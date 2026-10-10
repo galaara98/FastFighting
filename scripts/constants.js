@@ -69,6 +69,9 @@ export const SWAY = Object.freeze({ SURRENDER: "surrendered", FLEE: "fled", SWIT
 /** A PC hands over an item only when this d100 luck check comes up under it (39 or less). */
 export const CONCEDE_LUCK = 40;
 
+/** Robbing a PC takes a successful check and this d100 luck check coming up under it (29 or less). */
+export const THEFT_LUCK = 30;
+
 /** How an encounter opens: decided by who would rather talk, always with words, or straight into battle. */
 export const OPENING = Object.freeze({ AUTO: "auto", TALK: "talk", FIGHT: "fight" });
 

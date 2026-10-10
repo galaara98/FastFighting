@@ -12,7 +12,7 @@ import { costOf, costUnits } from "./turn.js";
 import {
   prepareBattle, createRun, isStanding, isUp, enemiesOf, alliesOf, areEnemies, liveTier, liveTrait, currentAc,
   attackRoll, saveRoll, checkRoll, turnFor, moveToward, moveAway, bonusDamageParts, dispositionOf,
-  behaviorOf, edgeDistance, movesNeeded, approach
+  behaviorOf, edgeDistance, movesNeeded, approach, canMove
 } from "./battle-state.js";
 import { sampleRunTactics } from "./playstyles.js";
 import { chooseTarget, bestOptionVs } from "./behavior/targeting.js";
@@ -22,6 +22,8 @@ import { expectedDamage, spendUse, attacksIn, criticalParts, saveMultiplier } fr
 import { createAggregator } from "./aggregate.js";
 import { talkActionsThisTurn, choosePitch, attemptTalk } from "./behavior/talk.js";
 import { opensWithTalk, breaksStandoff, standoffPitches, charismaticLeader } from "./behavior/standoff.js";
+import { controlOutcome, isImmune, degreeShift, applyControl } from "./behavior/control.js";
+import { stealChance, theftTarget, attemptTheft } from "./behavior/theft.js";
 
 const MAX_STEPS_PER_TURN = 8;
 /** After the last blow, how long the winners keep tending the dying (ten minutes of rounds, at most). */
@@ -197,6 +199,10 @@ function huntable(run, u) {
 
 function dealDamage(run, source, target, amount, { crit = false } = {}) {
   if ( amount <= 0 || target.status === STATUS.DEAD || target.status === STATUS.FLED ) return;
+  if ( target.effects?.some(e => e.endsOnDamage) ) {
+    target.effects = target.effects.filter(e => !e.endsOnDamage); // a blow wakes the sleeper
+    recomputeConditions(target);
+  }
   const rules = run.prep.rules;
   const model = run.prep.options.downedModel;
   if ( target.status === STATUS.STANDING ) {
@@ -236,6 +242,12 @@ function releaseGrabs(run, u) {
 /** Recompute condition values from active afflictions (the worst value of each condition wins). */
 function recomputeConditions(u) {
   const conds = { ...u.baseConds };
+  for ( const e of u.effects ?? [] ) {
+    for ( const [k, v] of Object.entries(e.conditions) ) {
+      const value = v === true ? 1 : Number(v) || 0;
+      conds[k] = Math.max(conds[k] ?? 0, value);
+    }
+  }
   for ( const a of u.afflictions ) {
     if ( a.onsetLeft > 0 ) continue; // not taken hold yet
     const stage = a.spec.stages[a.stage - 1];
@@ -292,6 +304,12 @@ function applyEffects(run, u, action, target, degree) {
       log(run, target, `is grabbed by ${u.spec.name}`, { type: "grabbed", by: u.spec.name });
     } else if ( effect.kind === "affliction" ) {
       exposeToAffliction(run, u, target, effect);
+    } else if ( effect.kind === "condition" && (degree === 3 || !effect.critOnly) ) {
+      // A rider such as "if it critically fails, it's also stunned 1": the system's own tags decide immunity.
+      if ( isImmune(run, target, { traits: action.traits, onSave: [effect] }) ) continue;
+      applyControl(target, effect, u.id);
+      recomputeConditions(target);
+      log(run, target, `is left ${effect.label || "reeling"}`, { type: "condition", by: u.spec.name, effect: effect.label ?? "" });
     }
   }
 }
@@ -367,6 +385,11 @@ function executeOffense(run, u, action, t, attacksMade) {
       continue;
     }
 
+    if ( action.kind === "control" ) {
+      executeControl(run, u, action, target, attacksMade, common);
+      continue;
+    }
+
     if ( action.kind === "save" && action.save ) {
       const extra = bonusDamageParts(run, u, action, target, { commit: true });
       const { mod, advantage } = saveRoll(run, target, action.save.type);
@@ -402,6 +425,48 @@ function executeOffense(run, u, action, t, attacksMade) {
   if ( action.melee ) {
     u.adjacent.add(t.id);
     t.adjacent.add(u.id);
+  }
+}
+
+/** A crowd-control action on one target: immunity, the roll, the outcome for that degree, any damage. */
+function executeControl(run, u, action, target, attacksMade, common) {
+  const rules = run.prep.rules;
+  const logging = !!run.log;
+  if ( isImmune(run, target, action) ) {
+    if ( logging ) log(run, u, `${action.name} → ${target.spec.name}: unaffected`, { type: "control", ...common, immune: true, degree: null });
+    return;
+  }
+  let roll;
+  let dc;
+  if ( action.save ) {
+    const { mod, advantage } = saveRoll(run, target, action.save.type);
+    dc = action.save.dc;
+    roll = { ...rollCheck(rules, run.rng, mod, dc, { advantage, kind: "save" }), mod };
+  } else {
+    const { bonus, advantage } = attackRoll(run, u, target, action, attacksMade);
+    dc = currentAc(run, target, u, action);
+    roll = { ...rollCheck(rules, run.rng, bonus, dc, { advantage, kind: "attack" }), mod: bonus };
+  }
+  // Some effects hold weaker on much stronger targets (PF2e incapacitation): their result counts one better.
+  const shift = degreeShift(run, u, target, action);
+  const degree = Math.max(0, Math.min(3, roll.degree + (action.save ? shift : -shift)));
+  const outcome = controlOutcome(action, degree);
+  if ( outcome ) applyControl(target, outcome, u.id);
+  recomputeConditions(target);
+  let damage = 0;
+  if ( action.damage?.length ) {
+    const mult = action.save ? saveMultiplier(rules, degree, action.save) : (degree >= 2 ? 1 : 0);
+    if ( mult > 0 ) {
+      const hit = rollHit(run, u, action, target, action.damage, mult, false);
+      damage = hit.total;
+      hit.apply();
+    }
+  }
+  if ( logging ) {
+    log(run, u, `${action.name} → ${target.spec.name}: ${outcome?.label || "no effect"}${damage ? `, ${damage} damage` : ""}`, {
+      type: "control", ...common, saveType: action.save?.type ?? null, natural: roll.natural, mod: roll.mod, total: roll.total, dc,
+      degree, margin: roll.total - dc, effect: outcome?.label ?? "", took: !!outcome, damage, shifted: shift
+    });
   }
 }
 
@@ -540,6 +605,7 @@ function takeTurn(run, u) {
   // The turn's budget comes from the system (PF2e: three actions; 5e: an action, a bonus action and movement).
   const turn = turnFor(run, u);
   u.usedThisTurn = null; // once-per-turn riders such as sneak attack
+  u.stoleThisTurn = false;
   const basic = rules.basicAction ?? 1; // a simple action: stand, escape, recall knowledge, step
   const behavior = behaviorOf(u);
   // Diplomats with no one who understands them still try to talk.
@@ -568,7 +634,7 @@ function takeTurn(run, u) {
   }
 
   // Running for help: head toward an ally who hasn't joined yet and shout.
-  const helper = turn.left > 0 ? wantsHelp(run, u) : null;
+  const helper = turn.left > 0 && canMove(run, u) ? wantsHelp(run, u) : null;
   if ( helper ) {
     for ( let n = 0; n < MAX_STEPS_PER_TURN; n++ ) {
       const budget = turn.payForMove(approach(run, u, helper).speed);
@@ -627,12 +693,24 @@ function takeTurn(run, u) {
       u.studied.delete(target.id);
       u.studied.add(`skip:${target.id}`);
     }
+    // A thief may rob someone within reach instead of hitting them (once a turn).
+    if ( !u.stoleThisTurn ) {
+      u.stoleThisTurn = true;
+      const mark = theftTarget(run, u);
+      const stealCost = rules.stealCost ?? basic;
+      const chance = mark ? stealChance(run, u, mark) : 0;
+      if ( chance > 0 && turn.canAfford(stealCost) && run.rng.chance(chance) ) {
+        turn.spend(stealCost);
+        attemptTheft(run, u, mark, (unit, text, data) => log(run, unit, text, data));
+        continue;
+      }
+    }
     u.targetId = target.id;
     const option = bestOptionVs(run, u, target, attacksMade, turn);
     if ( !option ) break;
 
     if ( option.moves > 0 ) {
-      if ( u.grabbedBy ) break;
+      if ( !canMove(run, u) ) break;
       // PF2e: a Stride per action. 5e: the rest of the movement, then a Dash.
       const budget = turn.payForMove(approach(run, u, target).speed);
       if ( !budget ) break;
@@ -690,6 +768,12 @@ function takeTurn(run, u) {
 
 function endOfTurn(run, u) {
   const rules = run.prep.rules;
+  if ( u.effects?.length ) {
+    for ( const e of u.effects ) e.rounds -= 1;
+    const before = u.effects.length;
+    u.effects = u.effects.filter(e => e.rounds > 0);
+    if ( u.effects.length !== before ) recomputeConditions(u);
+  }
   if ( u.persistent.length ) {
     const remaining = [];
     for ( const entry of u.persistent ) {

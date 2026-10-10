@@ -51,6 +51,16 @@ export function bestOptionVs(run, u, t, attacksMade = 0, turn = null) {
   }
   if ( !options.length ) return null;
 
+  // Feral creatures with spells don't plan: half the time they let fly with anything, otherwise whatever hurts most
+  // right now, spending what they have without a thought.
+  const SPELLS = ["spell-attack", "save", "auto", "control"];
+  if ( liveTier(run, u) <= TACTICAL.FERAL && options.some(o => SPELLS.includes(o.action.kind)) ) {
+    const affordable = turn ? options.filter(o => turn.canAfford({ ...o.cost, [main]: (o.cost[main] ?? 0) + o.moveUnits })) : options;
+    const pool = affordable.length ? affordable : options;
+    if ( run.rng && run.rng.chance(0.5) ) return run.rng.pick(pool);
+    return pool.reduce((best, o) => (!best || o.ev > best.ev ? o : best), null);
+  }
+
   let pool = options;
   if ( tactics ) {
     // Ranged fighters don't wade in while they still have a shot.

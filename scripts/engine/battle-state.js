@@ -189,6 +189,7 @@ export function createRun(prep) {
       conds: Object.fromEntries(Object.entries(s.conditions ?? {}).filter(([k]) => k !== "prone").map(([k, v]) => [k, v === true ? 1 : Number(v) || 0])),
       baseConds: null, // set below: conditions that were there before any affliction
       afflictions: [],
+      effects: [],           // timed conditions from crowd control: {conditions, rounds, endsOnDamage, sourceId}
       grabbedBy: null,
       tac: s.tactics ?? null, // replaced per fight by sampleRunTactics in runOne
       studied: new Set(),
@@ -375,7 +376,8 @@ export function checkRoll(run, u, mod) {
 /** A fresh turn budget for u, minus what conditions take away (stunned, slowed, paralyzed ...). */
 export function turnFor(run, u) {
   const rules = run.prep.rules;
-  const lost = rules.modifiers?.actionsLost?.(u) ?? 0;
+  // "incapacitated" (asleep, held) is the engine's own: no actions at all.
+  const lost = (rules.modifiers?.actionsLost?.(u) ?? 0) + (u.conds.incapacitated ? 99 : 0);
   return new Turn(rules, u, lost);
 }
 
@@ -422,6 +424,13 @@ export function bonusDamageParts(run, attacker, action, target, { advantage = 0,
     if ( commit && bonus.oncePerTurn ) (attacker.usedThisTurn ??= new Set()).add(key);
   }
   return out;
+}
+
+/** Can u move at all (not grabbed by someone standing, not immobilized)? */
+export function canMove(run, u) {
+  if ( u.conds.immobilized ) return false;
+  const grabber = u.grabbedBy ? run.byId.get(u.grabbedBy) : null;
+  return !(grabber && isStanding(grabber));
 }
 
 /** Geometry ------------------------------------------------------------- */

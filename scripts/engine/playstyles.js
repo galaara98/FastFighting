@@ -43,7 +43,8 @@ export const PLAYSTYLES = Object.freeze({
   redeemSeeker: { icon: "fa-dove", traits: { brave: 15, selfish: -20 }, suggest: { allyDying: "rescue", retreat: "never", style: "frontline" }, behavior: { drawAggro: 0.15 } },
   loreCollector: { icon: "fa-book-open", traits: { tactical: 5 }, suggest: {}, behavior: { study: 0.5 } },
   puzzleManiac: { icon: "fa-puzzle-piece", traits: { tactical: 15 }, suggest: { target: "casters" }, behavior: { exploitWeakness: 0.5 } },
-  wildcard: { icon: "fa-dice", traits: {}, suggest: {}, behavior: { random: 0.25 } }
+  wildcard: { icon: "fa-dice", traits: {}, suggest: {}, behavior: { random: 0.25 } },
+  thief: { icon: "fa-mask", traits: { selfish: 10 }, suggest: {}, behavior: { steal: 1 } }
 });
 
 export const PLAYSTYLE_IDS = Object.freeze(Object.keys(PLAYSTYLES));

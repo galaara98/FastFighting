@@ -407,7 +407,9 @@
       "Gives": "Gives up {what} to {name}",
       "Receives": "Receives {what} from {name}",
       "Kept": "Agreed to give up {what}, but kept it (luck {luck})",
-      "Reclaimed": "Gave up {what} to {name}, but got it back when {name} was beaten"
+      "Reclaimed": "Gave up {what} to {name}, but got it back when {name} was beaten",
+      "Stolen": "{what} stolen by {name}",
+      "Steals": "Steals {what} from {name}"
     },
     "Tactics": {
       "Auto": "Let {name} decide: {choice}",
@@ -632,7 +634,11 @@
         "Hint": "Unpredictable: sometimes attacks someone random or does something unexpected."
       },
       "AlwaysTalk": "This character always prefers talking to fighting",
-      "AlwaysTalkHint": "Talks whenever there's someone to talk to, whole turns at a time, even without much skill at it, and always votes to open an encounter as a standoff. With \"stay mostly true\" also checked, it only makes talking a little more likely."
+      "AlwaysTalkHint": "Talks whenever there's someone to talk to, whole turns at a time, even without much skill at it, and always votes to open an encounter as a standoff. With \"stay mostly true\" also checked, it only makes talking a little more likely.",
+      "thief": {
+        "Name": "Thief",
+        "Hint": "Light fingers: when their side is winning, or they're unseen and someone is alone, they may rob a foe within reach instead of hitting them."
+      }
     },
     "Tracker": {
       "OpenHint": "Estimate how this encounter will go",
@@ -702,7 +708,9 @@
       "Card": "<strong>{giver}</strong> gave up {what} to {receiver}.",
       "Luck": "Luck check: {luck} on a d100 (needed under 40).",
       "Undo": "Undo just this",
-      "Undone": "Undone: it's back with its owner."
+      "Undone": "Undone: it's back with its owner.",
+      "CardTheft": "<strong>{giver}</strong> was robbed of {what} by {receiver}.",
+      "TheftLuck": "Luck check: {luck} on a d100 (the thief needed under 30)."
     }
   }
 }

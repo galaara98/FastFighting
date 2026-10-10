@@ -38,8 +38,8 @@ export function shareLanguage(a, b) {
   return la.some(l => lb.includes(l));
 }
 
-/** What t still has to hand over, after anything already given up this fight. */
-function remaining(t) {
+/** What t still has to hand over (or have taken), after anything already lost this fight. */
+export function remaining(t) {
   const v = t.spec.valuables ?? {};
   const given = (t.concessions ?? []).filter(c => !c.kept);
   const spent = given.filter(c => c.kind === "money").reduce((s, c) => s + c.amount, 0);
@@ -231,7 +231,7 @@ function outcomeFor(run, t, kind) {
  * isn't wielding or wearing (a PC keeps it unless a d100 luck check comes up under 40); failing that, an NPC gives
  * up something it's wielding. Returns null when there's nothing at all (an NPC then lies and runs).
  */
-function concession(run, t) {
+export function concession(run, t, { itemLuck = true } = {}) {
   const v = remaining(t);
   const rng = run.rng;
   if ( v.money > 0 ) {
@@ -240,7 +240,7 @@ function concession(run, t) {
   }
   if ( v.stowed.length ) {
     const item = rng.pick(v.stowed);
-    if ( t.spec.kind === "pc" ) {
+    if ( t.spec.kind === "pc" && itemLuck ) {
       const luck = rng.die(100);
       return { kind: "item", item, luck, kept: luck >= CONCEDE_LUCK };
     }

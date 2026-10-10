@@ -5,6 +5,7 @@ import { meanPart, doubled } from "../dice.js";
 import { degreeDistribution } from "../probability.js";
 import { attackRoll, currentAc, saveRoll, bonusDamageParts } from "../battle-state.js";
 import { costOf, costUnits, mainPool } from "../turn.js";
+import { controlValue } from "./control.js";
 
 function meanByType(parts) {
   const out = {};
@@ -67,6 +68,7 @@ export function expectedDamage(run, a, action, t, attacksMade = 0) {
     action.sequence.forEach((strike, i) => { total += expectedDamage(run, a, strike, t, attacksMade + i); });
     return total;
   }
+  if ( action.kind === "control" ) return controlValue(run, a, action, t, attacksMade);
   const rules = run.prep.rules;
   const dmg = meanDamageVs(run, action, t);
   const targets = action.area ? Math.max(1, action.area.targets ?? 2) : 1;
@@ -141,6 +143,7 @@ export function attacksIn(action) {
 }
 
 export function countsAsAttack(action) {
+  if ( action.kind === "control" ) return action.attack !== false && !action.save;
   return action.attack !== false && (action.kind === "strike" || action.kind === "spell-attack");
 }
 

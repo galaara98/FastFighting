@@ -238,6 +238,13 @@ function narrate(e, roll, rel, fill) {
       return roll({ surrendered: "event.surrender", fled: "event.swayFlee", switched: "event.switch", stoodDown: "event.standDown" }[e.outcome] ?? "event.surrender", f);
     }
     case "lastWord": return roll("event.lastWord", f);
+    case "condition": return roll("event.conditionRider", { ...f, effect: e.effect ?? "" });
+    case "control":
+      if ( e.immune ) return roll("event.controlImmune", f);
+      return roll(e.took ? "event.controlTakes" : "event.controlResisted", { ...f, effect: e.effect ?? "" });
+    case "theft":
+      if ( e.stolen ) return roll("event.theftSuccess", { ...f, amount: concessionText(e.stolen) });
+      return roll(e.noticed ? "event.theftCaught" : "event.theftEmpty", f);
     case "reclaim": return roll("event.reclaim", { ...f, amount: concessionText(e.concession) });
     case "persistent": return roll("event.persistent", f);
     case "afflictionSave": return roll(e.degree <= 1 ? "event.afflictionSaveFail" : "event.afflictionSavePass", f);
@@ -321,7 +328,15 @@ function standard(result, spec, title, labels) {
   for ( const e of result.log ) {
     if ( !e.actorId || !mentions(e) ) continue;
     const s = entry(e.actorId);
-    if ( e.type === "attack" || e.type === "save" || e.type === "auto" ) {
+    if ( e.type === "control" ) {
+      const a = s.spells.get(e.action) ?? { uses: 0, hits: 0, crits: 0, misses: 0 };
+      a.uses += 1;
+      if ( e.took ) a.hits += 1; else a.misses += 1;
+      s.spells.set(e.action, a);
+      s.damage += e.damage ?? 0;
+    } else if ( e.type === "theft" ) {
+      s.notes.push(e.stolen ? `stole ${concessionText(e.stolen)} from ${e.target}` : e.noticed ? `caught stealing from ${e.target}` : `came away empty-handed from ${e.target}`);
+    } else if ( e.type === "attack" || e.type === "save" || e.type === "auto" ) {
       const bucket = SPELL_KINDS.has(e.actionKind) ? s.spells : s.attacks;
       const a = bucket.get(e.action) ?? { uses: 0, hits: 0, crits: 0, misses: 0 };
       a.uses += 1;
@@ -391,6 +406,11 @@ function statLine(e) {
     case "notice": return `${e.actor} notices (${e.cause})`;
     case "firstAid": return `${e.actor} → ${e.target}: first aid · medicine ${roll(e.natural, e.mod, e.total, e.dc, "DC")} · ${DEGREE[e.degree]} · ${e.stable ? "stabilized" : e.dead ? "dies" : `dying ${e.dying}`}`;
     case "aftermath": return "After the fight";
+    case "control":
+      if ( e.immune ) return `${e.actor} → ${e.target}: ${e.action} · unaffected`;
+      return `${e.actor} → ${e.target}: ${e.action} · ${e.saveType ? `${e.saveType} ` : ""}${roll(e.natural, e.mod, e.total, e.dc, e.saveType ? "DC" : "AC")} · ${DEGREE[e.degree]}${e.shifted ? " (shifted)" : ""} · ${e.effect || "no effect"}${e.damage ? ` · ${e.damage} damage` : ""}`;
+    case "theft":
+      return `${e.actor} → ${e.target}: ${e.skill} · ${roll(e.natural, e.mod, e.total, e.dc, `${e.dcStat} DC`)} · ${DEGREE[e.degree]}${e.luck ? ` · luck d100 ${e.luck} (needs under 30)` : ""} · ${e.stolen ? `steals ${concessionText(e.stolen)}` : e.noticed ? "caught" : "nothing taken"}`;
     case "reclaim": return `${e.actor} gets back ${concessionText(e.concession)} from ${e.by}`;
     case "sway":
       if ( !e.concession ) return `${e.actor}: ${e.text}`;
