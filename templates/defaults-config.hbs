@@ -1,0 +1,11 @@
+<div class="ff-defaults-body">
+  <p class="hint">{{localize "FASTFIGHTING.Defaults.Hint"}}</p>
+  {{#each sides}}
+  <div class="ff-side-block">
+    <h4><span class="ff-dot {{id}}"></span>{{label}}</h4>
+    <div class="ff-trait-grid">
+      {{#each traits}}{{> "modules/fast-fighting/templates/partials/fudge.hbs" this}}{{/each}}
+    </div>
+  </div>
+  {{/each}}
+</div>

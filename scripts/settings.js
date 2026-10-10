@@ -34,7 +34,18 @@ const SETTINGS = {
   fledMode: { type: String, default: "hide", choices: choices(["hide", "leave"], "Fled") }
 };
 
-export function registerSettings(DefaultsConfig) {
+export function registerSettings(DefaultsConfig, GenericPathsConfig) {
+  game.settings.register(MODULE_ID, "genericPaths", { scope: "world", config: false, type: Object, default: {} });
+  if ( GenericPathsConfig ) {
+    game.settings.registerMenu(MODULE_ID, "genericPathsMenu", {
+      name: "FASTFIGHTING.Generic.MenuName",
+      label: "FASTFIGHTING.Generic.MenuLabel",
+      hint: "FASTFIGHTING.Generic.MenuHint",
+      icon: "fa-solid fa-route",
+      type: GenericPathsConfig,
+      restricted: true
+    });
+  }
   for ( const [key, data] of Object.entries(SETTINGS) ) {
     game.settings.register(MODULE_ID, key, {
       name: `FASTFIGHTING.Settings.${key}.Name`,

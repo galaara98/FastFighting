@@ -67,6 +67,8 @@ export async function commitPf2eOutcome(tokenDoc, spec, final, options = {}) {
     deletedItems: [], tokenUpdate: null, createdActors: [], createdTokens: [], deletedTokens: [], statuses: []
   };
   const sys = actor.system;
+  // PF2e adds linked conditions on its own (dying → unconscious → prone), so undo tracks every new item.
+  const itemsBefore = new Set(actor.items.map(i => i.id));
   const update = {};
   const hp = sys.attributes.hp;
   if ( hp.value !== final.hp ) {
@@ -143,6 +145,10 @@ export async function commitPf2eOutcome(tokenDoc, spec, final, options = {}) {
   } else if ( final.status === STATUS.FLED && options.fledMode !== "leave" ) {
     undo.tokenUpdate = { hidden: tokenDoc.hidden };
     await tokenDoc.update({ hidden: true });
+  }
+  const live = tokenDoc.actor ?? actor;
+  for ( const item of live.items ) {
+    if ( !itemsBefore.has(item.id) && !undo.createdItems.includes(item.id) ) undo.createdItems.push(item.id);
   }
   return undo;
 }

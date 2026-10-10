@@ -1,0 +1,7 @@
+<div class="ff-fudge {{#if fudge}}is-fudged{{/if}}" data-tooltip="{{tooltip}}">
+  <span class="ff-fudge-label">{{label}}{{#if band}} <span class="ff-band">· {{band}}</span>{{/if}}</span>
+  <button type="button" class="ff-icon-btn ff-minus" data-action="fudge" data-path="{{path}}" data-step="{{step}}" data-dir="-1" aria-label="{{localize "FASTFIGHTING.Fudge.Down"}}"><i class="fa-solid fa-minus"></i></button>
+  <span class="ff-fudge-value">{{value}}{{#if fudgeLabel}}<sup>{{fudgeLabel}}</sup>{{/if}}</span>
+  <button type="button" class="ff-icon-btn ff-plus" data-action="fudge" data-path="{{path}}" data-step="{{step}}" data-dir="1" aria-label="{{localize "FASTFIGHTING.Fudge.Up"}}"><i class="fa-solid fa-plus"></i></button>
+  <button type="button" class="ff-icon-btn ff-reset" data-action="fudge" data-path="{{path}}" data-dir="0" {{#unless fudge}}disabled{{/unless}} aria-label="{{localize "FASTFIGHTING.Fudge.Remove"}}"><i class="fa-solid fa-rotate-left"></i></button>
+</div>

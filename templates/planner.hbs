@@ -1,0 +1,294 @@
+<div class="ff-root">
+  {{!-- ============ Toolbar ============ --}}
+  <header class="ff-toolbar">
+    <div class="ff-scene">
+      <i class="fa-solid fa-map-location-dot"></i>
+      <strong>{{sceneName}}</strong>
+      <span class="ff-chip">{{adapterLabel}}</span>
+    </div>
+    <label class="ff-field">{{localize "FASTFIGHTING.Planner.Runs"}}
+      <input type="number" name="options.runs" value="{{options.runs}}" min="100" max="20000" step="100" data-dtype="Number">
+    </label>
+    <label class="ff-field">{{localize "FASTFIGHTING.Planner.MaxRounds"}}
+      <input type="number" name="options.maxRounds" value="{{options.maxRounds}}" min="3" max="100" data-dtype="Number">
+    </label>
+    <label class="ff-field">{{localize "FASTFIGHTING.Planner.Seed"}}
+      <input type="text" name="options.seed" value="{{options.seed}}" placeholder="{{localize "FASTFIGHTING.Planner.Random"}}" size="9">
+    </label>
+    <label class="ff-field">{{localize "FASTFIGHTING.Planner.Downed"}}
+      <select name="options.downedModel">{{selectOptions downedChoices selected=options.downedModel localize=true}}</select>
+    </label>
+    <label class="ff-field">{{localize "FASTFIGHTING.Planner.Initiative"}}
+      <select name="options.surprise">{{selectOptions surpriseChoices selected=options.surprise localize=true}}</select>
+    </label>
+    <div class="ff-toggles">
+      <label data-tooltip="{{localize "FASTFIGHTING.Planner.PositioningHint"}}"><input type="checkbox" name="options.positioning" {{checked options.positioning}}> {{localize "FASTFIGHTING.Planner.Positioning"}}</label>
+      <label><input type="checkbox" name="options.morale" {{checked options.morale}}> {{localize "FASTFIGHTING.Planner.Morale"}}</label>
+      <label><input type="checkbox" name="options.leadership" {{checked options.leadership}}> {{localize "FASTFIGHTING.Planner.Leadership"}}</label>
+      <label><input type="checkbox" name="options.includeHidden" {{checked options.includeHidden}}> {{localize "FASTFIGHTING.Planner.Hidden"}}</label>
+    </div>
+    <div class="ff-run-group">
+      {{#if canUndo}}<button type="button" class="ff-btn" data-action="undo" data-tooltip="{{localize "FASTFIGHTING.MakeItSo.UndoConfirm"}}"><i class="fa-solid fa-rotate-left"></i> {{localize "FASTFIGHTING.MakeItSo.Undo"}}</button>{{/if}}
+      <button type="button" class="ff-btn" data-action="refresh" data-tooltip="{{localize "FASTFIGHTING.Planner.RefreshHint"}}"><i class="fa-solid fa-arrows-rotate"></i></button>
+      <button type="button" class="ff-btn ff-run" data-action="run" {{#if running}}disabled{{/if}} {{#unless hasAdapter}}disabled{{/unless}}>
+        <i class="fa-solid {{#if running}}fa-spinner fa-spin{{else}}fa-dice-d20{{/if}}"></i> {{localize "FASTFIGHTING.Planner.Run"}}
+      </button>
+    </div>
+    <div class="ff-progress {{#if running}}is-running{{/if}}"><span style="width: {{progress}}%"></span></div>
+  </header>
+
+  <div class="ff-body">
+    {{!-- ============ Left: sides and roster ============ --}}
+    <section class="ff-left">
+      <nav class="ff-side-tabs">
+        {{#each sides}}
+        <button type="button" class="ff-side-tab {{id}} {{#if active}}active{{/if}}" data-action="sideTab" data-side="{{id}}">
+          <i class="fa-solid {{icon}}"></i> {{label}} <span class="ff-count">{{count}}</span>
+        </button>
+        {{/each}}
+      </nav>
+
+      {{#with activeSide}}
+      <div class="ff-side-strip {{id}}">
+        <div class="ff-strip-row">
+          {{#if isUnaligned}}
+          <label class="ff-field">{{localize "FASTFIGHTING.Planner.Allegiance"}}
+            <select name="sides.{{id}}.allegiance">{{selectOptions allegianceChoices selected=allegiance localize=true}}</select>
+          </label>
+          {{/if}}
+          <label class="ff-field">{{localize "FASTFIGHTING.Planner.Healing"}}
+            <select name="sides.{{id}}.healAggro">{{selectOptions healChoices selected=healAggro localize=true}}</select>
+          </label>
+          <label class="ff-check"><input type="checkbox" name="sides.{{id}}.morale" {{checked morale}}> {{localize "FASTFIGHTING.Planner.SideMorale"}}</label>
+        </div>
+        <div class="ff-strip-title">{{localize "FASTFIGHTING.Planner.GroupTraits"}}</div>
+        <div class="ff-trait-grid">
+          {{#each traits}}{{> "modules/fast-fighting/templates/partials/fudge.hbs" this}}{{/each}}
+        </div>
+        <div class="ff-strip-row">
+          <label class="ff-field ff-grow">{{localize "FASTFIGHTING.Planner.Leader"}}
+            <select name="sides.{{id}}.leaderId">{{selectOptions leaderChoices selected=leaderId}}</select>
+          </label>
+          {{#if leaderReason}}<span class="ff-hint" data-tooltip="{{leaderReason}}"><i class="fa-solid fa-circle-info"></i> {{leaderReason}}</span>{{/if}}
+        </div>
+        {{#if leadership.length}}
+        <div class="ff-trait-grid">
+          {{#each leadership}}{{> "modules/fast-fighting/templates/partials/fudge.hbs" this}}{{/each}}
+        </div>
+        {{/if}}
+      </div>
+
+      <div class="ff-roster-list">
+        {{#each members}}
+        <article class="ff-row {{#unless include}}is-excluded{{/unless}} {{#if expanded}}is-expanded{{/if}}" data-token-id="{{id}}">
+          <div class="ff-row-head">
+            <img src="{{img}}" alt="" data-action="panToken" data-tooltip="{{localize "FASTFIGHTING.Planner.PanTo"}}">
+            <div class="ff-row-id">
+              <div class="ff-row-name">
+                {{name}}
+                {{#if hidden}}<i class="fa-solid fa-eye-slash" data-tooltip="{{localize "FASTFIGHTING.Planner.HiddenToken"}}"></i>{{/if}}
+                <span class="ff-chip ff-kind-{{kind}}">{{kindLabel}} {{level}}</span>
+              </div>
+              <div class="ff-row-meta">
+                <span><i class="fa-solid fa-heart"></i> {{hp}}</span>
+                <span><i class="fa-solid fa-shield"></i> {{ac}}</span>
+                {{#if approach}}<span class="ff-approach"><i class="fa-solid fa-route"></i> {{approach}}</span>{{/if}}
+              </div>
+              {{#if resolvedLabel}}<div class="ff-row-note">{{resolvedLabel}}</div>{{/if}}
+            </div>
+            <label class="ff-check" data-tooltip="{{localize "FASTFIGHTING.Planner.IncludeHint"}}"><input type="checkbox" name="tokens.{{id}}.include" {{checked include}}></label>
+            <select name="tokens.{{id}}.side" class="ff-side-select">{{selectOptions sideChoices selected=side localize=true}}</select>
+            <button type="button" class="ff-icon-btn" data-action="toggleRow" aria-label="{{localize "FASTFIGHTING.Planner.Details"}}"><i class="fa-solid {{#if expanded}}fa-chevron-up{{else}}fa-chevron-down{{/if}}"></i></button>
+          </div>
+          <div class="ff-trait-grid ff-compact">
+            {{#each traits}}{{> "modules/fast-fighting/templates/partials/fudge.hbs" this}}{{/each}}
+          </div>
+          {{#if expanded}}
+          <div class="ff-row-details">
+            <div class="ff-trait-grid ff-compact">
+              {{#each stats}}{{> "modules/fast-fighting/templates/partials/fudge.hbs" this}}{{/each}}
+            </div>
+            {{#if isPc}}
+            <div class="ff-disposition">
+              <div class="ff-strip-title">{{localize "FASTFIGHTING.Planner.Disposition"}}</div>
+              <label class="ff-field">{{localize "FASTFIGHTING.Planner.HealAggro"}}
+                <select name="disp.{{actorId}}.healAggro">{{selectOptions healChoices selected=disposition.healAggro localize=true}}</select>
+              </label>
+              <label class="ff-field">{{localize "FASTFIGHTING.Planner.AllyDying"}}
+                <select name="disp.{{actorId}}.allyDying">{{selectOptions allyDyingChoices selected=disposition.allyDying localize=true}}</select>
+              </label>
+              <label class="ff-field">{{localize "FASTFIGHTING.Planner.SelfRevived"}}
+                <select name="disp.{{actorId}}.selfRevived">{{selectOptions selfRevivedChoices selected=disposition.selfRevived localize=true}}</select>
+              </label>
+            </div>
+            {{/if}}
+            <div class="ff-strip-row">
+              <label class="ff-check"><input type="checkbox" name="tokens.{{id}}.ignoreTerrain" {{checked ignoreTerrain}}> {{localize "FASTFIGHTING.Planner.IgnoreTerrain"}}</label>
+              <label class="ff-check"><input type="checkbox" name="tokens.{{id}}.diesAtZero" {{checked diesAtZero}}> {{localize "FASTFIGHTING.Planner.DiesAtZero"}}</label>
+            </div>
+            <dl class="ff-facts">
+              <dt>{{localize "FASTFIGHTING.Planner.Movement"}}</dt><dd>{{speeds}}</dd>
+              {{#if environment}}<dt>{{localize "FASTFIGHTING.Planner.Environment"}}</dt><dd>{{environment}}</dd>{{/if}}
+              <dt>{{localize "FASTFIGHTING.Planner.Options"}}</dt><dd>{{actions}}</dd>
+            </dl>
+          </div>
+          {{/if}}
+        </article>
+        {{else}}
+        <p class="ff-empty">{{localize "FASTFIGHTING.Planner.NoMembers"}}</p>
+        {{/each}}
+      </div>
+      {{/with}}
+    </section>
+
+    {{!-- ============ Right: results ============ --}}
+    <section class="ff-right">
+      <nav class="ff-result-tabs">
+        {{#each resultTabs}}
+        <button type="button" class="{{#if active}}active{{/if}}" data-action="resultTab" data-tab="{{id}}" {{#unless @root.hasResults}}disabled{{/unless}}>{{label}}</button>
+        {{/each}}
+      </nav>
+      <div class="ff-results-body">
+        {{#if hasResults}}
+          {{#if stale}}<div class="ff-banner"><i class="fa-solid fa-triangle-exclamation"></i> {{localize "FASTFIGHTING.Results.Stale"}}</div>{{/if}}
+
+          {{#if (eq resultTab "overview")}}
+          <div class="ff-overview">
+            <div class="ff-winbar">
+              {{#each results.segments}}<span style="width: {{width}}%; background: {{color}}" data-tooltip="{{label}}: {{pct}}">{{#if (gt width 9)}}{{label}} {{pct}}{{/if}}</span>{{/each}}
+            </div>
+            <div class="ff-kpis">
+              <div class="ff-kpi"><span class="ff-kpi-value">{{results.partyWin}}</span><span class="ff-kpi-label">{{localize "FASTFIGHTING.Results.PartyWins"}}</span></div>
+              <div class="ff-kpi danger"><span class="ff-kpi-value">{{results.pcDeath}}</span><span class="ff-kpi-label">{{localize "FASTFIGHTING.Results.PcDeath"}}</span></div>
+              <div class="ff-kpi warn"><span class="ff-kpi-value">{{results.pcDowned}}</span><span class="ff-kpi-label">{{localize "FASTFIGHTING.Results.PcDowned"}}</span></div>
+              <div class="ff-kpi"><span class="ff-kpi-value">{{results.rounds.median}}</span><span class="ff-kpi-label">{{localize "FASTFIGHTING.Results.MedianRounds"}} ({{results.rounds.p10}}–{{results.rounds.p90}})</span></div>
+              <div class="ff-kpi ff-difficulty {{results.simulatedClass}}"><span class="ff-kpi-value">{{results.simulated}}</span><span class="ff-kpi-label">{{localize "FASTFIGHTING.Results.Simulated"}}{{#if results.crossCheck}} · {{localize "FASTFIGHTING.Results.SystemSays"}} <strong>{{results.crossCheck.labelLoc}}</strong> ({{results.crossCheck.xp}} XP){{/if}}</span></div>
+            </div>
+            <div class="ff-split">
+              <div class="ff-panel">
+                <h4>{{localize "FASTFIGHTING.Results.Duration"}}</h4>
+                <div class="ff-histogram">
+                  {{#each results.histogram}}<div class="ff-hbar" data-tooltip="{{localize "FASTFIGHTING.Results.RoundN"}} {{round}}: {{p}}"><span style="height: {{height}}%"></span><small>{{round}}</small></div>{{/each}}
+                </div>
+              </div>
+              <div class="ff-panel">
+                <h4>{{localize "FASTFIGHTING.Results.Dangerous"}}</h4>
+                <ul class="ff-list">{{#each results.foes}}<li><span class="ff-dot {{sideClass}}"></span>{{name}} <em>{{damage}} {{localize "FASTFIGHTING.Results.DmgAbbr"}}</em></li>{{/each}}</ul>
+                <h4>{{localize "FASTFIGHTING.Results.AtRisk"}}</h4>
+                <ul class="ff-list">{{#each results.atRisk}}<li><span class="ff-dot {{sideClass}}"></span>{{name}} <em>{{localize "FASTFIGHTING.Results.Downed"}} {{downed}} · {{localize "FASTFIGHTING.Results.Dead"}} {{dead}}</em></li>{{/each}}</ul>
+              </div>
+            </div>
+            <p class="ff-footnote">{{localize "FASTFIGHTING.Results.Footnote"}} {{results.runs}} · {{localize "FASTFIGHTING.Planner.Seed"}} {{results.seed}}</p>
+          </div>
+          {{/if}}
+
+          {{#if (eq resultTab "combatants")}}
+          <table class="ff-table">
+            <thead><tr>
+              <th>{{localize "FASTFIGHTING.Results.Combatant"}}</th><th>{{localize "FASTFIGHTING.Results.Fate"}}</th>
+              <th>{{localize "FASTFIGHTING.Results.HpLeft"}}</th><th>{{localize "FASTFIGHTING.Results.Damage"}}</th>
+              <th>{{localize "FASTFIGHTING.Results.Healing"}}</th><th>{{localize "FASTFIGHTING.Results.FirstToFall"}}</th>
+            </tr></thead>
+            <tbody>
+            {{#each results.combatants}}
+              <tr>
+                <td><span class="ff-dot {{sideClass}}"></span>{{name}}</td>
+                <td><div class="ff-fate">{{#each bars}}<span class="{{cls}}" style="width: {{w}}%" data-tooltip="{{label}}"></span>{{/each}}</div>
+                  <small>{{localize "FASTFIGHTING.Results.Standing"}} {{standing}} · {{localize "FASTFIGHTING.Results.Dead"}} {{dead}} · {{localize "FASTFIGHTING.Results.Fled"}} {{fled}}</small></td>
+                <td>{{hpLeft}}</td><td>{{damage}}</td><td>{{healing}}</td><td>{{first}}</td>
+              </tr>
+            {{/each}}
+            </tbody>
+          </table>
+          {{/if}}
+
+          {{#if (eq resultTab "swing")}}
+          <div class="ff-panel">
+            <p class="ff-hint">{{localize "FASTFIGHTING.Swing.Hint"}}</p>
+            <button type="button" class="ff-btn" data-action="swing" {{#if running}}disabled{{/if}}><i class="fa-solid fa-scale-unbalanced"></i> {{localize "FASTFIGHTING.Swing.Compute"}}</button>
+            {{#if results.swing}}
+            <ul class="ff-swing">
+              {{#each results.swing}}
+              <li>
+                <span class="ff-swing-label">{{label}}</span>
+                <span class="ff-swing-bar"><span class="{{#if positive}}pos{{else}}neg{{/if}}" style="width: {{width}}%"></span></span>
+                <span class="ff-swing-value {{#if positive}}pos{{else}}neg{{/if}}">{{deltaLabel}}</span>
+              </li>
+              {{/each}}
+            </ul>
+            {{/if}}
+          </div>
+          {{/if}}
+
+          {{#if (eq resultTab "resources")}}
+          <table class="ff-table">
+            <thead><tr><th>{{localize "FASTFIGHTING.Results.Combatant"}}</th><th>{{localize "FASTFIGHTING.Results.Resource"}}</th><th>{{localize "FASTFIGHTING.Results.AvgUsed"}}</th></tr></thead>
+            <tbody>
+            {{#each results.resources}}
+              <tr><td>{{name}}</td><td>{{label}}</td><td><div class="ff-meter"><span style="width: {{width}}%"></span></div> {{used}} / {{start}}</td></tr>
+            {{else}}
+              <tr><td colspan="3" class="ff-empty">{{localize "FASTFIGHTING.Results.NoResources"}}</td></tr>
+            {{/each}}
+            </tbody>
+          </table>
+          {{/if}}
+
+          {{#if (eq resultTab "sample")}}
+          <div class="ff-sample">
+            <div class="ff-strip-row">
+              <label class="ff-field">{{localize "FASTFIGHTING.Sample.Show"}}
+                <select name="sampleFilter">{{selectOptions sampleFilters selected=sampleFilter localize=true}}</select>
+              </label>
+              <button type="button" class="ff-btn" data-action="rollSample"><i class="fa-solid fa-dice"></i> {{localize "FASTFIGHTING.Sample.Roll"}}</button>
+              <span class="ff-grow"></span>
+              <button type="button" class="ff-btn ff-make-it-so" data-action="makeItSo" {{#unless results.sample}}disabled{{/unless}}><i class="fa-solid fa-gavel"></i> {{localize "FASTFIGHTING.MakeItSo.Button"}}</button>
+            </div>
+            {{#with results.sample}}
+            <div class="ff-sample-head">{{localize "FASTFIGHTING.Sample.Result"}}: <strong>{{outcome}}</strong> · {{totalRounds}} {{localize "FASTFIGHTING.Sample.Rounds"}} · {{localize "FASTFIGHTING.Planner.Seed"}} {{seed}}</div>
+            <div class="ff-split">
+              <ol class="ff-log">
+                {{#each rounds}}
+                <li class="ff-log-round"><h5>{{label}}</h5>
+                  <ul>{{#each entries}}<li class="ff-log-entry {{side}}"><strong>{{actor}}</strong> {{text}}</li>{{/each}}</ul>
+                </li>
+                {{/each}}
+              </ol>
+              <ul class="ff-finals">
+                {{#each finals}}<li><span class="ff-dot {{side}}"></span><strong>{{name}}</strong> <span class="ff-status {{statusClass}}">{{status}}</span><br><small>{{lines}}</small></li>{{/each}}
+              </ul>
+            </div>
+            {{/with}}
+          </div>
+          {{/if}}
+
+          {{#if (eq resultTab "share")}}
+          <div class="ff-share">
+            <div class="ff-strip-row">
+              <label class="ff-field">{{localize "FASTFIGHTING.Report.Accuracy"}}
+                <select name="report.accuracy">{{selectOptions report.accuracyChoices selected=report.accuracy localize=true}}</select>
+              </label>
+              <label class="ff-field">{{localize "FASTFIGHTING.Report.Mode"}}
+                <select name="report.mode">{{selectOptions report.modeChoices selected=report.mode localize=true}}</select>
+              </label>
+              <label class="ff-check"><input type="checkbox" name="report.hideEnemyNames" {{checked report.hideEnemyNames}}> {{localize "FASTFIGHTING.Report.HideNames"}}</label>
+            </div>
+            <p class="ff-hint">{{localize (concat "FASTFIGHTING.Accuracy.Hint." report.accuracy)}}</p>
+            <textarea name="report.text" rows="7">{{report.preview}}</textarea>
+            <div class="ff-strip-row">
+              <button type="button" class="ff-btn" data-action="resetReport"><i class="fa-solid fa-rotate-left"></i> {{localize "FASTFIGHTING.Report.Reset"}}</button>
+              <span class="ff-grow"></span>
+              <button type="button" class="ff-btn ff-run" data-action="sendReport"><i class="fa-solid fa-comment"></i> {{localize "FASTFIGHTING.Report.Send"}}</button>
+            </div>
+          </div>
+          {{/if}}
+        {{else}}
+          <div class="ff-empty-state">
+            <i class="fa-solid fa-swords"></i>
+            <h3>{{localize "FASTFIGHTING.Results.EmptyTitle"}}</h3>
+            <p>{{localize "FASTFIGHTING.Results.EmptyBody"}}</p>
+          </div>
+        {{/if}}
+      </div>
+    </section>
+  </div>
+</div>

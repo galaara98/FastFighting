@@ -1,6 +1,10 @@
 # FastFighting
 
-A system-agnostic [Foundry VTT](https://foundryvtt.com) module to speed up combat.
+A [Foundry VTT](https://foundryvtt.com) module that estimates how a battle will go, using the tokens on the scene. It simulates the fight thousands of times, round by round, with real dice math. Results show win odds, how long the fight lasts, who is likely to fall, and what swings the outcome. The GM can then commit one simulated fight to the tokens with **Make it So**.
+
+- **Foundry:** v14
+- **Built-in support:** Pathfinder 2e (8.6+), plus a generic d20 fallback for other systems
+- **Other systems:** helper modules can add support through the API below
 
 ## Installation
 
@@ -10,10 +14,152 @@ In Foundry, go to **Add-on Modules → Install Module** and paste this manifest 
 https://github.com/galaara98/FastFighting/releases/latest/download/module.json
 ```
 
+## Using it
+
+As GM, open the **Battle Planner** in one of three ways:
+- the swords button in the Token controls
+- the Token HUD
+- <kbd>Shift</kbd>+<kbd>B</kbd>
+
+The planner needs at least 1000×600 and uses any extra space you give it.
+
+**Left side: the battle.** There's one tab per side: Friendly, Hostile, Neutral, Secret (Foundry token dispositions).
+
+- **Side settings:**
+  - group personality
+  - healing aggressiveness
+  - whether the side can rout
+  - its leader and the leadership bonus
+  - for Neutral and Secret: **allegiance** (stays out, joins the party, joins the enemy, joins the nearest side, joins the underdog, or fights everyone)
+- **Each token row:**
+  - HP and AC
+  - how it would reach the nearest enemy (movement mode, move actions, terrain multiplier)
+  - its four personality traits
+  - side override and include toggle
+- **Expanding a row** gives stat fudges (AC, HP, attack/DC, damage), *ignores terrain*, and *dies at 0 HP*. For PCs it also shows the **healing and dying disposition**: how freely they heal, what they do when an ally is dying, and what they do after being revived. Ask your players before you run.
+
+Every derived number has **fudge up / fudge down / remove fudge** buttons. A fudged value is outlined, and the tooltip shows the system-derived base and the reason for it.
+
+**Right side: results.**
+
+| Tab | What it shows |
+| --- | --- |
+| Overview | Win/stalemate bar, party win chance, chance a PC dies or goes down, round histogram, simulated difficulty next to the system's own rating (PF2e XP budget), most dangerous foes and most-at-risk allies |
+| Combatants | Per token: standing / down / dead / fled odds, HP left, damage dealt, healing done, chance to fall first |
+| Swing factors | Re-runs without each combatant and each modifier to show what moves the party's odds most |
+| Resources | Average spell slots, focus points and consumables spent |
+| Sample fight | A representative fight, round by round. Roll others, optionally filtered ("a party defeat", "a PC dies", "a close call"). **Make it So** commits that exact fight. **Undo** reverts it. |
+| Share | Player chat card at an accuracy from **Statistician** (exact numbers) to **Roleplayer** (one line of atmosphere); the default is **Storyteller** |
+
+## What the simulation models
+
+- **Rules:** PF2e degrees of success, the multiple attack penalty, 3-action turns, and immunities, weaknesses and resistances.
+- **Damage:** persistent damage, and afflictions (poisons, diseases) stage by stage.
+- **Riders:** knockdown and grab; sneak attack and pack attack against off-guard targets; flanking.
+- **Dying:** dying, wounded and recovery checks.
+- **Healing:** healing spells, potions and Battle Medicine.
+- **Personality: Tactical, Brave, Selfish, Loyal** (0–100, named bands). They come from creature data: intelligence, mindless, animal, undead, minion, Will save and more. Each blends with the group personality of its side.
+  - **Tactical bands** drive targeting:
+    - *Feral*: closest foe or whoever hurt it last
+    - *Instinctive*: wounded prey; pack hunters gang up
+    - *Competent*: focus fire and flanking
+    - *Tactical*: healers and casters first, reads the odds
+    - *Mastermind*: side-wide focus, ambush edge; ruthless ones finish off the downed
+  - **Morale:** losses, wounds, a fallen leader or master, and bad odds against Brave. Combatants hold, waver or rout.
+  - **Leadership:** best Diplomacy, Intimidation or Warfare Lore, the PF2e Commander class and its tactics, and rallying abilities. A standing leader raises the side's bravery and tactics floor, and can add attack or AC bonuses.
+- **Terrain and movement types:**
+  - Travel cost is measured per movement mode with Foundry's region terrain. A band of rubble that doubles walking cost does nothing to a flyer.
+  - Each creature approaches using its best mode (walk, fly, swim, burrow).
+  - Walls block line of sight. Ranged attackers get free rounds.
+  - A flyer above a ground-bound creature's reach can't be hit in melee by it.
+  - PF2e environment regions (such as aquatic) are read for each token.
+- **Initiative:** from the combat tracker when one exists, Stealth for hidden or Secret ambushers, or a surprise round for either side.
+
+## Make it So
+
+Make it So writes the chosen sample fight onto the tokens:
+- HP and temp HP
+- dying, wounded and unconscious; lingering conditions such as clumsy or enfeebled
+- persistent damage, and afflictions as effects at their stage
+- death (dead marker, combatant defeated)
+- spell slots, focus points and consumables spent
+- fled tokens hidden
+- loot: slain creatures' gear stays on the lootable corpse, or drops into a "Remains of …" loot pile
+
+A confirmation lists every change first. **Undo** restores everything, including conditions PF2e added on its own.
+
+## Settings
+
+All settings are defaults that the planner can override per battle:
+- runs and maximum rounds
+- hidden tokens and other scene levels
+- default Neutral/Secret allegiance
+- downed model (simulate dying / down = out / down = dead)
+- default PC healing and dying response
+- leadership, morale and positioning toggles
+- initiative source
+- report accuracy and delivery
+- Make it So loot, corpse and fled handling
+- side personality defaults
+- data paths for the generic adapter
+
+**PF2e note:** PF2e ties token disposition to the actor's *alliance*. To make a creature Neutral, set its alliance to Neutral on the actor sheet.
+
+## For system and module developers
+
+FastFighting is split into three layers:
+- a pure simulation engine with no Foundry dependencies (`scripts/engine/`)
+- system **adapters**
+- the Foundry UI
+
+To support another system, publish a helper module:
+
+```js
+Hooks.once("fastFighting.init", api => {
+  class MySystemAdapter extends api.SystemAdapter {
+    get label() { return "My System"; }
+    get rules() { return myRules; }            // pure object, see scripts/adapters/pf2e/rules.js
+    canHandle(actor) { return actor.type === "character" || actor.type === "monster"; }
+    async toCombatantSpec(tokenDoc) { /* see CombatantSpec in scripts/engine/battle-state.js */ }
+    deriveTraits(actor) { return { traits: { tactical, brave, selfish, loyal }, flags: {}, reasons: {} }; }
+    detectLeaders(specs) { return [{ id, score, reason, bonus: { brave, tacticalFloor, attack, ac } }]; }
+    difficultyCrossCheck(friendly, hostile) { return { label: "moderate", xp: 80 }; }
+    describeOutcome(spec, final) { return ["HP 20 → 4"]; }
+    async commitOutcome(tokenDoc, spec, final, options) { /* return an undo record */ }
+  }
+  api.registerAdapter("my-system", MySystemAdapter, { priority: 10 });
+});
+```
+
+Adapter priority decides which one is used, highest first. A helper with priority above 0 replaces the built-in PF2e adapter. The generic fallback is registered for `"*"` at priority −100.
+
+**Rules object (pure).** The engine calls these thousands of times:
+- `actionsPerTurn`
+- `degreeOfSuccess(natural, total, dc)` returning 0–3
+- `roll(rng, mod, dc)`
+- `attackPenalty(action, attacksMade)`
+- `basicSaveMultiplier(degree)`
+- `applyIwr(iwr, byType)`
+- `onDropped(unit, {crit, model})`
+- `onHealed(unit, amount)`
+- `recoveryCheck(unit, rng)` (optional)
+- `persistentFlatCheck(rng)`
+
+**Other API** on `game.modules.get("fast-fighting").api`:
+- `registerModifier({id, label, apply(spec, context)})`: change the BattleSpec before each run
+- `registerTraitRule({id, test(actor, spec), apply(traits, spec)})`: adjust derived personality
+- `engine`: `runBatch`, `runBatchSync`, `replay`, `findSample`
+- `dice`, `constants`
+- `openPlanner()`
+
+**Hooks:**
+- `fastFighting.init(api)`
+- `fastFighting.preSimulate(spec, context)` and `fastFighting.postSimulate(results, context)`
+- `fastFighting.prepareReport(report, context)`
+- `fastFighting.preMakeItSo(plan)` and `fastFighting.makeItSo(undoRecords)`
+
 ## Development
 
-Symlink or copy this folder into your Foundry data directory as `Data/modules/fast-fighting`, then enable it in a world.
-
-## Releasing
-
-Bump `version` in `module.json`, commit, then push a tag `vX.Y.Z`. The GitHub Action builds `module.zip` and attaches it with `module.json` to a release.
+- Symlink or junction this folder into your Foundry data folder as `Data/modules/fast-fighting`.
+- Run `npm install` then `npm test` for the engine and parser unit tests (Vitest).
+- **Releasing:** bump `version` in `module.json`, commit, and push a `vX.Y.Z` tag. The release workflow builds `module.zip`.
