@@ -3,6 +3,7 @@
  */
 import { MODULE_ID, SIDES, ALLEGIANCE, DISPOSITION_SIDES, TRAITS, clamp } from "../constants.js";
 import { runBatch, runBatchSync, replay, findSample } from "../engine/simulator.js";
+import { deriveSeed } from "../engine/rng.js";
 import { applyTraitRules, getAdapter, getModifiers } from "../api.js";
 import { computeApproach, computeAwareness, environmentAt, positionOf } from "./terrain.js";
 import { tokenSetup } from "./persistence.js";
@@ -57,7 +58,7 @@ export async function gatherRoster(setup, adapter = getAdapter()) {
       spec.hidden = token.document.hidden;
       spec.inEncounter = inEncounter.has(token.id);
       spec.position = positionOf(token);
-      spec.perception = token.actor.perception?.mod ?? spec.initiative?.mod ?? 0;
+      spec.perception ??= spec.initiative?.mod ?? 0;
       out.push({ token, spec, baseSide: DISPOSITION_SIDES[token.document.disposition] ?? SIDES.HOSTILE });
     } catch ( err ) {
       console.error(`${MODULE_ID} | failed to read ${token.name}`, err);
@@ -243,7 +244,9 @@ export function buildBattleSpec(roster, setup, { underdog = null, approach = nul
   if ( options.surprise === "tracker" ) {
     const combat = sceneEncounter();
     if ( combat?.combatants.some(x => x.initiative !== null) ) {
-      initiativeOrder = combat.turns.filter(t => t.initiative !== null && t.tokenId).map(t => t.tokenId);
+      // An encounter already under way picks up from whoever's turn it is.
+      const turns = combat.started ? [...combat.turns.slice(combat.turn ?? 0), ...combat.turns.slice(0, combat.turn ?? 0)] : combat.turns;
+      initiativeOrder = turns.filter(t => t.initiative !== null && t.tokenId).map(t => t.tokenId);
     }
   } else if ( options.surprise === "stealth" ) {
     stealthSides = used.filter(s => s === SIDES.SECRET || combatants.some(c => c.side === s && c.hidden));
@@ -258,6 +261,7 @@ export function buildBattleSpec(roster, setup, { underdog = null, approach = nul
     options: {
       maxRounds: options.maxRounds,
       downedModel: options.downedModel,
+      aftermath: options.aftermath,
       positioning: options.positioning && !!approach,
       morale: options.morale,
       leadership: options.leadership,
@@ -277,19 +281,52 @@ export function buildBattleSpec(roster, setup, { underdog = null, approach = nul
   return spec;
 }
 
+/**
+ * Terrain-aware approach matrix for the roster, reused until a token moves, changes elevation or speed, or the
+ * GM changes who ignores terrain. Measuring every pair's path is the slowest step on a busy map.
+ */
+let approachCache = { key: null, value: null };
+export function approachFor(roster, setup) {
+  const ignoreTerrainFor = new Set(Object.entries(setup.tokens ?? {}).filter(([, t]) => t?.ignoreTerrain).map(([id]) => id));
+  const key = JSON.stringify([
+    canvas.scene?.id,
+    roster.map(e => [e.token.id, e.token.document.x, e.token.document.y, e.token.document.elevation, e.spec.speeds]),
+    [...ignoreTerrainFor].sort()
+  ]);
+  if ( approachCache.key !== key ) {
+    const specs = new Map(roster.map(e => [e.token.id, e.spec]));
+    approachCache = { key, value: computeApproach(roster.map(e => e.token), specs, { ignoreTerrainFor }) };
+  }
+  return approachCache.value;
+}
+
+/** Walls and regions change the paths, so forget the cached matrix when they do. */
+export function invalidateApproach() {
+  approachCache = { key: null, value: null };
+}
+
+/**
+ * Draw one of the simulated fights at random: the fair choice for Make it So. Every fight in the batch is
+ * equally likely to be picked, so outcomes come up as often as the odds say.
+ */
+export function drawFight(spec, results) {
+  if ( !results?.runs ) return null;
+  const seed = deriveSeed(results.seed, Math.floor(Math.random() * results.runs));
+  return { seed, result: replay(spec, getAdapter().rules, seed), how: "drawn" };
+}
+
 /** Sight and sound from each bystander to each starting combatant (and between bystanders). */
 export function awarenessFor(roster) {
   const bystanders = roster.filter(e => !e.spec.inEncounter).map(e => e.token);
   if ( !bystanders.length ) return {};
-  return computeAwareness(bystanders, roster.map(e => e.token));
+  const darkvision = new Set(roster.filter(e => e.spec.darkvision).map(e => e.token.id));
+  return computeAwareness(bystanders, roster.map(e => e.token), { darkvision });
 }
 
 /** Full pipeline used by the Battle Planner. */
 export async function simulate(roster, setup, { onProgress, signal } = {}) {
   const adapter = getAdapter();
-  const specs = new Map(roster.map(e => [e.token.id, e.spec]));
-  const ignoreTerrainFor = new Set(Object.entries(setup.tokens).filter(([, t]) => t.ignoreTerrain).map(([id]) => id));
-  const approach = setup.options.positioning ? computeApproach(roster.map(e => e.token), specs, { ignoreTerrainFor }) : null;
+  const approach = setup.options.positioning ? approachFor(roster, setup) : null;
 
   // Underdog neutrals need a quick estimate without them.
   let underdog = null;

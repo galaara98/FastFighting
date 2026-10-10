@@ -305,6 +305,10 @@ const EVENT = {
   struckDown: ["{actor}, already down, is struck again.", "{actor} is hit while helpless.", "Even fallen, {actor} isn't safe.", "Another blow lands on the fallen {actor}.", "{actor} groans as the blow lands."],
   recoveryGood: ["{actor} fights for every breath and holds on.", "{actor} clings to life.", "{actor}'s breathing steadies a little.", "{actor} refuses to let go.", "{actor} stirs faintly."],
   recoveryBad: ["{actor} slips closer to death.", "{actor}'s breathing grows shallow.", "{actor} fades.", "{actor} grows pale and still.", "Life ebbs from {actor}."],
+  firstAid: ["{actor} kneels beside {target} and stops the bleeding.", "{actor} binds {target}'s wounds; {target} will live.", "{actor} works quickly, and {target}'s breathing steadies.", "{actor} keeps {target} from slipping away.", "With steady hands, {actor} pulls {target} back from the edge."],
+  firstAidFail: ["{actor} works over {target}, but the bleeding won't stop.", "{actor} fumbles with the bandages as {target} fades.", "{actor} tries to help {target}, to no avail yet.", "{actor} presses on {target}'s wounds, but it isn't enough.", "{actor} can't steady {target}, not yet."],
+  aftermathAlone: ["The fighting is over. No one comes for the fallen.", "Silence settles, and the fallen are left to their fate.", "The victors pay the fallen no mind.", "It's over, and the wounded are on their own.", "No help comes; the fallen fight their own battle now."],
+  aftermath: ["The fighting is over, but not the danger.", "As the dust settles, the survivors turn to their fallen.", "Silence, and then the urgent work of keeping friends alive.", "With the enemy gone, there's no time to rest: someone is dying.", "The last foe falls, and the survivors rush to the wounded."],
   stabilize: ["{actor} stabilizes, unconscious but alive.", "{actor}'s breathing evens out; the danger has passed for now.", "{actor} will live, though still out cold.", "{actor} stops slipping away.", "{actor} drifts into a deep but living sleep."],
   heal: ["{actor} tends to {target}, mending wounds.", "{actor}'s magic knits {target}'s flesh.", "{actor} channels healing into {target}.", "{actor} patches up {target} amid the chaos.", "Warm light flows from {actor} into {target}."],
   healSelf: ["{actor} catches a breath and mends their own wounds.", "{actor} heals themselves.", "{actor} steadies and recovers.", "{actor} pulls themselves together.", "{actor} draws strength back into their own body."],
@@ -343,6 +347,7 @@ const EVENT = {
   coverShoot: ["{actor} leans out from cover.", "{actor} pops up from behind the wall.", "Sheltered by the wall, {actor} takes aim.", "{actor} steadies against the stonework.", "{actor} fires from behind cover."],
   step: ["{actor} steps back to a better position.", "{actor} slides away to reset.", "{actor} dances back out of reach.", "{actor} repositions.", "{actor} gives ground deliberately."],
   victory: ["When the dust settles, {winners} stand victorious.", "It's over. {winners} carry the day.", "Silence returns. {winners} have won.", "{winners} prevail.", "The battle belongs to {winners}."],
+  victoryOne: ["When the dust settles, {winners} stands victorious.", "It's over. {winners} carries the day.", "Silence returns. {winners} has won.", "{winners} prevails.", "The battle belongs to {winners}."],
   noOne: ["When it ends, no one is left standing.", "Silence falls over a field of the fallen.", "There are no victors here.", "Everyone has fallen.", "Nothing moves when it's over."],
   stalemate: ["Neither side breaks, and the fight grinds on.", "Exhausted, both sides pull apart.", "It ends in a bitter stalemate.", "No one wins this day.", "The fight goes on past all reason."]
 };

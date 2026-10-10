@@ -55,6 +55,16 @@ export class SystemAdapter {
     return [];
   }
 
+  /**
+   * What a system-specific region behavior means for a fight (core behaviors are handled already). Optional.
+   * @param {RegionBehavior} behavior
+   * @returns {{types?: string[], difficult?: boolean, hazardous?: boolean}|null}
+   *   types: environment tags such as "aquatic"; difficult: difficult terrain for walkers; hazardous: dangerous ground
+   */
+  describeRegionBehavior(behavior) {
+    return null;
+  }
+
   /** The system's own difficulty estimate for the encounter, or null. */
   difficultyCrossCheck(friendly, hostile) {
     return null;

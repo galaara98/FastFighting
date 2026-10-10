@@ -19,18 +19,43 @@ export const SURVEY_STATUS = Object.freeze({ NONE: "none", REQUESTED: "requested
 
 const loc = key => game.i18n.localize(key);
 
+const META_KEYS = ["stayTrue", "roleplay"];
+const MAX_NOTES = 2000;
+const isPlain = v => !!v && typeof v === "object" && !Array.isArray(v);
+
+/**
+ * Keep only answers the survey could have produced. Players own these flags and can write anything to them
+ * from the console, so nothing unexpected (an unknown choice, a fifth playstyle, a non-array) reaches the planner.
+ */
+export function sanitizeTactics(raw) {
+  const out = {};
+  if ( !isPlain(raw) ) return out;
+  for ( const [key, choices] of Object.entries(TACTIC_CHOICES) ) {
+    const v = raw[key];
+    if ( v === "auto" || choices.includes(v) ) out[key] = v;
+  }
+  if ( typeof raw.preferredAction === "string" ) out.preferredAction = raw.preferredAction;
+  if ( typeof raw.notes === "string" ) out.notes = raw.notes.slice(0, MAX_NOTES);
+  if ( Array.isArray(raw.playstyles) ) {
+    out.playstyles = [...new Set(raw.playstyles.filter(id => typeof id === "string" && PLAYSTYLES[id]))].slice(0, MAX_PLAYSTYLES);
+  }
+  for ( const key of META_KEYS ) if ( key in raw ) out[key] = raw[key] === true;
+  return out;
+}
+
 /** Stored answers, migrating the older `disposition` flag. */
 export function getStoredTactics(actor) {
   if ( !actor ) return {};
-  const old = actor.getFlag(MODULE_ID, "disposition") ?? {};
-  return { ...old, ...(actor.getFlag(MODULE_ID, "tactics") ?? {}) };
+  const old = actor.getFlag(MODULE_ID, "disposition");
+  const current = actor.getFlag(MODULE_ID, "tactics");
+  return sanitizeTactics({ ...(isPlain(old) ? old : {}), ...(isPlain(current) ? current : {}) });
 }
-
-const META_KEYS = ["stayTrue", "roleplay"];
 
 export async function setTactic(actor, key, value) {
   if ( !actor || !(TACTIC_KEYS.includes(key) || META_KEYS.includes(key)) ) return;
-  await actor.update({ [`flags.${MODULE_ID}.tactics.${key}`]: value });
+  const clean = sanitizeTactics({ [key]: value });
+  if ( !(key in clean) ) return;
+  await actor.update({ [`flags.${MODULE_ID}.tactics.${key}`]: clean[key] });
 }
 
 /**
@@ -167,6 +192,7 @@ export function questionsContext(spec, actor, uid, { questions: withQuestions = 
   add("selfRevived", TACTIC_CHOICES.selfRevived);
   add("retreat", TACTIC_CHOICES.retreat);
   add("shield", TACTIC_CHOICES.shield, { show: !!spec.shield });
+  add("beyond", TACTIC_CHOICES.beyond);
 
   const picked = playstyles.ids;
   return {
@@ -254,5 +280,6 @@ export async function requestSurveys(users, scene = canvas.scene) {
   for ( const user of users ) {
     await user.setFlag(MODULE_ID, "survey", { status: SURVEY_STATUS.REQUESTED, sceneId: scene.id, requestId, updated: Date.now() });
   }
-  game.socket.emit(SOCKET, { action: "openSurvey", userIds: users.map(u => u.id), sceneId: scene.id, requestId });
+  const userIds = users.map(u => u.id);
+  game.socket.emit(SOCKET, { action: "openSurvey", userIds, sceneId: scene.id, requestId }, { recipients: userIds });
 }

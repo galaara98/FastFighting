@@ -109,6 +109,10 @@
       "genericFallback": {
         "Name": "Use the experimental generic adapter",
         "Hint": "Only for systems without a FastFighting helper module: guess HP, AC, attacks and damage from configured data paths. Expect rough results."
+      },
+      "aftermath": {
+        "Name": "After the fight",
+        "Hint": "When the last enemy falls: the survivors tend their dying (first aid, Battle Medicine, healing) and anyone left untended lives or dies by recovery checks, and the story tells it; or the same happens but the story ends at the last blow; or everyone is left exactly as the fight left them, for you to play out."
       }
     },
     "Allegiance": {
@@ -135,11 +139,6 @@
       "fight": "Keep fighting",
       "retreat": "Retreat",
       "protectSelf": "Protect self"
-    },
-    "SelfRevived": {
-      "rejoin": "Rejoin the fight",
-      "healSelf": "Heal self first",
-      "retreat": "Retreat"
     },
     "Surprise": {
       "none": "Roll normally",
@@ -274,9 +273,6 @@
       "IncludeHint": "Take part in the battle",
       "Details": "Details",
       "Disposition": "Tactics (ask your player, or use Prepare Players)",
-      "HealAggro": "Healing",
-      "AllyDying": "When an ally is dying",
-      "SelfRevived": "After being revived",
       "IgnoreTerrain": "Ignores terrain",
       "DiesAtZero": "Dies at 0 HP",
       "Movement": "Movement",
@@ -298,7 +294,12 @@
       "TalkingHint": "Let characters talk foes down mid-fight (Diplomacy, Intimidation, Deception)",
       "Bystanders": "Bystanders",
       "BystandersHint": "Tokens not in the encounter may notice the fight and join it",
-      "Bystander": "Bystander"
+      "Bystander": "Bystander",
+      "Stopped": "Stopped after {n} simulated fights.",
+      "SceneChanged": "You're viewing a different scene now. Run the battle again for this scene.",
+      "ActionFailed": "That didn't work: {error}",
+      "Cancel": "Stop",
+      "Aftermath": "After the fight"
     },
     "Results": {
       "Tab": {
@@ -355,7 +356,6 @@
       "Compute": "Compute swing factors"
     },
     "Sample": {
-      "likely": "A typical fight",
       "partyWins": "A party victory",
       "partyLoses": "A party defeat",
       "pcDies": "A PC dies",
@@ -371,7 +371,14 @@
       "Result": "Outcome",
       "Rounds": "rounds",
       "Unchanged": "No change",
-      "NotFound": "No simulated fight matched that outcome. It may be very unlikely."
+      "NotFound": "No simulated fight matched that outcome. It may be very unlikely.",
+      "any": "A fair draw",
+      "typical": "The most typical fight",
+      "How": {
+        "drawn": "Fair draw",
+        "typical": "Most typical",
+        "chosen": "Chosen by filter"
+      }
     },
     "MakeItSo": {
       "Title": "Make it So",
@@ -379,8 +386,6 @@
       "Confirm": "Commit this fight's outcome to the tokens? The following changes will be made:",
       "UndoHint": "You can undo this from the Sample fight tab.",
       "Failed": "Make it So could not update {name}. See the console for details.",
-      "ChatTitle": "The battle is decided",
-      "LastMoments": "How it ended",
       "Done": "The outcome has been committed to the tokens.",
       "Nothing": "Nothing would change.",
       "Undo": "Undo Make it So",
@@ -487,6 +492,13 @@
         "first": "Talk first: try to end it with words",
         "opportune": "Talk when it could work",
         "never": "Let my weapons do the talking"
+      },
+      "beyond": {
+        "Label": "Others nearby",
+        "Hint": "Creatures on the map who aren't in the encounter yet. Run to fetch your allies when the fight goes badly, or hunt down enemies still about once the fight is won.",
+        "stay": "Stay with the fight",
+        "seekHelp": "Run for help when it goes badly",
+        "hunt": "Hunt down enemies nearby"
       }
     },
     "Survey": {
@@ -637,7 +649,9 @@
         "potion": "potion(s)",
         "moved": "moved",
         "stayedOut": "stayed out of it",
-        "nothing": "did nothing of note"
+        "nothing": "did nothing of note",
+        "firstAid": "first aid",
+        "stabilized": "stabilized"
       },
       "TablesFolder": "FastFighting Story",
       "TablesMenuName": "Story tables",
@@ -660,6 +674,11 @@
       "notInstalled": "Install {module} ({url}) to use FastFighting with {system}.",
       "unknown": "There is no FastFighting helper for {system} yet, so FastFighting is inactive in this world. Supported systems are listed at {list}.",
       "ListLink": "Supported systems"
+    },
+    "Aftermath": {
+      "tell": "Tend the fallen and tell it",
+      "quiet": "Tend the fallen quietly",
+      "none": "Stop at the last blow"
     }
   }
 }

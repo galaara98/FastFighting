@@ -18,6 +18,7 @@ import * as engine from "./engine/simulator.js";
 import * as dice from "./engine/dice.js";
 import * as constants from "./constants.js";
 import { MODULE_ID } from "./constants.js";
+import { CORE_API_VERSION } from "./core-api.js";
 
 const adapters = new Map(); // systemId -> [{cls, priority, source}]
 const modifiers = [];
@@ -91,6 +92,7 @@ export function applyTraitRules(actor, spec) {
 
 export function buildApi(extra = {}) {
   return {
+    version: CORE_API_VERSION,
     SystemAdapter,
     registerAdapter,
     getAdapter,

@@ -37,6 +37,7 @@ export class PlayerSurvey extends HandlebarsApplicationMixin(ApplicationV2) {
     app.sceneId = sceneId ?? app.sceneId ?? canvas.scene?.id;
     app.requestId = requestId ?? app.requestId ?? null;
     app.finished = false;
+    app.specs.clear(); // re-read characters each time the survey opens
     await app.render({ force: true });
     app.bringToFront?.();
     if ( !game.user.isGM ) await setOwnSurveyStatus(SURVEY_STATUS.ENTERING, app.sceneId, app.requestId);
@@ -62,14 +63,17 @@ export class PlayerSurvey extends HandlebarsApplicationMixin(ApplicationV2) {
     const tokens = tokensForUser(scene, game.user);
     const sheets = [];
     for ( const t of tokens ) {
-      let spec = null;
-      try {
-        spec = await adapter.toCombatantSpec(t);
-      } catch ( err ) {
-        console.warn(`${MODULE_ID} | survey could not read ${t.name}`, err);
+      // Reading strikes and spells is slow; answers don't change them, so keep what was read at opening.
+      let spec = this.specs.get(t.id) ?? null;
+      if ( !spec ) {
+        try {
+          spec = await adapter.toCombatantSpec(t);
+        } catch ( err ) {
+          console.warn(`${MODULE_ID} | survey could not read ${t.name}`, err);
+        }
+        if ( !spec ) continue;
+        this.specs.set(t.id, spec);
       }
-      if ( !spec ) continue;
-      this.specs.set(t.id, spec);
       const others = game.users.filter(u => u !== game.user && !u.isGM && t.actor.testUserPermission(u, "OWNER"));
       sheets.push({
         id: t.id,

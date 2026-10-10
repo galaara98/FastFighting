@@ -81,3 +81,19 @@ export function decideHeal(run, u, actionsLeft) {
   if ( !action ) return null;
   return { action, target: best };
 }
+
+/**
+ * After the fight: how u can help a dying ally within `actionsLeft`. Free help first (Battle Medicine and other
+ * unlimited healing, then first aid), and only then spells, focus or items. Returns a heal action, "firstAid", or null.
+ */
+export function rescueOption(run, u, target, actionsLeft) {
+  const fits = a => a.cost <= actionsLeft && hasUses(u, a) && !a.selfOnly
+    && (!a.oncePerTarget || !u.healedTargets.has(`${a.id}|${target.id}`))
+    && (!a.targetTrait || target.spec.creatureTraits?.includes(a.targetTrait));
+  const heals = u.prep.healActions.filter(fits);
+  const free = heals.find(a => !a.resource && !Number.isFinite(a.uses));
+  if ( free ) return free;
+  const rules = run.prep.rules;
+  if ( u.spec.firstAid && rules.firstAidDC && rules.firstAid && actionsLeft >= 2 ) return "firstAid";
+  return heals[0] ?? null;
+}

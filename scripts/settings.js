@@ -1,7 +1,7 @@
 /**
  * World settings. Every setting is a default: the Battle Planner can override any of them per battle.
  */
-import { MODULE_ID, ALLEGIANCE, DOWNED_MODELS, HEAL_AGGRO, ALLY_DYING } from "./constants.js";
+import { MODULE_ID, ALLEGIANCE, DOWNED_MODELS, HEAL_AGGRO, ALLY_DYING, AFTERMATH } from "./constants.js";
 
 const choices = (keys, prefix) => Object.fromEntries(keys.map(k => [k, `FASTFIGHTING.${prefix}.${k}`]));
 
@@ -13,7 +13,7 @@ export const DEFAULT_SIDE_TRAITS = {
 };
 
 const SETTINGS = {
-  genericFallback: { type: Boolean, default: false, requiresReload: false },
+  genericFallback: { type: Boolean, default: false, requiresReload: false, onChange: () => ui.combat?.render() },
   runs: { type: Number, default: 2000, range: { min: 200, max: 20000, step: 100 } },
   maxRounds: { type: Number, default: 20, range: { min: 3, max: 100, step: 1 } },
   includeHidden: { type: Boolean, default: true },
@@ -21,6 +21,7 @@ const SETTINGS = {
   neutralDefault: { type: String, default: ALLEGIANCE.EXCLUDE, choices: choices(Object.values(ALLEGIANCE), "Allegiance") },
   secretDefault: { type: String, default: ALLEGIANCE.HOSTILE, choices: choices(Object.values(ALLEGIANCE), "Allegiance") },
   downedModel: { type: String, default: DOWNED_MODELS.SIMULATE, choices: choices(Object.values(DOWNED_MODELS), "Downed") },
+  aftermath: { type: String, default: AFTERMATH.TELL, choices: choices(Object.values(AFTERMATH), "Aftermath") },
   pcHealAggro: { type: String, default: "balanced", choices: choices(HEAL_AGGRO, "HealAggro") },
   pcAllyDying: { type: String, default: "rescue", choices: choices(ALLY_DYING, "AllyDying") },
   leadership: { type: Boolean, default: true },

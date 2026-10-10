@@ -65,8 +65,19 @@ export function expectedDamage(run, a, action, t, attacksMade = 0) {
   return targets * (dist[2] * (dmg.normal + extra) + dist[3] * (dmg.critical + extra * 2));
 }
 
-/** A unit's typical damage per round against a foe: its best single action used repeatedly. */
+/**
+ * A unit's typical damage per round against a foe: its best single action used repeatedly. Targeting and morale
+ * ask this constantly, so it is worked out once per pair per round (within a round it barely changes).
+ */
 export function threatOf(run, u, versus) {
+  if ( run.threatRound !== run.round ) {
+    run.threatRound = run.round;
+    run.threatCache = new Map();
+  }
+  let row = run.threatCache.get(u);
+  if ( !row ) run.threatCache.set(u, row = new Map());
+  const cached = row.get(versus);
+  if ( cached !== undefined ) return cached;
   let best = 0;
   const actions = run.prep.rules.actionsPerTurn;
   for ( const action of u.prep.offense ) {
@@ -79,6 +90,7 @@ export function threatOf(run, u, versus) {
     }
     best = Math.max(best, total);
   }
+  row.set(versus, best);
   return best;
 }
 

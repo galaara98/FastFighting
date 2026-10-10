@@ -3,7 +3,8 @@
  *   1. Move every token to where the fight left it (snapped to the grid, never stacked, never through a wall).
  *   2. Commit each token's outcome through the system adapter (HP, conditions, death, loot, spent resources).
  *   3. Post the story of the fight to chat.
- * Everything is recorded on the scene so Undo can put it all back, chat message included.
+ * Everything is recorded on the scene so Undo can put it all back, chat message included. The last few are kept,
+ * newest first, so several Make it So's can be undone in turn.
  */
 import { MODULE_ID, STATUS } from "../constants.js";
 import { getAdapter } from "../api.js";
@@ -11,6 +12,15 @@ import { setting } from "../settings.js";
 import { pixelsFor } from "./terrain.js";
 
 const loc = key => game.i18n.localize(key);
+const UNDO_DEPTH = 5;
+
+/** Undo entries for a scene, newest first (older worlds stored a single entry). */
+function undoStack(scene) {
+  const stored = scene?.getFlag(MODULE_ID, "undo");
+  if ( !stored ) return [];
+  if ( Array.isArray(stored.stack) ) return stored.stack;
+  return (stored.records || stored.moves || stored.messages) ? [stored] : [];
+}
 
 function escape(s) {
   return foundry.utils.escapeHTML ? foundry.utils.escapeHTML(String(s)) : String(s);
@@ -152,6 +162,7 @@ function planPlacements(rows) {
  * @param {{title: string, html: string}} [options.story]  The story to post
  */
 export async function executeMakeItSo(rows, replay, { story = null } = {}) {
+  if ( !game.user.isGM ) return [];
   const adapter = getAdapter();
   const options = { lootMode: setting("lootMode"), corpseMode: setting("corpseMode"), fledMode: setting("fledMode") };
   Hooks.callAll("fastFighting.preMakeItSo", { rows, replay, options, story });
@@ -188,19 +199,20 @@ export async function executeMakeItSo(rows, replay, { story = null } = {}) {
     if ( message ) messages.push(message.id);
   }
 
-  await canvas.scene.setFlag(MODULE_ID, "undo", { time: Date.now(), records, moves, messages });
+  const stack = [{ time: Date.now(), records, moves, messages }, ...undoStack(canvas.scene)].slice(0, UNDO_DEPTH);
+  await canvas.scene.update({ [`flags.${MODULE_ID}.==undo`]: { stack } });
   Hooks.callAll("fastFighting.makeItSo", records);
   return records;
 }
 
 export function hasUndo(scene = canvas.scene) {
-  const undo = scene?.getFlag(MODULE_ID, "undo");
-  return !!(undo?.records?.length || undo?.moves?.length || undo?.messages?.length);
+  return undoStack(scene).length > 0;
 }
 
-/** Revert the last Make it So on this scene: outcomes, positions and the story message. */
+/** Revert the most recent Make it So on this scene: outcomes, positions and the story message. */
 export async function undoMakeItSo(scene = canvas.scene) {
-  const undo = scene.getFlag(MODULE_ID, "undo");
+  if ( !game.user.isGM ) return false;
+  const [undo, ...rest] = undoStack(scene);
   if ( !undo ) return false;
   for ( const id of undo.messages ?? [] ) await game.messages.get(id)?.delete();
   for ( const r of [...(undo.records ?? [])].reverse() ) {
@@ -235,7 +247,8 @@ export async function undoMakeItSo(scene = canvas.scene) {
     if ( doc ) back.push({ _id: doc.id, x: m.x, y: m.y });
   }
   if ( back.length ) await scene.updateEmbeddedDocuments("Token", back);
-  await scene.unsetFlag(MODULE_ID, "undo");
+  if ( rest.length ) await scene.update({ [`flags.${MODULE_ID}.==undo`]: { stack: rest } });
+  else await scene.unsetFlag(MODULE_ID, "undo");
   return true;
 }
 

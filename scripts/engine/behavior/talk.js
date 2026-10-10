@@ -133,24 +133,29 @@ export function choosePitch(run, talker) {
   return best;
 }
 
-/** How many actions u spends talking this turn (0, 1 or 2). */
+/**
+ * How many actions u spends talking this turn (0, 1 or 2), and the first pitch it would make (so the turn
+ * doesn't weigh every enemy twice).
+ * @returns {{count: number, pitch: object|null}}
+ */
 export function talkActionsThisTurn(run, u, actions) {
-  if ( !run.prep.options.talking || actions <= 0 ) return 0;
+  const none = { count: 0, pitch: null };
+  if ( !run.prep.options.talking || actions <= 0 ) return none;
   const tactic = u.tac?.talk;
-  if ( tactic === "never" ) return 0;
+  if ( tactic === "never" ) return none;
   const affinity = u.prep.talkAffinity ?? 0;
-  if ( affinity <= 0 && tactic !== "first" ) return 0;
+  if ( affinity <= 0 && tactic !== "first" ) return none;
   const pitch = choosePitch(run, u);
-  if ( !pitch ) return 0;
+  if ( !pitch ) return none;
   const talker = affinity >= 0.75 || tactic === "first" || !!behaviorOf(u).parleyFirst;
   // The less battle-worthy, and skilled talkers with a promising pitch, put their whole voice into it.
   const max = Math.min(actions, (u.prep.lowBattleWorth || (talker && pitch.pSuccess >= 0.5)) ? 2 : 1);
   // Talkers always get to start swaying on their first turn.
-  if ( talker && u.turnsTaken === 0 ) return max;
-  if ( tactic === "first" && pitch.pSuccess >= 0.2 ) return max;
+  if ( talker && u.turnsTaken === 0 ) return { count: max, pitch };
+  if ( tactic === "first" && pitch.pSuccess >= 0.2 ) return { count: max, pitch };
   const chance = affinity * (0.2 + pitch.pSuccess) * (u.prep.lowBattleWorth ? 1.5 : 1);
-  if ( !run.rng.chance(clamp(chance, 0, 0.95)) ) return 0;
-  return (u.prep.lowBattleWorth && pitch.pSuccess >= 0.35) ? max : 1;
+  if ( !run.rng.chance(clamp(chance, 0, 0.95)) ) return none;
+  return { count: (u.prep.lowBattleWorth && pitch.pSuccess >= 0.35) ? max : 1, pitch };
 }
 
 /** Decide how a convinced enemy leaves the fight. */
@@ -170,7 +175,6 @@ function applyOutcome(run, talker, t, outcome, log) {
   for ( const id of t.adjacent ) run.byId.get(id)?.adjacent.delete(t.id);
   t.adjacent.clear();
   t.swayOutcome = outcome;
-  t.swayedBy = talker.id;
   if ( outcome === SWAY.SWITCH ) {
     t.side = talker.side;
     t.targetId = null;
@@ -206,9 +210,8 @@ export function attemptTalk(run, talker, pitch, log) {
       progress = Math.max(0, progress - 1);
   }
   t.sway.set(talker.side, progress);
-  talker.talkAttempts = (talker.talkAttempts ?? 0) + 1;
   const result = ["critical failure: they won't hear another word", "unmoved", "wavering", "badly shaken"][roll.degree];
-  log(talker, `${verb} ${t.spec.name} (${pitch.skill} ${roll.total} vs DC ${pitch.dc}): ${result} [${Math.min(progress, steps)}/${steps}]`, {
+  if ( run.log ) log(talker, `${verb} ${t.spec.name} (${pitch.skill} ${roll.total} vs DC ${pitch.dc}): ${result} [${Math.min(progress, steps)}/${steps}]`, {
     type: "talk", skill: pitch.skill, target: t.spec.name, targetId: t.id, natural: roll.natural, mod: pitch.mod, total: roll.total,
     dc: pitch.dc, dcStat: pitch.skill === "deception" ? "perception" : "will", degree: roll.degree, margin: roll.total - pitch.dc,
     progress: Math.min(progress, steps), steps, offended: roll.degree === 0
@@ -217,7 +220,6 @@ export function attemptTalk(run, talker, pitch, log) {
   if ( roll.degree < 2 || progress < steps ) return false;
 
   applyOutcome(run, talker, t, outcomeFor(run, t), log);
-  talker.talkSuccesses = (talker.talkSuccesses ?? 0) + 1;
 
   // A convinced leader can take their side with them.
   const side = run.prep.sides[t.spec.side];

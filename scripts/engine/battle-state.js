@@ -21,6 +21,12 @@
  * @property {boolean} [diesAtZero]         NPCs normally die at 0 HP
  * @property {number} [wounded]
  * @property {number} [doomed]
+ * @property {number} [dying]               Already dying when the battle starts (a fight resumed mid-way)
+ * @property {Record<string, number|boolean>} [conditions]  Conditions already on the creature (frightened, slowed, ...)
+ * @property {object[]} [persistent]        Persistent damage already running: DamagePart[] with persistent: true
+ * @property {number} [perception]          Perception modifier, for bystanders noticing a fight
+ * @property {boolean} [darkvision]         Sees in the dark (bystanders spotting a fight at night)
+ * @property {{mod: number}} [firstAid]     Can stabilize the dying without magic (PF2e: trained in Medicine)
  *
  * @typedef {object} ActionSpec
  * @property {string} id
@@ -144,12 +150,13 @@ export function createRun(prep) {
       maxHp: s.hp.max,
       temp: s.hp.temp ?? 0,
       status: s.hp.value > 0 ? STATUS.STANDING : STATUS.DOWN,
-      dying: 0,
+      // A creature already dying keeps dying; one down at 0 HP without a dying value is stable.
+      dying: s.hp.value > 0 ? 0 : Math.max(0, s.dying ?? 0),
       wounded: s.wounded ?? 0,
       doomed: s.doomed ?? 0,
-      stable: s.hp.value <= 0,
-      prone: false,
-      persistent: [],
+      stable: s.hp.value <= 0 && !(s.dying > 0),
+      prone: !!s.conditions?.prone,
+      persistent: (s.persistent ?? []).map(part => ({ part, sourceId: null })),
       resources,
       resourcesStart: { ...resources },
       uses,
@@ -161,15 +168,14 @@ export function createRun(prep) {
       shieldRaised: false,
       wavering: false,
       moraleStress: 0,
-      checkedHalf: false,
-      checkedQuarter: false,
       damageDealt: 0,
       healingDone: 0,
       fellRound: null,
       wasDowned: false,
       healedTargets: new Set(),
       drawn: new Set(),
-      conds: {},
+      conds: Object.fromEntries(Object.entries(s.conditions ?? {}).filter(([k]) => k !== "prone").map(([k, v]) => [k, v === true ? 1 : Number(v) || 0])),
+      baseConds: null, // set below: conditions that were there before any affliction
       afflictions: [],
       grabbedBy: null,
       tac: s.tactics ?? null, // replaced per fight by sampleRunTactics in runOne
@@ -186,12 +192,12 @@ export function createRun(prep) {
       aware: s.inEncounter !== false,
       joinedRound: s.inEncounter !== false ? 0 : null,
       calledForHelp: false,
-      seekingHelpId: null,
       // Positions in feet (token centers), when the scene provided them.
       pos: s.position ? { x: s.position.x, y: s.position.y } : null,
       feetMoved: 0
     };
   });
+  for ( const u of units ) u.baseConds = { ...u.conds };
   return {
     prep,
     units,
@@ -239,7 +245,6 @@ export function studyBonus(u, t) {
   if ( !t || !u.studied?.has(t.id) ) return 0;
   return Object.keys(t.spec.iwr?.weak ?? {}).length ? 2 : 1;
 }
-export const isOut = u => u.status !== STATUS.STANDING;
 
 export function areEnemies(run, a, b) {
   return run.prep.sides[a.side]?.enemies.has(b.side) ?? false;

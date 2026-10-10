@@ -6,8 +6,25 @@
  *  - awareness[b][c]: can bystander b see combatant c, and how hard is it to hear them (walls muffle sound).
  *  - cover: tokens standing beside walls can duck behind them (used by the story writer).
  */
+import { getAdapter } from "../api.js";
 
 const MODES = ["walk", "fly", "swim", "climb", "burrow"];
+
+/**
+ * What a region behavior means for a fight: core behaviors here, system ones (PF2e environments and
+ * environment features, ...) from the system helper's describeRegionBehavior.
+ * @returns {{types?: string[], difficult?: boolean, hazardous?: boolean}|null}
+ */
+function describeBehavior(behavior) {
+  if ( behavior.disabled ) return null;
+  if ( behavior.type === "modifyMovementCost" ) return (behavior.system.difficulties?.walk ?? 1) > 1 ? { difficult: true } : null;
+  if ( ["executeScript", "executeMacro"].includes(behavior.type) ) return { hazardous: true };
+  try {
+    return getAdapter()?.describeRegionBehavior?.(behavior) ?? null;
+  } catch ( err ) {
+    return null;
+  }
+}
 
 /** Hearing combat in the open: easy nearby, harder with distance, much harder through each wall. */
 const HEAR = { baseDC: 8, perFeet: 15, perWall: 6, maxFeet: 300 };
@@ -50,9 +67,7 @@ function regionsCrossed(a, b) {
   const names = new Set();
   const steps = 8;
   for ( const region of canvas.scene.regions ) {
-    const difficult = region.behaviors.some(beh => !beh.disabled
-      && ((beh.type === "modifyMovementCost" && (beh.system.difficulties?.walk ?? 1) > 1)
-        || (beh.type === "environmentFeature" && beh.system.terrain?.difficult)));
+    const difficult = region.behaviors.some(beh => describeBehavior(beh)?.difficult);
     if ( !difficult ) continue;
     for ( let i = 1; i < steps; i++ ) {
       const t = i / steps;
@@ -73,7 +88,7 @@ function regionsCrossed(a, b) {
  * @param {Set<string>} [options.ignoreTerrainFor]  Token ids that ignore terrain (GM override)
  * @returns {Record<string, Record<string, object>>}  approach[aId][tId] = {dist, mult, speed, mode, los, meleeOk, modes, regions}
  */
-export function computeApproach(tokens, specs, { ignoreTerrain = false, ignoreTerrainFor = new Set(), terrainFudge = {} } = {}) {
+export function computeApproach(tokens, specs, { ignoreTerrain = false, ignoreTerrainFor = new Set() } = {}) {
   const approach = {};
   for ( const a of tokens ) {
     const specA = specs.get(a.id);
@@ -94,7 +109,6 @@ export function computeApproach(tokens, specs, { ignoreTerrain = false, ignoreTe
         const speed = speeds[mode];
         if ( !(speed > 0) ) continue;
         let mult = (ignoreTerrain || ignoreTerrainFor.has(a.id)) ? 1 : terrainMultiplier(a, b, mode);
-        mult *= 1 + (terrainFudge[a.id] ?? 0);
         // Blocked by walls: walkers and swimmers detour; climbers go over; burrowers go under.
         if ( blocked && !["burrow", "climb"].includes(mode) ) mult *= 1.5;
         if ( !Number.isFinite(mult) ) mult = Infinity;
@@ -136,16 +150,16 @@ function wallsBetween(a, b) {
  * Who could notice whom: for each bystander, for each combatant, can they see it, and the DC to hear it.
  * @param {Token[]} bystanders
  * @param {Token[]} combatants
+ * @param {object} [options]
+ * @param {Set<string>} [options.darkvision]  Token ids that see in the dark (from the system helper's specs)
  * @returns {Record<string, Record<string, {see: boolean, hearDC: number|null}>>}
  */
-export function computeAwareness(bystanders, combatants) {
+export function computeAwareness(bystanders, combatants, { darkvision = new Set() } = {}) {
   const out = {};
   const darkness = canvas.scene.environment?.darknessLevel ?? 0;
   for ( const b of bystanders ) {
     const row = out[b.id] = {};
-    const senses = b.actor?.system?.perception?.senses ?? [];
-    const darkvision = Array.isArray(senses) ? senses.some(s => /darkvision|greater-darkvision/.test(s.type ?? s)) : false;
-    const visionFeet = (darkness > 0.7 && !darkvision) ? 30 : VISION_FEET;
+    const visionFeet = (darkness > 0.7 && !darkvision.has(b.id)) ? 30 : VISION_FEET;
     for ( const c of combatants ) {
       if ( b === c ) continue;
       const feet = canvas.grid.measurePath([b.center, c.center]).distance;
@@ -191,16 +205,11 @@ export function environmentAt(token) {
     if ( !inside ) continue;
     env.regions.push(region.name);
     for ( const behavior of region.behaviors ) {
-      if ( behavior.disabled ) continue;
-      if ( behavior.type === "environment" ) {
-        for ( const t of behavior.system.environmentTypes ?? [] ) env.types.push(t);
-      } else if ( behavior.type === "environmentFeature" && behavior.system.terrain?.difficult ) {
-        env.difficult = true;
-      } else if ( behavior.type === "modifyMovementCost" ) {
-        if ( (behavior.system.difficulties?.walk ?? 1) > 1 ) env.difficult = true;
-      } else if ( ["executeScript", "executeMacro"].includes(behavior.type) ) {
-        env.hazardous = true;
-      }
+      const d = describeBehavior(behavior);
+      if ( !d ) continue;
+      env.types.push(...(d.types ?? []));
+      if ( d.difficult ) env.difficult = true;
+      if ( d.hazardous ) env.hazardous = true;
     }
   }
   env.aquatic = env.types.includes("aquatic");

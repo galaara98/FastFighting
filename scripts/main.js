@@ -13,6 +13,7 @@ import { invalidateStoryTables, installStoryTables } from "./story/tables.js";
 import { PlayerSurvey } from "./apps/player-survey.js";
 import { SOCKET, SURVEY_STATUS } from "./foundry/tactics.js";
 import { helperStatus, helperMessage, helperNoticeHtml } from "./helpers.js";
+import { invalidateApproach } from "./foundry/battle.js";
 
 Hooks.once("init", () => {
   registerSettings(DefaultsConfig, GenericPathsConfig, StoryTablesConfig);
@@ -21,7 +22,7 @@ Hooks.once("init", () => {
   // fallback for systems nobody supports yet.
   registerAdapter("*", GenericAdapter, { priority: -100, source: MODULE_ID });
 
-  const api = buildApi({ openPlanner: () => BattlePlanner.open(), openSurvey: options => PlayerSurvey.open(options), installStoryTables, BattlePlanner, PlayerSurvey });
+  const api = buildApi({ openPlanner: () => openIfReady(), openSurvey: options => PlayerSurvey.open(options), installStoryTables, BattlePlanner, PlayerSurvey });
   game.modules.get(MODULE_ID).api = api;
   Hooks.callAll("fastFighting.init", api);
 
@@ -93,8 +94,10 @@ Hooks.once("ready", () => {
   // Tell the GM once if this system has no helper module yet.
   const status = helperStatus();
   if ( game.user.isGM && !status.specific ) ui.notifications[status.ready ? "info" : "warn"](helperMessage(status), { permanent: !status.ready });
-  // The GM's "Prepare Players" request opens the survey on the chosen players' screens.
-  game.socket.on(SOCKET, data => {
+  // The GM's "Prepare Players" request opens the survey on the chosen players' screens. Foundry passes the
+  // sender's user id; only a GM may open surveys on someone else's screen.
+  game.socket.on(SOCKET, (data, senderId) => {
+    if ( !game.users.get(senderId)?.isGM ) return;
     if ( data?.action === "openSurvey" && data.userIds?.includes(game.user.id) ) {
       PlayerSurvey.open({ sceneId: data.sceneId, requestId: data.requestId });
     }
@@ -139,6 +142,21 @@ Hooks.on("updateUser", (user, changes) => {
 Hooks.on("userConnected", () => {
   if ( game.user.isGM ) refreshPlanner();
 });
+
+// The planner belongs to the scene on screen: viewing another scene starts it afresh.
+Hooks.on("canvasReady", () => {
+  const app = foundry.applications.instances.get("fast-fighting-planner");
+  if ( app?.rendered && app.sceneId !== canvas.scene?.id && !app.running ) {
+    app.resetForScene();
+    app.render();
+  }
+});
+
+// Walls and regions change the paths tokens take.
+for ( const hook of ["createWall", "updateWall", "deleteWall", "createRegion", "updateRegion", "deleteRegion",
+  "createRegionBehavior", "updateRegionBehavior", "deleteRegionBehavior"] ) {
+  Hooks.on(hook, () => invalidateApproach());
+}
 
 // Edited story tables take effect immediately.
 for ( const hook of ["createRollTable", "updateRollTable", "deleteRollTable", "createTableResult", "updateTableResult", "deleteTableResult"] ) {

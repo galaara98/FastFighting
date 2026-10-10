@@ -27,6 +27,7 @@ export function defaultSetup() {
       maxRounds: setting("maxRounds"),
       seed: null,
       downedModel: setting("downedModel"),
+      aftermath: setting("aftermath"),
       positioning: setting("positioning"),
       morale: setting("morale"),
       leadership: setting("leadership"),

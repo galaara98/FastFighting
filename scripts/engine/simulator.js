@@ -4,7 +4,7 @@
  * Every logged event carries structured data (type, rolls, margins, damage types, movement) so the story
  * writer can narrate it at any level of detail.
  */
-import { STATUS, TACTICAL, DOWNED_MODELS } from "../constants.js";
+import { STATUS, TACTICAL, DOWNED_MODELS, AFTERMATH } from "../constants.js";
 import { createRng, deriveSeed, randomSeed } from "./rng.js";
 import { sampleDamage, samplePart, doubled } from "./dice.js";
 import {
@@ -14,13 +14,17 @@ import {
 } from "./battle-state.js";
 import { sampleRunTactics } from "./playstyles.js";
 import { chooseTarget, bestOptionVs } from "./behavior/targeting.js";
-import { decideHeal } from "./behavior/healing.js";
+import { decideHeal, rescueOption } from "./behavior/healing.js";
 import { checkMorale, MORALE } from "./behavior/morale.js";
 import { expectedDamage, spendUse, countsAsAttack } from "./behavior/evaluate.js";
 import { createAggregator } from "./aggregate.js";
 import { talkActionsThisTurn, choosePitch, attemptTalk } from "./behavior/talk.js";
 
 const MAX_STEPS_PER_TURN = 8;
+/** After the last blow, how long the winners keep tending the dying (ten minutes of rounds, at most). */
+const AFTERMATH_ROUNDS = 100;
+/** Batches give the browser back control this often (ms), so the GM's screen stays responsive. */
+const SLICE_MS = 25;
 const DEGREE_LABEL = ["critical failure", "failure", "success", "critical success"];
 
 function log(run, u, text, data = {}) {
@@ -218,8 +222,9 @@ function releaseGrabs(run, u) {
 
 /** Recompute condition values from active afflictions (the worst value of each condition wins). */
 function recomputeConditions(u) {
-  const conds = {};
+  const conds = { ...u.baseConds };
   for ( const a of u.afflictions ) {
+    if ( a.onsetLeft > 0 ) continue; // not taken hold yet
     const stage = a.spec.stages[a.stage - 1];
     for ( const [k, v] of Object.entries(stage?.conditions ?? {}) ) {
       const value = v === true ? 1 : Number(v) || 0;
@@ -253,10 +258,11 @@ function exposeToAffliction(run, source, target, spec) {
   if ( !increase ) return;
   let affliction = target.afflictions.find(a => a.spec.id === spec.id);
   if ( !affliction ) {
-    affliction = { spec, stage: 0, rounds: 0, sourceId: source.id };
+    affliction = { spec, stage: 0, rounds: 0, sourceId: source.id, onsetLeft: Math.max(0, spec.onset ?? 0) };
     target.afflictions.push(affliction);
   }
   affliction.stage = Math.min(spec.stages.length, affliction.stage + increase);
+  if ( affliction.onsetLeft > 0 ) return; // it takes hold once the onset has passed
   applyAfflictionStage(run, target, affliction);
 }
 
@@ -278,9 +284,15 @@ function applyEffects(run, u, action, target, degree) {
 }
 
 /** Roll damage for a hit; returns the total and a function that applies it (so the log reads in order). */
-function rollHit(run, u, action, t, parts, multiplier, crit) {
+function rollHit(run, u, action, t, parts, multiplier, crit, minimum = 0) {
   const rules = run.prep.rules;
   const rolled = sampleDamage(parts, run.rng, multiplier);
+  // Some systems guarantee a hit does at least some damage before resistances (PF2e: 1).
+  if ( minimum > 0 ) {
+    const types = Object.keys(rolled.byType);
+    const sum = types.reduce((s, k) => s + rolled.byType[k], 0);
+    if ( types.length && sum < minimum ) rolled.byType[types[0]] += minimum - sum;
+  }
   const total = rules.applyIwr(t.spec.iwr, rolled.byType);
   return {
     total,
@@ -303,18 +315,19 @@ function executeOffense(run, u, action, t, attacksMade) {
     targets.push(...others.slice(0, Math.max(0, (action.area.targets ?? 2) - 1)));
   }
   const ranged = !!action.range && !action.melee;
+  const logging = !!run.log; // thousands of unlogged runs shouldn't pay for building log text
   for ( const target of targets ) {
     if ( !target.active ) notice(run, target, "attacked", u);
     target.lastAttackerId = u.id;
     const extra = bonusDamageParts(run, u, action, target);
-    const common = {
+    const common = logging ? {
       action: action.name, actionKind: action.kind, damageType: primaryType(action), target: target.spec.name, targetId: target.id,
       ranged, area: !!action.area, targetCover: !!target.spec.environment?.nearCover, attackerCover: !!u.spec.environment?.nearCover
-    };
+    } : null;
 
     if ( action.kind === "auto" ) {
       const hit = rollHit(run, u, action, target, (action.damage ?? []).concat(extra), 1, false);
-      log(run, u, `${action.name} → ${target.spec.name}: ${hit.total} damage`, { type: "auto", ...common, damage: hit.total });
+      if ( logging ) log(run, u, `${action.name} → ${target.spec.name}: ${hit.total} damage`, { type: "auto", ...common, damage: hit.total });
       hit.apply();
       continue;
     }
@@ -323,13 +336,13 @@ function executeOffense(run, u, action, t, attacksMade) {
       const mod = saveMod(target, action.save.type);
       const roll = rules.roll(run.rng, mod, action.save.dc);
       const mult = action.save.basic === false ? [2, 1, 0, 0][roll.degree] : rules.basicSaveMultiplier(roll.degree);
-      const data = { type: "save", ...common, saveType: action.save.type, natural: roll.natural, mod, total: roll.total, dc: action.save.dc, degree: roll.degree, margin: roll.total - action.save.dc };
+      const data = !logging ? null : { type: "save", ...common, saveType: action.save.type, natural: roll.natural, mod, total: roll.total, dc: action.save.dc, degree: roll.degree, margin: roll.total - action.save.dc };
       if ( mult > 0 ) {
         const hit = rollHit(run, u, action, target, (action.damage ?? []).concat(extra), mult, roll.degree === 0);
-        log(run, u, `${action.name} → ${target.spec.name}: save ${DEGREE_LABEL[roll.degree]}, ${hit.total} damage`, { ...data, damage: hit.total });
+        if ( logging ) log(run, u, `${action.name} → ${target.spec.name}: save ${DEGREE_LABEL[roll.degree]}, ${hit.total} damage`, { ...data, damage: hit.total });
         hit.apply();
         if ( roll.degree <= 1 ) applyEffects(run, u, action, target, 3 - roll.degree);
-      } else log(run, u, `${action.name} → ${target.spec.name}: ${DEGREE_LABEL[roll.degree]}, no damage`, { ...data, damage: 0 });
+      } else if ( logging ) log(run, u, `${action.name} → ${target.spec.name}: ${DEGREE_LABEL[roll.degree]}, no damage`, { ...data, damage: 0 });
       continue;
     }
 
@@ -337,16 +350,16 @@ function executeOffense(run, u, action, t, attacksMade) {
       + rangePenalty(run, u, target, action);
     const ac = currentAc(run, target, u, action);
     const roll = rules.roll(run.rng, bonus, ac);
-    const data = { type: "attack", ...common, natural: roll.natural, mod: bonus, total: roll.total, dc: ac, degree: roll.degree, margin: roll.total - ac, attackNumber: attacksMade + 1 };
+    const data = !logging ? null : { type: "attack", ...common, natural: roll.natural, mod: bonus, total: roll.total, dc: ac, degree: roll.degree, margin: roll.total - ac, attackNumber: attacksMade + 1 };
     if ( roll.degree >= 2 ) {
       const crit = roll.degree === 3;
       const base = crit ? (action.critDamage ?? doubled(action.damage ?? [])) : (action.damage ?? []);
-      const parts = base.concat(crit ? doubled(extra) : extra);
-      const hit = rollHit(run, u, action, target, parts, 1, crit);
-      log(run, u, `${action.name} → ${target.spec.name}: ${roll.total} vs AC ${ac}, ${crit ? "critical hit" : "hit"} for ${hit.total}`, { ...data, damage: hit.total, crit, sneak: extra.length > 0 });
+      const parts = extra.length ? base.concat(crit ? doubled(extra) : extra) : base;
+      const hit = rollHit(run, u, action, target, parts, 1, crit, rules.minimumDamage ?? 0);
+      if ( logging ) log(run, u, `${action.name} → ${target.spec.name}: ${roll.total} vs AC ${ac}, ${crit ? "critical hit" : "hit"} for ${hit.total}`, { ...data, damage: hit.total, crit, sneak: extra.length > 0 });
       hit.apply();
       applyEffects(run, u, action, target, roll.degree);
-    } else {
+    } else if ( logging ) {
       log(run, u, `${action.name} → ${target.spec.name}: ${roll.total} vs AC ${ac}, miss`, { ...data, damage: 0 });
     }
   }
@@ -372,7 +385,7 @@ function executeHeal(run, u, action, target) {
   u.healedTargets.add(`${action.id}|${target.id}`);
   spendUse(u, action);
   const revived = wasDown && target.status === STATUS.STANDING;
-  log(run, u, `${action.name} → ${target === u ? "self" : target.spec.name}: heals ${target.hp - before}${revived ? " and revives them" : ""}`, {
+  if ( run.log ) log(run, u, `${action.name} → ${target === u ? "self" : target.spec.name}: heals ${target.hp - before}${revived ? " and revives them" : ""}`, {
     type: "heal", action: action.name, target: target.spec.name, targetId: target.id, self: target === u, amount: target.hp - before, revived,
     potion: !!action.selfOnly, check: roll ? { natural: roll.natural, mod: action.healCheck.mod, total: roll.total, dc: action.healCheck.dc, degree: roll.degree } : null
   });
@@ -399,6 +412,7 @@ function flee(run, u, reason) {
 }
 
 function moveLog(run, u, move, toward, purpose = "approach") {
+  if ( !run.log ) return;
   log(run, u, `${move.mode === "walk" ? "moves" : move.mode === "fly" ? "flies" : move.mode === "swim" ? "swims" : move.mode === "climb" ? "climbs" : "burrows"} toward ${toward.spec.name}`, {
     type: "move", mode: move.mode, feet: move.feet, mult: move.mult, regions: move.regions, toward: toward.spec.name, towardId: toward.id,
     reached: move.reached, purpose, tactical: liveTier(run, u), cover: !!u.spec.environment?.nearCover
@@ -477,8 +491,8 @@ function takeTurn(run, u) {
 
   // Words before weapons: talkers sway, the less battle-worthy talk twice, anyone may quip.
   const talking = talkActionsThisTurn(run, u, actions);
-  for ( let i = 0; i < talking && actions > 0; i++ ) {
-    const pitch = choosePitch(run, u);
+  for ( let i = 0; i < talking.count && actions > 0; i++ ) {
+    const pitch = i === 0 ? talking.pitch : choosePitch(run, u); // the first pitch was already chosen
     if ( !pitch ) break;
     attemptTalk(run, u, pitch, (unit, text, data) => log(run, unit, text, data));
     actions -= 1;
@@ -577,7 +591,7 @@ function endOfTurn(run, u) {
     const remaining = [];
     for ( const entry of u.persistent ) {
       const amount = rules.applyIwr(u.spec.iwr, { [entry.part.type]: Math.max(0, samplePart(entry.part, run.rng)) });
-      log(run, u, `takes ${amount} persistent ${entry.part.type}`, { type: "persistent", damageType: entry.part.type, amount });
+      if ( run.log ) log(run, u, `takes ${amount} persistent ${entry.part.type}`, { type: "persistent", damageType: entry.part.type, amount });
       dealDamage(run, run.byId.get(entry.sourceId), u, amount);
       if ( !rules.persistentFlatCheck(run.rng) ) remaining.push(entry);
     }
@@ -589,6 +603,11 @@ function endOfTurn(run, u) {
       if ( a.spec.maxDuration && a.rounds >= a.spec.maxDuration ) {
         u.afflictions.splice(u.afflictions.indexOf(a), 1);
         log(run, u, `${a.spec.name} runs its course`, { type: "afflictionEnd", name: a.spec.name });
+        continue;
+      }
+      if ( a.onsetLeft > 0 ) {
+        a.onsetLeft -= 1;
+        if ( a.onsetLeft <= 0 ) applyAfflictionStage(run, u, a); // the onset is over: the first stage takes hold
         continue;
       }
       const mod = saveMod(u, a.spec.save.type);
@@ -603,6 +622,67 @@ function endOfTurn(run, u) {
     }
     recomputeConditions(u);
   }
+}
+
+/* -------------------------------------------- */
+/*  Aftermath                                   */
+/* -------------------------------------------- */
+
+const isDying = u => u.status === STATUS.DOWN && !u.stable && u.dying > 0;
+
+/** Administer first aid to a dying ally: a skill check against the system's DC (PF2e: 15 + dying). */
+function firstAid(run, u, target) {
+  const rules = run.prep.rules;
+  const dc = rules.firstAidDC(target);
+  const roll = rules.roll(run.rng, u.spec.firstAid.mod, dc);
+  const before = target.dying;
+  rules.firstAid(target, roll.degree);
+  log(run, u, `gives ${target.spec.name} first aid (${roll.total} vs DC ${dc}): ${target.stable ? "stabilized" : target.status === STATUS.DEAD ? "it's too late" : "no change"}`, {
+    type: "firstAid", target: target.spec.name, targetId: target.id, natural: roll.natural, mod: u.spec.firstAid.mod, total: roll.total, dc,
+    degree: roll.degree, before, dying: target.dying, stable: target.stable, dead: target.status === STATUS.DEAD, aftermath: true
+  });
+}
+
+/**
+ * Once the last enemy is gone, the fight isn't quite over: the winners tend their dying friends (free help such as
+ * first aid or Battle Medicine before spending spells and potions), and anyone left untended lives or dies by their
+ * recovery checks. What Make it So commits is then settled: stable, healed, or dead, never "dying 2".
+ * The fallen on the losing side get no help here; what the victors do with them is the GM's call.
+ */
+function aftermath(run, order) {
+  const { rules, options } = run.prep;
+  if ( options.aftermath === AFTERMATH.NONE || options.downedModel !== DOWNED_MODELS.SIMULATE || !run.units.some(isDying) ) return;
+  const rounds = run.round;
+  run.round = rounds + 1; // one paragraph in the story, after the fight
+  log(run, null, "The fighting is over", { type: "aftermath", aftermath: true });
+  const marker = run.log?.at(-1);
+  let tended = false;
+  for ( let i = 0; i < AFTERMATH_ROUNDS && run.units.some(isDying); i++ ) {
+    for ( const u of order ) {
+      if ( u.status === STATUS.DOWN ) {
+        if ( isDying(u) && rules.recoveryCheck ) {
+          const before = u.dying;
+          const text = rules.recoveryCheck(u, run.rng);
+          if ( text ) log(run, u, text, { type: "recovery", before, dying: u.dying, dead: u.status === STATUS.DEAD, stable: u.stable, aftermath: true });
+        }
+        continue;
+      }
+      if ( !isStanding(u) ) continue;
+      let actions = rules.actionsPerTurn;
+      while ( actions > 0 ) {
+        const dying = run.units.filter(a => a.side === u.side && a !== u && isDying(a)).sort((a, b) => b.dying - a.dying)[0];
+        if ( !dying ) break;
+        const option = rescueOption(run, u, dying, actions);
+        if ( !option ) break;
+        if ( option === "firstAid" ) firstAid(run, u, dying);
+        else executeHeal(run, u, option, dying);
+        tended = true;
+        actions -= option === "firstAid" ? 2 : option.cost;
+      }
+    }
+  }
+  if ( marker ) marker.tended = tended; // the story opens differently when nobody comes to help
+  run.round = rounds;
 }
 
 /* -------------------------------------------- */
@@ -640,7 +720,7 @@ function captureUnit(u) {
     stable: u.stable,
     prone: u.prone,
     persistent: u.persistent.map(e => ({ type: e.part.type, part: e.part })),
-    afflictions: u.afflictions.map(a => ({ id: a.spec.id, name: a.spec.name, slug: a.spec.slug ?? null, stage: a.stage, rounds: a.rounds, dc: a.spec.save.dc, save: a.spec.save.type })),
+    afflictions: u.afflictions.map(a => ({ id: a.spec.id, name: a.spec.name, slug: a.spec.slug ?? null, stage: a.stage, rounds: a.rounds, onset: a.onsetLeft ?? 0, dc: a.spec.save.dc, save: a.spec.save.type })),
     conditions: { ...u.conds },
     swayed: u.swayOutcome,
     side: u.side,
@@ -652,8 +732,7 @@ function captureUnit(u) {
   };
 }
 
-function summarize(run, ended, capture) {
-  const winners = ended ? activeSides(run) : [];
+function summarize(run, ended, capture, winners) {
   const outcome = !ended ? "stalemate" : (winners.length ? "victory" : "none");
   const units = {};
   for ( const u of run.units ) {
@@ -682,7 +761,7 @@ export function runOne(prep, seed, { log: withLog = false, capture = false } = {
   // Each simulated fight decides which stated preferences win out (see "stay mostly true").
   for ( const u of run.units ) {
     u.tac = sampleRunTactics(u.spec, run.rng);
-    u.hunts = u.tac?.beyond === "hunt" || run.rng.chance(behaviorOf(u).hunt ?? 0);
+    u.hunts = u.tac?.beyond === "hunt";
   }
   if ( withLog ) run.log = [];
   const order = rollInitiative(run);
@@ -706,37 +785,41 @@ export function runOne(prep, seed, { log: withLog = false, capture = false } = {
       if ( battleOver(run) ) { ended = true; break; }
     }
   }
+  // Who won is decided when the last blow lands; the aftermath only settles the fallen.
+  const winners = ended ? activeSides(run) : [];
   if ( withLog ) {
-    const winners = ended ? activeSides(run) : [];
     const labels = winners.map(s => prep.sides[s]?.label ?? s);
     log(run, null, ended ? (labels.length ? `${labels.join(" & ")} win after ${run.round} rounds` : "No one is left standing") : `Still fighting after ${run.round} rounds`, {
       type: "end", outcome: !ended ? "stalemate" : (winners.length ? "victory" : "none"), winners, winnerLabels: labels, rounds: run.round
     });
   }
-  return summarize(run, ended, capture);
+  if ( ended ) aftermath(run, order);
+  return summarize(run, ended, capture, winners);
 }
 
 /**
- * Run a batch of simulations, yielding to the event loop between chunks.
+ * Run a batch of simulations, giving the event loop back every few milliseconds so the page stays responsive
+ * however big the fight. An aborted batch returns the fights finished so far.
  * @param {object} spec             BattleSpec
  * @param {object} rules            System rules
  * @param {object} [opts]
  * @param {number} [opts.runs=2000]
  * @param {number} [opts.seed]
- * @param {number} [opts.chunk=100]
  * @param {(fraction: number) => void} [opts.onProgress]
  * @param {AbortSignal} [opts.signal]
  */
-export async function runBatch(spec, rules, { runs = 2000, seed = randomSeed(), chunk = 100, onProgress, signal } = {}) {
+export async function runBatch(spec, rules, { runs = 2000, seed = randomSeed(), onProgress, signal } = {}) {
   const prep = prepareBattle(spec, rules);
   const agg = createAggregator(prep);
+  let sliceStart = performance.now();
   for ( let i = 0; i < runs; i++ ) {
     const runSeed = deriveSeed(seed, i);
     agg.add(runOne(prep, runSeed), runSeed);
-    if ( (i + 1) % chunk === 0 ) {
+    if ( performance.now() - sliceStart > SLICE_MS ) {
       onProgress?.((i + 1) / runs);
       await new Promise(resolve => setTimeout(resolve, 0));
       if ( signal?.aborted ) break;
+      sliceStart = performance.now();
     }
   }
   onProgress?.(1);

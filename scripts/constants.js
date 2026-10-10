@@ -44,7 +44,12 @@ export const TACTICAL = Object.freeze({ FERAL: 0, INSTINCTIVE: 1, COMPETENT: 2, 
 
 export const HEAL_AGGRO = Object.freeze(["conservative", "balanced", "aggressive", "allCosts"]);
 export const ALLY_DYING = Object.freeze(["rescue", "fight", "retreat", "protectSelf"]);
-export const SELF_REVIVED = Object.freeze(["rejoin", "healSelf", "retreat"]);
+
+/**
+ * After the last blow: TELL settles the fallen (first aid, recovery checks) and the story narrates it; QUIET
+ * settles them but the story ends at the last blow; NONE leaves everyone as the fight left them.
+ */
+export const AFTERMATH = Object.freeze({ TELL: "tell", QUIET: "quiet", NONE: "none" });
 
 export const DOWNED_MODELS = Object.freeze({ SIMULATE: "simulate", OUT: "out", DEAD: "dead" });
 

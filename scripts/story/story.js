@@ -98,6 +98,24 @@ class Relationships {
   }
 }
 
+/**
+ * Who the story may talk about. A creature that never took part is left out of the lists; a hidden one that
+ * never took part isn't mentioned at all (the story is often posted for the players, and they never met it).
+ */
+function storyCast(result, spec) {
+  const out = new Set();
+  const secret = new Set();
+  for ( const c of spec.combatants ?? [] ) {
+    if ( result.units?.[c.id]?.final?.active !== false ) continue;
+    out.add(c.id);
+    if ( c.hidden ) secret.add(c.id);
+  }
+  // With a quiet aftermath the story ends at the last blow (the outcome is still settled).
+  const quiet = spec.options?.aftermath === "quiet";
+  const mentions = e => !(quiet && e.aftermath) && !secret.has(e.actorId) && !secret.has(e.targetId) && !secret.has(e.towardId) && !secret.has(e.byId);
+  return { out, mentions };
+}
+
 function makeRoller(tables, seed) {
   const rng = createRng(seed >>> 0);
   return (key, fill = {}) => {
@@ -196,6 +214,8 @@ function narrate(e, roll, rel, fill) {
     case "afflictionEnd": return roll("event.afflictionEnd", f);
     case "step": return roll("event.step", f);
     case "surprise": return roll("event.surprise", f);
+    case "aftermath": return roll(e.tended ? "event.aftermath" : "event.aftermathAlone", f);
+    case "firstAid": return roll(e.stable ? "event.firstAid" : e.dead ? "event.death" : "event.firstAidFail", f);
     default: return "";
   }
 }
@@ -203,13 +223,20 @@ function narrate(e, roll, rel, fill) {
 function roleplay(result, spec, tables, seed, title) {
   const roll = makeRoller(tables, seed);
   const rel = new Relationships(spec);
+  const { mentions } = storyCast(result, spec);
   const paragraphs = [];
   const opening = result.log.find(e => e.type === "surprise") ? null : roll("event.opening");
   if ( opening ) paragraphs.push(opening);
   let current = null;
   let lastMoveKey = null;
   for ( const e of result.log ) {
-    if ( e.type === "initiative" || e.type === "end" ) continue;
+    if ( e.type === "initiative" || !mentions(e) ) continue;
+    // The outcome comes where the fighting stops; anything after it (tending the fallen) follows.
+    if ( e.type === "end" ) {
+      paragraphs.push(ending(result, spec, e, roll));
+      current = null;
+      continue;
+    }
     if ( !current || current.round !== e.round ) {
       current = { round: e.round, sentences: [] };
       paragraphs.push(current);
@@ -225,14 +252,6 @@ function roleplay(result, spec, tables, seed, title) {
     rel.record(e);
     if ( sentence ) current.sentences.push(capital(sentence.trim()));
   }
-  const end = result.log.find(e => e.type === "end");
-  if ( end ) {
-    // Name the survivors rather than the side.
-    const standing = spec.combatants.filter(c => end.winners?.includes(result.units[c.id]?.final?.side ?? c.side)
-      && result.units[c.id]?.final?.status === "standing" && result.units[c.id]?.final?.active !== false).map(c => c.name);
-    const winners = standing.length > 3 ? `${standing.slice(0, 2).join(", ")} and their companions` : standing.length ? listJoin(standing) : (end.winnerLabels ?? []).join(" and ");
-    paragraphs.push(roll(end.outcome === "victory" ? "event.victory" : end.outcome === "none" ? "event.noOne" : "event.stalemate", { winners }));
-  }
   const html = paragraphs
     .map(p => (typeof p === "string" ? p : p.sentences.join(" ")))
     .filter(Boolean)
@@ -241,18 +260,29 @@ function roleplay(result, spec, tables, seed, title) {
   return { title, html, text: paragraphs.map(p => (typeof p === "string" ? p : p.sentences.join(" "))).filter(Boolean).join("\n\n") };
 }
 
+/** The closing line, naming the survivors rather than the side. */
+function ending(result, spec, end, roll) {
+  const standing = spec.combatants.filter(c => end.winners?.includes(result.units[c.id]?.final?.side ?? c.side)
+    && result.units[c.id]?.final?.status === "standing" && result.units[c.id]?.final?.active !== false).map(c => c.name);
+  const winners = standing.length > 3 ? `${standing.slice(0, 2).join(", ")} and their companions` : standing.length ? listJoin(standing) : (end.winnerLabels ?? []).join(" and ");
+  // A lone survivor takes a singular verb ("Lini prevails").
+  const victory = standing.length === 1 ? "event.victoryOne" : "event.victory";
+  return roll(end.outcome === "victory" ? victory : end.outcome === "none" ? "event.noOne" : "event.stalemate", { winners });
+}
+
 /* -------------------------------------------- */
 /*  Standard                                    */
 /* -------------------------------------------- */
 
 function standard(result, spec, title, labels) {
+  const { out, mentions } = storyCast(result, spec);
   const by = new Map();
   const entry = id => {
-    if ( !by.has(id) ) by.set(id, { attacks: new Map(), spells: new Map(), talks: { tries: 0, wins: 0 }, heals: 0, healed: 0, potions: 0, feet: 0, damage: 0, notes: [] });
+    if ( !by.has(id) ) by.set(id, { attacks: new Map(), spells: new Map(), talks: { tries: 0, wins: 0 }, heals: 0, healed: 0, potions: 0, aid: 0, stabilized: 0, feet: 0, damage: 0, notes: [] });
     return by.get(id);
   };
   for ( const e of result.log ) {
-    if ( !e.actorId ) continue;
+    if ( !e.actorId || !mentions(e) ) continue;
     const s = entry(e.actorId);
     if ( e.type === "attack" || e.type === "save" || e.type === "auto" ) {
       const bucket = SPELL_KINDS.has(e.actionKind) ? s.spells : s.attacks;
@@ -269,6 +299,9 @@ function standard(result, spec, title, labels) {
     } else if ( e.type === "heal" ) {
       if ( e.potion ) s.potions += 1; else s.heals += 1;
       s.healed += e.amount ?? 0;
+    } else if ( e.type === "firstAid" ) {
+      s.aid += 1;
+      if ( e.stable ) s.stabilized += 1;
     } else if ( e.type === "move" ) s.feet += e.feet ?? 0;
     else if ( ["join", "leave", "sway", "flee", "callHelp"].includes(e.type) ) s.notes.push(e.text);
   }
@@ -276,6 +309,7 @@ function standard(result, spec, title, labels) {
   const summary = end?.text ?? "";
   const rows = [];
   for ( const c of spec.combatants ) {
+    if ( out.has(c.id) ) continue; // never took part
     const s = by.get(c.id);
     const final = result.units[c.id]?.final;
     const bits = [];
@@ -284,6 +318,7 @@ function standard(result, spec, title, labels) {
     if ( s?.talks.tries ) bits.push(`${labels.talked} ${s.talks.tries}× (${s.talks.wins} ${labels.convincing})`);
     if ( s?.heals ) bits.push(`${labels.healed} ${s.heals}× (${s.healed} HP)`);
     if ( s?.potions ) bits.push(`${s.potions} ${labels.potion}`);
+    if ( s?.aid ) bits.push(`${labels.firstAid} ${s.aid}× (${s.stabilized} ${labels.stabilized})`);
     if ( s?.feet ) bits.push(`${labels.moved} ${s.feet} ft`);
     if ( !bits.length ) bits.push(final?.active === false ? labels.stayedOut : labels.nothing);
     const status = final ? `${labels.status[final.swayed === "switched" ? "switched" : final.status] ?? final.status}, ${final.hp}/${c.hp.max} HP` : "";
@@ -312,26 +347,32 @@ function statLine(e) {
     case "move": return `${e.actor} ${{ walk: "walks", fly: "flies", swim: "swims", climb: "climbs", burrow: "burrows" }[e.mode] ?? "moves"} ${e.feet} ft toward ${e.toward}${e.mult > 1.05 ? ` (terrain ×${e.mult.toFixed(2)}${e.regions?.length ? `: ${e.regions.join(", ")}` : ""})` : ""}`;
     case "afflictionSave": return `${e.actor} vs ${e.name} · ${e.saveType} ${roll(e.natural, e.mod, e.total, e.dc, "DC")} · ${DEGREE[e.degree]}`;
     case "notice": return `${e.actor} notices (${e.cause})`;
+    case "firstAid": return `${e.actor} → ${e.target}: first aid · medicine ${roll(e.natural, e.mod, e.total, e.dc, "DC")} · ${DEGREE[e.degree]} · ${e.stable ? "stabilized" : e.dead ? "dies" : `dying ${e.dying}`}`;
+    case "aftermath": return "After the fight";
     default: return `${e.actor ? `${e.actor}: ` : ""}${e.text}`;
   }
 }
 
 function statistician(result, spec, title) {
+  const { out, mentions } = storyCast(result, spec);
   const rounds = new Map();
   for ( const e of result.log ) {
-    if ( !rounds.has(e.round) ) rounds.set(e.round, []);
-    rounds.get(e.round).push(statLine(e));
+    if ( !mentions(e) || e.type === "aftermath" ) continue;
+    const key = e.aftermath ? "after" : e.round;
+    if ( !rounds.has(key) ) rounds.set(key, []);
+    rounds.get(key).push(statLine(e));
   }
   const parts = [];
   for ( const [round, lines] of rounds ) {
-    parts.push(`<p><strong>R${round}</strong></p><ul>${lines.map(l => `<li>${esc(l)}</li>`).join("")}</ul>`);
+    const heading = round === "after" ? "After the fight" : `R${round}`;
+    parts.push(`<p><strong>${heading}</strong></p><ul>${lines.map(l => `<li>${esc(l)}</li>`).join("")}</ul>`);
   }
-  const finals = spec.combatants.map(c => {
+  const finals = spec.combatants.filter(c => !out.has(c.id)).map(c => {
     const f = result.units[c.id]?.final;
     return f ? `${c.name}: ${f.status}${f.swayed ? ` (${f.swayed})` : ""}, ${f.hp}/${c.hp.max} HP${f.dying ? `, dying ${f.dying}` : ""}${f.wounded ? `, wounded ${f.wounded}` : ""}` : c.name;
   });
   parts.push(`<p><strong>Final</strong></p><ul>${finals.map(l => `<li>${esc(l)}</li>`).join("")}</ul>`);
-  return { title, html: parts.join(""), text: [...rounds.entries()].map(([r, ls]) => `R${r}\n${ls.join("\n")}`).join("\n") };
+  return { title, html: parts.join(""), text: [...rounds.entries()].map(([r, ls]) => `${r === "after" ? "After the fight" : `R${r}`}\n${ls.join("\n")}`).join("\n") };
 }
 
 /**
@@ -348,6 +389,6 @@ export function buildStory(result, spec, style, { tables, seed = 1, title = "", 
 
 export const DEFAULT_LABELS = {
   hit: "hit", crit: "critical", miss: "missed", resisted: "resisted", talked: "talked", convincing: "convincing",
-  healed: "healed", potion: "potion(s)", moved: "moved", stayedOut: "stayed out of it", nothing: "did nothing of note",
+  healed: "healed", potion: "potion(s)", firstAid: "first aid", stabilized: "stabilized", moved: "moved", stayedOut: "stayed out of it", nothing: "did nothing of note",
   status: { standing: "standing", down: "down", dead: "dead", fled: "fled", surrendered: "surrendered", switched: "switched sides" }
 };

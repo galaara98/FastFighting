@@ -15,6 +15,7 @@ let english = null;
 let locale = null;
 let localeLang = null;
 let worldCache = null;
+let resolved = null; // the tables object handed out until something changes
 
 function englishTables() {
   english ??= buildEnglishTables();
@@ -26,6 +27,7 @@ async function localeTables() {
   if ( lang === "en" ) return null;
   if ( localeLang === lang ) return locale;
   localeLang = lang;
+  resolved = null;
   try {
     const response = await fetch(`modules/${MODULE_ID}/story/${lang}.json`);
     locale = response.ok ? await response.json() : null;
@@ -35,8 +37,18 @@ async function localeTables() {
   return locale;
 }
 
+/** Plain text of a result: GMs edit these in the rich-text editor, so drop markup and decode entities. */
 function resultText(result) {
-  return String(result.description || result.name || "").replace(/<\/?p>/g, "").trim();
+  const html = String(result.description || result.name || "");
+  if ( !/[<&]/.test(html) ) return html.trim();
+  // DOMParser builds an inert document: no scripts run and no images load.
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  return (doc.body.textContent ?? "").replace(/\s+/g, " ").trim();
+}
+
+/** A table players can edit could put words in the GM's story, so only GM-controlled tables count. */
+function gmControlled(table) {
+  return !game.users.some(u => !u.isGM && table.testUserPermission(u, "OWNER"));
 }
 
 function worldTables() {
@@ -44,7 +56,7 @@ function worldTables() {
   worldCache = {};
   for ( const table of game.tables ?? [] ) {
     const key = table.getFlag(MODULE_ID, "storyKey");
-    if ( !key ) continue;
+    if ( !key || !gmControlled(table) ) continue;
     const entries = table.results.contents.filter(r => r.type === "text").map(resultText);
     if ( entries.length ) worldCache[key] = entries;
   }
@@ -54,18 +66,24 @@ function worldTables() {
 /** Forget cached world tables (after a GM edits one). */
 export function invalidateStoryTables() {
   worldCache = null;
+  resolved = null;
 }
 
-/** Resolve all tables once per story (async because a translation may need fetching). */
+/**
+ * Resolve all tables (async because a translation may need fetching). The same object comes back until a table
+ * or the language changes, so callers can cache what they built from it.
+ */
 export async function loadStoryTables() {
   const base = englishTables();
   const loc = await localeTables();
+  if ( resolved ) return resolved;
   const world = worldTables();
-  return {
+  resolved = {
     get(key) {
       return world[key] ?? loc?.[key] ?? base[key] ?? null;
     }
   };
+  return resolved;
 }
 
 /** Every key the story writer can use, with its English entries (for installing and translating). */
@@ -96,6 +114,7 @@ export async function installStoryTables({ overwrite = false } = {}) {
   const existing = new Map(game.tables.filter(t => t.getFlag(MODULE_ID, "storyKey")).map(t => [t.getFlag(MODULE_ID, "storyKey"), t]));
   const folders = new Map();
   const toCreate = [];
+  const toDelete = [];
   let kept = 0;
   for ( const key of Object.keys(base) ) {
     const entries = loc?.[key] ?? base[key];
@@ -116,9 +135,10 @@ export async function installStoryTables({ overwrite = false } = {}) {
       flags: { [MODULE_ID]: { storyKey: key } },
       results: entries.map((text, i) => ({ type: "text", name: text.slice(0, 60), description: text, weight: 1, range: [i + 1, i + 1] }))
     };
-    if ( prior ) await prior.delete();
+    if ( prior ) toDelete.push(prior.id);
     toCreate.push(data);
   }
+  for ( let i = 0; i < toDelete.length; i += 100 ) await TableCls.deleteDocuments(toDelete.slice(i, i + 100));
   for ( let i = 0; i < toCreate.length; i += 50 ) await TableCls.createDocuments(toCreate.slice(i, i + 50));
   invalidateStoryTables();
   return { created: toCreate.length, kept };

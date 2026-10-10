@@ -91,7 +91,7 @@ export class GenericAdapter extends SystemAdapter {
     const lines = [];
     if ( final.hp !== spec.hp.value ) lines.push(`HP ${spec.hp.value} → ${final.hp}`);
     if ( final.status === STATUS.DEAD ) lines.push("Dead");
-    else if ( final.status === STATUS.FLED ) lines.push("Fled the battle (token hidden)");
+    else if ( final.status === STATUS.FLED ) lines.push(spec.kind === "pc" ? "Retreated from the battle" : "Fled the battle (token hidden)");
     else if ( final.status === STATUS.SURRENDERED ) lines.push("Surrenders");
     if ( final.swayed === "switched" ) lines.push("Switches sides");
     else if ( final.status === STATUS.DOWN ) lines.push("Down");
@@ -109,7 +109,7 @@ export class GenericAdapter extends SystemAdapter {
     if ( final.status === STATUS.DEAD ) {
       await actor.toggleStatusEffect(CONFIG.specialStatusEffects.DEFEATED, { active: true, overlay: true });
       undo.statuses.push({ id: CONFIG.specialStatusEffects.DEFEATED, active: false, overlay: true });
-    } else if ( final.status === STATUS.FLED && options.fledMode !== "leave" ) {
+    } else if ( final.status === STATUS.FLED && options.fledMode !== "leave" && spec.kind !== "pc" ) {
       undo.tokenUpdate = { hidden: tokenDoc.hidden };
       await tokenDoc.update({ hidden: true });
     }

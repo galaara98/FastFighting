@@ -133,11 +133,7 @@ export function maxPart(p) {
   return p.flat + p.dice.reduce((s, { n, faces, mult = 1 }) => s + (n > 0 ? n * faces : n) * mult, 0);
 }
 
-export function variancePart(p) {
-  return p.dice.reduce((s, { n, faces, mult = 1 }) => s + Math.abs(n) * mult * mult * ((faces * faces - 1) / 12), 0);
-}
-
-/** Sample a list of parts; returns {byType: {type: amount}, persistent: DamagePart[]}. Minimum 1 per non-persistent roll. */
+/** Sample a list of parts; returns {byType: {type: amount}, persistent: DamagePart[]}. Each roll is at least 0. */
 export function sampleDamage(parts, rng, multiplier = 1) {
   const byType = {};
   const persistent = [];

@@ -2,7 +2,7 @@
  * The GM's Battle Planner: roster and per-side settings on the left, results on the right.
  */
 import {
-  MODULE_ID, SIDES, TRAITS, ALLEGIANCE, HEAL_AGGRO, DOWNED_MODELS, STATUS,
+  MODULE_ID, SIDES, TRAITS, ALLEGIANCE, HEAL_AGGRO, DOWNED_MODELS, STATUS, AFTERMATH,
   traitBand, fudged, clamp, FUDGE_STEP
 } from "../constants.js";
 import { getAdapter } from "../api.js";
@@ -12,11 +12,10 @@ import {
   questionsContext, setTactic, togglePlaystyle, syncTacticsDom, isPlayerControlled, playersOnScene, tokensForUser, surveyStatus,
   requestSurveys, SURVEY_STATUS, playstyleSignature, tacticsFor
 } from "../foundry/tactics.js";
-import { gatherRoster, chosenSide, resolveAllegiances, simulate, swingFactors, replay, findSample, withPlaystyleLeaders } from "../foundry/battle.js";
+import { gatherRoster, chosenSide, resolveAllegiances, simulate, swingFactors, replay, findSample, drawFight, withPlaystyleLeaders, approachFor } from "../foundry/battle.js";
 import { buildStory, STORY_STYLES } from "../story/story.js";
 import { loadStoryTables } from "../story/tables.js";
 import { planMakeItSo, confirmMakeItSo, executeMakeItSo, undoMakeItSo, hasUndo } from "../foundry/make-it-so.js";
-import { computeApproach } from "../foundry/terrain.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 const TEMPLATE = `modules/${MODULE_ID}/templates/planner.hbs`;
@@ -26,7 +25,7 @@ const TACTICS_PARTIAL = `modules/${MODULE_ID}/templates/partials/tactics.hbs`;
 const SIDE_ORDER = [SIDES.FRIENDLY, SIDES.HOSTILE, SIDES.NEUTRAL, SIDES.SECRET];
 const SIDE_ICONS = { friendly: "fa-shield-heart", hostile: "fa-skull", neutral: "fa-scale-balanced", secret: "fa-user-secret" };
 const RESULT_TABS = ["overview", "combatants", "swing", "resources", "sample"];
-const SAMPLE_FILTERS = ["likely", "partyWins", "partyLoses", "pcDies", "closeCall"];
+const SAMPLE_FILTERS = ["any", "typical", "partyWins", "partyLoses", "pcDies", "closeCall"];
 const STAT_FUDGES = [["ac", 1], ["hp", 5], ["attack", 1], ["damage", 1]];
 
 const loc = key => game.i18n.localize(key);
@@ -65,7 +64,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       preparePlayers: BattlePlanner.#onPreparePlayers,
       togglePlaystyle: BattlePlanner.#onTogglePlaystyle,
       openSurvey: BattlePlanner.#onOpenSurvey,
-      undoStory: BattlePlanner.#onUndo
+      cancel: BattlePlanner.#onCancel
     }
   };
 
@@ -75,6 +74,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /** Singleton access. */
   static open() {
+    if ( !game.user.isGM ) return null;
     const existing = foundry.applications.instances.get("fast-fighting-planner");
     if ( existing ) {
       existing.bringToFront?.();
@@ -94,12 +94,34 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     this.spec = null;
     this.swing = null;
     this.sample = null;
-    this.sampleFilter = "likely";
+    this.sampleFilter = "any";
     this.running = false;
     this.progress = 0;
     this.stale = false;
     this.storyStyle = setting("storyStyle");
     this.storyTables = null;
+    this.storyCache = new Map();
+    this.sceneId = canvas.scene?.id ?? null;
+    this.abort = null;
+  }
+
+  /** The planner reads and writes game data, so it is the GM's alone. */
+  _canRender() {
+    if ( !game.user.isGM ) return false;
+  }
+
+  /** Forget everything about the previous scene (called when the GM views another scene). */
+  resetForScene() {
+    this.sceneId = canvas.scene?.id ?? null;
+    this.setup = null;
+    this.roster = null;
+    this.approach = null;
+    this.results = null;
+    this.spec = null;
+    this.swing = null;
+    this.sample = null;
+    this.stale = false;
+    this.storyCache.clear();
   }
 
   get title() {
@@ -114,9 +136,8 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     this.setup = getSetup();
     this.roster = await gatherRoster(this.setup);
     for ( const e of this.roster ) tokenSetup(this.setup, e.token.id);
-    const specs = new Map(this.roster.map(e => [e.token.id, e.spec]));
     try {
-      this.approach = computeApproach(this.roster.map(e => e.token), specs);
+      this.approach = approachFor(this.roster, this.setup);
     } catch ( err ) {
       console.warn(`${MODULE_ID} | approach preview failed`, err);
       this.approach = null;
@@ -221,6 +242,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       hasAdapter: !!adapter,
       options: setup.options,
       downedChoices: Object.fromEntries(Object.values(DOWNED_MODELS).map(k => [k, `FASTFIGHTING.Downed.${k}`])),
+      aftermathChoices: Object.fromEntries(Object.values(AFTERMATH).map(k => [k, `FASTFIGHTING.Aftermath.${k}`])),
       surpriseChoices: {
         none: "FASTFIGHTING.Surprise.none",
         tracker: "FASTFIGHTING.Surprise.tracker",
@@ -245,12 +267,13 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
 
   #rowContext(e, resolved) {
     const setup = this.setup;
-    const ts = tokenSetup(setup, e.token.id);
+    const ts = setup.tokens[e.token.id] ?? tokenSetup({ tokens: {} }, e.token.id); // rendering never edits the setup
     const s = e.spec;
     const fudge = ts.fudge ?? {};
     const isPc = s.kind === "pc";
     const playerControlled = isPlayerControlled(s, e.token.actor);
-    const shifts = tacticsFor(e.token.actor, s).playstyles.traits;
+    const { playstyles } = tacticsFor(e.token.actor, s);
+    const shifts = playstyles.traits;
     const controllers = game.users.filter(u => !u.isGM && e.token.actor?.testUserPermission(u, "OWNER")).map(u => u.name).join(", ");
     const approach = this.#nearestEnemyApproach(e, resolved);
     const resolvedSide = resolved[e.token.id];
@@ -288,7 +311,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       playerControlled,
       controllers,
       tactics: this.expanded.has(e.token.id) ? questionsContext(s, e.token.actor, `gm-${e.token.id}`, { questions: playerControlled }) : null,
-      playstyleNames: (e.token.actor?.getFlag(MODULE_ID, "tactics")?.playstyles ?? []).map(id => loc(`FASTFIGHTING.Playstyle.${id}.Name`)).join(", ")
+      playstyleNames: playstyles.ids.map(id => loc(`FASTFIGHTING.Playstyle.${id}.Name`)).join(", ")
     };
   }
 
@@ -368,12 +391,20 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
   /** The story of the current sample fight in the chosen style (the same text Make it So posts). */
   storyFor(style = this.storyStyle) {
     if ( !this.sample || !this.storyTables ) return null;
-    return buildStory(this.sample.result, this.spec, style, {
-      tables: this.storyTables,
-      seed: this.sample.seed,
-      title: game.i18n.format("FASTFIGHTING.Story.Title", { scene: canvas.scene?.name ?? "" }),
-      labels: storyLabels()
-    });
+    if ( this.storyCache.tables !== this.storyTables ) {
+      this.storyCache.clear();
+      this.storyCache.tables = this.storyTables;
+    }
+    const key = `${this.sample.seed}|${style}`;
+    if ( !this.storyCache.has(key) ) {
+      this.storyCache.set(key, buildStory(this.sample.result, this.spec, style, {
+        tables: this.storyTables,
+        seed: this.sample.seed,
+        title: game.i18n.format("FASTFIGHTING.Story.Title", { scene: canvas.scene?.name ?? "" }),
+        labels: storyLabels()
+      }));
+    }
+    return this.storyCache.get(key);
   }
 
   #sampleContext() {
@@ -381,6 +412,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     const rows = planMakeItSo(this.spec, result);
     return {
       seed,
+      how: this.sample.how ? loc(`FASTFIGHTING.Sample.How.${this.sample.how}`) : "",
       outcome: result.outcome === "victory" ? result.winners.map(w => loc(`FASTFIGHTING.Side.${w}`)).join(" & ") : loc(`FASTFIGHTING.Sample.Outcome.${result.outcome}`),
       story: this.storyFor()?.html ?? "",
       totalRounds: result.rounds,
@@ -466,7 +498,14 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     const target = event?.target;
     const name = target?.name;
     if ( !name ) return;
-    const value = target.type === "checkbox" ? target.checked : (target.dataset.dtype === "Number" || target.type === "number") ? Number(target.value) : target.value;
+    let value = target.type === "checkbox" ? target.checked : (target.dataset.dtype === "Number" || target.type === "number") ? Number(target.value) : target.value;
+    if ( target.type === "number" ) {
+      // Typed values ignore the field's min/max, so enforce them here.
+      const min = target.min === "" ? -Infinity : Number(target.min);
+      const max = target.max === "" ? Infinity : Number(target.max);
+      value = Number.isFinite(value) ? clamp(Math.round(value), min, max) : (Number.isFinite(min) ? min : 0);
+      target.value = String(value);
+    }
     if ( target.dataset.tactic ) {
       const actor = await fromUuid(target.dataset.actorUuid);
       const tacticValue = target.type === "checkbox" ? target.checked : target.value;
@@ -483,7 +522,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     } else {
       if ( name.startsWith("tokens.") ) tokenSetup(this.setup, name.split(".")[1]);
       foundry.utils.setProperty(this.setup, name, value === "" ? null : value);
-      if ( name === "options.seed" ) this.setup.options.seed = value ? Number(value) : null;
+      if ( name === "options.seed" ) this.setup.options.seed = Number.isFinite(Number.parseInt(value, 10)) ? Number.parseInt(value, 10) >>> 0 : null;
       await saveSetup(this.setup);
       this.stale = true;
     }
@@ -541,12 +580,14 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     this.progress = 0;
     this.swing = null;
     this.sample = null;
+    this.abort = new AbortController();
     await this.render();
     try {
       // Re-read tokens so HP and positions are current.
       this.roster = await gatherRoster(this.setup);
       let lastPaint = 0;
       const { spec, results, approach } = await simulate(this.roster, this.setup, {
+        signal: this.abort.signal,
         onProgress: p => {
           this.progress = p;
           const bar = this.element?.querySelector(".ff-progress > span");
@@ -558,14 +599,23 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       this.results = results;
       this.approach = approach;
       this.stale = false;
-      if ( results.representativeSeed !== null ) this.sample = { seed: results.representativeSeed, result: replay(spec, getAdapter().rules, results.representativeSeed) };
+      this.storyCache.clear();
+      // The fight Make it So commits is drawn at random from the simulated fights, so a 70% win is a loss
+      // three times in ten, as it should be.
+      this.sample = drawFight(spec, results);
+      if ( this.abort.signal.aborted ) ui.notifications.info(game.i18n.format("FASTFIGHTING.Planner.Stopped", { n: results.runs }));
     } catch ( err ) {
       console.error(`${MODULE_ID} | simulation failed`, err);
       ui.notifications.error(game.i18n.format("FASTFIGHTING.Planner.RunFailed", { error: err.message }));
     } finally {
       this.running = false;
+      this.abort = null;
       this.render();
     }
+  }
+
+  static #onCancel() {
+    this.abort?.abort();
   }
 
   static async #onSwing(event, target) {
@@ -580,6 +630,8 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
           if ( bar ) bar.style.width = `${Math.round(p * 100)}%`;
         }
       });
+    } catch ( err ) {
+      reportError(err);
     } finally {
       this.running = false;
       this.render();
@@ -587,34 +639,47 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   static async #onRollSample() {
-    if ( !this.spec ) return;
-    const rules = getAdapter().rules;
-    const pcIds = new Set(this.spec.combatants.filter(c => c.kind === "pc").map(c => c.id));
-    const predicates = {
-      likely: null,
-      partyWins: r => r.outcome === "victory" && r.winners.includes(SIDES.FRIENDLY),
-      partyLoses: r => !(r.outcome === "victory" && r.winners.includes(SIDES.FRIENDLY)),
-      pcDies: r => Object.entries(r.units).some(([id, u]) => pcIds.has(id) && u.status === STATUS.DEAD),
-      closeCall: r => r.outcome === "victory" && r.winners.includes(SIDES.FRIENDLY)
-        && Object.entries(r.units).filter(([id]) => pcIds.has(id)).some(([, u]) => u.wasDowned)
-    };
-    const start = Math.floor(Math.random() * 1e9);
-    let found;
-    if ( this.sampleFilter === "likely" ) found = { seed: start, result: replay(this.spec, rules, start) };
-    else found = findSample(this.spec, rules, predicates[this.sampleFilter], { start, tries: 600 });
-    if ( !found ) ui.notifications.info(loc("FASTFIGHTING.Sample.NotFound"));
-    else this.sample = found;
+    if ( !this.spec || !this.results ) return;
+    try {
+      const rules = getAdapter().rules;
+      const pcIds = new Set(this.spec.combatants.filter(c => c.kind === "pc").map(c => c.id));
+      const predicates = {
+        partyWins: r => r.outcome === "victory" && r.winners.includes(SIDES.FRIENDLY),
+        partyLoses: r => !(r.outcome === "victory" && r.winners.includes(SIDES.FRIENDLY)),
+        pcDies: r => Object.entries(r.units).some(([id, u]) => pcIds.has(id) && u.status === STATUS.DEAD),
+        closeCall: r => r.outcome === "victory" && r.winners.includes(SIDES.FRIENDLY)
+          && Object.entries(r.units).filter(([id]) => pcIds.has(id)).some(([, u]) => u.wasDowned)
+      };
+      let found;
+      if ( this.sampleFilter === "any" ) found = drawFight(this.spec, this.results);
+      else if ( this.sampleFilter === "typical" ) {
+        const seed = this.results.representativeSeed;
+        found = seed === null ? null : { seed, result: replay(this.spec, rules, seed), how: "typical" };
+      } else {
+        found = findSample(this.spec, rules, predicates[this.sampleFilter], { start: Math.floor(Math.random() * 1e9), tries: 600 });
+        if ( found ) found.how = "chosen";
+      }
+      if ( !found ) ui.notifications.info(loc("FASTFIGHTING.Sample.NotFound"));
+      else this.sample = found;
+    } catch ( err ) {
+      reportError(err);
+    }
     this.render();
   }
 
   static async #onMakeItSo() {
     if ( !this.sample || !this.spec ) return;
-    const rows = planMakeItSo(this.spec, this.sample.result);
-    if ( !rows.some(r => r.changed) ) return ui.notifications.info(loc("FASTFIGHTING.MakeItSo.Nothing"));
-    const ok = await confirmMakeItSo(rows);
-    if ( !ok ) return;
-    await executeMakeItSo(rows, this.sample.result, { story: this.storyFor() });
-    ui.notifications.info(loc("FASTFIGHTING.MakeItSo.Done"));
+    if ( canvas.scene?.id !== this.sceneId ) return ui.notifications.warn(loc("FASTFIGHTING.Planner.SceneChanged"));
+    try {
+      const rows = planMakeItSo(this.spec, this.sample.result);
+      if ( !rows.some(r => r.changed) ) return ui.notifications.info(loc("FASTFIGHTING.MakeItSo.Nothing"));
+      const ok = await confirmMakeItSo(rows);
+      if ( !ok ) return;
+      await executeMakeItSo(rows, this.sample.result, { story: this.storyFor() });
+      ui.notifications.info(loc("FASTFIGHTING.MakeItSo.Done"));
+    } catch ( err ) {
+      reportError(err);
+    }
     this.roster = null;
     this.results = null;
     this.sample = null;
@@ -627,12 +692,21 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       content: `<p>${loc("FASTFIGHTING.MakeItSo.UndoConfirm")}</p>`
     });
     if ( !ok ) return;
-    await undoMakeItSo();
-    ui.notifications.info(loc("FASTFIGHTING.MakeItSo.Undone"));
+    try {
+      await undoMakeItSo();
+      ui.notifications.info(loc("FASTFIGHTING.MakeItSo.Undone"));
+    } catch ( err ) {
+      reportError(err);
+    }
     this.roster = null;
     this.render();
   }
 
+}
+
+function reportError(err) {
+  console.error(`${MODULE_ID} |`, err);
+  ui.notifications.error(game.i18n.format("FASTFIGHTING.Planner.ActionFailed", { error: err.message }));
 }
 
 /** Localized words the Standard story uses. */
@@ -640,7 +714,7 @@ function storyLabels() {
   const l = key => loc(`FASTFIGHTING.Story.Labels.${key}`);
   return {
     hit: l("hit"), crit: l("crit"), miss: l("miss"), resisted: l("resisted"), talked: l("talked"), convincing: l("convincing"),
-    healed: l("healed"), potion: l("potion"), moved: l("moved"), stayedOut: l("stayedOut"), nothing: l("nothing"),
+    healed: l("healed"), potion: l("potion"), firstAid: l("firstAid"), stabilized: l("stabilized"), moved: l("moved"), stayedOut: l("stayedOut"), nothing: l("nothing"),
     status: Object.fromEntries(["standing", "down", "dead", "fled", "surrendered", "switched"].map(s => [s, loc(`FASTFIGHTING.Status.${s}`)]))
   };
 }
