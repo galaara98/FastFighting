@@ -9,7 +9,8 @@
 import { MODULE_ID, STATUS } from "../constants.js";
 import { getAdapter } from "../api.js";
 import { setting } from "../settings.js";
-import { pixelsFor } from "./terrain.js";
+import { pixelsFor, feetPerUnit, squareFeet } from "./terrain.js";
+import { currentPathGrid, pathGridFor } from "./pathing.js";
 import { concessionText } from "../story/story.js";
 
 const loc = key => game.i18n.localize(key);
@@ -47,7 +48,7 @@ export function planMakeItSo(spec, replay) {
     if ( !final || !tokenDoc ) continue;
     const lines = adapter.describeOutcome(c, final);
     const moved = feetMoved(c, final);
-    if ( moved >= 5 ) lines.push(game.i18n.format("FASTFIGHTING.MakeItSo.Moves", { feet: moved }));
+    if ( moved >= 5 ) lines.push(game.i18n.format("FASTFIGHTING.MakeItSo.Moves", { distance: sceneDistance(moved) }));
     rows.push({ spec: c, final, tokenDoc, lines, moved, changed: lines.length > 0 });
   }
   // Something given up changes hands: say so on both sides.
@@ -93,6 +94,64 @@ export async function confirmMakeItSo(rows) {
 /*  Token placement                             */
 /* -------------------------------------------- */
 
+/** Where a token really is. (While it's animating, a token's x and y follow the animation, not the move.) */
+const placeOf = doc => ({ x: doc._source.x, y: doc._source.y });
+
+/** Feet as the scene measures them, to the nearest square: "30 ft", "9 m". */
+function sceneDistance(feet) {
+  const square = squareFeet();
+  const units = canvas.scene.grid.units || "ft";
+  const rounded = Math.max(1, Math.round(feet / square)) * square;
+  return `${Math.round((rounded / feetPerUnit()) * 10) / 10} ${units}`;
+}
+
+/** How fast tokens run through the fight on the map, in grid squares a second. */
+const PLAYBACK_SPEED = 16;
+
+/**
+ * Move a token quickly along waypoints (walls are already accounted for), and give the animation about as long as
+ * it should take. (A browser tab in the background doesn't animate at all, so never wait on it for longer.)
+ */
+async function quickMove(doc, waypoints) {
+  const size = canvas.dimensions.size;
+  let squares = 0;
+  let from = placeOf(doc);
+  for ( const p of waypoints ) {
+    squares += Math.hypot(p.x - from.x, p.y - from.y) / size;
+    from = p;
+  }
+  try {
+    await doc.move(waypoints, {
+      animation: { movementSpeed: PLAYBACK_SPEED }, showRuler: false, pan: false, autoRotate: false,
+      constrainOptions: { ignoreWalls: true, ignoreCost: true }
+    });
+    const animation = doc.object?.movementAnimationPromise;
+    if ( animation ) await Promise.race([animation, new Promise(r => setTimeout(r, (squares / PLAYBACK_SPEED) * 1000 + 250))]);
+  } catch ( err ) {
+    console.warn(`${MODULE_ID} | couldn't play a move for ${doc.name}`, err);
+  }
+}
+
+/**
+ * Walk the tokens through the fight as the story tells it: every move in order, quickly, around walls (or
+ * straight through where the fight went through). Returns the ids of the tokens it moved.
+ */
+async function playOnMap(replay, rows) {
+  const docs = new Map(rows.map(r => [r.spec.id, r.tokenDoc]));
+  const grid = currentPathGrid() ?? pathGridFor(rows.map(r => r.tokenDoc.object).filter(Boolean));
+  const moved = new Set();
+  for ( const e of replay.log ?? [] ) {
+    if ( !["move", "flee", "leave"].includes(e.type) || !e.to ) continue;
+    const doc = docs.get(e.actorId);
+    if ( !doc?.object || doc.hidden ) continue;
+    const dest = clampToScene(pixelsFor(doc, e.to), doc);
+    if ( dest.x === doc._source.x && dest.y === doc._source.y ) continue;
+    await quickMove(doc, grid ? grid.route(doc, dest) : [dest]);
+    moved.add(doc.id);
+  }
+  return moved;
+}
+
 function cellsOf(x, y, doc) {
   const size = canvas.dimensions.size;
   const cx = Math.round(x / size);
@@ -118,11 +177,14 @@ function centerOf(point, doc) {
   return { x: point.x + (doc.width * size) / 2, y: point.y + (doc.height * size) / 2 };
 }
 
-/** Back off along the line from the token's spot until the path doesn't cross a wall. */
+/**
+ * On a square grid the fight already found its way round the walls (or through one, at a price), so its final spot
+ * stands. Elsewhere, back off along the line from the token's spot until the path doesn't cross a wall.
+ */
 function respectWalls(tokenDoc, dest) {
   const token = tokenDoc.object;
-  if ( !token ) return dest;
-  const start = { x: tokenDoc.x, y: tokenDoc.y };
+  if ( !token || currentPathGrid() ) return dest;
+  const start = placeOf(tokenDoc);
   const size = canvas.dimensions.size;
   const steps = Math.ceil(Math.hypot(dest.x - start.x, dest.y - start.y) / (size / 2));
   for ( let i = steps; i >= 1; i-- ) {
@@ -134,7 +196,15 @@ function respectWalls(tokenDoc, dest) {
   return start;
 }
 
-/** Nearest free grid spot to `dest` (spiral search), so tokens never end up stacked. */
+function wallBetween(a, b) {
+  try {
+    return !!CONFIG.Canvas.polygonBackends.move.testCollision(a, b, { type: "move", mode: "any" });
+  } catch ( err ) {
+    return false;
+  }
+}
+
+/** Nearest free grid spot to `dest` (spiral search, on the same side of any wall), so tokens never end up stacked. */
 function freeSpot(tokenDoc, dest, occupied) {
   const size = canvas.dimensions.size;
   const free = p => cellsOf(p.x, p.y, tokenDoc).every(c => !occupied.has(c));
@@ -144,7 +214,7 @@ function freeSpot(tokenDoc, dest, occupied) {
       for ( let dy = -ring; dy <= ring; dy++ ) {
         if ( Math.max(Math.abs(dx), Math.abs(dy)) !== ring ) continue;
         const p = clampToScene({ x: dest.x + dx * size, y: dest.y + dy * size }, tokenDoc);
-        if ( free(p) && !tokenDoc.object?.checkCollision(centerOf(p, tokenDoc), { type: "move", mode: "any" }) ) return p;
+        if ( free(p) && !wallBetween(centerOf(dest, tokenDoc), centerOf(p, tokenDoc)) ) return p;
       }
     }
   }
@@ -156,7 +226,7 @@ function planPlacements(rows) {
   const occupied = new Set();
   const moving = new Set(rows.filter(r => r.moved >= 5).map(r => r.tokenDoc.id));
   for ( const t of canvas.scene.tokens ) {
-    if ( !moving.has(t.id) && !t.hidden ) for ( const c of cellsOf(t.x, t.y, t) ) occupied.add(c);
+    if ( !moving.has(t.id) && !t.hidden ) for ( const c of cellsOf(t._source.x, t._source.y, t) ) occupied.add(c);
   }
   const placements = [];
   // Standing combatants pick spots first; the fallen lie where they can.
@@ -167,7 +237,7 @@ function planPlacements(rows) {
     dest = respectWalls(doc, dest);
     dest = freeSpot(doc, dest, occupied);
     for ( const c of cellsOf(dest.x, dest.y, doc) ) occupied.add(c);
-    if ( dest.x !== doc.x || dest.y !== doc.y ) placements.push({ doc, x: dest.x, y: dest.y });
+    if ( dest.x !== doc._source.x || dest.y !== doc._source.y ) placements.push({ doc, x: dest.x, y: dest.y });
   }
   return placements;
 }
@@ -189,12 +259,20 @@ export async function executeMakeItSo(rows, replay, { story = null } = {}) {
   const options = { lootMode: setting("lootMode"), corpseMode: setting("corpseMode"), fledMode: setting("fledMode") };
   Hooks.callAll("fastFighting.preMakeItSo", { rows, replay, options, story });
 
-  // 1. Movement
+  // 1. Movement: the fight plays out on the map (every move in the story's order, quickly, around walls), then
+  //    everyone settles on a free spot where the fight left them.
   const placements = planPlacements(rows);
-  const moves = placements.map(p => ({ uuid: p.doc.uuid, x: p.doc.x, y: p.doc.y }));
-  if ( placements.length ) {
-    await canvas.scene.updateEmbeddedDocuments("Token", placements.map(p => ({ _id: p.doc.id, x: p.x, y: p.y })));
+  const start = new Map(rows.map(r => [r.tokenDoc.id, placeOf(r.tokenDoc)]));
+  const moves = rows.map(r => ({ uuid: r.tokenDoc.uuid, ...start.get(r.tokenDoc.id) }));
+  const played = setting("playOnMap") ? await playOnMap(replay, rows) : new Set();
+  const finals = new Map(placements.map(p => [p.doc.id, { x: p.x, y: p.y }]));
+  for ( const id of played ) if ( !finals.has(id) ) finals.set(id, start.get(id));
+  const settle = [];
+  for ( const [id, p] of finals ) {
+    const doc = canvas.scene.tokens.get(id);
+    if ( doc && (doc._source.x !== p.x || doc._source.y !== p.y) ) settle.push(quickMove(doc, [p]));
   }
+  await Promise.all(settle);
 
   // 2. Outcomes
   const records = [];
@@ -257,33 +335,47 @@ export function hasUndo(scene = canvas.scene) {
 
 /** Put one undo record back: created documents removed, deleted ones restored, changed values reset. */
 async function revertRecord(r) {
-  try {
-    for ( const uuid of r.createdTokens ?? [] ) await (await fromUuid(uuid))?.delete();
-    for ( const uuid of r.createdActors ?? [] ) await (await fromUuid(uuid))?.delete();
-    for ( const t of r.deletedTokens ?? [] ) {
-      const parent = await fromUuid(t.parentUuid);
-      await parent?.createEmbeddedDocuments("Token", [t.data], { keepId: true });
+  // Each step on its own: one that fails (a status the server has already dropped, say) mustn't stop the rest.
+  const step = async (what, fn) => {
+    try {
+      await fn();
+    } catch ( err ) {
+      console.error(`${MODULE_ID} | undo: ${what} failed`, r, err);
     }
-    const tokenDoc = r.tokenUuid ? await fromUuid(r.tokenUuid) : null;
-    const actor = tokenDoc?.actor ?? await fromUuid(r.actorUuid);
-    if ( !actor ) return;
-    if ( r.createdItems?.length ) {
-      const ids = r.createdItems.filter(id => actor.items.has(id));
-      if ( ids.length ) await actor.deleteEmbeddedDocuments("Item", ids);
-    }
-    if ( r.deletedItems?.length ) await actor.createEmbeddedDocuments("Item", r.deletedItems, { keepId: true });
-    if ( r.createdEffects?.length ) {
-      const ids = r.createdEffects.filter(id => actor.effects.has(id));
-      if ( ids.length ) await actor.deleteEmbeddedDocuments("ActiveEffect", ids);
-    }
-    for ( const { id, update } of r.itemUpdates ?? [] ) await actor.items.get(id)?.update(update);
-    for ( const s of r.statuses ?? [] ) await actor.toggleStatusEffect(s.id, { active: s.active, overlay: s.overlay });
-    if ( Object.keys(r.actorUpdate ?? {}).length ) await actor.update(r.actorUpdate);
-    if ( r.tokenUpdate && tokenDoc ) await tokenDoc.update(r.tokenUpdate);
-    if ( r.combatant ) await (await fromUuid(r.combatant.uuid))?.update({ defeated: r.combatant.defeated });
-  } catch ( err ) {
-    console.error(`${MODULE_ID} | undo failed for a record`, r, err);
+  };
+  for ( const uuid of r.createdTokens ?? [] ) await step("removing a token", async () => (await fromUuid(uuid))?.delete());
+  for ( const uuid of r.createdActors ?? [] ) await step("removing an actor", async () => (await fromUuid(uuid))?.delete());
+  for ( const t of r.deletedTokens ?? [] ) {
+    await step("restoring a token", async () => (await fromUuid(t.parentUuid))?.createEmbeddedDocuments("Token", [t.data], { keepId: true }));
   }
+  const tokenDoc = r.tokenUuid ? await fromUuid(r.tokenUuid) : null;
+  const actor = tokenDoc?.actor ?? await fromUuid(r.actorUuid);
+  if ( !actor ) return;
+  if ( r.createdItems?.length ) {
+    const ids = r.createdItems.filter(id => actor.items.has(id));
+    if ( ids.length ) await step("removing items", () => actor.deleteEmbeddedDocuments("Item", ids));
+  }
+  if ( r.deletedItems?.length ) await step("restoring items", () => actor.createEmbeddedDocuments("Item", r.deletedItems, { keepId: true }));
+  if ( r.createdEffects?.length ) {
+    const ids = r.createdEffects.filter(id => actor.effects.has(id));
+    if ( ids.length ) await step("removing effects", () => actor.deleteEmbeddedDocuments("ActiveEffect", ids));
+  }
+  for ( const { id, update } of r.itemUpdates ?? [] ) await step("restoring an item", () => actor.items.get(id)?.update(update));
+  for ( const s of r.statuses ?? [] ) {
+    if ( actor.statuses?.has(s.id) === s.active ) continue; // already as it was
+    await step(`status ${s.id}`, () => actor.toggleStatusEffect(s.id, { active: s.active, overlay: s.overlay }));
+  }
+  if ( Object.keys(r.actorUpdate ?? {}).length ) await step("restoring the actor", () => actor.update(r.actorUpdate));
+  // Anything the system added along the way (dnd5e lays the unconscious down Prone) comes off too.
+  if ( r.statusesBefore ) {
+    const before = new Set(r.statusesBefore);
+    for ( const id of [...(actor.statuses ?? [])] ) {
+      if ( before.has(id) || !CONFIG.statusEffects.some(s => s.id === id) ) continue;
+      await step(`status ${id}`, () => (actor.statuses.has(id) ? actor.toggleStatusEffect(id, { active: false }) : null));
+    }
+  }
+  if ( r.tokenUpdate && tokenDoc ) await step("restoring the token", () => tokenDoc.update(r.tokenUpdate));
+  if ( r.combatant ) await step("the combat tracker", async () => (await fromUuid(r.combatant.uuid))?.update({ defeated: r.combatant.defeated }));
 }
 
 /* -------------------------------------------- */
@@ -329,12 +421,14 @@ export async function undoMakeItSo(scene = canvas.scene) {
   for ( const id of undo.messages ?? [] ) await game.messages.get(id)?.delete();
   for ( const r of [...(undo.records ?? [])].reverse() ) await revertRecord(r);
   // Positions last, so tokens recreated above go back to where they started too.
+  // Straight back where they stood, without walking the map again.
   const back = [];
   for ( const m of undo.moves ?? [] ) {
     const doc = await fromUuid(m.uuid);
-    if ( doc ) back.push({ _id: doc.id, x: m.x, y: m.y });
+    if ( doc && (doc._source.x !== m.x || doc._source.y !== m.y) ) back.push([doc.id, { destination: { x: m.x, y: m.y, action: "displace" } }]);
   }
-  if ( back.length ) await scene.updateEmbeddedDocuments("Token", back);
+  // (Moves, not plain updates: Foundry quietly refuses a position update that would cross a wall.)
+  if ( back.length ) await scene.moveTokens(Object.fromEntries(back), { animate: false });
   if ( rest.length ) await scene.update({ [`flags.${MODULE_ID}.==undo`]: { stack: rest } });
   else await scene.unsetFlag(MODULE_ID, "undo");
   return true;

@@ -37,7 +37,8 @@ const SETTINGS = {
   storyMode: { type: String, default: "public", choices: choices(["public", "whisper"], "Story.Mode") },
   lootMode: { type: String, default: "corpse", choices: choices(["corpse", "pile", "none"], "Loot") },
   corpseMode: { type: String, default: "keep", choices: choices(["keep", "remove"], "Corpse") },
-  fledMode: { type: String, default: "hide", choices: choices(["hide", "leave"], "Fled") }
+  fledMode: { type: String, default: "hide", choices: choices(["hide", "leave"], "Fled") },
+  playOnMap: { type: Boolean, default: true }
 };
 
 export function registerSettings(DefaultsConfig, GenericPathsConfig, StoryTablesConfig) {

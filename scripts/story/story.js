@@ -198,6 +198,7 @@ function narrate(e, roll, rel, fill) {
       return roll(`talk.${e.kind ?? "persuade"}.${tier}`, f) + relationshipClause(e, tier, rel, roll, f);
     }
     case "move": {
+      if ( e.purpose === "tend" ) return roll("event.moveTend", { ...f, target: e.toward });
       const mode = ["walk", "fly", "swim", "climb", "burrow"].includes(e.mode) ? e.mode : "walk";
       const situation = e.purpose === "help" ? "help" : e.purpose === "hunt" ? "hunt" : (e.regions?.length && (e.mult > 1.05 || mode === "fly" || mode === "burrow" || mode === "climb")) ? "terrain" : "approach";
       return roll(`move.${mode}.${situation}`, { ...f, target: e.toward, region: e.regions?.[0] ?? "" });
@@ -249,6 +250,10 @@ function narrate(e, roll, rel, fill) {
     case "reclaim": return roll("event.reclaim", { ...f, amount: concessionText(e.concession) });
     case "persistent": return roll("event.persistent", f);
     case "afflictionSave": return roll(e.degree <= 1 ? "event.afflictionSaveFail" : "event.afflictionSavePass", f);
+    // A failed save that leaves a condition is told by the condition that follows.
+    case "riderSave": return e.degree > 1 && e.controls ? roll("event.riderSavePass", f) : "";
+    case "opportunity": return roll("event.opportunity", f);
+    case "disengage": return roll("event.disengage", f);
     case "afflictionStage": return roll("event.afflictionStage", f);
     case "afflictionEnd": return roll("event.afflictionEnd", f);
     case "step": return roll("event.step", f);
@@ -404,6 +409,9 @@ function statLine(e) {
       return `${e.actor} → ${e.self ? "self" : e.target}: ${e.action}${e.check ? ` · medicine ${roll(e.check.natural, e.check.mod, e.check.total, e.check.dc, "DC")} · ${DEGREE[e.check.degree]}` : ""} · +${e.amount} HP${e.revived ? " · revived" : ""}`;
     case "move": return `${e.actor} ${{ walk: "walks", fly: "flies", swim: "swims", climb: "climbs", burrow: "burrows" }[e.mode] ?? "moves"} ${e.feet} ft toward ${e.toward}${e.mult > 1.05 ? ` (terrain ×${e.mult.toFixed(2)}${e.regions?.length ? `: ${e.regions.join(", ")}` : ""})` : ""}`;
     case "afflictionSave": return `${e.actor} vs ${e.name} · ${e.saveType} ${roll(e.natural, e.mod, e.total, e.dc, "DC")} · ${DEGREE[e.degree]}`;
+    case "opportunity": return `${e.actor} → ${e.target}: opportunity attack (reaction)`;
+    case "disengage": return `${e.actor}: ${e.label || "disengages"}`;
+    case "riderSave": return `${e.actor} vs ${e.name} · ${e.saveType} ${roll(e.natural, e.mod, e.total, e.dc, "DC")} · ${DEGREE[e.degree]}${e.damage ? ` · ${e.damage} damage` : ""}`;
     case "notice": return `${e.actor} notices (${e.cause})`;
     case "firstAid": return `${e.actor} → ${e.target}: first aid · medicine ${roll(e.natural, e.mod, e.total, e.dc, "DC")} · ${DEGREE[e.degree]} · ${e.stable ? "stabilized" : e.dead ? "dies" : `dying ${e.dying}`}`;
     case "aftermath": return "After the fight";

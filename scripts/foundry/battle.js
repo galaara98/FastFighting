@@ -6,6 +6,7 @@ import { runBatch, runBatchSync, replay, findSample } from "../engine/simulator.
 import { deriveSeed } from "../engine/rng.js";
 import { applyTraitRules, getAdapter, getModifiers } from "../api.js";
 import { computeApproach, computeAwareness, environmentAt, positionOf } from "./terrain.js";
+import { resetPathGrid } from "./pathing.js";
 import { tokenSetup } from "./persistence.js";
 import { tacticsFor, isPlayerControlled } from "./tactics.js";
 import { setting } from "../settings.js";
@@ -308,6 +309,7 @@ export function approachFor(roster, setup) {
 /** Walls and regions change the paths, so forget the cached matrix when they do. */
 export function invalidateApproach() {
   approachCache = { key: null, value: null };
+  resetPathGrid();
 }
 
 /**

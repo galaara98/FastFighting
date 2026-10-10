@@ -66,7 +66,7 @@ Once it notices, it decides from its personality whether to join, watch, or slip
 
 **Make it So:**
 - posts the story to chat;
-- moves each token to where the fight left it (snapped to the grid, never stacked, never through a wall);
+- plays the fight on the map: the tokens run through every move in the story's order, quickly and around walls, then settle where the fight left them (snapped to the grid, never stacked). A setting turns this off, and the tokens go straight to their final spots;
 - writes the outcome onto the tokens through the system's helper: HP, dying, conditions, death, resources spent, loot, the fled and the surrendered.
 
 A confirmation lists every change first. **Undo** reverses it all, chat messages included, and keeps the last five.
@@ -114,12 +114,19 @@ Theft mid-fight is rare; most who want your things take them from your body afte
 - **Rules:** whatever the system's helper provides, such as the turn's actions, degrees of success, attack penalties, advantage, criticals, resistances and dying.
 - **Afflictions:** stage by stage, with onset.
 - **Persistent damage.**
-- **Riders:** knockdown, grab, sneak attack, and pack attack or Pack Tactics.
+- **Riders:** knockdown, grab, sneak attack, pack attack or Pack Tactics, and saves on a hit (a wolf's bite: Strength or prone; a spider's venom: half on a success).
 - **Crowd control:** spells that slow, frighten, trip, immobilize, paralyze or put foes to sleep, by degree of success, for their duration.
   - They're valued by the damage they prevent.
   - The system's tags decide immunity (mental, fear, sleep and others), and some systems let strong targets resist better (PF2e incapacitation).
   - Thinking creatures don't waste them on the immune. Feral casters cast at random, or whatever does the most right now.
 - **Healing:** spells, potions and first aid.
+  - Heals have a range: a touch means walking over first, and a heal that leaves the main action free (a bonus action) is preferred.
+  - Anyone down is back up with any heal, so for them the cheapest way wins.
+- **Opportunity attacks** (in systems that have them; the helper says who can make one):
+  - Walking out of a foe's reach gives it one melee attack, its reaction for the round.
+  - Tactical and Mastermind characters always weigh it: they keep fighting the foe beside them, and when they must leave (to heal, to flee) they get clear safely first (5e Disengage, PF2e Step) if the turn still allows what they're leaving for.
+  - Competent characters think of it half the time; Feral and Instinctive ones never do. A character whose player ticked "roleplaying is very important to me" forgets half the time.
+  - A way out that doesn't cost the main action (5e Nimble Escape, Cunning Action) is second nature to anything that isn't feral.
 - **Personality: Tactical, Brave, Selfish, Loyal,** from 0 to 100 with named bands. They come from creature data and blend with the side's personality.
   - *Feral:* the closest foe, or whoever hurt it last.
   - *Instinctive:* wounded prey; pack hunters gang up.
@@ -128,7 +135,9 @@ Theft mid-fight is rare; most who want your things take them from your body afte
   - *Mastermind:* a side-wide focus, an ambush edge, and the ruthless finish off the downed.
 - **Morale:** losses, wounds, a fallen leader or master, and bad odds, all against Brave. Combatants hold, waver or rout.
 - **Leadership:** the best social or warfare skill, plus commanding features.
-- **Terrain and movement:** travel cost per movement mode from Foundry's region terrain, so rubble doesn't slow a flyer. Walls block sight. A high flyer can't be hit in melee by a ground-bound creature.
+- **Terrain and movement:** travel cost per movement mode from Foundry's region terrain, so rubble doesn't slow a flyer. A high flyer can't be hit in melee by a ground-bound creature.
+- **Walls:** they block sight, and movement goes the shortest way round (a quick grid search over the fighters' part of the map). Climbers go over and burrowers under. With no way round, crossing a wall counts as four times difficult terrain for that square, and a creature that can't manage that in one move gives up on going that way.
+- **Any grid and any units:** distances come from the scene's grid size and units, whatever the system calls them (ft, feet, m, metres ...; a metre counted the table way, 1.5 m to a 5-foot square). Units it doesn't know count each square as 5 ft.
 
 ## Prepare Players
 
@@ -171,7 +180,7 @@ All settings are defaults that the planner can override per battle:
   - handing over an item, default 39;
   - being robbed, default 29.
 - **Story:** style and delivery.
-- **Make it So:** loot, corpse and fled handling.
+- **Make it So:** loot, corpse and fled handling, and whether the fight plays out on the map.
 - **Defaults:** side personalities, and data paths for the generic adapter.
 
 ## For system and module developers
@@ -188,7 +197,7 @@ Hooks.once("fastFighting.init", api => {
     async toCombatantSpec(tokenDoc) { ... }          // see CombatantSpec in scripts/engine/battle-state.js
     deriveTraits(actor) { ... }
     detectLeaders(specs) { ... }
-    difficultyCrossCheck(friendly, hostile) { ... }  // {label: trivial|low|moderate|severe|extreme, xp}
+    difficultyCrossCheck(friendly, hostile) { ... }  // {label: trivial|low|moderate|severe|extreme, text?, xp}
     describeRegionBehavior(behavior) { ... }         // system region behaviors -> {types, difficult, hazardous}
     resourceLabel(key, spec) { ... }
     describeOutcome(spec, final) { ... }
@@ -218,11 +227,14 @@ Declare your system in `module.json` (`relationships.systems`) so Foundry only o
   - `onDropped(unit, {crit, model, amount, overflow})`, `onHealed(unit, amount)` and `recoveryCheck(unit, rng)`;
   - `firstAidDC(unit)`, `firstAid(unit, degree)` and `persistentFlatCheck(rng)`.
 - **Crowd control:** `isImmune(target, action)`, `controlShift(ctx)` and `conditionWeight(key, value)`.
+- **Reactions:** `opportunity(reactor, mover)` returns the strike a creature makes at a foe leaving its reach, or null if it can't; `reactions(u)` (default 1 a round); `disengage(u)` returns `{cost, label}`, how to leave safely. `bestReactionStrike(u)` in core-api picks the usual strike.
 - **What's typical for a level:** `typical.ac`, `save`, `skill` and `dc`.
 - **Per-fight state:** `initUnit(u)` and `capture(u)`.
 - **The story:** `storyDamageType(type)` maps your damage types onto the story's imagery.
 
-Helpers import shared pieces from `scripts/core-api.js`, such as `SystemAdapter`, `parseFormula`, `parseTypedFormula`, `rollD20`, `TALK_KINDS` and `CORE_API_VERSION`.
+Helpers import shared pieces from `scripts/core-api.js`, such as `SystemAdapter`, `parseFormula`, `parseTypedFormula`, `rollD20`, `TALK_KINDS`, `bestReactionStrike` and `CORE_API_VERSION`.
+
+The engine counts distance in feet: give speeds, reach and ranges in feet (convert metric data), and the core converts the scene's grid. Heal actions can carry `reach` (touch) or `range`.
 
 **Other API** on `game.modules.get("fast-fighting").api`:
 - `registerModifier` and `registerTraitRule`;

@@ -24,6 +24,8 @@ import { talkActionsThisTurn, choosePitch, attemptTalk } from "./behavior/talk.j
 import { opensWithTalk, breaksStandoff, standoffPitches, charismaticLeader } from "./behavior/standoff.js";
 import { controlOutcome, isImmune, degreeShift, applyControl } from "./behavior/control.js";
 import { stealChance, theftTarget, theftPlan, attemptTheft } from "./behavior/theft.js";
+import { reactionsPerRound, threats, takesSafeWay } from "./behavior/reactions.js";
+import { normalizeCost } from "./turn.js";
 
 const MAX_STEPS_PER_TURN = 8;
 /** After the last blow, how long the winners keep tending the dying (ten minutes of rounds, at most). */
@@ -133,8 +135,9 @@ function decideToJoin(run, b, cause) {
   if ( selfish > 60 || brave < 30 ) {
     b.status = STATUS.FLED;
     b.fellRound ??= run.round;
+    const from = run.log && b.pos ? { x: b.pos.x, y: b.pos.y } : null;
     moveAway(run, b, (b.spec.speeds?.walk ?? 25) * 2);
-    return log(run, b, "wants no part of it and slips away", { type: "leave" });
+    return log(run, b, "wants no part of it and slips away", { type: "leave", from, to: from ? { x: b.pos.x, y: b.pos.y } : null });
   }
   b.watchUntil = run.round + 2;
   log(run, b, "hangs back, watching", { type: "watch" });
@@ -224,7 +227,7 @@ function dealDamage(run, source, target, amount, { crit = false } = {}) {
       run.firstFallen ??= target.id;
       releaseGrabs(run, target);
       const dead = target.status === STATUS.DEAD;
-      log(run, target, dead ? "is slain" : `falls (dying ${target.dying})`, { type: dead ? "death" : "down", by: source?.spec.name ?? null, byId: source?.id ?? null, dying: target.dying });
+      log(run, target, dead ? "is slain" : `falls${target.dying ? ` (dying ${target.dying})` : ""}`, { type: dead ? "death" : "down", by: source?.spec.name ?? null, byId: source?.id ?? null, dying: target.dying });
     }
   } else if ( target.status === STATUS.DOWN ) {
     if ( model === DOWNED_MODELS.OUT ) return;
@@ -310,8 +313,32 @@ function applyEffects(run, u, action, target, degree) {
       applyControl(target, effect, u.id);
       recomputeConditions(target);
       log(run, target, `is left ${effect.label || "reeling"}`, { type: "condition", by: u.spec.name, effect: effect.label ?? "" });
+    } else if ( effect.kind === "save" && effect.save ) {
+      saveRider(run, u, action, target, effect);
     }
   }
+}
+
+/**
+ * A rider that calls for a save when it hits: a wolf's bite (Strength or be knocked prone), a spider's venom
+ * (Constitution, half damage on a success). {save, damage?, conditions?, rounds?, label?}
+ */
+function saveRider(run, u, action, target, effect) {
+  const rules = run.prep.rules;
+  const { mod, advantage } = saveRoll(run, target, effect.save.type);
+  const roll = rollCheck(rules, run.rng, mod, effect.save.dc, { advantage, kind: "save" });
+  const mult = effect.damage?.length ? saveMultiplier(rules, roll.degree, effect.save) : 0;
+  const hit = mult > 0 ? rollHit(run, u, action, target, effect.damage, mult, false) : null;
+  log(run, target, `${effect.label || action.name}: ${effect.save.type} save ${DEGREE_LABEL[roll.degree]}${hit ? `, ${hit.total} damage` : ""}`, {
+    type: "riderSave", name: effect.label || action.name, by: u.spec.name, saveType: effect.save.type, natural: roll.natural, mod, total: roll.total,
+    dc: effect.save.dc, degree: roll.degree, damage: hit?.total ?? 0, controls: !!effect.conditions
+  });
+  hit?.apply();
+  if ( roll.degree > 1 || !effect.conditions || !isUp(target) ) return;
+  if ( isImmune(run, target, { traits: action.traits, onSave: [effect] }) ) return;
+  applyControl(target, effect, u.id);
+  recomputeConditions(target);
+  log(run, target, `is left ${effect.label || "reeling"}`, { type: "condition", by: u.spec.name, effect: effect.label ?? "" });
 }
 
 /** Roll damage for a hit; returns the total and a function that applies it (so the log reads in order). */
@@ -497,14 +524,47 @@ function executeHeal(run, u, action, target) {
 /*  Turns                                       */
 /* -------------------------------------------- */
 
-function flee(run, u, reason) {
+/**
+ * u is about to walk away from foes beside it (all but `keep`, the one it's heading for). Each that can react
+ * strikes as it goes, unless u, mindful of it, first gets clear safely (5e Disengage, PF2e Step) when what's left
+ * of the turn allows. Afterwards it's no longer beside them. Returns false if u didn't survive leaving.
+ */
+function leaveReach(run, u, turn, keep = null, need = null) {
+  const list = u.disengaged ? [] : threats(run, u, keep);
+  if ( list.length ) {
+    const safe = run.prep.rules.disengage?.(u);
+    if ( takesSafeWay(run, u, safe, turn, need) ) {
+      turn.spend(safe.cost);
+      u.disengaged = true;
+      log(run, u, safe.label ?? "gets clear carefully", { type: "disengage", label: safe.label ?? "" });
+    } else {
+      for ( const { e, strike } of list ) {
+        if ( !isStanding(u) || battleOver(run) ) break;
+        e.reactionsLeft -= 1;
+        log(run, e, `strikes at ${u.spec.name} as they pull away`, { type: "opportunity", target: u.spec.name, targetId: u.id, action: strike.name });
+        executeOffense(run, e, strike, u, 0);
+      }
+    }
+  }
+  for ( const id of [...u.adjacent] ) {
+    if ( keep && id === keep.id ) continue;
+    run.byId.get(id)?.adjacent.delete(u.id);
+    u.adjacent.delete(id);
+  }
+  return isStanding(u);
+}
+
+function flee(run, u, reason, turn = null) {
+  // Turning to run from a foe in reach invites a parting blow.
+  if ( !leaveReach(run, u, turn) ) return;
   u.status = STATUS.FLED;
   u.fellRound ??= run.round;
   for ( const id of u.adjacent ) run.byId.get(id)?.adjacent.delete(u.id);
   u.adjacent.clear();
   releaseGrabs(run, u);
+  const from = run.log && u.pos ? { x: u.pos.x, y: u.pos.y } : null;
   const feet = moveAway(run, u, (Math.max(...Object.values(u.spec.speeds ?? { walk: 25 })) || 25) * 2);
-  log(run, u, reason, { type: "flee", feet, mode: (u.spec.speeds?.fly ?? 0) > 0 ? "fly" : "walk" });
+  log(run, u, reason, { type: "flee", feet, mode: (u.spec.speeds?.fly ?? 0) > 0 ? "fly" : "walk", from, to: from ? { x: u.pos.x, y: u.pos.y } : null });
   // Fleeing into a bystander alerts them; an ally will hear the call for help.
   for ( const b of run.units ) {
     if ( b.active || b.status !== STATUS.STANDING ) continue;
@@ -517,6 +577,7 @@ function moveLog(run, u, move, toward, purpose = "approach") {
   if ( !run.log ) return;
   log(run, u, `${move.mode === "walk" ? "moves" : move.mode === "fly" ? "flies" : move.mode === "swim" ? "swims" : move.mode === "climb" ? "climbs" : "burrows"} toward ${toward.spec.name}`, {
     type: "move", mode: move.mode, feet: move.feet, mult: move.mult, regions: move.regions, toward: toward.spec.name, towardId: toward.id,
+    from: move.from ?? null, to: move.to ?? null,
     reached: move.reached, purpose, tactical: liveTier(run, u), cover: !!u.spec.environment?.nearCover
   });
 }
@@ -566,6 +627,9 @@ function takeTurn(run, u) {
   if ( [STATUS.DEAD, STATUS.FLED, STATUS.SURRENDERED, STATUS.STOOD_DOWN].includes(u.status) ) return;
   if ( !u.active ) return; // bystanders act only once they join
   u.shieldRaised = false;
+  // A creature's reaction comes back at the start of its turn.
+  u.reactionsLeft = reactionsPerRound(rules, u);
+  u.disengaged = false;
 
   if ( u.status === STATUS.DOWN ) {
     if ( options.downedModel === DOWNED_MODELS.SIMULATE && rules.recoveryCheck ) {
@@ -589,21 +653,21 @@ function takeTurn(run, u) {
     log(run, u, { insulted: "takes offense and attacks", beast: "won't wait any longer and attacks" }[cause] ?? "has heard enough and attacks", { type: "breakStandoff", cause });
   }
 
+  // The turn's budget comes from the system (PF2e: three actions; 5e: an action, a bonus action and movement).
+  const turn = turnFor(run, u);
   const morale = checkMorale(run, u);
-  if ( morale === MORALE.ROUT ) return flee(run, u, "breaks and flees");
+  if ( morale === MORALE.ROUT ) return flee(run, u, "breaks and flees", turn);
   if ( morale === MORALE.WAVER && !u.wavering ) {
     u.wavering = true;
     log(run, u, "wavers", { type: "waver" });
   }
 
   const disposition = dispositionOf(u);
-  if ( u.prone && u.wasDowned && disposition.selfRevived === "retreat" ) return flee(run, u, "retreats after being revived");
+  if ( u.prone && u.wasDowned && disposition.selfRevived === "retreat" ) return flee(run, u, "retreats after being revived", turn);
   if ( disposition.allyDying === "retreat" && run.units.some(a => a.side === u.side && a !== u && a.status === STATUS.DOWN && a.active) ) {
-    return flee(run, u, "retreats as an ally falls");
+    return flee(run, u, "retreats as an ally falls", turn);
   }
 
-  // The turn's budget comes from the system (PF2e: three actions; 5e: an action, a bonus action and movement).
-  const turn = turnFor(run, u);
   u.usedThisTurn = null; // once-per-turn riders such as sneak attack
   u.stoleThisTurn = false;
   const basic = rules.basicAction ?? 1; // a simple action: stand, escape, recall knowledge, step
@@ -635,7 +699,7 @@ function takeTurn(run, u) {
 
   // Running for help: head toward an ally who hasn't joined yet and shout.
   const helper = turn.left > 0 && canMove(run, u) ? wantsHelp(run, u) : null;
-  if ( helper ) {
+  if ( helper && leaveReach(run, u, turn, helper) ) {
     for ( let n = 0; n < MAX_STEPS_PER_TURN; n++ ) {
       const budget = turn.payForMove(approach(run, u, helper).speed);
       if ( !budget ) break;
@@ -666,6 +730,16 @@ function takeTurn(run, u) {
 
   for ( let step = 0; turn.any && step < MAX_STEPS_PER_TURN && !battleOver(run); step++ ) {
     const heal = decideHeal(run, u, turn);
+    if ( heal?.moves > 0 ) {
+      // Go to them first (a touch spell, or out of range).
+      if ( !leaveReach(run, u, turn, heal.target, costOf(rules, heal.action)) ) break;
+      const budget = turn.payForMove(approach(run, u, heal.target).speed);
+      if ( !budget ) break;
+      const move = moveToward(run, u, heal.target, heal.action.range ? null : (heal.action.reach ?? 5), budget);
+      turn.usedMove(move.cost);
+      moveLog(run, u, move, heal.target, "tend");
+      continue;
+    }
     if ( heal ) {
       executeHeal(run, u, heal.action, heal.target);
       turn.spend(costOf(rules, heal.action));
@@ -712,6 +786,7 @@ function takeTurn(run, u) {
 
     if ( option.moves > 0 ) {
       if ( !canMove(run, u) ) break;
+      if ( !leaveReach(run, u, turn, target, normalizeCost(rules, option.cost)) ) break;
       // PF2e: a Stride per action. 5e: the rest of the movement, then a Dash.
       const budget = turn.payForMove(approach(run, u, target).speed);
       if ( !budget ) break;

@@ -100,10 +100,10 @@ const TYPE = {
   },
   vitality: {
     hit: ["sears", "blazes into", "burns", "floods", "scours"],
-    wound: ["{target} recoils from the living light", "{target}'s unnatural flesh smokes", "a radiant glow clings to {target}", "{target} shrieks at the touch of life", "the light burns away shadows"],
+    wound: ["{target} recoils from the living light", "{target}'s unnatural flesh smokes", "a radiant glow clings to {target}", "{target} shrieks in the searing light", "the light burns away shadows"],
     graze: ["glows against", "brushes", "warms", "flickers over", "tingles across"],
     miss: ["blooms harmlessly in the air", "fades like dawn mist", "washes past", "glimmers away", "lights the ground instead"],
-    crit: ["bathes {target} in searing radiance", "burns {target} like the noon sun", "blazes through {target}", "leaves {target} smoking and howling", "scours {target} with pure life"],
+    crit: ["bathes {target} in searing radiance", "burns {target} like the noon sun", "blazes through {target}", "leaves {target} smoking and howling", "scours {target} with pure light"],
     botch: ["sputters into a weak glow", "lights the caster up like a lantern", "fades before it lands", "scatters into sparkles", "dims to nothing"]
   },
   void: {
@@ -367,6 +367,10 @@ const EVENT = {
   persistent: ["{actor} keeps burning from the earlier wound.", "{actor} suffers lingering harm.", "The wound keeps hurting {actor}.", "{actor} can't shake the lingering damage.", "{actor} is still suffering."],
   afflictionSaveFail: ["{affliction} takes hold of {actor}.", "{actor} feels {affliction} spreading.", "{actor} sways as {affliction} sets in.", "{affliction} seeps into {actor}.", "{actor} has been afflicted by {affliction}."],
   afflictionSavePass: ["{actor} resists {affliction}.", "{actor} shakes off {affliction}.", "{affliction} fails to take hold of {actor}.", "{actor} fights off {affliction}.", "{actor} is unaffected by {affliction}."],
+  opportunity: ["{actor} lashes out as {target} pulls away.", "{target} turns away, and {actor} makes them pay for it.", "{actor} takes the opening as {target} breaks off.", "{target} leaves {actor} a gap, and {actor} takes it.", "{actor} punishes {target} for turning their back."],
+  disengage: ["{actor} backs off carefully, guard up.", "{actor} gives ground step by step, never turning their back.", "{actor} slips out of reach.", "{actor} disengages with care.", "{actor} edges away, blade still raised."],
+  moveTend: ["{actor} hurries to {target}'s side.", "{actor} pushes through to reach {target}.", "{actor} ducks low and makes for {target}.", "{actor} closes the gap to {target}.", "{actor} runs to {target}."],
+  riderSavePass: ["{actor} keeps their footing.", "{actor} shrugs it off.", "{actor} braces and holds firm.", "{actor} twists free of it.", "{actor} stays steady."],
   afflictionStage: ["{affliction} worsens in {actor}.", "{actor} suffers from {affliction}.", "{affliction} burns through {actor}'s veins.", "{actor} doubles over from {affliction}.", "{affliction} tightens its grip on {actor}."],
   afflictionEnd: ["{actor} recovers from {affliction}.", "{affliction} runs its course in {actor}.", "{actor} finally shakes off {affliction}.", "{affliction} fades from {actor}.", "{actor} is free of {affliction}."],
   coverDuck: ["{target} ducks behind cover.", "{target} presses against the wall as it passes.", "{target} dives behind cover just in time.", "Cover saves {target}.", "{target} drops behind the nearest wall."],

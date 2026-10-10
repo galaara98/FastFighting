@@ -215,6 +215,8 @@ export function createRun(prep) {
   for ( const u of units ) {
     u.baseConds = { ...u.conds };
     prep.rules.initUnit?.(u); // the system's own per-fight state (5e: death saves already on the sheet)
+    // Ready to react from the start (5e opportunity attacks, PF2e Reactive Strike); none if the system has none.
+    u.reactionsLeft = prep.rules.opportunity ? (prep.rules.reactions ? prep.rules.reactions(u) : 1) : 0;
   }
   return {
     prep,
@@ -492,6 +494,8 @@ export function movesNeeded(run, a, t, action) {
  *   feet covered (for the story) and movement spent (feet × terrain)
  */
 export function moveToward(run, a, t, reach = null, budget = null) {
+  run.geo = (run.geo ?? 0) + 1; // someone moved: distances are stale
+  const from = run.log && a.pos ? { x: a.pos.x, y: a.pos.y } : null; // for playing the fight back on the map
   const ap = approach(run, a, t);
   const progress = Number.isFinite(ap.mult) && ap.mult > 0 ? (budget ?? ap.speed) / ap.mult : 0;
   let feet = progress;
@@ -514,12 +518,14 @@ export function moveToward(run, a, t, reach = null, budget = null) {
     t.adjacent.add(a.id);
     reached = true;
   }
-  return { feet: Math.round(feet), cost: feet * (ap.mult ?? 1), mode: ap.mode ?? "walk", mult: ap.mult ?? 1, regions: ap.regions ?? [], reached };
+  return { feet: Math.round(feet), cost: feet * (ap.mult ?? 1), mode: ap.mode ?? "walk", mult: ap.mult ?? 1, regions: ap.regions ?? [], reached,
+    from, to: from ? { x: a.pos.x, y: a.pos.y } : null };
 }
 
 /** Move u away from its nearest foes (fleeing): up to `feet` along the line away from them. */
 export function moveAway(run, u, feet) {
   if ( !u.pos ) return 0;
+  run.geo = (run.geo ?? 0) + 1;
   const foes = run.units.filter(o => o !== u && o.pos && areEnemies(run, u, o) && o.status === STATUS.STANDING);
   if ( !foes.length ) return 0;
   const cx = foes.reduce((s, f) => s + f.pos.x, 0) / foes.length;

@@ -33,6 +33,13 @@ const pct = (p, d = 0) => `${(p * 100).toFixed(d)}%`;
 /** Status key for a creature's end state ("conceded" stood down after giving something up). */
 const statusOf = final => (final.swayed === "conceded" ? "conceded" : final.status);
 
+/** How far a creature must travel to reach its nearest foe, terrain included, to the grid ("40 ft"). */
+function approachDistance(approach) {
+  const grid = canvas.scene?.grid?.distance || 5;
+  const travel = Math.max(grid, Math.round((approach.dist * approach.mult) / grid) * grid);
+  return `${travel} ${canvas.scene?.grid?.units || "ft"}`;
+}
+
 function simulatedDifficulty(results) {
   const win = results.sides.friendly?.pWin ?? 0;
   const death = results.pAnyPcDead;
@@ -178,7 +185,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       const a = row[other.token.id];
       if ( !a ) continue;
       const moves = a.modes?.[a.mode]?.moveActions ?? Math.ceil((a.dist * a.mult) / Math.max(1, a.speed));
-      if ( !best || moves < best.moves ) best = { moves, mode: a.mode, mult: a.mult, dist: a.dist, name: other.spec.name, meleeOk: a.meleeOk };
+      if ( !best || moves < best.moves ) best = { moves, mode: a.mode, mult: a.mult, dist: a.dist, name: other.spec.name, meleeOk: a.meleeOk, blocked: a.blocked, throughWall: a.throughWall };
     }
     return best;
   }
@@ -305,8 +312,9 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       actions: s.actions.map(a => a.name).filter((n, i, arr) => arr.indexOf(n) === i).join(", "),
       speeds: Object.entries(s.speeds ?? {}).map(([k, v]) => `${loc(`FASTFIGHTING.Mode.${k}`)} ${v}`).join(", "),
       approach: approach ? game.i18n.format("FASTFIGHTING.Planner.Approach", {
-        mode: loc(`FASTFIGHTING.Mode.${approach.mode ?? "walk"}`), moves: Number.isFinite(approach.moves) ? approach.moves : "∞", name: approach.name
-      }) + (approach.mult > 1.05 ? ` · ${loc("FASTFIGHTING.Planner.Terrain")} ×${approach.mult.toFixed(2)}` : "") + (approach.meleeOk ? "" : ` · ${loc("FASTFIGHTING.Planner.OutOfReach")}`) : "",
+        mode: loc(`FASTFIGHTING.Mode.${approach.mode ?? "walk"}`), name: approach.name,
+        distance: Number.isFinite(approach.moves) ? approachDistance(approach) : "∞"
+      }) +(approach.mult > 1.05 ? ` · ${loc(approach.throughWall ? "FASTFIGHTING.Planner.ThroughWall" : approach.blocked ? "FASTFIGHTING.Planner.AroundWalls" : "FASTFIGHTING.Planner.Terrain")} ×${approach.mult.toFixed(2)}` : "") + (approach.meleeOk ? "" : ` · ${loc("FASTFIGHTING.Planner.OutOfReach")}`) : "",
       environment: [...(s.environment?.types ?? []), s.environment?.difficult ? loc("FASTFIGHTING.Planner.DifficultHere") : null, s.environment?.hazardous ? loc("FASTFIGHTING.Planner.HazardHere") : null].filter(Boolean).join(", "),
       ignoreTerrain: !!ts.ignoreTerrain,
       diesAtZero: ts.diesAtZero ?? s.diesAtZero,
@@ -387,7 +395,8 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
         histogram,
         simulated: loc(`FASTFIGHTING.Difficulty.${sim}`),
         simulatedClass: sim,
-        crossCheck: r.crossCheck ? { label: r.crossCheck.label, labelLoc: game.i18n.localize(`FASTFIGHTING.Difficulty.${r.crossCheck.label}`), xp: r.crossCheck.xp } : null,
+        // A helper may name the band in its own system's words ("High", "Deadly"); otherwise the core's.
+        crossCheck: r.crossCheck ? { label: r.crossCheck.label, labelLoc: r.crossCheck.text ?? game.i18n.localize(`FASTFIGHTING.Difficulty.${r.crossCheck.label}`), xp: r.crossCheck.xp } : null,
         foes, atRisk, combatants, resources, swing, sample
       },
       sampleFilters: Object.fromEntries(SAMPLE_FILTERS.map(k => [k, `FASTFIGHTING.Sample.${k}`])),

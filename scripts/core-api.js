@@ -14,3 +14,4 @@ export { MODULE_ID, STATUS, SWAY, DOWNED_MODELS, TRAITS, TACTICAL, clamp, fudged
 export { part, parseFormula, parseTypedFormula, samplePart, meanPart, maxPart, doubled, sampleDamage, meanDamage } from "./engine/dice.js";
 export { degreeDistribution, rollD20 } from "./engine/probability.js";
 export { TALK_KINDS } from "./engine/behavior/talk.js";
+export { bestReactionStrike } from "./engine/behavior/reactions.js";

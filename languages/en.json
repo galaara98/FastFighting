@@ -125,6 +125,10 @@
       "theftLuck": {
         "Name": "PC luck: being robbed",
         "Hint": "A thief who beats a player character's defenses still needs a hidden d100 at or under this to take anything. Higher means thieves succeed more often."
+      },
+      "playOnMap": {
+        "Name": "Make it So: play the fight on the map",
+        "Hint": "The tokens run through the fight as the story tells it, quickly and around walls, before settling where the fight left them. Off: they go straight to where they end up."
       }
     },
     "Allegiance": {
@@ -297,7 +301,7 @@
       "RunFailed": "Simulation failed: {error}",
       "FightsWith": "Fights as {side}",
       "SitsOut": "Sits this one out",
-      "Approach": "{mode}, {moves} move actions to reach {name}",
+      "Approach": "{mode} {distance} to reach {name}",
       "Terrain": "terrain",
       "OutOfReach": "can't reach in melee",
       "DifficultHere": "difficult terrain",
@@ -314,7 +318,9 @@
       "ActionFailed": "That didn't work: {error}",
       "Cancel": "Stop",
       "Aftermath": "After the fight",
-      "Opening": "Opening"
+      "Opening": "Opening",
+      "AroundWalls": "around walls",
+      "ThroughWall": "no way round: through a wall"
     },
     "Results": {
       "Tab": {
@@ -410,7 +416,7 @@
       "Remains": "Remains of {name}",
       "Surrendered": "Surrendered",
       "SurrenderedHint": "Laid down arms during a FastFighting battle and is at the victors' mercy.",
-      "Moves": "Moves {feet} ft",
+      "Moves": "Moves {distance}",
       "Hint": "Post this story to chat, move every token to where the fight left it, and commit the outcome. Undo reverses all of it.",
       "Gives": "Gives up {what} to {name}",
       "Receives": "Receives {what} from {name}",

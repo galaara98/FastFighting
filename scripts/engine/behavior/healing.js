@@ -3,8 +3,10 @@
  * PCs follow their GM-entered disposition; monsters scale with Tactical, but always consider healing they have.
  */
 import { STATUS, TACTICAL, clamp } from "../../constants.js";
-import { alliesOf, liveTier, liveTrait, dispositionOf } from "../battle-state.js";
-import { hasUses, costOf } from "./evaluate.js";
+import { alliesOf, liveTier, liveTrait, dispositionOf, movesNeeded, canMove } from "../battle-state.js";
+import { hasUses, costOf, costUnits } from "./evaluate.js";
+import { mainPool } from "../turn.js";
+import { threats, isWary, addCosts } from "./reactions.js";
 import { meanPart } from "../dice.js";
 
 const THRESHOLD = { conservative: 0.3, balanced: 0.45, aggressive: 0.6, allCosts: 0.8 };
@@ -22,6 +24,16 @@ export function healAggroOf(run, u) {
 }
 
 const meanHeal = action => (action.heal ?? []).reduce((s, p) => s + meanPart(p), 0);
+const perTurn = (rules, action) => Math.max(0.1, costUnits(rules, costOf(rules, action)));
+
+/**
+ * Moves needed before a heal reaches its target: none for heals with no range given (or no map), else what it takes
+ * to come within touch (reach) or range, like an attack.
+ */
+export function healMoves(run, u, action, target) {
+  if ( target === u || action.selfOnly || (!action.range && action.reach === undefined) ) return 0;
+  return movesNeeded(run, u, target, action);
+}
 
 /**
  * @param {object} run
@@ -75,15 +87,41 @@ export function decideHeal(run, u, turn) {
 
   // Prefer free (unlimited) healing unless going all out or someone is dying.
   const urgent = best.status === STATUS.DOWN || aggro === "allCosts";
-  const usable = heals
+  // Out of reach: it can still be done this turn if there's movement (or actions) to get there first.
+  const speed = run.prep.approachOf(u.id, best.id).speed;
+  const reachable = a => {
+    const moves = healMoves(run, u, a, best);
+    if ( !moves ) return { a, moves: 0, units: 0 };
+    if ( !Number.isFinite(moves) || !canMove(run, u) ) return null;
+    const units = turn.unitsForMoves(moves, speed);
+    const cost = { ...costOf(rules, a) };
+    const pool = mainPool(rules);
+    cost[pool] = (cost[pool] ?? 0) + units;
+    if ( !turn.canAfford(cost) ) return null;
+    // Walking off from a foe invites a free swing. The wary get clear first if the turn still allows the heal, or
+    // take the risk for a friend who is down; they won't for a scratch.
+    if ( !u.disengaged && threats(run, u, best).length && isWary(run, u) ) {
+      const safe = rules.disengage?.(u);
+      const safely = safe && turn.canAfford(addCosts(cost, safe.cost));
+      if ( !safely && best.status !== STATUS.DOWN ) return null;
+    }
+    return { a, moves, units };
+  };
+  // Healing for what it costs from the turn, the walk there included: a bonus-action heal from afar (5e Healing Word)
+  // leaves the action to fight with; a touch spell (Cure Wounds) heals more but means getting there and using the
+  // action. Anyone down is back up with any heal, so for them the cheapest way wins.
+  const value = o => (best.status === STATUS.DOWN ? 1 + meanHeal(o.a) / 100 : meanHeal(o.a)) / (perTurn(rules, o.a) + o.units);
+  const options = heals
     .filter(a => !a.oncePerTarget || !u.healedTargets.has(`${a.id}|${best.id}`))
     .filter(a => !a.selfOnly || best === u)
     .filter(a => !a.targetTrait || best.spec.creatureTraits?.includes(a.targetTrait))
-    .sort((a, b) => meanHeal(b) / b.cost - meanHeal(a) / a.cost);
+    .map(reachable).filter(Boolean)
+    .sort((x, y) => value(y) - value(x));
+  const usable = options.map(o => o.a);
   const unlimited = usable.filter(a => !a.resource && !Number.isFinite(a.uses));
   const action = urgent ? usable[0] : (unlimited[0] ?? (aggro === "conservative" ? null : usable[0]));
   if ( !action ) return null;
-  return { action, target: best };
+  return { action, target: best, moves: options.find(o => o.a === action)?.moves ?? 0 };
 }
 
 /**

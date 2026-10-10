@@ -12,6 +12,7 @@ import { enemiesOf, isStanding, liveTier, liveTrait, movesNeeded, behaviorOf } f
 import { expectedDamage, hasUses, threatOf, costOf, costUnits, unitsPerTurn } from "./evaluate.js";
 import { mainPool } from "../turn.js";
 import { styleWeight } from "../tactics.js";
+import { threats, isWary } from "./reactions.js";
 
 const limited = a => !!a.resource || Number.isFinite(a.uses);
 
@@ -32,6 +33,7 @@ export function bestOptionVs(run, u, t, attacksMade = 0, turn = null) {
   const main = mainPool(rules);
   const tactics = u.tac;
   const behavior = behaviorOf(u);
+  let wary = null; // worked out only if some option means walking
   const options = [];
   for ( const action of u.prep.offense ) {
     if ( !hasUses(u, action) ) continue;
@@ -45,6 +47,8 @@ export function bestOptionVs(run, u, t, attacksMade = 0, turn = null) {
     const moveUnits = turn ? turn.unitsForMoves(moves, run.prep.approachOf(u.id, t.id).speed) : moves;
     const perAction = ev / Math.max(0.1, amortized + moveUnits);
     let weighted = perAction * styleWeight(tactics, action);
+    // Walking off from another foe invites a free swing: the wary would rather use what reaches from here.
+    if ( moves > 0 && (wary ??= !!run.prep.rules.opportunity && isWary(run, u) && threats(run, u, t).length > 0) ) weighted *= 0.3;
     if ( behavior.meleeBias && action.melee ) weighted *= 1 + behavior.meleeBias;
     if ( behavior.exploitWeakness && (action.damage ?? []).some(p => t.spec.iwr?.weak?.[p.type]) ) weighted *= 1 + behavior.exploitWeakness;
     options.push({ action, moves, moveUnits, ev, perAction, cost, weighted });
@@ -171,10 +175,12 @@ function chooseTargetCore(run, u, behavior) {
     const downed = foes.filter(f => f.status === STATUS.DOWN && !f.stable);
     candidates = candidates.concat(downed);
   }
-  const reachable = candidates
+  let reachable = candidates
     .map(t => ({ t, moves: minMoves(run, u, t) }))
     .filter(x => Number.isFinite(x.moves));
   if ( !reachable.length ) return null;
+  // Engaged with a foe who'd strike as it walks off, a wary fighter keeps to the foes it can hit from where it stands.
+  if ( run.prep.rules.opportunity && reachable.some(x => x.moves === 0) && isWary(run, u) && threats(run, u).length ) reachable = reachable.filter(x => x.moves === 0);
   const rng = run.rng;
   const nearest = () => {
     const min = Math.min(...reachable.map(x => x.moves));

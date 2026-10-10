@@ -7,6 +7,7 @@
  *  - cover: tokens standing beside walls can duck behind them (used by the story writer).
  */
 import { getAdapter } from "../api.js";
+import { pathGridFor, THROUGH_WALL } from "./pathing.js";
 
 const MODES = ["walk", "fly", "swim", "climb", "burrow"];
 
@@ -31,24 +32,56 @@ const HEAR = { baseDC: 8, perFeet: 15, perWall: 6, maxFeet: 300 };
 const VISION_FEET = 240;
 const COVER_FEET = 7.5;
 
+/**
+ * Feet in one of the scene's distance units, whatever the system or the GM calls them ("ft", "feet", "m",
+ * "metres", ...; a metre counted the table way, 1.5 m to a 5-foot square). Units it doesn't know count squares,
+ * five feet each. The engine works in feet; this keeps it right on any grid.
+ */
+const UNIT_FEET = {
+  ft: 1, feet: 1, foot: 1, "'": 1, pi: 1, pieds: 1, "fuß": 1, fuss: 1,
+  m: 10 / 3, meter: 10 / 3, meters: 10 / 3, metre: 10 / 3, metres: 10 / 3, "mètre": 10 / 3, "mètres": 10 / 3, metro: 10 / 3, metros: 10 / 3, metri: 10 / 3,
+  yd: 3, yard: 3, yards: 3, mi: 5280, mile: 5280, miles: 5280, km: 10000 / 3
+};
+export function feetPerUnit(scene = canvas.scene) {
+  const units = String(scene?.grid?.units ?? "").trim().toLowerCase().replace(/\.$/, "");
+  if ( units in UNIT_FEET ) return UNIT_FEET[units];
+  return 5 / (scene?.grid?.distance || 5);
+}
+
+/** Feet across one grid square of the current scene. */
+export function squareFeet() {
+  return canvas.dimensions.distance * feetPerUnit();
+}
+
 function sizeFeet(doc) {
-  return Math.max(doc.width, doc.height) * canvas.dimensions.distance;
+  return Math.max(doc.width, doc.height) * squareFeet();
 }
 
 /** Straight-line distance between the edges of two tokens, in feet (adjacent = 5). */
 function edgeDistance(a, b) {
-  const grid = canvas.dimensions.distance;
+  const grid = squareFeet();
   const pa = { ...a.center, elevation: a.document.elevation };
   const pb = { ...b.center, elevation: b.document.elevation };
-  const center = canvas.grid.measurePath([pa, pb]).distance;
+  const center = canvas.grid.measurePath([pa, pb]).distance * feetPerUnit();
   const extra = (sizeFeet(a.document) + sizeFeet(b.document)) / 2 - grid;
   return Math.max(grid, center - extra);
 }
 
 /** Terrain-aware cost multiplier for moving token a to b using `action`. */
 function terrainMultiplier(a, b, action) {
-  const from = { x: a.document.x, y: a.document.y, elevation: a.document.elevation, action };
-  const to = { x: b.document.x, y: b.document.y, elevation: b.document.elevation, action };
+  // Measure to the space beside the target, not into it: systems charge extra to enter a foe's space (5e counts
+  // it as difficult terrain), and nobody walks into the creature they mean to hit.
+  const size = canvas.grid.size;
+  const beside = (ap, bp, aw, bw) => {
+    if ( ap + aw * size <= bp ) return bp - aw * size; // coming from the left (or above): stop just short
+    if ( ap >= bp + bw * size ) return bp + bw * size; // from the right (or below)
+    return ap;                                         // already level on this axis
+  };
+  const A = a.document;
+  const B = b.document;
+  const from = { x: A.x, y: A.y, elevation: A.elevation, action };
+  const to = { x: beside(A.x, B.x, A.width ?? 1, B.width ?? 1), y: beside(A.y, B.y, A.height ?? 1, B.height ?? 1), elevation: B.elevation, action };
+  if ( to.x === from.x && to.y === from.y ) return 1;
   try {
     const path = a.createTerrainMovementPath([from, to]);
     const measured = a.measureMovementPath(path);
@@ -90,6 +123,9 @@ function regionsCrossed(a, b) {
  */
 export function computeApproach(tokens, specs, { ignoreTerrain = false, ignoreTerrainFor = new Set() } = {}) {
   const approach = {};
+  // Walls: the way around them, from a grid over the fight (or through, at 4x, when there's none).
+  const grid = pathGridFor(tokens);
+  const square = squareFeet();
   for ( const a of tokens ) {
     const specA = specs.get(a.id);
     if ( !specA ) continue;
@@ -103,14 +139,25 @@ export function computeApproach(tokens, specs, { ignoreTerrain = false, ignoreTe
       const dist = edgeDistance(a, b);
       const elevDiff = Math.abs((a.document.elevation ?? 0) - (b.document.elevation ?? 0));
       const blocked = a.checkCollision(b.center, { type: "move", mode: "any" });
+      let throughWall = false;
       const modes = {};
       let best = null;
       for ( const mode of MODES ) {
         const speed = speeds[mode];
         if ( !(speed > 0) ) continue;
         let mult = (ignoreTerrain || ignoreTerrainFor.has(a.id)) ? 1 : terrainMultiplier(a, b, mode);
-        // Blocked by walls: walkers and swimmers detour; climbers go over; burrowers go under.
-        if ( blocked && !["burrow", "climb"].includes(mode) ) mult *= 1.5;
+        // Blocked by walls: walkers, swimmers and flyers go the long way round; climbers go over; burrowers under.
+        // With no way round, through the wall counts as 4x difficult terrain for that square, and a creature
+        // that can't manage that in one move gives up on going that way.
+        if ( blocked && !["burrow", "climb"].includes(mode) ) {
+          const steps = grid?.stepsBetween(a, b);
+          const straight = Math.max(1, dist / square);
+          if ( steps === null || steps === undefined ) mult *= 1.5;
+          else if ( Number.isFinite(steps) ) mult *= Math.max(1, steps / straight);
+          else if ( speed < THROUGH_WALL * square ) mult = Infinity;
+          else mult *= (dist + (THROUGH_WALL - 1) * square) / Math.max(square, dist);
+          throughWall ||= steps === Infinity;
+        }
         if ( !Number.isFinite(mult) ) mult = Infinity;
         modes[mode] = { speed, mult, moveActions: Number.isFinite(mult) ? Math.ceil((dist * mult) / speed) : Infinity };
         const score = (dist * mult) / speed;
@@ -129,6 +176,7 @@ export function computeApproach(tokens, specs, { ignoreTerrain = false, ignoreTe
         meleeOk,
         modes,
         blocked,
+        throughWall,
         regions: best?.mode === "walk" || best?.mode === "swim" ? regionsCrossed(a, b) : []
       };
     }
@@ -188,7 +236,7 @@ function nearestWallFeet(point) {
     const d = Math.hypot(px - (x1 + t * dx), py - (y1 + t * dy));
     best = Math.min(best, d);
   }
-  return (best / canvas.dimensions.size) * canvas.dimensions.distance;
+  return (best / canvas.dimensions.size) * squareFeet();
 }
 
 /** Environment flags for a token from the regions it stands in and the walls beside it. */
@@ -219,15 +267,21 @@ export function environmentAt(token) {
 
 /** Token center in feet, plus its size, for the engine's positions. */
 export function positionOf(token) {
-  const { size, distance } = canvas.dimensions;
-  return { x: (token.center.x / size) * distance, y: (token.center.y / size) * distance, size: sizeFeet(token.document) };
+  const { size } = canvas.dimensions;
+  const feet = squareFeet();
+  // Where the token really is (its center while it animates is wherever the animation has got to).
+  const doc = token.document;
+  const cx = doc._source.x + (doc.width * size) / 2;
+  const cy = doc._source.y + (doc.height * size) / 2;
+  return { x: (cx / size) * feet, y: (cy / size) * feet, size: sizeFeet(doc) };
 }
 
 /** Convert an engine position (feet, center) back to a token's top-left x/y in pixels, snapped to the grid. */
 export function pixelsFor(tokenDoc, position) {
-  const { size, distance } = canvas.dimensions;
-  const cx = (position.x / distance) * size;
-  const cy = (position.y / distance) * size;
+  const { size } = canvas.dimensions;
+  const feet = squareFeet();
+  const cx = (position.x / feet) * size;
+  const cy = (position.y / feet) * size;
   const w = tokenDoc.width * size;
   const h = tokenDoc.height * size;
   const raw = { x: cx - w / 2, y: cy - h / 2 };

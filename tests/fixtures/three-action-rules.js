@@ -4,6 +4,7 @@
  */
 import { DOWNED_MODELS, STATUS } from "../../scripts/constants.js";
 import { doubled } from "../../scripts/engine/dice.js";
+import { bestReactionStrike } from "../../scripts/engine/behavior/reactions.js";
 
 /** Damage types grouped for IWR keys such as "physical" or "energy". */
 const PHYSICAL = new Set(["bludgeoning", "piercing", "slashing", "bleed"]);
@@ -30,6 +31,20 @@ const statusPenalty = u => Math.max(u.conds.frightened ?? 0, u.conds.sickened ??
 export const pf2eRules = {
   id: "pf2e",
   actionsPerTurn: 3,
+
+  /** Reactive Strike: only those who have it; a Step gets clear without triggering it. */
+  reactions() {
+    return 1;
+  },
+  opportunity(reactor) {
+    if ( !reactor.spec.flags?.reactiveStrike ) return null;
+    const c = reactor.conds ?? {};
+    if ( c.incapacitated || c.paralyzed || c.stunned ) return null;
+    return bestReactionStrike(reactor);
+  },
+  disengage() {
+    return { cost: { actions: 1 }, label: "Steps carefully out of reach" };
+  },
   /** A hit always deals at least 1 damage before resistances, however large the penalties. */
   minimumDamage: 1,
 

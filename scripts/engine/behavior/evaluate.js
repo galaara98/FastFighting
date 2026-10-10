@@ -27,6 +27,8 @@ function effectMean(action) {
   for ( const e of action.effects ?? [] ) {
     if ( e.kind === "affliction" ) total += 0.5 * (e.stages?.[0]?.damage ?? []).reduce((s, p) => s + meanPart(p), 0) * 2;
     if ( e.kind === "prone" || e.kind === "grabbed" ) total += 1.5;
+    // A save on a hit: about half the time it bites (the damage), and the condition is worth a little.
+    if ( e.kind === "save" ) total += 0.6 * (e.damage ?? []).reduce((s, p) => s + Math.max(0, meanPart(p)), 0) + (e.conditions ? 0.75 : 0);
   }
   return total;
 }
