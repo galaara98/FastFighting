@@ -6,6 +6,43 @@ import { createRng } from "../scripts/engine/rng.js";
 import { parseFormula } from "../scripts/engine/dice.js";
 import { creature, strike, battle } from "./helpers.js";
 
+describe("every pill", () => {
+  test("does something", () => {
+    for ( const id of PLAYSTYLE_IDS ) {
+      const p = combinePlaystyles([id]);
+      const neutral = combinePlaystyles([]);
+      const changed = Object.keys(p.traits).length || Object.keys(p.suggest).length || Object.keys(p.behavior).length
+        || JSON.stringify(p.desire) !== JSON.stringify(neutral.desire);
+      expect(changed, id).toBeTruthy();
+      // ... and has a say in what the character wants.
+      expect(JSON.stringify(p.desire) !== JSON.stringify(neutral.desire), id).toBe(true);
+    }
+  });
+
+  test("when pills disagree on a tactic, each gets its chance by its place", () => {
+    const p = combinePlaystyles(["cruel", "leader"]); // weakest (first) vs dangerous (second)
+    expect(p.suggest.target).toBe("weakest");
+    expect(p.mix.target).toEqual([{ value: "weakest", weight: 1 }, { value: "dangerous", weight: 0.75 }]);
+    const rng = createRng(7);
+    const spec = { tactics: { target: "weakest" }, tacticsMix: p.mix };
+    let dangerous = 0;
+    for ( let i = 0; i < 2000; i++ ) if ( sampleRunTactics(spec, rng).target === "dangerous" ) dangerous++;
+    expect(dangerous / 2000).toBeGreaterThan(0.38);
+    expect(dangerous / 2000).toBeLessThan(0.48);
+  });
+});
+
+describe("pick order", () => {
+  test("the first pill counts in full, each later one less", () => {
+    const scaredFirst = combinePlaystyles(["scaredyCat", "cruel"]);
+    const cruelFirst = combinePlaystyles(["cruel", "scaredyCat"]);
+    expect(scaredFirst.traits.brave).toBe(-30);
+    expect(cruelFirst.traits.brave).toBeCloseTo(-22.5);
+    expect(cruelFirst.desire.hurt.weakest).toBe(15);
+    expect(scaredFirst.desire.hurt.weakest).toBeCloseTo(11.25);
+  });
+});
+
 describe("playstyle combination", () => {
   test("twenty-four playstyles, at most four count", () => {
     expect(PLAYSTYLE_IDS).toHaveLength(24);

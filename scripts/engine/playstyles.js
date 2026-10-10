@@ -16,6 +16,8 @@
 import { clamp } from "../constants.js";
 
 export const MAX_PLAYSTYLES = 4;
+/** Pills count in the order they were picked: the first in full, each later one less than the one before. */
+export const ORDER_WEIGHTS = Object.freeze([1, 0.75, 0.55, 0.4]);
 export const STAY_TRUE_CAP = 0.1;
 
 /**
@@ -114,10 +116,11 @@ const DESIRE_MULTIPLIERS = ["retaliate", "avenge", "cool", "frustration", "leade
 
 /** The combined desire guide of a character's pills (roleplay leans on it harder; staying true halves it). */
 function combineDesires(chosen, { stayTrue, roleplay }) {
-  const scale = roleplay ? 1.5 : stayTrue ? 0.5 : 1;
+  const base = roleplay ? 1.5 : stayTrue ? 0.5 : 1;
   const out = { hurt: {}, avoid: {}, heal: 0, protect: 0, talk: 0, whim: 0, contrarian: 0 };
   for ( const m of DESIRE_MULTIPLIERS ) out[m] = 1;
-  for ( const id of chosen ) {
+  for ( const [i, id] of chosen.entries() ) {
+    const scale = base * ORDER_WEIGHTS[i];
     const d = PLAYSTYLES[id].desire ?? {};
     for ( const group of ["hurt", "avoid"] ) for ( const [k, v] of Object.entries(d[group] ?? {}) ) out[group][k] = (out[group][k] ?? 0) + v * scale;
     for ( const k of ["heal", "protect", "talk", "whim"] ) out[k] += (d[k] ?? 0) * scale;
@@ -139,20 +142,28 @@ export function intensity({ roleplay = false } = {}) {
  * Aggregate a character's playstyles.
  * @param {string[]} ids
  * @param {{stayTrue?: boolean, roleplay?: boolean}} flags
- * @returns {{ids: string[], traits: object, suggest: object, behavior: object}}
+ * @returns {{ids: string[], traits: object, suggest: object, mix: object, behavior: object, desire: object}}
+ *   suggest: the most likely answer to each tactics question; mix: every pill's vote for it, by weight, so each
+ *   simulated fight can draw one (the first pick most often, the later ones now and then)
  */
 export function combinePlaystyles(ids = [], { stayTrue = false, roleplay = false } = {}) {
   const chosen = ids.filter(id => PLAYSTYLES[id]).slice(0, MAX_PLAYSTYLES);
   const k = intensity({ roleplay });
   const traits = {};
-  const suggest = {};
+  const mix = {};
   const behavior = {};
-  for ( const id of chosen ) {
+  for ( const [i, id] of chosen.entries() ) {
     const p = PLAYSTYLES[id];
-    for ( const [t, v] of Object.entries(p.traits) ) traits[t] = (traits[t] ?? 0) + v * (roleplay ? 2 : 1);
-    for ( const [key, v] of Object.entries(p.suggest) ) suggest[key] ??= v; // first-listed playstyle wins
+    const w = ORDER_WEIGHTS[i]; // the first pick counts most
+    for ( const [t, v] of Object.entries(p.traits) ) traits[t] = (traits[t] ?? 0) + v * w * (roleplay ? 2 : 1);
+    for ( const [key, v] of Object.entries(p.suggest) ) {
+      const votes = mix[key] ??= [];
+      const vote = votes.find(x => x.value === v);
+      if ( vote ) vote.weight += w;
+      else votes.push({ value: v, weight: w });
+    }
     for ( const [b, v] of Object.entries(p.behavior) ) {
-      const scaled = b === "initiative" ? v * k : clamp(v * k, 0, 1);
+      const scaled = b === "initiative" ? v * k * w : clamp(v * k * w, 0, 1);
       behavior[b] = Math.max(behavior[b] ?? 0, scaled);
     }
   }
@@ -165,7 +176,11 @@ export function combinePlaystyles(ids = [], { stayTrue = false, roleplay = false
       behavior[b] = b === "initiative" ? Math.min(behavior[b], 1) : Math.min(behavior[b], STAY_TRUE_CAP);
     }
   }
-  return { ids: chosen, traits, suggest, behavior, desire: combineDesires(chosen, { stayTrue, roleplay }) };
+  // The most likely answer to each question (ties go to the earlier pick).
+  const suggest = {};
+  for ( const [key, votes] of Object.entries(mix) ) suggest[key] = votes.reduce((best, v) => (v.weight > best.weight ? v : best)).value;
+  for ( const key of Object.keys(mix) ) if ( mix[key].length < 2 ) delete mix[key];
+  return { ids: chosen, traits, suggest, mix, behavior, desire: combineDesires(chosen, { stayTrue, roleplay }) };
 }
 
 /**
@@ -176,9 +191,22 @@ export function combinePlaystyles(ids = [], { stayTrue = false, roleplay = false
  */
 export function sampleRunTactics(spec, rng) {
   if ( !spec.tactics ) return null;
-  if ( !spec.stayTrue || !spec.tacticsCalc ) return spec.tactics;
+  let tactics = spec.tactics;
+  // Where its pills disagree, each one's answer gets its chance, in proportion to its place in the order.
+  if ( spec.tacticsMix ) {
+    tactics = { ...tactics };
+    for ( const [key, votes] of Object.entries(spec.tacticsMix) ) {
+      const total = votes.reduce((s, v) => s + v.weight, 0);
+      let r = rng.next() * total;
+      for ( const v of votes ) {
+        r -= v.weight;
+        if ( r <= 0 ) { tactics[key] = v.value; break; }
+      }
+    }
+  }
+  if ( !spec.stayTrue || !spec.tacticsCalc ) return tactics;
   const out = {};
-  for ( const [key, value] of Object.entries(spec.tactics) ) {
+  for ( const [key, value] of Object.entries(tactics) ) {
     const calc = spec.tacticsCalc[key];
     out[key] = (calc === undefined || calc === value || rng.next() < STAY_TRUE_CAP) ? value : calc;
   }

@@ -154,12 +154,19 @@ function applyCharacterTactics(spec, entry) {
   for ( const [k, v] of Object.entries(playstyles.traits) ) {
     if ( spec.traits[k] ) spec.traits[k] = { ...spec.traits[k], fudge: (spec.traits[k].fudge ?? 0) + v };
   }
+  // Questions left to "Let them decide" where the pills disagree: each fight draws one pill's answer, by its place.
+  const mixFor = keys => {
+    const out = Object.fromEntries(Object.entries(playstyles.mix ?? {}).filter(([k]) => keys.includes(k)));
+    return Object.keys(out).length ? out : null;
+  };
   if ( isPlayerControlled(entry.spec, actor) ) {
     spec.tactics = resolved;
     spec.tacticsCalc = calc;
+    spec.tacticsMix = mixFor(Object.keys(playstyles.mix ?? {}).filter(k => [undefined, null, "", "auto"].includes(stored[k])));
   } else if ( Object.keys(playstyles.suggest).length ) {
     spec.tactics = { ...playstyles.suggest };
     spec.tacticsCalc = Object.fromEntries(Object.keys(playstyles.suggest).map(k => [k, calc[k]]));
+    spec.tacticsMix = mixFor(Object.keys(playstyles.mix ?? {}));
   }
   if ( spec.tactics ) {
     spec.disposition = { healAggro: spec.tactics.healAggro, allyDying: spec.tactics.allyDying, selfRevived: spec.tactics.selfRevived };

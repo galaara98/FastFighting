@@ -559,7 +559,7 @@
     },
     "Playstyle": {
       "Label": "Playstyles",
-      "Hint": "Pick up to four labels that describe how this character really plays. They change what \"Let them decide\" means and how the simulation predicts them. The first one picked wins when two disagree.",
+      "Hint": "Pick up to four labels that describe how this character really plays, in order of importance: the number on each pill is its place. Every pill counts, the first in full and each later one less (75%, 55%, 40%): in personality, quirks, desires, and tactics (where pills disagree, each simulated fight goes with one of them, the first most often). Unpick one and the later ones move up. They change what \"Let them decide\" means, how the simulation predicts the character, and how it picks up desires.",
       "Count": "{n} of {max}",
       "Max": "Pick at most four playstyles. Unpick one first.",
       "StayTrue": "Stay mostly true to my calculated tactical level",
