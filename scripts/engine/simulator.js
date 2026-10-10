@@ -915,9 +915,10 @@ export function battleOver(run) {
   return true;
 }
 
-/** Everything "Make it So" needs to commit one unit's end state. */
-function captureUnit(u) {
+/** Everything "Make it So" needs to commit one unit's end state (plus whatever the system keeps: rules.capture). */
+function captureUnit(u, rules) {
   return {
+    system: rules?.capture?.(u) ?? null,
     hp: u.hp,
     temp: u.temp,
     status: u.status,
@@ -958,7 +959,7 @@ function summarize(run, ended, capture, winners) {
       swayed: u.swayOutcome,
       conceded: (u.concessions?.length ?? 0) > 0,
       resourcesUsed: Object.fromEntries(Object.entries(u.resourcesStart).map(([k, v]) => [k, v - (u.resources[k] ?? 0)])),
-      final: capture ? captureUnit(u) : undefined
+      final: capture ? captureUnit(u, run.prep.rules) : undefined
     };
   }
   // Settled with words: it ended and nobody ever struck a blow.

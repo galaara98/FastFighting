@@ -272,6 +272,10 @@ async function revertRecord(r) {
       if ( ids.length ) await actor.deleteEmbeddedDocuments("Item", ids);
     }
     if ( r.deletedItems?.length ) await actor.createEmbeddedDocuments("Item", r.deletedItems, { keepId: true });
+    if ( r.createdEffects?.length ) {
+      const ids = r.createdEffects.filter(id => actor.effects.has(id));
+      if ( ids.length ) await actor.deleteEmbeddedDocuments("ActiveEffect", ids);
+    }
     for ( const { id, update } of r.itemUpdates ?? [] ) await actor.items.get(id)?.update(update);
     for ( const s of r.statuses ?? [] ) await actor.toggleStatusEffect(s.id, { active: s.active, overlay: s.overlay });
     if ( Object.keys(r.actorUpdate ?? {}).length ) await actor.update(r.actorUpdate);

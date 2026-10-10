@@ -76,7 +76,8 @@ export class SystemAdapter {
    * @param {object} spec        The CombatantSpec used in the simulation
    * @param {object} final       Captured end state from the engine
    * @param {object} options     {lootMode, corpseMode, fledMode}
-   * @returns {Promise<object>}  Undo record
+   * @returns {Promise<object>}  Undo record: {tokenUuid, actorUuid, actorUpdate, itemUpdates, createdItems, deletedItems,
+   *   createdEffects, tokenUpdate, createdActors, createdTokens, deletedTokens, statuses, combatant}
    */
   async commitOutcome(tokenDoc, spec, final, options) {
     throw new Error(`${this.constructor.name} does not support Make it So`);

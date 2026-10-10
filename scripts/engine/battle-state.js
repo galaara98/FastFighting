@@ -29,6 +29,7 @@
  * @property {number} [wounded]
  * @property {number} [doomed]
  * @property {number} [dying]               Already dying when the battle starts (a fight resumed mid-way)
+ * @property {boolean} [stable]             At 0 HP: stable (true) or still dying (false); by default stable unless dying > 0
  * @property {Record<string, number|boolean>} [conditions]  Conditions already on the creature (frightened, slowed, ...)
  * @property {object[]} [persistent]        Persistent damage already running: DamagePart[] with persistent: true
  * @property {number} [perception]          Perception modifier, for bystanders noticing a fight
@@ -166,7 +167,8 @@ export function createRun(prep) {
       dying: s.hp.value > 0 ? 0 : Math.max(0, s.dying ?? 0),
       wounded: s.wounded ?? 0,
       doomed: s.doomed ?? 0,
-      stable: s.hp.value <= 0 && !(s.dying > 0),
+      // The system may say outright (5e: a creature at 0 HP is dying until stabilized).
+      stable: s.hp.value <= 0 && (s.stable ?? !(s.dying > 0)),
       prone: !!s.conditions?.prone,
       persistent: (s.persistent ?? []).map(part => ({ part, sourceId: null })),
       resources,
@@ -210,7 +212,10 @@ export function createRun(prep) {
       feetMoved: 0
     };
   });
-  for ( const u of units ) u.baseConds = { ...u.conds };
+  for ( const u of units ) {
+    u.baseConds = { ...u.conds };
+    prep.rules.initUnit?.(u); // the system's own per-fight state (5e: death saves already on the sheet)
+  }
   return {
     prep,
     units,
