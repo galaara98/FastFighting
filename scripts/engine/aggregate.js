@@ -15,7 +15,7 @@ export function createAggregator(prep) {
   const units = {};
   for ( const c of prep.combatants ) {
     units[c.spec.id] = {
-      standing: 0, down: 0, dead: 0, fled: 0, surrendered: 0, switched: 0, talkedDown: 0, atMercy: 0, downed: 0, involved: 0,
+      standing: 0, down: 0, dead: 0, fled: 0, surrendered: 0, stoodDown: 0, switched: 0, talkedDown: 0, atMercy: 0, downed: 0, involved: 0,
       hpFrac: 0, damage: 0, healing: 0, firstToFall: 0, resources: {}
     };
   }
@@ -27,6 +27,7 @@ export function createAggregator(prep) {
   let anyPcDead = 0;
   let anyPcDowned = 0;
   let swayedRuns = 0;
+  let peacefulRuns = 0;
   const pcIds = prep.combatants.filter(c => c.spec.kind === "pc").map(c => c.spec.id);
 
   return {
@@ -50,6 +51,7 @@ export function createAggregator(prep) {
         else if ( r.status === STATUS.DEAD ) u.dead += 1;
         else if ( r.status === STATUS.FLED ) u.fled += 1;
         else if ( r.status === STATUS.SURRENDERED ) u.surrendered += 1;
+        else if ( r.status === STATUS.STOOD_DOWN ) u.stoodDown += 1;
         if ( r.swayed ) {
           u.talkedDown += 1;
           if ( r.swayed === "switched" ) u.switched += 1;
@@ -69,6 +71,7 @@ export function createAggregator(prep) {
       if ( result.firstFallen && units[result.firstFallen] ) units[result.firstFallen].firstToFall += 1;
       if ( pcDead ) anyPcDead += 1;
       if ( anySwayed ) swayedRuns += 1;
+      if ( result.peaceful ) peacefulRuns += 1;
       if ( pcDowned ) anyPcDowned += 1;
     },
 
@@ -99,6 +102,7 @@ export function createAggregator(prep) {
           pDead: u.dead / n,
           pFled: u.fled / n,
           pSurrendered: u.surrendered / n,
+          pStoodDown: u.stoodDown / n,
           pSwitched: u.switched / n,
           pTalkedDown: u.talkedDown / n,
           pInvolved: u.involved / n,
@@ -120,6 +124,7 @@ export function createAggregator(prep) {
         pAnyPcDead: anyPcDead / n,
         pAnyPcDowned: anyPcDowned / n,
         pAnySwayed: swayedRuns / n,
+        pPeaceful: peacefulRuns / n,
         rounds: {
           mean: rounds.reduce((s, r) => s + r, 0) / n,
           median: percentile(sorted, 0.5),

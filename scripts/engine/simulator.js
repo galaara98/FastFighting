@@ -19,6 +19,7 @@ import { checkMorale, MORALE } from "./behavior/morale.js";
 import { expectedDamage, spendUse, countsAsAttack } from "./behavior/evaluate.js";
 import { createAggregator } from "./aggregate.js";
 import { talkActionsThisTurn, choosePitch, attemptTalk } from "./behavior/talk.js";
+import { opensWithTalk, breaksStandoff, standoffPitches } from "./behavior/standoff.js";
 
 const MAX_STEPS_PER_TURN = 8;
 /** After the last blow, how long the winners keep tending the dying (ten minutes of rounds, at most). */
@@ -79,7 +80,10 @@ function cueFrom(run, b, c) {
 
 function notice(run, b, cause, source) {
   b.aware = true;
+  // During a standoff there is no fighting to see or hear, only a tense crowd and raised voices.
+  if ( run.standoff && (cause === "sight" || cause === "sound") ) cause = "standoff";
   const text = {
+    standoff: "notices the tense standoff",
     sight: `sees the fight${source ? ` (${source.spec.name})` : ""}`,
     sound: "hears the sounds of fighting",
     fledInto: `is stumbled into by the fleeing ${source?.spec.name ?? "combatant"}`,
@@ -308,6 +312,7 @@ function rollHit(run, u, action, t, parts, multiplier, crit, minimum = 0) {
 function executeOffense(run, u, action, t, attacksMade) {
   const rules = run.prep.rules;
   u.revealed = true;
+  run.blood = true; // a blow has been struck: whatever happens now, it wasn't settled with words
   const targets = [t];
   if ( action.area ) {
     const others = enemiesOf(run, u).filter(o => o !== t && isStanding(o));
@@ -419,9 +424,22 @@ function moveLog(run, u, move, toward, purpose = "approach") {
   });
 }
 
+/** A turn while the standoff holds: talkers press their case, everyone else keeps their hands off their weapons. */
+function standoffTurn(run, u) {
+  const n = standoffPitches(run, u, actionsThisTurn(run, u));
+  for ( let i = 0; i < n; i++ ) {
+    const pitch = choosePitch(run, u);
+    if ( !pitch ) break;
+    attemptTalk(run, u, pitch, (unit, text, data) => log(run, unit, text, data));
+    if ( battleOver(run) ) break;
+  }
+  u.turnsTaken += 1;
+  endOfTurn(run, u);
+}
+
 function takeTurn(run, u) {
   const { rules, options } = run.prep;
-  if ( u.status === STATUS.DEAD || u.status === STATUS.FLED || u.status === STATUS.SURRENDERED ) return;
+  if ( [STATUS.DEAD, STATUS.FLED, STATUS.SURRENDERED, STATUS.STOOD_DOWN].includes(u.status) ) return;
   if ( !u.active ) return; // bystanders act only once they join
   u.shieldRaised = false;
 
@@ -433,6 +451,14 @@ function takeTurn(run, u) {
     }
     endOfTurn(run, u);
     return;
+  }
+
+  // While a standoff holds, nobody fights; it lasts until someone gets upset.
+  if ( run.standoff ) {
+    const cause = breaksStandoff(run, u);
+    if ( !cause ) return standoffTurn(run, u);
+    run.standoff = false;
+    log(run, u, { insulted: "takes offense and attacks", beast: "won't wait any longer and attacks" }[cause] ?? "has heard enough and attacks", { type: "breakStandoff", cause });
   }
 
   const morale = checkMorale(run, u);
@@ -751,7 +777,8 @@ function summarize(run, ended, capture, winners) {
       final: capture ? captureUnit(u) : undefined
     };
   }
-  return { outcome, winners, rounds: run.round, firstFallen: run.firstFallen, units, log: run.log };
+  // Settled with words: it ended and nobody ever struck a blow.
+  return { outcome, winners, rounds: run.round, firstFallen: run.firstFallen, peaceful: ended && !run.blood, units, log: run.log };
 }
 
 /** Simulate a single battle. */
@@ -769,6 +796,9 @@ export function runOne(prep, seed, { log: withLog = false, capture = false } = {
     const fighters = order.filter(u => u.active);
     log(run, null, `Initiative: ${fighters.map(u => u.spec.name).join(", ")}`, { type: "initiative", order: fighters.map(u => u.spec.name) });
   }
+  // Words before weapons, when the sides would rather talk (or the GM says so).
+  run.standoff = opensWithTalk(run);
+  if ( run.standoff ) log(run, null, "A tense standoff: words before weapons", { type: "standoff" });
 
   const surpriseSide = prep.options.surpriseSide;
   if ( surpriseSide ) {
@@ -790,7 +820,8 @@ export function runOne(prep, seed, { log: withLog = false, capture = false } = {
   if ( withLog ) {
     const labels = winners.map(s => prep.sides[s]?.label ?? s);
     log(run, null, ended ? (labels.length ? `${labels.join(" & ")} win after ${run.round} rounds` : "No one is left standing") : `Still fighting after ${run.round} rounds`, {
-      type: "end", outcome: !ended ? "stalemate" : (winners.length ? "victory" : "none"), winners, winnerLabels: labels, rounds: run.round
+      type: "end", outcome: !ended ? "stalemate" : (winners.length ? "victory" : "none"), winners, winnerLabels: labels, rounds: run.round,
+      peaceful: ended && !run.blood, standoff: !!run.standoff
     });
   }
   if ( ended ) aftermath(run, order);

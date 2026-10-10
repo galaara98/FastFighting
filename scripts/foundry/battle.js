@@ -266,6 +266,7 @@ export function buildBattleSpec(roster, setup, { underdog = null, approach = nul
       morale: options.morale,
       leadership: options.leadership,
       talking: options.talking !== false,
+      opening: options.opening ?? "auto",
       initiativeOrder,
       stealthSides,
       surpriseSide

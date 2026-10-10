@@ -46,7 +46,8 @@
 .ff-field { display: flex; flex-direction: column; gap: 2px; font-size: 11px; color: var(--ff-text-dim); }
 .ff-field input, .ff-field select { font-size: 12px; height: 26px; color: var(--color-text-primary, inherit); }
 .ff-field input[type="number"] { width: 72px; }
-.ff-toggles { display: flex; flex-wrap: wrap; gap: 2px 10px; font-size: 12px; align-self: center; max-width: 260px; }
+.ff-toolbar-row { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 6px 12px; flex-basis: 100%; }
+.ff-toggles { display: flex; flex-wrap: wrap; gap: 2px 12px; font-size: 12px; align-self: center; flex: 1 1 280px; }
 .ff-toggles label, .ff-check { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
 .ff-run-group { display: flex; gap: 6px; align-self: center; }
 .ff-btn {
@@ -314,6 +315,8 @@
 .ff-fate .switched { background: light-dark(#8a5a12, #f0b65b); }
 .ff-kpi.talk .ff-kpi-value { color: light-dark(#2b7fa3, #5bb6db); }
 .ff-status.surrendered { background: light-dark(#2b7fa3, #5bb6db); color: #fff; }
+.ff-fate .stoodDown { background: light-dark(#3f8f6b, #74d1a4); }
+.ff-status.stoodDown { background: light-dark(#3f8f6b, #74d1a4); color: #fff; }
 
 /* ---------- Combat Tracker button ---------- */
 .ff-tracker-open {

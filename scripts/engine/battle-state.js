@@ -73,6 +73,8 @@ export function prepareBattle(spec, rules) {
     morale: true,
     leadership: true,
     talking: true,
+    opening: "auto",
+    aftermath: "tell",
     ...spec.options
   };
   const sides = {};

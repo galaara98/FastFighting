@@ -59,11 +59,15 @@ export const STATUS = Object.freeze({
   DOWN: "down",
   DEAD: "dead",
   FLED: "fled",
-  SURRENDERED: "surrendered"
+  SURRENDERED: "surrendered",
+  STOOD_DOWN: "stoodDown" // persuaded to let it go: out of the conflict, but nobody's prisoner
 });
 
 /** How a talked-down combatant leaves the fight. */
-export const SWAY = Object.freeze({ SURRENDER: "surrendered", FLEE: "fled", SWITCH: "switched" });
+export const SWAY = Object.freeze({ SURRENDER: "surrendered", FLEE: "fled", SWITCH: "switched", STAND_DOWN: "stoodDown" });
+
+/** How an encounter opens: decided by who would rather talk, always with words, or straight into battle. */
+export const OPENING = Object.freeze({ AUTO: "auto", TALK: "talk", FIGHT: "fight" });
 
 export const FUDGE_STEP = Object.freeze({ trait: 5, bonus: 1, multiplier: 0.25 });
 

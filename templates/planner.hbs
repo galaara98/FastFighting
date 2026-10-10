@@ -15,23 +15,6 @@
     <label class="ff-field">{{localize "FASTFIGHTING.Planner.Seed"}}
       <input type="text" name="options.seed" value="{{options.seed}}" placeholder="{{localize "FASTFIGHTING.Planner.Random"}}" size="9">
     </label>
-    <label class="ff-field">{{localize "FASTFIGHTING.Planner.Downed"}}
-      <select name="options.downedModel">{{selectOptions downedChoices selected=options.downedModel localize=true}}</select>
-    </label>
-    <label class="ff-field" data-tooltip="{{localize "FASTFIGHTING.Settings.aftermath.Hint"}}">{{localize "FASTFIGHTING.Planner.Aftermath"}}
-      <select name="options.aftermath">{{selectOptions aftermathChoices selected=options.aftermath localize=true}}</select>
-    </label>
-    <label class="ff-field">{{localize "FASTFIGHTING.Planner.Initiative"}}
-      <select name="options.surprise">{{selectOptions surpriseChoices selected=options.surprise localize=true}}</select>
-    </label>
-    <div class="ff-toggles">
-      <label data-tooltip="{{localize "FASTFIGHTING.Planner.PositioningHint"}}"><input type="checkbox" name="options.positioning" {{checked options.positioning}}> {{localize "FASTFIGHTING.Planner.Positioning"}}</label>
-      <label><input type="checkbox" name="options.morale" {{checked options.morale}}> {{localize "FASTFIGHTING.Planner.Morale"}}</label>
-      <label><input type="checkbox" name="options.leadership" {{checked options.leadership}}> {{localize "FASTFIGHTING.Planner.Leadership"}}</label>
-      <label data-tooltip="{{localize "FASTFIGHTING.Planner.TalkingHint"}}"><input type="checkbox" name="options.talking" {{checked options.talking}}> {{localize "FASTFIGHTING.Planner.Talking"}}</label>
-      <label data-tooltip="{{localize "FASTFIGHTING.Planner.BystandersHint"}}"><input type="checkbox" name="options.bystanders" {{checked options.bystanders}}> {{localize "FASTFIGHTING.Planner.Bystanders"}}</label>
-      <label><input type="checkbox" name="options.includeHidden" {{checked options.includeHidden}}> {{localize "FASTFIGHTING.Planner.Hidden"}}</label>
-    </div>
     <div class="ff-run-group">
       {{#if canUndo}}<button type="button" class="ff-btn" data-action="undo" data-tooltip="{{localize "FASTFIGHTING.MakeItSo.UndoConfirm"}}"><i class="fa-solid fa-rotate-left"></i> {{localize "FASTFIGHTING.MakeItSo.Undo"}}</button>{{/if}}
       <button type="button" class="ff-btn" data-action="refresh" data-tooltip="{{localize "FASTFIGHTING.Planner.RefreshHint"}}"><i class="fa-solid fa-arrows-rotate"></i></button>
@@ -41,6 +24,29 @@
       <button type="button" class="ff-btn ff-run" data-action="run" {{#if running}}disabled{{/if}} {{#unless hasAdapter}}disabled{{/unless}}>
         <i class="fa-solid {{#if running}}fa-spinner fa-spin{{else}}fa-dice-d20{{/if}}"></i> {{localize "FASTFIGHTING.Planner.Run"}}
       </button>
+    </div>
+    {{!-- How the fight plays out --}}
+    <div class="ff-toolbar-row">
+      <label class="ff-field">{{localize "FASTFIGHTING.Planner.Downed"}}
+        <select name="options.downedModel">{{selectOptions downedChoices selected=options.downedModel localize=true}}</select>
+      </label>
+      <label class="ff-field" data-tooltip="{{localize "FASTFIGHTING.Settings.aftermath.Hint"}}">{{localize "FASTFIGHTING.Planner.Aftermath"}}
+        <select name="options.aftermath">{{selectOptions aftermathChoices selected=options.aftermath localize=true}}</select>
+      </label>
+      <label class="ff-field" data-tooltip="{{localize "FASTFIGHTING.Settings.opening.Hint"}}">{{localize "FASTFIGHTING.Planner.Opening"}}
+        <select name="options.opening">{{selectOptions openingChoices selected=options.opening localize=true}}</select>
+      </label>
+      <label class="ff-field">{{localize "FASTFIGHTING.Planner.Initiative"}}
+        <select name="options.surprise">{{selectOptions surpriseChoices selected=options.surprise localize=true}}</select>
+      </label>
+      <div class="ff-toggles">
+        <label data-tooltip="{{localize "FASTFIGHTING.Planner.PositioningHint"}}"><input type="checkbox" name="options.positioning" {{checked options.positioning}}> {{localize "FASTFIGHTING.Planner.Positioning"}}</label>
+        <label><input type="checkbox" name="options.morale" {{checked options.morale}}> {{localize "FASTFIGHTING.Planner.Morale"}}</label>
+        <label><input type="checkbox" name="options.leadership" {{checked options.leadership}}> {{localize "FASTFIGHTING.Planner.Leadership"}}</label>
+        <label data-tooltip="{{localize "FASTFIGHTING.Planner.TalkingHint"}}"><input type="checkbox" name="options.talking" {{checked options.talking}}> {{localize "FASTFIGHTING.Planner.Talking"}}</label>
+        <label data-tooltip="{{localize "FASTFIGHTING.Planner.BystandersHint"}}"><input type="checkbox" name="options.bystanders" {{checked options.bystanders}}> {{localize "FASTFIGHTING.Planner.Bystanders"}}</label>
+        <label><input type="checkbox" name="options.includeHidden" {{checked options.includeHidden}}> {{localize "FASTFIGHTING.Planner.Hidden"}}</label>
+      </div>
     </div>
     <div class="ff-progress {{#if running}}is-running{{/if}}"><span style="width: {{progress}}%"></span></div>
   </header>
@@ -182,6 +188,7 @@
               <div class="ff-kpi danger"><span class="ff-kpi-value">{{results.pcDeath}}</span><span class="ff-kpi-label">{{localize "FASTFIGHTING.Results.PcDeath"}}</span></div>
               <div class="ff-kpi warn"><span class="ff-kpi-value">{{results.pcDowned}}</span><span class="ff-kpi-label">{{localize "FASTFIGHTING.Results.PcDowned"}}</span></div>
               <div class="ff-kpi talk"><span class="ff-kpi-value">{{results.swayed}}</span><span class="ff-kpi-label">{{localize "FASTFIGHTING.Results.Swayed"}}</span></div>
+              {{#if results.peacefulAny}}<div class="ff-kpi talk"><span class="ff-kpi-value">{{results.peaceful}}</span><span class="ff-kpi-label">{{localize "FASTFIGHTING.Results.Peaceful"}}</span></div>{{/if}}
               <div class="ff-kpi"><span class="ff-kpi-value">{{results.rounds.median}}</span><span class="ff-kpi-label">{{localize "FASTFIGHTING.Results.MedianRounds"}} ({{results.rounds.p10}}–{{results.rounds.p90}})</span></div>
               <div class="ff-kpi ff-difficulty {{results.simulatedClass}}"><span class="ff-kpi-value">{{results.simulated}}</span><span class="ff-kpi-label">{{localize "FASTFIGHTING.Results.Simulated"}}{{#if results.crossCheck}} · {{localize "FASTFIGHTING.Results.SystemSays"}} <strong>{{results.crossCheck.labelLoc}}</strong> ({{results.crossCheck.xp}} XP){{/if}}</span></div>
             </div>

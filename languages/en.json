@@ -113,6 +113,10 @@
       "aftermath": {
         "Name": "After the fight",
         "Hint": "When the last enemy falls: the survivors tend their dying (first aid, Battle Medicine, healing) and anyone left untended lives or dies by recovery checks, and the story tells it; or the same happens but the story ends at the last blow; or everyone is left exactly as the fight left them, for you to play out."
+      },
+      "opening": {
+        "Name": "How encounters open",
+        "Hint": "Talk if they'd rather: the encounter opens as a standoff when every side's leader (or most of a leaderless side) would rather talk, or when almost everyone would. Nobody fights until someone gets upset: an insult, failed pitches piling up, a beast that can't follow the talk, or an impatient temper. Always talk first: every encounter opens that way. Straight to battle: no standoff."
       }
     },
     "Allegiance": {
@@ -225,7 +229,8 @@
       "dead": "Dead",
       "fled": "Fled",
       "surrendered": "Surrendered",
-      "switched": "Switched sides"
+      "switched": "Switched sides",
+      "stoodDown": "Stood down"
     },
     "Difficulty": {
       "trivial": "Trivial",
@@ -299,7 +304,8 @@
       "SceneChanged": "You're viewing a different scene now. Run the battle again for this scene.",
       "ActionFailed": "That didn't work: {error}",
       "Cancel": "Stop",
-      "Aftermath": "After the fight"
+      "Aftermath": "After the fight",
+      "Opening": "Opening"
     },
     "Results": {
       "Tab": {
@@ -345,7 +351,8 @@
       "EmptyBody": "Every token on the scene is listed on the left by side. Adjust personalities, allegiances and dispositions, then run thousands of simulated fights.",
       "Swayed": "Foe talked down",
       "TalkedDown": "talked down",
-      "Switched": "Switched sides"
+      "Switched": "Switched sides",
+      "Peaceful": "Settled with words"
     },
     "Swing": {
       "Without": "Without {name}",
@@ -679,6 +686,11 @@
       "tell": "Tend the fallen and tell it",
       "quiet": "Tend the fallen quietly",
       "none": "Stop at the last blow"
+    },
+    "Opening": {
+      "auto": "Talk if they'd rather",
+      "talk": "Always talk first",
+      "fight": "Straight to battle"
     }
   }
 }

@@ -158,13 +158,17 @@ export function talkActionsThisTurn(run, u, actions) {
   return { count: (u.prep.lowBattleWorth && pitch.pSuccess >= 0.35) ? max : 1, pitch };
 }
 
-/** Decide how a convinced enemy leaves the fight. */
-function outcomeFor(run, t) {
+/**
+ * Decide how a convinced enemy leaves the fight. Before any blow is struck (a standoff), reasoning or a bluff
+ * talks them into standing down; threats still make them yield or run.
+ */
+function outcomeFor(run, t, skill) {
   const rng = run.rng;
   const selfish = t.prep.traits.selfish;
   const loyal = t.prep.traits.loyal;
   const switchChance = t.spec.originSide === "neutral" ? 0.6 : clamp(0.03 + (selfish - 50) / 500 + (50 - loyal) / 500, 0, 0.12);
   if ( rng.chance(switchChance) ) return SWAY.SWITCH;
+  if ( run.standoff && skill !== "intimidation" ) return SWAY.STAND_DOWN;
   const hurt = t.maxHp > 0 && t.hp / t.maxHp < 0.5;
   if ( !hurt && selfish >= 55 ) return SWAY.FLEE;
   if ( hurt && t.prep.traits.brave < 40 && rng.chance(0.5) ) return SWAY.FLEE;
@@ -182,9 +186,10 @@ function applyOutcome(run, talker, t, outcome, log) {
     log(t, `is won over and switches sides`, { type: "sway", outcome, by: talker.spec.name, byId: talker.id });
     return;
   }
-  t.status = outcome === SWAY.FLEE ? STATUS.FLED : STATUS.SURRENDERED;
+  t.status = { [SWAY.FLEE]: STATUS.FLED, [SWAY.STAND_DOWN]: STATUS.STOOD_DOWN }[outcome] ?? STATUS.SURRENDERED;
   t.fellRound ??= run.round;
-  log(t, outcome === SWAY.FLEE ? "is talked into leaving and flees" : "lays down arms and surrenders", { type: "sway", outcome, by: talker.spec.name, byId: talker.id });
+  const text = { [SWAY.FLEE]: "is talked into leaving and flees", [SWAY.STAND_DOWN]: "agrees to stand down" }[outcome] ?? "lays down arms and surrenders";
+  log(t, text, { type: "sway", outcome, by: talker.spec.name, byId: talker.id });
 }
 
 /**
@@ -219,7 +224,8 @@ export function attemptTalk(run, talker, pitch, log) {
   // Only a successful pitch closes the deal, even if circumstances have made them easier to convince.
   if ( roll.degree < 2 || progress < steps ) return false;
 
-  applyOutcome(run, talker, t, outcomeFor(run, t), log);
+  const outcome = outcomeFor(run, t, pitch.skill);
+  applyOutcome(run, talker, t, outcome, log);
 
   // A convinced leader can take their side with them.
   const side = run.prep.sides[t.spec.side];
@@ -227,7 +233,7 @@ export function attemptTalk(run, talker, pitch, log) {
     for ( const f of run.units ) {
       if ( f === t || f.side !== t.spec.side || !swayable(f) ) continue;
       const p = 0.4 + (100 - f.prep.traits.brave) / 250 + (f.sway.get(talker.side) ?? 0) * 0.1;
-      if ( run.rng.chance(clamp(p, 0, 0.9)) ) applyOutcome(run, talker, f, SWAY.SURRENDER, log);
+      if ( run.rng.chance(clamp(p, 0, 0.9)) ) applyOutcome(run, talker, f, outcome === SWAY.STAND_DOWN ? SWAY.STAND_DOWN : SWAY.SURRENDER, log);
     }
   }
   return true;

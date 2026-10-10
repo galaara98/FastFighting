@@ -2,7 +2,7 @@
  * The GM's Battle Planner: roster and per-side settings on the left, results on the right.
  */
 import {
-  MODULE_ID, SIDES, TRAITS, ALLEGIANCE, HEAL_AGGRO, DOWNED_MODELS, STATUS, AFTERMATH,
+  MODULE_ID, SIDES, TRAITS, ALLEGIANCE, HEAL_AGGRO, DOWNED_MODELS, STATUS, AFTERMATH, OPENING,
   traitBand, fudged, clamp, FUDGE_STEP
 } from "../constants.js";
 import { getAdapter } from "../api.js";
@@ -243,6 +243,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       options: setup.options,
       downedChoices: Object.fromEntries(Object.values(DOWNED_MODELS).map(k => [k, `FASTFIGHTING.Downed.${k}`])),
       aftermathChoices: Object.fromEntries(Object.values(AFTERMATH).map(k => [k, `FASTFIGHTING.Aftermath.${k}`])),
+      openingChoices: Object.fromEntries(Object.values(OPENING).map(k => [k, `FASTFIGHTING.Opening.${k}`])),
       surpriseChoices: {
         none: "FASTFIGHTING.Surprise.none",
         tracker: "FASTFIGHTING.Surprise.tracker",
@@ -337,6 +338,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
         { cls: "dead", w: (c.pDead * 100).toFixed(1), label: `${loc("FASTFIGHTING.Results.Dead")} ${pct(c.pDead)}` },
         { cls: "fled", w: (c.pFled * 100).toFixed(1), label: `${loc("FASTFIGHTING.Results.Fled")} ${pct(c.pFled)}` },
         { cls: "surrendered", w: (c.pSurrendered * 100).toFixed(1), label: `${loc("FASTFIGHTING.Status.surrendered")} ${pct(c.pSurrendered)}` },
+        { cls: "stoodDown", w: (c.pStoodDown * 100).toFixed(1), label: `${loc("FASTFIGHTING.Status.stoodDown")} ${pct(c.pStoodDown)}` },
         { cls: "switched", w: (c.pSwitched * 100).toFixed(1), label: `${loc("FASTFIGHTING.Results.Switched")} ${pct(c.pSwitched)}` }
       ],
       talkedDown: c.pTalkedDown > 0.0005 ? pct(c.pTalkedDown, 1) : "",
@@ -374,6 +376,8 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
         pcDeath: pct(r.pAnyPcDead, 1),
         pcDowned: pct(r.pAnyPcDowned, 1),
         swayed: pct(r.pAnySwayed ?? 0, 1),
+        peaceful: pct(r.pPeaceful ?? 0, 1),
+        peacefulAny: (r.pPeaceful ?? 0) > 0,
         rounds: r.rounds,
         histogram,
         simulated: loc(`FASTFIGHTING.Difficulty.${sim}`),
@@ -715,6 +719,6 @@ function storyLabels() {
   return {
     hit: l("hit"), crit: l("crit"), miss: l("miss"), resisted: l("resisted"), talked: l("talked"), convincing: l("convincing"),
     healed: l("healed"), potion: l("potion"), firstAid: l("firstAid"), stabilized: l("stabilized"), moved: l("moved"), stayedOut: l("stayedOut"), nothing: l("nothing"),
-    status: Object.fromEntries(["standing", "down", "dead", "fled", "surrendered", "switched"].map(s => [s, loc(`FASTFIGHTING.Status.${s}`)]))
+    status: Object.fromEntries(["standing", "down", "dead", "fled", "surrendered", "stoodDown", "switched"].map(s => [s, loc(`FASTFIGHTING.Status.${s}`)]))
   };
 }

@@ -203,11 +203,11 @@ function narrate(e, roll, rel, fill) {
     case "study": return roll("event.study", f);
     case "parley": return roll("event.parley", f);
     case "callHelp": return roll("event.callHelp", { ...f, target: e.toward });
-    case "notice": return roll({ sight: "event.noticeSight", sound: "event.noticeSound", fledInto: "event.noticeFled", help: "event.noticeHelp", attacked: "event.noticeAttacked" }[e.cause] ?? "event.noticeSound", f);
+    case "notice": return roll({ sight: "event.noticeSight", sound: "event.noticeSound", fledInto: "event.noticeFled", help: "event.noticeHelp", attacked: "event.noticeAttacked", standoff: "event.noticeStandoff" }[e.cause] ?? "event.noticeSound", f);
     case "join": return roll(e.why === "forced" ? "event.joinForced" : "event.join", f);
     case "watch": return roll("event.watch", f);
     case "leave": return roll("event.leave", f);
-    case "sway": return roll({ surrendered: "event.surrender", fled: "event.swayFlee", switched: "event.switch" }[e.outcome] ?? "event.surrender", f);
+    case "sway": return roll({ surrendered: "event.surrender", fled: "event.swayFlee", switched: "event.switch", stoodDown: "event.standDown" }[e.outcome] ?? "event.surrender", f);
     case "persistent": return roll("event.persistent", f);
     case "afflictionSave": return roll(e.degree <= 1 ? "event.afflictionSaveFail" : "event.afflictionSavePass", f);
     case "afflictionStage": return roll("event.afflictionStage", f);
@@ -215,6 +215,8 @@ function narrate(e, roll, rel, fill) {
     case "step": return roll("event.step", f);
     case "surprise": return roll("event.surprise", f);
     case "aftermath": return roll(e.tended ? "event.aftermath" : "event.aftermathAlone", f);
+    case "standoff": return roll("event.standoff", f);
+    case "breakStandoff": return roll({ insulted: "event.breakInsulted", beast: "event.breakBeast" }[e.cause] ?? "event.breakStandoff", f);
     case "firstAid": return roll(e.stable ? "event.firstAid" : e.dead ? "event.death" : "event.firstAidFail", f);
     default: return "";
   }
@@ -225,7 +227,7 @@ function roleplay(result, spec, tables, seed, title) {
   const rel = new Relationships(spec);
   const { mentions } = storyCast(result, spec);
   const paragraphs = [];
-  const opening = result.log.find(e => e.type === "surprise") ? null : roll("event.opening");
+  const opening = result.log.find(e => e.type === "surprise" || e.type === "standoff") ? null : roll("event.opening");
   if ( opening ) paragraphs.push(opening);
   let current = null;
   let lastMoveKey = null;
@@ -266,6 +268,8 @@ function ending(result, spec, end, roll) {
     && result.units[c.id]?.final?.status === "standing" && result.units[c.id]?.final?.active !== false).map(c => c.name);
   const winners = standing.length > 3 ? `${standing.slice(0, 2).join(", ")} and their companions` : standing.length ? listJoin(standing) : (end.winnerLabels ?? []).join(" and ");
   // A lone survivor takes a singular verb ("Lini prevails").
+  if ( end.peaceful ) return roll("event.peace", { winners });
+  if ( end.outcome === "stalemate" && end.standoff ) return roll("event.talksStall", { winners });
   const victory = standing.length === 1 ? "event.victoryOne" : "event.victory";
   return roll(end.outcome === "victory" ? victory : end.outcome === "none" ? "event.noOne" : "event.stalemate", { winners });
 }
@@ -390,5 +394,5 @@ export function buildStory(result, spec, style, { tables, seed = 1, title = "", 
 export const DEFAULT_LABELS = {
   hit: "hit", crit: "critical", miss: "missed", resisted: "resisted", talked: "talked", convincing: "convincing",
   healed: "healed", potion: "potion(s)", firstAid: "first aid", stabilized: "stabilized", moved: "moved", stayedOut: "stayed out of it", nothing: "did nothing of note",
-  status: { standing: "standing", down: "down", dead: "dead", fled: "fled", surrendered: "surrendered", switched: "switched sides" }
+  status: { standing: "standing", down: "down", dead: "dead", fled: "fled", surrendered: "surrendered", stoodDown: "stood down", switched: "switched sides" }
 };
