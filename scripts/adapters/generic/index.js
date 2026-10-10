@@ -70,6 +70,7 @@ export class GenericAdapter extends SystemAdapter {
       }],
       iwr: {},
       resources: {},
+      social: { diplomacy: Math.ceil(level / 2) + 2, intimidation: Math.ceil(level / 2) + 2, willDC: 10 + bonus, perceptionDC: 10 + bonus, languages: ["common"], mindless: false },
       traits: Object.fromEntries(Object.entries(derived.traits).map(([k, v]) => [k, { base: v, fudge: 0 }])),
       traitReasons: derived.reasons,
       flags: {},
@@ -91,6 +92,8 @@ export class GenericAdapter extends SystemAdapter {
     if ( final.hp !== spec.hp.value ) lines.push(`HP ${spec.hp.value} → ${final.hp}`);
     if ( final.status === STATUS.DEAD ) lines.push("Dead");
     else if ( final.status === STATUS.FLED ) lines.push("Fled the battle (token hidden)");
+    else if ( final.status === STATUS.SURRENDERED ) lines.push("Surrenders");
+    if ( final.swayed === "switched" ) lines.push("Switches sides");
     else if ( final.status === STATUS.DOWN ) lines.push("Down");
     return lines;
   }

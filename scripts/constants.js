@@ -56,8 +56,12 @@ export const STATUS = Object.freeze({
   STANDING: "standing",
   DOWN: "down",
   DEAD: "dead",
-  FLED: "fled"
+  FLED: "fled",
+  SURRENDERED: "surrendered"
 });
+
+/** How a talked-down combatant leaves the fight. */
+export const SWAY = Object.freeze({ SURRENDER: "surrendered", FLEE: "fled", SWITCH: "switched" });
 
 export const FUDGE_STEP = Object.freeze({ trait: 5, bonus: 1, multiplier: 0.25 });
 

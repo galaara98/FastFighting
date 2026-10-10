@@ -101,6 +101,10 @@
         "Name": "Side personality defaults",
         "Label": "Configure",
         "Hint": "Default group Tactical, Brave, Selfish and Loyal values for Friendly, Hostile, Neutral and Secret sides."
+      },
+      "talking": {
+        "Name": "Talking",
+        "Hint": "Characters may try to de-escalate: talk enemies who share a language into surrendering, fleeing, or (rarely, unless neutral) switching sides."
       }
     },
     "Allegiance": {
@@ -234,7 +238,8 @@
       "standing": "Standing",
       "down": "Down",
       "dead": "Dead",
-      "fled": "Fled"
+      "fled": "Fled",
+      "surrendered": "Surrendered"
     },
     "Difficulty": {
       "trivial": "Trivial",
@@ -301,7 +306,9 @@
       "DifficultHere": "difficult terrain",
       "HazardHere": "hazard region",
       "ControlledBy": "Controlled by",
-      "Fudge": "fudge"
+      "Fudge": "fudge",
+      "Talking": "Talking",
+      "TalkingHint": "Let characters talk foes down mid-fight (Diplomacy, Intimidation, Deception)"
     },
     "Results": {
       "Tab": {
@@ -344,7 +351,10 @@
       "FocusPoint": "Focus Point",
       "SlotRank": "Rank {rank} slot",
       "EmptyTitle": "Plan the battle, then Run",
-      "EmptyBody": "Every token on the scene is listed on the left by side. Adjust personalities, allegiances and dispositions, then run thousands of simulated fights."
+      "EmptyBody": "Every token on the scene is listed on the left by side. Adjust personalities, allegiances and dispositions, then run thousands of simulated fights.",
+      "Swayed": "Foe talked down",
+      "TalkedDown": "talked down",
+      "Switched": "Switched sides"
     },
     "Swing": {
       "Without": "Without {name}",
@@ -387,7 +397,9 @@
       "UndoTitle": "Undo Make it So",
       "UndoConfirm": "Restore the tokens to how they were before the last Make it So on this scene?",
       "Undone": "Make it So was undone.",
-      "Remains": "Remains of {name}"
+      "Remains": "Remains of {name}",
+      "Surrendered": "Surrendered",
+      "SurrenderedHint": "Laid down arms during a FastFighting battle and is at the victors' mercy."
     },
     "Report": {
       "Title": "Sizing up the battle",
@@ -404,14 +416,16 @@
         "Length": "Median length {median} rounds (most fights {p10}–{p90}).",
         "Death": "Chance at least one PC dies: {death}. Chance someone is knocked down: {downed}.",
         "Member": "{name}: standing at the end {standing}, killed {dead}.",
-        "Deadliest": "Most dangerous: {name} (averages {damage} damage)."
+        "Deadliest": "Most dangerous: {name} (averages {damage} damage).",
+        "Talk": "Chance at least one foe is talked down: {p}."
       },
       "Analyst": {
         "Odds": "Roughly {win} in your favor.",
         "Length": "Expect {p10} to {p90} rounds.",
         "Death": "About 1 in {n} of these fights kills someone.",
         "NoDeath": "Deaths are very unlikely.",
-        "Deadliest": "Watch out for {name}."
+        "Deadliest": "Watch out for {name}.",
+        "Talk": "About {p} of the time, someone can be talked out of fighting."
       },
       "Tactician": {
         "Odds": {
@@ -433,7 +447,8 @@
           "low": "Death is possible but unlikely.",
           "none": "No one should die."
         },
-        "Deadliest": "The biggest threat: {name}."
+        "Deadliest": "The biggest threat: {name}.",
+        "Talk": "Words may win part of this fight."
       },
       "Story": {
         "Odds": {
@@ -453,7 +468,8 @@
           "short": "It will be quick and brutal.",
           "long": "It will be a long, hard struggle.",
           "grinding": "It will grind on until someone breaks."
-        }
+        },
+        "Talk": "Not every foe here seems eager to die for this."
       },
       "Roleplayer": {
         "overwhelming": "Your foes look small and uncertain before you.",
@@ -550,6 +566,13 @@
       "notes": {
         "Label": "Anything else the GM should know",
         "Hint": "For example: protect Ezren at all costs; won't harm the dog."
+      },
+      "talk": {
+        "Label": "Talking instead of fighting",
+        "Hint": "Whether this character tries to end fights with words: persuading, threatening or bluffing foes who share a language into surrendering, fleeing or switching sides. It takes several successes to convince most foes, and anyone this character has hurt or failed to convince is much harder to sway.",
+        "first": "Talk first: try to end it with words",
+        "opportune": "Talk when it could work",
+        "never": "Let my weapons do the talking"
       }
     },
     "Survey": {

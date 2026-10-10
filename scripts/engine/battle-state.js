@@ -50,6 +50,8 @@
  */
 import { STATUS, clamp, fudged, tacticalTier, TRAITS } from "../constants.js";
 import { meanPart } from "./dice.js";
+import { typicalValue } from "./tactics.js";
+import { talkAffinity } from "./behavior/talk.js";
 
 const DEFAULT_APPROACH = Object.freeze({ dist: 5, mult: 1, speed: 25, mode: "walk", los: true, meleeOk: true });
 const SIDE_WEIGHT = 0.3;
@@ -64,6 +66,7 @@ export function prepareBattle(spec, rules) {
     positioning: true,
     morale: true,
     leadership: true,
+    talking: true,
     ...spec.options
   };
   const sides = {};
@@ -107,6 +110,16 @@ export function prepareBattle(spec, rules) {
       healActions: c.actions.filter(a => a.kind === "heal").sort((x, y) => meanHeal(y) / y.cost - meanHeal(x) / x.cost),
       offense: c.actions.filter(a => a.kind !== "heal")
     };
+  });
+
+  // Battle-worthiness: offense compared with everyone else on the field. The weakest may talk twice a turn.
+  const offense = combatants.map(c => Math.max(0, ...c.offense.map(a => typicalValue(a, c.spec.level ?? 1))));
+  const sorted = [...offense].sort((a, b) => a - b);
+  const median = sorted[Math.floor(sorted.length / 2)] ?? 0;
+  combatants.forEach((c, i) => {
+    c.offensePower = offense[i];
+    c.lowBattleWorth = median > 0 && offense[i] < median * 0.5;
+    c.talkAffinity = talkAffinity(c.spec, c.traits);
   });
 
   const byId = new Map(combatants.map(c => [c.spec.id, c]));
@@ -161,7 +174,13 @@ export function createRun(prep) {
       grabbedBy: null,
       tac: s.tactics ?? null, // replaced per fight by sampleRunTactics in runOne
       studied: new Set(),
-      parleyed: false
+      parleyed: false,
+      turnsTaken: 0,
+      harmedBy: new Map(),   // attackerId -> damage dealt to this unit
+      rebuffed: new Map(),   // talkerId -> failed pitches
+      offendedBy: new Set(), // talkers this unit will no longer listen to
+      sway: new Map(),       // talker side -> persuasion progress
+      swayOutcome: null
     };
   });
   return {

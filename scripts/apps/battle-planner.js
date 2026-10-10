@@ -309,8 +309,11 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
         { cls: "standing", w: (c.pStanding * 100).toFixed(1), label: `${loc("FASTFIGHTING.Results.Standing")} ${pct(c.pStanding)}` },
         { cls: "down", w: (c.pDown * 100).toFixed(1), label: `${loc("FASTFIGHTING.Results.Down")} ${pct(c.pDown)}` },
         { cls: "dead", w: (c.pDead * 100).toFixed(1), label: `${loc("FASTFIGHTING.Results.Dead")} ${pct(c.pDead)}` },
-        { cls: "fled", w: (c.pFled * 100).toFixed(1), label: `${loc("FASTFIGHTING.Results.Fled")} ${pct(c.pFled)}` }
+        { cls: "fled", w: (c.pFled * 100).toFixed(1), label: `${loc("FASTFIGHTING.Results.Fled")} ${pct(c.pFled)}` },
+        { cls: "surrendered", w: (c.pSurrendered * 100).toFixed(1), label: `${loc("FASTFIGHTING.Status.surrendered")} ${pct(c.pSurrendered)}` },
+        { cls: "switched", w: (c.pSwitched * 100).toFixed(1), label: `${loc("FASTFIGHTING.Results.Switched")} ${pct(c.pSwitched)}` }
       ],
+      talkedDown: c.pTalkedDown > 0.0005 ? pct(c.pTalkedDown, 1) : "",
       standing: pct(c.pStanding), dead: pct(c.pDead), downed: pct(c.pDowned), fled: pct(c.pFled),
       hpLeft: pct(c.meanHpFrac), damage: c.meanDamage.toFixed(1), healing: c.meanHealing.toFixed(1), first: pct(c.pFirstToFall)
     }));
@@ -345,6 +348,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
         partyWin: pct(r.sides.friendly?.pWin ?? 0, 1),
         pcDeath: pct(r.pAnyPcDead, 1),
         pcDowned: pct(r.pAnyPcDowned, 1),
+        swayed: pct(r.pAnySwayed ?? 0, 1),
         rounds: r.rounds,
         histogram,
         simulated: loc(`FASTFIGHTING.Difficulty.${sim}`),

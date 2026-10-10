@@ -25,6 +25,7 @@
       <label data-tooltip="{{localize "FASTFIGHTING.Planner.PositioningHint"}}"><input type="checkbox" name="options.positioning" {{checked options.positioning}}> {{localize "FASTFIGHTING.Planner.Positioning"}}</label>
       <label><input type="checkbox" name="options.morale" {{checked options.morale}}> {{localize "FASTFIGHTING.Planner.Morale"}}</label>
       <label><input type="checkbox" name="options.leadership" {{checked options.leadership}}> {{localize "FASTFIGHTING.Planner.Leadership"}}</label>
+      <label data-tooltip="{{localize "FASTFIGHTING.Planner.TalkingHint"}}"><input type="checkbox" name="options.talking" {{checked options.talking}}> {{localize "FASTFIGHTING.Planner.Talking"}}</label>
       <label><input type="checkbox" name="options.includeHidden" {{checked options.includeHidden}}> {{localize "FASTFIGHTING.Planner.Hidden"}}</label>
     </div>
     <div class="ff-run-group">
@@ -172,6 +173,7 @@
               <div class="ff-kpi"><span class="ff-kpi-value">{{results.partyWin}}</span><span class="ff-kpi-label">{{localize "FASTFIGHTING.Results.PartyWins"}}</span></div>
               <div class="ff-kpi danger"><span class="ff-kpi-value">{{results.pcDeath}}</span><span class="ff-kpi-label">{{localize "FASTFIGHTING.Results.PcDeath"}}</span></div>
               <div class="ff-kpi warn"><span class="ff-kpi-value">{{results.pcDowned}}</span><span class="ff-kpi-label">{{localize "FASTFIGHTING.Results.PcDowned"}}</span></div>
+              <div class="ff-kpi talk"><span class="ff-kpi-value">{{results.swayed}}</span><span class="ff-kpi-label">{{localize "FASTFIGHTING.Results.Swayed"}}</span></div>
               <div class="ff-kpi"><span class="ff-kpi-value">{{results.rounds.median}}</span><span class="ff-kpi-label">{{localize "FASTFIGHTING.Results.MedianRounds"}} ({{results.rounds.p10}}–{{results.rounds.p90}})</span></div>
               <div class="ff-kpi ff-difficulty {{results.simulatedClass}}"><span class="ff-kpi-value">{{results.simulated}}</span><span class="ff-kpi-label">{{localize "FASTFIGHTING.Results.Simulated"}}{{#if results.crossCheck}} · {{localize "FASTFIGHTING.Results.SystemSays"}} <strong>{{results.crossCheck.labelLoc}}</strong> ({{results.crossCheck.xp}} XP){{/if}}</span></div>
             </div>
@@ -205,7 +207,7 @@
               <tr>
                 <td><span class="ff-dot {{sideClass}}"></span>{{name}}</td>
                 <td><div class="ff-fate">{{#each bars}}<span class="{{cls}}" style="width: {{w}}%" data-tooltip="{{label}}"></span>{{/each}}</div>
-                  <small>{{localize "FASTFIGHTING.Results.Standing"}} {{standing}} · {{localize "FASTFIGHTING.Results.Dead"}} {{dead}} · {{localize "FASTFIGHTING.Results.Fled"}} {{fled}}</small></td>
+                  <small>{{localize "FASTFIGHTING.Results.Standing"}} {{standing}} · {{localize "FASTFIGHTING.Results.Dead"}} {{dead}} · {{localize "FASTFIGHTING.Results.Fled"}} {{fled}}{{#if talkedDown}} · {{localize "FASTFIGHTING.Results.TalkedDown"}} {{talkedDown}}{{/if}}</small></td>
                 <td>{{hpLeft}}</td><td>{{damage}}</td><td>{{healing}}</td><td>{{first}}</td>
               </tr>
             {{/each}}

@@ -173,6 +173,7 @@ export function buildBattleSpec(roster, setup, { underdog = null, approach = nul
     const ts = tokenSetup(setup, e.token.id);
     const spec = applyStatFudges(e.spec, ts.fudge);
     spec.side = side;
+    spec.originSide = e.baseSide;
     spec.traits = fudgedTraits(e.spec, ts.fudge);
     applyCharacterTactics(spec, e);
     if ( ts.diesAtZero !== undefined ) spec.diesAtZero = ts.diesAtZero;
@@ -239,6 +240,7 @@ export function buildBattleSpec(roster, setup, { underdog = null, approach = nul
       positioning: options.positioning && !!approach,
       morale: options.morale,
       leadership: options.leadership,
+      talking: options.talking !== false,
       initiativeOrder,
       stealthSides,
       surpriseSide

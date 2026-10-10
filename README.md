@@ -112,6 +112,17 @@ Every derived number has **fudge up / fudge down / remove fudge** buttons. A fud
   - A flyer above a ground-bound creature's reach can't be hit in melee by it.
   - PF2e environment regions (such as aquatic) are read for each token.
 - **Initiative:** from the combat tracker when one exists, Stealth for hidden or Secret ambushers, or a surprise round for either side.
+- **Talking:** a fight can be de-escalated at any point.
+  - **The pitch:** a character may spend actions talking to an enemy who shares a language with them, using Diplomacy, Intimidation or Deception against the enemy's Will or Perception DC.
+  - **The persuasion track:** each success moves the enemy along it. Most foes need 2–6 successes; only the very gullible fold at once. Being wounded, outnumbered, or neutral makes a foe easier to sway. Only a successful pitch closes the deal.
+  - **Grudges:** anyone the talker has hurt, failed to convince before, or whose friends they hurt is much harder to sway. A critical failure means that foe won't listen to them again.
+  - **Outcomes:** the convinced foe surrenders, flees, or switches sides (likely for Neutrals, rare otherwise). A convinced leader can take their followers with them.
+  - **Who talks:**
+    - Talkers (strong social skills, the Diplomat / Leader / People-Pleaser playstyles, or a "Talk first" answer) always get to start on their first turn.
+    - Characters who aren't very battle-worthy may spend two actions talking instead of attacking.
+    - Anyone else may make one quip a turn when it looks promising.
+  - **Can't be swayed:** mindless creatures, foes with no shared language, and hidden ambushers that haven't attacked yet. PCs aren't swayed either; their players decide.
+  - Make it So marks surrendered foes with a "Surrendered" effect and flips the disposition (and PF2e alliance) of those who switched sides.
 
 ## Make it So
 

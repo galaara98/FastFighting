@@ -14,6 +14,7 @@ import { decideHeal } from "./behavior/healing.js";
 import { checkMorale, MORALE } from "./behavior/morale.js";
 import { expectedDamage, spendUse, countsAsAttack } from "./behavior/evaluate.js";
 import { createAggregator } from "./aggregate.js";
+import { talkActionsThisTurn, choosePitch, attemptTalk } from "./behavior/talk.js";
 
 const MAX_STEPS_PER_TURN = 8;
 const DEGREE_LABEL = ["critical failure", "failure", "success", "critical success"];
@@ -60,7 +61,10 @@ function dealDamage(run, source, target, amount, { crit = false } = {}) {
     const rest = amount - absorbed;
     const dealt = Math.min(rest, target.hp);
     target.hp -= rest;
-    if ( source ) source.damageDealt += dealt + absorbed;
+    if ( source ) {
+      source.damageDealt += dealt + absorbed;
+      target.harmedBy.set(source.id, (target.harmedBy.get(source.id) ?? 0) + dealt + absorbed);
+    }
     if ( target.hp <= 0 ) {
       target.hp = 0;
       target.wasDowned = true;
@@ -157,6 +161,7 @@ function rollHit(run, u, action, t, parts, multiplier, crit) {
 
 function executeOffense(run, u, action, t, attacksMade) {
   const rules = run.prep.rules;
+  u.revealed = true;
   const targets = [t];
   if ( action.area ) {
     const others = enemiesOf(run, u).filter(o => o !== t && isStanding(o));
@@ -269,10 +274,10 @@ function takeTurn(run, u) {
 
   let actions = actionsThisTurn(run, u);
   const behavior = behaviorOf(u);
-  // Diplomats open by trying to talk.
+  // Diplomats with no one who understands them still try to talk.
   if ( !u.parleyed ) {
     u.parleyed = true;
-    if ( behavior.parleyFirst && actions > 0 && run.rng.chance(behavior.parleyFirst) ) {
+    if ( behavior.parleyFirst && actions > 0 && !u.spec.social && run.rng.chance(behavior.parleyFirst) ) {
       actions -= 1;
       log(run, u, "tries to talk the other side down");
     }
@@ -292,7 +297,17 @@ function takeTurn(run, u) {
     } else log(run, u, "struggles against the grab");
   }
 
-  for ( let step = 0; actions > 0 && step < MAX_STEPS_PER_TURN; step++ ) {
+  // Words before weapons: talkers sway, the less battle-worthy talk twice, anyone may quip.
+  const talking = talkActionsThisTurn(run, u, actions);
+  for ( let i = 0; i < talking && actions > 0; i++ ) {
+    const pitch = choosePitch(run, u);
+    if ( !pitch ) break;
+    attemptTalk(run, u, pitch, (unit, text) => log(run, unit, text));
+    actions -= 1;
+    if ( battleOver(run) ) break;
+  }
+
+  for ( let step = 0; actions > 0 && step < MAX_STEPS_PER_TURN && !battleOver(run); step++ ) {
     const heal = decideHeal(run, u, actions);
     if ( heal ) {
       executeHeal(run, u, heal.action, heal.target);
@@ -374,6 +389,7 @@ function takeTurn(run, u) {
     if ( battleOver(run) ) break;
   }
 
+  u.turnsTaken += 1;
   endOfTurn(run, u);
 }
 
@@ -441,6 +457,8 @@ function captureUnit(u) {
     persistent: u.persistent.map(e => ({ type: e.part.type, part: e.part })),
     afflictions: u.afflictions.map(a => ({ id: a.spec.id, name: a.spec.name, slug: a.spec.slug ?? null, stage: a.stage, rounds: a.rounds, dc: a.spec.save.dc, save: a.spec.save.type })),
     conditions: { ...u.conds },
+    swayed: u.swayOutcome,
+    side: u.side,
     resources: { ...u.resources },
     uses: { ...u.uses },
     killerId: u.killerId ?? null
@@ -461,6 +479,7 @@ function summarize(run, ended, capture) {
       damage: u.damageDealt,
       healing: u.healingDone,
       fellRound: u.fellRound,
+      swayed: u.swayOutcome,
       resourcesUsed: Object.fromEntries(Object.entries(u.resourcesStart).map(([k, v]) => [k, v - (u.resources[k] ?? 0)])),
       final: capture ? captureUnit(u) : undefined
     };

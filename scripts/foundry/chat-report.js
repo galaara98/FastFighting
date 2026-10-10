@@ -62,6 +62,7 @@ export function buildReport(results, spec, accuracy, { hideEnemyNames = true } =
         lines.push(t("Stat.Member", { name: c.name, standing: pct(c.pStanding), dead: pct(c.pDead) }));
       }
       if ( deadliestName ) lines.push(t("Stat.Deadliest", { name: deadliestName, damage: deadliest.meanDamage.toFixed(1) }));
+      if ( (results.pAnySwayed ?? 0) >= 0.01 ) lines.push(t("Stat.Talk", { p: pct(results.pAnySwayed, 1) }));
       break;
     }
     case "analyst": {
@@ -70,6 +71,7 @@ export function buildReport(results, spec, accuracy, { hideEnemyNames = true } =
       const n = oneIn(death);
       lines.push(n && death >= 0.01 ? t("Analyst.Death", { n }) : t("Analyst.NoDeath"));
       if ( deadliestName ) lines.push(t("Analyst.Deadliest", { name: deadliestName }));
+      if ( (results.pAnySwayed ?? 0) >= 0.05 ) lines.push(t("Analyst.Talk", { p: round5(results.pAnySwayed) }));
       break;
     }
     case "tactician": {
@@ -77,6 +79,7 @@ export function buildReport(results, spec, accuracy, { hideEnemyNames = true } =
       lines.push(t(`Tactician.Length.${lengthBand(rounds.median)}`));
       lines.push(t(`Tactician.Death.${deathBand(death)}`));
       if ( deadliestName ) lines.push(t("Tactician.Deadliest", { name: deadliestName }));
+      if ( (results.pAnySwayed ?? 0) >= 0.15 ) lines.push(t("Tactician.Talk"));
       break;
     }
     case "roleplayer": {
@@ -88,6 +91,7 @@ export function buildReport(results, spec, accuracy, { hideEnemyNames = true } =
       const d = deathBand(death);
       if ( d !== "none" ) lines.push(t(`Story.Death.${d}`));
       lines.push(t(`Story.Length.${lengthBand(rounds.median)}`));
+      if ( (results.pAnySwayed ?? 0) >= 0.15 ) lines.push(t("Story.Talk"));
     }
   }
   const title = t("Title");

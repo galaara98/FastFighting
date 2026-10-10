@@ -46,7 +46,7 @@ export function decideHeal(run, u, actionsLeft) {
   let best = null;
   let bestScore = 0;
   for ( const ally of alliesOf(run, u) ) {
-    if ( ally.status === STATUS.DEAD || ally.status === STATUS.FLED ) continue;
+    if ( ally.status === STATUS.DEAD || ally.status === STATUS.FLED || ally.status === STATUS.SURRENDERED ) continue;
     const isSelf = ally === u;
     if ( !isSelf && (allyDying === "protectSelf" || allyDying === "retreat") ) continue;
     if ( !isSelf && tier <= TACTICAL.FERAL ) continue; // feral healers only tend themselves

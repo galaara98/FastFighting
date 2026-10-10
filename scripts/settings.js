@@ -24,6 +24,7 @@ const SETTINGS = {
   pcAllyDying: { type: String, default: "rescue", choices: choices(ALLY_DYING, "AllyDying") },
   leadership: { type: Boolean, default: true },
   morale: { type: Boolean, default: true },
+  talking: { type: Boolean, default: true },
   positioning: { type: Boolean, default: true },
   surpriseDefault: { type: String, default: "tracker", choices: choices(["none", "tracker", "stealth"], "Surprise") },
   reportAccuracy: { type: String, default: "storyteller", choices: choices(ACCURACY, "Accuracy") },

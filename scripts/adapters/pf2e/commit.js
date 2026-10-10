@@ -21,7 +21,9 @@ export function describePf2eOutcome(spec, final) {
   const lines = [];
   if ( final.hp !== spec.hp.value ) lines.push(`HP ${spec.hp.value} → ${final.hp}`);
   if ( final.status === STATUS.DEAD ) lines.push(spec.kind === "pc" ? "DIES" : "Dead");
-  else if ( final.status === STATUS.FLED ) lines.push("Fled the battle (token hidden)");
+  else if ( final.status === STATUS.FLED ) lines.push(final.swayed ? "Talked into fleeing (token hidden)" : "Fled the battle (token hidden)");
+  else if ( final.status === STATUS.SURRENDERED ) lines.push("Surrenders");
+  if ( final.swayed === "switched" ) lines.push(`Switches sides (now ${final.side})`);
   else if ( final.status === STATUS.DOWN ) lines.push(final.dying > 0 ? `Dying ${final.dying}` : "Unconscious (stable)");
   if ( final.wounded > (spec.wounded ?? 0) ) lines.push(`Wounded ${final.wounded}`);
   for ( const p of final.persistent ?? [] ) lines.push(`Persistent ${partFormula(p.part)} ${p.type}`);
@@ -145,6 +147,25 @@ export async function commitPf2eOutcome(tokenDoc, spec, final, options = {}) {
   } else if ( final.status === STATUS.FLED && options.fledMode !== "leave" ) {
     undo.tokenUpdate = { hidden: tokenDoc.hidden };
     await tokenDoc.update({ hidden: true });
+  } else if ( final.status === STATUS.SURRENDERED ) {
+    const [effect] = await actor.createEmbeddedDocuments("Item", [{
+      type: "effect",
+      name: game.i18n.localize("FASTFIGHTING.MakeItSo.Surrendered"),
+      img: "icons/svg/cancel.svg",
+      system: {
+        description: { value: `<p>${game.i18n.localize("FASTFIGHTING.MakeItSo.SurrenderedHint")}</p>` },
+        duration: { value: -1, unit: "unlimited", expiry: null, sustained: false },
+        tokenIcon: { show: true }
+      }
+    }]);
+    if ( effect ) undo.createdItems.push(effect.id);
+  }
+  if ( final.swayed === "switched" ) {
+    const friendly = final.side === "friendly";
+    undo.actorUpdate["system.details.alliance"] = actor.system.details?.alliance ?? null;
+    undo.tokenUpdate = { ...(undo.tokenUpdate ?? {}), disposition: tokenDoc.disposition };
+    await actor.update({ "system.details.alliance": friendly ? "party" : "opposition" });
+    await tokenDoc.update({ disposition: friendly ? CONST.TOKEN_DISPOSITIONS.FRIENDLY : CONST.TOKEN_DISPOSITIONS.HOSTILE });
   }
   const live = tokenDoc.actor ?? actor;
   for ( const item of live.items ) {

@@ -160,6 +160,7 @@ export function questionsContext(spec, actor, uid, { questions: withQuestions = 
   add("style", TACTIC_CHOICES.style);
   add("target", TACTIC_CHOICES.target);
   add("resourceUse", TACTIC_CHOICES.resourceUse, { show: hasLimited });
+  add("talk", TACTIC_CHOICES.talk, { show: (spec.social?.languages?.length ?? 0) > 0 && !spec.social?.mindless });
   add("healAggro", TACTIC_CHOICES.healAggro, { show: heals.some(a => !a.selfOnly) });
   add("potionThreshold", TACTIC_CHOICES.potionThreshold, { show: hasPotions });
   add("allyDying", TACTIC_CHOICES.allyDying);

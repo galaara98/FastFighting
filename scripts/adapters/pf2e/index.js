@@ -131,6 +131,15 @@ export class Pf2eAdapter extends SystemAdapter {
       doomed: sys.attributes?.doomed?.value ?? 0,
       dying: sys.attributes?.dying?.value ?? 0,
       creatureTraits: traits,
+      social: {
+        diplomacy: actor.skills?.diplomacy?.mod,
+        intimidation: actor.skills?.intimidation?.mod,
+        deception: actor.skills?.deception?.mod,
+        willDC: actor.saves?.will?.dc?.value ?? (level + 15),
+        perceptionDC: actor.perception?.dc?.value ?? (level + 15),
+        languages: [...(sys.details?.languages?.value ?? [])],
+        mindless: traits.includes("mindless")
+      },
       leadership: this.#leadershipEntry(actor, tokenDoc.id)
     };
   }

@@ -4,6 +4,7 @@
  */
 import { clamp, tacticalTier, fudged, TACTICAL } from "../constants.js";
 import { meanPart } from "./dice.js";
+import { talkAffinity } from "./behavior/talk.js";
 
 export const TACTIC_CHOICES = Object.freeze({
   style: ["frontline", "skirmisher", "ranged", "caster", "protector"],
@@ -14,11 +15,12 @@ export const TACTIC_CHOICES = Object.freeze({
   allyDying: ["rescue", "fight", "retreat", "protectSelf"],
   selfRevived: ["rejoin", "healSelf", "retreat"],
   retreat: ["never", "hurt", "losing"],
-  shield: ["always", "spare", "never"]
+  shield: ["always", "spare", "never"],
+  talk: ["first", "opportune", "never"]
 });
 
 /** Question keys in survey order. `preferredAction` and `notes` are special (dynamic choices, free text). */
-export const TACTIC_KEYS = Object.freeze(["preferredAction", "style", "target", "resourceUse", "healAggro", "potionThreshold", "allyDying", "selfRevived", "retreat", "shield", "notes"]);
+export const TACTIC_KEYS = Object.freeze(["preferredAction", "style", "target", "resourceUse", "talk", "healAggro", "potionThreshold", "allyDying", "selfRevived", "retreat", "shield", "notes"]);
 
 const isOffense = a => a.kind !== "heal";
 const usesResource = a => !!a.resource || Number.isFinite(a.uses);
@@ -82,8 +84,17 @@ export function suggestTactics(spec, defaults = {}) {
     selfRevived: "rejoin",
     retreat: brave >= 70 ? "never" : "hurt",
     shield: spec.shield ? "spare" : "never",
+    talk: suggestTalk(spec),
     notes: ""
   };
+}
+
+/** Would this character open with words, try them when they might work, or never bother? */
+function suggestTalk(spec) {
+  const affinity = talkAffinity(spec, { tactical: fudged(spec.traits?.tactical ?? 50) });
+  if ( affinity >= 0.75 ) return "first";
+  if ( affinity >= 0.3 ) return "opportune";
+  return "never";
 }
 
 /** Merge stored answers over suggestions; "auto" (or missing) means "use the suggestion". */

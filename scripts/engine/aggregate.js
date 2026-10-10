@@ -15,7 +15,7 @@ export function createAggregator(prep) {
   const units = {};
   for ( const c of prep.combatants ) {
     units[c.spec.id] = {
-      standing: 0, down: 0, dead: 0, fled: 0, atMercy: 0, downed: 0,
+      standing: 0, down: 0, dead: 0, fled: 0, surrendered: 0, switched: 0, talkedDown: 0, atMercy: 0, downed: 0,
       hpFrac: 0, damage: 0, healing: 0, firstToFall: 0, resources: {}
     };
   }
@@ -26,6 +26,7 @@ export function createAggregator(prep) {
   let none = 0;
   let anyPcDead = 0;
   let anyPcDowned = 0;
+  let swayedRuns = 0;
   const pcIds = prep.combatants.filter(c => c.spec.kind === "pc").map(c => c.spec.id);
 
   return {
@@ -38,6 +39,7 @@ export function createAggregator(prep) {
       samples.push({ seed, rounds: result.rounds, key: result.outcome === "victory" ? result.winners.join("+") : result.outcome });
 
       let pcDead = false;
+      let anySwayed = false;
       let pcDowned = false;
       for ( const [id, r] of Object.entries(result.units) ) {
         const u = units[id];
@@ -46,6 +48,12 @@ export function createAggregator(prep) {
         else if ( r.status === STATUS.DOWN ) u.down += 1;
         else if ( r.status === STATUS.DEAD ) u.dead += 1;
         else if ( r.status === STATUS.FLED ) u.fled += 1;
+        else if ( r.status === STATUS.SURRENDERED ) u.surrendered += 1;
+        if ( r.swayed ) {
+          u.talkedDown += 1;
+          if ( r.swayed === "switched" ) u.switched += 1;
+          anySwayed = true;
+        }
         if ( r.atMercy ) u.atMercy += 1;
         if ( r.wasDowned ) u.downed += 1;
         u.hpFrac += r.hpFrac;
@@ -59,6 +67,7 @@ export function createAggregator(prep) {
       }
       if ( result.firstFallen && units[result.firstFallen] ) units[result.firstFallen].firstToFall += 1;
       if ( pcDead ) anyPcDead += 1;
+      if ( anySwayed ) swayedRuns += 1;
       if ( pcDowned ) anyPcDowned += 1;
     },
 
@@ -88,6 +97,9 @@ export function createAggregator(prep) {
           pDown: u.down / n,
           pDead: u.dead / n,
           pFled: u.fled / n,
+          pSurrendered: u.surrendered / n,
+          pSwitched: u.switched / n,
+          pTalkedDown: u.talkedDown / n,
           pAtMercy: u.atMercy / n,
           pDowned: u.downed / n,
           meanHpFrac: u.hpFrac / n,
@@ -104,6 +116,7 @@ export function createAggregator(prep) {
         pNone: none / n,
         pAnyPcDead: anyPcDead / n,
         pAnyPcDowned: anyPcDowned / n,
+        pAnySwayed: swayedRuns / n,
         rounds: {
           mean: rounds.reduce((s, r) => s + r, 0) / n,
           median: percentile(sorted, 0.5),
