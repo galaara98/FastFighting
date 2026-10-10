@@ -12,6 +12,7 @@ import { StoryTablesConfig } from "./apps/story-tables-config.js";
 import { invalidateStoryTables, installStoryTables } from "./story/tables.js";
 import { PlayerSurvey } from "./apps/player-survey.js";
 import { SOCKET, SURVEY_STATUS } from "./foundry/tactics.js";
+import { helperStatus, helperMessage, helperNoticeHtml } from "./helpers.js";
 
 Hooks.once("init", () => {
   registerSettings(DefaultsConfig, GenericPathsConfig, StoryTablesConfig);
@@ -43,6 +44,8 @@ function encounterReady() {
 
 function openIfReady() {
   if ( !game.user.isGM ) return;
+  const status = helperStatus();
+  if ( !status.ready ) return ui.notifications.warn(helperMessage(status));
   if ( !encounterReady() ) return ui.notifications.info(game.i18n.localize("FASTFIGHTING.Tracker.NeedTwo"));
   BattlePlanner.open();
 }
@@ -53,6 +56,13 @@ Hooks.on("renderCombatTracker", (app, element) => {
   const header = root?.querySelector(".combat-tracker-header") ?? root;
   if ( !header ) return;
   header.querySelector(".ff-tracker-open")?.remove();
+  header.querySelector(".ff-helper-notice")?.remove();
+  // Without a helper for this system, say so instead of offering the planner.
+  const status = helperStatus();
+  if ( !status.ready ) {
+    header.insertAdjacentHTML("afterbegin", helperNoticeHtml(status));
+    return;
+  }
   const ready = encounterReady();
   const button = document.createElement("button");
   button.type = "button";
@@ -79,14 +89,10 @@ for ( const hook of ["createCombatant", "deleteCombatant", "createCombat", "dele
   Hooks.on(hook, () => { if ( game.user.isGM ) refreshRoster(); });
 }
 
-const HELPERS = { pf2e: "fast-fighting-pf2e" };
-
 Hooks.once("ready", () => {
-  // Point GMs at the helper module for their system when only the generic adapter is available.
-  const helper = HELPERS[game.system.id];
-  if ( game.user.isGM && helper && !game.modules.get(helper)?.active ) {
-    ui.notifications.info(game.i18n.format("FASTFIGHTING.Helper.Missing", { system: game.system.title, module: helper }));
-  }
+  // Tell the GM once if this system has no helper module yet.
+  const status = helperStatus();
+  if ( game.user.isGM && !status.specific ) ui.notifications[status.ready ? "info" : "warn"](helperMessage(status), { permanent: !status.ready });
   // The GM's "Prepare Players" request opens the survey on the chosen players' screens.
   game.socket.on(SOCKET, data => {
     if ( data?.action === "openSurvey" && data.userIds?.includes(game.user.id) ) {
@@ -138,3 +144,20 @@ Hooks.on("userConnected", () => {
 for ( const hook of ["createRollTable", "updateRollTable", "deleteRollTable", "createTableResult", "updateTableResult", "deleteTableResult"] ) {
   Hooks.on(hook, () => invalidateStoryTables());
 }
+
+/* Without a helper the settings are greyed out, with a notice pointing at the supported systems. */
+Hooks.on("renderSettingsConfig", (app, element) => {
+  const root = element instanceof HTMLElement ? element : element?.[0];
+  const section = root?.querySelector(`section[data-category="${MODULE_ID}"]`);
+  if ( !section ) return;
+  section.querySelector(".ff-helper-notice")?.remove();
+  const status = helperStatus();
+  if ( status.specific ) return;
+  section.insertAdjacentHTML("afterbegin", helperNoticeHtml(status));
+  if ( status.generic ) return; // the GM opted into the generic adapter: everything stays usable
+  for ( const el of section.querySelectorAll("input, select, textarea, button, file-picker, range-picker") ) {
+    if ( el.name === `${MODULE_ID}.genericFallback` || el.closest(".ff-helper-notice") ) continue;
+    el.disabled = true;
+    el.closest(".form-group")?.classList.add("ff-disabled");
+  }
+});

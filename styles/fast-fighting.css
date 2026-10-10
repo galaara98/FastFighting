@@ -332,3 +332,11 @@
 .fast-fighting-story header { font-weight: 700; margin-bottom: 6px; display: flex; gap: 6px; align-items: center; }
 .fast-fighting-story p { margin: 0 0 6px; }
 .fast-fighting-story ul { padding-left: 16px; margin: 0 0 6px; }
+
+/* ---------- Missing helper ---------- */
+.ff-helper-notice { display: flex; gap: 10px; align-items: flex-start; padding: 8px 10px; margin: 0 0 8px; border-radius: 6px;
+  border: 1px solid #c98a1c; background: color-mix(in srgb, #c98a1c 15%, transparent); font-size: 12px; }
+.ff-helper-notice > i { font-size: 20px; color: #c98a1c; margin-top: 2px; }
+.ff-helper-notice p { margin: 2px 0; }
+.ff-helper-notice.ff-helper-generic { border-color: #5bb6db; background: color-mix(in srgb, #5bb6db 12%, transparent); }
+.form-group.ff-disabled { opacity: 0.45; }

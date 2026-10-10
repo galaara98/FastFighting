@@ -105,6 +105,10 @@
       "bystanders": {
         "Name": "Bystanders can join",
         "Hint": "Tokens on the map that are not in the encounter may notice the fight (by sight or sound, muffled by walls), be called for help, be hunted, or be run into by someone fleeing, and then decide whether to join."
+      },
+      "genericFallback": {
+        "Name": "Use the experimental generic adapter",
+        "Hint": "Only for systems without a FastFighting helper module: guess HP, AC, attacks and damage from configured data paths. Expect rough results."
       }
     },
     "Allegiance": {
@@ -649,7 +653,13 @@
       "Installed": "Story tables: {created} installed, {kept} already present."
     },
     "Helper": {
-      "Missing": "FastFighting: install and enable the {module} helper module for full {system} support. Until then the generic adapter is used."
+      "Title": "FastFighting needs a helper module for {system}",
+      "ok": "{system} is supported.",
+      "generic": "No helper for {system}: using the experimental generic adapter. Results will be rough. See {list} for supported systems.",
+      "disabled": "{module} is installed but not enabled in this world. Enable it in Manage Modules.",
+      "notInstalled": "Install {module} ({url}) to use FastFighting with {system}.",
+      "unknown": "There is no FastFighting helper for {system} yet, so FastFighting is inactive in this world. Supported systems are listed at {list}.",
+      "ListLink": "Supported systems"
     }
   }
 }

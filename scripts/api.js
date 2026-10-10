@@ -11,13 +11,13 @@
  * Other hooks fired by FastFighting:
  *   fastFighting.preSimulate (battleSpec, context)   mutate the spec before a batch runs
  *   fastFighting.postSimulate (results, context)      read or annotate results
- *   fastFighting.prepareReport (report, context)      edit the player chat card before it is sent
  *   fastFighting.preMakeItSo (plan) / fastFighting.makeItSo (undoRecords)
  */
 import { SystemAdapter } from "./adapters/adapter-base.js";
 import * as engine from "./engine/simulator.js";
 import * as dice from "./engine/dice.js";
 import * as constants from "./constants.js";
+import { MODULE_ID } from "./constants.js";
 
 const adapters = new Map(); // systemId -> [{cls, priority, source}]
 const modifiers = [];
@@ -27,16 +27,29 @@ export function registerAdapter(systemId, AdapterClass, { priority = 0, source =
   if ( !(AdapterClass?.prototype instanceof SystemAdapter) ) {
     throw new Error("FastFighting | registerAdapter expects a subclass of api.SystemAdapter");
   }
+  // A helper only counts for the system it was written for.
+  if ( systemId !== "*" && globalThis.game?.system && systemId !== game.system.id ) {
+    console.warn(`FastFighting | ignoring the "${systemId}" adapter from ${source}: this world uses "${game.system.id}".`);
+    return false;
+  }
   const list = adapters.get(systemId) ?? [];
   list.push({ cls: AdapterClass, priority, source });
   list.sort((a, b) => b.priority - a.priority);
   adapters.set(systemId, list);
+  return true;
+}
+
+/** Is there an adapter written for this system (not just the generic fallback)? */
+export function hasSystemAdapter(systemId = game.system.id) {
+  return !!adapters.get(systemId)?.length;
 }
 
 /** The highest-priority adapter for a system, instantiated once. */
 const instances = new Map();
 export function getAdapter(systemId = game.system.id) {
-  const best = adapters.get(systemId)?.[0] ?? adapters.get("*")?.[0];
+  // The generic adapter is experimental: used only when the GM opts in and no helper exists.
+  const generic = game.settings.get(MODULE_ID, "genericFallback") ? adapters.get("*")?.[0] : null;
+  const best = adapters.get(systemId)?.[0] ?? generic;
   if ( !best ) return null;
   if ( !instances.has(best.cls) ) instances.set(best.cls, new best.cls());
   return instances.get(best.cls);

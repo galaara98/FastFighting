@@ -13,6 +13,7 @@ export const DEFAULT_SIDE_TRAITS = {
 };
 
 const SETTINGS = {
+  genericFallback: { type: Boolean, default: false, requiresReload: false },
   runs: { type: Number, default: 2000, range: { min: 200, max: 20000, step: 100 } },
   maxRounds: { type: Number, default: 20, range: { min: 3, max: 100, step: 1 } },
   includeHidden: { type: Boolean, default: true },

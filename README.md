@@ -3,10 +3,10 @@
 A [Foundry VTT](https://foundryvtt.com) module that estimates, narrates and resolves a battle from the encounter on the scene. It simulates the fight thousands of times, round by round, with real dice math. Results show win odds, how long the fight lasts, who is likely to fall, and what swings the outcome. The GM can then tell the story of one simulated fight and commit it to the tokens with **Make it So**.
 
 - **Foundry:** v14
-- **System support comes from helper modules:**
-  - [FastFighting PF2e](https://github.com/galaara98/FastFighting-PF2e) for Pathfinder Second Edition
-  - a generic d20 adapter covers any other system
-  - writing a helper for another system is covered in the API section below
+- **System support comes from helper modules.** See [systems.md](systems.md) for the list (currently [FastFighting PF2e](https://github.com/galaara98/FastFighting-PF2e) for Pathfinder Second Edition).
+  - Without a helper for your world's system, FastFighting stays inactive. Its settings are greyed out, and the settings window and Combat Tracker point you to systems.md.
+  - An experimental generic d20 adapter can be switched on for systems with no helper.
+  - Writing a helper for another system is covered in the API section below.
 
 ## Installation
 
@@ -210,7 +210,7 @@ Hooks.once("fastFighting.init", api => {
 });
 ```
 
-Adapter priority decides which one is used, highest first. FastFighting PF2e registers at priority 10, so another PF2e helper with a higher priority would replace it. The generic fallback is registered for `"*"` at priority −100.
+Each helper should declare its system in `module.json` (`relationships.systems`) so Foundry only offers it in worlds of that system. The core also ignores adapters registered for any system other than the world's. Adapter priority decides which one is used, highest first. FastFighting PF2e registers at priority 10, so another PF2e helper with a higher priority would replace it. The generic fallback is registered for `"*"` at priority −100.
 
 **Rules object (pure).** The engine calls these thousands of times:
 - `actionsPerTurn`
