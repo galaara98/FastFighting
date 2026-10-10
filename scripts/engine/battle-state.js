@@ -154,7 +154,11 @@ export function createRun(prep) {
       healingDone: 0,
       fellRound: null,
       wasDowned: false,
-      healedTargets: new Set()
+      healedTargets: new Set(),
+      drawn: new Set(),
+      conds: {},
+      afflictions: [],
+      grabbedBy: null
     };
   });
   return {
@@ -205,15 +209,50 @@ export function liveTier(run, u) {
   return tacticalTier(liveTrait(run, u, "tactical"));
 }
 
-/** Current AC including raised shield, leadership and flanking (off-guard). */
+/** Status penalty to checks and DCs (frightened / sickened don't stack; the worst applies). */
+export function statusPenalty(u) {
+  return Math.max(u.conds.frightened ?? 0, u.conds.sickened ?? 0);
+}
+
+/** Off-guard: prone, grabbed, flanked, or a condition that says so. */
+export function isOffGuard(run, target, attacker = null, action = null) {
+  if ( target.prone || target.conds.offGuard || target.conds.paralyzed ) return true;
+  if ( target.grabbedBy ) {
+    const grabber = run.byId.get(target.grabbedBy);
+    if ( grabber && isStanding(grabber) ) return true;
+  }
+  return !!(attacker && action?.melee && isFlanked(run, target, attacker));
+}
+
+/** Current AC including raised shield, leadership, off-guard and conditions. */
 export function currentAc(run, target, attacker, action) {
   let ac = target.spec.defenses.ac;
   if ( target.shieldRaised && target.spec.shield ) ac += target.spec.shield.ac;
   const side = run.prep.sides[target.side];
   if ( leaderStanding(run, target.side) ) ac += side.leadership.ac;
-  if ( attacker && action?.melee && isFlanked(run, target, attacker) ) ac -= 2;
-  if ( target.prone ) ac -= 2;
+  if ( isOffGuard(run, target, attacker, action) ) ac -= 2;
+  ac -= (target.conds.clumsy ?? 0) + statusPenalty(target);
   return ac;
+}
+
+/** Saving throw modifier including conditions. */
+export function saveMod(target, type) {
+  let mod = target.spec.defenses[type] ?? (target.spec.level + 5);
+  mod -= statusPenalty(target);
+  if ( type === "reflex" ) mod -= target.conds.clumsy ?? 0;
+  return mod;
+}
+
+/** Actions available at the start of a turn. */
+export function actionsThisTurn(run, u) {
+  const base = run.prep.rules.actionsPerTurn;
+  if ( u.conds.paralyzed ) return 0;
+  return Math.max(0, base - (u.conds.slowed ?? 0) - (u.conds.stunned ?? 0));
+}
+
+/** Effective action cost, including drawing an unready weapon the first time. */
+export function actionCost(u, action) {
+  return action.cost + ((action.drawCost && !u.drawn.has(action.id)) ? action.drawCost : 0);
 }
 
 /** Attackers flank when another standing ally of theirs is adjacent to the target and they coordinate. */
@@ -221,17 +260,37 @@ export function isFlanked(run, target, attacker) {
   if ( !attacker.adjacent.has(target.id) ) return false;
   const coordinates = liveTier(run, attacker) >= 2 || attacker.spec.flags?.packTactics;
   if ( !coordinates ) return false;
-  for ( const id of target.adjacent ) {
-    const other = run.byId.get(id);
-    if ( other && other !== attacker && other.side === attacker.side && isStanding(other) ) return true;
-  }
-  return false;
+  return alliesAdjacentTo(run, target, attacker) >= 1;
 }
 
-export function attackBonusMods(run, u) {
+/** Number of attacker's standing allies (excluding the attacker) adjacent to the target. */
+export function alliesAdjacentTo(run, target, attacker) {
+  let n = 0;
+  for ( const id of target.adjacent ) {
+    const other = run.byId.get(id);
+    if ( other && other !== attacker && other.side === attacker.side && isStanding(other) ) n += 1;
+  }
+  return n;
+}
+
+/** Extra damage parts that apply to this hit (sneak attack vs off-guard, pack attack, ...). */
+export function bonusDamageParts(run, attacker, action, target) {
+  const out = [];
+  for ( const bonus of action.bonusDamage ?? [] ) {
+    if ( bonus.when === "offGuard" && isOffGuard(run, target, attacker, action) ) out.push(...bonus.parts);
+    else if ( bonus.when === "pack" && alliesAdjacentTo(run, target, attacker) >= (bonus.allies ?? 2) ) out.push(...bonus.parts);
+    else if ( bonus.when === "always" ) out.push(...bonus.parts);
+  }
+  return out;
+}
+
+export function attackBonusMods(run, u, action = null) {
   let mod = 0;
   if ( u.wavering ) mod -= 1;
   if ( u.prone ) mod -= 2;
+  mod -= statusPenalty(u);
+  if ( action?.melee ) mod -= u.conds.enfeebled ?? 0;
+  if ( u.spec.environment?.aquatic && !(u.spec.speeds?.swim > 0) && action?.melee ) mod -= 2;
   if ( leaderStanding(run, u.side) && run.prep.sides[u.side].leaderId !== u.id ) {
     mod += run.prep.sides[u.side].leadership.attack;
   }
@@ -278,7 +337,7 @@ export function movesNeeded(run, a, t, action) {
 
 /** Range penalty (PF2e: -2 per increment beyond the first). */
 export function rangePenalty(run, a, t, action) {
-  if ( !action.range || !run.prep.options.positioning ) return 0;
+  if ( !action.range || action.range.noPenalty || !run.prep.options.positioning ) return 0;
   const d = separation(run, a, t);
   const increments = Math.max(0, Math.ceil(d / action.range.increment) - 1);
   return -2 * increments;

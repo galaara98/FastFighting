@@ -62,6 +62,7 @@ export function decideHeal(run, u, actionsLeft) {
   const usable = heals
     .filter(a => !a.oncePerTarget || !u.healedTargets.has(`${a.id}|${best.id}`))
     .filter(a => !a.selfOnly || best === u)
+    .filter(a => !a.targetTrait || best.spec.creatureTraits?.includes(a.targetTrait))
     .sort((a, b) => meanHeal(b) / b.cost - meanHeal(a) / a.cost);
   const unlimited = usable.filter(a => !a.resource && !Number.isFinite(a.uses));
   const action = urgent ? usable[0] : (unlimited[0] ?? (aggro === "conservative" ? null : usable[0]));

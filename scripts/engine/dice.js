@@ -35,27 +35,106 @@ export function parseFormula(formula, type = "untyped") {
   return p;
 }
 
+/**
+ * Parse a display formula such as "2 * (1d6 + 4) + 1d8 piercing + 1d4 persistent poison" (the format PF2e's
+ * DamageRoll#formula produces) into DamageParts. Each run of arithmetic followed by type words is one part.
+ * Multiplication by a constant is supported (dice keep a `mult`).
+ */
+export function parseTypedFormula(formula, defaultType = "untyped") {
+  const tokens = String(formula ?? "").replace(/\[([^\]]*)\]/g, " $1 ").replace(/,/g, " ")
+    .match(/\d+d\d+|\d+(?:\.\d+)?|[a-z][a-z-]*|[()+\-*/]/gi) ?? [];
+  const parts = [];
+  let expr = [];
+  let words = [];
+  const flush = () => {
+    if ( !expr.length ) { words = []; return; }
+    while ( expr.length && /^[+\-*/]$/.test(expr.at(-1)) ) expr.pop();
+    const lin = evaluateLinear(expr);
+    const persistent = words.includes("persistent");
+    const category = words.includes("precision") ? "precision" : words.includes("splash") ? "splash" : null;
+    const type = words.filter(w => !["persistent", "precision", "splash", "damage"].includes(w)).at(-1) ?? defaultType;
+    if ( lin ) parts.push({ dice: lin.dice, flat: lin.flat, type, persistent, category });
+    expr = [];
+    words = [];
+  };
+  for ( let i = 0; i < tokens.length; i++ ) {
+    const tok = tokens[i];
+    if ( /^[a-z]/i.test(tok) && !/^\d+d\d+$/i.test(tok) ) {
+      words.push(tok.toLowerCase());
+      // A "+" after type words starts the next part.
+      if ( tokens[i + 1] === "+" ) { flush(); i++; }
+      continue;
+    }
+    if ( words.length ) flush();
+    expr.push(tok);
+  }
+  flush();
+  return parts;
+}
+
+/** Evaluate +,-,*,/ and parentheses over dice and numbers into {dice:[{n,faces,mult}], flat}. */
+function evaluateLinear(tokens) {
+  let pos = 0;
+  const peek = () => tokens[pos];
+  const scale = (v, k) => ({ dice: v.dice.map(d => ({ ...d, mult: (d.mult ?? 1) * k })), flat: v.flat * k });
+  const add = (a, b, sign = 1) => ({ dice: a.dice.concat(sign === 1 ? b.dice : scale(b, -1).dice), flat: a.flat + sign * b.flat });
+  const isConst = v => !v.dice.length;
+  function primary() {
+    const tok = tokens[pos++];
+    if ( tok === "(" ) {
+      const v = sum();
+      if ( peek() === ")" ) pos++;
+      return v;
+    }
+    if ( tok === "-" ) return scale(primary(), -1);
+    const dm = /^(\d+)d(\d+)$/i.exec(tok ?? "");
+    if ( dm ) return { dice: [{ n: Number(dm[1]), faces: Number(dm[2]), mult: 1 }], flat: 0 };
+    const num = Number(tok);
+    return { dice: [], flat: Number.isFinite(num) ? num : 0 };
+  }
+  function product() {
+    let v = primary();
+    while ( peek() === "*" || peek() === "/" ) {
+      const op = tokens[pos++];
+      const r = primary();
+      if ( op === "*" ) v = isConst(v) ? scale(r, v.flat) : scale(v, isConst(r) ? r.flat : 1);
+      else if ( isConst(r) && r.flat ) v = scale(v, 1 / r.flat);
+    }
+    return v;
+  }
+  function sum() {
+    let v = product();
+    while ( peek() === "+" || peek() === "-" ) {
+      const op = tokens[pos++];
+      v = add(v, product(), op === "+" ? 1 : -1);
+    }
+    return v;
+  }
+  if ( !tokens.length ) return null;
+  return sum();
+}
+
 export function samplePart(p, rng) {
   let total = p.flat;
-  for ( const { n, faces } of p.dice ) {
+  for ( const { n, faces, mult = 1 } of p.dice ) {
     const count = Math.abs(n);
     let sum = 0;
     for ( let i = 0; i < count; i++ ) sum += rng.die(faces);
-    total += n < 0 ? -sum : sum;
+    total += (n < 0 ? -sum : sum) * mult;
   }
-  return total;
+  return Math.floor(total);
 }
 
 export function meanPart(p) {
-  return p.flat + p.dice.reduce((s, { n, faces }) => s + (n * (faces + 1)) / 2, 0);
+  return p.flat + p.dice.reduce((s, { n, faces, mult = 1 }) => s + (n * mult * (faces + 1)) / 2, 0);
 }
 
 export function maxPart(p) {
-  return p.flat + p.dice.reduce((s, { n, faces }) => s + (n > 0 ? n * faces : n), 0);
+  return p.flat + p.dice.reduce((s, { n, faces, mult = 1 }) => s + (n > 0 ? n * faces : n) * mult, 0);
 }
 
 export function variancePart(p) {
-  return p.dice.reduce((s, { n, faces }) => s + Math.abs(n) * ((faces * faces - 1) / 12), 0);
+  return p.dice.reduce((s, { n, faces, mult = 1 }) => s + Math.abs(n) * mult * mult * ((faces * faces - 1) / 12), 0);
 }
 
 /** Sample a list of parts; returns {byType: {type: amount}, persistent: DamagePart[]}. Minimum 1 per non-persistent roll. */
@@ -76,5 +155,5 @@ export function meanDamage(parts, multiplier = 1) {
 
 /** Double every part (used when a system gives no explicit critical formula). */
 export function doubled(parts) {
-  return parts.map(p => ({ ...p, dice: p.dice.map(d => ({ ...d, n: d.n * 2 })), flat: p.flat * 2 }));
+  return parts.map(p => ({ ...p, dice: p.dice.map(d => ({ ...d, mult: (d.mult ?? 1) * 2 })), flat: p.flat * 2 }));
 }

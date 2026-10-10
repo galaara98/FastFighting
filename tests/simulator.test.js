@@ -84,6 +84,48 @@ describe("simulator", () => {
   });
 });
 
+describe("riders and conditions", () => {
+  const venom = {
+    kind: "affliction", id: "venom", name: "Venom", traits: ["poison"],
+    save: { type: "fortitude", dc: 16 }, maxDuration: 6,
+    stages: [
+      { damage: [parseFormula("1d4", "poison")], conditions: { offGuard: true } },
+      { damage: [parseFormula("1d6", "poison")], conditions: { offGuard: true, clumsy: 1 } }
+    ]
+  };
+
+  test("afflictions add damage and are captured for Make it So", () => {
+    const spider = creature({ id: "spider", actions: [strike({ id: "fangs", effects: [venom] })] });
+    const victim = creature({ id: "victim", side: "hostile", hp: { value: 200, max: 200 }, defenses: { ac: 16, fortitude: 0 } });
+    const plain = creature({ id: "spider", actions: [strike({ id: "fangs" })] });
+    const withVenom = runBatchSync(battle([spider, victim], { maxRounds: 3 }), pf2eRules, { runs: 500 });
+    const without = runBatchSync(battle([plain, victim], { maxRounds: 3 }), pf2eRules, { runs: 500 });
+    expect(withVenom.combatants.spider.meanDamage).toBeGreaterThan(without.combatants.spider.meanDamage * 1.1);
+
+    const r = replay(battle([spider, victim], { maxRounds: 2 }), pf2eRules, 9);
+    expect(r.units.victim.final).toBeDefined();
+    expect(r.log.some(e => e.text.includes("Venom"))).toBe(true);
+  });
+
+  test("sneak attack applies only to off-guard targets", () => {
+    const sneak = { when: "offGuard", parts: [parseFormula("1d6", "precision")] };
+    const rogue = creature({ id: "rogue", actions: [strike({ id: "rapier", bonusDamage: [sneak] })] });
+    const ally = creature({ id: "ally", hp: { value: 300, max: 300 }, actions: [strike({ id: "poke", bonus: -20 })] });
+    const target = creature({ id: "dummy", side: "hostile", hp: { value: 300, max: 300 }, actions: [strike({ id: "nothing", bonus: -30 })] });
+    const solo = runBatchSync(battle([rogue, target], { maxRounds: 3 }), pf2eRules, { runs: 400 });
+    const flank = runBatchSync(battle([rogue, ally, target], { maxRounds: 3 }), pf2eRules, { runs: 400 });
+    expect(flank.combatants.rogue.meanDamage).toBeGreaterThan(solo.combatants.rogue.meanDamage * 1.25);
+  });
+
+  test("auto-hit actions always deal damage", () => {
+    const barrage = { id: "fb", name: "Force Barrage", kind: "auto", cost: 2, damage: [parseFormula("2d4+2", "force")], range: { increment: 120, max: 120 } };
+    const mage = creature({ id: "mage", actions: [barrage] });
+    const wall = creature({ id: "wall", side: "hostile", hp: { value: 1000, max: 1000 }, defenses: { ac: 99 }, actions: [strike({ bonus: -50 })] });
+    const r = runBatchSync(battle([mage, wall], { maxRounds: 2 }), pf2eRules, { runs: 100 });
+    expect(r.combatants.mage.meanDamage).toBeGreaterThan(12); // one 2-action barrage (mean 7) per round
+  });
+});
+
 describe("positioning and movement modes", () => {
   test("ranged attackers get free rounds against melee across difficult terrain", () => {
     const archer = creature({ id: "archer", actions: [strike({ id: "bow", melee: false, range: { increment: 60, max: 360 } })] });

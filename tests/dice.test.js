@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { parseFormula, meanPart, maxPart, samplePart, sampleDamage, doubled } from "../scripts/engine/dice.js";
+import { parseFormula, parseTypedFormula, meanPart, maxPart, samplePart, sampleDamage, doubled } from "../scripts/engine/dice.js";
 import { createRng, deriveSeed } from "../scripts/engine/rng.js";
 
 describe("dice", () => {
@@ -29,8 +29,29 @@ describe("dice", () => {
 
   test("doubled doubles dice and flat", () => {
     const [d] = doubled([parseFormula("1d8+4")]);
-    expect(d.dice[0].n).toBe(2);
+    expect(d.dice[0].mult).toBe(2);
     expect(d.flat).toBe(8);
+    expect(meanPart(d)).toBeCloseTo(17);
+  });
+
+  test("parses PF2e display formulas into typed parts", () => {
+    const crit = parseTypedFormula("2 * (1d6 + 4) + 1d8 piercing");
+    expect(crit).toHaveLength(1);
+    expect(crit[0].type).toBe("piercing");
+    expect(meanPart(crit[0])).toBeCloseTo(2 * 7.5 + 4.5);
+
+    const multi = parseTypedFormula("(1d6 + 2) piercing + 1d4 persistent poison");
+    expect(multi.map(p => [p.type, p.persistent])).toEqual([["piercing", false], ["poison", true]]);
+    expect(meanPart(multi[0])).toBeCloseTo(5.5);
+
+    const two = parseTypedFormula("(2d6 + 3) fire + 1d4 cold");
+    expect(two.map(p => p.type)).toEqual(["fire", "cold"]);
+
+    const plain = parseTypedFormula("1d4 - 1 bludgeoning");
+    expect(meanPart(plain[0])).toBeCloseTo(1.5);
+
+    const untyped = parseTypedFormula("1d8", "healing");
+    expect(untyped[0].type).toBe("healing");
   });
 
   test("rng is deterministic per seed", () => {

@@ -9,7 +9,7 @@
  */
 import { STATUS, TACTICAL } from "../../constants.js";
 import { enemiesOf, isStanding, liveTier, liveTrait, movesNeeded } from "../battle-state.js";
-import { expectedDamage, hasUses, threatOf } from "./evaluate.js";
+import { expectedDamage, hasUses, threatOf, actionCost } from "./evaluate.js";
 
 /** Cheapest way (in move actions) for u to get any offensive action onto t, and that action's EV per action. */
 export function bestOptionVs(run, u, t, attacksMade = 0) {
@@ -19,8 +19,11 @@ export function bestOptionVs(run, u, t, attacksMade = 0) {
     const moves = movesNeeded(run, u, t, action);
     if ( !Number.isFinite(moves) ) continue;
     const ev = expectedDamage(run, u, action, t, attacksMade);
-    const perAction = ev / (action.cost + moves);
-    if ( !best || perAction > best.perAction ) best = { action, moves, ev, perAction };
+    const cost = actionCost(u, action);
+    // Drawing a weapon is a one-time cost, so spread it over the attacks it enables.
+    const amortized = action.cost + (cost - action.cost) * 0.25;
+    const perAction = ev / (amortized + moves);
+    if ( !best || perAction > best.perAction ) best = { action, moves, ev, perAction, cost };
   }
   return best;
 }
