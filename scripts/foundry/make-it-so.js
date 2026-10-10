@@ -291,7 +291,8 @@ async function concessionCard(giverName, receiverName, c, eventId, records) {
   const ChatMessage = foundry.documents.ChatMessage ?? globalThis.ChatMessage;
   const text = game.i18n.format(c.how === "theft" ? "FASTFIGHTING.Concession.CardTheft" : "FASTFIGHTING.Concession.Card", { giver: escape(giverName), what: escape(concessionText(c)), receiver: escape(receiverName ?? "") });
   const luckKey = c.how === "theft" ? "FASTFIGHTING.Concession.TheftLuck" : "FASTFIGHTING.Concession.Luck";
-  const luck = c.luck ? `<p class="hint">${game.i18n.format(luckKey, { luck: c.luck })}</p>` : "";
+  const needed = c.how === "theft" ? (c.needed ?? setting("theftLuck")) : (c.needed ?? setting("concedeLuck"));
+  const luck = c.luck ? `<p class="hint">${game.i18n.format(luckKey, { luck: c.luck, needed })}</p>` : "";
   return ChatMessage.create({
     content: `<div class="fast-fighting-concession"><p>${text}</p>${luck}<button type="button" data-ff-undo-concession><i class="fa-solid fa-rotate-left"></i> ${loc("FASTFIGHTING.Concession.Undo")}</button></div>`,
     speaker: { alias: loc("FASTFIGHTING.Story.Speaker") },

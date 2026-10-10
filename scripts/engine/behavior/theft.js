@@ -11,8 +11,8 @@
  *    (rules.feintCost; by default the weapon's own cost: a PF2e Strike, but folded into 5e's one action).
  *  - Then the stealing test: the thief's skill against the victim's DC to resist it (CombatantSpec.social.resist.steal,
  *    which the system supplies; PF2e: Perception DC), with whatever the rules add (PF2e: -5 in combat).
- *  - Against a player character it also takes a hidden d100 luck check under 30 (29 or less): never told in the
- *    story. Companions, neutrals and bystanders just face the stealing test.
+ *  - Against a player character it also takes a hidden d100 luck check (29 or less by default; the "theftLuck"
+ *    setting): never told in the story. Companions, neutrals and bystanders just face the stealing test.
  *  - A failed stealing test is noticed: the victim goes after the thief. A success isn't.
  *  - Whatever is taken comes back at the end if the thief is beaten (like anything given up).
  * Pure: no Foundry globals.
@@ -164,14 +164,14 @@ export function attemptTheft(run, u, t, log, { plan = null, attacksMade = 0 } = 
   let luck = null;
   if ( t.spec.kind === "pc" ) {
     luck = run.rng.die(100);
-    if ( luck >= THEFT_LUCK ) {
+    if ( luck > (run.prep.options.theftLuck ?? THEFT_LUCK) ) {
       log(u, `nearly robs ${t.spec.name}, but comes away empty-handed`, { ...data, luck, stolen: null });
       return { stolen: null, noticed: false, luck, attacks };
     }
   }
   const taken = concession(run, t, { itemLuck: false });
   if ( !taken ) return { stolen: null, noticed: false, luck, attacks };
-  const record = { ...taken, how: "theft", to: u.id, toName: u.spec.name, round: run.round, luck: luck ?? undefined };
+  const record = { ...taken, how: "theft", to: u.id, toName: u.spec.name, round: run.round, luck: luck ?? undefined, needed: luck ? (run.prep.options.theftLuck ?? THEFT_LUCK) : undefined };
   (t.concessions ??= []).push(record);
   log(u, `steals ${taken.kind === "money" ? `${taken.percent}% of ${t.spec.name}'s money` : `${taken.item.name} from ${t.spec.name}`}`, { ...data, luck, stolen: record });
   return { stolen: record, noticed: false, luck, attacks };

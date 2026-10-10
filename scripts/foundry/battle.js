@@ -268,6 +268,9 @@ export function buildBattleSpec(roster, setup, { underdog = null, approach = nul
       leadership: options.leadership,
       talking: options.talking !== false,
       opening: options.opening ?? "auto",
+      // The luck checks that protect player characters (world settings, as sliders).
+      concedeLuck: setting("concedeLuck"),
+      theftLuck: setting("theftLuck"),
       initiativeOrder,
       stealthSides,
       surpriseSide

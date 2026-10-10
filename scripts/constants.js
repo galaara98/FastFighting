@@ -66,11 +66,12 @@ export const STATUS = Object.freeze({
 /** How a talked-down combatant leaves the fight. */
 export const SWAY = Object.freeze({ SURRENDER: "surrendered", FLEE: "fled", SWITCH: "switched", STAND_DOWN: "stoodDown", CONCEDE: "conceded" });
 
-/** A PC hands over an item only when this d100 luck check comes up under it (39 or less). */
-export const CONCEDE_LUCK = 40;
-
-/** Robbing a PC takes a successful check and this d100 luck check coming up under it (29 or less). */
-export const THEFT_LUCK = 30;
+/**
+ * Luck checks that protect player characters, as the highest d100 roll that goes against the PC (world settings
+ * "concedeLuck" and "theftLuck" override these defaults).
+ */
+export const CONCEDE_LUCK = 39; // a PC talked into giving up an item loses it only on 39 or less
+export const THEFT_LUCK = 29;   // a thief who beats a PC's defenses still needs 29 or less
 
 /** How an encounter opens: decided by who would rather talk, always with words, or straight into battle. */
 export const OPENING = Object.freeze({ AUTO: "auto", TALK: "talk", FIGHT: "fight" });

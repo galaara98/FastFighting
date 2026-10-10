@@ -1,7 +1,7 @@
 /**
  * World settings. Every setting is a default: the Battle Planner can override any of them per battle.
  */
-import { MODULE_ID, ALLEGIANCE, DOWNED_MODELS, HEAL_AGGRO, ALLY_DYING, AFTERMATH, OPENING } from "./constants.js";
+import { MODULE_ID, ALLEGIANCE, DOWNED_MODELS, HEAL_AGGRO, ALLY_DYING, AFTERMATH, OPENING, CONCEDE_LUCK, THEFT_LUCK } from "./constants.js";
 
 const choices = (keys, prefix) => Object.fromEntries(keys.map(k => [k, `FASTFIGHTING.${prefix}.${k}`]));
 
@@ -28,6 +28,8 @@ const SETTINGS = {
   morale: { type: Boolean, default: true },
   talking: { type: Boolean, default: true },
   opening: { type: String, default: OPENING.AUTO, choices: choices(Object.values(OPENING), "Opening") },
+  concedeLuck: { type: Number, default: CONCEDE_LUCK, range: { min: 0, max: 100, step: 1 } },
+  theftLuck: { type: Number, default: THEFT_LUCK, range: { min: 0, max: 100, step: 1 } },
   bystanders: { type: Boolean, default: true },
   positioning: { type: Boolean, default: true },
   surpriseDefault: { type: String, default: "tracker", choices: choices(["none", "tracker", "stealth"], "Surprise") },

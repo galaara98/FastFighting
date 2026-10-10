@@ -420,7 +420,7 @@ function statLine(e) {
     case "sway":
       if ( !e.concession ) return `${e.actor}: ${e.text}`;
       return e.concession.kept
-        ? `${e.actor} agrees to hand over ${concessionText(e.concession)} · luck d100 ${e.concession.luck} (needs under 40) · keeps it`
+        ? `${e.actor} agrees to hand over ${concessionText(e.concession)} · luck d100 ${e.concession.luck} (needs ${e.concession.needed ?? 39} or less) · keeps it`
         : `${e.actor} gives ${concessionText(e.concession)} to ${e.concession.toName}${e.concession.luck ? ` · luck d100 ${e.concession.luck}` : ""}`;
     default: return `${e.actor ? `${e.actor}: ` : ""}${e.text}`;
   }

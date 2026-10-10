@@ -117,6 +117,14 @@
       "opening": {
         "Name": "How encounters open",
         "Hint": "Talk if they'd rather: the encounter opens as a standoff when every side's leader (or most of a leaderless side) would rather talk, or when almost everyone would. Nobody fights until someone gets upset: an insult, failed pitches piling up, a beast that can't follow the talk, or an impatient temper. Always talk first: every encounter opens that way. Straight to battle: no standoff."
+      },
+      "concedeLuck": {
+        "Name": "PC luck: handing over an item",
+        "Hint": "When a player character is talked into giving up an item, they lose it only if a hidden d100 comes up at or under this. Higher means PCs lose items more often."
+      },
+      "theftLuck": {
+        "Name": "PC luck: being robbed",
+        "Hint": "A thief who beats a player character's defenses still needs a hidden d100 at or under this to take anything. Higher means thieves succeed more often."
       }
     },
     "Allegiance": {
@@ -706,11 +714,11 @@
     },
     "Concession": {
       "Card": "<strong>{giver}</strong> gave up {what} to {receiver}.",
-      "Luck": "Luck check: {luck} on a d100 (needed under 40).",
+      "Luck": "Luck check: {luck} on a d100 (needed {needed} or less).",
       "Undo": "Undo just this",
       "Undone": "Undone: it's back with its owner.",
       "CardTheft": "<strong>{giver}</strong> was robbed of {what} by {receiver}.",
-      "TheftLuck": "Luck check: {luck} on a d100 (the thief needed under 30)."
+      "TheftLuck": "Luck check: {luck} on a d100 (the thief needed {needed} or less)."
     }
   }
 }

@@ -242,7 +242,8 @@ export function concession(run, t, { itemLuck = true } = {}) {
     const item = rng.pick(v.stowed);
     if ( t.spec.kind === "pc" && itemLuck ) {
       const luck = rng.die(100);
-      return { kind: "item", item, luck, kept: luck >= CONCEDE_LUCK };
+      const needed = run.prep.options.concedeLuck ?? CONCEDE_LUCK;
+      return { kind: "item", item, luck, needed, kept: luck > needed };
     }
     return { kind: "item", item };
   }

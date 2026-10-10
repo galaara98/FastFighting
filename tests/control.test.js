@@ -176,3 +176,20 @@ describe("open theft", () => {
     }
   });
 });
+
+describe("PC luck settings", () => {
+  test("the theft luck setting decides how often a successful thief gets anything", () => {
+    const COINS = [{ label: "gp", value: 100 }];
+    const spec = theftLuck => {
+      const victim = creature({ id: "v", kind: "pc", diesAtZero: false, hp: { value: 400, max: 400 }, actions: [strike({ bonus: -20 })],
+        social: social({ diplomacy: 0, perceptionDC: 5 }), valuables: { money: 10000, denominations: COINS, stowed: [], wielded: [] } });
+      victim.social.resist.steal = { dc: 5, label: "Perception" };
+      const thief = creature({ id: "thief", side: "hostile", hp: { value: 400, max: 400 }, playstyles: ["thief"], theft: { skill: "Thievery", mod: 30 }, actions: [strike({ id: "d", name: "Dagger", bonus: 30 })] });
+      const crony = creature({ id: "crony", side: "hostile", hp: { value: 400, max: 400 }, actions: [strike({ bonus: -20 })] });
+      return battle([victim, thief, crony], { maxRounds: 6, theftLuck });
+    };
+    const steals = s => [...Array(80).keys()].flatMap(i => replay(spec(s), pf2eRules, i + 1).log.filter(e => e.type === "theft" && e.degree >= 2));
+    expect(steals(0).every(e => !e.stolen)).toBe(true);
+    expect(steals(100).every(e => e.stolen)).toBe(true);
+  });
+});
