@@ -1,10 +1,12 @@
-# FastFighting
+# FastFighting Core
 
-A [Foundry VTT](https://foundryvtt.com) module that estimates how a battle will go, using the tokens on the scene. It simulates the fight thousands of times, round by round, with real dice math. Results show win odds, how long the fight lasts, who is likely to fall, and what swings the outcome. The GM can then commit one simulated fight to the tokens with **Make it So**.
+A [Foundry VTT](https://foundryvtt.com) module that estimates, narrates and resolves a battle from the encounter on the scene. It simulates the fight thousands of times, round by round, with real dice math. Results show win odds, how long the fight lasts, who is likely to fall, and what swings the outcome. The GM can then tell the story of one simulated fight and commit it to the tokens with **Make it So**.
 
 - **Foundry:** v14
-- **Built-in support:** Pathfinder 2e (8.6+), plus a generic d20 fallback for other systems
-- **Other systems:** helper modules can add support through the API below
+- **System support comes from helper modules:**
+  - [FastFighting PF2e](https://github.com/galaara98/FastFighting-PF2e) for Pathfinder Second Edition
+  - a generic d20 adapter covers any other system
+  - writing a helper for another system is covered in the API section below
 
 ## Installation
 
@@ -14,12 +16,23 @@ In Foundry, go to **Add-on Modules → Install Module** and paste this manifest 
 https://github.com/galaara98/FastFighting/releases/latest/download/module.json
 ```
 
+For Pathfinder 2e, also install FastFighting PF2e:
+
+```
+https://github.com/galaara98/FastFighting-PF2e/releases/latest/download/module.json
+```
+
 ## Using it
 
-As GM, open the **Battle Planner** in one of three ways:
-- the swords button in the Token controls
-- the Token HUD
-- <kbd>Shift</kbd>+<kbd>B</kbd>
+**The encounter starts the fight.** Add combatants to an encounter in the Combat Tracker. Once it has at least two tokens, a **Battle Planner** button appears at the top of the tracker; it's GM only. <kbd>Shift</kbd>+<kbd>B</kbd> opens the planner too.
+
+Every token on the map that isn't in the encounter is a **bystander**. A bystander does nothing unless something draws it in:
+- it sees or hears the fight; walls muffle sound
+- an ally runs to it calling for help
+- a hunter goes after it
+- someone fleeing runs into it
+
+Once it notices, it decides from its personality whether to join, watch, or slip away.
 
 The planner needs at least 1000×600 and uses any extra space you give it.
 
@@ -86,12 +99,11 @@ Every derived number has **fudge up / fudge down / remove fudge** buttons. A fud
 | Combatants | Per token: standing / down / dead / fled odds, HP left, damage dealt, healing done, chance to fall first |
 | Swing factors | Re-runs without each combatant and each modifier to show what moves the party's odds most |
 | Resources | Average spell slots, focus points and consumables spent |
-| Sample fight | A representative fight, round by round. Roll others, optionally filtered ("a party defeat", "a PC dies", "a close call"). **Make it So** commits that exact fight. **Undo** reverts it. |
-| Share | Player chat card at an accuracy from **Statistician** (exact numbers) to **Roleplayer** (one line of atmosphere); the default is **Storyteller** |
+| Sample fight | The **story** of a representative fight. Roll others, optionally filtered ("a party defeat", "a PC dies", "a close call"). **Make it So** posts that story to chat, moves every token to where the fight left it, and commits the outcome. **Undo** reverses all of it, chat message included. |
 
 ## What the simulation models
 
-- **Rules:** PF2e degrees of success, the multiple attack penalty, 3-action turns, and immunities, weaknesses and resistances.
+- **Rules:** whatever the system adapter provides. With FastFighting PF2e: degrees of success, the multiple attack penalty, 3-action turns, and immunities, weaknesses and resistances.
 - **Damage:** persistent damage, and afflictions (poisons, diseases) stage by stage.
 - **Riders:** knockdown and grab; sneak attack and pack attack against off-guard targets; flanking.
 - **Dying:** dying, wounded and recovery checks.
@@ -124,9 +136,27 @@ Every derived number has **fudge up / fudge down / remove fudge** buttons. A fud
   - **Can't be swayed:** mindless creatures, foes with no shared language, and hidden ambushers that haven't attacked yet. PCs aren't swayed either; their players decide.
   - Make it So marks surrendered foes with a "Surrendered" effect and flips the disposition (and PF2e alliance) of those who switched sides.
 
+## The story
+
+The sample fight is told in one of three styles:
+
+- **Roleplay:** prose. Every blow, spell, pitch and dash is narrated, and the telling picks up the scene:
+  - characters duck behind walls
+  - walkers slog through difficult terrain while flyers soar over it
+  - climbers scale obstacles, and swimmers and burrowers move their own way
+  - relationships color the words: an enemy leader, a grudge, vengeance for a fallen friend, a talking nemesis, a protector, a rivalry
+- **Standard:** what each character did (attacks and hits, spells, talking, healing, movement) and how they ended, with a summary.
+- **Statistician:** every roll. The d20, modifier, total, DC, degree of success, margin and damage, round by round.
+
+**Story tables.** Every Roleplay sentence is rolled from a table:
+- an action table: delivery × damage type × outcome tier, e.g. *Melee · Slashing · Minor Success*
+- a relationship table, e.g. *Relationship · Enemy Leader · Failure*
+
+There are also talking, movement and event tables, 5 entries each. Install them as editable RollTables under **Settings → FastFighting → Story tables**; your world's tables always win over the built-in ones. Translators can ship `story/<language>.json` with the same keys.
+
 ## Make it So
 
-Make it So writes the chosen sample fight onto the tokens:
+Make it So posts the story to chat, moves each token to its final spot (snapped to the grid, never stacked, never through a wall), and writes the outcome onto the tokens:
 - HP and temp HP
 - dying, wounded and unconscious; lingering conditions such as clumsy or enfeebled
 - persistent damage, and afflictions as effects at their stage
@@ -167,7 +197,7 @@ To support another system, publish a helper module:
 Hooks.once("fastFighting.init", api => {
   class MySystemAdapter extends api.SystemAdapter {
     get label() { return "My System"; }
-    get rules() { return myRules; }            // pure object, see scripts/adapters/pf2e/rules.js
+    get rules() { return myRules; }            // pure object, see FastFighting PF2e scripts/rules.js
     canHandle(actor) { return actor.type === "character" || actor.type === "monster"; }
     async toCombatantSpec(tokenDoc) { /* see CombatantSpec in scripts/engine/battle-state.js */ }
     deriveTraits(actor) { return { traits: { tactical, brave, selfish, loyal }, flags: {}, reasons: {} }; }
@@ -180,7 +210,7 @@ Hooks.once("fastFighting.init", api => {
 });
 ```
 
-Adapter priority decides which one is used, highest first. A helper with priority above 0 replaces the built-in PF2e adapter. The generic fallback is registered for `"*"` at priority −100.
+Adapter priority decides which one is used, highest first. FastFighting PF2e registers at priority 10, so another PF2e helper with a higher priority would replace it. The generic fallback is registered for `"*"` at priority −100.
 
 **Rules object (pure).** The engine calls these thousands of times:
 - `actionsPerTurn`
@@ -193,6 +223,8 @@ Adapter priority decides which one is used, highest first. A helper with priorit
 - `onHealed(unit, amount)`
 - `recoveryCheck(unit, rng)` (optional)
 - `persistentFlatCheck(rng)`
+
+Helper modules import shared pieces from `scripts/core-api.js`, e.g. `import { SystemAdapter, parseTypedFormula } from "../../fast-fighting/scripts/core-api.js"`. FastFighting PF2e is the reference implementation.
 
 **Other API** on `game.modules.get("fast-fighting").api`:
 - `registerModifier({id, label, apply(spec, context)})`: change the BattleSpec before each run

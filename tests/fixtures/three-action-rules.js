@@ -1,7 +1,8 @@
 /**
- * Pathfinder 2e rules for the simulation engine. Pure functions only: no Foundry globals.
+ * Test fixture: a three-action, four-degree ruleset (a copy of FastFighting PF2e's rules) used to exercise
+ * the core engine. The real PF2e rules ship in the FastFighting PF2e module.
  */
-import { DOWNED_MODELS, STATUS } from "../../constants.js";
+import { DOWNED_MODELS, STATUS } from "../../scripts/constants.js";
 
 export const DEGREE = Object.freeze({ CRIT_FAIL: 0, FAIL: 1, SUCCESS: 2, CRIT_SUCCESS: 3 });
 

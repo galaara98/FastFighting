@@ -4,7 +4,6 @@
 import { MODULE_ID } from "./constants.js";
 import { registerSettings } from "./settings.js";
 import { buildApi, registerAdapter } from "./api.js";
-import { Pf2eAdapter } from "./adapters/pf2e/index.js";
 import { BattlePlanner } from "./apps/battle-planner.js";
 import { DefaultsConfig } from "./apps/defaults-config.js";
 import { GenericAdapter } from "./adapters/generic/index.js";
@@ -17,9 +16,8 @@ import { SOCKET, SURVEY_STATUS } from "./foundry/tactics.js";
 Hooks.once("init", () => {
   registerSettings(DefaultsConfig, GenericPathsConfig, StoryTablesConfig);
 
-  // Built-in adapters register at priority 0 so helper modules can replace them.
-  // The generic adapter ("*") is the fallback for systems nobody supports yet.
-  registerAdapter("pf2e", Pf2eAdapter, { priority: 0, source: MODULE_ID });
+  // System support comes from helper modules (FastFighting PF2e, ...). The generic adapter ("*") is the
+  // fallback for systems nobody supports yet.
   registerAdapter("*", GenericAdapter, { priority: -100, source: MODULE_ID });
 
   const api = buildApi({ openPlanner: () => BattlePlanner.open(), openSurvey: options => PlayerSurvey.open(options), installStoryTables, BattlePlanner, PlayerSurvey });
@@ -81,7 +79,14 @@ for ( const hook of ["createCombatant", "deleteCombatant", "createCombat", "dele
   Hooks.on(hook, () => { if ( game.user.isGM ) refreshRoster(); });
 }
 
+const HELPERS = { pf2e: "fast-fighting-pf2e" };
+
 Hooks.once("ready", () => {
+  // Point GMs at the helper module for their system when only the generic adapter is available.
+  const helper = HELPERS[game.system.id];
+  if ( game.user.isGM && helper && !game.modules.get(helper)?.active ) {
+    ui.notifications.info(game.i18n.format("FASTFIGHTING.Helper.Missing", { system: game.system.title, module: helper }));
+  }
   // The GM's "Prepare Players" request opens the survey on the chosen players' screens.
   game.socket.on(SOCKET, data => {
     if ( data?.action === "openSurvey" && data.userIds?.includes(game.user.id) ) {

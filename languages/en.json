@@ -647,6 +647,9 @@
       "ReinstallConfirm": "Replace every installed story table with the built-in version? Your edits to them will be lost.",
       "Installing": "Installing story tables…",
       "Installed": "Story tables: {created} installed, {kept} already present."
+    },
+    "Helper": {
+      "Missing": "FastFighting: install and enable the {module} helper module for full {system} support. Until then the generic adapter is used."
     }
   }
 }

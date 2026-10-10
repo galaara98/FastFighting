@@ -2,7 +2,7 @@ import { describe, expect, test } from "vitest";
 import { runBatchSync, replay, prepareBattle } from "../scripts/engine/simulator.js";
 import { createRun } from "../scripts/engine/battle-state.js";
 import { stepsToConvince, talkDC, talkAffinity, shareLanguage } from "../scripts/engine/behavior/talk.js";
-import { pf2eRules } from "../scripts/adapters/pf2e/rules.js";
+import { pf2eRules } from "./fixtures/three-action-rules.js";
 import { parseFormula } from "../scripts/engine/dice.js";
 import { creature, strike, battle } from "./helpers.js";
 

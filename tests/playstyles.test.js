@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest";
 import { combinePlaystyles, sampleRunTactics, PLAYSTYLE_IDS, MAX_PLAYSTYLES } from "../scripts/engine/playstyles.js";
 import { runBatchSync } from "../scripts/engine/simulator.js";
-import { pf2eRules } from "../scripts/adapters/pf2e/rules.js";
+import { pf2eRules } from "./fixtures/three-action-rules.js";
 import { createRng } from "../scripts/engine/rng.js";
 import { parseFormula } from "../scripts/engine/dice.js";
 import { creature, strike, battle } from "./helpers.js";

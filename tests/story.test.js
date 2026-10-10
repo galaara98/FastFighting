@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 import { replay } from "../scripts/engine/simulator.js";
-import { pf2eRules } from "../scripts/adapters/pf2e/rules.js";
+import { pf2eRules } from "./fixtures/three-action-rules.js";
 import { parseFormula } from "../scripts/engine/dice.js";
 import { buildStory, tierOf } from "../scripts/story/story.js";
 import { buildEnglishTables, TIERS, DELIVERIES, DAMAGE_TYPES, TALK_SKILLS, RELATIONSHIPS, MOVE_MODES, MOVE_SITUATIONS } from "../scripts/story/tables-en.js";

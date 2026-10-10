@@ -1,25 +1,44 @@
 {
   "id": "fast-fighting",
-  "title": "FastFighting",
-  "description": "Estimate the outcome of a battle from the tokens on the scene. Monte Carlo simulation with GM-tunable tactics, morale, leadership, terrain and healing. System agnostic, with built-in Pathfinder 2e support and an API for helper modules.",
+  "title": "FastFighting Core",
+  "description": "Estimate, narrate and resolve battles from the encounter on the scene: Monte Carlo simulation with personalities, tactics, talking, terrain and bystanders, a story of the fight, and Make it So to commit it. System support comes from helper modules such as FastFighting PF2e; a generic adapter covers the rest.",
   "version": "0.1.0",
   "authors": [
-    { "name": "galaara98", "url": "https://github.com/galaara98" }
+    {
+      "name": "galaara98",
+      "url": "https://github.com/galaara98"
+    }
   ],
   "compatibility": {
     "minimum": "14",
     "verified": "14"
   },
-  "esmodules": ["scripts/main.js"],
-  "styles": ["styles/fast-fighting.css"],
+  "esmodules": [
+    "scripts/main.js"
+  ],
+  "styles": [
+    "styles/fast-fighting.css"
+  ],
   "languages": [
-    { "lang": "en", "name": "English", "path": "languages/en.json" }
+    {
+      "lang": "en",
+      "name": "English",
+      "path": "languages/en.json"
+    }
   ],
   "socket": true,
   "flags": {
     "hotReload": {
-      "extensions": ["css", "hbs", "json"],
-      "paths": ["styles", "templates", "languages"]
+      "extensions": [
+        "css",
+        "hbs",
+        "json"
+      ],
+      "paths": [
+        "styles",
+        "templates",
+        "languages"
+      ]
     }
   },
   "url": "https://github.com/galaara98/FastFighting",

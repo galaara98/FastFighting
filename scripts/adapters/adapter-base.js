@@ -19,7 +19,7 @@ export class SystemAdapter {
     return this.constructor.name;
   }
 
-  /** Pure rules object; see scripts/adapters/pf2e/rules.js for the expected shape. */
+  /** Pure rules object; see FastFighting PF2e (scripts/rules.js) or scripts/adapters/generic/rules.js for the expected shape. */
   get rules() {
     throw new Error(`${this.constructor.name} must provide rules`);
   }
