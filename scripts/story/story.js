@@ -9,6 +9,7 @@
  */
 import { createRng } from "../engine/rng.js";
 import { DAMAGE_TYPES } from "./tables-en.js";
+import { desireBand, DESIRE_BAND_KEYS } from "../engine/behavior/desire.js";
 
 export const STORY_STYLES = ["roleplay", "standard", "statistician"];
 
@@ -197,8 +198,14 @@ function narrate(e, roll, rel, fill) {
       const tier = tierOf(e.degree, e.margin);
       return roll(`talk.${e.kind ?? "persuade"}.${tier}`, f) + relationshipClause(e, tier, rel, roll, f);
     }
+    case "door": {
+      const key = { open: "doorOpen", giveup: "doorGiveUp" }[e.method]
+        ?? (e.method === "attack" ? (e.success ? "doorSmashed" : e.hit ? "doorHit" : "doorMiss") : `door${e.method === "pick" ? "Picked" : "Forced"}${e.success ? "" : "Fail"}`);
+      return roll(`event.${key}`, f);
+    }
     case "move": {
       if ( e.purpose === "tend" ) return roll("event.moveTend", { ...f, target: e.toward });
+      if ( e.purpose === "door" ) return roll("event.moveDoor", f);
       const mode = ["walk", "fly", "swim", "climb", "burrow"].includes(e.mode) ? e.mode : "walk";
       const situation = e.purpose === "help" ? "help" : e.purpose === "hunt" ? "hunt" : (e.regions?.length && (e.mult > 1.05 || mode === "fly" || mode === "burrow" || mode === "climb")) ? "terrain" : "approach";
       return roll(`move.${mode}.${situation}`, { ...f, target: e.toward, region: e.regions?.[0] ?? "" });
@@ -266,8 +273,34 @@ function narrate(e, roll, rel, fill) {
   }
 }
 
+/** How often a character's turn opens with a moment of thought (and never two rounds running for the same one). */
+const THOUGHT_CHANCE = 0.25;
+
+/**
+ * A character's two strongest desires, as a thought: "Charlette really wants to heal Brent, but also kind of wants
+ * to hurt the wolf." Desires about creatures the story mustn't name are left out.
+ */
+function thinkAloud(e, roll, mentions) {
+  const desires = (e.desires ?? []).filter(d => d.target && mentions({ targetId: d.targetId }))
+    // (Two goblins read as one: "hurt Goblin, but also hurt Goblin" says nothing.)
+    .filter((d, i, all) => i === 0 || d.kind !== all[0].kind || d.target !== all[0].target);
+  if ( !desires.length ) return "";
+  const phrase = d => {
+    const target = d.targetId === e.actorId ? "themselves" : d.target;
+    const intensity = roll(`desire.intensity.${DESIRE_BAND_KEYS[desireBand(d.level)]}`);
+    const verb = roll(`desire.verb.${d.kind}`, { target });
+    return intensity && verb ? `${intensity} ${verb}` : "";
+  };
+  const first = phrase(desires[0]);
+  if ( !first ) return "";
+  const second = desires[1] ? phrase(desires[1]) : "";
+  return second ? roll("event.thoughtTwo", { actor: e.actor, first, second }) : roll("event.thoughtOne", { actor: e.actor, first });
+}
+
 function roleplay(result, spec, tables, seed, title, mapType) {
   const roll = makeRoller(tables, seed);
+  const moment = createRng((seed + 7919) >>> 0); // when someone pauses to think
+  const lastThought = new Map();
   const rel = new Relationships(spec);
   const { mentions } = storyCast(result, spec);
   const paragraphs = [];
@@ -294,6 +327,15 @@ function roleplay(result, spec, tables, seed, title, mapType) {
       if ( key === lastMoveKey ) continue;
       lastMoveKey = key;
     } else lastMoveKey = null;
+    if ( e.type === "thought" ) {
+      if ( (lastThought.get(e.actorId) ?? -9) >= e.round - 1 || moment.next() > THOUGHT_CHANCE ) continue;
+      const thought = thinkAloud(e, roll, mentions);
+      if ( thought ) {
+        lastThought.set(e.actorId, e.round);
+        current.sentences.push(capital(thought.trim()));
+      }
+      continue;
+    }
     const sentence = narrate(e, roll, rel, { mapType });
     rel.record(e);
     if ( sentence ) current.sentences.push(capital(sentence.trim()));
@@ -411,6 +453,8 @@ function statLine(e) {
     case "afflictionSave": return `${e.actor} vs ${e.name} · ${e.saveType} ${roll(e.natural, e.mod, e.total, e.dc, "DC")} · ${DEGREE[e.degree]}`;
     case "opportunity": return `${e.actor} → ${e.target}: opportunity attack (reaction)`;
     case "disengage": return `${e.actor}: ${e.label || "disengages"}`;
+    case "door": return `${e.actor} → the door: ${e.method}${e.natural !== undefined ? ` · ${roll(e.natural, e.mod, e.total, e.dc, e.method === "attack" ? "AC" : "DC")}` : ""}${e.method === "attack" && e.hit ? ` · ${e.damage} damage` : ""} · ${e.method === "giveup" ? `gives up on ${e.target}` : e.success ? "open" : "holds"}`;
+    case "thought": return `${e.actor} thinks: ${(e.desires ?? []).map(d => `${d.kind} ${d.targetId === e.actorId ? "self" : d.target} ${d.level}`).join(" · ")}`;
     case "riderSave": return `${e.actor} vs ${e.name} · ${e.saveType} ${roll(e.natural, e.mod, e.total, e.dc, "DC")} · ${DEGREE[e.degree]}${e.damage ? ` · ${e.damage} damage` : ""}`;
     case "notice": return `${e.actor} notices (${e.cause})`;
     case "firstAid": return `${e.actor} → ${e.target}: first aid · medicine ${roll(e.natural, e.mod, e.total, e.dc, "DC")} · ${DEGREE[e.degree]} · ${e.stable ? "stabilized" : e.dead ? "dies" : `dying ${e.dying}`}`;

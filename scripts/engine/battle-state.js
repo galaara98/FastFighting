@@ -487,6 +487,21 @@ export function movesNeeded(run, a, t, action) {
   return Math.ceil((gap * ap.mult) / ap.speed);
 }
 
+/** One move toward a spot (a door): straight there, stopping `stopAt` feet short. */
+export function moveTowardPoint(run, a, point, budget, stopAt = 5) {
+  run.geo = (run.geo ?? 0) + 1;
+  const from = run.log && a.pos ? { x: a.pos.x, y: a.pos.y } : null;
+  if ( !a.pos ) return { feet: 0, cost: 0, mode: "walk", mult: 1, regions: [], reached: true, from, to: null };
+  const d = Math.hypot(point.x - a.pos.x, point.y - a.pos.y);
+  const feet = Math.max(0, Math.min(budget ?? a.spec.speeds?.walk ?? 25, d - stopAt));
+  if ( d > 0 && feet > 0 ) {
+    a.pos.x += ((point.x - a.pos.x) / d) * feet;
+    a.pos.y += ((point.y - a.pos.y) / d) * feet;
+  }
+  a.feetMoved += feet;
+  return { feet: Math.round(feet), cost: feet, mode: "walk", mult: 1, regions: [], reached: d - feet <= stopAt + 0.5, from, to: from ? { x: a.pos.x, y: a.pos.y } : null };
+}
+
 /**
  * One move advancing a toward t (stopping at reach for melee). `budget` is the movement it may spend (feet of
  * speed before terrain), a full speed by default.

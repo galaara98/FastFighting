@@ -369,6 +369,18 @@ const EVENT = {
   afflictionSavePass: ["{actor} resists {affliction}.", "{actor} shakes off {affliction}.", "{affliction} fails to take hold of {actor}.", "{actor} fights off {affliction}.", "{actor} is unaffected by {affliction}."],
   opportunity: ["{actor} lashes out as {target} pulls away.", "{target} turns away, and {actor} makes them pay for it.", "{actor} takes the opening as {target} breaks off.", "{target} leaves {actor} a gap, and {actor} takes it.", "{actor} punishes {target} for turning their back."],
   disengage: ["{actor} backs off carefully, guard up.", "{actor} gives ground step by step, never turning their back.", "{actor} slips out of reach.", "{actor} disengages with care.", "{actor} edges away, blade still raised."],
+  thoughtTwo: ["{actor} {first}, but also {second}.", "{actor} {first}; part of them {second}.", "Above all, {actor} {first}, but also {second}.", "{actor} {first}, and somewhere underneath also {second}.", "{actor} {first}, yet also {second}."],
+  thoughtOne: ["{actor} {first}.", "{actor} {first}, above everything else.", "{actor} {first}, and nothing else matters.", "Right now {actor} {first}.", "In this moment, {actor} {first}."],
+  moveDoor: ["{actor} makes for the door.", "{actor} heads for the door.", "{actor} crosses to the door.", "{actor} goes to the door.", "{actor} strides up to the door."],
+  doorOpen: ["{actor} throws the door open.", "{actor} pulls the door wide.", "{actor} shoulders the door open.", "{actor} yanks the door open.", "The door swings open under {actor}'s hand."],
+  doorForced: ["{actor} slams into the door and it bursts open.", "With a crack of splintering wood, {actor} forces the door.", "{actor} heaves, and the door gives way.", "The lock tears free as {actor} forces the door.", "{actor} kicks the door in."],
+  doorForcedFail: ["{actor} throws a shoulder at the door, but it holds.", "The door shudders under {actor}'s weight and holds.", "{actor} strains at the door to no avail.", "{actor} batters the door, and it doesn't budge.", "The door groans but stands firm against {actor}."],
+  doorPicked: ["{actor} works the lock, and it clicks open.", "A few deft twists, and {actor} has the lock open.", "{actor} picks the lock in moments.", "The lock gives way to {actor}'s picks.", "{actor} coaxes the lock open."],
+  doorPickedFail: ["{actor} fumbles with the lock.", "The lock resists {actor}'s picks.", "{actor} can't get the lock to give.", "A pick slips, and {actor} curses the lock.", "{actor} works at the lock without luck."],
+  doorSmashed: ["{actor} hacks through the door.", "The door splinters apart under {actor}'s blows.", "{actor} smashes the door to kindling.", "With a last blow, {actor} breaks the door down.", "{actor} chops a way through the door."],
+  doorHit: ["{actor} hacks at the door; splinters fly.", "{actor} chops into the door.", "{actor}'s blow bites deep into the door.", "{actor} batters the door, and it cracks.", "Wood splits as {actor} hits the door."],
+  doorMiss: ["{actor} strikes at the door and glances off.", "{actor}'s blow barely marks the door.", "{actor} hits the door at a bad angle.", "The door shrugs off {actor}'s blow.", "{actor} swings at the door to little effect."],
+  doorGiveUp: ["{actor} gives up on the locked door.", "{actor} rattles the locked door and turns away.", "The door won't open; {actor} looks for another way.", "{actor} isn't going to waste time on a locked door.", "Locked. {actor} turns back."],
   moveTend: ["{actor} hurries to {target}'s side.", "{actor} pushes through to reach {target}.", "{actor} ducks low and makes for {target}.", "{actor} closes the gap to {target}.", "{actor} runs to {target}."],
   riderSavePass: ["{actor} keeps their footing.", "{actor} shrugs it off.", "{actor} braces and holds firm.", "{actor} twists free of it.", "{actor} stays steady."],
   afflictionStage: ["{affliction} worsens in {actor}.", "{actor} suffers from {affliction}.", "{affliction} burns through {actor}'s veins.", "{actor} doubles over from {affliction}.", "{affliction} tightens its grip on {actor}."],
@@ -385,6 +397,25 @@ const EVENT = {
 function fill(template, parts) {
   return template.replace(/\{(\w+)\}/g, (m, k) => (parts[k] !== undefined ? parts[k] : m));
 }
+
+/**
+ * A character's desires, for its moments of thought: how badly ("really wants to"), then what ("heal {target}").
+ * Bands: passing, wants, determined, driven, obsessed.
+ */
+export const DESIRE_INTENSITY = {
+  passing: ["half wants to", "has half a mind to", "idly wonders whether to", "is faintly tempted to", "toys with the idea to"],
+  wants: ["kind of wants to", "would like to", "wouldn't mind a chance to", "rather wants to", "is inclined to"],
+  determined: ["means to", "wants to", "is determined to", "intends to", "has made up their mind to"],
+  driven: ["really wants to", "badly wants to", "is set on trying to", "won't rest until they can", "is driven to"],
+  obsessed: ["can think only of how to", "would give anything to", "is desperate to", "burns to", "is consumed by the need to"]
+};
+export const DESIRE_VERB = {
+  hurt: ["hurt {target}", "bring {target} down", "make {target} pay", "get at {target}", "finish {target}"],
+  heal: ["heal {target}", "patch up {target}", "tend to {target}", "help {target}", "get {target} back on their feet"],
+  protect: ["protect {target}", "keep {target} safe", "stand between {target} and harm", "watch {target}'s back", "shield {target}"],
+  talk: ["talk {target} down", "reason with {target}", "have a word with {target}", "talk {target} out of this", "get through to {target}"],
+  avoid: ["get away from {target}", "stay clear of {target}", "keep away from {target}", "put some distance between them and {target}", "avoid {target}"]
+};
 
 /** Build every table: key -> 5 entries. */
 export function buildEnglishTables() {
@@ -415,6 +446,8 @@ export function buildEnglishTables() {
     for ( const situation of MOVE_SITUATIONS ) tables[`move.${mode}.${situation}`] = MOVE[mode][situation];
   }
   for ( const [name, entries] of Object.entries(EVENT) ) tables[`event.${name}`] = entries;
+  for ( const [band, entries] of Object.entries(DESIRE_INTENSITY) ) tables[`desire.intensity.${band}`] = entries;
+  for ( const [kind, entries] of Object.entries(DESIRE_VERB) ) tables[`desire.verb.${kind}`] = entries;
   return tables;
 }
 

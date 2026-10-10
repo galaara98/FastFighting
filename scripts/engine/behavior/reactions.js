@@ -14,6 +14,7 @@
 import { TACTICAL } from "../../constants.js";
 import { areEnemies, isStanding, liveTier, edgeDistance } from "../battle-state.js";
 import { meanPart } from "../dice.js";
+import { mind } from "./desire.js";
 
 /** Reactions u has each round: none in a system without opportunity attacks. */
 export function reactionsPerRound(rules, u) {
@@ -61,6 +62,7 @@ export function isWary(run, u) {
   if ( u.waryRound === run.round ) return u.wary;
   const tier = liveTier(run, u);
   let p = tier >= TACTICAL.TACTICAL ? 1 : tier === TACTICAL.COMPETENT ? 0.5 : 0;
+  if ( mind(run, u).obsessed ) p = 0; // an obsession leaves no room for caution
   if ( u.spec.roleplay ) p *= 0.5;
   u.waryRound = run.round;
   u.wary = p >= 1 || (p > 0 && run.rng.chance(p));

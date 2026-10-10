@@ -7,8 +7,8 @@ import { parseFormula } from "../scripts/engine/dice.js";
 import { creature, strike, battle } from "./helpers.js";
 
 describe("playstyle combination", () => {
-  test("twenty-one playstyles, at most four count", () => {
-    expect(PLAYSTYLE_IDS).toHaveLength(21);
+  test("twenty-four playstyles, at most four count", () => {
+    expect(PLAYSTYLE_IDS).toHaveLength(24);
     expect(combinePlaystyles(PLAYSTYLE_IDS).ids).toHaveLength(MAX_PLAYSTYLES);
   });
 

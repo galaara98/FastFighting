@@ -21,7 +21,7 @@ function undoStack(scene) {
   const stored = scene?.getFlag(MODULE_ID, "undo");
   if ( !stored ) return [];
   if ( Array.isArray(stored.stack) ) return stored.stack;
-  return (stored.records || stored.moves || stored.messages) ? [stored] : [];
+  return (stored.records || stored.moves || stored.messages || stored.doors) ? [stored] : [];
 }
 
 function escape(s) {
@@ -76,10 +76,12 @@ export function planMakeItSo(spec, replay) {
 }
 
 /** Ask the GM to confirm; returns true if they accept. */
-export async function confirmMakeItSo(rows) {
+export async function confirmMakeItSo(rows, replay = null) {
   const changed = rows.filter(r => r.changed);
+  const doors = Object.values(replay?.doors ?? {});
+  const doorLine = doors.length ? `<li>${game.i18n.format("FASTFIGHTING.MakeItSo.Doors", { n: doors.length, broken: doors.filter(d => d.broken).length })}</li>` : "";
   const content = `<p>${loc("FASTFIGHTING.MakeItSo.Confirm")}</p>
-    <ul class="ff-mis-list">${changed.map(r => `<li><strong>${escape(r.spec.name)}</strong>: ${r.lines.map(escape).join("; ")}</li>`).join("")}</ul>
+    <ul class="ff-mis-list">${changed.map(r => `<li><strong>${escape(r.spec.name)}</strong>: ${r.lines.map(escape).join("; ")}</li>`).join("")}${doorLine}</ul>
     <p class="hint">${loc("FASTFIGHTING.MakeItSo.UndoHint")}</p>`;
   return foundry.applications.api.DialogV2.confirm({
     window: { title: loc("FASTFIGHTING.MakeItSo.Title"), icon: "fa-solid fa-gavel" },
@@ -136,20 +138,37 @@ async function quickMove(doc, waypoints) {
  * Walk the tokens through the fight as the story tells it: every move in order, quickly, around walls (or
  * straight through where the fight went through). Returns the ids of the tokens it moved.
  */
-async function playOnMap(replay, rows) {
+async function playOnMap(replay, rows, doorsOpened) {
   const docs = new Map(rows.map(r => [r.spec.id, r.tokenDoc]));
   const grid = currentPathGrid() ?? pathGridFor(rows.map(r => r.tokenDoc.object).filter(Boolean));
   const moved = new Set();
   for ( const e of replay.log ?? [] ) {
+    // A door opens when the story opens it.
+    if ( e.type === "door" && e.success ) {
+      await openSceneDoor(e.doorId, doorsOpened);
+      continue;
+    }
     if ( !["move", "flee", "leave"].includes(e.type) || !e.to ) continue;
     const doc = docs.get(e.actorId);
     if ( !doc?.object || doc.hidden ) continue;
     const dest = clampToScene(pixelsFor(doc, e.to), doc);
     if ( dest.x === doc._source.x && dest.y === doc._source.y ) continue;
-    await quickMove(doc, grid ? grid.route(doc, dest) : [dest]);
+    await quickMove(doc, grid ? grid.route(doc, dest, { doors: true }) : [dest]);
     moved.add(doc.id);
   }
   return moved;
+}
+
+/** Open a door on the scene (once), remembering how it was for Undo. */
+async function openSceneDoor(id, opened) {
+  const wall = canvas.scene.walls.get(id);
+  if ( !wall || opened.has(id) || wall.ds === CONST.WALL_DOOR_STATES.OPEN ) return;
+  opened.set(id, { uuid: wall.uuid, ds: wall.ds });
+  try {
+    await wall.update({ ds: CONST.WALL_DOOR_STATES.OPEN });
+  } catch ( err ) {
+    console.warn(`${MODULE_ID} | couldn't open door ${id}`, err);
+  }
 }
 
 function cellsOf(x, y, doc) {
@@ -264,7 +283,10 @@ export async function executeMakeItSo(rows, replay, { story = null } = {}) {
   const placements = planPlacements(rows);
   const start = new Map(rows.map(r => [r.tokenDoc.id, placeOf(r.tokenDoc)]));
   const moves = rows.map(r => ({ uuid: r.tokenDoc.uuid, ...start.get(r.tokenDoc.id) }));
-  const played = setting("playOnMap") ? await playOnMap(replay, rows) : new Set();
+  const doorsOpened = new Map();
+  const played = setting("playOnMap") ? await playOnMap(replay, rows, doorsOpened) : new Set();
+  // Doors the fight opened or broke stay open (if the map didn't already show it).
+  for ( const id of Object.keys(replay.doors ?? {}) ) await openSceneDoor(id, doorsOpened);
   const finals = new Map(placements.map(p => [p.doc.id, { x: p.x, y: p.y }]));
   for ( const id of played ) if ( !finals.has(id) ) finals.set(id, start.get(id));
   const settle = [];
@@ -323,7 +345,7 @@ export async function executeMakeItSo(rows, replay, { story = null } = {}) {
     if ( message ) messages.push(message.id);
   }
 
-  const stack = [{ time: Date.now(), records, moves, messages }, ...undoStack(canvas.scene)].slice(0, UNDO_DEPTH);
+  const stack = [{ time: Date.now(), records, moves, messages, doors: [...doorsOpened.values()] }, ...undoStack(canvas.scene)].slice(0, UNDO_DEPTH);
   await canvas.scene.update({ [`flags.${MODULE_ID}.==undo`]: { stack } });
   Hooks.callAll("fastFighting.makeItSo", records);
   return records;
@@ -420,6 +442,14 @@ export async function undoMakeItSo(scene = canvas.scene) {
   if ( !undo ) return false;
   for ( const id of undo.messages ?? [] ) await game.messages.get(id)?.delete();
   for ( const r of [...(undo.records ?? [])].reverse() ) await revertRecord(r);
+  // Doors as they were (closed, or locked).
+  for ( const d of undo.doors ?? [] ) {
+    try {
+      await (await fromUuid(d.uuid))?.update({ ds: d.ds });
+    } catch ( err ) {
+      console.warn(`${MODULE_ID} | couldn't restore a door`, err);
+    }
+  }
   // Positions last, so tokens recreated above go back to where they started too.
   // Straight back where they stood, without walking the map again.
   const back = [];

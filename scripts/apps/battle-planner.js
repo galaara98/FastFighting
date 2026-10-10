@@ -321,7 +321,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       isPc,
       playerControlled,
       controllers,
-      tactics: this.expanded.has(e.token.id) ? questionsContext(s, e.token.actor, `gm-${e.token.id}`, { questions: playerControlled }) : null,
+      tactics: this.expanded.has(e.token.id) ? questionsContext(s, e.token.actor, `gm-${e.token.id}`, { questions: playerControlled, targets: this.roster.map(r => ({ id: r.token.id, name: r.spec.name })) }) : null,
       playstyleNames: playstyles.ids.map(id => loc(`FASTFIGHTING.Playstyle.${id}.Name`)).join(", ")
     };
   }
@@ -691,8 +691,8 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     if ( canvas.scene?.id !== this.sceneId ) return ui.notifications.warn(loc("FASTFIGHTING.Planner.SceneChanged"));
     try {
       const rows = planMakeItSo(this.spec, this.sample.result);
-      if ( !rows.some(r => r.changed) ) return ui.notifications.info(loc("FASTFIGHTING.MakeItSo.Nothing"));
-      const ok = await confirmMakeItSo(rows);
+      if ( !rows.some(r => r.changed) && !Object.keys(this.sample.result.doors ?? {}).length ) return ui.notifications.info(loc("FASTFIGHTING.MakeItSo.Nothing"));
+      const ok = await confirmMakeItSo(rows, this.sample.result);
       if ( !ok ) return;
       await executeMakeItSo(rows, this.sample.result, { story: this.storyFor() });
       ui.notifications.info(loc("FASTFIGHTING.MakeItSo.Done"));

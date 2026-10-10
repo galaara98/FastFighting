@@ -140,6 +140,7 @@ export function computeApproach(tokens, specs, { ignoreTerrain = false, ignoreTe
       const elevDiff = Math.abs((a.document.elevation ?? 0) - (b.document.elevation ?? 0));
       const blocked = a.checkCollision(b.center, { type: "move", mode: "any" });
       let throughWall = false;
+      const doorsBy = {};
       const modes = {};
       let best = null;
       for ( const mode of MODES ) {
@@ -150,13 +151,16 @@ export function computeApproach(tokens, specs, { ignoreTerrain = false, ignoreTe
         // With no way round, through the wall counts as 4x difficult terrain for that square, and a creature
         // that can't manage that in one move gives up on going that way.
         if ( blocked && !["burrow", "climb"].includes(mode) ) {
-          const steps = grid?.stepsBetween(a, b);
+          // A closed door on the way is walked to and opened (or forced, or picked) in the fight itself.
+          const way = grid?.stepsBetween(a, b);
           const straight = Math.max(1, dist / square);
-          if ( steps === null || steps === undefined ) mult *= 1.5;
-          else if ( Number.isFinite(steps) ) mult *= Math.max(1, steps / straight);
-          else if ( speed < THROUGH_WALL * square ) mult = Infinity;
+          if ( !way ) mult *= 1.5;
+          else if ( Number.isFinite(way.steps) ) {
+            mult *= Math.max(1, way.steps / straight);
+            if ( way.doors.length ) doorsBy[mode] = way.doors;
+          } else if ( speed < THROUGH_WALL * square ) mult = Infinity;
           else mult *= (dist + (THROUGH_WALL - 1) * square) / Math.max(square, dist);
-          throughWall ||= steps === Infinity;
+          throughWall ||= way?.steps === Infinity;
         }
         if ( !Number.isFinite(mult) ) mult = Infinity;
         modes[mode] = { speed, mult, moveActions: Number.isFinite(mult) ? Math.ceil((dist * mult) / speed) : Infinity };
@@ -177,6 +181,7 @@ export function computeApproach(tokens, specs, { ignoreTerrain = false, ignoreTe
         modes,
         blocked,
         throughWall,
+        doors: (best && doorsBy[best.mode]) ?? [],
         regions: best?.mode === "walk" || best?.mode === "swim" ? regionsCrossed(a, b) : []
       };
     }

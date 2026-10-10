@@ -12,11 +12,13 @@ import { costOf, costUnits } from "./turn.js";
 import {
   prepareBattle, createRun, isStanding, isUp, enemiesOf, alliesOf, areEnemies, liveTier, liveTrait, currentAc,
   attackRoll, saveRoll, checkRoll, turnFor, moveToward, moveAway, bonusDamageParts, dispositionOf,
-  behaviorOf, edgeDistance, movesNeeded, approach, canMove
+  behaviorOf, edgeDistance, movesNeeded, approach, canMove, moveTowardPoint
 } from "./battle-state.js";
 import { sampleRunTactics } from "./playstyles.js";
-import { chooseTarget, bestOptionVs } from "./behavior/targeting.js";
-import { decideHeal, rescueOption } from "./behavior/healing.js";
+import { chooseTarget, bestOptionVs, scoreTargets } from "./behavior/targeting.js";
+import { decideHeal, rescueOption, healScores } from "./behavior/healing.js";
+import { initDesires, newTurn, think, want, thwart, relieve, levelOf, mind, thoughts as thoughtsOf, levelsFromScores, listen, remember, styleWants, styleOf, CHOICE_LEVEL } from "./behavior/desire.js";
+import { prepareDoors, doorStates, doorAhead, atDoor, doorPlan, patienceFor, doorDamage } from "./behavior/doors.js";
 import { checkMorale, MORALE } from "./behavior/morale.js";
 import { expectedDamage, spendUse, attacksIn, criticalParts, saveMultiplier } from "./behavior/evaluate.js";
 import { createAggregator } from "./aggregate.js";
@@ -33,6 +35,8 @@ const AFTERMATH_ROUNDS = 100;
 /** Batches give the browser back control this often (ms), so the GM's screen stays responsive. */
 const SLICE_MS = 25;
 const DEGREE_LABEL = ["critical failure", "failure", "success", "critical success"];
+/** How much being hit makes a creature want to hit back, by tactical band: simple minds go for whoever hurt them. */
+const HIT_URGE = [40, 25, 10, 5, 3];
 
 function log(run, u, text, data = {}) {
   if ( !run.log ) return;
@@ -217,6 +221,11 @@ function dealDamage(run, source, target, amount, { crit = false } = {}) {
     if ( source ) {
       source.damageDealt += dealt + absorbed;
       target.harmedBy.set(source.id, (target.harmedBy.get(source.id) ?? 0) + dealt + absorbed);
+      if ( areEnemies(run, source, target) ) {
+        // Hit from afar while already trading blows with someone: keep at the one in front of it.
+        const busy = !target.adjacent.has(source.id) && [...target.adjacent].some(id => { const o = run.byId.get(id); return o && isStanding(o) && areEnemies(run, target, o); });
+        want(target, "hurt", source.id, (busy ? 3 : (HIT_URGE[liveTier(run, target)] ?? 5)) * styleOf(target).retaliate);
+      }
     }
     if ( target.hp <= 0 ) {
       target.hp = 0;
@@ -227,6 +236,12 @@ function dealDamage(run, source, target, amount, { crit = false } = {}) {
       run.firstFallen ??= target.id;
       releaseGrabs(run, target);
       const dead = target.status === STATUS.DEAD;
+      // A friend's fall: the one who did it becomes someone to settle with, the more so for the loyal.
+      if ( source ) {
+        for ( const a of run.units ) {
+          if ( a !== target && a.side === target.side && isStanding(a) ) want(a, "hurt", source.id, 15 * liveTrait(run, a, "loyal") / 60 * styleOf(a).avenge);
+        }
+      }
       log(run, target, dead ? "is slain" : `falls${target.dying ? ` (dying ${target.dying})` : ""}`, { type: dead ? "death" : "down", by: source?.spec.name ?? null, byId: source?.id ?? null, dying: target.dying });
     }
   } else if ( target.status === STATUS.DOWN ) {
@@ -397,7 +412,10 @@ function executeOffense(run, u, action, t, attacksMade) {
     if ( !target.active ) notice(run, target, "attacked", u);
     target.lastAttackerId = u.id;
     const held = target.grudges?.get(u.id);
-    if ( held && !held.provoked ) held.provoked = true; // they took from me, and now this
+    if ( held && !held.provoked ) {
+      held.provoked = true; // they took from me, and now this
+      want(target, "hurt", u.id, 60);
+    }
 
     const common = logging ? {
       action: action.name, actionKind: action.kind, damageType: primaryType(action), target: target.spec.name, targetId: target.id,
@@ -544,6 +562,8 @@ function leaveReach(run, u, turn, keep = null, need = null) {
         log(run, e, `strikes at ${u.spec.name} as they pull away`, { type: "opportunity", target: u.spec.name, targetId: u.id, action: strike.name });
         executeOffense(run, e, strike, u, 0);
       }
+      // That hurt: whatever it was heading for seems a little less worth it.
+      if ( keep ) thwart(run, u, areEnemies(run, u, keep) ? "hurt" : "heal", keep.id, 6);
     }
   }
   for ( const id of [...u.adjacent] ) {
@@ -574,12 +594,138 @@ function flee(run, u, reason, turn = null) {
 }
 
 function moveLog(run, u, move, toward, purpose = "approach") {
-  if ( !run.log ) return;
+  if ( !run.log || !(move.feet > 0) ) return;
   log(run, u, `${move.mode === "walk" ? "moves" : move.mode === "fly" ? "flies" : move.mode === "swim" ? "swims" : move.mode === "climb" ? "climbs" : "burrows"} toward ${toward.spec.name}`, {
     type: "move", mode: move.mode, feet: move.feet, mult: move.mult, regions: move.regions, toward: toward.spec.name, towardId: toward.id,
     from: move.from ?? null, to: move.to ?? null,
     reached: move.reached, purpose, tactical: liveTier(run, u), cover: !!u.spec.environment?.nearCover
   });
+}
+
+/** A door gives way (or is simply opened): it's open for everyone now, and nobody's walled off by it any more. */
+function openDoor(run, door, state, broken = false) {
+  state.open = true;
+  state.locked = false;
+  state.broken ||= broken;
+  run.geo = (run.geo ?? 0) + 1;
+  for ( const o of run.units ) for ( const [tid, did] of o.walledOff ?? [] ) if ( did === door.id ) o.walledOff.delete(tid);
+}
+
+/**
+ * A closed door between u and what it's after: walk to it, then open it, or (if it's locked and u wants it badly
+ * enough) bash it, hack at it or pick the lock, whichever is quickest for u. Every failed try wears the desire down.
+ * Returns "moved", "worked", "giveup" (not worth it: u turns to something else) or "stuck" (nothing left this turn).
+ */
+function workTheDoor(run, u, turn, door, target) {
+  const rules = run.prep.rules;
+  const state = run.doors.get(door.id);
+  const kind = areEnemies(run, u, target) ? "hurt" : "heal";
+  if ( !atDoor(u, door) ) {
+    if ( !canMove(run, u) || !leaveReach(run, u, turn, null) ) return "stuck";
+    const budget = turn.payForMove(approach(run, u, target).speed);
+    if ( !budget ) return "stuck";
+    const move = moveTowardPoint(run, u, door, budget);
+    turn.usedMove(move.cost);
+    if ( run.log ) {
+      log(run, u, "moves toward the door", {
+        type: "move", mode: "walk", feet: move.feet, mult: 1, regions: [], toward: "the door", towardId: `door:${door.id}`,
+        from: move.from, to: move.to, purpose: "door", reached: move.reached, tactical: liveTier(run, u)
+      });
+    }
+    return move.feet > 0 ? "moved" : "stuck";
+  }
+  const basic = rules.basicAction ?? 1;
+  const where = { doorId: door.id, target: target.spec.name, targetId: target.id };
+  if ( !state.locked ) {
+    const cost = rules.doorCosts?.open ?? basic;
+    if ( !turn.canAfford(cost) ) return "stuck";
+    turn.spend(cost);
+    openDoor(run, door, state);
+    log(run, u, "opens the door", { type: "door", method: "open", success: true, ...where });
+    return "worked";
+  }
+  const plan = doorPlan(run, u, door, state);
+  // The door is worth whatever u wants most on the far side of it; with nobody on this side to fight, there's
+  // nothing better to do, so it keeps at it longer.
+  const beyond = enemiesOf(run, u).filter(o => isStanding(o) && (run.prep.approachOf(u.id, o.id)?.doors ?? []).includes(door.id));
+  if ( !beyond.includes(target) && areEnemies(run, u, target) ) beyond.push(target);
+  const urge = Math.max(CHOICE_LEVEL, levelOf(u, kind, target.id), ...beyond.map(o => levelOf(u, "hurt", o.id)));
+  const nothingElse = !enemiesOf(run, u).some(o => isStanding(o) && !beyond.includes(o));
+  if ( !plan || plan.turns > patienceFor(urge) * (nothingElse ? 1.5 : 1) * styleOf(u).doorPatience ) {
+    log(run, u, "won't waste time on the locked door", { type: "door", method: "giveup", success: false, ...where });
+    for ( const o of beyond ) {
+      thwart(run, u, "hurt", o.id, 15);
+      (u.walledOff ??= new Map()).set(o.id, door.id);
+    }
+    if ( kind !== "hurt" ) thwart(run, u, kind, target.id, 15);
+    return "giveup";
+  }
+  if ( !turn.canAfford(plan.cost) ) return "stuck";
+  turn.spend(plan.cost);
+  if ( plan.method === "attack" ) {
+    const roll = rollCheck(rules, run.rng, plan.strike.bonus ?? 0, door.ac, { kind: "attack" });
+    let damage = 0;
+    if ( roll.degree >= 2 ) {
+      const parts = roll.degree === 3 ? criticalParts(rules, plan.strike.damage) : plan.strike.damage;
+      const rolled = sampleDamage(parts ?? [], run.rng, 1);
+      damage = doorDamage(rules, door, Object.values(rolled.byType).reduce((s, v) => s + v, 0));
+      state.hp -= damage;
+    }
+    const broke = state.hp <= 0;
+    if ( broke ) openDoor(run, door, state, true);
+    else thwart(run, u, kind, target.id, damage > 0 ? 4 : 8);
+    log(run, u, broke ? "smashes through the door" : damage ? "hacks at the door" : "can't make a dent in the door", {
+      type: "door", method: "attack", success: broke, hit: roll.degree >= 2, damage, action: plan.strike.name,
+      natural: roll.natural, mod: plan.strike.bonus ?? 0, total: roll.total, dc: door.ac, degree: roll.degree, ...where
+    });
+  } else {
+    const roll = rollCheck(rules, run.rng, plan.mod, plan.dc, { kind: "check" });
+    const success = roll.degree >= 2;
+    if ( success ) openDoor(run, door, state, plan.method === "force");
+    else thwart(run, u, kind, target.id, 12);
+    log(run, u, success ? (plan.method === "force" ? "forces the door open" : "picks the lock") : (plan.method === "force" ? "throws a shoulder at the door, but it holds" : "can't get the lock to give"), {
+      type: "door", method: plan.method, success, natural: roll.natural, mod: plan.mod, total: roll.total, dc: plan.dc, degree: roll.degree, ...where
+    });
+  }
+  if ( state.open ) relieve(u, kind, target.id);
+  return "worked";
+}
+
+/**
+ * What u wants this turn: its tactics' reasoning (whom it would fight, and the runners-up; whom it would mend; whom it
+ * would talk to; whom it fears), on top of what it was told to want and what the fight has stirred.
+ */
+function deliberate(run, u) {
+  newTurn(u);
+  const scored = scoreTargets(run, u);
+  for ( const { id, level } of levelsFromScores(scored.map(x => ({ id: x.t.id, score: x.score }))) ) think(u, "hurt", id, level);
+  // (When its healing logic says heal, that's at least as pressing as the foe it would pick.)
+  if ( u.prep.healActions?.length ) for ( const { ally, score } of healScores(run, u) ) think(u, "heal", ally.id, Math.max(45, 20 + 20 * score));
+  let talkTarget = null;
+  if ( run.prep.options.talking && (u.prep.talkAffinity ?? 0) > 0 && u.tac?.talk !== "never" ) {
+    const pitch = choosePitch(run, u);
+    if ( pitch ) {
+      talkTarget = pitch.target.id;
+      think(u, "talk", talkTarget, 15 + 60 * u.prep.talkAffinity);
+    }
+  }
+  // Whoever took from it, until they attack it.
+  for ( const [id, g] of u.grudges ?? [] ) if ( !g.provoked ) think(u, "avoid", id, 50);
+  if ( u.tac?.target === "protect" ) {
+    const ward = run.units.find(a => a !== u && a.side === u.side && isStanding(a) && run.units.some(e => e.targetId === a.id && isStanding(e) && areEnemies(run, a, e)));
+    if ( ward ) think(u, "protect", ward.id, 50);
+  }
+  // Badly hurt, it loses heart for foes it would have to cross the field to reach.
+  if ( u.maxHp > 0 && u.hp / u.maxHp < 0.35 ) for ( const x of scored ) if ( x.moves >= 2 ) thwart(run, u, "hurt", x.t.id, 5);
+  // Its playstyle's leanings (the weakest, the fallen, a friend to guard, something to fear ...).
+  styleWants(run, u, scored, { canHeal: !!u.prep.healActions?.length, canTalk: !!talkTarget, talkTarget });
+  // What its leader and its friends want pulls on it too (for most, the leader more than the crowd).
+  listen(run, u, { canHeal: !!u.prep.healActions?.length, canTalk: (u.prep.talkAffinity ?? 0) > 0 });
+  remember(run, u);
+  if ( run.log ) {
+    const top = thoughtsOf(run, u);
+    if ( top.length ) log(run, u, `thinks: ${top.map(d => `${d.kind} ${d.target} (${d.level})`).join(", ")}`, { type: "thought", desires: top });
+  }
 }
 
 /** Pitches made in a standoff turn (or a leader's last word, aimed only at the player characters). */
@@ -662,6 +808,15 @@ function takeTurn(run, u) {
     log(run, u, "wavers", { type: "waver" });
   }
 
+  // What it wants this turn, and what that means: a terror close at hand sends it running.
+  deliberate(run, u);
+  const wants = mind(run, u);
+  if ( wants.lead?.kind === "avoid" && wants.lead.level >= 70 ) {
+    const dread = run.byId.get(wants.lead.targetId);
+    const d = dread ? edgeDistance(u, dread) : null;
+    if ( dread && (d === null || d <= 30) ) return flee(run, u, `runs from ${dread.spec.name}`, turn);
+  }
+
   const disposition = dispositionOf(u);
   if ( u.prone && u.wasDowned && disposition.selfRevived === "retreat" ) return flee(run, u, "retreats after being revived", turn);
   if ( disposition.allyDying === "retreat" && run.units.some(a => a.side === u.side && a !== u && a.status === STATUS.DOWN && a.active) ) {
@@ -719,9 +874,15 @@ function takeTurn(run, u) {
 
   // Words before weapons: talkers sway, the less battle-worthy talk twice, anyone may quip.
   const talkCost = rules.talkCost ?? basic;
-  const talking = brokeStandoff ? { count: 0, pitch: null } : talkActionsThisTurn(run, u, turn.howMany(talkCost));
+  // Set on talking someone round: it talks to them (and keeps at it). Something far stronger on its mind: no talk.
+  const lead = wants.lead;
+  const only = lead?.kind === "talk" && lead.driven !== "logic" ? (t => t.id === lead.targetId) : null;
+  const talking = brokeStandoff ? { count: 0, pitch: null }
+    : only ? { count: turn.howMany(talkCost), pitch: choosePitch(run, u, { only }) }
+      : (wants.blinding && lead.level >= 60 && !wants.kindInView("talk")) ? { count: 0, pitch: null }
+        : talkActionsThisTurn(run, u, turn.howMany(talkCost));
   for ( let i = 0; i < talking.count && turn.canAfford(talkCost); i++ ) {
-    const pitch = i === 0 ? talking.pitch : choosePitch(run, u); // the first pitch was already chosen
+    const pitch = i === 0 ? talking.pitch : choosePitch(run, u, only ? { only } : {}); // the first pitch was already chosen
     if ( !pitch ) break;
     attemptTalk(run, u, pitch, (unit, text, data) => log(run, unit, text, data));
     turn.spend(talkCost);
@@ -786,6 +947,13 @@ function takeTurn(run, u) {
 
     if ( option.moves > 0 ) {
       if ( !canMove(run, u) ) break;
+      // A closed door in the way: get to it, then through it (or give up on what's behind it).
+      const door = doorAhead(run, u, target);
+      if ( door ) {
+        const done = workTheDoor(run, u, turn, door, target);
+        if ( done === "stuck" ) break;
+        continue;
+      }
       if ( !leaveReach(run, u, turn, target, normalizeCost(rules, option.cost)) ) break;
       // PF2e: a Stride per action. 5e: the rest of the movement, then a Dash.
       const budget = turn.payForMove(approach(run, u, target).speed);
@@ -1038,13 +1206,19 @@ function summarize(run, ended, capture, winners) {
     };
   }
   // Settled with words: it ended and nobody ever struck a blow.
-  return { outcome, winners, rounds: run.round, firstFallen: run.firstFallen, peaceful: ended && !run.blood, units, log: run.log };
+  // Doors the fight opened (or broke): Make it So leaves them that way.
+  const doors = {};
+  for ( const [id, s] of run.doors ?? [] ) if ( s.open ) doors[id] = { open: true, broken: !!s.broken };
+  return { outcome, winners, rounds: run.round, firstFallen: run.firstFallen, peaceful: ended && !run.blood, units, doors, log: run.log };
 }
 
 /** Simulate a single battle. */
 export function runOne(prep, seed, { log: withLog = false, capture = false } = {}) {
   const run = createRun(prep);
   run.rng = createRng(seed);
+  for ( const u of run.units ) initDesires(u);
+  prep.doors ??= prepareDoors(prep.spec, prep.rules);
+  run.doors = doorStates(prep);
   // Each simulated fight decides which stated preferences win out (see "stay mostly true").
   for ( const u of run.units ) {
     u.tac = sampleRunTactics(u.spec, run.rng);

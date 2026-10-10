@@ -66,7 +66,7 @@ describe("talk in the simulation", () => {
 
   test("talkers start swaying on their very first turn", () => {
     const r = replay(battle([talker(), bandit()]), pf2eRules, 21);
-    const first = r.log.find(e => e.actor === "talker" && e.round === 1);
+    const first = r.log.find(e => e.actor === "talker" && e.round === 1 && e.type !== "thought");
     expect(first.text).toMatch(/reasons with|threatens|bluffs/);
   });
 

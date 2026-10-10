@@ -423,7 +423,8 @@
       "Kept": "Agreed to give up {what}, but kept it (luck {luck})",
       "Reclaimed": "Gave up {what} to {name}, but got it back when {name} was beaten",
       "Stolen": "{what} stolen by {name}",
-      "Steals": "Steals {what} from {name}"
+      "Steals": "Steals {what} from {name}",
+      "Doors": "Doors: {n} opened ({broken} of them broken or forced)"
     },
     "Tactics": {
       "Auto": "Let {name} decide: {choice}",
@@ -569,89 +570,105 @@
       "NpcTitle": "Playstyles (GM)",
       "scaredyCat": {
         "Name": "Scaredy-Cat",
-        "Hint": "Much less brave, hangs back, drinks potions early, retreats when hurt, and tends to go unnoticed."
+        "Hint": "Much less brave: hangs back, drinks potions early, retreats when hurt, goes unnoticed. Wants above all to keep away from the most dangerous foe, gives up easily, and hits back half-heartedly."
       },
       "cruel": {
         "Name": "Cruel",
-        "Hint": "Picks on the weakest and finishes off the fallen."
+        "Hint": "Picks on the weakest and finishes off the fallen; hits back hard."
       },
       "moralist": {
         "Name": "Moralist",
-        "Hint": "Never strikes a fallen foe; rushes to save allies."
+        "Hint": "Never strikes a fallen foe; wants to heal friends and guard the weakest of them."
       },
       "peoplePleaser": {
         "Name": "People-Pleaser",
-        "Hint": "Goes along with the group: attacks what allies attack, heals generously, protects friends."
+        "Hint": "Goes along with the group: wants what its leader and friends want (and listens to them far more than most), heals generously, protects friends, likes to talk."
       },
       "fragile": {
         "Name": "Fragile",
-        "Hint": "Less brave; drinks potions early, retreats when hurt, heals self after being revived."
+        "Hint": "Less brave; drinks potions early, retreats when hurt. Once hurt, wants to get away from whoever is hurting it and to mend itself; setbacks wear it down."
       },
       "impatient": {
         "Name": "Impatient",
-        "Hint": "Charges the nearest foe, spends resources freely, skips the shield."
+        "Hint": "Charges the nearest foe, spends resources freely, skips the shield. A short fuse: setbacks wear it down twice as fast, and it has little patience for a locked door."
       },
       "brawler": {
         "Name": "Brawler",
-        "Hint": "Loves melee: front line, nearest foe, braver."
+        "Hint": "Loves melee: front line, the nearest foe, braver, hits back hard, no talking."
       },
       "skeptic": {
         "Name": "Skeptic",
-        "Hint": "Careful and calculating: saves resources, heals sparingly, a little more tactical."
+        "Hint": "Careful and calculating: saves resources, heals sparingly. Trusts its own judgment: its leader and team sway it half as much, and it's slow to talk."
       },
       "speedRunner": {
         "Name": "Speed-Runner",
-        "Hint": "Wants it over fast: spends everything, goes for quick kills."
+        "Hint": "Wants it over fast: spends everything, goes for the quickest kills."
       },
       "leader": {
         "Name": "Leader",
-        "Hint": "Steps up to lead the side, braver and more loyal, goes for the biggest threat."
+        "Hint": "Steps up to lead the side, braver and more loyal, goes for the biggest threat and looks after its people. When it isn't the side's leader, it mostly goes its own way."
       },
       "instigator": {
         "Name": "Instigator",
-        "Hint": "Acts first, picks fights with the most dangerous foe, and draws attacks."
+        "Hint": "Acts first, picks fights with the most dangerous foe and with the other side's leader, and draws attacks. May defy its own leader."
       },
       "diplomat": {
         "Name": "Diplomat",
-        "Hint": "Opens by trying to talk, often spares the fallen, less selfish."
+        "Hint": "Opens by trying to talk, wants to talk throughout, and often spares the fallen."
       },
       "wallflower": {
         "Name": "Wallflower",
-        "Hint": "Stays at range and out of notice; enemies often overlook them."
+        "Hint": "Stays at range and out of notice; keeps its distance from whatever comes close, and listens to the crowd less."
       },
       "martyr": {
         "Name": "Martyr",
-        "Hint": "Never retreats, heals at all costs, guards allies, and throws themselves into danger."
+        "Hint": "Never retreats, heals at all costs, and wants above all to guard the weakest friend; fears nothing; avenges the fallen twice as hard."
       },
       "mercenary": {
         "Name": "Mercenary",
-        "Hint": "Looks out for number one: conserves resources, keeps fighting over rescuing, retreats when it turns."
+        "Hint": "Looks out for number one: easy pickings, conserves resources, keeps fighting over rescuing, retreats when it turns. Little loyalty: barely avenges anyone, gives up when it gets hard."
       },
       "enabler": {
         "Name": "Enabler",
-        "Hint": "Support first: heals and protects allies, follows the group's lead."
+        "Hint": "Support first: wants to heal and guard friends, and backs the leader."
       },
       "redeemSeeker": {
         "Name": "Redeem-Seeker",
-        "Hint": "Braver and selfless, fights on the front line to save others, never retreats."
+        "Hint": "Out to prove itself: takes on the biggest threat, fights on the front line to save others, never retreats, and won't give up."
       },
       "loreCollector": {
         "Name": "Lore-Collector",
-        "Hint": "Studies a new foe before fighting it (Recall Knowledge), then fights it better."
+        "Hint": "Studies a new foe before fighting it (Recall Knowledge), then fights it better; drawn to foes it hasn't sized up yet."
       },
       "puzzleManiac": {
         "Name": "Puzzle-Maniac",
-        "Hint": "Much more tactical; exploits weaknesses and goes after casters."
+        "Hint": "Much more tactical: exploits weaknesses, goes after casters, and loves a locked door (keeps at it twice as long)."
       },
       "wildcard": {
         "Name": "Wildcard",
-        "Hint": "Unpredictable: sometimes attacks someone random or does something unexpected."
+        "Hint": "Unpredictable: some foe catches its eye at random, nobody's voice counts for much, and it may defy its leader."
       },
       "AlwaysTalk": "This character always prefers talking to fighting",
       "AlwaysTalkHint": "Talks whenever there's someone to talk to, whole turns at a time, even without much skill at it, and always votes to open an encounter as a standoff. With \"stay mostly true\" also checked, it only makes talking a little more likely.",
       "thief": {
         "Name": "Thief",
-        "Hint": "Light fingers: when their side is winning, or they're unseen and someone is alone, they may rob a foe within reach instead of hitting them."
+        "Hint": "Light fingers: when their side is winning, or they're unseen and someone is alone, they may rob a foe within reach instead of hitting them. A lock is an invitation."
+      },
+      "AvoidConsumables": "I don't like to use consumables",
+      "AvoidConsumablesHint": "Potions, scrolls, bombs and the like get used far less, unless the moment demands it: a friend (or this character) close to death, or, with a helping playstyle, a friend in a bad way.",
+      "AvoidCostlySpells": "I don't like to use spells that cost something",
+      "AvoidCostlySpellsHint": "Spells that spend a slot, focus or a daily use get cast far less (cantrips are free), unless the moment demands it: a friend (or this character) close to death, or, with a helping playstyle, a friend in a bad way.",
+      "vengeful": {
+        "Name": "Vengeful",
+        "Hint": "Never forgets: hits back twice as hard, avenges fallen friends, and its grudges never cool."
+      },
+      "relentless": {
+        "Name": "Relentless",
+        "Hint": "Single-minded: sticks with the foe it's on, shrugs off setbacks, and keeps at a locked door."
+      },
+      "lazy": {
+        "Name": "Lazy",
+        "Hint": "As little as it can get away with: whatever foe is nearest (and not one worth a long walk), saves its resources, isn't much help to anyone, gives up fast, barely bothers with a locked door, and can't be bothered to hold a grudge."
       }
     },
     "Tracker": {
@@ -725,6 +742,28 @@
       "Undone": "Undone: it's back with its owner.",
       "CardTheft": "<strong>{giver}</strong> was robbed of {what} by {receiver}.",
       "TheftLuck": "Luck check: {luck} on a d100 (the thief needed {needed} or less)."
+    },
+    "Desire": {
+      "Label": "Desires",
+      "Hint": "What this character wants, at whom, and how badly. Its tactics work out desires of their own each turn (the foe it would go for, a friend to heal); these come on top. The strongest leads, much weaker ones don't cross its mind, and a desire fades when it's thwarted (a locked door, a target out of reach, getting hurt on the way).",
+      "What": "What",
+      "Who": "Who?",
+      "HowMuch": "How badly",
+      "Kind": {
+        "none": "—",
+        "hurt": "Hurt",
+        "heal": "Heal",
+        "protect": "Protect",
+        "talk": "Talk to",
+        "avoid": "Keep away from"
+      },
+      "Level": {
+        "passing": "Passing",
+        "wants": "Wants",
+        "determined": "Determined",
+        "driven": "Driven",
+        "obsessed": "Obsessed"
+      }
     }
   }
 }

@@ -13,6 +13,8 @@ import { expectedDamage, hasUses, threatOf, costOf, costUnits, unitsPerTurn } fr
 import { mainPool } from "../turn.js";
 import { styleWeight } from "../tactics.js";
 import { threats, isWary } from "./reactions.js";
+import { think, thwart, mind, avoids, levelsFromScores } from "./desire.js";
+import { willingness } from "./reluctance.js";
 
 const limited = a => !!a.resource || Number.isFinite(a.uses);
 
@@ -46,7 +48,8 @@ export function bestOptionVs(run, u, t, attacksMade = 0, turn = null) {
     const amortized = base + ((cost[main] ?? 0) - (costOf(rules, action)[main] ?? 0)) * 0.25;
     const moveUnits = turn ? turn.unitsForMoves(moves, run.prep.approachOf(u.id, t.id).speed) : moves;
     const perAction = ev / Math.max(0.1, amortized + moveUnits);
-    let weighted = perAction * styleWeight(tactics, action);
+    // (Reluctant to spend a potion or a spell slot? Far less likely, unless the moment demands it.)
+    let weighted = perAction * styleWeight(tactics, action) * willingness(run, u, action);
     // Walking off from another foe invites a free swing: the wary would rather use what reaches from here.
     if ( moves > 0 && (wary ??= !!run.prep.rules.opportunity && isWary(run, u) && threats(run, u, t).length > 0) ) weighted *= 0.3;
     if ( behavior.meleeBias && action.melee ) weighted *= 1 + behavior.meleeBias;
@@ -111,9 +114,10 @@ function grudge(u, f) {
 }
 const feared = (u, f) => { const g = grudge(u, f); return !!g && !g.provoked; };
 
-/** Foes u is willing to go after (not the ones it's afraid of). */
+/** Foes u is willing to go after (not the ones it's afraid of, or set on keeping away from). */
 function foesOf(run, u) {
-  return enemiesOf(run, u).filter(f => !feared(u, f));
+  // (Walled off: behind a locked door it decided wasn't worth the trouble.)
+  return enemiesOf(run, u).filter(f => !feared(u, f) && !avoids(run, u, f) && !u.walledOff?.has(f.id));
 }
 
 /**
@@ -142,7 +146,25 @@ export function chooseTarget(run, u) {
     const most = Math.max(...focus.map(x => x.n));
     if ( most > 0 ) return rng.pick(focus.filter(x => x.n === most)).t;
   }
-  const target = chooseTargetCore(run, u, behavior);
+  // The tactics score every foe in reach; their pick and the runners-up become what the character wants.
+  const scored = scoreTargets(run, u, behavior);
+  for ( const { id, level } of levelsFromScores(scored.map(x => ({ id: x.t.id, score: x.score }))) ) think(u, "hurt", id, level);
+  // A stronger desire (stated in Tactics, or stirred by the fight) decides instead, if its target can be reached.
+  const { lead } = mind(run, u);
+  if ( lead?.kind === "hurt" ) {
+    const wanted = run.byId.get(lead.targetId);
+    if ( wanted && !u.walledOff?.has(wanted.id) && Number.isFinite(minMoves(run, u, wanted)) ) {
+      if ( liveTier(run, u) >= TACTICAL.MASTERMIND ) run.sideFocus[u.side] = wanted.id;
+      return wanted;
+    }
+    thwart(run, u, "hurt", lead.targetId, 8); // can't get at them from here
+  } else if ( lead?.kind === "protect" ) {
+    const ward = run.byId.get(lead.targetId);
+    const threat = scored.find(x => x.t.targetId === ward?.id || x.t.adjacent.has(ward?.id));
+    if ( threat ) return threat.t;
+  }
+  const target = scored[0]?.t ?? null;
+  if ( target && liveTier(run, u) >= TACTICAL.MASTERMIND && isStanding(target) ) run.sideFocus[u.side] = target.id;
   return redirectForAttention(run, target, standing);
 }
 
@@ -163,7 +185,12 @@ function redirectForAttention(run, target, standing) {
   return target;
 }
 
-function chooseTargetCore(run, u, behavior) {
+/**
+ * Every foe u could go for, scored by how its tactics think (best first): what it would pick, and how the
+ * runners-up compare. The score's scale differs by band; only the order and the ratios matter.
+ * @returns {{t, moves, score}[]}
+ */
+export function scoreTargets(run, u, behavior = behaviorOf(u)) {
   const tier = liveTier(run, u);
   const selfish = liveTrait(run, u, "selfish");
   const foes = foesOf(run, u);
@@ -178,83 +205,58 @@ function chooseTargetCore(run, u, behavior) {
   let reachable = candidates
     .map(t => ({ t, moves: minMoves(run, u, t) }))
     .filter(x => Number.isFinite(x.moves));
-  if ( !reachable.length ) return null;
+  if ( !reachable.length ) return [];
   // Engaged with a foe who'd strike as it walks off, a wary fighter keeps to the foes it can hit from where it stands.
   if ( run.prep.rules.opportunity && reachable.some(x => x.moves === 0) && isWary(run, u) && threats(run, u).length ) reachable = reachable.filter(x => x.moves === 0);
-  const rng = run.rng;
-  const nearest = () => {
-    const min = Math.min(...reachable.map(x => x.moves));
-    return rng.pick(reachable.filter(x => x.moves === min)).t;
-  };
+  // Ties go any way.
+  reachable = run.rng.shuffle([...reachable]);
+  const min = Math.min(...reachable.map(x => x.moves));
+  const near = x => 1 / (1 + x.moves - min); // 1 for the nearest
+  const ranked = score => reachable.map(x => ({ ...x, score: Math.max(0, score(x)) })).sort((a, b) => b.score - a.score);
 
   // A player's stated target priority overrides the personality-driven choice.
   const choice = u.tac?.target;
   if ( choice ) {
     const standing = reachable.filter(x => isStanding(x.t));
-    const pool = standing.length ? standing : reachable;
-    const near = Math.min(...pool.map(x => x.moves));
-    const close = pool.filter(x => x.moves <= near + 1);
+    const pool = new Set(standing.length ? standing : reachable);
+    const poolMin = Math.min(...[...pool].map(x => x.moves));
+    const close = x => pool.has(x) && x.moves <= poolMin + 1;
     switch ( choice ) {
-      case "nearest": return nearest();
-      case "weakest": return [...close].sort((a, b) => hpFraction(a.t) - hpFraction(b.t) || a.t.hp - b.t.hp)[0].t;
+      case "nearest": return ranked(near);
+      case "weakest": return ranked(x => (close(x) ? 2 - hpFraction(x.t) - x.t.hp / 10000 : 0.1 * near(x)));
       // Danger is weighed against the turns it takes to get there and bring the foe down.
-      case "dangerous": return pickBy(run, u, pool, x => valueOfKill(run, u, x));
-      case "casters": return pickBy(run, u, pool, x => valueOfKill(run, u, x) * ((x.t.prep.isCaster || x.t.prep.isHealer) ? 2.5 : 1));
+      case "dangerous": return ranked(x => (pool.has(x) ? valueOfKill(run, u, x) : 0));
+      case "casters": return ranked(x => (pool.has(x) ? valueOfKill(run, u, x) * ((x.t.prep.isCaster || x.t.prep.isHealer) ? 2.5 : 1) : 0));
       case "protect": {
         // Whoever is attacking my allies (not me), nearest first.
-        const threats = pool.filter(x => {
+        const attacking = x => {
           const victim = x.t.targetId && run.byId.get(x.t.targetId);
-          return victim && victim !== u && victim.side === u.side;
-        });
-        if ( threats.length ) return pickBy(run, u, threats, x => -x.moves);
-        return nearest();
+          return pool.has(x) && victim && victim !== u && victim.side === u.side;
+        };
+        return ranked(x => (attacking(x) ? 2 + near(x) : near(x)));
       }
     }
   }
 
   switch ( tier ) {
-    case TACTICAL.FERAL: {
-      const last = reachable.find(x => x.t.id === u.lastAttackerId && x.moves <= 1);
-      return last ? last.t : nearest();
-    }
+    // Feral: whoever just hurt it, if it's close; otherwise whatever is nearest.
+    case TACTICAL.FERAL: return ranked(x => (x.t.id === u.lastAttackerId && x.moves <= 1 ? 2 : 0) + near(x));
+    // Instinctive: close prey, the weakest first; pack hunters pile onto whoever the pack already has.
     case TACTICAL.INSTINCTIVE: {
-      const min = Math.min(...reachable.map(x => x.moves));
-      const close = reachable.filter(x => x.moves <= min + 1 && isStanding(x.t));
-      if ( u.spec.flags?.packTactics ) {
-        const ganged = close.map(x => ({ ...x, n: [...x.t.adjacent].filter(id => run.byId.get(id)?.side === u.side).length }));
-        const most = Math.max(...ganged.map(x => x.n));
-        if ( most > 0 ) return rng.pick(ganged.filter(x => x.n === most)).t;
-      }
-      if ( !close.length ) return nearest();
-      close.sort((a, b) => hpFraction(a.t) - hpFraction(b.t));
-      return close[0].t;
+      const close = x => x.moves <= min + 1 && isStanding(x.t);
+      const ganged = x => [...x.t.adjacent].filter(id => run.byId.get(id)?.side === u.side).length;
+      const pack = u.spec.flags?.packTactics && reachable.some(x => close(x) && ganged(x) > 0);
+      if ( pack ) return ranked(x => (close(x) ? 1 + ganged(x) : 0.2 * near(x)));
+      return ranked(x => (close(x) ? 1 + (1 - hpFraction(x.t)) : 0.2 * near(x)));
     }
-    case TACTICAL.COMPETENT: {
-      const current = reachable.find(x => x.t.id === u.targetId && isStanding(x.t));
-      if ( current ) return current.t;
-      return pickBy(run, u, reachable, x => quickestKill(run, u, x));
-    }
+    // Competent: sticks with its foe; otherwise the quickest kill.
+    case TACTICAL.COMPETENT: return ranked(x => (x.t.id === u.targetId && isStanding(x.t) ? 10 : 1 / (1 + Math.max(0, -quickestKill(run, u, x)))));
+    // Tactical and up: the threat removed per turn invested; masterminds keep the side on one focus.
     default: {
-      if ( tier >= TACTICAL.MASTERMIND ) {
-        const focus = run.sideFocus[u.side] && run.byId.get(run.sideFocus[u.side]);
-        const focusEntry = focus && reachable.find(x => x.t === focus && isStanding(x.t));
-        if ( focusEntry && focusEntry.moves <= 2 ) return focus;
-      }
-      const choice = pickBy(run, u, reachable, x => valueOfKill(run, u, x));
-      if ( tier >= TACTICAL.MASTERMIND && choice && isStanding(choice) ) run.sideFocus[u.side] = choice.id;
-      return choice;
+      const focusId = tier >= TACTICAL.MASTERMIND ? run.sideFocus[u.side] : null;
+      return ranked(x => (x.t.id === focusId && isStanding(x.t) && x.moves <= 2 ? 1e6 : valueOfKill(run, u, x)));
     }
   }
-}
-
-function pickBy(run, u, reachable, score) {
-  let best = null;
-  let bestScore = -Infinity;
-  for ( const x of reachable ) {
-    const s = score(x);
-    if ( s > bestScore ) { bestScore = s; best = x.t; }
-  }
-  return best;
 }
 
 /** Higher is better: fewer turns to drop the target including travel. */

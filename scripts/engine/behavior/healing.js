@@ -7,6 +7,8 @@ import { alliesOf, liveTier, liveTrait, dispositionOf, movesNeeded, canMove } fr
 import { hasUses, costOf, costUnits } from "./evaluate.js";
 import { mainPool } from "../turn.js";
 import { threats, isWary, addCosts } from "./reactions.js";
+import { mind, levelOf } from "./desire.js";
+import { bringsItself } from "./reluctance.js";
 import { meanPart } from "../dice.js";
 
 const THRESHOLD = { conservative: 0.3, balanced: 0.45, aggressive: 0.6, allCosts: 0.8 };
@@ -36,31 +38,18 @@ export function healMoves(run, u, action, target) {
 }
 
 /**
- * @param {object} run
- * @param {object} u
- * @param {Turn} turn   What's left of u's turn
- * @returns {{action: object, target: object}|null}
+ * How much each friend (or u itself) needs u's healing, as its healing logic weighs it: [{ally, score}] best first,
+ * only those worth healing. These become u's desires to heal.
  */
-export function decideHeal(run, u, turn) {
-  const rules = run.prep.rules;
+export function healScores(run, u, heals = u.prep.healActions) {
+  if ( !heals?.length ) return [];
   const potionAt = u.tac?.potionThreshold;
-  const ownFrac = u.maxHp > 0 ? u.hp / u.maxHp : 0;
-  const heals = u.prep.healActions.filter(a => {
-    if ( !turn.canAfford(costOf(rules, a)) || !hasUses(u, a) ) return false;
-    // Players decide when to drink their own potions.
-    if ( a.selfOnly && potionAt ) return potionAt !== "never" && ownFrac < Number(potionAt) / 100;
-    return true;
-  });
-  if ( !heals.length ) return null;
-
   const aggro = healAggroOf(run, u);
   const threshold = THRESHOLD[aggro] ?? 0.45;
   const selfish = liveTrait(run, u, "selfish");
   const tier = liveTier(run, u);
   const allyDying = dispositionOf(u).allyDying ?? (selfish >= 70 ? "protectSelf" : "rescue");
-
-  let best = null;
-  let bestScore = 0;
+  const out = [];
   for ( const ally of alliesOf(run, u) ) {
     if ( [STATUS.DEAD, STATUS.FLED, STATUS.SURRENDERED, STATUS.STOOD_DOWN].includes(ally.status) ) continue;
     const isSelf = ally === u;
@@ -81,8 +70,39 @@ export function decideHeal(run, u, turn) {
     if ( isSelf && u.wasDowned && dispositionOf(u).selfRevived === "healSelf" && frac < 0.75 ) score += 1;
     if ( score <= 0 ) continue;
     score *= isSelf ? (1 + selfish / 50) : clamp(1 - selfish / 200, 0.2, 1);
-    if ( score > bestScore ) { bestScore = score; best = ally; }
+    out.push({ ally, score });
   }
+  return out.sort((a, b) => b.score - a.score);
+}
+
+/**
+ * Whether u heals someone now, whom, and with what.
+ * @param {object} run
+ * @param {object} u
+ * @param {Turn} turn   What's left of u's turn
+ * @returns {{action: object, target: object}|null}
+ */
+export function decideHeal(run, u, turn) {
+  const rules = run.prep.rules;
+  const potionAt = u.tac?.potionThreshold;
+  const ownFrac = u.maxHp > 0 ? u.hp / u.maxHp : 0;
+  const heals = u.prep.healActions.filter(a => {
+    if ( !turn.canAfford(costOf(rules, a)) || !hasUses(u, a) ) return false;
+    // Players decide when to drink their own potions.
+    if ( a.selfOnly && potionAt ) return potionAt !== "never" && ownFrac < Number(potionAt) / 100;
+    return true;
+  }).filter(a => bringsItself(run, u, a)); // reluctant to use up a potion or a slot: only now and then, unless a life is at stake
+  if ( !heals.length ) return null;
+  const aggro = healAggroOf(run, u);
+
+  // What u wants decides: a friend it's set on healing comes first; with something else far stronger on its
+  // mind, healing doesn't cross it at all.
+  const thoughts = mind(run, u);
+  if ( thoughts.blinding && thoughts.lead.kind !== "heal" && !thoughts.kindInView("heal") ) return null;
+  const scored = healScores(run, u, heals);
+  let best = scored[0]?.ally ?? null;
+  if ( thoughts.lead?.kind === "heal" ) best = run.byId.get(thoughts.lead.targetId) ?? best;
+  else if ( scored.length > 1 ) best = scored.reduce((b, x) => (levelOf(u, "heal", x.ally.id) > levelOf(u, "heal", b.ally.id) ? x : b), scored[0]).ally;
   if ( !best ) return null;
 
   // Prefer free (unlimited) healing unless going all out or someone is dying.

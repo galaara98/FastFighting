@@ -109,6 +109,33 @@ Theft mid-fight is rare; most who want your things take them from your body afte
 - **Getting caught** reveals the thief and makes it the victim's target.
 - **Taken back:** stolen goods return if the thief is beaten.
 
+## Desires
+
+Every character has a list of desires: what it wants right now, at whom, and how badly (0 to 100: Passing, Wants, Determined, Driven, Obsessed). They're its reasoning made visible, and they decide what it does:
+- **Hurt, heal, protect, talk to, keep away from.**
+- **Where they come from:**
+  - **its tactics:** each turn its tactical band weighs every foe it can reach (a Mastermind picks the healer to destroy, a Feral beast the nearest thing), every friend it could mend, whom it could talk round, whom it fears;
+  - **its Tactics answers:** up to three desires stated for any character, PC or NPC (what, who, how badly);
+  - **the fight:** whoever hurt it (simple minds go straight for whoever just hurt them; hit from afar while already trading blows, they keep at the one in front of them), whoever felled a friend, a grudge;
+  - **its leader and its team:** the leader's desires pull on it a medium amount, the team's a little. With nobody leading (none chosen, or the leader fallen), the team pulls together less, except when it comes to vengeance;
+  - **its playstyles:** each pill guides how it picks up desires (below), added up across up to four.
+- **The strongest leads.** Desires 20 or more below a stated or fight-stirred one don't cross the character's mind, and an obsession leaves no room for caution (it forgets about opportunity attacks).
+- **Thwarted desires fade:** a locked door that won't give, a target it can't reach, getting hurt on the way, being badly hurt with the target far off. The character moves on when something gets too hard or too dangerous.
+- **The story** now and then pauses on a character's two strongest desires: *"Charlette really wants to heal Brent, but also kind of wants to hurt the wolf."* The phrases are roll tables you can edit.
+
+## Doors
+
+Paths go round walls; a closed door on the way is walked to and opened. A locked one is worth only what the character wants most on the far side of it (more patience when there's nobody else to fight):
+- **force it** with the system's strength check, **hack it down** with its best weapon, or **pick the lock** if it has the skill and tools, whichever is quickest for that character;
+- every failed try wears the desire down; giving up turns it to something else;
+- a door the fight opened opens on the map when the story gets there, and stays open after Make it So; Undo closes (and relocks) it.
+
+The system says what a door is like and how hard it is to get through (its defense, hit points, DCs, and its own damage rules such as PF2e hardness or a 5e damage threshold). A GM can give a door its own numbers in the wall's flags (`fast-fighting.door`).
+
+## Reluctance
+
+Two boxes beside the playstyle pills: **"I don't like to use consumables"** and **"I don't like to use spells that cost something"** (cantrips are free). The character is about a tenth as willing to spend them, until the moment demands it: a friend (or itself) close to death, or, for a character whose playstyle is to help, a friend in a bad way.
+
 ## What else the simulation models
 
 - **Rules:** whatever the system's helper provides, such as the turn's actions, degrees of success, attack penalties, advantage, criticals, resistances and dying.
@@ -151,7 +178,34 @@ Theft mid-fight is rare; most who want your things take them from your body afte
 
 Answers save as they're made, and two players sharing a token see each other's changes live. The planner shows each player's status, with a button to (re)open their survey.
 
-**Playstyles:** up to four pills per character, PC or NPC. Scaredy-Cat, Cruel, Moralist, People-Pleaser, Fragile, Impatient, Brawler, Skeptic, Speed-Runner, Leader, Instigator, Diplomat, Wallflower, Martyr, Mercenary, Enabler, Redeem-Seeker, Lore-Collector, Puzzle-Maniac, Wildcard and Thief. They shift traits, change the defaults, and switch on quirks.
+**Playstyles:** up to four pills per character, PC or NPC. They shift traits, change the defaults, switch on quirks, and guide how the character picks up desires:
+
+| Pill | Desires |
+| --- | --- |
+| Scaredy-Cat | keeps away from the most dangerous foe; gives up easily; hits back half-heartedly |
+| Cruel | the weakest, and the fallen; hits back hard |
+| Moralist | never the fallen; heals friends, guards the weakest |
+| People-Pleaser | wants what its leader and friends want (listens far more than most); likes to talk |
+| Fragile | once hurt: away from whoever is hurting it, and mends itself; setbacks wear it down |
+| Impatient | the nearest foe; setbacks wear it down twice as fast; little patience for locks |
+| Brawler | the nearest foe; hits back hard; no talking |
+| Skeptic | its leader and team sway it half as much; slow to talk |
+| Speed-Runner | the quickest kills |
+| Leader | the biggest threat; looks after its people; when it isn't the leader, mostly goes its own way |
+| Instigator | the most dangerous foe and the other side's leader; may defy its own leader |
+| Diplomat | talking; spares the fallen |
+| Wallflower | keeps its distance; listens to the crowd less |
+| Martyr | guards the weakest friend; fears nothing; avenges the fallen twice as hard |
+| Mercenary | easy pickings; barely avenges anyone; gives up when it gets hard |
+| Enabler | heals and guards friends; backs the leader |
+| Redeem-Seeker | the biggest threat; won't give up |
+| Lore-Collector | foes it hasn't sized up yet |
+| Puzzle-Maniac | weaknesses to exploit, casters, and locked doors (twice the patience) |
+| Wildcard | something random catches its eye; nobody's voice counts for much; may defy its leader |
+| Thief | robs when it's safe; a lock is an invitation |
+| Vengeful | hits back twice as hard; avenges fallen friends; its grudges never cool |
+| Relentless | sticks with the foe it's on; shrugs off setbacks; keeps at doors |
+| Lazy | the nearest foe and no long walks; not much help to anyone; gives up fast; can't hold a grudge |
 
 Three checkboxes go with the pills:
 - **Stay mostly true to my calculated tactical level:** playstyles and answers move the calculated strategy by about 10% at most.
@@ -227,6 +281,7 @@ Declare your system in `module.json` (`relationships.systems`) so Foundry only o
   - `onDropped(unit, {crit, model, amount, overflow})`, `onHealed(unit, amount)` and `recoveryCheck(unit, rng)`;
   - `firstAidDC(unit)`, `firstAid(unit, degree)` and `persistentFlatCheck(rng)`.
 - **Crowd control:** `isImmune(target, action)`, `controlShift(ctx)` and `conditionWeight(key, value)`.
+- **Doors:** `door` (the typical door: defense, hit points, DCs and whatever its own rules use), `doorCosts` (`open`, `force`, `pick`), and `doorDamage(door, damage)` (how much of a blow gets through). The helper puts `doorWork: {force: {mod}, pick: {mod}}` on each spec.
 - **Reactions:** `opportunity(reactor, mover)` returns the strike a creature makes at a foe leaving its reach, or null if it can't; `reactions(u)` (default 1 a round); `disengage(u)` returns `{cost, label}`, how to leave safely. `bestReactionStrike(u)` in core-api picks the usual strike.
 - **What's typical for a level:** `typical.ac`, `save`, `skill` and `dc`.
 - **Per-fight state:** `initUnit(u)` and `capture(u)`.

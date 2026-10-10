@@ -345,3 +345,8 @@
 .ff-helper-notice p { margin: 2px 0; }
 .ff-helper-notice.ff-helper-generic { border-color: #5bb6db; background: color-mix(in srgb, #5bb6db 12%, transparent); }
 .form-group.ff-disabled { opacity: 0.45; }
+
+/* Desires (Tactics): what, at whom, how badly */
+.ff-desires { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; }
+.ff-desire { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) minmax(0, 1fr); gap: 4px; }
+.ff-desire.is-empty select:not(:first-child) { opacity: 0.6; }

@@ -12,6 +12,7 @@ import { MODULE_ID } from "../constants.js";
 import { TACTIC_CHOICES, TACTIC_KEYS, suggestTactics, resolveTactics } from "../engine/tactics.js";
 import { PLAYSTYLES, PLAYSTYLE_IDS, MAX_PLAYSTYLES, combinePlaystyles } from "../engine/playstyles.js";
 import { getAdapter } from "../api.js";
+import { DESIRE_KINDS, DESIRE_BAND_KEYS } from "../engine/behavior/desire.js";
 import { setting } from "../settings.js";
 
 export const SOCKET = `module.${MODULE_ID}`;
@@ -19,7 +20,22 @@ export const SURVEY_STATUS = Object.freeze({ NONE: "none", REQUESTED: "requested
 
 const loc = key => game.i18n.localize(key);
 
-const META_KEYS = ["stayTrue", "roleplay", "alwaysTalk"];
+const META_KEYS = ["stayTrue", "roleplay", "alwaysTalk", "avoidConsumables", "avoidCostlySpells"];
+/** Stated desires: three slots, each "what, at whom, how badly". */
+const DESIRE_SLOTS = ["d0", "d1", "d2"];
+const DESIRE_KEY = /^desire\.(d[0-2])\.(kind|target|level)$/;
+/** The level a band stands for (its middle). */
+export const DESIRE_LEVELS = Object.freeze({ passing: 10, wants: 30, determined: 50, driven: 70, obsessed: 90 });
+
+function cleanDesire(raw) {
+  if ( !isPlain(raw) ) return null;
+  const out = {};
+  if ( raw.kind === "" || DESIRE_KINDS.includes(raw.kind) ) out.kind = raw.kind;
+  if ( typeof raw.target === "string" && raw.target.length <= 64 ) out.target = raw.target;
+  const level = Number(raw.level);
+  if ( Number.isFinite(level) ) out.level = Math.max(0, Math.min(100, Math.round(level)));
+  return out;
+}
 const MAX_NOTES = 2000;
 const isPlain = v => !!v && typeof v === "object" && !Array.isArray(v);
 
@@ -40,7 +56,21 @@ export function sanitizeTactics(raw) {
     out.playstyles = [...new Set(raw.playstyles.filter(id => typeof id === "string" && PLAYSTYLES[id]))].slice(0, MAX_PLAYSTYLES);
   }
   for ( const key of META_KEYS ) if ( key in raw ) out[key] = raw[key] === true;
+  if ( isPlain(raw.desires) ) {
+    out.desires = {};
+    for ( const slot of DESIRE_SLOTS ) {
+      const d = cleanDesire(raw.desires[slot]);
+      if ( d ) out.desires[slot] = d;
+    }
+  }
   return out;
+}
+
+/** The desires a character's Tactics state, for the engine: [{kind, targetId, level}]. */
+export function statedDesires(stored) {
+  return Object.values(stored?.desires ?? {})
+    .filter(d => d.kind && d.target)
+    .map(d => ({ kind: d.kind, targetId: d.target, level: d.level ?? DESIRE_LEVELS.determined }));
 }
 
 /** Stored answers, migrating the older `disposition` flag. */
@@ -52,6 +82,14 @@ export function getStoredTactics(actor) {
 }
 
 export async function setTactic(actor, key, value) {
+  const desire = DESIRE_KEY.exec(key ?? "");
+  if ( actor && desire ) {
+    const [, slot, field] = desire;
+    const clean = cleanDesire({ [field]: field === "level" ? Number(value) : value });
+    if ( !clean || !(field in clean) ) return;
+    await actor.update({ [`flags.${MODULE_ID}.tactics.desires.${slot}.${field}`]: clean[field] });
+    return;
+  }
   if ( !actor || !(TACTIC_KEYS.includes(key) || META_KEYS.includes(key)) ) return;
   const clean = sanitizeTactics({ [key]: value });
   if ( !(key in clean) ) return;
@@ -115,7 +153,7 @@ export function isPlayerControlled(spec, actor) {
 /** Compact fingerprint of what changes "Let them decide" (playstyles and the two checkboxes). */
 export function playstyleSignature(actor) {
   const t = getStoredTactics(actor);
-  return JSON.stringify([t.playstyles ?? [], !!t.stayTrue, !!t.roleplay, !!t.alwaysTalk]);
+  return JSON.stringify([t.playstyles ?? [], !!t.stayTrue, !!t.roleplay, !!t.alwaysTalk, !!t.avoidConsumables, !!t.avoidCostlySpells]);
 }
 
 /* -------------------------------------------- */
@@ -135,8 +173,9 @@ function actionLabel(a) {
  * @param {string} uid    Unique suffix for input names in this form
  * @param {object} [options]
  * @param {boolean} [options.questions=true]  Include the tactics questions (NPC rows show only playstyles)
+ * @param {{id: string, name: string}[]} [options.targets]  Who a desire can be about (tokens on the scene)
  */
-export function questionsContext(spec, actor, uid, { questions: withQuestions = true } = {}) {
+export function questionsContext(spec, actor, uid, { questions: withQuestions = true, targets = [] } = {}) {
   const { suggested, stored, playstyles } = tacticsFor(actor, spec);
   const sourceOf = key => playstyles.ids.find(id => PLAYSTYLES[id].suggest[key] === suggested[key] && PLAYSTYLES[id].suggest[key] !== undefined);
   const name = spec.name;
@@ -195,11 +234,32 @@ export function questionsContext(spec, actor, uid, { questions: withQuestions = 
   add("beyond", TACTIC_CHOICES.beyond);
 
   const picked = playstyles.ids;
+  // What the character wants, at whom, how badly (any character, PC or NPC). Three goblins read "Goblin 1, 2, 3".
+  const counts = new Map();
+  for ( const t of targets ) counts.set(t.name, (counts.get(t.name) ?? 0) + 1);
+  const numbered = new Map();
+  const others = targets.map(t => {
+    if ( counts.get(t.name) < 2 ) return t;
+    numbered.set(t.name, (numbered.get(t.name) ?? 0) + 1);
+    return { ...t, name: `${t.name} ${numbered.get(t.name)}` };
+  }).filter(t => t.id !== (spec.tokenId ?? spec.id));
+  const desires = DESIRE_SLOTS.map(slot => {
+    const d = stored.desires?.[slot] ?? {};
+    const level = d.level ?? DESIRE_LEVELS.determined;
+    const band = Object.entries(DESIRE_LEVELS).reduce((best, [k, v]) => (Math.abs(v - level) < Math.abs(DESIRE_LEVELS[best] - level) ? k : best), "determined");
+    return {
+      kind: { key: `desire.${slot}.kind`, name: `tactic-${uid}-desire-${slot}-kind`, choices: ["", ...DESIRE_KINDS].map(k => ({ value: k, label: loc(`FASTFIGHTING.Desire.Kind.${k || "none"}`), selected: (d.kind ?? "") === k })) },
+      target: { key: `desire.${slot}.target`, name: `tactic-${uid}-desire-${slot}-target`, choices: [{ value: "", label: loc("FASTFIGHTING.Desire.Who"), selected: !d.target }, ...others.map(t => ({ value: t.id, label: t.name, selected: d.target === t.id }))] },
+      level: { key: `desire.${slot}.level`, name: `tactic-${uid}-desire-${slot}-level`, choices: DESIRE_BAND_KEYS.map(k => ({ value: DESIRE_LEVELS[k], label: loc(`FASTFIGHTING.Desire.Level.${k}`), selected: band === k })) },
+      empty: !d.kind
+    };
+  });
   return {
     uid,
     actorUuid: actor.uuid,
     withQuestions,
     questions,
+    desires,
     notes: withQuestions ? { name: `tactic-${uid}-notes`, value: stored.notes ?? "", label: loc("FASTFIGHTING.Tactics.notes.Label"), placeholder: loc("FASTFIGHTING.Tactics.notes.Hint") } : null,
     playstyles: PLAYSTYLE_IDS.map(id => ({
       id,
@@ -214,6 +274,8 @@ export function questionsContext(spec, actor, uid, { questions: withQuestions = 
     stayTrue: { name: `tactic-${uid}-stayTrue`, checked: !!stored.stayTrue },
     roleplay: { name: `tactic-${uid}-roleplay`, checked: !!stored.roleplay },
     alwaysTalk: { name: `tactic-${uid}-alwaysTalk`, checked: !!stored.alwaysTalk, show: (spec.social?.languages?.length ?? 0) > 0 && !spec.social?.mindless },
+    avoidConsumables: { name: `tactic-${uid}-avoidConsumables`, checked: !!stored.avoidConsumables, show: spec.actions.some(a => /^item:/.test(a.resource ?? "")) },
+    avoidCostlySpells: { name: `tactic-${uid}-avoidCostlySpells`, checked: !!stored.avoidCostlySpells, show: spec.actions.some(a => ((a.rank ?? 0) > 0 || a.spellId) && (a.resource || Number.isFinite(a.uses))) },
     conflict: !!stored.stayTrue && !!stored.roleplay
   };
 }
@@ -248,7 +310,9 @@ export function syncTacticsDom(root, actor) {
   }
   for ( const el of root.querySelectorAll(`select[data-tactic][data-actor-uuid="${actor.uuid}"], textarea[data-tactic][data-actor-uuid="${actor.uuid}"]`) ) {
     const key = el.dataset.tactic;
-    const value = stored[key] ?? (key === "notes" ? "" : "auto");
+    const desire = DESIRE_KEY.exec(key);
+    const value = desire ? (stored.desires?.[desire[1]]?.[desire[2]] ?? (desire[2] === "level" ? DESIRE_LEVELS.determined : ""))
+      : (stored[key] ?? (key === "notes" ? "" : "auto"));
     if ( el === document.activeElement || el.value === String(value) ) continue;
     el.value = value;
     const q = el.closest(".ff-q");

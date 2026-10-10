@@ -13,8 +13,26 @@
     {{/if}}
     <label class="ff-check"><input type="checkbox" name="{{roleplay.name}}" data-tactic="roleplay" data-actor-uuid="{{actorUuid}}" {{checked roleplay.checked}}> {{localize "FASTFIGHTING.Playstyle.Roleplay"}}
       <i class="fa-solid fa-circle-question" data-tooltip="{{localize "FASTFIGHTING.Playstyle.RoleplayHint"}}"></i></label>
+    {{#if avoidConsumables.show}}
+    <label class="ff-check"><input type="checkbox" name="{{avoidConsumables.name}}" data-tactic="avoidConsumables" data-actor-uuid="{{actorUuid}}" {{checked avoidConsumables.checked}}> {{localize "FASTFIGHTING.Playstyle.AvoidConsumables"}}
+      <i class="fa-solid fa-circle-question" data-tooltip="{{localize "FASTFIGHTING.Playstyle.AvoidConsumablesHint"}}"></i></label>
+    {{/if}}
+    {{#if avoidCostlySpells.show}}
+    <label class="ff-check"><input type="checkbox" name="{{avoidCostlySpells.name}}" data-tactic="avoidCostlySpells" data-actor-uuid="{{actorUuid}}" {{checked avoidCostlySpells.checked}}> {{localize "FASTFIGHTING.Playstyle.AvoidCostlySpells"}}
+      <i class="fa-solid fa-circle-question" data-tooltip="{{localize "FASTFIGHTING.Playstyle.AvoidCostlySpellsHint"}}"></i></label>
+    {{/if}}
   </div>
   {{#if conflict}}<p class="ff-hint"><i class="fa-solid fa-circle-info"></i> {{localize "FASTFIGHTING.Playstyle.Both"}}</p>{{/if}}
+</div>
+<div class="ff-desires">
+  <div class="ff-q-label">{{localize "FASTFIGHTING.Desire.Label"}} <i class="fa-solid fa-circle-question" data-tooltip="{{localize "FASTFIGHTING.Desire.Hint"}}"></i></div>
+  {{#each desires}}
+  <div class="ff-desire {{#if empty}}is-empty{{/if}}">
+    <select name="{{kind.name}}" data-tactic="{{kind.key}}" data-actor-uuid="{{../actorUuid}}" aria-label="{{localize "FASTFIGHTING.Desire.What"}}">{{#each kind.choices}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select>
+    <select name="{{target.name}}" data-tactic="{{target.key}}" data-actor-uuid="{{../actorUuid}}" aria-label="{{localize "FASTFIGHTING.Desire.Who"}}">{{#each target.choices}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select>
+    <select name="{{level.name}}" data-tactic="{{level.key}}" data-actor-uuid="{{../actorUuid}}" aria-label="{{localize "FASTFIGHTING.Desire.HowMuch"}}">{{#each level.choices}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select>
+  </div>
+  {{/each}}
 </div>
 {{#if withQuestions}}
 <div class="ff-tactics">

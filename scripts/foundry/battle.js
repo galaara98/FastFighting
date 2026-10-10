@@ -5,10 +5,10 @@ import { MODULE_ID, SIDES, ALLEGIANCE, DISPOSITION_SIDES, TRAITS, clamp } from "
 import { runBatch, runBatchSync, replay, findSample } from "../engine/simulator.js";
 import { deriveSeed } from "../engine/rng.js";
 import { applyTraitRules, getAdapter, getModifiers } from "../api.js";
-import { computeApproach, computeAwareness, environmentAt, positionOf } from "./terrain.js";
+import { computeApproach, computeAwareness, environmentAt, positionOf, squareFeet } from "./terrain.js";
 import { resetPathGrid } from "./pathing.js";
 import { tokenSetup } from "./persistence.js";
-import { tacticsFor, isPlayerControlled } from "./tactics.js";
+import { tacticsFor, isPlayerControlled, statedDesires } from "./tactics.js";
 import { setting } from "../settings.js";
 
 const SIDE_LABELS = {
@@ -144,9 +144,13 @@ function applyCharacterTactics(spec, entry) {
   const { calc, resolved, stored, playstyles } = tacticsFor(actor, entry.spec);
   spec.playstyles = playstyles.ids;
   spec.behavior = playstyles.behavior;
+  spec.desireStyle = playstyles.desire; // how its pills say it picks up desires
   spec.stayTrue = !!stored.stayTrue;
   spec.roleplay = !!stored.roleplay;
   spec.alwaysTalk = !!stored.alwaysTalk; // "always prefers talking to fighting"
+  spec.desires = statedDesires(stored); // what the GM or player says it wants, at whom, how badly
+  spec.avoidConsumables = !!stored.avoidConsumables; // "I don't like to use consumables"
+  spec.avoidCostlySpells = !!stored.avoidCostlySpells; // "I don't like to use spells that cost something"
   for ( const [k, v] of Object.entries(playstyles.traits) ) {
     if ( spec.traits[k] ) spec.traits[k] = { ...spec.traits[k], fudge: (spec.traits[k].fudge ?? 0) + v };
   }
@@ -260,6 +264,7 @@ export function buildBattleSpec(roster, setup, { underdog = null, approach = nul
     combatants,
     sides,
     approach: options.positioning ? approach : null,
+    doors: options.positioning ? sceneDoors() : {},
     options: {
       maxRounds: options.maxRounds,
       downedModel: options.downedModel,
@@ -296,7 +301,7 @@ export function approachFor(roster, setup) {
   const ignoreTerrainFor = new Set(Object.entries(setup.tokens ?? {}).filter(([, t]) => t?.ignoreTerrain).map(([id]) => id));
   const key = JSON.stringify([
     canvas.scene?.id,
-    roster.map(e => [e.token.id, e.token.document.x, e.token.document.y, e.token.document.elevation, e.spec.speeds]),
+    roster.map(e => [e.token.id, e.token.document._source.x, e.token.document._source.y, e.token.document.elevation, e.spec.speeds]),
     [...ignoreTerrainFor].sort()
   ]);
   if ( approachCache.key !== key ) {
@@ -304,6 +309,24 @@ export function approachFor(roster, setup) {
     approachCache = { key, value: computeApproach(roster.map(e => e.token), specs, { ignoreTerrainFor }) };
   }
   return approachCache.value;
+}
+
+/**
+ * The scene's closed doors, for the fight: where each is (its middle, in feet) and whether it's locked. A GM can give a
+ * door its own numbers in the wall's flags (`fast-fighting.door`: ac, hp, forceDC, pickDC, and whatever the system's
+ * door rules use, such as PF2e hardness); otherwise the system's typical door applies.
+ */
+function sceneDoors() {
+  const { size } = canvas.dimensions;
+  const feet = squareFeet();
+  const out = {};
+  for ( const w of canvas.scene.walls ) {
+    if ( w.door !== CONST.WALL_DOOR_TYPES.DOOR || w.ds === CONST.WALL_DOOR_STATES.OPEN ) continue;
+    const [x1, y1, x2, y2] = w.c;
+    const own = w.getFlag?.(MODULE_ID, "door") ?? {};
+    out[w.id] = { ...own, locked: w.ds === CONST.WALL_DOOR_STATES.LOCKED, x: ((x1 + x2) / 2 / size) * feet, y: ((y1 + y2) / 2 / size) * feet };
+  }
+  return out;
 }
 
 /** Walls and regions change the paths, so forget the cached matrix when they do. */

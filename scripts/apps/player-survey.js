@@ -84,7 +84,8 @@ export class PlayerSurvey extends HandlebarsApplicationMixin(ApplicationV2) {
         level: spec.level,
         sharedWith: others.map(u => u.name).join(", "),
         sharedOnline: others.some(u => u.active),
-        tactics: questionsContext(spec, t.actor, t.id)
+        // Players name only the creatures they can see.
+        tactics: questionsContext(spec, t.actor, t.id, { targets: scene.tokens.filter(o => !o.hidden && o.actor).map(o => ({ id: o.id, name: o.name })) })
       });
     }
     if ( !sheets.some(s => s.id === this.activeTab) ) this.activeTab = sheets[0]?.id ?? null;

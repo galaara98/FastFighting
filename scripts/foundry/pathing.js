@@ -8,8 +8,15 @@
 const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]];
 /** Wall-free cost of a diagonal step, by the scene's diagonal rule (CONST.GRID_DIAGONALS). */
 const DIAGONAL = { 0: 1, 1: Math.SQRT2, 2: 1.5, 3: 2, 4: 1.5, 5: 1.5, 6: Infinity };
-/** Going through a wall when there's no way around: that square counts as 4x difficult terrain. */
+/** Going through a wall when there's no way round: that square counts as 4x difficult terrain. */
 export const THROUGH_WALL = 4;
+/** A closed door on the way costs about this many squares of walking (stopping, opening it). */
+const DOOR_STEPS = 2;
+
+/** A closed (or locked) ordinary door a creature could open, break or pick. Secret doors count as wall. */
+function usableDoor(wall) {
+  return wall.door === CONST.WALL_DOOR_TYPES.DOOR && wall.ds !== CONST.WALL_DOOR_STATES.OPEN;
+}
 
 let cached = null;
 
@@ -52,9 +59,11 @@ export class WallGrid {
     this.oy = y0;
     this.cols = Math.max(1, Math.ceil((x1 - x0) / size));
     this.rows = Math.max(1, Math.ceil((y1 - y0) / size));
-    // Per cell and direction: 0 not tested yet, 1 open, 2 blocked.
+    // Per cell and direction: 0 not tested yet, 1 open, 2 wall, 3 only closed doors in the way (which ones: doorsAt).
     this.edges = new Uint8Array(this.cols * this.rows * 8);
+    this.doorsAt = new Map();
     this.fields = new Map();
+    this.walls = canvas.scene.walls.filter(w => w.move !== CONST.WALL_MOVEMENT_TYPES.NONE);
   }
 
   covers(x, y) {
@@ -88,27 +97,47 @@ export class WallGrid {
     return row * this.cols + col;
   }
 
-  /** Can a creature step from cell in direction d? (Walls that block movement say no.) */
-  #open(cell, d) {
+  /** What's between a cell and its neighbor in direction d: 1 nothing, 2 wall, 3 only closed doors. */
+  #edge(cell, d) {
     const k = cell * 8 + d;
     if ( !this.edges[k] ) {
       const next = this.#step(cell, d);
-      let blocked = next < 0;
-      if ( !blocked ) {
+      let state = next < 0 ? 2 : 1;
+      if ( next >= 0 ) {
+        const a = this.#center(cell);
+        const b = this.#center(next);
+        let blocked = false;
         try {
-          blocked = !!CONFIG.Canvas.polygonBackends.move.testCollision(this.#center(cell), this.#center(next), { type: "move", mode: "any" });
+          blocked = !!CONFIG.Canvas.polygonBackends.move.testCollision(a, b, { type: "move", mode: "any" });
         } catch ( err ) {
           blocked = false;
         }
+        if ( blocked ) {
+          // Which walls? If every one in the way is a door, it's a door to open (or break, or pick).
+          const hit = this.walls.filter(w => foundry.utils.lineSegmentIntersects(a, b, { x: w.c[0], y: w.c[1] }, { x: w.c[2], y: w.c[3] }));
+          const doors = hit.length && hit.every(usableDoor) ? hit.map(w => w.id) : null;
+          state = doors ? 3 : 2;
+          if ( doors ) this.doorsAt.set(k, doors);
+        }
       }
-      this.edges[k] = blocked ? 2 : 1;
+      this.edges[k] = state;
     }
-    return this.edges[k] === 1;
+    return this.edges[k];
   }
 
-  /** Steps (in squares, diagonals by the scene's rule) from a cell to every other cell, around walls. Cached. */
-  field(from) {
-    let dist = this.fields.get(from);
+  /** Can a creature step from cell in direction d? (Through a closed door too, if `doors`.) */
+  #open(cell, d, doors = false) {
+    const e = this.#edge(cell, d);
+    return e === 1 || (doors && e === 3);
+  }
+
+  /**
+   * Steps (in squares, diagonals by the scene's rule) from a cell to every other cell, around walls; with `doors`,
+   * through closed doors too (each costing a little extra). Cached.
+   */
+  field(from, doors = false) {
+    const cacheKey = `${from}|${doors ? 1 : 0}`;
+    let dist = this.fields.get(cacheKey);
     if ( dist ) return dist;
     const n = this.cols * this.rows;
     dist = new Float32Array(n).fill(Infinity);
@@ -119,42 +148,69 @@ export class WallGrid {
       const [cell, d] = heap.pop();
       if ( d > dist[cell] ) continue;
       for ( let k = 0; k < 8; k++ ) {
-        const cost = k < 4 ? 1 : this.diagonal;
-        if ( !Number.isFinite(cost) || !this.#open(cell, k) ) continue;
+        const base = k < 4 ? 1 : this.diagonal;
+        if ( !Number.isFinite(base) || !this.#open(cell, k, doors) ) continue;
         const next = this.#step(cell, k);
-        const nd = d + cost;
+        const nd = d + base + (this.#edge(cell, k) === 3 ? DOOR_STEPS : 0);
         if ( nd < dist[next] ) {
           dist[next] = nd;
           heap.push(next, nd);
         }
       }
     }
-    this.fields.set(from, dist);
+    this.fields.set(cacheKey, dist);
     return dist;
   }
 
   /**
-   * Squares a walks to come beside b around the walls, or Infinity when walls shut it off.
+   * How a walks to come beside b: squares of walking, and the closed doors on the way (in order), or Infinity
+   * squares when walls (and doors) shut it off. The way round wins unless the door saves a real detour.
    * @param {Token} a
    * @param {Token} b
+   * @returns {{steps: number, doors: string[]}|null}
    */
   stepsBetween(a, b) {
-    const from = this.cellAt(a.document.x, a.document.y);
-    const to = this.cellAt(b.document.x, b.document.y);
+    const from = this.cellAt(a.document._source.x, a.document._source.y);
+    const to = this.cellAt(b.document._source.x, b.document._source.y);
     if ( from < 0 || to < 0 ) return null;
-    const d = this.field(from)[to];
-    return Number.isFinite(d) ? Math.max(0, d - 1) : Infinity;
+    const around = this.field(from)[to];
+    const through = this.field(from, true)[to];
+    if ( Number.isFinite(around) && around <= through + DOOR_STEPS ) return { steps: Math.max(0, around - 1), doors: [] };
+    if ( !Number.isFinite(through) ) return { steps: Infinity, doors: [] };
+    const doors = this.#doorsOnWay(from, to);
+    return { steps: Math.max(0, through - 1 - DOOR_STEPS * doors.length), doors };
+  }
+
+  /** The doors on the shortest way from one cell to another (walking back from the far end), nearest first. */
+  #doorsOnWay(from, to) {
+    const dist = this.field(from, true);
+    const found = [];
+    let cell = to;
+    for ( let guard = 0; cell !== from && guard < this.cols * this.rows; guard++ ) {
+      let best = -1;
+      let bestD = dist[cell];
+      let bestK = -1;
+      for ( let k = 0; k < 8; k++ ) {
+        if ( !this.#open(cell, k, true) ) continue;
+        const prev = this.#step(cell, k);
+        if ( dist[prev] < bestD - 1e-6 ) { bestD = dist[prev]; best = prev; bestK = k; }
+      }
+      if ( best < 0 ) break;
+      for ( const id of this.doorsAt.get(cell * 8 + bestK) ?? [] ) if ( !found.includes(id) ) found.unshift(id);
+      cell = best;
+    }
+    return found;
   }
 
   /**
    * The waypoints (top-left pixels) a token follows from where it is to `dest`, around walls; straight to `dest`
    * when there's no way round (or either end is off the grid).
    */
-  route(tokenDoc, dest) {
+  route(tokenDoc, dest, { doors = false } = {}) {
     const from = this.cellAt(tokenDoc._source.x, tokenDoc._source.y);
     const to = this.cellAt(dest.x, dest.y);
     if ( from < 0 || to < 0 || from === to ) return [dest];
-    const dist = this.field(to); // walk the field downhill from the start to the destination
+    const dist = this.field(to, doors); // walk the field downhill from the start to the destination
     if ( !Number.isFinite(dist[from]) ) return [dest];
     const cells = [];
     let cell = from;
@@ -162,7 +218,7 @@ export class WallGrid {
       let best = -1;
       let bestD = dist[cell];
       for ( let k = 0; k < 8; k++ ) {
-        if ( !this.#open(cell, k) ) continue;
+        if ( !this.#open(cell, k, doors) ) continue;
         const next = this.#step(cell, k);
         if ( dist[next] < bestD - 1e-6 ) { bestD = dist[next]; best = next; }
       }
