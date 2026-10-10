@@ -1,0 +1,10 @@
+{
+  "FASTFIGHTING": {
+    "Settings": {
+      "Enabled": {
+        "Name": "Enable FastFighting",
+        "Hint": "Turn FastFighting features on or off for this world."
+      }
+    }
+  }
+}
