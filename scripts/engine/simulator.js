@@ -292,7 +292,7 @@ function takeTurn(run, u) {
     const target = chooseTarget(run, u);
     if ( !target ) break;
     u.targetId = target.id;
-    const option = bestOptionVs(run, u, target, attacksMade);
+    const option = bestOptionVs(run, u, target, attacksMade, actions);
     if ( !option ) break;
 
     if ( option.moves > 0 ) {
@@ -304,7 +304,22 @@ function takeTurn(run, u) {
     }
 
     const tier = liveTier(run, u);
-    const canShield = u.spec.shield && !u.shieldRaised;
+    const tactics = u.spec.tactics ?? null;
+    const canShield = u.spec.shield && !u.shieldRaised && tactics?.shield !== "never";
+    // "Always" keeps the shield up: the last action of the turn goes to it.
+    if ( canShield && tactics?.shield === "always" && actions === 1 ) {
+      u.shieldRaised = true;
+      actions -= 1;
+      log(run, u, "raises a shield");
+      continue;
+    }
+    // Skirmishers hit twice and keep moving instead of taking a hopeless third swing.
+    if ( tactics?.style === "skirmisher" && attacksMade >= 2 && option.action.melee ) {
+      if ( canShield ) { u.shieldRaised = true; log(run, u, "raises a shield"); }
+      else log(run, u, "steps back to a better position");
+      actions -= 1;
+      continue;
+    }
     if ( option.cost > actions ) {
       if ( canShield && tier >= TACTICAL.INSTINCTIVE ) {
         u.shieldRaised = true;

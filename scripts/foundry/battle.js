@@ -5,7 +5,8 @@ import { MODULE_ID, SIDES, ALLEGIANCE, DISPOSITION_SIDES, TRAITS, clamp } from "
 import { runBatch, runBatchSync, replay, findSample } from "../engine/simulator.js";
 import { applyTraitRules, getAdapter, getModifiers } from "../api.js";
 import { computeApproach, environmentAt } from "./terrain.js";
-import { getDisposition, tokenSetup } from "./persistence.js";
+import { tokenSetup } from "./persistence.js";
+import { tacticsFor, isPlayerControlled } from "./tactics.js";
 import { setting } from "../settings.js";
 
 const SIDE_LABELS = {
@@ -127,7 +128,11 @@ export function buildBattleSpec(roster, setup, { underdog = null, approach = nul
     const spec = applyStatFudges(e.spec, ts.fudge);
     spec.side = side;
     spec.traits = fudgedTraits(e.spec, ts.fudge);
-    if ( spec.kind === "pc" ) spec.disposition = getDisposition(e.token.actor);
+    if ( isPlayerControlled(e.spec, e.token.actor) ) {
+      const { resolved } = tacticsFor(e.token.actor, e.spec);
+      spec.tactics = resolved;
+      spec.disposition = { healAggro: resolved.healAggro, allyDying: resolved.allyDying, selfRevived: resolved.selfRevived };
+    }
     if ( ts.diesAtZero !== undefined ) spec.diesAtZero = ts.diesAtZero;
     combatants.push(spec);
     (bySide[side] ??= []).push(spec);

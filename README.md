@@ -36,7 +36,25 @@ The planner needs at least 1000×600 and uses any extra space you give it.
   - how it would reach the nearest enemy (movement mode, move actions, terrain multiplier)
   - its four personality traits
   - side override and include toggle
-- **Expanding a row** gives stat fudges (AC, HP, attack/DC, damage), *ignores terrain*, and *dies at 0 HP*. For PCs it also shows the **healing and dying disposition**: how freely they heal, what they do when an ally is dying, and what they do after being revived. Ask your players before you run.
+- **Expanding a row** gives stat fudges (AC, HP, attack/DC, damage), *ignores terrain*, and *dies at 0 HP*. For player-controlled tokens it also shows that character's **tactics** (see Prepare Players below).
+
+**Prepare Players.** The button at the top of the planner opens a **Prepare for Battle** survey on every player's screen. It has one spreadsheet-style tab per token they control on the battle map. Each tab asks:
+- favorite weapon or attack
+- fighting style (front line, skirmisher, ranged, caster, protector)
+- who to attack first
+- how freely to spend spell slots and limited abilities
+- healing others
+- when to drink potions
+- what to do when an ally is dying, and after being revived
+- when to retreat
+- shield use
+- notes for the GM
+
+Every question starts on *"Let ⟨character⟩ decide: …"*, which shows what that character would probably do. Answers save as they're made. Two players who control the same token see each other's changes live.
+
+Next to each player, the GM sees a status: *Not asked*, *Waiting to log in*, *Entering…*, *Closed, not finished*, or *Ready*. Each player has a button to open or re-open their survey. A player asked while offline gets the survey when they log in.
+
+If you never press Prepare Players, the same questions are in each player-controlled token's expanded row in the planner, for you to fill in.
 
 Every derived number has **fudge up / fudge down / remove fudge** buttons. A fudged value is outlined, and the tooltip shows the system-derived base and the reason for it.
 

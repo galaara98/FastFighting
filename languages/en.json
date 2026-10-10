@@ -1,6 +1,8 @@
 {
   "FASTFIGHTING": {
-    "Keybinding": { "Open": "Open the Battle Planner" },
+    "Keybinding": {
+      "Open": "Open the Battle Planner"
+    },
     "Generic": {
       "Label": "Generic d20 (configured paths)",
       "Attack": "Attack",
@@ -8,38 +10,142 @@
       "MenuLabel": "Configure",
       "MenuHint": "For game systems without a FastFighting helper module: where to find HP, AC, attack bonus and damage on actors.",
       "Hint": "Property paths on the actor, e.g. system.attributes.hp.value. Leave attack or damage empty to estimate them from level.",
-      "Path": { "hp": "Current HP", "hpMax": "Maximum HP", "ac": "Armor Class / defense", "attack": "Attack bonus", "damage": "Damage formula", "level": "Level", "initiative": "Initiative modifier" }
+      "Path": {
+        "hp": "Current HP",
+        "hpMax": "Maximum HP",
+        "ac": "Armor Class / defense",
+        "attack": "Attack bonus",
+        "damage": "Damage formula",
+        "level": "Level",
+        "initiative": "Initiative modifier"
+      }
     },
     "Settings": {
-      "runs": { "Name": "Simulations per estimate", "Hint": "How many battles to simulate. More is steadier but slower; 2000 takes well under a second for a typical fight." },
-      "maxRounds": { "Name": "Maximum rounds", "Hint": "A simulated battle still going after this many rounds counts as a stalemate." },
-      "includeHidden": { "Name": "Include hidden tokens", "Hint": "Hidden tokens (ambushers, reinforcements) take part in estimates by default." },
-      "includeOtherLevels": { "Name": "Include other scene levels", "Hint": "Include tokens on scene Levels other than the one being viewed." },
-      "neutralDefault": { "Name": "Neutral tokens", "Hint": "Default handling of tokens with Neutral disposition. Can be changed per battle and per token." },
-      "secretDefault": { "Name": "Secret tokens", "Hint": "Default handling of tokens with Secret disposition." },
-      "downedModel": { "Name": "Downed characters", "Hint": "How falling to 0 HP is simulated. 'Simulate dying and healing' follows the system's rules for dying, recovery and revival." },
-      "pcHealAggro": { "Name": "Default PC healing", "Hint": "How freely player characters spend spells, potions and actions on healing, unless set per character in the Battle Planner." },
-      "pcAllyDying": { "Name": "Default PC response to a dying ally", "Hint": "What player characters prioritize when an ally is dying, unless set per character." },
-      "leadership": { "Name": "Leadership", "Hint": "Leaders (best social or warfare skill, Commanders, rallying abilities) raise their side's bravery and coordination while standing." },
-      "morale": { "Name": "Morale and routing", "Hint": "Combatants may waver or flee based on bravery, wounds, losses and a fallen leader or master." },
-      "positioning": { "Name": "Positioning and terrain", "Hint": "Use token distances, movement types, terrain costs, walls and elevation. Turn off for theater-of-the-mind scenes." },
-      "surpriseDefault": { "Name": "Initiative", "Hint": "Use the combat tracker's initiative when present, roll Stealth for hidden or Secret tokens, or roll normally." },
-      "reportAccuracy": { "Name": "Player report accuracy", "Hint": "How precisely the player chat card describes the odds, from exact statistics to pure flavor." },
-      "reportMode": { "Name": "Player report delivery", "Hint": "Post player reports publicly or whisper them to the players." },
-      "reportHideEnemyNames": { "Name": "Hide enemy names in reports", "Hint": "Refer to enemies generically in player reports." },
-      "lootMode": { "Name": "Make it So: loot", "Hint": "What happens to a slain creature's gear: leave it on the corpse (lootable), drop it in a loot pile, or do nothing." },
-      "corpseMode": { "Name": "Make it So: corpses", "Hint": "Keep slain tokens on the map with the dead marker, or remove them (when a loot pile is dropped)." },
-      "fledMode": { "Name": "Make it So: fled combatants", "Hint": "Hide tokens that fled the battle, or leave them where they are." },
-      "sideDefaults": { "Name": "Side personality defaults", "Label": "Configure", "Hint": "Default group Tactical, Brave, Selfish and Loyal values for Friendly, Hostile, Neutral and Secret sides." }
+      "runs": {
+        "Name": "Simulations per estimate",
+        "Hint": "How many battles to simulate. More is steadier but slower; 2000 takes well under a second for a typical fight."
+      },
+      "maxRounds": {
+        "Name": "Maximum rounds",
+        "Hint": "A simulated battle still going after this many rounds counts as a stalemate."
+      },
+      "includeHidden": {
+        "Name": "Include hidden tokens",
+        "Hint": "Hidden tokens (ambushers, reinforcements) take part in estimates by default."
+      },
+      "includeOtherLevels": {
+        "Name": "Include other scene levels",
+        "Hint": "Include tokens on scene Levels other than the one being viewed."
+      },
+      "neutralDefault": {
+        "Name": "Neutral tokens",
+        "Hint": "Default handling of tokens with Neutral disposition. Can be changed per battle and per token."
+      },
+      "secretDefault": {
+        "Name": "Secret tokens",
+        "Hint": "Default handling of tokens with Secret disposition."
+      },
+      "downedModel": {
+        "Name": "Downed characters",
+        "Hint": "How falling to 0 HP is simulated. 'Simulate dying and healing' follows the system's rules for dying, recovery and revival."
+      },
+      "pcHealAggro": {
+        "Name": "Default PC healing",
+        "Hint": "How freely player characters spend spells, potions and actions on healing, unless set per character in the Battle Planner."
+      },
+      "pcAllyDying": {
+        "Name": "Default PC response to a dying ally",
+        "Hint": "What player characters prioritize when an ally is dying, unless set per character."
+      },
+      "leadership": {
+        "Name": "Leadership",
+        "Hint": "Leaders (best social or warfare skill, Commanders, rallying abilities) raise their side's bravery and coordination while standing."
+      },
+      "morale": {
+        "Name": "Morale and routing",
+        "Hint": "Combatants may waver or flee based on bravery, wounds, losses and a fallen leader or master."
+      },
+      "positioning": {
+        "Name": "Positioning and terrain",
+        "Hint": "Use token distances, movement types, terrain costs, walls and elevation. Turn off for theater-of-the-mind scenes."
+      },
+      "surpriseDefault": {
+        "Name": "Initiative",
+        "Hint": "Use the combat tracker's initiative when present, roll Stealth for hidden or Secret tokens, or roll normally."
+      },
+      "reportAccuracy": {
+        "Name": "Player report accuracy",
+        "Hint": "How precisely the player chat card describes the odds, from exact statistics to pure flavor."
+      },
+      "reportMode": {
+        "Name": "Player report delivery",
+        "Hint": "Post player reports publicly or whisper them to the players."
+      },
+      "reportHideEnemyNames": {
+        "Name": "Hide enemy names in reports",
+        "Hint": "Refer to enemies generically in player reports."
+      },
+      "lootMode": {
+        "Name": "Make it So: loot",
+        "Hint": "What happens to a slain creature's gear: leave it on the corpse (lootable), drop it in a loot pile, or do nothing."
+      },
+      "corpseMode": {
+        "Name": "Make it So: corpses",
+        "Hint": "Keep slain tokens on the map with the dead marker, or remove them (when a loot pile is dropped)."
+      },
+      "fledMode": {
+        "Name": "Make it So: fled combatants",
+        "Hint": "Hide tokens that fled the battle, or leave them where they are."
+      },
+      "sideDefaults": {
+        "Name": "Side personality defaults",
+        "Label": "Configure",
+        "Hint": "Default group Tactical, Brave, Selfish and Loyal values for Friendly, Hostile, Neutral and Secret sides."
+      }
     },
-    "Allegiance": { "exclude": "Stays out of it", "friendly": "Joins the party", "hostile": "Joins the enemy", "closest": "Joins the nearest side", "underdog": "Joins the underdog", "own": "Fights everyone" },
-    "Downed": { "simulate": "Simulate dying and healing", "out": "Down = out of the fight", "dead": "Down = dead" },
-    "HealAggro": { "conservative": "Conservative", "balanced": "Balanced", "aggressive": "Aggressive", "allCosts": "At all costs" },
-    "AllyDying": { "rescue": "Rescue them", "fight": "Keep fighting", "retreat": "Retreat", "protectSelf": "Protect self" },
-    "SelfRevived": { "rejoin": "Rejoin the fight", "healSelf": "Heal self first", "retreat": "Retreat" },
-    "Surprise": { "none": "Roll normally", "tracker": "Combat tracker", "stealth": "Stealth for hidden", "friendly": "Party surprises", "hostile": "Enemy surprises" },
+    "Allegiance": {
+      "exclude": "Stays out of it",
+      "friendly": "Joins the party",
+      "hostile": "Joins the enemy",
+      "closest": "Joins the nearest side",
+      "underdog": "Joins the underdog",
+      "own": "Fights everyone"
+    },
+    "Downed": {
+      "simulate": "Simulate dying and healing",
+      "out": "Down = out of the fight",
+      "dead": "Down = dead"
+    },
+    "HealAggro": {
+      "conservative": "Conservative",
+      "balanced": "Balanced",
+      "aggressive": "Aggressive",
+      "allCosts": "At all costs"
+    },
+    "AllyDying": {
+      "rescue": "Rescue them",
+      "fight": "Keep fighting",
+      "retreat": "Retreat",
+      "protectSelf": "Protect self"
+    },
+    "SelfRevived": {
+      "rejoin": "Rejoin the fight",
+      "healSelf": "Heal self first",
+      "retreat": "Retreat"
+    },
+    "Surprise": {
+      "none": "Roll normally",
+      "tracker": "Combat tracker",
+      "stealth": "Stealth for hidden",
+      "friendly": "Party surprises",
+      "hostile": "Enemy surprises"
+    },
     "Accuracy": {
-      "statistician": "Statistician", "analyst": "Analyst", "tactician": "Tactician", "storyteller": "Storyteller", "roleplayer": "Roleplayer",
+      "statistician": "Statistician",
+      "analyst": "Analyst",
+      "tactician": "Tactician",
+      "storyteller": "Storyteller",
+      "roleplayer": "Roleplayer",
       "Hint": {
         "statistician": "Exact percentages and per-character odds.",
         "analyst": "Rounded numbers and plain odds.",
@@ -48,84 +154,250 @@
         "roleplayer": "A single line of atmosphere."
       }
     },
-    "ReportMode": { "public": "Public", "whisper": "Whisper to players" },
-    "Loot": { "corpse": "Leave on corpse (lootable)", "pile": "Drop a loot pile", "none": "Do nothing" },
-    "Corpse": { "keep": "Keep, marked dead", "remove": "Remove token" },
-    "Fled": { "hide": "Hide token", "leave": "Leave in place" },
-    "Side": { "friendly": "Friendly", "hostile": "Hostile", "neutral": "Neutral", "secret": "Secret" },
-    "Trait": { "tactical": "Tactical", "brave": "Brave", "selfish": "Selfish", "loyal": "Loyal" },
-    "Band": {
-      "feral": "Feral", "instinctive": "Instinctive", "competent": "Competent", "tactical": "Tactical", "mastermind": "Mastermind",
-      "craven": "Craven", "skittish": "Skittish", "steady": "Steady", "bold": "Bold", "fearless": "Fearless",
-      "devoted": "Devoted", "selfless": "Selfless", "pragmatic": "Pragmatic", "selfish": "Selfish", "ruthless": "Ruthless",
-      "treacherous": "Treacherous", "wavering": "Wavering", "dependable": "Dependable", "loyal": "Loyal", "unshakable": "Unshakable"
+    "ReportMode": {
+      "public": "Public",
+      "whisper": "Whisper to players"
     },
-    "Stat": { "ac": "AC", "hp": "HP", "attack": "Attack/DC", "damage": "Damage", "leadBrave": "Bravery bonus", "leadTactical": "Tactics floor", "leadAttack": "Attack bonus", "leadAc": "AC bonus" },
-    "Kind": { "pc": "PC", "npc": "Lvl", "companion": "Companion", "summon": "Summon", "minion": "Minion", "hazard": "Hazard" },
-    "Mode": { "walk": "Walks", "fly": "Flies", "swim": "Swims", "climb": "Climbs", "burrow": "Burrows" },
-    "Status": { "standing": "Standing", "down": "Down", "dead": "Dead", "fled": "Fled" },
-    "Difficulty": { "trivial": "Trivial", "low": "Low", "moderate": "Moderate", "severe": "Severe", "extreme": "Extreme" },
-    "Fudge": { "Up": "Fudge up", "Down": "Fudge down", "Remove": "Remove fudge" },
-    "Defaults": { "Hint": "Group personality for each side. Every member's own values are blended with these, and both can be fudged per battle.", "Restore": "Restore defaults" },
+    "Loot": {
+      "corpse": "Leave on corpse (lootable)",
+      "pile": "Drop a loot pile",
+      "none": "Do nothing"
+    },
+    "Corpse": {
+      "keep": "Keep, marked dead",
+      "remove": "Remove token"
+    },
+    "Fled": {
+      "hide": "Hide token",
+      "leave": "Leave in place"
+    },
+    "Side": {
+      "friendly": "Friendly",
+      "hostile": "Hostile",
+      "neutral": "Neutral",
+      "secret": "Secret"
+    },
+    "Trait": {
+      "tactical": "Tactical",
+      "brave": "Brave",
+      "selfish": "Selfish",
+      "loyal": "Loyal"
+    },
+    "Band": {
+      "feral": "Feral",
+      "instinctive": "Instinctive",
+      "competent": "Competent",
+      "tactical": "Tactical",
+      "mastermind": "Mastermind",
+      "craven": "Craven",
+      "skittish": "Skittish",
+      "steady": "Steady",
+      "bold": "Bold",
+      "fearless": "Fearless",
+      "devoted": "Devoted",
+      "selfless": "Selfless",
+      "pragmatic": "Pragmatic",
+      "selfish": "Selfish",
+      "ruthless": "Ruthless",
+      "treacherous": "Treacherous",
+      "wavering": "Wavering",
+      "dependable": "Dependable",
+      "loyal": "Loyal",
+      "unshakable": "Unshakable"
+    },
+    "Stat": {
+      "ac": "AC",
+      "hp": "HP",
+      "attack": "Attack/DC",
+      "damage": "Damage",
+      "leadBrave": "Bravery bonus",
+      "leadTactical": "Tactics floor",
+      "leadAttack": "Attack bonus",
+      "leadAc": "AC bonus"
+    },
+    "Kind": {
+      "pc": "PC",
+      "npc": "Lvl",
+      "companion": "Companion",
+      "summon": "Summon",
+      "minion": "Minion",
+      "hazard": "Hazard"
+    },
+    "Mode": {
+      "walk": "Walks",
+      "fly": "Flies",
+      "swim": "Swims",
+      "climb": "Climbs",
+      "burrow": "Burrows"
+    },
+    "Status": {
+      "standing": "Standing",
+      "down": "Down",
+      "dead": "Dead",
+      "fled": "Fled"
+    },
+    "Difficulty": {
+      "trivial": "Trivial",
+      "low": "Low",
+      "moderate": "Moderate",
+      "severe": "Severe",
+      "extreme": "Extreme"
+    },
+    "Fudge": {
+      "Up": "Fudge up",
+      "Down": "Fudge down",
+      "Remove": "Remove fudge"
+    },
+    "Defaults": {
+      "Hint": "Group personality for each side. Every member's own values are blended with these, and both can be fudged per battle.",
+      "Restore": "Restore defaults"
+    },
     "Planner": {
       "Title": "Battle Planner",
-      "Runs": "Runs", "MaxRounds": "Max rounds", "Seed": "Seed", "Random": "random", "Downed": "Downed", "Initiative": "Initiative",
-      "Positioning": "Terrain & positioning", "PositioningHint": "Distances, movement types, terrain cost, walls and elevation",
-      "Morale": "Morale", "Leadership": "Leadership", "Hidden": "Hidden tokens",
-      "RefreshHint": "Re-read the tokens on the scene", "Run": "Run",
-      "Allegiance": "Allegiance", "Healing": "Healing", "SideMorale": "Can rout", "GroupTraits": "Group personality",
-      "Leader": "Leader", "AutoLeader": "Auto: {name}", "AutoLeaderNone": "Auto (no leader found)", "NoLeader": "No leader", "ChosenLeader": "Chosen by the GM",
+      "Runs": "Runs",
+      "MaxRounds": "Max rounds",
+      "Seed": "Seed",
+      "Random": "random",
+      "Downed": "Downed",
+      "Initiative": "Initiative",
+      "Positioning": "Terrain & positioning",
+      "PositioningHint": "Distances, movement types, terrain cost, walls and elevation",
+      "Morale": "Morale",
+      "Leadership": "Leadership",
+      "Hidden": "Hidden tokens",
+      "RefreshHint": "Re-read the tokens on the scene",
+      "Run": "Run",
+      "Allegiance": "Allegiance",
+      "Healing": "Healing",
+      "SideMorale": "Can rout",
+      "GroupTraits": "Group personality",
+      "Leader": "Leader",
+      "AutoLeader": "Auto: {name}",
+      "AutoLeaderNone": "Auto (no leader found)",
+      "NoLeader": "No leader",
+      "ChosenLeader": "Chosen by the GM",
       "SideDefault": "side default",
-      "PanTo": "Select and pan to token", "HiddenToken": "Hidden token", "IncludeHint": "Take part in the battle", "Details": "Details",
-      "Disposition": "Healing and dying disposition (ask your player)", "HealAggro": "Healing", "AllyDying": "When an ally is dying", "SelfRevived": "After being revived",
-      "IgnoreTerrain": "Ignores terrain", "DiesAtZero": "Dies at 0 HP",
-      "Movement": "Movement", "Environment": "Standing in", "Options": "Options",
+      "PanTo": "Select and pan to token",
+      "HiddenToken": "Hidden token",
+      "IncludeHint": "Take part in the battle",
+      "Details": "Details",
+      "Disposition": "Tactics (ask your player, or use Prepare Players)",
+      "HealAggro": "Healing",
+      "AllyDying": "When an ally is dying",
+      "SelfRevived": "After being revived",
+      "IgnoreTerrain": "Ignores terrain",
+      "DiesAtZero": "Dies at 0 HP",
+      "Movement": "Movement",
+      "Environment": "Standing in",
+      "Options": "Options",
       "NoMembers": "No tokens on this side.",
       "NoAdapter": "FastFighting has no support for this game system yet. A helper module can add it.",
       "RunFailed": "Simulation failed: {error}",
-      "FightsWith": "Fights as {side}", "SitsOut": "Sits this one out",
-      "Approach": "{mode}, {moves} move actions to reach {name}", "Terrain": "terrain", "OutOfReach": "can't reach in melee",
-      "DifficultHere": "difficult terrain", "HazardHere": "hazard region"
+      "FightsWith": "Fights as {side}",
+      "SitsOut": "Sits this one out",
+      "Approach": "{mode}, {moves} move actions to reach {name}",
+      "Terrain": "terrain",
+      "OutOfReach": "can't reach in melee",
+      "DifficultHere": "difficult terrain",
+      "HazardHere": "hazard region",
+      "ControlledBy": "Controlled by"
     },
     "Results": {
-      "Tab": { "overview": "Overview", "combatants": "Combatants", "swing": "Swing factors", "resources": "Resources", "sample": "Sample fight", "share": "Share" },
+      "Tab": {
+        "overview": "Overview",
+        "combatants": "Combatants",
+        "swing": "Swing factors",
+        "resources": "Resources",
+        "sample": "Sample fight",
+        "share": "Share"
+      },
       "Stale": "Settings changed since this run. Run again to update.",
-      "Stalemate": "Stalemate", "NoOne": "No one left",
-      "PartyWins": "Party wins", "PcDeath": "A PC dies", "PcDowned": "A PC goes down", "MedianRounds": "Rounds",
-      "Simulated": "Simulated difficulty", "SystemSays": "system says",
-      "Duration": "How long it lasts", "RoundN": "Round", "Dangerous": "Most dangerous", "DmgAbbr": "dmg", "AtRisk": "Most at risk",
-      "Downed": "downed", "Dead": "Dead", "Standing": "Standing", "Down": "Down", "Fled": "Fled",
+      "Stalemate": "Stalemate",
+      "NoOne": "No one left",
+      "PartyWins": "Party wins",
+      "PcDeath": "A PC dies",
+      "PcDowned": "A PC goes down",
+      "MedianRounds": "Rounds",
+      "Simulated": "Simulated difficulty",
+      "SystemSays": "system says",
+      "Duration": "How long it lasts",
+      "RoundN": "Round",
+      "Dangerous": "Most dangerous",
+      "DmgAbbr": "dmg",
+      "AtRisk": "Most at risk",
+      "Downed": "downed",
+      "Dead": "Dead",
+      "Standing": "Standing",
+      "Down": "Down",
+      "Fled": "Fled",
       "Footnote": "Simulated battles:",
-      "Combatant": "Combatant", "Fate": "Fate", "HpLeft": "HP left", "Damage": "Damage", "Healing": "Healing", "FirstToFall": "First to fall",
-      "Resource": "Resource", "AvgUsed": "Average used", "NoResources": "No limited resources were spent.",
-      "FocusPoint": "Focus Point", "SlotRank": "Rank {rank} slot",
+      "Combatant": "Combatant",
+      "Fate": "Fate",
+      "HpLeft": "HP left",
+      "Damage": "Damage",
+      "Healing": "Healing",
+      "FirstToFall": "First to fall",
+      "Resource": "Resource",
+      "AvgUsed": "Average used",
+      "NoResources": "No limited resources were spent.",
+      "FocusPoint": "Focus Point",
+      "SlotRank": "Rank {rank} slot",
       "EmptyTitle": "Plan the battle, then Run",
       "EmptyBody": "Every token on the scene is listed on the left by side. Adjust personalities, allegiances and dispositions, then run thousands of simulated fights."
     },
     "Swing": {
-      "Without": "Without {name}", "NoLeadership": "Without leadership", "NoMorale": "Without morale", "NoPositioning": "Without terrain & positioning",
+      "Without": "Without {name}",
+      "NoLeadership": "Without leadership",
+      "NoMorale": "Without morale",
+      "NoPositioning": "Without terrain & positioning",
       "Hint": "Re-runs the battle without each combatant and modifier to show what moves the party's odds most.",
       "Compute": "Compute swing factors"
     },
     "Sample": {
-      "likely": "A typical fight", "partyWins": "A party victory", "partyLoses": "A party defeat", "pcDies": "A PC dies", "closeCall": "A close call",
-      "Start": "Start", "Round": "Round {n}", "Outcome": { "stalemate": "Stalemate", "none": "No one standing" },
-      "Show": "Show", "Roll": "Roll another", "Result": "Outcome", "Rounds": "rounds", "Unchanged": "No change",
+      "likely": "A typical fight",
+      "partyWins": "A party victory",
+      "partyLoses": "A party defeat",
+      "pcDies": "A PC dies",
+      "closeCall": "A close call",
+      "Start": "Start",
+      "Round": "Round {n}",
+      "Outcome": {
+        "stalemate": "Stalemate",
+        "none": "No one standing"
+      },
+      "Show": "Show",
+      "Roll": "Roll another",
+      "Result": "Outcome",
+      "Rounds": "rounds",
+      "Unchanged": "No change",
       "NotFound": "No simulated fight matched that outcome. It may be very unlikely."
     },
     "MakeItSo": {
-      "Title": "Make it So", "Button": "Make it So",
+      "Title": "Make it So",
+      "Button": "Make it So",
       "Confirm": "Commit this fight's outcome to the tokens? The following changes will be made:",
       "UndoHint": "You can undo this from the Sample fight tab.",
       "Failed": "Make it So could not update {name}. See the console for details.",
-      "ChatTitle": "The battle is decided", "LastMoments": "How it ended",
-      "Done": "The outcome has been committed to the tokens.", "Nothing": "Nothing would change.",
-      "Undo": "Undo Make it So", "UndoTitle": "Undo Make it So", "UndoConfirm": "Restore the tokens to how they were before the last Make it So on this scene?",
-      "Undone": "Make it So was undone.", "Remains": "Remains of {name}"
+      "ChatTitle": "The battle is decided",
+      "LastMoments": "How it ended",
+      "Done": "The outcome has been committed to the tokens.",
+      "Nothing": "Nothing would change.",
+      "Undo": "Undo Make it So",
+      "UndoTitle": "Undo Make it So",
+      "UndoConfirm": "Restore the tokens to how they were before the last Make it So on this scene?",
+      "Undone": "Make it So was undone.",
+      "Remains": "Remains of {name}"
     },
     "Report": {
-      "Title": "Sizing up the battle", "Speaker": "The Odds", "AFoe": "one of them", "Sent": "Report posted to chat.",
-      "Accuracy": "Accuracy", "Mode": "Delivery", "HideNames": "Hide enemy names", "Reset": "Regenerate", "Send": "Post to chat",
+      "Title": "Sizing up the battle",
+      "Speaker": "The Odds",
+      "AFoe": "one of them",
+      "Sent": "Report posted to chat.",
+      "Accuracy": "Accuracy",
+      "Mode": "Delivery",
+      "HideNames": "Hide enemy names",
+      "Reset": "Regenerate",
+      "Send": "Post to chat",
       "Stat": {
         "Odds": "Party victory {win}; enemy victory {lose}; stalemate {stalemate}.",
         "Length": "Median length {median} rounds (most fights {p10}–{p90}).",
@@ -141,9 +413,25 @@
         "Deadliest": "Watch out for {name}."
       },
       "Tactician": {
-        "Odds": { "overwhelming": "Overwhelming advantage.", "favorable": "The odds favor you.", "even": "An even fight.", "unfavorable": "The odds are against you.", "dire": "You are badly outmatched." },
-        "Length": { "brief": "It should be over almost at once.", "short": "A short, sharp fight.", "long": "A long fight.", "grinding": "A grinding battle of attrition." },
-        "Death": { "high": "Expect to lose someone.", "real": "Someone could die.", "low": "Death is possible but unlikely.", "none": "No one should die." },
+        "Odds": {
+          "overwhelming": "Overwhelming advantage.",
+          "favorable": "The odds favor you.",
+          "even": "An even fight.",
+          "unfavorable": "The odds are against you.",
+          "dire": "You are badly outmatched."
+        },
+        "Length": {
+          "brief": "It should be over almost at once.",
+          "short": "A short, sharp fight.",
+          "long": "A long fight.",
+          "grinding": "A grinding battle of attrition."
+        },
+        "Death": {
+          "high": "Expect to lose someone.",
+          "real": "Someone could die.",
+          "low": "Death is possible but unlikely.",
+          "none": "No one should die."
+        },
         "Deadliest": "The biggest threat: {name}."
       },
       "Story": {
@@ -154,8 +442,17 @@
           "unfavorable": "Every instinct says this is a fight you could lose.",
           "dire": "Steel yourselves: this is a fight you are likely to lose."
         },
-        "Death": { "high": "Someone may not walk away from this.", "real": "Someone could fall and not rise again.", "low": "It will hurt, but you should all live through it." },
-        "Length": { "brief": "It will be over in moments.", "short": "It will be quick and brutal.", "long": "It will be a long, hard struggle.", "grinding": "It will grind on until someone breaks." }
+        "Death": {
+          "high": "Someone may not walk away from this.",
+          "real": "Someone could fall and not rise again.",
+          "low": "It will hurt, but you should all live through it."
+        },
+        "Length": {
+          "brief": "It will be over in moments.",
+          "short": "It will be quick and brutal.",
+          "long": "It will be a long, hard struggle.",
+          "grinding": "It will grind on until someone breaks."
+        }
       },
       "Roleplayer": {
         "overwhelming": "Your foes look small and uncertain before you.",
@@ -163,6 +460,123 @@
         "even": "The moment hangs balanced on a blade's edge.",
         "unfavorable": "A cold weight settles in your stomach.",
         "dire": "Somewhere nearby, carrion birds have begun to gather."
+      }
+    },
+    "Tactics": {
+      "Auto": "Let {name} decide: {choice}",
+      "BestAvailable": "best available option",
+      "ActionKind": {
+        "strike": "weapon",
+        "spell-attack": "spell attack",
+        "save": "spell, saving throw",
+        "auto": "spell, always hits",
+        "heal": "healing"
+      },
+      "preferredAction": {
+        "Label": "Favorite weapon or attack",
+        "Hint": "The attack this character reaches for first. They still switch when something else is clearly better."
+      },
+      "style": {
+        "Label": "Fighting style",
+        "Hint": "How this character likes to fight.",
+        "frontline": "Front line: close in and hold the line",
+        "skirmisher": "Skirmisher: flank, strike twice, keep moving",
+        "ranged": "Ranged: keep my distance and shoot",
+        "caster": "Caster: lead with spells",
+        "protector": "Protector: guard my allies, shield up"
+      },
+      "target": {
+        "Label": "Who to attack first",
+        "Hint": "Target priority when there is a choice.",
+        "nearest": "Whoever is closest",
+        "weakest": "Finish off the weakest",
+        "dangerous": "The most dangerous foe",
+        "casters": "Spellcasters and healers first",
+        "protect": "Whoever is attacking my allies"
+      },
+      "resourceUse": {
+        "Label": "Spell slots, focus and limited abilities",
+        "Hint": "How readily this character spends resources that only come back after rest.",
+        "conserve": "Save them for emergencies",
+        "balanced": "Use them when they are clearly better",
+        "nova": "Spend freely to end it fast"
+      },
+      "healAggro": {
+        "Label": "Healing others",
+        "Hint": "How freely this character spends actions and resources healing allies.",
+        "conservative": "Only when someone is dying or badly hurt",
+        "balanced": "Heal allies who are hurting",
+        "aggressive": "Keep everyone topped up",
+        "allCosts": "Heal at all costs, even with my last resources"
+      },
+      "potionThreshold": {
+        "25": "Below a quarter of my HP",
+        "50": "Below half my HP",
+        "75": "As soon as I'm hurt",
+        "Label": "Drinking my own potions",
+        "Hint": "When this character drinks healing potions or elixirs.",
+        "never": "Never, save them for later"
+      },
+      "allyDying": {
+        "Label": "When an ally is dying",
+        "Hint": "What this character does the moment a friend goes down.",
+        "rescue": "Drop everything to save them",
+        "fight": "Keep fighting; heal if convenient",
+        "retreat": "Get out of here",
+        "protectSelf": "Look after myself"
+      },
+      "selfRevived": {
+        "Label": "After I'm revived",
+        "Hint": "What this character does after getting back up.",
+        "rejoin": "Get back in the fight",
+        "healSelf": "Heal myself first",
+        "retreat": "Retreat"
+      },
+      "retreat": {
+        "Label": "When to retreat",
+        "Hint": "When this character would leave the battle.",
+        "never": "Fight to the end",
+        "hurt": "When I'm badly hurt",
+        "losing": "When the battle turns against us"
+      },
+      "shield": {
+        "Label": "Shield",
+        "Hint": "How this character uses Raise a Shield.",
+        "always": "Keep it raised every turn",
+        "spare": "Raise it with spare actions",
+        "never": "Don't bother"
+      },
+      "notes": {
+        "Label": "Anything else the GM should know",
+        "Hint": "For example: protect Ezren at all costs; won't harm the dog."
+      }
+    },
+    "Survey": {
+      "Title": "Prepare for Battle",
+      "Intro": "Your GM wants to know how your characters fight in {scene}. Answers save as you go, and anyone sharing a character sees changes live.",
+      "NoTokens": "You don't control any tokens on this battle map.",
+      "Level": "Level",
+      "SharedWith": "Also controlled by",
+      "Reset": "Reset answers",
+      "ResetHint": "Return every answer for this character to \"let them decide\".",
+      "AutoHint": "\"Let … decide\" is what your character would probably do. Change anything you'd do differently.",
+      "Ready": "I'm ready",
+      "Thanks": "Thanks! Your GM can see you're ready.",
+      "Prepare": "Prepare Players",
+      "PrepareHint": "Open a tactics survey on every player's screen for the tokens they control on this map.",
+      "NoPlayers": "No players control tokens on this scene.",
+      "NoPlayersHere": "No players control tokens on this scene. Fill in tactics yourself in each PC's row.",
+      "Sent": "Survey sent to {n} player(s).",
+      "WillOpen": "{name} is offline; their survey will open when they log in.",
+      "OpenFirst": "Open this player's survey",
+      "Reopen": "Re-open this player's survey",
+      "Status": {
+        "none": "Not asked",
+        "requested": "Opening…",
+        "offline": "Waiting to log in",
+        "entering": "Entering…",
+        "closed": "Closed, not finished",
+        "done": "Ready"
       }
     }
   }

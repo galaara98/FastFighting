@@ -26,7 +26,14 @@ const meanHeal = action => (action.heal ?? []).reduce((s, p) => s + meanPart(p),
  * @returns {{action: object, target: object}|null}
  */
 export function decideHeal(run, u, actionsLeft) {
-  const heals = u.prep.healActions.filter(a => a.cost <= actionsLeft && hasUses(u, a));
+  const potionAt = u.spec.tactics?.potionThreshold;
+  const ownFrac = u.maxHp > 0 ? u.hp / u.maxHp : 0;
+  const heals = u.prep.healActions.filter(a => {
+    if ( a.cost > actionsLeft || !hasUses(u, a) ) return false;
+    // Players decide when to drink their own potions.
+    if ( a.selfOnly && potionAt ) return potionAt !== "never" && ownFrac < Number(potionAt) / 100;
+    return true;
+  });
   if ( !heals.length ) return null;
 
   const aggro = healAggroOf(run, u);
@@ -51,6 +58,10 @@ export function decideHeal(run, u, actionsLeft) {
       score = 1 - frac;
       if ( aggro === "conservative" && frac >= 0.25 ) score = 0;
     }
+    if ( isSelf && potionAt && potionAt !== "never" && frac < Number(potionAt) / 100 && heals.some(a => a.selfOnly) ) {
+      score = Math.max(score, 1 - frac);
+    }
+    if ( isSelf && u.wasDowned && u.spec.disposition?.selfRevived === "healSelf" && frac < 0.75 ) score += 1;
     if ( score <= 0 ) continue;
     score *= isSelf ? (1 + selfish / 50) : clamp(1 - selfish / 200, 0.2, 1);
     if ( score > bestScore ) { bestScore = score; best = ally; }

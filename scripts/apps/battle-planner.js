@@ -2,12 +2,16 @@
  * The GM's Battle Planner: roster and per-side settings on the left, results on the right.
  */
 import {
-  MODULE_ID, SIDES, TRAITS, ALLEGIANCE, ACCURACY, HEAL_AGGRO, ALLY_DYING, SELF_REVIVED, DOWNED_MODELS, STATUS,
+  MODULE_ID, SIDES, TRAITS, ALLEGIANCE, ACCURACY, HEAL_AGGRO, DOWNED_MODELS, STATUS,
   traitBand, fudged, clamp, FUDGE_STEP
 } from "../constants.js";
 import { getAdapter } from "../api.js";
 import { setting } from "../settings.js";
-import { getSetup, saveSetup, tokenSetup, getDisposition, setDisposition } from "../foundry/persistence.js";
+import { getSetup, saveSetup, tokenSetup } from "../foundry/persistence.js";
+import {
+  questionsContext, setTactic, syncTacticsDom, isPlayerControlled, playersOnScene, tokensForUser, surveyStatus,
+  requestSurveys, SURVEY_STATUS
+} from "../foundry/tactics.js";
 import { gatherRoster, chosenSide, resolveAllegiances, simulate, swingFactors, replay, findSample } from "../foundry/battle.js";
 import { buildReport, sendReport } from "../foundry/chat-report.js";
 import { planMakeItSo, confirmMakeItSo, executeMakeItSo, undoMakeItSo, hasUndo } from "../foundry/make-it-so.js";
@@ -16,6 +20,7 @@ import { computeApproach } from "../foundry/terrain.js";
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 const TEMPLATE = `modules/${MODULE_ID}/templates/planner.hbs`;
 const FUDGE_PARTIAL = `modules/${MODULE_ID}/templates/partials/fudge.hbs`;
+const TACTICS_PARTIAL = `modules/${MODULE_ID}/templates/partials/tactics.hbs`;
 
 const SIDE_ORDER = [SIDES.FRIENDLY, SIDES.HOSTILE, SIDES.NEUTRAL, SIDES.SECRET];
 const SIDE_ICONS = { friendly: "fa-shield-heart", hostile: "fa-skull", neutral: "fa-scale-balanced", secret: "fa-user-secret" };
@@ -56,13 +61,15 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       rollSample: BattlePlanner.#onRollSample,
       makeItSo: BattlePlanner.#onMakeItSo,
       undo: BattlePlanner.#onUndo,
+      preparePlayers: BattlePlanner.#onPreparePlayers,
+      openSurvey: BattlePlanner.#onOpenSurvey,
       sendReport: BattlePlanner.#onSendReport,
       resetReport: BattlePlanner.#onResetReport
     }
   };
 
   static PARTS = {
-    main: { template: TEMPLATE, templates: [FUDGE_PARTIAL], scrollable: [".ff-roster-list", ".ff-results-body", ".ff-log"] }
+    main: { template: TEMPLATE, templates: [FUDGE_PARTIAL, TACTICS_PARTIAL], scrollable: [".ff-roster-list", ".ff-results-body", ".ff-log"] }
   };
 
   /** Singleton access. */
@@ -223,7 +230,8 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       resultTabs: RESULT_TABS.map(id => ({ id, label: loc(`FASTFIGHTING.Results.Tab.${id}`), active: this.resultTab === id })),
       resultTab: this.resultTab,
       hasResults: !!this.results,
-      canUndo: hasUndo()
+      canUndo: hasUndo(),
+      players: this.#playersContext()
     };
     if ( this.results ) Object.assign(context, this.#resultsContext());
     return context;
@@ -235,7 +243,8 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     const s = e.spec;
     const fudge = ts.fudge ?? {};
     const isPc = s.kind === "pc";
-    const disposition = isPc ? getDisposition(e.token.actor) : null;
+    const playerControlled = isPlayerControlled(s, e.token.actor);
+    const controllers = game.users.filter(u => !u.isGM && e.token.actor?.testUserPermission(u, "OWNER")).map(u => u.name).join(", ");
     const approach = this.#nearestEnemyApproach(e, resolved);
     const resolvedSide = resolved[e.token.id];
     return {
@@ -268,10 +277,9 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       ignoreTerrain: !!ts.ignoreTerrain,
       diesAtZero: ts.diesAtZero ?? s.diesAtZero,
       isPc,
-      disposition,
-      healChoices: Object.fromEntries(HEAL_AGGRO.map(k => [k, `FASTFIGHTING.HealAggro.${k}`])),
-      allyDyingChoices: Object.fromEntries(ALLY_DYING.map(k => [k, `FASTFIGHTING.AllyDying.${k}`])),
-      selfRevivedChoices: Object.fromEntries(SELF_REVIVED.map(k => [k, `FASTFIGHTING.SelfRevived.${k}`]))
+      playerControlled,
+      controllers,
+      tactics: playerControlled && this.expanded.has(e.token.id) ? questionsContext(s, e.token.actor, `gm-${e.token.id}`) : null
     };
   }
 
@@ -367,6 +375,50 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     };
   }
 
+  #playersContext() {
+    const scene = canvas.scene;
+    return playersOnScene(scene).map(u => {
+      let { status } = surveyStatus(u, scene);
+      if ( status === SURVEY_STATUS.REQUESTED && u.active ) status = SURVEY_STATUS.REQUESTED;
+      else if ( status === SURVEY_STATUS.REQUESTED && !u.active ) status = "offline";
+      else if ( status === SURVEY_STATUS.ENTERING && !u.active ) status = SURVEY_STATUS.CLOSED;
+      return {
+        id: u.id,
+        name: u.name,
+        color: u.color?.css ?? u.color,
+        active: u.active,
+        status,
+        statusLabel: loc(`FASTFIGHTING.Survey.Status.${status}`),
+        entering: status === SURVEY_STATUS.ENTERING,
+        tokens: tokensForUser(scene, u).map(t => t.name).join(", "),
+        openLabel: loc(status === SURVEY_STATUS.NONE ? "FASTFIGHTING.Survey.OpenFirst" : "FASTFIGHTING.Survey.Reopen")
+      };
+    });
+  }
+
+  /** Called by hooks when someone edits an actor's answers. */
+  syncActor(actor) {
+    if ( !this.rendered ) return;
+    syncTacticsDom(this.element, actor);
+    if ( this.results ) this.stale = true;
+  }
+
+  static async #onPreparePlayers() {
+    const players = playersOnScene(canvas.scene);
+    if ( !players.length ) return ui.notifications.warn(loc("FASTFIGHTING.Survey.NoPlayers"));
+    await requestSurveys(players);
+    ui.notifications.info(game.i18n.format("FASTFIGHTING.Survey.Sent", { n: players.length }));
+    this.render();
+  }
+
+  static async #onOpenSurvey(event, target) {
+    const user = game.users.get(target.dataset.userId);
+    if ( !user ) return;
+    await requestSurveys([user]);
+    if ( !user.active ) ui.notifications.info(game.i18n.format("FASTFIGHTING.Survey.WillOpen", { name: user.name }));
+    this.render();
+  }
+
   /* -------------------------------------------- */
   /*  Rendering                                   */
   /* -------------------------------------------- */
@@ -388,9 +440,12 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     const name = target?.name;
     if ( !name ) return;
     const value = target.type === "checkbox" ? target.checked : (target.dataset.dtype === "Number" || target.type === "number") ? Number(target.value) : target.value;
-    if ( name.startsWith("disp.") ) {
-      const [, actorId, key] = name.split(".");
-      await setDisposition(game.actors.get(actorId) ?? canvas.scene.tokens.find(t => t.actor?.id === actorId)?.actor, { [key]: value });
+    if ( target.dataset.tactic ) {
+      const actor = await fromUuid(target.dataset.actorUuid);
+      target.closest(".ff-q")?.classList.toggle("is-auto", target.value === "auto");
+      await setTactic(actor, target.dataset.tactic, target.value);
+      this.stale = true;
+      return; // no re-render: keep focus; the actor update hook syncs other views
     } else if ( name.startsWith("report.") ) {
       const key = name.slice(7);
       this.report[key] = value;

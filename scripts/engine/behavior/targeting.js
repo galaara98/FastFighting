@@ -10,10 +10,24 @@
 import { STATUS, TACTICAL } from "../../constants.js";
 import { enemiesOf, isStanding, liveTier, liveTrait, movesNeeded } from "../battle-state.js";
 import { expectedDamage, hasUses, threatOf, actionCost } from "./evaluate.js";
+import { styleWeight } from "../tactics.js";
 
-/** Cheapest way (in move actions) for u to get any offensive action onto t, and that action's EV per action. */
-export function bestOptionVs(run, u, t, attacksMade = 0) {
-  let best = null;
+const limited = a => !!a.resource || Number.isFinite(a.uses);
+
+/** Is the unit (or its side) in trouble, so a careful character would spend limited resources? */
+function inCrisis(run, u) {
+  if ( u.maxHp > 0 && u.hp / u.maxHp < 0.5 ) return true;
+  return run.units.some(o => o.side === u.side && o !== u && o.status === STATUS.DOWN);
+}
+
+/**
+ * Best way for u to get an offensive action onto t this turn: moves needed, the action, and its value.
+ * With `actionsLeft`, options that fit in the remaining actions win over ones that don't (so a character
+ * whose favorite weapon still needs drawing punches with its last action instead of standing idle).
+ */
+export function bestOptionVs(run, u, t, attacksMade = 0, actionsLeft = Infinity) {
+  const tactics = u.spec.tactics ?? null;
+  const options = [];
   for ( const action of u.prep.offense ) {
     if ( !hasUses(u, action) ) continue;
     const moves = movesNeeded(run, u, t, action);
@@ -23,8 +37,27 @@ export function bestOptionVs(run, u, t, attacksMade = 0) {
     // Drawing a weapon is a one-time cost, so spread it over the attacks it enables.
     const amortized = action.cost + (cost - action.cost) * 0.25;
     const perAction = ev / (amortized + moves);
-    if ( !best || perAction > best.perAction ) best = { action, moves, ev, perAction, cost };
+    options.push({ action, moves, ev, perAction, cost, weighted: perAction * styleWeight(tactics, action) });
   }
+  if ( !options.length ) return null;
+
+  let pool = options;
+  if ( tactics ) {
+    // Ranged fighters don't wade in while they still have a shot.
+    if ( tactics.style === "ranged" && pool.some(o => o.action.range && o.moves === 0) ) {
+      pool = pool.filter(o => !(o.action.melee && o.moves > 0));
+    }
+    // Resource discipline for limited options (spell slots, focus, consumables, per-battle uses).
+    const bestFree = Math.max(0, ...pool.filter(o => !limited(o.action)).map(o => o.perAction));
+    const crisis = inCrisis(run, u);
+    const gate = { conserve: crisis ? 1.15 : 1.6, balanced: 1.05, nova: 0 }[tactics.resourceUse] ?? 1.05;
+    const gated = pool.filter(o => !limited(o.action) || bestFree === 0 || o.perAction >= bestFree * gate);
+    if ( gated.length ) pool = gated;
+  }
+  const fits = pool.filter(o => o.moves + o.cost <= actionsLeft);
+  if ( fits.length ) pool = fits;
+  let best = null;
+  for ( const o of pool ) if ( !best || o.weighted > best.weighted ) best = o;
   return best;
 }
 
@@ -64,6 +97,31 @@ export function chooseTarget(run, u) {
     const min = Math.min(...reachable.map(x => x.moves));
     return rng.pick(reachable.filter(x => x.moves === min)).t;
   };
+
+  // A player's stated target priority overrides the personality-driven choice.
+  const choice = u.spec.tactics?.target;
+  if ( choice ) {
+    const standing = reachable.filter(x => isStanding(x.t));
+    const pool = standing.length ? standing : reachable;
+    const near = Math.min(...pool.map(x => x.moves));
+    const close = pool.filter(x => x.moves <= near + 1);
+    switch ( choice ) {
+      case "nearest": return nearest();
+      case "weakest": return [...close].sort((a, b) => hpFraction(a.t) - hpFraction(b.t) || a.t.hp - b.t.hp)[0].t;
+      // Danger is weighed against the turns it takes to get there and bring the foe down.
+      case "dangerous": return pickBy(run, u, pool, x => valueOfKill(run, u, x));
+      case "casters": return pickBy(run, u, pool, x => valueOfKill(run, u, x) * ((x.t.prep.isCaster || x.t.prep.isHealer) ? 2.5 : 1));
+      case "protect": {
+        // Whoever is attacking my allies (not me), nearest first.
+        const threats = pool.filter(x => {
+          const victim = x.t.targetId && run.byId.get(x.t.targetId);
+          return victim && victim !== u && victim.side === u.side;
+        });
+        if ( threats.length ) return pickBy(run, u, threats, x => -x.moves);
+        return nearest();
+      }
+    }
+  }
 
   switch ( tier ) {
     case TACTICAL.FERAL: {

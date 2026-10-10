@@ -37,6 +37,23 @@
     <div class="ff-progress {{#if running}}is-running{{/if}}"><span style="width: {{progress}}%"></span></div>
   </header>
 
+  {{!-- ============ Players: survey requests and status ============ --}}
+  <div class="ff-players">
+    <button type="button" class="ff-btn ff-prepare" data-action="preparePlayers" {{#unless players.length}}disabled{{/unless}} data-tooltip="{{localize "FASTFIGHTING.Survey.PrepareHint"}}">
+      <i class="fa-solid fa-clipboard-question"></i> {{localize "FASTFIGHTING.Survey.Prepare"}}
+    </button>
+    {{#each players}}
+    <div class="ff-player ff-status-{{status}}" data-tooltip="{{tokens}}">
+      <span class="ff-player-dot {{#if active}}is-online{{/if}}" style="--player-color: {{color}}"></span>
+      <span class="ff-player-name">{{name}}</span>
+      <span class="ff-player-status">{{#if entering}}<i class="fa-solid fa-pen-nib fa-beat-fade"></i> {{/if}}{{statusLabel}}</span>
+      <button type="button" class="ff-icon-btn" data-action="openSurvey" data-user-id="{{id}}" data-tooltip="{{openLabel}}" aria-label="{{openLabel}}"><i class="fa-solid fa-clipboard-list"></i></button>
+    </div>
+    {{else}}
+    <span class="ff-hint">{{localize "FASTFIGHTING.Survey.NoPlayersHere"}}</span>
+    {{/each}}
+  </div>
+
   <div class="ff-body">
     {{!-- ============ Left: sides and roster ============ --}}
     <section class="ff-left">
@@ -88,6 +105,7 @@
                 {{name}}
                 {{#if hidden}}<i class="fa-solid fa-eye-slash" data-tooltip="{{localize "FASTFIGHTING.Planner.HiddenToken"}}"></i>{{/if}}
                 <span class="ff-chip ff-kind-{{kind}}">{{kindLabel}} {{level}}</span>
+                {{#if controllers}}<span class="ff-chip" data-tooltip="{{localize "FASTFIGHTING.Planner.ControlledBy"}}"><i class="fa-solid fa-user"></i> {{controllers}}</span>{{/if}}
               </div>
               <div class="ff-row-meta">
                 <span><i class="fa-solid fa-heart"></i> {{hp}}</span>
@@ -108,18 +126,10 @@
             <div class="ff-trait-grid ff-compact">
               {{#each stats}}{{> "modules/fast-fighting/templates/partials/fudge.hbs" this}}{{/each}}
             </div>
-            {{#if isPc}}
+            {{#if tactics}}
             <div class="ff-disposition">
-              <div class="ff-strip-title">{{localize "FASTFIGHTING.Planner.Disposition"}}</div>
-              <label class="ff-field">{{localize "FASTFIGHTING.Planner.HealAggro"}}
-                <select name="disp.{{actorId}}.healAggro">{{selectOptions healChoices selected=disposition.healAggro localize=true}}</select>
-              </label>
-              <label class="ff-field">{{localize "FASTFIGHTING.Planner.AllyDying"}}
-                <select name="disp.{{actorId}}.allyDying">{{selectOptions allyDyingChoices selected=disposition.allyDying localize=true}}</select>
-              </label>
-              <label class="ff-field">{{localize "FASTFIGHTING.Planner.SelfRevived"}}
-                <select name="disp.{{actorId}}.selfRevived">{{selectOptions selfRevivedChoices selected=disposition.selfRevived localize=true}}</select>
-              </label>
+              <div class="ff-strip-title">{{localize "FASTFIGHTING.Planner.Disposition"}}{{#if controllers}} · {{controllers}}{{/if}}</div>
+              {{> "modules/fast-fighting/templates/partials/tactics.hbs" tactics}}
             </div>
             {{/if}}
             <div class="ff-strip-row">

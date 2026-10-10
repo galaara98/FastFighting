@@ -1,0 +1,34 @@
+<div class="ff-survey-root">
+  <header class="ff-survey-head">
+    <p>{{intro}}</p>
+  </header>
+
+  <div class="ff-survey-sheet">
+    {{#if empty}}
+      <p class="ff-empty">{{localize "FASTFIGHTING.Survey.NoTokens"}}</p>
+    {{else}}
+      {{#with active}}
+      <div class="ff-survey-token">
+        <img src="{{img}}" alt="">
+        <div>
+          <h3>{{name}}</h3>
+          <div class="ff-row-meta"><span>{{localize "FASTFIGHTING.Survey.Level"}} {{level}}</span><span><i class="fa-solid fa-heart"></i> {{hp}}</span><span><i class="fa-solid fa-shield"></i> {{ac}}</span></div>
+          {{#if sharedWith}}<div class="ff-shared {{#if sharedOnline}}is-online{{/if}}"><i class="fa-solid fa-user-group"></i> {{localize "FASTFIGHTING.Survey.SharedWith"}} {{sharedWith}}</div>{{/if}}
+        </div>
+        <button type="button" class="ff-btn ff-survey-reset" data-action="resetAll" data-token-id="{{id}}" data-tooltip="{{localize "FASTFIGHTING.Survey.ResetHint"}}"><i class="fa-solid fa-rotate-left"></i> {{localize "FASTFIGHTING.Survey.Reset"}}</button>
+      </div>
+      <p class="ff-hint">{{localize "FASTFIGHTING.Survey.AutoHint"}}</p>
+      {{> "modules/fast-fighting/templates/partials/tactics.hbs" tactics}}
+      {{/with}}
+    {{/if}}
+  </div>
+
+  <footer class="ff-survey-foot">
+    <nav class="ff-sheet-tabs">
+      {{#each sheets}}
+      <button type="button" class="ff-sheet-tab {{#if active}}active{{/if}}" data-action="sheetTab" data-tab="{{id}}"><img src="{{img}}" alt=""> {{name}}</button>
+      {{/each}}
+    </nav>
+    <button type="button" class="ff-btn ff-run" data-action="ready" {{#if empty}}disabled{{/if}}><i class="fa-solid fa-check"></i> {{localize "FASTFIGHTING.Survey.Ready"}}</button>
+  </footer>
+</div>

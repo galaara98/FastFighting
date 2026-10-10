@@ -46,6 +46,18 @@ export function moraleStress(run, u) {
 /** Roll morale at the start of u's turn when its stress has risen meaningfully. */
 export function checkMorale(run, u) {
   const side = run.prep.sides[u.side];
+  // A player's stated retreat rule replaces the bravery roll.
+  const retreat = u.spec.tactics?.retreat;
+  if ( retreat ) {
+    if ( retreat === "never" ) return MORALE.HOLD;
+    if ( retreat === "hurt" ) return (u.maxHp > 0 && u.hp / u.maxHp < 0.25) ? MORALE.ROUT : MORALE.HOLD;
+    if ( retreat === "losing" ) {
+      const friends = alliesOf(run, u).filter(isStanding).length;
+      const foes = enemiesOf(run, u).filter(isStanding).length;
+      const fallen = alliesOf(run, u).filter(a => a.status !== STATUS.STANDING).length;
+      return (fallen >= Math.ceil(alliesOf(run, u).length / 2) && foes > friends) ? MORALE.ROUT : MORALE.HOLD;
+    }
+  }
   if ( !side.morale ) return MORALE.HOLD;
   const brave = liveTrait(run, u, "brave");
   if ( u.spec.flags?.fearless || brave >= 95 ) return MORALE.HOLD;
