@@ -7,6 +7,10 @@
   <div class="ff-pill-flags">
     <label class="ff-check"><input type="checkbox" name="{{stayTrue.name}}" data-tactic="stayTrue" data-actor-uuid="{{actorUuid}}" {{checked stayTrue.checked}}> {{localize "FASTFIGHTING.Playstyle.StayTrue"}}
       <i class="fa-solid fa-circle-question" data-tooltip="{{localize "FASTFIGHTING.Playstyle.StayTrueHint"}}"></i></label>
+    {{#if alwaysTalk.show}}
+    <label class="ff-check"><input type="checkbox" name="{{alwaysTalk.name}}" data-tactic="alwaysTalk" data-actor-uuid="{{actorUuid}}" {{checked alwaysTalk.checked}}> {{localize "FASTFIGHTING.Playstyle.AlwaysTalk"}}
+      <i class="fa-solid fa-circle-question" data-tooltip="{{localize "FASTFIGHTING.Playstyle.AlwaysTalkHint"}}"></i></label>
+    {{/if}}
     <label class="ff-check"><input type="checkbox" name="{{roleplay.name}}" data-tactic="roleplay" data-actor-uuid="{{actorUuid}}" {{checked roleplay.checked}}> {{localize "FASTFIGHTING.Playstyle.Roleplay"}}
       <i class="fa-solid fa-circle-question" data-tooltip="{{localize "FASTFIGHTING.Playstyle.RoleplayHint"}}"></i></label>
   </div>

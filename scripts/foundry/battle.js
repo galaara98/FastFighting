@@ -145,6 +145,7 @@ function applyCharacterTactics(spec, entry) {
   spec.behavior = playstyles.behavior;
   spec.stayTrue = !!stored.stayTrue;
   spec.roleplay = !!stored.roleplay;
+  spec.alwaysTalk = !!stored.alwaysTalk; // "always prefers talking to fighting"
   for ( const [k, v] of Object.entries(playstyles.traits) ) {
     if ( spec.traits[k] ) spec.traits[k] = { ...spec.traits[k], fudge: (spec.traits[k].fudge ?? 0) + v };
   }

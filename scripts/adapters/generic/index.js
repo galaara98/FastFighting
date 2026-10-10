@@ -61,7 +61,7 @@ export class GenericAdapter extends SystemAdapter {
       kind: actor.hasPlayerOwner ? "pc" : "npc",
       level,
       hp: { value: hp, max: hpMax, temp: 0 },
-      defenses: { ac, fortitude: bonus, reflex: bonus, will: bonus },
+      defenses: { ac }, // saves fall back to the rules' typical values
       initiative: { mod: Number(read(actor, p.initiative, 0)) || 0 },
       speeds: { walk: 30 },
       actions: [{

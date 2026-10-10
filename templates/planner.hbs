@@ -222,7 +222,7 @@
               <tr>
                 <td><span class="ff-dot {{sideClass}}"></span>{{name}}</td>
                 <td><div class="ff-fate">{{#each bars}}<span class="{{cls}}" style="width: {{w}}%" data-tooltip="{{label}}"></span>{{/each}}</div>
-                  <small>{{localize "FASTFIGHTING.Results.Standing"}} {{standing}} · {{localize "FASTFIGHTING.Results.Dead"}} {{dead}} · {{localize "FASTFIGHTING.Results.Fled"}} {{fled}}{{#if talkedDown}} · {{localize "FASTFIGHTING.Results.TalkedDown"}} {{talkedDown}}{{/if}}</small></td>
+                  <small>{{localize "FASTFIGHTING.Results.Standing"}} {{standing}} · {{localize "FASTFIGHTING.Results.Dead"}} {{dead}} · {{localize "FASTFIGHTING.Results.Fled"}} {{fled}}{{#if talkedDown}} · {{localize "FASTFIGHTING.Results.TalkedDown"}} {{talkedDown}}{{/if}}{{#if conceded}} · {{localize "FASTFIGHTING.Results.Conceded"}} {{conceded}}{{/if}}</small></td>
                 <td>{{hpLeft}}</td><td>{{damage}}</td><td>{{healing}}</td><td>{{first}}</td>
               </tr>
             {{/each}}

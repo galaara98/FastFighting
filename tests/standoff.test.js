@@ -13,7 +13,8 @@ const speaks = (extra = {}) => social({ diplomacy: 12, intimidation: 8, deceptio
 
 /** A negotiator facing a guard captain and a guard, all of whom would rather talk. */
 function parley({ opening, guardTalk = "first", captainTalk = guardTalk, beast = false } = {}) {
-  const envoy = creature({ id: "envoy", name: "Seelah", kind: "pc", diesAtZero: false, social: speaks(), tactics: { talk: "first" } });
+  // A resolute envoy: the guards rarely talk her into anything, so these tests are about the party talking.
+  const envoy = creature({ id: "envoy", name: "Seelah", kind: "pc", diesAtZero: false, social: speaks({ willDC: 30 }), tactics: { talk: "first" } });
   const captain = creature({ id: "captain", name: "Captain", side: "hostile", social: speaks({ diplomacy: 6 }), tactics: { talk: captainTalk } });
   const other = beast
     ? creature({ id: "hound", name: "Hound", side: "hostile", social: null, traits: { tactical: { base: 10, fudge: 0 }, brave: { base: 70, fudge: 0 }, selfish: { base: 50, fudge: 0 }, loyal: { base: 50, fudge: 0 } } })

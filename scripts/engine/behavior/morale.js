@@ -38,6 +38,11 @@ export function moraleStress(run, u) {
     if ( friendThreat > 0 ) stress += clamp(25 * (foeThreat / friendThreat - 1), 0, 40);
   }
 
+  // Someone who made them pay and is still standing, unanswered, weighs on them.
+  for ( const [id, g] of u.grudges ?? [] ) {
+    if ( !g.provoked && isStanding(run.byId.get(id) ?? {}) ) stress += 15;
+  }
+
   // Selfish creatures care less about the group, more about themselves.
   const selfish = liveTrait(run, u, "selfish");
   return Math.max(0, stress * (0.8 + selfish / 250));

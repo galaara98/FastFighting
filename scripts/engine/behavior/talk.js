@@ -7,8 +7,11 @@
  *   persuade    reason, bargain, appeal
  *   intimidate  threaten (works better on the outnumbered; the brave resist it)
  *   deceive     bluff (backfires harder when it fails) Each success moves that enemy along a persuasion track; it takes several steps to
- * convince someone (2-6), unless they are very gullible (1). When the track fills, the enemy surrenders,
- * flees, or (rarely, unless they were neutral) switches sides. Convincing a leader can make the rest of
+ * convince someone (2-6), unless they are very gullible (1). When the track fills, the enemy surrenders, flees,
+ * gives something up (money or an item, then backs off), or (rarely, unless they were neutral) switches sides.
+ * Player characters decide their own fate, so words can only make a PC give something up or back off and run; a
+ * PC who would rather let weapons do the talking won't listen at all. In a standoff, giving something up or
+ * running ends the whole conflict: the deal is struck and everyone walks away. Convincing a leader can make the rest of
  * their side stand down.
  *
  * Grudges matter: anyone the talker has hurt, or has failed to convince before, is much harder to sway,
@@ -21,7 +24,7 @@
  *  - Anyone else may make one quip per turn when it looks promising and they would.
  * Pure: no Foundry globals.
  */
-import { STATUS, SWAY, clamp } from "../../constants.js";
+import { STATUS, SWAY, CONCEDE_LUCK, clamp } from "../../constants.js";
 import { alliesOf, enemiesOf, isStanding, behaviorOf, leaderStanding, typical, checkRoll } from "../battle-state.js";
 import { degreeDistribution, rollCheck } from "../probability.js";
 
@@ -35,12 +38,37 @@ export function shareLanguage(a, b) {
   return la.some(l => lb.includes(l));
 }
 
-/** Can this unit be talked out of the fight at all? (PCs decide for themselves.) */
+/** What t still has to hand over, after anything already given up this fight. */
+function remaining(t) {
+  const v = t.spec.valuables ?? {};
+  const given = (t.concessions ?? []).filter(c => !c.kept);
+  const spent = given.filter(c => c.kind === "money").reduce((s, c) => s + c.amount, 0);
+  const gone = new Set(given.filter(c => c.kind === "item").map(c => c.item.id));
+  return {
+    money: Math.max(0, (v.money ?? 0) - spent),
+    denominations: v.denominations ?? null,
+    stowed: (v.stowed ?? []).filter(i => !gone.has(i.id)),
+    wielded: (v.wielded ?? []).filter(i => !gone.has(i.id))
+  };
+}
+
+/** Something to hand over: money, or an item carried but not wielded or worn. */
+export function hasValuables(t) {
+  const v = remaining(t);
+  return v.money > 0 || v.stowed.length > 0;
+}
+
+/**
+ * Can this unit be talked out of the fight at all? PCs decide their own fate: words can only talk a PC into
+ * giving something up or backing off, and only if they're willing to listen.
+ */
 export function swayable(t) {
-  if ( !isStanding(t) || t.spec.kind === "pc" ) return false;
+  if ( !isStanding(t) ) return false;
   if ( t.spec.hidden && !t.revealed ) return false; // you can't talk to an ambusher you haven't spotted
   const s = t.spec.social;
-  return !!s && !s.mindless && (s.languages?.length ?? 0) > 0;
+  if ( !s || s.mindless || !((s.languages?.length ?? 0) > 0) ) return false;
+  if ( t.spec.kind === "pc" ) return t.tac?.talk !== "never";
+  return true;
 }
 
 /**
@@ -63,11 +91,12 @@ export function stepsToConvince(t, run = null) {
   if ( selfish >= 70 ) steps -= 1;
   if ( t.spec.flags?.fearless ) steps += 1;
   if ( t.spec.originSide === "neutral" ) steps -= 1;
+  if ( t.spec.kind === "pc" ) steps += 2; // a player character does not fold easily
   if ( run ) {
     if ( t.maxHp > 0 && t.hp / t.maxHp < 0.5 ) steps -= 1;
     else if ( enemiesOf(run, t).filter(isStanding).length > alliesOf(run, t).filter(isStanding).length ) steps -= 1;
   }
-  return clamp(steps, 2, 6);
+  return clamp(steps, 2, t.spec.kind === "pc" ? 8 : 6);
 }
 
 /** The DC t sets against `talker` for one kind of pitch, including grudges and circumstances. */
@@ -107,9 +136,12 @@ export function bestPitch(run, talker, t) {
   const rules = run.prep.rules;
   const s = talker.spec.social ?? {};
   let best = null;
+  // A PC with nothing to hand over can only be scared off; reasoning or bluffing gets nowhere.
+  const scareOnly = t.spec.kind === "pc" && !hasValuables(t);
   for ( const kind of TALK_KINDS ) {
     const pitch = s.pitches?.[kind];
     if ( typeof pitch?.mod !== "number" ) continue;
+    if ( scareOnly && kind !== "intimidate" ) continue;
     const { mod, advantage } = checkRoll(run, talker, pitch.mod);
     const dc = talkDC(run, talker, t, kind);
     const dist = degreeDistribution(rules, mod, dc, { advantage, kind: "check" });
@@ -123,13 +155,14 @@ export function bestPitch(run, talker, t) {
 }
 
 /** Choose who to talk to: likely to work, few steps left, and worth taking out of the fight. */
-export function choosePitch(run, talker) {
+export function choosePitch(run, talker, { only = null } = {}) {
   let best = null;
   for ( const t of enemiesOf(run, talker) ) {
     if ( !swayable(t) || !shareLanguage(talker, t) ) continue;
     if ( t.offendedBy.has(talker.id) ) continue;
+    if ( only && !only(t) ) continue;
     const pitch = bestPitch(run, talker, t);
-    if ( !pitch || pitch.pSuccess <= 0.05 ) continue;
+    if ( !pitch || pitch.pSuccess <= (talker.spec.alwaysTalk ? 0.01 : 0.05) ) continue;
     const remaining = Math.max(1, stepsToConvince(t, run) - (t.sway.get(talker.side) ?? 0));
     const isLeader = run.prep.sides[t.side]?.leaderId === t.id;
     const value = (1 + (isLeader ? 1.5 : 0)) * (1 + t.hp / Math.max(1, t.maxHp));
@@ -153,7 +186,10 @@ export function talkActionsThisTurn(run, u, actions) {
   if ( affinity <= 0 && tactic !== "first" ) return none;
   const pitch = choosePitch(run, u);
   if ( !pitch ) return none;
-  const talker = affinity >= 0.75 || tactic === "first" || !!behaviorOf(u).parleyFirst;
+  // "Always prefers talking to fighting" (unless they also stay true to their calculated tactics): the whole turn.
+  const devoted = !!u.spec.alwaysTalk && !u.spec.stayTrue;
+  const talker = affinity >= 0.75 || tactic === "first" || !!behaviorOf(u).parleyFirst || devoted;
+  if ( devoted ) return { count: actions, pitch };
   // The less battle-worthy, and skilled talkers with a promising pitch, put their whole voice into it.
   const max = Math.min(actions, (u.prep.lowBattleWorth || (talker && pitch.pSuccess >= 0.5)) ? 2 : 1);
   // Talkers always get to start swaying on their first turn.
@@ -170,18 +206,96 @@ export function talkActionsThisTurn(run, u, actions) {
  */
 function outcomeFor(run, t, kind) {
   const rng = run.rng;
+  // Words can only make a PC pay up or back off: threats may send them running (the only way, if they have nothing).
+  if ( t.spec.kind === "pc" ) {
+    if ( !hasValuables(t) ) return SWAY.FLEE;
+    if ( kind === "intimidate" && rng.chance(clamp(0.5 - (t.prep.traits.brave - 50) / 100, 0.1, 0.8)) ) return SWAY.FLEE;
+    return SWAY.CONCEDE;
+  }
   const selfish = t.prep.traits.selfish;
   const loyal = t.prep.traits.loyal;
   const switchChance = t.spec.originSide === "neutral" ? 0.6 : clamp(0.03 + (selfish - 50) / 500 + (50 - loyal) / 500, 0, 0.12);
   if ( rng.chance(switchChance) ) return SWAY.SWITCH;
-  if ( run.standoff && kind !== "intimidate" ) return SWAY.STAND_DOWN;
+  // Paying them off: rarer than backing down, likelier under threat or when badly hurt; the greedy hate it.
   const hurt = t.maxHp > 0 && t.hp / t.maxHp < 0.5;
+  const concedeChance = clamp(0.12 + (kind === "intimidate" ? 0.15 : 0) + (hurt ? 0.1 : 0) - (selfish - 50) / 400, 0.03, 0.45);
+  if ( rng.chance(concedeChance) ) return SWAY.CONCEDE;
+  if ( run.standoff && kind !== "intimidate" ) return SWAY.STAND_DOWN;
   if ( !hurt && selfish >= 55 ) return SWAY.FLEE;
   if ( hurt && t.prep.traits.brave < 40 && rng.chance(0.5) ) return SWAY.FLEE;
   return SWAY.SURRENDER;
 }
 
+/**
+ * What a creature hands over when it gives something up: 1-10% of its money; failing that an item it carries but
+ * isn't wielding or wearing (a PC keeps it unless a d100 luck check comes up under 40); failing that, an NPC gives
+ * up something it's wielding. Returns null when there's nothing at all (an NPC then lies and runs).
+ */
+function concession(run, t) {
+  const v = remaining(t);
+  const rng = run.rng;
+  if ( v.money > 0 ) {
+    const percent = rng.die(10);
+    return { kind: "money", amount: Math.max(1, Math.round(v.money * percent / 100)), percent, denominations: v.denominations ?? null };
+  }
+  if ( v.stowed.length ) {
+    const item = rng.pick(v.stowed);
+    if ( t.spec.kind === "pc" ) {
+      const luck = rng.die(100);
+      return { kind: "item", item, luck, kept: luck >= CONCEDE_LUCK };
+    }
+    return { kind: "item", item };
+  }
+  if ( t.spec.kind !== "pc" && v.wielded.length ) return { kind: "item", item: rng.pick(v.wielded), wielded: true };
+  return null;
+}
+
+/** In a standoff, giving something up or running settles the whole thing: everyone walks away. */
+function settle(run, talker, outcome) {
+  if ( run.standoff && !run.resolved && [SWAY.CONCEDE, SWAY.FLEE].includes(outcome) ) run.resolved = { side: talker.side, outcome };
+}
+
+/**
+ * Giving something up. In a standoff it settles everything and the giver backs off. In the thick of a fight it's
+ * personal: the giver stays in, won't listen to the taker again, and fears them, until the taker attacks them, when
+ * the taker becomes the one they most want to hit.
+ */
+function concede(run, talker, t, log) {
+  const given = concession(run, t);
+  if ( !given && t.spec.kind !== "pc" ) {
+    // Nothing to give: they swear they have nothing and run.
+    for ( const id of t.adjacent ) run.byId.get(id)?.adjacent.delete(t.id);
+    t.adjacent.clear();
+    t.swayOutcome = SWAY.FLEE;
+    t.status = STATUS.FLED;
+    t.fellRound ??= run.round;
+    log(t, "swears they have nothing and runs", { type: "sway", outcome: SWAY.FLEE, lie: true, by: talker.spec.name, byId: talker.id });
+    return;
+  }
+  const record = given ? { ...given, to: talker.id, toName: talker.spec.name, round: run.round } : null;
+  if ( record ) (t.concessions ??= []).push(record);
+  const what = !given ? "nothing" : given.kind === "money" ? `${given.percent}% of their money` : given.item.name;
+  const data = { type: "sway", outcome: SWAY.CONCEDE, by: talker.spec.name, byId: talker.id, concession: record };
+  if ( run.standoff ) {
+    for ( const id of t.adjacent ) run.byId.get(id)?.adjacent.delete(t.id);
+    t.adjacent.clear();
+    t.swayOutcome = SWAY.CONCEDE;
+    t.status = STATUS.STOOD_DOWN; // paid up, and the matter is settled
+    t.fellRound ??= run.round;
+    log(t, given?.kept ? `agrees to hand over ${what}, but keeps it (luck ${given.luck})` : `gives up ${what} to ${talker.spec.name}`, data);
+    return;
+  }
+  // Mid-fight: still in it, but bitter and wary of whoever made them pay.
+  t.conceded = true;
+  t.offendedBy.add(talker.id);
+  t.sway.set(talker.side, 0);
+  (t.grudges ??= new Map()).set(talker.id, { provoked: false });
+  log(t, given?.kept ? `agrees to hand over ${what}, but keeps it (luck ${given.luck}), and fights on` : `gives up ${what} to ${talker.spec.name}, bitterly, and fights on`, data);
+}
+
 function applyOutcome(run, talker, t, outcome, log) {
+  settle(run, talker, outcome === SWAY.CONCEDE && !hasValuables(t) && t.spec.kind !== "pc" ? SWAY.FLEE : outcome);
+  if ( outcome === SWAY.CONCEDE ) return concede(run, talker, t, log);
   for ( const id of t.adjacent ) run.byId.get(id)?.adjacent.delete(t.id);
   t.adjacent.clear();
   t.swayOutcome = outcome;
@@ -237,9 +351,10 @@ export function attemptTalk(run, talker, pitch, log) {
   const side = run.prep.sides[t.spec.side];
   if ( side?.leaderId === t.id ) {
     for ( const f of run.units ) {
-      if ( f === t || f.side !== t.spec.side || !swayable(f) ) continue;
+      if ( f === t || f.side !== t.spec.side || f.spec.kind === "pc" || !swayable(f) ) continue;
       const p = 0.4 + (100 - f.prep.traits.brave) / 250 + (f.sway.get(talker.side) ?? 0) * 0.1;
-      if ( run.rng.chance(clamp(p, 0, 0.9)) ) applyOutcome(run, talker, f, outcome === SWAY.STAND_DOWN ? SWAY.STAND_DOWN : SWAY.SURRENDER, log);
+      const follows = [SWAY.STAND_DOWN, SWAY.CONCEDE].includes(outcome) ? SWAY.STAND_DOWN : SWAY.SURRENDER;
+      if ( run.rng.chance(clamp(p, 0, 0.9)) ) applyOutcome(run, talker, f, follows, log);
     }
   }
   return true;
@@ -266,6 +381,8 @@ export function talkAffinity(spec, traits, rules = null) {
   if ( (traits?.tactical ?? 50) < 20 ) a -= 0.3;
   if ( spec.tactics?.talk === "first" ) a = Math.max(a, 0.8);
   if ( spec.roleplay && (ps.has("diplomat") || ps.has("peoplePleaser")) ) a += 0.15;
+  // "Always prefers talking to fighting": much keener, however unskilled; only a little when staying true.
+  if ( spec.alwaysTalk ) a = spec.stayTrue ? a + 0.1 : Math.max(a + 0.4, 0.85);
   return clamp(a, 0, 1);
 }
 

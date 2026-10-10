@@ -5,7 +5,7 @@
  * Storage
  *  - Actor flag `fast-fighting.tactics.<key>`: one field per answer, written individually so two players
  *    sharing a token can edit different questions at the same time without overwriting each other.
- *    Also `playstyles` (up to four ids), `stayTrue` and `roleplay` (booleans).
+ *    Also `playstyles` (up to four ids), `stayTrue`, `roleplay` and `alwaysTalk` (booleans).
  *  - User flag `fast-fighting.survey`: {status, sceneId, requestId, updated} for the GM's status indicators.
  */
 import { MODULE_ID } from "../constants.js";
@@ -19,7 +19,7 @@ export const SURVEY_STATUS = Object.freeze({ NONE: "none", REQUESTED: "requested
 
 const loc = key => game.i18n.localize(key);
 
-const META_KEYS = ["stayTrue", "roleplay"];
+const META_KEYS = ["stayTrue", "roleplay", "alwaysTalk"];
 const MAX_NOTES = 2000;
 const isPlain = v => !!v && typeof v === "object" && !Array.isArray(v);
 
@@ -115,7 +115,7 @@ export function isPlayerControlled(spec, actor) {
 /** Compact fingerprint of what changes "Let them decide" (playstyles and the two checkboxes). */
 export function playstyleSignature(actor) {
   const t = getStoredTactics(actor);
-  return JSON.stringify([t.playstyles ?? [], !!t.stayTrue, !!t.roleplay]);
+  return JSON.stringify([t.playstyles ?? [], !!t.stayTrue, !!t.roleplay, !!t.alwaysTalk]);
 }
 
 /* -------------------------------------------- */
@@ -213,6 +213,7 @@ export function questionsContext(spec, actor, uid, { questions: withQuestions = 
     playstyleCount: game.i18n.format("FASTFIGHTING.Playstyle.Count", { n: picked.length, max: MAX_PLAYSTYLES }),
     stayTrue: { name: `tactic-${uid}-stayTrue`, checked: !!stored.stayTrue },
     roleplay: { name: `tactic-${uid}-roleplay`, checked: !!stored.roleplay },
+    alwaysTalk: { name: `tactic-${uid}-alwaysTalk`, checked: !!stored.alwaysTalk, show: (spec.social?.languages?.length ?? 0) > 0 && !spec.social?.mindless },
     conflict: !!stored.stayTrue && !!stored.roleplay
   };
 }

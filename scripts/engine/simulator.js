@@ -21,7 +21,7 @@ import { checkMorale, MORALE } from "./behavior/morale.js";
 import { expectedDamage, spendUse, attacksIn, criticalParts, saveMultiplier } from "./behavior/evaluate.js";
 import { createAggregator } from "./aggregate.js";
 import { talkActionsThisTurn, choosePitch, attemptTalk } from "./behavior/talk.js";
-import { opensWithTalk, breaksStandoff, standoffPitches } from "./behavior/standoff.js";
+import { opensWithTalk, breaksStandoff, standoffPitches, charismaticLeader } from "./behavior/standoff.js";
 
 const MAX_STEPS_PER_TURN = 8;
 /** After the last blow, how long the winners keep tending the dying (ten minutes of rounds, at most). */
@@ -351,6 +351,9 @@ function executeOffense(run, u, action, t, attacksMade) {
   for ( const target of targets ) {
     if ( !target.active ) notice(run, target, "attacked", u);
     target.lastAttackerId = u.id;
+    const held = target.grudges?.get(u.id);
+    if ( held && !held.provoked ) held.provoked = true; // they took from me, and now this
+
     const common = logging ? {
       action: action.name, actionKind: action.kind, damageType: primaryType(action), target: target.spec.name, targetId: target.id,
       ranged, area: !!action.area, targetCover: !!target.spec.environment?.nearCover, attackerCover: !!u.spec.environment?.nearCover
@@ -453,18 +456,44 @@ function moveLog(run, u, move, toward, purpose = "approach") {
   });
 }
 
-/** A turn while the standoff holds: talkers press their case, everyone else keeps their hands off their weapons. */
-function standoffTurn(run, u) {
-  const rules = run.prep.rules;
-  const n = standoffPitches(run, u, turnFor(run, u).howMany(rules.talkCost ?? rules.basicAction ?? 1));
+/** Pitches made in a standoff turn (or a leader's last word, aimed only at the player characters). */
+function standoffPitching(run, u, n, only = null) {
   for ( let i = 0; i < n; i++ ) {
-    const pitch = choosePitch(run, u);
+    const pitch = choosePitch(run, u, { only });
     if ( !pitch ) break;
     attemptTalk(run, u, pitch, (unit, text, data) => log(run, unit, text, data));
     if ( battleOver(run) ) break;
   }
+}
+
+/** A turn while the standoff holds: talkers press their case, everyone else keeps their hands off their weapons. */
+function standoffTurn(run, u) {
+  const rules = run.prep.rules;
+  standoffPitching(run, u, standoffPitches(run, u, turnFor(run, u).howMany(rules.talkCost ?? rules.basicAction ?? 1)));
   u.turnsTaken += 1;
   endOfTurn(run, u);
+}
+
+/**
+ * Before a standoff breaks, a charismatic NPC leader may take one more turn to press the player characters to pay
+ * up or back off (once per side). Returns true if that settled it.
+ */
+function lastWord(run) {
+  const rules = run.prep.rules;
+  run.lastWords ??= new Set();
+  for ( const side of Object.keys(run.prep.sides) ) {
+    if ( run.lastWords.has(side) ) continue;
+    const found = charismaticLeader(run, side);
+    if ( !found ) continue;
+    const pcs = run.units.filter(o => o.spec.kind === "pc" && isStanding(o) && areEnemies(run, found.leader, o));
+    if ( !pcs.length ) continue;
+    run.lastWords.add(side);
+    if ( !run.rng.chance(Math.min(0.85, 0.35 + 0.1 * found.edge)) ) continue;
+    log(run, found.leader, "steps in for one last try at settling it", { type: "lastWord" });
+    standoffPitching(run, found.leader, turnFor(run, found.leader).howMany(rules.talkCost ?? rules.basicAction ?? 1), o => o.spec.kind === "pc");
+    if ( battleOver(run) ) return true;
+  }
+  return false;
 }
 
 function takeTurn(run, u) {
@@ -484,10 +513,14 @@ function takeTurn(run, u) {
   }
 
   // While a standoff holds, nobody fights; it lasts until someone gets upset.
+  let brokeStandoff = false;
   if ( run.standoff ) {
     const cause = breaksStandoff(run, u);
     if ( !cause ) return standoffTurn(run, u);
+    // A charismatic leader may get a last word in before it comes to blows.
+    if ( lastWord(run) ) return;
     run.standoff = false;
+    brokeStandoff = true; // whoever breaks it came to fight, not to talk
     log(run, u, { insulted: "takes offense and attacks", beast: "won't wait any longer and attacks" }[cause] ?? "has heard enough and attacks", { type: "breakStandoff", cause });
   }
 
@@ -556,7 +589,7 @@ function takeTurn(run, u) {
 
   // Words before weapons: talkers sway, the less battle-worthy talk twice, anyone may quip.
   const talkCost = rules.talkCost ?? basic;
-  const talking = talkActionsThisTurn(run, u, turn.howMany(talkCost));
+  const talking = brokeStandoff ? { count: 0, pitch: null } : talkActionsThisTurn(run, u, turn.howMany(talkCost));
   for ( let i = 0; i < talking.count && turn.canAfford(talkCost); i++ ) {
     const pitch = i === 0 ? talking.pitch : choosePitch(run, u); // the first pitch was already chosen
     if ( !pitch ) break;
@@ -757,6 +790,23 @@ function aftermath(run, order) {
   run.round = rounds;
 }
 
+/**
+ * When the fight is over, whatever was given up comes back to its owner if the one who took it was beaten (dead,
+ * down, surrendered or talked down); a taker who got away keeps it.
+ */
+const BEATEN = new Set([STATUS.DEAD, STATUS.DOWN, STATUS.SURRENDERED, STATUS.STOOD_DOWN]);
+function reclaimGoods(run) {
+  for ( const u of run.units ) {
+    for ( const c of u.concessions ?? [] ) {
+      if ( c.kept || c.returned ) continue;
+      const taker = run.byId.get(c.to);
+      if ( !taker || !BEATEN.has(taker.status) ) continue;
+      c.returned = true;
+      log(run, u, `gets back what ${taker.spec.name} took`, { type: "reclaim", concession: c, by: taker.spec.name, byId: taker.id, aftermath: true });
+    }
+  }
+}
+
 /* -------------------------------------------- */
 /*  Battle                                      */
 /* -------------------------------------------- */
@@ -766,6 +816,7 @@ function activeSides(run) {
 }
 
 export function battleOver(run) {
+  if ( run.resolved ) return true; // a standoff settled by a payment or a retreat
   const active = activeSides(run);
   for ( let i = 0; i < active.length; i++ ) {
     for ( let j = i + 1; j < active.length; j++ ) {
@@ -795,6 +846,7 @@ function captureUnit(u) {
     afflictions: u.afflictions.map(a => ({ id: a.spec.id, name: a.spec.name, slug: a.spec.slug ?? null, stage: a.stage, rounds: a.rounds, onset: a.onsetLeft ?? 0, dc: a.spec.save.dc, save: a.spec.save.type })),
     conditions: { ...u.conds },
     swayed: u.swayOutcome,
+    concessions: (u.concessions ?? []).map(c => ({ ...c })), // what they gave up when talked into it (Make it So hands it over)
     side: u.side,
     resources: { ...u.resources },
     uses: { ...u.uses },
@@ -819,6 +871,7 @@ function summarize(run, ended, capture, winners) {
       healing: u.healingDone,
       fellRound: u.fellRound,
       swayed: u.swayOutcome,
+      conceded: (u.concessions?.length ?? 0) > 0,
       resourcesUsed: Object.fromEntries(Object.entries(u.resourcesStart).map(([k, v]) => [k, v - (u.resources[k] ?? 0)])),
       final: capture ? captureUnit(u) : undefined
     };
@@ -861,16 +914,19 @@ export function runOne(prep, seed, { log: withLog = false, capture = false } = {
       if ( battleOver(run) ) { ended = true; break; }
     }
   }
-  // Who won is decided when the last blow lands; the aftermath only settles the fallen.
-  const winners = ended ? activeSides(run) : [];
+  // Who won is decided when the last blow lands (or the deal is struck); the aftermath only settles the fallen.
+  const winners = !ended ? [] : run.resolved ? [run.resolved.side] : activeSides(run);
   if ( withLog ) {
     const labels = winners.map(s => prep.sides[s]?.label ?? s);
     log(run, null, ended ? (labels.length ? `${labels.join(" & ")} win after ${run.round} rounds` : "No one is left standing") : `Still fighting after ${run.round} rounds`, {
       type: "end", outcome: !ended ? "stalemate" : (winners.length ? "victory" : "none"), winners, winnerLabels: labels, rounds: run.round,
-      peaceful: ended && !run.blood, standoff: !!run.standoff
+      peaceful: ended && !run.blood, standoff: !!run.standoff, resolved: run.resolved?.outcome ?? null
     });
   }
-  if ( ended ) aftermath(run, order);
+  if ( ended ) {
+    aftermath(run, order);
+    reclaimGoods(run);
+  }
   return summarize(run, ended, capture, winners);
 }
 

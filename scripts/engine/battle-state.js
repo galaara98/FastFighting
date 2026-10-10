@@ -23,6 +23,9 @@
  *   pitches: {persuade|intimidate|deceive: {skill: display name, mod}}   what this creature can try on others
  *   resist:  {persuade|intimidate|deceive: {dc, label}}                  the DC others face, and what it's called
  *   resolve: how much more strong-willed than typical for its level (0 typical; -5 or less: very gullible)
+ * @property {object} [valuables]           What it could be talked into giving up:
+ *   {money: total in the smallest coin, denominations: [{label, value}] largest first,
+ *    stowed: [{id, name, value}] carried but not wielded or worn, wielded: [{id, name, value}]}
  * @property {number} [wounded]
  * @property {number} [doomed]
  * @property {number} [dying]               Already dying when the battle starts (a fight resumed mid-way)

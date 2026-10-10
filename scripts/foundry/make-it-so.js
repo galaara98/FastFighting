@@ -10,6 +10,7 @@ import { MODULE_ID, STATUS } from "../constants.js";
 import { getAdapter } from "../api.js";
 import { setting } from "../settings.js";
 import { pixelsFor } from "./terrain.js";
+import { concessionText } from "../story/story.js";
 
 const loc = key => game.i18n.localize(key);
 const UNDO_DEPTH = 5;
@@ -48,6 +49,27 @@ export function planMakeItSo(spec, replay) {
     const moved = feetMoved(c, final);
     if ( moved >= 5 ) lines.push(game.i18n.format("FASTFIGHTING.MakeItSo.Moves", { feet: moved }));
     rows.push({ spec: c, final, tokenDoc, lines, moved, changed: lines.length > 0 });
+  }
+  // Something given up changes hands: say so on both sides.
+  for ( const row of rows ) {
+    for ( const c of row.final.concessions ?? [] ) {
+    const what = concessionText(c);
+    if ( c.kept ) {
+      row.lines.push(game.i18n.format("FASTFIGHTING.MakeItSo.Kept", { what, luck: c.luck }));
+      continue;
+    }
+    if ( c.returned ) {
+      row.lines.push(game.i18n.format("FASTFIGHTING.MakeItSo.Reclaimed", { what, name: c.toName }));
+      continue;
+    }
+    row.lines.push(game.i18n.format("FASTFIGHTING.MakeItSo.Gives", { what, name: c.toName }));
+    row.changed = true;
+    const to = rows.find(r => r.spec.id === c.to);
+    if ( to ) {
+      to.lines.push(game.i18n.format("FASTFIGHTING.MakeItSo.Receives", { what, name: row.spec.name }));
+      to.changed = true;
+    }
+    }
   }
   return rows;
 }
@@ -185,8 +207,32 @@ export async function executeMakeItSo(rows, replay, { story = null } = {}) {
     }
   }
 
-  // 3. The story
+  // 3. Whatever was given up changes hands. A PC's loss gets its own GM card with an Undo for just that.
   const messages = [];
+  if ( adapter.commitConcession ) {
+    for ( const row of rows ) {
+      for ( const c of row.final.concessions ?? [] ) {
+      if ( c.kept || c.returned ) continue; // kept by luck, or taken back from a beaten taker: nothing changes hands
+      const to = rows.find(r => r.spec.id === c.to);
+      try {
+        const eventRecords = (await adapter.commitConcession(row.tokenDoc, to?.tokenDoc ?? null, c, { giver: row.spec, receiver: to?.spec ?? null })) ?? [];
+        if ( !eventRecords.length ) continue;
+        const eventId = foundry.utils.randomID();
+        for ( const r of eventRecords ) r.eventId = eventId;
+        records.push(...eventRecords);
+        if ( row.spec.kind === "pc" ) {
+          const card = await concessionCard(row.spec.name, to?.spec.name ?? c.toName, c, eventId, eventRecords);
+          if ( card ) messages.push(card.id);
+        }
+      } catch ( err ) {
+        console.error(`${MODULE_ID} | handing over what ${row.spec.name} gave up failed`, err);
+        ui.notifications.error(game.i18n.format("FASTFIGHTING.MakeItSo.Failed", { name: row.spec.name }));
+      }
+      }
+    }
+  }
+
+  // 4. The story
   if ( story?.html ) {
     const ChatMessage = foundry.documents.ChatMessage ?? globalThis.ChatMessage;
     const whisper = setting("storyMode") === "whisper" ? game.users.filter(u => u.isGM).map(u => u.id) : [];
@@ -209,37 +255,73 @@ export function hasUndo(scene = canvas.scene) {
   return undoStack(scene).length > 0;
 }
 
+/** Put one undo record back: created documents removed, deleted ones restored, changed values reset. */
+async function revertRecord(r) {
+  try {
+    for ( const uuid of r.createdTokens ?? [] ) await (await fromUuid(uuid))?.delete();
+    for ( const uuid of r.createdActors ?? [] ) await (await fromUuid(uuid))?.delete();
+    for ( const t of r.deletedTokens ?? [] ) {
+      const parent = await fromUuid(t.parentUuid);
+      await parent?.createEmbeddedDocuments("Token", [t.data], { keepId: true });
+    }
+    const tokenDoc = r.tokenUuid ? await fromUuid(r.tokenUuid) : null;
+    const actor = tokenDoc?.actor ?? await fromUuid(r.actorUuid);
+    if ( !actor ) return;
+    if ( r.createdItems?.length ) {
+      const ids = r.createdItems.filter(id => actor.items.has(id));
+      if ( ids.length ) await actor.deleteEmbeddedDocuments("Item", ids);
+    }
+    if ( r.deletedItems?.length ) await actor.createEmbeddedDocuments("Item", r.deletedItems, { keepId: true });
+    for ( const { id, update } of r.itemUpdates ?? [] ) await actor.items.get(id)?.update(update);
+    for ( const s of r.statuses ?? [] ) await actor.toggleStatusEffect(s.id, { active: s.active, overlay: s.overlay });
+    if ( Object.keys(r.actorUpdate ?? {}).length ) await actor.update(r.actorUpdate);
+    if ( r.tokenUpdate && tokenDoc ) await tokenDoc.update(r.tokenUpdate);
+    if ( r.combatant ) await (await fromUuid(r.combatant.uuid))?.update({ defeated: r.combatant.defeated });
+  } catch ( err ) {
+    console.error(`${MODULE_ID} | undo failed for a record`, r, err);
+  }
+}
+
+/* -------------------------------------------- */
+/*  A PC's loss: one card, one undo             */
+/* -------------------------------------------- */
+
+/** The GM-only card for something a PC gave up, with an Undo for just that hand-over. */
+async function concessionCard(giverName, receiverName, c, eventId, records) {
+  const ChatMessage = foundry.documents.ChatMessage ?? globalThis.ChatMessage;
+  const text = game.i18n.format("FASTFIGHTING.Concession.Card", { giver: escape(giverName), what: escape(concessionText(c)), receiver: escape(receiverName ?? "") });
+  const luck = c.luck ? `<p class="hint">${game.i18n.format("FASTFIGHTING.Concession.Luck", { luck: c.luck })}</p>` : "";
+  return ChatMessage.create({
+    content: `<div class="fast-fighting-concession"><p>${text}</p>${luck}<button type="button" data-ff-undo-concession><i class="fa-solid fa-rotate-left"></i> ${loc("FASTFIGHTING.Concession.Undo")}</button></div>`,
+    speaker: { alias: loc("FASTFIGHTING.Story.Speaker") },
+    whisper: game.users.filter(u => u.isGM).map(u => u.id),
+    flags: { [MODULE_ID]: { concession: { eventId, sceneId: canvas.scene.id, records, undone: false } } }
+  });
+}
+
+/** Undo just one hand-over from its card, and take it out of the scene's Make it So undo so it isn't undone twice. */
+export async function undoConcession(message) {
+  if ( !game.user.isGM ) return false;
+  const data = message.getFlag(MODULE_ID, "concession");
+  if ( !data || data.undone ) return false;
+  for ( const r of [...(data.records ?? [])].reverse() ) await revertRecord(r);
+  const scene = game.scenes.get(data.sceneId);
+  if ( scene ) {
+    const stack = undoStack(scene).map(entry => ({ ...entry, records: (entry.records ?? []).filter(r => r.eventId !== data.eventId) }));
+    await scene.update({ [`flags.${MODULE_ID}.==undo`]: { stack } });
+  }
+  const content = message.content.replace(/<button[^>]*data-ff-undo-concession[^>]*>[\s\S]*?<\/button>/, `<p class="hint"><i class="fa-solid fa-check"></i> ${loc("FASTFIGHTING.Concession.Undone")}</p>`);
+  await message.update({ content, [`flags.${MODULE_ID}.concession.undone`]: true });
+  return true;
+}
+
 /** Revert the most recent Make it So on this scene: outcomes, positions and the story message. */
 export async function undoMakeItSo(scene = canvas.scene) {
   if ( !game.user.isGM ) return false;
   const [undo, ...rest] = undoStack(scene);
   if ( !undo ) return false;
   for ( const id of undo.messages ?? [] ) await game.messages.get(id)?.delete();
-  for ( const r of [...(undo.records ?? [])].reverse() ) {
-    try {
-      for ( const uuid of r.createdTokens ?? [] ) await (await fromUuid(uuid))?.delete();
-      for ( const uuid of r.createdActors ?? [] ) await (await fromUuid(uuid))?.delete();
-      for ( const t of r.deletedTokens ?? [] ) {
-        const parent = await fromUuid(t.parentUuid);
-        await parent?.createEmbeddedDocuments("Token", [t.data], { keepId: true });
-      }
-      const tokenDoc = await fromUuid(r.tokenUuid);
-      const actor = tokenDoc?.actor ?? await fromUuid(r.actorUuid);
-      if ( !actor ) continue;
-      if ( r.createdItems?.length ) {
-        const ids = r.createdItems.filter(id => actor.items.has(id));
-        if ( ids.length ) await actor.deleteEmbeddedDocuments("Item", ids);
-      }
-      if ( r.deletedItems?.length ) await actor.createEmbeddedDocuments("Item", r.deletedItems, { keepId: true });
-      for ( const { id, update } of r.itemUpdates ?? [] ) await actor.items.get(id)?.update(update);
-      for ( const s of r.statuses ?? [] ) await actor.toggleStatusEffect(s.id, { active: s.active, overlay: s.overlay });
-      if ( Object.keys(r.actorUpdate ?? {}).length ) await actor.update(r.actorUpdate);
-      if ( r.tokenUpdate && tokenDoc ) await tokenDoc.update(r.tokenUpdate);
-      if ( r.combatant ) await (await fromUuid(r.combatant.uuid))?.update({ defeated: r.combatant.defeated });
-    } catch ( err ) {
-      console.error(`${MODULE_ID} | undo failed for a record`, r, err);
-    }
-  }
+  for ( const r of [...(undo.records ?? [])].reverse() ) await revertRecord(r);
   // Positions last, so tokens recreated above go back to where they started too.
   const back = [];
   for ( const m of undo.moves ?? [] ) {

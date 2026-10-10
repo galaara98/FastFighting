@@ -30,6 +30,8 @@ const STAT_FUDGES = [["ac", 1], ["hp", 5], ["attack", 1], ["damage", 1]];
 
 const loc = key => game.i18n.localize(key);
 const pct = (p, d = 0) => `${(p * 100).toFixed(d)}%`;
+/** Status key for a creature's end state ("conceded" stood down after giving something up). */
+const statusOf = final => (final.swayed === "conceded" ? "conceded" : final.status);
 
 function simulatedDifficulty(results) {
   const win = results.sides.friendly?.pWin ?? 0;
@@ -342,6 +344,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
         { cls: "switched", w: (c.pSwitched * 100).toFixed(1), label: `${loc("FASTFIGHTING.Results.Switched")} ${pct(c.pSwitched)}` }
       ],
       talkedDown: c.pTalkedDown > 0.0005 ? pct(c.pTalkedDown, 1) : "",
+      conceded: c.pConceded > 0.0005 ? pct(c.pConceded, 1) : "",
       standing: pct(c.pStanding), dead: pct(c.pDead), downed: pct(c.pDowned), fled: pct(c.pFled),
       hpLeft: pct(c.meanHpFrac), damage: c.meanDamage.toFixed(1), healing: c.meanHealing.toFixed(1), first: pct(c.pFirstToFall)
     }));
@@ -423,7 +426,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       outcome: result.outcome === "victory" ? result.winners.map(w => loc(`FASTFIGHTING.Side.${w}`)).join(" & ") : loc(`FASTFIGHTING.Sample.Outcome.${result.outcome}`),
       story: this.storyFor()?.html ?? "",
       totalRounds: result.rounds,
-      finals: rows.map(r => ({ name: r.spec.name, side: r.spec.side, status: loc(`FASTFIGHTING.Status.${r.final.status}`), statusClass: r.final.status, lines: r.lines.join("; ") || loc("FASTFIGHTING.Sample.Unchanged") }))
+      finals: rows.map(r => ({ name: r.spec.name, side: r.spec.side, status: loc(`FASTFIGHTING.Status.${statusOf(r.final)}`), statusClass: statusOf(r.final), lines: r.lines.join("; ") || loc("FASTFIGHTING.Sample.Unchanged") }))
     };
   }
 
@@ -722,6 +725,6 @@ function storyLabels() {
   return {
     hit: l("hit"), crit: l("crit"), miss: l("miss"), resisted: l("resisted"), talked: l("talked"), convincing: l("convincing"),
     healed: l("healed"), potion: l("potion"), firstAid: l("firstAid"), stabilized: l("stabilized"), moved: l("moved"), stayedOut: l("stayedOut"), nothing: l("nothing"),
-    status: Object.fromEntries(["standing", "down", "dead", "fled", "surrendered", "stoodDown", "switched"].map(s => [s, loc(`FASTFIGHTING.Status.${s}`)]))
+    status: Object.fromEntries(["standing", "down", "dead", "fled", "surrendered", "stoodDown", "conceded", "switched"].map(s => [s, loc(`FASTFIGHTING.Status.${s}`)]))
   };
 }

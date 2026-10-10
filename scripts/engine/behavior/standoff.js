@@ -13,7 +13,7 @@
  * Pure: no Foundry globals.
  */
 import { TACTICAL, OPENING, clamp } from "../../constants.js";
-import { isStanding, areEnemies, liveTrait, liveTier, behaviorOf } from "../battle-state.js";
+import { isStanding, areEnemies, liveTrait, liveTier, behaviorOf, typical } from "../battle-state.js";
 
 /** Tuning: chance per turn to lose patience, before personality. */
 const BASE = 0.05;
@@ -34,6 +34,7 @@ export function canTalk(u) {
 /** Would this creature rather settle things with words? Its own answer wins; otherwise its knack for it. */
 export function prefersTalk(u) {
   if ( !canTalk(u) ) return false;
+  if ( u.spec.alwaysTalk ) return true; // "always prefers talking to fighting": a vote for words, always
   const answer = u.tac?.talk;
   if ( answer === "never" ) return false;
   if ( answer === "first" ) return true;
@@ -106,9 +107,19 @@ export function breaksStandoff(run, u) {
   return canTalk(u) ? "impatient" : "beast";
 }
 
+/** A side's leader who isn't a PC and has a way with words: may take the last word before a standoff breaks. */
+export function charismaticLeader(run, side) {
+  const leader = run.byId.get(run.prep.sides[side]?.leaderId);
+  if ( !leader || leader.spec.kind === "pc" || !isStanding(leader) || !canTalk(leader) ) return null;
+  const best = Math.max(...Object.values(leader.spec.social?.pitches ?? {}).map(p => p?.mod ?? -99));
+  const edge = best - typical(run.prep.rules, "skill", leader.spec.level ?? 0);
+  return edge >= 2 ? { leader, edge } : null;
+}
+
 /** How many pitches u makes on a standoff turn: talkers press their case, others chime in. */
 export function standoffPitches(run, u, actions) {
   if ( !run.prep.options.talking || !canTalk(u) || u.tac?.talk === "never" ) return 0;
+  if ( u.spec.alwaysTalk && !u.spec.stayTrue ) return actions;
   if ( prefersTalk(u) ) return Math.min(2, actions);
   return (u.prep.talkAffinity ?? 0) > 0 ? Math.min(1, actions) : 0;
 }

@@ -64,7 +64,10 @@ export const STATUS = Object.freeze({
 });
 
 /** How a talked-down combatant leaves the fight. */
-export const SWAY = Object.freeze({ SURRENDER: "surrendered", FLEE: "fled", SWITCH: "switched", STAND_DOWN: "stoodDown" });
+export const SWAY = Object.freeze({ SURRENDER: "surrendered", FLEE: "fled", SWITCH: "switched", STAND_DOWN: "stoodDown", CONCEDE: "conceded" });
+
+/** A PC hands over an item only when this d100 luck check comes up under it (39 or less). */
+export const CONCEDE_LUCK = 40;
 
 /** How an encounter opens: decided by who would rather talk, always with words, or straight into battle. */
 export const OPENING = Object.freeze({ AUTO: "auto", TALK: "talk", FIGHT: "fight" });

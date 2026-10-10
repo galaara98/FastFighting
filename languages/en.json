@@ -230,7 +230,8 @@
       "fled": "Fled",
       "surrendered": "Surrendered",
       "switched": "Switched sides",
-      "stoodDown": "Stood down"
+      "stoodDown": "Stood down",
+      "conceded": "Gave something up"
     },
     "Difficulty": {
       "trivial": "Trivial",
@@ -350,7 +351,8 @@
       "Swayed": "Foe talked down",
       "TalkedDown": "talked down",
       "Switched": "Switched sides",
-      "Peaceful": "Settled with words"
+      "Peaceful": "Settled with words",
+      "Conceded": "gave something up"
     },
     "Swing": {
       "Without": "Without {name}",
@@ -401,7 +403,11 @@
       "Surrendered": "Surrendered",
       "SurrenderedHint": "Laid down arms during a FastFighting battle and is at the victors' mercy.",
       "Moves": "Moves {feet} ft",
-      "Hint": "Post this story to chat, move every token to where the fight left it, and commit the outcome. Undo reverses all of it."
+      "Hint": "Post this story to chat, move every token to where the fight left it, and commit the outcome. Undo reverses all of it.",
+      "Gives": "Gives up {what} to {name}",
+      "Receives": "Receives {what} from {name}",
+      "Kept": "Agreed to give up {what}, but kept it (luck {luck})",
+      "Reclaimed": "Gave up {what} to {name}, but got it back when {name} was beaten"
     },
     "Tactics": {
       "Auto": "Let {name} decide: {choice}",
@@ -624,7 +630,9 @@
       "wildcard": {
         "Name": "Wildcard",
         "Hint": "Unpredictable: sometimes attacks someone random or does something unexpected."
-      }
+      },
+      "AlwaysTalk": "This character always prefers talking to fighting",
+      "AlwaysTalkHint": "Talks whenever there's someone to talk to, whole turns at a time, even without much skill at it, and always votes to open an encounter as a standoff. With \"stay mostly true\" also checked, it only makes talking a little more likely."
     },
     "Tracker": {
       "OpenHint": "Estimate how this encounter will go",
@@ -689,6 +697,12 @@
       "auto": "Talk if they'd rather",
       "talk": "Always talk first",
       "fight": "Straight to battle"
+    },
+    "Concession": {
+      "Card": "<strong>{giver}</strong> gave up {what} to {receiver}.",
+      "Luck": "Luck check: {luck} on a d100 (needed under 40).",
+      "Undo": "Undo just this",
+      "Undone": "Undone: it's back with its owner."
     }
   }
 }

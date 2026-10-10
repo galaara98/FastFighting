@@ -89,6 +89,20 @@ function hpFraction(t) {
 }
 
 /**
+ * Someone who made u give something up mid-fight: feared (not a target) until they attack u, then the one u most
+ * wants to hit.
+ */
+function grudge(u, f) {
+  return u.grudges?.get(f.id) ?? null;
+}
+const feared = (u, f) => { const g = grudge(u, f); return !!g && !g.provoked; };
+
+/** Foes u is willing to go after (not the ones it's afraid of). */
+function foesOf(run, u) {
+  return enemiesOf(run, u).filter(f => !feared(u, f));
+}
+
+/**
  * Choose who `u` attacks this turn. Returns a unit or null.
  * Playstyles get the first word (Cruel finishes the fallen, Wildcards surprise, People-Pleasers follow the
  * group's target), then stated tactics or personality decide, then the target's own playstyle can pull
@@ -97,8 +111,12 @@ function hpFraction(t) {
 export function chooseTarget(run, u) {
   const behavior = behaviorOf(u);
   const rng = run.rng;
-  const foes = enemiesOf(run, u);
+  const foes = foesOf(run, u);
   const reach = list => list.map(t => ({ t, moves: minMoves(run, u, t) })).filter(x => Number.isFinite(x.moves));
+  // Whoever took from them and then attacked them is the one they want.
+  for ( const f of foes ) {
+    if ( grudge(u, f)?.provoked && isStanding(f) && Number.isFinite(minMoves(run, u, f)) ) return f;
+  }
   if ( behavior.finishDowned && !behavior.spareDowned ) {
     const downed = reach(foes.filter(f => f.status === STATUS.DOWN && !f.stable)).filter(x => x.moves <= 1);
     if ( downed.length && rng.chance(behavior.finishDowned) ) return rng.pick(downed).t;
@@ -134,7 +152,7 @@ function redirectForAttention(run, target, standing) {
 function chooseTargetCore(run, u, behavior) {
   const tier = liveTier(run, u);
   const selfish = liveTrait(run, u, "selfish");
-  const foes = enemiesOf(run, u);
+  const foes = foesOf(run, u);
   let candidates = foes.filter(isStanding);
 
   // Ruthless tacticians consider finishing downed (dying) foes when nothing else is close; Moralists never do.

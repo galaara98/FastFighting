@@ -14,6 +14,7 @@ import { PlayerSurvey } from "./apps/player-survey.js";
 import { SOCKET, SURVEY_STATUS } from "./foundry/tactics.js";
 import { helperStatus, helperMessage, helperNoticeHtml } from "./helpers.js";
 import { invalidateApproach } from "./foundry/battle.js";
+import { undoConcession } from "./foundry/make-it-so.js";
 
 Hooks.once("init", () => {
   registerSettings(DefaultsConfig, GenericPathsConfig, StoryTablesConfig);
@@ -157,6 +158,21 @@ for ( const hook of ["createWall", "updateWall", "deleteWall", "createRegion", "
   "createRegionBehavior", "updateRegionBehavior", "deleteRegionBehavior"] ) {
   Hooks.on(hook, () => invalidateApproach());
 }
+
+// A PC's loss card: its Undo puts back just that hand-over (GMs only).
+Hooks.on("renderChatMessageHTML", (message, html) => {
+  const button = html.querySelector?.("[data-ff-undo-concession]");
+  if ( !button ) return;
+  if ( !game.user.isGM || message.getFlag(MODULE_ID, "concession")?.undone ) {
+    button.remove();
+    return;
+  }
+  button.addEventListener("click", async event => {
+    event.preventDefault();
+    button.disabled = true;
+    await undoConcession(message);
+  });
+});
 
 // Edited story tables take effect immediately.
 for ( const hook of ["createRollTable", "updateRollTable", "deleteRollTable", "createTableResult", "updateTableResult", "deleteTableResult"] ) {

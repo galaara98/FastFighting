@@ -18,6 +18,24 @@ const DEGREE = ["critical failure", "failure", "success", "critical success"];
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" }[c]));
 const capital = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
 const signed = n => (n >= 0 ? `+${n}` : `${n}`);
+/** Money in the system's coins, largest first ("1 gp, 4 sp"), from an amount in its smallest coin. */
+export function formatMoney(amount, denominations) {
+  if ( !denominations?.length ) return String(amount);
+  const parts = [];
+  let left = Math.round(amount);
+  for ( const d of denominations ) {
+    const n = Math.floor(left / d.value);
+    if ( n > 0 ) { parts.push(`${n} ${d.label}`); left -= n * d.value; }
+  }
+  return parts.join(", ") || `0 ${denominations.at(-1).label}`;
+}
+
+/** What a creature handed over, in words. */
+export function concessionText(c) {
+  if ( !c ) return "";
+  return c.kind === "money" ? formatMoney(c.amount, c.denominations) : (c.item?.name ?? "");
+}
+
 const listJoin = names => names.length <= 1 ? (names[0] ?? "") : `${names.slice(0, -1).join(", ")} and ${names.at(-1)}`;
 
 /** Outcome tier of a check from the actor's point of view. */
@@ -210,7 +228,17 @@ function narrate(e, roll, rel, fill) {
     case "join": return roll(e.why === "forced" ? "event.joinForced" : "event.join", f);
     case "watch": return roll("event.watch", f);
     case "leave": return roll("event.leave", f);
-    case "sway": return roll({ surrendered: "event.surrender", fled: "event.swayFlee", switched: "event.switch", stoodDown: "event.standDown" }[e.outcome] ?? "event.surrender", f);
+    case "sway": {
+      if ( e.lie ) return roll("event.lieAndRun", f);
+      if ( e.outcome === "conceded" ) {
+        const c = e.concession;
+        const key = !c ? "event.standDown" : c.kept ? "event.concedeKept" : c.kind === "money" ? "event.concedeMoney" : "event.concedeItem";
+        return roll(key, { ...f, amount: concessionText(c), item: c?.item?.name ?? "" });
+      }
+      return roll({ surrendered: "event.surrender", fled: "event.swayFlee", switched: "event.switch", stoodDown: "event.standDown" }[e.outcome] ?? "event.surrender", f);
+    }
+    case "lastWord": return roll("event.lastWord", f);
+    case "reclaim": return roll("event.reclaim", { ...f, amount: concessionText(e.concession) });
     case "persistent": return roll("event.persistent", f);
     case "afflictionSave": return roll(e.degree <= 1 ? "event.afflictionSaveFail" : "event.afflictionSavePass", f);
     case "afflictionStage": return roll("event.afflictionStage", f);
@@ -271,6 +299,8 @@ function ending(result, spec, end, roll) {
     && result.units[c.id]?.final?.status === "standing" && result.units[c.id]?.final?.active !== false).map(c => c.name);
   const winners = standing.length > 3 ? `${standing.slice(0, 2).join(", ")} and their companions` : standing.length ? listJoin(standing) : (end.winnerLabels ?? []).join(" and ");
   // A lone survivor takes a singular verb ("Lini prevails").
+  if ( end.resolved === "conceded" ) return roll("event.dealStruck", { winners });
+  if ( end.resolved === "fled" ) return roll("event.backedOff", { winners });
   if ( end.peaceful ) return roll("event.peace", { winners });
   if ( end.outcome === "stalemate" && end.standoff ) return roll("event.talksStall", { winners });
   const victory = standing.length === 1 ? "event.victoryOne" : "event.victory";
@@ -310,6 +340,10 @@ function standard(result, spec, title, labels) {
       s.aid += 1;
       if ( e.stable ) s.stabilized += 1;
     } else if ( e.type === "move" ) s.feet += e.feet ?? 0;
+    else if ( e.type === "sway" && e.concession ) {
+      const c = e.concession;
+      s.notes.push(c.kept ? `kept ${concessionText(c)} (luck ${c.luck})` : `gave ${concessionText(c)} to ${c.toName}`);
+    } else if ( e.type === "reclaim" ) s.notes.push(`got back ${concessionText(e.concession)} from ${e.by}`);
     else if ( ["join", "leave", "sway", "flee", "callHelp"].includes(e.type) ) s.notes.push(e.text);
   }
   const end = result.log.find(e => e.type === "end");
@@ -328,7 +362,8 @@ function standard(result, spec, title, labels) {
     if ( s?.aid ) bits.push(`${labels.firstAid} ${s.aid}× (${s.stabilized} ${labels.stabilized})`);
     if ( s?.feet ) bits.push(`${labels.moved} ${s.feet} ft`);
     if ( !bits.length ) bits.push(final?.active === false ? labels.stayedOut : labels.nothing);
-    const status = final ? `${labels.status[final.swayed === "switched" ? "switched" : final.status] ?? final.status}, ${final.hp}/${c.hp.max} HP` : "";
+    const statusKey = final?.swayed === "switched" ? "switched" : final?.swayed === "conceded" ? "conceded" : final?.status;
+    const status = final ? `${labels.status[statusKey] ?? statusKey}, ${final.hp}/${c.hp.max} HP` : "";
     rows.push(`<li><strong>${esc(c.name)}</strong>: ${esc(bits.join("; "))}. <em>${esc(status)}</em>${s?.notes?.length ? ` <small>(${esc(s.notes.join("; "))})</small>` : ""}</li>`);
   }
   const html = `<p><strong>${esc(summary)}</strong></p><ul>${rows.join("")}</ul>`;
@@ -356,6 +391,12 @@ function statLine(e) {
     case "notice": return `${e.actor} notices (${e.cause})`;
     case "firstAid": return `${e.actor} → ${e.target}: first aid · medicine ${roll(e.natural, e.mod, e.total, e.dc, "DC")} · ${DEGREE[e.degree]} · ${e.stable ? "stabilized" : e.dead ? "dies" : `dying ${e.dying}`}`;
     case "aftermath": return "After the fight";
+    case "reclaim": return `${e.actor} gets back ${concessionText(e.concession)} from ${e.by}`;
+    case "sway":
+      if ( !e.concession ) return `${e.actor}: ${e.text}`;
+      return e.concession.kept
+        ? `${e.actor} agrees to hand over ${concessionText(e.concession)} · luck d100 ${e.concession.luck} (needs under 40) · keeps it`
+        : `${e.actor} gives ${concessionText(e.concession)} to ${e.concession.toName}${e.concession.luck ? ` · luck d100 ${e.concession.luck}` : ""}`;
     default: return `${e.actor ? `${e.actor}: ` : ""}${e.text}`;
   }
 }
@@ -397,5 +438,5 @@ export function buildStory(result, spec, style, { tables, seed = 1, title = "", 
 export const DEFAULT_LABELS = {
   hit: "hit", crit: "critical", miss: "missed", resisted: "resisted", talked: "talked", convincing: "convincing",
   healed: "healed", potion: "potion(s)", firstAid: "first aid", stabilized: "stabilized", moved: "moved", stayedOut: "stayed out of it", nothing: "did nothing of note",
-  status: { standing: "standing", down: "down", dead: "dead", fled: "fled", surrendered: "surrendered", stoodDown: "stood down", switched: "switched sides" }
+  status: { standing: "standing", down: "down", dead: "dead", fled: "fled", surrendered: "surrendered", stoodDown: "stood down", conceded: "gave something up", switched: "switched sides" }
 };
