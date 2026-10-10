@@ -112,7 +112,7 @@
       },
       "aftermath": {
         "Name": "After the fight",
-        "Hint": "When the last enemy falls: the survivors tend their dying (first aid, Battle Medicine, healing) and anyone left untended lives or dies by recovery checks, and the story tells it; or the same happens but the story ends at the last blow; or everyone is left exactly as the fight left them, for you to play out."
+        "Hint": "When the last enemy falls: the survivors tend their dying (first aid, healing feats, spells and potions) and anyone left untended lives or dies by the system's rules for dying, and the story tells it; or the same happens but the story ends at the last blow; or everyone is left exactly as the fight left them, for you to play out."
       },
       "opening": {
         "Name": "How encounters open",
@@ -296,7 +296,7 @@
       "ControlledBy": "Controlled by",
       "Fudge": "fudge",
       "Talking": "Talking",
-      "TalkingHint": "Let characters talk foes down mid-fight (Diplomacy, Intimidation, Deception)",
+      "TalkingHint": "Let characters talk foes down by persuading, threatening or bluffing them",
       "Bystanders": "Bystanders",
       "BystandersHint": "Tokens not in the encounter may notice the fight and join it",
       "Bystander": "Bystander",
@@ -345,8 +345,6 @@
       "Resource": "Resource",
       "AvgUsed": "Average used",
       "NoResources": "No limited resources were spent.",
-      "FocusPoint": "Focus Point",
-      "SlotRank": "Rank {rank} slot",
       "EmptyTitle": "Plan the battle, then Run",
       "EmptyBody": "Every token on the scene is listed on the left by side. Adjust personalities, allegiances and dispositions, then run thousands of simulated fights.",
       "Swayed": "Foe talked down",

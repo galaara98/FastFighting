@@ -19,6 +19,10 @@
  * @property {object} [flags]               packTactics, fearless, mindless, masterId, flying
  * @property {object} [disposition]         {healAggro, allyDying, selfRevived}
  * @property {boolean} [diesAtZero]         NPCs normally die at 0 HP
+ * @property {object} [social]              Talking: {languages[], mindless, gullible?, resolve?, pitches, resist}
+ *   pitches: {persuade|intimidate|deceive: {skill: display name, mod}}   what this creature can try on others
+ *   resist:  {persuade|intimidate|deceive: {dc, label}}                  the DC others face, and what it's called
+ *   resolve: how much more strong-willed than typical for its level (0 typical; -5 or less: very gullible)
  * @property {number} [wounded]
  * @property {number} [doomed]
  * @property {number} [dying]               Already dying when the battle starts (a fight resumed mid-way)
@@ -31,8 +35,10 @@
  * @typedef {object} ActionSpec
  * @property {string} id
  * @property {string} name
- * @property {string} kind                  "strike" | "spell-attack" | "save" | "heal"
- * @property {number} cost                  Actions (PF2e) to use once
+ * @property {string} kind                  "strike" | "spell-attack" | "save" | "auto" | "heal"
+ * @property {number|object} cost           What one use costs: a number of the rules' main pool (PF2e actions), or
+ *                                          {action: 1} / {bonus: 1} ... (see engine/turn.js); rules.costOf may decide
+ * @property {object[]} [sequence]          A multiattack: component strikes made in order with one use
  * @property {number} [bonus]               Attack modifier
  * @property {number[]} [maps]              Multiple attack penalties
  * @property {boolean} [subjectToMAP]
@@ -58,6 +64,7 @@ import { STATUS, clamp, fudged, tacticalTier, TRAITS } from "../constants.js";
 import { meanPart } from "./dice.js";
 import { typicalValue } from "./tactics.js";
 import { talkAffinity } from "./behavior/talk.js";
+import { Turn } from "./turn.js";
 
 const DEFAULT_APPROACH = Object.freeze({ dist: 5, mult: 1, speed: 25, mode: "walk", los: true, meleeOk: true });
 const SIDE_WEIGHT = 0.3;
@@ -121,13 +128,13 @@ export function prepareBattle(spec, rules) {
   });
 
   // Battle-worthiness: offense compared with everyone else on the field. The weakest may talk twice a turn.
-  const offense = combatants.map(c => Math.max(0, ...c.offense.map(a => typicalValue(a, c.spec.level ?? 1))));
+  const offense = combatants.map(c => Math.max(0, ...c.offense.map(a => typicalValue(a, c.spec.level ?? 1, rules))));
   const sorted = [...offense].sort((a, b) => a - b);
   const median = sorted[Math.floor(sorted.length / 2)] ?? 0;
   combatants.forEach((c, i) => {
     c.offensePower = offense[i];
     c.lowBattleWorth = median > 0 && offense[i] < median * 0.5;
-    c.talkAffinity = talkAffinity(c.spec, c.traits);
+    c.talkAffinity = talkAffinity(c.spec, c.traits, rules);
   });
 
   const byId = new Map(combatants.map(c => [c.spec.id, c]));
@@ -282,51 +289,10 @@ export function liveTier(run, u) {
   return tacticalTier(liveTrait(run, u, "tactical"));
 }
 
-/** Status penalty to checks and DCs (frightened / sickened don't stack; the worst applies). */
-export function statusPenalty(u) {
-  return Math.max(u.conds.frightened ?? 0, u.conds.sickened ?? 0);
-}
-
-/** Off-guard: prone, grabbed, flanked, or a condition that says so. */
-export function isOffGuard(run, target, attacker = null, action = null) {
-  if ( target.prone || target.conds.offGuard || target.conds.paralyzed ) return true;
-  if ( target.grabbedBy ) {
-    const grabber = run.byId.get(target.grabbedBy);
-    if ( grabber && isStanding(grabber) ) return true;
-  }
-  return !!(attacker && action?.melee && isFlanked(run, target, attacker));
-}
-
-/** Current AC including raised shield, leadership, off-guard and conditions. */
-export function currentAc(run, target, attacker, action) {
-  let ac = target.spec.defenses.ac;
-  if ( target.shieldRaised && target.spec.shield ) ac += target.spec.shield.ac;
-  const side = run.prep.sides[target.side];
-  if ( leaderStanding(run, target.side) ) ac += side.leadership.ac;
-  if ( isOffGuard(run, target, attacker, action) ) ac -= 2;
-  ac -= (target.conds.clumsy ?? 0) + statusPenalty(target);
-  return ac;
-}
-
-/** Saving throw modifier including conditions. */
-export function saveMod(target, type) {
-  let mod = target.spec.defenses[type] ?? (target.spec.level + 5);
-  mod -= statusPenalty(target);
-  if ( type === "reflex" ) mod -= target.conds.clumsy ?? 0;
-  return mod;
-}
-
-/** Actions available at the start of a turn. */
-export function actionsThisTurn(run, u) {
-  const base = run.prep.rules.actionsPerTurn;
-  if ( u.conds.paralyzed ) return 0;
-  return Math.max(0, base - (u.conds.slowed ?? 0) - (u.conds.stunned ?? 0));
-}
-
-/** Effective action cost, including drawing an unready weapon the first time. */
-export function actionCost(u, action) {
-  return action.cost + ((action.drawCost && !u.drawn.has(action.id)) ? action.drawCost : 0);
-}
+/* Rules-facing situation ------------------------------------------------
+ * The engine knows the facts (prone, grabbed, flanked, how far, which conditions); the system's rules say what
+ * they're worth. Leadership, wavering and studying a foe are FastFighting's own and stay here.
+ */
 
 /** Attackers flank when another standing ally of theirs is adjacent to the target and they coordinate. */
 export function isFlanked(run, target, attacker) {
@@ -346,28 +312,113 @@ export function alliesAdjacentTo(run, target, attacker) {
   return n;
 }
 
-/** Extra damage parts that apply to this hit (sneak attack vs off-guard, pack attack, ...). */
-export function bonusDamageParts(run, attacker, action, target) {
-  const out = [];
-  for ( const bonus of action.bonusDamage ?? [] ) {
-    if ( bonus.when === "offGuard" && isOffGuard(run, target, attacker, action) ) out.push(...bonus.parts);
-    else if ( bonus.when === "pack" && alliesAdjacentTo(run, target, attacker) >= (bonus.allies ?? 2) ) out.push(...bonus.parts);
-    else if ( bonus.when === "always" ) out.push(...bonus.parts);
-  }
-  return out;
+/** The facts the rules weigh for an attack (or an effect) from attacker against target. */
+export function situation(run, target, attacker = null, action = null) {
+  const grabber = target.grabbedBy ? run.byId.get(target.grabbedBy) : null;
+  return {
+    target,
+    attacker,
+    action,
+    grabbed: !!(grabber && isStanding(grabber)),
+    flanked: !!(attacker && action?.melee && isFlanked(run, target, attacker)),
+    distance: attacker ? separation(run, attacker, target) : 0,
+    positioning: !!run.prep.options.positioning
+  };
 }
 
-export function attackBonusMods(run, u, action = null) {
-  let mod = 0;
-  if ( u.wavering ) mod -= 1;
-  if ( u.prone ) mod -= 2;
-  mod -= statusPenalty(u);
-  if ( action?.melee ) mod -= u.conds.enfeebled ?? 0;
-  if ( u.spec.environment?.aquatic && !(u.spec.speeds?.swim > 0) && action?.melee ) mod -= 2;
-  if ( leaderStanding(run, u.side) && run.prep.sides[u.side].leaderId !== u.id ) {
-    mod += run.prep.sides[u.side].leadership.attack;
+/** Is the target exposed to this attack (PF2e: off-guard; 5e: attacked with advantage)? */
+export function isExposed(run, target, attacker = null, action = null) {
+  const rules = run.prep.rules;
+  const ctx = situation(run, target, attacker, action);
+  if ( rules.modifiers?.exposed ) return !!rules.modifiers.exposed(ctx);
+  return !!(target.prone || ctx.grabbed || ctx.flanked || target.conds.offGuard);
+}
+
+/** Current AC: base, a raised shield, leadership, and whatever the rules make of the situation. */
+export function currentAc(run, target, attacker, action) {
+  let ac = target.spec.defenses.ac;
+  if ( target.shieldRaised && target.spec.shield ) ac += target.spec.shield.ac;
+  const side = run.prep.sides[target.side];
+  if ( leaderStanding(run, target.side) ) ac += side.leadership.ac;
+  ac += run.prep.rules.modifiers?.defense?.(situation(run, target, attacker, action)) ?? 0;
+  return ac;
+}
+
+/** Typical numbers for a creature of this level, when the system didn't supply one. */
+export function typical(rules, what, level = 0) {
+  const fn = rules?.typical?.[what];
+  if ( fn ) return fn(level);
+  return { ac: 10 + level, save: Math.ceil(level / 2) + 2, skill: Math.ceil(level / 2) + 2, dc: 10 + level }[what] ?? 0;
+}
+
+/** A saving throw: the modifier and any advantage (+1) or disadvantage (-1). */
+export function saveRoll(run, target, type) {
+  const base = target.spec.defenses[type] ?? typical(run.prep.rules, "save", target.spec.level ?? 0);
+  const m = run.prep.rules.modifiers?.save?.({ unit: target, type }) ?? {};
+  return { mod: base + (m.bonus ?? 0), advantage: m.advantage ?? 0 };
+}
+
+/** Saving throw modifier (without advantage), for heuristics and logs. */
+export function saveMod(run, target, type) {
+  return saveRoll(run, target, type).mod;
+}
+
+/** A skill check (talking, first aid): the rules' situational bonus and advantage. */
+export function checkRoll(run, u, mod) {
+  const m = run.prep.rules.modifiers?.check?.({ unit: u }) ?? {};
+  return { mod: mod + (m.bonus ?? 0), advantage: m.advantage ?? 0 };
+}
+
+/** A fresh turn budget for u, minus what conditions take away (stunned, slowed, paralyzed ...). */
+export function turnFor(run, u) {
+  const rules = run.prep.rules;
+  const lost = rules.modifiers?.actionsLost?.(u) ?? 0;
+  return new Turn(rules, u, lost);
+}
+
+/**
+ * Everything that adjusts an attack roll: the rules' situation (prone, conditions, range, ...), plus wavering,
+ * leadership and having studied the foe. Returns {bonus, advantage}.
+ */
+export function attackRoll(run, u, target, action, attacksMade = 0) {
+  const rules = run.prep.rules;
+  let bonus = (action.bonus ?? 0) + rules.attackPenalty(action, attacksMade);
+  if ( u.wavering ) bonus -= 1;
+  if ( leaderStanding(run, u.side) && run.prep.sides[u.side].leaderId !== u.id ) bonus += run.prep.sides[u.side].leadership.attack;
+  bonus += studyBonus(u, target);
+  const m = rules.modifiers?.attack?.(situation(run, target, u, action)) ?? {};
+  return { bonus: bonus + (m.bonus ?? 0), advantage: m.advantage ?? 0 };
+}
+
+/** Does a bonus-damage condition hold for this hit? */
+function bonusApplies(run, attacker, action, target, when, bonus, advantage) {
+  switch ( when ) {
+    case "always": return true;
+    case "offGuard":
+    case "exposed": return isExposed(run, target, attacker, action);
+    case "advantage": return advantage > 0;
+    case "allyAdjacent": return alliesAdjacentTo(run, target, attacker) >= 1;
+    case "pack": return alliesAdjacentTo(run, target, attacker) >= (bonus.allies ?? 2);
+    default: return false;
   }
-  return mod;
+}
+
+/**
+ * Extra damage parts that apply to this hit (sneak attack, pack attack, ...). `when` may be one condition or a list
+ * (any one will do); `oncePerTurn` bonuses apply to the first qualifying hit of the attacker's turn only.
+ * Pass `commit` when the hit lands, so once-per-turn bonuses are used up.
+ */
+export function bonusDamageParts(run, attacker, action, target, { advantage = 0, commit = false } = {}) {
+  const out = [];
+  for ( const bonus of action.bonusDamage ?? [] ) {
+    const key = bonus.id ?? bonus.when;
+    if ( bonus.oncePerTurn && attacker.usedThisTurn?.has(key) ) continue;
+    const conditions = Array.isArray(bonus.when) ? bonus.when : [bonus.when];
+    if ( !conditions.some(w => bonusApplies(run, attacker, action, target, w, bonus, advantage)) ) continue;
+    out.push(...bonus.parts);
+    if ( commit && bonus.oncePerTurn ) (attacker.usedThisTurn ??= new Set()).add(key);
+  }
+  return out;
 }
 
 /** Geometry ------------------------------------------------------------- */
@@ -410,21 +461,15 @@ export function movesNeeded(run, a, t, action) {
   return Math.ceil((gap * ap.mult) / ap.speed);
 }
 
-/** Range penalty (PF2e: -2 per increment beyond the first). */
-export function rangePenalty(run, a, t, action) {
-  if ( !action.range || action.range.noPenalty || !run.prep.options.positioning ) return 0;
-  const d = separation(run, a, t);
-  const increments = Math.max(0, Math.ceil(d / action.range.increment) - 1);
-  return -2 * increments;
-}
-
 /**
- * Spend one move action advancing a toward t (stopping at reach for melee).
- * @returns {{feet: number, mode: string, mult: number, regions: string[], reached: boolean}} for the story
+ * One move advancing a toward t (stopping at reach for melee). `budget` is the movement it may spend (feet of
+ * speed before terrain), a full speed by default.
+ * @returns {{feet: number, cost: number, mode: string, mult: number, regions: string[], reached: boolean}}
+ *   feet covered (for the story) and movement spent (feet × terrain)
  */
-export function moveToward(run, a, t, reach = null) {
+export function moveToward(run, a, t, reach = null, budget = null) {
   const ap = approach(run, a, t);
-  const progress = Number.isFinite(ap.mult) && ap.mult > 0 ? ap.speed / ap.mult : 0;
+  const progress = Number.isFinite(ap.mult) && ap.mult > 0 ? (budget ?? ap.speed) / ap.mult : 0;
   let feet = progress;
   if ( a.pos && t.pos ) {
     const d = centerDistance(a, t);
@@ -445,7 +490,7 @@ export function moveToward(run, a, t, reach = null) {
     t.adjacent.add(a.id);
     reached = true;
   }
-  return { feet: Math.round(feet), mode: ap.mode ?? "walk", mult: ap.mult ?? 1, regions: ap.regions ?? [], reached };
+  return { feet: Math.round(feet), cost: feet * (ap.mult ?? 1), mode: ap.mode ?? "walk", mult: ap.mult ?? 1, regions: ap.regions ?? [], reached };
 }
 
 /** Move u away from its nearest foes (fleeing): up to `feet` along the line away from them. */

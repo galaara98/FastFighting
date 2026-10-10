@@ -5,11 +5,11 @@ import { impatience, opensWithTalk } from "../scripts/engine/behavior/standoff.j
 import { pf2eRules } from "./fixtures/three-action-rules.js";
 import { buildStory } from "../scripts/story/story.js";
 import { buildEnglishTables } from "../scripts/story/tables-en.js";
-import { creature, strike, battle } from "./helpers.js";
+import { creature, strike, battle, social } from "./helpers.js";
 
 const english = buildEnglishTables();
 const tables = { get: k => english[k] };
-const speaks = (extra = {}) => ({ diplomacy: 12, intimidation: 8, deception: 6, willDC: 16, perceptionDC: 16, languages: ["common"], mindless: false, ...extra });
+const speaks = (extra = {}) => social({ diplomacy: 12, intimidation: 8, deception: 6, willDC: 16, perceptionDC: 16, ...extra });
 
 /** A negotiator facing a guard captain and a guard, all of whom would rather talk. */
 function parley({ opening, guardTalk = "first", captainTalk = guardTalk, beast = false } = {}) {

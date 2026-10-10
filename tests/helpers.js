@@ -54,3 +54,16 @@ export function battle(combatants, options = {}, sides = null) {
     options: { positioning: false, ...options }
   };
 }
+
+/**
+ * Talking data in the core's shape, from PF2e-style numbers: Diplomacy persuades, Intimidation threatens,
+ * Deception bluffs; Will resists persuasion and threats, Perception resists bluffs.
+ */
+export function social({ diplomacy, intimidation, deception, willDC = 17, perceptionDC = 17, languages = ["common"], mindless = false, ...rest } = {}) {
+  const pitch = (skill, mod) => (typeof mod === "number" ? { skill, mod } : undefined);
+  return {
+    pitches: { persuade: pitch("diplomacy", diplomacy), intimidate: pitch("intimidation", intimidation), deceive: pitch("deception", deception) },
+    resist: { persuade: { dc: willDC, label: "will" }, intimidate: { dc: willDC, label: "will" }, deceive: { dc: perceptionDC, label: "perception" } },
+    languages, mindless, ...rest
+  };
+}

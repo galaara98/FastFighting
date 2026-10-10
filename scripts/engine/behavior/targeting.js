@@ -9,7 +9,8 @@
  */
 import { STATUS, TACTICAL } from "../../constants.js";
 import { enemiesOf, isStanding, liveTier, liveTrait, movesNeeded, behaviorOf } from "../battle-state.js";
-import { expectedDamage, hasUses, threatOf, actionCost } from "./evaluate.js";
+import { expectedDamage, hasUses, threatOf, costOf, costUnits, unitsPerTurn } from "./evaluate.js";
+import { mainPool } from "../turn.js";
 import { styleWeight } from "../tactics.js";
 
 const limited = a => !!a.resource || Number.isFinite(a.uses);
@@ -22,10 +23,13 @@ function inCrisis(run, u) {
 
 /**
  * Best way for u to get an offensive action onto t this turn: moves needed, the action, and its value.
- * With `actionsLeft`, options that fit in the remaining actions win over ones that don't (so a character
- * whose favorite weapon still needs drawing punches with its last action instead of standing idle).
+ * With a `turn`, options that fit in what's left of it win over ones that don't (so a character whose favorite
+ * weapon still needs drawing punches with its last action instead of standing idle), and moving costs what the
+ * system says (PF2e: an action per Stride; 5e: nothing until the movement runs out).
  */
-export function bestOptionVs(run, u, t, attacksMade = 0, actionsLeft = Infinity) {
+export function bestOptionVs(run, u, t, attacksMade = 0, turn = null) {
+  const rules = run.prep.rules;
+  const main = mainPool(rules);
   const tactics = u.tac;
   const behavior = behaviorOf(u);
   const options = [];
@@ -34,14 +38,16 @@ export function bestOptionVs(run, u, t, attacksMade = 0, actionsLeft = Infinity)
     const moves = movesNeeded(run, u, t, action);
     if ( !Number.isFinite(moves) ) continue;
     const ev = expectedDamage(run, u, action, t, attacksMade);
-    const cost = actionCost(u, action);
+    const cost = costOf(rules, action, u);
+    const base = costUnits(rules, costOf(rules, action));
     // Drawing a weapon is a one-time cost, so spread it over the attacks it enables.
-    const amortized = action.cost + (cost - action.cost) * 0.25;
-    const perAction = ev / (amortized + moves);
+    const amortized = base + ((cost[main] ?? 0) - (costOf(rules, action)[main] ?? 0)) * 0.25;
+    const moveUnits = turn ? turn.unitsForMoves(moves, run.prep.approachOf(u.id, t.id).speed) : moves;
+    const perAction = ev / Math.max(0.1, amortized + moveUnits);
     let weighted = perAction * styleWeight(tactics, action);
     if ( behavior.meleeBias && action.melee ) weighted *= 1 + behavior.meleeBias;
     if ( behavior.exploitWeakness && (action.damage ?? []).some(p => t.spec.iwr?.weak?.[p.type]) ) weighted *= 1 + behavior.exploitWeakness;
-    options.push({ action, moves, ev, perAction, cost, weighted });
+    options.push({ action, moves, moveUnits, ev, perAction, cost, weighted });
   }
   if ( !options.length ) return null;
 
@@ -58,8 +64,10 @@ export function bestOptionVs(run, u, t, attacksMade = 0, actionsLeft = Infinity)
     const gated = pool.filter(o => !limited(o.action) || bestFree === 0 || o.perAction >= bestFree * gate);
     if ( gated.length ) pool = gated;
   }
-  const fits = pool.filter(o => o.moves + o.cost <= actionsLeft);
-  if ( fits.length ) pool = fits;
+  if ( turn ) {
+    const fits = pool.filter(o => turn.canAfford({ ...o.cost, [main]: (o.cost[main] ?? 0) + o.moveUnits }));
+    if ( fits.length ) pool = fits;
+  }
   // Wildcards sometimes just do something else.
   if ( behavior.random && run.rng && pool.length > 1 && run.rng.chance(behavior.random) ) return run.rng.pick(pool);
   let best = null;
@@ -216,20 +224,29 @@ function pickBy(run, u, reachable, score) {
 }
 
 /** Higher is better: fewer turns to drop the target including travel. */
+/** Damage per round of an option, and how many moves fit in a round, by the system's turn. */
+function pace(run, u, option) {
+  const rules = run.prep.rules;
+  const perTurn = unitsPerTurn(rules, u);
+  const units = option ? Math.max(1e-9, costUnits(rules, costOf(rules, option.action))) : 1;
+  const dpr = Math.max(0.1, (option?.ev ?? 0) * Math.max(1, Math.floor(perTurn / units)));
+  // PF2e: every action can be a Stride; 5e: a move and a Dash.
+  const movesPerTurn = rules.movement === "feet" ? 2 : perTurn;
+  return { dpr, movesPerTurn };
+}
+
 function quickestKill(run, u, { t, moves }) {
   if ( t.status === STATUS.DOWN ) return -moves; // finishing blow is trivial if worthwhile
-  const option = bestOptionVs(run, u, t);
-  const dpr = Math.max(0.1, (option?.ev ?? 0) * Math.max(1, Math.floor(run.prep.rules.actionsPerTurn / (option?.action.cost ?? 1))));
-  return -(t.hp / dpr + moves / run.prep.rules.actionsPerTurn);
+  const { dpr, movesPerTurn } = pace(run, u, bestOptionVs(run, u, t));
+  return -(t.hp / dpr + moves / movesPerTurn);
 }
 
 /** Threat removed per turn invested: prioritises dangerous, fragile, healing or casting foes. */
 function valueOfKill(run, u, x) {
   const { t, moves } = x;
   if ( t.status === STATUS.DOWN ) return 0.5 * (t.spec.kind === "pc" ? 3 : 1) / (1 + moves);
-  const option = bestOptionVs(run, u, t);
-  const dpr = Math.max(0.1, (option?.ev ?? 0) * Math.max(1, Math.floor(run.prep.rules.actionsPerTurn / (option?.action.cost ?? 1))));
-  const turns = t.hp / dpr + moves / run.prep.rules.actionsPerTurn;
+  const { dpr, movesPerTurn } = pace(run, u, bestOptionVs(run, u, t));
+  const turns = t.hp / dpr + moves / movesPerTurn;
   let threat = threatOf(run, t, u) + 1;
   if ( t.prep.isHealer ) threat *= 1.5;
   if ( t.prep.isCaster ) threat *= 1.25;

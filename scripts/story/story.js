@@ -43,8 +43,10 @@ function deliveryOf(e) {
   return e.ranged ? "ranged" : "melee";
 }
 
-function damageTypeOf(e) {
-  return DAMAGE_TYPES.includes(e.damageType) ? e.damageType : "untyped";
+/** The imagery family for a damage type: the system maps its own types (5e "lightning" reads as electricity). */
+function damageTypeOf(e, mapType) {
+  const type = mapType ? mapType(e.damageType) : e.damageType;
+  return DAMAGE_TYPES.includes(type) ? type : "untyped";
 }
 
 /**
@@ -161,12 +163,13 @@ function relationshipClause(e, tier, rel, roll, fill) {
 function narrate(e, roll, rel, fill) {
   const base = { actor: e.actor, target: e.target ?? "", weapon: e.action ?? e.item ?? "", by: e.by ?? "", affliction: e.name ?? "" };
   const f = { ...base, ...fill };
+  delete f.mapType;
   switch ( e.type ) {
     case "attack":
     case "save":
     case "auto": {
       const tier = e.type === "save" ? saveTier(e) : e.type === "auto" ? "success" : tierOf(e.degree, e.margin);
-      let text = roll(`action.${deliveryOf(e)}.${damageTypeOf(e)}.${tier}`, f);
+      let text = roll(`action.${deliveryOf(e)}.${damageTypeOf(e, fill.mapType)}.${tier}`, f);
       text = agreeWithWeapon(text, f.weapon);
       if ( e.attackerCover && e.ranged && e.natural % 3 === 0 ) text = `${roll("event.coverShoot", f)} ${capital(text)}`;
       if ( e.targetCover && e.ranged && !successful(tier) ) text += ` ${capital(roll("event.coverDuck", f))}`;
@@ -174,7 +177,7 @@ function narrate(e, roll, rel, fill) {
     }
     case "talk": {
       const tier = tierOf(e.degree, e.margin);
-      return roll(`talk.${e.skill}.${tier}`, f) + relationshipClause(e, tier, rel, roll, f);
+      return roll(`talk.${e.kind ?? "persuade"}.${tier}`, f) + relationshipClause(e, tier, rel, roll, f);
     }
     case "move": {
       const mode = ["walk", "fly", "swim", "climb", "burrow"].includes(e.mode) ? e.mode : "walk";
@@ -222,7 +225,7 @@ function narrate(e, roll, rel, fill) {
   }
 }
 
-function roleplay(result, spec, tables, seed, title) {
+function roleplay(result, spec, tables, seed, title, mapType) {
   const roll = makeRoller(tables, seed);
   const rel = new Relationships(spec);
   const { mentions } = storyCast(result, spec);
@@ -250,7 +253,7 @@ function roleplay(result, spec, tables, seed, title) {
       if ( key === lastMoveKey ) continue;
       lastMoveKey = key;
     } else lastMoveKey = null;
-    const sentence = narrate(e, roll, rel, {});
+    const sentence = narrate(e, roll, rel, { mapType });
     rel.record(e);
     if ( sentence ) current.sentences.push(capital(sentence.trim()));
   }
@@ -383,12 +386,12 @@ function statistician(result, spec, title) {
  * @param {object} result   runOne(..., {log: true, capture: true}) output
  * @param {object} spec     BattleSpec it came from
  * @param {string} style    roleplay | standard | statistician
- * @param {object} options  {tables, seed, title, labels}
+ * @param {object} options  {tables, seed, title, labels, damageType: (systemType) => imagery family}
  */
-export function buildStory(result, spec, style, { tables, seed = 1, title = "", labels = DEFAULT_LABELS } = {}) {
+export function buildStory(result, spec, style, { tables, seed = 1, title = "", labels = DEFAULT_LABELS, damageType = null } = {}) {
   if ( style === "statistician" ) return statistician(result, spec, title);
   if ( style === "standard" ) return standard(result, spec, title, labels);
-  return roleplay(result, spec, tables, seed, title);
+  return roleplay(result, spec, tables, seed, title, damageType);
 }
 
 export const DEFAULT_LABELS = {

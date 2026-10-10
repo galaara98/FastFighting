@@ -6,17 +6,19 @@
  */
 import { STATUS, TACTICAL, DOWNED_MODELS, AFTERMATH } from "../constants.js";
 import { createRng, deriveSeed, randomSeed } from "./rng.js";
-import { sampleDamage, samplePart, doubled } from "./dice.js";
+import { sampleDamage, samplePart } from "./dice.js";
+import { rollCheck } from "./probability.js";
+import { costOf, costUnits } from "./turn.js";
 import {
   prepareBattle, createRun, isStanding, isUp, enemiesOf, alliesOf, areEnemies, liveTier, liveTrait, currentAc,
-  attackBonusMods, rangePenalty, moveToward, moveAway, saveMod, actionsThisTurn, bonusDamageParts, dispositionOf,
-  behaviorOf, studyBonus, edgeDistance, movesNeeded
+  attackRoll, saveRoll, checkRoll, turnFor, moveToward, moveAway, bonusDamageParts, dispositionOf,
+  behaviorOf, edgeDistance, movesNeeded, approach
 } from "./battle-state.js";
 import { sampleRunTactics } from "./playstyles.js";
 import { chooseTarget, bestOptionVs } from "./behavior/targeting.js";
 import { decideHeal, rescueOption } from "./behavior/healing.js";
 import { checkMorale, MORALE } from "./behavior/morale.js";
-import { expectedDamage, spendUse, countsAsAttack } from "./behavior/evaluate.js";
+import { expectedDamage, spendUse, attacksIn, criticalParts, saveMultiplier } from "./behavior/evaluate.js";
 import { createAggregator } from "./aggregate.js";
 import { talkActionsThisTurn, choosePitch, attemptTalk } from "./behavior/talk.js";
 import { opensWithTalk, breaksStandoff, standoffPitches } from "./behavior/standoff.js";
@@ -37,6 +39,12 @@ function log(run, u, text, data = {}) {
 }
 
 const primaryType = action => (action.damage ?? action.heal ?? [])[0]?.type ?? "untyped";
+
+/** How a degree of success moves an affliction along: on first exposure, and at each later save. */
+function afflictionStep(rules, degree, phase) {
+  if ( rules.afflictionStep ) return rules.afflictionStep(degree, phase);
+  return phase === "exposure" ? (degree <= 1 ? 1 : 0) : (degree <= 1 ? 1 : -1);
+}
 
 /* -------------------------------------------- */
 /*  Initiative                                  */
@@ -144,7 +152,8 @@ function checkAwareness(run) {
     }
     if ( !best ) continue;
     const perception = b.spec.perception ?? b.spec.initiative?.mod ?? 0;
-    const roll = run.prep.rules.roll(run.rng, perception, best.cue.dc);
+    const check = checkRoll(run, b, perception);
+    const roll = rollCheck(run.prep.rules, run.rng, check.mod, best.cue.dc, { advantage: check.advantage, kind: "check" });
     if ( roll.degree >= 2 ) {
       if ( b.aware ) decideToJoin(run, b, best.cue.sense);
       else notice(run, b, best.cue.sense, best.c);
@@ -203,7 +212,7 @@ function dealDamage(run, source, target, amount, { crit = false } = {}) {
     if ( target.hp <= 0 ) {
       target.hp = 0;
       target.wasDowned = true;
-      rules.onDropped(target, { crit, model });
+      rules.onDropped(target, { crit, model, amount: rest, overflow: Math.max(0, rest - dealt) });
       target.fellRound ??= run.round;
       target.killerId = source?.id ?? target.killerId ?? null;
       run.firstFallen ??= target.id;
@@ -213,7 +222,7 @@ function dealDamage(run, source, target, amount, { crit = false } = {}) {
     }
   } else if ( target.status === STATUS.DOWN ) {
     if ( model === DOWNED_MODELS.OUT ) return;
-    rules.onDropped(target, { crit, model });
+    rules.onDropped(target, { crit, model, amount, overflow: amount });
     const dead = target.status === STATUS.DEAD;
     if ( dead ) target.killerId = source?.id ?? target.killerId ?? null;
     log(run, target, dead ? "is finished off" : `is struck while down (dying ${target.dying})`, { type: dead ? "death" : "struckDown", by: source?.spec.name ?? null, byId: source?.id ?? null, dying: target.dying, finished: dead });
@@ -253,13 +262,13 @@ function applyAfflictionStage(run, target, affliction) {
 function exposeToAffliction(run, source, target, spec) {
   if ( target.spec.iwr?.immune?.some(k => spec.traits?.includes(k)) ) return;
   const rules = run.prep.rules;
-  const mod = saveMod(target, spec.save.type);
-  const roll = rules.roll(run.rng, mod, spec.save.dc);
-  const increase = [2, 1, 0, 0][roll.degree];
+  const { mod, advantage } = saveRoll(run, target, spec.save.type);
+  const roll = rollCheck(rules, run.rng, mod, spec.save.dc, { advantage, kind: "save" });
+  const increase = afflictionStep(rules, roll.degree, "exposure");
   log(run, target, `${spec.name}: ${spec.save.type} save ${DEGREE_LABEL[roll.degree]}`, {
     type: "afflictionSave", name: spec.name, saveType: spec.save.type, natural: roll.natural, mod, total: roll.total, dc: spec.save.dc, degree: roll.degree
   });
-  if ( !increase ) return;
+  if ( !(increase > 0) ) return;
   let affliction = target.afflictions.find(a => a.spec.id === spec.id);
   if ( !affliction ) {
     affliction = { spec, stage: 0, rounds: 0, sourceId: source.id, onsetLeft: Math.max(0, spec.onset ?? 0) };
@@ -309,7 +318,25 @@ function rollHit(run, u, action, t, parts, multiplier, crit, minimum = 0) {
   };
 }
 
+/** Someone else u could hit with this action without moving (when a multiattack's first target drops). */
+function nextTargetInReach(run, u, action) {
+  return enemiesOf(run, u).filter(o => isStanding(o) && movesNeeded(run, u, o, action) === 0).sort((a, b) => a.hp - b.hp)[0] ?? null;
+}
+
 function executeOffense(run, u, action, t, attacksMade) {
+  // A multiattack (or Extra Attack) makes its strikes in order, turning to a new foe if the first one drops.
+  if ( action.sequence?.length ) {
+    let made = attacksMade;
+    let target = t;
+    for ( const strike of action.sequence ) {
+      if ( !target || !isStanding(target) ) target = nextTargetInReach(run, u, strike);
+      if ( !target ) break;
+      executeOffense(run, u, strike, target, made);
+      made += attacksIn(strike);
+      if ( battleOver(run) ) break;
+    }
+    return;
+  }
   const rules = run.prep.rules;
   u.revealed = true;
   run.blood = true; // a blow has been struck: whatever happens now, it wasn't settled with words
@@ -324,13 +351,13 @@ function executeOffense(run, u, action, t, attacksMade) {
   for ( const target of targets ) {
     if ( !target.active ) notice(run, target, "attacked", u);
     target.lastAttackerId = u.id;
-    const extra = bonusDamageParts(run, u, action, target);
     const common = logging ? {
       action: action.name, actionKind: action.kind, damageType: primaryType(action), target: target.spec.name, targetId: target.id,
       ranged, area: !!action.area, targetCover: !!target.spec.environment?.nearCover, attackerCover: !!u.spec.environment?.nearCover
     } : null;
 
     if ( action.kind === "auto" ) {
+      const extra = bonusDamageParts(run, u, action, target, { commit: true });
       const hit = rollHit(run, u, action, target, (action.damage ?? []).concat(extra), 1, false);
       if ( logging ) log(run, u, `${action.name} → ${target.spec.name}: ${hit.total} damage`, { type: "auto", ...common, damage: hit.total });
       hit.apply();
@@ -338,9 +365,10 @@ function executeOffense(run, u, action, t, attacksMade) {
     }
 
     if ( action.kind === "save" && action.save ) {
-      const mod = saveMod(target, action.save.type);
-      const roll = rules.roll(run.rng, mod, action.save.dc);
-      const mult = action.save.basic === false ? [2, 1, 0, 0][roll.degree] : rules.basicSaveMultiplier(roll.degree);
+      const extra = bonusDamageParts(run, u, action, target, { commit: true });
+      const { mod, advantage } = saveRoll(run, target, action.save.type);
+      const roll = rollCheck(rules, run.rng, mod, action.save.dc, { advantage, kind: "save" });
+      const mult = saveMultiplier(rules, roll.degree, action.save);
       const data = !logging ? null : { type: "save", ...common, saveType: action.save.type, natural: roll.natural, mod, total: roll.total, dc: action.save.dc, degree: roll.degree, margin: roll.total - action.save.dc };
       if ( mult > 0 ) {
         const hit = rollHit(run, u, action, target, (action.damage ?? []).concat(extra), mult, roll.degree === 0);
@@ -351,21 +379,21 @@ function executeOffense(run, u, action, t, attacksMade) {
       continue;
     }
 
-    const bonus = (action.bonus ?? 0) + rules.attackPenalty(action, attacksMade) + attackBonusMods(run, u, action) + studyBonus(u, target)
-      + rangePenalty(run, u, target, action);
+    const { bonus, advantage } = attackRoll(run, u, target, action, attacksMade);
     const ac = currentAc(run, target, u, action);
-    const roll = rules.roll(run.rng, bonus, ac);
+    const roll = rollCheck(rules, run.rng, bonus, ac, { advantage, kind: "attack" });
     const data = !logging ? null : { type: "attack", ...common, natural: roll.natural, mod: bonus, total: roll.total, dc: ac, degree: roll.degree, margin: roll.total - ac, attackNumber: attacksMade + 1 };
     if ( roll.degree >= 2 ) {
       const crit = roll.degree === 3;
-      const base = crit ? (action.critDamage ?? doubled(action.damage ?? [])) : (action.damage ?? []);
-      const parts = extra.length ? base.concat(crit ? doubled(extra) : extra) : base;
+      const extra = bonusDamageParts(run, u, action, target, { advantage, commit: true });
+      const base = crit ? (action.critDamage ?? criticalParts(rules, action.damage)) : (action.damage ?? []);
+      const parts = extra.length ? base.concat(crit ? criticalParts(rules, extra) : extra) : base;
       const hit = rollHit(run, u, action, target, parts, 1, crit, rules.minimumDamage ?? 0);
-      if ( logging ) log(run, u, `${action.name} → ${target.spec.name}: ${roll.total} vs AC ${ac}, ${crit ? "critical hit" : "hit"} for ${hit.total}`, { ...data, damage: hit.total, crit, sneak: extra.length > 0 });
+      if ( logging ) log(run, u, `${action.name} → ${target.spec.name}: ${roll.total} vs AC ${ac}, ${crit ? "critical hit" : "hit"} for ${hit.total}`, { ...data, damage: hit.total, crit, sneak: extra.length > 0, advantage });
       hit.apply();
       applyEffects(run, u, action, target, roll.degree);
     } else if ( logging ) {
-      log(run, u, `${action.name} → ${target.spec.name}: ${roll.total} vs AC ${ac}, miss`, { ...data, damage: 0 });
+      log(run, u, `${action.name} → ${target.spec.name}: ${roll.total} vs AC ${ac}, miss`, { ...data, damage: 0, advantage });
     }
   }
   if ( action.melee ) {
@@ -379,8 +407,9 @@ function executeHeal(run, u, action, target) {
   let multiplier = 1;
   let roll = null;
   if ( action.healCheck ) {
-    roll = rules.roll(run.rng, action.healCheck.mod, action.healCheck.dc);
-    multiplier = [0, 0, 1, 2][roll.degree];
+    const check = checkRoll(run, u, action.healCheck.mod);
+    roll = rollCheck(rules, run.rng, check.mod, action.healCheck.dc, { advantage: check.advantage, kind: "check" });
+    multiplier = rules.healCheckMultiplier ? rules.healCheckMultiplier(roll.degree) : [0, 0, 1, 2][roll.degree];
   }
   const amount = Math.max(0, Math.floor((action.heal ?? []).reduce((s, p) => s + samplePart(p, run.rng), 0) * multiplier));
   const wasDown = target.status === STATUS.DOWN;
@@ -426,7 +455,8 @@ function moveLog(run, u, move, toward, purpose = "approach") {
 
 /** A turn while the standoff holds: talkers press their case, everyone else keeps their hands off their weapons. */
 function standoffTurn(run, u) {
-  const n = standoffPitches(run, u, actionsThisTurn(run, u));
+  const rules = run.prep.rules;
+  const n = standoffPitches(run, u, turnFor(run, u).howMany(rules.talkCost ?? rules.basicAction ?? 1));
   for ( let i = 0; i < n; i++ ) {
     const pitch = choosePitch(run, u);
     if ( !pitch ) break;
@@ -474,36 +504,44 @@ function takeTurn(run, u) {
     return flee(run, u, "retreats as an ally falls");
   }
 
-  let actions = actionsThisTurn(run, u);
+  // The turn's budget comes from the system (PF2e: three actions; 5e: an action, a bonus action and movement).
+  const turn = turnFor(run, u);
+  u.usedThisTurn = null; // once-per-turn riders such as sneak attack
+  const basic = rules.basicAction ?? 1; // a simple action: stand, escape, recall knowledge, step
   const behavior = behaviorOf(u);
   // Diplomats with no one who understands them still try to talk.
   if ( !u.parleyed ) {
     u.parleyed = true;
-    if ( behavior.parleyFirst && actions > 0 && !u.spec.social && run.rng.chance(behavior.parleyFirst) ) {
-      actions -= 1;
+    if ( behavior.parleyFirst && turn.canAfford(basic) && !u.spec.social && run.rng.chance(behavior.parleyFirst) ) {
+      turn.spend(basic);
       log(run, u, "tries to talk the other side down", { type: "parley" });
     }
   }
   let attacksMade = 0;
-  if ( u.prone && actions > 0 ) {
-    actions -= 1;
-    u.prone = false;
-    log(run, u, "stands up", { type: "stand" });
+  if ( u.prone ) {
+    const stand = rules.standCost ? rules.standCost(u) : basic;
+    if ( turn.canAfford(stand) ) {
+      turn.spend(stand);
+      u.prone = false;
+      log(run, u, "stands up", { type: "stand" });
+    }
   }
-  if ( u.grabbedBy && actions > 0 ) {
+  if ( u.grabbedBy && turn.canAfford(basic) ) {
     // Escape attempt costs an action; succeed half the time.
-    actions -= 1;
+    turn.spend(basic);
     const escaped = run.rng.chance(0.5);
     if ( escaped ) u.grabbedBy = null;
     log(run, u, escaped ? "escapes the grab" : "struggles against the grab", { type: "escape", success: escaped });
   }
 
   // Running for help: head toward an ally who hasn't joined yet and shout.
-  const helper = actions > 0 ? wantsHelp(run, u) : null;
+  const helper = turn.left > 0 ? wantsHelp(run, u) : null;
   if ( helper ) {
-    while ( actions > 0 ) {
-      const move = moveToward(run, u, helper, 5);
-      actions -= 1;
+    for ( let n = 0; n < MAX_STEPS_PER_TURN; n++ ) {
+      const budget = turn.payForMove(approach(run, u, helper).speed);
+      if ( !budget ) break;
+      const move = moveToward(run, u, helper, 5, budget);
+      turn.usedMove(move.cost);
       moveLog(run, u, move, helper, "help");
       const d = edgeDistance(u, helper);
       if ( d === null || d <= 30 ) {
@@ -512,24 +550,26 @@ function takeTurn(run, u) {
         notice(run, helper, "help", u);
         break;
       }
+      if ( move.feet <= 0 ) break; // can't get any closer
     }
   }
 
   // Words before weapons: talkers sway, the less battle-worthy talk twice, anyone may quip.
-  const talking = talkActionsThisTurn(run, u, actions);
-  for ( let i = 0; i < talking.count && actions > 0; i++ ) {
+  const talkCost = rules.talkCost ?? basic;
+  const talking = talkActionsThisTurn(run, u, turn.howMany(talkCost));
+  for ( let i = 0; i < talking.count && turn.canAfford(talkCost); i++ ) {
     const pitch = i === 0 ? talking.pitch : choosePitch(run, u); // the first pitch was already chosen
     if ( !pitch ) break;
     attemptTalk(run, u, pitch, (unit, text, data) => log(run, unit, text, data));
-    actions -= 1;
+    turn.spend(talkCost);
     if ( battleOver(run) ) break;
   }
 
-  for ( let step = 0; actions > 0 && step < MAX_STEPS_PER_TURN && !battleOver(run); step++ ) {
-    const heal = decideHeal(run, u, actions);
+  for ( let step = 0; turn.any && step < MAX_STEPS_PER_TURN && !battleOver(run); step++ ) {
+    const heal = decideHeal(run, u, turn);
     if ( heal ) {
       executeHeal(run, u, heal.action, heal.target);
-      actions -= heal.action.cost;
+      turn.spend(costOf(rules, heal.action));
       continue;
     }
 
@@ -544,10 +584,10 @@ function takeTurn(run, u) {
     }
     if ( !target ) break;
     // Lore-Collectors study a new foe first (Recall Knowledge), then fight it better.
-    if ( behavior.study && !u.studied.has(target.id) && !u.studied.has(`skip:${target.id}`) && actions >= 2 ) {
+    if ( behavior.study && !u.studied.has(target.id) && !u.studied.has(`skip:${target.id}`) && turn.howMany(basic) >= 2 ) {
       u.studied.add(target.id);
       if ( run.rng.chance(behavior.study) ) {
-        actions -= 1;
+        turn.spend(basic);
         log(run, u, `studies ${target.spec.name} for weaknesses`, { type: "study", target: target.spec.name, targetId: target.id });
         continue;
       }
@@ -555,13 +595,16 @@ function takeTurn(run, u) {
       u.studied.add(`skip:${target.id}`);
     }
     u.targetId = target.id;
-    const option = bestOptionVs(run, u, target, attacksMade, actions);
+    const option = bestOptionVs(run, u, target, attacksMade, turn);
     if ( !option ) break;
 
     if ( option.moves > 0 ) {
       if ( u.grabbedBy ) break;
-      const move = moveToward(run, u, target, option.action.range ? null : (option.action.reach ?? 5));
-      actions -= 1;
+      // PF2e: a Stride per action. 5e: the rest of the movement, then a Dash.
+      const budget = turn.payForMove(approach(run, u, target).speed);
+      if ( !budget ) break;
+      const move = moveToward(run, u, target, option.action.range ? null : (option.action.reach ?? 5), budget);
+      turn.usedMove(move.cost);
       moveLog(run, u, move, target, target.active ? "approach" : "hunt");
       continue;
     }
@@ -569,24 +612,25 @@ function takeTurn(run, u) {
     const tier = liveTier(run, u);
     const tactics = u.tac;
     const rushing = behavior.rush && run.rng.chance(behavior.rush);
-    const canShield = u.spec.shield && !u.shieldRaised && tactics?.shield !== "never" && !rushing;
+    const shieldCost = rules.shieldCost ?? basic;
+    const canShield = u.spec.shield && !u.shieldRaised && tactics?.shield !== "never" && !rushing && turn.canAfford(shieldCost);
     const raiseShield = () => {
       u.shieldRaised = true;
-      actions -= 1;
+      turn.spend(shieldCost);
       log(run, u, "raises a shield", { type: "shield" });
     };
     // "Always" keeps the shield up: the last action of the turn goes to it.
-    if ( canShield && tactics?.shield === "always" && actions === 1 ) { raiseShield(); continue; }
+    if ( canShield && tactics?.shield === "always" && turn.howMany(shieldCost) === 1 ) { raiseShield(); continue; }
     // Skirmishers hit twice and keep moving instead of taking a hopeless third swing.
-    if ( tactics?.style === "skirmisher" && attacksMade >= 2 && option.action.melee ) {
+    if ( tactics?.style === "skirmisher" && attacksMade >= 2 && option.action.melee && turn.canAfford(basic) ) {
       if ( canShield ) raiseShield();
       else {
-        actions -= 1;
+        turn.spend(basic);
         log(run, u, "steps back to a better position", { type: "step" });
       }
       continue;
     }
-    if ( option.cost > actions ) {
+    if ( !turn.canAfford(option.cost) ) {
       if ( canShield && tier >= TACTICAL.INSTINCTIVE ) { raiseShield(); continue; }
       break;
     }
@@ -602,8 +646,8 @@ function takeTurn(run, u) {
     }
     executeOffense(run, u, option.action, target, attacksMade);
     spendUse(u, option.action);
-    actions -= option.cost;
-    if ( countsAsAttack(option.action) ) attacksMade += 1;
+    turn.spend(option.cost);
+    attacksMade += attacksIn(option.action);
     if ( battleOver(run) ) break;
   }
 
@@ -636,9 +680,9 @@ function endOfTurn(run, u) {
         if ( a.onsetLeft <= 0 ) applyAfflictionStage(run, u, a); // the onset is over: the first stage takes hold
         continue;
       }
-      const mod = saveMod(u, a.spec.save.type);
-      const roll = rules.roll(run.rng, mod, a.spec.save.dc);
-      a.stage = Math.min(a.spec.stages.length, a.stage + [2, 1, -1, -2][roll.degree]);
+      const { mod, advantage } = saveRoll(run, u, a.spec.save.type);
+      const roll = rollCheck(rules, run.rng, mod, a.spec.save.dc, { advantage, kind: "save" });
+      a.stage = Math.min(a.spec.stages.length, a.stage + afflictionStep(rules, roll.degree, "stage"));
       if ( a.stage <= 0 ) {
         u.afflictions.splice(u.afflictions.indexOf(a), 1);
         log(run, u, `recovers from ${a.spec.name}`, { type: "afflictionEnd", name: a.spec.name, natural: roll.natural, mod, total: roll.total, dc: a.spec.save.dc, degree: roll.degree });
@@ -654,13 +698,15 @@ function endOfTurn(run, u) {
 /*  Aftermath                                   */
 /* -------------------------------------------- */
 
-const isDying = u => u.status === STATUS.DOWN && !u.stable && u.dying > 0;
+/** Down and not yet stable: still dying, whatever the system calls it (PF2e dying N; 5e death saves). */
+const isDying = u => u.status === STATUS.DOWN && !u.stable;
 
 /** Administer first aid to a dying ally: a skill check against the system's DC (PF2e: 15 + dying). */
 function firstAid(run, u, target) {
   const rules = run.prep.rules;
   const dc = rules.firstAidDC(target);
-  const roll = rules.roll(run.rng, u.spec.firstAid.mod, dc);
+  const check = checkRoll(run, u, u.spec.firstAid.mod);
+  const roll = rollCheck(rules, run.rng, check.mod, dc, { advantage: check.advantage, kind: "check" });
   const before = target.dying;
   rules.firstAid(target, roll.degree);
   log(run, u, `gives ${target.spec.name} first aid (${roll.total} vs DC ${dc}): ${target.stable ? "stabilized" : target.status === STATUS.DEAD ? "it's too late" : "no change"}`, {
@@ -694,16 +740,16 @@ function aftermath(run, order) {
         continue;
       }
       if ( !isStanding(u) ) continue;
-      let actions = rules.actionsPerTurn;
-      while ( actions > 0 ) {
-        const dying = run.units.filter(a => a.side === u.side && a !== u && isDying(a)).sort((a, b) => b.dying - a.dying)[0];
+      const turn = turnFor(run, u);
+      for ( let n = 0; n < MAX_STEPS_PER_TURN && turn.any; n++ ) {
+        const dying = run.units.filter(a => a.side === u.side && a !== u && isDying(a)).sort((a, b) => (b.dying ?? 0) - (a.dying ?? 0))[0];
         if ( !dying ) break;
-        const option = rescueOption(run, u, dying, actions);
+        const option = rescueOption(run, u, dying, turn);
         if ( !option ) break;
         if ( option === "firstAid" ) firstAid(run, u, dying);
         else executeHeal(run, u, option, dying);
         tended = true;
-        actions -= option === "firstAid" ? 2 : option.cost;
+        turn.spend(option === "firstAid" ? (rules.firstAidCost ?? rules.basicAction ?? 1) : costOf(rules, option));
       }
     }
   }

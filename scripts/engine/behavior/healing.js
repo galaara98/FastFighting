@@ -4,7 +4,7 @@
  */
 import { STATUS, TACTICAL, clamp } from "../../constants.js";
 import { alliesOf, liveTier, liveTrait, dispositionOf } from "../battle-state.js";
-import { hasUses } from "./evaluate.js";
+import { hasUses, costOf } from "./evaluate.js";
 import { meanPart } from "../dice.js";
 
 const THRESHOLD = { conservative: 0.3, balanced: 0.45, aggressive: 0.6, allCosts: 0.8 };
@@ -24,13 +24,17 @@ export function healAggroOf(run, u) {
 const meanHeal = action => (action.heal ?? []).reduce((s, p) => s + meanPart(p), 0);
 
 /**
+ * @param {object} run
+ * @param {object} u
+ * @param {Turn} turn   What's left of u's turn
  * @returns {{action: object, target: object}|null}
  */
-export function decideHeal(run, u, actionsLeft) {
+export function decideHeal(run, u, turn) {
+  const rules = run.prep.rules;
   const potionAt = u.tac?.potionThreshold;
   const ownFrac = u.maxHp > 0 ? u.hp / u.maxHp : 0;
   const heals = u.prep.healActions.filter(a => {
-    if ( a.cost > actionsLeft || !hasUses(u, a) ) return false;
+    if ( !turn.canAfford(costOf(rules, a)) || !hasUses(u, a) ) return false;
     // Players decide when to drink their own potions.
     if ( a.selfOnly && potionAt ) return potionAt !== "never" && ownFrac < Number(potionAt) / 100;
     return true;
@@ -83,17 +87,18 @@ export function decideHeal(run, u, actionsLeft) {
 }
 
 /**
- * After the fight: how u can help a dying ally within `actionsLeft`. Free help first (Battle Medicine and other
- * unlimited healing, then first aid), and only then spells, focus or items. Returns a heal action, "firstAid", or null.
+ * After the fight: how u can help a dying ally with what's left of its turn. Free help first (unlimited healing
+ * such as a medicine feat, then first aid), and only then spells, focus or items. Returns a heal action,
+ * "firstAid", or null.
  */
-export function rescueOption(run, u, target, actionsLeft) {
-  const fits = a => a.cost <= actionsLeft && hasUses(u, a) && !a.selfOnly
+export function rescueOption(run, u, target, turn) {
+  const rules = run.prep.rules;
+  const fits = a => turn.canAfford(costOf(rules, a)) && hasUses(u, a) && !a.selfOnly
     && (!a.oncePerTarget || !u.healedTargets.has(`${a.id}|${target.id}`))
     && (!a.targetTrait || target.spec.creatureTraits?.includes(a.targetTrait));
   const heals = u.prep.healActions.filter(fits);
   const free = heals.find(a => !a.resource && !Number.isFinite(a.uses));
   if ( free ) return free;
-  const rules = run.prep.rules;
-  if ( u.spec.firstAid && rules.firstAidDC && rules.firstAid && actionsLeft >= 2 ) return "firstAid";
+  if ( u.spec.firstAid && rules.firstAidDC && rules.firstAid && turn.canAfford(rules.firstAidCost ?? rules.basicAction ?? 1) ) return "firstAid";
   return heals[0] ?? null;
 }

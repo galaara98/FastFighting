@@ -4,7 +4,7 @@
  *
  * Table keys (also the names of the RollTables installed into a world, see story/tables.js):
  *   action.<delivery>.<damageType>.<tier>     delivery: melee | ranged | spell
- *   talk.<skill>.<tier>                       skill: diplomacy | intimidation | deception
+ *   talk.<kind>.<tier>                        kind: persuade | intimidate | deceive (systems map their skills onto these)
  *   relationship.<kind>.<polarity>            kind: none | enemyLeader | talkingNemesis | grudge | avenger |
  *                                                   protector | finishing | rival      polarity: success | failure
  *   move.<mode>.<situation>                   mode: walk | fly | swim | climb | burrow
@@ -17,8 +17,9 @@
 
 export const TIERS = ["criticalSuccess", "majorSuccess", "success", "minorSuccess", "minorFailure", "failure", "majorFailure", "criticalFailure"];
 export const DELIVERIES = ["melee", "ranged", "spell"];
+/** Damage imagery families. Systems map their own damage types onto these (rules.storyDamageType). */
 export const DAMAGE_TYPES = ["bludgeoning", "piercing", "slashing", "fire", "cold", "electricity", "acid", "sonic", "force", "vitality", "void", "poison", "bleed", "mental", "spirit", "untyped"];
-export const TALK_SKILLS = ["diplomacy", "intimidation", "deception"];
+export const TALK_KINDS = ["persuade", "intimidate", "deceive"];
 export const RELATIONSHIPS = ["none", "enemyLeader", "talkingNemesis", "grudge", "avenger", "protector", "finishing", "rival"];
 export const MOVE_MODES = ["walk", "fly", "swim", "climb", "burrow"];
 export const MOVE_SITUATIONS = ["approach", "terrain", "flee", "hunt", "help"];
@@ -197,17 +198,17 @@ const SHAPES = {
 };
 
 const TALK = {
-  diplomacy: {
+  persuade: {
     verb: ["reasons with", "appeals to", "pleads with", "offers terms to", "speaks earnestly to"],
     good: ["{target} lowers their weapon a fraction", "{target} hesitates, listening", "something in {target}'s stance softens", "{target} glances at their allies, uncertain", "{target} seems to weigh the offer"],
     bad: ["{target} isn't listening", "{target} shakes their head", "the words fall flat", "{target} only grips their weapon tighter", "{target} spits at the suggestion"]
   },
-  intimidation: {
+  intimidate: {
     verb: ["threatens", "roars at", "stares down", "promises ruin to", "bellows at"],
     good: ["{target} takes an involuntary step back", "{target}'s face goes pale", "{target}'s hands shake", "{target} looks for a way out", "{target} swallows hard"],
     bad: ["{target} laughs it off", "{target} stands their ground", "{target} sneers back", "{target} isn't impressed", "{target} answers with a snarl"]
   },
-  deception: {
+  deceive: {
     verb: ["bluffs", "lies smoothly to", "feeds a tale to", "tricks", "spins a story for"],
     good: ["{target} buys every word", "doubt creeps into {target}'s eyes", "{target} looks around nervously", "{target} believes it, for now", "{target} starts to second-guess everything"],
     bad: ["{target} sees right through it", "{target} narrows their eyes", "the lie is too thin", "{target} isn't fooled", "{target} calls the bluff"]
@@ -379,10 +380,10 @@ export function buildEnglishTables() {
       }
     }
   }
-  for ( const skill of TALK_SKILLS ) {
+  for ( const kind of TALK_KINDS ) {
     for ( const tier of TIERS ) {
-      tables[`talk.${skill}.${tier}`] = TALK_SHAPES[tier].map((shape, i) => fill(shape, {
-        verb: TALK[skill].verb[i % 5], good: TALK[skill].good[i % 5], bad: TALK[skill].bad[i % 5]
+      tables[`talk.${kind}.${tier}`] = TALK_SHAPES[tier].map((shape, i) => fill(shape, {
+        verb: TALK[kind].verb[i % 5], good: TALK[kind].good[i % 5], bad: TALK[kind].bad[i % 5]
       }));
     }
   }

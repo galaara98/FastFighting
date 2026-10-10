@@ -1,8 +1,12 @@
 /**
  * Talking resolution: de-escalate a fight at any point.
  *
- * A talker spends an action on a pitch (Diplomacy, Intimidation or Deception) at one enemy that shares a
- * language with them. Each success moves that enemy along a persuasion track; it takes several steps to
+ * A talker spends an action on a pitch at one enemy that shares a language with them. There are three kinds of
+ * pitch, and each system says which skill makes them and which DC resists them (PF2e: Diplomacy, Intimidation and
+ * Deception against Will or Perception DCs; 5e: Persuasion, Intimidation and Deception against Insight):
+ *   persuade    reason, bargain, appeal
+ *   intimidate  threaten (works better on the outnumbered; the brave resist it)
+ *   deceive     bluff (backfires harder when it fails) Each success moves that enemy along a persuasion track; it takes several steps to
  * convince someone (2-6), unless they are very gullible (1). When the track fills, the enemy surrenders,
  * flees, or (rarely, unless they were neutral) switches sides. Convincing a leader can make the rest of
  * their side stand down.
@@ -18,10 +22,12 @@
  * Pure: no Foundry globals.
  */
 import { STATUS, SWAY, clamp } from "../../constants.js";
-import { alliesOf, enemiesOf, isStanding, behaviorOf, leaderStanding } from "../battle-state.js";
-import { degreeDistribution } from "../probability.js";
+import { alliesOf, enemiesOf, isStanding, behaviorOf, leaderStanding, typical, checkRoll } from "../battle-state.js";
+import { degreeDistribution, rollCheck } from "../probability.js";
 
-const SKILLS = ["diplomacy", "intimidation", "deception"];
+/** The three kinds of pitch. Systems map their own skills onto these (CombatantSpec.social.pitches). */
+export const TALK_KINDS = Object.freeze(["persuade", "intimidate", "deceive"]);
+const VERB = { persuade: "reasons with", intimidate: "threatens", deceive: "bluffs" };
 
 export function shareLanguage(a, b) {
   const la = a.spec.social?.languages ?? [];
@@ -37,17 +43,14 @@ export function swayable(t) {
   return !!s && !s.mindless && (s.languages?.length ?? 0) > 0;
 }
 
-/** Expected Will modifier for a level (moderate NPC guideline). */
-const expectedWill = level => Math.round(level * 1.15 + 5);
-
 /**
  * Successful pitches needed to convince t (2-6, or 1 if very gullible). With `run`, the situation counts:
  * a badly hurt or outnumbered enemy is one step easier to talk down.
  */
 export function stepsToConvince(t, run = null) {
   const s = t.spec.social ?? {};
-  const will = t.spec.defenses?.will ?? expectedWill(t.spec.level);
-  const delta = will - expectedWill(t.spec.level);
+  // How strong-willed it is compared with a typical creature of its level (the system works that out).
+  const delta = s.resolve ?? 0;
   const loyal = t.prep.traits.loyal;
   const brave = t.prep.traits.brave;
   const selfish = t.prep.traits.selfish;
@@ -67,11 +70,11 @@ export function stepsToConvince(t, run = null) {
   return clamp(steps, 2, 6);
 }
 
-/** The DC t sets against `talker` for one skill, including grudges and circumstances. */
-export function talkDC(run, talker, t, skill) {
+/** The DC t sets against `talker` for one kind of pitch, including grudges and circumstances. */
+export function talkDC(run, talker, t, kind) {
   const s = t.spec.social ?? {};
   const level = t.spec.level ?? 0;
-  let dc = skill === "deception" ? (s.perceptionDC ?? level + 15) : (s.willDC ?? level + 15);
+  let dc = s.resist?.[kind]?.dc ?? typical(run.prep.rules, "dc", level);
 
   // Grudges: harm done by this talker, earlier failures, harm to their friends.
   const harm = t.harmedBy.get(talker.id) ?? 0;
@@ -88,30 +91,33 @@ export function talkDC(run, talker, t, skill) {
   if ( t.wavering ) dc -= 2;
   const theirs = alliesOf(run, t).filter(isStanding).length;
   const ours = enemiesOf(run, t).filter(isStanding).length;
-  if ( ours > theirs ) dc -= skill === "intimidation" ? 3 : 2;
+  if ( ours > theirs ) dc -= kind === "intimidate" ? 3 : 2;
   const side = run.prep.sides[t.side];
   if ( side?.leaderId && side.leaderId !== t.id && !leaderStanding(run, t.side) ) dc -= 2;
 
   // Personality: loyal and brave hold out, selfish take a deal; neutrals are easy to talk to.
   dc += Math.round((t.prep.traits.loyal - 50) / 25) - Math.round((t.prep.traits.selfish - 50) / 25);
-  if ( skill === "intimidation" ) dc += Math.round((t.prep.traits.brave - 50) / 20);
-  if ( t.spec.originSide === "neutral" ) dc -= skill === "diplomacy" ? 4 : 2;
+  if ( kind === "intimidate" ) dc += Math.round((t.prep.traits.brave - 50) / 20);
+  if ( t.spec.originSide === "neutral" ) dc -= kind === "persuade" ? 4 : 2;
   return dc;
 }
 
-/** The talker's best pitch at t: {skill, mod, dc, pSuccess}. */
+/** The talker's best pitch at t: {kind, skill, mod, advantage, dc, dcLabel, pSuccess}. */
 export function bestPitch(run, talker, t) {
   const rules = run.prep.rules;
   const s = talker.spec.social ?? {};
   let best = null;
-  for ( const skill of SKILLS ) {
-    const mod = s[skill];
-    if ( typeof mod !== "number" ) continue;
-    const dc = talkDC(run, talker, t, skill);
-    const dist = degreeDistribution(rules, mod, dc);
-    // Deception backfires harder, so it needs to be clearly better.
-    const p = dist[2] + dist[3] - (skill === "deception" ? dist[0] * 0.5 : 0);
-    if ( !best || p > best.pSuccess ) best = { skill, mod, dc, pSuccess: Math.max(0, p) };
+  for ( const kind of TALK_KINDS ) {
+    const pitch = s.pitches?.[kind];
+    if ( typeof pitch?.mod !== "number" ) continue;
+    const { mod, advantage } = checkRoll(run, talker, pitch.mod);
+    const dc = talkDC(run, talker, t, kind);
+    const dist = degreeDistribution(rules, mod, dc, { advantage, kind: "check" });
+    // A bluff backfires harder, so it needs to be clearly better.
+    const p = dist[2] + dist[3] - (kind === "deceive" ? dist[0] * 0.5 : 0);
+    if ( !best || p > best.pSuccess ) {
+      best = { kind, skill: pitch.skill ?? kind, mod, advantage, dc, dcLabel: t.spec.social?.resist?.[kind]?.label ?? "DC", pSuccess: Math.max(0, p) };
+    }
   }
   return best;
 }
@@ -162,13 +168,13 @@ export function talkActionsThisTurn(run, u, actions) {
  * Decide how a convinced enemy leaves the fight. Before any blow is struck (a standoff), reasoning or a bluff
  * talks them into standing down; threats still make them yield or run.
  */
-function outcomeFor(run, t, skill) {
+function outcomeFor(run, t, kind) {
   const rng = run.rng;
   const selfish = t.prep.traits.selfish;
   const loyal = t.prep.traits.loyal;
   const switchChance = t.spec.originSide === "neutral" ? 0.6 : clamp(0.03 + (selfish - 50) / 500 + (50 - loyal) / 500, 0, 0.12);
   if ( rng.chance(switchChance) ) return SWAY.SWITCH;
-  if ( run.standoff && skill !== "intimidation" ) return SWAY.STAND_DOWN;
+  if ( run.standoff && kind !== "intimidate" ) return SWAY.STAND_DOWN;
   const hurt = t.maxHp > 0 && t.hp / t.maxHp < 0.5;
   if ( !hurt && selfish >= 55 ) return SWAY.FLEE;
   if ( hurt && t.prep.traits.brave < 40 && rng.chance(0.5) ) return SWAY.FLEE;
@@ -199,10 +205,10 @@ function applyOutcome(run, talker, t, outcome, log) {
 export function attemptTalk(run, talker, pitch, log) {
   const t = pitch.target;
   const rules = run.prep.rules;
-  const roll = rules.roll(run.rng, pitch.mod, pitch.dc);
+  const roll = rollCheck(rules, run.rng, pitch.mod, pitch.dc, { advantage: pitch.advantage ?? 0, kind: "check" });
   const steps = stepsToConvince(t, run);
   let progress = t.sway.get(talker.side) ?? 0;
-  const verb = { diplomacy: "reasons with", intimidation: "threatens", deception: "bluffs" }[pitch.skill];
+  const verb = VERB[pitch.kind] ?? "talks to";
   switch ( roll.degree ) {
     case 3: progress += 2; break;
     case 2: progress += 1; break;
@@ -217,14 +223,14 @@ export function attemptTalk(run, talker, pitch, log) {
   t.sway.set(talker.side, progress);
   const result = ["critical failure: they won't hear another word", "unmoved", "wavering", "badly shaken"][roll.degree];
   if ( run.log ) log(talker, `${verb} ${t.spec.name} (${pitch.skill} ${roll.total} vs DC ${pitch.dc}): ${result} [${Math.min(progress, steps)}/${steps}]`, {
-    type: "talk", skill: pitch.skill, target: t.spec.name, targetId: t.id, natural: roll.natural, mod: pitch.mod, total: roll.total,
-    dc: pitch.dc, dcStat: pitch.skill === "deception" ? "perception" : "will", degree: roll.degree, margin: roll.total - pitch.dc,
+    type: "talk", kind: pitch.kind, skill: pitch.skill, target: t.spec.name, targetId: t.id, natural: roll.natural, mod: pitch.mod, total: roll.total,
+    dc: pitch.dc, dcStat: pitch.dcLabel, degree: roll.degree, margin: roll.total - pitch.dc,
     progress: Math.min(progress, steps), steps, offended: roll.degree === 0
   });
   // Only a successful pitch closes the deal, even if circumstances have made them easier to convince.
   if ( roll.degree < 2 || progress < steps ) return false;
 
-  const outcome = outcomeFor(run, t, pitch.skill);
+  const outcome = outcomeFor(run, t, pitch.kind);
   applyOutcome(run, talker, t, outcome, log);
 
   // A convinced leader can take their side with them.
@@ -243,12 +249,13 @@ export function attemptTalk(run, talker, pitch, log) {
  * Talk affinity 0-1: how readily a unit reaches for words over weapons.
  * Social skill relative to level, playstyles, intelligence and tactics answers.
  */
-export function talkAffinity(spec, traits) {
+export function talkAffinity(spec, traits, rules = null) {
   const s = spec.social;
   if ( !s || s.mindless || !(s.languages?.length) ) return 0;
-  const best = Math.max(...SKILLS.map(k => (typeof s[k] === "number" ? s[k] : -99)));
+  const best = Math.max(...TALK_KINDS.map(k => (typeof s.pitches?.[k]?.mod === "number" ? s.pitches[k].mod : -99)));
   if ( best <= -99 ) return 0;
-  const rel = best - ((spec.level ?? 0) + 4);
+  // How much better than a typical creature of its level it is with words.
+  const rel = best - typical(rules, "skill", spec.level ?? 0);
   let a = 0.35 + rel * 0.08;
   const ps = new Set(spec.playstyles ?? []);
   if ( ps.has("diplomat") ) a += 0.45;

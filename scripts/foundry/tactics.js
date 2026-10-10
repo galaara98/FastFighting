@@ -88,7 +88,7 @@ export function worldTacticDefaults() {
 export function tacticsFor(actor, spec) {
   const stored = getStoredTactics(actor);
   const playstyles = combinePlaystyles(stored.playstyles ?? [], { stayTrue: !!stored.stayTrue, roleplay: !!stored.roleplay });
-  const calc = suggestTactics(spec, worldTacticDefaults());
+  const calc = suggestTactics(spec, worldTacticDefaults(), getAdapter()?.rules ?? null);
   const suggested = { ...calc, ...playstyles.suggest };
   const resolved = resolveTactics(stored, suggested);
   if ( resolved.preferredAction && !spec.actions.some(a => a.id === resolved.preferredAction) ) resolved.preferredAction = calc.preferredAction;

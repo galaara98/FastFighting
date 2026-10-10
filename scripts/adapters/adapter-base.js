@@ -82,6 +82,14 @@ export class SystemAdapter {
     throw new Error(`${this.constructor.name} does not support Make it So`);
   }
 
+  /**
+   * A readable name for a resource pool key (as used in CombatantSpec.resources), for the Resources tab.
+   * Return null to fall back to the name of the action that spends it.
+   */
+  resourceLabel(key, spec) {
+    return null;
+  }
+
   /** Describe the changes commitOutcome would make, for the confirmation dialog. */
   describeOutcome(spec, final) {
     return [];

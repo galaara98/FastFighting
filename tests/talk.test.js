@@ -4,9 +4,9 @@ import { createRun } from "../scripts/engine/battle-state.js";
 import { stepsToConvince, talkDC, talkAffinity, shareLanguage } from "../scripts/engine/behavior/talk.js";
 import { pf2eRules } from "./fixtures/three-action-rules.js";
 import { parseFormula } from "../scripts/engine/dice.js";
-import { creature, strike, battle } from "./helpers.js";
+import { creature, strike, battle, social as talkData } from "./helpers.js";
 
-const social = (over = {}) => ({ diplomacy: 3, intimidation: 3, deception: 3, willDC: 17, perceptionDC: 17, languages: ["common"], mindless: false, ...over });
+const social = (over = {}) => talkData({ diplomacy: 3, intimidation: 3, deception: 3, ...over });
 
 const talker = (over = {}) => creature({
   id: "talker", kind: "pc", diesAtZero: false,
@@ -50,9 +50,9 @@ describe("talk: who and how hard", () => {
   });
 
   test("diplomats and smooth talkers have high talk affinity; mindless have none", () => {
-    expect(talkAffinity({ level: 1, social: social({ diplomacy: 12 }), playstyles: [] })).toBeGreaterThan(0.75);
-    expect(talkAffinity({ level: 1, social: social({ diplomacy: 2 }), playstyles: ["diplomat"] })).toBeGreaterThan(0.6);
-    expect(talkAffinity({ level: 1, social: social({ mindless: true }) })).toBe(0);
+    expect(talkAffinity({ level: 1, social: social({ diplomacy: 12 }), playstyles: []  }, null, pf2eRules)).toBeGreaterThan(0.75);
+    expect(talkAffinity({ level: 1, social: social({ diplomacy: 2 }), playstyles: ["diplomat"]  }, null, pf2eRules)).toBeGreaterThan(0.6);
+    expect(talkAffinity({ level: 1, social: social({ mindless: true })  }, null, pf2eRules)).toBe(0);
   });
 });
 

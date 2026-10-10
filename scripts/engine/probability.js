@@ -2,24 +2,53 @@
  * Exact d20 outcome distributions used by behavior heuristics (the simulation itself rolls dice).
  */
 
-const cache = new WeakMap(); // rules -> Map(modifier/dc key -> distribution)
+const cache = new WeakMap(); // rules -> Map(key -> distribution)
+
+/** Chance the kept d20 shows `natural`: one die, the higher of two (advantage) or the lower (disadvantage). */
+function naturalChance(natural, advantage) {
+  if ( advantage > 0 ) return (2 * natural - 1) / 400;
+  if ( advantage < 0 ) return (41 - 2 * natural) / 400;
+  return 0.05;
+}
 
 /**
  * Probability of each degree of success for d20 + modifier vs dc. Behavior code asks this tens of thousands of
  * times per fight with the same handful of numbers, so results are cached (and must not be mutated).
- * @param {object} rules       System rules providing degreeOfSuccess(natural, total, dc)
+ * @param {object} rules       System rules providing degreeOfSuccess(natural, total, dc, kind)
+ * @param {number} modifier
+ * @param {number} dc
+ * @param {object} [options]
+ * @param {number} [options.advantage=0]  +1 advantage, -1 disadvantage
+ * @param {string} [options.kind="check"] "attack" | "save" | "check": some systems only crit on attacks
  * @returns {readonly number[]}  [critFail, fail, success, critSuccess]
  */
-export function degreeDistribution(rules, modifier, dc) {
+export function degreeDistribution(rules, modifier, dc, { advantage = 0, kind = "check" } = {}) {
   let byKey = cache.get(rules);
   if ( !byKey ) cache.set(rules, byKey = new Map());
-  const key = `${modifier}|${dc}`;
+  const adv = Math.sign(advantage);
+  const key = `${modifier}|${dc}|${adv}|${kind}`;
   let out = byKey.get(key);
   if ( out ) return out;
   out = [0, 0, 0, 0];
   for ( let natural = 1; natural <= 20; natural++ ) {
-    out[rules.degreeOfSuccess(natural, natural + modifier, dc)] += 0.05;
+    out[rules.degreeOfSuccess(natural, natural + modifier, dc, kind)] += naturalChance(natural, adv);
   }
   byKey.set(key, Object.freeze(out));
   return out;
+}
+
+/** Roll a d20 check with advantage or disadvantage: {natural, total, degree}. Rules use this unless they roll their own. */
+export function rollD20(rules, rng, modifier, dc, { advantage = 0, kind = "check" } = {}) {
+  let natural = rng.d20();
+  if ( advantage ) {
+    const second = rng.d20();
+    natural = advantage > 0 ? Math.max(natural, second) : Math.min(natural, second);
+  }
+  const total = natural + modifier;
+  return { natural, total, degree: rules.degreeOfSuccess(natural, total, dc, kind) };
+}
+
+/** Roll a check the system's way: its own roll() if it has one, otherwise a plain d20. */
+export function rollCheck(rules, rng, modifier, dc, options = {}) {
+  return rules.roll ? rules.roll(rng, modifier, dc, options) : rollD20(rules, rng, modifier, dc, options);
 }

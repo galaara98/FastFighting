@@ -70,7 +70,11 @@ export class GenericAdapter extends SystemAdapter {
       }],
       iwr: {},
       resources: {},
-      social: { diplomacy: Math.ceil(level / 2) + 2, intimidation: Math.ceil(level / 2) + 2, willDC: 10 + bonus, perceptionDC: 10 + bonus, languages: ["common"], mindless: false },
+      social: {
+        pitches: { persuade: { skill: "Persuasion", mod: Math.ceil(level / 2) + 2 }, intimidate: { skill: "Intimidation", mod: Math.ceil(level / 2) + 2 } },
+        resist: { persuade: { dc: 10 + bonus, label: "DC" }, intimidate: { dc: 10 + bonus, label: "DC" }, deceive: { dc: 10 + bonus, label: "DC" } },
+        languages: ["common"], mindless: false
+      },
       traits: Object.fromEntries(Object.entries(derived.traits).map(([k, v]) => [k, { base: v, fudge: 0 }])),
       traitReasons: derived.reasons,
       flags: {},
