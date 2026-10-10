@@ -574,7 +574,7 @@
       },
       "cruel": {
         "Name": "Cruel",
-        "Hint": "Picks on the weakest and finishes off the fallen; hits back hard."
+        "Hint": "Picks on the weakest and finishes off the fallen; hits back hard, and enjoys leaving a foe hampered."
       },
       "moralist": {
         "Name": "Moralist",
@@ -582,7 +582,7 @@
       },
       "peoplePleaser": {
         "Name": "People-Pleaser",
-        "Hint": "Goes along with the group: wants what its leader and friends want (and listens to them far more than most), heals generously, protects friends, likes to talk."
+        "Hint": "Goes along with the group: wants what its leader and friends want (and listens to them far more than most), heals generously, protects friends, likes to talk, and is happy to bolster a friend."
       },
       "fragile": {
         "Name": "Fragile",
@@ -606,11 +606,11 @@
       },
       "leader": {
         "Name": "Leader",
-        "Hint": "Steps up to lead the side, braver and more loyal, goes for the biggest threat and looks after its people. When it isn't the side's leader, it mostly goes its own way."
+        "Hint": "Steps up to lead the side, braver and more loyal, goes for the biggest threat (and now and then pins it down), looks after its people and bolsters them. When it isn't the side's leader, it mostly goes its own way."
       },
       "instigator": {
         "Name": "Instigator",
-        "Hint": "Acts first, picks fights with the most dangerous foe and with the other side's leader, and draws attacks. May defy its own leader."
+        "Hint": "Acts first and spoils everyone else's plans: would rather lock a foe down, harass it or weaken it (trips, frights, hexes, holds) than simply hit it, more than any other playstyle. Picks fights with the most dangerous foe and the other side's leader, draws attacks, and may defy its own leader."
       },
       "diplomat": {
         "Name": "Diplomat",
@@ -618,7 +618,7 @@
       },
       "wallflower": {
         "Name": "Wallflower",
-        "Hint": "Stays at range and out of notice; keeps its distance from whatever comes close, and listens to the crowd less."
+        "Hint": "Stays at range and out of notice; keeps its distance from whatever comes close, would rather hamper a foe from afar, and listens to the crowd less."
       },
       "martyr": {
         "Name": "Martyr",
@@ -630,7 +630,7 @@
       },
       "enabler": {
         "Name": "Enabler",
-        "Hint": "Support first: wants to heal and guard friends, and backs the leader."
+        "Hint": "Support first: wants to heal, guard and bolster friends, and backs the leader."
       },
       "redeemSeeker": {
         "Name": "Redeem-Seeker",
@@ -642,7 +642,7 @@
       },
       "puzzleManiac": {
         "Name": "Puzzle-Maniac",
-        "Hint": "Much more tactical: exploits weaknesses, goes after casters, and loves a locked door (keeps at it twice as long)."
+        "Hint": "Much more tactical: exploits weaknesses, goes after casters, likes a clever lock-down, and loves a locked door (keeps at it twice as long)."
       },
       "wildcard": {
         "Name": "Wildcard",
@@ -701,7 +701,8 @@
         "stayedOut": "stayed out of it",
         "nothing": "did nothing of note",
         "firstAid": "first aid",
-        "stabilized": "stabilized"
+        "stabilized": "stabilized",
+        "bolstered": "bolstered"
       },
       "TablesFolder": "FastFighting Story",
       "TablesMenuName": "Story tables",
@@ -754,6 +755,7 @@
         "hurt": "Hurt",
         "heal": "Heal",
         "protect": "Protect",
+        "aid": "Bolster",
         "talk": "Talk to",
         "avoid": "Keep away from"
       },

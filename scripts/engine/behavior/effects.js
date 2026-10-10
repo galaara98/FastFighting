@@ -1,0 +1,399 @@
+/**
+ * Timed effects: crowd control, buffs and debuffs, as one thing. A control action's outcome at a degree, a buff, a
+ * save rider: each is an outcome
+ *   {conditions?, mods?, tempHp?, mark?, rounds, label, endsOnDamage?, repeatSave?, onlyVs?, self?}
+ *     conditions   the system's condition keys (and the engine's own: prone, immobilized, incapacitated, and
+ *                  controlled: charmed or dominated, it fights for whoever laid it on, until it ends)
+ *     mods         bonuses and penalties (see engine/mods.js)
+ *     tempHp       temporary hit points when it lands (they don't stack: the better stays)
+ *     mark         damage parts added to the source's own hits against it (Hunter's Mark, Hex)
+ *     repeatSave   {type, dc}: a save at the end of each of its turns ends it (5e Hold Person)
+ *     onlyVs       its conditions hold only against the source (PF2e Feint: off-guard to the feinter)
+ *     self         it lands on the one who acted, not the target (PF2e Trip, critically failed: you fall)
+ *     endsOnHarm   it ends when its source or the source's side harms the bearer (5e Charm Person)
+ *     iwr          {resist: {type: value}, immune: [types], weak: {type: value}} for as long as it lasts (Rage, Stoneskin)
+ *     actionsNow   main-pool units it gains at once, this turn only (5e Action Surge)
+ * Everything is optional: an outcome with nothing the engine understands does nothing. Effects from the same action
+ * and source refresh rather than pile up; an action with `concentration` holds them only while its source keeps
+ * concentrating (one at a time; damage may break it, if the system says how).
+ * Pure: no Foundry globals.
+ */
+import { STATUS, clamp } from "../../constants.js";
+import { combineMods, diceMean } from "../mods.js";
+import { isStanding, areEnemies, enemiesOf, alliesOf } from "../battle-state.js";
+import { threatOf, unitsPerTurn, attacksIn } from "./evaluate.js";
+import { meanPart } from "../dice.js";
+
+/* -------------------------------------------- */
+/*  Applying                                    */
+/* -------------------------------------------- */
+
+/** Work out a unit's conditions, bonuses and marks from what's on it (base, timed effects, afflictions). */
+export function recompute(u) {
+  const conds = { ...u.baseConds };
+  const vs = new Map();
+  const mods = [u.baseMods];
+  const marks = [];
+  let controlledBy = null;
+  const extra = { resist: {}, immune: new Set(), weak: {} };
+  let hardened = false;
+  const raise = (into, k, v) => {
+    const value = v === true ? 1 : Number(v) || 0;
+    into[k] = Math.max(into[k] ?? 0, value);
+  };
+  for ( const e of u.effects ?? [] ) {
+    if ( e.onlyVs && e.sourceId ) {
+      const row = vs.get(e.sourceId) ?? {};
+      for ( const [k, v] of Object.entries(e.conditions ?? {}) ) raise(row, k, v);
+      vs.set(e.sourceId, row);
+    } else for ( const [k, v] of Object.entries(e.conditions ?? {}) ) raise(conds, k, v);
+    if ( e.mods ) mods.push(e.mods);
+    if ( e.mark?.length && e.sourceId ) marks.push({ by: e.sourceId, parts: e.mark });
+    if ( e.sourceId && (Number(e.conditions?.controlled) || 0) > 0 ) controlledBy = e.sourceId; // the latest hold wins
+    if ( e.iwr ) {
+      hardened = true;
+      for ( const [k, v] of Object.entries(e.iwr.resist ?? {}) ) extra.resist[k] = Math.max(extra.resist[k] ?? 0, Number(v) || 0);
+      for ( const [k, v] of Object.entries(e.iwr.weak ?? {}) ) extra.weak[k] = Math.max(extra.weak[k] ?? 0, Number(v) || 0);
+      for ( const k of e.iwr.immune ?? [] ) extra.immune.add(k);
+    }
+  }
+  for ( const a of u.afflictions ?? [] ) {
+    if ( a.onsetLeft > 0 ) continue; // not taken hold yet
+    const stage = a.spec.stages[a.stage - 1];
+    for ( const [k, v] of Object.entries(stage?.conditions ?? {}) ) raise(conds, k, v);
+  }
+  u.conds = conds;
+  u.vs = vs.size ? vs : null;
+  u.mods = combineMods(mods);
+  u.marks = marks;
+  u.controlledBy = controlledBy;
+  // Resistances an effect lends (Rage, Stoneskin) on top of its own: the better of each counts.
+  if ( hardened ) {
+    const base = u.spec.iwr ?? {};
+    const resist = { ...(base.resist ?? {}) };
+    for ( const [k, v] of Object.entries(extra.resist) ) resist[k] = Math.max(resist[k] ?? 0, v);
+    const weak = { ...(base.weak ?? {}) };
+    for ( const [k, v] of Object.entries(extra.weak) ) weak[k] = Math.max(weak[k] ?? 0, v);
+    u.iwr = { ...base, resist, weak, immune: [...new Set([...(base.immune ?? []), ...extra.immune])] };
+    u.iwrKey = JSON.stringify([extra.resist, extra.weak, [...extra.immune]]);
+  } else {
+    u.iwr = null;
+    u.iwrKey = "";
+  }
+}
+
+/** Its immunities, weaknesses and resistances right now (its own, and any an effect lends it). */
+export function iwrOf(u) {
+  return u.iwr ?? u.spec.iwr;
+}
+
+/**
+ * Charmed or dominated creatures fight for whoever holds them, and come back to their own side the moment the
+ * hold ends (or its holder falls). Returns the creatures whose side just changed: [{u, joined, home}].
+ */
+export function settleAllegiance(run) {
+  const changed = [];
+  for ( const u of run.units ) {
+    const holder = u.controlledBy ? run.byId.get(u.controlledBy) : null;
+    const home = u.homeSide ?? u.side;
+    const side = holder && holder.status === "standing" && holder.side !== home ? holder.side : home;
+    if ( u.side === side || [STATUS.DEAD, STATUS.FLED].includes(u.status) ) continue;
+    u.side = side;
+    u.targetId = null;
+    u.wavering = false;
+    run.geo = (run.geo ?? 0) + 1; // friends and foes have changed
+    changed.push({ u, joined: side !== home, home, holder });
+  }
+  return changed;
+}
+
+/**
+ * Lay an outcome on a target. Returns the effect, or null if nothing lasting came of it (temporary hit points and
+ * a knockdown happen at once). `action` (optional) names it, so the same effect refreshes instead of piling up.
+ */
+export function applyOutcome(target, outcome, sourceId = null, action = null) {
+  if ( !target || !outcome || typeof outcome !== "object" ) return null;
+  const conditions = { ...(outcome.conditions ?? {}) };
+  if ( conditions.prone ) {
+    target.prone = true;
+    delete conditions.prone;
+  }
+  const temp = Math.round(Number(outcome.tempHp) || 0);
+  if ( temp > 0 ) target.temp = Math.max(target.temp ?? 0, temp);
+  const mods = outcome.mods && typeof outcome.mods === "object" && Object.keys(outcome.mods).length ? outcome.mods : null;
+  const mark = Array.isArray(outcome.mark) && outcome.mark.length ? outcome.mark : null;
+  const iwr = outcome.iwr && typeof outcome.iwr === "object" && (Object.keys(outcome.iwr.resist ?? {}).length || outcome.iwr.immune?.length || Object.keys(outcome.iwr.weak ?? {}).length) ? outcome.iwr : null;
+  if ( !Object.keys(conditions).length && !mods && !mark && !iwr ) return null;
+  const key = action?.id ?? outcome.label ?? null;
+  if ( key !== null ) target.effects = (target.effects ?? []).filter(e => !(e.key === key && e.sourceId === sourceId));
+  // Effects run out at the end of the bearer's turns; one it lays on itself during its own turn would lose a round
+  // straight away, so "until your next turn" gets the extra one it needs.
+  const self = sourceId !== null && target.id === sourceId;
+  const effect = {
+    key, conditions, mods, mark, iwr, sourceId,
+    rounds: Math.max(1, Math.round(Number(outcome.rounds) || 1)) + (self ? 1 : 0),
+    endsOnDamage: !!outcome.endsOnDamage,
+    endsOnHarm: !!outcome.endsOnHarm,
+    label: outcome.label ?? action?.name ?? "",
+    concentration: !!action?.concentration,
+    repeatSave: outcome.repeatSave?.type && Number.isFinite(Number(outcome.repeatSave.dc)) ? { type: outcome.repeatSave.type, dc: Number(outcome.repeatSave.dc) } : null,
+    onlyVs: !!outcome.onlyVs
+  };
+  (target.effects ??= []).push(effect);
+  recompute(target);
+  return effect;
+}
+
+/** Lay a crowd-control outcome's conditions on a target for its rounds (older name, kept for callers). */
+export function applyControl(target, outcome, sourceId) {
+  return applyOutcome(target, outcome, sourceId);
+}
+
+/**
+ * Does the target already carry this action's effect (from this source, or anyone's)? Effects run out at the end of
+ * the bearer's turn, so one that's there still covers its next turn: doing it again now gains nothing.
+ */
+export function hasFresh(target, action, sourceId = null) {
+  return (target.effects ?? []).some(e => e.key === action.id && (sourceId === null || e.sourceId === sourceId));
+}
+
+/** Begin concentrating on an action: whatever the source held before ends first. */
+export function beginConcentration(run, u, action) {
+  if ( !action?.concentration ) return [];
+  const ended = u.concentration && u.concentration.actionId !== action.id ? endConcentration(run, u) : [];
+  u.concentration = { actionId: action.id, name: action.name, worth: 0, round: run.round };
+  return ended;
+}
+
+/** Stop concentrating: every effect it held ends. Returns the labels that ended. */
+export function endConcentration(run, u) {
+  const ended = new Set();
+  for ( const o of run.units ) {
+    if ( !o.effects?.length ) continue;
+    const before = o.effects.length;
+    o.effects = o.effects.filter(e => {
+      const held = e.concentration && e.sourceId === u.id;
+      if ( held ) ended.add(e.label);
+      return !held;
+    });
+    if ( o.effects.length !== before ) recompute(o);
+  }
+  u.concentration = null;
+  return [...ended];
+}
+
+/**
+ * A single-target effect u is holding (a mark, a hold) moves when u lays it on someone new: it leaves the others.
+ * Returns whether anyone else still had it standing (then moving it costs what it was doing there).
+ */
+export function heldElsewhere(run, u, action, target = null) {
+  if ( !action?.concentration || action.area || action.aura || u.concentration?.actionId !== action.id ) return false;
+  return run.units.some(o => o !== target && o.status === "standing" && o.effects?.some(e => e.key === action.id && e.sourceId === u.id));
+}
+
+export function moveHeld(run, u, action, target) {
+  if ( !action?.concentration || action.area || action.aura ) return;
+  for ( const o of run.units ) {
+    if ( o === target || !o.effects?.some(e => e.key === action.id && e.sourceId === u.id) ) continue;
+    o.effects = o.effects.filter(e => !(e.key === action.id && e.sourceId === u.id));
+    recompute(o);
+  }
+}
+
+/** Is u still holding anything up with its concentration? (A spell everyone resisted holds nothing.) */
+export function holdsAnything(run, u) {
+  return run.units.some(o => o.effects?.some(e => e.concentration && e.sourceId === u.id));
+}
+
+/* -------------------------------------------- */
+/*  Worth                                       */
+/* -------------------------------------------- */
+
+/** One point on a d20 roll: about 8.5% more (or less) of what that roll decides, at a typical chance to hit. */
+const ROLL_POINT = 0.085;
+/** Advantage or disadvantage: worth about four points. */
+const ADVANTAGE = 0.35;
+/** Saves decide less of what comes at a creature than attacks do. */
+const SAVE_SHARE = 0.25;
+/** Most fights don't last long: no effect counts for more than this many more rounds. */
+const MAX_ROUNDS = 3;
+
+/** Share of a creature's fighting a set of conditions takes away each round (0-1). */
+export function conditionWeight(rules, conditions = {}) {
+  let w = 0;
+  for ( const [key, raw] of Object.entries(conditions) ) {
+    const value = raw === true ? 1 : Number(raw) || 0;
+    const custom = rules.conditionWeight?.(key, value);
+    if ( typeof custom === "number" ) { w += custom; continue; }
+    if ( key === "incapacitated" || key === "controlled" ) w += 1;
+    else if ( key === "immobilized" ) w += 0.25;
+    else if ( key === "prone" ) w += 0.15;
+    else w += 0.08 * value;
+  }
+  return clamp(w, 0, 1);
+}
+
+/** A foe of t to measure its fighting against: whoever it's after, else the nearest standing foe. */
+function typicalFoe(run, t) {
+  const current = t.targetId ? run.byId.get(t.targetId) : null;
+  if ( current && isStanding(current) && areEnemies(run, t, current) ) return current;
+  return enemiesOf(run, t).find(isStanding) ?? null;
+}
+
+/** Damage t deals in a round (against `versus`, or a typical foe). */
+function damageOut(run, t, versus = null) {
+  const foe = versus ?? typicalFoe(run, t);
+  return foe ? threatOf(run, t, foe) : 0;
+}
+
+/** Damage t can expect to take in a round: its foes' share of their fighting, more for one in the thick of it. */
+export function incoming(run, t) {
+  if ( run.incomingRound !== run.round ) {
+    run.incomingRound = run.round;
+    run.incomingCache = new Map();
+  }
+  const cached = run.incomingCache.get(t);
+  if ( cached !== undefined ) return cached;
+  const foes = enemiesOf(run, t).filter(isStanding);
+  const friends = Math.max(1, alliesOf(run, t).filter(isStanding).length);
+  const total = foes.reduce((s, f) => s + threatOf(run, f, t), 0);
+  const front = [...(t.adjacent ?? [])].some(id => { const o = run.byId.get(id); return o && isStanding(o) && areEnemies(run, t, o); });
+  const value = Math.min(total, (total / friends) * (front ? 1.5 : 1));
+  run.incomingCache.set(t, value);
+  return value;
+}
+
+/** Hits t lands in a typical round (for flat damage and marks). */
+function hitsPerRound(run, t) {
+  const per = unitsPerTurn(run.prep.rules, t);
+  let most = 1;
+  for ( const a of t.prep?.offense ?? [] ) most = Math.max(most, attacksIn(a) * (per >= 2 ? Math.min(2, per) : 1));
+  return 0.6 * Math.min(3, most);
+}
+
+/** Rounds the fight is likely to go on for a side: what its foes have left over what it deals, at most three. */
+export function fightLeft(run, side) {
+  if ( run.leftRound !== run.round ) {
+    run.leftRound = run.round;
+    run.leftCache = new Map();
+  }
+  if ( run.leftCache.has(side) ) return run.leftCache.get(side);
+  const mine = run.units.filter(o => o.side === side && isStanding(o));
+  const foes = run.units.filter(o => isStanding(o) && mine.some(m => areEnemies(run, m, o)));
+  const hp = foes.reduce((s, f) => s + Math.max(0, f.hp) + (f.temp ?? 0), 0);
+  const dealt = mine.reduce((s, m) => s + damageOut(run, m), 0);
+  const value = dealt > 0 ? clamp(Math.ceil(hp / dealt), 1, MAX_ROUNDS) : MAX_ROUNDS;
+  run.leftCache.set(side, value);
+  return value;
+}
+
+/** Rounds an effect will matter, in a fight that rarely lasts long. */
+export function usefulRounds(run, side, rounds) {
+  return Math.min(Math.max(1, Number(rounds) || 1), fightLeft(run, side));
+}
+
+/** Extra damage a creature deals to a foe that's off guard (sneak attack, precision): its best such bonus. */
+function exposedBonus(u) {
+  let best = 0;
+  for ( const a of u.prep?.offense ?? [] ) {
+    for ( const b of a.bonusDamage ?? [] ) {
+      const when = [].concat(b.when ?? []);
+      if ( !when.some(w => w === "offGuard" || w === "exposed") ) continue;
+      best = Math.max(best, (b.parts ?? []).reduce((s, p) => s + Math.max(0, meanPart(p)), 0));
+    }
+  }
+  return best;
+}
+
+/** Conditions in `conditions` worse than what t already has (the rest change nothing). */
+function freshConditions(t, conditions) {
+  const out = {};
+  for ( const [k, raw] of Object.entries(conditions ?? {}) ) {
+    const v = raw === true ? 1 : Number(raw) || 0;
+    if ( k === "prone" ? !t.prone : v > (t.conds?.[k] ?? 0) ) out[k] = v;
+  }
+  return out;
+}
+
+/** What a set of bonuses and penalties is worth to t each round (negative: it hurts t). */
+function modsPerRound(run, t, mods, out, inc) {
+  if ( !mods ) return 0;
+  const num = k => Number(mods[k]) || 0;
+  const sign = k => Math.sign(num(k));
+  const die = k => (Number.isFinite(Number(mods[k])) ? diceMean([Number(mods[k])]) : diceMean(mods[k]));
+  let v = 0;
+  // Its own fighting: rolls, advantage, damage, actions, getting there.
+  v += out * (ROLL_POINT * (num("attack") + die("attackDie")) + ADVANTAGE * sign("adv"));
+  v += num("damage") * hitsPerRound(run, t);
+  const per = Math.max(1, unitsPerTurn(run.prep.rules, t));
+  v += out * clamp(num("actions") / per, -1, 1);
+  v += out * 0.004 * num("speed");
+  // What comes at it: AC, being easy or hard to hit, its saves.
+  v += inc * (ROLL_POINT * num("ac") - ADVANTAGE * sign("defAdv"));
+  v += inc * SAVE_SHARE * (ROLL_POINT * (num("saves") + die("saveDie")) + ADVANTAGE * sign("saveAdv"));
+  return v;
+}
+
+/**
+ * What an outcome is worth to t, in damage-like points over the rounds it will matter: positive when it helps t,
+ * negative when it hurts. `by` is whoever brings it about (for a mark: its own hits count). Conditions the system
+ * can put a number on (rules.conditionMods) count as those bonuses and penalties; others by how much of t's
+ * fighting they take away.
+ */
+export function outcomeWorth(run, by, t, outcome, { versus = null } = {}) {
+  if ( !outcome || !t ) return 0;
+  const rules = run.prep.rules;
+  const out = damageOut(run, t, versus);
+  const inc = incoming(run, t);
+  const rounds = usefulRounds(run, by?.side ?? t.side, outcome.rounds);
+  let perRound = 0;
+  const fresh = freshConditions(t, outcome.conditions);
+  const weighed = {};
+  for ( const [k, v] of Object.entries(fresh) ) {
+    // Turned against its own side: what it would have done to them, and what it now does for the other.
+    if ( k === "controlled" ) {
+      perRound -= 2 * out * (outcome.endsOnDamage || outcome.endsOnHarm ? 0.6 : 1);
+      continue;
+    }
+    const asMods = rules.conditionMods?.(k, v);
+    if ( outcome.onlyVs && by && by !== t ) {
+      // Off-guard to its source alone (PF2e Feint): only the source's own blows land easier, and its sneak attacks
+      // now find their mark. Nothing else about t changes.
+      perRound += modsPerRound(run, t, { ac: asMods?.ac ?? -2 }, 0, damageOut(run, by, t));
+      if ( !t.conds?.offGuard && !t.prone ) perRound -= exposedBonus(by) * 0.6;
+    } else if ( asMods && typeof asMods === "object" ) perRound += modsPerRound(run, t, asMods, out, inc);
+    else weighed[k] = v;
+  }
+  if ( Object.keys(weighed).length ) perRound -= conditionWeight(rules, weighed) * out * (outcome.endsOnDamage ? 0.6 : 1);
+  perRound += modsPerRound(run, t, outcome.mods, out, inc);
+  if ( Array.isArray(outcome.mark) && by && by !== t ) {
+    const extra = outcome.mark.reduce((s, p) => s + Math.max(0, meanPart(p)), 0);
+    perRound -= extra * hitsPerRound(run, by) * 0.8; // it has to keep hitting that one
+  }
+  // Resistances it lends: the share of what comes at it that they cover, and how much of each blow they stop.
+  const resist = Object.entries(outcome.iwr?.resist ?? {}).filter(([k, v]) => v > (t.spec.iwr?.resist?.[k] ?? 0));
+  if ( resist.length ) {
+    const physical = resist.filter(([k]) => ["bludgeoning", "piercing", "slashing", "physical"].includes(k)).length;
+    const share = Math.min(0.9, (physical ? 0.7 * Math.min(1, physical / 3) * (resist.some(([k]) => k === "physical") ? 3 : 1) : 0) + 0.15 * (resist.length - physical));
+    const strength = Math.max(...resist.map(([, v]) => rules.resistShare?.(v) ?? 0.5));
+    perRound += inc * Math.min(0.9, share) * strength;
+  }
+  let worth = perRound * rounds;
+  // An action this very turn: as much again as one of its actions does.
+  const now = Number(outcome.actionsNow) || 0;
+  if ( now > 0 && by === t ) worth += now * out / Math.max(1, unitsPerTurn(rules, t));
+  const temp = Number(outcome.tempHp) || 0;
+  if ( temp > (t.temp ?? 0) ) worth += Math.min(temp - (t.temp ?? 0), inc * rounds);
+  return worth;
+}
+
+/** Remember what u's concentration is worth (so it won't drop it lightly for something lesser). */
+export function noteConcentration(u, worth) {
+  if ( u.concentration ) u.concentration.worth = Math.max(u.concentration.worth ?? 0, worth);
+}
+
+/** What u would give up by starting something new that needs its concentration. */
+export function concentrationCost(run, u, action) {
+  if ( !action?.concentration || !u.concentration || u.concentration.actionId === action.id ) return 0;
+  return holdsAnything(run, u) ? (u.concentration.worth ?? 0) * 0.6 : 0;
+}

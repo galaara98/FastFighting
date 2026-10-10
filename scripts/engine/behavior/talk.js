@@ -302,6 +302,7 @@ function applyOutcome(run, talker, t, outcome, log) {
   t.swayOutcome = outcome;
   if ( outcome === SWAY.SWITCH ) {
     t.side = talker.side;
+    t.homeSide = talker.side; // won over for good
     run.geo = (run.geo ?? 0) + 1; // friends and foes have changed
     t.targetId = null;
     t.wavering = false;

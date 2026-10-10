@@ -112,7 +112,7 @@ Theft mid-fight is rare; most who want your things take them from your body afte
 ## Desires
 
 Every character has a list of desires: what it wants right now, at whom, and how badly (0 to 100: Passing, Wants, Determined, Driven, Obsessed). They're its reasoning made visible, and they decide what it does:
-- **Hurt, heal, protect, talk to, keep away from.**
+- **Hurt, heal, protect, bolster (with a buff), talk to, keep away from.**
 - **Where they come from:**
   - **its tactics:** each turn its tactical band weighs every foe it can reach (a Mastermind picks the healer to destroy, a Feral beast the nearest thing), every friend it could mend, whom it could talk round, whom it fears;
   - **its Tactics answers:** up to three desires stated for any character, PC or NPC (what, who, how badly);
@@ -122,6 +122,20 @@ Every character has a list of desires: what it wants right now, at whom, and how
 - **The strongest leads.** Desires 20 or more below a stated or fight-stirred one don't cross the character's mind, and an obsession leaves no room for caution (it forgets about opportunity attacks).
 - **Thwarted desires fade:** a locked door that won't give, a target it can't reach, getting hurt on the way, being badly hurt with the target far off. The character moves on when something gets too hard or too dangerous.
 - **The story** now and then pauses on a character's two strongest desires: *"Charlette really wants to heal Brent, but also kind of wants to hurt the wolf."* The phrases are roll tables you can edit.
+
+## Buffs, debuffs and control
+
+Spells, songs, skills and features that change the numbers instead of (or as well as) dealing damage. The system helper reads them; the core plays them out the same way in every system:
+- **Buffs** for friends or itself: Bless, Heroism, Shield of Faith, Haste, Courageous Anthem, Rage, Dodge, Action Surge. One friend, several, or everyone in an aura.
+- **Debuffs and control** on foes: Bane, Faerie Fire, Slow, Hold Person, frightened, prone, Hunter's Mark and Hex (extra damage on the caster's own hits), a Demoralize or a Trip (a skill against the foe's defense), a Feint (off guard to the feinter alone).
+- **What they change:** attack rolls, AC, saves and checks (a flat bonus, or a die such as Bless's d4), damage, speed, actions (Haste, Slow), advantage and disadvantage, temporary hit points, resistances (Rage, Stoneskin), conditions.
+- **How long:** for their rounds; a save at the end of each turn can shake them off (Hold Person); damage ends some (sleep). Where the system has **concentration**, one spell at a time, and a hard knock or being taken out ends it.
+- **Charmed or dominated:** the creature fights for whoever holds it until the hold ends (it runs out, a save, the holder loses concentration or falls, or the holder's side harms a charmed one). Its friends are reluctant to cut it down. The story still counts it as one of its own.
+- **Choosing them:** a buff is worth casting when what it adds up to, across everyone it reaches, over the rounds it will matter, beats attacking with the same actions. Thinking minds see this best; feral ones only look after themselves. Late in a won fight, nobody bothers.
+- **Spoilers:** the **Instigator** pill loves locking foes down, harassing and debuffing them (up to 2.5 times the appeal). Puzzle-Maniac, Cruel, Wallflower and Leader lean that way a little.
+- **The story** tells it: *"Akra lifts Bless over the group: Akra, Zanna and Randal, emboldened."* Dodge, Reckless Attack and Action Surge get lines of their own.
+
+A system that has none of this (no concentration, no skill DCs) simply leaves it out; nothing else changes.
 
 ## Doors
 
@@ -183,24 +197,24 @@ Answers save as they're made, and two players sharing a token see each other's c
 | Pill | Desires |
 | --- | --- |
 | Scaredy-Cat | keeps away from the most dangerous foe; gives up easily; hits back half-heartedly |
-| Cruel | the weakest, and the fallen; hits back hard |
+| Cruel | the weakest, and the fallen; hits back hard; likes leaving a foe hampered |
 | Moralist | never the fallen; heals friends, guards the weakest |
-| People-Pleaser | wants what its leader and friends want (listens far more than most); likes to talk |
+| People-Pleaser | wants what its leader and friends want (listens far more than most); likes to talk and to bolster friends |
 | Fragile | once hurt: away from whoever is hurting it, and mends itself; setbacks wear it down |
 | Impatient | the nearest foe; setbacks wear it down twice as fast; little patience for locks |
 | Brawler | the nearest foe; hits back hard; no talking |
 | Skeptic | its leader and team sway it half as much; slow to talk |
 | Speed-Runner | the quickest kills |
-| Leader | the biggest threat; looks after its people; when it isn't the leader, mostly goes its own way |
-| Instigator | the most dangerous foe and the other side's leader; may defy its own leader |
+| Leader | the biggest threat (now and then pins it down); looks after and bolsters its people; when it isn't the leader, mostly goes its own way |
+| Instigator | spoils everyone's plans: locks foes down, harasses and debuffs them more than anyone; the most dangerous foe and the other side's leader; may defy its own leader |
 | Diplomat | talking; spares the fallen |
-| Wallflower | keeps its distance; listens to the crowd less |
+| Wallflower | keeps its distance; would rather hamper foes from afar; listens to the crowd less |
 | Martyr | guards the weakest friend; fears nothing; avenges the fallen twice as hard |
 | Mercenary | easy pickings; barely avenges anyone; gives up when it gets hard |
-| Enabler | heals and guards friends; backs the leader |
+| Enabler | heals, guards and bolsters friends; backs the leader |
 | Redeem-Seeker | the biggest threat; won't give up |
 | Lore-Collector | foes it hasn't sized up yet |
-| Puzzle-Maniac | weaknesses to exploit, casters, and locked doors (twice the patience) |
+| Puzzle-Maniac | weaknesses to exploit, casters, a clever lock-down, and locked doors (twice the patience) |
 | Wildcard | something random catches its eye; nobody's voice counts for much; may defy its leader |
 | Thief | robs when it's safe; a lock is an invitation |
 | Vengeful | hits back twice as hard; avenges fallen friends; its grudges never cool |
@@ -243,7 +257,7 @@ FastFighting is split into a pure simulation engine (`scripts/engine/`), system 
 
 ```js
 Hooks.once("fastFighting.init", api => {
-  if ( (api.version ?? 1) < 3 ) return; // the helper interface this is written against
+  if ( (api.version ?? 1) < 4 ) return; // the helper interface this is written against
   class MySystemAdapter extends api.SystemAdapter {
     get label() { return "My System"; }
     get rules() { return myRules; }
@@ -264,6 +278,8 @@ Hooks.once("fastFighting.init", api => {
 
 Declare your system in `module.json` (`relationships.systems`) so Foundry only offers the helper in worlds of that system; the core also ignores adapters registered for another system.
 
+**Recognise things by slug, read them by what they do.** When a helper has to know a particular feature, action or spell, it looks for its slug or identifier (PF2e `slug`, dnd5e `system.identifier`), never its name: slugs are the same in every book, every edition of the free rules and every language, while names change with translations, reprints and homebrew copies (the name is only a fallback). Better still, read what an item does (its activities, effects, rule elements, and as a last resort its words), so paid books and homebrew nobody has seen yet still work. Both reference helpers work from the free rules (the SRD, the PF2e remaster) alone; anything more is read the same way.
+
 **The rules object** is pure and is called thousands of times:
 - **The turn:** `turn(u)` gives the budget (`{actions: 3}` or `{action: 1, bonus: 1, move: 30}`).
   - `mainPool` names the pool a plain-number cost uses.
@@ -280,14 +296,22 @@ Declare your system in `module.json` (`relationships.systems`) so Foundry only o
   - `applyIwr(iwr, byType)`;
   - `onDropped(unit, {crit, model, amount, overflow})`, `onHealed(unit, amount)` and `recoveryCheck(unit, rng)`;
   - `firstAidDC(unit)`, `firstAid(unit, degree)` and `persistentFlatCheck(rng)`.
-- **Crowd control:** `isImmune(target, action)`, `controlShift(ctx)` and `conditionWeight(key, value)`.
+- **Crowd control, buffs and debuffs:**
+  - `isImmune(target, action)`, `controlShift(ctx)`, `conditionWeight(key, value)`, and `conditionMods(key, value)` (a condition as bonuses and penalties, so it's weighed like any other: PF2e frightened 1 is -1 to everything);
+  - `defenseDc(target, against)` (the DC a skill action rolls against; default 10 + the defense) and `resistShare(value)` (how much of a blow a resistance stops; default half);
+  - `concentration: {save, dc(damage), breaksOn: [conditions]}`, where the system has it.
 - **Doors:** `door` (the typical door: defense, hit points, DCs and whatever its own rules use), `doorCosts` (`open`, `force`, `pick`), and `doorDamage(door, damage)` (how much of a blow gets through). The helper puts `doorWork: {force: {mod}, pick: {mod}}` on each spec.
 - **Reactions:** `opportunity(reactor, mover)` returns the strike a creature makes at a foe leaving its reach, or null if it can't; `reactions(u)` (default 1 a round); `disengage(u)` returns `{cost, label}`, how to leave safely. `bestReactionStrike(u)` in core-api picks the usual strike.
 - **What's typical for a level:** `typical.ac`, `save`, `skill` and `dc`.
 - **Per-fight state:** `initUnit(u)` and `capture(u)`.
 - **The story:** `storyDamageType(type)` maps your damage types onto the story's imagery.
 
-Helpers import shared pieces from `scripts/core-api.js`, such as `SystemAdapter`, `parseFormula`, `parseTypedFormula`, `rollD20`, `TALK_KINDS`, `bestReactionStrike` and `CORE_API_VERSION`.
+**Buffs, debuffs and control in a CombatantSpec** (see `scripts/engine/mods.js`, `behavior/effects.js`, `behavior/control.js` and `behavior/support.js`):
+- **An outcome** is `{conditions, mods, tempHp, mark, iwr, actionsNow, rounds, label, endsOnDamage, endsOnHarm, repeatSave: {type, dc}, onlyVs, self}`, all optional. `mods` holds `attack`, `ac`, `saves`, `checks`, `damage`, `speed`, `actions` (numbers), `attackDie` / `saveDie` (signed faces: 4 is +1d4), and `adv`, `defAdv`, `saveAdv` (+1 or -1). The engine's own conditions are `prone`, `immobilized`, `incapacitated` and `controlled`.
+- **A buff:** `{kind: "buff", outcome, targets: "self" | aura: feet | area: {targets}, range | reach, concentration, oncePerTurn, economy, tell}`.
+- **Control or a debuff:** `{kind: "control", save: {type, dc, advantage} | check: {mod, against, attack} | bonus | auto: true, onSave | onHit | outcome, oncePerTarget, concentration, freeWhileHeld}`.
+
+Helpers import shared pieces from `scripts/core-api.js`, such as `SystemAdapter`, `parseFormula`, `parseTypedFormula`, `rollD20`, `TALK_KINDS`, `bestReactionStrike`, `combineMods`, `describeMods` and `CORE_API_VERSION`.
 
 The engine counts distance in feet: give speeds, reach and ranges in feet (convert metric data), and the core converts the scene's grid. Heal actions can carry `reach` (touch) or `range`.
 

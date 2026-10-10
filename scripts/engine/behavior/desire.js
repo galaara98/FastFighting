@@ -14,7 +14,7 @@
  *               contrarian (chaotic, or an instigator, who isn't leading) may lean away from what the leader wants.
  *
  * A desire's level is max(logic, stated) + memory + social - frustration, 0 to 100:
- *   {kind: "hurt" | "heal" | "protect" | "talk" | "avoid", targetId, level}
+ *   {kind: "hurt" | "heal" | "protect" | "aid" | "talk" | "avoid", targetId, level}   (aid: bolster with a buff)
  *
  * The strongest desire leads. Much weaker ones (BLIND_GAP or more below it) don't cross the character's mind, and
  * an obsessed character (OBSESSED+) stops worrying about its own safety.
@@ -23,10 +23,12 @@ import { STATUS } from "../../constants.js";
 import { areEnemies, isStanding, liveTrait, enemiesOf } from "../battle-state.js";
 
 /** A character's playstyle guide for desires (from its pills), or the neutral one. */
-const NEUTRAL_STYLE = Object.freeze({ hurt: {}, avoid: {}, heal: 0, protect: 0, talk: 0, whim: 0, contrarian: 0, retaliate: 1, avenge: 1, cool: 1, frustration: 1, leader: 1, team: 1, doorPatience: 1 });
+const NEUTRAL_STYLE = Object.freeze({ hurt: {}, avoid: {}, heal: 0, protect: 0, aid: 0, talk: 0, whim: 0, contrarian: 0, retaliate: 1, avenge: 1, cool: 1, frustration: 1, leader: 1, team: 1, doorPatience: 1 });
 export const styleOf = u => u.spec?.desireStyle ?? NEUTRAL_STYLE;
 
-export const DESIRE_KINDS = Object.freeze(["hurt", "heal", "protect", "talk", "avoid"]);
+export const DESIRE_KINDS = Object.freeze(["hurt", "heal", "protect", "aid", "talk", "avoid"]);
+/** Desires a creature may have about itself: mending itself, bolstering itself. */
+const SELF_KINDS = new Set(["heal", "aid"]);
 /** Band floors: passing, wants, determined, driven, obsessed. */
 export const DESIRE_BANDS = Object.freeze([0, 20, 40, 60, 80]);
 export const DESIRE_BAND_KEYS = Object.freeze(["passing", "wants", "determined", "driven", "obsessed"]);
@@ -70,7 +72,7 @@ export function newTurn(u) {
 
 /** What the unit's tactics conclude this turn (the strongest reason for each kind and target wins). */
 export function think(u, kind, targetId, level) {
-  if ( !u.desire || !targetId || (targetId === u.id && kind !== "heal") ) return;
+  if ( !u.desire || !targetId || (targetId === u.id && !SELF_KINDS.has(kind)) ) return;
   const k = keyOf(kind, targetId);
   u.desire.logic.set(k, Math.max(u.desire.logic.get(k) ?? 0, clamp(level)));
 }
@@ -107,7 +109,7 @@ export function levelOf(u, kind, targetId) {
 
 /** Is a desire still something the unit can act on? (Healing itself counts: a potion when it's hurt.) */
 function relevant(run, u, kind, t) {
-  if ( !t || !t.active || (t === u && kind !== "heal") ) return false;
+  if ( !t || !t.active || (t === u && !SELF_KINDS.has(kind)) ) return false;
   if ( [STATUS.DEAD, STATUS.FLED].includes(t.status) ) return false;
   switch ( kind ) {
     case "hurt": return areEnemies(run, u, t) && t.status !== STATUS.SURRENDERED && t.status !== STATUS.STOOD_DOWN;
@@ -115,6 +117,7 @@ function relevant(run, u, kind, t) {
     case "talk": return t.status === STATUS.STANDING;
     case "heal": return !areEnemies(run, u, t) && (t.status === STATUS.DOWN || t.hp < t.maxHp);
     case "protect": return !areEnemies(run, u, t);
+    case "aid": return !areEnemies(run, u, t) && isStanding(t);
     default: return false;
   }
 }
@@ -198,11 +201,11 @@ export function influence(run, u) {
  * heal or guard; someone to talk to; something to fear; a whim).
  * @param {{t, moves}[]} scored  The foes its tactics weighed
  */
-export function styleWants(run, u, scored, { canHeal = false, canTalk = false, talkTarget = null } = {}) {
+export function styleWants(run, u, scored, { canHeal = false, canTalk = false, talkTarget = null, canAid = false } = {}) {
   const s = styleOf(u);
   if ( !u.desire || s === NEUTRAL_STYLE ) return;
   const add = (kind, id, points) => {
-    if ( !points || !id || (id === u.id && kind !== "heal") ) return;
+    if ( !points || !id || (id === u.id && !SELF_KINDS.has(kind)) ) return;
     const k = keyOf(kind, id);
     u.desire.style.set(k, (u.desire.style.get(k) ?? 0) + points);
   };
@@ -235,6 +238,13 @@ export function styleWants(run, u, scored, { canHeal = false, canTalk = false, t
   const friends = run.units.filter(a => a !== u && a.side === u.side && a.active && ![STATUS.DEAD, STATUS.FLED].includes(a.status));
   if ( canHeal && s.heal ) for ( const a of friends ) if ( a.status === STATUS.DOWN || frac(a) < 0.75 ) add("heal", a.id, s.heal);
   if ( s.protect ) add("protect", friends.filter(isStanding).sort((a, b) => frac(a) - frac(b))[0]?.id, s.protect);
+  // Bolstering: the friend doing the most fighting (its leader, for those who look to one).
+  if ( canAid && s.aid ) {
+    const leaderId = run.prep.sides[u.side]?.leaderId;
+    const chief = friends.find(a => a.id === leaderId && isStanding(a));
+    const fighter = friends.filter(isStanding).sort((a, b) => (b.damageDealt ?? 0) - (a.damageDealt ?? 0))[0];
+    add("aid", (s.leader > 1 ? chief : null)?.id ?? fighter?.id, s.aid);
+  }
   if ( canTalk && s.talk ) add("talk", talkTarget, s.talk);
   // Fear: of the most dangerous foe, of whoever is hurting it once it's hurt, of whatever comes close.
   const avoid = s.avoid ?? {};
@@ -249,10 +259,10 @@ export function styleWants(run, u, scored, { canHeal = false, canTalk = false, t
  * Let the others' desires pull on u: its leader's (a medium amount), its team's (a little), as far as u can act on
  * them (a leader's wish to heal someone means nothing to a creature that can't heal).
  */
-export function listen(run, u, { canHeal = false, canTalk = false } = {}) {
+export function listen(run, u, { canHeal = false, canTalk = false, canAid = false } = {}) {
   if ( !u.desire ) return;
   const { leader, team } = influence(run, u);
-  const fits = kind => kind === "hurt" || kind === "avoid" || kind === "protect" || (kind === "heal" && canHeal) || (kind === "talk" && canTalk);
+  const fits = kind => kind === "hurt" || kind === "avoid" || kind === "protect" || (kind === "heal" && canHeal) || (kind === "talk" && canTalk) || (kind === "aid" && canAid);
   const pull = (kind, targetId, amount) => {
     if ( !fits(kind) || targetId === u.id || !amount ) return;
     const k = keyOf(kind, targetId);
@@ -263,7 +273,7 @@ export function listen(run, u, { canHeal = false, canTalk = false } = {}) {
   if ( leaderless(run, u.side) ) {
     for ( const k of new Set([...u.desire.logic.keys(), ...u.desire.style.keys(), ...u.desire.stated.keys()]) ) {
       const [kind, targetId] = k.split("|");
-      if ( (kind === "heal" || kind === "protect") && targetId !== u.id ) u.desire.social.set(k, (u.desire.social.get(k) ?? 0) - LEADERLESS.cooperative);
+      if ( (kind === "heal" || kind === "protect" || kind === "aid") && targetId !== u.id ) u.desire.social.set(k, (u.desire.social.get(k) ?? 0) - LEADERLESS.cooperative);
     }
   }
   const leaderUnit = run.byId.get(run.prep.sides[u.side]?.leaderId);

@@ -25,7 +25,7 @@ export const TACTIC_CHOICES = Object.freeze({
 /** Question keys in survey order. `preferredAction` and `notes` are special (dynamic choices, free text). */
 export const TACTIC_KEYS = Object.freeze(["preferredAction", "style", "target", "resourceUse", "talk", "healAggro", "potionThreshold", "allyDying", "selfRevived", "retreat", "shield", "beyond", "notes"]);
 
-const isOffense = a => a.kind !== "heal";
+const isOffense = a => a.kind !== "heal" && a.kind !== "buff";
 const usesResource = a => !!a.resource || Number.isFinite(a.uses);
 
 /** Rough expected damage per action of `action` against a same-level foe (the system says what's typical). */

@@ -9,6 +9,12 @@
  *  - Foundry side (async, may read documents): build CombatantSpecs, derive personality traits, find leaders,
  *    cross-check difficulty, and commit a chosen outcome back to the tokens ("Make it So").
  *  - Pure side: `rules`, a plain object the engine calls thousands of times. It must not touch Foundry.
+ *
+ * Recognising things: find a system's features, actions and spells by their slug or identifier (PF2e `slug`,
+ * dnd5e `system.identifier`), never by name. Slugs are the same in every book, every edition of the free rules
+ * and every language; names change with translations, reprints and homebrew copies. Use the name only as a fallback,
+ * and prefer reading what an item does (its activities, effects, rule elements) over recognising it at all, so
+ * content nobody has seen yet (paid books, homebrew) still works.
  */
 export class SystemAdapter {
   /** @type {string} */

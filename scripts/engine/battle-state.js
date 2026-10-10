@@ -69,6 +69,7 @@ import { meanPart } from "./dice.js";
 import { typicalValue } from "./tactics.js";
 import { talkAffinity } from "./behavior/talk.js";
 import { Turn } from "./turn.js";
+import { combineMods, netAdvantage } from "./mods.js";
 
 const DEFAULT_APPROACH = Object.freeze({ dist: 5, mult: 1, speed: 25, mode: "walk", los: true, meleeOk: true });
 const SIDE_WEIGHT = 0.3;
@@ -124,10 +125,11 @@ export function prepareBattle(spec, rules) {
       traits,
       isHealer: c.actions.some(a => a.kind === "heal"),
       isCaster: c.actions.some(a => a.kind === "save" || a.kind === "spell-attack"),
-      hasRanged: c.actions.some(a => a.range && a.kind !== "heal"),
+      hasRanged: c.actions.some(a => a.range && a.kind !== "heal" && a.kind !== "buff"),
       flies: (c.speeds?.fly ?? 0) > 0,
       healActions: c.actions.filter(a => a.kind === "heal").sort((x, y) => meanHeal(y) / y.cost - meanHeal(x) / x.cost),
-      offense: c.actions.filter(a => a.kind !== "heal")
+      buffActions: c.actions.filter(a => a.kind === "buff" && a.outcome),
+      offense: c.actions.filter(a => a.kind !== "heal" && a.kind !== "buff")
     };
   });
 
@@ -159,6 +161,8 @@ export function createRun(prep) {
       spec: s,
       id: s.id,
       side: s.side,
+      homeSide: s.side,      // where it belongs (a charmed creature fights for someone else until it wears off)
+      controlledBy: null,
       hp: s.hp.value,
       maxHp: s.hp.max,
       temp: s.hp.temp ?? 0,
@@ -191,7 +195,13 @@ export function createRun(prep) {
       conds: Object.fromEntries(Object.entries(s.conditions ?? {}).filter(([k]) => k !== "prone").map(([k, v]) => [k, v === true ? 1 : Number(v) || 0])),
       baseConds: null, // set below: conditions that were there before any affliction
       afflictions: [],
-      effects: [],           // timed conditions from crowd control: {conditions, rounds, endsOnDamage, sourceId}
+      effects: [],           // timed effects (crowd control, buffs, debuffs): see behavior/effects.js
+      baseMods: s.mods ?? null, // bonuses and penalties already on it when the fight starts
+      mods: combineMods([s.mods]),
+      marks: [],             // extra damage on the hits of whoever marked it (Hunter's Mark, Hex): {by, parts}
+      vs: null,              // conditions that hold against one foe only (PF2e Feint): Map(sourceId -> conditions)
+      concentration: null,   // the effect it is holding up (5e concentration): {actionId, name, worth}
+      triedOn: null,         // once-per-target actions already tried (PF2e Demoralize)
       grabbedBy: null,
       tac: s.tactics ?? null, // replaced per fight by sampleRunTactics in runOne
       studied: new Set(),
@@ -340,7 +350,9 @@ export function situation(run, target, attacker = null, action = null) {
       return o && isStanding(o) && areEnemies(run, attacker, o);
     }),
     distance: attacker ? separation(run, attacker, target) : 0,
-    positioning: !!run.prep.options.positioning
+    positioning: !!run.prep.options.positioning,
+    // Off guard against this attacker in particular (PF2e Feint).
+    exposedTo: !!(attacker && target.vs?.get(attacker.id)?.offGuard)
   };
 }
 
@@ -349,7 +361,7 @@ export function isExposed(run, target, attacker = null, action = null) {
   const rules = run.prep.rules;
   const ctx = situation(run, target, attacker, action);
   if ( rules.modifiers?.exposed ) return !!rules.modifiers.exposed(ctx);
-  return !!(target.prone || ctx.grabbed || ctx.flanked || target.conds.offGuard);
+  return !!(target.prone || ctx.grabbed || ctx.flanked || ctx.exposedTo || target.conds.offGuard);
 }
 
 /** Current AC: base, a raised shield, leadership, and whatever the rules make of the situation. */
@@ -358,6 +370,7 @@ export function currentAc(run, target, attacker, action) {
   if ( target.shieldRaised && target.spec.shield ) ac += target.spec.shield.ac;
   const side = run.prep.sides[target.side];
   if ( leaderStanding(run, target.side) ) ac += side.leadership.ac;
+  ac += target.mods?.ac ?? 0;
   ac += run.prep.rules.modifiers?.defense?.(situation(run, target, attacker, action)) ?? 0;
   return ac;
 }
@@ -369,11 +382,28 @@ export function typical(rules, what, level = 0) {
   return { ac: 10 + level, save: Math.ceil(level / 2) + 2, skill: Math.ceil(level / 2) + 2, dc: 10 + level }[what] ?? 0;
 }
 
-/** A saving throw: the modifier and any advantage (+1) or disadvantage (-1). */
+/** A saving throw: the modifier, any advantage (+1) or disadvantage (-1), and dice that ride along (Bless). */
 export function saveRoll(run, target, type) {
+  if ( Array.isArray(type) ) {
+    const rolls = type.map(t => saveRoll(run, target, t));
+    return rolls.reduce((best, r) => (r.mod + 3.5 * r.advantage > best.mod + 3.5 * best.advantage ? r : best), rolls[0] ?? saveRoll(run, target, "none"));
+  }
   const base = target.spec.defenses[type] ?? typical(run.prep.rules, "save", target.spec.level ?? 0);
   const m = run.prep.rules.modifiers?.save?.({ unit: target, type }) ?? {};
-  return { mod: base + (m.bonus ?? 0), advantage: m.advantage ?? 0 };
+  const mods = target.mods ?? {};
+  return { mod: base + (m.bonus ?? 0) + (mods.saves ?? 0), advantage: netAdvantage(m.advantage ?? 0, mods.saveAdv ?? 0), dice: mods.saveDie ?? null };
+}
+
+/**
+ * The DC to beat with a skill against a target's defense (PF2e: Will DC for Demoralize, Reflex DC for Trip,
+ * Perception DC for Feint): the system's, else 10 + the defense's modifier.
+ */
+export function defenseDc(run, target, against) {
+  const own = run.prep.rules.defenseDc?.(target, against);
+  if ( Number.isFinite(own) ) return own;
+  if ( against === "perception" ) return 10 + (target.spec.perception ?? target.spec.initiative?.mod ?? typical(run.prep.rules, "skill", target.spec.level ?? 0));
+  if ( against === "ac" ) return target.spec.defenses.ac;
+  return 10 + saveRoll(run, target, against).mod;
 }
 
 /** Saving throw modifier (without advantage), for heuristics and logs. */
@@ -384,14 +414,15 @@ export function saveMod(run, target, type) {
 /** A skill check (talking, first aid): the rules' situational bonus and advantage. */
 export function checkRoll(run, u, mod) {
   const m = run.prep.rules.modifiers?.check?.({ unit: u }) ?? {};
-  return { mod: mod + (m.bonus ?? 0), advantage: m.advantage ?? 0 };
+  return { mod: (Number(mod) || 0) + (m.bonus ?? 0) + (u.mods?.checks ?? 0), advantage: m.advantage ?? 0 };
 }
 
 /** A fresh turn budget for u, minus what conditions take away (stunned, slowed, paralyzed ...). */
 export function turnFor(run, u) {
   const rules = run.prep.rules;
   // "incapacitated" (asleep, held) is the engine's own: no actions at all.
-  const lost = (rules.modifiers?.actionsLost?.(u) ?? 0) + (u.conds.incapacitated ? 99 : 0);
+  // Haste and the like give an action (a negative loss); Slow takes one.
+  const lost = (rules.modifiers?.actionsLost?.(u) ?? 0) + (u.conds.incapacitated ? 99 : 0) - (u.mods?.actions ?? 0);
   return new Turn(rules, u, lost);
 }
 
@@ -405,8 +436,13 @@ export function attackRoll(run, u, target, action, attacksMade = 0) {
   if ( u.wavering ) bonus -= 1;
   if ( leaderStanding(run, u.side) && run.prep.sides[u.side].leaderId !== u.id ) bonus += run.prep.sides[u.side].leadership.attack;
   bonus += studyBonus(u, target);
+  bonus += u.mods?.attack ?? 0;
   const m = rules.modifiers?.attack?.(situation(run, target, u, action)) ?? {};
-  return { bonus: bonus + (m.bonus ?? 0), advantage: m.advantage ?? 0 };
+  return {
+    bonus: bonus + (m.bonus ?? 0),
+    advantage: netAdvantage(m.advantage ?? 0, u.mods?.adv ?? 0, target.mods?.defAdv ?? 0),
+    dice: u.mods?.attackDie ?? null
+  };
 }
 
 /** Does a bonus-damage condition hold for this hit? */
@@ -437,6 +473,10 @@ export function bonusDamageParts(run, attacker, action, target, { advantage = 0,
     out.push(...bonus.parts);
     if ( commit && bonus.oncePerTurn ) (attacker.usedThisTurn ??= new Set()).add(key);
   }
+  // A flat bonus (or penalty) to its damage, and the extra hurt of a foe it marked.
+  const flat = attacker.mods?.damage ?? 0;
+  if ( flat && action.damage?.length ) out.push({ dice: [], flat, type: action.damage[0].type ?? "untyped" });
+  for ( const m of target.marks ?? [] ) if ( m.by === attacker.id ) out.push(...m.parts);
   return out;
 }
 
@@ -450,7 +490,9 @@ export function canMove(run, u) {
 /** Geometry ------------------------------------------------------------- */
 
 export function approach(run, a, t) {
-  return run.prep.approachOf(a.id, t.id);
+  const ap = run.prep.approachOf(a.id, t.id);
+  const extra = a.mods?.speed;
+  return extra ? { ...ap, speed: Math.max(0, ap.speed + extra) } : ap;
 }
 
 /** Feet still separating a and t: from real positions when known, otherwise from how far both advanced. */

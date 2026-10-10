@@ -733,7 +733,7 @@ function storyLabels() {
   const l = key => loc(`FASTFIGHTING.Story.Labels.${key}`);
   return {
     hit: l("hit"), crit: l("crit"), miss: l("miss"), resisted: l("resisted"), talked: l("talked"), convincing: l("convincing"),
-    healed: l("healed"), potion: l("potion"), firstAid: l("firstAid"), stabilized: l("stabilized"), moved: l("moved"), stayedOut: l("stayedOut"), nothing: l("nothing"),
+    healed: l("healed"), potion: l("potion"), firstAid: l("firstAid"), bolstered: l("bolstered"), stabilized: l("stabilized"), moved: l("moved"), stayedOut: l("stayedOut"), nothing: l("nothing"),
     status: Object.fromEntries(["standing", "down", "dead", "fled", "surrendered", "stoodDown", "conceded", "switched"].map(s => [s, loc(`FASTFIGHTING.Status.${s}`)]))
   };
 }

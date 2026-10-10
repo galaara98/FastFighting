@@ -54,6 +54,8 @@ export function bestOptionVs(run, u, t, attacksMade = 0, turn = null) {
     if ( moves > 0 && (wary ??= !!run.prep.rules.opportunity && isWary(run, u) && threats(run, u, t).length > 0) ) weighted *= 0.3;
     if ( behavior.meleeBias && action.melee ) weighted *= 1 + behavior.meleeBias;
     if ( behavior.exploitWeakness && (action.damage ?? []).some(p => t.spec.iwr?.weak?.[p.type]) ) weighted *= 1 + behavior.exploitWeakness;
+    // Spoilers would rather lock a foe down, harass it or weaken it than simply hit it.
+    if ( behavior.hinders && action.kind === "control" ) weighted *= 1 + 1.5 * behavior.hinders;
     options.push({ action, moves, moveUnits, ev, perAction, cost, weighted });
   }
   if ( !options.length ) return null;
@@ -212,7 +214,10 @@ export function scoreTargets(run, u, behavior = behaviorOf(u)) {
   reachable = run.rng.shuffle([...reachable]);
   const min = Math.min(...reachable.map(x => x.moves));
   const near = x => 1 / (1 + x.moves - min); // 1 for the nearest
-  const ranked = score => reachable.map(x => ({ ...x, score: Math.max(0, score(x)) })).sort((a, b) => b.score - a.score);
+  // A friend who's been charmed or dominated is still a friend: anyone with a thought for it would rather not cut it
+  // down (the loyal least of all).
+  const spare = t => (t.controlledBy && t.homeSide === u.side && tier >= TACTICAL.INSTINCTIVE ? Math.max(0.1, 0.5 - liveTrait(run, u, "loyal") / 250) : 1);
+  const ranked = score => reachable.map(x => ({ ...x, score: Math.max(0, score(x)) * spare(x.t) })).sort((a, b) => b.score - a.score);
 
   // A player's stated target priority overrides the personality-driven choice.
   const choice = u.tac?.target;

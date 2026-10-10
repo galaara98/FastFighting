@@ -46,12 +46,12 @@ export function saveMultiplier(rules, degree, save) {
 
 /** Mean damage of `action` against `target` after IWR, for normal and critical outcomes. Cached per batch. */
 export function meanDamageVs(run, action, target) {
-  const key = `${action.id}|${target.id}`;
+  const key = `${action.id}|${target.id}${target.iwrKey ? `|${target.iwrKey}` : ""}`;
   const cache = run.prep.meanCache;
   let hit = cache.get(key);
   if ( hit ) return hit;
   const rules = run.prep.rules;
-  const iwr = target.spec.iwr;
+  const iwr = target.iwr ?? target.spec.iwr; // (with any resistance an effect lends it: Rage, Stoneskin)
   const crit = action.critDamage ?? criticalParts(rules, action.damage);
   const rider = effectMean(action);
   hit = {
@@ -102,16 +102,34 @@ export function unitsPerTurn(rules, u) {
  * A unit's typical damage per round against a foe: its best action used as often as a turn allows (plus its best
  * bonus-action attack, where the system has them). Targeting and morale ask this constantly, so it is worked out
  * once per pair per round (within a round it barely changes).
+ *
+ * What a debuff is worth depends on how dangerous its target is, which depends on that target's own debuffs: worked
+ * out inside another such estimate, a creature's control counts for its damage only, so the two never chase each
+ * other round and round.
  */
 export function threatOf(run, u, versus) {
   if ( run.threatRound !== run.round ) {
     run.threatRound = run.round;
     run.threatCache = new Map();
+    run.threatCacheInner = new Map();
   }
-  let row = run.threatCache.get(u);
-  if ( !row ) run.threatCache.set(u, row = new Map());
+  const inner = (run.threatDepth ?? 0) > 0;
+  const cache = inner ? (run.threatCacheInner ??= new Map()) : run.threatCache;
+  let row = cache.get(u);
+  if ( !row ) cache.set(u, row = new Map());
   const cached = row.get(versus);
   if ( cached !== undefined ) return cached;
+  run.threatDepth = (run.threatDepth ?? 0) + 1;
+  try {
+    const best = threatNow(run, u, versus);
+    row.set(versus, best);
+    return best;
+  } finally {
+    run.threatDepth -= 1;
+  }
+}
+
+function threatNow(run, u, versus) {
   const rules = run.prep.rules;
   const main = mainPool(rules);
   const perTurn = unitsPerTurn(rules, u);
@@ -133,9 +151,7 @@ export function threatOf(run, u, versus) {
     }
     bestMain = Math.max(bestMain, total);
   }
-  const best = bestMain + bestBonus;
-  row.set(versus, best);
-  return best;
+  return bestMain + bestBonus;
 }
 
 /** Attack rolls one use makes (for the multiple attack penalty): a multiattack makes several. */
@@ -145,7 +161,12 @@ export function attacksIn(action) {
 }
 
 export function countsAsAttack(action) {
-  if ( action.kind === "control" ) return action.attack !== false && !action.save;
+  // Control: an attack roll counts; so does a skill with the attack trait (PF2e Trip); a save or a mark doesn't.
+  if ( action.kind === "control" ) {
+    if ( action.save || action.auto || (action.outcome && !action.onHit) ) return false;
+    if ( action.check ) return !!action.check.attack;
+    return action.attack !== false;
+  }
   return action.attack !== false && (action.kind === "strike" || action.kind === "spell-attack");
 }
 

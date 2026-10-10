@@ -182,7 +182,7 @@ export function questionsContext(spec, actor, uid, { questions: withQuestions = 
   const offense = [];
   const seen = new Set();
   for ( const a of spec.actions ) {
-    if ( a.kind === "heal" || seen.has(a.name) ) continue;
+    if ( a.kind === "heal" || a.kind === "buff" || seen.has(a.name) ) continue;
     seen.add(a.name);
     offense.push(a);
   }

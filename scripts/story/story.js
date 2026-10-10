@@ -249,7 +249,24 @@ function narrate(e, roll, rel, fill) {
     case "condition": return roll("event.conditionRider", { ...f, effect: e.effect ?? "" });
     case "control":
       if ( e.immune ) return roll("event.controlImmune", f);
+      if ( e.backfired ) return roll("event.controlBackfire", { ...f, effect: e.effect ?? "" });
       return roll(e.took ? "event.controlTakes" : "event.controlResisted", { ...f, effect: e.effect ?? "" });
+    case "buff": {
+      // Plain moves (Dodge, Reckless Attack, Action Surge) are told as what they are, not as magic.
+      if ( e.tell ) {
+        const own = roll(`event.${e.tell}`, f);
+        if ( own ) return own;
+      }
+      const others = (e.targets ?? []).filter((n, i) => e.targetIds?.[i] !== e.actorId);
+      const fill = { ...f, effect: e.effect ?? "", target: others[0] ?? "", targets: listJoin(others), all: listJoin([e.actor, ...others]) };
+      if ( !others.length ) return roll("event.buffSelf", fill);
+      if ( e.withSelf ) return roll("event.buffWithSelf", fill);
+      return roll(others.length > 1 ? "event.buffMany" : "event.buffOne", fill);
+    }
+    // Letting one spell go for another passes without comment; losing hold of it doesn't.
+    case "concentrationEnd": return e.reason === "switch" ? "" : roll("event.concentrationLost", { ...f, weapon: e.action ?? "" });
+    case "shakeOff": return roll("event.shakeOff", { ...f, effect: e.effect ?? "" });
+    case "allegiance": return roll(e.joined ? "event.allegianceTurn" : "event.allegianceBack", { ...f, by: e.by ?? "" });
     case "theft":
       if ( e.feint && !e.feint.hit ) return roll("event.feintMiss", { ...f, weapon: e.feint.weapon });
       if ( e.stolen ) return roll(e.feint ? "event.theftFeint" : "event.theftSuccess", { ...f, amount: concessionText(e.stolen), weapon: e.feint?.weapon ?? "" });
@@ -370,7 +387,7 @@ function standard(result, spec, title, labels) {
   const { out, mentions } = storyCast(result, spec);
   const by = new Map();
   const entry = id => {
-    if ( !by.has(id) ) by.set(id, { attacks: new Map(), spells: new Map(), talks: { tries: 0, wins: 0 }, heals: 0, healed: 0, potions: 0, aid: 0, stabilized: 0, feet: 0, damage: 0, notes: [] });
+    if ( !by.has(id) ) by.set(id, { attacks: new Map(), spells: new Map(), buffs: new Map(), talks: { tries: 0, wins: 0 }, heals: 0, healed: 0, potions: 0, aid: 0, stabilized: 0, feet: 0, damage: 0, notes: [] });
     return by.get(id);
   };
   for ( const e of result.log ) {
@@ -382,6 +399,8 @@ function standard(result, spec, title, labels) {
       if ( e.took ) a.hits += 1; else a.misses += 1;
       s.spells.set(e.action, a);
       s.damage += e.damage ?? 0;
+    } else if ( e.type === "buff" ) {
+      s.buffs.set(e.action, (s.buffs.get(e.action) ?? 0) + 1);
     } else if ( e.type === "theft" ) {
       s.notes.push(e.stolen ? `stole ${concessionText(e.stolen)} from ${e.target}` : e.noticed ? `caught stealing from ${e.target}` : `came away empty-handed from ${e.target}`);
     } else if ( e.type === "attack" || e.type === "save" || e.type === "auto" ) {
@@ -419,6 +438,7 @@ function standard(result, spec, title, labels) {
     const bits = [];
     for ( const [name, a] of s?.attacks ?? [] ) bits.push(`${a.uses}× ${name} (${a.hits} ${labels.hit}${a.crits ? `, ${a.crits} ${labels.crit}` : ""}${a.misses ? `, ${a.misses} ${labels.miss}` : ""})`);
     for ( const [name, a] of s?.spells ?? [] ) bits.push(`${a.uses}× ${name} (${a.hits} ${labels.hit}${a.misses ? `, ${a.misses} ${labels.resisted}` : ""})`);
+    for ( const [name, n] of s?.buffs ?? [] ) bits.push(`${n}× ${name} (${labels.bolstered ?? "bolstered"})`);
     if ( s?.talks.tries ) bits.push(`${labels.talked} ${s.talks.tries}× (${s.talks.wins} ${labels.convincing})`);
     if ( s?.heals ) bits.push(`${labels.healed} ${s.heals}× (${s.healed} HP)`);
     if ( s?.potions ) bits.push(`${s.potions} ${labels.potion}`);
@@ -459,9 +479,19 @@ function statLine(e) {
     case "notice": return `${e.actor} notices (${e.cause})`;
     case "firstAid": return `${e.actor} → ${e.target}: first aid · medicine ${roll(e.natural, e.mod, e.total, e.dc, "DC")} · ${DEGREE[e.degree]} · ${e.stable ? "stabilized" : e.dead ? "dies" : `dying ${e.dying}`}`;
     case "aftermath": return "After the fight";
-    case "control":
+    case "control": {
       if ( e.immune ) return `${e.actor} → ${e.target}: ${e.action} · unaffected`;
-      return `${e.actor} → ${e.target}: ${e.action} · ${e.saveType ? `${e.saveType} ` : ""}${roll(e.natural, e.mod, e.total, e.dc, e.saveType ? "DC" : "AC")} · ${DEGREE[e.degree]}${e.shifted ? " (shifted)" : ""} · ${e.effect || "no effect"}${e.damage ? ` · ${e.damage} damage` : ""}`;
+      const how = e.roll === "auto" ? "no roll"
+        : e.roll === "check" ? `${roll(e.natural, e.mod, e.total, e.dc, `${e.against ?? "defense"} DC`)} · ${DEGREE[e.degree]}`
+          : `${e.saveType ? `${[].concat(e.saveType).join("/")} ` : ""}${roll(e.natural, e.mod, e.total, e.dc, e.saveType ? "DC" : "AC")} · ${DEGREE[e.degree]}`;
+      return `${e.actor} → ${e.target}: ${e.action} · ${how}${e.shifted ? " (shifted)" : ""} · ${e.effect || "no effect"}${e.backfired ? ` (on ${e.actor})` : ""}${e.damage ? ` · ${e.damage} damage` : ""}`;
+    }
+    case "buff": return `${e.actor} → ${(e.targets ?? []).map((n, i) => (e.targetIds?.[i] === e.actorId ? "self" : n)).join(", ")}: ${e.action} · ${e.effect || "bolstered"}${e.tempHp ? ` · ${e.tempHp} temp HP` : ""}`;
+    case "concentrationEnd":
+      if ( e.reason === "switch" ) return `${e.actor} lets ${(e.effects ?? []).join(", ")} go`;
+      return `${e.actor} loses concentration on ${e.action}${e.natural !== undefined ? ` · ${e.saveType} ${roll(e.natural, e.mod, e.total, e.dc, "DC")}` : " (can't act)"}`;
+    case "shakeOff": return `${e.actor} shakes off ${e.effect} · ${e.saveType} ${roll(e.natural, e.mod, e.total, e.dc, "DC")}`;
+    case "allegiance": return e.joined ? `${e.actor} fights for ${e.by}'s side (controlled)` : `${e.actor} returns to ${e.homeLabel}`;
     case "theft": {
       // The luck check against a PC is the GM's secret, so it never appears here.
       const feint = e.feint ? `feint ${e.feint.weapon} · ${roll(e.feint.natural, e.feint.mod, e.feint.total, e.feint.ac, "AC")} · ${e.feint.hit ? "hit, no damage" : "miss"}` : "";
@@ -514,6 +544,6 @@ export function buildStory(result, spec, style, { tables, seed = 1, title = "", 
 
 export const DEFAULT_LABELS = {
   hit: "hit", crit: "critical", miss: "missed", resisted: "resisted", talked: "talked", convincing: "convincing",
-  healed: "healed", potion: "potion(s)", firstAid: "first aid", stabilized: "stabilized", moved: "moved", stayedOut: "stayed out of it", nothing: "did nothing of note",
+  healed: "healed", potion: "potion(s)", firstAid: "first aid", bolstered: "bolstered", stabilized: "stabilized", moved: "moved", stayedOut: "stayed out of it", nothing: "did nothing of note",
   status: { standing: "standing", down: "down", dead: "dead", fled: "fled", surrendered: "surrendered", stoodDown: "stood down", conceded: "gave something up", switched: "switched sides" }
 };
