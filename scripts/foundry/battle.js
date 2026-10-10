@@ -110,6 +110,52 @@ function applyStatFudges(spec, fudge = {}) {
 }
 
 /**
+ * Fold a character's tactics answers and playstyles into its spec.
+ *  - Player-controlled: full tactics (answers over playstyle-adjusted suggestions), plus the calculated
+ *    strategy so "stay mostly true" can fall back to it.
+ *  - NPCs: only what their playstyles imply; everything else stays personality-driven.
+ * Playstyle trait shifts land on the trait fudges (already capped at ±10 when staying true).
+ */
+function applyCharacterTactics(spec, entry) {
+  const actor = entry.token.actor;
+  const { calc, resolved, stored, playstyles } = tacticsFor(actor, entry.spec);
+  spec.playstyles = playstyles.ids;
+  spec.behavior = playstyles.behavior;
+  spec.stayTrue = !!stored.stayTrue;
+  spec.roleplay = !!stored.roleplay;
+  for ( const [k, v] of Object.entries(playstyles.traits) ) {
+    if ( spec.traits[k] ) spec.traits[k] = { ...spec.traits[k], fudge: (spec.traits[k].fudge ?? 0) + v };
+  }
+  if ( isPlayerControlled(entry.spec, actor) ) {
+    spec.tactics = resolved;
+    spec.tacticsCalc = calc;
+  } else if ( Object.keys(playstyles.suggest).length ) {
+    spec.tactics = { ...playstyles.suggest };
+    spec.tacticsCalc = Object.fromEntries(Object.keys(playstyles.suggest).map(k => [k, calc[k]]));
+  }
+  if ( spec.tactics ) {
+    spec.disposition = { healAggro: spec.tactics.healAggro, allyDying: spec.tactics.allyDying, selfRevived: spec.tactics.selfRevived };
+  }
+}
+
+/** Leader playstyles put a character forward as their side's leader. */
+export function withPlaystyleLeaders(leaders, members) {
+  const out = leaders.map(l => ({ ...l }));
+  for ( const m of members ) {
+    if ( !m.behavior?.leads ) continue;
+    const existing = out.find(l => l.id === m.id);
+    const reason = game.i18n.localize("FASTFIGHTING.Playstyle.leader.Name");
+    if ( existing ) {
+      existing.score += 5;
+      existing.reason = `${existing.reason}; ${reason}`;
+    } else {
+      out.push({ id: m.id, score: 3, reason, bonus: { brave: 10, tacticalFloor: 40, attack: 0, ac: 0 } });
+    }
+  }
+  return out.sort((a, b) => b.score - a.score);
+}
+
+/**
  * Build the BattleSpec the engine runs.
  * @param {object[]} roster      From gatherRoster
  * @param {object} setup         Scene setup
@@ -128,11 +174,7 @@ export function buildBattleSpec(roster, setup, { underdog = null, approach = nul
     const spec = applyStatFudges(e.spec, ts.fudge);
     spec.side = side;
     spec.traits = fudgedTraits(e.spec, ts.fudge);
-    if ( isPlayerControlled(e.spec, e.token.actor) ) {
-      const { resolved } = tacticsFor(e.token.actor, e.spec);
-      spec.tactics = resolved;
-      spec.disposition = { healAggro: resolved.healAggro, allyDying: resolved.allyDying, selfRevived: resolved.selfRevived };
-    }
+    applyCharacterTactics(spec, e);
     if ( ts.diesAtZero !== undefined ) spec.diesAtZero = ts.diesAtZero;
     combatants.push(spec);
     (bySide[side] ??= []).push(spec);
@@ -153,7 +195,7 @@ export function buildBattleSpec(roster, setup, { underdog = null, approach = nul
     if ( side === SIDES.FRIENDLY ) enemies = used.filter(o => o !== SIDES.FRIENDLY);
     else if ( side === SIDES.HOSTILE ) enemies = used.filter(o => o !== SIDES.HOSTILE);
     else enemies = used.filter(o => o !== side); // third parties fight everyone
-    const leaders = adapter?.detectLeaders(bySide[side]) ?? [];
+    const leaders = withPlaystyleLeaders(adapter?.detectLeaders(bySide[side]) ?? [], bySide[side]);
     const leader = s.leaderId === "auto" ? leaders[0] : leaders.find(l => l.id === s.leaderId) ?? (s.leaderId && s.leaderId !== "none" ? { id: s.leaderId, bonus: { brave: 10, tacticalFloor: 40, attack: 0, ac: 0 } } : null);
     const lf = s.leadershipFudge ?? {};
     sides[side] = {

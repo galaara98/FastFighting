@@ -47,7 +47,7 @@ export function moraleStress(run, u) {
 export function checkMorale(run, u) {
   const side = run.prep.sides[u.side];
   // A player's stated retreat rule replaces the bravery roll.
-  const retreat = u.spec.tactics?.retreat;
+  const retreat = u.tac?.retreat;
   if ( retreat ) {
     if ( retreat === "never" ) return MORALE.HOLD;
     if ( retreat === "hurt" ) return (u.maxHp > 0 && u.hp / u.maxHp < 0.25) ? MORALE.ROUT : MORALE.HOLD;

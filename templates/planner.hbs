@@ -113,6 +113,7 @@
                 {{#if approach}}<span class="ff-approach"><i class="fa-solid fa-route"></i> {{approach}}</span>{{/if}}
               </div>
               {{#if resolvedLabel}}<div class="ff-row-note">{{resolvedLabel}}</div>{{/if}}
+              {{#if playstyleNames}}<div class="ff-row-playstyles"><i class="fa-solid fa-masks-theater"></i> {{playstyleNames}}</div>{{/if}}
             </div>
             <label class="ff-check" data-tooltip="{{localize "FASTFIGHTING.Planner.IncludeHint"}}"><input type="checkbox" name="tokens.{{id}}.include" {{checked include}}></label>
             <select name="tokens.{{id}}.side" class="ff-side-select">{{selectOptions sideChoices selected=side localize=true}}</select>
@@ -128,7 +129,7 @@
             </div>
             {{#if tactics}}
             <div class="ff-disposition">
-              <div class="ff-strip-title">{{localize "FASTFIGHTING.Planner.Disposition"}}{{#if controllers}} · {{controllers}}{{/if}}</div>
+              <div class="ff-strip-title">{{#if playerControlled}}{{localize "FASTFIGHTING.Planner.Disposition"}}{{else}}{{localize "FASTFIGHTING.Playstyle.NpcTitle"}}{{/if}}{{#if controllers}} · {{controllers}}{{/if}}</div>
               {{> "modules/fast-fighting/templates/partials/tactics.hbs" tactics}}
             </div>
             {{/if}}

@@ -300,7 +300,8 @@
       "OutOfReach": "can't reach in melee",
       "DifficultHere": "difficult terrain",
       "HazardHere": "hazard region",
-      "ControlledBy": "Controlled by"
+      "ControlledBy": "Controlled by",
+      "Fudge": "fudge"
     },
     "Results": {
       "Tab": {
@@ -577,6 +578,98 @@
         "entering": "Entering…",
         "closed": "Closed, not finished",
         "done": "Ready"
+      }
+    },
+    "Playstyle": {
+      "Label": "Playstyles",
+      "Hint": "Pick up to four labels that describe how this character really plays. They change what \"Let them decide\" means and how the simulation predicts them. The first one picked wins when two disagree.",
+      "Count": "{n} of {max}",
+      "Max": "Pick at most four playstyles. Unpick one first.",
+      "StayTrue": "Stay mostly true to my calculated tactical level",
+      "StayTrueHint": "Your answers and playstyles can only move the calculated strategy by about 10%: trait shifts are capped at ±10, and any choice that differs from the calculation shows up in only about 1 in 10 simulated fights.",
+      "Roleplay": "Roleplaying is very important to me",
+      "RoleplayHint": "The simulation weighs your playstyles heavily: their personality shifts double and their quirks (finishing foes, parleying, studying enemies…) happen much more often.",
+      "Both": "Both boxes are checked: roleplay strengthens your playstyles, but staying true still caps how far they move you from the calculated strategy.",
+      "NpcTitle": "Playstyles (GM)",
+      "scaredyCat": {
+        "Name": "Scaredy-Cat",
+        "Hint": "Much less brave, hangs back, drinks potions early, retreats when hurt, and tends to go unnoticed."
+      },
+      "cruel": {
+        "Name": "Cruel",
+        "Hint": "Picks on the weakest and finishes off the fallen."
+      },
+      "moralist": {
+        "Name": "Moralist",
+        "Hint": "Never strikes a fallen foe; rushes to save allies."
+      },
+      "peoplePleaser": {
+        "Name": "People-Pleaser",
+        "Hint": "Goes along with the group: attacks what allies attack, heals generously, protects friends."
+      },
+      "fragile": {
+        "Name": "Fragile",
+        "Hint": "Less brave; drinks potions early, retreats when hurt, heals self after being revived."
+      },
+      "impatient": {
+        "Name": "Impatient",
+        "Hint": "Charges the nearest foe, spends resources freely, skips the shield."
+      },
+      "brawler": {
+        "Name": "Brawler",
+        "Hint": "Loves melee: front line, nearest foe, braver."
+      },
+      "skeptic": {
+        "Name": "Skeptic",
+        "Hint": "Careful and calculating: saves resources, heals sparingly, a little more tactical."
+      },
+      "speedRunner": {
+        "Name": "Speed-Runner",
+        "Hint": "Wants it over fast: spends everything, goes for quick kills."
+      },
+      "leader": {
+        "Name": "Leader",
+        "Hint": "Steps up to lead the side, braver and more loyal, goes for the biggest threat."
+      },
+      "instigator": {
+        "Name": "Instigator",
+        "Hint": "Acts first, picks fights with the most dangerous foe, and draws attacks."
+      },
+      "diplomat": {
+        "Name": "Diplomat",
+        "Hint": "Opens by trying to talk, often spares the fallen, less selfish."
+      },
+      "wallflower": {
+        "Name": "Wallflower",
+        "Hint": "Stays at range and out of notice; enemies often overlook them."
+      },
+      "martyr": {
+        "Name": "Martyr",
+        "Hint": "Never retreats, heals at all costs, guards allies, and throws themselves into danger."
+      },
+      "mercenary": {
+        "Name": "Mercenary",
+        "Hint": "Looks out for number one: conserves resources, keeps fighting over rescuing, retreats when it turns."
+      },
+      "enabler": {
+        "Name": "Enabler",
+        "Hint": "Support first: heals and protects allies, follows the group's lead."
+      },
+      "redeemSeeker": {
+        "Name": "Redeem-Seeker",
+        "Hint": "Braver and selfless, fights on the front line to save others, never retreats."
+      },
+      "loreCollector": {
+        "Name": "Lore-Collector",
+        "Hint": "Studies a new foe before fighting it (Recall Knowledge), then fights it better."
+      },
+      "puzzleManiac": {
+        "Name": "Puzzle-Maniac",
+        "Hint": "Much more tactical; exploits weaknesses and goes after casters."
+      },
+      "wildcard": {
+        "Name": "Wildcard",
+        "Hint": "Unpredictable: sometimes attacks someone random or does something unexpected."
       }
     }
   }

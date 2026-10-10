@@ -158,7 +158,10 @@ export function createRun(prep) {
       drawn: new Set(),
       conds: {},
       afflictions: [],
-      grabbedBy: null
+      grabbedBy: null,
+      tac: s.tactics ?? null, // replaced per fight by sampleRunTactics in runOne
+      studied: new Set(),
+      parleyed: false
     };
   });
   return {
@@ -173,6 +176,22 @@ export function createRun(prep) {
 }
 
 export const isStanding = u => u.status === STATUS.STANDING;
+
+/** Healing/dying answers for this fight: player tactics, else the older disposition record. */
+export function dispositionOf(u) {
+  return u.tac ?? u.spec.disposition ?? {};
+}
+
+/** Playstyle-driven behavior chances (see engine/playstyles.js). */
+export function behaviorOf(u) {
+  return u.spec.behavior ?? {};
+}
+
+/** Lore-Collector bonus against a foe it has studied: +1, or +2 when the foe has a weakness to exploit. */
+export function studyBonus(u, t) {
+  if ( !t || !u.studied?.has(t.id) ) return 0;
+  return Object.keys(t.spec.iwr?.weak ?? {}).length ? 2 : 1;
+}
 export const isOut = u => u.status !== STATUS.STANDING;
 
 export function areEnemies(run, a, b) {

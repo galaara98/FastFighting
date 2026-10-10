@@ -4,7 +4,9 @@
  */
 import { MODULE_ID } from "../constants.js";
 import { getAdapter } from "../api.js";
-import { questionsContext, setTactic, syncTacticsDom, tokensForUser, setOwnSurveyStatus, SURVEY_STATUS } from "../foundry/tactics.js";
+import {
+  questionsContext, setTactic, togglePlaystyle, syncTacticsDom, tokensForUser, setOwnSurveyStatus, SURVEY_STATUS, playstyleSignature
+} from "../foundry/tactics.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 const loc = key => game.i18n.localize(key);
@@ -17,7 +19,7 @@ export class PlayerSurvey extends HandlebarsApplicationMixin(ApplicationV2) {
     window: { title: "FASTFIGHTING.Survey.Title", icon: "fa-solid fa-clipboard-question", resizable: true },
     position: { width: 640, height: 640 },
     form: { handler: PlayerSurvey.#onChange, submitOnChange: true, closeOnSubmit: false },
-    actions: { sheetTab: PlayerSurvey.#onTab, ready: PlayerSurvey.#onReady, resetAll: PlayerSurvey.#onResetAll }
+    actions: { sheetTab: PlayerSurvey.#onTab, ready: PlayerSurvey.#onReady, resetAll: PlayerSurvey.#onResetAll, togglePlaystyle: PlayerSurvey.#onTogglePlaystyle }
   };
 
   static PARTS = {
@@ -102,10 +104,19 @@ export class PlayerSurvey extends HandlebarsApplicationMixin(ApplicationV2) {
     }
   }
 
-  /** Keep other people's edits flowing in without stealing focus. */
+  /**
+   * Keep other people's edits flowing in without stealing focus. Playstyle changes alter what
+   * "Let them decide" means, so those re-render unless someone is typing.
+   */
   syncActor(actor) {
     if ( !this.rendered ) return;
     syncTacticsDom(this.element, actor);
+    this.signatures ??= new Map();
+    const sig = playstyleSignature(actor);
+    const before = this.signatures.get(actor.uuid);
+    this.signatures.set(actor.uuid, sig);
+    const typing = this.element.contains(document.activeElement) && document.activeElement?.tagName === "TEXTAREA";
+    if ( before !== undefined && before !== sig && !typing ) this.render();
   }
 
   static async #onChange(event) {
@@ -113,8 +124,17 @@ export class PlayerSurvey extends HandlebarsApplicationMixin(ApplicationV2) {
     const key = el?.dataset?.tactic;
     if ( !key ) return;
     const actor = await fromUuid(el.dataset.actorUuid);
-    el.closest(".ff-q")?.classList.toggle("is-auto", el.value === "auto");
-    await setTactic(actor, key, el.value);
+    const value = el.type === "checkbox" ? el.checked : el.value;
+    el.closest(".ff-q")?.classList.toggle("is-auto", value === "auto");
+    await setTactic(actor, key, value);
+    if ( el.type === "checkbox" ) this.render();
+  }
+
+  static async #onTogglePlaystyle(event, target) {
+    const actor = await fromUuid(target.dataset.actorUuid);
+    const ok = await togglePlaystyle(actor, target.dataset.playstyle);
+    if ( !ok ) ui.notifications.warn(loc("FASTFIGHTING.Playstyle.Max"));
+    this.render();
   }
 
   static #onTab(event, target) {

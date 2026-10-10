@@ -3,7 +3,7 @@
  */
 import { meanPart, doubled } from "../dice.js";
 import { degreeDistribution } from "../probability.js";
-import { attackBonusMods, currentAc, rangePenalty, saveMod, bonusDamageParts, actionCost } from "../battle-state.js";
+import { attackBonusMods, currentAc, rangePenalty, saveMod, bonusDamageParts, actionCost, studyBonus } from "../battle-state.js";
 
 function meanByType(parts) {
   const out = {};
@@ -59,7 +59,7 @@ export function expectedDamage(run, a, action, t, attacksMade = 0) {
     const mult = action.save.basic === false ? [2, 1, 0, 0] : [2, 1, 0.5, 0];
     return targets * dist.reduce((s, p, d) => s + p * mult[d] * (dmg.normal + extra), 0);
   }
-  const bonus = (action.bonus ?? 0) + rules.attackPenalty(action, attacksMade) + attackBonusMods(run, a, action)
+  const bonus = (action.bonus ?? 0) + rules.attackPenalty(action, attacksMade) + attackBonusMods(run, a, action) + studyBonus(a, t)
     + rangePenalty(run, a, t, action);
   const dist = degreeDistribution(rules, bonus, currentAc(run, t, a, action));
   return targets * (dist[2] * (dmg.normal + extra) + dist[3] * (dmg.critical + extra * 2));

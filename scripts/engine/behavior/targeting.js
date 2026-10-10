@@ -8,7 +8,7 @@
  *   Mastermind   side-wide focus target; ruthless ones finish off the downed
  */
 import { STATUS, TACTICAL } from "../../constants.js";
-import { enemiesOf, isStanding, liveTier, liveTrait, movesNeeded } from "../battle-state.js";
+import { enemiesOf, isStanding, liveTier, liveTrait, movesNeeded, behaviorOf } from "../battle-state.js";
 import { expectedDamage, hasUses, threatOf, actionCost } from "./evaluate.js";
 import { styleWeight } from "../tactics.js";
 
@@ -26,7 +26,8 @@ function inCrisis(run, u) {
  * whose favorite weapon still needs drawing punches with its last action instead of standing idle).
  */
 export function bestOptionVs(run, u, t, attacksMade = 0, actionsLeft = Infinity) {
-  const tactics = u.spec.tactics ?? null;
+  const tactics = u.tac;
+  const behavior = behaviorOf(u);
   const options = [];
   for ( const action of u.prep.offense ) {
     if ( !hasUses(u, action) ) continue;
@@ -37,7 +38,10 @@ export function bestOptionVs(run, u, t, attacksMade = 0, actionsLeft = Infinity)
     // Drawing a weapon is a one-time cost, so spread it over the attacks it enables.
     const amortized = action.cost + (cost - action.cost) * 0.25;
     const perAction = ev / (amortized + moves);
-    options.push({ action, moves, ev, perAction, cost, weighted: perAction * styleWeight(tactics, action) });
+    let weighted = perAction * styleWeight(tactics, action);
+    if ( behavior.meleeBias && action.melee ) weighted *= 1 + behavior.meleeBias;
+    if ( behavior.exploitWeakness && (action.damage ?? []).some(p => t.spec.iwr?.weak?.[p.type]) ) weighted *= 1 + behavior.exploitWeakness;
+    options.push({ action, moves, ev, perAction, cost, weighted });
   }
   if ( !options.length ) return null;
 
@@ -56,6 +60,8 @@ export function bestOptionVs(run, u, t, attacksMade = 0, actionsLeft = Infinity)
   }
   const fits = pool.filter(o => o.moves + o.cost <= actionsLeft);
   if ( fits.length ) pool = fits;
+  // Wildcards sometimes just do something else.
+  if ( behavior.random && run.rng && pool.length > 1 && run.rng.chance(behavior.random) ) return run.rng.pick(pool);
   let best = null;
   for ( const o of pool ) if ( !best || o.weighted > best.weighted ) best = o;
   return best;
@@ -76,15 +82,56 @@ function hpFraction(t) {
 
 /**
  * Choose who `u` attacks this turn. Returns a unit or null.
+ * Playstyles get the first word (Cruel finishes the fallen, Wildcards surprise, People-Pleasers follow the
+ * group's target), then stated tactics or personality decide, then the target's own playstyle can pull
+ * attention (Instigators, Martyrs) or slip it (Wallflowers, Scaredy-Cats).
  */
 export function chooseTarget(run, u) {
+  const behavior = behaviorOf(u);
+  const rng = run.rng;
+  const foes = enemiesOf(run, u);
+  const reach = list => list.map(t => ({ t, moves: minMoves(run, u, t) })).filter(x => Number.isFinite(x.moves));
+  if ( behavior.finishDowned && !behavior.spareDowned ) {
+    const downed = reach(foes.filter(f => f.status === STATUS.DOWN && !f.stable)).filter(x => x.moves <= 1);
+    if ( downed.length && rng.chance(behavior.finishDowned) ) return rng.pick(downed).t;
+  }
+  const standing = reach(foes.filter(isStanding));
+  if ( behavior.random && standing.length && rng.chance(behavior.random) ) return rng.pick(standing).t;
+  if ( behavior.followFocus && standing.length && rng.chance(behavior.followFocus) ) {
+    const focus = standing.map(x => ({ ...x, n: run.units.filter(a => a.side === u.side && a !== u && isStanding(a) && a.targetId === x.t.id).length }));
+    const most = Math.max(...focus.map(x => x.n));
+    if ( most > 0 ) return rng.pick(focus.filter(x => x.n === most)).t;
+  }
+  const target = chooseTargetCore(run, u, behavior);
+  return redirectForAttention(run, target, standing);
+}
+
+/** Targets' playstyles: some draw attacks, some avoid notice. */
+function redirectForAttention(run, target, standing) {
+  if ( !target || !standing.length ) return target;
+  const rng = run.rng;
+  const here = standing.find(x => x.t === target);
+  const near = here ? here.moves + 1 : Math.min(...standing.map(x => x.moves)) + 1;
+  const tb = behaviorOf(target);
+  if ( tb.lowProfile && rng.chance(tb.lowProfile) ) {
+    const others = standing.filter(x => x.t !== target && x.moves <= near && !behaviorOf(x.t).lowProfile);
+    if ( others.length ) target = rng.pick(others).t;
+  }
+  for ( const x of rng.shuffle(standing.filter(y => y.t !== target && behaviorOf(y.t).drawAggro && y.moves <= near)) ) {
+    if ( rng.chance(behaviorOf(x.t).drawAggro) ) return x.t;
+  }
+  return target;
+}
+
+function chooseTargetCore(run, u, behavior) {
   const tier = liveTier(run, u);
   const selfish = liveTrait(run, u, "selfish");
   const foes = enemiesOf(run, u);
   let candidates = foes.filter(isStanding);
 
-  // Ruthless tacticians consider finishing downed (dying) foes when nothing else is close.
-  if ( tier >= TACTICAL.TACTICAL && selfish >= 60 ) {
+  // Ruthless tacticians consider finishing downed (dying) foes when nothing else is close; Moralists never do.
+  const spares = behavior.spareDowned && (behavior.spareDowned >= 1 || run.rng.chance(behavior.spareDowned));
+  if ( !spares && tier >= TACTICAL.TACTICAL && selfish >= 60 ) {
     const downed = foes.filter(f => f.status === STATUS.DOWN && !f.stable);
     candidates = candidates.concat(downed);
   }
@@ -99,7 +146,7 @@ export function chooseTarget(run, u) {
   };
 
   // A player's stated target priority overrides the personality-driven choice.
-  const choice = u.spec.tactics?.target;
+  const choice = u.tac?.target;
   if ( choice ) {
     const standing = reachable.filter(x => isStanding(x.t));
     const pool = standing.length ? standing : reachable;

@@ -3,15 +3,16 @@
  * PCs follow their GM-entered disposition; monsters scale with Tactical, but always consider healing they have.
  */
 import { STATUS, TACTICAL, clamp } from "../../constants.js";
-import { alliesOf, liveTier, liveTrait } from "../battle-state.js";
+import { alliesOf, liveTier, liveTrait, dispositionOf } from "../battle-state.js";
 import { hasUses } from "./evaluate.js";
 import { meanPart } from "../dice.js";
 
 const THRESHOLD = { conservative: 0.3, balanced: 0.45, aggressive: 0.6, allCosts: 0.8 };
 
 export function healAggroOf(run, u) {
-  if ( u.spec.kind === "pc" || u.spec.disposition?.healAggro ) {
-    return u.spec.disposition?.healAggro ?? run.prep.sides[u.side].healAggro ?? "balanced";
+  const disposition = dispositionOf(u);
+  if ( u.spec.kind === "pc" || disposition.healAggro ) {
+    return disposition.healAggro ?? run.prep.sides[u.side].healAggro ?? "balanced";
   }
   const tier = liveTier(run, u);
   if ( tier <= TACTICAL.FERAL ) return "conservative";
@@ -26,7 +27,7 @@ const meanHeal = action => (action.heal ?? []).reduce((s, p) => s + meanPart(p),
  * @returns {{action: object, target: object}|null}
  */
 export function decideHeal(run, u, actionsLeft) {
-  const potionAt = u.spec.tactics?.potionThreshold;
+  const potionAt = u.tac?.potionThreshold;
   const ownFrac = u.maxHp > 0 ? u.hp / u.maxHp : 0;
   const heals = u.prep.healActions.filter(a => {
     if ( a.cost > actionsLeft || !hasUses(u, a) ) return false;
@@ -40,7 +41,7 @@ export function decideHeal(run, u, actionsLeft) {
   const threshold = THRESHOLD[aggro] ?? 0.45;
   const selfish = liveTrait(run, u, "selfish");
   const tier = liveTier(run, u);
-  const allyDying = u.spec.disposition?.allyDying ?? (selfish >= 70 ? "protectSelf" : "rescue");
+  const allyDying = dispositionOf(u).allyDying ?? (selfish >= 70 ? "protectSelf" : "rescue");
 
   let best = null;
   let bestScore = 0;
@@ -61,7 +62,7 @@ export function decideHeal(run, u, actionsLeft) {
     if ( isSelf && potionAt && potionAt !== "never" && frac < Number(potionAt) / 100 && heals.some(a => a.selfOnly) ) {
       score = Math.max(score, 1 - frac);
     }
-    if ( isSelf && u.wasDowned && u.spec.disposition?.selfRevived === "healSelf" && frac < 0.75 ) score += 1;
+    if ( isSelf && u.wasDowned && dispositionOf(u).selfRevived === "healSelf" && frac < 0.75 ) score += 1;
     if ( score <= 0 ) continue;
     score *= isSelf ? (1 + selfish / 50) : clamp(1 - selfish / 200, 0.2, 1);
     if ( score > bestScore ) { bestScore = score; best = ally; }

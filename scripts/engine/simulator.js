@@ -6,8 +6,9 @@ import { createRng, deriveSeed, randomSeed } from "./rng.js";
 import { sampleDamage, samplePart, doubled } from "./dice.js";
 import {
   prepareBattle, createRun, isStanding, enemiesOf, areEnemies, liveTier, currentAc, attackBonusMods,
-  rangePenalty, moveToward, saveMod, actionsThisTurn, bonusDamageParts
+  rangePenalty, moveToward, saveMod, actionsThisTurn, bonusDamageParts, dispositionOf, behaviorOf, studyBonus
 } from "./battle-state.js";
+import { sampleRunTactics } from "./playstyles.js";
 import { chooseTarget, bestOptionVs } from "./behavior/targeting.js";
 import { decideHeal } from "./behavior/healing.js";
 import { checkMorale, MORALE } from "./behavior/morale.js";
@@ -33,6 +34,7 @@ function rollInitiative(run) {
   for ( const u of run.units ) {
     const init = u.spec.initiative ?? { mod: 0 };
     let mod = stealthSides.has(u.side) ? (init.stealth ?? init.mod ?? 0) : (init.mod ?? 0);
+    mod += behaviorOf(u).initiative ?? 0; // Instigators jump in first
     if ( liveTier(run, u) >= TACTICAL.MASTERMIND ) mod += 2; // ambush instincts
     rolled.set(u.id, run.rng.d20() + mod + run.rng.next() * 0.01);
   }
@@ -184,7 +186,7 @@ function executeOffense(run, u, action, t, attacksMade) {
       continue;
     }
 
-    const bonus = (action.bonus ?? 0) + rules.attackPenalty(action, attacksMade) + attackBonusMods(run, u, action)
+    const bonus = (action.bonus ?? 0) + rules.attackPenalty(action, attacksMade) + attackBonusMods(run, u, action) + studyBonus(u, target)
       + rangePenalty(run, u, target, action);
     const ac = currentAc(run, target, u, action);
     const roll = rules.roll(run.rng, bonus, ac);
@@ -259,13 +261,22 @@ function takeTurn(run, u) {
     log(run, u, "wavers");
   }
 
-  const disposition = u.spec.disposition ?? {};
+  const disposition = dispositionOf(u);
   if ( u.prone && u.wasDowned && disposition.selfRevived === "retreat" ) return flee(run, u, "retreats after being revived");
   if ( disposition.allyDying === "retreat" && run.units.some(a => a.side === u.side && a !== u && a.status === STATUS.DOWN) ) {
     return flee(run, u, "retreats as an ally falls");
   }
 
   let actions = actionsThisTurn(run, u);
+  const behavior = behaviorOf(u);
+  // Diplomats open by trying to talk.
+  if ( !u.parleyed ) {
+    u.parleyed = true;
+    if ( behavior.parleyFirst && actions > 0 && run.rng.chance(behavior.parleyFirst) ) {
+      actions -= 1;
+      log(run, u, "tries to talk the other side down");
+    }
+  }
   let attacksMade = 0;
   if ( u.prone && actions > 0 ) {
     actions -= 1;
@@ -291,6 +302,17 @@ function takeTurn(run, u) {
 
     const target = chooseTarget(run, u);
     if ( !target ) break;
+    // Lore-Collectors study a new foe first (Recall Knowledge), then fight it better.
+    if ( behavior.study && !u.studied.has(target.id) && !u.studied.has(`skip:${target.id}`) && actions >= 2 ) {
+      u.studied.add(target.id);
+      if ( run.rng.chance(behavior.study) ) {
+        actions -= 1;
+        log(run, u, `studies ${target.spec.name} for weaknesses`);
+        continue;
+      }
+      u.studied.delete(target.id);
+      u.studied.add(`skip:${target.id}`);
+    }
     u.targetId = target.id;
     const option = bestOptionVs(run, u, target, attacksMade, actions);
     if ( !option ) break;
@@ -304,8 +326,9 @@ function takeTurn(run, u) {
     }
 
     const tier = liveTier(run, u);
-    const tactics = u.spec.tactics ?? null;
-    const canShield = u.spec.shield && !u.shieldRaised && tactics?.shield !== "never";
+    const tactics = u.tac;
+    const rushing = behavior.rush && run.rng.chance(behavior.rush);
+    const canShield = u.spec.shield && !u.shieldRaised && tactics?.shield !== "never" && !rushing;
     // "Always" keeps the shield up: the last action of the turn goes to it.
     if ( canShield && tactics?.shield === "always" && actions === 1 ) {
       u.shieldRaised = true;
@@ -449,6 +472,8 @@ function summarize(run, ended, capture) {
 export function runOne(prep, seed, { log: withLog = false, capture = false } = {}) {
   const run = createRun(prep);
   run.rng = createRng(seed);
+  // Each simulated fight decides which stated preferences win out (see "stay mostly true").
+  for ( const u of run.units ) u.tac = sampleRunTactics(u.spec, run.rng);
   if ( withLog ) run.log = [];
   const order = rollInitiative(run);
   if ( withLog ) log(run, null, `Initiative: ${order.map(u => u.spec.name).join(", ")}`);

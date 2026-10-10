@@ -9,10 +9,10 @@ import { getAdapter } from "../api.js";
 import { setting } from "../settings.js";
 import { getSetup, saveSetup, tokenSetup } from "../foundry/persistence.js";
 import {
-  questionsContext, setTactic, syncTacticsDom, isPlayerControlled, playersOnScene, tokensForUser, surveyStatus,
-  requestSurveys, SURVEY_STATUS
+  questionsContext, setTactic, togglePlaystyle, syncTacticsDom, isPlayerControlled, playersOnScene, tokensForUser, surveyStatus,
+  requestSurveys, SURVEY_STATUS, playstyleSignature, tacticsFor
 } from "../foundry/tactics.js";
-import { gatherRoster, chosenSide, resolveAllegiances, simulate, swingFactors, replay, findSample } from "../foundry/battle.js";
+import { gatherRoster, chosenSide, resolveAllegiances, simulate, swingFactors, replay, findSample, withPlaystyleLeaders } from "../foundry/battle.js";
 import { buildReport, sendReport } from "../foundry/chat-report.js";
 import { planMakeItSo, confirmMakeItSo, executeMakeItSo, undoMakeItSo, hasUndo } from "../foundry/make-it-so.js";
 import { computeApproach } from "../foundry/terrain.js";
@@ -62,6 +62,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       makeItSo: BattlePlanner.#onMakeItSo,
       undo: BattlePlanner.#onUndo,
       preparePlayers: BattlePlanner.#onPreparePlayers,
+      togglePlaystyle: BattlePlanner.#onTogglePlaystyle,
       openSurvey: BattlePlanner.#onOpenSurvey,
       sendReport: BattlePlanner.#onSendReport,
       resetReport: BattlePlanner.#onResetReport
@@ -121,13 +122,15 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     }
   }
 
-  #traitView(trait, base, fudge, path, reason) {
-    const value = clamp(base + fudge, 0, 100);
+  /** A fudgeable trait. `shift` is the playstyle adjustment, shown but not editable here. */
+  #traitView(trait, base, fudge, path, reason, shift = 0) {
+    const value = clamp(base + fudge + shift, 0, 100);
+    const signed = n => (n > 0 ? `+${n}` : `${n}`);
     return {
       trait, label: loc(`FASTFIGHTING.Trait.${trait}`), value, base, fudge, path, step: FUDGE_STEP.trait,
       band: loc(`FASTFIGHTING.Band.${traitBand(trait, value)}`),
-      fudgeLabel: fudge ? (fudge > 0 ? `+${fudge}` : `${fudge}`) : "",
-      tooltip: `${loc(`FASTFIGHTING.Trait.${trait}`)}: ${base}${fudge ? ` ${fudge > 0 ? "+" : ""}${fudge}` : ""}${reason ? ` (${reason})` : ""}`
+      fudgeLabel: fudge ? signed(fudge) : "",
+      tooltip: `${loc(`FASTFIGHTING.Trait.${trait}`)}: ${base}${fudge ? ` ${signed(fudge)} ${loc("FASTFIGHTING.Planner.Fudge")}` : ""}${shift ? ` ${signed(shift)} ${loc("FASTFIGHTING.Playstyle.Label")}` : ""}${reason ? ` (${reason})` : ""}`
     };
   }
 
@@ -174,7 +177,8 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       const s = setup.sides[id];
       const members = this.roster.filter(e => chosenSide(e, setup) === id);
       const defaults = sideDefaults[id] ?? sideDefaults.hostile;
-      const leaders = adapter?.detectLeaders(members.map(m => m.spec)) ?? [];
+      const leaders = withPlaystyleLeaders(adapter?.detectLeaders(members.map(m => m.spec)) ?? [],
+        members.map(m => ({ id: m.spec.id, behavior: tacticsFor(m.token.actor, m.spec).playstyles.behavior })));
       const autoLeader = leaders[0] ? this.roster.find(e => e.token.id === leaders[0].id) : null;
       const leaderId = s.leaderId === "auto" ? leaders[0]?.id : s.leaderId;
       const leader = leaders.find(l => l.id === leaderId) ?? (leaderId && leaderId !== "none" ? { id: leaderId, bonus: { brave: 10, tacticalFloor: 40, attack: 0, ac: 0 }, reason: loc("FASTFIGHTING.Planner.ChosenLeader") } : null);
@@ -244,6 +248,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     const fudge = ts.fudge ?? {};
     const isPc = s.kind === "pc";
     const playerControlled = isPlayerControlled(s, e.token.actor);
+    const shifts = tacticsFor(e.token.actor, s).playstyles.traits;
     const controllers = game.users.filter(u => !u.isGM && e.token.actor?.testUserPermission(u, "OWNER")).map(u => u.name).join(", ");
     const approach = this.#nearestEnemyApproach(e, resolved);
     const resolvedSide = resolved[e.token.id];
@@ -262,7 +267,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       side: ts.side ?? e.baseSide,
       sideChoices: Object.fromEntries(SIDE_ORDER.map(k => [k, `FASTFIGHTING.Side.${k}`])),
       resolvedLabel: resolvedSide && resolvedSide !== chosenSide(e, setup) ? game.i18n.format("FASTFIGHTING.Planner.FightsWith", { side: loc(`FASTFIGHTING.Side.${resolvedSide}`) }) : (resolvedSide === null && ts.include !== false ? loc("FASTFIGHTING.Planner.SitsOut") : ""),
-      traits: TRAITS.map(k => this.#traitView(k, s.traits[k]?.base ?? 50, fudge[k] ?? 0, `tokens.${e.token.id}.fudge.${k}`, s.traitReasons?.[k])),
+      traits: TRAITS.map(k => this.#traitView(k, s.traits[k]?.base ?? 50, fudge[k] ?? 0, `tokens.${e.token.id}.fudge.${k}`, s.traitReasons?.[k], shifts[k] ?? 0)),
       expanded: this.expanded.has(e.token.id),
       stats: STAT_FUDGES.map(([k, step]) => {
         const base = k === "ac" ? s.defenses.ac : k === "hp" ? s.hp.max : 0;
@@ -279,7 +284,8 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       isPc,
       playerControlled,
       controllers,
-      tactics: playerControlled && this.expanded.has(e.token.id) ? questionsContext(s, e.token.actor, `gm-${e.token.id}`) : null
+      tactics: this.expanded.has(e.token.id) ? questionsContext(s, e.token.actor, `gm-${e.token.id}`, { questions: playerControlled }) : null,
+      playstyleNames: (e.token.actor?.getFlag(MODULE_ID, "tactics")?.playstyles ?? []).map(id => loc(`FASTFIGHTING.Playstyle.${id}.Name`)).join(", ")
     };
   }
 
@@ -401,6 +407,20 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     if ( !this.rendered ) return;
     syncTacticsDom(this.element, actor);
     if ( this.results ) this.stale = true;
+    this.signatures ??= new Map();
+    const sig = playstyleSignature(actor);
+    const before = this.signatures.get(actor.uuid);
+    this.signatures.set(actor.uuid, sig);
+    const typing = this.element.contains(document.activeElement) && ["TEXTAREA", "INPUT"].includes(document.activeElement?.tagName) && document.activeElement.type !== "checkbox";
+    if ( before !== sig && !typing && !this.running ) this.render();
+  }
+
+  static async #onTogglePlaystyle(event, target) {
+    const actor = await fromUuid(target.dataset.actorUuid);
+    const ok = await togglePlaystyle(actor, target.dataset.playstyle);
+    if ( !ok ) ui.notifications.warn(loc("FASTFIGHTING.Playstyle.Max"));
+    this.stale = true;
+    this.render();
   }
 
   static async #onPreparePlayers() {
@@ -442,10 +462,12 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     const value = target.type === "checkbox" ? target.checked : (target.dataset.dtype === "Number" || target.type === "number") ? Number(target.value) : target.value;
     if ( target.dataset.tactic ) {
       const actor = await fromUuid(target.dataset.actorUuid);
-      target.closest(".ff-q")?.classList.toggle("is-auto", target.value === "auto");
-      await setTactic(actor, target.dataset.tactic, target.value);
+      const tacticValue = target.type === "checkbox" ? target.checked : target.value;
+      target.closest(".ff-q")?.classList.toggle("is-auto", tacticValue === "auto");
+      await setTactic(actor, target.dataset.tactic, tacticValue);
       this.stale = true;
-      return; // no re-render: keep focus; the actor update hook syncs other views
+      if ( target.type === "checkbox" ) this.render();
+      return; // selects and notes: no re-render, keep focus; the actor update hook syncs other views
     } else if ( name.startsWith("report.") ) {
       const key = name.slice(7);
       this.report[key] = value;

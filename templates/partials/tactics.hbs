@@ -1,3 +1,18 @@
+<div class="ff-playstyles">
+  <div class="ff-q-label">{{localize "FASTFIGHTING.Playstyle.Label"}} <span class="ff-pill-count">{{playstyleCount}}</span>
+    <i class="fa-solid fa-circle-question" data-tooltip="{{localize "FASTFIGHTING.Playstyle.Hint"}}"></i></div>
+  <div class="ff-pills" data-actor-uuid="{{actorUuid}}">
+    {{#each playstyles}}<button type="button" class="ff-pill {{#if active}}active{{/if}}" data-action="togglePlaystyle" data-playstyle="{{id}}" data-actor-uuid="{{../actorUuid}}" aria-pressed="{{#if active}}true{{else}}false{{/if}}" {{#if disabled}}disabled{{/if}} data-tooltip="{{hint}}"><i class="fa-solid {{icon}}"></i> {{label}}<span class="ff-pill-order">{{#if active}}{{order}}{{/if}}</span></button>{{/each}}
+  </div>
+  <div class="ff-pill-flags">
+    <label class="ff-check"><input type="checkbox" name="{{stayTrue.name}}" data-tactic="stayTrue" data-actor-uuid="{{actorUuid}}" {{checked stayTrue.checked}}> {{localize "FASTFIGHTING.Playstyle.StayTrue"}}
+      <i class="fa-solid fa-circle-question" data-tooltip="{{localize "FASTFIGHTING.Playstyle.StayTrueHint"}}"></i></label>
+    <label class="ff-check"><input type="checkbox" name="{{roleplay.name}}" data-tactic="roleplay" data-actor-uuid="{{actorUuid}}" {{checked roleplay.checked}}> {{localize "FASTFIGHTING.Playstyle.Roleplay"}}
+      <i class="fa-solid fa-circle-question" data-tooltip="{{localize "FASTFIGHTING.Playstyle.RoleplayHint"}}"></i></label>
+  </div>
+  {{#if conflict}}<p class="ff-hint"><i class="fa-solid fa-circle-info"></i> {{localize "FASTFIGHTING.Playstyle.Both"}}</p>{{/if}}
+</div>
+{{#if withQuestions}}
 <div class="ff-tactics">
   {{#each questions}}
   <div class="ff-q {{#if isAuto}}is-auto{{/if}}">
@@ -12,3 +27,4 @@
     <textarea id="{{notes.name}}" name="{{notes.name}}" data-tactic="notes" data-actor-uuid="{{actorUuid}}" rows="2" placeholder="{{notes.placeholder}}">{{notes.value}}</textarea>
   </div>
 </div>
+{{/if}}

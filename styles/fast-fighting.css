@@ -285,3 +285,25 @@
 .ff-sheet-tab img { width: 22px; height: 22px; border: none; border-radius: 3px; object-fit: cover; }
 .ff-sheet-tab.active { border-top-color: var(--ff-accent); color: var(--color-text-primary, inherit); font-weight: 700; background: var(--ff-surface-2); }
 .ff-survey-foot .ff-run { margin: 4px 8px; height: auto; }
+
+/* ---------- Playstyle pills ---------- */
+.ff-playstyles { display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; }
+.ff-pill-count { font-weight: 700; color: var(--ff-accent); margin-left: 4px; }
+.ff-pills { display: flex; flex-wrap: wrap; gap: 4px; border-radius: 6px; }
+.ff-pill {
+  flex: none; width: auto; height: 24px; display: inline-flex; align-items: center; gap: 5px;
+  padding: 0 10px; border-radius: 12px; font-size: 11px; line-height: 1;
+  border: 1px solid var(--ff-line); background: var(--ff-surface); color: var(--ff-text-dim); box-shadow: none;
+}
+.ff-pill:hover:not(:disabled) { border-color: var(--ff-accent); color: var(--color-text-primary, inherit); }
+.ff-pill.active { background: var(--ff-accent); border-color: var(--ff-accent); color: #fff; font-weight: 700; }
+.ff-pill:disabled { opacity: 0.35; cursor: not-allowed; }
+.ff-pill-order:empty { display: none; }
+.ff-pill-order {
+  display: inline-flex; align-items: center; justify-content: center; width: 14px; height: 14px;
+  border-radius: 50%; background: rgba(255, 255, 255, 0.85); color: #222; font-size: 9px;
+}
+.ff-pills.ff-synced { animation: ff-flash 1.2s ease-out; }
+.ff-pill-flags { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 12px; }
+.ff-pill-flags i { opacity: 0.6; }
+.ff-row-playstyles { font-size: 11px; color: var(--ff-accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

@@ -56,6 +56,26 @@ Next to each player, the GM sees a status: *Not asked*, *Waiting to log in*, *En
 
 If you never press Prepare Players, the same questions are in each player-controlled token's expanded row in the planner, for you to fill in.
 
+**Playstyles.** Each character, PC or NPC, can carry up to four playstyle pills:
+- Scaredy-Cat, Cruel, Moralist, People-Pleaser, Fragile, Impatient, Brawler
+- Skeptic, Speed-Runner, Leader, Instigator, Diplomat, Wallflower
+- Martyr, Mercenary, Enabler, Redeem-Seeker, Lore-Collector, Puzzle-Maniac, Wildcard
+
+They shift personality traits and change what "Let them decide" means; the survey shows which playstyle drove each default. They also switch on simulated quirks:
+- Cruel finishes off the fallen; Moralists never do.
+- Diplomats open by talking.
+- Lore-Collectors study a foe first, then hit it harder.
+- Instigators and Martyrs draw attacks; Wallflowers slip notice.
+- People-Pleasers attack what the group attacks.
+- Puzzle-Maniacs exploit weaknesses.
+- Wildcards surprise.
+
+The first-picked playstyle wins when two disagree. Players pick theirs in the survey; the GM picks NPCs' in the planner.
+
+Two checkboxes go with the pills:
+- **Stay mostly true to my calculated tactical level** caps the survey's influence at about 10%. Trait shifts are limited to ±10, and any answer or quirk that differs from the calculated strategy only appears in about 1 in 10 simulated fights.
+- **Roleplaying is very important to me** weighs playstyles heavily. Trait shifts double, and quirks happen far more often.
+
 Every derived number has **fudge up / fudge down / remove fudge** buttons. A fudged value is outlined, and the tooltip shows the system-derived base and the reason for it.
 
 **Right side: results.**
