@@ -26,6 +26,7 @@
       <label><input type="checkbox" name="options.morale" {{checked options.morale}}> {{localize "FASTFIGHTING.Planner.Morale"}}</label>
       <label><input type="checkbox" name="options.leadership" {{checked options.leadership}}> {{localize "FASTFIGHTING.Planner.Leadership"}}</label>
       <label data-tooltip="{{localize "FASTFIGHTING.Planner.TalkingHint"}}"><input type="checkbox" name="options.talking" {{checked options.talking}}> {{localize "FASTFIGHTING.Planner.Talking"}}</label>
+      <label data-tooltip="{{localize "FASTFIGHTING.Planner.BystandersHint"}}"><input type="checkbox" name="options.bystanders" {{checked options.bystanders}}> {{localize "FASTFIGHTING.Planner.Bystanders"}}</label>
       <label><input type="checkbox" name="options.includeHidden" {{checked options.includeHidden}}> {{localize "FASTFIGHTING.Planner.Hidden"}}</label>
     </div>
     <div class="ff-run-group">
@@ -106,6 +107,7 @@
                 {{name}}
                 {{#if hidden}}<i class="fa-solid fa-eye-slash" data-tooltip="{{localize "FASTFIGHTING.Planner.HiddenToken"}}"></i>{{/if}}
                 <span class="ff-chip ff-kind-{{kind}}">{{kindLabel}} {{level}}</span>
+                {{#if bystander}}<span class="ff-chip ff-bystander" data-tooltip="{{localize "FASTFIGHTING.Planner.BystandersHint"}}"><i class="fa-solid fa-eye"></i> {{localize "FASTFIGHTING.Planner.Bystander"}}</span>{{/if}}
                 {{#if controllers}}<span class="ff-chip" data-tooltip="{{localize "FASTFIGHTING.Planner.ControlledBy"}}"><i class="fa-solid fa-user"></i> {{controllers}}</span>{{/if}}
               </div>
               <div class="ff-row-meta">
@@ -253,19 +255,16 @@
                 <select name="sampleFilter">{{selectOptions sampleFilters selected=sampleFilter localize=true}}</select>
               </label>
               <button type="button" class="ff-btn" data-action="rollSample"><i class="fa-solid fa-dice"></i> {{localize "FASTFIGHTING.Sample.Roll"}}</button>
+              <label class="ff-field">{{localize "FASTFIGHTING.Story.StyleLabel"}}
+                <select name="storyStyle">{{selectOptions storyStyles selected=storyStyle localize=true}}</select>
+              </label>
               <span class="ff-grow"></span>
-              <button type="button" class="ff-btn ff-make-it-so" data-action="makeItSo" {{#unless results.sample}}disabled{{/unless}}><i class="fa-solid fa-gavel"></i> {{localize "FASTFIGHTING.MakeItSo.Button"}}</button>
+              <button type="button" class="ff-btn ff-make-it-so" data-action="makeItSo" {{#unless results.sample}}disabled{{/unless}} data-tooltip="{{localize "FASTFIGHTING.MakeItSo.Hint"}}"><i class="fa-solid fa-gavel"></i> {{localize "FASTFIGHTING.MakeItSo.Button"}}</button>
             </div>
             {{#with results.sample}}
             <div class="ff-sample-head">{{localize "FASTFIGHTING.Sample.Result"}}: <strong>{{outcome}}</strong> · {{totalRounds}} {{localize "FASTFIGHTING.Sample.Rounds"}} · {{localize "FASTFIGHTING.Planner.Seed"}} {{seed}}</div>
             <div class="ff-split">
-              <ol class="ff-log">
-                {{#each rounds}}
-                <li class="ff-log-round"><h5>{{label}}</h5>
-                  <ul>{{#each entries}}<li class="ff-log-entry {{side}}"><strong>{{actor}}</strong> {{text}}</li>{{/each}}</ul>
-                </li>
-                {{/each}}
-              </ol>
+              <article class="ff-story ff-story-{{@root.storyStyle}}">{{{story}}}</article>
               <ul class="ff-finals">
                 {{#each finals}}<li><span class="ff-dot {{side}}"></span><strong>{{name}}</strong> <span class="ff-status {{statusClass}}">{{status}}</span><br><small>{{lines}}</small></li>{{/each}}
               </ul>
@@ -274,26 +273,6 @@
           </div>
           {{/if}}
 
-          {{#if (eq resultTab "share")}}
-          <div class="ff-share">
-            <div class="ff-strip-row">
-              <label class="ff-field">{{localize "FASTFIGHTING.Report.Accuracy"}}
-                <select name="report.accuracy">{{selectOptions report.accuracyChoices selected=report.accuracy localize=true}}</select>
-              </label>
-              <label class="ff-field">{{localize "FASTFIGHTING.Report.Mode"}}
-                <select name="report.mode">{{selectOptions report.modeChoices selected=report.mode localize=true}}</select>
-              </label>
-              <label class="ff-check"><input type="checkbox" name="report.hideEnemyNames" {{checked report.hideEnemyNames}}> {{localize "FASTFIGHTING.Report.HideNames"}}</label>
-            </div>
-            <p class="ff-hint">{{localize (concat "FASTFIGHTING.Accuracy.Hint." report.accuracy)}}</p>
-            <textarea name="report.text" rows="7">{{report.preview}}</textarea>
-            <div class="ff-strip-row">
-              <button type="button" class="ff-btn" data-action="resetReport"><i class="fa-solid fa-rotate-left"></i> {{localize "FASTFIGHTING.Report.Reset"}}</button>
-              <span class="ff-grow"></span>
-              <button type="button" class="ff-btn ff-run" data-action="sendReport"><i class="fa-solid fa-comment"></i> {{localize "FASTFIGHTING.Report.Send"}}</button>
-            </div>
-          </div>
-          {{/if}}
         {{else}}
           <div class="ff-empty-state">
             <i class="fa-solid fa-swords"></i>

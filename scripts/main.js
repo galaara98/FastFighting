@@ -9,18 +9,20 @@ import { BattlePlanner } from "./apps/battle-planner.js";
 import { DefaultsConfig } from "./apps/defaults-config.js";
 import { GenericAdapter } from "./adapters/generic/index.js";
 import { GenericPathsConfig } from "./apps/generic-paths-config.js";
+import { StoryTablesConfig } from "./apps/story-tables-config.js";
+import { invalidateStoryTables, installStoryTables } from "./story/tables.js";
 import { PlayerSurvey } from "./apps/player-survey.js";
 import { SOCKET, SURVEY_STATUS } from "./foundry/tactics.js";
 
 Hooks.once("init", () => {
-  registerSettings(DefaultsConfig, GenericPathsConfig);
+  registerSettings(DefaultsConfig, GenericPathsConfig, StoryTablesConfig);
 
   // Built-in adapters register at priority 0 so helper modules can replace them.
   // The generic adapter ("*") is the fallback for systems nobody supports yet.
   registerAdapter("pf2e", Pf2eAdapter, { priority: 0, source: MODULE_ID });
   registerAdapter("*", GenericAdapter, { priority: -100, source: MODULE_ID });
 
-  const api = buildApi({ openPlanner: () => BattlePlanner.open(), openSurvey: options => PlayerSurvey.open(options), BattlePlanner, PlayerSurvey });
+  const api = buildApi({ openPlanner: () => BattlePlanner.open(), openSurvey: options => PlayerSurvey.open(options), installStoryTables, BattlePlanner, PlayerSurvey });
   game.modules.get(MODULE_ID).api = api;
   Hooks.callAll("fastFighting.init", api);
 
@@ -29,41 +31,55 @@ Hooks.once("init", () => {
     editable: [{ key: "KeyB", modifiers: ["Shift"] }],
     restricted: true,
     onDown: () => {
-      if ( game.user.isGM ) BattlePlanner.open();
+      openIfReady();
       return true;
     }
   });
 });
 
-Hooks.on("getSceneControlButtons", controls => {
-  if ( !game.user?.isGM || !controls.tokens ) return;
-  controls.tokens.tools.fastFighting = {
-    name: "fastFighting",
-    title: "FASTFIGHTING.Planner.Title",
-    icon: "fa-solid fa-swords",
-    order: Object.keys(controls.tokens.tools).length,
-    button: true,
-    visible: game.user.isGM,
-    onChange: () => BattlePlanner.open()
-  };
-});
+/* The Battle Planner lives at the top of the Combat Tracker, for GMs, once an encounter has two tokens. */
+function encounterReady() {
+  const combat = ui.combat?.viewed;
+  return !!combat && combat.combatants.filter(c => c.tokenId).length >= 2;
+}
 
-Hooks.on("renderTokenHUD", (hud, element) => {
+function openIfReady() {
   if ( !game.user.isGM ) return;
-  const column = element.querySelector(".col.right") ?? element.querySelector(".col.left");
-  if ( !column || column.querySelector(".ff-hud") ) return;
+  if ( !encounterReady() ) return ui.notifications.info(game.i18n.localize("FASTFIGHTING.Tracker.NeedTwo"));
+  BattlePlanner.open();
+}
+
+Hooks.on("renderCombatTracker", (app, element) => {
+  if ( !game.user.isGM ) return;
+  const root = element instanceof HTMLElement ? element : element?.[0];
+  const header = root?.querySelector(".combat-tracker-header") ?? root;
+  if ( !header ) return;
+  header.querySelector(".ff-tracker-open")?.remove();
+  const ready = encounterReady();
   const button = document.createElement("button");
   button.type = "button";
-  button.className = "control-icon ff-hud";
-  button.dataset.tooltip = game.i18n.localize("FASTFIGHTING.Planner.Title");
-  button.innerHTML = `<i class="fa-solid fa-swords"></i>`;
+  button.className = "ff-tracker-open";
+  button.disabled = !ready;
+  button.dataset.tooltip = game.i18n.localize(ready ? "FASTFIGHTING.Tracker.OpenHint" : "FASTFIGHTING.Tracker.NeedTwo");
+  button.innerHTML = `<i class="fa-solid fa-swords"></i> ${game.i18n.localize("FASTFIGHTING.Planner.Title")}`;
   button.addEventListener("click", event => {
     event.preventDefault();
-    event.stopPropagation();
-    BattlePlanner.open();
+    openIfReady();
   });
-  column.append(button);
+  header.prepend(button);
 });
+
+// Encounter changes re-read the roster in an open planner.
+const refreshRoster = foundry.utils.debounce(() => {
+  const app = foundry.applications.instances.get("fast-fighting-planner");
+  if ( app?.rendered && !app.running ) {
+    app.roster = null;
+    app.render();
+  }
+}, 200);
+for ( const hook of ["createCombatant", "deleteCombatant", "createCombat", "deleteCombat", "combatStart"] ) {
+  Hooks.on(hook, () => { if ( game.user.isGM ) refreshRoster(); });
+}
 
 Hooks.once("ready", () => {
   // The GM's "Prepare Players" request opens the survey on the chosen players' screens.
@@ -112,3 +128,8 @@ Hooks.on("updateUser", (user, changes) => {
 Hooks.on("userConnected", () => {
   if ( game.user.isGM ) refreshPlanner();
 });
+
+// Edited story tables take effect immediately.
+for ( const hook of ["createRollTable", "updateRollTable", "deleteRollTable", "createTableResult", "updateTableResult", "deleteTableResult"] ) {
+  Hooks.on(hook, () => invalidateStoryTables());
+}

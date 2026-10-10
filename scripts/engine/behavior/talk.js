@@ -175,12 +175,12 @@ function applyOutcome(run, talker, t, outcome, log) {
     t.side = talker.side;
     t.targetId = null;
     t.wavering = false;
-    log(t, `is won over and switches sides`);
+    log(t, `is won over and switches sides`, { type: "sway", outcome, by: talker.spec.name, byId: talker.id });
     return;
   }
   t.status = outcome === SWAY.FLEE ? STATUS.FLED : STATUS.SURRENDERED;
   t.fellRound ??= run.round;
-  log(t, outcome === SWAY.FLEE ? "is talked into leaving and flees" : "lays down arms and surrenders");
+  log(t, outcome === SWAY.FLEE ? "is talked into leaving and flees" : "lays down arms and surrenders", { type: "sway", outcome, by: talker.spec.name, byId: talker.id });
 }
 
 /**
@@ -208,7 +208,11 @@ export function attemptTalk(run, talker, pitch, log) {
   t.sway.set(talker.side, progress);
   talker.talkAttempts = (talker.talkAttempts ?? 0) + 1;
   const result = ["critical failure: they won't hear another word", "unmoved", "wavering", "badly shaken"][roll.degree];
-  log(talker, `${verb} ${t.spec.name} (${pitch.skill} ${roll.total} vs DC ${pitch.dc}): ${result} [${Math.min(progress, steps)}/${steps}]`);
+  log(talker, `${verb} ${t.spec.name} (${pitch.skill} ${roll.total} vs DC ${pitch.dc}): ${result} [${Math.min(progress, steps)}/${steps}]`, {
+    type: "talk", skill: pitch.skill, target: t.spec.name, targetId: t.id, natural: roll.natural, mod: pitch.mod, total: roll.total,
+    dc: pitch.dc, dcStat: pitch.skill === "deception" ? "perception" : "will", degree: roll.degree, margin: roll.total - pitch.dc,
+    progress: Math.min(progress, steps), steps, offended: roll.degree === 0
+  });
   // Only a successful pitch closes the deal, even if circumstances have made them easier to convince.
   if ( roll.degree < 2 || progress < steps ) return false;
 

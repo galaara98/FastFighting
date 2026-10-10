@@ -1,7 +1,7 @@
 /**
  * World settings. Every setting is a default: the Battle Planner can override any of them per battle.
  */
-import { MODULE_ID, ALLEGIANCE, ACCURACY, DOWNED_MODELS, HEAL_AGGRO, ALLY_DYING } from "./constants.js";
+import { MODULE_ID, ALLEGIANCE, DOWNED_MODELS, HEAL_AGGRO, ALLY_DYING } from "./constants.js";
 
 const choices = (keys, prefix) => Object.fromEntries(keys.map(k => [k, `FASTFIGHTING.${prefix}.${k}`]));
 
@@ -25,17 +25,27 @@ const SETTINGS = {
   leadership: { type: Boolean, default: true },
   morale: { type: Boolean, default: true },
   talking: { type: Boolean, default: true },
+  bystanders: { type: Boolean, default: true },
   positioning: { type: Boolean, default: true },
   surpriseDefault: { type: String, default: "tracker", choices: choices(["none", "tracker", "stealth"], "Surprise") },
-  reportAccuracy: { type: String, default: "storyteller", choices: choices(ACCURACY, "Accuracy") },
-  reportMode: { type: String, default: "public", choices: choices(["public", "whisper"], "ReportMode") },
-  reportHideEnemyNames: { type: Boolean, default: true },
+  storyStyle: { type: String, default: "roleplay", choices: choices(["roleplay", "standard", "statistician"], "Story.Style") },
+  storyMode: { type: String, default: "public", choices: choices(["public", "whisper"], "Story.Mode") },
   lootMode: { type: String, default: "corpse", choices: choices(["corpse", "pile", "none"], "Loot") },
   corpseMode: { type: String, default: "keep", choices: choices(["keep", "remove"], "Corpse") },
   fledMode: { type: String, default: "hide", choices: choices(["hide", "leave"], "Fled") }
 };
 
-export function registerSettings(DefaultsConfig, GenericPathsConfig) {
+export function registerSettings(DefaultsConfig, GenericPathsConfig, StoryTablesConfig) {
+  if ( StoryTablesConfig ) {
+    game.settings.registerMenu(MODULE_ID, "storyTablesMenu", {
+      name: "FASTFIGHTING.Story.TablesMenuName",
+      label: "FASTFIGHTING.Story.TablesMenuLabel",
+      hint: "FASTFIGHTING.Story.TablesMenuHint",
+      icon: "fa-solid fa-table-list",
+      type: StoryTablesConfig,
+      restricted: true
+    });
+  }
   game.settings.register(MODULE_ID, "genericPaths", { scope: "world", config: false, type: Object, default: {} });
   if ( GenericPathsConfig ) {
     game.settings.registerMenu(MODULE_ID, "genericPathsMenu", {

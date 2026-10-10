@@ -2,7 +2,7 @@
  * The GM's Battle Planner: roster and per-side settings on the left, results on the right.
  */
 import {
-  MODULE_ID, SIDES, TRAITS, ALLEGIANCE, ACCURACY, HEAL_AGGRO, DOWNED_MODELS, STATUS,
+  MODULE_ID, SIDES, TRAITS, ALLEGIANCE, HEAL_AGGRO, DOWNED_MODELS, STATUS,
   traitBand, fudged, clamp, FUDGE_STEP
 } from "../constants.js";
 import { getAdapter } from "../api.js";
@@ -13,7 +13,8 @@ import {
   requestSurveys, SURVEY_STATUS, playstyleSignature, tacticsFor
 } from "../foundry/tactics.js";
 import { gatherRoster, chosenSide, resolveAllegiances, simulate, swingFactors, replay, findSample, withPlaystyleLeaders } from "../foundry/battle.js";
-import { buildReport, sendReport } from "../foundry/chat-report.js";
+import { buildStory, STORY_STYLES } from "../story/story.js";
+import { loadStoryTables } from "../story/tables.js";
 import { planMakeItSo, confirmMakeItSo, executeMakeItSo, undoMakeItSo, hasUndo } from "../foundry/make-it-so.js";
 import { computeApproach } from "../foundry/terrain.js";
 
@@ -24,7 +25,7 @@ const TACTICS_PARTIAL = `modules/${MODULE_ID}/templates/partials/tactics.hbs`;
 
 const SIDE_ORDER = [SIDES.FRIENDLY, SIDES.HOSTILE, SIDES.NEUTRAL, SIDES.SECRET];
 const SIDE_ICONS = { friendly: "fa-shield-heart", hostile: "fa-skull", neutral: "fa-scale-balanced", secret: "fa-user-secret" };
-const RESULT_TABS = ["overview", "combatants", "swing", "resources", "sample", "share"];
+const RESULT_TABS = ["overview", "combatants", "swing", "resources", "sample"];
 const SAMPLE_FILTERS = ["likely", "partyWins", "partyLoses", "pcDies", "closeCall"];
 const STAT_FUDGES = [["ac", 1], ["hp", 5], ["attack", 1], ["damage", 1]];
 
@@ -64,8 +65,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       preparePlayers: BattlePlanner.#onPreparePlayers,
       togglePlaystyle: BattlePlanner.#onTogglePlaystyle,
       openSurvey: BattlePlanner.#onOpenSurvey,
-      sendReport: BattlePlanner.#onSendReport,
-      resetReport: BattlePlanner.#onResetReport
+      undoStory: BattlePlanner.#onUndo
     }
   };
 
@@ -98,7 +98,8 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     this.running = false;
     this.progress = 0;
     this.stale = false;
-    this.report = { accuracy: setting("reportAccuracy"), mode: setting("reportMode"), hideEnemyNames: setting("reportHideEnemyNames"), text: null };
+    this.storyStyle = setting("storyStyle");
+    this.storyTables = null;
   }
 
   get title() {
@@ -161,6 +162,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
 
   async _prepareContext(options) {
     if ( !this.roster ) await this.#loadRoster();
+    this.storyTables = await loadStoryTables();
     const setup = this.setup;
     const adapter = getAdapter();
     const resolved = resolveAllegiances(this.roster, setup, this.results?.underdog ?? null);
@@ -259,6 +261,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       img: s.img,
       kind: s.kind,
       kindLabel: loc(`FASTFIGHTING.Kind.${s.kind}`),
+      bystander: s.inEncounter === false,
       level: s.level,
       hp: `${s.hp.value + (fudge.hp ?? 0)}/${s.hp.max + (fudge.hp ?? 0)}`,
       ac: s.defenses.ac + (fudge.ac ?? 0),
@@ -338,7 +341,6 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     })) ?? null;
 
     const sample = this.sample ? this.#sampleContext() : null;
-    const report = buildReport(r, spec, this.report.accuracy, { hideEnemyNames: this.report.hideEnemyNames });
 
     return {
       results: {
@@ -358,28 +360,29 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       },
       sampleFilters: Object.fromEntries(SAMPLE_FILTERS.map(k => [k, `FASTFIGHTING.Sample.${k}`])),
       sampleFilter: this.sampleFilter,
-      report: {
-        ...this.report,
-        accuracyChoices: Object.fromEntries(ACCURACY.map(k => [k, `FASTFIGHTING.Accuracy.${k}`])),
-        modeChoices: { public: "FASTFIGHTING.ReportMode.public", whisper: "FASTFIGHTING.ReportMode.whisper" },
-        preview: this.report.text ?? report.lines.join("\n")
-      }
+      storyStyles: Object.fromEntries(STORY_STYLES.map(k => [k, `FASTFIGHTING.Story.Style.${k}`])),
+      storyStyle: this.storyStyle
     };
+  }
+
+  /** The story of the current sample fight in the chosen style (the same text Make it So posts). */
+  storyFor(style = this.storyStyle) {
+    if ( !this.sample || !this.storyTables ) return null;
+    return buildStory(this.sample.result, this.spec, style, {
+      tables: this.storyTables,
+      seed: this.sample.seed,
+      title: game.i18n.format("FASTFIGHTING.Story.Title", { scene: canvas.scene?.name ?? "" }),
+      labels: storyLabels()
+    });
   }
 
   #sampleContext() {
     const { seed, result } = this.sample;
-    const rounds = [];
-    for ( const e of result.log ?? [] ) {
-      let group = rounds.at(-1);
-      if ( !group || group.round !== e.round ) rounds.push(group = { round: e.round, label: e.round === 0 ? loc("FASTFIGHTING.Sample.Start") : game.i18n.format("FASTFIGHTING.Sample.Round", { n: e.round }), entries: [] });
-      group.entries.push({ actor: e.actor, side: e.side ?? "system", text: e.text });
-    }
     const rows = planMakeItSo(this.spec, result);
     return {
       seed,
       outcome: result.outcome === "victory" ? result.winners.map(w => loc(`FASTFIGHTING.Side.${w}`)).join(" & ") : loc(`FASTFIGHTING.Sample.Outcome.${result.outcome}`),
-      rounds,
+      story: this.storyFor()?.html ?? "",
       totalRounds: result.rounds,
       finals: rows.map(r => ({ name: r.spec.name, side: r.spec.side, status: loc(`FASTFIGHTING.Status.${r.final.status}`), statusClass: r.final.status, lines: r.lines.join("; ") || loc("FASTFIGHTING.Sample.Unchanged") }))
     };
@@ -472,11 +475,8 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       this.stale = true;
       if ( target.type === "checkbox" ) this.render();
       return; // selects and notes: no re-render, keep focus; the actor update hook syncs other views
-    } else if ( name.startsWith("report.") ) {
-      const key = name.slice(7);
-      this.report[key] = value;
-      if ( key !== "text" ) this.report.text = null;
-      if ( key === "text" ) return; // keep focus while editing
+    } else if ( name === "storyStyle" ) {
+      this.storyStyle = value;
     } else if ( name === "sampleFilter" ) {
       this.sampleFilter = value;
       return;
@@ -541,7 +541,6 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     this.progress = 0;
     this.swing = null;
     this.sample = null;
-    this.report.text = null;
     await this.render();
     try {
       // Re-read tokens so HP and positions are current.
@@ -614,7 +613,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     if ( !rows.some(r => r.changed) ) return ui.notifications.info(loc("FASTFIGHTING.MakeItSo.Nothing"));
     const ok = await confirmMakeItSo(rows);
     if ( !ok ) return;
-    await executeMakeItSo(rows, this.sample.result);
+    await executeMakeItSo(rows, this.sample.result, { story: this.storyFor() });
     ui.notifications.info(loc("FASTFIGHTING.MakeItSo.Done"));
     this.roster = null;
     this.results = null;
@@ -634,17 +633,14 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     this.render();
   }
 
-  static async #onSendReport() {
-    if ( !this.results ) return;
-    const generated = buildReport(this.results, this.spec, this.report.accuracy, { hideEnemyNames: this.report.hideEnemyNames });
-    const text = this.element.querySelector("textarea[name='report.text']")?.value;
-    if ( text ) generated.lines = text.split("\n").map(l => l.trim()).filter(Boolean);
-    await sendReport(generated, { mode: this.report.mode });
-    ui.notifications.info(loc("FASTFIGHTING.Report.Sent"));
-  }
+}
 
-  static #onResetReport() {
-    this.report.text = null;
-    this.render();
-  }
+/** Localized words the Standard story uses. */
+function storyLabels() {
+  const l = key => loc(`FASTFIGHTING.Story.Labels.${key}`);
+  return {
+    hit: l("hit"), crit: l("crit"), miss: l("miss"), resisted: l("resisted"), talked: l("talked"), convincing: l("convincing"),
+    healed: l("healed"), potion: l("potion"), moved: l("moved"), stayedOut: l("stayedOut"), nothing: l("nothing"),
+    status: Object.fromEntries(["standing", "down", "dead", "fled", "surrendered", "switched"].map(s => [s, loc(`FASTFIGHTING.Status.${s}`)]))
+  };
 }

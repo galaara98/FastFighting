@@ -25,7 +25,7 @@ export const STAY_TRUE_CAP = 0.1;
  */
 export const PLAYSTYLES = Object.freeze({
   scaredyCat: { icon: "fa-ghost", traits: { brave: -30, selfish: 10 }, suggest: { retreat: "hurt", style: "ranged", potionThreshold: "75" }, behavior: { lowProfile: 0.3 } },
-  cruel: { icon: "fa-skull-crossbones", traits: { selfish: 20, loyal: -5 }, suggest: { target: "weakest" }, behavior: { finishDowned: 0.4 } },
+  cruel: { icon: "fa-skull-crossbones", traits: { selfish: 20, loyal: -5 }, suggest: { target: "weakest" }, behavior: { finishDowned: 0.4, hunt: 1 } },
   moralist: { icon: "fa-scale-balanced", traits: { selfish: -15, loyal: 10 }, suggest: { allyDying: "rescue" }, behavior: { spareDowned: 1 } },
   peoplePleaser: { icon: "fa-face-smile", traits: { selfish: -20, loyal: 15 }, suggest: { healAggro: "aggressive", target: "protect", talk: "opportune" }, behavior: { followFocus: 0.5 } },
   fragile: { icon: "fa-heart-crack", traits: { brave: -15 }, suggest: { retreat: "hurt", potionThreshold: "75", selfRevived: "healSelf" }, behavior: { lowProfile: 0.2 } },

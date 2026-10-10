@@ -31,6 +31,7 @@ export function defaultSetup() {
       morale: setting("morale"),
       leadership: setting("leadership"),
       talking: setting("talking"),
+      bystanders: setting("bystanders"),
       surprise: setting("surpriseDefault"),
       includeHidden: setting("includeHidden"),
       includeOtherLevels: setting("includeOtherLevels")

@@ -48,9 +48,6 @@ export const SELF_REVIVED = Object.freeze(["rejoin", "healSelf", "retreat"]);
 
 export const DOWNED_MODELS = Object.freeze({ SIMULATE: "simulate", OUT: "out", DEAD: "dead" });
 
-/** Player report accuracy, most precise first. */
-export const ACCURACY = Object.freeze(["statistician", "analyst", "tactician", "storyteller", "roleplayer"]);
-
 /** Combatant end states. */
 export const STATUS = Object.freeze({
   STANDING: "standing",

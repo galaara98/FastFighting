@@ -4,7 +4,7 @@
 import { MODULE_ID, SIDES, ALLEGIANCE, DISPOSITION_SIDES, TRAITS, clamp } from "../constants.js";
 import { runBatch, runBatchSync, replay, findSample } from "../engine/simulator.js";
 import { applyTraitRules, getAdapter, getModifiers } from "../api.js";
-import { computeApproach, environmentAt } from "./terrain.js";
+import { computeApproach, computeAwareness, environmentAt, positionOf } from "./terrain.js";
 import { tokenSetup } from "./persistence.js";
 import { tacticsFor, isPlayerControlled } from "./tactics.js";
 import { setting } from "../settings.js";
@@ -20,13 +20,31 @@ const SIDE_LABELS = {
  * Read every eligible token on the viewed scene.
  * @returns {Promise<{token: Token, spec: object, baseSide: string}[]>}
  */
+/** The encounter for the viewed scene: the combat tracker's viewed combat, else any combat on this scene. */
+export function sceneEncounter(scene = canvas.scene) {
+  const viewed = ui.combat?.viewed;
+  if ( viewed && (!viewed.scene || viewed.scene.id === scene?.id) ) return viewed;
+  return game.combats.find(c => c.scene?.id === scene?.id) ?? null;
+}
+
+/** Token ids of the encounter's combatants on this scene. */
+export function encounterTokenIds(scene = canvas.scene) {
+  const combat = sceneEncounter(scene);
+  if ( !combat ) return new Set();
+  return new Set(combat.combatants.filter(c => c.tokenId && (!c.sceneId || c.sceneId === scene?.id)).map(c => c.tokenId));
+}
+
 export async function gatherRoster(setup, adapter = getAdapter()) {
   if ( !canvas.ready || !adapter ) return [];
   const levelId = canvas.level?.id ?? null;
+  const inEncounter = encounterTokenIds();
   const tokens = canvas.tokens.placeables.filter(t => {
     if ( !t.actor || !adapter.canHandle(t.actor) ) return false;
-    if ( !setup.options.includeOtherLevels && levelId && t.document.level && t.document.level !== levelId ) return false;
-    if ( !setup.options.includeHidden && t.document.hidden ) return false;
+    const starts = inEncounter.has(t.id);
+    // The encounter's combatants always start the fight; everyone else on the map is a bystander.
+    if ( !starts && setup.options.bystanders === false ) return false;
+    if ( !starts && !setup.options.includeOtherLevels && levelId && t.document.level && t.document.level !== levelId ) return false;
+    if ( !starts && !setup.options.includeHidden && t.document.hidden ) return false;
     return true;
   });
   const out = [];
@@ -37,6 +55,9 @@ export async function gatherRoster(setup, adapter = getAdapter()) {
       applyTraitRules(token.actor, spec);
       spec.environment = environmentAt(token);
       spec.hidden = token.document.hidden;
+      spec.inEncounter = inEncounter.has(token.id);
+      spec.position = positionOf(token);
+      spec.perception = token.actor.perception?.mod ?? spec.initiative?.mod ?? 0;
       out.push({ token, spec, baseSide: DISPOSITION_SIDES[token.document.disposition] ?? SIDES.HOSTILE });
     } catch ( err ) {
       console.error(`${MODULE_ID} | failed to read ${token.name}`, err);
@@ -220,8 +241,8 @@ export function buildBattleSpec(roster, setup, { underdog = null, approach = nul
   let stealthSides = [];
   let surpriseSide = null;
   if ( options.surprise === "tracker" ) {
-    const combat = game.combats.find(c => c.scene?.id === canvas.scene.id && c.combatants.some(x => x.initiative !== null));
-    if ( combat ) {
+    const combat = sceneEncounter();
+    if ( combat?.combatants.some(x => x.initiative !== null) ) {
       initiativeOrder = combat.turns.filter(t => t.initiative !== null && t.tokenId).map(t => t.tokenId);
     }
   } else if ( options.surprise === "stealth" ) {
@@ -256,6 +277,13 @@ export function buildBattleSpec(roster, setup, { underdog = null, approach = nul
   return spec;
 }
 
+/** Sight and sound from each bystander to each starting combatant (and between bystanders). */
+export function awarenessFor(roster) {
+  const bystanders = roster.filter(e => !e.spec.inEncounter).map(e => e.token);
+  if ( !bystanders.length ) return {};
+  return computeAwareness(bystanders, roster.map(e => e.token));
+}
+
 /** Full pipeline used by the Battle Planner. */
 export async function simulate(roster, setup, { onProgress, signal } = {}) {
   const adapter = getAdapter();
@@ -274,6 +302,7 @@ export async function simulate(roster, setup, { onProgress, signal } = {}) {
   }
 
   const spec = buildBattleSpec(roster, setup, { underdog, approach });
+  spec.awareness = awarenessFor(roster);
   Hooks.callAll("fastFighting.preSimulate", spec, { setup, roster });
   const seed = setup.options.seed ?? undefined;
   const results = await runBatch(spec, adapter.rules, { runs: setup.options.runs, seed, onProgress, signal });

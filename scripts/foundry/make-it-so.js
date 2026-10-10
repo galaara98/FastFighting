@@ -1,9 +1,26 @@
 /**
- * "Make it So": commit one replayed fight to the tokens, with a confirmation step and a full Undo.
+ * "Make it So": commit one replayed fight to the world.
+ *   1. Move every token to where the fight left it (snapped to the grid, never stacked, never through a wall).
+ *   2. Commit each token's outcome through the system adapter (HP, conditions, death, loot, spent resources).
+ *   3. Post the story of the fight to chat.
+ * Everything is recorded on the scene so Undo can put it all back, chat message included.
  */
 import { MODULE_ID, STATUS } from "../constants.js";
 import { getAdapter } from "../api.js";
 import { setting } from "../settings.js";
+import { pixelsFor } from "./terrain.js";
+
+const loc = key => game.i18n.localize(key);
+
+function escape(s) {
+  return foundry.utils.escapeHTML ? foundry.utils.escapeHTML(String(s)) : String(s);
+}
+
+/** Feet between the token's current center and the engine's final position. */
+function feetMoved(spec, final) {
+  if ( !spec.position || !final?.position ) return 0;
+  return Math.round(Math.hypot(final.position.x - spec.position.x, final.position.y - spec.position.y));
+}
 
 /**
  * Build the per-token change list for a replayed fight.
@@ -18,35 +35,135 @@ export function planMakeItSo(spec, replay) {
     const tokenDoc = canvas.scene.tokens.get(c.tokenId ?? c.id);
     if ( !final || !tokenDoc ) continue;
     const lines = adapter.describeOutcome(c, final);
-    rows.push({ spec: c, final, tokenDoc, lines, changed: lines.length > 0 });
+    const moved = feetMoved(c, final);
+    if ( moved >= 5 ) lines.push(game.i18n.format("FASTFIGHTING.MakeItSo.Moves", { feet: moved }));
+    rows.push({ spec: c, final, tokenDoc, lines, moved, changed: lines.length > 0 });
   }
   return rows;
-}
-
-function escape(s) {
-  return foundry.utils.escapeHTML ? foundry.utils.escapeHTML(String(s)) : String(s);
 }
 
 /** Ask the GM to confirm; returns true if they accept. */
 export async function confirmMakeItSo(rows) {
   const changed = rows.filter(r => r.changed);
-  const content = `<p>${game.i18n.localize("FASTFIGHTING.MakeItSo.Confirm")}</p>
+  const content = `<p>${loc("FASTFIGHTING.MakeItSo.Confirm")}</p>
     <ul class="ff-mis-list">${changed.map(r => `<li><strong>${escape(r.spec.name)}</strong>: ${r.lines.map(escape).join("; ")}</li>`).join("")}</ul>
-    <p class="hint">${game.i18n.localize("FASTFIGHTING.MakeItSo.UndoHint")}</p>`;
+    <p class="hint">${loc("FASTFIGHTING.MakeItSo.UndoHint")}</p>`;
   return foundry.applications.api.DialogV2.confirm({
-    window: { title: game.i18n.localize("FASTFIGHTING.MakeItSo.Title"), icon: "fa-solid fa-gavel" },
+    window: { title: loc("FASTFIGHTING.MakeItSo.Title"), icon: "fa-solid fa-gavel" },
     content,
-    yes: { label: game.i18n.localize("FASTFIGHTING.MakeItSo.Button"), icon: "fa-solid fa-gavel" },
-    no: { label: game.i18n.localize("Cancel") },
+    yes: { label: loc("FASTFIGHTING.MakeItSo.Button"), icon: "fa-solid fa-gavel" },
+    no: { label: loc("Cancel") },
     position: { width: 560 }
   });
 }
 
-/** Commit the plan. Stores undo records on the scene and posts a GM-whispered summary. */
-export async function executeMakeItSo(rows, replay) {
+/* -------------------------------------------- */
+/*  Token placement                             */
+/* -------------------------------------------- */
+
+function cellsOf(x, y, doc) {
+  const size = canvas.dimensions.size;
+  const cx = Math.round(x / size);
+  const cy = Math.round(y / size);
+  const out = [];
+  for ( let i = 0; i < Math.max(1, Math.round(doc.width)); i++ ) {
+    for ( let j = 0; j < Math.max(1, Math.round(doc.height)); j++ ) out.push(`${cx + i},${cy + j}`);
+  }
+  return out;
+}
+
+function clampToScene(point, doc) {
+  const r = canvas.dimensions.sceneRect;
+  const size = canvas.dimensions.size;
+  return {
+    x: Math.min(Math.max(point.x, r.x), r.x + r.width - doc.width * size),
+    y: Math.min(Math.max(point.y, r.y), r.y + r.height - doc.height * size)
+  };
+}
+
+function centerOf(point, doc) {
+  const size = canvas.dimensions.size;
+  return { x: point.x + (doc.width * size) / 2, y: point.y + (doc.height * size) / 2 };
+}
+
+/** Back off along the line from the token's spot until the path doesn't cross a wall. */
+function respectWalls(tokenDoc, dest) {
+  const token = tokenDoc.object;
+  if ( !token ) return dest;
+  const start = { x: tokenDoc.x, y: tokenDoc.y };
+  const size = canvas.dimensions.size;
+  const steps = Math.ceil(Math.hypot(dest.x - start.x, dest.y - start.y) / (size / 2));
+  for ( let i = steps; i >= 1; i-- ) {
+    const t = i / steps;
+    const p = { x: start.x + (dest.x - start.x) * t, y: start.y + (dest.y - start.y) * t };
+    const snapped = canvas.grid.getSnappedPoint?.(p, { mode: CONST.GRID_SNAPPING_MODES.TOP_LEFT_CORNER }) ?? p;
+    if ( !token.checkCollision(centerOf(snapped, tokenDoc), { type: "move", mode: "any" }) ) return snapped;
+  }
+  return start;
+}
+
+/** Nearest free grid spot to `dest` (spiral search), so tokens never end up stacked. */
+function freeSpot(tokenDoc, dest, occupied) {
+  const size = canvas.dimensions.size;
+  const free = p => cellsOf(p.x, p.y, tokenDoc).every(c => !occupied.has(c));
+  if ( free(dest) ) return dest;
+  for ( let ring = 1; ring <= 6; ring++ ) {
+    for ( let dx = -ring; dx <= ring; dx++ ) {
+      for ( let dy = -ring; dy <= ring; dy++ ) {
+        if ( Math.max(Math.abs(dx), Math.abs(dy)) !== ring ) continue;
+        const p = clampToScene({ x: dest.x + dx * size, y: dest.y + dy * size }, tokenDoc);
+        if ( free(p) && !tokenDoc.object?.checkCollision(centerOf(p, tokenDoc), { type: "move", mode: "any" }) ) return p;
+      }
+    }
+  }
+  return dest;
+}
+
+/** Final top-left spots for every row that moved. */
+function planPlacements(rows) {
+  const occupied = new Set();
+  const moving = new Set(rows.filter(r => r.moved >= 5).map(r => r.tokenDoc.id));
+  for ( const t of canvas.scene.tokens ) {
+    if ( !moving.has(t.id) && !t.hidden ) for ( const c of cellsOf(t.x, t.y, t) ) occupied.add(c);
+  }
+  const placements = [];
+  // Standing combatants pick spots first; the fallen lie where they can.
+  const order = rows.filter(r => moving.has(r.tokenDoc.id)).sort((a, b) => (a.final.status === STATUS.STANDING ? 0 : 1) - (b.final.status === STATUS.STANDING ? 0 : 1));
+  for ( const row of order ) {
+    const doc = row.tokenDoc;
+    let dest = clampToScene(pixelsFor(doc, row.final.position), doc);
+    dest = respectWalls(doc, dest);
+    dest = freeSpot(doc, dest, occupied);
+    for ( const c of cellsOf(dest.x, dest.y, doc) ) occupied.add(c);
+    if ( dest.x !== doc.x || dest.y !== doc.y ) placements.push({ doc, x: dest.x, y: dest.y });
+  }
+  return placements;
+}
+
+/* -------------------------------------------- */
+/*  Commit                                      */
+/* -------------------------------------------- */
+
+/**
+ * Commit the plan: move tokens, apply outcomes, post the story. Stores everything needed for Undo.
+ * @param {object[]} rows       From planMakeItSo
+ * @param {object} replay       The fight being committed
+ * @param {object} [options]
+ * @param {{title: string, html: string}} [options.story]  The story to post
+ */
+export async function executeMakeItSo(rows, replay, { story = null } = {}) {
   const adapter = getAdapter();
   const options = { lootMode: setting("lootMode"), corpseMode: setting("corpseMode"), fledMode: setting("fledMode") };
-  Hooks.callAll("fastFighting.preMakeItSo", { rows, replay, options });
+  Hooks.callAll("fastFighting.preMakeItSo", { rows, replay, options, story });
+
+  // 1. Movement
+  const placements = planPlacements(rows);
+  const moves = placements.map(p => ({ uuid: p.doc.uuid, x: p.doc.x, y: p.doc.y }));
+  if ( placements.length ) {
+    await canvas.scene.updateEmbeddedDocuments("Token", placements.map(p => ({ _id: p.doc.id, x: p.x, y: p.y })));
+  }
+
+  // 2. Outcomes
   const records = [];
   for ( const row of rows.filter(r => r.changed) ) {
     try {
@@ -56,29 +173,37 @@ export async function executeMakeItSo(rows, replay) {
       ui.notifications.error(game.i18n.format("FASTFIGHTING.MakeItSo.Failed", { name: row.spec.name }));
     }
   }
-  await canvas.scene.setFlag(MODULE_ID, "undo", { time: Date.now(), records });
-  Hooks.callAll("fastFighting.makeItSo", records);
 
-  const ChatMessage = foundry.documents.ChatMessage ?? globalThis.ChatMessage;
-  const summary = rows.filter(r => r.changed).map(r => `<li><strong>${escape(r.spec.name)}</strong>: ${r.lines.map(escape).join("; ")}</li>`).join("");
-  const narrative = (replay.log ?? []).slice(-12).map(e => `<li>R${e.round} ${escape(e.actor)} ${escape(e.text)}</li>`).join("");
-  await ChatMessage.create({
-    content: `<div class="fast-fighting-report"><header><i class="fa-solid fa-gavel"></i> ${game.i18n.localize("FASTFIGHTING.MakeItSo.ChatTitle")}</header><ul>${summary}</ul><details><summary>${game.i18n.localize("FASTFIGHTING.MakeItSo.LastMoments")}</summary><ol>${narrative}</ol></details></div>`,
-    whisper: game.users.filter(u => u.isGM).map(u => u.id),
-    speaker: { alias: "FastFighting" }
-  });
+  // 3. The story
+  const messages = [];
+  if ( story?.html ) {
+    const ChatMessage = foundry.documents.ChatMessage ?? globalThis.ChatMessage;
+    const whisper = setting("storyMode") === "whisper" ? game.users.filter(u => u.isGM).map(u => u.id) : [];
+    const message = await ChatMessage.create({
+      content: `<div class="fast-fighting-story"><header><i class="fa-solid fa-book-open"></i> ${escape(story.title)}</header>${story.html}</div>`,
+      speaker: { alias: loc("FASTFIGHTING.Story.Speaker") },
+      whisper,
+      flags: { [MODULE_ID]: { story: true } }
+    });
+    if ( message ) messages.push(message.id);
+  }
+
+  await canvas.scene.setFlag(MODULE_ID, "undo", { time: Date.now(), records, moves, messages });
+  Hooks.callAll("fastFighting.makeItSo", records);
   return records;
 }
 
 export function hasUndo(scene = canvas.scene) {
-  return !!scene?.getFlag(MODULE_ID, "undo")?.records?.length;
+  const undo = scene?.getFlag(MODULE_ID, "undo");
+  return !!(undo?.records?.length || undo?.moves?.length || undo?.messages?.length);
 }
 
-/** Revert the last Make it So on this scene. */
+/** Revert the last Make it So on this scene: outcomes, positions and the story message. */
 export async function undoMakeItSo(scene = canvas.scene) {
   const undo = scene.getFlag(MODULE_ID, "undo");
-  if ( !undo?.records?.length ) return false;
-  for ( const r of [...undo.records].reverse() ) {
+  if ( !undo ) return false;
+  for ( const id of undo.messages ?? [] ) await game.messages.get(id)?.delete();
+  for ( const r of [...(undo.records ?? [])].reverse() ) {
     try {
       for ( const uuid of r.createdTokens ?? [] ) await (await fromUuid(uuid))?.delete();
       for ( const uuid of r.createdActors ?? [] ) await (await fromUuid(uuid))?.delete();
@@ -103,6 +228,13 @@ export async function undoMakeItSo(scene = canvas.scene) {
       console.error(`${MODULE_ID} | undo failed for a record`, r, err);
     }
   }
+  // Positions last, so tokens recreated above go back to where they started too.
+  const back = [];
+  for ( const m of undo.moves ?? [] ) {
+    const doc = await fromUuid(m.uuid);
+    if ( doc ) back.push({ _id: doc.id, x: m.x, y: m.y });
+  }
+  if ( back.length ) await scene.updateEmbeddedDocuments("Token", back);
   await scene.unsetFlag(MODULE_ID, "undo");
   return true;
 }

@@ -180,7 +180,16 @@ export function createRun(prep) {
       rebuffed: new Map(),   // talkerId -> failed pitches
       offendedBy: new Set(), // talkers this unit will no longer listen to
       sway: new Map(),       // talker side -> persuasion progress
-      swayOutcome: null
+      swayOutcome: null,
+      // Encounter membership: combatants start active; bystanders wait until they notice the fight.
+      active: s.inEncounter !== false,
+      aware: s.inEncounter !== false,
+      joinedRound: s.inEncounter !== false ? 0 : null,
+      calledForHelp: false,
+      seekingHelpId: null,
+      // Positions in feet (token centers), when the scene provided them.
+      pos: s.position ? { x: s.position.x, y: s.position.y } : null,
+      feetMoved: 0
     };
   });
   return {
@@ -194,7 +203,26 @@ export function createRun(prep) {
   };
 }
 
-export const isStanding = u => u.status === STATUS.STANDING;
+/** On its feet and taking part (bystanders who haven't joined are not). */
+export const isStanding = u => u.status === STATUS.STANDING && u.active !== false;
+
+/** On its feet, whether or not it has joined the fight. */
+export const isUp = u => u.status === STATUS.STANDING;
+
+/** Straight-line feet between two units' centers, or null without positions. */
+export function centerDistance(a, b) {
+  if ( !a.pos || !b.pos ) return null;
+  return Math.hypot(a.pos.x - b.pos.x, a.pos.y - b.pos.y);
+}
+
+/** Edge-to-edge feet between two units (adjacent creatures are 5 ft apart). */
+export function edgeDistance(a, b) {
+  const d = centerDistance(a, b);
+  if ( d === null ) return null;
+  const sizeA = a.spec.position?.size ?? 5;
+  const sizeB = b.spec.position?.size ?? 5;
+  return Math.max(5, d - ((sizeA + sizeB) / 2 - 5));
+}
 
 /** Healing/dying answers for this fight: player tactics, else the older disposition record. */
 export function dispositionOf(u) {
@@ -341,10 +369,12 @@ export function approach(run, a, t) {
   return run.prep.approachOf(a.id, t.id);
 }
 
-/** Straight-line feet still separating a and t (after both have advanced). */
+/** Feet still separating a and t: from real positions when known, otherwise from how far both advanced. */
 export function separation(run, a, t) {
   if ( !run.prep.options.positioning ) return 0;
   if ( a.adjacent.has(t.id) ) return 0;
+  const edge = edgeDistance(a, t);
+  if ( edge !== null ) return edge;
   const ap = approach(run, a, t);
   return Math.max(0, ap.dist - a.advance - t.advance);
 }
@@ -368,7 +398,7 @@ export function movesNeeded(run, a, t, action) {
   if ( !ap.meleeOk ) return Infinity;
   const reach = action.reach ?? 5;
   const gap = Math.max(0, separation(run, a, t) - reach);
-  if ( gap <= 0 ) return 0;
+  if ( gap <= 0.5 ) return 0;
   if ( !Number.isFinite(ap.mult) || ap.speed <= 0 ) return Infinity;
   return Math.ceil((gap * ap.mult) / ap.speed);
 }
@@ -381,14 +411,50 @@ export function rangePenalty(run, a, t, action) {
   return -2 * increments;
 }
 
-/** Spend one move action advancing a toward t. */
+/**
+ * Spend one move action advancing a toward t (stopping at reach for melee).
+ * @returns {{feet: number, mode: string, mult: number, regions: string[], reached: boolean}} for the story
+ */
 export function moveToward(run, a, t, reach = null) {
   const ap = approach(run, a, t);
   const progress = Number.isFinite(ap.mult) && ap.mult > 0 ? ap.speed / ap.mult : 0;
-  a.advance = Math.min(a.advance + progress, ap.dist);
+  let feet = progress;
+  if ( a.pos && t.pos ) {
+    const d = centerDistance(a, t);
+    // Close the gap until the target is within reach (or simply adjacent when moving for a ranged shot).
+    feet = Math.max(0, Math.min(progress, edgeDistance(a, t) - (reach ?? 5)));
+    if ( d > 0 && feet > 0 ) {
+      a.pos.x += ((t.pos.x - a.pos.x) / d) * feet;
+      a.pos.y += ((t.pos.y - a.pos.y) / d) * feet;
+    }
+  } else {
+    a.advance = Math.min(a.advance + progress, ap.dist);
+  }
+  a.feetMoved += feet;
   a.losGained.add(t.id);
-  if ( (reach !== null) && ap.meleeOk && separation(run, a, t) <= reach ) {
+  let reached = false;
+  if ( (reach !== null) && ap.meleeOk && separation(run, a, t) <= reach + 0.5 ) {
     a.adjacent.add(t.id);
     t.adjacent.add(a.id);
+    reached = true;
   }
+  return { feet: Math.round(feet), mode: ap.mode ?? "walk", mult: ap.mult ?? 1, regions: ap.regions ?? [], reached };
+}
+
+/** Move u away from its nearest foes (fleeing): up to `feet` along the line away from them. */
+export function moveAway(run, u, feet) {
+  if ( !u.pos ) return 0;
+  const foes = run.units.filter(o => o !== u && o.pos && areEnemies(run, u, o) && o.status === STATUS.STANDING);
+  if ( !foes.length ) return 0;
+  const cx = foes.reduce((s, f) => s + f.pos.x, 0) / foes.length;
+  const cy = foes.reduce((s, f) => s + f.pos.y, 0) / foes.length;
+  let dx = u.pos.x - cx;
+  let dy = u.pos.y - cy;
+  const len = Math.hypot(dx, dy) || 1;
+  dx /= len;
+  dy /= len;
+  u.pos.x += dx * feet;
+  u.pos.y += dy * feet;
+  u.feetMoved += feet;
+  return feet;
 }

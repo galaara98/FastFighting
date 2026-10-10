@@ -73,18 +73,6 @@
         "Name": "Initiative",
         "Hint": "Use the combat tracker's initiative when present, roll Stealth for hidden or Secret tokens, or roll normally."
       },
-      "reportAccuracy": {
-        "Name": "Player report accuracy",
-        "Hint": "How precisely the player chat card describes the odds, from exact statistics to pure flavor."
-      },
-      "reportMode": {
-        "Name": "Player report delivery",
-        "Hint": "Post player reports publicly or whisper them to the players."
-      },
-      "reportHideEnemyNames": {
-        "Name": "Hide enemy names in reports",
-        "Hint": "Refer to enemies generically in player reports."
-      },
       "lootMode": {
         "Name": "Make it So: loot",
         "Hint": "What happens to a slain creature's gear: leave it on the corpse (lootable), drop it in a loot pile, or do nothing."
@@ -105,6 +93,18 @@
       "talking": {
         "Name": "Talking",
         "Hint": "Characters may try to de-escalate: talk enemies who share a language into surrendering, fleeing, or (rarely, unless neutral) switching sides."
+      },
+      "storyStyle": {
+        "Name": "Story style",
+        "Hint": "How the story of a fight is told in the Sample fight tab and in chat after Make it So: Roleplay (prose), Standard (what everyone did) or Statistician (every roll)."
+      },
+      "storyMode": {
+        "Name": "Story delivery",
+        "Hint": "Post the story publicly, or whisper it to GMs only."
+      },
+      "bystanders": {
+        "Name": "Bystanders can join",
+        "Hint": "Tokens on the map that are not in the encounter may notice the fight (by sight or sound, muffled by walls), be called for help, be hunted, or be run into by someone fleeing, and then decide whether to join."
       }
     },
     "Allegiance": {
@@ -143,24 +143,6 @@
       "stealth": "Stealth for hidden",
       "friendly": "Party surprises",
       "hostile": "Enemy surprises"
-    },
-    "Accuracy": {
-      "statistician": "Statistician",
-      "analyst": "Analyst",
-      "tactician": "Tactician",
-      "storyteller": "Storyteller",
-      "roleplayer": "Roleplayer",
-      "Hint": {
-        "statistician": "Exact percentages and per-character odds.",
-        "analyst": "Rounded numbers and plain odds.",
-        "tactician": "Qualitative odds, the most dangerous foe, and how long it should take.",
-        "storyteller": "In-world phrasing that still makes the danger obvious.",
-        "roleplayer": "A single line of atmosphere."
-      }
-    },
-    "ReportMode": {
-      "public": "Public",
-      "whisper": "Whisper to players"
     },
     "Loot": {
       "corpse": "Leave on corpse (lootable)",
@@ -239,7 +221,8 @@
       "down": "Down",
       "dead": "Dead",
       "fled": "Fled",
-      "surrendered": "Surrendered"
+      "surrendered": "Surrendered",
+      "switched": "Switched sides"
     },
     "Difficulty": {
       "trivial": "Trivial",
@@ -308,7 +291,10 @@
       "ControlledBy": "Controlled by",
       "Fudge": "fudge",
       "Talking": "Talking",
-      "TalkingHint": "Let characters talk foes down mid-fight (Diplomacy, Intimidation, Deception)"
+      "TalkingHint": "Let characters talk foes down mid-fight (Diplomacy, Intimidation, Deception)",
+      "Bystanders": "Bystanders",
+      "BystandersHint": "Tokens not in the encounter may notice the fight and join it",
+      "Bystander": "Bystander"
     },
     "Results": {
       "Tab": {
@@ -399,85 +385,9 @@
       "Undone": "Make it So was undone.",
       "Remains": "Remains of {name}",
       "Surrendered": "Surrendered",
-      "SurrenderedHint": "Laid down arms during a FastFighting battle and is at the victors' mercy."
-    },
-    "Report": {
-      "Title": "Sizing up the battle",
-      "Speaker": "The Odds",
-      "AFoe": "one of them",
-      "Sent": "Report posted to chat.",
-      "Accuracy": "Accuracy",
-      "Mode": "Delivery",
-      "HideNames": "Hide enemy names",
-      "Reset": "Regenerate",
-      "Send": "Post to chat",
-      "Stat": {
-        "Odds": "Party victory {win}; enemy victory {lose}; stalemate {stalemate}.",
-        "Length": "Median length {median} rounds (most fights {p10}–{p90}).",
-        "Death": "Chance at least one PC dies: {death}. Chance someone is knocked down: {downed}.",
-        "Member": "{name}: standing at the end {standing}, killed {dead}.",
-        "Deadliest": "Most dangerous: {name} (averages {damage} damage).",
-        "Talk": "Chance at least one foe is talked down: {p}."
-      },
-      "Analyst": {
-        "Odds": "Roughly {win} in your favor.",
-        "Length": "Expect {p10} to {p90} rounds.",
-        "Death": "About 1 in {n} of these fights kills someone.",
-        "NoDeath": "Deaths are very unlikely.",
-        "Deadliest": "Watch out for {name}.",
-        "Talk": "About {p} of the time, someone can be talked out of fighting."
-      },
-      "Tactician": {
-        "Odds": {
-          "overwhelming": "Overwhelming advantage.",
-          "favorable": "The odds favor you.",
-          "even": "An even fight.",
-          "unfavorable": "The odds are against you.",
-          "dire": "You are badly outmatched."
-        },
-        "Length": {
-          "brief": "It should be over almost at once.",
-          "short": "A short, sharp fight.",
-          "long": "A long fight.",
-          "grinding": "A grinding battle of attrition."
-        },
-        "Death": {
-          "high": "Expect to lose someone.",
-          "real": "Someone could die.",
-          "low": "Death is possible but unlikely.",
-          "none": "No one should die."
-        },
-        "Deadliest": "The biggest threat: {name}.",
-        "Talk": "Words may win part of this fight."
-      },
-      "Story": {
-        "Odds": {
-          "overwhelming": "This should be well in hand.",
-          "favorable": "The odds are with you, but blood will be spilled.",
-          "even": "This could go either way.",
-          "unfavorable": "Every instinct says this is a fight you could lose.",
-          "dire": "Steel yourselves: this is a fight you are likely to lose."
-        },
-        "Death": {
-          "high": "Someone may not walk away from this.",
-          "real": "Someone could fall and not rise again.",
-          "low": "It will hurt, but you should all live through it."
-        },
-        "Length": {
-          "brief": "It will be over in moments.",
-          "short": "It will be quick and brutal.",
-          "long": "It will be a long, hard struggle.",
-          "grinding": "It will grind on until someone breaks."
-        },
-        "Talk": "Not every foe here seems eager to die for this."
-      },
-      "Roleplayer": {
-        "overwhelming": "Your foes look small and uncertain before you.",
-        "favorable": "The air is tense, but your footing feels sure.",
-        "even": "The moment hangs balanced on a blade's edge.",
-        "unfavorable": "A cold weight settles in your stomach.",
-        "dire": "Somewhere nearby, carrion birds have begun to gather."
-      }
+      "SurrenderedHint": "Laid down arms during a FastFighting battle and is at the victors' mercy.",
+      "Moves": "Moves {feet} ft",
+      "Hint": "Post this story to chat, move every token to where the fight left it, and commit the outcome. Undo reverses all of it."
     },
     "Tactics": {
       "Auto": "Let {name} decide: {choice}",
@@ -694,6 +604,49 @@
         "Name": "Wildcard",
         "Hint": "Unpredictable: sometimes attacks someone random or does something unexpected."
       }
+    },
+    "Tracker": {
+      "OpenHint": "Estimate how this encounter will go",
+      "NeedTwo": "Add at least two tokens to the encounter to plan the battle."
+    },
+    "Story": {
+      "Title": "The battle at {scene}",
+      "Speaker": "The Chronicle",
+      "StyleLabel": "Story",
+      "Style": {
+        "roleplay": "Roleplay",
+        "standard": "Standard",
+        "statistician": "Statistician"
+      },
+      "Mode": {
+        "public": "Public",
+        "whisper": "Whisper to GMs"
+      },
+      "Labels": {
+        "hit": "hit",
+        "crit": "critical",
+        "miss": "missed",
+        "resisted": "resisted",
+        "talked": "talked",
+        "convincing": "convincing",
+        "healed": "healed",
+        "potion": "potion(s)",
+        "moved": "moved",
+        "stayedOut": "stayed out of it",
+        "nothing": "did nothing of note"
+      },
+      "TablesFolder": "FastFighting Story",
+      "TablesMenuName": "Story tables",
+      "TablesMenuLabel": "Manage",
+      "TablesMenuHint": "Install the story's sentences as editable RollTables in this world.",
+      "TablesHint": "Every sentence of the Roleplay story is rolled from a table: an action table (delivery, damage type and how well it went, e.g. Melee · Slashing · Minor Success) plus a relationship table (e.g. Relationship · Enemy Leader · Failure). Install them to edit, add entries or translate; your world tables always win over the built-in ones.",
+      "TablesInstalled": "story tables installed in this world",
+      "TablesLocale": "Translators: a module can ship story/<language>.json with the same table keys; it is used automatically for that language.",
+      "Install": "Install missing tables",
+      "Reinstall": "Reinstall all",
+      "ReinstallConfirm": "Replace every installed story table with the built-in version? Your edits to them will be lost.",
+      "Installing": "Installing story tables…",
+      "Installed": "Story tables: {created} installed, {kept} already present."
     }
   }
 }
