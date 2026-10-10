@@ -325,6 +325,13 @@ export function situation(run, target, attacker = null, action = null) {
     action,
     grabbed: !!(grabber && isStanding(grabber)),
     flanked: !!(attacker && action?.melee && isFlanked(run, target, attacker)),
+    // Standing allies of the attacker next to the target (5e Pack Tactics), and whether a foe is next to the
+    // attacker (5e: a ranged attack in melee has disadvantage).
+    alliesAdjacent: attacker ? alliesAdjacentTo(run, target, attacker) : 0,
+    attackerEngaged: !!attacker && [...attacker.adjacent].some(id => {
+      const o = run.byId.get(id);
+      return o && isStanding(o) && areEnemies(run, attacker, o);
+    }),
     distance: attacker ? separation(run, attacker, target) : 0,
     positioning: !!run.prep.options.positioning
   };

@@ -3,6 +3,11 @@ import { runBatchSync, replay } from "../scripts/engine/simulator.js";
 import { pf2eRules } from "./fixtures/three-action-rules.js";
 import { parseFormula } from "../scripts/engine/dice.js";
 import { creature, strike, battle, social } from "./helpers.js";
+import { buildStory } from "../scripts/story/story.js";
+import { buildEnglishTables } from "../scripts/story/tables-en.js";
+
+const english = buildEnglishTables();
+const tables = { get: k => english[k] };
 
 const tactical = n => ({ tactical: { base: n, fudge: 0 }, brave: { base: 90, fudge: 0 }, selfish: { base: 40, fudge: 0 }, loyal: { base: 60, fudge: 0 } });
 const brute = (extra = {}) => creature({
@@ -123,6 +128,50 @@ describe("theft", () => {
       for ( const c of r.units.pc.final.concessions ) {
         expect(c.how).toBe("theft");
         expect(!!c.returned).toBe(beaten);
+      }
+    }
+  });
+});
+
+describe("open theft", () => {
+  const COINS = [{ label: "gp", value: 100 }, { label: "cp", value: 1 }];
+  const winning = ({ kind = "pc" } = {}) => {
+    const victim = creature({ id: "v", kind, diesAtZero: false, hp: { value: 400, max: 400 }, actions: [strike({ bonus: -20 })],
+      social: social({ diplomacy: 0, perceptionDC: 10 }), valuables: { money: 10000, denominations: COINS, stowed: [], wielded: [] } });
+    victim.social.resist.steal = { dc: 10, label: "Perception" };
+    const thief = creature({ id: "thief", side: "hostile", hp: { value: 400, max: 400 }, playstyles: ["thief"], theft: { skill: "Thievery", mod: 20 },
+      actions: [strike({ id: "dagger", name: "Dagger", bonus: 8 })] });
+    // The thief's side is winning: two of them against one.
+    const crony = creature({ id: "crony", side: "hostile", hp: { value: 400, max: 400 }, actions: [strike({ bonus: -20 })] });
+    return battle([victim, thief, crony], { maxRounds: 6 });
+  };
+  const thefts = spec => [...Array(120).keys()].flatMap(s => replay(spec, pf2eRules, s + 1).log.filter(e => e.type === "theft"));
+
+  test("acting openly, a thief feints with its weapon first and only steals if the feint lands", () => {
+    const all = thefts(winning());
+    expect(all.length).toBeGreaterThan(5);
+    for ( const e of all ) {
+      expect(e.feint?.weapon).toBe("Dagger");
+      if ( !e.feint.hit ) expect(e.degree).toBeUndefined(); // no stealing test after a missed feint
+    }
+    expect(all.some(e => !e.feint.hit)).toBe(true);
+    expect(all.some(e => e.feint.hit && e.stolen)).toBe(true);
+  });
+
+  test("a PC also needs the hidden luck check; a companion doesn't", () => {
+    for ( const e of thefts(winning()).filter(x => x.stolen) ) expect(e.luck).toBeLessThan(30);
+    const companion = thefts(winning({ kind: "companion" }));
+    expect(companion.some(e => e.stolen)).toBe(true);
+    for ( const e of companion ) expect(e.luck ?? null).toBeNull();
+  });
+
+  test("the luck check never shows up in a story", () => {
+    const spec = winning();
+    for ( let s = 1; s <= 60; s++ ) {
+      const r = replay(spec, pf2eRules, s);
+      if ( !r.log.some(e => e.type === "theft" && e.luck) ) continue;
+      for ( const style of ["roleplay", "standard", "statistician"] ) {
+        expect(buildStory(r, spec, style, { tables, seed: s }).text.toLowerCase()).not.toContain("luck");
       }
     }
   });

@@ -243,7 +243,8 @@ function narrate(e, roll, rel, fill) {
       if ( e.immune ) return roll("event.controlImmune", f);
       return roll(e.took ? "event.controlTakes" : "event.controlResisted", { ...f, effect: e.effect ?? "" });
     case "theft":
-      if ( e.stolen ) return roll("event.theftSuccess", { ...f, amount: concessionText(e.stolen) });
+      if ( e.feint && !e.feint.hit ) return roll("event.feintMiss", { ...f, weapon: e.feint.weapon });
+      if ( e.stolen ) return roll(e.feint ? "event.theftFeint" : "event.theftSuccess", { ...f, amount: concessionText(e.stolen), weapon: e.feint?.weapon ?? "" });
       return roll(e.noticed ? "event.theftCaught" : "event.theftEmpty", f);
     case "reclaim": return roll("event.reclaim", { ...f, amount: concessionText(e.concession) });
     case "persistent": return roll("event.persistent", f);
@@ -409,8 +410,12 @@ function statLine(e) {
     case "control":
       if ( e.immune ) return `${e.actor} → ${e.target}: ${e.action} · unaffected`;
       return `${e.actor} → ${e.target}: ${e.action} · ${e.saveType ? `${e.saveType} ` : ""}${roll(e.natural, e.mod, e.total, e.dc, e.saveType ? "DC" : "AC")} · ${DEGREE[e.degree]}${e.shifted ? " (shifted)" : ""} · ${e.effect || "no effect"}${e.damage ? ` · ${e.damage} damage` : ""}`;
-    case "theft":
-      return `${e.actor} → ${e.target}: ${e.skill} · ${roll(e.natural, e.mod, e.total, e.dc, `${e.dcStat} DC`)} · ${DEGREE[e.degree]}${e.luck ? ` · luck d100 ${e.luck} (needs under 30)` : ""} · ${e.stolen ? `steals ${concessionText(e.stolen)}` : e.noticed ? "caught" : "nothing taken"}`;
+    case "theft": {
+      // The luck check against a PC is the GM's secret, so it never appears here.
+      const feint = e.feint ? `feint ${e.feint.weapon} · ${roll(e.feint.natural, e.feint.mod, e.feint.total, e.feint.ac, "AC")} · ${e.feint.hit ? "hit, no damage" : "miss"}` : "";
+      if ( e.feint && !e.feint.hit ) return `${e.actor} → ${e.target}: ${feint}`;
+      return `${e.actor} → ${e.target}: ${feint ? `${feint} · ` : ""}${e.skill} · ${roll(e.natural, e.mod, e.total, e.dc, `${e.dcStat} DC`)} · ${DEGREE[e.degree]} · ${e.stolen ? `steals ${concessionText(e.stolen)}` : e.noticed ? "caught" : "nothing taken"}`;
+    }
     case "reclaim": return `${e.actor} gets back ${concessionText(e.concession)} from ${e.by}`;
     case "sway":
       if ( !e.concession ) return `${e.actor}: ${e.text}`;

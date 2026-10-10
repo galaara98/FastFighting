@@ -23,7 +23,7 @@ import { createAggregator } from "./aggregate.js";
 import { talkActionsThisTurn, choosePitch, attemptTalk } from "./behavior/talk.js";
 import { opensWithTalk, breaksStandoff, standoffPitches, charismaticLeader } from "./behavior/standoff.js";
 import { controlOutcome, isImmune, degreeShift, applyControl } from "./behavior/control.js";
-import { stealChance, theftTarget, attemptTheft } from "./behavior/theft.js";
+import { stealChance, theftTarget, theftPlan, attemptTheft } from "./behavior/theft.js";
 
 const MAX_STEPS_PER_TURN = 8;
 /** After the last blow, how long the winners keep tending the dying (ten minutes of rounds, at most). */
@@ -697,11 +697,12 @@ function takeTurn(run, u) {
     if ( !u.stoleThisTurn ) {
       u.stoleThisTurn = true;
       const mark = theftTarget(run, u);
-      const stealCost = rules.stealCost ?? basic;
       const chance = mark ? stealChance(run, u, mark) : 0;
-      if ( chance > 0 && turn.canAfford(stealCost) && run.rng.chance(chance) ) {
-        turn.spend(stealCost);
-        attemptTheft(run, u, mark, (unit, text, data) => log(run, unit, text, data));
+      const plan = chance > 0 ? theftPlan(run, u, mark) : null;
+      if ( plan && turn.canAfford(plan.cost) && run.rng.chance(chance) ) {
+        turn.spend(plan.cost);
+        const result = attemptTheft(run, u, mark, (unit, text, data) => log(run, unit, text, data), { plan, attacksMade });
+        attacksMade += result.attacks ?? 0;
         continue;
       }
     }
