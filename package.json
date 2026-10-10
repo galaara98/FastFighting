@@ -1,0 +1,13 @@
+{
+  "name": "fast-fighting",
+  "private": true,
+  "type": "module",
+  "description": "Development tooling for the FastFighting Foundry VTT module",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "vitest": "3.2.4"
+  }
+}
