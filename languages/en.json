@@ -697,7 +697,7 @@
       },
       "loreCollector": {
         "Name": "Lore-Collector",
-        "Hint": "Sizes up a new foe before talking to it or fighting it (an action, or a whole turn where a turn has only one; in a standoff, most likely its whole first turn, watching the other side while the talk waits). When that works, its next rolls against that foe are about 2.5 times as likely to succeed, to make up for the time it took (in Ironsworn: it Secures an Advantage, and its next attack or words are 25% likelier to succeed), and afterwards it still deals with that foe a little better. Drawn to foes it hasn't sized up yet."
+        "Hint": "Sizes up a new foe before talking to it or fighting it (an action, or a whole turn where a turn has only one; in a standoff, most likely its whole first turn, watching the other side while the talk waits). When that works, its next rolls against that foe are much likelier to succeed, to make up for the time it took (how much is a setting in each game system's FastFighting module, 1.25 to 2.5 times; in Ironsworn it Secures an Advantage, for its next attack or words), and afterwards it still deals with that foe a little better. Drawn to foes it hasn't sized up yet."
       },
       "puzzleManiac": {
         "Name": "Puzzle-Maniac",
