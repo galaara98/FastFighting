@@ -276,6 +276,17 @@ function narrate(e, roll, rel, fill) {
     case "boost": return roll(e.self ? "event.boost" : "event.boostFor", { ...f, label: e.label ?? "luck", target: e.target ?? "" });
     case "fate": return roll(e.self ? "event.fateSelf" : "event.fateFor", { ...f, label: e.label ?? "fate", target: e.target ?? "" });
     case "body": return roll(e.alive ? "event.bodyAlive" : "event.bodyDead", f);
+    case "summon": return roll((e.names ?? []).length > 1 ? "event.summonMany" : "event.summonOne", { ...f, weapon: e.action ?? "", names: listJoin(e.names ?? []), name: e.names?.[0] ?? "" });
+    case "vanish": return roll("event.vanish", f);
+    case "reaction": {
+      const fill = { ...f, weapon: e.reaction ?? "", target: e.target ?? "" };
+      if ( e.tell ) {
+        const own = roll(`event.${e.tell}`, fill);
+        if ( own ) return own;
+      }
+      return roll({ hit: "event.reactHit", attacked: "event.reactAttacked", missed: "event.reactMissed", damaged: "event.reactDamaged" }[e.trigger] ?? "event.reactHit", fill);
+    }
+    case "counter": return roll(e.countered ? "event.counterTakes" : "event.counterFails", { ...f, weapon: e.reaction ?? "", spell: e.action ?? "", target: e.target ?? "" });
     case "allegiance": return roll(e.joined ? "event.allegianceTurn" : "event.allegianceBack", { ...f, by: e.by ?? "" });
     case "theft":
       if ( e.feint && !e.feint.hit ) return roll("event.feintMiss", { ...f, weapon: e.feint.weapon });
@@ -486,6 +497,10 @@ function statLine(e) {
       return `${e.actor}: ${e.action} · d${e.faces ?? 20} ${e.natural} ${signed(e.mod)} = ${e.total} · ${how}`;
     }
     case "boost": return `${e.actor} burns ${e.spent} ${e.label}${e.self ? "" : ` for ${e.target}`}: ${e.from} → ${e.to} vs ${e.dc} · ${e.made ? "made it" : "still short"}`;
+    case "reaction": return `${e.actor}: ${e.reaction} (reaction to ${e.target}, ${e.trigger})`;
+    case "summon": return `${e.actor}: ${e.action} · ${(e.names ?? []).join(", ")} join`;
+    case "vanish": return `${e.actor} is gone (${e.reason})`;
+    case "counter": return `${e.actor}: ${e.reaction} vs ${e.target}'s ${e.action}${e.natural !== null && e.natural !== undefined ? ` · d20 ${e.natural} → ${e.total}` : ""} · ${e.countered ? "countered" : "gets through"}`;
     case "save":
       return `${e.target} saves vs ${e.actor}'s ${e.action} · ${e.saveType} ${roll(e.natural, e.mod, e.total, e.dc, "DC")} · ${DEGREE[e.degree]} (${signed(e.margin)}) · ${e.damage} ${e.damageType}`;
     case "auto": return `${e.actor} → ${e.target}: ${e.action} (no roll) · ${e.damage} ${e.damageType}`;

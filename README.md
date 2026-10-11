@@ -174,6 +174,9 @@ Two boxes beside the playstyle pills: **"I don't like to use consumables"** and 
 - **Action dice other than a d20:** a giant's d24, a second action on a d16, crit ranges scaled to the die.
 - **Checks that pick the result:** a spell check whose total says what the spell does (DCC), with spells lost on a failure or a god's patience wearing thin.
 - **Luck:** points burned after a roll falls short to make it (DCC), the more readily the more is at stake; some spend it for friends.
+- **Reactions that answer** (besides opportunity attacks), each taking the round's reaction when it's worth what it costs: a spell that turns a hit into a miss (Shield), a dodge that halves a blow (Uncanny Dodge), damage taken off it (Parry, Shield Block, Deflect Attacks), a bonus to AC as the attack comes (Nimble Dodge), fire for whoever hurt you (Hellish Rebuke), a strike back at a melee miss (Riposte), and counterspells (by the spell's level, a check, or the caster's save).
+- **Summons:** creatures called mid-fight (Spiritual Weapon, Conjure Animals, Summon Animal ...) join right after their summoner and fight for its side, worth it when they'd do more over the fight than its own blows. They go when their time runs out, when the summoner's concentration breaks, or when it stops sustaining them (PF2e); something that isn't a creature (a spiritual weapon) can't be attacked and doesn't hold the field alone. They aren't the table's: left out of the results and Make it So, though the story tells what they did.
+- **Size:** you can only shove or trip a creature up to one size larger.
 - **Crowd control:** spells that slow, frighten, trip, immobilize, paralyze or put foes to sleep, by degree of success, for their duration.
   - They're valued by the damage they prevent.
   - The system's tags decide immunity (mental, fear, sleep and others), and some systems let strong targets resist better (PF2e incapacitation).
@@ -341,6 +344,11 @@ Declare your system in `module.json` (`relationships.systems`) so Foundry only o
 - `spec.deeds`: `[{id, label, melee, ranged, tiers: [{min, outcome}]}]` (an outcome with `self` lands on the one who did it).
 - A check with tiers: `casting: {mod, faces, fumbleOn, lostOnFail, disapproval, label}`, `tiers: [{min, max, ...fields}]` (a save's `dc: "check"` is the check's total), `castChance`; the action's own fields are what a success most often does.
 - `spec.boosts`: `[{pool, label, per, faces, allies, range, kinds, keep, recovers}]`, spending `spec.resources[pool]`.
+- Riders also take `vs` (only against creatures with one of these traits), `group` (one of a group per hit), `cost` (what it takes from the turn, on one's own turn: `{bonus: 1, slot: 1}`) and `dear` (a spell slot's level, which prices it).
+
+**Reactions and summons in a CombatantSpec** (see `behavior/responses.js` and `behavior/summons.js`):
+- `spec.reactions`: `[{id, label, on: "attacked" | "hit" | "missed" | "damaged" | "spell", ac, halve, reduce, strike, damage, save, counter: {level, mod} | {level, save}, resource, amount, uses, range, melee, ranged, physical, needsShield, tell}]`. They share `rules.reactions(u)` a round with opportunity attacks.
+- A summoning: `{kind: "summon", creatures: [CombatantSpec], rounds, concentration, sustain: cost, sustainOrEnd}`; a creature with `untargetable` can't be attacked. `spec.size` (0 tiny … 5 gargantuan) and an action's `maxSize` are for the system's `isImmune` to compare.
 
 **Buffs, debuffs and control in a CombatantSpec** (see `scripts/engine/mods.js`, `behavior/effects.js`, `behavior/control.js` and `behavior/support.js`):
 - **An outcome** is `{conditions, mods, tempHp, mark, iwr, actionsNow, rounds, label, endsOnDamage, endsOnHarm, repeatSave: {type, dc}, onlyVs, self}`, all optional. `mods` holds `attack`, `ac`, `saves`, `checks`, `damage`, `speed`, `actions` (numbers), `attackDie` / `saveDie` (signed faces: 4 is +1d4), and `adv`, `defAdv`, `saveAdv` (+1 or -1). The engine's own conditions are `prone`, `immobilized`, `incapacitated` and `controlled`.

@@ -24,6 +24,8 @@ import { expectedDamage, spendUse, attacksIn, criticalParts, saveMultiplier, mea
 import { chooseDeed, deedTier, chooseHitRiders, rescueMiss, rollCrit, rollFumble } from "./behavior/riders.js";
 import { cast } from "./behavior/casting.js";
 import { boost } from "./behavior/luck.js";
+import { respond, riposteStrike } from "./behavior/responses.js";
+import { decideSummon, callSummons, sustainSummons, summonState, dismiss } from "./behavior/summons.js";
 import { createAggregator } from "./aggregate.js";
 import { talkActionsThisTurn, choosePitch, attemptTalk } from "./behavior/talk.js";
 import { opensWithTalk, breaksStandoff, standoffPitches, charismaticLeader } from "./behavior/standoff.js";
@@ -451,11 +453,13 @@ function rollHit(run, u, action, t, parts, multiplier, crit, minimum = 0) {
   const total = rules.applyIwr(iwrOf(t), rolled.byType);
   return {
     total,
-    apply: () => {
+    types: Object.keys(rolled.byType),
+    apply: (amount = total) => {
       for ( const p of rolled.persistent ) {
         if ( !t.spec.iwr?.immune?.includes(p.type) ) t.persistent.push({ part: p, sourceId: u.id });
       }
-      dealDamage(run, u, t, total, { crit });
+      dealDamage(run, u, t, amount, { crit });
+      return amount;
     }
   };
 }
@@ -492,6 +496,10 @@ function tierIndex(run, action, tierAction) {
 }
 
 function executeOffense(run, u, action, t, attacksMade) {
+  if ( counterspelled(run, u, action) ) {
+    run.blood = true;
+    return;
+  }
   if ( action.casting ) {
     const tier = castFor(run, u, action, t);
     run.blood = true;
@@ -552,7 +560,7 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
       const extra = bonusDamageParts(run, u, action, target, { commit: true });
       const hit = rollHit(run, u, action, target, (action.damage ?? []).concat(extra), 1, false);
       if ( logging ) log(run, u, `${action.name} → ${target.spec.name}: ${hit.total} damage`, { type: "auto", ...common, damage: hit.total });
-      hit.apply();
+      answerHarm(run, target, u, action, hit.apply());
       return;
     }
 
@@ -569,8 +577,9 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
       if ( mult > 0 ) {
         const hit = rollHit(run, u, action, target, (action.damage ?? []).concat(extra), mult, roll.degree === 0);
         if ( logging ) log(run, u, `${action.name} → ${target.spec.name}: save ${DEGREE_LABEL[roll.degree]}, ${hit.total} damage`, { ...data, damage: hit.total });
-        hit.apply();
+        const dealt = hit.apply();
         if ( roll.degree <= 1 ) applyEffects(run, u, action, target, 3 - roll.degree);
+        answerHarm(run, target, u, action, dealt);
       } else if ( logging ) log(run, u, `${action.name} → ${target.spec.name}: ${DEGREE_LABEL[roll.degree]}, no damage`, { ...data, damage: 0 });
       return;
     }
@@ -581,7 +590,15 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
     // A deed is declared before the roll (DCC Mighty Deeds); the deed die adds to the roll and, on a hit, the damage.
     const deed = r.deed ? chooseDeed(run, u, action, target) : null;
     const deedRoll = r.deed ? run.rng.die(r.deed) : 0;
-    const ac = currentAc(run, target, u, action);
+    let ac = currentAc(run, target, u, action);
+    // Seeing it coming (PF2e Nimble Dodge): a bonus to AC against this attack.
+    if ( target.spec.reactions && target !== u ) {
+      const dodge = respond(run, target, "attacked", { by: u, action, damage: meanDamageVs(run, action, target).normal });
+      if ( dodge?.ac ) {
+        ac += dodge.ac;
+        logReaction(run, target, u, dodge, "attacked");
+      }
+    }
     let roll = rollCheck(rules, run.rng, bonus + deedRoll, ac, opts);
     if ( run.boosting && roll.degree < 2 ) roll = boost(run, u, roll, ac, { kind: "attack", stakes: attackStakes(run, u, target, action), options: opts, label: action.name }, logger(run));
     // A close miss a die can mend (5e Precision Attack).
@@ -591,6 +608,22 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
         roll = { ...roll, total: roll.total + mend.roll };
         roll.degree = regrade(rules, roll, ac, "attack", opts);
         if ( logging ) log(run, u, `${mend.rider.label}: +${mend.roll}`, { type: "rider", rider: mend.rider.label, tell: mend.rider.tell ?? null, target: target.spec.name, targetId: target.id, roll: mend.roll, made: roll.degree >= 2 });
+      }
+    }
+    // Hit, and the target answers before the damage (5e Shield: perhaps a miss after all; Uncanny Dodge, Parry, PF2e
+    // Shield Block: less of it).
+    let answer = null;
+    if ( roll.degree >= 2 && target.spec.reactions && target !== u ) {
+      answer = respond(run, target, "hit", {
+        by: u, action, roll, ac, crit: roll.degree === 3, damage: meanDamageVs(run, action, target)[roll.degree === 3 ? "critical" : "normal"], types: (action.damage ?? []).map(p => p.type)
+      });
+      if ( answer ) {
+        logReaction(run, target, u, answer, "hit");
+        if ( answer.ac ) {
+          applyOutcome(target, { mods: { ac: answer.ac }, rounds: 1, label: answer.label }, target.id, { id: `reaction:${answer.id}`, name: answer.label });
+          ac += answer.ac;
+          roll = { ...roll, degree: regrade(rules, roll, ac, "attack", opts) };
+        }
       }
     }
     const data = !logging ? null : { type: "attack", ...common, natural: roll.natural, mod: bonus + deedRoll + (roll.die ?? 0), total: roll.total, dc: ac, degree: roll.degree, margin: roll.total - ac, attackNumber: attacksMade + 1, faces: opts.faces, deed: r.deed ? deedRoll : null };
@@ -605,20 +638,91 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
       if ( table?.row?.damage?.length ) more.push(...table.row.damage);
       if ( deedRoll ) more.push(part([], deedRoll, primaryType(action)));
       const hit = rollHit(run, u, action, target, more.length ? base.concat(more) : base, 1, crit, rules.minimumDamage ?? 0);
-      if ( logging ) log(run, u, `${action.name} → ${target.spec.name}: ${roll.total} vs AC ${ac}, ${crit ? "critical hit" : "hit"} for ${hit.total}`, {
-        ...data, damage: hit.total, crit, sneak: extra.length > 0, advantage, riders: riders.map(x => x.label), critRoll: table?.total ?? null, critRowText: table?.row?.text ?? null
+      let amount = hit.total;
+      if ( answer?.halve ) amount = Math.floor(amount / 2);
+      if ( answer?.reduce ) amount = Math.max(0, amount - samplePart(answer.reduce, run.rng));
+      if ( logging ) log(run, u, `${action.name} → ${target.spec.name}: ${roll.total} vs AC ${ac}, ${crit ? "critical hit" : "hit"} for ${amount}`, {
+        ...data, damage: amount, crit, sneak: extra.length > 0, advantage, riders: riders.map(x => x.label), critRoll: table?.total ?? null, critRowText: table?.row?.text ?? null,
+        lessened: amount < hit.total ? hit.total - amount : 0
       });
-      hit.apply();
+      const dealt = hit.apply(amount);
       applyEffects(run, u, action, target, roll.degree);
       if ( table?.row ) applyCritRow(run, u, target, table);
       for ( const x of riders ) applyRider(run, u, action, target, x);
       if ( deed ) applyDeed(run, u, target, deed, deedRoll);
+      answerHarm(run, target, u, action, dealt);
     } else {
-      if ( logging ) log(run, u, `${action.name} → ${target.spec.name}: ${roll.total} vs AC ${ac}, ${roll.degree === 0 ? "fumble" : "miss"}`, { ...data, damage: 0, advantage });
+      if ( logging ) log(run, u, `${action.name} → ${target.spec.name}: ${roll.total} vs AC ${ac}, ${roll.degree === 0 ? "fumble" : "miss"}${answer ? ` (${answer.label})` : ""}`, { ...data, damage: 0, advantage, savedBy: answer?.label ?? null });
+      // A melee miss opens the attacker up (5e Riposte).
+      if ( action.melee && target.spec.reactions && isUp(target) && target !== u ) {
+        const back = respond(run, target, "missed", { by: u, action });
+        const strike = back?.strike ? riposteStrike(target) : null;
+        if ( strike ) {
+          logReaction(run, target, u, back, "missed");
+          strikeTarget(run, target, strike, u, 0, false, logging);
+        }
+      }
       if ( deed && logging ) log(run, u, `${deed.label}: the attack misses`, { type: "deed", deed: deed.label, target: target.spec.name, targetId: target.id, roll: deedRoll, success: false });
       if ( roll.degree === 0 && u.spec.fumble ) applyFumble(run, u);
     }
   }
+}
+
+/** A reaction taken, for the log and the story. */
+function logReaction(run, u, by, r, trigger) {
+  if ( !run.log ) return;
+  log(run, u, `${r.label} (reaction) against ${by.spec.name}`, { type: "reaction", reaction: r.label, tell: r.tell ?? null, trigger, target: by.spec.name, targetId: by.id });
+}
+
+/** Hurt by a foe: the one hurt may answer (5e Hellish Rebuke: fire at whoever did it, a save for half). */
+function answerHarm(run, target, by, action, dealt) {
+  if ( !(dealt > 0) || !target.spec.reactions || !by || target === by || !isUp(target) || !isUp(by) ) return;
+  const r = respond(run, target, "damaged", { by, action, damage: dealt });
+  if ( !r?.damage?.length ) return;
+  logReaction(run, target, by, r, "damaged");
+  const rules = run.prep.rules;
+  let mult = 1;
+  let roll = null;
+  if ( r.save ) {
+    roll = rollSave(run, by, r.save.type, r.save.dc, { stakes: 0.3, label: r.label }).roll;
+    mult = saveMultiplier(rules, roll.degree, { basic: r.save.basic !== false });
+  }
+  if ( mult <= 0 ) return;
+  const hit = rollHit(run, target, { id: `reaction:${r.id}`, damage: r.damage }, by, r.damage, mult, false);
+  if ( run.log ) log(run, target, `${r.label} → ${by.spec.name}: ${hit.total} damage`, {
+    type: "auto", action: r.label, actionKind: "auto", damageType: r.damage[0]?.type ?? "untyped", target: by.spec.name, targetId: by.id, damage: hit.total, reaction: true
+  });
+  hit.apply();
+}
+
+/**
+ * A foe casts a spell (an action with a rank: its spell level) where someone with a counterspell can see it. A spell
+ * of the counter's level or lower simply fails; a higher one if the check beats 10 + its level; or (5e 2024) if
+ * the caster fails a save against it.
+ * @returns {boolean} countered
+ */
+function counterspelled(run, u, action) {
+  if ( !(Number(action.rank) > 0) || !run.counters ) return false;
+  const rules = run.prep.rules;
+  for ( const e of run.units ) {
+    if ( !e.spec.reactions || !areEnemies(run, u, e) ) continue;
+    const r = respond(run, e, "spell", { by: u, action });
+    if ( !r?.counter ) continue;
+    let countered = !r.counter.save && (r.counter.level ?? 0) >= action.rank;
+    let roll = null;
+    if ( r.counter.save ) {
+      roll = rollSave(run, u, r.counter.save.type, r.counter.save.dc, { stakes: 0.5, label: action.name }).roll;
+      countered = roll.degree < 2;
+    } else if ( !countered ) {
+      roll = rollCheck(rules, run.rng, Number(r.counter.mod) || 0, 10 + action.rank, { kind: "check" });
+      countered = roll.degree >= 2;
+    }
+    log(run, e, `${r.label} against ${u.spec.name}'s ${action.name}: ${countered ? "countered" : "it gets through"}`, {
+      type: "counter", reaction: r.label, target: u.spec.name, targetId: u.id, action: action.name, countered, natural: roll?.natural ?? null, total: roll?.total ?? null
+    });
+    if ( countered ) return true;
+  }
+  return false;
 }
 
 /** A crit table's row: its lasting effect on the foe (and on the attacker, rarely); some simply kill. */
@@ -865,8 +969,20 @@ function executeControl(run, u, action, target, attacksMade, common) {
   }
 }
 
+/** Creatures called to fight: they join the order right after u (holding its concentration, if they need it). */
+function executeSummon(run, u, action) {
+  if ( counterspelled(run, u, action) ) return;
+  const released = beginConcentration(run, u, action);
+  if ( released.length ) log(run, u, `lets ${released.join(", ")} go`, { type: "concentrationEnd", effects: released, reason: "switch" });
+  const called = callSummons(run, u, action);
+  log(run, u, `${action.name}: ${called.map(s => s.spec.name).join(", ")} join${called.length === 1 ? "s" : ""} the fight`, {
+    type: "summon", action: action.name, names: called.map(s => s.spec.name), ids: called.map(s => s.id)
+  });
+}
+
 /** A buff on its recipients (the user too, for an aura). An action it gains at once (Action Surge) goes on the turn. */
 function executeBuff(run, u, action, targets, worth = 0, turn = null) {
+  if ( counterspelled(run, u, action) ) return spendUse(u, action);
   if ( action.casting ) {
     const tier = castFor(run, u, action, targets[0] ?? null);
     if ( !tier || tier.kind !== "buff" ) return spendUse(u, action);
@@ -898,6 +1014,10 @@ function executeBuff(run, u, action, targets, worth = 0, turn = null) {
 
 function executeHeal(run, u, action, target) {
   const rules = run.prep.rules;
+  if ( counterspelled(run, u, action) ) {
+    u.healedTargets.add(`${action.id}|${target.id}`);
+    return spendUse(u, action);
+  }
   if ( action.casting ) {
     const tier = castFor(run, u, action, target);
     u.healedTargets.add(`${action.id}|${target.id}`);
@@ -1177,6 +1297,16 @@ function takeTurn(run, u) {
   const { rules, options } = run.prep;
   if ( [STATUS.DEAD, STATUS.FLED, STATUS.SURRENDERED, STATUS.STOOD_DOWN].includes(u.status) ) return;
   if ( !u.active ) return; // bystanders act only once they join
+  // A summoned creature: gone when its time or its summoner's concentration runs out; idle when it wasn't sustained.
+  if ( u.summoner ) {
+    const state = summonState(run, u);
+    if ( state === "expired" || state === "released" ) {
+      dismiss(u);
+      log(run, u, "fades away", { type: "vanish", reason: state });
+      return;
+    }
+    if ( state === "idle" ) return;
+  }
   u.shieldRaised = false;
   // A creature's reaction comes back at the start of its turn.
   u.reactionsLeft = reactionsPerRound(rules, u);
@@ -1209,6 +1339,18 @@ function takeTurn(run, u) {
 
   // The turn's budget comes from the system (PF2e: three actions; 5e: an action, a bonus action and movement).
   const turn = turnFor(run, u);
+  // Whose turn it is, and what's left of it (a rider that takes a bonus action can only be had on one's own).
+  run.acting = u;
+  u.turn = turn;
+  // What it has called and must sustain (PF2e), first thing.
+  if ( u.prep.summonActions?.length ) {
+    const { kept, gone } = sustainSummons(run, u, turn);
+    for ( const a of kept ) log(run, u, `sustains ${a.name}`, { type: "sustain", action: a.name });
+    for ( const s of gone ) {
+      dismiss(s);
+      log(run, s, "fades away", { type: "vanish", reason: "unsustained" });
+    }
+  }
   const morale = checkMorale(run, u);
   if ( morale === MORALE.ROUT ) return flee(run, u, "breaks and flees", turn);
   if ( morale === MORALE.WAVER && !u.wavering ) {
@@ -1313,6 +1455,15 @@ function takeTurn(run, u) {
     if ( heal ) {
       executeHeal(run, u, heal.action, heal.target);
       turn.spend(costOf(rules, heal.action));
+      u.actsThisTurn += 1;
+      continue;
+    }
+    // Call creatures to fight beside it, when they'd do more over the fight than its own blows.
+    const summon = decideSummon(run, u, turn);
+    if ( summon ) {
+      turn.spend(costOf(rules, summon, u));
+      executeSummon(run, u, summon);
+      spendUse(u, summon);
       u.actsThisTurn += 1;
       continue;
     }
@@ -1430,6 +1581,7 @@ function takeTurn(run, u) {
   }
 
   u.turnsTaken += 1;
+  run.acting = null;
   endOfTurn(run, u);
 }
 
@@ -1634,7 +1786,8 @@ function reclaimGoods(run) {
 /* -------------------------------------------- */
 
 function activeSides(run) {
-  return [...new Set(run.units.filter(isStanding).map(u => u.side))];
+  // (A summoned thing nobody can attack, a Spiritual Weapon, doesn't keep its side in the fight.)
+  return [...new Set(run.units.filter(u => isStanding(u) && !u.spec.untargetable).map(u => u.side))];
 }
 
 export function battleOver(run) {
@@ -1688,6 +1841,7 @@ function summarize(run, ended, capture, winners) {
   const outcome = !ended ? "stalemate" : (winners.length ? "victory" : "none");
   const units = {};
   for ( const u of run.units ) {
+    if ( u.summoner ) continue; // summoned for this fight alone: not the table's
     const lost = ended && !winners.includes(u.side);
     units[u.id] = {
       status: u.status,
@@ -1725,6 +1879,7 @@ export function runOne(prep, seed, { log: withLog = false, capture = false } = {
   }
   if ( withLog ) run.log = [];
   const order = rollInitiative(run);
+  run.order = order; // (summoned creatures join it, right after their summoner)
   if ( withLog ) {
     const fighters = order.filter(u => u.active);
     log(run, null, `Initiative: ${fighters.map(u => u.spec.name).join(", ")}`, { type: "initiative", order: fighters.map(u => u.spec.name) });

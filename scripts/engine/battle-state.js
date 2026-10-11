@@ -66,6 +66,9 @@
  * @property {object} [repeat]              A DamagePart: how many times the damage is rolled (DCC magic missiles)
  * @property {number} [healDice]            Heals this many of the target's own hit dice (spec.hitDie)
  * @property {object} [casting]             A check whose total picks what it does, with tiers (see casting.js)
+ * @property {object[]} [creatures]         kind "summon": the creatures it calls (CombatantSpecs, without id, side or
+ *                                          position), with rounds (how long they stay), concentration, sustain (actions
+ *                                          the summoner spends each turn to keep them: PF2e)
  *
  * @typedef {object} BattleSpec
  * @property {CombatantSpec[]} combatants
@@ -122,25 +125,7 @@ export function prepareBattle(spec, rules) {
     for ( const b of a.enemies ) sides[b]?.enemies.add(a.id);
   }
 
-  const combatants = spec.combatants.filter(c => sides[c.side]).map(c => {
-    const side = sides[c.side];
-    const traits = {};
-    for ( const k of TRAITS ) {
-      traits[k] = clamp(Math.round(fudged(c.traits?.[k] ?? 50) * (1 - SIDE_WEIGHT) + side.traits[k] * SIDE_WEIGHT), 0, 100);
-    }
-    const meanHeal = a => (a.heal ?? []).reduce((s, p) => s + meanPart(p), 0);
-    return {
-      spec: c,
-      traits,
-      isHealer: c.actions.some(a => a.kind === "heal"),
-      isCaster: c.actions.some(a => a.kind === "save" || a.kind === "spell-attack"),
-      hasRanged: c.actions.some(a => a.range && a.kind !== "heal" && a.kind !== "buff"),
-      flies: (c.speeds?.fly ?? 0) > 0,
-      healActions: c.actions.filter(a => a.kind === "heal").sort((x, y) => meanHeal(y) / y.cost - meanHeal(x) / x.cost),
-      buffActions: c.actions.filter(a => a.kind === "buff" && a.outcome),
-      offense: c.actions.filter(a => a.kind !== "heal" && a.kind !== "buff")
-    };
-  });
+  const combatants = spec.combatants.filter(c => sides[c.side]).map(c => prepareCombatant(c, sides[c.side]));
 
   // Battle-worthiness: offense compared with everyone else on the field. The weakest may talk twice a turn.
   const offense = combatants.map(c => Math.max(0, ...c.offense.map(a => typicalValue(a, c.spec.level ?? 1, rules))));
@@ -155,103 +140,144 @@ export function prepareBattle(spec, rules) {
   const byId = new Map(combatants.map(c => [c.spec.id, c]));
   const approachOf = (aId, tId) => spec.approach?.[aId]?.[tId] ?? DEFAULT_APPROACH;
 
-  return { spec, rules, options, sides, combatants, byId, approachOf, meanCache: new Map() };
+  // What each summoning calls, ready to join a fight (on the summoner's side, under its command).
+  const summons = new Map();
+  for ( const c of combatants ) {
+    for ( const a of c.summonActions ) {
+      const list = (a.creatures ?? []).map((t, i) => {
+        const s = { ...t, id: `${c.spec.id}~${a.id}~${i}`, side: c.spec.side, kind: "summon", position: null, inEncounter: true, summoned: true,
+          hp: { ...(t.hp ?? { value: 1, max: 1 }) }, actions: t.actions ?? [], traits: t.traits ?? c.spec.traits, flags: { ...(t.flags ?? {}), masterId: c.spec.id, fearless: true } };
+        const p = prepareCombatant(s, sides[c.spec.side]);
+        p.offensePower = Math.max(0, ...p.offense.map(x => typicalValue(x, s.level ?? 1, rules)));
+        p.lowBattleWorth = false;
+        p.talkAffinity = 0;
+        return p;
+      });
+      summons.set(a.id, list);
+    }
+  }
+
+  return { spec, rules, options, sides, combatants, byId, approachOf, summons, meanCache: new Map() };
+}
+
+/** A combatant as a batch uses it: its traits blended with its side's, and its actions sorted by what they're for. */
+function prepareCombatant(c, side) {
+  const traits = {};
+  for ( const k of TRAITS ) {
+    traits[k] = clamp(Math.round(fudged(c.traits?.[k] ?? 50) * (1 - SIDE_WEIGHT) + side.traits[k] * SIDE_WEIGHT), 0, 100);
+  }
+  const meanHeal = a => (a.heal ?? []).reduce((s, p) => s + meanPart(p), 0);
+  return {
+    spec: c,
+    traits,
+    isHealer: c.actions.some(a => a.kind === "heal"),
+    isCaster: c.actions.some(a => a.kind === "save" || a.kind === "spell-attack"),
+    hasRanged: c.actions.some(a => a.range && !["heal", "buff", "summon"].includes(a.kind)),
+    flies: (c.speeds?.fly ?? 0) > 0,
+    healActions: c.actions.filter(a => a.kind === "heal").sort((x, y) => meanHeal(y) / y.cost - meanHeal(x) / x.cost),
+    buffActions: c.actions.filter(a => a.kind === "buff" && a.outcome),
+    summonActions: c.actions.filter(a => a.kind === "summon" && a.creatures?.length),
+    offense: c.actions.filter(a => !["heal", "buff", "summon"].includes(a.kind))
+  };
 }
 
 /** Fresh mutable state for one run. */
 export function createRun(prep) {
-  const units = prep.combatants.map(p => {
-    const s = p.spec;
-    const resources = { ...(s.resources ?? {}) };
-    const uses = {};
-    for ( const a of s.actions ) if ( Number.isFinite(a.uses) ) uses[a.id] = a.uses;
-    return {
-      prep: p,
-      spec: s,
-      id: s.id,
-      side: s.side,
-      homeSide: s.side,      // where it belongs (a charmed creature fights for someone else until it wears off)
-      controlledBy: null,
-      hp: s.hp.value,
-      maxHp: s.hp.max,
-      temp: s.hp.temp ?? 0,
-      status: s.hp.value > 0 ? STATUS.STANDING : STATUS.DOWN,
-      // A creature already dying keeps dying; one down at 0 HP without a dying value is stable.
-      dying: s.hp.value > 0 ? 0 : Math.max(0, s.dying ?? 0),
-      wounded: s.wounded ?? 0,
-      doomed: s.doomed ?? 0,
-      // The system may say outright (5e: a creature at 0 HP is dying until stabilized).
-      stable: s.hp.value <= 0 && (s.stable ?? !(s.dying > 0)),
-      prone: !!s.conditions?.prone,
-      persistent: (s.persistent ?? []).map(part => ({ part, sourceId: null })),
-      resources,
-      resourcesStart: { ...resources },
-      uses,
-      lost: null,            // spells it lost to a failed check (DCC wizards), by action id
-      disapproval: null,     // a DCC cleric's disapproval range, once a failure has widened it
-      riderUses: null,       // limited riders used (riders.js)
-      actsThisTurn: 0,       // actions taken this turn (which of several action dice the next one rolls)
-      advance: 0,
-      adjacent: new Set(),
-      losGained: new Set(),
-      lastAttackerId: null,
-      targetId: null,
-      shieldRaised: false,
-      wavering: false,
-      moraleStress: 0,
-      damageDealt: 0,
-      healingDone: 0,
-      fellRound: null,
-      wasDowned: false,
-      healedTargets: new Set(),
-      drawn: new Set(),
-      conds: Object.fromEntries(Object.entries(s.conditions ?? {}).filter(([k]) => k !== "prone").map(([k, v]) => [k, v === true ? 1 : Number(v) || 0])),
-      baseConds: null, // set below: conditions that were there before any affliction
-      afflictions: [],
-      effects: [],           // timed effects (crowd control, buffs, debuffs): see behavior/effects.js
-      baseMods: s.mods ?? null, // bonuses and penalties already on it when the fight starts (one, or a list)
-      mods: combineMods([].concat(s.mods ?? [])),
-      marks: [],             // extra damage on the hits of whoever marked it (Hunter's Mark, Hex): {by, parts}
-      vs: null,              // conditions that hold against one foe only (PF2e Feint): Map(sourceId -> conditions)
-      concentration: null,   // the effect it is holding up (5e concentration): {actionId, name, worth}
-      triedOn: null,         // once-per-target actions already tried (PF2e Demoralize)
-      grabbedBy: null,
-      tac: s.tactics ?? null, // replaced per fight by sampleRunTactics in runOne
-      studied: new Set(),
-      parleyed: false,
-      turnsTaken: 0,
-      harmedBy: new Map(),   // attackerId -> damage dealt to this unit
-      rebuffed: new Map(),   // talkerId -> failed pitches
-      offendedBy: new Set(), // talkers this unit will no longer listen to
-      sway: new Map(),       // talker side -> persuasion progress
-      swayOutcome: null,
-      // Encounter membership: combatants start active; bystanders wait until they notice the fight.
-      active: s.inEncounter !== false,
-      aware: s.inEncounter !== false,
-      joinedRound: s.inEncounter !== false ? 0 : null,
-      calledForHelp: false,
-      // Positions in feet (token centers), when the scene provided them.
-      pos: s.position ? { x: s.position.x, y: s.position.y } : null,
-      feetMoved: 0
-    };
-  });
-  for ( const u of units ) {
-    u.baseConds = { ...u.conds };
-    prep.rules.initUnit?.(u); // the system's own per-fight state (5e: death saves already on the sheet)
-    // Ready to react from the start (5e opportunity attacks, PF2e Reactive Strike); none if the system has none.
-    u.reactionsLeft = prep.rules.opportunity ? (prep.rules.reactions ? prep.rules.reactions(u) : 1) : 0;
-  }
+  const units = prep.combatants.map(p => createUnit(prep, p));
   return {
     prep,
     units,
     fateInPlay: units.some(u => (u.resources.fate ?? 0) > 0), // anyone with hero points or the like to spend
     boosting: units.some(u => u.spec.boosts?.length),       // anyone who can burn Luck (or the like) on a roll
+    counters: units.some(u => u.spec.reactions?.some(r => r.on === "spell")), // anyone with a counterspell
     byId: new Map(units.map(u => [u.id, u])),
     round: 0,
     sideFocus: {},
     firstFallen: null,
     log: null
   };
+}
+
+/** One combatant's state for a fight (a summoned creature's too, when it's called). */
+export function createUnit(prep, p) {
+  const s = p.spec;
+  const resources = { ...(s.resources ?? {}) };
+  const uses = {};
+  for ( const a of s.actions ) if ( Number.isFinite(a.uses) ) uses[a.id] = a.uses;
+  const u = {
+    prep: p,
+    spec: s,
+    id: s.id,
+    side: s.side,
+    homeSide: s.side,      // where it belongs (a charmed creature fights for someone else until it wears off)
+    controlledBy: null,
+    hp: s.hp.value,
+    maxHp: s.hp.max,
+    temp: s.hp.temp ?? 0,
+    status: s.hp.value > 0 ? STATUS.STANDING : STATUS.DOWN,
+    // A creature already dying keeps dying; one down at 0 HP without a dying value is stable.
+    dying: s.hp.value > 0 ? 0 : Math.max(0, s.dying ?? 0),
+    wounded: s.wounded ?? 0,
+    doomed: s.doomed ?? 0,
+    // The system may say outright (5e: a creature at 0 HP is dying until stabilized).
+    stable: s.hp.value <= 0 && (s.stable ?? !(s.dying > 0)),
+    prone: !!s.conditions?.prone,
+    persistent: (s.persistent ?? []).map(part => ({ part, sourceId: null })),
+    resources,
+    resourcesStart: { ...resources },
+    uses,
+    lost: null,            // spells it lost to a failed check (DCC wizards), by action id
+    disapproval: null,     // a DCC cleric's disapproval range, once a failure has widened it
+    riderUses: null,       // limited riders used (riders.js)
+    actsThisTurn: 0,       // actions taken this turn (which of several action dice the next one rolls)
+    advance: 0,
+    adjacent: new Set(),
+    losGained: new Set(),
+    lastAttackerId: null,
+    targetId: null,
+    shieldRaised: false,
+    wavering: false,
+    moraleStress: 0,
+    damageDealt: 0,
+    healingDone: 0,
+    fellRound: null,
+    wasDowned: false,
+    healedTargets: new Set(),
+    drawn: new Set(),
+    conds: Object.fromEntries(Object.entries(s.conditions ?? {}).filter(([k]) => k !== "prone").map(([k, v]) => [k, v === true ? 1 : Number(v) || 0])),
+    baseConds: null, // set below: conditions that were there before any affliction
+    afflictions: [],
+    effects: [],           // timed effects (crowd control, buffs, debuffs): see behavior/effects.js
+    baseMods: s.mods ?? null, // bonuses and penalties already on it when the fight starts (one, or a list)
+    mods: combineMods([].concat(s.mods ?? [])),
+    marks: [],             // extra damage on the hits of whoever marked it (Hunter's Mark, Hex): {by, parts}
+    vs: null,              // conditions that hold against one foe only (PF2e Feint): Map(sourceId -> conditions)
+    concentration: null,   // the effect it is holding up (5e concentration): {actionId, name, worth}
+    triedOn: null,         // once-per-target actions already tried (PF2e Demoralize)
+    grabbedBy: null,
+    tac: s.tactics ?? null, // replaced per fight by sampleRunTactics in runOne
+    studied: new Set(),
+    parleyed: false,
+    turnsTaken: 0,
+    harmedBy: new Map(),   // attackerId -> damage dealt to this unit
+    rebuffed: new Map(),   // talkerId -> failed pitches
+    offendedBy: new Set(), // talkers this unit will no longer listen to
+    sway: new Map(),       // talker side -> persuasion progress
+    swayOutcome: null,
+    // Encounter membership: combatants start active; bystanders wait until they notice the fight.
+    active: s.inEncounter !== false,
+    aware: s.inEncounter !== false,
+    joinedRound: s.inEncounter !== false ? 0 : null,
+    calledForHelp: false,
+    // Positions in feet (token centers), when the scene provided them.
+    pos: s.position ? { x: s.position.x, y: s.position.y } : null,
+    feetMoved: 0
+  };
+  u.baseConds = { ...u.conds };
+  prep.rules.initUnit?.(u); // the system's own per-fight state (5e: death saves already on the sheet)
+  // Ready to react from the start (5e opportunity attacks, PF2e Reactive Strike); none if the system has none.
+  u.reactionsLeft = prep.rules.opportunity || s.reactions?.length ? (prep.rules.reactions ? prep.rules.reactions(u) : 1) : 0;
+  return u;
 }
 
 /** On its feet and taking part (bystanders who haven't joined are not). */
@@ -296,6 +322,7 @@ export function areEnemies(run, a, b) {
 }
 
 export function enemiesOf(run, u) {
+  if ( run.untargetable ) return run.units.filter(o => o !== u && !o.spec.untargetable && areEnemies(run, u, o));
   return run.units.filter(o => o !== u && areEnemies(run, u, o));
 }
 

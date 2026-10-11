@@ -23,7 +23,7 @@ import { TACTICAL, clamp } from "../../constants.js";
 import { degreeDistribution } from "../probability.js";
 import { saveRoll, attackRoll, attackOptions, checkRoll, currentAc, defenseDc, liveTier } from "../battle-state.js";
 import { netAdvantage } from "../mods.js";
-import { meanDamageVs, saveMultiplier } from "./evaluate.js";
+import { meanDamageVs, saveMultiplier, areaTargets } from "./evaluate.js";
 import { outcomeWorth, hasFresh, concentrationCost, heldElsewhere } from "./effects.js";
 import { castChanceOf } from "./casting.js";
 
@@ -140,6 +140,6 @@ export function controlValue(run, u, action, t, attacksMade = 0) {
     const dmg = meanDamageVs(run, action, t).normal;
     value += action.save ? dist.reduce((s, p, d) => s + p * saveMultiplier(rules, d, action.save) * dmg, 0) : (dist[2] + dist[3]) * dmg;
   }
-  const targets = action.area ? Math.max(1, action.area.targets ?? 2) : 1;
+  const targets = areaTargets(run, u, action);
   return Math.max(0, castChanceOf(u, action) * targets * value * (1 - immunity) - concentrationCost(run, u, action));
 }

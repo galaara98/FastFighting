@@ -151,6 +151,33 @@ describe("riders", () => {
     expect(used.some(e => e.landed && e.effect === "stunned")).toBe(true);
   });
 
+  test("against fiends a smite does more; only one smite of a group per hit", () => {
+    const vs = { id: "smite-fiend", label: "Smite (fiend)", group: "smite", vs: ["fiend"], resource: "slot", damage: [parseFormula("3d8", "radiant")], melee: true };
+    const plain = { id: "smite", label: "Smite", group: "smite", resource: "slot", damage: [parseFormula("2d8", "radiant")], melee: true };
+    const paladin = () => hero({ resources: { slot: 3 }, riders: [vs, plain], tac: { resourceUse: "nova" } });
+    const used = traits => events(battle([paladin(), dummy({ creatureTraits: traits })], { maxRounds: 4 }), "attack").filter(e => e.actorId === "hero" && e.riders?.length);
+    const onFiend = used(["fiend"]);
+    const onBeast = used(["beast"]);
+    expect(onFiend.length).toBeGreaterThan(0);
+    expect(onFiend.every(e => e.riders.length === 1 && e.riders[0] === "Smite (fiend)")).toBe(true);
+    expect(onBeast.every(e => e.riders.length === 1 && e.riders[0] === "Smite")).toBe(true);
+  });
+
+  test("a rider that takes the bonus action: once a turn, and never on someone else's turn", () => {
+    const bonusRules = { ...rules, turn: u => ({ action: 2, bonus: 1, move: 30 }) };
+    const smite = { id: "smite", label: "Smite", resource: "slot", cost: { bonus: 1 }, damage: [parseFormula("2d8", "radiant")], melee: true };
+    const paladin = hero({ resources: { slot: 9 }, riders: [smite], tac: { resourceUse: "nova" } });
+    let used = 0;
+    for ( let s = 1; s <= 10; s++ ) {
+      const r = replay(battle([paladin, dummy()], { maxRounds: 4 }), bonusRules, s);
+      const byRound = new Map();
+      for ( const e of r.log.filter(x => x.type === "attack" && x.riders?.includes("Smite")) ) byRound.set(e.round, (byRound.get(e.round) ?? 0) + 1);
+      for ( const n of byRound.values() ) expect(n).toBe(1);
+      used += byRound.size;
+    }
+    expect(used).toBeGreaterThan(5);
+  });
+
   test("a die mends a close miss (Precision Attack)", () => {
     const precision = { id: "precision", label: "Precision Attack", when: "miss", attackDie: 8, resource: "sup" };
     const fighter = hero({ resources: { sup: 4 }, riders: [precision], tac: { resourceUse: "nova" } });

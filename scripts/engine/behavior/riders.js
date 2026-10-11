@@ -8,6 +8,9 @@
  *    critDouble?, save?: {type, dc}, onSave?: [critFail, fail, success, critSuccess], outcome?, attackDie?, tell?}
  *   when "miss" with attackDie: a die added to an attack that just missed by a little (5e Precision Attack)
  *   melee / ranged: only for those attacks (unset: either); weapon: only for weapon strikes, not spells
+ *   vs: only against creatures with one of these traits (Divine Smite's extra die against fiends and undead)
+ *   group: one rider of a group per hit, the first that's worth it (the version against fiends, else the plain one)
+ *   cost: what it takes from the turn, on the creature's own turn only (a smite spell: {bonus: 1, slot: 1})
  *
  * Deeds (spec.deeds, for attacks with a deed die: DCC Mighty Deeds of Arms): declared before the roll; the deed
  * happens if the attack hits and the deed die shows enough, the more the better.
@@ -30,17 +33,19 @@ import { outcomeWorth } from "./effects.js";
 const isWeapon = action => action.kind === "strike";
 const isRanged = action => !!action.range && !action.melee;
 
-/** Does this rider (or deed) go with this attack? */
-function fits(r, action) {
+/** Does this rider (or deed) go with this attack (on this target)? */
+function fits(r, action, t = null) {
+  if ( r.vs?.length && !(t?.spec.creatureTraits ?? []).some(x => r.vs.includes(x)) ) return false;
   if ( r.weapon && !isWeapon(action) ) return false;
   if ( r.melee && isRanged(action) ) return false;
   if ( r.ranged && !isRanged(action) ) return false;
   return action.kind === "strike" || action.kind === "spell-attack";
 }
 
-/** Can u pay for it now? */
-function affordable(u, r) {
+/** Can u pay for it now? (What it takes from the turn only on u's own turn: no bonus action off-turn.) */
+function affordable(run, u, r) {
   if ( r.oncePerTurn && u.usedThisTurn?.has(`rider:${r.id}`) ) return false;
+  if ( r.cost && Object.keys(r.cost).length && (run.acting !== u || !u.turn?.canAfford(r.cost)) ) return false;
   if ( r.resource ) return (u.resources[r.resource] ?? 0) >= (r.amount ?? 1);
   if ( Number.isFinite(r.uses) ) return (u.riderUses?.[r.id] ?? r.uses) > 0;
   return true;
@@ -48,6 +53,7 @@ function affordable(u, r) {
 
 function pay(u, r) {
   if ( r.oncePerTurn ) (u.usedThisTurn ??= new Set()).add(`rider:${r.id}`);
+  if ( r.cost && Object.keys(r.cost).length ) u.turn?.spend(r.cost);
   if ( r.resource ) u.resources[r.resource] -= (r.amount ?? 1);
   else if ( Number.isFinite(r.uses) ) (u.riderUses ??= {})[r.id] = (u.riderUses[r.id] ?? r.uses) - 1;
 }
@@ -71,7 +77,7 @@ export function chooseDeed(run, u, action, t) {
   if ( !faces || !u.spec.deeds?.length || liveTier(run, u) <= TACTICAL.FERAL ) return null;
   let best = null;
   for ( const deed of u.spec.deeds ) {
-    if ( !fits(deed, action) ) continue;
+    if ( !fits(deed, action, t) ) continue;
     const tiers = [...(deed.tiers ?? [])].sort((a, b) => a.min - b.min);
     let worth = 0;
     tiers.forEach((tier, i) => {
@@ -101,11 +107,13 @@ export function deedTier(deed, roll) {
  */
 function priceOf(run, u, r, baseHit) {
   if ( !r.resource && !Number.isFinite(r.uses) ) return 0;
+  // A spell slot is dear by its level (r.dear); anything else by what the blow itself does.
+  const scale = r.dear ? 4 * r.dear : Math.max(1, baseHit);
   const start = r.resource ? (u.resourcesStart[r.resource] ?? 1) : r.uses;
   const left = r.resource ? (u.resources[r.resource] ?? 0) : (u.riderUses?.[r.id] ?? r.uses);
   const frac = start > 0 ? left / start : 0;
   const style = { conserve: 1.6, balanced: 1, nova: 0.55 }[u.tac?.resourceUse] ?? 1;
-  return style * (0.6 + 1.4 * (1 - frac)) * Math.max(1, baseHit);
+  return style * (0.6 + 1.4 * (1 - frac)) * scale;
 }
 
 /** Expected worth of a rider on this hit (crit: double dice where the rider says so). */
@@ -127,15 +135,25 @@ function riderWorth(run, u, r, action, t, { crit, baseHit }) {
  * weigh it; feral ones use what they have when they have it.
  */
 export function chooseHitRiders(run, u, action, t, { crit = false } = {}) {
-  const out = [];
+  const careless = liveTier(run, u) <= TACTICAL.FERAL;
+  const baseHit = meanDamageVs(run, action, t)[crit ? "critical" : "normal"];
+  // Everything worth its price, the best value for what it costs first (a free rider before any; a Divine Smite before
+  // a lesser smite; the cheapest slot that does the job), then paid for while the turn and the pools allow.
+  const options = [];
   for ( const r of u.spec.riders ?? [] ) {
-    if ( (r.when ?? "hit") !== "hit" || !fits(r, action) || !affordable(u, r) ) continue;
-    const baseHit = meanDamageVs(run, action, t)[crit ? "critical" : "normal"];
+    if ( (r.when ?? "hit") !== "hit" || !fits(r, action, t) || !affordable(run, u, r) ) continue;
     const worth = riderWorth(run, u, r, action, t, { crit, baseHit });
     const price = priceOf(run, u, r, baseHit);
-    const careless = liveTier(run, u) <= TACTICAL.FERAL;
     if ( worth <= 0 || (!careless && worth < price) ) continue;
+    options.push({ r, rate: price > 0 ? worth / price : Infinity, worth });
+  }
+  options.sort((a, b) => b.rate - a.rate || b.worth - a.worth);
+  const out = [];
+  const groups = new Set();
+  for ( const { r } of options ) {
+    if ( (r.group && groups.has(r.group)) || !affordable(run, u, r) ) continue;
     pay(u, r);
+    if ( r.group ) groups.add(r.group);
     out.push(r);
   }
   return out;
@@ -147,7 +165,7 @@ export function chooseHitRiders(run, u, action, t, { crit = false } = {}) {
  */
 export function rescueMiss(run, u, action, t, short) {
   for ( const r of u.spec.riders ?? [] ) {
-    if ( r.when !== "miss" || !r.attackDie || !fits(r, action) || !affordable(u, r) ) continue;
+    if ( r.when !== "miss" || !r.attackDie || !fits(r, action, t) || !affordable(run, u, r) ) continue;
     if ( short > r.attackDie ) continue;
     const chance = atLeast(r.attackDie, short);
     const baseHit = meanDamageVs(run, action, t).normal;

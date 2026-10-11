@@ -202,7 +202,9 @@ export function moveHeld(run, u, action, target) {
 
 /** Is u still holding anything up with its concentration? (A spell everyone resisted holds nothing.) */
 export function holdsAnything(run, u) {
-  return run.units.some(o => o.effects?.some(e => e.concentration && e.sourceId === u.id));
+  return run.units.some(o => o.effects?.some(e => e.concentration && e.sourceId === u.id)
+    // (or creatures it called and holds here with its concentration)
+    || (o.summoner === u.id && !o.vanished && o.status !== STATUS.DEAD && o.summonedBy === u.concentration?.actionId));
 }
 
 /* -------------------------------------------- */
@@ -215,6 +217,11 @@ const ROLL_POINT = 0.085;
 const ADVANTAGE = 0.35;
 /** Saves decide less of what comes at a creature than attacks do. */
 const SAVE_SHARE = 0.25;
+/**
+ * Knocked prone, it gets up on its next turn: being easier to hit lasts only until then, and only for foes close
+ * enough to take advantage (in some systems those further off do worse). About half of what it would be worth.
+ */
+const PRONE_SHARE = 0.5;
 /** Most fights don't last long: no effect counts for more than this many more rounds. */
 const MAX_ROUNDS = 3;
 
@@ -361,7 +368,7 @@ export function outcomeWorth(run, by, t, outcome, { versus = null } = {}) {
       // now find their mark. Nothing else about t changes.
       perRound += modsPerRound(run, t, { ac: asMods?.ac ?? -2 }, 0, damageOut(run, by, t));
       if ( !t.conds?.offGuard && !t.prone ) perRound -= exposedBonus(by) * 0.6;
-    } else if ( asMods && typeof asMods === "object" ) perRound += modsPerRound(run, t, asMods, out, inc);
+    } else if ( asMods && typeof asMods === "object" ) perRound += modsPerRound(run, t, asMods, out, inc) * (k === "prone" ? PRONE_SHARE : 1);
     else weighed[k] = v;
   }
   if ( Object.keys(weighed).length ) perRound -= conditionWeight(rules, weighed) * out * (outcome.endsOnDamage ? 0.6 : 1);

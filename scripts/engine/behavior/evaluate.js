@@ -3,7 +3,7 @@
  */
 import { meanPart, doubled } from "../dice.js";
 import { degreeDistribution } from "../probability.js";
-import { attackRoll, attackOptions, currentAc, saveRoll, bonusDamageParts } from "../battle-state.js";
+import { attackRoll, attackOptions, currentAc, saveRoll, bonusDamageParts, enemiesOf, isStanding } from "../battle-state.js";
 import { costOf, costUnits, mainPool } from "../turn.js";
 import { controlValue } from "./control.js";
 import { iwrOf } from "./effects.js";
@@ -80,7 +80,7 @@ export function expectedDamage(run, a, action, t, attacksMade = 0) {
   if ( action.kind === "control" ) return controlValue(run, a, action, t, attacksMade);
   const rules = run.prep.rules;
   const dmg = meanDamageVs(run, action, t);
-  const targets = action.area ? Math.max(1, action.area.targets ?? 2) : 1;
+  const targets = areaTargets(run, a, action);
   if ( action.kind === "auto" ) {
     const extra = bonusDamageParts(run, a, action, t).reduce((s, p) => s + Math.max(0, meanPart(p)), 0);
     return targets * (dmg.normal + extra);
@@ -101,6 +101,17 @@ export function expectedDamage(run, a, action, t, attacksMade = 0) {
   return targets * (dist[2] * (dmg.normal + extra) + dist[3] * (dmg.critical + extraCrit));
 }
 
+/**
+ * How many foes an area really catches: as many as it can take, but no more than are standing against u (a Mass
+ * Suggestion for twelve, against two foes, takes two).
+ */
+export function areaTargets(run, u, action) {
+  if ( !action.area ) return 1;
+  const most = Math.max(1, action.area.targets ?? 2);
+  const foes = enemiesOf(run, u).filter(isStanding).length;
+  return Math.max(1, Math.min(most, foes));
+}
+
 /** Main-pool units a creature gets each turn (PF2e 3 actions; 5e 1 action). */
 export function unitsPerTurn(rules, u) {
   const budget = rules.turn ? rules.turn(u) : { actions: rules.actionsPerTurn ?? 1 };
@@ -116,6 +127,9 @@ export function unitsPerTurn(rules, u) {
  * out inside another such estimate, a creature's control counts for its damage only, so the two never chase each
  * other round and round.
  */
+/** Rounds a fight typically lasts, for spreading a creature's limited spells and items over it. */
+const TYPICAL_ROUNDS = 3;
+
 export function threatOf(run, u, versus) {
   if ( run.threatRound !== run.round ) {
     run.threatRound = run.round;
@@ -158,6 +172,10 @@ function threatNow(run, u, versus) {
       made += attacksIn(action);
       if ( Number.isFinite(action.uses) || action.resource ) break;
     }
+    // A spell or item it can only use so often counts in a round's threat only as far as what's left could last a
+    // typical fight (a single Meteor Swarm isn't three rounds of Meteor Swarms).
+    const left = action.resource ? (u.resources[action.resource] ?? 0) : Number.isFinite(action.uses) ? (u.uses?.[action.id] ?? action.uses) : Infinity;
+    if ( Number.isFinite(left) ) total *= Math.min(1, left / TYPICAL_ROUNDS);
     bestMain = Math.max(bestMain, total);
   }
   return bestMain + bestBonus;

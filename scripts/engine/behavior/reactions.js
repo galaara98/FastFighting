@@ -18,7 +18,7 @@ import { mind } from "./desire.js";
 
 /** Reactions u has each round: none in a system without opportunity attacks. */
 export function reactionsPerRound(rules, u) {
-  if ( !rules.opportunity ) return 0;
+  if ( !rules.opportunity && !u.spec.reactions?.length ) return 0;
   return rules.reactions ? rules.reactions(u) : 1;
 }
 
