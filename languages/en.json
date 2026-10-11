@@ -52,7 +52,7 @@
         "Hint": "Include tokens on scene Levels other than the one being viewed."
       },
       "neutralDefault": {
-        "Name": "Neutral token",
+        "Name": "Neutral tokens",
         "Hint": "Default handling of tokens with Neutral disposition. They stand on the field taking no side, perhaps leaning one way: whoever hurts or robs them, or crosses what they want (hurting someone they lean toward), turns them against their side, and either side's talkers can try to win them over (harder against their lean). Can be changed per battle and per token."
       },
       "downedModel": {
