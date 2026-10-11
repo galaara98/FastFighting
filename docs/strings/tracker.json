@@ -19127,6 +19127,16 @@
    "commit": null,
    "hash": "1f7ceb30eafd"
   },
+  "dcc:FFDCC.Toughness": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.Toughness",
+   "area": "dcc/General",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "19cd2c1eecf1"
+  },
   "dcc:FFDCC.Turned": {
    "repo": "dcc",
    "file": "languages/en.json",
@@ -19156,6 +19166,16 @@
    "date": null,
    "commit": null,
    "hash": "39f396bdd747"
+  },
+  "dcc:FFDCC.Unarmed": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.Unarmed",
+   "area": "dcc/General",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "5214e92bd733"
   },
   "dcc:FFDCC.Will": {
    "repo": "dcc",
