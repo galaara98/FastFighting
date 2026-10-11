@@ -8023,8 +8023,8 @@
    "area": "core/Settings",
    "status": "written",
    "date": "2026-10-11",
-   "commit": "54558c4",
-   "hash": "a65c90e07e8c"
+   "commit": "81cb84f",
+   "hash": "2b31dad686e9"
   },
   "core:FASTFIGHTING.Settings.neutralReach.Hint": {
    "repo": "core",
