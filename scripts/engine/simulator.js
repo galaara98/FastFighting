@@ -71,7 +71,7 @@ const logger = run => (run.logTo ??= (unit, data) => log(run, unit, data));
  */
 function saveStakes(target, damage = 0, controls = false) {
   let s = controls ? 0.7 : 0.2;
-  if ( damage > 0 ) s = Math.max(s, damage >= target.hp + target.temp ? 0.95 : 0.25 + 0.5 * damage / Math.max(1, target.hp));
+  if ( damage > 0 ) s = Math.max(s, damage >= target.hp + target.temp + (target.stamina ?? 0) ? 0.95 : 0.25 + 0.5 * damage / Math.max(1, target.hp));
   return Math.min(1, s);
 }
 
@@ -270,15 +270,18 @@ function dealDamage(run, source, target, amount, { crit = false, types = null } 
   const rules = run.prep.rules;
   const model = run.prep.options.downedModel;
   if ( target.status === STATUS.STANDING ) {
+    // Temporary hit points go first, then stamina, then hit points.
     const absorbed = Math.min(target.temp, amount);
     target.temp -= absorbed;
-    const rest = amount - absorbed;
+    const winded = Math.min(target.stamina ?? 0, amount - absorbed);
+    if ( winded ) target.stamina -= winded;
+    const rest = amount - absorbed - winded;
     const dealt = Math.min(rest, target.hp);
     target.hp -= rest;
     if ( target.hp <= 0 && holdsOn(run, target, rest, crit, types) ) target.hp = 1;
     if ( source ) {
-      source.damageDealt += dealt + absorbed;
-      target.harmedBy.set(source.id, (target.harmedBy.get(source.id) ?? 0) + dealt + absorbed);
+      source.damageDealt += dealt + absorbed + winded;
+      target.harmedBy.set(source.id, (target.harmedBy.get(source.id) ?? 0) + dealt + absorbed + winded);
       if ( run.standoff ) bloodInStandoff(run, source, target);
       if ( areEnemies(run, source, target) ) {
         // Hit from afar while already trading blows with someone: keep at the one in front of it.
@@ -799,7 +802,7 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
       if ( deedRoll ) more.push(part([], deedRoll, primaryType(action)));
       const hit = rollHit(run, u, action, target, more.length ? base.concat(more) : base, 1, crit, rules.minimumDamage ?? 0);
       // A finishing move (an Ironsworn End the Fight): whatever it has left.
-      let amount = action.finish ? target.hp + target.temp : hit.total;
+      let amount = action.finish ? target.hp + target.temp + (target.stamina ?? 0) : hit.total;
       if ( answer?.halve ) amount = Math.floor(amount / 2);
       if ( answer?.reduce ) amount = Math.max(0, amount - samplePart(answer.reduce, run.rng));
       if ( guard?.r.reduce ) amount = Math.max(0, amount - samplePart(guard.r.reduce, run.rng));
@@ -914,7 +917,7 @@ function counterspelled(run, u, action) {
 /** A crit table's row: its lasting effect on the foe (and on the attacker, rarely); some simply kill. */
 function applyCritRow(run, u, target, { row, total }) {
   if ( row.slay && target.status !== STATUS.DEAD ) {
-    if ( target.status === STATUS.STANDING ) dealDamage(run, u, target, target.hp + target.temp, { crit: true });
+    if ( target.status === STATUS.STANDING ) dealDamage(run, u, target, target.hp + target.temp + (target.stamina ?? 0), { crit: true });
     if ( target.status === STATUS.DOWN ) {
       target.status = STATUS.DEAD;
       target.killerId = u.id;
@@ -2443,6 +2446,7 @@ function captureUnit(u, rules) {
     system: rules?.capture?.(u) ?? null,
     hp: u.hp,
     temp: u.temp,
+    stamina: u.stamina,
     status: u.status,
     active: u.active,
     joinedRound: u.joinedRound,

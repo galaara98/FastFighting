@@ -125,8 +125,9 @@
                 {{#if controllers}}<span class="ff-chip" data-tooltip="{{localize "FASTFIGHTING.Planner.ControlledBy"}}"><i class="fa-solid fa-user"></i> {{controllers}}</span>{{/if}}
               </div>
               <div class="ff-row-meta">
-                <span><i class="fa-solid fa-heart"></i> {{hp}}</span>
-                {{#if showAc}}<span><i class="fa-solid fa-shield"></i> {{ac}}</span>{{/if}}
+                <span data-tooltip="{{hpName}}"><i class="fa-solid fa-heart"></i> {{hp}}</span>
+                {{#if stamina}}<span data-tooltip="{{staminaName}}"><i class="fa-solid fa-bolt"></i> {{stamina}}</span>{{/if}}
+                {{#if showAc}}<span data-tooltip="{{acName}}"><i class="fa-solid fa-shield"></i> {{ac}}</span>{{/if}}
                 {{#if approach}}<span class="ff-approach"><i class="fa-solid fa-route"></i> {{approach}}</span>{{/if}}
               </div>
               {{#if resolvedLabel}}<div class="ff-row-note">{{resolvedLabel}}</div>{{/if}}

@@ -149,7 +149,7 @@ export function meddling(run, n, say = () => {}) {
   if ( !enemies?.size ) return null;
   const key = `${favored}|${run.standoff ? "standoff" : "fight"}`;
   if ( n.meddling?.key === key ) return n.meddling.how ? n.meddling : null;
-  const strength = has => run.units.reduce((s, o) => (!isNeutral(o) && has(o.side) && isStanding(o) ? s + o.hp + (o.temp ?? 0) : s), 0);
+  const strength = has => run.units.reduce((s, o) => (!isNeutral(o) && has(o.side) && isStanding(o) ? s + o.hp + (o.temp ?? 0) + (o.stamina ?? 0) : s), 0);
   const ours = strength(s => s === favored);
   const theirs = strength(s => enemies.has(s));
   const odds = ours + theirs > 0 ? ours / (ours + theirs) : 0.5;

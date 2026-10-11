@@ -275,6 +275,8 @@ export function createUnit(prep, p) {
     hp: s.hp.value,
     maxHp: s.hp.max,
     temp: s.hp.temp ?? 0,
+    // Stamina (a system's variant, PF2e's): spent before hit points; healing doesn't bring it back.
+    stamina: s.hp.stamina?.value ?? 0,
     status: s.hp.value > 0 ? STATUS.STANDING : STATUS.DOWN,
     // A creature already dying keeps dying; one down at 0 HP without a dying value is stable.
     dying: s.hp.value > 0 ? 0 : Math.max(0, s.dying ?? 0),

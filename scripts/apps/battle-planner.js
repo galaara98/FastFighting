@@ -344,8 +344,13 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       bystander: s.inEncounter === false,
       level: s.level,
       hp: `${s.hp.value + (fudge.hp ?? 0)}/${s.hp.max + (fudge.hp ?? 0)}`,
+      hpName: term("hp"),
+      // Stamina, where the system has it: spent before hit points.
+      stamina: s.hp.stamina ? `${s.hp.stamina.value}/${s.hp.stamina.max}` : null,
+      staminaName: term("sp"),
       ac: s.defenses.ac + (fudge.ac ?? 0),
       showAc: hasStat("ac"),
+      acName: term("ac"),
       hidden: s.hidden,
       include: ts.include !== false,
       side: ts.side ?? e.baseSide,

@@ -269,11 +269,11 @@ describe("the game's words for armor class and hit points", () => {
     expect(hasStat("ac")).toBe(true);
   });
 
-  test("templates show text with {AC} or {HP} through ffLocalize, which fills them (Foundry's localize wouldn't)", () => {
+  test("templates show text with {AC}, {HP} or {SP} through ffLocalize, which fills them (Foundry's localize wouldn't)", () => {
     const plain = [];
     for ( const file of sources("templates", [".hbs"]) ) {
       const source = readFileSync(new URL(`../${file}`, import.meta.url), "utf8");
-      for ( const [, key] of source.matchAll(/\{\{localize "([^"]+)"/g) ) if ( /\{(AC|HP)\}/.test(en[key] ?? "") ) plain.push(`${file}: ${key}`);
+      for ( const [, key] of source.matchAll(/\{\{localize "([^"]+)"/g) ) if ( /\{(AC|HP|SP)\}/.test(en[key] ?? "") ) plain.push(`${file}: ${key}`);
     }
     expect(plain).toEqual([]);
   });

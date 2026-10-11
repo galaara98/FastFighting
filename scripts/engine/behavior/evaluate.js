@@ -101,7 +101,7 @@ export function expectedDamage(run, a, action, t, attacksMade = 0) {
     const r = attackRoll(run, a, t, action, attacksMade);
     const ac = currentAc(run, t, a, action);
     const dist = degreeDistribution(rules, r.bonus + boostBonus(rules, a, t, r.bonus, ac, attackOptions(r)), ac, attackOptions(r));
-    return (dist[2] + dist[3]) * (t.hp + t.temp);
+    return (dist[2] + dist[3]) * (t.hp + t.temp + (t.stamina ?? 0));
   }
   const dmg = meanDamageVs(run, action, t);
   const targets = areaTargets(run, a, action);

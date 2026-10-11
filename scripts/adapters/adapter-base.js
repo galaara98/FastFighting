@@ -76,7 +76,8 @@ export class SystemAdapter {
 
   /**
    * The system's own word for a stat, for {AC} and {HP} in FastFighting's text (in the client's language).
-   * @param {"ac"|"hp"} key   ac: how hard a creature is to hit; hp: how much harm it can take
+   * @param {"ac"|"hp"|"sp"} key   ac: how hard a creature is to hit; hp: how much harm it can take; sp: stamina, spent
+   *                                before hit points (a spec's hp.stamina)
    * @returns {string|null|false}  the word; null: FastFighting's generic one; false: the system has none (not shown)
    */
   term(key) {

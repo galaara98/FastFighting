@@ -40,7 +40,10 @@ function ownTerm(key) {
   }
 }
 
-/** Does the game system have this stat? ("ac": how hard a creature is to hit; "hp": how much harm it can take.) */
+/**
+ * Does the game system have this stat? ("ac": how hard a creature is to hit; "hp": how much harm it can take; "sp":
+ * stamina, spent before hit points, where a system has it.)
+ */
 export const hasStat = key => ownTerm(key) !== false;
 
 /** The game's word for a stat: the system helper's own, else FastFighting's generic one (FASTFIGHTING.Stat.<key>). */
@@ -50,12 +53,12 @@ export function term(key) {
   return hasWords(`FASTFIGHTING.Stat.${key}`) ? globalThis.game.i18n.localize(`FASTFIGHTING.Stat.${key}`) : key;
 }
 
-/** {AC} and {HP} in any text: the game's words for them. */
-const TERMS = { AC: "ac", HP: "hp" };
-const withTerms = text => String(text).replace(/\{(AC|HP)\}/g, (m, k) => term(TERMS[k]));
+/** {AC}, {HP} and {SP} in any text: the game's words for them. */
+const TERMS = { AC: "ac", HP: "hp", SP: "sp" };
+const withTerms = text => String(text).replace(/\{(AC|HP|SP)\}/g, (m, k) => term(TERMS[k]));
 
 /**
- * The text for `key` in the reader's language, {placeholders} filled from data, and {AC} and {HP} with the game's words
+ * The text for `key` in the reader's language, {placeholders} filled from data, and {AC}, {HP} and {SP} with the game's words
  * for them. A key with no text comes back as it is, as Foundry's own localize does.
  * @param {string} key       a translation key ("FASTFIGHTING.MakeItSo.Outcome.Dead")
  * @param {object} [data]    values for the {placeholders}
@@ -120,6 +123,8 @@ export function outcomeLine(id, data = null) {
 export function commonOutcome(spec, final, { hp = true } = {}) {
   const lines = [];
   if ( hp && final.hp !== spec.hp.value ) lines.push(outcomeLine("Hp", { from: spec.hp.value, to: final.hp }));
+  const stamina = spec.hp.stamina;
+  if ( hp && stamina && final.stamina !== undefined && final.stamina !== stamina.value ) lines.push(outcomeLine("Stamina", { from: stamina.value, to: final.stamina }));
   if ( final.status === "dead" ) lines.push(outcomeLine(spec.kind === "pc" ? "Dies" : "Dead"));
   else if ( final.status === "fled" ) lines.push(outcomeLine(spec.kind === "pc" ? "Retreated" : final.swayed ? "TalkedAway" : "Fled"));
   else if ( final.status === "surrendered" ) lines.push(outcomeLine("Surrenders"));

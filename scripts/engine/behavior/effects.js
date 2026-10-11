@@ -358,7 +358,7 @@ export function fightLeft(run, side) {
   if ( run.leftCache.has(side) ) return run.leftCache.get(side);
   const mine = run.units.filter(o => o.side === side && isStanding(o));
   const foes = run.units.filter(o => isStanding(o) && mine.some(m => areEnemies(run, m, o)));
-  const hp = foes.reduce((s, f) => s + Math.max(0, f.hp) + (f.temp ?? 0), 0);
+  const hp = foes.reduce((s, f) => s + Math.max(0, f.hp) + (f.temp ?? 0) + (f.stamina ?? 0), 0);
   const dealt = mine.reduce((s, m) => s + damageOut(run, m), 0);
   const value = dealt > 0 ? clamp(Math.ceil(hp / dealt), 1, MAX_ROUNDS) : MAX_ROUNDS;
   run.leftCache.set(side, value);

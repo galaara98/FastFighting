@@ -5152,6 +5152,16 @@
    "commit": null,
    "hash": "a54349dec66b"
   },
+  "core:FASTFIGHTING.MakeItSo.Outcome.Stamina": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.MakeItSo.Outcome.Stamina",
+   "area": "core/MakeItSo",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "25e8ac605fc0"
+  },
   "core:FASTFIGHTING.MakeItSo.Outcome.StandsAside": {
    "repo": "core",
    "file": "languages/en.json",
@@ -8583,6 +8593,16 @@
    "date": null,
    "commit": null,
    "hash": "3ed1ffe07de0"
+  },
+  "core:FASTFIGHTING.Stat.sp": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Stat.sp",
+   "area": "core/Stat",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "cc350ea33939"
   },
   "core:FASTFIGHTING.Status.conceded": {
    "repo": "core",

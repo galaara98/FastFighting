@@ -263,6 +263,7 @@
     "Stat": {
       "ac": "AC",
       "hp": "HP",
+      "sp": "Stamina",
       "attack": "Attack/DC",
       "damage": "Damage",
       "leadBrave": "Bravery bonus",
@@ -513,6 +514,7 @@
       "BackToDrawn": "Back to the fight the simulation drew: that's the one Make it So commits.",
       "Outcome": {
         "Hp": "{HP} {from} → {to}",
+        "Stamina": "{SP} {from} → {to}",
         "Dies": "Dies",
         "Dead": "Dead",
         "Down": "Down",
