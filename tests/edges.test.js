@@ -207,10 +207,19 @@ describe("a Lore-Collector leading its side shares what it learns", () => {
     expect(mine.filter(e => e.round === 2 && e.type === "attack")).toHaveLength(0);
   });
 
-  test("not when it isn't the side's leader", () => {
-    const r = replay(battle([sage(), ally("a1"), ogre()], { maxRounds: 1, leadership: true }, sides("a1")), pf2eRules, 4);
-    expect(r.log.some(e => e.type === "study" && e.worked)).toBe(true);
-    expect(r.log.some(e => e.type === "shareLore")).toBe(false);
+  test("anyone else shares half as readily as the leader, unless it would rather talk than fight", () => {
+    const chanceAs = (leaderId, extra = {}) => {
+      const { run, by } = unitsOf(battle([sage(extra), ally("a1"), ogre()], { leadership: true }, sides(leaderId)));
+      return shareChance(run, by("sage"));
+    };
+    const leading = chanceAs("sage");
+    expect(chanceAs("a1")).toBeCloseTo(leading / 2, 6);
+    expect(chanceAs("a1", { alwaysTalk: true })).toBeCloseTo(leading, 6);
+    // And it does share, now and then, without leading.
+    let shared = 0;
+    for ( let seed = 1; seed <= 20; seed++ ) shared += replay(battle([sage(), ally("a1"), ogre()], { maxRounds: 1, leadership: true }, sides("a1")), pf2eRules, seed).log.filter(e => e.type === "shareLore").length;
+    expect(shared).toBeGreaterThan(0);
+    expect(shared).toBeLessThan(20);
   });
 });
 
@@ -233,7 +242,8 @@ describe("not every leader likes to share", () => {
       return fighter("lead", { traits, behavior: p.behavior, desireStyle: p.desire, social: social({ diplomacy: 2 }) });
     };
     const t = (tactical, loyal, selfish) => ({ tactical: { base: tactical, fudge: 0 }, brave: { base: 60, fudge: 0 }, selfish: { base: selfish, fudge: 0 }, loyal: { base: loyal, fudge: 0 } });
-    const chanceOf = spec => { const { run, by } = unitsOf(battle([spec, ogre()])); return shareChance(run, by("lead")); };
+    // (As its side's leader: anyone else, half as readily.)
+    const chanceOf = spec => { const { run, by } = unitsOf(battle([spec, ogre()], { leadership: true }, { friendly: { label: "Party", enemies: ["hostile"], leaderId: "lead" }, hostile: { label: "Foes", enemies: ["friendly"] } })); return shareChance(run, by("lead")); };
     const generous = chanceOf(leader(t(70, 90, 10)));
     const average = chanceOf(leader(t(40, 50, 50)));
     const grasping = chanceOf(leader(t(40, 20, 90)));

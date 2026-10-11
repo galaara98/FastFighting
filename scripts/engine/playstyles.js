@@ -92,7 +92,8 @@ export const PLAYSTYLES = Object.freeze({
   redeemSeeker: { icon: "fa-dove", traits: { brave: 15, selfish: -20 }, suggest: { allyDying: "rescue", retreat: "never", style: "frontline" }, behavior: { drawAggro: 0.15, helps: 1 },
     desire: { hurt: { dangerous: 20 }, protect: 10, frustration: 0.6 } },
   // Curious: drawn to foes it hasn't sized up yet, and sizes them up before it deals with them (in a standoff, its
-  // first turn most likely goes into watching the other side). Leading its side, it may tell its friends what it learned.
+  // first turn most likely goes into watching the other side). It may tell its friends what it learned (more readily
+  // leading its side, or as one who'd rather talk than fight).
   loreCollector: { icon: "fa-book-open", traits: { tactical: 5 }, suggest: {}, behavior: { study: 0.5, observe: 0.85, share: 0.9 },
     desire: { hurt: { unstudied: 10 }, frustration: 0.8 } },
   // Loves a weakness to exploit (and a lock to crack).

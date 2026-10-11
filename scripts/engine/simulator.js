@@ -28,7 +28,7 @@ import { respond, riposteStrike } from "./behavior/responses.js";
 import { decideSummon, callSummons, sustainSummons, summonState, dismiss } from "./behavior/summons.js";
 import { createAggregator } from "./aggregate.js";
 import { talkActionsThisTurn, choosePitch, attemptTalk, shareLanguage } from "./behavior/talk.js";
-import { opensWithTalk, breaksStandoff, standoffPitches, charismaticLeader, canTalk } from "./behavior/standoff.js";
+import { opensWithTalk, breaksStandoff, standoffPitches, charismaticLeader, canTalk, prefersTalk } from "./behavior/standoff.js";
 import { controlOutcome, controlRoll, isImmune, degreeShift } from "./behavior/control.js";
 import { recompute as recomputeConditions, applyOutcome, applyControl, beginConcentration, endConcentration, holdsAnything, noteConcentration, moveHeld, settleAllegiance, iwrOf, incoming, spendEdges, spendBoost, focusOf } from "./behavior/effects.js";
 import { decideBuff, aidScores } from "./behavior/support.js";
@@ -1505,25 +1505,26 @@ function sizesUp(run, u, t, turn, room, { decided = false, wholeTurn = false } =
 }
 
 /**
- * How likely u, leading its side, is to share what it learned (0 to 1). Not every leader likes to: its Lore-Collector
- * pill's chance (smaller the further down its pills it is), times how minded it is to: from even odds, more for the
- * loyal and less for the selfish, more for a tactical mind (it sees the worth of it), and as its pills lean on
- * supporting friends (Enablers, People-Pleasers, those who'd lead more; the lazy, brawlers, mercenaries less).
+ * How likely u is to share what it learned (0 to 1). Not everyone likes to: its Lore-Collector pill's chance (smaller
+ * the further down its pills it is), times how minded it is to: from even odds, more for the loyal and less for the
+ * selfish, more for a tactical mind (it sees the worth of it), and as its pills lean on supporting friends (Enablers,
+ * People-Pleasers, those who'd lead more; the lazy, brawlers, mercenaries less). Its side's leader shares as readily
+ * as that; anyone else half as readily, unless it would rather talk than fight anyway.
  */
 export function shareChance(run, u) {
   const chance = behaviorOf(u).share ?? 0;
   if ( !chance || u.spec.social?.mindless ) return 0;
   const minded = 0.5 + (liveTrait(run, u, "loyal") - 50) / 100 - (liveTrait(run, u, "selfish") - 50) / 100
     + (liveTier(run, u) >= TACTICAL.TACTICAL ? 0.15 : 0) + (styleOf(u).aid ?? 0) / 100;
-  return clamp(chance * clamp(minded, 0, 1), 0, 1);
+  const leads = run.prep.sides[u.side]?.leaderId === u.id;
+  return clamp(chance * clamp(minded, 0, 1) * (leads || prefersTalk(u) ? 1 : 0.5), 0, 1);
 }
 
 /**
- * A Lore-Collector that leads its side may pass on what it learned about t's sort, if it's minded to (shareChance):
- * decided when it learns it, told when it has an action for it (now, or its next turn).
+ * A Lore-Collector may pass on what it learned about t's sort, if it's minded to (shareChance): decided when it
+ * learns it, told when it has an action for it (now, or its next turn).
  */
 function shareLore(run, u, t, sort, turn) {
-  if ( run.prep.sides[u.side]?.leaderId !== u.id ) return;
   const chance = shareChance(run, u);
   if ( !chance ) return;
   if ( !run.rng.chance(chance) ) {
@@ -1543,7 +1544,7 @@ function shareLore(run, u, t, sort, turn) {
 function tellLore(run, u, turn) {
   const p = u.lorePending;
   if ( !p ) return;
-  if ( run.prep.sides[u.side]?.leaderId !== u.id || !isStanding(u) ) {
+  if ( !isStanding(u) ) {
     u.lorePending = null;
     return;
   }
@@ -1904,7 +1905,7 @@ function takeTurn(run, u) {
     }
   }
 
-  // What it learned last turn, if it leads and means to tell its friends: an action, first thing.
+  // What it learned last turn, if it means to tell its friends: an action, first thing.
   tellLore(run, u, turn);
 
   // Words before weapons: talkers sway, the less battle-worthy talk twice, anyone may quip.
