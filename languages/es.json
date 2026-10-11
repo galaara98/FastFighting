@@ -933,6 +933,10 @@
       "unknown": "Aún no hay un módulo auxiliar de FastFighting para {system}, así que FastFighting está inactivo en este mundo. Los sistemas compatibles se enumeran en {list}.",
       "ListLink": "Sistemas compatibles"
     },
+    "Translation": {
+      "Disabled": "<strong>{system}</strong> no está traducido a tu idioma ({language}) en este mundo, así que sus propias palabras (sus acciones, estados, habilidades y compendios) siguen en inglés. El último módulo de traducción conocido, <strong>{title}</strong> (<code>{id}</code>), está instalado pero no activado: actívalo en Gestionar módulos.",
+      "Missing": "<strong>{system}</strong> no está traducido a tu idioma ({language}) en este mundo, así que sus propias palabras (sus acciones, estados, habilidades y compendios) siguen en inglés. El último módulo de traducción conocido era <strong>{title}</strong> (<code>{id}</code>{link}): instálalo en Módulos complementarios y actívalo en este mundo."
+    },
     "Aftermath": {
       "tell": "Atender a los caídos y contarlo",
       "quiet": "Atender a los caídos en silencio",

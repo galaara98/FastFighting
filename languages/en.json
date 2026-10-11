@@ -933,6 +933,10 @@
       "unknown": "There is no FastFighting helper for {system} yet, so FastFighting is inactive in this world. Supported systems are listed at {list}.",
       "ListLink": "Supported systems"
     },
+    "Translation": {
+      "Disabled": "<strong>{system}</strong> isn't translated into your language ({language}) in this world, so its own words (its actions, conditions, skills and compendiums) stay in English. The last known translation module, <strong>{title}</strong> (<code>{id}</code>), is installed but not enabled: enable it in Manage Modules.",
+      "Missing": "<strong>{system}</strong> isn't translated into your language ({language}) in this world, so its own words (its actions, conditions, skills and compendiums) stay in English. The last known translation module was <strong>{title}</strong> (<code>{id}</code>{link}): install it in Add-on Modules, and enable it in this world."
+    },
     "Aftermath": {
       "tell": "Tend the fallen and tell it",
       "quiet": "Tend the fallen quietly",

@@ -19,6 +19,7 @@ import * as dice from "./engine/dice.js";
 import * as constants from "./constants.js";
 import { MODULE_ID } from "./constants.js";
 import { CORE_API_VERSION } from "./core-api.js";
+import { adviseTranslation } from "./foundry/translation-advice.js";
 
 const adapters = new Map(); // systemId -> [{cls, priority, source}]
 const modifiers = [];
@@ -102,6 +103,8 @@ export function buildApi(extra = {}) {
     engine,
     dice,
     constants,
+    // (A helper names its system's last known translation module; its settings recommend it when it's missing.)
+    adviseTranslation,
     ...extra
   };
 }
