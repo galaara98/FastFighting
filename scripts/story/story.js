@@ -345,6 +345,8 @@ function narrate(e, roll, rel, fill) {
       // Talked down from what it expects (or out of it); a player character pressed for one of its things, keeping it.
       if ( e.what === "keeps" ) return roll("event.concedeKept", { ...f, item: e.item?.name ?? "", by: e.by ?? "" });
       return roll(e.what === "drops" ? "event.haggleDrop" : "event.haggleLower", { ...f, by: e.by ?? "" });
+    // A spell answered with a spell: undone, or not.
+    case "duel": return roll(e.outcome === "wins" || e.outcome === "both" ? "event.duelWin" : "event.duelLose", { ...f, target: e.target ?? "", spell: e.action ?? "" });
     // A shot into a melee that missed, straying toward the shooter's own friend.
     case "stray": return roll(e.hit ? "event.strayHit" : "event.strayMiss", { ...f, target: e.target ?? "" });
     case "peacekeep": return roll("event.peacekeep", f);

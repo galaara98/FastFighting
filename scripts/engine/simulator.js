@@ -702,6 +702,20 @@ function castFor(run, u, action, target = null) {
     success: !!result.action, tier, fumble: !!result.fumble, disapproved: !!result.disapproved, lost: !!result.lost,
     disapproval: u.disapproval ?? null, target: target?.spec.name ?? null, targetId: target?.id ?? null
   });
+  // A spell duel (rules.duel: DCC): someone answers a spell that worked with one of its own, the two checks compared.
+  // The answer's higher: the spell is undone; the same: neither stands; lower (or its own check failed): it goes on.
+  if ( result.action && run.prep.rules.duel ) {
+    const duel = run.prep.rules.duel(run, u, action);
+    if ( duel?.by && duel.counter?.casting ) {
+      const answer = cast(run, duel.by, duel.counter, { stakes: 0.5, log: logger(run) });
+      const theirs = answer.action ? answer.roll.total : null;
+      const outcome = theirs === null ? "fails" : theirs > r.total ? "wins" : theirs === r.total ? "both" : "loses";
+      log(run, duel.by, {
+        type: "duel", counter: duel.counter.name, action: action.name, target: u.spec.name, targetId: u.id, natural: answer.roll.natural, total: answer.roll.total, against: r.total, outcome
+      });
+      if ( outcome === "wins" || outcome === "both" ) return null;
+    }
+  }
   // A save against it whose DC is the check itself (DCC: the spell check total).
   if ( result.action?.save?.dc === "check" ) return { ...result.action, save: { ...result.action.save, dc: r.total } };
   return result.action;

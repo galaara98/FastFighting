@@ -2319,6 +2319,16 @@
       "The shot strays toward {target}, and misses.",
       "{target} ducks as {actor}'s shot whistles by."
     ],
+    "duelWin": [
+      "{actor} meets {target}'s {spell} with magic of its own, and unmakes it.",
+      "{target}'s {spell} gutters out against {actor}'s answer.",
+      "{actor} tears {target}'s {spell} apart before it can land."
+    ],
+    "duelLose": [
+      "{actor} tries to answer {target}'s {spell}, and fails.",
+      "{target}'s {spell} breaks through {actor}'s counter.",
+      "{actor}'s answer comes too weak: {target}'s {spell} goes on."
+    ],
     "promiseNoHarm": [
       "{actor} gives {by} its word: no harm will come to them.",
       "{actor} promises {by} that nobody will be hurt.",

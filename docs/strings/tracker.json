@@ -3000,6 +3000,56 @@
    "commit": null,
    "hash": "508a49991ce4"
   },
+  "core:FASTFIGHTING.Log.Duel": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.Duel",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "cd56be59fa87"
+  },
+  "core:FASTFIGHTING.Log.DuelBoth": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.DuelBoth",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "5ee322ad5bee"
+  },
+  "core:FASTFIGHTING.Log.DuelFails": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.DuelFails",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "95854c3d1f4d"
+  },
+  "core:FASTFIGHTING.Log.DuelLoses": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.DuelLoses",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "90ed88c8b493"
+  },
+  "core:FASTFIGHTING.Log.DuelWins": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.DuelWins",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "98537b581979"
+  },
   "core:FASTFIGHTING.Log.DyingN": {
    "repo": "core",
    "file": "languages/en.json",
@@ -10623,6 +10673,26 @@
    "commit": null,
    "hash": "0036bde2a9b9"
   },
+  "core:FASTFIGHTING.Story.Part.duelLose": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Story.Part.duelLose",
+   "area": "core/Story",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "66ee9745ce24"
+  },
+  "core:FASTFIGHTING.Story.Part.duelWin": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Story.Part.duelWin",
+   "area": "core/Story",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "f8e0e5d950f6"
+  },
   "core:FASTFIGHTING.Story.Part.edgeFails": {
    "repo": "core",
    "file": "languages/en.json",
@@ -15937,6 +16007,26 @@
    "date": null,
    "commit": null,
    "hash": "102f44f8f78d"
+  },
+  "core:story:event.duelLose": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "event.duelLose",
+   "area": "core/story.event",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "b992b805c2f1"
+  },
+  "core:story:event.duelWin": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "event.duelWin",
+   "area": "core/story.event",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "c8715fea1ebd"
   },
   "core:story:event.edgeFails": {
    "repo": "core",
