@@ -118,3 +118,20 @@ describe("talk in the simulation", () => {
     expect(n.combatants.bandit.pSwitched).toBe(0);
   });
 });
+
+describe("languages set aside", () => {
+  test("with languages ignored, anyone who speaks one understands anyone else who does (but not a beast)", () => {
+    const run = createRun(prepareBattle(battle([talker(), bandit({ social: social({ languages: ["draconic"] }) }), bandit({ id: "wolf", social: social({ languages: [] }) })], { ignoreLanguages: true }), pf2eRules));
+    const [t, drake, wolf] = run.units;
+    expect(shareLanguage(t, drake)).toBe(false); // (without the run's options: as written)
+    expect(shareLanguage(t, drake, run)).toBe(true);
+    expect(shareLanguage(t, wolf, run)).toBe(false);
+  });
+
+  test("off by default: a fight with no shared language still has no talking", () => {
+    const r = runBatchSync(battle([talker(), bandit({ social: social({ languages: ["aklo"] }) })]), pf2eRules, { runs: 200 });
+    expect(r.pAnySwayed).toBe(0);
+    const on = runBatchSync(battle([talker(), bandit({ social: social({ languages: ["aklo"] }) })], { ignoreLanguages: true }), pf2eRules, { runs: 200 });
+    expect(on.pAnySwayed).toBeGreaterThan(0);
+  });
+});

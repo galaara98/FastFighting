@@ -93,7 +93,11 @@
       },
       "talking": {
         "Name": "Talking",
-        "Hint": "Characters may try to de-escalate: talk enemies who share a language into surrendering, fleeing, or (rarely, unless neutral) switching sides."
+        "Hint": "Characters may try to de-escalate: talk enemies who share a language into surrendering, fleeing, giving something up or (rarely, unless they came as neutrals) standing aside; and talk those who take no side into joining them, or leaving."
+      },
+      "ignoreLanguages": {
+        "Name": "Ignore languages",
+        "Hint": "Anyone who speaks at least one language understands anyone else who does, so talking never fails for want of a shared language. Creatures with no language at all (beasts, the mindless) still can't be talked to. Can be changed per battle."
       },
       "storyStyle": {
         "Name": "Story style",
@@ -344,8 +348,10 @@
       "Fudge": "fudge",
       "Talking": "Talking",
       "TalkingHint": "Let characters talk foes down by persuading, threatening or bluffing them",
+      "IgnoreLanguages": "Ignore languages",
+      "IgnoreLanguagesHint": "Anyone who speaks a language understands anyone else who speaks one",
       "Bystanders": "Bystanders",
-      "BystandersHint": "Tokens not in the encounter may notice the fight and join it",
+      "BystandersHint": "Tokens on the map but not in the encounter: each turn they may notice the conflict, and take part from the next round",
       "Bystander": "Bystander",
       "Stopped": "Stopped after {n} simulated fights.",
       "SceneChanged": "You're viewing a different scene now. Run the battle again for this scene.",

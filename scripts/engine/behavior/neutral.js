@@ -56,9 +56,11 @@ export const neutralTo = (u, side) => isNeutral(u) && side !== NEUTRAL_PARTY && 
 /** Easy to talk to: it came as a neutral, or it stands aside now. */
 export const standsAside = u => u.spec.originSide === "neutral" || isNeutral(u);
 
-function sharesLanguage(a, b) {
+/** A language in common (or, with languages set aside, any language on both sides): talk.js shareLanguage. */
+function sharesLanguage(a, b, run) {
   const la = a.spec.social?.languages ?? [];
   const lb = b.spec.social?.languages ?? [];
+  if ( run?.prep.options.ignoreLanguages ) return la.length > 0 && lb.length > 0;
   return la.some(l => lb.includes(l));
 }
 
@@ -134,7 +136,7 @@ export function seemsFoe(run, u, n) {
 export function losingTruce(run, n) {
   const side = n.truce?.side;
   if ( !side ) return false;
-  const voice = run.units.some(o => o.side === side && isStanding(o) && canTalk(o) && sharesLanguage(n, o)
+  const voice = run.units.some(o => o.side === side && isStanding(o) && canTalk(o) && sharesLanguage(n, o, run)
     && ((o.prep.talkAffinity ?? 0) > 0 || prefersTalk(o)));
   return !voice || impatience(run, n, n.truce.round) >= 0.4;
 }
@@ -195,7 +197,7 @@ export function offend(run, n, by, why, say, victim = null) {
   n.crossedBy.add(by.side);
   n.grievance.set(by.side, Math.max(GRIEVANCE, n.grievance.get(by.side) ?? 0));
   const talks = !n.truce && why !== "insulted" && run.prep.options.talking && isUp(n) && prefersTalk(n)
-    && isStanding(by) && canTalk(by) && sharesLanguage(n, by);
+    && isStanding(by) && canTalk(by) && sharesLanguage(n, by, run);
   if ( talks ) {
     n.truce = { withId: by.id, side: by.side, round: run.round };
     n.active = true;
@@ -233,7 +235,7 @@ export function truceWith(run, n) {
   if ( !truce ) return null;
   const first = run.byId.get(truce.withId);
   if ( first && first.side === truce.side && isStanding(first) ) return first;
-  return run.units.find(o => o.side === truce.side && isStanding(o) && canTalk(o) && sharesLanguage(n, o)) ?? null;
+  return run.units.find(o => o.side === truce.side && isStanding(o) && canTalk(o) && sharesLanguage(n, o, run)) ?? null;
 }
 
 /** Does n lose patience with the talk this turn? (The longer it drags and the more pitches fail on it, the likelier.) */
@@ -329,7 +331,7 @@ export function peaceDesires(run, u, top) {
   const aim = peacemaker || styles.some(p => SEND_AWAY.has(p)) ? "dismiss" : "recruit";
   let best = null;
   for ( const n of run.units ) {
-    if ( !isNeutral(n) || !isStanding(n) || n.against.has(u.side) || n.spec.kind === "pc" || !sharesLanguage(u, n) ) continue;
+    if ( !isNeutral(n) || !isStanding(n) || n.against.has(u.side) || n.spec.kind === "pc" || !sharesLanguage(u, n, run) ) continue;
     const converted = n.swayOutcome === SWAY.NEUTRAL;
     if ( (!converted && !peacemaker) || !perceives(run, u, n) ) continue;
     const level = clamp(converted ? (peacemaker ? top + 5 : top - 5) : top - 10, 10, 100);

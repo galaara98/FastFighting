@@ -99,7 +99,7 @@ A fight can be talked down at any point, and some encounters never come to blows
 
 A leader who wants to talk holds their side back. Before it breaks, a charismatic NPC leader may take one last turn to press the party.
 
-**Pitches.** Persuade, intimidate or deceive, using whatever skills the system maps to each, against the system's DC for resisting. The target has to share a language with the talker.
+**Pitches.** Persuade, intimidate or deceive, using whatever skills the system maps to each, against the system's DC for resisting. The target has to share a language with the talker, unless the **Ignore languages** setting (off by default; a toggle in each plan too) says anyone who speaks a language understands anyone else who does. A creature with no language at all can't be talked to either way.
 - **The persuasion track:** most need 2–6 successes; the very gullible fold at once.
 - **Grudges:** hurting someone or failing to convince them makes them harder to sway. An insult (a critical failure) means they won't listen again.
 - **Outcomes:** surrender, flee, stand down, change sides (rare unless neutral), or **give something up**.
@@ -201,6 +201,8 @@ Two boxes beside the playstyle pills: **"I don't like to use consumables"** and 
 - **Luck:** points burned after a roll falls short to make it (DCC), the more readily the more is at stake; some spend it for friends.
 - **Reactions that answer** (besides opportunity attacks), each taking the round's reaction when it's worth what it costs: a spell that turns a hit into a miss (Shield), a dodge that halves a blow (Uncanny Dodge), damage taken off it (Parry, Shield Block, Deflect Attacks), a bonus to AC as the attack comes (Nimble Dodge), fire for whoever hurt you (Hellish Rebuke), a strike back at a melee miss (Riposte), and counterspells (by the spell's level, a check, or the caster's save).
 - **Summons:** creatures called mid-fight (Spiritual Weapon, Conjure Animals, Summon Animal ...) join right after their summoner and fight for its side, worth it when they'd do more over the fight than its own blows. They go when their time runs out, when the summoner's concentration breaks, or when it stops sustaining them (PF2e); something that isn't a creature (a spiritual weapon) can't be attacked and doesn't hold the field alone. They aren't the table's: left out of the results and Make it So, though the story tells what they did.
+- **Legendary creatures:** legendary actions are taken between other creatures' turns, from a pool that comes back at the start of the creature's own turn, each the best blow it can strike from where it stands. Legendary Resistance turns a failed save that would take it out of the fight (a hold, a stun, a killing blast) into a success while it lasts.
+- **Abilities that come back:** a 5e "Recharge 5–6" rolls at the start of the creature's turn; a PF2e "can't use it again for 1d4 rounds" waits that long.
 - **Size:** you can only shove or trip a creature up to one size larger.
 - **Crowd control:** spells that slow, frighten, trip, immobilize, paralyze or put foes to sleep, by degree of success, for their duration.
   - They're valued by the damage they prevent.
@@ -289,7 +291,7 @@ All settings are defaults that the planner can override per battle:
 - **Simulation:** runs and maximum rounds; hidden tokens and other levels; bystanders.
 - **Unaligned sides:** Neutral lean (takes no side, by default) and Secret allegiance.
 - **Dying and healing:** the downed model, after the fight, and PC healing and dying defaults.
-- **Modifiers:** leadership, morale, positioning, talking, how encounters open, and the initiative source.
+- **Modifiers:** leadership, morale, positioning, talking (and whether to ignore languages), how encounters open, and the initiative source.
 - **Luck checks** (sliders):
   - a PC handing over an item, default 39;
   - a PC being robbed, default 29;
@@ -370,6 +372,7 @@ Declare your system in `module.json` (`relationships.systems`) so Foundry only o
 - `spec.deeds`: `[{id, label, melee, ranged, tiers: [{min, outcome}]}]` (an outcome with `self` lands on the one who did it).
 - A check with tiers: `casting: {mod, faces, fumbleOn, lostOnFail, disapproval, label}`, `tiers: [{min, max, ...fields}]` (a save's `dc: "check"` is the check's total), `castChance`; the action's own fields are what a success most often does.
 - `spec.boosts`: `[{pool, label, per, faces, allies, range, kinds, keep, recovers}]`, spending `spec.resources[pool]`.
+- Legendary: `spec.legendary: {pool}` and actions with `legendary: cost` (taken between others' turns, never on its own); `spec.standFirm: {pool, label}` (a resource that turns a failed save that matters into a success).
 - An action with `uses` can come back: `recharge: {on, die}` (5e "Recharge 5–6": `{on: 5, die: 6}`, rolled at the start of its turn) or `cooldown: {n, faces}` (PF2e "can't use it again for 1d4 rounds": `{n: 1, faces: 4}`).
 - Riders also take `vs` (only against creatures with one of these traits), `group` (one of a group per hit), `cost` (what it takes from the turn, on one's own turn: `{bonus: 1, slot: 1}`) and `dear` (a spell slot's level, which prices it).
 

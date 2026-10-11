@@ -324,6 +324,7 @@ export function buildBattleSpec(roster, setup, { underdog = null, approach = nul
       morale: options.morale,
       leadership: options.leadership,
       talking: options.talking !== false,
+      ignoreLanguages: options.ignoreLanguages === true,
       opening: options.opening ?? "auto",
       // The luck checks that protect player characters (world settings, as sliders).
       concedeLuck: setting("concedeLuck"),

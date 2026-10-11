@@ -177,17 +177,20 @@ function prepareCombatant(c, side) {
     traits[k] = clamp(Math.round(fudged(c.traits?.[k] ?? 50) * (1 - SIDE_WEIGHT) + side.traits[k] * SIDE_WEIGHT), 0, 100);
   }
   const meanHeal = a => (a.heal ?? []).reduce((s, p) => s + meanPart(p), 0);
+  // (Legendary actions are taken between others' turns, not on its own.)
+  const own = c.actions.filter(a => !a.legendary);
   return {
     spec: c,
     traits,
-    isHealer: c.actions.some(a => a.kind === "heal"),
-    isCaster: c.actions.some(a => a.kind === "save" || a.kind === "spell-attack"),
-    hasRanged: c.actions.some(a => a.range && !["heal", "buff", "summon"].includes(a.kind)),
+    isHealer: own.some(a => a.kind === "heal"),
+    isCaster: own.some(a => a.kind === "save" || a.kind === "spell-attack"),
+    hasRanged: own.some(a => a.range && !["heal", "buff", "summon"].includes(a.kind)),
     flies: (c.speeds?.fly ?? 0) > 0,
-    healActions: c.actions.filter(a => a.kind === "heal").sort((x, y) => meanHeal(y) / y.cost - meanHeal(x) / x.cost),
-    buffActions: c.actions.filter(a => a.kind === "buff" && a.outcome),
-    summonActions: c.actions.filter(a => a.kind === "summon" && a.creatures?.length),
-    offense: c.actions.filter(a => !["heal", "buff", "summon"].includes(a.kind))
+    healActions: own.filter(a => a.kind === "heal").sort((x, y) => meanHeal(y) / y.cost - meanHeal(x) / x.cost),
+    buffActions: own.filter(a => a.kind === "buff" && a.outcome),
+    summonActions: own.filter(a => a.kind === "summon" && a.creatures?.length),
+    offense: own.filter(a => !["heal", "buff", "summon"].includes(a.kind)),
+    legendaryActions: c.legendary?.pool ? c.actions.filter(a => a.legendary && !["heal", "buff", "summon"].includes(a.kind)) : []
   };
 }
 
@@ -201,6 +204,7 @@ export function createRun(prep) {
     neutral: units.some(u => u.side === NEUTRAL_PARTY),        // anyone standing aside (more may, mid-fight)
     boosting: units.some(u => u.spec.boosts?.length),       // anyone who can burn Luck (or the like) on a roll
     counters: units.some(u => u.spec.reactions?.some(r => r.on === "spell")), // anyone with a counterspell
+    legendary: units.some(u => u.prep.legendaryActions?.length),               // anyone with legendary actions
     byId: new Map(units.map(u => [u.id, u])),
     round: 0,
     sideFocus: {},

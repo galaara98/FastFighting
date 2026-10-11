@@ -32,6 +32,7 @@ export function defaultSetup() {
       morale: setting("morale"),
       leadership: setting("leadership"),
       talking: setting("talking"),
+      ignoreLanguages: setting("ignoreLanguages"),
       opening: setting("opening"),
       bystanders: setting("bystanders"),
       surprise: setting("surpriseDefault"),

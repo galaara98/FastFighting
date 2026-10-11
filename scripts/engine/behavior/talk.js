@@ -87,9 +87,14 @@ function pitchTargets(run, talker) {
 /** Always tries words before blows: "always prefers talking", a "talk first" answer, or a playstyle like the Diplomat. */
 const talksFirst = u => !!u.spec.alwaysTalk || u.tac?.talk === "first" || !!behaviorOf(u).parleyFirst;
 
-export function shareLanguage(a, b) {
+/**
+ * Can a and b understand each other? A language in common; or, with languages set aside (options.ignoreLanguages),
+ * any language at all on both sides.
+ */
+export function shareLanguage(a, b, run = null) {
   const la = a.spec.social?.languages ?? [];
   const lb = b.spec.social?.languages ?? [];
+  if ( run?.prep.options.ignoreLanguages ) return la.length > 0 && lb.length > 0;
   return la.some(l => lb.includes(l));
 }
 
@@ -233,7 +238,7 @@ export function bestPitch(run, talker, t) {
 export function choosePitch(run, talker, { only = null } = {}) {
   let best = null;
   for ( const t of pitchTargets(run, talker) ) {
-    if ( !swayable(t) || !shareLanguage(talker, t) ) continue;
+    if ( !swayable(t) || !shareLanguage(talker, t, run) ) continue;
     if ( t.offendedBy.has(talker.id) ) continue;
     if ( only && !only(t) ) continue;
     const pitch = bestPitch(run, talker, t);

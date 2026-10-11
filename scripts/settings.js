@@ -27,6 +27,7 @@ const SETTINGS = {
   leadership: { type: Boolean, default: true },
   morale: { type: Boolean, default: true },
   talking: { type: Boolean, default: true },
+  ignoreLanguages: { type: Boolean, default: false },
   opening: { type: String, default: OPENING.AUTO, choices: choices(Object.values(OPENING), "Opening") },
   concedeLuck: { type: Number, default: CONCEDE_LUCK, range: { min: 0, max: 100, step: 1 } },
   theftLuck: { type: Number, default: THEFT_LUCK, range: { min: 0, max: 100, step: 1 } },

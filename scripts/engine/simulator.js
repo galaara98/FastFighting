@@ -20,7 +20,7 @@ import { decideHeal, rescueOption, healScores } from "./behavior/healing.js";
 import { initDesires, newTurn, think, want, thwart, relieve, levelOf, mind, thoughts as thoughtsOf, levelsFromScores, listen, remember, styleWants, styleOf, CHOICE_LEVEL } from "./behavior/desire.js";
 import { prepareDoors, doorStates, doorAhead, atDoor, doorPlan, patienceFor, doorDamage } from "./behavior/doors.js";
 import { checkMorale, MORALE } from "./behavior/morale.js";
-import { expectedDamage, spendUse, attacksIn, criticalParts, saveMultiplier, meanDamageVs } from "./behavior/evaluate.js";
+import { expectedDamage, spendUse, hasUses, attacksIn, criticalParts, saveMultiplier, meanDamageVs } from "./behavior/evaluate.js";
 import { chooseDeed, deedTier, chooseHitRiders, rescueMiss, rollCrit, rollFumble } from "./behavior/riders.js";
 import { cast } from "./behavior/casting.js";
 import { boost } from "./behavior/luck.js";
@@ -84,7 +84,22 @@ function rollSave(run, target, type, dc, { stakes = 0.3, label = "" } = {}) {
   const s = saveRoll(run, target, type);
   let roll = rollCheck(rules, run.rng, s.mod, dc, { advantage: s.advantage, dice: s.dice, kind: "save" });
   if ( run.boosting && roll.degree < 2 ) roll = boost(run, target, roll, dc, { kind: "save", stakes, label }, logger(run));
+  roll = standFirm(run, target, roll, dc, stakes, label);
   return { roll, mod: s.mod };
+}
+
+/**
+ * A failed save it can't afford (one that would take it out of the fight, or close to it), it simply makes, while it
+ * has the means (spec.standFirm {pool, label}: 5e Legendary Resistance).
+ */
+function standFirm(run, target, roll, dc, stakes, label) {
+  const firm = target.spec.standFirm;
+  if ( !firm || roll.degree >= 2 || stakes < 0.6 || !((target.resources[firm.pool] ?? 0) > 0) ) return roll;
+  target.resources[firm.pool] -= 1;
+  log(run, target, `${firm.label ?? "stands firm"} against ${label}`, {
+    type: "standFirm", label: firm.label ?? "", against: label, natural: roll.natural, total: roll.total, dc
+  });
+  return { ...roll, degree: 2, firm: true };
 }
 
 /** How a degree of success moves an affliction along: on first exposure, and at each later save. */
@@ -940,6 +955,7 @@ function executeControl(run, u, action, target, attacksMade, common) {
       let x = rollCheck(rules, run.rng, r.mod, r.dc, opts);
       // Luck: the target on a save against it, the user on its own roll.
       if ( run.boosting && x.degree < 2 ) x = boost(run, r.kind === "save" ? target : u, x, r.dc, { kind: r.rollKind, stakes: r.kind === "save" ? 0.7 : 0.3, options: opts, label: action.name }, logger(run));
+      if ( r.kind === "save" ) x = standFirm(run, target, x, r.dc, 0.7, action.name);
       return { ...x, mod: r.mod + (x.die ?? 0) };
     })();
   // Some effects hold weaker on much stronger targets (PF2e incapacitation): their result counts one better.
@@ -1290,6 +1306,34 @@ function rechargeActions(run, u) {
   }
 }
 
+/**
+ * Legendary actions (5e): after each other creature's turn, a legendary creature may spend some of its pool
+ * (spec.legendary.pool, back at the start of its own turn) on one of its legendary options (action.legendary: what
+ * it costs), the best value it can get against a foe already in reach. Not while it can't act, or a standoff holds.
+ */
+function legendaryMoment(run, after) {
+  if ( run.standoff ) return;
+  for ( const u of run.units ) {
+    if ( u === after || !u.prep.legendaryActions?.length || !isStanding(u) || !((u.legendaryLeft ?? 0) > 0) ) continue;
+    if ( u.conds.incapacitated || (run.prep.rules.modifiers?.actionsLost?.(u) ?? 0) >= 3 ) continue;
+    let best = null;
+    for ( const action of u.prep.legendaryActions ) {
+      if ( action.legendary > u.legendaryLeft || !hasUses(u, action) ) continue;
+      for ( const t of enemiesOf(run, u) ) {
+        if ( !isStanding(t) || movesNeeded(run, u, t, action) !== 0 ) continue;
+        const ev = expectedDamage(run, u, action, t, 0) / action.legendary;
+        if ( ev > 0 && (!best || ev > best.ev) ) best = { action, t, ev };
+      }
+    }
+    if ( !best ) continue;
+    u.legendaryLeft -= best.action.legendary;
+    log(run, u, `takes a legendary action: ${best.action.name}`, { type: "legendary", action: best.action.name, cost: best.action.legendary, target: best.t.spec.name, targetId: best.t.id });
+    executeOffense(run, u, best.action, best.t, 0);
+    spendUse(u, best.action);
+    if ( battleOver(run) ) return;
+  }
+}
+
 /** Pitches made in a standoff turn (or a leader's last word, aimed only at the player characters). */
 function standoffPitching(run, u, n, only = null) {
   for ( let i = 0; i < n; i++ ) {
@@ -1375,6 +1419,7 @@ function takeTurn(run, u) {
   // A creature's reaction comes back at the start of its turn.
   u.reactionsLeft = reactionsPerRound(rules, u);
   rechargeActions(run, u);
+  if ( u.spec.legendary?.pool ) u.legendaryLeft = u.spec.legendary.pool; // (legendary actions come back)
   u.disengaged = false;
 
   settleSides(run); // holds that took or ended since this creature's last turn
@@ -1987,6 +2032,10 @@ export function runOne(prep, seed, { log: withLog = false, capture = false } = {
     for ( const u of order ) {
       takeTurn(run, u);
       if ( battleOver(run) ) { ended = true; break; }
+      if ( run.legendary ) {
+        legendaryMoment(run, u);
+        if ( battleOver(run) ) { ended = true; break; }
+      }
     }
   }
   // Who won is decided when the last blow lands (or the deal is struck); the aftermath only settles the fallen.
