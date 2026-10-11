@@ -2179,6 +2179,26 @@
    "commit": null,
    "hash": "cef179960a21"
   },
+  "core:FASTFIGHTING.Log.Beaten": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.Beaten",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "0c61a0692909"
+  },
+  "core:FASTFIGHTING.Log.BeatenKilled": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.BeatenKilled",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "1e4e8b483b04"
+  },
   "core:FASTFIGHTING.Log.Bolstered": {
    "repo": "core",
    "file": "languages/en.json",
@@ -9342,6 +9362,16 @@
    "commit": null,
    "hash": "cc350ea33939"
   },
+  "core:FASTFIGHTING.Status.beaten": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Status.beaten",
+   "area": "core/Status",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "3dbd042313d5"
+  },
   "core:FASTFIGHTING.Status.conceded": {
    "repo": "core",
    "file": "languages/en.json",
@@ -9881,6 +9911,26 @@
    "date": null,
    "commit": null,
    "hash": "69eab2e1786a"
+  },
+  "core:FASTFIGHTING.Story.Part.beaten": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Story.Part.beaten",
+   "area": "core/Story",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "3dbd042313d5"
+  },
+  "core:FASTFIGHTING.Story.Part.beatenKilled": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Story.Part.beatenKilled",
+   "area": "core/Story",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "cedfc17a55df"
   },
   "core:FASTFIGHTING.Story.Part.bleed": {
    "repo": "core",
@@ -15267,6 +15317,26 @@
    "commit": null,
    "hash": "008358d86ed2"
   },
+  "core:story:event.beaten": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "event.beaten",
+   "area": "core/story.event",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "cd54fc819780"
+  },
+  "core:story:event.beatenKilled": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "event.beatenKilled",
+   "area": "core/story.event",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "f62689ebb2dd"
+  },
   "core:story:event.bodyAlive": {
    "repo": "core",
    "file": "story/en.json",
@@ -19902,6 +19972,46 @@
    "commit": null,
    "hash": "d77e226ffbda"
   },
+  "ironsworn:FFIRONSWORN.Allegiance.Bolster": {
+   "repo": "ironsworn",
+   "file": "languages/en.json",
+   "key": "FFIRONSWORN.Allegiance.Bolster",
+   "area": "ironsworn/Allegiance",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "7a734fb6e8a8"
+  },
+  "ironsworn:FFIRONSWORN.Allegiance.Dread": {
+   "repo": "ironsworn",
+   "file": "languages/en.json",
+   "key": "FFIRONSWORN.Allegiance.Dread",
+   "area": "ironsworn/Allegiance",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "97836675d815"
+  },
+  "ironsworn:FFIRONSWORN.Allegiance.Harder": {
+   "repo": "ironsworn",
+   "file": "languages/en.json",
+   "key": "FFIRONSWORN.Allegiance.Harder",
+   "area": "ironsworn/Allegiance",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "d406d610cc13"
+  },
+  "ironsworn:FFIRONSWORN.Allegiance.Success": {
+   "repo": "ironsworn",
+   "file": "languages/en.json",
+   "key": "FFIRONSWORN.Allegiance.Success",
+   "area": "ironsworn/Allegiance",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "e2cce15c40f9"
+  },
   "ironsworn:FFIRONSWORN.AtRange": {
    "repo": "ironsworn",
    "file": "languages/en.json",
@@ -20781,6 +20891,16 @@
    "date": null,
    "commit": null,
    "hash": "34da40f861be"
+  },
+  "ironsworn:FFIRONSWORN.Out.Killed": {
+   "repo": "ironsworn",
+   "file": "languages/en.json",
+   "key": "FFIRONSWORN.Out.Killed",
+   "area": "ironsworn/Out",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "b3ce8f082c53"
   },
   "ironsworn:FFIRONSWORN.Out.Momentum": {
    "repo": "ironsworn",

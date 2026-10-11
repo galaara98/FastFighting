@@ -1406,6 +1406,18 @@
       "{actor} lies still.",
       "{actor}'s fight is over, forever."
     ],
+    "beaten": [
+      "{actor} is beaten.",
+      "{by} has the better of {actor}, and it's out of the fight.",
+      "{actor} can fight no more.",
+      "{by} beats {actor}."
+    ],
+    "beatenKilled": [
+      "{by} beats {actor}, and makes sure of it: {actor} is dead.",
+      "Beaten, {actor} gets no mercy from {by}.",
+      "{by} finishes {actor} for good.",
+      "{actor} falls to {by}, and doesn't get up again."
+    ],
     "finished": [
       "{by} ends {actor} where they lie.",
       "{actor} is finished off by {by}.",

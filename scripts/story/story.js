@@ -213,6 +213,8 @@ function narrate(e, roll, rel, fill) {
     case "mercy": return roll("event.mercy", f);
     case "execute": return e.goes ? roll("event.executeGoes", f) : roll(e.next ? "event.executeSpared" : "event.executeSparedAlone", { ...f, next: e.next ?? "" });
     case "death": return roll(e.finished ? "event.finished" : "event.death", f);
+    // Beaten (out of the fight, however the table decides), or killed by one who would kill.
+    case "beaten": return roll(e.killed ? "event.beatenKilled" : "event.beaten", { ...f, by: e.by ?? "" });
     case "struckDown": return roll("event.struckDown", f);
     case "recovery":
       if ( e.dead ) return roll("event.death", f);

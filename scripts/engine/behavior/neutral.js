@@ -326,6 +326,17 @@ export function turnOn(run, n, by, why, say, victim = null) {
     type: "neutral", what: "offended", why, by: by.spec.name, byId: by.id, side: by.side, sideLabel,
     victim: victim?.spec.name ?? null, victimId: victim?.id ?? null
   });
+  allegiance(run, n, { against: by.side }, say);
+}
+
+/**
+ * The system's word on someone taking a side, joining one or turning on one (rules.onAllegiance: Ironsworn's success
+ * for the side it helps, a harder fight for the one it turns on), said as the system words it.
+ */
+function allegiance(run, u, change, say) {
+  for ( const said of run.prep.rules.onAllegiance?.(run, u, change) ?? [] ) {
+    if ( said?.text ) say?.(said.unit ?? u, { type: "endure", text: said.text, ...said.data });
+  }
 }
 
 /** Whom n is having words with: the one it confronted, or someone else of that side it can talk to (null: no one). */
@@ -379,7 +390,7 @@ export function standAside(run, t) {
 }
 
 /** Someone taking no side, won over: it joins `side` for good. */
-export function joinSide(run, t, side) {
+export function joinSide(run, t, side, say = null) {
   if ( side !== t.homeSide ) dropAmbition(t);
   t.side = side;
   t.homeSide = side;
@@ -389,6 +400,7 @@ export function joinSide(run, t, side) {
   t.wavering = false;
   run.geo = (run.geo ?? 0) + 1;
   refreshLeans(run); // (someone leaning toward that side now has one more to look after)
+  allegiance(run, t, { joined: side }, say);
 }
 
 /**

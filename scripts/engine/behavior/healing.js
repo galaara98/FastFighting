@@ -54,7 +54,7 @@ export function healScores(run, u, heals = u.prep.healActions) {
   const allyDying = dispositionOf(u).allyDying ?? (selfish >= 70 ? "protectSelf" : "rescue");
   const out = [];
   for ( const ally of alliesOf(run, u) ) {
-    if ( [STATUS.DEAD, STATUS.FLED, STATUS.SURRENDERED, STATUS.STOOD_DOWN].includes(ally.status) ) continue;
+    if ( [STATUS.DEAD, STATUS.FLED, STATUS.SURRENDERED, STATUS.STOOD_DOWN, STATUS.BEATEN].includes(ally.status) ) continue;
     const isSelf = ally === u;
     if ( !isSelf && (allyDying === "protectSelf" || allyDying === "retreat") ) continue;
     if ( !isSelf && !perceives(run, u, ally, { crisis: true }) ) continue; // it has to be able to tell

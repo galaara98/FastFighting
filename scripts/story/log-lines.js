@@ -233,6 +233,8 @@ export function logLine(e) {
     case "callHelp": return t("CallHelp", { actor: e.actor, target: e.toward ?? "" });
     case "condition": return t("Condition", { actor: e.actor, effect: e.effect || t("Reeling") });
     case "down": return e.knockedOut ? t("KnockedOut", a) : t("Down", { actor: e.actor, dying: e.dying ? t("DownDying", { n: e.dying }) : "" });
+    // Beaten (out of the fight, however the table decides), or killed by one who would kill.
+    case "beaten": return t(e.killed ? "BeatenKilled" : "Beaten", { actor: e.actor, by: e.by ?? "" });
     case "death":
       if ( e.regen ) return t("RegenStopped", a);
       if ( e.crit ) return t("SlainOutrightBy", a);

@@ -298,6 +298,7 @@ function dealDamage(run, source, target, amount, { crit = false, types = null } 
       target.wasDowned = true;
       rules.onDropped(target, { crit, model, amount: rest, overflow: Math.max(0, rest - dealt) });
       if ( target.status === STATUS.DEAD && holdsBack(run, source) ) knockOut(run, target);
+      killsBeaten(run, source, target);
       regenerating(target);
     }
     // (Still up at 0, by the system's rules: Ironsworn characters fight on at 0 health.)
@@ -306,7 +307,6 @@ function dealDamage(run, source, target, amount, { crit = false, types = null } 
       target.killerId = source?.id ?? target.killerId ?? null;
       run.firstFallen ??= target.id;
       releaseGrabs(run, target);
-      const dead = target.status === STATUS.DEAD;
       // A friend's fall: the one who did it becomes someone to settle with, the more so for the loyal.
       if ( source ) {
         for ( const a of run.units ) {
@@ -314,11 +314,12 @@ function dealDamage(run, source, target, amount, { crit = false, types = null } 
         }
       }
       log(run, target, {
-        type: dead ? "death" : "down", by: source?.spec.name ?? null, byId: source?.id ?? null, dying: target.dying, knockedOut: !!target.knockedOut
+        type: fallType(target), by: source?.spec.name ?? null, byId: source?.id ?? null, dying: target.dying, knockedOut: !!target.knockedOut, killed: !!target.killedBeaten
       });
+      fell(run, target, source);
     }
     // One track for many (Ironsworn's encounter objective, every foe part of it): what one takes, all of them take.
-    if ( target.spec.sharedHp ) shareHarm(run, source, target);
+    if ( sharedOf(target) ) shareHarm(run, source, target);
     testConcentration(run, target, rest + absorbed);
     // What being hurt sets off, by the system (Ironsworn: Endure Harm, a roll to shake it off or lose heart).
     if ( rules.afterHarm && target.status !== STATUS.DEAD ) {
@@ -332,6 +333,7 @@ function dealDamage(run, source, target, amount, { crit = false, types = null } 
         target.killerId = source?.id ?? target.killerId ?? null;
         run.firstFallen ??= target.id;
         releaseGrabs(run, target);
+        fell(run, target, source);
       }
     }
     // Someone taking no side who was hurt, or who saw someone it wants safe hurt, takes note.
@@ -456,7 +458,7 @@ function applyAfflictionStage(run, target, affliction) {
   recomputeConditions(target);
   if ( !stage?.damage?.length ) return;
   const rolled = sampleDamage(stage.damage, run.rng);
-  const amount = run.prep.rules.applyIwr(iwrOf(target), rolled.byType);
+  const amount = run.prep.rules.applyIwr(iwrOf(target), rolled.byType, target);
   log(run, target, {
     type: "afflictionStage", name: affliction.spec.name, stage: affliction.stage, amount, damageType: stage.damage[0]?.type ?? "poison"
   });
@@ -530,6 +532,9 @@ function saveRider(run, u, action, target, effect) {
   log(run, target, { type: "condition", by: u.spec.name, effect: effect.label ?? "" });
 }
 
+/** The hit points a creature shares, by key (its own sharedHp, set in the fight: one who joined the track; else its spec's). */
+const sharedOf = u => u.sharedHp ?? u.spec.sharedHp ?? null;
+
 /**
  * Hit points several creatures share (spec.sharedHp, a key: Ironsworn's encounter track, which every foe in the fight is
  * part of): the others are left as the one struck was, and fall with it.
@@ -537,16 +542,49 @@ function saveRider(run, u, action, target, effect) {
 function shareHarm(run, source, target) {
   const rules = run.prep.rules;
   for ( const o of run.units ) {
-    if ( o === target || o.spec.sharedHp !== target.spec.sharedHp || o.status !== STATUS.STANDING ) continue;
+    if ( o === target || sharedOf(o) !== sharedOf(target) || o.status !== STATUS.STANDING ) continue;
     o.hp = Math.max(0, target.hp);
     if ( o.hp > 0 ) continue;
     o.wasDowned = true;
     rules.onDropped(o, { model: run.prep.options.downedModel, amount: 0, overflow: 0 });
+    killsBeaten(run, source, o);
     if ( o.status === STATUS.STANDING ) continue;
     o.fellRound ??= run.round;
     o.killerId = source?.id ?? o.killerId ?? null;
     releaseGrabs(run, o);
-    log(run, o, { type: o.status === STATUS.DEAD ? "death" : "down", by: source?.spec.name ?? null, byId: source?.id ?? null, shared: true });
+    log(run, o, { type: fallType(o), by: source?.spec.name ?? null, byId: source?.id ?? null, shared: true, killed: !!o.killedBeaten });
+    fell(run, o, source);
+  }
+}
+
+/** How a fall reads in the log: a death, beaten (out of the fight, however the table decides), or down. */
+const fallType = u => (u.killedBeaten ? "beaten" : u.status === STATUS.DEAD ? "death" : u.status === STATUS.BEATEN ? "beaten" : "down");
+
+/**
+ * Would u kill one it has beaten? The Cruel would (it finishes the fallen), and so would a creature that isn't a player
+ * character, unless it holds back from killing or spares the fallen. Anyone else leaves it beaten, for the table to
+ * say what that means.
+ */
+function wouldKill(run, u) {
+  if ( !u ) return false;
+  const mercy = mercyOf(run, u);
+  if ( mercy === "spare" ) return false;
+  return mercy === "finish" || u.spec.kind !== "pc";
+}
+
+/** Beaten (the system's word: Ironsworn's full track) by one who would kill: killed. */
+function killsBeaten(run, source, u) {
+  if ( u.status !== STATUS.BEATEN || !wouldKill(run, source) ) return;
+  u.status = STATUS.DEAD;
+  u.killedBeaten = true;
+}
+
+/** Someone fell (down, beaten, killed): the system's word on it, once (Ironsworn: its friends endure stress). */
+function fell(run, u, source) {
+  if ( u.fallNoted || !run.prep.rules.onFall ) return;
+  u.fallNoted = true;
+  for ( const said of run.prep.rules.onFall(run, u, { dead: u.status === STATUS.DEAD, source }) ?? [] ) {
+    if ( said?.text ) log(run, said.unit ?? u, { type: "endure", text: said.text, ...said.data });
   }
 }
 
@@ -594,7 +632,7 @@ function rollHit(run, u, action, t, parts, multiplier, crit, minimum = 0) {
     const sum = types.reduce((s, k) => s + rolled.byType[k], 0);
     if ( types.length && sum < minimum ) rolled.byType[types[0]] += minimum - sum;
   }
-  const total = rules.applyIwr(iwrOf(t), rolled.byType);
+  const total = rules.applyIwr(iwrOf(t), rolled.byType, t);
   return {
     total,
     byType: rolled.byType, // (as rolled, before anyone's resistances)
@@ -852,7 +890,7 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
       if ( guard?.r.reduce ) amount = Math.max(0, amount - samplePart(guard.r.reduce, run.rng));
       // Taken instead (PF2e Intercept Attack): the friend takes none of it; its protector takes the blow, against its
       // own resistances.
-      const intercepted = guard?.r.redirect && amount > 0 ? rules.applyIwr(iwrOf(guard.g), hit.byType) : null;
+      const intercepted = guard?.r.redirect && amount > 0 ? rules.applyIwr(iwrOf(guard.g), hit.byType, guard.g) : null;
       if ( intercepted !== null ) amount = 0;
       if ( logging ) log(run, u, {
         ...data, damage: amount, crit, sneak: extra.length > 0, advantage, riders: riders.map(x => x.label), critRoll: table?.total ?? null, critRowText: table?.row?.text ?? null,
@@ -982,7 +1020,7 @@ function applyFumble(run, u) {
   if ( !table?.row ) return;
   const { row, total } = table;
   if ( row.damage?.length ) {
-    const amount = run.prep.rules.applyIwr(iwrOf(u), sampleDamage(row.damage, run.rng).byType);
+    const amount = run.prep.rules.applyIwr(iwrOf(u), sampleDamage(row.damage, run.rng).byType, u);
     if ( amount > 0 ) dealDamage(run, null, u, amount);
   }
   if ( row.outcome && isUp(u) ) applyOutcome(u, row.outcome, u.id, { id: `fumble:${u.id}`, name: row.outcome.label ?? localize("FASTFIGHTING.Effect.fumble") });
@@ -1949,7 +1987,7 @@ function hazardTurn(run, u) {
 
 function takeTurn(run, u) {
   const { rules, options } = run.prep;
-  if ( [STATUS.DEAD, STATUS.FLED, STATUS.SURRENDERED, STATUS.STOOD_DOWN].includes(u.status) ) return;
+  if ( [STATUS.DEAD, STATUS.FLED, STATUS.SURRENDERED, STATUS.STOOD_DOWN, STATUS.BEATEN].includes(u.status) ) return;
   if ( u.spec.hazard ) return hazardTurn(run, u);
   // On the map but not in the conflict: it only looks around, until the round after it notices.
   if ( !u.active && !lookAround(run, u) ) return;
@@ -1971,8 +2009,8 @@ function takeTurn(run, u) {
   u.reactionsLeft = reactionsPerRound(rules, u);
   rechargeActions(run, u);
   if ( rules.startTurn ) {
-    const said = rules.startTurn(run, u);
-    if ( said?.text ) log(run, u, { text: said.text, type: "startTurn", ...said.data });
+    // (What the system says at the start of a turn: one report, or several, each about whoever it names.)
+    for ( const said of [rules.startTurn(run, u)].flat() ) if ( said?.text ) log(run, said.unit ?? u, { text: said.text, type: "startTurn", ...said.data });
   }
   if ( u.spec.legendary?.pool ) u.legendaryLeft = u.spec.legendary.pool; // (legendary actions come back)
   u.disengaged = false;
@@ -2468,9 +2506,9 @@ function dealWithTheFallen(run, victors, fallen) {
 
 /**
  * When the fight is over, whatever was given up comes back to its owner if the one who took it was beaten (dead,
- * down, surrendered or talked down); a taker who got away keeps it.
+ * down, surrendered, talked down, beaten); a taker who got away keeps it.
  */
-const BEATEN = new Set([STATUS.DEAD, STATUS.DOWN, STATUS.SURRENDERED, STATUS.STOOD_DOWN]);
+const BEATEN = new Set([STATUS.DEAD, STATUS.DOWN, STATUS.SURRENDERED, STATUS.STOOD_DOWN, STATUS.BEATEN]);
 function reclaimGoods(run) {
   for ( const u of run.units ) {
     for ( const c of u.concessions ?? [] ) {

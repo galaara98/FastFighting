@@ -175,8 +175,9 @@ const outsider = (talker, t) => { const g = groupKeyOf(talker); return g === nul
  */
 export function stepsToConvince(t, run = null, talker = null) {
   const s = t.spec.social ?? {};
-  // (A system's own number: Ironsworn's, by the encounter's rank.)
-  if ( Number.isFinite(s.steps) ) return Math.max(1, Math.round(s.steps));
+  // (A system's own number: Ironsworn's, by the encounter's rank, as the fight has left it.)
+  const fixed = t.convinceSteps ?? s.steps;
+  if ( Number.isFinite(fixed) ) return Math.max(1, Math.round(fixed));
   // How strong-willed it is compared with a typical creature of its level (the system works that out).
   const delta = s.resolve ?? 0;
   const loyal = t.prep.traits.loyal;
@@ -618,7 +619,7 @@ function applyOutcome(run, talker, t, outcome, log, aim = "down", luck = null) {
   }
   // Won over: it joins the talker's side.
   if ( outcome === SWAY.SWITCH ) {
-    joinSide(run, t, talker.side);
+    joinSide(run, t, talker.side, log);
     t.swayOutcome = SWAY.SWITCH;
     const sideLabel = run.prep.sides[talker.side]?.label ?? talker.side;
     log(t, { type: "sway", outcome, recruit: true, sideLabel, ...by });

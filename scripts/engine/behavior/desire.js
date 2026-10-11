@@ -168,7 +168,7 @@ export function allDesires(u) {
 /** Is a desire still something the unit can act on? (Healing itself counts: a potion when it's hurt.) */
 function relevant(run, u, kind, t) {
   if ( !t || !t.active || (t === u && !SELF_KINDS.has(kind)) ) return false;
-  if ( [STATUS.DEAD, STATUS.FLED].includes(t.status) ) return false;
+  if ( [STATUS.DEAD, STATUS.FLED, STATUS.BEATEN].includes(t.status) ) return false;
   switch ( kind ) {
     // (Nobody can attack what's untargetable: a hazard, a Spiritual Weapon.)
     case "hurt": return !t.spec.untargetable && (areEnemies(run, u, t) || seemsFoe(run, u, t)) && t.status !== STATUS.SURRENDERED && t.status !== STATUS.STOOD_DOWN;
