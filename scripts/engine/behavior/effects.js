@@ -24,6 +24,13 @@
  *                  (worked out roll by roll, as far as the dice allow): a Lore-Collector's payoff for sizing a foe up
  *     thisTurn     laid on itself, it lasts only to the end of this turn (not through its next one)
  *     resources    resources it gains at once ({momentum: 2}): the system says how (rules.gainResource)
+ *     taunt        a taunt: for as long as it lasts, the bearer wants to go for whoever laid it on, this badly (a
+ *                  desire level, 0 to 100; true: TAUNT, "driven"). It's a desire like any other (behavior/desire.js):
+ *                  stronger reasons of its own (an obsession, a grudge, a cruel streak) can still win out, and a
+ *                  taunter it can't reach wears it down. The want ends early when the taunter falls (its `defy`
+ *                  runs its rounds).
+ *     defy         with a taunt: what ignoring it costs, bonuses and penalties (as mods) on the bearer's rolls against
+ *                  anyone but the taunter (5e Compelled Duel: {adv: -1}; PF2e Taunt: {attack: -1})
  * Everything is optional: an outcome with nothing the engine understands does nothing. Effects from the same action
  * and source refresh rather than pile up; an action with `concentration` holds them only while its source keeps
  * concentrating (one at a time; damage may break it, if the system says how).
@@ -34,6 +41,9 @@ import { combineMods, diceMean } from "../mods.js";
 import { isStanding, areEnemies, enemiesOf, alliesOf, boostReaches, wish } from "../battle-state.js";
 import { threatOf, unitsPerTurn, attacksIn } from "./evaluate.js";
 import { meanPart } from "../dice.js";
+
+/** How badly a taunt makes its bearer want to go for the taunter, unless it says: "driven", above a clear choice. */
+export const TAUNT = 65;
 
 /* -------------------------------------------- */
 /*  Applying                                    */
@@ -53,6 +63,7 @@ export function recompute(u) {
     into[k] = Math.max(into[k] ?? 0, value);
   };
   const against = new Map(); // bonuses that count against one creature only: id -> [mods]
+  const defied = new Map(); // a taunt's price, paid against everyone but the taunter: id -> [mods]
   for ( const e of u.effects ?? [] ) {
     if ( e.onlyVs && e.sourceId ) {
       const row = vs.get(e.sourceId) ?? {};
@@ -63,6 +74,11 @@ export function recompute(u) {
       if ( !against.has(e.vs) ) against.set(e.vs, []);
       against.get(e.vs).push(e.mods);
     } else if ( e.mods ) mods.push(e.mods);
+    if ( e.defy && e.sourceId ) {
+      mods.push(e.defy);
+      if ( !defied.has(e.sourceId) ) defied.set(e.sourceId, []);
+      defied.get(e.sourceId).push(e.defy);
+    }
     if ( e.mark?.length && e.sourceId ) marks.push({ by: e.sourceId, parts: e.mark });
     if ( e.sourceId && (Number(e.conditions?.controlled) || 0) > 0 ) controlledBy = e.sourceId; // the latest hold wins
     if ( e.iwr ) {
@@ -80,8 +96,17 @@ export function recompute(u) {
   u.conds = conds;
   u.vs = vs.size ? vs : null;
   u.mods = combineMods(mods);
-  // (Against one creature: those bonuses with everything else it has, the best of each kind still counting.)
-  u.edgeMods = against.size ? new Map([...against].map(([id, list]) => [id, combineMods([...mods, ...list])])) : null;
+  // (Against one creature: those bonuses with everything else it has, the best of each kind still counting; against a
+  // taunter, without what ignoring its taunt costs.)
+  u.edgeMods = null;
+  if ( against.size || defied.size ) {
+    u.edgeMods = new Map();
+    for ( const id of new Set([...against.keys(), ...defied.keys()]) ) {
+      const spared = defied.get(id);
+      const base = spared ? mods.filter(m => !spared.includes(m)) : mods;
+      u.edgeMods.set(id, combineMods([...base, ...(against.get(id) ?? [])]));
+    }
+  }
   u.marks = marks;
   u.controlledBy = controlledBy;
   // Resistances an effect lends (Rage, Stoneskin) on top of its own: the better of each counts.
@@ -141,7 +166,10 @@ export function applyOutcome(target, outcome, sourceId = null, action = null) {
   const mark = Array.isArray(outcome.mark) && outcome.mark.length ? outcome.mark : null;
   const iwr = outcome.iwr && typeof outcome.iwr === "object" && (Object.keys(outcome.iwr.resist ?? {}).length || outcome.iwr.immune?.length || Object.keys(outcome.iwr.weak ?? {}).length) ? outcome.iwr : null;
   const boost = Number(outcome.boost) > 1 ? Number(outcome.boost) : null;
-  if ( !Object.keys(conditions).length && !mods && !mark && !iwr && !boost ) return null;
+  // (A taunt needs a taunter, and someone else to be taunted.)
+  const taunt = sourceId && target.id !== sourceId ? tauntLevel(outcome.taunt) : 0;
+  const defy = taunt && outcome.defy && typeof outcome.defy === "object" && Object.keys(outcome.defy).length ? { ...outcome.defy } : null;
+  if ( !Object.keys(conditions).length && !mods && !mark && !iwr && !boost && !taunt ) return null;
   const key = action?.id ?? outcome.label ?? null;
   if ( key !== null ) target.effects = (target.effects ?? []).filter(e => !(e.key === key && e.sourceId === sourceId));
   // Effects run out at the end of the bearer's turns; one it lays on itself during its own turn would lose a round
@@ -159,11 +187,20 @@ export function applyOutcome(target, outcome, sourceId = null, action = null) {
     uses: Number(outcome.uses) > 0 ? Math.round(Number(outcome.uses)) : null,
     vs: typeof outcome.vs === "string" && outcome.vs ? outcome.vs : null,
     vsSort: typeof outcome.vsSort === "string" && outcome.vsSort ? outcome.vsSort : null,
-    boost
+    boost,
+    taunt: taunt || null,
+    defy
   };
   (target.effects ??= []).push(effect);
   recompute(target);
   return effect;
+}
+
+/** How badly an outcome's taunt makes its bearer want the taunter: 0 (none) to 100; true is TAUNT. */
+export function tauntLevel(taunt) {
+  if ( taunt === true ) return TAUNT;
+  const level = Number(taunt);
+  return level > 0 ? clamp(level, 0, 100) : 0;
 }
 
 /** Lay a crowd-control outcome's conditions on a target for its rounds (older name, kept for callers). */
@@ -295,6 +332,8 @@ const SAVE_SHARE = 0.25;
 const PRONE_SHARE = 0.5;
 /** Most fights don't last long: no effect counts for more than this many more rounds. */
 const MAX_ROUNDS = 3;
+/** How strongly a creature wants its usual pick, when nothing says (a clear choice lands a little above 45). */
+const USUAL_LEAD = 50;
 
 /** Share of a creature's fighting a set of conditions takes away each round (0-1). */
 export function conditionWeight(rules, conditions = {}) {
@@ -463,6 +502,14 @@ export function outcomeWorth(run, by, t, outcome, { versus = null } = {}) {
     const extra = outcome.mark.reduce((s, p) => s + Math.max(0, meanPart(p)), 0);
     perRound -= extra * hitsPerRound(run, by) * 0.8; // it has to keep hitting that one
   }
+  // A taunt: as often as it outweighs what t had in mind, t goes for `by` instead of whoever it was set on; the rest
+  // of the time, it pays what ignoring it costs.
+  const taunt = by && by !== t ? tauntLevel(outcome.taunt) : 0;
+  if ( taunt ) {
+    const holds = clamp(0.5 + (taunt - (t.lastDesires?.[0]?.level ?? USUAL_LEAD)) / 30, 0, 1);
+    perRound -= holds * tauntGain(run, by, t);
+    if ( outcome.defy ) perRound += (1 - holds) * modsPerRound(run, t, outcome.defy, out, 0);
+  }
   // Resistances it lends: the share of what comes at it that they cover, and how much of each blow they stop.
   const resist = Object.entries(outcome.iwr?.resist ?? {}).filter(([k, v]) => v > (t.spec.iwr?.resist?.[k] ?? 0));
   if ( resist.length ) {
@@ -480,6 +527,21 @@ export function outcomeWorth(run, by, t, outcome, { versus = null } = {}) {
   // Resources it gains (Ironsworn momentum): what the system says they're worth.
   for ( const [k, v] of Object.entries(outcome.resources ?? {}) ) worth += Number(rules.resourceWorth?.(run, t, k, Number(v) || 0)) || 0;
   return worth;
+}
+
+/**
+ * What `by` gains each round t comes at it instead of the friend t was set on: the blows that friend is spared, less
+ * the ones `by` takes (a friend who might not last the round counts for more kept standing; a taunter who might not,
+ * the same against it). Nothing when t is set on `by` already, or on no friend of its.
+ */
+function tauntGain(run, by, t) {
+  const focus = focusOf(run, t);
+  const ward = focus?.kind === "hurt" ? focus.unit : null;
+  if ( !ward || ward === by || !isStanding(ward) || areEnemies(run, by, ward) ) return 0;
+  const spared = damageOut(run, t, ward);
+  const taken = damageOut(run, t, by);
+  const left = o => Math.max(0, o.hp) + (o.temp ?? 0);
+  return spared * (left(ward) <= 2 * spared ? 1.5 : 1) - taken * (left(by) <= 2 * taken ? 1.5 : 1);
 }
 
 /** How much of t's turn goes into checks (talking, first aid), 0 to 1: what it was set on last turn, its knack for words. */

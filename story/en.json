@@ -1973,6 +1973,11 @@
       "{actor}'s {weapon} fizzles against {target}.",
       "{target} won't be bound by {actor}'s {weapon}."
     ],
+    "taunted": [
+      "{actor}'s {weapon} gets under {target}'s skin; now {target} wants {actor}, and no one else.",
+      "{target} can't let {actor}'s {weapon} go, and turns on {actor}.",
+      "{actor} goads {target} with {weapon}, and {target} takes the bait."
+    ],
     "buffOne": [
       "{actor}'s {weapon} settles over {target}, leaving them {effect}.",
       "{actor} turns to {target}, and {weapon} leaves them {effect}.",

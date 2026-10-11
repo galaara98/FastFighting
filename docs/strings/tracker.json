@@ -12243,6 +12243,16 @@
    "commit": null,
    "hash": "4e2b25184220"
   },
+  "core:FASTFIGHTING.Story.Part.taunted": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Story.Part.taunted",
+   "area": "core/Story",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "73a737d61583"
+  },
   "core:FASTFIGHTING.Story.Part.terrain": {
    "repo": "core",
    "file": "languages/en.json",
@@ -17168,6 +17178,16 @@
    "commit": null,
    "hash": "8ca48d159116"
   },
+  "core:story:event.taunted": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "event.taunted",
+   "area": "core/story.event",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "c5bfa45d4962"
+  },
   "core:story:event.theftCaught": {
    "repo": "core",
    "file": "story/en.json",
@@ -18188,6 +18208,16 @@
    "commit": null,
    "hash": "0d0b7eee2953"
   },
+  "dcc:FFDCC.Agro": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.Agro",
+   "area": "dcc/General",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "d5554c30875c"
+  },
   "dcc:FFDCC.Attack": {
    "repo": "dcc",
    "file": "languages/en.json",
@@ -18587,6 +18617,16 @@
    "date": null,
    "commit": null,
    "hash": "8ce9c2e72efe"
+  },
+  "dcc:FFDCC.DrawAgro": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.DrawAgro",
+   "area": "dcc/General",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "56edd2a832a7"
   },
   "dcc:FFDCC.FleetingGain": {
    "repo": "dcc",

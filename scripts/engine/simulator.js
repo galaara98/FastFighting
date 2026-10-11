@@ -18,7 +18,7 @@ import {
 import { sampleRunTactics } from "./playstyles.js";
 import { chooseTarget, bestOptionVs, scoreTargets } from "./behavior/targeting.js";
 import { decideHeal, rescueOption, healScores } from "./behavior/healing.js";
-import { initDesires, newTurn, think, want, thwart, relieve, levelOf, mind, thoughts as thoughtsOf, levelsFromScores, listen, heed, remember, styleWants, styleOf, follow, scheme, CHOICE_LEVEL } from "./behavior/desire.js";
+import { initDesires, newTurn, goaded, think, want, thwart, relieve, levelOf, mind, thoughts as thoughtsOf, levelsFromScores, listen, heed, remember, styleWants, styleOf, follow, scheme, CHOICE_LEVEL } from "./behavior/desire.js";
 import { prepareDoors, doorStates, doorAhead, atDoor, doorPlan, patienceFor, doorDamage } from "./behavior/doors.js";
 import { checkMorale, standsGround, callRetreat, rallies, MORALE } from "./behavior/morale.js";
 import { expectedDamage, spendUse, hasUses, attacksIn, criticalParts, saveMultiplier, saveMultiplierFor, meanDamageVs, unitsPerTurn } from "./behavior/evaluate.js";
@@ -1293,7 +1293,7 @@ function executeControl(run, u, action, target, attacksMade, common) {
       controls: !!outcome?.conditions?.controlled,
       type: "control", ...common, roll: r.kind, saveType: action.save?.type ?? null, against: action.check?.against ?? null,
       natural: roll.natural, mod: roll.mod, total: roll.total, dc, degree, margin: roll.total === null ? null : roll.total - dc,
-      effect: outcome?.label ?? "", took: !!outcome, backfired: !!outcome?.self, damage, shifted: shift,
+      effect: outcome?.label ?? "", took: !!outcome, backfired: !!outcome?.self, damage, shifted: shift, taunt: !!outcome?.taunt,
       debuff: !!(outcome?.mods || outcome?.mark), tempHp: Number(outcome?.tempHp) || 0
     });
   }
@@ -1784,6 +1784,8 @@ function noteCommand(run, quietly = false) {
  */
 function deliberate(run, u) {
   newTurn(u);
+  // Taunted: it wants the taunter (as long as the taunt lasts and the taunter stands).
+  goaded(run, u);
   // One who wants to lead and doesn't may scheme against whoever does (then it follows no one this turn).
   if ( scheme(run, u) && run.log ) {
     log(run, u, { type: "scheme", target: u.scheming.name, targetId: u.scheming.against, boss: u.scheming.boss });

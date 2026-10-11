@@ -277,6 +277,11 @@ function narrate(e, roll, rel, fill) {
     case "control":
       if ( e.immune ) return roll("event.controlImmune", f);
       if ( e.backfired ) return roll("event.controlBackfire", { ...f, effect: e.effect ?? "" });
+      // (Goaded: told as a taunt that lands, where there are words for it.)
+      if ( e.taunt && e.took ) {
+        const own = roll("event.taunted", { ...f, effect: e.effect ?? "" });
+        if ( own ) return own;
+      }
       return roll(e.took ? "event.controlTakes" : "event.controlResisted", { ...f, effect: e.effect ?? "" });
     case "buff": {
       // Plain moves (Dodge, Reckless Attack, Action Surge) are told as what they are, not as magic.

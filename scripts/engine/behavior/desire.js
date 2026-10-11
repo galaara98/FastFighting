@@ -19,10 +19,12 @@
  *               (but doesn't) half ignores its commander, a chaotic one barely hears anyone, People-Pleasers and
  *               Enablers listen harder, and a contrarian (chaotic, or an instigator) may lean away from what its
  *               commander wants.
+ *   taunt       taunts on it (effects.js): it wants to go for whoever taunted it, at least as badly as the taunt
+ *               says, while the taunt lasts and the taunter stands. It counts like a stated desire, and blinds like one.
  *   asked       friends asking it for a buff (their "bolstered" desires naming it): no roll, only that they can make
  *               themselves understood and that it's willing (see heed).
  *
- * A desire's level is max(logic, stated) + memory + social - frustration, 0 to 100:
+ * A desire's level is max(logic, stated, lean, taunt) + memory + social - frustration, 0 to 100:
  *   {kind: "hurt" | "heal" | "protect" | "aid" | "talk" | "avoid" | "bolstered", targetId, level}
  *   (aid: bolster with a buff; bolstered: to be bolstered by that friend. A request, not something it acts on itself:
  *   the friend hears it and, if willing, wants to aid it.)
@@ -68,7 +70,7 @@ function parseKey(k) {
 /** Every key u has a desire under, once each. */
 function desireKeys(d) {
   const keys = new Set(d.logic.keys());
-  for ( const m of [d.stated, d.lean, d.memory, d.social, d.style] ) for ( const k of m.keys() ) keys.add(k);
+  for ( const m of [d.stated, d.lean, d.taunt, d.memory, d.social, d.style] ) for ( const k of m.keys() ) keys.add(k);
   return keys;
 }
 
@@ -81,7 +83,7 @@ export function desireBand(level) {
 
 /** A unit's desires at the start of the fight: what it was told to want. */
 export function initDesires(u) {
-  u.desire = { stated: new Map(), memory: new Map(), frustration: new Map(), logic: new Map(), social: new Map(), style: new Map(), lean: new Map() };
+  u.desire = { stated: new Map(), memory: new Map(), frustration: new Map(), logic: new Map(), social: new Map(), style: new Map(), lean: new Map(), taunt: new Map() };
   for ( const d of u.spec.desires ?? [] ) {
     if ( !DESIRE_KINDS.includes(d.kind) || !d.targetId || d.targetId === u.id ) continue;
     u.desire.stated.set(keyOf(d.kind, d.targetId), clamp(Number(d.level) || 0));
@@ -135,7 +137,23 @@ export function levelOf(u, kind, targetId) {
   const d = u.desire;
   if ( !d ) return 0;
   const k = keyOf(kind, targetId);
-  return clamp(Math.max(d.logic.get(k) ?? 0, d.stated.get(k) ?? 0, d.lean.get(k) ?? 0) + (d.style.get(k) ?? 0) + (d.memory.get(k) ?? 0) + (d.social.get(k) ?? 0) - (d.frustration.get(k) ?? 0));
+  return clamp(Math.max(d.logic.get(k) ?? 0, d.stated.get(k) ?? 0, d.lean.get(k) ?? 0, d.taunt.get(k) ?? 0) + (d.style.get(k) ?? 0) + (d.memory.get(k) ?? 0) + (d.social.get(k) ?? 0) - (d.frustration.get(k) ?? 0));
+}
+
+/**
+ * The taunts on u this turn (effects with a taunt, effects.js): each makes it want to go for its taunter, at least as
+ * badly as the taunt says. Only a taunter still standing, and still its foe, counts. Call after newTurn.
+ */
+export function goaded(run, u) {
+  if ( !u.desire ) return;
+  u.desire.taunt.clear();
+  for ( const e of u.effects ?? [] ) {
+    if ( !(e.taunt > 0) || !e.sourceId ) continue;
+    const by = run.byId.get(e.sourceId);
+    if ( !by || !isStanding(by) || !areEnemies(run, u, by) ) continue;
+    const k = keyOf("hurt", by.id);
+    u.desire.taunt.set(k, Math.max(u.desire.taunt.get(k) ?? 0, clamp(e.taunt)));
+  }
 }
 
 /** Point a lean (behavior/neutral.js) at these: [[kind, targetId, level]], in place of the last one. */
@@ -192,9 +210,10 @@ export function rankedDesires(run, u) {
     if ( !relevant(run, u, kind, run.byId.get(targetId)) ) continue;
     const level = levelOf(u, kind, targetId);
     if ( level <= 0 ) continue;
-    // What's driving it: the tactics' own reasoning, or something stated or stirred on top of it.
+    // What's driving it: the tactics' own reasoning, or something stated, taunted or stirred on top of it.
     const logic = d.logic.get(k) ?? 0;
-    const driven = (d.stated.get(k) ?? 0) > logic ? "stated" : (d.memory.get(k) ?? 0) >= 10 ? "memory" : (d.social.get(k) ?? 0) >= 10 ? "social" : "logic";
+    const stated = d.stated.get(k) ?? 0;
+    const driven = (d.taunt.get(k) ?? 0) > Math.max(logic, stated) ? "taunted" : stated > logic ? "stated" : (d.memory.get(k) ?? 0) >= 10 ? "memory" : (d.social.get(k) ?? 0) >= 10 ? "social" : "logic";
     out.push({ kind, targetId, level, driven });
   }
   return out.sort((a, b) => b.level - a.level);
@@ -211,9 +230,9 @@ export function mind(run, u) {
   return {
     lead,
     ranked,
-    // Only a desire stated, or stirred by the fight, blinds; the tactics' own reasoning (and the others' pull) weighs
-    // everything.
-    blinding: !!lead && (lead.driven === "stated" || lead.driven === "memory"),
+    // Only a desire stated, taunted, or stirred by the fight, blinds; the tactics' own reasoning (and the others' pull)
+    // weighs everything.
+    blinding: !!lead && (lead.driven === "stated" || lead.driven === "taunted" || lead.driven === "memory"),
     inView: (kind, targetId) => levelOf(u, kind, targetId) >= floor,
     kindInView: kind => ranked.some(d => d.kind === kind && d.level >= floor),
     obsessed: !!lead && lead.level >= OBSESSED
