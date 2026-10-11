@@ -197,7 +197,7 @@ for ( const hook of ["createCombat", "deleteCombat", "updateCombat"] ) Hooks.on(
 // keeping the GM's plan as it stands (only the encounter ending, or the GM clearing the plan, starts it afresh).
 const rereadRoster = foundry.utils.debounce(() => {
   const app = foundry.applications.instances.get("fast-fighting-planner");
-  if ( app?.rendered && !app.running ) app.rereadRoster();
+  if ( app?.rendered ) app.rereadRoster(); // (during a run, as soon as it ends)
 }, 150);
 Hooks.on("createCombatant", combatant => { if ( combatant.parent?.uuid === planHolder()?.uuid ) rereadRoster(); });
 Hooks.on("deleteCombatant", combatant => { if ( combatant.parent?.uuid === planHolder()?.uuid ) rereadRoster(); });

@@ -702,8 +702,16 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     this.rereadRoster();
   }
 
-  /** Read the tokens again (someone joined the encounter, a token came or went), keeping the GM's plan as it stands. */
+  /**
+   * Read the tokens again (someone joined or left the encounter, a token came or went), keeping the GM's plan as it
+   * stands. While a run is going, as soon as it ends.
+   */
   rereadRoster() {
+    if ( this.running ) {
+      this.rosterChanged = true;
+      return;
+    }
+    this.rosterChanged = false;
     this.roster = null;
     this.approach = null;
     this.stale = true;
@@ -761,10 +769,16 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       console.error(`${MODULE_ID} | simulation failed`, err);
       ui.notifications.error(game.i18n.format("FASTFIGHTING.Planner.RunFailed", { error: err.message }));
     } finally {
-      this.running = false;
       this.abort = null;
-      this.render();
+      this.#doneRunning();
     }
+  }
+
+  /** A run (or a swing study) is over: take in anyone who joined or left meanwhile, and show it. */
+  #doneRunning() {
+    this.running = false;
+    if ( this.rosterChanged ) this.rereadRoster();
+    else this.render();
   }
 
   static #onCancel() {
@@ -786,8 +800,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     } catch ( err ) {
       reportError(err);
     } finally {
-      this.running = false;
-      this.render();
+      this.#doneRunning();
     }
   }
 
