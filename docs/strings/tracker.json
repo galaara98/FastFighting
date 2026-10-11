@@ -7246,11 +7246,10 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Playstyle.brawler.Hint",
    "area": "core/Playstyle",
-   "status": "approved",
+   "status": "todo",
    "date": "2026-10-11",
-   "commit": "f7ee61e",
-   "hash": "4b64195be6a1",
-   "changed": true
+   "commit": "a33b78f",
+   "hash": "7ddb07daddb3"
   },
   "core:FASTFIGHTING.Playstyle.brawler.Name": {
    "repo": "core",
@@ -7267,11 +7266,10 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Playstyle.chicken.Hint",
    "area": "core/Playstyle",
-   "status": "approved",
+   "status": "todo",
    "date": "2026-10-11",
-   "commit": "f7ee61e",
-   "hash": "8e68ecae337d",
-   "changed": true
+   "commit": "a33b78f",
+   "hash": "8bf8293fdced"
   },
   "core:FASTFIGHTING.Playstyle.chicken.Name": {
    "repo": "core",
@@ -7318,11 +7316,10 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Playstyle.diplomat.Hint",
    "area": "core/Playstyle",
-   "status": "approved",
+   "status": "todo",
    "date": "2026-10-11",
-   "commit": "f7ee61e",
-   "hash": "7932a6ec5547",
-   "changed": true
+   "commit": "a33b78f",
+   "hash": "97ce8daa4c16"
   },
   "core:FASTFIGHTING.Playstyle.diplomat.Name": {
    "repo": "core",
@@ -7409,11 +7406,10 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Playstyle.instigator.Hint",
    "area": "core/Playstyle",
-   "status": "approved",
+   "status": "todo",
    "date": "2026-10-11",
-   "commit": "f7ee61e",
-   "hash": "c10f51ae7c2f",
-   "changed": true
+   "commit": "a33b78f",
+   "hash": "13104b79ca7e"
   },
   "core:FASTFIGHTING.Playstyle.instigator.Name": {
    "repo": "core",
@@ -7440,11 +7436,10 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Playstyle.lazy.Hint",
    "area": "core/Playstyle",
-   "status": "approved",
+   "status": "todo",
    "date": "2026-10-11",
-   "commit": "f7ee61e",
-   "hash": "aa3b54d2bd1f",
-   "changed": true
+   "commit": "a33b78f",
+   "hash": "4362ac5ab5f1"
   },
   "core:FASTFIGHTING.Playstyle.lazy.Name": {
    "repo": "core",
@@ -7501,11 +7496,10 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Playstyle.martyr.Hint",
    "area": "core/Playstyle",
-   "status": "approved",
+   "status": "todo",
    "date": "2026-10-11",
-   "commit": "f7ee61e",
-   "hash": "ab733c79e1ec",
-   "changed": true
+   "commit": "a33b78f",
+   "hash": "bb7e3b809224"
   },
   "core:FASTFIGHTING.Playstyle.martyr.Name": {
    "repo": "core",
@@ -7604,11 +7598,10 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Playstyle.peacekeeper.Hint",
    "area": "core/Playstyle",
-   "status": "approved",
+   "status": "todo",
    "date": "2026-10-11",
-   "commit": "f7ee61e",
-   "hash": "bcbf2994bff2",
-   "changed": true
+   "commit": "a33b78f",
+   "hash": "742bc1ad9a71"
   },
   "core:FASTFIGHTING.Playstyle.peacekeeper.Name": {
    "repo": "core",
@@ -7645,11 +7638,10 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Playstyle.puzzleManiac.Hint",
    "area": "core/Playstyle",
-   "status": "approved",
+   "status": "todo",
    "date": "2026-10-11",
-   "commit": "f7ee61e",
-   "hash": "db1a03b77ccb",
-   "changed": true
+   "commit": "a33b78f",
+   "hash": "4e706e3c59c6"
   },
   "core:FASTFIGHTING.Playstyle.puzzleManiac.Name": {
    "repo": "core",
@@ -7666,11 +7658,10 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Playstyle.redeemSeeker.Hint",
    "area": "core/Playstyle",
-   "status": "approved",
+   "status": "todo",
    "date": "2026-10-11",
-   "commit": "f7ee61e",
-   "hash": "847706eb170c",
-   "changed": true
+   "commit": "a33b78f",
+   "hash": "0081fddee01d"
   },
   "core:FASTFIGHTING.Playstyle.redeemSeeker.Name": {
    "repo": "core",
@@ -7687,11 +7678,10 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Playstyle.relentless.Hint",
    "area": "core/Playstyle",
-   "status": "approved",
+   "status": "todo",
    "date": "2026-10-11",
-   "commit": "f7ee61e",
-   "hash": "e9c8fc044116",
-   "changed": true
+   "commit": "a33b78f",
+   "hash": "c3971c600bec"
   },
   "core:FASTFIGHTING.Playstyle.relentless.Name": {
    "repo": "core",
@@ -7728,11 +7718,10 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Playstyle.skeptic.Hint",
    "area": "core/Playstyle",
-   "status": "approved",
+   "status": "todo",
    "date": "2026-10-11",
-   "commit": "f7ee61e",
-   "hash": "acaee03013a0",
-   "changed": true
+   "commit": "a33b78f",
+   "hash": "bfa3965c0fe8"
   },
   "core:FASTFIGHTING.Playstyle.skeptic.Name": {
    "repo": "core",
@@ -7849,11 +7838,10 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Playstyle.wallflower.Hint",
    "area": "core/Playstyle",
-   "status": "approved",
+   "status": "todo",
    "date": "2026-10-11",
-   "commit": "f7ee61e",
-   "hash": "40b482f73282",
-   "changed": true
+   "commit": "a33b78f",
+   "hash": "0912f71f1000"
   },
   "core:FASTFIGHTING.Playstyle.wallflower.Name": {
    "repo": "core",
