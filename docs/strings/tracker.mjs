@@ -20,7 +20,7 @@
 import { readFileSync, writeFileSync, readdirSync, statSync, existsSync } from "fs";
 import { createHash } from "crypto";
 import { dirname, join, relative } from "path";
-import { fileURLToPath } from "url";
+import { fileURLToPath, pathToFileURL } from "url";
 import { parseAst } from "rolldown/parseAst";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -31,7 +31,7 @@ const REPOS = { core: "FastFighting", pf2e: "FastFighting-PF2e", dnd5e: "FastFig
 
 const hash = text => createHash("sha256").update(String(text)).digest("hex").slice(0, 12);
 const today = () => new Date().toISOString().slice(0, 10);
-const placeholders = text => [...new Set(String(text).match(/\{[a-zA-Z]+\}/g) ?? [])];
+export const placeholders = text => [...new Set(String(text).match(/\{[a-zA-Z]+\}/g) ?? [])];
 const readJson = file => JSON.parse(readFileSync(file, "utf8"));
 
 /** A nested object's string leaves as [path, value] (lists kept whole when `lists`). */
@@ -120,7 +120,7 @@ function codeMessages(repoKey, repoDir) {
 /* -------------------------------------------- */
 
 /** Every string the author writes, as it stands now: id -> {repo, file, key, area, text}. */
-function current() {
+export function current() {
   const now = {};
   const add = entry => { now[entry.id] = entry; };
   for ( const [repo, folder] of Object.entries(REPOS) ) {
@@ -145,7 +145,7 @@ function current() {
   return now;
 }
 
-function load() {
+export function load() {
   return existsSync(RECORD) ? readJson(RECORD) : { strings: {} };
 }
 
@@ -186,10 +186,16 @@ function sync(record) {
 /*  Commands                                    */
 /* -------------------------------------------- */
 
-const [command = "status", ...args] = process.argv.slice(2);
+// (Imported rather than run, it only lends current() and load().)
+const run = !!process.argv[1] && pathToFileURL(process.argv[1]).href.toLowerCase() === import.meta.url.toLowerCase();
+const [command = "status", ...args] = run ? process.argv.slice(2) : ["none"];
 const record = load();
 
-if ( command === "sync" ) {
+if ( command === "none" ) {
+  // (imported)
+}
+
+else if ( command === "sync" ) {
   const { added, gone, changed } = sync(record);
   save(record);
   console.log(`added ${added.length}, gone ${gone.length}, changed outside a recorded batch ${changed.length}`);

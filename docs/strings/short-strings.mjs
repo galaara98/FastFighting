@@ -9,7 +9,7 @@
  */
 import { readFileSync, writeFileSync } from "fs";
 import { dirname, join } from "path";
-import { fileURLToPath } from "url";
+import { fileURLToPath, pathToFileURL } from "url";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(HERE, "..", "..", "..");
@@ -17,6 +17,8 @@ const REPOS = { core: "FastFighting", pf2e: "FastFighting-PF2e", dnd5e: "FastFig
 const flat = (o, p = "", out = {}) => { for ( const [k, v] of Object.entries(o) ) { if ( v && typeof v === "object" ) flat(v, `${p}${k}.`, out); else out[`${p}${k}`] = v; } return out; };
 const words = s => (String(s).replace(/\{\w+\}/g, " ").replace(/<[^>]+>/g, " ").match(/[A-Za-zÀ-ÿ][A-Za-zÀ-ÿ'’-]*/g) ?? []).length;
 const marks = s => [...new Set(String(s).match(/\{\w+\}/g) ?? [])];
+/** A short string: two words or fewer, two placeholders at most (the ones describe() knows). */
+export const isShort = s => words(s) <= 2 && marks(s).length <= 2;
 
 /* -------------------------------------------- */
 /*  Where things show                           */
@@ -274,7 +276,7 @@ const HELPER = {
 /* -------------------------------------------- */
 /*  Describing one string                       */
 /* -------------------------------------------- */
-function describe(repo, key, value) {
+export function describe(repo, key, value) {
   const rel = key.split(".").slice(1).join(".");
   const [group, ...rest] = rel.split(".");
   const sub = rest.join(".");
@@ -375,10 +377,10 @@ function describe(repo, key, value) {
 /* -------------------------------------------- */
 /*  The CSV                                     */
 /* -------------------------------------------- */
-const MODULES = { core: "Core", pf2e: "PF2e", dnd5e: "D&D 5e", dcc: "DCC", ironsworn: "Ironsworn" };
+export const MODULES = { core: "Core", pf2e: "PF2e", dnd5e: "D&D 5e", dcc: "DCC", ironsworn: "Ironsworn" };
 
 /** A CSV's rows as arrays (RFC 4180: quoted fields, doubled quotes, line breaks inside quotes). */
-function parseCsv(text) {
+export function parseCsv(text) {
   const out = [];
   let row = [], field = "", quoted = false;
   for ( let i = 0; i < text.length; i++ ) {
@@ -397,52 +399,56 @@ function parseCsv(text) {
   return out;
 }
 
-// The strings the author already answered in an earlier batch ("Module|Key": what the row said then).
-const args = process.argv.slice(2);
-const answered = new Map();
-for ( let i = args.indexOf("--skip"); i >= 0; i = args.indexOf("--skip", i + 1) ) {
-  const [head, ...body] = parseCsv(readFileSync(args[i + 1], "utf8").replace(/^\uFEFF/, ""));
-  const col = name => head.indexOf(name);
-  // (The proposal and an answer can come in our quotes.)
-  const unquote = v => (/^".*"$/s.test(v) ? v.slice(1, -1) : v);
-  for ( const r of body ) {
-    if ( !(r[col("Yours")] ?? "").trim() ) continue;
-    answered.set(`${r[col("Module")]}|${r[col("Key")]}`, { what: r[col("What it must say")], texts: [unquote(r[col("Proposed")]), unquote(r[col("Yours")])] });
+// (Imported rather than run, it only lends describe() and parseCsv().)
+const run = !!process.argv[1] && pathToFileURL(process.argv[1]).href.toLowerCase() === import.meta.url.toLowerCase();
+if ( run ) {
+  // The strings the author already answered in an earlier batch ("Module|Key": what the row said then).
+  const args = process.argv.slice(2);
+  const answered = new Map();
+  for ( let i = args.indexOf("--skip"); i >= 0; i = args.indexOf("--skip", i + 1) ) {
+    const [head, ...body] = parseCsv(readFileSync(args[i + 1], "utf8").replace(/^\uFEFF/, ""));
+    const col = name => head.indexOf(name);
+    // (The proposal and an answer can come in our quotes.)
+    const unquote = v => (/^".*"$/s.test(v) ? v.slice(1, -1) : v);
+    for ( const r of body ) {
+      if ( !(r[col("Yours")] ?? "").trim() ) continue;
+      answered.set(`${r[col("Module")]}|${r[col("Key")]}`, { what: r[col("What it must say")], texts: [unquote(r[col("Proposed")]), unquote(r[col("Yours")])] });
+    }
   }
-}
-const outFile = args.find((a, i) => !a.startsWith("--") && args[i - 1] !== "--skip");
+  const outFile = args.find((a, i) => !a.startsWith("--") && args[i - 1] !== "--skip");
 
-const rows = [];
-const missing = [];
-for ( const [repo, dir] of Object.entries(REPOS) ) {
-  const en = flat(JSON.parse(readFileSync(join(ROOT, dir, "languages/en.json"), "utf8")));
-  for ( const [key, value] of Object.entries(en) ) {
-    if ( words(value) > 2 || marks(value).length > 2 ) continue;
-    const d = describe(repo, key, value);
-    const before = answered.get(`${MODULES[repo]}|${key}`);
-    if ( before && before.texts.includes(value) && before.what === d?.what ) continue;
-    if ( !d?.what ) { missing.push(`${repo} ${key} ${JSON.stringify(value)}`); continue; }
-    const notes = [d.limits];
-    if ( marks(value).length ) notes.push(`keep ${marks(value).join(" ")}`);
-    if ( /^\s/.test(value) && !/start/i.test(d.limits) ) notes.push("starts with a space");
-    if ( /\s$/.test(value) && !/end/i.test(d.limits) ) notes.push("ends with a space");
-    rows.push({ repo, key, ...d, limits: notes.join("; "), value });
+  const rows = [];
+  const missing = [];
+  for ( const [repo, dir] of Object.entries(REPOS) ) {
+    const en = flat(JSON.parse(readFileSync(join(ROOT, dir, "languages/en.json"), "utf8")));
+    for ( const [key, value] of Object.entries(en) ) {
+      if ( words(value) > 2 || marks(value).length > 2 ) continue;
+      const d = describe(repo, key, value);
+      const before = answered.get(`${MODULES[repo]}|${key}`);
+      if ( before && before.texts.includes(value) && before.what === d?.what ) continue;
+      if ( !d?.what ) { missing.push(`${repo} ${key} ${JSON.stringify(value)}`); continue; }
+      const notes = [d.limits];
+      if ( marks(value).length ) notes.push(`keep ${marks(value).join(" ")}`);
+      if ( /^\s/.test(value) && !/start/i.test(d.limits) ) notes.push("starts with a space");
+      if ( /\s$/.test(value) && !/end/i.test(d.limits) ) notes.push("ends with a space");
+      rows.push({ repo, key, ...d, limits: notes.join("; "), value });
+    }
   }
+  if ( missing.length ) { console.error(`No description for ${missing.length}:\n${missing.join("\n")}`); process.exit(1); }
+
+  // The order a GM meets them: core's windows and settings, its words, the story's tables, then each helper.
+  const ORDER = ["Settings", "Choices", "Generic system", "Defaults", "Sides", "Personality", "Planner", "Results", "Sample fight", "Status", "Make it So", "Tactics survey", "Playstyles", "Helper notice", "Words", "Effects", "Damage types", "Standard story", "Story", "Battle log", "Story table names"];
+  const rank = r => (r.repo === "core" ? ORDER.findIndex(a => r.area.startsWith(a)) : 100 + Object.keys(REPOS).indexOf(r.repo));
+  rows.sort((a, b) => rank(a) - rank(b));
+
+  const cell = v => `"${String(v).replace(/"/g, "\"\"")}"`;
+  const PREFIX = { core: "FASTFIGHTING", pf2e: "FFPF2E", dnd5e: "FFDND5E", dcc: "FFDCC", ironsworn: "FFIRONSWORN" };
+  const lines = [["#", "Module", "Area", "Key", "Where it shows", "What it must say", "Limits", "Proposed", "Yours"].map(cell).join(",")];
+  rows.forEach((r, i) => {
+    const module = MODULES[r.repo];
+    // The proposal in quotes, so spaces at either end show and Excel never reads it as a formula.
+    lines.push([i + 1, module, r.area.replace(/^\w+: /, ""), r.key, r.where, r.what, r.limits, `"${r.value}"`, ""].map(cell).join(","));
+  });
+  writeFileSync(outFile ?? join(HERE, "short-strings.csv"), `\uFEFF${lines.join("\r\n")}\r\n`);
+  console.log(`${rows.length} strings written`);
 }
-if ( missing.length ) { console.error(`No description for ${missing.length}:\n${missing.join("\n")}`); process.exit(1); }
-
-// The order a GM meets them: core's windows and settings, its words, the story's tables, then each helper.
-const ORDER = ["Settings", "Choices", "Generic system", "Defaults", "Sides", "Personality", "Planner", "Results", "Sample fight", "Status", "Make it So", "Tactics survey", "Playstyles", "Helper notice", "Words", "Effects", "Damage types", "Standard story", "Story", "Battle log", "Story table names"];
-const rank = r => (r.repo === "core" ? ORDER.findIndex(a => r.area.startsWith(a)) : 100 + Object.keys(REPOS).indexOf(r.repo));
-rows.sort((a, b) => rank(a) - rank(b));
-
-const cell = v => `"${String(v).replace(/"/g, "\"\"")}"`;
-const PREFIX = { core: "FASTFIGHTING", pf2e: "FFPF2E", dnd5e: "FFDND5E", dcc: "FFDCC", ironsworn: "FFIRONSWORN" };
-const lines = [["#", "Module", "Area", "Key", "Where it shows", "What it must say", "Limits", "Proposed", "Yours"].map(cell).join(",")];
-rows.forEach((r, i) => {
-  const module = MODULES[r.repo];
-  // The proposal in quotes, so spaces at either end show and Excel never reads it as a formula.
-  lines.push([i + 1, module, r.area.replace(/^\w+: /, ""), r.key, r.where, r.what, r.limits, `"${r.value}"`, ""].map(cell).join(","));
-});
-writeFileSync(outFile ?? join(HERE, "short-strings.csv"), `\uFEFF${lines.join("\r\n")}\r\n`);
-console.log(`${rows.length} strings written`);
