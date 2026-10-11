@@ -130,7 +130,8 @@ describe("talking with those who take no side", () => {
       if ( !r.log.some(e => e.what === "truce") ) continue;
       truces += 1;
       const guardTalks = r.log.filter(e => e.actor === "guard" && e.type === "talk");
-      expect(guardTalks.every(e => e.target === "talker" && e.aim === "settle")).toBe(true);
+      // (Settling its quarrel; and, leaning toward the party, talking the talker out of the fight once it has no quarrel.)
+      expect(guardTalks.every(e => e.target === "talker" && ["settle", "down"].includes(e.aim))).toBe(true);
     }
     expect(truces).toBeGreaterThan(5);
   });
@@ -300,5 +301,35 @@ describe("not one for killing", () => {
     }
     expect(talked).toBeGreaterThan(6);
     expect(gone).toBeGreaterThan(2);
+  });
+});
+
+describe("a neutral talking for the side it leans toward", () => {
+  const elder = (over = {}) => guard({ id: "elder", lean: "friendly", social: social({ diplomacy: 25, intimidation: 20 }), playstyles: ["diplomat"], behavior: { parleyFirst: 1 }, ...over });
+  const bandit = (over = {}) => brute({ id: "bandit", social: social(), hp: { value: 40, max: 40 }, ...over });
+  const pc = (over = {}) => fighter({ social: social(), ...over });
+
+  test("in a standoff it talks the party's enemies out of the fight, and that settles it for the party", () => {
+    let settled = 0;
+    for ( let seed = 1; seed <= 30; seed++ ) {
+      const r = replay(battle([pc(), bandit(), elder({ initiative: { mod: 50 } })], { maxRounds: 4, opening: "talk" }), pf2eRules, seed);
+      const words = r.log.filter(e => e.actor === "elder" && e.type === "talk");
+      for ( const e of words ) expect([e.target, e.aim]).toEqual(["bandit", "down"]);
+      if ( r.log.some(e => e.type === "sway" && e.byId === "elder" && ["fled", "conceded", "stoodDown"].includes(e.outcome)) ) settled += 1;
+    }
+    expect(settled).toBeGreaterThan(3);
+  });
+
+  test("in the encounter from the start, it's aware at once: its words come in the first round", () => {
+    const r = replay(battle([pc(), bandit(), elder({ initiative: { mod: 50 } })], { maxRounds: 2, opening: "talk" }), pf2eRules, 2);
+    expect(r.log.find(e => e.actor === "elder" && e.type === "talk")?.round).toBe(1);
+    // A bystander (not in the encounter) has to notice the fight first.
+    const late = replay(battle([pc(), bandit(), elder({ initiative: { mod: 50 }, inEncounter: false, position: { x: 500, y: 500, size: 5 } })], { maxRounds: 1, opening: "talk" }), pf2eRules, 2);
+    expect(late.log.some(e => e.actor === "elder" && e.type === "talk")).toBe(false);
+  });
+
+  test("leaning toward the party's enemies, it talks the party down instead (a player character can only pay up or back off)", () => {
+    const r = replay(battle([pc({ valuables: { money: 50 } }), bandit(), elder({ lean: "hostile", initiative: { mod: 50 } })], { maxRounds: 3, opening: "talk" }), pf2eRules, 4);
+    for ( const e of r.log.filter(x => x.actor === "elder" && x.type === "talk") ) expect(e.target).toBe("fighter");
   });
 });

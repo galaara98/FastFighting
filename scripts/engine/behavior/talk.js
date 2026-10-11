@@ -35,7 +35,7 @@ import { STATUS, SWAY, CONCEDE_LUCK, SWITCH_LUCK, TRAITOR_LUCK, TACTICAL, clamp 
 import { alliesOf, enemiesOf, isStanding, behaviorOf, typical, checkRoll, liveTier, studyBonus, boostBonus, chainOf, commandOf, groupKeyOf } from "../battle-state.js";
 import { spendEdges, spendBoost } from "./effects.js";
 import { degreeDistribution, rollCheck } from "../probability.js";
-import { isNeutral, standsAside, appeal, offend, turnOn, standAside, joinSide, calm, settleTruce, seemsFoe } from "./neutral.js";
+import { isNeutral, standsAside, appeal, offend, turnOn, standAside, joinSide, calm, settleTruce, seemsFoe, leanSide } from "./neutral.js";
 import { levelOf, allDesires } from "./desire.js";
 import { standsGround } from "./morale.js";
 
@@ -66,6 +66,8 @@ function pitchTargets(run, talker) {
   if ( !run.neutral ) return out;
   if ( isNeutral(talker) ) {
     if ( talker.truce ) for ( const o of run.units ) if ( o.side === talker.truce.side && !out.includes(o) ) out.push(o);
+    // Leaning toward a side, it may talk that side's enemies out of the fight (it wants its friends safe).
+    for ( const o of opposedToLean(run, talker) ) if ( !out.includes(o) ) out.push(o);
     return out;
   }
   const knows = liveTier(run, talker) >= TACTICAL.TACTICAL;
@@ -84,6 +86,16 @@ function pitchTargets(run, talker) {
     if ( knows || levelOf(talker, "talk", n.id) >= 20 || (wordsFirst && seemsFoe(run, talker, n)) ) out.push(n);
   }
   return out;
+}
+
+/**
+ * Those at odds with the side a neutral leans toward (hostiles, for one leaning toward the party; the party, for one
+ * leaning toward its enemies): the ones it may talk out of the fight. None without a lean.
+ */
+export function opposedToLean(run, n) {
+  const favored = isNeutral(n) && (n.leanLevel ?? 1) > 0 ? leanSide(run, n) : null;
+  const sides = favored ? run.prep.sides[favored]?.enemies : null;
+  return sides?.size ? run.units.filter(o => !isNeutral(o) && sides.has(o.side)) : [];
 }
 
 /** Always tries words before blows: "always prefers talking", a "talk first" answer, or a playstyle like the Diplomat. */
@@ -358,8 +370,13 @@ export function concession(run, t, { itemLuck = true } = {}) {
 }
 
 /** In a standoff, giving something up or running settles the whole thing: everyone walks away. */
+/**
+ * In a standoff, an enemy talked into paying up or running settles the whole thing, for the talker's side (a neutral
+ * talking for the side it leans toward: for that side).
+ */
 function settle(run, talker, outcome) {
-  if ( run.standoff && !run.resolved && [SWAY.CONCEDE, SWAY.FLEE].includes(outcome) ) run.resolved = { side: talker.side, outcome };
+  const side = isNeutral(talker) ? leanSide(run, talker) : talker.side;
+  if ( side && run.standoff && !run.resolved && [SWAY.CONCEDE, SWAY.FLEE].includes(outcome) ) run.resolved = { side, outcome };
 }
 
 /**
@@ -414,7 +431,7 @@ function applyOutcome(run, talker, t, outcome, log, aim = "down", luck = null) {
     log(t, `lets it go, talked round by ${talker.spec.name}`, { type: "neutral", what: "calmed", ...by });
     return;
   }
-  if ( aim === "down" && !isNeutral(talker) ) settle(run, talker, outcome === SWAY.CONCEDE && !hasValuables(t) && t.spec.kind !== "pc" ? SWAY.FLEE : outcome);
+  if ( aim === "down" ) settle(run, talker, outcome === SWAY.CONCEDE && !hasValuables(t) && t.spec.kind !== "pc" ? SWAY.FLEE : outcome);
   if ( outcome === SWAY.CONCEDE ) {
     concede(run, talker, t, log);
     if ( aim === "settle" ) settleTruce(talker, t.side);

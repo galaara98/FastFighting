@@ -28,7 +28,7 @@ import { boost } from "./behavior/luck.js";
 import { respond, riposteStrike } from "./behavior/responses.js";
 import { decideSummon, callSummons, sustainSummons, summonState, dismiss } from "./behavior/summons.js";
 import { createAggregator } from "./aggregate.js";
-import { talkActionsThisTurn, choosePitch, attemptTalk, shareLanguage } from "./behavior/talk.js";
+import { talkActionsThisTurn, choosePitch, attemptTalk, shareLanguage, opposedToLean } from "./behavior/talk.js";
 import { opensWithTalk, breaksStandoff, standoffPitches, charismaticLeader, canTalk, prefersTalk } from "./behavior/standoff.js";
 import { controlOutcome, controlRoll, isImmune, degreeShift } from "./behavior/control.js";
 import { recompute as recomputeConditions, applyOutcome, applyControl, beginConcentration, endConcentration, holdsAnything, noteConcentration, moveHeld, settleAllegiance, iwrOf, incoming, spendEdges, spendBoost, focusOf } from "./behavior/effects.js";
@@ -1748,6 +1748,17 @@ function standoffPitching(run, u, n, only = null) {
  */
 function neutralTurn(run, u) {
   const say = logger(run);
+  // Leaning toward a side, with a way with words: it may talk that side's enemies out of the fight (in a standoff as
+  // a talker would; in a fight now and then), into fleeing, standing down or handing something over.
+  if ( !u.truce && run.prep.options.talking ) {
+    const opposed = new Set(opposedToLean(run, u).filter(isStanding));
+    if ( opposed.size ) {
+      const rules = run.prep.rules;
+      const actions = turnFor(run, u).howMany(rules.talkCost ?? rules.basicAction ?? 1);
+      const n = run.standoff ? standoffPitches(run, u, actions) : talkActionsThisTurn(run, u, actions).count;
+      if ( n > 0 ) standoffPitching(run, u, n, o => opposed.has(o));
+    }
+  }
   if ( u.truce ) {
     const other = truceWith(run, u);
     if ( !other ) {
