@@ -115,6 +115,8 @@ A fight can be talked down at any point, and some encounters never come to blows
 
 A leader who wants to talk holds their side back. Before it breaks, a charismatic NPC leader may take one last turn to press the party.
 
+**Only an argument.** Some conflicts are words and nothing else: a negotiation, a hearing, a haggle that mustn't turn bloody. Pick **Only an argument: no fighting** as the planner's opening (or the world's default). The encounter opens as a standoff and stays one, and whatever would come to blows ends it instead: someone takes offense, loses patience, can't follow the talk, a blow lands, or a quarrel turns ugly. The talks collapse and everyone goes their own way; nobody fights. Whatever was agreed before it collapsed stands: a deal struck, someone standing down, someone backing off. Talks that settle nothing before the round limit stall. The results show how often the talks collapsed (beside how often it was settled with words, which no longer counts a collapse); there's no simulated difficulty, since nobody fights. The story tells what was agreed, and who walked out and why.
+
 **A quarrel beside the standoff.** A neutral (see below) may come to blows with one of the sides, most often when one of that side's members takes offense at a botched pitch from it. Only the two of them fight: the other side doesn't have to join in, and the standoff between the two sides holds, with exceptions:
 - **Impatience:** every blow struck beside the standoff wears on everyone's patience.
 - **Annoyance:** hurt or insulted by a neutral that seems to be with the other side, a creature may blame that side and break the standoff (a tactical mind sees through it, mostly).

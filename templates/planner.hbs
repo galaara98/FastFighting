@@ -197,8 +197,9 @@
               <div class="ff-kpi warn"><span class="ff-kpi-value">{{results.pcDowned}}</span><span class="ff-kpi-label">{{localize "FASTFIGHTING.Results.PcDowned"}}</span></div>
               <div class="ff-kpi talk"><span class="ff-kpi-value">{{results.swayed}}</span><span class="ff-kpi-label">{{localize "FASTFIGHTING.Results.Swayed"}}</span></div>
               {{#if results.peacefulAny}}<div class="ff-kpi talk"><span class="ff-kpi-value">{{results.peaceful}}</span><span class="ff-kpi-label">{{localize "FASTFIGHTING.Results.Peaceful"}}</span></div>{{/if}}
+              {{#if results.collapsedAny}}<div class="ff-kpi warn"><span class="ff-kpi-value">{{results.collapsed}}</span><span class="ff-kpi-label">{{localize "FASTFIGHTING.Results.Collapsed"}}</span></div>{{/if}}
               <div class="ff-kpi"><span class="ff-kpi-value">{{results.rounds.median}}</span><span class="ff-kpi-label">{{localize "FASTFIGHTING.Results.MedianRounds"}} ({{results.rounds.p10}}–{{results.rounds.p90}})</span></div>
-              <div class="ff-kpi ff-difficulty {{results.simulatedClass}}"><span class="ff-kpi-value">{{results.simulated}}</span><span class="ff-kpi-label">{{localize "FASTFIGHTING.Results.Simulated"}}</span></div>
+              {{#unless results.argument}}<div class="ff-kpi ff-difficulty {{results.simulatedClass}}"><span class="ff-kpi-value">{{results.simulated}}</span><span class="ff-kpi-label">{{localize "FASTFIGHTING.Results.Simulated"}}</span></div>{{/unless}}
             </div>
             <div class="ff-split">
               <div class="ff-panel">

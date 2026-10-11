@@ -61,6 +61,7 @@ const party = u => present(u) && u.side !== NEUTRAL_PARTY && !u.spec.hazard; // 
  */
 export function opensWithTalk(run) {
   const o = run.prep.options;
+  if ( o.opening === OPENING.ARGUMENT ) return true; // (only an argument: talk, whatever else)
   if ( !o.talking || o.opening === OPENING.FIGHT ) return false;
   if ( o.opening === OPENING.TALK ) return true;
   if ( o.surpriseSide ) return false; // an ambush is not a conversation

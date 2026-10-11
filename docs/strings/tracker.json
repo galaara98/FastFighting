@@ -2369,6 +2369,76 @@
    "commit": null,
    "hash": "cecc6b303ef4"
   },
+  "core:FASTFIGHTING.Log.Collapse": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.Collapse",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "684fc80e0ae1"
+  },
+  "core:FASTFIGHTING.Log.CollapseAnnoyed": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.CollapseAnnoyed",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "bcec2ecd8beb"
+  },
+  "core:FASTFIGHTING.Log.CollapseBeast": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.CollapseBeast",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "39c20f465471"
+  },
+  "core:FASTFIGHTING.Log.CollapseBlood": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.CollapseBlood",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "b6ef61912925"
+  },
+  "core:FASTFIGHTING.Log.CollapseFray": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.CollapseFray",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "bfb20489f8d0"
+  },
+  "core:FASTFIGHTING.Log.CollapseImpatient": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.CollapseImpatient",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "a86e89533694"
+  },
+  "core:FASTFIGHTING.Log.CollapseInsulted": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.CollapseInsulted",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "6221cd84e94f"
+  },
   "core:FASTFIGHTING.Log.CommandAfter": {
    "repo": "core",
    "file": "languages/en.json",
@@ -5492,6 +5562,16 @@
    "commit": null,
    "hash": "22e4ca854bc9"
   },
+  "core:FASTFIGHTING.Opening.argument": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Opening.argument",
+   "area": "core/Opening",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "72c9a459db71"
+  },
   "core:FASTFIGHTING.Opening.auto": {
    "repo": "core",
    "file": "languages/en.json",
@@ -7142,6 +7222,16 @@
    "commit": null,
    "hash": "595ed5e7ae88"
   },
+  "core:FASTFIGHTING.Results.Collapsed": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Results.Collapsed",
+   "area": "core/Results",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "2db21b42a8a2"
+  },
   "core:FASTFIGHTING.Results.Combatant": {
    "repo": "core",
    "file": "languages/en.json",
@@ -8195,7 +8285,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "974ebb803d42"
+   "hash": "974ebb803d42",
+   "changed": true
   },
   "core:FASTFIGHTING.Settings.opening.Name": {
    "repo": "core",
@@ -9471,6 +9562,16 @@
    "date": null,
    "commit": null,
    "hash": "f151cd9e12c8"
+  },
+  "core:FASTFIGHTING.Story.Part.collapse": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Story.Part.collapse",
+   "area": "core/Story",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "be6eb1fc3b05"
   },
   "core:FASTFIGHTING.Story.Part.commandBack": {
    "repo": "core",
@@ -11331,6 +11432,16 @@
    "date": null,
    "commit": null,
    "hash": "c7931e822a72"
+  },
+  "core:FASTFIGHTING.Story.Part.talksCollapse": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Story.Part.talksCollapse",
+   "area": "core/Story",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "1ffc3b15c803"
   },
   "core:FASTFIGHTING.Story.Part.talksStall": {
    "repo": "core",
@@ -14687,6 +14798,16 @@
    "commit": null,
    "hash": "8d85b79d3958"
   },
+  "core:story:event.collapse": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "event.collapse",
+   "area": "core/story.event",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "16a2517ceaf6"
+  },
   "core:story:event.commandBack": {
    "repo": "core",
    "file": "story/en.json",
@@ -16076,6 +16197,16 @@
    "date": null,
    "commit": null,
    "hash": "3259e2527b11"
+  },
+  "core:story:event.talksCollapse": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "event.talksCollapse",
+   "area": "core/story.event",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "50ae38f9b13d"
   },
   "core:story:event.talksStall": {
    "repo": "core",

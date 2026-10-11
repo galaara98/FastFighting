@@ -28,6 +28,7 @@ export function createAggregator(prep) {
   let anyPcDowned = 0;
   let swayedRuns = 0;
   let peacefulRuns = 0;
+  let collapsedRuns = 0; // (only an argument: the talks collapsed)
   const pcIds = prep.combatants.filter(c => c.spec.kind === "pc").map(c => c.spec.id);
 
   return {
@@ -74,6 +75,7 @@ export function createAggregator(prep) {
       if ( pcDead ) anyPcDead += 1;
       if ( anySwayed ) swayedRuns += 1;
       if ( result.peaceful ) peacefulRuns += 1;
+      if ( result.collapsed ) collapsedRuns += 1;
       if ( pcDowned ) anyPcDowned += 1;
     },
 
@@ -129,6 +131,7 @@ export function createAggregator(prep) {
         pAnyPcDowned: anyPcDowned / n,
         pAnySwayed: swayedRuns / n,
         pPeaceful: peacefulRuns / n,
+        pCollapsed: collapsedRuns / n,
         rounds: {
           mean: rounds.reduce((s, r) => s + r, 0) / n,
           median: percentile(sorted, 0.5),

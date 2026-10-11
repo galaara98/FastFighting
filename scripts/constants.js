@@ -108,7 +108,8 @@ export const STAND_GROUND = 90;
 export const AVOID_KILLING = 90;
 
 /** How an encounter opens: decided by who would rather talk, always with words, or straight into battle. */
-export const OPENING = Object.freeze({ AUTO: "auto", TALK: "talk", FIGHT: "fight" });
+/** How an encounter opens. ARGUMENT: only an argument, talk and nothing else (what would come to blows ends it). */
+export const OPENING = Object.freeze({ AUTO: "auto", TALK: "talk", FIGHT: "fight", ARGUMENT: "argument" });
 
 export const FUDGE_STEP = Object.freeze({ trait: 5 });
 

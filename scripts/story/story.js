@@ -333,6 +333,7 @@ function narrate(e, roll, rel, fill) {
     case "aftermath": return roll(e.tended ? "event.aftermath" : "event.aftermathAlone", f);
     case "standoff": return roll("event.standoff", f);
     case "breakStandoff": return roll({ insulted: "event.breakInsulted", beast: "event.breakBeast", annoyed: "event.breakAnnoyed", blood: "event.breakBlood" }[e.cause] ?? "event.breakStandoff", f);
+    case "collapse": return roll("event.collapse", f); // (only an argument: it would have come to blows)
     case "peacekeep": return roll("event.peacekeep", f);
     case "firstAid": return roll(e.stable ? "event.firstAid" : e.dead ? "event.death" : "event.firstAidFail", f);
     default: return "";
@@ -422,6 +423,7 @@ function ending(result, spec, end, roll) {
   const winners = standing.length > 3 ? localize("FASTFIGHTING.Story.Companions", { names: listItems(standing.slice(0, 2)) })
     : standing.length ? listJoin(standing) : listJoin(end.winnerLabels ?? []);
   // A lone survivor takes a singular verb ("Lini prevails").
+  if ( end.resolved === "collapsed" ) return roll("event.talksCollapse", { winners });
   if ( end.resolved === "conceded" ) return roll("event.dealStruck", { winners });
   if ( end.resolved === "fled" ) return roll("event.backedOff", { winners });
   if ( end.peaceful ) return roll("event.peace", { winners });

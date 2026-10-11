@@ -470,10 +470,15 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
         swayed: pct(r.pAnySwayed ?? 0, 1),
         peaceful: pct(r.pPeaceful ?? 0, 1),
         peacefulAny: (r.pPeaceful ?? 0) > 0,
+        // (Only an argument: how often the talks collapsed.)
+        collapsed: pct(r.pCollapsed ?? 0, 1),
+        collapsedAny: (r.pCollapsed ?? 0) > 0 || this.setup.options.opening === OPENING.ARGUMENT,
         rounds: r.rounds,
         histogram,
         simulated: loc(`FASTFIGHTING.Difficulty.${sim}`),
         simulatedClass: sim,
+        // (A fight's difficulty means nothing for an argument.)
+        argument: this.setup.options.opening === OPENING.ARGUMENT,
         foes, atRisk, combatants, resources, swing, sample
       },
       sampleFilters: Object.fromEntries(SAMPLE_FILTERS.map(k => [k, `FASTFIGHTING.Sample.${k}`])),

@@ -1854,6 +1854,18 @@
       "It's a stalemate of words.",
       "The standoff simply goes on."
     ],
+    "collapse": [
+      "{actor} has heard enough, and the talking is over.",
+      "{actor} turns away: there is nothing more to say.",
+      "It's too much for {actor}, and the meeting breaks up before it comes to blows.",
+      "{actor} won't hear another word, and walks off."
+    ],
+    "talksCollapse": [
+      "Nobody is willing to talk any longer, and everyone goes their own way.",
+      "The talks collapse, and both sides walk away before it comes to blows.",
+      "There is nothing left to say; the meeting breaks up.",
+      "The argument ends with no one listening, and no one fighting."
+    ],
     "noticeStandoff": [
       "{actor} notices the tense standoff.",
       "Raised voices draw {actor}'s attention.",

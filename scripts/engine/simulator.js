@@ -4,7 +4,7 @@
  * Every logged event carries structured data (type, rolls, margins, damage types, movement) so the story
  * writer can narrate it at any level of detail.
  */
-import { STATUS, TACTICAL, DOWNED_MODELS, AFTERMATH, EXECUTE_LUCK, NEUTRAL_PARTY, clamp } from "../constants.js";
+import { STATUS, TACTICAL, DOWNED_MODELS, AFTERMATH, EXECUTE_LUCK, NEUTRAL_PARTY, OPENING, clamp } from "../constants.js";
 import { createRng, deriveSeed, randomSeed } from "./rng.js";
 import { sampleDamage, samplePart, meanPart, part } from "./dice.js";
 import { rollCheck, regrade } from "./probability.js";
@@ -590,8 +590,20 @@ function nextTargetInReach(run, u, action) {
 
 /** The standoff is over: from here on it's a fight. */
 function endStandoff(run, u, cause) {
+  // Only an argument: what would come to blows ends the encounter instead.
+  if ( run.prep.options.opening === OPENING.ARGUMENT ) return collapse(run, u, cause);
   run.standoff = false;
   log(run, u, { type: "breakStandoff", cause });
+}
+
+/**
+ * Only an argument, and it would come to blows (someone takes offense, loses patience, a blow lands, a quarrel turns
+ * ugly): the talks collapse and everyone goes their own way, nobody fighting. What was agreed before it stands.
+ */
+function collapse(run, u, cause) {
+  if ( run.resolved ) return;
+  run.resolved = { side: null, outcome: "collapsed" };
+  log(run, u, { type: "collapse", cause });
 }
 
 /**
@@ -1958,10 +1970,13 @@ function takeTurn(run, u) {
   if ( run.standoff ) {
     const cause = isNeutral(u) ? null : breaksStandoff(run, u, logger(run));
     if ( !cause && !inFray(run, u) ) return standoffTurn(run, u);
+    // Only an argument: a quarrel coming to blows ends it too.
+    if ( !cause && run.prep.options.opening === OPENING.ARGUMENT ) return collapse(run, u, "fray");
     if ( cause ) {
       // A charismatic leader may get a last word in before it comes to blows.
       if ( lastWord(run) ) return;
       endStandoff(run, u, cause);
+      if ( run.resolved ) return; // (only an argument: it's over)
       brokeStandoff = true; // whoever breaks it came to fight, not to talk
     }
   }
@@ -2540,7 +2555,10 @@ function summarize(run, ended, capture, winners) {
   // Doors the fight opened (or broke): Make it So leaves them that way.
   const doors = {};
   for ( const [id, s] of run.doors ?? [] ) if ( s.open ) doors[id] = { open: true, broken: !!s.broken };
-  return { outcome, winners, rounds: run.round, aftermathRounds: run.aftermathRounds ?? 0, firstFallen: run.firstFallen, peaceful: ended && !run.blood, units, doors, log: run.log };
+  // (Talks that collapsed came to no blows, but settled nothing.)
+  const collapsed = run.resolved?.outcome === "collapsed";
+  return { outcome, winners, rounds: run.round, aftermathRounds: run.aftermathRounds ?? 0, firstFallen: run.firstFallen, peaceful: ended && !run.blood && !collapsed,
+    collapsed, units, doors, log: run.log };
 }
 
 /** Simulate a single battle. */
@@ -2594,7 +2612,8 @@ export function runOne(prep, seed, { log: withLog = false, capture = false } = {
     }
   }
   // Who won is decided when the last blow lands (or the deal is struck); the aftermath only settles the fallen.
-  const winners = !ended ? [] : run.resolved ? [run.resolved.side] : activeSides(run);
+  // (Talks that collapsed: nobody's.)
+  const winners = !ended ? [] : run.resolved ? [run.resolved.side].filter(Boolean) : activeSides(run);
   if ( withLog ) {
     const labels = winners.map(s => prep.sides[s]?.label ?? s);
     log(run, null, {

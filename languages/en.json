@@ -130,7 +130,7 @@
       },
       "opening": {
         "Name": "How encounters open",
-        "Hint": "Talk if they'd rather: the encounter opens as a standoff when every side's leader (or most of a leaderless side) would rather talk, or when almost everyone would. Nobody fights until someone gets upset: an insult, failed pitches piling up, a beast that can't follow the talk, or an impatient temper. Always talk first: every encounter opens that way. Straight to battle: no standoff."
+        "Hint": "Talk if they'd rather: the encounter opens as a standoff when every side's leader (or most of a leaderless side) would rather talk, or when almost everyone would. Nobody fights until someone gets upset: an insult, failed pitches piling up, a beast that can't follow the talk, or an impatient temper. Always talk first: every encounter opens that way. Straight to battle: no standoff. Only an argument: it opens as a standoff and stays one; whatever would come to blows ends the encounter instead, the talks collapsing, and what was agreed before stands."
       },
       "concedeLuck": {
         "Name": "PC luck: handing over an item",
@@ -464,6 +464,7 @@
       "Switched": "Switched sides",
       "Neutral": "Stood aside",
       "Peaceful": "Settled with words",
+      "Collapsed": "Talks collapsed",
       "Conceded": "gave something up"
     },
     "Swing": {
@@ -995,6 +996,8 @@
         "standDown": "Stand Down",
         "peace": "Peace",
         "talksStall": "Talks Stall",
+        "collapse": "Collapse",
+        "talksCollapse": "Talks Collapse",
         "noticeStandoff": "Notice Standoff",
         "paidOff": "Paid Off",
         "paidKept": "Paid Kept",
@@ -1140,7 +1143,8 @@
     "Opening": {
       "auto": "Talk if they'd rather",
       "talk": "Always talk first",
-      "fight": "Straight to battle"
+      "fight": "Straight to battle",
+      "argument": "Only an argument: no fighting"
     },
     "Concession": {
       "Card": "<strong>{giver}</strong> gave up {what} to {receiver}.",
@@ -1392,6 +1396,13 @@
       "BreakAnnoyed": "blames the other side for it and attacks",
       "BreakBlood": "strikes across the standoff: it's a fight now",
       "BreakImpatient": "has heard enough and attacks",
+      "Collapse": "{actor} {how}: the talks collapse before it comes to blows",
+      "CollapseInsulted": "takes offense and won't talk any longer",
+      "CollapseBeast": "won't wait any longer",
+      "CollapseAnnoyed": "blames the other side and walks out",
+      "CollapseBlood": "lands a blow",
+      "CollapseImpatient": "has heard enough",
+      "CollapseFray": "is pulled into a quarrel",
       "CallHelp": "{actor} shouts to {target} for help",
       "Condition": "{actor} is left {effect}",
       "Reeling": "reeling",

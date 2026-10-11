@@ -44,6 +44,8 @@ const DESIRE = { hurt: "DesireHurt", heal: "DesireHeal", protect: "DesireProtect
 const WHY = { hurt: "WhyHurt", harmed: "WhyHarmed", helped: "WhyHelped", robbed: "WhyRobbed", insulted: "WhyInsulted", impatient: "WhyImpatient" };
 const NOTICE = { sight: "NoticeSight", sound: "NoticeSound", standoff: "NoticeStandoff", fledInto: "NoticeFled", help: "NoticeHelp", attacked: "NoticeAttacked" };
 const BREAKS = { insulted: "BreakInsulted", beast: "BreakBeast", annoyed: "BreakAnnoyed", blood: "BreakBlood", impatient: "BreakImpatient" };
+/** Only an argument: why the talks collapsed (nobody fights). */
+const COLLAPSES = { insulted: "CollapseInsulted", beast: "CollapseBeast", annoyed: "CollapseAnnoyed", blood: "CollapseBlood", impatient: "CollapseImpatient", fray: "CollapseFray" };
 const TRIGGER = { hit: "TriggerHit", attacked: "TriggerAttacked", missed: "TriggerMissed", damaged: "TriggerDamaged", spell: "TriggerSpell" };
 const VANISH = { expired: "VanishExpired", released: "VanishReleased", unsustained: "VanishUnsustained", idle: "VanishIdle" };
 const role = r => (r === "boss" ? t("RoleBoss") : r === "leader" ? t("RoleLeader") : String(r ?? "").startsWith("lieutenant") ? t("RoleLieutenant", { n: String(r).split(" ")[1] ?? "" }) : r ?? "");
@@ -201,6 +203,7 @@ export function logLine(e) {
     }
     case "backlash": return t("Backlash", { actor: e.actor, label: e.label || t("PaysForIt"), damage: damage(e.damage, e.damageType) });
     case "breakStandoff": return t("BreakStandoff", { actor: e.actor, how: t(BREAKS[e.cause] ?? "BreakImpatient") });
+    case "collapse": return t("Collapse", { actor: e.actor, how: t(COLLAPSES[e.cause] ?? "CollapseImpatient") });
     case "callHelp": return t("CallHelp", { actor: e.actor, target: e.toward ?? "" });
     case "condition": return t("Condition", { actor: e.actor, effect: e.effect || t("Reeling") });
     case "down": return e.knockedOut ? t("KnockedOut", a) : t("Down", { actor: e.actor, dying: e.dying ? t("DownDying", { n: e.dying }) : "" });
