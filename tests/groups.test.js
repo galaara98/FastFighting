@@ -68,7 +68,7 @@ describe("neutral friend groups in the fight", () => {
     run.log = [];
     for ( const u of run.units ) initDesires(u);
     refreshLeans(run);
-    const say = (unit, text, data) => run.log.push({ actor: unit.spec.name, text, ...data });
+    const say = (unit, data) => run.log.push({ actor: unit.spec.name, ...data });
     return { run, say, units: Object.fromEntries(run.units.map(u => [u.id, u])) };
   }
 
@@ -87,6 +87,20 @@ describe("neutral friend groups in the fight", () => {
     crossed(run, units.brute, units.wife, "harm", 1, say);
     expect(units.wife.against.has("hostile")).toBe(true);
     expect(units.miller.grievance.get("hostile")).toBeGreaterThan(0);
+    expect(units.tinker.grievance.get("hostile") ?? 0).toBe(0);
+  });
+
+  test("neutrals can be in three friend groups: each looks out for its own", () => {
+    const { run, say, units } = ready([fighter(), brute(), neutral("miller", 1), neutral("wife", 1), neutral("tinker", 2), neutral("smith", 2),
+      neutral("monk", 3), neutral("nun", 3)]);
+    for ( const [a, b] of [["miller", "wife"], ["tinker", "smith"], ["monk", "nun"]] ) {
+      expect(alliesOf(run, units[a]).map(u => u.id).sort()).toEqual([a, b].sort());
+      expect(units[a].desire.lean.get(`protect|${b}`)).toBe(FELLOW);
+    }
+    expect(units.monk.desire.lean.get("protect|tinker")).toBeUndefined();
+    crossed(run, units.brute, units.nun, "harm", 1, say);
+    expect(units.monk.grievance.get("hostile")).toBeGreaterThan(0);
+    expect(units.miller.grievance.get("hostile") ?? 0).toBe(0);
     expect(units.tinker.grievance.get("hostile") ?? 0).toBe(0);
   });
 });
