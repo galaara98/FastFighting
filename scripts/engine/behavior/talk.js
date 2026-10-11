@@ -25,14 +25,14 @@
  * and a critical failure means that enemy will not listen to that talker again.
  *
  * Who talks:
- *  - Talkers (strong social skills, or Diplomat / Leader / People-Pleaser playstyles, or a "talk first"
+ *  - Talkers (strong social skills, or Diplomat / People-Pleaser playstyles, heading their group, or a "talk first"
  *    answer) always get a chance to start swaying on their first turn.
  *  - Characters who are not very battle-worthy may spend two actions talking instead of attacking.
  *  - Anyone else may make one quip per turn when it looks promising and they would.
  * Pure: no Foundry globals.
  */
 import { STATUS, SWAY, CONCEDE_LUCK, SWITCH_LUCK, TACTICAL, clamp } from "../../constants.js";
-import { alliesOf, enemiesOf, isStanding, behaviorOf, leaderStanding, typical, checkRoll, liveTier, studyBonus, boostBonus } from "../battle-state.js";
+import { alliesOf, enemiesOf, isStanding, behaviorOf, typical, checkRoll, liveTier, studyBonus, boostBonus, chainOf, commandOf, groupKeyOf } from "../battle-state.js";
 import { spendEdges, spendBoost } from "./effects.js";
 import { degreeDistribution, rollCheck } from "../probability.js";
 import { isNeutral, standsAside, appeal, offend, turnOn, standAside, joinSide, calm, settleTruce, seemsFoe } from "./neutral.js";
@@ -190,8 +190,8 @@ export function talkDC(run, talker, t, kind) {
   const theirs = alliesOf(run, t).filter(isStanding).length;
   const ours = enemiesOf(run, t).filter(isStanding).length;
   if ( ours > theirs ) dc -= kind === "intimidate" ? 3 : 2;
-  const side = run.prep.sides[t.side];
-  if ( side?.leaderId && side.leaderId !== t.id && !leaderStanding(run, t.side) ) dc -= 2;
+  // (Its leaders all down, or none of them able to lead: nobody holding it together.)
+  if ( chainOf(run, groupKeyOf(t))?.length && !commandOf(run, t) ) dc -= 2;
 
   // Personality: loyal and brave hold out, selfish take a deal; neutrals are easy to talk to.
   dc += Math.round((t.prep.traits.loyal - 50) / 25) - Math.round((t.prep.traits.selfish - 50) / 25);
@@ -249,10 +249,12 @@ export function choosePitch(run, talker, { only = null } = {}) {
     const pitch = bestPitch(run, talker, t);
     if ( !pitch || pitch.pSuccess <= (talker.spec.alwaysTalk ? 0.01 : 0.05) ) continue;
     const remaining = Math.max(1, stepsToConvince(t, run, talker) - (t.sway.get(talker.side) ?? 0));
-    const isLeader = run.prep.sides[t.side]?.leaderId === t.id;
+    const cmd = commandOf(run, t);
+    const commands = cmd?.unit === t ? (cmd.boss ? 2.5 : 1.5) : 0;
     const health = 1 + t.hp / Math.max(1, t.maxHp);
-    // An enemy out of the fight; a new friend (a weak one counts for less); a new enemy prevented; a quarrel settled.
-    const value = { down: (1 + (isLeader ? 1.5 : 0)) * health, recruit: 0.8 * health * (t.prep.lowBattleWorth ? 0.5 : 1), dismiss: 0.9 * health, calm: 1.2 * health, settle: 1.5 }[pitch.aim];
+    // An enemy out of the fight (its commander, its side with it); a new friend (a weak one counts for less); a new
+    // enemy prevented; a quarrel settled.
+    const value = { down: (1 + commands) * health, recruit: 0.8 * health * (t.prep.lowBattleWorth ? 0.5 : 1), dismiss: 0.9 * health, calm: 1.2 * health, settle: 1.5 }[pitch.aim];
     const score = pitch.pSuccess * value / remaining;
     if ( !best || score > best.score ) best = { target: t, ...pitch, remaining, score };
   }
@@ -502,13 +504,15 @@ export function attemptTalk(run, talker, pitch, log) {
       outcome = outcomeFor(run, t, pitch.kind, aim, { noSwitch: true });
     }
   }
+  // (Whoever commanded its group, before it's talked out of it.)
+  const group = groupKeyOf(t);
+  const commanded = commandOf(run, t)?.unit === t;
   applyOutcome(run, talker, t, outcome, log, aim, luck);
 
-  // A convinced leader can take their side with them.
-  const side = run.prep.sides[t.spec.side];
-  if ( aim === "down" && side?.leaderId === t.id ) {
+  // A convinced commander can take their group with them.
+  if ( aim === "down" && commanded ) {
     for ( const f of run.units ) {
-      if ( f === t || f.side !== t.spec.side || f.spec.kind === "pc" || !swayable(f) ) continue;
+      if ( f === t || groupKeyOf(f) !== group || f.spec.kind === "pc" || !swayable(f) ) continue;
       const p = 0.4 + (100 - f.prep.traits.brave) / 250 + (f.sway.get(talker.side) ?? 0) * 0.1;
       const follows = [SWAY.STAND_DOWN, SWAY.CONCEDE, SWAY.NEUTRAL].includes(outcome) ? SWAY.STAND_DOWN : SWAY.SURRENDER;
       if ( run.rng.chance(clamp(p, 0, 0.9)) ) applyOutcome(run, talker, f, follows, log);
@@ -532,7 +536,6 @@ export function talkAffinity(spec, traits, rules = null) {
   const ps = new Set(spec.playstyles ?? []);
   if ( ps.has("diplomat") ) a += 0.45;
   if ( ps.has("peoplePleaser") ) a += 0.2;
-  if ( ps.has("leader") ) a += 0.15;
   if ( ps.has("instigator") || ps.has("cruel") ) a += 0.1;
   if ( ps.has("brawler") || ps.has("impatient") || ps.has("speedRunner") ) a -= 0.25;
   if ( (traits?.tactical ?? 50) < 20 ) a -= 0.3;

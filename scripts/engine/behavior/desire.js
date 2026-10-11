@@ -9,11 +9,16 @@
  *   memory      what the fight has stirred: whoever hurt it, whoever felled a friend. Cools a little every round.
  *   frustration what has thwarted it: a locked door that won't give, a target it can't reach, getting hurt on the
  *               way. It wears the desire down until the character moves on.
- *   social      what the others want: its leader's desires pull on it a medium amount, its team's (the average of
- *               its friends') a little. With nobody leading (none chosen, or the leader fallen), the team pulls
- *               together less: the team's pull and the wish to heal or guard each other dip (vengeance doesn't). Playstyles change that: a would-be leader who isn't the leader half ignores
- *               the leader, a chaotic one barely hears anyone, People-Pleasers and Enablers listen harder, and a
- *               contrarian (chaotic, or an instigator, who isn't leading) may lean away from what the leader wants.
+ *   social      what the others want. Each turn it may take its lead from whoever commands its group (its boss or
+ *               leader, or a lieutenant who stepped up: battle-state.js command), as readily as the world's leader
+ *               influence, its loyalty and its pills say (a boss, several times as readily): then it wants the
+ *               topmost thing its commander wants that it can actually do, and its playstyle leans toward the
+ *               commander's for the turn. Its team's wishes (the average of its friends') pull a little, always.
+ *               With nobody able to lead, the team pulls together less: the team's pull and the wish to heal or guard
+ *               each other dip (vengeance doesn't). Playstyles change how readily it follows: one who wants to lead
+ *               (but doesn't) half ignores its commander, a chaotic one barely hears anyone, People-Pleasers and
+ *               Enablers listen harder, and a contrarian (chaotic, or an instigator) may lean away from what its
+ *               commander wants.
  *   asked       friends asking it for a buff (their "bolstered" desires naming it): no roll, only that they can make
  *               themselves understood and that it's willing (see heed).
  *
@@ -26,13 +31,15 @@
  * an obsessed character (OBSESSED+) stops worrying about its own safety.
  */
 import { STATUS } from "../../constants.js";
-import { areEnemies, isStanding, liveTrait, enemiesOf, alliesOf, sizedUp } from "../battle-state.js";
+import { areEnemies, isStanding, liveTrait, enemiesOf, alliesOf, sizedUp, command, commandOf } from "../battle-state.js";
 import { perceives, apparentHealth } from "./senses.js";
 import { seemsFoe } from "./neutral.js";
 
 /** A character's playstyle guide for desires (from its pills), or the neutral one. */
 const NEUTRAL_STYLE = Object.freeze({ hurt: {}, avoid: {}, heal: 0, protect: 0, aid: 0, talk: 0, whim: 0, contrarian: 0, retaliate: 1, avenge: 1, cool: 1, frustration: 1, leader: 1, team: 1, doorPatience: 1 });
-export const styleOf = u => u.spec?.desireStyle ?? NEUTRAL_STYLE;
+export const styleOf = u => u.turnStyle ?? u.spec?.desireStyle ?? NEUTRAL_STYLE;
+/** Its own pills' guide, whoever it follows this turn. */
+const ownStyle = u => u.spec?.desireStyle ?? NEUTRAL_STYLE;
 
 export const DESIRE_KINDS = Object.freeze(["hurt", "heal", "protect", "aid", "talk", "avoid", "bolstered"]);
 /** Desires a creature may have about itself: mending itself, bolstering itself. */
@@ -232,31 +239,92 @@ function leadLevel(run, u) {
   return best;
 }
 
-/** No one leading this side: there never was a leader, or the leader is down, dead or gone. */
-export function leaderless(run, side) {
-  const leader = run.byId.get(run.prep.sides[side]?.leaderId);
-  return !leader || !isStanding(leader);
+/** No one leading this group (a unit's, or a side by its id): there never was a leader, or no one in its chain can lead now. */
+export function leaderless(run, unitOrSide) {
+  return !(typeof unitOrSide === "string" ? command(run, unitOrSide) : commandOf(run, unitOrSide));
 }
 
 /** A leaderless team pulls together a little less (vengeance aside). */
 export const LEADERLESS = Object.freeze({ team: 0.7, cooperative: 6 });
 
-/** How much the leader's and the team's desires pull on u (negative: it leans away). Playstyles shape it. */
-export function influence(run, u) {
-  const isLeader = run.prep.sides[u.side]?.leaderId === u.id;
-  const style = styleOf(u);
+/**
+ * How readily u, at the world's usual leader influence (50), takes its lead from its commander on a turn: a loyal
+ * follower half its turns.
+ */
+export const FOLLOW = Object.freeze({ chance: 0.5, pull: 0.7, lean: 0.6, max: 0.95 });
+
+/**
+ * How readily u takes its lead from whoever commands its group this turn: {cmd, raw, chance}, or null (nobody leads
+ * it, or it leads). raw: the world's leader influence (50 the usual) times its loyalty and its pills' ear for a leader
+ * (a would-be leader's half, a people-pleaser's double), a boss's many times over; chance: that, at most 95%. A
+ * contrarian leaning against its commander doesn't follow (see listen).
+ */
+export function followChance(run, u) {
+  const cmd = commandOf(run, u);
+  if ( !cmd || cmd.unit === u ) return null;
+  const opts = run.prep.options ?? {};
+  const style = ownStyle(u);
   const loyal = Math.max(0, Math.min(1.6, liveTrait(run, u, "loyal") / 60));
-  // Its pills say how much it listens: a would-be leader half ignores the leader, a people-pleaser hangs on every
-  // word, a wildcard barely hears anyone.
-  let leader = isLeader ? 0 : 0.35 * loyal * style.leader;
-  // Without anyone leading, the team's wishes carry less.
-  const team = 0.15 * loyal * style.team * (leaderless(run, u.side) ? LEADERLESS.team : 1);
-  // A contrarian (an instigator, a wildcard) who isn't leading decides, once a fight, to go against its leader.
-  if ( style.contrarian > 0 && !isLeader && !u.spec.behavior?.leads ) {
-    u.contrarian ??= run.rng.chance(style.contrarian);
-    if ( u.contrarian ) leader = -Math.max(leader, 0.15);
+  const scale = (Number.isFinite(opts.leaderInfluence) ? opts.leaderInfluence : 50) / 50;
+  const raw = FOLLOW.chance * scale * loyal * style.leader * (cmd.boss ? (Number(opts.bossInfluence) || 2) : 1);
+  return { cmd, raw: Math.max(0, raw), chance: Math.min(FOLLOW.max, Math.max(0, raw)) };
+}
+
+/**
+ * Does u take its lead from its commander this turn? If so (u.following), its playstyle leans toward the commander's
+ * for the turn: its pills' guide to desires (u.turnStyle) and its quirks (u.turnBehavior), as much as it follows (a
+ * typical follower about a third of the way, under a boss more). Call before its desires are worked out.
+ */
+export function follow(run, u) {
+  u.following = null;
+  u.turnStyle = null;
+  u.turnBehavior = null;
+  const f = followChance(run, u);
+  if ( !f || isContrarian(run, u, f.cmd) || !run.rng.chance(f.chance) ) return null;
+  const share = Math.min(FOLLOW.lean, FOLLOW.lean * f.raw);
+  const leader = f.cmd.unit;
+  u.following = { id: leader.id, name: leader.spec.name, boss: f.cmd.boss, raw: f.raw, chance: f.chance, share };
+  u.turnStyle = blendStyle(ownStyle(u), ownStyle(leader), share);
+  u.turnBehavior = blendBehavior(u.spec.behavior ?? {}, leader.spec.behavior ?? {}, share);
+  return u.following;
+}
+
+/** A contrarian (an instigator, a wildcard) who isn't leading decides, once a fight, to go against its commander. */
+function isContrarian(run, u, cmd) {
+  const style = ownStyle(u);
+  if ( !(style.contrarian > 0) || cmd.unit === u ) return false;
+  u.contrarian ??= run.rng.chance(style.contrarian);
+  return u.contrarian;
+}
+
+/** Desire guides blended: `own` leaning toward `lead` by `share` (how much it listens stays its own). */
+function blendStyle(own, lead, share) {
+  const mix = (a, b) => (a ?? 0) * (1 - share) + (b ?? 0) * share;
+  const out = { ...own, hurt: {}, avoid: {} };
+  for ( const group of ["hurt", "avoid"] ) {
+    for ( const k of new Set([...Object.keys(own[group] ?? {}), ...Object.keys(lead[group] ?? {})]) ) out[group][k] = mix(own[group]?.[k], lead[group]?.[k]);
   }
-  return { leader, team };
+  for ( const k of ["heal", "protect", "aid", "talk", "whim"] ) out[k] = mix(own[k], lead[k]);
+  for ( const k of ["retaliate", "avenge", "cool", "frustration", "doorPatience"] ) out[k] = (own[k] ?? 1) * (1 - share) + (lead[k] ?? 1) * share;
+  return out;
+}
+
+/** Quirks blended the same way. */
+function blendBehavior(own, lead, share) {
+  const out = { ...own };
+  for ( const k of new Set([...Object.keys(own), ...Object.keys(lead)]) ) {
+    const v = (Number(own[k]) || 0) * (1 - share) + (Number(lead[k]) || 0) * share;
+    if ( v ) out[k] = v;
+  }
+  return out;
+}
+
+/** How much the team's desires pull on u: a little, less without anyone to lead them. Playstyles shape it. */
+export function influence(run, u) {
+  const style = ownStyle(u);
+  const loyal = Math.max(0, Math.min(1.6, liveTrait(run, u, "loyal") / 60));
+  const team = 0.15 * loyal * style.team * (leaderless(run, u) ? LEADERLESS.team : 1);
+  return { team };
 }
 
 /**
@@ -292,7 +360,7 @@ export function styleWants(run, u, scored, { canHeal = false, canTalk = false, t
     if ( h.dangerous && t === dangerous ) points += h.dangerous;
     if ( h.casters && t.prep?.isCaster ) points += h.casters;
     if ( h.healers && t.prep?.isHealer ) points += h.healers;
-    if ( h.leader && run.prep.sides[t.side]?.leaderId === t.id ) points += h.leader;
+    if ( h.leader && commandOf(run, t)?.unit === t ) points += h.leader;
     if ( h.weakness && Object.keys(t.spec.iwr?.weak ?? {}).some(k => mine.has(k)) ) points += h.weakness;
     if ( h.unstudied && !sizedUp(u, t) ) points += h.unstudied;
     if ( h.current && t.id === u.targetId ) points += h.current;
@@ -306,8 +374,9 @@ export function styleWants(run, u, scored, { canHeal = false, canTalk = false, t
   if ( s.protect ) add("protect", friends.filter(isStanding).sort((a, b) => looks(a) - looks(b))[0]?.id, s.protect);
   // Bolstering: the friend doing the most fighting (its leader, for those who look to one).
   if ( canAid && s.aid ) {
-    const leaderId = run.prep.sides[u.side]?.leaderId;
-    const chief = friends.find(a => a.id === leaderId && isStanding(a));
+    // (Whoever commands its group now.)
+    const lead = commandOf(run, u)?.unit;
+    const chief = lead && lead !== u ? friends.find(a => a === lead) : null;
     const fighter = friends.filter(isStanding).sort((a, b) => (b.damageDealt ?? 0) - (a.damageDealt ?? 0))[0];
     add("aid", (s.leader > 1 ? chief : null)?.id ?? fighter?.id, s.aid);
   }
@@ -322,12 +391,13 @@ export function styleWants(run, u, scored, { canHeal = false, canTalk = false, t
 }
 
 /**
- * Let the others' desires pull on u: its leader's (a medium amount), its team's (a little), as far as u can act on
- * them (a leader's wish to heal someone means nothing to a creature that can't heal).
+ * Let the others' desires pull on u: its commander's, on a turn it follows (the topmost thing its commander wants
+ * that it can actually do: a wish to heal someone means nothing to a creature that can't heal, so the next one counts),
+ * and its team's (a little), as far as u can act on them. A contrarian leans away from its commander's top wish.
  */
 export function listen(run, u, { canHeal = false, canTalk = false, canAid = false } = {}) {
   if ( !u.desire ) return;
-  const { leader, team } = influence(run, u);
+  const { team } = influence(run, u);
   const fits = kind => kind === "hurt" || kind === "avoid" || kind === "protect" || (kind === "heal" && canHeal) || (kind === "talk" && canTalk) || (kind === "aid" && canAid);
   const pull = (kind, targetId, amount) => {
     if ( !fits(kind) || targetId === u.id || !amount ) return;
@@ -336,15 +406,21 @@ export function listen(run, u, { canHeal = false, canTalk = false, canAid = fals
   };
   // Leaderless, the team is less coordinated: wanting to mend or guard each other dips a little. (Vengeance doesn't:
   // a fallen leader is a reason to settle scores, not to stop caring.)
-  if ( leaderless(run, u.side) ) {
+  if ( leaderless(run, u) ) {
     for ( const k of new Set([...u.desire.logic.keys(), ...u.desire.style.keys(), ...u.desire.stated.keys()]) ) {
       const [kind, targetId] = k.split("|");
       if ( (kind === "heal" || kind === "protect" || kind === "aid") && targetId !== u.id ) u.desire.social.set(k, (u.desire.social.get(k) ?? 0) - LEADERLESS.cooperative);
     }
   }
-  const leaderUnit = run.byId.get(run.prep.sides[u.side]?.leaderId);
-  if ( leader && leaderUnit && leaderUnit !== u && isStanding(leaderUnit) ) {
-    for ( const d of leaderUnit.lastDesires ?? [] ) pull(d.kind, d.targetId, leader * d.level);
+  const cmd = commandOf(run, u);
+  const leaderUnit = cmd?.unit !== u ? cmd?.unit : null;
+  if ( leaderUnit ) {
+    // What it can actually do: the kinds it has the means for, at someone it can act on.
+    const can = d => fits(d.kind) && d.targetId !== u.id && relevant(run, u, d.kind, run.byId.get(d.targetId))
+      && (d.kind !== "hurt" || (u.prep.offense?.length ?? 0) > 0);
+    const top = (leaderUnit.lastDesires ?? []).find(can);
+    if ( top && u.following ) pull(top.kind, top.targetId, FOLLOW.pull * top.level * (u.following.raw > u.following.chance ? u.following.raw / u.following.chance : 1));
+    else if ( top && u.contrarian ) pull(top.kind, top.targetId, -0.15 * top.level);
   }
   if ( team ) {
     const friends = run.units.filter(o => o !== u && o.side === u.side && isStanding(o) && o.lastDesires?.length);
@@ -361,10 +437,10 @@ export function listen(run, u, { canHeal = false, canTalk = false, canAid = fals
 
 /**
  * How willing u is to take up a friend's request for a buff (0 to 1): the loyal gladly, the selfish grudgingly,
- * helpers (Enablers, Moralists, Martyrs ...) more than most; a contrarian defying its leader, not for the leader.
+ * helpers (Enablers, Moralists, Martyrs ...) more than most; a contrarian defying its commander, not for the commander.
  */
 export function willingness(run, u, asker) {
-  if ( u.contrarian && run.prep.sides[u.side]?.leaderId === asker.id ) return 0;
+  if ( u.contrarian && commandOf(run, u)?.unit === asker ) return 0;
   const loyal = liveTrait(run, u, "loyal");
   const selfish = liveTrait(run, u, "selfish");
   const w = 0.5 + (loyal - 50) / 100 - (selfish - 50) / 100 + (u.spec.behavior?.helps ? 0.25 : 0);

@@ -32,7 +32,7 @@
  * Pure: no Foundry globals.
  */
 import { STATUS, NEUTRAL_PARTY, TACTICAL, SWAY, clamp } from "../../constants.js";
-import { isStanding, isUp, edgeDistance, liveTrait, liveTier } from "../battle-state.js";
+import { isStanding, isUp, edgeDistance, liveTrait, liveTier, commandOf } from "../battle-state.js";
 import { levelOf, want, think, setLean, allDesires } from "./desire.js";
 import { perceives } from "./senses.js";
 import { prefersTalk, canTalk, impatience } from "./standoff.js";
@@ -315,7 +315,7 @@ export function appeal(run, n, side) {
 }
 
 /** Playstyles that would rather see someone taking no side leave than join the fight (on either side). */
-const SEND_AWAY = new Set(["leader", "diplomat", "moralist", "peoplePleaser", "chicken", "wallflower", "fragile", "lazy"]);
+const SEND_AWAY = new Set(["diplomat", "moralist", "peoplePleaser", "chicken", "wallflower", "fragile", "lazy"]);
 
 /**
  * Someone who doesn't like killing (Tactics: "I never kill"), seeing an enemy that was talked out of the fight, wants
@@ -327,7 +327,8 @@ const SEND_AWAY = new Set(["leader", "diplomat", "moralist", "peoplePleaser", "c
  */
 export function peaceDesires(run, u, top) {
   const styles = u.spec.playstyles ?? [];
-  const peacemaker = styles.includes("leader") || run.prep.sides[u.side]?.leaderId === u.id || prefersTalk(u);
+  // (One who commands its group, not merely one who'd like to; or one who'd rather talk than fight.)
+  const peacemaker = commandOf(run, u)?.unit === u || prefersTalk(u);
   const aim = peacemaker || styles.some(p => SEND_AWAY.has(p)) ? "dismiss" : "recruit";
   let best = null;
   for ( const n of run.units ) {

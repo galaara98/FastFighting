@@ -14,7 +14,7 @@
  * Pure: no Foundry globals.
  */
 import { TACTICAL, OPENING, NEUTRAL_PARTY, clamp } from "../../constants.js";
-import { isStanding, areEnemies, liveTrait, liveTier, behaviorOf, typical } from "../battle-state.js";
+import { isStanding, areEnemies, liveTrait, liveTier, behaviorOf, typical, command, commandOf } from "../battle-state.js";
 
 /** Tuning: chance per turn to lose patience, before personality. */
 const BASE = 0.05;
@@ -63,7 +63,8 @@ export function opensWithTalk(run) {
   // Each side's voice: its leader if it has one here, otherwise the majority of its members.
   const voices = sides.map(side => {
     const members = here.filter(u => u.side === side);
-    const leader = members.find(u => u.id === run.prep.sides[side]?.leaderId);
+    const head = command(run, side)?.unit;
+    const leader = head && members.includes(head) ? head : null;
     return leader ? prefersTalk(leader) : members.filter(prefersTalk).length > members.length / 2;
   });
   const share = here.filter(prefersTalk).length / here.length;
@@ -94,8 +95,9 @@ export function impatience(run, u, since = 1) {
   // Half-persuaded people calm down; a leader who wants to talk holds their side back.
   const progress = Math.max(0, ...u.sway.values());
   if ( !losing ) p *= Math.max(0.2, 1 - 0.25 * progress);
-  const leader = run.byId.get(run.prep.sides[u.side]?.leaderId);
-  if ( leader && leader !== u && isStanding(leader) && prefersTalk(leader) && canTalk(u) ) p *= 0.4;
+  // (A boss who'd rather talk holds its side back harder.)
+  const cmd = commandOf(run, u);
+  if ( cmd && cmd.unit !== u && prefersTalk(cmd.unit) && canTalk(u) ) p *= cmd.boss ? 0.2 : 0.4;
   const master = run.byId.get(u.spec.flags?.masterId);
   if ( master && isStanding(master) && prefersTalk(master) ) p *= 0.3; // a companion waits on its master
   return clamp(p, 0, MAX_CHANCE);
@@ -133,7 +135,7 @@ export function losingTalk(run, side) {
 
 /** A side's leader who isn't a PC and has a way with words: may take the last word before a standoff breaks. */
 export function charismaticLeader(run, side) {
-  const leader = run.byId.get(run.prep.sides[side]?.leaderId);
+  const leader = command(run, side)?.unit;
   if ( !leader || leader.spec.kind === "pc" || !isStanding(leader) || !canTalk(leader) ) return null;
   const best = Math.max(...Object.values(leader.spec.social?.pitches ?? {}).map(p => p?.mod ?? -99));
   const edge = best - typical(run.prep.rules, "skill", leader.spec.level ?? 0);

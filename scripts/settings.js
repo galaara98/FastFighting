@@ -27,6 +27,9 @@ const SETTINGS = {
   pcHealAggro: { type: String, default: "balanced", choices: choices(HEAL_AGGRO, "HealAggro") },
   pcAllyDying: { type: String, default: "rescue", choices: choices(ALLY_DYING, "AllyDying") },
   leadership: { type: Boolean, default: true },
+  // How readily followers take their commander's lead (0-100; 50 the usual), and how much more readily a boss's.
+  leaderInfluence: { type: Number, default: 50, range: { min: 0, max: 100, step: 5 } },
+  bossInfluence: { type: Number, default: 2, range: { min: 1.25, max: 3, step: 0.05 } },
   morale: { type: Boolean, default: true },
   talking: { type: Boolean, default: true },
   ignoreLanguages: { type: Boolean, default: false },

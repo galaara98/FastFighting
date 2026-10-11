@@ -3,7 +3,7 @@
  * Outcomes: hold, waver (-1 to attacks), or rout (leave the battle).
  */
 import { STATUS, TACTICAL, STAND_GROUND, clamp } from "../../constants.js";
-import { alliesOf, enemiesOf, isStanding, liveTier, liveTrait } from "../battle-state.js";
+import { alliesOf, enemiesOf, isStanding, liveTier, liveTrait, chainOf, commandOf, groupKeyOf } from "../battle-state.js";
 import { threatOf } from "./evaluate.js";
 
 export const MORALE = Object.freeze({ HOLD: "hold", WAVER: "waver", ROUT: "rout" });
@@ -31,10 +31,12 @@ export function moraleStress(run, u, floor = -Infinity) {
   if ( hpFrac < 0.25 ) stress += 45;
   else if ( hpFrac < 0.5 ) stress += 25;
 
-  const side = run.prep.sides[u.side];
-  if ( side.leaderId && side.leaderId !== u.id ) {
-    const leader = run.byId.get(side.leaderId);
-    if ( leader && !isStanding(leader) ) stress += 25;
+  // Its boss or leader fallen: a blow, softened when a lieutenant has stepped up.
+  const chain = chainOf(run, groupKeyOf(u));
+  const head = chain?.length ? run.byId.get(chain[0].id) : null;
+  if ( head && head !== u && !isStanding(head) ) {
+    const shock = chain[0].role === "boss" ? 35 : 25;
+    stress += commandOf(run, u) ? Math.round(shock / 2) : shock;
   }
   const masterId = u.spec.flags?.masterId;
   if ( masterId ) {

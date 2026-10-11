@@ -154,6 +154,14 @@
       "executeLuck": {
         "Name": "PC luck: being finished off",
         "Hint": "Each time a creature wants to kill a player character who's down at 0 HP, it goes ahead only if a hidden d100 comes up at or under this; otherwise it turns away to its next foe, taking everything it wanted of that PC along. Higher means fallen PCs die more often."
+      },
+      "leaderInfluence": {
+        "Name": "Leader influence",
+        "Hint": "How readily followers take their lead from whoever commands their group, on a scale of 0 to 100 (50 is the usual; it isn't a percentage). Each turn a follower may follow, as its loyalty and playstyles allow: it then wants the topmost thing its commander wants that it can actually do (targets included), and its playstyle leans toward its commander's for the turn. 0: nobody follows; 100: twice as readily as usual."
+      },
+      "bossInfluence": {
+        "Name": "Boss influence",
+        "Hint": "How much more readily followers take a boss's lead than a leader's: 1.25 to 3 times (default 2). A group with a boss has no leader; a lieutenant who steps up for a fallen boss leads as a leader, never as a boss. The party never has a boss."
       }
     },
     "Allegiance": {
@@ -325,7 +333,7 @@
       "Leader": "Leader",
       "AutoLeader": "Auto: {name}",
       "AutoLeaderNone": "Auto (no leader found)",
-      "NoLeader": "No leader",
+      "NoLeader": "No leaders",
       "ChosenLeader": "Chosen by the GM",
       "SideDefault": "side default",
       "PanTo": "Select and pan to token",
@@ -375,7 +383,28 @@
       "Opening": "Opening",
       "AroundWalls": "around walls",
       "ThroughWall": "no way round: through a wall",
-      "NoScene": "No scene is showing on the canvas. View the encounter's scene, then run the battle."
+      "NoScene": "No scene is showing on the canvas. View the encounter's scene, then run the battle.",
+      "AutoLeaders": "Leaders: {names}",
+      "Command": "Command",
+      "Role": {
+        "boss": {
+          "Name": "Boss",
+          "Short": "B"
+        },
+        "leader": {
+          "Name": "Leader",
+          "Short": "L"
+        },
+        "lt1": {
+          "Name": "1st Lieutenant",
+          "Short": "1"
+        },
+        "lt2": {
+          "Name": "2nd Lieutenant",
+          "Short": "2"
+        }
+      },
+      "RoleHint": "Command: B boss (not in the party; its lead {boss}× as compelling as a leader's, and a group with a boss has no leader), L leader, 1 and 2 lieutenants (they step up, as leaders, when those before them are down, gone, blinded, deafened or otherwise can't lead, and step back when they can again). Faded: the automatic pick, from the system's own ranking of who leads best. Click to give this token the role; click again to keep it out of command; right-click for the automatic pick."
     },
     "Results": {
       "Tab": {
@@ -665,7 +694,7 @@
       },
       "leader": {
         "Name": "Wants to Lead",
-        "Hint": "Steps up to lead the side, braver and more loyal, goes for the biggest threat (and now and then pins it down), looks after its people and bolsters them. When it isn't the side's leader, it mostly goes its own way."
+        "Hint": "Wants to lead (whether or not it does: who leads is its group's chain of command, set in the planner): braver and more loyal, goes for the biggest threat (and now and then pins it down), looks after its people and bolsters them. Whoever commands it instead, it half ignores."
       },
       "instigator": {
         "Name": "Instigator",

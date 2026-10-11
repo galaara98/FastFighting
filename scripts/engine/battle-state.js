@@ -76,6 +76,9 @@
  * @typedef {object} BattleSpec
  * @property {CombatantSpec[]} combatants
  * @property {Record<string, object>} sides           {id, label, enemies[], traits, leaderId, leadership, healAggro, morale}
+ * @property {Record<string, object[]>} [command]       Chains of command, by group (a side; for those who take no side, a
+ *   friend group: "neutralParty#2"): [{id, role: "boss" | "leader" | "lieutenant", leadership}], the boss or the leader
+ *   first, then the 1st and 2nd lieutenants. Without it, a side's leaderId leads it.
  * @property {Record<string, Record<string, object>>} [approach]  approach[a][t] = {dist, mult, speed, mode, los, meleeOk}
  * @property {object} options                         {maxRounds, downedModel, positioning, morale, leadership, initiativeOrder, surpriseSide}
  */
@@ -100,6 +103,9 @@ export function prepareBattle(spec, rules) {
     positioning: true,
     morale: true,
     leadership: true,
+    // How readily followers take their lead (0 to 100: 50 is the usual), and how much more readily under a boss.
+    leaderInfluence: 50,
+    bossInfluence: 2,
     talking: true,
     opening: "auto",
     aftermath: "tell",
@@ -107,22 +113,35 @@ export function prepareBattle(spec, rules) {
   };
   const sides = {};
   for ( const [id, side] of Object.entries(spec.sides) ) {
-    const leadership = side.leadership ?? {};
     sides[id] = {
       id,
       label: side.label ?? id,
       enemies: new Set(side.enemies ?? []),
       traits: Object.fromEntries(TRAITS.map(k => [k, fudged(side.traits?.[k] ?? 50)])),
       leaderId: options.leadership ? (side.leaderId ?? null) : null,
-      leadership: {
-        brave: fudged(leadership.brave ?? 0, -50, 50),
-        tacticalFloor: fudged(leadership.tacticalFloor ?? 0, 0, 100),
-        attack: fudged(leadership.attack ?? 0, -5, 5),
-        ac: fudged(leadership.ac ?? 0, -5, 5)
-      },
+      leadership: leadershipOf(side.leadership),
       healAggro: side.healAggro ?? "balanced",
       morale: options.morale && side.morale !== false
     };
+  }
+  // Chains of command, by group: the boss or the leader first, then the lieutenants (at most two). A side with no chain
+  // of its own but a leaderId: that leader alone.
+  const command = {};
+  if ( options.leadership ) {
+    for ( const [key, chain] of Object.entries(spec.command ?? {}) ) {
+      if ( !Array.isArray(chain) || !chain.length ) continue;
+      command[key] = chain.filter(c => c?.id).slice(0, 3).map((c, i) => ({
+        id: c.id, role: c.role === "boss" && i === 0 ? "boss" : c.role === "lieutenant" || i > 0 ? "lieutenant" : "leader", leadership: leadershipOf(c.leadership)
+      }));
+    }
+    for ( const [id, side] of Object.entries(sides) ) {
+      if ( !command[id] && side.leaderId ) command[id] = [{ id: side.leaderId, role: "leader", leadership: side.leadership }];
+      // (The side's own leaderId and leadership: whoever heads its chain.)
+      if ( command[id] ) {
+        side.leaderId = command[id][0].id;
+        side.leadership = command[id][0].leadership;
+      }
+    }
   }
   // Enemy relations are symmetric.
   for ( const a of Object.values(sides) ) {
@@ -152,6 +171,11 @@ export function prepareBattle(spec, rules) {
   });
 
   const byId = new Map(combatants.map(c => [c.spec.id, c]));
+  // Whoever heads a group (its boss or its leader) finds its words more readily (one who only wants to lead doesn't).
+  for ( const chain of Object.values(command) ) {
+    const head = byId.get(chain[0]?.id);
+    if ( head && head.talkAffinity > 0 ) head.talkAffinity = Math.min(1, head.talkAffinity + 0.15);
+  }
   const approachOf = (aId, tId) => spec.approach?.[aId]?.[tId] ?? DEFAULT_APPROACH;
 
   // What each summoning calls, ready to join a fight (on the summoner's side, under its command).
@@ -171,7 +195,17 @@ export function prepareBattle(spec, rules) {
     }
   }
 
-  return { spec, rules, options, sides, combatants, byId, approachOf, summons, meanCache: new Map() };
+  return { spec, rules, options, sides, command, combatants, byId, approachOf, summons, meanCache: new Map() };
+}
+
+/** What a leader lends those it leads, as fudged numbers: bravery, a floor under tactics, attack and AC. */
+function leadershipOf(l = {}) {
+  return {
+    brave: fudged(l?.brave ?? 0, -50, 50),
+    tacticalFloor: fudged(l?.tacticalFloor ?? 0, 0, 100),
+    attack: fudged(l?.attack ?? 0, -5, 5),
+    ac: fudged(l?.ac ?? 0, -5, 5)
+  };
 }
 
 /** A combatant as a batch uses it: its traits blended with its side's, and its actions sorted by what they're for. */
@@ -335,9 +369,9 @@ export function dispositionOf(u) {
   return u.tac ?? u.spec.disposition ?? {};
 }
 
-/** Playstyle-driven behavior chances (see engine/playstyles.js). */
+/** Playstyle-driven behavior chances (see engine/playstyles.js): its own, leaning toward its leader's on a turn it follows. */
 export function behaviorOf(u) {
-  return u.spec.behavior ?? {};
+  return u.turnBehavior ?? u.spec.behavior ?? {};
 }
 
 /**
@@ -418,20 +452,69 @@ export function alliesOf(run, u) {
   return run.units.filter(o => o.side === u.side);
 }
 
-export function leaderStanding(run, side) {
-  const id = run.prep.sides[side]?.leaderId;
-  if ( !id ) return false;
-  const leader = run.byId.get(id);
-  return !!leader && isStanding(leader);
+/* Chains of command ------------------------------------------------------
+ * Every group (a side; for those who take no side, each friend group) may have a boss (never the party) or a leader,
+ * and up to two lieutenants. Whoever of them comes first and can lead right now commands the group: a lieutenant steps
+ * up (as a leader: never a boss) when those before it are down, dead, gone, or can't make themselves seen and heard
+ * (blinded, deafened, silenced, out of their wits); the boss or the leader takes back over when it can again. Nobody
+ * able to lead: the group is leaderless.
+ */
+
+/** The group a unit belongs to, for command: its side, or its friend group if it takes no side (or null, alone). */
+export const groupKeyOf = u => (u.side === NEUTRAL_PARTY ? (u.friendGroup ? `${NEUTRAL_PARTY}#${u.friendGroup}` : null) : u.side);
+
+/** Conditions that keep a commander from directing anyone. */
+const CANT_COMMAND = new Set(["incapacitated", "controlled", "unconscious", "paralyzed", "stunned", "confused", "fleeing", "blinded", "deafened", "silenced", "petrified"]);
+
+/** Can u direct its group right now: up and in the fight, its own master, and able to see, hear and speak? */
+export function canCommand(u) {
+  if ( !u || !isStanding(u) || u.controlledBy ) return false;
+  for ( const k in u.conds ?? {} ) if ( u.conds[k] > 0 && CANT_COMMAND.has(k) ) return false;
+  return true;
+}
+
+/** A group's chain of command, as given (or a side's lone leader): [{id, role, leadership}]. */
+export function chainOf(run, key) {
+  if ( !key ) return null;
+  const chain = run.prep.command?.[key];
+  if ( chain ) return chain;
+  const side = run.prep.sides?.[key];
+  return side?.leaderId ? [{ id: side.leaderId, role: "leader", leadership: side.leadership }] : null;
+}
+
+/**
+ * Who commands a group right now: {unit, role ("boss" only for the boss itself; anyone after it leads as a leader),
+ * boss, leadership, rank (0 the head, 1 and 2 the lieutenants)}, or null (leaderless).
+ */
+export function command(run, key) {
+  const chain = chainOf(run, key);
+  if ( !chain?.length ) return null;
+  for ( let i = 0; i < chain.length; i++ ) {
+    const u = run.byId.get(chain[i].id);
+    if ( !u || groupKeyOf(u) !== key || !canCommand(u) ) continue;
+    const boss = i === 0 && chain[i].role === "boss";
+    return { unit: u, role: boss ? "boss" : "leader", boss, leadership: chain[i].leadership, rank: i };
+  }
+  return null;
+}
+
+/** Who commands u's group right now (null: leaderless, or alone). */
+export const commandOf = (run, u) => command(run, groupKeyOf(u));
+
+/** Is anyone leading this group right now? (A side's id, or a unit for its own group.) */
+export function leaderStanding(run, sideOrUnit) {
+  return !!(typeof sideOrUnit === "string" ? command(run, sideOrUnit) : commandOf(run, sideOrUnit));
 }
 
 /** Trait value including live leadership effects. */
 export function liveTrait(run, u, trait) {
   let value = u.prep.traits[trait];
-  const side = run.prep.sides[u.side];
-  if ( leaderStanding(run, u.side) && side.leaderId !== u.id ) {
-    if ( trait === "brave" ) value += side.leadership.brave;
-    if ( trait === "tactical" ) value = Math.max(value, side.leadership.tacticalFloor);
+  if ( trait === "brave" || trait === "tactical" ) {
+    const cmd = commandOf(run, u);
+    if ( cmd && cmd.unit !== u ) {
+      if ( trait === "brave" ) value += cmd.leadership.brave;
+      if ( trait === "tactical" ) value = Math.max(value, cmd.leadership.tacticalFloor);
+    }
   }
   return clamp(value, 0, 100);
 }
@@ -498,8 +581,8 @@ export function isExposed(run, target, attacker = null, action = null) {
 export function currentAc(run, target, attacker, action) {
   let ac = target.spec.defenses.ac;
   if ( target.shieldRaised && target.spec.shield ) ac += target.spec.shield.ac;
-  const side = run.prep.sides[target.side];
-  if ( leaderStanding(run, target.side) ) ac += side.leadership.ac;
+  const cmd = commandOf(run, target);
+  if ( cmd ) ac += cmd.leadership.ac;
   ac += target.mods?.ac ?? 0;
   ac += run.prep.rules.modifiers?.defense?.(situation(run, target, attacker, action)) ?? 0;
   return ac;
@@ -590,7 +673,8 @@ export function attackRoll(run, u, target, action, attacksMade = 0) {
   const rules = run.prep.rules;
   let bonus = (action.bonus ?? 0) + rules.attackPenalty(action, attacksMade);
   if ( u.wavering ) bonus -= 1;
-  if ( leaderStanding(run, u.side) && run.prep.sides[u.side].leaderId !== u.id ) bonus += run.prep.sides[u.side].leadership.attack;
+  const cmd = commandOf(run, u);
+  if ( cmd && cmd.unit !== u ) bonus += cmd.leadership.attack;
   bonus += studyBonus(u, target);
   const mods = modsAgainst(u, target);
   bonus += mods.attack ?? 0;

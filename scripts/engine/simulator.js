@@ -12,12 +12,13 @@ import { costOf, mainPool } from "./turn.js";
 import {
   prepareBattle, createRun, isStanding, isUp, enemiesOf, alliesOf, areEnemies, liveTier, liveTrait, currentAc,
   attackRoll, attackOptions, saveRoll, checkRoll, turnFor, moveToward, moveAway, bonusDamageParts, dispositionOf,
-  behaviorOf, edgeDistance, movesNeeded, approach, canMove, moveTowardPoint, isMagical, upgradesSave, boostBonus, typical, sortOf, sizedUp, passedOver
+  behaviorOf, edgeDistance, movesNeeded, approach, canMove, moveTowardPoint, isMagical, upgradesSave, boostBonus, typical, sortOf, sizedUp, passedOver,
+  command, commandOf
 } from "./battle-state.js";
 import { sampleRunTactics } from "./playstyles.js";
 import { chooseTarget, bestOptionVs, scoreTargets } from "./behavior/targeting.js";
 import { decideHeal, rescueOption, healScores } from "./behavior/healing.js";
-import { initDesires, newTurn, think, want, thwart, relieve, levelOf, mind, thoughts as thoughtsOf, levelsFromScores, listen, heed, remember, styleWants, styleOf, CHOICE_LEVEL } from "./behavior/desire.js";
+import { initDesires, newTurn, think, want, thwart, relieve, levelOf, mind, thoughts as thoughtsOf, levelsFromScores, listen, heed, remember, styleWants, styleOf, follow, CHOICE_LEVEL } from "./behavior/desire.js";
 import { prepareDoors, doorStates, doorAhead, atDoor, doorPlan, patienceFor, doorDamage } from "./behavior/doors.js";
 import { checkMorale, standsGround, MORALE } from "./behavior/morale.js";
 import { expectedDamage, spendUse, hasUses, attacksIn, criticalParts, saveMultiplier, saveMultiplierFor, meanDamageVs, unitsPerTurn } from "./behavior/evaluate.js";
@@ -1516,7 +1517,7 @@ export function shareChance(run, u) {
   if ( !chance || u.spec.social?.mindless ) return 0;
   const minded = 0.5 + (liveTrait(run, u, "loyal") - 50) / 100 - (liveTrait(run, u, "selfish") - 50) / 100
     + (liveTier(run, u) >= TACTICAL.TACTICAL ? 0.15 : 0) + (styleOf(u).aid ?? 0) / 100;
-  const leads = run.prep.sides[u.side]?.leaderId === u.id;
+  const leads = commandOf(run, u)?.unit === u;
   return clamp(chance * clamp(minded, 0, 1) * (leads || prefersTalk(u) ? 1 : 0.5), 0, 1);
 }
 
@@ -1594,11 +1595,42 @@ function observes(run, u, turn) {
 }
 
 /**
+ * Who commands each group, as it changes: a lieutenant stepping up when the boss or the leader can't lead (down, dead,
+ * gone, blinded, silenced ...), the boss or leader taking back over, nobody left to lead. Logged as it happens.
+ */
+function noteCommand(run, quietly = false) {
+  if ( !run.prep.options.leadership ) return;
+  run.commanders ??= new Map();
+  run.everCommanded ??= new Set();
+  for ( const key of Object.keys(run.prep.command ?? {}) ) {
+    const cmd = command(run, key);
+    const id = cmd?.unit.id ?? null;
+    const before = run.commanders.has(key) ? run.commanders.get(key) : undefined;
+    run.commanders.set(key, id);
+    const again = !!id && run.everCommanded.has(id);
+    if ( id ) run.everCommanded.add(id);
+    if ( quietly || before === undefined || before === id ) continue;
+    const from = before ? run.byId.get(before) : null;
+    if ( !cmd ) {
+      log(run, from, `no one is left to lead ${from ? `after ${from.spec.name}` : "them"}`, { type: "command", group: key, lost: true, from: from?.spec.name ?? null });
+      continue;
+    }
+    // Back in charge (it commanded before), or taking command.
+    const back = again;
+    log(run, cmd.unit, back ? `takes back command` : `takes command${from ? ` from ${from.spec.name}` : ""}`, {
+      type: "command", group: key, role: cmd.boss ? "boss" : cmd.rank === 0 ? "leader" : `lieutenant ${cmd.rank}`, back, from: from?.spec.name ?? null
+    });
+  }
+}
+
+/**
  * What u wants this turn: its tactics' reasoning (whom it would fight, and the runners-up; whom it would mend; whom it
  * would talk to; whom it fears), on top of what it was told to want and what the fight has stirred.
  */
 function deliberate(run, u) {
   newTurn(u);
+  // Whether it takes its lead from whoever commands its group this turn (its playstyle leans toward theirs if so).
+  follow(run, u);
   const scored = scoreTargets(run, u);
   for ( const { id, level } of levelsFromScores(scored.map(x => ({ id: x.t.id, score: x.score }))) ) think(u, "hurt", id, level);
   // (When its healing logic says heal, that's at least as pressing as the foe it would pick.)
@@ -1635,7 +1667,10 @@ function deliberate(run, u) {
   remember(run, u);
   if ( run.log ) {
     const top = thoughtsOf(run, u);
-    if ( top.length ) log(run, u, `thinks: ${top.map(d => `${d.kind} ${d.target} (${d.level})`).join(", ")}`, { type: "thought", desires: top });
+    if ( top.length || u.following ) {
+      const following = u.following ? { name: u.following.name, boss: u.following.boss, chance: u.following.chance, share: u.following.share } : null;
+      log(run, u, `thinks: ${top.map(d => `${d.kind} ${d.target} (${d.level})`).join(", ")}${following ? ` (following ${following.name})` : ""}`, { type: "thought", desires: top, following });
+    }
   }
 }
 
@@ -2414,10 +2449,12 @@ export function runOne(prep, seed, { log: withLog = false, capture = false } = {
     for ( const u of order ) if ( u.side === surpriseSide ) takeTurn(run, u);
   }
   let ended = battleOver(run);
+  noteCommand(run, true);
   for ( let round = 1; !ended && round <= prep.options.maxRounds; round++ ) {
     run.round = round;
     refreshLeans(run); // (the underdog changes as the fight goes)
     for ( const u of order ) {
+      noteCommand(run);
       takeTurn(run, u);
       if ( battleOver(run) ) { ended = true; break; }
       if ( run.legendary ) {

@@ -132,7 +132,10 @@
               {{#if playstyleNames}}<div class="ff-row-playstyles"><i class="fa-solid fa-masks-theater"></i> {{playstyleNames}}</div>{{/if}}
             </div>
             <label class="ff-check" data-tooltip="{{localize "FASTFIGHTING.Planner.IncludeHint"}}"><input type="checkbox" name="tokens.{{id}}.include" {{checked include}}></label>
-            <span class="ff-groups" {{#if groups}}role="group" aria-label="{{localize "FASTFIGHTING.Planner.Group"}}" data-tooltip="{{groupHint}}"{{/if}}>{{#each groups}}<button type="button" class="ff-group-pill {{#if active}}active{{/if}} {{#if auto}}is-auto{{/if}}" data-action="setGroup" data-group="{{n}}" aria-pressed="{{#if active}}true{{else}}false{{/if}}">{{n}}</button>{{/each}}</span>
+            <span class="ff-row-pills">
+              <span class="ff-groups" {{#if groups}}role="group" aria-label="{{localize "FASTFIGHTING.Planner.Group"}}" data-tooltip="{{groupHint}}"{{/if}}>{{#each groups}}<button type="button" class="ff-group-pill {{#if active}}active{{/if}} {{#if auto}}is-auto{{/if}}" data-action="setGroup" data-group="{{n}}" aria-pressed="{{#if active}}true{{else}}false{{/if}}">{{n}}</button>{{/each}}</span>
+              <span class="ff-roles" {{#if roles}}role="group" aria-label="{{localize "FASTFIGHTING.Planner.Command"}}" data-tooltip="{{roleHint}}"{{/if}}>{{#each roles}}<button type="button" class="ff-role-pill {{#if active}}active{{/if}} {{#if auto}}is-auto{{/if}}" data-action="setRole" data-role="{{key}}" aria-pressed="{{#if active}}true{{else}}false{{/if}}" aria-label="{{label}}">{{short}}</button>{{/each}}</span>
+            </span>
             <select name="tokens.{{id}}.side" class="ff-side-select">{{selectOptions sideChoices selected=side localize=true}}</select>
             <button type="button" class="ff-icon-btn" data-action="toggleRow" aria-label="{{localize "FASTFIGHTING.Planner.Details"}}"><i class="fa-solid {{#if expanded}}fa-chevron-up{{else}}fa-chevron-down{{/if}}"></i></button>
           </div>

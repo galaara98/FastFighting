@@ -14,7 +14,7 @@ import {
 } from "../foundry/tactics.js";
 import {
   gatherRoster, chosenSide, groupOf, proposeNeutralGroups, resolveAllegiances, simulate, swingFactors, replay, findSample, drawFight,
-  withPlaystyleLeaders, approachFor
+  approachFor, commandChains, commandGroup, ROLES
 } from "../foundry/battle.js";
 import { buildStory, STORY_STYLES } from "../story/story.js";
 import { loadStoryTables } from "../story/tables.js";
@@ -76,6 +76,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       preparePlayers: BattlePlanner.#onPreparePlayers,
       togglePlaystyle: BattlePlanner.#onTogglePlaystyle,
       setGroup: BattlePlanner.#onSetGroup,
+      setRole: BattlePlanner.#onSetRole,
       openSurvey: BattlePlanner.#onOpenSurvey,
       cancel: BattlePlanner.#onCancel
     }
@@ -229,22 +230,20 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     const resolved = resolveAllegiances(this.roster, setup, this.results?.underdog ?? null);
     const sideDefaults = setting("sideDefaults");
 
-    // Leader candidates per side (from current chosen sides)
-    const bySide = {};
-    for ( const e of this.roster ) {
-      const side = resolved[e.token.id] ?? chosenSide(e, setup);
-      (bySide[side] ??= []).push(e.spec);
-    }
+    // Chains of command, by group: who holds which role (the GM's pick, or the automatic one).
+    const chains = setup.options.leadership !== false ? commandChains(this.roster.filter(e => resolved[e.token.id] && setup.tokens[e.token.id]?.include !== false), setup, resolved, adapter) : {};
+    this.roles = new Map();
+    for ( const [key, chain] of Object.entries(chains) ) for ( const c of chain ) this.roles.set(c.id, { ...c, key });
 
     const sides = SIDE_ORDER.map(id => {
       const s = setup.sides[id];
       const members = this.roster.filter(e => chosenSide(e, setup) === id);
       const defaults = sideDefaults[id] ?? sideDefaults.hostile;
-      const leaders = withPlaystyleLeaders(adapter?.detectLeaders(members.map(m => m.spec)) ?? [],
-        members.map(m => ({ id: m.spec.id, behavior: tacticsFor(m.token.actor, m.spec).playstyles.behavior })));
-      const autoLeader = leaders[0] ? this.roster.find(e => e.token.id === leaders[0].id) : null;
-      const leaderId = s.leaderId === "auto" ? leaders[0]?.id : s.leaderId;
-      const leader = leaders.find(l => l.id === leaderId) ?? (leaderId && leaderId !== "none" ? { id: leaderId, bonus: { brave: 10, tacticalFloor: 40, attack: 0, ac: 0 }, reason: loc("FASTFIGHTING.Planner.ChosenLeader") } : null);
+      // Who heads this tab's groups (the first of them, for its leadership numbers).
+      const heads = members.map(m => this.roles.get(m.token.id)).filter(r => r && (r.slot === "boss" || r.slot === "leader"));
+      const head = heads[0] ?? null;
+      const headName = id => this.roster.find(e => e.token.id === id)?.spec.name ?? "";
+      const leader = head ? { id: head.id, bonus: Object.fromEntries(Object.entries(head.leadership).map(([k, v]) => [k, v.base])), reason: head.reason || loc("FASTFIGHTING.Planner.ChosenLeader") } : null;
       const lf = s.leadershipFudge ?? {};
       return {
         id,
@@ -262,11 +261,10 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
         healChoices: Object.fromEntries(HEAL_AGGRO.map(k => [k, `FASTFIGHTING.HealAggro.${k}`])),
         morale: s.morale !== false,
         leaderChoices: {
-          auto: autoLeader ? game.i18n.format("FASTFIGHTING.Planner.AutoLeader", { name: autoLeader.spec.name }) : loc("FASTFIGHTING.Planner.AutoLeaderNone"),
-          none: loc("FASTFIGHTING.Planner.NoLeader"),
-          ...Object.fromEntries(members.map(m => [m.token.id, m.spec.name]))
+          auto: heads.length ? game.i18n.format("FASTFIGHTING.Planner.AutoLeaders", { names: heads.map(h => `${headName(h.id)} (${loc(`FASTFIGHTING.Planner.Role.${h.slot}.Name`)})`).join(", ") }) : loc("FASTFIGHTING.Planner.AutoLeaderNone"),
+          none: loc("FASTFIGHTING.Planner.NoLeader")
         },
-        leaderId: s.leaderId ?? "auto",
+        leaderId: s.leaderId === "none" ? "none" : "auto",
         leaderReason: leader?.reason ?? "",
         leadership: leader ? [
           this.#statView("leadBrave", leader.bonus.brave, lf.brave ?? 0, `sides.${id}.leadershipFudge.brave`, 5),
@@ -344,6 +342,13 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
         : moved ? game.i18n.format("FASTFIGHTING.Planner.FightsWith", { side: loc(`FASTFIGHTING.Side.${resolvedSide}`) }) : (resolvedSide === null && ts.include !== false ? loc("FASTFIGHTING.Planner.SitsOut") : ""),
       // Which group (1 2 3): hostile groups fight each other too; a neutral's friend group was proposed when the planner opened.
       groups: grouped ? GROUPS.map(n => ({ n, active: n === group, auto: chosen === SIDES.NEUTRAL && ts.group == null })) : null,
+      // Its role in its group's chain of command: boss (never in the party), leader, 1st or 2nd lieutenant.
+      roles: setup.options.leadership !== false && setup.sides[chosen]?.leaderId !== "none" && resolvedSide ? ROLES.filter(r => r !== "boss" || chosen !== SIDES.FRIENDLY).map(r => {
+        const held = this.roles?.get(e.token.id);
+        const active = held?.slot === r;
+        return { key: r, short: loc(`FASTFIGHTING.Planner.Role.${r}.Short`), label: loc(`FASTFIGHTING.Planner.Role.${r}.Name`), active, auto: active && held.auto };
+      }) : null,
+      roleHint: game.i18n.format("FASTFIGHTING.Planner.RoleHint", { boss: setting("bossInfluence") }),
       groupHint: loc(chosen === SIDES.NEUTRAL ? "FASTFIGHTING.Planner.NeutralGroupHint" : "FASTFIGHTING.Planner.HostileGroupHint"),
       traits: TRAITS.map(k => this.#traitView(k, s.traits[k]?.base ?? 50, fudge[k] ?? 0, `tokens.${e.token.id}.fudge.${k}`, s.traitReasons?.[k], shifts[k] ?? 0)),
       expanded: this.expanded.has(e.token.id),
@@ -552,6 +557,18 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     const el = this.element;
     el.style.minWidth = "1000px";
     el.style.minHeight = "600px";
+    // Right-click on a role pill: back to the automatic pick.
+    for ( const pills of el.querySelectorAll(".ff-roles") ) {
+      pills.addEventListener("contextmenu", async event => {
+        event.preventDefault();
+        const id = pills.closest("[data-token-id]")?.dataset.tokenId;
+        if ( !id || !this.setup.tokens[id] ) return;
+        delete this.setup.tokens[id].role;
+        await saveSetup(this.setup);
+        this.stale = true;
+        this.render();
+      });
+    }
   }
 
   /* -------------------------------------------- */
@@ -590,7 +607,10 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       if ( name.startsWith("tokens.") ) tokenSetup(this.setup, name.split(".")[1]);
       foundry.utils.setProperty(this.setup, name, value === "" ? null : value);
       // A token moved to another side starts in that side's first group (a neutral, in the one proposed for it).
-      if ( /^tokens\.[^.]+\.side$/.test(name) ) this.setup.tokens[name.split(".")[1]].group = null;
+      if ( /^tokens\.[^.]+\.side$/.test(name) ) {
+        this.setup.tokens[name.split(".")[1]].group = null;
+        delete this.setup.tokens[name.split(".")[1]].role; // (its role was in the group it left)
+      }
       if ( name === "options.seed" ) this.setup.options.seed = Number.isFinite(Number.parseInt(value, 10)) ? Number.parseInt(value, 10) >>> 0 : null;
       await saveSetup(this.setup);
       this.stale = true;
@@ -604,6 +624,33 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     const current = foundry.utils.getProperty(this.setup, path) ?? 0;
     const next = Number(dir) === 0 ? 0 : current + Number(dir) * Number(step || 1);
     foundry.utils.setProperty(this.setup, path, next);
+    await saveSetup(this.setup);
+    this.stale = true;
+    this.render();
+  }
+
+  /**
+   * A role pill: give this token that role in its group (taking it from whoever had it; a boss and a leader are the one
+   * place at the head), or, clicked again, keep it out of command. Right-click leaves it to the automatic pick.
+   */
+  static async #onSetRole(event, target) {
+    const id = target.closest("[data-token-id]")?.dataset.tokenId;
+    const role = target.dataset.role;
+    if ( !id || !ROLES.includes(role) ) return;
+    const ts = tokenSetup(this.setup, id);
+    if ( target.classList.contains("active") ) ts.role = "none";
+    else {
+      const resolved = resolveAllegiances(this.roster, this.setup, this.results?.underdog ?? null);
+      const me = this.roster.find(e => e.token.id === id);
+      const key = me ? commandGroup(me, this.setup, resolved) : null;
+      const head = role === "boss" || role === "leader" ? ["boss", "leader"] : [role];
+      for ( const e of this.roster ) {
+        const other = this.setup.tokens[e.token.id];
+        if ( e.token.id === id || !other || !head.includes(other.role) ) continue;
+        if ( commandGroup(e, this.setup, resolved) === key ) delete other.role;
+      }
+      ts.role = role;
+    }
     await saveSetup(this.setup);
     this.stale = true;
     this.render();

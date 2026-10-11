@@ -66,8 +66,9 @@ export const PLAYSTYLES = Object.freeze({
   // Ends it fast: the quickest kills.
   speedRunner: { icon: "fa-forward-fast", traits: { tactical: 5, brave: 5 }, suggest: { resourceUse: "nova", target: "weakest" }, behavior: { rush: 0.4 },
     desire: { hurt: { weakest: 20 }, frustration: 1.3 } },
-  // Leads: goes for the biggest threat and looks after its people; follows nobody else's lead.
-  leader: { icon: "fa-flag", traits: { brave: 10, loyal: 10, tactical: 5 }, suggest: { target: "dangerous" }, behavior: { leads: 1, hinders: 0.15 },
+  // Wants to lead (whether or not it does: that's its group's chain of command): goes for the biggest threat, looks
+  // after its people, and half ignores whoever commands it instead.
+  leader: { icon: "fa-flag", traits: { brave: 10, loyal: 10, tactical: 5 }, suggest: { target: "dangerous" }, behavior: { hinders: 0.15 },
     desire: { hurt: { dangerous: 10 }, protect: 10, aid: 10, talk: 5, leader: 0.4 } },
   // Starts trouble and spoils everyone else's plans: locks foes down, harasses and debuffs them (more than anyone),
   // goes for the most dangerous foe and their leader, and may defy its own leader.

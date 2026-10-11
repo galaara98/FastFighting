@@ -279,20 +279,87 @@ function applyCharacterTactics(spec, entry) {
 }
 
 /** Leader playstyles put a character forward as their side's leader. */
-export function withPlaystyleLeaders(leaders, members) {
-  const out = leaders.map(l => ({ ...l }));
-  for ( const m of members ) {
-    if ( !m.behavior?.leads ) continue;
-    const existing = out.find(l => l.id === m.id);
-    const reason = game.i18n.localize("FASTFIGHTING.Playstyle.leader.Name");
-    if ( existing ) {
-      existing.score += 5;
-      existing.reason = `${existing.reason}; ${reason}`;
-    } else {
-      out.push({ id: m.id, score: 3, reason, bonus: { brave: 10, tacticalFloor: 40, attack: 0, ac: 0 } });
-    }
+/** The roles a token can hold in its group's chain of command (the planner's pills): boss or leader, then two lieutenants. */
+export const ROLES = Object.freeze(["boss", "leader", "lt1", "lt2"]);
+/** What a leader the system didn't rank (the GM's own pick) lends its group. */
+const PICKED_BONUS = Object.freeze({ brave: 10, tacticalFloor: 40, attack: 0, ac: 0 });
+
+/** The group a roster entry fights in, for command: its side, or (taking no side) its friend group, or null. */
+export function commandGroup(entry, setup, resolved) {
+  const side = resolved[entry.token.id];
+  if ( !side ) return null;
+  if ( side === NEUTRAL_PARTY ) return chosenSide(entry, setup) === SIDES.NEUTRAL ? `${NEUTRAL_PARTY}#${groupOf(entry, setup)}` : null;
+  return side;
+}
+
+/** The planner tab whose settings a command group uses (hostile groups share the Hostile tab's; neutral groups the Neutral's). */
+const tabOf = key => (key.startsWith(NEUTRAL_PARTY) ? SIDES.NEUTRAL : HOSTILE_GROUPS.includes(key) ? SIDES.HOSTILE : key);
+
+/**
+ * Every group's chain of command: {key: [{id, slot (boss | leader | lt1 | lt2), role, leadership, auto, reason}]}.
+ * The GM's picks (a token's role: a pill in the planner; "none" keeps it out) stand. The rest come from the system's
+ * own ranking of who leads best (adapter.detectLeaders; wanting to lead, a playstyle, is no part of it): the best heads
+ * the group (outside the party, as its boss when it outranks every other member by 2 levels or more), the next two
+ * are its lieutenants. A tab set to "No leaders" has none; the party never has a boss.
+ * @param {object[]} entries   roster entries in the fight
+ */
+export function commandChains(entries, setup, resolved, adapter = getAdapter()) {
+  const groups = new Map();
+  for ( const e of entries ) {
+    const key = commandGroup(e, setup, resolved);
+    if ( !key ) continue;
+    if ( !groups.has(key) ) groups.set(key, []);
+    groups.get(key).push(e);
   }
-  return out.sort((a, b) => b.score - a.score);
+  const out = {};
+  for ( const [key, members] of groups ) {
+    const tab = tabOf(key);
+    const s = setup.sides[tab] ?? {};
+    if ( s.leaderId === "none" ) continue;
+    const party = key === SIDES.FRIENDLY;
+    const ranked = adapter?.detectLeaders(members.map(m => m.spec)) ?? [];
+    const roleOf = e => setup.tokens[e.token.id]?.role ?? null;
+    const picked = slot => members.find(e => roleOf(e) === slot) ?? null;
+    // (A leader picked the old way, by the tab's leader setting.)
+    const legacy = s.leaderId && s.leaderId !== "auto" ? members.find(e => e.token.id === s.leaderId && !roleOf(e)) ?? null : null;
+    const used = new Set(members.filter(e => roleOf(e)).map(e => e.token.id));
+    if ( legacy ) used.add(legacy.token.id);
+    const nextRanked = () => {
+      const r = ranked.find(x => !used.has(x.id));
+      if ( r ) used.add(r.id);
+      return r ?? null;
+    };
+    const lf = s.leadershipFudge ?? {};
+    const entry = (id, slot, auto) => {
+      const r = ranked.find(x => x.id === id);
+      const b = r?.bonus ?? PICKED_BONUS;
+      return {
+        id, slot, auto, reason: r?.reason ?? "", role: slot === "boss" ? "boss" : slot === "leader" ? "leader" : "lieutenant",
+        leadership: Object.fromEntries(["brave", "tacticalFloor", "attack", "ac"].map(k => [k, { base: b[k] ?? 0, fudge: lf[k] ?? 0 }]))
+      };
+    };
+    const level = id => Number(members.find(m => m.token.id === id)?.spec.level) || 0;
+    const outranks = id => members.length > 1 && members.every(m => m.token.id === id || level(id) >= (Number(m.spec.level) || 0) + 2);
+    const chain = [];
+    const boss = party ? null : picked("boss");
+    const leader = picked("leader") ?? (party ? picked("boss") : null) ?? legacy;
+    if ( boss ) chain.push(entry(boss.token.id, "boss", false));
+    else if ( leader ) chain.push(entry(leader.token.id, "leader", false));
+    else {
+      const r = nextRanked();
+      if ( r ) chain.push(entry(r.id, !party && outranks(r.id) ? "boss" : "leader", true));
+    }
+    for ( const slot of ["lt1", "lt2"] ) {
+      const p = picked(slot);
+      if ( p ) chain.push(entry(p.token.id, slot, false));
+      else {
+        const r = nextRanked();
+        if ( r ) chain.push(entry(r.id, slot, true));
+      }
+    }
+    if ( chain.length ) out[key] = chain;
+  }
+  return out;
 }
 
 /**
@@ -331,6 +398,8 @@ export function buildBattleSpec(roster, setup, { underdog = null, approach = nul
   }
 
   const options = { ...setup.options, ...optionOverrides };
+  // Who commands each group: its boss or leader, and its lieutenants.
+  const chains = options.leadership ? commandChains(roster.filter(e => resolved[e.token.id] && !exclude.has(e.token.id)), setup, resolved, adapter) : {};
   const sides = {};
   const used = Object.keys(bySide);
   const fighting = used.filter(s => s !== NEUTRAL_PARTY); // (those who take no side are nobody's enemy, as a side)
@@ -343,22 +412,13 @@ export function buildBattleSpec(roster, setup, { underdog = null, approach = nul
     const defaults = sideDefaults[neutral ? SIDES.NEUTRAL : group ? SIDES.HOSTILE : side] ?? sideDefaults.hostile;
     // Everyone who fights is everyone else's enemy: the party's, each hostile group's (and third parties fight all).
     const enemies = neutral ? [] : fighting.filter(o => o !== side);
-    const leaders = withPlaystyleLeaders(adapter?.detectLeaders(bySide[side]) ?? [], bySide[side]);
-    const pickedHere = s.leaderId && !["auto", "none"].includes(s.leaderId) && (!group || bySide[side].some(m => m.id === s.leaderId));
-    const leaderId = group && s.leaderId !== "none" && !pickedHere ? "auto" : s.leaderId;
-    const leader = leaderId === "auto" ? leaders[0] : leaders.find(l => l.id === leaderId) ?? (leaderId && leaderId !== "none" ? { id: leaderId, bonus: { brave: 10, tacticalFloor: 40, attack: 0, ac: 0 } } : null);
-    const lf = s.leadershipFudge ?? {};
+    const head = neutral ? null : chains[side]?.[0] ?? null;
     sides[side] = {
       label: game.i18n.localize(side === SIDES.HOSTILE && hostileGroups > 1 ? "FASTFIGHTING.Side.hostile1" : SIDE_LABELS[side] ?? side),
       enemies,
       traits: Object.fromEntries(TRAITS.map(k => [k, { base: defaults[k] ?? 50, fudge: s.traitFudge?.[k] ?? 0 }])),
-      leaderId: neutral || leaderId === "none" ? null : leader?.id ?? null,
-      leadership: leader ? {
-        brave: { base: leader.bonus.brave, fudge: lf.brave ?? 0 },
-        tacticalFloor: { base: leader.bonus.tacticalFloor, fudge: lf.tacticalFloor ?? 0 },
-        attack: { base: leader.bonus.attack, fudge: lf.attack ?? 0 },
-        ac: { base: leader.bonus.ac, fudge: lf.ac ?? 0 }
-      } : {},
+      leaderId: head?.id ?? null,
+      leadership: head?.leadership ?? {},
       healAggro: s.healAggro ?? "balanced",
       morale: s.morale !== false
     };
@@ -384,6 +444,7 @@ export function buildBattleSpec(roster, setup, { underdog = null, approach = nul
   const spec = {
     combatants,
     sides,
+    command: Object.fromEntries(Object.entries(chains).map(([k, chain]) => [k, chain.map(c => ({ id: c.id, role: c.role, leadership: c.leadership }))])),
     approach: options.positioning ? approach : null,
     doors: options.positioning ? sceneDoors() : {},
     options: {
@@ -395,6 +456,9 @@ export function buildBattleSpec(roster, setup, { underdog = null, approach = nul
       darkness: canvas.scene?.environment?.darknessLevel ?? 0,
       morale: options.morale,
       leadership: options.leadership,
+      // How readily followers take their lead, and how much more readily a boss's (world settings, as sliders).
+      leaderInfluence: setting("leaderInfluence"),
+      bossInfluence: setting("bossInfluence"),
       talking: options.talking !== false,
       ignoreLanguages: options.ignoreLanguages === true,
       opening: options.opening ?? "auto",

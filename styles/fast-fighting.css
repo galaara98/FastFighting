@@ -11,6 +11,7 @@
   --ff-muted: light-dark(#8a8a8a, #6c6c6c);
   --ff-dark: light-dark(#3a3a3a, #222);
   --ff-accent: light-dark(#a3541a, #f0a35b);
+  --ff-command: light-dark(#7a5c00, #d4a72c);
   --ff-surface: light-dark(rgba(0, 0, 0, 0.04), rgba(255, 255, 255, 0.04));
   --ff-surface-2: light-dark(rgba(0, 0, 0, 0.08), rgba(255, 255, 255, 0.08));
   --ff-line: light-dark(rgba(0, 0, 0, 0.15), rgba(255, 255, 255, 0.14));
@@ -133,6 +134,9 @@
 .ff-row { border: 1px solid var(--ff-line); border-radius: 6px; padding: 6px; background: var(--ff-surface); }
 .ff-row.is-excluded { opacity: 0.5; }
 .ff-row-head { display: grid; grid-template-columns: 40px 1fr auto auto 110px auto; gap: 8px; align-items: center; margin-bottom: 4px; }
+/* Group pills over role pills, in one column. */
+.ff-row-pills { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
+.ff-row-pills:empty { display: none; }
 /* Groups 1 2 3: small touching pills, one click to move a token. */
 .ff-groups { display: inline-flex; }
 .ff-group-pill {
@@ -145,6 +149,18 @@
 .ff-group-pill:hover { color: var(--color-text-primary, inherit); background: var(--ff-surface-2); }
 .ff-group-pill.active { background: var(--ff-accent); border-color: var(--ff-accent); color: #fff; }
 .ff-group-pill.active.is-auto { background: color-mix(in srgb, var(--ff-accent) 60%, transparent); }
+/* Command roles B L 1 2: the same touching pills, in the leaders' own color. */
+.ff-roles { display: inline-flex; }
+.ff-role-pill {
+  flex: none; width: 20px; height: 20px; min-height: 0; margin: 0; padding: 0; line-height: 18px;
+  font-size: 11px; font-weight: 600; border: 1px solid var(--ff-line); border-radius: 0; background: var(--ff-surface); color: var(--ff-text-dim); cursor: pointer;
+}
+.ff-role-pill + .ff-role-pill { border-left: none; }
+.ff-role-pill:first-child { border-radius: 10px 0 0 10px; }
+.ff-role-pill:last-child { border-radius: 0 10px 10px 0; }
+.ff-role-pill:hover { color: var(--color-text-primary, inherit); background: var(--ff-surface-2); }
+.ff-role-pill.active { background: var(--ff-command); border-color: var(--ff-command); color: #fff; }
+.ff-role-pill.active.is-auto { background: color-mix(in srgb, var(--ff-command) 55%, transparent); }
 .ff-row-head img { width: 40px; height: 40px; border: none; border-radius: 4px; object-fit: cover; cursor: pointer; }
 .ff-row-id { min-width: 0; }
 .ff-row-name { font-weight: 700; display: flex; align-items: center; gap: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

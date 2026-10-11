@@ -73,7 +73,8 @@ function damageTypeOf(e, mapType) {
  */
 class Relationships {
   constructor(spec) {
-    this.leaders = new Set(Object.values(spec.sides ?? {}).map(s => s.leaderId).filter(Boolean));
+    // (Those who command a group: the heads of its chain, and its lieutenants.)
+    this.leaders = new Set([...Object.values(spec.sides ?? {}).map(s => s.leaderId), ...Object.values(spec.command ?? {}).flatMap(c => (c ?? []).map(x => x.id))].filter(Boolean));
     this.sideOf = new Map((spec.combatants ?? []).map(c => [c.id, c.side]));
     this.hurtBy = new Map();      // victimId -> Set(attackerId)
     this.downedBy = new Map();    // fallenId -> attackerName/id
@@ -235,6 +236,9 @@ function narrate(e, roll, rel, fill) {
     case "study": return roll(e.worked === false ? "event.studyFails" : "event.study", f);
     case "observe": return roll("event.observe", { ...f, targets: listJoin(e.targets ?? []) });
     case "shareLore": return roll("event.shareLore", { ...f, allies: listJoin(e.with ?? []) });
+    case "command":
+      if ( e.lost ) return e.from ? roll("event.commandLost", { ...f, actor: e.from }) : "";
+      return roll(e.back ? "event.commandBack" : e.from ? "event.commandTakes" : "event.commandTakesFresh", { ...f, target: e.from ?? "" });
     case "keepLore": return ""; // (kept to itself: nothing to see)
     case "parley": return roll("event.parley", f);
     case "callHelp": return roll("event.callHelp", { ...f, target: e.toward });
@@ -542,7 +546,7 @@ function statLine(e) {
     case "opportunity": return `${e.actor} → ${e.target}: opportunity attack (reaction)`;
     case "disengage": return `${e.actor}: ${e.label || "disengages"}`;
     case "door": return `${e.actor} → the door: ${e.method}${e.natural !== undefined ? ` · ${roll(e.natural, e.mod, e.total, e.dc, e.method === "attack" ? "AC" : "DC")}` : ""}${e.method === "attack" && e.hit ? ` · ${e.damage} damage` : ""} · ${e.method === "giveup" ? `gives up on ${e.target}` : e.success ? "open" : "holds"}`;
-    case "thought": return `${e.actor} thinks: ${(e.desires ?? []).map(d => `${d.kind} ${d.targetId === e.actorId ? "self" : d.target} ${d.level}`).join(" · ")}`;
+    case "thought": return `${e.actor} thinks: ${(e.desires ?? []).map(d => `${d.kind} ${d.targetId === e.actorId ? "self" : d.target} ${d.level}`).join(" · ")}${e.following ? ` · following ${e.following.name}${e.following.boss ? " (boss)" : ""}, chance ${Math.round(e.following.chance * 100)}%` : ""}`;
     case "riderSave": return `${e.actor} vs ${e.name} · ${e.saveType} ${roll(e.natural, e.mod, e.total, e.dc, "DC")} · ${DEGREE[e.degree]}${e.damage ? ` · ${e.damage} damage` : ""}`;
     case "notice": return `${e.actor} notices (${e.cause})`;
     case "study": {
@@ -555,6 +559,7 @@ function statLine(e) {
       return `${e.actor} → ${e.target}${kin}: sizes up${rolled} · ${pays}`;
     }
     case "observe": return `${e.actor} watches ${(e.targets ?? []).join(", ")} instead of talking`;
+    case "command": return e.lost ? `no one left to lead${e.from ? ` after ${e.from}` : ""}` : `${e.actor} ${e.back ? "takes back command" : "takes command"} (${e.role})${e.from && !e.back ? ` from ${e.from}` : ""}`;
     case "shareLore": return `${e.actor} → ${(e.with ?? []).join(", ")}: shares what it knows of ${e.target} (an action; they know its sort too)${Number.isFinite(e.chance) ? ` · minded to share ${Math.round(e.chance * 100)}%` : ""}`;
     case "keepLore": return `${e.actor} keeps what it learned of ${e.target} to itself · minded to share ${Math.round((e.chance ?? 0) * 100)}%`;
     case "firstAid": return `${e.actor} → ${e.target}: first aid · medicine ${roll(e.natural, e.mod, e.total, e.dc, "DC")} · ${DEGREE[e.degree]} · ${e.stable ? "stabilized" : e.dead ? "dies" : `dying ${e.dying}`}`;

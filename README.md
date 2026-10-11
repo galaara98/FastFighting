@@ -51,7 +51,7 @@ Its side, desires, nerve and personality decide the rest: a coward may still bre
 - **Left: the sides.** There's a tab per side: Friendly, Hostile, Neutral, Secret.
   - **Side settings:**
     - group personality, healing aggressiveness, and whether the side can rout;
-    - its leader and the leadership bonus;
+    - whether its groups have leaders (Auto, or No leaders), and the leadership bonus;
     - for Neutral, a lean: takes no side, or leans toward the party, the enemy, the nearest side or the underdog (see **Taking no side**); or it's left out, or fights everyone;
     - for Secret, an allegiance: left out, joins the party, joins the enemy, joins the nearest side, joins the underdog, takes no side, or fights everyone.
   - **Each token row:**
@@ -162,7 +162,7 @@ Every character has a list of desires: what it wants right now, at whom, and how
   - **its tactics:** each turn its tactical band weighs every foe it can reach (a Mastermind picks the healer to destroy, a Feral beast the nearest thing), every friend it could mend, whom it could talk round, whom it fears;
   - **its Tactics answers:** up to three desires stated for any character, PC or NPC (what, who, how badly; healing, bolstering and talking are offered only to those who can);
   - **the fight:** whoever hurt it (simple minds go straight for whoever just hurt them; hit from afar while already trading blows, they keep at the one in front of them), whoever felled a friend, a grudge;
-  - **its leader and its team:** the leader's desires pull on it a medium amount, the team's a little. With nobody leading (none chosen, or the leader fallen), the team pulls together less, except when it comes to vengeance;
+  - **whoever commands it, and its team:** each turn it may take its lead from whoever commands its group (see **Chains of command**), as readily as the Leader influence setting, its loyalty and its playstyles allow (a boss's, by the Boss influence setting, more readily). Following, it wants the topmost thing its commander wants that it can actually do (a commander who'd heal a friend, followed by one who can't heal: its next wish, say a foe to hurt), and its playstyle leans toward its commander's for the turn (about a third of the way for a typical follower, more under a boss: the commander's leanings, and quirks such as finishing off the fallen). Its team's wishes pull a little, always. With nobody able to lead, the team pulls together less, except when it comes to vengeance. A contrarian (an Instigator, a Wildcard) may lean away from its commander's wish instead;
   - **a friend asking for a buff:** a character who wants to **be bolstered by** a friend (a desire in its Tactics) asks; no roll, only that the two can understand each other (a language in common, and minds that follow it) and that the friend is willing (the loyal gladly, the selfish grudgingly, helpers more than most, a contrarian never for the leader it defies). A friend with a buff to give then wants to bolster the asker, as much as the asking times its willingness, and a single-target buff goes to the one it most wants to bolster. The story tells the call and the answer;
   - **its playstyles:** each pill guides how it picks up desires (below), added up across up to four.
 - **The strongest leads.** Desires 20 or more below a stated or fight-stirred one don't cross the character's mind, and an obsession leaves no room for caution (it forgets about opportunity attacks).
@@ -241,7 +241,8 @@ Two boxes beside the playstyle pills: **"I don't like to use consumables"** and 
   - *Tactical:* healers and casters first, and reads the odds.
   - *Mastermind:* a side-wide focus, an ambush edge, and the ruthless finish off the downed.
 - **Morale:** losses, wounds, a fallen leader or master, and bad odds, all against Brave. Combatants hold, waver or rout.
-- **Leadership:** the best social or warfare skill, plus commanding features.
+- **Leadership:** the best social or warfare skill, plus commanding features (the system's own ranking of who leads best).
+- **Chains of command:** every group (the party, each hostile group, each neutral friend group) has a **boss** (never the party) or a **leader**, and up to two **lieutenants**: B L 1 2 pills on each token in the planner, picked automatically from the system's ranking (the best heads the group, as a boss outside the party when it outranks everyone else in it by 2 levels or more; the next two are lieutenants), or by the GM (click a pill to give the role, click again to keep a token out of command, right-click for the automatic pick). Whoever comes first and can lead commands the group: its leadership bonus counts, its wishes are followed, its words carry (talking it down can take its group with it). When the boss or leader is down, dead, gone, or can't make itself seen and heard (blinded, deafened, silenced, stunned, confused, controlled ...), the 1st lieutenant steps up, then the 2nd; a lieutenant leads as a leader, never as a boss; the boss or leader takes back over when it can. Nobody able to lead: the group is leaderless. The story tells who takes command. Wanting to lead (a playstyle) is no part of it.
 - **Terrain and movement:** travel cost per movement mode from Foundry's region terrain, so rubble doesn't slow a flyer. A high flyer can't be hit in melee by a ground-bound creature.
 - **Walls:** they block sight, and movement goes the shortest way round (a quick grid search over the fighters' part of the map). Climbers go over and burrowers under. With no way round, crossing a wall counts as four times difficult terrain for that square, and a creature that can't manage that in one move gives up on going that way.
 - **Any grid and any units:** distances come from the scene's grid size and units, whatever the system calls them (ft, feet, m, metres ...; a metre counted the table way, 1.5 m to a 5-foot square). Units it doesn't know count each square as 5 ft.
@@ -284,7 +285,7 @@ Answers save as they're made, and two players sharing a token see each other's c
 | Thief | robs when it's safe; a lock is an invitation |
 | Vengeful | hits back twice as hard; avenges fallen friends; its grudges never cool |
 | Wallflower | keeps its distance; would rather hamper foes from afar; listens to the crowd less |
-| Wants to Lead | the biggest threat (now and then pins it down); looks after and bolsters its people; when it isn't the leader, mostly goes its own way |
+| Wants to Lead | the biggest threat (now and then pins it down); looks after and bolsters its people; half ignores whoever commands it (it wants to lead; whether it does is its group's chain of command) |
 | Wildcard | something random catches its eye; nobody's voice counts for much; may defy its leader |
 
 Three checkboxes go with the pills:
@@ -310,6 +311,7 @@ All settings are defaults that the planner can override per battle:
 - **Unaligned sides:** Neutral lean (takes no side, by default) and Secret allegiance; how near a neutral must be to join a friend group the planner proposes (3 squares; 1 to 20).
 - **Dying and healing:** the downed model, after the fight, and PC healing and dying defaults.
 - **Modifiers:** leadership, morale, positioning, talking (and whether to ignore languages), how encounters open, and the initiative source.
+- **Leadership** (sliders): **Leader influence**, how readily followers take their commander's lead (0 to 100, a scale where 50 is the usual; 0 nobody follows, 100 twice as readily); **Boss influence**, how much more readily a boss's than a leader's (1.25× to 3×, default 2×).
 - **Luck checks** (sliders):
   - a PC handing over an item, default 39;
   - a PC being robbed, default 29;
@@ -390,6 +392,7 @@ A spec may say what kind of creature it is (`creatureKind`: the system's own wor
 - On an action: `die` (its own die), `critOn`, `fumbleOn`, `deedDie` (rolled with the attack, added to the roll and the damage), `crit: {die, mod, rows}` (its crit table), `repeat` (a DamagePart: how many times the damage is rolled), `healDice` (so many of the target's own hit dice, `spec.hitDie`).
 - A table row: `{lo, hi, damage, multiply, outcome, self, slay}`. `spec.fumble`: the fumbler's table, `{die, mod, rows}`. `spec.critAgainst`: taken off crit rolls made against it by anyone but a player character.
 - `spec.riders`: `[{id, label, when: "hit" | "miss", melee, ranged, weapon, resource, amount, uses, oncePerTurn, damage, critDouble, save, onSave, outcome, attackDie, tell}]`.
+- `spec.command` (the BattleSpec, beside `sides`): chains of command by group (a side; a neutral friend group is `"neutralParty#n"`): `[{id, role: "boss" | "leader" | "lieutenant", leadership: {brave, tacticalFloor, attack, ac}}]`, the head first. Without one, a side's `leaderId` leads it. `options.leaderInfluence` (0-100) and `options.bossInfluence` (×).
 - `spec.deeds`: `[{id, label, melee, ranged, tiers: [{min, outcome}]}]` (an outcome with `self` lands on the one who did it; with `allies: feet`, on the friends that close: a rally).
 - A check with tiers: `casting: {mod, faces, fumbleOn, lostOnFail, disapproval, label}`, `tiers: [{min, max, ...fields}]` (a save's `dc: "check"` is the check's total), `castChance`; the action's own fields are what a success most often does.
 - `spec.boosts`: `[{pool, label, per, faces, allies, range, kinds, keep, recovers}]`, spending `spec.resources[pool]`.
