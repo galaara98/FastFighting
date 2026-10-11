@@ -284,14 +284,15 @@ Answers save as they're made, and two players sharing a token see each other's c
 | Cruel | the weakest, and the fallen; hits back hard; likes leaving a foe hampered |
 | Diplomat | talking; spares the fallen; can't abide violence (calms quarrels, talks fighters into leaving: see Standoffs and Taking no side) |
 | Enabler | heals, guards and bolsters friends; backs the leader |
-| Fragile | once hurt: away from whoever is hurting it, and mends itself; setbacks wear it down |
+| Fragile | once hurt: away from whoever is hurting it, and mends itself (wants to heal itself, if it can); setbacks wear it down; leading, its flight takes others along |
 | Impatient | the nearest foe; setbacks wear it down twice as fast; little patience for locks |
 | Instigator | spoils everyone's plans: locks foes down, harasses and debuffs them more than anyone; the most dangerous foe and the other side's leader; may defy its own leader |
-| Lazy | the nearest foe and no long walks; not much help to anyone; gives up fast; can't hold a grudge |
+| Lazy | the nearest foe and no long walks; not much help to anyone; gives up fast; can't hold a grudge; leading, its flight takes others along |
 | Lore-Collector | foes it hasn't sized up yet; sizes up a new foe before talking to it or attacking it (an action when the turn has one to spare; with one action a turn, the whole turn; in a standoff, most likely its whole first turn, watching while the talk waits). When it works (the system's check, if it has one), its next rolls against that foe are much likelier to succeed, to make up for the time (each system's module has a **Lore-Collector advantage** setting, 1.25× to 3×; 2.5× without one); never without paying for it. What it learns holds for every foe of the same sort (the same stat block, or the same name but for the number): one turn for three goblin warriors, and the payoff against any of them. Afterwards it still hits them and talks to them a little better. It may tell its friends what it learned, though not everyone likes to: its pill's chance times how minded it is (from even odds, more for the loyal, less for the selfish, more for a tactical mind and for pills that lean on supporting friends, Enablers, People-Pleasers, those who'd lead; less for the lazy, brawlers, mercenaries); its side's leader that readily, anyone else half as readily, unless it would rather talk than fight anyway. It's an action (now, or first thing next turn), to every friend within a move of it (its speed: as far as it can properly explain it in the time) who understands it. They deal with that sort a little better too. Every Lore-Collector chance (sizing up, watching, sharing) is smaller the further down its pills it is (×0.75, ×0.55, ×0.4) |
 | Martyr | guards the weakest friend; fears nothing; avenges the fallen twice as hard; rallies friends who waver |
-| Mercenary | easy pickings; barely avenges anyone; gives up when it gets hard |
+| Mercenary | easy pickings; barely avenges anyone; gives up when it gets hard; leading, its flight takes others along; never pays a boss off |
 | Moralist | never the fallen; heals friends, guards the weakest; can't abide violence |
+| Peacekeeper | keeps the peace between anyone: everyone in a standoff with it (either side) loses patience half as fast; calms any quarrel it sees; foes it talks round stand down (a truce, even mid-fight: never a surrender, a payoff or a rout); its word is trusted (up to 2 easier) and it never threatens; spares the fallen; can't abide violence |
 | People-Pleaser | wants what its leader and friends want (listens far more than most); likes to talk and to bolster friends; can't abide violence |
 | Puzzle-Maniac | weaknesses to exploit, casters, a clever lock-down, and locked doors (twice the patience) |
 | Redeem-Seeker | the biggest threat; won't give up |
@@ -300,7 +301,7 @@ Answers save as they're made, and two players sharing a token see each other's c
 | Speed-Runner | the quickest kills |
 | Thief | robs when it's safe; a lock is an invitation |
 | Vengeful | hits back twice as hard; avenges fallen friends; its grudges never cool |
-| Wallflower | keeps its distance; would rather hamper foes from afar; listens to the crowd less |
+| Wallflower | keeps its distance; would rather hamper foes from afar; listens to the crowd less; leading, its flight takes a few along |
 | Wants to Lead | the biggest threat (now and then pins it down); looks after, bolsters and rallies its people; half ignores whoever commands it (it wants to lead; whether it does is its group's chain of command); not chosen, it may scheme (see **Chains of command**) |
 | Wildcard | something random catches its eye; nobody's voice counts for much; may defy its leader |
 

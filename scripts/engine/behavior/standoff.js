@@ -31,7 +31,7 @@ const FRAY_MAX = 0.2;
 const MAX_CHANCE = 0.85;
 
 /** Playstyles that make someone quicker (above 1) or slower (below 1) to lose patience. */
-const TEMPER = { impatient: 2.5, cruel: 2, instigator: 2, brawler: 1.8, speedRunner: 1.5, moralist: 0.6, chicken: 0.5, peoplePleaser: 0.5, diplomat: 0.3 };
+const TEMPER = { impatient: 2.5, cruel: 2, instigator: 2, brawler: 1.8, speedRunner: 1.5, moralist: 0.6, chicken: 0.5, peoplePleaser: 0.5, diplomat: 0.3, peacekeeper: 0.3 };
 
 /** Can this creature take part in a conversation at all? */
 export function canTalk(u) {
@@ -88,6 +88,11 @@ export function impatience(run, u, since = 1) {
   p *= 1 + (liveTrait(run, u, "selfish") - 50) / 150;
   if ( liveTier(run, u) <= TACTICAL.FERAL ) p *= 2;
   for ( const id of u.spec.playstyles ?? [] ) p *= TEMPER[id] ?? 1;
+
+  // A Peacekeeper there holds everyone back, whichever side they're on (by how much of one it is).
+  let keeper = 0;
+  for ( const o of run.units ) if ( o !== u && present(o) ) keeper = Math.max(keeper, behaviorOf(o).peacekeeping ?? 0);
+  if ( keeper > 0 ) p *= 1 - 0.5 * keeper;
 
   // Talk that goes nowhere wears on everyone; pitches that fail on you wear on you most.
   const rebuffs = [...u.rebuffed.values()].reduce((s, n) => s + n, 0);

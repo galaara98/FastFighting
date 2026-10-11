@@ -229,6 +229,9 @@ export function talkDC(run, talker, t, kind) {
   if ( kind === "intimidate" ) dc += Math.round((t.prep.traits.brave - 50) / 20);
   if ( standsAside(t) ) dc -= kind === "persuade" ? 4 : 2;
   if ( t.scheming ) dc -= 4; // (it's looking for a way out from under its leaders)
+  // A Peacekeeper's word is trusted: up to 2 easier.
+  const keeper = behaviorOf(talker).peacekeeping ?? 0;
+  if ( keeper > 0 ) dc -= Math.round(2 * keeper);
   // Wary of outsiders' words (a Skeptic): up to 4 harder, by how much of a Skeptic it is.
   const wary = behaviorOf(t).wary ?? 0;
   if ( wary > 0 && outsider(talker, t) ) dc += Math.round(4 * wary);
@@ -259,6 +262,7 @@ export function bestPitch(run, talker, t) {
     if ( typeof pitch?.mod !== "number" ) continue;
     if ( scareOnly && kind !== "intimidate" && aim === "down" ) continue;
     if ( (aim === "recruit" || aim === "pacify") && kind === "intimidate" ) continue; // nobody is threatened into friendship (or peace)
+    if ( kind === "intimidate" && (behaviorOf(talker).peacekeeping ?? 0) >= 0.5 ) continue; // (a Peacekeeper never threatens)
     const { mod: base, advantage, dice } = checkRoll(run, talker, pitch.mod + studyBonus(talker, t, { words: true }), t);
     const dc = talkDC(run, talker, t, kind);
     // (A Lore-Collector that sized it up: about 2.5 times as likely to get through.)
@@ -335,8 +339,10 @@ export function talkActionsThisTurn(run, u, actions) {
  * Decide how a convinced enemy leaves the fight. Before any blow is struck (a standoff), reasoning or a bluff
  * talks them into standing down; threats still make them yield or run.
  */
-function outcomeFor(run, t, kind, aim = "down", { noSwitch = false } = {}) {
+function outcomeFor(run, t, kind, aim = "down", { noSwitch = false, peace = false } = {}) {
   const rng = run.rng;
+  // Talked round by a Peacekeeper: a truce, it stands down (a player character still only pays up or backs off).
+  if ( peace && aim === "down" && !t.isBoss && t.spec.kind !== "pc" ) return SWAY.STAND_DOWN;
   // A boss isn't talked out of anything: in a standoff it can be paid to go (and takes its group); in a fight, only
   // badly hurt does it give up, or else it buys its way out of the argument (and fights on). It never stands aside.
   if ( t.isBoss && aim === "down" ) {
@@ -402,7 +408,7 @@ export function concession(run, t, { itemLuck = true } = {}) {
 }
 
 /** Playstyles that would pay to be spared the trouble (more talk, a fight), and those that never would. */
-const PAYS = new Set(["diplomat", "peoplePleaser", "moralist", "enabler", "chicken", "lazy", "fragile", "wallflower"]);
+const PAYS = new Set(["peacekeeper", "diplomat", "peoplePleaser", "moralist", "enabler", "chicken", "lazy", "fragile", "wallflower"]);
 const WONT_PAY = new Set(["brawler", "instigator", "cruel", "vengeful", "relentless", "mercenary", "thief", "redeemSeeker"]);
 
 /**
@@ -642,7 +648,9 @@ export function attemptTalk(run, talker, pitch, log) {
   // Only a successful pitch closes the deal, even if circumstances have made them easier to convince.
   if ( roll.degree < 2 || progress < steps ) return false;
 
-  let outcome = outcomeFor(run, t, pitch.kind, aim);
+  // (A Peacekeeper's success is a truce: by how much of one it is.)
+  const peace = (behaviorOf(talker).peacekeeping ?? 0) > 0 && run.rng.chance(behaviorOf(talker).peacekeeping);
+  let outcome = outcomeFor(run, t, pitch.kind, aim, { peace });
   // An enemy changing sides goes through with it only on a d100 under the switch luck (one scheming against its own
   // leaders, more readily; a player character, only under the traitor luck); otherwise it's talked into something else.
   let luck = null;
@@ -654,7 +662,7 @@ export function attemptTalk(run, talker, pitch, log) {
       log(t, `almost comes over, but won't turn on their own (luck ${luck.roll})`, {
         type: "neutral", what: "luck", luck: luck.roll, needed: luck.needed, by: talker.spec.name, byId: talker.id
       });
-      outcome = outcomeFor(run, t, pitch.kind, aim, { noSwitch: true });
+      outcome = outcomeFor(run, t, pitch.kind, aim, { noSwitch: true, peace });
     }
   }
   // (Whoever commanded its group, before it's talked out of it.)
@@ -695,6 +703,7 @@ export function talkAffinity(spec, traits, rules = null) {
   let a = 0.35 + rel * 0.08;
   const ps = new Set(spec.playstyles ?? []);
   if ( ps.has("diplomat") ) a += 0.45;
+  if ( ps.has("peacekeeper") ) a += 0.3;
   if ( ps.has("peoplePleaser") ) a += 0.2;
   if ( ps.has("instigator") || ps.has("cruel") ) a += 0.1;
   if ( ps.has("brawler") || ps.has("impatient") || ps.has("speedRunner") ) a -= 0.25;

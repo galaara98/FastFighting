@@ -31,7 +31,7 @@
  *    the fight, or (the greedy) squeezes it for money. A botched word may start a quarrel between it and that side:
  *    the two fight it out, and the standoff between the sides holds (heldOff), unless someone loses patience (blood
  *    nearby wears on everyone) or blames the side it seems to be with (annoyed).
- *  - Can't abide violence (diplomats, moralists, people-pleasers, those who never kill, those who always talk): seeing
+ *  - Can't abide violence (peacekeepers, diplomats, moralists, people-pleasers, those who never kill, those who always talk): seeing
  *    a fight, it puts its words into stopping it, on either side: in a standoff, talking a quarrel's fighters into
  *    letting it be; once it's a fight, talking the fighters into leaving.
  *  - Enemies come here first: an enemy talked into changing sides stands aside (on a d100 under the switch luck),
@@ -115,7 +115,7 @@ export function refreshLeans(run) {
 }
 
 /** Playstyles that can't abide violence: seeing a fight, they try to stop it. */
-const PEACEABLE = new Set(["diplomat", "moralist", "peoplePleaser"]);
+const PEACEABLE = new Set(["peacekeeper", "diplomat", "moralist", "peoplePleaser"]);
 
 /** Can't abide violence: a peaceable playstyle, Tactics' "I never kill", or always prefers talking to fighting. */
 export const dislikesViolence = u => !!u.spec.neverKill || (!!u.spec.alwaysTalk && !u.spec.stayTrue) || (u.spec.playstyles ?? []).some(p => PEACEABLE.has(p));
@@ -412,7 +412,7 @@ export function appeal(run, n, side) {
 }
 
 /** Playstyles that would rather see someone taking no side leave than join the fight (on either side). */
-const SEND_AWAY = new Set(["diplomat", "moralist", "peoplePleaser", "chicken", "wallflower", "fragile", "lazy"]);
+const SEND_AWAY = new Set(["peacekeeper", "diplomat", "moralist", "peoplePleaser", "chicken", "wallflower", "fragile", "lazy"]);
 
 /**
  * Someone who doesn't like killing (Tactics: "I never kill"), seeing an enemy that was talked out of the fight, wants

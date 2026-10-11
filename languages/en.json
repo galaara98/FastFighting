@@ -662,7 +662,7 @@
       "NpcTitle": "Playstyles (GM)",
       "chicken": {
         "Name": "Chicken",
-        "Hint": "Much less brave: hangs back, drinks potions early, retreats when hurt, goes unnoticed. Wants above all to keep away from the most dangerous foe, gives up easily, and hits back half-heartedly."
+        "Hint": "Much less brave: hangs back, drinks potions early, retreats when hurt, goes unnoticed. Wants above all to keep away from the most dangerous foe, gives up easily, and hits back half-heartedly. Leading a group, it takes it along when it runs; it would pay a boss to go rather than fight."
       },
       "cruel": {
         "Name": "Cruel",
@@ -670,15 +670,19 @@
       },
       "moralist": {
         "Name": "Moralist",
-        "Hint": "Never strikes a fallen foe; wants to heal friends and guard the weakest of them."
+        "Hint": "Never strikes a fallen foe; wants to heal friends and guard the weakest of them. Can't abide violence: it calms quarrels it sees and, taking no side, talks fighters into leaving."
+      },
+      "peacekeeper": {
+        "Name": "Peacekeeper",
+        "Hint": "Keeps the peace, between anyone: while a standoff holds, everyone there (either side) loses patience half as fast; it calms any quarrel it sees at once; foes it talks round stand down (a truce, even mid-fight: never a surrender, a payoff or a rout); its word is trusted (easier to accept) and it never threatens; it spares the fallen, and would pay a boss to go rather than fight."
       },
       "peoplePleaser": {
         "Name": "People-Pleaser",
-        "Hint": "Goes along with the group: wants what its leader and friends want (and listens to them far more than most), heals generously, protects friends, likes to talk, and is happy to bolster a friend."
+        "Hint": "Goes along with the group: wants what its leader and friends want (and listens to them far more than most), heals generously, protects friends, likes to talk, and is happy to bolster a friend. Can't abide violence: it calms quarrels it sees and, taking no side, talks fighters into leaving."
       },
       "fragile": {
         "Name": "Fragile",
-        "Hint": "Drinks potions early and retreats when hurt. Once hurt, wants to get away from whoever is hurting it and to mend itself; setbacks wear it down."
+        "Hint": "Drinks potions early and retreats when hurt. Once hurt, wants to get away from whoever is hurting it and to mend itself; setbacks wear it down. Leading a group, its flight takes others along."
       },
       "impatient": {
         "Name": "Impatient",
@@ -690,7 +694,7 @@
       },
       "skeptic": {
         "Name": "Skeptic",
-        "Hint": "Careful and calculating: saves resources, heals sparingly. Trusts its own judgment: its leader and team sway it half as much, and it's slow to talk."
+        "Hint": "Careful and calculating: saves resources, heals sparingly. Trusts its own judgment: its leader and team sway it half as much, it's slow to talk, and an outsider's words have a harder time with it (a step further to talk it round, and harder to get through)."
       },
       "speedRunner": {
         "Name": "Speed-Runner",
@@ -698,7 +702,7 @@
       },
       "leader": {
         "Name": "Wants to Lead",
-        "Hint": "Wants to lead (whether or not it does: who leads is its group's chain of command, set in the planner): braver and more loyal, goes for the biggest threat (and now and then pins it down), looks after its people and bolsters them. Whoever commands it instead, it half ignores. Not chosen, it may brood on it now and then (less often the further down its pills this is); with a treacherous streak (Cruel, Wildcard, Mercenary, Instigator) it schemes: that turn it won't help its leaders and is far easier to turn. Changing sides, it gives up wanting to lead."
+        "Hint": "Wants to lead (whether or not it does: who leads is its group's chain of command, set in the planner): braver and more loyal, goes for the biggest threat (and now and then pins it down), looks after its people, bolsters them, and rallies them when friends run or waver. Whoever commands it instead, it half ignores. Not chosen, it may brood on it now and then (less often the further down its pills this is); with a treacherous streak (Cruel, Wildcard, Mercenary, Instigator) it schemes: that turn it won't help its leaders and is far easier to turn. Changing sides, it gives up wanting to lead."
       },
       "instigator": {
         "Name": "Instigator",
@@ -706,19 +710,19 @@
       },
       "diplomat": {
         "Name": "Diplomat",
-        "Hint": "Opens by trying to talk, wants to talk throughout, and often spares the fallen."
+        "Hint": "Opens by trying to talk, wants to talk throughout, and often spares the fallen. Can't abide violence: it calms quarrels it sees and, taking no side, talks fighters into leaving."
       },
       "wallflower": {
         "Name": "Wallflower",
-        "Hint": "Stays at range and out of notice; keeps its distance from whatever comes close, would rather hamper a foe from afar, and listens to the crowd less."
+        "Hint": "Stays at range and out of notice; keeps its distance from whatever comes close, would rather hamper a foe from afar, and listens to the crowd less. Leading a group, its flight takes a few along."
       },
       "martyr": {
         "Name": "Martyr",
-        "Hint": "Never retreats, heals at all costs, and wants above all to guard the weakest friend; fears nothing; avenges the fallen twice as hard."
+        "Hint": "Never retreats, heals at all costs, and wants above all to guard the weakest friend; fears nothing; avenges the fallen twice as hard; rallies friends who run or waver."
       },
       "mercenary": {
         "Name": "Mercenary",
-        "Hint": "Looks out for number one: easy pickings, conserves resources, keeps fighting over rescuing, retreats when it turns. Little loyalty: barely avenges anyone, gives up when it gets hard."
+        "Hint": "Looks out for number one: easy pickings, conserves resources, keeps fighting over rescuing, retreats when it turns. Little loyalty: barely avenges anyone, gives up when it gets hard. Leading a group, its flight takes others along; it would never pay a boss off."
       },
       "enabler": {
         "Name": "Enabler",
@@ -756,11 +760,11 @@
       },
       "relentless": {
         "Name": "Relentless",
-        "Hint": "Single-minded: sticks with the foe it's on, shrugs off setbacks, and keeps at a locked door."
+        "Hint": "Single-minded: sticks with the foe it's on, shrugs off setbacks, keeps at a locked door, and doesn't care for an outsider's reasons (a little harder to talk round)."
       },
       "lazy": {
         "Name": "Lazy",
-        "Hint": "As little as it can get away with: whatever foe is nearest (and not one worth a long walk), saves its resources, isn't much help to anyone, gives up fast, barely bothers with a locked door, and can't be bothered to hold a grudge."
+        "Hint": "As little as it can get away with: whatever foe is nearest (and not one worth a long walk), saves its resources, isn't much help to anyone, gives up fast, barely bothers with a locked door, and can't be bothered to hold a grudge. Leading a group, its flight takes others along."
       },
       "NeverKill": "I never kill",
       "NeverKillHint": "Blows that would kill knock out instead (unconscious and stable), the fallen are never struck, and after the fight this character stops anyone finishing them and tends them if it can.",

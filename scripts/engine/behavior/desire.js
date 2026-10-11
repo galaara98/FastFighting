@@ -397,6 +397,8 @@ export function styleWants(run, u, scored, { canHeal = false, canTalk = false, t
   // Friends: one to mend, one to guard.
   const friends = run.units.filter(a => a !== u && a.side === u.side && a.active && ![STATUS.DEAD, STATUS.FLED].includes(a.status));
   if ( canHeal && s.heal ) for ( const a of friends ) if ( perceives(run, u, a, { crisis: true }) && (a.status === STATUS.DOWN || frac(a) < 0.75) ) add("heal", a.id, s.heal);
+  // Itself, once hurt (the Fragile).
+  if ( canHeal && s.mend && frac(u) < 0.75 ) add("heal", u.id, s.mend);
   if ( s.protect ) add("protect", friends.filter(isStanding).sort((a, b) => looks(a) - looks(b))[0]?.id, s.protect);
   // Bolstering: the friend doing the most fighting (its leader, for those who look to one).
   if ( canAid && s.aid ) {

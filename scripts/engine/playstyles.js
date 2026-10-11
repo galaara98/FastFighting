@@ -50,10 +50,10 @@ export const PLAYSTYLES = Object.freeze({
   // Does what the others want: the leader's and the team's wishes pull hard.
   peoplePleaser: { icon: "fa-face-smile", traits: { selfish: -20, loyal: 15 }, suggest: { healAggro: "aggressive", target: "protect", talk: "opportune" }, behavior: { followFocus: 0.5, helps: 1 },
     desire: { talk: 10, aid: 10, leader: 2, team: 2.5 } },
-  // Fine until hurt; then it wants to mend itself and get away from whoever is hurting it. (Not a coward: that's
-  // the Chicken. It doesn't shift bravery.)
+  // Fine until hurt; then it wants to mend itself (mend: healing itself, once hurt) and get away from whoever is
+  // hurting it. (Not a coward: that's the Chicken. It doesn't shift bravery.)
   fragile: { icon: "fa-heart-crack", traits: {}, suggest: { retreat: "hurt", potionThreshold: "75", selfRevived: "healSelf" }, behavior: { lowProfile: 0.2, flighty: 0.6 },
-    desire: { avoid: { attacker: 30 }, heal: 10, frustration: 1.3 } },
+    desire: { avoid: { attacker: 30 }, mend: 25, frustration: 1.3 } },
   // The nearest foe, now; no patience for obstacles (or locked doors).
   impatient: { icon: "fa-hourglass-end", traits: { tactical: -10 }, suggest: { resourceUse: "nova", target: "nearest", shield: "never" }, behavior: { rush: 0.5 },
     desire: { hurt: { nearest: 15 }, frustration: 2, doorPatience: 0.5 } },
@@ -77,6 +77,11 @@ export const PLAYSTYLES = Object.freeze({
   // goes for the most dangerous foe and their leader, and may defy its own leader.
   instigator: { icon: "fa-fire", traits: { brave: 10, selfish: 5 }, suggest: { style: "frontline", target: "dangerous" }, behavior: { drawAggro: 0.35, initiative: 2, hinders: 1 },
     desire: { hurt: { dangerous: 15, leader: 15 }, retaliate: 1.2, contrarian: 0.5 } },
+  // Keeps the peace, between anyone (peacekeeping): everyone in a standoff with it loses patience half as fast, either
+  // side; it calms any quarrel it sees; foes it talks round stand down (a truce, even mid-fight: never a surrender, a
+  // payoff or a rout); it's trusted for it (its words 2 easier to accept) and never threatens; it spares the fallen.
+  peacekeeper: { icon: "fa-hand-peace", traits: { selfish: -10, brave: 5 }, suggest: { talk: "first", allyDying: "rescue" }, behavior: { peacekeeping: 1, spareDowned: 1 },
+    desire: { talk: 20, protect: 10, hurt: { downed: -100 } } },
   // Talks first, and spares the fallen.
   diplomat: { icon: "fa-handshake", traits: { selfish: -10 }, suggest: { talk: "first", target: "dangerous" }, behavior: { parleyFirst: 0.6, spareDowned: 0.5 },
     desire: { talk: 30, hurt: { downed: -50 } } },
@@ -128,13 +133,13 @@ const DESIRE_MULTIPLIERS = ["retaliate", "avenge", "cool", "frustration", "leade
 /** The combined desire guide of a character's pills (roleplay leans on it harder; staying true halves it). */
 function combineDesires(chosen, { stayTrue, roleplay }) {
   const base = roleplay ? 1.5 : stayTrue ? 0.5 : 1;
-  const out = { hurt: {}, avoid: {}, heal: 0, protect: 0, aid: 0, talk: 0, whim: 0, contrarian: 0 };
+  const out = { hurt: {}, avoid: {}, heal: 0, mend: 0, protect: 0, aid: 0, talk: 0, whim: 0, contrarian: 0 };
   for ( const m of DESIRE_MULTIPLIERS ) out[m] = 1;
   for ( const [i, id] of chosen.entries() ) {
     const scale = base * ORDER_WEIGHTS[i];
     const d = PLAYSTYLES[id].desire ?? {};
     for ( const group of ["hurt", "avoid"] ) for ( const [k, v] of Object.entries(d[group] ?? {}) ) out[group][k] = (out[group][k] ?? 0) + v * scale;
-    for ( const k of ["heal", "protect", "aid", "talk", "whim"] ) out[k] += (d[k] ?? 0) * scale;
+    for ( const k of ["heal", "mend", "protect", "aid", "talk", "whim"] ) out[k] += (d[k] ?? 0) * scale;
     for ( const m of DESIRE_MULTIPLIERS ) if ( d[m] !== undefined ) out[m] *= 1 + (d[m] - 1) * scale;
     if ( d.contrarian ) out.contrarian = Math.min(1, Math.max(out.contrarian, d.contrarian * scale));
   }
