@@ -301,7 +301,7 @@
 .ff-survey-sheet { flex: 1; overflow-y: auto; padding: 8px 12px 12px; }
 .ff-survey-token { display: flex; gap: 10px; align-items: center; margin-bottom: 6px; }
 /* FastFighting's tab in the token windows */
-.ff-token-tactics-head { display: flex; gap: 10px; align-items: flex-start; justify-content: space-between; }
+.ff-token-tactics-head { display: flex; gap: 10px; align-items: flex-start; justify-content: space-between; margin-bottom: 8px; }
 .ff-token-tactics-head .hint { margin: 0; flex: 1; }
 .ff-token-tactics .ff-tactics { margin-top: 6px; }
 .ff-token-hazard { margin: 12px 0 6px; padding-top: 8px; border-top: 1px solid var(--ff-line); }
