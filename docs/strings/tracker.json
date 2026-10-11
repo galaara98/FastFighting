@@ -11852,7 +11852,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "185ba2b22995"
+   "hash": "185ba2b22995",
+   "gone": "2026-10-11"
   },
   "core:FASTFIGHTING.Survey.Intro": {
    "repo": "core",
