@@ -127,7 +127,10 @@ export function logLine(e) {
     case "afflictionStage": return t("AfflictionStage", { actor: e.actor, name: e.name, stage: e.stage, damage: damage(e.amount, e.damageType) });
     case "afflictionEnd": return Number.isFinite(e.natural) ? t("AfflictionCured", { actor: e.actor, name: e.name, roll: dice(e.natural, e.mod, e.total, e.dc, t("DC")), degree: degree(e.degree) }) : t("AfflictionEnd", { actor: e.actor, name: e.name });
     case "opportunity": return t("Opportunity", a);
-    case "disengage": return t("Disengage", { actor: e.actor, label: e.label || t("Disengages") });
+    case "disengage":
+      // (A way out that takes a check: missed, it goes anyway, and the blows come.)
+      if ( e.made === false ) return t("DisengageMissed", { actor: e.actor, label: e.label || t("Disengages"), total: e.total, dc: e.dc });
+      return t("Disengage", { actor: e.actor, label: e.label || t("Disengages") });
     case "door": {
       const method = { open: "DoorOpen", force: "DoorForce", pick: "DoorPick", attack: "DoorAttack", giveup: "DoorGiveUp" }[e.method] ?? "DoorOpen";
       const roll = e.natural !== undefined ? ` · ${dice(e.natural, e.mod, e.total, e.dc, e.method === "attack" ? term("ac") : t("DC"))}` : "";

@@ -1324,6 +1324,7 @@
       "AfflictionCured": "{actor} recovers from {name} · {roll} · {degree}",
       "Opportunity": "{actor} → {target}: opportunity attack (reaction)",
       "Disengage": "{actor}: {label}",
+      "DisengageMissed": "{actor} tries to get clear ({label}, {total} vs DC {dc}) and fails",
       "Disengages": "disengages",
       "Door": "{actor} → the door: {method}{roll}{damage} · {result}",
       "DoorOpen": "opens it",

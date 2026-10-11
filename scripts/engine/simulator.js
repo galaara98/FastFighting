@@ -1429,11 +1429,17 @@ function leaveReach(run, u, turn, keep = null, need = null) {
   const list = u.disengaged ? [] : threats(run, u, keep);
   if ( list.length ) {
     const safe = run.prep.rules.disengage?.(u);
+    let clear = false;
     if ( takesSafeWay(run, u, safe, turn, need) ) {
       turn.spend(safe.cost);
-      u.disengaged = true;
-      log(run, u, { type: "disengage", label: safe.label ?? "" });
-    } else {
+      // (A way out that takes a check, when the system has one: XCC's acrobatics, harder against several foes.)
+      const dc = list.length > 1 ? safe.check?.dcMany ?? safe.check?.dc : safe.check?.dc;
+      const check = safe.check ? rollCheck(run.prep.rules, run.rng, Number(safe.check.mod) || 0, dc, { kind: "check" }) : null;
+      clear = !check || check.degree >= 2;
+      u.disengaged = clear;
+      log(run, u, { type: "disengage", label: safe.label ?? "", natural: check?.natural ?? null, total: check?.total ?? null, dc: check ? dc : null, made: clear });
+    }
+    if ( !clear ) {
       for ( const { e, strike } of list ) {
         if ( !isStanding(u) || battleOver(run) ) break;
         e.reactionsLeft -= 1;

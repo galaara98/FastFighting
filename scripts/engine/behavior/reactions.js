@@ -5,7 +5,9 @@
  *   rules.opportunity(reactor, mover)  the melee strike the reactor makes, or null if it can't (in PF2e only some
  *                                      creatures can; in 5e anyone with a melee attack)
  *   rules.reactions(u)                 reactions a round (default 1), regained at the start of the creature's turn
- *   rules.disengage(u)                 how to leave safely, {cost, label} (5e Disengage, PF2e Step)
+ *   rules.disengage(u)                 how to leave safely, {cost, label, check?} (5e Disengage, PF2e Step; check:
+ *                                      {mod, dc, dcMany}, a roll it has to make, harder against several foes: XCC's
+ *                                      acrobatics)
  *
  * Thinking combatants have a healthy respect for it: tactical minds always weigh it, competent ones half the time,
  * feral and instinctive ones never. A character played for the story (the "roleplaying is very important" box)

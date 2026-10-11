@@ -326,7 +326,7 @@ function narrate(e, roll, rel, fill) {
     // A failed save that leaves a condition is told by the condition that follows.
     case "riderSave": return e.degree > 1 && e.controls ? roll("event.riderSavePass", f) : "";
     case "opportunity": return roll("event.opportunity", f);
-    case "disengage": return roll("event.disengage", f);
+    case "disengage": return e.made === false ? "" : roll("event.disengage", f); // (missed: the blows that follow tell it)
     case "afflictionStage": return roll("event.afflictionStage", f);
     case "afflictionEnd": return roll("event.afflictionEnd", f);
     case "step": return roll("event.step", f);
