@@ -6479,9 +6479,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Playstyle.AvoidKilling",
    "area": "core/Playstyle",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "written",
+   "date": "2026-10-11",
+   "commit": "3ed0110",
    "hash": "ae2c86420e35"
   },
   "core:FASTFIGHTING.Playstyle.AvoidKillingHint": {
