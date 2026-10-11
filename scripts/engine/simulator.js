@@ -30,7 +30,7 @@ import { createAggregator } from "./aggregate.js";
 import { talkActionsThisTurn, choosePitch, attemptTalk } from "./behavior/talk.js";
 import { opensWithTalk, breaksStandoff, standoffPitches, charismaticLeader } from "./behavior/standoff.js";
 import { controlOutcome, controlRoll, isImmune, degreeShift } from "./behavior/control.js";
-import { recompute as recomputeConditions, applyOutcome, applyControl, beginConcentration, endConcentration, holdsAnything, noteConcentration, moveHeld, settleAllegiance, iwrOf } from "./behavior/effects.js";
+import { recompute as recomputeConditions, applyOutcome, applyControl, beginConcentration, endConcentration, holdsAnything, noteConcentration, moveHeld, settleAllegiance, iwrOf, incoming } from "./behavior/effects.js";
 import { decideBuff, aidScores } from "./behavior/support.js";
 import { perceives } from "./behavior/senses.js";
 import { stealChance, theftTarget, theftPlan, attemptTheft } from "./behavior/theft.js";
@@ -666,6 +666,18 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
       if ( roll.degree === 0 && u.spec.fumble ) applyFumble(run, u);
     }
   }
+}
+
+/**
+ * What raising its shield is worth to u until its next turn, in damage terms: its bonus to AC on what's coming at
+ * it, and a block (PF2e Shield Block) off one blow if it has one and its reaction to spare.
+ */
+function shieldWorth(run, u) {
+  const inc = incoming(run, u);
+  let worth = inc * 0.085 * (Number(u.spec.shield?.ac) || 2);
+  const block = u.spec.reactions?.find(r => r.needsShield && r.reduce);
+  if ( block && (u.reactionsLeft ?? 0) > 0 ) worth += Math.min(meanPart(block.reduce), inc / 2) * 0.8;
+  return worth;
 }
 
 /** A reaction taken, for the log and the story. */
@@ -1558,10 +1570,14 @@ function takeTurn(run, u) {
       if ( canShield && tier >= TACTICAL.INSTINCTIVE ) { raiseShield(); continue; }
       break;
     }
-    // A thinking combatant with a shield prefers defense over a hopeless third attack.
+    // The last action: the shield up, when what it guards against is worth more than what the action would do.
+    if ( canShield && tier >= TACTICAL.COMPETENT && turn.howMany(shieldCost) === 1 && shieldWorth(run, u) > option.ev ) { raiseShield(); continue; }
+    // A thinking combatant with a shield prefers defense over a hopeless third attack; sooner still when a raised
+    // shield can also block (PF2e Shield Block).
     if ( canShield && tier >= TACTICAL.COMPETENT && attacksMade >= 2 ) {
       const first = expectedDamage(run, u, option.action, target, 0);
-      if ( option.ev < first * 0.3 ) { raiseShield(); continue; }
+      const blocks = u.spec.reactions?.some(r => r.needsShield) && (u.reactionsLeft ?? 0) > 0;
+      if ( option.ev < first * (blocks ? 0.65 : 0.3) ) { raiseShield(); continue; }
     }
 
     if ( option.action.drawCost && !u.drawn.has(option.action.id) ) {
