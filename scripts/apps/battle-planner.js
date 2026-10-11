@@ -8,14 +8,14 @@ import {
 import { getAdapter } from "../api.js";
 import { setting } from "../settings.js";
 import { listJoin, localize, term, hasStat } from "../i18n.js";
-import { getSetup, saveSetup, clearSetup, tokenSetup, planHolder } from "../foundry/persistence.js";
+import { getSetup, saveSetup, clearSetup, tokenSetup, planHolder, rememberPartyRole } from "../foundry/persistence.js";
 import {
   questionsContext, setTactic, togglePlaystyle, syncTacticsDom, isPlayerControlled, playersOnScene, tokensForUser, surveyStatus,
   requestSurveys, SURVEY_STATUS, playstyleSignature, tacticsFor
 } from "../foundry/tactics.js";
 import {
   gatherRoster, chosenSide, groupOf, proposeNeutralGroups, resolveAllegiances, simulate, swingFactors, replay, findSample, drawFight,
-  approachFor, commandChains, commandGroup, ROLES, sideName, hostileGroupsIn, secretTeam, SECRET_TEAMS, LEANS
+  approachFor, commandChains, commandGroup, seedCommand, clearRole, ROLES, sideName, hostileGroupsIn, secretTeam, SECRET_TEAMS, LEANS
 } from "../foundry/battle.js";
 import { buildStory, STORY_STYLES } from "../story/story.js";
 import { loadStoryTables } from "../story/tables.js";
@@ -185,6 +185,11 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     this.roster = await gatherRoster(this.setup);
     for ( const e of this.roster ) tokenSetup(this.setup, e.token.id);
     proposeNeutralGroups(this.roster, this.setup); // friend groups for the neutrals, as the map stands now
+    // A new plan, or one just cleared: who commands each group, picked once (after that, only the GM changes it).
+    if ( !this.setup.commandSeeded && this.roster.length && game.user.isGM ) {
+      seedCommand(this.roster, this.setup);
+      await saveSetup(this.setup, this.holder);
+    }
     try {
       this.approach = approachFor(this.roster, this.setup);
     } catch ( err ) {
@@ -586,7 +591,10 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
         event.preventDefault();
         const id = pills.closest("[data-token-id]")?.dataset.tokenId;
         if ( !id || !this.setup.tokens[id] ) return;
-        delete this.setup.tokens[id].role;
+        clearRole(this.setup.tokens[id]);
+        // (A party member's role from earlier fights is forgotten too.)
+        const me = this.roster.find(e => e.token.id === id);
+        if ( me && commandGroup(me, this.setup, resolveAllegiances(this.roster, this.setup)) === SIDES.FRIENDLY ) await rememberPartyRole(me.token.actor?.id, null);
         await saveSetup(this.setup, this.holder);
         this.stale = true;
         this.render();
@@ -633,7 +641,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       if ( /^tokens\.[^.]+\.side$/.test(name) ) {
         this.setup.tokens[name.split(".")[1]].group = null;
         delete this.setup.tokens[name.split(".")[1]].team;
-        delete this.setup.tokens[name.split(".")[1]].role; // (its role was in the group it left)
+        clearRole(this.setup.tokens[name.split(".")[1]]); // (its role was in the group it left)
       }
       if ( name === "options.seed" ) this.setup.options.seed = Number.isFinite(Number.parseInt(value, 10)) ? Number.parseInt(value, 10) >>> 0 : null;
       await saveSetup(this.setup, this.holder);
@@ -662,19 +670,24 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     const role = target.dataset.role;
     if ( !id || !ROLES.includes(role) ) return;
     const ts = tokenSetup(this.setup, id);
+    const resolved = resolveAllegiances(this.roster, this.setup);
+    const me = this.roster.find(e => e.token.id === id);
+    const key = me ? commandGroup(me, this.setup, resolved) : null;
+    // (The GM's pick now, not the automatic one.)
+    delete ts.roleAuto;
+    delete ts.roleWhy;
     if ( target.classList.contains("active") ) ts.role = "none";
     else {
-      const resolved = resolveAllegiances(this.roster, this.setup);
-      const me = this.roster.find(e => e.token.id === id);
-      const key = me ? commandGroup(me, this.setup, resolved) : null;
       const head = role === "boss" || role === "leader" ? ["boss", "leader"] : [role];
       for ( const e of this.roster ) {
         const other = this.setup.tokens[e.token.id];
         if ( e.token.id === id || !other || !head.includes(other.role) ) continue;
-        if ( commandGroup(e, this.setup, resolved) === key ) delete other.role;
+        if ( commandGroup(e, this.setup, resolved) === key ) clearRole(other);
       }
       ts.role = role;
     }
+    // (The party's roles carry over to its next fights.)
+    if ( key === SIDES.FRIENDLY ) await rememberPartyRole(me.token.actor?.id, ts.role);
     await saveSetup(this.setup, this.holder);
     this.stale = true;
     this.render();
@@ -697,7 +710,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     if ( !id || !SECRET_TEAMS.includes(team) || target.classList.contains("active") ) return;
     const ts = tokenSetup(this.setup, id);
     ts.team = team;
-    delete ts.role; // (its role was in the team it left)
+    clearRole(ts); // (its role was in the team it left)
     await saveSetup(this.setup, this.holder);
     this.stale = true;
     this.render();

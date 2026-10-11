@@ -63,6 +63,8 @@ export function registerSettings(DefaultsConfig, GenericPathsConfig, StoryTables
     });
   }
   game.settings.register(MODULE_ID, "genericPaths", { scope: "world", config: false, type: Object, default: {} });
+  // The party's roles the GM gave in earlier fights, by actor: {actorId: "leader" | "lt1" | "lt2"}.
+  game.settings.register(MODULE_ID, "partyCommand", { scope: "world", config: false, type: Object, default: {} });
   if ( GenericPathsConfig ) {
     game.settings.registerMenu(MODULE_ID, "genericPathsMenu", {
       name: "FASTFIGHTING.Generic.MenuName",

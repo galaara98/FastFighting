@@ -6122,7 +6122,28 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "4d317992ee64"
+   "hash": "4d317992ee64",
+   "changed": true
+  },
+  "core:FASTFIGHTING.Planner.RoleRemembered": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Planner.RoleRemembered",
+   "area": "core/Planner",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "311209221ef0"
+  },
+  "core:FASTFIGHTING.Planner.RoleWantsToLead": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Planner.RoleWantsToLead",
+   "area": "core/Planner",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "61a3c2ff965a"
   },
   "core:FASTFIGHTING.Planner.Run": {
    "repo": "core",

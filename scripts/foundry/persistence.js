@@ -8,6 +8,7 @@
  */
 import { MODULE_ID, SIDES, TRAITS } from "../constants.js";
 import { setting } from "../settings.js";
+import { rememberRole } from "./command-pick.js";
 
 const emptyFudge = () => Object.fromEntries(TRAITS.map(k => [k, 0]));
 
@@ -67,6 +68,16 @@ export function getSetup(holder = planHolder()) {
 }
 
 /** Clear the plan: back to the defaults (an encounter's clears to the defaults, not to its scene's plan). */
+/**
+ * Keep the GM's pick for a party member's role for the party's next fights (by actor): the partyCommand setting.
+ * @param {string} actorId
+ * @param {string|null} role   the token's role now ("none" or null: none)
+ */
+export async function rememberPartyRole(actorId, role) {
+  if ( !actorId || !game.user.isGM ) return;
+  await game.settings.set(MODULE_ID, "partyCommand", rememberRole(setting("partyCommand") ?? {}, actorId, role));
+}
+
 export async function clearSetup(holder = planHolder()) {
   if ( !holder || !game.user.isGM ) return;
   await holder.update({ [`flags.${MODULE_ID}.==setup`]: {} }, { render: false });

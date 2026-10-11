@@ -338,6 +338,8 @@
       "GroupTraits": "Group personality",
       "Leader": "Leader",
       "AutoLeaderNone": "Auto (no leader found)",
+      "RoleRemembered": "Held this role in an earlier fight",
+      "RoleWantsToLead": "The only one who wants to lead",
       "NoLeader": "No leaders",
       "ChosenLeader": "Chosen by the GM",
       "SideDefault": "side default",
@@ -409,7 +411,7 @@
           "Short": "2"
         }
       },
-      "RoleHint": "Command: B boss (not in the party; its lead {boss}× as compelling as a leader's, and a group with a boss has no leader), L leader, 1 and 2 lieutenants (they step up, as leaders, when those before them are down, gone, blinded, deafened or otherwise can't lead, and step back when they can again). Faded: the automatic pick, from the system's own ranking of who leads best. Click to give this token the role; click again to keep it out of command; right-click for the automatic pick."
+      "RoleHint": "Command: B boss (not in the party; its lead {boss}× as compelling as a leader's, and a group with a boss has no leader), L leader, 1 and 2 lieutenants (they step up, as leaders, when those before them are down, gone, blinded, deafened or otherwise can't lead, and step back when they can again). Faded: picked automatically when this plan was made or cleared. Click to give this token the role; click again to keep it out of command; right-click to clear it."
     },
     "Results": {
       "Tab": {

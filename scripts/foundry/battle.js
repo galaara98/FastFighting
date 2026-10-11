@@ -10,6 +10,7 @@ import { proposeGroups } from "../engine/groups.js";
 import { resetPathGrid } from "./pathing.js";
 import { tokenSetup, sceneEncounter } from "./persistence.js";
 import { tacticsFor, isPlayerControlled, statedDesires } from "./tactics.js";
+import { rankForCommand, autoLieutenants, partyRoles } from "./command-pick.js";
 import { setting } from "../settings.js";
 
 const SIDE_LABELS = {
@@ -316,15 +317,30 @@ export function commandGroup(entry, setup, resolved) {
 /** The planner tab whose settings a command group uses (hostile groups share the Hostile tab's; neutral groups the Neutral's). */
 const tabOf = key => (key.startsWith(NEUTRAL_PARTY) ? SIDES.NEUTRAL : HOSTILE_GROUPS.includes(key) ? SIDES.HOSTILE : key);
 
+/** A member's playstyles and traits (its playstyles' shifts in them), for who takes command (command-pick.js). */
+function bossyOf(entry) {
+  let styles = { ids: [], traits: {} };
+  try {
+    styles = tacticsFor(entry.token.actor, entry.spec).playstyles ?? styles;
+  } catch ( err ) { /* (no tactics to read: it's as its traits say) */ }
+  const traits = Object.fromEntries(TRAITS.map(k => [k, (Number(entry.spec.traits?.[k]?.base) || 50) + (styles.traits?.[k] ?? 0)]));
+  return { playstyles: styles.ids ?? [], traits };
+}
+
 /**
- * Every group's chain of command: {key: [{id, slot (boss | leader | lt1 | lt2), role, leadership, auto, reason}]}.
- * The GM's picks (a token's role: a pill in the planner; "none" keeps it out) stand. The rest come from the system's
- * own ranking of who leads best (adapter.detectLeaders; wanting to lead, a playstyle, is no part of it): the best heads
- * the group (outside the party, as its boss when it outranks every other member by 2 levels or more), the next two
- * are its lieutenants. A tab set to "No leaders" has none; the party never has a boss.
+ * Every group's chain of command: {key: [{id, slot (boss | leader | lt1 | lt2), role, leadership, auto, reason, why}]},
+ * from the roles in the plan (a pill in the planner; "none" keeps a token out; auto: the automatic pick made when the
+ * plan was new, see seedCommand). With `auto`, the automatic pick fills the rest (command-pick.js):
+ *  - outside the party, the group's best heads it (as its boss when it outranks every other member by 2 levels or
+ *    more): the system's ranking of who leads (adapter.detectLeaders) counts double, how bossy each is sways it; a
+ *    group of five or more gets a lieutenant too. A group of one has nobody to command.
+ *  - the party: the roles the GM gave its members in earlier fights (the partyCommand setting); else a leader only
+ *    when one member, and only one, wants to lead. It never has a boss.
+ * A tab set to "No leaders" has none.
  * @param {object[]} entries   roster entries in the fight
+ * @param {object} [options]   {auto: fill what the plan leaves open with the automatic pick}
  */
-export function commandChains(entries, setup, resolved, adapter = getAdapter()) {
+export function commandChains(entries, setup, resolved, adapter = getAdapter(), { auto: fill = false } = {}) {
   const groups = new Map();
   for ( const e of entries ) {
     const key = commandGroup(e, setup, resolved);
@@ -345,17 +361,15 @@ export function commandChains(entries, setup, resolved, adapter = getAdapter()) 
     const legacy = s.leaderId && s.leaderId !== "auto" ? members.find(e => e.token.id === s.leaderId && !roleOf(e)) ?? null : null;
     const used = new Set(members.filter(e => roleOf(e)).map(e => e.token.id));
     if ( legacy ) used.add(legacy.token.id);
-    const nextRanked = () => {
-      const r = ranked.find(x => !used.has(x.id));
-      if ( r ) used.add(r.id);
-      return r ?? null;
-    };
     const lf = s.leadershipFudge ?? {};
-    const entry = (id, slot, auto) => {
+    const entry = (id, slot, auto, why = null) => {
       const r = ranked.find(x => x.id === id);
       const b = r?.bonus ?? PICKED_BONUS;
+      // (A role the automatic pick gave when the plan was new keeps saying why.)
+      const ts = setup.tokens[id];
+      if ( !auto && ts?.roleAuto ) [auto, why] = [true, ts.roleWhy ?? null];
       return {
-        id, slot, auto, reason: r?.reason ?? "", role: slot === "boss" ? "boss" : slot === "leader" ? "leader" : "lieutenant",
+        id, slot, auto, why, reason: why ? game.i18n.localize(why) : r?.reason ?? "", role: slot === "boss" ? "boss" : slot === "leader" ? "leader" : "lieutenant",
         leadership: Object.fromEntries(["brave", "tacticalFloor", "attack", "ac"].map(k => [k, { base: b[k] ?? 0, fudge: lf[k] ?? 0 }]))
       };
     };
@@ -364,23 +378,74 @@ export function commandChains(entries, setup, resolved, adapter = getAdapter()) 
     const chain = [];
     const boss = party ? null : picked("boss");
     const leader = picked("leader") ?? (party ? picked("boss") : null) ?? legacy;
-    if ( boss ) chain.push(entry(boss.token.id, "boss", false));
-    else if ( leader ) chain.push(entry(leader.token.id, "leader", false));
-    else {
-      const r = nextRanked();
-      if ( r ) chain.push(entry(r.id, !party && outranks(r.id) ? "boss" : "leader", true));
-    }
-    for ( const slot of ["lt1", "lt2"] ) {
-      const p = picked(slot);
-      if ( p ) chain.push(entry(p.token.id, slot, false));
-      else {
-        const r = nextRanked();
-        if ( r ) chain.push(entry(r.id, slot, true));
+    const free = members.filter(e => !used.has(e.token.id));
+    if ( party ) {
+      // The roles from earlier fights, or the one member who wants to lead.
+      const taken = new Set(["leader", "lt1", "lt2"].filter(slot => (slot === "leader" ? leader : picked(slot))));
+      const auto = new Map(partyRoles(free.map(e => ({ id: e.token.id, actorId: e.token.actor?.id ?? null, playstyles: bossyOf(e).playstyles })),
+        setting("partyCommand") ?? {}, taken).map(r => [r.slot, r]));
+      const why = r => (r.why === "remembered" ? "FASTFIGHTING.Planner.RoleRemembered" : "FASTFIGHTING.Planner.RoleWantsToLead");
+      if ( leader ) chain.push(entry(leader.token.id, "leader", false));
+      else if ( fill && auto.has("leader") ) chain.push(entry(auto.get("leader").id, "leader", true, why(auto.get("leader"))));
+      for ( const slot of ["lt1", "lt2"] ) {
+        const p = picked(slot);
+        if ( p ) chain.push(entry(p.token.id, slot, false));
+        else if ( fill && auto.has(slot) ) chain.push(entry(auto.get(slot).id, slot, true, why(auto.get(slot))));
+      }
+    } else {
+      // The group's best: the system's ranking counts double, how bossy each is sways it.
+      const order = rankForCommand(free.map(e => ({ id: e.token.id, ...bossyOf(e) })), ranked);
+      const next = () => {
+        const r = order.find(x => !used.has(x.id));
+        if ( r ) used.add(r.id);
+        return r ?? null;
+      };
+      if ( boss ) chain.push(entry(boss.token.id, "boss", false));
+      else if ( leader ) chain.push(entry(leader.token.id, "leader", false));
+      else if ( fill && members.length > 1 ) {
+        const r = next();
+        if ( r ) chain.push(entry(r.id, outranks(r.id) ? "boss" : "leader", true));
+      }
+      // A lieutenant of its own in a group of five or more (unless the GM gave it one).
+      let lieutenants = Math.max(0, autoLieutenants(members.length) - ["lt1", "lt2"].filter(slot => picked(slot)).length);
+      for ( const slot of ["lt1", "lt2"] ) {
+        const p = picked(slot);
+        if ( p ) chain.push(entry(p.token.id, slot, false));
+        else if ( fill && lieutenants > 0 && chain.length ) {
+          const r = next();
+          if ( r ) chain.push(entry(r.id, slot, true));
+          lieutenants--;
+        }
       }
     }
     if ( chain.length ) out[key] = chain;
   }
   return out;
+}
+
+/**
+ * A new plan (or one just cleared) gets its chains of command once: whoever the plan gives no role takes the one the
+ * automatic pick gives it, kept in the plan as automatic (faded in the planner). After that only the GM changes them:
+ * tokens joining the fight, or moving from group to group, reshuffle nothing.
+ */
+export function seedCommand(roster, setup, adapter = getAdapter()) {
+  const resolved = resolveAllegiances(roster, setup);
+  const entries = roster.filter(e => resolved[e.token.id] && setup.tokens[e.token.id]?.include !== false);
+  for ( const chain of Object.values(commandChains(entries, setup, resolved, adapter, { auto: true })) ) {
+    for ( const c of chain ) {
+      if ( !c.auto || setup.tokens[c.id]?.role ) continue;
+      Object.assign(tokenSetup(setup, c.id), { role: c.slot, roleAuto: true, ...(c.why ? { roleWhy: c.why } : {}) });
+    }
+  }
+  setup.commandSeeded = true;
+}
+
+/** A token's role in the plan, gone (with whether the automatic pick gave it, and why). */
+export function clearRole(ts) {
+  if ( !ts ) return;
+  delete ts.role;
+  delete ts.roleAuto;
+  delete ts.roleWhy;
 }
 
 /**

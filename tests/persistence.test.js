@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { planHolder, getSetup, saveSetup, clearSetup, sceneEncounter } from "../scripts/foundry/persistence.js";
-import { groupOf, resolveAllegiances, resolveLeans, commandGroup, secretTeam, SECRET_TEAMS } from "../scripts/foundry/battle.js";
+import { groupOf, resolveAllegiances, resolveLeans, commandGroup, commandChains, seedCommand, secretTeam, SECRET_TEAMS } from "../scripts/foundry/battle.js";
 
 /** A document that keeps flags, as a Foundry Scene or Combat does. */
 function doc(uuid, extra = {}) {
@@ -159,5 +159,45 @@ describe("a plan per encounter", () => {
     expect(groupOf(hostile, setup)).toBe(1);
     setup.tokens.orc.group = 3;
     expect(groupOf(hostile, setup)).toBe(3);
+  });
+});
+
+describe("who commands: picked once, when the plan is new or just cleared", () => {
+  // (The system's ranking: whoever has a lead score, best first.)
+  const adapter = { detectLeaders: specs => specs.filter(s => s.lead !== undefined)
+    .map(s => ({ id: s.id, score: s.lead, reason: "", bonus: { brave: 10 } })).sort((a, b) => b.score - a.score) };
+  const token = (id, lead) => ({ token: { id, actor: { id } }, baseSide: "hostile", spec: { id, level: 1, lead, traits: {} } });
+  const roles = setup => Object.fromEntries(Object.entries(setup.tokens).filter(([, t]) => t.role).map(([id, t]) => [id, t.role]));
+
+  test("a new plan gets its commanders once; a better leader joining later changes nothing; cleared, it picks again", async () => {
+    const setup = getSetup();
+    const roster = ["a", "b", "c", "d", "e"].map(id => token(id, id === "c" ? 5 : 1));
+    for ( const e of roster ) setup.tokens[e.token.id] = { include: true };
+    seedCommand(roster, setup, adapter);
+    // Five in the group: a leader and a lieutenant, kept in the plan as the automatic pick.
+    expect(roles(setup)).toEqual({ c: "leader", a: "lt1" });
+    expect(setup.tokens.c.roleAuto).toBe(true);
+    expect(setup.commandSeeded).toBe(true);
+    roster.push(token("f", 9));
+    setup.tokens.f = { include: true };
+    const chain = commandChains(roster, setup, resolveAllegiances(roster, setup), adapter).hostile;
+    expect(chain.map(c => [c.id, c.slot, c.auto])).toEqual([["c", "leader", true], ["a", "lt1", true]]);
+    await saveSetup(setup);
+    await clearSetup();
+    expect(getSetup().commandSeeded).toBeUndefined();
+  });
+
+  test("a group of four gets a leader and no lieutenant; one alone, nobody; the GM's own picks stand", () => {
+    const setup = getSetup();
+    const roster = ["a", "b", "c", "d"].map(id => token(id, id === "b" ? 3 : 0));
+    for ( const e of roster ) setup.tokens[e.token.id] = { include: true };
+    setup.tokens.d.role = "lt2";
+    seedCommand(roster, setup, adapter);
+    expect(roles(setup)).toEqual({ b: "leader", d: "lt2" });
+    expect(setup.tokens.d.roleAuto).toBeUndefined();
+    const alone = getSetup();
+    alone.tokens.a = { include: true };
+    seedCommand([token("a", 9)], alone, adapter);
+    expect(roles(alone)).toEqual({});
   });
 });
