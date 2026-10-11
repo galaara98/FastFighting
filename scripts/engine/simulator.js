@@ -45,14 +45,17 @@ const MAX_STEPS_PER_TURN = 8;
 const AFTERMATH_ROUNDS = 100;
 /** Batches give the browser back control this often (ms), so the GM's screen stays responsive. */
 const SLICE_MS = 25;
-const DEGREE_LABEL = ["critical failure", "failure", "success", "critical success"];
 /** How much being hit makes a creature want to hit back, by tactical band: simple minds go for whoever hurt them. */
 const HIT_URGE = [40, 25, 10, 5, 3];
 
-function log(run, u, text, data = {}) {
+/**
+ * Note an event in the run's log: its type and data, from which the log and the stories are told in the reader's
+ * language (story/log-lines.js). A game system's own report carries its words as data.text, shown as they come.
+ */
+function log(run, u, data = {}) {
   if ( !run.log ) return;
   run.log.push({
-    round: run.round, actor: u?.spec.name ?? "", actorId: u?.id ?? null, side: u?.side ?? null, text,
+    round: run.round, actor: u?.spec.name ?? "", actorId: u?.id ?? null, side: u?.side ?? null,
     type: data.type ?? "note", ...data
   });
 }
@@ -60,7 +63,7 @@ function log(run, u, text, data = {}) {
 const primaryType = action => (action.damage ?? action.heal ?? [])[0]?.type ?? "untyped";
 
 /** The run's logger, for helpers that log as they go (see luck.js). */
-const logger = run => (run.logTo ??= (unit, text, data) => log(run, unit, text, data));
+const logger = run => (run.logTo ??= (unit, data) => log(run, unit, data));
 
 /**
  * How much rides on a save (for burning Luck on one that falls short): a blow that would drop the saver, or a hold
@@ -91,7 +94,7 @@ function rollSave(run, target, type, dc, { stakes = 0.3, label = "", magical = f
   if ( roll.degree === 2 && upgradesSave(target, type) ) roll = { ...roll, degree: 3 };
   if ( rules.adjustRoll ) {
     roll = rules.adjustRoll(run, target, roll, { kind: "save", stakes, label }) ?? roll;
-    if ( roll.said ) log(run, target, roll.said.text, { type: "adjust", ...roll.said.data });
+    if ( roll.said ) log(run, target, { text: roll.said.text, type: "adjust", ...roll.said.data });
   }
   rules.afterRoll?.(run, target, roll, { kind: "save", type });
   return { roll, mod: s.mod };
@@ -105,7 +108,7 @@ function standFirm(run, target, roll, dc, stakes, label) {
   const firm = target.spec.standFirm;
   if ( !firm || roll.degree >= 2 || stakes < 0.6 || !((target.resources[firm.pool] ?? 0) > 0) ) return roll;
   target.resources[firm.pool] -= 1;
-  log(run, target, `${firm.label ?? "stands firm"} against ${label}`, {
+  log(run, target, {
     type: "standFirm", label: firm.label ?? "", against: label, natural: roll.natural, total: roll.total, dc
   });
   return { ...roll, degree: 2, firm: true };
@@ -167,15 +170,7 @@ function notice(run, b, cause, source) {
   b.aware = true;
   // During a standoff there is no fighting to see or hear, only a tense crowd and raised voices.
   if ( run.standoff && (cause === "sight" || cause === "sound") ) cause = "standoff";
-  const text = {
-    standoff: "notices the tense standoff",
-    sight: `sees the fight${source ? ` (${source.spec.name})` : ""}`,
-    sound: "hears the sounds of fighting",
-    fledInto: `is stumbled into by the fleeing ${source?.spec.name ?? "combatant"}`,
-    help: `is roused by ${source?.spec.name ?? "an ally"} calling for help`,
-    attacked: `is set upon by ${source?.spec.name ?? "a hunter"}`
-  }[cause] ?? "notices the fight";
-  log(run, b, text, { type: "notice", cause, by: source?.spec.name ?? null, byId: source?.id ?? null });
+  log(run, b, { type: "notice", cause, by: source?.spec.name ?? null, byId: source?.id ?? null });
   if ( cause === "attacked" ) return join(run, b, "forced");
   b.joinsRound ??= run.round + 1;
   b.joinCause = cause;
@@ -187,8 +182,8 @@ function join(run, b, why) {
   b.aware = true;
   b.joinsRound = null;
   b.joinedRound = run.round;
-  if ( isNeutral(b) && !enemiesOf(run, b).length ) return log(run, b, "watches, taking no side", { type: "watch", neutral: true, why });
-  log(run, b, why === "forced" ? "is drawn into the fight" : "joins the fight", { type: "join", why });
+  if ( isNeutral(b) && !enemiesOf(run, b).length ) return log(run, b, { type: "watch", neutral: true, why });
+  log(run, b, { type: "join", why });
 }
 
 /** Waiting to take part: aware of the conflict, with turns from the next round. */
@@ -311,7 +306,7 @@ function dealDamage(run, source, target, amount, { crit = false, types = null } 
           if ( a !== target && a.side === target.side && isStanding(a) && perceives(run, a, target, { crisis: true }) ) want(a, "hurt", source.id, 15 * liveTrait(run, a, "loyal") / 60 * styleOf(a).avenge);
         }
       }
-      log(run, target, dead ? "is slain" : target.knockedOut ? "is knocked out" : `falls${target.dying ? ` (dying ${target.dying})` : ""}`, {
+      log(run, target, {
         type: dead ? "death" : "down", by: source?.spec.name ?? null, byId: source?.id ?? null, dying: target.dying, knockedOut: !!target.knockedOut
       });
     }
@@ -320,7 +315,7 @@ function dealDamage(run, source, target, amount, { crit = false, types = null } 
     if ( rules.afterHarm && target.status !== STATUS.DEAD ) {
       const up = target.status === STATUS.STANDING;
       const said = rules.afterHarm(run, target, rest + absorbed, run.rng);
-      if ( said?.text ) log(run, target, said.text, { type: "endure", ...said.data });
+      if ( said?.text ) log(run, target, { text: said.text, type: "endure", ...said.data });
       // (Taken out by it: the fall counts like any other.)
       if ( up && target.status !== STATUS.STANDING ) {
         target.wasDowned = true;
@@ -340,7 +335,7 @@ function dealDamage(run, source, target, amount, { crit = false, types = null } 
     regenerating(target);
     const dead = target.status === STATUS.DEAD;
     if ( dead ) target.killerId = source?.id ?? target.killerId ?? null;
-    log(run, target, dead ? "is finished off" : `is struck while down (dying ${target.dying})`, { type: dead ? "death" : "struckDown", by: source?.spec.name ?? null, byId: source?.id ?? null, dying: target.dying, finished: dead });
+    log(run, target, { type: dead ? "death" : "struckDown", by: source?.spec.name ?? null, byId: source?.id ?? null, dying: target.dying, finished: dead });
   }
 }
 
@@ -354,7 +349,7 @@ function holdsOn(run, u, amount, crit, types) {
   const dc = (h.base ?? 5) + amount;
   const { roll } = rollSave(run, u, h.save ?? "con", dc, { stakes: 0.9, label: h.label ?? "" });
   if ( roll.degree < 2 ) return false;
-  log(run, u, `${h.label ?? "holds on"}: stays up at 1 hit point`, { type: "holdOn", label: h.label ?? "", natural: roll.natural, total: roll.total, dc });
+  log(run, u, { type: "holdOn", label: h.label ?? "", natural: roll.natural, total: roll.total, dc });
   return true;
 }
 
@@ -381,7 +376,7 @@ function regenerate(run, u) {
   if ( u.status === STATUS.DOWN && u.held && stopped ) {
     if ( u.spec.diesAtZero ) {
       u.status = STATUS.DEAD;
-      log(run, u, "dies, its regeneration stopped", { type: "death", regen: true });
+      log(run, u, { type: "death", regen: true });
       return;
     }
     u.held = false; // (from here on, the system's dying rules)
@@ -392,7 +387,7 @@ function regenerate(run, u) {
   const wasDown = u.status === STATUS.DOWN;
   run.prep.rules.onHealed(u, amount);
   if ( u.status === STATUS.STANDING ) u.held = false;
-  log(run, u, `regenerates ${u.hp - before} hit points${wasDown && u.status === STATUS.STANDING ? " and gets back up" : ""}`, {
+  log(run, u, {
     type: "regen", amount: u.hp - before, revived: wasDown && u.status === STATUS.STANDING
   });
 }
@@ -415,7 +410,7 @@ function releaseGrabs(run, u) {
 function settleSides(run) {
   for ( const { u, joined, home, holder } of settleAllegiance(run) ) {
     const homeLabel = run.prep.sides[home]?.label ?? home;
-    log(run, u, joined ? `turns on ${homeLabel}, under ${holder?.spec.name ?? "someone"}'s control` : "comes back to its senses", {
+    log(run, u, {
       type: "allegiance", joined, by: holder?.spec.name ?? null, byId: holder?.id ?? null, home, homeLabel
     });
   }
@@ -441,7 +436,7 @@ function testConcentration(run, u, amount = 0) {
   const name = u.concentration.name;
   const ended = endConcentration(run, u);
   settleSides(run);
-  log(run, u, `loses concentration on ${name}`, {
+  log(run, u, {
     type: "concentrationEnd", action: name, effects: ended, reason: roll ? "blow" : "incapacitated",
     ...(roll ? { saveType: c.save ?? "con", natural: roll.natural, mod: roll.mod, total: roll.total, dc, degree: roll.degree } : {})
   });
@@ -453,7 +448,7 @@ function applyAfflictionStage(run, target, affliction) {
   if ( !stage?.damage?.length ) return;
   const rolled = sampleDamage(stage.damage, run.rng);
   const amount = run.prep.rules.applyIwr(iwrOf(target), rolled.byType);
-  log(run, target, `${affliction.spec.name} stage ${affliction.stage}: ${amount} damage`, {
+  log(run, target, {
     type: "afflictionStage", name: affliction.spec.name, stage: affliction.stage, amount, damageType: stage.damage[0]?.type ?? "poison"
   });
   dealDamage(run, run.byId.get(affliction.sourceId), target, amount);
@@ -465,7 +460,7 @@ function exposeToAffliction(run, source, target, spec) {
   const { mod, advantage, dice } = saveRoll(run, target, spec.save.type);
   const roll = rollCheck(rules, run.rng, mod, spec.save.dc, { advantage, dice, kind: "save" });
   const increase = afflictionStep(rules, roll.degree, "exposure");
-  log(run, target, `${spec.name}: ${spec.save.type} save ${DEGREE_LABEL[roll.degree]}`, {
+  log(run, target, {
     type: "afflictionSave", name: spec.name, saveType: spec.save.type, natural: roll.natural, mod, total: roll.total, dc: spec.save.dc, degree: roll.degree
   });
   if ( !(increase > 0) ) return;
@@ -486,10 +481,10 @@ function applyEffects(run, u, action, target, degree) {
     if ( target.status === STATUS.DEAD ) return;
     if ( effect.kind === "prone" && (degree === 3 || !effect.critOnly) ) {
       target.prone = true;
-      log(run, target, "is knocked prone", { type: "prone", by: u.spec.name });
+      log(run, target, { type: "prone", by: u.spec.name });
     } else if ( effect.kind === "grabbed" ) {
       target.grabbedBy = u.id;
-      log(run, target, `is grabbed by ${u.spec.name}`, { type: "grabbed", by: u.spec.name });
+      log(run, target, { type: "grabbed", by: u.spec.name });
     } else if ( effect.kind === "affliction" ) {
       exposeToAffliction(run, u, target, effect);
     } else if ( effect.kind === "condition" && (degree === 3 || !effect.critOnly) ) {
@@ -497,7 +492,7 @@ function applyEffects(run, u, action, target, degree) {
       if ( isImmune(run, target, { traits: action.traits, onSave: [effect] }) ) continue;
       applyControl(target, effect, u.id);
       testConcentration(run, target);
-      log(run, target, `is left ${effect.label || "reeling"}`, { type: "condition", by: u.spec.name, effect: effect.label ?? "" });
+      log(run, target, { type: "condition", by: u.spec.name, effect: effect.label ?? "" });
     } else if ( effect.kind === "save" && effect.save ) {
       saveRider(run, u, action, target, effect);
     }
@@ -514,7 +509,7 @@ function saveRider(run, u, action, target, effect) {
   const { roll, mod } = rollSave(run, target, effect.save.type, effect.save.dc, { stakes: saveStakes(target, harmful, !!effect.conditions), label: effect.label || action.name, magical: isMagical(action) });
   const mult = effect.damage?.length ? saveMultiplier(rules, roll.degree, effect.save) : 0;
   const hit = mult > 0 ? rollHit(run, u, action, target, effect.damage, mult, false) : null;
-  log(run, target, `${effect.label || action.name}: ${effect.save.type} save ${DEGREE_LABEL[roll.degree]}${hit ? `, ${hit.total} damage` : ""}`, {
+  log(run, target, {
     type: "riderSave", name: effect.label || action.name, by: u.spec.name, saveType: effect.save.type, natural: roll.natural, mod, total: roll.total,
     dc: effect.save.dc, degree: roll.degree, damage: hit?.total ?? 0, controls: !!effect.conditions
   });
@@ -523,7 +518,7 @@ function saveRider(run, u, action, target, effect) {
   if ( isImmune(run, target, { traits: action.traits, onSave: [effect] }) ) return;
   applyControl(target, effect, u.id);
   testConcentration(run, target);
-  log(run, target, `is left ${effect.label || "reeling"}`, { type: "condition", by: u.spec.name, effect: effect.label ?? "" });
+  log(run, target, { type: "condition", by: u.spec.name, effect: effect.label ?? "" });
 }
 
 /** The price of an attack, as the system sets it (rules.backlash): the target's harm to the attacker. */
@@ -531,7 +526,7 @@ function backlash(run, u, target, action, degree, logging) {
   const cost = run.prep.rules.backlash?.(run, u, target, action, degree);
   if ( !cost?.damage?.length || !isUp(u) || target.status === STATUS.DEAD ) return;
   const hit = rollHit(run, target, { name: cost.label ?? "", damage: cost.damage }, u, cost.damage, 1, false);
-  if ( logging ) log(run, u, `${cost.label ?? "pays for it"}: ${hit.total}`, {
+  if ( logging ) log(run, u, {
     type: "backlash", label: cost.label ?? "", by: target.spec.name, byId: target.id, damage: hit.total, damageType: cost.damage[0]?.type ?? "untyped"
   });
   hit.apply();
@@ -545,7 +540,7 @@ function retort(run, saver, by, action, degree, logging) {
   const back = run.prep.rules.retort?.(run, saver, by, action, degree);
   if ( !back?.damage?.length || !isUp(saver) || !isUp(by) ) return;
   const hit = rollHit(run, saver, { name: back.label ?? "", damage: back.damage }, by, back.damage, 1, degree === 3);
-  if ( logging ) log(run, saver, `${back.label ?? "strikes back"} → ${by.spec.name}: ${hit.total}`, {
+  if ( logging ) log(run, saver, {
     type: "attack", action: back.label ?? "", target: by.spec.name, targetId: by.id, damage: hit.total, degree, retort: true, damageType: back.damage[0]?.type ?? "untyped"
   });
   hit.apply();
@@ -587,16 +582,10 @@ function nextTargetInReach(run, u, action) {
   return enemiesOf(run, u).filter(o => isStanding(o) && !heldOff(run, u, o) && movesNeeded(run, u, o, action) === 0 && (!can || can(run, u, o))).sort((a, b) => a.hp - b.hp)[0] ?? null;
 }
 
-/** What breaks a standoff, as the log tells it. */
-const STANDOFF_BREAKS = {
-  insulted: "takes offense and attacks", beast: "won't wait any longer and attacks", annoyed: "blames the other side for it and attacks",
-  blood: "strikes across the standoff: it's a fight now"
-};
-
 /** The standoff is over: from here on it's a fight. */
 function endStandoff(run, u, cause) {
   run.standoff = false;
-  log(run, u, STANDOFF_BREAKS[cause] ?? "has heard enough and attacks", { type: "breakStandoff", cause });
+  log(run, u, { type: "breakStandoff", cause });
 }
 
 /**
@@ -624,9 +613,7 @@ function castFor(run, u, action, target = null) {
   const result = cast(run, u, action, { stakes, log: logger(run) });
   const r = result.roll;
   const tier = result.action ? tierIndex(run, action, result.action) : null;
-  log(run, u, result.action
-    ? `${action.name}: ${action.casting.label ?? "check"} ${r.total}`
-    : `${action.name}: ${action.casting.label ?? "check"} ${r.total}, ${result.fumble ? "a fumble" : result.disapproved ? "disapproval" : "it fails"}${result.lost ? ", and the spell is lost" : ""}`, {
+  log(run, u, {
     type: "cast", action: action.name, natural: r.natural, mod: Number(action.casting.mod) || 0, total: r.total, faces: result.faces,
     success: !!result.action, tier, fumble: !!result.fumble, disapproved: !!result.disapproved, lost: !!result.lost,
     disapproval: u.disapproval ?? null, target: target?.spec.name ?? null, targetId: target?.id ?? null
@@ -665,7 +652,6 @@ function executeOffense(run, u, action, t, attacksMade) {
     }
     return;
   }
-  const rules = run.prep.rules;
   u.revealed = true;
   run.blood = true; // a blow has been struck: whatever happens now, it wasn't settled with words
   const targets = [t];
@@ -706,7 +692,7 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
     if ( action.kind === "auto" ) {
       const extra = bonusDamageParts(run, u, action, target, { commit: true });
       const hit = rollHit(run, u, action, target, (action.damage ?? []).concat(extra), 1, false);
-      if ( logging ) log(run, u, `${action.name} → ${target.spec.name}: ${hit.total} damage`, { type: "auto", ...common, damage: hit.total });
+      if ( logging ) log(run, u, { type: "auto", ...common, damage: hit.total });
       answerHarm(run, target, u, action, hit.apply());
       return;
     }
@@ -723,11 +709,11 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
       const data = !logging ? null : { type: "save", ...common, saveType: action.save.type, natural: roll.natural, mod: mod + (roll.die ?? 0), total: roll.total, dc: action.save.dc, degree: roll.degree, margin: roll.total - action.save.dc };
       if ( mult > 0 ) {
         const hit = rollHit(run, u, action, target, (action.damage ?? []).concat(extra), mult, roll.degree === 0);
-        if ( logging ) log(run, u, `${action.name} → ${target.spec.name}: save ${DEGREE_LABEL[roll.degree]}, ${hit.total} damage`, { ...data, damage: hit.total });
+        if ( logging ) log(run, u, { ...data, damage: hit.total });
         const dealt = hit.apply();
         if ( roll.degree <= 1 ) applyEffects(run, u, action, target, 3 - roll.degree);
         answerHarm(run, target, u, action, dealt);
-      } else if ( logging ) log(run, u, `${action.name} → ${target.spec.name}: ${DEGREE_LABEL[roll.degree]}, no damage`, { ...data, damage: 0 });
+      } else if ( logging ) log(run, u, { ...data, damage: 0 });
       retort(run, target, u, action, roll.degree, logging);
       return;
     }
@@ -757,7 +743,7 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
     // The system's own say once the dice are seen (Ironsworn: burning momentum), and what the roll means (initiative).
     if ( rules.adjustRoll ) {
       roll = rules.adjustRoll(run, u, roll, { kind: "attack", stakes: attackStakes(run, u, target, action), label: action.name, action, target }) ?? roll;
-      if ( roll.said ) log(run, u, roll.said.text, { type: "adjust", ...roll.said.data });
+      if ( roll.said ) log(run, u, { text: roll.said.text, type: "adjust", ...roll.said.data });
     }
     rules.afterRoll?.(run, u, roll, { kind: "attack", action, target });
     // A close miss a die can mend (5e Precision Attack).
@@ -766,7 +752,7 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
       if ( mend ) {
         roll = { ...roll, total: roll.total + mend.roll };
         roll.degree = regrade(rules, roll, ac, "attack", opts);
-        if ( logging ) log(run, u, `${mend.rider.label}: +${mend.roll}`, { type: "rider", rider: mend.rider.label, tell: mend.rider.tell ?? null, target: target.spec.name, targetId: target.id, roll: mend.roll, made: roll.degree >= 2 });
+        if ( logging ) log(run, u, { type: "rider", rider: mend.rider.label, tell: mend.rider.tell ?? null, target: target.spec.name, targetId: target.id, roll: mend.roll, made: roll.degree >= 2 });
       }
     }
     // Hit, and the target answers before the damage (5e Shield: perhaps a miss after all; Uncanny Dodge, Parry, PF2e
@@ -800,9 +786,6 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
         }
       }
     }
-    // (Against challenge dice rather than a number: an Ironsworn move. A strong hit, a weak hit, a miss.)
-    const versus = roll.challenge ? `${roll.challenge.join(", ")}` : `AC ${ac}`;
-    const said = roll.challenge ? ["miss (a match)", "miss", "weak hit", "strong hit"][roll.degree] : null;
     const data = !logging ? null : { type: "attack", ...common, natural: roll.natural, mod: bonus + deedRoll + lift + (roll.die ?? 0), total: roll.total, dc: ac, degree: roll.degree, margin: roll.total - ac, attackNumber: attacksMade + 1, boost: lift || null, faces: opts.faces, deed: r.deed ? deedRoll : null, challenge: roll.challenge ?? null, burned: roll.burned ?? null };
     if ( roll.degree >= 2 ) {
       const crit = roll.degree === 3;
@@ -824,7 +807,7 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
       // own resistances.
       const intercepted = guard?.r.redirect && amount > 0 ? rules.applyIwr(iwrOf(guard.g), hit.byType) : null;
       if ( intercepted !== null ) amount = 0;
-      if ( logging ) log(run, u, `${action.name} → ${target.spec.name}: ${roll.total} vs ${versus}, ${said ?? (crit ? "critical hit" : "hit")} for ${amount}${intercepted !== null ? `, taken by ${guard.g.spec.name} for ${intercepted}` : ""}`, {
+      if ( logging ) log(run, u, {
         ...data, damage: amount, crit, sneak: extra.length > 0, advantage, riders: riders.map(x => x.label), critRoll: table?.total ?? null, critRowText: table?.row?.text ?? null,
         lessened: amount < hit.total ? hit.total - amount : 0, interceptedBy: intercepted !== null ? guard.g.spec.name : null, intercepted
       });
@@ -841,7 +824,7 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
         if ( strike && movesNeeded(run, guard.g, u, strike) === 0 ) strikeTarget(run, guard.g, strike, u, 0, false, logging);
       }
     } else {
-      if ( logging ) log(run, u, `${action.name} → ${target.spec.name}: ${roll.total} vs ${versus}, ${said ?? (roll.degree === 0 ? "fumble" : "miss")}${answer ? ` (${answer.label})` : ""}`, { ...data, damage: 0, advantage, savedBy: answer?.label ?? null });
+      if ( logging ) log(run, u, { ...data, damage: 0, advantage, savedBy: answer?.label ?? null });
       // A melee miss opens the attacker up (5e Riposte).
       if ( action.melee && target.spec.reactions && isUp(target) && target !== u ) {
         const back = respond(run, target, "missed", { by: u, action });
@@ -851,7 +834,7 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
           strikeTarget(run, target, strike, u, 0, false, logging);
         }
       }
-      if ( deed && logging ) log(run, u, `${deed.label}: the attack misses`, { type: "deed", deed: deed.label, target: target.spec.name, targetId: target.id, roll: deedRoll, success: false });
+      if ( deed && logging ) log(run, u, { type: "deed", deed: deed.label, target: target.spec.name, targetId: target.id, roll: deedRoll, success: false });
       if ( roll.degree === 0 && u.spec.fumble ) applyFumble(run, u);
     }
     // What the attempt costs the attacker, by the system (Ironsworn: a miss, or a weak Clash, is Pay the Price).
@@ -874,7 +857,7 @@ function shieldWorth(run, u) {
 /** A reaction taken, for the log and the story. */
 function logReaction(run, u, by, r, trigger) {
   if ( !run.log ) return;
-  log(run, u, `${r.label} (reaction) against ${by.spec.name}`, { type: "reaction", reaction: r.label, tell: r.tell ?? null, trigger, target: by.spec.name, targetId: by.id });
+  log(run, u, { type: "reaction", reaction: r.label, tell: r.tell ?? null, trigger, target: by.spec.name, targetId: by.id });
 }
 
 /** Hurt by a foe: the one hurt may answer (5e Hellish Rebuke: fire at whoever did it, a save for half). */
@@ -892,7 +875,7 @@ function answerHarm(run, target, by, action, dealt) {
   }
   if ( mult <= 0 ) return;
   const hit = rollHit(run, target, { id: `reaction:${r.id}`, damage: r.damage }, by, r.damage, mult, false);
-  if ( run.log ) log(run, target, `${r.label} → ${by.spec.name}: ${hit.total} damage`, {
+  if ( run.log ) log(run, target, {
     type: "auto", action: r.label, actionKind: "auto", damageType: r.damage[0]?.type ?? "untyped", target: by.spec.name, targetId: by.id, damage: hit.total, reaction: true
   });
   hit.apply();
@@ -920,7 +903,7 @@ function counterspelled(run, u, action) {
       roll = rollCheck(rules, run.rng, Number(r.counter.mod) || 0, 10 + action.rank, { kind: "check" });
       countered = roll.degree >= 2;
     }
-    log(run, e, `${r.label} against ${u.spec.name}'s ${action.name}: ${countered ? "countered" : "it gets through"}`, {
+    log(run, e, {
       type: "counter", reaction: r.label, target: u.spec.name, targetId: u.id, action: action.name, countered, natural: roll?.natural ?? null, total: roll?.total ?? null
     });
     if ( countered ) return true;
@@ -935,7 +918,7 @@ function applyCritRow(run, u, target, { row, total }) {
     if ( target.status === STATUS.DOWN ) {
       target.status = STATUS.DEAD;
       target.killerId = u.id;
-      log(run, target, "is slain outright", { type: "death", by: u.spec.name, byId: u.id, crit: true });
+      log(run, target, { type: "death", by: u.spec.name, byId: u.id, crit: true });
     }
   }
   if ( row.outcome && isUp(target) && !isImmune(run, target, { id: `crit:${u.id}:${row.lo}`, onSave: [row.outcome] }) ) {
@@ -943,7 +926,7 @@ function applyCritRow(run, u, target, { row, total }) {
     testConcentration(run, target);
   }
   if ( row.self && isUp(u) ) applyOutcome(u, row.self, u.id, { id: `critSelf:${u.id}`, name: row.self.label ?? "" });
-  log(run, target, row.outcome?.label ? `is left ${row.outcome.label}` : "takes a crippling blow", { type: "critTable", by: u.spec.name, byId: u.id, roll: total, effect: row.outcome?.label ?? "", rowText: row.text ?? null, slain: !!row.slay });
+  log(run, target, { type: "critTable", by: u.spec.name, byId: u.id, roll: total, effect: row.outcome?.label ?? "", rowText: row.text ?? null, slain: !!row.slay });
 }
 
 /** A fumble table's row: what befalls the one who fumbled. */
@@ -956,7 +939,7 @@ function applyFumble(run, u) {
     if ( amount > 0 ) dealDamage(run, null, u, amount);
   }
   if ( row.outcome && isUp(u) ) applyOutcome(u, row.outcome, u.id, { id: `fumble:${u.id}`, name: row.outcome.label ?? localize("FASTFIGHTING.Effect.fumble") });
-  log(run, u, row.outcome?.label ? `fumbles and is left ${row.outcome.label}` : "fumbles", { type: "fumble", roll: total, effect: row.outcome?.label ?? "", rowText: row.text ?? null });
+  log(run, u, { type: "fumble", roll: total, effect: row.outcome?.label ?? "", rowText: row.text ?? null });
 }
 
 /** An on-hit rider's lasting part: a save against it, or simply what it does. */
@@ -973,7 +956,7 @@ function applyRider(run, u, action, target, rider) {
     applyOutcome(target, outcome, u.id, { id: `rider:${rider.id}`, name: rider.label });
     testConcentration(run, target);
   }
-  if ( run.log ) log(run, u, `${rider.label} → ${target.spec.name}${outcome ? (landed ? `: ${outcome.label ?? "it takes"}` : ": no effect") : rider.save ? ": resisted" : ""}`, {
+  if ( run.log ) log(run, u, {
     type: "rider", rider: rider.label, tell: rider.tell ?? null, target: target.spec.name, targetId: target.id, effect: landed ? (outcome.label ?? "") : "",
     saveType: rider.save?.type ?? null, natural: roll?.natural ?? null, total: roll?.total ?? null, dc: rider.save?.dc ?? null, degree: roll?.degree ?? null, landed
   });
@@ -986,7 +969,7 @@ function applyDeed(run, u, target, deed, deedRoll) {
   if ( tier?.outcome?.allies ) {
     const friends = rallied(run, u, tier.outcome);
     for ( const a of friends ) applyOutcome(a, tier.outcome, u.id, { id: `deed:${deed.id}`, name: deed.label });
-    log(run, u, `${deed.label} (deed ${deedRoll}): ${friends.length ? `${friends.map(a => a.spec.name).join(", ")} ${tier.outcome.label ?? "rallied"}` : "no one near enough"}`, {
+    log(run, u, {
       type: "deed", deed: deed.label, target: target.spec.name, targetId: target.id, roll: deedRoll, success: friends.length > 0, effect: friends.length ? (tier.outcome.label ?? "") : "",
       allies: friends.map(a => a.spec.name)
     });
@@ -999,7 +982,7 @@ function applyDeed(run, u, target, deed, deedRoll) {
     applyOutcome(on, tier.outcome, u.id, { id: `deed:${deed.id}`, name: deed.label });
     if ( on === target ) testConcentration(run, target);
   }
-  log(run, u, `${deed.label} (deed ${deedRoll}) → ${target.spec.name}: ${landed ? (tier.outcome?.label ?? "done") : "fails"}`, {
+  log(run, u, {
     type: "deed", deed: deed.label, target: target.spec.name, targetId: target.id, roll: deedRoll, success: landed, effect: landed ? (tier.outcome?.label ?? "") : ""
   });
 }
@@ -1027,13 +1010,13 @@ function executionCheck(run, u, t) {
   const needed = run.prep.options.executeLuck ?? EXECUTE_LUCK;
   if ( roll <= needed ) {
     u.executionChecks.set(key, { next: t });
-    log(run, u, `means to finish off ${t.spec.name} (luck d100 ${roll}, ${needed} or less)`, { type: "execute", target: t.spec.name, targetId: t.id, luck: roll, needed, goes: true });
+    log(run, u, { type: "execute", target: t.spec.name, targetId: t.id, luck: roll, needed, goes: true });
     return t;
   }
   const next = scoreTargets(run, u).map(x => x.t).find(o => o !== t && !wouldExecute(u, o)) ?? null;
   moveDesires(u, t, next);
   u.executionChecks.set(key, { next });
-  log(run, u, `turns away from the fallen ${t.spec.name}${next ? ` to go after ${next.spec.name}` : ""} (luck d100 ${roll}, needed ${needed} or less)`, {
+  log(run, u, {
     type: "execute", target: t.spec.name, targetId: t.id, next: next?.spec.name ?? null, nextId: next?.id ?? null, luck: roll, needed, goes: false
   });
   return next;
@@ -1113,7 +1096,7 @@ function fateful(run, victim, actor, attempt) {
       rules.avertDeath(victim);
       victim.resources.fate = 0;
       run.fateInPlay = run.units.some(o => fateOf(o) > 0);
-      log(run, victim, `spends ${label} and pulls back from death`, { type: "fate", self: true, label, spent, sure: true });
+      log(run, victim, { type: "fate", self: true, label, spent, sure: true });
       return;
     }
     Object.assign(victim, before);
@@ -1123,7 +1106,7 @@ function fateful(run, victim, actor, attempt) {
     run.firstFallen = firstFallen;
     spender.resources.fate -= 1;
     run.fateInPlay = run.units.some(o => fateOf(o) > 0);
-    log(run, spender, spender === victim ? `spends ${label} to cheat death` : `spends ${label} to save ${victim.spec.name}`, {
+    log(run, spender, {
       type: "fate", self: spender === victim, target: victim.spec.name, targetId: victim.id, label, spent: 1
     });
   }
@@ -1135,12 +1118,12 @@ function executeControl(run, u, action, target, attacksMade, common) {
   const logging = !!run.log;
   if ( action.oncePerTarget ) (u.triedOn ??= new Set()).add(`${action.id}|${target.id}`);
   if ( isImmune(run, target, action) ) {
-    if ( logging ) log(run, u, `${action.name} → ${target.spec.name}: unaffected`, { type: "control", ...common, immune: true, degree: null });
+    if ( logging ) log(run, u, { type: "control", ...common, immune: true, degree: null });
     return;
   }
   // Starting something that needs concentration lets go of whatever it held before.
   const released = u.concentration?.actionId === action.id ? [] : beginConcentration(run, u, action);
-  if ( released.length ) log(run, u, `lets ${released.join(", ")} go`, { type: "concentrationEnd", effects: released, reason: "switch" });
+  if ( released.length ) log(run, u, { type: "concentrationEnd", effects: released, reason: "switch" });
   const r = controlRoll(run, u, target, action, attacksMade);
   const dc = r.dc ?? null;
   const roll = r.kind === "auto" ? { natural: null, total: null, degree: 2, mod: null }
@@ -1182,7 +1165,7 @@ function executeControl(run, u, action, target, attacksMade, common) {
     }
   }
   if ( logging ) {
-    log(run, u, `${action.name} → ${target.spec.name}: ${outcome?.label || "no effect"}${outcome?.self ? " (on itself)" : ""}${damage ? `, ${damage} damage` : ""}`, {
+    log(run, u, {
       controls: !!outcome?.conditions?.controlled,
       type: "control", ...common, roll: r.kind, saveType: action.save?.type ?? null, against: action.check?.against ?? null,
       natural: roll.natural, mod: roll.mod, total: roll.total, dc, degree, margin: roll.total === null ? null : roll.total - dc,
@@ -1196,9 +1179,9 @@ function executeControl(run, u, action, target, attacksMade, common) {
 function executeSummon(run, u, action) {
   if ( counterspelled(run, u, action) ) return;
   const released = beginConcentration(run, u, action);
-  if ( released.length ) log(run, u, `lets ${released.join(", ")} go`, { type: "concentrationEnd", effects: released, reason: "switch" });
+  if ( released.length ) log(run, u, { type: "concentrationEnd", effects: released, reason: "switch" });
   const called = callSummons(run, u, action);
-  log(run, u, `${action.name}: ${called.map(s => s.spec.name).join(", ")} join${called.length === 1 ? "s" : ""} the fight`, {
+  log(run, u, {
     type: "summon", action: action.name, names: called.map(s => s.spec.name), ids: called.map(s => s.id)
   });
 }
@@ -1215,7 +1198,7 @@ function executeBuff(run, u, action, targets, worth = 0, turn = null) {
   const now = Number(action.outcome?.actionsNow) || 0;
   if ( now > 0 && turn && targets.includes(u) ) turn.pools[mainPool(run.prep.rules)] = (turn.pools[mainPool(run.prep.rules)] ?? 0) + now;
   const released = u.concentration?.actionId === action.id ? [] : beginConcentration(run, u, action);
-  if ( released.length ) log(run, u, `lets ${released.join(", ")} go`, { type: "concentrationEnd", effects: released, reason: "switch" });
+  if ( released.length ) log(run, u, { type: "concentrationEnd", effects: released, reason: "switch" });
   const landed = targets.filter(t => isUp(t));
   if ( landed.length === 1 ) moveHeld(run, u, action, landed[0]);
   // An edge that needs a roll to land (PF2e Aid, Ironsworn Secure an Advantage): what the roll reaches decides what
@@ -1252,8 +1235,7 @@ function executeBuff(run, u, action, targets, worth = 0, turn = null) {
   }
   if ( run.log ) {
     const self = landed.length === 1 && landed[0] === u;
-    const names = landed.map(t => (t === u ? "self" : t.spec.name));
-    log(run, u, `${action.name} → ${names.join(", ")}${!outcome ? ": nothing comes of it" : outcome.failed ? `: ${outcome.label ?? "it fails"}` : ""}`, {
+    log(run, u, {
       type: "buff", action: action.name, effect: outcome?.label ?? action.name, self, targets: landed.map(t => t.spec.name), check, failed: !outcome || !!outcome.failed,
       against: landed.map(t => focus.get(t)?.spec.name ?? null),
       targetIds: landed.map(t => t.id), withSelf: landed.includes(u), tempHp: Number(outcome?.tempHp) || 0, aura: !!action.aura,
@@ -1287,7 +1269,7 @@ function executeHeal(run, u, action, target) {
     if ( !multiplier && dying && fateOf(u) > 0 && (u === target || run.rng.chance(clamp(1 - liveTrait(run, u, "selfish") / 100, 0.05, 0.95))) ) {
       u.resources.fate -= 1;
       run.fateInPlay = run.units.some(o => fateOf(o) > 0);
-      log(run, u, `spends ${u.spec.fateLabel ?? "fate"} to try again for ${target.spec.name}`, { type: "fate", target: target.spec.name, targetId: target.id, label: u.spec.fateLabel ?? localize("FASTFIGHTING.Words.Fate"), spent: 1 });
+      log(run, u, { type: "fate", target: target.spec.name, targetId: target.id, label: u.spec.fateLabel ?? localize("FASTFIGHTING.Words.Fate"), spent: 1 });
       roll = rollCheck(rules, run.rng, check.mod, action.healCheck.dc, { advantage: check.advantage, dice: check.dice, kind: "check" });
       multiplier = rules.healCheckMultiplier ? rules.healCheckMultiplier(roll.degree) : [0, 0, 1, 2][roll.degree];
     }
@@ -1304,7 +1286,7 @@ function executeHeal(run, u, action, target) {
   spendUse(u, action);
   const revived = wasDown && target.status === STATUS.STANDING;
   if ( run.neutral && target.hp > before ) crossed(run, u, target, "help", revived ? 1.5 : 0.75, logger(run));
-  if ( run.log ) log(run, u, `${action.name} → ${target === u ? "self" : target.spec.name}: heals ${target.hp - before}${revived ? " and revives them" : ""}`, {
+  if ( run.log ) log(run, u, {
     type: "heal", action: action.name, target: target.spec.name, targetId: target.id, self: target === u, amount: target.hp - before, revived,
     potion: !!action.selfOnly, check: roll ? { natural: roll.natural, mod: action.healCheck.mod, total: roll.total, dc: action.healCheck.dc, degree: roll.degree } : null
   });
@@ -1326,12 +1308,12 @@ function leaveReach(run, u, turn, keep = null, need = null) {
     if ( takesSafeWay(run, u, safe, turn, need) ) {
       turn.spend(safe.cost);
       u.disengaged = true;
-      log(run, u, safe.label ?? "gets clear carefully", { type: "disengage", label: safe.label ?? "" });
+      log(run, u, { type: "disengage", label: safe.label ?? "" });
     } else {
       for ( const { e, strike } of list ) {
         if ( !isStanding(u) || battleOver(run) ) break;
         e.reactionsLeft -= 1;
-        log(run, e, `strikes at ${u.spec.name} as they pull away`, { type: "opportunity", target: u.spec.name, targetId: u.id, action: strike.name });
+        log(run, e, { type: "opportunity", target: u.spec.name, targetId: u.id, action: strike.name });
         executeOffense(run, e, strike, u, 0);
       }
       // That hurt: whatever it was heading for seems a little less worth it.
@@ -1353,13 +1335,13 @@ function leaveReach(run, u, turn, keep = null, need = null) {
  */
 function runs(run, u, reason, turn, why = {}) {
   if ( standsGround(run, u) ) {
-    if ( !u.heldGround ) log(run, u, "wants to run, but stands its ground", { type: "holdGround" });
+    if ( !u.heldGround ) log(run, u, { type: "holdGround" });
     u.heldGround = true;
     return false;
   }
   const retreat = callRetreat(run, u, logger(run));
   if ( retreat.held ) {
-    log(run, u, "holds, as ordered", { type: "holdGround", ordered: true, by: retreat.commander?.spec.name ?? null });
+    log(run, u, { type: "holdGround", ordered: true, by: retreat.commander?.spec.name ?? null });
     return false;
   }
   flee(run, u, reason, turn, why);
@@ -1386,7 +1368,7 @@ function flee(run, u, reason, turn = null, extra = {}) {
   releaseGrabs(run, u);
   const from = run.log && u.pos ? { x: u.pos.x, y: u.pos.y } : null;
   const feet = moveAway(run, u, (Math.max(...Object.values(u.spec.speeds ?? { walk: 25 })) || 25) * 2);
-  log(run, u, reason, { type: "flee", feet, mode: (u.spec.speeds?.fly ?? 0) > 0 ? "fly" : "walk", from, to: from ? { x: u.pos.x, y: u.pos.y } : null, ...extra });
+  log(run, u, { type: "flee", feet, mode: (u.spec.speeds?.fly ?? 0) > 0 ? "fly" : "walk", from, to: from ? { x: u.pos.x, y: u.pos.y } : null, ...extra });
   // Fleeing into a bystander alerts them; an ally will hear the call for help.
   for ( const b of run.units ) {
     if ( b.active || b.status !== STATUS.STANDING ) continue;
@@ -1397,7 +1379,7 @@ function flee(run, u, reason, turn = null, extra = {}) {
 
 function moveLog(run, u, move, toward, purpose = "approach") {
   if ( !run.log || !(move.feet > 0) ) return;
-  log(run, u, `${move.mode === "walk" ? "moves" : move.mode === "fly" ? "flies" : move.mode === "swim" ? "swims" : move.mode === "climb" ? "climbs" : "burrows"} toward ${toward.spec.name}`, {
+  log(run, u, {
     type: "move", mode: move.mode, feet: move.feet, mult: move.mult, regions: move.regions, toward: toward.spec.name, towardId: toward.id,
     from: move.from ?? null, to: move.to ?? null,
     reached: move.reached, purpose, tactical: liveTier(run, u), cover: !!u.spec.environment?.nearCover
@@ -1429,7 +1411,7 @@ function workTheDoor(run, u, turn, door, target) {
     const move = moveTowardPoint(run, u, door, budget);
     turn.usedMove(move.cost);
     if ( run.log ) {
-      log(run, u, "moves toward the door", {
+      log(run, u, {
         type: "move", mode: "walk", feet: move.feet, mult: 1, regions: [], toward: "the door", towardId: `door:${door.id}`,
         from: move.from, to: move.to, purpose: "door", reached: move.reached, tactical: liveTier(run, u)
       });
@@ -1443,7 +1425,7 @@ function workTheDoor(run, u, turn, door, target) {
     if ( !turn.canAfford(cost) ) return "stuck";
     turn.spend(cost);
     openDoor(run, door, state);
-    log(run, u, "opens the door", { type: "door", method: "open", success: true, ...where });
+    log(run, u, { type: "door", method: "open", success: true, ...where });
     return "worked";
   }
   const plan = doorPlan(run, u, door, state);
@@ -1454,7 +1436,7 @@ function workTheDoor(run, u, turn, door, target) {
   const urge = Math.max(CHOICE_LEVEL, levelOf(u, kind, target.id), ...beyond.map(o => levelOf(u, "hurt", o.id)));
   const nothingElse = !enemiesOf(run, u).some(o => isStanding(o) && !beyond.includes(o));
   if ( !plan || plan.turns > patienceFor(urge) * (nothingElse ? 1.5 : 1) * styleOf(u).doorPatience ) {
-    log(run, u, "won't waste time on the locked door", { type: "door", method: "giveup", success: false, ...where });
+    log(run, u, { type: "door", method: "giveup", success: false, ...where });
     for ( const o of beyond ) {
       thwart(run, u, "hurt", o.id, 15);
       (u.walledOff ??= new Map()).set(o.id, door.id);
@@ -1476,7 +1458,7 @@ function workTheDoor(run, u, turn, door, target) {
     const broke = state.hp <= 0;
     if ( broke ) openDoor(run, door, state, true);
     else thwart(run, u, kind, target.id, damage > 0 ? 4 : 8);
-    log(run, u, broke ? "smashes through the door" : damage ? "hacks at the door" : "can't make a dent in the door", {
+    log(run, u, {
       type: "door", method: "attack", success: broke, hit: roll.degree >= 2, damage, action: plan.strike.name,
       natural: roll.natural, mod: plan.strike.bonus ?? 0, total: roll.total, dc: door.ac, degree: roll.degree, ...where
     });
@@ -1485,7 +1467,7 @@ function workTheDoor(run, u, turn, door, target) {
     const success = roll.degree >= 2;
     if ( success ) openDoor(run, door, state, plan.method === "force");
     else thwart(run, u, kind, target.id, 12);
-    log(run, u, success ? (plan.method === "force" ? "forces the door open" : "picks the lock") : (plan.method === "force" ? "throws a shoulder at the door, but it holds" : "can't get the lock to give"), {
+    log(run, u, {
       type: "door", method: plan.method, success, natural: roll.natural, mod: plan.mod, total: roll.total, dc: plan.dc, degree: roll.degree, ...where
     });
   }
@@ -1541,7 +1523,7 @@ function sizesUp(run, u, t, turn, room, { decided = false, wholeTurn = false } =
     // (What a miss costs, in the system's terms: Ironsworn's price.)
     if ( how?.missOutcome ) rules.onOutcome?.(run, u, u, how.missOutcome);
   }
-  log(run, u, worked ? `sizes up ${t.spec.name}` : `tries to size up ${t.spec.name}, and learns nothing useful`, {
+  log(run, u, {
     type: "study", target: t.spec.name, targetId: t.id, worked, check, factor, oneRoll: !!uses, anyFoe: !!how?.anyFoe, kin, price: !worked && how?.missOutcome ? how.missOutcome.label ?? "" : null
   });
   if ( worked ) shareLore(run, u, t, sort, turn);
@@ -1572,7 +1554,7 @@ function shareLore(run, u, t, sort, turn) {
   const chance = shareChance(run, u);
   if ( !chance ) return;
   if ( !run.rng.chance(chance) ) {
-    log(run, u, `keeps what it learned of ${t.spec.name} to itself`, { type: "keepLore", target: t.spec.name, targetId: t.id, chance });
+    log(run, u, { type: "keepLore", target: t.spec.name, targetId: t.id, chance });
     return;
   }
   u.lorePending = { sort, name: t.spec.name, id: t.id, chance };
@@ -1604,7 +1586,7 @@ function tellLore(run, u, turn) {
   if ( !told.length ) return;
   turn.spend(cost);
   for ( const a of told ) a.studied.add(`sort:${p.sort}`);
-  log(run, u, `tells ${told.map(a => a.spec.name).join(", ")} what it knows of ${p.name}`, {
+  log(run, u, {
     type: "shareLore", target: p.name, targetId: p.id, with: told.map(a => a.spec.name), withIds: told.map(a => a.id), chance: p.chance
   });
 }
@@ -1631,7 +1613,7 @@ function observes(run, u, turn) {
   const foes = run.units.filter(seen).sort((a, b) => (b === first) - (a === first) || (Number(b.spec.level) || 0) - (Number(a.spec.level) || 0))
     .filter(o => !sorts.has(sortOf(o)) && sorts.add(sortOf(o)));
   if ( !foes.length ) return false;
-  log(run, u, `holds back, watching ${foes.map(f => f.spec.name).join(", ")} closely`, { type: "observe", targets: foes.map(f => f.spec.name), targetIds: foes.map(f => f.id) });
+  log(run, u, { type: "observe", targets: foes.map(f => f.spec.name), targetIds: foes.map(f => f.id) });
   for ( const t of foes ) if ( !sizesUp(run, u, t, turn, true, { decided: true, wholeTurn: true }) ) break;
   turn.spendAll();
   return true;
@@ -1655,12 +1637,12 @@ function noteCommand(run, quietly = false) {
     if ( quietly || before === undefined || before === id ) continue;
     const from = before ? run.byId.get(before) : null;
     if ( !cmd ) {
-      log(run, from, `no one is left to lead ${from ? `after ${from.spec.name}` : "them"}`, { type: "command", group: key, lost: true, from: from?.spec.name ?? null });
+      log(run, from, { type: "command", group: key, lost: true, from: from?.spec.name ?? null });
       continue;
     }
     // Back in charge (it commanded before), or taking command.
     const back = again;
-    log(run, cmd.unit, back ? `takes back command` : `takes command${from ? ` from ${from.spec.name}` : ""}`, {
+    log(run, cmd.unit, {
       type: "command", group: key, role: cmd.boss ? "boss" : cmd.rank === 0 ? "leader" : `lieutenant ${cmd.rank}`, back, from: from?.spec.name ?? null
     });
   }
@@ -1674,7 +1656,7 @@ function deliberate(run, u) {
   newTurn(u);
   // One who wants to lead and doesn't may scheme against whoever does (then it follows no one this turn).
   if ( scheme(run, u) && run.log ) {
-    log(run, u, `wonders how to be rid of ${u.scheming.name}`, { type: "scheme", target: u.scheming.name, targetId: u.scheming.against, boss: u.scheming.boss });
+    log(run, u, { type: "scheme", target: u.scheming.name, targetId: u.scheming.against, boss: u.scheming.boss });
   }
   // Whether it takes its lead from whoever commands its group this turn (its playstyle leans toward theirs if so).
   follow(run, u);
@@ -1716,7 +1698,7 @@ function deliberate(run, u) {
     const top = thoughtsOf(run, u);
     if ( top.length || u.following ) {
       const following = u.following ? { name: u.following.name, boss: u.following.boss, chance: u.following.chance, share: u.following.share } : null;
-      log(run, u, `thinks: ${top.map(d => `${d.kind} ${d.target} (${d.level})`).join(", ")}${following ? ` (following ${following.name})` : ""}`, { type: "thought", desires: top, following });
+      log(run, u, { type: "thought", desires: top, following });
     }
   }
 }
@@ -1742,7 +1724,7 @@ function rechargeActions(run, u) {
     }
     if ( !back ) continue;
     u.uses[a.id] = a.uses;
-    log(run, u, `${a.name} is ready again`, { type: "recharge", action: a.name });
+    log(run, u, { type: "recharge", action: a.name });
   }
 }
 
@@ -1767,7 +1749,7 @@ function legendaryMoment(run, after) {
     }
     if ( !best ) continue;
     u.legendaryLeft -= best.action.legendary;
-    log(run, u, `takes a legendary action: ${best.action.name}`, { type: "legendary", action: best.action.name, cost: best.action.legendary, target: best.t.spec.name, targetId: best.t.id });
+    log(run, u, { type: "legendary", action: best.action.name, cost: best.action.legendary, target: best.t.spec.name, targetId: best.t.id });
     executeOffense(run, u, best.action, best.t, 0);
     spendUse(u, best.action);
     if ( battleOver(run) ) return;
@@ -1780,7 +1762,7 @@ function standoffPitching(run, u, n, only = null) {
   for ( let i = 0; i < n; i++ ) {
     const pitch = choosePitch(run, u, { only });
     if ( !pitch ) break;
-    attemptTalk(run, u, pitch, (unit, text, data) => log(run, unit, text, data));
+    attemptTalk(run, u, pitch, logger(run));
     made += 1;
     if ( battleOver(run) ) break;
   }
@@ -1833,7 +1815,7 @@ function neutralTurn(run, u) {
   if ( u.truce ) {
     const other = truceWith(run, u);
     if ( !other ) {
-      log(run, u, "lets the matter drop", { type: "neutral", what: "lapse" });
+      log(run, u, { type: "neutral", what: "lapse" });
       settleTruce(u, u.truce.side);
     } else if ( truceBreaks(run, u) ) {
       turnOn(run, u, other, "impatient", say);
@@ -1879,7 +1861,7 @@ function lastWord(run) {
     if ( !pcs.length ) continue;
     run.lastWords.add(side);
     if ( !run.rng.chance(Math.min(0.85, 0.35 + 0.1 * found.edge)) ) continue;
-    log(run, found.leader, "steps in for one last try at settling it", { type: "lastWord" });
+    log(run, found.leader, { type: "lastWord" });
     standoffPitching(run, found.leader, turnFor(run, found.leader).howMany(rules.talkCost ?? rules.basicAction ?? 1), o => o.spec.kind === "pc");
     if ( battleOver(run) ) return true;
   }
@@ -1896,7 +1878,7 @@ function takeTurn(run, u) {
     const state = summonState(run, u);
     if ( state === "expired" || state === "released" ) {
       dismiss(u);
-      log(run, u, "fades away", { type: "vanish", reason: state });
+      log(run, u, { type: "vanish", reason: state });
       return;
     }
     if ( state === "idle" ) return;
@@ -1907,7 +1889,7 @@ function takeTurn(run, u) {
   rechargeActions(run, u);
   if ( rules.startTurn ) {
     const said = rules.startTurn(run, u);
-    if ( said?.text ) log(run, u, said.text, { type: "startTurn", ...said.data });
+    if ( said?.text ) log(run, u, { text: said.text, type: "startTurn", ...said.data });
   }
   if ( u.spec.legendary?.pool ) u.legendaryLeft = u.spec.legendary.pool; // (legendary actions come back)
   u.disengaged = false;
@@ -1921,7 +1903,7 @@ function takeTurn(run, u) {
       fateful(run, u, null, () => {
         const before = u.dying;
         const text = rules.recoveryCheck(u, run.rng);
-        if ( text ) log(run, u, text, { type: "recovery", before, dying: u.dying, dead: u.status === STATUS.DEAD, stable: u.stable });
+        if ( text ) log(run, u, { text, type: "recovery", before, dying: u.dying, dead: u.status === STATUS.DEAD, stable: u.stable });
       });
     }
     endOfTurn(run, u);
@@ -1953,24 +1935,24 @@ function takeTurn(run, u) {
   // What it has called and must sustain (PF2e), first thing.
   if ( u.prep.summonActions?.length ) {
     const { kept, gone } = sustainSummons(run, u, turn);
-    for ( const a of kept ) log(run, u, `sustains ${a.name}`, { type: "sustain", action: a.name });
+    for ( const a of kept ) log(run, u, { type: "sustain", action: a.name });
     for ( const s of gone ) {
       dismiss(s);
-      log(run, s, "fades away", { type: "vanish", reason: "unsustained" });
+      log(run, s, { type: "vanish", reason: "unsustained" });
     }
   }
   const morale = checkMorale(run, u);
   if ( morale === MORALE.ROUT && runs(run, u, "breaks and flees", turn, { why: "breaks" }) ) return;
   if ( morale !== MORALE.HOLD && !u.wavering ) {
     u.wavering = true; // (shaken, even when it won't run)
-    if ( morale === MORALE.WAVER ) log(run, u, "wavers", { type: "waver" });
+    if ( morale === MORALE.WAVER ) log(run, u, { type: "waver" });
   }
   // Friends running or wavering: it may spend an action holding the rest together.
   if ( turn.canAfford(rules.basicAction ?? 1) ) {
     const heard = rallies(run, u);
     if ( heard ) {
       turn.spend(rules.basicAction ?? 1);
-      log(run, u, `rallies ${heard.map(a => a.spec.name).join(", ")}: hold!`, { type: "rally", with: heard.map(a => a.spec.name), withIds: heard.map(a => a.id) });
+      log(run, u, { type: "rally", with: heard.map(a => a.spec.name), withIds: heard.map(a => a.id) });
     }
   }
 
@@ -1998,7 +1980,7 @@ function takeTurn(run, u) {
     u.parleyed = true;
     if ( behavior.parleyFirst && turn.canAfford(basic) && !u.spec.social && run.rng.chance(behavior.parleyFirst) ) {
       turn.spend(basic);
-      log(run, u, "tries to talk the other side down", { type: "parley" });
+      log(run, u, { type: "parley" });
     }
   }
   let attacksMade = 0;
@@ -2007,7 +1989,7 @@ function takeTurn(run, u) {
     if ( turn.canAfford(stand) ) {
       turn.spend(stand);
       u.prone = false;
-      log(run, u, "stands up", { type: "stand" });
+      log(run, u, { type: "stand" });
     }
   }
   if ( u.grabbedBy && turn.canAfford(basic) ) {
@@ -2015,7 +1997,7 @@ function takeTurn(run, u) {
     turn.spend(basic);
     const escaped = run.rng.chance(0.5);
     if ( escaped ) u.grabbedBy = null;
-    log(run, u, escaped ? "escapes the grab" : "struggles against the grab", { type: "escape", success: escaped });
+    log(run, u, { type: "escape", success: escaped });
   }
 
   // Running for help: head toward an ally who hasn't joined yet and shout.
@@ -2030,7 +2012,7 @@ function takeTurn(run, u) {
       const d = edgeDistance(u, helper);
       if ( d === null || d <= 30 ) {
         helper.calledForHelp = true;
-        log(run, u, `shouts to ${helper.spec.name} for help`, { type: "callHelp", toward: helper.spec.name, towardId: helper.id });
+        log(run, u, { type: "callHelp", toward: helper.spec.name, towardId: helper.id });
         notice(run, helper, "help", u);
         break;
       }
@@ -2065,7 +2047,7 @@ function takeTurn(run, u) {
   for ( let i = 0; i < talking.count && turn.canAfford(talkCost); i++ ) {
     const pitch = i === 0 ? talking.pitch : choosePitch(run, u, only ? { only } : peacePitch ? { only: peaceful } : {}); // the first pitch was already chosen
     if ( !pitch ) break;
-    attemptTalk(run, u, pitch, (unit, text, data) => log(run, unit, text, data));
+    attemptTalk(run, u, pitch, logger(run));
     turn.spend(talkCost);
     if ( battleOver(run) ) break;
   }
@@ -2124,7 +2106,7 @@ function takeTurn(run, u) {
       const plan = chance > 0 ? theftPlan(run, u, mark) : null;
       if ( plan && turn.canAfford(plan.cost) && run.rng.chance(chance) ) {
         turn.spend(plan.cost);
-        const result = attemptTheft(run, u, mark, (unit, text, data) => log(run, unit, text, data), { plan, attacksMade });
+        const result = attemptTheft(run, u, mark, logger(run), { plan, attacksMade });
         attacksMade += result.attacks ?? 0;
         continue;
       }
@@ -2163,7 +2145,7 @@ function takeTurn(run, u) {
     const raiseShield = () => {
       u.shieldRaised = true;
       turn.spend(shieldCost);
-      log(run, u, "raises a shield", { type: "shield" });
+      log(run, u, { type: "shield" });
     };
     // "Always" keeps the shield up: the last action of the turn goes to it.
     if ( canShield && tactics?.shield === "always" && turn.howMany(shieldCost) === 1 ) { raiseShield(); continue; }
@@ -2172,7 +2154,7 @@ function takeTurn(run, u) {
       if ( canShield ) raiseShield();
       else {
         turn.spend(basic);
-        log(run, u, "steps back to a better position", { type: "step" });
+        log(run, u, { type: "step" });
       }
       continue;
     }
@@ -2192,7 +2174,7 @@ function takeTurn(run, u) {
 
     if ( option.action.drawCost && !u.drawn.has(option.action.id) ) {
       u.drawn.add(option.action.id);
-      log(run, u, `draws ${option.action.name}`, { type: "draw", item: option.action.name });
+      log(run, u, { type: "draw", item: option.action.name });
     }
     // Moving a mark to a new foe (Hunter's Mark) while still holding it costs no new slot.
     const holding = option.action.concentration && u.concentration?.actionId === option.action.id && holdsAnything(run, u);
@@ -2228,7 +2210,7 @@ function endOfTurn(run, u) {
       if ( roll.degree < 2 ) continue;
       u.effects.splice(u.effects.indexOf(e), 1);
       recomputeConditions(u);
-      log(run, u, `shakes off ${e.label || "the effect"}`, {
+      log(run, u, {
         type: "shakeOff", effect: e.label ?? "", saveType: e.repeatSave.type, natural: roll.natural, mod: s.mod, total: roll.total, dc: e.repeatSave.dc, degree: roll.degree
       });
     }
@@ -2246,7 +2228,7 @@ function endOfTurn(run, u) {
     const remaining = [];
     for ( const entry of u.persistent ) {
       const amount = rules.applyIwr(iwrOf(u), { [entry.part.type]: Math.max(0, samplePart(entry.part, run.rng)) });
-      if ( run.log ) log(run, u, `takes ${amount} persistent ${entry.part.type}`, { type: "persistent", damageType: entry.part.type, amount });
+      if ( run.log ) log(run, u, { type: "persistent", damageType: entry.part.type, amount });
       dealDamage(run, run.byId.get(entry.sourceId), u, amount, { types: [entry.part.type] });
       if ( !rules.persistentFlatCheck(run.rng) ) remaining.push(entry);
     }
@@ -2257,7 +2239,7 @@ function endOfTurn(run, u) {
       a.rounds += 1;
       if ( a.spec.maxDuration && a.rounds >= a.spec.maxDuration ) {
         u.afflictions.splice(u.afflictions.indexOf(a), 1);
-        log(run, u, `${a.spec.name} runs its course`, { type: "afflictionEnd", name: a.spec.name });
+        log(run, u, { type: "afflictionEnd", name: a.spec.name });
         continue;
       }
       if ( a.onsetLeft > 0 ) {
@@ -2270,7 +2252,7 @@ function endOfTurn(run, u) {
       a.stage = Math.min(a.spec.stages.length, a.stage + afflictionStep(rules, roll.degree, "stage"));
       if ( a.stage <= 0 ) {
         u.afflictions.splice(u.afflictions.indexOf(a), 1);
-        log(run, u, `recovers from ${a.spec.name}`, { type: "afflictionEnd", name: a.spec.name, natural: roll.natural, mod, total: roll.total, dc: a.spec.save.dc, degree: roll.degree });
+        log(run, u, { type: "afflictionEnd", name: a.spec.name, natural: roll.natural, mod, total: roll.total, dc: a.spec.save.dc, degree: roll.degree });
         continue;
       }
       applyAfflictionStage(run, u, a);
@@ -2295,7 +2277,7 @@ function firstAid(run, u, target) {
   spendEdges(u, "check", target.id);
   const before = target.dying;
   rules.firstAid(target, roll.degree);
-  log(run, u, `gives ${target.spec.name} first aid (${roll.total} vs DC ${dc}): ${target.stable ? "stabilized" : target.status === STATUS.DEAD ? "it's too late" : "no change"}`, {
+  log(run, u, {
     type: "firstAid", target: target.spec.name, targetId: target.id, natural: roll.natural, mod: u.spec.firstAid.mod, total: roll.total, dc,
     degree: roll.degree, before, dying: target.dying, stable: target.stable, dead: target.status === STATUS.DEAD, aftermath: true
   });
@@ -2320,7 +2302,7 @@ function aftermath(run, order) {
   if ( !(simulated && run.units.some(isDying)) && !decided && !bodies.length ) return;
   const rounds = run.round;
   run.round = rounds + 1; // one paragraph in the story, after the fight
-  log(run, null, "The fighting is over", { type: "aftermath", aftermath: true });
+  log(run, null, { type: "aftermath", aftermath: true });
   const marker = run.log?.at(-1);
   if ( decided ) dealWithTheFallen(run, victors, fallen);
   let tended = false;
@@ -2350,13 +2332,13 @@ function aftermath(run, order) {
       fateful(run, u, null, () => {
         const before = u.dying;
         const text = rules.recoveryCheck(u, run.rng);
-        if ( text ) log(run, u, text, { type: "recovery", before, dying: u.dying, dead: u.status === STATUS.DEAD, stable: u.stable, aftermath: true });
+        if ( text ) log(run, u, { text, type: "recovery", before, dying: u.dying, dead: u.status === STATUS.DEAD, stable: u.stable, aftermath: true });
       });
     }
   }
   for ( const u of bodies ) {
     const text = rules.recoverBody(u, run.rng);
-    if ( text ) log(run, u, text, { type: "body", alive: u.status !== STATUS.DEAD, aftermath: true });
+    if ( text ) log(run, u, { text, type: "body", alive: u.status !== STATUS.DEAD, aftermath: true });
     if ( u.status !== STATUS.DEAD ) tended = true;
   }
   if ( marker ) marker.tended = tended; // the story opens differently when nobody comes to help
@@ -2382,7 +2364,7 @@ function dealWithTheFallen(run, victors, fallen) {
   for ( const f of fallen ) {
     if ( sparer ) {
       f.spared = true;
-      if ( finishers.length ) log(run, sparer, `won't let anyone finish off ${f.spec.name}`, { type: "mercy", target: f.spec.name, targetId: f.id, aftermath: true });
+      if ( finishers.length ) log(run, sparer, { type: "mercy", target: f.spec.name, targetId: f.id, aftermath: true });
       continue;
     }
     const killer = finishers.find(k => executionCheck(run, k, f) === f);
@@ -2409,7 +2391,7 @@ function reclaimGoods(run) {
       const caught = !!holder && (holder.homeSide ?? holder.side) === (u.homeSide ?? u.side);
       if ( !taker || !(BEATEN.has(taker.status) || caught) ) continue;
       c.returned = true;
-      log(run, u, `gets back what ${taker.spec.name} took`, { type: "reclaim", concession: c, by: taker.spec.name, byId: taker.id, aftermath: true });
+      log(run, u, { type: "reclaim", concession: c, by: taker.spec.name, byId: taker.id, aftermath: true });
     }
   }
 }
@@ -2535,16 +2517,16 @@ export function runOne(prep, seed, { log: withLog = false, capture = false } = {
   run.order = order; // (summoned creatures join it, right after their summoner)
   if ( withLog ) {
     const fighters = order.filter(u => u.active);
-    log(run, null, `Initiative: ${fighters.map(u => u.spec.name).join(", ")}`, { type: "initiative", order: fighters.map(u => u.spec.name) });
+    log(run, null, { type: "initiative", order: fighters.map(u => u.spec.name) });
   }
   // Words before weapons, when the sides would rather talk (or the GM says so).
   run.standoff = opensWithTalk(run);
-  if ( run.standoff ) log(run, null, "A tense standoff: words before weapons", { type: "standoff" });
+  if ( run.standoff ) log(run, null, { type: "standoff" });
 
   const surpriseSide = prep.options.surpriseSide;
   if ( surpriseSide ) {
     run.round = 0;
-    log(run, null, `Surprise round for ${prep.sides[surpriseSide]?.label ?? surpriseSide}`, { type: "surprise", sideLabel: prep.sides[surpriseSide]?.label ?? surpriseSide });
+    log(run, null, { type: "surprise", sideLabel: prep.sides[surpriseSide]?.label ?? surpriseSide });
     for ( const u of order ) if ( u.side === surpriseSide ) takeTurn(run, u);
   }
   let ended = battleOver(run);
@@ -2566,9 +2548,7 @@ export function runOne(prep, seed, { log: withLog = false, capture = false } = {
   const winners = !ended ? [] : run.resolved ? [run.resolved.side] : activeSides(run);
   if ( withLog ) {
     const labels = winners.map(s => prep.sides[s]?.label ?? s);
-    const last = run.units.filter(u => isNeutral(u) && isStanding(u) && u.against.size).map(u => u.spec.name);
-    const none = last.length ? `Only ${last.join(" & ")} still stands` : "No one is left standing";
-    log(run, null, ended ? (labels.length ? `${labels.join(" & ")} win after ${run.round} rounds` : none) : `Still fighting after ${run.round} rounds`, {
+    log(run, null, {
       type: "end", outcome: !ended ? "stalemate" : (winners.length ? "victory" : "none"), winners, winnerLabels: labels, rounds: run.round,
       peaceful: ended && !run.blood, standoff: !!run.standoff, resolved: run.resolved?.outcome ?? null
     });

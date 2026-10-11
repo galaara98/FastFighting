@@ -58,7 +58,7 @@ function payers(run, roller, kind) {
  * @param {object} roll     {natural, total, degree}
  * @param {number} dc
  * @param {object} ctx      {kind: "attack"|"save"|"cast"|"check", stakes, options: the roll's die options, label}
- * @param {Function} log    (unit, text, data)
+ * @param {Function} log    (unit, data): the run's log
  */
 export function boost(run, roller, roll, dc, { kind, stakes = 0.3, options = {}, label = "" } = {}, log = null) {
   if ( !roll || roll.degree >= 2 || !Number.isFinite(dc) || !Number.isFinite(roll.total) ) return roll;
@@ -85,7 +85,7 @@ export function boost(run, roller, roll, dc, { kind, stakes = 0.3, options = {},
     u.resources[b.pool] -= spent;
     const next = { ...roll, total, boosted: spent };
     next.degree = regrade(rules, next, dc, kind === "cast" ? "check" : kind, options);
-    log?.(u, `${own ? "burns" : `burns for ${roller.spec.name}`} ${spent} ${b.label ?? b.pool}${label ? ` (${label})` : ""}: ${roll.total} → ${total}`, {
+    log?.(u, {
       type: "boost", target: roller.spec.name, targetId: roller.id, self: own, label: b.label ?? b.pool, spent, from: roll.total, to: total,
       dc, made: next.degree >= 2, kind
     });

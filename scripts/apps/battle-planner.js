@@ -7,6 +7,7 @@ import {
 } from "../constants.js";
 import { getAdapter } from "../api.js";
 import { setting } from "../settings.js";
+import { listJoin } from "../i18n.js";
 import { getSetup, saveSetup, tokenSetup } from "../foundry/persistence.js";
 import {
   questionsContext, setTactic, togglePlaystyle, syncTacticsDom, isPlayerControlled, playersOnScene, tokensForUser, surveyStatus,
@@ -82,7 +83,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
   };
 
   static PARTS = {
-    main: { template: TEMPLATE, templates: [FUDGE_PARTIAL, TACTICS_PARTIAL], scrollable: [".ff-roster-list", ".ff-results-body", ".ff-log"] }
+    main: { template: TEMPLATE, templates: [FUDGE_PARTIAL, TACTICS_PARTIAL], scrollable: [".ff-roster-list", ".ff-results-body"] }
   };
 
   /** Singleton access. */
@@ -480,7 +481,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       seed,
       how: this.sample.how ? loc(`FASTFIGHTING.Sample.How.${this.sample.how}`) : "",
       preview: this.sample !== this.drawn,
-      outcome: result.outcome === "victory" ? result.winners.map(w => loc(`FASTFIGHTING.Side.${w}`)).join(" & ") : loc(`FASTFIGHTING.Sample.Outcome.${result.outcome}`),
+      outcome: result.outcome === "victory" ? listJoin(result.winners.map(w => loc(`FASTFIGHTING.Side.${w}`))) : loc(`FASTFIGHTING.Sample.Outcome.${result.outcome}`),
       story: this.storyFor()?.html ?? "",
       totalRounds: result.rounds,
       finals: rows.map(r => ({ name: r.spec.name, side: r.spec.side, status: loc(`FASTFIGHTING.Status.${statusOf(r.final)}`), statusClass: statusOf(r.final), lines: r.lines.join("; ") || loc("FASTFIGHTING.Sample.Unchanged") }))

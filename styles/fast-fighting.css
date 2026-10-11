@@ -232,14 +232,6 @@
 .ff-sample { display: flex; flex-direction: column; gap: 8px; }
 .ff-sample .ff-split { grid-template-columns: 1.4fr 1fr; align-items: start; }
 .ff-sample-head { font-size: 12px; }
-.ff-log { list-style: none; margin: 0; padding: 0; max-height: 380px; overflow-y: auto; border: 1px solid var(--ff-line); border-radius: 6px; }
-.ff-log-round h5 { margin: 0; padding: 3px 8px; font-size: 11px; background: var(--ff-surface-2); position: sticky; top: 0; }
-.ff-log-round ul { list-style: none; margin: 0; padding: 2px 8px 4px; }
-.ff-log-entry { font-size: 11px; padding: 1px 0 1px 6px; border-left: 3px solid var(--ff-muted); }
-.ff-log-entry.friendly { border-left-color: var(--ff-friendly); }
-.ff-log-entry.hostile { border-left-color: var(--ff-hostile); }
-.ff-log-entry.neutral { border-left-color: var(--ff-neutral); }
-.ff-log-entry.secret { border-left-color: var(--ff-secret); }
 .ff-finals { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; font-size: 12px; }
 .ff-finals small { color: var(--ff-text-dim); }
 .ff-status { font-size: 10px; padding: 0 5px; border-radius: 6px; background: var(--ff-surface-2); }
@@ -247,16 +239,12 @@
 .ff-status.down { background: var(--ff-down); color: #111; }
 .ff-status.fled { background: var(--ff-fled); color: #fff; }
 
-.ff-share { display: flex; flex-direction: column; gap: 8px; }
-.ff-share textarea { width: 100%; resize: vertical; font-family: inherit; font-size: 13px; }
 
 .ff-empty-state { text-align: center; padding: 60px 30px; color: var(--ff-text-dim); }
 .ff-empty-state i { font-size: 42px; opacity: 0.4; }
 .ff-empty-state h3 { border: none; margin: 10px 0 4px; }
 
 /* ---------- Chat cards and dialogs ---------- */
-.fast-fighting-report header { font-weight: 700; margin-bottom: 4px; display: flex; gap: 6px; align-items: center; }
-.fast-fighting-report p { margin: 2px 0; }
 .ff-mis-list { max-height: 300px; overflow-y: auto; font-size: 12px; }
 
 /* ---------- Defaults config ---------- */

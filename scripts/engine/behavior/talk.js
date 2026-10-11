@@ -42,9 +42,6 @@ import { standsGround, callRetreat } from "./morale.js";
 
 /** The three kinds of pitch. Systems map their own skills onto these (CombatantSpec.social.pitches). */
 export const TALK_KINDS = Object.freeze(["persuade", "intimidate", "deceive"]);
-const VERB = { persuade: "reasons with", intimidate: "threatens", deceive: "bluffs" };
-/** What a pitch is for, beyond talking an enemy down. */
-const AIM_TEXT = { recruit: " to join them", dismiss: " to leave", calm: " to let it go", settle: " to make amends", extort: " to pay up", pacify: " to let it be", leave: " to leave" };
 
 /**
  * What talking to t is for: "down" (an enemy: talk it out of the fight), "recruit" (someone taking no side: win it
@@ -470,12 +467,11 @@ function concede(run, talker, t, log) {
     t.status = STATUS.FLED;
     t.fellRound ??= run.round;
     t.ranRound = run.round;
-    log(t, "swears they have nothing and runs", { type: "sway", outcome: SWAY.FLEE, lie: true, by: talker.spec.name, byId: talker.id });
+    log(t, { type: "sway", outcome: SWAY.FLEE, lie: true, by: talker.spec.name, byId: talker.id });
     return;
   }
   const record = given ? { ...given, to: talker.id, toName: talker.spec.name, round: run.round } : null;
   if ( record ) (t.concessions ??= []).push(record);
-  const what = !given ? "nothing" : given.kind === "money" ? `${given.percent}% of their money` : given.item.name;
   const data = { type: "sway", outcome: SWAY.CONCEDE, by: talker.spec.name, byId: talker.id, concession: record };
   if ( run.standoff ) {
     for ( const id of t.adjacent ) run.byId.get(id)?.adjacent.delete(t.id);
@@ -483,7 +479,7 @@ function concede(run, talker, t, log) {
     t.swayOutcome = SWAY.CONCEDE;
     t.status = STATUS.STOOD_DOWN; // paid up, and the matter is settled
     t.fellRound ??= run.round;
-    log(t, given?.kept ? `agrees to hand over ${what}, but keeps it (luck ${given.luck})` : `gives up ${what} to ${talker.spec.name}`, data);
+    log(t, data);
     return;
   }
   // Mid-fight: still in it, but bitter and wary of whoever made them pay.
@@ -491,7 +487,7 @@ function concede(run, talker, t, log) {
   t.offendedBy.add(talker.id);
   t.sway.set(talker.side, 0);
   (t.grudges ??= new Map()).set(talker.id, { provoked: false });
-  log(t, given?.kept ? `agrees to hand over ${what}, but keeps it (luck ${given.luck}), and fights on` : `gives up ${what} to ${talker.spec.name}, bitterly, and fights on`, data);
+  log(t, data);
 }
 
 function applyOutcome(run, talker, t, outcome, log, aim = "down", luck = null) {
@@ -499,7 +495,7 @@ function applyOutcome(run, talker, t, outcome, log, aim = "down", luck = null) {
   // A quarrel settled with words (the talker takes no side): an apology, or something handed over.
   if ( outcome === "amends" ) {
     settleTruce(talker, t.side);
-    log(t, `makes amends with ${talker.spec.name}`, { type: "neutral", what: "amends", ...by });
+    log(t, { type: "neutral", what: "amends", ...by });
     return;
   }
   // A boss paid to go: the talker's side pays (whoever has the most), and the boss leaves with its whole group. That
@@ -519,8 +515,7 @@ function applyOutcome(run, talker, t, outcome, log, aim = "down", luck = null) {
       f.fellRound ??= run.round;
     }
     settle(run, talker, SWAY.CONCEDE);
-    const what = !given ? "nothing" : given.kind === "money" ? `${given.percent}% of ${payer.spec.name}'s money` : given.item.name;
-    log(t, `is paid ${what} to go, and leaves with its people`, { type: "sway", outcome: "bribed", concession: record, payer: payer?.spec.name ?? null, payerId: payer?.id ?? null, ...by });
+    log(t, { type: "sway", outcome: "bribed", concession: record, payer: payer?.spec.name ?? null, payerId: payer?.id ?? null, ...by });
     return;
   }
   // Paid off: someone taking no side squeezes the side it likes least, which pays it to keep out of it (and it does).
@@ -529,9 +524,7 @@ function applyOutcome(run, talker, t, outcome, log, aim = "down", luck = null) {
     const record = given ? { ...given, to: talker.id, toName: talker.spec.name, round: run.round } : null;
     if ( record ) (t.concessions ??= []).push(record);
     if ( talker.meddling ) talker.meddling.how = null;
-    const what = !given ? "" : given.kind === "money" ? `${given.percent}% of their money` : given.item.name;
-    const text = !given ? `has nothing to pay ${talker.spec.name} with` : given.kept ? `agrees to pay ${talker.spec.name} off with ${what}, but keeps it (luck ${given.luck})` : `pays ${talker.spec.name} off with ${what}`;
-    log(t, text, { type: "sway", outcome: SWAY.CONCEDE, paidOff: true, concession: record, ...by });
+    log(t, { type: "sway", outcome: SWAY.CONCEDE, paidOff: true, concession: record, ...by });
     return;
   }
   // Talked into letting a quarrel be: someone taking no side lets the sides it was fighting be; anyone else holds back
@@ -541,17 +534,17 @@ function applyOutcome(run, talker, t, outcome, log, aim = "down", luck = null) {
       for ( const side of [...t.against] ) calm(t, side);
       t.targetId = null;
       run.geo = (run.geo ?? 0) + 1;
-      log(t, `lets it go, talked round by ${talker.spec.name}`, { type: "neutral", what: "calmed", ...by });
+      log(t, { type: "neutral", what: "calmed", ...by });
     } else {
       t.holdsBack = true;
-      log(t, `agrees to let it be, talked round by ${talker.spec.name}`, { type: "neutral", what: "holds", ...by });
+      log(t, { type: "neutral", what: "holds", ...by });
     }
     return;
   }
   // Someone taking no side, confronting the talker's side, talked round.
   if ( outcome === "calm" ) {
     settleTruce(t, talker.side);
-    log(t, `lets it go, talked round by ${talker.spec.name}`, { type: "neutral", what: "calmed", ...by });
+    log(t, { type: "neutral", what: "calmed", ...by });
     return;
   }
   if ( aim === "down" ) settle(run, talker, outcome === SWAY.CONCEDE && !hasValuables(t) && t.spec.kind !== "pc" ? SWAY.FLEE : outcome);
@@ -565,7 +558,7 @@ function applyOutcome(run, talker, t, outcome, log, aim = "down", luck = null) {
     joinSide(run, t, talker.side);
     t.swayOutcome = SWAY.SWITCH;
     const sideLabel = run.prep.sides[talker.side]?.label ?? talker.side;
-    log(t, `is won over and joins ${sideLabel}`, { type: "sway", outcome, recruit: true, sideLabel, ...by });
+    log(t, { type: "sway", outcome, recruit: true, sideLabel, ...by });
     return;
   }
   for ( const id of t.adjacent ) run.byId.get(id)?.adjacent.delete(t.id);
@@ -576,7 +569,7 @@ function applyOutcome(run, talker, t, outcome, log, aim = "down", luck = null) {
     if ( again ) calm(t, talker.side);
     else standAside(run, t);
     t.swayOutcome = SWAY.NEUTRAL;
-    log(t, again ? "calms down and stands aside again" : "is talked out of the fight and stands aside", {
+    log(t, {
       type: "sway", outcome, again, luck: luck?.roll ?? null, needed: luck?.needed ?? null, ...by
     });
     return;
@@ -585,8 +578,7 @@ function applyOutcome(run, talker, t, outcome, log, aim = "down", luck = null) {
   t.status = { [SWAY.FLEE]: STATUS.FLED, [SWAY.STAND_DOWN]: STATUS.STOOD_DOWN }[outcome] ?? STATUS.SURRENDERED;
   t.fellRound ??= run.round;
   if ( outcome === SWAY.FLEE ) t.ranRound = run.round;
-  const text = { [SWAY.FLEE]: "is talked into leaving and flees", [SWAY.STAND_DOWN]: "agrees to stand down" }[outcome] ?? "lays down arms and surrenders";
-  log(t, text, { type: "sway", outcome, by: talker.spec.name, byId: talker.id });
+  log(t, { type: "sway", outcome, by: talker.spec.name, byId: talker.id });
 }
 
 /** a falls back with leader (a retreat it called, or answered): off the field. */
@@ -596,7 +588,7 @@ function fallBack(run, a, leader, log) {
   a.status = STATUS.FLED;
   a.fellRound ??= run.round;
   a.ranRound = run.round;
-  log(a, a === leader ? "leads the retreat" : `falls back with ${leader.spec.name}`, { type: "flee", retreat: true, with: leader.spec.name, withId: leader.id, leads: a === leader });
+  log(a, { type: "flee", retreat: true, with: leader.spec.name, withId: leader.id, leads: a === leader });
 }
 
 /**
@@ -612,7 +604,6 @@ export function attemptTalk(run, talker, pitch, log) {
   const steps = stepsToConvince(t, run, talker);
   const aim = pitch.aim ?? aimOf(talker, t);
   let progress = t.sway.get(talker.side) ?? 0;
-  const verb = VERB[pitch.kind] ?? "talks to";
   switch ( roll.degree ) {
     case 3: progress += 2; break;
     case 2: progress += 1; break;
@@ -625,15 +616,10 @@ export function attemptTalk(run, talker, pitch, log) {
       progress = Math.max(0, progress - 1);
   }
   t.sway.set(talker.side, progress);
-  const result = ["critical failure: they won't hear another word", "unmoved", "wavering", "badly shaken"][roll.degree];
   // Winning someone over, the talker makes the case by what it wants (keeping someone safe, hurting someone).
   const pull = aim === "recruit" ? appeal(run, t, talker.side).fulfils : null;
   const pullName = pull ? run.byId.get(pull.targetId)?.spec.name ?? "" : "";
-  const why = pull ? ` (${pull.kind === "hurt" ? `a chance at ${pullName}` : `to keep ${pullName} safe`})` : "";
-  // (Against challenge dice rather than a DC: Ironsworn.)
-  const versus = roll.challenge ? roll.challenge.join(", ") : `DC ${pitch.dc}`;
-  const aimText = t.isBoss && aim === "down" && run.standoff ? " to take payment and go" : AIM_TEXT[aim] ?? "";
-  if ( run.log ) log(talker, `${verb} ${t.spec.name}${aimText}${why} (${pitch.skill} ${roll.total} vs ${versus}): ${result} [${Math.min(progress, steps)}/${steps}]`, {
+  if ( run.log ) log(talker, {
     type: "talk", kind: pitch.kind, skill: pitch.skill, target: t.spec.name, targetId: t.id, natural: roll.natural, mod: pitch.mod, boost: pitch.boost ?? null, total: roll.total,
     dc: pitch.dc, dcStat: pitch.dcLabel, degree: roll.degree, margin: roll.total - pitch.dc, challenge: roll.challenge ?? null,
     progress: Math.min(progress, steps), steps, offended: roll.degree === 0,
@@ -659,7 +645,7 @@ export function attemptTalk(run, talker, pitch, log) {
     const needed = pc ? run.prep.options.traitorLuck ?? TRAITOR_LUCK : Math.min(100, (run.prep.options.switchLuck ?? SWITCH_LUCK) + (t.scheming ? 20 : 0));
     luck = { roll: run.rng.die(100), needed, traitor: pc };
     if ( luck.needed < 100 && luck.roll >= luck.needed ) { // (100: always)
-      log(t, `almost comes over, but won't turn on their own (luck ${luck.roll})`, {
+      log(t, {
         type: "neutral", what: "luck", luck: luck.roll, needed: luck.needed, by: talker.spec.name, byId: talker.id
       });
       outcome = outcomeFor(run, t, pitch.kind, aim, { noSwitch: true, peace });

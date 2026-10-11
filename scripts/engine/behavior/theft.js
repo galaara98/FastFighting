@@ -123,7 +123,7 @@ export function theftPlan(run, u, t) {
 /**
  * Try to rob t. Returns what happened: {stolen, noticed, luck, attacks} (attacks: rolls that count toward a
  * multiple attack penalty).
- * @param {(unit, text, data) => void} log
+ * @param {(unit, data) => void} log
  * @param {object} [options]
  * @param {object} [options.plan]         From theftPlan
  * @param {number} [options.attacksMade]  Attacks already made this turn
@@ -138,7 +138,7 @@ export function attemptTheft(run, u, t, log, { plan = null, attacksMade = 0 } = 
     const roll = rollCheck(rules, run.rng, bonus, ac, { advantage, kind: "attack" });
     feint = { weapon: plan.weapon.name, natural: roll.natural, mod: bonus, total: roll.total, ac, hit: roll.degree >= 2 };
     if ( !feint.hit ) {
-      log(u, `feints at ${t.spec.name} with ${plan.weapon.name}, but can't get close enough to steal`, {
+      log(u, {
         type: "theft", target: t.spec.name, targetId: t.id, feint, stolen: null, noticed: false
       });
       return { stolen: null, noticed: false, attacks: 1 };
@@ -159,7 +159,7 @@ export function attemptTheft(run, u, t, log, { plan = null, attacksMade = 0 } = 
     // Caught in the act: the victim wants the thief now, and the thief is no longer hidden.
     (t.grudges ??= new Map()).set(u.id, { provoked: true });
     u.revealed = true;
-    log(u, `tries to rob ${t.spec.name} and is caught`, { ...data, noticed: true });
+    log(u, { ...data, noticed: true });
     offend(run, t, u, "robbed", log);
     return { stolen: null, noticed: true, attacks };
   }
@@ -168,7 +168,7 @@ export function attemptTheft(run, u, t, log, { plan = null, attacksMade = 0 } = 
   if ( t.spec.kind === "pc" ) {
     luck = run.rng.die(100);
     if ( luck > (run.prep.options.theftLuck ?? THEFT_LUCK) ) {
-      log(u, `nearly robs ${t.spec.name}, but comes away empty-handed`, { ...data, luck, stolen: null });
+      log(u, { ...data, luck, stolen: null });
       return { stolen: null, noticed: false, luck, attacks };
     }
   }
@@ -176,6 +176,6 @@ export function attemptTheft(run, u, t, log, { plan = null, attacksMade = 0 } = 
   if ( !taken ) return { stolen: null, noticed: false, luck, attacks };
   const record = { ...taken, how: "theft", to: u.id, toName: u.spec.name, round: run.round, luck: luck ?? undefined, needed: luck ? (run.prep.options.theftLuck ?? THEFT_LUCK) : undefined };
   (t.concessions ??= []).push(record);
-  log(u, `steals ${taken.kind === "money" ? `${taken.percent}% of ${t.spec.name}'s money` : `${taken.item.name} from ${t.spec.name}`}`, { ...data, luck, stolen: record });
+  log(u, { ...data, luck, stolen: record });
   return { stolen: record, noticed: false, luck, attacks };
 }

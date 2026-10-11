@@ -19,7 +19,7 @@ const runOf = (combatants, command = {}) => {
   const run = createRun(prepareBattle({ ...battle(combatants, { leadership: true }), command }, pf2eRules));
   for ( const u of run.units ) initDesires(u);
   run.log = [];
-  const say = (unit, text, data) => run.log.push({ actor: unit.spec.name, text, ...data });
+  const say = (unit, data) => run.log.push({ actor: unit.spec.name, ...data });
   return { run, say, by: id => run.byId.get(id) };
 };
 const band = (extra = []) => runOf([goblin("boss"), goblin("w1"), goblin("w2"), ...extra, creature({ id: "pc", kind: "pc", diesAtZero: false })], { hostile: chain("boss") });

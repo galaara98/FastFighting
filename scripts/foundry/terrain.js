@@ -142,7 +142,7 @@ export function computeApproach(tokens, specs, { ignoreTerrain = false, ignoreTe
   for ( const a of tokens ) {
     const specA = specs.get(a.id);
     if ( !specA ) continue;
-    const row = approach[a.id] = {};
+    approach[a.id] = {};
     const speeds = specA.speeds ?? { walk: 25 };
     const reach = Math.max(5, ...specA.actions.filter(x => x.melee).map(x => x.reach ?? 5));
     for ( const b of tokens ) {

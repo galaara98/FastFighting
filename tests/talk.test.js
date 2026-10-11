@@ -67,7 +67,7 @@ describe("talk in the simulation", () => {
   test("talkers start swaying on their very first turn", () => {
     const r = replay(battle([talker(), bandit()]), pf2eRules, 21);
     const first = r.log.find(e => e.actor === "talker" && e.round === 1 && e.type !== "thought");
-    expect(first.text).toMatch(/reasons with|threatens|bluffs/);
+    expect(first.type).toBe("talk");
   });
 
   test("weak fighters talk twice a turn", () => {
@@ -77,7 +77,7 @@ describe("talk in the simulation", () => {
     let most = 0;
     for ( let seed = 1; seed <= 10; seed++ ) {
       const r = replay(battle([meek, fighter, bandit({ hp: { value: 300, max: 300 } })], { maxRounds: 1 }), pf2eRules, seed);
-      const talks = r.log.filter(e => e.actor === "talker" && e.round === 1 && /reasons with|threatens|bluffs/.test(e.text));
+      const talks = r.log.filter(e => e.actor === "talker" && e.round === 1 && e.type === "talk");
       most = Math.max(most, talks.length);
     }
     expect(most).toBe(2);
@@ -87,9 +87,11 @@ describe("talk in the simulation", () => {
     for ( let seed = 1; seed <= 40; seed++ ) {
       const r = replay(battle([talker(), bandit({ originSide: "neutral" })]), pf2eRules, seed);
       for ( let i = 0; i < r.log.length; i++ ) {
-        if ( /surrenders|switches sides|talked into leaving/.test(r.log[i].text) ) {
-          const pitch = [...r.log.slice(0, i)].reverse().find(e => /reasons with|threatens|bluffs/.test(e.text));
-          expect(pitch.text).toMatch(/wavering|badly shaken/);
+        const e = r.log[i];
+        // Talked into surrendering, switching sides or leaving: the pitch before it was a success.
+        if ( e.type === "sway" && !e.recruit && !e.lie && !e.paidOff && !e.concession && ["surrendered", "switched", "fled"].includes(e.outcome) ) {
+          const pitch = [...r.log.slice(0, i)].reverse().find(x => x.type === "talk");
+          expect(pitch.degree).toBeGreaterThanOrEqual(2);
         }
       }
     }
@@ -97,9 +99,8 @@ describe("talk in the simulation", () => {
 
   test("hidden ambushers can't be talked to until they attack", () => {
     const r = replay(battle([talker(), bandit({ hidden: true, actions: [strike({ bonus: -30 })] })], { maxRounds: 1 }), pf2eRules, 2);
-    const order = r.log.map(e => e.actor + ":" + e.text);
-    const firstTalk = order.findIndex(x => /^talker:.*(reasons with|threatens|bluffs)/.test(x));
-    const firstAttack = order.findIndex(x => /^bandit:.*→/.test(x));
+    const firstTalk = r.log.findIndex(e => e.actor === "talker" && e.type === "talk");
+    const firstAttack = r.log.findIndex(e => e.actor === "bandit" && ["attack", "save", "auto", "control"].includes(e.type));
     expect(firstTalk === -1 || (firstAttack !== -1 && firstAttack < firstTalk)).toBe(true);
   });
 

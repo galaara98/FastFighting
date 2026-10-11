@@ -48,7 +48,7 @@ export function castChanceOf(u, action) {
  * @param {object} action
  * @param {object} [options]
  * @param {number} [options.stakes]   how much rides on it (0..1), for burning Luck on a check that falls short
- * @param {Function} [options.log]    (unit, text, data)
+ * @param {Function} [options.log]    (unit, data): the run's log
  */
 export function cast(run, u, action, { stakes = 0.5, log = null } = {}) {
   const c = action.casting;

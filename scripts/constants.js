@@ -103,7 +103,7 @@ export const STAND_GROUND = 90;
 /** How an encounter opens: decided by who would rather talk, always with words, or straight into battle. */
 export const OPENING = Object.freeze({ AUTO: "auto", TALK: "talk", FIGHT: "fight" });
 
-export const FUDGE_STEP = Object.freeze({ trait: 5, bonus: 1, multiplier: 0.25 });
+export const FUDGE_STEP = Object.freeze({ trait: 5 });
 
 export function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));

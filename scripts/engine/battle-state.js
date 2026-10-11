@@ -533,11 +533,6 @@ export function command(run, key) {
 /** Who commands u's group right now (null: leaderless, or alone). */
 export const commandOf = (run, u) => command(run, groupKeyOf(u));
 
-/** Is anyone leading this group right now? (A side's id, or a unit for its own group.) */
-export function leaderStanding(run, sideOrUnit) {
-  return !!(typeof sideOrUnit === "string" ? command(run, sideOrUnit) : commandOf(run, sideOrUnit));
-}
-
 /** Trait value including live leadership effects. */
 export function liveTrait(run, u, trait) {
   let value = u.prep.traits[trait];

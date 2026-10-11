@@ -348,7 +348,6 @@
       "SideMorale": "Can rout",
       "GroupTraits": "Group personality",
       "Leader": "Leader",
-      "AutoLeader": "Auto: {name}",
       "AutoLeaderNone": "Auto (no leader found)",
       "NoLeader": "No leaders",
       "ChosenLeader": "Chosen by the GM",
@@ -429,8 +428,7 @@
         "combatants": "Combatants",
         "swing": "Swing factors",
         "resources": "Resources",
-        "sample": "Sample fight",
-        "share": "Share"
+        "sample": "Sample fight"
       },
       "Stale": "Settings changed since this run. Run again to update.",
       "Stalemate": "Stalemate",
@@ -484,8 +482,6 @@
       "partyLoses": "A party defeat",
       "pcDies": "A PC dies",
       "closeCall": "A close call",
-      "Start": "Start",
-      "Round": "Round {n}",
       "Outcome": {
         "stalemate": "Stalemate",
         "none": "No one standing"
@@ -1212,13 +1208,11 @@
       "SizedUp": "sized up +{n}",
       "AttackN": "attack #{n}",
       "CritTable": "crit table {n}",
-      "FumbleTable": "fumble table {n}",
       "Self": "self",
       "NoRoll": "no roll",
       "Shifted": "(shifted)",
       "OnSelf": "(on {name})",
       "NoEffect": "no effect",
-      "Unaffected": "unaffected",
       "Succeeds": "succeeds",
       "Fails": "fails",
       "NowAHit": "now a hit",
@@ -1384,7 +1378,6 @@
       "SwayStoodDown": "{actor} agrees to stand down",
       "SwaySurrendered": "{actor} lays down arms and surrenders",
       "SwaySwitched": "{actor} switches sides",
-      "Adjust": "{actor}: {text}",
       "Backlash": "{actor}: {label} · {damage}",
       "PaysForIt": "pays for it",
       "BreakStandoff": "{actor} {how}",

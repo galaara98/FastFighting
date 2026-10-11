@@ -1998,7 +1998,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "08ab5d3aecdf"
+   "hash": "08ab5d3aecdf",
+   "gone": "2026-10-11"
   },
   "core:FASTFIGHTING.Log.AfflictionCured": {
    "repo": "core",
@@ -3139,7 +3140,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "f1f911b06c4c"
+   "hash": "f1f911b06c4c",
+   "gone": "2026-10-11"
   },
   "core:FASTFIGHTING.Log.GetsThrough": {
    "repo": "core",
@@ -4759,7 +4761,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "7298a246841d"
+   "hash": "7298a246841d",
+   "gone": "2026-10-11"
   },
   "core:FASTFIGHTING.Log.Vanish": {
    "repo": "core",
@@ -5499,7 +5502,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "d6e72e5f0b14"
+   "hash": "d6e72e5f0b14",
+   "gone": "2026-10-11"
   },
   "core:FASTFIGHTING.Planner.AutoLeaderNone": {
    "repo": "core",
@@ -7369,7 +7373,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "29887a5ff984"
+   "hash": "29887a5ff984",
+   "gone": "2026-10-11"
   },
   "core:FASTFIGHTING.Results.Tab.swing": {
    "repo": "core",
@@ -7569,7 +7574,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "af2dff6dd952"
+   "hash": "af2dff6dd952",
+   "gone": "2026-10-11"
   },
   "core:FASTFIGHTING.Sample.Rounds": {
    "repo": "core",
@@ -7599,7 +7605,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "e4bb9f1ece9a"
+   "hash": "e4bb9f1ece9a",
+   "gone": "2026-10-11"
   },
   "core:FASTFIGHTING.Sample.typical": {
    "repo": "core",

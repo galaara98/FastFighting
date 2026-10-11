@@ -104,7 +104,7 @@ describe("riders and conditions", () => {
 
     const r = replay(battle([spider, victim], { maxRounds: 2 }), pf2eRules, 9);
     expect(r.units.victim.final).toBeDefined();
-    expect(r.log.some(e => e.text.includes("Venom"))).toBe(true);
+    expect(r.log.some(e => e.name === "Venom")).toBe(true);
   });
 
   test("sneak attack applies only to off-guard targets", () => {

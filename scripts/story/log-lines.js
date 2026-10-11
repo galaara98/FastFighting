@@ -1,8 +1,8 @@
 /**
  * The fight's log in words: one line per event, as the Statistician story shows it (and the Standard story's notes),
- * built from the event's data in the reader's language, never from the engine's own notes (e.text). Each phrase is a
- * template under FASTFIGHTING.Log in the language files.
- * Only text a game system writes itself (a rule's own report: recovery checks, enduring harm) is shown as it comes.
+ * built from the event's data in the reader's language. Each phrase is a template under FASTFIGHTING.Log in the
+ * language files. Only text a game system writes itself (a rule's own report: recovery checks, enduring harm, carried
+ * as e.text) is shown as it comes.
  * Pure apart from reading Foundry's translations when they're there (../i18n.js).
  */
 import { localize, listJoin, listItems, hasWords, distanceText } from "../i18n.js";

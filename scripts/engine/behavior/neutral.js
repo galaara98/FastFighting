@@ -162,8 +162,8 @@ export function meddling(run, n, say = () => {}) {
   n.meddling = { key, how, side: favored, against: [...enemies], chance: p, odds };
   const sideLabel = run.prep.sides[favored]?.label ?? favored;
   const theirLabel = n.meddling.against.map(s => run.prep.sides[s]?.label ?? s).join(", ");
-  if ( !how ) say(n, "keeps out of it", { type: "neutral", what: "aloof", chance: p, side: favored, sideLabel });
-  else say(n, how === "extort" ? `sees a chance to squeeze ${theirLabel}` : `speaks up for ${sideLabel}`, { type: "neutral", what: "meddle", how, chance: p, side: favored, sideLabel, against: theirLabel });
+  if ( !how ) say(n, { type: "neutral", what: "aloof", chance: p, side: favored, sideLabel });
+  else say(n, { type: "neutral", what: "meddle", how, chance: p, side: favored, sideLabel, against: theirLabel });
   return how ? n.meddling : null;
 }
 
@@ -183,7 +183,7 @@ export function feud(run, u, n, say) {
   want(u, "hurt", n.id, 40);
   want(n, "hurt", u.id, 30);
   run.geo = (run.geo ?? 0) + 1; // friends and foes have changed
-  say(u, `takes offense at ${n.spec.name} and goes for them`, { type: "neutral", what: "feud", target: n.spec.name, targetId: n.id });
+  say(u, { type: "neutral", what: "feud", target: n.spec.name, targetId: n.id });
   return true;
 }
 
@@ -257,7 +257,7 @@ export function sparedForTruce(run, u) {
  * Anyone taking no side who cares takes note: the one harmed, at once; anyone watching who wants the target safe
  * (or, for help, badly wants it hurt), a grievance against the actor's side, the more it cares.
  * @param {number} weight  how much it mattered: about 0.5 for a scratch, 2 for a crippling blow, 3 for a fall
- * @param {(unit, text, data) => void} say
+ * @param {(unit, data) => void} say
  */
 export function crossed(run, actor, target, how, weight, say) {
   if ( !run.neutral || !actor || !target || actor === target || isNeutral(actor) ) return;
@@ -297,7 +297,7 @@ export function offend(run, n, by, why, say, victim = null) {
     n.truce = { withId: by.id, side: by.side, round: run.round };
     n.active = true;
     n.aware = true;
-    say(n, `confronts ${by.spec.name}${victim ? ` over ${victim.spec.name}` : ""}`, {
+    say(n, {
       type: "neutral", what: "truce", why, by: by.spec.name, byId: by.id, victim: victim?.spec.name ?? null, victimId: victim?.id ?? null
     });
     return true;
@@ -318,7 +318,7 @@ export function turnOn(run, n, by, why, say, victim = null) {
   want(n, "hurt", by.id, 40);
   run.geo = (run.geo ?? 0) + 1; // friends and foes have changed
   const sideLabel = run.prep.sides[by.side]?.label ?? by.side;
-  say(n, `turns on ${sideLabel}`, {
+  say(n, {
     type: "neutral", what: "offended", why, by: by.spec.name, byId: by.id, side: by.side, sideLabel,
     victim: victim?.spec.name ?? null, victimId: victim?.id ?? null
   });

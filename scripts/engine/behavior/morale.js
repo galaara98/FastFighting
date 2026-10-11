@@ -153,7 +153,7 @@ export function running(run, a) {
  * u means to run: does its group go with it? Its commander decides (u itself, if it commands; with nobody commanding,
  * u can only shout and hope; a player character commanding isn't made to). Returns who falls back with u (the
  * commander first, when u talked it into it), or held: true when the commander refused and u obeys its order to hold.
- * @param {(unit, text, data) => void} say
+ * @param {(unit, data) => void} say
  * @returns {{followers: object[], commander: object|null, held: boolean}}
  */
 export function callRetreat(run, u, say = () => {}) {
@@ -170,14 +170,14 @@ export function callRetreat(run, u, say = () => {}) {
     const word = (chainOf(run, groupKeyOf(u))?.some(c => c.id === u.id) ? 0.15 : 0) + 0.2 * (u.prep.talkAffinity ?? 0);
     const p = clamp((0.2 + shaken + word) * (steadied(run, commander) ? 0.5 : 1) * (commander.isBoss ? BOSS_AGREES : 1), 0.01, 0.85);
     if ( !run.rng.chance(p) ) {
-      say(commander, "won't hear of retreat", { type: "retreat", what: "refused", target: u.spec.name, targetId: u.id, chance: p });
+      say(commander, { type: "retreat", what: "refused", target: u.spec.name, targetId: u.id, chance: p });
       // Ordered to hold: it does as readily as it would take its commander's lead.
       const f = followChance(run, u);
       return { ...none, commander, held: !!f && run.rng.chance(f.chance) };
     }
   }
   const leader = commander ?? u;
-  say(leader, commander && commander !== u ? `calls the retreat, at ${u.spec.name}'s urging` : "calls the retreat", {
+  say(leader, {
     type: "retreat", what: "call", by: u.spec.name, byId: u.id, urged: !!commander && commander !== u
   });
   const followers = commander && commander !== u ? [commander] : [];

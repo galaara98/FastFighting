@@ -27,7 +27,7 @@ function ready(combatants, options = {}) {
   run.log = [];
   for ( const u of run.units ) initDesires(u);
   refreshLeans(run);
-  const say = (unit, text, data) => run.log.push({ actor: unit.spec.name, text, ...data });
+  const say = (unit, data) => run.log.push({ actor: unit.spec.name, ...data });
   return { run, say, units: Object.fromEntries(run.units.map(u => [u.id, u])) };
 }
 
@@ -287,7 +287,7 @@ describe("not one for killing", () => {
     t.sway.set("friendly", 10);
     expect(attemptTalk(run, units.kind, pitch, say)).toBe(true);
     expect(t.status).toBe("fled");
-    expect(run.log.some(e => e.type === "talk" && /to leave/.test(e.text ?? ""))).toBe(true);
+    expect(run.log.some(e => e.type === "talk" && e.aim === "dismiss")).toBe(true);
   });
 
   test("in a fight, a peacemaker who never kills tries to talk a neutral off the field", () => {
