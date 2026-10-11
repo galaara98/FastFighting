@@ -129,6 +129,14 @@
       "playOnMap": {
         "Name": "Make it So: play the fight on the map",
         "Hint": "The tokens run through the fight as the story tells it, quickly and around walls, before settling where the fight left them. Off: they go straight to where they end up."
+      },
+      "storyOdds": {
+        "Name": "Show the odds in the posted story",
+        "Hint": "Adds each side's chance of winning, as the simulation saw it before the fight, to the story Make it So posts. Off by default; the planner has the same switch beside Make it So."
+      },
+      "executeLuck": {
+        "Name": "PC luck: being finished off",
+        "Hint": "Each time a creature wants to kill a player character who's down at 0 HP, it goes ahead only if a hidden d100 comes up at or under this; otherwise it turns away to its next foe, taking everything it wanted of that PC along. Higher means fallen PCs die more often."
       }
     },
     "Allegiance": {
@@ -668,7 +676,9 @@
       "lazy": {
         "Name": "Lazy",
         "Hint": "As little as it can get away with: whatever foe is nearest (and not one worth a long walk), saves its resources, isn't much help to anyone, gives up fast, barely bothers with a locked door, and can't be bothered to hold a grudge."
-      }
+      },
+      "NeverKill": "I never kill",
+      "NeverKillHint": "Blows that would kill knock out instead (unconscious and stable), the fallen are never struck, and after the fight this character stops anyone finishing them and tends them if it can."
     },
     "Tracker": {
       "OpenHint": "Estimate how this encounter will go",
@@ -714,7 +724,11 @@
       "Reinstall": "Reinstall all",
       "ReinstallConfirm": "Replace every installed story table with the built-in version? Your edits to them will be lost.",
       "Installing": "Installing story tables…",
-      "Installed": "Story tables: {created} installed, {kept} already present."
+      "Installed": "Story tables: {created} installed, {kept} already present.",
+      "ShowOdds": "Show the odds",
+      "ShowOddsHint": "Add each side's chance of winning to the posted story (remembered for later fights).",
+      "Odds": "Before it began, the odds stood at {odds}.",
+      "Reveal": "Show to everyone"
     },
     "Helper": {
       "Title": "FastFighting needs a helper module for {system}",
@@ -765,6 +779,18 @@
         "driven": "Driven",
         "obsessed": "Obsessed"
       }
+    },
+    "Summary": {
+      "Title": "After the fight (GM only)",
+      "Time": "Time passed: {fight} of fighting ({rounds} rounds).",
+      "TimeAfter": "Time passed: {fight} of fighting ({rounds} rounds), then {after} tending the fallen.",
+      "Spent": "Used up by the players' characters:",
+      "Nothing": "nothing",
+      "Unchanged": "The encounter is still open and the world clock hasn't moved: close it and advance time when you're ready.",
+      "Minute": "{n} minute",
+      "Minutes": "{n} minutes",
+      "Second": "{n} second",
+      "Seconds": "{n} seconds"
     }
   }
 }

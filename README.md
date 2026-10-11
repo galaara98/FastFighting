@@ -59,15 +59,22 @@ Once it notices, it decides from its personality whether to join, watch, or slip
 
 **Make it So commits a fight drawn at random from the simulated ones.** A 70% win is a loss three times in ten, as it should be. The Sample fight tab labels where the fight came from: *Fair draw*, *Most typical*, or *Chosen by filter* (a party victory, a defeat, a PC dies, a close call). The typical fight and the filtered ones are there to preview.
 
-**After the fight.** When the last foe falls, the survivors tend their dying. They use free help first (first aid, medicine feats), then spells and potions. Anyone left untended lives or dies by the system's rules for dying, so nobody is committed half-dead. Choose one of:
+**After the fight.** When the last foe falls, the survivors tend their dying, before the dying make their next roll. They use free help first (first aid, medicine feats), then spells and potions. Anyone left untended lives or dies by the system's rules for dying, so nobody is committed half-dead.
+
+**The fallen foes** are dealt with as the victors' playstyles say: one who spares them (a Moralist, a Diplomat most of the time, anyone with **"I never kill"** ticked) stops the rest from finishing them and gives them free first aid if it can; otherwise the Cruel finish them off; everyone else leaves them to the dice. "I never kill" also makes a character's killing blows knock out instead (unconscious and stable), and it never strikes the fallen.
+
+**The fallen PCs.** Each time a creature wants to finish off a player character at 0 HP, it rolls d100 against the **PC luck: being finished off** slider (39 by default): at or under, it goes ahead; over, it turns away, and everything it wanted of that PC goes to the next foe it would pick. And a character with **fate** to spend (PF2e Hero Points, 5e Heroic Inspiration) uses it when someone would die: a blow, a save or a recovery check that would kill is rolled again (a hit may become a miss), or, for one's own death where the system has a sure way out, that (PF2e Heroic Recovery: all of one's Hero Points). It always spends for itself; for a friend, the more selfish, the less likely.
+
+Choose one of:
 - tend the fallen and tell it;
 - tend them quietly, with the story ending at the last blow;
 - stop at the last blow and play the rest out yourself.
 
 **Make it So:**
-- posts the story to chat;
+- posts the story to chat (with the GM's choice of style; a **Statistician** account goes to the GMs alone, with a button to show it to everyone, while the table gets the Standard one). **Show the odds**, beside Make it So (off by default, remembered), adds each side's chance of winning to it;
+- then whispers the GMs a short **summary**: how much time passed (fighting, and tending the fallen), and what each player character used up (slots, focus, potions, hero points, limited uses). It doesn't close the encounter or move the world clock;
 - plays the fight on the map: the tokens run through every move in the story's order, quickly and around walls, then settle where the fight left them (snapped to the grid, never stacked). A setting turns this off, and the tokens go straight to their final spots;
-- writes the outcome onto the tokens through the system's helper: HP, dying, conditions, death, resources spent, loot, the fled and the surrendered.
+- writes the outcome onto the tokens through the system's helper: HP, dying, conditions, death, resources spent, loot, the fled and the surrendered, and **buffs and debuffs still running** (a Bless with 8 rounds left stays on, as the spell's own effect, for those 8 rounds).
 
 A confirmation lists every change first. **Undo** reverses it all, chat messages included, and keeps the last five.
 
@@ -136,6 +143,10 @@ Spells, songs, skills and features that change the numbers instead of (or as wel
 - **The story** tells it: *"Akra lifts Bless over the group: Akra, Zanna and Randal, emboldened."* Dodge, Reckless Attack and Action Surge get lines of their own.
 
 A system that has none of this (no concentration, no skill DCs) simply leaves it out; nothing else changes.
+
+## Senses
+
+To know that a friend needs help, or that a foe is hurt badly enough to finish, a character has to perceive them: see them (a line of sight, and light, or darkvision in the dark), hear them (60 feet, through walls), or sense them another way (blindsight, tremorsense, scent ..., each with its range, from the system's helper). Blinded creatures don't see, deafened ones don't hear. A foe it can't perceive looks unhurt to it, and it doesn't go after the fallen it can't make out. In a crisis perception bends: helping a friend, keeping someone from dying, or avenging a fallen friend, any sense that could plausibly reach them will do (twice the range, no line of sight or light needed).
 
 ## Doors
 
@@ -246,8 +257,9 @@ All settings are defaults that the planner can override per battle:
 - **Modifiers:** leadership, morale, positioning, talking, how encounters open, and the initiative source.
 - **PC luck checks** (sliders):
   - handing over an item, default 39;
-  - being robbed, default 29.
-- **Story:** style and delivery.
+  - being robbed, default 29;
+  - being finished off at 0 HP, default 39.
+- **Story:** style, delivery, and whether the posted story shows the odds (off).
 - **Make it So:** loot, corpse and fled handling, and whether the fight plays out on the map.
 - **Defaults:** side personalities, and data paths for the generic adapter.
 
@@ -305,6 +317,13 @@ Declare your system in `module.json` (`relationships.systems`) so Foundry only o
 - **What's typical for a level:** `typical.ac`, `save`, `skill` and `dc`.
 - **Per-fight state:** `initUnit(u)` and `capture(u)`.
 - **The story:** `storyDamageType(type)` maps your damage types onto the story's imagery.
+
+**Senses, fate and what's already on a creature:**
+- `spec.senses`: `[{type, range, dark, blind}]` beyond plain sight and hearing (`dark`: sees in darkness; `blind`: needs no sight). `rules.hearingFeet` (default 60). The scene's darkness comes in `options.darkness`.
+- `spec.resources.fate` and `spec.fateLabel`: points spent to keep someone from dying; `rules.avertDeath(u)` is the system's sure way out for one's own death, if it has one.
+- `spec.mods`: bonuses already on it when the fight starts (one, or a list), but only what the system's own numbers don't already include.
+- `rules.knockOut(u)` (a blow from someone who never kills) and `rules.secondsPerRound` (default 6, for the GM's summary).
+- Lingering effects: `final.effects` lists what's still running; `commitOutcome`'s `options.effectSource(id)` finds the action that laid each, whose `effectRef` (the helper's own) says what to copy onto the creature.
 
 **Buffs, debuffs and control in a CombatantSpec** (see `scripts/engine/mods.js`, `behavior/effects.js`, `behavior/control.js` and `behavior/support.js`):
 - **An outcome** is `{conditions, mods, tempHp, mark, iwr, actionsNow, rounds, label, endsOnDamage, endsOnHarm, repeatSave: {type, dc}, onlyVs, self}`, all optional. `mods` holds `attack`, `ac`, `saves`, `checks`, `damage`, `speed`, `actions` (numbers), `attackDie` / `saveDie` (signed faces: 4 is +1d4), and `adv`, `defAdv`, `saveAdv` (+1 or -1). The engine's own conditions are `prone`, `immobilized`, `incapacitated` and `controlled`.

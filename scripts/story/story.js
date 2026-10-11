@@ -215,7 +215,9 @@ function narrate(e, roll, rel, fill) {
       if ( e.potion ) return roll("event.potion", f);
       if ( e.revived ) return roll("event.revive", f);
       return roll(e.self ? "event.healSelf" : "event.heal", f);
-    case "down": return roll("event.down", f);
+    case "down": return roll(e.knockedOut ? "event.knockout" : "event.down", f);
+    case "mercy": return roll("event.mercy", f);
+    case "execute": return e.goes ? roll("event.executeGoes", f) : roll(e.next ? "event.executeSpared" : "event.executeSparedAlone", { ...f, next: e.next ?? "" });
     case "death": return roll(e.finished ? "event.finished" : "event.death", f);
     case "struckDown": return roll("event.struckDown", f);
     case "recovery":
@@ -491,6 +493,7 @@ function statLine(e) {
       if ( e.reason === "switch" ) return `${e.actor} lets ${(e.effects ?? []).join(", ")} go`;
       return `${e.actor} loses concentration on ${e.action}${e.natural !== undefined ? ` · ${e.saveType} ${roll(e.natural, e.mod, e.total, e.dc, "DC")}` : " (can't act)"}`;
     case "shakeOff": return `${e.actor} shakes off ${e.effect} · ${e.saveType} ${roll(e.natural, e.mod, e.total, e.dc, "DC")}`;
+    case "execute": return `${e.actor} → ${e.target}: execution luck d100 ${e.luck} (${e.needed} or less) · ${e.goes ? "goes for the kill" : `spares them${e.next ? `, turns on ${e.next}` : ""}`}`;
     case "allegiance": return e.joined ? `${e.actor} fights for ${e.by}'s side (controlled)` : `${e.actor} returns to ${e.homeLabel}`;
     case "theft": {
       // The luck check against a PC is the GM's secret, so it never appears here.

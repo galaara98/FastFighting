@@ -32,7 +32,7 @@ import { meanPart } from "../dice.js";
 export function recompute(u) {
   const conds = { ...u.baseConds };
   const vs = new Map();
-  const mods = [u.baseMods];
+  const mods = [].concat(u.baseMods ?? []);
   const marks = [];
   let controlledBy = null;
   const extra = { resist: {}, immune: new Set(), weak: {} };

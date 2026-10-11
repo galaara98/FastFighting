@@ -36,6 +36,9 @@ export class SystemAdapter {
   }
 
   /**
+   * (commitOutcome's options.effectSource(id) finds the action that laid a lingering effect, final.effects, so the
+   * helper can leave it on the creature, from the action's own effectRef.)
+   *
    * Build a CombatantSpec (see scripts/engine/battle-state.js) for a token.
    * @param {TokenDocument} tokenDoc
    * @returns {Promise<object|null>}

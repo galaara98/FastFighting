@@ -1,7 +1,7 @@
 /**
  * World settings. Every setting is a default: the Battle Planner can override any of them per battle.
  */
-import { MODULE_ID, ALLEGIANCE, DOWNED_MODELS, HEAL_AGGRO, ALLY_DYING, AFTERMATH, OPENING, CONCEDE_LUCK, THEFT_LUCK } from "./constants.js";
+import { MODULE_ID, ALLEGIANCE, DOWNED_MODELS, HEAL_AGGRO, ALLY_DYING, AFTERMATH, OPENING, CONCEDE_LUCK, THEFT_LUCK, EXECUTE_LUCK } from "./constants.js";
 
 const choices = (keys, prefix) => Object.fromEntries(keys.map(k => [k, `FASTFIGHTING.${prefix}.${k}`]));
 
@@ -30,11 +30,13 @@ const SETTINGS = {
   opening: { type: String, default: OPENING.AUTO, choices: choices(Object.values(OPENING), "Opening") },
   concedeLuck: { type: Number, default: CONCEDE_LUCK, range: { min: 0, max: 100, step: 1 } },
   theftLuck: { type: Number, default: THEFT_LUCK, range: { min: 0, max: 100, step: 1 } },
+  executeLuck: { type: Number, default: EXECUTE_LUCK, range: { min: 0, max: 100, step: 1 } },
   bystanders: { type: Boolean, default: true },
   positioning: { type: Boolean, default: true },
   surpriseDefault: { type: String, default: "tracker", choices: choices(["none", "tracker", "stealth"], "Surprise") },
   storyStyle: { type: String, default: "roleplay", choices: choices(["roleplay", "standard", "statistician"], "Story.Style") },
   storyMode: { type: String, default: "public", choices: choices(["public", "whisper"], "Story.Mode") },
+  storyOdds: { type: Boolean, default: false },
   lootMode: { type: String, default: "corpse", choices: choices(["corpse", "pile", "none"], "Loot") },
   corpseMode: { type: String, default: "keep", choices: choices(["keep", "remove"], "Corpse") },
   fledMode: { type: String, default: "hide", choices: choices(["hide", "leave"], "Fled") },

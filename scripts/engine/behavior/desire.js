@@ -21,6 +21,7 @@
  */
 import { STATUS } from "../../constants.js";
 import { areEnemies, isStanding, liveTrait, enemiesOf } from "../battle-state.js";
+import { perceives, apparentHealth } from "./senses.js";
 
 /** A character's playstyle guide for desires (from its pills), or the neutral one. */
 const NEUTRAL_STYLE = Object.freeze({ hurt: {}, avoid: {}, heal: 0, protect: 0, aid: 0, talk: 0, whim: 0, contrarian: 0, retaliate: 1, avenge: 1, cool: 1, frustration: 1, leader: 1, team: 1, doorPatience: 1 });
@@ -210,11 +211,13 @@ export function styleWants(run, u, scored, { canHeal = false, canTalk = false, t
     u.desire.style.set(k, (u.desire.style.get(k) ?? 0) + points);
   };
   const frac = t => (t.maxHp > 0 ? t.hp / t.maxHp : 1);
+  // How hurt they look: friends in trouble are noticed by any sense; a foe's weakness only when it can really tell.
+  const looks = t => (areEnemies(run, u, t) ? apparentHealth(run, u, t) : perceives(run, u, t, { crisis: true }) ? frac(t) : 1);
   const danger = t => (Number(t.spec.level) || 0) * 2 + (t.damageDealt ?? 0) / 5;
   const h = s.hurt ?? {};
   const foes = scored.map(x => x.t);
   const min = scored.length ? Math.min(...scored.map(x => x.moves)) : 0;
-  const weakest = foes.length ? foes.reduce((a, b) => (frac(b) < frac(a) ? b : a)) : null;
+  const weakest = foes.length ? foes.reduce((a, b) => (looks(b) < looks(a) ? b : a)) : null;
   const dangerous = foes.length ? foes.reduce((a, b) => (danger(b) > danger(a) ? b : a)) : null;
   const mine = new Set((u.prep.offense ?? []).flatMap(a => (a.damage ?? []).map(p => p.type)));
   for ( const x of scored ) {
@@ -233,11 +236,11 @@ export function styleWants(run, u, scored, { canHeal = false, canTalk = false, t
     add("hurt", t.id, points);
   }
   // The fallen: some can't resist finishing them, some never would.
-  if ( h.downed ) for ( const t of enemiesOf(run, u) ) if ( t.active && t.status === STATUS.DOWN && !t.stable ) add("hurt", t.id, h.downed);
+  if ( h.downed ) for ( const t of enemiesOf(run, u) ) if ( t.active && t.status === STATUS.DOWN && !t.stable && perceives(run, u, t) ) add("hurt", t.id, h.downed);
   // Friends: one to mend, one to guard.
   const friends = run.units.filter(a => a !== u && a.side === u.side && a.active && ![STATUS.DEAD, STATUS.FLED].includes(a.status));
-  if ( canHeal && s.heal ) for ( const a of friends ) if ( a.status === STATUS.DOWN || frac(a) < 0.75 ) add("heal", a.id, s.heal);
-  if ( s.protect ) add("protect", friends.filter(isStanding).sort((a, b) => frac(a) - frac(b))[0]?.id, s.protect);
+  if ( canHeal && s.heal ) for ( const a of friends ) if ( perceives(run, u, a, { crisis: true }) && (a.status === STATUS.DOWN || frac(a) < 0.75) ) add("heal", a.id, s.heal);
+  if ( s.protect ) add("protect", friends.filter(isStanding).sort((a, b) => looks(a) - looks(b))[0]?.id, s.protect);
   // Bolstering: the friend doing the most fighting (its leader, for those who look to one).
   if ( canAid && s.aid ) {
     const leaderId = run.prep.sides[u.side]?.leaderId;

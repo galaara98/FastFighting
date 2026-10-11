@@ -14,7 +14,7 @@ import { PlayerSurvey } from "./apps/player-survey.js";
 import { SOCKET, SURVEY_STATUS } from "./foundry/tactics.js";
 import { helperStatus, helperMessage, helperNoticeHtml } from "./helpers.js";
 import { invalidateApproach } from "./foundry/battle.js";
-import { undoConcession } from "./foundry/make-it-so.js";
+import { undoConcession, revealStory } from "./foundry/make-it-so.js";
 
 Hooks.once("init", () => {
   registerSettings(DefaultsConfig, GenericPathsConfig, StoryTablesConfig);
@@ -158,6 +158,21 @@ for ( const hook of ["createWall", "updateWall", "deleteWall", "createRegion", "
   "createRegionBehavior", "updateRegionBehavior", "deleteRegionBehavior"] ) {
   Hooks.on(hook, () => invalidateApproach());
 }
+
+// A GM-only story: the GM can show it to everyone.
+Hooks.on("renderChatMessageHTML", (message, html) => {
+  const button = html.querySelector?.("[data-ff-reveal]");
+  if ( !button ) return;
+  if ( !game.user.isGM || !message.getFlag(MODULE_ID, "revealable") ) {
+    button.remove();
+    return;
+  }
+  button.addEventListener("click", async event => {
+    event.preventDefault();
+    button.disabled = true;
+    await revealStory(message);
+  });
+});
 
 // A PC's loss card: its Undo puts back just that hand-over (GMs only).
 Hooks.on("renderChatMessageHTML", (message, html) => {

@@ -270,13 +270,19 @@ function planPlacements(rows) {
  * @param {object[]} rows       From planMakeItSo
  * @param {object} replay       The fight being committed
  * @param {object} [options]
- * @param {{title: string, html: string}} [options.story]  The story to post
+ * @param {{title: string, html: string}} [options.story]    The story to post (older callers)
+ * @param {{everyone?: object, gm?: object}} [options.stories] The story for the table, and one for the GMs alone
+ *   (the Statistician's, with a button to show it to everyone)
+ * @param {string} [options.odds]  A line on the odds, to add to the stories (only when the GM wants it shown)
  */
-export async function executeMakeItSo(rows, replay, { story = null } = {}) {
+export async function executeMakeItSo(rows, replay, { story = null, stories = null, odds = null } = {}) {
+  stories ??= { everyone: story };
   if ( !game.user.isGM ) return [];
   const adapter = getAdapter();
-  const options = { lootMode: setting("lootMode"), corpseMode: setting("corpseMode"), fledMode: setting("fledMode") };
-  Hooks.callAll("fastFighting.preMakeItSo", { rows, replay, options, story });
+  // Where a lingering effect came from: the action (and its user) that laid it, for the helper to copy.
+  const sources = new Map(rows.flatMap(r => r.spec.actions.map(action => [action.id, { action, spec: r.spec }])));
+  const options = { lootMode: setting("lootMode"), corpseMode: setting("corpseMode"), fledMode: setting("fledMode"), effectSource: id => sources.get(id) ?? null };
+  Hooks.callAll("fastFighting.preMakeItSo", { rows, replay, options, story: stories.everyone ?? stories.gm ?? null, stories });
 
   // 1. Movement: the fight plays out on the map (every move in the story's order, quickly, around walls), then
   //    everyone settles on a free spot where the fight left them.
@@ -332,16 +338,29 @@ export async function executeMakeItSo(rows, replay, { story = null } = {}) {
     }
   }
 
-  // 4. The story
-  if ( story?.html ) {
-    const ChatMessage = foundry.documents.ChatMessage ?? globalThis.ChatMessage;
-    const whisper = setting("storyMode") === "whisper" ? game.users.filter(u => u.isGM).map(u => u.id) : [];
+  // 4. The story: for the table (or the GMs, by the delivery setting); the Statistician's account for the GMs alone,
+  //    with a button to show it to everyone. Then, for the GMs, what the players' characters spent and how long it
+  //    all took (nothing is changed: the encounter stays open and the clock stays where it was).
+  const ChatMessage = foundry.documents.ChatMessage ?? globalThis.ChatMessage;
+  const gms = game.users.filter(u => u.isGM).map(u => u.id);
+  const speaker = { alias: loc("FASTFIGHTING.Story.Speaker") };
+  const post = async (s, { gmOnly = false } = {}) => {
+    if ( !s?.html ) return;
+    const oddsHtml = odds ? `<p class="ff-odds"><em>${escape(odds)}</em></p>` : "";
+    const reveal = gmOnly ? `<button type="button" data-ff-reveal><i class="fa-solid fa-eye"></i> ${loc("FASTFIGHTING.Story.Reveal")}</button>` : "";
     const message = await ChatMessage.create({
-      content: `<div class="fast-fighting-story"><header><i class="fa-solid fa-book-open"></i> ${escape(story.title)}</header>${story.html}</div>`,
-      speaker: { alias: loc("FASTFIGHTING.Story.Speaker") },
-      whisper,
-      flags: { [MODULE_ID]: { story: true } }
+      content: `<div class="fast-fighting-story"><header><i class="fa-solid fa-book-open"></i> ${escape(s.title)}</header>${s.html}${oddsHtml}${reveal}</div>`,
+      speaker,
+      whisper: gmOnly || setting("storyMode") === "whisper" ? gms : [],
+      flags: { [MODULE_ID]: { story: true, revealable: gmOnly } }
     });
+    if ( message ) messages.push(message.id);
+  };
+  await post(stories.everyone);
+  await post(stories.gm, { gmOnly: true });
+  const summary = gmSummary(rows, replay, adapter);
+  if ( summary ) {
+    const message = await ChatMessage.create({ content: summary, speaker, whisper: gms, flags: { [MODULE_ID]: { summary: true } } });
     if ( message ) messages.push(message.id);
   }
 
@@ -349,6 +368,56 @@ export async function executeMakeItSo(rows, replay, { story = null } = {}) {
   await canvas.scene.update({ [`flags.${MODULE_ID}.==undo`]: { stack } });
   Hooks.callAll("fastFighting.makeItSo", records);
   return records;
+}
+
+/** "1 minute 12 seconds" */
+function timeText(seconds) {
+  const m = Math.floor(seconds / 60);
+  const s = Math.round(seconds % 60);
+  const parts = [];
+  if ( m ) parts.push(game.i18n.format(m === 1 ? "FASTFIGHTING.Summary.Minute" : "FASTFIGHTING.Summary.Minutes", { n: m }));
+  if ( s || !m ) parts.push(game.i18n.format(s === 1 ? "FASTFIGHTING.Summary.Second" : "FASTFIGHTING.Summary.Seconds", { n: s }));
+  return parts.join(" ");
+}
+
+/**
+ * The GM's after-action note: what each player character used up (slots, focus, potions, hero points,
+ * limited uses), and how much time passed, fighting and then tending the fallen.
+ */
+function gmSummary(rows, replay, adapter) {
+  const items = [];
+  for ( const r of rows ) {
+    const actor = r.tokenDoc.actor;
+    // A character a player controls (or a player character nobody has been given yet, as in a GM's test party).
+    if ( !actor || !(r.spec.kind === "pc" || game.users.some(u => !u.isGM && actor.testUserPermission(u, "OWNER"))) ) continue;
+    const spent = [];
+    for ( const [key, start] of Object.entries(r.spec.resources ?? {}) ) {
+      const used = start - (r.final.resources?.[key] ?? start);
+      if ( used > 0 ) spent.push(`${used} × ${adapter.resourceLabel?.(key, r.spec) ?? r.spec.actions.find(a => a.resource === key)?.name ?? key}`);
+    }
+    for ( const [id, left] of Object.entries(r.final.uses ?? {}) ) {
+      const a = r.spec.actions.find(x => x.id === id);
+      if ( a && Number.isFinite(a.uses) && left < a.uses ) spent.push(`${a.uses - left} × ${a.name}`);
+    }
+    items.push(`<li><strong>${escape(r.spec.name)}</strong>: ${escape(spent.length ? spent.join(", ") : loc("FASTFIGHTING.Summary.Nothing"))}</li>`);
+  }
+  const per = adapter.rules?.secondsPerRound ?? 6;
+  const fight = (replay.rounds ?? 0) * per;
+  const after = (replay.aftermathRounds ?? 0) * per;
+  const time = after > 0
+    ? game.i18n.format("FASTFIGHTING.Summary.TimeAfter", { fight: timeText(fight), rounds: replay.rounds ?? 0, after: timeText(after) })
+    : game.i18n.format("FASTFIGHTING.Summary.Time", { fight: timeText(fight), rounds: replay.rounds ?? 0 });
+  return `<div class="fast-fighting-summary"><header><i class="fa-solid fa-clipboard-list"></i> ${loc("FASTFIGHTING.Summary.Title")}</header>
+    <p>${escape(time)}</p>${items.length ? `<p>${loc("FASTFIGHTING.Summary.Spent")}</p><ul>${items.join("")}</ul>` : ""}
+    <p class="hint">${loc("FASTFIGHTING.Summary.Unchanged")}</p></div>`;
+}
+
+/** Show a GM-only story to everyone (the Reveal button on it). */
+export async function revealStory(message) {
+  if ( !game.user.isGM || !message.getFlag(MODULE_ID, "revealable") ) return false;
+  const content = message.content.replace(/<button[^>]*data-ff-reveal[^>]*>[\s\S]*?<\/button>/, "");
+  await message.update({ whisper: [], content, [`flags.${MODULE_ID}.revealable`]: false });
+  return true;
 }
 
 export function hasUndo(scene = canvas.scene) {

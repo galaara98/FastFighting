@@ -4,7 +4,7 @@
  * Every logged event carries structured data (type, rolls, margins, damage types, movement) so the story
  * writer can narrate it at any level of detail.
  */
-import { STATUS, TACTICAL, DOWNED_MODELS, AFTERMATH } from "../constants.js";
+import { STATUS, TACTICAL, DOWNED_MODELS, AFTERMATH, EXECUTE_LUCK, clamp } from "../constants.js";
 import { createRng, deriveSeed, randomSeed } from "./rng.js";
 import { sampleDamage, samplePart } from "./dice.js";
 import { rollCheck } from "./probability.js";
@@ -27,6 +27,7 @@ import { opensWithTalk, breaksStandoff, standoffPitches, charismaticLeader } fro
 import { controlOutcome, controlRoll, isImmune, degreeShift } from "./behavior/control.js";
 import { recompute as recomputeConditions, applyOutcome, applyControl, beginConcentration, endConcentration, holdsAnything, noteConcentration, moveHeld, settleAllegiance, iwrOf } from "./behavior/effects.js";
 import { decideBuff, aidScores } from "./behavior/support.js";
+import { perceives } from "./behavior/senses.js";
 import { stealChance, theftTarget, theftPlan, attemptTheft } from "./behavior/theft.js";
 import { reactionsPerRound, threats, takesSafeWay } from "./behavior/reactions.js";
 import { normalizeCost } from "./turn.js";
@@ -243,6 +244,7 @@ function dealDamage(run, source, target, amount, { crit = false } = {}) {
       target.hp = 0;
       target.wasDowned = true;
       rules.onDropped(target, { crit, model, amount: rest, overflow: Math.max(0, rest - dealt) });
+      if ( source?.spec.neverKill && target.status === STATUS.DEAD ) knockOut(run, target);
       target.fellRound ??= run.round;
       target.killerId = source?.id ?? target.killerId ?? null;
       run.firstFallen ??= target.id;
@@ -251,19 +253,32 @@ function dealDamage(run, source, target, amount, { crit = false } = {}) {
       // A friend's fall: the one who did it becomes someone to settle with, the more so for the loyal.
       if ( source ) {
         for ( const a of run.units ) {
-          if ( a !== target && a.side === target.side && isStanding(a) ) want(a, "hurt", source.id, 15 * liveTrait(run, a, "loyal") / 60 * styleOf(a).avenge);
+          if ( a !== target && a.side === target.side && isStanding(a) && perceives(run, a, target, { crisis: true }) ) want(a, "hurt", source.id, 15 * liveTrait(run, a, "loyal") / 60 * styleOf(a).avenge);
         }
       }
-      log(run, target, dead ? "is slain" : `falls${target.dying ? ` (dying ${target.dying})` : ""}`, { type: dead ? "death" : "down", by: source?.spec.name ?? null, byId: source?.id ?? null, dying: target.dying });
+      log(run, target, dead ? "is slain" : target.knockedOut ? "is knocked out" : `falls${target.dying ? ` (dying ${target.dying})` : ""}`, {
+        type: dead ? "death" : "down", by: source?.spec.name ?? null, byId: source?.id ?? null, dying: target.dying, knockedOut: !!target.knockedOut
+      });
     }
     testConcentration(run, target, rest + absorbed);
   } else if ( target.status === STATUS.DOWN ) {
     if ( model === DOWNED_MODELS.OUT ) return;
     rules.onDropped(target, { crit, model, amount, overflow: amount });
+    if ( source?.spec.neverKill && target.status === STATUS.DEAD ) knockOut(run, target);
     const dead = target.status === STATUS.DEAD;
     if ( dead ) target.killerId = source?.id ?? target.killerId ?? null;
     log(run, target, dead ? "is finished off" : `is struck while down (dying ${target.dying})`, { type: dead ? "death" : "struckDown", by: source?.spec.name ?? null, byId: source?.id ?? null, dying: target.dying, finished: dead });
   }
+}
+
+/** Knocked out, not killed: down at 0 hit points, unconscious and stable (the system may say more: rules.knockOut). */
+function knockOut(run, u) {
+  u.status = STATUS.DOWN;
+  u.hp = 0;
+  u.dying = 0;
+  u.stable = true;
+  u.knockedOut = true;
+  run.prep.rules.knockOut?.(u);
 }
 
 function releaseGrabs(run, u) {
@@ -437,7 +452,19 @@ function executeOffense(run, u, action, t, attacksMade) {
   }
   const ranged = !!action.range && !action.melee;
   const logging = !!run.log; // thousands of unlogged runs shouldn't pay for building log text
-  for ( const target of targets ) {
+  for ( const target of targets ) fateful(run, target, u, () => strikeTarget(run, u, action, target, attacksMade, ranged, logging));
+  if ( action.melee ) {
+    u.adjacent.add(t.id);
+    t.adjacent.add(u.id);
+  }
+  // A concentration spell everyone shrugged off holds nothing up.
+  if ( action.concentration && u.concentration?.actionId === action.id && !holdsAnything(run, u) ) u.concentration = null;
+}
+
+/** What one use of an action does to one target: the attack or save, the damage, the riders. */
+function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
+  const rules = run.prep.rules;
+  {
     if ( !target.active ) notice(run, target, "attacked", u);
     target.lastAttackerId = u.id;
     const held = target.grudges?.get(u.id);
@@ -456,12 +483,12 @@ function executeOffense(run, u, action, t, attacksMade) {
       const hit = rollHit(run, u, action, target, (action.damage ?? []).concat(extra), 1, false);
       if ( logging ) log(run, u, `${action.name} → ${target.spec.name}: ${hit.total} damage`, { type: "auto", ...common, damage: hit.total });
       hit.apply();
-      continue;
+      return;
     }
 
     if ( action.kind === "control" ) {
       executeControl(run, u, action, target, attacksMade, common);
-      continue;
+      return;
     }
 
     if ( action.kind === "save" && action.save ) {
@@ -476,7 +503,7 @@ function executeOffense(run, u, action, t, attacksMade) {
         hit.apply();
         if ( roll.degree <= 1 ) applyEffects(run, u, action, target, 3 - roll.degree);
       } else if ( logging ) log(run, u, `${action.name} → ${target.spec.name}: ${DEGREE_LABEL[roll.degree]}, no damage`, { ...data, damage: 0 });
-      continue;
+      return;
     }
 
     const { bonus, advantage, dice } = attackRoll(run, u, target, action, attacksMade);
@@ -496,12 +523,131 @@ function executeOffense(run, u, action, t, attacksMade) {
       log(run, u, `${action.name} → ${target.spec.name}: ${roll.total} vs AC ${ac}, miss`, { ...data, damage: 0, advantage });
     }
   }
-  if ( action.melee ) {
-    u.adjacent.add(t.id);
-    t.adjacent.add(u.id);
+}
+
+/* -------------------------------------------- */
+/*  The execution luck check                    */
+/* -------------------------------------------- */
+
+/** A creature other than a player character going for a player character who's down: the one blow players dread. */
+const wouldExecute = (u, t) => !!t && t.status === STATUS.DOWN && t.spec.kind === "pc" && u.spec.kind !== "pc";
+
+/**
+ * Each time a creature wants to finish off a player character at 0 HP, it rolls d100: only on the world's number or
+ * less (39 by default) does it go ahead. Otherwise it turns away, and everything it wanted of the fallen PC goes to
+ * the next foe it would pick, in its usual order (if there is one). Once a turn for each creature and PC.
+ * Returns whom it goes for now.
+ */
+function executionCheck(run, u, t) {
+  if ( !wouldExecute(u, t) ) return t;
+  const key = `${run.round}|${t.id}`;
+  u.executionChecks ??= new Map();
+  const known = u.executionChecks.get(key);
+  if ( known ) return known.next;
+  const roll = run.rng.die(100);
+  const needed = run.prep.options.executeLuck ?? EXECUTE_LUCK;
+  if ( roll <= needed ) {
+    u.executionChecks.set(key, { next: t });
+    log(run, u, `means to finish off ${t.spec.name} (luck d100 ${roll}, ${needed} or less)`, { type: "execute", target: t.spec.name, targetId: t.id, luck: roll, needed, goes: true });
+    return t;
   }
-  // A concentration spell everyone shrugged off holds nothing up.
-  if ( action.concentration && u.concentration?.actionId === action.id && !holdsAnything(run, u) ) u.concentration = null;
+  const next = scoreTargets(run, u).map(x => x.t).find(o => o !== t && !wouldExecute(u, o)) ?? null;
+  moveDesires(u, t, next);
+  u.executionChecks.set(key, { next });
+  log(run, u, `turns away from the fallen ${t.spec.name}${next ? ` to go after ${next.spec.name}` : ""} (luck d100 ${roll}, needed ${needed} or less)`, {
+    type: "execute", target: t.spec.name, targetId: t.id, next: next?.spec.name ?? null, nextId: next?.id ?? null, luck: roll, needed, goes: false
+  });
+  return next;
+}
+
+/** Everything u wanted of `from` (to hurt it) goes to `to` instead, or simply goes. */
+function moveDesires(u, from, to) {
+  const d = u.desire;
+  if ( d ) {
+    const fromKey = `hurt|${from.id}`;
+    const toKey = to ? `hurt|${to.id}` : null;
+    for ( const map of [d.stated, d.memory, d.logic, d.social, d.style] ) {
+      const v = map.get(fromKey);
+      if ( v === undefined ) continue;
+      map.delete(fromKey);
+      if ( toKey ) map.set(toKey, (map === d.stated || map === d.logic) ? Math.max(map.get(toKey) ?? 0, v) : (map.get(toKey) ?? 0) + v);
+    }
+    d.frustration.delete(fromKey);
+  }
+  if ( u.targetId === from.id ) u.targetId = to?.id ?? null;
+}
+
+/* -------------------------------------------- */
+/*  Fate: hero points, inspiration              */
+/* -------------------------------------------- */
+
+/** Fate a creature has left to spend (resources.fate: PF2e hero points, 5e Heroic Inspiration, from the helper). */
+const fateOf = u => u.resources?.fate ?? 0;
+
+/**
+ * Who spends fate to keep `victim` alive: the victim itself first, always; otherwise a friend with some left who
+ * can tell it's happening (in a moment like this, any sense will do), the less selfish the likelier.
+ */
+function fateSpender(run, victim) {
+  if ( fateOf(victim) > 0 ) return victim;
+  for ( const a of run.units ) {
+    if ( a === victim || a.side !== victim.side || !isStanding(a) || fateOf(a) <= 0 ) continue;
+    if ( !perceives(run, a, victim, { crisis: true }) ) continue;
+    if ( run.rng.chance(clamp(1 - liveTrait(run, a, "selfish") / 100, 0.05, 0.95)) ) return a;
+  }
+  return null;
+}
+
+/** What a blow, a save or a recovery check can change on a creature, to put it back as it was. */
+function snapshotOf(u) {
+  const s = {};
+  for ( const [k, v] of Object.entries(u) ) if ( v === null || typeof v !== "object" ) s[k] = v;
+  s.conds = { ...u.conds };
+  s.effects = [...(u.effects ?? [])];
+  s.persistent = [...(u.persistent ?? [])];
+  s.afflictions = (u.afflictions ?? []).map(a => ({ ...a }));
+  s.harmedBy = new Map(u.harmedBy ?? []);
+  s.usedThisTurn = u.usedThisTurn ? new Set(u.usedThisTurn) : u.usedThisTurn;
+  return s;
+}
+
+/**
+ * Something that might kill `victim`: a blow, a save, a recovery check. If it does and someone spends fate, it's
+ * taken back and rolled again (a hit may become a miss, a failed check a success), up to three times. Where the
+ * system has a sure way out for the dying themselves (PF2e Heroic Recovery, all their hero points), it's that.
+ */
+function fateful(run, victim, actor, attempt) {
+  if ( !run.fateInPlay || !victim || victim.status === STATUS.DEAD ) return attempt();
+  const rules = run.prep.rules;
+  for ( let tries = 0; ; tries++ ) {
+    const before = snapshotOf(victim);
+    const by = actor && actor !== victim ? snapshotOf(actor) : null;
+    const logLength = run.log?.length ?? 0;
+    const firstFallen = run.firstFallen;
+    attempt();
+    if ( victim.status !== STATUS.DEAD || tries >= 3 ) return;
+    const spender = fateSpender(run, victim);
+    if ( !spender ) return;
+    const label = spender.spec.fateLabel ?? "fate";
+    if ( spender === victim && rules.avertDeath ) {
+      const spent = fateOf(victim);
+      rules.avertDeath(victim);
+      victim.resources.fate = 0;
+      run.fateInPlay = run.units.some(o => fateOf(o) > 0);
+      log(run, victim, `spends ${label} and pulls back from death`, { type: "fate", self: true, label, spent, sure: true });
+      return;
+    }
+    Object.assign(victim, before);
+    if ( by ) Object.assign(actor, by);
+    recomputeConditions(victim);
+    if ( run.log ) run.log.length = logLength;
+    run.firstFallen = firstFallen;
+    spender.resources.fate -= 1;
+    run.fateInPlay = run.units.some(o => fateOf(o) > 0);
+    log(run, spender, spender === victim ? `spends ${label} to cheat death` : `spends ${label} to save ${victim.spec.name}`, {
+      type: "fate", self: spender === victim, target: victim.spec.name, targetId: victim.id, label, spent: 1
+    });
+  }
 }
 
 /** A crowd-control action on one target: immunity, the roll, the outcome for that degree, any damage. */
@@ -585,6 +731,15 @@ function executeHeal(run, u, action, target) {
     const check = checkRoll(run, u, action.healCheck.mod);
     roll = rollCheck(rules, run.rng, check.mod, action.healCheck.dc, { advantage: check.advantage, kind: "check" });
     multiplier = rules.healCheckMultiplier ? rules.healCheckMultiplier(roll.degree) : [0, 0, 1, 2][roll.degree];
+    // Someone's life on it: a healer with fate to spare tries again (the selfish less readily, for others).
+    const dying = target.status === STATUS.DOWN && !target.stable;
+    if ( !multiplier && dying && fateOf(u) > 0 && (u === target || run.rng.chance(clamp(1 - liveTrait(run, u, "selfish") / 100, 0.05, 0.95))) ) {
+      u.resources.fate -= 1;
+      run.fateInPlay = run.units.some(o => fateOf(o) > 0);
+      log(run, u, `spends ${u.spec.fateLabel ?? "fate"} to try again for ${target.spec.name}`, { type: "fate", target: target.spec.name, targetId: target.id, label: u.spec.fateLabel ?? "fate", spent: 1 });
+      roll = rollCheck(rules, run.rng, check.mod, action.healCheck.dc, { advantage: check.advantage, kind: "check" });
+      multiplier = rules.healCheckMultiplier ? rules.healCheckMultiplier(roll.degree) : [0, 0, 1, 2][roll.degree];
+    }
   }
   const amount = Math.max(0, Math.floor((action.heal ?? []).reduce((s, p) => s + samplePart(p, run.rng), 0) * multiplier));
   const wasDown = target.status === STATUS.DOWN;
@@ -848,9 +1003,11 @@ function takeTurn(run, u) {
   settleSides(run); // holds that took or ended since this creature's last turn
   if ( u.status === STATUS.DOWN ) {
     if ( options.downedModel === DOWNED_MODELS.SIMULATE && rules.recoveryCheck ) {
-      const before = u.dying;
-      const text = rules.recoveryCheck(u, run.rng);
-      if ( text ) log(run, u, text, { type: "recovery", before, dying: u.dying, dead: u.status === STATUS.DEAD, stable: u.stable });
+      fateful(run, u, null, () => {
+        const before = u.dying;
+        const text = rules.recoveryCheck(u, run.rng);
+        if ( text ) log(run, u, text, { type: "recovery", before, dying: u.dying, dead: u.status === STATUS.DEAD, stable: u.stable });
+      });
     }
     endOfTurn(run, u);
     return;
@@ -983,7 +1140,7 @@ function takeTurn(run, u) {
       continue;
     }
 
-    let target = chooseTarget(run, u);
+    let target = executionCheck(run, u, chooseTarget(run, u));
     // Hunters go after bystanders once there's no one else to fight.
     if ( !target && isHunter(u) ) {
       const prey = huntable(run, u)
@@ -1177,32 +1334,37 @@ function firstAid(run, u, target) {
  * Once the last enemy is gone, the fight isn't quite over: the winners tend their dying friends (free help such as
  * first aid or Battle Medicine before spending spells and potions), and anyone left untended lives or dies by their
  * recovery checks. What Make it So commits is then settled: stable, healed, or dead, never "dying 2".
- * The fallen on the losing side get no help here; what the victors do with them is the GM's call.
+ * The fallen on the losing side are dealt with as the victors' playstyles say (see mercyOf): spared and tended,
+ * finished off, or left to their own recovery checks.
  */
 function aftermath(run, order) {
   const { rules, options } = run.prep;
-  if ( options.aftermath === AFTERMATH.NONE || options.downedModel !== DOWNED_MODELS.SIMULATE || !run.units.some(isDying) ) return;
+  if ( options.aftermath === AFTERMATH.NONE ) return;
+  const simulated = options.downedModel === DOWNED_MODELS.SIMULATE;
+  const victors = run.units.filter(isStanding);
+  const fallen = run.units.filter(u => u.status === STATUS.DOWN && victors.some(v => areEnemies(run, v, u)));
+  const decided = simulated && fallen.length > 0 && victors.some(v => mercyOf(v) !== "leave");
+  if ( !(simulated && run.units.some(isDying)) && !decided ) return;
   const rounds = run.round;
   run.round = rounds + 1; // one paragraph in the story, after the fight
   log(run, null, "The fighting is over", { type: "aftermath", aftermath: true });
   const marker = run.log?.at(-1);
+  if ( decided ) dealWithTheFallen(run, victors, fallen);
   let tended = false;
-  for ( let i = 0; i < AFTERMATH_ROUNDS && run.units.some(isDying); i++ ) {
+  let i = 0;
+  for ( ; i < AFTERMATH_ROUNDS && run.units.some(isDying); i++ ) {
+    // With the fighting over, help comes before the dying's next roll: the survivors tend, then the dying roll.
     for ( const u of order ) {
-      if ( u.status === STATUS.DOWN ) {
-        if ( isDying(u) && rules.recoveryCheck ) {
-          const before = u.dying;
-          const text = rules.recoveryCheck(u, run.rng);
-          if ( text ) log(run, u, text, { type: "recovery", before, dying: u.dying, dead: u.status === STATUS.DEAD, stable: u.stable, aftermath: true });
-        }
-        continue;
-      }
       if ( !isStanding(u) ) continue;
       const turn = turnFor(run, u);
       for ( let n = 0; n < MAX_STEPS_PER_TURN && turn.any; n++ ) {
-        const dying = run.units.filter(a => a.side === u.side && a !== u && isDying(a)).sort((a, b) => (b.dying ?? 0) - (a.dying ?? 0))[0];
+        // Friends first; then, for one who spares the fallen, a foe it can help for free (first aid, not a spell).
+        const friend = run.units.filter(a => a.side === u.side && a !== u && isDying(a)).sort((a, b) => (b.dying ?? 0) - (a.dying ?? 0))[0];
+        const foe = !friend && mercyOf(u) === "spare" ? run.units.find(a => a.spared && isDying(a)) : null;
+        const dying = friend ?? foe;
         if ( !dying ) break;
-        const option = rescueOption(run, u, dying, turn);
+        let option = rescueOption(run, u, dying, turn);
+        if ( foe && option !== "firstAid" && (option?.resource || Number.isFinite(option?.uses)) ) option = null;
         if ( !option ) break;
         if ( option === "firstAid" ) firstAid(run, u, dying);
         else executeHeal(run, u, option, dying);
@@ -1210,9 +1372,48 @@ function aftermath(run, order) {
         turn.spend(option === "firstAid" ? (rules.firstAidCost ?? rules.basicAction ?? 1) : costOf(rules, option));
       }
     }
+    for ( const u of order ) {
+      if ( !isDying(u) || !rules.recoveryCheck ) continue;
+      fateful(run, u, null, () => {
+        const before = u.dying;
+        const text = rules.recoveryCheck(u, run.rng);
+        if ( text ) log(run, u, text, { type: "recovery", before, dying: u.dying, dead: u.status === STATUS.DEAD, stable: u.stable, aftermath: true });
+      });
+    }
   }
   if ( marker ) marker.tended = tended; // the story opens differently when nobody comes to help
+  run.aftermathRounds = i; // (how long it took, for the GM's summary of time passed)
   run.round = rounds;
+}
+
+/**
+ * What a victor does with a fallen foe once the fighting is over, by its playstyles: "spare" it (one who never
+ * kills, a Moralist, a Diplomat most of the time), "finish" it (the Cruel), or "leave" it to fate.
+ */
+export function mercyOf(u) {
+  const b = behaviorOf(u);
+  if ( u.spec.neverKill || (b.spareDowned ?? 0) >= 0.5 ) return "spare";
+  if ( b.finishDowned && !b.spareDowned ) return "finish";
+  return "leave";
+}
+
+/** The victors settle the fallen: anyone sparing them stops the rest; otherwise the cruel finish them off. */
+function dealWithTheFallen(run, victors, fallen) {
+  const sparer = victors.find(v => mercyOf(v) === "spare");
+  const finishers = victors.filter(v => mercyOf(v) === "finish");
+  for ( const f of fallen ) {
+    if ( sparer ) {
+      f.spared = true;
+      if ( finishers.length ) log(run, sparer, `won't let anyone finish off ${f.spec.name}`, { type: "mercy", target: f.spec.name, targetId: f.id, aftermath: true });
+      continue;
+    }
+    const killer = finishers.find(k => executionCheck(run, k, f) === f);
+    if ( !killer ) continue;
+    // Its everyday blows (no spell slots or potions on the helpless), until it's done.
+    const blows = killer.prep.offense.filter(a => !a.resource && !Number.isFinite(a.uses) && a.kind !== "control" && a.damage?.length);
+    const best = blows.reduce((top, a) => { const ev = expectedDamage(run, killer, a, f, 0); return !top || ev > top.ev ? { a, ev } : top; }, null);
+    for ( let n = 0; best && n < 4 && f.status === STATUS.DOWN; n++ ) executeOffense(run, killer, best.a, f, 0);
+  }
 }
 
 /**
@@ -1271,6 +1472,9 @@ function captureUnit(u, rules) {
     persistent: u.persistent.map(e => ({ type: e.part.type, part: e.part })),
     afflictions: u.afflictions.map(a => ({ id: a.spec.id, name: a.spec.name, slug: a.spec.slug ?? null, stage: a.stage, rounds: a.rounds, onset: a.onsetLeft ?? 0, dc: a.spec.save.dc, save: a.spec.save.type })),
     conditions: { ...u.conds },
+    // Buffs and debuffs still running (Make it So leaves them on, for the rounds they have left).
+    effects: [STATUS.DEAD, STATUS.FLED].includes(u.status) ? [] : (u.effects ?? []).filter(e => e.mods || e.iwr || e.mark)
+      .map(e => ({ key: e.key, sourceId: e.sourceId, rounds: e.rounds, label: e.label })),
     swayed: u.swayOutcome,
     // Under someone else's control when it ended: it still belongs to its own side.
     controlledBy: u.controlledBy ?? null,
@@ -1308,7 +1512,7 @@ function summarize(run, ended, capture, winners) {
   // Doors the fight opened (or broke): Make it So leaves them that way.
   const doors = {};
   for ( const [id, s] of run.doors ?? [] ) if ( s.open ) doors[id] = { open: true, broken: !!s.broken };
-  return { outcome, winners, rounds: run.round, firstFallen: run.firstFallen, peaceful: ended && !run.blood, units, doors, log: run.log };
+  return { outcome, winners, rounds: run.round, aftermathRounds: run.aftermathRounds ?? 0, firstFallen: run.firstFallen, peaceful: ended && !run.blood, units, doors, log: run.log };
 }
 
 /** Simulate a single battle. */

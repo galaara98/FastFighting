@@ -196,8 +196,8 @@ export function createRun(prep) {
       baseConds: null, // set below: conditions that were there before any affliction
       afflictions: [],
       effects: [],           // timed effects (crowd control, buffs, debuffs): see behavior/effects.js
-      baseMods: s.mods ?? null, // bonuses and penalties already on it when the fight starts
-      mods: combineMods([s.mods]),
+      baseMods: s.mods ?? null, // bonuses and penalties already on it when the fight starts (one, or a list)
+      mods: combineMods([].concat(s.mods ?? [])),
       marks: [],             // extra damage on the hits of whoever marked it (Hunter's Mark, Hex): {by, parts}
       vs: null,              // conditions that hold against one foe only (PF2e Feint): Map(sourceId -> conditions)
       concentration: null,   // the effect it is holding up (5e concentration): {actionId, name, worth}
@@ -231,6 +231,7 @@ export function createRun(prep) {
   return {
     prep,
     units,
+    fateInPlay: units.some(u => (u.resources.fate ?? 0) > 0), // anyone with hero points or the like to spend
     byId: new Map(units.map(u => [u.id, u])),
     round: 0,
     sideFocus: {},

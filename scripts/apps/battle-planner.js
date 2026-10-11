@@ -402,7 +402,8 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       sampleFilters: Object.fromEntries(SAMPLE_FILTERS.map(k => [k, `FASTFIGHTING.Sample.${k}`])),
       sampleFilter: this.sampleFilter,
       storyStyles: Object.fromEntries(STORY_STYLES.map(k => [k, `FASTFIGHTING.Story.Style.${k}`])),
-      storyStyle: this.storyStyle
+      storyStyle: this.storyStyle,
+      storyOdds: setting("storyOdds")
     };
   }
 
@@ -535,6 +536,9 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       return; // selects and notes: no re-render, keep focus; the actor update hook syncs other views
     } else if ( name === "storyStyle" ) {
       this.storyStyle = value;
+    } else if ( name === "storyOdds" ) {
+      await game.settings.set(MODULE_ID, "storyOdds", !!value); // remembered for the next fight too
+      return;
     } else if ( name === "sampleFilter" ) {
       this.sampleFilter = value;
       return;
@@ -694,7 +698,11 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       if ( !rows.some(r => r.changed) && !Object.keys(this.sample.result.doors ?? {}).length ) return ui.notifications.info(loc("FASTFIGHTING.MakeItSo.Nothing"));
       const ok = await confirmMakeItSo(rows, this.sample.result);
       if ( !ok ) return;
-      await executeMakeItSo(rows, this.sample.result, { story: this.storyFor() });
+      // The Statistician's account is for the GM (who can show it to the table); everyone else gets the plain one.
+      const stories = this.storyStyle === "statistician"
+        ? { everyone: this.storyFor("standard"), gm: this.storyFor("statistician") }
+        : { everyone: this.storyFor() };
+      await executeMakeItSo(rows, this.sample.result, { stories, odds: setting("storyOdds") ? oddsText(this.results) : null });
       ui.notifications.info(loc("FASTFIGHTING.MakeItSo.Done"));
     } catch ( err ) {
       reportError(err);
@@ -726,6 +734,15 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
 function reportError(err) {
   console.error(`${MODULE_ID} |`, err);
   ui.notifications.error(game.i18n.format("FASTFIGHTING.Planner.ActionFailed", { error: err.message }));
+}
+
+/** "Before it began, the odds stood at Party 97% · Goblins 3%": each side's chance of winning, then a stalemate's. */
+function oddsText(results) {
+  if ( !results ) return null;
+  const parts = Object.values(results.sides ?? {}).filter(s => s.pWin > 0).sort((a, b) => b.pWin - a.pWin)
+    .map(s => `${s.label} ${Math.round(s.pWin * 100)}%`);
+  if ( (results.pStalemate ?? 0) >= 0.005 ) parts.push(`${loc("FASTFIGHTING.Sample.Outcome.stalemate")} ${Math.round(results.pStalemate * 100)}%`);
+  return parts.length ? game.i18n.format("FASTFIGHTING.Story.Odds", { odds: parts.join(" · ") }) : null;
 }
 
 /** Localized words the Standard story uses. */

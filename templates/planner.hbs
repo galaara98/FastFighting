@@ -271,6 +271,7 @@
               <label class="ff-field">{{localize "FASTFIGHTING.Story.StyleLabel"}}
                 <select name="storyStyle">{{selectOptions storyStyles selected=storyStyle localize=true}}</select>
               </label>
+              <label class="ff-check" data-tooltip="{{localize "FASTFIGHTING.Story.ShowOddsHint"}}"><input type="checkbox" name="storyOdds" {{checked storyOdds}}> {{localize "FASTFIGHTING.Story.ShowOdds"}}</label>
               <span class="ff-grow"></span>
               <button type="button" class="ff-btn ff-make-it-so" data-action="makeItSo" {{#unless results.sample}}disabled{{/unless}} data-tooltip="{{localize "FASTFIGHTING.MakeItSo.Hint"}}"><i class="fa-solid fa-gavel"></i> {{localize "FASTFIGHTING.MakeItSo.Button"}}</button>
             </div>

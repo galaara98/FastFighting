@@ -72,6 +72,7 @@ export const SWAY = Object.freeze({ SURRENDER: "surrendered", FLEE: "fled", SWIT
  */
 export const CONCEDE_LUCK = 39; // a PC talked into giving up an item loses it only on 39 or less
 export const THEFT_LUCK = 29;   // a thief who beats a PC's defenses still needs 29 or less
+export const EXECUTE_LUCK = 39; // a creature that wants to finish off a PC at 0 HP goes ahead only on 39 or less
 
 /** How an encounter opens: decided by who would rather talk, always with words, or straight into battle. */
 export const OPENING = Object.freeze({ AUTO: "auto", TALK: "talk", FIGHT: "fight" });

@@ -84,8 +84,9 @@ export class PlayerSurvey extends HandlebarsApplicationMixin(ApplicationV2) {
         level: spec.level,
         sharedWith: others.map(u => u.name).join(", "),
         sharedOnline: others.some(u => u.active),
-        // Players name only the creatures they can see.
-        tactics: questionsContext(spec, t.actor, t.id, { targets: scene.tokens.filter(o => !o.hidden && o.actor).map(o => ({ id: o.id, name: o.name })) })
+        // Players name only the creatures they can see: not hidden, and (on the scene they're looking at) within
+        // their own sight, so the survey never gives away what lurks in the dark.
+        tactics: questionsContext(spec, t.actor, t.id, { targets: scene.tokens.filter(o => o.actor && !o.hidden && (canvas.scene?.id !== scene.id || !o.object || o.object.isVisible)).map(o => ({ id: o.id, name: o.name })) })
       });
     }
     if ( !sheets.some(s => s.id === this.activeTab) ) this.activeTab = sheets[0]?.id ?? null;

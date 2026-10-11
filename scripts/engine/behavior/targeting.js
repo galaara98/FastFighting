@@ -15,6 +15,7 @@ import { styleWeight } from "../tactics.js";
 import { threats, isWary } from "./reactions.js";
 import { think, thwart, mind, avoids, levelsFromScores } from "./desire.js";
 import { willingness } from "./reluctance.js";
+import { perceives, apparentHealth } from "./senses.js";
 
 const limited = a => !!a.resource || Number.isFinite(a.uses);
 
@@ -103,8 +104,9 @@ function minMoves(run, u, t) {
   return min;
 }
 
-function hpFraction(t) {
-  return t.maxHp > 0 ? t.hp / t.maxHp : 0;
+/** Hit points t seems to have left, to u: the truth if u can tell, else as many as it started with. */
+function apparentHp(run, u, t) {
+  return perceives(run, u, t) ? t.hp : t.maxHp;
 }
 
 /**
@@ -137,8 +139,8 @@ export function chooseTarget(run, u) {
   for ( const f of foes ) {
     if ( grudge(u, f)?.provoked && isStanding(f) && Number.isFinite(minMoves(run, u, f)) ) return f;
   }
-  if ( behavior.finishDowned && !behavior.spareDowned ) {
-    const downed = reach(foes.filter(f => f.status === STATUS.DOWN && !f.stable)).filter(x => x.moves <= 1);
+  if ( behavior.finishDowned && !behavior.spareDowned && !u.spec.neverKill ) {
+    const downed = reach(foes.filter(f => f.status === STATUS.DOWN && !f.stable && perceives(run, u, f))).filter(x => x.moves <= 1);
     if ( downed.length && rng.chance(behavior.finishDowned) ) return rng.pick(downed).t;
   }
   const standing = reach(foes.filter(isStanding));
@@ -200,8 +202,8 @@ export function scoreTargets(run, u, behavior = behaviorOf(u)) {
 
   // Ruthless tacticians consider finishing downed (dying) foes when nothing else is close; Moralists never do.
   const spares = behavior.spareDowned && (behavior.spareDowned >= 1 || run.rng.chance(behavior.spareDowned));
-  if ( !spares && tier >= TACTICAL.TACTICAL && selfish >= 60 ) {
-    const downed = foes.filter(f => f.status === STATUS.DOWN && !f.stable);
+  if ( !spares && !u.spec.neverKill && tier >= TACTICAL.TACTICAL && selfish >= 60 ) {
+    const downed = foes.filter(f => f.status === STATUS.DOWN && !f.stable && perceives(run, u, f));
     candidates = candidates.concat(downed);
   }
   let reachable = candidates
@@ -228,7 +230,7 @@ export function scoreTargets(run, u, behavior = behaviorOf(u)) {
     const close = x => pool.has(x) && x.moves <= poolMin + 1;
     switch ( choice ) {
       case "nearest": return ranked(near);
-      case "weakest": return ranked(x => (close(x) ? 2 - hpFraction(x.t) - x.t.hp / 10000 : 0.1 * near(x)));
+      case "weakest": return ranked(x => (close(x) ? 2 - apparentHealth(run, u, x.t) - apparentHp(run, u, x.t) / 10000 : 0.1 * near(x)));
       // Danger is weighed against the turns it takes to get there and bring the foe down.
       case "dangerous": return ranked(x => (pool.has(x) ? valueOfKill(run, u, x) : 0));
       case "casters": return ranked(x => (pool.has(x) ? valueOfKill(run, u, x) * ((x.t.prep.isCaster || x.t.prep.isHealer) ? 2.5 : 1) : 0));
@@ -252,7 +254,7 @@ export function scoreTargets(run, u, behavior = behaviorOf(u)) {
       const ganged = x => [...x.t.adjacent].filter(id => run.byId.get(id)?.side === u.side).length;
       const pack = u.spec.flags?.packTactics && reachable.some(x => close(x) && ganged(x) > 0);
       if ( pack ) return ranked(x => (close(x) ? 1 + ganged(x) : 0.2 * near(x)));
-      return ranked(x => (close(x) ? 1 + (1 - hpFraction(x.t)) : 0.2 * near(x)));
+      return ranked(x => (close(x) ? 1 + (1 - apparentHealth(run, u, x.t)) : 0.2 * near(x)));
     }
     // Competent: sticks with its foe; otherwise the quickest kill.
     case TACTICAL.COMPETENT: return ranked(x => (x.t.id === u.targetId && isStanding(x.t) ? 10 : 1 / (1 + Math.max(0, -quickestKill(run, u, x)))));
@@ -279,7 +281,7 @@ function pace(run, u, option) {
 function quickestKill(run, u, { t, moves }) {
   if ( t.status === STATUS.DOWN ) return -moves; // finishing blow is trivial if worthwhile
   const { dpr, movesPerTurn } = pace(run, u, bestOptionVs(run, u, t));
-  return -(t.hp / dpr + moves / movesPerTurn);
+  return -(apparentHp(run, u, t) / dpr + moves / movesPerTurn);
 }
 
 /** Threat removed per turn invested: prioritises dangerous, fragile, healing or casting foes. */
@@ -287,7 +289,7 @@ function valueOfKill(run, u, x) {
   const { t, moves } = x;
   if ( t.status === STATUS.DOWN ) return 0.5 * (t.spec.kind === "pc" ? 3 : 1) / (1 + moves);
   const { dpr, movesPerTurn } = pace(run, u, bestOptionVs(run, u, t));
-  const turns = t.hp / dpr + moves / movesPerTurn;
+  const turns = apparentHp(run, u, t) / dpr + moves / movesPerTurn;
   let threat = threatOf(run, t, u) + 1;
   if ( t.prep.isHealer ) threat *= 1.5;
   if ( t.prep.isCaster ) threat *= 1.25;

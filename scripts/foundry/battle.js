@@ -151,6 +151,7 @@ function applyCharacterTactics(spec, entry) {
   spec.desires = statedDesires(stored); // what the GM or player says it wants, at whom, how badly
   spec.avoidConsumables = !!stored.avoidConsumables; // "I don't like to use consumables"
   spec.avoidCostlySpells = !!stored.avoidCostlySpells; // "I don't like to use spells that cost something"
+  spec.neverKill = !!stored.neverKill; // "I never kill": knocks out, never finishes the fallen, spares them after
   for ( const [k, v] of Object.entries(playstyles.traits) ) {
     if ( spec.traits[k] ) spec.traits[k] = { ...spec.traits[k], fudge: (spec.traits[k].fudge ?? 0) + v };
   }
@@ -277,6 +278,8 @@ export function buildBattleSpec(roster, setup, { underdog = null, approach = nul
       downedModel: options.downedModel,
       aftermath: options.aftermath,
       positioning: options.positioning && !!approach,
+      // How dark the scene is (0 to 1): in the dark, only darkvision and the like see far.
+      darkness: canvas.scene?.environment?.darknessLevel ?? 0,
       morale: options.morale,
       leadership: options.leadership,
       talking: options.talking !== false,
@@ -284,6 +287,7 @@ export function buildBattleSpec(roster, setup, { underdog = null, approach = nul
       // The luck checks that protect player characters (world settings, as sliders).
       concedeLuck: setting("concedeLuck"),
       theftLuck: setting("theftLuck"),
+      executeLuck: setting("executeLuck"),
       initiativeOrder,
       stealthSides,
       surpriseSide

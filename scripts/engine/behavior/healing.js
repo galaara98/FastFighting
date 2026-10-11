@@ -9,6 +9,7 @@ import { mainPool } from "../turn.js";
 import { threats, isWary, addCosts } from "./reactions.js";
 import { mind, levelOf } from "./desire.js";
 import { bringsItself } from "./reluctance.js";
+import { perceives } from "./senses.js";
 import { meanPart } from "../dice.js";
 
 const THRESHOLD = { conservative: 0.3, balanced: 0.45, aggressive: 0.6, allCosts: 0.8 };
@@ -54,6 +55,7 @@ export function healScores(run, u, heals = u.prep.healActions) {
     if ( [STATUS.DEAD, STATUS.FLED, STATUS.SURRENDERED, STATUS.STOOD_DOWN].includes(ally.status) ) continue;
     const isSelf = ally === u;
     if ( !isSelf && (allyDying === "protectSelf" || allyDying === "retreat") ) continue;
+    if ( !isSelf && !perceives(run, u, ally, { crisis: true }) ) continue; // it has to be able to tell
     if ( !isSelf && tier <= TACTICAL.FERAL ) continue; // feral healers only tend themselves
     const frac = ally.maxHp > 0 ? ally.hp / ally.maxHp : 0;
     let score = 0;
