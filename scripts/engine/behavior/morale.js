@@ -245,6 +245,14 @@ export function checkMorale(run, u) {
     }
   }
   if ( !side.morale ) return MORALE.HOLD;
+  // A system's own morale rule, for those it covers (DCC: a Will save when a group's first falls, when half are down,
+  // when one alone has lost half its hit points): its answer stands, and what it rolled is told.
+  const own = run.prep.rules.morale?.(run, u);
+  if ( own ) {
+    const said = typeof own === "object" ? own.said : null;
+    if ( said?.text && run.log ) run.log.push({ round: run.round, actor: u.spec.name, actorId: u.id, side: u.side, type: "morale", text: said.text, ...said.data });
+    return typeof own === "object" ? own.result : own;
+  }
   const brave = liveTrait(run, u, "brave");
   if ( u.spec.flags?.fearless || brave >= 95 ) return MORALE.HOLD;
   const stress = moraleStress(run, u, u.moraleStress + 10);

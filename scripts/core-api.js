@@ -14,6 +14,7 @@ export { MODULE_ID, STATUS, SWAY, DOWNED_MODELS, TRAITS, TACTICAL, clamp, fudged
 export { part, parseFormula, parseTypedFormula, samplePart, meanPart, maxPart, doubled, sampleDamage, meanDamage } from "./engine/dice.js";
 export { degreeDistribution, rollD20 } from "./engine/probability.js";
 export { TALK_KINDS } from "./engine/behavior/talk.js";
+export { MORALE } from "./engine/behavior/morale.js";
 export { bestReactionStrike } from "./engine/behavior/reactions.js";
 export { combineMods, describeMods, diceMean } from "./engine/mods.js";
 export { localize, hasWords, fillIn, listJoin, listItems, language, outcomeLine, commonOutcome, sideChangeLine, stillLine } from "./i18n.js";

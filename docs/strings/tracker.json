@@ -18617,6 +18617,66 @@
    "commit": null,
    "hash": "6c7bb7d1d3e2"
   },
+  "dcc:FFDCC.Morale": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.Morale",
+   "area": "dcc/General",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "f8de3ab6a75e"
+  },
+  "dcc:FFDCC.MoraleBreaks": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.MoraleBreaks",
+   "area": "dcc/General",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "342b503c6723"
+  },
+  "dcc:FFDCC.MoraleHolds": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.MoraleHolds",
+   "area": "dcc/General",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "3b97260d76d3"
+  },
+  "dcc:FFDCC.MoraleWhy.first": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.MoraleWhy.first",
+   "area": "dcc/MoraleWhy",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "e7f31a1e0edd"
+  },
+  "dcc:FFDCC.MoraleWhy.half": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.MoraleWhy.half",
+   "area": "dcc/MoraleWhy",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "d325eed539e5"
+  },
+  "dcc:FFDCC.MoraleWhy.hurt": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.MoraleWhy.hurt",
+   "area": "dcc/MoraleWhy",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "f0238529b2e2"
+  },
   "dcc:FFDCC.NeedsCore": {
    "repo": "dcc",
    "file": "languages/en.json",
