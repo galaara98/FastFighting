@@ -283,6 +283,8 @@ Answers save as they're made, and two players sharing a token see each other's c
 
 **My tactics:** players don't have to wait to be asked. Any player who controls a token on the battle map, or owns a character, gets a **My tactics** button in the Encounters tab that opens the same survey any time, in a fight or not. It shows one tab for each of their tokens on the map, plus one for each of their characters that has no token there. A token linked to its actor shares that actor's answers. An unlinked token keeps its own answers, and while it's on the map it stands in for its actor.
 
+**In the token windows (GM):** every token's window, and the Prototype Token window opened from an actor, has a FastFighting tab beside Identity, Appearance and Vision with the same questions, playstyles and desires. A token on the map, linked or not, edits its own answers (a linked token's are its actor's); the Prototype Token edits the actor's, where every new token of it starts. They save as they change, like the survey.
+
 **Playstyles:** up to four pills per character, PC or NPC, picked in order of importance (each pill shows its place, 1 to 4). Every pill counts, the first in full and each later one less (75%, 55%, 40%): in personality, quirks, desires, and tactics (where pills disagree on a tactic, each simulated fight goes with one of them, the first most often). Unpicking one moves the later ones up. They shift traits, change the defaults, switch on quirks, and guide how the character picks up desires:
 
 | Pill | Desires |

@@ -11,6 +11,7 @@ import { GenericPathsConfig } from "./apps/generic-paths-config.js";
 import { StoryTablesConfig } from "./apps/story-tables-config.js";
 import { invalidateStoryTables, installStoryTables } from "./story/tables.js";
 import { PlayerSurvey } from "./apps/player-survey.js";
+import { registerTokenTactics, syncTokenTactics } from "./apps/token-tactics.js";
 import { SOCKET, SURVEY_STATUS, charactersForUser } from "./foundry/tactics.js";
 import { helperStatus, helperMessage, helperNoticeHtml } from "./helpers.js";
 import { invalidateApproach } from "./foundry/battle.js";
@@ -151,7 +152,11 @@ function syncOpenViews(actor) {
   if ( !actor ) return;
   foundry.applications.instances.get("fast-fighting-survey")?.syncActor(actor);
   foundry.applications.instances.get("fast-fighting-planner")?.syncActor(actor);
+  syncTokenTactics(actor);
 }
+
+// FastFighting's tab in the token windows (GM only): a token's tactics, playstyles and desires, or its prototype's.
+registerTokenTactics();
 
 const touchesTactics = changes => foundry.utils.hasProperty(changes, `flags.${MODULE_ID}`)
   || foundry.utils.hasProperty(changes, `delta.flags.${MODULE_ID}`);

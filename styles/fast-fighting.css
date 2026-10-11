@@ -300,6 +300,10 @@
 .ff-survey-head p { margin: 0; }
 .ff-survey-sheet { flex: 1; overflow-y: auto; padding: 8px 12px 12px; }
 .ff-survey-token { display: flex; gap: 10px; align-items: center; margin-bottom: 6px; }
+/* FastFighting's tab in the token windows */
+.ff-token-tactics-head { display: flex; gap: 10px; align-items: flex-start; justify-content: space-between; }
+.ff-token-tactics-head .hint { margin: 0; flex: 1; }
+.ff-token-tactics .ff-tactics { margin-top: 6px; }
 .ff-survey-token img { width: 56px; height: 56px; border: none; border-radius: 6px; object-fit: cover; }
 .ff-survey-token h3 { margin: 0; border: none; }
 .ff-survey-token > div { flex: 1; }

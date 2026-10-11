@@ -90,6 +90,16 @@
    "commit": null,
    "hash": "3e446f411415"
   },
+  "core:code:scripts/apps/token-tactics.js:fill#1": {
+   "repo": "core",
+   "file": "scripts/apps/token-tactics.js",
+   "key": "scripts/apps/token-tactics.js:fill#1",
+   "area": "core/code",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "3fda8f3332ea"
+  },
   "core:code:scripts/foundry/battle.js:buildBattleSpec#1": {
    "repo": "core",
    "file": "scripts/foundry/battle.js",
@@ -12833,6 +12843,26 @@
    "date": null,
    "commit": null,
    "hash": "099e4aae1b11"
+  },
+  "core:FASTFIGHTING.TokenTactics.PrototypeHint": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.TokenTactics.PrototypeHint",
+   "area": "core/TokenTactics",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "a0b9ab13e3e1"
+  },
+  "core:FASTFIGHTING.TokenTactics.TokenHint": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.TokenTactics.TokenHint",
+   "area": "core/TokenTactics",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "c40d8d0b1081"
   },
   "core:FASTFIGHTING.Tracker.NeedTwo": {
    "repo": "core",
