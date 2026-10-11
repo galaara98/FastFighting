@@ -3006,10 +3006,9 @@
    "key": "FASTFIGHTING.Log.FinalLine",
    "area": "core/Log",
    "status": "todo",
-   "date": null,
-   "commit": null,
-   "hash": "0010cab7aeca",
-   "changed": true
+   "date": "2026-10-11",
+   "commit": "9faf4c4",
+   "hash": "13568d548a9f"
   },
   "core:FASTFIGHTING.Log.FinalSwayed": {
    "repo": "core",
@@ -3218,10 +3217,9 @@
    "key": "FASTFIGHTING.Log.Heal",
    "area": "core/Log",
    "status": "todo",
-   "date": null,
-   "commit": null,
-   "hash": "5bacfcca04fb",
-   "changed": true
+   "date": "2026-10-11",
+   "commit": "9faf4c4",
+   "hash": "e6688acdf719"
   },
   "core:FASTFIGHTING.Log.HoldGround": {
    "repo": "core",
@@ -3269,10 +3267,9 @@
    "key": "FASTFIGHTING.Log.HpN",
    "area": "core/Log",
    "status": "todo",
-   "date": null,
-   "commit": null,
-   "hash": "1df2918cd1c8",
-   "changed": true
+   "date": "2026-10-11",
+   "commit": "9faf4c4",
+   "hash": "15afa478669c"
   },
   "core:FASTFIGHTING.Log.Initiative": {
    "repo": "core",
@@ -4080,10 +4077,9 @@
    "key": "FASTFIGHTING.Log.Regen",
    "area": "core/Log",
    "status": "todo",
-   "date": null,
-   "commit": null,
-   "hash": "552a16ad6d3b",
-   "changed": true
+   "date": "2026-10-11",
+   "commit": "9faf4c4",
+   "hash": "1d484d12151b"
   },
   "core:FASTFIGHTING.Log.RegenStopped": {
    "repo": "core",
@@ -4631,10 +4627,9 @@
    "key": "FASTFIGHTING.Log.TempHp",
    "area": "core/Log",
    "status": "todo",
-   "date": null,
-   "commit": null,
-   "hash": "addeff8b9e31",
-   "changed": true
+   "date": "2026-10-11",
+   "commit": "9faf4c4",
+   "hash": "04d4cf55bdec"
   },
   "core:FASTFIGHTING.Log.Terrain": {
    "repo": "core",
@@ -5133,10 +5128,9 @@
    "key": "FASTFIGHTING.MakeItSo.Outcome.Hp",
    "area": "core/MakeItSo",
    "status": "todo",
-   "date": null,
-   "commit": null,
-   "hash": "61484bceed15",
-   "changed": true
+   "date": "2026-10-11",
+   "commit": "9faf4c4",
+   "hash": "aa90b873b4ed"
   },
   "core:FASTFIGHTING.MakeItSo.Outcome.Persistent": {
    "repo": "core",
@@ -5656,10 +5650,9 @@
    "key": "FASTFIGHTING.Planner.DiesAtZero",
    "area": "core/Planner",
    "status": "todo",
-   "date": null,
-   "commit": null,
-   "hash": "84e65cb76ae9",
-   "changed": true
+   "date": "2026-10-11",
+   "commit": "9faf4c4",
+   "hash": "1ea91e1c9d2c"
   },
   "core:FASTFIGHTING.Planner.DifficultHere": {
    "repo": "core",
@@ -7197,10 +7190,9 @@
    "key": "FASTFIGHTING.Results.HpLeft",
    "area": "core/Results",
    "status": "todo",
-   "date": null,
-   "commit": null,
-   "hash": "c9e2173530f5",
-   "changed": true
+   "date": "2026-10-11",
+   "commit": "9faf4c4",
+   "hash": "9f7be83dabe0"
   },
   "core:FASTFIGHTING.Results.MedianRounds": {
    "repo": "core",
@@ -8558,10 +8550,9 @@
    "key": "FASTFIGHTING.Stat.leadAc",
    "area": "core/Stat",
    "status": "todo",
-   "date": null,
-   "commit": null,
-   "hash": "089ebc235296",
-   "changed": true
+   "date": "2026-10-11",
+   "commit": "9faf4c4",
+   "hash": "8c11b5c204a2"
   },
   "core:FASTFIGHTING.Stat.leadAttack": {
    "repo": "core",
@@ -12339,10 +12330,9 @@
    "key": "FASTFIGHTING.Tactics.potionThreshold.25",
    "area": "core/Tactics",
    "status": "todo",
-   "date": null,
-   "commit": null,
-   "hash": "b366c534f08e",
-   "changed": true
+   "date": "2026-10-11",
+   "commit": "9faf4c4",
+   "hash": "0cbb6d09954f"
   },
   "core:FASTFIGHTING.Tactics.potionThreshold.50": {
    "repo": "core",
@@ -12350,10 +12340,9 @@
    "key": "FASTFIGHTING.Tactics.potionThreshold.50",
    "area": "core/Tactics",
    "status": "todo",
-   "date": null,
-   "commit": null,
-   "hash": "352c3adf6e85",
-   "changed": true
+   "date": "2026-10-11",
+   "commit": "9faf4c4",
+   "hash": "181dae23beae"
   },
   "core:FASTFIGHTING.Tactics.potionThreshold.75": {
    "repo": "core",
