@@ -41,7 +41,8 @@ function englishTables() {
 
 async function localeTables() {
   const lang = game.i18n.lang;
-  if ( lang === "en" ) return null;
+  // (English, or a language the module tells its stories in itself: nothing to fetch.)
+  if ( lang === "en" || BUILT_IN[lang] ) return null;
   if ( localeLang === lang ) return locale;
   localeLang = lang;
   resolved = null;
