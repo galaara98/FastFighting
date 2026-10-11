@@ -622,6 +622,12 @@ export function buildBattleSpec(roster, setup, { approach = null, exclude = new 
       console.error(`${MODULE_ID} | modifier ${m.id} failed`, err);
     }
   }
+  // The game system's own settings for this encounter (the planner's system section): its helper applies them.
+  try {
+    adapter?.applyPlannerSettings?.(spec, setup.system ?? {}, { setup, roster, resolved });
+  } catch ( err ) {
+    console.error(`${MODULE_ID} | the system's settings for this encounter failed`, err);
+  }
   return spec;
 }
 

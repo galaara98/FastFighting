@@ -72,6 +72,14 @@ export function planMakeItSo(spec, replay) {
     }
     }
   }
+  // The encounter's own record, by the system (Ironsworn: its progress track, kept on one character): {title, lines}.
+  let encounter = null;
+  try {
+    encounter = adapter.describeEncounter?.(spec, replay) ?? null;
+  } catch ( err ) {
+    console.error(`${MODULE_ID} | the encounter's own record failed`, err);
+  }
+  if ( encounter?.lines?.length ) rows.encounter = { ...encounter, spec, replay };
   return rows;
 }
 
@@ -80,8 +88,9 @@ export async function confirmMakeItSo(rows, replay = null) {
   const changed = rows.filter(r => r.changed);
   const doors = Object.values(replay?.doors ?? {});
   const doorLine = doors.length ? `<li>${game.i18n.format("FASTFIGHTING.MakeItSo.Doors", { n: doors.length, broken: doors.filter(d => d.broken).length })}</li>` : "";
+  const encounter = rows.encounter ? `<li><strong>${escape(rows.encounter.title ?? "")}</strong>: ${rows.encounter.lines.map(escape).join("; ")}</li>` : "";
   const content = `<p>${loc("FASTFIGHTING.MakeItSo.Confirm")}</p>
-    <ul class="ff-mis-list">${changed.map(r => `<li><strong>${escape(r.spec.name)}</strong>: ${r.lines.map(escape).join("; ")}</li>`).join("")}${doorLine}</ul>
+    <ul class="ff-mis-list">${changed.map(r => `<li><strong>${escape(r.spec.name)}</strong>: ${r.lines.map(escape).join("; ")}</li>`).join("")}${encounter}${doorLine}</ul>
     <p class="hint">${loc("FASTFIGHTING.MakeItSo.UndoHint")}</p>`;
   return foundry.applications.api.DialogV2.confirm({
     window: { title: loc("FASTFIGHTING.MakeItSo.Title"), icon: "fa-solid fa-gavel" },
@@ -387,6 +396,16 @@ async function commitFight(rows, replay, { story = null, stories = null, odds = 
         ui.notifications.error(game.i18n.format("FASTFIGHTING.MakeItSo.Failed", { name: row.spec.name }));
       }
       }
+    }
+  }
+
+  // 3b. The encounter's own record, by the system (Ironsworn: its progress track, kept on one character).
+  if ( rows.encounter && adapter.commitEncounter ) {
+    try {
+      records.push(...((await adapter.commitEncounter(rows.encounter.spec, rows.encounter.replay, options)) ?? []));
+    } catch ( err ) {
+      console.error(`${MODULE_ID} | Make it So: the encounter's own record failed`, err);
+      ui.notifications.error(game.i18n.format("FASTFIGHTING.MakeItSo.Failed", { name: rows.encounter.title ?? "" }));
     }
   }
 

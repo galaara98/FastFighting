@@ -27,6 +27,8 @@ https://github.com/galaara98/FastFighting/releases/latest/download/module.json
 
 **A plan for each encounter.** The planner ties itself to the encounter on the scene (the one the Combat Tracker shows), and keeps everything you choose there (sides, groups, roles, fudges and options) with that encounter until it ends. Each encounter has a plan of its own: view another one in the tracker and the planner follows. Someone joining the encounter mid-plan (or a token coming or going on the map) is taken in, and your choices stand. A new encounter starts from whatever you set up on the scene before it began; a fresh one puts every hostile token in one group, for you to split. **Clear** (the eraser, beside Refresh) puts the plan back to the defaults, after asking. With no encounter on the scene, the plan is the scene's.
 
+**The game system's own settings.** A system's helper can add a row of its own to the planner, under the options, for what its rules need to know about this encounter (FastFighting Ironsworn: how the encounter is tracked, its rank, and whose sheet keeps the track). What you pick there is kept with the plan, like everything else.
+
 **In the encounter, or just on the map.** Being in the encounter means being aware of the conflict when the simulation starts. Every other token on the map (a bystander) only checks, on its own turn, whether it becomes aware of the conflict now; once it is, it takes its turns from the next round, as if it had been in the encounter all along. It becomes aware when:
 - it sees or hears a combatant (walls muffle sound), against the system's Perception (or the like);
 - an ally runs to it calling for help;
@@ -417,6 +419,10 @@ Hooks.once("fastFighting.init", api => {
     describeRegionBehavior(behavior) { ... }         // system region behaviors -> {types, difficult, hazardous}
     term(key) { ... }                                // the system's word for "ac" / "hp" / "sp" / "money"; null: FastFighting's generic one; false: none
     itemCatalog() { ... }                            // {categories, materials, rarities}: [{key, label}], what a character can ask for
+    plannerSettings({ roster, setup, resolved, chains }) { ... } // the planner's row for this system: {title, hint, fields: [{key, label, hint, type: "pills"|"select", value, choices}]}
+    applyPlannerSettings(spec, settings, context) { ... }        // setup.system's answers, onto the battle (spec.options.system for Make it So)
+    describeEncounter(spec, replay) { ... }          // the encounter's own record for Make it So's confirmation: {title, lines}
+    async commitEncounter(spec, replay, options) { ... } // write it; returns undo records
     resourceLabel(key, spec) { ... }
     describeOutcome(spec, final) { ... }
     async commitOutcome(tokenDoc, spec, final, options) { ... }      // returns an undo record

@@ -175,6 +175,8 @@ const outsider = (talker, t) => { const g = groupKeyOf(talker); return g === nul
  */
 export function stepsToConvince(t, run = null, talker = null) {
   const s = t.spec.social ?? {};
+  // (A system's own number: Ironsworn's, by the encounter's rank.)
+  if ( Number.isFinite(s.steps) ) return Math.max(1, Math.round(s.steps));
   // How strong-willed it is compared with a typical creature of its level (the system works that out).
   const delta = s.resolve ?? 0;
   const loyal = t.prep.traits.loyal;
@@ -690,6 +692,9 @@ export function attemptTalk(run, talker, pitch, log) {
   // press that gets nowhere irritates the one pressing.
   if ( aim === "haggle" ) (roll.degree >= 2 ? calmsDown : irritated)(t);
   if ( aim === "press" && roll.degree < 2 ) irritated(talker);
+  // What the pitch's result gives or costs the talker, by the system (Ironsworn: Compel's momentum, a miss's price).
+  const said = run.prep.rules.afterTalk?.(run, talker, t, roll, { aim, kind: pitch.kind });
+  if ( said?.text && run.log ) log(talker, { type: "endure", text: said.text, ...said.data });
   // Insulted by a botched pitch: someone taking no side turns on the talker's side (one already confronting the
   // talker turns on its side).
   if ( roll.degree === 0 ) {

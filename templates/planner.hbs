@@ -50,6 +50,21 @@
         <label><input type="checkbox" name="options.includeHidden" {{checked options.includeHidden}}> {{localize "FASTFIGHTING.Planner.Hidden"}}</label>
       </div>
     </div>
+    {{!-- The game system's own settings for this encounter --}}
+    {{#if systemSection}}
+    <div class="ff-toolbar-row ff-system-row">
+      <span class="ff-system-title" {{#if systemSection.hint}}data-tooltip="{{systemSection.hint}}"{{/if}}>{{systemSection.title}}</span>
+      {{#each systemSection.fields}}
+      <div class="ff-field ff-system-field" {{#if hint}}data-tooltip="{{hint}}"{{/if}}>{{label}}
+        {{#if isPills}}
+        <span class="ff-pills">{{#each choices}}<button type="button" class="ff-pill {{#if active}}active{{/if}}" data-action="setSystem" data-key="{{../key}}" data-value="{{value}}" aria-pressed="{{#if active}}true{{else}}false{{/if}}" {{#if hint}}data-tooltip="{{hint}}"{{/if}}>{{label}}</button>{{/each}}</span>
+        {{else}}
+        <select name="{{name}}">{{#each choices}}<option value="{{value}}" {{#if active}}selected{{/if}}>{{label}}</option>{{/each}}</select>
+        {{/if}}
+      </div>
+      {{/each}}
+    </div>
+    {{/if}}
     <div class="ff-progress {{#if running}}is-running{{/if}}"><span style="width: {{progress}}%"></span></div>
   </header>
 

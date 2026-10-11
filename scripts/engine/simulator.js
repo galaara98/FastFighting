@@ -317,6 +317,8 @@ function dealDamage(run, source, target, amount, { crit = false, types = null } 
         type: dead ? "death" : "down", by: source?.spec.name ?? null, byId: source?.id ?? null, dying: target.dying, knockedOut: !!target.knockedOut
       });
     }
+    // One track for many (Ironsworn's encounter objective, every foe part of it): what one takes, all of them take.
+    if ( target.spec.sharedHp ) shareHarm(run, source, target);
     testConcentration(run, target, rest + absorbed);
     // What being hurt sets off, by the system (Ironsworn: Endure Harm, a roll to shake it off or lose heart).
     if ( rules.afterHarm && target.status !== STATUS.DEAD ) {
@@ -528,9 +530,33 @@ function saveRider(run, u, action, target, effect) {
   log(run, target, { type: "condition", by: u.spec.name, effect: effect.label ?? "" });
 }
 
-/** The price of an attack, as the system sets it (rules.backlash): the target's harm to the attacker. */
+/**
+ * Hit points several creatures share (spec.sharedHp, a key: Ironsworn's encounter track, which every foe in the fight is
+ * part of): the others are left as the one struck was, and fall with it.
+ */
+function shareHarm(run, source, target) {
+  const rules = run.prep.rules;
+  for ( const o of run.units ) {
+    if ( o === target || o.spec.sharedHp !== target.spec.sharedHp || o.status !== STATUS.STANDING ) continue;
+    o.hp = Math.max(0, target.hp);
+    if ( o.hp > 0 ) continue;
+    o.wasDowned = true;
+    rules.onDropped(o, { model: run.prep.options.downedModel, amount: 0, overflow: 0 });
+    if ( o.status === STATUS.STANDING ) continue;
+    o.fellRound ??= run.round;
+    o.killerId = source?.id ?? o.killerId ?? null;
+    releaseGrabs(run, o);
+    log(run, o, { type: o.status === STATUS.DEAD ? "death" : "down", by: source?.spec.name ?? null, byId: source?.id ?? null, shared: true });
+  }
+}
+
+/**
+ * The price of an attack, as the system sets it (rules.backlash): the target's harm to the attacker, or a price of
+ * the system's own that it has paid already (Ironsworn's stress: its report, `said`).
+ */
 function backlash(run, u, target, action, degree, logging) {
   const cost = run.prep.rules.backlash?.(run, u, target, action, degree);
+  if ( cost?.said?.text && logging ) log(run, u, { type: "endure", text: cost.said.text, ...cost.said.data });
   if ( !cost?.damage?.length || !isUp(u) || target.status === STATUS.DEAD ) return;
   const hit = rollHit(run, target, { name: cost.label ?? "", damage: cost.damage }, u, cost.damage, 1, false);
   if ( logging ) log(run, u, {

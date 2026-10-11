@@ -85,6 +85,38 @@ export class SystemAdapter {
   }
 
   /**
+   * The system's own settings for an encounter: a section of the planner (Ironsworn: one progress track for the
+   * encounter, its rank, who keeps it). Each field's answer is kept with the plan (setup.system[key]).
+   * @param {object} context   {roster, setup, resolved: side by token id, chains: who commands each group}
+   * @returns {{title: string, hint?: string, fields: {key: string, label: string, hint?: string, type: "pills"|"select",
+   *   value: string, choices: {value: string, label: string, hint?: string}[]}[]}|null}
+   */
+  plannerSettings(context) {
+    return null;
+  }
+
+  /**
+   * Apply the answers to the planner's system section to a battle (its combatants, spec.options.system for Make it So).
+   * @param {object} spec       the BattleSpec, as built
+   * @param {object} settings   setup.system
+   * @param {object} context    {setup, roster, resolved}
+   */
+  applyPlannerSettings(spec, settings, context) {}
+
+  /**
+   * The encounter's own record, beyond each token's (Ironsworn: its progress track, kept on one character), for Make it
+   * So's confirmation: {title, lines}, or null for none.
+   */
+  describeEncounter(spec, replay) {
+    return null;
+  }
+
+  /** Write the encounter's own record (describeEncounter's); returns undo records. */
+  async commitEncounter(spec, replay, options) {
+    return [];
+  }
+
+  /**
    * The kinds of thing a character can ask for in a standoff (never a particular item): the system's own item
    * categories, materials and rarities, each [{key, label}] in the system's words. A CombatantSpec's valuables name
    * each item's category, material and rarity by these keys. Empty lists: the system has none of them.

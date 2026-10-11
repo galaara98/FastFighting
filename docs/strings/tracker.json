@@ -80,6 +80,16 @@
    "commit": null,
    "hash": "08d655006cb6"
   },
+  "core:code:scripts/apps/battle-planner.js:systemSection#1": {
+   "repo": "core",
+   "file": "scripts/apps/battle-planner.js",
+   "key": "scripts/apps/battle-planner.js:systemSection#1",
+   "area": "core/code",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "2f40c0551613"
+  },
   "core:code:scripts/apps/player-survey.js:_prepareContext#1": {
    "repo": "core",
    "file": "scripts/apps/player-survey.js",
@@ -109,6 +119,16 @@
    "date": null,
    "commit": null,
    "hash": "2ce9cbe37a4d"
+  },
+  "core:code:scripts/foundry/battle.js:buildBattleSpec#2": {
+   "repo": "core",
+   "file": "scripts/foundry/battle.js",
+   "key": "scripts/foundry/battle.js:buildBattleSpec#2",
+   "area": "core/code",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "2f40c0551613"
   },
   "core:code:scripts/foundry/battle.js:gatherRoster#1": {
    "repo": "core",
@@ -150,6 +170,16 @@
    "commit": null,
    "hash": "f6080dfc49f3"
   },
+  "core:code:scripts/foundry/make-it-so.js:commitFight#4": {
+   "repo": "core",
+   "file": "scripts/foundry/make-it-so.js",
+   "key": "scripts/foundry/make-it-so.js:commitFight#4",
+   "area": "core/code",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "21663c876ced"
+  },
   "core:code:scripts/foundry/make-it-so.js:openSceneDoor#1": {
    "repo": "core",
    "file": "scripts/foundry/make-it-so.js",
@@ -159,6 +189,16 @@
    "date": null,
    "commit": null,
    "hash": "c35aa4700c5a"
+  },
+  "core:code:scripts/foundry/make-it-so.js:planMakeItSo#1": {
+   "repo": "core",
+   "file": "scripts/foundry/make-it-so.js",
+   "key": "scripts/foundry/make-it-so.js:planMakeItSo#1",
+   "area": "core/code",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "63d298c5c68b"
   },
   "core:code:scripts/foundry/make-it-so.js:quickMove#1": {
    "repo": "core",
@@ -19932,6 +19972,36 @@
    "commit": null,
    "hash": "a126b3703d5b"
   },
+  "ironsworn:FFIRONSWORN.CompelOutcome.Demand": {
+   "repo": "ironsworn",
+   "file": "languages/en.json",
+   "key": "FFIRONSWORN.CompelOutcome.Demand",
+   "area": "ironsworn/CompelOutcome",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "1c545c2574c6"
+  },
+  "ironsworn:FFIRONSWORN.CompelOutcome.Price": {
+   "repo": "ironsworn",
+   "file": "languages/en.json",
+   "key": "FFIRONSWORN.CompelOutcome.Price",
+   "area": "ironsworn/CompelOutcome",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "cf2e7523c2fc"
+  },
+  "ironsworn:FFIRONSWORN.CompelOutcome.Strong": {
+   "repo": "ironsworn",
+   "file": "languages/en.json",
+   "key": "FFIRONSWORN.CompelOutcome.Strong",
+   "area": "ironsworn/CompelOutcome",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "59930cf3c760"
+  },
   "ironsworn:FFIRONSWORN.CompelShadow": {
    "repo": "ironsworn",
    "file": "languages/en.json",
@@ -19941,6 +20011,176 @@
    "date": null,
    "commit": null,
    "hash": "085bbe934fc4"
+  },
+  "ironsworn:FFIRONSWORN.Conflict.Achieved": {
+   "repo": "ironsworn",
+   "file": "languages/en.json",
+   "key": "FFIRONSWORN.Conflict.Achieved",
+   "area": "ironsworn/Conflict",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "b48d279254cc"
+  },
+  "ironsworn:FFIRONSWORN.Conflict.Encounter": {
+   "repo": "ironsworn",
+   "file": "languages/en.json",
+   "key": "FFIRONSWORN.Conflict.Encounter",
+   "area": "ironsworn/Conflict",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "e6192ff5b2da"
+  },
+  "ironsworn:FFIRONSWORN.Conflict.EncounterHint": {
+   "repo": "ironsworn",
+   "file": "languages/en.json",
+   "key": "FFIRONSWORN.Conflict.EncounterHint",
+   "area": "ironsworn/Conflict",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "e4334b807599"
+  },
+  "ironsworn:FFIRONSWORN.Conflict.Foes": {
+   "repo": "ironsworn",
+   "file": "languages/en.json",
+   "key": "FFIRONSWORN.Conflict.Foes",
+   "area": "ironsworn/Conflict",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "b177e72b384b"
+  },
+  "ironsworn:FFIRONSWORN.Conflict.FoesHint": {
+   "repo": "ironsworn",
+   "file": "languages/en.json",
+   "key": "FFIRONSWORN.Conflict.FoesHint",
+   "area": "ironsworn/Conflict",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "631d828358bc"
+  },
+  "ironsworn:FFIRONSWORN.Conflict.Hint": {
+   "repo": "ironsworn",
+   "file": "languages/en.json",
+   "key": "FFIRONSWORN.Conflict.Hint",
+   "area": "ironsworn/Conflict",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "b262f7c602a7"
+  },
+  "ironsworn:FFIRONSWORN.Conflict.Holder": {
+   "repo": "ironsworn",
+   "file": "languages/en.json",
+   "key": "FFIRONSWORN.Conflict.Holder",
+   "area": "ironsworn/Conflict",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "0ce220da428e"
+  },
+  "ironsworn:FFIRONSWORN.Conflict.HolderHint": {
+   "repo": "ironsworn",
+   "file": "languages/en.json",
+   "key": "FFIRONSWORN.Conflict.HolderHint",
+   "area": "ironsworn/Conflict",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "ee8d4da0012e"
+  },
+  "ironsworn:FFIRONSWORN.Conflict.Lost": {
+   "repo": "ironsworn",
+   "file": "languages/en.json",
+   "key": "FFIRONSWORN.Conflict.Lost",
+   "area": "ironsworn/Conflict",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "ac91bb5d539a"
+  },
+  "ironsworn:FFIRONSWORN.Conflict.Progress": {
+   "repo": "ironsworn",
+   "file": "languages/en.json",
+   "key": "FFIRONSWORN.Conflict.Progress",
+   "area": "ironsworn/Conflict",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "7af8253c2ab7"
+  },
+  "ironsworn:FFIRONSWORN.Conflict.Rank": {
+   "repo": "ironsworn",
+   "file": "languages/en.json",
+   "key": "FFIRONSWORN.Conflict.Rank",
+   "area": "ironsworn/Conflict",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "a4130d7d2c3a"
+  },
+  "ironsworn:FFIRONSWORN.Conflict.RankHint": {
+   "repo": "ironsworn",
+   "file": "languages/en.json",
+   "key": "FFIRONSWORN.Conflict.RankHint",
+   "area": "ironsworn/Conflict",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "67cdc2d12c94"
+  },
+  "ironsworn:FFIRONSWORN.Conflict.Record": {
+   "repo": "ironsworn",
+   "file": "languages/en.json",
+   "key": "FFIRONSWORN.Conflict.Record",
+   "area": "ironsworn/Conflict",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "65ed36b3d195"
+  },
+  "ironsworn:FFIRONSWORN.Conflict.Title": {
+   "repo": "ironsworn",
+   "file": "languages/en.json",
+   "key": "FFIRONSWORN.Conflict.Title",
+   "area": "ironsworn/Conflict",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "014659ab9d98"
+  },
+  "ironsworn:FFIRONSWORN.Conflict.Track": {
+   "repo": "ironsworn",
+   "file": "languages/en.json",
+   "key": "FFIRONSWORN.Conflict.Track",
+   "area": "ironsworn/Conflict",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "051f01f095a2"
+  },
+  "ironsworn:FFIRONSWORN.Conflict.TrackHint": {
+   "repo": "ironsworn",
+   "file": "languages/en.json",
+   "key": "FFIRONSWORN.Conflict.TrackHint",
+   "area": "ironsworn/Conflict",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "3df672612f76"
+  },
+  "ironsworn:FFIRONSWORN.Conflict.TrackName": {
+   "repo": "ironsworn",
+   "file": "languages/en.json",
+   "key": "FFIRONSWORN.Conflict.TrackName",
+   "area": "ironsworn/Conflict",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "bfa0e0a7101e"
   },
   "ironsworn:FFIRONSWORN.Control.hasinitiative": {
    "repo": "ironsworn",
@@ -20282,6 +20522,16 @@
    "commit": null,
    "hash": "e617393cd9e8"
   },
+  "ironsworn:FFIRONSWORN.Move.EndureStress": {
+   "repo": "ironsworn",
+   "file": "languages/en.json",
+   "key": "FFIRONSWORN.Move.EndureStress",
+   "area": "ironsworn/Move",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "1d6ab11f4eb6"
+  },
   "ironsworn:FFIRONSWORN.Move.EntertheFray": {
    "repo": "ironsworn",
    "file": "languages/en.json",
@@ -20301,6 +20551,16 @@
    "date": null,
    "commit": null,
    "hash": "82718439f689"
+  },
+  "ironsworn:FFIRONSWORN.Move.FaceDesolation": {
+   "repo": "ironsworn",
+   "file": "languages/en.json",
+   "key": "FFIRONSWORN.Move.FaceDesolation",
+   "area": "ironsworn/Move",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "13cbe7fad8f5"
   },
   "ironsworn:FFIRONSWORN.Move.GainGround": {
    "repo": "ironsworn",
@@ -20472,6 +20732,16 @@
    "commit": null,
    "hash": "c754da2668fe"
   },
+  "ironsworn:FFIRONSWORN.Out.Defeated": {
+   "repo": "ironsworn",
+   "file": "languages/en.json",
+   "key": "FFIRONSWORN.Out.Defeated",
+   "area": "ironsworn/Out",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "529431e20432"
+  },
   "ironsworn:FFIRONSWORN.Out.Dies": {
    "repo": "ironsworn",
    "file": "languages/en.json",
@@ -20541,6 +20811,26 @@
    "date": null,
    "commit": null,
    "hash": "1c43f6fdc931"
+  },
+  "ironsworn:FFIRONSWORN.Out.Shaken": {
+   "repo": "ironsworn",
+   "file": "languages/en.json",
+   "key": "FFIRONSWORN.Out.Shaken",
+   "area": "ironsworn/Out",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "75079e97b3cc"
+  },
+  "ironsworn:FFIRONSWORN.Out.Spirit": {
+   "repo": "ironsworn",
+   "file": "languages/en.json",
+   "key": "FFIRONSWORN.Out.Spirit",
+   "area": "ironsworn/Out",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "bcc50ec30701"
   },
   "ironsworn:FFIRONSWORN.Out.StandsDown": {
    "repo": "ironsworn",
@@ -20771,6 +21061,136 @@
    "date": null,
    "commit": null,
    "hash": "a6ab9e64998c"
+  },
+  "ironsworn:FFIRONSWORN.Stress.Desolate": {
+   "repo": "ironsworn",
+   "file": "languages/en.json",
+   "key": "FFIRONSWORN.Stress.Desolate",
+   "area": "ironsworn/Stress",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "9542c986dfe1"
+  },
+  "ironsworn:FFIRONSWORN.Stress.DesolateHolds": {
+   "repo": "ironsworn",
+   "file": "languages/en.json",
+   "key": "FFIRONSWORN.Stress.DesolateHolds",
+   "area": "ironsworn/Stress",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "c1a3fd4bbb3b"
+  },
+  "ironsworn:FFIRONSWORN.Stress.Embrace": {
+   "repo": "ironsworn",
+   "file": "languages/en.json",
+   "key": "FFIRONSWORN.Stress.Embrace",
+   "area": "ironsworn/Stress",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "ea32803082e4"
+  },
+  "ironsworn:FFIRONSWORN.Stress.Falters": {
+   "repo": "ironsworn",
+   "file": "languages/en.json",
+   "key": "FFIRONSWORN.Stress.Falters",
+   "area": "ironsworn/Stress",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "d6c7847df96f"
+  },
+  "ironsworn:FFIRONSWORN.Stress.Perseveres": {
+   "repo": "ironsworn",
+   "file": "languages/en.json",
+   "key": "FFIRONSWORN.Stress.Perseveres",
+   "area": "ironsworn/Stress",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "14b088add0e3"
+  },
+  "ironsworn:FFIRONSWORN.Stress.Press": {
+   "repo": "ironsworn",
+   "file": "languages/en.json",
+   "key": "FFIRONSWORN.Stress.Press",
+   "area": "ironsworn/Stress",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "ba744b4da3f9"
+  },
+  "ironsworn:FFIRONSWORN.Stress.PressTrade": {
+   "repo": "ironsworn",
+   "file": "languages/en.json",
+   "key": "FFIRONSWORN.Stress.PressTrade",
+   "area": "ironsworn/Stress",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "d7c623c81ea5"
+  },
+  "ironsworn:FFIRONSWORN.Stress.Reels": {
+   "repo": "ironsworn",
+   "file": "languages/en.json",
+   "key": "FFIRONSWORN.Stress.Reels",
+   "area": "ironsworn/Stress",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "450bbb45d5ac"
+  },
+  "ironsworn:FFIRONSWORN.Stress.Shake": {
+   "repo": "ironsworn",
+   "file": "languages/en.json",
+   "key": "FFIRONSWORN.Stress.Shake",
+   "area": "ironsworn/Stress",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "37fc98f1105d"
+  },
+  "ironsworn:FFIRONSWORN.Stress.ShakeCost": {
+   "repo": "ironsworn",
+   "file": "languages/en.json",
+   "key": "FFIRONSWORN.Stress.ShakeCost",
+   "area": "ironsworn/Stress",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "10829d485ad1"
+  },
+  "ironsworn:FFIRONSWORN.Stress.Shaken": {
+   "repo": "ironsworn",
+   "file": "languages/en.json",
+   "key": "FFIRONSWORN.Stress.Shaken",
+   "area": "ironsworn/Stress",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "4d58ddf99fb5"
+  },
+  "ironsworn:FFIRONSWORN.Stress.WorseMomentum": {
+   "repo": "ironsworn",
+   "file": "languages/en.json",
+   "key": "FFIRONSWORN.Stress.WorseMomentum",
+   "area": "ironsworn/Stress",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "cccd9c341329"
+  },
+  "ironsworn:FFIRONSWORN.Stress.WorseSpirit": {
+   "repo": "ironsworn",
+   "file": "languages/en.json",
+   "key": "FFIRONSWORN.Stress.WorseSpirit",
+   "area": "ironsworn/Stress",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "82a4d7e0a7db"
   },
   "ironsworn:FFIRONSWORN.TheRoll": {
    "repo": "ironsworn",

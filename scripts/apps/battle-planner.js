@@ -79,6 +79,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       preparePlayers: BattlePlanner.#onPreparePlayers,
       togglePlaystyle: BattlePlanner.#onTogglePlaystyle,
       setMotive: BattlePlanner.#onSetMotive,
+      setSystem: BattlePlanner.#onSetSystem,
       setGroup: BattlePlanner.#onSetGroup,
       setTeam: BattlePlanner.#onSetTeam,
       setRole: BattlePlanner.#onSetRole,
@@ -292,6 +293,8 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     });
 
     const context = {
+      // The game system's own settings for this encounter (its helper's: Ironsworn's track and its rank).
+      systemSection: this.#systemSection(adapter, resolved, chains),
       sceneName: canvas.scene?.name,
       adapterLabel: adapter?.label ?? loc("FASTFIGHTING.Planner.NoAdapter"),
       hasAdapter: !!adapter,
@@ -561,6 +564,41 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     const actor = await fromUuid(target.dataset.actorUuid);
     const ok = await togglePlaystyle(actor, target.dataset.playstyle);
     if ( !ok ) ui.notifications.warn(loc("FASTFIGHTING.Playstyle.Max"));
+    this.stale = true;
+    this.render();
+  }
+
+  /**
+   * The system's section: what its helper asks of this encounter (adapter.plannerSettings), each field as pills or a
+   * list, its answers kept with the plan (setup.system).
+   */
+  #systemSection(adapter, resolved, chains) {
+    let section = null;
+    try {
+      const roster = this.roster.filter(e => this.setup.tokens[e.token.id]?.include !== false);
+      section = adapter?.plannerSettings?.({ roster, setup: this.setup, resolved, chains }) ?? null;
+    } catch ( err ) {
+      console.error(`${MODULE_ID} | the system's settings for this encounter failed`, err);
+    }
+    if ( !section?.fields?.length ) return null;
+    return {
+      title: section.title ?? adapter.label,
+      hint: section.hint ?? "",
+      fields: section.fields.map(f => ({
+        ...f,
+        name: `system.${f.key}`,
+        isPills: f.type === "pills",
+        choices: (f.choices ?? []).map(c => ({ ...c, active: String(c.value) === String(f.value) }))
+      }))
+    };
+  }
+
+  /** A pill in the system's section. */
+  static async #onSetSystem(event, target) {
+    const { key, value } = target.dataset;
+    if ( !key ) return;
+    (this.setup.system ??= {})[key] = value;
+    await saveSetup(this.setup, this.holder);
     this.stale = true;
     this.render();
   }
@@ -906,7 +944,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     }
     try {
       const rows = planMakeItSo(this.spec, this.sample.result);
-      if ( !rows.some(r => r.changed) && !Object.keys(this.sample.result.doors ?? {}).length ) return ui.notifications.info(loc("FASTFIGHTING.MakeItSo.Nothing"));
+      if ( !rows.some(r => r.changed) && !rows.encounter && !Object.keys(this.sample.result.doors ?? {}).length ) return ui.notifications.info(loc("FASTFIGHTING.MakeItSo.Nothing"));
       const ok = await confirmMakeItSo(rows, this.sample.result);
       if ( !ok ) return;
       // The Statistician's account is for the GM (who can show it to the table); everyone else gets the plain one.
