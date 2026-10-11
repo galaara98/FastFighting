@@ -627,8 +627,8 @@
       "RoleplayHint": "The simulation weighs your playstyles heavily: their personality shifts double and their quirks (finishing foes, parleying, studying enemies…) happen much more often.",
       "Both": "Both boxes are checked: roleplay strengthens your playstyles, but staying true still caps how far they move you from the calculated strategy.",
       "NpcTitle": "Playstyles (GM)",
-      "scaredyCat": {
-        "Name": "Scaredy-Cat",
+      "chicken": {
+        "Name": "Chicken",
         "Hint": "Much less brave: hangs back, drinks potions early, retreats when hurt, goes unnoticed. Wants above all to keep away from the most dangerous foe, gives up easily, and hits back half-heartedly."
       },
       "cruel": {
@@ -645,7 +645,7 @@
       },
       "fragile": {
         "Name": "Fragile",
-        "Hint": "Less brave; drinks potions early, retreats when hurt. Once hurt, wants to get away from whoever is hurting it and to mend itself; setbacks wear it down."
+        "Hint": "Drinks potions early and retreats when hurt. Once hurt, wants to get away from whoever is hurting it and to mend itself; setbacks wear it down."
       },
       "impatient": {
         "Name": "Impatient",
@@ -664,7 +664,7 @@
         "Hint": "Wants it over fast: spends everything, goes for the quickest kills."
       },
       "leader": {
-        "Name": "Leader",
+        "Name": "Wants to Lead",
         "Hint": "Steps up to lead the side, braver and more loyal, goes for the biggest threat (and now and then pins it down), looks after its people and bolsters them. When it isn't the side's leader, it mostly goes its own way."
       },
       "instigator": {

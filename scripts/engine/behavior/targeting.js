@@ -140,7 +140,7 @@ function foesOf(run, u) {
  * Choose who `u` attacks this turn. Returns a unit or null.
  * Playstyles get the first word (Cruel finishes the fallen, Wildcards surprise, People-Pleasers follow the
  * group's target), then stated tactics or personality decide, then the target's own playstyle can pull
- * attention (Instigators, Martyrs) or slip it (Wallflowers, Scaredy-Cats).
+ * attention (Instigators, Martyrs) or slip it (Wallflowers, Chickens).
  */
 export function chooseTarget(run, u) {
   const t = pickTarget(run, u);

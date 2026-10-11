@@ -39,7 +39,7 @@ export const STAY_TRUE_CAP = 0.1;
  */
 export const PLAYSTYLES = Object.freeze({
   // Afraid: of the most dangerous foe above all; gives up easily, hits back half-heartedly.
-  scaredyCat: { icon: "fa-ghost", traits: { brave: -30, selfish: 10 }, suggest: { retreat: "hurt", style: "ranged", potionThreshold: "75" }, behavior: { lowProfile: 0.3 },
+  chicken: { icon: "fa-ghost", traits: { brave: -30, selfish: 10 }, suggest: { retreat: "hurt", style: "ranged", potionThreshold: "75" }, behavior: { lowProfile: 0.3 },
     desire: { avoid: { dangerous: 35 }, frustration: 1.5, retaliate: 0.5 } },
   // Picks on the weak and the fallen.
   cruel: { icon: "fa-skull-crossbones", traits: { selfish: 20, loyal: -5 }, suggest: { target: "weakest", beyond: "hunt" }, behavior: { finishDowned: 0.4, hinders: 0.25 },
@@ -50,8 +50,9 @@ export const PLAYSTYLES = Object.freeze({
   // Does what the others want: the leader's and the team's wishes pull hard.
   peoplePleaser: { icon: "fa-face-smile", traits: { selfish: -20, loyal: 15 }, suggest: { healAggro: "aggressive", target: "protect", talk: "opportune" }, behavior: { followFocus: 0.5, helps: 1 },
     desire: { talk: 10, aid: 10, leader: 2, team: 2.5 } },
-  // Fine until hurt; then it wants to mend itself and get away from whoever is hurting it.
-  fragile: { icon: "fa-heart-crack", traits: { brave: -15 }, suggest: { retreat: "hurt", potionThreshold: "75", selfRevived: "healSelf" }, behavior: { lowProfile: 0.2 },
+  // Fine until hurt; then it wants to mend itself and get away from whoever is hurting it. (Not a coward: that's
+  // the Chicken. It doesn't shift bravery.)
+  fragile: { icon: "fa-heart-crack", traits: {}, suggest: { retreat: "hurt", potionThreshold: "75", selfRevived: "healSelf" }, behavior: { lowProfile: 0.2 },
     desire: { avoid: { attacker: 30 }, heal: 10, frustration: 1.3 } },
   // The nearest foe, now; no patience for obstacles (or locked doors).
   impatient: { icon: "fa-hourglass-end", traits: { tactical: -10 }, suggest: { resourceUse: "nova", target: "nearest", shield: "never" }, behavior: { rush: 0.5 },
@@ -135,6 +136,10 @@ function combineDesires(chosen, { stayTrue, roleplay }) {
 }
 
 export const PLAYSTYLE_IDS = Object.freeze(Object.keys(PLAYSTYLES));
+/** Whether an id is a playstyle (its own key: never "constructor" and the like). */
+export const isPlaystyle = id => typeof id === "string" && Object.hasOwn(PLAYSTYLES, id);
+/** Playstyles renamed since, by their old ids: answers saved under an old id still count. */
+export const RENAMED_PLAYSTYLES = Object.freeze({ scaredyCat: "chicken" });
 
 /** How strongly playstyles act: 1 normally, heavier for roleplay. */
 export function intensity({ roleplay = false } = {}) {
@@ -150,7 +155,7 @@ export function intensity({ roleplay = false } = {}) {
  *   simulated fight can draw one (the first pick most often, the later ones now and then)
  */
 export function combinePlaystyles(ids = [], { stayTrue = false, roleplay = false } = {}) {
-  const chosen = ids.filter(id => PLAYSTYLES[id]).slice(0, MAX_PLAYSTYLES);
+  const chosen = ids.filter(isPlaystyle).slice(0, MAX_PLAYSTYLES);
   const k = intensity({ roleplay });
   const traits = {};
   const mix = {};

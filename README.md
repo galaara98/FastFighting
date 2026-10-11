@@ -141,7 +141,7 @@ A lean doesn't last: watching the side it leans toward hurt someone it cares abo
 - **Won over:** either side's talkers can talk it into joining them, against its lean too, with no luck roll, as long as it hasn't seen that side cross it. Talkers weigh what joining would mean to it: a pitch that gives it what it wants (keeping someone safe, a chance at someone it wants hurt) is easier and quicker, so one already leaning their way doesn't take much; one that betrays what it wants is harder and slower. Nobody is threatened into friendship. Make it So changes the token's disposition to its new side, and a creature that stood aside to Neutral.
 - **Who knows:** only a tactical mind (Tactical and up) sees someone taking no side for what it is, and only a tactical talker knows it could be won over. Anyone else goes by appearances and its desires: a neutral leaning toward its enemies looks like one of them, and to a feral creature anything close is fair game, so it may attack (which offends the neutral, and ends any lean toward its side). One who always tries words first (a Diplomat, "talk first", "always prefers talking") talks to a neutral it takes for a foe, and may win it over by accident; a desire to talk to it (stated, or its leader's) does the same.
 - **Keeping the peace:** while a neutral is having words with a side, that side's smart members (Tactical and up) hold off hurting it or anyone it wants safe, unless the talk is going against them anyway (nobody left who can talk to it, or it's nearly out of patience). Smart creatures likewise won't break an opening standoff unless their side is losing the talk.
-- **Not one for killing:** a character whose Tactics say "I never kill", seeing an enemy that was talked out of the fight, wants to talk to it again, just under whatever is most on its mind (unless it already wants to talk to it more): into leaving, or onto its side, as its playstyle leans (Leaders, Diplomats, Moralists, People-Pleasers, Scaredy-Cats, Wallflowers and the like would rather it left). Leaders and talkers among them want it more, look for the chance with any neutral they see, and always try to send it away: one less fighter on the field is safer than one more, even a friendly one.
+- **Not one for killing:** a character whose Tactics say "I never kill", seeing an enemy that was talked out of the fight, wants to talk to it again, just under whatever is most on its mind (unless it already wants to talk to it more): into leaving, or onto its side, as its playstyle leans (Wants to Lead, Diplomats, Moralists, People-Pleasers, Chickens, Wallflowers and the like would rather it left). Those who want to lead and talkers among them want it more, look for the chance with any neutral they see, and always try to send it away: one less fighter on the field is safer than one more, even a friendly one.
 - **Results:** those who take no side never win or lose a fight, and don't keep one going. The planner shows how often a foe was talked into standing aside.
 
 ## Theft
@@ -177,7 +177,7 @@ Spells, songs, skills and features that change the numbers instead of (or as wel
 - **How long:** for their rounds; a save at the end of each turn can shake them off (Hold Person); damage ends some (sleep). Where the system has **concentration**, one spell at a time, and a hard knock or being taken out ends it.
 - **Charmed or dominated:** the creature fights for whoever holds it until the hold ends (it runs out, a save, the holder loses concentration or falls, or the holder's side harms a charmed one). Its friends are reluctant to cut it down. The story still counts it as one of its own.
 - **Choosing them:** a buff is worth casting when what it adds up to, across everyone it reaches, over the rounds it will matter, beats attacking with the same actions. Thinking minds see this best; feral ones only look after themselves. Late in a won fight, nobody bothers.
-- **Spoilers:** the **Instigator** pill loves locking foes down, harassing and debuffing them (up to 2.5 times the appeal). Puzzle-Maniac, Cruel, Wallflower and Leader lean that way a little.
+- **Spoilers:** the **Instigator** pill loves locking foes down, harassing and debuffing them (up to 2.5 times the appeal). Puzzle-Maniac, Cruel, Wallflower and Wants to Lead lean that way a little.
 - **The story** tells it: *"Akra lifts Bless over the group: Akra, Zanna and Randal, emboldened."* Dodge, Reckless Attack and Action Surge get lines of their own.
 
 A system that has none of this (no concentration, no skill DCs) simply leaves it out; nothing else changes.
@@ -260,30 +260,30 @@ Answers save as they're made, and two players sharing a token see each other's c
 
 | Pill | Desires |
 | --- | --- |
-| Scaredy-Cat | keeps away from the most dangerous foe; gives up easily; hits back half-heartedly |
+| Brawler | the nearest foe; hits back hard; no talking |
+| Chicken | keeps away from the most dangerous foe; gives up easily; hits back half-heartedly |
 | Cruel | the weakest, and the fallen; hits back hard; likes leaving a foe hampered |
-| Moralist | never the fallen; heals friends, guards the weakest |
-| People-Pleaser | wants what its leader and friends want (listens far more than most); likes to talk and to bolster friends |
+| Diplomat | talking; spares the fallen |
+| Enabler | heals, guards and bolsters friends; backs the leader |
 | Fragile | once hurt: away from whoever is hurting it, and mends itself; setbacks wear it down |
 | Impatient | the nearest foe; setbacks wear it down twice as fast; little patience for locks |
-| Brawler | the nearest foe; hits back hard; no talking |
-| Skeptic | its leader and team sway it half as much; slow to talk |
-| Speed-Runner | the quickest kills |
-| Leader | the biggest threat (now and then pins it down); looks after and bolsters its people; when it isn't the leader, mostly goes its own way |
 | Instigator | spoils everyone's plans: locks foes down, harasses and debuffs them more than anyone; the most dangerous foe and the other side's leader; may defy its own leader |
-| Diplomat | talking; spares the fallen |
-| Wallflower | keeps its distance; would rather hamper foes from afar; listens to the crowd less |
+| Lazy | the nearest foe and no long walks; not much help to anyone; gives up fast; can't hold a grudge |
+| Lore-Collector | foes it hasn't sized up yet |
 | Martyr | guards the weakest friend; fears nothing; avenges the fallen twice as hard |
 | Mercenary | easy pickings; barely avenges anyone; gives up when it gets hard |
-| Enabler | heals, guards and bolsters friends; backs the leader |
-| Redeem-Seeker | the biggest threat; won't give up |
-| Lore-Collector | foes it hasn't sized up yet |
+| Moralist | never the fallen; heals friends, guards the weakest |
+| People-Pleaser | wants what its leader and friends want (listens far more than most); likes to talk and to bolster friends |
 | Puzzle-Maniac | weaknesses to exploit, casters, a clever lock-down, and locked doors (twice the patience) |
-| Wildcard | something random catches its eye; nobody's voice counts for much; may defy its leader |
+| Redeem-Seeker | the biggest threat; won't give up |
+| Relentless | sticks with the foe it's on; shrugs off setbacks; keeps at doors |
+| Skeptic | its leader and team sway it half as much; slow to talk |
+| Speed-Runner | the quickest kills |
 | Thief | robs when it's safe; a lock is an invitation |
 | Vengeful | hits back twice as hard; avenges fallen friends; its grudges never cool |
-| Relentless | sticks with the foe it's on; shrugs off setbacks; keeps at doors |
-| Lazy | the nearest foe and no long walks; not much help to anyone; gives up fast; can't hold a grudge |
+| Wallflower | keeps its distance; would rather hamper foes from afar; listens to the crowd less |
+| Wants to Lead | the biggest threat (now and then pins it down); looks after and bolsters its people; when it isn't the leader, mostly goes its own way |
+| Wildcard | something random catches its eye; nobody's voice counts for much; may defy its leader |
 
 Three checkboxes go with the pills:
 - **Stay mostly true to my calculated tactical level:** playstyles and answers move the calculated strategy by about 10% at most.

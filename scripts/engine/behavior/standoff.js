@@ -24,7 +24,7 @@ const CANT_FOLLOW = 0.35; // a beast, or anyone who shares no language with the 
 const MAX_CHANCE = 0.85;
 
 /** Playstyles that make someone quicker (above 1) or slower (below 1) to lose patience. */
-const TEMPER = { impatient: 2.5, cruel: 2, instigator: 2, brawler: 1.8, speedRunner: 1.5, moralist: 0.6, scaredyCat: 0.5, peoplePleaser: 0.5, diplomat: 0.3 };
+const TEMPER = { impatient: 2.5, cruel: 2, instigator: 2, brawler: 1.8, speedRunner: 1.5, moralist: 0.6, chicken: 0.5, peoplePleaser: 0.5, diplomat: 0.3 };
 
 /** Can this creature take part in a conversation at all? */
 export function canTalk(u) {

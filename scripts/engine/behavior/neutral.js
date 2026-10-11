@@ -315,7 +315,7 @@ export function appeal(run, n, side) {
 }
 
 /** Playstyles that would rather see someone taking no side leave than join the fight (on either side). */
-const SEND_AWAY = new Set(["leader", "diplomat", "moralist", "peoplePleaser", "scaredyCat", "wallflower", "fragile", "lazy"]);
+const SEND_AWAY = new Set(["leader", "diplomat", "moralist", "peoplePleaser", "chicken", "wallflower", "fragile", "lazy"]);
 
 /**
  * Someone who doesn't like killing (Tactics: "I never kill"), seeing an enemy that was talked out of the fight, wants

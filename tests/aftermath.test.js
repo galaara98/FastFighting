@@ -145,5 +145,7 @@ describe("answers players store", () => {
     expect(clean.notes).toBeUndefined();
     expect(sanitizeTactics("not an object")).toEqual({});
     expect(sanitizeTactics({ playstyles: "cruel" }).playstyles).toBeUndefined();
+    // A renamed playstyle saved under its old id still counts; an object's own keys aren't playstyles.
+    expect(sanitizeTactics({ playstyles: ["scaredyCat", "constructor", "toString", "chicken", "cruel"] }).playstyles).toEqual(["chicken", "cruel"]);
   });
 });

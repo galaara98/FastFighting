@@ -10,7 +10,7 @@
  */
 import { MODULE_ID } from "../constants.js";
 import { TACTIC_CHOICES, TACTIC_KEYS, suggestTactics, resolveTactics } from "../engine/tactics.js";
-import { PLAYSTYLES, PLAYSTYLE_IDS, MAX_PLAYSTYLES, combinePlaystyles } from "../engine/playstyles.js";
+import { PLAYSTYLES, PLAYSTYLE_IDS, MAX_PLAYSTYLES, RENAMED_PLAYSTYLES, combinePlaystyles, isPlaystyle } from "../engine/playstyles.js";
 import { getAdapter } from "../api.js";
 import { DESIRE_KINDS, DESIRE_BAND_KEYS } from "../engine/behavior/desire.js";
 import { setting } from "../settings.js";
@@ -53,7 +53,8 @@ export function sanitizeTactics(raw) {
   if ( typeof raw.preferredAction === "string" ) out.preferredAction = raw.preferredAction.slice(0, MAX_NOTES);
   if ( typeof raw.notes === "string" ) out.notes = raw.notes.slice(0, MAX_NOTES);
   if ( Array.isArray(raw.playstyles) ) {
-    out.playstyles = [...new Set(raw.playstyles.filter(id => typeof id === "string" && PLAYSTYLES[id]))].slice(0, MAX_PLAYSTYLES);
+    const current = id => (Object.hasOwn(RENAMED_PLAYSTYLES, id) ? RENAMED_PLAYSTYLES[id] : id);
+    out.playstyles = [...new Set(raw.playstyles.filter(id => typeof id === "string").map(current).filter(isPlaystyle))].slice(0, MAX_PLAYSTYLES);
   }
   for ( const key of META_KEYS ) if ( key in raw ) out[key] = raw[key] === true;
   if ( isPlain(raw.desires) ) {
@@ -101,7 +102,7 @@ export async function setTactic(actor, key, value) {
  * The whole list is written at once; the order is the order they were picked (first wins conflicts).
  */
 export async function togglePlaystyle(actor, id) {
-  if ( !actor || !PLAYSTYLES[id] ) return false;
+  if ( !actor || !isPlaystyle(id) ) return false;
   const current = [...(getStoredTactics(actor).playstyles ?? [])];
   const i = current.indexOf(id);
   if ( i >= 0 ) current.splice(i, 1);
@@ -268,6 +269,7 @@ export function questionsContext(spec, actor, uid, { questions: withQuestions = 
     questions,
     desires,
     notes: withQuestions ? { name: `tactic-${uid}-notes`, value: stored.notes ?? "", label: loc("FASTFIGHTING.Tactics.notes.Label"), placeholder: loc("FASTFIGHTING.Tactics.notes.Hint") } : null,
+    // (In alphabetical order, as the player reads them.)
     playstyles: PLAYSTYLE_IDS.map(id => ({
       id,
       icon: PLAYSTYLES[id].icon,
@@ -276,7 +278,7 @@ export function questionsContext(spec, actor, uid, { questions: withQuestions = 
       active: picked.includes(id),
       order: picked.indexOf(id) + 1,
       disabled: !picked.includes(id) && picked.length >= MAX_PLAYSTYLES
-    })),
+    })).sort((a, b) => a.label.localeCompare(b.label, game.i18n.lang)),
     playstyleCount: game.i18n.format("FASTFIGHTING.Playstyle.Count", { n: picked.length, max: MAX_PLAYSTYLES }),
     stayTrue: { name: `tactic-${uid}-stayTrue`, checked: !!stored.stayTrue },
     roleplay: { name: `tactic-${uid}-roleplay`, checked: !!stored.roleplay },

@@ -34,8 +34,8 @@ describe("every pill", () => {
 
 describe("pick order", () => {
   test("the first pill counts in full, each later one less", () => {
-    const scaredFirst = combinePlaystyles(["scaredyCat", "cruel"]);
-    const cruelFirst = combinePlaystyles(["cruel", "scaredyCat"]);
+    const scaredFirst = combinePlaystyles(["chicken", "cruel"]);
+    const cruelFirst = combinePlaystyles(["cruel", "chicken"]);
     expect(scaredFirst.traits.brave).toBe(-30);
     expect(cruelFirst.traits.brave).toBeCloseTo(-22.5);
     expect(cruelFirst.desire.hurt.weakest).toBe(15);
@@ -50,13 +50,13 @@ describe("playstyle combination", () => {
   });
 
   test("first-listed playstyle wins conflicting suggestions", () => {
-    expect(combinePlaystyles(["martyr", "scaredyCat"]).suggest.retreat).toBe("never");
-    expect(combinePlaystyles(["scaredyCat", "martyr"]).suggest.retreat).toBe("hurt");
+    expect(combinePlaystyles(["martyr", "chicken"]).suggest.retreat).toBe("never");
+    expect(combinePlaystyles(["chicken", "martyr"]).suggest.retreat).toBe("hurt");
   });
 
   test("stay mostly true caps trait shifts at 10 and behaviors at 10%", () => {
-    const free = combinePlaystyles(["scaredyCat", "cruel"]);
-    const capped = combinePlaystyles(["scaredyCat", "cruel"], { stayTrue: true });
+    const free = combinePlaystyles(["chicken", "cruel"]);
+    const capped = combinePlaystyles(["chicken", "cruel"], { stayTrue: true });
     expect(free.traits.brave).toBe(-30);
     expect(capped.traits.brave).toBe(-10);
     expect(capped.behavior.finishDowned).toBeLessThanOrEqual(0.1);
