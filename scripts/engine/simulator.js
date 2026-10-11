@@ -1500,7 +1500,68 @@ function sizesUp(run, u, t, turn, room, { decided = false, wholeTurn = false } =
   log(run, u, worked ? `sizes up ${t.spec.name}` : `tries to size up ${t.spec.name}, and learns nothing useful`, {
     type: "study", target: t.spec.name, targetId: t.id, worked, check, factor, oneRoll: !!uses, anyFoe: !!how?.anyFoe, kin, price: !worked && how?.missOutcome ? how.missOutcome.label ?? "" : null
   });
+  if ( worked ) shareLore(run, u, t, sort, turn);
   return true;
+}
+
+/**
+ * How likely u, leading its side, is to share what it learned (0 to 1). Not every leader likes to: its Lore-Collector
+ * pill's chance (smaller the further down its pills it is), times how minded it is to: from even odds, more for the
+ * loyal and less for the selfish, more for a tactical mind (it sees the worth of it), and as its pills lean on
+ * supporting friends (Enablers, People-Pleasers, those who'd lead more; the lazy, brawlers, mercenaries less).
+ */
+export function shareChance(run, u) {
+  const chance = behaviorOf(u).share ?? 0;
+  if ( !chance || u.spec.social?.mindless ) return 0;
+  const minded = 0.5 + (liveTrait(run, u, "loyal") - 50) / 100 - (liveTrait(run, u, "selfish") - 50) / 100
+    + (liveTier(run, u) >= TACTICAL.TACTICAL ? 0.15 : 0) + (styleOf(u).aid ?? 0) / 100;
+  return clamp(chance * clamp(minded, 0, 1), 0, 1);
+}
+
+/**
+ * A Lore-Collector that leads its side may pass on what it learned about t's sort, if it's minded to (shareChance):
+ * decided when it learns it, told when it has an action for it (now, or its next turn).
+ */
+function shareLore(run, u, t, sort, turn) {
+  if ( run.prep.sides[u.side]?.leaderId !== u.id ) return;
+  const chance = shareChance(run, u);
+  if ( !chance ) return;
+  if ( !run.rng.chance(chance) ) {
+    log(run, u, `keeps what it learned of ${t.spec.name} to itself`, { type: "keepLore", target: t.spec.name, targetId: t.id, chance });
+    return;
+  }
+  u.lorePending = { sort, name: t.spec.name, id: t.id, chance };
+  tellLore(run, u, turn);
+}
+
+/**
+ * Telling it: an action, to every friend within a move of it (as far as it can properly explain what it learned in
+ * the time) who can understand it (a language in common). They know that sort too from then on (battle-state.js
+ * studyBonus), though only the one that took the time gets the payoff. With no action left, it waits for its next
+ * turn; with no one to tell, nothing is spent.
+ */
+function tellLore(run, u, turn) {
+  const p = u.lorePending;
+  if ( !p ) return;
+  if ( run.prep.sides[u.side]?.leaderId !== u.id || !isStanding(u) ) {
+    u.lorePending = null;
+    return;
+  }
+  const cost = run.prep.rules.basicAction ?? 1;
+  if ( !turn.canAfford(cost) ) return;
+  const move = Number(u.spec.speeds?.walk) || Math.max(0, ...Object.values(u.spec.speeds ?? {}).map(Number).filter(Number.isFinite)) || 30;
+  const told = alliesOf(run, u).filter(a => {
+    if ( a === u || !isStanding(a) || a.studied?.has(`sort:${p.sort}`) || a.spec.social?.mindless || !shareLanguage(u, a, run) ) return false;
+    const d = edgeDistance(u, a);
+    return d === null || d <= move;
+  });
+  u.lorePending = null;
+  if ( !told.length ) return;
+  turn.spend(cost);
+  for ( const a of told ) a.studied.add(`sort:${p.sort}`);
+  log(run, u, `tells ${told.map(a => a.spec.name).join(", ")} what it knows of ${p.name}`, {
+    type: "shareLore", target: p.name, targetId: p.id, with: told.map(a => a.spec.name), withIds: told.map(a => a.id), chance: p.chance
+  });
 }
 
 /** A Lore-Collector's payoff for sizing a foe up: its rolls against it about this many times as likely to succeed. */
@@ -1673,6 +1734,7 @@ function neutralTurn(run, u) {
 function standoffTurn(run, u) {
   const rules = run.prep.rules;
   const turn = turnFor(run, u);
+  tellLore(run, u, turn); // (what it learned last turn, if it means to tell its friends)
   if ( !observes(run, u, turn) ) standoffPitching(run, u, standoffPitches(run, u, turn.howMany(rules.talkCost ?? rules.basicAction ?? 1)));
   u.turnsTaken += 1;
   endOfTurn(run, u);
@@ -1841,6 +1903,9 @@ function takeTurn(run, u) {
       if ( move.feet <= 0 ) break; // can't get any closer
     }
   }
+
+  // What it learned last turn, if it leads and means to tell its friends: an action, first thing.
+  tellLore(run, u, turn);
 
   // Words before weapons: talkers sway, the less battle-worthy talk twice, anyone may quip.
   const talkCost = rules.talkCost ?? basic;

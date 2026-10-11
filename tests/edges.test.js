@@ -1,10 +1,11 @@
 import { describe, expect, test } from "vitest";
-import { replay, prepareBattle } from "../scripts/engine/simulator.js";
+import { replay, prepareBattle, shareChance } from "../scripts/engine/simulator.js";
 import { createRun, boostBonus, modsAgainst, checkRoll, studyBonus } from "../scripts/engine/battle-state.js";
 import { applyOutcome, spendEdges } from "../scripts/engine/behavior/effects.js";
 import { bestPitch } from "../scripts/engine/behavior/talk.js";
 import { degreeDistribution } from "../scripts/engine/probability.js";
 import { buildStory } from "../scripts/story/story.js";
+import { combinePlaystyles } from "../scripts/engine/playstyles.js";
 import { buildEnglishTables } from "../scripts/story/tables-en.js";
 import { pf2eRules } from "./fixtures/three-action-rules.js";
 import { genericRules } from "../scripts/adapters/generic/rules.js";
@@ -175,5 +176,83 @@ describe("what sizing up teaches holds for the foe's sort", () => {
     // The boosted blows land on whichever warrior it fights.
     const boosted = r.log.filter(e => e.type === "attack" && e.actorId === "s" && e.boost > 0);
     expect(boosted.length).toBeGreaterThan(0);
+  });
+});
+
+describe("a Lore-Collector leading its side shares what it learns", () => {
+  const sage = (extra = {}) => fighter("sage", { behavior: { study: 1, share: 1 }, initiative: { mod: 50 }, sizeUp: { mod: 40, dc: 10 },
+    social: social({ diplomacy: 2 }), traits: { tactical: { base: 70, fudge: 0 }, brave: { base: 60, fudge: 0 }, selfish: { base: 10, fudge: 0 }, loyal: { base: 90, fudge: 0 } }, ...extra });
+  const ally = (id, languages = ["common"]) => fighter(id, { social: social({ diplomacy: 0, languages }) });
+  const sides = leaderId => ({ friendly: { label: "Party", enemies: ["hostile"], leaderId }, hostile: { label: "Foes", enemies: ["friendly"] } });
+
+  test("the leader spends an action telling the friends within a move who understand it; they know that sort too", () => {
+    const at = (x, y = 0) => ({ x, y, size: 5 });
+    const spec = battle([sage({ position: at(0), speeds: { walk: 25 } }), { ...ally("a1"), position: at(20) }, { ...ally("far"), position: at(0, 80) }, { ...ally("elf", ["elvish"]), position: at(10) },
+      ogre("ogre", { position: at(5, 5), speeds: { walk: 0 } })], { maxRounds: 1, leadership: true, positioning: true }, sides("sage"));
+    const r = replay(spec, pf2eRules, 4);
+    const told = r.log.find(e => e.type === "shareLore");
+    expect(told.with).toEqual(["a1"]); // (not one too far off to explain it to, nor one without a language in common)
+    // Three actions: size it up, tell them, and one left to strike with.
+    expect(r.log.filter(e => e.actorId === "sage" && e.type === "attack" && e.round === 1).length).toBeLessThanOrEqual(1);
+    expect(buildStory(r, spec, "statistician").text).toMatch(/sage → a1: shares what it knows of ogre/);
+    const prose = buildStory(r, spec, "roleplay", { tables, seed: 4 }).text;
+    expect(prose).not.toMatch(/\{\w+\}/);
+  });
+
+  test("with one action a turn: sizing up takes this turn, telling the next", () => {
+    const r = replay(battle([sage(), ally("a1"), ogre()], { maxRounds: 2, leadership: true }, sides("sage")), genericRules, 4);
+    const mine = r.log.filter(e => e.actorId === "sage" && e.type !== "thought");
+    expect(mine.find(e => e.round === 1)?.type).toBe("study");
+    expect(mine.find(e => e.round === 2)?.type).toBe("shareLore");
+    expect(mine.filter(e => e.round === 2 && e.type === "attack")).toHaveLength(0);
+  });
+
+  test("not when it isn't the side's leader", () => {
+    const r = replay(battle([sage(), ally("a1"), ogre()], { maxRounds: 1, leadership: true }, sides("a1")), pf2eRules, 4);
+    expect(r.log.some(e => e.type === "study" && e.worked)).toBe(true);
+    expect(r.log.some(e => e.type === "shareLore")).toBe(false);
+  });
+});
+
+describe("every Lore-Collector chance is smaller the further down its pills it is", () => {
+  test("sizing up, watching in a standoff, sharing: 1st, 2nd, 3rd, 4th pick", () => {
+    const at = i => combinePlaystyles([...["cruel", "brawler", "skeptic"].slice(0, i), "loreCollector"]).behavior;
+    const picks = [0, 1, 2, 3].map(at);
+    for ( const key of ["study", "observe", "share"] ) {
+      const values = picks.map(b => b[key]);
+      for ( let i = 1; i < 4; i++ ) expect(values[i], `${key} at pick ${i + 1}`).toBeLessThan(values[i - 1]);
+    }
+    expect(picks.map(b => +b.study.toFixed(3))).toEqual([0.5, 0.375, 0.275, 0.2]);
+  });
+});
+
+describe("not every leader likes to share", () => {
+  test("the chance to share: the pill's, times how minded it is (loyal, unselfish, tactical, supportive pills)", () => {
+    const leader = (traits, pills = ["loreCollector"]) => {
+      const p = combinePlaystyles(pills);
+      return fighter("lead", { traits, behavior: p.behavior, desireStyle: p.desire, social: social({ diplomacy: 2 }) });
+    };
+    const t = (tactical, loyal, selfish) => ({ tactical: { base: tactical, fudge: 0 }, brave: { base: 60, fudge: 0 }, selfish: { base: selfish, fudge: 0 }, loyal: { base: loyal, fudge: 0 } });
+    const chanceOf = spec => { const { run, by } = unitsOf(battle([spec, ogre()])); return shareChance(run, by("lead")); };
+    const generous = chanceOf(leader(t(70, 90, 10)));
+    const average = chanceOf(leader(t(40, 50, 50)));
+    const grasping = chanceOf(leader(t(40, 20, 90)));
+    expect(generous).toBeGreaterThan(0.8);
+    expect(average).toBeGreaterThan(0.3);
+    expect(average).toBeLessThan(0.6);
+    expect(grasping).toBeLessThan(0.05);
+    // Supportive pills more, a mercenary less; and the further down the Lore-Collector pill, the less.
+    expect(chanceOf(leader(t(40, 50, 50), ["loreCollector", "enabler"]))).toBeGreaterThan(average);
+    expect(chanceOf(leader(t(40, 50, 50), ["loreCollector", "mercenary"]))).toBeLessThan(average);
+    expect(chanceOf(leader(t(40, 50, 50), ["brawler", "loreCollector"]))).toBeLessThan(average);
+  });
+
+  test("a leader that keeps it to itself: the statistician says so", () => {
+    const keeper = fighter("sage", { behavior: { study: 1, share: 1 }, initiative: { mod: 50 }, sizeUp: { mod: 40, dc: 10 }, social: social({ diplomacy: 2 }),
+      traits: { tactical: { base: 40, fudge: 0 }, brave: { base: 60, fudge: 0 }, selfish: { base: 95, fudge: 0 }, loyal: { base: 10, fudge: 0 } } });
+    const spec = battle([keeper, fighter("a1", { social: social({ diplomacy: 0 }) }), ogre()], { maxRounds: 1, leadership: true },
+      { friendly: { label: "Party", enemies: ["hostile"], leaderId: "sage" }, hostile: { label: "Foes", enemies: ["friendly"] } });
+    const r = replay(spec, pf2eRules, 4);
+    expect(r.log.some(e => e.type === "shareLore")).toBe(false);
   });
 });
