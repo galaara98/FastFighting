@@ -28,6 +28,7 @@
   </div>
   {{#if conflict}}<p class="ff-hint"><i class="fa-solid fa-circle-info"></i> {{localize "FASTFIGHTING.Playstyle.Both"}}</p>{{/if}}
 </div>
+{{#if desires}}
 <div class="ff-desires">
   <div class="ff-q-label">{{localize "FASTFIGHTING.Desire.Label"}} <i class="fa-solid fa-circle-question" data-tooltip="{{localize "FASTFIGHTING.Desire.Hint"}}"></i></div>
   {{#each desires}}
@@ -38,6 +39,7 @@
   </div>
   {{/each}}
 </div>
+{{/if}}
 {{#if withQuestions}}
 <div class="ff-tactics">
   {{#each questions}}

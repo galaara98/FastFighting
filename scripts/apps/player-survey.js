@@ -7,12 +7,24 @@
 import { MODULE_ID } from "../constants.js";
 import { getAdapter } from "../api.js";
 import { localize, hasStat } from "../i18n.js";
+import { sceneEncounter } from "../foundry/persistence.js";
 import {
   questionsContext, setTactic, togglePlaystyle, syncTacticsDom, charactersForUser, setOwnSurveyStatus, SURVEY_STATUS, playstyleSignature
 } from "../foundry/tactics.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 const loc = key => localize(key);
+
+/**
+ * Who a player can name in a desire: the creatures it perceives on the battle map (the scene it's looking at, with token
+ * vision: not hidden, within its sight), so the survey never gives away what lurks in the dark. Where that can't be
+ * told (another scene, no token vision), only the encounter's combatants there; with no encounter, nobody.
+ */
+function nameable(scene) {
+  if ( !scene ) return [];
+  if ( canvas.scene?.id === scene.id && scene.tokenVision ) return scene.tokens.filter(o => o.actor && !o.hidden && o.object?.isVisible);
+  return (sceneEncounter(scene)?.combatants ?? []).map(c => c.token).filter(t => t?.actor && !t.hidden);
+}
 
 export class PlayerSurvey extends HandlebarsApplicationMixin(ApplicationV2) {
   static DEFAULT_OPTIONS = {
@@ -93,9 +105,7 @@ export class PlayerSurvey extends HandlebarsApplicationMixin(ApplicationV2) {
         level: spec.level,
         sharedWith: others.map(u => u.name).join(", "),
         sharedOnline: others.some(u => u.active),
-        // Players name only the creatures they can see: not hidden, and (on the scene they're looking at) within
-        // their own sight, so the survey never gives away what lurks in the dark.
-        tactics: questionsContext(spec, e.actor, e.key, { targets: scene.tokens.filter(o => o.actor && !o.hidden && (canvas.scene?.id !== scene.id || !o.object || o.object.isVisible)).map(o => ({ id: o.id, name: o.name })) })
+        tactics: questionsContext(spec, e.actor, e.key, { targets: nameable(scene).map(o => ({ id: o.id, name: o.name })) })
       });
     }
     if ( !sheets.some(s => s.id === this.activeTab) ) this.activeTab = sheets[0]?.id ?? null;

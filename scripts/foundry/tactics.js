@@ -193,9 +193,11 @@ function actionLabel(a) {
  * @param {string} uid    Unique suffix for input names in this form
  * @param {object} [options]
  * @param {boolean} [options.questions=true]  Include the tactics questions (NPC rows show only playstyles)
- * @param {{id: string, name: string}[]} [options.targets]  Who a desire can be about (tokens on the scene)
+ * @param {{id: string, name: string}[]|null} [options.targets]  Who a desire can be about (tokens on the scene); null or
+ *   none: nobody can be named, and there are no desires to state
  */
-export function questionsContext(spec, actor, uid, { questions: withQuestions = true, targets = [] } = {}) {
+export function questionsContext(spec, actor, uid, { questions: withQuestions = true, targets: named = [] } = {}) {
+  const targets = named ?? [];
   const { suggested, stored, playstyles } = tacticsFor(actor, spec);
   const sourceOf = key => playstyles.ids.find(id => PLAYSTYLES[id].suggest[key] === suggested[key] && PLAYSTYLES[id].suggest[key] !== undefined);
   const name = spec.name;
@@ -272,7 +274,7 @@ export function questionsContext(spec, actor, uid, { questions: withQuestions = 
     talk: speaks,
     bolstered: speaks
   };
-  const desires = DESIRE_SLOTS.map(slot => {
+  const desires = !targets?.length ? null : DESIRE_SLOTS.map(slot => {
     const d = stored.desires?.[slot] ?? {};
     const kinds = DESIRE_KINDS.filter(k => canDo[k] !== false || d.kind === k);
     const level = d.level ?? DESIRE_LEVELS.determined;

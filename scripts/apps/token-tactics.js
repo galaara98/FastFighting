@@ -72,9 +72,6 @@ async function fill(app, panel) {
     if ( !spec ) return;
     specs.set(app, spec);
   }
-  // A desire can name another token on the same scene (a prototype has no scene to name one from).
-  const scene = app.isPrototype ? null : app.document?.parent;
-  const targets = scene?.tokens?.filter(o => o.actor && o.id !== app.document.id).map(o => ({ id: o.id, name: o.name })) ?? [];
   // Any token can be a hazard (the GM's mark), or not be one; a hazard has no tactics to set.
   const hazard = actor.getFlag(MODULE_ID, "hazard") ?? "";
   const isHazard = !!applyHazard({ ...spec, flags: { ...spec.flags } }, hazard).hazard;
@@ -83,7 +80,8 @@ async function fill(app, panel) {
     hazard,
     hazardChoices: Object.fromEntries(HAZARD_MARKS.map(k => [k, localize(`FASTFIGHTING.TokenTactics.HazardMark.${k || "system"}`)])),
     isHazard,
-    tactics: isHazard ? null : questionsContext(spec, actor, `token-${app.id}`, { targets })
+    // (No desires here: a desire names a creature someone can perceive on the battle map, which a token window can't tell.)
+    tactics: isHazard ? null : questionsContext(spec, actor, `token-${app.id}`, { targets: null })
   });
   panel.innerHTML = html;
   // The token window's own form leaves these alone: no names to submit, no actions of its own to run.
