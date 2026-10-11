@@ -2928,7 +2928,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "5fb2b5ac720b"
+   "hash": "5fb2b5ac720b",
+   "gone": "2026-10-11"
   },
   "core:FASTFIGHTING.Log.Feint": {
    "repo": "core",
@@ -3556,9 +3557,9 @@
    "key": "FASTFIGHTING.Log.Move",
    "area": "core/Log",
    "status": "todo",
-   "date": null,
-   "commit": null,
-   "hash": "2e8567c10509"
+   "date": "2026-10-11",
+   "commit": "516c94b",
+   "hash": "620604a44f5d"
   },
   "core:FASTFIGHTING.Log.NeutralAloof": {
    "repo": "core",
