@@ -6474,6 +6474,26 @@
    "commit": null,
    "hash": "ef422e0aed3c"
   },
+  "core:FASTFIGHTING.Playstyle.AvoidKilling": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Playstyle.AvoidKilling",
+   "area": "core/Playstyle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "ae2c86420e35"
+  },
+  "core:FASTFIGHTING.Playstyle.AvoidKillingHint": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Playstyle.AvoidKillingHint",
+   "area": "core/Playstyle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "4add74af016c"
+  },
   "core:FASTFIGHTING.Playstyle.Both": {
    "repo": "core",
    "file": "languages/en.json",
@@ -6812,7 +6832,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "526251b0fb43"
+   "hash": "526251b0fb43",
+   "gone": "2026-10-11"
   },
   "core:FASTFIGHTING.Playstyle.NeverKillHint": {
    "repo": "core",
@@ -6822,7 +6843,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "d374c8becb4f"
+   "hash": "d374c8becb4f",
+   "gone": "2026-10-11"
   },
   "core:FASTFIGHTING.Playstyle.NpcTitle": {
    "repo": "core",
@@ -7778,6 +7800,26 @@
    "date": null,
    "commit": null,
    "hash": "1f1a4067addb"
+  },
+  "core:FASTFIGHTING.Settings.avoidKilling.Hint": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Settings.avoidKilling.Hint",
+   "area": "core/Settings",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "48ebf4f0285e"
+  },
+  "core:FASTFIGHTING.Settings.avoidKilling.Name": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Settings.avoidKilling.Name",
+   "area": "core/Settings",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "63b99d80af55"
   },
   "core:FASTFIGHTING.Settings.bossInfluence.Hint": {
    "repo": "core",

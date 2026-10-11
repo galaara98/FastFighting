@@ -88,7 +88,7 @@ Hazards (traps, haunts, dangerous features) fire at whoever is in their reach. S
 
 **After the fight.** When the last foe falls, the survivors tend their dying, before the dying make their next roll. They use free help first (first aid, medicine feats), then spells and potions. Anyone left untended lives or dies by the system's rules for dying, so nobody is committed half-dead.
 
-**The fallen foes** are dealt with as the victors' playstyles say: one who spares them (a Moralist, a Diplomat most of the time, anyone with **"I never kill"** ticked) stops the rest from finishing them and gives them free first aid if it can; otherwise the Cruel finish them off; everyone else leaves them to the dice. "I never kill" also makes a character's killing blows knock out instead (unconscious and stable), and it never strikes the fallen.
+**The fallen foes** are dealt with as the victors' playstyles say: one who spares them (a Moralist, a Diplomat most of the time, anyone with **"I avoid killing"** ticked, as often as it holds back) stops the rest from finishing them and gives them free first aid if it can; otherwise the Cruel finish them off; everyone else leaves them to the dice. "I never kill" also makes a character's killing blows knock out instead (unconscious and stable), and it never strikes the fallen.
 
 **The fallen PCs.** Each time a creature wants to finish off a player character at 0 HP, it rolls d100 against the **PC luck: being finished off** slider (39 by default): at or under, it goes ahead; over, it turns away, and everything it wanted of that PC goes to the next foe it would pick. And a character with **fate** to spend (PF2e Hero Points, 5e Heroic Inspiration) uses it when someone would die: a blow, a save or a recovery check that would kill is rolled again (a hit may become a miss), or, for one's own death where the system has a sure way out, that (PF2e Heroic Recovery: all of one's Hero Points). It always spends for itself; for a friend, the more selfish, the less likely.
 
@@ -118,7 +118,7 @@ A leader who wants to talk holds their side back. Before it breaks, a charismati
 **A quarrel beside the standoff.** A neutral (see below) may come to blows with one of the sides, most often when one of that side's members takes offense at a botched pitch from it. Only the two of them fight: the other side doesn't have to join in, and the standoff between the two sides holds, with exceptions:
 - **Impatience:** every blow struck beside the standoff wears on everyone's patience.
 - **Annoyance:** hurt or insulted by a neutral that seems to be with the other side, a creature may blame that side and break the standoff (a tactical mind sees through it, mostly).
-- **Peacemakers:** anyone on either side who can't abide violence (Diplomats, Moralists, People-Pleasers, those who never kill, those who always prefer talking) spends its turns calming the quarrel at once: talking the neutral into letting it go, or the side's fighters into leaving the neutral be (until it hurts them again).
+- **Peacemakers:** anyone on either side who can't abide violence (Diplomats, Moralists, People-Pleasers, those who avoid killing, those who always prefer talking) spends its turns calming the quarrel at once: talking the neutral into letting it go, or the side's fighters into leaving the neutral be (until it hurts them again).
 
 **Pitches.** Persuade, intimidate or deceive, using whatever skills the system maps to each, against the system's DC for resisting. The target has to share a language with the talker, unless the **Ignore languages** setting (off by default; a toggle in each plan too) says anyone who speaks a language understands anyone else who does. A creature with no language at all can't be talked to either way.
 - **The persuasion track:** most need 2–6 successes; the very gullible fold at once.
@@ -164,9 +164,9 @@ A lean doesn't last: watching the side it leans toward hurt someone it cares abo
   - **Talking it out of the fight:** into running, standing down or handing something over (to the neutral). In a standoff that settles it for the side it leans toward, as if that side had done the talking. Leaning toward the party's enemies, it talks the party down instead (a player character can only pay up or back off).
   - **Squeezing it for money** (the greedier it is, the likelier): talked round, a member pays the neutral off (the usual 1–10% of its money, or an item) and stays where it is; paid, the neutral keeps out of it from then on.
   - A neutral in the encounter from the start is aware of the fight at once; one that isn't has to notice it first.
-- **Can't abide violence:** a neutral that's a Diplomat, Moralist or People-Pleaser, never kills, or always prefers talking, seeing a fight, spends its turns trying to talk the fighters (either side: whoever it's likeliest to move) into leaving.
+- **Can't abide violence:** a neutral that's a Diplomat, Moralist or People-Pleaser, avoids killing, or always prefers talking, seeing a fight, spends its turns trying to talk the fighters (either side: whoever it's likeliest to move) into leaving.
 - **Keeping the peace:** while a neutral is having words with a side, that side's smart members (Tactical and up) hold off hurting it or anyone it wants safe, unless the talk is going against them anyway (nobody left who can talk to it, or it's nearly out of patience). Smart creatures likewise won't break an opening standoff unless their side is losing the talk.
-- **Not one for killing:** a character whose Tactics say "I never kill", seeing an enemy that was talked out of the fight, wants to talk to it again, just under whatever is most on its mind (unless it already wants to talk to it more): into leaving, or onto its side, as its playstyle leans (Wants to Lead, Diplomats, Moralists, People-Pleasers, Chickens, Wallflowers and the like would rather it left). Those who want to lead and talkers among them want it more, look for the chance with any neutral they see, and always try to send it away: one less fighter on the field is safer than one more, even a friendly one.
+- **Not one for killing:** a character whose Tactics say "I avoid killing", seeing an enemy that was talked out of the fight, wants to talk to it again, just under whatever is most on its mind (unless it already wants to talk to it more): into leaving, or onto its side, as its playstyle leans (Wants to Lead, Diplomats, Moralists, People-Pleasers, Chickens, Wallflowers and the like would rather it left). Those who want to lead and talkers among them want it more, look for the chance with any neutral they see, and always try to send it away: one less fighter on the field is safer than one more, even a friendly one.
 - **Results:** those who take no side never win or lose a fight, and don't keep one going. The planner shows how often a foe was talked into standing aside.
 
 ## Theft
@@ -375,7 +375,8 @@ All settings are defaults that the planner can override per battle:
   - an enemy changing sides (under this), default 69;
   - a PC scheming against the leader it wasn't chosen to be turning traitor (this or less), default 9;
   - a trap avoider spotting a hazard (this or less), default 59;
-  - how often someone who doesn't like to flee stays, default 90 (50 to 90).
+  - how often someone who doesn't like to flee stays, default 90 (50 to 90);
+  - how often someone who avoids killing holds back (a blow that would kill knocks out, the fallen left be and spared after), default 90 (50 to 90).
 - **Story:** style, delivery, and whether the posted story shows the odds (off).
 - **Make it So:** loot, corpse and fled handling, and whether the fight plays out on the map.
 - **Defaults:** side personalities, and data paths for the generic adapter.
@@ -443,7 +444,7 @@ A spec may say what kind of creature it is (`creatureKind`: the system's own wor
 - `spec.senses`: `[{type, range, dark, blind}]` beyond plain sight and hearing (`dark`: sees in darkness; `blind`: needs no sight). `rules.hearingFeet` (default 60). The scene's darkness comes in `options.darkness`.
 - `spec.resources.fate` and `spec.fateLabel`: points spent to keep someone from dying; `rules.avertDeath(u)` is the system's sure way out for one's own death, if it has one.
 - `spec.mods`: bonuses already on it when the fight starts (one, or a list), but only what the system's own numbers don't already include.
-- `rules.knockOut(u)` (a blow from someone who never kills) and `rules.secondsPerRound` (default 6, for the GM's summary).
+- `rules.knockOut(u)` (a blow from someone who avoids killing, holding back) and `rules.secondsPerRound` (default 6, for the GM's summary).
 - Lingering effects: `final.effects` lists what's still running; `commitOutcome`'s `options.effectSource(id)` finds the action that laid each, whose `effectRef` (the helper's own) says what to copy onto the creature.
 
 **Dice, deeds, tables, checks and Luck in a CombatantSpec** (see `behavior/riders.js`, `behavior/casting.js` and `behavior/luck.js`):

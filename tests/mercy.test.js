@@ -12,16 +12,35 @@ const hero = (extra = {}) => creature({ id: "hero", kind: "pc", diesAtZero: fals
 const bandit = (extra = {}) => creature({ id: "bandit", side: "hostile", diesAtZero: false, hp: { value: 30, max: 30 }, traits: traits(40),
   actions: [strike({ id: "club", bonus: 2, damage: [parseFormula("1d6", "bludgeoning")] })], flags: { fearless: true }, ...extra });
 
-describe("I never kill", () => {
-  test("its blows knock out instead: the fallen live, unconscious and stable", () => {
+describe("I avoid killing", () => {
+  test("holding back every time, its blows knock out instead: the fallen live, unconscious and stable", () => {
     let knocked = 0;
     for ( let s = 1; s <= 20; s++ ) {
-      const r = replay(battle([hero({ neverKill: true }), bandit({ diesAtZero: true })], { maxRounds: 6 }), pf2eRules, s);
+      const r = replay(battle([hero({ avoidKilling: true }), bandit({ diesAtZero: true })], { maxRounds: 6, avoidKilling: 100 }), pf2eRules, s);
       const f = r.units.bandit.final;
       expect(f.status).not.toBe("dead");
       if ( r.log.some(e => e.type === "down" && e.knockedOut) ) knocked += 1;
     }
     expect(knocked).toBeGreaterThan(15);
+  });
+
+  test("a wish, not a law: holding back half the time, it kills now and then; by default, rarely", () => {
+    const dead = avoidKilling => {
+      let n = 0;
+      for ( let s = 1; s <= 60; s++ ) {
+        const r = replay(battle([hero({ avoidKilling: true }), bandit({ diesAtZero: true })], { maxRounds: 6, ...(avoidKilling ? { avoidKilling } : {}) }), pf2eRules, s);
+        if ( r.units.bandit.final.status === "dead" ) n++;
+      }
+      return n;
+    };
+    const half = dead(50);
+    const usual = dead();
+    expect(half).toBeGreaterThan(10);
+    expect(usual).toBeLessThan(half);
+    expect(usual).toBeLessThan(15);
+    // Without it, the blow that drops the bandit kills it.
+    const r = replay(battle([hero(), bandit({ diesAtZero: true })], { maxRounds: 6 }), pf2eRules, 1);
+    expect(r.units.bandit.final.status).toBe("dead");
   });
 });
 

@@ -152,6 +152,10 @@
         "Name": "Doesn't like to flee: how often it stays (%)",
         "Hint": "A character marked \"I don't like to flee\" ignores the urge to run away this often, when running is its own choice (shaken nerve, a terror close by, a planned retreat); talked out of the fight, it gives up where it stands instead of running just as often. Fear a spell or the rules put on it still works as the system says."
       },
+      "avoidKilling": {
+        "Name": "Avoids killing: how often it holds back (%)",
+        "Hint": "A character marked \"I avoid killing\" holds back this often (50 to 90, default 90): a blow that would kill knocks out instead, it leaves the fallen be, and after the fight it spares them. Nobody controls the story entirely: now and then it kills all the same."
+      },
       "neutralReach": {
         "Name": "Neutral friend groups: reach (squares)",
         "Hint": "When the Battle Planner opens, it proposes friend groups for the neutral tokens: from the map's top-left corner, the nearest neutral starts group 1 with every neutral of its kind; anyone within this many squares of the group joins it, and so on, up to three steps out. Group 2 starts the same way; everyone left is group 3. The GM can move anyone with the 1 2 3 pills."
@@ -805,8 +809,8 @@
         "Name": "Lazy",
         "Hint": "As little as it can get away with: whatever foe is nearest (and not one worth a long walk), saves its resources, isn't much help to anyone, gives up fast, barely bothers with a locked door, and can't be bothered to hold a grudge. Leading a group, its flight takes others along."
       },
-      "NeverKill": "I never kill",
-      "NeverKillHint": "Blows that would kill knock out instead (unconscious and stable), the fallen are never struck, and after the fight this character stops anyone finishing them and tends them if it can.",
+      "AvoidKilling": "I avoid killing",
+      "AvoidKillingHint": "Holds back from killing most of the time (the Avoids killing setting, 90% by default), not always: a blow that would kill knocks out instead (unconscious and stable), it leaves the fallen be, and after the fight it stops anyone finishing them and tends them if it can.",
       "AvoidFleeing": "I don't like to flee",
       "AvoidFleeingHint": "Mostly stays when it would choose to run (shaken nerve, a terror close by, a planned retreat), and talked out of the fight, it gives up where it stands instead of running: how often is a module setting (90% unless changed). Fear a spell or the rules put on it still works as the system says."
     },

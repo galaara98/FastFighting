@@ -252,7 +252,7 @@ describe("leans don't last, and not everyone sees a neutral for what it is", () 
 });
 
 describe("not one for killing", () => {
-  const speaker = (over = {}) => creature({ id: "kind", kind: "pc", diesAtZero: false, neverKill: true, traits: minded(45), social: social({ diplomacy: 14 }), ...over });
+  const speaker = (over = {}) => creature({ id: "kind", kind: "pc", diesAtZero: false, avoidKilling: true, traits: minded(45), social: social({ diplomacy: 14 }), ...over });
   const standing = (over = {}) => creature({ id: "bandit", side: NEUTRAL_PARTY, originSide: "hostile", social: social(), ...over });
 
   function primed(talker, extra = []) {
@@ -432,7 +432,7 @@ describe("a quarrel beside a standoff", () => {
 describe("can't abide violence", () => {
   test("diplomats, moralists, people-pleasers, those who never kill and those who always talk", () => {
     expect(dislikesViolence({ spec: { playstyles: ["moralist"] } })).toBe(true);
-    expect(dislikesViolence({ spec: { neverKill: true } })).toBe(true);
+    expect(dislikesViolence({ spec: { avoidKilling: true } })).toBe(true);
     expect(dislikesViolence({ spec: { alwaysTalk: true } })).toBe(true);
     expect(dislikesViolence({ spec: { alwaysTalk: true, stayTrue: true } })).toBe(false);
     expect(dislikesViolence({ spec: { playstyles: ["brawler"] } })).toBe(false);

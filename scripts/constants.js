@@ -101,6 +101,12 @@ export const TRAITOR_LUCK = 9;
  */
 export const STAND_GROUND = 90;
 
+/**
+ * Someone who avoids killing ("I avoid killing") holds back this often (percent: the "avoidKilling" world setting, 50
+ * to 90): a blow that would kill knocks out instead, it leaves the fallen be, and after the fight it spares them.
+ */
+export const AVOID_KILLING = 90;
+
 /** How an encounter opens: decided by who would rather talk, always with words, or straight into battle. */
 export const OPENING = Object.freeze({ AUTO: "auto", TALK: "talk", FIGHT: "fight" });
 

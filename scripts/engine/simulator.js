@@ -13,7 +13,7 @@ import {
   prepareBattle, createRun, isStanding, isUp, enemiesOf, alliesOf, areEnemies, liveTier, liveTrait, currentAc,
   attackRoll, attackOptions, saveRoll, checkRoll, turnFor, moveToward, moveAway, bonusDamageParts, dispositionOf,
   behaviorOf, edgeDistance, movesNeeded, approach, canMove, moveTowardPoint, isMagical, upgradesSave, boostBonus, typical, sortOf, sizedUp, passedOver,
-  command, commandOf, heldOff
+  command, commandOf, heldOff, holdsBack
 } from "./battle-state.js";
 import { sampleRunTactics } from "./playstyles.js";
 import { chooseTarget, bestOptionVs, scoreTargets } from "./behavior/targeting.js";
@@ -295,7 +295,7 @@ function dealDamage(run, source, target, amount, { crit = false, types = null } 
       target.hp = 0;
       target.wasDowned = true;
       rules.onDropped(target, { crit, model, amount: rest, overflow: Math.max(0, rest - dealt) });
-      if ( source?.spec.neverKill && target.status === STATUS.DEAD ) knockOut(run, target);
+      if ( target.status === STATUS.DEAD && holdsBack(run, source) ) knockOut(run, target);
       regenerating(target);
     }
     // (Still up at 0, by the system's rules: Ironsworn characters fight on at 0 health.)
@@ -336,7 +336,7 @@ function dealDamage(run, source, target, amount, { crit = false, types = null } 
     if ( model === DOWNED_MODELS.OUT ) return;
     if ( run.neutral && source ) crossed(run, source, target, "harm", 1.5, logger(run));
     rules.onDropped(target, { crit, model, amount, overflow: amount });
-    if ( source?.spec.neverKill && target.status === STATUS.DEAD ) knockOut(run, target);
+    if ( target.status === STATUS.DEAD && holdsBack(run, source) ) knockOut(run, target);
     regenerating(target);
     const dead = target.status === STATUS.DEAD;
     if ( dead ) target.killerId = source?.id ?? target.killerId ?? null;
@@ -1685,7 +1685,7 @@ function deliberate(run, u) {
   for ( const [id, g] of u.grudges ?? [] ) if ( !g.provoked ) think(u, "avoid", id, 50);
   // Not one for killing: an enemy talked out of the fight is someone to talk away (or over), not to cut down.
   u.peace = null;
-  if ( u.spec.neverKill && run.neutral && run.prep.options.talking && canTalk(u) && u.tac?.talk !== "never" ) {
+  if ( u.spec.avoidKilling && run.neutral && run.prep.options.talking && canTalk(u) && u.tac?.talk !== "never" ) {
     u.peace = peaceDesires(run, u, Math.max(40, ...[...u.desire.logic.values()]));
   }
   if ( u.tac?.target === "protect" ) {
@@ -2332,7 +2332,7 @@ function aftermath(run, order) {
   const simulated = options.downedModel === DOWNED_MODELS.SIMULATE;
   const victors = run.units.filter(isStanding);
   const fallen = run.units.filter(u => u.status === STATUS.DOWN && victors.some(v => areEnemies(run, v, u)));
-  const decided = simulated && fallen.length > 0 && victors.some(v => mercyOf(v) !== "leave");
+  const decided = simulated && fallen.length > 0 && victors.some(v => mercyOf(run, v) !== "leave");
   // The system may give a fallen player character one last chance once friends reach the body (DCC: roll the body).
   const bodies = simulated && rules.recoverBody ? run.units.filter(u => u.status === STATUS.DEAD && u.spec.kind === "pc" && victors.some(v => v.side === u.side)) : [];
   if ( !(simulated && run.units.some(isDying)) && !decided && !bodies.length ) return;
@@ -2351,7 +2351,7 @@ function aftermath(run, order) {
       for ( let n = 0; n < MAX_STEPS_PER_TURN && turn.any; n++ ) {
         // Friends first; then, for one who spares the fallen, a foe it can help for free (first aid, not a spell).
         const friend = run.units.filter(a => a.side === u.side && a !== u && isDying(a)).sort((a, b) => (b.dying ?? 0) - (a.dying ?? 0))[0];
-        const foe = !friend && mercyOf(u) === "spare" ? run.units.find(a => a.spared && isDying(a)) : null;
+        const foe = !friend && mercyOf(run, u) === "spare" ? run.units.find(a => a.spared && isDying(a)) : null;
         const dying = friend ?? foe;
         if ( !dying ) break;
         let option = rescueOption(run, u, dying, turn);
@@ -2383,20 +2383,22 @@ function aftermath(run, order) {
 }
 
 /**
- * What a victor does with a fallen foe once the fighting is over, by its playstyles: "spare" it (one who never
- * kills, a Moralist, a Diplomat most of the time), "finish" it (the Cruel), or "leave" it to fate.
+ * What a victor does with a fallen foe once the fighting is over, by its playstyles: "spare" it (a Moralist, a Diplomat
+ * most of the time, one who avoids killing as often as it holds back: decided once), "finish" it (the Cruel), or
+ * "leave" it to fate.
  */
-export function mercyOf(u) {
+export function mercyOf(run, u) {
   const b = behaviorOf(u);
-  if ( u.spec.neverKill || (b.spareDowned ?? 0) >= 0.5 ) return "spare";
+  u.sparesTheFallen ??= holdsBack(run, u);
+  if ( u.sparesTheFallen || (b.spareDowned ?? 0) >= 0.5 ) return "spare";
   if ( b.finishDowned && !b.spareDowned ) return "finish";
   return "leave";
 }
 
 /** The victors settle the fallen: anyone sparing them stops the rest; otherwise the cruel finish them off. */
 function dealWithTheFallen(run, victors, fallen) {
-  const sparer = victors.find(v => mercyOf(v) === "spare");
-  const finishers = victors.filter(v => mercyOf(v) === "finish");
+  const sparer = victors.find(v => mercyOf(run, v) === "spare");
+  const finishers = victors.filter(v => mercyOf(run, v) === "finish");
   for ( const f of fallen ) {
     if ( sparer ) {
       f.spared = true;

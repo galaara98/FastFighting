@@ -8,7 +8,7 @@
  *   Mastermind   side-wide focus target; ruthless ones finish off the downed
  */
 import { STATUS, TACTICAL, NEUTRAL_PARTY } from "../../constants.js";
-import { enemiesOf, isStanding, liveTier, liveTrait, movesNeeded, behaviorOf, heldOff } from "../battle-state.js";
+import { enemiesOf, isStanding, liveTier, liveTrait, movesNeeded, behaviorOf, heldOff, holdsBackThisRound } from "../battle-state.js";
 import { expectedDamage, hasUses, threatOf, costOf, costUnits, unitsPerTurn } from "./evaluate.js";
 import { mainPool } from "../turn.js";
 import { styleWeight } from "../tactics.js";
@@ -159,7 +159,7 @@ function pickTarget(run, u) {
   for ( const f of foes ) {
     if ( grudge(u, f)?.provoked && isStanding(f) && Number.isFinite(minMoves(run, u, f)) ) return f;
   }
-  if ( behavior.finishDowned && !behavior.spareDowned && !u.spec.neverKill ) {
+  if ( behavior.finishDowned && !behavior.spareDowned && !holdsBackThisRound(run, u) ) {
     const downed = reach(foes.filter(f => f.status === STATUS.DOWN && !f.stable && perceives(run, u, f))).filter(x => x.moves <= 1);
     if ( downed.length && rng.chance(behavior.finishDowned) ) return rng.pick(downed).t;
   }
@@ -222,12 +222,12 @@ export function scoreTargets(run, u, behavior = behaviorOf(u)) {
 
   // Ruthless tacticians consider finishing downed (dying) foes when nothing else is close; Moralists never do.
   const spares = behavior.spareDowned && (behavior.spareDowned >= 1 || run.rng.chance(behavior.spareDowned));
-  if ( !spares && !u.spec.neverKill && tier >= TACTICAL.TACTICAL && selfish >= 60 ) {
+  if ( !spares && !holdsBackThisRound(run, u) && tier >= TACTICAL.TACTICAL && selfish >= 60 ) {
     const downed = foes.filter(f => f.status === STATUS.DOWN && !f.stable && perceives(run, u, f));
     candidates = candidates.concat(downed);
   }
   // A foe down but regenerating gets back up: anyone with what stops it (fire, acid) finishes it.
-  if ( !u.spec.neverKill && tier >= TACTICAL.INSTINCTIVE ) {
+  if ( !holdsBackThisRound(run, u) && tier >= TACTICAL.INSTINCTIVE ) {
     const mending = foes.filter(f => f.held && f.status === STATUS.DOWN && !candidates.includes(f) && canStop(u, f) && perceives(run, u, f));
     candidates = candidates.concat(mending);
   }

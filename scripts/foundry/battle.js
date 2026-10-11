@@ -300,7 +300,7 @@ function applyCharacterTactics(spec, entry) {
   spec.desires = statedDesires(stored); // what the GM or player says it wants, at whom, how badly
   spec.avoidConsumables = !!stored.avoidConsumables; // "I don't like to use consumables"
   spec.avoidCostlySpells = !!stored.avoidCostlySpells; // "I don't like to use spells that cost something"
-  spec.neverKill = !!stored.neverKill; // "I never kill": knocks out, never finishes the fallen, spares them after
+  spec.avoidKilling = !!stored.avoidKilling; // "I avoid killing": mostly knocks out, leaves the fallen be, spares them after
   spec.avoidFleeing = !!stored.avoidFleeing; // "I don't like to flee": mostly stays when it would choose to run
   for ( const [k, v] of Object.entries(playstyles.traits) ) {
     if ( spec.traits[k] ) spec.traits[k] = { ...spec.traits[k], fudge: (spec.traits[k].fudge ?? 0) + v };
@@ -587,6 +587,7 @@ export function buildBattleSpec(roster, setup, { approach = null, exclude = new 
       traitorLuck: setting("traitorLuck"),
       // How often someone who doesn't like to flee ignores the urge to run.
       standGround: setting("standGround"),
+      avoidKilling: setting("avoidKilling"),
       initiativeOrder,
       stealthSides,
       surpriseSide

@@ -121,7 +121,7 @@ export function refreshLeans(run) {
 const PEACEABLE = new Set(["peacekeeper", "diplomat", "moralist", "peoplePleaser"]);
 
 /** Can't abide violence: a peaceable playstyle, Tactics' "I never kill", or always prefers talking to fighting. */
-export const dislikesViolence = u => !!u.spec.neverKill || (!!u.spec.alwaysTalk && !u.spec.stayTrue) || (u.spec.playstyles ?? []).some(p => PEACEABLE.has(p));
+export const dislikesViolence = u => !!u.spec.avoidKilling || (!!u.spec.alwaysTalk && !u.spec.stayTrue) || (u.spec.playstyles ?? []).some(p => PEACEABLE.has(p));
 
 /** Is o fighting anyone right now (in a standoff: a quarrel with someone taking no side)? */
 export function fighting(run, o) {
