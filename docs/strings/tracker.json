@@ -8283,10 +8283,9 @@
    "key": "FASTFIGHTING.Settings.opening.Hint",
    "area": "core/Settings",
    "status": "todo",
-   "date": null,
-   "commit": null,
-   "hash": "974ebb803d42",
-   "changed": true
+   "date": "2026-10-11",
+   "commit": "91cd5e7",
+   "hash": "b537da5852ea"
   },
   "core:FASTFIGHTING.Settings.opening.Name": {
    "repo": "core",
