@@ -16,6 +16,7 @@ import { helperStatus, helperMessage, helperNoticeHtml } from "./helpers.js";
 import { invalidateApproach } from "./foundry/battle.js";
 import { undoConcession, revealStory, ownCard } from "./foundry/make-it-so.js";
 import { sceneUnit } from "./foundry/terrain.js";
+import { planHolder } from "./foundry/persistence.js";
 import { setDistanceUnit } from "./i18n.js";
 
 Hooks.once("init", () => {
@@ -173,7 +174,6 @@ Hooks.on("userConnected", () => {
   if ( game.user.isGM ) refreshPlanner();
 });
 
-// The planner belongs to the scene on screen: viewing another scene starts it afresh.
 // Distances read in the viewed scene's units (metres on a metric map; the engine counts feet).
 const useSceneUnits = () => setDistanceUnit(canvas.scene ? sceneUnit(canvas.scene) : null);
 Hooks.on("canvasReady", useSceneUnits);
@@ -181,13 +181,27 @@ Hooks.on("updateScene", (scene, changes) => {
   if ( scene.id === canvas.scene?.id && "grid" in changes ) useSceneUnits();
 });
 
-Hooks.on("canvasReady", () => {
+// The planner belongs to the scene on screen, and to its encounter: each encounter has a plan of its own, so viewing
+// another scene, or another encounter (or one starting or ending), starts it on that one.
+const followPlan = () => {
   const app = foundry.applications.instances.get("fast-fighting-planner");
-  if ( app?.rendered && app.sceneId !== canvas.scene?.id && !app.running ) {
-    app.resetForScene();
-    app.render();
-  }
-});
+  if ( !app?.rendered || app.running ) return;
+  if ( app.sceneId === canvas.scene?.id && app.holderUuid === (planHolder()?.uuid ?? null) ) return;
+  app.resetForScene();
+  app.render();
+};
+Hooks.on("canvasReady", followPlan);
+for ( const hook of ["createCombat", "deleteCombat", "updateCombat"] ) Hooks.on(hook, () => followPlan());
+
+// Someone joins (or leaves) the planner's encounter, or a token comes or goes on its scene: the planner takes them in,
+// keeping the GM's plan as it stands (only the encounter ending, or the GM clearing the plan, starts it afresh).
+const rereadRoster = foundry.utils.debounce(() => {
+  const app = foundry.applications.instances.get("fast-fighting-planner");
+  if ( app?.rendered && !app.running ) app.rereadRoster();
+}, 150);
+Hooks.on("createCombatant", combatant => { if ( combatant.parent?.uuid === planHolder()?.uuid ) rereadRoster(); });
+Hooks.on("deleteCombatant", combatant => { if ( combatant.parent?.uuid === planHolder()?.uuid ) rereadRoster(); });
+for ( const hook of ["createToken", "deleteToken"] ) Hooks.on(hook, token => { if ( token.parent?.id === canvas.scene?.id ) rereadRoster(); });
 
 // Walls and regions change the paths tokens take.
 for ( const hook of ["createWall", "updateWall", "deleteWall", "createRegion", "updateRegion", "deleteRegion",

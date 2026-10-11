@@ -8,7 +8,7 @@ import {
 import { getAdapter } from "../api.js";
 import { setting } from "../settings.js";
 import { listJoin } from "../i18n.js";
-import { getSetup, saveSetup, tokenSetup } from "../foundry/persistence.js";
+import { getSetup, saveSetup, clearSetup, tokenSetup, planHolder } from "../foundry/persistence.js";
 import {
   questionsContext, setTactic, togglePlaystyle, syncTacticsDom, isPlayerControlled, playersOnScene, tokensForUser, surveyStatus,
   requestSurveys, SURVEY_STATUS, playstyleSignature, tacticsFor
@@ -64,6 +64,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     actions: {
       run: BattlePlanner.#onRun,
       refresh: BattlePlanner.#onRefresh,
+      clearPlan: BattlePlanner.#onClearPlan,
       fudge: BattlePlanner.#onFudge,
       sideTab: BattlePlanner.#onSideTab,
       resultTab: BattlePlanner.#onResultTab,
@@ -149,9 +150,10 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     });
   }
 
-  /** Forget everything about the previous scene (called when the GM views another scene). */
+  /** Forget everything about the previous plan (called when the GM views another scene, or another encounter). */
   resetForScene() {
     this.sceneId = canvas.scene?.id ?? null;
+    this.holderUuid = planHolder()?.uuid ?? null;
     this.setup = null;
     this.roster = null;
     this.approach = null;
@@ -173,7 +175,10 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
   /* -------------------------------------------- */
 
   async #loadRoster() {
-    this.setup = getSetup();
+    // The plan of the encounter it's tied to (or the scene's, with none): read and saved there.
+    this.holder = planHolder();
+    this.holderUuid = this.holder?.uuid ?? null;
+    this.setup = getSetup(this.holder);
     this.roster = await gatherRoster(this.setup);
     for ( const e of this.roster ) tokenSetup(this.setup, e.token.id);
     proposeNeutralGroups(this.roster, this.setup); // friend groups for the neutrals, as the map stands now
@@ -565,7 +570,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
         const id = pills.closest("[data-token-id]")?.dataset.tokenId;
         if ( !id || !this.setup.tokens[id] ) return;
         delete this.setup.tokens[id].role;
-        await saveSetup(this.setup);
+        await saveSetup(this.setup, this.holder);
         this.stale = true;
         this.render();
       });
@@ -613,7 +618,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
         delete this.setup.tokens[name.split(".")[1]].role; // (its role was in the group it left)
       }
       if ( name === "options.seed" ) this.setup.options.seed = Number.isFinite(Number.parseInt(value, 10)) ? Number.parseInt(value, 10) >>> 0 : null;
-      await saveSetup(this.setup);
+      await saveSetup(this.setup, this.holder);
       this.stale = true;
     }
     this.render();
@@ -625,7 +630,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     const current = foundry.utils.getProperty(this.setup, path) ?? 0;
     const next = Number(dir) === 0 ? 0 : current + Number(dir) * Number(step || 1);
     foundry.utils.setProperty(this.setup, path, next);
-    await saveSetup(this.setup);
+    await saveSetup(this.setup, this.holder);
     this.stale = true;
     this.render();
   }
@@ -652,7 +657,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       }
       ts.role = role;
     }
-    await saveSetup(this.setup);
+    await saveSetup(this.setup, this.holder);
     this.stale = true;
     this.render();
   }
@@ -662,7 +667,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     const group = Number(target.dataset.group);
     if ( !id || !GROUPS.includes(group) ) return;
     tokenSetup(this.setup, id).group = group;
-    await saveSetup(this.setup);
+    await saveSetup(this.setup, this.holder);
     this.stale = true;
     this.render();
   }
@@ -694,9 +699,26 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   static async #onRefresh() {
+    this.rereadRoster();
+  }
+
+  /** Read the tokens again (someone joined the encounter, a token came or went), keeping the GM's plan as it stands. */
+  rereadRoster() {
     this.roster = null;
     this.approach = null;
     this.stale = true;
+    this.render();
+  }
+
+  /** Clear the plan, after asking: every choice made here goes back to the defaults. */
+  static async #onClearPlan() {
+    const ok = await foundry.applications.api.DialogV2.confirm({
+      window: { title: loc("FASTFIGHTING.Planner.ClearTitle") },
+      content: `<p>${loc("FASTFIGHTING.Planner.ClearConfirm")}</p>`
+    });
+    if ( !ok ) return;
+    await clearSetup(this.holder ?? planHolder());
+    this.resetForScene();
     this.render();
   }
 

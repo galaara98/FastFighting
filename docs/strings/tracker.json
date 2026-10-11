@@ -5575,6 +5575,36 @@
    "commit": null,
    "hash": "58fdee5fa731"
   },
+  "core:FASTFIGHTING.Planner.ClearConfirm": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Planner.ClearConfirm",
+   "area": "core/Planner",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "e0e4a931ac05"
+  },
+  "core:FASTFIGHTING.Planner.ClearHint": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Planner.ClearHint",
+   "area": "core/Planner",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "3cc4e46473a8"
+  },
+  "core:FASTFIGHTING.Planner.ClearTitle": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Planner.ClearTitle",
+   "area": "core/Planner",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "59e94f043196"
+  },
   "core:FASTFIGHTING.Planner.Command": {
    "repo": "core",
    "file": "languages/en.json",

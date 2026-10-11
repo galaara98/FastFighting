@@ -1,6 +1,8 @@
 /**
  * Where battle setup lives:
- *  - Scene flag `fast-fighting.setup`: per-battle options, side settings, per-token overrides and fudges.
+ *  - The plan (per-battle options, side settings, per-token overrides, groups and fudges): a `fast-fighting.setup`
+ *    flag on the encounter the planner is tied to (the Combat on the viewed scene), so each encounter has a plan of its
+ *    own, kept until the encounter ends (it goes with the Combat). With no encounter on the scene, on the scene.
  *  - Actor flag `fast-fighting.tactics`: a character's tactics answers, carried between battles (foundry/tactics.js).
  *  - Scene flag `fast-fighting.undo`: the last Make it So undo records.
  */
@@ -44,14 +46,35 @@ export function defaultSetup() {
   };
 }
 
-export function getSetup(scene = canvas.scene) {
-  const stored = scene?.getFlag(MODULE_ID, "setup") ?? {};
+/** The encounter for the viewed scene: the combat tracker's viewed combat, else any combat on this scene. */
+export function sceneEncounter(scene = canvas.scene) {
+  const viewed = ui.combat?.viewed;
+  if ( viewed && (!viewed.scene || viewed.scene.id === scene?.id) ) return viewed;
+  return game.combats.find(c => c.scene?.id === scene?.id) ?? null;
+}
+
+/** What holds the plan: the scene's encounter (its own plan, until it ends), else the scene. */
+export const planHolder = (scene = canvas.scene) => sceneEncounter(scene) ?? scene ?? null;
+
+/**
+ * The plan, as saved. An encounter with no plan of its own yet starts from its scene's (what the GM set up on the map
+ * before the encounter began), else from the defaults: hostile tokens in one group, the GM splitting them.
+ * @param {Document} [holder]   the encounter or the scene (planHolder)
+ */
+export function getSetup(holder = planHolder()) {
+  const stored = holder?.getFlag(MODULE_ID, "setup") ?? holder?.scene?.getFlag?.(MODULE_ID, "setup") ?? {};
   return foundry.utils.mergeObject(defaultSetup(), stored, { inplace: false });
 }
 
-export async function saveSetup(setup, scene = canvas.scene) {
-  if ( !scene || !game.user.isGM ) return;
-  await scene.update({ [`flags.${MODULE_ID}.==setup`]: setup }, { render: false });
+/** Clear the plan: back to the defaults (an encounter's clears to the defaults, not to its scene's plan). */
+export async function clearSetup(holder = planHolder()) {
+  if ( !holder || !game.user.isGM ) return;
+  await holder.update({ [`flags.${MODULE_ID}.==setup`]: {} }, { render: false });
+}
+
+export async function saveSetup(setup, holder = planHolder()) {
+  if ( !holder || !game.user.isGM ) return;
+  await holder.update({ [`flags.${MODULE_ID}.==setup`]: setup }, { render: false });
 }
 
 export function tokenSetup(setup, tokenId) {

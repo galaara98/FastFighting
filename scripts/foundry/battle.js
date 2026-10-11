@@ -8,7 +8,7 @@ import { applyTraitRules, getAdapter, getModifiers } from "../api.js";
 import { computeApproach, computeAwareness, environmentAt, positionOf, squareFeet } from "./terrain.js";
 import { proposeGroups } from "../engine/groups.js";
 import { resetPathGrid } from "./pathing.js";
-import { tokenSetup } from "./persistence.js";
+import { tokenSetup, sceneEncounter } from "./persistence.js";
 import { tacticsFor, isPlayerControlled, statedDesires } from "./tactics.js";
 import { setting } from "../settings.js";
 
@@ -38,17 +38,6 @@ export function sideName(side, hostileGroups = 1) {
 /** Neutral tokens take no side in the fight: these allegiances are only the way they lean (behavior/neutral.js). */
 const LEANS = new Set([ALLEGIANCE.NEUTRAL, ALLEGIANCE.FRIENDLY, ALLEGIANCE.HOSTILE, ALLEGIANCE.CLOSEST, ALLEGIANCE.UNDERDOG]);
 
-/**
- * Read every eligible token on the viewed scene.
- * @returns {Promise<{token: Token, spec: object, baseSide: string}[]>}
- */
-/** The encounter for the viewed scene: the combat tracker's viewed combat, else any combat on this scene. */
-export function sceneEncounter(scene = canvas.scene) {
-  const viewed = ui.combat?.viewed;
-  if ( viewed && (!viewed.scene || viewed.scene.id === scene?.id) ) return viewed;
-  return game.combats.find(c => c.scene?.id === scene?.id) ?? null;
-}
-
 /** Token ids of the encounter's combatants on this scene. */
 export function encounterTokenIds(scene = canvas.scene) {
   const combat = sceneEncounter(scene);
@@ -56,6 +45,10 @@ export function encounterTokenIds(scene = canvas.scene) {
   return new Set(combat.combatants.filter(c => c.tokenId && (!c.sceneId || c.sceneId === scene?.id)).map(c => c.tokenId));
 }
 
+/**
+ * Read every eligible token on the viewed scene.
+ * @returns {Promise<{token: Token, spec: object, baseSide: string}[]>}
+ */
 export async function gatherRoster(setup, adapter = getAdapter()) {
   if ( !canvas.ready || !adapter ) return [];
   const levelId = canvas.level?.id ?? null;

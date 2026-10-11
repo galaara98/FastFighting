@@ -17,6 +17,7 @@
     </label>
     <div class="ff-run-group">
       {{#if canUndo}}<button type="button" class="ff-btn" data-action="undo" data-tooltip="{{localize "FASTFIGHTING.MakeItSo.UndoConfirm"}}"><i class="fa-solid fa-rotate-left"></i> {{localize "FASTFIGHTING.MakeItSo.Undo"}}</button>{{/if}}
+      <button type="button" class="ff-btn" data-action="clearPlan" data-tooltip="{{localize "FASTFIGHTING.Planner.ClearHint"}}" {{#if running}}disabled{{/if}}><i class="fa-solid fa-eraser"></i></button>
       <button type="button" class="ff-btn" data-action="refresh" data-tooltip="{{localize "FASTFIGHTING.Planner.RefreshHint"}}"><i class="fa-solid fa-arrows-rotate"></i></button>
       {{#if running}}
       <button type="button" class="ff-btn" data-action="cancel"><i class="fa-solid fa-stop"></i> {{localize "FASTFIGHTING.Planner.Cancel"}}</button>

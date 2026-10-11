@@ -25,6 +25,8 @@ https://github.com/galaara98/FastFighting/releases/latest/download/module.json
 
 **The encounter starts it.** Add combatants to an encounter in the Combat Tracker. Once it has at least two tokens, a **Battle Planner** button appears at the top of the tracker; it's GM only. <kbd>Shift</kbd>+<kbd>B</kbd> opens the planner too. It picks up an encounter already under way from whoever's turn it is, keeping wounds, dying and conditions.
 
+**A plan for each encounter.** The planner ties itself to the encounter on the scene (the one the Combat Tracker shows), and keeps everything you choose there (sides, groups, roles, fudges and options) with that encounter until it ends. Each encounter has a plan of its own: view another one in the tracker and the planner follows. Someone joining the encounter mid-plan (or a token coming or going on the map) is taken in, and your choices stand. A new encounter starts from whatever you set up on the scene before it began; a fresh one puts every hostile token in one group, for you to split. **Clear** (the eraser, beside Refresh) puts the plan back to the defaults, after asking. With no encounter on the scene, the plan is the scene's.
+
 **In the encounter, or just on the map.** Being in the encounter means being aware of the conflict when the simulation starts. Every other token on the map (a bystander) only checks, on its own turn, whether it becomes aware of the conflict now; once it is, it takes its turns from the next round, as if it had been in the encounter all along. It becomes aware when:
 - it sees or hears a combatant (walls muffle sound), against the system's Perception (or the like);
 - an ally runs to it calling for help;
