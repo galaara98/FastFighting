@@ -4626,10 +4626,10 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Log.TempHp",
    "area": "core/Log",
-   "status": "todo",
+   "status": "written",
    "date": "2026-10-11",
-   "commit": "9faf4c4",
-   "hash": "04d4cf55bdec"
+   "commit": "1b747c4",
+   "hash": "e8f8dc61e01b"
   },
   "core:FASTFIGHTING.Log.Terrain": {
    "repo": "core",
@@ -8519,10 +8519,10 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Stat.ac",
    "area": "core/Stat",
-   "status": "todo",
-   "date": null,
-   "commit": null,
-   "hash": "472e73d796e2"
+   "status": "written",
+   "date": "2026-10-11",
+   "commit": "1b747c4",
+   "hash": "51467af9ed5b"
   },
   "core:FASTFIGHTING.Stat.attack": {
    "repo": "core",
@@ -8549,10 +8549,10 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Stat.hp",
    "area": "core/Stat",
-   "status": "todo",
-   "date": null,
-   "commit": null,
-   "hash": "9449a7aaa80c"
+   "status": "written",
+   "date": "2026-10-11",
+   "commit": "1b747c4",
+   "hash": "a6fec1246a82"
   },
   "core:FASTFIGHTING.Stat.leadAc": {
    "repo": "core",
