@@ -12994,6 +12994,16 @@
    "commit": null,
    "hash": "a0b9ab13e3e1"
   },
+  "core:FASTFIGHTING.TokenTactics.Tab": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.TokenTactics.Tab",
+   "area": "core/TokenTactics",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "9af9e8099c35"
+  },
   "core:FASTFIGHTING.TokenTactics.TokenHint": {
    "repo": "core",
    "file": "languages/en.json",

@@ -681,6 +681,7 @@
       "MyTacticsHint": "How your characters fight: tactics, playstyles and desires. Change them any time; your GM sees them as you go."
     },
     "TokenTactics": {
+      "Tab": "FastFighting",
       "PrototypeHint": "FastFighting's tactics, playstyles and desires for this actor: every new token of it starts with these. Tokens already on the map keep their own.",
       "TokenHint": "FastFighting's tactics, playstyles and desires for this token. An unlinked token's are its own; a linked token shares its actor's.",
       "Hazard": "Hazard",

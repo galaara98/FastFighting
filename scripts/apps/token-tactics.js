@@ -40,7 +40,7 @@ function addTab(app, element) {
     Object.assign(link.dataset, { action: "tab", group: "sheet", tab: TAB });
     link.classList.toggle("active", active);
     link.innerHTML = '<i class="fa-solid fa-swords" inert></i> <span></span>';
-    link.querySelector("span").textContent = game.modules.get(MODULE_ID)?.title ?? MODULE_ID;
+    link.querySelector("span").textContent = localize("FASTFIGHTING.TokenTactics.Tab");
     nav.append(link);
   }
   let panel = element.querySelector(`.tab[data-tab="${TAB}"]`);

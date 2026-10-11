@@ -2,15 +2,15 @@
   <p class="hint">{{hint}}</p>
   <button type="button" class="ff-btn" data-action="resetAll" data-tooltip="{{localize "FASTFIGHTING.Survey.ResetHint"}}"><i class="fa-solid fa-rotate-left"></i> {{localize "FASTFIGHTING.Survey.Reset"}}</button>
 </div>
-<div class="ff-token-hazard">
-  <label class="ff-q-label">{{localize "FASTFIGHTING.TokenTactics.Hazard"}}
-    <select data-ff-setting="hazard">{{selectOptions hazardChoices selected=hazard}}</select>
-  </label>
-  <p class="ff-hint">{{localize "FASTFIGHTING.TokenTactics.HazardHint"}}</p>
-</div>
 {{#if tactics}}
 <p class="ff-hint">{{localize "FASTFIGHTING.Survey.AutoHint"}}</p>
 {{> "modules/fast-fighting/templates/partials/tactics.hbs" tactics}}
 {{else}}
 <p class="ff-hint">{{localize "FASTFIGHTING.TokenTactics.HazardNoTactics"}}</p>
 {{/if}}
+<div class="ff-token-hazard">
+  <label class="ff-q-label">{{localize "FASTFIGHTING.TokenTactics.Hazard"}}
+    <select data-ff-setting="hazard">{{selectOptions hazardChoices selected=hazard}}</select>
+  </label>
+  <p class="ff-hint">{{localize "FASTFIGHTING.TokenTactics.HazardHint"}}</p>
+</div>
