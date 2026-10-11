@@ -261,8 +261,8 @@
       "unshakable": "Unshakable"
     },
     "Stat": {
-      "ac": "AC",
-      "hp": "HP",
+      "ac": "AC/Def",
+      "hp": "HP/Health",
       "sp": "Stamina",
       "attack": "Attack/DC",
       "damage": "Damage",
@@ -1307,7 +1307,7 @@
       "ControlImmune": "{actor} → {target}: {action} · unaffected",
       "Buff": "{actor} → {targets}: {action}{check} · {effect}{against}{temp}{asked}",
       "BuffAgainst": " (against {names})",
-      "TempHp": " · {n} temp {HP}",
+      "TempHp": " · {n} Temp {HP}",
       "AskedBy": " · asked by {names}",
       "NothingComesOfIt": "nothing comes of it",
       "Bolstered": "bolstered",
