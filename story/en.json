@@ -2309,6 +2309,16 @@
       "It ends with a bargain, not a battle.",
       "Something is given up, and the matter is settled."
     ],
+    "strayHit": [
+      "{actor}'s shot goes wide into the melee and strikes {target}!",
+      "The shot misses its mark and finds {target} instead.",
+      "{target} cries out: {actor}'s shot strayed."
+    ],
+    "strayMiss": [
+      "{actor}'s shot goes wide, past {target}'s ear.",
+      "The shot strays toward {target}, and misses.",
+      "{target} ducks as {actor}'s shot whistles by."
+    ],
     "promiseNoHarm": [
       "{actor} gives {by} its word: no harm will come to them.",
       "{actor} promises {by} that nobody will be hurt.",

@@ -136,7 +136,8 @@ function rollInitiative(run) {
     let mod = stealthSides.has(u.side) ? (init.stealth ?? init.mod ?? 0) : (init.mod ?? 0);
     mod += behaviorOf(u).initiative ?? 0; // Instigators jump in first
     if ( liveTier(run, u) >= TACTICAL.MASTERMIND ) mod += 2; // ambush instincts
-    rolled.set(u.id, run.rng.d20() + mod + run.rng.next() * 0.01);
+    // (A die of the system's own: DCC's d16 for a two-handed weapon.)
+    rolled.set(u.id, run.rng.die(init.die ?? 20) + mod + run.rng.next() * 0.01);
   }
   if ( fixed?.length ) {
     const known = fixed.map(id => run.byId.get(id)).filter(Boolean);
@@ -920,11 +921,35 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
         }
       }
       if ( deed && logging ) log(run, u, { type: "deed", deed: deed.label, target: target.spec.name, targetId: target.id, roll: deedRoll, success: false });
+      // A shot into a melee that misses may stray toward one of the shooter's own friends there (rules.strayShot: DCC).
+      if ( ranged && rules.strayShot ) {
+        const friend = rules.strayShot(run, u, target, action);
+        if ( friend && isUp(friend) ) strayShot(run, u, action, friend, logging);
+      }
       if ( roll.degree === 0 && u.spec.fumble ) applyFumble(run, u);
     }
     // What the attempt costs the attacker, by the system (Ironsworn: a miss, or a weak Clash, is Pay the Price).
     backlash(run, u, target, action, roll.degree, logging);
   }
+}
+
+/**
+ * A stray shot: the attack again, against the friend it strayed toward (its plain roll: no deed, no sizing up), and its
+ * damage on a hit.
+ */
+function strayShot(run, u, action, friend, logging) {
+  const rules = run.prep.rules;
+  const r = attackRoll(run, u, friend, action, 0);
+  const opts = attackOptions(r);
+  const ac = currentAc(run, friend, u, action);
+  const roll = rollCheck(rules, run.rng, r.bonus, ac, opts);
+  if ( roll.degree < 2 ) {
+    if ( logging ) log(run, u, { type: "stray", action: action.name, target: friend.spec.name, targetId: friend.id, natural: roll.natural, total: roll.total, dc: ac, hit: false, damage: 0 });
+    return;
+  }
+  const hit = rollHit(run, u, action, friend, action.damage ?? [], 1, false, rules.minimumDamage ?? 0);
+  if ( logging ) log(run, u, { type: "stray", action: action.name, target: friend.spec.name, targetId: friend.id, natural: roll.natural, total: roll.total, dc: ac, hit: true, damage: hit.total });
+  hit.apply();
 }
 
 /**

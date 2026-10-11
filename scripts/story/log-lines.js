@@ -226,6 +226,7 @@ export function logLine(e) {
     case "breakStandoff": return t("BreakStandoff", { actor: e.actor, how: t(BREAKS[e.cause] ?? "BreakImpatient") });
     case "collapse": return t("Collapse", { actor: e.actor, how: t(COLLAPSES[e.cause] ?? "CollapseImpatient") });
     // Only an argument: what was handed over, or promised, to end it.
+    case "stray": return t("Stray", { actor: e.actor, target: e.target ?? "", result: e.hit ? t("StrayHit", { n: e.damage }) : t("StrayMiss") });
     case "deal": return t("Deal", { actor: e.actor, target: e.target ?? "", what: e.promise ? t(PROMISE[e.promise] ?? "PromiseNoHarm") : concessionText(e.concession) });
     case "haggle":
       if ( e.what === "keeps" ) return t("KeepsIt", { actor: e.actor, what: e.item?.name ?? "", luck: e.luck, needed: e.needed ?? 39 });

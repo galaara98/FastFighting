@@ -4771,6 +4771,36 @@
    "commit": null,
    "hash": "2dfad53e69a4"
   },
+  "core:FASTFIGHTING.Log.Stray": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.Stray",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "3552c9e5bb82"
+  },
+  "core:FASTFIGHTING.Log.StrayHit": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.StrayHit",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "bb8ba3ecd310"
+  },
+  "core:FASTFIGHTING.Log.StrayMiss": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.StrayMiss",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "b36708c7beec"
+  },
   "core:FASTFIGHTING.Log.StruckDown": {
    "repo": "core",
    "file": "languages/en.json",
@@ -11932,6 +11962,26 @@
    "commit": null,
    "hash": "8e6a6cca7aae"
   },
+  "core:FASTFIGHTING.Story.Part.strayHit": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Story.Part.strayHit",
+   "area": "core/Story",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "096f5ba2fb6a"
+  },
+  "core:FASTFIGHTING.Story.Part.strayMiss": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Story.Part.strayMiss",
+   "area": "core/Story",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "7b7cfdd389ab"
+  },
   "core:FASTFIGHTING.Story.Part.struckDown": {
    "repo": "core",
    "file": "languages/en.json",
@@ -16856,6 +16906,26 @@
    "date": null,
    "commit": null,
    "hash": "e1c390c5d982"
+  },
+  "core:story:event.strayHit": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "event.strayHit",
+   "area": "core/story.event",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "cf9073c20d09"
+  },
+  "core:story:event.strayMiss": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "event.strayMiss",
+   "area": "core/story.event",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "2f8d27b1558f"
   },
   "core:story:event.struckDown": {
    "repo": "core",
