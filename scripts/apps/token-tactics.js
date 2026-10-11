@@ -79,7 +79,7 @@ async function fill(app, panel) {
   const hazard = actor.getFlag(MODULE_ID, "hazard") ?? "";
   const isHazard = !!applyHazard({ ...spec, flags: { ...spec.flags } }, hazard).hazard;
   const html = await foundry.applications.handlebars.renderTemplate(TEMPLATE, {
-    hint: localize(app.isPrototype ? "FASTFIGHTING.TokenTactics.PrototypeHint" : "FASTFIGHTING.TokenTactics.TokenHint"),
+    hint: localize("FASTFIGHTING.TokenTactics.Hint"),
     hazard,
     hazardChoices: Object.fromEntries(HAZARD_MARKS.map(k => [k, localize(`FASTFIGHTING.TokenTactics.HazardMark.${k || "system"}`)])),
     isHazard,

@@ -12984,6 +12984,16 @@
    "commit": null,
    "hash": "ec3d032d7cbd"
   },
+  "core:FASTFIGHTING.TokenTactics.Hint": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.TokenTactics.Hint",
+   "area": "core/TokenTactics",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "cb6aecae5a53"
+  },
   "core:FASTFIGHTING.TokenTactics.PrototypeHint": {
    "repo": "core",
    "file": "languages/en.json",
@@ -12992,7 +13002,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "a0b9ab13e3e1"
+   "hash": "a0b9ab13e3e1",
+   "gone": "2026-10-11"
   },
   "core:FASTFIGHTING.TokenTactics.Tab": {
    "repo": "core",
@@ -13012,7 +13023,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "c40d8d0b1081"
+   "hash": "c40d8d0b1081",
+   "gone": "2026-10-11"
   },
   "core:FASTFIGHTING.Tracker.NeedTwo": {
    "repo": "core",
