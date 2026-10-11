@@ -426,7 +426,6 @@
       "PcDowned": "A PC goes down",
       "MedianRounds": "Rounds",
       "Simulated": "Simulated difficulty",
-      "SystemSays": "system says",
       "Duration": "How long it lasts",
       "RoundN": "Round",
       "Dangerous": "Most dangerous",
@@ -454,8 +453,7 @@
       "Switched": "Switched sides",
       "Neutral": "Stood aside",
       "Peaceful": "Settled with words",
-      "Conceded": "gave something up",
-      "Xp": "{xp} XP"
+      "Conceded": "gave something up"
     },
     "Swing": {
       "Without": "Without {name}",

@@ -460,8 +460,6 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
         histogram,
         simulated: loc(`FASTFIGHTING.Difficulty.${sim}`),
         simulatedClass: sim,
-        // A helper may name the band in its own system's words ("High", "Deadly"); otherwise the core's.
-        crossCheck: r.crossCheck ? { label: r.crossCheck.label, labelLoc: r.crossCheck.text ?? game.i18n.localize(`FASTFIGHTING.Difficulty.${r.crossCheck.label}`), xp: r.crossCheck.xp } : null,
         foes, atRisk, combatants, resources, swing, sample
       },
       sampleFilters: Object.fromEntries(SAMPLE_FILTERS.map(k => [k, `FASTFIGHTING.Sample.${k}`])),

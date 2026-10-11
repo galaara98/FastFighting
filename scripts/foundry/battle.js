@@ -579,10 +579,6 @@ export async function simulate(roster, setup, { onProgress, signal } = {}) {
   Hooks.callAll("fastFighting.preSimulate", spec, { setup, roster });
   const seed = setup.options.seed ?? undefined;
   const results = await runBatch(spec, adapter.rules, { runs: setup.options.runs, seed, onProgress, signal });
-  results.crossCheck = adapter.difficultyCrossCheck?.(
-    spec.combatants.filter(c => c.side === SIDES.FRIENDLY),
-    spec.combatants.filter(c => c.side !== SIDES.FRIENDLY && c.side !== NEUTRAL_PARTY)
-  ) ?? null;
   Hooks.callAll("fastFighting.postSimulate", results, { setup, roster, spec });
   return { spec, results, approach };
 }

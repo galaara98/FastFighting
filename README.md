@@ -383,7 +383,6 @@ Hooks.once("fastFighting.init", api => {
     async toCombatantSpec(tokenDoc) { ... }          // see CombatantSpec in scripts/engine/battle-state.js
     deriveTraits(actor) { ... }
     detectLeaders(specs) { ... }
-    difficultyCrossCheck(friendly, hostile) { ... }  // {label: trivial|low|moderate|severe|extreme, text?, xp}
     describeRegionBehavior(behavior) { ... }         // system region behaviors -> {types, difficult, hazardous}
     resourceLabel(key, spec) { ... }
     describeOutcome(spec, final) { ... }

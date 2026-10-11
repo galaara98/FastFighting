@@ -7361,7 +7361,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "67efc7b19ea5"
+   "hash": "67efc7b19ea5",
+   "gone": "2026-10-11"
   },
   "core:FASTFIGHTING.Results.Tab.combatants": {
    "repo": "core",
@@ -7442,7 +7443,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "cef6bdf42180"
+   "hash": "cef6bdf42180",
+   "gone": "2026-10-11"
   },
   "core:FASTFIGHTING.Sample.any": {
    "repo": "core",
@@ -18089,7 +18091,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "4e62856a9aed"
+   "hash": "4e62856a9aed",
+   "gone": "2026-10-11"
   },
   "dnd5e:FFDND5E.Difficulty.BeyondHigh": {
    "repo": "dnd5e",
@@ -18099,7 +18102,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "12b73904c16f"
+   "hash": "12b73904c16f",
+   "gone": "2026-10-11"
   },
   "dnd5e:FFDND5E.Difficulty.High": {
    "repo": "dnd5e",
@@ -18109,7 +18113,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "c4ebc6d4a583"
+   "hash": "c4ebc6d4a583",
+   "gone": "2026-10-11"
   },
   "dnd5e:FFDND5E.Difficulty.Low": {
    "repo": "dnd5e",
@@ -18119,7 +18124,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "f793de205ead"
+   "hash": "f793de205ead",
+   "gone": "2026-10-11"
   },
   "dnd5e:FFDND5E.Difficulty.Moderate": {
    "repo": "dnd5e",
@@ -18129,7 +18135,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "5c42afc7a230"
+   "hash": "5c42afc7a230",
+   "gone": "2026-10-11"
   },
   "dnd5e:FFDND5E.Disengage": {
    "repo": "dnd5e",
@@ -19699,7 +19706,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "607af6f26f4e"
+   "hash": "607af6f26f4e",
+   "gone": "2026-10-11"
   },
   "pf2e:code:scripts/adapter.js:elementalBlasts#1": {
    "repo": "pf2e",

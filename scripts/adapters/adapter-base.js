@@ -75,15 +75,6 @@ export class SystemAdapter {
   }
 
   /**
-   * The system's own difficulty estimate for the encounter, or null.
-   * @returns {{label: "trivial"|"low"|"moderate"|"severe"|"extreme", text?: string, xp: number}|null}
-   *   label: the nearest of the core's bands (it colors the badge); text: the band in the system's own words
-   */
-  difficultyCrossCheck(friendly, hostile) {
-    return null;
-  }
-
-  /**
    * Commit one simulated outcome to a token ("Make it So").
    * @param {TokenDocument} tokenDoc
    * @param {object} spec        The CombatantSpec used in the simulation

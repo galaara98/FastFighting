@@ -88,12 +88,11 @@ const PLANNER = {
 const RESULTS = {
   "Tab.overview": "tab: the overall odds", "Tab.combatants": "tab: each creature's fate", "Tab.swing": "tab: what changes the odds most", "Tab.resources": "tab: what each side uses up", "Tab.sample": "tab: one fight, told as a story",
   Stalemate: "headline figure: the chance no one wins", PartyWins: "headline figure: the chance the party wins", MedianRounds: "headline figure: how many rounds a fight lasts", Simulated: "headline figure: how hard the fight is, by the simulation",
-  SystemSays: "note after the difficulty: what the game system's own rules call it", RoundN: "tooltip on a bar of the rounds chart: 'Round 3: 25%'", Dangerous: "heading: the foes that deal the most damage",
+  RoundN: "tooltip on a bar of the rounds chart: 'Round 3: 25%'", Dangerous: "heading: the foes that deal the most damage",
   DmgAbbr: "abbreviation of damage, after a number", Downed: "how often a character goes down (followed by a figure)", Dead: "how often a creature dies (a bar's label)", Standing: "how often a creature is still standing (a bar's label)",
   Down: "how often a creature is down at the end (a bar's label)", Fled: "how often a creature flees (a bar's label)", Footnote: "footnote before the number of simulated fights", Combatant: "column heading: the creature",
   Fate: "column heading: how each creature ends up", HpLeft: "column heading: hit points left", Damage: "column heading: damage dealt", Healing: "column heading: healing done", Resource: "column heading: a resource (spell slots, potions …)",
-  AvgUsed: "column heading: how much of it is used on average", TalkedDown: "how often a creature is talked out of fighting", Switched: "how often a creature switches sides (a bar's label)", Neutral: "how often a creature stands aside (a bar's label)",
-  Xp: "the system's XP figure for the fight"
+  AvgUsed: "column heading: how much of it is used on average", TalkedDown: "how often a creature is talked out of fighting", Switched: "how often a creature switches sides (a bar's label)", Neutral: "how often a creature stands aside (a bar's label)"
 };
 const SAMPLE = {
   "Outcome.stalemate": "the outcome of a fight no one won", Show: "label: which fight to show (any, typical, the party wins …)", Roll: "button: show another fight", Result: "label before the fight's outcome", Rounds: "after the number of rounds the fight took",
@@ -230,8 +229,7 @@ const HELPER = {
     "Affliction.Name": ["The effect Make it So puts on the character sheet", "an affliction's name and stage", "Short"], "Affliction.Stage": ["The effect's description, on the character sheet", "the affliction's stage", "Short sentence"]
   },
   dnd5e: {
-    PactSlot: [W.makeItSo, "a pact magic slot spent", "Short"], Surrendered: ["The condition FastFighting puts on a creature that surrenders", "the condition's name", "Short"], "Difficulty.BelowLow": [W.results, "the system's difficulty: below low", "Short"],
-    "Difficulty.Low": [W.results, "the system's difficulty: low", "One word"], "Difficulty.Moderate": [W.results, "the system's difficulty: moderate", "One word"], "Difficulty.High": [W.results, "the system's difficulty: high", "One word"], "Difficulty.BeyondHigh": [W.results, "the system's difficulty: beyond high", "Short"],
+    PactSlot: [W.makeItSo, "a pact magic slot spent", "Short"], Surrendered: ["The condition FastFighting puts on a creature that surrenders", "the condition's name", "Short"],
     HeroicInspiration: ["The planner and the log", "Heroic Inspiration (2024 rules)", "Short"], Inspiration: ["The planner and the log", "Inspiration (2014 rules)", "One word"], "Settings.loreBoost.Name": [W.settings, "setting: how much a Lore-Collector gains from sizing up a foe", "Short label"],
     Passive: [W.log, "a passive skill as a DC ('passive Insight')", "Lower case"], Dodge: [W.log, "the Dodge action", "One word"], Dodging: [W.story, "the effect of dodging", "Lower case"], Reckless: [W.story, "the effect of Reckless Attack", "Lower case"],
     Surging: [W.story, "the effect of Action Surge", "Lower case"], KnockedProne: [W.story, "a hit knocks someone prone", "Lower case"], Shove: [W.log, "the Shove action", "One word"], OffHand: [W.log, "an off-hand attack ('Dagger (off hand)')", "Short"],
