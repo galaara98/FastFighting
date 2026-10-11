@@ -26,7 +26,7 @@
  */
 import { TACTICAL, clamp } from "../../constants.js";
 import { meanPart, samplePart } from "../dice.js";
-import { liveTier } from "../battle-state.js";
+import { liveTier, isStanding, edgeDistance } from "../battle-state.js";
 import { meanDamageVs, threatOf } from "./evaluate.js";
 import { outcomeWorth } from "./effects.js";
 
@@ -83,11 +83,18 @@ export function chooseDeed(run, u, action, t) {
     tiers.forEach((tier, i) => {
       const next = tiers[i + 1];
       const p = atLeast(faces, tier.min) - (next ? atLeast(faces, next.min) : 0);
-      if ( p > 0 ) worth += p * (tier.outcome?.self ? outcomeWorth(run, u, u, tier.outcome) : harm(run, u, t, tier.outcome));
+      if ( p > 0 ) worth += p * (tier.outcome?.allies ? rallied(run, u, tier.outcome).reduce((s, a) => s + outcomeWorth(run, u, a, tier.outcome), 0)
+        : tier.outcome?.self ? outcomeWorth(run, u, u, tier.outcome) : harm(run, u, t, tier.outcome));
     });
     if ( worth > 0 && (!best || worth > best.worth) ) best = { deed, worth };
   }
   return best?.deed ?? null;
+}
+
+/** The friends a rallying outcome (`allies`: feet) reaches: those up and within that many feet of u (all, without a map). */
+export function rallied(run, u, outcome) {
+  const feet = Number(outcome?.allies) || 0;
+  return run.units.filter(a => a !== u && a.side === u.side && isStanding(a) && (() => { const d = edgeDistance(u, a); return d === null || d <= feet; })());
 }
 
 /** The tier a deed reaches with this deed-die roll, or null if it falls short. */

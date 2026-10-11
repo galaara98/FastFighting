@@ -390,7 +390,7 @@ A spec may say what kind of creature it is (`creatureKind`: the system's own wor
 - On an action: `die` (its own die), `critOn`, `fumbleOn`, `deedDie` (rolled with the attack, added to the roll and the damage), `crit: {die, mod, rows}` (its crit table), `repeat` (a DamagePart: how many times the damage is rolled), `healDice` (so many of the target's own hit dice, `spec.hitDie`).
 - A table row: `{lo, hi, damage, multiply, outcome, self, slay}`. `spec.fumble`: the fumbler's table, `{die, mod, rows}`. `spec.critAgainst`: taken off crit rolls made against it by anyone but a player character.
 - `spec.riders`: `[{id, label, when: "hit" | "miss", melee, ranged, weapon, resource, amount, uses, oncePerTurn, damage, critDouble, save, onSave, outcome, attackDie, tell}]`.
-- `spec.deeds`: `[{id, label, melee, ranged, tiers: [{min, outcome}]}]` (an outcome with `self` lands on the one who did it).
+- `spec.deeds`: `[{id, label, melee, ranged, tiers: [{min, outcome}]}]` (an outcome with `self` lands on the one who did it; with `allies: feet`, on the friends that close: a rally).
 - A check with tiers: `casting: {mod, faces, fumbleOn, lostOnFail, disapproval, label}`, `tiers: [{min, max, ...fields}]` (a save's `dc: "check"` is the check's total), `castChance`; the action's own fields are what a success most often does.
 - `spec.boosts`: `[{pool, label, per, faces, allies, range, kinds, keep, recovers}]`, spending `spec.resources[pool]`.
 - Legendary: `spec.legendary: {pool}` and actions with `legendary: cost` (taken between others' turns, never on its own); `spec.standFirm: {pool, label}` (a resource that turns a failed save that matters into a success).

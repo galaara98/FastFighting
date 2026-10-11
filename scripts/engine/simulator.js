@@ -21,7 +21,7 @@ import { initDesires, newTurn, think, want, thwart, relieve, levelOf, mind, thou
 import { prepareDoors, doorStates, doorAhead, atDoor, doorPlan, patienceFor, doorDamage } from "./behavior/doors.js";
 import { checkMorale, standsGround, MORALE } from "./behavior/morale.js";
 import { expectedDamage, spendUse, hasUses, attacksIn, criticalParts, saveMultiplier, saveMultiplierFor, meanDamageVs, unitsPerTurn } from "./behavior/evaluate.js";
-import { chooseDeed, deedTier, chooseHitRiders, rescueMiss, rollCrit, rollFumble } from "./behavior/riders.js";
+import { chooseDeed, deedTier, chooseHitRiders, rescueMiss, rollCrit, rollFumble, rallied } from "./behavior/riders.js";
 import { cast } from "./behavior/casting.js";
 import { boost } from "./behavior/luck.js";
 import { respond, riposteStrike } from "./behavior/responses.js";
@@ -950,6 +950,16 @@ function applyRider(run, u, action, target, rider) {
 /** A declared deed whose attack hit: it happens if the deed die showed enough. */
 function applyDeed(run, u, target, deed, deedRoll) {
   const tier = deedTier(deed, deedRoll);
+  // (A rally: the friends close enough to see it, not the foe.)
+  if ( tier?.outcome?.allies ) {
+    const friends = rallied(run, u, tier.outcome);
+    for ( const a of friends ) applyOutcome(a, tier.outcome, u.id, { id: `deed:${deed.id}`, name: deed.label });
+    log(run, u, `${deed.label} (deed ${deedRoll}): ${friends.length ? `${friends.map(a => a.spec.name).join(", ")} ${tier.outcome.label ?? "rallied"}` : "no one near enough"}`, {
+      type: "deed", deed: deed.label, target: target.spec.name, targetId: target.id, roll: deedRoll, success: friends.length > 0, effect: friends.length ? (tier.outcome.label ?? "") : "",
+      allies: friends.map(a => a.spec.name)
+    });
+    return;
+  }
   // (A defensive deed lands on the one who did it.)
   const on = tier?.outcome?.self ? u : target;
   const landed = !!tier && isUp(on) && (on === u || !isImmune(run, target, { id: `deed:${deed.id}:${tier.min}`, onSave: [tier.outcome] }));
