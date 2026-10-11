@@ -2080,21 +2080,29 @@ function reclaimGoods(run) {
 /*  Battle                                      */
 /* -------------------------------------------- */
 
-function activeSides(run) {
+/** Still in the fight, for its side's sake. */
+function keepsSideIn(u) {
   // (A summoned thing nobody can attack, a Spiritual Weapon, doesn't keep its side in the fight; nor does anyone who
   // takes no side.)
   // (Someone who has noticed the fight and takes part next round counts: it's coming.)
   // (Nor does a troll lying there, mending: it will get back up unless someone burns it.)
-  return [...new Set(run.units.filter(u => (isStanding(u) || joining(u) || (u.held && u.status === STATUS.DOWN)) && !u.spec.untargetable && u.side !== NEUTRAL_PARTY).map(u => u.side))];
+  return (isStanding(u) || joining(u) || (u.held && u.status === STATUS.DOWN)) && !u.spec.untargetable && u.side !== NEUTRAL_PARTY;
+}
+
+function activeSides(run) {
+  const out = [];
+  for ( const u of run.units ) if ( keepsSideIn(u) && !out.includes(u.side) ) out.push(u.side);
+  return out;
 }
 
 export function battleOver(run) {
   if ( run.resolved ) return true; // a standoff settled by a payment or a retreat
-  const active = activeSides(run);
-  for ( let i = 0; i < active.length; i++ ) {
-    for ( let j = i + 1; j < active.length; j++ ) {
-      if ( run.prep.sides[active[i]].enemies.has(active[j]) ) return false;
-    }
+  // (Checked after every action: stops at the first two sides still at each other's throats.)
+  const active = [];
+  for ( const u of run.units ) {
+    if ( !keepsSideIn(u) || active.includes(u.side) ) continue;
+    for ( const s of active ) if ( run.prep.sides[s].enemies.has(u.side) ) return false;
+    active.push(u.side);
   }
   // Someone who took no side, and has since turned on a side still standing, keeps the fight going.
   if ( run.neutral ) {

@@ -52,8 +52,6 @@ const CARING = ["protect", "heal", "aid"];
 
 /** Takes no side (for now). */
 export const isNeutral = u => u.side === NEUTRAL_PARTY;
-/** Takes no side and hasn't turned on this one. */
-export const neutralTo = (u, side) => isNeutral(u) && side !== NEUTRAL_PARTY && !u.against.has(side);
 /** Easy to talk to: it came as a neutral, or it stands aside now. */
 export const standsAside = u => u.spec.originSide === "neutral" || isNeutral(u);
 

@@ -18,7 +18,11 @@ export function standsGround(run, u) {
   return run.rng.chance(clamp(run.prep?.options.standGround ?? STAND_GROUND, 0, 100) / 100);
 }
 
-export function moraleStress(run, u) {
+/**
+ * How shaken u is. With a floor (the stress it must reach for a new morale check), the costly reckoning of the odds is
+ * skipped when even the worst odds couldn't bring it there.
+ */
+export function moraleStress(run, u, floor = -Infinity) {
   const allies = alliesOf(run, u).filter(a => a !== u);
   const lost = allies.filter(a => a.status !== STATUS.STANDING).length;
   const lostFrac = allies.length ? lost / allies.length : 0;
@@ -39,24 +43,26 @@ export function moraleStress(run, u) {
     else stress -= liveTrait(run, u, "loyal") * 0.2;
   }
 
-  // Tactical creatures read the odds and retreat from lost causes; others only feel losses and wounds.
-  if ( liveTier(run, u) >= TACTICAL.TACTICAL ) {
-    const foes = enemiesOf(run, u).filter(isStanding);
-    const friends = alliesOf(run, u).filter(isStanding);
-    const foeThreat = foes.reduce((s, f) => s + threatOf(run, f, u), 0);
-    const friendThreat = friends.reduce((s, f) => s + (foes[0] ? threatOf(run, f, foes[0]) : 0), 0);
-    if ( friendThreat > 0 ) stress += clamp(25 * (foeThreat / friendThreat - 1), 0, 40);
-  }
-
   // Someone who made them pay and is still standing, unanswered, weighs on them.
   for ( const [id, g] of u.grudges ?? [] ) {
     if ( !g.provoked && isStanding(run.byId.get(id) ?? {}) ) stress += 15;
   }
-
   // Selfish creatures care less about the group, more about themselves.
-  const selfish = liveTrait(run, u, "selfish");
-  return Math.max(0, stress * (0.8 + selfish / 250));
+  const factor = 0.8 + liveTrait(run, u, "selfish") / 250;
+
+  // Tactical creatures read the odds and retreat from lost causes; others only feel losses and wounds.
+  if ( liveTier(run, u) >= TACTICAL.TACTICAL && (stress + ODDS) * factor >= floor ) {
+    const foes = enemiesOf(run, u).filter(isStanding);
+    const friends = alliesOf(run, u).filter(isStanding);
+    const foeThreat = foes.reduce((s, f) => s + threatOf(run, f, u), 0);
+    const friendThreat = friends.reduce((s, f) => s + (foes[0] ? threatOf(run, f, foes[0]) : 0), 0);
+    if ( friendThreat > 0 ) stress += clamp(25 * (foeThreat / friendThreat - 1), 0, ODDS);
+  }
+  return Math.max(0, stress * factor);
 }
+
+/** The most that bad odds add to a tactical creature's stress. */
+const ODDS = 40;
 
 /** Roll morale at the start of u's turn when its stress has risen meaningfully. */
 export function checkMorale(run, u) {
@@ -77,7 +83,7 @@ export function checkMorale(run, u) {
   if ( !side.morale ) return MORALE.HOLD;
   const brave = liveTrait(run, u, "brave");
   if ( u.spec.flags?.fearless || brave >= 95 ) return MORALE.HOLD;
-  const stress = moraleStress(run, u);
+  const stress = moraleStress(run, u, u.moraleStress + 10);
   if ( stress < u.moraleStress + 10 ) return u.wavering ? MORALE.WAVER : MORALE.HOLD;
   u.moraleStress = stress;
   const resolve = brave * 0.75;

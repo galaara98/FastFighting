@@ -44,6 +44,22 @@ export const OBSESSED = 80;
 
 const clamp = v => Math.max(0, Math.min(100, v));
 const keyOf = (kind, targetId) => `${kind}|${targetId}`;
+/** A key's kind and target, read once (desires are ranked many times a turn). */
+const PARSED = new Map();
+function parseKey(k) {
+  let p = PARSED.get(k);
+  if ( !p ) {
+    const at = k.indexOf("|");
+    PARSED.set(k, p = [k.slice(0, at), k.slice(at + 1)]);
+  }
+  return p;
+}
+/** Every key u has a desire under, once each. */
+function desireKeys(d) {
+  const keys = new Set(d.logic.keys());
+  for ( const m of [d.stated, d.lean, d.memory, d.social, d.style] ) for ( const k of m.keys() ) keys.add(k);
+  return keys;
+}
 
 /** 0 passing ... 4 obsessed. */
 export function desireBand(level) {
@@ -129,10 +145,9 @@ export function setLean(u, entries) {
 export function allDesires(u) {
   const d = u.desire;
   if ( !d ) return [];
-  const keys = new Set([...d.logic.keys(), ...d.stated.keys(), ...d.lean.keys(), ...d.memory.keys(), ...d.social.keys(), ...d.style.keys()]);
   const out = [];
-  for ( const k of keys ) {
-    const [kind, targetId] = k.split("|");
+  for ( const k of desireKeys(d) ) {
+    const [kind, targetId] = parseKey(k);
     const level = levelOf(u, kind, targetId);
     if ( level > 0 ) out.push({ kind, targetId, level });
   }
@@ -158,10 +173,9 @@ function relevant(run, u, kind, t) {
 export function rankedDesires(run, u) {
   const d = u.desire;
   if ( !d ) return [];
-  const keys = new Set([...d.logic.keys(), ...d.stated.keys(), ...d.lean.keys(), ...d.memory.keys(), ...d.social.keys(), ...d.style.keys()]);
   const out = [];
-  for ( const k of keys ) {
-    const [kind, targetId] = k.split("|");
+  for ( const k of desireKeys(d) ) {
+    const [kind, targetId] = parseKey(k);
     if ( !relevant(run, u, kind, run.byId.get(targetId)) ) continue;
     const level = levelOf(u, kind, targetId);
     if ( level <= 0 ) continue;
@@ -197,7 +211,20 @@ export function mind(run, u) {
 export function avoids(run, u, t) {
   const level = levelOf(u, "avoid", t.id);
   if ( level <= 0 ) return false;
-  return level >= (rankedDesires(run, u)[0]?.level ?? 0) - BLIND_GAP;
+  return level >= leadLevel(run, u) - BLIND_GAP;
+}
+
+/** How strong the desire on top of u's mind is (rankedDesires' first, without ranking them all). */
+function leadLevel(run, u) {
+  const d = u.desire;
+  if ( !d ) return 0;
+  let best = 0;
+  for ( const k of desireKeys(d) ) {
+    const [kind, targetId] = parseKey(k);
+    const level = levelOf(u, kind, targetId);
+    if ( level > best && relevant(run, u, kind, run.byId.get(targetId)) ) best = level;
+  }
+  return best;
 }
 
 /** No one leading this side: there never was a leader, or the leader is down, dead or gone. */
