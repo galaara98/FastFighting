@@ -93,6 +93,7 @@ import { STATUS, NEUTRAL_PARTY, AVOID_KILLING, clamp, fudged, tacticalTier, TRAI
 import { meanPart } from "./dice.js";
 import { typicalValue } from "./tactics.js";
 import { talkAffinity } from "./behavior/talk.js";
+import { goadAction } from "./behavior/goad.js";
 import { Turn } from "./turn.js";
 import { combineMods, netAdvantage } from "./mods.js";
 import { degreeDistribution } from "./probability.js";
@@ -177,6 +178,11 @@ export function prepareBattle(spec, rules) {
     c.lowBattleWorth = median > 0 && offense[i] < median * 0.5;
     c.talkAffinity = talkAffinity(c.spec, c.traits, rules);
   });
+  // A taunt its playstyles give it (behavior/goad.js): an action like its others, weighed against them.
+  for ( const c of combatants ) {
+    const goad = goadAction(c, rules, options);
+    if ( goad ) c.offense.push(goad);
+  }
 
   const byId = new Map(combatants.map(c => [c.spec.id, c]));
   // Whoever heads a group (its boss or its leader) finds its words more readily (one who only wants to lead doesn't).

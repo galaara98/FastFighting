@@ -38,7 +38,7 @@
  */
 import { STATUS, clamp } from "../../constants.js";
 import { combineMods, diceMean } from "../mods.js";
-import { isStanding, areEnemies, enemiesOf, alliesOf, boostReaches, wish } from "../battle-state.js";
+import { isStanding, areEnemies, enemiesOf, alliesOf, boostReaches, wish, behaviorOf } from "../battle-state.js";
 import { threatOf, unitsPerTurn, attacksIn } from "./evaluate.js";
 import { meanPart } from "../dice.js";
 
@@ -194,6 +194,23 @@ export function applyOutcome(target, outcome, sourceId = null, action = null) {
   (target.effects ??= []).push(effect);
   recompute(target);
   return effect;
+}
+
+/**
+ * How readily u shrugs off a taunt as it lands, any taunt (a playstyle's, a skill, a power, a spell): its playstyles'
+ * (behavior tauntProof: Relentless most, then Skeptic, Peacekeeper, Puzzle-Maniac, Diplomat, Chicken, Wallflower,
+ * Lazy), at most 90%.
+ */
+export function tauntProof(u) {
+  return clamp(Number(behaviorOf(u).tauntProof) || 0, 0, 0.9);
+}
+
+/** An outcome without its taunt (shrugged off, and with it what ignoring it would cost): the rest, or null if that was all. */
+export function withoutTaunt(outcome) {
+  const { taunt, defy, ...rest } = outcome;
+  const does = ["conditions", "mods", "mark", "iwr", "boost", "tempHp", "resources", "actionsNow"]
+    .some(k => rest[k] && (typeof rest[k] !== "object" || Object.keys(rest[k]).length));
+  return does ? rest : null;
 }
 
 /** How badly an outcome's taunt makes its bearer want the taunter: 0 (none) to 100; true is TAUNT. */
@@ -502,13 +519,14 @@ export function outcomeWorth(run, by, t, outcome, { versus = null } = {}) {
     const extra = outcome.mark.reduce((s, p) => s + Math.max(0, meanPart(p)), 0);
     perRound -= extra * hitsPerRound(run, by) * 0.8; // it has to keep hitting that one
   }
-  // A taunt: as often as it outweighs what t had in mind, t goes for `by` instead of whoever it was set on; the rest
-  // of the time, it pays what ignoring it costs.
+  // A taunt: unless t shrugs it off, as often as it outweighs what t had in mind, t goes for `by` instead of whoever it
+  // was set on; the rest of the time, it pays what ignoring it costs.
   const taunt = by && by !== t ? tauntLevel(outcome.taunt) : 0;
   if ( taunt ) {
+    const lands = 1 - tauntProof(t);
     const holds = clamp(0.5 + (taunt - (t.lastDesires?.[0]?.level ?? USUAL_LEAD)) / 30, 0, 1);
-    perRound -= holds * tauntGain(run, by, t);
-    if ( outcome.defy ) perRound += (1 - holds) * modsPerRound(run, t, outcome.defy, out, 0);
+    perRound -= lands * holds * tauntGain(run, by, t);
+    if ( outcome.defy ) perRound += lands * (1 - holds) * modsPerRound(run, t, outcome.defy, out, 0);
   }
   // Resistances it lends: the share of what comes at it that they cover, and how much of each blow they stop.
   const resist = Object.entries(outcome.iwr?.resist ?? {}).filter(([k, v]) => v > (t.spec.iwr?.resist?.[k] ?? 0));
@@ -532,7 +550,8 @@ export function outcomeWorth(run, by, t, outcome, { versus = null } = {}) {
 /**
  * What `by` gains each round t comes at it instead of the friend t was set on: the blows that friend is spared, less
  * the ones `by` takes (a friend who might not last the round counts for more kept standing; a taunter who might not,
- * the same against it). Nothing when t is set on `by` already, or on no friend of its.
+ * the same against it; one who means to draw the blows, a Tank, minds them half as much). Nothing when t is set on `by`
+ * already, or on no friend of its.
  */
 function tauntGain(run, by, t) {
   const focus = focusOf(run, t);
@@ -541,7 +560,8 @@ function tauntGain(run, by, t) {
   const spared = damageOut(run, t, ward);
   const taken = damageOut(run, t, by);
   const left = o => Math.max(0, o.hp) + (o.temp ?? 0);
-  return spared * (left(ward) <= 2 * spared ? 1.5 : 1) - taken * (left(by) <= 2 * taken ? 1.5 : 1);
+  const minds = 1 - 0.5 * Math.min(1, Number(behaviorOf(by).taunt) || 0);
+  return spared * (left(ward) <= 2 * spared ? 1.5 : 1) - taken * minds * (left(by) <= 2 * taken ? 1.5 : 1);
 }
 
 /** How much of t's turn goes into checks (talking, first aid), 0 to 1: what it was set on last turn, its knack for words. */

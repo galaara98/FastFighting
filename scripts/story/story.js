@@ -274,15 +274,23 @@ function narrate(e, roll, rel, fill) {
     }
     case "lastWord": return roll("event.lastWord", f);
     case "condition": return roll("event.conditionRider", { ...f, effect: e.effect ?? "" });
-    case "control":
-      if ( e.immune ) return roll("event.controlImmune", f);
-      if ( e.backfired ) return roll("event.controlBackfire", { ...f, effect: e.effect ?? "" });
+    case "control": {
+      // (A playstyle's taunt has no name of its own: it's a taunt.)
+      const g = e.goad ? { ...f, weapon: e.action || localize("FASTFIGHTING.Words.Taunt") } : f;
+      if ( e.immune ) return roll("event.controlImmune", g);
+      if ( e.backfired ) return roll("event.controlBackfire", { ...g, effect: e.effect ?? "" });
       // (Goaded: told as a taunt that lands, where there are words for it.)
       if ( e.taunt && e.took ) {
-        const own = roll("event.taunted", { ...f, effect: e.effect ?? "" });
+        const own = roll("event.taunted", { ...g, effect: e.effect ?? "" });
         if ( own ) return own;
       }
-      return roll(e.took ? "event.controlTakes" : "event.controlResisted", { ...f, effect: e.effect ?? "" });
+      // (Not risen to: shrugged off, or a playstyle's taunt that didn't get through.)
+      if ( e.shrugged || (e.goad && !e.took) ) {
+        const own = roll("event.tauntIgnored", g);
+        if ( own ) return own;
+      }
+      return roll(e.took ? "event.controlTakes" : "event.controlResisted", { ...g, effect: e.effect ?? "" });
+    }
     case "buff": {
       // Plain moves (Dodge, Reckless Attack, Action Surge) are told as what they are, not as magic.
       if ( e.tell ) {

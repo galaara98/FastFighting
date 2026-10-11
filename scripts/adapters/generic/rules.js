@@ -18,6 +18,8 @@ export const genericRules = {
     return { action: 1 };
   },
   basicAction: { action: 1 },
+  /** A playstyle's taunt: the turn's action. */
+  tauntCost: { action: 1 },
 
   degreeOfSuccess(natural, total, dc, kind = "check") {
     if ( kind === "attack" ) {

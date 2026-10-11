@@ -10,6 +10,8 @@
  *                                    penalty):              onHit:  [critFail, fail, success, critSuccess]
  *   bonus                            an attack roll vs AC:  onHit:  [critMiss, miss, hit, crit]
  *   auto: true                       it simply happens (Hunter's Mark, Hex): outcome
+ *   goad: share                      a playstyle's taunt (behavior/goad.js): its talking against the foe's
+ *                                    resistance, then a luck check (the Taunting setting): onHit
  * Each outcome is null or an effect (see effects.js): conditions, mods, mark, tempHp, rounds, label, endsOnDamage,
  * repeatSave, onlyVs, self. Condition keys are the system's own, passed through to its rules, plus three the
  * engine itself understands: prone, immobilized, incapacitated (with endsOnDamage, any damage ends it).
@@ -26,9 +28,11 @@ import { netAdvantage } from "../mods.js";
 import { meanDamageVs, saveMultiplier, areaTargets } from "./evaluate.js";
 import { outcomeWorth, hasFresh, concentrationCost, heldElsewhere } from "./effects.js";
 import { castChanceOf } from "./casting.js";
+import { goadPitch, goadLuck } from "./goad.js";
 
-/** How a control action is decided: "save", "check", "attack" or "auto". */
+/** How a control action is decided: "save", "check", "attack", "auto" or "goad" (a playstyle's taunt). */
 export function rollKind(action) {
+  if ( action.goad ) return "goad";
   if ( action.save ) return "save";
   if ( action.check ) return "check";
   if ( action.auto || (action.outcome && !action.onHit) ) return "auto";
@@ -60,6 +64,8 @@ export function isImmune(run, target, action) {
 }
 
 function immuneNow(run, target, action) {
+  // (A playstyle's taunt is words: only the mindless pay them no heed.)
+  if ( action.goad ) return !!target.spec.social?.mindless;
   const rules = run.prep.rules;
   if ( rules.isImmune ) return !!rules.isImmune(target, action);
   const immune = new Set(target.spec.iwr?.immune ?? []);
@@ -84,6 +90,12 @@ export function controlRoll(run, u, t, action, attacksMade = 0) {
     const save = saveRoll(run, t, action.save.type, { magical: isMagical(action) });
     return { kind, mod: save.mod, dc: Number(action.save.dc) || 10, advantage: netAdvantage(save.advantage, Number(action.save.advantage) || 0), dice: save.dice, rollKind: "save" };
   }
+  if ( kind === "goad" ) {
+    // A playstyle's taunt: its talking, as any pitch (behavior/goad.js), and then its luck check.
+    const pitch = goadPitch(run, u, t, action);
+    if ( !pitch ) return { kind, mod: -99, dc: 99, advantage: 0, dice: null, rollKind: "check", luck: 0 };
+    return { kind, mod: pitch.mod, dc: pitch.dc, advantage: pitch.advantage, dice: pitch.dice, rollKind: "check", pitch, luck: goadLuck(run, action) };
+  }
   if ( kind === "check" ) {
     const check = checkRoll(run, u, action.check.mod, t);
     const map = action.check.attack ? (run.prep.rules.attackPenalty?.(action, attacksMade) ?? 0) : 0;
@@ -104,6 +116,11 @@ function controlDistribution(run, u, t, action, attacksMade) {
   const roll = controlRoll(run, u, t, action, attacksMade);
   if ( roll.kind === "auto" ) return [0, 0, 1, 0];
   let dist = [...degreeDistribution(run.prep.rules, roll.mod, roll.dc, { advantage: roll.advantage, kind: roll.rollKind, dice: roll.dice, faces: roll.faces ?? 20, critOn: roll.critOn ?? null, fumbleOn: roll.fumbleOn ?? null })];
+  // (A playstyle's taunt that gets through still needs its luck.)
+  if ( roll.kind === "goad" ) {
+    const p = roll.luck / 100;
+    dist = [dist[0], dist[1] + (dist[2] + dist[3]) * (1 - p), dist[2] * p, dist[3] * p];
+  }
   // Shifted degrees (incapacitation): the target fares better.
   const shift = degreeShift(run, u, t, action);
   if ( shift ) {

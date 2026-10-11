@@ -22,7 +22,8 @@ export function normalizeCost(rules, cost) {
 
 /** What an action costs: the rules decide (PF2e: its action count; 5e: an action or a bonus action). */
 export function costOf(rules, action, u = null) {
-  const base = rules.costOf ? rules.costOf(action, u) : action.cost;
+  // (fixedCost: a cost the rules have already set, a playstyle's taunt's: rules.tauntCost.)
+  const base = action.fixedCost ? action.cost : rules.costOf ? rules.costOf(action, u) : action.cost;
   const cost = { ...normalizeCost(rules, base) };
   // Drawing an unready weapon the first time (PF2e Interact) adds to the main pool.
   if ( u && action.drawCost && !u.drawn?.has(action.id) ) {

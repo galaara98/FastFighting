@@ -1978,6 +1978,11 @@
       "{target} can't let {actor}'s {weapon} go, and turns on {actor}.",
       "{actor} goads {target} with {weapon}, and {target} takes the bait."
     ],
+    "tauntIgnored": [
+      "{target} ignores {actor}'s {weapon}.",
+      "{actor}'s {weapon} doesn't rattle {target}.",
+      "{target} won't rise to {actor}'s {weapon}."
+    ],
     "buffOne": [
       "{actor}'s {weapon} settles over {target}, leaving them {effect}.",
       "{actor} turns to {target}, and {weapon} leaves them {effect}.",

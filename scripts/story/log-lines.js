@@ -161,11 +161,15 @@ export function logLine(e) {
     case "firstAid": return t("FirstAid", { ...a, roll: dice(e.natural, e.mod, e.total, e.dc, t("DC")), degree: degree(e.degree), result: e.stable ? t("Stabilized") : e.dead ? t("Dies") : t("DyingN", { n: e.dying }) });
     case "aftermath": return t("Aftermath");
     case "control": {
-      if ( e.immune ) return t("ControlImmune", { ...a, action: e.action });
+      // (A playstyle's taunt has no name of its own: it's a taunt.)
+      const action = e.action || (e.goad ? t("Goad") : "");
+      if ( e.immune ) return t("ControlImmune", { ...a, action });
       const how = e.roll === "auto" ? t("NoRoll")
+        : e.roll === "goad" ? `${e.skill ? `${e.skill} ` : ""}${dice(e.natural, e.mod, e.total, e.dc, t("DcOf", { stat: e.dcStat ?? t("Defense") }))} · ${degree(e.degree)}${e.luck !== null && e.luck !== undefined ? t("GoadLuck", { luck: e.luck, needed: e.needed }) : ""}`
         : e.roll === "check" ? `${dice(e.natural, e.mod, e.total, e.dc, t("DcOf", { stat: e.against ?? t("Defense") }))} · ${degree(e.degree)}`
           : `${e.saveType ? `${[].concat(e.saveType).join("/")} ` : ""}${dice(e.natural, e.mod, e.total, e.dc, e.saveType ? t("DC") : term("ac"))} · ${degree(e.degree)}`;
-      return t("Control", { ...a, action: e.action, how, shifted: e.shifted ? ` ${t("Shifted")}` : "", effect: e.effect || t("NoEffect"), onSelf: e.backfired ? ` ${t("OnSelf", { name: e.actor })}` : "", damage: e.damage ? ` · ${t("DamageN", { n: e.damage })}` : "" });
+      const effect = e.effect || (e.shrugged ? t("Shrugged") : e.taunt && e.took ? t("Goaded") : t("NoEffect"));
+      return t("Control", { ...a, action, how, shifted: e.shifted ? ` ${t("Shifted")}` : "", effect, onSelf: e.backfired ? ` ${t("OnSelf", { name: e.actor })}` : "", damage: e.damage ? ` · ${t("DamageN", { n: e.damage })}` : "" });
     }
     case "buff": {
       const c = e.check;

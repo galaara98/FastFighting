@@ -11,7 +11,8 @@
       "List": "{rest} and {last}",
       "ListSeparator": ", ",
       "Luck": "luck",
-      "Fate": "fate"
+      "Fate": "fate",
+      "Taunt": "taunt"
     },
     "Generic": {
       "Label": "Generic d20 (configured paths)",
@@ -183,6 +184,10 @@
       "trapLuck": {
         "Name": "Trap avoiders: spotting a trap (%)",
         "Hint": "A trap avoider (a character whose playstyles keep it watchful: Thief most, then Puzzle-Maniac, Skeptic, Lore-Collector, Chicken and Wallflower) spots each hazard only if a hidden d100 comes up at or under this (default 59) times how watchful it is: all of it for a Thief, about a third for a Wallflower, less for a pill further down. It then keeps out of that hazard's reach as it moves, going around it, and goes in only for something it wants badly enough. Anyone a hazard goes for knows it from then on. 0: never; 100: always."
+      },
+      "tauntLuck": {
+        "Name": "Playstyle taunts: taking hold (%)",
+        "Hint": "A character whose playstyles make it a taunter (Tank most, then Instigator, Martyr, Brawler and Redeem-Seeker) may spend an action goading a foe into coming at it: its talking (threats or mockery) against the foe's resistance, then, if that gets through, a hidden d100 at or under this (default 42) times how much of a taunter it is (all of it for a Tank as its first pick; less for the others, and for a pill further down). Taken hold, the foe wants to go for it until the end of its next turn. Only playstyle taunts use this: a game system's taunts (skills, powers, spells) follow their own rules. 0: never; 100: always, when the talking works."
       }
     },
     "Lean": {
@@ -710,7 +715,7 @@
       "NpcTitle": "Playstyles (GM)",
       "chicken": {
         "Name": "Chicken",
-        "Hint": "Much less brave: hangs back, drinks potions early, retreats when hurt, goes unnoticed. Wants above all to keep away from the most dangerous foe, gives up easily, and hits back half-heartedly. Leading a group, it takes it along when it runs; it would pay a boss to go rather than fight."
+        "Hint": "Much less brave: hangs back, drinks potions early, retreats when hurt, goes unnoticed. Wants above all to keep away from the most dangerous foe, gives up easily, and hits back half-heartedly. Leading a group, it takes it along when it runs; it would pay a boss to go rather than fight. Won't step up to a challenge: a taunt often fails to draw it."
       },
       "cruel": {
         "Name": "Cruel",
@@ -722,7 +727,7 @@
       },
       "peacekeeper": {
         "Name": "Peacekeeper",
-        "Hint": "Keeps the peace, between anyone: while a standoff holds, everyone there (either side) loses patience half as fast; it calms any quarrel it sees at once; foes it talks round stand down (a truce, even mid-fight: never a surrender, a payoff or a rout); its word is trusted (easier to accept) and it never threatens; it spares the fallen, and would pay a boss to go rather than fight."
+        "Hint": "Keeps the peace, between anyone: while a standoff holds, everyone there (either side) loses patience half as fast; it calms any quarrel it sees at once; foes it talks round stand down (a truce, even mid-fight: never a surrender, a payoff or a rout); its word is trusted (easier to accept) and it never threatens; it spares the fallen, and would pay a boss to go rather than fight. Seldom rises to a taunt."
       },
       "peoplePleaser": {
         "Name": "People-Pleaser",
@@ -738,11 +743,11 @@
       },
       "brawler": {
         "Name": "Brawler",
-        "Hint": "Loves melee: front line, the nearest foe, braver, hits back hard, no talking."
+        "Hint": "Loves melee: front line, the nearest foe, braver, hits back hard, no talking. Now and then jeers a foe into coming at it."
       },
       "skeptic": {
         "Name": "Skeptic",
-        "Hint": "Careful and calculating: saves resources, heals sparingly. Trusts its own judgment: its leader and team sway it half as much, it's slow to talk, and an outsider's words have a harder time with it (a step further to talk it round, and harder to get through)."
+        "Hint": "Careful and calculating: saves resources, heals sparingly. Trusts its own judgment: its leader and team sway it half as much, it's slow to talk, and an outsider's words have a harder time with it (a step further to talk it round, and harder to get through). Sees through most taunts."
       },
       "speedRunner": {
         "Name": "Speed-Runner",
@@ -754,19 +759,23 @@
       },
       "instigator": {
         "Name": "Instigator",
-        "Hint": "Acts first and spoils everyone else's plans: would rather lock a foe down, harass it or weaken it (trips, frights, hexes, holds) than simply hit it, more than any other playstyle. Picks fights with the most dangerous foe and the other side's leader, draws attacks, and may defy its own leader."
+        "Hint": "Acts first and spoils everyone else's plans: would rather lock a foe down, harass it or weaken it (trips, frights, hexes, holds) than simply hit it, more than any other playstyle. Picks fights with the most dangerous foe and the other side's leader, draws attacks, and may defy its own leader. Taunts foes into coming at it."
       },
       "diplomat": {
         "Name": "Diplomat",
-        "Hint": "Opens by trying to talk, wants to talk throughout, and often spares the fallen. Can't abide violence: it calms quarrels it sees and, taking no side, talks fighters into leaving."
+        "Hint": "Opens by trying to talk, wants to talk throughout, and often spares the fallen. Can't abide violence: it calms quarrels it sees and, taking no side, talks fighters into leaving. Keeps a cool head when taunted."
       },
       "wallflower": {
         "Name": "Wallflower",
-        "Hint": "Stays at range and out of notice; keeps its distance from whatever comes close, would rather hamper a foe from afar, and listens to the crowd less. Leading a group, its flight takes a few along."
+        "Hint": "Stays at range and out of notice; keeps its distance from whatever comes close, would rather hamper a foe from afar, and listens to the crowd less. Leading a group, its flight takes a few along. Often ignores a taunt."
       },
       "martyr": {
         "Name": "Martyr",
-        "Hint": "Never retreats, heals at all costs, and wants above all to guard the weakest friend; fears nothing; avenges the fallen twice as hard; rallies friends who run or waver."
+        "Hint": "Never retreats, heals at all costs, and wants above all to guard the weakest friend; fears nothing; avenges the fallen twice as hard; rallies friends who run or waver. Taunts foes off its friends."
+      },
+      "tank": {
+        "Name": "Tank",
+        "Hint": "Stands in front and takes the blows: taunts foes off its friends (an action, with its talking), draws attacks, guards the weakest friend, fears nothing, never retreats, keeps its shield up, and doesn't take getting hit personally."
       },
       "mercenary": {
         "Name": "Mercenary",
@@ -778,7 +787,7 @@
       },
       "redeemSeeker": {
         "Name": "Redeem-Seeker",
-        "Hint": "Out to prove itself: takes on the biggest threat, fights on the front line to save others, never retreats, and won't give up."
+        "Hint": "Out to prove itself: takes on the biggest threat, fights on the front line to save others, never retreats, and won't give up. Now and then dares a foe to come at it."
       },
       "loreCollector": {
         "Name": "Lore-Collector",
@@ -786,7 +795,7 @@
       },
       "puzzleManiac": {
         "Name": "Puzzle-Maniac",
-        "Hint": "Much more tactical: exploits weaknesses, goes after casters, likes a clever lock-down, and loves a locked door (keeps at it twice as long)."
+        "Hint": "Much more tactical: exploits weaknesses, goes after casters, likes a clever lock-down, and loves a locked door (keeps at it twice as long). Often sees a taunt for the ploy it is."
       },
       "wildcard": {
         "Name": "Wildcard",
@@ -806,11 +815,11 @@
       },
       "relentless": {
         "Name": "Relentless",
-        "Hint": "Single-minded: sticks with the foe it's on, shrugs off setbacks, keeps at a locked door, and doesn't care for an outsider's reasons (a little harder to talk round)."
+        "Hint": "Single-minded: sticks with the foe it's on, shrugs off setbacks, keeps at a locked door, and doesn't care for an outsider's reasons (a little harder to talk round). A taunt rarely pulls it off its foe."
       },
       "lazy": {
         "Name": "Lazy",
-        "Hint": "As little as it can get away with: whatever foe is nearest (and not one worth a long walk), saves its resources, isn't much help to anyone, gives up fast, barely bothers with a locked door, and can't be bothered to hold a grudge. Leading a group, its flight takes others along."
+        "Hint": "As little as it can get away with: whatever foe is nearest (and not one worth a long walk), saves its resources, isn't much help to anyone, gives up fast, barely bothers with a locked door, and can't be bothered to hold a grudge. Leading a group, its flight takes others along. Can't always be bothered to answer a taunt."
       }
     },
     "Tracker": {
@@ -1017,6 +1026,7 @@
         "controlTakes": "Control Takes",
         "controlResisted": "Control Resisted",
         "taunted": "Taunted",
+        "tauntIgnored": "Taunt Ignored",
         "buffOne": "Buff One",
         "buffMany": "Buff Many",
         "buffWithSelf": "Buff With Self",
@@ -1378,6 +1388,10 @@
       "DyingN": "dying {n}",
       "Aftermath": "After the fight",
       "Control": "{actor} → {target}: {action} · {how}{shifted} · {effect}{onSelf}{damage}",
+      "Goad": "Taunt",
+      "GoadLuck": " · taunt luck d100 {luck} ({needed} or less)",
+      "Goaded": "goaded",
+      "Shrugged": "won't rise to it",
       "ControlImmune": "{actor} → {target}: {action} · unaffected",
       "Buff": "{actor} → {targets}: {action}{check} · {effect}{against}{temp}{asked}",
       "BuffAgainst": " (against {names})",

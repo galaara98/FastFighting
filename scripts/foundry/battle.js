@@ -609,6 +609,8 @@ export function buildBattleSpec(roster, setup, { approach = null, exclude = new 
       theftLuck: setting("theftLuck"),
       executeLuck: setting("executeLuck"),
       trapLuck: setting("trapLuck"),
+      // And how readily a playstyle's taunt takes hold.
+      tauntLuck: setting("tauntLuck"),
       // And the one that keeps enemies from changing sides too easily.
       switchLuck: setting("switchLuck"),
       // And the one a player character scheming against the leader it wasn't chosen to be needs to turn traitor.

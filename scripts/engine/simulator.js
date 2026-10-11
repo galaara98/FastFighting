@@ -33,7 +33,7 @@ import { bargain } from "./behavior/bargain.js";
 import { talkActionsThisTurn, choosePitch, attemptTalk, shareLanguage } from "./behavior/talk.js";
 import { opensWithTalk, breaksStandoff, standoffPitches, charismaticLeader, canTalk, prefersTalk } from "./behavior/standoff.js";
 import { controlOutcome, controlRoll, isImmune, degreeShift } from "./behavior/control.js";
-import { recompute as recomputeConditions, applyOutcome, applyControl, beginConcentration, endConcentration, holdsAnything, noteConcentration, moveHeld, settleAllegiance, iwrOf, incoming, spendEdges, spendBoost, focusOf } from "./behavior/effects.js";
+import { recompute as recomputeConditions, applyOutcome, applyControl, beginConcentration, endConcentration, holdsAnything, noteConcentration, moveHeld, settleAllegiance, iwrOf, incoming, spendEdges, spendBoost, focusOf, tauntProof, withoutTaunt } from "./behavior/effects.js";
 import { decideBuff, aidScores } from "./behavior/support.js";
 import { perceives } from "./behavior/senses.js";
 import { stealChance, theftTarget, theftPlan, attemptTheft } from "./behavior/theft.js";
@@ -1269,7 +1269,13 @@ function executeControl(run, u, action, target, attacksMade, common) {
   // Some effects hold weaker on much stronger targets (PF2e incapacitation): their result counts one better.
   const shift = r.kind === "auto" ? 0 : degreeShift(run, u, target, action);
   const degree = Math.max(0, Math.min(3, roll.degree + (action.save ? shift : -shift)));
-  const outcome = controlOutcome(action, degree);
+  // A playstyle's taunt that gets through takes hold only on its luck check (the Taunting setting: behavior/goad.js).
+  const luck = r.kind === "goad" && degree >= 2 ? { roll: run.rng.die(100), needed: r.luck } : null;
+  let outcome = luck && luck.roll > luck.needed ? null : controlOutcome(action, degree);
+  // Some won't rise to a taunt at all (their playstyles: effects.js tauntProof): it may shrug one off as it lands.
+  const proof = outcome?.taunt && !outcome.self ? tauntProof(target) : 0;
+  const shrugged = proof > 0 && run.rng.chance(proof);
+  if ( shrugged ) outcome = withoutTaunt(outcome);
   // Most outcomes land on the target; a botched Trip lands on the one who tried it.
   const lands = outcome?.self ? u : target;
   if ( outcome && isUp(lands) ) {
@@ -1294,6 +1300,7 @@ function executeControl(run, u, action, target, attacksMade, common) {
       type: "control", ...common, roll: r.kind, saveType: action.save?.type ?? null, against: action.check?.against ?? null,
       natural: roll.natural, mod: roll.mod, total: roll.total, dc, degree, margin: roll.total === null ? null : roll.total - dc,
       effect: outcome?.label ?? "", took: !!outcome, backfired: !!outcome?.self, damage, shifted: shift, taunt: !!outcome?.taunt,
+      goad: !!action.goad, skill: r.pitch?.skill ?? null, dcStat: r.pitch?.dcLabel ?? null, luck: luck?.roll ?? null, needed: luck?.needed ?? null, shrugged,
       debuff: !!(outcome?.mods || outcome?.mark), tempHp: Number(outcome?.tempHp) || 0
     });
   }

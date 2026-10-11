@@ -31,6 +31,7 @@ const statusPenalty = u => Math.max(u.conds.frightened ?? 0, u.conds.sickened ??
 export const pf2eRules = {
   id: "pf2e",
   actionsPerTurn: 3,
+  tauntCost: { actions: 1 },
 
   /** Reactive Strike: only those who have it; a Step gets clear without triggering it. */
   reactions() {
