@@ -205,6 +205,7 @@ export function createRun(prep) {
     boosting: units.some(u => u.spec.boosts?.length),       // anyone who can burn Luck (or the like) on a roll
     counters: units.some(u => u.spec.reactions?.some(r => r.on === "spell")), // anyone with a counterspell
     legendary: units.some(u => u.prep.legendaryActions?.length),               // anyone with legendary actions
+    auras: units.some(u => u.spec.saveAura),                                     // anyone whose aura helps friends' saves
     byId: new Map(units.map(u => [u.id, u])),
     round: 0,
     sideFocus: {},
@@ -450,16 +451,42 @@ export function typical(rules, what, level = 0) {
 }
 
 /** A saving throw: the modifier, any advantage (+1) or disadvantage (-1), and dice that ride along (Bless). */
-export function saveRoll(run, target, type) {
+/** Spells and the like (an action with a spell rank, a spell check, or marked magical). */
+export const isMagical = action => !!action && (!!action.magical || action.rank !== undefined || !!action.casting || !!action.spellId);
+
+/**
+ * A save's modifier and advantage. With `magical`, Magic Resistance (spec.magicResistance) gives advantage. A
+ * friend's aura (spec.saveAura {bonus, range}: 5e Aura of Protection) adds to it while that friend is up and near
+ * (the best one only).
+ */
+export function saveRoll(run, target, type, { magical = false } = {}) {
   if ( Array.isArray(type) ) {
-    const rolls = type.map(t => saveRoll(run, target, t));
+    const rolls = type.map(t => saveRoll(run, target, t, { magical }));
     return rolls.reduce((best, r) => (r.mod + 3.5 * r.advantage > best.mod + 3.5 * best.advantage ? r : best), rolls[0] ?? saveRoll(run, target, "none"));
   }
   const base = target.spec.defenses[type] ?? typical(run.prep.rules, "save", target.spec.level ?? 0);
   const m = run.prep.rules.modifiers?.save?.({ unit: target, type }) ?? {};
   const mods = target.mods ?? {};
-  return { mod: base + (m.bonus ?? 0) + (mods.saves ?? 0), advantage: netAdvantage(m.advantage ?? 0, mods.saveAdv ?? 0), dice: mods.saveDie ?? null };
+  let advantage = netAdvantage(m.advantage ?? 0, mods.saveAdv ?? 0);
+  if ( magical && target.spec.magicResistance ) advantage = netAdvantage(advantage, 1);
+  return { mod: base + (m.bonus ?? 0) + (mods.saves ?? 0) + auraBonus(run, target), advantage, dice: mods.saveDie ?? null };
 }
+
+/** The best save aura over t from a friend who's up and within its reach (anywhere, without positions). */
+function auraBonus(run, t) {
+  if ( !run.auras ) return 0;
+  let best = 0;
+  for ( const a of run.units ) {
+    const aura = a.spec.saveAura;
+    if ( !aura || a.side !== t.side || a.status !== STATUS.STANDING || a.conds?.incapacitated ) continue;
+    const d = a === t ? 0 : edgeDistance(a, t);
+    if ( d === null || d <= (aura.range ?? 10) ) best = Math.max(best, aura.bonus ?? 0);
+  }
+  return best;
+}
+
+/** Does t turn a success on this kind of save into a critical success (PF2e Evasion, Juggernaut, Resolve)? */
+export const upgradesSave = (t, type) => !!t.spec.saveUpgrades?.length && [].concat(type).some(x => t.spec.saveUpgrades.includes(x));
 
 /**
  * The DC to beat with a skill against a target's defense (PF2e: Will DC for Demoralize, Reflex DC for Trip,

@@ -21,7 +21,7 @@
  */
 import { TACTICAL, clamp } from "../../constants.js";
 import { degreeDistribution } from "../probability.js";
-import { saveRoll, attackRoll, attackOptions, checkRoll, currentAc, defenseDc, liveTier } from "../battle-state.js";
+import { saveRoll, attackRoll, attackOptions, checkRoll, currentAc, defenseDc, liveTier, isMagical } from "../battle-state.js";
 import { netAdvantage } from "../mods.js";
 import { meanDamageVs, saveMultiplier, areaTargets } from "./evaluate.js";
 import { outcomeWorth, hasFresh, concentrationCost, heldElsewhere } from "./effects.js";
@@ -81,7 +81,7 @@ export function controlRoll(run, u, t, action, attacksMade = 0) {
   const kind = rollKind(action);
   if ( kind === "auto" ) return { kind };
   if ( kind === "save" ) {
-    const save = saveRoll(run, t, action.save.type);
+    const save = saveRoll(run, t, action.save.type, { magical: isMagical(action) });
     return { kind, mod: save.mod, dc: Number(action.save.dc) || 10, advantage: netAdvantage(save.advantage, Number(action.save.advantage) || 0), dice: save.dice, rollKind: "save" };
   }
   if ( kind === "check" ) {

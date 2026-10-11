@@ -3,7 +3,7 @@
  */
 import { meanPart, doubled } from "../dice.js";
 import { degreeDistribution } from "../probability.js";
-import { attackRoll, attackOptions, currentAc, saveRoll, bonusDamageParts, enemiesOf, isStanding } from "../battle-state.js";
+import { attackRoll, attackOptions, currentAc, saveRoll, bonusDamageParts, enemiesOf, isStanding, isMagical, upgradesSave } from "../battle-state.js";
 import { costOf, costUnits, mainPool } from "../turn.js";
 import { controlValue } from "./control.js";
 import { iwrOf } from "./effects.js";
@@ -47,6 +47,22 @@ export function saveMultiplier(rules, degree, save) {
   return degree >= 2 ? (save?.basic === false ? 0 : 0.5) : 1;
 }
 
+/**
+ * As saveMultiplier, for this target: one with evasion against this kind of save (spec.evasion: "dex") takes less
+ * from damage it can save for half (the system's rules.evasion; by default 5e's: none on a success, half on a failure).
+ */
+export function saveMultiplierFor(rules, degree, save, target) {
+  const evades = target?.spec.evasion && save?.basic !== false && [].concat(save?.type).includes(target.spec.evasion);
+  if ( !evades ) return saveMultiplier(rules, degree, save);
+  if ( rules.evasion ) return rules.evasion(degree, save);
+  return degree >= 2 ? 0 : 0.5 * saveMultiplier(rules, degree, save);
+}
+
+/** A save's chances by degree, with a success counting as a critical success for whoever upgrades this save. */
+export function upgradedDistribution(dist, t, type) {
+  return upgradesSave(t, type) ? [dist[0], dist[1], 0, dist[2] + dist[3]] : dist;
+}
+
 /** Mean damage of `action` against `target` after IWR, for normal and critical outcomes. Cached per batch. */
 export function meanDamageVs(run, action, target) {
   const key = `${action.id}|${target.id}${target.iwrKey ? `|${target.iwrKey}` : ""}`;
@@ -87,9 +103,9 @@ export function expectedDamage(run, a, action, t, attacksMade = 0) {
   }
   if ( action.kind === "save" && action.save ) {
     const extra = bonusDamageParts(run, a, action, t).reduce((s, p) => s + Math.max(0, meanPart(p)), 0);
-    const save = saveRoll(run, t, action.save.type);
-    const dist = degreeDistribution(rules, save.mod, action.save.dc, { advantage: save.advantage, kind: "save" });
-    return targets * dist.reduce((s, p, d) => s + p * saveMultiplier(rules, d, action.save) * (dmg.normal + extra), 0);
+    const save = saveRoll(run, t, action.save.type, { magical: isMagical(action) });
+    const dist = upgradedDistribution(degreeDistribution(rules, save.mod, action.save.dc, { advantage: save.advantage, kind: "save" }), t, action.save.type);
+    return targets * dist.reduce((s, p, d) => s + p * saveMultiplierFor(rules, d, action.save, t) * (dmg.normal + extra), 0);
   }
   const roll = attackRoll(run, a, t, action, attacksMade);
   const extraParts = bonusDamageParts(run, a, action, t, { advantage: roll.advantage });

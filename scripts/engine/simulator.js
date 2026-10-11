@@ -12,7 +12,7 @@ import { costOf, mainPool } from "./turn.js";
 import {
   prepareBattle, createRun, isStanding, isUp, enemiesOf, alliesOf, areEnemies, liveTier, liveTrait, currentAc,
   attackRoll, attackOptions, saveRoll, checkRoll, turnFor, moveToward, moveAway, bonusDamageParts, dispositionOf,
-  behaviorOf, edgeDistance, movesNeeded, approach, canMove, moveTowardPoint
+  behaviorOf, edgeDistance, movesNeeded, approach, canMove, moveTowardPoint, isMagical, upgradesSave
 } from "./battle-state.js";
 import { sampleRunTactics } from "./playstyles.js";
 import { chooseTarget, bestOptionVs, scoreTargets } from "./behavior/targeting.js";
@@ -20,7 +20,7 @@ import { decideHeal, rescueOption, healScores } from "./behavior/healing.js";
 import { initDesires, newTurn, think, want, thwart, relieve, levelOf, mind, thoughts as thoughtsOf, levelsFromScores, listen, remember, styleWants, styleOf, CHOICE_LEVEL } from "./behavior/desire.js";
 import { prepareDoors, doorStates, doorAhead, atDoor, doorPlan, patienceFor, doorDamage } from "./behavior/doors.js";
 import { checkMorale, MORALE } from "./behavior/morale.js";
-import { expectedDamage, spendUse, hasUses, attacksIn, criticalParts, saveMultiplier, meanDamageVs } from "./behavior/evaluate.js";
+import { expectedDamage, spendUse, hasUses, attacksIn, criticalParts, saveMultiplier, saveMultiplierFor, meanDamageVs } from "./behavior/evaluate.js";
 import { chooseDeed, deedTier, chooseHitRiders, rescueMiss, rollCrit, rollFumble } from "./behavior/riders.js";
 import { cast } from "./behavior/casting.js";
 import { boost } from "./behavior/luck.js";
@@ -79,12 +79,13 @@ function attackStakes(run, u, t, action) {
 }
 
 /** A save the target makes, with Luck burned on it if it falls short and someone will. */
-function rollSave(run, target, type, dc, { stakes = 0.3, label = "" } = {}) {
+function rollSave(run, target, type, dc, { stakes = 0.3, label = "", magical = false } = {}) {
   const rules = run.prep.rules;
-  const s = saveRoll(run, target, type);
+  const s = saveRoll(run, target, type, { magical });
   let roll = rollCheck(rules, run.rng, s.mod, dc, { advantage: s.advantage, dice: s.dice, kind: "save" });
   if ( run.boosting && roll.degree < 2 ) roll = boost(run, target, roll, dc, { kind: "save", stakes, label }, logger(run));
   roll = standFirm(run, target, roll, dc, stakes, label);
+  if ( roll.degree === 2 && upgradesSave(target, type) ) roll = { ...roll, degree: 3 };
   return { roll, mod: s.mod };
 }
 
@@ -483,7 +484,7 @@ function applyEffects(run, u, action, target, degree) {
 function saveRider(run, u, action, target, effect) {
   const rules = run.prep.rules;
   const harmful = (effect.damage ?? []).reduce((s, p) => s + Math.max(0, meanPart(p)), 0);
-  const { roll, mod } = rollSave(run, target, effect.save.type, effect.save.dc, { stakes: saveStakes(target, harmful, !!effect.conditions), label: effect.label || action.name });
+  const { roll, mod } = rollSave(run, target, effect.save.type, effect.save.dc, { stakes: saveStakes(target, harmful, !!effect.conditions), label: effect.label || action.name, magical: isMagical(action) });
   const mult = effect.damage?.length ? saveMultiplier(rules, roll.degree, effect.save) : 0;
   const hit = mult > 0 ? rollHit(run, u, action, target, effect.damage, mult, false) : null;
   log(run, target, `${effect.label || action.name}: ${effect.save.type} save ${DEGREE_LABEL[roll.degree]}${hit ? `, ${hit.total} damage` : ""}`, {
@@ -635,8 +636,8 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
 
     if ( action.kind === "save" && action.save ) {
       const extra = bonusDamageParts(run, u, action, target, { commit: true });
-      const { roll, mod } = rollSave(run, target, action.save.type, action.save.dc, { stakes: saveStakes(target, meanDamageVs(run, action, target).normal, !!action.effects?.length), label: action.name });
-      const mult = saveMultiplier(rules, roll.degree, action.save);
+      const { roll, mod } = rollSave(run, target, action.save.type, action.save.dc, { stakes: saveStakes(target, meanDamageVs(run, action, target).normal, !!action.effects?.length), label: action.name, magical: isMagical(action) });
+      const mult = saveMultiplierFor(rules, roll.degree, action.save, target);
       const data = !logging ? null : { type: "save", ...common, saveType: action.save.type, natural: roll.natural, mod: mod + (roll.die ?? 0), total: roll.total, dc: action.save.dc, degree: roll.degree, margin: roll.total - action.save.dc };
       if ( mult > 0 ) {
         const hit = rollHit(run, u, action, target, (action.damage ?? []).concat(extra), mult, roll.degree === 0);
@@ -1013,6 +1014,7 @@ function executeControl(run, u, action, target, attacksMade, common) {
       // Luck: the target on a save against it, the user on its own roll.
       if ( run.boosting && x.degree < 2 ) x = boost(run, r.kind === "save" ? target : u, x, r.dc, { kind: r.rollKind, stakes: r.kind === "save" ? 0.7 : 0.3, options: opts, label: action.name }, logger(run));
       if ( r.kind === "save" ) x = standFirm(run, target, x, r.dc, 0.7, action.name);
+      if ( r.kind === "save" && x.degree === 2 && upgradesSave(target, action.save.type) ) x = { ...x, degree: 3 };
       return { ...x, mod: r.mod + (x.die ?? 0) };
     })();
   // Some effects hold weaker on much stronger targets (PF2e incapacitation): their result counts one better.
