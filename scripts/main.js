@@ -15,6 +15,8 @@ import { SOCKET, SURVEY_STATUS, charactersForUser } from "./foundry/tactics.js";
 import { helperStatus, helperMessage, helperNoticeHtml } from "./helpers.js";
 import { invalidateApproach } from "./foundry/battle.js";
 import { undoConcession, revealStory, ownCard } from "./foundry/make-it-so.js";
+import { sceneUnit } from "./foundry/terrain.js";
+import { setDistanceUnit } from "./i18n.js";
 
 Hooks.once("init", () => {
   registerSettings(DefaultsConfig, GenericPathsConfig, StoryTablesConfig);
@@ -172,6 +174,13 @@ Hooks.on("userConnected", () => {
 });
 
 // The planner belongs to the scene on screen: viewing another scene starts it afresh.
+// Distances read in the viewed scene's units (metres on a metric map; the engine counts feet).
+const useSceneUnits = () => setDistanceUnit(canvas.scene ? sceneUnit(canvas.scene) : null);
+Hooks.on("canvasReady", useSceneUnits);
+Hooks.on("updateScene", (scene, changes) => {
+  if ( scene.id === canvas.scene?.id && "grid" in changes ) useSceneUnits();
+});
+
 Hooks.on("canvasReady", () => {
   const app = foundry.applications.instances.get("fast-fighting-planner");
   if ( app?.rendered && app.sceneId !== canvas.scene?.id && !app.running ) {

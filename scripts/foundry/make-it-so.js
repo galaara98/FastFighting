@@ -9,7 +9,7 @@
 import { MODULE_ID, STATUS } from "../constants.js";
 import { getAdapter } from "../api.js";
 import { setting } from "../settings.js";
-import { pixelsFor, feetPerUnit, squareFeet } from "./terrain.js";
+import { pixelsFor, sceneDistance } from "./terrain.js";
 import { currentPathGrid, pathGridFor } from "./pathing.js";
 import { concessionText } from "../story/story.js";
 
@@ -98,14 +98,6 @@ export async function confirmMakeItSo(rows, replay = null) {
 
 /** Where a token really is. (While it's animating, a token's x and y follow the animation, not the move.) */
 const placeOf = doc => ({ x: doc._source.x, y: doc._source.y });
-
-/** Feet as the scene measures them, to the nearest square: "30 ft", "9 m". */
-function sceneDistance(feet) {
-  const square = squareFeet();
-  const units = canvas.scene.grid.units || game.i18n.localize("FASTFIGHTING.Units.Feet");
-  const rounded = Math.max(1, Math.round(feet / square)) * square;
-  return `${Math.round((rounded / feetPerUnit()) * 10) / 10} ${units}`;
-}
 
 /** How fast tokens run through the fight on the map, in grid squares a second. */
 const PLAYBACK_SPEED = 16;

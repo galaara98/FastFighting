@@ -335,6 +335,8 @@ FastFighting ships in **English** and is built to be translated. Each person see
 - **The game system in your language:** a system has its own words (its actions, conditions, skills and compendiums), and a translation of it is a module of its own. When yours isn't English and the system's translation isn't on in this world, each FastFighting system module says so at the bottom of its settings, naming the last translation module we knew of (Spanish: pf2e-es for PF2e; translate-dnd5e-sdr2-es for D&D 5e). With a translation that rewords compendium items (Babele), the system modules still read their rules from the English Babele keeps.
 - **Regional variants:** Foundry matches a language code exactly and falls back only to English, so a translation should use the code Foundry's own translation for that language uses (`es` for Spanish, for example, in a Spanish that reads naturally in every region).
 - **Story tables:** installing the story tables (Settings → FastFighting → Story tables) installs them in the GM's language. Tables you've installed or edited always win over the built-in ones.
+- **Distances, imperial or metric:** distances read in the units of the scene's grid (Configure Scene → Grid: `m` and 1.5 per square on a metric map), counted the table way, 1.5 m to a 5-foot square. A scene with no units named reads in feet. Numbers are written as the reader's language writes them (4.5 m, 4,5 m).
+- **Words kept in English:** each system module's `hardcoded-toEN.json` lists words it keeps in English for now, whatever the reader's language, where a translation would contradict a game system that isn't translated yet.
 
 ### Translating
 
@@ -342,7 +344,7 @@ A translation needs no code. All of FastFighting's words are in two text files, 
 1. Copy `languages/en.json` to `languages/<code>.json` (`fr.json` for French) and translate the text after each key. Keep the keys, and anything in `{braces}`, as they are: the braces are filled in with names and numbers, in whatever order the sentence puts them. Some entries are pieces of a longer line (their leading space or ` · ` included); the key's group shows where they go.
 2. Add the language to the `"languages"` list in `module.json`, the way English is listed there.
 3. For the Roleplay prose, copy `story/en.json` to `story/<code>.json` and translate its phrases. Sentences are built from them: a sentence shape like `{actor} {aim} and their {weapon} {crit}!` takes one phrase from each list it names. Where your language needs whole sentences instead, a file can also list finished sentences for any table, by the table's key (`{"event.opening": ["…", "…"]}`). A list can have as many entries as you like.
-4. Each FastFighting system module (PF2e, D&D 5e …) has its own `languages/en.json`, translated the same way.
+4. Each FastFighting system module (PF2e, D&D 5e …) has its own `languages/en.json`, translated the same way. Its `hardcoded-toEN.json` names any words it keeps in English for now: leave those as they are.
 
 Anything a translation leaves out reads in English. The tests check every listed language for unknown keys and matching placeholders.
 

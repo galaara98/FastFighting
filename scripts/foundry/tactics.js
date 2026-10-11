@@ -14,6 +14,7 @@ import { PLAYSTYLES, PLAYSTYLE_IDS, MAX_PLAYSTYLES, RENAMED_PLAYSTYLES, combineP
 import { getAdapter } from "../api.js";
 import { DESIRE_KINDS, DESIRE_BAND_KEYS } from "../engine/behavior/desire.js";
 import { setting } from "../settings.js";
+import { distanceText } from "../i18n.js";
 
 export const SOCKET = `module.${MODULE_ID}`;
 export const SURVEY_STATUS = Object.freeze({ NONE: "none", REQUESTED: "requested", ENTERING: "entering", CLOSED: "closed", DONE: "done" });
@@ -181,7 +182,7 @@ export function playstyleSignature(actor) {
 
 function actionLabel(a) {
   const kind = loc(`FASTFIGHTING.Tactics.ActionKind.${a.kind}`);
-  const extra = a.range && !a.melee ? ` · ${a.range.increment} ${loc("FASTFIGHTING.Units.Feet")}` : "";
+  const extra = a.range && !a.melee ? ` · ${distanceText(a.range.increment)}` : "";
   return `${a.name} (${kind}${extra})`;
 }
 

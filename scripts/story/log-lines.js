@@ -5,7 +5,7 @@
  * Only text a game system writes itself (a rule's own report: recovery checks, enduring harm) is shown as it comes.
  * Pure apart from reading Foundry's translations when they're there (../i18n.js).
  */
-import { localize, listJoin, listItems, hasWords } from "../i18n.js";
+import { localize, listJoin, listItems, hasWords, distanceText } from "../i18n.js";
 
 /** A phrase of the log, by its key (for the stories' own lists and headings). */
 export const logTerm = (key, data = null) => t(key, data);
@@ -97,7 +97,7 @@ export function logLine(e) {
     case "talk": return t("Talk", { ...a, skill: e.skill, roll: dice(e.natural, e.mod, e.total, e.dc, t("DcOf", { stat: e.dcStat })), degree: degree(e.degree), margin: signed(e.margin ?? 0), boost: e.boost ? ` · ${t("SizedUp", { n: e.boost })}` : "", progress: e.progress, steps: e.steps });
     case "heal": return t("Heal", { actor: e.actor, target: e.self ? t("Self") : e.target, action: e.action, check: e.check ? ` · ${t("Medicine", { roll: dice(e.check.natural, e.check.mod, e.check.total, e.check.dc, t("DC")), degree: degree(e.check.degree) })}` : "", amount: e.amount, revived: e.revived ? t("Revived") : "" });
     case "move": return t("Move", {
-      actor: e.actor, mode: t(MODE[e.mode] ?? "ModeMove"), feet: t("Feet", { n: e.feet }), toward: e.purpose === "door" ? t("TheDoor") : e.toward,
+      actor: e.actor, mode: t(MODE[e.mode] ?? "ModeMove"), distance: distanceText(e.feet), toward: e.purpose === "door" ? t("TheDoor") : e.toward,
       terrain: e.mult > 1.05 ? t("Terrain", { mult: Number(e.mult).toFixed(2), regions: e.regions?.length ? t("TerrainRegions", { regions: listItems(e.regions) }) : "" }) : ""
     });
     case "afflictionSave": return t("AfflictionSave", { actor: e.actor, name: e.name, saveType: e.saveType, roll: dice(e.natural, e.mod, e.total, e.dc, t("DC")), degree: degree(e.degree) });

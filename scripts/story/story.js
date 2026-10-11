@@ -10,7 +10,7 @@
 import { createRng } from "../engine/rng.js";
 import { DAMAGE_TYPES } from "./blocks.js";
 import { desireBand, DESIRE_BAND_KEYS } from "../engine/behavior/desire.js";
-import { listJoin, listItems, localize, hasWords } from "../i18n.js";
+import { listJoin, listItems, localize, hasWords, distanceText } from "../i18n.js";
 import { logLine, endLine, logTerm, formatMoney, concessionText } from "./log-lines.js";
 
 export { formatMoney, concessionText };
@@ -506,7 +506,7 @@ function standard(result, spec, title) {
     if ( s?.heals ) bits.push(w("Healed", { n: s.heals, hp: logTerm("HpN", { n: s.healed }) }));
     if ( s?.potions ) bits.push(w("Potions", { n: s.potions }));
     if ( s?.aid ) bits.push(w("FirstAid", { n: s.aid, stabilized: s.stabilized }));
-    if ( s?.feet ) bits.push(w("Moved", { distance: logTerm("Feet", { n: s.feet }) }));
+    if ( s?.feet ) bits.push(w("Moved", { distance: distanceText(s.feet) }));
     if ( !bits.length ) bits.push(final?.active === false ? w("StayedOut") : w("Nothing"));
     const statusKey = final?.swayed === "switched" ? "switched" : final?.swayed === "conceded" ? "conceded"
       : final?.status === "standing" && final?.side === "neutralParty" ? (final.swayed === "neutral" ? "neutral" : "noSide") : final?.status;

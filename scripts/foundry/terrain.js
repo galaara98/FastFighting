@@ -7,6 +7,7 @@
  *  - cover: tokens standing beside walls can duck behind them (used by the story writer).
  */
 import { getAdapter } from "../api.js";
+import { distanceText } from "../i18n.js";
 import { pathGridFor, THROUGH_WALL } from "./pathing.js";
 
 const MODES = ["walk", "fly", "swim", "climb", "burrow"];
@@ -46,6 +47,18 @@ export function feetPerUnit(scene = canvas.scene) {
   const units = String(scene?.grid?.units ?? "").trim().toLowerCase().replace(/\.$/, "");
   if ( units in UNIT_FEET ) return UNIT_FEET[units];
   return 5 / (scene?.grid?.distance || 5);
+}
+
+/** A scene's units, for distances told in them: {label, feetPer}, or null (no units named: feet). */
+export function sceneUnit(scene = canvas.scene) {
+  const label = String(scene?.grid?.units ?? "").trim();
+  return label ? { label, feetPer: feetPerUnit(scene) } : null;
+}
+
+/** A distance in feet as the scene measures it, to the nearest whole square: "30 ft", "9 m". */
+export function sceneDistance(feet) {
+  const square = squareFeet();
+  return distanceText(Math.max(1, Math.round(feet / square)) * square);
 }
 
 /** Feet across one grid square of the current scene. */

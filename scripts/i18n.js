@@ -41,6 +41,34 @@ export function listJoin(items) {
   return localize("FASTFIGHTING.Words.List", { rest: listItems(list.slice(0, -1)), last: list.at(-1) });
 }
 
+/* Numbers and distances ---------------------------------------------------- */
+
+/** A number as the reader's language writes it ("4.5", "4,5"), to `digits` decimals at most. */
+export function numberText(n, digits = 1) {
+  try {
+    return new Intl.NumberFormat(language(), { maximumFractionDigits: digits }).format(n);
+  } catch ( err ) {
+    return String(Math.round(n * 10 ** digits) / 10 ** digits);
+  }
+}
+
+let distanceUnit = null;
+
+/**
+ * The units distances read in. The engine counts feet; a table may count metres. The Foundry side sets the viewed
+ * scene's ({label: "m", feetPer: 10 / 3}: a metre the table way, 1.5 m to a 5-foot square); null for feet, named
+ * by the language file (FASTFIGHTING.Units.Feet).
+ */
+export function setDistanceUnit(unit) {
+  distanceUnit = unit?.label && unit.feetPer > 0 ? { label: unit.label, feetPer: unit.feetPer } : null;
+}
+
+/** A distance given in feet, in the table's units and the reader's language ("30 ft", "9 m", "4,5 m"). */
+export function distanceText(feet) {
+  const u = distanceUnit;
+  return localize("FASTFIGHTING.Units.Distance", { n: numberText(u ? feet / u.feetPer : feet), units: u ? u.label : localize("FASTFIGHTING.Units.Feet") });
+}
+
 /* Make it So: the lines every system's outcome has in common. -------------- */
 
 /** One of the common Make it So lines (FASTFIGHTING.MakeItSo.Outcome), in the reader's language. */

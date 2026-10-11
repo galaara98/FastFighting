@@ -12,6 +12,8 @@ Decisions the user made along the way:
 - **Developer messages** (console messages, errors thrown at other modules) are part of the review, but the user's wording goes **directly into the code**, not into `en.json`. The tracker lists them (area `<repo>/code`).
 - **Localization must be doable by a non-coder editing only string files.** No translation may need code. So: word order lives in templates (`"{rest} and {last}"`), not in words glued in code; the code-only story language route was removed; the core README has a **Translating** section. Any language or key missing falls back to English, never a crash.
 - The user said "review all strings". Reviewing doesn't make them the author (§4.2): they state each string fresh, as below.
+- **`hardcoded-toEN.json`** in each helper: `lastUpdated` (a date) and `keys`, keys of the helper's `languages/en.json` (or groups of them) that stay English in every language for now, because a translation would contradict a game system that isn't translated. Core applies it (`api.keepEnglish`, `scripts/foundry/keep-english.js`). The user decides what's on it and updates the date.
+- **Distances** read in the scene's grid units (imperial or metric); the engine counts feet inside. `distanceText` in `scripts/i18n.js`; the template is `FASTFIGHTING.Units.Distance`.
 
 ## For Claude: what this session is
 

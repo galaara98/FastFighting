@@ -18,6 +18,7 @@ import {
 } from "../foundry/battle.js";
 import { buildStory, STORY_STYLES } from "../story/story.js";
 import { loadStoryTables } from "../story/tables.js";
+import { sceneDistance } from "../foundry/terrain.js";
 import { planMakeItSo, confirmMakeItSo, executeMakeItSo, undoMakeItSo, hasUndo, makingItSo } from "../foundry/make-it-so.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -36,11 +37,9 @@ const pct = (p, d = 0) => `${(p * 100).toFixed(d)}%`;
 /** Status key for a creature's end state ("conceded" stood down after giving something up). */
 const statusOf = final => (final.swayed === "conceded" ? "conceded" : final.status);
 
-/** How far a creature must travel to reach its nearest foe, terrain included, to the grid ("40 ft"). */
+/** How far a creature must travel to reach its nearest foe, terrain included, to the grid ("40 ft", "12 m"). */
 function approachDistance(approach) {
-  const grid = canvas.scene?.grid?.distance || 5;
-  const travel = Math.max(grid, Math.round((approach.dist * approach.mult) / grid) * grid);
-  return game.i18n.format("FASTFIGHTING.Units.Distance", { n: travel, units: canvas.scene?.grid?.units || game.i18n.localize("FASTFIGHTING.Units.Feet") });
+  return sceneDistance(approach.dist * approach.mult);
 }
 
 function simulatedDifficulty(results) {
