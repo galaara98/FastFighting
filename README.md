@@ -115,7 +115,7 @@ Every character has a list of desires: what it wants right now, at whom, and how
 - **Hurt, heal, protect, bolster (with a buff), talk to, keep away from.**
 - **Where they come from:**
   - **its tactics:** each turn its tactical band weighs every foe it can reach (a Mastermind picks the healer to destroy, a Feral beast the nearest thing), every friend it could mend, whom it could talk round, whom it fears;
-  - **its Tactics answers:** up to three desires stated for any character, PC or NPC (what, who, how badly);
+  - **its Tactics answers:** up to three desires stated for any character, PC or NPC (what, who, how badly; healing, bolstering and talking are offered only to those who can);
   - **the fight:** whoever hurt it (simple minds go straight for whoever just hurt them; hit from afar while already trading blows, they keep at the one in front of them), whoever felled a friend, a grudge;
   - **its leader and its team:** the leader's desires pull on it a medium amount, the team's a little. With nobody leading (none chosen, or the leader fallen), the team pulls together less, except when it comes to vengeance;
   - **its playstyles:** each pill guides how it picks up desires (below), added up across up to four.

@@ -18,7 +18,7 @@ import { meanPart } from "../dice.js";
 import { bestReactionStrike } from "./reactions.js";
 
 /** A plain door, where the system says nothing. */
-export const DEFAULT_DOOR = Object.freeze({ ac: 15, hp: 20, forceDC: 15, pickDC: 15 });
+const DEFAULT_DOOR = Object.freeze({ ac: 15, hp: 20, forceDC: 15, pickDC: 15 });
 
 /** How much of a blow gets through to a door, by the system's rules (all of it, if it has none). */
 export function doorDamage(rules, door, damage) {

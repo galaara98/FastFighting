@@ -5,7 +5,7 @@ import { impatience, opensWithTalk } from "../scripts/engine/behavior/standoff.j
 import { pf2eRules } from "./fixtures/three-action-rules.js";
 import { buildStory } from "../scripts/story/story.js";
 import { buildEnglishTables } from "../scripts/story/tables-en.js";
-import { creature, strike, battle, social } from "./helpers.js";
+import { creature, battle, social } from "./helpers.js";
 
 const english = buildEnglishTables();
 const tables = { get: k => english[k] };

@@ -3,6 +3,7 @@
  */
 
 const cache = new WeakMap(); // rules -> Map(key -> distribution)
+const KIND_CODE = { attack: 0, save: 1, check: 2 };
 
 /** Chance the kept d20 shows `natural`: one die, the higher of two (advantage) or the lower (disadvantage). */
 function naturalChance(natural, advantage) {
@@ -27,7 +28,10 @@ export function degreeDistribution(rules, modifier, dc, { advantage = 0, kind = 
   let byKey = cache.get(rules);
   if ( !byKey ) cache.set(rules, byKey = new Map());
   const adv = Math.sign(advantage);
-  const key = `${modifier}|${dc}|${adv}|${kind}|${dice?.length ? dice.join(",") : ""}`;
+  const k = KIND_CODE[kind];
+  const key = !dice?.length && k !== undefined && Number.isInteger(modifier) && Number.isInteger(dc) && Math.abs(modifier) < 500 && Math.abs(dc) < 500
+    ? (((k * 3 + adv + 1) * 1000) + dc + 500) * 1000 + modifier + 500
+    : `${modifier}|${dc}|${adv}|${kind}|${dice?.length ? dice.join(",") : ""}`;
   let out = byKey.get(key);
   if ( out ) return out;
   out = [0, 0, 0, 0];

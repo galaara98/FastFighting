@@ -50,7 +50,7 @@ export function sanitizeTactics(raw) {
     const v = raw[key];
     if ( v === "auto" || choices.includes(v) ) out[key] = v;
   }
-  if ( typeof raw.preferredAction === "string" ) out.preferredAction = raw.preferredAction;
+  if ( typeof raw.preferredAction === "string" ) out.preferredAction = raw.preferredAction.slice(0, MAX_NOTES);
   if ( typeof raw.notes === "string" ) out.notes = raw.notes.slice(0, MAX_NOTES);
   if ( Array.isArray(raw.playstyles) ) {
     out.playstyles = [...new Set(raw.playstyles.filter(id => typeof id === "string" && PLAYSTYLES[id]))].slice(0, MAX_PLAYSTYLES);
@@ -243,12 +243,19 @@ export function questionsContext(spec, actor, uid, { questions: withQuestions = 
     numbered.set(t.name, (numbered.get(t.name) ?? 0) + 1);
     return { ...t, name: `${t.name} ${numbered.get(t.name)}` };
   }).filter(t => t.id !== (spec.tokenId ?? spec.id));
+  // Healing, bolstering and talking only for those who can (anyone can want to hurt, guard or avoid someone).
+  const canDo = {
+    heal: heals.length > 0,
+    aid: spec.actions.some(a => a.kind === "buff" && !a.tell), // (Dodge and the like are moves, not bolstering)
+    talk: (spec.social?.languages?.length ?? 0) > 0 && !spec.social?.mindless
+  };
   const desires = DESIRE_SLOTS.map(slot => {
     const d = stored.desires?.[slot] ?? {};
+    const kinds = DESIRE_KINDS.filter(k => canDo[k] !== false || d.kind === k);
     const level = d.level ?? DESIRE_LEVELS.determined;
     const band = Object.entries(DESIRE_LEVELS).reduce((best, [k, v]) => (Math.abs(v - level) < Math.abs(DESIRE_LEVELS[best] - level) ? k : best), "determined");
     return {
-      kind: { key: `desire.${slot}.kind`, name: `tactic-${uid}-desire-${slot}-kind`, choices: ["", ...DESIRE_KINDS].map(k => ({ value: k, label: loc(`FASTFIGHTING.Desire.Kind.${k || "none"}`), selected: (d.kind ?? "") === k })) },
+      kind: { key: `desire.${slot}.kind`, name: `tactic-${uid}-desire-${slot}-kind`, choices: ["", ...kinds].map(k => ({ value: k, label: loc(`FASTFIGHTING.Desire.Kind.${k || "none"}`), selected: (d.kind ?? "") === k })) },
       target: { key: `desire.${slot}.target`, name: `tactic-${uid}-desire-${slot}-target`, choices: [{ value: "", label: loc("FASTFIGHTING.Desire.Who"), selected: !d.target }, ...others.map(t => ({ value: t.id, label: t.name, selected: d.target === t.id }))] },
       level: { key: `desire.${slot}.level`, name: `tactic-${uid}-desire-${slot}-level`, choices: DESIRE_BAND_KEYS.map(k => ({ value: DESIRE_LEVELS[k], label: loc(`FASTFIGHTING.Desire.Level.${k}`), selected: band === k })) },
       empty: !d.kind

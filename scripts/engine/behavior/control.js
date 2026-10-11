@@ -24,9 +24,7 @@ import { degreeDistribution } from "../probability.js";
 import { saveRoll, attackRoll, checkRoll, currentAc, defenseDc, liveTier } from "../battle-state.js";
 import { netAdvantage } from "../mods.js";
 import { meanDamageVs, saveMultiplier } from "./evaluate.js";
-import { outcomeWorth, hasFresh, concentrationCost, conditionWeight, applyControl, applyOutcome, heldElsewhere } from "./effects.js";
-
-export { conditionWeight, applyControl, applyOutcome };
+import { outcomeWorth, hasFresh, concentrationCost, heldElsewhere } from "./effects.js";
 
 /** How a control action is decided: "save", "check", "attack" or "auto". */
 export function rollKind(action) {
@@ -52,6 +50,15 @@ function outcomesOf(action) {
 
 /** Is the target immune to this action (its tags or the conditions it imposes)? The system decides. */
 export function isImmune(run, target, action) {
+  if ( !action.id ) return immuneNow(run, target, action);
+  const cache = run.prep.immuneCache ??= new Map();
+  const key = `${action.id}|${target.id}|${target.iwrKey ?? ""}`;
+  let v = cache.get(key);
+  if ( v === undefined ) cache.set(key, v = immuneNow(run, target, action));
+  return v;
+}
+
+function immuneNow(run, target, action) {
   const rules = run.prep.rules;
   if ( rules.isImmune ) return !!rules.isImmune(target, action);
   const immune = new Set(target.spec.iwr?.immune ?? []);

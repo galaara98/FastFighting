@@ -3,7 +3,7 @@
  */
 import {
   MODULE_ID, SIDES, TRAITS, ALLEGIANCE, HEAL_AGGRO, DOWNED_MODELS, STATUS, AFTERMATH, OPENING,
-  traitBand, fudged, clamp, FUDGE_STEP
+  traitBand, clamp, FUDGE_STEP
 } from "../constants.js";
 import { getAdapter } from "../api.js";
 import { setting } from "../settings.js";

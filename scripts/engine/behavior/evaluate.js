@@ -6,6 +6,7 @@ import { degreeDistribution } from "../probability.js";
 import { attackRoll, currentAc, saveRoll, bonusDamageParts } from "../battle-state.js";
 import { costOf, costUnits, mainPool } from "../turn.js";
 import { controlValue } from "./control.js";
+import { iwrOf } from "./effects.js";
 
 function meanByType(parts) {
   const out = {};
@@ -51,7 +52,7 @@ export function meanDamageVs(run, action, target) {
   let hit = cache.get(key);
   if ( hit ) return hit;
   const rules = run.prep.rules;
-  const iwr = target.iwr ?? target.spec.iwr; // (with any resistance an effect lends it: Rage, Stoneskin)
+  const iwr = iwrOf(target); // (with any resistance an effect lends it: Rage, Stoneskin)
   const crit = action.critDamage ?? criticalParts(rules, action.damage);
   const rider = effectMean(action);
   hit = {

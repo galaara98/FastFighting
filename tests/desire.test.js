@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 import { replay } from "../scripts/engine/simulator.js";
-import { initDesires, think, want, thwart, levelOf, mind, levelsFromScores } from "../scripts/engine/behavior/desire.js";
+import { initDesires, think, want, thwart, levelOf, levelsFromScores } from "../scripts/engine/behavior/desire.js";
 import { pf2eRules } from "./fixtures/three-action-rules.js";
 import { creature, strike, battle } from "./helpers.js";
 import { parseFormula } from "../scripts/engine/dice.js";

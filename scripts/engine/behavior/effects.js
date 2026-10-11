@@ -96,7 +96,7 @@ export function settleAllegiance(run) {
   for ( const u of run.units ) {
     const holder = u.controlledBy ? run.byId.get(u.controlledBy) : null;
     const home = u.homeSide ?? u.side;
-    const side = holder && holder.status === "standing" && holder.side !== home ? holder.side : home;
+    const side = holder && holder.status === STATUS.STANDING && holder.side !== home ? holder.side : home;
     if ( u.side === side || [STATUS.DEAD, STATUS.FLED].includes(u.status) ) continue;
     u.side = side;
     u.targetId = null;
@@ -188,7 +188,7 @@ export function endConcentration(run, u) {
  */
 export function heldElsewhere(run, u, action, target = null) {
   if ( !action?.concentration || action.area || action.aura || u.concentration?.actionId !== action.id ) return false;
-  return run.units.some(o => o !== target && o.status === "standing" && o.effects?.some(e => e.key === action.id && e.sourceId === u.id));
+  return run.units.some(o => o !== target && o.status === STATUS.STANDING && o.effects?.some(e => e.key === action.id && e.sourceId === u.id));
 }
 
 export function moveHeld(run, u, action, target) {

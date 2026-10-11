@@ -8,7 +8,7 @@ import { STATUS, TACTICAL, DOWNED_MODELS, AFTERMATH } from "../constants.js";
 import { createRng, deriveSeed, randomSeed } from "./rng.js";
 import { sampleDamage, samplePart } from "./dice.js";
 import { rollCheck } from "./probability.js";
-import { costOf, costUnits, mainPool } from "./turn.js";
+import { costOf, mainPool } from "./turn.js";
 import {
   prepareBattle, createRun, isStanding, isUp, enemiesOf, alliesOf, areEnemies, liveTier, liveTrait, currentAc,
   attackRoll, saveRoll, checkRoll, turnFor, moveToward, moveAway, bonusDamageParts, dispositionOf,
@@ -25,7 +25,7 @@ import { createAggregator } from "./aggregate.js";
 import { talkActionsThisTurn, choosePitch, attemptTalk } from "./behavior/talk.js";
 import { opensWithTalk, breaksStandoff, standoffPitches, charismaticLeader } from "./behavior/standoff.js";
 import { controlOutcome, controlRoll, isImmune, degreeShift } from "./behavior/control.js";
-import { recompute as recomputeConditions, applyOutcome, applyControl, beginConcentration, endConcentration, holdsAnything, noteConcentration, moveHeld, settleAllegiance } from "./behavior/effects.js";
+import { recompute as recomputeConditions, applyOutcome, applyControl, beginConcentration, endConcentration, holdsAnything, noteConcentration, moveHeld, settleAllegiance, iwrOf } from "./behavior/effects.js";
 import { decideBuff, aidScores } from "./behavior/support.js";
 import { stealChance, theftTarget, theftPlan, attemptTheft } from "./behavior/theft.js";
 import { reactionsPerRound, threats, takesSafeWay } from "./behavior/reactions.js";
@@ -311,7 +311,7 @@ function applyAfflictionStage(run, target, affliction) {
   recomputeConditions(target);
   if ( !stage?.damage?.length ) return;
   const rolled = sampleDamage(stage.damage, run.rng);
-  const amount = run.prep.rules.applyIwr(target.iwr ?? target.spec.iwr, rolled.byType);
+  const amount = run.prep.rules.applyIwr(iwrOf(target), rolled.byType);
   log(run, target, `${affliction.spec.name} stage ${affliction.stage}: ${amount} damage`, {
     type: "afflictionStage", name: affliction.spec.name, stage: affliction.stage, amount, damageType: stage.damage[0]?.type ?? "poison"
   });
@@ -395,7 +395,7 @@ function rollHit(run, u, action, t, parts, multiplier, crit, minimum = 0) {
     const sum = types.reduce((s, k) => s + rolled.byType[k], 0);
     if ( types.length && sum < minimum ) rolled.byType[types[0]] += minimum - sum;
   }
-  const total = rules.applyIwr(t.iwr ?? t.spec.iwr, rolled.byType);
+  const total = rules.applyIwr(iwrOf(t), rolled.byType);
   return {
     total,
     apply: () => {
@@ -1118,7 +1118,7 @@ function endOfTurn(run, u) {
   if ( u.persistent.length ) {
     const remaining = [];
     for ( const entry of u.persistent ) {
-      const amount = rules.applyIwr(u.iwr ?? u.spec.iwr, { [entry.part.type]: Math.max(0, samplePart(entry.part, run.rng)) });
+      const amount = rules.applyIwr(iwrOf(u), { [entry.part.type]: Math.max(0, samplePart(entry.part, run.rng)) });
       if ( run.log ) log(run, u, `takes ${amount} persistent ${entry.part.type}`, { type: "persistent", damageType: entry.part.type, amount });
       dealDamage(run, run.byId.get(entry.sourceId), u, amount);
       if ( !rules.persistentFlatCheck(run.rng) ) remaining.push(entry);

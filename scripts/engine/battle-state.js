@@ -406,11 +406,6 @@ export function defenseDc(run, target, against) {
   return 10 + saveRoll(run, target, against).mod;
 }
 
-/** Saving throw modifier (without advantage), for heuristics and logs. */
-export function saveMod(run, target, type) {
-  return saveRoll(run, target, type).mod;
-}
-
 /** A skill check (talking, first aid): the rules' situational bonus and advantage. */
 export function checkRoll(run, u, mod) {
   const m = run.prep.rules.modifiers?.check?.({ unit: u }) ?? {};

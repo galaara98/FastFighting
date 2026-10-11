@@ -413,9 +413,6 @@
       "UndoTitle": "Undo Make it So",
       "UndoConfirm": "Restore the tokens to how they were before the last Make it So on this scene?",
       "Undone": "Make it So was undone.",
-      "Remains": "Remains of {name}",
-      "Surrendered": "Surrendered",
-      "SurrenderedHint": "Laid down arms during a FastFighting battle and is at the victors' mercy.",
       "Moves": "Moves {distance}",
       "Hint": "Post this story to chat, move every token to where the fight left it, and commit the outcome. Undo reverses all of it.",
       "Gives": "Gives up {what} to {name}",
@@ -434,7 +431,9 @@
         "spell-attack": "spell attack",
         "save": "spell, saving throw",
         "auto": "spell, always hits",
-        "heal": "healing"
+        "heal": "healing",
+        "control": "crowd control or debuff",
+        "buff": "buff"
       },
       "preferredAction": {
         "Label": "Favorite weapon or attack",

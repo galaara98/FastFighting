@@ -128,6 +128,7 @@ export function aidScores(run, u) {
   const baseline = Math.max(0.5, offenseBaseline(run, u));
   const best = new Map();
   for ( const o of buffOptions(run, u) ) {
+    if ( o.action.tell ) continue; // Dodge, Reckless Attack, Action Surge: moves, not something to want for a friend
     for ( const { ally, worth } of o.picks ) {
       const units = Math.max(0.25, costUnits(run.prep.rules, costOf(run.prep.rules, o.action, u)));
       const score = (worth / units) / baseline;
