@@ -8,6 +8,7 @@ import { MODULE_ID } from "../constants.js";
 import { getAdapter } from "../api.js";
 import { localize } from "../i18n.js";
 import { questionsContext, setTactic, togglePlaystyle, syncTacticsDom } from "../foundry/tactics.js";
+import { HAZARD_MARKS, applyHazard } from "../foundry/battle.js";
 
 const TAB = "fastFighting";
 const TEMPLATE = `modules/${MODULE_ID}/templates/token-tactics.hbs`;
@@ -74,9 +75,15 @@ async function fill(app, panel) {
   // A desire can name another token on the same scene (a prototype has no scene to name one from).
   const scene = app.isPrototype ? null : app.document?.parent;
   const targets = scene?.tokens?.filter(o => o.actor && o.id !== app.document.id).map(o => ({ id: o.id, name: o.name })) ?? [];
+  // Any token can be a hazard (the GM's mark), or not be one; a hazard has no tactics to set.
+  const hazard = actor.getFlag(MODULE_ID, "hazard") ?? "";
+  const isHazard = !!applyHazard({ ...spec, flags: { ...spec.flags } }, hazard).hazard;
   const html = await foundry.applications.handlebars.renderTemplate(TEMPLATE, {
     hint: localize(app.isPrototype ? "FASTFIGHTING.TokenTactics.PrototypeHint" : "FASTFIGHTING.TokenTactics.TokenHint"),
-    tactics: questionsContext(spec, actor, `token-${app.id}`, { targets })
+    hazard,
+    hazardChoices: Object.fromEntries(HAZARD_MARKS.map(k => [k, localize(`FASTFIGHTING.TokenTactics.HazardMark.${k || "system"}`)])),
+    isHazard,
+    tactics: isHazard ? null : questionsContext(spec, actor, `token-${app.id}`, { targets })
   });
   panel.innerHTML = html;
   // The token window's own form leaves these alone: no names to submit, no actions of its own to run.
@@ -91,6 +98,14 @@ async function fill(app, panel) {
 function listen(app, panel) {
   panel.addEventListener("change", async event => {
     const el = event.target;
+    // Whether it's a hazard: kept with its tactics.
+    if ( el?.dataset?.ffSetting === "hazard" ) {
+      event.stopPropagation();
+      const actor = actorOf(app);
+      if ( HAZARD_MARKS.includes(el.value) && el.value ) await actor.setFlag(MODULE_ID, "hazard", el.value);
+      else await actor.unsetFlag(MODULE_ID, "hazard");
+      return fill(app, panel);
+    }
     const key = el?.dataset?.tactic;
     if ( !key ) return;
     event.stopPropagation();

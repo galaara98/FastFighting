@@ -374,7 +374,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       // Which group (1 2 3): hostile groups fight each other too; a neutral's friend group was proposed when the planner opened.
       groups: grouped ? GROUPS.map(n => ({ n, active: n === group, auto: chosen === SIDES.NEUTRAL && ts.group == null })) : null,
       // Its role in its group's chain of command: boss (never in the party), leader, 1st or 2nd lieutenant.
-      roles: setup.options.leadership !== false && setup.sides[chosen]?.leaderId !== "none" && resolvedSide ? ROLES.filter(r => r !== "boss" || chosen !== SIDES.FRIENDLY).map(r => {
+      roles: setup.options.leadership !== false && setup.sides[chosen]?.leaderId !== "none" && resolvedSide && !s.hazard ? ROLES.filter(r => r !== "boss" || chosen !== SIDES.FRIENDLY).map(r => {
         const held = this.roles?.get(e.token.id);
         const active = held?.slot === r;
         return { key: r, short: loc(`FASTFIGHTING.Planner.Role.${r}.Short`), label: loc(`FASTFIGHTING.Planner.Role.${r}.Name`), active, auto: active && held.auto };

@@ -39,6 +39,30 @@ export function sideName(side, hostileGroups = 1) {
 /** Neutral tokens take no side in the fight: these allegiances are only the way they lean (behavior/neutral.js). */
 export const LEANS = new Set([ALLEGIANCE.NEUTRAL, ALLEGIANCE.FRIENDLY, ALLEGIANCE.HOSTILE, ALLEGIANCE.CLOSEST, ALLEGIANCE.UNDERDOG]);
 
+/** How the GM can mark any token in its FastFighting tab: as the system has it (""), not a hazard, simple, complex. */
+export const HAZARD_MARKS = Object.freeze(["", "no", "simple", "complex"]);
+
+/**
+ * A token the GM marked as a hazard, in any system (a trap made as a creature, a system with no hazards of its own):
+ * it fires as one, doesn't move, think or talk, and nobody attacks it; a simple one fires once, a complex one each
+ * round. "no": not a hazard, whatever the system says (one the party can attack and break).
+ * @param {object} spec        a CombatantSpec, changed in place
+ * @param {string} [mark]      one of HAZARD_MARKS
+ */
+export function applyHazard(spec, mark) {
+  if ( mark === "no" ) {
+    delete spec.hazard;
+    delete spec.untargetable;
+    if ( spec.kind === "hazard" ) spec.kind = "npc";
+  } else if ( mark === "simple" || mark === "complex" ) {
+    Object.assign(spec, {
+      kind: "hazard", hazard: { once: mark === "simple" }, untargetable: true, speeds: {}, leadership: null,
+      social: { mindless: true, languages: [], pitches: {}, resist: {} }, flags: { ...spec.flags, fearless: true, mindless: true }
+    });
+  }
+  return spec;
+}
+
 /** Token ids of the encounter's combatants on this scene. */
 export function encounterTokenIds(scene = canvas.scene) {
   const combat = sceneEncounter(scene);
@@ -76,7 +100,10 @@ export async function gatherRoster(setup, adapter = getAdapter()) {
       spec.inEncounter = inEncounter.has(token.id);
       spec.position = positionOf(token);
       spec.perception ??= spec.initiative?.mod ?? 0;
-      out.push({ token, spec, baseSide: DISPOSITION_SIDES[token.document.disposition] ?? SIDES.HOSTILE });
+      applyHazard(spec, token.actor?.getFlag(MODULE_ID, "hazard")); // (the GM's mark, in the token's FastFighting tab)
+      // (A hazard on the Neutral side, as PF2e leaves one with no alliance, is set against the party.)
+      const side = DISPOSITION_SIDES[token.document.disposition] ?? SIDES.HOSTILE;
+      out.push({ token, spec, baseSide: spec.hazard && side === SIDES.NEUTRAL ? SIDES.HOSTILE : side });
     } catch ( err ) {
       console.error(`${MODULE_ID} | failed to read ${token.name}`, err);
     }
@@ -343,6 +370,7 @@ function bossyOf(entry) {
 export function commandChains(entries, setup, resolved, adapter = getAdapter(), { auto: fill = false } = {}) {
   const groups = new Map();
   for ( const e of entries ) {
+    if ( e.spec.hazard ) continue; // (a hazard commands nobody, and nobody commands it)
     const key = commandGroup(e, setup, resolved);
     if ( !key ) continue;
     if ( !groups.has(key) ) groups.set(key, []);

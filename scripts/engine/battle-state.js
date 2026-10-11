@@ -6,6 +6,8 @@
  * @property {string} name
  * @property {string} side
  * @property {string} kind                  "pc" | "npc" | "companion" | "summon" | "minion" | "hazard"
+ * @property {object} [hazard]              A hazard (a trap, a haunt, a hazardous feature): {once} (a simple one fires once).
+ *                                          It doesn't move, think or talk; give it untargetable too (nobody attacks it).
  * @property {number} level
  * @property {{value: number, max: number, temp?: number}} hp
  * @property {{ac: number, fortitude?: number, reflex?: number, will?: number}} defenses
@@ -251,6 +253,7 @@ export function createRun(prep) {
     legendary: units.some(u => u.prep.legendaryActions?.length),               // anyone with legendary actions
     auras: units.some(u => u.spec.saveAura),                                     // anyone whose aura helps friends' saves
     guards: units.some(u => u.spec.reactions?.some(r => r.on === "allyHit")),     // anyone who reacts when a friend is hit
+    untargetable: units.some(u => u.spec.untargetable),                           // anything nobody can attack (a hazard)
     byId: new Map(units.map(u => [u.id, u])),
     round: 0,
     sideFocus: {},
@@ -772,7 +775,7 @@ export function bonusDamageParts(run, attacker, action, target, { advantage = 0,
 
 /** Can u move at all (not grabbed by someone standing, not immobilized)? */
 export function canMove(run, u) {
-  if ( u.conds.immobilized ) return false;
+  if ( u.conds.immobilized || u.spec.hazard ) return false; // (a hazard stays where it is)
   const grabber = u.grabbedBy ? run.byId.get(u.grabbedBy) : null;
   return !(grabber && isStanding(grabber));
 }

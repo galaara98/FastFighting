@@ -170,7 +170,8 @@ function relevant(run, u, kind, t) {
   if ( !t || !t.active || (t === u && !SELF_KINDS.has(kind)) ) return false;
   if ( [STATUS.DEAD, STATUS.FLED].includes(t.status) ) return false;
   switch ( kind ) {
-    case "hurt": return (areEnemies(run, u, t) || seemsFoe(run, u, t)) && t.status !== STATUS.SURRENDERED && t.status !== STATUS.STOOD_DOWN;
+    // (Nobody can attack what's untargetable: a hazard, a Spiritual Weapon.)
+    case "hurt": return !t.spec.untargetable && (areEnemies(run, u, t) || seemsFoe(run, u, t)) && t.status !== STATUS.SURRENDERED && t.status !== STATUS.STOOD_DOWN;
     case "avoid": return areEnemies(run, u, t) && isStanding(t);
     case "talk": return t.status === STATUS.STANDING;
     case "heal": return !areEnemies(run, u, t) && (t.status === STATUS.DOWN || t.hp < t.maxHp) && !refusesToHelp(run, u, t);

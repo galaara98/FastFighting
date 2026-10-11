@@ -304,6 +304,9 @@
 .ff-token-tactics-head { display: flex; gap: 10px; align-items: flex-start; justify-content: space-between; }
 .ff-token-tactics-head .hint { margin: 0; flex: 1; }
 .ff-token-tactics .ff-tactics { margin-top: 6px; }
+.ff-token-hazard { margin: 6px 0; }
+.ff-token-hazard label { display: flex; gap: 8px; align-items: center; }
+.ff-token-hazard select { flex: 1; }
 .ff-survey-token img { width: 56px; height: 56px; border: none; border-radius: 6px; object-fit: cover; }
 .ff-survey-token h3 { margin: 0; border: none; }
 .ff-survey-token > div { flex: 1; }

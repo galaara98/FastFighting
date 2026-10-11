@@ -678,7 +678,16 @@
     },
     "TokenTactics": {
       "PrototypeHint": "FastFighting's tactics, playstyles and desires for this actor: every new token of it starts with these. Tokens already on the map keep their own.",
-      "TokenHint": "FastFighting's tactics, playstyles and desires for this token. An unlinked token's are its own; a linked token shares its actor's."
+      "TokenHint": "FastFighting's tactics, playstyles and desires for this token. An unlinked token's are its own; a linked token shares its actor's.",
+      "Hazard": "Hazard",
+      "HazardHint": "A trap, a haunt or a dangerous feature fights as a hazard: it doesn't move, think or talk, nobody attacks it, and it doesn't keep its side in the fight. A simple one fires once; a complex one acts every round.",
+      "HazardMark": {
+        "system": "As the game system has it",
+        "no": "Not a hazard",
+        "simple": "Simple: fires once",
+        "complex": "Complex: acts every round"
+      },
+      "HazardNoTactics": "A hazard has no tactics to set."
     },
     "Playstyle": {
       "Label": "Playstyles",

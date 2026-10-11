@@ -52,7 +52,7 @@ export function prefersTalk(u) {
 /** Present and visible: hidden ambushers aren't part of the conversation. */
 const present = u => isStanding(u) && !(u.spec.hidden && !u.revealed);
 /** Present, and on one of the sides at odds (those who take no side don't open or hold up a standoff). */
-const party = u => present(u) && u.side !== NEUTRAL_PARTY;
+const party = u => present(u) && u.side !== NEUTRAL_PARTY && !u.spec.hazard; // (a hazard has no say)
 
 /**
  * Does this fight open as a standoff?

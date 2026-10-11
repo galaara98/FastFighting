@@ -87,7 +87,7 @@ export function stealChance(run, u, mark = null) {
 
 /** Someone within reach worth robbing, the richest first: a foe, a bystander not in the fight, or someone taking no side. */
 export function theftTarget(run, u) {
-  const marks = run.units.filter(t => t !== u && isUp(t) && t.side !== u.side && (areEnemies(run, u, t) || t.active === false || isNeutral(t))
+  const marks = run.units.filter(t => t !== u && isUp(t) && !t.spec.hazard && t.side !== u.side && (areEnemies(run, u, t) || t.active === false || isNeutral(t))
     && worthRobbing(t) && (u.adjacent.has(t.id) || (edgeDistance(u, t) ?? Infinity) <= 5));
   return marks.sort((a, b) => remaining(b).money - remaining(a).money)[0] ?? null;
 }

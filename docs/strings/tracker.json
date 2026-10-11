@@ -12844,6 +12844,76 @@
    "commit": null,
    "hash": "099e4aae1b11"
   },
+  "core:FASTFIGHTING.TokenTactics.Hazard": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.TokenTactics.Hazard",
+   "area": "core/TokenTactics",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "5c5f3b2772cf"
+  },
+  "core:FASTFIGHTING.TokenTactics.HazardHint": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.TokenTactics.HazardHint",
+   "area": "core/TokenTactics",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "2f762015b68d"
+  },
+  "core:FASTFIGHTING.TokenTactics.HazardMark.complex": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.TokenTactics.HazardMark.complex",
+   "area": "core/TokenTactics",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "abba969d70af"
+  },
+  "core:FASTFIGHTING.TokenTactics.HazardMark.no": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.TokenTactics.HazardMark.no",
+   "area": "core/TokenTactics",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "4b974208284b"
+  },
+  "core:FASTFIGHTING.TokenTactics.HazardMark.simple": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.TokenTactics.HazardMark.simple",
+   "area": "core/TokenTactics",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "3eddffad7b20"
+  },
+  "core:FASTFIGHTING.TokenTactics.HazardMark.system": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.TokenTactics.HazardMark.system",
+   "area": "core/TokenTactics",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "25876a7def9a"
+  },
+  "core:FASTFIGHTING.TokenTactics.HazardNoTactics": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.TokenTactics.HazardNoTactics",
+   "area": "core/TokenTactics",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "ec3d032d7cbd"
+  },
   "core:FASTFIGHTING.TokenTactics.PrototypeHint": {
    "repo": "core",
    "file": "languages/en.json",

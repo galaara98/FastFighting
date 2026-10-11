@@ -1609,7 +1609,7 @@ function observes(run, u, turn) {
   u.observed = true;
   const chance = behaviorOf(u).observe;
   if ( !chance || !run.rng.chance(chance) ) return false;
-  const seen = o => isStanding(o) && areEnemies(run, u, o) && !(o.spec.hidden && !o.revealed) && !sizedUp(u, o) && !passedOver(u, o);
+  const seen = o => isStanding(o) && areEnemies(run, u, o) && !o.spec.untargetable && !(o.spec.hidden && !o.revealed) && !sizedUp(u, o) && !passedOver(u, o);
   const first = choosePitch(run, u)?.target;
   // (One of each sort: sizing up one goblin warrior is sizing up them all.)
   const sorts = new Set();
@@ -1871,9 +1871,36 @@ function lastWord(run) {
   return false;
 }
 
+/**
+ * A hazard's turn (a trap, a haunt, a hazardous feature): it doesn't move, think or talk. It fires at its side's enemies
+ * in its reach, its actions in the order it has them, as far as its turn goes; a simple hazard fires once, a complex one
+ * each round. It's set from the start, encounter or not, and waits out a standoff (nothing has set it off).
+ */
+function hazardTurn(run, u) {
+  if ( run.standoff || u.spent || u.status !== STATUS.STANDING ) return;
+  const turn = turnFor(run, u);
+  run.acting = u;
+  u.turn = turn;
+  let made = 0;
+  for ( let tries = 0; tries < 6 && !battleOver(run); tries++ ) {
+    const action = u.prep.offense.find(a => turn.canAfford(costOf(run.prep.rules, a, u)) && hasUses(u, a) && nextTargetInReach(run, u, a));
+    if ( !action ) break;
+    turn.spend(costOf(run.prep.rules, action, u));
+    spendUse(u, action);
+    executeOffense(run, u, action, nextTargetInReach(run, u, action), made);
+    made += attacksIn(action);
+    if ( u.spec.hazard.once ) {
+      u.spent = true; // (its one trigger: spent)
+      break;
+    }
+  }
+  run.acting = null;
+}
+
 function takeTurn(run, u) {
   const { rules, options } = run.prep;
   if ( [STATUS.DEAD, STATUS.FLED, STATUS.SURRENDERED, STATUS.STOOD_DOWN].includes(u.status) ) return;
+  if ( u.spec.hazard ) return hazardTurn(run, u);
   // On the map but not in the conflict: it only looks around, until the round after it notices.
   if ( !u.active && !lookAround(run, u) ) return;
   // A summoned creature: gone when its time or its summoner's concentration runs out; idle when it wasn't sustained.
