@@ -27,7 +27,9 @@
  *   resolve: how much more strong-willed than typical for its level (0 typical; -5 or less: very gullible)
  * @property {object} [valuables]           What it could be talked into giving up:
  *   {money: total in the smallest coin, denominations: [{label, value}] largest first,
- *    stowed: [{id, name, value}] carried but not wielded or worn, wielded: [{id, name, value}]}
+ *    stowed: [{id, name, value, category?, material?, rarity?}] carried but not wielded or worn, wielded: (the same),
+ *    pooled: true where its side shares the money (Ironsworn's Supply: one pays, all have that much less),
+ *    progress: n where giving ground marks n progress on its own track instead (an Ironsworn foe: the winner's reward)}
  * @property {number} [wounded]
  * @property {number} [doomed]
  * @property {number} [dying]               Already dying when the battle starts (a fight resumed mid-way)
@@ -241,6 +243,10 @@ function prepareCombatant(c, side) {
 /** Fresh mutable state for one run. */
 export function createRun(prep) {
   const units = prep.combatants.map(p => createUnit(prep, p));
+  // Money its side pools (Ironsworn's Supply): what one pays, all of them have that much less of.
+  for ( const u of units ) {
+    if ( u.spec.valuables?.pooled ) u.pool = units.filter(o => o.side === u.side && o.spec.valuables?.pooled);
+  }
   // A boss (the head of its group's chain, as a boss): almost never runs; in a standoff it's paid, not talked, away.
   for ( const chain of Object.values(prep.command ?? {}) ) {
     if ( chain?.[0]?.role !== "boss" ) continue;

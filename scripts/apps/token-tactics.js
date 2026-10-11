@@ -7,7 +7,7 @@
 import { MODULE_ID } from "../constants.js";
 import { getAdapter } from "../api.js";
 import { localize } from "../i18n.js";
-import { questionsContext, setTactic, togglePlaystyle, syncTacticsDom } from "../foundry/tactics.js";
+import { questionsContext, setTactic, togglePlaystyle, syncTacticsDom, playstyleSignature } from "../foundry/tactics.js";
 import { HAZARD_MARKS, applyHazard } from "../foundry/battle.js";
 
 const TAB = "fastFighting";
@@ -84,6 +84,7 @@ async function fill(app, panel) {
     tactics: isHazard ? null : questionsContext(spec, actor, `token-${app.id}`, { targets: null })
   });
   panel.innerHTML = html;
+  panel.dataset.ffSignature = playstyleSignature(actor);
   // The token window's own form leaves these alone: no names to submit, no actions of its own to run.
   for ( const el of panel.querySelectorAll("[name]") ) el.removeAttribute("name");
   for ( const el of panel.querySelectorAll("[data-action]") ) {
@@ -121,7 +122,8 @@ function listen(app, panel) {
     const actor = actorOf(app);
     if ( button.dataset.ffAction === "togglePlaystyle" ) {
       if ( !await togglePlaystyle(actor, button.dataset.playstyle) ) ui.notifications.warn(localize("FASTFIGHTING.Playstyle.Max"));
-    } else if ( button.dataset.ffAction === "resetAll" ) await actor.unsetFlag(MODULE_ID, "tactics");
+    } else if ( button.dataset.ffAction === "setMotive" ) await setTactic(actor, `${button.dataset.motive}.kind`, button.dataset.kind);
+    else if ( button.dataset.ffAction === "resetAll" ) await actor.unsetFlag(MODULE_ID, "tactics");
     fill(app, panel);
   });
 }
@@ -130,6 +132,9 @@ function listen(app, panel) {
 export function syncTokenTactics(actor) {
   for ( const app of foundry.applications.instances.values() ) {
     const panel = app.element?.querySelector?.(`.tab[data-tab="${TAB}"]`);
-    if ( panel && actorOf(app)?.uuid === actor.uuid ) syncTacticsDom(panel, actor);
+    if ( !panel || actorOf(app)?.uuid !== actor.uuid ) continue;
+    // (A change to what shows, such as the kind of offer: drawn again; anything else, patched in place.)
+    if ( panel.dataset.ffSignature !== playstyleSignature(actor) ) fill(app, panel);
+    else syncTacticsDom(panel, actor);
   }
 }

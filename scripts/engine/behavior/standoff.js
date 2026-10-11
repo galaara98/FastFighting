@@ -18,6 +18,7 @@
  * Pure: no Foundry globals.
  */
 import { TACTICAL, OPENING, NEUTRAL_PARTY, clamp } from "../../constants.js";
+import { waiting } from "./bargain.js";
 import { isStanding, areEnemies, liveTrait, liveTier, behaviorOf, typical, command, commandOf, wish, wishWins } from "../battle-state.js";
 import { isNeutral, feud, annoyedBy } from "./neutral.js";
 
@@ -29,6 +30,12 @@ const CANT_FOLLOW = 0.35; // a beast, or anyone who shares no language with the 
 const FRAY = 0.04;        // every blow struck in a quarrel beside the standoff
 const FRAY_MAX = 0.2;
 const MAX_CHANCE = 0.85;
+const UNMET = 0.25;       // every turn (or failed haggle) it has waited on what it expects, up to 4
+/**
+ * Only an argument: what would break a standoff collapses the talks this often (insults, impatience, blame): with no
+ * blows to come to, it falls apart somewhat less often than a standoff that could come to blows.
+ */
+const ARGUMENT_BREAKS = 0.75;
 
 /** Playstyles that make someone quicker (above 1) or slower (below 1) to lose patience. */
 const TEMPER = { impatient: 2.5, cruel: 2, instigator: 2, brawler: 1.8, speedRunner: 1.5, moralist: 0.6, chicken: 0.5, peoplePleaser: 0.5, diplomat: 0.3, peacekeeper: 0.3 };
@@ -95,6 +102,8 @@ export function impatience(run, u, since = 1) {
   for ( const o of run.units ) if ( o !== u && present(o) ) keeper = Math.max(keeper, behaviorOf(o).peacekeeping ?? 0);
   if ( keeper > 0 ) p *= 1 - 0.5 * keeper;
 
+  // Waiting on what it expects, with nothing meeting it, wears on it (the longer, the more).
+  if ( waiting(u) ) p *= 1 + UNMET * Math.min(4, u.unmet);
   // Talk that goes nowhere wears on everyone; pitches that fail on you wear on you most.
   const rebuffs = [...u.rebuffed.values()].reduce((s, n) => s + n, 0);
   p += PER_ROUND * Math.max(0, run.round - since) + PER_REBUFF * rebuffs;
@@ -120,10 +129,18 @@ export function impatience(run, u, since = 1) {
 
 /**
  * Does u (on one of the standoff's sides) break the standoff on its turn? Returns why ("insulted", "annoyed": blaming
- * the other side for what someone who seems to be with them did, "impatient", or "beast" for a creature that can't
- * follow the talk), or null to keep talking.
+ * the other side for what someone who seems to be with them did, "unmet": tired of waiting on what it expects,
+ * "impatient", or "beast" for a creature that can't follow the talk), or null to keep talking. Only an argument: less
+ * often (ARGUMENT_BREAKS).
  */
 export function breaksStandoff(run, u, say = () => {}) {
+  const cause = breakCause(run, u, say);
+  if ( !cause || run.prep.options.opening !== OPENING.ARGUMENT ) return cause;
+  return run.rng.chance(ARGUMENT_BREAKS) ? cause : null;
+}
+
+function breakCause(run, u, say) {
+  const argument = run.prep.options.opening === OPENING.ARGUMENT;
   if ( !run.units.some(o => party(o) && areEnemies(run, u, o)) ) return null;
   // Insults are answered at once, more often than not: one from someone taking no side starts a quarrel with it (the
   // standoff holds, unless u blames the other side for it); one from the other side ends the standoff.
@@ -131,7 +148,8 @@ export function breaksStandoff(run, u, say = () => {}) {
     const fresh = [...u.offendedBy].slice(u.insultsAnswered ?? 0).map(id => run.byId.get(id)).filter(Boolean);
     u.insultsAnswered = u.offendedBy.size;
     for ( const n of fresh.filter(isNeutral) ) {
-      if ( !run.rng.chance(0.7) ) continue;
+      // (Only an argument: a quarrel would end the talks, so somewhat less often.)
+      if ( !run.rng.chance(argument ? 0.7 * ARGUMENT_BREAKS : 0.7) ) continue;
       feud(run, u, n, say);
       annoyedBy(run, u, n);
     }
@@ -142,7 +160,7 @@ export function breaksStandoff(run, u, say = () => {}) {
     return "annoyed";
   }
   if ( !run.rng.chance(impatience(run, u)) ) return null;
-  return canTalk(u) ? "impatient" : "beast";
+  return !canTalk(u) ? "beast" : waiting(u) ? "unmet" : "impatient";
 }
 
 /**

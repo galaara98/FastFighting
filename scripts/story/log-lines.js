@@ -33,9 +33,29 @@ export function formatMoney(amount, denominations) {
   return parts.length ? listItems(parts) : t("Money", { n: 0, coin: denominations.at(-1).label });
 }
 
+/**
+ * What a creature expects, in words: money; a promise; or something of a kind (the system's own words for its
+ * category, material and rarity, as the survey stored them), worth at least so much, or unvalued.
+ */
+export function expectText(e) {
+  if ( !e ) return "";
+  if ( e.kind === "money" ) return formatMoney(e.amount, e.denominations);
+  if ( e.kind === "promise" ) return t(PROMISE[e.promise] ?? "PromiseNoHarm");
+  const labels = e.labels ?? {};
+  const details = [
+    labels.material ? t("ExpectMaterial", { material: labels.material }) : "",
+    labels.rarity ? t("ExpectRarity", { rarity: labels.rarity }) : "",
+    e.minValue > 0 ? t("ExpectWorth", { value: formatMoney(e.minValue, e.denominations) }) : "",
+    e.unvalued ? t("ExpectUnvalued") : ""
+  ].filter(Boolean);
+  const what = labels.category || t("ExpectAnything");
+  return details.length ? t("ExpectThing", { what, details: listItems(details) }) : what;
+}
+
 /** What a creature handed over, in words. */
 export function concessionText(c) {
   if ( !c ) return "";
+  if ( c.kind === "progress" ) return t("GroundGiven", { n: c.amount });
   return c.kind === "money" ? formatMoney(c.amount, c.denominations) : (c.item?.name ?? "");
 }
 
@@ -43,9 +63,10 @@ const MODE = { walk: "ModeWalk", fly: "ModeFly", swim: "ModeSwim", climb: "ModeC
 const DESIRE = { hurt: "DesireHurt", heal: "DesireHeal", protect: "DesireProtect", aid: "DesireAid", talk: "DesireTalk", avoid: "DesireAvoid" };
 const WHY = { hurt: "WhyHurt", harmed: "WhyHarmed", helped: "WhyHelped", robbed: "WhyRobbed", insulted: "WhyInsulted", impatient: "WhyImpatient" };
 const NOTICE = { sight: "NoticeSight", sound: "NoticeSound", standoff: "NoticeStandoff", fledInto: "NoticeFled", help: "NoticeHelp", attacked: "NoticeAttacked" };
-const BREAKS = { insulted: "BreakInsulted", beast: "BreakBeast", annoyed: "BreakAnnoyed", blood: "BreakBlood", impatient: "BreakImpatient" };
+const BREAKS = { insulted: "BreakInsulted", beast: "BreakBeast", annoyed: "BreakAnnoyed", blood: "BreakBlood", impatient: "BreakImpatient", unmet: "BreakUnmet" };
 /** Only an argument: why the talks collapsed (nobody fights). */
-const COLLAPSES = { insulted: "CollapseInsulted", beast: "CollapseBeast", annoyed: "CollapseAnnoyed", blood: "CollapseBlood", impatient: "CollapseImpatient", fray: "CollapseFray" };
+const COLLAPSES = { insulted: "CollapseInsulted", beast: "CollapseBeast", annoyed: "CollapseAnnoyed", blood: "CollapseBlood", impatient: "CollapseImpatient", fray: "CollapseFray", unmet: "CollapseUnmet" };
+const PROMISE = { noHarm: "PromiseNoHarm", passage: "PromisePassage", leave: "PromiseLeave" };
 const TRIGGER = { hit: "TriggerHit", attacked: "TriggerAttacked", missed: "TriggerMissed", damaged: "TriggerDamaged", spell: "TriggerSpell" };
 const VANISH = { expired: "VanishExpired", released: "VanishReleased", unsustained: "VanishUnsustained", idle: "VanishIdle" };
 const role = r => (r === "boss" ? t("RoleBoss") : r === "leader" ? t("RoleLeader") : String(r ?? "").startsWith("lieutenant") ? t("RoleLieutenant", { n: String(r).split(" ")[1] ?? "" }) : r ?? "");
@@ -204,6 +225,11 @@ export function logLine(e) {
     case "backlash": return t("Backlash", { actor: e.actor, label: e.label || t("PaysForIt"), damage: damage(e.damage, e.damageType) });
     case "breakStandoff": return t("BreakStandoff", { actor: e.actor, how: t(BREAKS[e.cause] ?? "BreakImpatient") });
     case "collapse": return t("Collapse", { actor: e.actor, how: t(COLLAPSES[e.cause] ?? "CollapseImpatient") });
+    // Only an argument: what was handed over, or promised, to end it.
+    case "deal": return t("Deal", { actor: e.actor, target: e.target ?? "", what: e.promise ? t(PROMISE[e.promise] ?? "PromiseNoHarm") : concessionText(e.concession) });
+    case "haggle":
+      if ( e.what === "keeps" ) return t("KeepsIt", { actor: e.actor, what: e.item?.name ?? "", luck: e.luck, needed: e.needed ?? 39 });
+      return e.what === "drops" ? t("HaggleDrops", { actor: e.actor, by: e.by ?? "" }) : t("HaggleLowers", { actor: e.actor, by: e.by ?? "", what: expectText(e.expect) });
     case "callHelp": return t("CallHelp", { actor: e.actor, target: e.toward ?? "" });
     case "condition": return t("Condition", { actor: e.actor, effect: e.effect || t("Reeling") });
     case "down": return e.knockedOut ? t("KnockedOut", a) : t("Down", { actor: e.actor, dying: e.dying ? t("DownDying", { n: e.dying }) : "" });

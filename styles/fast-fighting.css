@@ -384,4 +384,12 @@
 /* Desires (Tactics): what, at whom, how badly */
 .ff-desires { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; }
 .ff-desire { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) minmax(0, 1fr); gap: 4px; }
+/* What a character brings to a standoff, and what it wants out of it. */
+.ff-motives { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 8px 16px; margin-top: 8px; }
+.ff-motive { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.ff-motive-fields { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; font-size: 12px; }
+.ff-motive-fields select { flex: 1 1 8em; min-width: 0; }
+.ff-motive-fields input[type=number] { width: 6em; flex: 0 0 auto; }
+.ff-motive-worth { display: inline-flex; align-items: center; gap: 4px; }
+.ff-motive-unit { opacity: 0.8; }
 .ff-desire.is-empty select:not(:first-child) { opacity: 0.6; }

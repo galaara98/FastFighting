@@ -78,6 +78,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       undo: BattlePlanner.#onUndo,
       preparePlayers: BattlePlanner.#onPreparePlayers,
       togglePlaystyle: BattlePlanner.#onTogglePlaystyle,
+      setMotive: BattlePlanner.#onSetMotive,
       setGroup: BattlePlanner.#onSetGroup,
       setTeam: BattlePlanner.#onSetTeam,
       setRole: BattlePlanner.#onSetRole,
@@ -560,6 +561,14 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     const actor = await fromUuid(target.dataset.actorUuid);
     const ok = await togglePlaystyle(actor, target.dataset.playstyle);
     if ( !ok ) ui.notifications.warn(loc("FASTFIGHTING.Playstyle.Max"));
+    this.stale = true;
+    this.render();
+  }
+
+  /** What it offers, or expects: the kind (each shows fields of its own). */
+  static async #onSetMotive(event, target) {
+    const actor = await fromUuid(target.dataset.actorUuid);
+    await setTactic(actor, `${target.dataset.motive}.kind`, target.dataset.kind);
     this.stale = true;
     this.render();
   }

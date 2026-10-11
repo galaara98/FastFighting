@@ -29,6 +29,7 @@ import { respond, riposteStrike } from "./behavior/responses.js";
 import { decideSummon, callSummons, sustainSummons, summonState, dismiss } from "./behavior/summons.js";
 import { createAggregator } from "./aggregate.js";
 import { spotTraps, stepOut, learnTrap } from "./behavior/traps.js";
+import { bargain } from "./behavior/bargain.js";
 import { talkActionsThisTurn, choosePitch, attemptTalk, shareLanguage } from "./behavior/talk.js";
 import { opensWithTalk, breaksStandoff, standoffPitches, charismaticLeader, canTalk, prefersTalk } from "./behavior/standoff.js";
 import { controlOutcome, controlRoll, isImmune, degreeShift } from "./behavior/control.js";
@@ -1861,6 +1862,11 @@ function standoffTurn(run, u) {
   const rules = run.prep.rules;
   const turn = turnFor(run, u);
   tellLore(run, u, turn); // (what it learned last turn, if it means to tell its friends)
+  // What it offers, or expects, comes first (behavior/bargain.js); a deal ends it.
+  if ( u.spec.motives && bargain(run, u, logger(run)) ) {
+    u.turnsTaken += 1;
+    return endOfTurn(run, u);
+  }
   const actions = turn.howMany(rules.talkCost ?? rules.basicAction ?? 1);
   if ( !keepsPeace(run, u, actions) && !observes(run, u, turn) ) standoffPitching(run, u, standoffPitches(run, u, actions));
   u.turnsTaken += 1;
@@ -2442,7 +2448,7 @@ const BEATEN = new Set([STATUS.DEAD, STATUS.DOWN, STATUS.SURRENDERED, STATUS.STO
 function reclaimGoods(run) {
   for ( const u of run.units ) {
     for ( const c of u.concessions ?? [] ) {
-      if ( c.kept || c.returned ) continue;
+      if ( c.kept || c.returned || c.kind === "progress" ) continue; // (ground given stays given)
       const taker = run.byId.get(c.to);
       // Beaten, or caught: still under the control of the owner's side when it's over (a dominated thief).
       const holder = taker?.controlledBy ? run.byId.get(taker.controlledBy) : null;

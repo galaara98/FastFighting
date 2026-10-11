@@ -11,6 +11,7 @@ import { TACTIC_KEYS, TACTIC_WISHES } from "../engine/tactics.js";
 import { resetPathGrid } from "./pathing.js";
 import { tokenSetup, sceneEncounter } from "./persistence.js";
 import { tacticsFor, isPlayerControlled, statedDesires } from "./tactics.js";
+import { validMotives, NO_CATALOG } from "./motives.js";
 import { rankForCommand, autoLieutenants, partyRoles } from "./command-pick.js";
 import { setting } from "../settings.js";
 
@@ -307,6 +308,9 @@ function applyCharacterTactics(spec, entry) {
   spec.avoidCostlySpells = !!stored.avoidCostlySpells; // "I don't like to use spells that cost something"
   spec.avoidKilling = wish("target"); // holds back from a kill: knocks out, leaves the fallen be, spares them after
   spec.avoidFleeing = wish("retreat"); // stays when it would choose to run
+  // What it brings to a standoff, and what it wants out of it: only what it really has, and the system's own kinds of thing.
+  const motives = validMotives(stored, spec.valuables, getAdapter()?.itemCatalog?.() ?? NO_CATALOG);
+  if ( motives ) spec.motives = motives;
   for ( const [k, v] of Object.entries(playstyles.traits) ) {
     if ( spec.traits[k] ) spec.traits[k] = { ...spec.traits[k], fudge: (spec.traits[k].fudge ?? 0) + v };
   }

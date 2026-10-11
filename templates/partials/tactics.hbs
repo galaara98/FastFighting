@@ -44,3 +44,47 @@
   {{/each}}
 </div>
 {{/if}}
+{{#if motives}}
+<div class="ff-motives">
+  {{#each motives.sides}}
+  <div class="ff-motive" data-motive="{{which}}">
+    <div class="ff-q-label">{{label}} <i class="fa-solid fa-circle-question" data-tooltip="{{hint}}"></i></div>
+    <div class="ff-pills ff-motive-kinds">
+      {{#each kinds}}<button type="button" class="ff-pill {{#if active}}active{{/if}}" data-action="setMotive" data-motive="{{../which}}" data-kind="{{value}}" data-actor-uuid="{{../actorUuid}}" aria-pressed="{{#if active}}true{{else}}false{{/if}}">{{label}}</button>{{/each}}
+    </div>
+    {{#if money}}
+    <div class="ff-motive-fields">
+      <input type="number" min="0" step="1" name="{{money.amount.name}}" value="{{money.amount.value}}" data-tactic="{{money.amount.key}}" data-actor-uuid="{{actorUuid}}" aria-label="{{localize "FASTFIGHTING.Motive.Amount"}}">
+      {{#if money.coin}}<select name="{{money.coin.name}}" data-tactic="{{money.coin.key}}" data-actor-uuid="{{actorUuid}}" aria-label="{{localize "FASTFIGHTING.Motive.Coin"}}">{{#each money.coin.choices}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select>{{else}}<span class="ff-motive-unit">{{money.unit}}</span>{{/if}}
+      {{#if money.have}}<span class="ff-hint">{{money.have}}</span>{{/if}}
+    </div>
+    {{/if}}
+    {{#if item}}
+    <div class="ff-motive-fields">
+      <select name="{{item.name}}" data-tactic="{{item.key}}" data-actor-uuid="{{actorUuid}}" aria-label="{{localize "FASTFIGHTING.Motive.Item"}}">{{#each item.choices}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select>
+    </div>
+    {{/if}}
+    {{#if thing}}
+    <div class="ff-motive-fields">
+      {{#if thing.category}}<select name="{{thing.names.category}}" data-tactic="{{thing.keys.category}}" data-actor-uuid="{{actorUuid}}" aria-label="{{localize "FASTFIGHTING.Motive.Category"}}">{{#each thing.category}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select>{{/if}}
+      {{#if thing.material}}<select name="{{thing.names.material}}" data-tactic="{{thing.keys.material}}" data-actor-uuid="{{actorUuid}}" aria-label="{{localize "FASTFIGHTING.Motive.Material"}}">{{#each thing.material}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select>{{/if}}
+      {{#if thing.rarity}}<select name="{{thing.names.rarity}}" data-tactic="{{thing.keys.rarity}}" data-actor-uuid="{{actorUuid}}" aria-label="{{localize "FASTFIGHTING.Motive.Rarity"}}">{{#each thing.rarity}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select>{{/if}}
+    </div>
+    <div class="ff-motive-fields">
+      {{#if thing.coin}}
+      <label class="ff-motive-worth">{{localize "FASTFIGHTING.Motive.MinValue"}}
+        <input type="number" min="0" step="1" name="{{thing.names.minValue}}" value="{{thing.minValue}}" data-tactic="{{thing.keys.minValue}}" data-actor-uuid="{{actorUuid}}"></label>
+      <select name="{{thing.names.coin}}" data-tactic="{{thing.keys.coin}}" data-actor-uuid="{{actorUuid}}" aria-label="{{localize "FASTFIGHTING.Motive.Coin"}}">{{#each thing.coin}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select>
+      {{else if thing.unit}}
+      <label class="ff-motive-worth">{{localize "FASTFIGHTING.Motive.MinValue"}}
+        <input type="number" min="0" step="1" name="{{thing.names.minValue}}" value="{{thing.minValue}}" data-tactic="{{thing.keys.minValue}}" data-actor-uuid="{{actorUuid}}"></label>
+      <span class="ff-motive-unit">{{thing.unit}}</span>
+      {{/if}}
+      <label class="ff-check"><input type="checkbox" name="{{thing.names.unvalued}}" data-tactic="{{thing.keys.unvalued}}" data-actor-uuid="{{actorUuid}}" {{checked thing.unvalued}}> {{localize "FASTFIGHTING.Motive.Unvalued"}}
+        <i class="fa-solid fa-circle-question" data-tooltip="{{localize "FASTFIGHTING.Motive.UnvaluedHint"}}"></i></label>
+    </div>
+    {{/if}}
+  </div>
+  {{/each}}
+</div>
+{{/if}}

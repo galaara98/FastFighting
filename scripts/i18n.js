@@ -53,9 +53,9 @@ export function term(key) {
   return hasWords(`FASTFIGHTING.Stat.${key}`) ? globalThis.game.i18n.localize(`FASTFIGHTING.Stat.${key}`) : key;
 }
 
-/** {AC}, {HP} and {SP} in any text: the game's words for them. */
-const TERMS = { AC: "ac", HP: "hp", SP: "sp" };
-const withTerms = text => String(text).replace(/\{(AC|HP|SP)\}/g, (m, k) => term(TERMS[k]));
+/** {AC}, {HP}, {SP} and {MONEY} in any text: the game's words for them (money: what paying costs, Ironsworn's Supply). */
+const TERMS = { AC: "ac", HP: "hp", SP: "sp", MONEY: "money" };
+const withTerms = text => String(text).replace(/\{(AC|HP|SP|MONEY)\}/g, (m, k) => term(TERMS[k]));
 
 /**
  * The text for `key` in the reader's language, {placeholders} filled from data, and {AC}, {HP} and {SP} with the game's words

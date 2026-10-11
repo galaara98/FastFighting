@@ -75,13 +75,23 @@ export class SystemAdapter {
   }
 
   /**
-   * The system's own word for a stat, for {AC} and {HP} in FastFighting's text (in the client's language).
-   * @param {"ac"|"hp"|"sp"} key   ac: how hard a creature is to hit; hp: how much harm it can take; sp: stamina, spent
-   *                                before hit points (a spec's hp.stamina)
+   * The system's own word for a stat, for {AC}, {HP}, {SP} and {MONEY} in FastFighting's text (in the client's language).
+   * @param {"ac"|"hp"|"sp"|"money"} key   ac: how hard a creature is to hit; hp: how much harm it can take; sp:
+   *   stamina, spent before hit points (a spec's hp.stamina); money: what paying costs (coins; Ironsworn's Supply)
    * @returns {string|null|false}  the word; null: FastFighting's generic one; false: the system has none (not shown)
    */
   term(key) {
     return null;
+  }
+
+  /**
+   * The kinds of thing a character can ask for in a standoff (never a particular item): the system's own item
+   * categories, materials and rarities, each [{key, label}] in the system's words. A CombatantSpec's valuables name
+   * each item's category, material and rarity by these keys. Empty lists: the system has none of them.
+   * @returns {{categories: {key: string, label: string}[], materials: {key: string, label: string}[], rarities: {key: string, label: string}[]}}
+   */
+  itemCatalog() {
+    return { categories: [], materials: [], rarities: [] };
   }
 
   /**

@@ -1833,6 +1833,12 @@
       "That was one word too many for {actor}.",
       "Insulted, {actor} strikes."
     ],
+    "breakUnmet": [
+      "{actor} is done waiting for what it was promised, and goes for a weapon.",
+      "Nobody has given {actor} what it asked for; it means to take it.",
+      "{actor} stops asking, and starts fighting.",
+      "Tired of waiting, {actor} attacks."
+    ],
     "standDown": [
       "{actor} lowers their weapon and steps back.",
       "{actor} agrees to stand down.",
@@ -1914,6 +1920,11 @@
       "{actor} promises {item} to {by}, and the moment passes.",
       "{actor} offers {item}; {by} doesn't take it after all.",
       "Luck is with {actor}: {item} stays put."
+    ],
+    "concedeProgress": [
+      "{actor} gives ground to {by}.",
+      "{actor} yields the point to {by}.",
+      "{by} wins this round of words with {actor}."
     ],
     "lieAndRun": [
       "{actor} swears they have nothing and bolts.",
@@ -2285,6 +2296,46 @@
       "Coin and goods change hands, and the standoff is over.",
       "It ends with a bargain, not a battle.",
       "Something is given up, and the matter is settled."
+    ],
+    "promiseNoHarm": [
+      "{actor} gives {by} its word: no harm will come to them.",
+      "{actor} promises {by} that nobody will be hurt.",
+      "\"No harm will come to you,\" {actor} tells {by}."
+    ],
+    "promisePassage": [
+      "{actor} agrees to let {by} pass.",
+      "{actor} steps aside and promises {by} safe passage.",
+      "\"Go on through,\" {actor} tells {by}."
+    ],
+    "promiseLeave": [
+      "{actor} agrees to leave, as {by} asked.",
+      "{actor} promises {by} it will go.",
+      "\"We'll go,\" {actor} tells {by}."
+    ],
+    "haggleLower": [
+      "{by} talks {actor} into asking for less.",
+      "{actor} comes down on its price, at {by}'s urging.",
+      "{by} haggles, and {actor} gives a little ground."
+    ],
+    "haggleDrop": [
+      "{by} talks {actor} out of it altogether.",
+      "{actor} lets the matter drop, at {by}'s urging.",
+      "In the end, {actor} asks for nothing more."
+    ],
+    "agreedNoHarm": [
+      "Both sides agree that nobody will be harmed, and the matter is settled.",
+      "A truce is agreed, and everyone goes their own way unharmed.",
+      "They agree to leave each other be."
+    ],
+    "agreedPassage": [
+      "{winners} are promised safe passage, and go on their way.",
+      "The way is opened for {winners}, and nobody stands in it.",
+      "It ends with {winners} allowed to pass."
+    ],
+    "agreedLeave": [
+      "The others agree to leave, and {winners} have the place to themselves.",
+      "It ends with a promise to leave, given to {winners}.",
+      "{winners} watch the others go, as agreed."
     ],
     "backedOff": [
       "One side backs away, and it's over without a blow.",

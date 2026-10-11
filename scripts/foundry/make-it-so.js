@@ -370,7 +370,10 @@ async function commitFight(rows, replay, { story = null, stories = null, odds = 
       if ( c.kept || c.returned ) continue; // kept by luck, or taken back from a beaten taker: nothing changes hands
       const to = rows.find(r => r.spec.id === c.to);
       try {
-        const eventRecords = (await adapter.commitConcession(row.tokenDoc, to?.tokenDoc ?? null, c, { giver: row.spec, receiver: to?.spec ?? null })) ?? [];
+        // (The giver's side, for what it shares: Ironsworn's Supply.)
+        const sideOf = r => r.final.side ?? r.spec.side;
+        const allies = rows.filter(r => r !== row && sideOf(r) === sideOf(row)).map(r => r.tokenDoc);
+        const eventRecords = (await adapter.commitConcession(row.tokenDoc, to?.tokenDoc ?? null, c, { giver: row.spec, receiver: to?.spec ?? null, allies })) ?? [];
         if ( !eventRecords.length ) continue;
         const eventId = foundry.utils.randomID();
         for ( const r of eventRecords ) r.eventId = eventId;

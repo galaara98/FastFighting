@@ -115,7 +115,16 @@ A fight can be talked down at any point, and some encounters never come to blows
 
 A leader who wants to talk holds their side back. Before it breaks, a charismatic NPC leader may take one last turn to press the party.
 
-**Only an argument.** Some conflicts are words and nothing else: a negotiation, a hearing, a haggle that mustn't turn bloody. Pick **Only an argument: no fighting** as the planner's opening (or the world's default). The encounter opens as a standoff and stays one, and whatever would come to blows ends it instead: someone takes offense, loses patience, can't follow the talk, a blow lands, or a quarrel turns ugly. The talks collapse and everyone goes their own way; nobody fights. Whatever was agreed before it collapsed stands: a deal struck, someone standing down, someone backing off. Talks that settle nothing before the round limit stall. The results show how often the talks collapsed (beside how often it was settled with words, which no longer counts a collapse); there's no simulated difficulty, since nobody fights. The story tells what was agreed, and who walked out and why.
+**Only an argument.** Some conflicts are words and nothing else: a negotiation, a hearing, a haggle that mustn't turn bloody. Pick **Only an argument: no fighting** as the planner's opening (or the world's default). The encounter opens as a standoff and stays one, and whatever would come to blows ends it instead: someone takes offense, loses patience, can't follow the talk, a blow lands, or a quarrel turns ugly. The talks collapse and everyone goes their own way; nobody fights. Nobody runs or yields in an argument either: talked round, a creature backs down; made to pay, it pays to end the argument and stays where it is (a boss is paid to drop it, not to go). With no blows to come to, it falls apart somewhat less often than a standoff that could come to blows (3 times in 4). Whatever was agreed before it collapsed stands: a deal struck, someone backing down. Talks that settle nothing before the round limit stall. The results show how often the talks collapsed (beside how often it was settled with words, which no longer counts a collapse); there's no simulated difficulty, since nobody fights. The story tells what was agreed, and who walked out and why.
+
+**Bargaining.** Every survey (and each token's FastFighting tab, and the planner's tactics panel) asks two more questions, for any standoff:
+- **Do you offer something to end this argument?** Nothing; money (so much, in the coin picked); one of its own things; or a promise: not to harm them, to let them pass, to leave.
+- **Do you expect something to end this argument?** Nothing; money; something of a kind, never a particular item: the system's own categories, materials and rarities (a cold iron weapon, a rare piece of armor), worth at least so much, or unvalued (junk, or beyond price) if that will do; or a promise: not to be harmed, to be let through, that they leave.
+- **Anti-cheating:** only what the character really has counts (money up to what it carries; one of its own things, still with it), and only the system's own kinds of thing. Anything else is dropped before the battle is built.
+- **On its turn**, one who expects something asks for it: whoever on the other side has it and would part with it (or offered it) hands it over. One who offers puts it to the other side: whoever expects what it meets takes it; with nothing stated, the greedy may take goods, the timid a promise. A player character hands over only what it offered, unless it's talked into more. A deal ends the encounter, for the side that got what it wanted (a promise of no harm: a truce, nobody's).
+- **What isn't met is talked over,** with the usual checks. The other side haggles: each success calms the one who expects (it keeps talking); talked round, it comes down (half the money; any material and rarity, then half the value, then unvalued will do; leaving becomes passage, passage becomes no harm), and agrees when the talker meets the new price; pressed again, it lets it go. The one who expects presses: talked round, whoever it pressed hands it over. Both against the resolve of whoever's being talked round: the greedy hold out for their due and hold on to what they have (Mercenaries, Thieves most), the peaceable come round (Peacekeepers, Diplomats, People-Pleasers most). A failed haggle irritates the one who expects, as does a failed press of its own; while nothing meets it, its patience wears faster, and when it runs out, the standoff breaks (only an argument: the talks collapse).
+- **Made to pay** in a standoff (talked into giving something up, paying a boss to go, squeezed by a neutral), a creature pays what the other side expects, if it has it; else what it offered; else the usual (below). A player character's things still go only on the luck check.
+- **Systems without coins or goods** (Ironsworn): paying costs Supply, which the side shares (what one pays, all of them have that much less of, and Make it So lowers every friendly character's Supply, and every character the system shares it with); a foe made to give something up gives ground instead, a mark of progress on its own track, the winners' reward.
 
 **A quarrel beside the standoff.** A neutral (see below) may come to blows with one of the sides, most often when one of that side's members takes offense at a botched pitch from it. Only the two of them fight: the other side doesn't have to join in, and the standoff between the two sides holds, with exceptions:
 - **Impatience:** every blow struck beside the standoff wears on everyone's patience.
@@ -129,7 +138,7 @@ A leader who wants to talk holds their side back. Before it breaks, a charismati
 - **Changing sides:** an enemy talked into it only stands aside, taking no side (see below), and only if a hidden d100 comes up under the **switch luck** slider (69 by default); otherwise it's talked into one of the other outcomes. Spells and abilities made for it (charm, dominate) don't take this roll, and still turn a creature straight over until they end.
 
 **Giving something up:**
-- **What:** 1–10% of their money, or an item they carry but don't wield or wear.
+- **What:** in a standoff, what the other side expects, if they have it, else what they offered (see Bargaining); otherwise 1–10% of their money, or an item they carry but don't wield or wear (in a system without them, ground given: progress on their track).
 - **A PC** hands over an item only on a hidden luck check (39 or less by default).
 - **An NPC** with nothing spare gives up what it's wielding; with nothing at all, it lies and runs.
 - **Who gets it:** the talker.
@@ -406,11 +415,12 @@ Hooks.once("fastFighting.init", api => {
     deriveTraits(actor) { ... }
     detectLeaders(specs) { ... }
     describeRegionBehavior(behavior) { ... }         // system region behaviors -> {types, difficult, hazardous}
-    term(key) { ... }                                // the system's word for "ac" / "hp" / "sp"; null: FastFighting's generic one; false: none
+    term(key) { ... }                                // the system's word for "ac" / "hp" / "sp" / "money"; null: FastFighting's generic one; false: none
+    itemCatalog() { ... }                            // {categories, materials, rarities}: [{key, label}], what a character can ask for
     resourceLabel(key, spec) { ... }
     describeOutcome(spec, final) { ... }
     async commitOutcome(tokenDoc, spec, final, options) { ... }      // returns an undo record
-    async commitConcession(giverDoc, receiverDoc, concession) { ... } // returns undo records
+    async commitConcession(giverDoc, receiverDoc, concession, { allies }) { ... } // returns undo records (allies: the giver's side, for pooled money)
   }
   api.registerAdapter("my-system", MySystemAdapter, { priority: 10 });
 });

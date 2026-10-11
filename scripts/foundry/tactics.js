@@ -8,6 +8,7 @@
  *    Also `playstyles` (up to four ids), `stayTrue`, `roleplay`, `avoidConsumables` and `avoidCostlySpells` (booleans).
  *    Older tick-boxes read as answers while their question is unanswered: `alwaysTalk` (talk "always"), `avoidKilling` or
  *    `neverKill` (target "avoidKilling"), `avoidFleeing` (retreat "never"); answering the question sets them aside.
+ *    And `offer` and `expect`: what it brings to a standoff, and what it wants out of it (foundry/motives.js).
  *  - User flag `fast-fighting.survey`: {status, sceneId, requestId, updated} for the GM's status indicators.
  */
 import { MODULE_ID } from "../constants.js";
@@ -17,6 +18,7 @@ import { getAdapter } from "../api.js";
 import { DESIRE_KINDS, DESIRE_BAND_KEYS } from "../engine/behavior/desire.js";
 import { setting } from "../settings.js";
 import { distanceText, localize } from "../i18n.js";
+import { cleanMotive, cleanMotiveField, MOTIVE_KEY, motivesContext, NO_CATALOG } from "./motives.js";
 
 export const SOCKET = `module.${MODULE_ID}`;
 export const SURVEY_STATUS = Object.freeze({ NONE: "none", REQUESTED: "requested", ENTERING: "entering", CLOSED: "closed", DONE: "done" });
@@ -68,6 +70,11 @@ export function sanitizeTactics(raw) {
   if ( raw.alwaysTalk === true && unanswered("talk") ) out.talk = "always";
   if ( (raw.avoidKilling === true || raw.neverKill === true) && unanswered("target") ) out.target = "avoidKilling";
   if ( raw.avoidFleeing === true && unanswered("retreat") ) out.retreat = "never";
+  // What it brings to a standoff, and what it wants out of it (checked against what it has when a battle is built).
+  for ( const which of ["offer", "expect"] ) {
+    const m = cleanMotive(which, raw[which]);
+    if ( m && Object.keys(m).length ) out[which] = m;
+  }
   if ( isPlain(raw.desires) ) {
     out.desires = {};
     for ( const slot of DESIRE_SLOTS ) {
@@ -94,6 +101,14 @@ export function getStoredTactics(actor) {
 }
 
 export async function setTactic(actor, key, value) {
+  const motive = MOTIVE_KEY.exec(key ?? "");
+  if ( actor && motive ) {
+    const [, which, field] = motive;
+    const clean = cleanMotiveField(which, field, value);
+    if ( clean === null ) return;
+    await actor.update({ [`flags.${MODULE_ID}.tactics.${which}.${field}`]: clean });
+    return;
+  }
   const desire = DESIRE_KEY.exec(key ?? "");
   if ( actor && desire ) {
     const [, slot, field] = desire;
@@ -183,10 +198,25 @@ export function isPlayerControlled(spec, actor) {
   return spec.kind === "pc" || !!actor?.hasPlayerOwner;
 }
 
-/** Compact fingerprint of what changes "Let them decide" (playstyles and the two checkboxes). */
+/**
+ * Compact fingerprint of what changes the sheet's shape: "Let them decide" (playstyles and the checkboxes), and the
+ * kind of offer and expectation (each shows fields of its own).
+ */
 export function playstyleSignature(actor) {
   const t = getStoredTactics(actor);
-  return JSON.stringify([t.playstyles ?? [], !!t.stayTrue, !!t.roleplay, !!t.avoidConsumables, !!t.avoidCostlySpells]);
+  return JSON.stringify([t.playstyles ?? [], !!t.stayTrue, !!t.roleplay, !!t.avoidConsumables, !!t.avoidCostlySpells, t.offer?.kind ?? "", t.expect?.kind ?? ""]);
+}
+
+/**
+ * A stored answer by its survey key: a question, a desire's field, or a motive's field (undefined: never set, so the
+ * sheet keeps showing its default, such as the coin an amount is counted in).
+ */
+function storedValue(stored, key) {
+  const motive = MOTIVE_KEY.exec(key);
+  if ( motive ) return stored[motive[1]]?.[motive[2]];
+  const desire = DESIRE_KEY.exec(key);
+  if ( desire ) return stored.desires?.[desire[1]]?.[desire[2]] ?? (desire[2] === "level" ? DESIRE_LEVELS.determined : "");
+  return stored[key];
 }
 
 /* -------------------------------------------- */
@@ -317,6 +347,8 @@ export function questionsContext(spec, actor, uid, { questions: withQuestions = 
       disabled: !picked.includes(id) && picked.length >= MAX_PLAYSTYLES
     })).sort((a, b) => a.label.localeCompare(b.label, game.i18n.lang)),
     playstyleCount: game.i18n.format("FASTFIGHTING.Playstyle.Count", { n: picked.length, max: MAX_PLAYSTYLES }),
+    // What it brings to a standoff, and what it wants out of it.
+    motives: withQuestions ? motivesContext(spec, stored, getAdapter()?.itemCatalog?.() ?? NO_CATALOG, uid, actor.uuid) : null,
     stayTrue: { name: `tactic-${uid}-stayTrue`, checked: !!stored.stayTrue },
     roleplay: { name: `tactic-${uid}-roleplay`, checked: !!stored.roleplay },
     avoidConsumables: { name: `tactic-${uid}-avoidConsumables`, checked: !!stored.avoidConsumables, show: spec.actions.some(a => /^item:/.test(a.resource ?? "")) },
@@ -350,14 +382,19 @@ export function syncTacticsDom(root, actor) {
     if ( changed ) { box.classList.remove("ff-synced"); void box.offsetWidth; box.classList.add("ff-synced"); }
   }
   for ( const cb of root.querySelectorAll(`input[type=checkbox][data-tactic][data-actor-uuid="${actor.uuid}"]`) ) {
-    const on = !!stored[cb.dataset.tactic];
+    const on = !!storedValue(stored, cb.dataset.tactic);
     if ( cb.checked !== on && cb !== document.activeElement ) cb.checked = on;
+  }
+  // (An amount someone else typed.)
+  for ( const el of root.querySelectorAll(`input[type=number][data-tactic][data-actor-uuid="${actor.uuid}"]`) ) {
+    const value = storedValue(stored, el.dataset.tactic);
+    if ( value !== undefined && el !== document.activeElement && el.value !== String(value) ) el.value = String(value);
   }
   for ( const el of root.querySelectorAll(`select[data-tactic][data-actor-uuid="${actor.uuid}"]`) ) {
     const key = el.dataset.tactic;
-    const desire = DESIRE_KEY.exec(key);
-    const value = desire ? (stored.desires?.[desire[1]]?.[desire[2]] ?? (desire[2] === "level" ? DESIRE_LEVELS.determined : ""))
-      : (stored[key] ?? "auto");
+    const stated = storedValue(stored, key);
+    if ( stated === undefined && MOTIVE_KEY.test(key) ) continue;
+    const value = stated ?? "auto";
     if ( el === document.activeElement || el.value === String(value) ) continue;
     el.value = value;
     const q = el.closest(".ff-q");
