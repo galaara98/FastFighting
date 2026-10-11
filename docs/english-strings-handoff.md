@@ -6,7 +6,7 @@
 
 - **Step 0 is done** (2026-10-11). Every word a GM or player reads is in `languages/en.json` (each repo) or the core's `story/en.json`; the code names keys only. Core commits ece9bd0 and a02f557 (API 9), one commit in each helper. All five suites pass, normally and with `npm run test:reworded`, which rewords every string so no test depends on the wording. Checked in the local Foundry (5e world): planner, results, all three story styles.
 - **Step 1 is done** (2026-10-11): the tracker is `docs/strings/` in the core (`npm run strings -- status`; see below).
-- **Next: Step 2**, the writing sessions.
+- **Next: Step 2**, the writing sessions. The user chose to start with the short strings (two words or fewer, two placeholders at most: 968 of them) in a CSV: `docs/strings/short-strings.csv`, built by `docs/strings/short-strings.mjs`, with a "Yours" column the user fills in Excel. When it comes back: enter each answer exactly (quotes around an answer are Excel's, not the user's: drop them), flag proofreading issues as before/after for approval, run the tests both ways, commit the strings and the CSV as the user saved it, and record the batch in the tracker. A blank "Yours" stays todo.
 
 Decisions the user made along the way:
 - **Developer messages** (console messages, errors thrown at other modules) are part of the review, but the user's wording goes **directly into the code**, not into `en.json`. The tracker lists them (area `<repo>/code`).
