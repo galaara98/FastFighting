@@ -40,7 +40,7 @@
         "Hint": "How many battles to simulate. More is steadier but slower; 2000 takes well under a second for a typical fight."
       },
       "maxRounds": {
-        "Name": "Maximum rounds",
+        "Name": "Max rounds",
         "Hint": "A simulated battle still going after this many rounds counts as a stalemate."
       },
       "includeHidden": {
@@ -52,7 +52,7 @@
         "Hint": "Include tokens on scene Levels other than the one being viewed."
       },
       "neutralDefault": {
-        "Name": "Neutral tokens",
+        "Name": "Neutral token",
         "Hint": "Default handling of tokens with Neutral disposition. They stand on the field taking no side, perhaps leaning one way: whoever hurts or robs them, or crosses what they want (hurting someone they lean toward), turns them against their side, and either side's talkers can try to win them over (harder against their lean). Can be changed per battle and per token."
       },
       "downedModel": {
@@ -165,11 +165,11 @@
         "Hint": "Each time a creature wants to kill a player character who's down at 0 HP, it goes ahead only if a hidden d100 comes up at or under this; otherwise it turns away to its next foe, taking everything it wanted of that PC along. Higher means fallen PCs die more often."
       },
       "leaderInfluence": {
-        "Name": "Leader influence",
+        "Name": "Leader's influence",
         "Hint": "How readily followers take their lead from whoever commands their group, on a scale of 0 to 100 (50 is the usual; it isn't a percentage). Each turn a follower may follow, as its loyalty and playstyles allow: it then wants the topmost thing its commander wants that it can actually do (targets included), and its playstyle leans toward its commander's for the turn. 0: nobody follows; 100: twice as readily as usual."
       },
       "bossInfluence": {
-        "Name": "Boss influence",
+        "Name": "Boss's influence",
         "Hint": "How much more readily followers take a boss's lead than a leader's: 1.25 to 3 times (default 2). A group with a boss has no leader; a lieutenant who steps up for a fallen boss leads as a leader, never as a boss. The party never has a boss."
       },
       "traitorLuck": {
@@ -515,7 +515,7 @@
       "BackToDrawn": "Back to the fight the simulation drew: that's the one Make it So commits.",
       "Outcome": {
         "Hp": "HP {from} → {to}",
-        "Dies": "DIES",
+        "Dies": "Dies",
         "Dead": "Dead",
         "Down": "Down",
         "Unconscious": "Unconscious (stable)",

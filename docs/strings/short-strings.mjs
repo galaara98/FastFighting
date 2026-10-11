@@ -2,6 +2,8 @@
  * The index of short strings (two words or fewer, two placeholders at most) for the author to write: a CSV with what
  * each must say, where it shows, its limits and the proposed text, and a column for the author's own wording.
  *   node docs/strings/short-strings.mjs            writes docs/strings/short-strings.csv
+ *   node docs/strings/short-strings.mjs <out.csv> --skip <answered.csv> ...
+ *                                                  a later batch: leaves out every string answered in those CSVs
  * The repos sit side by side, as for tracker.mjs.
  */
 import { readFileSync, writeFileSync } from "fs";
@@ -49,7 +51,7 @@ const SETTING = {
   talking: "creatures can talk instead of fighting (on or off)", ignoreLanguages: "talking works without a shared language (on or off)", storyStyle: "which story style is told by default",
   storyMode: "who the story is posted for", leaderInfluence: "how readily followers take their commander's lead", bossInfluence: "how much more a boss's lead counts"
 };
-const SIDE = { friendly: "the party's side", hostile: "the enemy side: the Hostile tab and side choice, and its name when it fights as one group", hostileGroup: "a hostile group's name, with its number, when the hostile tokens fight in more than one group", neutral: "neutral tokens (taking part as set)", secret: "secret tokens (hidden from the players)" };
+const SIDE = { friendly: "the party's side", hostile: "the enemy side: the Hostile tab and side choice, and its name when it fights as one group", hostileGroup: "a hostile group's name, with its number, when the hostile tokens fight in more than one group", neutralGroup: "a neutral team's name, with its number: a Secret token's team pills in the planner", neutral: "neutral tokens (taking part as set)", secret: "secret tokens (hidden from the players)" };
 const BAND = {
   feral: "Tactical, lowest band (0-19): pure instinct", instinctive: "Tactical, 20-39", competent: "Tactical, 40-59", tactical: "Tactical, 60-79", mastermind: "Tactical, highest band (80+)",
   craven: "Brave, lowest band (0-19)", skittish: "Brave, 20-39", steady: "Brave, 40-59", bold: "Brave, 60-79", fearless: "Brave, highest band (80+)",
@@ -374,12 +376,45 @@ function describe(repo, key, value) {
 /* -------------------------------------------- */
 /*  The CSV                                     */
 /* -------------------------------------------- */
+const MODULES = { core: "Core", pf2e: "PF2e", dnd5e: "D&D 5e", dcc: "DCC", ironsworn: "Ironsworn" };
+
+/** A CSV's rows as arrays (RFC 4180: quoted fields, doubled quotes, line breaks inside quotes). */
+function parseCsv(text) {
+  const out = [];
+  let row = [], field = "", quoted = false;
+  for ( let i = 0; i < text.length; i++ ) {
+    const c = text[i];
+    if ( quoted ) {
+      if ( c !== "\"" ) field += c;
+      else if ( text[i + 1] === "\"" ) { field += "\""; i++; }
+      else quoted = false;
+    }
+    else if ( c === "\"" ) quoted = true;
+    else if ( c === "," ) { row.push(field); field = ""; }
+    else if ( c === "\n" ) { row.push(field); out.push(row); row = []; field = ""; }
+    else if ( c !== "\r" ) field += c;
+  }
+  if ( field || row.length ) { row.push(field); out.push(row); }
+  return out;
+}
+
+// The strings the author already answered in an earlier batch ("Module|Key").
+const args = process.argv.slice(2);
+const answered = new Set();
+for ( let i = args.indexOf("--skip"); i >= 0; i = args.indexOf("--skip", i + 1) ) {
+  const [head, ...body] = parseCsv(readFileSync(args[i + 1], "utf8").replace(/^\uFEFF/, ""));
+  const col = name => head.indexOf(name);
+  for ( const r of body ) if ( (r[col("Yours")] ?? "").trim() ) answered.add(`${r[col("Module")]}|${r[col("Key")]}`);
+}
+const outFile = args.find((a, i) => !a.startsWith("--") && args[i - 1] !== "--skip");
+
 const rows = [];
 const missing = [];
 for ( const [repo, dir] of Object.entries(REPOS) ) {
   const en = flat(JSON.parse(readFileSync(join(ROOT, dir, "languages/en.json"), "utf8")));
   for ( const [key, value] of Object.entries(en) ) {
     if ( words(value) > 2 || marks(value).length > 2 ) continue;
+    if ( answered.has(`${MODULES[repo]}|${key}`) ) continue;
     const d = describe(repo, key, value);
     if ( !d?.what ) { missing.push(`${repo} ${key} ${JSON.stringify(value)}`); continue; }
     const notes = [d.limits];
@@ -400,9 +435,9 @@ const cell = v => `"${String(v).replace(/"/g, "\"\"")}"`;
 const PREFIX = { core: "FASTFIGHTING", pf2e: "FFPF2E", dnd5e: "FFDND5E", dcc: "FFDCC", ironsworn: "FFIRONSWORN" };
 const lines = [["#", "Module", "Area", "Key", "Where it shows", "What it must say", "Limits", "Proposed", "Yours"].map(cell).join(",")];
 rows.forEach((r, i) => {
-  const module = { core: "Core", pf2e: "PF2e", dnd5e: "D&D 5e", dcc: "DCC", ironsworn: "Ironsworn" }[r.repo];
+  const module = MODULES[r.repo];
   // The proposal in quotes, so spaces at either end show and Excel never reads it as a formula.
   lines.push([i + 1, module, r.area.replace(/^\w+: /, ""), r.key, r.where, r.what, r.limits, `"${r.value}"`, ""].map(cell).join(","));
 });
-writeFileSync(process.argv[2] ?? join(HERE, "short-strings.csv"), `\uFEFF${lines.join("\r\n")}\r\n`);
+writeFileSync(outFile ?? join(HERE, "short-strings.csv"), `\uFEFF${lines.join("\r\n")}\r\n`);
 console.log(`${rows.length} strings written`);
