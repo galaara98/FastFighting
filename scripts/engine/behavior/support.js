@@ -14,6 +14,7 @@
  *                        roll): onDegree [critical failure, failure, success, critical success] says what comes of each
  *                        (an outcome, or null for nothing); without it, the outcome on a success and nothing otherwise
  *   besideFoe: feet      only for a friend whose foe is that close to the user (5e Help: within 5 feet of you)
+ * An outcome with `failed` is what a failure costs (Ironsworn: Pay the Price, through rules.onOutcome).
  * An outcome with vsFocus counts against whoever the friend is set on (effects.js), and `uses` makes it one roll's
  * worth: Help, Aid, Guidance, an inspiration die, "+1 on your next move".
  *   oncePerTurn          no more than once in a turn (Action Surge, Reckless Attack)
@@ -123,6 +124,7 @@ export function buffOptions(run, u, turn = null) {
   for ( const action of buffs ) {
     if ( !hasUses(u, action) ) continue;
     if ( action.oncePerTurn && u.usedThisTurn?.has(action.id) ) continue;
+    if ( rules.usable && !rules.usable(run, u, action, null) ) continue; // (Ironsworn: Secure an Advantage only in control)
     const cost = costOf(rules, action, u);
     if ( turn && !turn.canAfford(cost) ) continue;
     // A single-target buff it's holding on a friend still standing stays with them.
@@ -151,11 +153,16 @@ export function decideBuff(run, u, turn) {
   const options = buffOptions(run, u, turn);
   if ( !options.length ) return null;
   const leadAid = wants.lead?.kind === "aid" ? wants.lead.targetId : null;
+  // Set on it (driven or more, and not just its own reckoning: told to, stirred by the fight, a friend who asked):
+  // it bolsters that friend with whatever reaches them, worth it or not.
+  const devoted = leadAid && wants.lead.level >= 60 && wants.lead.driven !== "logic";
   // Helpers think helping is worth more than it is; everyone else weighs it against hitting something.
-  const baseline = offenseBaseline(run, u) * (behaviorOf(u).helps ? 0.8 : 1);
+  const baseline = devoted ? 0 : offenseBaseline(run, u) * (behaviorOf(u).helps ? 0.8 : 1);
   let best = null;
   for ( const o of options ) {
-    const score = leadAid && o.targets.some(t => t.id === leadAid) ? o.score * 1.5 : o.score;
+    const forLead = leadAid && o.targets.some(t => t.id === leadAid);
+    if ( devoted && !forLead ) continue;
+    const score = forLead ? o.score * 1.5 : o.score;
     if ( score <= baseline ) continue;
     if ( !best || score > best.score ) best = { ...o, score };
   }

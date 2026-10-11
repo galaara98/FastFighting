@@ -136,3 +136,15 @@ describe("a Lore-Collector's payoff", () => {
     expect(buildStory(r, spec, "statistician").text).toMatch(/lore watches bandit instead of talking/);
   });
 });
+
+describe("set on bolstering a friend", () => {
+  test("told to (driven or more), it bolsters that friend even when hitting would do more", () => {
+    const pep = { id: "pep", name: "Pep Talk", kind: "buff", cost: 1, includeSelf: false, outcome: { mods: { attack: 1 }, uses: 1, rounds: 1, label: "heartened" } };
+    const bard = (desires = []) => fighter("bard", { initiative: { mod: 50 }, desires, actions: [strike({ id: "rapier", bonus: 12, damage: [parseFormula("2d8+6", "piercing")] }), pep] });
+    const given = r => r.log.filter(e => e.type === "buff" && e.actorId === "bard" && e.round === 1);
+    const plain = replay(battle([bard(), fighter("f1"), ogre()], { maxRounds: 1 }), pf2eRules, 3);
+    expect(given(plain)).toHaveLength(0); // (not worth an action next to its rapier)
+    const told = replay(battle([bard([{ kind: "aid", targetId: "f1", level: 90 }]), fighter("f1"), ogre()], { maxRounds: 1 }), pf2eRules, 3);
+    expect(given(told).map(e => e.targetIds)).toEqual([["f1"]]);
+  });
+});

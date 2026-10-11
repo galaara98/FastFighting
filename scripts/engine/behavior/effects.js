@@ -270,7 +270,7 @@ export function holdsAnything(run, u) {
 /* -------------------------------------------- */
 
 /** One point on a d20 roll: about 8.5% more (or less) of what that roll decides, at a typical chance to hit. */
-const ROLL_POINT = 0.085;
+const D20_POINT = 0.085;
 /** Advantage or disadvantage: worth about four points. */
 const ADVANTAGE = 0.35;
 /** Saves decide less of what comes at a creature than attacks do. */
@@ -386,6 +386,8 @@ function freshConditions(t, conditions) {
  * reach (all of them, or only the next one).
  */
 function modsPerRound(run, t, mods, out, inc, { words = 0, own = 1, guard = 1 } = {}) {
+  // (A point means more on smaller dice: the system says how much, rules.rollPoint.)
+  const ROLL_POINT = Number(run.prep.rules.rollPoint) || D20_POINT;
   if ( !mods ) return 0;
   const num = k => Number(mods[k]) || 0;
   const sign = k => Math.sign(num(k));

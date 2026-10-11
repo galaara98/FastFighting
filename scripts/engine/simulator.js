@@ -1219,8 +1219,8 @@ function executeBuff(run, u, action, targets, worth = 0, turn = null) {
   if ( run.log ) {
     const self = landed.length === 1 && landed[0] === u;
     const names = landed.map(t => (t === u ? "self" : t.spec.name));
-    log(run, u, `${action.name} → ${names.join(", ")}${outcome ? "" : ": nothing comes of it"}`, {
-      type: "buff", action: action.name, effect: outcome?.label ?? action.name, self, targets: landed.map(t => t.spec.name), check, failed: !outcome,
+    log(run, u, `${action.name} → ${names.join(", ")}${!outcome ? ": nothing comes of it" : outcome.failed ? `: ${outcome.label ?? "it fails"}` : ""}`, {
+      type: "buff", action: action.name, effect: outcome?.label ?? action.name, self, targets: landed.map(t => t.spec.name), check, failed: !outcome || !!outcome.failed,
       against: landed.map(t => focus.get(t)?.spec.name ?? null),
       targetIds: landed.map(t => t.id), withSelf: landed.includes(u), tempHp: Number(outcome?.tempHp) || 0, aura: !!action.aura,
       askedBy: landed.filter(t => t !== u && u.heard?.has(t.id)).map(t => t.spec.name), // (friends who asked for it)
