@@ -17,7 +17,8 @@
         "attack": "Attack bonus",
         "damage": "Damage formula",
         "level": "Level",
-        "initiative": "Initiative modifier"
+        "initiative": "Initiative modifier",
+        "perception": "Perception modifier (optional; the initiative stands in without it)"
       }
     },
     "Settings": {
@@ -406,8 +407,11 @@
       "How": {
         "drawn": "Fair draw",
         "typical": "Most typical",
-        "chosen": "Chosen by filter"
-      }
+        "chosen": "Chosen by filter",
+        "another": "Another draw"
+      },
+      "Preview": "Preview",
+      "PreviewHint": "Only to look at: Make it So commits the fight the simulation drew. Run the simulation again for a new one."
     },
     "MakeItSo": {
       "Title": "Make it So",
@@ -422,14 +426,15 @@
       "UndoConfirm": "Restore the tokens to how they were before the last Make it So on this scene?",
       "Undone": "Make it So was undone.",
       "Moves": "Moves {distance}",
-      "Hint": "Post this story to chat, move every token to where the fight left it, and commit the outcome. Undo reverses all of it.",
+      "Hint": "Commit the fight the simulation drew: post its story, move every token to where the fight left it, and commit the outcome. Previews (another draw, the most typical fight, a filter's pick) can't be committed. Undo reverses all of it.",
       "Gives": "Gives up {what} to {name}",
       "Receives": "Receives {what} from {name}",
       "Kept": "Agreed to give up {what}, but kept it (luck {luck})",
       "Reclaimed": "Gave up {what} to {name}, but got it back when {name} was beaten",
       "Stolen": "{what} stolen by {name}",
       "Steals": "Steals {what} from {name}",
-      "Doors": "Doors: {n} opened ({broken} of them broken or forced)"
+      "Doors": "Doors: {n} opened ({broken} of them broken or forced)",
+      "BackToDrawn": "Back to the fight the simulation drew: that's the one Make it So commits."
     },
     "Tactics": {
       "Auto": "Let {name} decide: {choice}",

@@ -14,7 +14,9 @@ export const GENERIC_PATHS = {
   attack: "",
   damage: "",
   level: "system.details.level.value",
-  initiative: ""
+  initiative: "",
+  // (Noticing a fight, and telling who is hurt: without it, the initiative stands in, as it does in many systems.)
+  perception: ""
 };
 
 function read(doc, path, fallback = null) {
@@ -63,6 +65,7 @@ export class GenericAdapter extends SystemAdapter {
       hp: { value: hp, max: hpMax, temp: 0 },
       defenses: { ac }, // saves fall back to the rules' typical values
       initiative: { mod: Number(read(actor, p.initiative, 0)) || 0 },
+      perception: Number(read(actor, p.perception, read(actor, p.initiative, 0))) || 0,
       speeds: { walk: 30 },
       actions: [{
         id: `${actor.id}.attack`, name: game.i18n.localize("FASTFIGHTING.Generic.Attack"), kind: "strike", cost: 1,

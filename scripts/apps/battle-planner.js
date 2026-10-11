@@ -103,6 +103,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     this.spec = null;
     this.swing = null;
     this.sample = null;
+    this.drawn = null;
     this.sampleFilter = "any";
     this.running = false;
     this.progress = 0;
@@ -129,6 +130,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     this.spec = null;
     this.swing = null;
     this.sample = null;
+    this.drawn = null;
     this.stale = false;
     this.storyCache.clear();
   }
@@ -433,6 +435,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     return {
       seed,
       how: this.sample.how ? loc(`FASTFIGHTING.Sample.How.${this.sample.how}`) : "",
+      preview: this.sample !== this.drawn,
       outcome: result.outcome === "victory" ? result.winners.map(w => loc(`FASTFIGHTING.Side.${w}`)).join(" & ") : loc(`FASTFIGHTING.Sample.Outcome.${result.outcome}`),
       story: this.storyFor()?.html ?? "",
       totalRounds: result.rounds,
@@ -603,6 +606,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     this.progress = 0;
     this.swing = null;
     this.sample = null;
+    this.drawn = null;
     this.abort = new AbortController();
     await this.render();
     try {
@@ -626,6 +630,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       // The fight Make it So commits is drawn at random from the simulated fights, so a 70% win is a loss
       // three times in ten, as it should be.
       this.sample = drawFight(spec, results);
+      this.drawn = this.sample; // the only fight Make it So will commit (until the next run)
       if ( this.abort.signal.aborted ) ui.notifications.info(game.i18n.format("FASTFIGHTING.Planner.Stopped", { n: results.runs }));
     } catch ( err ) {
       console.error(`${MODULE_ID} | simulation failed`, err);
@@ -674,7 +679,10 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
           && Object.entries(r.units).filter(([id]) => pcIds.has(id)).some(([, u]) => u.wasDowned)
       };
       let found;
-      if ( this.sampleFilter === "any" ) found = drawFight(this.spec, this.results);
+      if ( this.sampleFilter === "any" ) {
+        found = drawFight(this.spec, this.results);
+        if ( found ) found.how = "another"; // another fair draw: to look at, not to commit
+      }
       else if ( this.sampleFilter === "typical" ) {
         const seed = this.results.representativeSeed;
         found = seed === null ? null : { seed, result: replay(this.spec, rules, seed), how: "typical" };
@@ -691,8 +699,15 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   static async #onMakeItSo() {
-    if ( !this.sample || !this.spec ) return;
+    if ( !this.drawn || !this.spec ) return;
     if ( canvas.scene?.id !== this.sceneId ) return ui.notifications.warn(loc("FASTFIGHTING.Planner.SceneChanged"));
+    // Only the fight the simulation drew can be committed: a preview (another draw, the most typical fight, one a
+    // filter chose) is put aside, and the GM confirms the real one.
+    if ( this.sample !== this.drawn ) {
+      this.sample = this.drawn;
+      await this.render();
+      ui.notifications.info(loc("FASTFIGHTING.MakeItSo.BackToDrawn"));
+    }
     try {
       const rows = planMakeItSo(this.spec, this.sample.result);
       if ( !rows.some(r => r.changed) && !Object.keys(this.sample.result.doors ?? {}).length ) return ui.notifications.info(loc("FASTFIGHTING.MakeItSo.Nothing"));
@@ -710,6 +725,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     this.roster = null;
     this.results = null;
     this.sample = null;
+    this.drawn = null;
     this.render();
   }
 

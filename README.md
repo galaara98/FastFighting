@@ -57,7 +57,7 @@ Once it notices, it decides from its personality whether to join, watch, or slip
 
 ## A fair ruling
 
-**Make it So commits a fight drawn at random from the simulated ones.** A 70% win is a loss three times in ten, as it should be. The Sample fight tab labels where the fight came from: *Fair draw*, *Most typical*, or *Chosen by filter* (a party victory, a defeat, a PC dies, a close call). The typical fight and the filtered ones are there to preview.
+**Make it So commits the fight the simulation drew at random.** A 70% win is a loss three times in ten, as it should be, and the GM can't pick a better one: another draw, the most typical fight, or one a filter chose (a party victory, a defeat, a PC dies, a close call) are previews only, marked so. Make it So always goes back to the drawn fight; for a new one, run the simulation again. Undo still reverses a committed fight.
 
 **After the fight.** When the last foe falls, the survivors tend their dying, before the dying make their next roll. They use free help first (first aid, medicine feats), then spells and potions. Anyone left untended lives or dies by the system's rules for dying, so nobody is committed half-dead.
 
