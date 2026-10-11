@@ -12999,9 +12999,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.TokenTactics.Tab",
    "area": "core/TokenTactics",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "written",
+   "date": "2026-10-11",
+   "commit": "b8a0373",
    "hash": "9af9e8099c35"
   },
   "core:FASTFIGHTING.TokenTactics.TokenHint": {
