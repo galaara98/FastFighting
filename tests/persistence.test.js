@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { planHolder, getSetup, saveSetup, clearSetup, sceneEncounter } from "../scripts/foundry/persistence.js";
-import { groupOf } from "../scripts/foundry/battle.js";
+import { groupOf, resolveAllegiances, resolveLeans, commandGroup, secretTeam, SECRET_TEAMS } from "../scripts/foundry/battle.js";
 
 /** A document that keeps flags, as a Foundry Scene or Combat does. */
 function doc(uuid, extra = {}) {
@@ -107,6 +107,49 @@ describe("a plan per encounter", () => {
     ui.combat.viewed = elsewhere;
     expect(sceneEncounter()).toBe(null);
     expect(planHolder()).toBe(scene);
+  });
+
+  test("a Secret token is always on a team: hostile group 1, until the GM puts it on any hostile group or neutral team", () => {
+    const setup = getSetup();
+    setup.sides.neutral.allegiance = "friendly"; // (neutrals leaning toward the party)
+    const roster = [{ token: { id: "orc" }, baseSide: "hostile" }, { token: { id: "spy" }, baseSide: "secret" }];
+    for ( const e of roster ) setup.tokens[e.token.id] = { include: true };
+    const spy = roster[1];
+    expect(secretTeam(spy, setup)).toEqual({ side: "hostile", group: 1 });
+    expect(secretTeam(roster[0], setup)).toBe(null); // (only a Secret token has a team)
+    expect(resolveAllegiances(roster, setup).spy).toBe("hostile");
+    // A hostile group no one else is in: a team of its own.
+    setup.tokens.spy.team = "hostile3";
+    expect(resolveAllegiances(roster, setup).spy).toBe("hostile3");
+    expect(secretTeam(spy, setup)).toEqual({ side: "hostile", group: 3 });
+    // A neutral team: it takes no side with that team, leaning as the neutrals do, in that team's chain of command.
+    setup.tokens.spy.team = "neutral2";
+    const resolved = resolveAllegiances(roster, setup);
+    expect(resolved.spy).toBe("neutralParty");
+    expect(resolveLeans(roster, setup).spy).toBe("friendly");
+    expect(commandGroup(spy, setup, resolved)).toBe("neutralParty#2");
+    // The neutrals left out of it: a Secret token on a neutral team still takes no side, leaning nowhere.
+    setup.sides.neutral.allegiance = "exclude";
+    expect(resolveAllegiances(roster, setup).spy).toBe("neutralParty");
+    expect(resolveLeans(roster, setup).spy).toBe(null);
+    // A team that isn't one: hostile group 1.
+    setup.tokens.spy.team = "friendly1";
+    expect(resolveAllegiances(roster, setup).spy).toBe("hostile");
+    expect(SECRET_TEAMS).toEqual(["hostile1", "hostile2", "hostile3", "neutral1", "neutral2", "neutral3"]);
+  });
+
+  test("neutrals take no side, leaning as the Neutral tab says; or they're left out, or fight everyone", () => {
+    const setup = getSetup();
+    const roster = [{ token: { id: "orc" }, baseSide: "hostile" }, { token: { id: "miller" }, baseSide: "neutral" }];
+    for ( const e of roster ) setup.tokens[e.token.id] = { include: true };
+    for ( const lean of ["neutral", "friendly", "hostile", "closest", "underdog"] ) {
+      setup.sides.neutral.allegiance = lean;
+      expect(resolveAllegiances(roster, setup).miller).toBe("neutralParty");
+    }
+    setup.sides.neutral.allegiance = "exclude";
+    expect(resolveAllegiances(roster, setup).miller).toBe(null);
+    setup.sides.neutral.allegiance = "own";
+    expect(resolveAllegiances(roster, setup).miller).toBe("neutral");
   });
 
   test("a fresh plan puts every hostile token in one group, until the GM splits them", () => {

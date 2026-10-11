@@ -40,7 +40,7 @@ What a token does then depends on its disposition (the planner can move any toke
 | **Friendly** | Fights for the party from round 1. | Checks each turn whether it notices; fights for the party from the round after. |
 | **Hostile** | Fights for its hostile group from round 1 (group 1 unless the GM moves it; each group fights the others as well as the party). | Checks each turn whether it notices; fights for its group from the round after. |
 | **Neutral** | Takes no side, but weighs what it wants from round 1: its lean (the planner's Neutral tab), its friend group among the other neutrals, whatever its Tactics say. It may be offended, confront someone, or be won over (see **Taking no side**). | Checks each turn whether it notices; from the round after, takes no side but starts weighing what it wants. |
-| **Secret** | Hidden until it acts; fights for the side its allegiance names (the enemy by default; "takes no side" makes it a Neutral). | Checks each turn whether it notices; from the round after, as in the encounter. |
+| **Secret** | Hidden until it acts; fights with the team the GM puts it on: a hostile group (group 1 by default), or a neutral team, taking no side as a Neutral does. | Checks each turn whether it notices; from the round after, as in the encounter. |
 
 Its side, desires, nerve and personality decide the rest: a coward may still break and run, a talker may try words first. The encounter is the Combat Tracker's encounter for the scene; with none, everyone on the map is in it. The planner's toggles leave out bystanders, hidden tokens and tokens on other levels.
 
@@ -58,13 +58,13 @@ Its side, desires, nerve and personality decide the rest: a coward may still bre
   - **Side settings:**
     - group personality, healing aggressiveness, and whether the side can rout;
     - whether its groups have leaders (Auto, or No leaders), and the leadership bonus;
-    - for Neutral, a lean: takes no side, or leans toward the party, the enemy, the nearest side or the underdog (see **Taking no side**); or it's left out, or fights everyone;
-    - for Secret, an allegiance: left out, joins the party, joins the enemy, joins the nearest side, joins the underdog, takes no side, or fights everyone.
+    - for Neutral, a lean: takes no side, or leans toward the party, the enemy, the nearest side or the underdog (see **Taking no side**); or it's left out, or fights everyone.
   - **Each token row:**
     - HP, AC and its personality traits;
     - how it would reach the nearest enemy (mode, moves and terrain);
     - side override and include toggle;
-    - for a Hostile or Neutral token, its group: three small pills, **1 2 3**, one click to move it.
+    - for a Hostile or Neutral token, its group: three small pills, **1 2 3**, one click to move it;
+    - for a Secret token, its team: pills for hostile groups **1 2 3** and neutral teams **1 2 3** (hostile group 1 until the GM picks another; a number no one else has is a team of its own).
   - **Expanding a row** gives stat fudges, *ignores terrain* and *dies at 0 HP*, plus that character's tactics and playstyles.
 - **Right: the results.**
   - **Overview:** win odds, PC death and downed odds, foes talked down, fights settled with words, length, the simulated difficulty next to the system's own rating, the most dangerous foes and most-at-risk allies.
@@ -354,7 +354,7 @@ Anything a translation leaves out reads in English. The tests check every listed
 
 All settings are defaults that the planner can override per battle:
 - **Simulation:** runs and maximum rounds; hidden tokens and other levels; bystanders.
-- **Unaligned sides:** Neutral lean (takes no side, by default) and Secret allegiance; how near a neutral must be to join a friend group the planner proposes (3 squares; 1 to 20).
+- **Unaligned sides:** Neutral lean (takes no side, by default); how near a neutral must be to join a friend group the planner proposes (3 squares; 1 to 20).
 - **Dying and healing:** the downed model, after the fight, and PC healing and dying defaults.
 - **Modifiers:** leadership, morale, positioning, talking (and whether to ignore languages), how encounters open, and the initiative source.
 - **Leadership** (sliders): **Leader influence**, how readily followers take their commander's lead (0 to 100, a scale where 50 is the usual; 0 nobody follows, 100 twice as readily); **Boss influence**, how much more readily a boss's than a leader's (1.25× to 3×, default 2×).

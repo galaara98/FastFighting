@@ -55,10 +55,6 @@
         "Name": "Neutral tokens",
         "Hint": "Default handling of tokens with Neutral disposition. They stand on the field taking no side, perhaps leaning one way: whoever hurts or robs them, or crosses what they want (hurting someone they lean toward), turns them against their side, and either side's talkers can try to win them over (harder against their lean). Can be changed per battle and per token."
       },
-      "secretDefault": {
-        "Name": "Secret tokens",
-        "Hint": "Default handling of tokens with Secret disposition."
-      },
       "downedModel": {
         "Name": "Downed characters",
         "Hint": "How falling to 0 HP is simulated. 'Simulate dying and healing' follows the system's rules for dying, recovery and revival."
@@ -181,15 +177,6 @@
         "Hint": "A player character who wants to lead, isn't its group's leader, and is scheming against whoever is (a playstyle like Cruel or Wildcard with Wants to Lead) can be talked into changing sides only on a d100 roll of this or less (default 9). 0: never."
       }
     },
-    "Allegiance": {
-      "exclude": "Left out of it",
-      "friendly": "Joins the party",
-      "hostile": "Joins the enemy",
-      "closest": "Joins the nearest side",
-      "underdog": "Joins the underdog",
-      "own": "Fights everyone",
-      "neutral": "Takes no side (until crossed)"
-    },
     "Lean": {
       "exclude": "Left out of it",
       "neutral": "Takes no side (until crossed)",
@@ -241,6 +228,7 @@
       "hostile": "Hostile",
       "hostileGroup": "Hostile {n}",
       "neutral": "Neutral",
+      "neutralGroup": "Neutral {n}",
       "secret": "Secret",
       "neutralParty": "Taking no side"
     },
@@ -343,7 +331,6 @@
       "ClearTitle": "Clear the plan?",
       "ClearConfirm": "Every choice made in the planner for this encounter (sides, groups, roles, fudges and options) goes back to the defaults. This can't be undone.",
       "Run": "Run",
-      "Allegiance": "Allegiance",
       "Lean": "Lean",
       "Healing": "Healing",
       "SideMorale": "Can rout",

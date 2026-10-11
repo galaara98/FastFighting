@@ -90,6 +90,12 @@ describe("neutral friend groups in the fight", () => {
     expect(units.tinker.grievance.get("hostile") ?? 0).toBe(0);
   });
 
+  test("a Secret token on a neutral team is in that team's friend group", () => {
+    const { run, units } = ready([fighter(), brute(), neutral("miller", 2), neutral("spy", 2, { originSide: "secret" }), neutral("tinker", 1)]);
+    expect(alliesOf(run, units.spy).map(u => u.id).sort()).toEqual(["miller", "spy"]);
+    expect(units.miller.desire.lean.get("protect|spy")).toBe(FELLOW);
+  });
+
   test("neutrals can be in three friend groups: each looks out for its own", () => {
     const { run, say, units } = ready([fighter(), brute(), neutral("miller", 1), neutral("wife", 1), neutral("tinker", 2), neutral("smith", 2),
       neutral("monk", 3), neutral("nun", 3)]);

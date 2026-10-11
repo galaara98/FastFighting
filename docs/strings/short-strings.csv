@@ -15,149 +15,149 @@
 14,Core,Allegiance,FASTFIGHTING.Allegiance.own,"A choice in a FastFighting setting's dropdown, and in the Battle Planner (GM)",fights everyone (a side of its own),Short choice,"""Fights everyone""","""Fights everyone"""
 15,Core,Lean,FASTFIGHTING.Lean.own,"A choice in a FastFighting setting's dropdown, and in the Battle Planner (GM)",fights everyone (a side of its own),Short choice,"""Fights everyone""","""Fights everyone"""
 16,Core,Downed,FASTFIGHTING.Downed.dead,"A choice in a FastFighting setting's dropdown, and in the Battle Planner (GM)",dropping to 0 HP is death,Short choice,"""Down = dead""",
-17,Core,Healing,FASTFIGHTING.HealAggro.conservative,"A choice in a FastFighting setting's dropdown, and in the Battle Planner (GM)",heals others only when needed,Short choice,"""Conservative""",
-18,Core,Healing,FASTFIGHTING.HealAggro.balanced,"A choice in a FastFighting setting's dropdown, and in the Battle Planner (GM)",heals when it's worth it,Short choice,"""Balanced""",
-19,Core,Healing,FASTFIGHTING.HealAggro.aggressive,"A choice in a FastFighting setting's dropdown, and in the Battle Planner (GM)",heals readily,Short choice,"""Aggressive""",
-20,Core,Ally dying,FASTFIGHTING.AllyDying.rescue,"A choice in a FastFighting setting's dropdown, and in the Battle Planner (GM)",rescue them,Short choice,"""Rescue them""",
-21,Core,Ally dying,FASTFIGHTING.AllyDying.fight,"A choice in a FastFighting setting's dropdown, and in the Battle Planner (GM)",keep fighting,Short choice,"""Keep fighting""",
-22,Core,Ally dying,FASTFIGHTING.AllyDying.retreat,"A choice in a FastFighting setting's dropdown, and in the Battle Planner (GM)",retreat,Short choice,"""Retreat""",
-23,Core,Ally dying,FASTFIGHTING.AllyDying.protectSelf,"A choice in a FastFighting setting's dropdown, and in the Battle Planner (GM)",protect yourself,Short choice,"""Protect self""",
-24,Core,Initiative,FASTFIGHTING.Surprise.none,"A choice in a FastFighting setting's dropdown, and in the Battle Planner (GM)","roll initiative normally, no surprise",Short choice,"""Roll normally""",
-25,Core,Initiative,FASTFIGHTING.Surprise.tracker,"A choice in a FastFighting setting's dropdown, and in the Battle Planner (GM)",use the Combat Tracker's initiative,Short choice,"""Combat tracker""",
-26,Core,Initiative,FASTFIGHTING.Surprise.friendly,"A choice in a FastFighting setting's dropdown, and in the Battle Planner (GM)",the party surprises the enemy,Short choice,"""Party surprises""",
-27,Core,Initiative,FASTFIGHTING.Surprise.hostile,"A choice in a FastFighting setting's dropdown, and in the Battle Planner (GM)",the enemy surprises the party,Short choice,"""Enemy surprises""",
-28,Core,Loot,FASTFIGHTING.Loot.none,"A choice in a FastFighting setting's dropdown, and in the Battle Planner (GM)",do nothing with the dead's belongings,Short choice,"""Do nothing""",
-29,Core,Corpses,FASTFIGHTING.Corpse.remove,"A choice in a FastFighting setting's dropdown, and in the Battle Planner (GM)",remove a dead creature's token,Short choice,"""Remove token""",
-30,Core,Fled,FASTFIGHTING.Fled.hide,"A choice in a FastFighting setting's dropdown, and in the Battle Planner (GM)",hide the token of a creature that fled,Short choice,"""Hide token""",
-31,Core,Generic system,FASTFIGHTING.Generic.Attack,Generic system support: its settings dialog and the planner (GM),the one attack the generic system gives every creature,One word,"""Attack""",
-32,Core,Generic system,FASTFIGHTING.Generic.MenuLabel,Configure Settings → FastFighting (GM),button that opens the generic data paths dialog,"Button, one word","""Configure""",
-33,Core,Generic system,FASTFIGHTING.Generic.Path.hp,Generic system data paths dialog (GM),field label: where the actor keeps its current HP,Short label,"""Current HP""",
-34,Core,Generic system,FASTFIGHTING.Generic.Path.hpMax,Generic system data paths dialog (GM),field label: where the actor keeps its maximum HP,Short label,"""Maximum HP""",
-35,Core,Generic system,FASTFIGHTING.Generic.Path.attack,Generic system data paths dialog (GM),field label: where the actor keeps its attack bonus,Short label,"""Attack bonus""",
-36,Core,Generic system,FASTFIGHTING.Generic.Path.damage,Generic system data paths dialog (GM),field label: where the actor keeps its damage formula,Short label,"""Damage formula""",
-37,Core,Generic system,FASTFIGHTING.Generic.Path.level,Generic system data paths dialog (GM),field label: where the actor keeps its level,Short label,"""Level""",
-38,Core,Generic system,FASTFIGHTING.Generic.Path.initiative,Generic system data paths dialog (GM),field label: where the actor keeps its initiative modifier,Short label,"""Initiative modifier""",
-39,Core,Generic system,FASTFIGHTING.Generic.DefaultReason,The planner: why a trait is what it is,the generic system's default,Short,"""Generic default""",
-40,Core,Generic system,FASTFIGHTING.Generic.Persuasion,"The Statistician story's log, one line per event (chat, and the planner's Sample fight)",the skill the generic system talks with: persuading,A skill's name,"""Persuasion""",
-41,Core,Generic system,FASTFIGHTING.Generic.Intimidation,"The Statistician story's log, one line per event (chat, and the planner's Sample fight)",the skill for intimidating,A skill's name,"""Intimidation""",
-42,Core,Defaults,FASTFIGHTING.Defaults.Restore,Side defaults dialog (Settings → FastFighting) (GM),button: restore the defaults,"Button, short","""Restore defaults""",
-43,Core,Sides,FASTFIGHTING.Side.friendly,"The planner's side tabs, the results and the stories",the party's side,Short name,"""Friendly""",
-44,Core,Sides,FASTFIGHTING.Side.hostile,"The planner's side tabs, the results and the stories","the enemy side: the Hostile tab and side choice, and its name when it fights as one group",Short name,"""Hostile""",
-45,Core,Sides,FASTFIGHTING.Side.hostileGroup,"The planner's side tabs, the results and the stories","a hostile group's name, with its number, when the hostile tokens fight in more than one group",Short name; keep {n},"""Hostile {n}""",
-48,Core,Sides,FASTFIGHTING.Side.neutral,"The planner's side tabs, the results and the stories",neutral tokens (taking part as set),Short name,"""Neutral""",
-49,Core,Sides,FASTFIGHTING.Side.secret,"The planner's side tabs, the results and the stories",secret tokens (hidden from the players),Short name,"""Secret""",
-50,Core,Personality,FASTFIGHTING.Trait.tactical,The planner and the defaults dialog (GM),the personality trait 'tactical',One word,"""Tactical""",
-51,Core,Personality,FASTFIGHTING.Trait.brave,The planner and the defaults dialog (GM),the personality trait 'brave',One word,"""Brave""",
-52,Core,Personality,FASTFIGHTING.Trait.selfish,The planner and the defaults dialog (GM),the personality trait 'selfish',One word,"""Selfish""",
-53,Core,Personality,FASTFIGHTING.Trait.loyal,The planner and the defaults dialog (GM),the personality trait 'loyal',One word,"""Loyal""",
-54,Core,Personality,FASTFIGHTING.Band.feral,The planner: a trait's value in words (GM),"Tactical, lowest band (0-19): pure instinct",One word,"""Feral""",
-55,Core,Personality,FASTFIGHTING.Band.instinctive,The planner: a trait's value in words (GM),"Tactical, 20-39",One word,"""Instinctive""",
-56,Core,Personality,FASTFIGHTING.Band.competent,The planner: a trait's value in words (GM),"Tactical, 40-59",One word,"""Competent""",
-57,Core,Personality,FASTFIGHTING.Band.tactical,The planner: a trait's value in words (GM),"Tactical, 60-79",One word,"""Tactical""",
-58,Core,Personality,FASTFIGHTING.Band.mastermind,The planner: a trait's value in words (GM),"Tactical, highest band (80+)",One word,"""Mastermind""",
-59,Core,Personality,FASTFIGHTING.Band.craven,The planner: a trait's value in words (GM),"Brave, lowest band (0-19)",One word,"""Craven""",
-60,Core,Personality,FASTFIGHTING.Band.skittish,The planner: a trait's value in words (GM),"Brave, 20-39",One word,"""Skittish""",
-61,Core,Personality,FASTFIGHTING.Band.steady,The planner: a trait's value in words (GM),"Brave, 40-59",One word,"""Steady""",
-62,Core,Personality,FASTFIGHTING.Band.bold,The planner: a trait's value in words (GM),"Brave, 60-79",One word,"""Bold""",
-63,Core,Personality,FASTFIGHTING.Band.fearless,The planner: a trait's value in words (GM),"Brave, highest band (80+)",One word,"""Fearless""",
-64,Core,Personality,FASTFIGHTING.Band.devoted,The planner: a trait's value in words (GM),"Selfish, lowest band (0-19): puts others first",One word,"""Devoted""",
-65,Core,Personality,FASTFIGHTING.Band.selfless,The planner: a trait's value in words (GM),"Selfish, 20-39",One word,"""Selfless""",
-66,Core,Personality,FASTFIGHTING.Band.pragmatic,The planner: a trait's value in words (GM),"Selfish, 40-59",One word,"""Pragmatic""",
-67,Core,Personality,FASTFIGHTING.Band.selfish,The planner: a trait's value in words (GM),"Selfish, 60-79",One word,"""Selfish""",
-68,Core,Personality,FASTFIGHTING.Band.ruthless,The planner: a trait's value in words (GM),"Selfish, highest band (80+)",One word,"""Ruthless""",
-69,Core,Personality,FASTFIGHTING.Band.treacherous,The planner: a trait's value in words (GM),"Loyal, lowest band (0-19)",One word,"""Treacherous""",
-70,Core,Personality,FASTFIGHTING.Band.wavering,The planner: a trait's value in words (GM),"Loyal, 20-39",One word,"""Wavering""",
-71,Core,Personality,FASTFIGHTING.Band.dependable,The planner: a trait's value in words (GM),"Loyal, 40-59",One word,"""Dependable""",
-72,Core,Personality,FASTFIGHTING.Band.loyal,The planner: a trait's value in words (GM),"Loyal, 60-79",One word,"""Loyal""",
-73,Core,Personality,FASTFIGHTING.Band.unshakable,The planner: a trait's value in words (GM),"Loyal, highest band (80+)",One word,"""Unshakable""",
+17,Core,Healing,FASTFIGHTING.HealAggro.conservative,"A choice in a FastFighting setting's dropdown, and in the Battle Planner (GM)",heals others only when needed,Short choice,"""Conservative""","""Conservative"""
+18,Core,Healing,FASTFIGHTING.HealAggro.balanced,"A choice in a FastFighting setting's dropdown, and in the Battle Planner (GM)",heals when it's worth it,Short choice,"""Balanced""","""Balanced"""
+19,Core,Healing,FASTFIGHTING.HealAggro.aggressive,"A choice in a FastFighting setting's dropdown, and in the Battle Planner (GM)",heals readily,Short choice,"""Aggressive""","""Aggressive"""
+20,Core,Ally dying,FASTFIGHTING.AllyDying.rescue,"A choice in a FastFighting setting's dropdown, and in the Battle Planner (GM)",rescue them,Short choice,"""Rescue them""","""Rescue them"""
+21,Core,Ally dying,FASTFIGHTING.AllyDying.fight,"A choice in a FastFighting setting's dropdown, and in the Battle Planner (GM)",keep fighting,Short choice,"""Keep fighting""","""Keep fighting"""
+22,Core,Ally dying,FASTFIGHTING.AllyDying.retreat,"A choice in a FastFighting setting's dropdown, and in the Battle Planner (GM)",retreat,Short choice,"""Retreat""","""Retreat"""
+23,Core,Ally dying,FASTFIGHTING.AllyDying.protectSelf,"A choice in a FastFighting setting's dropdown, and in the Battle Planner (GM)",protect yourself,Short choice,"""Protect self""","""Protect self"""
+24,Core,Initiative,FASTFIGHTING.Surprise.none,"A choice in a FastFighting setting's dropdown, and in the Battle Planner (GM)","roll initiative normally, no surprise",Short choice,"""Roll normally""","""Roll normally"""
+25,Core,Initiative,FASTFIGHTING.Surprise.tracker,"A choice in a FastFighting setting's dropdown, and in the Battle Planner (GM)",use the Combat Tracker's initiative,Short choice,"""Combat tracker""","""Combat tracker"""
+26,Core,Initiative,FASTFIGHTING.Surprise.friendly,"A choice in a FastFighting setting's dropdown, and in the Battle Planner (GM)",the party surprises the enemy,Short choice,"""Party surprises""","""Party surprises"""
+27,Core,Initiative,FASTFIGHTING.Surprise.hostile,"A choice in a FastFighting setting's dropdown, and in the Battle Planner (GM)",the enemy surprises the party,Short choice,"""Enemy surprises""","""Enemy surprises"""
+28,Core,Loot,FASTFIGHTING.Loot.none,"A choice in a FastFighting setting's dropdown, and in the Battle Planner (GM)",do nothing with the dead's belongings,Short choice,"""Do nothing""","""Do nothing"""
+29,Core,Corpses,FASTFIGHTING.Corpse.remove,"A choice in a FastFighting setting's dropdown, and in the Battle Planner (GM)",remove a dead creature's token,Short choice,"""Remove token""","""Remove token"""
+30,Core,Fled,FASTFIGHTING.Fled.hide,"A choice in a FastFighting setting's dropdown, and in the Battle Planner (GM)",hide the token of a creature that fled,Short choice,"""Hide token""","""Hide token"""
+31,Core,Generic system,FASTFIGHTING.Generic.Attack,Generic system support: its settings dialog and the planner (GM),the one attack the generic system gives every creature,One word,"""Attack""","""Attack"""
+32,Core,Generic system,FASTFIGHTING.Generic.MenuLabel,Configure Settings → FastFighting (GM),button that opens the generic data paths dialog,"Button, one word","""Configure""","""Configure"""
+33,Core,Generic system,FASTFIGHTING.Generic.Path.hp,Generic system data paths dialog (GM),field label: where the actor keeps its current HP,Short label,"""Current HP""","""Current HP"""
+34,Core,Generic system,FASTFIGHTING.Generic.Path.hpMax,Generic system data paths dialog (GM),field label: where the actor keeps its maximum HP,Short label,"""Maximum HP""","""Maximum HP"""
+35,Core,Generic system,FASTFIGHTING.Generic.Path.attack,Generic system data paths dialog (GM),field label: where the actor keeps its attack bonus,Short label,"""Attack bonus""","""Attack bonus"""
+36,Core,Generic system,FASTFIGHTING.Generic.Path.damage,Generic system data paths dialog (GM),field label: where the actor keeps its damage formula,Short label,"""Damage formula""","""Damage formula"""
+37,Core,Generic system,FASTFIGHTING.Generic.Path.level,Generic system data paths dialog (GM),field label: where the actor keeps its level,Short label,"""Level""","""Level"""
+38,Core,Generic system,FASTFIGHTING.Generic.Path.initiative,Generic system data paths dialog (GM),field label: where the actor keeps its initiative modifier,Short label,"""Initiative modifier""","""Initiative modifier"""
+39,Core,Generic system,FASTFIGHTING.Generic.DefaultReason,The planner: why a trait is what it is,the generic system's default,Short,"""Generic default""","""Generic default"""
+40,Core,Generic system,FASTFIGHTING.Generic.Persuasion,"The Statistician story's log, one line per event (chat, and the planner's Sample fight)",the skill the generic system talks with: persuading,A skill's name,"""Persuasion""","""Persuasion"""
+41,Core,Generic system,FASTFIGHTING.Generic.Intimidation,"The Statistician story's log, one line per event (chat, and the planner's Sample fight)",the skill for intimidating,A skill's name,"""Intimidation""","""Intimidation"""
+42,Core,Defaults,FASTFIGHTING.Defaults.Restore,Side defaults dialog (Settings → FastFighting) (GM),button: restore the defaults,"Button, short","""Restore defaults""","""Restore defaults"""
+43,Core,Sides,FASTFIGHTING.Side.friendly,"The planner's side tabs, the results and the stories",the party's side,Short name,"""Friendly""","""Friendly"""
+44,Core,Sides,FASTFIGHTING.Side.hostile,"The planner's side tabs, the results and the stories","the enemy side: the Hostile tab and side choice, and its name when it fights as one group",Short name,"""Hostile""","""Hostile"""
+45,Core,Sides,FASTFIGHTING.Side.hostileGroup,"The planner's side tabs, the results and the stories","a hostile group's name, with its number, when the hostile tokens fight in more than one group",Short name; keep {n},"""Hostile {n}""","""Hostile {n}"""
+48,Core,Sides,FASTFIGHTING.Side.neutral,"The planner's side tabs, the results and the stories",neutral tokens (taking part as set),Short name,"""Neutral""","""Neutral"""
+49,Core,Sides,FASTFIGHTING.Side.secret,"The planner's side tabs, the results and the stories",secret tokens (hidden from the players),Short name,"""Secret""","""Secret"""
+50,Core,Personality,FASTFIGHTING.Trait.tactical,The planner and the defaults dialog (GM),the personality trait 'tactical',One word,"""Tactical""","""Tactical"""
+51,Core,Personality,FASTFIGHTING.Trait.brave,The planner and the defaults dialog (GM),the personality trait 'brave',One word,"""Brave""","""Brave"""
+52,Core,Personality,FASTFIGHTING.Trait.selfish,The planner and the defaults dialog (GM),the personality trait 'selfish',One word,"""Selfish""","""Selfish"""
+53,Core,Personality,FASTFIGHTING.Trait.loyal,The planner and the defaults dialog (GM),the personality trait 'loyal',One word,"""Loyal""","""Loyal"""
+54,Core,Personality,FASTFIGHTING.Band.feral,The planner: a trait's value in words (GM),"Tactical, lowest band (0-19): pure instinct",One word,"""Feral""","""Feral"""
+55,Core,Personality,FASTFIGHTING.Band.instinctive,The planner: a trait's value in words (GM),"Tactical, 20-39",One word,"""Instinctive""","""Instinctive"""
+56,Core,Personality,FASTFIGHTING.Band.competent,The planner: a trait's value in words (GM),"Tactical, 40-59",One word,"""Competent""","""Competent"""
+57,Core,Personality,FASTFIGHTING.Band.tactical,The planner: a trait's value in words (GM),"Tactical, 60-79",One word,"""Tactical""","""Tactical"""
+58,Core,Personality,FASTFIGHTING.Band.mastermind,The planner: a trait's value in words (GM),"Tactical, highest band (80+)",One word,"""Mastermind""","""Mastermind"""
+59,Core,Personality,FASTFIGHTING.Band.craven,The planner: a trait's value in words (GM),"Brave, lowest band (0-19)",One word,"""Craven""","""Craven"""
+60,Core,Personality,FASTFIGHTING.Band.skittish,The planner: a trait's value in words (GM),"Brave, 20-39",One word,"""Skittish""","""Skittish"""
+61,Core,Personality,FASTFIGHTING.Band.steady,The planner: a trait's value in words (GM),"Brave, 40-59",One word,"""Steady""","""Steady"""
+62,Core,Personality,FASTFIGHTING.Band.bold,The planner: a trait's value in words (GM),"Brave, 60-79",One word,"""Bold""","""Bold"""
+63,Core,Personality,FASTFIGHTING.Band.fearless,The planner: a trait's value in words (GM),"Brave, highest band (80+)",One word,"""Fearless""","""Fearless"""
+64,Core,Personality,FASTFIGHTING.Band.devoted,The planner: a trait's value in words (GM),"Selfish, lowest band (0-19): puts others first",One word,"""Devoted""","""Devoted"""
+65,Core,Personality,FASTFIGHTING.Band.selfless,The planner: a trait's value in words (GM),"Selfish, 20-39",One word,"""Selfless""","""Selfless"""
+66,Core,Personality,FASTFIGHTING.Band.pragmatic,The planner: a trait's value in words (GM),"Selfish, 40-59",One word,"""Pragmatic""","""Pragmatic"""
+67,Core,Personality,FASTFIGHTING.Band.selfish,The planner: a trait's value in words (GM),"Selfish, 60-79",One word,"""Selfish""","""Selfish"""
+68,Core,Personality,FASTFIGHTING.Band.ruthless,The planner: a trait's value in words (GM),"Selfish, highest band (80+)",One word,"""Ruthless""","""Ruthless"""
+69,Core,Personality,FASTFIGHTING.Band.treacherous,The planner: a trait's value in words (GM),"Loyal, lowest band (0-19)",One word,"""Treacherous""","""Treacherous"""
+70,Core,Personality,FASTFIGHTING.Band.wavering,The planner: a trait's value in words (GM),"Loyal, 20-39",One word,"""Wavering""","""Wavering"""
+71,Core,Personality,FASTFIGHTING.Band.dependable,The planner: a trait's value in words (GM),"Loyal, 40-59",One word,"""Dependable""","""Dependable"""
+72,Core,Personality,FASTFIGHTING.Band.loyal,The planner: a trait's value in words (GM),"Loyal, 60-79",One word,"""Loyal""","""Loyal"""
+73,Core,Personality,FASTFIGHTING.Band.unshakable,The planner: a trait's value in words (GM),"Loyal, highest band (80+)",One word,"""Unshakable""","""Unshakable"""
 74,Core,Planner,FASTFIGHTING.Stat.ac,Battle Planner: a creature's row in the roster (GM),armor class,Short label,"""AC""",
 75,Core,Planner,FASTFIGHTING.Stat.hp,Battle Planner: a creature's row in the roster (GM),hit points,Short label,"""HP""",
 76,Core,Planner,FASTFIGHTING.Stat.attack,Battle Planner: a creature's row in the roster (GM),attack bonus (or spell DC),Short label,"""Attack/DC""",
-77,Core,Planner,FASTFIGHTING.Stat.damage,Battle Planner: a creature's row in the roster (GM),damage per hit,Short label,"""Damage""",
-78,Core,Planner,FASTFIGHTING.Stat.leadBrave,Battle Planner: a creature's row in the roster (GM),the bravery bonus a leader gives its side,Short label,"""Bravery bonus""",
-79,Core,Planner,FASTFIGHTING.Stat.leadTactical,Battle Planner: a creature's row in the roster (GM),the lowest tactical level a leader holds its side to,Short label,"""Tactics floor""",
-80,Core,Planner,FASTFIGHTING.Stat.leadAttack,Battle Planner: a creature's row in the roster (GM),the attack bonus a leader gives its side,Short label,"""Attack bonus""",
-81,Core,Planner,FASTFIGHTING.Stat.leadAc,Battle Planner: a creature's row in the roster (GM),the AC bonus a leader gives its side,Short label,"""AC bonus""",
-82,Core,Planner,FASTFIGHTING.Kind.pc,Battle Planner: a creature's row in the roster (GM),badge for a player character,Very short badge,"""PC""",
-83,Core,Planner,FASTFIGHTING.Kind.npc,Battle Planner: a creature's row in the roster (GM),badge before an NPC's level ('Lvl 3'),Very short badge,"""Lvl""",
-84,Core,Planner,FASTFIGHTING.Kind.companion,Battle Planner: a creature's row in the roster (GM),"badge for a companion (animal companion, familiar)",Very short badge,"""Companion""",
-85,Core,Planner,FASTFIGHTING.Kind.summon,Battle Planner: a creature's row in the roster (GM),badge for a summoned creature,Very short badge,"""Summon""",
-86,Core,Planner,FASTFIGHTING.Kind.minion,Battle Planner: a creature's row in the roster (GM),badge for a minion,Very short badge,"""Minion""",
-87,Core,Planner,FASTFIGHTING.Kind.hazard,Battle Planner: a creature's row in the roster (GM),badge for a hazard,Very short badge,"""Hazard""",
-88,Core,Planner,FASTFIGHTING.Mode.walk,Battle Planner: how a creature reaches its foe ('Walks 30 ft to reach Goblin'),moves by walking,"Verb, capitalized","""Walks""",
-89,Core,Planner,FASTFIGHTING.Mode.fly,Battle Planner: how a creature reaches its foe ('Walks 30 ft to reach Goblin'),moves by flying,"Verb, capitalized","""Flies""",
-90,Core,Planner,FASTFIGHTING.Mode.swim,Battle Planner: how a creature reaches its foe ('Walks 30 ft to reach Goblin'),moves by swimming,"Verb, capitalized","""Swims""",
-91,Core,Planner,FASTFIGHTING.Mode.climb,Battle Planner: how a creature reaches its foe ('Walks 30 ft to reach Goblin'),moves by climbing,"Verb, capitalized","""Climbs""",
-92,Core,Planner,FASTFIGHTING.Mode.burrow,Battle Planner: how a creature reaches its foe ('Walks 30 ft to reach Goblin'),moves by burrowing,"Verb, capitalized","""Burrows""",
-93,Core,Planner,FASTFIGHTING.Fudge.Up,Battle Planner: tooltips on the fudge buttons (GM),raise this value,Short tooltip,"""Fudge up""",
-94,Core,Planner,FASTFIGHTING.Fudge.Down,Battle Planner: tooltips on the fudge buttons (GM),lower this value,Short tooltip,"""Fudge down""",
-95,Core,Planner,FASTFIGHTING.Fudge.Remove,Battle Planner: tooltips on the fudge buttons (GM),clear the adjustment,Short tooltip,"""Remove fudge""",
-96,Core,Planner,FASTFIGHTING.Planner.Title,Battle Planner window (GM),the window's title,Short title,"""Battle Planner""",
-97,Core,Planner,FASTFIGHTING.Planner.Runs,Battle Planner window (GM),label: how many fights to simulate,Short label,"""Runs""",
-98,Core,Planner,FASTFIGHTING.Planner.MaxRounds,Battle Planner window (GM),label: the round limit,Short label,"""Max rounds""",
-99,Core,Planner,FASTFIGHTING.Planner.Seed,Battle Planner window (GM),label: the random seed (the same seed replays the same fights),Short label,"""Seed""",
-100,Core,Planner,FASTFIGHTING.Planner.Random,Battle Planner window (GM),placeholder in the seed box when it's empty: a random seed,"One or two words, lower case","""random""",
-101,Core,Planner,FASTFIGHTING.Planner.Downed,Battle Planner window (GM),label: what dropping to 0 HP means,Short label,"""Downed""",
-102,Core,Planner,FASTFIGHTING.Planner.Initiative,Battle Planner window (GM),label: how initiative and surprise are decided,Short label,"""Initiative""",
+77,Core,Planner,FASTFIGHTING.Stat.damage,Battle Planner: a creature's row in the roster (GM),damage per hit,Short label,"""Damage""","""Damage"""
+78,Core,Planner,FASTFIGHTING.Stat.leadBrave,Battle Planner: a creature's row in the roster (GM),the bravery bonus a leader gives its side,Short label,"""Bravery bonus""","""Bravery bonus"""
+79,Core,Planner,FASTFIGHTING.Stat.leadTactical,Battle Planner: a creature's row in the roster (GM),the lowest tactical level a leader holds its side to,Short label,"""Tactics floor""","""Tactics floor"""
+80,Core,Planner,FASTFIGHTING.Stat.leadAttack,Battle Planner: a creature's row in the roster (GM),the attack bonus a leader gives its side,Short label,"""Attack bonus""","""Attack bonus"""
+81,Core,Planner,FASTFIGHTING.Stat.leadAc,Battle Planner: a creature's row in the roster (GM),the AC bonus a leader gives its side,Short label,"""AC bonus""","""AC bonus"""
+82,Core,Planner,FASTFIGHTING.Kind.pc,Battle Planner: a creature's row in the roster (GM),badge for a player character,Very short badge,"""PC""","""PC"""
+83,Core,Planner,FASTFIGHTING.Kind.npc,Battle Planner: a creature's row in the roster (GM),badge before an NPC's level ('Lvl 3'),Very short badge,"""Lvl""","""Lvl"""
+84,Core,Planner,FASTFIGHTING.Kind.companion,Battle Planner: a creature's row in the roster (GM),"badge for a companion (animal companion, familiar)",Very short badge,"""Companion""","""Companion"""
+85,Core,Planner,FASTFIGHTING.Kind.summon,Battle Planner: a creature's row in the roster (GM),badge for a summoned creature,Very short badge,"""Summon""","""Summon"""
+86,Core,Planner,FASTFIGHTING.Kind.minion,Battle Planner: a creature's row in the roster (GM),badge for a minion,Very short badge,"""Minion""","""Minion"""
+87,Core,Planner,FASTFIGHTING.Kind.hazard,Battle Planner: a creature's row in the roster (GM),badge for a hazard,Very short badge,"""Hazard""","""Hazard"""
+88,Core,Planner,FASTFIGHTING.Mode.walk,Battle Planner: how a creature reaches its foe ('Walks 30 ft to reach Goblin'),moves by walking,"Verb, capitalized","""Walks""","""Walks"""
+89,Core,Planner,FASTFIGHTING.Mode.fly,Battle Planner: how a creature reaches its foe ('Walks 30 ft to reach Goblin'),moves by flying,"Verb, capitalized","""Flies""","""Flies"""
+90,Core,Planner,FASTFIGHTING.Mode.swim,Battle Planner: how a creature reaches its foe ('Walks 30 ft to reach Goblin'),moves by swimming,"Verb, capitalized","""Swims""","""Swims"""
+91,Core,Planner,FASTFIGHTING.Mode.climb,Battle Planner: how a creature reaches its foe ('Walks 30 ft to reach Goblin'),moves by climbing,"Verb, capitalized","""Climbs""","""Climbs"""
+92,Core,Planner,FASTFIGHTING.Mode.burrow,Battle Planner: how a creature reaches its foe ('Walks 30 ft to reach Goblin'),moves by burrowing,"Verb, capitalized","""Burrows""","""Burrows"""
+93,Core,Planner,FASTFIGHTING.Fudge.Up,Battle Planner: tooltips on the fudge buttons (GM),raise this value,Short tooltip,"""Fudge up""","""Fudge up"""
+94,Core,Planner,FASTFIGHTING.Fudge.Down,Battle Planner: tooltips on the fudge buttons (GM),lower this value,Short tooltip,"""Fudge down""","""Fudge down"""
+95,Core,Planner,FASTFIGHTING.Fudge.Remove,Battle Planner: tooltips on the fudge buttons (GM),clear the adjustment,Short tooltip,"""Remove fudge""","""Remove fudge"""
+96,Core,Planner,FASTFIGHTING.Planner.Title,Battle Planner window (GM),the window's title,Short title,"""Battle Planner""","""Battle Planner"""
+97,Core,Planner,FASTFIGHTING.Planner.Runs,Battle Planner window (GM),label: how many fights to simulate,Short label,"""Runs""","""Runs"""
+98,Core,Planner,FASTFIGHTING.Planner.MaxRounds,Battle Planner window (GM),label: the round limit,Short label,"""Max rounds""","""Max rounds"""
+99,Core,Planner,FASTFIGHTING.Planner.Seed,Battle Planner window (GM),label: the random seed (the same seed replays the same fights),Short label,"""Seed""","""Seed"""
+100,Core,Planner,FASTFIGHTING.Planner.Random,Battle Planner window (GM),placeholder in the seed box when it's empty: a random seed,"One or two words, lower case","""random""","""random"""
+101,Core,Planner,FASTFIGHTING.Planner.Downed,Battle Planner window (GM),label: what dropping to 0 HP means,Short label,"""Downed""","""Downed"""
+102,Core,Planner,FASTFIGHTING.Planner.Initiative,Battle Planner window (GM),label: how initiative and surprise are decided,Short label,"""Initiative""","""Initiative"""
 103,Core,Planner,FASTFIGHTING.Planner.Positioning,Battle Planner window (GM),"toggle: use the map (terrain, walls, distance)",Short label,"""Terrain & positioning""",
-104,Core,Planner,FASTFIGHTING.Planner.Morale,Battle Planner window (GM),toggle: creatures can break and flee,Short label,"""Morale""",
-105,Core,Planner,FASTFIGHTING.Planner.Leadership,Battle Planner window (GM),toggle: leaders and command,Short label,"""Leadership""",
-106,Core,Planner,FASTFIGHTING.Planner.Hidden,Battle Planner window (GM),toggle: include hidden tokens,Short label,"""Hidden tokens""",
-107,Core,Planner,FASTFIGHTING.Planner.Run,Battle Planner window (GM),button: start the simulation,"Button, one word","""Run""",
-108,Core,Planner,FASTFIGHTING.Planner.Allegiance,Battle Planner window (GM),label: how a secret side takes part,Short label,"""Allegiance""",
-109,Core,Planner,FASTFIGHTING.Planner.Lean,Battle Planner window (GM),label: which way a neutral side leans,Short label,"""Lean""",
-110,Core,Planner,FASTFIGHTING.Planner.Healing,Battle Planner window (GM),label: how readily the party heals others,Short label,"""Healing""",
-111,Core,Planner,FASTFIGHTING.Planner.SideMorale,Battle Planner window (GM),toggle: this side can break and run (rout),Short label,"""Can rout""",
-112,Core,Planner,FASTFIGHTING.Planner.GroupTraits,Battle Planner window (GM),heading: the side's shared personality traits,Short heading,"""Group personality""",
-113,Core,Planner,FASTFIGHTING.Planner.Leader,Battle Planner window (GM),label: who leads the side,Short label,"""Leader""",
-114,Core,Planner,FASTFIGHTING.Planner.NoLeader,Battle Planner window (GM),choice: the side has no leaders,Short,"""No leaders""",
-115,Core,Planner,FASTFIGHTING.Planner.SideDefault,Battle Planner window (GM),tooltip note: this value comes from the side's default,"Lower case, short","""side default""",
-116,Core,Planner,FASTFIGHTING.Planner.HiddenToken,Battle Planner window (GM),tooltip on an icon: the token is hidden,Short,"""Hidden token""",
-117,Core,Planner,FASTFIGHTING.Planner.Details,Battle Planner window (GM),screen-reader label of the button that opens a creature's details,Short,"""Details""",
-118,Core,Planner,FASTFIGHTING.Planner.IgnoreTerrain,Battle Planner window (GM),detail: the creature ignores difficult terrain,Short,"""Ignores terrain""",
-119,Core,Planner,FASTFIGHTING.Planner.Movement,Battle Planner window (GM),detail heading: the creature's speeds,Short heading,"""Movement""",
-120,Core,Planner,FASTFIGHTING.Planner.Environment,Battle Planner window (GM),detail heading: the terrain the creature stands in,Short heading,"""Standing in""",
-121,Core,Planner,FASTFIGHTING.Planner.Options,Battle Planner window (GM),detail heading: the creature's actions,Short heading,"""Options""",
-122,Core,Planner,FASTFIGHTING.Planner.RunFailed,Battle Planner window (GM),error notice when a simulation fails,Short sentence; keep {error},"""Simulation failed: {error}""",
-123,Core,Planner,FASTFIGHTING.Planner.FightsWith,Battle Planner window (GM),"a token's side, when it fights with another side",Short; keep {side},"""Fights as {side}""",
-124,Core,Planner,FASTFIGHTING.Planner.Group,Battle Planner window (GM),screen-reader label of the group buttons (1 2 3),Short,"""Group""",
-125,Core,Planner,FASTFIGHTING.Planner.Terrain,Battle Planner window (GM),note on the approach line: slowed by terrain (followed by ×1.25),"Lower case, short","""terrain""",
-126,Core,Planner,FASTFIGHTING.Planner.DifficultHere,Battle Planner window (GM),chip: the creature stands in difficult terrain,"Lower case, short","""difficult terrain""",
-127,Core,Planner,FASTFIGHTING.Planner.HazardHere,Battle Planner window (GM),chip: the creature stands in a hazardous region,"Lower case, short","""hazard region""",
-128,Core,Planner,FASTFIGHTING.Planner.ControlledBy,Battle Planner window (GM),tooltip on the chip naming a token's players,Short,"""Controlled by""",
-129,Core,Planner,FASTFIGHTING.Planner.Fudge,Battle Planner window (GM),tooltip note: the GM's adjustment to a value ('+5 fudge'),"Lower case, one word","""fudge""",
-130,Core,Planner,FASTFIGHTING.Planner.Talking,Battle Planner window (GM),toggle: creatures can talk instead of fight,Short label,"""Talking""",
-131,Core,Planner,FASTFIGHTING.Planner.IgnoreLanguages,Battle Planner window (GM),toggle: talking works without a shared language,Short label,"""Ignore languages""",
-132,Core,Planner,FASTFIGHTING.Planner.Bystanders,Battle Planner window (GM),toggle: tokens outside the encounter can join in,Short label,"""Bystanders""",
-133,Core,Planner,FASTFIGHTING.Planner.Bystander,Battle Planner window (GM),chip on a token outside the encounter (it may join in),One word,"""Bystander""",
-134,Core,Planner,FASTFIGHTING.Planner.Cancel,Battle Planner window (GM),button: stop a running simulation,"Button, one word","""Stop""",
-135,Core,Planner,FASTFIGHTING.Planner.Opening,Battle Planner window (GM),"label: how the fight opens (talk first, fight, decide)",Short label,"""Opening""",
-136,Core,Planner,FASTFIGHTING.Planner.AroundWalls,Battle Planner window (GM),note on the approach line: has to go around walls,"Lower case, short","""around walls""",
-137,Core,Planner,FASTFIGHTING.Planner.AutoLeaders,Battle Planner window (GM),the leaders picked automatically,Short; keep {names},"""Leaders: {names}""",
-138,Core,Planner,FASTFIGHTING.Planner.Command,Battle Planner window (GM),screen-reader label of the command role buttons,Short,"""Command""",
-139,Core,Planner,FASTFIGHTING.Planner.Role.boss.Name,Battle Planner: a side's settings (GM),command role: the boss,One or two words,"""Boss""",
-140,Core,Planner,FASTFIGHTING.Planner.Role.boss.Short,Battle Planner: a side's settings (GM),one-letter button for the boss role,One character,"""B""",
-141,Core,Planner,FASTFIGHTING.Planner.Role.leader.Name,Battle Planner: a side's settings (GM),command role: the leader,One or two words,"""Leader""",
-142,Core,Planner,FASTFIGHTING.Planner.Role.leader.Short,Battle Planner: a side's settings (GM),one-letter button for the leader role,One character,"""L""",
-143,Core,Planner,FASTFIGHTING.Planner.Role.lt1.Name,Battle Planner: a side's settings (GM),command role: first lieutenant,Two words at most,"""1st Lieutenant""",
-144,Core,Planner,FASTFIGHTING.Planner.Role.lt1.Short,Battle Planner: a side's settings (GM),one-character button for the first lieutenant,One character,"""1""",
-145,Core,Planner,FASTFIGHTING.Planner.Role.lt2.Name,Battle Planner: a side's settings (GM),command role: second lieutenant,Two words at most,"""2nd Lieutenant""",
-146,Core,Planner,FASTFIGHTING.Planner.Role.lt2.Short,Battle Planner: a side's settings (GM),one-character button for the second lieutenant,One character,"""2""",
-147,Core,Results,FASTFIGHTING.Difficulty.trivial,Battle Planner: the results (GM),the simulated difficulty: lowest of five,One word,"""Trivial""",
-148,Core,Results,FASTFIGHTING.Difficulty.low,Battle Planner: the results (GM),the simulated difficulty: second lowest of five,One word,"""Low""",
-149,Core,Results,FASTFIGHTING.Difficulty.moderate,Battle Planner: the results (GM),the simulated difficulty: middle of five,One word,"""Moderate""",
-150,Core,Results,FASTFIGHTING.Difficulty.severe,Battle Planner: the results (GM),the simulated difficulty: second highest of five,One word,"""Severe""",
-151,Core,Results,FASTFIGHTING.Difficulty.extreme,Battle Planner: the results (GM),the simulated difficulty: highest of five,One word,"""Extreme""",
-152,Core,Results,FASTFIGHTING.Results.Tab.overview,Battle Planner: the results (GM),tab: the overall odds,"Tab label, short","""Overview""",
-153,Core,Results,FASTFIGHTING.Results.Tab.combatants,Battle Planner: the results (GM),tab: each creature's fate,"Tab label, short","""Combatants""",
-154,Core,Results,FASTFIGHTING.Results.Tab.swing,Battle Planner: the results (GM),tab: what changes the odds most,"Tab label, short","""Swing factors""",
-155,Core,Results,FASTFIGHTING.Results.Tab.resources,Battle Planner: the results (GM),tab: what each side uses up,"Tab label, short","""Resources""",
-156,Core,Results,FASTFIGHTING.Results.Tab.sample,Battle Planner: the results (GM),"tab: one fight, told as a story","Tab label, short","""Sample fight""",
-157,Core,Results,FASTFIGHTING.Results.Stalemate,Battle Planner: the results (GM),headline figure: the chance no one wins,Short,"""Stalemate""",
-158,Core,Results,FASTFIGHTING.Results.PartyWins,Battle Planner: the results (GM),headline figure: the chance the party wins,Short,"""Party wins""",
+104,Core,Planner,FASTFIGHTING.Planner.Morale,Battle Planner window (GM),toggle: creatures can break and flee,Short label,"""Morale""","""Morale"""
+105,Core,Planner,FASTFIGHTING.Planner.Leadership,Battle Planner window (GM),toggle: leaders and command,Short label,"""Leadership""","""Leadership"""
+106,Core,Planner,FASTFIGHTING.Planner.Hidden,Battle Planner window (GM),toggle: include hidden tokens,Short label,"""Hidden tokens""","""Hidden tokens"""
+107,Core,Planner,FASTFIGHTING.Planner.Run,Battle Planner window (GM),button: start the simulation,"Button, one word","""Run""","""Run"""
+108,Core,Planner,FASTFIGHTING.Planner.Allegiance,Battle Planner window (GM),label: how a secret side takes part,Short label,"""Allegiance""","""Allegiance"""
+109,Core,Planner,FASTFIGHTING.Planner.Lean,Battle Planner window (GM),label: which way a neutral side leans,Short label,"""Lean""","""Lean"""
+110,Core,Planner,FASTFIGHTING.Planner.Healing,Battle Planner window (GM),label: how readily the party heals others,Short label,"""Healing""","""Healing"""
+111,Core,Planner,FASTFIGHTING.Planner.SideMorale,Battle Planner window (GM),toggle: this side can break and run (rout),Short label,"""Can rout""","""Can rout"""
+112,Core,Planner,FASTFIGHTING.Planner.GroupTraits,Battle Planner window (GM),heading: the side's shared personality traits,Short heading,"""Group personality""","""Group personality"""
+113,Core,Planner,FASTFIGHTING.Planner.Leader,Battle Planner window (GM),label: who leads the side,Short label,"""Leader""","""Leader"""
+114,Core,Planner,FASTFIGHTING.Planner.NoLeader,Battle Planner window (GM),choice: the side has no leaders,Short,"""No leaders""","""No leaders"""
+115,Core,Planner,FASTFIGHTING.Planner.SideDefault,Battle Planner window (GM),tooltip note: this value comes from the side's default,"Lower case, short","""side default""","""side default"""
+116,Core,Planner,FASTFIGHTING.Planner.HiddenToken,Battle Planner window (GM),tooltip on an icon: the token is hidden,Short,"""Hidden token""","""Hidden token"""
+117,Core,Planner,FASTFIGHTING.Planner.Details,Battle Planner window (GM),screen-reader label of the button that opens a creature's details,Short,"""Details""","""Details"""
+118,Core,Planner,FASTFIGHTING.Planner.IgnoreTerrain,Battle Planner window (GM),detail: the creature ignores difficult terrain,Short,"""Ignores terrain""","""Ignores terrain"""
+119,Core,Planner,FASTFIGHTING.Planner.Movement,Battle Planner window (GM),detail heading: the creature's speeds,Short heading,"""Movement""","""Movement"""
+120,Core,Planner,FASTFIGHTING.Planner.Environment,Battle Planner window (GM),detail heading: the terrain the creature stands in,Short heading,"""Standing in""","""Standing in"""
+121,Core,Planner,FASTFIGHTING.Planner.Options,Battle Planner window (GM),detail heading: the creature's actions,Short heading,"""Options""","""Options"""
+122,Core,Planner,FASTFIGHTING.Planner.RunFailed,Battle Planner window (GM),error notice when a simulation fails,Short sentence; keep {error},"""Simulation failed: {error}""","""Simulation failed: {error}"""
+123,Core,Planner,FASTFIGHTING.Planner.FightsWith,Battle Planner window (GM),"a token's side, when it fights with another side",Short; keep {side},"""Fights as {side}""","""Fights as {side}"""
+124,Core,Planner,FASTFIGHTING.Planner.Group,Battle Planner window (GM),screen-reader label of the group buttons (1 2 3),Short,"""Group""","""Group"""
+125,Core,Planner,FASTFIGHTING.Planner.Terrain,Battle Planner window (GM),note on the approach line: slowed by terrain (followed by ×1.25),"Lower case, short","""terrain""","""terrain"""
+126,Core,Planner,FASTFIGHTING.Planner.DifficultHere,Battle Planner window (GM),chip: the creature stands in difficult terrain,"Lower case, short","""difficult terrain""","""difficult terrain"""
+127,Core,Planner,FASTFIGHTING.Planner.HazardHere,Battle Planner window (GM),chip: the creature stands in a hazardous region,"Lower case, short","""hazard region""","""hazard region"""
+128,Core,Planner,FASTFIGHTING.Planner.ControlledBy,Battle Planner window (GM),tooltip on the chip naming a token's players,Short,"""Controlled by""","""Controlled by"""
+129,Core,Planner,FASTFIGHTING.Planner.Fudge,Battle Planner window (GM),tooltip note: the GM's adjustment to a value ('+5 fudge'),"Lower case, one word","""fudge""","""fudge"""
+130,Core,Planner,FASTFIGHTING.Planner.Talking,Battle Planner window (GM),toggle: creatures can talk instead of fight,Short label,"""Talking""","""Talking"""
+131,Core,Planner,FASTFIGHTING.Planner.IgnoreLanguages,Battle Planner window (GM),toggle: talking works without a shared language,Short label,"""Ignore languages""","""Ignore languages"""
+132,Core,Planner,FASTFIGHTING.Planner.Bystanders,Battle Planner window (GM),toggle: tokens outside the encounter can join in,Short label,"""Bystanders""","""Bystanders"""
+133,Core,Planner,FASTFIGHTING.Planner.Bystander,Battle Planner window (GM),chip on a token outside the encounter (it may join in),One word,"""Bystander""","""Bystander"""
+134,Core,Planner,FASTFIGHTING.Planner.Cancel,Battle Planner window (GM),button: stop a running simulation,"Button, one word","""Stop""","""Stop"""
+135,Core,Planner,FASTFIGHTING.Planner.Opening,Battle Planner window (GM),"label: how the fight opens (talk first, fight, decide)",Short label,"""Opening""","""Opening"""
+136,Core,Planner,FASTFIGHTING.Planner.AroundWalls,Battle Planner window (GM),note on the approach line: has to go around walls,"Lower case, short","""around walls""","""around walls"""
+137,Core,Planner,FASTFIGHTING.Planner.AutoLeaders,Battle Planner window (GM),the leaders picked automatically,Short; keep {names},"""Leaders: {names}""","""Leaders: {names}"""
+138,Core,Planner,FASTFIGHTING.Planner.Command,Battle Planner window (GM),screen-reader label of the command role buttons,Short,"""Command""","""Command"""
+139,Core,Planner,FASTFIGHTING.Planner.Role.boss.Name,Battle Planner: a side's settings (GM),command role: the boss,One or two words,"""Boss""","""Boss"""
+140,Core,Planner,FASTFIGHTING.Planner.Role.boss.Short,Battle Planner: a side's settings (GM),one-letter button for the boss role,One character,"""B""","""B"""
+141,Core,Planner,FASTFIGHTING.Planner.Role.leader.Name,Battle Planner: a side's settings (GM),command role: the leader,One or two words,"""Leader""","""Leader"""
+142,Core,Planner,FASTFIGHTING.Planner.Role.leader.Short,Battle Planner: a side's settings (GM),one-letter button for the leader role,One character,"""L""","""L"""
+143,Core,Planner,FASTFIGHTING.Planner.Role.lt1.Name,Battle Planner: a side's settings (GM),command role: first lieutenant,Two words at most,"""1st Lieutenant""","""1st Lieutenant"""
+144,Core,Planner,FASTFIGHTING.Planner.Role.lt1.Short,Battle Planner: a side's settings (GM),one-character button for the first lieutenant,One character,"""1""","""1"""
+145,Core,Planner,FASTFIGHTING.Planner.Role.lt2.Name,Battle Planner: a side's settings (GM),command role: second lieutenant,Two words at most,"""2nd Lieutenant""","""2nd Lieutenant"""
+146,Core,Planner,FASTFIGHTING.Planner.Role.lt2.Short,Battle Planner: a side's settings (GM),one-character button for the second lieutenant,One character,"""2""","""2"""
+147,Core,Results,FASTFIGHTING.Difficulty.trivial,Battle Planner: the results (GM),the simulated difficulty: lowest of five,One word,"""Trivial""","""Trivial"""
+148,Core,Results,FASTFIGHTING.Difficulty.low,Battle Planner: the results (GM),the simulated difficulty: second lowest of five,One word,"""Low""","""Low"""
+149,Core,Results,FASTFIGHTING.Difficulty.moderate,Battle Planner: the results (GM),the simulated difficulty: middle of five,One word,"""Moderate""","""Moderate"""
+150,Core,Results,FASTFIGHTING.Difficulty.severe,Battle Planner: the results (GM),the simulated difficulty: second highest of five,One word,"""Severe""","""Severe"""
+151,Core,Results,FASTFIGHTING.Difficulty.extreme,Battle Planner: the results (GM),the simulated difficulty: highest of five,One word,"""Extreme""","""Extreme"""
+152,Core,Results,FASTFIGHTING.Results.Tab.overview,Battle Planner: the results (GM),tab: the overall odds,"Tab label, short","""Overview""","""Overview"""
+153,Core,Results,FASTFIGHTING.Results.Tab.combatants,Battle Planner: the results (GM),tab: each creature's fate,"Tab label, short","""Combatants""","""Combatants"""
+154,Core,Results,FASTFIGHTING.Results.Tab.swing,Battle Planner: the results (GM),tab: what changes the odds most,"Tab label, short","""Swing factors""","""Swing factors"""
+155,Core,Results,FASTFIGHTING.Results.Tab.resources,Battle Planner: the results (GM),tab: what each side uses up,"Tab label, short","""Resources""","""Resources"""
+156,Core,Results,FASTFIGHTING.Results.Tab.sample,Battle Planner: the results (GM),"tab: one fight, told as a story","Tab label, short","""Sample fight""","""Sample fight"""
+157,Core,Results,FASTFIGHTING.Results.Stalemate,Battle Planner: the results (GM),headline figure: the chance no one wins,Short,"""Stalemate""","""Stalemate"""
+158,Core,Results,FASTFIGHTING.Results.PartyWins,Battle Planner: the results (GM),headline figure: the chance the party wins,Short,"""Party wins""","""Party wins"""
 159,Core,Results,FASTFIGHTING.Results.MedianRounds,Battle Planner: the results (GM),headline figure: how many rounds a fight lasts,Short,"""Rounds""",
-160,Core,Results,FASTFIGHTING.Results.Simulated,Battle Planner: the results (GM),"headline figure: how hard the fight is, by the simulation",Short,"""Simulated difficulty""",
-161,Core,Results,FASTFIGHTING.Results.SystemSays,Battle Planner: the results (GM),note after the difficulty: what the game system's own rules call it,Short,"""system says""",
+160,Core,Results,FASTFIGHTING.Results.Simulated,Battle Planner: the results (GM),"headline figure: how hard the fight is, by the simulation",Short,"""Simulated difficulty""","""Simulated difficulty"""
+161,Core,Results,FASTFIGHTING.Results.SystemSays,Battle Planner: the results (GM),note after the difficulty: what the game system's own rules call it,Short,"""system says""","""system says"""
 162,Core,Results,FASTFIGHTING.Results.RoundN,Battle Planner: the results (GM),tooltip on a bar of the rounds chart: 'Round 3: 25%',Short,"""Round""",
 163,Core,Results,FASTFIGHTING.Results.Dangerous,Battle Planner: the results (GM),heading: the foes that deal the most damage,Short,"""Most dangerous""",
 164,Core,Results,FASTFIGHTING.Results.DmgAbbr,Battle Planner: the results (GM),"abbreviation of damage, after a number",Short,"""dmg""",

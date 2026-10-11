@@ -174,6 +174,18 @@ Hooks.on("userConnected", () => {
   if ( game.user.isGM ) refreshPlanner();
 });
 
+// Hostile and neutral pills in the system's disposition colors (the token borders), with text that reads on them.
+Hooks.once("ready", () => {
+  const colors = CONFIG.Canvas?.dispositionColors ?? {};
+  const root = document.documentElement.style;
+  for ( const [key, name] of [["HOSTILE", "hostile"], ["NEUTRAL", "neutral"]] ) {
+    if ( !Number.isFinite(colors[key]) ) continue;
+    const r = (colors[key] >> 16) & 255, g = (colors[key] >> 8) & 255, b = colors[key] & 255;
+    root.setProperty(`--ff-disposition-${name}`, `rgb(${r}, ${g}, ${b})`);
+    root.setProperty(`--ff-disposition-${name}-text`, (0.299 * r + 0.587 * g + 0.114 * b) > 150 ? "#222" : "#fff");
+  }
+});
+
 // Distances read in the viewed scene's units (metres on a metric map; the engine counts feet).
 const useSceneUnits = () => setDistanceUnit(canvas.scene ? sceneUnit(canvas.scene) : null);
 Hooks.on("canvasReady", useSceneUnits);

@@ -15,7 +15,7 @@ import {
 } from "../foundry/tactics.js";
 import {
   gatherRoster, chosenSide, groupOf, proposeNeutralGroups, resolveAllegiances, simulate, swingFactors, replay, findSample, drawFight,
-  approachFor, commandChains, commandGroup, ROLES, sideName, hostileGroupsIn
+  approachFor, commandChains, commandGroup, ROLES, sideName, hostileGroupsIn, secretTeam, SECRET_TEAMS, LEANS
 } from "../foundry/battle.js";
 import { buildStory, STORY_STYLES } from "../story/story.js";
 import { loadStoryTables } from "../story/tables.js";
@@ -77,6 +77,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       preparePlayers: BattlePlanner.#onPreparePlayers,
       togglePlaystyle: BattlePlanner.#onTogglePlaystyle,
       setGroup: BattlePlanner.#onSetGroup,
+      setTeam: BattlePlanner.#onSetTeam,
       setRole: BattlePlanner.#onSetRole,
       openSurvey: BattlePlanner.#onOpenSurvey,
       cancel: BattlePlanner.#onCancel
@@ -232,7 +233,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     this.storyTables = await loadStoryTables();
     const setup = this.setup;
     const adapter = getAdapter();
-    const resolved = resolveAllegiances(this.roster, setup, this.results?.underdog ?? null);
+    const resolved = resolveAllegiances(this.roster, setup);
     // (How many hostile groups fight, for their names: "Hostile" alone, or numbered.)
     this.hostileGroups = hostileGroupsIn(this.roster.filter(e => setup.tokens[e.token.id]?.include !== false).map(e => resolved[e.token.id]));
     const sideDefaults = setting("sideDefaults");
@@ -258,11 +259,9 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
         icon: SIDE_ICONS[id],
         active: this.sideTab === id,
         count: members.filter(m => setup.tokens[m.token.id]?.include !== false).length,
-        isUnaligned: id === SIDES.NEUTRAL || id === SIDES.SECRET,
-        allegiance: s.allegiance,
-        allegianceLabel: id === SIDES.NEUTRAL ? "FASTFIGHTING.Planner.Lean" : "FASTFIGHTING.Planner.Allegiance",
-        // Neutrals only lean (they take no side until something crosses them); Secret tokens join outright.
-        allegianceChoices: Object.fromEntries(Object.values(ALLEGIANCE).map(k => [k, `FASTFIGHTING.${id === SIDES.NEUTRAL ? "Lean" : "Allegiance"}.${k}`])),
+        // Neutrals only lean (they take no side until something crosses them). (A Secret token is on the team its row says.)
+        lean: id === SIDES.NEUTRAL ? s.allegiance : null,
+        leanChoices: id === SIDES.NEUTRAL ? Object.fromEntries(Object.values(ALLEGIANCE).map(k => [k, `FASTFIGHTING.Lean.${k}`])) : null,
         traits: TRAITS.map(k => this.#traitView(k, defaults[k] ?? 50, s.traitFudge?.[k] ?? 0, `sides.${id}.traitFudge.${k}`, loc("FASTFIGHTING.Planner.SideDefault"))),
         healAggro: s.healAggro,
         healChoices: Object.fromEntries(HEAL_AGGRO.map(k => [k, `FASTFIGHTING.HealAggro.${k}`])),
@@ -329,6 +328,8 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     // (A hostile token in another group fights as that group: the pills say so.)
     const moved = resolvedSide && resolvedSide !== chosen && !(chosen === SIDES.HOSTILE && HOSTILE_GROUPS.includes(resolvedSide));
     const grouped = chosen === SIDES.HOSTILE || chosen === SIDES.NEUTRAL;
+    const team = secretTeam(e, setup);
+    const lean = setup.sides[SIDES.NEUTRAL]?.allegiance;
     const group = grouped ? groupOf(e, setup) : null;
     return {
       id: e.token.id,
@@ -345,7 +346,16 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       include: ts.include !== false,
       side: ts.side ?? e.baseSide,
       sideChoices: Object.fromEntries(SIDE_ORDER.map(k => [k, `FASTFIGHTING.Side.${k}`])),
-      resolvedLabel: resolvedSide === NEUTRAL_PARTY ? loc(`FASTFIGHTING.Planner.TakesNoSide.${chosenSide(e, setup) === SIDES.NEUTRAL ? setup.sides[SIDES.NEUTRAL]?.allegiance ?? ALLEGIANCE.NEUTRAL : ALLEGIANCE.NEUTRAL}`)
+      // A Secret token's team, as pills: any hostile group or neutral team (an unused number: one of its own). It's always
+      // on one: hostile group 1 until the GM picks another.
+      teams: team ? ["hostile", "neutral"].map(kind => ({
+        kind,
+        label: loc(`FASTFIGHTING.Side.${kind}`),
+        pills: GROUPS.map(n => ({ n, team: `${kind}${n}`, name: game.i18n.format(`FASTFIGHTING.Side.${kind}Group`, { n }), active: team.side === kind && team.group === n }))
+      })) : null,
+      groupKind: chosen === SIDES.NEUTRAL ? "neutral" : "hostile",
+      // (Neutrals, and Secret tokens on a neutral team, lean as the Neutral tab says: nowhere, when it leaves them out.)
+      resolvedLabel: resolvedSide === NEUTRAL_PARTY ? loc(`FASTFIGHTING.Planner.TakesNoSide.${LEANS.has(lean) ? lean : ALLEGIANCE.NEUTRAL}`)
         : moved ? game.i18n.format("FASTFIGHTING.Planner.FightsWith", { side: sideName(resolvedSide, this.hostileGroups) }) : (resolvedSide === null && ts.include !== false ? loc("FASTFIGHTING.Planner.SitsOut") : ""),
       // Which group (1 2 3): hostile groups fight each other too; a neutral's friend group was proposed when the planner opened.
       groups: grouped ? GROUPS.map(n => ({ n, active: n === group, auto: chosen === SIDES.NEUTRAL && ts.group == null })) : null,
@@ -615,6 +625,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       // A token moved to another side starts in that side's first group (a neutral, in the one proposed for it).
       if ( /^tokens\.[^.]+\.side$/.test(name) ) {
         this.setup.tokens[name.split(".")[1]].group = null;
+        delete this.setup.tokens[name.split(".")[1]].team;
         delete this.setup.tokens[name.split(".")[1]].role; // (its role was in the group it left)
       }
       if ( name === "options.seed" ) this.setup.options.seed = Number.isFinite(Number.parseInt(value, 10)) ? Number.parseInt(value, 10) >>> 0 : null;
@@ -646,7 +657,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     const ts = tokenSetup(this.setup, id);
     if ( target.classList.contains("active") ) ts.role = "none";
     else {
-      const resolved = resolveAllegiances(this.roster, this.setup, this.results?.underdog ?? null);
+      const resolved = resolveAllegiances(this.roster, this.setup);
       const me = this.roster.find(e => e.token.id === id);
       const key = me ? commandGroup(me, this.setup, resolved) : null;
       const head = role === "boss" || role === "leader" ? ["boss", "leader"] : [role];
@@ -667,6 +678,19 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     const group = Number(target.dataset.group);
     if ( !id || !GROUPS.includes(group) ) return;
     tokenSetup(this.setup, id).group = group;
+    await saveSetup(this.setup, this.holder);
+    this.stale = true;
+    this.render();
+  }
+
+  /** A Secret token onto another team (it's always on one). */
+  static async #onSetTeam(event, target) {
+    const id = target.closest("[data-token-id]")?.dataset.tokenId;
+    const team = target.dataset.team;
+    if ( !id || !SECRET_TEAMS.includes(team) || target.classList.contains("active") ) return;
+    const ts = tokenSetup(this.setup, id);
+    ts.team = team;
+    delete ts.role; // (its role was in the team it left)
     await saveSetup(this.setup, this.holder);
     this.stale = true;
     this.render();

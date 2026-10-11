@@ -36,7 +36,7 @@ export function sideName(side, hostileGroups = 1) {
 }
 
 /** Neutral tokens take no side in the fight: these allegiances are only the way they lean (behavior/neutral.js). */
-const LEANS = new Set([ALLEGIANCE.NEUTRAL, ALLEGIANCE.FRIENDLY, ALLEGIANCE.HOSTILE, ALLEGIANCE.CLOSEST, ALLEGIANCE.UNDERDOG]);
+export const LEANS = new Set([ALLEGIANCE.NEUTRAL, ALLEGIANCE.FRIENDLY, ALLEGIANCE.HOSTILE, ALLEGIANCE.CLOSEST, ALLEGIANCE.UNDERDOG]);
 
 /** Token ids of the encounter's combatants on this scene. */
 export function encounterTokenIds(scene = canvas.scene) {
@@ -97,6 +97,26 @@ export function groupOf(entry, setup) {
   const neutral = chosenSide(entry, setup) === SIDES.NEUTRAL;
   const g = Number(ts?.group ?? (neutral ? ts?.autoGroup : null) ?? 1);
   return GROUPS.includes(g) ? g : 1;
+}
+
+/** The teams a Secret token can be put on: any hostile group, or any neutral team (an unused number: one of its own). */
+export const SECRET_TEAMS = Object.freeze(GROUPS.flatMap(n => [`hostile${n}`]).concat(GROUPS.map(n => `neutral${n}`)));
+
+/**
+ * The team a Secret token is on ({side: "hostile" | "neutral", group: 1-3}): the GM's pick, else hostile group 1. (Null
+ * for a token that isn't Secret.)
+ */
+export function secretTeam(entry, setup) {
+  if ( chosenSide(entry, setup) !== SIDES.SECRET ) return null;
+  const m = /^(hostile|neutral)([1-3])$/.exec(setup.tokens[entry.token.id]?.team ?? "");
+  return m ? { side: m[1], group: Number(m[2]) } : { side: "hostile", group: 1 };
+}
+
+/** The neutral friend group a token taking no side is in: a neutral's group, or a Secret token's neutral team (else null). */
+function neutralTeamOf(entry, setup) {
+  if ( chosenSide(entry, setup) === SIDES.NEUTRAL ) return groupOf(entry, setup);
+  const team = secretTeam(entry, setup);
+  return team?.side === "neutral" ? team.group : null;
 }
 
 /** The side a hostile group fights as (group 1 is the hostile side itself). */
@@ -165,10 +185,9 @@ function campsOf(included, setup) {
  * Decide where Neutral and Secret tokens end up.
  * @returns {Record<string, string|null>} tokenId -> resolved side id (null = excluded)
  */
-export function resolveAllegiances(roster, setup, underdog = null) {
+export function resolveAllegiances(roster, setup) {
   const resolved = {};
   const included = roster.filter(e => setup.tokens[e.token.id]?.include !== false);
-  const camps = campsOf(included, setup);
   for ( const e of included ) {
     const side = chosenSide(e, setup);
     const explicit = setup.tokens[e.token.id]?.side;
@@ -176,22 +195,15 @@ export function resolveAllegiances(roster, setup, underdog = null) {
       resolved[e.token.id] = campOf(e, setup);
       continue;
     }
-    const allegiance = setup.sides[side]?.allegiance ?? ALLEGIANCE.EXCLUDE;
-    // Neutrals stand on the field taking no side, leaning the way their allegiance says (and a Secret token told to
-    // take no side does the same, leaning nowhere).
-    if ( (side === SIDES.NEUTRAL && LEANS.has(allegiance)) || allegiance === ALLEGIANCE.NEUTRAL ) {
-      resolved[e.token.id] = NEUTRAL_PARTY;
+    // A Secret token is always on a team: its hostile group, or its neutral team (taking no side with it).
+    const team = secretTeam(e, setup);
+    if ( team ) {
+      resolved[e.token.id] = team.side === "hostile" ? hostileSide(team.group) : NEUTRAL_PARTY;
       continue;
     }
-    switch ( allegiance ) {
-      case ALLEGIANCE.EXCLUDE: resolved[e.token.id] = null; break;
-      case ALLEGIANCE.FRIENDLY: resolved[e.token.id] = SIDES.FRIENDLY; break;
-      case ALLEGIANCE.HOSTILE: resolved[e.token.id] = SIDES.HOSTILE; break;
-      case ALLEGIANCE.CLOSEST: resolved[e.token.id] = closestCamp(e, camps); break;
-      case ALLEGIANCE.UNDERDOG: resolved[e.token.id] = underdog ?? SIDES.FRIENDLY; break;
-      case ALLEGIANCE.OWN: resolved[e.token.id] = side; break;
-      default: resolved[e.token.id] = null;
-    }
+    // Neutrals stand on the field taking no side, leaning the way their lean says; or they're left out, or fight everyone.
+    const allegiance = setup.sides[side]?.allegiance ?? ALLEGIANCE.EXCLUDE;
+    resolved[e.token.id] = LEANS.has(allegiance) ? NEUTRAL_PARTY : allegiance === ALLEGIANCE.OWN ? side : null;
   }
   return resolved;
 }
@@ -206,9 +218,9 @@ export function resolveLeans(roster, setup) {
   const included = roster.filter(e => setup.tokens[e.token.id]?.include !== false);
   const camps = campsOf(included, setup);
   for ( const e of included ) {
-    const side = chosenSide(e, setup);
-    if ( side !== SIDES.NEUTRAL ) continue;
-    const allegiance = setup.sides[side]?.allegiance;
+    // Neutrals, and Secret tokens on a neutral team: they lean as the neutrals do.
+    if ( chosenSide(e, setup) !== SIDES.NEUTRAL && secretTeam(e, setup)?.side !== "neutral" ) continue;
+    const allegiance = setup.sides[SIDES.NEUTRAL]?.allegiance;
     leans[e.token.id] = {
       [ALLEGIANCE.FRIENDLY]: SIDES.FRIENDLY,
       [ALLEGIANCE.HOSTILE]: SIDES.HOSTILE,
@@ -294,7 +306,10 @@ const PICKED_BONUS = Object.freeze({ brave: 10, tacticalFloor: 40, attack: 0, ac
 export function commandGroup(entry, setup, resolved) {
   const side = resolved[entry.token.id];
   if ( !side ) return null;
-  if ( side === NEUTRAL_PARTY ) return chosenSide(entry, setup) === SIDES.NEUTRAL ? `${NEUTRAL_PARTY}#${groupOf(entry, setup)}` : null;
+  if ( side === NEUTRAL_PARTY ) {
+    const team = neutralTeamOf(entry, setup);
+    return team ? `${NEUTRAL_PARTY}#${team}` : null;
+  }
   return side;
 }
 
@@ -372,13 +387,13 @@ export function commandChains(entries, setup, resolved, adapter = getAdapter()) 
  * Build the BattleSpec the engine runs.
  * @param {object[]} roster      From gatherRoster
  * @param {object} setup         Scene setup
- * @param {object} [extra]       {underdog, approach, exclude: Set<tokenId>, optionOverrides}
+ * @param {object} [extra]       {approach, exclude: Set<tokenId>, optionOverrides}
  */
-export function buildBattleSpec(roster, setup, { underdog = null, approach = null, exclude = new Set(), optionOverrides = {} } = {}) {
+export function buildBattleSpec(roster, setup, { approach = null, exclude = new Set(), optionOverrides = {} } = {}) {
   const adapter = getAdapter();
   const sideDefaults = setting("sideDefaults");
   proposeNeutralGroups(roster, setup, { missingOnly: true }); // (a neutral put on the map since the planner opened)
-  const resolved = resolveAllegiances(roster, setup, underdog);
+  const resolved = resolveAllegiances(roster, setup);
   const leans = resolveLeans(roster, setup);
   const combatants = [];
   const bySide = {};
@@ -390,7 +405,7 @@ export function buildBattleSpec(roster, setup, { underdog = null, approach = nul
     spec.side = side;
     spec.originSide = e.baseSide;
     if ( side === NEUTRAL_PARTY ) spec.lean = leans[e.token.id] ?? null;
-    if ( side === NEUTRAL_PARTY && chosenSide(e, setup) === SIDES.NEUTRAL ) spec.group = groupOf(e, setup); // its friend group
+    if ( side === NEUTRAL_PARTY ) spec.group = neutralTeamOf(e, setup) ?? undefined; // its friend group
     spec.traits = fudgedTraits(e.spec, ts.fudge);
     applyCharacterTactics(spec, e);
     if ( ts.diesAtZero !== undefined ) spec.diesAtZero = ts.diesAtZero;
@@ -442,7 +457,7 @@ export function buildBattleSpec(roster, setup, { underdog = null, approach = nul
       initiativeOrder = turns.filter(t => t.initiative !== null && t.tokenId).map(t => t.tokenId);
     }
   } else if ( options.surprise === "stealth" ) {
-    stealthSides = used.filter(s => s === SIDES.SECRET || combatants.some(c => c.side === s && c.hidden));
+    stealthSides = used.filter(s => combatants.some(c => c.side === s && c.hidden));
   } else if ( used.includes(options.surprise) ) {
     surpriseSide = options.surprise;
   }
@@ -559,20 +574,7 @@ export async function simulate(roster, setup, { onProgress, signal } = {}) {
   const adapter = getAdapter();
   const approach = setup.options.positioning ? approachFor(roster, setup) : null;
 
-  // Secret tokens joining the underdog need a quick estimate without them. (Neutrals only lean toward the underdog,
-  // and that's worked out as the fight goes.)
-  let underdog = null;
-  const needsUnderdog = setup.sides[SIDES.SECRET]?.allegiance === ALLEGIANCE.UNDERDOG;
-  if ( needsUnderdog ) {
-    const probeSetup = foundry.utils.deepClone(setup);
-    probeSetup.sides[SIDES.SECRET].allegiance = ALLEGIANCE.EXCLUDE;
-    const probe = runBatchSync(buildBattleSpec(roster, probeSetup, { approach }), adapter.rules, { runs: 200, seed: 7 });
-    // The underdog: of the party and the hostile groups, the least likely to win.
-    const camps = Object.values(probe.sides).filter(s => s.id === SIDES.FRIENDLY || HOSTILE_GROUPS.includes(s.id));
-    underdog = camps.sort((a, b) => a.pWin - b.pWin)[0]?.id ?? SIDES.FRIENDLY;
-  }
-
-  const spec = buildBattleSpec(roster, setup, { underdog, approach });
+  const spec = buildBattleSpec(roster, setup, { approach });
   spec.awareness = awarenessFor(roster);
   Hooks.callAll("fastFighting.preSimulate", spec, { setup, roster });
   const seed = setup.options.seed ?? undefined;
@@ -581,7 +583,6 @@ export async function simulate(roster, setup, { onProgress, signal } = {}) {
     spec.combatants.filter(c => c.side === SIDES.FRIENDLY),
     spec.combatants.filter(c => c.side !== SIDES.FRIENDLY && c.side !== NEUTRAL_PARTY)
   ) ?? null;
-  results.underdog = underdog;
   Hooks.callAll("fastFighting.postSimulate", results, { setup, roster, spec });
   return { spec, results, approach };
 }

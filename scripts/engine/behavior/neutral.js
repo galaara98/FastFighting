@@ -90,9 +90,12 @@ export function leanSide(run, u) {
   return worst?.side ?? null;
 }
 
-/** The other neutral tokens in a neutral token's friend group (the planner's 1 2 3; all of them, without groups). */
+/**
+ * The other neutral tokens in a neutral token's friend group (the planner's 1 2 3; all of them, without groups). A Secret
+ * token the GM put on a neutral team is one of that team's.
+ */
 function fellowsOf(run, u) {
-  const neutralToken = o => o.spec.side === NEUTRAL_PARTY && o.spec.originSide === "neutral";
+  const neutralToken = o => o.spec.side === NEUTRAL_PARTY && (o.spec.originSide === "neutral" || (o.spec.originSide === "secret" && !!o.spec.group));
   if ( !neutralToken(u) ) return [];
   return run.units.filter(o => o !== u && neutralToken(o) && (o.spec.group ?? null) === (u.spec.group ?? null)).map(o => o.id);
 }

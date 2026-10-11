@@ -84,9 +84,9 @@
       {{#with activeSide}}
       <div class="ff-side-strip {{id}}">
         <div class="ff-strip-row">
-          {{#if isUnaligned}}
-          <label class="ff-field">{{localize allegianceLabel}}
-            <select name="sides.{{id}}.allegiance">{{selectOptions allegianceChoices selected=allegiance localize=true}}</select>
+          {{#if leanChoices}}
+          <label class="ff-field">{{localize "FASTFIGHTING.Planner.Lean"}}
+            <select name="sides.{{id}}.allegiance">{{selectOptions leanChoices selected=lean localize=true}}</select>
           </label>
           {{/if}}
           <label class="ff-field">{{localize "FASTFIGHTING.Planner.Healing"}}
@@ -134,7 +134,8 @@
             </div>
             <label class="ff-check" data-tooltip="{{localize "FASTFIGHTING.Planner.IncludeHint"}}"><input type="checkbox" name="tokens.{{id}}.include" {{checked include}}></label>
             <span class="ff-row-pills">
-              <span class="ff-groups" {{#if groups}}role="group" aria-label="{{localize "FASTFIGHTING.Planner.Group"}}" data-tooltip="{{groupHint}}"{{/if}}>{{#each groups}}<button type="button" class="ff-group-pill {{#if active}}active{{/if}} {{#if auto}}is-auto{{/if}}" data-action="setGroup" data-group="{{n}}" aria-pressed="{{#if active}}true{{else}}false{{/if}}">{{n}}</button>{{/each}}</span>
+              {{#each teams}}<span class="ff-groups {{kind}}" role="group" aria-label="{{label}}">{{#each pills}}<button type="button" class="ff-group-pill {{#if active}}active{{/if}}" data-action="setTeam" data-team="{{team}}" data-tooltip="{{name}}" aria-label="{{name}}" aria-pressed="{{#if active}}true{{else}}false{{/if}}">{{n}}</button>{{/each}}</span>{{/each}}
+              <span class="ff-groups {{groupKind}}" {{#if groups}}role="group" aria-label="{{localize "FASTFIGHTING.Planner.Group"}}" data-tooltip="{{groupHint}}"{{/if}}>{{#each groups}}<button type="button" class="ff-group-pill {{#if active}}active{{/if}} {{#if auto}}is-auto{{/if}}" data-action="setGroup" data-group="{{n}}" aria-pressed="{{#if active}}true{{else}}false{{/if}}">{{n}}</button>{{/each}}</span>
               <span class="ff-roles" {{#if roles}}role="group" aria-label="{{localize "FASTFIGHTING.Planner.Command"}}" data-tooltip="{{roleHint}}"{{/if}}>{{#each roles}}<button type="button" class="ff-role-pill {{#if active}}active{{/if}} {{#if auto}}is-auto{{/if}}" data-action="setRole" data-role="{{key}}" aria-pressed="{{#if active}}true{{else}}false{{/if}}" aria-label="{{label}}">{{short}}</button>{{/each}}</span>
             </span>
             <select name="tokens.{{id}}.side" class="ff-side-select">{{selectOptions sideChoices selected=side localize=true}}</select>

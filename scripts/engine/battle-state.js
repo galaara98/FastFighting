@@ -328,7 +328,7 @@ export function createUnit(prep, p) {
     // Taking no side (NEUTRAL_PARTY): the side it leans to, the sides it has turned on, how much each has crossed
     // it, and a quarrel it's still trying to settle with words. (See behavior/neutral.js.)
     lean: s.lean ?? null,
-    friendGroup: s.side === NEUTRAL_PARTY && s.originSide === "neutral" && s.group ? s.group : null,
+    friendGroup: s.side === NEUTRAL_PARTY && (s.originSide === "neutral" || s.originSide === "secret") && s.group ? s.group : null,
     against: new Set(),
     grievance: new Map(),
     crossedBy: new Set(),

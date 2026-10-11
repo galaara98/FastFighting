@@ -20,6 +20,11 @@
   --ff-down: light-dark(#c98a1c, #e8b04e);
   --ff-dead: var(--ff-hostile);
   --ff-fled: var(--ff-secret);
+  /* Group and team pills: the system's disposition colors when it has them (set at init), else red and yellow. */
+  --ff-team-hostile: var(--ff-disposition-hostile, #d23a2a);
+  --ff-team-hostile-text: var(--ff-disposition-hostile-text, #fff);
+  --ff-team-neutral: var(--ff-disposition-neutral, #e9c62b);
+  --ff-team-neutral-text: var(--ff-disposition-neutral-text, #222);
 }
 
 .ff-planner .window-content {
@@ -149,6 +154,11 @@
 .ff-group-pill:hover { color: var(--color-text-primary, inherit); background: var(--ff-surface-2); }
 .ff-group-pill.active { background: var(--ff-accent); border-color: var(--ff-accent); color: #fff; }
 .ff-group-pill.active.is-auto { background: color-mix(in srgb, var(--ff-accent) 60%, transparent); }
+.ff-groups.hostile .ff-group-pill.active { background: var(--ff-team-hostile); border-color: var(--ff-team-hostile); color: var(--ff-team-hostile-text); }
+.ff-groups.neutral .ff-group-pill.active { background: var(--ff-team-neutral); border-color: var(--ff-team-neutral); color: var(--ff-team-neutral-text); }
+.ff-groups.hostile .ff-group-pill.active.is-auto { background: color-mix(in srgb, var(--ff-team-hostile) 55%, transparent); }
+.ff-groups.neutral .ff-group-pill.active.is-auto { background: color-mix(in srgb, var(--ff-team-neutral) 55%, transparent); }
+.ff-groups + .ff-groups { margin-left: 4px; }
 /* Command roles B L 1 2: the same touching pills, in the leaders' own color. */
 .ff-roles { display: inline-flex; }
 .ff-role-pill {

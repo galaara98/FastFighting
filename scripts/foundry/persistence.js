@@ -18,7 +18,7 @@ export function defaultSideSetup(side) {
     morale: true,
     leaderId: "auto",
     leadershipFudge: { brave: 0, tacticalFloor: 0, attack: 0, ac: 0 },
-    allegiance: side === SIDES.NEUTRAL ? setting("neutralDefault") : side === SIDES.SECRET ? setting("secretDefault") : null
+    allegiance: side === SIDES.NEUTRAL ? setting("neutralDefault") : null
   };
 }
 

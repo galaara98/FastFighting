@@ -19,7 +19,6 @@ const SETTINGS = {
   includeHidden: { type: Boolean, default: true },
   includeOtherLevels: { type: Boolean, default: false },
   neutralDefault: { type: String, default: ALLEGIANCE.NEUTRAL, choices: choices(Object.values(ALLEGIANCE), "Lean") },
-  secretDefault: { type: String, default: ALLEGIANCE.HOSTILE, choices: choices(Object.values(ALLEGIANCE), "Allegiance") },
   // (Read when the planner opens, to propose friend groups for neutrals: a world setting, not per plan.)
   neutralReach: { type: Number, default: NEUTRAL_REACH, range: { min: 1, max: 20, step: 1 } },
   downedModel: { type: String, default: DOWNED_MODELS.SIMULATE, choices: choices(Object.values(DOWNED_MODELS), "Downed") },

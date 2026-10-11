@@ -44,7 +44,7 @@ const W = {
 /*  Core                                        */
 /* -------------------------------------------- */
 const SETTING = {
-  maxRounds: "the round limit for a simulated fight", neutralDefault: "how neutral tokens take part by default", secretDefault: "how secret tokens take part by default",
+  maxRounds: "the round limit for a simulated fight", neutralDefault: "how neutral tokens take part by default",
   downedModel: "what dropping to 0 HP means", leadership: "leaders and their command (on or off)", surpriseDefault: "how initiative and surprise are decided",
   talking: "creatures can talk instead of fighting (on or off)", ignoreLanguages: "talking works without a shared language (on or off)", storyStyle: "which story style is told by default",
   storyMode: "who the story is posted for", leaderInfluence: "how readily followers take their commander's lead", bossInfluence: "how much more a boss's lead counts"
@@ -65,7 +65,7 @@ const PLANNER = {
   Title: ["the window's title", "Short title"], Runs: ["label: how many fights to simulate", "Short label"], MaxRounds: ["label: the round limit", "Short label"], Seed: ["label: the random seed (the same seed replays the same fights)", "Short label"],
   Random: ["placeholder in the seed box when it's empty: a random seed", "One or two words, lower case"], Downed: ["label: what dropping to 0 HP means", "Short label"], Initiative: ["label: how initiative and surprise are decided", "Short label"],
   Positioning: ["toggle: use the map (terrain, walls, distance)", "Short label"], Morale: ["toggle: creatures can break and flee", "Short label"], Leadership: ["toggle: leaders and command", "Short label"],
-  Hidden: ["toggle: include hidden tokens", "Short label"], Run: ["button: start the simulation", "Button, one word"], Allegiance: ["label: how a secret side takes part", "Short label"],
+  Hidden: ["toggle: include hidden tokens", "Short label"], Run: ["button: start the simulation", "Button, one word"],
   Lean: ["label: which way a neutral side leans", "Short label"], Healing: ["label: how readily the party heals others", "Short label"], SideMorale: ["toggle: this side can break and run (rout)", "Short label"],
   GroupTraits: ["heading: the side's shared personality traits", "Short heading"], Leader: ["label: who leads the side", "Short label"], NoLeader: ["choice: the side has no leaders", "Short"],
   SideDefault: ["tooltip note: this value comes from the side's default", "Lower case, short"], HiddenToken: ["tooltip on an icon: the token is hidden", "Short"], Details: ["screen-reader label of the button that opens a creature's details", "Short"],
@@ -316,7 +316,7 @@ function describe(repo, key, value) {
         Intimidation: { area: "Generic system", where: W.log, what: "the skill for intimidating", limits: "A skill's name" } }[sub];
     }
     case "Settings": return { area: "Settings", where: W.settings, what: sub === "sideDefaults.Label" ? "button that opens the side defaults dialog" : `the setting's name: ${SETTING[rest[0]]}`, limits: sub.endsWith("Label") ? "Button, one word" : "Short label, one line" };
-    case "Allegiance": case "Lean": return setOpt(`${group}`, "fights everyone (a side of its own)");
+    case "Lean": return setOpt(`${group}`, "fights everyone (a side of its own)");
     case "Downed": return setOpt("Downed", "dropping to 0 HP is death");
     case "HealAggro": return setOpt("Healing", { conservative: "heals others only when needed", balanced: "heals when it's worth it", aggressive: "heals readily" }[sub]);
     case "AllyDying": return setOpt("Ally dying", { rescue: "rescue them", fight: "keep fighting", retreat: "retreat", protectSelf: "protect yourself" }[sub]);
