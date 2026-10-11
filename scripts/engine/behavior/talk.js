@@ -32,12 +32,13 @@
  * Pure: no Foundry globals.
  */
 import { STATUS, SWAY, CONCEDE_LUCK, SWITCH_LUCK, TRAITOR_LUCK, TACTICAL, clamp } from "../../constants.js";
-import { alliesOf, enemiesOf, isStanding, behaviorOf, typical, checkRoll, liveTier, studyBonus, boostBonus, chainOf, commandOf, groupKeyOf } from "../battle-state.js";
+import { alliesOf, enemiesOf, isStanding, behaviorOf, typical, checkRoll, liveTier, liveTrait, studyBonus, boostBonus, chainOf, commandOf, groupKeyOf } from "../battle-state.js";
 import { spendEdges, spendBoost } from "./effects.js";
 import { degreeDistribution, rollCheck } from "../probability.js";
-import { isNeutral, standsAside, appeal, offend, turnOn, standAside, joinSide, calm, settleTruce, seemsFoe, leanSide, fighting } from "./neutral.js";
+import { isNeutral, standsAside, appeal, offend, turnOn, standAside, joinSide, calm, settleTruce, seemsFoe, leanSide, fighting, dislikesViolence } from "./neutral.js";
+import { prefersTalk } from "./standoff.js";
 import { levelOf, allDesires } from "./desire.js";
-import { standsGround } from "./morale.js";
+import { standsGround, callRetreat } from "./morale.js";
 
 /** The three kinds of pitch. Systems map their own skills onto these (CombatantSpec.social.pitches). */
 export const TALK_KINDS = Object.freeze(["persuade", "intimidate", "deceive"]);
@@ -282,6 +283,8 @@ export function choosePitch(run, talker, { only = null } = {}) {
     if ( only && !only(t) ) continue;
     const pitch = bestPitch(run, talker, t);
     if ( !pitch || pitch.pSuccess <= (talker.spec.alwaysTalk ? 0.01 : 0.05) ) continue;
+    // A boss can't be talked into leaving; in a standoff, only paid to (by a side with something to pay it).
+    if ( t.isBoss && (pitch.aim === "leave" || (pitch.aim === "down" && run.standoff && !bribeFrom(run, talker))) ) continue;
     const remaining = Math.max(1, stepsToConvince(t, run, talker) - (t.sway.get(talker.side) ?? 0));
     const cmd = commandOf(run, t);
     const commands = cmd?.unit === t ? (cmd.boss ? 2.5 : 1.5) : 0;
@@ -334,6 +337,12 @@ export function talkActionsThisTurn(run, u, actions) {
  */
 function outcomeFor(run, t, kind, aim = "down", { noSwitch = false } = {}) {
   const rng = run.rng;
+  // A boss isn't talked out of anything: in a standoff it can be paid to go (and takes its group); in a fight, only
+  // badly hurt does it give up, or else it buys its way out of the argument (and fights on). It never stands aside.
+  if ( t.isBoss && aim === "down" ) {
+    if ( run.standoff ) return "bribed";
+    return t.maxHp > 0 && t.hp / t.maxHp < 0.25 ? SWAY.SURRENDER : SWAY.CONCEDE;
+  }
   if ( aim === "recruit" ) return SWAY.SWITCH;
   if ( aim === "dismiss" ) return SWAY.FLEE;
   if ( aim === "calm" ) return "calm";
@@ -392,6 +401,44 @@ export function concession(run, t, { itemLuck = true } = {}) {
   return null;
 }
 
+/** Playstyles that would pay to be spared the trouble (more talk, a fight), and those that never would. */
+const PAYS = new Set(["diplomat", "peoplePleaser", "moralist", "enabler", "chicken", "lazy", "fragile", "wallflower"]);
+const WONT_PAY = new Set(["brawler", "instigator", "cruel", "vengeful", "relentless", "mercenary", "thief", "redeemSeeker"]);
+
+/**
+ * Would u pay to be spared the trouble of more talk, or a fight? A bribe isn't a shakedown: its first pill that has a
+ * say decides (a Diplomat or a Chicken would; a Brawler or a Mercenary never); without one, one who can't abide
+ * violence would, and so would an unselfish one who'd rather talk or isn't very bold.
+ */
+export function willingToPay(run, u) {
+  for ( const p of u.spec.playstyles ?? [] ) {
+    if ( PAYS.has(p) ) return true;
+    if ( WONT_PAY.has(p) ) return false;
+  }
+  if ( dislikesViolence(u) ) return true;
+  return liveTrait(run, u, "selfish") < 50 && (prefersTalk(u) || liveTrait(run, u, "brave") < 60);
+}
+
+/**
+ * Who would pay a boss off for the talker's side: of those willing to (willingToPay), whoever has the most money, else
+ * something to give.
+ */
+function bribeFrom(run, talker) {
+  const side = isNeutral(talker) ? leanSide(run, talker) : talker.side;
+  const payers = run.units.filter(o => (o === talker || (o.side === side && !isNeutral(o))) && isStanding(o) && hasValuables(o) && willingToPay(run, o));
+  return payers.sort((a, b) => remaining(b).money - remaining(a).money)[0] ?? null;
+}
+
+/** What it takes to pay a boss off: 11-30% of the payer's money, or else something it carries. */
+function bribe(run, payer) {
+  const v = remaining(payer);
+  if ( v.money > 0 ) {
+    const percent = 10 + run.rng.die(20);
+    return { kind: "money", amount: Math.max(1, Math.round(v.money * percent / 100)), percent, denominations: v.denominations ?? null, bribe: true };
+  }
+  return v.stowed.length ? { kind: "item", item: run.rng.pick(v.stowed), bribe: true } : null;
+}
+
 /** In a standoff, giving something up or running settles the whole thing: everyone walks away. */
 /**
  * In a standoff, an enemy talked into paying up or running settles the whole thing, for the talker's side (a neutral
@@ -416,6 +463,7 @@ function concede(run, talker, t, log) {
     t.swayOutcome = SWAY.FLEE;
     t.status = STATUS.FLED;
     t.fellRound ??= run.round;
+    t.ranRound = run.round;
     log(t, "swears they have nothing and runs", { type: "sway", outcome: SWAY.FLEE, lie: true, by: talker.spec.name, byId: talker.id });
     return;
   }
@@ -446,6 +494,27 @@ function applyOutcome(run, talker, t, outcome, log, aim = "down", luck = null) {
   if ( outcome === "amends" ) {
     settleTruce(talker, t.side);
     log(t, `makes amends with ${talker.spec.name}`, { type: "neutral", what: "amends", ...by });
+    return;
+  }
+  // A boss paid to go: the talker's side pays (whoever has the most), and the boss leaves with its whole group. That
+  // settles the standoff for the talker's side.
+  if ( outcome === "bribed" ) {
+    const payer = bribeFrom(run, talker);
+    const given = payer ? bribe(run, payer) : null;
+    const record = given ? { ...given, to: t.id, toName: t.spec.name, round: run.round } : null;
+    if ( record ) (payer.concessions ??= []).push(record);
+    const group = groupKeyOf(t);
+    for ( const f of run.units ) {
+      if ( (f !== t && groupKeyOf(f) !== group) || !isStanding(f) || f.spec.kind === "pc" ) continue;
+      for ( const id of f.adjacent ) run.byId.get(id)?.adjacent.delete(f.id);
+      f.adjacent.clear();
+      f.swayOutcome = SWAY.STAND_DOWN;
+      f.status = STATUS.STOOD_DOWN;
+      f.fellRound ??= run.round;
+    }
+    settle(run, talker, SWAY.CONCEDE);
+    const what = !given ? "nothing" : given.kind === "money" ? `${given.percent}% of ${payer.spec.name}'s money` : given.item.name;
+    log(t, `is paid ${what} to go, and leaves with its people`, { type: "sway", outcome: "bribed", concession: record, payer: payer?.spec.name ?? null, payerId: payer?.id ?? null, ...by });
     return;
   }
   // Paid off: someone taking no side squeezes the side it likes least, which pays it to keep out of it (and it does).
@@ -509,8 +578,19 @@ function applyOutcome(run, talker, t, outcome, log, aim = "down", luck = null) {
   t.swayOutcome = outcome;
   t.status = { [SWAY.FLEE]: STATUS.FLED, [SWAY.STAND_DOWN]: STATUS.STOOD_DOWN }[outcome] ?? STATUS.SURRENDERED;
   t.fellRound ??= run.round;
+  if ( outcome === SWAY.FLEE ) t.ranRound = run.round;
   const text = { [SWAY.FLEE]: "is talked into leaving and flees", [SWAY.STAND_DOWN]: "agrees to stand down" }[outcome] ?? "lays down arms and surrenders";
   log(t, text, { type: "sway", outcome, by: talker.spec.name, byId: talker.id });
+}
+
+/** a falls back with leader (a retreat it called, or answered): off the field. */
+function fallBack(run, a, leader, log) {
+  for ( const id of a.adjacent ) run.byId.get(id)?.adjacent.delete(a.id);
+  a.adjacent.clear();
+  a.status = STATUS.FLED;
+  a.fellRound ??= run.round;
+  a.ranRound = run.round;
+  log(a, a === leader ? "leads the retreat" : `falls back with ${leader.spec.name}`, { type: "flee", retreat: true, with: leader.spec.name, withId: leader.id, leads: a === leader });
 }
 
 /**
@@ -546,7 +626,8 @@ export function attemptTalk(run, talker, pitch, log) {
   const why = pull ? ` (${pull.kind === "hurt" ? `a chance at ${pullName}` : `to keep ${pullName} safe`})` : "";
   // (Against challenge dice rather than a DC: Ironsworn.)
   const versus = roll.challenge ? roll.challenge.join(", ") : `DC ${pitch.dc}`;
-  if ( run.log ) log(talker, `${verb} ${t.spec.name}${AIM_TEXT[aim] ?? ""}${why} (${pitch.skill} ${roll.total} vs ${versus}): ${result} [${Math.min(progress, steps)}/${steps}]`, {
+  const aimText = t.isBoss && aim === "down" && run.standoff ? " to take payment and go" : AIM_TEXT[aim] ?? "";
+  if ( run.log ) log(talker, `${verb} ${t.spec.name}${aimText}${why} (${pitch.skill} ${roll.total} vs ${versus}): ${result} [${Math.min(progress, steps)}/${steps}]`, {
     type: "talk", kind: pitch.kind, skill: pitch.skill, target: t.spec.name, targetId: t.id, natural: roll.natural, mod: pitch.mod, boost: pitch.boost ?? null, total: roll.total,
     dc: pitch.dc, dcStat: pitch.dcLabel, degree: roll.degree, margin: roll.total - pitch.dc, challenge: roll.challenge ?? null,
     progress: Math.min(progress, steps), steps, offended: roll.degree === 0,
@@ -581,6 +662,13 @@ export function attemptTalk(run, talker, pitch, log) {
   const commanded = commandOf(run, t)?.unit === t;
   applyOutcome(run, talker, t, outcome, log, aim, luck);
 
+  // Talked into running (in a fight), it tries to take its group with it (behavior/morale.js callRetreat).
+  if ( outcome === SWAY.FLEE && t.status === STATUS.FLED && !run.standoff ) {
+    const retreat = callRetreat(run, t, log);
+    const leader = retreat.commander ?? t;
+    for ( const a of retreat.followers ) if ( isStanding(a) ) fallBack(run, a, leader, log);
+    return true;
+  }
   // A convinced commander can take their group with them.
   if ( aim === "down" && commanded ) {
     for ( const f of run.units ) {

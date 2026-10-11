@@ -236,6 +236,11 @@ function prepareCombatant(c, side) {
 /** Fresh mutable state for one run. */
 export function createRun(prep) {
   const units = prep.combatants.map(p => createUnit(prep, p));
+  // A boss (the head of its group's chain, as a boss): almost never runs; in a standoff it's paid, not talked, away.
+  for ( const chain of Object.values(prep.command ?? {}) ) {
+    if ( chain?.[0]?.role !== "boss" ) continue;
+    for ( const u of units ) if ( u.id === chain[0].id ) u.isBoss = true;
+  }
   return {
     prep,
     units,

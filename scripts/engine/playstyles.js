@@ -39,7 +39,7 @@ export const STAY_TRUE_CAP = 0.1;
  */
 export const PLAYSTYLES = Object.freeze({
   // Afraid: of the most dangerous foe above all; gives up easily, hits back half-heartedly.
-  chicken: { icon: "fa-ghost", traits: { brave: -30, selfish: 10 }, suggest: { retreat: "hurt", style: "ranged", potionThreshold: "75" }, behavior: { lowProfile: 0.3 },
+  chicken: { icon: "fa-ghost", traits: { brave: -30, selfish: 10 }, suggest: { retreat: "hurt", style: "ranged", potionThreshold: "75" }, behavior: { lowProfile: 0.3, flighty: 1 },
     desire: { avoid: { dangerous: 35 }, frustration: 1.5, retaliate: 0.5 } },
   // Picks on the weak and the fallen.
   cruel: { icon: "fa-skull-crossbones", traits: { selfish: 20, loyal: -5 }, suggest: { target: "weakest", beyond: "hunt" }, behavior: { finishDowned: 0.4, hinders: 0.25 },
@@ -52,7 +52,7 @@ export const PLAYSTYLES = Object.freeze({
     desire: { talk: 10, aid: 10, leader: 2, team: 2.5 } },
   // Fine until hurt; then it wants to mend itself and get away from whoever is hurting it. (Not a coward: that's
   // the Chicken. It doesn't shift bravery.)
-  fragile: { icon: "fa-heart-crack", traits: {}, suggest: { retreat: "hurt", potionThreshold: "75", selfRevived: "healSelf" }, behavior: { lowProfile: 0.2 },
+  fragile: { icon: "fa-heart-crack", traits: {}, suggest: { retreat: "hurt", potionThreshold: "75", selfRevived: "healSelf" }, behavior: { lowProfile: 0.2, flighty: 0.6 },
     desire: { avoid: { attacker: 30 }, heal: 10, frustration: 1.3 } },
   // The nearest foe, now; no patience for obstacles (or locked doors).
   impatient: { icon: "fa-hourglass-end", traits: { tactical: -10 }, suggest: { resourceUse: "nova", target: "nearest", shield: "never" }, behavior: { rush: 0.5 },
@@ -71,7 +71,7 @@ export const PLAYSTYLES = Object.freeze({
   // after its people, and half ignores whoever commands it instead.
   // Not chosen, it may brood (ambition: a turn's chance, by the pill's place); with a treacherous streak (Cruel, Wildcard,
   // Mercenary, Instigator), it schemes against whoever leads instead (desire.js scheme).
-  leader: { icon: "fa-flag", traits: { brave: 10, loyal: 10, tactical: 5 }, suggest: { target: "dangerous" }, behavior: { hinders: 0.15, ambition: 0.25 },
+  leader: { icon: "fa-flag", traits: { brave: 10, loyal: 10, tactical: 5 }, suggest: { target: "dangerous" }, behavior: { hinders: 0.15, ambition: 0.25, rally: 0.25 },
     desire: { hurt: { dangerous: 10 }, protect: 10, aid: 10, talk: 5, leader: 0.4 } },
   // Starts trouble and spoils everyone else's plans: locks foes down, harasses and debuffs them (more than anyone),
   // goes for the most dangerous foe and their leader, and may defy its own leader.
@@ -81,13 +81,13 @@ export const PLAYSTYLES = Object.freeze({
   diplomat: { icon: "fa-handshake", traits: { selfish: -10 }, suggest: { talk: "first", target: "dangerous" }, behavior: { parleyFirst: 0.6, spareDowned: 0.5 },
     desire: { talk: 30, hurt: { downed: -50 } } },
   // Keeps its distance and out of the crowd.
-  wallflower: { icon: "fa-user-ninja", traits: { brave: -10 }, suggest: { style: "ranged" }, behavior: { lowProfile: 0.45, hinders: 0.25 },
+  wallflower: { icon: "fa-user-ninja", traits: { brave: -10 }, suggest: { style: "ranged" }, behavior: { lowProfile: 0.45, hinders: 0.25, flighty: 0.3 },
     desire: { hurt: { nearest: -10 }, avoid: { nearest: 15 }, team: 0.7 } },
   // Shields the weakest friend, avenges the fallen, fears nothing.
-  martyr: { icon: "fa-cross", traits: { brave: 20, selfish: -30, loyal: 20 }, suggest: { allyDying: "rescue", retreat: "never", healAggro: "allCosts", style: "protector", target: "protect" }, behavior: { drawAggro: 0.3, helps: 1 },
+  martyr: { icon: "fa-cross", traits: { brave: 20, selfish: -30, loyal: 20 }, suggest: { allyDying: "rescue", retreat: "never", healAggro: "allCosts", style: "protector", target: "protect" }, behavior: { drawAggro: 0.3, helps: 1, rally: 0.2 },
     desire: { protect: 25, heal: 15, aid: 5, avenge: 2, avoid: { dangerous: -50, attacker: -50 } } },
   // In it for itself: easy pickings, little loyalty, gives up when it gets hard.
-  mercenary: { icon: "fa-coins", traits: { selfish: 30, loyal: -20 }, suggest: { retreat: "losing", resourceUse: "conserve", allyDying: "fight" }, behavior: {},
+  mercenary: { icon: "fa-coins", traits: { selfish: 30, loyal: -20 }, suggest: { retreat: "losing", resourceUse: "conserve", allyDying: "fight" }, behavior: { flighty: 0.6 },
     desire: { hurt: { weakest: 10 }, aid: -10, avenge: 0.3, team: 0.5, frustration: 1.3 } },
   // Support first: heals and guards friends, backs the leader.
   enabler: { icon: "fa-hands-holding", traits: { selfish: -15, loyal: 10 }, suggest: { healAggro: "aggressive", target: "protect" }, behavior: { followFocus: 0.3, helps: 1 },
@@ -118,7 +118,7 @@ export const PLAYSTYLES = Object.freeze({
     desire: { hurt: { current: 15 }, frustration: 0.4, doorPatience: 1.5 } },
   // As little as it can get away with: whatever's nearest, no long walks, not much help for anyone, gives up fast,
   // and can't be bothered to hold a grudge.
-  lazy: { icon: "fa-couch", traits: { tactical: -5, brave: -5 }, suggest: { resourceUse: "conserve" }, behavior: {},
+  lazy: { icon: "fa-couch", traits: { tactical: -5, brave: -5 }, suggest: { resourceUse: "conserve" }, behavior: { flighty: 0.4 },
     desire: { hurt: { nearest: 15, far: -20 }, heal: -10, protect: -10, aid: -10, frustration: 1.6, doorPatience: 0.4, cool: 1.5 } }
 });
 

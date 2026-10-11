@@ -211,7 +211,11 @@ function narrate(e, roll, rel, fill) {
       const situation = e.purpose === "help" ? "help" : e.purpose === "hunt" ? "hunt" : (e.regions?.length && (e.mult > 1.05 || mode === "fly" || mode === "burrow" || mode === "climb")) ? "terrain" : "approach";
       return roll(`move.${mode}.${situation}`, { ...f, target: e.toward, region: e.regions?.[0] ?? "" });
     }
-    case "flee": return roll(e.feet ? `move.${e.mode === "fly" ? "fly" : "walk"}.flee` : "event.flee", f);
+    case "flee":
+      if ( e.retreat ) return roll(e.leads ? "event.leadRetreat" : "event.fallBack", { ...f, target: e.with ?? "" });
+      return roll(e.feet ? `move.${e.mode === "fly" ? "fly" : "walk"}.flee` : "event.flee", f);
+    case "retreat": return e.what === "refused" ? roll("event.retreatRefused", { ...f, target: e.target ?? "" }) : roll(e.urged ? "event.retreatUrged" : "event.retreatCall", { ...f, target: e.by ?? "" });
+    case "rally": return roll("event.rally", { ...f, allies: listJoin(e.with ?? []) });
     case "heal":
       if ( e.potion ) return roll("event.potion", f);
       if ( e.revived ) return roll("event.revive", f);
@@ -232,7 +236,7 @@ function narrate(e, roll, rel, fill) {
     case "grabbed": return roll("event.grabbed", f);
     case "escape": return roll(e.success ? "event.escape" : "event.stuck", f);
     case "waver": return roll("event.waver", f);
-    case "holdGround": return roll("event.holdGround", f);
+    case "holdGround": return roll(e.ordered ? "event.holdOrdered" : "event.holdGround", { ...f, target: e.by ?? "" });
     case "study": return roll(e.worked === false ? "event.studyFails" : "event.study", f);
     case "observe": return roll("event.observe", { ...f, targets: listJoin(e.targets ?? []) });
     case "shareLore": return roll("event.shareLore", { ...f, allies: listJoin(e.with ?? []) });
@@ -264,6 +268,7 @@ function narrate(e, roll, rel, fill) {
     case "leave": return roll("event.leave", f);
     case "sway": {
       if ( e.lie ) return roll("event.lieAndRun", f);
+      if ( e.outcome === "bribed" ) return roll("event.bribed", { ...f, amount: concessionText(e.concession) || "a price", target: e.payer ?? e.by ?? "" });
       if ( e.paidOff ) {
         const c = e.concession;
         return roll(!c ? "event.paidNothing" : c.kept ? "event.paidKept" : "event.paidOff", { ...f, amount: concessionText(c), item: c?.item?.name ?? "" });
@@ -602,6 +607,7 @@ function statLine(e) {
     }
     case "reclaim": return `${e.actor} gets back ${concessionText(e.concession)} from ${e.by}`;
     case "sway":
+      if ( e.outcome === "bribed" ) return `${e.actor} is paid ${e.concession ? concessionText(e.concession) : "nothing"} by ${e.payer ?? e.by} to go (with its people)`;
       if ( e.outcome === "neutral" && e.luck ) return `${e.actor} stands aside · switch luck d100 ${e.luck} (needs under ${e.needed})`;
       if ( !e.concession ) return `${e.actor}: ${e.text}`;
       return e.concession.kept

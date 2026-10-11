@@ -20,7 +20,7 @@ import { chooseTarget, bestOptionVs, scoreTargets } from "./behavior/targeting.j
 import { decideHeal, rescueOption, healScores } from "./behavior/healing.js";
 import { initDesires, newTurn, think, want, thwart, relieve, levelOf, mind, thoughts as thoughtsOf, levelsFromScores, listen, heed, remember, styleWants, styleOf, follow, scheme, CHOICE_LEVEL } from "./behavior/desire.js";
 import { prepareDoors, doorStates, doorAhead, atDoor, doorPlan, patienceFor, doorDamage } from "./behavior/doors.js";
-import { checkMorale, standsGround, MORALE } from "./behavior/morale.js";
+import { checkMorale, standsGround, callRetreat, rallies, MORALE } from "./behavior/morale.js";
 import { expectedDamage, spendUse, hasUses, attacksIn, criticalParts, saveMultiplier, saveMultiplierFor, meanDamageVs, unitsPerTurn } from "./behavior/evaluate.js";
 import { chooseDeed, deedTier, chooseHitRiders, rescueMiss, rollCrit, rollFumble, rallied } from "./behavior/riders.js";
 import { cast } from "./behavior/casting.js";
@@ -1346,8 +1346,9 @@ function leaveReach(run, u, turn, keep = null, need = null) {
 }
 
 /**
- * u chooses to run: it goes, unless it doesn't like to flee and stands its ground (the story hears of it once).
- * Returns true if it ran.
+ * u chooses to run: it goes, unless it doesn't like to flee and stands its ground (the story hears of it once). Not
+ * alone if it can help it: it calls on its group to fall back with it (its commander decides, and may order it to hold
+ * instead: behavior/morale.js callRetreat). Returns true if it ran.
  */
 function runs(run, u, reason, turn) {
   if ( standsGround(run, u) ) {
@@ -1355,15 +1356,26 @@ function runs(run, u, reason, turn) {
     u.heldGround = true;
     return false;
   }
+  const retreat = callRetreat(run, u, logger(run));
+  if ( retreat.held ) {
+    log(run, u, "holds, as ordered", { type: "holdGround", ordered: true, by: retreat.commander?.spec.name ?? null });
+    return false;
+  }
   flee(run, u, reason, turn);
+  const leader = retreat.commander ?? u;
+  for ( const a of retreat.followers ) {
+    if ( a.status !== STATUS.STANDING ) continue;
+    flee(run, a, a === leader ? "leads the retreat" : `falls back with ${leader.spec.name}`, null, { retreat: true, with: leader.spec.name, withId: leader.id, leads: a === leader });
+  }
   return true;
 }
 
-function flee(run, u, reason, turn = null) {
+function flee(run, u, reason, turn = null, extra = {}) {
   // Turning to run from a foe in reach invites a parting blow.
   if ( !leaveReach(run, u, turn) ) return;
   u.status = STATUS.FLED;
   u.fellRound ??= run.round;
+  u.ranRound = run.round; // (seen running: its friends take it hard)
   if ( u.concentration ) {
     endConcentration(run, u);
     settleSides(run);
@@ -1373,7 +1385,7 @@ function flee(run, u, reason, turn = null) {
   releaseGrabs(run, u);
   const from = run.log && u.pos ? { x: u.pos.x, y: u.pos.y } : null;
   const feet = moveAway(run, u, (Math.max(...Object.values(u.spec.speeds ?? { walk: 25 })) || 25) * 2);
-  log(run, u, reason, { type: "flee", feet, mode: (u.spec.speeds?.fly ?? 0) > 0 ? "fly" : "walk", from, to: from ? { x: u.pos.x, y: u.pos.y } : null });
+  log(run, u, reason, { type: "flee", feet, mode: (u.spec.speeds?.fly ?? 0) > 0 ? "fly" : "walk", from, to: from ? { x: u.pos.x, y: u.pos.y } : null, ...extra });
   // Fleeing into a bystander alerts them; an ally will hear the call for help.
   for ( const b of run.units ) {
     if ( b.active || b.status !== STATUS.STANDING ) continue;
@@ -1951,6 +1963,14 @@ function takeTurn(run, u) {
   if ( morale !== MORALE.HOLD && !u.wavering ) {
     u.wavering = true; // (shaken, even when it won't run)
     if ( morale === MORALE.WAVER ) log(run, u, "wavers", { type: "waver" });
+  }
+  // Friends running or wavering: it may spend an action holding the rest together.
+  if ( turn.canAfford(rules.basicAction ?? 1) ) {
+    const heard = rallies(run, u);
+    if ( heard ) {
+      turn.spend(rules.basicAction ?? 1);
+      log(run, u, `rallies ${heard.map(a => a.spec.name).join(", ")}: hold!`, { type: "rally", with: heard.map(a => a.spec.name), withIds: heard.map(a => a.id) });
+    }
   }
 
   // What it wants this turn, and what that means: a terror close at hand sends it running.
