@@ -6,7 +6,8 @@
   "scripts": {
     "test": "vitest run",
     "test:reworded": "vitest run --mode reworded",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "strings": "node docs/strings/tracker.mjs"
   },
   "devDependencies": {
     "vitest": "4.1.11"
