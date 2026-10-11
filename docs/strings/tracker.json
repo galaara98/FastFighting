@@ -2870,6 +2870,16 @@
    "commit": null,
    "hash": "c7a81be5e5c7"
   },
+  "core:FASTFIGHTING.Log.DisengageMissed": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.DisengageMissed",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "aaec9bbafd7d"
+  },
   "core:FASTFIGHTING.Log.Disengages": {
    "repo": "core",
    "file": "languages/en.json",
@@ -18168,6 +18178,16 @@
    "commit": null,
    "hash": "472e73d796e2"
   },
+  "dcc:FFDCC.Acrobatics": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.Acrobatics",
+   "area": "dcc/General",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "0d0b7eee2953"
+  },
   "dcc:FFDCC.Attack": {
    "repo": "dcc",
    "file": "languages/en.json",
@@ -18237,6 +18257,16 @@
    "date": null,
    "commit": null,
    "hash": "fd93fe434eff"
+  },
+  "dcc:FFDCC.Body.TooCute": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.Body.TooCute",
+   "area": "dcc/Body",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "0a0c018674c1"
   },
   "dcc:FFDCC.Chaotic": {
    "repo": "dcc",
@@ -18538,6 +18568,26 @@
    "commit": null,
    "hash": "bd13d5a0906b"
   },
+  "dcc:FFDCC.Disrespect": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.Disrespect",
+   "area": "dcc/General",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "32a40b860077"
+  },
+  "dcc:FFDCC.Disrespected": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.Disrespected",
+   "area": "dcc/General",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "8ce9c2e72efe"
+  },
   "dcc:FFDCC.FleetingGain": {
    "repo": "dcc",
    "file": "languages/en.json",
@@ -18557,6 +18607,16 @@
    "date": null,
    "commit": null,
    "hash": "ed2754347c81"
+  },
+  "dcc:FFDCC.Grapple": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.Grapple",
+   "area": "dcc/General",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "248b11099031"
   },
   "dcc:FFDCC.Hp": {
    "repo": "dcc",
@@ -18817,6 +18877,16 @@
    "date": null,
    "commit": null,
    "hash": "1c6ac69f1e5d"
+  },
+  "dcc:FFDCC.NotInTheFace": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.NotInTheFace",
+   "area": "dcc/General",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "af3ca5e72abf"
   },
   "dcc:FFDCC.Out.Bleed": {
    "repo": "dcc",
