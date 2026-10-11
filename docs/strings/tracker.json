@@ -8497,10 +8497,9 @@
    "key": "FASTFIGHTING.Settings.trapLuck.Hint",
    "area": "core/Settings",
    "status": "todo",
-   "date": null,
-   "commit": null,
-   "hash": "5befda0f0ffd",
-   "changed": true
+   "date": "2026-10-11",
+   "commit": "e3eb035",
+   "hash": "cbac88c16ab6"
   },
   "core:FASTFIGHTING.Settings.trapLuck.Name": {
    "repo": "core",
