@@ -37,7 +37,8 @@
       "paths": [
         "styles",
         "templates",
-        "languages"
+        "languages",
+        "story"
       ]
     }
   },

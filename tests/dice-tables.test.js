@@ -6,7 +6,7 @@ import { genericRules } from "../scripts/adapters/generic/rules.js";
 import { STATUS } from "../scripts/constants.js";
 import { creature, strike, battle } from "./helpers.js";
 import { buildStory } from "../scripts/story/story.js";
-import { buildEnglishTables } from "../scripts/story/tables-en.js";
+import { storyTables, text } from "./foundry-i18n.js";
 
 /**
  * A DCC-like d20 game for the core's own tests: any die for the action, crits from the top of the die (the threat
@@ -227,13 +227,13 @@ describe("checks with results by tier (spell checks)", () => {
   });
 
   test("the story tells a lost spell", () => {
-    const english = buildEnglishTables();
+    const english = storyTables();
     const tables = { get: k => english[k] };
     for ( let s = 1; s <= 30; s++ ) {
       const r = replay(battle([wizard(), dummy()], { maxRounds: 6 }), rules, s);
       if ( !r.log.some(e => e.type === "cast" && e.lost) ) continue;
       const told = buildStory(r, battle([wizard(), dummy()]), "statistician", { tables }).text;
-      expect(told).toMatch(/spell lost/);
+      expect(told).toContain(text("FASTFIGHTING.Log.SpellLost"));
       const prose = buildStory(r, battle([wizard(), dummy()]), "roleplay", { tables, seed: s }).text;
       expect(prose).toMatch(/Magic Missile/);
       return;

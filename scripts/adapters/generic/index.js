@@ -75,7 +75,7 @@ export class GenericAdapter extends SystemAdapter {
       iwr: {},
       resources: {},
       social: {
-        pitches: { persuade: { skill: "Persuasion", mod: Math.ceil(level / 2) + 2 }, intimidate: { skill: "Intimidation", mod: Math.ceil(level / 2) + 2 } },
+        pitches: { persuade: { skill: localize("FASTFIGHTING.Generic.Persuasion"), mod: Math.ceil(level / 2) + 2 }, intimidate: { skill: localize("FASTFIGHTING.Generic.Intimidation"), mod: Math.ceil(level / 2) + 2 } },
         resist: { persuade: { dc: 10 + bonus, label: "DC" }, intimidate: { dc: 10 + bonus, label: "DC" }, deceive: { dc: 10 + bonus, label: "DC" } },
         languages: ["common"], mindless: false
       },
@@ -91,7 +91,7 @@ export class GenericAdapter extends SystemAdapter {
     return {
       traits: { tactical: pc ? 65 : 45, brave: pc ? 75 : 55, selfish: pc ? 25 : 45, loyal: pc ? 80 : 50 },
       flags: {},
-      reasons: Object.fromEntries(["tactical", "brave", "selfish", "loyal"].map(k => [k, localize("FASTFIGHTING.Generic.DefaultReason", "Generic default")]))
+      reasons: Object.fromEntries(["tactical", "brave", "selfish", "loyal"].map(k => [k, localize("FASTFIGHTING.Generic.DefaultReason")]))
     };
   }
 

@@ -4,9 +4,9 @@ import { pf2eRules } from "./fixtures/three-action-rules.js";
 import { parseFormula } from "../scripts/engine/dice.js";
 import { creature, strike, battle, social } from "./helpers.js";
 import { buildStory } from "../scripts/story/story.js";
-import { buildEnglishTables } from "../scripts/story/tables-en.js";
+import { storyTables } from "./foundry-i18n.js";
 
-const english = buildEnglishTables();
+const english = storyTables();
 const tables = { get: k => english[k] };
 
 const tactical = n => ({ tactical: { base: n, fudge: 0 }, brave: { base: 90, fudge: 0 }, selfish: { base: 40, fudge: 0 }, loyal: { base: 60, fudge: 0 } });

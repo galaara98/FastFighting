@@ -11,9 +11,10 @@ import { pf2eRules } from "./fixtures/three-action-rules.js";
 import { parseFormula } from "../scripts/engine/dice.js";
 import { creature, strike, battle } from "./helpers.js";
 import { buildStory } from "../scripts/story/story.js";
-import { buildEnglishTables } from "../scripts/story/tables-en.js";
+import { storyTables, text } from "./foundry-i18n.js";
+import { logLine } from "../scripts/story/log-lines.js";
 
-const english = buildEnglishTables();
+const english = storyTables();
 const tables = { get: k => english[k] };
 const traits = (tactical = 70) => ({ tactical: { base: tactical, fudge: 0 }, brave: { base: 90, fudge: 0 }, selfish: { base: 30, fudge: 0 }, loyal: { base: 60, fudge: 0 } });
 const brute = (extra = {}) => creature({
@@ -300,7 +301,10 @@ describe("asking a friend for a buff", () => {
     const r = replay(spec, pf2eRules, 3);
     for ( const e of r.log.filter(x => x.type === "thought" && x.actorId === "f2") ) expect(e.desires.some(d => d.kind === "bolstered")).toBe(false);
     expect(r.log.some(e => e.type === "thought" && e.actorId === "cleric" && e.desires.some(d => d.kind === "aid" && d.targetId === "f2"))).toBe(true);
-    expect(buildStory(r, spec, "statistician").text).toMatch(/Heroism · heroic · asked by f2/);
+    const asked = r.log.find(e => e.type === "buff" && e.askedBy?.includes("f2"));
+    expect(asked).toMatchObject({ action: "Heroism", effect: "heroic" });
+    expect(logLine(asked)).toContain(text("FASTFIGHTING.Log.AskedBy", { names: "f2" }));
+    expect(buildStory(r, spec, "statistician").text).toContain(logLine(asked));
     const prose = buildStory(r, spec, "roleplay", { tables, seed: 3 }).text;
     expect(prose).toMatch(/Heroism/);
     expect(prose).not.toMatch(/\{\w+\}/);

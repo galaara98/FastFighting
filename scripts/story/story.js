@@ -8,9 +8,9 @@
  * Pure apart from the tables object passed in ({get(key) -> string[]}), so it can be unit-tested.
  */
 import { createRng } from "../engine/rng.js";
-import { DAMAGE_TYPES } from "./tables-en.js";
+import { DAMAGE_TYPES } from "./blocks.js";
 import { desireBand, DESIRE_BAND_KEYS } from "../engine/behavior/desire.js";
-import { listJoin, localize } from "../i18n.js";
+import { listJoin, listItems, localize, hasWords } from "../i18n.js";
 import { logLine, endLine, logTerm, formatMoney, concessionText } from "./log-lines.js";
 
 export { formatMoney, concessionText };
@@ -128,10 +128,8 @@ function makeRoller(tables, seed) {
     const entries = tables.get(key);
     if ( !entries?.length ) return "";
     const text = entries[Math.floor(rng.next() * entries.length)] ?? "";
-    // (A language whose possessive agrees with the weapon fills {su} from its tables' possessive().)
-    const extra = tables.possessive && text.includes("{su}") ? { su: tables.possessive(fill.weapon ?? "") } : null;
     return text.replace(/\{(\w+)\}/g, (m, k) => {
-      const v = fill[k] ?? extra?.[k];
+      const v = fill[k];
       return v !== undefined && v !== null ? v : m;
     });
   };
@@ -259,7 +257,7 @@ function narrate(e, roll, rel, fill) {
     case "leave": return roll("event.leave", f);
     case "sway": {
       if ( e.lie ) return roll("event.lieAndRun", f);
-      if ( e.outcome === "bribed" ) return roll("event.bribed", { ...f, amount: concessionText(e.concession) || "a price", target: e.payer ?? e.by ?? "" });
+      if ( e.outcome === "bribed" ) return roll("event.bribed", { ...f, amount: concessionText(e.concession) || localize("FASTFIGHTING.Story.APrice"), target: e.payer ?? e.by ?? "" });
       if ( e.paidOff ) {
         const c = e.concession;
         return roll(!c ? "event.paidNothing" : c.kept ? "event.paidKept" : "event.paidOff", { ...f, amount: concessionText(c), item: c?.item?.name ?? "" });
@@ -297,13 +295,13 @@ function narrate(e, roll, rel, fill) {
     // Letting one spell go for another passes without comment; losing hold of it doesn't.
     case "concentrationEnd": return e.reason === "switch" ? "" : roll("event.concentrationLost", { ...f, weapon: e.action ?? "" });
     case "shakeOff": return roll("event.shakeOff", { ...f, effect: e.effect ?? "" });
-    case "deed": return e.success ? roll("event.deed", { ...f, weapon: e.deed ?? "", effect: e.effect || "reeling" }) : "";
-    case "rider": return e.landed ? roll("event.riderTakes", { ...f, weapon: e.rider ?? "", effect: e.effect || "reeling" }) : (e.tell ? roll(`event.${e.tell}`, f) : "");
+    case "deed": return e.success ? roll("event.deed", { ...f, weapon: e.deed ?? "", effect: e.effect || logTerm("Reeling") }) : "";
+    case "rider": return e.landed ? roll("event.riderTakes", { ...f, weapon: e.rider ?? "", effect: e.effect || logTerm("Reeling") }) : (e.tell ? roll(`event.${e.tell}`, f) : "");
     case "critTable": return !e.slain && e.effect ? roll("event.critEffect", { ...f, effect: e.effect }) : "";
     case "fumble": return e.effect ? roll("event.fumbleEffect", { ...f, effect: e.effect }) : roll("event.fumble", f);
     case "cast": return e.success ? "" : roll(e.lost ? "event.spellLost" : e.disapproved ? "event.disapproval" : "event.spellFails", f);
-    case "boost": return roll(e.self ? "event.boost" : "event.boostFor", { ...f, label: e.label ?? "luck", target: e.target ?? "" });
-    case "fate": return roll(e.self ? "event.fateSelf" : "event.fateFor", { ...f, label: e.label ?? "fate", target: e.target ?? "" });
+    case "boost": return roll(e.self ? "event.boost" : "event.boostFor", { ...f, label: e.label ?? localize("FASTFIGHTING.Words.Luck"), target: e.target ?? "" });
+    case "fate": return roll(e.self ? "event.fateSelf" : "event.fateFor", { ...f, label: e.label ?? localize("FASTFIGHTING.Words.Fate"), target: e.target ?? "" });
     case "body": return roll(e.alive ? "event.bodyAlive" : "event.bodyDead", f);
     case "summon": return roll((e.names ?? []).length > 1 ? "event.summonMany" : "event.summonOne", { ...f, weapon: e.action ?? "", names: listJoin(e.names ?? []), name: e.names?.[0] ?? "" });
     case "vanish": return roll("event.vanish", f);
@@ -357,8 +355,8 @@ function thinkAloud(e, roll, mentions) {
     const intensity = roll(`desire.intensity.${DESIRE_BAND_KEYS[desireBand(d.level)]}`);
     // (About itself: its own words, "heal themselves", "curarse".)
     const self = d.targetId === e.actorId;
-    const verb = (self && roll(`desire.self.${d.kind}`)) || roll(`desire.verb.${d.kind}`, { target: self ? localize("FASTFIGHTING.Story.Themselves", "themselves") : d.target });
-    return intensity && verb ? `${intensity} ${verb}` : "";
+    const verb = (self && roll(`desire.self.${d.kind}`)) || roll(`desire.verb.${d.kind}`, { target: self ? localize("FASTFIGHTING.Story.Themselves") : d.target });
+    return intensity && verb ? localize("FASTFIGHTING.Story.Desire", { intensity, verb }) : "";
   };
   const first = phrase(desires[0]);
   if ( !first ) return "";
@@ -421,7 +419,7 @@ function roleplay(result, spec, tables, seed, title, mapType) {
 function ending(result, spec, end, roll) {
   const standing = spec.combatants.filter(c => end.winners?.includes(result.units[c.id]?.final?.side ?? c.side)
     && result.units[c.id]?.final?.status === "standing" && result.units[c.id]?.final?.active !== false).map(c => c.name);
-  const winners = standing.length > 3 ? localize("FASTFIGHTING.Story.Companions", "{names} and their companions", { names: standing.slice(0, 2).join(", ") })
+  const winners = standing.length > 3 ? localize("FASTFIGHTING.Story.Companions", { names: listItems(standing.slice(0, 2)) })
     : standing.length ? listJoin(standing) : listJoin(end.winnerLabels ?? []);
   // A lone survivor takes a singular verb ("Lini prevails").
   if ( end.resolved === "conceded" ) return roll("event.dealStruck", { winners });
@@ -442,7 +440,8 @@ function ending(result, spec, end, roll) {
 /*  Standard                                    */
 /* -------------------------------------------- */
 
-function standard(result, spec, title, labels) {
+function standard(result, spec, title) {
+  const w = (key, data = null) => localize(`FASTFIGHTING.Story.Labels.${key}`, data);
   const { out, mentions } = storyCast(result, spec);
   const by = new Map();
   const entry = id => {
@@ -495,18 +494,23 @@ function standard(result, spec, title, labels) {
     const s = by.get(c.id);
     const final = result.units[c.id]?.final;
     const bits = [];
-    for ( const [name, a] of s?.attacks ?? [] ) bits.push(`${a.uses}× ${name} (${a.hits} ${labels.hit}${a.crits ? `, ${a.crits} ${labels.crit}` : ""}${a.misses ? `, ${a.misses} ${labels.miss}` : ""})`);
-    for ( const [name, a] of s?.spells ?? [] ) bits.push(`${a.uses}× ${name} (${a.hits} ${labels.hit}${a.misses ? `, ${a.misses} ${labels.resisted}` : ""})`);
-    for ( const [name, n] of s?.buffs ?? [] ) bits.push(`${n}× ${name} (${labels.bolstered ?? "bolstered"})`);
-    if ( s?.talks.tries ) bits.push(`${labels.talked} ${s.talks.tries}× (${s.talks.wins} ${labels.convincing})`);
-    if ( s?.heals ) bits.push(`${labels.healed} ${s.heals}× (${logTerm("HpN", { n: s.healed })})`);
-    if ( s?.potions ) bits.push(`${s.potions} ${labels.potion}`);
-    if ( s?.aid ) bits.push(`${labels.firstAid} ${s.aid}× (${s.stabilized} ${labels.stabilized})`);
-    if ( s?.feet ) bits.push(`${labels.moved} ${logTerm("Feet", { n: s.feet })}`);
-    if ( !bits.length ) bits.push(final?.active === false ? labels.stayedOut : labels.nothing);
+    const results = list => list.filter(Boolean).join(localize("FASTFIGHTING.Words.ListSeparator"));
+    for ( const [name, a] of s?.attacks ?? [] ) {
+      bits.push(w("Uses", { n: a.uses, name, results: results([w("Hits", { n: a.hits }), a.crits ? w("Crits", { n: a.crits }) : "", a.misses ? w("Misses", { n: a.misses }) : ""]) }));
+    }
+    for ( const [name, a] of s?.spells ?? [] ) {
+      bits.push(w("Uses", { n: a.uses, name, results: results([w("Hits", { n: a.hits }), a.misses ? w("Resisted", { n: a.misses }) : ""]) }));
+    }
+    for ( const [name, n] of s?.buffs ?? [] ) bits.push(w("Bolstered", { n, name }));
+    if ( s?.talks.tries ) bits.push(w("Talked", { n: s.talks.tries, wins: s.talks.wins }));
+    if ( s?.heals ) bits.push(w("Healed", { n: s.heals, hp: logTerm("HpN", { n: s.healed }) }));
+    if ( s?.potions ) bits.push(w("Potions", { n: s.potions }));
+    if ( s?.aid ) bits.push(w("FirstAid", { n: s.aid, stabilized: s.stabilized }));
+    if ( s?.feet ) bits.push(w("Moved", { distance: logTerm("Feet", { n: s.feet }) }));
+    if ( !bits.length ) bits.push(final?.active === false ? w("StayedOut") : w("Nothing"));
     const statusKey = final?.swayed === "switched" ? "switched" : final?.swayed === "conceded" ? "conceded"
       : final?.status === "standing" && final?.side === "neutralParty" ? (final.swayed === "neutral" ? "neutral" : "noSide") : final?.status;
-    const status = final ? `${labels.status[statusKey] ?? statusKey}, ${logTerm("HpN", { n: `${final.hp}/${c.hp.max}` })}` : "";
+    const status = final ? w("Status", { status: statusWord(statusKey), hp: logTerm("HpN", { n: `${final.hp}/${c.hp.max}` }) }) : "";
     rows.push(`<li><strong>${esc(c.name)}</strong>: ${esc(bits.join("; "))}. <em>${esc(status)}</em>${s?.notes?.length ? ` <small>(${esc(s.notes.join("; "))})</small>` : ""}</li>`);
   }
   const html = `<p><strong>${esc(summary)}</strong></p><ul>${rows.join("")}</ul>`;
@@ -517,7 +521,7 @@ function standard(result, spec, title, labels) {
 /*  Statistician                                */
 /* -------------------------------------------- */
 
-function statistician(result, spec, title, labels = DEFAULT_LABELS) {
+function statistician(result, spec, title) {
   const { out, mentions } = storyCast(result, spec);
   const rounds = new Map();
   for ( const e of result.log ) {
@@ -534,7 +538,7 @@ function statistician(result, spec, title, labels = DEFAULT_LABELS) {
   const finals = spec.combatants.filter(c => !out.has(c.id)).map(c => {
     const f = result.units[c.id]?.final;
     return f ? logTerm("FinalLine", {
-      name: c.name, status: labels.status?.[f.status] ?? f.status, swayed: f.swayed ? logTerm("FinalSwayed", { how: labels.status?.[f.swayed] ?? f.swayed }) : "",
+      name: c.name, status: statusWord(f.status), swayed: f.swayed ? logTerm("FinalSwayed", { how: statusWord(f.swayed) }) : "",
       hp: f.hp, max: c.hp.max, dying: f.dying ? logTerm("FinalDying", { n: f.dying }) : "", wounded: f.wounded ? logTerm("FinalWounded", { n: f.wounded }) : ""
     }) : c.name;
   });
@@ -546,16 +550,13 @@ function statistician(result, spec, title, labels = DEFAULT_LABELS) {
  * @param {object} result   runOne(..., {log: true, capture: true}) output
  * @param {object} spec     BattleSpec it came from
  * @param {string} style    roleplay | standard | statistician
- * @param {object} options  {tables, seed, title, labels, damageType: (systemType) => imagery family}
+ * @param {object} options  {tables, seed, title, damageType: (systemType) => imagery family}
  */
-export function buildStory(result, spec, style, { tables, seed = 1, title = "", labels = DEFAULT_LABELS, damageType = null } = {}) {
-  if ( style === "statistician" ) return statistician(result, spec, title, labels);
-  if ( style === "standard" ) return standard(result, spec, title, labels);
+export function buildStory(result, spec, style, { tables, seed = 1, title = "", damageType = null } = {}) {
+  if ( style === "statistician" ) return statistician(result, spec, title);
+  if ( style === "standard" ) return standard(result, spec, title);
   return roleplay(result, spec, tables, seed, title, damageType);
 }
 
-export const DEFAULT_LABELS = {
-  hit: "hit", crit: "critical", miss: "missed", resisted: "resisted", talked: "talked", convincing: "convincing",
-  healed: "healed", potion: "potion(s)", firstAid: "first aid", bolstered: "bolstered", stabilized: "stabilized", moved: "moved", stayedOut: "stayed out of it", nothing: "did nothing of note",
-  status: { standing: "standing", down: "down", dead: "dead", fled: "fled", surrendered: "surrendered", stoodDown: "stood down", conceded: "gave something up", switched: "switched sides", neutral: "stood aside", noSide: "took no side" }
-};
+/** Where a creature ended up ("standing", "stood down"), in the reader's language. */
+const statusWord = key => (hasWords(`FASTFIGHTING.Status.${key}`) ? localize(`FASTFIGHTING.Status.${key}`) : key ?? "");

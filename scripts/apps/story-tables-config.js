@@ -23,7 +23,7 @@ export class StoryTablesConfig extends HandlebarsApplicationMixin(ApplicationV2)
   async _prepareContext() {
     const installed = game.tables.filter(t => t.getFlag(MODULE_ID, "storyKey")).length;
     return {
-      total: allStoryKeys().length,
+      total: (await allStoryKeys()).length,
       installed,
       buttons: [
         { type: "button", action: "reinstall", icon: "fa-solid fa-rotate", label: "FASTFIGHTING.Story.Reinstall" },

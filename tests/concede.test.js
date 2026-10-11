@@ -5,10 +5,10 @@ import { opensWithTalk } from "../scripts/engine/behavior/standoff.js";
 import { talkAffinity } from "../scripts/engine/behavior/talk.js";
 import { pf2eRules } from "./fixtures/three-action-rules.js";
 import { buildStory, formatMoney } from "../scripts/story/story.js";
-import { buildEnglishTables } from "../scripts/story/tables-en.js";
+import { storyTables } from "./foundry-i18n.js";
 import { creature, battle, social } from "./helpers.js";
 
-const english = buildEnglishTables();
+const english = storyTables();
 const tables = { get: k => english[k] };
 const COINS = [{ label: "gp", value: 100 }, { label: "sp", value: 10 }, { label: "cp", value: 1 }];
 const traits = (brave, selfish = 40) => ({ tactical: { base: 50, fudge: 0 }, brave: { base: brave, fudge: 0 }, selfish: { base: selfish, fudge: 0 }, loyal: { base: 50, fudge: 0 } });

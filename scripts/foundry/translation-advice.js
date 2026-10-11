@@ -56,6 +56,6 @@ export function translationAdvice(moduleId) {
     link: known.url ? `, <a href="${esc(known.url)}" target="_blank" rel="noopener">${esc(known.url)}</a>` : ""
   };
   return installed
-    ? localize("FASTFIGHTING.Translation.Disabled", "<strong>{system}</strong> isn't translated into your language ({language}) in this world, so its own words (its actions, conditions, skills and compendiums) stay in English. The last known translation module, <strong>{title}</strong> (<code>{id}</code>), is installed but not enabled: enable it in Manage Modules.", data)
-    : localize("FASTFIGHTING.Translation.Missing", "<strong>{system}</strong> isn't translated into your language ({language}) in this world, so its own words (its actions, conditions, skills and compendiums) stay in English. The last known translation module was <strong>{title}</strong> (<code>{id}</code>{link}): install it in Add-on Modules, and enable it in this world.", data);
+    ? localize("FASTFIGHTING.Translation.Disabled", data)
+    : localize("FASTFIGHTING.Translation.Missing", data);
 }

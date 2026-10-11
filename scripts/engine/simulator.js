@@ -939,7 +939,7 @@ function applyCritRow(run, u, target, { row, total }) {
     }
   }
   if ( row.outcome && isUp(target) && !isImmune(run, target, { id: `crit:${u.id}:${row.lo}`, onSave: [row.outcome] }) ) {
-    applyOutcome(target, row.outcome, u.id, { id: `crit:${u.id}`, name: row.outcome.label ?? "a crippling blow" });
+    applyOutcome(target, row.outcome, u.id, { id: `crit:${u.id}`, name: row.outcome.label ?? localize("FASTFIGHTING.Effect.cripplingBlow") });
     testConcentration(run, target);
   }
   if ( row.self && isUp(u) ) applyOutcome(u, row.self, u.id, { id: `critSelf:${u.id}`, name: row.self.label ?? "" });
@@ -955,7 +955,7 @@ function applyFumble(run, u) {
     const amount = run.prep.rules.applyIwr(iwrOf(u), sampleDamage(row.damage, run.rng).byType);
     if ( amount > 0 ) dealDamage(run, null, u, amount);
   }
-  if ( row.outcome && isUp(u) ) applyOutcome(u, row.outcome, u.id, { id: `fumble:${u.id}`, name: row.outcome.label ?? "a fumble" });
+  if ( row.outcome && isUp(u) ) applyOutcome(u, row.outcome, u.id, { id: `fumble:${u.id}`, name: row.outcome.label ?? localize("FASTFIGHTING.Effect.fumble") });
   log(run, u, row.outcome?.label ? `fumbles and is left ${row.outcome.label}` : "fumbles", { type: "fumble", roll: total, effect: row.outcome?.label ?? "", rowText: row.text ?? null });
 }
 
@@ -1107,7 +1107,7 @@ function fateful(run, victim, actor, attempt) {
     if ( victim.status !== STATUS.DEAD || tries >= 3 ) return;
     const spender = fateSpender(run, victim);
     if ( !spender ) return;
-    const label = spender.spec.fateLabel ?? "fate";
+    const label = spender.spec.fateLabel ?? localize("FASTFIGHTING.Words.Fate");
     if ( spender === victim && rules.avertDeath ) {
       const spent = fateOf(victim);
       rules.avertDeath(victim);
@@ -1287,7 +1287,7 @@ function executeHeal(run, u, action, target) {
     if ( !multiplier && dying && fateOf(u) > 0 && (u === target || run.rng.chance(clamp(1 - liveTrait(run, u, "selfish") / 100, 0.05, 0.95))) ) {
       u.resources.fate -= 1;
       run.fateInPlay = run.units.some(o => fateOf(o) > 0);
-      log(run, u, `spends ${u.spec.fateLabel ?? "fate"} to try again for ${target.spec.name}`, { type: "fate", target: target.spec.name, targetId: target.id, label: u.spec.fateLabel ?? "fate", spent: 1 });
+      log(run, u, `spends ${u.spec.fateLabel ?? "fate"} to try again for ${target.spec.name}`, { type: "fate", target: target.spec.name, targetId: target.id, label: u.spec.fateLabel ?? localize("FASTFIGHTING.Words.Fate"), spent: 1 });
       roll = rollCheck(rules, run.rng, check.mod, action.healCheck.dc, { advantage: check.advantage, dice: check.dice, kind: "check" });
       multiplier = rules.healCheckMultiplier ? rules.healCheckMultiplier(roll.degree) : [0, 0, 1, 2][roll.degree];
     }
@@ -1535,7 +1535,7 @@ function sizesUp(run, u, t, turn, room, { decided = false, wholeTurn = false } =
     u.studied.add(`sort:${sort}`);
     // Paid for, and it worked: against any of that sort (or, as the system says, anyone), for the rest of this turn
     // (or through its next, when sizing it up took the turn), to make up for the time it took.
-    applyOutcome(u, { boost: factor, uses, vsSort: how?.anyFoe ? undefined : sort, rounds: 1, thisTurn: !wholeTurn, label: localize("FASTFIGHTING.Effect.sizedUp", "sized up") }, u.id, { id: `sizeUp:${sort}`, name: "sized up" });
+    applyOutcome(u, { boost: factor, uses, vsSort: how?.anyFoe ? undefined : sort, rounds: 1, thisTurn: !wholeTurn, label: localize("FASTFIGHTING.Effect.sizedUp") }, u.id, { id: `sizeUp:${sort}`, name: localize("FASTFIGHTING.Effect.sizedUp") });
   } else {
     u.studied.add(`skipsort:${sort}`);
     // (What a miss costs, in the system's terms: Ironsworn's price.)

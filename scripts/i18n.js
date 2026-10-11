@@ -2,10 +2,10 @@
  * Words for the people at the table, in their language.
  *
  * Everything the GM and players read (the story, the log, what Make it So will change, why a trait is what it is)
- * goes through localize(): the translation Foundry has for the key (the client's language, falling back to English),
- * else the English written beside the call. The English beside each call is what the tests (no Foundry) and an
- * incomplete translation see; languages/en.json carries the same English for translators to work from.
- * Pure: it only reads Foundry's i18n when it's there.
+ * goes through localize(): the text Foundry has for the key, in the client's language or else in English. The words
+ * live only in languages/en.json (and the story's in story/en.json); the code holds keys, never the English itself.
+ * The tests load languages/en.json into a stand-in for Foundry's i18n (tests/foundry-i18n.js).
+ * Pure: it only reads Foundry's i18n.
  */
 
 /** The client's language ("en" without Foundry). */
@@ -17,56 +17,35 @@ export function fillIn(text, data) {
   return String(text).replace(/\{(\w+)\}/g, (m, k) => (data[k] !== undefined && data[k] !== null ? String(data[k]) : m));
 }
 
+/** Does Foundry have text for this key (in the client's language or English)? */
+export const hasWords = key => !!key && !!globalThis.game?.i18n?.has?.(key);
+
 /**
- * The text for `key`: Foundry's translation when it has one, else `english`; {placeholders} filled from data.
+ * The text for `key` in the reader's language, {placeholders} filled from data. A key with no text comes back as it is,
+ * as Foundry's own localize does.
  * @param {string} key       a translation key ("FASTFIGHTING.MakeItSo.Outcome.Dead")
- * @param {string} english   the English, used without Foundry or a translation
  * @param {object} [data]    values for the {placeholders}
  */
-export function localize(key, english, data = null) {
-  const i18n = globalThis.game?.i18n;
-  const text = key && i18n?.has?.(key) ? i18n.localize(key) : english;
+export function localize(key, data = null) {
+  const text = hasWords(key) ? globalThis.game.i18n.localize(key) : key;
   return fillIn(text, data);
 }
 
-/** A list in words: "Amiri, Ezren and Lini" ("Amiri, Ezren y Lini"). */
+/** Names one after another ("Amiri, Ezren"), with the language file's separator. */
+export const listItems = items => items.join(localize("FASTFIGHTING.Words.ListSeparator"));
+
+/** A list in words: "Amiri, Ezren and Lini" ("Amiri, Ezren y Lini"), its shape from the language file. */
 export function listJoin(items) {
   const list = (items ?? []).filter(x => x !== null && x !== undefined && x !== "").map(String);
   if ( list.length <= 1 ) return list[0] ?? "";
-  return `${list.slice(0, -1).join(", ")} ${localize("FASTFIGHTING.Words.And", "and")} ${list.at(-1)}`;
+  return localize("FASTFIGHTING.Words.List", { rest: listItems(list.slice(0, -1)), last: list.at(-1) });
 }
 
 /* Make it So: the lines every system's outcome has in common. -------------- */
 
-const OUTCOME = {
-  Hp: "HP {from} → {to}",
-  Dies: "DIES",
-  Dead: "Dead",
-  Down: "Down",
-  Unconscious: "Unconscious (stable)",
-  Dying: "Dying {n}",
-  Wounded: "Wounded {n}",
-  Retreated: "Retreated from the battle",
-  TalkedAway: "Talked into fleeing (token hidden)",
-  Fled: "Fled the battle (token hidden)",
-  Surrenders: "Surrenders",
-  StandsDown: "Stands down (talked out of fighting)",
-  SwitchesFriendly: "Switches sides (now friendly)",
-  SwitchesHostile: "Switches sides (now hostile)",
-  TurnedOn: "Turned on the party (now hostile)",
-  StandsAside: "Stands aside (now neutral)",
-  Uses: "Uses {n}× {what}",
-  StillOne: "Still {effect} (1 more round)",
-  StillMany: "Still {effect} ({n} more rounds)",
-  Affected: "affected",
-  Persistent: "Persistent {formula} {type}",
-  Affliction: "{name} (stage {stage})",
-  AfflictionOnset: "{name} (takes hold in {n} rounds, stage {stage})"
-};
-
-/** One of the common Make it So lines (OUTCOME above), in the reader's language. */
+/** One of the common Make it So lines (FASTFIGHTING.MakeItSo.Outcome), in the reader's language. */
 export function outcomeLine(id, data = null) {
-  return localize(`FASTFIGHTING.MakeItSo.Outcome.${id}`, OUTCOME[id] ?? id, data);
+  return localize(`FASTFIGHTING.MakeItSo.Outcome.${id}`, data);
 }
 
 /**

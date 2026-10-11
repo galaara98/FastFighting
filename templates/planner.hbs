@@ -195,7 +195,7 @@
               <div class="ff-kpi talk"><span class="ff-kpi-value">{{results.swayed}}</span><span class="ff-kpi-label">{{localize "FASTFIGHTING.Results.Swayed"}}</span></div>
               {{#if results.peacefulAny}}<div class="ff-kpi talk"><span class="ff-kpi-value">{{results.peaceful}}</span><span class="ff-kpi-label">{{localize "FASTFIGHTING.Results.Peaceful"}}</span></div>{{/if}}
               <div class="ff-kpi"><span class="ff-kpi-value">{{results.rounds.median}}</span><span class="ff-kpi-label">{{localize "FASTFIGHTING.Results.MedianRounds"}} ({{results.rounds.p10}}–{{results.rounds.p90}})</span></div>
-              <div class="ff-kpi ff-difficulty {{results.simulatedClass}}"><span class="ff-kpi-value">{{results.simulated}}</span><span class="ff-kpi-label">{{localize "FASTFIGHTING.Results.Simulated"}}{{#if results.crossCheck}} · {{localize "FASTFIGHTING.Results.SystemSays"}} <strong>{{results.crossCheck.labelLoc}}</strong> ({{results.crossCheck.xp}} XP){{/if}}</span></div>
+              <div class="ff-kpi ff-difficulty {{results.simulatedClass}}"><span class="ff-kpi-value">{{results.simulated}}</span><span class="ff-kpi-label">{{localize "FASTFIGHTING.Results.Simulated"}}{{#if results.crossCheck}} · {{localize "FASTFIGHTING.Results.SystemSays"}} <strong>{{results.crossCheck.labelLoc}}</strong> ({{localize "FASTFIGHTING.Results.Xp" xp=results.crossCheck.xp}}){{/if}}</span></div>
             </div>
             <div class="ff-split">
               <div class="ff-panel">

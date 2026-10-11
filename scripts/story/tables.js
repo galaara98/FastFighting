@@ -4,56 +4,45 @@
  * Lookup order for each table key:
  *   1. A RollTable in this world flagged with that key (GMs install and edit these: see installStoryTables).
  *   2. The module's tables for the client language, from story/<lang>.json if a translation ships one.
- *   3. Built-in tables for the client language (none ship today; see BUILT_IN).
- *   4. The built-in English tables (story/tables-en.js).
+ *   3. The English tables, built from story/en.json.
  *
- * A locale file is JSON: { "<table key>": ["entry 1", ..., "entry 5"], ... }. Missing keys fall back to English.
+ * A story file is JSON, either building blocks like story/en.json (see blocks.js) or finished tables:
+ * { "<table key>": ["entry 1", ...], ... }. Missing keys fall back to English.
  */
 import { MODULE_ID } from "../constants.js";
-import { buildEnglishTables, tableName } from "./tables-en.js";
+import { buildTables, isBlocks, tableName } from "./blocks.js";
 import { language } from "../i18n.js";
 
-/**
- * Languages the module tells its stories in itself, by code: {build() → tables, possessive?(weapon) → the word for
- * {su} before a weapon's name, for a language whose possessive agrees with it}. None ship today.
- */
-const BUILT_IN = {};
-let builtIn = null;
-let builtInLang = null;
-
-/** The module's own tables in a language (null: none, English does). */
-function builtInTables(lang) {
-  if ( builtInLang !== lang ) {
-    builtInLang = lang;
-    builtIn = BUILT_IN[lang]?.build() ?? null;
-  }
-  return builtIn;
-}
-
-let english = null;
+let english = null; // (a promise of them)
 let locale = null;
 let localeLang = null;
 let worldCache = null;
 let resolved = null; // the tables object handed out until something changes
 
+/** A story file's tables (null: none), from building blocks or as they are. */
+async function fetchTables(lang) {
+  try {
+    const response = await fetch(`modules/${MODULE_ID}/story/${lang}.json`);
+    const data = response.ok ? await response.json() : null;
+    return isBlocks(data) ? buildTables(data) : data;
+  } catch ( err ) {
+    return null;
+  }
+}
+
 function englishTables() {
-  english ??= buildEnglishTables();
+  english ??= fetchTables("en").then(tables => tables ?? {});
   return english;
 }
 
 async function localeTables() {
   const lang = game.i18n.lang;
-  // (English, or a language the module tells its stories in itself: nothing to fetch.)
-  if ( lang === "en" || BUILT_IN[lang] ) return null;
+  // (English: nothing more to fetch.)
+  if ( lang === "en" ) return null;
   if ( localeLang === lang ) return locale;
   localeLang = lang;
   resolved = null;
-  try {
-    const response = await fetch(`modules/${MODULE_ID}/story/${lang}.json`);
-    locale = response.ok ? await response.json() : null;
-  } catch ( err ) {
-    locale = null;
-  }
+  locale = await fetchTables(lang);
   return locale;
 }
 
@@ -83,10 +72,13 @@ function worldTables() {
   return worldCache;
 }
 
-/** Forget cached world tables (after a GM edits one). */
+/** Forget cached tables (after a GM edits one): the world's, and the story files, read again when next needed. */
 export function invalidateStoryTables() {
   worldCache = null;
   resolved = null;
+  english = null;
+  locale = null;
+  localeLang = null;
 }
 
 /**
@@ -94,30 +86,27 @@ export function invalidateStoryTables() {
  * or the language changes, so callers can cache what they built from it.
  */
 export async function loadStoryTables() {
-  const base = englishTables();
+  const base = await englishTables();
   const loc = await localeTables();
   if ( resolved ) return resolved;
   const world = worldTables();
-  const lang = language();
-  const own = builtInTables(lang);
   resolved = {
-    lang: own || loc ? lang : "en",
-    possessive: BUILT_IN[lang]?.possessive ?? null,
+    lang: loc ? language() : "en",
     get(key) {
-      return world[key] ?? loc?.[key] ?? own?.[key] ?? base[key] ?? null;
+      return world[key] ?? loc?.[key] ?? base[key] ?? null;
     }
   };
   return resolved;
 }
 
-/** Every key the story writer can use, with its English entries (for installing and translating). */
-export function allStoryKeys() {
-  return Object.keys(englishTables());
+/** Every key the story writer can use (for installing and translating). */
+export async function allStoryKeys() {
+  return Object.keys(await englishTables());
 }
 
 function groupOf(key) {
   const [kind, a] = key.split(".");
-  if ( kind === "action" ) return `Action · ${tableName(a)}`;
+  if ( kind === "action" ) return tableName(`${kind}.${a}`);
   return tableName(kind);
 }
 
@@ -128,8 +117,7 @@ function groupOf(key) {
  */
 export async function installStoryTables({ overwrite = false } = {}) {
   const loc = await localeTables();
-  const base = englishTables();
-  const own = builtInTables(language());
+  const base = await englishTables();
   const FolderCls = foundry.documents.Folder ?? globalThis.Folder;
   const TableCls = foundry.documents.RollTable ?? globalThis.RollTable;
   const rootName = game.i18n.localize("FASTFIGHTING.Story.TablesFolder");
@@ -142,7 +130,7 @@ export async function installStoryTables({ overwrite = false } = {}) {
   const toDelete = [];
   let kept = 0;
   for ( const key of Object.keys(base) ) {
-    const entries = loc?.[key] ?? own?.[key] ?? base[key];
+    const entries = loc?.[key] ?? base[key];
     const prior = existing.get(key);
     if ( prior && !overwrite ) { kept += 1; continue; }
     const group = groupOf(key);

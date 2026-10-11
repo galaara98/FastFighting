@@ -6,13 +6,17 @@ import { bestPitch } from "../scripts/engine/behavior/talk.js";
 import { degreeDistribution } from "../scripts/engine/probability.js";
 import { buildStory } from "../scripts/story/story.js";
 import { combinePlaystyles } from "../scripts/engine/playstyles.js";
-import { buildEnglishTables } from "../scripts/story/tables-en.js";
+import { storyTables, text } from "./foundry-i18n.js";
+import { logLine } from "../scripts/story/log-lines.js";
+
+/** A roll as the log writes it ("d20 12 +30 = 42 vs DC 15"). */
+const rollText = (c, label = text("FASTFIGHTING.Log.DC")) => text("FASTFIGHTING.Log.Roll", { faces: 20, natural: c.natural, mod: c.mod >= 0 ? `+${c.mod}` : c.mod, total: c.total, label, dc: c.dc });
 import { pf2eRules } from "./fixtures/three-action-rules.js";
 import { genericRules } from "../scripts/adapters/generic/rules.js";
 import { parseFormula } from "../scripts/engine/dice.js";
 import { creature, strike, battle, social } from "./helpers.js";
 
-const english = buildEnglishTables();
+const english = storyTables();
 const tables = { get: k => english[k] };
 const minded = (tactical = 70) => ({ tactical: { base: tactical, fudge: 0 }, brave: { base: 90, fudge: 0 }, selfish: { base: 30, fudge: 0 }, loyal: { base: 60, fudge: 0 } });
 const tough = { value: 400, max: 400, temp: 0 };
@@ -65,7 +69,11 @@ describe("edges: one roll, one foe", () => {
     const given = r.log.find(e => e.type === "buff" && e.actorId === "helper");
     expect(given.check.degree).toBe(3);
     expect(given.against).toEqual(["ogre"]);
-    expect(buildStory(r, spec, "statistician").text).toMatch(/helper → f1: Aid · Aid d20 \d+ \+\d+ = \d+ vs DC 15 · critical success · aided \(against ogre\)/);
+    const line = logLine(given);
+    expect(buildStory(r, spec, "statistician").text).toContain(line);
+    for ( const piece of ["helper", "f1", "Aid", "aided", rollText({ ...given.check, dc: 15 }), text("FASTFIGHTING.Log.Degree3"), text("FASTFIGHTING.Log.BuffAgainst", { names: "ogre" })] ) {
+      expect(line).toContain(piece);
+    }
     // A roll that can't make it: nothing comes of it, and the story says so.
     const hopeless = { ...aid, check: { mod: -40, dc: 15, label: "Aid" } };
     const spec2 = battle([fighter("f1", { initiative: { mod: 50 } }), fighter("helper", { initiative: { mod: -50 }, actions: [strike({ id: "jab", bonus: 0, damage: [parseFormula("1", "bludgeoning")] }), hopeless] }), ogre()], { maxRounds: 2 });
@@ -134,7 +142,7 @@ describe("a Lore-Collector's payoff", () => {
     expect(words.mod).toBeGreaterThan(4 + 2); // its +4, and the boost on top
     const prose = buildStory(r, spec, "roleplay", { tables, seed: 7 }).text;
     expect(prose).not.toMatch(/\{\w+\}/);
-    expect(buildStory(r, spec, "statistician").text).toMatch(/lore watches bandit instead of talking/);
+    expect(buildStory(r, spec, "statistician").text).toContain(text("FASTFIGHTING.Log.Observe", { actor: "lore", targets: "bandit" }));
   });
 });
 
@@ -159,7 +167,11 @@ describe("a system's own payoff for sizing up", () => {
     expect(study).toMatchObject({ worked: true, factor: 1.25, oneRoll: true, anyFoe: true });
     const boosted = r.log.filter(e => e.type === "attack" && e.actorId === "s" && e.boost > 0);
     expect(boosted).toHaveLength(1); // the next roll only
-    expect(buildStory(r, spec, "statistician").text).toMatch(/sizes up · Secure an Advantage d20 \d+ \+40 = \d+ vs DC 10 · \w[\w ]* · its next roll 1\.25× as likely to succeed/);
+    const line = logLine(study);
+    expect(buildStory(r, spec, "statistician").text).toContain(line);
+    for ( const piece of ["Secure an Advantage", rollText({ ...study.check, dc: 10 }), text("FASTFIGHTING.Log.NextRoll", { against: "", factor: 1.25, target: study.target })] ) {
+      expect(line).toContain(piece);
+    }
   });
 });
 
@@ -172,7 +184,10 @@ describe("what sizing up teaches holds for the foe's sort", () => {
     const studies = r.log.filter(e => e.type === "study" && e.actorId === "s");
     expect(studies).toHaveLength(1);
     expect(studies[0].kin).toBe(2);
-    expect(buildStory(r, spec, "statistician").text).toMatch(/s → Goblin Warrior \d \(and the 2 like them\): sizes up/);
+    const line = logLine(studies[0]);
+    expect(buildStory(r, spec, "statistician").text).toContain(line);
+    expect(line).toContain(text("FASTFIGHTING.Log.StudyKin", { kin: 2, target: studies[0].target }));
+    expect(studies[0].target).toMatch(/^Goblin Warrior \d$/);
     // The boosted blows land on whichever warrior it fights.
     const boosted = r.log.filter(e => e.type === "attack" && e.actorId === "s" && e.boost > 0);
     expect(boosted.length).toBeGreaterThan(0);
@@ -194,7 +209,10 @@ describe("a Lore-Collector leading its side shares what it learns", () => {
     expect(told.with).toEqual(["a1"]); // (not one too far off to explain it to, nor one without a language in common)
     // Three actions: size it up, tell them, and one left to strike with.
     expect(r.log.filter(e => e.actorId === "sage" && e.type === "attack" && e.round === 1).length).toBeLessThanOrEqual(1);
-    expect(buildStory(r, spec, "statistician").text).toMatch(/sage → a1: shares what it knows of ogre/);
+    expect(told).toMatchObject({ actor: "sage", target: "ogre" });
+    expect(buildStory(r, spec, "statistician").text).toContain(text("FASTFIGHTING.Log.ShareLore", {
+      actor: "sage", allies: "a1", target: "ogre", chance: Number.isFinite(told.chance) ? text("FASTFIGHTING.Log.MindedToShare", { n: Math.round(told.chance * 100) }) : ""
+    }));
     const prose = buildStory(r, spec, "roleplay", { tables, seed: 4 }).text;
     expect(prose).not.toMatch(/\{\w+\}/);
   });

@@ -5,12 +5,12 @@ import { followChance, follow, listen, levelOf, leaderless, styleOf, initDesires
 import { combinePlaystyles } from "../scripts/engine/playstyles.js";
 import { STATUS, NEUTRAL_PARTY } from "../scripts/constants.js";
 import { buildStory } from "../scripts/story/story.js";
-import { buildEnglishTables } from "../scripts/story/tables-en.js";
+import { storyTables, text } from "./foundry-i18n.js";
 import { pf2eRules } from "./fixtures/three-action-rules.js";
 import { parseFormula } from "../scripts/engine/dice.js";
 import { creature, strike, battle } from "./helpers.js";
 
-const english = buildEnglishTables();
+const english = storyTables();
 const tables = { get: k => english[k] };
 const minded = (loyal = 60) => ({ tactical: { base: 60, fudge: 0 }, brave: { base: 70, fudge: 0 }, selfish: { base: 30, fudge: 0 }, loyal: { base: loyal, fudge: 0 } });
 const goblin = (id, extra = {}) => creature({ id, side: "hostile", traits: minded(), ...extra });
@@ -130,7 +130,9 @@ describe("the story of who's in charge", () => {
     const r = replay(spec, pf2eRules, 3);
     const took = r.log.find(e => e.type === "command");
     expect(took).toMatchObject({ actor: "Lieutenant", from: "Boss", role: "lieutenant 1" });
-    expect(buildStory(r, spec, "statistician").text).toMatch(/Lieutenant takes command \(lieutenant 1\) from Boss/);
+    expect(buildStory(r, spec, "statistician").text).toContain(text("FASTFIGHTING.Log.CommandTakes", {
+      actor: "Lieutenant", role: text("FASTFIGHTING.Log.RoleLieutenant", { n: 1 }), from: text("FASTFIGHTING.Log.CommandFrom", { name: "Boss" })
+    }));
     expect(buildStory(r, spec, "roleplay", { tables, seed: 3 }).text).not.toMatch(/\{\w+\}/);
   });
 });

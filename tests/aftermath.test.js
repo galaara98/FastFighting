@@ -4,11 +4,11 @@ import { createRun } from "../scripts/engine/battle-state.js";
 import { pf2eRules } from "./fixtures/three-action-rules.js";
 import { parseFormula } from "../scripts/engine/dice.js";
 import { buildStory } from "../scripts/story/story.js";
-import { buildEnglishTables } from "../scripts/story/tables-en.js";
+import { storyTables, text } from "./foundry-i18n.js";
 import { sanitizeTactics } from "../scripts/foundry/tactics.js";
 import { creature, strike, battle } from "./helpers.js";
 
-const english = buildEnglishTables();
+const english = storyTables();
 const tables = { get: k => english[k] };
 
 /** A PC who is already dying, with a friend standing over them and one weak foe left. */
@@ -66,8 +66,8 @@ describe("after the fight", () => {
     expect(quiet.units.down.final.status).toBe(told.units.down.final.status);
     const spec = rescue({ aftermath: "quiet" });
     const story = buildStory(quiet, spec, "statistician", { tables });
-    expect(story.html).not.toContain("After the fight");
-    expect(buildStory(told, rescue(), "statistician", { tables }).html).toContain("After the fight");
+    expect(story.html).not.toContain(text("FASTFIGHTING.Log.Aftermath"));
+    expect(buildStory(told, rescue(), "statistician", { tables }).html).toContain(text("FASTFIGHTING.Log.Aftermath"));
   });
 });
 

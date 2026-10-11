@@ -8,12 +8,12 @@ import { hasSystemAdapter } from "./api.js";
 
 export const SYSTEMS_URL = "https://github.com/galaara98/FastFighting/blob/main/systems.md";
 
-/** Helper modules we know about, by game system id (keep in sync with systems.md). */
+/** Helper modules we know about, by game system id (keep in sync with systems.md). Their titles: FASTFIGHTING.Helper.Module. */
 export const KNOWN_HELPERS = Object.freeze({
-  pf2e: { module: "fast-fighting-pf2e", title: "FastFighting PF2e", url: "https://github.com/galaara98/FastFighting-PF2e" },
-  dnd5e: { module: "fast-fighting-dnd5e", title: "FastFighting D&D 5e", url: "https://github.com/galaara98/FastFighting-DnD5e" },
-  dcc: { module: "fast-fighting-dcc", title: "FastFighting DCC", url: "https://github.com/galaara98/FastFighting-DCC" },
-  "foundry-ironsworn": { module: "fast-fighting-ironsworn", title: "FastFighting Ironsworn", url: "https://github.com/galaara98/FastFighting-Ironsworn" }
+  pf2e: { module: "fast-fighting-pf2e", url: "https://github.com/galaara98/FastFighting-PF2e" },
+  dnd5e: { module: "fast-fighting-dnd5e", url: "https://github.com/galaara98/FastFighting-DnD5e" },
+  dcc: { module: "fast-fighting-dcc", url: "https://github.com/galaara98/FastFighting-DCC" },
+  "foundry-ironsworn": { module: "fast-fighting-ironsworn", url: "https://github.com/galaara98/FastFighting-Ironsworn" }
 });
 
 /**
@@ -24,7 +24,7 @@ export function helperStatus() {
   const systemId = game.system.id;
   const specific = hasSystemAdapter(systemId);
   const generic = !specific && !!game.settings.get(MODULE_ID, "genericFallback");
-  const known = KNOWN_HELPERS[systemId] ?? null;
+  const known = KNOWN_HELPERS[systemId] ? { ...KNOWN_HELPERS[systemId], title: game.i18n.localize(`FASTFIGHTING.Helper.Module.${systemId}`) } : null;
   const module = known ? game.modules.get(known.module) : null;
   let reason = "ok";
   if ( !specific ) {

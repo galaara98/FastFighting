@@ -1,171 +1,23 @@
 /**
  * The fight's log in words: one line per event, as the Statistician story shows it (and the Standard story's notes),
- * built from the event's data in the reader's language, never from the engine's own English (e.text). Each phrase is a
- * template here (English) with a key under FASTFIGHTING.Log in the language files.
+ * built from the event's data in the reader's language, never from the engine's own notes (e.text). Each phrase is a
+ * template under FASTFIGHTING.Log in the language files.
  * Only text a game system writes itself (a rule's own report: recovery checks, enduring harm) is shown as it comes.
  * Pure apart from reading Foundry's translations when they're there (../i18n.js).
  */
-import { localize, listJoin } from "../i18n.js";
-
-/** The English of every phrase (and the keys under FASTFIGHTING.Log). */
-export const LOG_ENGLISH = {
-  Roll: "d{faces} {natural} {mod} = {total} vs {label} {dc}",
-  Challenge: "d6 {natural} {mod} = {total} vs {dice}",
-  Progress: "progress {total} vs {dice}",
-  AC: "AC", DC: "DC", DcOf: "{stat} DC", Defense: "defense",
-  Degree0: "critical failure", Degree1: "failure", Degree2: "success", Degree3: "critical success",
-  Ironsworn0: "miss (a match)", Ironsworn1: "miss", Ironsworn2: "weak hit", Ironsworn3: "strong hit",
-  Momentum: "momentum {n}",
-  Damage: "{n} {type}",
-  DamageN: "{n} damage",
-  DeedRoll: "deed {n}",
-  TakenBy: "taken by {name} for {n}",
-  SizedUp: "sized up +{n}",
-  AttackN: "attack #{n}",
-  CritTable: "crit table {n}",
-  FumbleTable: "fumble table {n}",
-  Self: "self",
-  NoRoll: "no roll",
-  Shifted: "(shifted)",
-  OnSelf: "(on {name})",
-  NoEffect: "no effect",
-  Unaffected: "unaffected",
-  Succeeds: "succeeds", Fails: "fails",
-  NowAHit: "now a hit", StillAMiss: "still a miss",
-  SlainOutright: "slain outright",
-  CastWorks: "works (result {n})", CastFumble: "fumble", CastDisapproval: "disapproval", CastFails: "fails", SpellLost: "spell lost", DisapprovalRange: "(disapproval {n})",
-  Boost: "{actor} burns {spent} {label}{forTarget}: {from} → {to} vs {dc} · {made}", BoostFor: " for {target}", MadeIt: "made it", StillShort: "still short",
-  Reaction: "{actor}: {reaction} (reaction to {target}, {trigger})",
-  TriggerHit: "hit", TriggerAttacked: "attacked", TriggerMissed: "missed", TriggerDamaged: "damaged", TriggerSpell: "a spell",
-  Summon: "{actor}: {action} · {names} join",
-  Vanish: "{actor} is gone ({reason})",
-  VanishExpired: "its time is up", VanishReleased: "released", VanishUnsustained: "not sustained", VanishIdle: "idle",
-  Counter: "{actor}: {reaction} vs {target}'s {action}{roll} · {how}", CounterRoll: " · d20 {natural} → {total}", Countered: "countered", GetsThrough: "gets through",
-  Save: "{target} saves vs {actor}'s {action} · {saveType} {roll} · {degree} ({margin}) · {damage}",
-  Auto: "{actor} → {target}: {action} (no roll) · {damage}",
-  Talk: "{actor} → {target}: {skill} · {roll} · {degree} ({margin}){boost} · persuasion {progress}/{steps}",
-  Heal: "{actor} → {target}: {action}{check} · +{amount} HP{revived}", Medicine: "medicine {roll} · {degree}", Revived: " · revived",
-  Move: "{actor} {mode} {feet} toward {toward}{terrain}", Terrain: " (terrain ×{mult}{regions})",
-  ModeWalk: "walks", ModeFly: "flies", ModeSwim: "swims", ModeClimb: "climbs", ModeBurrow: "burrows", ModeMove: "moves",
-  Feet: "{n} ft", TheDoor: "the door",
-  AfflictionSave: "{actor} vs {name} · {saveType} {roll} · {degree}",
-  AfflictionStage: "{actor}: {name} stage {stage} · {damage}",
-  AfflictionEnd: "{actor}: {name} runs its course", AfflictionCured: "{actor} recovers from {name} · {roll} · {degree}",
-  Opportunity: "{actor} → {target}: opportunity attack (reaction)",
-  Disengage: "{actor}: {label}", Disengages: "disengages",
-  Door: "{actor} → the door: {method}{roll}{damage} · {result}",
-  DoorOpen: "opens it", DoorForce: "forces it", DoorPick: "picks the lock", DoorAttack: "attacks it", DoorGiveUp: "gives up",
-  DoorOpened: "open", DoorHolds: "holds", DoorGaveUp: "gives up on it",
-  Thought: "{actor} thinks: {desires}{following}", Following: " · following {name}{boss}, chance {chance}%", Boss: " (boss)",
-  DesireHurt: "hurt", DesireHeal: "heal", DesireProtect: "protect", DesireAid: "bolster", DesireTalk: "talk to", DesireAvoid: "avoid",
-  RiderSave: "{actor} vs {name} · {saveType} {roll} · {degree}{damage}",
-  Notice: "{actor} notices ({cause})",
-  NoticeSight: "sees the fight", NoticeSound: "hears it", NoticeStandoff: "the standoff", NoticeFled: "{by} runs into them", NoticeHelp: "{by} calls for help", NoticeAttacked: "attacked by {by}",
-  Study: "{actor} → {target}{kin}: sizes up{roll} · {pays}", StudyKin: " (and the {kin} like them)",
-  LearnsNothing: "learns nothing", NextRoll: "its next roll {against}{factor}× as likely to succeed", NextRolls: "its next rolls against them {factor}× as likely to succeed", AgainstThem: "against them ",
-  Observe: "{actor} watches {targets} instead of talking",
-  CommandLost: "no one left to lead{after}", CommandAfter: " after {name}",
-  CommandTakes: "{actor} takes command ({role}){from}", CommandBack: "{actor} takes back command ({role})", CommandFrom: " from {name}",
-  RoleBoss: "boss", RoleLeader: "leader", RoleLieutenant: "lieutenant {n}",
-  Scheme: "{actor} schemes against {target}{boss}: wants to lead; won't help its leaders this turn, and is far easier to turn",
-  ShareLore: "{actor} → {allies}: shares what it knows of {target} (an action; they know its sort too){chance}", MindedToShare: " · minded to share {n}%",
-  KeepLore: "{actor} keeps what it learned of {target} to itself · minded to share {n}%",
-  FirstAid: "{actor} → {target}: first aid · medicine {roll} · {degree} · {result}", Stabilized: "stabilized", Dies: "dies", DyingN: "dying {n}",
-  Aftermath: "After the fight",
-  Control: "{actor} → {target}: {action} · {how}{shifted} · {effect}{onSelf}{damage}", ControlImmune: "{actor} → {target}: {action} · unaffected",
-  Buff: "{actor} → {targets}: {action}{check} · {effect}{against}{temp}{asked}", BuffAgainst: " (against {names})", TempHp: " · {n} temp HP", AskedBy: " · asked by {names}",
-  NothingComesOfIt: "nothing comes of it", Bolstered: "bolstered",
-  LetsGo: "{actor} lets {effects} go",
-  LosesConcentration: "{actor} loses concentration on {action}{roll}", CantAct: " (can't act)",
-  ShakeOff: "{actor} shakes off {effect} · {saveType} {roll}", TheEffect: "the effect",
-  Execute: "{actor} → {target}: execution luck d100 {luck} ({needed} or less) · {how}", GoesForKill: "goes for the kill", SparesThem: "spares them{next}", TurnsOn: ", turns on {name}",
-  AllegianceTurn: "{actor} fights for {by}'s side (controlled)", AllegianceBack: "{actor} returns to {side}",
-  NeutralLuck: "{actor}: switch luck d100 {luck} (needs under {needed}) · won't change sides",
-  NeutralOffended: "{actor} turns on {side} ({why}{victim}, by {by})",
-  NeutralTruce: "{actor} confronts {by}{over} ({why}) · words first", Over: " over {name}",
-  NeutralAloof: "{actor} keeps out of it (chance to get involved {n}%)",
-  NeutralMeddle: "{actor} speaks up for {side} (chance {n}%)", NeutralExtort: "{actor} means to squeeze {against} for money (chance {n}%)",
-  NeutralFeud: "{actor} takes offense at {target} and goes for them (the standoff holds)",
-  NeutralLapse: "{actor} lets the matter drop", NeutralHolds: "{actor} agrees to let it be, talked round by {by}",
-  NeutralCalmed: "{actor} lets it go, talked round by {by}", NeutralAmends: "{actor} makes amends with {by}",
-  WhyHurt: "hurt", WhyHarmed: "harmed someone it cares about", WhyHelped: "helped someone it hates", WhyRobbed: "robbed", WhyInsulted: "insulted", WhyImpatient: "lost patience",
-  Theft: "{actor} → {target}: {feint}{skill} · {roll} · {degree} · {result}", Feint: "feint {weapon} · {roll} · {hit}", FeintHit: "hit, no damage", FeintMiss: "miss",
-  FeintOnly: "{actor} → {target}: {feint}", Steals: "steals {what}", Caught: "caught", NothingTaken: "nothing taken",
-  Reclaim: "{actor} gets back {what} from {by}",
-  Bribed: "{actor} is paid {what} by {payer} to go (with its people)", Nothing: "nothing",
-  StandsAsideLuck: "{actor} stands aside · switch luck d100 {luck} (needs under {needed})",
-  KeepsIt: "{actor} agrees to hand over {what} · luck d100 {luck} (needs {needed} or less) · keeps it",
-  Gives: "{actor} gives {what} to {to}{luck}", GivesLuck: " · luck d100 {luck}",
-  PaysOff: "{actor} pays {by} off with {what}", PaysNothing: "{actor} has nothing to pay {by} with",
-  LieAndRun: "{actor} swears they have nothing and runs",
-  Recruit: "{actor} is won over and joins {side}",
-  StandAside: "{actor} is talked out of the fight and stands aside", StandAsideAgain: "{actor} calms down and stands aside again",
-  SwayFled: "{actor} is talked into leaving and flees", SwayStoodDown: "{actor} agrees to stand down", SwaySurrendered: "{actor} lays down arms and surrenders",
-  SwaySwitched: "{actor} switches sides",
-  Adjust: "{actor}: {text}",
-  Backlash: "{actor}: {label} · {damage}", PaysForIt: "pays for it",
-  BreakStandoff: "{actor} {how}", BreakInsulted: "takes offense and attacks", BreakBeast: "won't wait any longer and attacks", BreakAnnoyed: "blames the other side for it and attacks",
-  BreakBlood: "strikes across the standoff: it's a fight now", BreakImpatient: "has heard enough and attacks",
-  CallHelp: "{actor} shouts to {target} for help",
-  Condition: "{actor} is left {effect}", Reeling: "reeling",
-  Down: "{actor} falls{dying}", DownDying: " (dying {n})", KnockedOut: "{actor} is knocked out", Slain: "{actor} is slain", SlainOutrightBy: "{actor} is slain outright by {by}",
-  Finished: "{actor} is finished off", StruckDown: "{actor} is struck while down (dying {n})", RegenStopped: "{actor} dies, its regeneration stopped",
-  Draw: "{actor} draws {item}",
-  End: "{winners} win after {rounds} rounds", EndNone: "No one is left after {rounds} rounds", EndStalemate: "Still fighting after {rounds} rounds",
-  Escape: "{actor} escapes the grab", Stuck: "{actor} struggles against the grab",
-  FateSelf: "{actor} spends {label} to cheat death", FateFor: "{actor} spends {label} to save {target}", FateRetry: "{actor} spends {label} to try again for {target}", FateSure: "{actor} spends {label} and pulls back from death",
-  Flee: "{actor} flees", FleeLeads: "{actor} leads the retreat", FleeWith: "{actor} falls back with {name}",
-  FleeDread: "{actor} runs from {name}", FleeBreaks: "{actor} breaks and flees", FleeRevived: "{actor} retreats after being revived", FleeAllyFalls: "{actor} retreats as an ally falls",
-  Fumble: "{actor}: fumble table {n}{effect}{row}",
-  Grabbed: "{actor} is grabbed by {by}",
-  HoldGround: "{actor} wants to run, but stands its ground", HoldOrdered: "{actor} holds, as ordered{by}", ByName: " by {name}",
-  HoldOn: "{actor}: {label} · stays up at 1 hit point", HoldsOn: "holds on",
-  Initiative: "Initiative: {order}",
-  Join: "{actor} joins the fight", JoinForced: "{actor} is drawn into the fight",
-  LastWord: "{actor} steps in for one last try at settling it",
-  Legendary: "{actor} takes a legendary action: {action} → {target}",
-  Mercy: "{actor} won't let anyone finish off {target}",
-  Parley: "{actor} tries to talk the other side down",
-  Peacekeep: "{actor} tries to calm things down",
-  Persistent: "{actor} takes {damage} (persistent)",
-  Prone: "{actor} is knocked prone",
-  Rally: "{actor} rallies {allies}: hold!",
-  Recharge: "{actor}: {action} is ready again",
-  Regen: "{actor} regenerates {n} hit points{up}", GetsUp: " and gets back up",
-  RetreatCall: "{actor} calls the retreat", RetreatUrged: "{actor} calls the retreat, at {by}'s urging", RetreatRefused: "{actor} won't hear of retreat ({target} must hold; chance {n}%)",
-  StandFirm: "{actor}: {label} against {against}", StandsFirm: "stands firm",
-  Standoff: "A tense standoff: words before weapons",
-  Step: "{actor} steps back to a better position",
-  Surprise: "Surprise round for {side}",
-  Sustain: "{actor} sustains {action}",
-  Watch: "{actor} watches, taking no side",
-  Waver: "{actor} wavers",
-  Stand: "{actor} stands up",
-  Shield: "{actor} raises a shield",
-  Leave: "{actor} slips away",
-  DeedLine: "{actor} → {target}: {deed} · deed {n} · {result}",
-  Rider: "{actor} → {target}: {rider}{mended}{saved}{effect}", RiderMended: " · +{n}, {result}", RiderSaved: " · {saveType} d20 {natural} = {total} vs DC {dc} · {degree}",
-  CritTableLine: "{by} → {actor}: crit table {n}{slain}{effect}{row}",
-  Cast: "{actor}: {action} · d{faces} {natural} {mod} = {total} · {how}",
-  RoundShort: "R{n}", Final: "Final",
-  FinalLine: "{name}: {status}{swayed}, {hp}/{max} HP{dying}{wounded}", FinalSwayed: " ({how})", FinalDying: ", dying {n}", FinalWounded: ", wounded {n}",
-  HpN: "{n} HP",
-  NoteStole: "stole {what} from {target}", NoteCaught: "caught stealing from {target}", NoteEmpty: "came away empty-handed from {target}",
-  NoteKept: "kept {what} (luck {luck})", NoteGave: "gave {what} to {name}", NoteGotBack: "got back {what} from {by}"
-};
+import { localize, listJoin, listItems, hasWords } from "../i18n.js";
 
 /** A phrase of the log, by its key (for the stories' own lists and headings). */
 export const logTerm = (key, data = null) => t(key, data);
 
 /** One phrase, in the reader's language. */
-const t = (key, data = null) => localize(`FASTFIGHTING.Log.${key}`, LOG_ENGLISH[key] ?? key, data);
+const t = (key, data = null) => localize(`FASTFIGHTING.Log.${key}`, data);
 
 const signed = n => (n >= 0 ? `+${n}` : `${n}`);
 const degree = d => t(`Degree${d ?? 1}`);
 const dice = (nat, mod, total, dc, label, faces = 20) => t("Roll", { faces: faces ?? 20, natural: nat, mod: signed(mod ?? 0), total, label, dc });
 /** A damage type's name: the common ones in the reader's language (the system's own word otherwise). */
-export const DAMAGE_TYPE_ENGLISH = {"bludgeoning":"bludgeoning","piercing":"piercing","slashing":"slashing","fire":"fire","cold":"cold","electricity":"electricity","lightning":"lightning","acid":"acid","sonic":"sonic","thunder":"thunder","force":"force","vitality":"vitality","positive":"positive","void":"void","negative":"negative","poison":"poison","bleed":"bleed","mental":"mental","psychic":"psychic","spirit":"spirit","radiant":"radiant","necrotic":"necrotic","precision":"precision","untyped":"untyped","physical":"physical","energy":"energy","holy":"holy","unholy":"unholy"};
-const damageType = type => (type && DAMAGE_TYPE_ENGLISH[type] ? localize(`FASTFIGHTING.DamageType.${type}`, DAMAGE_TYPE_ENGLISH[type]) : type ?? "");
+const damageType = type => (hasWords(`FASTFIGHTING.DamageType.${type}`) ? localize(`FASTFIGHTING.DamageType.${type}`) : type ?? "");
 const damage = (n, type) => (n ? t("Damage", { n, type: damageType(type) }).trim() : "");
 const bits = list => list.filter(Boolean).join(" · ");
 
@@ -176,9 +28,9 @@ export function formatMoney(amount, denominations) {
   let left = Math.round(amount);
   for ( const d of denominations ) {
     const n = Math.floor(left / d.value);
-    if ( n > 0 ) { parts.push(`${n} ${d.label}`); left -= n * d.value; }
+    if ( n > 0 ) { parts.push(t("Money", { n, coin: d.label })); left -= n * d.value; }
   }
-  return parts.join(", ") || `0 ${denominations.at(-1).label}`;
+  return parts.length ? listItems(parts) : t("Money", { n: 0, coin: denominations.at(-1).label });
 }
 
 /** What a creature handed over, in words. */
@@ -218,7 +70,7 @@ export function logLine(e) {
         e.interceptedBy ? t("TakenBy", { name: e.interceptedBy, n: e.intercepted }) : "",
         e.boost ? t("SizedUp", { n: e.boost }) : "",
         e.attackNumber > 1 ? t("AttackN", { n: e.attackNumber }) : "",
-        e.riders?.length ? e.riders.join(", ") : "",
+        e.riders?.length ? listItems(e.riders) : "",
         e.critRoll !== null && e.critRoll !== undefined ? t("CritTable", { n: e.critRoll }) : ""
       ])}`;
     }
@@ -232,7 +84,7 @@ export function logLine(e) {
     case "fumble": return t("Fumble", { actor: e.actor, n: e.roll, effect: e.effect ? ` · ${e.effect}` : "", row: e.rowText ? ` (${e.rowText})` : "" });
     case "cast": {
       const how = e.success ? t("CastWorks", { n: (e.tier ?? 0) + 1 })
-        : [e.fumble ? t("CastFumble") : e.disapproved ? t("CastDisapproval") : t("CastFails"), e.lost ? t("SpellLost") : ""].filter(Boolean).join(", ") + (e.disapproval ? ` ${t("DisapprovalRange", { n: e.disapproval })}` : "");
+        : [e.fumble ? t("CastFumble") : e.disapproved ? t("CastDisapproval") : t("CastFails"), e.lost ? t("SpellLost") : ""].filter(Boolean).join(t("Separator")) + (e.disapproval ? ` ${t("DisapprovalRange", { n: e.disapproval })}` : "");
       return t("Cast", { actor: e.actor, action: e.action, faces: e.faces ?? 20, natural: e.natural, mod: signed(e.mod ?? 0), total: e.total, how });
     }
     case "boost": return t("Boost", { actor: e.actor, spent: e.spent, label: e.label, forTarget: e.self ? "" : t("BoostFor", { target: e.target }), from: e.from, to: e.to, dc: e.dc, made: e.made ? t("MadeIt") : t("StillShort") });
@@ -246,7 +98,7 @@ export function logLine(e) {
     case "heal": return t("Heal", { actor: e.actor, target: e.self ? t("Self") : e.target, action: e.action, check: e.check ? ` · ${t("Medicine", { roll: dice(e.check.natural, e.check.mod, e.check.total, e.check.dc, t("DC")), degree: degree(e.check.degree) })}` : "", amount: e.amount, revived: e.revived ? t("Revived") : "" });
     case "move": return t("Move", {
       actor: e.actor, mode: t(MODE[e.mode] ?? "ModeMove"), feet: t("Feet", { n: e.feet }), toward: e.purpose === "door" ? t("TheDoor") : e.toward,
-      terrain: e.mult > 1.05 ? t("Terrain", { mult: Number(e.mult).toFixed(2), regions: e.regions?.length ? `: ${e.regions.join(", ")}` : "" }) : ""
+      terrain: e.mult > 1.05 ? t("Terrain", { mult: Number(e.mult).toFixed(2), regions: e.regions?.length ? t("TerrainRegions", { regions: listItems(e.regions) }) : "" }) : ""
     });
     case "afflictionSave": return t("AfflictionSave", { actor: e.actor, name: e.name, saveType: e.saveType, roll: dice(e.natural, e.mod, e.total, e.dc, t("DC")), degree: degree(e.degree) });
     case "afflictionStage": return t("AfflictionStage", { actor: e.actor, name: e.name, stage: e.stage, damage: damage(e.amount, e.damageType) });
@@ -260,7 +112,7 @@ export function logLine(e) {
     }
     case "thought": return t("Thought", {
       actor: e.actor,
-      desires: (e.desires ?? []).map(d => `${DESIRE[d.kind] ? t(DESIRE[d.kind]) : d.kind} ${d.targetId === e.actorId ? t("Self") : d.target} ${d.level}`).join(" · "),
+      desires: (e.desires ?? []).map(d => t("ThoughtDesire", { desire: DESIRE[d.kind] ? t(DESIRE[d.kind]) : d.kind, target: d.targetId === e.actorId ? t("Self") : d.target, level: d.level })).join(" · "),
       following: e.following ? t("Following", { name: e.following.name, boss: e.following.boss ? t("Boss") : "", chance: Math.round(e.following.chance * 100) }) : ""
     });
     case "riderSave": return t("RiderSave", { actor: e.actor, name: e.name, saveType: e.saveType, roll: dice(e.natural, e.mod, e.total, e.dc, t("DC")), degree: degree(e.degree), damage: e.damage ? ` · ${t("DamageN", { n: e.damage })}` : "" });
@@ -293,9 +145,9 @@ export function logLine(e) {
       const c = e.check;
       const check = !c ? "" : ` · ${c.skill ? `${c.skill} ` : ""}${c.challenge ? t("Challenge", { natural: c.natural, mod: signed(c.mod ?? 0), total: c.total, dice: c.challenge.join(", ") }) : dice(c.natural, c.mod, c.total, c.dc, t("DC"))} · ${degree(c.degree)}`;
       return t("Buff", {
-        actor: e.actor, targets: (e.targets ?? []).map((n, i) => (e.targetIds?.[i] === e.actorId ? t("Self") : n)).join(", "), action: e.action, check,
+        actor: e.actor, targets: listItems((e.targets ?? []).map((n, i) => (e.targetIds?.[i] === e.actorId ? t("Self") : n))), action: e.action, check,
         effect: e.failed ? (e.effect && e.effect !== e.action ? e.effect : t("NothingComesOfIt")) : e.effect || t("Bolstered"),
-        against: (e.against ?? []).some(Boolean) ? t("BuffAgainst", { names: e.against.filter(Boolean).join(", ") }) : "",
+        against: (e.against ?? []).some(Boolean) ? t("BuffAgainst", { names: listItems(e.against.filter(Boolean)) }) : "",
         temp: e.tempHp ? t("TempHp", { n: e.tempHp }) : "", asked: e.askedBy?.length ? t("AskedBy", { names: listJoin(e.askedBy) }) : ""
       });
     }
@@ -370,7 +222,7 @@ export function logLine(e) {
     case "grabbed": return t("Grabbed", a);
     case "holdGround": return e.ordered ? t("HoldOrdered", { actor: e.actor, by: e.by ? t("ByName", { name: e.by }) : "" }) : t("HoldGround", a);
     case "holdOn": return t("HoldOn", { actor: e.actor, label: e.label || t("HoldsOn") });
-    case "initiative": return t("Initiative", { order: (e.order ?? []).join(", ") });
+    case "initiative": return t("Initiative", { order: listItems(e.order ?? []) });
     case "join": return e.why === "forced" ? t("JoinForced", a) : t("Join", a);
     case "watch": return t("Watch", a);
     case "lastWord": return t("LastWord", a);

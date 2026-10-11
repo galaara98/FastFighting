@@ -40,7 +40,7 @@ const statusOf = final => (final.swayed === "conceded" ? "conceded" : final.stat
 function approachDistance(approach) {
   const grid = canvas.scene?.grid?.distance || 5;
   const travel = Math.max(grid, Math.round((approach.dist * approach.mult) / grid) * grid);
-  return `${travel} ${canvas.scene?.grid?.units || game.i18n.localize("FASTFIGHTING.Units.Feet")}`;
+  return game.i18n.format("FASTFIGHTING.Units.Distance", { n: travel, units: canvas.scene?.grid?.units || game.i18n.localize("FASTFIGHTING.Units.Feet") });
 }
 
 function simulatedDifficulty(results) {
@@ -468,7 +468,6 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
         tables: this.storyTables,
         seed: this.sample.seed,
         title: game.i18n.format("FASTFIGHTING.Story.Title", { scene: canvas.scene?.name ?? "" }),
-        labels: storyLabels(),
         damageType: getAdapter()?.rules?.storyDamageType?.bind(getAdapter().rules) ?? null
       }));
     }
@@ -861,14 +860,4 @@ function oddsText(results) {
     .map(s => `${s.label} ${Math.round(s.pWin * 100)}%`);
   if ( (results.pStalemate ?? 0) >= 0.005 ) parts.push(`${loc("FASTFIGHTING.Sample.Outcome.stalemate")} ${Math.round(results.pStalemate * 100)}%`);
   return parts.length ? game.i18n.format("FASTFIGHTING.Story.Odds", { odds: parts.join(" · ") }) : null;
-}
-
-/** Localized words the Standard story uses. */
-function storyLabels() {
-  const l = key => loc(`FASTFIGHTING.Story.Labels.${key}`);
-  return {
-    hit: l("hit"), crit: l("crit"), miss: l("miss"), resisted: l("resisted"), talked: l("talked"), convincing: l("convincing"),
-    healed: l("healed"), potion: l("potion"), firstAid: l("firstAid"), bolstered: l("bolstered"), stabilized: l("stabilized"), moved: l("moved"), stayedOut: l("stayedOut"), nothing: l("nothing"),
-    status: Object.fromEntries(["standing", "down", "dead", "fled", "surrendered", "stoodDown", "conceded", "switched", "neutral", "noSide"].map(s => [s, loc(`FASTFIGHTING.Status.${s}`)]))
-  };
 }

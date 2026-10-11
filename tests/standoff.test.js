@@ -4,10 +4,10 @@ import { createRun } from "../scripts/engine/battle-state.js";
 import { impatience, opensWithTalk } from "../scripts/engine/behavior/standoff.js";
 import { pf2eRules } from "./fixtures/three-action-rules.js";
 import { buildStory } from "../scripts/story/story.js";
-import { buildEnglishTables } from "../scripts/story/tables-en.js";
+import { storyTables } from "./foundry-i18n.js";
 import { creature, battle, social } from "./helpers.js";
 
-const english = buildEnglishTables();
+const english = storyTables();
 const tables = { get: k => english[k] };
 const speaks = (extra = {}) => social({ diplomacy: 12, intimidation: 8, deception: 6, willDC: 16, perceptionDC: 16, ...extra });
 
