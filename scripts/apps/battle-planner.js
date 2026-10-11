@@ -2,7 +2,7 @@
  * The GM's Battle Planner: roster and per-side settings on the left, results on the right.
  */
 import {
-  MODULE_ID, SIDES, TRAITS, ALLEGIANCE, HEAL_AGGRO, DOWNED_MODELS, STATUS, AFTERMATH, OPENING, NEUTRAL_PARTY,
+  MODULE_ID, SIDES, TRAITS, ALLEGIANCE, HEAL_AGGRO, DOWNED_MODELS, STATUS, AFTERMATH, OPENING, NEUTRAL_PARTY, HOSTILE_GROUPS, GROUPS,
   traitBand, clamp, FUDGE_STEP
 } from "../constants.js";
 import { getAdapter } from "../api.js";
@@ -12,7 +12,10 @@ import {
   questionsContext, setTactic, togglePlaystyle, syncTacticsDom, isPlayerControlled, playersOnScene, tokensForUser, surveyStatus,
   requestSurveys, SURVEY_STATUS, playstyleSignature, tacticsFor
 } from "../foundry/tactics.js";
-import { gatherRoster, chosenSide, resolveAllegiances, simulate, swingFactors, replay, findSample, drawFight, withPlaystyleLeaders, approachFor } from "../foundry/battle.js";
+import {
+  gatherRoster, chosenSide, groupOf, proposeNeutralGroups, resolveAllegiances, simulate, swingFactors, replay, findSample, drawFight,
+  withPlaystyleLeaders, approachFor
+} from "../foundry/battle.js";
 import { buildStory, STORY_STYLES } from "../story/story.js";
 import { loadStoryTables } from "../story/tables.js";
 import { planMakeItSo, confirmMakeItSo, executeMakeItSo, undoMakeItSo, hasUndo } from "../foundry/make-it-so.js";
@@ -72,6 +75,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       undo: BattlePlanner.#onUndo,
       preparePlayers: BattlePlanner.#onPreparePlayers,
       togglePlaystyle: BattlePlanner.#onTogglePlaystyle,
+      setGroup: BattlePlanner.#onSetGroup,
       openSurvey: BattlePlanner.#onOpenSurvey,
       cancel: BattlePlanner.#onCancel
     }
@@ -120,6 +124,25 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     if ( !game.user.isGM ) return false;
   }
 
+  /** The fight is read off the map, so the game pauses while the GM plans (and goes on when the planner closes). */
+  async _onFirstRender(context, options) {
+    await super._onFirstRender(context, options);
+    if ( !game.paused ) {
+      game.togglePause(true, { broadcast: true });
+      this.pausedGame = true;
+    }
+    // (Unpaused by hand meanwhile: closing the planner leaves the game as the GM has it.)
+    this.pauseHook = Hooks.on("pauseGame", paused => { if ( !paused ) this.pausedGame = false; });
+  }
+
+  _onClose(options) {
+    super._onClose(options);
+    if ( this.pauseHook ) Hooks.off("pauseGame", this.pauseHook);
+    this.pauseHook = null;
+    if ( this.pausedGame && game.paused ) game.togglePause(false, { broadcast: true });
+    this.pausedGame = false;
+  }
+
   /** Forget everything about the previous scene (called when the GM views another scene). */
   resetForScene() {
     this.sceneId = canvas.scene?.id ?? null;
@@ -147,6 +170,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     this.setup = getSetup();
     this.roster = await gatherRoster(this.setup);
     for ( const e of this.roster ) tokenSetup(this.setup, e.token.id);
+    proposeNeutralGroups(this.roster, this.setup); // friend groups for the neutrals, as the map stands now
     try {
       this.approach = approachFor(this.roster, this.setup);
     } catch ( err ) {
@@ -291,6 +315,11 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     const controllers = game.users.filter(u => !u.isGM && e.token.actor?.testUserPermission(u, "OWNER")).map(u => u.name).join(", ");
     const approach = this.#nearestEnemyApproach(e, resolved);
     const resolvedSide = resolved[e.token.id];
+    const chosen = chosenSide(e, setup);
+    // (A hostile token in another group fights as that group: the pills say so.)
+    const moved = resolvedSide && resolvedSide !== chosen && !(chosen === SIDES.HOSTILE && HOSTILE_GROUPS.includes(resolvedSide));
+    const grouped = chosen === SIDES.HOSTILE || chosen === SIDES.NEUTRAL;
+    const group = grouped ? groupOf(e, setup) : null;
     return {
       id: e.token.id,
       actorId: e.token.actor?.id,
@@ -307,7 +336,10 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       side: ts.side ?? e.baseSide,
       sideChoices: Object.fromEntries(SIDE_ORDER.map(k => [k, `FASTFIGHTING.Side.${k}`])),
       resolvedLabel: resolvedSide === NEUTRAL_PARTY ? loc(`FASTFIGHTING.Planner.TakesNoSide.${chosenSide(e, setup) === SIDES.NEUTRAL ? setup.sides[SIDES.NEUTRAL]?.allegiance ?? ALLEGIANCE.NEUTRAL : ALLEGIANCE.NEUTRAL}`)
-        : resolvedSide && resolvedSide !== chosenSide(e, setup) ? game.i18n.format("FASTFIGHTING.Planner.FightsWith", { side: loc(`FASTFIGHTING.Side.${resolvedSide}`) }) : (resolvedSide === null && ts.include !== false ? loc("FASTFIGHTING.Planner.SitsOut") : ""),
+        : moved ? game.i18n.format("FASTFIGHTING.Planner.FightsWith", { side: loc(`FASTFIGHTING.Side.${resolvedSide}`) }) : (resolvedSide === null && ts.include !== false ? loc("FASTFIGHTING.Planner.SitsOut") : ""),
+      // Which group (1 2 3): hostile groups fight each other too; a neutral's friend group was proposed when the planner opened.
+      groups: grouped ? GROUPS.map(n => ({ n, active: n === group, auto: chosen === SIDES.NEUTRAL && ts.group == null })) : null,
+      groupHint: loc(chosen === SIDES.NEUTRAL ? "FASTFIGHTING.Planner.NeutralGroupHint" : "FASTFIGHTING.Planner.HostileGroupHint"),
       traits: TRAITS.map(k => this.#traitView(k, s.traits[k]?.base ?? 50, fudge[k] ?? 0, `tokens.${e.token.id}.fudge.${k}`, s.traitReasons?.[k], shifts[k] ?? 0)),
       expanded: this.expanded.has(e.token.id),
       stats: STAT_FUDGES.map(([k, step]) => {
@@ -334,7 +366,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
   #resultsContext() {
     const r = this.results;
     const spec = this.spec;
-    const sideColor = { friendly: "var(--ff-friendly)", hostile: "var(--ff-hostile)", neutral: "var(--ff-neutral)", secret: "var(--ff-secret)" };
+    const sideColor = { friendly: "var(--ff-friendly)", hostile: "var(--ff-hostile)", hostile2: "var(--ff-hostile2)", hostile3: "var(--ff-hostile3)", neutral: "var(--ff-neutral)", secret: "var(--ff-secret)" };
     const segments = Object.values(r.sides).filter(s => s.pWin > 0).map(s => ({
       label: s.label, pct: pct(s.pWin, 1), width: (s.pWin * 100).toFixed(2), color: sideColor[s.id] ?? "var(--ff-neutral)"
     }));
@@ -552,6 +584,8 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     } else {
       if ( name.startsWith("tokens.") ) tokenSetup(this.setup, name.split(".")[1]);
       foundry.utils.setProperty(this.setup, name, value === "" ? null : value);
+      // A token moved to another side starts in that side's first group (a neutral, in the one proposed for it).
+      if ( /^tokens\.[^.]+\.side$/.test(name) ) this.setup.tokens[name.split(".")[1]].group = null;
       if ( name === "options.seed" ) this.setup.options.seed = Number.isFinite(Number.parseInt(value, 10)) ? Number.parseInt(value, 10) >>> 0 : null;
       await saveSetup(this.setup);
       this.stale = true;
@@ -565,6 +599,16 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     const current = foundry.utils.getProperty(this.setup, path) ?? 0;
     const next = Number(dir) === 0 ? 0 : current + Number(dir) * Number(step || 1);
     foundry.utils.setProperty(this.setup, path, next);
+    await saveSetup(this.setup);
+    this.stale = true;
+    this.render();
+  }
+
+  static async #onSetGroup(event, target) {
+    const id = target.closest("[data-token-id]")?.dataset.tokenId;
+    const group = Number(target.dataset.group);
+    if ( !id || !GROUPS.includes(group) ) return;
+    tokenSetup(this.setup, id).group = group;
     await saveSetup(this.setup);
     this.stale = true;
     this.render();

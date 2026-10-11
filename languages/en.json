@@ -139,6 +139,14 @@
         "Name": "Show the odds in the posted story",
         "Hint": "Adds each side's chance of winning, as the simulation saw it before the fight, to the story Make it So posts. Off by default; the planner has the same switch beside Make it So."
       },
+      "standGround": {
+        "Name": "Doesn't like to flee: how often it stays (%)",
+        "Hint": "A character marked \"I don't like to flee\" ignores the urge to run away this often, when running is its own choice (shaken nerve, a terror close by, a planned retreat); talked out of the fight, it gives up where it stands instead of running just as often. Fear a spell or the rules put on it still works as the system says."
+      },
+      "neutralReach": {
+        "Name": "Neutral friend groups: reach (squares)",
+        "Hint": "When the Battle Planner opens, it proposes friend groups for the neutral tokens: from the map's top-left corner, the nearest neutral starts group 1 with every neutral of its kind; anyone within this many squares of the group joins it, and so on, up to three steps out. Group 2 starts the same way; everyone left is group 3. The GM can move anyone with the 1 2 3 pills."
+      },
       "switchLuck": {
         "Name": "Luck: an enemy changing sides",
         "Hint": "When an enemy is talked into changing sides, it goes through with it only if a hidden d100 comes up under this; otherwise it's talked into something else (surrendering, standing down, running). Even then it only stands aside, taking no side, and has to be won over from there. 100 means it always does. Doesn't touch spells and abilities made for it (charm, dominate), or talking round someone who already takes no side."
@@ -206,6 +214,9 @@
     "Side": {
       "friendly": "Friendly",
       "hostile": "Hostile",
+      "hostile1": "Hostile 1",
+      "hostile2": "Hostile 2",
+      "hostile3": "Hostile 3",
       "neutral": "Neutral",
       "secret": "Secret",
       "neutralParty": "Taking no side"
@@ -331,6 +342,9 @@
       "NoAdapter": "FastFighting has no support for this game system yet. A helper module can add it.",
       "RunFailed": "Simulation failed: {error}",
       "FightsWith": "Fights as {side}",
+      "Group": "Group",
+      "HostileGroupHint": "Hostile group: each group fights the others as well as the party",
+      "NeutralGroupHint": "Friend group: they look out for each other. Proposed when the planner opened (by kind and closeness); click to move",
       "SitsOut": "Sits this one out",
       "TakesNoSide": {
         "neutral": "Takes no side (until crossed)",
@@ -716,7 +730,9 @@
         "Hint": "As little as it can get away with: whatever foe is nearest (and not one worth a long walk), saves its resources, isn't much help to anyone, gives up fast, barely bothers with a locked door, and can't be bothered to hold a grudge."
       },
       "NeverKill": "I never kill",
-      "NeverKillHint": "Blows that would kill knock out instead (unconscious and stable), the fallen are never struck, and after the fight this character stops anyone finishing them and tends them if it can."
+      "NeverKillHint": "Blows that would kill knock out instead (unconscious and stable), the fallen are never struck, and after the fight this character stops anyone finishing them and tends them if it can.",
+      "AvoidFleeing": "I don't like to flee",
+      "AvoidFleeingHint": "Mostly stays when it would choose to run (shaken nerve, a terror close by, a planned retreat), and talked out of the fight, it gives up where it stands instead of running: how often is a module setting (90% unless changed). Fear a spell or the rules put on it still works as the system says."
     },
     "Tracker": {
       "OpenHint": "Estimate how this encounter will go",

@@ -37,6 +37,16 @@ export const ALLEGIANCE = Object.freeze({
  */
 export const NEUTRAL_PARTY = "neutralParty";
 
+/**
+ * Hostile tokens fight in up to three groups, each a side of its own: every group is the others' enemy as much as
+ * the party's. Group 1 is the hostile side itself.
+ */
+export const HOSTILE_GROUPS = Object.freeze([SIDES.HOSTILE, "hostile2", "hostile3"]);
+/** Friend groups, for hostile and neutral tokens alike. */
+export const GROUPS = Object.freeze([1, 2, 3]);
+/** How near (in squares) a neutral must be to a friend group, for the planner to put it in that group. */
+export const NEUTRAL_REACH = 3;
+
 export const TRAITS = Object.freeze(["tactical", "brave", "selfish", "loyal"]);
 
 /** Named bands for every 0-100 trait. Lower bound inclusive. */
@@ -82,6 +92,11 @@ export const THEFT_LUCK = 29;   // a thief who beats a PC's defenses still needs
 export const EXECUTE_LUCK = 39; // a creature that wants to finish off a PC at 0 HP goes ahead only on 39 or less
 /** An enemy talked into changing sides (standing aside) goes through with it only on a d100 under this ("switchLuck"). */
 export const SWITCH_LUCK = 69;
+/**
+ * Someone who doesn't like to flee ignores the urge to run, when running is its own choice, this often (percent:
+ * the "standGround" world setting, 50 to 90).
+ */
+export const STAND_GROUND = 90;
 
 /** How an encounter opens: decided by who would rather talk, always with words, or straight into battle. */
 export const OPENING = Object.freeze({ AUTO: "auto", TALK: "talk", FIGHT: "fight" });

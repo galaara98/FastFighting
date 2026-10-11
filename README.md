@@ -32,13 +32,13 @@ What a token does then depends on its disposition (the planner can move any toke
 | Disposition | In the encounter (aware from the start) | On the map, not in the encounter |
 |---|---|---|
 | **Friendly** | Fights for the party from round 1. | Checks each turn whether it notices; fights for the party from the round after. |
-| **Hostile** | Fights for the enemy from round 1. | Checks each turn whether it notices; fights for the enemy from the round after. |
-| **Neutral** | Takes no side, but weighs what it wants from round 1: its lean (the planner's Neutral tab), its friends among the other neutrals, whatever its Tactics say. It may be offended, confront someone, or be won over (see **Taking no side**). | Checks each turn whether it notices; from the round after, takes no side but starts weighing what it wants. |
+| **Hostile** | Fights for its hostile group from round 1 (group 1 unless the GM moves it; each group fights the others as well as the party). | Checks each turn whether it notices; fights for its group from the round after. |
+| **Neutral** | Takes no side, but weighs what it wants from round 1: its lean (the planner's Neutral tab), its friend group among the other neutrals, whatever its Tactics say. It may be offended, confront someone, or be won over (see **Taking no side**). | Checks each turn whether it notices; from the round after, takes no side but starts weighing what it wants. |
 | **Secret** | Hidden until it acts; fights for the side its allegiance names (the enemy by default; "takes no side" makes it a Neutral). | Checks each turn whether it notices; from the round after, as in the encounter. |
 
 Its side, desires, nerve and personality decide the rest: a coward may still break and run, a talker may try words first. The encounter is the Combat Tracker's encounter for the scene; with none, everyone on the map is in it. The planner's toggles leave out bystanders, hidden tokens and tokens on other levels.
 
-**The planner** needs at least 1000×600 and uses any extra space you give it.
+**The planner** needs at least 1000×600 and uses any extra space you give it. Opening it pauses the game, since the fight is read off the map; closing it un-pauses, unless the game was already paused or you un-paused it yourself meanwhile.
 
 - **Toolbar:**
   - runs, maximum rounds and seed;
@@ -57,7 +57,8 @@ Its side, desires, nerve and personality decide the rest: a coward may still bre
   - **Each token row:**
     - HP, AC and its personality traits;
     - how it would reach the nearest enemy (mode, moves and terrain);
-    - side override and include toggle.
+    - side override and include toggle;
+    - for a Hostile or Neutral token, its group: three small pills, **1 2 3**, one click to move it.
   - **Expanding a row** gives stat fudges, *ignores terrain* and *dies at 0 HP*, plus that character's tactics and playstyles.
 - **Right: the results.**
   - **Overview:** win odds, PC death and downed odds, foes talked down, fights settled with words, length, the simulated difficulty next to the system's own rating, the most dangerous foes and most-at-risk allies.
@@ -118,9 +119,20 @@ A leader who wants to talk holds their side back. Before it breaks, a charismati
 
 **Make it So hands goods over.** Each thing a PC loses gets its own GM-only chat card, with an Undo for just that hand-over.
 
+## Groups
+
+**Hostile groups.** Every hostile token starts in group 1. Move any of them to group 2 or 3 with the pills: each group is a side of its own, the others' enemy as much as the party's (two warbands that hate each other, a monster loose among bandits). They share the Hostile tab's settings; each has its own leader (the one you pick, if it's in that group; otherwise the best of the group). The results show each group's chance of winning.
+
+**Neutral friend groups.** The moment the planner opens, it proposes up to three friend groups for the neutral tokens:
+1. From the map's top-left corner, the nearest neutral starts group 1, and every neutral of its kind joins it: the same stat block, or what the system calls the same type of creature (5e: its type and subtype; PF2e: its ancestry, else its creature types; Ironsworn: what the foe is).
+2. Anyone within 3 squares of someone in the group joins it, then anyone within 3 squares of those, and of those (three steps out, no further). The reach is a world setting (1 to 20 squares), not a per-plan one, since it's used as the planner opens.
+3. Group 2 starts the same way from whoever is left; everyone left after that is group 3.
+
+Move anyone with the pills; your pick stands (a proposed group shows lighter). A friend group looks out for its own: its members want each other safe, stand together as allies, and hurting one builds a grievance in the rest. Different groups are nothing to each other.
+
 ## Taking no side
 
-Neutral tokens, and enemies talked out of the fight, stand on the field taking no side. Nobody fights them and they fight no one, each on its own. The planner's lean for the Neutral side doesn't put them on a side; it makes them want that side's members safe (a desire, "determined"), which guides where they go once something happens they care about. The underdog's members change as the fight goes. Neutral tokens also want each other safe (the villagers, the caravan). An enemy who stands aside still leans a little toward its old friends, the more so the more loyal it is.
+Neutral tokens, and enemies talked out of the fight, stand on the field taking no side. Nobody fights them and they fight no one, each with its friend group alone. The planner's lean for the Neutral side doesn't put them on a side; it makes them want that side's members safe (a desire, "determined"), which guides where they go once something happens they care about. The underdog's members change as the fight goes. A friend group also wants its own safe (the villagers, the caravan; see **Groups**). An enemy who stands aside still leans a little toward its old friends, the more so the more loyal it is.
 
 A lean doesn't last: watching the side it leans toward hurt someone it cares about wears it down, and that side hurting it ends it at once (either way round).
 
@@ -186,6 +198,8 @@ The system says what a door is like and how hard it is to get through (its defen
 ## Reluctance
 
 Two boxes beside the playstyle pills: **"I don't like to use consumables"** and **"I don't like to use spells that cost something"** (cantrips are free). The character is about a tenth as willing to spend them, until the moment demands it: a friend (or itself) close to death, or, for a character whose playstyle is to help, a friend in a bad way.
+
+**"I don't like to flee":** when running would be the character's own choice (its nerve breaks, a terror is close by, a retreat it planned), it ignores the urge and stays, 90% of the time by default (a world setting, 50% to 90%). It is still shaken, and the story says it held its ground. Talked out of the fight, it mostly gives up where it stands instead of running. Fear that a spell or the rules put on it (frightened, fleeing, turned) still works as the system says.
 
 ## What else the simulation models
 
@@ -291,14 +305,15 @@ Creatures that never joined the fight aren't listed, and hidden ones are never n
 
 All settings are defaults that the planner can override per battle:
 - **Simulation:** runs and maximum rounds; hidden tokens and other levels; bystanders.
-- **Unaligned sides:** Neutral lean (takes no side, by default) and Secret allegiance.
+- **Unaligned sides:** Neutral lean (takes no side, by default) and Secret allegiance; how near a neutral must be to join a friend group the planner proposes (3 squares; 1 to 20).
 - **Dying and healing:** the downed model, after the fight, and PC healing and dying defaults.
 - **Modifiers:** leadership, morale, positioning, talking (and whether to ignore languages), how encounters open, and the initiative source.
 - **Luck checks** (sliders):
   - a PC handing over an item, default 39;
   - a PC being robbed, default 29;
   - a PC being finished off at 0 HP, default 39;
-  - an enemy changing sides (under this), default 69.
+  - an enemy changing sides (under this), default 69;
+  - how often someone who doesn't like to flee stays, default 90 (50 to 90).
 - **Story:** style, delivery, and whether the posted story shows the odds (off).
 - **Make it So:** loot, corpse and fled handling, and whether the fight plays out on the map.
 - **Defaults:** side personalities, and data paths for the generic adapter.
@@ -329,6 +344,8 @@ Hooks.once("fastFighting.init", api => {
 ```
 
 Declare your system in `module.json` (`relationships.systems`) so Foundry only offers the helper in worlds of that system; the core also ignores adapters registered for another system.
+
+A spec may say what kind of creature it is (`creatureKind`: the system's own word, such as a 5e type and subtype or a PF2e ancestry), and the planner groups neutrals of a kind together; without it, the same stat block or name does.
 
 **Recognise things by slug, read them by what they do.** When a helper has to know a particular feature, action or spell, it looks for its slug or identifier (PF2e `slug`, dnd5e `system.identifier`), never its name: slugs are the same in every book, every edition of the free rules and every language, while names change with translations, reprints and homebrew copies (the name is only a fallback). Better still, read what an item does (its activities, effects, rule elements, and as a last resort its words), so paid books and homebrew nobody has seen yet still work. Both reference helpers work from the free rules (the SRD, the PF2e remaster) alone; anything more is read the same way.
 

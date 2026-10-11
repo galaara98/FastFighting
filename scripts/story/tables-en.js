@@ -323,6 +323,7 @@ const EVENT = {
   escape: ["{actor} wrenches free.", "{actor} twists loose.", "{actor} breaks the hold.", "{actor} slips the grip.", "{actor} pulls free."],
   stuck: ["{actor} struggles but can't break free.", "{actor} strains against the hold.", "The grip on {actor} holds.", "{actor} thrashes uselessly.", "{actor} is still held fast."],
   waver: ["{actor}'s nerve falters.", "{actor} glances toward the exits.", "Doubt flickers across {actor}'s face.", "{actor} hesitates.", "{actor}'s hands begin to shake."],
+  holdGround: ["Every instinct tells {actor} to run; {actor} plants their feet instead.", "{actor} looks to the exits, then grits their teeth and stays.", "{actor} will not run. Not today.", "{actor} shakes off the urge to flee and holds their ground.", "{actor} takes a step back, then no more."],
   flee: ["{actor} breaks and runs.", "{actor} has had enough and flees.", "{actor} turns tail.", "{actor} bolts.", "{actor} abandons the fight."],
   study: ["{actor} studies {target}, looking for weaknesses.", "{actor} watches {target} carefully.", "{actor} recalls everything known about {target}.", "{actor} sizes {target} up.", "{actor} searches memory for how to beat {target}."],
   parley: ["{actor} calls out, trying to talk.", "{actor} raises a hand and shouts for peace.", "{actor} tries to reason, but no one understands.", "{actor} calls for a truce.", "{actor} tries words first."],

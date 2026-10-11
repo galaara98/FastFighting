@@ -2,11 +2,12 @@
  * Taking no side: neutral parties.
  *
  * Neutral tokens, and enemies talked out of the fight, stand on the field as a party of their own (NEUTRAL_PARTY):
- * nobody fights them and they fight no one. Each stands alone, and each may lean one way: the planner's "leans
+ * nobody fights them and they fight no one. Each stands with its friend group alone (the planner's groups 1 2 3: the
+ * villagers, the caravan; an enemy talked out of the fight, alone), and each may lean one way: the planner's "leans
  * toward the party / the enemy / the nearest side / the underdog" makes it want that side's members safe (a desire,
- * LEAN strong; the underdog's changes as the fight goes), and neutral tokens want each other safe too (FELLOW: the
- * villagers, the caravan). A lean guides it; it doesn't bind it, and it doesn't last: watching the side it leans to
- * hurt someone it cares about wears it down, and that side hurting it ends it at once.
+ * LEAN strong; the underdog's changes as the fight goes), and a friend group wants its own safe too (FELLOW). A lean
+ * guides it; it doesn't bind it, and it doesn't last: watching the side it leans to hurt someone it cares about wears
+ * it down, and that side hurting it ends it at once.
  *
  *  - Crossed: whoever hurts it, robs it, or insults it with a botched pitch offends it at once. Seeing someone hurt
  *    or hinder a creature it wants safe (or help one it wants hurt) builds a grievance against the doer's side,
@@ -83,10 +84,11 @@ export function leanSide(run, u) {
   return worst?.side ?? null;
 }
 
-/** The other neutral tokens a neutral token came with: its friends. */
+/** The other neutral tokens in a neutral token's friend group (the planner's 1 2 3; all of them, without groups). */
 function fellowsOf(run, u) {
   const neutralToken = o => o.spec.side === NEUTRAL_PARTY && o.spec.originSide === "neutral";
-  return neutralToken(u) ? run.units.filter(o => o !== u && neutralToken(o)).map(o => o.id) : [];
+  if ( !neutralToken(u) ) return [];
+  return run.units.filter(o => o !== u && neutralToken(o) && (o.spec.group ?? null) === (u.spec.group ?? null)).map(o => o.id);
 }
 
 /** Point every lean at the members of the side it leans to (they change: the underdog, a new recruit). */

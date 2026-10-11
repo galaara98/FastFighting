@@ -2,11 +2,21 @@
  * Morale: stress from losses, wounds, a fallen leader or master, and bad odds, resisted by Brave.
  * Outcomes: hold, waver (-1 to attacks), or rout (leave the battle).
  */
-import { STATUS, TACTICAL, clamp } from "../../constants.js";
+import { STATUS, TACTICAL, STAND_GROUND, clamp } from "../../constants.js";
 import { alliesOf, enemiesOf, isStanding, liveTier, liveTrait } from "../battle-state.js";
 import { threatOf } from "./evaluate.js";
 
 export const MORALE = Object.freeze({ HOLD: "hold", WAVER: "waver", ROUT: "rout" });
+
+/**
+ * Wanting to run, does u stay anyway? Only someone who doesn't like to flee (Tactics: "I don't like to flee"), and
+ * only when running is its own choice (fear, a lost cause, a stated retreat): what a spell or a rule makes it do
+ * (frightened, fleeing, turned) plays out as the system says. It stays the "standGround" percent of the time.
+ */
+export function standsGround(run, u) {
+  if ( !u.spec.avoidFleeing ) return false;
+  return run.rng.chance(clamp(run.prep?.options.standGround ?? STAND_GROUND, 0, 100) / 100);
+}
 
 export function moraleStress(run, u) {
   const allies = alliesOf(run, u).filter(a => a !== u);

@@ -19,7 +19,7 @@ import { chooseTarget, bestOptionVs, scoreTargets } from "./behavior/targeting.j
 import { decideHeal, rescueOption, healScores } from "./behavior/healing.js";
 import { initDesires, newTurn, think, want, thwart, relieve, levelOf, mind, thoughts as thoughtsOf, levelsFromScores, listen, remember, styleWants, styleOf, CHOICE_LEVEL } from "./behavior/desire.js";
 import { prepareDoors, doorStates, doorAhead, atDoor, doorPlan, patienceFor, doorDamage } from "./behavior/doors.js";
-import { checkMorale, MORALE } from "./behavior/morale.js";
+import { checkMorale, standsGround, MORALE } from "./behavior/morale.js";
 import { expectedDamage, spendUse, hasUses, attacksIn, criticalParts, saveMultiplier, saveMultiplierFor, meanDamageVs } from "./behavior/evaluate.js";
 import { chooseDeed, deedTier, chooseHitRiders, rescueMiss, rollCrit, rollFumble } from "./behavior/riders.js";
 import { cast } from "./behavior/casting.js";
@@ -1258,6 +1258,20 @@ function leaveReach(run, u, turn, keep = null, need = null) {
   return isStanding(u);
 }
 
+/**
+ * u chooses to run: it goes, unless it doesn't like to flee and stands its ground (the story hears of it once).
+ * Returns true if it ran.
+ */
+function runs(run, u, reason, turn) {
+  if ( standsGround(run, u) ) {
+    if ( !u.heldGround ) log(run, u, "wants to run, but stands its ground", { type: "holdGround" });
+    u.heldGround = true;
+    return false;
+  }
+  flee(run, u, reason, turn);
+  return true;
+}
+
 function flee(run, u, reason, turn = null) {
   // Turning to run from a foe in reach invites a parting blow.
   if ( !leaveReach(run, u, turn) ) return;
@@ -1614,10 +1628,10 @@ function takeTurn(run, u) {
     }
   }
   const morale = checkMorale(run, u);
-  if ( morale === MORALE.ROUT ) return flee(run, u, "breaks and flees", turn);
-  if ( morale === MORALE.WAVER && !u.wavering ) {
-    u.wavering = true;
-    log(run, u, "wavers", { type: "waver" });
+  if ( morale === MORALE.ROUT && runs(run, u, "breaks and flees", turn) ) return;
+  if ( morale !== MORALE.HOLD && !u.wavering ) {
+    u.wavering = true; // (shaken, even when it won't run)
+    if ( morale === MORALE.WAVER ) log(run, u, "wavers", { type: "waver" });
   }
 
   // What it wants this turn, and what that means: a terror close at hand sends it running.
@@ -1626,14 +1640,13 @@ function takeTurn(run, u) {
   if ( wants.lead?.kind === "avoid" && wants.lead.level >= 70 ) {
     const dread = run.byId.get(wants.lead.targetId);
     const d = dread ? edgeDistance(u, dread) : null;
-    if ( dread && (d === null || d <= 30) ) return flee(run, u, `runs from ${dread.spec.name}`, turn);
+    if ( dread && (d === null || d <= 30) && runs(run, u, `runs from ${dread.spec.name}`, turn) ) return;
   }
 
   const disposition = dispositionOf(u);
-  if ( u.prone && u.wasDowned && disposition.selfRevived === "retreat" ) return flee(run, u, "retreats after being revived", turn);
-  if ( disposition.allyDying === "retreat" && run.units.some(a => a.side === u.side && a !== u && a.status === STATUS.DOWN && a.active) ) {
-    return flee(run, u, "retreats as an ally falls", turn);
-  }
+  if ( u.prone && u.wasDowned && disposition.selfRevived === "retreat" && runs(run, u, "retreats after being revived", turn) ) return;
+  if ( disposition.allyDying === "retreat" && run.units.some(a => a.side === u.side && a !== u && a.status === STATUS.DOWN && a.active)
+    && runs(run, u, "retreats as an ally falls", turn) ) return;
 
   u.usedThisTurn = null; // once-per-turn riders such as sneak attack
   u.stoleThisTurn = false;

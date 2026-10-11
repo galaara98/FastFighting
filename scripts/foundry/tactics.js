@@ -20,7 +20,7 @@ export const SURVEY_STATUS = Object.freeze({ NONE: "none", REQUESTED: "requested
 
 const loc = key => game.i18n.localize(key);
 
-const META_KEYS = ["stayTrue", "roleplay", "alwaysTalk", "avoidConsumables", "avoidCostlySpells", "neverKill"];
+const META_KEYS = ["stayTrue", "roleplay", "alwaysTalk", "avoidConsumables", "avoidCostlySpells", "neverKill", "avoidFleeing"];
 /** Stated desires: three slots, each "what, at whom, how badly". */
 const DESIRE_SLOTS = ["d0", "d1", "d2"];
 const DESIRE_KEY = /^desire\.(d[0-2])\.(kind|target|level)$/;
@@ -153,7 +153,7 @@ export function isPlayerControlled(spec, actor) {
 /** Compact fingerprint of what changes "Let them decide" (playstyles and the two checkboxes). */
 export function playstyleSignature(actor) {
   const t = getStoredTactics(actor);
-  return JSON.stringify([t.playstyles ?? [], !!t.stayTrue, !!t.roleplay, !!t.alwaysTalk, !!t.avoidConsumables, !!t.avoidCostlySpells, !!t.neverKill]);
+  return JSON.stringify([t.playstyles ?? [], !!t.stayTrue, !!t.roleplay, !!t.alwaysTalk, !!t.avoidConsumables, !!t.avoidCostlySpells, !!t.neverKill, !!t.avoidFleeing]);
 }
 
 /* -------------------------------------------- */
@@ -284,6 +284,7 @@ export function questionsContext(spec, actor, uid, { questions: withQuestions = 
     avoidConsumables: { name: `tactic-${uid}-avoidConsumables`, checked: !!stored.avoidConsumables, show: spec.actions.some(a => /^item:/.test(a.resource ?? "")) },
     avoidCostlySpells: { name: `tactic-${uid}-avoidCostlySpells`, checked: !!stored.avoidCostlySpells, show: spec.actions.some(a => ((a.rank ?? 0) > 0 || a.spellId) && (a.resource || Number.isFinite(a.uses))) },
     neverKill: { name: `tactic-${uid}-neverKill`, checked: !!stored.neverKill },
+    avoidFleeing: { name: `tactic-${uid}-avoidFleeing`, checked: !!stored.avoidFleeing },
     conflict: !!stored.stayTrue && !!stored.roleplay
   };
 }

@@ -1,7 +1,7 @@
 /**
  * World settings. Every setting is a default: the Battle Planner can override any of them per battle.
  */
-import { MODULE_ID, ALLEGIANCE, DOWNED_MODELS, HEAL_AGGRO, ALLY_DYING, AFTERMATH, OPENING, CONCEDE_LUCK, THEFT_LUCK, EXECUTE_LUCK, SWITCH_LUCK } from "./constants.js";
+import { MODULE_ID, ALLEGIANCE, DOWNED_MODELS, HEAL_AGGRO, ALLY_DYING, AFTERMATH, OPENING, CONCEDE_LUCK, THEFT_LUCK, EXECUTE_LUCK, SWITCH_LUCK, STAND_GROUND, NEUTRAL_REACH } from "./constants.js";
 
 const choices = (keys, prefix) => Object.fromEntries(keys.map(k => [k, `FASTFIGHTING.${prefix}.${k}`]));
 
@@ -20,6 +20,8 @@ const SETTINGS = {
   includeOtherLevels: { type: Boolean, default: false },
   neutralDefault: { type: String, default: ALLEGIANCE.NEUTRAL, choices: choices(Object.values(ALLEGIANCE), "Lean") },
   secretDefault: { type: String, default: ALLEGIANCE.HOSTILE, choices: choices(Object.values(ALLEGIANCE), "Allegiance") },
+  // (Read when the planner opens, to propose friend groups for neutrals: a world setting, not per plan.)
+  neutralReach: { type: Number, default: NEUTRAL_REACH, range: { min: 1, max: 20, step: 1 } },
   downedModel: { type: String, default: DOWNED_MODELS.SIMULATE, choices: choices(Object.values(DOWNED_MODELS), "Downed") },
   aftermath: { type: String, default: AFTERMATH.TELL, choices: choices(Object.values(AFTERMATH), "Aftermath") },
   pcHealAggro: { type: String, default: "balanced", choices: choices(HEAL_AGGRO, "HealAggro") },
@@ -33,6 +35,7 @@ const SETTINGS = {
   theftLuck: { type: Number, default: THEFT_LUCK, range: { min: 0, max: 100, step: 1 } },
   executeLuck: { type: Number, default: EXECUTE_LUCK, range: { min: 0, max: 100, step: 1 } },
   switchLuck: { type: Number, default: SWITCH_LUCK, range: { min: 0, max: 100, step: 1 } },
+  standGround: { type: Number, default: STAND_GROUND, range: { min: 50, max: 90, step: 1 } },
   bystanders: { type: Boolean, default: true },
   positioning: { type: Boolean, default: true },
   surpriseDefault: { type: String, default: "tracker", choices: choices(["none", "tracker", "stealth"], "Surprise") },

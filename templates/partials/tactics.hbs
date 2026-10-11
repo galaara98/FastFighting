@@ -19,6 +19,8 @@
     {{/if}}
     <label class="ff-check"><input type="checkbox" name="{{neverKill.name}}" data-tactic="neverKill" data-actor-uuid="{{actorUuid}}" {{checked neverKill.checked}}> {{localize "FASTFIGHTING.Playstyle.NeverKill"}}
       <i class="fa-solid fa-circle-question" data-tooltip="{{localize "FASTFIGHTING.Playstyle.NeverKillHint"}}"></i></label>
+    <label class="ff-check"><input type="checkbox" name="{{avoidFleeing.name}}" data-tactic="avoidFleeing" data-actor-uuid="{{actorUuid}}" {{checked avoidFleeing.checked}}> {{localize "FASTFIGHTING.Playstyle.AvoidFleeing"}}
+      <i class="fa-solid fa-circle-question" data-tooltip="{{localize "FASTFIGHTING.Playstyle.AvoidFleeingHint"}}"></i></label>
     {{#if avoidCostlySpells.show}}
     <label class="ff-check"><input type="checkbox" name="{{avoidCostlySpells.name}}" data-tactic="avoidCostlySpells" data-actor-uuid="{{actorUuid}}" {{checked avoidCostlySpells.checked}}> {{localize "FASTFIGHTING.Playstyle.AvoidCostlySpells"}}
       <i class="fa-solid fa-circle-question" data-tooltip="{{localize "FASTFIGHTING.Playstyle.AvoidCostlySpellsHint"}}"></i></label>

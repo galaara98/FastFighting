@@ -36,6 +36,7 @@ import { alliesOf, enemiesOf, isStanding, behaviorOf, leaderStanding, typical, c
 import { degreeDistribution, rollCheck } from "../probability.js";
 import { isNeutral, standsAside, appeal, offend, turnOn, standAside, joinSide, calm, settleTruce, seemsFoe } from "./neutral.js";
 import { levelOf, allDesires } from "./desire.js";
+import { standsGround } from "./morale.js";
 
 /** The three kinds of pitch. Systems map their own skills onto these (CombatantSpec.social.pitches). */
 export const TALK_KINDS = Object.freeze(["persuade", "intimidate", "deceive"]);
@@ -296,7 +297,7 @@ function outcomeFor(run, t, kind, aim = "down", { noSwitch = false } = {}) {
   // Words can only make a PC pay up or back off: threats may send them running (the only way, if they have nothing).
   if ( t.spec.kind === "pc" ) {
     if ( !hasValuables(t) ) return SWAY.FLEE;
-    if ( kind === "intimidate" && rng.chance(clamp(0.5 - (t.prep.traits.brave - 50) / 100, 0.1, 0.8)) ) return SWAY.FLEE;
+    if ( kind === "intimidate" && rng.chance(clamp(0.5 - (t.prep.traits.brave - 50) / 100, 0.1, 0.8)) && !standsGround(run, t) ) return SWAY.FLEE;
     return SWAY.CONCEDE;
   }
   const selfish = t.prep.traits.selfish;
@@ -309,8 +310,9 @@ function outcomeFor(run, t, kind, aim = "down", { noSwitch = false } = {}) {
   const concedeChance = clamp(0.12 + (kind === "intimidate" ? 0.15 : 0) + (hurt ? 0.1 : 0) - (selfish - 50) / 400, 0.03, 0.45);
   if ( rng.chance(concedeChance) ) return SWAY.CONCEDE;
   if ( run.standoff && kind !== "intimidate" ) return SWAY.STAND_DOWN;
-  if ( !hurt && selfish >= 55 ) return SWAY.FLEE;
-  if ( hurt && t.prep.traits.brave < 40 && rng.chance(0.5) ) return SWAY.FLEE;
+  // (One who doesn't like to flee mostly gives up where it stands instead.)
+  if ( !hurt && selfish >= 55 && !standsGround(run, t) ) return SWAY.FLEE;
+  if ( hurt && t.prep.traits.brave < 40 && rng.chance(0.5) && !standsGround(run, t) ) return SWAY.FLEE;
   return SWAY.SURRENDER;
 }
 

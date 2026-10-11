@@ -35,6 +35,9 @@
  * @property {number} [perception]          Perception modifier, for bystanders noticing a fight
  * @property {boolean} [darkvision]         Sees in the dark (bystanders spotting a fight at night)
  * @property {{mod: number}} [firstAid]     Can stabilize the dying without magic (PF2e: trained in Medicine)
+ * @property {number} [group]               A neutral token's friend group (1-3, from the planner): they look out for each other
+ * @property {string} [creatureKind]        What kind of creature it is, as the system has it (5e: its type), for grouping neutrals
+ * @property {boolean} [avoidFleeing]       "I don't like to flee": most times, stays when it would choose to run
  *
  * @typedef {object} ActionSpec
  * @property {string} id
@@ -284,6 +287,7 @@ export function createUnit(prep, p) {
     // Taking no side (NEUTRAL_PARTY): the side it leans to, the sides it has turned on, how much each has crossed
     // it, and a quarrel it's still trying to settle with words. (See behavior/neutral.js.)
     lean: s.lean ?? null,
+    friendGroup: s.side === NEUTRAL_PARTY && s.originSide === "neutral" && s.group ? s.group : null,
     against: new Set(),
     grievance: new Map(),
     crossedBy: new Set(),
@@ -353,7 +357,8 @@ export function enemiesOf(run, u) {
 }
 
 export function alliesOf(run, u) {
-  if ( u.side === NEUTRAL_PARTY ) return [u]; // standing aside, each on its own
+  // Standing aside: with its friend group (neutral tokens the planner grouped), else on its own.
+  if ( u.side === NEUTRAL_PARTY ) return u.friendGroup ? run.units.filter(o => o.side === NEUTRAL_PARTY && o.friendGroup === u.friendGroup) : [u];
   return run.units.filter(o => o.side === u.side);
 }
 

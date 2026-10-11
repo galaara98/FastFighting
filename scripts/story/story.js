@@ -231,6 +231,7 @@ function narrate(e, roll, rel, fill) {
     case "grabbed": return roll("event.grabbed", f);
     case "escape": return roll(e.success ? "event.escape" : "event.stuck", f);
     case "waver": return roll("event.waver", f);
+    case "holdGround": return roll("event.holdGround", f);
     case "study": return roll("event.study", f);
     case "parley": return roll("event.parley", f);
     case "callHelp": return roll("event.callHelp", { ...f, target: e.toward });
