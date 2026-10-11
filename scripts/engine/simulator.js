@@ -578,7 +578,7 @@ function executeOffense(run, u, action, t, attacksMade) {
       if ( !target || !isStanding(target) ) target = nextTargetInReach(run, u, strike);
       if ( !target ) break;
       executeOffense(run, u, strike, target, made);
-      made += attacksIn(strike);
+      if ( !action.sameMap ) made += attacksIn(strike); // (PF2e Double Slice: both at the same penalty)
       if ( battleOver(run) ) break;
     }
     return;
@@ -691,6 +691,21 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
         }
       }
     }
+    // A friend close by takes some of it off, and may strike back (PF2e champion's reactions).
+    let guard = null;
+    if ( roll.degree >= 2 && run.guards && target !== u ) {
+      const types = (action.damage ?? []).map(p => p.type);
+      const expected = meanDamageVs(run, action, target)[roll.degree === 3 ? "critical" : "normal"];
+      for ( const g of run.units ) {
+        if ( g === target || g === u || g.side !== target.side || !g.spec.reactions?.some(x => x.on === "allyHit") ) continue;
+        const r2 = respond(run, g, "allyHit", { by: u, ally: target, action, crit: roll.degree === 3, damage: expected, types });
+        if ( r2 ) {
+          guard = { g, r: r2 };
+          logReaction(run, g, u, r2, "allyHit");
+          break;
+        }
+      }
+    }
     const data = !logging ? null : { type: "attack", ...common, natural: roll.natural, mod: bonus + deedRoll + (roll.die ?? 0), total: roll.total, dc: ac, degree: roll.degree, margin: roll.total - ac, attackNumber: attacksMade + 1, faces: opts.faces, deed: r.deed ? deedRoll : null };
     if ( roll.degree >= 2 ) {
       const crit = roll.degree === 3;
@@ -706,6 +721,7 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
       let amount = hit.total;
       if ( answer?.halve ) amount = Math.floor(amount / 2);
       if ( answer?.reduce ) amount = Math.max(0, amount - samplePart(answer.reduce, run.rng));
+      if ( guard?.r.reduce ) amount = Math.max(0, amount - samplePart(guard.r.reduce, run.rng));
       if ( logging ) log(run, u, `${action.name} → ${target.spec.name}: ${roll.total} vs AC ${ac}, ${crit ? "critical hit" : "hit"} for ${amount}`, {
         ...data, damage: amount, crit, sneak: extra.length > 0, advantage, riders: riders.map(x => x.label), critRoll: table?.total ?? null, critRowText: table?.row?.text ?? null,
         lessened: amount < hit.total ? hit.total - amount : 0
@@ -716,6 +732,11 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
       for ( const x of riders ) applyRider(run, u, action, target, x);
       if ( deed ) applyDeed(run, u, target, deed, deedRoll);
       answerHarm(run, target, u, action, dealt);
+      // (Retributive Strike: the champion's own blow at the attacker, if it's within reach.)
+      if ( guard?.r.strike && isUp(guard.g) && isUp(u) ) {
+        const strike = riposteStrike(guard.g);
+        if ( strike && movesNeeded(run, guard.g, u, strike) === 0 ) strikeTarget(run, guard.g, strike, u, 0, false, logging);
+      }
     } else {
       if ( logging ) log(run, u, `${action.name} → ${target.spec.name}: ${roll.total} vs AC ${ac}, ${roll.degree === 0 ? "fumble" : "miss"}${answer ? ` (${answer.label})` : ""}`, { ...data, damage: 0, advantage, savedBy: answer?.label ?? null });
       // A melee miss opens the attacker up (5e Riposte).
@@ -1753,6 +1774,12 @@ function takeTurn(run, u) {
     }
     // Moving a mark to a new foe (Hunter's Mark) while still holding it costs no new slot.
     const holding = option.action.concentration && u.concentration?.actionId === option.action.id && holdsAnything(run, u);
+    // An action that moves first (Sudden Charge): up to the foe, as part of it.
+    if ( option.action.charge && option.action.melee && !u.adjacent.has(target.id) && canMove(run, u) ) {
+      const move = moveToward(run, u, target, option.action.reach ?? 5, approach(run, u, target).speed * option.action.charge);
+      moveLog(run, u, move, target, "approach");
+    }
+    if ( option.action.oncePerTurn ) (u.usedThisTurn ??= new Set()).add(option.action.id);
     executeOffense(run, u, option.action, target, attacksMade);
     settleSides(run);
     if ( option.action.concentration && u.concentration?.actionId === option.action.id ) noteConcentration(u, option.ev);

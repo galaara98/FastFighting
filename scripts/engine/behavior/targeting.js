@@ -41,6 +41,7 @@ export function bestOptionVs(run, u, t, attacksMade = 0, turn = null) {
   const options = [];
   for ( const action of u.prep.offense ) {
     if ( !hasUses(u, action) ) continue;
+    if ( action.oncePerTurn && u.usedThisTurn?.has(action.id) ) continue; // (PF2e Flurry of Blows)
     const moves = movesNeeded(run, u, t, action);
     if ( !Number.isFinite(moves) ) continue;
     const ev = expectedDamage(run, u, action, t, attacksMade);

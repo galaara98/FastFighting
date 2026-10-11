@@ -206,6 +206,7 @@ export function createRun(prep) {
     counters: units.some(u => u.spec.reactions?.some(r => r.on === "spell")), // anyone with a counterspell
     legendary: units.some(u => u.prep.legendaryActions?.length),               // anyone with legendary actions
     auras: units.some(u => u.spec.saveAura),                                     // anyone whose aura helps friends' saves
+    guards: units.some(u => u.spec.reactions?.some(r => r.on === "allyHit")),     // anyone who reacts when a friend is hit
     byId: new Map(units.map(u => [u.id, u])),
     round: 0,
     sideFocus: {},
@@ -634,7 +635,8 @@ export function movesNeeded(run, a, t, action) {
   const gap = Math.max(0, separation(run, a, t) - reach);
   if ( gap <= 0.5 ) return 0;
   if ( !Number.isFinite(ap.mult) || ap.speed <= 0 ) return Infinity;
-  return Math.ceil((gap * ap.mult) / ap.speed);
+  // (An action that moves first: PF2e Sudden Charge strides twice, then strikes.)
+  return Math.max(0, Math.ceil((gap * ap.mult) / ap.speed) - (action.charge ?? 0));
 }
 
 /** One move toward a spot (a door): straight there, stopping `stopAt` feet short. */

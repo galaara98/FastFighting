@@ -10,6 +10,9 @@
  *                                                                (a DamagePart taken off: 5e Parry, PF2e Shield Block)
  *   on "missed"     a melee attack misses it:                   strike (5e Riposte: its best melee strike back)
  *   on "damaged"    a foe's blow hurt it:                       damage and save (5e Hellish Rebuke, at the foe)
+ *   on "allyHit"    an attack hits a friend near it (range):     reduce (taken off the friend's damage) and strike
+ *                                                                (its best melee strike at the attacker, if in reach:
+ *                                                                PF2e Retributive Strike, Glimpse of Redemption ...)
  *   on "spell"      a foe casts a spell it can see:             counter: {level, mod} (5e Counterspell: a spell of
  *                                                                its level or lower simply fails; a higher one if
  *                                                                the check beats 10 + its level)
@@ -20,7 +23,7 @@
  * Pure: no Foundry globals.
  */
 import { TACTICAL } from "../../constants.js";
-import { liveTier, edgeDistance, isUp, saveRoll } from "../battle-state.js";
+import { liveTier, edgeDistance, isUp, saveRoll, movesNeeded } from "../battle-state.js";
 import { meanPart } from "../dice.js";
 import { meanDamageVs, threatOf } from "./evaluate.js";
 import { degreeDistribution } from "../probability.js";
@@ -75,8 +78,12 @@ export function respond(run, u, trigger, ctx) {
     if ( r.melee && !ctx.action?.melee ) continue;
     if ( r.ranged && ctx.action?.melee ) continue;
     if ( r.physical && !(ctx.types ?? []).some(t => PHYSICAL.has(t)) ) continue;
-    if ( ctx.by && !near(run, u, ctx.by, r) ) continue;
-    if ( ctx.by && trigger !== "hit" && trigger !== "attacked" && !perceives(run, u, ctx.by) ) continue;
+    if ( trigger === "allyHit" ) {
+      if ( !ctx.ally || !near(run, u, ctx.ally, r) || !perceives(run, u, ctx.ally) ) continue;
+    } else {
+      if ( ctx.by && !near(run, u, ctx.by, r) ) continue;
+      if ( ctx.by && trigger !== "hit" && trigger !== "attacked" && !perceives(run, u, ctx.by) ) continue;
+    }
     const worth = worthOf(run, u, r, trigger, ctx);
     if ( !(worth > 0) ) continue;
     // (A counterspell burns a slot of its level: the dearer the slot, the more the spell has to be worth stopping.)
@@ -106,6 +113,13 @@ function worthOf(run, u, r, trigger, ctx) {
     }
     case "missed":
       return r.strike ? meanStrike(run, u, ctx.by) : 0;
+    case "allyHit": {
+      // What it takes off the friend's blow, and a strike back at the attacker if it's within reach.
+      let w = r.reduce ? Math.min(expected, meanPart(r.reduce)) : 0;
+      const strike = r.strike && ctx.by ? riposteStrike(u) : null;
+      if ( strike && movesNeeded(run, u, ctx.by, strike) === 0 ) w += meanStrike(run, u, ctx.by);
+      return w;
+    }
     case "damaged": {
       const dmg = (r.damage ?? []).reduce((s, p) => s + Math.max(0, meanPart(p)), 0);
       return dmg * (r.save ? 0.65 : 1) + (ctx.by ? threatOf(run, ctx.by, u) * 0.1 : 0);

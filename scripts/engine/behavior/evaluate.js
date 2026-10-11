@@ -90,7 +90,8 @@ export function expectedDamage(run, a, action, t, attacksMade = 0) {
   // A multiattack is its strikes in order.
   if ( action.sequence?.length ) {
     let total = 0;
-    action.sequence.forEach((strike, i) => { total += expectedDamage(run, a, strike, t, attacksMade + i); });
+    // (Each at the same penalty when it says so: PF2e Double Slice.)
+    action.sequence.forEach((strike, i) => { total += expectedDamage(run, a, strike, t, attacksMade + (action.sameMap ? 0 : i)); });
     return total;
   }
   if ( action.kind === "control" ) return controlValue(run, a, action, t, attacksMade);
@@ -201,6 +202,7 @@ function threatNow(run, u, versus) {
 
 /** Attack rolls one use makes (for the multiple attack penalty): a multiattack makes several. */
 export function attacksIn(action) {
+  if ( Number.isFinite(action.attacks) ) return action.attacks; // (PF2e Power Attack counts as two)
   if ( action.sequence?.length ) return action.sequence.filter(countsAsAttack).length;
   return countsAsAttack(action) ? 1 : 0;
 }
