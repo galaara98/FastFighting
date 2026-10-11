@@ -38,7 +38,7 @@ What a token does then depends on its disposition (the planner can move any toke
 
 Its side, desires, nerve and personality decide the rest: a coward may still break and run, a talker may try words first. The encounter is the Combat Tracker's encounter for the scene; with none, everyone on the map is in it. The planner's toggles leave out bystanders, hidden tokens and tokens on other levels.
 
-**The planner** needs at least 1000×600 and uses any extra space you give it. Opening it pauses the game, since the fight is read off the map; closing it un-pauses, unless the game was already paused or you un-paused it yourself meanwhile.
+**The planner** needs at least 1000×600 and uses any extra space you give it. Opening it pauses the game, since the fight is read off the map; closing it un-pauses, unless the game was already paused or you un-paused it yourself meanwhile. Make it So and Undo keep the game paused while they write the fight onto the map, so no player drags a token into the middle of it (closed meanwhile, the planner un-pauses once they're done). A pause only stops players: the GM's changes and the tokens' movement play out regardless, so pausing or un-pausing partway through never holds Make it So up, and whoever paused or un-paused meanwhile has the last word.
 
 - **Toolbar:**
   - runs, maximum rounds and seed;

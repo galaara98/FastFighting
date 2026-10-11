@@ -18,7 +18,7 @@ import {
 } from "../foundry/battle.js";
 import { buildStory, STORY_STYLES } from "../story/story.js";
 import { loadStoryTables } from "../story/tables.js";
-import { planMakeItSo, confirmMakeItSo, executeMakeItSo, undoMakeItSo, hasUndo } from "../foundry/make-it-so.js";
+import { planMakeItSo, confirmMakeItSo, executeMakeItSo, undoMakeItSo, hasUndo, makingItSo } from "../foundry/make-it-so.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 const TEMPLATE = `modules/${MODULE_ID}/templates/planner.hbs`;
@@ -139,8 +139,13 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     super._onClose(options);
     if ( this.pauseHook ) Hooks.off("pauseGame", this.pauseHook);
     this.pauseHook = null;
-    if ( this.pausedGame && game.paused ) game.togglePause(false, { broadcast: true });
+    const resume = this.pausedGame;
     this.pausedGame = false;
+    if ( !resume ) return;
+    // (Closed while Make it So is still writing the fight onto the map: the game goes on once it's done.)
+    Promise.resolve(makingItSo()).then(() => {
+      if ( game.paused ) game.togglePause(false, { broadcast: true });
+    });
   }
 
   /** Forget everything about the previous scene (called when the GM views another scene). */

@@ -110,6 +110,40 @@ function sceneDistance(feet) {
 /** How fast tokens run through the fight on the map, in grid squares a second. */
 const PLAYBACK_SPEED = 16;
 
+const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+/** The Make it So (or Undo) under way: a promise that settles when it's done, or null. */
+let busy = null;
+export const makingItSo = () => busy;
+
+/**
+ * Keep the game paused while Make it So (or Undo) writes the fight onto the map, so no player drags a token into the
+ * middle of it. A pause only stops players: the GM's writes and every animation go on, so nothing here ever waits on
+ * it, whoever pauses or un-pauses meanwhile. After, the game is left as it was before (the planner keeps it paused
+ * while it's open), unless someone paused or un-paused it meanwhile: that stands.
+ */
+async function holdingPause(work) {
+  const wasPaused = game.paused;
+  if ( !wasPaused ) game.togglePause(true, { broadcast: true });
+  let touched = false;
+  const hook = Hooks.on("pauseGame", () => { touched = true; });
+  const running = (async () => {
+    try {
+      return await work();
+    } finally {
+      Hooks.off("pauseGame", hook);
+      if ( !wasPaused && !touched && game.paused ) game.togglePause(false, { broadcast: true });
+    }
+  })();
+  const done = running.then(() => {}, () => {});
+  busy = done;
+  try {
+    return await running;
+  } finally {
+    if ( busy === done ) busy = null;
+  }
+}
+
 /**
  * Move a token quickly along waypoints (walls are already accounted for), and give the animation about as long as
  * it should take. (A browser tab in the background doesn't animate at all, so never wait on it for longer.)
@@ -122,13 +156,18 @@ async function quickMove(doc, waypoints) {
     squares += Math.hypot(p.x - from.x, p.y - from.y) / size;
     from = p;
   }
+  const takes = (squares / PLAYBACK_SPEED) * 1000 + 250;
   try {
-    await doc.move(waypoints, {
+    // (One step, no checkpoints: a game paused meanwhile doesn't stop it. A move something else holds up, such as a
+    // region's script pausing it, is let go after a while; everyone settles where the fight left them anyway.)
+    const moving = doc.move(waypoints, {
       animation: { movementSpeed: PLAYBACK_SPEED }, showRuler: false, pan: false, autoRotate: false,
       constrainOptions: { ignoreWalls: true, ignoreCost: true }
     });
+    const settled = await Promise.race([moving.then(() => true), wait(takes + 5000).then(() => false)]);
+    if ( !settled && doc.movement?.user?.isSelf ) doc.stopMovement();
     const animation = doc.object?.movementAnimationPromise;
-    if ( animation ) await Promise.race([animation, new Promise(r => setTimeout(r, (squares / PLAYBACK_SPEED) * 1000 + 250))]);
+    if ( animation ) await Promise.race([animation, wait(takes)]);
   } catch ( err ) {
     console.warn(`${MODULE_ID} | couldn't play a move for ${doc.name}`, err);
   }
@@ -275,9 +314,13 @@ function planPlacements(rows) {
  *   (the Statistician's, with a button to show it to everyone)
  * @param {string} [options.odds]  A line on the odds, to add to the stories (only when the GM wants it shown)
  */
-export async function executeMakeItSo(rows, replay, { story = null, stories = null, odds = null } = {}) {
-  stories ??= { everyone: story };
+export async function executeMakeItSo(rows, replay, options = {}) {
   if ( !game.user.isGM ) return [];
+  return holdingPause(() => commitFight(rows, replay, options));
+}
+
+async function commitFight(rows, replay, { story = null, stories = null, odds = null } = {}) {
+  stories ??= { everyone: story };
   const adapter = getAdapter();
   // Where a lingering effect came from: the action (and its user) that laid it, for the helper to copy.
   const sources = new Map(rows.flatMap(r => r.spec.actions.map(action => [action.id, { action, spec: r.spec }])));
@@ -517,6 +560,10 @@ export async function undoConcession(message) {
 /** Revert the most recent Make it So on this scene: outcomes, positions and the story message. */
 export async function undoMakeItSo(scene = canvas.scene) {
   if ( !game.user.isGM ) return false;
+  return holdingPause(() => undoFight(scene));
+}
+
+async function undoFight(scene) {
   const [undo, ...rest] = undoStack(scene);
   if ( !undo ) return false;
   for ( const id of undo.messages ?? [] ) await game.messages.get(id)?.delete();
