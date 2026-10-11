@@ -12,6 +12,8 @@
  *   kinds     the rolls it may go on: "attack", "save", "cast", "check" (default: all)
  *   keep      it won't go below this, unless a life is at stake
  *   recovers  it comes back (a DCC thief's or halfling's Luck): spent more freely
+ *   shared    a key: a pool several creatures draw on together (DCC's Fleeting Luck, a player's for all its
+ *             characters), kept in run.sharedPools[key] (set from the first of them: spec.resources[pool])
  *
  * How readily: by what's at stake (the caller says, 0 to 1: a save against a killing blow is near 1, an ordinary
  * swing low), how much is left, and, for a friend's roll, how selfish the spender is.
@@ -22,7 +24,7 @@ import { isStanding, liveTrait, areEnemies, edgeDistance } from "../battle-state
 import { regrade } from "../probability.js";
 import { perceives } from "./senses.js";
 
-const left = (u, b) => u.resources[b.pool] ?? 0;
+const left = (run, u, b) => (b.shared ? run.sharedPools?.[b.shared] ?? 0 : u.resources[b.pool] ?? 0);
 
 /** What one point adds, on average and as rolled: on its own roll, or on a friend's. */
 function pointValue(b, own) {
@@ -36,12 +38,12 @@ function pointValue(b, own) {
 function payers(run, roller, kind) {
   const out = [];
   for ( const b of roller.spec.boosts ?? [] ) {
-    if ( (!b.kinds || b.kinds.includes(kind)) && left(roller, b) > 0 ) out.push({ u: roller, b, own: true });
+    if ( (!b.kinds || b.kinds.includes(kind)) && left(run, roller, b) > 0 ) out.push({ u: roller, b, own: true });
   }
   for ( const a of run.units ) {
     if ( a === roller || !isStanding(a) || areEnemies(run, a, roller) || !a.spec.boosts ) continue;
     for ( const b of a.spec.boosts ) {
-      if ( !b.allies || (b.kinds && !b.kinds.includes(kind)) || left(a, b) <= 0 ) continue;
+      if ( !b.allies || (b.kinds && !b.kinds.includes(kind)) || left(run, a, b) <= 0 ) continue;
       const d = b.range ? edgeDistance(a, roller) : null;
       if ( d !== null && d > b.range ) continue;
       if ( perceives(run, a, roller, { crisis: true }) ) out.push({ u: a, b, own: false });
@@ -69,7 +71,7 @@ export function boost(run, roller, roll, dc, { kind, stakes = 0.3, options = {},
     if ( !(value.mean > 0) ) continue;
     const need = dc - roll.total;
     const points = Math.ceil(need / value.mean);
-    const available = left(u, b) - (stakes >= 0.85 ? 0 : (b.keep ?? 0));
+    const available = left(run, u, b) - (stakes >= 0.85 ? 0 : (b.keep ?? 0));
     const cap = stakes >= 0.85 ? available : Math.min(available, b.recovers ? 4 : 2);
     if ( points > cap ) continue;
     let p = clamp(stakes * (b.recovers ? 1.2 : 0.8), 0, 0.95);
@@ -82,7 +84,8 @@ export function boost(run, roller, roll, dc, { kind, stakes = 0.3, options = {},
       total += value.roll(run.rng);
       spent += 1;
     }
-    u.resources[b.pool] -= spent;
+    if ( b.shared ) run.sharedPools[b.shared] -= spent;
+    else u.resources[b.pool] -= spent;
     const next = { ...roll, total, boosted: spent };
     next.degree = regrade(rules, next, dc, kind === "cast" ? "check" : kind, options);
     log?.(u, {

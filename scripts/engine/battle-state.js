@@ -247,12 +247,19 @@ export function createRun(prep) {
   for ( const u of units ) {
     if ( u.spec.valuables?.pooled ) u.pool = units.filter(o => o.side === u.side && o.spec.valuables?.pooled);
   }
+  // Boost pools several share (DCC's Fleeting Luck: a player's, for all its characters): one stock for the fight.
+  const sharedPools = {};
+  for ( const u of units ) {
+    for ( const b of u.spec.boosts ?? [] ) if ( b.shared ) sharedPools[b.shared] ??= Number(u.spec.resources?.[b.pool]) || 0;
+    u.sharedPools = sharedPools;
+  }
   // A boss (the head of its group's chain, as a boss): almost never runs; in a standoff it's paid, not talked, away.
   for ( const chain of Object.values(prep.command ?? {}) ) {
     if ( chain?.[0]?.role !== "boss" ) continue;
     for ( const u of units ) if ( u.id === chain[0].id ) u.isBoss = true;
   }
   return {
+    sharedPools,
     prep,
     units,
     fateInPlay: units.some(u => (u.resources.fate ?? 0) > 0), // anyone with hero points or the like to spend

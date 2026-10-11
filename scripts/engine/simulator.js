@@ -98,7 +98,7 @@ function rollSave(run, target, type, dc, { stakes = 0.3, label = "", magical = f
     roll = rules.adjustRoll(run, target, roll, { kind: "save", stakes, label }) ?? roll;
     if ( roll.said ) log(run, target, { text: roll.said.text, type: "adjust", ...roll.said.data });
   }
-  rules.afterRoll?.(run, target, roll, { kind: "save", type });
+  rules.afterRoll?.(run, target, roll, { kind: "save", type, faces: 20 });
   return { roll, mod: s.mod };
 }
 
@@ -831,7 +831,7 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
       roll = rules.adjustRoll(run, u, roll, { kind: "attack", stakes: attackStakes(run, u, target, action), label: action.name, action, target }) ?? roll;
       if ( roll.said ) log(run, u, { text: roll.said.text, type: "adjust", ...roll.said.data });
     }
-    rules.afterRoll?.(run, u, roll, { kind: "attack", action, target });
+    rules.afterRoll?.(run, u, roll, { kind: "attack", action, target, faces: opts.faces ?? 20 });
     // A close miss a die can mend (5e Precision Attack).
     if ( roll.degree === 1 && u.spec.riders ) {
       const mend = rescueMiss(run, u, action, target, ac - roll.total);

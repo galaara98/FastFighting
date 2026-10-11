@@ -551,6 +551,8 @@ async function revertRecord(r) {
     }
   }
   if ( r.tokenUpdate && tokenDoc ) await step("restoring the token", () => tokenDoc.update(r.tokenUpdate));
+  // (A player's own, such as DCC's Fleeting Luck.)
+  if ( r.userId && r.userUpdate ) await step("restoring a player's", () => game.users.get(r.userId)?.update(r.userUpdate));
   if ( r.combatant ) await step("the combat tracker", async () => (await fromUuid(r.combatant.uuid))?.update({ defeated: r.combatant.defeated }));
 }
 

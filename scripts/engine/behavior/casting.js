@@ -57,6 +57,8 @@ export function cast(run, u, action, { stakes = 0.5, log = null } = {}) {
   const tiers = tierActionsOf(run.prep, action);
   const lowest = tiers[0]?.min ?? Infinity;
   let roll = rollCheck(rules, run.rng, Number(c.mod) || 0, lowest, { kind: "check", faces });
+  // (What the roll means beyond the spell, by the system: DCC's Fleeting Luck.)
+  rules.afterRoll?.(run, u, roll, { kind: "cast", action, faces });
   const range = c.disapproval ? (u.disapproval ?? c.disapproval) : 0;
   // (A cleric's natural 1 is disapproval, not a fumble: it's inside the range.)
   const fumble = !range && roll.natural <= (c.fumbleOn ?? 1);
