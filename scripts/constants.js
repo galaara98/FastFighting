@@ -27,8 +27,15 @@ export const ALLEGIANCE = Object.freeze({
   HOSTILE: "hostile",
   CLOSEST: "closest",
   UNDERDOG: "underdog",
-  OWN: "own" // fights as its own side, hostile to everyone
+  OWN: "own", // fights as its own side, hostile to everyone
+  NEUTRAL: "neutral" // on the field, taking no side until something crosses it
 });
+
+/**
+ * The side, in a fight, of everyone who has taken no side: neutral tokens (leaning one way, or not at all) and
+ * enemies talked out of the fight. Nobody fights them and they fight no one, until something crosses them.
+ */
+export const NEUTRAL_PARTY = "neutralParty";
 
 export const TRAITS = Object.freeze(["tactical", "brave", "selfish", "loyal"]);
 
@@ -64,7 +71,7 @@ export const STATUS = Object.freeze({
 });
 
 /** How a talked-down combatant leaves the fight. */
-export const SWAY = Object.freeze({ SURRENDER: "surrendered", FLEE: "fled", SWITCH: "switched", STAND_DOWN: "stoodDown", CONCEDE: "conceded" });
+export const SWAY = Object.freeze({ SURRENDER: "surrendered", FLEE: "fled", SWITCH: "switched", STAND_DOWN: "stoodDown", CONCEDE: "conceded", NEUTRAL: "neutral" });
 
 /**
  * Luck checks that protect player characters, as the highest d100 roll that goes against the PC (world settings
@@ -73,6 +80,8 @@ export const SWAY = Object.freeze({ SURRENDER: "surrendered", FLEE: "fled", SWIT
 export const CONCEDE_LUCK = 39; // a PC talked into giving up an item loses it only on 39 or less
 export const THEFT_LUCK = 29;   // a thief who beats a PC's defenses still needs 29 or less
 export const EXECUTE_LUCK = 39; // a creature that wants to finish off a PC at 0 HP goes ahead only on 39 or less
+/** An enemy talked into changing sides (standing aside) goes through with it only on a d100 under this ("switchLuck"). */
+export const SWITCH_LUCK = 69;
 
 /** How an encounter opens: decided by who would rather talk, always with words, or straight into battle. */
 export const OPENING = Object.freeze({ AUTO: "auto", TALK: "talk", FIGHT: "fight" });

@@ -12,7 +12,7 @@
  * impatient personality. A leader who wants to talk holds their side back; being half-persuaded calms anyone.
  * Pure: no Foundry globals.
  */
-import { TACTICAL, OPENING, clamp } from "../../constants.js";
+import { TACTICAL, OPENING, NEUTRAL_PARTY, clamp } from "../../constants.js";
 import { isStanding, areEnemies, liveTrait, liveTier, behaviorOf, typical } from "../battle-state.js";
 
 /** Tuning: chance per turn to lose patience, before personality. */
@@ -43,6 +43,8 @@ export function prefersTalk(u) {
 
 /** Present and visible: hidden ambushers aren't part of the conversation. */
 const present = u => isStanding(u) && !(u.spec.hidden && !u.revealed);
+/** Present, and on one of the sides at odds (those who take no side don't open or hold up a standoff). */
+const party = u => present(u) && u.side !== NEUTRAL_PARTY;
 
 /**
  * Does this fight open as a standoff?
@@ -54,7 +56,7 @@ export function opensWithTalk(run) {
   if ( !o.talking || o.opening === OPENING.FIGHT ) return false;
   if ( o.opening === OPENING.TALK ) return true;
   if ( o.surpriseSide ) return false; // an ambush is not a conversation
-  const here = run.units.filter(present);
+  const here = run.units.filter(party);
   const sides = [...new Set(here.map(u => u.side))];
   if ( sides.length < 2 ) return false;
   // Each side's voice: its leader if it has one here, otherwise the majority of its members.
@@ -67,8 +69,8 @@ export function opensWithTalk(run) {
   return voices.every(Boolean) || share >= 0.75;
 }
 
-/** Chance that u loses patience this turn. */
-export function impatience(run, u) {
+/** Chance that u loses patience this turn (the talk began in round `since`). */
+export function impatience(run, u, since = 1) {
   const talker = prefersTalk(u);
   let p = canTalk(u) ? BASE : CANT_FOLLOW;
   if ( talker ) p *= 0.3;
@@ -80,7 +82,7 @@ export function impatience(run, u) {
 
   // Talk that goes nowhere wears on everyone; pitches that fail on you wear on you most.
   const rebuffs = [...u.rebuffed.values()].reduce((s, n) => s + n, 0);
-  p += PER_ROUND * Math.max(0, run.round - 1) + PER_REBUFF * rebuffs;
+  p += PER_ROUND * Math.max(0, run.round - since) + PER_REBUFF * rebuffs;
 
   // Half-persuaded people calm down; a leader who wants to talk holds their side back.
   const progress = Math.max(0, ...u.sway.values());

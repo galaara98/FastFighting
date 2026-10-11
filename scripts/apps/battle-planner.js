@@ -2,7 +2,7 @@
  * The GM's Battle Planner: roster and per-side settings on the left, results on the right.
  */
 import {
-  MODULE_ID, SIDES, TRAITS, ALLEGIANCE, HEAL_AGGRO, DOWNED_MODELS, STATUS, AFTERMATH, OPENING,
+  MODULE_ID, SIDES, TRAITS, ALLEGIANCE, HEAL_AGGRO, DOWNED_MODELS, STATUS, AFTERMATH, OPENING, NEUTRAL_PARTY,
   traitBand, clamp, FUDGE_STEP
 } from "../constants.js";
 import { getAdapter } from "../api.js";
@@ -179,11 +179,11 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     if ( !this.approach ) return null;
     const mySide = resolved[entry.token.id];
     const row = this.approach[entry.token.id];
-    if ( !row || !mySide ) return null;
+    if ( !row || !mySide || mySide === NEUTRAL_PARTY ) return null;
     let best = null;
     for ( const other of this.roster ) {
       const side = resolved[other.token.id];
-      if ( !side || side === mySide ) continue;
+      if ( !side || side === mySide || side === NEUTRAL_PARTY ) continue;
       const a = row[other.token.id];
       if ( !a ) continue;
       const moves = a.modes?.[a.mode]?.moveActions ?? Math.ceil((a.dist * a.mult) / Math.max(1, a.speed));
@@ -225,7 +225,9 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
         count: members.filter(m => setup.tokens[m.token.id]?.include !== false).length,
         isUnaligned: id === SIDES.NEUTRAL || id === SIDES.SECRET,
         allegiance: s.allegiance,
-        allegianceChoices: Object.fromEntries(Object.values(ALLEGIANCE).map(k => [k, `FASTFIGHTING.Allegiance.${k}`])),
+        allegianceLabel: id === SIDES.NEUTRAL ? "FASTFIGHTING.Planner.Lean" : "FASTFIGHTING.Planner.Allegiance",
+        // Neutrals only lean (they take no side until something crosses them); Secret tokens join outright.
+        allegianceChoices: Object.fromEntries(Object.values(ALLEGIANCE).map(k => [k, `FASTFIGHTING.${id === SIDES.NEUTRAL ? "Lean" : "Allegiance"}.${k}`])),
         traits: TRAITS.map(k => this.#traitView(k, defaults[k] ?? 50, s.traitFudge?.[k] ?? 0, `sides.${id}.traitFudge.${k}`, loc("FASTFIGHTING.Planner.SideDefault"))),
         healAggro: s.healAggro,
         healChoices: Object.fromEntries(HEAL_AGGRO.map(k => [k, `FASTFIGHTING.HealAggro.${k}`])),
@@ -304,7 +306,8 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       include: ts.include !== false,
       side: ts.side ?? e.baseSide,
       sideChoices: Object.fromEntries(SIDE_ORDER.map(k => [k, `FASTFIGHTING.Side.${k}`])),
-      resolvedLabel: resolvedSide && resolvedSide !== chosenSide(e, setup) ? game.i18n.format("FASTFIGHTING.Planner.FightsWith", { side: loc(`FASTFIGHTING.Side.${resolvedSide}`) }) : (resolvedSide === null && ts.include !== false ? loc("FASTFIGHTING.Planner.SitsOut") : ""),
+      resolvedLabel: resolvedSide === NEUTRAL_PARTY ? loc(`FASTFIGHTING.Planner.TakesNoSide.${chosenSide(e, setup) === SIDES.NEUTRAL ? setup.sides[SIDES.NEUTRAL]?.allegiance ?? ALLEGIANCE.NEUTRAL : ALLEGIANCE.NEUTRAL}`)
+        : resolvedSide && resolvedSide !== chosenSide(e, setup) ? game.i18n.format("FASTFIGHTING.Planner.FightsWith", { side: loc(`FASTFIGHTING.Side.${resolvedSide}`) }) : (resolvedSide === null && ts.include !== false ? loc("FASTFIGHTING.Planner.SitsOut") : ""),
       traits: TRAITS.map(k => this.#traitView(k, s.traits[k]?.base ?? 50, fudge[k] ?? 0, `tokens.${e.token.id}.fudge.${k}`, s.traitReasons?.[k], shifts[k] ?? 0)),
       expanded: this.expanded.has(e.token.id),
       stats: STAT_FUDGES.map(([k, step]) => {
@@ -351,7 +354,8 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
         { cls: "fled", w: (c.pFled * 100).toFixed(1), label: `${loc("FASTFIGHTING.Results.Fled")} ${pct(c.pFled)}` },
         { cls: "surrendered", w: (c.pSurrendered * 100).toFixed(1), label: `${loc("FASTFIGHTING.Status.surrendered")} ${pct(c.pSurrendered)}` },
         { cls: "stoodDown", w: (c.pStoodDown * 100).toFixed(1), label: `${loc("FASTFIGHTING.Status.stoodDown")} ${pct(c.pStoodDown)}` },
-        { cls: "switched", w: (c.pSwitched * 100).toFixed(1), label: `${loc("FASTFIGHTING.Results.Switched")} ${pct(c.pSwitched)}` }
+        { cls: "switched", w: (c.pSwitched * 100).toFixed(1), label: `${loc("FASTFIGHTING.Results.Switched")} ${pct(c.pSwitched)}` },
+        { cls: "neutral", w: ((c.pNeutral ?? 0) * 100).toFixed(1), label: `${loc("FASTFIGHTING.Results.Neutral")} ${pct(c.pNeutral ?? 0)}` }
       ],
       talkedDown: c.pTalkedDown > 0.0005 ? pct(c.pTalkedDown, 1) : "",
       conceded: c.pConceded > 0.0005 ? pct(c.pConceded, 1) : "",
@@ -769,6 +773,6 @@ function storyLabels() {
   return {
     hit: l("hit"), crit: l("crit"), miss: l("miss"), resisted: l("resisted"), talked: l("talked"), convincing: l("convincing"),
     healed: l("healed"), potion: l("potion"), firstAid: l("firstAid"), bolstered: l("bolstered"), stabilized: l("stabilized"), moved: l("moved"), stayedOut: l("stayedOut"), nothing: l("nothing"),
-    status: Object.fromEntries(["standing", "down", "dead", "fled", "surrendered", "stoodDown", "conceded", "switched"].map(s => [s, loc(`FASTFIGHTING.Status.${s}`)]))
+    status: Object.fromEntries(["standing", "down", "dead", "fled", "surrendered", "stoodDown", "conceded", "switched", "neutral", "noSide"].map(s => [s, loc(`FASTFIGHTING.Status.${s}`)]))
   };
 }

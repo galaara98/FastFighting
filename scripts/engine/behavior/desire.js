@@ -4,6 +4,8 @@
  *   logic       what its tactical thinking concludes this turn: the foe it would go for (and the runners-up), the
  *               friend it would heal, the one it would talk to, the one it fears. Worked out afresh each turn.
  *   stated      what the GM or player says it wants (Tactics), at the stated level.
+ *   lean        which way someone who takes no side leans: the members of the side it would rather see safe
+ *               (behavior/neutral.js). It counts like a stated desire, but it doesn't blind.
  *   memory      what the fight has stirred: whoever hurt it, whoever felled a friend. Cools a little every round.
  *   frustration what has thwarted it: a locked door that won't give, a target it can't reach, getting hurt on the
  *               way. It wears the desire down until the character moves on.
@@ -51,7 +53,7 @@ export function desireBand(level) {
 
 /** A unit's desires at the start of the fight: what it was told to want. */
 export function initDesires(u) {
-  u.desire = { stated: new Map(), memory: new Map(), frustration: new Map(), logic: new Map(), social: new Map(), style: new Map() };
+  u.desire = { stated: new Map(), memory: new Map(), frustration: new Map(), logic: new Map(), social: new Map(), style: new Map(), lean: new Map() };
   for ( const d of u.spec.desires ?? [] ) {
     if ( !DESIRE_KINDS.includes(d.kind) || !d.targetId || d.targetId === u.id ) continue;
     u.desire.stated.set(keyOf(d.kind, d.targetId), clamp(Number(d.level) || 0));
@@ -105,7 +107,31 @@ export function levelOf(u, kind, targetId) {
   const d = u.desire;
   if ( !d ) return 0;
   const k = keyOf(kind, targetId);
-  return clamp(Math.max(d.logic.get(k) ?? 0, d.stated.get(k) ?? 0) + (d.style.get(k) ?? 0) + (d.memory.get(k) ?? 0) + (d.social.get(k) ?? 0) - (d.frustration.get(k) ?? 0));
+  return clamp(Math.max(d.logic.get(k) ?? 0, d.stated.get(k) ?? 0, d.lean.get(k) ?? 0) + (d.style.get(k) ?? 0) + (d.memory.get(k) ?? 0) + (d.social.get(k) ?? 0) - (d.frustration.get(k) ?? 0));
+}
+
+/** Point a lean (behavior/neutral.js) at these targets, in place of the last one. */
+export function setLean(u, kind, targetIds, level) {
+  if ( !u.desire ) return;
+  u.desire.lean.clear();
+  for ( const id of targetIds ) if ( id && id !== u.id ) u.desire.lean.set(keyOf(kind, id), clamp(level));
+}
+
+/**
+ * Everything u wants, whether or not it can act on it now (someone who takes no side still wants its friends safe
+ * and its enemies hurt): [{kind, targetId, level}], strongest first.
+ */
+export function allDesires(u) {
+  const d = u.desire;
+  if ( !d ) return [];
+  const keys = new Set([...d.logic.keys(), ...d.stated.keys(), ...d.lean.keys(), ...d.memory.keys(), ...d.social.keys(), ...d.style.keys()]);
+  const out = [];
+  for ( const k of keys ) {
+    const [kind, targetId] = k.split("|");
+    const level = levelOf(u, kind, targetId);
+    if ( level > 0 ) out.push({ kind, targetId, level });
+  }
+  return out.sort((a, b) => b.level - a.level);
 }
 
 /** Is a desire still something the unit can act on? (Healing itself counts: a potion when it's hurt.) */
@@ -127,7 +153,7 @@ function relevant(run, u, kind, t) {
 export function rankedDesires(run, u) {
   const d = u.desire;
   if ( !d ) return [];
-  const keys = new Set([...d.logic.keys(), ...d.stated.keys(), ...d.memory.keys(), ...d.social.keys(), ...d.style.keys()]);
+  const keys = new Set([...d.logic.keys(), ...d.stated.keys(), ...d.lean.keys(), ...d.memory.keys(), ...d.social.keys(), ...d.style.keys()]);
   const out = [];
   for ( const k of keys ) {
     const [kind, targetId] = k.split("|");

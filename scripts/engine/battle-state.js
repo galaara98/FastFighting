@@ -76,7 +76,7 @@
  * @property {Record<string, Record<string, object>>} [approach]  approach[a][t] = {dist, mult, speed, mode, los, meleeOk}
  * @property {object} options                         {maxRounds, downedModel, positioning, morale, leadership, initiativeOrder, surpriseSide}
  */
-import { STATUS, clamp, fudged, tacticalTier, TRAITS } from "../constants.js";
+import { STATUS, NEUTRAL_PARTY, clamp, fudged, tacticalTier, TRAITS } from "../constants.js";
 import { meanPart } from "./dice.js";
 import { typicalValue } from "./tactics.js";
 import { talkAffinity } from "./behavior/talk.js";
@@ -124,6 +124,16 @@ export function prepareBattle(spec, rules) {
   for ( const a of Object.values(sides) ) {
     for ( const b of a.enemies ) sides[b]?.enemies.add(a.id);
   }
+  // Those who take no side: always there for anyone who stands aside mid-fight, and nobody's enemy as a side (each
+  // of them turns on whoever crosses it, on its own).
+  sides[NEUTRAL_PARTY] ??= {
+    id: NEUTRAL_PARTY, label: "Neutral", traits: Object.fromEntries(TRAITS.map(k => [k, fudged(50)])), leaderId: null,
+    leadership: { brave: fudged(0), tacticalFloor: fudged(0), attack: fudged(0), ac: fudged(0) }, healAggro: "balanced", morale: options.morale
+  };
+  sides[NEUTRAL_PARTY].enemies = new Set();
+  sides[NEUTRAL_PARTY].neutral = true;
+  sides[NEUTRAL_PARTY].leaderId = null;
+  for ( const s of Object.values(sides) ) s.enemies.delete(NEUTRAL_PARTY);
 
   const combatants = spec.combatants.filter(c => sides[c.side]).map(c => prepareCombatant(c, sides[c.side]));
 
@@ -188,6 +198,7 @@ export function createRun(prep) {
     prep,
     units,
     fateInPlay: units.some(u => (u.resources.fate ?? 0) > 0), // anyone with hero points or the like to spend
+    neutral: units.some(u => u.side === NEUTRAL_PARTY),        // anyone standing aside (more may, mid-fight)
     boosting: units.some(u => u.spec.boosts?.length),       // anyone who can burn Luck (or the like) on a roll
     counters: units.some(u => u.spec.reactions?.some(r => r.on === "spell")), // anyone with a counterspell
     byId: new Map(units.map(u => [u.id, u])),
@@ -264,6 +275,13 @@ export function createUnit(prep, p) {
     offendedBy: new Set(), // talkers this unit will no longer listen to
     sway: new Map(),       // talker side -> persuasion progress
     swayOutcome: null,
+    // Taking no side (NEUTRAL_PARTY): the side it leans to, the sides it has turned on, how much each has crossed
+    // it, and a quarrel it's still trying to settle with words. (See behavior/neutral.js.)
+    lean: s.lean ?? null,
+    against: new Set(),
+    grievance: new Map(),
+    crossedBy: new Set(),
+    truce: null,
     // Encounter membership: combatants start active; bystanders wait until they notice the fight.
     active: s.inEncounter !== false,
     aware: s.inEncounter !== false,
@@ -318,6 +336,8 @@ export function studyBonus(u, t) {
 }
 
 export function areEnemies(run, a, b) {
+  // Someone who takes no side fights only the sides it has turned on.
+  if ( a.side === NEUTRAL_PARTY || b.side === NEUTRAL_PARTY ) return !!(a.against?.has(b.side) || b.against?.has(a.side));
   return run.prep.sides[a.side]?.enemies.has(b.side) ?? false;
 }
 
@@ -327,6 +347,7 @@ export function enemiesOf(run, u) {
 }
 
 export function alliesOf(run, u) {
+  if ( u.side === NEUTRAL_PARTY ) return [u]; // standing aside, each on its own
   return run.units.filter(o => o.side === u.side);
 }
 

@@ -236,7 +236,18 @@ function narrate(e, roll, rel, fill) {
     case "callHelp": return roll("event.callHelp", { ...f, target: e.toward });
     case "notice": return roll({ sight: "event.noticeSight", sound: "event.noticeSound", fledInto: "event.noticeFled", help: "event.noticeHelp", attacked: "event.noticeAttacked", standoff: "event.noticeStandoff" }[e.cause] ?? "event.noticeSound", f);
     case "join": return roll(e.why === "forced" ? "event.joinForced" : "event.join", f);
-    case "watch": return roll("event.watch", f);
+    case "watch": return roll(e.neutral ? "event.watchNeutral" : "event.watch", f);
+    case "neutral": {
+      const g = { ...f, side: e.sideLabel ?? "", victim: e.victim ?? "" };
+      switch ( e.what ) {
+        case "truce": return roll(e.victim ? "event.truceVictim" : "event.truce", g);
+        case "offended": return roll(e.why === "hurt" ? "event.offendedHurt" : e.why === "robbed" ? "event.offendedRobbed" : e.why === "insulted" ? "event.offendedInsulted" : e.victim ? "event.offendedVictim" : "event.offended", g);
+        case "luck": return roll("event.nearlyTurns", g);
+        case "amends": return roll("event.amends", g);
+        case "calmed": return roll("event.calmed", g);
+        default: return roll("event.lapse", g);
+      }
+    }
     case "leave": return roll("event.leave", f);
     case "sway": {
       if ( e.lie ) return roll("event.lieAndRun", f);
@@ -245,6 +256,8 @@ function narrate(e, roll, rel, fill) {
         const key = !c ? "event.standDown" : c.kept ? "event.concedeKept" : c.kind === "money" ? "event.concedeMoney" : "event.concedeItem";
         return roll(key, { ...f, amount: concessionText(c), item: c?.item?.name ?? "" });
       }
+      if ( e.outcome === "switched" && e.recruit ) return roll("event.recruit", f);
+      if ( e.outcome === "neutral" ) return roll(e.again ? "event.standAsideAgain" : "event.standAside", f);
       return roll({ surrendered: "event.surrender", fled: "event.swayFlee", switched: "event.switch", stoodDown: "event.standDown" }[e.outcome] ?? "event.surrender", f);
     }
     case "lastWord": return roll("event.lastWord", f);
@@ -397,6 +410,12 @@ function ending(result, spec, end, roll) {
   if ( end.peaceful ) return roll("event.peace", { winners });
   if ( end.outcome === "stalemate" && end.standoff ) return roll("event.talksStall", { winners });
   const victory = standing.length === 1 ? "event.victoryOne" : "event.victory";
+  // Nobody's side left, but someone who took no side (and then turned on one) still stands.
+  if ( end.outcome === "none" ) {
+    const last = spec.combatants.filter(c => result.units[c.id]?.final?.status === "standing" && result.units[c.id]?.final?.side === "neutralParty"
+      && result.units[c.id]?.final?.against?.length).map(c => c.name);
+    if ( last.length ) return roll("event.lastStanding", { winners: listJoin(last) });
+  }
   return roll(end.outcome === "victory" ? victory : end.outcome === "none" ? "event.noOne" : "event.stalemate", { winners });
 }
 
@@ -466,7 +485,8 @@ function standard(result, spec, title, labels) {
     if ( s?.aid ) bits.push(`${labels.firstAid} ${s.aid}× (${s.stabilized} ${labels.stabilized})`);
     if ( s?.feet ) bits.push(`${labels.moved} ${s.feet} ft`);
     if ( !bits.length ) bits.push(final?.active === false ? labels.stayedOut : labels.nothing);
-    const statusKey = final?.swayed === "switched" ? "switched" : final?.swayed === "conceded" ? "conceded" : final?.status;
+    const statusKey = final?.swayed === "switched" ? "switched" : final?.swayed === "conceded" ? "conceded"
+      : final?.status === "standing" && final?.side === "neutralParty" ? (final.swayed === "neutral" ? "neutral" : "noSide") : final?.status;
     const status = final ? `${labels.status[statusKey] ?? statusKey}, ${final.hp}/${c.hp.max} HP` : "";
     rows.push(`<li><strong>${esc(c.name)}</strong>: ${esc(bits.join("; "))}. <em>${esc(status)}</em>${s?.notes?.length ? ` <small>(${esc(s.notes.join("; "))})</small>` : ""}</li>`);
   }
@@ -532,6 +552,11 @@ function statLine(e) {
     case "shakeOff": return `${e.actor} shakes off ${e.effect} · ${e.saveType} ${roll(e.natural, e.mod, e.total, e.dc, "DC")}`;
     case "execute": return `${e.actor} → ${e.target}: execution luck d100 ${e.luck} (${e.needed} or less) · ${e.goes ? "goes for the kill" : `spares them${e.next ? `, turns on ${e.next}` : ""}`}`;
     case "allegiance": return e.joined ? `${e.actor} fights for ${e.by}'s side (controlled)` : `${e.actor} returns to ${e.homeLabel}`;
+    case "neutral":
+      if ( e.what === "luck" ) return `${e.actor}: switch luck d100 ${e.luck} (needs under ${e.needed}) · won't change sides`;
+      if ( e.what === "offended" ) return `${e.actor} turns on ${e.sideLabel} (${e.why}${e.victim ? `: ${e.victim}` : ""}, by ${e.by})`;
+      if ( e.what === "truce" ) return `${e.actor} confronts ${e.by}${e.victim ? ` over ${e.victim}` : ""} (${e.why}) · words first`;
+      return `${e.actor}: ${e.text}`;
     case "theft": {
       // The luck check against a PC is the GM's secret, so it never appears here.
       const feint = e.feint ? `feint ${e.feint.weapon} · ${roll(e.feint.natural, e.feint.mod, e.feint.total, e.feint.ac, "AC")} · ${e.feint.hit ? "hit, no damage" : "miss"}` : "";
@@ -540,6 +565,7 @@ function statLine(e) {
     }
     case "reclaim": return `${e.actor} gets back ${concessionText(e.concession)} from ${e.by}`;
     case "sway":
+      if ( e.outcome === "neutral" && e.luck ) return `${e.actor} stands aside · switch luck d100 ${e.luck} (needs under ${e.needed})`;
       if ( !e.concession ) return `${e.actor}: ${e.text}`;
       return e.concession.kept
         ? `${e.actor} agrees to hand over ${concessionText(e.concession)} · luck d100 ${e.concession.luck} (needs ${e.concession.needed ?? 39} or less) · keeps it`
@@ -585,5 +611,5 @@ export function buildStory(result, spec, style, { tables, seed = 1, title = "", 
 export const DEFAULT_LABELS = {
   hit: "hit", crit: "critical", miss: "missed", resisted: "resisted", talked: "talked", convincing: "convincing",
   healed: "healed", potion: "potion(s)", firstAid: "first aid", bolstered: "bolstered", stabilized: "stabilized", moved: "moved", stayedOut: "stayed out of it", nothing: "did nothing of note",
-  status: { standing: "standing", down: "down", dead: "dead", fled: "fled", surrendered: "surrendered", stoodDown: "stood down", conceded: "gave something up", switched: "switched sides" }
+  status: { standing: "standing", down: "down", dead: "dead", fled: "fled", surrendered: "surrendered", stoodDown: "stood down", conceded: "gave something up", switched: "switched sides", neutral: "stood aside", noSide: "took no side" }
 };

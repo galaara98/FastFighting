@@ -8,7 +8,14 @@
  *   intimidate  threaten (works better on the outnumbered; the brave resist it)
  *   deceive     bluff (backfires harder when it fails) Each success moves that enemy along a persuasion track; it takes several steps to
  * convince someone (2-6), unless they are very gullible (1). When the track fills, the enemy surrenders, flees,
- * gives something up (money or an item, then backs off), or (rarely, unless they were neutral) switches sides.
+ * gives something up (money or an item, then backs off), or (rarely, unless they were neutral) changes sides. An
+ * enemy changing sides only stands aside (it takes no side now), and only on a d100 under the switch luck; otherwise
+ * it's talked into one of the others.
+ *
+ * Those who take no side (behavior/neutral.js) are talked to as well: won over to join the talker's side (no luck
+ * check; easier when joining gives them what they want, harder when it betrays it, and never by a side they've seen
+ * cross them), talked round when they're confronting the talker's side, or, when they're the ones confronting
+ * someone, talking that someone into making amends.
  * Player characters decide their own fate, so words can only make a PC give something up or back off and run; a
  * PC who would rather let weapons do the talking won't listen at all. In a standoff, giving something up or
  * running ends the whole conflict: the deal is struck and everyone walks away. Convincing a leader can make the rest of
@@ -24,13 +31,43 @@
  *  - Anyone else may make one quip per turn when it looks promising and they would.
  * Pure: no Foundry globals.
  */
-import { STATUS, SWAY, CONCEDE_LUCK, clamp } from "../../constants.js";
+import { STATUS, SWAY, CONCEDE_LUCK, SWITCH_LUCK, clamp } from "../../constants.js";
 import { alliesOf, enemiesOf, isStanding, behaviorOf, leaderStanding, typical, checkRoll } from "../battle-state.js";
 import { degreeDistribution, rollCheck } from "../probability.js";
+import { isNeutral, standsAside, appeal, offend, turnOn, standAside, joinSide, calm, settleTruce } from "./neutral.js";
 
 /** The three kinds of pitch. Systems map their own skills onto these (CombatantSpec.social.pitches). */
 export const TALK_KINDS = Object.freeze(["persuade", "intimidate", "deceive"]);
 const VERB = { persuade: "reasons with", intimidate: "threatens", deceive: "bluffs" };
+/** What a pitch is for, beyond talking an enemy down. */
+const AIM_TEXT = { recruit: " to join them", calm: " to let it go", settle: " to make amends" };
+
+/**
+ * What talking to t is for: "down" (an enemy: talk it out of the fight), "recruit" (someone taking no side: win it
+ * over), "calm" (someone taking no side who's confronting the talker's side: talk it round), or "settle" (the talker
+ * takes no side and is confronting t's side: have it make amends).
+ */
+export function aimOf(talker, t) {
+  if ( isNeutral(talker) && talker.truce?.side === t.side && !talker.against.has(t.side) ) return "settle";
+  if ( isNeutral(t) && !t.against.has(talker.side) ) return t.truce?.side === talker.side ? "calm" : "recruit";
+  return "down";
+}
+
+/** Who a talker might talk to: its enemies, and those who take no side that it could win over or talk round. */
+function pitchTargets(run, talker) {
+  const out = enemiesOf(run, talker);
+  if ( !run.neutral ) return out;
+  if ( isNeutral(talker) ) {
+    if ( talker.truce ) for ( const o of run.units ) if ( o.side === talker.truce.side && !out.includes(o) ) out.push(o);
+    return out;
+  }
+  for ( const n of run.units ) {
+    if ( !isNeutral(n) || n.against.has(talker.side) ) continue;
+    // Won over only by a side it hasn't seen cross it (and player characters decide that for themselves).
+    if ( n.truce?.side === talker.side || (!n.crossedBy.has(talker.side) && n.spec.kind !== "pc") ) out.push(n);
+  }
+  return out;
+}
 
 export function shareLanguage(a, b) {
   const la = a.spec.social?.languages ?? [];
@@ -75,7 +112,7 @@ export function swayable(t) {
  * Successful pitches needed to convince t (2-6, or 1 if very gullible). With `run`, the situation counts:
  * a badly hurt or outnumbered enemy is one step easier to talk down.
  */
-export function stepsToConvince(t, run = null) {
+export function stepsToConvince(t, run = null, talker = null) {
   const s = t.spec.social ?? {};
   // How strong-willed it is compared with a typical creature of its level (the system works that out).
   const delta = s.resolve ?? 0;
@@ -90,8 +127,15 @@ export function stepsToConvince(t, run = null) {
   if ( brave >= 80 ) steps += 1;
   if ( selfish >= 70 ) steps -= 1;
   if ( t.spec.flags?.fearless ) steps += 1;
-  if ( t.spec.originSide === "neutral" ) steps -= 1;
+  if ( standsAside(t) ) steps -= 1;
   if ( t.spec.kind === "pc" ) steps += 2; // a player character does not fold easily
+  // Winning someone over: a step quicker if joining gives it something it wants, slower if it betrays it.
+  if ( run && talker && aimOf(talker, t) === "recruit" ) {
+    const { fulfils, betrays } = appeal(run, t, talker.side);
+    if ( (fulfils?.level ?? 0) >= 40 ) steps -= 1;
+    if ( (betrays?.level ?? 0) >= 40 ) steps += 1;
+    if ( (betrays?.level ?? 0) >= 70 ) steps += 1;
+  }
   if ( run ) {
     if ( t.maxHp > 0 && t.hp / t.maxHp < 0.5 ) steps -= 1;
     else if ( enemiesOf(run, t).filter(isStanding).length > alliesOf(run, t).filter(isStanding).length ) steps -= 1;
@@ -127,7 +171,12 @@ export function talkDC(run, talker, t, kind) {
   // Personality: loyal and brave hold out, selfish take a deal; neutrals are easy to talk to.
   dc += Math.round((t.prep.traits.loyal - 50) / 25) - Math.round((t.prep.traits.selfish - 50) / 25);
   if ( kind === "intimidate" ) dc += Math.round((t.prep.traits.brave - 50) / 20);
-  if ( t.spec.originSide === "neutral" ) dc -= kind === "persuade" ? 4 : 2;
+  if ( standsAside(t) ) dc -= kind === "persuade" ? 4 : 2;
+  // Winning someone over: what joining would mean to it, by what it wants.
+  if ( aimOf(talker, t) === "recruit" ) {
+    const { fulfils, betrays } = appeal(run, t, talker.side);
+    dc += Math.round((betrays?.level ?? 0) / 10) - Math.round((fulfils?.level ?? 0) / 10);
+  }
   return dc;
 }
 
@@ -138,34 +187,38 @@ export function bestPitch(run, talker, t) {
   let best = null;
   // A PC with nothing to hand over can only be scared off; reasoning or bluffing gets nowhere.
   const scareOnly = t.spec.kind === "pc" && !hasValuables(t);
+  const aim = aimOf(talker, t);
   for ( const kind of TALK_KINDS ) {
     const pitch = s.pitches?.[kind];
     if ( typeof pitch?.mod !== "number" ) continue;
-    if ( scareOnly && kind !== "intimidate" ) continue;
+    if ( scareOnly && kind !== "intimidate" && aim === "down" ) continue;
+    if ( aim === "recruit" && kind === "intimidate" ) continue; // nobody is threatened into friendship
     const { mod, advantage } = checkRoll(run, talker, pitch.mod);
     const dc = talkDC(run, talker, t, kind);
     const dist = degreeDistribution(rules, mod, dc, { advantage, kind: "check" });
     // A bluff backfires harder, so it needs to be clearly better.
     const p = dist[2] + dist[3] - (kind === "deceive" ? dist[0] * 0.5 : 0);
     if ( !best || p > best.pSuccess ) {
-      best = { kind, skill: pitch.skill ?? kind, mod, advantage, dc, dcLabel: t.spec.social?.resist?.[kind]?.label ?? "DC", pSuccess: Math.max(0, p) };
+      best = { kind, aim, skill: pitch.skill ?? kind, mod, advantage, dc, dcLabel: t.spec.social?.resist?.[kind]?.label ?? "DC", pSuccess: Math.max(0, p) };
     }
   }
   return best;
 }
 
-/** Choose who to talk to: likely to work, few steps left, and worth taking out of the fight. */
+/** Choose who to talk to: likely to work, few steps left, and worth taking out of the fight (or bringing in). */
 export function choosePitch(run, talker, { only = null } = {}) {
   let best = null;
-  for ( const t of enemiesOf(run, talker) ) {
+  for ( const t of pitchTargets(run, talker) ) {
     if ( !swayable(t) || !shareLanguage(talker, t) ) continue;
     if ( t.offendedBy.has(talker.id) ) continue;
     if ( only && !only(t) ) continue;
     const pitch = bestPitch(run, talker, t);
     if ( !pitch || pitch.pSuccess <= (talker.spec.alwaysTalk ? 0.01 : 0.05) ) continue;
-    const remaining = Math.max(1, stepsToConvince(t, run) - (t.sway.get(talker.side) ?? 0));
+    const remaining = Math.max(1, stepsToConvince(t, run, talker) - (t.sway.get(talker.side) ?? 0));
     const isLeader = run.prep.sides[t.side]?.leaderId === t.id;
-    const value = (1 + (isLeader ? 1.5 : 0)) * (1 + t.hp / Math.max(1, t.maxHp));
+    const health = 1 + t.hp / Math.max(1, t.maxHp);
+    // An enemy out of the fight; a new friend (a weak one counts for less); a new enemy prevented; a quarrel settled.
+    const value = { down: (1 + (isLeader ? 1.5 : 0)) * health, recruit: 0.8 * health * (t.prep.lowBattleWorth ? 0.5 : 1), calm: 1.2 * health, settle: 1.5 }[pitch.aim];
     const score = pitch.pSuccess * value / remaining;
     if ( !best || score > best.score ) best = { target: t, ...pitch, remaining, score };
   }
@@ -204,8 +257,12 @@ export function talkActionsThisTurn(run, u, actions) {
  * Decide how a convinced enemy leaves the fight. Before any blow is struck (a standoff), reasoning or a bluff
  * talks them into standing down; threats still make them yield or run.
  */
-function outcomeFor(run, t, kind) {
+function outcomeFor(run, t, kind, aim = "down", { noSwitch = false } = {}) {
   const rng = run.rng;
+  if ( aim === "recruit" ) return SWAY.SWITCH;
+  if ( aim === "calm" ) return "calm";
+  // Satisfaction for a quarrel: something handed over, or an apology.
+  if ( aim === "settle" ) return hasValuables(t) ? SWAY.CONCEDE : "amends";
   // Words can only make a PC pay up or back off: threats may send them running (the only way, if they have nothing).
   if ( t.spec.kind === "pc" ) {
     if ( !hasValuables(t) ) return SWAY.FLEE;
@@ -214,8 +271,9 @@ function outcomeFor(run, t, kind) {
   }
   const selfish = t.prep.traits.selfish;
   const loyal = t.prep.traits.loyal;
-  const switchChance = t.spec.originSide === "neutral" ? 0.6 : clamp(0.03 + (selfish - 50) / 500 + (50 - loyal) / 500, 0, 0.12);
-  if ( rng.chance(switchChance) ) return SWAY.SWITCH;
+  // Changing sides: an enemy can only be talked into standing aside (taking no side), from where it can be won over.
+  const switchChance = noSwitch ? 0 : standsAside(t) ? 0.6 : clamp(0.03 + (selfish - 50) / 500 + (50 - loyal) / 500, 0, 0.12);
+  if ( rng.chance(switchChance) ) return SWAY.NEUTRAL;
   // Paying them off: rarer than backing down, likelier under threat or when badly hurt; the greedy hate it.
   const hurt = t.maxHp > 0 && t.hp / t.maxHp < 0.5;
   const concedeChance = clamp(0.12 + (kind === "intimidate" ? 0.15 : 0) + (hurt ? 0.1 : 0) - (selfish - 50) / 400, 0.03, 0.45);
@@ -294,21 +352,48 @@ function concede(run, talker, t, log) {
   log(t, given?.kept ? `agrees to hand over ${what}, but keeps it (luck ${given.luck}), and fights on` : `gives up ${what} to ${talker.spec.name}, bitterly, and fights on`, data);
 }
 
-function applyOutcome(run, talker, t, outcome, log) {
-  settle(run, talker, outcome === SWAY.CONCEDE && !hasValuables(t) && t.spec.kind !== "pc" ? SWAY.FLEE : outcome);
-  if ( outcome === SWAY.CONCEDE ) return concede(run, talker, t, log);
-  for ( const id of t.adjacent ) run.byId.get(id)?.adjacent.delete(t.id);
-  t.adjacent.clear();
-  t.swayOutcome = outcome;
-  if ( outcome === SWAY.SWITCH ) {
-    t.side = talker.side;
-    t.homeSide = talker.side; // won over for good
-    run.geo = (run.geo ?? 0) + 1; // friends and foes have changed
-    t.targetId = null;
-    t.wavering = false;
-    log(t, `is won over and switches sides`, { type: "sway", outcome, by: talker.spec.name, byId: talker.id });
+function applyOutcome(run, talker, t, outcome, log, aim = "down", luck = null) {
+  const by = { by: talker.spec.name, byId: talker.id };
+  // A quarrel settled with words (the talker takes no side): an apology, or something handed over.
+  if ( outcome === "amends" ) {
+    settleTruce(talker, t.side);
+    log(t, `makes amends with ${talker.spec.name}`, { type: "neutral", what: "amends", ...by });
     return;
   }
+  // Someone taking no side, confronting the talker's side, talked round.
+  if ( outcome === "calm" ) {
+    settleTruce(t, talker.side);
+    log(t, `lets it go, talked round by ${talker.spec.name}`, { type: "neutral", what: "calmed", ...by });
+    return;
+  }
+  if ( aim === "down" && !isNeutral(talker) ) settle(run, talker, outcome === SWAY.CONCEDE && !hasValuables(t) && t.spec.kind !== "pc" ? SWAY.FLEE : outcome);
+  if ( outcome === SWAY.CONCEDE ) {
+    concede(run, talker, t, log);
+    if ( aim === "settle" ) settleTruce(talker, t.side);
+    return;
+  }
+  // Won over: it joins the talker's side.
+  if ( outcome === SWAY.SWITCH ) {
+    joinSide(run, t, talker.side);
+    t.swayOutcome = SWAY.SWITCH;
+    const sideLabel = run.prep.sides[talker.side]?.label ?? talker.side;
+    log(t, `is won over and joins ${sideLabel}`, { type: "sway", outcome, recruit: true, sideLabel, ...by });
+    return;
+  }
+  for ( const id of t.adjacent ) run.byId.get(id)?.adjacent.delete(t.id);
+  t.adjacent.clear();
+  // An enemy talked into changing sides stands aside (one who had turned on the talker's side lets it be again).
+  if ( outcome === SWAY.NEUTRAL ) {
+    const again = isNeutral(t);
+    if ( again ) calm(t, talker.side);
+    else standAside(run, t);
+    t.swayOutcome = SWAY.NEUTRAL;
+    log(t, again ? "calms down and stands aside again" : "is talked out of the fight and stands aside", {
+      type: "sway", outcome, again, luck: luck?.roll ?? null, needed: luck?.needed ?? null, ...by
+    });
+    return;
+  }
+  t.swayOutcome = outcome;
   t.status = { [SWAY.FLEE]: STATUS.FLED, [SWAY.STAND_DOWN]: STATUS.STOOD_DOWN }[outcome] ?? STATUS.SURRENDERED;
   t.fellRound ??= run.round;
   const text = { [SWAY.FLEE]: "is talked into leaving and flees", [SWAY.STAND_DOWN]: "agrees to stand down" }[outcome] ?? "lays down arms and surrenders";
@@ -323,7 +408,8 @@ export function attemptTalk(run, talker, pitch, log) {
   const t = pitch.target;
   const rules = run.prep.rules;
   const roll = rollCheck(rules, run.rng, pitch.mod, pitch.dc, { advantage: pitch.advantage ?? 0, kind: "check" });
-  const steps = stepsToConvince(t, run);
+  const steps = stepsToConvince(t, run, talker);
+  const aim = pitch.aim ?? aimOf(talker, t);
   let progress = t.sway.get(talker.side) ?? 0;
   const verb = VERB[pitch.kind] ?? "talks to";
   switch ( roll.degree ) {
@@ -339,24 +425,47 @@ export function attemptTalk(run, talker, pitch, log) {
   }
   t.sway.set(talker.side, progress);
   const result = ["critical failure: they won't hear another word", "unmoved", "wavering", "badly shaken"][roll.degree];
-  if ( run.log ) log(talker, `${verb} ${t.spec.name} (${pitch.skill} ${roll.total} vs DC ${pitch.dc}): ${result} [${Math.min(progress, steps)}/${steps}]`, {
+  // Winning someone over, the talker makes the case by what it wants (keeping someone safe, hurting someone).
+  const pull = aim === "recruit" ? appeal(run, t, talker.side).fulfils : null;
+  const pullName = pull ? run.byId.get(pull.targetId)?.spec.name ?? "" : "";
+  const why = pull ? ` (${pull.kind === "hurt" ? `a chance at ${pullName}` : `to keep ${pullName} safe`})` : "";
+  if ( run.log ) log(talker, `${verb} ${t.spec.name}${AIM_TEXT[aim] ?? ""}${why} (${pitch.skill} ${roll.total} vs DC ${pitch.dc}): ${result} [${Math.min(progress, steps)}/${steps}]`, {
     type: "talk", kind: pitch.kind, skill: pitch.skill, target: t.spec.name, targetId: t.id, natural: roll.natural, mod: pitch.mod, total: roll.total,
     dc: pitch.dc, dcStat: pitch.dcLabel, degree: roll.degree, margin: roll.total - pitch.dc,
-    progress: Math.min(progress, steps), steps, offended: roll.degree === 0
+    progress: Math.min(progress, steps), steps, offended: roll.degree === 0,
+    aim, appeal: pull ? { kind: pull.kind, target: pullName, targetId: pull.targetId } : null
   });
+  // Insulted by a botched pitch: someone taking no side turns on the talker's side (one already confronting the
+  // talker turns on its side).
+  if ( roll.degree === 0 ) {
+    if ( aim === "recruit" || aim === "calm" ) offend(run, t, talker, "insulted", log);
+    else if ( aim === "settle" ) turnOn(run, talker, t, "insulted", log);
+  }
   // Only a successful pitch closes the deal, even if circumstances have made them easier to convince.
   if ( roll.degree < 2 || progress < steps ) return false;
 
-  const outcome = outcomeFor(run, t, pitch.kind);
-  applyOutcome(run, talker, t, outcome, log);
+  let outcome = outcomeFor(run, t, pitch.kind, aim);
+  // An enemy changing sides goes through with it only on a d100 under the switch luck; otherwise it's talked into
+  // something else.
+  let luck = null;
+  if ( outcome === SWAY.NEUTRAL && aim === "down" ) {
+    luck = { roll: run.rng.die(100), needed: run.prep.options.switchLuck ?? SWITCH_LUCK };
+    if ( luck.needed < 100 && luck.roll >= luck.needed ) { // (100: always)
+      log(t, `almost comes over, but won't turn on their own (luck ${luck.roll})`, {
+        type: "neutral", what: "luck", luck: luck.roll, needed: luck.needed, by: talker.spec.name, byId: talker.id
+      });
+      outcome = outcomeFor(run, t, pitch.kind, aim, { noSwitch: true });
+    }
+  }
+  applyOutcome(run, talker, t, outcome, log, aim, luck);
 
   // A convinced leader can take their side with them.
   const side = run.prep.sides[t.spec.side];
-  if ( side?.leaderId === t.id ) {
+  if ( aim === "down" && side?.leaderId === t.id ) {
     for ( const f of run.units ) {
       if ( f === t || f.side !== t.spec.side || f.spec.kind === "pc" || !swayable(f) ) continue;
       const p = 0.4 + (100 - f.prep.traits.brave) / 250 + (f.sway.get(talker.side) ?? 0) * 0.1;
-      const follows = [SWAY.STAND_DOWN, SWAY.CONCEDE].includes(outcome) ? SWAY.STAND_DOWN : SWAY.SURRENDER;
+      const follows = [SWAY.STAND_DOWN, SWAY.CONCEDE, SWAY.NEUTRAL].includes(outcome) ? SWAY.STAND_DOWN : SWAY.SURRENDER;
       if ( run.rng.chance(clamp(p, 0, 0.9)) ) applyOutcome(run, talker, f, follows, log);
     }
   }

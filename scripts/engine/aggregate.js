@@ -1,7 +1,7 @@
 /**
  * Accumulates per-run summaries into batch statistics.
  */
-import { STATUS } from "../constants.js";
+import { STATUS, NEUTRAL_PARTY } from "../constants.js";
 
 function percentile(sorted, p) {
   if ( !sorted.length ) return 0;
@@ -10,12 +10,12 @@ function percentile(sorted, p) {
 }
 
 export function createAggregator(prep) {
-  const sideIds = Object.keys(prep.sides);
+  const sideIds = Object.keys(prep.sides).filter(id => id !== NEUTRAL_PARTY); // (those who take no side never win)
   const wins = Object.fromEntries(sideIds.map(id => [id, 0]));
   const units = {};
   for ( const c of prep.combatants ) {
     units[c.spec.id] = {
-      standing: 0, down: 0, dead: 0, fled: 0, surrendered: 0, stoodDown: 0, conceded: 0, switched: 0, talkedDown: 0, atMercy: 0, downed: 0, involved: 0,
+      standing: 0, down: 0, dead: 0, fled: 0, surrendered: 0, stoodDown: 0, conceded: 0, switched: 0, neutral: 0, talkedDown: 0, atMercy: 0, downed: 0, involved: 0,
       hpFrac: 0, damage: 0, healing: 0, firstToFall: 0, resources: {}
     };
   }
@@ -56,6 +56,7 @@ export function createAggregator(prep) {
         if ( r.swayed ) {
           u.talkedDown += 1;
           if ( r.swayed === "switched" ) u.switched += 1;
+          if ( r.swayed === "neutral" ) u.neutral += 1;
           anySwayed = true;
         }
         if ( r.atMercy ) u.atMercy += 1;
@@ -106,6 +107,7 @@ export function createAggregator(prep) {
           pStoodDown: u.stoodDown / n,
           pConceded: u.conceded / n,
           pSwitched: u.switched / n,
+          pNeutral: u.neutral / n,
           pTalkedDown: u.talkedDown / n,
           pInvolved: u.involved / n,
           bystander: c.spec.inEncounter === false,

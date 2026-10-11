@@ -1,7 +1,7 @@
 /**
  * Turns the tokens on the viewed scene plus the GM's setup into a BattleSpec, runs it, and digs into the results.
  */
-import { MODULE_ID, SIDES, ALLEGIANCE, DISPOSITION_SIDES, TRAITS, clamp } from "../constants.js";
+import { MODULE_ID, SIDES, ALLEGIANCE, DISPOSITION_SIDES, NEUTRAL_PARTY, TRAITS, clamp } from "../constants.js";
 import { runBatch, runBatchSync, replay, findSample } from "../engine/simulator.js";
 import { deriveSeed } from "../engine/rng.js";
 import { applyTraitRules, getAdapter, getModifiers } from "../api.js";
@@ -15,8 +15,12 @@ const SIDE_LABELS = {
   [SIDES.FRIENDLY]: "FASTFIGHTING.Side.friendly",
   [SIDES.HOSTILE]: "FASTFIGHTING.Side.hostile",
   [SIDES.NEUTRAL]: "FASTFIGHTING.Side.neutral",
-  [SIDES.SECRET]: "FASTFIGHTING.Side.secret"
+  [SIDES.SECRET]: "FASTFIGHTING.Side.secret",
+  [NEUTRAL_PARTY]: "FASTFIGHTING.Side.neutralParty"
 };
+
+/** Neutral tokens take no side in the fight: these allegiances are only the way they lean (behavior/neutral.js). */
+const LEANS = new Set([ALLEGIANCE.NEUTRAL, ALLEGIANCE.FRIENDLY, ALLEGIANCE.HOSTILE, ALLEGIANCE.CLOSEST, ALLEGIANCE.UNDERDOG]);
 
 /**
  * Read every eligible token on the viewed scene.
@@ -95,6 +99,12 @@ export function resolveAllegiances(roster, setup, underdog = null) {
       continue;
     }
     const allegiance = setup.sides[side]?.allegiance ?? ALLEGIANCE.EXCLUDE;
+    // Neutrals stand on the field taking no side, leaning the way their allegiance says (and a Secret token told to
+    // take no side does the same, leaning nowhere).
+    if ( (side === SIDES.NEUTRAL && LEANS.has(allegiance)) || allegiance === ALLEGIANCE.NEUTRAL ) {
+      resolved[e.token.id] = NEUTRAL_PARTY;
+      continue;
+    }
     switch ( allegiance ) {
       case ALLEGIANCE.EXCLUDE: resolved[e.token.id] = null; break;
       case ALLEGIANCE.FRIENDLY: resolved[e.token.id] = SIDES.FRIENDLY; break;
@@ -108,6 +118,30 @@ export function resolveAllegiances(roster, setup, underdog = null) {
     }
   }
   return resolved;
+}
+
+/**
+ * Which way each token that takes no side leans: toward the party, the enemy, the nearest of them, or the underdog
+ * (worked out as the fight goes); null leans nowhere.
+ * @returns {Record<string, string|null>} tokenId -> lean
+ */
+export function resolveLeans(roster, setup) {
+  const leans = {};
+  const included = roster.filter(e => setup.tokens[e.token.id]?.include !== false);
+  const friendly = included.filter(e => chosenSide(e, setup) === SIDES.FRIENDLY);
+  const hostile = included.filter(e => chosenSide(e, setup) === SIDES.HOSTILE);
+  for ( const e of included ) {
+    const side = chosenSide(e, setup);
+    if ( side !== SIDES.NEUTRAL ) continue;
+    const allegiance = setup.sides[side]?.allegiance;
+    leans[e.token.id] = {
+      [ALLEGIANCE.FRIENDLY]: SIDES.FRIENDLY,
+      [ALLEGIANCE.HOSTILE]: SIDES.HOSTILE,
+      [ALLEGIANCE.UNDERDOG]: "underdog",
+      [ALLEGIANCE.CLOSEST]: averageDistance(e, friendly) <= averageDistance(e, hostile) ? SIDES.FRIENDLY : SIDES.HOSTILE
+    }[allegiance] ?? null;
+  }
+  return leans;
 }
 
 function fudgedTraits(spec, fudge) {
@@ -201,6 +235,7 @@ export function buildBattleSpec(roster, setup, { underdog = null, approach = nul
   const adapter = getAdapter();
   const sideDefaults = setting("sideDefaults");
   const resolved = resolveAllegiances(roster, setup, underdog);
+  const leans = resolveLeans(roster, setup);
   const combatants = [];
   const bySide = {};
   for ( const e of roster ) {
@@ -210,6 +245,7 @@ export function buildBattleSpec(roster, setup, { underdog = null, approach = nul
     const spec = applyStatFudges(e.spec, ts.fudge);
     spec.side = side;
     spec.originSide = e.baseSide;
+    if ( side === NEUTRAL_PARTY ) spec.lean = leans[e.token.id] ?? null;
     spec.traits = fudgedTraits(e.spec, ts.fudge);
     applyCharacterTactics(spec, e);
     if ( ts.diesAtZero !== undefined ) spec.diesAtZero = ts.diesAtZero;
@@ -225,13 +261,16 @@ export function buildBattleSpec(roster, setup, { underdog = null, approach = nul
   const options = { ...setup.options, ...optionOverrides };
   const sides = {};
   const used = Object.keys(bySide);
+  const fighting = used.filter(s => s !== NEUTRAL_PARTY); // (those who take no side are nobody's enemy, as a side)
   for ( const side of used ) {
-    const s = setup.sides[side] ?? {};
-    const defaults = sideDefaults[side] ?? sideDefaults.hostile;
+    const neutral = side === NEUTRAL_PARTY;
+    const s = (neutral ? setup.sides[SIDES.NEUTRAL] : setup.sides[side]) ?? {};
+    const defaults = sideDefaults[neutral ? SIDES.NEUTRAL : side] ?? sideDefaults.hostile;
     let enemies;
-    if ( side === SIDES.FRIENDLY ) enemies = used.filter(o => o !== SIDES.FRIENDLY);
-    else if ( side === SIDES.HOSTILE ) enemies = used.filter(o => o !== SIDES.HOSTILE);
-    else enemies = used.filter(o => o !== side); // third parties fight everyone
+    if ( neutral ) enemies = [];
+    else if ( side === SIDES.FRIENDLY ) enemies = fighting.filter(o => o !== SIDES.FRIENDLY);
+    else if ( side === SIDES.HOSTILE ) enemies = fighting.filter(o => o !== SIDES.HOSTILE);
+    else enemies = fighting.filter(o => o !== side); // third parties fight everyone
     const leaders = withPlaystyleLeaders(adapter?.detectLeaders(bySide[side]) ?? [], bySide[side]);
     const leader = s.leaderId === "auto" ? leaders[0] : leaders.find(l => l.id === s.leaderId) ?? (s.leaderId && s.leaderId !== "none" ? { id: s.leaderId, bonus: { brave: 10, tacticalFloor: 40, attack: 0, ac: 0 } } : null);
     const lf = s.leadershipFudge ?? {};
@@ -239,7 +278,7 @@ export function buildBattleSpec(roster, setup, { underdog = null, approach = nul
       label: game.i18n.localize(SIDE_LABELS[side] ?? side),
       enemies,
       traits: Object.fromEntries(TRAITS.map(k => [k, { base: defaults[k] ?? 50, fudge: s.traitFudge?.[k] ?? 0 }])),
-      leaderId: s.leaderId === "none" ? null : leader?.id ?? null,
+      leaderId: neutral || s.leaderId === "none" ? null : leader?.id ?? null,
       leadership: leader ? {
         brave: { base: leader.bonus.brave, fudge: lf.brave ?? 0 },
         tacticalFloor: { base: leader.bonus.tacticalFloor, fudge: lf.tacticalFloor ?? 0 },
@@ -288,6 +327,8 @@ export function buildBattleSpec(roster, setup, { underdog = null, approach = nul
       concedeLuck: setting("concedeLuck"),
       theftLuck: setting("theftLuck"),
       executeLuck: setting("executeLuck"),
+      // And the one that keeps enemies from changing sides too easily.
+      switchLuck: setting("switchLuck"),
       initiativeOrder,
       stealthSides,
       surpriseSide
@@ -369,12 +410,13 @@ export async function simulate(roster, setup, { onProgress, signal } = {}) {
   const adapter = getAdapter();
   const approach = setup.options.positioning ? approachFor(roster, setup) : null;
 
-  // Underdog neutrals need a quick estimate without them.
+  // Secret tokens joining the underdog need a quick estimate without them. (Neutrals only lean toward the underdog,
+  // and that's worked out as the fight goes.)
   let underdog = null;
-  const needsUnderdog = [SIDES.NEUTRAL, SIDES.SECRET].some(s => setup.sides[s]?.allegiance === ALLEGIANCE.UNDERDOG);
+  const needsUnderdog = setup.sides[SIDES.SECRET]?.allegiance === ALLEGIANCE.UNDERDOG;
   if ( needsUnderdog ) {
     const probeSetup = foundry.utils.deepClone(setup);
-    for ( const s of [SIDES.NEUTRAL, SIDES.SECRET] ) if ( probeSetup.sides[s].allegiance === ALLEGIANCE.UNDERDOG ) probeSetup.sides[s].allegiance = ALLEGIANCE.EXCLUDE;
+    probeSetup.sides[SIDES.SECRET].allegiance = ALLEGIANCE.EXCLUDE;
     const probe = runBatchSync(buildBattleSpec(roster, probeSetup, { approach }), adapter.rules, { runs: 200, seed: 7 });
     underdog = (probe.sides.friendly?.pWin ?? 0) < (probe.sides.hostile?.pWin ?? 0) ? SIDES.FRIENDLY : SIDES.HOSTILE;
   }
@@ -386,7 +428,7 @@ export async function simulate(roster, setup, { onProgress, signal } = {}) {
   const results = await runBatch(spec, adapter.rules, { runs: setup.options.runs, seed, onProgress, signal });
   results.crossCheck = adapter.difficultyCrossCheck?.(
     spec.combatants.filter(c => c.side === SIDES.FRIENDLY),
-    spec.combatants.filter(c => c.side !== SIDES.FRIENDLY)
+    spec.combatants.filter(c => c.side !== SIDES.FRIENDLY && c.side !== NEUTRAL_PARTY)
   ) ?? null;
   results.underdog = underdog;
   Hooks.callAll("fastFighting.postSimulate", results, { setup, roster, spec });

@@ -13,7 +13,8 @@
  *    which the system supplies; PF2e: Perception DC), with whatever the rules add (PF2e: -5 in combat).
  *  - Against a player character it also takes a hidden d100 luck check (29 or less by default; the "theftLuck"
  *    setting): never told in the story. Companions, neutrals and bystanders just face the stealing test.
- *  - A failed stealing test is noticed: the victim goes after the thief. A success isn't.
+ *  - A failed stealing test is noticed: the victim goes after the thief (someone who took no side turns on the
+ *    thief's side, or confronts the thief first: behavior/neutral.js). A success isn't.
  *  - Whatever is taken comes back at the end if the thief is beaten (like anything given up).
  * Pure: no Foundry globals.
  */
@@ -22,6 +23,7 @@ import { isStanding, isUp, areEnemies, edgeDistance, checkRoll, typical, liveTra
 import { rollCheck } from "../probability.js";
 import { costOf, normalizeCost } from "../turn.js";
 import { remaining, concession } from "./talk.js";
+import { isNeutral, offend } from "./neutral.js";
 
 /** Skill this far above typical for the level makes someone a thief, playstyle or not. */
 const SKILLED = 3;
@@ -83,9 +85,9 @@ export function stealChance(run, u, mark = null) {
   return clamp(p, 0, 0.5);
 }
 
-/** Someone within reach worth robbing, the richest first: a foe, or a bystander not in the fight. */
+/** Someone within reach worth robbing, the richest first: a foe, a bystander not in the fight, or someone taking no side. */
 export function theftTarget(run, u) {
-  const marks = run.units.filter(t => t !== u && isUp(t) && t.side !== u.side && (areEnemies(run, u, t) || t.active === false)
+  const marks = run.units.filter(t => t !== u && isUp(t) && t.side !== u.side && (areEnemies(run, u, t) || t.active === false || isNeutral(t))
     && worthRobbing(t) && (u.adjacent.has(t.id) || (edgeDistance(u, t) ?? Infinity) <= 5));
   return marks.sort((a, b) => remaining(b).money - remaining(a).money)[0] ?? null;
 }
@@ -158,6 +160,7 @@ export function attemptTheft(run, u, t, log, { plan = null, attacksMade = 0 } = 
     (t.grudges ??= new Map()).set(u.id, { provoked: true });
     u.revealed = true;
     log(u, `tries to rob ${t.spec.name} and is caught`, { ...data, noticed: true });
+    offend(run, t, u, "robbed", log);
     return { stolen: null, noticed: true, attacks };
   }
   // Robbing a player character needs luck as well as skill: a hidden check the story never mentions.

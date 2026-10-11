@@ -43,7 +43,8 @@ Once it notices, it decides from its personality whether to join, watch, or slip
   - **Side settings:**
     - group personality, healing aggressiveness, and whether the side can rout;
     - its leader and the leadership bonus;
-    - for Neutral and Secret, an allegiance: stays out, joins the party, joins the enemy, joins the nearest side, joins the underdog, or fights everyone.
+    - for Neutral, a lean: takes no side, or leans toward the party, the enemy, the nearest side or the underdog (see **Taking no side**); or it's left out, or fights everyone;
+    - for Secret, an allegiance: left out, joins the party, joins the enemy, joins the nearest side, joins the underdog, takes no side, or fights everyone.
   - **Each token row:**
     - HP, AC and its personality traits;
     - how it would reach the nearest enemy (mode, moves and terrain);
@@ -92,7 +93,8 @@ A leader who wants to talk holds their side back. Before it breaks, a charismati
 **Pitches.** Persuade, intimidate or deceive, using whatever skills the system maps to each, against the system's DC for resisting. The target has to share a language with the talker.
 - **The persuasion track:** most need 2–6 successes; the very gullible fold at once.
 - **Grudges:** hurting someone or failing to convince them makes them harder to sway. An insult (a critical failure) means they won't listen again.
-- **Outcomes:** surrender, flee, stand down, switch sides (rare unless neutral), or **give something up**.
+- **Outcomes:** surrender, flee, stand down, change sides (rare unless neutral), or **give something up**.
+- **Changing sides:** an enemy talked into it only stands aside, taking no side (see below), and only if a hidden d100 comes up under the **switch luck** slider (69 by default); otherwise it's talked into one of the other outcomes. Spells and abilities made for it (charm, dominate) don't take this roll, and still turn a creature straight over until they end.
 
 **Giving something up:**
 - **What:** 1–10% of their money, or an item they carry but don't wield or wear.
@@ -107,6 +109,15 @@ A leader who wants to talk holds their side back. Before it breaks, a charismati
 
 **Make it So hands goods over.** Each thing a PC loses gets its own GM-only chat card, with an Undo for just that hand-over.
 
+## Taking no side
+
+Neutral tokens, and enemies talked out of the fight, stand on the field taking no side. Nobody fights them and they fight no one, each on its own. The planner's lean for the Neutral side doesn't put them on a side; it makes them want that side's members safe (a desire, "determined"), which guides where they go once something happens they care about. The underdog's members change as the fight goes. An enemy who stands aside still leans a little toward its old friends, the more so the more loyal it is.
+
+- **Crossed:** whoever hurts it (a careless area spell catches one standing within 10 ft of its targets; careful casters aim around them), robs it, or insults it with a botched pitch offends it at once. Seeing someone hurt or hinder a creature it wants safe, or heal or bolster one it badly wants hurt, builds a grievance against the doer's side, faster the more it cares and the worse the harm; enough of it offends it too. Offended, it turns on that side (only that side) and fights it. Make it So turns a neutral that turned on the party Hostile.
+- **Words first:** a talker who can make itself understood confronts the offender instead: a truce between the two of them in the middle of the fight. The offender's side can talk it round; it can talk the offender into making amends (handing something over, or an apology). It turns on them when it loses patience, or the moment that side crosses it again.
+- **Won over:** either side's talkers can talk it into joining them, against its lean too, with no luck roll, as long as it hasn't seen that side cross it. Talkers weigh what joining would mean to it: a pitch that gives it what it wants (keeping someone safe, a chance at someone it wants hurt) is easier and quicker; one that betrays what it wants is harder and slower. Nobody is threatened into friendship. Make it So changes the token's disposition to its new side, and a creature that stood aside to Neutral.
+- **Results:** those who take no side never win or lose a fight, and don't keep one going. The planner shows how often a foe was talked into standing aside.
+
 ## Theft
 
 Theft mid-fight is rare; most who want your things take them from your body afterwards.
@@ -114,7 +125,7 @@ Theft mid-fight is rare; most who want your things take them from your body afte
 - **When:** only when it's safe. Either their side is clearly winning, or they're hidden and their mark is alone. Alone means no friends within 30 ft, or the two of them more than one ordinary move from everyone else.
 - **Openly:** the thief feints with its weapon first (it must hit, for no damage), then makes the system's stealing test.
 - **Against a PC:** it also needs a hidden luck check (29 or less by default). The story never mentions it.
-- **Getting caught** reveals the thief and makes it the victim's target.
+- **Getting caught** reveals the thief and makes it the victim's target. Thieves rob those who take no side too; getting caught by one turns it on the thief's side.
 - **Taken back:** stolen goods return if the thief is beaten.
 
 ## Desires
@@ -262,13 +273,14 @@ Creatures that never joined the fight aren't listed, and hidden ones are never n
 
 All settings are defaults that the planner can override per battle:
 - **Simulation:** runs and maximum rounds; hidden tokens and other levels; bystanders.
-- **Unaligned sides:** Neutral and Secret allegiance.
+- **Unaligned sides:** Neutral lean (takes no side, by default) and Secret allegiance.
 - **Dying and healing:** the downed model, after the fight, and PC healing and dying defaults.
 - **Modifiers:** leadership, morale, positioning, talking, how encounters open, and the initiative source.
-- **PC luck checks** (sliders):
-  - handing over an item, default 39;
-  - being robbed, default 29;
-  - being finished off at 0 HP, default 39.
+- **Luck checks** (sliders):
+  - a PC handing over an item, default 39;
+  - a PC being robbed, default 29;
+  - a PC being finished off at 0 HP, default 39;
+  - an enemy changing sides (under this), default 69.
 - **Story:** style, delivery, and whether the posted story shows the odds (off).
 - **Make it So:** loot, corpse and fled handling, and whether the fight plays out on the map.
 - **Defaults:** side personalities, and data paths for the generic adapter.

@@ -40,7 +40,7 @@
       },
       "neutralDefault": {
         "Name": "Neutral tokens",
-        "Hint": "Default handling of tokens with Neutral disposition. Can be changed per battle and per token."
+        "Hint": "Default handling of tokens with Neutral disposition. They stand on the field taking no side, perhaps leaning one way: whoever hurts or robs them, or crosses what they want (hurting someone they lean toward), turns them against their side, and either side's talkers can try to win them over (harder against their lean). Can be changed per battle and per token."
       },
       "secretDefault": {
         "Name": "Secret tokens",
@@ -135,17 +135,31 @@
         "Name": "Show the odds in the posted story",
         "Hint": "Adds each side's chance of winning, as the simulation saw it before the fight, to the story Make it So posts. Off by default; the planner has the same switch beside Make it So."
       },
+      "switchLuck": {
+        "Name": "Luck: an enemy changing sides",
+        "Hint": "When an enemy is talked into changing sides, it goes through with it only if a hidden d100 comes up under this; otherwise it's talked into something else (surrendering, standing down, running). Even then it only stands aside, taking no side, and has to be won over from there. 100 means it always does. Doesn't touch spells and abilities made for it (charm, dominate), or talking round someone who already takes no side."
+      },
       "executeLuck": {
         "Name": "PC luck: being finished off",
         "Hint": "Each time a creature wants to kill a player character who's down at 0 HP, it goes ahead only if a hidden d100 comes up at or under this; otherwise it turns away to its next foe, taking everything it wanted of that PC along. Higher means fallen PCs die more often."
       }
     },
     "Allegiance": {
-      "exclude": "Stays out of it",
+      "exclude": "Left out of it",
       "friendly": "Joins the party",
       "hostile": "Joins the enemy",
       "closest": "Joins the nearest side",
       "underdog": "Joins the underdog",
+      "own": "Fights everyone",
+      "neutral": "Takes no side (until crossed)"
+    },
+    "Lean": {
+      "exclude": "Left out of it",
+      "neutral": "Takes no side (until crossed)",
+      "friendly": "Leans toward the party",
+      "hostile": "Leans toward the enemy",
+      "closest": "Leans toward the nearest side",
+      "underdog": "Leans toward the underdog",
       "own": "Fights everyone"
     },
     "Downed": {
@@ -189,7 +203,8 @@
       "friendly": "Friendly",
       "hostile": "Hostile",
       "neutral": "Neutral",
-      "secret": "Secret"
+      "secret": "Secret",
+      "neutralParty": "Taking no side"
     },
     "Trait": {
       "tactical": "Tactical",
@@ -252,7 +267,9 @@
       "surrendered": "Surrendered",
       "switched": "Switched sides",
       "stoodDown": "Stood down",
-      "conceded": "Gave something up"
+      "conceded": "Gave something up",
+      "neutral": "Stood aside",
+      "noSide": "Took no side"
     },
     "Difficulty": {
       "trivial": "Trivial",
@@ -286,6 +303,7 @@
       "RefreshHint": "Re-read the tokens on the scene",
       "Run": "Run",
       "Allegiance": "Allegiance",
+      "Lean": "Lean",
       "Healing": "Healing",
       "SideMorale": "Can rout",
       "GroupTraits": "Group personality",
@@ -310,6 +328,13 @@
       "RunFailed": "Simulation failed: {error}",
       "FightsWith": "Fights as {side}",
       "SitsOut": "Sits this one out",
+      "TakesNoSide": {
+        "neutral": "Takes no side (until crossed)",
+        "friendly": "Takes no side, leaning toward the party",
+        "hostile": "Takes no side, leaning toward the enemy",
+        "closest": "Takes no side, leaning toward the nearest side",
+        "underdog": "Takes no side, leaning toward the underdog"
+      },
       "Approach": "{mode} {distance} to reach {name}",
       "Terrain": "terrain",
       "OutOfReach": "can't reach in melee",
@@ -375,6 +400,7 @@
       "Swayed": "Foe talked down",
       "TalkedDown": "talked down",
       "Switched": "Switched sides",
+      "Neutral": "Stood aside",
       "Peaceful": "Settled with words",
       "Conceded": "gave something up"
     },

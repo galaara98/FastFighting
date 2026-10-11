@@ -110,9 +110,11 @@ describe("talk in the simulation", () => {
     expect(off.pAnySwayed).toBe(0);
   });
 
-  test("neutrals switch sides far more often than hostiles", () => {
+  test("neutrals fighting for a side are talked back to taking no side far more often than hostiles", () => {
     const n = runBatchSync(battle([talker(), bandit({ originSide: "neutral" })]), pf2eRules, { runs: 800 });
     const h = runBatchSync(battle([talker(), bandit({ originSide: "hostile" })]), pf2eRules, { runs: 800 });
-    expect(n.combatants.bandit.pSwitched).toBeGreaterThan(h.combatants.bandit.pSwitched);
+    expect(n.combatants.bandit.pNeutral).toBeGreaterThan(h.combatants.bandit.pNeutral);
+    // An enemy only ever stands aside: nobody switches straight over.
+    expect(n.combatants.bandit.pSwitched).toBe(0);
   });
 });

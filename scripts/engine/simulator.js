@@ -4,7 +4,7 @@
  * Every logged event carries structured data (type, rolls, margins, damage types, movement) so the story
  * writer can narrate it at any level of detail.
  */
-import { STATUS, TACTICAL, DOWNED_MODELS, AFTERMATH, EXECUTE_LUCK, clamp } from "../constants.js";
+import { STATUS, TACTICAL, DOWNED_MODELS, AFTERMATH, EXECUTE_LUCK, NEUTRAL_PARTY, clamp } from "../constants.js";
 import { createRng, deriveSeed, randomSeed } from "./rng.js";
 import { sampleDamage, samplePart, meanPart, part } from "./dice.js";
 import { rollCheck, regrade } from "./probability.js";
@@ -35,6 +35,7 @@ import { decideBuff, aidScores } from "./behavior/support.js";
 import { perceives } from "./behavior/senses.js";
 import { stealChance, theftTarget, theftPlan, attemptTheft } from "./behavior/theft.js";
 import { reactionsPerRound, threats, takesSafeWay } from "./behavior/reactions.js";
+import { isNeutral, crossed, caughtInArea, refreshLeans, truceWith, truceBreaks, turnOn, settleTruce } from "./behavior/neutral.js";
 import { normalizeCost } from "./turn.js";
 
 const MAX_STEPS_PER_TURN = 8;
@@ -157,6 +158,17 @@ function join(run, b, why) {
 
 /** A bystander who has noticed the fight decides: join, leave, or keep watching. */
 function decideToJoin(run, b, cause) {
+  if ( isNeutral(b) ) {
+    // Someone who takes no side: the timid slip away; the rest come closer and watch, taking no side (yet).
+    if ( (b.prep.traits.brave < 30 || b.prep.traits.selfish > 70) && run.rng.chance(0.5) ) {
+      b.status = STATUS.FLED;
+      b.fellRound ??= run.round;
+      return log(run, b, "wants no part of it and slips away", { type: "leave", from: null, to: null });
+    }
+    b.active = true;
+    b.joinedRound ??= run.round;
+    return log(run, b, "watches, taking no side", { type: "watch", neutral: true });
+  }
   const brave = b.prep.traits.brave;
   const loyal = b.prep.traits.loyal;
   const selfish = b.prep.traits.selfish;
@@ -296,8 +308,11 @@ function dealDamage(run, source, target, amount, { crit = false } = {}) {
       });
     }
     testConcentration(run, target, rest + absorbed);
+    // Someone taking no side who was hurt, or who saw someone it wants safe hurt, takes note.
+    if ( run.neutral && source ) crossed(run, source, target, "harm", 0.5 + Math.min(1.5, 3 * (dealt + absorbed) / Math.max(1, target.maxHp)) + (target.hp <= 0 ? 1 : 0), logger(run));
   } else if ( target.status === STATUS.DOWN ) {
     if ( model === DOWNED_MODELS.OUT ) return;
+    if ( run.neutral && source ) crossed(run, source, target, "harm", 1.5, logger(run));
     rules.onDropped(target, { crit, model, amount, overflow: amount });
     if ( source?.spec.neverKill && target.status === STATUS.DEAD ) knockOut(run, target);
     const dead = target.status === STATUS.DEAD;
@@ -527,6 +542,7 @@ function executeOffense(run, u, action, t, attacksMade) {
     const others = enemiesOf(run, u).filter(o => o !== t && isStanding(o));
     run.rng.shuffle(others);
     targets.push(...others.slice(0, Math.max(0, (action.area.targets ?? 2) - 1)));
+    if ( run.neutral ) targets.push(...caughtInArea(run, u, targets));
   }
   const ranged = !!action.range && !action.melee;
   const logging = !!run.log; // thousands of unlogged runs shouldn't pay for building log text
@@ -960,6 +976,7 @@ function executeControl(run, u, action, target, attacksMade, common) {
     if ( !outcome.self ) moveHeld(run, u, action, lands);
     applyOutcome(lands, outcome, u.id, action);
     testConcentration(run, lands);
+    if ( run.neutral && !outcome.self ) crossed(run, u, lands, "harm", 1, logger(run));
   }
   let damage = 0;
   if ( action.damage?.length ) {
@@ -1008,6 +1025,7 @@ function executeBuff(run, u, action, targets, worth = 0, turn = null) {
   const landed = targets.filter(t => isUp(t));
   if ( landed.length === 1 ) moveHeld(run, u, action, landed[0]);
   for ( const t of landed ) applyOutcome(t, action.outcome, u.id, action);
+  if ( run.neutral ) for ( const t of landed ) crossed(run, u, t, "help", 0.5, logger(run));
   spendUse(u, action);
   if ( action.concentration ) {
     if ( holdsAnything(run, u) ) noteConcentration(u, worth);
@@ -1063,6 +1081,7 @@ function executeHeal(run, u, action, target) {
   u.healedTargets.add(`${action.id}|${target.id}`);
   spendUse(u, action);
   const revived = wasDown && target.status === STATUS.STANDING;
+  if ( run.neutral && target.hp > before ) crossed(run, u, target, "help", revived ? 1.5 : 0.75, logger(run));
   if ( run.log ) log(run, u, `${action.name} → ${target === u ? "self" : target.spec.name}: heals ${target.hp - before}${revived ? " and revives them" : ""}`, {
     type: "heal", action: action.name, target: target.spec.name, targetId: target.id, self: target === u, amount: target.hp - before, revived,
     potion: !!action.selfOnly, check: roll ? { natural: roll.natural, mod: action.healCheck.mod, total: roll.total, dc: action.healCheck.dc, degree: roll.degree } : null
@@ -1275,6 +1294,32 @@ function standoffPitching(run, u, n, only = null) {
   }
 }
 
+/**
+ * A turn for someone who takes no side and isn't fighting anyone: it watches, unless it's having words with someone
+ * who crossed it (behavior/neutral.js), when it presses its case, lets it drop if there's no one left to talk to, or
+ * loses patience and turns on them. Returns true if it now fights (the rest of the turn is an ordinary one).
+ */
+function neutralTurn(run, u) {
+  const say = logger(run);
+  if ( u.truce ) {
+    const other = truceWith(run, u);
+    if ( !other ) {
+      log(run, u, "lets the matter drop", { type: "neutral", what: "lapse" });
+      settleTruce(u, u.truce.side);
+    } else if ( truceBreaks(run, u) ) {
+      turnOn(run, u, other, "impatient", say);
+      return true;
+    } else {
+      const rules = run.prep.rules;
+      const side = u.truce.side;
+      standoffPitching(run, u, standoffPitches(run, u, turnFor(run, u).howMany(rules.talkCost ?? rules.basicAction ?? 1)), o => o.side === side);
+    }
+  }
+  u.turnsTaken += 1;
+  endOfTurn(run, u);
+  return false;
+}
+
 /** A turn while the standoff holds: talkers press their case, everyone else keeps their hands off their weapons. */
 function standoffTurn(run, u) {
   const rules = run.prep.rules;
@@ -1336,6 +1381,9 @@ function takeTurn(run, u) {
     endOfTurn(run, u);
     return;
   }
+
+  // Taking no side: it watches, or has words with whoever crossed it; once it has turned on a side, it fights.
+  if ( isNeutral(u) && !enemiesOf(run, u).some(isStanding) && !neutralTurn(run, u) ) return;
 
   // While a standoff holds, nobody fights; it lasts until someone gets upset.
   let brokeStandoff = false;
@@ -1802,8 +1850,9 @@ function reclaimGoods(run) {
 /* -------------------------------------------- */
 
 function activeSides(run) {
-  // (A summoned thing nobody can attack, a Spiritual Weapon, doesn't keep its side in the fight.)
-  return [...new Set(run.units.filter(u => isStanding(u) && !u.spec.untargetable).map(u => u.side))];
+  // (A summoned thing nobody can attack, a Spiritual Weapon, doesn't keep its side in the fight; nor does anyone who
+  // takes no side.)
+  return [...new Set(run.units.filter(u => isStanding(u) && !u.spec.untargetable && u.side !== NEUTRAL_PARTY).map(u => u.side))];
 }
 
 export function battleOver(run) {
@@ -1812,6 +1861,12 @@ export function battleOver(run) {
   for ( let i = 0; i < active.length; i++ ) {
     for ( let j = i + 1; j < active.length; j++ ) {
       if ( run.prep.sides[active[i]].enemies.has(active[j]) ) return false;
+    }
+  }
+  // Someone who took no side, and has since turned on a side still standing, keeps the fight going.
+  if ( run.neutral ) {
+    for ( const u of run.units ) {
+      if ( isNeutral(u) && u.against.size && isStanding(u) && !u.spec.untargetable && active.some(s => u.against.has(s)) ) return false;
     }
   }
   // A hunter with prey still in reach keeps the fight going.
@@ -1843,6 +1898,7 @@ function captureUnit(u, rules) {
     swayed: u.swayOutcome,
     // Under someone else's control when it ended: it still belongs to its own side.
     controlledBy: u.controlledBy ?? null,
+    against: [...(u.against ?? [])], // (someone who took no side: the sides it turned on)
     concessions: (u.concessions ?? []).map(c => ({ ...c })), // what they gave up when talked into it (Make it So hands it over)
     side: u.homeSide ?? u.side,
     resources: { ...u.resources },
@@ -1886,6 +1942,7 @@ export function runOne(prep, seed, { log: withLog = false, capture = false } = {
   const run = createRun(prep);
   run.rng = createRng(seed);
   for ( const u of run.units ) initDesires(u);
+  refreshLeans(run); // which way those who take no side lean
   prep.doors ??= prepareDoors(prep.spec, prep.rules);
   run.doors = doorStates(prep);
   // Each simulated fight decides which stated preferences win out (see "stay mostly true").
@@ -1914,6 +1971,7 @@ export function runOne(prep, seed, { log: withLog = false, capture = false } = {
   for ( let round = 1; !ended && round <= prep.options.maxRounds; round++ ) {
     run.round = round;
     checkAwareness(run);
+    refreshLeans(run); // (the underdog changes as the fight goes)
     for ( const u of order ) {
       takeTurn(run, u);
       if ( battleOver(run) ) { ended = true; break; }
@@ -1923,7 +1981,9 @@ export function runOne(prep, seed, { log: withLog = false, capture = false } = {
   const winners = !ended ? [] : run.resolved ? [run.resolved.side] : activeSides(run);
   if ( withLog ) {
     const labels = winners.map(s => prep.sides[s]?.label ?? s);
-    log(run, null, ended ? (labels.length ? `${labels.join(" & ")} win after ${run.round} rounds` : "No one is left standing") : `Still fighting after ${run.round} rounds`, {
+    const last = run.units.filter(u => isNeutral(u) && isStanding(u) && u.against.size).map(u => u.spec.name);
+    const none = last.length ? `Only ${last.join(" & ")} still stands` : "No one is left standing";
+    log(run, null, ended ? (labels.length ? `${labels.join(" & ")} win after ${run.round} rounds` : none) : `Still fighting after ${run.round} rounds`, {
       type: "end", outcome: !ended ? "stalemate" : (winners.length ? "victory" : "none"), winners, winnerLabels: labels, rounds: run.round,
       peaceful: ended && !run.blood, standoff: !!run.standoff, resolved: run.resolved?.outcome ?? null
     });
