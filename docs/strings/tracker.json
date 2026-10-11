@@ -5086,10 +5086,10 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.MakeItSo.Outcome.Dies",
    "area": "core/MakeItSo",
-   "status": "todo",
-   "date": null,
-   "commit": null,
-   "hash": "5b4914ab33f7"
+   "status": "written",
+   "date": "2026-10-11",
+   "commit": "54558c4",
+   "hash": "aacf35708ea5"
   },
   "core:FASTFIGHTING.MakeItSo.Outcome.Down": {
    "repo": "core",
@@ -7701,10 +7701,10 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Settings.bossInfluence.Name",
    "area": "core/Settings",
-   "status": "todo",
-   "date": null,
-   "commit": null,
-   "hash": "a72781f89fcd"
+   "status": "written",
+   "date": "2026-10-11",
+   "commit": "54558c4",
+   "hash": "47293363ff2e"
   },
   "core:FASTFIGHTING.Settings.bystanders.Hint": {
    "repo": "core",
@@ -7921,10 +7921,10 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Settings.leaderInfluence.Name",
    "area": "core/Settings",
-   "status": "todo",
-   "date": null,
-   "commit": null,
-   "hash": "b40175839bcb"
+   "status": "written",
+   "date": "2026-10-11",
+   "commit": "54558c4",
+   "hash": "5059bcfb9493"
   },
   "core:FASTFIGHTING.Settings.leadership.Hint": {
    "repo": "core",
@@ -7981,10 +7981,10 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Settings.maxRounds.Name",
    "area": "core/Settings",
-   "status": "todo",
-   "date": null,
-   "commit": null,
-   "hash": "0ce0e02c37a5"
+   "status": "written",
+   "date": "2026-10-11",
+   "commit": "54558c4",
+   "hash": "f8ea6369c5ed"
   },
   "core:FASTFIGHTING.Settings.morale.Hint": {
    "repo": "core",
@@ -8021,10 +8021,10 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Settings.neutralDefault.Name",
    "area": "core/Settings",
-   "status": "todo",
-   "date": null,
-   "commit": null,
-   "hash": "2b31dad686e9"
+   "status": "written",
+   "date": "2026-10-11",
+   "commit": "54558c4",
+   "hash": "a65c90e07e8c"
   },
   "core:FASTFIGHTING.Settings.neutralReach.Hint": {
    "repo": "core",
