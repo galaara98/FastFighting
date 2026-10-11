@@ -43,7 +43,9 @@ export function encounterTokenIds(scene = canvas.scene) {
 export async function gatherRoster(setup, adapter = getAdapter()) {
   if ( !canvas.ready || !adapter ) return [];
   const levelId = canvas.level?.id ?? null;
-  const inEncounter = encounterTokenIds();
+  const encounter = encounterTokenIds();
+  // In the encounter: aware of the conflict from the start. With no encounter on the scene, that's everyone on the map.
+  const inEncounter = { has: id => !encounter.size || encounter.has(id) };
   const tokens = canvas.tokens.placeables.filter(t => {
     if ( !t.actor || !adapter.canHandle(t.actor) ) return false;
     const starts = inEncounter.has(t.id);

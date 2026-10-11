@@ -133,7 +133,13 @@ function cueFrom(run, b, c) {
   return null;
 }
 
+/**
+ * b, on the map but not in the encounter, becomes aware of the conflict. It takes its turns from the next round, as
+ * if it had been in the encounter all along (its side, its desires and its nerve decide what it does then; someone
+ * taking no side starts weighing what it wants). Set upon, it's in the fight at once.
+ */
 function notice(run, b, cause, source) {
+  if ( b.aware && cause !== "attacked" ) return; // (it already knows; it's on its way)
   b.aware = true;
   // During a standoff there is no fighting to see or hear, only a tense crowd and raised voices.
   if ( run.standoff && (cause === "sight" || cause === "sound") ) cause = "standoff";
@@ -147,82 +153,52 @@ function notice(run, b, cause, source) {
   }[cause] ?? "notices the fight";
   log(run, b, text, { type: "notice", cause, by: source?.spec.name ?? null, byId: source?.id ?? null });
   if ( cause === "attacked" ) return join(run, b, "forced");
-  decideToJoin(run, b, cause);
+  b.joinsRound ??= run.round + 1;
+  b.joinCause = cause;
 }
 
+/** b takes part from now on (someone who takes no side watches, weighing what it wants). */
 function join(run, b, why) {
   b.active = true;
+  b.aware = true;
+  b.joinsRound = null;
   b.joinedRound = run.round;
+  if ( isNeutral(b) && !enemiesOf(run, b).length ) return log(run, b, "watches, taking no side", { type: "watch", neutral: true, why });
   log(run, b, why === "forced" ? "is drawn into the fight" : "joins the fight", { type: "join", why });
 }
 
-/** A bystander who has noticed the fight decides: join, leave, or keep watching. */
-function decideToJoin(run, b, cause) {
-  if ( isNeutral(b) ) {
-    // Someone who takes no side: the timid slip away; the rest come closer and watch, taking no side (yet).
-    if ( (b.prep.traits.brave < 30 || b.prep.traits.selfish > 70) && run.rng.chance(0.5) ) {
-      b.status = STATUS.FLED;
-      b.fellRound ??= run.round;
-      return log(run, b, "wants no part of it and slips away", { type: "leave", from: null, to: null });
-    }
-    b.active = true;
-    b.joinedRound ??= run.round;
-    return log(run, b, "watches, taking no side", { type: "watch", neutral: true });
+/** Waiting to take part: aware of the conflict, with turns from the next round. */
+const joining = u => u.status === STATUS.STANDING && !u.active && u.aware && u.joinsRound !== null && u.joinsRound !== undefined;
+
+/**
+ * The turn of someone on the map who isn't in the conflict yet: does it notice it now (seeing or hearing an active
+ * combatant, against the system's check)? Returns true if it takes part from this turn on (it noticed earlier).
+ */
+function lookAround(run, b) {
+  if ( joining(b) ) {
+    if ( run.round < b.joinsRound ) return false;
+    join(run, b, b.joinCause);
+    return true;
   }
-  const brave = b.prep.traits.brave;
-  const loyal = b.prep.traits.loyal;
-  const selfish = b.prep.traits.selfish;
-  const friends = alliesOf(run, b).filter(a => a !== b && a.active);
-  const foes = enemiesOf(run, b).filter(isStanding);
-  if ( !foes.length && !friends.length ) {
-    b.watchUntil = run.round + 2;
-    return log(run, b, "watches warily", { type: "watch" });
+  if ( b.aware || b.status !== STATUS.STANDING ) return false;
+  let best = null;
+  for ( const c of run.units ) {
+    if ( c === b || !c.active ) continue;
+    if ( c.status !== STATUS.STANDING && c.fellRound !== run.round && c.fellRound !== run.round - 1 ) continue;
+    const cue = cueFrom(run, b, c);
+    if ( cue && (!best || cue.dc < best.cue.dc) ) best = { cue, c };
   }
-  const tier = liveTier(run, b);
-  let p = 0.35 + (brave - 50) / 150 + (loyal - 50) / 150 - (selfish - 50) / 250;
-  if ( tier <= TACTICAL.FERAL ) p = 0.5 + (brave - 50) / 100; // territorial instinct
-  if ( b.spec.flags?.mindless ) p = 0.9;
-  if ( cause === "help" ) p += 0.35;
-  const losing = friends.some(f => f.status !== STATUS.STANDING);
-  if ( losing ) p += 0.1 * (loyal / 50);
-  if ( run.rng.chance(Math.min(0.95, Math.max(0.05, p))) ) return join(run, b, cause);
-  if ( selfish > 60 || brave < 30 ) {
-    b.status = STATUS.FLED;
-    b.fellRound ??= run.round;
-    const from = run.log && b.pos ? { x: b.pos.x, y: b.pos.y } : null;
-    moveAway(run, b, (b.spec.speeds?.walk ?? 25) * 2);
-    return log(run, b, "wants no part of it and slips away", { type: "leave", from, to: from ? { x: b.pos.x, y: b.pos.y } : null });
-  }
-  b.watchUntil = run.round + 2;
-  log(run, b, "hangs back, watching", { type: "watch" });
+  if ( !best ) return false;
+  const perception = b.spec.perception ?? b.spec.initiative?.mod ?? 0;
+  const check = checkRoll(run, b, perception);
+  const roll = rollCheck(run.prep.rules, run.rng, check.mod, best.cue.dc, { advantage: check.advantage, kind: "check" });
+  if ( roll.degree >= 2 ) notice(run, b, best.cue.sense, best.c);
+  return false;
 }
 
-/** Start of each round: bystanders who can see or hear an active combatant may notice. */
-function checkAwareness(run) {
-  for ( const b of run.units ) {
-    if ( b.active || b.status !== STATUS.STANDING ) continue;
-    if ( b.aware && b.watchUntil && run.round < b.watchUntil ) continue;
-    let best = null;
-    for ( const c of run.units ) {
-      if ( c === b || !c.active ) continue;
-      if ( c.status !== STATUS.STANDING && c.fellRound !== run.round && c.fellRound !== run.round - 1 ) continue;
-      const cue = cueFrom(run, b, c);
-      if ( cue && (!best || cue.dc < best.cue.dc) ) best = { cue, c };
-    }
-    if ( !best ) continue;
-    const perception = b.spec.perception ?? b.spec.initiative?.mod ?? 0;
-    const check = checkRoll(run, b, perception);
-    const roll = rollCheck(run.prep.rules, run.rng, check.mod, best.cue.dc, { advantage: check.advantage, kind: "check" });
-    if ( roll.degree >= 2 ) {
-      if ( b.aware ) decideToJoin(run, b, best.cue.sense);
-      else notice(run, b, best.cue.sense, best.c);
-    }
-  }
-}
-
-/** Unaware or uncommitted bystanders on u's side who could be fetched. */
+/** Bystanders on u's side who don't know about the fight yet, and could be fetched. */
 function helpFor(run, u) {
-  return run.units.filter(o => o !== u && !o.active && o.side === u.side && o.status === STATUS.STANDING && !o.calledForHelp);
+  return run.units.filter(o => o !== u && !o.active && !o.aware && o.side === u.side && o.status === STATUS.STANDING && !o.calledForHelp);
 }
 
 /** Should u run for help this turn? (Its answers say so, or a thinking NPC sees it going badly.) */
@@ -1353,7 +1329,8 @@ function lastWord(run) {
 function takeTurn(run, u) {
   const { rules, options } = run.prep;
   if ( [STATUS.DEAD, STATUS.FLED, STATUS.SURRENDERED, STATUS.STOOD_DOWN].includes(u.status) ) return;
-  if ( !u.active ) return; // bystanders act only once they join
+  // On the map but not in the conflict: it only looks around, until the round after it notices.
+  if ( !u.active && !lookAround(run, u) ) return;
   // A summoned creature: gone when its time or its summoner's concentration runs out; idle when it wasn't sustained.
   if ( u.summoner ) {
     const state = summonState(run, u);
@@ -1852,7 +1829,8 @@ function reclaimGoods(run) {
 function activeSides(run) {
   // (A summoned thing nobody can attack, a Spiritual Weapon, doesn't keep its side in the fight; nor does anyone who
   // takes no side.)
-  return [...new Set(run.units.filter(u => isStanding(u) && !u.spec.untargetable && u.side !== NEUTRAL_PARTY).map(u => u.side))];
+  // (Someone who has noticed the fight and takes part next round counts: it's coming.)
+  return [...new Set(run.units.filter(u => (isStanding(u) || joining(u)) && !u.spec.untargetable && u.side !== NEUTRAL_PARTY).map(u => u.side))];
 }
 
 export function battleOver(run) {
@@ -1970,7 +1948,6 @@ export function runOne(prep, seed, { log: withLog = false, capture = false } = {
   let ended = battleOver(run);
   for ( let round = 1; !ended && round <= prep.options.maxRounds; round++ ) {
     run.round = round;
-    checkAwareness(run);
     refreshLeans(run); // (the underdog changes as the fight goes)
     for ( const u of order ) {
       takeTurn(run, u);

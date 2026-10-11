@@ -21,13 +21,22 @@ https://github.com/galaara98/FastFighting/releases/latest/download/module.json
 
 **The encounter starts it.** Add combatants to an encounter in the Combat Tracker. Once it has at least two tokens, a **Battle Planner** button appears at the top of the tracker; it's GM only. <kbd>Shift</kbd>+<kbd>B</kbd> opens the planner too. It picks up an encounter already under way from whoever's turn it is, keeping wounds, dying and conditions.
 
-**Bystanders.** Every token on the map that isn't in the encounter is a bystander. A bystander does nothing unless something draws it in:
-- it sees or hears the fight (walls muffle sound);
+**In the encounter, or just on the map.** Being in the encounter means being aware of the conflict when the simulation starts. Every other token on the map (a bystander) only checks, on its own turn, whether it becomes aware of the conflict now; once it is, it takes its turns from the next round, as if it had been in the encounter all along. It becomes aware when:
+- it sees or hears a combatant (walls muffle sound), against the system's Perception (or the like);
 - an ally runs to it calling for help;
-- a hunter goes after it;
-- someone fleeing runs into it.
+- someone fleeing runs into it;
+- someone attacks it (a hunter, a careless spell): then it's in the fight at once.
 
-Once it notices, it decides from its personality whether to join, watch, or slip away.
+What a token does then depends on its disposition (the planner can move any token to another side, or leave it out):
+
+| Disposition | In the encounter (aware from the start) | On the map, not in the encounter |
+|---|---|---|
+| **Friendly** | Fights for the party from round 1. | Checks each turn whether it notices; fights for the party from the round after. |
+| **Hostile** | Fights for the enemy from round 1. | Checks each turn whether it notices; fights for the enemy from the round after. |
+| **Neutral** | Takes no side, but weighs what it wants from round 1: its lean (the planner's Neutral tab), its friends among the other neutrals, whatever its Tactics say. It may be offended, confront someone, or be won over (see **Taking no side**). | Checks each turn whether it notices; from the round after, takes no side but starts weighing what it wants. |
+| **Secret** | Hidden until it acts; fights for the side its allegiance names (the enemy by default; "takes no side" makes it a Neutral). | Checks each turn whether it notices; from the round after, as in the encounter. |
+
+Its side, desires, nerve and personality decide the rest: a coward may still break and run, a talker may try words first. The encounter is the Combat Tracker's encounter for the scene; with none, everyone on the map is in it. The planner's toggles leave out bystanders, hidden tokens and tokens on other levels.
 
 **The planner** needs at least 1000×600 and uses any extra space you give it.
 
@@ -111,11 +120,15 @@ A leader who wants to talk holds their side back. Before it breaks, a charismati
 
 ## Taking no side
 
-Neutral tokens, and enemies talked out of the fight, stand on the field taking no side. Nobody fights them and they fight no one, each on its own. The planner's lean for the Neutral side doesn't put them on a side; it makes them want that side's members safe (a desire, "determined"), which guides where they go once something happens they care about. The underdog's members change as the fight goes. An enemy who stands aside still leans a little toward its old friends, the more so the more loyal it is.
+Neutral tokens, and enemies talked out of the fight, stand on the field taking no side. Nobody fights them and they fight no one, each on its own. The planner's lean for the Neutral side doesn't put them on a side; it makes them want that side's members safe (a desire, "determined"), which guides where they go once something happens they care about. The underdog's members change as the fight goes. Neutral tokens also want each other safe (the villagers, the caravan). An enemy who stands aside still leans a little toward its old friends, the more so the more loyal it is.
+
+A lean doesn't last: watching the side it leans toward hurt someone it cares about wears it down, and that side hurting it ends it at once (either way round).
 
 - **Crossed:** whoever hurts it (a careless area spell catches one standing within 10 ft of its targets; careful casters aim around them), robs it, or insults it with a botched pitch offends it at once. Seeing someone hurt or hinder a creature it wants safe, or heal or bolster one it badly wants hurt, builds a grievance against the doer's side, faster the more it cares and the worse the harm; enough of it offends it too. Offended, it turns on that side (only that side) and fights it. Make it So turns a neutral that turned on the party Hostile.
 - **Words first:** a talker who can make itself understood confronts the offender instead: a truce between the two of them in the middle of the fight. The offender's side can talk it round; it can talk the offender into making amends (handing something over, or an apology). It turns on them when it loses patience, or the moment that side crosses it again.
-- **Won over:** either side's talkers can talk it into joining them, against its lean too, with no luck roll, as long as it hasn't seen that side cross it. Talkers weigh what joining would mean to it: a pitch that gives it what it wants (keeping someone safe, a chance at someone it wants hurt) is easier and quicker; one that betrays what it wants is harder and slower. Nobody is threatened into friendship. Make it So changes the token's disposition to its new side, and a creature that stood aside to Neutral.
+- **Won over:** either side's talkers can talk it into joining them, against its lean too, with no luck roll, as long as it hasn't seen that side cross it. Talkers weigh what joining would mean to it: a pitch that gives it what it wants (keeping someone safe, a chance at someone it wants hurt) is easier and quicker, so one already leaning their way doesn't take much; one that betrays what it wants is harder and slower. Nobody is threatened into friendship. Make it So changes the token's disposition to its new side, and a creature that stood aside to Neutral.
+- **Who knows:** only a tactical mind (Tactical and up) sees someone taking no side for what it is, and only a tactical talker knows it could be won over. Anyone else goes by appearances and its desires: a neutral leaning toward its enemies looks like one of them, and to a feral creature anything close is fair game, so it may attack (which offends the neutral, and ends any lean toward its side). One who always tries words first (a Diplomat, "talk first", "always prefers talking") talks to a neutral it takes for a foe, and may win it over by accident; a desire to talk to it (stated, or its leader's) does the same.
+- **Keeping the peace:** while a neutral is having words with a side, that side's smart members (Tactical and up) hold off hurting it or anyone it wants safe, unless the talk is going against them anyway (nobody left who can talk to it, or it's nearly out of patience). Smart creatures likewise won't break an opening standoff unless their side is losing the talk.
 - **Results:** those who take no side never win or lose a fight, and don't keep one going. The planner shows how often a foe was talked into standing aside.
 
 ## Theft

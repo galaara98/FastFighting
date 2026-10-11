@@ -64,3 +64,51 @@ describe("bystanders", () => {
     expect(r.log.some(e => e.type === "move" && typeof e.feet === "number")).toBe(true);
   });
 });
+
+describe("aware of the conflict", () => {
+  test("a bystander who notices takes its first turn the round after", () => {
+    let checked = 0;
+    for ( let seed = 1; seed <= 15; seed++ ) {
+      const r = replay(scene({ see: true }), pf2eRules, seed);
+      const noticed = r.log.find(e => e.actor === "guard" && e.type === "notice");
+      if ( !noticed ) continue;
+      checked += 1;
+      // Nothing else from it that round; then it joins.
+      expect(r.log.filter(e => e.actor === "guard" && e.round === noticed.round && e.type !== "notice" && e.type !== "thought")).toEqual([]);
+      const joined = r.log.find(e => e.actor === "guard" && e.type === "join");
+      if ( joined ) expect(joined.round).toBe(noticed.round + 1);
+    }
+    expect(checked).toBeGreaterThan(5);
+  });
+
+  test("once aware, a bystander always takes part (no more deciding whether to join)", () => {
+    let noticed = 0;
+    for ( let seed = 1; seed <= 20; seed++ ) {
+      const r = replay(scene({ see: true }), pf2eRules, seed);
+      if ( !r.log.some(e => e.actor === "guard" && e.type === "notice") ) continue;
+      noticed += 1;
+      expect(r.log.some(e => e.actor === "guard" && e.type === "join")).toBe(true);
+      expect(r.log.some(e => e.actor === "guard" && (e.type === "leave" || e.type === "watch"))).toBe(false);
+    }
+    expect(noticed).toBeGreaterThan(5);
+  });
+
+  test("a neutral bystander who notices takes no side, but starts weighing what it wants", () => {
+    const spec = scene({ see: true });
+    const guard = spec.combatants.find(c => c.id === "guard");
+    Object.assign(guard, { side: "neutralParty", originSide: "neutral", lean: "friendly" });
+    // (A tough foe, so the fight lasts long enough for the guard to notice it.)
+    Object.assign(spec.combatants.find(c => c.id === "foe"), { hp: { value: 120, max: 120 } });
+    let watched = 0;
+    for ( let seed = 1; seed <= 15; seed++ ) {
+      const r = replay(spec, pf2eRules, seed);
+      const joined = r.log.find(e => e.actor === "guard" && (e.type === "watch" || e.type === "join"));
+      if ( !joined ) continue;
+      watched += 1;
+      expect(joined.type).toBe("watch");
+      // It only ever fights the side it turns on (here, the foe hurting the party it leans toward).
+      expect(r.log.filter(e => e.actor === "guard" && e.type === "attack").every(e => e.target === "foe")).toBe(true);
+    }
+    expect(watched).toBeGreaterThan(5);
+  });
+});
