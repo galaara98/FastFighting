@@ -1,10 +1,13 @@
 import { describe, expect, test } from "vitest";
 import { runBatchSync, replay, prepareBattle } from "../scripts/engine/simulator.js";
-import { createRun, areEnemies, alliesOf } from "../scripts/engine/battle-state.js";
+import { createRun, areEnemies, alliesOf, heldOff } from "../scripts/engine/battle-state.js";
 import { createRng } from "../scripts/engine/rng.js";
 import { initDesires } from "../scripts/engine/behavior/desire.js";
-import { crossed, refreshLeans, appeal, seemsFoe, sparedForTruce, GRIEVANCE, LEAN, FELLOW } from "../scripts/engine/behavior/neutral.js";
-import { attemptTalk, choosePitch, talkDC, stepsToConvince } from "../scripts/engine/behavior/talk.js";
+import { crossed, refreshLeans, appeal, seemsFoe, sparedForTruce, meddling, inFray, dislikesViolence, GRIEVANCE, LEAN, FELLOW } from "../scripts/engine/behavior/neutral.js";
+import { attemptTalk, choosePitch, talkDC, stepsToConvince, aimOf } from "../scripts/engine/behavior/talk.js";
+import { breaksStandoff } from "../scripts/engine/behavior/standoff.js";
+import { chooseTarget } from "../scripts/engine/behavior/targeting.js";
+import { combinePlaystyles } from "../scripts/engine/playstyles.js";
 import { NEUTRAL_PARTY } from "../scripts/constants.js";
 import { pf2eRules } from "./fixtures/three-action-rules.js";
 import { parseFormula } from "../scripts/engine/dice.js";
@@ -309,11 +312,12 @@ describe("a neutral talking for the side it leans toward", () => {
   const bandit = (over = {}) => brute({ id: "bandit", social: social(), hp: { value: 40, max: 40 }, ...over });
   const pc = (over = {}) => fighter({ social: social(), ...over });
 
-  test("in a standoff it talks the party's enemies out of the fight, and that settles it for the party", () => {
+  test("in a standoff, getting involved, it talks the party's enemies out of the fight, and that settles it for the party", () => {
     let settled = 0;
     for ( let seed = 1; seed <= 30; seed++ ) {
       const r = replay(battle([pc(), bandit(), elder({ initiative: { mod: 50 } })], { maxRounds: 4, opening: "talk" }), pf2eRules, seed);
-      const words = r.log.filter(e => e.actor === "elder" && e.type === "talk");
+      const broke = r.log.findIndex(e => e.type === "breakStandoff");
+      const words = r.log.filter((e, i) => e.actor === "elder" && e.type === "talk" && (broke < 0 || i < broke));
       for ( const e of words ) expect([e.target, e.aim]).toEqual(["bandit", "down"]);
       if ( r.log.some(e => e.type === "sway" && e.byId === "elder" && ["fled", "conceded", "stoodDown"].includes(e.outcome)) ) settled += 1;
     }
@@ -331,5 +335,151 @@ describe("a neutral talking for the side it leans toward", () => {
   test("leaning toward the party's enemies, it talks the party down instead (a player character can only pay up or back off)", () => {
     const r = replay(battle([pc({ valuables: { money: 50 } }), bandit(), elder({ lean: "hostile", initiative: { mod: 50 } })], { maxRounds: 3, opening: "talk" }), pf2eRules, 4);
     for ( const e of r.log.filter(x => x.actor === "elder" && x.type === "talk") ) expect(e.target).toBe("fighter");
+  });
+});
+
+describe("getting involved, or keeping out of it", () => {
+  const scene = ({ pcHp = 60, banditHp = 40, leanLevel = LEAN, guardOver = {} } = {}) => {
+    const made = ready([fighter({ social: social(), hp: { value: pcHp, max: pcHp } }), brute({ social: social(), hp: { value: banditHp, max: banditHp }, valuables: { money: 100 } }),
+      guard({ lean: "friendly", social: social(), ...guardOver })]);
+    made.run.standoff = true;
+    made.units.guard.leanLevel = leanLevel;
+    return made;
+  };
+
+  test("most keep out of it, unless the side they lean toward is one they like and looks like winning", () => {
+    const chance = over => {
+      const { run, units } = scene(over);
+      meddling(run, units.guard);
+      return units.guard.meddling.chance;
+    };
+    expect(chance({ pcHp: 20, banditHp: 80 })).toBeLessThan(0.12); // its side is losing
+    expect(chance({ leanLevel: 10 })).toBeLessThan(0.25);            // it hardly cares
+    expect(chance({ pcHp: 90, banditHp: 30 })).toBeGreaterThan(0.5); // it likes them, and they're winning
+    // Decided once (for the standoff), not every turn.
+    const { run, units } = scene({ pcHp: 90, banditHp: 30 });
+    const first = meddling(run, units.guard)?.how ?? null;
+    for ( let i = 0; i < 5; i++ ) expect(meddling(run, units.guard)?.how ?? null).toBe(first);
+  });
+
+  test("the greedy squeeze the side they like least: it pays them off, keeps its place in the standoff, and they keep out of it", () => {
+    const { run, say, units } = scene({ guardOver: { traits: { tactical: { base: 50, fudge: 0 }, brave: { base: 60, fudge: 0 }, selfish: { base: 95, fudge: 0 }, loyal: { base: 40, fudge: 0 } } } });
+    const g = units.guard;
+    run.rng = { ...run.rng, chance: () => true };
+    expect(meddling(run, g)).toMatchObject({ how: "extort", against: ["hostile"] });
+    expect(aimOf(g, units.brute)).toBe("extort");
+    expect(aimOf(g, units.fighter)).not.toBe("extort"); // (only the side it likes least)
+    for ( let i = 0; i < 4 && !units.brute.concessions; i++ ) attemptTalk(run, g, { target: units.brute, kind: "persuade", aim: "extort", mod: 40, dc: 10 }, say);
+    expect(units.brute.concessions?.[0]).toMatchObject({ kind: "money", to: "guard" });
+    expect(units.brute.status).toBe("standing");
+    expect(run.resolved ?? null).toBeNull(); // (the standoff isn't settled by it)
+    expect(meddling(run, g)).toBeNull();     // paid off: it keeps out of it now
+  });
+});
+
+describe("a quarrel beside a standoff", () => {
+  const always = { chance: p => p >= 0.5, next: () => 0.5, die: n => n, d20: () => 10, pick: a => a[0], shuffle: a => a };
+
+  test("an insult from someone taking no side starts a quarrel with it; the standoff holds (unless it's blamed on the other side)", () => {
+    const { run, say, units } = ready([fighter({ social: social() }), brute({ social: social() }), guard({ lean: "friendly", social: social() })]);
+    run.standoff = true;
+    run.rng = always;
+    units.brute.offendedBy.add("guard");
+    expect(breaksStandoff(run, units.brute, say)).toBeNull();
+    expect(units.guard.against.has("hostile")).toBe(true);
+    expect(run.log.some(e => e.what === "feud" && e.actor === "brute")).toBe(true);
+    // Blamed on the side it seems to be with: that ends the standoff.
+    units.brute.annoyed = { byId: "guard", side: "friendly" };
+    expect(breaksStandoff(run, units.brute, say)).toBe("annoyed");
+    // An insult from the other side still ends it.
+    units.brute.offendedBy.add("fighter");
+    expect(breaksStandoff(run, units.brute, say)).toBe("insulted");
+  });
+
+  test("the two of them fight it out; the sides of the standoff keep their hands off each other", () => {
+    const { run, units } = ready([fighter({ social: social() }), brute({ social: social() }), guard({ lean: "friendly", social: social() })]);
+    run.standoff = true;
+    units.guard.against.add("hostile");
+    expect(heldOff(run, units.brute, units.fighter)).toBe(true);
+    expect(heldOff(run, units.brute, units.guard)).toBe(false);
+    expect(inFray(run, units.brute)).toBe(true);
+    expect(inFray(run, units.guard)).toBe(true);
+    expect(inFray(run, units.fighter)).toBe(false); // (the party doesn't have to join in)
+    expect(chooseTarget(run, units.brute)?.id).toBe("guard");
+    run.standoff = false;
+    expect(heldOff(run, units.brute, units.fighter)).toBe(false);
+  });
+
+  test("in play: after a quarrel starts, no blow passes between the party and its enemies until the standoff breaks", () => {
+    let quarrels = 0;
+    let heldOn = 0;
+    for ( let seed = 1; seed <= 60; seed++ ) {
+      const r = replay(battle([fighter({ social: social(), hp: { value: 90, max: 90 } }), brute({ social: social({ diplomacy: 6 }) }),
+        guard({ lean: "friendly", social: social({ diplomacy: 0, intimidation: 0, deception: 0 }), initiative: { mod: 50 } })], { maxRounds: 5, opening: "talk" }), pf2eRules, seed);
+      const start = r.log.findIndex(e => e.what === "feud");
+      if ( start < 0 ) continue;
+      quarrels += 1;
+      const broke = r.log.findIndex((e, i) => i > start && e.type === "breakStandoff");
+      const before = r.log.slice(start, broke < 0 ? undefined : broke);
+      for ( const e of before.filter(x => x.type === "attack") ) expect([e.actor, e.targetId ?? e.target].sort()).not.toEqual(["brute", "fighter"]);
+      if ( before.some(e => e.round > r.log[start].round) ) heldOn += 1;
+    }
+    expect(quarrels).toBeGreaterThan(2);
+    expect(heldOn).toBeGreaterThan(0);
+  });
+});
+
+describe("can't abide violence", () => {
+  test("diplomats, moralists, people-pleasers, those who never kill and those who always talk", () => {
+    expect(dislikesViolence({ spec: { playstyles: ["moralist"] } })).toBe(true);
+    expect(dislikesViolence({ spec: { neverKill: true } })).toBe(true);
+    expect(dislikesViolence({ spec: { alwaysTalk: true } })).toBe(true);
+    expect(dislikesViolence({ spec: { alwaysTalk: true, stayTrue: true } })).toBe(false);
+    expect(dislikesViolence({ spec: { playstyles: ["brawler"] } })).toBe(false);
+  });
+
+  test("in a standoff, a quarrel beside it: it talks both of them into letting it be", () => {
+    const { run, say, units } = ready([fighter({ social: social({ diplomacy: 20 }), playstyles: ["diplomat"] }), brute({ social: social() }), guard({ lean: "friendly", social: social() })]);
+    run.standoff = true;
+    units.guard.against.add("hostile");
+    units.fighter.calming = "pacify";
+    expect(choosePitch(run, units.fighter)?.aim).toBe("pacify");
+    expect(aimOf(units.fighter, units.guard)).toBe("pacify");
+    expect(aimOf(units.fighter, units.brute)).toBe("pacify");
+    for ( let i = 0; i < 4 && units.guard.against.size; i++ ) attemptTalk(run, units.fighter, { target: units.guard, kind: "persuade", aim: "pacify", mod: 40, dc: 10 }, say);
+    expect(units.guard.against.size).toBe(0);
+    units.guard.against.add("hostile");
+    for ( let i = 0; i < 4 && !units.brute.holdsBack; i++ ) attemptTalk(run, units.fighter, { target: units.brute, kind: "persuade", aim: "pacify", mod: 40, dc: 10 }, say);
+    expect(units.brute.holdsBack).toBe(true);
+    expect(inFray(run, units.brute)).toBe(false); // (it lets it be, until it's hurt again)
+  });
+
+  test("taking no side, seeing a fight, it talks the fighters (either side: whoever it's likeliest to move) into leaving", () => {
+    let leave = 0;
+    const targets = new Set();
+    const { run, units } = ready([fighter({ social: social() }), brute({ social: social() }), guard({ id: "monk", playstyles: ["moralist"], social: social({ diplomacy: 20 }) })]);
+    units.monk.calming = "leave";
+    expect(choosePitch(run, units.monk, { only: o => o.id === "fighter" })?.aim).toBe("leave");
+    expect(choosePitch(run, units.monk, { only: o => o.id === "brute" })?.aim).toBe("leave");
+    for ( let seed = 1; seed <= 20; seed++ ) {
+      const r = replay(battle([fighter({ social: social() }), brute({ social: social() }), guard({ id: "monk", playstyles: ["moralist"], social: social({ diplomacy: 20 }), initiative: { mod: 50 } })], { maxRounds: 3, opening: "fight" }), pf2eRules, seed);
+      for ( const e of r.log.filter(x => x.actor === "monk" && x.type === "talk") ) {
+        expect(e.aim).toBe("leave");
+        leave += 1;
+        targets.add(e.target);
+      }
+    }
+    expect(leave).toBeGreaterThan(10);
+    expect(targets.has("brute")).toBe(true);
+  });
+});
+
+describe("wary of outsiders' words", () => {
+  test("a Skeptic is a step further from being talked round, and harder to reach, by anyone not of its own group", () => {
+    expect(combinePlaystyles(["skeptic"]).behavior.wary).toBe(1);
+    expect(combinePlaystyles(["brawler", "skeptic"]).behavior.wary).toBeLessThan(1);
+    const { run, units } = ready([fighter({ social: social() }), brute({ social: social() }), brute({ id: "doubter", social: social(), playstyles: ["skeptic"], behavior: { wary: 1 } })]);
+    expect(stepsToConvince(units.doubter, run, units.fighter)).toBe(stepsToConvince(units.brute, run, units.fighter) + 1);
+    expect(talkDC(run, units.fighter, units.doubter, "persuade")).toBe(talkDC(run, units.fighter, units.brute, "persuade") + 4);
   });
 });

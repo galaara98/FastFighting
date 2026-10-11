@@ -60,8 +60,9 @@ export const PLAYSTYLES = Object.freeze({
   // Up close and personal: the nearest foe, hits back hard, no talking.
   brawler: { icon: "fa-hand-fist", traits: { brave: 15, tactical: -5 }, suggest: { style: "frontline", target: "nearest", talk: "never" }, behavior: { meleeBias: 0.3 },
     desire: { hurt: { nearest: 20 }, talk: -40, aid: -10, retaliate: 1.5 } },
-  // Trusts its own judgment over anyone's, and isn't talked into things.
-  skeptic: { icon: "fa-magnifying-glass", traits: { tactical: 10 }, suggest: { resourceUse: "conserve", healAggro: "conservative" }, behavior: {},
+  // Trusts its own judgment over anyone's, and isn't talked into things: an outsider's words (anyone not of its own
+  // group) get a step further to go and up to 4 harder (wary, by the pill's place).
+  skeptic: { icon: "fa-magnifying-glass", traits: { tactical: 10 }, suggest: { resourceUse: "conserve", healAggro: "conservative" }, behavior: { wary: 1 },
     desire: { talk: -15, leader: 0.5, team: 0.5, frustration: 0.8 } },
   // Ends it fast: the quickest kills.
   speedRunner: { icon: "fa-forward-fast", traits: { tactical: 5, brave: 5 }, suggest: { resourceUse: "nova", target: "weakest" }, behavior: { rush: 0.4 },
@@ -111,8 +112,9 @@ export const PLAYSTYLES = Object.freeze({
   // Never forgets: hits back twice as hard, avenges the fallen, and its grudges never cool.
   vengeful: { icon: "fa-bolt", traits: { brave: 5, selfish: 5 }, suggest: {}, behavior: {},
     desire: { retaliate: 2, avenge: 2.5, cool: 0 } },
-  // Single-minded: sticks with its target, shrugs off setbacks, keeps at a locked door.
-  relentless: { icon: "fa-crosshairs", traits: { brave: 10 }, suggest: {}, behavior: {},
+  // Single-minded: sticks with its target, shrugs off setbacks, keeps at a locked door, and doesn't care to hear an
+  // outsider's reasons (a little wary).
+  relentless: { icon: "fa-crosshairs", traits: { brave: 10 }, suggest: {}, behavior: { wary: 0.5 },
     desire: { hurt: { current: 15 }, frustration: 0.4, doorPatience: 1.5 } },
   // As little as it can get away with: whatever's nearest, no long walks, not much help for anyone, gives up fast,
   // and can't be bothered to hold a grudge.

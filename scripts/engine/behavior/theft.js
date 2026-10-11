@@ -19,7 +19,7 @@
  * Pure: no Foundry globals.
  */
 import { THEFT_LUCK, clamp } from "../../constants.js";
-import { isStanding, isUp, areEnemies, edgeDistance, checkRoll, typical, liveTrait, alliesOf, enemiesOf, behaviorOf, attackRoll, currentAc, movesNeeded } from "../battle-state.js";
+import { isStanding, isUp, areEnemies, edgeDistance, checkRoll, typical, liveTrait, alliesOf, enemiesOf, behaviorOf, attackRoll, currentAc, movesNeeded, heldOff } from "../battle-state.js";
 import { rollCheck } from "../probability.js";
 import { costOf, normalizeCost } from "../turn.js";
 import { remaining, concession } from "./talk.js";
@@ -37,7 +37,7 @@ function worthRobbing(t) {
 /** Is u's side clearly winning: more of them standing, or the other side has lost noticeably more? */
 function winning(run, u) {
   const allies = alliesOf(run, u).filter(a => a.active !== false);
-  const foes = enemiesOf(run, u).filter(f => f.active !== false);
+  const foes = enemiesOf(run, u).filter(f => f.active !== false && !heldOff(run, u, f));
   if ( !foes.length ) return false;
   const up = list => list.filter(isStanding).length;
   if ( up(allies) > up(foes) ) return true;

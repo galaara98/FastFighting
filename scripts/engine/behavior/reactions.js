@@ -12,7 +12,7 @@
  * forgets about it half the time.
  */
 import { TACTICAL } from "../../constants.js";
-import { areEnemies, isStanding, liveTier, edgeDistance } from "../battle-state.js";
+import { areEnemies, isStanding, liveTier, edgeDistance, heldOff } from "../battle-state.js";
 import { meanPart } from "../dice.js";
 import { mind } from "./desire.js";
 
@@ -43,11 +43,11 @@ export function threats(run, u, keep = null) {
  * kept until someone moves (run.geo), u's engagements change, or someone changes sides.
  */
 function nearbyFoes(run, u) {
-  const key = `${run.geo ?? 0}|${u.adjacent.size}`;
+  const key = `${run.geo ?? 0}|${u.adjacent.size}|${run.standoff ? 1 : 0}`;
   if ( u.nearbyKey === key ) return u.nearby;
   const list = [];
   for ( const e of run.units ) {
-    if ( e === u || !areEnemies(run, u, e) ) continue;
+    if ( e === u || !areEnemies(run, u, e) || heldOff(run, u, e) ) continue; // (not across a standoff)
     // Beside it: engaged in melee, or on the map within reach.
     const d = u.adjacent.has(e.id) ? 0 : edgeDistance(e, u);
     if ( d !== null && d <= 15.5 ) list.push({ e, d });

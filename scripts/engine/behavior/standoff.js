@@ -7,20 +7,27 @@
  *  - words win: the other side is persuaded to stand down (or threatened into yielding), and no blow is struck;
  *  - someone gets upset and attacks, and from that turn on it is a battle.
  *
+ * Someone taking no side may come to blows with one of the sides meanwhile (behavior/neutral.js): the two fight it
+ * out, and the standoff holds. The blood wears on everyone's patience, and whoever is hurt or insulted by one who
+ * seems to be with the other side may blame that side (annoyed), and break it.
+ *
  * What upsets people: an insulting pitch (a critical failure aimed at them), failed pitches piling up, rounds
- * dragging on, being unable to follow the talk at all (beasts, the mindless, no shared language), and an
+ * dragging on, a quarrel beside the standoff, being unable to follow the talk at all (beasts, the mindless, no shared language), and an
  * impatient personality. A leader who wants to talk holds their side back; being half-persuaded calms anyone; a smart
  * creature (TACTICAL and up) won't wreck it unless its side is losing the talk.
  * Pure: no Foundry globals.
  */
 import { TACTICAL, OPENING, NEUTRAL_PARTY, clamp } from "../../constants.js";
 import { isStanding, areEnemies, liveTrait, liveTier, behaviorOf, typical, command, commandOf } from "../battle-state.js";
+import { isNeutral, feud, annoyedBy } from "./neutral.js";
 
 /** Tuning: chance per turn to lose patience, before personality. */
 const BASE = 0.05;
 const PER_ROUND = 0.03;   // every round of talk wears on everyone
 const PER_REBUFF = 0.04;  // every failed pitch aimed at this creature
 const CANT_FOLLOW = 0.35; // a beast, or anyone who shares no language with the talk
+const FRAY = 0.04;        // every blow struck in a quarrel beside the standoff
+const FRAY_MAX = 0.2;
 const MAX_CHANCE = 0.85;
 
 /** Playstyles that make someone quicker (above 1) or slower (below 1) to lose patience. */
@@ -85,6 +92,8 @@ export function impatience(run, u, since = 1) {
   // Talk that goes nowhere wears on everyone; pitches that fail on you wear on you most.
   const rebuffs = [...u.rebuffed.values()].reduce((s, n) => s + n, 0);
   p += PER_ROUND * Math.max(0, run.round - since) + PER_REBUFF * rebuffs;
+  // Blood spilled beside the standoff (someone taking no side, fighting one of the sides) frays everyone's nerves.
+  if ( run.standoff ) p += Math.min(FRAY_MAX, FRAY * (run.fray ?? 0));
 
   // A smart creature doesn't wreck a standoff its side is in, unless the talk is going against its side anyway; then
   // it would rather strike first (and being half-persuaded doesn't calm it: it sees where this is going).
@@ -104,15 +113,27 @@ export function impatience(run, u, since = 1) {
 }
 
 /**
- * Does u break the standoff on its turn? Returns why ("insulted", "impatient", or "beast" for a creature that
- * can't follow the talk), or null to keep talking.
+ * Does u (on one of the standoff's sides) break the standoff on its turn? Returns why ("insulted", "annoyed": blaming
+ * the other side for what someone who seems to be with them did, "impatient", or "beast" for a creature that can't
+ * follow the talk), or null to keep talking.
  */
-export function breaksStandoff(run, u) {
-  if ( !run.units.some(o => present(o) && areEnemies(run, u, o)) ) return null;
-  // An insult is answered at once, more often than not.
+export function breaksStandoff(run, u, say = () => {}) {
+  if ( !run.units.some(o => party(o) && areEnemies(run, u, o)) ) return null;
+  // Insults are answered at once, more often than not: one from someone taking no side starts a quarrel with it (the
+  // standoff holds, unless u blames the other side for it); one from the other side ends the standoff.
   if ( u.offendedBy.size > (u.insultsAnswered ?? 0) ) {
+    const fresh = [...u.offendedBy].slice(u.insultsAnswered ?? 0).map(id => run.byId.get(id)).filter(Boolean);
     u.insultsAnswered = u.offendedBy.size;
-    if ( run.rng.chance(0.7) ) return "insulted";
+    for ( const n of fresh.filter(isNeutral) ) {
+      if ( !run.rng.chance(0.7) ) continue;
+      feud(run, u, n, say);
+      annoyedBy(run, u, n);
+    }
+    if ( fresh.some(o => !isNeutral(o)) && run.rng.chance(0.7) ) return "insulted";
+  }
+  if ( u.annoyed ) {
+    u.annoyed = null;
+    return "annoyed";
   }
   if ( !run.rng.chance(impatience(run, u)) ) return null;
   return canTalk(u) ? "impatient" : "beast";

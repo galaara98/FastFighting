@@ -26,13 +26,21 @@
  *    talking to it, which may win it over by accident).
  *  - Holding back: while someone taking no side is having words with a side, that side's smart members (TACTICAL
  *    and up) don't hurt it or anyone it wants safe, unless the talk is going against them anyway (sparedForTruce).
+ *  - Getting involved: in a standoff (and once it's a fight), most keep out of it. One leaning toward a side that it
+ *    likes well enough and that looks like winning may speak up (meddling): it talks the side it likes least out of
+ *    the fight, or (the greedy) squeezes it for money. A botched word may start a quarrel between it and that side:
+ *    the two fight it out, and the standoff between the sides holds (heldOff), unless someone loses patience (blood
+ *    nearby wears on everyone) or blames the side it seems to be with (annoyed).
+ *  - Can't abide violence (diplomats, moralists, people-pleasers, those who never kill, those who always talk): seeing
+ *    a fight, it puts its words into stopping it, on either side: in a standoff, talking a quarrel's fighters into
+ *    letting it be; once it's a fight, talking the fighters into leaving.
  *  - Enemies come here first: an enemy talked into changing sides stands aside (on a d100 under the switch luck),
  *    still leaning a little toward its old friends, the more so the more loyal it is; from here it can be won over
  *    like anyone else.
  * Pure: no Foundry globals.
  */
 import { STATUS, NEUTRAL_PARTY, TACTICAL, SWAY, clamp } from "../../constants.js";
-import { isStanding, isUp, edgeDistance, liveTrait, liveTier, commandOf, dropAmbition } from "../battle-state.js";
+import { isStanding, isUp, edgeDistance, liveTrait, liveTier, commandOf, dropAmbition, areEnemies, heldOff } from "../battle-state.js";
 import { levelOf, want, think, setLean, allDesires } from "./desire.js";
 import { perceives } from "./senses.js";
 import { prefersTalk, canTalk, impatience } from "./standoff.js";
@@ -104,6 +112,93 @@ export function refreshLeans(run) {
     u.leaning = key;
     setLean(u, [...fellows.map(id => ["protect", id, FELLOW]), ...members.map(id => ["protect", id, level])]);
   }
+}
+
+/** Playstyles that can't abide violence: seeing a fight, they try to stop it. */
+const PEACEABLE = new Set(["diplomat", "moralist", "peoplePleaser"]);
+
+/** Can't abide violence: a peaceable playstyle, Tactics' "I never kill", or always prefers talking to fighting. */
+export const dislikesViolence = u => !!u.spec.neverKill || (!!u.spec.alwaysTalk && !u.spec.stayTrue) || (u.spec.playstyles ?? []).some(p => PEACEABLE.has(p));
+
+/** Is o fighting anyone right now (in a standoff: a quarrel with someone taking no side)? */
+export function fighting(run, o) {
+  if ( !isStanding(o) || o.holdsBack ) return false;
+  return run.units.some(p => p !== o && isStanding(p) && !(p.spec.hidden && !p.revealed) && areEnemies(run, o, p) && !heldOff(run, o, p));
+}
+
+/** In a standoff, is u in a quarrel (one of its sides against someone taking no side)? It fights that out. */
+export const inFray = (run, u) => !!run.standoff && fighting(run, u);
+
+/** Getting involved: the chance before personality, and how much a liked, winning side adds. */
+const MEDDLE = { base: 0.08, keen: 0.6, max: 0.85 };
+
+/**
+ * Does n, taking no side, get involved (in this standoff, or in the fight once it's on)? Decided once (again if its lean
+ * changes): mostly not, unless the side it leans toward is one it likes well enough and looks like winning (its
+ * standing members' hit points against its enemies'). The bold, the greedy and the talkers get involved more readily.
+ * Involved, it goes after the side it likes least: talking it out of the fight ("down"), or, the greedier it is, the
+ * likelier squeezing it for money ("extort").
+ * @returns {{how: "down"|"extort", side: string, against: string[], chance: number, odds: number}|null}
+ */
+export function meddling(run, n, say = () => {}) {
+  const favored = isNeutral(n) && (n.leanLevel ?? LEAN) > 0 ? leanSide(run, n) : null;
+  const enemies = favored ? run.prep.sides[favored]?.enemies : null;
+  if ( !enemies?.size ) return null;
+  const key = `${favored}|${run.standoff ? "standoff" : "fight"}`;
+  if ( n.meddling?.key === key ) return n.meddling.how ? n.meddling : null;
+  const strength = has => run.units.reduce((s, o) => (!isNeutral(o) && has(o.side) && isStanding(o) ? s + o.hp + (o.temp ?? 0) : s), 0);
+  const ours = strength(s => s === favored);
+  const theirs = strength(s => enemies.has(s));
+  const odds = ours + theirs > 0 ? ours / (ours + theirs) : 0.5;
+  const fond = clamp((n.leanLevel ?? LEAN) / LEAN, 0, 1.5);
+  const winning = clamp((odds - 0.35) / 0.4, 0, 1); // (nothing at a third of the strength; all at three quarters)
+  let p = MEDDLE.base + MEDDLE.keen * fond * winning;
+  p *= 1 + (liveTrait(run, n, "brave") - 50) / 100;
+  p *= 1 + (liveTrait(run, n, "selfish") - 50) / 200; // (a chance at money)
+  if ( prefersTalk(n) ) p *= 1.3;
+  p = clamp(p, 0.02, MEDDLE.max);
+  const greed = clamp(0.1 + (liveTrait(run, n, "selfish") - 50) / 50, 0.05, 0.85);
+  const how = !run.rng.chance(p) ? null : run.rng.chance(greed) ? "extort" : "down";
+  n.meddling = { key, how, side: favored, against: [...enemies], chance: p, odds };
+  const sideLabel = run.prep.sides[favored]?.label ?? favored;
+  const theirLabel = n.meddling.against.map(s => run.prep.sides[s]?.label ?? s).join(", ");
+  if ( !how ) say(n, "keeps out of it", { type: "neutral", what: "aloof", chance: p, side: favored, sideLabel });
+  else say(n, how === "extort" ? `sees a chance to squeeze ${theirLabel}` : `speaks up for ${sideLabel}`, { type: "neutral", what: "meddle", how, chance: p, side: favored, sideLabel, against: theirLabel });
+  return how ? n.meddling : null;
+}
+
+/**
+ * u, of one of a standoff's sides, answers an insult from someone taking no side: the two sides of it come to blows
+ * (it fights u's side now), and the standoff holds.
+ */
+export function feud(run, u, n, say) {
+  if ( !isNeutral(n) || isNeutral(u) || n.status === STATUS.DEAD || n.against.has(u.side) ) return false;
+  if ( n.truce?.side === u.side ) n.truce = null;
+  n.against.add(u.side);
+  n.sway.delete(u.side);
+  n.active = true;
+  n.aware = true;
+  n.joinedRound ??= run.round;
+  n.targetId = null;
+  want(u, "hurt", n.id, 40);
+  want(n, "hurt", u.id, 30);
+  run.geo = (run.geo ?? 0) + 1; // friends and foes have changed
+  say(u, `takes offense at ${n.spec.name} and goes for them`, { type: "neutral", what: "feud", target: n.spec.name, targetId: n.id });
+  return true;
+}
+
+/** How likely one side of a standoff blames the other for an insult (or, per blow, harm) from someone leaning its way. */
+export const ANNOYED = { insult: 0.35, blow: 0.15 };
+
+/**
+ * u, of one side of a standoff, crossed by n, who takes no side but seems to be with the other side: it may blame them
+ * (u.annoyed: on its turn, it breaks the standoff). A tactical mind sees it for what it is, mostly.
+ */
+export function annoyedBy(run, u, n, chance = ANNOYED.insult) {
+  if ( !run.standoff || isNeutral(u) || !isNeutral(n) || u.annoyed ) return;
+  const leaning = leanSide(run, n);
+  if ( !leaning || (n.leanLevel ?? LEAN) < SHOWS || !run.prep.sides[u.side]?.enemies.has(leaning) ) return;
+  if ( run.rng.chance(chance * (liveTier(run, u) >= TACTICAL.TACTICAL ? 0.4 : 1)) ) u.annoyed = { byId: n.id, side: leaning };
 }
 
 /** Its lean wears down (it's lost at 0). */

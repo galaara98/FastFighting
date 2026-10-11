@@ -254,12 +254,20 @@ function narrate(e, roll, rel, fill) {
         case "luck": return roll("event.nearlyTurns", g);
         case "amends": return roll("event.amends", g);
         case "calmed": return roll("event.calmed", g);
+        case "holds": return roll("event.holdsBack", g);
+        case "feud": return roll("event.feud", { ...g, target: e.target ?? "" });
+        case "meddle": return roll(e.how === "extort" ? "event.meddleExtort" : "event.meddle", { ...g, side: e.how === "extort" ? e.against ?? "" : e.sideLabel ?? "" });
+        case "aloof": return roll("event.aloof", g);
         default: return roll("event.lapse", g);
       }
     }
     case "leave": return roll("event.leave", f);
     case "sway": {
       if ( e.lie ) return roll("event.lieAndRun", f);
+      if ( e.paidOff ) {
+        const c = e.concession;
+        return roll(!c ? "event.paidNothing" : c.kept ? "event.paidKept" : "event.paidOff", { ...f, amount: concessionText(c), item: c?.item?.name ?? "" });
+      }
       if ( e.outcome === "conceded" ) {
         const c = e.concession;
         const key = !c ? "event.standDown" : c.kept ? "event.concedeKept" : c.kind === "money" ? "event.concedeMoney" : "event.concedeItem";
@@ -330,7 +338,8 @@ function narrate(e, roll, rel, fill) {
     case "surprise": return roll("event.surprise", f);
     case "aftermath": return roll(e.tended ? "event.aftermath" : "event.aftermathAlone", f);
     case "standoff": return roll("event.standoff", f);
-    case "breakStandoff": return roll({ insulted: "event.breakInsulted", beast: "event.breakBeast" }[e.cause] ?? "event.breakStandoff", f);
+    case "breakStandoff": return roll({ insulted: "event.breakInsulted", beast: "event.breakBeast", annoyed: "event.breakAnnoyed", blood: "event.breakBlood" }[e.cause] ?? "event.breakStandoff", f);
+    case "peacekeep": return roll("event.peacekeep", f);
     case "firstAid": return roll(e.stable ? "event.firstAid" : e.dead ? "event.death" : "event.firstAidFail", f);
     default: return "";
   }

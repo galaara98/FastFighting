@@ -13,7 +13,7 @@ import {
   prepareBattle, createRun, isStanding, isUp, enemiesOf, alliesOf, areEnemies, liveTier, liveTrait, currentAc,
   attackRoll, attackOptions, saveRoll, checkRoll, turnFor, moveToward, moveAway, bonusDamageParts, dispositionOf,
   behaviorOf, edgeDistance, movesNeeded, approach, canMove, moveTowardPoint, isMagical, upgradesSave, boostBonus, typical, sortOf, sizedUp, passedOver,
-  command, commandOf
+  command, commandOf, heldOff
 } from "./battle-state.js";
 import { sampleRunTactics } from "./playstyles.js";
 import { chooseTarget, bestOptionVs, scoreTargets } from "./behavior/targeting.js";
@@ -28,7 +28,7 @@ import { boost } from "./behavior/luck.js";
 import { respond, riposteStrike } from "./behavior/responses.js";
 import { decideSummon, callSummons, sustainSummons, summonState, dismiss } from "./behavior/summons.js";
 import { createAggregator } from "./aggregate.js";
-import { talkActionsThisTurn, choosePitch, attemptTalk, shareLanguage, opposedToLean } from "./behavior/talk.js";
+import { talkActionsThisTurn, choosePitch, attemptTalk, shareLanguage } from "./behavior/talk.js";
 import { opensWithTalk, breaksStandoff, standoffPitches, charismaticLeader, canTalk, prefersTalk } from "./behavior/standoff.js";
 import { controlOutcome, controlRoll, isImmune, degreeShift } from "./behavior/control.js";
 import { recompute as recomputeConditions, applyOutcome, applyControl, beginConcentration, endConcentration, holdsAnything, noteConcentration, moveHeld, settleAllegiance, iwrOf, incoming, spendEdges, spendBoost, focusOf } from "./behavior/effects.js";
@@ -36,7 +36,7 @@ import { decideBuff, aidScores } from "./behavior/support.js";
 import { perceives } from "./behavior/senses.js";
 import { stealChance, theftTarget, theftPlan, attemptTheft } from "./behavior/theft.js";
 import { reactionsPerRound, threats, takesSafeWay } from "./behavior/reactions.js";
-import { isNeutral, crossed, caughtInArea, refreshLeans, truceWith, truceBreaks, turnOn, settleTruce, peaceDesires, seemsFoe } from "./behavior/neutral.js";
+import { isNeutral, crossed, caughtInArea, refreshLeans, truceWith, truceBreaks, turnOn, settleTruce, peaceDesires, seemsFoe, meddling, inFray, fighting, dislikesViolence, annoyedBy, ANNOYED } from "./behavior/neutral.js";
 import { normalizeCost } from "./turn.js";
 
 const MAX_STEPS_PER_TURN = 8;
@@ -283,6 +283,7 @@ function dealDamage(run, source, target, amount, { crit = false, types = null } 
     if ( source ) {
       source.damageDealt += dealt + absorbed;
       target.harmedBy.set(source.id, (target.harmedBy.get(source.id) ?? 0) + dealt + absorbed);
+      if ( run.standoff ) bloodInStandoff(run, source, target);
       if ( areEnemies(run, source, target) ) {
         // Hit from afar while already trading blows with someone: keep at the one in front of it.
         const busy = !target.adjacent.has(source.id) && [...target.adjacent].some(id => { const o = run.byId.get(id); return o && isStanding(o) && areEnemies(run, target, o); });
@@ -582,7 +583,35 @@ function rollHit(run, u, action, t, parts, multiplier, crit, minimum = 0) {
 /** Someone else u could hit with this action without moving (when a multiattack's first target drops). */
 function nextTargetInReach(run, u, action) {
   const can = run.prep.rules.canTarget;
-  return enemiesOf(run, u).filter(o => isStanding(o) && movesNeeded(run, u, o, action) === 0 && (!can || can(run, u, o))).sort((a, b) => a.hp - b.hp)[0] ?? null;
+  return enemiesOf(run, u).filter(o => isStanding(o) && !heldOff(run, u, o) && movesNeeded(run, u, o, action) === 0 && (!can || can(run, u, o))).sort((a, b) => a.hp - b.hp)[0] ?? null;
+}
+
+/** What breaks a standoff, as the log tells it. */
+const STANDOFF_BREAKS = {
+  insulted: "takes offense and attacks", beast: "won't wait any longer and attacks", annoyed: "blames the other side for it and attacks",
+  blood: "strikes across the standoff: it's a fight now"
+};
+
+/** The standoff is over: from here on it's a fight. */
+function endStandoff(run, u, cause) {
+  run.standoff = false;
+  log(run, u, STANDOFF_BREAKS[cause] ?? "has heard enough and attacks", { type: "breakStandoff", cause });
+}
+
+/**
+ * Someone hurt while a standoff holds: by the other side (a stray blow, a reaction), the standoff is over. In a quarrel
+ * with someone taking no side, the standoff holds, but the blood frays everyone's nerves, and one hurt by someone who
+ * seems to be with the other side may blame them. (Hurt by one taking no side, one that had agreed to let it be
+ * doesn't any more.)
+ */
+function bloodInStandoff(run, source, target) {
+  if ( source === target || !areEnemies(run, source, target) ) return;
+  if ( heldOff(run, source, target) ) return endStandoff(run, source, "blood");
+  run.fray = (run.fray ?? 0) + 1;
+  if ( isNeutral(source) ) {
+    target.holdsBack = false;
+    annoyedBy(run, target, source, ANNOYED.blow);
+  }
 }
 
 /**
@@ -640,7 +669,7 @@ function executeOffense(run, u, action, t, attacksMade) {
   run.blood = true; // a blow has been struck: whatever happens now, it wasn't settled with words
   const targets = [t];
   if ( action.area ) {
-    const others = enemiesOf(run, u).filter(o => o !== t && isStanding(o));
+    const others = enemiesOf(run, u).filter(o => o !== t && isStanding(o) && !heldOff(run, u, o));
     run.rng.shuffle(others);
     targets.push(...others.slice(0, Math.max(0, (action.area.targets ?? 2) - 1)));
     if ( run.neutral ) targets.push(...caughtInArea(run, u, targets));
@@ -878,7 +907,7 @@ function counterspelled(run, u, action) {
   if ( !(Number(action.rank) > 0) || !run.counters ) return false;
   const rules = run.prep.rules;
   for ( const e of run.units ) {
-    if ( !e.spec.reactions || !areEnemies(run, u, e) ) continue;
+    if ( !e.spec.reactions || !areEnemies(run, u, e) || heldOff(run, u, e) ) continue;
     const r = respond(run, e, "spell", { by: u, action });
     if ( !r?.counter ) continue;
     let countered = !r.counter.save && (r.counter.level ?? 0) >= action.rank;
@@ -1137,6 +1166,7 @@ function executeControl(run, u, action, target, attacksMade, common) {
   const lands = outcome?.self ? u : target;
   if ( outcome && isUp(lands) ) {
     if ( !outcome.self ) moveHeld(run, u, action, lands);
+    if ( !outcome.self && run.standoff && heldOff(run, u, lands) && areEnemies(run, u, lands) ) endStandoff(run, u, "blood");
     applyOutcome(lands, outcome, u.id, action);
     testConcentration(run, lands);
     if ( run.neutral && !outcome.self ) crossed(run, u, lands, "harm", 1, logger(run));
@@ -1731,14 +1761,39 @@ function legendaryMoment(run, after) {
   }
 }
 
-/** Pitches made in a standoff turn (or a leader's last word, aimed only at the player characters). */
+/** Pitches made in a standoff turn (or a leader's last word, aimed only at the player characters). Returns how many. */
 function standoffPitching(run, u, n, only = null) {
+  let made = 0;
   for ( let i = 0; i < n; i++ ) {
     const pitch = choosePitch(run, u, { only });
     if ( !pitch ) break;
     attemptTalk(run, u, pitch, (unit, text, data) => log(run, unit, text, data));
+    made += 1;
     if ( battleOver(run) ) break;
   }
+  return made;
+}
+
+/**
+ * One who can't abide violence, seeing a fight (in a standoff, a quarrel between someone taking no side and one of the
+ * sides; any fight, for one taking no side), puts its words into stopping it, whoever's in it: talking the fighters
+ * into letting it be (in a standoff), or into leaving. Returns true if it made a pitch.
+ */
+function keepsPeace(run, u, actions) {
+  if ( !dislikesViolence(u) || !run.prep.options.talking || !canTalk(u) || u.tac?.talk === "never" ) return false;
+  const fighters = new Set(run.units.filter(o => o !== u && fighting(run, o) && perceives(run, u, o)));
+  if ( !fighters.size ) return false;
+  u.calming = run.standoff ? "pacify" : "leave";
+  const first = !u.keptPeace;
+  const made = standoffPitching(run, u, Math.max(1, standoffPitches(run, u, actions)), o => fighters.has(o));
+  u.calming = null;
+  if ( made && first ) {
+    u.keptPeace = true;
+    // (Told before the words it says.)
+    const at = run.log ? run.log.length - made : 0;
+    if ( run.log ) run.log.splice(at, 0, { round: run.round, actor: u.spec.name, actorId: u.id, side: u.side, text: "tries to calm things down", type: "peacekeep" });
+  }
+  return made > 0;
 }
 
 /**
@@ -1748,15 +1803,18 @@ function standoffPitching(run, u, n, only = null) {
  */
 function neutralTurn(run, u) {
   const say = logger(run);
-  // Leaning toward a side, with a way with words: it may talk that side's enemies out of the fight (in a standoff as
-  // a talker would; in a fight now and then), into fleeing, standing down or handing something over.
-  if ( !u.truce && run.prep.options.talking ) {
-    const opposed = new Set(opposedToLean(run, u).filter(isStanding));
-    if ( opposed.size ) {
-      const rules = run.prep.rules;
-      const actions = turnFor(run, u).howMany(rules.talkCost ?? rules.basicAction ?? 1);
-      const n = run.standoff ? standoffPitches(run, u, actions) : talkActionsThisTurn(run, u, actions).count;
-      if ( n > 0 ) standoffPitching(run, u, n, o => opposed.has(o));
+  // One who can't abide violence, seeing a fight, tries to stop it. Otherwise, leaning toward a side, it may get
+  // involved (mostly not, unless that side is one it likes and looks like winning: neutral.js meddling): talking the
+  // side it likes least out of the fight, or squeezing it for money.
+  if ( !u.truce && run.prep.options.talking && canTalk(u) && u.tac?.talk !== "never" ) {
+    const rules = run.prep.rules;
+    const actions = turnFor(run, u).howMany(rules.talkCost ?? rules.basicAction ?? 1);
+    if ( !keepsPeace(run, u, actions) ) {
+      const involved = meddling(run, u, say);
+      if ( involved ) {
+        const against = new Set(involved.against);
+        standoffPitching(run, u, Math.max(1, standoffPitches(run, u, actions)), o => !isNeutral(o) && against.has(o.side) && isStanding(o));
+      }
     }
   }
   if ( u.truce ) {
@@ -1780,13 +1838,15 @@ function neutralTurn(run, u) {
 
 /**
  * A turn while the standoff holds: talkers press their case, everyone else keeps their hands off their weapons (and a
- * Lore-Collector may spend its first one watching the other side).
+ * Lore-Collector may spend its first one watching the other side). One who can't abide violence, seeing a quarrel
+ * break out beside it, tries to calm it first.
  */
 function standoffTurn(run, u) {
   const rules = run.prep.rules;
   const turn = turnFor(run, u);
   tellLore(run, u, turn); // (what it learned last turn, if it means to tell its friends)
-  if ( !observes(run, u, turn) ) standoffPitching(run, u, standoffPitches(run, u, turn.howMany(rules.talkCost ?? rules.basicAction ?? 1)));
+  const actions = turn.howMany(rules.talkCost ?? rules.basicAction ?? 1);
+  if ( !keepsPeace(run, u, actions) && !observes(run, u, turn) ) standoffPitching(run, u, standoffPitches(run, u, actions));
   u.turnsTaken += 1;
   endOfTurn(run, u);
 }
@@ -1858,16 +1918,18 @@ function takeTurn(run, u) {
   // Taking no side: it watches, or has words with whoever crossed it; once it has turned on a side, it fights.
   if ( isNeutral(u) && !enemiesOf(run, u).some(isStanding) && !neutralTurn(run, u) ) return;
 
-  // While a standoff holds, nobody fights; it lasts until someone gets upset.
+  // While a standoff holds, its sides don't fight; it lasts until someone gets upset. (A quarrel between someone taking
+  // no side and one of the sides is fought out meanwhile, by those two alone: the standoff holds.)
   let brokeStandoff = false;
   if ( run.standoff ) {
-    const cause = breaksStandoff(run, u);
-    if ( !cause ) return standoffTurn(run, u);
-    // A charismatic leader may get a last word in before it comes to blows.
-    if ( lastWord(run) ) return;
-    run.standoff = false;
-    brokeStandoff = true; // whoever breaks it came to fight, not to talk
-    log(run, u, { insulted: "takes offense and attacks", beast: "won't wait any longer and attacks" }[cause] ?? "has heard enough and attacks", { type: "breakStandoff", cause });
+    const cause = isNeutral(u) ? null : breaksStandoff(run, u, logger(run));
+    if ( !cause && !inFray(run, u) ) return standoffTurn(run, u);
+    if ( cause ) {
+      // A charismatic leader may get a last word in before it comes to blows.
+      if ( lastWord(run) ) return;
+      endStandoff(run, u, cause);
+      brokeStandoff = true; // whoever breaks it came to fight, not to talk
+    }
   }
 
   // The turn's budget comes from the system (PF2e: three actions; 5e: an action, a bonus action and movement).

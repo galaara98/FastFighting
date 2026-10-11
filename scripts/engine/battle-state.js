@@ -462,6 +462,12 @@ export function areEnemies(run, a, b) {
   return run.prep.sides[a.side]?.enemies.has(b.side) ?? false;
 }
 
+/**
+ * While a standoff holds, its sides keep their hands off each other. (Someone taking no side, and whoever it has come
+ * to blows with, may fight it out meanwhile: that doesn't end the standoff.)
+ */
+export const heldOff = (run, a, b) => !!run.standoff && a.side !== NEUTRAL_PARTY && b.side !== NEUTRAL_PARTY;
+
 export function enemiesOf(run, u) {
   if ( run.untargetable ) return run.units.filter(o => o !== u && !o.spec.untargetable && areEnemies(run, u, o));
   return run.units.filter(o => o !== u && areEnemies(run, u, o));

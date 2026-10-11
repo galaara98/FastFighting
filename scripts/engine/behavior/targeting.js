@@ -8,7 +8,7 @@
  *   Mastermind   side-wide focus target; ruthless ones finish off the downed
  */
 import { STATUS, TACTICAL, NEUTRAL_PARTY } from "../../constants.js";
-import { enemiesOf, isStanding, liveTier, liveTrait, movesNeeded, behaviorOf } from "../battle-state.js";
+import { enemiesOf, isStanding, liveTier, liveTrait, movesNeeded, behaviorOf, heldOff } from "../battle-state.js";
 import { expectedDamage, hasUses, threatOf, costOf, costUnits, unitsPerTurn } from "./evaluate.js";
 import { mainPool } from "../turn.js";
 import { styleWeight } from "../tactics.js";
@@ -125,7 +125,8 @@ const feared = (u, f) => { const g = grudge(u, f); return !!g && !g.provoked; };
 
 /**
  * Foes u is willing to go after (not the ones it's afraid of, or set on keeping away from), and anyone taking no side
- * that it takes for a foe. A smart one holds off those a talk its side is having would be ruined by hurting.
+ * that it takes for a foe. A smart one holds off those a talk its side is having would be ruined by hurting. While a
+ * standoff holds, only a quarrel with someone taking no side is fought.
  */
 function foesOf(run, u) {
   const foes = run.neutral ? [...enemiesOf(run, u), ...run.units.filter(n => seemsFoe(run, u, n))] : enemiesOf(run, u);
@@ -133,7 +134,7 @@ function foesOf(run, u) {
   // (A system may say who can be pressed right now: Ironsworn, not a foe who has the initiative over it.)
   const can = run.prep.rules.canTarget;
   // (Walled off: behind a locked door it decided wasn't worth the trouble.)
-  return foes.filter(f => !feared(u, f) && !avoids(run, u, f) && !u.walledOff?.has(f.id) && !spared?.has(f.id) && (!can || can(run, u, f)));
+  return foes.filter(f => !feared(u, f) && !avoids(run, u, f) && !u.walledOff?.has(f.id) && !spared?.has(f.id) && !heldOff(run, u, f) && (!can || can(run, u, f)));
 }
 
 /**
@@ -176,7 +177,7 @@ function pickTarget(run, u) {
   const { lead } = mind(run, u);
   if ( lead?.kind === "hurt" ) {
     const wanted = run.byId.get(lead.targetId);
-    if ( wanted && !u.walledOff?.has(wanted.id) && !sparedForTruce(run, u)?.has(wanted.id) && Number.isFinite(minMoves(run, u, wanted)) ) {
+    if ( wanted && !u.walledOff?.has(wanted.id) && !sparedForTruce(run, u)?.has(wanted.id) && !heldOff(run, u, wanted) && Number.isFinite(minMoves(run, u, wanted)) ) {
       if ( liveTier(run, u) >= TACTICAL.MASTERMIND ) run.sideFocus[u.side] = wanted.id;
       return wanted;
     }
