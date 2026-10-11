@@ -56,6 +56,8 @@ export function bestOptionVs(run, u, t, attacksMade = 0, turn = null) {
     if ( moves > 0 && (wary ??= !!run.prep.rules.opportunity && isWary(run, u) && threats(run, u, t).length > 0) ) weighted *= 0.3;
     if ( behavior.meleeBias && action.melee ) weighted *= 1 + behavior.meleeBias;
     if ( behavior.exploitWeakness && (action.damage ?? []).some(p => t.spec.iwr?.weak?.[p.type]) ) weighted *= 1 + behavior.exploitWeakness;
+    // A foe down and regenerating: only what stops it (fire, acid) does any good.
+    if ( t.held && t.status === STATUS.DOWN ) weighted *= (action.damage ?? []).some(p => t.spec.regen?.stoppedBy?.includes(p.type)) ? 3 : 0.05;
     // Spoilers would rather lock a foe down, harass it or weaken it than simply hit it.
     if ( behavior.hinders && action.kind === "control" ) weighted *= 1 + 1.5 * behavior.hinders;
     options.push({ action, moves, moveUnits, ev, perAction, cost, weighted });
@@ -212,6 +214,11 @@ export function scoreTargets(run, u, behavior = behaviorOf(u)) {
     const downed = foes.filter(f => f.status === STATUS.DOWN && !f.stable && perceives(run, u, f));
     candidates = candidates.concat(downed);
   }
+  // A foe down but regenerating gets back up: anyone with what stops it (fire, acid) finishes it.
+  if ( !u.spec.neverKill && tier >= TACTICAL.INSTINCTIVE ) {
+    const mending = foes.filter(f => f.held && f.status === STATUS.DOWN && !candidates.includes(f) && canStop(u, f) && perceives(run, u, f));
+    candidates = candidates.concat(mending);
+  }
   let reachable = candidates
     .map(t => ({ t, moves: minMoves(run, u, t) }))
     .filter(x => Number.isFinite(x.moves));
@@ -272,6 +279,12 @@ export function scoreTargets(run, u, behavior = behaviorOf(u)) {
       return ranked(x => (x.t.id === focusId && isStanding(x.t) && x.moves <= 2 ? 1e6 : valueOfKill(run, u, x)));
     }
   }
+}
+
+/** Has u something that stops f's regeneration (a fire or acid attack for a troll)? */
+function canStop(u, f) {
+  const stoppers = f.spec.regen?.stoppedBy ?? [];
+  return u.prep.offense.some(a => (a.damage ?? []).some(p => stoppers.includes(p.type)));
 }
 
 /** Higher is better: fewer turns to drop the target including travel. */

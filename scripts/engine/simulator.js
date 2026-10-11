@@ -245,8 +245,10 @@ function huntable(run, u) {
 /*  Damage, healing, conditions                 */
 /* -------------------------------------------- */
 
-function dealDamage(run, source, target, amount, { crit = false } = {}) {
+function dealDamage(run, source, target, amount, { crit = false, types = null } = {}) {
   if ( amount <= 0 || target.status === STATUS.DEAD || target.status === STATUS.FLED ) return;
+  // Acid or fire on a troll: its regeneration stops, for its next turn.
+  if ( target.spec.regen?.stoppedBy?.length && types?.some(t => target.spec.regen.stoppedBy.includes(t)) ) target.regenStopped = true;
   if ( target.effects?.some(e => e.endsOnDamage || e.endsOnHarm) ) {
     // A blow wakes the sleeper; a charm breaks when its caster's side does the harm.
     const harms = e => {
@@ -269,6 +271,7 @@ function dealDamage(run, source, target, amount, { crit = false } = {}) {
     const rest = amount - absorbed;
     const dealt = Math.min(rest, target.hp);
     target.hp -= rest;
+    if ( target.hp <= 0 && holdsOn(run, target, rest, crit, types) ) target.hp = 1;
     if ( source ) {
       source.damageDealt += dealt + absorbed;
       target.harmedBy.set(source.id, (target.harmedBy.get(source.id) ?? 0) + dealt + absorbed);
@@ -283,6 +286,7 @@ function dealDamage(run, source, target, amount, { crit = false } = {}) {
       target.wasDowned = true;
       rules.onDropped(target, { crit, model, amount: rest, overflow: Math.max(0, rest - dealt) });
       if ( source?.spec.neverKill && target.status === STATUS.DEAD ) knockOut(run, target);
+      regenerating(target);
       target.fellRound ??= run.round;
       target.killerId = source?.id ?? target.killerId ?? null;
       run.firstFallen ??= target.id;
@@ -306,10 +310,63 @@ function dealDamage(run, source, target, amount, { crit = false } = {}) {
     if ( run.neutral && source ) crossed(run, source, target, "harm", 1.5, logger(run));
     rules.onDropped(target, { crit, model, amount, overflow: amount });
     if ( source?.spec.neverKill && target.status === STATUS.DEAD ) knockOut(run, target);
+    regenerating(target);
     const dead = target.status === STATUS.DEAD;
     if ( dead ) target.killerId = source?.id ?? target.killerId ?? null;
     log(run, target, dead ? "is finished off" : `is struck while down (dying ${target.dying})`, { type: dead ? "death" : "struckDown", by: source?.spec.name ?? null, byId: source?.id ?? null, dying: target.dying, finished: dead });
   }
+}
+
+/**
+ * A blow that would drop it, it may shrug off at 1 hit point (5e Undead Fortitude: spec.holdOn {save, base, except,
+ * notOnCrit}: a save against base + the damage, unless the damage was one of `except` or a critical hit).
+ */
+function holdsOn(run, u, amount, crit, types) {
+  const h = u.spec.holdOn;
+  if ( !h || (crit && h.notOnCrit) || (types && h.except?.length && types.some(t => h.except.includes(t))) ) return false;
+  const dc = (h.base ?? 5) + amount;
+  const { roll } = rollSave(run, u, h.save ?? "con", dc, { stakes: 0.9, label: h.label ?? "" });
+  if ( roll.degree < 2 ) return false;
+  log(run, u, `${h.label ?? "holds on"}: stays up at 1 hit point`, { type: "holdOn", label: h.label ?? "", natural: roll.natural, total: roll.total, dc });
+  return true;
+}
+
+/** While its regeneration works, a creature can't be killed: it lies there, mending (a troll). */
+function regenerating(u) {
+  if ( u.status === STATUS.DEAD && u.spec.regen && !u.regenStopped ) {
+    u.status = STATUS.DOWN;
+    u.held = true; // (by its regeneration, not by its dying)
+  }
+}
+
+/**
+ * Start of its turn: regeneration (spec.regen {amount, stoppedBy}: not this turn if it took one of those damage types
+ * since its last; a creature down at 0 that can't regenerate dies, if 0 is death for it) and fast healing
+ * (spec.fastHealing).
+ */
+function regenerate(run, u) {
+  const regen = u.spec.regen;
+  const fast = Number(u.spec.fastHealing) || 0;
+  if ( (!regen && !fast) || [STATUS.DEAD, STATUS.FLED].includes(u.status) ) return;
+  const stopped = !!u.regenStopped;
+  u.regenStopped = false;
+  if ( u.status === STATUS.DOWN && u.held && stopped ) {
+    if ( u.spec.diesAtZero ) {
+      u.status = STATUS.DEAD;
+      log(run, u, "dies, its regeneration stopped", { type: "death", regen: true });
+      return;
+    }
+    u.held = false; // (from here on, the system's dying rules)
+  }
+  const amount = fast + (regen && !stopped ? regen.amount : 0);
+  if ( amount <= 0 || u.hp >= u.maxHp ) return;
+  const before = u.hp;
+  const wasDown = u.status === STATUS.DOWN;
+  run.prep.rules.onHealed(u, amount);
+  if ( u.status === STATUS.STANDING ) u.held = false;
+  log(run, u, `regenerates ${u.hp - before} hit points${wasDown && u.status === STATUS.STANDING ? " and gets back up" : ""}`, {
+    type: "regen", amount: u.hp - before, revived: wasDown && u.status === STATUS.STANDING
+  });
 }
 
 /** Knocked out, not killed: down at 0 hit points, unconscious and stable (the system may say more: rules.knockOut). */
@@ -464,7 +521,7 @@ function rollHit(run, u, action, t, parts, multiplier, crit, minimum = 0) {
       for ( const p of rolled.persistent ) {
         if ( !t.spec.iwr?.immune?.includes(p.type) ) t.persistent.push({ part: p, sourceId: u.id });
       }
-      dealDamage(run, u, t, amount, { crit });
+      dealDamage(run, u, t, amount, { crit, types: Object.keys(rolled.byType) });
       return amount;
     }
   };
@@ -1423,6 +1480,9 @@ function takeTurn(run, u) {
   u.disengaged = false;
 
   settleSides(run); // holds that took or ended since this creature's last turn
+  regenerate(run, u);
+  if ( u.status === STATUS.DEAD ) return endOfTurn(run, u);
+  if ( u.status === STATUS.DOWN && u.held ) return endOfTurn(run, u); // (held at the edge by its regeneration)
   if ( u.status === STATUS.DOWN ) {
     if ( options.downedModel === DOWNED_MODELS.SIMULATE && rules.recoveryCheck ) {
       fateful(run, u, null, () => {
@@ -1736,7 +1796,7 @@ function endOfTurn(run, u) {
     for ( const entry of u.persistent ) {
       const amount = rules.applyIwr(iwrOf(u), { [entry.part.type]: Math.max(0, samplePart(entry.part, run.rng)) });
       if ( run.log ) log(run, u, `takes ${amount} persistent ${entry.part.type}`, { type: "persistent", damageType: entry.part.type, amount });
-      dealDamage(run, run.byId.get(entry.sourceId), u, amount);
+      dealDamage(run, run.byId.get(entry.sourceId), u, amount, { types: [entry.part.type] });
       if ( !rules.persistentFlatCheck(run.rng) ) remaining.push(entry);
     }
     u.persistent = remaining;
@@ -1910,7 +1970,8 @@ function activeSides(run) {
   // (A summoned thing nobody can attack, a Spiritual Weapon, doesn't keep its side in the fight; nor does anyone who
   // takes no side.)
   // (Someone who has noticed the fight and takes part next round counts: it's coming.)
-  return [...new Set(run.units.filter(u => (isStanding(u) || joining(u)) && !u.spec.untargetable && u.side !== NEUTRAL_PARTY).map(u => u.side))];
+  // (Nor does a troll lying there, mending: it will get back up unless someone burns it.)
+  return [...new Set(run.units.filter(u => (isStanding(u) || joining(u) || (u.held && u.status === STATUS.DOWN)) && !u.spec.untargetable && u.side !== NEUTRAL_PARTY).map(u => u.side))];
 }
 
 export function battleOver(run) {
