@@ -339,10 +339,13 @@ export function behaviorOf(u) {
   return u.spec.behavior ?? {};
 }
 
-/** Lore-Collector bonus against a foe it has studied: +1, or +2 when the foe has a weakness to exploit. */
-export function studyBonus(u, t) {
+/**
+ * Lore-Collector bonus against a foe it has sized up: +1 to its attacks (+2 when the foe has a weakness to exploit),
+ * and +1 to its words (it knows what moves them).
+ */
+export function studyBonus(u, t, { words = false } = {}) {
   if ( !t || !u.studied?.has(t.id) ) return 0;
-  return Object.keys(t.spec.iwr?.weak ?? {}).length ? 2 : 1;
+  return !words && Object.keys(t.spec.iwr?.weak ?? {}).length ? 2 : 1;
 }
 
 export function areEnemies(run, a, b) {

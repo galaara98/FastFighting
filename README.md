@@ -157,12 +157,13 @@ Theft mid-fight is rare; most who want your things take them from your body afte
 ## Desires
 
 Every character has a list of desires: what it wants right now, at whom, and how badly (0 to 100: Passing, Wants, Determined, Driven, Obsessed). They're its reasoning made visible, and they decide what it does:
-- **Hurt, heal, protect, bolster (with a buff), talk to, keep away from.**
+- **Hurt, heal, protect, bolster (with a buff), talk to, keep away from, be bolstered by.**
 - **Where they come from:**
   - **its tactics:** each turn its tactical band weighs every foe it can reach (a Mastermind picks the healer to destroy, a Feral beast the nearest thing), every friend it could mend, whom it could talk round, whom it fears;
   - **its Tactics answers:** up to three desires stated for any character, PC or NPC (what, who, how badly; healing, bolstering and talking are offered only to those who can);
   - **the fight:** whoever hurt it (simple minds go straight for whoever just hurt them; hit from afar while already trading blows, they keep at the one in front of them), whoever felled a friend, a grudge;
   - **its leader and its team:** the leader's desires pull on it a medium amount, the team's a little. With nobody leading (none chosen, or the leader fallen), the team pulls together less, except when it comes to vengeance;
+  - **a friend asking for a buff:** a character who wants to **be bolstered by** a friend (a desire in its Tactics) asks; no roll, only that the two can understand each other (a language in common, and minds that follow it) and that the friend is willing (the loyal gladly, the selfish grudgingly, helpers more than most, a contrarian never for the leader it defies). A friend with a buff to give then wants to bolster the asker, as much as the asking times its willingness, and a single-target buff goes to the one it most wants to bolster. The story tells the call and the answer;
   - **its playstyles:** each pill guides how it picks up desires (below), added up across up to four.
 - **The strongest leads.** Desires 20 or more below a stated or fight-stirred one don't cross the character's mind, and an obsession leaves no room for caution (it forgets about opportunity attacks).
 - **Thwarted desires fade:** a locked door that won't give, a target it can't reach, getting hurt on the way, being badly hurt with the target far off. The character moves on when something gets too hard or too dangerous.
@@ -269,7 +270,7 @@ Answers save as they're made, and two players sharing a token see each other's c
 | Impatient | the nearest foe; setbacks wear it down twice as fast; little patience for locks |
 | Instigator | spoils everyone's plans: locks foes down, harasses and debuffs them more than anyone; the most dangerous foe and the other side's leader; may defy its own leader |
 | Lazy | the nearest foe and no long walks; not much help to anyone; gives up fast; can't hold a grudge |
-| Lore-Collector | foes it hasn't sized up yet |
+| Lore-Collector | foes it hasn't sized up yet; sizes up a new foe before talking to it or attacking it (an action, when the turn has room: a spare action, or, with one action a turn, one that would only have closed the distance), then hits it more often and talks to it better |
 | Martyr | guards the weakest friend; fears nothing; avenges the fallen twice as hard |
 | Mercenary | easy pickings; barely avenges anyone; gives up when it gets hard |
 | Moralist | never the fallen; heals friends, guards the weakest |

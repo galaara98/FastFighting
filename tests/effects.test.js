@@ -271,3 +271,38 @@ describe("a system that has none of it", () => {
     for ( const style of ["roleplay", "standard", "statistician"] ) expect(() => buildStory(r, spec, style, { tables, seed: 3 })).not.toThrow();
   });
 });
+
+describe("asking a friend for a buff", () => {
+  const heroism = { id: "heroism", name: "Heroism", kind: "buff", cost: 2, resource: "slot", outcome: { mods: { attack: 1 }, rounds: 10, label: "heroic" } };
+  const speaks = (languages = ["common"]) => ({ pitches: {}, resist: {}, languages });
+  const asker = (extra = {}) => ({ ...fighter("f2"), social: speaks(), desires: [{ kind: "bolstered", targetId: "cleric", level: 70 }], ...extra });
+  const firstBuff = (party, seed = 3) => replay(battle([...party, brute()], { maxRounds: 2 }), pf2eRules, seed).log.find(e => e.type === "buff");
+  const healer = (extra = {}) => cleric([heroism], { social: speaks(), ...extra });
+
+  test("a friend who can understand it, and is willing, bolsters the one who asked", () => {
+    // Unasked, two alike fighters: the first gets it.
+    expect(firstBuff([healer(), { ...fighter("f1"), social: speaks() }, { ...fighter("f2"), social: speaks() }]).targetIds).toEqual(["f1"]);
+    const asked = firstBuff([healer(), { ...fighter("f1"), social: speaks() }, asker()]);
+    expect(asked.targetIds).toEqual(["f2"]);
+    expect(asked.askedBy).toEqual(["f2"]);
+  });
+
+  test("no roll, but no language in common, or no will to help, and nothing comes of it", () => {
+    const strangers = firstBuff([healer(), { ...fighter("f1"), social: speaks() }, asker({ social: speaks(["elvish"]) })]);
+    expect(strangers.targetIds).toEqual(["f1"]);
+    expect(strangers.askedBy).toEqual([]);
+    const selfish = { tactical: { base: 70, fudge: 0 }, brave: { base: 90, fudge: 0 }, selfish: { base: 95, fudge: 0 }, loyal: { base: 5, fudge: 0 } };
+    expect(firstBuff([healer({ traits: selfish }), { ...fighter("f1"), social: speaks() }, asker()])?.askedBy ?? []).toEqual([]);
+  });
+
+  test("asking isn't something the asker acts on, and the story tells the call", () => {
+    const spec = battle([healer(), { ...fighter("f1"), social: speaks() }, asker(), brute()], { maxRounds: 2 });
+    const r = replay(spec, pf2eRules, 3);
+    for ( const e of r.log.filter(x => x.type === "thought" && x.actorId === "f2") ) expect(e.desires.some(d => d.kind === "bolstered")).toBe(false);
+    expect(r.log.some(e => e.type === "thought" && e.actorId === "cleric" && e.desires.some(d => d.kind === "aid" && d.targetId === "f2"))).toBe(true);
+    expect(buildStory(r, spec, "statistician").text).toMatch(/Heroism · heroic · asked by f2/);
+    const prose = buildStory(r, spec, "roleplay", { tables, seed: 3 }).text;
+    expect(prose).toMatch(/Heroism/);
+    expect(prose).not.toMatch(/\{\w+\}/);
+  });
+});

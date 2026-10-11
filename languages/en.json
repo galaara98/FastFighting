@@ -697,7 +697,7 @@
       },
       "loreCollector": {
         "Name": "Lore-Collector",
-        "Hint": "Studies a new foe before fighting it (Recall Knowledge), then fights it better; drawn to foes it hasn't sized up yet."
+        "Hint": "Sizes up a new foe before talking to it or fighting it, then deals with it better: its attacks land more often (more so on a weakness to exploit) and its words carry more weight. Drawn to foes it hasn't sized up yet."
       },
       "puzzleManiac": {
         "Name": "Puzzle-Maniac",
@@ -824,7 +824,8 @@
         "protect": "Protect",
         "aid": "Bolster",
         "talk": "Talk to",
-        "avoid": "Keep away from"
+        "avoid": "Keep away from",
+        "bolstered": "Be bolstered by"
       },
       "Level": {
         "passing": "Passing",

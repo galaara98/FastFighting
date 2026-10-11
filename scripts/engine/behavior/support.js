@@ -20,7 +20,7 @@ import { STATUS, TACTICAL } from "../../constants.js";
 import { alliesOf, enemiesOf, isStanding, liveTier, movesNeeded, edgeDistance, behaviorOf } from "../battle-state.js";
 import { hasUses, costOf, costUnits, threatOf, unitsPerTurn } from "./evaluate.js";
 import { outcomeWorth, hasFresh, concentrationCost, heldElsewhere } from "./effects.js";
-import { mind } from "./desire.js";
+import { mind, levelOf } from "./desire.js";
 import { bringsItself } from "./reluctance.js";
 import { castChanceOf } from "./casting.js";
 
@@ -40,8 +40,11 @@ function reaches(run, u, a, action) {
   return movesNeeded(run, u, a, how) === 0;
 }
 
-/** Whom a buff would go to now, and what it's worth to each: [{ally, worth}], best first. */
-export function recipients(run, u, action, tier = liveTier(run, u)) {
+/**
+ * Whom a buff would go to now, and what it's worth to each: [{ally, worth}], best first. With `all`, every friend it
+ * could go to, not just as many as it reaches.
+ */
+export function recipients(run, u, action, tier = liveTier(run, u), { all = false } = {}) {
   const outcome = action.outcome;
   if ( !outcome || typeof outcome !== "object" ) return [];
   const self = action.targets === "self";
@@ -54,9 +57,11 @@ export function recipients(run, u, action, tier = liveTier(run, u)) {
     const worth = outcomeWorth(run, u, ally, outcome);
     if ( worth > 0 ) picks.push({ ally, worth });
   }
-  picks.sort((a, b) => b.worth - a.worth);
+  // A friend it wants to bolster (one that asked, say) comes first, as far as the wish goes: at 50, worth twice as much.
+  const rank = x => x.worth * (1 + levelOf(u, "aid", x.ally.id) / 50);
+  picks.sort((a, b) => rank(b) - rank(a));
   const n = self ? 1 : action.aura ? picks.length : Math.max(1, Number(action.area?.targets) || 1);
-  return picks.slice(0, n);
+  return all ? picks : picks.slice(0, n);
 }
 
 /** What u would do with one action's worth of attacking instead: its best damage per action against a standing foe. */
@@ -90,13 +95,15 @@ export function buffOptions(run, u, turn = null) {
     if ( turn && !turn.canAfford(cost) ) continue;
     // A single-target buff it's holding on a friend still standing stays with them.
     if ( heldElsewhere(run, u, action) ) continue;
-    const picks = recipients(run, u, action, tier);
+    const candidates = recipients(run, u, action, tier, { all: true });
+    const n = action.targets === "self" ? 1 : action.aura ? candidates.length : Math.max(1, Number(action.area?.targets) || 1);
+    const picks = candidates.slice(0, n);
     if ( !picks.length ) continue;
     const worth = castChanceOf(u, action) * picks.reduce((s, x) => s + x.worth, 0) - concentrationCost(run, u, action);
     if ( !(worth > 0) ) continue;
     let score = (worth / Math.max(0.25, costUnits(rules, cost))) * (SEES[tier] ?? 1);
     if ( limited(action) ) score /= gate;
-    out.push({ action, targets: picks.map(x => x.ally), picks, worth, score });
+    out.push({ action, targets: picks.map(x => x.ally), picks, candidates, worth, score });
   }
   return out.sort((a, b) => b.score - a.score);
 }
@@ -130,7 +137,8 @@ export function aidScores(run, u) {
   const best = new Map();
   for ( const o of buffOptions(run, u) ) {
     if ( o.action.tell ) continue; // Dodge, Reckless Attack, Action Surge: moves, not something to want for a friend
-    for ( const { ally, worth } of o.picks ) {
+    // (Every friend it could bolster with it, not only the one it would pick: a friend who asks can change its mind.)
+    for ( const { ally, worth } of o.candidates ) {
       const units = Math.max(0.25, costUnits(run.prep.rules, costOf(run.prep.rules, o.action, u)));
       const score = (worth / units) / baseline;
       if ( score > (best.get(ally) ?? 0) ) best.set(ally, score);

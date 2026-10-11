@@ -17,17 +17,17 @@ import {
 import { sampleRunTactics } from "./playstyles.js";
 import { chooseTarget, bestOptionVs, scoreTargets } from "./behavior/targeting.js";
 import { decideHeal, rescueOption, healScores } from "./behavior/healing.js";
-import { initDesires, newTurn, think, want, thwart, relieve, levelOf, mind, thoughts as thoughtsOf, levelsFromScores, listen, remember, styleWants, styleOf, CHOICE_LEVEL } from "./behavior/desire.js";
+import { initDesires, newTurn, think, want, thwart, relieve, levelOf, mind, thoughts as thoughtsOf, levelsFromScores, listen, heed, remember, styleWants, styleOf, CHOICE_LEVEL } from "./behavior/desire.js";
 import { prepareDoors, doorStates, doorAhead, atDoor, doorPlan, patienceFor, doorDamage } from "./behavior/doors.js";
 import { checkMorale, standsGround, MORALE } from "./behavior/morale.js";
-import { expectedDamage, spendUse, hasUses, attacksIn, criticalParts, saveMultiplier, saveMultiplierFor, meanDamageVs } from "./behavior/evaluate.js";
+import { expectedDamage, spendUse, hasUses, attacksIn, criticalParts, saveMultiplier, saveMultiplierFor, meanDamageVs, unitsPerTurn } from "./behavior/evaluate.js";
 import { chooseDeed, deedTier, chooseHitRiders, rescueMiss, rollCrit, rollFumble } from "./behavior/riders.js";
 import { cast } from "./behavior/casting.js";
 import { boost } from "./behavior/luck.js";
 import { respond, riposteStrike } from "./behavior/responses.js";
 import { decideSummon, callSummons, sustainSummons, summonState, dismiss } from "./behavior/summons.js";
 import { createAggregator } from "./aggregate.js";
-import { talkActionsThisTurn, choosePitch, attemptTalk } from "./behavior/talk.js";
+import { talkActionsThisTurn, choosePitch, attemptTalk, shareLanguage } from "./behavior/talk.js";
 import { opensWithTalk, breaksStandoff, standoffPitches, charismaticLeader, canTalk } from "./behavior/standoff.js";
 import { controlOutcome, controlRoll, isImmune, degreeShift } from "./behavior/control.js";
 import { recompute as recomputeConditions, applyOutcome, applyControl, beginConcentration, endConcentration, holdsAnything, noteConcentration, moveHeld, settleAllegiance, iwrOf, incoming } from "./behavior/effects.js";
@@ -35,7 +35,7 @@ import { decideBuff, aidScores } from "./behavior/support.js";
 import { perceives } from "./behavior/senses.js";
 import { stealChance, theftTarget, theftPlan, attemptTheft } from "./behavior/theft.js";
 import { reactionsPerRound, threats, takesSafeWay } from "./behavior/reactions.js";
-import { isNeutral, crossed, caughtInArea, refreshLeans, truceWith, truceBreaks, turnOn, settleTruce, peaceDesires } from "./behavior/neutral.js";
+import { isNeutral, crossed, caughtInArea, refreshLeans, truceWith, truceBreaks, turnOn, settleTruce, peaceDesires, seemsFoe } from "./behavior/neutral.js";
 import { normalizeCost } from "./turn.js";
 
 const MAX_STEPS_PER_TURN = 8;
@@ -1177,6 +1177,7 @@ function executeBuff(run, u, action, targets, worth = 0, turn = null) {
     log(run, u, `${action.name} → ${names.join(", ")}`, {
       type: "buff", action: action.name, effect: action.outcome?.label ?? action.name, self, targets: landed.map(t => t.spec.name),
       targetIds: landed.map(t => t.id), withSelf: landed.includes(u), tempHp: Number(action.outcome?.tempHp) || 0, aura: !!action.aura,
+      askedBy: landed.filter(t => t !== u && u.heard?.has(t.id)).map(t => t.spec.name), // (friends who asked for it)
       tell: action.tell ?? null // a story line of its own (dodge, reckless, surge), if the system names one
     });
   }
@@ -1400,6 +1401,36 @@ function workTheDoor(run, u, turn, door, target) {
 }
 
 /**
+ * A Lore-Collector sizing up a foe (one it hasn't sized up, or let pass) before it first deals with it, by words or by
+ * weapons: from then on it deals with that foe better (battle-state.js studyBonus). Whether it takes the time is its
+ * playstyle's chance, decided once a foe; `room` says whether the turn has the time now. Returns true if it did.
+ */
+function sizesUp(run, u, t, turn, room) {
+  const chance = behaviorOf(u).study;
+  if ( !chance || !room || u.studied.has(t.id) || u.studied.has(`skip:${t.id}`) ) return false;
+  if ( !areEnemies(run, u, t) && !seemsFoe(run, u, t) ) return false;
+  const cost = run.prep.rules.basicAction ?? 1;
+  if ( !turn.canAfford(cost) ) return false;
+  if ( !run.rng.chance(chance) ) {
+    u.studied.add(`skip:${t.id}`);
+    return false;
+  }
+  turn.spend(cost);
+  u.studied.add(t.id);
+  log(run, u, `sizes up ${t.spec.name}`, { type: "study", target: t.spec.name, targetId: t.id });
+  return true;
+}
+
+/** A standing foe close enough to strike at u (with no map, everyone is). */
+function closeFoe(run, u) {
+  return enemiesOf(run, u).some(e => {
+    if ( !isStanding(e) ) return false;
+    const d = edgeDistance(u, e);
+    return d === null || d <= 10;
+  });
+}
+
+/**
  * What u wants this turn: its tactics' reasoning (whom it would fight, and the runners-up; whom it would mend; whom it
  * would talk to; whom it fears), on top of what it was told to want and what the fight has stirred.
  */
@@ -1436,6 +1467,8 @@ function deliberate(run, u) {
   styleWants(run, u, scored, { canHeal: !!u.prep.healActions?.length, canTalk: !!talkTarget, talkTarget, canAid: !!u.prep.buffActions?.length });
   // What its leader and its friends want pulls on it too (for most, the leader more than the crowd).
   listen(run, u, { canHeal: !!u.prep.healActions?.length, canTalk: (u.prep.talkAffinity ?? 0) > 0, canAid: !!u.prep.buffActions?.length });
+  // Friends asking it for a buff, who can make themselves understood: a willing one wants to oblige.
+  heed(run, u, { canAid: !!u.prep.buffActions?.length, understands: (a, b) => !a.spec.social?.mindless && !b.spec.social?.mindless && shareLanguage(a, b, run) });
   remember(run, u);
   if ( run.log ) {
     const top = thoughtsOf(run, u);
@@ -1657,7 +1690,7 @@ function takeTurn(run, u) {
   u.usedThisTurn = null; // once-per-turn riders such as sneak attack
   u.stoleThisTurn = false;
   u.actsThisTurn = 0;     // (which action die the next action rolls, where there are several: DCC)
-  const basic = rules.basicAction ?? 1; // a simple action: stand, escape, recall knowledge, step
+  const basic = rules.basicAction ?? 1; // a simple action: stand, escape, size up a foe, step
   const behavior = behaviorOf(u);
   // Diplomats with no one who understands them still try to talk.
   if ( !u.parleyed ) {
@@ -1717,6 +1750,13 @@ function takeTurn(run, u) {
       : peacePitch ? { count: Math.min(turn.howMany(talkCost), u.peace.level >= (lead?.level ?? 0) ? 2 : 1), pitch: peacePitch }
       : (wants.blinding && lead.level >= 60 && !wants.kindInView("talk")) ? { count: 0, pitch: null }
         : talkActionsThisTurn(run, u, turn.howMany(talkCost));
+  // A Lore-Collector sizes up whoever it's about to talk to first: where a turn has several actions, when that leaves
+  // one to talk with; where it has one, when no foe is close enough to strike at it (the talking waits a turn).
+  const listener = talking.count > 0 ? talking.pitch?.target : null;
+  if ( listener && sizesUp(run, u, listener, turn, unitsPerTurn(rules, u) >= 2 ? turn.howMany(basic) >= 2 : !closeFoe(run, u)) ) {
+    talking.count = Math.min(talking.count, turn.howMany(talkCost));
+    if ( !talking.count ) u.talkPending = true;
+  }
   for ( let i = 0; i < talking.count && turn.canAfford(talkCost); i++ ) {
     const pitch = i === 0 ? talking.pitch : choosePitch(run, u, only ? { only } : peacePitch ? { only: peaceful } : {}); // the first pitch was already chosen
     if ( !pitch ) break;
@@ -1771,17 +1811,6 @@ function takeTurn(run, u) {
       target = prey?.t ?? null;
     }
     if ( !target ) break;
-    // Lore-Collectors study a new foe first (Recall Knowledge), then fight it better.
-    if ( behavior.study && !u.studied.has(target.id) && !u.studied.has(`skip:${target.id}`) && turn.howMany(basic) >= 2 ) {
-      u.studied.add(target.id);
-      if ( run.rng.chance(behavior.study) ) {
-        turn.spend(basic);
-        log(run, u, `studies ${target.spec.name} for weaknesses`, { type: "study", target: target.spec.name, targetId: target.id });
-        continue;
-      }
-      u.studied.delete(target.id);
-      u.studied.add(`skip:${target.id}`);
-    }
     // A thief may rob someone within reach instead of hitting them (once a turn).
     if ( !u.stoleThisTurn ) {
       u.stoleThisTurn = true;
@@ -1798,6 +1827,9 @@ function takeTurn(run, u) {
     u.targetId = target.id;
     const option = bestOptionVs(run, u, target, attacksMade, turn);
     if ( !option ) break;
+    // A Lore-Collector sizes up a new foe before it attacks it: where a turn has several actions, when that leaves one
+    // to fight with; where it has one, when that action would only have gone into closing the distance.
+    if ( sizesUp(run, u, target, turn, unitsPerTurn(rules, u) >= 2 ? turn.howMany(basic) >= 2 : option.moveUnits >= 1) ) continue;
 
     if ( option.moves > 0 ) {
       if ( !canMove(run, u) ) break;

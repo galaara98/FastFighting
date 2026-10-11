@@ -32,7 +32,7 @@
  * Pure: no Foundry globals.
  */
 import { STATUS, SWAY, CONCEDE_LUCK, SWITCH_LUCK, TACTICAL, clamp } from "../../constants.js";
-import { alliesOf, enemiesOf, isStanding, behaviorOf, leaderStanding, typical, checkRoll, liveTier } from "../battle-state.js";
+import { alliesOf, enemiesOf, isStanding, behaviorOf, leaderStanding, typical, checkRoll, liveTier, studyBonus } from "../battle-state.js";
 import { degreeDistribution, rollCheck } from "../probability.js";
 import { isNeutral, standsAside, appeal, offend, turnOn, standAside, joinSide, calm, settleTruce, seemsFoe } from "./neutral.js";
 import { levelOf, allDesires } from "./desire.js";
@@ -223,7 +223,7 @@ export function bestPitch(run, talker, t) {
     if ( typeof pitch?.mod !== "number" ) continue;
     if ( scareOnly && kind !== "intimidate" && aim === "down" ) continue;
     if ( aim === "recruit" && kind === "intimidate" ) continue; // nobody is threatened into friendship
-    const { mod, advantage } = checkRoll(run, talker, pitch.mod);
+    const { mod, advantage } = checkRoll(run, talker, pitch.mod + studyBonus(talker, t, { words: true }));
     const dc = talkDC(run, talker, t, kind);
     const dist = degreeDistribution(rules, mod, dc, { advantage, kind: "check" });
     // A bluff backfires harder, so it needs to be clearly better.
@@ -275,7 +275,12 @@ export function talkActionsThisTurn(run, u, actions) {
   if ( devoted ) return { count: actions, pitch };
   // The less battle-worthy, and skilled talkers with a promising pitch, put their whole voice into it.
   const max = Math.min(actions, (u.prep.lowBattleWorth || (talker && pitch.pSuccess >= 0.5)) ? 2 : 1);
-  // Talkers always get to start swaying on their first turn.
+  // Talkers always get to start swaying on their first turn. (One that spent its turn sizing up whoever it meant to
+  // talk to gets to the talking now.)
+  if ( u.talkPending ) {
+    u.talkPending = false;
+    return { count: talker ? max : 1, pitch };
+  }
   if ( talker && u.turnsTaken === 0 ) return { count: max, pitch };
   if ( tactic === "first" && pitch.pSuccess >= 0.2 ) return { count: max, pitch };
   const chance = affinity * (0.2 + pitch.pSuccess) * (u.prep.lowBattleWorth ? 1.5 : 1);

@@ -1,10 +1,13 @@
 import { describe, expect, test } from "vitest";
 import { combinePlaystyles, sampleRunTactics, PLAYSTYLE_IDS, MAX_PLAYSTYLES } from "../scripts/engine/playstyles.js";
-import { runBatchSync } from "../scripts/engine/simulator.js";
+import { runBatchSync, replay, prepareBattle } from "../scripts/engine/simulator.js";
+import { createRun, studyBonus } from "../scripts/engine/battle-state.js";
+import { bestPitch } from "../scripts/engine/behavior/talk.js";
+import { genericRules } from "../scripts/adapters/generic/rules.js";
 import { pf2eRules } from "./fixtures/three-action-rules.js";
 import { createRng } from "../scripts/engine/rng.js";
 import { parseFormula } from "../scripts/engine/dice.js";
-import { creature, strike, battle } from "./helpers.js";
+import { creature, strike, battle, social } from "./helpers.js";
 
 describe("every pill", () => {
   test("does something", () => {
@@ -112,5 +115,44 @@ describe("playstyles in the simulation", () => {
     const talky = runBatchSync(make(["diplomat"]), pf2eRules, { runs: 400 });
     const plain = runBatchSync(make([]), pf2eRules, { runs: 400 });
     expect(talky.combatants.d.meanDamage).toBeLessThan(plain.combatants.d.meanDamage);
+  });
+});
+
+describe("the Lore-Collector sizes up a foe first", () => {
+  const at = (x, y = 0) => ({ x, y, size: 5 });
+  const scholar = (extra = {}) => creature({ id: "scholar", kind: "pc", diesAtZero: false, behavior: { study: 1 }, initiative: { mod: 50 },
+    social: social({ diplomacy: 12, intimidation: 10, deception: 8 }), actions: [strike({ bonus: 2, damage: [parseFormula("1d4", "bludgeoning")] })], ...extra });
+  const foe = (extra = {}) => creature({ id: "foe", side: "hostile", hp: { value: 500, max: 500, temp: 0 }, social: social({ diplomacy: 3 }),
+    actions: [strike({ bonus: -20, damage: [parseFormula("1", "bludgeoning")] })], ...extra });
+  const mine = r => r.log.filter(e => e.actorId === "scholar" && e.type !== "thought");
+
+  test("three actions: before talking to it, then talks with what's left", () => {
+    const first = mine(replay(battle([scholar(), foe()]), pf2eRules, 21)).filter(e => e.round === 1);
+    expect(first[0].type).toBe("study");
+    expect(first[1].type).toBe("talk");
+  });
+
+  test("one action a turn: only when the action would have gone into closing the distance", () => {
+    const quiet = { social: undefined };
+    const far = mine(replay(battle([scholar({ ...quiet, position: at(0), speeds: { walk: 30 } }), foe({ ...quiet, position: at(150), speeds: { walk: 0 } })], { positioning: true, maxRounds: 3 }), genericRules, 4));
+    expect(far.find(e => e.round === 1)?.type).toBe("study");
+    const near = mine(replay(battle([scholar({ ...quiet, position: at(0) }), foe({ ...quiet, position: at(5) })], { positioning: true, maxRounds: 3 }), genericRules, 4));
+    expect(near.some(e => e.type === "study")).toBe(false);
+  });
+
+  test("one action a turn, about to talk with no foe close: sizes it up, and talks next turn", () => {
+    const r = replay(battle([scholar({ position: at(0) }), foe({ position: at(60), speeds: { walk: 0 } })], { positioning: true, maxRounds: 3 }), genericRules, 21);
+    const acts = mine(r);
+    expect(acts.find(e => e.round === 1)?.type).toBe("study");
+    expect(acts.find(e => e.round === 2)?.type).toBe("talk");
+  });
+
+  test("it hits a sized-up foe more often, and talks to it better", () => {
+    const run = createRun(prepareBattle(battle([scholar(), foe()]), pf2eRules));
+    const [s, f] = run.units;
+    const before = bestPitch(run, s, f).mod;
+    s.studied.add(f.id);
+    expect(bestPitch(run, s, f).mod).toBe(before + 1);
+    expect(studyBonus(s, f)).toBe(1);
   });
 });

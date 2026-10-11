@@ -244,11 +244,14 @@ export function questionsContext(spec, actor, uid, { questions: withQuestions = 
     numbered.set(t.name, (numbered.get(t.name) ?? 0) + 1);
     return { ...t, name: `${t.name} ${numbered.get(t.name)}` };
   }).filter(t => t.id !== (spec.tokenId ?? spec.id));
-  // Healing, bolstering and talking only for those who can (anyone can want to hurt, guard or avoid someone).
+  // Healing, bolstering and talking only for those who can (anyone can want to hurt, guard or avoid someone); asking
+  // a friend for a buff, for those who can make themselves understood.
+  const speaks = (spec.social?.languages?.length ?? 0) > 0 && !spec.social?.mindless;
   const canDo = {
     heal: heals.length > 0,
     aid: spec.actions.some(a => a.kind === "buff" && !a.tell), // (Dodge and the like are moves, not bolstering)
-    talk: (spec.social?.languages?.length ?? 0) > 0 && !spec.social?.mindless
+    talk: speaks,
+    bolstered: speaks
   };
   const desires = DESIRE_SLOTS.map(slot => {
     const d = stored.desires?.[slot] ?? {};

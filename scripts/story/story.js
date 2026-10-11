@@ -276,8 +276,9 @@ function narrate(e, roll, rel, fill) {
       const others = (e.targets ?? []).filter((n, i) => e.targetIds?.[i] !== e.actorId);
       const fill = { ...f, effect: e.effect ?? "", target: others[0] ?? "", targets: listJoin(others), all: listJoin([e.actor, ...others]) };
       if ( !others.length ) return roll("event.buffSelf", fill);
-      if ( e.withSelf ) return roll("event.buffWithSelf", fill);
-      return roll(others.length > 1 ? "event.buffMany" : "event.buffOne", fill);
+      const asked = e.askedBy?.length ? `${roll("event.answerCall", { ...f, target: e.askedBy[0] })} ` : "";
+      if ( e.withSelf ) return asked + roll("event.buffWithSelf", fill);
+      return asked + roll(others.length > 1 ? "event.buffMany" : "event.buffOne", fill);
     }
     // Letting one spell go for another passes without comment; losing hold of it doesn't.
     case "concentrationEnd": return e.reason === "switch" ? "" : roll("event.concentrationLost", { ...f, weapon: e.action ?? "" });
@@ -548,7 +549,7 @@ function statLine(e) {
           : `${e.saveType ? `${[].concat(e.saveType).join("/")} ` : ""}${roll(e.natural, e.mod, e.total, e.dc, e.saveType ? "DC" : "AC")} · ${DEGREE[e.degree]}`;
       return `${e.actor} → ${e.target}: ${e.action} · ${how}${e.shifted ? " (shifted)" : ""} · ${e.effect || "no effect"}${e.backfired ? ` (on ${e.actor})` : ""}${e.damage ? ` · ${e.damage} damage` : ""}`;
     }
-    case "buff": return `${e.actor} → ${(e.targets ?? []).map((n, i) => (e.targetIds?.[i] === e.actorId ? "self" : n)).join(", ")}: ${e.action} · ${e.effect || "bolstered"}${e.tempHp ? ` · ${e.tempHp} temp HP` : ""}`;
+    case "buff": return `${e.actor} → ${(e.targets ?? []).map((n, i) => (e.targetIds?.[i] === e.actorId ? "self" : n)).join(", ")}: ${e.action} · ${e.effect || "bolstered"}${e.tempHp ? ` · ${e.tempHp} temp HP` : ""}${e.askedBy?.length ? ` · asked by ${e.askedBy.join(", ")}` : ""}`;
     case "concentrationEnd":
       if ( e.reason === "switch" ) return `${e.actor} lets ${(e.effects ?? []).join(", ")} go`;
       return `${e.actor} loses concentration on ${e.action}${e.natural !== undefined ? ` · ${e.saveType} ${roll(e.natural, e.mod, e.total, e.dc, "DC")}` : " (can't act)"}`;

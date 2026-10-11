@@ -14,15 +14,19 @@
  *               together less: the team's pull and the wish to heal or guard each other dip (vengeance doesn't). Playstyles change that: a would-be leader who isn't the leader half ignores
  *               the leader, a chaotic one barely hears anyone, People-Pleasers and Enablers listen harder, and a
  *               contrarian (chaotic, or an instigator, who isn't leading) may lean away from what the leader wants.
+ *   asked       friends asking it for a buff (their "bolstered" desires naming it): no roll, only that they can make
+ *               themselves understood and that it's willing (see heed).
  *
  * A desire's level is max(logic, stated) + memory + social - frustration, 0 to 100:
- *   {kind: "hurt" | "heal" | "protect" | "aid" | "talk" | "avoid", targetId, level}   (aid: bolster with a buff)
+ *   {kind: "hurt" | "heal" | "protect" | "aid" | "talk" | "avoid" | "bolstered", targetId, level}
+ *   (aid: bolster with a buff; bolstered: to be bolstered by that friend. A request, not something it acts on itself:
+ *   the friend hears it and, if willing, wants to aid it.)
  *
  * The strongest desire leads. Much weaker ones (BLIND_GAP or more below it) don't cross the character's mind, and
  * an obsessed character (OBSESSED+) stops worrying about its own safety.
  */
 import { STATUS } from "../../constants.js";
-import { areEnemies, isStanding, liveTrait, enemiesOf } from "../battle-state.js";
+import { areEnemies, isStanding, liveTrait, enemiesOf, alliesOf } from "../battle-state.js";
 import { perceives, apparentHealth } from "./senses.js";
 import { seemsFoe } from "./neutral.js";
 
@@ -30,7 +34,7 @@ import { seemsFoe } from "./neutral.js";
 const NEUTRAL_STYLE = Object.freeze({ hurt: {}, avoid: {}, heal: 0, protect: 0, aid: 0, talk: 0, whim: 0, contrarian: 0, retaliate: 1, avenge: 1, cool: 1, frustration: 1, leader: 1, team: 1, doorPatience: 1 });
 export const styleOf = u => u.spec?.desireStyle ?? NEUTRAL_STYLE;
 
-export const DESIRE_KINDS = Object.freeze(["hurt", "heal", "protect", "aid", "talk", "avoid"]);
+export const DESIRE_KINDS = Object.freeze(["hurt", "heal", "protect", "aid", "talk", "avoid", "bolstered"]);
 /** Desires a creature may have about itself: mending itself, bolstering itself. */
 const SELF_KINDS = new Set(["heal", "aid"]);
 /** Band floors: passing, wants, determined, driven, obsessed. */
@@ -165,6 +169,7 @@ function relevant(run, u, kind, t) {
     case "heal": return !areEnemies(run, u, t) && (t.status === STATUS.DOWN || t.hp < t.maxHp);
     case "protect": return !areEnemies(run, u, t);
     case "aid": return !areEnemies(run, u, t) && isStanding(t);
+    // (Wanting a friend's buff is for the friend to act on: see heed.)
     default: return false;
   }
 }
@@ -351,6 +356,41 @@ export function listen(run, u, { canHeal = false, canTalk = false, canAid = fals
         pull(kind, targetId, team * sum / friends.length);
       }
     }
+  }
+}
+
+/**
+ * How willing u is to take up a friend's request for a buff (0 to 1): the loyal gladly, the selfish grudgingly,
+ * helpers (Enablers, Moralists, Martyrs ...) more than most; a contrarian defying its leader, not for the leader.
+ */
+export function willingness(run, u, asker) {
+  if ( u.contrarian && run.prep.sides[u.side]?.leaderId === asker.id ) return 0;
+  const loyal = liveTrait(run, u, "loyal");
+  const selfish = liveTrait(run, u, "selfish");
+  const w = 0.5 + (loyal - 50) / 100 - (selfish - 50) / 100 + (u.spec.behavior?.helps ? 0.25 : 0);
+  return Math.max(0, Math.min(1, w));
+}
+/** Below this, a request goes unheeded. */
+export const UNWILLING = 0.2;
+
+/**
+ * Friends asking u for a buff (their "bolstered" desires naming u). No roll: only that they can make themselves
+ * understood (`understands`: a language in common, minds that follow it) and that u is willing. Each request u takes
+ * up becomes a wish to aid that friend, as strong as the asking times the willingness; u.heard keeps who asked.
+ * Nothing comes of it for a character with no buff to give.
+ */
+export function heed(run, u, { canAid = false, understands = () => true } = {}) {
+  u.heard = null;
+  if ( !u.desire || !canAid ) return;
+  for ( const a of alliesOf(run, u) ) {
+    if ( a === u || !isStanding(a) ) continue;
+    const asked = levelOf(a, "bolstered", u.id);
+    if ( asked <= 0 || !understands(a, u) ) continue;
+    const willing = willingness(run, u, a);
+    if ( willing < UNWILLING ) continue;
+    const k = keyOf("aid", a.id);
+    u.desire.social.set(k, (u.desire.social.get(k) ?? 0) + asked * willing);
+    (u.heard ??= new Set()).add(a.id);
   }
 }
 
