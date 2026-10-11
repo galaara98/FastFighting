@@ -128,7 +128,7 @@ function makeRoller(tables, seed) {
     const entries = tables.get(key);
     if ( !entries?.length ) return "";
     const text = entries[Math.floor(rng.next() * entries.length)] ?? "";
-    // (Spanish: su or sus before the weapon's name.)
+    // (A language whose possessive agrees with the weapon fills {su} from its tables' possessive().)
     const extra = tables.possessive && text.includes("{su}") ? { su: tables.possessive(fill.weapon ?? "") } : null;
     return text.replace(/\{(\w+)\}/g, (m, k) => {
       const v = fill[k] ?? extra?.[k];

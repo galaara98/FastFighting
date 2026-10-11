@@ -4,18 +4,20 @@
  * Lookup order for each table key:
  *   1. A RollTable in this world flagged with that key (GMs install and edit these: see installStoryTables).
  *   2. The module's tables for the client language, from story/<lang>.json if a translation ships one.
- *   3. The built-in tables for the client language (story/tables-es.js for Spanish).
+ *   3. Built-in tables for the client language (none ship today; see BUILT_IN).
  *   4. The built-in English tables (story/tables-en.js).
  *
  * A locale file is JSON: { "<table key>": ["entry 1", ..., "entry 5"], ... }. Missing keys fall back to English.
  */
 import { MODULE_ID } from "../constants.js";
 import { buildEnglishTables, tableName } from "./tables-en.js";
-import { buildSpanishTables, possessive } from "./tables-es.js";
 import { language } from "../i18n.js";
 
-/** Languages the module tells its stories in itself, and what each needs of the story writer (su/sus before a weapon). */
-const BUILT_IN = { es: { build: buildSpanishTables, possessive } };
+/**
+ * Languages the module tells its stories in itself, by code: {build() → tables, possessive?(weapon) → the word for
+ * {su} before a weapon's name, for a language whose possessive agrees with it}. None ship today.
+ */
+const BUILT_IN = {};
 let builtIn = null;
 let builtInLang = null;
 
