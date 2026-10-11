@@ -6120,10 +6120,9 @@
    "key": "FASTFIGHTING.Planner.RoleHint",
    "area": "core/Planner",
    "status": "todo",
-   "date": null,
-   "commit": null,
-   "hash": "4d317992ee64",
-   "changed": true
+   "date": "2026-10-11",
+   "commit": "3a70a39",
+   "hash": "9e9a7a967b0f"
   },
   "core:FASTFIGHTING.Planner.RoleRemembered": {
    "repo": "core",
