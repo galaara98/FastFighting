@@ -334,7 +334,8 @@ function holdsOn(run, u, amount, crit, types) {
 
 /** While its regeneration works, a creature can't be killed: it lies there, mending (a troll). */
 function regenerating(u) {
-  if ( u.status === STATUS.DEAD && u.spec.regen && !u.regenStopped ) {
+  // (Not one that only regenerates with at least 1 hit point: at 0 it's simply dead.)
+  if ( u.status === STATUS.DEAD && u.spec.regen && !u.spec.regen.needsHp && !u.regenStopped ) {
     u.status = STATUS.DOWN;
     u.held = true; // (by its regeneration, not by its dying)
   }
@@ -359,7 +360,7 @@ function regenerate(run, u) {
     }
     u.held = false; // (from here on, the system's dying rules)
   }
-  const amount = fast + (regen && !stopped ? regen.amount : 0);
+  const amount = fast + (regen && !stopped && !(regen.needsHp && u.hp <= 0) ? regen.amount : 0);
   if ( amount <= 0 || u.hp >= u.maxHp ) return;
   const before = u.hp;
   const wasDown = u.status === STATUS.DOWN;
