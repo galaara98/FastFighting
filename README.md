@@ -243,6 +243,7 @@ Two boxes beside the playstyle pills: **"I don't like to use consumables"** and 
 - **Morale:** losses, wounds, a fallen leader or master, and bad odds, all against Brave. Combatants hold, waver or rout.
 - **Leadership:** the best social or warfare skill, plus commanding features (the system's own ranking of who leads best).
 - **Chains of command:** every group (the party, each hostile group, each neutral friend group) has a **boss** (never the party) or a **leader**, and up to two **lieutenants**: B L 1 2 pills on each token in the planner, picked automatically from the system's ranking (the best heads the group, as a boss outside the party when it outranks everyone else in it by 2 levels or more; the next two are lieutenants), or by the GM (click a pill to give the role, click again to keep a token out of command, right-click for the automatic pick). Whoever comes first and can lead commands the group: its leadership bonus counts, its wishes are followed, its words carry (talking it down can take its group with it). When the boss or leader is down, dead, gone, or can't make itself seen and heard (blinded, deafened, silenced, stunned, confused, controlled ...), the 1st lieutenant steps up, then the 2nd; a lieutenant leads as a leader, never as a boss; the boss or leader takes back over when it can. Nobody able to lead: the group is leaderless. The story tells who takes command. Wanting to lead (a playstyle) is no part of it.
+- **Scheming:** one who wants to lead (the Wants to Lead pill) and doesn't command its group may brood over it on a turn: a quarter of its turns as its first pick, less further down (×0.75, ×0.55, ×0.4), more with roleplay, at most a tenth staying true. Only one with a treacherous streak (Cruel, Wildcard, Mercenary, Instigator) makes anything of it: it wonders how to be rid of its commander (the story says so), and that turn it refuses its leaders any help (no healing, bolstering, guarding, following, or answering their requests), and it's far easier to talk into changing sides (2 steps fewer, the DC 4 lower, the switch far likelier, the switch luck 20 higher; a player character only on the traitor luck, 9 by default). Changing sides, it gives up wanting to lead: in the fight, and on the character when you Make it So (Undo puts it back).
 - **Terrain and movement:** travel cost per movement mode from Foundry's region terrain, so rubble doesn't slow a flyer. A high flyer can't be hit in melee by a ground-bound creature.
 - **Walls:** they block sight, and movement goes the shortest way round (a quick grid search over the fighters' part of the map). Climbers go over and burrowers under. With no way round, crossing a wall counts as four times difficult terrain for that square, and a creature that can't manage that in one move gives up on going that way.
 - **Any grid and any units:** distances come from the scene's grid size and units, whatever the system calls them (ft, feet, m, metres ...; a metre counted the table way, 1.5 m to a 5-foot square). Units it doesn't know count each square as 5 ft.
@@ -285,7 +286,7 @@ Answers save as they're made, and two players sharing a token see each other's c
 | Thief | robs when it's safe; a lock is an invitation |
 | Vengeful | hits back twice as hard; avenges fallen friends; its grudges never cool |
 | Wallflower | keeps its distance; would rather hamper foes from afar; listens to the crowd less |
-| Wants to Lead | the biggest threat (now and then pins it down); looks after and bolsters its people; half ignores whoever commands it (it wants to lead; whether it does is its group's chain of command) |
+| Wants to Lead | the biggest threat (now and then pins it down); looks after and bolsters its people; half ignores whoever commands it (it wants to lead; whether it does is its group's chain of command); not chosen, it may scheme (see **Chains of command**) |
 | Wildcard | something random catches its eye; nobody's voice counts for much; may defy its leader |
 
 Three checkboxes go with the pills:
@@ -317,6 +318,7 @@ All settings are defaults that the planner can override per battle:
   - a PC being robbed, default 29;
   - a PC being finished off at 0 HP, default 39;
   - an enemy changing sides (under this), default 69;
+  - a PC scheming against the leader it wasn't chosen to be turning traitor (this or less), default 9;
   - how often someone who doesn't like to flee stays, default 90 (50 to 90).
 - **Story:** style, delivery, and whether the posted story shows the odds (off).
 - **Make it So:** loot, corpse and fled handling, and whether the fight plays out on the map.

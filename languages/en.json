@@ -162,6 +162,10 @@
       "bossInfluence": {
         "Name": "Boss influence",
         "Hint": "How much more readily followers take a boss's lead than a leader's: 1.25 to 3 times (default 2). A group with a boss has no leader; a lieutenant who steps up for a fallen boss leads as a leader, never as a boss. The party never has a boss."
+      },
+      "traitorLuck": {
+        "Name": "Luck check: a player character turning traitor",
+        "Hint": "A player character who wants to lead, isn't its group's leader, and is scheming against whoever is (a playstyle like Cruel or Wildcard with Wants to Lead) can be talked into changing sides only on a d100 roll of this or less (default 9). 0: never."
       }
     },
     "Allegiance": {
@@ -694,7 +698,7 @@
       },
       "leader": {
         "Name": "Wants to Lead",
-        "Hint": "Wants to lead (whether or not it does: who leads is its group's chain of command, set in the planner): braver and more loyal, goes for the biggest threat (and now and then pins it down), looks after its people and bolsters them. Whoever commands it instead, it half ignores."
+        "Hint": "Wants to lead (whether or not it does: who leads is its group's chain of command, set in the planner): braver and more loyal, goes for the biggest threat (and now and then pins it down), looks after its people and bolsters them. Whoever commands it instead, it half ignores. Not chosen, it may brood on it now and then (less often the further down its pills this is); with a treacherous streak (Cruel, Wildcard, Mercenary, Instigator) it schemes: that turn it won't help its leaders and is far easier to turn. Changing sides, it gives up wanting to lead."
       },
       "instigator": {
         "Name": "Instigator",

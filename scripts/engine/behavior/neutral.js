@@ -32,7 +32,7 @@
  * Pure: no Foundry globals.
  */
 import { STATUS, NEUTRAL_PARTY, TACTICAL, SWAY, clamp } from "../../constants.js";
-import { isStanding, isUp, edgeDistance, liveTrait, liveTier, commandOf } from "../battle-state.js";
+import { isStanding, isUp, edgeDistance, liveTrait, liveTier, commandOf, dropAmbition } from "../battle-state.js";
 import { levelOf, want, think, setLean, allDesires } from "./desire.js";
 import { perceives } from "./senses.js";
 import { prefersTalk, canTalk, impatience } from "./standoff.js";
@@ -259,6 +259,7 @@ export function calm(n, side) {
  */
 export function standAside(run, t) {
   const home = t.side;
+  dropAmbition(t); // (it wanted to lead them; not any more)
   const loyal = liveTrait(run, t, "loyal");
   t.side = NEUTRAL_PARTY;
   t.homeSide = NEUTRAL_PARTY;
@@ -280,6 +281,7 @@ export function standAside(run, t) {
 
 /** Someone taking no side, won over: it joins `side` for good. */
 export function joinSide(run, t, side) {
+  if ( side !== t.homeSide ) dropAmbition(t);
   t.side = side;
   t.homeSide = side;
   t.against.clear();

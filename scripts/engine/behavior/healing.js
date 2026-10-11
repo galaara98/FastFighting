@@ -3,7 +3,7 @@
  * PCs follow their GM-entered disposition; monsters scale with Tactical, but always consider healing they have.
  */
 import { STATUS, TACTICAL, clamp } from "../../constants.js";
-import { alliesOf, liveTier, liveTrait, dispositionOf, movesNeeded, canMove } from "../battle-state.js";
+import { alliesOf, liveTier, liveTrait, dispositionOf, movesNeeded, canMove, refusesToHelp } from "../battle-state.js";
 import { hasUses, costOf, costUnits } from "./evaluate.js";
 import { mainPool } from "../turn.js";
 import { threats, isWary, addCosts } from "./reactions.js";
@@ -59,6 +59,7 @@ export function healScores(run, u, heals = u.prep.healActions) {
     if ( !isSelf && (allyDying === "protectSelf" || allyDying === "retreat") ) continue;
     if ( !isSelf && !perceives(run, u, ally, { crisis: true }) ) continue; // it has to be able to tell
     if ( !isSelf && tier <= TACTICAL.FERAL ) continue; // feral healers only tend themselves
+    if ( refusesToHelp(run, u, ally) ) continue; // (scheming against its leaders)
     const frac = ally.maxHp > 0 ? ally.hp / ally.maxHp : 0;
     let score = 0;
     if ( ally.status === STATUS.DOWN ) {

@@ -24,7 +24,7 @@
  * Pure: no Foundry globals.
  */
 import { STATUS, TACTICAL } from "../../constants.js";
-import { alliesOf, enemiesOf, isStanding, liveTier, movesNeeded, edgeDistance, behaviorOf, checkRoll } from "../battle-state.js";
+import { alliesOf, enemiesOf, isStanding, liveTier, movesNeeded, edgeDistance, behaviorOf, checkRoll, refusesToHelp } from "../battle-state.js";
 import { degreeDistribution } from "../probability.js";
 import { hasUses, costOf, costUnits, threatOf, unitsPerTurn } from "./evaluate.js";
 import { outcomeWorth, hasFresh, concentrationCost, heldElsewhere, focusOf } from "./effects.js";
@@ -58,7 +58,7 @@ export function recipients(run, u, action, tier = liveTier(run, u), { all = fals
   const self = action.targets === "self";
   const pool = self || tier <= TACTICAL.FERAL
     ? (action.includeSelf === false && !self ? [] : [u])
-    : alliesOf(run, u).filter(a => isStanding(a) && (a !== u || action.includeSelf !== false) && reaches(run, u, a, action) && besideFoe(run, u, a, action));
+    : alliesOf(run, u).filter(a => isStanding(a) && (a !== u || action.includeSelf !== false) && reaches(run, u, a, action) && besideFoe(run, u, a, action) && !refusesToHelp(run, u, a));
   const picks = [];
   for ( const ally of pool ) {
     if ( hasFresh(ally, action) && !outcome.actionsNow ) continue; // it's on them already

@@ -92,6 +92,8 @@ export const THEFT_LUCK = 29;   // a thief who beats a PC's defenses still needs
 export const EXECUTE_LUCK = 39; // a creature that wants to finish off a PC at 0 HP goes ahead only on 39 or less
 /** An enemy talked into changing sides (standing aside) goes through with it only on a d100 under this ("switchLuck"). */
 export const SWITCH_LUCK = 69;
+/** A player character scheming against the leader it wasn't chosen to be turns on its side only on a d100 under this ("traitorLuck"). */
+export const TRAITOR_LUCK = 9;
 /**
  * Someone who doesn't like to flee ignores the urge to run, when running is its own choice, this often (percent:
  * the "standGround" world setting, 50 to 90).

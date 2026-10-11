@@ -68,7 +68,9 @@ export const PLAYSTYLES = Object.freeze({
     desire: { hurt: { weakest: 20 }, frustration: 1.3 } },
   // Wants to lead (whether or not it does: that's its group's chain of command): goes for the biggest threat, looks
   // after its people, and half ignores whoever commands it instead.
-  leader: { icon: "fa-flag", traits: { brave: 10, loyal: 10, tactical: 5 }, suggest: { target: "dangerous" }, behavior: { hinders: 0.15 },
+  // Not chosen, it may brood (ambition: a turn's chance, by the pill's place); with a treacherous streak (Cruel, Wildcard,
+  // Mercenary, Instigator), it schemes against whoever leads instead (desire.js scheme).
+  leader: { icon: "fa-flag", traits: { brave: 10, loyal: 10, tactical: 5 }, suggest: { target: "dangerous" }, behavior: { hinders: 0.15, ambition: 0.25 },
     desire: { hurt: { dangerous: 10 }, protect: 10, aid: 10, talk: 5, leader: 0.4 } },
   // Starts trouble and spoils everyone else's plans: locks foes down, harasses and debuffs them (more than anyone),
   // goes for the most dangerous foe and their leader, and may defy its own leader.

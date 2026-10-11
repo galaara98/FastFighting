@@ -89,6 +89,7 @@ import { talkAffinity } from "./behavior/talk.js";
 import { Turn } from "./turn.js";
 import { combineMods, netAdvantage } from "./mods.js";
 import { degreeDistribution } from "./probability.js";
+import { combinePlaystyles } from "./playstyles.js";
 
 const DEFAULT_APPROACH = Object.freeze({ dist: 5, mult: 1, speed: 25, mode: "walk", los: true, meleeOk: true });
 const SIDE_WEIGHT = 0.3;
@@ -371,7 +372,27 @@ export function dispositionOf(u) {
 
 /** Playstyle-driven behavior chances (see engine/playstyles.js): its own, leaning toward its leader's on a turn it follows. */
 export function behaviorOf(u) {
-  return u.turnBehavior ?? u.spec.behavior ?? {};
+  return u.turnBehavior ?? u.ownBehavior ?? u.spec.behavior ?? {};
+}
+
+/**
+ * u has changed sides: wanting to lead (a playstyle) goes, with whatever it was brooding over. Its pills are worked out
+ * again without it, for the rest of the fight (and Make it So takes it off the character: final.ambitionDropped).
+ */
+export function dropAmbition(u) {
+  const ids = u.spec.playstyles ?? [];
+  u.scheming = null;
+  if ( u.ambitionGone || !ids.includes("leader") ) return;
+  u.ambitionGone = true;
+  const rest = combinePlaystyles(ids.filter(id => id !== "leader"), { stayTrue: !!u.spec.stayTrue, roleplay: !!u.spec.roleplay });
+  u.ownBehavior = rest.behavior;
+  u.ownDesireStyle = rest.desire;
+}
+
+/** Does u refuse to help t: scheming against its leaders this turn, and t one of its group's chain of command? */
+export function refusesToHelp(run, u, t) {
+  if ( !u?.scheming || !t || t === u ) return false;
+  return !!chainOf(run, groupKeyOf(u))?.some(c => c.id === t.id);
 }
 
 /**

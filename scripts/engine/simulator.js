@@ -18,7 +18,7 @@ import {
 import { sampleRunTactics } from "./playstyles.js";
 import { chooseTarget, bestOptionVs, scoreTargets } from "./behavior/targeting.js";
 import { decideHeal, rescueOption, healScores } from "./behavior/healing.js";
-import { initDesires, newTurn, think, want, thwart, relieve, levelOf, mind, thoughts as thoughtsOf, levelsFromScores, listen, heed, remember, styleWants, styleOf, follow, CHOICE_LEVEL } from "./behavior/desire.js";
+import { initDesires, newTurn, think, want, thwart, relieve, levelOf, mind, thoughts as thoughtsOf, levelsFromScores, listen, heed, remember, styleWants, styleOf, follow, scheme, CHOICE_LEVEL } from "./behavior/desire.js";
 import { prepareDoors, doorStates, doorAhead, atDoor, doorPlan, patienceFor, doorDamage } from "./behavior/doors.js";
 import { checkMorale, standsGround, MORALE } from "./behavior/morale.js";
 import { expectedDamage, spendUse, hasUses, attacksIn, criticalParts, saveMultiplier, saveMultiplierFor, meanDamageVs, unitsPerTurn } from "./behavior/evaluate.js";
@@ -1629,6 +1629,10 @@ function noteCommand(run, quietly = false) {
  */
 function deliberate(run, u) {
   newTurn(u);
+  // One who wants to lead and doesn't may scheme against whoever does (then it follows no one this turn).
+  if ( scheme(run, u) && run.log ) {
+    log(run, u, `wonders how to be rid of ${u.scheming.name}`, { type: "scheme", target: u.scheming.name, targetId: u.scheming.against, boss: u.scheming.boss });
+  }
   // Whether it takes its lead from whoever commands its group this turn (its playstyle leans toward theirs if so).
   follow(run, u);
   const scored = scoreTargets(run, u);
@@ -2382,6 +2386,7 @@ function captureUnit(u, rules) {
     against: [...(u.against ?? [])], // (someone who took no side: the sides it turned on)
     concessions: (u.concessions ?? []).map(c => ({ ...c })), // what they gave up when talked into it (Make it So hands it over)
     side: u.homeSide ?? u.side,
+    ambitionDropped: !!u.ambitionGone, // (it changed sides: wanting to lead goes, on the character too)
     resources: { ...u.resources },
     uses: { ...u.uses },
     killerId: u.killerId ?? null,

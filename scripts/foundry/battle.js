@@ -468,6 +468,8 @@ export function buildBattleSpec(roster, setup, { underdog = null, approach = nul
       executeLuck: setting("executeLuck"),
       // And the one that keeps enemies from changing sides too easily.
       switchLuck: setting("switchLuck"),
+      // And the one a player character scheming against the leader it wasn't chosen to be needs to turn traitor.
+      traitorLuck: setting("traitorLuck"),
       // How often someone who doesn't like to flee ignores the urge to run.
       standGround: setting("standGround"),
       initiativeOrder,

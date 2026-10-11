@@ -31,15 +31,15 @@
  * an obsessed character (OBSESSED+) stops worrying about its own safety.
  */
 import { STATUS } from "../../constants.js";
-import { areEnemies, isStanding, liveTrait, enemiesOf, alliesOf, sizedUp, command, commandOf } from "../battle-state.js";
+import { areEnemies, isStanding, liveTrait, enemiesOf, alliesOf, sizedUp, command, commandOf, refusesToHelp } from "../battle-state.js";
 import { perceives, apparentHealth } from "./senses.js";
 import { seemsFoe } from "./neutral.js";
 
 /** A character's playstyle guide for desires (from its pills), or the neutral one. */
 const NEUTRAL_STYLE = Object.freeze({ hurt: {}, avoid: {}, heal: 0, protect: 0, aid: 0, talk: 0, whim: 0, contrarian: 0, retaliate: 1, avenge: 1, cool: 1, frustration: 1, leader: 1, team: 1, doorPatience: 1 });
 export const styleOf = u => u.turnStyle ?? u.spec?.desireStyle ?? NEUTRAL_STYLE;
-/** Its own pills' guide, whoever it follows this turn. */
-const ownStyle = u => u.spec?.desireStyle ?? NEUTRAL_STYLE;
+/** Its own pills' guide, whoever it follows this turn (worked out again without a pill it lost: dropAmbition). */
+const ownStyle = u => u.ownDesireStyle ?? u.spec?.desireStyle ?? NEUTRAL_STYLE;
 
 export const DESIRE_KINDS = Object.freeze(["hurt", "heal", "protect", "aid", "talk", "avoid", "bolstered"]);
 /** Desires a creature may have about itself: mending itself, bolstering itself. */
@@ -173,9 +173,9 @@ function relevant(run, u, kind, t) {
     case "hurt": return (areEnemies(run, u, t) || seemsFoe(run, u, t)) && t.status !== STATUS.SURRENDERED && t.status !== STATUS.STOOD_DOWN;
     case "avoid": return areEnemies(run, u, t) && isStanding(t);
     case "talk": return t.status === STATUS.STANDING;
-    case "heal": return !areEnemies(run, u, t) && (t.status === STATUS.DOWN || t.hp < t.maxHp);
-    case "protect": return !areEnemies(run, u, t);
-    case "aid": return !areEnemies(run, u, t) && isStanding(t);
+    case "heal": return !areEnemies(run, u, t) && (t.status === STATUS.DOWN || t.hp < t.maxHp) && !refusesToHelp(run, u, t);
+    case "protect": return !areEnemies(run, u, t) && !refusesToHelp(run, u, t);
+    case "aid": return !areEnemies(run, u, t) && isStanding(t) && !refusesToHelp(run, u, t);
     // (Wanting a friend's buff is for the friend to act on: see heed.)
     default: return false;
   }
@@ -280,13 +280,39 @@ export function follow(run, u) {
   u.turnStyle = null;
   u.turnBehavior = null;
   const f = followChance(run, u);
-  if ( !f || isContrarian(run, u, f.cmd) || !run.rng.chance(f.chance) ) return null;
+  // (Scheming against its leaders, it takes no lead from them.)
+  if ( !f || u.scheming || isContrarian(run, u, f.cmd) || !run.rng.chance(f.chance) ) return null;
   const share = Math.min(FOLLOW.lean, FOLLOW.lean * f.raw);
   const leader = f.cmd.unit;
   u.following = { id: leader.id, name: leader.spec.name, boss: f.cmd.boss, raw: f.raw, chance: f.chance, share };
   u.turnStyle = blendStyle(ownStyle(u), ownStyle(leader), share);
-  u.turnBehavior = blendBehavior(u.spec.behavior ?? {}, leader.spec.behavior ?? {}, share);
+  u.turnBehavior = blendBehavior(u.ownBehavior ?? u.spec.behavior ?? {}, leader.ownBehavior ?? leader.spec.behavior ?? {}, share);
   return u.following;
+}
+
+/** Playstyles with a treacherous streak: with these, one who wants to lead, and doesn't, may scheme instead of brood. */
+export const TREACHEROUS = Object.freeze(["cruel", "wildcard", "mercenary", "instigator"]);
+
+/**
+ * One who wants to lead (a playstyle) and doesn't command its group may brood over it this turn: a chance by where that
+ * pill is among its others (its ambition: a quarter as its first pick, less further down; more with roleplay, at most
+ * a tenth staying true). Only one with a treacherous streak (Cruel, Wildcard, Mercenary, Instigator) makes anything of
+ * it: it thinks how it could be rid of its commander (u.scheming). Scheming, this turn it refuses its leaders any
+ * help (no healing, bolstering, guarding or following them, no answering their requests), and it's far easier to
+ * talk into changing sides (talk.js; a player character only on the traitor luck). Changing sides, the ambition goes
+ * (battle-state.js dropAmbition). Call before its desires are worked out.
+ */
+export function scheme(run, u) {
+  u.scheming = null;
+  const ids = u.spec.playstyles ?? [];
+  if ( u.ambitionGone || !ids.includes("leader") ) return null;
+  const chance = (u.ownBehavior ?? u.spec.behavior ?? {}).ambition ?? 0;
+  const cmd = commandOf(run, u);
+  if ( !(chance > 0) || !cmd || cmd.unit === u ) return null; // (it leads, or there's no one to resent)
+  if ( !run.rng.chance(chance) ) return null;
+  if ( !ids.some(id => TREACHEROUS.includes(id)) ) return null; // (it wonders, and lets it go)
+  u.scheming = { against: cmd.unit.id, name: cmd.unit.spec.name, boss: cmd.boss, round: run.round };
+  return u.scheming;
 }
 
 /** A contrarian (an instigator, a wildcard) who isn't leading decides, once a fight, to go against its commander. */
@@ -441,6 +467,7 @@ export function listen(run, u, { canHeal = false, canTalk = false, canAid = fals
  */
 export function willingness(run, u, asker) {
   if ( u.contrarian && commandOf(run, u)?.unit === asker ) return 0;
+  if ( refusesToHelp(run, u, asker) ) return 0; // (scheming against its leaders)
   const loyal = liveTrait(run, u, "loyal");
   const selfish = liveTrait(run, u, "selfish");
   const w = 0.5 + (loyal - 50) / 100 - (selfish - 50) / 100 + (u.spec.behavior?.helps ? 0.25 : 0);

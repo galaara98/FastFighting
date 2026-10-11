@@ -25,7 +25,7 @@
  * Pure: no Foundry globals.
  */
 import { TACTICAL } from "../../constants.js";
-import { liveTier, edgeDistance, isUp, saveRoll, movesNeeded } from "../battle-state.js";
+import { liveTier, edgeDistance, isUp, saveRoll, movesNeeded, refusesToHelp } from "../battle-state.js";
 import { meanPart } from "../dice.js";
 import { meanDamageVs, threatOf } from "./evaluate.js";
 import { degreeDistribution } from "../probability.js";
@@ -81,7 +81,7 @@ export function respond(run, u, trigger, ctx) {
     if ( r.ranged && ctx.action?.melee ) continue;
     if ( r.physical && !(ctx.types ?? []).some(t => PHYSICAL.has(t)) ) continue;
     if ( trigger === "allyHit" ) {
-      if ( !ctx.ally || !near(run, u, ctx.ally, r) || !perceives(run, u, ctx.ally) ) continue;
+      if ( !ctx.ally || !near(run, u, ctx.ally, r) || !perceives(run, u, ctx.ally) || refusesToHelp(run, u, ctx.ally) ) continue;
     } else {
       if ( ctx.by && !near(run, u, ctx.by, r) ) continue;
       if ( ctx.by && trigger !== "hit" && trigger !== "attacked" && !perceives(run, u, ctx.by) ) continue;

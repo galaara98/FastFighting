@@ -31,7 +31,7 @@
  *  - Anyone else may make one quip per turn when it looks promising and they would.
  * Pure: no Foundry globals.
  */
-import { STATUS, SWAY, CONCEDE_LUCK, SWITCH_LUCK, TACTICAL, clamp } from "../../constants.js";
+import { STATUS, SWAY, CONCEDE_LUCK, SWITCH_LUCK, TRAITOR_LUCK, TACTICAL, clamp } from "../../constants.js";
 import { alliesOf, enemiesOf, isStanding, behaviorOf, typical, checkRoll, liveTier, studyBonus, boostBonus, chainOf, commandOf, groupKeyOf } from "../battle-state.js";
 import { spendEdges, spendBoost } from "./effects.js";
 import { degreeDistribution, rollCheck } from "../probability.js";
@@ -154,6 +154,7 @@ export function stepsToConvince(t, run = null, talker = null) {
   if ( t.spec.flags?.fearless ) steps += 1;
   if ( standsAside(t) ) steps -= 1;
   if ( t.spec.kind === "pc" ) steps += 2; // a player character does not fold easily
+  if ( t.scheming ) steps -= 2; // (scheming against its own leaders: half way there already)
   // Winning someone over: a step quicker if joining gives it something it wants, slower if it betrays it.
   if ( run && talker && aimOf(talker, t) === "recruit" ) {
     const { fulfils, betrays } = appeal(run, t, talker.side);
@@ -197,6 +198,7 @@ export function talkDC(run, talker, t, kind) {
   dc += Math.round((t.prep.traits.loyal - 50) / 25) - Math.round((t.prep.traits.selfish - 50) / 25);
   if ( kind === "intimidate" ) dc += Math.round((t.prep.traits.brave - 50) / 20);
   if ( standsAside(t) ) dc -= kind === "persuade" ? 4 : 2;
+  if ( t.scheming ) dc -= 4; // (it's looking for a way out from under its leaders)
   const aim = aimOf(talker, t);
   // Winning someone over: what joining would mean to it, by what it wants.
   if ( aim === "recruit" ) {
@@ -305,6 +307,8 @@ function outcomeFor(run, t, kind, aim = "down", { noSwitch = false } = {}) {
   if ( aim === "calm" ) return "calm";
   // Satisfaction for a quarrel: something handed over, or an apology.
   if ( aim === "settle" ) return hasValuables(t) ? SWAY.CONCEDE : "amends";
+  // A player character scheming against the leader it wasn't chosen to be may turn (only on the traitor luck: below).
+  if ( t.spec.kind === "pc" && t.scheming && aim === "down" && !noSwitch ) return SWAY.NEUTRAL;
   // Words can only make a PC pay up or back off: threats may send them running (the only way, if they have nothing).
   if ( t.spec.kind === "pc" ) {
     if ( !hasValuables(t) ) return SWAY.FLEE;
@@ -314,7 +318,8 @@ function outcomeFor(run, t, kind, aim = "down", { noSwitch = false } = {}) {
   const selfish = t.prep.traits.selfish;
   const loyal = t.prep.traits.loyal;
   // Changing sides: an enemy can only be talked into standing aside (taking no side), from where it can be won over.
-  const switchChance = noSwitch ? 0 : standsAside(t) ? 0.6 : clamp(0.03 + (selfish - 50) / 500 + (50 - loyal) / 500, 0, 0.12);
+  // (Scheming against its own leaders: far likelier.)
+  const switchChance = noSwitch ? 0 : standsAside(t) ? 0.6 : clamp(0.03 + (selfish - 50) / 500 + (50 - loyal) / 500 + (t.scheming ? 0.5 : 0), 0, t.scheming ? 0.7 : 0.12);
   if ( rng.chance(switchChance) ) return SWAY.NEUTRAL;
   // Paying them off: rarer than backing down, likelier under threat or when badly hurt; the greedy hate it.
   const hurt = t.maxHp > 0 && t.hp / t.maxHp < 0.5;
@@ -492,11 +497,13 @@ export function attemptTalk(run, talker, pitch, log) {
   if ( roll.degree < 2 || progress < steps ) return false;
 
   let outcome = outcomeFor(run, t, pitch.kind, aim);
-  // An enemy changing sides goes through with it only on a d100 under the switch luck; otherwise it's talked into
-  // something else.
+  // An enemy changing sides goes through with it only on a d100 under the switch luck (one scheming against its own
+  // leaders, more readily; a player character, only under the traitor luck); otherwise it's talked into something else.
   let luck = null;
   if ( outcome === SWAY.NEUTRAL && aim === "down" ) {
-    luck = { roll: run.rng.die(100), needed: run.prep.options.switchLuck ?? SWITCH_LUCK };
+    const pc = t.spec.kind === "pc";
+    const needed = pc ? run.prep.options.traitorLuck ?? TRAITOR_LUCK : Math.min(100, (run.prep.options.switchLuck ?? SWITCH_LUCK) + (t.scheming ? 20 : 0));
+    luck = { roll: run.rng.die(100), needed, traitor: pc };
     if ( luck.needed < 100 && luck.roll >= luck.needed ) { // (100: always)
       log(t, `almost comes over, but won't turn on their own (luck ${luck.roll})`, {
         type: "neutral", what: "luck", luck: luck.roll, needed: luck.needed, by: talker.spec.name, byId: talker.id

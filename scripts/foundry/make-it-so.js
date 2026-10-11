@@ -356,6 +356,20 @@ async function commitFight(rows, replay, { story = null, stories = null, odds = 
     }
   }
 
+  // (Changed sides: wanting to lead, a playstyle, goes from the character, and Undo puts it back.)
+  for ( const row of rows ) {
+    if ( !row.final.ambitionDropped ) continue;
+    const actor = row.tokenDoc?.actor;
+    const before = actor?.getFlag(MODULE_ID, "tactics")?.playstyles;
+    if ( !Array.isArray(before) || !before.includes("leader") ) continue;
+    try {
+      await actor.update({ [`flags.${MODULE_ID}.tactics.playstyles`]: before.filter(p => p !== "leader") });
+      records.push({ tokenUuid: row.tokenDoc.uuid, actorUuid: actor.uuid, actorUpdate: { [`flags.${MODULE_ID}.tactics.playstyles`]: before } });
+    } catch ( err ) {
+      console.error(`${MODULE_ID} | Make it So: dropping ${row.spec.name}'s ambition failed`, err);
+    }
+  }
+
   // 3. Whatever was given up changes hands. A PC's loss gets its own GM card with an Undo for just that.
   const messages = [];
   if ( adapter.commitConcession ) {

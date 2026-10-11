@@ -236,6 +236,7 @@ function narrate(e, roll, rel, fill) {
     case "study": return roll(e.worked === false ? "event.studyFails" : "event.study", f);
     case "observe": return roll("event.observe", { ...f, targets: listJoin(e.targets ?? []) });
     case "shareLore": return roll("event.shareLore", { ...f, allies: listJoin(e.with ?? []) });
+    case "scheme": return roll("event.scheme", f);
     case "command":
       if ( e.lost ) return e.from ? roll("event.commandLost", { ...f, actor: e.from }) : "";
       return roll(e.back ? "event.commandBack" : e.from ? "event.commandTakes" : "event.commandTakesFresh", { ...f, target: e.from ?? "" });
@@ -560,6 +561,7 @@ function statLine(e) {
     }
     case "observe": return `${e.actor} watches ${(e.targets ?? []).join(", ")} instead of talking`;
     case "command": return e.lost ? `no one left to lead${e.from ? ` after ${e.from}` : ""}` : `${e.actor} ${e.back ? "takes back command" : "takes command"} (${e.role})${e.from && !e.back ? ` from ${e.from}` : ""}`;
+    case "scheme": return `${e.actor} schemes against ${e.target}${e.boss ? " (boss)" : ""}: wants to lead; won't help its leaders this turn, and is far easier to turn`;
     case "shareLore": return `${e.actor} → ${(e.with ?? []).join(", ")}: shares what it knows of ${e.target} (an action; they know its sort too)${Number.isFinite(e.chance) ? ` · minded to share ${Math.round(e.chance * 100)}%` : ""}`;
     case "keepLore": return `${e.actor} keeps what it learned of ${e.target} to itself · minded to share ${Math.round((e.chance ?? 0) * 100)}%`;
     case "firstAid": return `${e.actor} → ${e.target}: first aid · medicine ${roll(e.natural, e.mod, e.total, e.dc, "DC")} · ${DEGREE[e.degree]} · ${e.stable ? "stabilized" : e.dead ? "dies" : `dying ${e.dying}`}`;
