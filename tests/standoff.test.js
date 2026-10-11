@@ -25,6 +25,24 @@ function parley({ opening, guardTalk = "first", captainTalk = guardTalk, beast =
 }
 
 describe("standoffs", () => {
+  test("a smart creature holds a standoff its side is in, unless its side is losing the talk", () => {
+    const minded = tactical => ({ tactical: { base: tactical, fudge: 0 }, brave: { base: 60, fudge: 0 }, selfish: { base: 50, fudge: 0 }, loyal: { base: 50, fudge: 0 } });
+    const run = createRun(prepareBattle(battle([
+      creature({ id: "envoy", kind: "pc", diesAtZero: false, social: speaks() }),
+      creature({ id: "sharp", side: "hostile", social: speaks(), traits: minded(70) }),
+      creature({ id: "dull", side: "hostile", social: speaks(), traits: minded(45) })
+    ]), pf2eRules));
+    run.round = 2;
+    const [envoy, sharp, dull] = run.units;
+    const calm = impatience(run, sharp);
+    expect(calm).toBeLessThan(impatience(run, dull));
+    // The envoy is halfway to talking them both down: now the smart one would rather strike first.
+    sharp.sway.set("friendly", 2);
+    dull.sway.set("friendly", 2);
+    expect(impatience(run, sharp)).toBeGreaterThan(calm * 2);
+    expect(envoy.side).toBe("friendly");
+  });
+
   test("when everyone would rather talk, it opens with words", () => {
     const run = createRun(prepareBattle(parley(), pf2eRules));
     for ( const u of run.units ) u.tac = u.spec.tactics;

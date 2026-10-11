@@ -24,6 +24,7 @@
 import { STATUS } from "../../constants.js";
 import { areEnemies, isStanding, liveTrait, enemiesOf } from "../battle-state.js";
 import { perceives, apparentHealth } from "./senses.js";
+import { seemsFoe } from "./neutral.js";
 
 /** A character's playstyle guide for desires (from its pills), or the neutral one. */
 const NEUTRAL_STYLE = Object.freeze({ hurt: {}, avoid: {}, heal: 0, protect: 0, aid: 0, talk: 0, whim: 0, contrarian: 0, retaliate: 1, avenge: 1, cool: 1, frustration: 1, leader: 1, team: 1, doorPatience: 1 });
@@ -110,11 +111,15 @@ export function levelOf(u, kind, targetId) {
   return clamp(Math.max(d.logic.get(k) ?? 0, d.stated.get(k) ?? 0, d.lean.get(k) ?? 0) + (d.style.get(k) ?? 0) + (d.memory.get(k) ?? 0) + (d.social.get(k) ?? 0) - (d.frustration.get(k) ?? 0));
 }
 
-/** Point a lean (behavior/neutral.js) at these targets, in place of the last one. */
-export function setLean(u, kind, targetIds, level) {
+/** Point a lean (behavior/neutral.js) at these: [[kind, targetId, level]], in place of the last one. */
+export function setLean(u, entries) {
   if ( !u.desire ) return;
   u.desire.lean.clear();
-  for ( const id of targetIds ) if ( id && id !== u.id ) u.desire.lean.set(keyOf(kind, id), clamp(level));
+  for ( const [kind, id, level] of entries ) {
+    if ( !id || id === u.id || !(level > 0) ) continue;
+    const k = keyOf(kind, id);
+    u.desire.lean.set(k, Math.max(u.desire.lean.get(k) ?? 0, clamp(level)));
+  }
 }
 
 /**
@@ -139,7 +144,7 @@ function relevant(run, u, kind, t) {
   if ( !t || !t.active || (t === u && !SELF_KINDS.has(kind)) ) return false;
   if ( [STATUS.DEAD, STATUS.FLED].includes(t.status) ) return false;
   switch ( kind ) {
-    case "hurt": return areEnemies(run, u, t) && t.status !== STATUS.SURRENDERED && t.status !== STATUS.STOOD_DOWN;
+    case "hurt": return (areEnemies(run, u, t) || seemsFoe(run, u, t)) && t.status !== STATUS.SURRENDERED && t.status !== STATUS.STOOD_DOWN;
     case "avoid": return areEnemies(run, u, t) && isStanding(t);
     case "talk": return t.status === STATUS.STANDING;
     case "heal": return !areEnemies(run, u, t) && (t.status === STATUS.DOWN || t.hp < t.maxHp);

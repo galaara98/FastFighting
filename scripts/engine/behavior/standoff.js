@@ -9,7 +9,8 @@
  *
  * What upsets people: an insulting pitch (a critical failure aimed at them), failed pitches piling up, rounds
  * dragging on, being unable to follow the talk at all (beasts, the mindless, no shared language), and an
- * impatient personality. A leader who wants to talk holds their side back; being half-persuaded calms anyone.
+ * impatient personality. A leader who wants to talk holds their side back; being half-persuaded calms anyone; a smart
+ * creature (TACTICAL and up) won't wreck it unless its side is losing the talk.
  * Pure: no Foundry globals.
  */
 import { TACTICAL, OPENING, NEUTRAL_PARTY, clamp } from "../../constants.js";
@@ -84,9 +85,15 @@ export function impatience(run, u, since = 1) {
   const rebuffs = [...u.rebuffed.values()].reduce((s, n) => s + n, 0);
   p += PER_ROUND * Math.max(0, run.round - since) + PER_REBUFF * rebuffs;
 
+  // A smart creature doesn't wreck a standoff its side is in, unless the talk is going against its side anyway; then
+  // it would rather strike first (and being half-persuaded doesn't calm it: it sees where this is going).
+  const smart = u.side !== NEUTRAL_PARTY && liveTier(run, u) >= TACTICAL.TACTICAL;
+  const losing = smart && losingTalk(run, u.side);
+  if ( smart ) p *= losing ? 1.5 : 0.25;
+
   // Half-persuaded people calm down; a leader who wants to talk holds their side back.
   const progress = Math.max(0, ...u.sway.values());
-  p *= Math.max(0.2, 1 - 0.25 * progress);
+  if ( !losing ) p *= Math.max(0.2, 1 - 0.25 * progress);
   const leader = run.byId.get(run.prep.sides[u.side]?.leaderId);
   if ( leader && leader !== u && isStanding(leader) && prefersTalk(leader) && canTalk(u) ) p *= 0.4;
   const master = run.byId.get(u.spec.flags?.masterId);
@@ -107,6 +114,21 @@ export function breaksStandoff(run, u) {
   }
   if ( !run.rng.chance(impatience(run, u)) ) return null;
   return canTalk(u) ? "impatient" : "beast";
+}
+
+/**
+ * Is `side` losing the talk: are the others further toward talking its members down than it is toward theirs?
+ */
+export function losingTalk(run, side) {
+  let ours = 0;
+  let theirs = 0;
+  for ( const o of run.units ) {
+    if ( !isStanding(o) ) continue;
+    if ( o.side === side ) {
+      for ( const [s, n] of o.sway ) if ( s !== side ) theirs += n;
+    } else if ( run.prep.sides[side]?.enemies.has(o.side) ) ours += o.sway.get(side) ?? 0;
+  }
+  return theirs > ours + 1;
 }
 
 /** A side's leader who isn't a PC and has a way with words: may take the last word before a standoff breaks. */

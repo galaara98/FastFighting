@@ -3,7 +3,7 @@ import { runBatchSync, replay, prepareBattle } from "../scripts/engine/simulator
 import { createRun, areEnemies, alliesOf } from "../scripts/engine/battle-state.js";
 import { createRng } from "../scripts/engine/rng.js";
 import { initDesires } from "../scripts/engine/behavior/desire.js";
-import { crossed, refreshLeans, appeal, GRIEVANCE } from "../scripts/engine/behavior/neutral.js";
+import { crossed, refreshLeans, appeal, seemsFoe, sparedForTruce, GRIEVANCE, LEAN, FELLOW } from "../scripts/engine/behavior/neutral.js";
 import { attemptTalk, choosePitch, talkDC, stepsToConvince } from "../scripts/engine/behavior/talk.js";
 import { NEUTRAL_PARTY } from "../scripts/constants.js";
 import { pf2eRules } from "./fixtures/three-action-rules.js";
@@ -12,6 +12,7 @@ import { creature, strike, battle, social as talkData } from "./helpers.js";
 
 const social = (over = {}) => talkData({ diplomacy: 3, intimidation: 3, deception: 3, ...over });
 const quiet = { pitches: {}, resist: {}, languages: [] }; // can't be talked to, and doesn't talk
+const minded = tactical => ({ tactical: { base: tactical, fudge: 0 }, brave: { base: 60, fudge: 0 }, selfish: { base: 30, fudge: 0 }, loyal: { base: 60, fudge: 0 } });
 const fighter = (over = {}) => creature({ id: "fighter", kind: "pc", diesAtZero: false, hp: { value: 60, max: 60 }, social: quiet, ...over });
 const brute = (over = {}) => creature({ id: "brute", side: "hostile", hp: { value: 40, max: 40 }, social: quiet, ...over });
 const guard = (over = {}) => creature({ id: "guard", side: NEUTRAL_PARTY, originSide: "neutral", social: quiet, actions: [strike({ bonus: 10, damage: [parseFormula("1d10+4", "slashing")] })], ...over });
@@ -77,7 +78,8 @@ describe("taking no side", () => {
 });
 
 describe("talking with those who take no side", () => {
-  const talker = (over = {}) => creature({ id: "talker", side: "hostile", social: social({ diplomacy: 14, deception: 12 }), ...over });
+  // A tactical talker: it knows someone taking no side could be won over.
+  const talker = (over = {}) => creature({ id: "talker", side: "hostile", traits: minded(70), social: social({ diplomacy: 14, deception: 12 }), ...over });
   const listener = (over = {}) => guard({ social: social(), ...over });
 
   test("winning someone over goes easier when it gives them what they want, harder when it betrays it", () => {
@@ -124,7 +126,7 @@ describe("talking with those who take no side", () => {
   test("in a fight, a truce settles or breaks, and the talking happens between the two of them", () => {
     let truces = 0;
     for ( let seed = 1; seed <= 30; seed++ ) {
-      const r = replay(battle([fighter(), talker({ actions: [strike({ bonus: 8 })] }), listener({ lean: "friendly", social: social({ diplomacy: 14 }) })], { maxRounds: 8, opening: "fight" }), pf2eRules, seed);
+      const r = replay(battle([fighter(), talker({ traits: minded(45), actions: [strike({ bonus: 8 })] }), listener({ lean: "friendly", social: social({ diplomacy: 14 }) })], { maxRounds: 8, opening: "fight" }), pf2eRules, seed);
       if ( !r.log.some(e => e.what === "truce") ) continue;
       truces += 1;
       const guardTalks = r.log.filter(e => e.actor === "guard" && e.type === "talk");
@@ -135,7 +137,7 @@ describe("talking with those who take no side", () => {
 });
 
 describe("enemies changing sides", () => {
-  const talker = () => creature({ id: "talker", kind: "pc", diesAtZero: false, social: social({ diplomacy: 14, intimidation: 12, deception: 10 }), actions: [strike({ bonus: 2, damage: [parseFormula("1d4", "bludgeoning")] })] });
+  const talker = () => creature({ id: "talker", kind: "pc", diesAtZero: false, traits: minded(70), social: social({ diplomacy: 14, intimidation: 12, deception: 10 }), actions: [strike({ bonus: 2, damage: [parseFormula("1d4", "bludgeoning")] })] });
   const bandit = (over = {}) => creature({ id: "bandit", side: "hostile", originSide: "neutral", social: social(), ...over });
 
   test("they only stand aside, and only on a d100 under the switch luck", () => {
@@ -166,5 +168,81 @@ describe("enemies changing sides", () => {
     expect(b.lean).toBe("hostile");
     expect(b.desire.lean.get("protect|boss")).toBeGreaterThan(0);
     expect(choosePitch(run, units.talker, { only: o => o === b })?.aim).toBe("recruit");
+  });
+});
+
+describe("leans don't last, and not everyone sees a neutral for what it is", () => {
+  const villager = (over = {}) => guard({ id: "villager", ...over });
+
+  test("neutral tokens want each other safe; a lean wears down as its side hurts them, and ends when its side hurts it", () => {
+    const { run, say, units } = ready([fighter(), brute(), guard({ lean: "friendly" }), villager()]);
+    expect(units.guard.desire.lean.get("protect|villager")).toBe(FELLOW);
+    expect(units.guard.desire.lean.get("protect|fighter")).toBe(LEAN);
+    // The party hurts the villager: the guard's lean toward the party wears down.
+    crossed(run, units.fighter, units.villager, "harm", 1, say);
+    expect(units.guard.leanLevel).toBeLessThan(LEAN);
+    expect(units.guard.lean).toBe("friendly");
+    expect(units.guard.desire.lean.get("protect|fighter")).toBe(units.guard.leanLevel);
+    // The party hurts the guard itself: the lean is gone at once.
+    crossed(run, units.fighter, units.guard, "harm", 0.5, say);
+    expect(units.guard.lean).toBeNull();
+    expect(units.guard.desire.lean.get("protect|fighter")).toBeUndefined();
+    expect(units.guard.desire.lean.get("protect|villager")).toBe(FELLOW); // still a friend of the villager
+  });
+
+  test("only tactical minds see someone taking no side for what it is; others go by appearances", () => {
+    const { run, units } = ready([fighter(), brute({ traits: minded(30) }), creature({ id: "captain", side: "hostile", traits: minded(70) }),
+      creature({ id: "beast", side: "hostile", traits: minded(5), position: { x: 0, y: 0, size: 5 } }),
+      guard({ lean: "friendly" }), villager({ position: { x: 5, y: 0, size: 5 } })], { positioning: false });
+    // Leaning toward the party, the guard looks like one of them to the brute, not to the captain.
+    expect(seemsFoe(run, units.brute, units.guard)).toBe(true);
+    expect(seemsFoe(run, units.captain, units.guard)).toBe(false);
+    // The party doesn't take the guard for a foe (it leans their way).
+    expect(seemsFoe(run, units.fighter, units.guard)).toBe(false);
+    // To a feral beast, anything close is fair game.
+    expect(seemsFoe(run, units.beast, units.villager)).toBe(true);
+  });
+
+  test("in a fight, an unthinking brute sometimes goes for a guard leaning toward the party; a captain never does", () => {
+    // The guard stands right beside the brute; the fighter is a long way off.
+    const at = x => ({ x, y: 0, size: 5 });
+    const fight = brains => battle([fighter({ hp: { value: 200, max: 200 }, position: at(120) }), brute({ traits: minded(brains), hp: { value: 200, max: 200 }, position: at(0) }),
+      guard({ lean: "friendly", position: at(5) })], { maxRounds: 4, positioning: true });
+    // (Attacks before the guard has turned on them: afterwards it's a foe like any other.)
+    const attacks = brains => [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].filter(seed => {
+      const log = replay(fight(brains), pf2eRules, seed).log;
+      const turned = log.findIndex(e => e.type === "neutral" && e.what === "offended");
+      return log.some((e, i) => e.actor === "brute" && e.type === "attack" && e.target === "guard" && (turned < 0 || i < turned));
+    }).length;
+    expect(attacks(30)).toBeGreaterThan(0);
+    expect(attacks(70)).toBe(0);
+  });
+
+  test("only a tactical talker tries to win someone over unprompted; others when they want to, or when they always talk first", () => {
+    const talker = (over = {}) => creature({ id: "talker", side: "hostile", social: social({ diplomacy: 14 }), ...over });
+    const pick = (t, extra = []) => {
+      const { run, units } = ready([fighter(), t, guard({ lean: "friendly", social: social() }), ...extra]);
+      return choosePitch(run, units.talker, { only: o => o === units.guard })?.aim ?? null;
+    };
+    expect(pick(talker({ traits: minded(70) }))).toBe("recruit");
+    expect(pick(talker({ traits: minded(45) }))).toBeNull();
+    // A desire to talk to it (here, stated): it tries.
+    expect(pick(talker({ traits: minded(45), desires: [{ kind: "talk", targetId: "guard", level: 50 }] }))).toBe("recruit");
+    // Words before blows, at someone it takes for a foe: it may win it over by accident.
+    expect(pick(talker({ traits: minded(30), tactics: { talk: "first" } }))).toBe("recruit");
+  });
+
+  test("while someone taking no side has words with a side, its smart members hold off hurting it or those it wants safe", () => {
+    const listener = guard({ lean: "friendly", social: social({ diplomacy: 14 }) });
+    const { run, say, units } = ready([fighter(), creature({ id: "talker", side: "hostile", traits: minded(70), social: social({ diplomacy: 12 }) }),
+      brute({ traits: minded(30) }), listener]);
+    crossed(run, units.talker, units.fighter, "harm", 3, say);
+    expect(units.guard.truce?.side).toBe("hostile");
+    const spared = sparedForTruce(run, units.talker);
+    expect(spared.has("guard") && spared.has("fighter")).toBe(true);
+    expect(sparedForTruce(run, units.brute)).toBeNull(); // not smart enough to hold back
+    // Once nobody on that side can talk to it, the talk is lost anyway: no holding back.
+    units.talker.status = "fled";
+    expect(sparedForTruce(run, units.talker)).toBeNull();
   });
 });

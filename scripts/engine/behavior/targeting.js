@@ -7,13 +7,14 @@
  *   Tactical     weighs threat: healers and casters first, quickest valuable kill
  *   Mastermind   side-wide focus target; ruthless ones finish off the downed
  */
-import { STATUS, TACTICAL } from "../../constants.js";
+import { STATUS, TACTICAL, NEUTRAL_PARTY } from "../../constants.js";
 import { enemiesOf, isStanding, liveTier, liveTrait, movesNeeded, behaviorOf } from "../battle-state.js";
 import { expectedDamage, hasUses, threatOf, costOf, costUnits, unitsPerTurn } from "./evaluate.js";
 import { mainPool } from "../turn.js";
 import { styleWeight } from "../tactics.js";
 import { threats, isWary } from "./reactions.js";
 import { think, thwart, mind, avoids, levelsFromScores } from "./desire.js";
+import { seemsFoe, sparedForTruce } from "./neutral.js";
 import { willingness } from "./reluctance.js";
 import { perceives, apparentHealth } from "./senses.js";
 
@@ -118,10 +119,15 @@ function grudge(u, f) {
 }
 const feared = (u, f) => { const g = grudge(u, f); return !!g && !g.provoked; };
 
-/** Foes u is willing to go after (not the ones it's afraid of, or set on keeping away from). */
+/**
+ * Foes u is willing to go after (not the ones it's afraid of, or set on keeping away from), and anyone taking no side
+ * that it takes for a foe. A smart one holds off those a talk its side is having would be ruined by hurting.
+ */
 function foesOf(run, u) {
+  const foes = run.neutral ? [...enemiesOf(run, u), ...run.units.filter(n => seemsFoe(run, u, n))] : enemiesOf(run, u);
+  const spared = sparedForTruce(run, u);
   // (Walled off: behind a locked door it decided wasn't worth the trouble.)
-  return enemiesOf(run, u).filter(f => !feared(u, f) && !avoids(run, u, f) && !u.walledOff?.has(f.id));
+  return foes.filter(f => !feared(u, f) && !avoids(run, u, f) && !u.walledOff?.has(f.id) && !spared?.has(f.id));
 }
 
 /**
@@ -157,7 +163,7 @@ export function chooseTarget(run, u) {
   const { lead } = mind(run, u);
   if ( lead?.kind === "hurt" ) {
     const wanted = run.byId.get(lead.targetId);
-    if ( wanted && !u.walledOff?.has(wanted.id) && Number.isFinite(minMoves(run, u, wanted)) ) {
+    if ( wanted && !u.walledOff?.has(wanted.id) && !sparedForTruce(run, u)?.has(wanted.id) && Number.isFinite(minMoves(run, u, wanted)) ) {
       if ( liveTier(run, u) >= TACTICAL.MASTERMIND ) run.sideFocus[u.side] = wanted.id;
       return wanted;
     }
@@ -218,7 +224,9 @@ export function scoreTargets(run, u, behavior = behaviorOf(u)) {
   const near = x => 1 / (1 + x.moves - min); // 1 for the nearest
   // A friend who's been charmed or dominated is still a friend: anyone with a thought for it would rather not cut it
   // down (the loyal least of all).
-  const spare = t => (t.controlledBy && t.homeSide === u.side && tier >= TACTICAL.INSTINCTIVE ? Math.max(0.1, 0.5 - liveTrait(run, u, "loyal") / 250) : 1);
+  // Someone taking no side that only seems a foe is less of a priority than the foes who are fighting.
+  const spare = t => (t.controlledBy && t.homeSide === u.side && tier >= TACTICAL.INSTINCTIVE ? Math.max(0.1, 0.5 - liveTrait(run, u, "loyal") / 250) : 1)
+    * (t.side === NEUTRAL_PARTY ? 0.6 : 1);
   const ranked = score => reachable.map(x => ({ ...x, score: Math.max(0, score(x)) * spare(x.t) })).sort((a, b) => b.score - a.score);
 
   // A player's stated target priority overrides the personality-driven choice.

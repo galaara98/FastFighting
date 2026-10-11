@@ -4,7 +4,9 @@
  * Neutral tokens, and enemies talked out of the fight, stand on the field as a party of their own (NEUTRAL_PARTY):
  * nobody fights them and they fight no one. Each stands alone, and each may lean one way: the planner's "leans
  * toward the party / the enemy / the nearest side / the underdog" makes it want that side's members safe (a desire,
- * LEAN strong; the underdog's changes as the fight goes). A lean guides it; it doesn't bind it:
+ * LEAN strong; the underdog's changes as the fight goes), and neutral tokens want each other safe too (FELLOW: the
+ * villagers, the caravan). A lean guides it; it doesn't bind it, and it doesn't last: watching the side it leans to
+ * hurt someone it cares about wears it down, and that side hurting it ends it at once.
  *
  *  - Crossed: whoever hurts it, robs it, or insults it with a botched pitch offends it at once. Seeing someone hurt
  *    or hinder a creature it wants safe (or help one it wants hurt) builds a grievance against the doer's side,
@@ -15,20 +17,31 @@
  *    (paying up, or an apology). It turns on them when it loses patience, or if that side crosses it again.
  *  - Won over: any side's talkers can talk it into joining them, against its lean too, so long as it hasn't seen
  *    that side cross it. Talkers weigh what joining would mean to it (appeal): a pitch that gives it what it wants
- *    is easier, one that asks it to betray what it wants is harder.
+ *    (one leaning their way already wants in) is easier, one that asks it to betray what it wants is harder. Only a
+ *    tactical talker knows it could be won over; anyone else tries only when its desires lead it to talk to it.
+ *  - Taken for a foe: a tactical mind sees someone taking no side for what it is. Anyone else goes by appearances
+ *    (seemsFoe): one leaning toward its enemies seems one of them, and to a feral creature anything close is fair
+ *    game; its desires may make attacking it look like a good idea (or, for one who always tries words first,
+ *    talking to it, which may win it over by accident).
+ *  - Holding back: while someone taking no side is having words with a side, that side's smart members (TACTICAL
+ *    and up) don't hurt it or anyone it wants safe, unless the talk is going against them anyway (sparedForTruce).
  *  - Enemies come here first: an enemy talked into changing sides stands aside (on a d100 under the switch luck),
  *    still leaning a little toward its old friends, the more so the more loyal it is; from here it can be won over
  *    like anyone else.
  * Pure: no Foundry globals.
  */
-import { STATUS, NEUTRAL_PARTY, clamp } from "../../constants.js";
-import { isStanding, isUp, edgeDistance, liveTrait } from "../battle-state.js";
+import { STATUS, NEUTRAL_PARTY, TACTICAL, clamp } from "../../constants.js";
+import { isStanding, isUp, edgeDistance, liveTrait, liveTier } from "../battle-state.js";
 import { levelOf, want, setLean, allDesires } from "./desire.js";
 import { perceives } from "./senses.js";
 import { prefersTalk, canTalk, impatience } from "./standoff.js";
 
 /** How much a lean makes it want each member of that side safe ("determined"). */
 export const LEAN = 50;
+/** How much neutral tokens want each other safe ("wants"). */
+export const FELLOW = 30;
+/** A lean this weak no longer makes it look like one of that side. */
+const SHOWS = 25;
 /** Offended at a side once what that side has done against its wishes adds up to this. */
 export const GRIEVANCE = 100;
 /** A wish to see someone hurt this strong is crossed by healing or bolstering them. */
@@ -68,18 +81,78 @@ export function leanSide(run, u) {
   return worst?.side ?? null;
 }
 
+/** The other neutral tokens a neutral token came with: its friends. */
+function fellowsOf(run, u) {
+  const neutralToken = o => o.spec.side === NEUTRAL_PARTY && o.spec.originSide === "neutral";
+  return neutralToken(u) ? run.units.filter(o => o !== u && neutralToken(o)).map(o => o.id) : [];
+}
+
 /** Point every lean at the members of the side it leans to (they change: the underdog, a new recruit). */
 export function refreshLeans(run) {
   if ( !run.neutral ) return;
   for ( const u of run.units ) {
-    if ( !u.lean || !u.desire ) continue;
+    if ( !u.desire ) continue;
+    const fellows = u.fellows ??= fellowsOf(run, u);
+    if ( !u.lean && !fellows.length ) continue;
     const side = leanSide(run, u);
-    const members = side ? run.units.filter(o => o !== u && o.side === side && o.status !== STATUS.DEAD).map(o => o.id) : [];
-    const key = `${side}|${members.length}`;
+    const level = u.leanLevel ?? LEAN;
+    const members = side && level > 0 ? run.units.filter(o => o !== u && o.side === side && o.status !== STATUS.DEAD).map(o => o.id) : [];
+    const key = `${side}|${members.length}|${Math.round(level)}`;
     if ( u.leaning === key ) continue;
     u.leaning = key;
-    setLean(u, "protect", members, u.leanLevel ?? LEAN);
+    setLean(u, [...fellows.map(id => ["protect", id, FELLOW]), ...members.map(id => ["protect", id, level])]);
   }
+}
+
+/** Its lean wears down (it's lost at 0). */
+function wearLean(run, n, amount) {
+  n.leanLevel = Math.max(0, (n.leanLevel ?? LEAN) - amount);
+  if ( n.leanLevel <= 0 ) n.lean = null;
+  n.leaning = null;
+  refreshLeans(run);
+}
+
+/**
+ * Does u take n, who takes no side, for a foe? A tactical mind (TACTICAL and up) sees it for what it is, unless it
+ * wants it hurt. Anyone else goes by its desires and by appearances: one leaning toward u's enemies seems to be one
+ * of them, and to a feral creature anything close enough to bite is fair game.
+ */
+export function seemsFoe(run, u, n) {
+  if ( !run.neutral || u === n || !isNeutral(n) || isNeutral(u) || n.against.has(u.side) || !isUp(n) ) return false;
+  if ( levelOf(u, "hurt", n.id) >= 20 ) return true;
+  const tier = liveTier(run, u);
+  if ( tier >= TACTICAL.TACTICAL ) return false;
+  const leaning = leanSide(run, n);
+  if ( leaning && (n.leanLevel ?? LEAN) >= SHOWS && run.prep.sides[u.side]?.enemies.has(leaning) ) return true;
+  return tier <= TACTICAL.FERAL && (edgeDistance(u, n) ?? Infinity) <= 10;
+}
+
+/**
+ * Is the talk with n going against the side it's confronting (it will turn on them anyway)? Nobody on that side can
+ * talk to it, or it's near the end of its patience.
+ */
+export function losingTruce(run, n) {
+  const side = n.truce?.side;
+  if ( !side ) return false;
+  const voice = run.units.some(o => o.side === side && isStanding(o) && canTalk(o) && sharesLanguage(n, o)
+    && ((o.prep.talkAffinity ?? 0) > 0 || prefersTalk(o)));
+  return !voice || impatience(run, n, n.truce.round) >= 0.4;
+}
+
+/**
+ * Whom a smart member of u's side (TACTICAL and up) holds off hurting while someone taking no side is having words
+ * with that side: that someone, and anyone it wants safe. Nobody, once the talk is going against them anyway.
+ * @returns {Set<string>|null}
+ */
+export function sparedForTruce(run, u) {
+  if ( !run.neutral || isNeutral(u) || liveTier(run, u) < TACTICAL.TACTICAL ) return null;
+  let spared = null;
+  for ( const n of run.units ) {
+    if ( !isNeutral(n) || n.truce?.side !== u.side || !isUp(n) || losingTruce(run, n) ) continue;
+    (spared ??= new Set()).add(n.id);
+    for ( const d of allDesires(n) ) if ( CARING.includes(d.kind) && d.level >= 20 ) spared.add(d.targetId);
+  }
+  return spared;
 }
 
 /**
@@ -92,13 +165,19 @@ export function refreshLeans(run) {
 export function crossed(run, actor, target, how, weight, say) {
   if ( !run.neutral || !actor || !target || actor === target || isNeutral(actor) ) return;
   const side = actor.side;
-  if ( how === "harm" && isNeutral(target) && target.status !== STATUS.DEAD ) offend(run, target, actor, "hurt", say);
+  if ( how === "harm" && isNeutral(target) && target.status !== STATUS.DEAD ) {
+    // Hurt by the side it leaned toward: that's the end of that.
+    if ( target.lean && leanSide(run, target) === side ) wearLean(run, target, Infinity);
+    offend(run, target, actor, "hurt", say);
+  }
   for ( const n of run.units ) {
     if ( n === target || n === actor || !isNeutral(n) || !isUp(n) || !n.aware || n.against.has(side) ) continue;
     const spite = how === "help" ? levelOf(n, "hurt", target.id) : 0;
     const care = how === "harm" ? Math.max(...CARING.map(k => levelOf(n, k, target.id))) : (spite >= SPITE ? spite - SPITE / 2 : 0);
     if ( care <= 0 || !perceives(run, n, target, { crisis: true }) ) continue;
     n.crossedBy.add(side);
+    // The side it leans toward hurting someone it cares about: the lean wears down.
+    if ( n.lean && leanSide(run, n) === side ) wearLean(run, n, care * weight / 2);
     const grievance = (n.grievance.get(side) ?? 0) + care * weight;
     n.grievance.set(side, grievance);
     if ( grievance >= GRIEVANCE || n.truce?.side === side ) offend(run, n, actor, how === "harm" ? "harmed" : "helped", say, target);
@@ -237,9 +316,10 @@ export function appeal(run, n, side) {
 export function caughtInArea(run, u, targets) {
   if ( !run.neutral ) return [];
   const careless = clamp(0.8 - liveTrait(run, u, "tactical") / 100, 0.05, 0.75);
+  const spared = sparedForTruce(run, u);
   const out = [];
   for ( const n of run.units ) {
-    if ( !isNeutral(n) || !isUp(n) || n.against.has(u.side) || targets.includes(n) ) continue;
+    if ( !isNeutral(n) || !isUp(n) || n.against.has(u.side) || targets.includes(n) || spared?.has(n.id) ) continue;
     const near = targets.some(t => t.adjacent?.has(n.id) || (edgeDistance(n, t) ?? Infinity) <= 10);
     if ( near && run.rng.chance(careless) ) out.push(n);
   }

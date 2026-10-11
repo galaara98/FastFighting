@@ -31,10 +31,11 @@
  *  - Anyone else may make one quip per turn when it looks promising and they would.
  * Pure: no Foundry globals.
  */
-import { STATUS, SWAY, CONCEDE_LUCK, SWITCH_LUCK, clamp } from "../../constants.js";
-import { alliesOf, enemiesOf, isStanding, behaviorOf, leaderStanding, typical, checkRoll } from "../battle-state.js";
+import { STATUS, SWAY, CONCEDE_LUCK, SWITCH_LUCK, TACTICAL, clamp } from "../../constants.js";
+import { alliesOf, enemiesOf, isStanding, behaviorOf, leaderStanding, typical, checkRoll, liveTier } from "../battle-state.js";
 import { degreeDistribution, rollCheck } from "../probability.js";
-import { isNeutral, standsAside, appeal, offend, turnOn, standAside, joinSide, calm, settleTruce } from "./neutral.js";
+import { isNeutral, standsAside, appeal, offend, turnOn, standAside, joinSide, calm, settleTruce, seemsFoe } from "./neutral.js";
+import { levelOf } from "./desire.js";
 
 /** The three kinds of pitch. Systems map their own skills onto these (CombatantSpec.social.pitches). */
 export const TALK_KINDS = Object.freeze(["persuade", "intimidate", "deceive"]);
@@ -61,13 +62,26 @@ function pitchTargets(run, talker) {
     if ( talker.truce ) for ( const o of run.units ) if ( o.side === talker.truce.side && !out.includes(o) ) out.push(o);
     return out;
   }
+  const knows = liveTier(run, talker) >= TACTICAL.TACTICAL;
+  const wordsFirst = talksFirst(talker);
   for ( const n of run.units ) {
     if ( !isNeutral(n) || n.against.has(talker.side) ) continue;
+    // Confronting the talker's side: anyone there can try to talk it round.
+    if ( n.truce?.side === talker.side ) {
+      out.push(n);
+      continue;
+    }
     // Won over only by a side it hasn't seen cross it (and player characters decide that for themselves).
-    if ( n.truce?.side === talker.side || (!n.crossedBy.has(talker.side) && n.spec.kind !== "pc") ) out.push(n);
+    if ( n.crossedBy.has(talker.side) || n.spec.kind === "pc" ) continue;
+    // Only a tactical talker knows it could be won over. Anyone else tries when it wants to talk to it, or when it
+    // takes it for a foe and always tries words before blows (and may win it over by accident).
+    if ( knows || levelOf(talker, "talk", n.id) >= 20 || (wordsFirst && seemsFoe(run, talker, n)) ) out.push(n);
   }
   return out;
 }
+
+/** Always tries words before blows: "always prefers talking", a "talk first" answer, or a playstyle like the Diplomat. */
+const talksFirst = u => !!u.spec.alwaysTalk || u.tac?.talk === "first" || !!behaviorOf(u).parleyFirst;
 
 export function shareLanguage(a, b) {
   const la = a.spec.social?.languages ?? [];
