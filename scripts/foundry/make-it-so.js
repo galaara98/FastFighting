@@ -456,8 +456,14 @@ function gmSummary(rows, replay, adapter) {
 }
 
 /** Show a GM-only story to everyone (the Reveal button on it). */
+/**
+ * Is this one of FastFighting's own cards? Only a GM posts them. Anyone can post a chat message with any flags, so a
+ * card a player wrote is never acted on: its "undo records" would run with the GM's rights.
+ */
+export const ownCard = message => !!message?.author?.isGM;
+
 export async function revealStory(message) {
-  if ( !game.user.isGM || !message.getFlag(MODULE_ID, "revealable") ) return false;
+  if ( !game.user.isGM || !ownCard(message) || !message.getFlag(MODULE_ID, "revealable") ) return false;
   const content = message.content.replace(/<button[^>]*data-ff-reveal[^>]*>[\s\S]*?<\/button>/, "");
   await message.update({ whisper: [], content, [`flags.${MODULE_ID}.revealable`]: false });
   return true;
@@ -543,7 +549,7 @@ async function concessionCard(giverName, receiverName, c, eventId, records) {
 
 /** Undo just one hand-over from its card, and take it out of the scene's Make it So undo so it isn't undone twice. */
 export async function undoConcession(message) {
-  if ( !game.user.isGM ) return false;
+  if ( !game.user.isGM || !ownCard(message) ) return false;
   const data = message.getFlag(MODULE_ID, "concession");
   if ( !data || data.undone ) return false;
   for ( const r of [...(data.records ?? [])].reverse() ) await revertRecord(r);

@@ -14,7 +14,7 @@ import { PlayerSurvey } from "./apps/player-survey.js";
 import { SOCKET, SURVEY_STATUS } from "./foundry/tactics.js";
 import { helperStatus, helperMessage, helperNoticeHtml } from "./helpers.js";
 import { invalidateApproach } from "./foundry/battle.js";
-import { undoConcession, revealStory } from "./foundry/make-it-so.js";
+import { undoConcession, revealStory, ownCard } from "./foundry/make-it-so.js";
 
 Hooks.once("init", () => {
   registerSettings(DefaultsConfig, GenericPathsConfig, StoryTablesConfig);
@@ -163,7 +163,7 @@ for ( const hook of ["createWall", "updateWall", "deleteWall", "createRegion", "
 Hooks.on("renderChatMessageHTML", (message, html) => {
   const button = html.querySelector?.("[data-ff-reveal]");
   if ( !button ) return;
-  if ( !game.user.isGM || !message.getFlag(MODULE_ID, "revealable") ) {
+  if ( !game.user.isGM || !ownCard(message) || !message.getFlag(MODULE_ID, "revealable") ) {
     button.remove();
     return;
   }
@@ -178,7 +178,7 @@ Hooks.on("renderChatMessageHTML", (message, html) => {
 Hooks.on("renderChatMessageHTML", (message, html) => {
   const button = html.querySelector?.("[data-ff-undo-concession]");
   if ( !button ) return;
-  if ( !game.user.isGM || message.getFlag(MODULE_ID, "concession")?.undone ) {
+  if ( !game.user.isGM || !ownCard(message) || message.getFlag(MODULE_ID, "concession")?.undone ) {
     button.remove();
     return;
   }

@@ -12,7 +12,9 @@
  *   on "damaged"    a foe's blow hurt it:                       damage and save (5e Hellish Rebuke, at the foe)
  *   on "allyHit"    an attack hits a friend near it (range):     reduce (taken off the friend's damage) and strike
  *                                                                (its best melee strike at the attacker, if in reach:
- *                                                                PF2e Retributive Strike, Glimpse of Redemption ...)
+ *                                                                PF2e Retributive Strike, Glimpse of Redemption ...);
+ *                                                                redirect: it takes the blow instead, against its own
+ *                                                                resistances (PF2e guardian's Intercept Attack)
  *   on "spell"      a foe casts a spell it can see:             counter: {level, mod} (5e Counterspell: a spell of
  *                                                                its level or lower simply fails; a higher one if
  *                                                                the check beats 10 + its level)
@@ -116,6 +118,8 @@ function worthOf(run, u, r, trigger, ctx) {
     case "allyHit": {
       // What it takes off the friend's blow, and a strike back at the attacker if it's within reach.
       let w = r.reduce ? Math.min(expected, meanPart(r.reduce)) : 0;
+      // Taking it instead: worth more the more the friend needs it, less when it would drop the one taking it.
+      if ( r.redirect ) w += expected * 0.5 + (ctx.ally && expected >= ctx.ally.hp ? expected : 0) - (expected >= u.hp ? expected : 0);
       const strike = r.strike && ctx.by ? riposteStrike(u) : null;
       if ( strike && movesNeeded(run, u, ctx.by, strike) === 0 ) w += meanStrike(run, u, ctx.by);
       return w;

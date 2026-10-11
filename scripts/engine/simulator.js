@@ -565,6 +565,7 @@ function rollHit(run, u, action, t, parts, multiplier, crit, minimum = 0) {
   const total = rules.applyIwr(iwrOf(t), rolled.byType);
   return {
     total,
+    byType: rolled.byType, // (as rolled, before anyone's resistances)
     types: Object.keys(rolled.byType),
     apply: (amount = total) => {
       for ( const p of rolled.persistent ) {
@@ -782,11 +783,16 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
       if ( answer?.halve ) amount = Math.floor(amount / 2);
       if ( answer?.reduce ) amount = Math.max(0, amount - samplePart(answer.reduce, run.rng));
       if ( guard?.r.reduce ) amount = Math.max(0, amount - samplePart(guard.r.reduce, run.rng));
-      if ( logging ) log(run, u, `${action.name} → ${target.spec.name}: ${roll.total} vs ${versus}, ${said ?? (crit ? "critical hit" : "hit")} for ${amount}`, {
+      // Taken instead (PF2e Intercept Attack): the friend takes none of it; its protector takes the blow, against its
+      // own resistances.
+      const intercepted = guard?.r.redirect && amount > 0 ? rules.applyIwr(iwrOf(guard.g), hit.byType) : null;
+      if ( intercepted !== null ) amount = 0;
+      if ( logging ) log(run, u, `${action.name} → ${target.spec.name}: ${roll.total} vs ${versus}, ${said ?? (crit ? "critical hit" : "hit")} for ${amount}${intercepted !== null ? `, taken by ${guard.g.spec.name} for ${intercepted}` : ""}`, {
         ...data, damage: amount, crit, sneak: extra.length > 0, advantage, riders: riders.map(x => x.label), critRoll: table?.total ?? null, critRowText: table?.row?.text ?? null,
-        lessened: amount < hit.total ? hit.total - amount : 0
+        lessened: amount < hit.total ? hit.total - amount : 0, interceptedBy: intercepted !== null ? guard.g.spec.name : null, intercepted
       });
-      const dealt = hit.apply(amount);
+      const dealt = intercepted !== null ? 0 : hit.apply(amount);
+      if ( intercepted > 0 ) dealDamage(run, u, guard.g, intercepted, { crit, types: hit.types });
       applyEffects(run, u, action, target, roll.degree);
       if ( table?.row ) applyCritRow(run, u, target, table);
       for ( const x of riders ) applyRider(run, u, action, target, x);

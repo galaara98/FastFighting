@@ -323,6 +323,7 @@ const EVENT = {
   escape: ["{actor} wrenches free.", "{actor} twists loose.", "{actor} breaks the hold.", "{actor} slips the grip.", "{actor} pulls free."],
   stuck: ["{actor} struggles but can't break free.", "{actor} strains against the hold.", "The grip on {actor} holds.", "{actor} thrashes uselessly.", "{actor} is still held fast."],
   waver: ["{actor}'s nerve falters.", "{actor} glances toward the exits.", "Doubt flickers across {actor}'s face.", "{actor} hesitates.", "{actor}'s hands begin to shake."],
+  intercept: ["{actor} hurls themselves into the path of {target}'s attack.", "{actor} steps in and takes {target}'s blow meant for a friend.", "{target} strikes, but {actor} is suddenly in the way.", "{actor} throws their body between {target} and an ally.", "{actor} catches {target}'s blow on their own armor."],
   holdGround: ["Every instinct tells {actor} to run; {actor} plants their feet instead.", "{actor} looks to the exits, then grits their teeth and stays.", "{actor} will not run. Not today.", "{actor} shakes off the urge to flee and holds their ground.", "{actor} takes a step back, then no more."],
   flee: ["{actor} breaks and runs.", "{actor} has had enough and flees.", "{actor} turns tail.", "{actor} bolts.", "{actor} abandons the fight."],
   study: ["{actor} studies {target}, looking for weaknesses.", "{actor} watches {target} carefully.", "{actor} recalls everything known about {target}.", "{actor} sizes {target} up.", "{actor} searches memory for how to beat {target}."],

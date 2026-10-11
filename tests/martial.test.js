@@ -65,4 +65,21 @@ describe("martial actions in a fight", () => {
     }
     expect(reacted).toBeGreaterThan(2);
   });
+
+  test("a guardian takes a friend's blow instead, against its own resistance (Intercept Attack)", () => {
+    const guardian = creature({ id: "guardian", hp: { value: 300, max: 300 }, iwr: { resist: { physical: 5 } }, actions: [strike({ id: "flail", bonus: 12 })],
+      reactions: [{ id: "intercept", label: "Intercept Attack", on: "allyHit", range: 10, physical: true, redirect: true, tell: "intercept" }] });
+    const ward = creature({ id: "ward", hp: { value: 30, max: 30 }, actions: [strike({ bonus: 0, damage: [parseFormula("1", "bludgeoning")] })] });
+    const brute = creature({ id: "brute", side: "hostile", hp: { value: 300, max: 300 }, flags: { fearless: true }, actions: [strike({ bonus: 15, damage: [parseFormula("2d8+10", "slashing")] })] });
+    let taken = 0;
+    for ( let seed = 1; seed <= 6; seed++ ) {
+      const r = replay(battle([guardian, ward, brute], { maxRounds: 3 }), pf2eRules, seed);
+      for ( const blow of r.log.filter(e => e.type === "attack" && e.actor === "brute" && e.interceptedBy) ) {
+        taken += 1;
+        expect(blow.interceptedBy).toBe("guardian");
+        expect(blow.damage).toBe(0); // the friend takes none of it
+      }
+    }
+    expect(taken).toBeGreaterThan(0);
+  });
 });
