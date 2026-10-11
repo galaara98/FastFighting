@@ -51,7 +51,7 @@ The user wants to be compliant **and straightforward**. Every README opens with 
 3. **"Keep it" is not an answer.** Every string gets text the user states.
    - If they want to move on, mark the string *skipped*, not *written*.
 4. **Enter the user's text verbatim.** You may proofread (§4.1): spelling, punctuation, consistent capitalization and terms, formatting, valid HTML, a missing or extra placeholder, a string too long for its spot.
-   - **Standing rule from the user (2026-10-11): always turn a "smart" apostrophe (’ or ‘) into a straight ' when entering their text.** No approval needed for this one.
+   - **Standing rule from the user (2026-10-11): always turn "smart" quotes into straight ones when entering their text: ’ and ‘ become ', “ and ” become ".** No approval needed for this one. (The user rarely puts " inside a string.)
    - Show each fix as a before/after and apply it only once the user approves.
    - Never reword for style.
 5. **Placeholders.** For each string, list the `{placeholders}` it must keep and what each one holds. Check the user's text keeps them, and ask if one is missing.
