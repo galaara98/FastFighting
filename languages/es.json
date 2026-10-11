@@ -1305,6 +1305,25 @@
       "energy": "energía",
       "holy": "sagrado",
       "unholy": "profano"
+    },
+    "Effect": {
+      "hastened": "acelerado",
+      "slowed": "ralentizado",
+      "emboldened": "envalentonado",
+      "weakened": "debilitado",
+      "shielded": "protegido",
+      "exposed": "expuesto",
+      "steeled": "templado",
+      "shaken": "amedrentado",
+      "empowered": "potenciado",
+      "enfeebled": "mermado",
+      "focused": "concentrado",
+      "rattled": "alterado",
+      "fleetFooted": "ligero de pies",
+      "inspired": "inspirado",
+      "bolstered": "reforzado",
+      "affected": "afectado",
+      "sizedUp": "estudiado"
     }
   }
 }

@@ -1305,6 +1305,25 @@
       "energy": "energy",
       "holy": "holy",
       "unholy": "unholy"
+    },
+    "Effect": {
+      "hastened": "hastened",
+      "slowed": "slowed",
+      "emboldened": "emboldened",
+      "weakened": "weakened",
+      "shielded": "shielded",
+      "exposed": "exposed",
+      "steeled": "steeled",
+      "shaken": "shaken",
+      "empowered": "empowered",
+      "enfeebled": "enfeebled",
+      "focused": "focused",
+      "rattled": "rattled",
+      "fleetFooted": "fleet-footed",
+      "inspired": "inspired",
+      "bolstered": "bolstered",
+      "affected": "affected",
+      "sizedUp": "sized up"
     }
   }
 }

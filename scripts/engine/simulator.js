@@ -38,6 +38,7 @@ import { stealChance, theftTarget, theftPlan, attemptTheft } from "./behavior/th
 import { reactionsPerRound, threats, takesSafeWay } from "./behavior/reactions.js";
 import { isNeutral, crossed, caughtInArea, refreshLeans, truceWith, truceBreaks, turnOn, settleTruce, peaceDesires, seemsFoe, meddling, inFray, fighting, dislikesViolence, annoyedBy, ANNOYED } from "./behavior/neutral.js";
 import { normalizeCost } from "./turn.js";
+import { localize } from "../i18n.js";
 
 const MAX_STEPS_PER_TURN = 8;
 /** After the last blow, how long the winners keep tending the dying (ten minutes of rounds, at most). */
@@ -1534,7 +1535,7 @@ function sizesUp(run, u, t, turn, room, { decided = false, wholeTurn = false } =
     u.studied.add(`sort:${sort}`);
     // Paid for, and it worked: against any of that sort (or, as the system says, anyone), for the rest of this turn
     // (or through its next, when sizing it up took the turn), to make up for the time it took.
-    applyOutcome(u, { boost: factor, uses, vsSort: how?.anyFoe ? undefined : sort, rounds: 1, thisTurn: !wholeTurn, label: "sized up" }, u.id, { id: `sizeUp:${sort}`, name: "sized up" });
+    applyOutcome(u, { boost: factor, uses, vsSort: how?.anyFoe ? undefined : sort, rounds: 1, thisTurn: !wholeTurn, label: localize("FASTFIGHTING.Effect.sizedUp", "sized up") }, u.id, { id: `sizeUp:${sort}`, name: "sized up" });
   } else {
     u.studied.add(`skipsort:${sort}`);
     // (What a miss costs, in the system's terms: Ironsworn's price.)

@@ -16,6 +16,7 @@
  * bonuses and 5e's "the same spell doesn't stack". Any advantage and any disadvantage cancel. Unknown keys and
  * values that aren't numbers are ignored. Pure: no imports, no Foundry.
  */
+import { localize } from "../i18n.js";
 
 export const FLAT_MODS = Object.freeze(["attack", "ac", "saves", "checks", "damage", "speed", "actions"]);
 export const DIE_MODS = Object.freeze(["attackDie", "saveDie", "checkDie"]);
@@ -67,27 +68,30 @@ export function netAdvantage(...values) {
 }
 
 /** A word for how bonuses and penalties leave whoever has them, for the story ("{target} is weakened"). */
+/** One of describeMods' words, in the reader's language. */
+const word = (key, english) => localize(`FASTFIGHTING.Effect.${key}`, english);
+
 export function describeMods(mods = {}, { tempHp = 0 } = {}) {
   const raw = k => Math.sign(Array.isArray(mods[k]) ? mods[k][0] : Number(mods[k]) || 0);
   // For something mostly good (a Rage: +2 damage, -1 AC), only its good side names it; mostly bad, its bad side.
   // (defAdv counts the other way round: attacks against it are easier.)
   const lean = Object.keys(mods).reduce((s, k) => s + (k === "defAdv" ? -raw(k) : raw(k)), 0) + (tempHp > 0 ? 1 : 0);
   const sign = k => { const v = raw(k); const good = k === "defAdv" ? -v : v; return (lean > 0 && good < 0) || (lean < 0 && good > 0) ? 0 : v; };
-  if ( sign("actions") > 0 ) return "hastened";
-  if ( sign("actions") < 0 ) return "slowed";
-  if ( sign("attack") > 0 || sign("attackDie") > 0 ) return "emboldened";
-  if ( sign("attack") < 0 || sign("attackDie") < 0 ) return "weakened";
-  if ( sign("ac") > 0 || sign("defAdv") < 0 ) return "shielded";
-  if ( sign("ac") < 0 || sign("defAdv") > 0 ) return "exposed";
-  if ( sign("saves") > 0 || sign("saveDie") > 0 ) return "steeled";
-  if ( sign("saves") < 0 || sign("saveDie") < 0 ) return "shaken";
-  if ( sign("damage") > 0 ) return "empowered";
-  if ( sign("damage") < 0 ) return "enfeebled";
-  if ( sign("adv") > 0 ) return "focused";
-  if ( sign("adv") < 0 ) return "rattled";
-  if ( sign("speed") > 0 ) return "fleet-footed";
-  if ( sign("speed") < 0 ) return "slowed";
-  if ( sign("checks") > 0 || sign("checkDie") > 0 || sign("checkAdv") > 0 ) return "inspired";
-  if ( tempHp > 0 ) return "bolstered";
-  return "affected";
+  if ( sign("actions") > 0 ) return word("hastened", "hastened");
+  if ( sign("actions") < 0 ) return word("slowed", "slowed");
+  if ( sign("attack") > 0 || sign("attackDie") > 0 ) return word("emboldened", "emboldened");
+  if ( sign("attack") < 0 || sign("attackDie") < 0 ) return word("weakened", "weakened");
+  if ( sign("ac") > 0 || sign("defAdv") < 0 ) return word("shielded", "shielded");
+  if ( sign("ac") < 0 || sign("defAdv") > 0 ) return word("exposed", "exposed");
+  if ( sign("saves") > 0 || sign("saveDie") > 0 ) return word("steeled", "steeled");
+  if ( sign("saves") < 0 || sign("saveDie") < 0 ) return word("shaken", "shaken");
+  if ( sign("damage") > 0 ) return word("empowered", "empowered");
+  if ( sign("damage") < 0 ) return word("enfeebled", "enfeebled");
+  if ( sign("adv") > 0 ) return word("focused", "focused");
+  if ( sign("adv") < 0 ) return word("rattled", "rattled");
+  if ( sign("speed") > 0 ) return word("fleetFooted", "fleet-footed");
+  if ( sign("speed") < 0 ) return word("slowed", "slowed");
+  if ( sign("checks") > 0 || sign("checkDie") > 0 || sign("checkAdv") > 0 ) return word("inspired", "inspired");
+  if ( tempHp > 0 ) return word("bolstered", "bolstered");
+  return word("affected", "affected");
 }
