@@ -86,6 +86,11 @@ function rollSave(run, target, type, dc, { stakes = 0.3, label = "", magical = f
   if ( run.boosting && roll.degree < 2 ) roll = boost(run, target, roll, dc, { kind: "save", stakes, label }, logger(run));
   roll = standFirm(run, target, roll, dc, stakes, label);
   if ( roll.degree === 2 && upgradesSave(target, type) ) roll = { ...roll, degree: 3 };
+  if ( rules.adjustRoll ) {
+    roll = rules.adjustRoll(run, target, roll, { kind: "save", stakes, label }) ?? roll;
+    if ( roll.said ) log(run, target, roll.said.text, { type: "adjust", ...roll.said.data });
+  }
+  rules.afterRoll?.(run, target, roll, { kind: "save", type });
   return { roll, mod: s.mod };
 }
 
@@ -288,6 +293,9 @@ function dealDamage(run, source, target, amount, { crit = false, types = null } 
       rules.onDropped(target, { crit, model, amount: rest, overflow: Math.max(0, rest - dealt) });
       if ( source?.spec.neverKill && target.status === STATUS.DEAD ) knockOut(run, target);
       regenerating(target);
+    }
+    // (Still up at 0, by the system's rules: Ironsworn characters fight on at 0 health.)
+    if ( target.hp <= 0 && target.status !== STATUS.STANDING ) {
       target.fellRound ??= run.round;
       target.killerId = source?.id ?? target.killerId ?? null;
       run.firstFallen ??= target.id;
@@ -304,6 +312,20 @@ function dealDamage(run, source, target, amount, { crit = false, types = null } 
       });
     }
     testConcentration(run, target, rest + absorbed);
+    // What being hurt sets off, by the system (Ironsworn: Endure Harm, a roll to shake it off or lose heart).
+    if ( rules.afterHarm && target.status !== STATUS.DEAD ) {
+      const up = target.status === STATUS.STANDING;
+      const said = rules.afterHarm(run, target, rest + absorbed, run.rng);
+      if ( said?.text ) log(run, target, said.text, { type: "endure", ...said.data });
+      // (Taken out by it: the fall counts like any other.)
+      if ( up && target.status !== STATUS.STANDING ) {
+        target.wasDowned = true;
+        target.fellRound ??= run.round;
+        target.killerId = source?.id ?? target.killerId ?? null;
+        run.firstFallen ??= target.id;
+        releaseGrabs(run, target);
+      }
+    }
     // Someone taking no side who was hurt, or who saw someone it wants safe hurt, takes note.
     if ( run.neutral && source ) crossed(run, source, target, "harm", 0.5 + Math.min(1.5, 3 * (dealt + absorbed) / Math.max(1, target.maxHp)) + (target.hp <= 0 ? 1 : 0), logger(run));
   } else if ( target.status === STATUS.DOWN ) {
@@ -500,6 +522,31 @@ function saveRider(run, u, action, target, effect) {
   log(run, target, `is left ${effect.label || "reeling"}`, { type: "condition", by: u.spec.name, effect: effect.label ?? "" });
 }
 
+/** The price of an attack, as the system sets it (rules.backlash): the target's harm to the attacker. */
+function backlash(run, u, target, action, degree, logging) {
+  const cost = run.prep.rules.backlash?.(run, u, target, action, degree);
+  if ( !cost?.damage?.length || !isUp(u) || target.status === STATUS.DEAD ) return;
+  const hit = rollHit(run, target, { name: cost.label ?? "", damage: cost.damage }, u, cost.damage, 1, false);
+  if ( logging ) log(run, u, `${cost.label ?? "pays for it"}: ${hit.total}`, {
+    type: "backlash", label: cost.label ?? "", by: target.spec.name, byId: target.id, damage: hit.total, damageType: cost.damage[0]?.type ?? "untyped"
+  });
+  hit.apply();
+}
+
+/**
+ * A save that turns the tables (rules.retort: an Ironsworn Clash, where doing well means striking the foe): the
+ * saver's own blow at whoever made it save, if the system says so for this degree.
+ */
+function retort(run, saver, by, action, degree, logging) {
+  const back = run.prep.rules.retort?.(run, saver, by, action, degree);
+  if ( !back?.damage?.length || !isUp(saver) || !isUp(by) ) return;
+  const hit = rollHit(run, saver, { name: back.label ?? "", damage: back.damage }, by, back.damage, 1, degree === 3);
+  if ( logging ) log(run, saver, `${back.label ?? "strikes back"} → ${by.spec.name}: ${hit.total}`, {
+    type: "attack", action: back.label ?? "", target: by.spec.name, targetId: by.id, damage: hit.total, degree, retort: true, damageType: back.damage[0]?.type ?? "untyped"
+  });
+  hit.apply();
+}
+
 /** Roll damage for a hit; returns the total and a function that applies it (so the log reads in order). */
 function rollHit(run, u, action, t, parts, multiplier, crit, minimum = 0) {
   const rules = run.prep.rules;
@@ -531,7 +578,8 @@ function rollHit(run, u, action, t, parts, multiplier, crit, minimum = 0) {
 
 /** Someone else u could hit with this action without moving (when a multiattack's first target drops). */
 function nextTargetInReach(run, u, action) {
-  return enemiesOf(run, u).filter(o => isStanding(o) && movesNeeded(run, u, o, action) === 0).sort((a, b) => a.hp - b.hp)[0] ?? null;
+  const can = run.prep.rules.canTarget;
+  return enemiesOf(run, u).filter(o => isStanding(o) && movesNeeded(run, u, o, action) === 0 && (!can || can(run, u, o))).sort((a, b) => a.hp - b.hp)[0] ?? null;
 }
 
 /**
@@ -647,6 +695,7 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
         if ( roll.degree <= 1 ) applyEffects(run, u, action, target, 3 - roll.degree);
         answerHarm(run, target, u, action, dealt);
       } else if ( logging ) log(run, u, `${action.name} → ${target.spec.name}: ${DEGREE_LABEL[roll.degree]}, no damage`, { ...data, damage: 0 });
+      retort(run, target, u, action, roll.degree, logging);
       return;
     }
 
@@ -667,6 +716,12 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
     }
     let roll = rollCheck(rules, run.rng, bonus + deedRoll, ac, opts);
     if ( run.boosting && roll.degree < 2 ) roll = boost(run, u, roll, ac, { kind: "attack", stakes: attackStakes(run, u, target, action), options: opts, label: action.name }, logger(run));
+    // The system's own say once the dice are seen (Ironsworn: burning momentum), and what the roll means (initiative).
+    if ( rules.adjustRoll ) {
+      roll = rules.adjustRoll(run, u, roll, { kind: "attack", stakes: attackStakes(run, u, target, action), label: action.name, action, target }) ?? roll;
+      if ( roll.said ) log(run, u, roll.said.text, { type: "adjust", ...roll.said.data });
+    }
+    rules.afterRoll?.(run, u, roll, { kind: "attack", action, target });
     // A close miss a die can mend (5e Precision Attack).
     if ( roll.degree === 1 && u.spec.riders ) {
       const mend = rescueMiss(run, u, action, target, ac - roll.total);
@@ -719,7 +774,8 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
       if ( table?.row?.damage?.length ) more.push(...table.row.damage);
       if ( deedRoll ) more.push(part([], deedRoll, primaryType(action)));
       const hit = rollHit(run, u, action, target, more.length ? base.concat(more) : base, 1, crit, rules.minimumDamage ?? 0);
-      let amount = hit.total;
+      // A finishing move (an Ironsworn End the Fight): whatever it has left.
+      let amount = action.finish ? target.hp + target.temp : hit.total;
       if ( answer?.halve ) amount = Math.floor(amount / 2);
       if ( answer?.reduce ) amount = Math.max(0, amount - samplePart(answer.reduce, run.rng));
       if ( guard?.r.reduce ) amount = Math.max(0, amount - samplePart(guard.r.reduce, run.rng));
@@ -752,6 +808,8 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
       if ( deed && logging ) log(run, u, `${deed.label}: the attack misses`, { type: "deed", deed: deed.label, target: target.spec.name, targetId: target.id, roll: deedRoll, success: false });
       if ( roll.degree === 0 && u.spec.fumble ) applyFumble(run, u);
     }
+    // What the attempt costs the attacker, by the system (Ironsworn: a miss, or a weak Clash, is Pay the Price).
+    backlash(run, u, target, action, roll.degree, logging);
   }
 }
 
@@ -1500,6 +1558,10 @@ function takeTurn(run, u) {
   // A creature's reaction comes back at the start of its turn.
   u.reactionsLeft = reactionsPerRound(rules, u);
   rechargeActions(run, u);
+  if ( rules.startTurn ) {
+    const said = rules.startTurn(run, u);
+    if ( said?.text ) log(run, u, said.text, { type: "startTurn", ...said.data });
+  }
   if ( u.spec.legendary?.pool ) u.legendaryLeft = u.spec.legendary.pool; // (legendary actions come back)
   u.disengaged = false;
 

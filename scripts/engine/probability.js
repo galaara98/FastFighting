@@ -32,9 +32,16 @@ function naturalChance(natural, advantage, faces = 20) {
  * @param {number} [options.fumbleOn]     natural at or under which it fumbles
  * @returns {readonly number[]}  [critFail, fail, success, critSuccess]
  */
-export function degreeDistribution(rules, modifier, dc, { advantage = 0, kind = "check", dice = null, faces = 20, critOn = null, fumbleOn = null } = {}) {
+export function degreeDistribution(rules, modifier, dc, { advantage = 0, kind = "check", dice = null, faces = 20, critOn = null, fumbleOn = null, progress = false } = {}) {
   let byKey = cache.get(rules);
   if ( !byKey ) cache.set(rules, byKey = new Map());
+  // A system with dice of its own (Ironsworn: an action die against two challenge dice) works its chances out itself.
+  if ( rules.distribution ) {
+    const key = `own|${modifier}|${dc}|${Math.sign(advantage)}|${kind}|${dice?.length ? dice.join(",") : ""}|${progress ? 1 : 0}`;
+    let own = byKey.get(key);
+    if ( !own ) byKey.set(key, own = Object.freeze(rules.distribution(modifier, dc, { advantage, kind, dice, progress })));
+    return own;
+  }
   const adv = Math.sign(advantage);
   const k = KIND_CODE[kind];
   const plain = faces === 20 && critOn === null && fumbleOn === null;

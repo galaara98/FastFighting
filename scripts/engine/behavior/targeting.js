@@ -42,6 +42,7 @@ export function bestOptionVs(run, u, t, attacksMade = 0, turn = null) {
   for ( const action of u.prep.offense ) {
     if ( !hasUses(u, action) ) continue;
     if ( action.oncePerTurn && u.usedThisTurn?.has(action.id) ) continue; // (PF2e Flurry of Blows)
+    if ( run.prep.rules.usable && !run.prep.rules.usable(run, u, action, t) ) continue; // (Ironsworn: Strike needs the initiative)
     const moves = movesNeeded(run, u, t, action);
     if ( !Number.isFinite(moves) ) continue;
     const ev = expectedDamage(run, u, action, t, attacksMade);
@@ -129,8 +130,10 @@ const feared = (u, f) => { const g = grudge(u, f); return !!g && !g.provoked; };
 function foesOf(run, u) {
   const foes = run.neutral ? [...enemiesOf(run, u), ...run.units.filter(n => seemsFoe(run, u, n))] : enemiesOf(run, u);
   const spared = sparedForTruce(run, u);
+  // (A system may say who can be pressed right now: Ironsworn, not a foe who has the initiative over it.)
+  const can = run.prep.rules.canTarget;
   // (Walled off: behind a locked door it decided wasn't worth the trouble.)
-  return foes.filter(f => !feared(u, f) && !avoids(run, u, f) && !u.walledOff?.has(f.id) && !spared?.has(f.id));
+  return foes.filter(f => !feared(u, f) && !avoids(run, u, f) && !u.walledOff?.has(f.id) && !spared?.has(f.id) && (!can || can(run, u, f)));
 }
 
 /**
@@ -140,6 +143,13 @@ function foesOf(run, u) {
  * attention (Instigators, Martyrs) or slip it (Wallflowers, Scaredy-Cats).
  */
 export function chooseTarget(run, u) {
+  const t = pickTarget(run, u);
+  // (Whatever its desires say, the system may rule someone out right now: Ironsworn, a foe with the initiative.)
+  const can = run.prep.rules.canTarget;
+  return t && can && !can(run, u, t) ? null : t;
+}
+
+function pickTarget(run, u) {
   const behavior = behaviorOf(u);
   const rng = run.rng;
   const foes = foesOf(run, u);

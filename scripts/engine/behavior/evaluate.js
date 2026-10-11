@@ -96,6 +96,12 @@ export function expectedDamage(run, a, action, t, attacksMade = 0) {
   }
   if ( action.kind === "control" ) return controlValue(run, a, action, t, attacksMade);
   const rules = run.prep.rules;
+  // A finishing move: everything the foe has left, as often as it lands.
+  if ( action.finish ) {
+    const r = attackRoll(run, a, t, action, attacksMade);
+    const dist = degreeDistribution(rules, r.bonus, currentAc(run, t, a, action), attackOptions(r));
+    return (dist[2] + dist[3]) * (t.hp + t.temp);
+  }
   const dmg = meanDamageVs(run, action, t);
   const targets = areaTargets(run, a, action);
   if ( action.kind === "auto" ) {

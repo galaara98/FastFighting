@@ -530,7 +530,9 @@ export function attackRoll(run, u, target, action, attacksMade = 0) {
   bonus += u.mods?.attack ?? 0;
   const m = rules.modifiers?.attack?.(situation(run, target, u, action)) ?? {};
   return {
-    bonus: bonus + (m.bonus ?? 0),
+    // (A roll whose score the system sets outright: an Ironsworn progress roll, the foe's track as it stands.)
+    bonus: Number.isFinite(m.score) ? m.score : bonus + (m.bonus ?? 0),
+    progress: !!action.progressRoll,
     advantage: netAdvantage(m.advantage ?? 0, u.mods?.adv ?? 0, target.mods?.defAdv ?? 0),
     dice: u.mods?.attackDie ?? null,
     faces: dieFor(run, u, action),
@@ -551,7 +553,7 @@ export function dieFor(run, u, action) {
  */
 export function attackOptions(r, { deed = false } = {}) {
   const dice = deed && r.deed ? [...(r.dice ?? []), r.deed] : r.dice;
-  return { advantage: r.advantage, dice: dice?.length ? dice : null, kind: "attack", faces: r.faces ?? 20, critOn: r.critOn ?? null, fumbleOn: r.fumbleOn ?? null };
+  return { advantage: r.advantage, dice: dice?.length ? dice : null, kind: "attack", faces: r.faces ?? 20, critOn: r.critOn ?? null, fumbleOn: r.fumbleOn ?? null, progress: !!r.progress };
 }
 
 /** Does a bonus-damage condition hold for this hit? */
