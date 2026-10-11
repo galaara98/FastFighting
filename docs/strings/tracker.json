@@ -6421,9 +6421,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Playstyle.AvoidConsumables",
    "area": "core/Playstyle",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "70a3276af458"
   },
   "core:FASTFIGHTING.Playstyle.AvoidConsumablesHint": {
@@ -6431,9 +6431,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Playstyle.AvoidConsumablesHint",
    "area": "core/Playstyle",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "8b47dffd2b99"
   },
   "core:FASTFIGHTING.Playstyle.AvoidCostlySpells": {
@@ -6441,9 +6441,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Playstyle.AvoidCostlySpells",
    "area": "core/Playstyle",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "bb4135fdf967"
   },
   "core:FASTFIGHTING.Playstyle.AvoidCostlySpellsHint": {
@@ -6451,9 +6451,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Playstyle.AvoidCostlySpellsHint",
    "area": "core/Playstyle",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "44585b9af50e"
   },
   "core:FASTFIGHTING.Playstyle.AvoidFleeing": {
@@ -6505,9 +6505,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Playstyle.Both",
    "area": "core/Playstyle",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "092d9672f2da"
   },
   "core:FASTFIGHTING.Playstyle.brawler.Hint": {
@@ -6515,9 +6515,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Playstyle.brawler.Hint",
    "area": "core/Playstyle",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "4b64195be6a1"
   },
   "core:FASTFIGHTING.Playstyle.brawler.Name": {
@@ -6525,9 +6525,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Playstyle.brawler.Name",
    "area": "core/Playstyle",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "cb7bccf5df77"
   },
   "core:FASTFIGHTING.Playstyle.chicken.Hint": {
@@ -6535,9 +6535,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Playstyle.chicken.Hint",
    "area": "core/Playstyle",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "8e68ecae337d"
   },
   "core:FASTFIGHTING.Playstyle.chicken.Name": {
@@ -6545,9 +6545,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Playstyle.chicken.Name",
    "area": "core/Playstyle",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "d003dadb7898"
   },
   "core:FASTFIGHTING.Playstyle.Count": {
@@ -6555,9 +6555,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Playstyle.Count",
    "area": "core/Playstyle",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "318b15d81876"
   },
   "core:FASTFIGHTING.Playstyle.cruel.Hint": {
@@ -6565,9 +6565,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Playstyle.cruel.Hint",
    "area": "core/Playstyle",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "8e84f4757d78"
   },
   "core:FASTFIGHTING.Playstyle.cruel.Name": {
@@ -6575,9 +6575,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Playstyle.cruel.Name",
    "area": "core/Playstyle",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "65c5e545fd23"
   },
   "core:FASTFIGHTING.Playstyle.diplomat.Hint": {
@@ -6585,9 +6585,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Playstyle.diplomat.Hint",
    "area": "core/Playstyle",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "7932a6ec5547"
   },
   "core:FASTFIGHTING.Playstyle.diplomat.Name": {
@@ -6595,9 +6595,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Playstyle.diplomat.Name",
    "area": "core/Playstyle",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "c6a96a629f87"
   },
   "core:FASTFIGHTING.Playstyle.enabler.Hint": {
@@ -6605,9 +6605,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Playstyle.enabler.Hint",
    "area": "core/Playstyle",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "b8a0aed57eb2"
   },
   "core:FASTFIGHTING.Playstyle.enabler.Name": {
@@ -6615,9 +6615,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Playstyle.enabler.Name",
    "area": "core/Playstyle",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "966318b8383b"
   },
   "core:FASTFIGHTING.Playstyle.fragile.Hint": {
@@ -6625,9 +6625,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Playstyle.fragile.Hint",
    "area": "core/Playstyle",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "823ea96b3f2c"
   },
   "core:FASTFIGHTING.Playstyle.fragile.Name": {
@@ -6635,9 +6635,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Playstyle.fragile.Name",
    "area": "core/Playstyle",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "f9eeb0d15006"
   },
   "core:FASTFIGHTING.Playstyle.Hint": {
@@ -6645,9 +6645,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Playstyle.Hint",
    "area": "core/Playstyle",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "13b8061aa473"
   },
   "core:FASTFIGHTING.Playstyle.impatient.Hint": {
@@ -6655,9 +6655,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Playstyle.impatient.Hint",
    "area": "core/Playstyle",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "072f621543f5"
   },
   "core:FASTFIGHTING.Playstyle.impatient.Name": {
@@ -6665,9 +6665,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Playstyle.impatient.Name",
    "area": "core/Playstyle",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "3a64a798b39a"
   },
   "core:FASTFIGHTING.Playstyle.instigator.Hint": {
@@ -6675,9 +6675,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Playstyle.instigator.Hint",
    "area": "core/Playstyle",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "c10f51ae7c2f"
   },
   "core:FASTFIGHTING.Playstyle.instigator.Name": {
@@ -6685,9 +6685,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Playstyle.instigator.Name",
    "area": "core/Playstyle",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "525565c780dd"
   },
   "core:FASTFIGHTING.Playstyle.Label": {
@@ -6695,9 +6695,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Playstyle.Label",
    "area": "core/Playstyle",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "191849ddd0b3"
   },
   "core:FASTFIGHTING.Playstyle.lazy.Hint": {
@@ -6705,9 +6705,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Playstyle.lazy.Hint",
    "area": "core/Playstyle",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "aa3b54d2bd1f"
   },
   "core:FASTFIGHTING.Playstyle.lazy.Name": {
@@ -6715,9 +6715,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Playstyle.lazy.Name",
    "area": "core/Playstyle",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "7d1792c1768c"
   },
   "core:FASTFIGHTING.Playstyle.leader.Hint": {
@@ -6725,9 +6725,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Playstyle.leader.Hint",
    "area": "core/Playstyle",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "153c6c3bed0a"
   },
   "core:FASTFIGHTING.Playstyle.leader.Name": {
@@ -6735,9 +6735,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Playstyle.leader.Name",
    "area": "core/Playstyle",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "235cf533eafe"
   },
   "core:FASTFIGHTING.Playstyle.loreCollector.Hint": {
@@ -6745,9 +6745,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Playstyle.loreCollector.Hint",
    "area": "core/Playstyle",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "080b38efcf75"
   },
   "core:FASTFIGHTING.Playstyle.loreCollector.Name": {
@@ -6755,9 +6755,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Playstyle.loreCollector.Name",
    "area": "core/Playstyle",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "571fa0f397ff"
   },
   "core:FASTFIGHTING.Playstyle.martyr.Hint": {
@@ -6765,9 +6765,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Playstyle.martyr.Hint",
    "area": "core/Playstyle",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "ab733c79e1ec"
   },
   "core:FASTFIGHTING.Playstyle.martyr.Name": {
@@ -6775,9 +6775,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Playstyle.martyr.Name",
    "area": "core/Playstyle",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "6b146382d9e8"
   },
   "core:FASTFIGHTING.Playstyle.Max": {
@@ -6785,9 +6785,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Playstyle.Max",
    "area": "core/Playstyle",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "7eadaeff3a0d"
   },
   "core:FASTFIGHTING.Playstyle.mercenary.Hint": {
@@ -6795,9 +6795,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Playstyle.mercenary.Hint",
    "area": "core/Playstyle",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "d75fab0f41f2"
   },
   "core:FASTFIGHTING.Playstyle.mercenary.Name": {
@@ -6805,9 +6805,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Playstyle.mercenary.Name",
    "area": "core/Playstyle",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "9455d6da063c"
   },
   "core:FASTFIGHTING.Playstyle.moralist.Hint": {
@@ -6815,9 +6815,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Playstyle.moralist.Hint",
    "area": "core/Playstyle",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "a9af70f70326"
   },
   "core:FASTFIGHTING.Playstyle.moralist.Name": {
@@ -6825,9 +6825,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Playstyle.moralist.Name",
    "area": "core/Playstyle",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "859f675e4cca"
   },
   "core:FASTFIGHTING.Playstyle.NeverKill": {
@@ -6867,9 +6867,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Playstyle.peacekeeper.Hint",
    "area": "core/Playstyle",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "bcbf2994bff2"
   },
   "core:FASTFIGHTING.Playstyle.peacekeeper.Name": {
@@ -6877,9 +6877,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Playstyle.peacekeeper.Name",
    "area": "core/Playstyle",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "996d6e692e73"
   },
   "core:FASTFIGHTING.Playstyle.peoplePleaser.Hint": {
@@ -6887,9 +6887,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Playstyle.peoplePleaser.Hint",
    "area": "core/Playstyle",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "0af6f47aa43e"
   },
   "core:FASTFIGHTING.Playstyle.peoplePleaser.Name": {
@@ -6897,9 +6897,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Playstyle.peoplePleaser.Name",
    "area": "core/Playstyle",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "9549df07f726"
   },
   "core:FASTFIGHTING.Playstyle.puzzleManiac.Hint": {
@@ -6907,9 +6907,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Playstyle.puzzleManiac.Hint",
    "area": "core/Playstyle",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "db1a03b77ccb"
   },
   "core:FASTFIGHTING.Playstyle.puzzleManiac.Name": {
@@ -6917,9 +6917,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Playstyle.puzzleManiac.Name",
    "area": "core/Playstyle",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "251323744ac2"
   },
   "core:FASTFIGHTING.Playstyle.redeemSeeker.Hint": {
@@ -6927,9 +6927,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Playstyle.redeemSeeker.Hint",
    "area": "core/Playstyle",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "847706eb170c"
   },
   "core:FASTFIGHTING.Playstyle.redeemSeeker.Name": {
@@ -6937,9 +6937,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Playstyle.redeemSeeker.Name",
    "area": "core/Playstyle",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "a35fcaf9328e"
   },
   "core:FASTFIGHTING.Playstyle.relentless.Hint": {
@@ -6947,9 +6947,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Playstyle.relentless.Hint",
    "area": "core/Playstyle",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "e9c8fc044116"
   },
   "core:FASTFIGHTING.Playstyle.relentless.Name": {
@@ -6957,9 +6957,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Playstyle.relentless.Name",
    "area": "core/Playstyle",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "4cf92935c62f"
   },
   "core:FASTFIGHTING.Playstyle.Roleplay": {
@@ -6967,9 +6967,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Playstyle.Roleplay",
    "area": "core/Playstyle",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "c8da5e92ff1c"
   },
   "core:FASTFIGHTING.Playstyle.RoleplayHint": {
@@ -6977,9 +6977,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Playstyle.RoleplayHint",
    "area": "core/Playstyle",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "ba0289279838"
   },
   "core:FASTFIGHTING.Playstyle.skeptic.Hint": {
@@ -6987,9 +6987,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Playstyle.skeptic.Hint",
    "area": "core/Playstyle",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "acaee03013a0"
   },
   "core:FASTFIGHTING.Playstyle.skeptic.Name": {
@@ -6997,9 +6997,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Playstyle.skeptic.Name",
    "area": "core/Playstyle",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "5b19cd3d1167"
   },
   "core:FASTFIGHTING.Playstyle.speedRunner.Hint": {
@@ -7007,9 +7007,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Playstyle.speedRunner.Hint",
    "area": "core/Playstyle",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "840dbf9746d8"
   },
   "core:FASTFIGHTING.Playstyle.speedRunner.Name": {
@@ -7017,9 +7017,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Playstyle.speedRunner.Name",
    "area": "core/Playstyle",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "4cf550f8d912"
   },
   "core:FASTFIGHTING.Playstyle.StayTrue": {
@@ -7027,9 +7027,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Playstyle.StayTrue",
    "area": "core/Playstyle",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "5346d089ea53"
   },
   "core:FASTFIGHTING.Playstyle.StayTrueHint": {
@@ -7037,9 +7037,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Playstyle.StayTrueHint",
    "area": "core/Playstyle",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "77f7cdc6ee46"
   },
   "core:FASTFIGHTING.Playstyle.thief.Hint": {
@@ -7047,9 +7047,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Playstyle.thief.Hint",
    "area": "core/Playstyle",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "79ee54ed3e2f"
   },
   "core:FASTFIGHTING.Playstyle.thief.Name": {
@@ -7057,9 +7057,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Playstyle.thief.Name",
    "area": "core/Playstyle",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "2fd478c88ca0"
   },
   "core:FASTFIGHTING.Playstyle.vengeful.Hint": {
@@ -7067,9 +7067,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Playstyle.vengeful.Hint",
    "area": "core/Playstyle",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "01eb6457bf1d"
   },
   "core:FASTFIGHTING.Playstyle.vengeful.Name": {
@@ -7077,9 +7077,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Playstyle.vengeful.Name",
    "area": "core/Playstyle",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "a0f1f56284a5"
   },
   "core:FASTFIGHTING.Playstyle.wallflower.Hint": {
@@ -7087,9 +7087,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Playstyle.wallflower.Hint",
    "area": "core/Playstyle",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "40b482f73282"
   },
   "core:FASTFIGHTING.Playstyle.wallflower.Name": {
@@ -7097,9 +7097,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Playstyle.wallflower.Name",
    "area": "core/Playstyle",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "6f3ad9533f77"
   },
   "core:FASTFIGHTING.Playstyle.wildcard.Hint": {
@@ -7107,9 +7107,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Playstyle.wildcard.Hint",
    "area": "core/Playstyle",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "ecb89d6ab612"
   },
   "core:FASTFIGHTING.Playstyle.wildcard.Name": {
@@ -7117,9 +7117,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Playstyle.wildcard.Name",
    "area": "core/Playstyle",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "d073b0d3cb4c"
   },
   "core:FASTFIGHTING.Results.AtRisk": {
@@ -12028,9 +12028,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Survey.Reset",
    "area": "core/Survey",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "4583bc5ac2b1"
   },
   "core:FASTFIGHTING.Survey.ResetHint": {
@@ -12038,9 +12038,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Survey.ResetHint",
    "area": "core/Survey",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "983e0d39bfc3"
   },
   "core:FASTFIGHTING.Survey.Sent": {
@@ -12218,9 +12218,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Tactics.ActionKind.auto",
    "area": "core/Tactics",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "aa70b717438b"
   },
   "core:FASTFIGHTING.Tactics.ActionKind.buff": {
@@ -12228,9 +12228,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Tactics.ActionKind.buff",
    "area": "core/Tactics",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "048b41bf9c3f"
   },
   "core:FASTFIGHTING.Tactics.ActionKind.control": {
@@ -12238,9 +12238,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Tactics.ActionKind.control",
    "area": "core/Tactics",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "2c6736a4ede2"
   },
   "core:FASTFIGHTING.Tactics.ActionKind.heal": {
@@ -12248,9 +12248,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Tactics.ActionKind.heal",
    "area": "core/Tactics",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "e904883f02b0"
   },
   "core:FASTFIGHTING.Tactics.ActionKind.save": {
@@ -12258,9 +12258,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Tactics.ActionKind.save",
    "area": "core/Tactics",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "97ded29d1e82"
   },
   "core:FASTFIGHTING.Tactics.ActionKind.spell-attack": {
@@ -12268,9 +12268,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Tactics.ActionKind.spell-attack",
    "area": "core/Tactics",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "6577fc1d6052"
   },
   "core:FASTFIGHTING.Tactics.ActionKind.strike": {
@@ -12278,9 +12278,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Tactics.ActionKind.strike",
    "area": "core/Tactics",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "c68fef1abac6"
   },
   "core:FASTFIGHTING.Tactics.allyDying.fight": {
@@ -12288,9 +12288,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Tactics.allyDying.fight",
    "area": "core/Tactics",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "479d40a34422"
   },
   "core:FASTFIGHTING.Tactics.allyDying.Hint": {
@@ -12298,9 +12298,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Tactics.allyDying.Hint",
    "area": "core/Tactics",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "fc52aff7ec06"
   },
   "core:FASTFIGHTING.Tactics.allyDying.Label": {
@@ -12308,9 +12308,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Tactics.allyDying.Label",
    "area": "core/Tactics",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "3f22b0bca6ee"
   },
   "core:FASTFIGHTING.Tactics.allyDying.protectSelf": {
@@ -12318,9 +12318,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Tactics.allyDying.protectSelf",
    "area": "core/Tactics",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "308b20e24de8"
   },
   "core:FASTFIGHTING.Tactics.allyDying.rescue": {
@@ -12328,9 +12328,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Tactics.allyDying.rescue",
    "area": "core/Tactics",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "ee9d52740a10"
   },
   "core:FASTFIGHTING.Tactics.allyDying.retreat": {
@@ -12338,9 +12338,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Tactics.allyDying.retreat",
    "area": "core/Tactics",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "73512c7cb914"
   },
   "core:FASTFIGHTING.Tactics.Auto": {
@@ -12348,9 +12348,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Tactics.Auto",
    "area": "core/Tactics",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "3b5c87cbee26"
   },
   "core:FASTFIGHTING.Tactics.BestAvailable": {
@@ -12358,9 +12358,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Tactics.BestAvailable",
    "area": "core/Tactics",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "16160d9aac20"
   },
   "core:FASTFIGHTING.Tactics.beyond.Hint": {
@@ -12368,9 +12368,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Tactics.beyond.Hint",
    "area": "core/Tactics",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "127f0fd231a3"
   },
   "core:FASTFIGHTING.Tactics.beyond.hunt": {
@@ -12378,9 +12378,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Tactics.beyond.hunt",
    "area": "core/Tactics",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "76614221eea7"
   },
   "core:FASTFIGHTING.Tactics.beyond.Label": {
@@ -12388,9 +12388,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Tactics.beyond.Label",
    "area": "core/Tactics",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "2dbebaf86c4a"
   },
   "core:FASTFIGHTING.Tactics.beyond.seekHelp": {
@@ -12398,9 +12398,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Tactics.beyond.seekHelp",
    "area": "core/Tactics",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "c88752cee977"
   },
   "core:FASTFIGHTING.Tactics.beyond.stay": {
@@ -12408,9 +12408,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Tactics.beyond.stay",
    "area": "core/Tactics",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "45197a114b04"
   },
   "core:FASTFIGHTING.Tactics.healAggro.aggressive": {
@@ -12418,9 +12418,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Tactics.healAggro.aggressive",
    "area": "core/Tactics",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "5095054a2336"
   },
   "core:FASTFIGHTING.Tactics.healAggro.allCosts": {
@@ -12428,9 +12428,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Tactics.healAggro.allCosts",
    "area": "core/Tactics",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "0b2d543f3396"
   },
   "core:FASTFIGHTING.Tactics.healAggro.balanced": {
@@ -12438,9 +12438,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Tactics.healAggro.balanced",
    "area": "core/Tactics",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "f9c49a42bbc4"
   },
   "core:FASTFIGHTING.Tactics.healAggro.conservative": {
@@ -12448,9 +12448,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Tactics.healAggro.conservative",
    "area": "core/Tactics",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "5004f84fee55"
   },
   "core:FASTFIGHTING.Tactics.healAggro.Hint": {
@@ -12458,9 +12458,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Tactics.healAggro.Hint",
    "area": "core/Tactics",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "6651675aca93"
   },
   "core:FASTFIGHTING.Tactics.healAggro.Label": {
@@ -12468,9 +12468,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Tactics.healAggro.Label",
    "area": "core/Tactics",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "5fcfb1042886"
   },
   "core:FASTFIGHTING.Tactics.notes.Hint": {
@@ -12500,9 +12500,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Tactics.potionThreshold.25",
    "area": "core/Tactics",
-   "status": "todo",
+   "status": "approved",
    "date": "2026-10-11",
-   "commit": "9faf4c4",
+   "commit": "f7ee61e",
    "hash": "0cbb6d09954f"
   },
   "core:FASTFIGHTING.Tactics.potionThreshold.50": {
@@ -12510,9 +12510,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Tactics.potionThreshold.50",
    "area": "core/Tactics",
-   "status": "todo",
+   "status": "approved",
    "date": "2026-10-11",
-   "commit": "9faf4c4",
+   "commit": "f7ee61e",
    "hash": "181dae23beae"
   },
   "core:FASTFIGHTING.Tactics.potionThreshold.75": {
@@ -12520,9 +12520,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Tactics.potionThreshold.75",
    "area": "core/Tactics",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "2713f97a4815"
   },
   "core:FASTFIGHTING.Tactics.potionThreshold.Hint": {
@@ -12530,9 +12530,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Tactics.potionThreshold.Hint",
    "area": "core/Tactics",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "dab508750832"
   },
   "core:FASTFIGHTING.Tactics.potionThreshold.Label": {
@@ -12540,9 +12540,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Tactics.potionThreshold.Label",
    "area": "core/Tactics",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "b3b28f8ab1f7"
   },
   "core:FASTFIGHTING.Tactics.potionThreshold.never": {
@@ -12550,9 +12550,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Tactics.potionThreshold.never",
    "area": "core/Tactics",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "a48f541a67f8"
   },
   "core:FASTFIGHTING.Tactics.preferredAction.Hint": {
@@ -12560,9 +12560,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Tactics.preferredAction.Hint",
    "area": "core/Tactics",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "cf0f8a81d103"
   },
   "core:FASTFIGHTING.Tactics.preferredAction.Label": {
@@ -12570,9 +12570,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Tactics.preferredAction.Label",
    "area": "core/Tactics",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "3b18e0da3db5"
   },
   "core:FASTFIGHTING.Tactics.resourceUse.balanced": {
@@ -12580,9 +12580,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Tactics.resourceUse.balanced",
    "area": "core/Tactics",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "f48155868024"
   },
   "core:FASTFIGHTING.Tactics.resourceUse.conserve": {
@@ -12590,9 +12590,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Tactics.resourceUse.conserve",
    "area": "core/Tactics",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "d67be81617e7"
   },
   "core:FASTFIGHTING.Tactics.resourceUse.Hint": {
@@ -12600,9 +12600,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Tactics.resourceUse.Hint",
    "area": "core/Tactics",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "abdd668c5d2d"
   },
   "core:FASTFIGHTING.Tactics.resourceUse.Label": {
@@ -12610,9 +12610,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Tactics.resourceUse.Label",
    "area": "core/Tactics",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "708305a88d2c"
   },
   "core:FASTFIGHTING.Tactics.resourceUse.nova": {
@@ -12620,9 +12620,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Tactics.resourceUse.nova",
    "area": "core/Tactics",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "2ebbfd009fc2"
   },
   "core:FASTFIGHTING.Tactics.retreat.Hint": {
@@ -12630,9 +12630,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Tactics.retreat.Hint",
    "area": "core/Tactics",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "afff69268bb1"
   },
   "core:FASTFIGHTING.Tactics.retreat.hurt": {
@@ -12640,9 +12640,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Tactics.retreat.hurt",
    "area": "core/Tactics",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "b1db8a49752a"
   },
   "core:FASTFIGHTING.Tactics.retreat.Label": {
@@ -12650,9 +12650,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Tactics.retreat.Label",
    "area": "core/Tactics",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "f52c2cbf81b7"
   },
   "core:FASTFIGHTING.Tactics.retreat.losing": {
@@ -12660,9 +12660,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Tactics.retreat.losing",
    "area": "core/Tactics",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "3384cf95dd32"
   },
   "core:FASTFIGHTING.Tactics.retreat.never": {
@@ -12670,9 +12670,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Tactics.retreat.never",
    "area": "core/Tactics",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "9bc21984fa5a"
   },
   "core:FASTFIGHTING.Tactics.selfRevived.healSelf": {
@@ -12680,9 +12680,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Tactics.selfRevived.healSelf",
    "area": "core/Tactics",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "151b3bc31d7a"
   },
   "core:FASTFIGHTING.Tactics.selfRevived.Hint": {
@@ -12690,9 +12690,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Tactics.selfRevived.Hint",
    "area": "core/Tactics",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "3bf806e53edf"
   },
   "core:FASTFIGHTING.Tactics.selfRevived.Label": {
@@ -12700,9 +12700,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Tactics.selfRevived.Label",
    "area": "core/Tactics",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "2719ebcdb4c3"
   },
   "core:FASTFIGHTING.Tactics.selfRevived.rejoin": {
@@ -12710,9 +12710,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Tactics.selfRevived.rejoin",
    "area": "core/Tactics",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "c87503e260c5"
   },
   "core:FASTFIGHTING.Tactics.selfRevived.retreat": {
@@ -12720,9 +12720,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Tactics.selfRevived.retreat",
    "area": "core/Tactics",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "e6e5c4f19dfe"
   },
   "core:FASTFIGHTING.Tactics.shield.always": {
@@ -12730,9 +12730,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Tactics.shield.always",
    "area": "core/Tactics",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "702b4da6cbda"
   },
   "core:FASTFIGHTING.Tactics.shield.Hint": {
@@ -12740,9 +12740,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Tactics.shield.Hint",
    "area": "core/Tactics",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "109a96de079a"
   },
   "core:FASTFIGHTING.Tactics.shield.Label": {
@@ -12750,9 +12750,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Tactics.shield.Label",
    "area": "core/Tactics",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "480d4be7d61f"
   },
   "core:FASTFIGHTING.Tactics.shield.never": {
@@ -12760,9 +12760,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Tactics.shield.never",
    "area": "core/Tactics",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "ecc5edb2a21f"
   },
   "core:FASTFIGHTING.Tactics.shield.spare": {
@@ -12770,9 +12770,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Tactics.shield.spare",
    "area": "core/Tactics",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "9218718c38c6"
   },
   "core:FASTFIGHTING.Tactics.style.caster": {
@@ -12780,9 +12780,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Tactics.style.caster",
    "area": "core/Tactics",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "a5fcd5013d0b"
   },
   "core:FASTFIGHTING.Tactics.style.frontline": {
@@ -12790,9 +12790,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Tactics.style.frontline",
    "area": "core/Tactics",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "a768fbaacf3a"
   },
   "core:FASTFIGHTING.Tactics.style.Hint": {
@@ -12800,9 +12800,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Tactics.style.Hint",
    "area": "core/Tactics",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "bc753daec9b3"
   },
   "core:FASTFIGHTING.Tactics.style.Label": {
@@ -12810,9 +12810,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Tactics.style.Label",
    "area": "core/Tactics",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "6962453b1c83"
   },
   "core:FASTFIGHTING.Tactics.style.protector": {
@@ -12820,9 +12820,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Tactics.style.protector",
    "area": "core/Tactics",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "fdd9a1575b69"
   },
   "core:FASTFIGHTING.Tactics.style.ranged": {
@@ -12830,9 +12830,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Tactics.style.ranged",
    "area": "core/Tactics",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "05475ccf6f57"
   },
   "core:FASTFIGHTING.Tactics.style.skirmisher": {
@@ -12840,9 +12840,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Tactics.style.skirmisher",
    "area": "core/Tactics",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "ba5285d6a871"
   },
   "core:FASTFIGHTING.Tactics.talk.always": {
@@ -12860,9 +12860,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Tactics.talk.first",
    "area": "core/Tactics",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "66b753842c5c"
   },
   "core:FASTFIGHTING.Tactics.talk.Hint": {
@@ -12870,9 +12870,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Tactics.talk.Hint",
    "area": "core/Tactics",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "73273e216509"
   },
   "core:FASTFIGHTING.Tactics.talk.Label": {
@@ -12880,9 +12880,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Tactics.talk.Label",
    "area": "core/Tactics",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "b763e4a3e0e5"
   },
   "core:FASTFIGHTING.Tactics.talk.never": {
@@ -12890,9 +12890,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Tactics.talk.never",
    "area": "core/Tactics",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "1ba27f7b69d4"
   },
   "core:FASTFIGHTING.Tactics.talk.opportune": {
@@ -12900,9 +12900,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Tactics.talk.opportune",
    "area": "core/Tactics",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "5852ab3b9b6c"
   },
   "core:FASTFIGHTING.Tactics.target.avoidKilling": {
@@ -12920,9 +12920,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Tactics.target.casters",
    "area": "core/Tactics",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "c9d0d2462bcd"
   },
   "core:FASTFIGHTING.Tactics.target.dangerous": {
@@ -12930,9 +12930,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Tactics.target.dangerous",
    "area": "core/Tactics",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "9fb40682a23d"
   },
   "core:FASTFIGHTING.Tactics.target.Hint": {
@@ -12940,9 +12940,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Tactics.target.Hint",
    "area": "core/Tactics",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "a4068dd619e5"
   },
   "core:FASTFIGHTING.Tactics.target.Label": {
@@ -12950,9 +12950,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Tactics.target.Label",
    "area": "core/Tactics",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "afaf3d3c65b4"
   },
   "core:FASTFIGHTING.Tactics.target.nearest": {
@@ -12960,9 +12960,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Tactics.target.nearest",
    "area": "core/Tactics",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "3908262651b3"
   },
   "core:FASTFIGHTING.Tactics.target.protect": {
@@ -12970,9 +12970,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Tactics.target.protect",
    "area": "core/Tactics",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "756c86119e5d"
   },
   "core:FASTFIGHTING.Tactics.target.weakest": {
@@ -12980,9 +12980,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Tactics.target.weakest",
    "area": "core/Tactics",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "approved",
+   "date": "2026-10-11",
+   "commit": "f7ee61e",
    "hash": "099e4aae1b11"
   },
   "core:FASTFIGHTING.TokenTactics.Hazard": {

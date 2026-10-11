@@ -1,6 +1,7 @@
 /**
  * The record of the author writing FastFighting's English (docs/english-strings-handoff.md): every string in the five
- * repos, its status (todo, written, skipped), when, and the commit that entered it. The entries come from the files
+ * repos, its status (todo, written, approved, skipped), when, and the commit that entered it. Approved: the author
+ * reviewed the draft and accepted it as it stands; for Foundry's AI policy it's still a draft, not the author's writing. The entries come from the files
  * the words live in, so nothing is missed:
  *   - each repo's languages/en.json, one entry per key;
  *   - the core's story/en.json, one entry per list of phrases (the author writes a list at a time; its count is free);
@@ -13,7 +14,7 @@
  *   node docs/strings/tracker.mjs status            what's left, by area
  *   node docs/strings/tracker.mjs check             exit 1 if anything changed outside a recorded batch
  *   node docs/strings/tracker.mjs list <area> [n]   the next n strings to write in an area (ids, placeholders)
- *   node docs/strings/tracker.mjs mark <written|written-same|skipped> <commit> <id> ...   record a batch (text hashes
+ *   node docs/strings/tracker.mjs mark <written|written-same|approved|skipped> <commit> <id> ...   record a batch (text hashes
  *                                                  refreshed); written-same: written, the same as the draft it replaced
  *
  * The repos sit side by side: this one (FastFighting) and FastFighting-PF2e, -DnD5e, -DCC, -Ironsworn next to it.
@@ -219,18 +220,19 @@ else if ( command === "status" ) {
   const by = new Map();
   for ( const e of Object.values(record.strings) ) {
     if ( e.gone ) continue;
-    const row = by.get(e.area) ?? { todo: 0, written: 0, skipped: 0 };
+    const row = by.get(e.area) ?? { todo: 0, written: 0, approved: 0, skipped: 0 };
     row[e.status] += 1;
     by.set(e.area, row);
   }
   const rows = [...by.entries()].sort(([a], [b]) => a.localeCompare(b));
-  const total = { todo: 0, written: 0, skipped: 0 };
-  console.log(`${"area".padEnd(34)} ${"todo".padStart(6)} ${"written".padStart(8)} ${"skipped".padStart(8)}`);
+  const total = { todo: 0, written: 0, approved: 0, skipped: 0 };
+  const line = (area, r) => `${area.padEnd(34)} ${String(r.todo).padStart(6)} ${String(r.written).padStart(8)} ${String(r.approved).padStart(9)} ${String(r.skipped).padStart(8)}`;
+  console.log(line("area", { todo: "todo", written: "written", approved: "approved", skipped: "skipped" }));
   for ( const [area, r] of rows ) {
-    console.log(`${area.padEnd(34)} ${String(r.todo).padStart(6)} ${String(r.written).padStart(8)} ${String(r.skipped).padStart(8)}`);
+    console.log(line(area, r));
     for ( const k of Object.keys(total) ) total[k] += r[k];
   }
-  console.log(`${"all".padEnd(34)} ${String(total.todo).padStart(6)} ${String(total.written).padStart(8)} ${String(total.skipped).padStart(8)}`);
+  console.log(line("all", total));
   const same = Object.values(record.strings).filter(e => e.sameAsDraft && !e.gone && e.status === "written").length;
   if ( same ) console.log(`(${same} of those written came out the same as the draft they replaced)`);
   const flagged = Object.entries(record.strings).filter(([, e]) => e.changed && !e.gone).length;
@@ -251,8 +253,8 @@ else if ( command === "list" ) {
 
 else if ( command === "mark" ) {
   const [status, commit, ...ids] = args;
-  if ( !["written", "written-same", "skipped", "todo"].includes(status) || !commit || !ids.length ) {
-    console.error("usage: mark <written|written-same|skipped|todo> <commit> <id> ...");
+  if ( !["written", "written-same", "approved", "skipped", "todo"].includes(status) || !commit || !ids.length ) {
+    console.error("usage: mark <written|written-same|approved|skipped|todo> <commit> <id> ...");
     process.exit(2);
   }
   const now = current();
