@@ -227,12 +227,13 @@ export function bestPitch(run, talker, t) {
     const { mod: base, advantage, dice } = checkRoll(run, talker, pitch.mod + studyBonus(talker, t, { words: true }), t);
     const dc = talkDC(run, talker, t, kind);
     // (A Lore-Collector that sized it up: about 2.5 times as likely to get through.)
-    const mod = base + boostBonus(rules, talker, t, base, dc, { advantage, dice, kind: "check" });
+    const lift = boostBonus(rules, talker, t, base, dc, { advantage, dice, kind: "check" });
+    const mod = base + lift;
     const dist = degreeDistribution(rules, mod, dc, { advantage, dice, kind: "check" });
     // A bluff backfires harder, so it needs to be clearly better.
     const p = dist[2] + dist[3] - (kind === "deceive" ? dist[0] * 0.5 : 0);
     if ( !best || p > best.pSuccess ) {
-      best = { kind, aim, skill: pitch.skill ?? kind, mod, advantage, dice, dc, dcLabel: t.spec.social?.resist?.[kind]?.label ?? "DC", pSuccess: Math.max(0, p) };
+      best = { kind, aim, skill: pitch.skill ?? kind, mod, boost: lift || null, advantage, dice, dc, dcLabel: t.spec.social?.resist?.[kind]?.label ?? "DC", pSuccess: Math.max(0, p) };
     }
   }
   return best;
@@ -473,7 +474,7 @@ export function attemptTalk(run, talker, pitch, log) {
   // (Against challenge dice rather than a DC: Ironsworn.)
   const versus = roll.challenge ? roll.challenge.join(", ") : `DC ${pitch.dc}`;
   if ( run.log ) log(talker, `${verb} ${t.spec.name}${AIM_TEXT[aim] ?? ""}${why} (${pitch.skill} ${roll.total} vs ${versus}): ${result} [${Math.min(progress, steps)}/${steps}]`, {
-    type: "talk", kind: pitch.kind, skill: pitch.skill, target: t.spec.name, targetId: t.id, natural: roll.natural, mod: pitch.mod, total: roll.total,
+    type: "talk", kind: pitch.kind, skill: pitch.skill, target: t.spec.name, targetId: t.id, natural: roll.natural, mod: pitch.mod, boost: pitch.boost ?? null, total: roll.total,
     dc: pitch.dc, dcStat: pitch.dcLabel, degree: roll.degree, margin: roll.total - pitch.dc, challenge: roll.challenge ?? null,
     progress: Math.min(progress, steps), steps, offended: roll.degree === 0,
     aim, appeal: pull ? { kind: pull.kind, target: pullName, targetId: pull.targetId } : null

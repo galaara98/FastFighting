@@ -532,7 +532,7 @@ function statLine(e) {
       return `${e.target} saves vs ${e.actor}'s ${e.action} · ${e.saveType} ${roll(e.natural, e.mod, e.total, e.dc, "DC")} · ${DEGREE[e.degree]} (${signed(e.margin)}) · ${e.damage} ${e.damageType}`;
     case "auto": return `${e.actor} → ${e.target}: ${e.action} (no roll) · ${e.damage} ${e.damageType}`;
     case "talk":
-      return `${e.actor} → ${e.target}: ${e.skill} · ${roll(e.natural, e.mod, e.total, e.dc, `${e.dcStat} DC`)} · ${DEGREE[e.degree]} (${signed(e.margin)}) · persuasion ${e.progress}/${e.steps}`;
+      return `${e.actor} → ${e.target}: ${e.skill} · ${roll(e.natural, e.mod, e.total, e.dc, `${e.dcStat} DC`)} · ${DEGREE[e.degree]} (${signed(e.margin)})${e.boost ? ` · sized up +${e.boost}` : ""} · persuasion ${e.progress}/${e.steps}`;
     case "heal":
       return `${e.actor} → ${e.self ? "self" : e.target}: ${e.action}${e.check ? ` · medicine ${roll(e.check.natural, e.check.mod, e.check.total, e.check.dc, "DC")} · ${DEGREE[e.check.degree]}` : ""} · +${e.amount} HP${e.revived ? " · revived" : ""}`;
     case "move": return `${e.actor} ${{ walk: "walks", fly: "flies", swim: "swims", climb: "climbs", burrow: "burrows" }[e.mode] ?? "moves"} ${e.feet} ft toward ${e.toward}${e.mult > 1.05 ? ` (terrain ×${e.mult.toFixed(2)}${e.regions?.length ? `: ${e.regions.join(", ")}` : ""})` : ""}`;
