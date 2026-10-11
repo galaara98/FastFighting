@@ -1,5 +1,9 @@
 # FastFighting Core
 
+> **AI use:** This module used AI in its creation.
+> - **Programming:** I am a skilled programmer by profession, but AI was used heavily as a co-pilot.
+> - **Strings:** ALL initial strings were created by AI. ALL initial translations were created by AI, and then human writers offered corrections.
+
 A [Foundry VTT](https://foundryvtt.com) module that resolves a battle, or a tense standoff, from the encounter on the scene, fairly and quickly, so the table can move on. It simulates the encounter thousands of times, round by round, with real dice math, and shows the odds. Then it tells the story of one fight drawn at random, and **Make it So** commits that fight to the tokens.
 
 - **Foundry:** v14
