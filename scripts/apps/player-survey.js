@@ -131,7 +131,7 @@ export class PlayerSurvey extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /**
    * Keep other people's edits flowing in without stealing focus. Playstyle changes alter what
-   * "Let them decide" means, so those re-render unless someone is typing.
+   * "Let them decide" means, so those re-render.
    */
   syncActor(actor) {
     if ( !this.rendered ) return;
@@ -140,8 +140,7 @@ export class PlayerSurvey extends HandlebarsApplicationMixin(ApplicationV2) {
     const sig = playstyleSignature(actor);
     const before = this.signatures.get(actor.uuid);
     this.signatures.set(actor.uuid, sig);
-    const typing = this.element.contains(document.activeElement) && document.activeElement?.tagName === "TEXTAREA";
-    if ( before !== undefined && before !== sig && !typing ) this.render();
+    if ( before !== undefined && before !== sig ) this.render();
   }
 
   static async #onChange(event) {

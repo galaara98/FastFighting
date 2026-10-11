@@ -285,8 +285,7 @@ Two boxes beside the playstyle pills: **"I don't like to use consumables"** and 
 - spending limited resources, healing others and drinking potions;
 - what to do when an ally is dying, and after being revived;
 - when to retreat, shield use and talking;
-- **others nearby:** stay with the fight, run for help when it goes badly, or hunt down enemies about;
-- notes for the GM.
+- **others nearby:** stay with the fight, run for help when it goes badly, or hunt down enemies about.
 
 Answers save as they're made, and two players sharing a token see each other's changes live. The planner shows each player's status, with a button to (re)open their survey.
 

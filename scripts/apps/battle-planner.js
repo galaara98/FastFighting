@@ -625,7 +625,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       await setTactic(actor, target.dataset.tactic, tacticValue);
       this.stale = true;
       if ( target.type === "checkbox" ) this.render();
-      return; // selects and notes: no re-render, keep focus; the actor update hook syncs other views
+      return; // selects: no re-render, keep focus; the actor update hook syncs other views
     } else if ( name === "storyStyle" ) {
       this.storyStyle = value;
     } else if ( name === "storyOdds" ) {

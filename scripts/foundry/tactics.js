@@ -37,7 +37,7 @@ function cleanDesire(raw) {
   if ( Number.isFinite(level) ) out.level = Math.max(0, Math.min(100, Math.round(level)));
   return out;
 }
-const MAX_NOTES = 2000;
+const MAX_ACTION_ID = 2000;
 const isPlain = v => !!v && typeof v === "object" && !Array.isArray(v);
 
 /**
@@ -51,8 +51,7 @@ export function sanitizeTactics(raw) {
     const v = raw[key];
     if ( v === "auto" || choices.includes(v) ) out[key] = v;
   }
-  if ( typeof raw.preferredAction === "string" ) out.preferredAction = raw.preferredAction.slice(0, MAX_NOTES);
-  if ( typeof raw.notes === "string" ) out.notes = raw.notes.slice(0, MAX_NOTES);
+  if ( typeof raw.preferredAction === "string" ) out.preferredAction = raw.preferredAction.slice(0, MAX_ACTION_ID);
   if ( Array.isArray(raw.playstyles) ) {
     const current = id => (Object.hasOwn(RENAMED_PLAYSTYLES, id) ? RENAMED_PLAYSTYLES[id] : id);
     out.playstyles = [...new Set(raw.playstyles.filter(id => typeof id === "string").map(current).filter(isPlaystyle))].slice(0, MAX_PLAYSTYLES);
@@ -292,7 +291,6 @@ export function questionsContext(spec, actor, uid, { questions: withQuestions = 
     withQuestions,
     questions,
     desires,
-    notes: withQuestions ? { name: `tactic-${uid}-notes`, value: stored.notes ?? "", label: loc("FASTFIGHTING.Tactics.notes.Label"), placeholder: loc("FASTFIGHTING.Tactics.notes.Hint") } : null,
     // (In alphabetical order, as the player reads them.)
     playstyles: PLAYSTYLE_IDS.map(id => ({
       id,
@@ -343,11 +341,11 @@ export function syncTacticsDom(root, actor) {
     const on = !!stored[cb.dataset.tactic];
     if ( cb.checked !== on && cb !== document.activeElement ) cb.checked = on;
   }
-  for ( const el of root.querySelectorAll(`select[data-tactic][data-actor-uuid="${actor.uuid}"], textarea[data-tactic][data-actor-uuid="${actor.uuid}"]`) ) {
+  for ( const el of root.querySelectorAll(`select[data-tactic][data-actor-uuid="${actor.uuid}"]`) ) {
     const key = el.dataset.tactic;
     const desire = DESIRE_KEY.exec(key);
     const value = desire ? (stored.desires?.[desire[1]]?.[desire[2]] ?? (desire[2] === "level" ? DESIRE_LEVELS.determined : ""))
-      : (stored[key] ?? (key === "notes" ? "" : "auto"));
+      : (stored[key] ?? "auto");
     if ( el === document.activeElement || el.value === String(value) ) continue;
     el.value = value;
     const q = el.closest(".ff-q");

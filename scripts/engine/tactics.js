@@ -22,8 +22,8 @@ export const TACTIC_CHOICES = Object.freeze({
   beyond: ["stay", "seekHelp", "hunt"]
 });
 
-/** Question keys in survey order. `preferredAction` and `notes` are special (dynamic choices, free text). */
-export const TACTIC_KEYS = Object.freeze(["preferredAction", "style", "target", "resourceUse", "talk", "healAggro", "potionThreshold", "allyDying", "selfRevived", "retreat", "shield", "beyond", "notes"]);
+/** Question keys in survey order. `preferredAction` is special (its choices are the character's own actions). */
+export const TACTIC_KEYS = Object.freeze(["preferredAction", "style", "target", "resourceUse", "talk", "healAggro", "potionThreshold", "allyDying", "selfRevived", "retreat", "shield", "beyond"]);
 
 const isOffense = a => a.kind !== "heal" && a.kind !== "buff";
 const usesResource = a => !!a.resource || Number.isFinite(a.uses);
@@ -93,8 +93,7 @@ export function suggestTactics(spec, defaults = {}, rules = null) {
     retreat: brave >= 70 ? "never" : "hurt",
     shield: spec.shield ? "spare" : "never",
     talk: suggestTalk(spec, rules),
-    beyond: "stay",
-    notes: ""
+    beyond: "stay"
   };
 }
 

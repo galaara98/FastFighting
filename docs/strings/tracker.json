@@ -12433,7 +12433,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "eee6b3eb8db7"
+   "hash": "eee6b3eb8db7",
+   "gone": "2026-10-11"
   },
   "core:FASTFIGHTING.Tactics.notes.Label": {
    "repo": "core",
@@ -12443,7 +12444,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "eb8440a72139"
+   "hash": "eb8440a72139",
+   "gone": "2026-10-11"
   },
   "core:FASTFIGHTING.Tactics.potionThreshold.25": {
    "repo": "core",

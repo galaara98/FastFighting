@@ -631,10 +631,6 @@
         "spare": "Raise it with spare actions",
         "never": "Don't bother"
       },
-      "notes": {
-        "Label": "Anything else the GM should know",
-        "Hint": "For example: protect Ezren at all costs; won't harm the dog."
-      },
       "talk": {
         "Label": "Talking instead of fighting",
         "Hint": "Whether this character tries to end fights with words: persuading, threatening or bluffing foes who share a language into surrendering, fleeing or switching sides. It takes several successes to convince most foes, and anyone this character has hurt or failed to convince is much harder to sway.",
