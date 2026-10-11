@@ -425,6 +425,16 @@ export function hasUndo(scene = canvas.scene) {
 }
 
 /** Put one undo record back: created documents removed, deleted ones restored, changed values reset. */
+/**
+ * The statuses on an actor, read from its effects too: a system that applies effects its own way (dcc) may leave
+ * actor.statuses empty.
+ */
+function statusesOf(actor) {
+  const out = new Set(actor?.statuses ?? []);
+  for ( const e of actor?.effects ?? [] ) if ( !e.disabled ) for ( const s of e.statuses ?? [] ) out.add(s);
+  return out;
+}
+
 async function revertRecord(r) {
   // Each step on its own: one that fails (a status the server has already dropped, say) mustn't stop the rest.
   const step = async (what, fn) => {
@@ -453,16 +463,16 @@ async function revertRecord(r) {
   }
   for ( const { id, update } of r.itemUpdates ?? [] ) await step("restoring an item", () => actor.items.get(id)?.update(update));
   for ( const s of r.statuses ?? [] ) {
-    if ( actor.statuses?.has(s.id) === s.active ) continue; // already as it was
+    if ( statusesOf(actor).has(s.id) === s.active ) continue; // already as it was
     await step(`status ${s.id}`, () => actor.toggleStatusEffect(s.id, { active: s.active, overlay: s.overlay }));
   }
   if ( Object.keys(r.actorUpdate ?? {}).length ) await step("restoring the actor", () => actor.update(r.actorUpdate));
   // Anything the system added along the way (dnd5e lays the unconscious down Prone) comes off too.
   if ( r.statusesBefore ) {
     const before = new Set(r.statusesBefore);
-    for ( const id of [...(actor.statuses ?? [])] ) {
+    for ( const id of [...statusesOf(actor)] ) {
       if ( before.has(id) || !CONFIG.statusEffects.some(s => s.id === id) ) continue;
-      await step(`status ${id}`, () => (actor.statuses.has(id) ? actor.toggleStatusEffect(id, { active: false }) : null));
+      await step(`status ${id}`, () => (statusesOf(actor).has(id) ? actor.toggleStatusEffect(id, { active: false }) : null));
     }
   }
   if ( r.tokenUpdate && tokenDoc ) await step("restoring the token", () => tokenDoc.update(r.tokenUpdate));

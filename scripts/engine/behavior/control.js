@@ -21,10 +21,11 @@
  */
 import { TACTICAL, clamp } from "../../constants.js";
 import { degreeDistribution } from "../probability.js";
-import { saveRoll, attackRoll, checkRoll, currentAc, defenseDc, liveTier } from "../battle-state.js";
+import { saveRoll, attackRoll, attackOptions, checkRoll, currentAc, defenseDc, liveTier } from "../battle-state.js";
 import { netAdvantage } from "../mods.js";
 import { meanDamageVs, saveMultiplier } from "./evaluate.js";
 import { outcomeWorth, hasFresh, concentrationCost, heldElsewhere } from "./effects.js";
+import { castChanceOf } from "./casting.js";
 
 /** How a control action is decided: "save", "check", "attack" or "auto". */
 export function rollKind(action) {
@@ -89,14 +90,15 @@ export function controlRoll(run, u, t, action, attacksMade = 0) {
     return { kind, mod: check.mod + map, dc: defenseDc(run, t, action.check.against ?? "will"), advantage: check.advantage, dice: null, rollKind: "check" };
   }
   const roll = attackRoll(run, u, t, action, attacksMade);
-  return { kind, mod: roll.bonus, dc: currentAc(run, t, u, action), advantage: roll.advantage, dice: roll.dice, rollKind: "attack" };
+  const opts = attackOptions(roll);
+  return { kind, mod: roll.bonus, dc: currentAc(run, t, u, action), advantage: roll.advantage, dice: roll.dice, rollKind: "attack", faces: opts.faces, critOn: opts.critOn, fumbleOn: opts.fumbleOn };
 }
 
 /** Chance of each degree, from the target's side for a save and from the user's otherwise ([1] for "auto": a hit). */
 function controlDistribution(run, u, t, action, attacksMade) {
   const roll = controlRoll(run, u, t, action, attacksMade);
   if ( roll.kind === "auto" ) return [0, 0, 1, 0];
-  let dist = [...degreeDistribution(run.prep.rules, roll.mod, roll.dc, { advantage: roll.advantage, kind: roll.rollKind, dice: roll.dice })];
+  let dist = [...degreeDistribution(run.prep.rules, roll.mod, roll.dc, { advantage: roll.advantage, kind: roll.rollKind, dice: roll.dice, faces: roll.faces ?? 20, critOn: roll.critOn ?? null, fumbleOn: roll.fumbleOn ?? null })];
   // Shifted degrees (incapacitation): the target fares better.
   const shift = degreeShift(run, u, t, action);
   if ( shift ) {
@@ -139,5 +141,5 @@ export function controlValue(run, u, action, t, attacksMade = 0) {
     value += action.save ? dist.reduce((s, p, d) => s + p * saveMultiplier(rules, d, action.save) * dmg, 0) : (dist[2] + dist[3]) * dmg;
   }
   const targets = action.area ? Math.max(1, action.area.targets ?? 2) : 1;
-  return Math.max(0, targets * value * (1 - immunity) - concentrationCost(run, u, action));
+  return Math.max(0, castChanceOf(u, action) * targets * value * (1 - immunity) - concentrationCost(run, u, action));
 }

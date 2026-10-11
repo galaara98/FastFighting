@@ -329,7 +329,8 @@
       "Aftermath": "After the fight",
       "Opening": "Opening",
       "AroundWalls": "around walls",
-      "ThroughWall": "no way round: through a wall"
+      "ThroughWall": "no way round: through a wall",
+      "NoScene": "No scene is showing on the canvas. View the encounter's scene, then run the battle."
     },
     "Results": {
       "Tab": {

@@ -602,6 +602,8 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
   static async #onRun() {
     if ( this.running ) return;
     if ( !getAdapter() ) return ui.notifications.warn(loc("FASTFIGHTING.Planner.NoAdapter"));
+    // The battle is read off the map: there has to be one on the canvas (there isn't right after a reload).
+    if ( !canvas.ready || !canvas.scene ) return ui.notifications.warn(loc("FASTFIGHTING.Planner.NoScene"));
     this.running = true;
     this.progress = 0;
     this.swing = null;

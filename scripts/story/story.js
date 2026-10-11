@@ -268,6 +268,14 @@ function narrate(e, roll, rel, fill) {
     // Letting one spell go for another passes without comment; losing hold of it doesn't.
     case "concentrationEnd": return e.reason === "switch" ? "" : roll("event.concentrationLost", { ...f, weapon: e.action ?? "" });
     case "shakeOff": return roll("event.shakeOff", { ...f, effect: e.effect ?? "" });
+    case "deed": return e.success ? roll("event.deed", { ...f, weapon: e.deed ?? "", effect: e.effect || "reeling" }) : "";
+    case "rider": return e.landed ? roll("event.riderTakes", { ...f, weapon: e.rider ?? "", effect: e.effect || "reeling" }) : (e.tell ? roll(`event.${e.tell}`, f) : "");
+    case "critTable": return !e.slain && e.effect ? roll("event.critEffect", { ...f, effect: e.effect }) : "";
+    case "fumble": return e.effect ? roll("event.fumbleEffect", { ...f, effect: e.effect }) : roll("event.fumble", f);
+    case "cast": return e.success ? "" : roll(e.lost ? "event.spellLost" : e.disapproved ? "event.disapproval" : "event.spellFails", f);
+    case "boost": return roll(e.self ? "event.boost" : "event.boostFor", { ...f, label: e.label ?? "luck", target: e.target ?? "" });
+    case "fate": return roll(e.self ? "event.fateSelf" : "event.fateFor", { ...f, label: e.label ?? "fate", target: e.target ?? "" });
+    case "body": return roll(e.alive ? "event.bodyAlive" : "event.bodyDead", f);
     case "allegiance": return roll(e.joined ? "event.allegianceTurn" : "event.allegianceBack", { ...f, by: e.by ?? "" });
     case "theft":
       if ( e.feint && !e.feint.hit ) return roll("event.feintMiss", { ...f, weapon: e.feint.weapon });
@@ -460,10 +468,24 @@ function standard(result, spec, title, labels) {
 /* -------------------------------------------- */
 
 function statLine(e) {
-  const roll = (nat, mod, total, dc, label) => `d20 ${nat} ${signed(mod)} = ${total} vs ${label} ${dc}`;
+  const roll = (nat, mod, total, dc, label, faces = 20) => `d${faces ?? 20} ${nat} ${signed(mod)} = ${total} vs ${label} ${dc}`;
   switch ( e.type ) {
     case "attack":
-      return `${e.actor} → ${e.target}: ${e.action} · ${roll(e.natural, e.mod, e.total, e.dc, "AC")} · ${DEGREE[e.degree]} (${signed(e.margin)})${e.damage ? ` · ${e.damage} ${e.damageType}` : ""}${e.attackNumber > 1 ? ` · attack #${e.attackNumber}` : ""}`;
+      return `${e.actor} → ${e.target}: ${e.action} · ${roll(e.natural, e.mod, e.total, e.dc, "AC", e.faces)}${e.deed !== null && e.deed !== undefined ? ` (deed ${e.deed})` : ""} · ${DEGREE[e.degree]} (${signed(e.margin)})${e.damage ? ` · ${e.damage} ${e.damageType}` : ""}${e.attackNumber > 1 ? ` · attack #${e.attackNumber}` : ""}${e.riders?.length ? ` · ${e.riders.join(", ")}` : ""}${e.critRoll !== null && e.critRoll !== undefined ? ` · crit table ${e.critRoll}` : ""}`;
+    case "deed": return `${e.actor} → ${e.target}: ${e.deed} · deed ${e.roll} · ${e.success ? (e.effect || "succeeds") : "fails"}`;
+    case "rider": {
+      const mended = Number.isFinite(e.roll) ? ` · +${e.roll}, ${e.made ? "now a hit" : "still a miss"}` : "";
+      const saved = e.saveType ? ` · ${e.saveType} d20 ${e.natural} = ${e.total} vs DC ${e.dc} · ${DEGREE[e.degree]}` : "";
+      return `${e.actor} → ${e.target}: ${e.rider}${mended}${saved}${e.effect ? ` · ${e.effect}` : ""}`;
+    }
+    case "critTable": return `${e.by} → ${e.actor}: crit table ${e.roll}${e.slain ? " · slain outright" : ""}${e.effect ? ` · ${e.effect}` : ""}${e.rowText ? ` (${e.rowText})` : ""}`;
+    case "fumble": return `${e.actor}: fumble table ${e.roll}${e.effect ? ` · ${e.effect}` : ""}${e.rowText ? ` (${e.rowText})` : ""}`;
+    case "cast": {
+      const how = e.success ? `works (result ${(e.tier ?? 0) + 1})`
+        : `${e.fumble ? "fumble" : e.disapproved ? "disapproval" : "fails"}${e.lost ? ", spell lost" : ""}${e.disapproval ? ` (disapproval ${e.disapproval})` : ""}`;
+      return `${e.actor}: ${e.action} · d${e.faces ?? 20} ${e.natural} ${signed(e.mod)} = ${e.total} · ${how}`;
+    }
+    case "boost": return `${e.actor} burns ${e.spent} ${e.label}${e.self ? "" : ` for ${e.target}`}: ${e.from} → ${e.to} vs ${e.dc} · ${e.made ? "made it" : "still short"}`;
     case "save":
       return `${e.target} saves vs ${e.actor}'s ${e.action} · ${e.saveType} ${roll(e.natural, e.mod, e.total, e.dc, "DC")} · ${DEGREE[e.degree]} (${signed(e.margin)}) · ${e.damage} ${e.damageType}`;
     case "auto": return `${e.actor} → ${e.target}: ${e.action} (no roll) · ${e.damage} ${e.damageType}`;

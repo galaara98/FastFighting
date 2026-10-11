@@ -6,6 +6,7 @@ A [Foundry VTT](https://foundryvtt.com) module that resolves a battle, or a tens
 - **System support comes from helper modules.** See [systems.md](systems.md):
   - [FastFighting PF2e](https://github.com/galaara98/FastFighting-PF2e) for Pathfinder Second Edition
   - [FastFighting D&D 5e](https://github.com/galaara98/FastFighting-DnD5e) for Dungeons & Dragons Fifth Edition
+  - [FastFighting DCC](https://github.com/galaara98/FastFighting-DCC) for Dungeon Crawl Classics (and Xcrawl Classics)
 - **Without a helper** for your world's system, FastFighting stays inactive. Its settings are greyed out, and the settings window and Combat Tracker point you to systems.md. An experimental generic d20 adapter can be switched on instead.
 
 ## Installation
@@ -167,6 +168,12 @@ Two boxes beside the playstyle pills: **"I don't like to use consumables"** and 
 - **Afflictions:** stage by stage, with onset.
 - **Persistent damage.**
 - **Riders:** knockdown, grab, sneak attack, pack attack or Pack Tactics, and saves on a hit (a wolf's bite: Strength or prone; a spider's venom: half on a success).
+- **What a hit can carry, for a price:** extras a creature adds to a hit when it thinks it worth spending on (a smite's spell slot, a stunning strike's ki, a maneuver's superiority die), and a die that mends a close miss. The emptier the pool, the more a use has to be worth; conservers want more, those going all out less.
+- **Deeds:** a deed die rolled with every attack, added to the roll and the damage, and a deed declared before it (DCC Mighty Deeds: trip, blind, disarm, a defensive stance) that happens on a hit if the die shows enough.
+- **Crit and fumble tables:** where a system crits by table instead of doubling (DCC), a crit rolls on the attacker's table for extra damage and a lasting effect, and a fumble on the fumbler's.
+- **Action dice other than a d20:** a giant's d24, a second action on a d16, crit ranges scaled to the die.
+- **Checks that pick the result:** a spell check whose total says what the spell does (DCC), with spells lost on a failure or a god's patience wearing thin.
+- **Luck:** points burned after a roll falls short to make it (DCC), the more readily the more is at stake; some spend it for friends.
 - **Crowd control:** spells that slow, frighten, trip, immobilize, paralyze or put foes to sleep, by degree of success, for their duration.
   - They're valued by the damage they prevent.
   - The system's tags decide immunity (mental, fear, sleep and others), and some systems let strong targets resist better (PF2e incapacitation).
@@ -265,11 +272,11 @@ All settings are defaults that the planner can override per battle:
 
 ## For system and module developers
 
-FastFighting is split into a pure simulation engine (`scripts/engine/`), system **helpers**, and the Foundry UI. The core owns only its own ideas: personality, morale, leadership, positioning, standoffs, the story, and how creatures leave a fight. Every game rule comes from the helper. FastFighting PF2e and FastFighting D&D 5e are reference implementations of two very different systems.
+FastFighting is split into a pure simulation engine (`scripts/engine/`), system **helpers**, and the Foundry UI. The core owns only its own ideas: personality, morale, leadership, positioning, standoffs, the story, and how creatures leave a fight. Every game rule comes from the helper. FastFighting PF2e, FastFighting D&D 5e and FastFighting DCC are reference implementations of three very different systems.
 
 ```js
 Hooks.once("fastFighting.init", api => {
-  if ( (api.version ?? 1) < 4 ) return; // the helper interface this is written against
+  if ( (api.version ?? 1) < 5 ) return; // the helper interface this is written against
   class MySystemAdapter extends api.SystemAdapter {
     get label() { return "My System"; }
     get rules() { return myRules; }
@@ -298,7 +305,8 @@ Declare your system in `module.json` (`relationships.systems`) so Foundry only o
   - `movement` is `"actions"` (each move costs an action) or `"feet"` (spend movement, then Dash).
   - `costOf(action)`, `basicAction`, `talkCost`, `stealCost`, `feintCost`, `firstAidCost`, `shieldCost` and `standCost(u)` set what things cost.
 - **Rolls:**
-  - `degreeOfSuccess(natural, total, dc, kind)` returns 0–3, where `kind` is attack, save or check;
+  - `degreeOfSuccess(natural, total, dc, kind, die)` returns 0–3, where `kind` is attack, save or check, and `die` (when it isn't a plain d20) is `{faces, critOn, fumbleOn}`: the die rolled, the d20-relative natural that threatens a crit (the rules scale it to the die) and the natural at or under which it fumbles;
+  - `actionDie(u, n)`: the die a creature's n-th action this turn rolls (DCC action dice), when actions don't say;
   - `roll(rng, mod, dc, {advantage, kind})`;
   - `attackPenalty(action, attacksMade)`;
   - `saveMultiplier(degree, save)`, `afflictionStep(degree, phase)`, `critical(parts)` and `healCheckMultiplier(degree)`;
@@ -316,6 +324,7 @@ Declare your system in `module.json` (`relationships.systems`) so Foundry only o
 - **Reactions:** `opportunity(reactor, mover)` returns the strike a creature makes at a foe leaving its reach, or null if it can't; `reactions(u)` (default 1 a round); `disengage(u)` returns `{cost, label}`, how to leave safely. `bestReactionStrike(u)` in core-api picks the usual strike.
 - **What's typical for a level:** `typical.ac`, `save`, `skill` and `dc`.
 - **Per-fight state:** `initUnit(u)` and `capture(u)`.
+- **After the fight:** `recoverBody(u, rng)`: a dead player character's last chance once friends reach it (DCC: roll the body). It sets the unit's status and hit points and returns the line to log.
 - **The story:** `storyDamageType(type)` maps your damage types onto the story's imagery.
 
 **Senses, fate and what's already on a creature:**
@@ -324,6 +333,14 @@ Declare your system in `module.json` (`relationships.systems`) so Foundry only o
 - `spec.mods`: bonuses already on it when the fight starts (one, or a list), but only what the system's own numbers don't already include.
 - `rules.knockOut(u)` (a blow from someone who never kills) and `rules.secondsPerRound` (default 6, for the GM's summary).
 - Lingering effects: `final.effects` lists what's still running; `commitOutcome`'s `options.effectSource(id)` finds the action that laid each, whose `effectRef` (the helper's own) says what to copy onto the creature.
+
+**Dice, deeds, tables, checks and Luck in a CombatantSpec** (see `behavior/riders.js`, `behavior/casting.js` and `behavior/luck.js`):
+- On an action: `die` (its own die), `critOn`, `fumbleOn`, `deedDie` (rolled with the attack, added to the roll and the damage), `crit: {die, mod, rows}` (its crit table), `repeat` (a DamagePart: how many times the damage is rolled), `healDice` (so many of the target's own hit dice, `spec.hitDie`).
+- A table row: `{lo, hi, damage, multiply, outcome, self, slay}`. `spec.fumble`: the fumbler's table, `{die, mod, rows}`. `spec.critAgainst`: taken off crit rolls made against it by anyone but a player character.
+- `spec.riders`: `[{id, label, when: "hit" | "miss", melee, ranged, weapon, resource, amount, uses, oncePerTurn, damage, critDouble, save, onSave, outcome, attackDie, tell}]`.
+- `spec.deeds`: `[{id, label, melee, ranged, tiers: [{min, outcome}]}]` (an outcome with `self` lands on the one who did it).
+- A check with tiers: `casting: {mod, faces, fumbleOn, lostOnFail, disapproval, label}`, `tiers: [{min, max, ...fields}]` (a save's `dc: "check"` is the check's total), `castChance`; the action's own fields are what a success most often does.
+- `spec.boosts`: `[{pool, label, per, faces, allies, range, kinds, keep, recovers}]`, spending `spec.resources[pool]`.
 
 **Buffs, debuffs and control in a CombatantSpec** (see `scripts/engine/mods.js`, `behavior/effects.js`, `behavior/control.js` and `behavior/support.js`):
 - **An outcome** is `{conditions, mods, tempHp, mark, iwr, actionsNow, rounds, label, endsOnDamage, endsOnHarm, repeatSave: {type, dc}, onlyVs, self}`, all optional. `mods` holds `attack`, `ac`, `saves`, `checks`, `damage`, `speed`, `actions` (numbers), `attackDie` / `saveDie` (signed faces: 4 is +1d4), and `adv`, `defAdv`, `saveAdv` (+1 or -1). The engine's own conditions are `prone`, `immobilized`, `incapacitated` and `controlled`.

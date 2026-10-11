@@ -57,6 +57,15 @@
  * @property {string} [resource]            Pool key consumed per use
  * @property {number} [uses]                Uses per battle when not pool-based
  * @property {boolean} [attack]             Counts toward MAP
+ * @property {number} [die]                 The die its attack rolls, if not the creature's usual (DCC action dice)
+ * @property {number} [critOn]              A natural this high threatens a crit (the system scales it to the die)
+ * @property {number} [fumbleOn]            A natural this low fumbles
+ * @property {number} [deedDie]             A die rolled with each attack, added to the roll and the damage; it
+ *                                          decides the creature's deeds (DCC Mighty Deeds: spec.deeds, riders.js)
+ * @property {object} [crit]                Its crit table: {die, mod, rows} (see riders.js)
+ * @property {object} [repeat]              A DamagePart: how many times the damage is rolled (DCC magic missiles)
+ * @property {number} [healDice]            Heals this many of the target's own hit dice (spec.hitDie)
+ * @property {object} [casting]             A check whose total picks what it does, with tiers (see casting.js)
  *
  * @typedef {object} BattleSpec
  * @property {CombatantSpec[]} combatants
@@ -178,6 +187,10 @@ export function createRun(prep) {
       resources,
       resourcesStart: { ...resources },
       uses,
+      lost: null,            // spells it lost to a failed check (DCC wizards), by action id
+      disapproval: null,     // a DCC cleric's disapproval range, once a failure has widened it
+      riderUses: null,       // limited riders used (riders.js)
+      actsThisTurn: 0,       // actions taken this turn (which of several action dice the next one rolls)
       advance: 0,
       adjacent: new Set(),
       losGained: new Set(),
@@ -232,6 +245,7 @@ export function createRun(prep) {
     prep,
     units,
     fateInPlay: units.some(u => (u.resources.fate ?? 0) > 0), // anyone with hero points or the like to spend
+    boosting: units.some(u => u.spec.boosts?.length),       // anyone who can burn Luck (or the like) on a roll
     byId: new Map(units.map(u => [u.id, u])),
     round: 0,
     sideFocus: {},
@@ -424,7 +438,8 @@ export function turnFor(run, u) {
 
 /**
  * Everything that adjusts an attack roll: the rules' situation (prone, conditions, range, ...), plus wavering,
- * leadership and having studied the foe. Returns {bonus, advantage}.
+ * leadership and having studied the foe. Returns {bonus, advantage, dice, faces, critOn, fumbleOn, deed}: dice ride
+ * along (Bless), faces is the die rolled, deed a deed die's faces (rolled apart: it also adds to the damage).
  */
 export function attackRoll(run, u, target, action, attacksMade = 0) {
   const rules = run.prep.rules;
@@ -437,8 +452,26 @@ export function attackRoll(run, u, target, action, attacksMade = 0) {
   return {
     bonus: bonus + (m.bonus ?? 0),
     advantage: netAdvantage(m.advantage ?? 0, u.mods?.adv ?? 0, target.mods?.defAdv ?? 0),
-    dice: u.mods?.attackDie ?? null
+    dice: u.mods?.attackDie ?? null,
+    faces: dieFor(run, u, action),
+    critOn: action.critOn ?? null,
+    fumbleOn: action.fumbleOn ?? null,
+    deed: action.deedDie ?? null
   };
+}
+
+/** The die an action rolls: its own, else the system's for the creature's next action (DCC action dice), else a d20. */
+export function dieFor(run, u, action) {
+  return action.die ?? run.prep.rules.actionDie?.(u, u.actsThisTurn ?? 0) ?? 20;
+}
+
+/**
+ * How to roll (or weigh) an attack from attackRoll's result: the die, its crit and fumble ranges, the dice riding
+ * along. With `deed`, the deed die rides along too (for the odds; the simulation rolls it apart).
+ */
+export function attackOptions(r, { deed = false } = {}) {
+  const dice = deed && r.deed ? [...(r.dice ?? []), r.deed] : r.dice;
+  return { advantage: r.advantage, dice: dice?.length ? dice : null, kind: "attack", faces: r.faces ?? 20, critOn: r.critOn ?? null, fumbleOn: r.fumbleOn ?? null };
 }
 
 /** Does a bonus-damage condition hold for this hit? */

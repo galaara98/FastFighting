@@ -6,12 +6,12 @@
  */
 import { STATUS, TACTICAL, DOWNED_MODELS, AFTERMATH, EXECUTE_LUCK, clamp } from "../constants.js";
 import { createRng, deriveSeed, randomSeed } from "./rng.js";
-import { sampleDamage, samplePart } from "./dice.js";
-import { rollCheck } from "./probability.js";
+import { sampleDamage, samplePart, meanPart, part } from "./dice.js";
+import { rollCheck, regrade } from "./probability.js";
 import { costOf, mainPool } from "./turn.js";
 import {
   prepareBattle, createRun, isStanding, isUp, enemiesOf, alliesOf, areEnemies, liveTier, liveTrait, currentAc,
-  attackRoll, saveRoll, checkRoll, turnFor, moveToward, moveAway, bonusDamageParts, dispositionOf,
+  attackRoll, attackOptions, saveRoll, checkRoll, turnFor, moveToward, moveAway, bonusDamageParts, dispositionOf,
   behaviorOf, edgeDistance, movesNeeded, approach, canMove, moveTowardPoint
 } from "./battle-state.js";
 import { sampleRunTactics } from "./playstyles.js";
@@ -20,7 +20,10 @@ import { decideHeal, rescueOption, healScores } from "./behavior/healing.js";
 import { initDesires, newTurn, think, want, thwart, relieve, levelOf, mind, thoughts as thoughtsOf, levelsFromScores, listen, remember, styleWants, styleOf, CHOICE_LEVEL } from "./behavior/desire.js";
 import { prepareDoors, doorStates, doorAhead, atDoor, doorPlan, patienceFor, doorDamage } from "./behavior/doors.js";
 import { checkMorale, MORALE } from "./behavior/morale.js";
-import { expectedDamage, spendUse, attacksIn, criticalParts, saveMultiplier } from "./behavior/evaluate.js";
+import { expectedDamage, spendUse, attacksIn, criticalParts, saveMultiplier, meanDamageVs } from "./behavior/evaluate.js";
+import { chooseDeed, deedTier, chooseHitRiders, rescueMiss, rollCrit, rollFumble } from "./behavior/riders.js";
+import { cast } from "./behavior/casting.js";
+import { boost } from "./behavior/luck.js";
 import { createAggregator } from "./aggregate.js";
 import { talkActionsThisTurn, choosePitch, attemptTalk } from "./behavior/talk.js";
 import { opensWithTalk, breaksStandoff, standoffPitches, charismaticLeader } from "./behavior/standoff.js";
@@ -50,6 +53,36 @@ function log(run, u, text, data = {}) {
 }
 
 const primaryType = action => (action.damage ?? action.heal ?? [])[0]?.type ?? "untyped";
+
+/** The run's logger, for helpers that log as they go (see luck.js). */
+const logger = run => (run.logTo ??= (unit, text, data) => log(run, unit, text, data));
+
+/**
+ * How much rides on a save (for burning Luck on one that falls short): a blow that would drop the saver, or a hold
+ * on it, matters most.
+ */
+function saveStakes(target, damage = 0, controls = false) {
+  let s = controls ? 0.7 : 0.2;
+  if ( damage > 0 ) s = Math.max(s, damage >= target.hp + target.temp ? 0.95 : 0.25 + 0.5 * damage / Math.max(1, target.hp));
+  return Math.min(1, s);
+}
+
+/** How much rides on an attack landing: a foe it would finish, a friend down and in danger. */
+function attackStakes(run, u, t, action) {
+  let s = 0.15;
+  if ( t.hp <= meanDamageVs(run, action, t).normal ) s += 0.35;
+  if ( run.units.some(a => a.side === u.side && a.status === STATUS.DOWN && !a.stable) ) s += 0.25;
+  return Math.min(1, s);
+}
+
+/** A save the target makes, with Luck burned on it if it falls short and someone will. */
+function rollSave(run, target, type, dc, { stakes = 0.3, label = "" } = {}) {
+  const rules = run.prep.rules;
+  const s = saveRoll(run, target, type);
+  let roll = rollCheck(rules, run.rng, s.mod, dc, { advantage: s.advantage, dice: s.dice, kind: "save" });
+  if ( run.boosting && roll.degree < 2 ) roll = boost(run, target, roll, dc, { kind: "save", stakes, label }, logger(run));
+  return { roll, mod: s.mod };
+}
 
 /** How a degree of success moves an affliction along: on first exposure, and at each later save. */
 function afflictionStep(rules, degree, phase) {
@@ -384,8 +417,8 @@ function applyEffects(run, u, action, target, degree) {
  */
 function saveRider(run, u, action, target, effect) {
   const rules = run.prep.rules;
-  const { mod, advantage, dice } = saveRoll(run, target, effect.save.type);
-  const roll = rollCheck(rules, run.rng, mod, effect.save.dc, { advantage, dice, kind: "save" });
+  const harmful = (effect.damage ?? []).reduce((s, p) => s + Math.max(0, meanPart(p)), 0);
+  const { roll, mod } = rollSave(run, target, effect.save.type, effect.save.dc, { stakes: saveStakes(target, harmful, !!effect.conditions), label: effect.label || action.name });
   const mult = effect.damage?.length ? saveMultiplier(rules, roll.degree, effect.save) : 0;
   const hit = mult > 0 ? rollHit(run, u, action, target, effect.damage, mult, false) : null;
   log(run, target, `${effect.label || action.name}: ${effect.save.type} save ${DEGREE_LABEL[roll.degree]}${hit ? `, ${hit.total} damage` : ""}`, {
@@ -404,6 +437,11 @@ function saveRider(run, u, action, target, effect) {
 function rollHit(run, u, action, t, parts, multiplier, crit, minimum = 0) {
   const rules = run.prep.rules;
   const rolled = sampleDamage(parts, run.rng, multiplier);
+  // Rolled several times over (DCC magic missiles: so many missiles of so much each).
+  for ( let n = action.repeat ? Math.max(1, samplePart(action.repeat, run.rng)) : 1; n > 1; n-- ) {
+    const more = sampleDamage(parts, run.rng, multiplier);
+    for ( const [k, v] of Object.entries(more.byType) ) rolled.byType[k] = (rolled.byType[k] ?? 0) + v;
+  }
   // Some systems guarantee a hit does at least some damage before resistances (PF2e: 1).
   if ( minimum > 0 ) {
     const types = Object.keys(rolled.byType);
@@ -427,7 +465,39 @@ function nextTargetInReach(run, u, action) {
   return enemiesOf(run, u).filter(o => isStanding(o) && movesNeeded(run, u, o, action) === 0).sort((a, b) => a.hp - b.hp)[0] ?? null;
 }
 
+/**
+ * A check whose total picks what the action does (DCC spell checks): rolled first, logged, and the action as it is at
+ * that result returned (null if it failed: the spell may be lost, a cleric's disapproval widened).
+ */
+function castFor(run, u, action, target = null) {
+  const stakes = target && !areEnemies(run, u, target) && target.status === STATUS.DOWN ? 0.9 : 0.5;
+  const result = cast(run, u, action, { stakes, log: logger(run) });
+  const r = result.roll;
+  const tier = result.action ? tierIndex(run, action, result.action) : null;
+  log(run, u, result.action
+    ? `${action.name}: ${action.casting.label ?? "check"} ${r.total}`
+    : `${action.name}: ${action.casting.label ?? "check"} ${r.total}, ${result.fumble ? "a fumble" : result.disapproved ? "disapproval" : "it fails"}${result.lost ? ", and the spell is lost" : ""}`, {
+    type: "cast", action: action.name, natural: r.natural, mod: Number(action.casting.mod) || 0, total: r.total, faces: result.faces,
+    success: !!result.action, tier, fumble: !!result.fumble, disapproved: !!result.disapproved, lost: !!result.lost,
+    disapproval: u.disapproval ?? null, target: target?.spec.name ?? null, targetId: target?.id ?? null
+  });
+  // A save against it whose DC is the check itself (DCC: the spell check total).
+  if ( result.action?.save?.dc === "check" ) return { ...result.action, save: { ...result.action.save, dc: r.total } };
+  return result.action;
+}
+
+/** Which of an action's tiers this is (0 the lowest). */
+function tierIndex(run, action, tierAction) {
+  return run.prep.tierActions?.get(action.id)?.indexOf(tierAction) ?? null;
+}
+
 function executeOffense(run, u, action, t, attacksMade) {
+  if ( action.casting ) {
+    const tier = castFor(run, u, action, t);
+    run.blood = true;
+    if ( !tier || tier.kind === "heal" || tier.kind === "buff" ) return;
+    action = tier;
+  }
   // A multiattack (or Extra Attack) makes its strikes in order, turning to a new foe if the first one drops.
   if ( action.sequence?.length ) {
     let made = attacksMade;
@@ -493,8 +563,7 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
 
     if ( action.kind === "save" && action.save ) {
       const extra = bonusDamageParts(run, u, action, target, { commit: true });
-      const { mod, advantage, dice } = saveRoll(run, target, action.save.type);
-      const roll = rollCheck(rules, run.rng, mod, action.save.dc, { advantage, dice, kind: "save" });
+      const { roll, mod } = rollSave(run, target, action.save.type, action.save.dc, { stakes: saveStakes(target, meanDamageVs(run, action, target).normal, !!action.effects?.length), label: action.name });
       const mult = saveMultiplier(rules, roll.degree, action.save);
       const data = !logging ? null : { type: "save", ...common, saveType: action.save.type, natural: roll.natural, mod: mod + (roll.die ?? 0), total: roll.total, dc: action.save.dc, degree: roll.degree, margin: roll.total - action.save.dc };
       if ( mult > 0 ) {
@@ -506,23 +575,116 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
       return;
     }
 
-    const { bonus, advantage, dice } = attackRoll(run, u, target, action, attacksMade);
+    const r = attackRoll(run, u, target, action, attacksMade);
+    const { bonus, advantage } = r;
+    const opts = attackOptions(r);
+    // A deed is declared before the roll (DCC Mighty Deeds); the deed die adds to the roll and, on a hit, the damage.
+    const deed = r.deed ? chooseDeed(run, u, action, target) : null;
+    const deedRoll = r.deed ? run.rng.die(r.deed) : 0;
     const ac = currentAc(run, target, u, action);
-    const roll = rollCheck(rules, run.rng, bonus, ac, { advantage, dice, kind: "attack" });
-    const data = !logging ? null : { type: "attack", ...common, natural: roll.natural, mod: bonus + (roll.die ?? 0), total: roll.total, dc: ac, degree: roll.degree, margin: roll.total - ac, attackNumber: attacksMade + 1 };
+    let roll = rollCheck(rules, run.rng, bonus + deedRoll, ac, opts);
+    if ( run.boosting && roll.degree < 2 ) roll = boost(run, u, roll, ac, { kind: "attack", stakes: attackStakes(run, u, target, action), options: opts, label: action.name }, logger(run));
+    // A close miss a die can mend (5e Precision Attack).
+    if ( roll.degree === 1 && u.spec.riders ) {
+      const mend = rescueMiss(run, u, action, target, ac - roll.total);
+      if ( mend ) {
+        roll = { ...roll, total: roll.total + mend.roll };
+        roll.degree = regrade(rules, roll, ac, "attack", opts);
+        if ( logging ) log(run, u, `${mend.rider.label}: +${mend.roll}`, { type: "rider", rider: mend.rider.label, tell: mend.rider.tell ?? null, target: target.spec.name, targetId: target.id, roll: mend.roll, made: roll.degree >= 2 });
+      }
+    }
+    const data = !logging ? null : { type: "attack", ...common, natural: roll.natural, mod: bonus + deedRoll + (roll.die ?? 0), total: roll.total, dc: ac, degree: roll.degree, margin: roll.total - ac, attackNumber: attacksMade + 1, faces: opts.faces, deed: r.deed ? deedRoll : null };
     if ( roll.degree >= 2 ) {
       const crit = roll.degree === 3;
       const extra = bonusDamageParts(run, u, action, target, { advantage, commit: true });
+      const riders = u.spec.riders ? chooseHitRiders(run, u, action, target, { crit }) : [];
+      const table = crit ? rollCrit(run, u, action, target) : null;
       const base = crit ? (action.critDamage ?? criticalParts(rules, action.damage)) : (action.damage ?? []);
-      const parts = extra.length ? base.concat(crit ? criticalParts(rules, extra) : extra) : base;
-      const hit = rollHit(run, u, action, target, parts, 1, crit, rules.minimumDamage ?? 0);
-      if ( logging ) log(run, u, `${action.name} → ${target.spec.name}: ${roll.total} vs AC ${ac}, ${crit ? "critical hit" : "hit"} for ${hit.total}`, { ...data, damage: hit.total, crit, sneak: extra.length > 0, advantage });
+      const more = crit ? criticalParts(rules, extra) : [...extra];
+      for ( const x of riders ) if ( x.damage?.length ) more.push(...(crit && x.critDouble ? criticalParts(rules, x.damage) : x.damage));
+      if ( table?.row?.damage?.length ) more.push(...table.row.damage);
+      if ( deedRoll ) more.push(part([], deedRoll, primaryType(action)));
+      const hit = rollHit(run, u, action, target, more.length ? base.concat(more) : base, 1, crit, rules.minimumDamage ?? 0);
+      if ( logging ) log(run, u, `${action.name} → ${target.spec.name}: ${roll.total} vs AC ${ac}, ${crit ? "critical hit" : "hit"} for ${hit.total}`, {
+        ...data, damage: hit.total, crit, sneak: extra.length > 0, advantage, riders: riders.map(x => x.label), critRoll: table?.total ?? null, critRowText: table?.row?.text ?? null
+      });
       hit.apply();
       applyEffects(run, u, action, target, roll.degree);
-    } else if ( logging ) {
-      log(run, u, `${action.name} → ${target.spec.name}: ${roll.total} vs AC ${ac}, miss`, { ...data, damage: 0, advantage });
+      if ( table?.row ) applyCritRow(run, u, target, table);
+      for ( const x of riders ) applyRider(run, u, action, target, x);
+      if ( deed ) applyDeed(run, u, target, deed, deedRoll);
+    } else {
+      if ( logging ) log(run, u, `${action.name} → ${target.spec.name}: ${roll.total} vs AC ${ac}, ${roll.degree === 0 ? "fumble" : "miss"}`, { ...data, damage: 0, advantage });
+      if ( deed && logging ) log(run, u, `${deed.label}: the attack misses`, { type: "deed", deed: deed.label, target: target.spec.name, targetId: target.id, roll: deedRoll, success: false });
+      if ( roll.degree === 0 && u.spec.fumble ) applyFumble(run, u);
     }
   }
+}
+
+/** A crit table's row: its lasting effect on the foe (and on the attacker, rarely); some simply kill. */
+function applyCritRow(run, u, target, { row, total }) {
+  if ( row.slay && target.status !== STATUS.DEAD ) {
+    if ( target.status === STATUS.STANDING ) dealDamage(run, u, target, target.hp + target.temp, { crit: true });
+    if ( target.status === STATUS.DOWN ) {
+      target.status = STATUS.DEAD;
+      target.killerId = u.id;
+      log(run, target, "is slain outright", { type: "death", by: u.spec.name, byId: u.id, crit: true });
+    }
+  }
+  if ( row.outcome && isUp(target) && !isImmune(run, target, { id: `crit:${u.id}:${row.lo}`, onSave: [row.outcome] }) ) {
+    applyOutcome(target, row.outcome, u.id, { id: `crit:${u.id}`, name: row.outcome.label ?? "a crippling blow" });
+    testConcentration(run, target);
+  }
+  if ( row.self && isUp(u) ) applyOutcome(u, row.self, u.id, { id: `critSelf:${u.id}`, name: row.self.label ?? "" });
+  log(run, target, row.outcome?.label ? `is left ${row.outcome.label}` : "takes a crippling blow", { type: "critTable", by: u.spec.name, byId: u.id, roll: total, effect: row.outcome?.label ?? "", rowText: row.text ?? null, slain: !!row.slay });
+}
+
+/** A fumble table's row: what befalls the one who fumbled. */
+function applyFumble(run, u) {
+  const table = rollFumble(run, u);
+  if ( !table?.row ) return;
+  const { row, total } = table;
+  if ( row.damage?.length ) {
+    const amount = run.prep.rules.applyIwr(iwrOf(u), sampleDamage(row.damage, run.rng).byType);
+    if ( amount > 0 ) dealDamage(run, null, u, amount);
+  }
+  if ( row.outcome && isUp(u) ) applyOutcome(u, row.outcome, u.id, { id: `fumble:${u.id}`, name: row.outcome.label ?? "a fumble" });
+  log(run, u, row.outcome?.label ? `fumbles and is left ${row.outcome.label}` : "fumbles", { type: "fumble", roll: total, effect: row.outcome?.label ?? "", rowText: row.text ?? null });
+}
+
+/** An on-hit rider's lasting part: a save against it, or simply what it does. */
+function applyRider(run, u, action, target, rider) {
+  let outcome = rider.save ? null : rider.outcome;
+  let roll = null;
+  if ( rider.save && isUp(target) ) {
+    roll = rollSave(run, target, rider.save.type, rider.save.dc, { stakes: 0.6, label: rider.label }).roll;
+    outcome = rider.onSave?.[roll.degree] ?? (roll.degree < 2 ? rider.outcome : null);
+  }
+  const fake = { id: `rider:${rider.id}`, traits: rider.traits, onSave: outcome ? [outcome] : [] };
+  const landed = !!outcome && isUp(target) && !isImmune(run, target, fake);
+  if ( landed ) {
+    applyOutcome(target, outcome, u.id, { id: `rider:${rider.id}`, name: rider.label });
+    testConcentration(run, target);
+  }
+  if ( run.log ) log(run, u, `${rider.label} → ${target.spec.name}${outcome ? (landed ? `: ${outcome.label ?? "it takes"}` : ": no effect") : rider.save ? ": resisted" : ""}`, {
+    type: "rider", rider: rider.label, tell: rider.tell ?? null, target: target.spec.name, targetId: target.id, effect: landed ? (outcome.label ?? "") : "",
+    saveType: rider.save?.type ?? null, natural: roll?.natural ?? null, total: roll?.total ?? null, dc: rider.save?.dc ?? null, degree: roll?.degree ?? null, landed
+  });
+}
+
+/** A declared deed whose attack hit: it happens if the deed die showed enough. */
+function applyDeed(run, u, target, deed, deedRoll) {
+  const tier = deedTier(deed, deedRoll);
+  // (A defensive deed lands on the one who did it.)
+  const on = tier?.outcome?.self ? u : target;
+  const landed = !!tier && isUp(on) && (on === u || !isImmune(run, target, { id: `deed:${deed.id}:${tier.min}`, onSave: [tier.outcome] }));
+  if ( landed ) {
+    applyOutcome(on, tier.outcome, u.id, { id: `deed:${deed.id}`, name: deed.label });
+    if ( on === target ) testConcentration(run, target);
+  }
+  log(run, u, `${deed.label} (deed ${deedRoll}) → ${target.spec.name}: ${landed ? (tier.outcome?.label ?? "done") : "fails"}`, {
+    type: "deed", deed: deed.label, target: target.spec.name, targetId: target.id, roll: deedRoll, success: landed, effect: landed ? (tier.outcome?.label ?? "") : ""
+  });
 }
 
 /* -------------------------------------------- */
@@ -665,7 +827,13 @@ function executeControl(run, u, action, target, attacksMade, common) {
   const r = controlRoll(run, u, target, action, attacksMade);
   const dc = r.dc ?? null;
   const roll = r.kind === "auto" ? { natural: null, total: null, degree: 2, mod: null }
-    : (() => { const x = rollCheck(rules, run.rng, r.mod, r.dc, { advantage: r.advantage, dice: r.dice, kind: r.rollKind }); return { ...x, mod: r.mod + (x.die ?? 0) }; })();
+    : (() => {
+      const opts = { advantage: r.advantage, dice: r.dice, kind: r.rollKind, faces: r.faces ?? 20, critOn: r.critOn ?? null, fumbleOn: r.fumbleOn ?? null };
+      let x = rollCheck(rules, run.rng, r.mod, r.dc, opts);
+      // Luck: the target on a save against it, the user on its own roll.
+      if ( run.boosting && x.degree < 2 ) x = boost(run, r.kind === "save" ? target : u, x, r.dc, { kind: r.rollKind, stakes: r.kind === "save" ? 0.7 : 0.3, options: opts, label: action.name }, logger(run));
+      return { ...x, mod: r.mod + (x.die ?? 0) };
+    })();
   // Some effects hold weaker on much stronger targets (PF2e incapacitation): their result counts one better.
   const shift = r.kind === "auto" ? 0 : degreeShift(run, u, target, action);
   const degree = Math.max(0, Math.min(3, roll.degree + (action.save ? shift : -shift)));
@@ -699,6 +867,11 @@ function executeControl(run, u, action, target, attacksMade, common) {
 
 /** A buff on its recipients (the user too, for an aura). An action it gains at once (Action Surge) goes on the turn. */
 function executeBuff(run, u, action, targets, worth = 0, turn = null) {
+  if ( action.casting ) {
+    const tier = castFor(run, u, action, targets[0] ?? null);
+    if ( !tier || tier.kind !== "buff" ) return spendUse(u, action);
+    return executeBuff(run, u, { ...tier, id: action.id }, targets, worth, turn);
+  }
   if ( action.oncePerTurn ) (u.usedThisTurn ??= new Set()).add(action.id);
   const now = Number(action.outcome?.actionsNow) || 0;
   if ( now > 0 && turn && targets.includes(u) ) turn.pools[mainPool(run.prep.rules)] = (turn.pools[mainPool(run.prep.rules)] ?? 0) + now;
@@ -725,6 +898,12 @@ function executeBuff(run, u, action, targets, worth = 0, turn = null) {
 
 function executeHeal(run, u, action, target) {
   const rules = run.prep.rules;
+  if ( action.casting ) {
+    const tier = castFor(run, u, action, target);
+    u.healedTargets.add(`${action.id}|${target.id}`);
+    if ( !tier || tier.kind !== "heal" ) return spendUse(u, action);
+    return executeHeal(run, u, { ...tier, id: action.id }, target);
+  }
   let multiplier = 1;
   let roll = null;
   if ( action.healCheck ) {
@@ -741,7 +920,10 @@ function executeHeal(run, u, action, target) {
       multiplier = rules.healCheckMultiplier ? rules.healCheckMultiplier(roll.degree) : [0, 0, 1, 2][roll.degree];
     }
   }
-  const amount = Math.max(0, Math.floor((action.heal ?? []).reduce((s, p) => s + samplePart(p, run.rng), 0) * multiplier));
+  // (A share of the target's own hit dice: DCC Lay on Hands.)
+  let rolled = (action.heal ?? []).reduce((s, p) => s + samplePart(p, run.rng), 0);
+  for ( let n = 0; n < (action.healDice ?? 0); n++ ) rolled += run.rng.die(target.spec.hitDie ?? 6);
+  const amount = Math.max(0, Math.floor(rolled * multiplier));
   const wasDown = target.status === STATUS.DOWN;
   const before = target.hp;
   if ( amount > 0 ) rules.onHealed(target, amount);
@@ -1051,6 +1233,7 @@ function takeTurn(run, u) {
 
   u.usedThisTurn = null; // once-per-turn riders such as sneak attack
   u.stoleThisTurn = false;
+  u.actsThisTurn = 0;     // (which action die the next action rolls, where there are several: DCC)
   const basic = rules.basicAction ?? 1; // a simple action: stand, escape, recall knowledge, step
   const behavior = behaviorOf(u);
   // Diplomats with no one who understands them still try to talk.
@@ -1130,6 +1313,7 @@ function takeTurn(run, u) {
     if ( heal ) {
       executeHeal(run, u, heal.action, heal.target);
       turn.spend(costOf(rules, heal.action));
+      u.actsThisTurn += 1;
       continue;
     }
     // Bolster a friend (or itself) when that does more than attacking would.
@@ -1137,6 +1321,7 @@ function takeTurn(run, u) {
     if ( buff ) {
       turn.spend(costOf(rules, buff.action, u));
       executeBuff(run, u, buff.action, buff.targets, buff.worth, turn);
+      u.actsThisTurn += 1;
       continue;
     }
 
@@ -1240,6 +1425,7 @@ function takeTurn(run, u) {
     if ( !holding || !option.action.freeWhileHeld ) spendUse(u, option.action);
     turn.spend(option.cost);
     attacksMade += attacksIn(option.action);
+    u.actsThisTurn += 1;
     if ( battleOver(run) ) break;
   }
 
@@ -1344,7 +1530,9 @@ function aftermath(run, order) {
   const victors = run.units.filter(isStanding);
   const fallen = run.units.filter(u => u.status === STATUS.DOWN && victors.some(v => areEnemies(run, v, u)));
   const decided = simulated && fallen.length > 0 && victors.some(v => mercyOf(v) !== "leave");
-  if ( !(simulated && run.units.some(isDying)) && !decided ) return;
+  // The system may give a fallen player character one last chance once friends reach the body (DCC: roll the body).
+  const bodies = simulated && rules.recoverBody ? run.units.filter(u => u.status === STATUS.DEAD && u.spec.kind === "pc" && victors.some(v => v.side === u.side)) : [];
+  if ( !(simulated && run.units.some(isDying)) && !decided && !bodies.length ) return;
   const rounds = run.round;
   run.round = rounds + 1; // one paragraph in the story, after the fight
   log(run, null, "The fighting is over", { type: "aftermath", aftermath: true });
@@ -1380,6 +1568,11 @@ function aftermath(run, order) {
         if ( text ) log(run, u, text, { type: "recovery", before, dying: u.dying, dead: u.status === STATUS.DEAD, stable: u.stable, aftermath: true });
       });
     }
+  }
+  for ( const u of bodies ) {
+    const text = rules.recoverBody(u, run.rng);
+    if ( text ) log(run, u, text, { type: "body", alive: u.status !== STATUS.DEAD, aftermath: true });
+    if ( u.status !== STATUS.DEAD ) tended = true;
   }
   if ( marker ) marker.tended = tended; // the story opens differently when nobody comes to help
   run.aftermathRounds = i; // (how long it took, for the GM's summary of time passed)

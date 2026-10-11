@@ -3,10 +3,12 @@
  */
 import { meanPart, doubled } from "../dice.js";
 import { degreeDistribution } from "../probability.js";
-import { attackRoll, currentAc, saveRoll, bonusDamageParts } from "../battle-state.js";
+import { attackRoll, attackOptions, currentAc, saveRoll, bonusDamageParts } from "../battle-state.js";
 import { costOf, costUnits, mainPool } from "../turn.js";
 import { controlValue } from "./control.js";
 import { iwrOf } from "./effects.js";
+import { critExtraMean } from "./riders.js";
+import { castChanceOf } from "./casting.js";
 
 function meanByType(parts) {
   const out = {};
@@ -55,9 +57,11 @@ export function meanDamageVs(run, action, target) {
   const iwr = iwrOf(target); // (with any resistance an effect lends it: Rage, Stoneskin)
   const crit = action.critDamage ?? criticalParts(rules, action.damage);
   const rider = effectMean(action);
+  // Rolled several times (magic missiles), and a crit table's extra on a crit.
+  const times = action.repeat ? Math.max(1, meanPart(action.repeat)) : 1;
   hit = {
-    normal: rules.applyIwr(iwr, meanByType(action.damage)) + persistentMean(action.damage) + rider,
-    critical: rules.applyIwr(iwr, meanByType(crit)) + persistentMean(crit) + rider
+    normal: times * (rules.applyIwr(iwr, meanByType(action.damage)) + persistentMean(action.damage)) + rider,
+    critical: times * (rules.applyIwr(iwr, meanByType(crit)) + persistentMean(crit)) + rider + critExtraMean(action.crit)
   };
   cache.set(key, hit);
   return hit;
@@ -65,6 +69,8 @@ export function meanDamageVs(run, action, target) {
 
 /** Expected damage dealt by one use of `action` from a against t, given attacks already made this turn. */
 export function expectedDamage(run, a, action, t, attacksMade = 0) {
+  // A spell check that may fail (DCC): what it does when it works, as often as it works.
+  if ( action.casting ) return castChanceOf(a, action) * expectedDamage(run, a, { ...action, casting: null }, t, attacksMade);
   // A multiattack is its strikes in order.
   if ( action.sequence?.length ) {
     let total = 0;
@@ -87,9 +93,11 @@ export function expectedDamage(run, a, action, t, attacksMade = 0) {
   }
   const roll = attackRoll(run, a, t, action, attacksMade);
   const extraParts = bonusDamageParts(run, a, action, t, { advantage: roll.advantage });
-  const extra = extraParts.reduce((s, p) => s + Math.max(0, meanPart(p)), 0);
-  const extraCrit = extraParts.length ? criticalParts(rules, extraParts).reduce((s, p) => s + Math.max(0, meanPart(p)), 0) : 0;
-  const dist = degreeDistribution(rules, roll.bonus, currentAc(run, t, a, action), { advantage: roll.advantage, kind: "attack" });
+  // A deed die adds what it shows to the damage, as well as to the roll.
+  const deed = roll.deed ? (roll.deed + 1) / 2 : 0;
+  const extra = extraParts.reduce((s, p) => s + Math.max(0, meanPart(p)), 0) + deed;
+  const extraCrit = (extraParts.length ? criticalParts(rules, extraParts).reduce((s, p) => s + Math.max(0, meanPart(p)), 0) : 0) + deed;
+  const dist = degreeDistribution(rules, roll.bonus, currentAc(run, t, a, action), attackOptions(roll, { deed: true }));
   return targets * (dist[2] * (dmg.normal + extra) + dist[3] * (dmg.critical + extraCrit));
 }
 
@@ -172,6 +180,7 @@ export function countsAsAttack(action) {
 }
 
 export function hasUses(u, action) {
+  if ( u.lost?.has(action.id) ) return false; // a spell lost to a failed check (DCC)
   if ( action.resource ) return (u.resources[action.resource] ?? 0) > 0;
   if ( Number.isFinite(action.uses) ) return (u.uses[action.id] ?? 0) > 0;
   return true;

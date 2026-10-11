@@ -22,6 +22,7 @@ import { hasUses, costOf, costUnits, threatOf, unitsPerTurn } from "./evaluate.j
 import { outcomeWorth, hasFresh, concentrationCost, heldElsewhere } from "./effects.js";
 import { mind } from "./desire.js";
 import { bringsItself } from "./reluctance.js";
+import { castChanceOf } from "./casting.js";
 
 /** How well each tactical band sees what a buff is worth (feral: not at all, beyond itself). */
 const SEES = [0.5, 0.6, 0.9, 1.05, 1.15];
@@ -91,7 +92,7 @@ export function buffOptions(run, u, turn = null) {
     if ( heldElsewhere(run, u, action) ) continue;
     const picks = recipients(run, u, action, tier);
     if ( !picks.length ) continue;
-    const worth = picks.reduce((s, x) => s + x.worth, 0) - concentrationCost(run, u, action);
+    const worth = castChanceOf(u, action) * picks.reduce((s, x) => s + x.worth, 0) - concentrationCost(run, u, action);
     if ( !(worth > 0) ) continue;
     let score = (worth / Math.max(0.25, costUnits(rules, cost))) * (SEES[tier] ?? 1);
     if ( limited(action) ) score /= gate;

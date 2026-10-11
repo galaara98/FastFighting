@@ -11,6 +11,7 @@ import { mind, levelOf } from "./desire.js";
 import { bringsItself } from "./reluctance.js";
 import { perceives } from "./senses.js";
 import { meanPart } from "../dice.js";
+import { castChanceOf } from "./casting.js";
 
 const THRESHOLD = { conservative: 0.3, balanced: 0.45, aggressive: 0.6, allCosts: 0.8 };
 
@@ -26,7 +27,8 @@ export function healAggroOf(run, u) {
   return "aggressive";
 }
 
-const meanHeal = action => (action.heal ?? []).reduce((s, p) => s + meanPart(p), 0);
+/** A heal's mean (a share of the target's own hit dice counted at a d6's), as often as its check works (DCC). */
+const meanHeal = (action, u = null) => ((action.heal ?? []).reduce((s, p) => s + meanPart(p), 0) + (action.healDice ?? 0) * 3.5) * castChanceOf(u, action);
 const perTurn = (rules, action) => Math.max(0.1, costUnits(rules, costOf(rules, action)));
 
 /**
@@ -132,7 +134,7 @@ export function decideHeal(run, u, turn) {
   // Healing for what it costs from the turn, the walk there included: a bonus-action heal from afar (5e Healing Word)
   // leaves the action to fight with; a touch spell (Cure Wounds) heals more but means getting there and using the
   // action. Anyone down is back up with any heal, so for them the cheapest way wins.
-  const value = o => (best.status === STATUS.DOWN ? 1 + meanHeal(o.a) / 100 : meanHeal(o.a)) / (perTurn(rules, o.a) + o.units);
+  const value = o => (best.status === STATUS.DOWN ? 1 + meanHeal(o.a, u) / 100 : meanHeal(o.a, u)) / (perTurn(rules, o.a) + o.units);
   const options = heals
     .filter(a => !a.oncePerTarget || !u.healedTargets.has(`${a.id}|${best.id}`))
     .filter(a => !a.selfOnly || best === u)

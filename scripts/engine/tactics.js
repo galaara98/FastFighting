@@ -43,7 +43,7 @@ export function typicalValue(action, level, rules = null) {
     const ac = typical(rules, "ac", level);
     chance = clamp((21 - (ac - (action.bonus ?? 0))) / 20, 0.05, 0.95) + 0.05;
   }
-  return (dmg * chance * targets) / units;
+  return (dmg * chance * targets * (action.castChance ?? 1)) / units;
 }
 
 /**

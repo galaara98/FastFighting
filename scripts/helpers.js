@@ -11,7 +11,8 @@ export const SYSTEMS_URL = "https://github.com/galaara98/FastFighting/blob/main/
 /** Helper modules we know about, by game system id (keep in sync with systems.md). */
 export const KNOWN_HELPERS = Object.freeze({
   pf2e: { module: "fast-fighting-pf2e", title: "FastFighting PF2e", url: "https://github.com/galaara98/FastFighting-PF2e" },
-  dnd5e: { module: "fast-fighting-dnd5e", title: "FastFighting D&D 5e", url: "https://github.com/galaara98/FastFighting-DnD5e" }
+  dnd5e: { module: "fast-fighting-dnd5e", title: "FastFighting D&D 5e", url: "https://github.com/galaara98/FastFighting-DnD5e" },
+  dcc: { module: "fast-fighting-dcc", title: "FastFighting DCC", url: "https://github.com/galaara98/FastFighting-DCC" }
 });
 
 /**
