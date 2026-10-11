@@ -1350,7 +1350,7 @@ function leaveReach(run, u, turn, keep = null, need = null) {
  * alone if it can help it: it calls on its group to fall back with it (its commander decides, and may order it to hold
  * instead: behavior/morale.js callRetreat). Returns true if it ran.
  */
-function runs(run, u, reason, turn) {
+function runs(run, u, reason, turn, why = {}) {
   if ( standsGround(run, u) ) {
     if ( !u.heldGround ) log(run, u, "wants to run, but stands its ground", { type: "holdGround" });
     u.heldGround = true;
@@ -1361,7 +1361,7 @@ function runs(run, u, reason, turn) {
     log(run, u, "holds, as ordered", { type: "holdGround", ordered: true, by: retreat.commander?.spec.name ?? null });
     return false;
   }
-  flee(run, u, reason, turn);
+  flee(run, u, reason, turn, why);
   const leader = retreat.commander ?? u;
   for ( const a of retreat.followers ) {
     if ( a.status !== STATUS.STANDING ) continue;
@@ -1959,7 +1959,7 @@ function takeTurn(run, u) {
     }
   }
   const morale = checkMorale(run, u);
-  if ( morale === MORALE.ROUT && runs(run, u, "breaks and flees", turn) ) return;
+  if ( morale === MORALE.ROUT && runs(run, u, "breaks and flees", turn, { why: "breaks" }) ) return;
   if ( morale !== MORALE.HOLD && !u.wavering ) {
     u.wavering = true; // (shaken, even when it won't run)
     if ( morale === MORALE.WAVER ) log(run, u, "wavers", { type: "waver" });
@@ -1979,13 +1979,13 @@ function takeTurn(run, u) {
   if ( wants.lead?.kind === "avoid" && wants.lead.level >= 70 ) {
     const dread = run.byId.get(wants.lead.targetId);
     const d = dread ? edgeDistance(u, dread) : null;
-    if ( dread && (d === null || d <= 30) && runs(run, u, `runs from ${dread.spec.name}`, turn) ) return;
+    if ( dread && (d === null || d <= 30) && runs(run, u, `runs from ${dread.spec.name}`, turn, { why: "dread", dread: dread.spec.name }) ) return;
   }
 
   const disposition = dispositionOf(u);
-  if ( u.prone && u.wasDowned && disposition.selfRevived === "retreat" && runs(run, u, "retreats after being revived", turn) ) return;
+  if ( u.prone && u.wasDowned && disposition.selfRevived === "retreat" && runs(run, u, "retreats after being revived", turn, { why: "revived" }) ) return;
   if ( disposition.allyDying === "retreat" && run.units.some(a => a.side === u.side && a !== u && a.status === STATUS.DOWN && a.active)
-    && runs(run, u, "retreats as an ally falls", turn) ) return;
+    && runs(run, u, "retreats as an ally falls", turn, { why: "allyFalls" }) ) return;
 
   u.usedThisTurn = null; // once-per-turn riders such as sneak attack
   u.stoleThisTurn = false;

@@ -163,7 +163,7 @@ export function playstyleSignature(actor) {
 
 function actionLabel(a) {
   const kind = loc(`FASTFIGHTING.Tactics.ActionKind.${a.kind}`);
-  const extra = a.range && !a.melee ? ` · ${a.range.increment} ft` : "";
+  const extra = a.range && !a.melee ? ` · ${a.range.increment} ${loc("FASTFIGHTING.Units.Feet")}` : "";
   return `${a.name} (${kind}${extra})`;
 }
 

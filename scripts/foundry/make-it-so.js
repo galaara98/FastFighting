@@ -102,7 +102,7 @@ const placeOf = doc => ({ x: doc._source.x, y: doc._source.y });
 /** Feet as the scene measures them, to the nearest square: "30 ft", "9 m". */
 function sceneDistance(feet) {
   const square = squareFeet();
-  const units = canvas.scene.grid.units || "ft";
+  const units = canvas.scene.grid.units || game.i18n.localize("FASTFIGHTING.Units.Feet");
   const rounded = Math.max(1, Math.round(feet / square)) * square;
   return `${Math.round((rounded / feetPerUnit()) * 10) / 10} ${units}`;
 }

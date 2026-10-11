@@ -40,7 +40,7 @@ const statusOf = final => (final.swayed === "conceded" ? "conceded" : final.stat
 function approachDistance(approach) {
   const grid = canvas.scene?.grid?.distance || 5;
   const travel = Math.max(grid, Math.round((approach.dist * approach.mult) / grid) * grid);
-  return `${travel} ${canvas.scene?.grid?.units || "ft"}`;
+  return `${travel} ${canvas.scene?.grid?.units || game.i18n.localize("FASTFIGHTING.Units.Feet")}`;
 }
 
 function simulatedDifficulty(results) {

@@ -10,34 +10,18 @@
 import { createRng } from "../engine/rng.js";
 import { DAMAGE_TYPES } from "./tables-en.js";
 import { desireBand, DESIRE_BAND_KEYS } from "../engine/behavior/desire.js";
+import { listJoin, localize } from "../i18n.js";
+import { logLine, endLine, logTerm, formatMoney, concessionText } from "./log-lines.js";
+
+export { formatMoney, concessionText };
 
 export const STORY_STYLES = ["roleplay", "standard", "statistician"];
 
 const SPELL_KINDS = new Set(["spell-attack", "save", "auto"]);
-const DEGREE = ["critical failure", "failure", "success", "critical success"];
 
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" }[c]));
 const capital = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
-const signed = n => (n >= 0 ? `+${n}` : `${n}`);
-/** Money in the system's coins, largest first ("1 gp, 4 sp"), from an amount in its smallest coin. */
-export function formatMoney(amount, denominations) {
-  if ( !denominations?.length ) return String(amount);
-  const parts = [];
-  let left = Math.round(amount);
-  for ( const d of denominations ) {
-    const n = Math.floor(left / d.value);
-    if ( n > 0 ) { parts.push(`${n} ${d.label}`); left -= n * d.value; }
-  }
-  return parts.join(", ") || `0 ${denominations.at(-1).label}`;
-}
 
-/** What a creature handed over, in words. */
-export function concessionText(c) {
-  if ( !c ) return "";
-  return c.kind === "money" ? formatMoney(c.amount, c.denominations) : (c.item?.name ?? "");
-}
-
-const listJoin = names => names.length <= 1 ? (names[0] ?? "") : `${names.slice(0, -1).join(", ")} and ${names.at(-1)}`;
 
 /** Outcome tier of a check from the actor's point of view. */
 export function tierOf(degree, margin) {
@@ -140,12 +124,19 @@ function storyCast(result, spec) {
 
 function makeRoller(tables, seed) {
   const rng = createRng(seed >>> 0);
-  return (key, fill = {}) => {
+  const roll = (key, fill = {}) => {
     const entries = tables.get(key);
     if ( !entries?.length ) return "";
     const text = entries[Math.floor(rng.next() * entries.length)] ?? "";
-    return text.replace(/\{(\w+)\}/g, (m, k) => (fill[k] !== undefined && fill[k] !== null ? fill[k] : m));
+    // (Spanish: su or sus before the weapon's name.)
+    const extra = tables.possessive && text.includes("{su}") ? { su: tables.possessive(fill.weapon ?? "") } : null;
+    return text.replace(/\{(\w+)\}/g, (m, k) => {
+      const v = fill[k] ?? extra?.[k];
+      return v !== undefined && v !== null ? v : m;
+    });
   };
+  roll.lang = tables.lang ?? "en";
+  return roll;
 }
 
 /* -------------------------------------------- */
@@ -190,7 +181,7 @@ function narrate(e, roll, rel, fill) {
     case "auto": {
       const tier = e.type === "save" ? saveTier(e) : e.type === "auto" ? "success" : tierOf(e.degree, e.margin);
       let text = roll(`action.${deliveryOf(e)}.${damageTypeOf(e, fill.mapType)}.${tier}`, f);
-      text = agreeWithWeapon(text, f.weapon);
+      if ( roll.lang === "en" ) text = agreeWithWeapon(text, f.weapon);
       if ( e.attackerCover && e.ranged && e.natural % 3 === 0 ) text = `${roll("event.coverShoot", f)} ${capital(text)}`;
       if ( e.targetCover && e.ranged && !successful(tier) ) text += ` ${capital(roll("event.coverDuck", f))}`;
       return text + relationshipClause(e, tier, rel, roll, f);
@@ -363,9 +354,10 @@ function thinkAloud(e, roll, mentions) {
     .filter((d, i, all) => i === 0 || d.kind !== all[0].kind || d.target !== all[0].target);
   if ( !desires.length ) return "";
   const phrase = d => {
-    const target = d.targetId === e.actorId ? "themselves" : d.target;
     const intensity = roll(`desire.intensity.${DESIRE_BAND_KEYS[desireBand(d.level)]}`);
-    const verb = roll(`desire.verb.${d.kind}`, { target });
+    // (About itself: its own words, "heal themselves", "curarse".)
+    const self = d.targetId === e.actorId;
+    const verb = (self && roll(`desire.self.${d.kind}`)) || roll(`desire.verb.${d.kind}`, { target: self ? localize("FASTFIGHTING.Story.Themselves", "themselves") : d.target });
     return intensity && verb ? `${intensity} ${verb}` : "";
   };
   const first = phrase(desires[0]);
@@ -429,7 +421,8 @@ function roleplay(result, spec, tables, seed, title, mapType) {
 function ending(result, spec, end, roll) {
   const standing = spec.combatants.filter(c => end.winners?.includes(result.units[c.id]?.final?.side ?? c.side)
     && result.units[c.id]?.final?.status === "standing" && result.units[c.id]?.final?.active !== false).map(c => c.name);
-  const winners = standing.length > 3 ? `${standing.slice(0, 2).join(", ")} and their companions` : standing.length ? listJoin(standing) : (end.winnerLabels ?? []).join(" and ");
+  const winners = standing.length > 3 ? localize("FASTFIGHTING.Story.Companions", "{names} and their companions", { names: standing.slice(0, 2).join(", ") })
+    : standing.length ? listJoin(standing) : listJoin(end.winnerLabels ?? []);
   // A lone survivor takes a singular verb ("Lini prevails").
   if ( end.resolved === "conceded" ) return roll("event.dealStruck", { winners });
   if ( end.resolved === "fled" ) return roll("event.backedOff", { winners });
@@ -468,7 +461,7 @@ function standard(result, spec, title, labels) {
     } else if ( e.type === "buff" ) {
       s.buffs.set(e.action, (s.buffs.get(e.action) ?? 0) + 1);
     } else if ( e.type === "theft" ) {
-      s.notes.push(e.stolen ? `stole ${concessionText(e.stolen)} from ${e.target}` : e.noticed ? `caught stealing from ${e.target}` : `came away empty-handed from ${e.target}`);
+      s.notes.push(e.stolen ? logTerm("NoteStole", { what: concessionText(e.stolen), target: e.target }) : e.noticed ? logTerm("NoteCaught", { target: e.target }) : logTerm("NoteEmpty", { target: e.target }));
     } else if ( e.type === "attack" || e.type === "save" || e.type === "auto" ) {
       const bucket = SPELL_KINDS.has(e.actionKind) ? s.spells : s.attacks;
       const a = bucket.get(e.action) ?? { uses: 0, hits: 0, crits: 0, misses: 0 };
@@ -490,12 +483,12 @@ function standard(result, spec, title, labels) {
     } else if ( e.type === "move" ) s.feet += e.feet ?? 0;
     else if ( e.type === "sway" && e.concession ) {
       const c = e.concession;
-      s.notes.push(c.kept ? `kept ${concessionText(c)} (luck ${c.luck})` : `gave ${concessionText(c)} to ${c.toName}`);
-    } else if ( e.type === "reclaim" ) s.notes.push(`got back ${concessionText(e.concession)} from ${e.by}`);
-    else if ( ["join", "leave", "sway", "flee", "callHelp"].includes(e.type) ) s.notes.push(e.text);
+      s.notes.push(c.kept ? logTerm("NoteKept", { what: concessionText(c), luck: c.luck }) : logTerm("NoteGave", { what: concessionText(c), name: c.toName }));
+    } else if ( e.type === "reclaim" ) s.notes.push(logTerm("NoteGotBack", { what: concessionText(e.concession), by: e.by }));
+    else if ( ["join", "leave", "sway", "flee", "callHelp"].includes(e.type) ) s.notes.push(logLine(e));
   }
   const end = result.log.find(e => e.type === "end");
-  const summary = end?.text ?? "";
+  const summary = end ? endLine(end) : "";
   const rows = [];
   for ( const c of spec.combatants ) {
     if ( out.has(c.id) ) continue; // never took part
@@ -506,14 +499,14 @@ function standard(result, spec, title, labels) {
     for ( const [name, a] of s?.spells ?? [] ) bits.push(`${a.uses}× ${name} (${a.hits} ${labels.hit}${a.misses ? `, ${a.misses} ${labels.resisted}` : ""})`);
     for ( const [name, n] of s?.buffs ?? [] ) bits.push(`${n}× ${name} (${labels.bolstered ?? "bolstered"})`);
     if ( s?.talks.tries ) bits.push(`${labels.talked} ${s.talks.tries}× (${s.talks.wins} ${labels.convincing})`);
-    if ( s?.heals ) bits.push(`${labels.healed} ${s.heals}× (${s.healed} HP)`);
+    if ( s?.heals ) bits.push(`${labels.healed} ${s.heals}× (${logTerm("HpN", { n: s.healed })})`);
     if ( s?.potions ) bits.push(`${s.potions} ${labels.potion}`);
     if ( s?.aid ) bits.push(`${labels.firstAid} ${s.aid}× (${s.stabilized} ${labels.stabilized})`);
-    if ( s?.feet ) bits.push(`${labels.moved} ${s.feet} ft`);
+    if ( s?.feet ) bits.push(`${labels.moved} ${logTerm("Feet", { n: s.feet })}`);
     if ( !bits.length ) bits.push(final?.active === false ? labels.stayedOut : labels.nothing);
     const statusKey = final?.swayed === "switched" ? "switched" : final?.swayed === "conceded" ? "conceded"
       : final?.status === "standing" && final?.side === "neutralParty" ? (final.swayed === "neutral" ? "neutral" : "noSide") : final?.status;
-    const status = final ? `${labels.status[statusKey] ?? statusKey}, ${final.hp}/${c.hp.max} HP` : "";
+    const status = final ? `${labels.status[statusKey] ?? statusKey}, ${logTerm("HpN", { n: `${final.hp}/${c.hp.max}` })}` : "";
     rows.push(`<li><strong>${esc(c.name)}</strong>: ${esc(bits.join("; "))}. <em>${esc(status)}</em>${s?.notes?.length ? ` <small>(${esc(s.notes.join("; "))})</small>` : ""}</li>`);
   }
   const html = `<p><strong>${esc(summary)}</strong></p><ul>${rows.join("")}</ul>`;
@@ -524,119 +517,29 @@ function standard(result, spec, title, labels) {
 /*  Statistician                                */
 /* -------------------------------------------- */
 
-function statLine(e) {
-  const roll = (nat, mod, total, dc, label, faces = 20) => `d${faces ?? 20} ${nat} ${signed(mod)} = ${total} vs ${label} ${dc}`;
-  switch ( e.type ) {
-    case "attack":
-      // (Against challenge dice: an Ironsworn move, or a progress roll.)
-      if ( e.challenge ) return `${e.actor} → ${e.target}: ${e.action} · ${e.natural ? `d6 ${e.natural} ${signed(e.mod)} = ` : "progress "}${e.total}${e.burned ? ` (momentum ${e.burned})` : ""} vs ${e.challenge.join(", ")} · ${["miss (a match)", "miss", "weak hit", "strong hit"][e.degree]}${e.damage ? ` · ${e.damage} ${e.damageType}` : ""}`;
-      return `${e.actor} → ${e.target}: ${e.action} · ${roll(e.natural, e.mod, e.total, e.dc, "AC", e.faces)}${e.deed !== null && e.deed !== undefined ? ` (deed ${e.deed})` : ""} · ${DEGREE[e.degree]} (${signed(e.margin)})${e.damage ? ` · ${e.damage} ${e.damageType}` : ""}${e.interceptedBy ? ` · taken by ${e.interceptedBy} for ${e.intercepted}` : ""}${e.boost ? ` · sized up +${e.boost}` : ""}${e.attackNumber > 1 ? ` · attack #${e.attackNumber}` : ""}${e.riders?.length ? ` · ${e.riders.join(", ")}` : ""}${e.critRoll !== null && e.critRoll !== undefined ? ` · crit table ${e.critRoll}` : ""}`;
-    case "deed": return `${e.actor} → ${e.target}: ${e.deed} · deed ${e.roll} · ${e.success ? (e.effect || "succeeds") : "fails"}`;
-    case "rider": {
-      const mended = Number.isFinite(e.roll) ? ` · +${e.roll}, ${e.made ? "now a hit" : "still a miss"}` : "";
-      const saved = e.saveType ? ` · ${e.saveType} d20 ${e.natural} = ${e.total} vs DC ${e.dc} · ${DEGREE[e.degree]}` : "";
-      return `${e.actor} → ${e.target}: ${e.rider}${mended}${saved}${e.effect ? ` · ${e.effect}` : ""}`;
-    }
-    case "critTable": return `${e.by} → ${e.actor}: crit table ${e.roll}${e.slain ? " · slain outright" : ""}${e.effect ? ` · ${e.effect}` : ""}${e.rowText ? ` (${e.rowText})` : ""}`;
-    case "fumble": return `${e.actor}: fumble table ${e.roll}${e.effect ? ` · ${e.effect}` : ""}${e.rowText ? ` (${e.rowText})` : ""}`;
-    case "cast": {
-      const how = e.success ? `works (result ${(e.tier ?? 0) + 1})`
-        : `${e.fumble ? "fumble" : e.disapproved ? "disapproval" : "fails"}${e.lost ? ", spell lost" : ""}${e.disapproval ? ` (disapproval ${e.disapproval})` : ""}`;
-      return `${e.actor}: ${e.action} · d${e.faces ?? 20} ${e.natural} ${signed(e.mod)} = ${e.total} · ${how}`;
-    }
-    case "boost": return `${e.actor} burns ${e.spent} ${e.label}${e.self ? "" : ` for ${e.target}`}: ${e.from} → ${e.to} vs ${e.dc} · ${e.made ? "made it" : "still short"}`;
-    case "reaction": return `${e.actor}: ${e.reaction} (reaction to ${e.target}, ${e.trigger})`;
-    case "summon": return `${e.actor}: ${e.action} · ${(e.names ?? []).join(", ")} join`;
-    case "vanish": return `${e.actor} is gone (${e.reason})`;
-    case "counter": return `${e.actor}: ${e.reaction} vs ${e.target}'s ${e.action}${e.natural !== null && e.natural !== undefined ? ` · d20 ${e.natural} → ${e.total}` : ""} · ${e.countered ? "countered" : "gets through"}`;
-    case "save":
-      return `${e.target} saves vs ${e.actor}'s ${e.action} · ${e.saveType} ${roll(e.natural, e.mod, e.total, e.dc, "DC")} · ${DEGREE[e.degree]} (${signed(e.margin)}) · ${e.damage} ${e.damageType}`;
-    case "auto": return `${e.actor} → ${e.target}: ${e.action} (no roll) · ${e.damage} ${e.damageType}`;
-    case "talk":
-      return `${e.actor} → ${e.target}: ${e.skill} · ${roll(e.natural, e.mod, e.total, e.dc, `${e.dcStat} DC`)} · ${DEGREE[e.degree]} (${signed(e.margin)})${e.boost ? ` · sized up +${e.boost}` : ""} · persuasion ${e.progress}/${e.steps}`;
-    case "heal":
-      return `${e.actor} → ${e.self ? "self" : e.target}: ${e.action}${e.check ? ` · medicine ${roll(e.check.natural, e.check.mod, e.check.total, e.check.dc, "DC")} · ${DEGREE[e.check.degree]}` : ""} · +${e.amount} HP${e.revived ? " · revived" : ""}`;
-    case "move": return `${e.actor} ${{ walk: "walks", fly: "flies", swim: "swims", climb: "climbs", burrow: "burrows" }[e.mode] ?? "moves"} ${e.feet} ft toward ${e.toward}${e.mult > 1.05 ? ` (terrain ×${e.mult.toFixed(2)}${e.regions?.length ? `: ${e.regions.join(", ")}` : ""})` : ""}`;
-    case "afflictionSave": return `${e.actor} vs ${e.name} · ${e.saveType} ${roll(e.natural, e.mod, e.total, e.dc, "DC")} · ${DEGREE[e.degree]}`;
-    case "opportunity": return `${e.actor} → ${e.target}: opportunity attack (reaction)`;
-    case "disengage": return `${e.actor}: ${e.label || "disengages"}`;
-    case "door": return `${e.actor} → the door: ${e.method}${e.natural !== undefined ? ` · ${roll(e.natural, e.mod, e.total, e.dc, e.method === "attack" ? "AC" : "DC")}` : ""}${e.method === "attack" && e.hit ? ` · ${e.damage} damage` : ""} · ${e.method === "giveup" ? `gives up on ${e.target}` : e.success ? "open" : "holds"}`;
-    case "thought": return `${e.actor} thinks: ${(e.desires ?? []).map(d => `${d.kind} ${d.targetId === e.actorId ? "self" : d.target} ${d.level}`).join(" · ")}${e.following ? ` · following ${e.following.name}${e.following.boss ? " (boss)" : ""}, chance ${Math.round(e.following.chance * 100)}%` : ""}`;
-    case "riderSave": return `${e.actor} vs ${e.name} · ${e.saveType} ${roll(e.natural, e.mod, e.total, e.dc, "DC")} · ${DEGREE[e.degree]}${e.damage ? ` · ${e.damage} damage` : ""}`;
-    case "notice": return `${e.actor} notices (${e.cause})`;
-    case "study": {
-      const c = e.check;
-      const rolled = !c ? "" : ` · ${c.skill ? `${c.skill} ` : ""}${c.challenge ? `d6 ${c.natural} ${signed(c.mod)} = ${c.total} vs ${c.challenge.join(", ")}` : roll(c.natural, c.mod, c.total, c.dc, "DC")} · ${DEGREE[c.degree]}`;
-      const factor = `${e.factor ?? 2.5}×`;
-      const pays = e.worked === false ? (e.price ? `learns nothing · ${e.price}` : "learns nothing")
-        : e.oneRoll ? `its next roll${e.anyFoe ? "" : " against them"} ${factor} as likely to succeed` : `its next rolls against them ${factor} as likely to succeed`;
-      const kin = e.kin ? ` (and the ${e.kin} like them)` : "";
-      return `${e.actor} → ${e.target}${kin}: sizes up${rolled} · ${pays}`;
-    }
-    case "observe": return `${e.actor} watches ${(e.targets ?? []).join(", ")} instead of talking`;
-    case "command": return e.lost ? `no one left to lead${e.from ? ` after ${e.from}` : ""}` : `${e.actor} ${e.back ? "takes back command" : "takes command"} (${e.role})${e.from && !e.back ? ` from ${e.from}` : ""}`;
-    case "scheme": return `${e.actor} schemes against ${e.target}${e.boss ? " (boss)" : ""}: wants to lead; won't help its leaders this turn, and is far easier to turn`;
-    case "shareLore": return `${e.actor} → ${(e.with ?? []).join(", ")}: shares what it knows of ${e.target} (an action; they know its sort too)${Number.isFinite(e.chance) ? ` · minded to share ${Math.round(e.chance * 100)}%` : ""}`;
-    case "keepLore": return `${e.actor} keeps what it learned of ${e.target} to itself · minded to share ${Math.round((e.chance ?? 0) * 100)}%`;
-    case "firstAid": return `${e.actor} → ${e.target}: first aid · medicine ${roll(e.natural, e.mod, e.total, e.dc, "DC")} · ${DEGREE[e.degree]} · ${e.stable ? "stabilized" : e.dead ? "dies" : `dying ${e.dying}`}`;
-    case "aftermath": return "After the fight";
-    case "control": {
-      if ( e.immune ) return `${e.actor} → ${e.target}: ${e.action} · unaffected`;
-      const how = e.roll === "auto" ? "no roll"
-        : e.roll === "check" ? `${roll(e.natural, e.mod, e.total, e.dc, `${e.against ?? "defense"} DC`)} · ${DEGREE[e.degree]}`
-          : `${e.saveType ? `${[].concat(e.saveType).join("/")} ` : ""}${roll(e.natural, e.mod, e.total, e.dc, e.saveType ? "DC" : "AC")} · ${DEGREE[e.degree]}`;
-      return `${e.actor} → ${e.target}: ${e.action} · ${how}${e.shifted ? " (shifted)" : ""} · ${e.effect || "no effect"}${e.backfired ? ` (on ${e.actor})` : ""}${e.damage ? ` · ${e.damage} damage` : ""}`;
-    }
-    case "buff": return `${e.actor} → ${(e.targets ?? []).map((n, i) => (e.targetIds?.[i] === e.actorId ? "self" : n)).join(", ")}: ${e.action}${e.check ? ` · ${e.check.skill ? `${e.check.skill} ` : ""}${e.check.challenge ? `d6 ${e.check.natural} ${signed(e.check.mod)} = ${e.check.total} vs ${e.check.challenge.join(", ")}` : roll(e.check.natural, e.check.mod, e.check.total, e.check.dc, "DC")} · ${DEGREE[e.check.degree]}` : ""} · ${e.failed ? (e.effect && e.effect !== e.action ? e.effect : "nothing comes of it") : e.effect || "bolstered"}${(e.against ?? []).some(Boolean) ? ` (against ${e.against.filter(Boolean).join(", ")})` : ""}${e.tempHp ? ` · ${e.tempHp} temp HP` : ""}${e.askedBy?.length ? ` · asked by ${e.askedBy.join(", ")}` : ""}`;
-    case "concentrationEnd":
-      if ( e.reason === "switch" ) return `${e.actor} lets ${(e.effects ?? []).join(", ")} go`;
-      return `${e.actor} loses concentration on ${e.action}${e.natural !== undefined ? ` · ${e.saveType} ${roll(e.natural, e.mod, e.total, e.dc, "DC")}` : " (can't act)"}`;
-    case "shakeOff": return `${e.actor} shakes off ${e.effect} · ${e.saveType} ${roll(e.natural, e.mod, e.total, e.dc, "DC")}`;
-    case "execute": return `${e.actor} → ${e.target}: execution luck d100 ${e.luck} (${e.needed} or less) · ${e.goes ? "goes for the kill" : `spares them${e.next ? `, turns on ${e.next}` : ""}`}`;
-    case "allegiance": return e.joined ? `${e.actor} fights for ${e.by}'s side (controlled)` : `${e.actor} returns to ${e.homeLabel}`;
-    case "neutral":
-      if ( e.what === "luck" ) return `${e.actor}: switch luck d100 ${e.luck} (needs under ${e.needed}) · won't change sides`;
-      if ( e.what === "offended" ) return `${e.actor} turns on ${e.sideLabel} (${e.why}${e.victim ? `: ${e.victim}` : ""}, by ${e.by})`;
-      if ( e.what === "truce" ) return `${e.actor} confronts ${e.by}${e.victim ? ` over ${e.victim}` : ""} (${e.why}) · words first`;
-      return `${e.actor}: ${e.text}`;
-    case "theft": {
-      // The luck check against a PC is the GM's secret, so it never appears here.
-      const feint = e.feint ? `feint ${e.feint.weapon} · ${roll(e.feint.natural, e.feint.mod, e.feint.total, e.feint.ac, "AC")} · ${e.feint.hit ? "hit, no damage" : "miss"}` : "";
-      if ( e.feint && !e.feint.hit ) return `${e.actor} → ${e.target}: ${feint}`;
-      return `${e.actor} → ${e.target}: ${feint ? `${feint} · ` : ""}${e.skill} · ${roll(e.natural, e.mod, e.total, e.dc, `${e.dcStat} DC`)} · ${DEGREE[e.degree]} · ${e.stolen ? `steals ${concessionText(e.stolen)}` : e.noticed ? "caught" : "nothing taken"}`;
-    }
-    case "reclaim": return `${e.actor} gets back ${concessionText(e.concession)} from ${e.by}`;
-    case "sway":
-      if ( e.outcome === "bribed" ) return `${e.actor} is paid ${e.concession ? concessionText(e.concession) : "nothing"} by ${e.payer ?? e.by} to go (with its people)`;
-      if ( e.outcome === "neutral" && e.luck ) return `${e.actor} stands aside · switch luck d100 ${e.luck} (needs under ${e.needed})`;
-      if ( !e.concession ) return `${e.actor}: ${e.text}`;
-      return e.concession.kept
-        ? `${e.actor} agrees to hand over ${concessionText(e.concession)} · luck d100 ${e.concession.luck} (needs ${e.concession.needed ?? 39} or less) · keeps it`
-        : `${e.actor} gives ${concessionText(e.concession)} to ${e.concession.toName}${e.concession.luck ? ` · luck d100 ${e.concession.luck}` : ""}`;
-    default: return `${e.actor ? `${e.actor}: ` : ""}${e.text}`;
-  }
-}
-
-function statistician(result, spec, title) {
+function statistician(result, spec, title, labels = DEFAULT_LABELS) {
   const { out, mentions } = storyCast(result, spec);
   const rounds = new Map();
   for ( const e of result.log ) {
     if ( !mentions(e) || e.type === "aftermath" ) continue;
     const key = e.aftermath ? "after" : e.round;
     if ( !rounds.has(key) ) rounds.set(key, []);
-    rounds.get(key).push(statLine(e));
+    rounds.get(key).push(logLine(e));
   }
   const parts = [];
   for ( const [round, lines] of rounds ) {
-    const heading = round === "after" ? "After the fight" : `R${round}`;
+    const heading = round === "after" ? logTerm("Aftermath") : logTerm("RoundShort", { n: round });
     parts.push(`<p><strong>${heading}</strong></p><ul>${lines.map(l => `<li>${esc(l)}</li>`).join("")}</ul>`);
   }
   const finals = spec.combatants.filter(c => !out.has(c.id)).map(c => {
     const f = result.units[c.id]?.final;
-    return f ? `${c.name}: ${f.status}${f.swayed ? ` (${f.swayed})` : ""}, ${f.hp}/${c.hp.max} HP${f.dying ? `, dying ${f.dying}` : ""}${f.wounded ? `, wounded ${f.wounded}` : ""}` : c.name;
+    return f ? logTerm("FinalLine", {
+      name: c.name, status: labels.status?.[f.status] ?? f.status, swayed: f.swayed ? logTerm("FinalSwayed", { how: labels.status?.[f.swayed] ?? f.swayed }) : "",
+      hp: f.hp, max: c.hp.max, dying: f.dying ? logTerm("FinalDying", { n: f.dying }) : "", wounded: f.wounded ? logTerm("FinalWounded", { n: f.wounded }) : ""
+    }) : c.name;
   });
-  parts.push(`<p><strong>Final</strong></p><ul>${finals.map(l => `<li>${esc(l)}</li>`).join("")}</ul>`);
-  return { title, html: parts.join(""), text: [...rounds.entries()].map(([r, ls]) => `${r === "after" ? "After the fight" : `R${r}`}\n${ls.join("\n")}`).join("\n") };
+  parts.push(`<p><strong>${esc(logTerm("Final"))}</strong></p><ul>${finals.map(l => `<li>${esc(l)}</li>`).join("")}</ul>`);
+  return { title, html: parts.join(""), text: [...rounds.entries()].map(([r, ls]) => `${r === "after" ? logTerm("Aftermath") : logTerm("RoundShort", { n: r })}\n${ls.join("\n")}`).join("\n") };
 }
 
 /**
@@ -646,7 +549,7 @@ function statistician(result, spec, title) {
  * @param {object} options  {tables, seed, title, labels, damageType: (systemType) => imagery family}
  */
 export function buildStory(result, spec, style, { tables, seed = 1, title = "", labels = DEFAULT_LABELS, damageType = null } = {}) {
-  if ( style === "statistician" ) return statistician(result, spec, title);
+  if ( style === "statistician" ) return statistician(result, spec, title, labels);
   if ( style === "standard" ) return standard(result, spec, title, labels);
   return roleplay(result, spec, tables, seed, title, damageType);
 }

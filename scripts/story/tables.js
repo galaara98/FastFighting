@@ -4,12 +4,29 @@
  * Lookup order for each table key:
  *   1. A RollTable in this world flagged with that key (GMs install and edit these: see installStoryTables).
  *   2. The module's tables for the client language, from story/<lang>.json if a translation ships one.
- *   3. The built-in English tables (story/tables-en.js).
+ *   3. The built-in tables for the client language (story/tables-es.js for Spanish).
+ *   4. The built-in English tables (story/tables-en.js).
  *
  * A locale file is JSON: { "<table key>": ["entry 1", ..., "entry 5"], ... }. Missing keys fall back to English.
  */
 import { MODULE_ID } from "../constants.js";
 import { buildEnglishTables, tableName } from "./tables-en.js";
+import { buildSpanishTables, possessive } from "./tables-es.js";
+import { language } from "../i18n.js";
+
+/** Languages the module tells its stories in itself, and what each needs of the story writer (su/sus before a weapon). */
+const BUILT_IN = { es: { build: buildSpanishTables, possessive } };
+let builtIn = null;
+let builtInLang = null;
+
+/** The module's own tables in a language (null: none, English does). */
+function builtInTables(lang) {
+  if ( builtInLang !== lang ) {
+    builtInLang = lang;
+    builtIn = BUILT_IN[lang]?.build() ?? null;
+  }
+  return builtIn;
+}
 
 let english = null;
 let locale = null;
@@ -78,9 +95,13 @@ export async function loadStoryTables() {
   const loc = await localeTables();
   if ( resolved ) return resolved;
   const world = worldTables();
+  const lang = language();
+  const own = builtInTables(lang);
   resolved = {
+    lang: own || loc ? lang : "en",
+    possessive: BUILT_IN[lang]?.possessive ?? null,
     get(key) {
-      return world[key] ?? loc?.[key] ?? base[key] ?? null;
+      return world[key] ?? loc?.[key] ?? own?.[key] ?? base[key] ?? null;
     }
   };
   return resolved;
@@ -105,6 +126,7 @@ function groupOf(key) {
 export async function installStoryTables({ overwrite = false } = {}) {
   const loc = await localeTables();
   const base = englishTables();
+  const own = builtInTables(language());
   const FolderCls = foundry.documents.Folder ?? globalThis.Folder;
   const TableCls = foundry.documents.RollTable ?? globalThis.RollTable;
   const rootName = game.i18n.localize("FASTFIGHTING.Story.TablesFolder");
@@ -117,7 +139,7 @@ export async function installStoryTables({ overwrite = false } = {}) {
   const toDelete = [];
   let kept = 0;
   for ( const key of Object.keys(base) ) {
-    const entries = loc?.[key] ?? base[key];
+    const entries = loc?.[key] ?? own?.[key] ?? base[key];
     const prior = existing.get(key);
     if ( prior && !overwrite ) { kept += 1; continue; }
     const group = groupOf(key);

@@ -321,6 +321,15 @@ The fight is told in one of three styles:
 
 Creatures that never joined the fight aren't listed, and hidden ones are never named. Every Roleplay sentence comes from a roll table, and you can install them as editable RollTables under **Settings → FastFighting → Story tables**.
 
+## Languages
+
+FastFighting speaks **English** and **Spanish** (Español). Each person sees it in the language they picked in Foundry (Configure Settings → Language), so a Spanish-speaking player and an English-speaking GM can share a table.
+- **What's translated:** every window, setting, label and hint; Make it So's list of changes; the story in all three styles, including every line of the Statistician log and the Roleplay prose, which is written in Spanish, not translated line by line (it never has to guess whether a character or a weapon is masculine or feminine: "su Espada larga", "sus Garras").
+- **What comes from elsewhere:** names of characters, items, spells and effects are whatever your game system and its compendiums call them (a Spanish translation of the system gives Spanish names). The system helper modules write some lines of their own (a recovery check, why a trait is what it is); those follow each helper's own languages.
+- **Regional Spanish:** Foundry matches a language code exactly and falls back only to English. FastFighting ships `es`, the code Spanish translations of Foundry use, in a neutral Spanish that reads naturally in Spain and the Americas.
+- **Story tables:** installing the story tables (Settings → FastFighting → Story tables) installs them in the GM's language. Tables you've installed or edited always win over the built-in ones.
+- **For translators:** add `languages/<code>.json` with the same keys as `languages/en.json` (the tests check that Spanish has every key, with the same placeholders), and for the Roleplay prose either install and edit the story tables in a world, or ship `story/<code>.json` (`{"<table key>": ["entry 1", ..., "entry 5"]}`; any table it leaves out is told in English).
+
 ## Settings
 
 All settings are defaults that the planner can override per battle:

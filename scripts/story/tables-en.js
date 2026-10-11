@@ -15,6 +15,8 @@
  * Entries never use gendered pronouns.
  */
 
+import { localize } from "../i18n.js";
+
 export const TIERS = ["criticalSuccess", "majorSuccess", "success", "minorSuccess", "minorFailure", "failure", "majorFailure", "criticalFailure"];
 export const DELIVERIES = ["melee", "ranged", "spell"];
 /** Damage imagery families. Systems map their own damage types onto these (rules.storyDamageType). */
@@ -497,6 +499,11 @@ export const DESIRE_INTENSITY = {
   driven: ["really wants to", "badly wants to", "is set on trying to", "won't rest until they can", "is driven to"],
   obsessed: ["can think only of how to", "would give anything to", "is desperate to", "burns to", "is consumed by the need to"]
 };
+/** Desires about itself (healing itself, bolstering itself). */
+export const DESIRE_SELF = {
+  heal: ["heal themselves", "patch themselves up", "tend their own wounds", "pull themselves together", "get back on their feet"],
+  aid: ["bolster themselves", "give themselves an edge", "steel themselves", "brace for the fight", "find their focus"]
+};
 export const DESIRE_VERB = {
   hurt: ["hurt {target}", "bring {target} down", "make {target} pay", "get at {target}", "finish {target}"],
   heal: ["heal {target}", "patch up {target}", "tend to {target}", "help {target}", "get {target} back on their feet"],
@@ -537,11 +544,14 @@ export function buildEnglishTables() {
   for ( const [name, entries] of Object.entries(EVENT) ) tables[`event.${name}`] = entries;
   for ( const [band, entries] of Object.entries(DESIRE_INTENSITY) ) tables[`desire.intensity.${band}`] = entries;
   for ( const [kind, entries] of Object.entries(DESIRE_VERB) ) tables[`desire.verb.${kind}`] = entries;
+  for ( const [kind, entries] of Object.entries(DESIRE_SELF) ) tables[`desire.self.${kind}`] = entries;
   return tables;
 }
 
-/** Human-friendly table name for a key, e.g. "Melee · Slashing · Minor Success". */
+/** A key's part as words: "minorSuccess" -> "Minor Success". */
+export const partWords = w => w.replace(/([A-Z])/g, " $1").replace(/^./, c => c.toUpperCase());
+
+/** Human-friendly table name for a key, e.g. "Melee · Slashing · Minor Success" (in the reader's language). */
 export function tableName(key) {
-  const words = key.split(".").map(w => w.replace(/([A-Z])/g, " $1").replace(/^./, c => c.toUpperCase()));
-  return words.join(" · ");
+  return key.split(".").map(w => localize(`FASTFIGHTING.Story.Part.${w}`, partWords(w))).join(" · ");
 }

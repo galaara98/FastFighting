@@ -6,6 +6,7 @@ import { SystemAdapter } from "../adapter-base.js";
 import { genericRules } from "./rules.js";
 import { parseFormula } from "../../engine/dice.js";
 import { MODULE_ID, STATUS } from "../../constants.js";
+import { localize, commonOutcome, outcomeLine } from "../../i18n.js";
 
 export const GENERIC_PATHS = {
   hp: "system.attributes.hp.value",
@@ -90,19 +91,13 @@ export class GenericAdapter extends SystemAdapter {
     return {
       traits: { tactical: pc ? 65 : 45, brave: pc ? 75 : 55, selfish: pc ? 25 : 45, loyal: pc ? 80 : 50 },
       flags: {},
-      reasons: { tactical: "Generic default", brave: "Generic default", selfish: "Generic default", loyal: "Generic default" }
+      reasons: Object.fromEntries(["tactical", "brave", "selfish", "loyal"].map(k => [k, localize("FASTFIGHTING.Generic.DefaultReason", "Generic default")]))
     };
   }
 
   describeOutcome(spec, final) {
-    const lines = [];
-    if ( final.hp !== spec.hp.value ) lines.push(`HP ${spec.hp.value} → ${final.hp}`);
-    if ( final.status === STATUS.DEAD ) lines.push("Dead");
-    else if ( final.status === STATUS.FLED ) lines.push(spec.kind === "pc" ? "Retreated from the battle" : "Fled the battle (token hidden)");
-    else if ( final.status === STATUS.SURRENDERED ) lines.push("Surrenders");
-    else if ( final.status === STATUS.STOOD_DOWN ) lines.push("Stands down (talked out of fighting)");
-    if ( final.swayed === "switched" ) lines.push("Switches sides");
-    else if ( final.status === STATUS.DOWN ) lines.push("Down");
+    const lines = commonOutcome(spec, final);
+    if ( final.status === STATUS.DOWN ) lines.push(outcomeLine("Down"));
     return lines;
   }
 
