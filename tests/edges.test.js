@@ -161,3 +161,19 @@ describe("a system's own payoff for sizing up", () => {
     expect(buildStory(r, spec, "statistician").text).toMatch(/sizes up · Secure an Advantage d20 \d+ \+40 = \d+ vs DC 10 · \w[\w ]* · its next roll 1\.25× as likely to succeed/);
   });
 });
+
+describe("what sizing up teaches holds for the foe's sort", () => {
+  test("one goblin warrior sized up is all of them: one turn, and the payoff against any of them", () => {
+    const scholar = fighter("s", { behavior: { study: 1 }, initiative: { mod: 50 }, sizeUp: { mod: 40, dc: 10, label: "Recall Knowledge" } });
+    const warrior = n => ogre(`w${n}`, { name: `Goblin Warrior ${n}`, hp: { value: 30, max: 30, temp: 0 } });
+    const spec = battle([scholar, warrior(1), warrior(2), warrior(3)], { maxRounds: 3 });
+    const r = replay(spec, pf2eRules, 5);
+    const studies = r.log.filter(e => e.type === "study" && e.actorId === "s");
+    expect(studies).toHaveLength(1);
+    expect(studies[0].kin).toBe(2);
+    expect(buildStory(r, spec, "statistician").text).toMatch(/s → Goblin Warrior \d \(and the 2 like them\): sizes up/);
+    // The boosted blows land on whichever warrior it fights.
+    const boosted = r.log.filter(e => e.type === "attack" && e.actorId === "s" && e.boost > 0);
+    expect(boosted.length).toBeGreaterThan(0);
+  });
+});

@@ -103,7 +103,7 @@ function campOf(entry, setup) {
 }
 
 /** The base actor's name, without the numbers tokens get ("Goblin 3"). */
-const baseName = token => String(token.actor?.name ?? token.name ?? "").toLowerCase().replace(/[sd#.()-]+$/, "").trim();
+const baseName = token => String(token.actor?.name ?? token.name ?? "").toLowerCase().replace(/[\s\d#.()-]+$/, "").trim();
 
 /**
  * Propose friend groups for the neutral tokens on the map (engine/groups.js), each to its token's setup as autoGroup.

@@ -346,9 +346,21 @@ export function behaviorOf(u) {
  * that counts instead.
  */
 export function studyBonus(u, t, { words = false } = {}) {
-  if ( !t || !u.studied?.has(t.id) || boosted(u, t) ) return 0;
+  if ( !t || !sizedUp(u, t) || boosted(u, t) ) return 0;
   return !words && Object.keys(t.spec.iwr?.weak ?? {}).length ? 2 : 1;
 }
+
+/**
+ * A foe's sort, for what sizing it up teaches: its stat block (the actor its token is of), else its name without the
+ * number tokens get ("Goblin Warrior 2": goblin warrior). Knowing one goblin warrior is knowing them all.
+ */
+export const sortOf = t => String(t?.spec?.actorId ?? String(t?.spec?.name ?? "").toLowerCase().replace(/[\s\d#.()-]+$/, "").trim());
+
+/** Has u sized t up: it, or another of its sort? */
+export const sizedUp = (u, t) => !!t && !!u.studied && (u.studied.has(t.id) || u.studied.has(`sort:${sortOf(t)}`));
+
+/** Has u let t's sort go: tried and learned nothing, or decided against sizing it up? */
+export const passedOver = (u, t) => !!t && !!u.studied && (u.studied.has(`skip:${t.id}`) || u.studied.has(`skipsort:${sortOf(t)}`));
 
 /** Does u have a boost against t (a Lore-Collector's payoff for sizing it up)? */
 export const boosted = (u, t) => boostOf(u, t) > 1;
@@ -359,9 +371,12 @@ export const boosted = (u, t) => boostOf(u, t) > 1;
  */
 export function boostOf(u, t) {
   let best = 1;
-  for ( const e of u?.effects ?? [] ) if ( e.boost > best && (!e.vs || e.vs === t?.id) ) best = e.boost;
+  for ( const e of u?.effects ?? [] ) if ( e.boost > best && boostReaches(e, t) ) best = e.boost;
   return best;
 }
+
+/** Does a boost reach t: one for anyone, for t itself, or for t's sort? */
+export const boostReaches = (e, t) => (!e.vs && !e.vsSort) || e.vs === t?.id || (!!e.vsSort && e.vsSort === sortOf(t));
 
 /**
  * What a boost adds to a roll against t: the bonus that makes it about `boost` times as likely to succeed as it

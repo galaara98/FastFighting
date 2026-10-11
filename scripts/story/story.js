@@ -549,7 +549,8 @@ function statLine(e) {
       const factor = `${e.factor ?? 2.5}×`;
       const pays = e.worked === false ? (e.price ? `learns nothing · ${e.price}` : "learns nothing")
         : e.oneRoll ? `its next roll${e.anyFoe ? "" : " against them"} ${factor} as likely to succeed` : `its next rolls against them ${factor} as likely to succeed`;
-      return `${e.actor} → ${e.target}: sizes up${rolled} · ${pays}`;
+      const kin = e.kin ? ` (and the ${e.kin} like them)` : "";
+      return `${e.actor} → ${e.target}${kin}: sizes up${rolled} · ${pays}`;
     }
     case "observe": return `${e.actor} watches ${(e.targets ?? []).join(", ")} instead of talking`;
     case "firstAid": return `${e.actor} → ${e.target}: first aid · medicine ${roll(e.natural, e.mod, e.total, e.dc, "DC")} · ${DEGREE[e.degree]} · ${e.stable ? "stabilized" : e.dead ? "dies" : `dying ${e.dying}`}`;

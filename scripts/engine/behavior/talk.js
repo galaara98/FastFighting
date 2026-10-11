@@ -450,7 +450,7 @@ export function attemptTalk(run, talker, pitch, log) {
   const rules = run.prep.rules;
   const roll = rollCheck(rules, run.rng, pitch.mod, pitch.dc, { advantage: pitch.advantage ?? 0, dice: pitch.dice ?? null, kind: "check" });
   spendEdges(talker, "check", t.id);
-  spendBoost(talker, t.id);
+  spendBoost(talker, t);
   const steps = stepsToConvince(t, run, talker);
   const aim = pitch.aim ?? aimOf(talker, t);
   let progress = t.sway.get(talker.side) ?? 0;

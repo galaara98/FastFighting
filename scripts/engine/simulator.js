@@ -12,7 +12,7 @@ import { costOf, mainPool } from "./turn.js";
 import {
   prepareBattle, createRun, isStanding, isUp, enemiesOf, alliesOf, areEnemies, liveTier, liveTrait, currentAc,
   attackRoll, attackOptions, saveRoll, checkRoll, turnFor, moveToward, moveAway, bonusDamageParts, dispositionOf,
-  behaviorOf, edgeDistance, movesNeeded, approach, canMove, moveTowardPoint, isMagical, upgradesSave, boostBonus, typical
+  behaviorOf, edgeDistance, movesNeeded, approach, canMove, moveTowardPoint, isMagical, upgradesSave, boostBonus, typical, sortOf, sizedUp, passedOver
 } from "./battle-state.js";
 import { sampleRunTactics } from "./playstyles.js";
 import { chooseTarget, bestOptionVs, scoreTargets } from "./behavior/targeting.js";
@@ -721,7 +721,7 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
     let roll = rollCheck(rules, run.rng, bonus + deedRoll + lift, ac, opts);
     spendEdges(u, "attack", target.id);
     spendEdges(target, "defend", u.id);
-    spendBoost(u, target.id);
+    spendBoost(u, target);
     if ( run.boosting && roll.degree < 2 ) roll = boost(run, u, roll, ac, { kind: "attack", stakes: attackStakes(run, u, target, action), options: opts, label: action.name }, logger(run));
     // The system's own say once the dice are seen (Ironsworn: burning momentum), and what the roll means (initiative).
     if ( rules.adjustRoll ) {
@@ -1119,7 +1119,7 @@ function executeControl(run, u, action, target, attacksMade, common) {
       if ( r.kind === "save" ) spendEdges(target, "save");
       else {
         spendEdges(u, r.rollKind, target.id);
-        spendBoost(u, target.id);
+        spendBoost(u, target);
         if ( r.rollKind === "attack" ) spendEdges(target, "defend", u.id);
       }
       // Luck: the target on a save against it, the user on its own roll.
@@ -1456,13 +1456,15 @@ function workTheDoor(run, u, turn, door, target) {
  */
 function sizesUp(run, u, t, turn, room, { decided = false, wholeTurn = false } = {}) {
   const chance = decided ? 1 : behaviorOf(u).study;
-  if ( !chance || !room || u.studied.has(t.id) || u.studied.has(`skip:${t.id}`) ) return false;
+  if ( !chance || !room || sizedUp(u, t) || passedOver(u, t) ) return false;
   if ( !areEnemies(run, u, t) && !seemsFoe(run, u, t) ) return false;
   const rules = run.prep.rules;
   const cost = rules.basicAction ?? 1;
   if ( !turn.canAfford(cost) ) return false;
+  // (Whether to take the time is decided once for each sort of foe: knowing one goblin warrior is knowing them all.)
+  const sort = sortOf(t);
   if ( !run.rng.chance(chance) ) {
-    u.studied.add(`skip:${t.id}`);
+    u.studied.add(`skipsort:${sort}`);
     return false;
   }
   turn.spend(cost);
@@ -1482,18 +1484,21 @@ function sizesUp(run, u, t, turn, room, { decided = false, wholeTurn = false } =
   // otherwise (Ironsworn: its next attack or words, at anyone, 25% likelier).
   const factor = Number(how?.boost) > 1 ? Number(how.boost) : LORE_BOOST;
   const uses = Number(how?.uses) > 0 ? Number(how.uses) : undefined;
+  // Others of its sort here: what it learns (or doesn't) holds for them too.
+  const kin = run.units.filter(o => o !== t && isStanding(o) && sortOf(o) === sort).length;
   if ( worked ) {
     u.studied.add(t.id);
-    // Paid for, and it worked: for the rest of this turn (or through its next, when sizing it up took the turn), to
-    // make up for the time it took.
-    applyOutcome(u, { boost: factor, uses, vs: how?.anyFoe ? undefined : t.id, rounds: 1, thisTurn: !wholeTurn, label: "sized up" }, u.id, { id: `sizeUp:${t.id}`, name: "sized up" });
+    u.studied.add(`sort:${sort}`);
+    // Paid for, and it worked: against any of that sort (or, as the system says, anyone), for the rest of this turn
+    // (or through its next, when sizing it up took the turn), to make up for the time it took.
+    applyOutcome(u, { boost: factor, uses, vsSort: how?.anyFoe ? undefined : sort, rounds: 1, thisTurn: !wholeTurn, label: "sized up" }, u.id, { id: `sizeUp:${sort}`, name: "sized up" });
   } else {
-    u.studied.add(`skip:${t.id}`);
+    u.studied.add(`skipsort:${sort}`);
     // (What a miss costs, in the system's terms: Ironsworn's price.)
     if ( how?.missOutcome ) rules.onOutcome?.(run, u, u, how.missOutcome);
   }
   log(run, u, worked ? `sizes up ${t.spec.name}` : `tries to size up ${t.spec.name}, and learns nothing useful`, {
-    type: "study", target: t.spec.name, targetId: t.id, worked, check, factor, oneRoll: !!uses, anyFoe: !!how?.anyFoe, price: !worked && how?.missOutcome ? how.missOutcome.label ?? "" : null
+    type: "study", target: t.spec.name, targetId: t.id, worked, check, factor, oneRoll: !!uses, anyFoe: !!how?.anyFoe, kin, price: !worked && how?.missOutcome ? how.missOutcome.label ?? "" : null
   });
   return true;
 }
@@ -1513,9 +1518,12 @@ function observes(run, u, turn) {
   u.observed = true;
   const chance = behaviorOf(u).observe;
   if ( !chance || !run.rng.chance(chance) ) return false;
-  const seen = o => isStanding(o) && areEnemies(run, u, o) && !(o.spec.hidden && !o.revealed) && !u.studied.has(o.id) && !u.studied.has(`skip:${o.id}`);
+  const seen = o => isStanding(o) && areEnemies(run, u, o) && !(o.spec.hidden && !o.revealed) && !sizedUp(u, o) && !passedOver(u, o);
   const first = choosePitch(run, u)?.target;
-  const foes = run.units.filter(seen).sort((a, b) => (b === first) - (a === first) || (Number(b.spec.level) || 0) - (Number(a.spec.level) || 0));
+  // (One of each sort: sizing up one goblin warrior is sizing up them all.)
+  const sorts = new Set();
+  const foes = run.units.filter(seen).sort((a, b) => (b === first) - (a === first) || (Number(b.spec.level) || 0) - (Number(a.spec.level) || 0))
+    .filter(o => !sorts.has(sortOf(o)) && sorts.add(sortOf(o)));
   if ( !foes.length ) return false;
   log(run, u, `holds back, watching ${foes.map(f => f.spec.name).join(", ")} closely`, { type: "observe", targets: foes.map(f => f.spec.name), targetIds: foes.map(f => f.id) });
   for ( const t of foes ) if ( !sizesUp(run, u, t, turn, true, { decided: true, wholeTurn: true }) ) break;

@@ -697,7 +697,7 @@
       },
       "loreCollector": {
         "Name": "Lore-Collector",
-        "Hint": "Sizes up a new foe before talking to it or fighting it (an action, or a whole turn where a turn has only one; in a standoff, most likely its whole first turn, watching the other side while the talk waits). When that works, its next rolls against that foe are much likelier to succeed, to make up for the time it took (how much is a setting in each game system's FastFighting module, 1.25 to 3 times; in Ironsworn it Secures an Advantage, for its next attack or words), and afterwards it still deals with that foe a little better. Drawn to foes it hasn't sized up yet."
+        "Hint": "Sizes up a new foe before talking to it or fighting it (an action, or a whole turn where a turn has only one; in a standoff, most likely its whole first turn, watching the other side while the talk waits). When that works, its next rolls against that foe are much likelier to succeed, to make up for the time it took (how much is a setting in each game system's FastFighting module, 1.25 to 3 times; in Ironsworn it Secures an Advantage, for its next attack or words), and afterwards it still deals with that foe a little better. What it learns holds for every foe of the same sort: one goblin warrior sized up is all of them. Drawn to foes it hasn't sized up yet."
       },
       "puzzleManiac": {
         "Name": "Puzzle-Maniac",

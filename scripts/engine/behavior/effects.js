@@ -19,6 +19,7 @@
  *                  first aid aimed at it)
  *     vsFocus      laid on a friend: against whoever that friend is set on (the foe it would hurt, the one it would
  *                  talk to, the friend it would tend), worked out when it lands
+ *     vsSort       a sort of creature (battle-state.js sortOf): a boost against every one of that sort
  *     boost        its rolls against `vs` are about this many times as likely to succeed as they would have been
  *                  (worked out roll by roll, as far as the dice allow): a Lore-Collector's payoff for sizing a foe up
  *     thisTurn     laid on itself, it lasts only to the end of this turn (not through its next one)
@@ -30,7 +31,7 @@
  */
 import { STATUS, clamp } from "../../constants.js";
 import { combineMods, diceMean } from "../mods.js";
-import { isStanding, areEnemies, enemiesOf, alliesOf } from "../battle-state.js";
+import { isStanding, areEnemies, enemiesOf, alliesOf, boostReaches } from "../battle-state.js";
 import { threatOf, unitsPerTurn, attacksIn } from "./evaluate.js";
 import { meanPart } from "../dice.js";
 
@@ -157,6 +158,7 @@ export function applyOutcome(target, outcome, sourceId = null, action = null) {
     onlyVs: !!outcome.onlyVs,
     uses: Number(outcome.uses) > 0 ? Math.round(Number(outcome.uses)) : null,
     vs: typeof outcome.vs === "string" && outcome.vs ? outcome.vs : null,
+    vsSort: typeof outcome.vsSort === "string" && outcome.vsSort ? outcome.vsSort : null,
     boost
   };
   (target.effects ??= []).push(effect);
@@ -194,11 +196,11 @@ export function spendEdges(u, kind, targetId = null) {
 }
 
 /**
- * A roll a boost helps was made (an attack, or words, at t): a boost good for so many rolls (`uses`) is spent by it,
- * the strongest first.
+ * A roll a boost helps was made (an attack, or words, at `target`): a boost good for so many rolls (`uses`) is spent
+ * by it, the strongest first.
  */
-export function spendBoost(u, targetId = null) {
-  const e = (u?.effects ?? []).filter(x => x.boost > 1 && x.uses > 0 && (!x.vs || x.vs === targetId)).sort((a, b) => b.boost - a.boost)[0];
+export function spendBoost(u, target = null) {
+  const e = (u?.effects ?? []).filter(x => x.boost > 1 && x.uses > 0 && boostReaches(x, target)).sort((a, b) => b.boost - a.boost)[0];
   if ( !e ) return;
   e.uses -= 1;
   if ( e.uses === 0 ) u.effects = u.effects.filter(x => x !== e);

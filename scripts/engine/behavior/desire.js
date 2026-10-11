@@ -26,7 +26,7 @@
  * an obsessed character (OBSESSED+) stops worrying about its own safety.
  */
 import { STATUS } from "../../constants.js";
-import { areEnemies, isStanding, liveTrait, enemiesOf, alliesOf } from "../battle-state.js";
+import { areEnemies, isStanding, liveTrait, enemiesOf, alliesOf, sizedUp } from "../battle-state.js";
 import { perceives, apparentHealth } from "./senses.js";
 import { seemsFoe } from "./neutral.js";
 
@@ -294,7 +294,7 @@ export function styleWants(run, u, scored, { canHeal = false, canTalk = false, t
     if ( h.healers && t.prep?.isHealer ) points += h.healers;
     if ( h.leader && run.prep.sides[t.side]?.leaderId === t.id ) points += h.leader;
     if ( h.weakness && Object.keys(t.spec.iwr?.weak ?? {}).some(k => mine.has(k)) ) points += h.weakness;
-    if ( h.unstudied && !u.studied?.has(t.id) ) points += h.unstudied;
+    if ( h.unstudied && !sizedUp(u, t) ) points += h.unstudied;
     if ( h.current && t.id === u.targetId ) points += h.current;
     add("hurt", t.id, points);
   }
