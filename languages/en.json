@@ -239,9 +239,7 @@
     "Side": {
       "friendly": "Friendly",
       "hostile": "Hostile",
-      "hostile1": "Hostile 1",
-      "hostile2": "Hostile 2",
-      "hostile3": "Hostile 3",
+      "hostileGroup": "Hostile {n}",
       "neutral": "Neutral",
       "secret": "Secret",
       "neutralParty": "Taking no side"

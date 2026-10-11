@@ -49,7 +49,7 @@ const SETTING = {
   talking: "creatures can talk instead of fighting (on or off)", ignoreLanguages: "talking works without a shared language (on or off)", storyStyle: "which story style is told by default",
   storyMode: "who the story is posted for", leaderInfluence: "how readily followers take their commander's lead", bossInfluence: "how much more a boss's lead counts"
 };
-const SIDE = { friendly: "the party's side", hostile: "the enemy side", hostile1: "hostile group 1", hostile2: "hostile group 2", hostile3: "hostile group 3", neutral: "neutral tokens (taking part as set)", secret: "secret tokens (hidden from the players)" };
+const SIDE = { friendly: "the party's side", hostile: "the enemy side: the Hostile tab and side choice, and its name when it fights as one group", hostileGroup: "a hostile group's name, with its number, when the hostile tokens fight in more than one group", neutral: "neutral tokens (taking part as set)", secret: "secret tokens (hidden from the players)" };
 const BAND = {
   feral: "Tactical, lowest band (0-19): pure instinct", instinctive: "Tactical, 20-39", competent: "Tactical, 40-59", tactical: "Tactical, 60-79", mastermind: "Tactical, highest band (80+)",
   craven: "Brave, lowest band (0-19)", skittish: "Brave, 20-39", steady: "Brave, 40-59", bold: "Brave, 60-79", fearless: "Brave, highest band (80+)",

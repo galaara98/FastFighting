@@ -15,12 +15,25 @@ import { setting } from "../settings.js";
 const SIDE_LABELS = {
   [SIDES.FRIENDLY]: "FASTFIGHTING.Side.friendly",
   [SIDES.HOSTILE]: "FASTFIGHTING.Side.hostile",
-  hostile2: "FASTFIGHTING.Side.hostile2",
-  hostile3: "FASTFIGHTING.Side.hostile3",
   [SIDES.NEUTRAL]: "FASTFIGHTING.Side.neutral",
   [SIDES.SECRET]: "FASTFIGHTING.Side.secret",
   [NEUTRAL_PARTY]: "FASTFIGHTING.Side.neutralParty"
 };
+
+/** How many hostile groups are among these sides (a battle's, or its tokens'). */
+export const hostileGroupsIn = sides => new Set([...sides].filter(s => HOSTILE_GROUPS.includes(s))).size;
+
+/**
+ * A side's name, in the reader's language. A hostile group is numbered ("FASTFIGHTING.Side.hostileGroup", {n}) when more
+ * than one fights, or when the one that does isn't group 1; a lone hostile side is just that.
+ * @param {string} side
+ * @param {number} [hostileGroups]   how many hostile groups fight (hostileGroupsIn)
+ */
+export function sideName(side, hostileGroups = 1) {
+  const n = HOSTILE_GROUPS.indexOf(side) + 1;
+  if ( n > 1 || (n === 1 && hostileGroups > 1) ) return game.i18n.format("FASTFIGHTING.Side.hostileGroup", { n });
+  return game.i18n.localize(SIDE_LABELS[side] ?? side);
+}
 
 /** Neutral tokens take no side in the fight: these allegiances are only the way they lean (behavior/neutral.js). */
 const LEANS = new Set([ALLEGIANCE.NEUTRAL, ALLEGIANCE.FRIENDLY, ALLEGIANCE.HOSTILE, ALLEGIANCE.CLOSEST, ALLEGIANCE.UNDERDOG]);
@@ -403,7 +416,7 @@ export function buildBattleSpec(roster, setup, { underdog = null, approach = nul
   const sides = {};
   const used = Object.keys(bySide);
   const fighting = used.filter(s => s !== NEUTRAL_PARTY); // (those who take no side are nobody's enemy, as a side)
-  const hostileGroups = used.filter(s => HOSTILE_GROUPS.includes(s)).length;
+  const hostileGroups = hostileGroupsIn(used);
   for ( const side of used ) {
     const neutral = side === NEUTRAL_PARTY;
     // Hostile groups share the hostile side's settings; each has its own leader (the GM's pick, if it's in the group).
@@ -414,7 +427,7 @@ export function buildBattleSpec(roster, setup, { underdog = null, approach = nul
     const enemies = neutral ? [] : fighting.filter(o => o !== side);
     const head = neutral ? null : chains[side]?.[0] ?? null;
     sides[side] = {
-      label: game.i18n.localize(side === SIDES.HOSTILE && hostileGroups > 1 ? "FASTFIGHTING.Side.hostile1" : SIDE_LABELS[side] ?? side),
+      label: sideName(side, hostileGroups),
       enemies,
       traits: Object.fromEntries(TRAITS.map(k => [k, { base: defaults[k] ?? 50, fudge: s.traitFudge?.[k] ?? 0 }])),
       leaderId: head?.id ?? null,

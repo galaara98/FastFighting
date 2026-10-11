@@ -2,6 +2,7 @@ import { afterEach, describe, expect, test } from "vitest";
 import { distanceText, numberText, setDistanceUnit } from "../scripts/i18n.js";
 import { logLine } from "../scripts/story/log-lines.js";
 import { keptEnglish, applyKeptEnglish } from "../scripts/foundry/keep-english.js";
+import { sideName, hostileGroupsIn } from "../scripts/foundry/battle.js";
 import { text } from "./foundry-i18n.js";
 
 afterEach(() => {
@@ -31,6 +32,18 @@ describe("distances: the engine counts feet, the table reads its own units", () 
     // (A code Intl doesn't know still gives a number.)
     globalThis.game.i18n.lang = "not a language";
     expect(numberText(4.5)).toBe("4.5");
+  });
+});
+
+describe("a side's name", () => {
+  test("a lone hostile side is just that; hostile groups are numbered from one template", () => {
+    expect(sideName("hostile", 1)).toBe(text("FASTFIGHTING.Side.hostile"));
+    expect(sideName("hostile", 2)).toBe(text("FASTFIGHTING.Side.hostileGroup", { n: 1 }));
+    expect(sideName("hostile2", 2)).toBe(text("FASTFIGHTING.Side.hostileGroup", { n: 2 }));
+    // (Only group 3 fights: still numbered, so it reads as the group the GM put it in.)
+    expect(sideName("hostile3", 1)).toBe(text("FASTFIGHTING.Side.hostileGroup", { n: 3 }));
+    expect(sideName("friendly", 3)).toBe(text("FASTFIGHTING.Side.friendly"));
+    expect(hostileGroupsIn(["friendly", "hostile", "hostile3", "hostile", "neutralParty"])).toBe(2);
   });
 });
 

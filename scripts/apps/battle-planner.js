@@ -15,7 +15,7 @@ import {
 } from "../foundry/tactics.js";
 import {
   gatherRoster, chosenSide, groupOf, proposeNeutralGroups, resolveAllegiances, simulate, swingFactors, replay, findSample, drawFight,
-  approachFor, commandChains, commandGroup, ROLES
+  approachFor, commandChains, commandGroup, ROLES, sideName, hostileGroupsIn
 } from "../foundry/battle.js";
 import { buildStory, STORY_STYLES } from "../story/story.js";
 import { loadStoryTables } from "../story/tables.js";
@@ -228,6 +228,8 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     const setup = this.setup;
     const adapter = getAdapter();
     const resolved = resolveAllegiances(this.roster, setup, this.results?.underdog ?? null);
+    // (How many hostile groups fight, for their names: "Hostile" alone, or numbered.)
+    this.hostileGroups = hostileGroupsIn(this.roster.filter(e => setup.tokens[e.token.id]?.include !== false).map(e => resolved[e.token.id]));
     const sideDefaults = setting("sideDefaults");
 
     // Chains of command, by group: who holds which role (the GM's pick, or the automatic one).
@@ -339,7 +341,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       side: ts.side ?? e.baseSide,
       sideChoices: Object.fromEntries(SIDE_ORDER.map(k => [k, `FASTFIGHTING.Side.${k}`])),
       resolvedLabel: resolvedSide === NEUTRAL_PARTY ? loc(`FASTFIGHTING.Planner.TakesNoSide.${chosenSide(e, setup) === SIDES.NEUTRAL ? setup.sides[SIDES.NEUTRAL]?.allegiance ?? ALLEGIANCE.NEUTRAL : ALLEGIANCE.NEUTRAL}`)
-        : moved ? game.i18n.format("FASTFIGHTING.Planner.FightsWith", { side: loc(`FASTFIGHTING.Side.${resolvedSide}`) }) : (resolvedSide === null && ts.include !== false ? loc("FASTFIGHTING.Planner.SitsOut") : ""),
+        : moved ? game.i18n.format("FASTFIGHTING.Planner.FightsWith", { side: sideName(resolvedSide, this.hostileGroups) }) : (resolvedSide === null && ts.include !== false ? loc("FASTFIGHTING.Planner.SitsOut") : ""),
       // Which group (1 2 3): hostile groups fight each other too; a neutral's friend group was proposed when the planner opened.
       groups: grouped ? GROUPS.map(n => ({ n, active: n === group, auto: chosen === SIDES.NEUTRAL && ts.group == null })) : null,
       // Its role in its group's chain of command: boss (never in the party), leader, 1st or 2nd lieutenant.
@@ -387,7 +389,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     const histogram = r.rounds.histogram.map((p, round) => ({ round, p: pct(p), height: Math.round((p / maxHist) * 100) })).filter(h => h.round > 0);
     const combatants = Object.values(r.combatants).map(c => ({
       ...c,
-      sideLabel: loc(`FASTFIGHTING.Side.${c.side}`),
+      sideLabel: this.spec?.sides?.[c.side]?.label ?? sideName(c.side, this.hostileGroups),
       sideClass: c.side,
       bars: [
         { cls: "standing", w: (c.pStanding * 100).toFixed(1), label: `${loc("FASTFIGHTING.Results.Standing")} ${pct(c.pStanding)}` },
@@ -481,7 +483,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       seed,
       how: this.sample.how ? loc(`FASTFIGHTING.Sample.How.${this.sample.how}`) : "",
       preview: this.sample !== this.drawn,
-      outcome: result.outcome === "victory" ? listJoin(result.winners.map(w => loc(`FASTFIGHTING.Side.${w}`))) : loc(`FASTFIGHTING.Sample.Outcome.${result.outcome}`),
+      outcome: result.outcome === "victory" ? listJoin(result.winners.map(w => this.spec?.sides?.[w]?.label ?? sideName(w, this.hostileGroups))) : loc(`FASTFIGHTING.Sample.Outcome.${result.outcome}`),
       story: this.storyFor()?.html ?? "",
       totalRounds: result.rounds,
       finals: rows.map(r => ({ name: r.spec.name, side: r.spec.side, status: loc(`FASTFIGHTING.Status.${statusOf(r.final)}`), statusClass: statusOf(r.final), lines: r.lines.join("; ") || loc("FASTFIGHTING.Sample.Unchanged") }))

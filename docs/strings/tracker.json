@@ -8386,7 +8386,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "e16b02561cbb"
+   "hash": "e16b02561cbb",
+   "gone": "2026-10-11"
   },
   "core:FASTFIGHTING.Side.hostile2": {
    "repo": "core",
@@ -8396,7 +8397,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "2c0b7c0cde48"
+   "hash": "2c0b7c0cde48",
+   "gone": "2026-10-11"
   },
   "core:FASTFIGHTING.Side.hostile3": {
    "repo": "core",
@@ -8406,7 +8408,18 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "0af586116017"
+   "hash": "0af586116017",
+   "gone": "2026-10-11"
+  },
+  "core:FASTFIGHTING.Side.hostileGroup": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Side.hostileGroup",
+   "area": "core/Side",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "e02745b10a39"
   },
   "core:FASTFIGHTING.Side.neutral": {
    "repo": "core",
