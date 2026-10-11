@@ -13,6 +13,16 @@
  *     endsOnHarm   it ends when its source or the source's side harms the bearer (5e Charm Person)
  *     iwr          {resist: {type: value}, immune: [types], weak: {type: value}} for as long as it lasts (Rage, Stoneskin)
  *     actionsNow   main-pool units it gains at once, this turn only (5e Action Surge)
+ *     uses         spent after that many rolls it helps (or, for a mark on its defense, attacks against it): 5e Help,
+ *                  Guidance, Bardic Inspiration, PF2e Aid and Sure Strike, Ironsworn "+1 on your next move"
+ *     vs           a creature id: its bonuses count only for rolls against that one (its attacks, or its words or
+ *                  first aid aimed at it)
+ *     vsFocus      laid on a friend: against whoever that friend is set on (the foe it would hurt, the one it would
+ *                  talk to, the friend it would tend), worked out when it lands
+ *     boost        its rolls against `vs` are about this many times as likely to succeed as they would have been
+ *                  (worked out roll by roll, as far as the dice allow): a Lore-Collector's payoff for sizing a foe up
+ *     thisTurn     laid on itself, it lasts only to the end of this turn (not through its next one)
+ *     resources    resources it gains at once ({momentum: 2}): the system says how (rules.gainResource)
  * Everything is optional: an outcome with nothing the engine understands does nothing. Effects from the same action
  * and source refresh rather than pile up; an action with `concentration` holds them only while its source keeps
  * concentrating (one at a time; damage may break it, if the system says how).
@@ -41,13 +51,17 @@ export function recompute(u) {
     const value = v === true ? 1 : Number(v) || 0;
     into[k] = Math.max(into[k] ?? 0, value);
   };
+  const against = new Map(); // bonuses that count against one creature only: id -> [mods]
   for ( const e of u.effects ?? [] ) {
     if ( e.onlyVs && e.sourceId ) {
       const row = vs.get(e.sourceId) ?? {};
       for ( const [k, v] of Object.entries(e.conditions ?? {}) ) raise(row, k, v);
       vs.set(e.sourceId, row);
     } else for ( const [k, v] of Object.entries(e.conditions ?? {}) ) raise(conds, k, v);
-    if ( e.mods ) mods.push(e.mods);
+    if ( e.mods && e.vs ) {
+      if ( !against.has(e.vs) ) against.set(e.vs, []);
+      against.get(e.vs).push(e.mods);
+    } else if ( e.mods ) mods.push(e.mods);
     if ( e.mark?.length && e.sourceId ) marks.push({ by: e.sourceId, parts: e.mark });
     if ( e.sourceId && (Number(e.conditions?.controlled) || 0) > 0 ) controlledBy = e.sourceId; // the latest hold wins
     if ( e.iwr ) {
@@ -65,6 +79,8 @@ export function recompute(u) {
   u.conds = conds;
   u.vs = vs.size ? vs : null;
   u.mods = combineMods(mods);
+  // (Against one creature: those bonuses with everything else it has, the best of each kind still counting.)
+  u.edgeMods = against.size ? new Map([...against].map(([id, list]) => [id, combineMods([...mods, ...list])])) : null;
   u.marks = marks;
   u.controlledBy = controlledBy;
   // Resistances an effect lends (Rage, Stoneskin) on top of its own: the better of each counts.
@@ -123,7 +139,8 @@ export function applyOutcome(target, outcome, sourceId = null, action = null) {
   const mods = outcome.mods && typeof outcome.mods === "object" && Object.keys(outcome.mods).length ? outcome.mods : null;
   const mark = Array.isArray(outcome.mark) && outcome.mark.length ? outcome.mark : null;
   const iwr = outcome.iwr && typeof outcome.iwr === "object" && (Object.keys(outcome.iwr.resist ?? {}).length || outcome.iwr.immune?.length || Object.keys(outcome.iwr.weak ?? {}).length) ? outcome.iwr : null;
-  if ( !Object.keys(conditions).length && !mods && !mark && !iwr ) return null;
+  const boost = Number(outcome.boost) > 1 ? Number(outcome.boost) : null;
+  if ( !Object.keys(conditions).length && !mods && !mark && !iwr && !boost ) return null;
   const key = action?.id ?? outcome.label ?? null;
   if ( key !== null ) target.effects = (target.effects ?? []).filter(e => !(e.key === key && e.sourceId === sourceId));
   // Effects run out at the end of the bearer's turns; one it lays on itself during its own turn would lose a round
@@ -131,13 +148,16 @@ export function applyOutcome(target, outcome, sourceId = null, action = null) {
   const self = sourceId !== null && target.id === sourceId;
   const effect = {
     key, conditions, mods, mark, iwr, sourceId,
-    rounds: Math.max(1, Math.round(Number(outcome.rounds) || 1)) + (self ? 1 : 0),
+    rounds: Math.max(1, Math.round(Number(outcome.rounds) || 1)) + (self && !outcome.thisTurn ? 1 : 0),
     endsOnDamage: !!outcome.endsOnDamage,
     endsOnHarm: !!outcome.endsOnHarm,
     label: outcome.label ?? action?.name ?? "",
     concentration: !!action?.concentration,
     repeatSave: outcome.repeatSave?.type && Number.isFinite(Number(outcome.repeatSave.dc)) ? { type: outcome.repeatSave.type, dc: Number(outcome.repeatSave.dc) } : null,
-    onlyVs: !!outcome.onlyVs
+    onlyVs: !!outcome.onlyVs,
+    uses: Number(outcome.uses) > 0 ? Math.round(Number(outcome.uses)) : null,
+    vs: typeof outcome.vs === "string" && outcome.vs ? outcome.vs : null,
+    boost
   };
   (target.effects ??= []).push(effect);
   recompute(target);
@@ -147,6 +167,44 @@ export function applyOutcome(target, outcome, sourceId = null, action = null) {
 /** Lay a crowd-control outcome's conditions on a target for its rounds (older name, kept for callers). */
 export function applyControl(target, outcome, sourceId) {
   return applyOutcome(target, outcome, sourceId);
+}
+
+/** The bonuses each kind of roll draws on (and, for "defend", the marks that make it easier to hit). */
+const ROLL_KEYS = Object.freeze({
+  attack: ["attack", "attackDie", "adv", "damage"], check: ["checks", "checkDie", "checkAdv"], save: ["saves", "saveDie", "saveAdv"], defend: ["defAdv", "ac"]
+});
+
+/**
+ * A roll was made: effects good for only so many rolls (`uses`) that helped it are spent (for one against a single
+ * creature, only a roll against that one). `kind`: attack, check, save, or defend (an attack against u).
+ */
+export function spendEdges(u, kind, targetId = null) {
+  const keys = ROLL_KEYS[kind];
+  if ( !keys || !u?.effects?.length ) return;
+  let spent = false;
+  for ( const e of u.effects ) {
+    if ( !(e.uses > 0) || !e.mods || (e.vs && e.vs !== targetId) ) continue;
+    if ( !keys.some(k => e.mods[k]) ) continue;
+    e.uses -= 1;
+    spent = true;
+  }
+  if ( !spent ) return;
+  u.effects = u.effects.filter(e => e.uses !== 0);
+  recompute(u);
+}
+
+/**
+ * Whoever t is set on: the foe it would hurt, the one it would talk to, or the friend it would tend (its strongest
+ * such desire last turn, else the foe it was fighting): {unit, kind}, or null.
+ */
+export function focusOf(run, t) {
+  for ( const d of t.lastDesires ?? [] ) {
+    if ( !["hurt", "talk", "heal"].includes(d.kind) ) continue;
+    const o = run.byId.get(d.targetId);
+    if ( o && o !== t && o.status !== STATUS.DEAD && o.status !== STATUS.FLED ) return { unit: o, kind: d.kind };
+  }
+  const current = t.targetId ? run.byId.get(t.targetId) : null;
+  return current && isStanding(current) && areEnemies(run, t, current) ? { unit: current, kind: "hurt" } : null;
 }
 
 /**
@@ -322,22 +380,27 @@ function freshConditions(t, conditions) {
   return out;
 }
 
-/** What a set of bonuses and penalties is worth to t each round (negative: it hurts t). */
-function modsPerRound(run, t, mods, out, inc) {
+/**
+ * What a set of bonuses and penalties is worth to t each round (negative: it hurts t). `words`: what its checks are
+ * worth in a round (talking, first aid); `own` and `guard`: the share of its attacks, and of the attacks on it, they
+ * reach (all of them, or only the next one).
+ */
+function modsPerRound(run, t, mods, out, inc, { words = 0, own = 1, guard = 1 } = {}) {
   if ( !mods ) return 0;
   const num = k => Number(mods[k]) || 0;
   const sign = k => Math.sign(num(k));
   const die = k => (Number.isFinite(Number(mods[k])) ? diceMean([Number(mods[k])]) : diceMean(mods[k]));
   let v = 0;
   // Its own fighting: rolls, advantage, damage, actions, getting there.
-  v += out * (ROLL_POINT * (num("attack") + die("attackDie")) + ADVANTAGE * sign("adv"));
-  v += num("damage") * hitsPerRound(run, t);
+  v += own * (out * (ROLL_POINT * (num("attack") + die("attackDie")) + ADVANTAGE * sign("adv")) + num("damage") * hitsPerRound(run, t));
   const per = Math.max(1, unitsPerTurn(run.prep.rules, t));
   v += out * clamp(num("actions") / per, -1, 1);
   v += out * 0.004 * num("speed");
   // What comes at it: AC, being easy or hard to hit, its saves.
-  v += inc * (ROLL_POINT * num("ac") - ADVANTAGE * sign("defAdv"));
+  v += guard * inc * (ROLL_POINT * num("ac") - ADVANTAGE * sign("defAdv"));
   v += inc * SAVE_SHARE * (ROLL_POINT * (num("saves") + die("saveDie")) + ADVANTAGE * sign("saveAdv"));
+  // Its checks: talking someone round, first aid.
+  v += words * (ROLL_POINT * (num("checks") + die("checkDie")) + ADVANTAGE * sign("checkAdv"));
   return v;
 }
 
@@ -350,9 +413,17 @@ function modsPerRound(run, t, mods, out, inc) {
 export function outcomeWorth(run, by, t, outcome, { versus = null } = {}) {
   if ( !outcome || !t ) return 0;
   const rules = run.prep.rules;
-  const out = damageOut(run, t, versus);
+  // Against whoever it's set on only: its blows at a foe it would hurt; its words, or its first aid, for one it would
+  // talk to or tend. Set on no one, it does nothing.
+  const focus = outcome.vsFocus ? focusOf(run, t) : null;
+  if ( outcome.vsFocus && !focus ) return 0;
+  const out = focus ? (focus.kind === "hurt" ? damageOut(run, t, focus.unit) : 0) : damageOut(run, t, versus);
   const inc = incoming(run, t);
-  const rounds = usefulRounds(run, by?.side ?? t.side, outcome.rounds);
+  const words = focus ? (focus.kind === "hurt" ? 0 : Math.max(1, damageOut(run, t))) : Math.max(1, damageOut(run, t)) * checkShare(run, t);
+  // Good for one roll (or a few): the next attack of the round's, the next check, the next blow at it.
+  const uses = Number(outcome.uses) > 0 ? Number(outcome.uses) : 0;
+  const share = uses ? { words, own: Math.min(1, uses / Math.max(1, hitsPerRound(run, t) / 0.6)), guard: Math.min(1, uses / 2) } : { words };
+  const rounds = uses ? 1 : usefulRounds(run, by?.side ?? t.side, outcome.rounds);
   let perRound = 0;
   const fresh = freshConditions(t, outcome.conditions);
   const weighed = {};
@@ -372,7 +443,7 @@ export function outcomeWorth(run, by, t, outcome, { versus = null } = {}) {
     else weighed[k] = v;
   }
   if ( Object.keys(weighed).length ) perRound -= conditionWeight(rules, weighed) * out * (outcome.endsOnDamage ? 0.6 : 1);
-  perRound += modsPerRound(run, t, outcome.mods, out, inc);
+  perRound += modsPerRound(run, t, outcome.mods, out, inc, share);
   if ( Array.isArray(outcome.mark) && by && by !== t ) {
     const extra = outcome.mark.reduce((s, p) => s + Math.max(0, meanPart(p)), 0);
     perRound -= extra * hitsPerRound(run, by) * 0.8; // it has to keep hitting that one
@@ -391,7 +462,18 @@ export function outcomeWorth(run, by, t, outcome, { versus = null } = {}) {
   if ( now > 0 && by === t ) worth += now * out / Math.max(1, unitsPerTurn(rules, t));
   const temp = Number(outcome.tempHp) || 0;
   if ( temp > (t.temp ?? 0) ) worth += Math.min(temp - (t.temp ?? 0), inc * rounds);
+  // Resources it gains (Ironsworn momentum): what the system says they're worth.
+  for ( const [k, v] of Object.entries(outcome.resources ?? {}) ) worth += Number(rules.resourceWorth?.(run, t, k, Number(v) || 0)) || 0;
   return worth;
+}
+
+/** How much of t's turn goes into checks (talking, first aid), 0 to 1: what it was set on last turn, its knack for words. */
+function checkShare(run, t) {
+  if ( t.spec.alwaysTalk && !t.spec.stayTrue ) return 1;
+  const lead = t.lastDesires?.[0]?.kind;
+  if ( lead === "talk" ) return 0.8;
+  if ( lead === "heal" && t.spec.firstAid ) return 0.4;
+  return Math.min(0.5, 0.5 * (t.prep?.talkAffinity ?? 0));
 }
 
 /** Remember what u's concentration is worth (so it won't drop it lightly for something lesser). */

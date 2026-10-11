@@ -91,8 +91,9 @@ export const PLAYSTYLES = Object.freeze({
   // Out to prove itself: takes on the biggest threat and won't quit.
   redeemSeeker: { icon: "fa-dove", traits: { brave: 15, selfish: -20 }, suggest: { allyDying: "rescue", retreat: "never", style: "frontline" }, behavior: { drawAggro: 0.15, helps: 1 },
     desire: { hurt: { dangerous: 20 }, protect: 10, frustration: 0.6 } },
-  // Curious: drawn to foes it hasn't sized up yet.
-  loreCollector: { icon: "fa-book-open", traits: { tactical: 5 }, suggest: {}, behavior: { study: 0.5 },
+  // Curious: drawn to foes it hasn't sized up yet, and sizes them up before it deals with them (in a standoff, its
+  // first turn most likely goes into watching the other side).
+  loreCollector: { icon: "fa-book-open", traits: { tactical: 5 }, suggest: {}, behavior: { study: 0.5, observe: 0.85 },
     desire: { hurt: { unstudied: 10 }, frustration: 0.8 } },
   // Loves a weakness to exploit (and a lock to crack).
   puzzleManiac: { icon: "fa-puzzle-piece", traits: { tactical: 15 }, suggest: { target: "casters" }, behavior: { exploitWeakness: 0.5, hinders: 0.3 },

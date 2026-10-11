@@ -3,8 +3,10 @@
  * reads its spells, songs, skills and features into it; anything it can't express it simply leaves out.
  *
  *   attack, ac, saves, checks, damage   flat bonuses (+) or penalties (-) to rolls, AC and each damaging hit
- *   attackDie, saveDie                  a die rolled with every attack or save (5e Bless 4 = +1d4; Bane -4 = -1d4)
+ *   attackDie, saveDie, checkDie        a die rolled with every attack, save or check (5e Bless 4 = +1d4; Bane -4 =
+ *                                       -1d4; Guidance: +1d4 to checks)
  *   adv                                 its own attacks: +1 advantage, -1 disadvantage
+ *   checkAdv                            its checks (talking, first aid ...): +1 advantage, -1 disadvantage
  *   defAdv                              attacks against it: +1 advantage (Faerie Fire), -1 disadvantage (Blur, Dodge)
  *   saveAdv                             its saves: +1 advantage, -1 disadvantage
  *   speed                               feet (+10 Longstrider, -10 Ray of Frost)
@@ -16,8 +18,8 @@
  */
 
 export const FLAT_MODS = Object.freeze(["attack", "ac", "saves", "checks", "damage", "speed", "actions"]);
-export const DIE_MODS = Object.freeze(["attackDie", "saveDie"]);
-export const SIGN_MODS = Object.freeze(["adv", "defAdv", "saveAdv"]);
+export const DIE_MODS = Object.freeze(["attackDie", "saveDie", "checkDie"]);
+export const SIGN_MODS = Object.freeze(["adv", "defAdv", "saveAdv", "checkAdv"]);
 const KNOWN = new Set([...FLAT_MODS, ...DIE_MODS, ...SIGN_MODS]);
 
 /** Combine several mods objects into one: {attack: 1, attackDie: [4, -4], adv: 1, ...}; empty when nothing applies. */
@@ -85,7 +87,7 @@ export function describeMods(mods = {}, { tempHp = 0 } = {}) {
   if ( sign("adv") < 0 ) return "rattled";
   if ( sign("speed") > 0 ) return "fleet-footed";
   if ( sign("speed") < 0 ) return "slowed";
-  if ( sign("checks") > 0 ) return "inspired";
+  if ( sign("checks") > 0 || sign("checkDie") > 0 || sign("checkAdv") > 0 ) return "inspired";
   if ( tempHp > 0 ) return "bolstered";
   return "affected";
 }

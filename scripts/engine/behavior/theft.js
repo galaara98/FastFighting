@@ -146,10 +146,10 @@ export function attemptTheft(run, u, t, log, { plan = null, attacksMade = 0 } = 
   }
   const resist = t.spec.social?.resist?.steal;
   const dc = resist?.dc ?? typical(rules, "dc", t.spec.level ?? 0);
-  const check = checkRoll(run, u, u.spec.theft.mod);
+  const check = checkRoll(run, u, u.spec.theft.mod, t);
   const extra = rules.modifiers?.steal?.({ thief: u, target: t }) ?? {};
   const mod = check.mod + (extra.bonus ?? 0);
-  const roll = rollCheck(rules, run.rng, mod, dc, { advantage: (check.advantage ?? 0) + (extra.advantage ?? 0), kind: "check" });
+  const roll = rollCheck(rules, run.rng, mod, dc, { advantage: (check.advantage ?? 0) + (extra.advantage ?? 0), dice: check.dice, kind: "check" });
   const data = {
     type: "theft", target: t.spec.name, targetId: t.id, skill: u.spec.theft.skill ?? "theft", natural: roll.natural, mod, total: roll.total,
     dc, dcStat: resist?.label ?? "DC", degree: roll.degree, margin: roll.total - dc, feint

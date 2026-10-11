@@ -697,7 +697,7 @@
       },
       "loreCollector": {
         "Name": "Lore-Collector",
-        "Hint": "Sizes up a new foe before talking to it or fighting it, then deals with it better: its attacks land more often (more so on a weakness to exploit) and its words carry more weight. Drawn to foes it hasn't sized up yet."
+        "Hint": "Sizes up a new foe before talking to it or fighting it (an action, or a whole turn where a turn has only one; in a standoff, most likely its whole first turn, watching the other side while the talk waits). When that works, its next rolls against that foe are about 2.5 times as likely to succeed, to make up for the time it took, and afterwards it still deals with that foe a little better. Drawn to foes it hasn't sized up yet."
       },
       "puzzleManiac": {
         "Name": "Puzzle-Maniac",

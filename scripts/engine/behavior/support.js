@@ -10,6 +10,12 @@
  *   aura: feet           every friend within that many feet of the user (PF2e Bless, Courageous Anthem)
  *   includeSelf: false   not the user itself
  *   concentration        it lasts only while the user concentrates
+ *   check: {mod, dc, label}  it needs a roll to land (PF2e Aid, DC 15; Ironsworn Secure an Advantage, an action
+ *                        roll): onDegree [critical failure, failure, success, critical success] says what comes of each
+ *                        (an outcome, or null for nothing); without it, the outcome on a success and nothing otherwise
+ *   besideFoe: feet      only for a friend whose foe is that close to the user (5e Help: within 5 feet of you)
+ * An outcome with vsFocus counts against whoever the friend is set on (effects.js), and `uses` makes it one roll's
+ * worth: Help, Aid, Guidance, an inspiration die, "+1 on your next move".
  *   oncePerTurn          no more than once in a turn (Action Surge, Reckless Attack)
  *   tell                 the story table to tell it with (event.dodge, event.reckless, event.surge), for what isn't magic
  * A buff is worth casting when what it adds up to across its recipients, over the rounds it will matter, beats what
@@ -17,9 +23,10 @@
  * Pure: no Foundry globals.
  */
 import { STATUS, TACTICAL } from "../../constants.js";
-import { alliesOf, enemiesOf, isStanding, liveTier, movesNeeded, edgeDistance, behaviorOf } from "../battle-state.js";
+import { alliesOf, enemiesOf, isStanding, liveTier, movesNeeded, edgeDistance, behaviorOf, checkRoll } from "../battle-state.js";
+import { degreeDistribution } from "../probability.js";
 import { hasUses, costOf, costUnits, threatOf, unitsPerTurn } from "./evaluate.js";
-import { outcomeWorth, hasFresh, concentrationCost, heldElsewhere } from "./effects.js";
+import { outcomeWorth, hasFresh, concentrationCost, heldElsewhere, focusOf } from "./effects.js";
 import { mind, levelOf } from "./desire.js";
 import { bringsItself } from "./reluctance.js";
 import { castChanceOf } from "./casting.js";
@@ -45,16 +52,16 @@ function reaches(run, u, a, action) {
  * could go to, not just as many as it reaches.
  */
 export function recipients(run, u, action, tier = liveTier(run, u), { all = false } = {}) {
-  const outcome = action.outcome;
+  const outcome = action.outcome ?? action.onDegree?.[2] ?? action.onDegree?.[3];
   if ( !outcome || typeof outcome !== "object" ) return [];
   const self = action.targets === "self";
   const pool = self || tier <= TACTICAL.FERAL
     ? (action.includeSelf === false && !self ? [] : [u])
-    : alliesOf(run, u).filter(a => isStanding(a) && (a !== u || action.includeSelf !== false) && reaches(run, u, a, action));
+    : alliesOf(run, u).filter(a => isStanding(a) && (a !== u || action.includeSelf !== false) && reaches(run, u, a, action) && besideFoe(run, u, a, action));
   const picks = [];
   for ( const ally of pool ) {
     if ( hasFresh(ally, action) && !outcome.actionsNow ) continue; // it's on them already
-    const worth = outcomeWorth(run, u, ally, outcome);
+    const worth = edgeWorth(run, u, ally, action, outcome);
     if ( worth > 0 ) picks.push({ ally, worth });
   }
   // A friend it wants to bolster (one that asked, say) comes first, as far as the wish goes: at 50, worth twice as much.
@@ -62,6 +69,31 @@ export function recipients(run, u, action, tier = liveTier(run, u), { all = fals
   picks.sort((a, b) => rank(b) - rank(a));
   const n = self ? 1 : action.aura ? picks.length : Math.max(1, Number(action.area?.targets) || 1);
   return all ? picks : picks.slice(0, n);
+}
+
+/** 5e Help: only for a friend whose foe is close enough to the helper (any friend, for one that isn't fighting). */
+function besideFoe(run, u, a, action) {
+  const feet = Number(action.besideFoe) || 0;
+  if ( !feet || a === u ) return true;
+  const focus = focusOf(run, a);
+  if ( focus?.kind !== "hurt" ) return true;
+  const d = edgeDistance(u, focus.unit);
+  return d === null || d <= feet;
+}
+
+/** Chances of each degree for a buff that needs a roll to land ([0, 0, 1, 0] for one that doesn't). */
+export function landing(run, u, action) {
+  if ( !action.check || !Number.isFinite(Number(action.check.mod)) ) return [0, 0, 1, 0];
+  const c = checkRoll(run, u, Number(action.check.mod));
+  return degreeDistribution(run.prep.rules, c.mod, Number(action.check.dc) || 0, { advantage: c.advantage, dice: c.dice, kind: "check" });
+}
+
+/** What a buff is worth to a friend, over what its roll may come to. */
+function edgeWorth(run, u, ally, action, outcome) {
+  if ( !action.check ) return outcomeWorth(run, u, ally, outcome);
+  const dist = landing(run, u, action);
+  if ( !Array.isArray(action.onDegree) ) return (dist[2] + dist[3]) * outcomeWorth(run, u, ally, outcome);
+  return dist.reduce((s, p, d) => s + (p > 0 && action.onDegree[d] ? p * outcomeWorth(run, u, ally, action.onDegree[d]) : 0), 0);
 }
 
 /** What u would do with one action's worth of attacking instead: its best damage per action against a standing foe. */

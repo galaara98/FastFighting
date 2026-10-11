@@ -3,7 +3,7 @@
  */
 import { meanPart, doubled } from "../dice.js";
 import { degreeDistribution } from "../probability.js";
-import { attackRoll, attackOptions, currentAc, saveRoll, bonusDamageParts, enemiesOf, isStanding, isMagical, upgradesSave } from "../battle-state.js";
+import { attackRoll, attackOptions, currentAc, saveRoll, bonusDamageParts, enemiesOf, isStanding, isMagical, upgradesSave, boostBonus } from "../battle-state.js";
 import { costOf, costUnits, mainPool } from "../turn.js";
 import { controlValue } from "./control.js";
 import { iwrOf } from "./effects.js";
@@ -99,7 +99,8 @@ export function expectedDamage(run, a, action, t, attacksMade = 0) {
   // A finishing move: everything the foe has left, as often as it lands.
   if ( action.finish ) {
     const r = attackRoll(run, a, t, action, attacksMade);
-    const dist = degreeDistribution(rules, r.bonus, currentAc(run, t, a, action), attackOptions(r));
+    const ac = currentAc(run, t, a, action);
+    const dist = degreeDistribution(rules, r.bonus + boostBonus(rules, a, t, r.bonus, ac, attackOptions(r)), ac, attackOptions(r));
     return (dist[2] + dist[3]) * (t.hp + t.temp);
   }
   const dmg = meanDamageVs(run, action, t);
@@ -120,7 +121,9 @@ export function expectedDamage(run, a, action, t, attacksMade = 0) {
   const deed = roll.deed ? (roll.deed + 1) / 2 : 0;
   const extra = extraParts.reduce((s, p) => s + Math.max(0, meanPart(p)), 0) + deed;
   const extraCrit = (extraParts.length ? criticalParts(rules, extraParts).reduce((s, p) => s + Math.max(0, meanPart(p)), 0) : 0) + deed;
-  const dist = degreeDistribution(rules, roll.bonus, currentAc(run, t, a, action), attackOptions(roll, { deed: true }));
+  const ac = currentAc(run, t, a, action);
+  const opts = attackOptions(roll, { deed: true });
+  const dist = degreeDistribution(rules, roll.bonus + boostBonus(rules, a, t, roll.bonus, ac, opts), ac, opts);
   return targets * (dist[2] * (dmg.normal + extra) + dist[3] * (dmg.critical + extraCrit));
 }
 

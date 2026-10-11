@@ -85,6 +85,7 @@ import { typicalValue } from "./tactics.js";
 import { talkAffinity } from "./behavior/talk.js";
 import { Turn } from "./turn.js";
 import { combineMods, netAdvantage } from "./mods.js";
+import { degreeDistribution } from "./probability.js";
 
 const DEFAULT_APPROACH = Object.freeze({ dist: 5, mult: 1, speed: 25, mode: "walk", los: true, meleeOk: true });
 const SIDE_WEIGHT = 0.3;
@@ -190,7 +191,7 @@ function prepareCombatant(c, side) {
     hasRanged: own.some(a => a.range && !["heal", "buff", "summon"].includes(a.kind)),
     flies: (c.speeds?.fly ?? 0) > 0,
     healActions: own.filter(a => a.kind === "heal").sort((x, y) => meanHeal(y) / y.cost - meanHeal(x) / x.cost),
-    buffActions: own.filter(a => a.kind === "buff" && a.outcome),
+    buffActions: own.filter(a => a.kind === "buff" && (a.outcome || Array.isArray(a.onDegree))),
     summonActions: own.filter(a => a.kind === "summon" && a.creatures?.length),
     offense: own.filter(a => !["heal", "buff", "summon"].includes(a.kind)),
     legendaryActions: c.legendary?.pool ? c.actions.filter(a => a.legendary && !["heal", "buff", "summon"].includes(a.kind)) : []
@@ -341,11 +342,48 @@ export function behaviorOf(u) {
 
 /**
  * Lore-Collector bonus against a foe it has sized up: +1 to its attacks (+2 when the foe has a weakness to exploit),
- * and +1 to its words (it knows what moves them).
+ * and +1 to its words (it knows what moves them). While its payoff for sizing it up holds (a boost: see effects.js),
+ * that counts instead.
  */
 export function studyBonus(u, t, { words = false } = {}) {
-  if ( !t || !u.studied?.has(t.id) ) return 0;
+  if ( !t || !u.studied?.has(t.id) || boosted(u, t) ) return 0;
   return !words && Object.keys(t.spec.iwr?.weak ?? {}).length ? 2 : 1;
+}
+
+/** Does u have a boost against t (a Lore-Collector's payoff for sizing it up)? */
+export const boosted = (u, t) => boostOf(u, t) > 1;
+
+/**
+ * The strongest boost u has against t (1: none). Only a Lore-Collector that paid for one has it: an action (or a
+ * turn) spent sizing t up, and the sizing up worked (see simulator sizesUp).
+ */
+export function boostOf(u, t) {
+  let best = 1;
+  for ( const e of u?.effects ?? [] ) if ( e.boost > best && (!e.vs || e.vs === t?.id) ) best = e.boost;
+  return best;
+}
+
+/**
+ * What a boost adds to a roll against t: the bonus that makes it about `boost` times as likely to succeed as it
+ * would have been without one (as far as the dice allow), or 0 without a boost.
+ */
+export function boostBonus(rules, u, t, mod, dc, options = {}) {
+  const factor = boostOf(u, t);
+  if ( !(factor > 1) || !Number.isFinite(dc) ) return 0;
+  const p = extra => {
+    const d = degreeDistribution(rules, mod + extra, dc, options);
+    return d[2] + d[3];
+  };
+  const base = p(0);
+  const goal = Math.min(p(30), factor * base, 0.95);
+  if ( base >= goal ) return 0;
+  for ( let b = 1; b < 30; b++ ) if ( p(b) >= goal - 1e-9 ) return b;
+  return 30;
+}
+
+/** u's bonuses and penalties for a roll against t: its own, with any that count against t alone. */
+export function modsAgainst(u, t = null) {
+  return (t && u.edgeMods?.get(t.id)) ?? u.mods ?? {};
 }
 
 export function areEnemies(run, a, b) {
@@ -509,10 +547,14 @@ export function defenseDc(run, target, against) {
   return 10 + saveRoll(run, target, against).mod;
 }
 
-/** A skill check (talking, first aid): the rules' situational bonus and advantage. */
-export function checkRoll(run, u, mod) {
+/**
+ * A skill check (talking, first aid): the rules' situational bonus and advantage, and u's own bonuses to checks (a
+ * die such as Guidance's, advantage), with those that count against `target` alone when there is one.
+ */
+export function checkRoll(run, u, mod, target = null) {
   const m = run.prep.rules.modifiers?.check?.({ unit: u }) ?? {};
-  return { mod: (Number(mod) || 0) + (m.bonus ?? 0) + (u.mods?.checks ?? 0), advantage: m.advantage ?? 0 };
+  const own = modsAgainst(u, target);
+  return { mod: (Number(mod) || 0) + (m.bonus ?? 0) + (own.checks ?? 0), advantage: netAdvantage(m.advantage ?? 0, own.checkAdv ?? 0), dice: own.checkDie ?? null };
 }
 
 /** A fresh turn budget for u, minus what conditions take away (stunned, slowed, paralyzed ...). */
@@ -535,14 +577,15 @@ export function attackRoll(run, u, target, action, attacksMade = 0) {
   if ( u.wavering ) bonus -= 1;
   if ( leaderStanding(run, u.side) && run.prep.sides[u.side].leaderId !== u.id ) bonus += run.prep.sides[u.side].leadership.attack;
   bonus += studyBonus(u, target);
-  bonus += u.mods?.attack ?? 0;
+  const mods = modsAgainst(u, target);
+  bonus += mods.attack ?? 0;
   const m = rules.modifiers?.attack?.(situation(run, target, u, action)) ?? {};
   return {
     // (A roll whose score the system sets outright: an Ironsworn progress roll, the foe's track as it stands.)
     bonus: Number.isFinite(m.score) ? m.score : bonus + (m.bonus ?? 0),
     progress: !!action.progressRoll,
-    advantage: netAdvantage(m.advantage ?? 0, u.mods?.adv ?? 0, target.mods?.defAdv ?? 0),
-    dice: u.mods?.attackDie ?? null,
+    advantage: netAdvantage(m.advantage ?? 0, mods.adv ?? 0, target.mods?.defAdv ?? 0),
+    dice: mods.attackDie ?? null,
     faces: dieFor(run, u, action),
     critOn: action.critOn ?? null,
     fumbleOn: action.fumbleOn ?? null,

@@ -232,7 +232,8 @@ function narrate(e, roll, rel, fill) {
     case "escape": return roll(e.success ? "event.escape" : "event.stuck", f);
     case "waver": return roll("event.waver", f);
     case "holdGround": return roll("event.holdGround", f);
-    case "study": return roll("event.study", f);
+    case "study": return roll(e.worked === false ? "event.studyFails" : "event.study", f);
+    case "observe": return roll("event.observe", { ...f, targets: listJoin(e.targets ?? []) });
     case "parley": return roll("event.parley", f);
     case "callHelp": return roll("event.callHelp", { ...f, target: e.toward });
     case "notice": return roll({ sight: "event.noticeSight", sound: "event.noticeSound", fledInto: "event.noticeFled", help: "event.noticeHelp", attacked: "event.noticeAttacked", standoff: "event.noticeStandoff" }[e.cause] ?? "event.noticeSound", f);
@@ -275,6 +276,8 @@ function narrate(e, roll, rel, fill) {
       }
       const others = (e.targets ?? []).filter((n, i) => e.targetIds?.[i] !== e.actorId);
       const fill = { ...f, effect: e.effect ?? "", target: others[0] ?? "", targets: listJoin(others), all: listJoin([e.actor, ...others]) };
+      // (An edge that needed a roll, and didn't land.)
+      if ( e.failed ) return roll(others.length ? "event.edgeFails" : "event.edgeFailsSelf", fill);
       if ( !others.length ) return roll("event.buffSelf", fill);
       const asked = e.askedBy?.length ? `${roll("event.answerCall", { ...f, target: e.askedBy[0] })} ` : "";
       if ( e.withSelf ) return asked + roll("event.buffWithSelf", fill);
@@ -506,7 +509,7 @@ function statLine(e) {
     case "attack":
       // (Against challenge dice: an Ironsworn move, or a progress roll.)
       if ( e.challenge ) return `${e.actor} → ${e.target}: ${e.action} · ${e.natural ? `d6 ${e.natural} ${signed(e.mod)} = ` : "progress "}${e.total}${e.burned ? ` (momentum ${e.burned})` : ""} vs ${e.challenge.join(", ")} · ${["miss (a match)", "miss", "weak hit", "strong hit"][e.degree]}${e.damage ? ` · ${e.damage} ${e.damageType}` : ""}`;
-      return `${e.actor} → ${e.target}: ${e.action} · ${roll(e.natural, e.mod, e.total, e.dc, "AC", e.faces)}${e.deed !== null && e.deed !== undefined ? ` (deed ${e.deed})` : ""} · ${DEGREE[e.degree]} (${signed(e.margin)})${e.damage ? ` · ${e.damage} ${e.damageType}` : ""}${e.interceptedBy ? ` · taken by ${e.interceptedBy} for ${e.intercepted}` : ""}${e.attackNumber > 1 ? ` · attack #${e.attackNumber}` : ""}${e.riders?.length ? ` · ${e.riders.join(", ")}` : ""}${e.critRoll !== null && e.critRoll !== undefined ? ` · crit table ${e.critRoll}` : ""}`;
+      return `${e.actor} → ${e.target}: ${e.action} · ${roll(e.natural, e.mod, e.total, e.dc, "AC", e.faces)}${e.deed !== null && e.deed !== undefined ? ` (deed ${e.deed})` : ""} · ${DEGREE[e.degree]} (${signed(e.margin)})${e.damage ? ` · ${e.damage} ${e.damageType}` : ""}${e.interceptedBy ? ` · taken by ${e.interceptedBy} for ${e.intercepted}` : ""}${e.boost ? ` · sized up +${e.boost}` : ""}${e.attackNumber > 1 ? ` · attack #${e.attackNumber}` : ""}${e.riders?.length ? ` · ${e.riders.join(", ")}` : ""}${e.critRoll !== null && e.critRoll !== undefined ? ` · crit table ${e.critRoll}` : ""}`;
     case "deed": return `${e.actor} → ${e.target}: ${e.deed} · deed ${e.roll} · ${e.success ? (e.effect || "succeeds") : "fails"}`;
     case "rider": {
       const mended = Number.isFinite(e.roll) ? ` · +${e.roll}, ${e.made ? "now a hit" : "still a miss"}` : "";
@@ -540,6 +543,12 @@ function statLine(e) {
     case "thought": return `${e.actor} thinks: ${(e.desires ?? []).map(d => `${d.kind} ${d.targetId === e.actorId ? "self" : d.target} ${d.level}`).join(" · ")}`;
     case "riderSave": return `${e.actor} vs ${e.name} · ${e.saveType} ${roll(e.natural, e.mod, e.total, e.dc, "DC")} · ${DEGREE[e.degree]}${e.damage ? ` · ${e.damage} damage` : ""}`;
     case "notice": return `${e.actor} notices (${e.cause})`;
+    case "study": {
+      const c = e.check;
+      const rolled = !c ? "" : ` · ${c.skill ? `${c.skill} ` : ""}${c.challenge ? `d6 ${c.natural} ${signed(c.mod)} = ${c.total} vs ${c.challenge.join(", ")}` : roll(c.natural, c.mod, c.total, c.dc, "DC")} · ${DEGREE[c.degree]}`;
+      return `${e.actor} → ${e.target}: sizes up${rolled} · ${e.worked === false ? "learns nothing" : "its next rolls against them 2.5× as likely to succeed"}`;
+    }
+    case "observe": return `${e.actor} watches ${(e.targets ?? []).join(", ")} instead of talking`;
     case "firstAid": return `${e.actor} → ${e.target}: first aid · medicine ${roll(e.natural, e.mod, e.total, e.dc, "DC")} · ${DEGREE[e.degree]} · ${e.stable ? "stabilized" : e.dead ? "dies" : `dying ${e.dying}`}`;
     case "aftermath": return "After the fight";
     case "control": {
@@ -549,7 +558,7 @@ function statLine(e) {
           : `${e.saveType ? `${[].concat(e.saveType).join("/")} ` : ""}${roll(e.natural, e.mod, e.total, e.dc, e.saveType ? "DC" : "AC")} · ${DEGREE[e.degree]}`;
       return `${e.actor} → ${e.target}: ${e.action} · ${how}${e.shifted ? " (shifted)" : ""} · ${e.effect || "no effect"}${e.backfired ? ` (on ${e.actor})` : ""}${e.damage ? ` · ${e.damage} damage` : ""}`;
     }
-    case "buff": return `${e.actor} → ${(e.targets ?? []).map((n, i) => (e.targetIds?.[i] === e.actorId ? "self" : n)).join(", ")}: ${e.action} · ${e.effect || "bolstered"}${e.tempHp ? ` · ${e.tempHp} temp HP` : ""}${e.askedBy?.length ? ` · asked by ${e.askedBy.join(", ")}` : ""}`;
+    case "buff": return `${e.actor} → ${(e.targets ?? []).map((n, i) => (e.targetIds?.[i] === e.actorId ? "self" : n)).join(", ")}: ${e.action}${e.check ? ` · ${e.check.skill ? `${e.check.skill} ` : ""}${e.check.challenge ? `d6 ${e.check.natural} ${signed(e.check.mod)} = ${e.check.total} vs ${e.check.challenge.join(", ")}` : roll(e.check.natural, e.check.mod, e.check.total, e.check.dc, "DC")} · ${DEGREE[e.check.degree]}` : ""} · ${e.failed ? "nothing comes of it" : e.effect || "bolstered"}${(e.against ?? []).some(Boolean) ? ` (against ${e.against.filter(Boolean).join(", ")})` : ""}${e.tempHp ? ` · ${e.tempHp} temp HP` : ""}${e.askedBy?.length ? ` · asked by ${e.askedBy.join(", ")}` : ""}`;
     case "concentrationEnd":
       if ( e.reason === "switch" ) return `${e.actor} lets ${(e.effects ?? []).join(", ")} go`;
       return `${e.actor} loses concentration on ${e.action}${e.natural !== undefined ? ` · ${e.saveType} ${roll(e.natural, e.mod, e.total, e.dc, "DC")}` : " (can't act)"}`;

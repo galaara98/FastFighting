@@ -12,7 +12,7 @@ import { costOf, mainPool } from "./turn.js";
 import {
   prepareBattle, createRun, isStanding, isUp, enemiesOf, alliesOf, areEnemies, liveTier, liveTrait, currentAc,
   attackRoll, attackOptions, saveRoll, checkRoll, turnFor, moveToward, moveAway, bonusDamageParts, dispositionOf,
-  behaviorOf, edgeDistance, movesNeeded, approach, canMove, moveTowardPoint, isMagical, upgradesSave
+  behaviorOf, edgeDistance, movesNeeded, approach, canMove, moveTowardPoint, isMagical, upgradesSave, boostBonus, typical
 } from "./battle-state.js";
 import { sampleRunTactics } from "./playstyles.js";
 import { chooseTarget, bestOptionVs, scoreTargets } from "./behavior/targeting.js";
@@ -30,7 +30,7 @@ import { createAggregator } from "./aggregate.js";
 import { talkActionsThisTurn, choosePitch, attemptTalk, shareLanguage } from "./behavior/talk.js";
 import { opensWithTalk, breaksStandoff, standoffPitches, charismaticLeader, canTalk } from "./behavior/standoff.js";
 import { controlOutcome, controlRoll, isImmune, degreeShift } from "./behavior/control.js";
-import { recompute as recomputeConditions, applyOutcome, applyControl, beginConcentration, endConcentration, holdsAnything, noteConcentration, moveHeld, settleAllegiance, iwrOf, incoming } from "./behavior/effects.js";
+import { recompute as recomputeConditions, applyOutcome, applyControl, beginConcentration, endConcentration, holdsAnything, noteConcentration, moveHeld, settleAllegiance, iwrOf, incoming, spendEdges, focusOf } from "./behavior/effects.js";
 import { decideBuff, aidScores } from "./behavior/support.js";
 import { perceives } from "./behavior/senses.js";
 import { stealChance, theftTarget, theftPlan, attemptTheft } from "./behavior/theft.js";
@@ -83,6 +83,7 @@ function rollSave(run, target, type, dc, { stakes = 0.3, label = "", magical = f
   const rules = run.prep.rules;
   const s = saveRoll(run, target, type, { magical });
   let roll = rollCheck(rules, run.rng, s.mod, dc, { advantage: s.advantage, dice: s.dice, kind: "save" });
+  spendEdges(target, "save");
   if ( run.boosting && roll.degree < 2 ) roll = boost(run, target, roll, dc, { kind: "save", stakes, label }, logger(run));
   roll = standFirm(run, target, roll, dc, stakes, label);
   if ( roll.degree === 2 && upgradesSave(target, type) ) roll = { ...roll, degree: 3 };
@@ -715,7 +716,11 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
         logReaction(run, target, u, dodge, "attacked");
       }
     }
-    let roll = rollCheck(rules, run.rng, bonus + deedRoll, ac, opts);
+    // (A Lore-Collector that sized this foe up: the roll about 2.5 times as likely to land.)
+    const lift = boostBonus(rules, u, target, bonus + deedRoll, ac, opts);
+    let roll = rollCheck(rules, run.rng, bonus + deedRoll + lift, ac, opts);
+    spendEdges(u, "attack", target.id);
+    spendEdges(target, "defend", u.id);
     if ( run.boosting && roll.degree < 2 ) roll = boost(run, u, roll, ac, { kind: "attack", stakes: attackStakes(run, u, target, action), options: opts, label: action.name }, logger(run));
     // The system's own say once the dice are seen (Ironsworn: burning momentum), and what the roll means (initiative).
     if ( rules.adjustRoll ) {
@@ -766,7 +771,7 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
     // (Against challenge dice rather than a number: an Ironsworn move. A strong hit, a weak hit, a miss.)
     const versus = roll.challenge ? `${roll.challenge.join(", ")}` : `AC ${ac}`;
     const said = roll.challenge ? ["miss (a match)", "miss", "weak hit", "strong hit"][roll.degree] : null;
-    const data = !logging ? null : { type: "attack", ...common, natural: roll.natural, mod: bonus + deedRoll + (roll.die ?? 0), total: roll.total, dc: ac, degree: roll.degree, margin: roll.total - ac, attackNumber: attacksMade + 1, faces: opts.faces, deed: r.deed ? deedRoll : null, challenge: roll.challenge ?? null, burned: roll.burned ?? null };
+    const data = !logging ? null : { type: "attack", ...common, natural: roll.natural, mod: bonus + deedRoll + lift + (roll.die ?? 0), total: roll.total, dc: ac, degree: roll.degree, margin: roll.total - ac, attackNumber: attacksMade + 1, boost: lift || null, faces: opts.faces, deed: r.deed ? deedRoll : null, challenge: roll.challenge ?? null, burned: roll.burned ?? null };
     if ( roll.degree >= 2 ) {
       const crit = roll.degree === 3;
       const extra = bonusDamageParts(run, u, action, target, { advantage, commit: true });
@@ -1100,6 +1105,11 @@ function executeControl(run, u, action, target, attacksMade, common) {
     : (() => {
       const opts = { advantage: r.advantage, dice: r.dice, kind: r.rollKind, faces: r.faces ?? 20, critOn: r.critOn ?? null, fumbleOn: r.fumbleOn ?? null };
       let x = rollCheck(rules, run.rng, r.mod, r.dc, opts);
+      if ( r.kind === "save" ) spendEdges(target, "save");
+      else {
+        spendEdges(u, r.rollKind, target.id);
+        if ( r.rollKind === "attack" ) spendEdges(target, "defend", u.id);
+      }
       // Luck: the target on a save against it, the user on its own roll.
       if ( run.boosting && x.degree < 2 ) x = boost(run, r.kind === "save" ? target : u, x, r.dc, { kind: r.rollKind, stakes: r.kind === "save" ? 0.7 : 0.3, options: opts, label: action.name }, logger(run));
       if ( r.kind === "save" ) x = standFirm(run, target, x, r.dc, 0.7, action.name);
@@ -1164,7 +1174,32 @@ function executeBuff(run, u, action, targets, worth = 0, turn = null) {
   if ( released.length ) log(run, u, `lets ${released.join(", ")} go`, { type: "concentrationEnd", effects: released, reason: "switch" });
   const landed = targets.filter(t => isUp(t));
   if ( landed.length === 1 ) moveHeld(run, u, action, landed[0]);
-  for ( const t of landed ) applyOutcome(t, action.outcome, u.id, action);
+  // An edge that needs a roll to land (PF2e Aid, Ironsworn Secure an Advantage): what the roll reaches decides what
+  // comes of it.
+  let outcome = action.outcome;
+  let check = null;
+  if ( action.check && Number.isFinite(Number(action.check.mod)) ) {
+    const rules = run.prep.rules;
+    const dc = Number(action.check.dc) || 0;
+    const c = checkRoll(run, u, Number(action.check.mod));
+    const roll = rollCheck(rules, run.rng, c.mod, dc, { advantage: c.advantage, dice: c.dice, kind: "check" });
+    spendEdges(u, "check");
+    check = { skill: action.check.label ?? "", natural: roll.natural, mod: c.mod, total: roll.total, dc, degree: roll.degree, challenge: roll.challenge ?? null };
+    outcome = Array.isArray(action.onDegree) ? action.onDegree[roll.degree] ?? null : roll.degree >= 2 ? action.outcome : null;
+  }
+  const focus = new Map();
+  for ( const t of outcome ? landed : [] ) {
+    // Against whoever the friend is set on (the foe it's after, the one it would talk to, the friend it would tend).
+    const on = outcome.vsFocus ? focusOf(run, t) : null;
+    if ( on ) focus.set(t, on.unit);
+    applyOutcome(t, on ? { ...outcome, vs: on.unit.id } : outcome, u.id, action);
+    for ( const [k, v] of Object.entries(outcome.resources ?? {}) ) {
+      const n = Number(v) || 0;
+      if ( run.prep.rules.gainResource ) run.prep.rules.gainResource(t, k, n);
+      else t.resources[k] = (t.resources[k] ?? 0) + n;
+    }
+    run.prep.rules.onOutcome?.(run, u, t, outcome);
+  }
   if ( run.neutral ) for ( const t of landed ) crossed(run, u, t, "help", 0.5, logger(run));
   spendUse(u, action);
   if ( action.concentration ) {
@@ -1174,9 +1209,10 @@ function executeBuff(run, u, action, targets, worth = 0, turn = null) {
   if ( run.log ) {
     const self = landed.length === 1 && landed[0] === u;
     const names = landed.map(t => (t === u ? "self" : t.spec.name));
-    log(run, u, `${action.name} → ${names.join(", ")}`, {
-      type: "buff", action: action.name, effect: action.outcome?.label ?? action.name, self, targets: landed.map(t => t.spec.name),
-      targetIds: landed.map(t => t.id), withSelf: landed.includes(u), tempHp: Number(action.outcome?.tempHp) || 0, aura: !!action.aura,
+    log(run, u, `${action.name} → ${names.join(", ")}${outcome ? "" : ": nothing comes of it"}`, {
+      type: "buff", action: action.name, effect: outcome?.label ?? action.name, self, targets: landed.map(t => t.spec.name), check, failed: !outcome,
+      against: landed.map(t => focus.get(t)?.spec.name ?? null),
+      targetIds: landed.map(t => t.id), withSelf: landed.includes(u), tempHp: Number(outcome?.tempHp) || 0, aura: !!action.aura,
       askedBy: landed.filter(t => t !== u && u.heard?.has(t.id)).map(t => t.spec.name), // (friends who asked for it)
       tell: action.tell ?? null // a story line of its own (dodge, reckless, surge), if the system names one
     });
@@ -1198,8 +1234,9 @@ function executeHeal(run, u, action, target) {
   let multiplier = 1;
   let roll = null;
   if ( action.healCheck ) {
-    const check = checkRoll(run, u, action.healCheck.mod);
-    roll = rollCheck(rules, run.rng, check.mod, action.healCheck.dc, { advantage: check.advantage, kind: "check" });
+    const check = checkRoll(run, u, action.healCheck.mod, target);
+    roll = rollCheck(rules, run.rng, check.mod, action.healCheck.dc, { advantage: check.advantage, dice: check.dice, kind: "check" });
+    spendEdges(u, "check", target.id);
     multiplier = rules.healCheckMultiplier ? rules.healCheckMultiplier(roll.degree) : [0, 0, 1, 2][roll.degree];
     // Someone's life on it: a healer with fate to spare tries again (the selfish less readily, for others).
     const dying = target.status === STATUS.DOWN && !target.stable;
@@ -1207,7 +1244,7 @@ function executeHeal(run, u, action, target) {
       u.resources.fate -= 1;
       run.fateInPlay = run.units.some(o => fateOf(o) > 0);
       log(run, u, `spends ${u.spec.fateLabel ?? "fate"} to try again for ${target.spec.name}`, { type: "fate", target: target.spec.name, targetId: target.id, label: u.spec.fateLabel ?? "fate", spent: 1 });
-      roll = rollCheck(rules, run.rng, check.mod, action.healCheck.dc, { advantage: check.advantage, kind: "check" });
+      roll = rollCheck(rules, run.rng, check.mod, action.healCheck.dc, { advantage: check.advantage, dice: check.dice, kind: "check" });
       multiplier = rules.healCheckMultiplier ? rules.healCheckMultiplier(roll.degree) : [0, 0, 1, 2][roll.degree];
     }
   }
@@ -1405,19 +1442,62 @@ function workTheDoor(run, u, turn, door, target) {
  * weapons: from then on it deals with that foe better (battle-state.js studyBonus). Whether it takes the time is its
  * playstyle's chance, decided once a foe; `room` says whether the turn has the time now. Returns true if it did.
  */
-function sizesUp(run, u, t, turn, room) {
-  const chance = behaviorOf(u).study;
+function sizesUp(run, u, t, turn, room, { decided = false, wholeTurn = false } = {}) {
+  const chance = decided ? 1 : behaviorOf(u).study;
   if ( !chance || !room || u.studied.has(t.id) || u.studied.has(`skip:${t.id}`) ) return false;
   if ( !areEnemies(run, u, t) && !seemsFoe(run, u, t) ) return false;
-  const cost = run.prep.rules.basicAction ?? 1;
+  const rules = run.prep.rules;
+  const cost = rules.basicAction ?? 1;
   if ( !turn.canAfford(cost) ) return false;
   if ( !run.rng.chance(chance) ) {
     u.studied.add(`skip:${t.id}`);
     return false;
   }
   turn.spend(cost);
-  u.studied.add(t.id);
-  log(run, u, `sizes up ${t.spec.name}`, { type: "study", target: t.spec.name, targetId: t.id });
+  // The system's way of sizing a foe up, when the helper gives one (PF2e Recall Knowledge, 5e Study, Ironsworn Gather
+  // Information): it has to work. Otherwise it simply does.
+  const how = u.spec.sizeUp;
+  let check = null;
+  if ( Number.isFinite(how?.mod) ) {
+    const dc = Number.isFinite(how.dc) ? how.dc : rules.sizeUpDC?.(t) ?? typical(rules, "dc", t.spec.level ?? 0);
+    const c = checkRoll(run, u, how.mod);
+    const roll = rollCheck(rules, run.rng, c.mod, dc, { advantage: c.advantage, dice: c.dice, kind: "check" });
+    spendEdges(u, "check");
+    check = { skill: how.label ?? "", natural: roll.natural, mod: c.mod, total: roll.total, dc, degree: roll.degree, challenge: roll.challenge ?? null };
+  }
+  const worked = !check || check.degree >= 2;
+  if ( worked ) {
+    u.studied.add(t.id);
+    // Paid for, and it worked: its rolls against t are about 2.5 times as likely to succeed for the rest of this turn
+    // (or through its next, when sizing it up took the turn), to make up for the time it took.
+    applyOutcome(u, { boost: LORE_BOOST, vs: t.id, rounds: 1, thisTurn: !wholeTurn, label: "sized up" }, u.id, { id: `sizeUp:${t.id}`, name: "sized up" });
+  } else u.studied.add(`skip:${t.id}`);
+  log(run, u, worked ? `sizes up ${t.spec.name}` : `tries to size up ${t.spec.name}, and learns nothing useful`, { type: "study", target: t.spec.name, targetId: t.id, worked, check });
+  return true;
+}
+
+/** A Lore-Collector's payoff for sizing a foe up: its rolls against it about this many times as likely to succeed. */
+const LORE_BOOST = 2.5;
+
+/**
+ * A Lore-Collector's first turn of a standoff: it may spend the whole of it watching the other side instead of
+ * talking (its playstyle's chance, by the pill's place among its others), sizing up as many of them as it has
+ * actions for: the one it would talk to first, then the strongest. The talk makes no progress from it that turn (and
+ * the standoff may not last), but its next turn's rolls against those it sized up are much likelier to land. Returns
+ * true if it spent the turn watching.
+ */
+function observes(run, u, turn) {
+  if ( u.observed ) return false;
+  u.observed = true;
+  const chance = behaviorOf(u).observe;
+  if ( !chance || !run.rng.chance(chance) ) return false;
+  const seen = o => isStanding(o) && areEnemies(run, u, o) && !(o.spec.hidden && !o.revealed) && !u.studied.has(o.id) && !u.studied.has(`skip:${o.id}`);
+  const first = choosePitch(run, u)?.target;
+  const foes = run.units.filter(seen).sort((a, b) => (b === first) - (a === first) || (Number(b.spec.level) || 0) - (Number(a.spec.level) || 0));
+  if ( !foes.length ) return false;
+  log(run, u, `holds back, watching ${foes.map(f => f.spec.name).join(", ")} closely`, { type: "observe", targets: foes.map(f => f.spec.name), targetIds: foes.map(f => f.id) });
+  for ( const t of foes ) if ( !sizesUp(run, u, t, turn, true, { decided: true, wholeTurn: true }) ) break;
+  turn.spendAll();
   return true;
 }
 
@@ -1565,10 +1645,14 @@ function neutralTurn(run, u) {
   return false;
 }
 
-/** A turn while the standoff holds: talkers press their case, everyone else keeps their hands off their weapons. */
+/**
+ * A turn while the standoff holds: talkers press their case, everyone else keeps their hands off their weapons (and a
+ * Lore-Collector may spend its first one watching the other side).
+ */
 function standoffTurn(run, u) {
   const rules = run.prep.rules;
-  standoffPitching(run, u, standoffPitches(run, u, turnFor(run, u).howMany(rules.talkCost ?? rules.basicAction ?? 1)));
+  const turn = turnFor(run, u);
+  if ( !observes(run, u, turn) ) standoffPitching(run, u, standoffPitches(run, u, turn.howMany(rules.talkCost ?? rules.basicAction ?? 1)));
   u.turnsTaken += 1;
   endOfTurn(run, u);
 }
@@ -1753,7 +1837,8 @@ function takeTurn(run, u) {
   // A Lore-Collector sizes up whoever it's about to talk to first: where a turn has several actions, when that leaves
   // one to talk with; where it has one, when no foe is close enough to strike at it (the talking waits a turn).
   const listener = talking.count > 0 ? talking.pitch?.target : null;
-  if ( listener && sizesUp(run, u, listener, turn, unitsPerTurn(rules, u) >= 2 ? turn.howMany(basic) >= 2 : !closeFoe(run, u)) ) {
+  const several = unitsPerTurn(rules, u) >= 2;
+  if ( listener && sizesUp(run, u, listener, turn, several ? turn.howMany(basic) >= 2 : !closeFoe(run, u), { wholeTurn: !several }) ) {
     talking.count = Math.min(talking.count, turn.howMany(talkCost));
     if ( !talking.count ) u.talkPending = true;
   }
@@ -1829,7 +1914,7 @@ function takeTurn(run, u) {
     if ( !option ) break;
     // A Lore-Collector sizes up a new foe before it attacks it: where a turn has several actions, when that leaves one
     // to fight with; where it has one, when that action would only have gone into closing the distance.
-    if ( sizesUp(run, u, target, turn, unitsPerTurn(rules, u) >= 2 ? turn.howMany(basic) >= 2 : option.moveUnits >= 1) ) continue;
+    if ( sizesUp(run, u, target, turn, several ? turn.howMany(basic) >= 2 : option.moveUnits >= 1, { wholeTurn: !several }) ) continue;
 
     if ( option.moves > 0 ) {
       if ( !canMove(run, u) ) break;
@@ -1985,8 +2070,9 @@ const isDying = u => u.status === STATUS.DOWN && !u.stable;
 function firstAid(run, u, target) {
   const rules = run.prep.rules;
   const dc = rules.firstAidDC(target);
-  const check = checkRoll(run, u, u.spec.firstAid.mod);
-  const roll = rollCheck(rules, run.rng, check.mod, dc, { advantage: check.advantage, kind: "check" });
+  const check = checkRoll(run, u, u.spec.firstAid.mod, target);
+  const roll = rollCheck(rules, run.rng, check.mod, dc, { advantage: check.advantage, dice: check.dice, kind: "check" });
+  spendEdges(u, "check", target.id);
   const before = target.dying;
   rules.firstAid(target, roll.degree);
   log(run, u, `gives ${target.spec.name} first aid (${roll.total} vs DC ${dc}): ${target.stable ? "stabilized" : target.status === STATUS.DEAD ? "it's too late" : "no change"}`, {

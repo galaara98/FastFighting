@@ -21,7 +21,7 @@
  */
 import { TACTICAL, clamp } from "../../constants.js";
 import { degreeDistribution } from "../probability.js";
-import { saveRoll, attackRoll, attackOptions, checkRoll, currentAc, defenseDc, liveTier, isMagical } from "../battle-state.js";
+import { saveRoll, attackRoll, attackOptions, checkRoll, currentAc, defenseDc, liveTier, isMagical, boostBonus } from "../battle-state.js";
 import { netAdvantage } from "../mods.js";
 import { meanDamageVs, saveMultiplier, areaTargets } from "./evaluate.js";
 import { outcomeWorth, hasFresh, concentrationCost, heldElsewhere } from "./effects.js";
@@ -85,13 +85,18 @@ export function controlRoll(run, u, t, action, attacksMade = 0) {
     return { kind, mod: save.mod, dc: Number(action.save.dc) || 10, advantage: netAdvantage(save.advantage, Number(action.save.advantage) || 0), dice: save.dice, rollKind: "save" };
   }
   if ( kind === "check" ) {
-    const check = checkRoll(run, u, action.check.mod);
+    const check = checkRoll(run, u, action.check.mod, t);
     const map = action.check.attack ? (run.prep.rules.attackPenalty?.(action, attacksMade) ?? 0) : 0;
-    return { kind, mod: check.mod + map, dc: defenseDc(run, t, action.check.against ?? "will"), advantage: check.advantage, dice: null, rollKind: "check" };
+    const dc = defenseDc(run, t, action.check.against ?? "will");
+    const mod = check.mod + map;
+    const lift = boostBonus(run.prep.rules, u, t, mod, dc, { advantage: check.advantage, dice: check.dice, kind: "check" });
+    return { kind, mod: mod + lift, dc, advantage: check.advantage, dice: check.dice, rollKind: "check" };
   }
   const roll = attackRoll(run, u, t, action, attacksMade);
   const opts = attackOptions(roll);
-  return { kind, mod: roll.bonus, dc: currentAc(run, t, u, action), advantage: roll.advantage, dice: roll.dice, rollKind: "attack", faces: opts.faces, critOn: opts.critOn, fumbleOn: opts.fumbleOn };
+  const dc = currentAc(run, t, u, action);
+  const lift = boostBonus(run.prep.rules, u, t, roll.bonus, dc, opts);
+  return { kind, mod: roll.bonus + lift, dc, advantage: roll.advantage, dice: roll.dice, rollKind: "attack", faces: opts.faces, critOn: opts.critOn, fumbleOn: opts.fumbleOn };
 }
 
 /** Chance of each degree, from the target's side for a save and from the user's otherwise ([1] for "auto": a hit). */
