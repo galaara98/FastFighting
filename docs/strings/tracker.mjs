@@ -13,7 +13,8 @@
  *   node docs/strings/tracker.mjs status            what's left, by area
  *   node docs/strings/tracker.mjs check             exit 1 if anything changed outside a recorded batch
  *   node docs/strings/tracker.mjs list <area> [n]   the next n strings to write in an area (ids, placeholders)
- *   node docs/strings/tracker.mjs mark <written|skipped> <commit> <id> ...   record a batch (text hashes refreshed)
+ *   node docs/strings/tracker.mjs mark <written|written-same|skipped> <commit> <id> ...   record a batch (text hashes
+ *                                                  refreshed); written-same: written, the same as the draft it replaced
  *
  * The repos sit side by side: this one (FastFighting) and FastFighting-PF2e, -DnD5e, -DCC, -Ironsworn next to it.
  */
@@ -230,6 +231,8 @@ else if ( command === "status" ) {
     for ( const k of Object.keys(total) ) total[k] += r[k];
   }
   console.log(`${"all".padEnd(34)} ${String(total.todo).padStart(6)} ${String(total.written).padStart(8)} ${String(total.skipped).padStart(8)}`);
+  const same = Object.values(record.strings).filter(e => e.sameAsDraft && !e.gone && e.status === "written").length;
+  if ( same ) console.log(`(${same} of those written came out the same as the draft they replaced)`);
   const flagged = Object.entries(record.strings).filter(([, e]) => e.changed && !e.gone).length;
   if ( flagged ) console.log(`\n${flagged} changed outside a recorded batch (node docs/strings/tracker.mjs sync lists them)`);
 }
@@ -248,15 +251,18 @@ else if ( command === "list" ) {
 
 else if ( command === "mark" ) {
   const [status, commit, ...ids] = args;
-  if ( !["written", "skipped", "todo"].includes(status) || !commit || !ids.length ) {
-    console.error("usage: mark <written|skipped|todo> <commit> <id> ...");
+  if ( !["written", "written-same", "skipped", "todo"].includes(status) || !commit || !ids.length ) {
+    console.error("usage: mark <written|written-same|skipped|todo> <commit> <id> ...");
     process.exit(2);
   }
   const now = current();
   for ( const id of ids ) {
     const e = record.strings[id];
     if ( !e || !now[id] ) throw new Error(`no such string: ${id}`);
-    Object.assign(e, { status, date: today(), commit, hash: hash(now[id].text) });
+    // (The author typed it; it came out the same as the draft it replaced, as convention would say it.)
+    Object.assign(e, { status: status === "written-same" ? "written" : status, date: today(), commit, hash: hash(now[id].text) });
+    if ( status === "written-same" ) e.sameAsDraft = true;
+    else delete e.sameAsDraft;
     delete e.changed;
   }
   save(record);
