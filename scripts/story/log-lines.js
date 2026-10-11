@@ -155,6 +155,7 @@ export function logLine(e) {
       if ( e.reason === "switch" ) return t("LetsGo", { actor: e.actor, effects: listJoin(e.effects ?? []) });
       return t("LosesConcentration", { actor: e.actor, action: e.action, roll: e.natural !== undefined ? ` · ${e.saveType} ${dice(e.natural, e.mod, e.total, e.dc, t("DC"))}` : t("CantAct") });
     case "shakeOff": return t("ShakeOff", { actor: e.actor, effect: e.effect || t("TheEffect"), saveType: e.saveType, roll: dice(e.natural, e.mod, e.total, e.dc, t("DC")) });
+    case "trap": return t({ spots: "TrapSpots", learns: "TrapLearns", braves: "TrapBraves", holds: "TrapHolds", stepsOut: "TrapStepsOut" }[e.what] ?? "TrapSpots", { ...a, luck: e.luck, needed: e.needed });
     case "execute": return t("Execute", { ...a, luck: e.luck, needed: e.needed, how: e.goes ? t("GoesForKill") : t("SparesThem", { next: e.next ? t("TurnsOn", { name: e.next }) : "" }) });
     case "allegiance": return e.joined ? t("AllegianceTurn", a) : t("AllegianceBack", { actor: e.actor, side: e.homeLabel ?? "" });
     case "neutral": {

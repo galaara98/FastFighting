@@ -73,6 +73,15 @@ Its side, desires, nerve and personality decide the rest: a coward may still bre
   - **Resources:** spell slots, focus points and consumables spent.
   - **Sample fight:** the story of a fight.
 
+## Trap avoiders
+
+Hazards (traps, haunts, dangerous features) fire at whoever is in their reach. Some characters watch for them, some a great deal, some a little: a **Thief** most, then a **Puzzle-Maniac** (90%), **Skeptic** (75%), **Lore-Collector** (60%), **Chicken** (50%) and **Wallflower** (35%); a pill further down counts less (×0.75, ×0.55, ×0.4). With positions on the map:
+- At the start of a fight, a trap avoider rolls d100 for each hazard against the **Trap avoiders: spotting a trap** slider (59 by default) times how watchful it is: at or under, it spots it. A Thief spots on 59 or less; a Wallflower, on 21 or less.
+- Anyone a hazard goes for, hit or miss, knows that hazard from then on, always, trap avoider or not.
+- Moving, it keeps out of the reach of the hazards it knows: it goes around them, or with no way around, stops short.
+- When what it's after is in a hazard's reach, it asks itself whether it wants it badly enough: driven or more, it goes in; merely wanting it, it doesn't; determined, it might, the likelier the more it wants it. The story says which.
+- Starting its turn in a hazard's reach with nobody beside it, it steps out first.
+
 ## A fair ruling
 
 **Make it So commits the fight the simulation drew at random.** A 70% win is a loss three times in ten, as it should be, and the GM can't pick a better one: another draw, the most typical fight, or one a filter chose (a party victory, a defeat, a PC dies, a close call) are previews only, marked so. Make it So always goes back to the drawn fight; for a new one, run the simulation again. Undo still reverses a committed fight.
@@ -290,7 +299,7 @@ Answers save as they're made, and two players sharing a token see each other's c
 | Pill | Desires |
 | --- | --- |
 | Brawler | the nearest foe; hits back hard; no talking |
-| Chicken | keeps away from the most dangerous foe; gives up easily; hits back half-heartedly; leading, takes its group with it when it runs (see **Running together**) |
+| Chicken | keeps away from the most dangerous foe; gives up easily; hits back half-heartedly; leading, takes its group with it when it runs (see **Running together**); a trap avoider (see **Trap avoiders**) |
 | Cruel | the weakest, and the fallen; hits back hard; likes leaving a foe hampered |
 | Diplomat | talking; spares the fallen; can't abide violence (calms quarrels, talks fighters into leaving: see Standoffs and Taking no side) |
 | Enabler | heals, guards and bolsters friends; backs the leader |
@@ -298,20 +307,20 @@ Answers save as they're made, and two players sharing a token see each other's c
 | Impatient | the nearest foe; setbacks wear it down twice as fast; little patience for locks |
 | Instigator | spoils everyone's plans: locks foes down, harasses and debuffs them more than anyone; the most dangerous foe and the other side's leader; may defy its own leader |
 | Lazy | the nearest foe and no long walks; not much help to anyone; gives up fast; can't hold a grudge; leading, its flight takes others along |
-| Lore-Collector | foes it hasn't sized up yet; sizes up a new foe before talking to it or attacking it (an action when the turn has one to spare; with one action a turn, the whole turn; in a standoff, most likely its whole first turn, watching while the talk waits). When it works (the system's check, if it has one), its next rolls against that foe are much likelier to succeed, to make up for the time (each system's module has a **Lore-Collector advantage** setting, 1.25× to 3×; 2.5× without one); never without paying for it. What it learns holds for every foe of the same sort (the same stat block, or the same name but for the number): one turn for three goblin warriors, and the payoff against any of them. Afterwards it still hits them and talks to them a little better. It may tell its friends what it learned, though not everyone likes to: its pill's chance times how minded it is (from even odds, more for the loyal, less for the selfish, more for a tactical mind and for pills that lean on supporting friends, Enablers, People-Pleasers, those who'd lead; less for the lazy, brawlers, mercenaries); its side's leader that readily, anyone else half as readily, unless it would rather talk than fight anyway. It's an action (now, or first thing next turn), to every friend within a move of it (its speed: as far as it can properly explain it in the time) who understands it. They deal with that sort a little better too. Every Lore-Collector chance (sizing up, watching, sharing) is smaller the further down its pills it is (×0.75, ×0.55, ×0.4) |
+| Lore-Collector | foes it hasn't sized up yet; sizes up a new foe before talking to it or attacking it (an action when the turn has one to spare; with one action a turn, the whole turn; in a standoff, most likely its whole first turn, watching while the talk waits). When it works (the system's check, if it has one), its next rolls against that foe are much likelier to succeed, to make up for the time (each system's module has a **Lore-Collector advantage** setting, 1.25× to 3×; 2.5× without one); never without paying for it. What it learns holds for every foe of the same sort (the same stat block, or the same name but for the number): one turn for three goblin warriors, and the payoff against any of them. Afterwards it still hits them and talks to them a little better. It may tell its friends what it learned, though not everyone likes to: its pill's chance times how minded it is (from even odds, more for the loyal, less for the selfish, more for a tactical mind and for pills that lean on supporting friends, Enablers, People-Pleasers, those who'd lead; less for the lazy, brawlers, mercenaries); its side's leader that readily, anyone else half as readily, unless it would rather talk than fight anyway. It's an action (now, or first thing next turn), to every friend within a move of it (its speed: as far as it can properly explain it in the time) who understands it. They deal with that sort a little better too. Every Lore-Collector chance (sizing up, watching, sharing) is smaller the further down its pills it is (×0.75, ×0.55, ×0.4); a trap avoider (see **Trap avoiders**) |
 | Martyr | guards the weakest friend; fears nothing; avenges the fallen twice as hard; rallies friends who waver |
 | Mercenary | easy pickings; barely avenges anyone; gives up when it gets hard; leading, its flight takes others along; never pays a boss off |
 | Moralist | never the fallen; heals friends, guards the weakest; can't abide violence |
 | Peacekeeper | keeps the peace between anyone: everyone in a standoff with it (either side) loses patience half as fast; calms any quarrel it sees; foes it talks round stand down (a truce, even mid-fight: never a surrender, a payoff or a rout); its word is trusted (up to 2 easier) and it never threatens; spares the fallen; can't abide violence |
 | People-Pleaser | wants what its leader and friends want (listens far more than most); likes to talk and to bolster friends; can't abide violence |
-| Puzzle-Maniac | weaknesses to exploit, casters, a clever lock-down, and locked doors (twice the patience) |
+| Puzzle-Maniac | weaknesses to exploit, casters, a clever lock-down, and locked doors (twice the patience); a trap avoider (see **Trap avoiders**) |
 | Redeem-Seeker | the biggest threat; won't give up |
 | Relentless | sticks with the foe it's on; shrugs off setbacks; keeps at doors; a little wary of outsiders' words (half a Skeptic's) |
-| Skeptic | its leader and team sway it half as much; slow to talk; wary of outsiders' words: anyone not of its own group needs a step more to talk it round, against up to 4 more DC (by the pill's place) |
+| Skeptic | its leader and team sway it half as much; slow to talk; wary of outsiders' words: anyone not of its own group needs a step more to talk it round, against up to 4 more DC (by the pill's place); a trap avoider (see **Trap avoiders**) |
 | Speed-Runner | the quickest kills |
-| Thief | robs when it's safe; a lock is an invitation |
+| Thief | robs when it's safe; a lock is an invitation; a trap avoider (see **Trap avoiders**) |
 | Vengeful | hits back twice as hard; avenges fallen friends; its grudges never cool |
-| Wallflower | keeps its distance; would rather hamper foes from afar; listens to the crowd less; leading, its flight takes a few along |
+| Wallflower | keeps its distance; would rather hamper foes from afar; listens to the crowd less; leading, its flight takes a few along; a trap avoider (see **Trap avoiders**) |
 | Wants to Lead | the biggest threat (now and then pins it down); looks after, bolsters and rallies its people; half ignores whoever commands it (it wants to lead; whether it does is its group's chain of command); not chosen, it may scheme (see **Chains of command**) |
 | Wildcard | something random catches its eye; nobody's voice counts for much; may defy its leader |
 
@@ -366,6 +375,7 @@ All settings are defaults that the planner can override per battle:
   - a PC being finished off at 0 HP, default 39;
   - an enemy changing sides (under this), default 69;
   - a PC scheming against the leader it wasn't chosen to be turning traitor (this or less), default 9;
+  - a trap avoider spotting a hazard (this or less), default 59;
   - how often someone who doesn't like to flee stays, default 90 (50 to 90).
 - **Story:** style, delivery, and whether the posted story shows the odds (off).
 - **Make it So:** loot, corpse and fled handling, and whether the fight plays out on the map.

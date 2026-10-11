@@ -4711,6 +4711,56 @@
    "commit": null,
    "hash": "e5e5054d11c6"
   },
+  "core:FASTFIGHTING.Log.TrapBraves": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.TrapBraves",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "0fe3220ca351"
+  },
+  "core:FASTFIGHTING.Log.TrapHolds": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.TrapHolds",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "58af855bdbd8"
+  },
+  "core:FASTFIGHTING.Log.TrapLearns": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.TrapLearns",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "d274b2cbc710"
+  },
+  "core:FASTFIGHTING.Log.TrapSpots": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.TrapSpots",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "ff8609daf678"
+  },
+  "core:FASTFIGHTING.Log.TrapStepsOut": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.TrapStepsOut",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "c1f0127a89ae"
+  },
   "core:FASTFIGHTING.Log.TriggerAttacked": {
    "repo": "core",
    "file": "languages/en.json",
@@ -8440,6 +8490,27 @@
    "date": null,
    "commit": null,
    "hash": "0a7cc07530f9"
+  },
+  "core:FASTFIGHTING.Settings.trapLuck.Hint": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Settings.trapLuck.Hint",
+   "area": "core/Settings",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "5befda0f0ffd",
+   "changed": true
+  },
+  "core:FASTFIGHTING.Settings.trapLuck.Name": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Settings.trapLuck.Name",
+   "area": "core/Settings",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "9c6b7ad5b8f5"
   },
   "core:FASTFIGHTING.Side.friendly": {
    "repo": "core",

@@ -580,6 +580,7 @@ export function buildBattleSpec(roster, setup, { approach = null, exclude = new 
       concedeLuck: setting("concedeLuck"),
       theftLuck: setting("theftLuck"),
       executeLuck: setting("executeLuck"),
+      trapLuck: setting("trapLuck"),
       // And the one that keeps enemies from changing sides too easily.
       switchLuck: setting("switchLuck"),
       // And the one a player character scheming against the leader it wasn't chosen to be needs to turn traitor.

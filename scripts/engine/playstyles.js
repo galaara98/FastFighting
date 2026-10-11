@@ -24,7 +24,9 @@ export const STAY_TRUE_CAP = 0.1;
  * traits:    additive shifts on 0-100 traits
  * suggest:   tactics answers this playstyle implies (first selected playstyle wins on conflicts)
  * behavior:  engine hooks; numbers are base chances per opportunity (scaled by intensity). hinders: how much it
- *             likes locking foes down, harassing and debuffing them (control actions count for up to 2.5 times more)
+ *             likes locking foes down, harassing and debuffing them (control actions count for up to 2.5 times more);
+ *             trapWary: a trap avoider, how watchful (the share of the Trap avoiders luck it gets: Thief all of it, then
+ *             Puzzle-Maniac, Skeptic, Lore-Collector, Chicken, Wallflower; behavior/traps.js)
  * desire:    how the character picks up desires (see engine/behavior/desire.js), added up across its pills:
  *   hurt      points toward foes that suit it: nearest, far (two moves or more away), weakest, dangerous, casters,
  *             healers, downed, leader (theirs), weakness (foes its attacks exploit), unstudied (foes it hasn't sized
@@ -39,7 +41,7 @@ export const STAY_TRUE_CAP = 0.1;
  */
 export const PLAYSTYLES = Object.freeze({
   // Afraid: of the most dangerous foe above all; gives up easily, hits back half-heartedly.
-  chicken: { icon: "fa-ghost", traits: { brave: -30, selfish: 10 }, suggest: { retreat: "hurt", style: "ranged", potionThreshold: "75" }, behavior: { lowProfile: 0.3, flighty: 1 },
+  chicken: { icon: "fa-ghost", traits: { brave: -30, selfish: 10 }, suggest: { retreat: "hurt", style: "ranged", potionThreshold: "75" }, behavior: { lowProfile: 0.3, flighty: 1, trapWary: 0.5 },
     desire: { avoid: { dangerous: 35 }, frustration: 1.5, retaliate: 0.5 } },
   // Picks on the weak and the fallen.
   cruel: { icon: "fa-skull-crossbones", traits: { selfish: 20, loyal: -5 }, suggest: { target: "weakest", beyond: "hunt" }, behavior: { finishDowned: 0.4, hinders: 0.25 },
@@ -62,7 +64,7 @@ export const PLAYSTYLES = Object.freeze({
     desire: { hurt: { nearest: 20 }, talk: -40, aid: -10, retaliate: 1.5 } },
   // Trusts its own judgment over anyone's, and isn't talked into things: an outsider's words (anyone not of its own
   // group) get a step further to go and up to 4 harder (wary, by the pill's place).
-  skeptic: { icon: "fa-magnifying-glass", traits: { tactical: 10 }, suggest: { resourceUse: "conserve", healAggro: "conservative" }, behavior: { wary: 1 },
+  skeptic: { icon: "fa-magnifying-glass", traits: { tactical: 10 }, suggest: { resourceUse: "conserve", healAggro: "conservative" }, behavior: { wary: 1, trapWary: 0.75 },
     desire: { talk: -15, leader: 0.5, team: 0.5, frustration: 0.8 } },
   // Ends it fast: the quickest kills.
   speedRunner: { icon: "fa-forward-fast", traits: { tactical: 5, brave: 5 }, suggest: { resourceUse: "nova", target: "weakest" }, behavior: { rush: 0.4 },
@@ -86,7 +88,7 @@ export const PLAYSTYLES = Object.freeze({
   diplomat: { icon: "fa-handshake", traits: { selfish: -10 }, suggest: { talk: "first", target: "dangerous" }, behavior: { parleyFirst: 0.6, spareDowned: 0.5 },
     desire: { talk: 30, hurt: { downed: -50 } } },
   // Keeps its distance and out of the crowd.
-  wallflower: { icon: "fa-user-ninja", traits: { brave: -10 }, suggest: { style: "ranged" }, behavior: { lowProfile: 0.45, hinders: 0.25, flighty: 0.3 },
+  wallflower: { icon: "fa-user-ninja", traits: { brave: -10 }, suggest: { style: "ranged" }, behavior: { lowProfile: 0.45, hinders: 0.25, flighty: 0.3, trapWary: 0.35 },
     desire: { hurt: { nearest: -10 }, avoid: { nearest: 15 }, team: 0.7 } },
   // Shields the weakest friend, avenges the fallen, fears nothing.
   martyr: { icon: "fa-cross", traits: { brave: 20, selfish: -30, loyal: 20 }, suggest: { allyDying: "rescue", retreat: "never", healAggro: "allCosts", style: "protector", target: "protect" }, behavior: { drawAggro: 0.3, helps: 1, rally: 0.2 },
@@ -103,16 +105,16 @@ export const PLAYSTYLES = Object.freeze({
   // Curious: drawn to foes it hasn't sized up yet, and sizes them up before it deals with them (in a standoff, its
   // first turn most likely goes into watching the other side). It may tell its friends what it learned (more readily
   // leading its side, or as one who'd rather talk than fight).
-  loreCollector: { icon: "fa-book-open", traits: { tactical: 5 }, suggest: {}, behavior: { study: 0.5, observe: 0.85, share: 0.9 },
+  loreCollector: { icon: "fa-book-open", traits: { tactical: 5 }, suggest: {}, behavior: { study: 0.5, observe: 0.85, share: 0.9, trapWary: 0.6 },
     desire: { hurt: { unstudied: 10 }, frustration: 0.8 } },
   // Loves a weakness to exploit (and a lock to crack).
-  puzzleManiac: { icon: "fa-puzzle-piece", traits: { tactical: 15 }, suggest: { target: "casters" }, behavior: { exploitWeakness: 0.5, hinders: 0.3 },
+  puzzleManiac: { icon: "fa-puzzle-piece", traits: { tactical: 15 }, suggest: { target: "casters" }, behavior: { exploitWeakness: 0.5, hinders: 0.3, trapWary: 0.9 },
     desire: { hurt: { weakness: 20, casters: 10 }, frustration: 0.7, doorPatience: 2 } },
   // Unpredictable: something random catches its eye, nobody's voice counts for much, may defy its leader.
   wildcard: { icon: "fa-dice", traits: {}, suggest: {}, behavior: { random: 0.25 },
     desire: { whim: 25, leader: 0.3, team: 0.3, contrarian: 0.5 } },
   // Light fingers: a lock is an invitation.
-  thief: { icon: "fa-mask", traits: { selfish: 10 }, suggest: {}, behavior: { steal: 1 },
+  thief: { icon: "fa-mask", traits: { selfish: 10 }, suggest: {}, behavior: { steal: 1, trapWary: 1 },
     desire: { hurt: { weakest: 5 }, doorPatience: 1.5 } },
   // Never forgets: hits back twice as hard, avenges the fallen, and its grudges never cool.
   vengeful: { icon: "fa-bolt", traits: { brave: 5, selfish: 5 }, suggest: {}, behavior: {},

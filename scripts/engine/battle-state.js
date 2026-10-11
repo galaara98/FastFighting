@@ -84,6 +84,7 @@
  * @property {Record<string, Record<string, object>>} [approach]  approach[a][t] = {dist, mult, speed, mode, los, meleeOk}
  * @property {object} options                         {maxRounds, downedModel, positioning, morale, leadership, initiativeOrder, surpriseSide}
  */
+import { keepClear } from "./behavior/traps.js";
 import { STATUS, NEUTRAL_PARTY, clamp, fudged, tacticalTier, TRAITS } from "../constants.js";
 import { meanPart } from "./dice.js";
 import { typicalValue } from "./tactics.js";
@@ -855,8 +856,14 @@ export function moveToward(run, a, t, reach = null, budget = null) {
     // Close the gap until the target is within reach (or simply adjacent when moving for a ranged shot).
     feet = Math.max(0, Math.min(progress, edgeDistance(a, t) - (reach ?? 5)));
     if ( d > 0 && feet > 0 ) {
-      a.pos.x += ((t.pos.x - a.pos.x) / d) * feet;
-      a.pos.y += ((t.pos.y - a.pos.y) / d) * feet;
+      let to = { x: a.pos.x + ((t.pos.x - a.pos.x) / d) * feet, y: a.pos.y + ((t.pos.y - a.pos.y) / d) * feet };
+      // (A trap avoider keeps clear of the hazards it spotted: around them, or short of them.)
+      if ( run.trapsSpotted ) {
+        to = keepClear(run, a, t, to, run.trapLog);
+        feet = Math.hypot(to.x - a.pos.x, to.y - a.pos.y);
+      }
+      a.pos.x = to.x;
+      a.pos.y = to.y;
     }
   } else {
     a.advance = Math.min(a.advance + progress, ap.dist);

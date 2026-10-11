@@ -1,7 +1,7 @@
 /**
  * World settings. Every setting is a default: the Battle Planner can override any of them per battle.
  */
-import { MODULE_ID, ALLEGIANCE, DOWNED_MODELS, HEAL_AGGRO, ALLY_DYING, AFTERMATH, OPENING, CONCEDE_LUCK, THEFT_LUCK, EXECUTE_LUCK, SWITCH_LUCK, TRAITOR_LUCK, STAND_GROUND, NEUTRAL_REACH } from "./constants.js";
+import { MODULE_ID, ALLEGIANCE, DOWNED_MODELS, HEAL_AGGRO, ALLY_DYING, AFTERMATH, OPENING, CONCEDE_LUCK, THEFT_LUCK, EXECUTE_LUCK, SWITCH_LUCK, TRAITOR_LUCK, TRAP_LUCK, STAND_GROUND, NEUTRAL_REACH } from "./constants.js";
 
 const choices = (keys, prefix) => Object.fromEntries(keys.map(k => [k, `FASTFIGHTING.${prefix}.${k}`]));
 
@@ -38,6 +38,7 @@ const SETTINGS = {
   executeLuck: { type: Number, default: EXECUTE_LUCK, range: { min: 0, max: 100, step: 1 } },
   switchLuck: { type: Number, default: SWITCH_LUCK, range: { min: 0, max: 100, step: 1 } },
   traitorLuck: { type: Number, default: TRAITOR_LUCK, range: { min: 0, max: 100, step: 1 } },
+  trapLuck: { type: Number, default: TRAP_LUCK, range: { min: 0, max: 100, step: 1 } },
   standGround: { type: Number, default: STAND_GROUND, range: { min: 50, max: 90, step: 1 } },
   bystanders: { type: Boolean, default: true },
   positioning: { type: Boolean, default: true },

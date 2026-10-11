@@ -28,6 +28,7 @@ import { boost } from "./behavior/luck.js";
 import { respond, riposteStrike } from "./behavior/responses.js";
 import { decideSummon, callSummons, sustainSummons, summonState, dismiss } from "./behavior/summons.js";
 import { createAggregator } from "./aggregate.js";
+import { spotTraps, stepOut, learnTrap } from "./behavior/traps.js";
 import { talkActionsThisTurn, choosePitch, attemptTalk, shareLanguage } from "./behavior/talk.js";
 import { opensWithTalk, breaksStandoff, standoffPitches, charismaticLeader, canTalk, prefersTalk } from "./behavior/standoff.js";
 import { controlOutcome, controlRoll, isImmune, degreeShift } from "./behavior/control.js";
@@ -679,6 +680,8 @@ function executeOffense(run, u, action, t, attacksMade) {
 /** What one use of an action does to one target: the attack or save, the damage, the riders. */
 function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
   const rules = run.prep.rules;
+  // Whoever a hazard goes for, hit or miss, knows it's there from now on (behavior/traps.js).
+  if ( u.spec.hazard ) learnTrap(run, target, u, run.trapLog);
   {
     if ( !target.active ) notice(run, target, "attacked", u);
     target.lastAttackerId = u.id;
@@ -1986,6 +1989,8 @@ function takeTurn(run, u) {
       log(run, u, { type: "rally", with: heard.map(a => a.spec.name), withIds: heard.map(a => a.id) });
     }
   }
+  // In the reach of a hazard it spotted: it steps out first, if it can (behavior/traps.js).
+  if ( run.trapsSpotted ) stepOut(run, u, turn, run.trapLog);
 
   // What it wants this turn, and what that means: a terror close at hand sends it running.
   deliberate(run, u);
@@ -2545,6 +2550,9 @@ export function runOne(prep, seed, { log: withLog = false, capture = false } = {
     u.hunts = u.tac?.beyond === "hunt";
   }
   if ( withLog ) run.log = [];
+  // Trap avoiders: the hazards they spot (behavior/traps.js), kept clear of as they move.
+  run.trapLog = logger(run);
+  spotTraps(run, run.trapLog);
   const order = rollInitiative(run);
   // A simple hazard goes off first: it's what set things off, while whoever set it off is still there.
   order.sort((a, b) => (b.spec.hazard?.once ? 1 : 0) - (a.spec.hazard?.once ? 1 : 0));

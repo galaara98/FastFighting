@@ -175,6 +175,10 @@
       "traitorLuck": {
         "Name": "Luck check: a player character turning traitor",
         "Hint": "A player character who wants to lead, isn't its group's leader, and is scheming against whoever is (a playstyle like Cruel or Wildcard with Wants to Lead) can be talked into changing sides only on a d100 roll of this or less (default 9). 0: never."
+      },
+      "trapLuck": {
+        "Name": "Trap avoiders: spotting a trap (%)",
+        "Hint": "A trap avoider (a character whose playstyles keep it watchful: Thief most, then Puzzle-Maniac, Skeptic, Lore-Collector, Chicken and Wallflower) spots each hazard only if a hidden d100 comes up at or under this (default 59) times how watchful it is: all of it for a Thief, about a third for a Wallflower, less for a pill further down. It then keeps out of that hazard's reach as it moves, going around it, and goes in only for something it wants badly enough. Anyone a hazard goes for knows it from then on. 0: never; 100: always."
       }
     },
     "Lean": {
@@ -1332,6 +1336,11 @@
       "ShakeOff": "{actor} shakes off {effect} · {saveType} {roll}",
       "TheEffect": "the effect",
       "Execute": "{actor} → {target}: execution luck d100 {luck} ({needed} or less) · {how}",
+      "TrapSpots": "{actor} spots {target}: trap luck d100 {luck} ({needed} or less)",
+      "TrapLearns": "{actor} knows {target} is there now, and keeps clear of it",
+      "TrapBraves": "{actor} braves {target} to get at {by}",
+      "TrapHolds": "{actor} won't go near {target}, not even for {by}",
+      "TrapStepsOut": "{actor} steps clear of {target}",
       "GoesForKill": "goes for the kill",
       "SparesThem": "spares them{next}",
       "TurnsOn": ", turns on {name}",
