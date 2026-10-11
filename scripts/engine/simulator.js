@@ -166,6 +166,7 @@ function cueFrom(run, b, c) {
  * taking no side starts weighing what it wants). Set upon, it's in the fight at once.
  */
 function notice(run, b, cause, source) {
+  if ( b.spec.hazard ) return; // (a hazard notices nothing)
   if ( b.aware && cause !== "attacked" ) return; // (it already knows; it's on its way)
   b.aware = true;
   // During a standoff there is no fighting to see or hear, only a tense crowd and raised voices.
@@ -2545,6 +2546,8 @@ export function runOne(prep, seed, { log: withLog = false, capture = false } = {
   }
   if ( withLog ) run.log = [];
   const order = rollInitiative(run);
+  // A simple hazard goes off first: it's what set things off, while whoever set it off is still there.
+  order.sort((a, b) => (b.spec.hazard?.once ? 1 : 0) - (a.spec.hazard?.once ? 1 : 0));
   run.order = order; // (summoned creatures join it, right after their summoner)
   if ( withLog ) {
     const fighters = order.filter(u => u.active);

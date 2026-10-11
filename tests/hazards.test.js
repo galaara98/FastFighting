@@ -35,6 +35,8 @@ describe("hazards", () => {
       const sturdy = { hp: { value: 300, max: 300, temp: 0 } };
       const simple = fight([hero(sturdy), goblin(sturdy), trap()], seed);
       expect(new Set(simple.fired).size).toBe(1);
+      expect(simple.fired[0]).toBe(1); // (first thing in round 1)
+      expect(simple.result.log.find(e => e.type === "initiative").order[0]).toBe("Dart Launcher");
       const complex = fight([hero(sturdy), goblin(sturdy), trap({ hazard: { once: false } })], seed);
       expect(new Set(complex.fired).size).toBeGreaterThan(1);
     }
@@ -59,6 +61,15 @@ describe("hazards", () => {
       const bold = combinePlaystyles(["instigator", "leader"]);
       const { struck } = fight([hero({ ...sturdy, playstyles: bold.ids, desireStyle: bold.desire, behavior: bold.behavior }), goblin(sturdy), trap({ hazard: { once: false } })], seed);
       expect(struck).toBe(0);
+    }
+  });
+
+  test("outside the encounter it's set all the same, and never 'notices' the fight", () => {
+    const sturdy = { hp: { value: 300, max: 300, temp: 0 } };
+    for ( let seed = 1; seed <= 5; seed++ ) {
+      const { result, fired } = fight([hero(sturdy), goblin(sturdy), trap({ hazard: { once: false }, inEncounter: false })], seed);
+      expect(fired.length).toBeGreaterThan(0);
+      expect(result.log.some(e => e.actorId === "trap" && e.type === "notice")).toBe(false);
     }
   });
 

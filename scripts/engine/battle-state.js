@@ -339,7 +339,7 @@ export function createUnit(prep, p) {
     crossedBy: new Set(),
     truce: null,
     // Encounter membership: combatants start active; bystanders wait until they notice the fight.
-    active: s.inEncounter !== false,
+    active: s.inEncounter !== false || !!s.hazard, // (a hazard is set from the start: it has nothing to notice)
     aware: s.inEncounter !== false,
     joinedRound: s.inEncounter !== false ? 0 : null,
     calledForHelp: false,
