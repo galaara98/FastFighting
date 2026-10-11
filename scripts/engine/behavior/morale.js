@@ -55,7 +55,8 @@ export function checkMorale(run, u) {
   const retreat = u.tac?.retreat;
   if ( retreat ) {
     if ( retreat === "never" ) return MORALE.HOLD;
-    if ( retreat === "hurt" ) return (u.maxHp > 0 && u.hp / u.maxHp < 0.25) ? MORALE.ROUT : MORALE.HOLD;
+    // (Badly hurt: under a quarter, unless the system says otherwise; Ironsworn heroes fight on until 0 health.)
+    if ( retreat === "hurt" ) return (u.maxHp > 0 && u.hp / u.maxHp < (run.prep.rules.retreatAt ?? 0.25)) ? MORALE.ROUT : MORALE.HOLD;
     if ( retreat === "losing" ) {
       const friends = alliesOf(run, u).filter(isStanding).length;
       const foes = enemiesOf(run, u).filter(isStanding).length;

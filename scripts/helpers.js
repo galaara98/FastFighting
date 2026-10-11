@@ -12,7 +12,8 @@ export const SYSTEMS_URL = "https://github.com/galaara98/FastFighting/blob/main/
 export const KNOWN_HELPERS = Object.freeze({
   pf2e: { module: "fast-fighting-pf2e", title: "FastFighting PF2e", url: "https://github.com/galaara98/FastFighting-PF2e" },
   dnd5e: { module: "fast-fighting-dnd5e", title: "FastFighting D&D 5e", url: "https://github.com/galaara98/FastFighting-DnD5e" },
-  dcc: { module: "fast-fighting-dcc", title: "FastFighting DCC", url: "https://github.com/galaara98/FastFighting-DCC" }
+  dcc: { module: "fast-fighting-dcc", title: "FastFighting DCC", url: "https://github.com/galaara98/FastFighting-DCC" },
+  "foundry-ironsworn": { module: "fast-fighting-ironsworn", title: "FastFighting Ironsworn", url: "https://github.com/galaara98/FastFighting-Ironsworn" }
 });
 
 /**

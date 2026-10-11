@@ -459,9 +459,11 @@ export function attemptTalk(run, talker, pitch, log) {
   const pull = aim === "recruit" ? appeal(run, t, talker.side).fulfils : null;
   const pullName = pull ? run.byId.get(pull.targetId)?.spec.name ?? "" : "";
   const why = pull ? ` (${pull.kind === "hurt" ? `a chance at ${pullName}` : `to keep ${pullName} safe`})` : "";
-  if ( run.log ) log(talker, `${verb} ${t.spec.name}${AIM_TEXT[aim] ?? ""}${why} (${pitch.skill} ${roll.total} vs DC ${pitch.dc}): ${result} [${Math.min(progress, steps)}/${steps}]`, {
+  // (Against challenge dice rather than a DC: Ironsworn.)
+  const versus = roll.challenge ? roll.challenge.join(", ") : `DC ${pitch.dc}`;
+  if ( run.log ) log(talker, `${verb} ${t.spec.name}${AIM_TEXT[aim] ?? ""}${why} (${pitch.skill} ${roll.total} vs ${versus}): ${result} [${Math.min(progress, steps)}/${steps}]`, {
     type: "talk", kind: pitch.kind, skill: pitch.skill, target: t.spec.name, targetId: t.id, natural: roll.natural, mod: pitch.mod, total: roll.total,
-    dc: pitch.dc, dcStat: pitch.dcLabel, degree: roll.degree, margin: roll.total - pitch.dc,
+    dc: pitch.dc, dcStat: pitch.dcLabel, degree: roll.degree, margin: roll.total - pitch.dc, challenge: roll.challenge ?? null,
     progress: Math.min(progress, steps), steps, offended: roll.degree === 0,
     aim, appeal: pull ? { kind: pull.kind, target: pullName, targetId: pull.targetId } : null
   });

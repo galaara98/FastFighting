@@ -502,6 +502,8 @@ function statLine(e) {
   const roll = (nat, mod, total, dc, label, faces = 20) => `d${faces ?? 20} ${nat} ${signed(mod)} = ${total} vs ${label} ${dc}`;
   switch ( e.type ) {
     case "attack":
+      // (Against challenge dice: an Ironsworn move, or a progress roll.)
+      if ( e.challenge ) return `${e.actor} → ${e.target}: ${e.action} · ${e.natural ? `d6 ${e.natural} ${signed(e.mod)} = ` : "progress "}${e.total}${e.burned ? ` (momentum ${e.burned})` : ""} vs ${e.challenge.join(", ")} · ${["miss (a match)", "miss", "weak hit", "strong hit"][e.degree]}${e.damage ? ` · ${e.damage} ${e.damageType}` : ""}`;
       return `${e.actor} → ${e.target}: ${e.action} · ${roll(e.natural, e.mod, e.total, e.dc, "AC", e.faces)}${e.deed !== null && e.deed !== undefined ? ` (deed ${e.deed})` : ""} · ${DEGREE[e.degree]} (${signed(e.margin)})${e.damage ? ` · ${e.damage} ${e.damageType}` : ""}${e.attackNumber > 1 ? ` · attack #${e.attackNumber}` : ""}${e.riders?.length ? ` · ${e.riders.join(", ")}` : ""}${e.critRoll !== null && e.critRoll !== undefined ? ` · crit table ${e.critRoll}` : ""}`;
     case "deed": return `${e.actor} → ${e.target}: ${e.deed} · deed ${e.roll} · ${e.success ? (e.effect || "succeeds") : "fails"}`;
     case "rider": {

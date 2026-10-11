@@ -762,7 +762,10 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
         }
       }
     }
-    const data = !logging ? null : { type: "attack", ...common, natural: roll.natural, mod: bonus + deedRoll + (roll.die ?? 0), total: roll.total, dc: ac, degree: roll.degree, margin: roll.total - ac, attackNumber: attacksMade + 1, faces: opts.faces, deed: r.deed ? deedRoll : null };
+    // (Against challenge dice rather than a number: an Ironsworn move. A strong hit, a weak hit, a miss.)
+    const versus = roll.challenge ? `${roll.challenge.join(", ")}` : `AC ${ac}`;
+    const said = roll.challenge ? ["miss (a match)", "miss", "weak hit", "strong hit"][roll.degree] : null;
+    const data = !logging ? null : { type: "attack", ...common, natural: roll.natural, mod: bonus + deedRoll + (roll.die ?? 0), total: roll.total, dc: ac, degree: roll.degree, margin: roll.total - ac, attackNumber: attacksMade + 1, faces: opts.faces, deed: r.deed ? deedRoll : null, challenge: roll.challenge ?? null, burned: roll.burned ?? null };
     if ( roll.degree >= 2 ) {
       const crit = roll.degree === 3;
       const extra = bonusDamageParts(run, u, action, target, { advantage, commit: true });
@@ -779,7 +782,7 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
       if ( answer?.halve ) amount = Math.floor(amount / 2);
       if ( answer?.reduce ) amount = Math.max(0, amount - samplePart(answer.reduce, run.rng));
       if ( guard?.r.reduce ) amount = Math.max(0, amount - samplePart(guard.r.reduce, run.rng));
-      if ( logging ) log(run, u, `${action.name} → ${target.spec.name}: ${roll.total} vs AC ${ac}, ${crit ? "critical hit" : "hit"} for ${amount}`, {
+      if ( logging ) log(run, u, `${action.name} → ${target.spec.name}: ${roll.total} vs ${versus}, ${said ?? (crit ? "critical hit" : "hit")} for ${amount}`, {
         ...data, damage: amount, crit, sneak: extra.length > 0, advantage, riders: riders.map(x => x.label), critRoll: table?.total ?? null, critRowText: table?.row?.text ?? null,
         lessened: amount < hit.total ? hit.total - amount : 0
       });
@@ -795,7 +798,7 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
         if ( strike && movesNeeded(run, guard.g, u, strike) === 0 ) strikeTarget(run, guard.g, strike, u, 0, false, logging);
       }
     } else {
-      if ( logging ) log(run, u, `${action.name} → ${target.spec.name}: ${roll.total} vs AC ${ac}, ${roll.degree === 0 ? "fumble" : "miss"}${answer ? ` (${answer.label})` : ""}`, { ...data, damage: 0, advantage, savedBy: answer?.label ?? null });
+      if ( logging ) log(run, u, `${action.name} → ${target.spec.name}: ${roll.total} vs ${versus}, ${said ?? (roll.degree === 0 ? "fumble" : "miss")}${answer ? ` (${answer.label})` : ""}`, { ...data, damage: 0, advantage, savedBy: answer?.label ?? null });
       // A melee miss opens the attacker up (5e Riposte).
       if ( action.melee && target.spec.reactions && isUp(target) && target !== u ) {
         const back = respond(run, target, "missed", { by: u, action });
