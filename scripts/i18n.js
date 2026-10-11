@@ -68,6 +68,10 @@ export function localize(key, data = null) {
   return fillIn(withTerms(text), data);
 }
 
+/** Text made safe to put in HTML (names players chose, words a table wrote): &, <, >, " and ' escaped. */
+const HTML_ESCAPES = { "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" };
+export const escapeHtml = s => String(s ?? "").replace(/[&<>"']/g, c => HTML_ESCAPES[c]);
+
 /** Names one after another ("Amiri, Ezren"), with the language file's separator. */
 export const listItems = items => items.join(localize("FASTFIGHTING.Words.ListSeparator"));
 

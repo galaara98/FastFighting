@@ -5,12 +5,11 @@
  * the system's own words (its actions, conditions, skills and compendiums) read in that language in FastFighting too.
  * Helpers register through the core API: api.adviseTranslation(moduleId, systemTitle, {lang: {id, title, url}}).
  */
-import { localize } from "../i18n.js";
+import { localize, escapeHtml as esc } from "../i18n.js";
 
 const advised = new Map();
 let hooked = false;
 
-const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" }[c]));
 
 /**
  * @param {string} moduleId   the helper module ("fast-fighting-pf2e")

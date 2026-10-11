@@ -7,6 +7,7 @@
  * newest first, so several Make it So's can be undone in turn.
  */
 import { MODULE_ID, STATUS } from "../constants.js";
+import { escapeHtml as escape } from "../i18n.js";
 import { getAdapter } from "../api.js";
 import { setting } from "../settings.js";
 import { pixelsFor, sceneDistance } from "./terrain.js";
@@ -24,9 +25,6 @@ function undoStack(scene) {
   return (stored.records || stored.moves || stored.messages || stored.doors) ? [stored] : [];
 }
 
-function escape(s) {
-  return foundry.utils.escapeHTML ? foundry.utils.escapeHTML(String(s)) : String(s);
-}
 
 /** Feet between the token's current center and the engine's final position. */
 function feetMoved(spec, final) {

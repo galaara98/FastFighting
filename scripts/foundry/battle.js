@@ -102,7 +102,9 @@ export async function gatherRoster(setup, adapter = getAdapter()) {
       spec.inEncounter = inEncounter.has(token.id);
       spec.position = positionOf(token);
       spec.perception ??= spec.initiative?.mod ?? 0;
-      applyHazard(spec, token.actor?.getFlag(MODULE_ID, "hazard")); // (the GM's mark, in the token's FastFighting tab)
+      // (The GM's mark, in the token's FastFighting tab. Players can write their own actors' flags, and nobody attacks a
+      // hazard: on an actor a player owns, the mark doesn't count.)
+      applyHazard(spec, token.actor?.hasPlayerOwner ? null : token.actor?.getFlag(MODULE_ID, "hazard"));
       // (A hazard on the Neutral side, as PF2e leaves one with no alliance, is set against the party.)
       const side = DISPOSITION_SIDES[token.document.disposition] ?? SIDES.HOSTILE;
       out.push({ token, spec, baseSide: spec.hazard && side === SIDES.NEUTRAL ? SIDES.HOSTILE : side });
@@ -510,6 +512,7 @@ export function buildBattleSpec(roster, setup, { approach = null, exclude = new 
   proposeNeutralGroups(roster, setup, { missingOnly: true }); // (a neutral put on the map since the planner opened)
   const resolved = resolveAllegiances(roster, setup);
   const leans = resolveLeans(roster, setup);
+  const hidden = new Set(roster.filter(e => e.token.document?.hidden).map(e => e.token.id));
   const combatants = [];
   const bySide = {};
   for ( const e of roster ) {
@@ -523,6 +526,9 @@ export function buildBattleSpec(roster, setup, { approach = null, exclude = new 
     if ( side === NEUTRAL_PARTY ) spec.group = neutralTeamOf(e, setup) ?? undefined; // its friend group
     spec.traits = fudgedTraits(e.spec, ts.fudge);
     applyCharacterTactics(spec, e);
+    // (A player's character wants nothing of a token hidden from it: the survey never offers one, and a flag written by
+    // hand can't name one either.)
+    if ( e.token.actor?.hasPlayerOwner ) spec.desires = (spec.desires ?? []).filter(d => !hidden.has(d.targetId));
     if ( ts.diesAtZero !== undefined ) spec.diesAtZero = ts.diesAtZero;
     combatants.push(spec);
     (bySide[side] ??= []).push(spec);

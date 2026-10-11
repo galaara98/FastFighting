@@ -214,12 +214,26 @@ export function stepsToConvince(t, run = null, talker = null) {
   return clamp(steps, 2, t.spec.kind === "pc" ? 8 : 6);
 }
 
-/** The DC t sets against `talker` for one kind of pitch, including grudges and circumstances. */
-export function talkDC(run, talker, t, kind) {
+/**
+ * The DC t sets against `talker` for one kind of pitch, including grudges and circumstances. (`shared`: what doesn't
+ * depend on the kind, talkDCShared, worked out once for all three.)
+ */
+export function talkDC(run, talker, t, kind, shared = talkDCShared(run, talker, t)) {
   const s = t.spec.social ?? {};
-  const level = t.spec.level ?? 0;
-  let dc = s.resist?.[kind]?.dc ?? typical(run.prep.rules, "dc", level);
+  let dc = s.resist?.[kind]?.dc ?? typical(run.prep.rules, "dc", t.spec.level ?? 0);
+  dc += shared.dc;
+  if ( shared.outnumbered ) dc -= kind === "intimidate" ? 3 : 2;
+  if ( kind === "intimidate" ) dc += shared.bold;
+  if ( shared.aside ) dc -= kind === "persuade" ? 4 : 2;
+  return dc;
+}
 
+/**
+ * What t's DC against `talker` comes to whatever the kind of pitch: grudges, circumstances, personality, what the talk
+ * is for. And what the kind changes: outnumbered (threats work better), its boldness (against threats), standing aside.
+ */
+function talkDCShared(run, talker, t) {
+  let dc = 0;
   // Grudges: harm done by this talker, earlier failures, harm to their friends.
   const harm = t.harmedBy.get(talker.id) ?? 0;
   if ( harm > 0 ) dc += 5 + Math.round(10 * Math.min(1, harm / Math.max(1, t.maxHp)));
@@ -235,14 +249,11 @@ export function talkDC(run, talker, t, kind) {
   if ( t.wavering ) dc -= 2;
   const theirs = alliesOf(run, t).filter(isStanding).length;
   const ours = enemiesOf(run, t).filter(isStanding).length;
-  if ( ours > theirs ) dc -= kind === "intimidate" ? 3 : 2;
   // (Its leaders all down, or none of them able to lead: nobody holding it together.)
   if ( chainOf(run, groupKeyOf(t))?.length && !commandOf(run, t) ) dc -= 2;
 
   // Personality: loyal and brave hold out, selfish take a deal; neutrals are easy to talk to.
   dc += Math.round((t.prep.traits.loyal - 50) / 25) - Math.round((t.prep.traits.selfish - 50) / 25);
-  if ( kind === "intimidate" ) dc += Math.round((t.prep.traits.brave - 50) / 20);
-  if ( standsAside(t) ) dc -= kind === "persuade" ? 4 : 2;
   if ( t.scheming ) dc -= 4; // (it's looking for a way out from under its leaders)
   // A Peacekeeper's word is trusted: up to 2 easier.
   const keeper = behaviorOf(talker).peacekeeping ?? 0;
@@ -266,7 +277,7 @@ export function talkDC(run, talker, t, kind) {
     const care = Math.max(0, ...allDesires(t).filter(d => d.kind !== "hurt" && d.kind !== "avoid" && run.byId.get(d.targetId)?.status === STATUS.STANDING).map(d => d.level));
     dc += Math.round(care / 10) + Math.round((t.prep.traits.brave - 50) / 20);
   }
-  return dc;
+  return { dc, outnumbered: ours > theirs, bold: Math.round((t.prep.traits.brave - 50) / 20), aside: standsAside(t) };
 }
 
 /** The talker's best pitch at t: {kind, skill, mod, advantage, dc, dcLabel, pSuccess}. */
@@ -277,14 +288,19 @@ export function bestPitch(run, talker, t) {
   // A PC with nothing to hand over can only be scared off; reasoning or bluffing gets nowhere.
   const scareOnly = t.spec.kind === "pc" && !hasValuables(t);
   const aim = aimOf(talker, t, run);
+  // (What doesn't depend on the kind of pitch, worked out once.)
+  let shared = null;
+  let study = null;
   for ( const kind of TALK_KINDS ) {
     const pitch = s.pitches?.[kind];
     if ( typeof pitch?.mod !== "number" ) continue;
     if ( scareOnly && kind !== "intimidate" && aim === "down" ) continue;
     if ( (aim === "recruit" || aim === "pacify") && kind === "intimidate" ) continue; // nobody is threatened into friendship (or peace)
     if ( kind === "intimidate" && (behaviorOf(talker).peacekeeping ?? 0) >= 0.5 ) continue; // (a Peacekeeper never threatens)
-    const { mod: base, advantage, dice } = checkRoll(run, talker, pitch.mod + studyBonus(talker, t, { words: true }), t);
-    const dc = talkDC(run, talker, t, kind);
+    study ??= studyBonus(talker, t, { words: true });
+    const { mod: base, advantage, dice } = checkRoll(run, talker, pitch.mod + study, t);
+    shared ??= talkDCShared(run, talker, t);
+    const dc = talkDC(run, talker, t, kind, shared);
     // (A Lore-Collector that sized it up: about 2.5 times as likely to get through.)
     const lift = boostBonus(rules, talker, t, base, dc, { advantage, dice, kind: "check" });
     const mod = base + lift;

@@ -7,9 +7,11 @@
 {{else}}
 <p class="ff-hint">{{localize "FASTFIGHTING.TokenTactics.HazardNoTactics"}}</p>
 {{/if}}
+{{#if markable}}
 <div class="ff-token-hazard">
   <label class="ff-q-label">{{localize "FASTFIGHTING.TokenTactics.Hazard"}}
     <select data-ff-setting="hazard">{{selectOptions hazardChoices selected=hazard}}</select>
   </label>
   <p class="ff-hint">{{localize "FASTFIGHTING.TokenTactics.HazardHint"}}</p>
 </div>
+{{/if}}

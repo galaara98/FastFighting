@@ -10,7 +10,7 @@
 import { createRng } from "../engine/rng.js";
 import { DAMAGE_TYPES } from "./blocks.js";
 import { desireBand, DESIRE_BAND_KEYS } from "../engine/behavior/desire.js";
-import { listJoin, listItems, localize, hasWords, distanceText } from "../i18n.js";
+import { listJoin, listItems, localize, hasWords, distanceText, escapeHtml as esc } from "../i18n.js";
 import { logLine, endLine, logTerm, formatMoney, concessionText } from "./log-lines.js";
 
 export { formatMoney, concessionText };
@@ -19,7 +19,6 @@ export const STORY_STYLES = ["roleplay", "standard", "statistician"];
 
 const SPELL_KINDS = new Set(["spell-attack", "save", "auto"]);
 
-const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" }[c]));
 const capital = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
 
 

@@ -4,6 +4,7 @@
  * the GM at the list of supported systems (systems.md).
  */
 import { MODULE_ID } from "./constants.js";
+import { escapeHtml as esc } from "./i18n.js";
 import { hasSystemAdapter } from "./api.js";
 
 export const SYSTEMS_URL = "https://github.com/galaara98/FastFighting/blob/main/systems.md";
@@ -47,7 +48,6 @@ export function helperMessage(status = helperStatus()) {
 
 /** HTML notice with links, for the settings window and the Combat Tracker. */
 export function helperNoticeHtml(status = helperStatus()) {
-  const esc = s => foundry.utils.escapeHTML ? foundry.utils.escapeHTML(String(s)) : String(s);
   const link = status.known
     ? `<a href="${status.known.url}" target="_blank" rel="noopener">${esc(status.known.title)}</a>`
     : `<a href="${SYSTEMS_URL}" target="_blank" rel="noopener">${esc(game.i18n.localize("FASTFIGHTING.Helper.ListLink"))}</a>`;

@@ -616,27 +616,63 @@ export function alliesAdjacentTo(run, target, attacker) {
   return n;
 }
 
-/** The facts the rules weigh for an attack (or an effect) from attacker against target. */
+/**
+ * The facts the rules weigh for an attack (or an effect) from attacker against target: {target, attacker, action,
+ * grabbed, flanked, alliesAdjacent, attackerEngaged, distance, positioning, exposedTo}. Each is worked out only when
+ * the rules ask for it, and once.
+ */
 export function situation(run, target, attacker = null, action = null) {
-  const grabber = target.grabbedBy ? run.byId.get(target.grabbedBy) : null;
-  return {
-    target,
-    attacker,
-    action,
-    grabbed: !!(grabber && isStanding(grabber)),
-    flanked: !!(attacker && action?.melee && isFlanked(run, target, attacker)),
-    // Standing allies of the attacker next to the target (5e Pack Tactics), and whether a foe is next to the
-    // attacker (5e: a ranged attack in melee has disadvantage).
-    alliesAdjacent: attacker ? alliesAdjacentTo(run, target, attacker) : 0,
-    attackerEngaged: !!attacker && [...attacker.adjacent].some(id => {
-      const o = run.byId.get(id);
-      return o && isStanding(o) && areEnemies(run, attacker, o);
-    }),
-    distance: attacker ? separation(run, attacker, target) : 0,
-    positioning: !!run.prep.options.positioning,
-    // Off guard against this attacker in particular (PF2e Feint).
-    exposedTo: !!(attacker && target.vs?.get(attacker.id)?.offGuard)
-  };
+  return new Situation(run, target, attacker, action);
+}
+
+class Situation {
+  #run;
+  #facts = {};
+  constructor(run, target, attacker, action) {
+    this.#run = run;
+    this.target = target;
+    this.attacker = attacker;
+    this.action = action;
+    this.positioning = !!run.prep.options.positioning;
+  }
+
+  #fact(key, work) {
+    if ( !(key in this.#facts) ) this.#facts[key] = work();
+    return this.#facts[key];
+  }
+
+  get grabbed() {
+    return this.#fact("grabbed", () => {
+      const grabber = this.target.grabbedBy ? this.#run.byId.get(this.target.grabbedBy) : null;
+      return !!(grabber && isStanding(grabber));
+    });
+  }
+
+  get flanked() {
+    return this.#fact("flanked", () => !!(this.attacker && this.action?.melee && isFlanked(this.#run, this.target, this.attacker)));
+  }
+
+  /** Standing allies of the attacker next to the target (5e Pack Tactics). */
+  get alliesAdjacent() {
+    return this.#fact("alliesAdjacent", () => (this.attacker ? alliesAdjacentTo(this.#run, this.target, this.attacker) : 0));
+  }
+
+  /** Whether a foe is next to the attacker (5e: a ranged attack in melee has disadvantage). */
+  get attackerEngaged() {
+    return this.#fact("attackerEngaged", () => !!this.attacker && [...this.attacker.adjacent].some(id => {
+      const o = this.#run.byId.get(id);
+      return o && isStanding(o) && areEnemies(this.#run, this.attacker, o);
+    }));
+  }
+
+  get distance() {
+    return this.#fact("distance", () => (this.attacker ? separation(this.#run, this.attacker, this.target) : 0));
+  }
+
+  /** Off guard against this attacker in particular (PF2e Feint). */
+  get exposedTo() {
+    return this.#fact("exposedTo", () => !!(this.attacker && this.target.vs?.get(this.attacker.id)?.offGuard));
+  }
 }
 
 /** Is the target exposed to this attack (PF2e: off-guard; 5e: attacked with advantage)? */

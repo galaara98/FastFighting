@@ -72,12 +72,15 @@ async function fill(app, panel) {
     if ( !spec ) return;
     specs.set(app, spec);
   }
-  // Any token can be a hazard (the GM's mark), or not be one; a hazard has no tactics to set.
-  const hazard = actor.getFlag(MODULE_ID, "hazard") ?? "";
+  // Any token can be a hazard (the GM's mark), or not be one; a hazard has no tactics to set. (Not one a player owns: its
+  // flags are the player's to write, so the mark wouldn't count.)
+  const markable = !actor.hasPlayerOwner;
+  const hazard = markable ? actor.getFlag(MODULE_ID, "hazard") ?? "" : "";
   const isHazard = !!applyHazard({ ...spec, flags: { ...spec.flags } }, hazard).hazard;
   const html = await foundry.applications.handlebars.renderTemplate(TEMPLATE, {
     hint: localize("FASTFIGHTING.TokenTactics.Hint"),
     hazard,
+    markable,
     hazardChoices: Object.fromEntries(HAZARD_MARKS.map(k => [k, localize(`FASTFIGHTING.TokenTactics.HazardMark.${k || "system"}`)])),
     isHazard,
     // (No desires here: a desire names a creature someone can perceive on the battle map, which a token window can't tell.)
