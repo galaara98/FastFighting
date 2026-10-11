@@ -12989,9 +12989,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.TokenTactics.Hint",
    "area": "core/TokenTactics",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "written",
+   "date": "2026-10-11",
+   "commit": "1793693",
    "hash": "cb6aecae5a53"
   },
   "core:FASTFIGHTING.TokenTactics.PrototypeHint": {
