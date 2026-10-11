@@ -590,7 +590,7 @@
     },
     "Survey": {
       "Title": "Prepare for Battle",
-      "Intro": "Your GM wants to know how your characters fight in {scene}. Answers save as you go, and anyone sharing a character sees changes live.",
+      "Intro": "Your GM wants to know how your characters fight in this upcoming conflict. Answers save as you go, and anyone sharing a character sees changes live.",
       "NoTokens": "You don't control any tokens on this battle map.",
       "Level": "Level",
       "SharedWith": "Also controlled by",
@@ -622,7 +622,7 @@
       "Count": "{n} of {max}",
       "Max": "Pick at most four playstyles. Unpick one first.",
       "StayTrue": "Stay mostly true to my calculated tactical level",
-      "StayTrueHint": "Your answers and playstyles can only move the calculated strategy by about 10%: trait shifts are capped at ±10, and any choice that differs from the calculation shows up in only about 1 in 10 simulated fights.",
+      "StayTrueHint": "Your playstyle will be heavily influenced by your stats, weapons and spells, which determine what you will probably do; the other settings on this screen will have only a minor effect.",
       "Roleplay": "Roleplaying is very important to me",
       "RoleplayHint": "The simulation weighs your playstyles heavily: their personality shifts double and their quirks (finishing foes, parleying, studying enemies…) happen much more often.",
       "Both": "Both boxes are checked: roleplay strengthens your playstyles, but staying true still caps how far they move you from the calculated strategy.",
@@ -708,7 +708,7 @@
         "Hint": "Unpredictable: some foe catches its eye at random, nobody's voice counts for much, and it may defy its leader."
       },
       "AlwaysTalk": "This character always prefers talking to fighting",
-      "AlwaysTalkHint": "Talks whenever there's someone to talk to, whole turns at a time, even without much skill at it, and always votes to open an encounter as a standoff. With \"stay mostly true\" also checked, it only makes talking a little more likely.",
+      "AlwaysTalkHint": "Talks whenever there's someone to talk to, whole turns at a time, even without much skill at it, and always votes to open an encounter as a standoff.",
       "thief": {
         "Name": "Thief",
         "Hint": "Light fingers: when their side is winning, or they're unseen and someone is alone, they may rob a foe within reach instead of hitting them. A lock is an invitation."

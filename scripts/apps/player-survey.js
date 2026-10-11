@@ -96,7 +96,7 @@ export class PlayerSurvey extends HandlebarsApplicationMixin(ApplicationV2) {
       sheets,
       active: sheets.find(s => s.active) ?? null,
       empty: !sheets.length,
-      intro: game.i18n.format("FASTFIGHTING.Survey.Intro", { scene: scene?.name ?? "" })
+      intro: game.i18n.localize("FASTFIGHTING.Survey.Intro")
     };
   }
 
