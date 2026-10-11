@@ -1426,7 +1426,10 @@ function reclaimGoods(run) {
     for ( const c of u.concessions ?? [] ) {
       if ( c.kept || c.returned ) continue;
       const taker = run.byId.get(c.to);
-      if ( !taker || !BEATEN.has(taker.status) ) continue;
+      // Beaten, or caught: still under the control of the owner's side when it's over (a dominated thief).
+      const holder = taker?.controlledBy ? run.byId.get(taker.controlledBy) : null;
+      const caught = !!holder && (holder.homeSide ?? holder.side) === (u.homeSide ?? u.side);
+      if ( !taker || !(BEATEN.has(taker.status) || caught) ) continue;
       c.returned = true;
       log(run, u, `gets back what ${taker.spec.name} took`, { type: "reclaim", concession: c, by: taker.spec.name, byId: taker.id, aftermath: true });
     }

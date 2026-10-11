@@ -131,6 +131,27 @@ describe("theft", () => {
       }
     }
   });
+
+  test("... or caught: still under the control of the owner's side when it's over", () => {
+    // The thief robs the PC; the PC's friend then dominates the thief, and with no one left to fight, it's over.
+    const dominate = { id: "dominate", name: "Dominate", kind: "control", cost: 2, save: { type: "will", dc: 60 }, range: { increment: 60, max: 60, noPenalty: true }, melee: false,
+      onSave: [{ conditions: { controlled: 1 }, rounds: 100, label: "dominated" }, { conditions: { controlled: 1 }, rounds: 100, label: "dominated" }, null, null] };
+    let caught = 0;
+    for ( let s = 1; s <= 120; s++ ) {
+      const spec = scene();
+      spec.options.maxRounds = 10;
+      // (A bystander at first, so the PC is alone when robbed; it joins once it hears the fight.)
+      spec.combatants.push(creature({ id: "mage", kind: "pc", diesAtZero: false, inEncounter: false, initiative: { mod: -50 }, perception: 4, hp: { value: 400, max: 400 }, actions: [dominate],
+        traits: { tactical: { base: 80, fudge: 0 }, brave: { base: 90, fudge: 0 }, selfish: { base: 20, fudge: 0 }, loyal: { base: 80, fudge: 0 } } }));
+      const r = replay(spec, pf2eRules, s);
+      if ( r.units.thief.final.controlledBy !== "mage" ) continue;
+      for ( const c of r.units.pc.final.concessions ) {
+        expect(c.returned).toBe(true);
+        caught += 1;
+      }
+    }
+    expect(caught).toBeGreaterThan(0);
+  });
 });
 
 describe("open theft", () => {
