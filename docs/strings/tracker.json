@@ -248,6 +248,17 @@
    "status": "todo",
    "date": null,
    "commit": null,
+   "hash": "f72e346158ec",
+   "changed": true
+  },
+  "core:code:scripts/foundry/make-it-so.js:revertRecord#13": {
+   "repo": "core",
+   "file": "scripts/foundry/make-it-so.js",
+   "key": "scripts/foundry/make-it-so.js:revertRecord#13",
+   "area": "core/code",
+   "status": "todo",
+   "date": null,
+   "commit": null,
    "hash": "f72e346158ec"
   },
   "core:code:scripts/foundry/make-it-so.js:revertRecord#2": {
@@ -18437,6 +18448,26 @@
    "commit": null,
    "hash": "bd13d5a0906b"
   },
+  "dcc:FFDCC.FleetingGain": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.FleetingGain",
+   "area": "dcc/General",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "cafb2f52d625"
+  },
+  "dcc:FFDCC.FleetingLost": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.FleetingLost",
+   "area": "dcc/General",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "ed2754347c81"
+  },
   "dcc:FFDCC.Hp": {
    "repo": "dcc",
    "file": "languages/en.json",
@@ -18736,6 +18767,16 @@
    "date": null,
    "commit": null,
    "hash": "955b6ef3c44a"
+  },
+  "dcc:FFDCC.Out.Fleeting": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.Out.Fleeting",
+   "area": "dcc/Out",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "302119cfda8f"
   },
   "dcc:FFDCC.Out.Lost": {
    "repo": "dcc",
