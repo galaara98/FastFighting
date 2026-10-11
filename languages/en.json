@@ -679,7 +679,9 @@
         "entering": "Entering…",
         "closed": "Closed, not finished",
         "done": "Ready"
-      }
+      },
+      "MyTactics": "My tactics",
+      "MyTacticsHint": "How your characters fight: tactics, playstyles and desires. Change them any time; your GM sees them as you go."
     },
     "Playstyle": {
       "Label": "Playstyles",

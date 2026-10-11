@@ -1,11 +1,13 @@
 /**
- * The player's pre-battle survey: one spreadsheet-style tab per token they control on the battle map.
- * Answers save as they change and sync live between everyone who controls the same token.
+ * The player's pre-battle survey: one spreadsheet-style tab per token they control on the battle map, and per character
+ * of theirs with no token there (charactersForUser). Opened by the GM's "Prepare Players", or by the player any time
+ * ("My tactics" in the Encounters tab). Answers save as they change and sync live between everyone who controls the
+ * same token or character.
  */
 import { MODULE_ID } from "../constants.js";
 import { getAdapter } from "../api.js";
 import {
-  questionsContext, setTactic, togglePlaystyle, syncTacticsDom, tokensForUser, setOwnSurveyStatus, SURVEY_STATUS, playstyleSignature
+  questionsContext, setTactic, togglePlaystyle, syncTacticsDom, charactersForUser, setOwnSurveyStatus, SURVEY_STATUS, playstyleSignature
 } from "../foundry/tactics.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -35,7 +37,10 @@ export class PlayerSurvey extends HandlebarsApplicationMixin(ApplicationV2) {
     let app = foundry.applications.instances.get("fast-fighting-survey");
     if ( !app ) app = new PlayerSurvey();
     app.sceneId = sceneId ?? app.sceneId ?? canvas.scene?.id;
-    app.requestId = requestId ?? app.requestId ?? null;
+    // (Opened by the player itself while the GM's request is still open: that request.)
+    const pending = !game.user.isGM && !requestId ? game.user.getFlag(MODULE_ID, "survey") : null;
+    const asked = pending && [SURVEY_STATUS.REQUESTED, SURVEY_STATUS.ENTERING].includes(pending.status) && pending.sceneId === app.sceneId ? pending.requestId : null;
+    app.requestId = requestId ?? asked ?? app.requestId ?? null;
     app.finished = false;
     app.specs.clear(); // re-read characters each time the survey opens
     await app.render({ force: true });
@@ -60,24 +65,26 @@ export class PlayerSurvey extends HandlebarsApplicationMixin(ApplicationV2) {
   async _prepareContext() {
     const adapter = getAdapter();
     const scene = this.scene;
-    const tokens = tokensForUser(scene, game.user);
+    const entries = charactersForUser(scene, game.user);
+    this.entries = new Map(entries.map(e => [e.key, e]));
     const sheets = [];
-    for ( const t of tokens ) {
-      // Reading strikes and spells is slow; answers don't change them, so keep what was read at opening.
-      let spec = this.specs.get(t.id) ?? null;
+    for ( const e of entries ) {
+      // Reading strikes and spells is slow; answers don't change them, so keep what was read at opening. (A character
+      // with no token on the map is read as its token would be.)
+      let spec = this.specs.get(e.key) ?? null;
       if ( !spec ) {
         try {
-          spec = await adapter.toCombatantSpec(t);
+          spec = await adapter.toCombatantSpec(e.token ?? await e.actor.getTokenDocument());
         } catch ( err ) {
-          console.warn(`${MODULE_ID} | survey could not read ${t.name}`, err);
+          console.warn(`${MODULE_ID} | survey could not read ${e.name}`, err);
         }
         if ( !spec ) continue;
-        this.specs.set(t.id, spec);
+        this.specs.set(e.key, spec);
       }
-      const others = game.users.filter(u => u !== game.user && !u.isGM && t.actor.testUserPermission(u, "OWNER"));
+      const others = game.users.filter(u => u !== game.user && !u.isGM && e.actor.testUserPermission(u, "OWNER"));
       sheets.push({
-        id: t.id,
-        name: t.name,
+        id: e.key,
+        name: e.name,
         img: spec.img,
         hp: `${spec.hp.value}/${spec.hp.max}`,
         ac: spec.defenses.ac,
@@ -86,7 +93,7 @@ export class PlayerSurvey extends HandlebarsApplicationMixin(ApplicationV2) {
         sharedOnline: others.some(u => u.active),
         // Players name only the creatures they can see: not hidden, and (on the scene they're looking at) within
         // their own sight, so the survey never gives away what lurks in the dark.
-        tactics: questionsContext(spec, t.actor, t.id, { targets: scene.tokens.filter(o => o.actor && !o.hidden && (canvas.scene?.id !== scene.id || !o.object || o.object.isVisible)).map(o => ({ id: o.id, name: o.name })) })
+        tactics: questionsContext(spec, e.actor, e.key, { targets: scene.tokens.filter(o => o.actor && !o.hidden && (canvas.scene?.id !== scene.id || !o.object || o.object.isVisible)).map(o => ({ id: o.id, name: o.name })) })
       });
     }
     if ( !sheets.some(s => s.id === this.activeTab) ) this.activeTab = sheets[0]?.id ?? null;
@@ -157,9 +164,9 @@ export class PlayerSurvey extends HandlebarsApplicationMixin(ApplicationV2) {
 
   static async #onResetAll(event, target) {
     const id = target.dataset.tokenId ?? this.activeTab;
-    const token = this.scene?.tokens.get(id);
-    if ( !token?.actor ) return;
-    await token.actor.unsetFlag(MODULE_ID, "tactics");
+    const actor = this.entries?.get(id)?.actor;
+    if ( !actor ) return;
+    await actor.unsetFlag(MODULE_ID, "tactics");
     this.render();
   }
 

@@ -141,6 +141,24 @@ export function tokensForUser(scene, user) {
   return scene.tokens.filter(t => t.actor && adapter.canHandle(t.actor) && t.actor.testUserPermission(user, "OWNER"));
 }
 
+/**
+ * Everything a player can set tactics for: its tokens on the battle map, then its own characters with no token there.
+ * A token linked to its actor is the actor (one set of answers, shared); an unlinked token on the map has answers of
+ * its own, so it stands for its actor here (the token is what fights). Each entry: {key, name, token|null, actor}.
+ */
+export function charactersForUser(scene, user) {
+  const adapter = getAdapter();
+  if ( !adapter ) return [];
+  const tokens = scene ? tokensForUser(scene, user) : [];
+  const out = tokens.map(t => ({ key: t.id, name: t.name, token: t, actor: t.actor }));
+  const onMap = new Set(tokens.map(t => t.actorId));
+  for ( const a of game.actors ?? [] ) {
+    if ( onMap.has(a.id) || !a.hasPlayerOwner || !a.testUserPermission(user, "OWNER") || !adapter.canHandle(a) ) continue;
+    out.push({ key: `actor-${a.id}`, name: a.name, token: null, actor: a });
+  }
+  return out;
+}
+
 /** Non-GM users who control at least one token on the scene. */
 export function playersOnScene(scene) {
   return game.users.filter(u => !u.isGM && tokensForUser(scene, u).length);

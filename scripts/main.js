@@ -11,7 +11,7 @@ import { GenericPathsConfig } from "./apps/generic-paths-config.js";
 import { StoryTablesConfig } from "./apps/story-tables-config.js";
 import { invalidateStoryTables, installStoryTables } from "./story/tables.js";
 import { PlayerSurvey } from "./apps/player-survey.js";
-import { SOCKET, SURVEY_STATUS } from "./foundry/tactics.js";
+import { SOCKET, SURVEY_STATUS, charactersForUser } from "./foundry/tactics.js";
 import { helperStatus, helperMessage, helperNoticeHtml } from "./helpers.js";
 import { invalidateApproach } from "./foundry/battle.js";
 import { undoConcession, revealStory, ownCard } from "./foundry/make-it-so.js";
@@ -53,7 +53,7 @@ function openIfReady() {
 }
 
 Hooks.on("renderCombatTracker", (app, element) => {
-  if ( !game.user.isGM ) return;
+  if ( !game.user.isGM ) return myTacticsButton(element);
   const root = element instanceof HTMLElement ? element : element?.[0];
   const header = root?.querySelector(".combat-tracker-header") ?? root;
   if ( !header ) return;
@@ -78,6 +78,33 @@ Hooks.on("renderCombatTracker", (app, element) => {
   });
   header.prepend(button);
 });
+
+/**
+ * A player who controls a token on the battle map, or owns a character, can open its own tactics any time from the
+ * Encounters tab (in a fight or not, asked by the GM or not).
+ */
+function myTacticsButton(element) {
+  const root = element instanceof HTMLElement ? element : element?.[0];
+  const header = root?.querySelector(".combat-tracker-header") ?? root;
+  if ( !header ) return;
+  header.querySelector(".ff-my-tactics")?.remove();
+  if ( !helperStatus().ready || !charactersForUser(canvas.scene, game.user).length ) return;
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "ff-tracker-open ff-my-tactics";
+  button.dataset.tooltip = game.i18n.localize("FASTFIGHTING.Survey.MyTacticsHint");
+  button.innerHTML = `<i class="fa-solid fa-clipboard-question"></i> ${game.i18n.localize("FASTFIGHTING.Survey.MyTactics")}`;
+  button.addEventListener("click", event => {
+    event.preventDefault();
+    PlayerSurvey.open({ sceneId: canvas.scene?.id });
+  });
+  header.prepend(button);
+}
+
+// A player's characters on the map change: its button comes and goes.
+const refreshMyTactics = foundry.utils.debounce(() => { if ( !game.user.isGM ) ui.combat?.render(); }, 300);
+for ( const hook of ["createToken", "deleteToken", "canvasReady", "createActor", "deleteActor"] ) Hooks.on(hook, () => refreshMyTactics());
+Hooks.on("updateActor", (actor, changes) => { if ( "ownership" in changes ) refreshMyTactics(); });
 
 // Encounter changes re-read the roster in an open planner.
 const refreshRoster = foundry.utils.debounce(() => {

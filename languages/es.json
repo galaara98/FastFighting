@@ -679,7 +679,9 @@
         "entering": "Rellenando…",
         "closed": "Cerrado sin terminar",
         "done": "Listo"
-      }
+      },
+      "MyTactics": "Mis tácticas",
+      "MyTacticsHint": "Cómo luchan tus personajes: tácticas, estilos de juego y deseos. Cámbialos cuando quieras; tu DJ los ve sobre la marcha."
     },
     "Playstyle": {
       "Label": "Estilos de juego",

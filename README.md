@@ -275,6 +275,8 @@ Two boxes beside the playstyle pills: **"I don't like to use consumables"** and 
 
 Answers save as they're made, and two players sharing a token see each other's changes live. The planner shows each player's status, with a button to (re)open their survey.
 
+**My tactics:** players don't have to wait to be asked. Any player who controls a token on the battle map, or owns a character, gets a **My tactics** button in the Encounters tab that opens the same survey any time, in a fight or not. It shows one tab for each of their tokens on the map, plus one for each of their characters that has no token there. A token linked to its actor shares that actor's answers. An unlinked token keeps its own answers, and while it's on the map it stands in for its actor.
+
 **Playstyles:** up to four pills per character, PC or NPC, picked in order of importance (each pill shows its place, 1 to 4). Every pill counts, the first in full and each later one less (75%, 55%, 40%): in personality, quirks, desires, and tactics (where pills disagree on a tactic, each simulated fight goes with one of them, the first most often). Unpicking one moves the later ones up. They shift traits, change the defaults, switch on quirks, and guide how the character picks up desires:
 
 | Pill | Desires |
