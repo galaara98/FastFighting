@@ -539,7 +539,7 @@ function statistician(result, spec, title) {
     const f = result.units[c.id]?.final;
     return f ? logTerm("FinalLine", {
       name: c.name, status: statusWord(f.status), swayed: f.swayed ? logTerm("FinalSwayed", { how: statusWord(f.swayed) }) : "",
-      hp: f.hp, max: c.hp.max, dying: f.dying ? logTerm("FinalDying", { n: f.dying }) : "", wounded: f.wounded ? logTerm("FinalWounded", { n: f.wounded }) : ""
+      now: f.hp, max: c.hp.max, dying: f.dying ? logTerm("FinalDying", { n: f.dying }) : "", wounded: f.wounded ? logTerm("FinalWounded", { n: f.wounded }) : ""
     }) : c.name;
   });
   parts.push(`<p><strong>${esc(logTerm("Final"))}</strong></p><ul>${finals.map(l => `<li>${esc(l)}</li>`).join("")}</ul>`);

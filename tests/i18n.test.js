@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, test } from "vitest";
 import { readFileSync, readdirSync, statSync } from "fs";
 import { replay } from "../scripts/engine/simulator.js";
-import { localize, listJoin, commonOutcome } from "../scripts/i18n.js";
+import { localize, listJoin, commonOutcome, term, hasStat, setTermSource } from "../scripts/i18n.js";
 import { logLine } from "../scripts/story/log-lines.js";
 import { buildStory } from "../scripts/story/story.js";
 import { isBlocks, buildTables } from "../scripts/story/blocks.js";
@@ -127,7 +127,7 @@ describe("in another language", () => {
       .replace("{rest}", `Amiri${pseudo(en["FASTFIGHTING.Words.ListSeparator"])}Ezren`).replace("{last}", "Lini"));
     expect(localize("FASTFIGHTING.MakeItSo.Outcome.Dead")).toBe(pseudo(en["FASTFIGHTING.MakeItSo.Outcome.Dead"]));
     expect(commonOutcome({ hp: { value: 20 }, kind: "npc" }, { hp: 0, status: "dead" })).toEqual([
-      pseudo(en["FASTFIGHTING.MakeItSo.Outcome.Hp"]).replace("{from}", "20").replace("{to}", "0"),
+      pseudo(en["FASTFIGHTING.MakeItSo.Outcome.Hp"]).replace("{HP}", pseudo(en["FASTFIGHTING.Stat.hp"])).replace("{from}", "20").replace("{to}", "0"),
       pseudo(en["FASTFIGHTING.MakeItSo.Outcome.Dead"])
     ]);
   });
@@ -236,5 +236,45 @@ describe("a language the module isn't (fully) translated into reads in English",
     const spec = talkingFight();
     const story = buildStory(replay(spec, pf2eRules, 1), spec, "roleplay", { tables, seed: 1 });
     expect(story.text).not.toMatch(/undefined|NaN|\{[a-zA-Z]+\}/);
+  });
+});
+
+describe("the game's words for armor class and hit points", () => {
+  afterEach(() => setTermSource(null));
+  const generic = key => en[`FASTFIGHTING.Stat.${key}`];
+
+  test("FastFighting's generic words, unless the system's helper has its own; {AC} and {HP} in any text take them", () => {
+    expect(term("ac")).toBe(generic("ac"));
+    expect(term("hp")).toBe(generic("hp"));
+    expect(localize("FASTFIGHTING.Planner.DiesAtZero")).toBe(en["FASTFIGHTING.Planner.DiesAtZero"].replace("{HP}", generic("hp")));
+    setTermSource(key => (key === "ac" ? "<ac>" : null));
+    expect(term("ac")).toBe("<ac>");
+    expect(term("hp")).toBe(generic("hp")); // (none of its own: the generic word)
+    expect(localize("FASTFIGHTING.Stat.leadAc")).toBe(en["FASTFIGHTING.Stat.leadAc"].replace("{AC}", "<ac>"));
+    // The values filled in are never mistaken for the words.
+    const line = localize("FASTFIGHTING.Log.FinalLine", { name: "Amiri", status: "", swayed: "", now: 3, max: 9, dying: "", wounded: "" });
+    expect(line).toContain("3/9");
+    expect(line).toContain(generic("hp"));
+    expect(line).not.toMatch(/\{[A-Za-z]+\}/);
+  });
+
+  test("a system with no armor class doesn't show one; a helper that fails leaves the generic words", () => {
+    expect(hasStat("ac")).toBe(true);
+    setTermSource(key => (key === "ac" ? false : null));
+    expect(hasStat("ac")).toBe(false);
+    expect(hasStat("hp")).toBe(true);
+    expect(term("ac")).toBe(generic("ac")); // (text that names it anyway)
+    setTermSource(() => { throw new Error("no system yet"); });
+    expect(term("hp")).toBe(generic("hp"));
+    expect(hasStat("ac")).toBe(true);
+  });
+
+  test("templates show text with {AC} or {HP} through ffLocalize, which fills them (Foundry's localize wouldn't)", () => {
+    const plain = [];
+    for ( const file of sources("templates", [".hbs"]) ) {
+      const source = readFileSync(new URL(`../${file}`, import.meta.url), "utf8");
+      for ( const [, key] of source.matchAll(/\{\{localize "([^"]+)"/g) ) if ( /\{(AC|HP)\}/.test(en[key] ?? "") ) plain.push(`${file}: ${key}`);
+    }
+    expect(plain).toEqual([]);
   });
 });

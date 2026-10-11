@@ -3,7 +3,7 @@
  */
 import { MODULE_ID } from "./constants.js";
 import { registerSettings } from "./settings.js";
-import { buildApi, registerAdapter } from "./api.js";
+import { buildApi, registerAdapter, getAdapter } from "./api.js";
 import { BattlePlanner } from "./apps/battle-planner.js";
 import { DefaultsConfig } from "./apps/defaults-config.js";
 import { GenericAdapter } from "./adapters/generic/index.js";
@@ -17,7 +17,7 @@ import { invalidateApproach } from "./foundry/battle.js";
 import { undoConcession, revealStory, ownCard } from "./foundry/make-it-so.js";
 import { sceneUnit } from "./foundry/terrain.js";
 import { planHolder } from "./foundry/persistence.js";
-import { setDistanceUnit } from "./i18n.js";
+import { setDistanceUnit, setTermSource, localize } from "./i18n.js";
 
 Hooks.once("init", () => {
   registerSettings(DefaultsConfig, GenericPathsConfig, StoryTablesConfig);
@@ -25,6 +25,10 @@ Hooks.once("init", () => {
   // System support comes from helper modules (FastFighting PF2e, ...). The generic adapter ("*") is the
   // fallback for systems nobody supports yet.
   registerAdapter("*", GenericAdapter, { priority: -100, source: MODULE_ID });
+  // The game's words for armor class and hit points: its helper's, else FastFighting's generic ones.
+  setTermSource(key => getAdapter()?.term?.(key));
+  // Text in templates that says {AC} or {HP}.
+  Handlebars.registerHelper("ffLocalize", (key, options) => localize(key, options?.hash));
 
   const api = buildApi({ openPlanner: () => openIfReady(), openSurvey: options => PlayerSurvey.open(options), installStoryTables, BattlePlanner, PlayerSurvey });
   game.modules.get(MODULE_ID).api = api;

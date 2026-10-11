@@ -75,7 +75,7 @@ describe("story writer", () => {
     const story = buildStory(result, spec, "statistician", { tables, seed: 7 });
     const attack = result.log.find(e => e.type === "attack" && e.natural);
     expect(story.text).toContain(text("FASTFIGHTING.Log.Roll", {
-      faces: 20, natural: attack.natural, mod: attack.mod >= 0 ? `+${attack.mod}` : attack.mod, total: attack.total, label: text("FASTFIGHTING.Log.AC"), dc: attack.dc
+      faces: 20, natural: attack.natural, mod: attack.mod >= 0 ? `+${attack.mod}` : attack.mod, total: attack.total, label: text("FASTFIGHTING.Stat.ac"), dc: attack.dc
     }));
   });
 

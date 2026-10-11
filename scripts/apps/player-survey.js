@@ -6,12 +6,13 @@
  */
 import { MODULE_ID } from "../constants.js";
 import { getAdapter } from "../api.js";
+import { localize, hasStat } from "../i18n.js";
 import {
   questionsContext, setTactic, togglePlaystyle, syncTacticsDom, charactersForUser, setOwnSurveyStatus, SURVEY_STATUS, playstyleSignature
 } from "../foundry/tactics.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
-const loc = key => game.i18n.localize(key);
+const loc = key => localize(key);
 
 export class PlayerSurvey extends HandlebarsApplicationMixin(ApplicationV2) {
   static DEFAULT_OPTIONS = {
@@ -88,6 +89,7 @@ export class PlayerSurvey extends HandlebarsApplicationMixin(ApplicationV2) {
         img: spec.img,
         hp: `${spec.hp.value}/${spec.hp.max}`,
         ac: spec.defenses.ac,
+        showAc: hasStat("ac"),
         level: spec.level,
         sharedWith: others.map(u => u.name).join(", "),
         sharedOnline: others.some(u => u.active),

@@ -1995,7 +1995,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "472e73d796e2"
+   "hash": "472e73d796e2",
+   "gone": "2026-10-11"
   },
   "core:FASTFIGHTING.Log.Adjust": {
    "repo": "core",
@@ -3007,7 +3008,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "0010cab7aeca"
+   "hash": "0010cab7aeca",
+   "changed": true
   },
   "core:FASTFIGHTING.Log.FinalSwayed": {
    "repo": "core",
@@ -3218,7 +3220,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "5bacfcca04fb"
+   "hash": "5bacfcca04fb",
+   "changed": true
   },
   "core:FASTFIGHTING.Log.HoldGround": {
    "repo": "core",
@@ -3268,7 +3271,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "1df2918cd1c8"
+   "hash": "1df2918cd1c8",
+   "changed": true
   },
   "core:FASTFIGHTING.Log.Initiative": {
    "repo": "core",
@@ -4078,7 +4082,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "552a16ad6d3b"
+   "hash": "552a16ad6d3b",
+   "changed": true
   },
   "core:FASTFIGHTING.Log.RegenStopped": {
    "repo": "core",
@@ -4628,7 +4633,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "addeff8b9e31"
+   "hash": "addeff8b9e31",
+   "changed": true
   },
   "core:FASTFIGHTING.Log.Terrain": {
    "repo": "core",
@@ -5129,7 +5135,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "61484bceed15"
+   "hash": "61484bceed15",
+   "changed": true
   },
   "core:FASTFIGHTING.MakeItSo.Outcome.Persistent": {
    "repo": "core",
@@ -5651,7 +5658,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "84e65cb76ae9"
+   "hash": "84e65cb76ae9",
+   "changed": true
   },
   "core:FASTFIGHTING.Planner.DifficultHere": {
    "repo": "core",
@@ -7191,7 +7199,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "c9e2173530f5"
+   "hash": "c9e2173530f5",
+   "changed": true
   },
   "core:FASTFIGHTING.Results.MedianRounds": {
    "repo": "core",
@@ -8551,7 +8560,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "089ebc235296"
+   "hash": "089ebc235296",
+   "changed": true
   },
   "core:FASTFIGHTING.Stat.leadAttack": {
    "repo": "core",
@@ -12331,7 +12341,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "b366c534f08e"
+   "hash": "b366c534f08e",
+   "changed": true
   },
   "core:FASTFIGHTING.Tactics.potionThreshold.50": {
    "repo": "core",
@@ -12341,7 +12352,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "352c3adf6e85"
+   "hash": "352c3adf6e85",
+   "changed": true
   },
   "core:FASTFIGHTING.Tactics.potionThreshold.75": {
    "repo": "core",
@@ -17162,6 +17174,16 @@
    "date": null,
    "commit": null,
    "hash": "bd13d5a0906b"
+  },
+  "dcc:FFDCC.Hp": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.Hp",
+   "area": "dcc/General",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "9449a7aaa80c"
   },
   "dcc:FFDCC.IntelligenceCheck": {
    "repo": "dcc",

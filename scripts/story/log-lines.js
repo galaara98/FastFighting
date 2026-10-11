@@ -5,7 +5,7 @@
  * as e.text) is shown as it comes.
  * Pure apart from reading Foundry's translations when they're there (../i18n.js).
  */
-import { localize, listJoin, listItems, hasWords, distanceText } from "../i18n.js";
+import { localize, listJoin, listItems, hasWords, distanceText, term } from "../i18n.js";
 
 /** A phrase of the log, by its key (for the stories' own lists and headings). */
 export const logTerm = (key, data = null) => t(key, data);
@@ -64,7 +64,7 @@ export function logLine(e) {
       if ( e.retort ) return `${e.actor} → ${e.target}: ${bits([e.action, damage(e.damage, e.damageType)])}`;
       return `${e.actor} → ${e.target}: ${bits([
         e.action,
-        `${dice(e.natural, e.mod, e.total, e.dc, t("AC"), e.faces)}${e.deed !== null && e.deed !== undefined ? ` (${t("DeedRoll", { n: e.deed })})` : ""}`,
+        `${dice(e.natural, e.mod, e.total, e.dc, term("ac"), e.faces)}${e.deed !== null && e.deed !== undefined ? ` (${t("DeedRoll", { n: e.deed })})` : ""}`,
         `${degree(e.degree)} (${signed(e.margin ?? 0)})`,
         damage(e.damage, e.damageType),
         e.interceptedBy ? t("TakenBy", { name: e.interceptedBy, n: e.intercepted }) : "",
@@ -107,7 +107,7 @@ export function logLine(e) {
     case "disengage": return t("Disengage", { actor: e.actor, label: e.label || t("Disengages") });
     case "door": {
       const method = { open: "DoorOpen", force: "DoorForce", pick: "DoorPick", attack: "DoorAttack", giveup: "DoorGiveUp" }[e.method] ?? "DoorOpen";
-      const roll = e.natural !== undefined ? ` · ${dice(e.natural, e.mod, e.total, e.dc, e.method === "attack" ? t("AC") : t("DC"))}` : "";
+      const roll = e.natural !== undefined ? ` · ${dice(e.natural, e.mod, e.total, e.dc, e.method === "attack" ? term("ac") : t("DC"))}` : "";
       return t("Door", { actor: e.actor, method: t(method), roll, damage: e.method === "attack" && e.hit ? ` · ${t("DamageN", { n: e.damage })}` : "", result: e.method === "giveup" ? t("DoorGaveUp") : e.success ? t("DoorOpened") : t("DoorHolds") });
     }
     case "thought": return t("Thought", {
@@ -138,7 +138,7 @@ export function logLine(e) {
       if ( e.immune ) return t("ControlImmune", { ...a, action: e.action });
       const how = e.roll === "auto" ? t("NoRoll")
         : e.roll === "check" ? `${dice(e.natural, e.mod, e.total, e.dc, t("DcOf", { stat: e.against ?? t("Defense") }))} · ${degree(e.degree)}`
-          : `${e.saveType ? `${[].concat(e.saveType).join("/")} ` : ""}${dice(e.natural, e.mod, e.total, e.dc, e.saveType ? t("DC") : t("AC"))} · ${degree(e.degree)}`;
+          : `${e.saveType ? `${[].concat(e.saveType).join("/")} ` : ""}${dice(e.natural, e.mod, e.total, e.dc, e.saveType ? t("DC") : term("ac"))} · ${degree(e.degree)}`;
       return t("Control", { ...a, action: e.action, how, shifted: e.shifted ? ` ${t("Shifted")}` : "", effect: e.effect || t("NoEffect"), onSelf: e.backfired ? ` ${t("OnSelf", { name: e.actor })}` : "", damage: e.damage ? ` · ${t("DamageN", { n: e.damage })}` : "" });
     }
     case "buff": {
@@ -174,7 +174,7 @@ export function logLine(e) {
     }
     case "theft": {
       // The luck check against a PC is the GM's secret, so it never appears here.
-      const feint = e.feint ? t("Feint", { weapon: e.feint.weapon, roll: dice(e.feint.natural, e.feint.mod, e.feint.total, e.feint.ac, t("AC")), hit: e.feint.hit ? t("FeintHit") : t("FeintMiss") }) : "";
+      const feint = e.feint ? t("Feint", { weapon: e.feint.weapon, roll: dice(e.feint.natural, e.feint.mod, e.feint.total, e.feint.ac, term("ac")), hit: e.feint.hit ? t("FeintHit") : t("FeintMiss") }) : "";
       if ( e.feint && !e.feint.hit ) return t("FeintOnly", { ...a, feint });
       return t("Theft", { ...a, feint: feint ? `${feint} · ` : "", skill: e.skill ?? "", roll: dice(e.natural, e.mod, e.total, e.dc, t("DcOf", { stat: e.dcStat })), degree: degree(e.degree), result: e.stolen ? t("Steals", { what: concessionText(e.stolen) }) : e.noticed ? t("Caught") : t("NothingTaken") });
     }

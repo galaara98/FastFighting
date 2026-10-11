@@ -3,7 +3,8 @@
  * each must say, where it shows, its limits and the proposed text, and a column for the author's own wording.
  *   node docs/strings/short-strings.mjs            writes docs/strings/short-strings.csv
  *   node docs/strings/short-strings.mjs <out.csv> --skip <answered.csv> ...
- *                                                  a later batch: leaves out every string answered in those CSVs
+ *                                                  a later batch: leaves out every string answered in those CSVs (one
+ *                                                  whose text or purpose has changed since comes back)
  * The repos sit side by side, as for tracker.mjs.
  */
 import { readFileSync, writeFileSync } from "fs";
@@ -58,7 +59,7 @@ const BAND = {
   devoted: "Selfish, lowest band (0-19): puts others first", selfless: "Selfish, 20-39", pragmatic: "Selfish, 40-59", selfish: "Selfish, 60-79", ruthless: "Selfish, highest band (80+)",
   treacherous: "Loyal, lowest band (0-19)", wavering: "Loyal, 20-39", dependable: "Loyal, 40-59", loyal: "Loyal, 60-79", unshakable: "Loyal, highest band (80+)"
 };
-const STAT = { ac: "armor class", hp: "hit points", attack: "attack bonus (or spell DC)", damage: "damage per hit", leadBrave: "the bravery bonus a leader gives its side", leadTactical: "the lowest tactical level a leader holds its side to", leadAttack: "the attack bonus a leader gives its side", leadAc: "the AC bonus a leader gives its side" };
+const STAT = { ac: "the generic word for armor class (how hard a creature is to hit), for {AC}: used where the game system's helper has no word of its own", hp: "the generic word for hit points (how much harm a creature can take), for {HP}: used where the game system's helper has no word of its own", attack: "attack bonus (or spell DC)", damage: "damage per hit", leadBrave: "the bravery bonus a leader gives its side", leadTactical: "the lowest tactical level a leader holds its side to", leadAttack: "the attack bonus a leader gives its side", leadAc: "the AC bonus a leader gives its side" };
 const KIND = { pc: "badge for a player character", npc: "badge before an NPC's level ('Lvl 3')", companion: "badge for a companion (animal companion, familiar)", summon: "badge for a summoned creature", minion: "badge for a minion", hazard: "badge for a hazard" };
 const MODE = { walk: "moves by walking", fly: "moves by flying", swim: "moves by swimming", climb: "moves by climbing", burrow: "moves by burrowing" };
 const STATUS = { standing: "still standing at the end", down: "down (unconscious or dying)", dead: "dead", fled: "fled the fight", surrendered: "surrendered", switched: "switched sides", stoodDown: "stood down (talked out of fighting)", neutral: "stood aside (talked into taking no side)", conceded: "gave something up to end it", noSide: "took no side" };
@@ -71,7 +72,7 @@ const PLANNER = {
   Lean: ["label: which way a neutral side leans", "Short label"], Healing: ["label: how readily the party heals others", "Short label"], SideMorale: ["toggle: this side can break and run (rout)", "Short label"],
   GroupTraits: ["heading: the side's shared personality traits", "Short heading"], Leader: ["label: who leads the side", "Short label"], NoLeader: ["choice: the side has no leaders", "Short"],
   SideDefault: ["tooltip note: this value comes from the side's default", "Lower case, short"], HiddenToken: ["tooltip on an icon: the token is hidden", "Short"], Details: ["screen-reader label of the button that opens a creature's details", "Short"],
-  IgnoreTerrain: ["detail: the creature ignores difficult terrain", "Short"], Movement: ["detail heading: the creature's speeds", "Short heading"], Environment: ["detail heading: the terrain the creature stands in", "Short heading"],
+  DiesAtZero: ["detail: the creature dies when it drops to 0 (not dying first)", "Short label"], IgnoreTerrain: ["detail: the creature ignores difficult terrain", "Short"], Movement: ["detail heading: the creature's speeds", "Short heading"], Environment: ["detail heading: the terrain the creature stands in", "Short heading"],
   Options: ["detail heading: the creature's actions", "Short heading"], RunFailed: ["error notice when a simulation fails", "Short sentence"], FightsWith: ["a token's side, when it fights with another side", "Short"],
   Group: ["screen-reader label of the group buttons (1 2 3)", "Short"], Terrain: ["note on the approach line: slowed by terrain (followed by ×1.25)", "Lower case, short"],
   DifficultHere: ["chip: the creature stands in difficult terrain", "Lower case, short"], HazardHere: ["chip: the creature stands in a hazardous region", "Lower case, short"],
@@ -127,7 +128,7 @@ const SUMMARY = { Nothing: "a character spent nothing", Minute: "one minute (of 
 
 // The log's short pieces: [what, where it goes].
 const LOG = {
-  Progress: ["an Ironsworn progress roll: progress against the challenge dice", "a roll"], AC: ["armor class, in a roll ('vs AC 15')", "abbreviation"], DC: ["difficulty class, in a roll ('vs DC 15')", "abbreviation"], DcOf: ["a DC named for a defense ('Will DC')", "a roll"],
+  Progress: ["an Ironsworn progress roll: progress against the challenge dice", "a roll"], DC: ["difficulty class, in a roll ('vs DC 15')", "abbreviation"], DcOf: ["a DC named for a defense ('Will DC')", "a roll"],
   Defense: ["what a roll is against when it isn't named", "lower case"], Degree0: ["result: critical failure", "lower case"], Degree1: ["result: failure", "lower case"], Degree2: ["result: success", "lower case"], Degree3: ["result: critical success", "lower case"],
   Ironsworn1: ["Ironsworn result: a miss", "lower case"], Ironsworn2: ["Ironsworn result: a weak hit", "lower case"], Ironsworn3: ["Ironsworn result: a strong hit", "lower case"], Momentum: ["Ironsworn: momentum burned", "lower case"],
   Damage: ["damage: amount and type ('8 fire')", "keep both"], DamageN: ["damage with no type", "lower case"], DeedRoll: ["DCC: the deed die's roll", "lower case"], SizedUp: ["a bonus for having sized the foe up", "lower case"],
@@ -243,7 +244,7 @@ const HELPER = {
     Label: [W.planner, "the game system's name", "Short name"], LabelXcc: [W.planner, "the game system's name, with XCC on", "Short name"], Luck: ["The planner and the log", "Luck", "One word"], Spellburn: ["The planner and the log", "Spellburn", "One word"],
     IntelligenceCheck: [W.log, "an Intelligence check", "Short"], Personality: [W.log, "Personality (the stat talking uses)", "One word"], PickPockets: [W.log, "the Pick Pockets skill", "Short"], TurnUnholy: [W.log, "the Turn Unholy ability", "Short"],
     Surrendered: ["The status FastFighting puts on a creature that surrenders", "its name", "Short"], "Settings.loreBoost.Name": [W.settings, "setting: how much a Lore-Collector gains from sizing up a foe", "Short label"], Will: [W.log, "the Will save", "One word"],
-    Reflex: [W.log, "the Reflex save", "One word"], Ac: [W.log, "armor class (abbreviation)", "Abbreviation"], Attack: [W.story, "attack rolls, in a rally's bonus ('+2 attack')", "Lower case"], Saves: [W.story, "saves, in a rally's bonus", "Lower case"],
+    Reflex: [W.log, "the Reflex save", "One word"], Ac: [W.log, "armor class (abbreviation): also DCC's word for {AC} in FastFighting's text", "Abbreviation"], Hp: ["The planner, the results and the log", "DCC's word for hit points, for {HP} in FastFighting's text", "Abbreviation"], Attack: [W.story, "attack rolls, in a rally's bonus ('+2 attack')", "Lower case"], Saves: [W.story, "saves, in a rally's bonus", "Lower case"],
     SpellCheck: [W.log, "a spell check", "Lower case"], Turned: [W.story, "turned by Turn Unholy", "Lower case"], TurnUnholyCheck: [W.log, "a Turn Unholy check", "Lower case"], Lawful: [W.log, "alignment: lawful", "One word"], Chaotic: [W.log, "alignment: chaotic", "One word"], Neutral: [W.log, "alignment: neutral", "One word"],
     "Deed.Trip": [W.log, "the trip deed", "Short"], "Deed.KnockedDown": [W.story, "knocked down by a deed", "Lower case"], "Deed.Blind": [W.log, "the blinding deed", "Short"], "Deed.Disarm": [W.log, "the disarming deed", "Short"], "Deed.Disarmed": [W.story, "disarmed", "Lower case"],
     "Deed.Defend": [W.log, "the defensive deed", "Short"], "Deed.Rally": [W.log, "the rallying deed", "Short"], "Deed.ThrownDown": [W.story, "thrown down by a deed", "Lower case"], "Deed.Blinded": [W.story, "blinded by a deed", "Lower case"],
@@ -396,13 +397,18 @@ function parseCsv(text) {
   return out;
 }
 
-// The strings the author already answered in an earlier batch ("Module|Key").
+// The strings the author already answered in an earlier batch ("Module|Key": what the row said then).
 const args = process.argv.slice(2);
-const answered = new Set();
+const answered = new Map();
 for ( let i = args.indexOf("--skip"); i >= 0; i = args.indexOf("--skip", i + 1) ) {
   const [head, ...body] = parseCsv(readFileSync(args[i + 1], "utf8").replace(/^\uFEFF/, ""));
   const col = name => head.indexOf(name);
-  for ( const r of body ) if ( (r[col("Yours")] ?? "").trim() ) answered.add(`${r[col("Module")]}|${r[col("Key")]}`);
+  // (The proposal and an answer can come in our quotes.)
+  const unquote = v => (/^".*"$/s.test(v) ? v.slice(1, -1) : v);
+  for ( const r of body ) {
+    if ( !(r[col("Yours")] ?? "").trim() ) continue;
+    answered.set(`${r[col("Module")]}|${r[col("Key")]}`, { what: r[col("What it must say")], texts: [unquote(r[col("Proposed")]), unquote(r[col("Yours")])] });
+  }
 }
 const outFile = args.find((a, i) => !a.startsWith("--") && args[i - 1] !== "--skip");
 
@@ -412,8 +418,9 @@ for ( const [repo, dir] of Object.entries(REPOS) ) {
   const en = flat(JSON.parse(readFileSync(join(ROOT, dir, "languages/en.json"), "utf8")));
   for ( const [key, value] of Object.entries(en) ) {
     if ( words(value) > 2 || marks(value).length > 2 ) continue;
-    if ( answered.has(`${MODULES[repo]}|${key}`) ) continue;
     const d = describe(repo, key, value);
+    const before = answered.get(`${MODULES[repo]}|${key}`);
+    if ( before && before.texts.includes(value) && before.what === d?.what ) continue;
     if ( !d?.what ) { missing.push(`${repo} ${key} ${JSON.stringify(value)}`); continue; }
     const notes = [d.limits];
     if ( marks(value).length ) notes.push(`keep ${marks(value).join(" ")}`);

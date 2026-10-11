@@ -384,6 +384,7 @@ Hooks.once("fastFighting.init", api => {
     deriveTraits(actor) { ... }
     detectLeaders(specs) { ... }
     describeRegionBehavior(behavior) { ... }         // system region behaviors -> {types, difficult, hazardous}
+    term(key) { ... }                                // the system's word for "ac" / "hp"; null: FastFighting's generic one; false: none
     resourceLabel(key, spec) { ... }
     describeOutcome(spec, final) { ... }
     async commitOutcome(tokenDoc, spec, final, options) { ... }      // returns an undo record

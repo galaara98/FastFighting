@@ -20,15 +20,49 @@ export function fillIn(text, data) {
 /** Does Foundry have text for this key (in the client's language or English)? */
 export const hasWords = key => !!key && !!globalThis.game?.i18n?.has?.(key);
 
+/* The game's words for its stats ------------------------------------------- */
+
+let termSource = null;
+
 /**
- * The text for `key` in the reader's language, {placeholders} filled from data. A key with no text comes back as it is,
- * as Foundry's own localize does.
+ * Where the game system's own words for its stats come from: its helper's (adapter.term(key)), set by the Foundry
+ * side. A helper gives a word, null (FastFighting's generic word) or false (the system has no such stat).
+ */
+export function setTermSource(source) {
+  termSource = source;
+}
+
+function ownTerm(key) {
+  try {
+    return termSource?.(key) ?? null;
+  } catch ( err ) {
+    return null;
+  }
+}
+
+/** Does the game system have this stat? ("ac": how hard a creature is to hit; "hp": how much harm it can take.) */
+export const hasStat = key => ownTerm(key) !== false;
+
+/** The game's word for a stat: the system helper's own, else FastFighting's generic one (FASTFIGHTING.Stat.<key>). */
+export function term(key) {
+  const own = ownTerm(key);
+  if ( typeof own === "string" && own ) return own;
+  return hasWords(`FASTFIGHTING.Stat.${key}`) ? globalThis.game.i18n.localize(`FASTFIGHTING.Stat.${key}`) : key;
+}
+
+/** {AC} and {HP} in any text: the game's words for them. */
+const TERMS = { AC: "ac", HP: "hp" };
+const withTerms = text => String(text).replace(/\{(AC|HP)\}/g, (m, k) => term(TERMS[k]));
+
+/**
+ * The text for `key` in the reader's language, {placeholders} filled from data, and {AC} and {HP} with the game's words
+ * for them. A key with no text comes back as it is, as Foundry's own localize does.
  * @param {string} key       a translation key ("FASTFIGHTING.MakeItSo.Outcome.Dead")
  * @param {object} [data]    values for the {placeholders}
  */
 export function localize(key, data = null) {
   const text = hasWords(key) ? globalThis.game.i18n.localize(key) : key;
-  return fillIn(text, data);
+  return fillIn(withTerms(text), data);
 }
 
 /** Names one after another ("Amiri, Ezren"), with the language file's separator. */

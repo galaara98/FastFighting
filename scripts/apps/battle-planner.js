@@ -7,7 +7,7 @@ import {
 } from "../constants.js";
 import { getAdapter } from "../api.js";
 import { setting } from "../settings.js";
-import { listJoin } from "../i18n.js";
+import { listJoin, localize, term, hasStat } from "../i18n.js";
 import { getSetup, saveSetup, clearSetup, tokenSetup, planHolder } from "../foundry/persistence.js";
 import {
   questionsContext, setTactic, togglePlaystyle, syncTacticsDom, isPlayerControlled, playersOnScene, tokensForUser, surveyStatus,
@@ -33,7 +33,9 @@ const RESULT_TABS = ["overview", "combatants", "swing", "resources", "sample"];
 const SAMPLE_FILTERS = ["any", "typical", "partyWins", "partyLoses", "pcDies", "closeCall"];
 const STAT_FUDGES = [["ac", 1], ["hp", 5], ["attack", 1], ["damage", 1]];
 
-const loc = key => game.i18n.localize(key);
+const loc = key => localize(key);
+/** A stat's name: the game's word for armor class and hit points (its helper's, or FastFighting's generic one). */
+const statName = stat => (stat === "ac" || stat === "hp" ? term(stat) : loc(`FASTFIGHTING.Stat.${stat}`));
 const pct = (p, d = 0) => `${(p * 100).toFixed(d)}%`;
 /** Status key for a creature's end state ("conceded" stood down after giving something up). */
 const statusOf = final => (final.swayed === "conceded" ? "conceded" : final.status);
@@ -205,9 +207,9 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
 
   #statView(stat, base, fudge, path, step) {
     return {
-      trait: stat, label: loc(`FASTFIGHTING.Stat.${stat}`), value: base + fudge, base, fudge, path, step,
+      trait: stat, label: statName(stat), value: base + fudge, base, fudge, path, step,
       fudgeLabel: fudge ? (fudge > 0 ? `+${fudge}` : `${fudge}`) : "",
-      tooltip: `${loc(`FASTFIGHTING.Stat.${stat}`)}: ${base}${fudge ? ` ${fudge > 0 ? "+" : ""}${fudge}` : ""}`
+      tooltip: `${statName(stat)}: ${base}${fudge ? ` ${fudge > 0 ? "+" : ""}${fudge}` : ""}`
     };
   }
 
@@ -276,7 +278,8 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
           this.#statView("leadBrave", leader.bonus.brave, lf.brave ?? 0, `sides.${id}.leadershipFudge.brave`, 5),
           this.#statView("leadTactical", leader.bonus.tacticalFloor, lf.tacticalFloor ?? 0, `sides.${id}.leadershipFudge.tacticalFloor`, 5),
           this.#statView("leadAttack", leader.bonus.attack, lf.attack ?? 0, `sides.${id}.leadershipFudge.attack`, 1),
-          this.#statView("leadAc", leader.bonus.ac, lf.ac ?? 0, `sides.${id}.leadershipFudge.ac`, 1)
+          // (A system with no armor class has no armor class bonus.)
+          ...(hasStat("ac") ? [this.#statView("leadAc", leader.bonus.ac, lf.ac ?? 0, `sides.${id}.leadershipFudge.ac`, 1)] : [])
         ] : [],
         members: members.map(e => this.#rowContext(e, resolved))
       };
@@ -342,6 +345,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       level: s.level,
       hp: `${s.hp.value + (fudge.hp ?? 0)}/${s.hp.max + (fudge.hp ?? 0)}`,
       ac: s.defenses.ac + (fudge.ac ?? 0),
+      showAc: hasStat("ac"),
       hidden: s.hidden,
       include: ts.include !== false,
       side: ts.side ?? e.baseSide,
@@ -369,7 +373,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       groupHint: loc(chosen === SIDES.NEUTRAL ? "FASTFIGHTING.Planner.NeutralGroupHint" : "FASTFIGHTING.Planner.HostileGroupHint"),
       traits: TRAITS.map(k => this.#traitView(k, s.traits[k]?.base ?? 50, fudge[k] ?? 0, `tokens.${e.token.id}.fudge.${k}`, s.traitReasons?.[k], shifts[k] ?? 0)),
       expanded: this.expanded.has(e.token.id),
-      stats: STAT_FUDGES.map(([k, step]) => {
+      stats: STAT_FUDGES.filter(([k]) => hasStat(k)).map(([k, step]) => {
         const base = k === "ac" ? s.defenses.ac : k === "hp" ? s.hp.max : 0;
         return this.#statView(k, base, fudge[k] ?? 0, `tokens.${e.token.id}.fudge.${k}`, step);
       }),

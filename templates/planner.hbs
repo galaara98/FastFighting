@@ -126,7 +126,7 @@
               </div>
               <div class="ff-row-meta">
                 <span><i class="fa-solid fa-heart"></i> {{hp}}</span>
-                <span><i class="fa-solid fa-shield"></i> {{ac}}</span>
+                {{#if showAc}}<span><i class="fa-solid fa-shield"></i> {{ac}}</span>{{/if}}
                 {{#if approach}}<span class="ff-approach"><i class="fa-solid fa-route"></i> {{approach}}</span>{{/if}}
               </div>
               {{#if resolvedLabel}}<div class="ff-row-note">{{resolvedLabel}}</div>{{/if}}
@@ -157,7 +157,7 @@
             {{/if}}
             <div class="ff-strip-row">
               <label class="ff-check"><input type="checkbox" name="tokens.{{id}}.ignoreTerrain" {{checked ignoreTerrain}}> {{localize "FASTFIGHTING.Planner.IgnoreTerrain"}}</label>
-              <label class="ff-check"><input type="checkbox" name="tokens.{{id}}.diesAtZero" {{checked diesAtZero}}> {{localize "FASTFIGHTING.Planner.DiesAtZero"}}</label>
+              <label class="ff-check"><input type="checkbox" name="tokens.{{id}}.diesAtZero" {{checked diesAtZero}}> {{ffLocalize "FASTFIGHTING.Planner.DiesAtZero"}}</label>
             </div>
             <dl class="ff-facts">
               <dt>{{localize "FASTFIGHTING.Planner.Movement"}}</dt><dd>{{speeds}}</dd>
@@ -221,7 +221,7 @@
           <table class="ff-table">
             <thead><tr>
               <th>{{localize "FASTFIGHTING.Results.Combatant"}}</th><th>{{localize "FASTFIGHTING.Results.Fate"}}</th>
-              <th>{{localize "FASTFIGHTING.Results.HpLeft"}}</th><th>{{localize "FASTFIGHTING.Results.Damage"}}</th>
+              <th>{{ffLocalize "FASTFIGHTING.Results.HpLeft"}}</th><th>{{localize "FASTFIGHTING.Results.Damage"}}</th>
               <th>{{localize "FASTFIGHTING.Results.Healing"}}</th><th>{{localize "FASTFIGHTING.Results.FirstToFall"}}</th>
             </tr></thead>
             <tbody>

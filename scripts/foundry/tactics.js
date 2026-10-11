@@ -14,12 +14,12 @@ import { PLAYSTYLES, PLAYSTYLE_IDS, MAX_PLAYSTYLES, RENAMED_PLAYSTYLES, combineP
 import { getAdapter } from "../api.js";
 import { DESIRE_KINDS, DESIRE_BAND_KEYS } from "../engine/behavior/desire.js";
 import { setting } from "../settings.js";
-import { distanceText } from "../i18n.js";
+import { distanceText, localize } from "../i18n.js";
 
 export const SOCKET = `module.${MODULE_ID}`;
 export const SURVEY_STATUS = Object.freeze({ NONE: "none", REQUESTED: "requested", ENTERING: "entering", CLOSED: "closed", DONE: "done" });
 
-const loc = key => game.i18n.localize(key);
+const loc = key => localize(key);
 
 const META_KEYS = ["stayTrue", "roleplay", "alwaysTalk", "avoidConsumables", "avoidCostlySpells", "neverKill", "avoidFleeing"];
 /** Stated desires: three slots, each "what, at whom, how badly". */
