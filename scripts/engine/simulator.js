@@ -13,7 +13,7 @@ import {
   prepareBattle, createRun, isStanding, isUp, enemiesOf, alliesOf, areEnemies, liveTier, liveTrait, currentAc,
   attackRoll, attackOptions, saveRoll, checkRoll, turnFor, moveToward, moveAway, bonusDamageParts, dispositionOf,
   behaviorOf, edgeDistance, movesNeeded, approach, canMove, moveTowardPoint, isMagical, upgradesSave, boostBonus, typical, sortOf, sizedUp, passedOver,
-  command, commandOf, heldOff, holdsBack
+  command, commandOf, heldOff, holdsBack, wish
 } from "./battle-state.js";
 import { sampleRunTactics } from "./playstyles.js";
 import { chooseTarget, bestOptionVs, scoreTargets } from "./behavior/targeting.js";
@@ -280,6 +280,7 @@ function dealDamage(run, source, target, amount, { crit = false, types = null } 
     const rest = amount - absorbed - winded;
     const dealt = Math.min(rest, target.hp);
     target.hp -= rest;
+    target.hurtSinceTurn = true; // (being hurt, whoever or whatever it is: "always talk unless I'm being hurt")
     if ( target.hp <= 0 && holdsOn(run, target, rest, crit, types) ) target.hp = 1;
     if ( source ) {
       source.damageDealt += dealt + absorbed + winded;
@@ -1685,8 +1686,9 @@ function deliberate(run, u) {
   for ( const [id, g] of u.grudges ?? [] ) if ( !g.provoked ) think(u, "avoid", id, 50);
   // Not one for killing: an enemy talked out of the fight is someone to talk away (or over), not to cut down.
   u.peace = null;
-  if ( u.spec.avoidKilling && run.neutral && run.prep.options.talking && canTalk(u) && u.tac?.talk !== "never" ) {
-    u.peace = peaceDesires(run, u, Math.max(40, ...[...u.desire.logic.values()]));
+  // (As strongly as its answer leans to avoiding killing.)
+  if ( wish(u.spec.avoidKilling) && run.neutral && run.prep.options.talking && canTalk(u) && u.tac?.talk !== "never" ) {
+    u.peace = peaceDesires(run, u, Math.max(40, ...[...u.desire.logic.values()]) * wish(u.spec.avoidKilling));
   }
   if ( u.tac?.target === "protect" ) {
     const ward = run.units.find(a => a !== u && a.side === u.side && isStanding(a) && run.units.some(e => e.targetId === a.id && isStanding(e) && areEnemies(run, a, e)));
@@ -1918,6 +1920,9 @@ function takeTurn(run, u) {
     if ( state === "idle" ) return;
   }
   u.shieldRaised = false;
+  // Hurt since its last turn: it's being hurt now.
+  u.beingHurt = !!u.hurtSinceTurn;
+  u.hurtSinceTurn = false;
   // A creature's reaction comes back at the start of its turn.
   u.reactionsLeft = reactionsPerRound(rules, u);
   rechargeActions(run, u);

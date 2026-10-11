@@ -7,20 +7,12 @@
   <div class="ff-pill-flags">
     <label class="ff-check"><input type="checkbox" name="{{stayTrue.name}}" data-tactic="stayTrue" data-actor-uuid="{{actorUuid}}" {{checked stayTrue.checked}}> {{localize "FASTFIGHTING.Playstyle.StayTrue"}}
       <i class="fa-solid fa-circle-question" data-tooltip="{{localize "FASTFIGHTING.Playstyle.StayTrueHint"}}"></i></label>
-    {{#if alwaysTalk.show}}
-    <label class="ff-check"><input type="checkbox" name="{{alwaysTalk.name}}" data-tactic="alwaysTalk" data-actor-uuid="{{actorUuid}}" {{checked alwaysTalk.checked}}> {{localize "FASTFIGHTING.Playstyle.AlwaysTalk"}}
-      <i class="fa-solid fa-circle-question" data-tooltip="{{localize "FASTFIGHTING.Playstyle.AlwaysTalkHint"}}"></i></label>
-    {{/if}}
     <label class="ff-check"><input type="checkbox" name="{{roleplay.name}}" data-tactic="roleplay" data-actor-uuid="{{actorUuid}}" {{checked roleplay.checked}}> {{localize "FASTFIGHTING.Playstyle.Roleplay"}}
       <i class="fa-solid fa-circle-question" data-tooltip="{{localize "FASTFIGHTING.Playstyle.RoleplayHint"}}"></i></label>
     {{#if avoidConsumables.show}}
     <label class="ff-check"><input type="checkbox" name="{{avoidConsumables.name}}" data-tactic="avoidConsumables" data-actor-uuid="{{actorUuid}}" {{checked avoidConsumables.checked}}> {{localize "FASTFIGHTING.Playstyle.AvoidConsumables"}}
       <i class="fa-solid fa-circle-question" data-tooltip="{{localize "FASTFIGHTING.Playstyle.AvoidConsumablesHint"}}"></i></label>
     {{/if}}
-    <label class="ff-check"><input type="checkbox" name="{{avoidKilling.name}}" data-tactic="avoidKilling" data-actor-uuid="{{actorUuid}}" {{checked avoidKilling.checked}}> {{localize "FASTFIGHTING.Playstyle.AvoidKilling"}}
-      <i class="fa-solid fa-circle-question" data-tooltip="{{localize "FASTFIGHTING.Playstyle.AvoidKillingHint"}}"></i></label>
-    <label class="ff-check"><input type="checkbox" name="{{avoidFleeing.name}}" data-tactic="avoidFleeing" data-actor-uuid="{{actorUuid}}" {{checked avoidFleeing.checked}}> {{localize "FASTFIGHTING.Playstyle.AvoidFleeing"}}
-      <i class="fa-solid fa-circle-question" data-tooltip="{{localize "FASTFIGHTING.Playstyle.AvoidFleeingHint"}}"></i></label>
     {{#if avoidCostlySpells.show}}
     <label class="ff-check"><input type="checkbox" name="{{avoidCostlySpells.name}}" data-tactic="avoidCostlySpells" data-actor-uuid="{{actorUuid}}" {{checked avoidCostlySpells.checked}}> {{localize "FASTFIGHTING.Playstyle.AvoidCostlySpells"}}
       <i class="fa-solid fa-circle-question" data-tooltip="{{localize "FASTFIGHTING.Playstyle.AvoidCostlySpellsHint"}}"></i></label>

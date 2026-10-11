@@ -32,7 +32,7 @@
  * Pure: no Foundry globals.
  */
 import { STATUS, SWAY, CONCEDE_LUCK, SWITCH_LUCK, TRAITOR_LUCK, TACTICAL, clamp } from "../../constants.js";
-import { alliesOf, enemiesOf, isStanding, behaviorOf, typical, checkRoll, liveTier, liveTrait, studyBonus, boostBonus, chainOf, commandOf, groupKeyOf } from "../battle-state.js";
+import { alliesOf, enemiesOf, isStanding, behaviorOf, typical, checkRoll, liveTier, liveTrait, studyBonus, boostBonus, chainOf, commandOf, groupKeyOf, wish, wishWins } from "../battle-state.js";
 import { spendEdges, spendBoost } from "./effects.js";
 import { degreeDistribution, rollCheck } from "../probability.js";
 import { isNeutral, standsAside, appeal, offend, turnOn, standAside, joinSide, calm, settleTruce, seemsFoe, leanSide, fighting, dislikesViolence } from "./neutral.js";
@@ -107,7 +107,7 @@ export function opposedToLean(run, n) {
 }
 
 /** Always tries words before blows: "always prefers talking", a "talk first" answer, or a playstyle like the Diplomat. */
-const talksFirst = u => !!u.spec.alwaysTalk || u.tac?.talk === "first" || !!behaviorOf(u).parleyFirst;
+const talksFirst = u => wish(u.spec.alwaysTalk) >= 0.66 || u.tac?.talk === "first" || !!behaviorOf(u).parleyFirst;
 
 /**
  * Can a and b understand each other? A language in common; or, with languages set aside (options.ignoreLanguages),
@@ -283,7 +283,7 @@ export function choosePitch(run, talker, { only = null } = {}) {
     if ( t.offendedBy.has(talker.id) ) continue;
     if ( only && !only(t) ) continue;
     const pitch = bestPitch(run, talker, t);
-    if ( !pitch || pitch.pSuccess <= (talker.spec.alwaysTalk ? 0.01 : 0.05) ) continue;
+    if ( !pitch || pitch.pSuccess <= 0.05 - 0.04 * wish(talker.spec.alwaysTalk) ) continue;
     // A boss can't be talked into leaving; in a standoff, only paid to (by a side with something to pay it).
     if ( t.isBoss && (pitch.aim === "leave" || (pitch.aim === "down" && run.standoff && !bribeFrom(run, talker))) ) continue;
     const remaining = Math.max(1, stepsToConvince(t, run, talker) - (t.sway.get(talker.side) ?? 0));
@@ -313,8 +313,9 @@ export function talkActionsThisTurn(run, u, actions) {
   if ( affinity <= 0 && tactic !== "first" ) return none;
   const pitch = choosePitch(run, u);
   if ( !pitch ) return none;
-  // "Always prefers talking to fighting" (unless they also stay true to their calculated tactics): the whole turn.
-  const devoted = !!u.spec.alwaysTalk && !u.spec.stayTrue;
+  // "Always talk unless I am currently being hurt" (and not staying true to the calculated tactics): the whole turn; an
+  // answer that leans less that way, as often as it leans.
+  const devoted = !u.spec.stayTrue && !u.beingHurt && wishWins(run, u.spec.alwaysTalk);
   const talker = affinity >= 0.75 || tactic === "first" || !!behaviorOf(u).parleyFirst || devoted;
   if ( devoted ) return { count: actions, pitch };
   // The less battle-worthy, and skilled talkers with a promising pitch, put their whole voice into it.
@@ -696,8 +697,9 @@ export function talkAffinity(spec, traits, rules = null) {
   if ( (traits?.tactical ?? 50) < 20 ) a -= 0.3;
   if ( spec.tactics?.talk === "first" ) a = Math.max(a, 0.8);
   if ( spec.roleplay && (ps.has("diplomat") || ps.has("peoplePleaser")) ) a += 0.15;
-  // "Always prefers talking to fighting": much keener, however unskilled; only a little when staying true.
-  if ( spec.alwaysTalk ) a = spec.stayTrue ? a + 0.1 : Math.max(a + 0.4, 0.85);
+  // Always talking: much keener, however unskilled (as much as its answer leans that way); only a little when staying true.
+  const keen = wish(spec.alwaysTalk);
+  if ( keen ) a = spec.stayTrue ? a + 0.1 * keen : Math.max(a + 0.4 * keen, 0.85 * keen);
   return clamp(a, 0, 1);
 }
 

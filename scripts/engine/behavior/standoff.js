@@ -18,7 +18,7 @@
  * Pure: no Foundry globals.
  */
 import { TACTICAL, OPENING, NEUTRAL_PARTY, clamp } from "../../constants.js";
-import { isStanding, areEnemies, liveTrait, liveTier, behaviorOf, typical, command, commandOf } from "../battle-state.js";
+import { isStanding, areEnemies, liveTrait, liveTier, behaviorOf, typical, command, commandOf, wish, wishWins } from "../battle-state.js";
 import { isNeutral, feud, annoyedBy } from "./neutral.js";
 
 /** Tuning: chance per turn to lose patience, before personality. */
@@ -42,7 +42,7 @@ export function canTalk(u) {
 /** Would this creature rather settle things with words? Its own answer wins; otherwise its knack for it. */
 export function prefersTalk(u) {
   if ( !canTalk(u) ) return false;
-  if ( u.spec.alwaysTalk ) return true; // "always prefers talking to fighting": a vote for words, always
+  if ( wish(u.spec.alwaysTalk) >= 1 ) return true; // "always talk unless I'm being hurt": a vote for words, always
   const answer = u.tac?.talk;
   if ( answer === "never" ) return false;
   if ( answer === "first" ) return true;
@@ -171,7 +171,8 @@ export function charismaticLeader(run, side) {
 /** How many pitches u makes on a standoff turn: talkers press their case, others chime in. */
 export function standoffPitches(run, u, actions) {
   if ( !run.prep.options.talking || !canTalk(u) || u.tac?.talk === "never" ) return 0;
-  if ( u.spec.alwaysTalk && !u.spec.stayTrue ) return actions;
+  // (Its whole turn: as likely as its answer leans to always talking.)
+  if ( !u.spec.stayTrue && wishWins(run, u.spec.alwaysTalk) ) return actions;
   if ( prefersTalk(u) ) return Math.min(2, actions);
   return (u.prep.talkAffinity ?? 0) > 0 ? Math.min(1, actions) : 0;
 }

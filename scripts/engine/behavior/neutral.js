@@ -40,7 +40,7 @@
  * Pure: no Foundry globals.
  */
 import { STATUS, NEUTRAL_PARTY, TACTICAL, SWAY, clamp } from "../../constants.js";
-import { isStanding, isUp, edgeDistance, liveTrait, liveTier, commandOf, dropAmbition, areEnemies, heldOff } from "../battle-state.js";
+import { isStanding, isUp, edgeDistance, liveTrait, liveTier, commandOf, dropAmbition, areEnemies, heldOff, wish } from "../battle-state.js";
 import { levelOf, want, think, setLean, allDesires } from "./desire.js";
 import { perceives } from "./senses.js";
 import { prefersTalk, canTalk, impatience } from "./standoff.js";
@@ -121,7 +121,8 @@ export function refreshLeans(run) {
 const PEACEABLE = new Set(["peacekeeper", "diplomat", "moralist", "peoplePleaser"]);
 
 /** Can't abide violence: a peaceable playstyle, Tactics' "I never kill", or always prefers talking to fighting. */
-export const dislikesViolence = u => !!u.spec.avoidKilling || (!!u.spec.alwaysTalk && !u.spec.stayTrue) || (u.spec.playstyles ?? []).some(p => PEACEABLE.has(p));
+// (The strongest answers only: "I avoid killing", "Always talk unless I am currently being hurt".)
+export const dislikesViolence = u => wish(u.spec.avoidKilling) >= 1 || (wish(u.spec.alwaysTalk) >= 1 && !u.spec.stayTrue) || (u.spec.playstyles ?? []).some(p => PEACEABLE.has(p));
 
 /** Is o fighting anyone right now (in a standoff: a quarrel with someone taking no side)? */
 export function fighting(run, o) {

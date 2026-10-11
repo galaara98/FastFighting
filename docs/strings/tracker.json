@@ -6402,7 +6402,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "a360bf130b87"
+   "hash": "a360bf130b87",
+   "gone": "2026-10-11"
   },
   "core:FASTFIGHTING.Playstyle.AlwaysTalkHint": {
    "repo": "core",
@@ -6412,7 +6413,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "62e6e6538dff"
+   "hash": "62e6e6538dff",
+   "gone": "2026-10-11"
   },
   "core:FASTFIGHTING.Playstyle.AvoidConsumables": {
    "repo": "core",
@@ -6462,7 +6464,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "8e0bc5443d08"
+   "hash": "8e0bc5443d08",
+   "gone": "2026-10-11"
   },
   "core:FASTFIGHTING.Playstyle.AvoidFleeingHint": {
    "repo": "core",
@@ -6472,7 +6475,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "ef422e0aed3c"
+   "hash": "ef422e0aed3c",
+   "gone": "2026-10-11"
   },
   "core:FASTFIGHTING.Playstyle.AvoidKilling": {
    "repo": "core",
@@ -6482,7 +6486,8 @@
    "status": "written",
    "date": "2026-10-11",
    "commit": "3ed0110",
-   "hash": "ae2c86420e35"
+   "hash": "ae2c86420e35",
+   "gone": "2026-10-11"
   },
   "core:FASTFIGHTING.Playstyle.AvoidKillingHint": {
    "repo": "core",
@@ -6492,7 +6497,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "4add74af016c"
+   "hash": "4add74af016c",
+   "gone": "2026-10-11"
   },
   "core:FASTFIGHTING.Playstyle.Both": {
    "repo": "core",
@@ -7809,7 +7815,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "48ebf4f0285e"
+   "hash": "48ebf4f0285e",
+   "changed": true
   },
   "core:FASTFIGHTING.Settings.avoidKilling.Name": {
    "repo": "core",
@@ -8361,7 +8368,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "ecc22b95d889"
+   "hash": "ecc22b95d889",
+   "changed": true
   },
   "core:FASTFIGHTING.Settings.standGround.Name": {
    "repo": "core",
@@ -12839,6 +12847,16 @@
    "commit": null,
    "hash": "ba5285d6a871"
   },
+  "core:FASTFIGHTING.Tactics.talk.always": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Tactics.talk.always",
+   "area": "core/Tactics",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "2d15e6e9a14c"
+  },
   "core:FASTFIGHTING.Tactics.talk.first": {
    "repo": "core",
    "file": "languages/en.json",
@@ -12888,6 +12906,16 @@
    "date": null,
    "commit": null,
    "hash": "5852ab3b9b6c"
+  },
+  "core:FASTFIGHTING.Tactics.target.avoidKilling": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Tactics.target.avoidKilling",
+   "area": "core/Tactics",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "ae2c86420e35"
   },
   "core:FASTFIGHTING.Tactics.target.casters": {
    "repo": "core",

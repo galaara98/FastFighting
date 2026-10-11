@@ -31,7 +31,7 @@
  */
 import { STATUS, clamp } from "../../constants.js";
 import { combineMods, diceMean } from "../mods.js";
-import { isStanding, areEnemies, enemiesOf, alliesOf, boostReaches } from "../battle-state.js";
+import { isStanding, areEnemies, enemiesOf, alliesOf, boostReaches, wish } from "../battle-state.js";
 import { threatOf, unitsPerTurn, attacksIn } from "./evaluate.js";
 import { meanPart } from "../dice.js";
 
@@ -484,11 +484,12 @@ export function outcomeWorth(run, by, t, outcome, { versus = null } = {}) {
 
 /** How much of t's turn goes into checks (talking, first aid), 0 to 1: what it was set on last turn, its knack for words. */
 function checkShare(run, t) {
-  if ( t.spec.alwaysTalk && !t.spec.stayTrue ) return 1;
+  // (As much as its answer leans to always talking.)
+  const devoted = t.spec.stayTrue ? 0 : wish(t.spec.alwaysTalk);
   const lead = t.lastDesires?.[0]?.kind;
-  if ( lead === "talk" ) return 0.8;
-  if ( lead === "heal" && t.spec.firstAid ) return 0.4;
-  return Math.min(0.5, 0.5 * (t.prep?.talkAffinity ?? 0));
+  if ( lead === "talk" ) return Math.max(devoted, 0.8);
+  if ( lead === "heal" && t.spec.firstAid ) return Math.max(devoted, 0.4);
+  return Math.max(devoted, Math.min(0.5, 0.5 * (t.prep?.talkAffinity ?? 0)));
 }
 
 /** Remember what u's concentration is worth (so it won't drop it lightly for something lesser). */

@@ -399,7 +399,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       isPc,
       playerControlled,
       controllers,
-      tactics: this.expanded.has(e.token.id) ? questionsContext(s, e.token.actor, `gm-${e.token.id}`, { questions: playerControlled, targets: this.roster.map(r => ({ id: r.token.id, name: r.spec.name })) }) : null,
+      tactics: this.expanded.has(e.token.id) ? questionsContext(s, e.token.actor, `gm-${e.token.id}`, { questions: true, targets: this.roster.map(r => ({ id: r.token.id, name: r.spec.name })) }) : null,
       playstyleNames: playstyles.ids.map(id => loc(`FASTFIGHTING.Playstyle.${id}.Name`)).join(", ")
     };
   }

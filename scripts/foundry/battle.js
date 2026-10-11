@@ -7,6 +7,7 @@ import { deriveSeed } from "../engine/rng.js";
 import { applyTraitRules, getAdapter, getModifiers } from "../api.js";
 import { computeApproach, computeAwareness, environmentAt, positionOf, squareFeet } from "./terrain.js";
 import { proposeGroups } from "../engine/groups.js";
+import { TACTIC_KEYS, TACTIC_WISHES } from "../engine/tactics.js";
 import { resetPathGrid } from "./pathing.js";
 import { tokenSetup, sceneEncounter } from "./persistence.js";
 import { tacticsFor, isPlayerControlled, statedDesires } from "./tactics.js";
@@ -285,7 +286,9 @@ function applyStatFudges(spec, fudge = {}) {
  * Fold a character's tactics answers and playstyles into its spec.
  *  - Player-controlled: full tactics (answers over playstyle-adjusted suggestions), plus the calculated
  *    strategy so "stay mostly true" can fall back to it.
- *  - NPCs: only what their playstyles imply; everything else stays personality-driven.
+ *  - NPCs: the answers the GM gave, and what their playstyles imply; everything else stays personality-driven.
+ * Three questions carry a wish each, as strongly as the answer says (TACTIC_WISHES): always talking (unless hurt),
+ * avoiding killing, not liking to flee. "Let them decide" carries none.
  * Playstyle trait shifts land on the trait fudges (already capped at ±10 when staying true).
  */
 function applyCharacterTactics(spec, entry) {
@@ -296,12 +299,14 @@ function applyCharacterTactics(spec, entry) {
   spec.desireStyle = playstyles.desire; // how its pills say it picks up desires
   spec.stayTrue = !!stored.stayTrue;
   spec.roleplay = !!stored.roleplay;
-  spec.alwaysTalk = !!stored.alwaysTalk; // "always prefers talking to fighting"
+  // The wishes the answers carry, 0 to 1: always talking (unless being hurt), avoiding killing, not liking to flee.
+  const wish = key => TACTIC_WISHES[key][stored[key]] ?? 0;
+  spec.alwaysTalk = wish("talk");
   spec.desires = statedDesires(stored); // what the GM or player says it wants, at whom, how badly
   spec.avoidConsumables = !!stored.avoidConsumables; // "I don't like to use consumables"
   spec.avoidCostlySpells = !!stored.avoidCostlySpells; // "I don't like to use spells that cost something"
-  spec.avoidKilling = !!stored.avoidKilling; // "I avoid killing": mostly knocks out, leaves the fallen be, spares them after
-  spec.avoidFleeing = !!stored.avoidFleeing; // "I don't like to flee": mostly stays when it would choose to run
+  spec.avoidKilling = wish("target"); // holds back from a kill: knocks out, leaves the fallen be, spares them after
+  spec.avoidFleeing = wish("retreat"); // stays when it would choose to run
   for ( const [k, v] of Object.entries(playstyles.traits) ) {
     if ( spec.traits[k] ) spec.traits[k] = { ...spec.traits[k], fudge: (spec.traits[k].fudge ?? 0) + v };
   }
@@ -310,14 +315,27 @@ function applyCharacterTactics(spec, entry) {
     const out = Object.fromEntries(Object.entries(playstyles.mix ?? {}).filter(([k]) => keys.includes(k)));
     return Object.keys(out).length ? out : null;
   };
+  const unanswered = k => [undefined, null, "", "auto"].includes(stored[k]);
   if ( isPlayerControlled(entry.spec, actor) ) {
-    spec.tactics = resolved;
+    spec.tactics = { ...resolved };
     spec.tacticsCalc = calc;
-    spec.tacticsMix = mixFor(Object.keys(playstyles.mix ?? {}).filter(k => [undefined, null, "", "auto"].includes(stored[k])));
-  } else if ( Object.keys(playstyles.suggest).length ) {
-    spec.tactics = { ...playstyles.suggest };
-    spec.tacticsCalc = Object.fromEntries(Object.keys(playstyles.suggest).map(k => [k, calc[k]]));
-    spec.tacticsMix = mixFor(Object.keys(playstyles.mix ?? {}));
+    spec.tacticsMix = mixFor(Object.keys(playstyles.mix ?? {}).filter(unanswered));
+  } else {
+    const answered = Object.fromEntries(TACTIC_KEYS.filter(k => !unanswered(k)).map(k => [k, resolved[k]]));
+    const tactics = { ...playstyles.suggest, ...answered };
+    if ( Object.keys(tactics).length ) {
+      spec.tactics = tactics;
+      spec.tacticsCalc = Object.fromEntries(Object.keys(tactics).map(k => [k, calc[k]]));
+      spec.tacticsMix = mixFor(Object.keys(playstyles.mix ?? {}).filter(unanswered));
+    }
+  }
+  // (The engine hears "always" as talking first, the wish carried by alwaysTalk; avoiding killing leaves whom it goes
+  // for to what it would do anyway.)
+  if ( spec.tactics?.talk === "always" ) spec.tactics.talk = "first";
+  if ( spec.tactics?.target === "avoidKilling" ) {
+    if ( isPlayerControlled(entry.spec, actor) ) spec.tactics.target = { ...calc, ...playstyles.suggest }.target;
+    else if ( playstyles.suggest.target ) spec.tactics.target = playstyles.suggest.target;
+    else delete spec.tactics.target;
   }
   if ( spec.tactics ) {
     spec.disposition = { healAggro: spec.tactics.healAggro, allyDying: spec.tactics.allyDying, selfRevived: spec.tactics.selfRevived };

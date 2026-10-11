@@ -21,7 +21,7 @@
  *    Leader influence setting; a boss's most).
  */
 import { STATUS, TACTICAL, STAND_GROUND, clamp } from "../../constants.js";
-import { alliesOf, enemiesOf, isStanding, liveTier, liveTrait, chainOf, commandOf, groupKeyOf, edgeDistance, behaviorOf } from "../battle-state.js";
+import { alliesOf, enemiesOf, isStanding, liveTier, liveTrait, chainOf, commandOf, groupKeyOf, edgeDistance, behaviorOf, wish } from "../battle-state.js";
 import { threatOf } from "./evaluate.js";
 import { perceives } from "./senses.js";
 import { followChance } from "./desire.js";
@@ -37,8 +37,10 @@ export const MORALE = Object.freeze({ HOLD: "hold", WAVER: "waver", ROUT: "rout"
 export function standsGround(run, u) {
   // A boss almost never runs (one prone to it, a little more readily).
   if ( u.isBoss ) return !run.rng.chance(clamp(BOSS_RUNS * (1 + 3 * (behaviorOf(u).flighty ?? 0)), 0, 0.5));
-  if ( !u.spec.avoidFleeing ) return false;
-  return run.rng.chance(clamp(run.prep?.options.standGround ?? STAND_GROUND, 0, 100) / 100);
+  // (As often as the setting says for "Never" retreating; less for answers that lean less that way.)
+  const strength = wish(u.spec.avoidFleeing);
+  if ( !strength ) return false;
+  return run.rng.chance((clamp(run.prep?.options.standGround ?? STAND_GROUND, 0, 100) / 100) * strength);
 }
 
 /**

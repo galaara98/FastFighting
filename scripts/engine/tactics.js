@@ -10,7 +10,7 @@ import { costOf, costUnits } from "./turn.js";
 
 export const TACTIC_CHOICES = Object.freeze({
   style: ["frontline", "skirmisher", "ranged", "caster", "protector"],
-  target: ["nearest", "weakest", "dangerous", "casters", "protect"],
+  target: ["nearest", "weakest", "dangerous", "casters", "protect", "avoidKilling"],
   resourceUse: ["conserve", "balanced", "nova"],
   healAggro: ["conservative", "balanced", "aggressive", "allCosts"],
   potionThreshold: ["never", "25", "50", "75"],
@@ -18,8 +18,22 @@ export const TACTIC_CHOICES = Object.freeze({
   selfRevived: ["rejoin", "healSelf", "retreat"],
   retreat: ["never", "hurt", "losing"],
   shield: ["always", "spare", "never"],
-  talk: ["first", "opportune", "never"],
+  talk: ["always", "first", "opportune", "never"],
   beyond: ["stay", "seekHelp", "hunt"]
+});
+
+/**
+ * How strongly an answer carries the wish its question took over from an old tick-box (0 to 1): the strongest answer
+ * as if the box were ticked, the others less, down to none for the opposite.
+ *  - talk: always talking (unless being hurt), "always prefers talking to fighting";
+ *  - target: avoiding killing, "I avoid killing";
+ *  - retreat: not liking to flee, "I don't like to flee".
+ * "Let them decide" carries none, as an unticked box did.
+ */
+export const TACTIC_WISHES = Object.freeze({
+  talk: Object.freeze({ always: 1, first: 0.66, opportune: 0.33, never: 0 }),
+  target: Object.freeze({ avoidKilling: 1, protect: 0.66, nearest: 0.33, dangerous: 0.33, casters: 0.33, weakest: 0 }),
+  retreat: Object.freeze({ never: 1, losing: 0.5, hurt: 0 })
 });
 
 /** Question keys in survey order. `preferredAction` is special (its choices are the character's own actions). */

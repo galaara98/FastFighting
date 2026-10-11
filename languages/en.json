@@ -150,11 +150,11 @@
       },
       "standGround": {
         "Name": "Doesn't like to flee: how often it stays (%)",
-        "Hint": "A character marked \"I don't like to flee\" ignores the urge to run away this often, when running is its own choice (shaken nerve, a terror close by, a planned retreat); talked out of the fight, it gives up where it stands instead of running just as often. Fear a spell or the rules put on it still works as the system says."
+        "Hint": "A character whose answer to when to retreat is Fight to the end ignores the urge to run away this often (half as often for When the battle turns against us), when running is its own choice (shaken nerve, a terror close by, a planned retreat); talked out of the fight, it gives up where it stands instead of running just as often. Fear a spell or the rules put on it still works as the system says."
       },
       "avoidKilling": {
         "Name": "Avoids killing: how often it holds back (%)",
-        "Hint": "A character marked \"I avoid killing\" holds back this often (50 to 90, default 90): a blow that would kill knocks out instead, it leaves the fallen be, and after the fight it spares them. Nobody controls the story entirely: now and then it kills all the same."
+        "Hint": "A character whose answer to who it attacks first is \"I avoid killing\" holds back this often (50 to 90, default 90; less for answers that lean less that way): a blow that would kill knocks out instead, it leaves the fallen be, and after the fight it spares them. Nobody controls the story entirely: now and then it kills all the same."
       },
       "neutralReach": {
         "Name": "Neutral friend groups: reach (squares)",
@@ -581,7 +581,8 @@
         "weakest": "Finish off the weakest",
         "dangerous": "The most dangerous foe",
         "casters": "Spellcasters and healers first",
-        "protect": "Whoever is attacking my allies"
+        "protect": "Whoever is attacking my allies",
+        "avoidKilling": "I avoid killing"
       },
       "resourceUse": {
         "Label": "Spell slots, focus and limited abilities",
@@ -638,6 +639,7 @@
       "talk": {
         "Label": "Talking instead of fighting",
         "Hint": "Whether this character tries to end fights with words: persuading, threatening or bluffing foes who share a language into surrendering, fleeing or switching sides. It takes several successes to convince most foes, and anyone this character has hurt or failed to convince is much harder to sway.",
+        "always": "Always talk unless I am currently being hurt",
         "first": "Talk first: try to end it with words",
         "opportune": "Talk when it could work",
         "never": "Let my weapons do the talking"
@@ -787,8 +789,6 @@
         "Name": "Wildcard",
         "Hint": "Unpredictable: some foe catches its eye at random, nobody's voice counts for much, and it may defy its leader."
       },
-      "AlwaysTalk": "This character always prefers talking to fighting",
-      "AlwaysTalkHint": "Talks whenever there's someone to talk to, whole turns at a time, even without much skill at it, and always votes to open an encounter as a standoff.",
       "thief": {
         "Name": "Thief",
         "Hint": "Light fingers: when their side is winning, or they're unseen and someone is alone, they may rob a foe within reach instead of hitting them. A lock is an invitation."
@@ -808,11 +808,7 @@
       "lazy": {
         "Name": "Lazy",
         "Hint": "As little as it can get away with: whatever foe is nearest (and not one worth a long walk), saves its resources, isn't much help to anyone, gives up fast, barely bothers with a locked door, and can't be bothered to hold a grudge. Leading a group, its flight takes others along."
-      },
-      "AvoidKilling": "I avoid killing",
-      "AvoidKillingHint": "Holds back from killing most of the time (the Avoids killing setting, 90% by default), not always: a blow that would kill knocks out instead (unconscious and stable), it leaves the fallen be, and after the fight it stops anyone finishing them and tends them if it can.",
-      "AvoidFleeing": "I don't like to flee",
-      "AvoidFleeingHint": "Mostly stays when it would choose to run (shaken nerve, a terror close by, a planned retreat), and talked out of the fight, it gives up where it stands instead of running: how often is a module setting (90% unless changed). Fear a spell or the rules put on it still works as the system says."
+      }
     },
     "Tracker": {
       "OpenHint": "Estimate how this encounter will go",

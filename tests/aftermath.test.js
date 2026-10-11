@@ -147,8 +147,14 @@ describe("answers players store", () => {
     expect(sanitizeTactics({ playstyles: "cruel" }).playstyles).toBeUndefined();
     // A renamed playstyle saved under its old id still counts; an object's own keys aren't playstyles.
     expect(sanitizeTactics({ playstyles: ["scaredyCat", "constructor", "toString", "chicken", "cruel"] }).playstyles).toEqual(["chicken", "cruel"]);
-    // What was "I never kill" is "I avoid killing" now.
-    expect(sanitizeTactics({ neverKill: true }).avoidKilling).toBe(true);
-    expect(sanitizeTactics({ neverKill: true, avoidKilling: false }).avoidKilling).toBe(false);
+    // The tick-boxes that became answers read as those answers, while their question is unanswered.
+    expect(sanitizeTactics({ neverKill: true }).target).toBe("avoidKilling");
+    expect(sanitizeTactics({ avoidKilling: true }).target).toBe("avoidKilling");
+    expect(sanitizeTactics({ alwaysTalk: true }).talk).toBe("always");
+    expect(sanitizeTactics({ avoidFleeing: true }).retreat).toBe("never");
+    expect(sanitizeTactics({ avoidFleeing: true, retreat: "hurt" }).retreat).toBe("hurt");
+    expect(sanitizeTactics({ alwaysTalk: true, talk: "opportune" }).talk).toBe("opportune");
+    expect(sanitizeTactics({ alwaysTalk: false }).talk).toBeUndefined();
+    expect(sanitizeTactics({ alwaysTalk: true }).alwaysTalk).toBeUndefined(); // (no tick-box of its own any more)
   });
 });

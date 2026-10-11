@@ -39,7 +39,9 @@
  * @property {{mod: number}} [firstAid]     Can stabilize the dying without magic (PF2e: trained in Medicine)
  * @property {number} [group]               A neutral token's friend group (1-3, from the planner): they look out for each other
  * @property {string} [creatureKind]        What kind of creature it is, as the system has it (5e: its type), for grouping neutrals
- * @property {boolean} [avoidFleeing]       "I don't like to flee": most times, stays when it would choose to run
+ * @property {number} [avoidFleeing]        not liking to flee, 0 to 1 (its answer to when to retreat; true: 1)
+ * @property {number} [avoidKilling]        avoiding killing, 0 to 1 (its answer to who it goes for; true: 1)
+ * @property {number} [alwaysTalk]          always talking unless being hurt, 0 to 1 (its answer to talking; true: 1)
  *
  * @typedef {object} ActionSpec
  * @property {string} id
@@ -376,18 +378,28 @@ export function edgeDistance(a, b) {
   return Math.max(5, d - ((sizeA + sizeB) / 2 - 5));
 }
 
+/** How strong a wish is, 0 to 1 (a tick-box's true is all of it). */
+export const wish = v => (v === true ? 1 : clamp(Number(v) || 0, 0, 1));
+
+/** Does a wish this strong win out this time? (No dice for none or all of it: the fight's other rolls stay as they were.) */
+export const wishWins = (run, v) => {
+  const strength = wish(v);
+  return strength >= 1 || (strength > 0 && run.rng.chance(strength));
+};
+
 /**
- * One who avoids killing ("I avoid killing") holds back from a kill this time? Most of the time (the avoidKilling
- * setting, 90% by default), not always: nobody controls the story entirely.
+ * One who avoids killing holds back from a kill this time? As often as the avoidKilling setting says (90% by default)
+ * for "I avoid killing", less for answers that lean less that way: nobody controls the story entirely.
  */
 export function holdsBack(run, u) {
-  if ( !u?.spec.avoidKilling ) return false;
-  return run.rng.chance(clamp(run.prep.options.avoidKilling ?? AVOID_KILLING, 0, 100) / 100);
+  const strength = wish(u?.spec.avoidKilling);
+  if ( !strength ) return false;
+  return run.rng.chance((clamp(run.prep.options.avoidKilling ?? AVOID_KILLING, 0, 100) / 100) * strength);
 }
 
 /** The same, decided once a round: choosing whom to strike, it doesn't change its mind with every look. */
 export function holdsBackThisRound(run, u) {
-  if ( !u?.spec.avoidKilling ) return false;
+  if ( !wish(u?.spec.avoidKilling) ) return false;
   if ( u.holdBackRound !== run.round ) {
     u.holdBackRound = run.round;
     u.holdingBack = holdsBack(run, u);

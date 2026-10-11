@@ -5,7 +5,9 @@
  * Storage
  *  - Actor flag `fast-fighting.tactics.<key>`: one field per answer, written individually so two players
  *    sharing a token can edit different questions at the same time without overwriting each other.
- *    Also `playstyles` (up to four ids), `stayTrue`, `roleplay` and `alwaysTalk` (booleans).
+ *    Also `playstyles` (up to four ids), `stayTrue`, `roleplay`, `avoidConsumables` and `avoidCostlySpells` (booleans).
+ *    Older tick-boxes read as answers while their question is unanswered: `alwaysTalk` (talk "always"), `avoidKilling` or
+ *    `neverKill` (target "avoidKilling"), `avoidFleeing` (retreat "never"); answering the question sets them aside.
  *  - User flag `fast-fighting.survey`: {status, sceneId, requestId, updated} for the GM's status indicators.
  */
 import { MODULE_ID } from "../constants.js";
@@ -21,7 +23,7 @@ export const SURVEY_STATUS = Object.freeze({ NONE: "none", REQUESTED: "requested
 
 const loc = key => localize(key);
 
-const META_KEYS = ["stayTrue", "roleplay", "alwaysTalk", "avoidConsumables", "avoidCostlySpells", "avoidKilling", "avoidFleeing"];
+const META_KEYS = ["stayTrue", "roleplay", "avoidConsumables", "avoidCostlySpells"];
 /** Stated desires: three slots, each "what, at whom, how badly". */
 const DESIRE_SLOTS = ["d0", "d1", "d2"];
 const DESIRE_KEY = /^desire\.(d[0-2])\.(kind|target|level)$/;
@@ -38,6 +40,8 @@ function cleanDesire(raw) {
   return out;
 }
 const MAX_ACTION_ID = 2000;
+/** The tick-boxes that became answers, by the question that took each over. */
+const LEGACY = Object.freeze({ talk: ["alwaysTalk"], target: ["avoidKilling", "neverKill"], retreat: ["avoidFleeing"] });
 const isPlain = v => !!v && typeof v === "object" && !Array.isArray(v);
 
 /**
@@ -57,8 +61,13 @@ export function sanitizeTactics(raw) {
     out.playstyles = [...new Set(raw.playstyles.filter(id => typeof id === "string").map(current).filter(isPlaystyle))].slice(0, MAX_PLAYSTYLES);
   }
   for ( const key of META_KEYS ) if ( key in raw ) out[key] = raw[key] === true;
-  // (What was "I never kill" is "I avoid killing" now.)
-  if ( !("avoidKilling" in raw) && "neverKill" in raw ) out.avoidKilling = raw.neverKill === true;
+  // The tick-boxes that became answers: "always prefers talking" talks always (unless hurt); "I avoid killing" (once
+  // "I never kill") is an answer to who it goes for; "I don't like to flee", where it hadn't said when to retreat, never
+  // retreats.
+  const unanswered = key => [undefined, "auto", ""].includes(out[key]);
+  if ( raw.alwaysTalk === true && unanswered("talk") ) out.talk = "always";
+  if ( (raw.avoidKilling === true || raw.neverKill === true) && unanswered("target") ) out.target = "avoidKilling";
+  if ( raw.avoidFleeing === true && unanswered("retreat") ) out.retreat = "never";
   if ( isPlain(raw.desires) ) {
     out.desires = {};
     for ( const slot of DESIRE_SLOTS ) {
@@ -96,7 +105,10 @@ export async function setTactic(actor, key, value) {
   if ( !actor || !(TACTIC_KEYS.includes(key) || META_KEYS.includes(key)) ) return;
   const clean = sanitizeTactics({ [key]: value });
   if ( !(key in clean) ) return;
-  await actor.update({ [`flags.${MODULE_ID}.tactics.${key}`]: clean[key] });
+  // (An older tick-box this question took over is set aside once the question is answered.)
+  const stored = actor.getFlag(MODULE_ID, "tactics") ?? {};
+  const aside = Object.fromEntries((LEGACY[key] ?? []).filter(k => stored[k] === true).map(k => [`flags.${MODULE_ID}.tactics.${k}`, false]));
+  await actor.update({ [`flags.${MODULE_ID}.tactics.${key}`]: clean[key], ...aside });
 }
 
 /**
@@ -174,7 +186,7 @@ export function isPlayerControlled(spec, actor) {
 /** Compact fingerprint of what changes "Let them decide" (playstyles and the two checkboxes). */
 export function playstyleSignature(actor) {
   const t = getStoredTactics(actor);
-  return JSON.stringify([t.playstyles ?? [], !!t.stayTrue, !!t.roleplay, !!t.alwaysTalk, !!t.avoidConsumables, !!t.avoidCostlySpells, !!t.avoidKilling, !!t.avoidFleeing]);
+  return JSON.stringify([t.playstyles ?? [], !!t.stayTrue, !!t.roleplay, !!t.avoidConsumables, !!t.avoidCostlySpells]);
 }
 
 /* -------------------------------------------- */
@@ -243,11 +255,12 @@ export function questionsContext(spec, actor, uid, { questions: withQuestions = 
     });
   };
 
+  // (Talking first, then who it goes for: the top of the sheet.)
+  add("talk", TACTIC_CHOICES.talk, { show: (spec.social?.languages?.length ?? 0) > 0 && !spec.social?.mindless });
+  add("target", TACTIC_CHOICES.target);
   add("preferredAction", offense.map(a => ({ value: a.id, label: actionLabel(a) })), { show: offense.length > 1 });
   add("style", TACTIC_CHOICES.style);
-  add("target", TACTIC_CHOICES.target);
   add("resourceUse", TACTIC_CHOICES.resourceUse, { show: hasLimited });
-  add("talk", TACTIC_CHOICES.talk, { show: (spec.social?.languages?.length ?? 0) > 0 && !spec.social?.mindless });
   add("healAggro", TACTIC_CHOICES.healAggro, { show: heals.some(a => !a.selfOnly) });
   add("potionThreshold", TACTIC_CHOICES.potionThreshold, { show: hasPotions });
   add("allyDying", TACTIC_CHOICES.allyDying);
@@ -306,11 +319,8 @@ export function questionsContext(spec, actor, uid, { questions: withQuestions = 
     playstyleCount: game.i18n.format("FASTFIGHTING.Playstyle.Count", { n: picked.length, max: MAX_PLAYSTYLES }),
     stayTrue: { name: `tactic-${uid}-stayTrue`, checked: !!stored.stayTrue },
     roleplay: { name: `tactic-${uid}-roleplay`, checked: !!stored.roleplay },
-    alwaysTalk: { name: `tactic-${uid}-alwaysTalk`, checked: !!stored.alwaysTalk, show: (spec.social?.languages?.length ?? 0) > 0 && !spec.social?.mindless },
     avoidConsumables: { name: `tactic-${uid}-avoidConsumables`, checked: !!stored.avoidConsumables, show: spec.actions.some(a => /^item:/.test(a.resource ?? "")) },
     avoidCostlySpells: { name: `tactic-${uid}-avoidCostlySpells`, checked: !!stored.avoidCostlySpells, show: spec.actions.some(a => ((a.rank ?? 0) > 0 || a.spellId) && (a.resource || Number.isFinite(a.uses))) },
-    avoidKilling: { name: `tactic-${uid}-avoidKilling`, checked: !!stored.avoidKilling },
-    avoidFleeing: { name: `tactic-${uid}-avoidFleeing`, checked: !!stored.avoidFleeing },
     conflict: !!stored.stayTrue && !!stored.roleplay
   };
 }
