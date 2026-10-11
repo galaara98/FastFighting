@@ -30,9 +30,9 @@
  *    like anyone else.
  * Pure: no Foundry globals.
  */
-import { STATUS, NEUTRAL_PARTY, TACTICAL, clamp } from "../../constants.js";
+import { STATUS, NEUTRAL_PARTY, TACTICAL, SWAY, clamp } from "../../constants.js";
 import { isStanding, isUp, edgeDistance, liveTrait, liveTier } from "../battle-state.js";
-import { levelOf, want, setLean, allDesires } from "./desire.js";
+import { levelOf, want, think, setLean, allDesires } from "./desire.js";
 import { perceives } from "./senses.js";
 import { prefersTalk, canTalk, impatience } from "./standoff.js";
 
@@ -310,6 +310,34 @@ export function appeal(run, n, side) {
     if ( bad && (!betrays || d.level > betrays.level) ) betrays = d;
   }
   return { fulfils, betrays };
+}
+
+/** Playstyles that would rather see someone taking no side leave than join the fight (on either side). */
+const SEND_AWAY = new Set(["leader", "diplomat", "moralist", "peoplePleaser", "scaredyCat", "wallflower", "fragile", "lazy"]);
+
+/**
+ * Someone who doesn't like killing (Tactics: "I never kill"), seeing an enemy that was talked out of the fight, wants
+ * to talk to it again: into leaving, or onto its own side, as its playstyle leans. It's a second thought, just under
+ * what's most on its mind (`top`), unless it already wants to talk to it more. Leaders and talkers among them want
+ * it more, would rather send anyone taking no side away (less dangerous than one more fighter, even a friendly one),
+ * and look for the chance with any neutral they see.
+ * @returns {{targetId: string, aim: "dismiss"|"recruit", level: number}|null}  the one it most wants to talk to
+ */
+export function peaceDesires(run, u, top) {
+  const styles = u.spec.playstyles ?? [];
+  const peacemaker = styles.includes("leader") || run.prep.sides[u.side]?.leaderId === u.id || prefersTalk(u);
+  const aim = peacemaker || styles.some(p => SEND_AWAY.has(p)) ? "dismiss" : "recruit";
+  let best = null;
+  for ( const n of run.units ) {
+    if ( !isNeutral(n) || !isStanding(n) || n.against.has(u.side) || n.spec.kind === "pc" || !sharesLanguage(u, n) ) continue;
+    const converted = n.swayOutcome === SWAY.NEUTRAL;
+    if ( (!converted && !peacemaker) || !perceives(run, u, n) ) continue;
+    const level = clamp(converted ? (peacemaker ? top + 5 : top - 5) : top - 10, 10, 100);
+    if ( levelOf(u, "talk", n.id) < level ) think(u, "talk", n.id, level);
+    const wanted = levelOf(u, "talk", n.id);
+    if ( !best || wanted > best.level ) best = { targetId: n.id, aim, level: wanted };
+  }
+  return best;
 }
 
 /** Bystanders near an area's targets that a careless user catches too (a careful one aims around them). */

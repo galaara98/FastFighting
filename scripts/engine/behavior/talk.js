@@ -35,22 +35,26 @@ import { STATUS, SWAY, CONCEDE_LUCK, SWITCH_LUCK, TACTICAL, clamp } from "../../
 import { alliesOf, enemiesOf, isStanding, behaviorOf, leaderStanding, typical, checkRoll, liveTier } from "../battle-state.js";
 import { degreeDistribution, rollCheck } from "../probability.js";
 import { isNeutral, standsAside, appeal, offend, turnOn, standAside, joinSide, calm, settleTruce, seemsFoe } from "./neutral.js";
-import { levelOf } from "./desire.js";
+import { levelOf, allDesires } from "./desire.js";
 
 /** The three kinds of pitch. Systems map their own skills onto these (CombatantSpec.social.pitches). */
 export const TALK_KINDS = Object.freeze(["persuade", "intimidate", "deceive"]);
 const VERB = { persuade: "reasons with", intimidate: "threatens", deceive: "bluffs" };
 /** What a pitch is for, beyond talking an enemy down. */
-const AIM_TEXT = { recruit: " to join them", calm: " to let it go", settle: " to make amends" };
+const AIM_TEXT = { recruit: " to join them", dismiss: " to leave", calm: " to let it go", settle: " to make amends" };
 
 /**
  * What talking to t is for: "down" (an enemy: talk it out of the fight), "recruit" (someone taking no side: win it
- * over), "calm" (someone taking no side who's confronting the talker's side: talk it round), or "settle" (the talker
- * takes no side and is confronting t's side: have it make amends).
+ * over), "dismiss" (someone taking no side: talk it into leaving, for those who don't like killing and would rather
+ * see it gone: behavior/neutral.js peaceDesires), "calm" (someone taking no side who's confronting the talker's
+ * side: talk it round), or "settle" (the talker takes no side and is confronting t's side: have it make amends).
  */
 export function aimOf(talker, t) {
   if ( isNeutral(talker) && talker.truce?.side === t.side && !talker.against.has(t.side) ) return "settle";
-  if ( isNeutral(t) && !t.against.has(talker.side) ) return t.truce?.side === talker.side ? "calm" : "recruit";
+  if ( isNeutral(t) && !t.against.has(talker.side) ) {
+    if ( t.truce?.side === talker.side ) return "calm";
+    return talker.peace?.targetId === t.id && talker.peace.aim === "dismiss" ? "dismiss" : "recruit";
+  }
   return "down";
 }
 
@@ -186,10 +190,16 @@ export function talkDC(run, talker, t, kind) {
   dc += Math.round((t.prep.traits.loyal - 50) / 25) - Math.round((t.prep.traits.selfish - 50) / 25);
   if ( kind === "intimidate" ) dc += Math.round((t.prep.traits.brave - 50) / 20);
   if ( standsAside(t) ) dc -= kind === "persuade" ? 4 : 2;
+  const aim = aimOf(talker, t);
   // Winning someone over: what joining would mean to it, by what it wants.
-  if ( aimOf(talker, t) === "recruit" ) {
+  if ( aim === "recruit" ) {
     const { fulfils, betrays } = appeal(run, t, talker.side);
     dc += Math.round((betrays?.level ?? 0) / 10) - Math.round((fulfils?.level ?? 0) / 10);
+  }
+  // Talking it into leaving: the more it cares about someone still here, and the bolder it is, the harder.
+  if ( aim === "dismiss" ) {
+    const care = Math.max(0, ...allDesires(t).filter(d => d.kind !== "hurt" && d.kind !== "avoid" && run.byId.get(d.targetId)?.status === STATUS.STANDING).map(d => d.level));
+    dc += Math.round(care / 10) + Math.round((t.prep.traits.brave - 50) / 20);
   }
   return dc;
 }
@@ -232,7 +242,7 @@ export function choosePitch(run, talker, { only = null } = {}) {
     const isLeader = run.prep.sides[t.side]?.leaderId === t.id;
     const health = 1 + t.hp / Math.max(1, t.maxHp);
     // An enemy out of the fight; a new friend (a weak one counts for less); a new enemy prevented; a quarrel settled.
-    const value = { down: (1 + (isLeader ? 1.5 : 0)) * health, recruit: 0.8 * health * (t.prep.lowBattleWorth ? 0.5 : 1), calm: 1.2 * health, settle: 1.5 }[pitch.aim];
+    const value = { down: (1 + (isLeader ? 1.5 : 0)) * health, recruit: 0.8 * health * (t.prep.lowBattleWorth ? 0.5 : 1), dismiss: 0.9 * health, calm: 1.2 * health, settle: 1.5 }[pitch.aim];
     const score = pitch.pSuccess * value / remaining;
     if ( !best || score > best.score ) best = { target: t, ...pitch, remaining, score };
   }
@@ -274,6 +284,7 @@ export function talkActionsThisTurn(run, u, actions) {
 function outcomeFor(run, t, kind, aim = "down", { noSwitch = false } = {}) {
   const rng = run.rng;
   if ( aim === "recruit" ) return SWAY.SWITCH;
+  if ( aim === "dismiss" ) return SWAY.FLEE;
   if ( aim === "calm" ) return "calm";
   // Satisfaction for a quarrel: something handed over, or an apology.
   if ( aim === "settle" ) return hasValuables(t) ? SWAY.CONCEDE : "amends";
@@ -452,7 +463,7 @@ export function attemptTalk(run, talker, pitch, log) {
   // Insulted by a botched pitch: someone taking no side turns on the talker's side (one already confronting the
   // talker turns on its side).
   if ( roll.degree === 0 ) {
-    if ( aim === "recruit" || aim === "calm" ) offend(run, t, talker, "insulted", log);
+    if ( aim === "recruit" || aim === "dismiss" || aim === "calm" ) offend(run, t, talker, "insulted", log);
     else if ( aim === "settle" ) turnOn(run, talker, t, "insulted", log);
   }
   // Only a successful pitch closes the deal, even if circumstances have made them easier to convince.

@@ -246,3 +246,59 @@ describe("leans don't last, and not everyone sees a neutral for what it is", () 
     expect(sparedForTruce(run, units.talker)).toBeNull();
   });
 });
+
+describe("not one for killing", () => {
+  const speaker = (over = {}) => creature({ id: "kind", kind: "pc", diesAtZero: false, neverKill: true, traits: minded(45), social: social({ diplomacy: 14 }), ...over });
+  const standing = (over = {}) => creature({ id: "bandit", side: NEUTRAL_PARTY, originSide: "hostile", social: social(), ...over });
+
+  function primed(talker, extra = []) {
+    const { run, say, units } = ready([talker, standing(), brute(), ...extra]);
+    units.bandit.swayOutcome = "neutral"; // talked out of the fight earlier
+    return { run, say, units };
+  }
+
+  test("seeing an enemy talked aside, it wants to talk to it again: just under what's most on its mind", async () => {
+    const { peaceDesires } = await import("../scripts/engine/behavior/neutral.js");
+    const { levelOf } = await import("../scripts/engine/behavior/desire.js");
+    // (No great talker, and no leader: a plain soul who would rather not kill.)
+    const { run, units } = primed(speaker({ social: social({ diplomacy: 4 }) }));
+    const peace = peaceDesires(run, units.kind, 60);
+    expect(peace).toMatchObject({ targetId: "bandit", aim: "recruit", level: 55 });
+    expect(levelOf(units.kind, "talk", "bandit")).toBe(55);
+  });
+
+  test("leaders and talkers among them would rather send it away, want it more, and look at any neutral", async () => {
+    const { peaceDesires } = await import("../scripts/engine/behavior/neutral.js");
+    const { run, units } = primed(speaker({ playstyles: ["leader"] }), [guard({ social: social() })]);
+    const peace = peaceDesires(run, units.kind, 60);
+    expect(peace).toMatchObject({ targetId: "bandit", aim: "dismiss", level: 65 });
+    expect(units.kind.desire.logic.get("talk|guard")).toBe(50); // any neutral it sees, a little less
+  });
+
+  test("talked into leaving, someone taking no side leaves the field", () => {
+    const { run, say, units } = primed(speaker({ playstyles: ["diplomat"] }));
+    units.kind.peace = { targetId: "bandit", aim: "dismiss", level: 60 };
+    const t = units.bandit;
+    const pitch = { target: t, kind: "persuade", aim: "dismiss", skill: "diplomacy", mod: 40, dc: 10, dcLabel: "will" };
+    t.sway.set("friendly", 10);
+    expect(attemptTalk(run, units.kind, pitch, say)).toBe(true);
+    expect(t.status).toBe("fled");
+    expect(run.log.some(e => e.type === "talk" && /to leave/.test(e.text ?? ""))).toBe(true);
+  });
+
+  test("in a fight, a peacemaker who never kills tries to talk a neutral off the field", () => {
+    let talked = 0;
+    let gone = 0;
+    for ( let seed = 1; seed <= 12; seed++ ) {
+      const spec = battle([speaker({ playstyles: ["leader"] }), standing({ originSide: "neutral" }), brute({ hp: { value: 80, max: 80 } })], { maxRounds: 5, opening: "fight" });
+      const r = replay(spec, pf2eRules, seed);
+      const talks = r.log.filter(e => e.actor === "kind" && e.type === "talk" && e.target === "bandit");
+      if ( talks.length ) talked += 1;
+      expect(talks.every(e => e.aim === "dismiss")).toBe(true);
+      if ( r.units.bandit.status === "fled" ) gone += 1;
+      expect(r.log.some(e => e.actor === "kind" && e.type === "attack" && e.target === "bandit")).toBe(false);
+    }
+    expect(talked).toBeGreaterThan(6);
+    expect(gone).toBeGreaterThan(2);
+  });
+});

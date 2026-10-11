@@ -175,7 +175,9 @@ function threatNow(run, u, versus) {
     // A spell or item it can only use so often counts in a round's threat only as far as what's left could last a
     // typical fight (a single Meteor Swarm isn't three rounds of Meteor Swarms).
     const left = action.resource ? (u.resources[action.resource] ?? 0) : Number.isFinite(action.uses) ? (u.uses?.[action.id] ?? action.uses) : Infinity;
-    if ( Number.isFinite(left) ) total *= Math.min(1, left / TYPICAL_ROUNDS);
+    // (One that recharges is there whenever it's ready, and may well be again.)
+    if ( action.recharge || action.cooldown ) total *= left > 0 ? 1 : 0.4;
+    else if ( Number.isFinite(left) ) total *= Math.min(1, left / TYPICAL_ROUNDS);
     bestMain = Math.max(bestMain, total);
   }
   return bestMain + bestBonus;

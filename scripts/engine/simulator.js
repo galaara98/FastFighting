@@ -28,14 +28,14 @@ import { respond, riposteStrike } from "./behavior/responses.js";
 import { decideSummon, callSummons, sustainSummons, summonState, dismiss } from "./behavior/summons.js";
 import { createAggregator } from "./aggregate.js";
 import { talkActionsThisTurn, choosePitch, attemptTalk } from "./behavior/talk.js";
-import { opensWithTalk, breaksStandoff, standoffPitches, charismaticLeader } from "./behavior/standoff.js";
+import { opensWithTalk, breaksStandoff, standoffPitches, charismaticLeader, canTalk } from "./behavior/standoff.js";
 import { controlOutcome, controlRoll, isImmune, degreeShift } from "./behavior/control.js";
 import { recompute as recomputeConditions, applyOutcome, applyControl, beginConcentration, endConcentration, holdsAnything, noteConcentration, moveHeld, settleAllegiance, iwrOf, incoming } from "./behavior/effects.js";
 import { decideBuff, aidScores } from "./behavior/support.js";
 import { perceives } from "./behavior/senses.js";
 import { stealChance, theftTarget, theftPlan, attemptTheft } from "./behavior/theft.js";
 import { reactionsPerRound, threats, takesSafeWay } from "./behavior/reactions.js";
-import { isNeutral, crossed, caughtInArea, refreshLeans, truceWith, truceBreaks, turnOn, settleTruce } from "./behavior/neutral.js";
+import { isNeutral, crossed, caughtInArea, refreshLeans, truceWith, truceBreaks, turnOn, settleTruce, peaceDesires } from "./behavior/neutral.js";
 import { normalizeCost } from "./turn.js";
 
 const MAX_STEPS_PER_TURN = 8;
@@ -1243,6 +1243,11 @@ function deliberate(run, u) {
   }
   // Whoever took from it, until they attack it.
   for ( const [id, g] of u.grudges ?? [] ) if ( !g.provoked ) think(u, "avoid", id, 50);
+  // Not one for killing: an enemy talked out of the fight is someone to talk away (or over), not to cut down.
+  u.peace = null;
+  if ( u.spec.neverKill && run.neutral && run.prep.options.talking && canTalk(u) && u.tac?.talk !== "never" ) {
+    u.peace = peaceDesires(run, u, Math.max(40, ...[...u.desire.logic.values()]));
+  }
   if ( u.tac?.target === "protect" ) {
     const ward = run.units.find(a => a !== u && a.side === u.side && isStanding(a) && run.units.some(e => e.targetId === a.id && isStanding(e) && areEnemies(run, a, e)));
     if ( ward ) think(u, "protect", ward.id, 50);
@@ -1257,6 +1262,31 @@ function deliberate(run, u) {
   if ( run.log ) {
     const top = thoughtsOf(run, u);
     if ( top.length ) log(run, u, `thinks: ${top.map(d => `${d.kind} ${d.target} (${d.level})`).join(", ")}`, { type: "thought", desires: top });
+  }
+}
+
+/**
+ * Abilities that come back: a 5e "Recharge 5–6" (action.recharge {on, die}: a die at the start of its turn), or a
+ * PF2e "can't use it again for 1d4 rounds" (action.cooldown {n, faces}: rolled the first turn after it's used).
+ */
+function rechargeActions(run, u) {
+  for ( const a of u.spec.actions ) {
+    if ( !(a.recharge || a.cooldown) || !Number.isFinite(a.uses) || (u.uses[a.id] ?? 0) >= a.uses ) continue;
+    let back;
+    if ( a.recharge ) back = run.rng.die(a.recharge.die ?? 6) >= (a.recharge.on ?? 6);
+    else {
+      u.readyAt ??= {};
+      if ( u.readyAt[a.id] === undefined ) {
+        let rounds = 0;
+        for ( let i = 0; i < (a.cooldown.n ?? 1); i++ ) rounds += run.rng.die(a.cooldown.faces ?? 4);
+        u.readyAt[a.id] = run.round - 1 + rounds; // (counted from the round it was used)
+      }
+      back = run.round >= u.readyAt[a.id];
+      if ( back ) delete u.readyAt[a.id];
+    }
+    if ( !back ) continue;
+    u.uses[a.id] = a.uses;
+    log(run, u, `${a.name} is ready again`, { type: "recharge", action: a.name });
   }
 }
 
@@ -1344,6 +1374,7 @@ function takeTurn(run, u) {
   u.shieldRaised = false;
   // A creature's reaction comes back at the start of its turn.
   u.reactionsLeft = reactionsPerRound(rules, u);
+  rechargeActions(run, u);
   u.disengaged = false;
 
   settleSides(run); // holds that took or ended since this creature's last turn
@@ -1465,12 +1496,16 @@ function takeTurn(run, u) {
   // Set on talking someone round: it talks to them (and keeps at it). Something far stronger on its mind: no talk.
   const lead = wants.lead;
   const only = lead?.kind === "talk" && lead.driven !== "logic" ? (t => t.id === lead.targetId) : null;
+  // Not one for killing, with someone it wants to talk out of the fight (or over) in view: words first.
+  const peaceful = !only && u.peace && wants.inView("talk", u.peace.targetId) ? (t => t.id === u.peace.targetId) : null;
+  const peacePitch = peaceful && !brokeStandoff ? choosePitch(run, u, { only: peaceful }) : null;
   const talking = brokeStandoff ? { count: 0, pitch: null }
     : only ? { count: turn.howMany(talkCost), pitch: choosePitch(run, u, { only }) }
+      : peacePitch ? { count: Math.min(turn.howMany(talkCost), u.peace.level >= (lead?.level ?? 0) ? 2 : 1), pitch: peacePitch }
       : (wants.blinding && lead.level >= 60 && !wants.kindInView("talk")) ? { count: 0, pitch: null }
         : talkActionsThisTurn(run, u, turn.howMany(talkCost));
   for ( let i = 0; i < talking.count && turn.canAfford(talkCost); i++ ) {
-    const pitch = i === 0 ? talking.pitch : choosePitch(run, u, only ? { only } : {}); // the first pitch was already chosen
+    const pitch = i === 0 ? talking.pitch : choosePitch(run, u, only ? { only } : peacePitch ? { only: peaceful } : {}); // the first pitch was already chosen
     if ( !pitch ) break;
     attemptTalk(run, u, pitch, (unit, text, data) => log(run, unit, text, data));
     turn.spend(talkCost);
