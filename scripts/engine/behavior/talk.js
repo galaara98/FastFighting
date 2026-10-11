@@ -33,7 +33,7 @@
  */
 import { STATUS, SWAY, CONCEDE_LUCK, SWITCH_LUCK, TACTICAL, clamp } from "../../constants.js";
 import { alliesOf, enemiesOf, isStanding, behaviorOf, leaderStanding, typical, checkRoll, liveTier, studyBonus, boostBonus } from "../battle-state.js";
-import { spendEdges } from "./effects.js";
+import { spendEdges, spendBoost } from "./effects.js";
 import { degreeDistribution, rollCheck } from "../probability.js";
 import { isNeutral, standsAside, appeal, offend, turnOn, standAside, joinSide, calm, settleTruce, seemsFoe } from "./neutral.js";
 import { levelOf, allDesires } from "./desire.js";
@@ -450,6 +450,7 @@ export function attemptTalk(run, talker, pitch, log) {
   const rules = run.prep.rules;
   const roll = rollCheck(rules, run.rng, pitch.mod, pitch.dc, { advantage: pitch.advantage ?? 0, dice: pitch.dice ?? null, kind: "check" });
   spendEdges(talker, "check", t.id);
+  spendBoost(talker, t.id);
   const steps = stepsToConvince(t, run, talker);
   const aim = pitch.aim ?? aimOf(talker, t);
   let progress = t.sway.get(talker.side) ?? 0;

@@ -194,6 +194,17 @@ export function spendEdges(u, kind, targetId = null) {
 }
 
 /**
+ * A roll a boost helps was made (an attack, or words, at t): a boost good for so many rolls (`uses`) is spent by it,
+ * the strongest first.
+ */
+export function spendBoost(u, targetId = null) {
+  const e = (u?.effects ?? []).filter(x => x.boost > 1 && x.uses > 0 && (!x.vs || x.vs === targetId)).sort((a, b) => b.boost - a.boost)[0];
+  if ( !e ) return;
+  e.uses -= 1;
+  if ( e.uses === 0 ) u.effects = u.effects.filter(x => x !== e);
+}
+
+/**
  * Whoever t is set on: the foe it would hurt, the one it would talk to, or the friend it would tend (its strongest
  * such desire last turn, else the foe it was fighting): {unit, kind}, or null.
  */

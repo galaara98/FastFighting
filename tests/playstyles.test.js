@@ -132,15 +132,15 @@ describe("the Lore-Collector sizes up a foe first", () => {
     expect(first[1].type).toBe("talk");
   });
 
-  test("one action a turn: only when the action would have gone into closing the distance", () => {
+  test("one action a turn: sizing up takes the turn, and the next turn's blow is the better for it", () => {
     const quiet = { social: undefined };
-    const far = mine(replay(battle([scholar({ ...quiet, position: at(0), speeds: { walk: 30 } }), foe({ ...quiet, position: at(150), speeds: { walk: 0 } })], { positioning: true, maxRounds: 3 }), genericRules, 4));
-    expect(far.find(e => e.round === 1)?.type).toBe("study");
-    const near = mine(replay(battle([scholar({ ...quiet, position: at(0) }), foe({ ...quiet, position: at(5) })], { positioning: true, maxRounds: 3 }), genericRules, 4));
-    expect(near.some(e => e.type === "study")).toBe(false);
+    const acts = mine(replay(battle([scholar({ ...quiet, position: at(0) }), foe({ ...quiet, position: at(5) })], { positioning: true, maxRounds: 3 }), genericRules, 4));
+    expect(acts.find(e => e.round === 1)?.type).toBe("study");
+    expect(acts.filter(e => e.round === 1 && e.type === "attack")).toHaveLength(0);
+    expect(acts.find(e => e.round === 2 && e.type === "attack")?.boost).toBeGreaterThan(0);
   });
 
-  test("one action a turn, about to talk with no foe close: sizes it up, and talks next turn", () => {
+  test("one action a turn, about to talk: sizes it up, and talks next turn", () => {
     const r = replay(battle([scholar({ position: at(0) }), foe({ position: at(60), speeds: { walk: 0 } })], { positioning: true, maxRounds: 3 }), genericRules, 21);
     const acts = mine(r);
     expect(acts.find(e => e.round === 1)?.type).toBe("study");

@@ -148,3 +148,16 @@ describe("set on bolstering a friend", () => {
     expect(given(told).map(e => e.targetIds)).toEqual([["f1"]]);
   });
 });
+
+describe("a system's own payoff for sizing up", () => {
+  test("one roll's worth, at anyone, as the system says (Ironsworn: 25% likelier)", () => {
+    const scholar = fighter("s", { behavior: { study: 1 }, initiative: { mod: 50 }, sizeUp: { mod: 40, dc: 10, label: "Secure an Advantage", boost: 1.25, uses: 1, anyFoe: true } });
+    const spec = battle([scholar, ogre("a"), ogre("b")], { maxRounds: 2 });
+    const r = replay(spec, pf2eRules, 5);
+    const study = r.log.find(e => e.type === "study" && e.actorId === "s");
+    expect(study).toMatchObject({ worked: true, factor: 1.25, oneRoll: true, anyFoe: true });
+    const boosted = r.log.filter(e => e.type === "attack" && e.actorId === "s" && e.boost > 0);
+    expect(boosted).toHaveLength(1); // the next roll only
+    expect(buildStory(r, spec, "statistician").text).toMatch(/sizes up · Secure an Advantage d20 \d+ \+40 = \d+ vs DC 10 · \w[\w ]* · its next roll 1\.25× as likely to succeed/);
+  });
+});

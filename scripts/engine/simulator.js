@@ -30,7 +30,7 @@ import { createAggregator } from "./aggregate.js";
 import { talkActionsThisTurn, choosePitch, attemptTalk, shareLanguage } from "./behavior/talk.js";
 import { opensWithTalk, breaksStandoff, standoffPitches, charismaticLeader, canTalk } from "./behavior/standoff.js";
 import { controlOutcome, controlRoll, isImmune, degreeShift } from "./behavior/control.js";
-import { recompute as recomputeConditions, applyOutcome, applyControl, beginConcentration, endConcentration, holdsAnything, noteConcentration, moveHeld, settleAllegiance, iwrOf, incoming, spendEdges, focusOf } from "./behavior/effects.js";
+import { recompute as recomputeConditions, applyOutcome, applyControl, beginConcentration, endConcentration, holdsAnything, noteConcentration, moveHeld, settleAllegiance, iwrOf, incoming, spendEdges, spendBoost, focusOf } from "./behavior/effects.js";
 import { decideBuff, aidScores } from "./behavior/support.js";
 import { perceives } from "./behavior/senses.js";
 import { stealChance, theftTarget, theftPlan, attemptTheft } from "./behavior/theft.js";
@@ -721,6 +721,7 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
     let roll = rollCheck(rules, run.rng, bonus + deedRoll + lift, ac, opts);
     spendEdges(u, "attack", target.id);
     spendEdges(target, "defend", u.id);
+    spendBoost(u, target.id);
     if ( run.boosting && roll.degree < 2 ) roll = boost(run, u, roll, ac, { kind: "attack", stakes: attackStakes(run, u, target, action), options: opts, label: action.name }, logger(run));
     // The system's own say once the dice are seen (Ironsworn: burning momentum), and what the roll means (initiative).
     if ( rules.adjustRoll ) {
@@ -1118,6 +1119,7 @@ function executeControl(run, u, action, target, attacksMade, common) {
       if ( r.kind === "save" ) spendEdges(target, "save");
       else {
         spendEdges(u, r.rollKind, target.id);
+        spendBoost(u, target.id);
         if ( r.rollKind === "attack" ) spendEdges(target, "defend", u.id);
       }
       // Luck: the target on a save against it, the user on its own roll.
@@ -1464,8 +1466,8 @@ function sizesUp(run, u, t, turn, room, { decided = false, wholeTurn = false } =
     return false;
   }
   turn.spend(cost);
-  // The system's way of sizing a foe up, when the helper gives one (PF2e Recall Knowledge, 5e Study, Ironsworn Gather
-  // Information): it has to work. Otherwise it simply does.
+  // The system's way of sizing a foe up, when the helper gives one (PF2e Recall Knowledge, 5e Study, Ironsworn Secure an
+  // Advantage): it has to work. Otherwise it simply does.
   const how = u.spec.sizeUp;
   let check = null;
   if ( Number.isFinite(how?.mod) ) {
@@ -1476,13 +1478,23 @@ function sizesUp(run, u, t, turn, room, { decided = false, wholeTurn = false } =
     check = { skill: how.label ?? "", natural: roll.natural, mod: c.mod, total: roll.total, dc, degree: roll.degree, challenge: roll.challenge ?? null };
   }
   const worked = !check || check.degree >= 2;
+  // What it pays off with: by default its rolls against t about 2.5 times as likely to succeed; the system may say
+  // otherwise (Ironsworn: its next attack or words, at anyone, 25% likelier).
+  const factor = Number(how?.boost) > 1 ? Number(how.boost) : LORE_BOOST;
+  const uses = Number(how?.uses) > 0 ? Number(how.uses) : undefined;
   if ( worked ) {
     u.studied.add(t.id);
-    // Paid for, and it worked: its rolls against t are about 2.5 times as likely to succeed for the rest of this turn
-    // (or through its next, when sizing it up took the turn), to make up for the time it took.
-    applyOutcome(u, { boost: LORE_BOOST, vs: t.id, rounds: 1, thisTurn: !wholeTurn, label: "sized up" }, u.id, { id: `sizeUp:${t.id}`, name: "sized up" });
-  } else u.studied.add(`skip:${t.id}`);
-  log(run, u, worked ? `sizes up ${t.spec.name}` : `tries to size up ${t.spec.name}, and learns nothing useful`, { type: "study", target: t.spec.name, targetId: t.id, worked, check });
+    // Paid for, and it worked: for the rest of this turn (or through its next, when sizing it up took the turn), to
+    // make up for the time it took.
+    applyOutcome(u, { boost: factor, uses, vs: how?.anyFoe ? undefined : t.id, rounds: 1, thisTurn: !wholeTurn, label: "sized up" }, u.id, { id: `sizeUp:${t.id}`, name: "sized up" });
+  } else {
+    u.studied.add(`skip:${t.id}`);
+    // (What a miss costs, in the system's terms: Ironsworn's price.)
+    if ( how?.missOutcome ) rules.onOutcome?.(run, u, u, how.missOutcome);
+  }
+  log(run, u, worked ? `sizes up ${t.spec.name}` : `tries to size up ${t.spec.name}, and learns nothing useful`, {
+    type: "study", target: t.spec.name, targetId: t.id, worked, check, factor, oneRoll: !!uses, anyFoe: !!how?.anyFoe, price: !worked && how?.missOutcome ? how.missOutcome.label ?? "" : null
+  });
   return true;
 }
 
@@ -1509,15 +1521,6 @@ function observes(run, u, turn) {
   for ( const t of foes ) if ( !sizesUp(run, u, t, turn, true, { decided: true, wholeTurn: true }) ) break;
   turn.spendAll();
   return true;
-}
-
-/** A standing foe close enough to strike at u (with no map, everyone is). */
-function closeFoe(run, u) {
-  return enemiesOf(run, u).some(e => {
-    if ( !isStanding(e) ) return false;
-    const d = edgeDistance(u, e);
-    return d === null || d <= 10;
-  });
 }
 
 /**
@@ -1845,10 +1848,10 @@ function takeTurn(run, u) {
       : (wants.blinding && lead.level >= 60 && !wants.kindInView("talk")) ? { count: 0, pitch: null }
         : talkActionsThisTurn(run, u, turn.howMany(talkCost));
   // A Lore-Collector sizes up whoever it's about to talk to first: where a turn has several actions, when that leaves
-  // one to talk with; where it has one, when no foe is close enough to strike at it (the talking waits a turn).
+  // one to talk with; where it has one, the whole turn (the talking waits, and its payoff makes up for it).
   const listener = talking.count > 0 ? talking.pitch?.target : null;
   const several = unitsPerTurn(rules, u) >= 2;
-  if ( listener && sizesUp(run, u, listener, turn, several ? turn.howMany(basic) >= 2 : !closeFoe(run, u), { wholeTurn: !several }) ) {
+  if ( listener && sizesUp(run, u, listener, turn, several ? turn.howMany(basic) >= 2 : true, { wholeTurn: !several }) ) {
     talking.count = Math.min(talking.count, turn.howMany(talkCost));
     if ( !talking.count ) u.talkPending = true;
   }
@@ -1923,8 +1926,8 @@ function takeTurn(run, u) {
     const option = bestOptionVs(run, u, target, attacksMade, turn);
     if ( !option ) break;
     // A Lore-Collector sizes up a new foe before it attacks it: where a turn has several actions, when that leaves one
-    // to fight with; where it has one, when that action would only have gone into closing the distance.
-    if ( sizesUp(run, u, target, turn, several ? turn.howMany(basic) >= 2 : option.moveUnits >= 1, { wholeTurn: !several }) ) continue;
+    // to fight with; where it has one, the whole turn (its payoff next turn makes up for it).
+    if ( sizesUp(run, u, target, turn, several ? turn.howMany(basic) >= 2 : true, { wholeTurn: !several }) ) continue;
 
     if ( option.moves > 0 ) {
       if ( !canMove(run, u) ) break;
