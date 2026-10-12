@@ -16,7 +16,8 @@
  *             characters), kept in run.sharedPools[key] (set from the first of them: spec.resources[pool])
  *
  * How readily: by what's at stake (the caller says, 0 to 1: a save against a killing blow is near 1, an ordinary
- * swing low), how much is left, and, for a friend's roll, how selfish the spender is.
+ * swing low), how much is left, how freely the spender uses its resources (its answer: conserving, half as readily;
+ * all out, half again), and, for a friend's roll, how selfish the spender is.
  * Pure: no Foundry globals.
  */
 import { clamp, STATUS } from "../../constants.js";
@@ -74,7 +75,8 @@ export function boost(run, roller, roll, dc, { kind, stakes = 0.3, options = {},
     const available = left(run, u, b) - (stakes >= 0.85 ? 0 : (b.keep ?? 0));
     const cap = stakes >= 0.85 ? available : Math.min(available, b.recovers ? 4 : 2);
     if ( points > cap ) continue;
-    let p = clamp(stakes * (b.recovers ? 1.2 : 0.8), 0, 0.95);
+    const freely = { conserve: 0.5, balanced: 1, nova: 1.5 }[u.tac?.resourceUse] ?? 1;
+    let p = clamp(stakes * (b.recovers ? 1.2 : 0.8) * freely, 0, 0.95);
     if ( !own ) p *= clamp(1 - liveTrait(run, u, "selfish") / 100, 0.05, 0.95);
     if ( !run.rng.chance(p) ) continue;
     // Spend a point at a time until it's enough (a rolled die may need more, or fewer, than reckoned).
