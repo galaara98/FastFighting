@@ -34,11 +34,22 @@ suggest a change (an issue or a pull request against `keywords/en.json`). The te
 
 ## How words add up
 
-- Each entry counts once however often it appears.
+- The same thing said again counts once: an entry counts once however often it appears ("hateful, hateful,
+  hateful" is one); where entries overlap, only the longest counts ("cowardly" is `cowardly`, not `coward` as
+  well); and entries rated exactly alike count once together, so a word and its synonyms ("hateful", "full of
+  hate", "hatred") are one. Give synonyms the same rating; give a word a different rating when it says more.
 - A word right after a **negation** in the same sentence doesn't count ("never cruel", "not a coward", "no longer
   loyal"). The negations are the file's `negations` list.
+- A word right after a **reversal** in the same sentence counts the other way ("despises cowards": a bold one; "hates
+  violence": one who likes peace). The reversals are the file's `reversals` list. So rate a thing someone may like
+  or dislike (fighting, peace, money, knowledge) as what **liking** it says.
 - All the words found add up, and then they're held in: at most two keywords' worth for any playstyle, and 15 points
   for any trait. So a biography can tip a character, but it can't overrule everything else about it.
+- Where a character's sheet keeps them apart, what's said of the character itself (a creature's description; a
+  character's appearance, attitude, beliefs, likes, edicts) counts in full; its backstory (a story with others in it:
+  the bandits it fought) a quarter; and what it's against (its dislikes, its anathema) in full, the other way:
+  "dislikes fighting" makes one who likes peace, "dislikes cowards and liars" a bolder, more honest one. Its allies and
+  enemies aren't read.
 - A biography's words don't move the traits of the mindless or of hazards.
 
 ## Choosing a rating
@@ -55,5 +66,5 @@ damage", "the cave lies north", "corruption of the land", "frightened 1". Prefer
 
 A translation adds a file here named for its language (`es.json`, `fr.json`) in the same shape. Its words are looked
 for **as well as** the English ones, since a biography may be written in either: list only your language's words. If
-it lists a word the English file has, its entry is used instead for that word. Its `negations` are added to the
-English ones.
+it lists a word the English file has, its entry is used instead for that word. Its `negations` and `reversals` are
+added to the English ones.

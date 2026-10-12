@@ -1,6 +1,6 @@
 import { describe, test, expect } from "vitest";
 import { readFileSync } from "fs";
-import { readKeywordFile, mergeKeywords, keywordEffects, biographyEffects, PLAYSTYLE_WORD_CAP, TRAIT_WORD_CAP, STORY_WEIGHT } from "../scripts/engine/keywords.js";
+import { readKeywordFile, mergeKeywords, keywordEffects, biographyEffects, PLAYSTYLE_WORD_CAP, TRAIT_WORD_CAP, STORY_WEIGHT, AGAINST_WEIGHT } from "../scripts/engine/keywords.js";
 import { applyBiography } from "../scripts/foundry/keywords.js";
 import { PLAYSTYLES } from "../scripts/engine/playstyles.js";
 import { TRAITS } from "../scripts/constants.js";
@@ -52,8 +52,8 @@ describe("what a text's keywords say", () => {
     const fx = keywordEffects("A greedy, ruthless sellsword. Greedy to the bone.", ENGLISH);
     expect(fx.traits.selfish).toBeGreaterThan(10);
     expect(fx.playstyles.mercenary).toBeGreaterThan(0);
-    expect(fx.found).toContain("greed");
-    expect(fx.found.filter(w => w === "greed").length).toBe(1);
+    expect(fx.found).toContain("greedy");
+    expect(fx.found.filter(w => w.startsWith("greed")).length).toBe(1);
   });
 
   test("a negation just before a word cancels it, in the same sentence only", () => {
@@ -62,6 +62,30 @@ describe("what a text's keywords say", () => {
     expect(keywordEffects("Not tall. Cruel to the core.", ENGLISH).found).toContain("cruel");
     // (Far enough back, a negation is about something else.)
     expect(keywordEffects("None of the guards are kind to her; she is cruel.", ENGLISH).found).toContain("cruel");
+  });
+
+  test("a reversal just before a word turns it around: one who despises cowards is bold; hates violence, likes peace", () => {
+    expect(keywordEffects("She despises cowards.", ENGLISH).traits.brave).toBeGreaterThan(0);
+    const fx = keywordEffects("He hates violence and loathes bloodshed.", ENGLISH);
+    expect(fx.playstyles.peacekeeper).toBeGreaterThan(0);
+    expect(fx.playstyles.brawler).toBeLessThan(0);
+    // (A negation wins: "doesn't hate" isn't a reversal.)
+    expect(keywordEffects("He is no coward.", ENGLISH).found).not.toContain("coward");
+    // (Disliking what she despises: the other way twice is the way it was.)
+    expect(biographyEffects({ against: "Those who despise cowards." }, ENGLISH).traits.brave).toBeLessThan(0);
+  });
+
+  test("the same thing said again counts once: a word repeated, a longer form of it, its synonyms", () => {
+    const once = keywordEffects("Hateful.", ENGLISH);
+    expect(keywordEffects("Hateful, hateful, hateful.", ENGLISH)).toEqual(once);
+    // (Synonyms are rated alike: together they count as one.)
+    expect(keywordEffects("Hateful, full of hate, and hatred in her heart.", ENGLISH).traits).toEqual(once.traits);
+    // (The longest entry where they overlap: "cowardly" isn't `coward` and `cowardly` both.)
+    const cowardly = keywordEffects("A cowardly sort.", ENGLISH);
+    expect(cowardly.found).toEqual(["cowardly"]);
+    expect(cowardly.traits.brave).toBe(FILE.words.cowardly.traits.brave);
+    // (Different words still add up.)
+    expect(keywordEffects("Cowardly and timid.", ENGLISH).traits.brave).toBeLessThan(cowardly.traits.brave);
   });
 
   test("a whole word only, where it says so", () => {
@@ -93,6 +117,17 @@ describe("a story told about a character", () => {
     expect(told.traits.selfish).toBeCloseTo(said.traits.selfish * STORY_WEIGHT);
     expect(biographyEffects("Cruel.", ENGLISH).traits.selfish).toBe(said.traits.selfish);
     expect(biographyEffects({ about: "Kind-hearted.", story: "Cruel bandits." }, ENGLISH).traits.selfish).toBeLessThan(0);
+  });
+
+  test("what a character is against counts the other way: one who dislikes fighting likes peace; one who dislikes cowards and liars", () => {
+    const fx = biographyEffects({ against: "Cowards and liars." }, ENGLISH);
+    expect(fx.traits.brave).toBeGreaterThan(0);
+    expect(fx.traits.selfish).toBeLessThan(0);
+    expect(fx.traits.brave).toBeCloseTo(-biographyEffects("Cowards.", ENGLISH).traits.brave * AGAINST_WEIGHT);
+    // (Dislikes fighting: likes peace.)
+    const peace = biographyEffects({ against: "Fighting." }, ENGLISH);
+    expect(peace.playstyles.peacekeeper).toBeGreaterThan(0);
+    expect(peace.playstyles.brawler).toBeLessThan(0);
   });
 });
 

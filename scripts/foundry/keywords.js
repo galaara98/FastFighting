@@ -53,8 +53,8 @@ export function useKeywords(merged) {
  * that speak to it (at most TRAIT_WORD_CAP either way), and those words in the trait's reason. Not for a hazard or the
  * mindless (what they are is all there is to them).
  * @param {object} spec   a CombatantSpec, its traits {k: {base, fudge}}
- * @param {string|{about?: string, story?: string}} bio   its biography and description (adapter.biography): what's said of it
- *        in full, a story told about it a little (engine/keywords.js: biographyEffects)
+ * @param {string|{about?: string, story?: string, against?: string}} bio   its biography and description (adapter.biography):
+ *        what's said of it in full, a story told about it a little, what it's against the other way (biographyEffects)
  * @param {object} [words]   the keywords (default: those read)
  * @returns {object} the spec
  */

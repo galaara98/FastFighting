@@ -19,6 +19,14 @@
         "pattern": "^[^A-Z]+$"
       }
     },
+    "reversals": {
+      "type": "array",
+      "description": "Words that, a few words before a keyword in the same sentence, turn it around (\"despises cowards\", \"hates violence\").",
+      "items": {
+        "type": "string",
+        "pattern": "^[^A-Z]+$"
+      }
+    },
     "words": {
       "type": "object",
       "description": "Each word or phrase, in lower case: it matches the start of a word, in any case.",

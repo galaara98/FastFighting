@@ -44,7 +44,7 @@ describe("the playstyles that fit", () => {
     expect(picks(plain, { hints: { enabler: 1 } })).toEqual(["enabler"]);
     const tank = creature({ traits: traits(55, 85, 20, 80), shield: { ac: 2 }, defenses: { ac: 22 } });
     expect(picks(tank, { hints: { tank: -1 } })).not.toContain("tank");
-    const words = readKeywordFile({ words: { greed: { playstyles: { mercenary: 1 } }, sellsword: { playstyles: { mercenary: 1 } }, thief: { playstyles: { thief: 1 } } } });
+    const words = readKeywordFile({ words: { greed: { playstyles: { mercenary: 1 } }, sellsword: { playstyles: { mercenary: 1 }, traits: { loyal: -2 } }, thief: { playstyles: { thief: 1 } } } });
     expect(keywordEffects("A greedy sellsword who loves Gold.", words).playstyles).toEqual({ mercenary: 2 });
     // (Two keywords' worth at most count, so a long list of them is no stronger than two; and words can count against.)
     expect(picks(creature({ traits: traits(50, 50, 50, 50), defenses: { ac: 11 } }), { words: { enabler: 9 } })).toEqual(["enabler"]);
