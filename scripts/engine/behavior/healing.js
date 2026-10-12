@@ -46,6 +46,8 @@ export function healMoves(run, u, action, target) {
  */
 export function healScores(run, u, heals = u.prep.healActions) {
   if ( !heals?.length ) return [];
+  // (First aid alone mends nobody: it's for a friend who's dying.)
+  const mends = heals.some(a => !a.firstAid);
   const potionAt = u.tac?.potionThreshold;
   const aggro = healAggroOf(run, u);
   const threshold = THRESHOLD[aggro] ?? 0.45;
@@ -56,6 +58,7 @@ export function healScores(run, u, heals = u.prep.healActions) {
   for ( const ally of alliesOf(run, u) ) {
     if ( [STATUS.DEAD, STATUS.FLED, STATUS.SURRENDERED, STATUS.STOOD_DOWN, STATUS.BEATEN].includes(ally.status) ) continue;
     const isSelf = ally === u;
+    if ( !mends && (isSelf || !(ally.status === STATUS.DOWN && !ally.stable)) ) continue;
     if ( !isSelf && (allyDying === "protectSelf" || allyDying === "retreat") ) continue;
     if ( !isSelf && !perceives(run, u, ally, { crisis: true }) ) continue; // it has to be able to tell
     if ( !isSelf && tier <= TACTICAL.FERAL ) continue; // feral healers only tend themselves
@@ -135,8 +138,9 @@ export function decideHeal(run, u, turn) {
   // Healing for what it costs from the turn, the walk there included: a bonus-action heal from afar (5e Healing Word)
   // leaves the action to fight with; a touch spell (Cure Wounds) heals more but means getting there and using the
   // action. Anyone down is back up with any heal, so for them the cheapest way wins.
-  const value = o => (best.status === STATUS.DOWN ? 1 + meanHeal(o.a, u) / 100 : meanHeal(o.a, u)) / (perTurn(rules, o.a) + o.units);
+  const value = o => (o.a.firstAid ? 0.5 : best.status === STATUS.DOWN ? 1 + meanHeal(o.a, u) / 100 : meanHeal(o.a, u)) / (perTurn(rules, o.a) + o.units);
   const options = heals
+    .filter(a => !a.firstAid || (best !== u && best.status === STATUS.DOWN && !best.stable))
     .filter(a => !a.oncePerTarget || !u.healedTargets.has(`${a.id}|${best.id}`))
     .filter(a => !a.selfOnly || best === u)
     .filter(a => !a.targetTrait || best.spec.creatureTraits?.includes(a.targetTrait))
@@ -156,7 +160,7 @@ export function decideHeal(run, u, turn) {
  */
 export function rescueOption(run, u, target, turn) {
   const rules = run.prep.rules;
-  const fits = a => turn.canAfford(costOf(rules, a)) && hasUses(u, a) && !a.selfOnly
+  const fits = a => !a.firstAid && turn.canAfford(costOf(rules, a)) && hasUses(u, a) && !a.selfOnly
     && (!a.oncePerTarget || !u.healedTargets.has(`${a.id}|${target.id}`))
     && (!a.targetTrait || target.spec.creatureTraits?.includes(a.targetTrait));
   const heals = u.prep.healActions.filter(fits);

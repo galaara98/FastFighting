@@ -11,12 +11,15 @@ import { creature, strike, battle } from "./helpers.js";
 const english = storyTables();
 const tables = { get: k => english[k] };
 
-/** A PC who is already dying, with a friend standing over them and one weak foe left. */
-function rescue({ medic = true, aftermath = "tell" } = {}) {
+/**
+ * A PC who is already dying, with a friend standing over them and one weak foe left. (holdsOff: the friend looks to
+ * itself in the fight, tending the dying only once it's over.)
+ */
+function rescue({ medic = true, aftermath = "tell", holdsOff = false } = {}) {
   const dying = creature({ id: "down", name: "Valeros", kind: "pc", diesAtZero: false, hp: { value: 0, max: 30 }, dying: 2 });
   const friend = creature({ id: "friend", name: "Kyra", kind: "pc", diesAtZero: false, hp: { value: 40, max: 40 },
     actions: [strike({ id: "sword", bonus: 20, damage: [parseFormula("3d8+10", "slashing")] })],
-    firstAid: medic ? { mod: 20 } : null });
+    firstAid: medic ? { mod: 20 } : null, disposition: holdsOff ? { allyDying: "protectSelf" } : undefined });
   const foe = creature({ id: "foe", side: "hostile", hp: { value: 5, max: 5 }, defenses: { ac: 5 }, actions: [strike({ bonus: -50 })] });
   return battle([dying, friend, foe], { maxRounds: 5, aftermath });
 }
@@ -54,20 +57,31 @@ describe("after the fight", () => {
   });
 
   test("stopping at the last blow leaves the fallen as they lie", () => {
-    const final = replay(rescue({ aftermath: "none" }), pf2eRules, 3).units.down.final;
+    const final = replay(rescue({ aftermath: "none", holdsOff: true }), pf2eRules, 3).units.down.final;
     expect(final.status).toBe("down");
     expect(final.dying).toBeGreaterThan(0);
   });
 
   test("a quiet aftermath is settled but not told", () => {
-    const told = replay(rescue(), pf2eRules, 5);
-    const quiet = replay(rescue({ aftermath: "quiet" }), pf2eRules, 5);
+    const told = replay(rescue({ holdsOff: true }), pf2eRules, 5);
+    const quiet = replay(rescue({ aftermath: "quiet", holdsOff: true }), pf2eRules, 5);
     expect(told.log.some(e => e.aftermath)).toBe(true);
     expect(quiet.units.down.final.status).toBe(told.units.down.final.status);
-    const spec = rescue({ aftermath: "quiet" });
+    const spec = rescue({ aftermath: "quiet", holdsOff: true });
     const story = buildStory(quiet, spec, "statistician", { tables });
     expect(story.html).not.toContain(text("FASTFIGHTING.Log.Aftermath"));
-    expect(buildStory(told, rescue(), "statistician", { tables }).html).toContain(text("FASTFIGHTING.Log.Aftermath"));
+    expect(buildStory(told, rescue({ holdsOff: true }), "statistician", { tables }).html).toContain(text("FASTFIGHTING.Log.Aftermath"));
+  });
+
+  test("first aid in the fight: one who would rescue a dying friend tends it before the fight is over", () => {
+    let tended = 0;
+    for ( let seed = 1; seed <= 10; seed++ ) {
+      const log = replay(rescue(), pf2eRules, seed).log;
+      tended += log.filter(e => e.type === "firstAid" && !e.aftermath && e.actorId === "friend").length;
+    }
+    expect(tended).toBeGreaterThan(0);
+    const held = replay(rescue({ holdsOff: true }), pf2eRules, 1).log;
+    expect(held.some(e => e.type === "firstAid" && !e.aftermath)).toBe(false);
   });
 });
 

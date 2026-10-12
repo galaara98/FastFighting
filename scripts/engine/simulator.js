@@ -1405,6 +1405,8 @@ function executeHeal(run, u, action, target) {
     u.healedTargets.add(`${action.id}|${target.id}`);
     return spendUse(u, action);
   }
+  // First aid, in the fight: the system's check, as after it.
+  if ( action.firstAid ) return firstAid(run, u, target, { aftermath: false });
   if ( action.casting ) {
     const tier = castFor(run, u, action, target);
     u.healedTargets.add(`${action.id}|${target.id}`);
@@ -2473,7 +2475,7 @@ function endOfTurn(run, u) {
 const isDying = u => u.status === STATUS.DOWN && !u.stable;
 
 /** Administer first aid to a dying ally: a skill check against the system's DC (PF2e: 15 + dying). */
-function firstAid(run, u, target) {
+function firstAid(run, u, target, { aftermath = true } = {}) {
   const rules = run.prep.rules;
   const dc = rules.firstAidDC(target);
   const check = checkRoll(run, u, u.spec.firstAid.mod, target);
@@ -2483,7 +2485,7 @@ function firstAid(run, u, target) {
   rules.firstAid(target, roll.degree);
   log(run, u, {
     type: "firstAid", target: target.spec.name, targetId: target.id, natural: roll.natural, mod: u.spec.firstAid.mod, total: roll.total, dc,
-    degree: roll.degree, before, dying: target.dying, stable: target.stable, dead: target.status === STATUS.DEAD, aftermath: true
+    degree: roll.degree, before, dying: target.dying, stable: target.stable, dead: target.status === STATUS.DEAD, aftermath
   });
 }
 

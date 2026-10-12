@@ -183,6 +183,15 @@ export function prepareBattle(spec, rules) {
     const goad = goadAction(c, rules, options);
     if ( goad ) c.offense.push(goad);
   }
+  // First aid for a friend who's dying, in the fight as after it (PF2e Administer First Aid, 5e a Medicine check): a
+  // heal of its own kind, for the dying only, a touch away, as dear as the system says.
+  if ( rules.firstAid && rules.firstAidDC ) {
+    for ( const c of combatants ) {
+      if ( c.spec.firstAid && Number.isFinite(Number(c.spec.firstAid.mod)) ) {
+        c.healActions.push({ id: `${c.spec.id}.firstAid`, name: "", kind: "heal", firstAid: true, cost: rules.firstAidCost ?? rules.basicAction ?? 1, reach: 5, heal: [], traits: [] });
+      }
+    }
+  }
 
   const byId = new Map(combatants.map(c => [c.spec.id, c]));
   // Whoever heads a group (its boss or its leader) finds its words more readily (one who only wants to lead doesn't).
