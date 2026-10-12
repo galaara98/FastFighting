@@ -575,7 +575,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "49cf5948f2ec"
+   "hash": "49cf5948f2ec",
+   "changed": true
   },
   "core:FASTFIGHTING.AutoWords.diplomat": {
    "repo": "core",
@@ -715,7 +716,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "b4dc2e0b3fde"
+   "hash": "b4dc2e0b3fde",
+   "changed": true
   },
   "core:FASTFIGHTING.AutoWords.puzzleManiac": {
    "repo": "core",
@@ -745,7 +747,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "1d054c4207e2"
+   "hash": "1d054c4207e2",
+   "changed": true
   },
   "core:FASTFIGHTING.AutoWords.skeptic": {
    "repo": "core",
@@ -785,7 +788,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "5881d41d5f76"
+   "hash": "5881d41d5f76",
+   "changed": true
   },
   "core:FASTFIGHTING.AutoWords.unmundane": {
    "repo": "core",
