@@ -1445,7 +1445,7 @@ function executeHeal(run, u, action, target) {
   if ( run.neutral && target.hp > before ) crossed(run, u, target, "help", revived ? 1.5 : 0.75, logger(run));
   if ( run.log ) log(run, u, {
     type: "heal", action: action.name, target: target.spec.name, targetId: target.id, self: target === u, amount: target.hp - before, revived,
-    potion: !!action.selfOnly, check: roll ? { natural: roll.natural, mod: action.healCheck.mod, total: roll.total, dc: action.healCheck.dc, degree: roll.degree } : null
+    potion: !!action.selfOnly, check: roll ? { skill: action.healCheck.label ?? null, natural: roll.natural, mod: action.healCheck.mod, total: roll.total, dc: action.healCheck.dc, degree: roll.degree } : null
   });
 }
 

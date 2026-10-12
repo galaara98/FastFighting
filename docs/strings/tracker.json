@@ -3368,7 +3368,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "0021c0b74f39"
+   "hash": "0021c0b74f39",
+   "changed": true
   },
   "core:FASTFIGHTING.Log.Flee": {
    "repo": "core",
@@ -3600,6 +3601,16 @@
    "date": "2026-10-11",
    "commit": "9faf4c4",
    "hash": "e6688acdf719"
+  },
+  "core:FASTFIGHTING.Log.HealCheck": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.HealCheck",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "d766afe937f8"
   },
   "core:FASTFIGHTING.Log.HoldGround": {
    "repo": "core",
@@ -3839,7 +3850,18 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "95bf8028c933"
+   "hash": "95bf8028c933",
+   "changed": true
+  },
+  "core:FASTFIGHTING.Log.MedicineSkill": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.MedicineSkill",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "a82ce870f999"
   },
   "core:FASTFIGHTING.Log.Mercy": {
    "repo": "core",
@@ -19447,6 +19469,16 @@
    "commit": null,
    "hash": "fca30679635b"
   },
+  "dcc:FFDCC.BindWounds": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.BindWounds",
+   "area": "dcc/General",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "6a4cea156b07"
+  },
   "dcc:FFDCC.Bleed.Dies": {
    "repo": "dcc",
    "file": "languages/en.json",
@@ -19877,6 +19909,36 @@
    "commit": null,
    "hash": "248b11099031"
   },
+  "dcc:FFDCC.Help": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.Help",
+   "area": "dcc/General",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "b79cac926e0b"
+  },
+  "dcc:FFDCC.Helped": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.Helped",
+   "area": "dcc/General",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "ac709ee1ce10"
+  },
+  "dcc:FFDCC.Hidden": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.Hidden",
+   "area": "dcc/General",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "e564b4081d7a"
+  },
   "dcc:FFDCC.Hp": {
    "repo": "dcc",
    "file": "languages/en.json",
@@ -20266,6 +20328,16 @@
    "date": null,
    "commit": null,
    "hash": "458f2c2c0f01"
+  },
+  "dcc:FFDCC.Pinned": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.Pinned",
+   "area": "dcc/General",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "3fab5c181bd2"
   },
   "dcc:FFDCC.Reason.BarelyThinks": {
    "repo": "dcc",
@@ -20777,6 +20849,26 @@
    "commit": null,
    "hash": "1d0dbd158cf2"
   },
+  "dnd5e:FFDND5E.Cond.grappled": {
+   "repo": "dnd5e",
+   "file": "languages/en.json",
+   "key": "FFDND5E.Cond.grappled",
+   "area": "dnd5e/Cond",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "73974852e940"
+  },
+  "dnd5e:FFDND5E.Cond.invisible": {
+   "repo": "dnd5e",
+   "file": "languages/en.json",
+   "key": "FFDND5E.Cond.invisible",
+   "area": "dnd5e/Cond",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "b75af7ef6c4d"
+  },
   "dnd5e:FFDND5E.Cond.paralyzed": {
    "repo": "dnd5e",
    "file": "languages/en.json",
@@ -21002,6 +21094,16 @@
    "commit": null,
    "hash": "4ba7e45ce4fd"
   },
+  "dnd5e:FFDND5E.Grapple": {
+   "repo": "dnd5e",
+   "file": "languages/en.json",
+   "key": "FFDND5E.Grapple",
+   "area": "dnd5e/General",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "4c93c2c050c7"
+  },
   "dnd5e:FFDND5E.Help": {
    "repo": "dnd5e",
    "file": "languages/en.json",
@@ -21041,6 +21143,16 @@
    "date": null,
    "commit": null,
    "hash": "b5ea273484f2"
+  },
+  "dnd5e:FFDND5E.Hide": {
+   "repo": "dnd5e",
+   "file": "languages/en.json",
+   "key": "FFDND5E.Hide",
+   "area": "dnd5e/General",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "ac20a57bfde0"
   },
   "dnd5e:FFDND5E.Inspiration": {
    "repo": "dnd5e",
@@ -21451,6 +21563,16 @@
    "date": null,
    "commit": null,
    "hash": "8bdc74c80c9e"
+  },
+  "dnd5e:FFDND5E.Skill.ste": {
+   "repo": "dnd5e",
+   "file": "languages/en.json",
+   "key": "FFDND5E.Skill.ste",
+   "area": "dnd5e/Skill",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "526a40a447dd"
   },
   "dnd5e:FFDND5E.SpellSlot": {
    "repo": "dnd5e",
@@ -23103,6 +23225,16 @@
    "commit": null,
    "hash": "7e77038bcf6f"
   },
+  "pf2e:FFPF2E.Action.Disarm": {
+   "repo": "pf2e",
+   "file": "languages/en.json",
+   "key": "FFPF2E.Action.Disarm",
+   "area": "pf2e/Action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "0449aa195af9"
+  },
   "pf2e:FFPF2E.Action.Feint": {
    "repo": "pf2e",
    "file": "languages/en.json",
@@ -23202,6 +23334,16 @@
    "date": null,
    "commit": null,
    "hash": "30274e05ef3f"
+  },
+  "pf2e:FFPF2E.Dropped": {
+   "repo": "pf2e",
+   "file": "languages/en.json",
+   "key": "FFPF2E.Dropped",
+   "area": "pf2e/General",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "6ef9405cc4b3"
   },
   "pf2e:FFPF2E.Exploited": {
    "repo": "pf2e",
@@ -23402,6 +23544,16 @@
    "date": null,
    "commit": null,
    "hash": "ca29d9101f10"
+  },
+  "pf2e:FFPF2E.Loosened": {
+   "repo": "pf2e",
+   "file": "languages/en.json",
+   "key": "FFPF2E.Loosened",
+   "area": "pf2e/General",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "021e9641bd23"
   },
   "pf2e:FFPF2E.NeedsCore": {
    "repo": "pf2e",

@@ -132,7 +132,7 @@ function baseLine(e) {
     case "save": return t("Save", { ...a, action: e.action, saveType: e.saveType, roll: dice(e.natural, e.mod, e.total, e.dc, t("DC")), degree: degree(e.degree), margin: signed(e.margin ?? 0), damage: damage(e.damage, e.damageType) || t("DamageN", { n: 0 }) });
     case "auto": return t("Auto", { ...a, action: e.action, damage: damage(e.damage, e.damageType) || t("DamageN", { n: e.damage ?? 0 }) });
     case "talk": return t("Talk", { ...a, skill: e.skill, roll: dice(e.natural, e.mod, e.total, e.dc, t("DcOf", { stat: e.dcStat })), degree: degree(e.degree), margin: signed(e.margin ?? 0), boost: e.boost ? ` · ${t("SizedUp", { n: e.boost })}` : "", progress: e.progress, steps: e.steps });
-    case "heal": return t("Heal", { actor: e.actor, target: e.self ? t("Self") : e.target, action: e.action, check: e.check ? ` · ${t("Medicine", { roll: dice(e.check.natural, e.check.mod, e.check.total, e.check.dc, t("DC")), degree: degree(e.check.degree) })}` : "", amount: e.amount, revived: e.revived ? t("Revived") : "" });
+    case "heal": return t("Heal", { actor: e.actor, target: e.self ? t("Self") : e.target, action: e.action, check: e.check ? ` · ${t(e.check.skill ? "HealCheck" : "Medicine", { skill: e.check.skill ?? "", roll: dice(e.check.natural, e.check.mod, e.check.total, e.check.dc, t("DC")), degree: degree(e.check.degree) })}` : "", amount: e.amount, revived: e.revived ? t("Revived") : "" });
     case "move": return t("Move", {
       actor: e.actor, mode: t(MODE[e.mode] ?? "ModeMove"), distance: distanceText(e.feet), toward: e.purpose === "door" ? t("TheDoor") : e.toward,
       terrain: e.mult > 1.05 ? t("Terrain", { mult: Number(e.mult).toFixed(2), regions: e.regions?.length ? t("TerrainRegions", { regions: listItems(e.regions) }) : "" }) : ""
@@ -172,7 +172,7 @@ function baseLine(e) {
     case "scheme": return t("Scheme", { ...a, boss: e.boss ? t("Boss") : "" });
     case "shareLore": return t("ShareLore", { actor: e.actor, allies: listJoin(e.with ?? []), target: e.target, chance: Number.isFinite(e.chance) ? t("MindedToShare", { n: Math.round(e.chance * 100) }) : "" });
     case "keepLore": return t("KeepLore", { ...a, n: Math.round((e.chance ?? 0) * 100) });
-    case "firstAid": return t("FirstAid", { ...a, skill: e.skill || t("Medicine"), roll: dice(e.natural, e.mod, e.total, e.dc, t("DC")), degree: degree(e.degree), result: e.stable ? t("Stabilized") : e.dead ? t("Dies") : t("DyingN", { n: e.dying }) });
+    case "firstAid": return t("FirstAid", { ...a, skill: e.skill || t("MedicineSkill"), roll: dice(e.natural, e.mod, e.total, e.dc, t("DC")), degree: degree(e.degree), result: e.stable ? t("Stabilized") : e.dead ? t("Dies") : t("DyingN", { n: e.dying }) });
     case "aftermath": return t("Aftermath");
     case "control": {
       // (A playstyle's taunt has no name of its own: it's a taunt.)

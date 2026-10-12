@@ -121,3 +121,17 @@ describe("the system's say", () => {
     expect(first({})).toBe("foe");
   });
 });
+
+describe("the log names the skill", () => {
+  test("a heal's check, by its label (or medicine); first aid, by the skill given (or medicine)", async () => {
+    const { logLine } = await import("../scripts/story/log-lines.js");
+    const { text } = await import("./foundry-i18n.js");
+    const check = { natural: 12, mod: 2, total: 14, dc: 10, degree: 2 };
+    const heal = e => logLine({ type: "heal", actor: "Kara", target: "Brand", action: "Heal", amount: 2, check: { ...check, ...e } });
+    expect(heal({ skill: "Heal (+wits)" })).toContain("Heal (+wits)");
+    expect(heal({})).toContain("14");
+    const aid = skill => logLine({ type: "firstAid", actor: "Kyra", target: "Valeros", skill, ...check, stable: true });
+    expect(aid("binding the wound")).toContain("binding the wound");
+    expect(aid(null)).toContain(text("FASTFIGHTING.Log.MedicineSkill"));
+  });
+});
