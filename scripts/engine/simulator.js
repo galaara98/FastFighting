@@ -2484,7 +2484,7 @@ function firstAid(run, u, target, { aftermath = true } = {}) {
   const before = target.dying;
   rules.firstAid(target, roll.degree);
   log(run, u, {
-    type: "firstAid", target: target.spec.name, targetId: target.id, natural: roll.natural, mod: u.spec.firstAid.mod, total: roll.total, dc,
+    type: "firstAid", target: target.spec.name, targetId: target.id, skill: u.spec.firstAid.skill ?? null, natural: roll.natural, mod: u.spec.firstAid.mod, total: roll.total, dc,
     degree: roll.degree, before, dying: target.dying, stable: target.stable, dead: target.status === STATUS.DEAD, aftermath
   });
 }

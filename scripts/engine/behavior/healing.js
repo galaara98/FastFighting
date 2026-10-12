@@ -141,7 +141,7 @@ export function decideHeal(run, u, turn) {
   // action. Anyone down is back up with any heal, so for them the cheapest way wins.
   const value = o => (o.a.firstAid ? 0.5 : best.status === STATUS.DOWN ? 1 + meanHeal(o.a, u) / 100 : meanHeal(o.a, u)) / (perTurn(rules, o.a) + o.units) * specialtyWeight(u, o.a);
   const options = heals
-    .filter(a => !a.firstAid || (best !== u && best.status === STATUS.DOWN && !best.stable))
+    .filter(a => !a.firstAid || (best !== u && best.status === STATUS.DOWN && !best.stable && (rules.canFirstAid?.(best) ?? true)))
     .filter(a => !a.oncePerTarget || !u.healedTargets.has(`${a.id}|${best.id}`))
     .filter(a => !a.selfOnly || best === u)
     .filter(a => !a.targetTrait || best.spec.creatureTraits?.includes(a.targetTrait))
@@ -167,6 +167,6 @@ export function rescueOption(run, u, target, turn) {
   const heals = u.prep.healActions.filter(fits);
   const free = heals.find(a => !a.resource && !Number.isFinite(a.uses));
   if ( free ) return free;
-  if ( u.spec.firstAid && rules.firstAidDC && rules.firstAid && turn.canAfford(rules.firstAidCost ?? rules.basicAction ?? 1) ) return "firstAid";
+  if ( u.spec.firstAid && rules.firstAidDC && rules.firstAid && (rules.canFirstAid?.(target) ?? true) && turn.canAfford(rules.firstAidCost ?? rules.basicAction ?? 1) ) return "firstAid";
   return heals[0] ?? null;
 }

@@ -172,7 +172,7 @@ function baseLine(e) {
     case "scheme": return t("Scheme", { ...a, boss: e.boss ? t("Boss") : "" });
     case "shareLore": return t("ShareLore", { actor: e.actor, allies: listJoin(e.with ?? []), target: e.target, chance: Number.isFinite(e.chance) ? t("MindedToShare", { n: Math.round(e.chance * 100) }) : "" });
     case "keepLore": return t("KeepLore", { ...a, n: Math.round((e.chance ?? 0) * 100) });
-    case "firstAid": return t("FirstAid", { ...a, roll: dice(e.natural, e.mod, e.total, e.dc, t("DC")), degree: degree(e.degree), result: e.stable ? t("Stabilized") : e.dead ? t("Dies") : t("DyingN", { n: e.dying }) });
+    case "firstAid": return t("FirstAid", { ...a, skill: e.skill || t("Medicine"), roll: dice(e.natural, e.mod, e.total, e.dc, t("DC")), degree: degree(e.degree), result: e.stable ? t("Stabilized") : e.dead ? t("Dies") : t("DyingN", { n: e.dying }) });
     case "aftermath": return t("Aftermath");
     case "control": {
       // (A playstyle's taunt has no name of its own: it's a taunt.)
