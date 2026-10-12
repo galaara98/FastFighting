@@ -17417,7 +17417,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "c5bfa45d4962"
+   "hash": "c5bfa45d4962",
+   "changed": true
   },
   "core:story:event.tauntIgnored": {
    "repo": "core",
@@ -18557,7 +18558,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "700c1a25e8f0"
+   "hash": "700c1a25e8f0",
+   "changed": true
   },
   "daggerheart:FFDAGGERHEART.Encounter.Title": {
    "repo": "daggerheart",
@@ -18618,6 +18620,16 @@
    "date": null,
    "commit": null,
    "hash": "a1fa8ff22b57"
+  },
+  "daggerheart:FFDAGGERHEART.Helped": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Helped",
+   "area": "daggerheart/General",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "4b0dfd141735"
   },
   "daggerheart:FFDAGGERHEART.Label": {
    "repo": "daggerheart",
@@ -18727,7 +18739,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "7a7fe8884063"
+   "hash": "7a7fe8884063",
+   "changed": true
   },
   "daggerheart:FFDAGGERHEART.Out.DeathMove": {
    "repo": "daggerheart",
@@ -18748,6 +18761,16 @@
    "date": null,
    "commit": null,
    "hash": "63c72ae3ce76"
+  },
+  "daggerheart:FFDAGGERHEART.Out.DefeatedAs": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Out.DefeatedAs",
+   "area": "daggerheart/Out",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "81731b027799"
   },
   "daggerheart:FFDAGGERHEART.Out.Dies": {
    "repo": "daggerheart",
@@ -18777,7 +18800,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "9d3f57ac59dc"
+   "hash": "9d3f57ac59dc",
+   "changed": true
   },
   "daggerheart:FFDAGGERHEART.Out.Hope": {
    "repo": "daggerheart",
@@ -18787,7 +18811,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "3cc534875d94"
+   "hash": "3cc534875d94",
+   "changed": true
   },
   "daggerheart:FFDAGGERHEART.Out.Killed": {
    "repo": "daggerheart",
@@ -18837,7 +18862,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "1bdce7846775"
+   "hash": "1bdce7846775",
+   "changed": true
   },
   "daggerheart:FFDAGGERHEART.Out.Surrenders": {
    "repo": "daggerheart",
@@ -18887,7 +18913,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "140262b32b0c"
+   "hash": "140262b32b0c",
+   "gone": "2026-10-12"
   },
   "daggerheart:FFDAGGERHEART.Plan.FearHint": {
    "repo": "daggerheart",
@@ -18957,7 +18984,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "fab03b4bf930"
+   "hash": "fab03b4bf930",
+   "changed": true
   },
   "daggerheart:FFDAGGERHEART.Plan.SpendingHint": {
    "repo": "daggerheart",
@@ -19027,7 +19055,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "a592855d0508"
+   "hash": "a592855d0508",
+   "changed": true
   },
   "daggerheart:FFDAGGERHEART.Resource.fear": {
    "repo": "daggerheart",
@@ -19048,6 +19077,16 @@
    "date": null,
    "commit": null,
    "hash": "8c765f98fcd0"
+  },
+  "daggerheart:FFDAGGERHEART.Resource.hp": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Resource.hp",
+   "area": "daggerheart/Resource",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "58e8ee2c9538"
   },
   "daggerheart:FFDAGGERHEART.Resource.stress": {
    "repo": "daggerheart",
