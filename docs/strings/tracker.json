@@ -14682,7 +14682,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "6183cd2c7e23"
+   "hash": "6183cd2c7e23",
+   "changed": true
   },
   "core:FASTFIGHTING.Words.Taunt": {
    "repo": "core",
@@ -23919,6 +23920,16 @@
    "commit": null,
    "hash": "b5cf1da40156"
   },
+  "pf2e:FFPF2E.Reason.Ability": {
+   "repo": "pf2e",
+   "file": "languages/en.json",
+   "key": "FFPF2E.Reason.Ability",
+   "area": "pf2e/Reason",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "86459545f596"
+  },
   "pf2e:FFPF2E.Reason.Animal": {
    "repo": "pf2e",
    "file": "languages/en.json",
@@ -23959,6 +23970,16 @@
    "commit": null,
    "hash": "dfde574d1831"
   },
+  "pf2e:FFPF2E.Reason.Level": {
+   "repo": "pf2e",
+   "file": "languages/en.json",
+   "key": "FFPF2E.Reason.Level",
+   "area": "pf2e/Reason",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "46369ecdca32"
+  },
   "pf2e:FFPF2E.Reason.Master": {
    "repo": "pf2e",
    "file": "languages/en.json",
@@ -23989,6 +24010,16 @@
    "commit": null,
    "hash": "f52e594f0e06"
   },
+  "pf2e:FFPF2E.Reason.NoParty": {
+   "repo": "pf2e",
+   "file": "languages/en.json",
+   "key": "FFPF2E.Reason.NoParty",
+   "area": "pf2e/Reason",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "af53afc87448"
+  },
   "pf2e:FFPF2E.Reason.Orders": {
    "repo": "pf2e",
    "file": "languages/en.json",
@@ -24017,7 +24048,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "c28b0d0a52ac"
+   "hash": "c28b0d0a52ac",
+   "gone": "2026-10-12"
   },
   "pf2e:FFPF2E.Reason.Pc": {
    "repo": "pf2e",
@@ -24028,6 +24060,16 @@
    "date": null,
    "commit": null,
    "hash": "075832387e72"
+  },
+  "pf2e:FFPF2E.Reason.Proficient": {
+   "repo": "pf2e",
+   "file": "languages/en.json",
+   "key": "FFPF2E.Reason.Proficient",
+   "area": "pf2e/Reason",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "e276f952e0be"
   },
   "pf2e:FFPF2E.Reason.SelfPreservation": {
    "repo": "pf2e",
