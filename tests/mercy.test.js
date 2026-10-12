@@ -75,3 +75,15 @@ describe("the fallen after the fight", () => {
     expect(res.combatants.bandit.pDead).toBeLessThan(0.95);
   });
 });
+
+describe("only its own foes", () => {
+  test("a Cruel victor never finishes a fallen friend, a hazard still set or not", () => {
+    for ( let s = 1; s <= 15; s++ ) {
+      const cruel = hero({ behavior: { finishDowned: 1 } });
+      const friend = creature({ id: "friend", kind: "pc", diesAtZero: false, hp: { value: 0, max: 20 }, dying: 1, traits: traits(), actions: [strike({ bonus: -20 })] });
+      const trap = creature({ id: "trap", side: "hostile", kind: "hazard", hazard: { once: false }, untargetable: true, speeds: {}, hp: { value: 1, max: 1 }, actions: [strike({ id: "blade-trap", bonus: -50 })] });
+      const r = replay(battle([cruel, friend, bandit({ diesAtZero: true, hp: { value: 5, max: 5 } }), trap], { maxRounds: 6 }), pf2eRules, s);
+      expect(r.log.some(e => e.actorId === "hero" && e.targetId === "friend" && e.type === "attack")).toBe(false);
+    }
+  });
+});

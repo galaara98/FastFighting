@@ -2500,7 +2500,8 @@ function aftermath(run, order) {
   const { rules, options } = run.prep;
   if ( options.aftermath === AFTERMATH.NONE ) return;
   const simulated = options.downedModel === DOWNED_MODELS.SIMULATE;
-  const victors = run.units.filter(isStanding);
+  // (A hazard still set wins nothing: it settles nobody's fate, and makes nobody's friend a fallen foe.)
+  const victors = run.units.filter(u => isStanding(u) && !u.spec.hazard);
   const fallen = run.units.filter(u => u.status === STATUS.DOWN && victors.some(v => areEnemies(run, v, u)));
   const decided = simulated && fallen.length > 0 && victors.some(v => mercyOf(run, v) !== "leave");
   // The system may give a fallen player character one last chance once friends reach the body (DCC: roll the body).
@@ -2567,9 +2568,10 @@ export function mercyOf(run, u) {
 
 /** The victors settle the fallen: anyone sparing them stops the rest; otherwise the cruel finish them off. */
 function dealWithTheFallen(run, victors, fallen) {
-  const sparer = victors.find(v => mercyOf(run, v) === "spare");
-  const finishers = victors.filter(v => mercyOf(run, v) === "finish");
   for ( const f of fallen ) {
+    // (Only its own foes: nobody finishes, or spares, a friend.)
+    const sparer = victors.find(v => areEnemies(run, v, f) && mercyOf(run, v) === "spare");
+    const finishers = victors.filter(v => areEnemies(run, v, f) && mercyOf(run, v) === "finish");
     if ( sparer ) {
       f.spared = true;
       if ( finishers.length ) log(run, sparer, { type: "mercy", target: f.spec.name, targetId: f.id, aftermath: true });

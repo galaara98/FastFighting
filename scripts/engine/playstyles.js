@@ -137,9 +137,10 @@ export const PLAYSTYLES = Object.freeze({
     desire: { hurt: { nearest: 15, far: -20 }, heal: -10, protect: -10, aid: -10, frustration: 1.6, doorPatience: 0.4, cool: 1.5 } },
 
   // Un-Mundane: would rather use what sets it apart (its magic, its class's and kind's own abilities, a monster's
-  // powers) than fight or talk as anyone would; spends what that takes freely.
+  // powers) than fight or talk as anyone would; spends what that takes freely; goes for the foes its powers find a weak
+  // spot in. (It talks less only for want of a specialty that helps it talk: behavior/specialty.js talkDamping.)
   unmundane: { icon: "fa-wand-sparkles", traits: {}, suggest: { specialty: "strong", resourceUse: "nova" }, behavior: {},
-    desire: { talk: -10 } }
+    desire: { hurt: { weakness: 10 } } }
 });
 
 /** Desire keys that add up across pills, and those that multiply (a playstyle's ×1 is "no change"). */

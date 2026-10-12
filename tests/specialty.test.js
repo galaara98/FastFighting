@@ -5,7 +5,7 @@
 import { describe, expect, test } from "vitest";
 import { replay } from "../scripts/engine/simulator.js";
 import { prepareBattle, createRun, turnFor } from "../scripts/engine/battle-state.js";
-import { isSpecial, specialtyLean, SPECIALTY_WEIGHT } from "../scripts/engine/behavior/specialty.js";
+import { isSpecial, specialtyLean, helpsTalk, talkDamping, SPECIALTY_WEIGHT } from "../scripts/engine/behavior/specialty.js";
 import { combinePlaystyles } from "../scripts/engine/playstyles.js";
 import { suggestTactics, TACTIC_KEYS } from "../scripts/engine/tactics.js";
 import { createRng } from "../scripts/engine/rng.js";
@@ -65,5 +65,30 @@ describe("the answer", () => {
     expect(counts[1]).toBeGreaterThan(counts[0]);
     expect(counts[2]).toBeGreaterThan(counts[1]);
     expect(counts[3]).toBeGreaterThanOrEqual(counts[2]);
+  });
+});
+
+describe("talking", () => {
+  const charm = { id: "charm", name: "Charm", kind: "control", cost: 2, rank: 1, save: { type: "will", dc: 17 }, onSave: [{ conditions: { controlled: 1 }, rounds: 10 }, { conditions: { controlled: 1 }, rounds: 1 }, null, null] };
+  const guidance = { id: "guidance", name: "Guidance", kind: "buff", cost: 1, rank: 0, targets: "self", outcome: { mods: { checkDie: 4 }, uses: 1, rounds: 1 } };
+
+  test("a specialty that makes it better with words: a charm, an edge to its checks; not a bolt", () => {
+    expect(helpsTalk(charm)).toBe(true);
+    expect(helpsTalk(guidance)).toBe(true);
+    expect(helpsTalk(bolt())).toBe(false);
+    expect(helpsTalk({ kind: "buff", outcome: { mods: { checkDie: 4 } } })).toBe(false); // (anyone's: not a specialty)
+  });
+
+  test("leaning on its specialties, it talks less, unless one of them makes it better with words", () => {
+    const damping = actions => {
+      const run = createRun(prepareBattle(battle([creature({ id: "me", actions }), creature({ id: "foe", side: "hostile" })]), pf2eRules));
+      const u = run.byId.get("me");
+      u.tac = { specialty: "strong" };
+      return talkDamping(u);
+    };
+    expect(damping([sword(), bolt()])).toBeCloseTo(1 / SPECIALTY_WEIGHT.strong);
+    expect(damping([sword(), bolt(), charm])).toBe(1);
+    expect(damping([sword(), bolt(), guidance])).toBe(1);
+    expect(damping([sword()])).toBe(1);
   });
 });

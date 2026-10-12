@@ -52,8 +52,32 @@ export function specialtyLean(u, action) {
   return hasSpecialties(u) ? 1 / w : 1;
 }
 
-/** How much less it talks when it might (while it has a specialty to use instead). */
+/**
+ * A specialty that makes it better with words, in a standoff, an argument or a fight: one that sharpens its checks (an
+ * edge, a bonus or a die on them: Guidance, an inspiration, a feature for its Presence), one that sways a foe (a
+ * charm, a command), or one the system marks as such (action.talks).
+ */
+export function helpsTalk(action) {
+  if ( !isSpecial(action) ) return false;
+  if ( action.talks ) return true;
+  const outcomes = [action.outcome, ...(action.onDegree ?? []), ...(action.onHit ?? []), ...(action.onSave ?? [])].filter(o => o && typeof o === "object");
+  return outcomes.some(o => Number(o.mods?.checks) > 0 || Number(o.mods?.checkAdv) > 0 || Number(o.mods?.checkDie) > 0
+    || !!(o.conditions?.controlled || o.conditions?.charm || o.conditions?.charmed));
+}
+
+/** Does it have a specialty, still to hand, that makes it better with words? */
+export function talksWithSpecialties(u) {
+  const p = u?.prep;
+  if ( !p ) return false;
+  return [...(p.offense ?? []), ...(p.buffActions ?? [])].some(a => helpsTalk(a) && hasUses(u, a));
+}
+
+/**
+ * How much less it talks when it might, while it has a specialty to use instead: its answer's weight. Not when its
+ * specialties make it better with words: then it talks as much as anyone.
+ */
 export function talkDamping(u) {
   const w = weightOf(u);
-  return w > 1 && hasSpecialties(u) ? 1 / w : 1;
+  if ( w <= 1 || !hasSpecialties(u) || talksWithSpecialties(u) ) return 1;
+  return 1 / w;
 }

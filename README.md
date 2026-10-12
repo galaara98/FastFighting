@@ -302,7 +302,7 @@ Two boxes beside the playstyle pills: **"I don't like to use consumables"** and 
 **Prepare Players** opens a survey on each player's screen, with one tab per token they control. Every question starts on *"Let ⟨character⟩ decide: …"*, showing what the character would probably do:
 - favorite attack, fighting style and first target;
 - spending limited resources, healing others and drinking potions;
-- **magic and specialties:** how strongly it reaches for its spells and its own abilities (its class's, its kind's, a creature's powers) over what anyone could do (a plain weapon blow, the everyday moves, talking): no preference, a little more often, much more often (three times as likely: it casts wherever a spell does nearly as well as its sword), or whenever it can. Where it stands, close or far, still follows its fighting style. It shows only for a character with something special to use. What counts: magic, anything with uses or a resource of its own (not gear), and whatever the system's helper marks as a class's or creature's own;
+- **magic and specialties:** how strongly it reaches for its spells and its own abilities (its class's, its kind's, a creature's powers) over what anyone could do (a plain weapon blow, the everyday moves, talking; talking only while none of its specialties make it better with words, such as a charm or an edge to its checks): no preference, a little more often, much more often (three times as likely: it casts wherever a spell does nearly as well as its sword), or whenever it can. Where it stands, close or far, still follows its fighting style. It shows only for a character with something special to use. What counts: magic, anything with uses or a resource of its own (not gear), and whatever the system's helper marks as a class's or creature's own;
 - what to do when an ally is dying, and after being revived;
 - when to retreat, shield use and talking;
 - **others nearby:** stay with the fight, run for help when it goes badly, or hunt down enemies about.
@@ -342,7 +342,7 @@ Answers save as they're made, and two players sharing a token see each other's c
 | Vengeful | hits back twice as hard; avenges fallen friends; its grudges never cool |
 | Wallflower | keeps its distance; often ignores a taunt; would rather hamper foes from afar; listens to the crowd less; leading, its flight takes a few along; a trap avoider (see **Trap avoiders**) |
 | Wants to Lead | the biggest threat (now and then pins it down); looks after, bolsters and rallies its people; half ignores whoever commands it (it wants to lead; whether it does is its group's chain of command); not chosen, it may scheme (see **Chains of command**) |
-| Un-Mundane | would rather use its magic and its own specialties than fight or talk as anyone would ("magic and specialties: much more often"), and spends freely what that takes; talks a little less |
+| Un-Mundane | would rather use its magic and its own specialties than fight or talk as anyone would ("magic and specialties: much more often"), and spends freely what that takes; goes for foes its powers find a weak spot in; talks less, unless its specialties make it better with words (a charm, an edge to its checks: then it talks as much as anyone, and reaches for them first) |
 | Wildcard | something random catches its eye; nobody's voice counts for much; may defy its leader |
 
 Checkboxes go with the pills:
