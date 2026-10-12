@@ -4,8 +4,9 @@
  * and when to work its calculated answers out again (missing, broken, an older core API, the character changed).
  */
 import { describe, expect, test } from "vitest";
-import { scorePlaystyles, pickPlaystyles, keywordHits, readSpec, CLASHES } from "../scripts/engine/auto-playstyles.js";
-import { autoPlan, validLets, specSignature, autoWords } from "../scripts/foundry/auto-config.js";
+import { scorePlaystyles, pickPlaystyles, readSpec, CLASHES } from "../scripts/engine/auto-playstyles.js";
+import { autoPlan, validLets, specSignature } from "../scripts/foundry/auto-config.js";
+import { readKeywordFile, keywordEffects } from "../scripts/engine/keywords.js";
 import { suggestTactics, TACTIC_KEYS } from "../scripts/engine/tactics.js";
 import { tacticsFor } from "../scripts/foundry/tactics.js";
 import { parseFormula } from "../scripts/engine/dice.js";
@@ -43,11 +44,11 @@ describe("the playstyles that fit", () => {
     expect(picks(plain, { hints: { enabler: 1 } })).toEqual(["enabler"]);
     const tank = creature({ traits: traits(55, 85, 20, 80), shield: { ac: 2 }, defenses: { ac: 22 } });
     expect(picks(tank, { hints: { tank: -1 } })).not.toContain("tank");
-    expect(keywordHits("A greedy sellsword who loves Gold.", { mercenary: ["mercenar", "sellsword", "greed"], thief: ["thief"] })).toEqual({ mercenary: 2 });
-    // (The start of a word: "greed" finds "greedy", "lore" doesn't find "explored".)
-    expect(keywordHits("She explored the ruins", { loreCollector: ["lore"] })).toEqual({});
-    // (Two words at most count, so a long list of them is no stronger than two.)
+    const words = readKeywordFile({ words: { greed: { playstyles: { mercenary: 1 } }, sellsword: { playstyles: { mercenary: 1 } }, thief: { playstyles: { thief: 1 } } } });
+    expect(keywordEffects("A greedy sellsword who loves Gold.", words).playstyles).toEqual({ mercenary: 2 });
+    // (Two keywords' worth at most count, so a long list of them is no stronger than two; and words can count against.)
     expect(picks(creature({ traits: traits(50, 50, 50, 50), defenses: { ac: 11 } }), { words: { enabler: 9 } })).toEqual(["enabler"]);
+    expect(picks(creature({ traits: traits(50, 50, 50, 50), defenses: { ac: 11 } }), { hints: { enabler: 1 }, words: { enabler: -2 } })).toEqual([]);
   });
 
   test("a player character's traits count only where it's unlike the usual one (bold, loyal, unselfish by default)", () => {
@@ -69,23 +70,6 @@ describe("the playstyles that fit", () => {
     expect(got.length).toBe(4);
     expect(got[0]).toBe("chicken");
     for ( const [a, b] of CLASHES ) expect(got.includes(a) && got.includes(b)).toBe(false);
-  });
-
-  test("a translation's keywords add to the English ones, each once (a biography may be written in either)", () => {
-    const english = { thief: "thief, burglar", chicken: "coward" };
-    globalThis.game.i18n.has = key => key === "FASTFIGHTING.AutoWords.thief";
-    globalThis.game.i18n.localize = key => (key === "FASTFIGHTING.AutoWords.thief" ? "ladrón, Burglar, carterista" : key);
-    const words = autoWords(english);
-    expect(words.thief).toEqual(["thief", "burglar", "ladrón", "carterista"]);
-    expect(words.chicken).toEqual(["coward"]);
-    expect(keywordHits("Un ladrón astuto", words)).toEqual({ thief: 1 });
-    expect(keywordHits("A clever burglar", words)).toEqual({ thief: 1 });
-  });
-
-  test("every playstyle has keywords in the language file", () => {
-    const words = autoWords();
-    expect(Object.keys(words).length).toBe(27);
-    expect(words.thief.length).toBeGreaterThan(0);
   });
 
   test("reading a spec: specialties against weapons, close and far", () => {

@@ -5,7 +5,7 @@
  *    whether it's mindless, fearless or a beast, its weapons (close or far), magic and specialties, healing and help
  *    for friends, ways to hamper a foe, a shield or a hard hide, skill at theft, lore and talk;
  *  - what its system's helper reads in it (hints: its class, ancestry, kind of creature, alignment, gear), -1 to 1 each;
- *  - words in its biography and description (each playstyle's keywords, from the language files: words).
+ *  - words in its biography and description (keywords/en.json, and a translation's: engine/keywords.js), for and against.
  * The picks: those that score at least AUTO_FLOOR, best first, never two that pull against each other (a Chicken and a
  * Martyr), at most four. Pure: no Foundry globals.
  */
@@ -13,12 +13,14 @@ import { PLAYSTYLES, MAX_PLAYSTYLES } from "./playstyles.js";
 import { fudged, PC_BASELINE } from "../constants.js";
 import { typical } from "./battle-state.js";
 import { isSpecial } from "./behavior/specialty.js";
+import { PLAYSTYLE_WORD_CAP } from "./keywords.js";
 
 /** The least score a playstyle needs to be picked. */
 export const AUTO_FLOOR = 30;
 /**
  * What the numbers alone can make of a playstyle, at most (so its system's "nothing like it" can still rule it out);
- * what a helper's hint of 1 is worth; a keyword found in the biography (at most two count).
+ * what a helper's hint of 1 is worth; what one keyword's worth in the biography is (the words found count for at most
+ * two keywords' worth, either way: PLAYSTYLE_WORD_CAP).
  */
 export const NUMBERS_CAP = 60;
 export const HINT_WEIGHT = 40;
@@ -123,7 +125,7 @@ export function numbersFit(s) {
 
 /**
  * Every playstyle's score: its numbers' fit, the helper's hints (each -1 to 1, so many HINT_WEIGHT), and keywords found
- * in its biography (words: {id: how many}, WORD_WEIGHT each, two at most).
+ * in its biography (words: {id: keywords' worth}, from engine/keywords.js: WORD_WEIGHT each, two at most either way).
  * @returns {{id: string, score: number, numbers: number, hint: number, words: number}[]} best first
  */
 export function scorePlaystyles(spec, { rules = null, hints = {}, words = {} } = {}) {
@@ -131,7 +133,7 @@ export function scorePlaystyles(spec, { rules = null, hints = {}, words = {} } =
   return Object.keys(PLAYSTYLES).map(id => {
     const numbers = Math.round(Math.min(NUMBERS_CAP, fit[id] ?? 0));
     const hint = Math.round(Math.max(-1, Math.min(1, Number(hints[id]) || 0)) * HINT_WEIGHT);
-    const said = Math.min(2, Math.max(0, Number(words[id]) || 0)) * WORD_WEIGHT;
+    const said = Math.round(Math.min(PLAYSTYLE_WORD_CAP, Math.max(-PLAYSTYLE_WORD_CAP, Number(words[id]) || 0)) * WORD_WEIGHT);
     return { id, score: numbers + hint + said, numbers, hint, words: said };
   }).sort((a, b) => b.score - a.score);
 }
@@ -143,24 +145,6 @@ export function pickPlaystyles(scored, { max = MAX_PLAYSTYLES, floor = AUTO_FLOO
     if ( out.length >= max || s.score < floor ) break;
     if ( out.some(id => clashes(id, s.id)) ) continue;
     out.push(s.id);
-  }
-  return out;
-}
-
-/** How many of each playstyle's keywords a text holds (each keyword matches as the start of a word, any case). */
-export function keywordHits(text, keywords) {
-  const out = {};
-  const hay = String(text ?? "").toLowerCase();
-  if ( !hay.trim() ) return out;
-  for ( const [id, list] of Object.entries(keywords ?? {}) ) {
-    let n = 0;
-    for ( const raw of list ?? [] ) {
-      const word = String(raw).trim().toLowerCase();
-      if ( !word ) continue;
-      const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-      if ( new RegExp(`(?<![\\p{L}\\p{N}])${escaped}`, "u").test(hay) ) n += 1;
-    }
-    if ( n ) out[id] = n;
   }
   return out;
 }

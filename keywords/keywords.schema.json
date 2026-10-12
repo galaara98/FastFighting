@@ -1,0 +1,209 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "FastFighting keywords",
+  "description": "Words and phrases found in a character's biography and description, and what each says of it. See keywords/README.md.",
+  "type": "object",
+  "required": [
+    "words"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "negations": {
+      "type": "array",
+      "description": "Words that, a few words before a keyword in the same sentence, cancel it (\"never cruel\").",
+      "items": {
+        "type": "string",
+        "pattern": "^[^A-Z]+$"
+      }
+    },
+    "words": {
+      "type": "object",
+      "description": "Each word or phrase, in lower case: it matches the start of a word, in any case.",
+      "propertyNames": {
+        "pattern": "^[^A-Z\\s][^A-Z]*[^A-Z\\s]$|^[^A-Z\\s]$"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "playstyles": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "chicken": {
+                "type": "number",
+                "minimum": -2,
+                "maximum": 2
+              },
+              "cruel": {
+                "type": "number",
+                "minimum": -2,
+                "maximum": 2
+              },
+              "moralist": {
+                "type": "number",
+                "minimum": -2,
+                "maximum": 2
+              },
+              "peoplePleaser": {
+                "type": "number",
+                "minimum": -2,
+                "maximum": 2
+              },
+              "fragile": {
+                "type": "number",
+                "minimum": -2,
+                "maximum": 2
+              },
+              "impatient": {
+                "type": "number",
+                "minimum": -2,
+                "maximum": 2
+              },
+              "brawler": {
+                "type": "number",
+                "minimum": -2,
+                "maximum": 2
+              },
+              "skeptic": {
+                "type": "number",
+                "minimum": -2,
+                "maximum": 2
+              },
+              "speedRunner": {
+                "type": "number",
+                "minimum": -2,
+                "maximum": 2
+              },
+              "leader": {
+                "type": "number",
+                "minimum": -2,
+                "maximum": 2
+              },
+              "instigator": {
+                "type": "number",
+                "minimum": -2,
+                "maximum": 2
+              },
+              "peacekeeper": {
+                "type": "number",
+                "minimum": -2,
+                "maximum": 2
+              },
+              "diplomat": {
+                "type": "number",
+                "minimum": -2,
+                "maximum": 2
+              },
+              "wallflower": {
+                "type": "number",
+                "minimum": -2,
+                "maximum": 2
+              },
+              "martyr": {
+                "type": "number",
+                "minimum": -2,
+                "maximum": 2
+              },
+              "tank": {
+                "type": "number",
+                "minimum": -2,
+                "maximum": 2
+              },
+              "mercenary": {
+                "type": "number",
+                "minimum": -2,
+                "maximum": 2
+              },
+              "enabler": {
+                "type": "number",
+                "minimum": -2,
+                "maximum": 2
+              },
+              "redeemSeeker": {
+                "type": "number",
+                "minimum": -2,
+                "maximum": 2
+              },
+              "loreCollector": {
+                "type": "number",
+                "minimum": -2,
+                "maximum": 2
+              },
+              "puzzleManiac": {
+                "type": "number",
+                "minimum": -2,
+                "maximum": 2
+              },
+              "wildcard": {
+                "type": "number",
+                "minimum": -2,
+                "maximum": 2
+              },
+              "thief": {
+                "type": "number",
+                "minimum": -2,
+                "maximum": 2
+              },
+              "vengeful": {
+                "type": "number",
+                "minimum": -2,
+                "maximum": 2
+              },
+              "relentless": {
+                "type": "number",
+                "minimum": -2,
+                "maximum": 2
+              },
+              "lazy": {
+                "type": "number",
+                "minimum": -2,
+                "maximum": 2
+              },
+              "unmundane": {
+                "type": "number",
+                "minimum": -2,
+                "maximum": 2
+              }
+            },
+            "description": "Keywords' worth toward (or, below 0, against) each playstyle when FastFighting sets a character up by itself: 1 is a clear sign, 0.5 a leaning, 0.3 a hint."
+          },
+          "traits": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "tactical": {
+                "type": "number",
+                "minimum": -15,
+                "maximum": 15
+              },
+              "brave": {
+                "type": "number",
+                "minimum": -15,
+                "maximum": 15
+              },
+              "selfish": {
+                "type": "number",
+                "minimum": -15,
+                "maximum": 15
+              },
+              "loyal": {
+                "type": "number",
+                "minimum": -15,
+                "maximum": 15
+              }
+            },
+            "description": "Points each trait (0 to 100) moves: 2 slight, 5 clear, 8 strong, 12 defining."
+          },
+          "whole": {
+            "type": "boolean",
+            "description": "Only the whole word (not \"generally\" for \"general\")."
+          }
+        }
+      }
+    }
+  }
+}

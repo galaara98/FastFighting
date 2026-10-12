@@ -40,6 +40,16 @@
    "commit": null,
    "hash": "0b269f9c8278"
   },
+  "core:code:scripts/api.js:characterSpec#1": {
+   "repo": "core",
+   "file": "scripts/api.js",
+   "key": "scripts/api.js:characterSpec#1",
+   "area": "core/code",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "362f03e0875a"
+  },
   "core:code:scripts/api.js:registerAdapter#1": {
    "repo": "core",
    "file": "scripts/api.js",
@@ -159,6 +169,16 @@
    "date": null,
    "commit": null,
    "hash": "fa9a1a4288bd"
+  },
+  "core:code:scripts/foundry/keywords.js:loadKeywords#1": {
+   "repo": "core",
+   "file": "scripts/foundry/keywords.js",
+   "key": "scripts/foundry/keywords.js:loadKeywords#1",
+   "area": "core/code",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "d5edbfe09ade"
   },
   "core:code:scripts/foundry/make-it-so.js:commitFight#1": {
    "repo": "core",
@@ -555,7 +575,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "93b683e37b11"
+   "hash": "93b683e37b11",
+   "gone": "2026-10-12"
   },
   "core:FASTFIGHTING.AutoWords.chicken": {
    "repo": "core",
@@ -565,7 +586,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "0b358bd5279f"
+   "hash": "0b358bd5279f",
+   "gone": "2026-10-12"
   },
   "core:FASTFIGHTING.AutoWords.cruel": {
    "repo": "core",
@@ -576,7 +598,8 @@
    "date": null,
    "commit": null,
    "hash": "49cf5948f2ec",
-   "changed": true
+   "changed": true,
+   "gone": "2026-10-12"
   },
   "core:FASTFIGHTING.AutoWords.diplomat": {
    "repo": "core",
@@ -586,7 +609,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "9cb8490e18ed"
+   "hash": "9cb8490e18ed",
+   "gone": "2026-10-12"
   },
   "core:FASTFIGHTING.AutoWords.enabler": {
    "repo": "core",
@@ -596,7 +620,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "ffe481a9887f"
+   "hash": "ffe481a9887f",
+   "gone": "2026-10-12"
   },
   "core:FASTFIGHTING.AutoWords.fragile": {
    "repo": "core",
@@ -606,7 +631,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "37d3bd498499"
+   "hash": "37d3bd498499",
+   "gone": "2026-10-12"
   },
   "core:FASTFIGHTING.AutoWords.Hint": {
    "repo": "core",
@@ -617,7 +643,8 @@
    "date": null,
    "commit": null,
    "hash": "04f2005cf6ef",
-   "changed": true
+   "changed": true,
+   "gone": "2026-10-12"
   },
   "core:FASTFIGHTING.AutoWords.impatient": {
    "repo": "core",
@@ -627,7 +654,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "833cf8cba1ec"
+   "hash": "833cf8cba1ec",
+   "gone": "2026-10-12"
   },
   "core:FASTFIGHTING.AutoWords.instigator": {
    "repo": "core",
@@ -637,7 +665,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "0aee9facd633"
+   "hash": "0aee9facd633",
+   "gone": "2026-10-12"
   },
   "core:FASTFIGHTING.AutoWords.lazy": {
    "repo": "core",
@@ -647,7 +676,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "6d5623929d77"
+   "hash": "6d5623929d77",
+   "gone": "2026-10-12"
   },
   "core:FASTFIGHTING.AutoWords.leader": {
    "repo": "core",
@@ -657,7 +687,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "c031e1191938"
+   "hash": "c031e1191938",
+   "gone": "2026-10-12"
   },
   "core:FASTFIGHTING.AutoWords.loreCollector": {
    "repo": "core",
@@ -667,7 +698,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "1f96cf07a378"
+   "hash": "1f96cf07a378",
+   "gone": "2026-10-12"
   },
   "core:FASTFIGHTING.AutoWords.martyr": {
    "repo": "core",
@@ -677,7 +709,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "821c3169c147"
+   "hash": "821c3169c147",
+   "gone": "2026-10-12"
   },
   "core:FASTFIGHTING.AutoWords.mercenary": {
    "repo": "core",
@@ -687,7 +720,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "8c84610c22f0"
+   "hash": "8c84610c22f0",
+   "gone": "2026-10-12"
   },
   "core:FASTFIGHTING.AutoWords.moralist": {
    "repo": "core",
@@ -697,7 +731,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "9beaa6c033a7"
+   "hash": "9beaa6c033a7",
+   "gone": "2026-10-12"
   },
   "core:FASTFIGHTING.AutoWords.peacekeeper": {
    "repo": "core",
@@ -707,7 +742,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "f0e78bc831a2"
+   "hash": "f0e78bc831a2",
+   "gone": "2026-10-12"
   },
   "core:FASTFIGHTING.AutoWords.peoplePleaser": {
    "repo": "core",
@@ -718,7 +754,8 @@
    "date": null,
    "commit": null,
    "hash": "b4dc2e0b3fde",
-   "changed": true
+   "changed": true,
+   "gone": "2026-10-12"
   },
   "core:FASTFIGHTING.AutoWords.puzzleManiac": {
    "repo": "core",
@@ -728,7 +765,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "5fa2b6acb277"
+   "hash": "5fa2b6acb277",
+   "gone": "2026-10-12"
   },
   "core:FASTFIGHTING.AutoWords.redeemSeeker": {
    "repo": "core",
@@ -738,7 +776,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "eccde42e1246"
+   "hash": "eccde42e1246",
+   "gone": "2026-10-12"
   },
   "core:FASTFIGHTING.AutoWords.relentless": {
    "repo": "core",
@@ -749,7 +788,8 @@
    "date": null,
    "commit": null,
    "hash": "1d054c4207e2",
-   "changed": true
+   "changed": true,
+   "gone": "2026-10-12"
   },
   "core:FASTFIGHTING.AutoWords.skeptic": {
    "repo": "core",
@@ -759,7 +799,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "16b06f2a9886"
+   "hash": "16b06f2a9886",
+   "gone": "2026-10-12"
   },
   "core:FASTFIGHTING.AutoWords.speedRunner": {
    "repo": "core",
@@ -769,7 +810,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "e4f4f5d08d63"
+   "hash": "e4f4f5d08d63",
+   "gone": "2026-10-12"
   },
   "core:FASTFIGHTING.AutoWords.tank": {
    "repo": "core",
@@ -779,7 +821,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "12fa30d7f8b2"
+   "hash": "12fa30d7f8b2",
+   "gone": "2026-10-12"
   },
   "core:FASTFIGHTING.AutoWords.thief": {
    "repo": "core",
@@ -790,7 +833,8 @@
    "date": null,
    "commit": null,
    "hash": "5881d41d5f76",
-   "changed": true
+   "changed": true,
+   "gone": "2026-10-12"
   },
   "core:FASTFIGHTING.AutoWords.unmundane": {
    "repo": "core",
@@ -800,7 +844,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "87a801b54576"
+   "hash": "87a801b54576",
+   "gone": "2026-10-12"
   },
   "core:FASTFIGHTING.AutoWords.vengeful": {
    "repo": "core",
@@ -810,7 +855,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "ba5cd5ada0fe"
+   "hash": "ba5cd5ada0fe",
+   "gone": "2026-10-12"
   },
   "core:FASTFIGHTING.AutoWords.wallflower": {
    "repo": "core",
@@ -820,7 +866,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "5162f93c50a4"
+   "hash": "5162f93c50a4",
+   "gone": "2026-10-12"
   },
   "core:FASTFIGHTING.AutoWords.wildcard": {
    "repo": "core",
@@ -830,7 +877,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "69d1ffd3f753"
+   "hash": "69d1ffd3f753",
+   "gone": "2026-10-12"
   },
   "core:FASTFIGHTING.Band.bold": {
    "repo": "core",
@@ -14633,6 +14681,16 @@
    "date": null,
    "commit": null,
    "hash": "9adf009b9ea4"
+  },
+  "core:FASTFIGHTING.Words.Biography": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Words.Biography",
+   "area": "core/Words",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "0cd3ea77c14c"
   },
   "core:FASTFIGHTING.Words.Fate": {
    "repo": "core",

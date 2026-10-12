@@ -19,11 +19,11 @@
 import { MODULE_ID } from "../constants.js";
 import { getAdapter } from "../api.js";
 import { CORE_API_VERSION } from "../core-api.js";
-import { hasWords, localize, language } from "../i18n.js";
 import { TRAITS, fudged } from "../constants.js";
 import { TACTIC_CHOICES, TACTIC_KEYS, suggestTactics } from "../engine/tactics.js";
-import { PLAYSTYLES } from "../engine/playstyles.js";
-import { scorePlaystyles, pickPlaystyles, keywordHits } from "../engine/auto-playstyles.js";
+import { scorePlaystyles, pickPlaystyles } from "../engine/auto-playstyles.js";
+import { biographyEffects } from "../engine/keywords.js";
+import { keywords, currentKeywords } from "./keywords.js";
 import { getStoredTactics, worldTacticDefaults } from "./tactics.js";
 
 /** The actor's auto setup, or null. */
@@ -67,42 +67,6 @@ export function autoPlan(stored, record, { api, sig, spec, force = false }) {
   return { pick, lets };
 }
 
-/**
- * The English keywords (languages/en.json), read once for a reader in another language: a translation's keywords add
- * to the English ones, never take their place (a biography may be written in either). Called at startup.
- */
-let englishWords = null;
-export async function loadEnglishWords() {
-  if ( language() === "en" ) return;
-  try {
-    const response = await fetch(`modules/${MODULE_ID}/languages/en.json`);
-    if ( response.ok ) englishWords = (await response.json())?.FASTFIGHTING?.AutoWords ?? null;
-  } catch ( err ) {
-    englishWords = null;
-  }
-}
-
-const splitWords = text => String(text ?? "").split(",").map(w => w.trim()).filter(Boolean);
-
-/**
- * Each playstyle's keywords (FASTFIGHTING.AutoWords: a comma-separated list for each): the English ones, and the
- * reader's language's as well, each once.
- * @param {Record<string, string>|null} [english]   the English lists (default: those read at startup)
- */
-export function autoWords(english = englishWords) {
-  const out = {};
-  for ( const id of Object.keys(PLAYSTYLES) ) {
-    const key = `FASTFIGHTING.AutoWords.${id}`;
-    const seen = new Set();
-    const list = [...splitWords(english?.[id]), ...(hasWords(key) ? splitWords(localize(key)) : [])].filter(w => {
-      const k = w.toLowerCase();
-      return !seen.has(k) && seen.add(k);
-    });
-    if ( list.length ) out[id] = list;
-  }
-  return out;
-}
-
 /** Something a system helper says, or nothing if it fails. */
 function ask(what, fn, otherwise) {
   try {
@@ -113,12 +77,15 @@ function ask(what, fn, otherwise) {
   }
 }
 
-/** Every playstyle's score for this character: its numbers, its system's hints, its biography's words. */
-export function autoScores(actor, spec) {
+/**
+ * Every playstyle's score for this character: its numbers, its system's hints, its biography's words (keywords/:
+ * engine/keywords.js).
+ */
+export function autoScores(actor, spec, words = currentKeywords()) {
   const adapter = getAdapter();
   const hints = ask("playstyleHints", () => adapter?.playstyleHints?.(actor, spec), {});
   const bio = ask("biography", () => adapter?.biography?.(actor), "");
-  return scorePlaystyles(spec, { rules: adapter?.rules ?? null, hints, words: keywordHits(bio, autoWords()) });
+  return scorePlaystyles(spec, { rules: adapter?.rules ?? null, hints, words: biographyEffects(bio, words).playstyles });
 }
 
 /** The calculated answer to every question: the core's reading of it, then its system's, where that knows better. */
@@ -151,7 +118,7 @@ export async function ensureAutoConfig(actor, spec, { force = false } = {}) {
     const next = { ...(record ?? {}), api: CORE_API_VERSION, sig, at: Date.now() };
     if ( plan.lets ) next.lets = autoLets(actor, spec);
     if ( plan.pick ) {
-      const scored = autoScores(actor, spec);
+      const scored = autoScores(actor, spec, await keywords());
       next.picked = pickPlaystyles(scored);
       next.scores = Object.fromEntries(scored.slice(0, 8).map(s => [s.id, s.score]));
       if ( next.picked.length ) await actor.setFlag(MODULE_ID, "tactics", { ...(actor.getFlag(MODULE_ID, "tactics") ?? {}), playstyles: next.picked });

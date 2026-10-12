@@ -18,6 +18,7 @@ import * as engine from "./engine/simulator.js";
 import * as dice from "./engine/dice.js";
 import * as constants from "./constants.js";
 import { MODULE_ID } from "./constants.js";
+import { keywords, applyBiography } from "./foundry/keywords.js";
 import { CORE_API_VERSION } from "./core-api.js";
 import { adviseTranslation } from "./foundry/translation-advice.js";
 import { keepEnglish } from "./foundry/keep-english.js";
@@ -90,6 +91,25 @@ export function applyTraitRules(actor, spec) {
       console.error(`FastFighting | trait rule ${rule.id} failed`, err);
     }
   }
+}
+
+/**
+ * A character as FastFighting reads it, the same wherever it's read (the planner, its token's tab, a player's survey):
+ * its system helper's spec, what its biography's words say of its traits, then the trait rules other modules add.
+ * @returns {Promise<object|null>} the CombatantSpec
+ */
+export async function characterSpec(adapter, tokenDoc) {
+  const spec = await adapter.toCombatantSpec(tokenDoc);
+  if ( !spec ) return spec;
+  const actor = tokenDoc?.actor ?? null;
+  try {
+    const words = await keywords();
+    applyBiography(spec, actor ? adapter.biography?.(actor) ?? "" : "", words);
+  } catch ( err ) {
+    console.warn(`${MODULE_ID} | reading ${actor?.name ?? "a character"}'s biography failed`, err);
+  }
+  applyTraitRules(actor, spec);
+  return spec;
 }
 
 export function buildApi(extra = {}) {

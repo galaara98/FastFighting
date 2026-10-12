@@ -5,7 +5,7 @@
  * same token or character.
  */
 import { MODULE_ID } from "../constants.js";
-import { getAdapter } from "../api.js";
+import { getAdapter, characterSpec } from "../api.js";
 import { localize, hasStat } from "../i18n.js";
 import { sceneEncounter } from "../foundry/persistence.js";
 import { ensureAutoConfig, resetAndAutoConfig } from "../foundry/auto-config.js";
@@ -88,7 +88,7 @@ export class PlayerSurvey extends HandlebarsApplicationMixin(ApplicationV2) {
       let spec = this.specs.get(e.key) ?? null;
       if ( !spec ) {
         try {
-          spec = await adapter.toCombatantSpec(e.token ?? await e.actor.getTokenDocument());
+          spec = await characterSpec(adapter, e.token ?? await e.actor.getTokenDocument());
         } catch ( err ) {
           console.warn(`${MODULE_ID} | survey could not read ${e.name}`, err);
         }

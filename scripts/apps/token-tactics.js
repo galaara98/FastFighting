@@ -5,7 +5,7 @@
  * Answers save as they change, as in the survey, and every open view of the same actor follows along.
  */
 import { MODULE_ID } from "../constants.js";
-import { getAdapter } from "../api.js";
+import { getAdapter, characterSpec } from "../api.js";
 import { localize } from "../i18n.js";
 import { questionsContext, setTactic, togglePlaystyle, syncTacticsDom, playstyleSignature } from "../foundry/tactics.js";
 import { HAZARD_MARKS, applyHazard } from "../foundry/battle.js";
@@ -66,7 +66,7 @@ async function fill(app, panel) {
   let spec = specs.get(app);
   if ( !spec ) {
     try {
-      spec = await adapter.toCombatantSpec(app.isPrototype ? await actor.getTokenDocument() : app.document);
+      spec = await characterSpec(adapter, app.isPrototype ? await actor.getTokenDocument() : app.document);
     } catch ( err ) {
       console.warn(`${MODULE_ID} | the token window could not read ${actor.name}`, err);
     }

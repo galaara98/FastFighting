@@ -4,7 +4,7 @@
 import { MODULE_ID, SIDES, ALLEGIANCE, DISPOSITION_SIDES, NEUTRAL_PARTY, HOSTILE_GROUPS, GROUPS, TRAITS, clamp } from "../constants.js";
 import { runBatch, runBatchSync, replay, findSample } from "../engine/simulator.js";
 import { deriveSeed } from "../engine/rng.js";
-import { applyTraitRules, getAdapter, getModifiers } from "../api.js";
+import { characterSpec, getAdapter, getModifiers } from "../api.js";
 import { computeApproach, computeAwareness, environmentAt, positionOf, squareFeet } from "./terrain.js";
 import { proposeGroups } from "../engine/groups.js";
 import { TACTIC_KEYS, TACTIC_WISHES } from "../engine/tactics.js";
@@ -94,9 +94,8 @@ export async function gatherRoster(setup, adapter = getAdapter()) {
   const out = [];
   for ( const token of tokens ) {
     try {
-      const spec = await adapter.toCombatantSpec(token.document);
+      const spec = await characterSpec(adapter, token.document);
       if ( !spec ) continue;
-      applyTraitRules(token.actor, spec);
       spec.environment = environmentAt(token);
       spec.hidden = token.document.hidden;
       spec.inEncounter = inEncounter.has(token.id);

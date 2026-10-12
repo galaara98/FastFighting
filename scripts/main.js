@@ -19,7 +19,7 @@ import { undoConcession, revealStory, ownCard } from "./foundry/make-it-so.js";
 import { sceneUnit } from "./foundry/terrain.js";
 import { planHolder } from "./foundry/persistence.js";
 import { setDistanceUnit, setTermSource, localize } from "./i18n.js";
-import { loadEnglishWords } from "./foundry/auto-config.js";
+import { loadKeywords } from "./foundry/keywords.js";
 
 Hooks.once("init", () => {
   registerSettings(DefaultsConfig, GenericPathsConfig, StoryTablesConfig);
@@ -128,8 +128,8 @@ for ( const hook of ["createCombatant", "deleteCombatant", "createCombat", "dele
 }
 
 Hooks.once("ready", () => {
-  // (In another language, the English keywords for setting characters up by themselves, which a translation adds to.)
-  loadEnglishWords();
+  // (The keywords read in characters' biographies: English, and the reader's language's on top.)
+  loadKeywords();
   // Tell the GM once if this system has no helper module yet.
   const status = helperStatus();
   if ( game.user.isGM && !status.specific ) ui.notifications[status.ready ? "info" : "warn"](helperMessage(status), { permanent: !status.ready });

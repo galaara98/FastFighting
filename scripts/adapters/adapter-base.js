@@ -173,7 +173,13 @@ export class SystemAdapter {
     return {};
   }
 
-  /** Its biography and description, as plain text, for the playstyles' keywords (FASTFIGHTING.AutoWords). Optional. */
+  /**
+   * Its biography and description, as plain text, for its keywords (keywords/en.json: what they say of its playstyles
+   * and traits). A string is all about the character; or `{about, story}`: what's said of the character itself (its
+   * description, personality, beliefs, appearance), counted in full, and a story told about it (a backstory, campaign
+   * notes: its words may be about anyone in it), counted a little. Leave out what's about others or the opposite of it
+   * (its enemies, its dislikes, its anathema). Optional.
+   */
   biography(actor) {
     return "";
   }
