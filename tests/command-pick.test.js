@@ -25,6 +25,16 @@ describe("who takes command outside the party", () => {
     expect(rankForCommand([{ id: "ranked" }, { id: "loud", playstyles: ["leader", "instigator", "cruel"] }], [{ id: "ranked", score: -2 }])[0].id).toBe("ranked");
   });
 
+  test("a rarer creature has a slight edge (where its system rates rarity): it settles a near thing, no more", () => {
+    // (Equals: the rare one leads, and the uncommon one is next, for a lieutenant.)
+    const equals = [{ id: "common", rarity: 0 }, { id: "rare", rarity: 2 }, { id: "uncommon", rarity: 1 }];
+    expect(rankForCommand(equals, equals.map(m => ({ id: m.id, score: 2 }))).map(r => r.id)).toEqual(["rare", "uncommon", "common"]);
+    // A plainly better leader still leads, unique or not beside it.
+    expect(rankForCommand([{ id: "captain" }, { id: "unique", rarity: 3 }], [{ id: "captain", score: 5 }, { id: "unique", score: 1 }])[0].id).toBe("captain");
+    // (No rarity: nothing changes.)
+    expect(rankForCommand([{ id: "a" }], [{ id: "a", score: 1 }])[0].score).toBe(rankForCommand([{ id: "a", rarity: 0 }], [{ id: "a", score: 1 }])[0].score);
+  });
+
   test("a lieutenant of its own only in a group of five or more", () => {
     expect([1, 2, 4, 5, 9].map(autoLieutenants)).toEqual([0, 0, 0, 1, 1]);
   });

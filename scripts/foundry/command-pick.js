@@ -4,7 +4,8 @@
  *
  * Outside the party: the group's best. The system's own ranking of who leads (adapter.detectLeaders: social and warfare
  * skills, a commander's class, rallying abilities) counts double; how bossy the creature is sways it (its playstyles,
- * Wants to Lead above all; its nerve; its head for tactics). A group of five or more gets a lieutenant too.
+ * Wants to Lead above all; its nerve; its head for tactics); a rarer creature, where its system rates rarity (PF2e),
+ * a little more. A group of five or more gets a lieutenant too.
  * The party: the roles the GM gave its members in earlier fights; else a leader only when one member, and only one,
  * wants to lead.
  */
@@ -17,6 +18,13 @@ export const BOSSY = Object.freeze({
 
 /** A playstyle's pull by its pill's place: the first counts most. */
 const PILL_WEIGHT = [1.5, 1, 0.8, 0.6];
+
+/**
+ * A rarer creature's slight edge for command (spec.rarity: 0 common, 1 uncommon, 2 rare, 3 unique, where the system
+ * rates it): enough to settle a near thing, never to beat a plainly better leader.
+ */
+export const RARITY_PULL = Object.freeze([0, 0.5, 1, 1.5]);
+export const rarityPull = rarity => RARITY_PULL[Math.max(0, Math.min(3, Math.round(Number(rarity) || 0)))];
 
 /** The system's ranking counts this many times over how bossy a creature is. */
 const STATS = 2;
@@ -36,12 +44,12 @@ export function bossiness({ playstyles = [], traits = {} } = {}) {
 
 /**
  * A group's members outside the party, the best to command it first: [{id, score}].
- * @param {{id: string, playstyles?: string[], traits?: object}[]} members
+ * @param {{id: string, playstyles?: string[], traits?: object, rarity?: number}[]} members
  * @param {{id: string, score: number}[]} ranked   the system's ranking of who leads (adapter.detectLeaders)
  */
 export function rankForCommand(members, ranked = []) {
   const stats = new Map(ranked.map(r => [r.id, Number(r.score) || 0]));
-  return members.map(m => ({ id: m.id, score: STATS * (stats.has(m.id) ? stats.get(m.id) : UNRANKED) + bossiness(m) }))
+  return members.map(m => ({ id: m.id, score: STATS * (stats.has(m.id) ? stats.get(m.id) : UNRANKED) + bossiness(m) + rarityPull(m.rarity) }))
     .sort((a, b) => b.score - a.score);
 }
 

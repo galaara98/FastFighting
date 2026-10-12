@@ -375,7 +375,7 @@ function bossyOf(entry) {
     styles = tacticsFor(entry.token.actor, entry.spec).playstyles ?? styles;
   } catch ( err ) { /* (no tactics to read: it's as its traits say) */ }
   const traits = Object.fromEntries(TRAITS.map(k => [k, (Number(entry.spec.traits?.[k]?.base) || 50) + (styles.traits?.[k] ?? 0)]));
-  return { playstyles: styles.ids ?? [], traits };
+  return { playstyles: styles.ids ?? [], traits, rarity: entry.spec.rarity ?? 0 };
 }
 
 /**
