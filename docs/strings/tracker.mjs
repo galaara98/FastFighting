@@ -29,7 +29,7 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const CORE = join(HERE, "..", "..");
 const ROOT = join(CORE, "..");
 const RECORD = join(HERE, "tracker.json");
-const REPOS = { core: "FastFighting", pf2e: "FastFighting-PF2e", dnd5e: "FastFighting-DnD5e", dcc: "FastFighting-DCC", ironsworn: "FastFighting-Ironsworn" };
+const REPOS = { core: "FastFighting", pf2e: "FastFighting-PF2e", dnd5e: "FastFighting-DnD5e", dcc: "FastFighting-DCC", ironsworn: "FastFighting-Ironsworn", daggerheart: "FastFighting-Daggerheart" };
 
 const hash = text => createHash("sha256").update(String(text)).digest("hex").slice(0, 12);
 const today = () => new Date().toISOString().slice(0, 10);

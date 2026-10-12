@@ -524,8 +524,10 @@ async function revertRecord(r) {
   for ( const t of r.deletedTokens ?? [] ) {
     await step("restoring a token", async () => (await fromUuid(t.parentUuid))?.createEmbeddedDocuments("Token", [t.data], { keepId: true }));
   }
+  // (A world setting the system keeps a pool in: Daggerheart's Fear, the GM's.)
+  if ( r.setting ) await step("restoring a setting", () => game.settings.set(r.setting.namespace, r.setting.key, r.setting.value));
   const tokenDoc = r.tokenUuid ? await fromUuid(r.tokenUuid) : null;
-  const actor = tokenDoc?.actor ?? await fromUuid(r.actorUuid);
+  const actor = tokenDoc?.actor ?? (r.actorUuid ? await fromUuid(r.actorUuid) : null);
   if ( !actor ) return;
   if ( r.createdItems?.length ) {
     const ids = r.createdItems.filter(id => actor.items.has(id));

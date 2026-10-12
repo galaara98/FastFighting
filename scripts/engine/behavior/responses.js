@@ -135,7 +135,7 @@ function worthOf(run, u, r, trigger, ctx) {
       if ( r.counter?.save && ctx.by ) {
         // (5e 2024: the caster saves against it.)
         const s = saveRoll(run, ctx.by, r.counter.save.type);
-        const dist = degreeDistribution(run.prep.rules, s.mod, Number(r.counter.save.dc) || 15, { advantage: s.advantage, kind: "save" });
+        const dist = degreeDistribution(run.prep.rules, s.mod, Number(r.counter.save.dc) || 15, { advantage: s.advantage, kind: "save", roller: ctx.by });
         sure = dist[0] + dist[1];
       } else sure = (r.counter?.level ?? 0) >= level ? 1 : Math.max(0.1, (21 - (10 + level - (r.counter?.mod ?? 0))) / 20);
       const kind = ctx.action?.kind;

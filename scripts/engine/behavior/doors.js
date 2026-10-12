@@ -75,7 +75,7 @@ export function doorPlan(run, u, door, state) {
   const plans = [];
   const check = (method, work, dc) => {
     if ( !work || !Number.isFinite(work.mod) ) return;
-    const dist = degreeDistribution(rules, work.mod, dc, { kind: "check" });
+    const dist = degreeDistribution(rules, work.mod, dc, { kind: "check", roller: u });
     const chance = (dist[2] ?? 0) + (dist[3] ?? 0);
     if ( chance <= 0 ) return;
     const cost = normalizeCost(rules, costs[method] ?? basic);
@@ -85,7 +85,7 @@ export function doorPlan(run, u, door, state) {
   check("pick", u.spec.doorWork?.pick, door.pickDC);
   const strike = bestReactionStrike(u);
   if ( strike ) {
-    const dist = degreeDistribution(rules, strike.bonus ?? 0, door.ac, { kind: "attack" });
+    const dist = degreeDistribution(rules, strike.bonus ?? 0, door.ac, { kind: "attack", roller: u });
     const hit = (dist[2] ?? 0) + (dist[3] ?? 0);
     const dmg = doorDamage(rules, door, (strike.damage ?? []).reduce((s, p) => s + meanPart(p), 0));
     if ( hit > 0 && dmg > 0 ) {

@@ -5,7 +5,16 @@
  * second weapon), so the die is an option everywhere: `faces` (default 20). Where a crit or a fumble depends on more
  * than the natural roll alone, `critOn` (a natural this high threatens a crit, as the system reads it for this die)
  * and `fumbleOn` (a natural this low fumbles) ride along to the system's degreeOfSuccess, which decides.
+ *
+ * `roller`: who rolls. A system whose creatures roll different dice says which (rules.dieOf(roller, kind): Daggerheart's
+ * player characters roll the Hope and Fear d12s, its adversaries a d20); that's the roll's `faces` then, a number or the
+ * system's own name for its dice, which its roll() and distribution() read. Its roll() also gets the roller.
  */
+
+/** The die `roller` rolls for this kind of roll, by the system (rules.dieOf), else the one given (a d20 by default). */
+function facesOf(rules, { roller = null, kind = "check", faces = 20 } = {}) {
+  return (roller && rules.dieOf ? rules.dieOf(roller, kind) : null) ?? faces;
+}
 
 const cache = new WeakMap(); // rules -> Map(key -> distribution)
 const KIND_CODE = { attack: 0, save: 1, check: 2 };
@@ -32,14 +41,16 @@ function naturalChance(natural, advantage, faces = 20) {
  * @param {number} [options.fumbleOn]     natural at or under which it fumbles
  * @returns {readonly number[]}  [critFail, fail, success, critSuccess]
  */
-export function degreeDistribution(rules, modifier, dc, { advantage = 0, kind = "check", dice = null, faces = 20, critOn = null, fumbleOn = null, progress = false } = {}) {
+export function degreeDistribution(rules, modifier, dc, options = {}) {
+  const { advantage = 0, kind = "check", dice = null, critOn = null, fumbleOn = null, progress = false } = options;
+  const faces = facesOf(rules, options);
   let byKey = cache.get(rules);
   if ( !byKey ) cache.set(rules, byKey = new Map());
   // A system with dice of its own (Ironsworn: an action die against two challenge dice) works its chances out itself.
   if ( rules.distribution ) {
-    const key = `own|${modifier}|${dc}|${Math.sign(advantage)}|${kind}|${dice?.length ? dice.join(",") : ""}|${progress ? 1 : 0}`;
+    const key = `own|${modifier}|${dc}|${Math.sign(advantage)}|${kind}|${dice?.length ? dice.join(",") : ""}|${progress ? 1 : 0}|${faces}|${critOn ?? ""}`;
     let own = byKey.get(key);
-    if ( !own ) byKey.set(key, own = Object.freeze(rules.distribution(modifier, dc, { advantage, kind, dice, progress })));
+    if ( !own ) byKey.set(key, own = Object.freeze(rules.distribution(modifier, dc, { advantage, kind, dice, progress, faces, critOn })));
     return own;
   }
   const adv = Math.sign(advantage);
@@ -91,13 +102,16 @@ export function rollCheck(rules, rng, modifier, dc, options = {}) {
     extra += Math.sign(f) * rng.die(faces);
   }
   const mod = modifier + extra;
-  const roll = rules.roll ? rules.roll(rng, mod, dc, options) : rollD20(rules, rng, mod, dc, options);
+  const own = { ...options, faces: facesOf(rules, options) };
+  const roll = rules.roll ? rules.roll(rng, mod, dc, own) : rollD20(rules, rng, mod, dc, own);
+  roll.faces ??= own.faces; // (the die it was, for the log)
   return extra ? { ...roll, die: extra } : roll;
 }
 
 /** The degree a check reaches once its total changes (Luck burned after the roll), by the system's rules. */
 export function regrade(rules, roll, dc, kind, options = {}) {
-  const { faces = 20, critOn = null, fumbleOn = null } = options;
+  const { critOn = null, fumbleOn = null } = options;
+  const faces = facesOf(rules, { ...options, kind });
   const die = faces === 20 && critOn === null && fumbleOn === null ? undefined : { faces, critOn, fumbleOn };
   return rules.degreeOfSuccess(roll.natural, roll.total, dc, kind, die);
 }

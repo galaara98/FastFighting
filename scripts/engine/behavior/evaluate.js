@@ -112,7 +112,7 @@ export function expectedDamage(run, a, action, t, attacksMade = 0) {
   if ( action.kind === "save" && action.save ) {
     const extra = bonusDamageParts(run, a, action, t).reduce((s, p) => s + Math.max(0, meanPart(p)), 0);
     const save = saveRoll(run, t, action.save.type, { magical: isMagical(action) });
-    const dist = upgradedDistribution(degreeDistribution(rules, save.mod, action.save.dc, { advantage: save.advantage, kind: "save" }), t, action.save.type);
+    const dist = upgradedDistribution(degreeDistribution(rules, save.mod, action.save.dc, { advantage: save.advantage, kind: "save", roller: t }), t, action.save.type);
     return targets * dist.reduce((s, p, d) => s + p * saveMultiplierFor(rules, d, action.save, t) * (dmg.normal + extra), 0);
   }
   const roll = attackRoll(run, a, t, action, attacksMade);
@@ -200,7 +200,7 @@ function threatNow(run, u, versus) {
     }
     // A spell or item it can only use so often counts in a round's threat only as far as what's left could last a
     // typical fight (a single Meteor Swarm isn't three rounds of Meteor Swarms).
-    const left = action.resource ? (u.resources[action.resource] ?? 0) : Number.isFinite(action.uses) ? (u.uses?.[action.id] ?? action.uses) : Infinity;
+    const left = action.resource ? resourceLeft(u, action) / Math.max(1, action.resourceCost ?? 1) : Number.isFinite(action.uses) ? (u.uses?.[action.id] ?? action.uses) : Infinity;
     // (One that recharges is there whenever it's ready, and may well be again.)
     if ( action.recharge || action.cooldown ) total *= left > 0 ? 1 : 0.4;
     else if ( Number.isFinite(left) ) total *= Math.min(1, left / TYPICAL_ROUNDS);
@@ -226,15 +226,25 @@ export function countsAsAttack(action) {
   return action.attack !== false && (action.kind === "strike" || action.kind === "spell-attack");
 }
 
+/**
+ * What's left to pay for an action from: its own resource (spec.resources), or, with `shared`, a pool its whole side
+ * draws on (run.sharedPools: Daggerheart's Fear, the GM's).
+ */
+export function resourceLeft(u, action) {
+  return action.shared ? (u.sharedPools?.[action.shared] ?? 0) : (u.resources[action.resource] ?? 0);
+}
+
 export function hasUses(u, action) {
   if ( u.lost?.has(action.id) ) return false; // a spell lost to a failed check (DCC)
-  if ( action.resource ) return (u.resources[action.resource] ?? 0) > 0;
+  // (resourceCost: what one use takes, a point by default: Daggerheart's 3 Hope for a class's Hope feature.)
+  if ( action.resource ) return resourceLeft(u, action) >= (action.resourceCost ?? 1);
   if ( Number.isFinite(action.uses) ) return (u.uses[action.id] ?? 0) > 0;
   return true;
 }
 
 export function spendUse(u, action) {
-  if ( action.resource ) u.resources[action.resource] -= 1;
+  if ( action.resource && action.shared && u.sharedPools ) u.sharedPools[action.shared] -= action.resourceCost ?? 1;
+  else if ( action.resource ) u.resources[action.resource] -= action.resourceCost ?? 1;
   else if ( Number.isFinite(action.uses) ) u.uses[action.id] -= 1;
 }
 

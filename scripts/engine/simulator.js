@@ -89,7 +89,7 @@ function attackStakes(run, u, t, action) {
 function rollSave(run, target, type, dc, { stakes = 0.3, label = "", magical = false } = {}) {
   const rules = run.prep.rules;
   const s = saveRoll(run, target, type, { magical });
-  let roll = rollCheck(rules, run.rng, s.mod, dc, { advantage: s.advantage, dice: s.dice, kind: "save" });
+  let roll = rollCheck(rules, run.rng, s.mod, dc, { advantage: s.advantage, dice: s.dice, kind: "save", roller: target });
   spendEdges(target, "save");
   if ( run.boosting && roll.degree < 2 ) roll = boost(run, target, roll, dc, { kind: "save", stakes, label }, logger(run));
   roll = standFirm(run, target, roll, dc, stakes, label);
@@ -214,7 +214,7 @@ function lookAround(run, b) {
   if ( !best ) return false;
   const perception = b.spec.perception ?? b.spec.initiative?.mod ?? 0;
   const check = checkRoll(run, b, perception);
-  const roll = rollCheck(run.prep.rules, run.rng, check.mod, best.cue.dc, { advantage: check.advantage, kind: "check" });
+  const roll = rollCheck(run.prep.rules, run.rng, check.mod, best.cue.dc, { advantage: check.advantage, kind: "check", roller: b });
   if ( roll.degree >= 2 ) notice(run, b, best.cue.sense, best.c);
   return false;
 }
@@ -297,7 +297,7 @@ function dealDamage(run, source, target, amount, { crit = false, types = null } 
     if ( target.hp <= 0 ) {
       target.hp = 0;
       target.wasDowned = true;
-      rules.onDropped(target, { crit, model, amount: rest, overflow: Math.max(0, rest - dealt) });
+      rules.onDropped(target, { crit, model, amount: rest, overflow: Math.max(0, rest - dealt), rng: run.rng });
       if ( target.status === STATUS.DEAD && holdsBack(run, source) ) knockOut(run, target);
       killsBeaten(run, source, target);
       regenerating(target);
@@ -315,7 +315,8 @@ function dealDamage(run, source, target, amount, { crit = false, types = null } 
         }
       }
       log(run, target, {
-        type: fallType(target), by: source?.spec.name ?? null, byId: source?.id ?? null, dying: target.dying, knockedOut: !!target.knockedOut, killed: !!target.killedBeaten
+        type: fallType(target), by: source?.spec.name ?? null, byId: source?.id ?? null, dying: target.dying, knockedOut: !!target.knockedOut, killed: !!target.killedBeaten,
+        note: takeFallNote(target)
       });
       fell(run, target, source);
     }
@@ -342,12 +343,12 @@ function dealDamage(run, source, target, amount, { crit = false, types = null } 
   } else if ( target.status === STATUS.DOWN ) {
     if ( model === DOWNED_MODELS.OUT ) return;
     if ( run.neutral && source ) crossed(run, source, target, "harm", 1.5, logger(run));
-    rules.onDropped(target, { crit, model, amount, overflow: amount });
+    rules.onDropped(target, { crit, model, amount, overflow: amount, rng: run.rng });
     if ( target.status === STATUS.DEAD && holdsBack(run, source) ) knockOut(run, target);
     regenerating(target);
     const dead = target.status === STATUS.DEAD;
     if ( dead ) target.killerId = source?.id ?? target.killerId ?? null;
-    log(run, target, { type: dead ? "death" : "struckDown", by: source?.spec.name ?? null, byId: source?.id ?? null, dying: target.dying, finished: dead });
+    log(run, target, { type: dead ? "death" : "struckDown", by: source?.spec.name ?? null, byId: source?.id ?? null, dying: target.dying, finished: dead, note: takeFallNote(target) });
   }
 }
 
@@ -441,7 +442,7 @@ function testConcentration(run, u, amount = 0) {
   if ( !broken && amount > 0 ) {
     dc = c.dc ? c.dc(amount) : Math.max(10, Math.floor(amount / 2));
     const s = saveRoll(run, u, c.save ?? "con");
-    roll = { ...rollCheck(run.prep.rules, run.rng, s.mod, dc, { advantage: s.advantage, dice: s.dice, kind: "save" }), mod: s.mod };
+    roll = { ...rollCheck(run.prep.rules, run.rng, s.mod, dc, { advantage: s.advantage, dice: s.dice, kind: "save", roller: u }), mod: s.mod };
     broken = roll.degree < 2;
   }
   if ( !broken ) return;
@@ -470,7 +471,7 @@ function exposeToAffliction(run, source, target, spec) {
   if ( target.spec.iwr?.immune?.some(k => spec.traits?.includes(k)) ) return;
   const rules = run.prep.rules;
   const { mod, advantage, dice } = saveRoll(run, target, spec.save.type);
-  const roll = rollCheck(rules, run.rng, mod, spec.save.dc, { advantage, dice, kind: "save" });
+  const roll = rollCheck(rules, run.rng, mod, spec.save.dc, { advantage, dice, kind: "save", roller: target });
   const increase = afflictionStep(rules, roll.degree, "exposure");
   log(run, target, {
     type: "afflictionSave", name: spec.name, saveType: spec.save.type, natural: roll.natural, mod, total: roll.total, dc: spec.save.dc, degree: roll.degree
@@ -547,7 +548,7 @@ function shareHarm(run, source, target) {
     o.hp = Math.max(0, target.hp);
     if ( o.hp > 0 ) continue;
     o.wasDowned = true;
-    rules.onDropped(o, { model: run.prep.options.downedModel, amount: 0, overflow: 0 });
+    rules.onDropped(o, { model: run.prep.options.downedModel, amount: 0, overflow: 0, rng: run.rng });
     killsBeaten(run, source, o);
     if ( o.status === STATUS.STANDING ) continue;
     o.fellRound ??= run.round;
@@ -560,6 +561,13 @@ function shareHarm(run, source, target) {
 
 /** How a fall reads in the log: a death, beaten (out of the fight, however the table decides), or down. */
 const fallType = u => (u.killedBeaten ? "beaten" : u.status === STATUS.DEAD ? "death" : u.status === STATUS.BEATEN ? "beaten" : "down");
+
+/** The system's word on how u fell, once (rules.onDropped's u.fallNote: Daggerheart's death moves). */
+function takeFallNote(u) {
+  const note = u.fallNote ?? null;
+  u.fallNote = null;
+  return note;
+}
 
 /**
  * Would u kill one it has beaten? The Cruel would (it finishes the fallen), and so would a creature that isn't a player
@@ -806,7 +814,7 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
       const extra = bonusDamageParts(run, u, action, target, { commit: true });
       const { roll, mod } = rollSave(run, target, action.save.type, action.save.dc, { stakes: saveStakes(target, meanDamageVs(run, action, target).normal, !!action.effects?.length), label: action.name, magical: isMagical(action) });
       const mult = saveMultiplierFor(rules, roll.degree, action.save, target);
-      const data = !logging ? null : { type: "save", ...common, saveType: action.save.type, natural: roll.natural, mod: mod + (roll.die ?? 0), total: roll.total, dc: action.save.dc, degree: roll.degree, margin: roll.total - action.save.dc };
+      const data = !logging ? null : { type: "save", ...common, saveType: action.save.type, natural: roll.natural, mod: mod + (roll.die ?? 0), total: roll.total, dc: action.save.dc, degree: roll.degree, margin: roll.total - action.save.dc, note: roll.note ?? null, faces: roll.faces ?? null };
       if ( mult > 0 ) {
         const hit = rollHit(run, u, action, target, (action.damage ?? []).concat(extra), mult, roll.degree === 0);
         if ( logging ) log(run, u, { ...data, damage: hit.total });
@@ -886,7 +894,7 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
         }
       }
     }
-    const data = !logging ? null : { type: "attack", ...common, natural: roll.natural, mod: bonus + deedRoll + lift + (roll.die ?? 0), total: roll.total, dc: ac, degree: roll.degree, margin: roll.total - ac, attackNumber: attacksMade + 1, boost: lift || null, faces: opts.faces, deed: r.deed ? deedRoll : null, challenge: roll.challenge ?? null, burned: roll.burned ?? null };
+    const data = !logging ? null : { type: "attack", ...common, natural: roll.natural, mod: bonus + deedRoll + lift + (roll.die ?? 0), total: roll.total, dc: ac, degree: roll.degree, margin: roll.total - ac, attackNumber: attacksMade + 1, boost: lift || null, faces: roll.faces ?? opts.faces, deed: r.deed ? deedRoll : null, challenge: roll.challenge ?? null, burned: roll.burned ?? null, note: roll.note ?? null };
     if ( roll.degree >= 2 ) {
       const crit = roll.degree === 3;
       const extra = bonusDamageParts(run, u, action, target, { advantage, commit: true });
@@ -1024,7 +1032,7 @@ function counterspelled(run, u, action) {
       roll = rollSave(run, u, r.counter.save.type, r.counter.save.dc, { stakes: 0.5, label: action.name }).roll;
       countered = roll.degree < 2;
     } else if ( !countered ) {
-      roll = rollCheck(rules, run.rng, Number(r.counter.mod) || 0, 10 + action.rank, { kind: "check" });
+      roll = rollCheck(rules, run.rng, Number(r.counter.mod) || 0, 10 + action.rank, { kind: "check", roller: e });
       countered = roll.degree >= 2;
     }
     log(run, e, {
@@ -1252,7 +1260,7 @@ function executeControl(run, u, action, target, attacksMade, common) {
   const dc = r.dc ?? null;
   const roll = r.kind === "auto" ? { natural: null, total: null, degree: 2, mod: null }
     : (() => {
-      const opts = { advantage: r.advantage, dice: r.dice, kind: r.rollKind, faces: r.faces ?? 20, critOn: r.critOn ?? null, fumbleOn: r.fumbleOn ?? null };
+      const opts = { advantage: r.advantage, dice: r.dice, kind: r.rollKind, faces: r.faces ?? 20, critOn: r.critOn ?? null, fumbleOn: r.fumbleOn ?? null, roller: r.roller ?? null };
       let x = rollCheck(rules, run.rng, r.mod, r.dc, opts);
       if ( r.kind === "save" ) spendEdges(target, "save");
       else {
@@ -1299,7 +1307,7 @@ function executeControl(run, u, action, target, attacksMade, common) {
       controls: !!outcome?.conditions?.controlled,
       type: "control", ...common, roll: r.kind, saveType: action.save?.type ?? null, against: action.check?.against ?? null,
       natural: roll.natural, mod: roll.mod, total: roll.total, dc, degree, margin: roll.total === null ? null : roll.total - dc,
-      effect: outcome?.label ?? "", took: !!outcome, backfired: !!outcome?.self, damage, shifted: shift, taunt: !!outcome?.taunt,
+      effect: outcome?.label ?? "", took: !!outcome, backfired: !!outcome?.self, damage, shifted: shift, taunt: !!outcome?.taunt, note: roll.note ?? null, faces: roll.faces ?? null,
       goad: !!action.goad, skill: r.pitch?.skill ?? null, dcStat: r.pitch?.dcLabel ?? null, luck: luck?.roll ?? null, needed: luck?.needed ?? null, shrugged,
       debuff: !!(outcome?.mods || outcome?.mark), tempHp: Number(outcome?.tempHp) || 0
     });
@@ -1340,7 +1348,7 @@ function executeBuff(run, u, action, targets, worth = 0, turn = null) {
     const rules = run.prep.rules;
     const dc = Number(action.check.dc) || 0;
     const c = checkRoll(run, u, Number(action.check.mod));
-    const roll = rollCheck(rules, run.rng, c.mod, dc, { advantage: c.advantage, dice: c.dice, kind: "check" });
+    const roll = rollCheck(rules, run.rng, c.mod, dc, { advantage: c.advantage, dice: c.dice, kind: "check", roller: u });
     spendEdges(u, "check");
     check = { skill: action.check.label ?? "", natural: roll.natural, mod: c.mod, total: roll.total, dc, degree: roll.degree, challenge: roll.challenge ?? null };
     outcome = Array.isArray(action.onDegree) ? action.onDegree[roll.degree] ?? null : roll.degree >= 2 ? action.outcome : null;
@@ -1392,7 +1400,7 @@ function executeHeal(run, u, action, target) {
   let roll = null;
   if ( action.healCheck ) {
     const check = checkRoll(run, u, action.healCheck.mod, target);
-    roll = rollCheck(rules, run.rng, check.mod, action.healCheck.dc, { advantage: check.advantage, dice: check.dice, kind: "check" });
+    roll = rollCheck(rules, run.rng, check.mod, action.healCheck.dc, { advantage: check.advantage, dice: check.dice, kind: "check", roller: u });
     spendEdges(u, "check", target.id);
     multiplier = rules.healCheckMultiplier ? rules.healCheckMultiplier(roll.degree) : [0, 0, 1, 2][roll.degree];
     // Someone's life on it: a healer with fate to spare tries again (the selfish less readily, for others).
@@ -1401,7 +1409,7 @@ function executeHeal(run, u, action, target) {
       u.resources.fate -= 1;
       run.fateInPlay = run.units.some(o => fateOf(o) > 0);
       log(run, u, { type: "fate", target: target.spec.name, targetId: target.id, label: u.spec.fateLabel ?? localize("FASTFIGHTING.Words.Fate"), spent: 1 });
-      roll = rollCheck(rules, run.rng, check.mod, action.healCheck.dc, { advantage: check.advantage, dice: check.dice, kind: "check" });
+      roll = rollCheck(rules, run.rng, check.mod, action.healCheck.dc, { advantage: check.advantage, dice: check.dice, kind: "check", roller: u });
       multiplier = rules.healCheckMultiplier ? rules.healCheckMultiplier(roll.degree) : [0, 0, 1, 2][roll.degree];
     }
   }
@@ -1441,7 +1449,7 @@ function leaveReach(run, u, turn, keep = null, need = null) {
       turn.spend(safe.cost);
       // (A way out that takes a check, when the system has one: XCC's acrobatics, harder against several foes.)
       const dc = list.length > 1 ? safe.check?.dcMany ?? safe.check?.dc : safe.check?.dc;
-      const check = safe.check ? rollCheck(run.prep.rules, run.rng, Number(safe.check.mod) || 0, dc, { kind: "check" }) : null;
+      const check = safe.check ? rollCheck(run.prep.rules, run.rng, Number(safe.check.mod) || 0, dc, { kind: "check", roller: u }) : null;
       clear = !check || check.degree >= 2;
       u.disengaged = clear;
       log(run, u, { type: "disengage", label: safe.label ?? "", natural: check?.natural ?? null, total: check?.total ?? null, dc: check ? dc : null, made: clear });
@@ -1584,7 +1592,7 @@ function workTheDoor(run, u, turn, door, target) {
   if ( !turn.canAfford(plan.cost) ) return "stuck";
   turn.spend(plan.cost);
   if ( plan.method === "attack" ) {
-    const roll = rollCheck(rules, run.rng, plan.strike.bonus ?? 0, door.ac, { kind: "attack" });
+    const roll = rollCheck(rules, run.rng, plan.strike.bonus ?? 0, door.ac, { kind: "attack", roller: u });
     let damage = 0;
     if ( roll.degree >= 2 ) {
       const parts = roll.degree === 3 ? criticalParts(rules, plan.strike.damage) : plan.strike.damage;
@@ -1600,7 +1608,7 @@ function workTheDoor(run, u, turn, door, target) {
       natural: roll.natural, mod: plan.strike.bonus ?? 0, total: roll.total, dc: door.ac, degree: roll.degree, ...where
     });
   } else {
-    const roll = rollCheck(rules, run.rng, plan.mod, plan.dc, { kind: "check" });
+    const roll = rollCheck(rules, run.rng, plan.mod, plan.dc, { kind: "check", roller: u });
     const success = roll.degree >= 2;
     if ( success ) openDoor(run, door, state, plan.method === "force");
     else thwart(run, u, kind, target.id, 12);
@@ -1638,7 +1646,7 @@ function sizesUp(run, u, t, turn, room, { decided = false, wholeTurn = false } =
   if ( Number.isFinite(how?.mod) ) {
     const dc = Number.isFinite(how.dc) ? how.dc : rules.sizeUpDC?.(t) ?? typical(rules, "dc", t.spec.level ?? 0);
     const c = checkRoll(run, u, how.mod);
-    const roll = rollCheck(rules, run.rng, c.mod, dc, { advantage: c.advantage, dice: c.dice, kind: "check" });
+    const roll = rollCheck(rules, run.rng, c.mod, dc, { advantage: c.advantage, dice: c.dice, kind: "check", roller: u });
     spendEdges(u, "check");
     check = { skill: how.label ?? "", natural: roll.natural, mod: c.mod, total: roll.total, dc, degree: roll.degree, challenge: roll.challenge ?? null };
   }
@@ -2386,7 +2394,7 @@ function endOfTurn(run, u) {
     for ( const e of [...u.effects] ) {
       if ( !e.repeatSave ) continue;
       const s = saveRoll(run, u, e.repeatSave.type);
-      const roll = rollCheck(rules, run.rng, s.mod, e.repeatSave.dc, { advantage: s.advantage, dice: s.dice, kind: "save" });
+      const roll = rollCheck(rules, run.rng, s.mod, e.repeatSave.dc, { advantage: s.advantage, dice: s.dice, kind: "save", roller: u });
       if ( roll.degree < 2 ) continue;
       u.effects.splice(u.effects.indexOf(e), 1);
       recomputeConditions(u);
@@ -2428,7 +2436,7 @@ function endOfTurn(run, u) {
         continue;
       }
       const { mod, advantage, dice } = saveRoll(run, u, a.spec.save.type);
-      const roll = rollCheck(rules, run.rng, mod, a.spec.save.dc, { advantage, dice, kind: "save" });
+      const roll = rollCheck(rules, run.rng, mod, a.spec.save.dc, { advantage, dice, kind: "save", roller: u });
       a.stage = Math.min(a.spec.stages.length, a.stage + afflictionStep(rules, roll.degree, "stage"));
       if ( a.stage <= 0 ) {
         u.afflictions.splice(u.afflictions.indexOf(a), 1);
@@ -2453,7 +2461,7 @@ function firstAid(run, u, target) {
   const rules = run.prep.rules;
   const dc = rules.firstAidDC(target);
   const check = checkRoll(run, u, u.spec.firstAid.mod, target);
-  const roll = rollCheck(rules, run.rng, check.mod, dc, { advantage: check.advantage, dice: check.dice, kind: "check" });
+  const roll = rollCheck(rules, run.rng, check.mod, dc, { advantage: check.advantage, dice: check.dice, kind: "check", roller: u });
   spendEdges(u, "check", target.id);
   const before = target.dying;
   rules.firstAid(target, roll.degree);
@@ -2685,6 +2693,28 @@ function summarize(run, ended, capture, winners) {
     collapsed, units, doors, log: run.log };
 }
 
+/**
+ * A creature fighting on for a last turn or so before it dies (rules.onDropped's `lastStand: {turns, label}`:
+ * Daggerheart's Blaze of Glory): when its turns are spent, it dies.
+ */
+function endLastStand(run, u) {
+  if ( u.status !== STATUS.STANDING ) {
+    u.lastStand = null;
+    return;
+  }
+  u.lastStand.turns -= 1;
+  if ( u.lastStand.turns > 0 ) return;
+  const label = u.lastStand.label ?? "";
+  u.lastStand = null;
+  u.status = STATUS.DEAD;
+  u.hp = Math.min(0, u.hp);
+  u.fellRound ??= run.round;
+  run.firstFallen ??= u.id;
+  releaseGrabs(run, u);
+  log(run, u, { type: "death", lastStand: label, by: null, byId: null, finished: true });
+  fell(run, u, null);
+}
+
 /** Simulate a single battle. */
 export function runOne(prep, seed, { log: withLog = false, capture = false } = {}) {
   const run = createRun(prep);
@@ -2698,6 +2728,8 @@ export function runOne(prep, seed, { log: withLog = false, capture = false } = {
     u.tac = sampleRunTactics(u.spec, run.rng);
     u.hunts = u.tac?.beyond === "hunt";
   }
+  // The system's own state for the fight (Daggerheart: the GM's Fear).
+  prep.rules.initRun?.(run);
   if ( withLog ) run.log = [];
   // Trap avoiders: the hazards they spot (behavior/traps.js), kept clear of as they move.
   run.trapLog = logger(run);
@@ -2725,9 +2757,11 @@ export function runOne(prep, seed, { log: withLog = false, capture = false } = {
   for ( let round = 1; !ended && round <= prep.options.maxRounds; round++ ) {
     run.round = round;
     refreshLeans(run); // (the underdog changes as the fight goes)
-    for ( const u of order ) {
+    // (Who acts, and when: the initiative order, or the system's own way of passing the turn: Daggerheart's spotlight.)
+    for ( const u of prep.rules.roundTurns ? prep.rules.roundTurns(run, order) : order ) {
       noteCommand(run);
       takeTurn(run, u);
+      if ( u.lastStand ) endLastStand(run, u);
       if ( battleOver(run) ) { ended = true; break; }
       if ( run.legendary ) {
         legendaryMoment(run, u);

@@ -13,7 +13,7 @@ import { fileURLToPath, pathToFileURL } from "url";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(HERE, "..", "..", "..");
-const REPOS = { core: "FastFighting", pf2e: "FastFighting-PF2e", dnd5e: "FastFighting-DnD5e", dcc: "FastFighting-DCC", ironsworn: "FastFighting-Ironsworn" };
+const REPOS = { core: "FastFighting", pf2e: "FastFighting-PF2e", dnd5e: "FastFighting-DnD5e", dcc: "FastFighting-DCC", ironsworn: "FastFighting-Ironsworn", daggerheart: "FastFighting-Daggerheart" };
 const flat = (o, p = "", out = {}) => { for ( const [k, v] of Object.entries(o) ) { if ( v && typeof v === "object" ) flat(v, `${p}${k}.`, out); else out[`${p}${k}`] = v; } return out; };
 const words = s => (String(s).replace(/\{\w+\}/g, " ").replace(/<[^>]+>/g, " ").match(/[A-Za-zÀ-ÿ][A-Za-zÀ-ÿ'’-]*/g) ?? []).length;
 const marks = s => [...new Set(String(s).match(/\{\w+\}/g) ?? [])];
@@ -377,7 +377,7 @@ export function describe(repo, key, value) {
 /* -------------------------------------------- */
 /*  The CSV                                     */
 /* -------------------------------------------- */
-export const MODULES = { core: "Core", pf2e: "PF2e", dnd5e: "D&D 5e", dcc: "DCC", ironsworn: "Ironsworn" };
+export const MODULES = { core: "Core", pf2e: "PF2e", dnd5e: "D&D 5e", dcc: "DCC", ironsworn: "Ironsworn", daggerheart: "Daggerheart" };
 
 /** A CSV's rows as arrays (RFC 4180: quoted fields, doubled quotes, line breaks inside quotes). */
 export function parseCsv(text) {
@@ -442,7 +442,7 @@ if ( run ) {
   rows.sort((a, b) => rank(a) - rank(b));
 
   const cell = v => `"${String(v).replace(/"/g, "\"\"")}"`;
-  const PREFIX = { core: "FASTFIGHTING", pf2e: "FFPF2E", dnd5e: "FFDND5E", dcc: "FFDCC", ironsworn: "FFIRONSWORN" };
+  const PREFIX = { core: "FASTFIGHTING", pf2e: "FFPF2E", dnd5e: "FFDND5E", dcc: "FFDCC", ironsworn: "FFIRONSWORN", daggerheart: "FFDAGGERHEART" };
   const lines = [["#", "Module", "Area", "Key", "Where it shows", "What it must say", "Limits", "Proposed", "Yours"].map(cell).join(",")];
   rows.forEach((r, i) => {
     const module = MODULES[r.repo];

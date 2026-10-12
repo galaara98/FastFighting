@@ -15,7 +15,13 @@ const t = (key, data = null) => localize(`FASTFIGHTING.Log.${key}`, data);
 
 const signed = n => (n >= 0 ? `+${n}` : `${n}`);
 const degree = d => t(`Degree${d ?? 1}`);
-const dice = (nat, mod, total, dc, label, faces = 20) => t("Roll", { faces: faces ?? 20, natural: nat, mod: signed(mod ?? 0), total, label, dc });
+/** The line being written (its die, for dice() where the caller doesn't say). */
+let current = null;
+/** A roll: its die and natural (a system's own dice, Daggerheart's two d12s, without a die's name), mod, total, against what. */
+const dice = (nat, mod, total, dc, label, faces) => {
+  const f = faces ?? current?.faces ?? 20;
+  return t(typeof f === "number" ? "Roll" : "RollOwn", { faces: f, natural: nat, mod: signed(mod ?? 0), total, label, dc });
+};
 /** A damage type's name: the common ones in the reader's language (the system's own word otherwise). */
 const damageType = type => (hasWords(`FASTFIGHTING.DamageType.${type}`) ? localize(`FASTFIGHTING.DamageType.${type}`) : type ?? "");
 const damage = (n, type) => (n ? t("Damage", { n, type: damageType(type) }).trim() : "");
@@ -77,6 +83,14 @@ const role = r => (r === "boss" ? t("RoleBoss") : r === "leader" ? t("RoleLeader
  * @returns {string}
  */
 export function logLine(e) {
+  current = e;
+  const line = baseLine(e);
+  current = null;
+  // (The system's own word on its dice, when it has one: Daggerheart's Hope and Fear.)
+  return e.note && line ? `${line} · ${e.note}` : line;
+}
+
+function baseLine(e) {
   const a = { actor: e.actor ?? "", target: e.target ?? "", by: e.by ?? "" };
   switch ( e.type ) {
     case "attack": {

@@ -56,7 +56,7 @@ export function cast(run, u, action, { stakes = 0.5, log = null } = {}) {
   const faces = c.faces ?? rules.actionDie?.(u, u.actsThisTurn ?? 0) ?? 20;
   const tiers = tierActionsOf(run.prep, action);
   const lowest = tiers[0]?.min ?? Infinity;
-  let roll = rollCheck(rules, run.rng, Number(c.mod) || 0, lowest, { kind: "check", faces });
+  let roll = rollCheck(rules, run.rng, Number(c.mod) || 0, lowest, { kind: "check", faces, roller: c.faces ? null : u });
   // (What the roll means beyond the spell, by the system: DCC's Fleeting Luck.)
   rules.afterRoll?.(run, u, roll, { kind: "cast", action, faces });
   const range = c.disapproval ? (u.disapproval ?? c.disapproval) : 0;

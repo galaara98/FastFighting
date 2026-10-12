@@ -733,7 +733,7 @@ export function saveRoll(run, target, type, { magical = false } = {}) {
   const mods = target.mods ?? {};
   let advantage = netAdvantage(m.advantage ?? 0, mods.saveAdv ?? 0);
   if ( magical && target.spec.magicResistance ) advantage = netAdvantage(advantage, 1);
-  return { mod: base + (m.bonus ?? 0) + (mods.saves ?? 0) + auraBonus(run, target), advantage, dice: mods.saveDie ?? null };
+  return { mod: base + (m.bonus ?? 0) + (mods.saves ?? 0) + auraBonus(run, target), advantage, dice: mods.saveDie ?? null, roller: target };
 }
 
 /** The best save aura over t from a friend who's up and within its reach (anywhere, without positions). */
@@ -771,7 +771,7 @@ export function defenseDc(run, target, against) {
 export function checkRoll(run, u, mod, target = null) {
   const m = run.prep.rules.modifiers?.check?.({ unit: u }) ?? {};
   const own = modsAgainst(u, target);
-  return { mod: (Number(mod) || 0) + (m.bonus ?? 0) + (own.checks ?? 0), advantage: netAdvantage(m.advantage ?? 0, own.checkAdv ?? 0), dice: own.checkDie ?? null };
+  return { mod: (Number(mod) || 0) + (m.bonus ?? 0) + (own.checks ?? 0), advantage: netAdvantage(m.advantage ?? 0, own.checkAdv ?? 0), dice: own.checkDie ?? null, roller: u };
 }
 
 /** A fresh turn budget for u, minus what conditions take away (stunned, slowed, paralyzed ...). */
@@ -807,7 +807,8 @@ export function attackRoll(run, u, target, action, attacksMade = 0) {
     faces: dieFor(run, u, action),
     critOn: action.critOn ?? null,
     fumbleOn: action.fumbleOn ?? null,
-    deed: action.deedDie ?? null
+    deed: action.deedDie ?? null,
+    roller: u
   };
 }
 
@@ -822,7 +823,7 @@ export function dieFor(run, u, action) {
  */
 export function attackOptions(r, { deed = false } = {}) {
   const dice = deed && r.deed ? [...(r.dice ?? []), r.deed] : r.dice;
-  return { advantage: r.advantage, dice: dice?.length ? dice : null, kind: "attack", faces: r.faces ?? 20, critOn: r.critOn ?? null, fumbleOn: r.fumbleOn ?? null, progress: !!r.progress };
+  return { advantage: r.advantage, dice: dice?.length ? dice : null, kind: "attack", faces: r.faces ?? 20, critOn: r.critOn ?? null, fumbleOn: r.fumbleOn ?? null, progress: !!r.progress, roller: r.roller ?? null };
 }
 
 /** Does a bonus-damage condition hold for this hit? */

@@ -302,9 +302,9 @@ export function bestPitch(run, talker, t) {
     shared ??= talkDCShared(run, talker, t);
     const dc = talkDC(run, talker, t, kind, shared);
     // (A Lore-Collector that sized it up: about 2.5 times as likely to get through.)
-    const lift = boostBonus(rules, talker, t, base, dc, { advantage, dice, kind: "check" });
+    const lift = boostBonus(rules, talker, t, base, dc, { advantage, dice, kind: "check", roller: talker });
     const mod = base + lift;
-    const dist = degreeDistribution(rules, mod, dc, { advantage, dice, kind: "check" });
+    const dist = degreeDistribution(rules, mod, dc, { advantage, dice, kind: "check", roller: talker });
     // A bluff backfires harder, so it needs to be clearly better.
     const p = dist[2] + dist[3] - (kind === "deceive" ? dist[0] * 0.5 : 0);
     if ( !best || p > best.pSuccess ) {
@@ -678,7 +678,7 @@ function fallBack(run, a, leader, log) {
 export function attemptTalk(run, talker, pitch, log) {
   const t = pitch.target;
   const rules = run.prep.rules;
-  const roll = rollCheck(rules, run.rng, pitch.mod, pitch.dc, { advantage: pitch.advantage ?? 0, dice: pitch.dice ?? null, kind: "check" });
+  const roll = rollCheck(rules, run.rng, pitch.mod, pitch.dc, { advantage: pitch.advantage ?? 0, dice: pitch.dice ?? null, kind: "check", roller: talker });
   spendEdges(talker, "check", t.id);
   spendBoost(talker, t);
   const steps = stepsToConvince(t, run, talker);
@@ -700,7 +700,7 @@ export function attemptTalk(run, talker, pitch, log) {
   const pull = aim === "recruit" ? appeal(run, t, talker.side).fulfils : null;
   const pullName = pull ? run.byId.get(pull.targetId)?.spec.name ?? "" : "";
   if ( run.log ) log(talker, {
-    type: "talk", kind: pitch.kind, skill: pitch.skill, target: t.spec.name, targetId: t.id, natural: roll.natural, mod: pitch.mod, boost: pitch.boost ?? null, total: roll.total,
+    type: "talk", kind: pitch.kind, skill: pitch.skill, target: t.spec.name, targetId: t.id, natural: roll.natural, mod: pitch.mod, boost: pitch.boost ?? null, total: roll.total, note: roll.note ?? null, faces: roll.faces ?? null,
     dc: pitch.dc, dcStat: pitch.dcLabel, degree: roll.degree, margin: roll.total - pitch.dc, challenge: roll.challenge ?? null,
     progress: Math.min(progress, steps), steps, offended: roll.degree === 0,
     aim, appeal: pull ? { kind: pull.kind, target: pullName, targetId: pull.targetId } : null

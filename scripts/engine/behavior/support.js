@@ -86,7 +86,7 @@ function besideFoe(run, u, a, action) {
 export function landing(run, u, action) {
   if ( !action.check || !Number.isFinite(Number(action.check.mod)) ) return [0, 0, 1, 0];
   const c = checkRoll(run, u, Number(action.check.mod));
-  return degreeDistribution(run.prep.rules, c.mod, Number(action.check.dc) || 0, { advantage: c.advantage, dice: c.dice, kind: "check" });
+  return degreeDistribution(run.prep.rules, c.mod, Number(action.check.dc) || 0, { advantage: c.advantage, dice: c.dice, kind: "check", roller: u });
 }
 
 /** What a buff is worth to a friend, over what its roll may come to. */

@@ -60,9 +60,9 @@ export function goadPitch(run, talker, t, action) {
     if ( typeof pitch?.mod !== "number" ) continue;
     const { mod: base, advantage, dice } = checkRoll(run, talker, pitch.mod + study, t);
     const dc = t.spec.social?.resist?.[kind]?.dc ?? typical(rules, "dc", t.spec.level ?? 0);
-    const lift = boostBonus(rules, talker, t, base, dc, { advantage, dice, kind: "check" });
+    const lift = boostBonus(rules, talker, t, base, dc, { advantage, dice, kind: "check", roller: talker });
     const mod = base + lift;
-    const dist = degreeDistribution(rules, mod, dc, { advantage, dice, kind: "check" });
+    const dist = degreeDistribution(rules, mod, dc, { advantage, dice, kind: "check", roller: talker });
     const p = dist[2] + dist[3];
     if ( !best || p > best.p ) best = { kind, skill: pitch.skill ?? kind, mod, advantage, dice, dc, dcLabel: t.spec.social?.resist?.[kind]?.label ?? "DC", boost: lift || null, p };
   }

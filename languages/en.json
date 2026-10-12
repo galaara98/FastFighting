@@ -1257,6 +1257,7 @@
     },
     "Log": {
       "Roll": "d{faces} {natural} {mod} = {total} vs {label} {dc}",
+      "RollOwn": "{natural} {mod} = {total} vs {label} {dc}",
       "Challenge": "d6 {natural} {mod} = {total} vs {dice}",
       "Progress": "progress {total} vs {dice}",
       "DC": "DC",

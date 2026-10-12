@@ -88,13 +88,13 @@ export function controlRoll(run, u, t, action, attacksMade = 0) {
   if ( kind === "auto" ) return { kind };
   if ( kind === "save" ) {
     const save = saveRoll(run, t, action.save.type, { magical: isMagical(action) });
-    return { kind, mod: save.mod, dc: Number(action.save.dc) || 10, advantage: netAdvantage(save.advantage, Number(action.save.advantage) || 0), dice: save.dice, rollKind: "save" };
+    return { kind, mod: save.mod, dc: Number(action.save.dc) || 10, advantage: netAdvantage(save.advantage, Number(action.save.advantage) || 0), dice: save.dice, rollKind: "save", roller: t };
   }
   if ( kind === "goad" ) {
     // A playstyle's taunt: its talking, as any pitch (behavior/goad.js), and then its luck check.
     const pitch = goadPitch(run, u, t, action);
-    if ( !pitch ) return { kind, mod: -99, dc: 99, advantage: 0, dice: null, rollKind: "check", luck: 0 };
-    return { kind, mod: pitch.mod, dc: pitch.dc, advantage: pitch.advantage, dice: pitch.dice, rollKind: "check", pitch, luck: goadLuck(run, action) };
+    if ( !pitch ) return { kind, mod: -99, dc: 99, advantage: 0, dice: null, rollKind: "check", luck: 0, roller: u };
+    return { kind, mod: pitch.mod, dc: pitch.dc, advantage: pitch.advantage, dice: pitch.dice, rollKind: "check", pitch, luck: goadLuck(run, action), roller: u };
   }
   if ( kind === "check" ) {
     const check = checkRoll(run, u, action.check.mod, t);
@@ -102,20 +102,20 @@ export function controlRoll(run, u, t, action, attacksMade = 0) {
     const dc = defenseDc(run, t, action.check.against ?? "will");
     const mod = check.mod + map;
     const lift = boostBonus(run.prep.rules, u, t, mod, dc, { advantage: check.advantage, dice: check.dice, kind: "check" });
-    return { kind, mod: mod + lift, dc, advantage: check.advantage, dice: check.dice, rollKind: "check" };
+    return { kind, mod: mod + lift, dc, advantage: check.advantage, dice: check.dice, rollKind: "check", roller: u };
   }
   const roll = attackRoll(run, u, t, action, attacksMade);
   const opts = attackOptions(roll);
   const dc = currentAc(run, t, u, action);
   const lift = boostBonus(run.prep.rules, u, t, roll.bonus, dc, opts);
-  return { kind, mod: roll.bonus + lift, dc, advantage: roll.advantage, dice: roll.dice, rollKind: "attack", faces: opts.faces, critOn: opts.critOn, fumbleOn: opts.fumbleOn };
+  return { kind, mod: roll.bonus + lift, dc, advantage: roll.advantage, dice: roll.dice, rollKind: "attack", faces: opts.faces, critOn: opts.critOn, fumbleOn: opts.fumbleOn, roller: u };
 }
 
 /** Chance of each degree, from the target's side for a save and from the user's otherwise ([1] for "auto": a hit). */
 function controlDistribution(run, u, t, action, attacksMade) {
   const roll = controlRoll(run, u, t, action, attacksMade);
   if ( roll.kind === "auto" ) return [0, 0, 1, 0];
-  let dist = [...degreeDistribution(run.prep.rules, roll.mod, roll.dc, { advantage: roll.advantage, kind: roll.rollKind, dice: roll.dice, faces: roll.faces ?? 20, critOn: roll.critOn ?? null, fumbleOn: roll.fumbleOn ?? null })];
+  let dist = [...degreeDistribution(run.prep.rules, roll.mod, roll.dc, { advantage: roll.advantage, kind: roll.rollKind, dice: roll.dice, faces: roll.faces ?? 20, critOn: roll.critOn ?? null, fumbleOn: roll.fumbleOn ?? null, roller: roll.roller ?? null })];
   // (A playstyle's taunt that gets through still needs its luck.)
   if ( roll.kind === "goad" ) {
     const p = roll.luck / 100;

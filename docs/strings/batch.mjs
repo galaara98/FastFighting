@@ -21,8 +21,8 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const CORE = join(HERE, "..", "..");
 const BATCHES = join(HERE, "batches");
 const PURPOSES = join(HERE, "purposes.json");
-const FOLDERS = { core: "FastFighting", pf2e: "FastFighting-PF2e", dnd5e: "FastFighting-DnD5e", dcc: "FastFighting-DCC", ironsworn: "FastFighting-Ironsworn" };
-const HELPERS = { pf2e: "PF2e", dnd5e: "D&D 5e", dcc: "DCC", ironsworn: "Ironsworn" };
+const FOLDERS = { core: "FastFighting", pf2e: "FastFighting-PF2e", dnd5e: "FastFighting-DnD5e", dcc: "FastFighting-DCC", ironsworn: "FastFighting-Ironsworn", daggerheart: "FastFighting-Daggerheart" };
+const HELPERS = { pf2e: "PF2e", dnd5e: "D&D 5e", dcc: "DCC", ironsworn: "Ironsworn", daggerheart: "Daggerheart" };
 
 /* -------------------------------------------- */
 /*  Where a GM meets each string                */

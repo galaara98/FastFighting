@@ -228,7 +228,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "d41031327928"
+   "hash": "d41031327928",
+   "changed": true
   },
   "core:code:scripts/foundry/make-it-so.js:revertRecord#11": {
    "repo": "core",
@@ -238,7 +239,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "45409d6d5e41"
+   "hash": "45409d6d5e41",
+   "changed": true
   },
   "core:code:scripts/foundry/make-it-so.js:revertRecord#12": {
    "repo": "core",
@@ -255,6 +257,17 @@
    "repo": "core",
    "file": "scripts/foundry/make-it-so.js",
    "key": "scripts/foundry/make-it-so.js:revertRecord#13",
+   "area": "core/code",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "f72e346158ec",
+   "changed": true
+  },
+  "core:code:scripts/foundry/make-it-so.js:revertRecord#14": {
+   "repo": "core",
+   "file": "scripts/foundry/make-it-so.js",
+   "key": "scripts/foundry/make-it-so.js:revertRecord#14",
    "area": "core/code",
    "status": "todo",
    "date": null,
@@ -289,7 +302,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "3a2c46aead66"
+   "hash": "3a2c46aead66",
+   "changed": true
   },
   "core:code:scripts/foundry/make-it-so.js:revertRecord#5": {
    "repo": "core",
@@ -299,7 +313,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "f44cc0c0f067"
+   "hash": "f44cc0c0f067",
+   "changed": true
   },
   "core:code:scripts/foundry/make-it-so.js:revertRecord#6": {
    "repo": "core",
@@ -309,7 +324,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "c060a5082a5a"
+   "hash": "c060a5082a5a",
+   "changed": true
   },
   "core:code:scripts/foundry/make-it-so.js:revertRecord#7": {
    "repo": "core",
@@ -319,7 +335,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "d8c83884c1f1"
+   "hash": "d8c83884c1f1",
+   "changed": true
   },
   "core:code:scripts/foundry/make-it-so.js:revertRecord#8": {
    "repo": "core",
@@ -329,7 +346,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "d41031327928"
+   "hash": "d41031327928",
+   "changed": true
   },
   "core:code:scripts/foundry/make-it-so.js:revertRecord#9": {
    "repo": "core",
@@ -339,7 +357,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "5c082cfdd672"
+   "hash": "5c082cfdd672",
+   "changed": true
   },
   "core:code:scripts/foundry/make-it-so.js:step#1": {
    "repo": "core",
@@ -4601,6 +4620,16 @@
    "date": null,
    "commit": null,
    "hash": "563e16764447"
+  },
+  "core:FASTFIGHTING.Log.RollOwn": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.RollOwn",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "3e7963ccc585"
   },
   "core:FASTFIGHTING.Log.RoundShort": {
    "repo": "core",
@@ -18237,6 +18266,786 @@
    "date": null,
    "commit": null,
    "hash": "aa8dfc8d92cb"
+  },
+  "daggerheart:code:scripts/main.js:(top)#1": {
+   "repo": "daggerheart",
+   "file": "scripts/main.js",
+   "key": "scripts/main.js:(top)#1",
+   "area": "daggerheart/code",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "92bccdfd208a"
+  },
+  "daggerheart:code:scripts/main.js:(top)#2": {
+   "repo": "daggerheart",
+   "file": "scripts/main.js",
+   "key": "scripts/main.js:(top)#2",
+   "area": "daggerheart/code",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "61fe0e78d94d"
+  },
+  "daggerheart:FFDAGGERHEART.CoreTooOld": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.CoreTooOld",
+   "area": "daggerheart/General",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "810ab720fe6d"
+  },
+  "daggerheart:FFDAGGERHEART.DeathMove.avoid": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.DeathMove.avoid",
+   "area": "daggerheart/DeathMove",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "d29f43ff2cb5"
+  },
+  "daggerheart:FFDAGGERHEART.DeathMove.Avoid": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.DeathMove.Avoid",
+   "area": "daggerheart/DeathMove",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "5c1d693fc309"
+  },
+  "daggerheart:FFDAGGERHEART.DeathMove.AvoidScar": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.DeathMove.AvoidScar",
+   "area": "daggerheart/DeathMove",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "c447217d5857"
+  },
+  "daggerheart:FFDAGGERHEART.DeathMove.blaze": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.DeathMove.blaze",
+   "area": "daggerheart/DeathMove",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "205257c3b0a1"
+  },
+  "daggerheart:FFDAGGERHEART.DeathMove.BlazeNote": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.DeathMove.BlazeNote",
+   "area": "daggerheart/DeathMove",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "244a165e73b3"
+  },
+  "daggerheart:FFDAGGERHEART.DeathMove.risk": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.DeathMove.risk",
+   "area": "daggerheart/DeathMove",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "a961aae2df36"
+  },
+  "daggerheart:FFDAGGERHEART.DeathMove.RiskAll": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.DeathMove.RiskAll",
+   "area": "daggerheart/DeathMove",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "cd53ac53e95b"
+  },
+  "daggerheart:FFDAGGERHEART.DeathMove.RiskDies": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.DeathMove.RiskDies",
+   "area": "daggerheart/DeathMove",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "4c828e9aca70"
+  },
+  "daggerheart:FFDAGGERHEART.DeathMove.RiskLives": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.DeathMove.RiskLives",
+   "area": "daggerheart/DeathMove",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "b1de57918668"
+  },
+  "daggerheart:FFDAGGERHEART.Difficulty": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Difficulty",
+   "area": "daggerheart/General",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "be44133ed57f"
+  },
+  "daggerheart:FFDAGGERHEART.Encounter.Fear": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Encounter.Fear",
+   "area": "daggerheart/Encounter",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "700c1a25e8f0"
+  },
+  "daggerheart:FFDAGGERHEART.Encounter.Title": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Encounter.Title",
+   "area": "daggerheart/Encounter",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "c3d3811c707a"
+  },
+  "daggerheart:FFDAGGERHEART.Label": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Label",
+   "area": "daggerheart/General",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "22f4a4670380"
+  },
+  "daggerheart:FFDAGGERHEART.Lead.Presence": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Lead.Presence",
+   "area": "daggerheart/Lead",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "57c4102fa0d2"
+  },
+  "daggerheart:FFDAGGERHEART.Lead.Type": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Lead.Type",
+   "area": "daggerheart/Lead",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "05167980989d"
+  },
+  "daggerheart:FFDAGGERHEART.Minion.More": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Minion.More",
+   "area": "daggerheart/Minion",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "2caeb298e0cd"
+  },
+  "daggerheart:FFDAGGERHEART.NeedsCore": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.NeedsCore",
+   "area": "daggerheart/General",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "d2215f29281a"
+  },
+  "daggerheart:FFDAGGERHEART.Note.Crit": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Note.Crit",
+   "area": "daggerheart/Note",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "bf9e1691121f"
+  },
+  "daggerheart:FFDAGGERHEART.Note.Experience": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Note.Experience",
+   "area": "daggerheart/Note",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "8077150245c4"
+  },
+  "daggerheart:FFDAGGERHEART.Note.Fear": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Note.Fear",
+   "area": "daggerheart/Note",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "e6059642d22c"
+  },
+  "daggerheart:FFDAGGERHEART.Note.Hope": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Note.Hope",
+   "area": "daggerheart/Note",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "54c271b690ee"
+  },
+  "daggerheart:FFDAGGERHEART.Note.Reaction": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Note.Reaction",
+   "area": "daggerheart/Note",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "271ae34ad2c8"
+  },
+  "daggerheart:FFDAGGERHEART.Out.Armor": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Out.Armor",
+   "area": "daggerheart/Out",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "7a7fe8884063"
+  },
+  "daggerheart:FFDAGGERHEART.Out.DeathMove": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Out.DeathMove",
+   "area": "daggerheart/Out",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "84367e46d48b"
+  },
+  "daggerheart:FFDAGGERHEART.Out.Defeated": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Out.Defeated",
+   "area": "daggerheart/Out",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "63c72ae3ce76"
+  },
+  "daggerheart:FFDAGGERHEART.Out.Dies": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Out.Dies",
+   "area": "daggerheart/Out",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "aacf35708ea5"
+  },
+  "daggerheart:FFDAGGERHEART.Out.Fled": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Out.Fled",
+   "area": "daggerheart/Out",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "bf516b3dd59a"
+  },
+  "daggerheart:FFDAGGERHEART.Out.HitPoints": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Out.HitPoints",
+   "area": "daggerheart/Out",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "9d3f57ac59dc"
+  },
+  "daggerheart:FFDAGGERHEART.Out.Hope": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Out.Hope",
+   "area": "daggerheart/Out",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "3cc534875d94"
+  },
+  "daggerheart:FFDAGGERHEART.Out.Retreated": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Out.Retreated",
+   "area": "daggerheart/Out",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "39d1ab4f4f6c"
+  },
+  "daggerheart:FFDAGGERHEART.Out.Scar": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Out.Scar",
+   "area": "daggerheart/Out",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "271334a1f674"
+  },
+  "daggerheart:FFDAGGERHEART.Out.StandsDown": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Out.StandsDown",
+   "area": "daggerheart/Out",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "0b854476064a"
+  },
+  "daggerheart:FFDAGGERHEART.Out.Stress": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Out.Stress",
+   "area": "daggerheart/Out",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "1bdce7846775"
+  },
+  "daggerheart:FFDAGGERHEART.Out.Surrenders": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Out.Surrenders",
+   "area": "daggerheart/Out",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "0d0ae56ee488"
+  },
+  "daggerheart:FFDAGGERHEART.Out.TalkedAway": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Out.TalkedAway",
+   "area": "daggerheart/Out",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "6238d58e5362"
+  },
+  "daggerheart:FFDAGGERHEART.Out.Unconscious": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Out.Unconscious",
+   "area": "daggerheart/Out",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "daf064fe39bd"
+  },
+  "daggerheart:FFDAGGERHEART.Plan.Fear": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Plan.Fear",
+   "area": "daggerheart/Plan",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "140262b32b0c"
+  },
+  "daggerheart:FFDAGGERHEART.Plan.FearHint": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Plan.FearHint",
+   "area": "daggerheart/Plan",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "53ed59cc4a3a"
+  },
+  "daggerheart:FFDAGGERHEART.Plan.free": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Plan.free",
+   "area": "daggerheart/Plan",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "f411a1fb6275"
+  },
+  "daggerheart:FFDAGGERHEART.Plan.freeHint": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Plan.freeHint",
+   "area": "daggerheart/Plan",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "a6e0251daea0"
+  },
+  "daggerheart:FFDAGGERHEART.Plan.Hint": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Plan.Hint",
+   "area": "daggerheart/Plan",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "44c410c3f5fc"
+  },
+  "daggerheart:FFDAGGERHEART.Plan.sparing": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Plan.sparing",
+   "area": "daggerheart/Plan",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "46ba8ebdbdaf"
+  },
+  "daggerheart:FFDAGGERHEART.Plan.sparingHint": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Plan.sparingHint",
+   "area": "daggerheart/Plan",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "4f1dc34462cf"
+  },
+  "daggerheart:FFDAGGERHEART.Plan.Spending": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Plan.Spending",
+   "area": "daggerheart/Plan",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "fab03b4bf930"
+  },
+  "daggerheart:FFDAGGERHEART.Plan.SpendingHint": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Plan.SpendingHint",
+   "area": "daggerheart/Plan",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "0d6ce9d82af3"
+  },
+  "daggerheart:FFDAGGERHEART.Plan.steady": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Plan.steady",
+   "area": "daggerheart/Plan",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "b3ee96c93ce5"
+  },
+  "daggerheart:FFDAGGERHEART.Plan.steadyHint": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Plan.steadyHint",
+   "area": "daggerheart/Plan",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "2cbfc2be828c"
+  },
+  "daggerheart:FFDAGGERHEART.Plan.Title": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Plan.Title",
+   "area": "daggerheart/Plan",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "22f4a4670380"
+  },
+  "daggerheart:FFDAGGERHEART.Reason.Beast": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Reason.Beast",
+   "area": "daggerheart/Reason",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "aefd5a343c31"
+  },
+  "daggerheart:FFDAGGERHEART.Reason.Tier": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Reason.Tier",
+   "area": "daggerheart/Reason",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "05167980989d"
+  },
+  "daggerheart:FFDAGGERHEART.Resource.armor": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Resource.armor",
+   "area": "daggerheart/Resource",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "a592855d0508"
+  },
+  "daggerheart:FFDAGGERHEART.Resource.fear": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Resource.fear",
+   "area": "daggerheart/Resource",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "140262b32b0c"
+  },
+  "daggerheart:FFDAGGERHEART.Resource.hope": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Resource.hope",
+   "area": "daggerheart/Resource",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "8c765f98fcd0"
+  },
+  "daggerheart:FFDAGGERHEART.Resource.stress": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Resource.stress",
+   "area": "daggerheart/Resource",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "2319cd90fbab"
+  },
+  "daggerheart:FFDAGGERHEART.Spotlight.Fear": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Spotlight.Fear",
+   "area": "daggerheart/Spotlight",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "fc5cfab12242"
+  },
+  "daggerheart:FFDAGGERHEART.Spotlight.Gm": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Spotlight.Gm",
+   "area": "daggerheart/Spotlight",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "0b85a7208b5f"
+  },
+  "daggerheart:FFDAGGERHEART.Trait.agility": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Trait.agility",
+   "area": "daggerheart/Trait",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "49796694dc67"
+  },
+  "daggerheart:FFDAGGERHEART.Trait.finesse": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Trait.finesse",
+   "area": "daggerheart/Trait",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "b97b8f529f52"
+  },
+  "daggerheart:FFDAGGERHEART.Trait.instinct": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Trait.instinct",
+   "area": "daggerheart/Trait",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "f363b62f7885"
+  },
+  "daggerheart:FFDAGGERHEART.Trait.knowledge": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Trait.knowledge",
+   "area": "daggerheart/Trait",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "dcb3e1c00e79"
+  },
+  "daggerheart:FFDAGGERHEART.Trait.presence": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Trait.presence",
+   "area": "daggerheart/Trait",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "d6b3e8c828d3"
+  },
+  "daggerheart:FFDAGGERHEART.Trait.strength": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Trait.strength",
+   "area": "daggerheart/Trait",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "63ee3a1b965a"
+  },
+  "daggerheart:FFDAGGERHEART.Type.bruiser": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Type.bruiser",
+   "area": "daggerheart/Type",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "3714eeb3895c"
+  },
+  "daggerheart:FFDAGGERHEART.Type.horde": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Type.horde",
+   "area": "daggerheart/Type",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "f1cdd50df864"
+  },
+  "daggerheart:FFDAGGERHEART.Type.leader": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Type.leader",
+   "area": "daggerheart/Type",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "3f53871b0838"
+  },
+  "daggerheart:FFDAGGERHEART.Type.minion": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Type.minion",
+   "area": "daggerheart/Type",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "2904bff43bc4"
+  },
+  "daggerheart:FFDAGGERHEART.Type.ranged": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Type.ranged",
+   "area": "daggerheart/Type",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "3f0b51a2492f"
+  },
+  "daggerheart:FFDAGGERHEART.Type.skulk": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Type.skulk",
+   "area": "daggerheart/Type",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "a1406b3cbad7"
+  },
+  "daggerheart:FFDAGGERHEART.Type.social": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Type.social",
+   "area": "daggerheart/Type",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "f1b7505afa5c"
+  },
+  "daggerheart:FFDAGGERHEART.Type.solo": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Type.solo",
+   "area": "daggerheart/Type",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "a6db48009495"
+  },
+  "daggerheart:FFDAGGERHEART.Type.standard": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Type.standard",
+   "area": "daggerheart/Type",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "ef6691545d2c"
+  },
+  "daggerheart:FFDAGGERHEART.Type.support": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Type.support",
+   "area": "daggerheart/Type",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "be91940b79f4"
+  },
+  "daggerheart:FFDAGGERHEART.Unarmed": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Unarmed",
+   "area": "daggerheart/General",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "de8d2be353ab"
+  },
+  "daggerheart:module.json:description": {
+   "repo": "daggerheart",
+   "file": "module.json",
+   "key": "description",
+   "area": "manifests",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "08280a95b6b1"
+  },
+  "daggerheart:module.json:title": {
+   "repo": "daggerheart",
+   "file": "module.json",
+   "key": "title",
+   "area": "manifests",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "1ff62f96d985"
   },
   "dcc:code:scripts/main.js:(top)#1": {
    "repo": "dcc",
