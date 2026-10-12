@@ -65,6 +65,8 @@ export function bestOptionVs(run, u, t, attacksMade = 0, turn = null) {
     if ( behavior.hinders && action.kind === "control" ) weighted *= 1 + 1.5 * behavior.hinders;
     // Magic and its own specialties, as strongly as its answer says (an Un-Mundane character's lean).
     weighted *= specialtyWeight(u, action);
+    // The system's own lean (DCC: one in a hurry would rather charge in).
+    if ( rules.optionWeight ) weighted *= rules.optionWeight(run, u, action, t, moves) ?? 1;
     options.push({ action, moves, moveUnits, ev, perAction, cost, weighted });
   }
   if ( !options.length ) return null;

@@ -26,7 +26,7 @@
  */
 import { TACTICAL, clamp } from "../../constants.js";
 import { meanPart, samplePart } from "../dice.js";
-import { liveTier, isStanding, edgeDistance } from "../battle-state.js";
+import { liveTier, isStanding, edgeDistance, behaviorOf } from "../battle-state.js";
 import { meanDamageVs, threatOf } from "./evaluate.js";
 import { outcomeWorth } from "./effects.js";
 
@@ -70,14 +70,18 @@ const atLeast = (faces, min) => clamp((faces - min + 1) / faces, 0, 1);
 
 /**
  * The deed u declares for this attack on t, or null: the one worth the most, weighing the chance the deed die
- * reaches each tier. Feral creatures don't think of it; the rest pick what helps most.
+ * reaches each tier. Feral creatures don't think of it; the rest pick what helps most. A deed may lean on playstyle
+ * perks (deed.leans: a trip on hinders, a rally on rally), likelier by their strength, and a defensive one (deed.guard)
+ * goes as the shield answer says (always: half again as readily; never: not at all).
  */
 export function chooseDeed(run, u, action, t) {
   const faces = action.deedDie;
   if ( !faces || !u.spec.deeds?.length || liveTier(run, u) <= TACTICAL.FERAL ) return null;
   let best = null;
+  const b = behaviorOf(u);
   for ( const deed of u.spec.deeds ) {
     if ( !fits(deed, action, t) ) continue;
+    if ( deed.guard && u.tac?.shield === "never" ) continue;
     const tiers = [...(deed.tiers ?? [])].sort((a, b) => a.min - b.min);
     let worth = 0;
     tiers.forEach((tier, i) => {
@@ -86,6 +90,7 @@ export function chooseDeed(run, u, action, t) {
       if ( p > 0 ) worth += p * (tier.outcome?.allies ? rallied(run, u, tier.outcome).reduce((s, a) => s + outcomeWorth(run, u, a, tier.outcome), 0)
         : tier.outcome?.self ? outcomeWorth(run, u, u, tier.outcome) : harm(run, u, t, tier.outcome));
     });
+    worth *= (deed.guard && u.tac?.shield === "always" ? 1.5 : 1) * (1 + (deed.leans ?? []).reduce((s, k) => s + Math.max(0, Number(b[k]) || 0), 0));
     if ( worth > 0 && (!best || worth > best.worth) ) best = { deed, worth };
   }
   return best?.deed ?? null;
