@@ -14743,6 +14743,16 @@
    "hash": "6183cd2c7e23",
    "changed": true
   },
+  "core:FASTFIGHTING.Words.Reversed": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Words.Reversed",
+   "area": "core/Words",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "4f532c4744f5"
+  },
   "core:FASTFIGHTING.Words.Taunt": {
    "repo": "core",
    "file": "languages/en.json",
@@ -18924,6 +18934,106 @@
    "commit": null,
    "hash": "be44133ed57f"
   },
+  "daggerheart:FFDAGGERHEART.Domain.arcana": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Domain.arcana",
+   "area": "daggerheart/Domain",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "bea77ce3d047"
+  },
+  "daggerheart:FFDAGGERHEART.Domain.blade": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Domain.blade",
+   "area": "daggerheart/Domain",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "b300137c3d8c"
+  },
+  "daggerheart:FFDAGGERHEART.Domain.bone": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Domain.bone",
+   "area": "daggerheart/Domain",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "f950109fcbe6"
+  },
+  "daggerheart:FFDAGGERHEART.Domain.codex": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Domain.codex",
+   "area": "daggerheart/Domain",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "616efbe96852"
+  },
+  "daggerheart:FFDAGGERHEART.Domain.dread": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Domain.dread",
+   "area": "daggerheart/Domain",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "f57b0cd751cd"
+  },
+  "daggerheart:FFDAGGERHEART.Domain.grace": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Domain.grace",
+   "area": "daggerheart/Domain",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "f2465f78e06e"
+  },
+  "daggerheart:FFDAGGERHEART.Domain.midnight": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Domain.midnight",
+   "area": "daggerheart/Domain",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "aa996cf21f0d"
+  },
+  "daggerheart:FFDAGGERHEART.Domain.sage": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Domain.sage",
+   "area": "daggerheart/Domain",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "5faa713a75d7"
+  },
+  "daggerheart:FFDAGGERHEART.Domain.splendor": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Domain.splendor",
+   "area": "daggerheart/Domain",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "e465ab472066"
+  },
+  "daggerheart:FFDAGGERHEART.Domain.valor": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Domain.valor",
+   "area": "daggerheart/Domain",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "b2f530c46991"
+  },
   "daggerheart:FFDAGGERHEART.Encounter.Fear": {
    "repo": "daggerheart",
    "file": "languages/en.json",
@@ -18985,6 +19095,46 @@
    "commit": null,
    "hash": "a7f33f557f37"
   },
+  "daggerheart:FFDAGGERHEART.Harm.magicalImmunity": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Harm.magicalImmunity",
+   "area": "daggerheart/Harm",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "29b08e1994ce"
+  },
+  "daggerheart:FFDAGGERHEART.Harm.magicalResistance": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Harm.magicalResistance",
+   "area": "daggerheart/Harm",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "75632f79c620"
+  },
+  "daggerheart:FFDAGGERHEART.Harm.physicalImmunity": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Harm.physicalImmunity",
+   "area": "daggerheart/Harm",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "b30ba42c0843"
+  },
+  "daggerheart:FFDAGGERHEART.Harm.physicalResistance": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Harm.physicalResistance",
+   "area": "daggerheart/Harm",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "f8162102eb8e"
+  },
   "daggerheart:FFDAGGERHEART.HelpAnAlly": {
    "repo": "daggerheart",
    "file": "languages/en.json",
@@ -19034,6 +19184,16 @@
    "date": null,
    "commit": null,
    "hash": "05167980989d"
+  },
+  "daggerheart:FFDAGGERHEART.Level": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Level",
+   "area": "daggerheart/General",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "1709305c9fa9"
   },
   "daggerheart:FFDAGGERHEART.Minion.More": {
    "repo": "daggerheart",
@@ -19401,6 +19561,16 @@
    "commit": null,
    "hash": "22f4a4670380"
   },
+  "daggerheart:FFDAGGERHEART.Reason.Ability": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Reason.Ability",
+   "area": "daggerheart/Reason",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "86459545f596"
+  },
   "daggerheart:FFDAGGERHEART.Reason.Beast": {
    "repo": "daggerheart",
    "file": "languages/en.json",
@@ -19411,6 +19581,26 @@
    "commit": null,
    "hash": "aefd5a343c31"
   },
+  "daggerheart:FFDAGGERHEART.Reason.NoParty": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Reason.NoParty",
+   "area": "daggerheart/Reason",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "844c1b562331"
+  },
+  "daggerheart:FFDAGGERHEART.Reason.Pc": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Reason.Pc",
+   "area": "daggerheart/Reason",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "075832387e72"
+  },
   "daggerheart:FFDAGGERHEART.Reason.Tier": {
    "repo": "daggerheart",
    "file": "languages/en.json",
@@ -19420,6 +19610,16 @@
    "date": null,
    "commit": null,
    "hash": "05167980989d"
+  },
+  "daggerheart:FFDAGGERHEART.Reason.TraitFor": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Reason.TraitFor",
+   "area": "daggerheart/Reason",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "0965948934c2"
   },
   "daggerheart:FFDAGGERHEART.Resource.armor": {
    "repo": "daggerheart",
@@ -19471,6 +19671,16 @@
    "date": null,
    "commit": null,
    "hash": "2319cd90fbab"
+  },
+  "daggerheart:FFDAGGERHEART.Scars": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Scars",
+   "area": "daggerheart/General",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "da09ead3ecd5"
   },
   "daggerheart:FFDAGGERHEART.Settings.loreBoost.Hint": {
    "repo": "daggerheart",
@@ -20752,6 +20962,16 @@
    "commit": null,
    "hash": "3fab5c181bd2"
   },
+  "dcc:FFDCC.Reason.Ability": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.Reason.Ability",
+   "area": "dcc/Reason",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "86459545f596"
+  },
   "dcc:FFDCC.Reason.BarelyThinks": {
    "repo": "dcc",
    "file": "languages/en.json",
@@ -20792,6 +21012,46 @@
    "commit": null,
    "hash": "18e70325f8cf"
   },
+  "dcc:FFDCC.Reason.DeedDie": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.Reason.DeedDie",
+   "area": "dcc/Reason",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "c5da7ae0b06d"
+  },
+  "dcc:FFDCC.Reason.Fiend": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.Reason.Fiend",
+   "area": "dcc/Reason",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "c1e97c9644bd"
+  },
+  "dcc:FFDCC.Reason.HitPoints": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.Reason.HitPoints",
+   "area": "dcc/Reason",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "accaa6fe1235"
+  },
+  "dcc:FFDCC.Reason.ImmuneFear": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.Reason.ImmuneFear",
+   "area": "dcc/Reason",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "f49f07b93f3a"
+  },
   "dcc:FFDCC.Reason.Int": {
    "repo": "dcc",
    "file": "languages/en.json",
@@ -20812,6 +21072,16 @@
    "commit": null,
    "hash": "82f9d068c8f6"
   },
+  "dcc:FFDCC.Reason.Level": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.Reason.Level",
+   "area": "dcc/Reason",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "46369ecdca32"
+  },
   "dcc:FFDCC.Reason.NeverFlees": {
    "repo": "dcc",
    "file": "languages/en.json",
@@ -20821,6 +21091,16 @@
    "date": null,
    "commit": null,
    "hash": "f52e594f0e06"
+  },
+  "dcc:FFDCC.Reason.NoParty": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.Reason.NoParty",
+   "area": "dcc/Reason",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "af53afc87448"
   },
   "dcc:FFDCC.Reason.Pc": {
    "repo": "dcc",
@@ -20852,6 +21132,16 @@
    "commit": null,
    "hash": "dc30c23ea68f"
   },
+  "dcc:FFDCC.Reason.Will": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.Reason.Will",
+   "area": "dcc/Reason",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "6aea530c0832"
+  },
   "dcc:FFDCC.Reason.WillSave": {
    "repo": "dcc",
    "file": "languages/en.json",
@@ -20860,7 +21150,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "7fde210f28e4"
+   "hash": "7fde210f28e4",
+   "gone": "2026-10-12"
   },
   "dcc:FFDCC.Reason.Zero": {
    "repo": "dcc",
@@ -21112,6 +21403,16 @@
    "commit": null,
    "hash": "39f396bdd747"
   },
+  "dcc:FFDCC.TwoWeapons": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.TwoWeapons",
+   "area": "dcc/General",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "d69b8e2af033"
+  },
   "dcc:FFDCC.Unarmed": {
    "repo": "dcc",
    "file": "languages/en.json",
@@ -21251,6 +21552,16 @@
    "date": null,
    "commit": null,
    "hash": "fb0ffdb4b0dd"
+  },
+  "dnd5e:FFDND5E.Cond.exhaustion": {
+   "repo": "dnd5e",
+   "file": "languages/en.json",
+   "key": "FFDND5E.Cond.exhaustion",
+   "area": "dnd5e/Cond",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "f717586765ca"
   },
   "dnd5e:FFDND5E.Cond.frightened": {
    "repo": "dnd5e",
@@ -21677,6 +21988,16 @@
    "commit": null,
    "hash": "a65bf68a2a48"
   },
+  "dnd5e:FFDND5E.Reason.Ability": {
+   "repo": "dnd5e",
+   "file": "languages/en.json",
+   "key": "FFDND5E.Reason.Ability",
+   "area": "dnd5e/Reason",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "86459545f596"
+  },
   "dnd5e:FFDND5E.Reason.BarelyThinks": {
    "repo": "dnd5e",
    "file": "languages/en.json",
@@ -21737,6 +22058,16 @@
    "commit": null,
    "hash": "67e7c6e28e54"
   },
+  "dnd5e:FFDND5E.Reason.Exhaustion": {
+   "repo": "dnd5e",
+   "file": "languages/en.json",
+   "key": "FFDND5E.Reason.Exhaustion",
+   "area": "dnd5e/Reason",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "86459545f596"
+  },
   "dnd5e:FFDND5E.Reason.Fiend": {
    "repo": "dnd5e",
    "file": "languages/en.json",
@@ -21747,6 +22078,16 @@
    "commit": null,
    "hash": "5a0f5f99f9e5"
   },
+  "dnd5e:FFDND5E.Reason.Immune": {
+   "repo": "dnd5e",
+   "file": "languages/en.json",
+   "key": "FFDND5E.Reason.Immune",
+   "area": "dnd5e/Reason",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "149378a3b243"
+  },
   "dnd5e:FFDND5E.Reason.Int": {
    "repo": "dnd5e",
    "file": "languages/en.json",
@@ -21755,7 +22096,28 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "dfde574d1831"
+   "hash": "dfde574d1831",
+   "gone": "2026-10-12"
+  },
+  "dnd5e:FFDND5E.Reason.Level": {
+   "repo": "dnd5e",
+   "file": "languages/en.json",
+   "key": "FFDND5E.Reason.Level",
+   "area": "dnd5e/Reason",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "46369ecdca32"
+  },
+  "dnd5e:FFDND5E.Reason.Loyalty": {
+   "repo": "dnd5e",
+   "file": "languages/en.json",
+   "key": "FFDND5E.Reason.Loyalty",
+   "area": "dnd5e/Reason",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "99d2045d0ba9"
   },
   "dnd5e:FFDND5E.Reason.Master": {
    "repo": "dnd5e",
@@ -21777,6 +22139,16 @@
    "commit": null,
    "hash": "f52e594f0e06"
   },
+  "dnd5e:FFDND5E.Reason.NoParty": {
+   "repo": "dnd5e",
+   "file": "languages/en.json",
+   "key": "FFDND5E.Reason.NoParty",
+   "area": "dnd5e/Reason",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "844c1b562331"
+  },
   "dnd5e:FFDND5E.Reason.Pack": {
    "repo": "dnd5e",
    "file": "languages/en.json",
@@ -21785,7 +22157,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "9ec8ede5f0e1"
+   "hash": "9ec8ede5f0e1",
+   "changed": true
   },
   "dnd5e:FFDND5E.Reason.Pc": {
    "repo": "dnd5e",
@@ -21796,6 +22169,16 @@
    "date": null,
    "commit": null,
    "hash": "075832387e72"
+  },
+  "dnd5e:FFDND5E.Reason.SaveVsLevel": {
+   "repo": "dnd5e",
+   "file": "languages/en.json",
+   "key": "FFDND5E.Reason.SaveVsLevel",
+   "area": "dnd5e/Reason",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "0cf462a9bad6"
   },
   "dnd5e:FFDND5E.Reason.Typical": {
    "repo": "dnd5e",
@@ -21815,7 +22198,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "178d249a06ef"
+   "hash": "178d249a06ef",
+   "gone": "2026-10-12"
   },
   "dnd5e:FFDND5E.Reckless": {
    "repo": "dnd5e",
@@ -21926,6 +22310,16 @@
    "date": null,
    "commit": null,
    "hash": "5459202ae7f0"
+  },
+  "dnd5e:FFDND5E.Skill.med": {
+   "repo": "dnd5e",
+   "file": "languages/en.json",
+   "key": "FFDND5E.Skill.med",
+   "area": "dnd5e/Skill",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "c4d3d42ed3a4"
   },
   "dnd5e:FFDND5E.Skill.nat": {
    "repo": "dnd5e",
@@ -23217,6 +23611,66 @@
    "commit": null,
    "hash": "5a8460f6b1bf"
   },
+  "ironsworn:FFIRONSWORN.Reason.Advances": {
+   "repo": "ironsworn",
+   "file": "languages/en.json",
+   "key": "FFIRONSWORN.Reason.Advances",
+   "area": "ironsworn/Reason",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "04548a8207a1"
+  },
+  "ironsworn:FFIRONSWORN.Reason.Count": {
+   "repo": "ironsworn",
+   "file": "languages/en.json",
+   "key": "FFIRONSWORN.Reason.Count",
+   "area": "ironsworn/Reason",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "86459545f596"
+  },
+  "ironsworn:FFIRONSWORN.Reason.Group": {
+   "repo": "ironsworn",
+   "file": "languages/en.json",
+   "key": "FFIRONSWORN.Reason.Group",
+   "area": "ironsworn/Reason",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "1728bc5332d2"
+  },
+  "ironsworn:FFIRONSWORN.Reason.Kept": {
+   "repo": "ironsworn",
+   "file": "languages/en.json",
+   "key": "FFIRONSWORN.Reason.Kept",
+   "area": "ironsworn/Reason",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "f7f5754d26c0"
+  },
+  "ironsworn:FFIRONSWORN.Reason.Legacy": {
+   "repo": "ironsworn",
+   "file": "languages/en.json",
+   "key": "FFIRONSWORN.Reason.Legacy",
+   "area": "ironsworn/Reason",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "028ee366ca29"
+  },
+  "ironsworn:FFIRONSWORN.Reason.Pc": {
+   "repo": "ironsworn",
+   "file": "languages/en.json",
+   "key": "FFIRONSWORN.Reason.Pc",
+   "area": "ironsworn/Reason",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "075832387e72"
+  },
   "ironsworn:FFIRONSWORN.Reason.Rank": {
    "repo": "ironsworn",
    "file": "languages/en.json",
@@ -23227,6 +23681,16 @@
    "commit": null,
    "hash": "4eea2307a16f"
   },
+  "ironsworn:FFIRONSWORN.Reason.Stat": {
+   "repo": "ironsworn",
+   "file": "languages/en.json",
+   "key": "FFIRONSWORN.Reason.Stat",
+   "area": "ironsworn/Reason",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "86459545f596"
+  },
   "ironsworn:FFIRONSWORN.Reason.Sworn": {
    "repo": "ironsworn",
    "file": "languages/en.json",
@@ -23235,7 +23699,18 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "cd5c5461f838"
+   "hash": "cd5c5461f838",
+   "gone": "2026-10-12"
+  },
+  "ironsworn:FFIRONSWORN.Reason.VowRank": {
+   "repo": "ironsworn",
+   "file": "languages/en.json",
+   "key": "FFIRONSWORN.Reason.VowRank",
+   "area": "ironsworn/Reason",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "b78b5c7aa25d"
   },
   "ironsworn:FFIRONSWORN.SecureAnAdvantage": {
    "repo": "ironsworn",
