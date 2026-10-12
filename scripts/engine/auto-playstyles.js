@@ -10,7 +10,7 @@
  * Martyr), at most four. Pure: no Foundry globals.
  */
 import { PLAYSTYLES, MAX_PLAYSTYLES } from "./playstyles.js";
-import { fudged } from "../constants.js";
+import { fudged, PC_BASELINE } from "../constants.js";
 import { typical } from "./battle-state.js";
 import { isSpecial } from "./behavior/specialty.js";
 
@@ -38,14 +38,13 @@ const clashes = (a, b) => CLASHES.some(([x, y]) => (x === a && y === b) || (x ==
 
 const pos = n => Math.max(0, n);
 
-/**
- * A player character's traits are read against the usual player character's (bold, loyal, unselfish, a good head:
- * what the systems give one by default), so only what sets it apart counts, and at half weight (its player says who it
- * is more than its numbers do); anyone else's as they are.
- */
-export const PC_BASELINE = Object.freeze({ tactical: 65, brave: 75, selfish: 25, loyal: 80 });
+export { PC_BASELINE };
 
-/** What a spec says about the character, as the scores need it. */
+/**
+ * What a spec says about the character, as the scores need it. A player character's traits are read against the usual
+ * player character's (PC_BASELINE: where the systems start one), so only what sets it apart counts, and at half weight
+ * (its player says who it is more than its numbers do); anyone else's as they are.
+ */
 export function readSpec(spec, rules = null) {
   const trait = k => {
     const v = fudged(spec.traits?.[k] ?? 50);

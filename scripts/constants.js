@@ -49,6 +49,12 @@ export const NEUTRAL_REACH = 3;
 
 export const TRAITS = Object.freeze(["tactical", "brave", "selfish", "loyal"]);
 
+/**
+ * The usual player character's traits: bold, loyal, unselfish, a good head. Where a system helper starts one before its
+ * own numbers move it (engine/trait-parts.js), and what setting one up by itself reads its traits against.
+ */
+export const PC_BASELINE = Object.freeze({ tactical: 65, brave: 75, selfish: 25, loyal: 80 });
+
 /** Named bands for every 0-100 trait. Lower bound inclusive. */
 export const TRAIT_BANDS = Object.freeze({
   tactical: [[0, "feral"], [20, "instinctive"], [40, "competent"], [60, "tactical"], [80, "mastermind"]],

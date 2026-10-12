@@ -14674,6 +14674,16 @@
    "commit": null,
    "hash": "a7a45ea923c6"
   },
+  "core:FASTFIGHTING.Words.Part": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Words.Part",
+   "area": "core/Words",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "6183cd2c7e23"
+  },
   "core:FASTFIGHTING.Words.Taunt": {
    "repo": "core",
    "file": "languages/en.json",

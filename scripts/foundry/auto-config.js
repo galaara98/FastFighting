@@ -5,8 +5,8 @@
  * Kept on the actor (an unlinked token's own; a prototype's is its actor's), flags.fast-fighting.auto:
  *   {api, sig, lets, picked, scores, at}
  *   api      the core API it was worked out under
- *   sig      what it was worked out from (its level, what it can do, the world's defaults): a change means working
- *            the answers out again
+ *   sig      what it was worked out from (its level, its traits, what it can do, the world's defaults): a change
+ *            means working the answers out again
  *   lets     the calculated answer to every tactics question (what "Let it decide" shows, before its playstyles' say)
  *   picked   the playstyles picked for it, best first (once: see below); scores, the best few and their scores
  *
@@ -14,12 +14,13 @@
  * engine/auto-playstyles.js), and never again, unless someone resets its FastFighting settings (then at once). Picks
  * someone has changed stay theirs.
  * The calculated answers are worked out again whenever they're missing or broken, the core API has moved on, or the
- * character has changed (a level, a new spell, the world's defaults). Answers someone gave stay as they are.
+ * character has changed (a level, its traits, a new spell, the world's defaults). Answers someone gave stay as they are.
  */
 import { MODULE_ID } from "../constants.js";
 import { getAdapter } from "../api.js";
 import { CORE_API_VERSION } from "../core-api.js";
 import { hasWords, localize, language } from "../i18n.js";
+import { TRAITS, fudged } from "../constants.js";
 import { TACTIC_CHOICES, TACTIC_KEYS, suggestTactics } from "../engine/tactics.js";
 import { PLAYSTYLES } from "../engine/playstyles.js";
 import { scorePlaystyles, pickPlaystyles, keywordHits } from "../engine/auto-playstyles.js";
@@ -43,9 +44,13 @@ export function validLets(lets, spec) {
   return TACTIC_KEYS.every(k => k in lets && validLet(k, lets[k], spec));
 }
 
-/** What the calculated answers are worked out from: its level, what it can do, the world's defaults (a short hash). */
+/**
+ * What the calculated answers are worked out from: its level, its traits, what it can do, the world's defaults (a
+ * short hash).
+ */
 export function specSignature(spec, defaults = {}) {
-  const text = JSON.stringify([spec?.level ?? 0, spec?.kind ?? "", (spec?.actions ?? []).map(a => a.id).sort(), !!spec?.shield, defaults]);
+  const traits = TRAITS.map(k => fudged(spec?.traits?.[k] ?? 50));
+  const text = JSON.stringify([spec?.level ?? 0, spec?.kind ?? "", traits, (spec?.actions ?? []).map(a => a.id).sort(), !!spec?.shield, defaults]);
   let h = 5381;
   for ( let i = 0; i < text.length; i++ ) h = ((h * 33) ^ text.charCodeAt(i)) >>> 0;
   return h.toString(36);

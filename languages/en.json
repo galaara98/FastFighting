@@ -10,6 +10,7 @@
     "Words": {
       "List": "{rest} and {last}",
       "ListSeparator": ", ",
+      "Part": "{why} {n}",
       "Luck": "luck",
       "Fate": "fate",
       "Taunt": "taunt"
