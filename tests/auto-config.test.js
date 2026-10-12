@@ -50,6 +50,19 @@ describe("the playstyles that fit", () => {
     expect(picks(creature({ traits: traits(50, 50, 50, 50), defenses: { ac: 11 } }), { words: { enabler: 9 } })).toEqual(["enabler"]);
   });
 
+  test("a player character's traits count only where it's unlike the usual one (bold, loyal, unselfish by default)", () => {
+    const pc = extra => creature({ kind: "pc", traits: traits(65, 75, 25, 80), defenses: { ac: 11 }, ...extra });
+    expect(picks(pc())).toEqual([]);
+    // (The same numbers on a creature that isn't a player character say a lot.)
+    expect(picks(creature({ traits: traits(65, 75, 25, 80), defenses: { ac: 11 } }))).toContain("moralist");
+    // A timid player character, for one of them, is a Chicken.
+    expect(picks(pc({ traits: traits(65, 30, 25, 80) }))).toContain("chicken");
+    // A plain one (a funnel peasant: less bold and loyal than a hero) isn't a villain for it.
+    const plain = picks(pc({ traits: traits(50, 50, 50, 45) }));
+    expect(plain).not.toContain("cruel");
+    expect(plain).not.toContain("mercenary");
+  });
+
   test("at most four, best first, never two that pull against each other", () => {
     const hints = Object.fromEntries(["chicken", "martyr", "tank", "enabler", "moralist", "diplomat", "loreCollector"].map((id, i) => [id, 1 - i * 0.05]));
     const got = picks(creature({ traits: traits(50, 50, 50, 50), defenses: { ac: 11 } }), { hints });

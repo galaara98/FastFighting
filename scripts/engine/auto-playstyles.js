@@ -38,9 +38,19 @@ const clashes = (a, b) => CLASHES.some(([x, y]) => (x === a && y === b) || (x ==
 
 const pos = n => Math.max(0, n);
 
+/**
+ * A player character's traits are read against the usual player character's (bold, loyal, unselfish, a good head:
+ * what the systems give one by default), so only what sets it apart counts, and at half weight (its player says who it
+ * is more than its numbers do); anyone else's as they are.
+ */
+export const PC_BASELINE = Object.freeze({ tactical: 65, brave: 75, selfish: 25, loyal: 80 });
+
 /** What a spec says about the character, as the scores need it. */
 export function readSpec(spec, rules = null) {
-  const trait = k => fudged(spec.traits?.[k] ?? 50);
+  const trait = k => {
+    const v = fudged(spec.traits?.[k] ?? 50);
+    return spec.kind === "pc" ? Math.max(0, Math.min(100, 50 + (v - PC_BASELINE[k]) / 2)) : v;
+  };
   const level = Number(spec.level) || 0;
   const skill = typical(rules, "skill", level);
   const actions = spec.actions ?? [];

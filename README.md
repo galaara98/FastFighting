@@ -315,7 +315,7 @@ Answers save as they're made, and two players sharing a token see each other's c
 
 **Set up by itself:** the first time FastFighting sees a character, it sets the character up. That happens when the planner opens on a scene with its token, when its token's FastFighting tab opens (the Prototype Token's too), or when a player's survey opens.
 - **Its playstyles:** up to four, best first, from three things:
-  - what its numbers and actions say: its traits, mindless or fearless, its weapons close or far, its magic and specialties, healing and help for friends, ways to hamper a foe, a shield or good armor, and skill at theft, lore and talk;
+  - what its numbers and actions say: its traits (a player character's only where they differ from the usual hero's: bold, loyal and unselfish, as every system gives one by default; and at half weight, since its player says more about who it is), mindless or fearless, its weapons close or far, its magic and specialties, healing and help for friends, ways to hamper a foe, a shield or good armor, and skill at theft, lore and talk;
   - what its system's helper reads in it: its class, ancestry, kind of creature, alignment, gear and role;
   - words in its biography and description (each playstyle's keywords, FASTFIGHTING.AutoWords in the language files: a translation adds its own words to the English ones, never replaces them, since a biography may be written in either language).
 
