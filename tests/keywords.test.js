@@ -4,6 +4,7 @@ import { readKeywordFile, mergeKeywords, keywordEffects, biographyEffects, PLAYS
 import { applyBiography } from "../scripts/foundry/keywords.js";
 import { PLAYSTYLES } from "../scripts/engine/playstyles.js";
 import { TRAITS } from "../scripts/constants.js";
+import { localize } from "../scripts/i18n.js";
 
 const RAW = readFileSync(new URL("../keywords/en.json", import.meta.url), "utf8");
 const FILE = JSON.parse(RAW);
@@ -140,6 +141,9 @@ describe("a biography's words in a character's traits", () => {
     expect(s.traits.selfish.base).toBeGreaterThan(40);
     expect(s.traitReasons.selfish).toContain("kin");
     expect(s.traitReasons.selfish).toContain("greed");
+    // (A word taken the other way is shown as such.)
+    const brave = applyBiography(spec(), { against: "Cowards." }, ENGLISH).traitReasons.brave;
+    expect(brave).toContain(localize("FASTFIGHTING.Words.Reversed", { word: "coward" }));
     expect(s.traits.tactical.base).toBe(50);
   });
 

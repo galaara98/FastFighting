@@ -14,7 +14,8 @@
       "Luck": "luck",
       "Fate": "fate",
       "Taunt": "taunt",
-      "Biography": "biography ({words})"
+      "Biography": "biography ({words})",
+      "Reversed": "against {word}"
     },
     "Generic": {
       "Label": "Generic d20 (configured paths)",

@@ -65,7 +65,9 @@ export function applyBiography(spec, bio, words = loaded) {
     const n = Math.round(fx.traits[k] ?? 0);
     if ( !n || !spec.traits[k] ) continue;
     spec.traits[k].base = clamp(Math.round((spec.traits[k].base ?? 50) + n), 0, 100);
-    const why = localize("FASTFIGHTING.Words.Biography", { words: listJoin(fx.byTrait[k] ?? []) });
+    // (A word taken the other way, "dislikes cowards", is shown as such.)
+    const words = (fx.byTrait[k] ?? []).map(({ word, sign }) => (sign < 0 ? localize("FASTFIGHTING.Words.Reversed", { word }) : word));
+    const why = localize("FASTFIGHTING.Words.Biography", { words: listJoin(words) });
     spec.traitReasons ??= {};
     spec.traitReasons[k] = listItems([spec.traitReasons[k], localize("FASTFIGHTING.Words.Part", { why, n: signedNumber(n) })].filter(Boolean));
   }

@@ -74,9 +74,9 @@ const ratingOf = entry => JSON.stringify([Object.entries(entry.playstyles ?? {})
  *  - entries rated exactly alike count once together ("hateful ... full of hate ... hatred": a word and its synonyms).
  * @param {string} text
  * @param {{words: Map, negations: string[], reversals: string[]}} keywords   (mergeKeywords)
- * @returns {{playstyles: Record<string, number>, traits: Record<string, number>, found: string[], byTrait: Record<string, string[]>}}
+ * @returns {{playstyles: Record<string, number>, traits: Record<string, number>, found: string[], byTrait: Record<string, {word: string, sign: number}[]>}}
  *   playstyles: each one's sum (keywords' worth, at most PLAYSTYLE_WORD_CAP either way); traits: each one's sum in points
- *   (at most TRAIT_WORD_CAP either way); found: the words that counted; byTrait: those that moved each trait
+ *   (at most TRAIT_WORD_CAP either way); found: the words that counted; byTrait: those that moved each trait, and which way they were taken (-1: turned around)
  */
 export function keywordEffects(text, keywords) {
   const out = { playstyles: {}, traits: {}, found: [], byTrait: {} };
@@ -116,7 +116,7 @@ export function keywordEffects(text, keywords) {
     for ( const [k, n] of Object.entries(entry.traits) ) {
       if ( !TRAITS.includes(k) ) continue;
       out.traits[k] = (out.traits[k] ?? 0) + n * sign;
-      (out.byTrait[k] ??= []).push(word);
+      (out.byTrait[k] ??= []).push({ word, sign });
     }
   }
   for ( const id of Object.keys(out.playstyles) ) out.playstyles[id] = clamp(out.playstyles[id], -PLAYSTYLE_WORD_CAP, PLAYSTYLE_WORD_CAP);
@@ -151,7 +151,14 @@ export function biographyEffects(bio, keywords) {
     return out;
   };
   const byTrait = {};
-  for ( const [fx] of parts ) for ( const [k, list] of Object.entries(fx.byTrait) ) byTrait[k] = [...new Set([...(byTrait[k] ?? []), ...list])];
+  for ( const [fx, w] of parts ) {
+    for ( const [k, list] of Object.entries(fx.byTrait) ) {
+      for ( const { word, sign } of list ) {
+        const taken = sign * Math.sign(w);
+        if ( !(byTrait[k] ??= []).some(x => x.word === word && x.sign === taken) ) byTrait[k].push({ word, sign: taken });
+      }
+    }
+  }
   return {
     playstyles: blend("playstyles", PLAYSTYLE_WORD_CAP),
     traits: blend("traits", TRAIT_WORD_CAP),
