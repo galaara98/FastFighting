@@ -16,6 +16,7 @@ import { threats, isWary } from "./reactions.js";
 import { think, thwart, mind, avoids, levelsFromScores } from "./desire.js";
 import { seemsFoe, sparedForTruce } from "./neutral.js";
 import { willingness } from "./reluctance.js";
+import { specialtyWeight } from "./specialty.js";
 import { perceives, apparentHealth } from "./senses.js";
 
 const limited = a => !!a.resource || Number.isFinite(a.uses);
@@ -62,6 +63,8 @@ export function bestOptionVs(run, u, t, attacksMade = 0, turn = null) {
     if ( t.held && t.status === STATUS.DOWN ) weighted *= (action.damage ?? []).some(p => t.spec.regen?.stoppedBy?.includes(p.type)) ? 3 : 0.05;
     // Spoilers would rather lock a foe down, harass it or weaken it than simply hit it.
     if ( behavior.hinders && action.kind === "control" ) weighted *= 1 + 1.5 * behavior.hinders;
+    // Magic and its own specialties, as strongly as its answer says (an Un-Mundane character's lean).
+    weighted *= specialtyWeight(u, action);
     options.push({ action, moves, moveUnits, ev, perAction, cost, weighted });
   }
   if ( !options.length ) return null;

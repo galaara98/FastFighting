@@ -19,6 +19,7 @@ import { offenseBaseline } from "./support.js";
 import { usefulRounds } from "./effects.js";
 import { initDesires } from "./desire.js";
 import { sampleRunTactics } from "../playstyles.js";
+import { specialtyLean } from "./specialty.js";
 
 /** Those u has called with this action and who are still here. */
 const calledBy = (run, u, action) => run.units.filter(o => o.summoner === u.id && o.summonedBy === action.id && !o.vanished && o.status !== STATUS.DEAD);
@@ -52,7 +53,7 @@ export function decideSummon(run, u, turn) {
   let best = null;
   for ( const action of list ) {
     if ( !hasUses(u, action) || !turn.canAfford(costOf(rules, action, u)) || calledBy(run, u, action).length ) continue;
-    const worth = worthOf(run, u, action);
+    const worth = worthOf(run, u, action) * specialtyLean(u, action);
     const cost = Math.max(0.5, costUnits(rules, costOf(rules, action, u)));
     if ( worth > baseline * cost * 2 && (!best || worth > best.worth) ) best = { action, worth };
   }

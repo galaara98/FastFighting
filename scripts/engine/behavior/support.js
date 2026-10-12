@@ -38,6 +38,7 @@ import { outcomeWorth, hasFresh, concentrationCost, heldElsewhere, focusOf } fro
 import { mind, levelOf } from "./desire.js";
 import { bringsItself } from "./reluctance.js";
 import { castChanceOf } from "./casting.js";
+import { specialtyLean } from "./specialty.js";
 
 /** How well each tactical band sees what a buff is worth (feral: not at all, beyond itself). */
 const SEES = [0.5, 0.6, 0.9, 1.05, 1.15];
@@ -182,7 +183,7 @@ export function decideBuff(run, u, turn) {
     if ( (o.action.setup || o.action.guard) && hurried ) continue;
     if ( o.action.guard && u.tac?.shield === "never" ) continue;
     const lean = 1 + (o.action.leans ?? []).reduce((s, k) => s + Math.max(0, Number(b[k]) || 0), 0);
-    const score = (forLead ? o.score * 1.5 : o.score) * (o.action.guard && u.tac?.shield === "always" ? 1.5 : 1) * lean;
+    const score = (forLead ? o.score * 1.5 : o.score) * (o.action.guard && u.tac?.shield === "always" ? 1.5 : 1) * lean * specialtyLean(u, o.action);
     if ( score <= baseline ) continue;
     if ( !best || score > best.score ) best = { ...o, score };
   }

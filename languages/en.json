@@ -599,6 +599,14 @@
         "balanced": "Use them when they are clearly better",
         "nova": "Spend freely to end it fast"
       },
+      "specialty": {
+        "Label": "Magic and specialties",
+        "Hint": "How strongly this character reaches for its spells and its own special abilities (its class's, its kind's, a creature's powers) over what anyone could do: a plain weapon blow, the everyday moves, talking. Where it stands, close or far, still follows its other answers.",
+        "none": "No preference",
+        "some": "A little more often",
+        "strong": "Much more often",
+        "always": "Whenever it can"
+      },
       "healAggro": {
         "Label": "Healing others",
         "Hint": "How freely this character spends actions and resources healing allies.",
@@ -820,6 +828,10 @@
       "lazy": {
         "Name": "Lazy",
         "Hint": "As little as it can get away with: whatever foe is nearest (and not one worth a long walk), saves its resources, isn't much help to anyone, gives up fast, barely bothers with a locked door, and can't be bothered to hold a grudge. Leading a group, its flight takes others along. Can't always be bothered to answer a taunt."
+      },
+      "unmundane": {
+        "Name": "Un-Mundane",
+        "Hint": "Would rather use what sets it apart (its magic, its class's and kind's own abilities) than fight or talk as anyone would, and spends what that takes freely."
       }
     },
     "Tracker": {

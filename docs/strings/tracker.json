@@ -7842,6 +7842,26 @@
    "commit": "f7ee61e",
    "hash": "2fd478c88ca0"
   },
+  "core:FASTFIGHTING.Playstyle.unmundane.Hint": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Playstyle.unmundane.Hint",
+   "area": "core/Playstyle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "5912d21b268c"
+  },
+  "core:FASTFIGHTING.Playstyle.unmundane.Name": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Playstyle.unmundane.Name",
+   "area": "core/Playstyle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "03a437557a3d"
+  },
   "core:FASTFIGHTING.Playstyle.vengeful.Hint": {
    "repo": "core",
    "file": "languages/en.json",
@@ -13804,6 +13824,66 @@
    "date": "2026-10-11",
    "commit": "f7ee61e",
    "hash": "9218718c38c6"
+  },
+  "core:FASTFIGHTING.Tactics.specialty.always": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Tactics.specialty.always",
+   "area": "core/Tactics",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "379d9406a2d3"
+  },
+  "core:FASTFIGHTING.Tactics.specialty.Hint": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Tactics.specialty.Hint",
+   "area": "core/Tactics",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "afb64593a105"
+  },
+  "core:FASTFIGHTING.Tactics.specialty.Label": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Tactics.specialty.Label",
+   "area": "core/Tactics",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "cb489a7f1d90"
+  },
+  "core:FASTFIGHTING.Tactics.specialty.none": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Tactics.specialty.none",
+   "area": "core/Tactics",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "35f994b0d72d"
+  },
+  "core:FASTFIGHTING.Tactics.specialty.some": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Tactics.specialty.some",
+   "area": "core/Tactics",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "70a4260182be"
+  },
+  "core:FASTFIGHTING.Tactics.specialty.strong": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Tactics.specialty.strong",
+   "area": "core/Tactics",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "3650cddf5088"
   },
   "core:FASTFIGHTING.Tactics.style.caster": {
    "repo": "core",
@@ -22052,6 +22132,16 @@
    "commit": null,
    "hash": "6417036f9fe3"
   },
+  "ironsworn:FFIRONSWORN.HarmsWay": {
+   "repo": "ironsworn",
+   "file": "languages/en.json",
+   "key": "FFIRONSWORN.HarmsWay",
+   "area": "ironsworn/General",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "145840181168"
+  },
   "ironsworn:FFIRONSWORN.Heart": {
    "repo": "ironsworn",
    "file": "languages/en.json",
@@ -22182,6 +22272,16 @@
    "commit": null,
    "hash": "d32c61de3be3"
   },
+  "ironsworn:FFIRONSWORN.Move.FaceDanger": {
+   "repo": "ironsworn",
+   "file": "languages/en.json",
+   "key": "FFIRONSWORN.Move.FaceDanger",
+   "area": "ironsworn/Move",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "4b7799ce823d"
+  },
   "ironsworn:FFIRONSWORN.Move.FaceDeath": {
    "repo": "ironsworn",
    "file": "languages/en.json",
@@ -22211,6 +22311,16 @@
    "date": null,
    "commit": null,
    "hash": "11f467683ffc"
+  },
+  "ironsworn:FFIRONSWORN.Move.Heal": {
+   "repo": "ironsworn",
+   "file": "languages/en.json",
+   "key": "FFIRONSWORN.Move.Heal",
+   "area": "ironsworn/Move",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "421acf13c1cb"
   },
   "ironsworn:FFIRONSWORN.Move.PaythePrice": {
    "repo": "ironsworn",
@@ -22522,6 +22632,46 @@
    "commit": null,
    "hash": "cb7d16c1f9d5"
   },
+  "ironsworn:FFIRONSWORN.Provoke.Holds": {
+   "repo": "ironsworn",
+   "file": "languages/en.json",
+   "key": "FFIRONSWORN.Provoke.Holds",
+   "area": "ironsworn/Provoke",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "b50634c636ba"
+  },
+  "ironsworn:FFIRONSWORN.Provoke.Line": {
+   "repo": "ironsworn",
+   "file": "languages/en.json",
+   "key": "FFIRONSWORN.Provoke.Line",
+   "area": "ironsworn/Provoke",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "422fc1d7c144"
+  },
+  "ironsworn:FFIRONSWORN.Provoke.Rises": {
+   "repo": "ironsworn",
+   "file": "languages/en.json",
+   "key": "FFIRONSWORN.Provoke.Rises",
+   "area": "ironsworn/Provoke",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "aba506efd75d"
+  },
+  "ironsworn:FFIRONSWORN.Provoke.Shrugs": {
+   "repo": "ironsworn",
+   "file": "languages/en.json",
+   "key": "FFIRONSWORN.Provoke.Shrugs",
+   "area": "ironsworn/Provoke",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "019ce59e3ec0"
+  },
   "ironsworn:FFIRONSWORN.Rank": {
    "repo": "ironsworn",
    "file": "languages/en.json",
@@ -22661,6 +22811,16 @@
    "date": null,
    "commit": null,
    "hash": "5a758414a1ea"
+  },
+  "ironsworn:FFIRONSWORN.SkillMove": {
+   "repo": "ironsworn",
+   "file": "languages/en.json",
+   "key": "FFIRONSWORN.SkillMove",
+   "area": "ironsworn/General",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "9bd0a1db1226"
   },
   "ironsworn:FFIRONSWORN.Stat.edge": {
    "repo": "ironsworn",

@@ -12,6 +12,8 @@ export const TACTIC_CHOICES = Object.freeze({
   style: ["frontline", "skirmisher", "ranged", "caster", "protector"],
   target: ["nearest", "weakest", "dangerous", "casters", "protect", "avoidKilling"],
   resourceUse: ["conserve", "balanced", "nova"],
+  // (How strongly it reaches for magic and its own specialties over the ordinary: behavior/specialty.js.)
+  specialty: ["none", "some", "strong", "always"],
   healAggro: ["conservative", "balanced", "aggressive", "allCosts"],
   potionThreshold: ["never", "25", "50", "75"],
   allyDying: ["rescue", "fight", "retreat", "protectSelf"],
@@ -37,7 +39,7 @@ export const TACTIC_WISHES = Object.freeze({
 });
 
 /** Question keys in survey order. `preferredAction` is special (its choices are the character's own actions). */
-export const TACTIC_KEYS = Object.freeze(["preferredAction", "style", "target", "resourceUse", "talk", "healAggro", "potionThreshold", "allyDying", "selfRevived", "retreat", "shield", "beyond"]);
+export const TACTIC_KEYS = Object.freeze(["preferredAction", "style", "target", "resourceUse", "specialty", "talk", "healAggro", "potionThreshold", "allyDying", "selfRevived", "retreat", "shield", "beyond"]);
 
 const isOffense = a => a.kind !== "heal" && a.kind !== "buff";
 const usesResource = a => !!a.resource || Number.isFinite(a.uses);
@@ -100,6 +102,7 @@ export function suggestTactics(spec, defaults = {}, rules = null) {
     style,
     target,
     resourceUse: "balanced",
+    specialty: "none",
     healAggro: defaults.healAggro ?? (heals.some(a => !a.selfOnly) ? "balanced" : "conservative"),
     potionThreshold: hasPotions ? "50" : "never",
     allyDying: defaults.allyDying ?? (heals.some(a => !a.selfOnly) ? "rescue" : "fight"),

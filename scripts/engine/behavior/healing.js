@@ -12,6 +12,7 @@ import { bringsItself } from "./reluctance.js";
 import { perceives } from "./senses.js";
 import { meanPart } from "../dice.js";
 import { castChanceOf } from "./casting.js";
+import { specialtyWeight } from "./specialty.js";
 
 const THRESHOLD = { conservative: 0.3, balanced: 0.45, aggressive: 0.6, allCosts: 0.8 };
 
@@ -138,7 +139,7 @@ export function decideHeal(run, u, turn) {
   // Healing for what it costs from the turn, the walk there included: a bonus-action heal from afar (5e Healing Word)
   // leaves the action to fight with; a touch spell (Cure Wounds) heals more but means getting there and using the
   // action. Anyone down is back up with any heal, so for them the cheapest way wins.
-  const value = o => (o.a.firstAid ? 0.5 : best.status === STATUS.DOWN ? 1 + meanHeal(o.a, u) / 100 : meanHeal(o.a, u)) / (perTurn(rules, o.a) + o.units);
+  const value = o => (o.a.firstAid ? 0.5 : best.status === STATUS.DOWN ? 1 + meanHeal(o.a, u) / 100 : meanHeal(o.a, u)) / (perTurn(rules, o.a) + o.units) * specialtyWeight(u, o.a);
   const options = heals
     .filter(a => !a.firstAid || (best !== u && best.status === STATUS.DOWN && !best.stable))
     .filter(a => !a.oncePerTarget || !u.healedTargets.has(`${a.id}|${best.id}`))

@@ -13,6 +13,7 @@
  */
 import { MODULE_ID } from "../constants.js";
 import { TACTIC_CHOICES, TACTIC_KEYS, suggestTactics, resolveTactics } from "../engine/tactics.js";
+import { isSpecial } from "../engine/behavior/specialty.js";
 import { PLAYSTYLES, PLAYSTYLE_IDS, MAX_PLAYSTYLES, RENAMED_PLAYSTYLES, combinePlaystyles, isPlaystyle } from "../engine/playstyles.js";
 import { getAdapter } from "../api.js";
 import { DESIRE_KINDS, DESIRE_BAND_KEYS } from "../engine/behavior/desire.js";
@@ -291,6 +292,7 @@ export function questionsContext(spec, actor, uid, { questions: withQuestions = 
   add("preferredAction", offense.map(a => ({ value: a.id, label: actionLabel(a) })), { show: offense.length > 1 });
   add("style", TACTIC_CHOICES.style);
   add("resourceUse", TACTIC_CHOICES.resourceUse, { show: hasLimited });
+  add("specialty", TACTIC_CHOICES.specialty, { show: spec.actions.some(isSpecial) });
   add("healAggro", TACTIC_CHOICES.healAggro, { show: heals.some(a => !a.selfOnly) });
   add("potionThreshold", TACTIC_CHOICES.potionThreshold, { show: hasPotions });
   add("allyDying", TACTIC_CHOICES.allyDying);

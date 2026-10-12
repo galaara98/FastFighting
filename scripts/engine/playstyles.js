@@ -116,7 +116,7 @@ export const PLAYSTYLES = Object.freeze({
   loreCollector: { icon: "fa-book-open", traits: { tactical: 5 }, suggest: {}, behavior: { study: 0.5, observe: 0.85, share: 0.9, trapWary: 0.6 },
     desire: { hurt: { unstudied: 10 }, frustration: 0.8 } },
   // Loves a weakness to exploit (and a lock to crack).
-  puzzleManiac: { icon: "fa-puzzle-piece", traits: { tactical: 15 }, suggest: { target: "casters" }, behavior: { exploitWeakness: 0.5, hinders: 0.3, trapWary: 0.9, tauntProof: 0.4 },
+  puzzleManiac: { icon: "fa-puzzle-piece", traits: { tactical: 15 }, suggest: { target: "casters", specialty: "some" }, behavior: { exploitWeakness: 0.5, hinders: 0.3, trapWary: 0.9, tauntProof: 0.4 },
     desire: { hurt: { weakness: 20, casters: 10 }, frustration: 0.7, doorPatience: 2 } },
   // Unpredictable: something random catches its eye, nobody's voice counts for much, may defy its leader.
   wildcard: { icon: "fa-dice", traits: {}, suggest: {}, behavior: { random: 0.25 },
@@ -134,7 +134,12 @@ export const PLAYSTYLES = Object.freeze({
   // As little as it can get away with: whatever's nearest, no long walks, not much help for anyone, gives up fast,
   // and can't be bothered to hold a grudge.
   lazy: { icon: "fa-couch", traits: { tactical: -5, brave: -5 }, suggest: { resourceUse: "conserve" }, behavior: { flighty: 0.4, tauntProof: 0.25 },
-    desire: { hurt: { nearest: 15, far: -20 }, heal: -10, protect: -10, aid: -10, frustration: 1.6, doorPatience: 0.4, cool: 1.5 } }
+    desire: { hurt: { nearest: 15, far: -20 }, heal: -10, protect: -10, aid: -10, frustration: 1.6, doorPatience: 0.4, cool: 1.5 } },
+
+  // Un-Mundane: would rather use what sets it apart (its magic, its class's and kind's own abilities, a monster's
+  // powers) than fight or talk as anyone would; spends what that takes freely.
+  unmundane: { icon: "fa-wand-sparkles", traits: {}, suggest: { specialty: "strong", resourceUse: "nova" }, behavior: {},
+    desire: { talk: -10 } }
 });
 
 /** Desire keys that add up across pills, and those that multiply (a playstyle's ×1 is "no change"). */

@@ -40,6 +40,7 @@ import { prefersTalk } from "./standoff.js";
 import { levelOf, allDesires } from "./desire.js";
 import { standsGround, callRetreat } from "./morale.js";
 import { bargainAim, holdsOut, calmsDown, irritated, haggled, pressed, expectOf, owed } from "./bargain.js";
+import { talkDamping } from "./specialty.js";
 
 /**
  * Only an argument: nobody runs, and nobody pays and goes. Talked round, a creature backs down (where it would run or
@@ -367,7 +368,8 @@ export function talkActionsThisTurn(run, u, actions) {
   }
   if ( talker && u.turnsTaken === 0 ) return { count: max, pitch };
   if ( tactic === "first" && pitch.pSuccess >= 0.2 ) return { count: max, pitch };
-  const chance = affinity * (0.2 + pitch.pSuccess) * (u.prep.lowBattleWorth ? 1.5 : 1);
+  // (One that would rather use its magic and specialties talks when it might that much less: its answer's weight.)
+  const chance = affinity * (0.2 + pitch.pSuccess) * (u.prep.lowBattleWorth ? 1.5 : 1) * talkDamping(u);
   if ( !run.rng.chance(clamp(chance, 0, 0.95)) ) return none;
   return { count: (u.prep.lowBattleWorth && pitch.pSuccess >= 0.35) ? max : 1, pitch };
 }
