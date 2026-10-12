@@ -14,7 +14,7 @@
  * forgets about it half the time.
  */
 import { TACTICAL } from "../../constants.js";
-import { areEnemies, isStanding, liveTier, edgeDistance, heldOff } from "../battle-state.js";
+import { areEnemies, isStanding, liveTier, edgeDistance, heldOff, behaviorOf } from "../battle-state.js";
 import { meanPart } from "../dice.js";
 import { mind } from "./desire.js";
 
@@ -85,6 +85,9 @@ export function addCosts(a = {}, b = {}) {
  */
 export function takesSafeWay(run, u, safe, turn, need = null) {
   if ( !safe || !turn || !turn.canAfford(addCosts(safe.cost, need)) ) return false;
+  // In a hurry (Impatient, Speed-Runner), it doesn't stop to get clear: it takes the free swings.
+  const rush = behaviorOf(u).rush ?? 0;
+  if ( rush > 0 && run.rng.chance(rush) ) return false;
   if ( isWary(run, u) ) return true;
   const main = run.prep.rules.mainPool ?? "actions";
   const cheap = !(safe.cost?.[main] > 0);

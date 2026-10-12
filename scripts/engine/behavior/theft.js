@@ -76,7 +76,8 @@ const hiding = u => !!u.spec.hidden && !u.revealed;
 export function stealChance(run, u, mark = null) {
   const skill = u.spec.theft;
   if ( !skill || typeof skill.mod !== "number" ) return 0;
-  const edge = skill.mod - typical(run.prep.rules, "skill", u.spec.level ?? 0);
+  // (A smaller die than the d20, an untrained check: DCC's d10, is that much less of an edge.)
+  const edge = skill.mod - typical(run.prep.rules, "skill", u.spec.level ?? 0) - (Number(skill.faces) > 0 ? (20 - skill.faces) / 2 : 0);
   const thief = !!behaviorOf(u).steal;
   if ( !thief && edge < SKILLED ) return 0;
   const safe = winning(run, u) || (!!mark && hiding(u) && (alone(run, mark) || offOnTheirOwn(run, u, mark)));
@@ -149,7 +150,7 @@ export function attemptTheft(run, u, t, log, { plan = null, attacksMade = 0 } = 
   const check = checkRoll(run, u, u.spec.theft.mod, t);
   const extra = rules.modifiers?.steal?.({ thief: u, target: t }) ?? {};
   const mod = check.mod + (extra.bonus ?? 0);
-  const roll = rollCheck(rules, run.rng, mod, dc, { advantage: (check.advantage ?? 0) + (extra.advantage ?? 0), dice: check.dice, kind: "check", roller: u });
+  const roll = rollCheck(rules, run.rng, mod, dc, { advantage: (check.advantage ?? 0) + (extra.advantage ?? 0), dice: check.dice, kind: "check", roller: u, faces: u.spec.theft.faces });
   const data = {
     type: "theft", target: t.spec.name, targetId: t.id, skill: u.spec.theft.skill ?? "theft", natural: roll.natural, mod, total: roll.total,
     dc, dcStat: resist?.label ?? "DC", degree: roll.degree, margin: roll.total - dc, feint

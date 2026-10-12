@@ -102,7 +102,7 @@ export function controlRoll(run, u, t, action, attacksMade = 0) {
     const dc = defenseDc(run, t, action.check.against ?? "will");
     const mod = check.mod + map;
     const lift = boostBonus(run.prep.rules, u, t, mod, dc, { advantage: check.advantage, dice: check.dice, kind: "check" });
-    return { kind, mod: mod + lift, dc, advantage: check.advantage, dice: check.dice, rollKind: "check", roller: u };
+    return { kind, mod: mod + lift, dc, advantage: check.advantage, dice: check.dice, rollKind: "check", faces: action.check.faces, roller: u };
   }
   const roll = attackRoll(run, u, t, action, attacksMade);
   const opts = attackOptions(roll);

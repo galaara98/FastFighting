@@ -57,7 +57,7 @@ export function bestOptionVs(run, u, t, attacksMade = 0, turn = null) {
     // Walking off from another foe invites a free swing: the wary would rather use what reaches from here.
     if ( moves > 0 && (wary ??= !!run.prep.rules.opportunity && isWary(run, u) && threats(run, u, t).length > 0) ) weighted *= 0.3;
     if ( behavior.meleeBias && action.melee ) weighted *= 1 + behavior.meleeBias;
-    if ( behavior.exploitWeakness && (action.damage ?? []).some(p => t.spec.iwr?.weak?.[p.type]) ) weighted *= 1 + behavior.exploitWeakness;
+    if ( behavior.exploitWeakness && (action.damage ?? []).some(p => t.spec.iwr?.weak?.[p.type] || t.spec.iwr?.exploit?.[p.type]) ) weighted *= 1 + behavior.exploitWeakness;
     // A foe down and regenerating: only what stops it (fire, acid) does any good.
     if ( t.held && t.status === STATUS.DOWN ) weighted *= (action.damage ?? []).some(p => t.spec.regen?.stoppedBy?.includes(p.type)) ? 3 : 0.05;
     // Spoilers would rather lock a foe down, harass it or weaken it than simply hit it.

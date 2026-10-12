@@ -75,11 +75,11 @@ export function doorPlan(run, u, door, state) {
   const plans = [];
   const check = (method, work, dc) => {
     if ( !work || !Number.isFinite(work.mod) ) return;
-    const dist = degreeDistribution(rules, work.mod, dc, { kind: "check", roller: u });
+    const dist = degreeDistribution(rules, work.mod, dc, { kind: "check", roller: u, faces: work.faces });
     const chance = (dist[2] ?? 0) + (dist[3] ?? 0);
     if ( chance <= 0 ) return;
     const cost = normalizeCost(rules, costs[method] ?? basic);
-    plans.push({ method, cost, chance, turns: costUnits(rules, cost) / (chance * perTurn), mod: work.mod, dc });
+    plans.push({ method, cost, chance, turns: costUnits(rules, cost) / (chance * perTurn), mod: work.mod, dc, faces: work.faces });
   };
   check("force", u.spec.doorWork?.force, door.forceDC);
   check("pick", u.spec.doorWork?.pick, door.pickDC);

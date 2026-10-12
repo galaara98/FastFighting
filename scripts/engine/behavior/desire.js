@@ -407,7 +407,7 @@ export function styleWants(run, u, scored, { canHeal = false, canTalk = false, t
     if ( h.casters && t.prep?.isCaster ) points += h.casters;
     if ( h.healers && t.prep?.isHealer ) points += h.healers;
     if ( h.leader && commandOf(run, t)?.unit === t ) points += h.leader;
-    if ( h.weakness && Object.keys(t.spec.iwr?.weak ?? {}).some(k => mine.has(k)) ) points += h.weakness;
+    if ( h.weakness && Object.keys({ ...t.spec.iwr?.weak, ...t.spec.iwr?.exploit }).some(k => mine.has(k)) ) points += h.weakness;
     if ( h.unstudied && !sizedUp(u, t) ) points += h.unstudied;
     if ( h.current && t.id === u.targetId ) points += h.current;
     add("hurt", t.id, points);

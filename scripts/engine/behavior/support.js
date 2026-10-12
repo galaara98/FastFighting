@@ -19,12 +19,19 @@
  * worth: Help, Aid, Guidance, an inspiration die, "+1 on your next move".
  *   oncePerTurn          no more than once in a turn (Action Surge, Reckless Attack)
  *   tell                 the story table to tell it with (event.dodge, event.reckless, event.surge), for what isn't magic
+ *   guard                a turn given to its own defense (5e Dodge): the shield answer says how readily, as for a shield
+ *                        (always: half again as readily; never: not at all)
+ *   setup                it sets something up rather than getting on with it (Dodge, Hide, Secure an Advantage): one in
+ *                        a hurry (Impatient, Speed-Runner) doesn't stop for it
+ *   leans: [keys]        playstyle behaviors that make it likelier, each by its strength (Hide: lowProfile; Secure an
+ *                        Advantage: hinders, exploitWeakness): what it would do is worth that much more to them
+ *   check.against        its roll is against the foes' best defense of that kind ("perception": Hide), not check.dc
  * A buff is worth casting when what it adds up to across its recipients, over the rounds it will matter, beats what
  * the same actions would do as an attack. Thinking minds see this best; feral ones only ever look after themselves.
  * Pure: no Foundry globals.
  */
 import { STATUS, TACTICAL } from "../../constants.js";
-import { alliesOf, enemiesOf, isStanding, liveTier, movesNeeded, edgeDistance, behaviorOf, checkRoll, refusesToHelp } from "../battle-state.js";
+import { alliesOf, enemiesOf, isStanding, liveTier, movesNeeded, edgeDistance, behaviorOf, checkRoll, refusesToHelp, defenseDc } from "../battle-state.js";
 import { degreeDistribution } from "../probability.js";
 import { hasUses, costOf, costUnits, threatOf, unitsPerTurn } from "./evaluate.js";
 import { outcomeWorth, hasFresh, concentrationCost, heldElsewhere, focusOf } from "./effects.js";
@@ -86,7 +93,14 @@ function besideFoe(run, u, a, action) {
 export function landing(run, u, action) {
   if ( !action.check || !Number.isFinite(Number(action.check.mod)) ) return [0, 0, 1, 0];
   const c = checkRoll(run, u, Number(action.check.mod));
-  return degreeDistribution(run.prep.rules, c.mod, Number(action.check.dc) || 0, { advantage: c.advantage, dice: c.dice, kind: "check", roller: u });
+  return degreeDistribution(run.prep.rules, c.mod, checkDc(run, u, action.check), { advantage: c.advantage, dice: c.dice, kind: "check", roller: u, faces: action.check.faces });
+}
+
+/** A buff's roll: against its DC, or (check.against) the best of the foes still up: Hide against the sharpest eyes. */
+export function checkDc(run, u, check) {
+  if ( !check?.against ) return Number(check?.dc) || 0;
+  const foes = enemiesOf(run, u).filter(isStanding);
+  return foes.length ? Math.max(...foes.map(f => defenseDc(run, f, check.against))) : Number(check.dc) || 10;
 }
 
 /** What a buff is worth to a friend, over what its roll may come to. */
@@ -159,10 +173,16 @@ export function decideBuff(run, u, turn) {
   // Helpers think helping is worth more than it is; everyone else weighs it against hitting something.
   const baseline = devoted ? 0 : offenseBaseline(run, u) * (behaviorOf(u).helps ? 0.8 : 1);
   let best = null;
+  const b = behaviorOf(u);
+  // (In a hurry, decided once a turn's look: it doesn't stop to set anything up.)
+  const hurried = (b.rush ?? 0) > 0 && run.rng.chance(b.rush);
   for ( const o of options ) {
     const forLead = leadAid && o.targets.some(t => t.id === leadAid);
     if ( devoted && !forLead ) continue;
-    const score = forLead ? o.score * 1.5 : o.score;
+    if ( (o.action.setup || o.action.guard) && hurried ) continue;
+    if ( o.action.guard && u.tac?.shield === "never" ) continue;
+    const lean = 1 + (o.action.leans ?? []).reduce((s, k) => s + Math.max(0, Number(b[k]) || 0), 0);
+    const score = (forLead ? o.score * 1.5 : o.score) * (o.action.guard && u.tac?.shield === "always" ? 1.5 : 1) * lean;
     if ( score <= baseline ) continue;
     if ( !best || score > best.score ) best = { ...o, score };
   }

@@ -34,7 +34,7 @@ import { talkActionsThisTurn, choosePitch, attemptTalk, shareLanguage } from "./
 import { opensWithTalk, breaksStandoff, standoffPitches, charismaticLeader, canTalk, prefersTalk } from "./behavior/standoff.js";
 import { controlOutcome, controlRoll, isImmune, degreeShift } from "./behavior/control.js";
 import { recompute as recomputeConditions, applyOutcome, applyControl, beginConcentration, endConcentration, holdsAnything, noteConcentration, moveHeld, settleAllegiance, iwrOf, incoming, spendEdges, spendBoost, focusOf, tauntProof, withoutTaunt } from "./behavior/effects.js";
-import { decideBuff, aidScores } from "./behavior/support.js";
+import { decideBuff, aidScores, checkDc } from "./behavior/support.js";
 import { perceives } from "./behavior/senses.js";
 import { stealChance, theftTarget, theftPlan, attemptTheft } from "./behavior/theft.js";
 import { reactionsPerRound, threats, takesSafeWay } from "./behavior/reactions.js";
@@ -134,6 +134,8 @@ function rollInitiative(run) {
   for ( const u of run.units ) {
     const init = u.spec.initiative ?? { mod: 0 };
     let mod = stealthSides.has(u.side) ? (init.stealth ?? init.mod ?? 0) : (init.mod ?? 0);
+    // (Keeping out of sight on the way in, where the system rolls Stealth for it: PF2e's Avoid Notice.)
+    if ( run.prep.rules.stealthInitiative && (behaviorOf(u).lowProfile ?? 0) > 0 && Number.isFinite(init.stealth) ) mod = Math.max(mod, init.stealth);
     mod += behaviorOf(u).initiative ?? 0; // Instigators jump in first
     if ( liveTier(run, u) >= TACTICAL.MASTERMIND ) mod += 2; // ambush instincts
     // (A die of the system's own: DCC's d16 for a two-handed weapon.)
@@ -253,7 +255,7 @@ function huntable(run, u) {
 /*  Damage, healing, conditions                 */
 /* -------------------------------------------- */
 
-function dealDamage(run, source, target, amount, { crit = false, types = null } = {}) {
+function dealDamage(run, source, target, amount, { crit = false, types = null, action = null } = {}) {
   if ( amount <= 0 || target.status === STATUS.DEAD || target.status === STATUS.FLED ) return;
   // Acid or fire on a troll: its regeneration stops, for its next turn.
   if ( target.spec.regen?.stoppedBy?.length && types?.some(t => target.spec.regen.stoppedBy.includes(t)) ) target.regenStopped = true;
@@ -298,7 +300,7 @@ function dealDamage(run, source, target, amount, { crit = false, types = null } 
       target.hp = 0;
       target.wasDowned = true;
       rules.onDropped(target, { crit, model, amount: rest, overflow: Math.max(0, rest - dealt), rng: run.rng });
-      if ( target.status === STATUS.DEAD && holdsBack(run, source) ) knockOut(run, target);
+      if ( target.status === STATUS.DEAD && (holdsBack(run, source) || pullsBlow(run, source, action)) ) knockOut(run, target);
       killsBeaten(run, source, target);
       regenerating(target);
     }
@@ -344,7 +346,7 @@ function dealDamage(run, source, target, amount, { crit = false, types = null } 
     if ( model === DOWNED_MODELS.OUT ) return;
     if ( run.neutral && source ) crossed(run, source, target, "harm", 1.5, logger(run));
     rules.onDropped(target, { crit, model, amount, overflow: amount, rng: run.rng });
-    if ( target.status === STATUS.DEAD && holdsBack(run, source) ) knockOut(run, target);
+    if ( target.status === STATUS.DEAD && (holdsBack(run, source) || pullsBlow(run, source, action)) ) knockOut(run, target);
     regenerating(target);
     const dead = target.status === STATUS.DEAD;
     if ( dead ) target.killerId = source?.id ?? target.killerId ?? null;
@@ -403,6 +405,17 @@ function regenerate(run, u) {
   log(run, u, {
     type: "regen", amount: u.hp - before, revived: wasDown && u.status === STATUS.STANDING
   });
+}
+
+/**
+ * One who spares the fallen (its playstyles' spareDowned: a Moralist, a Peacekeeper, a Diplomat now and then) pulls a
+ * blow that would kill, where the system has a way to (rules.pullsBlow: 5e a melee blow, PF2e a nonlethal attack, DCC a
+ * weapon that subdues): the foe is knocked out instead.
+ */
+function pullsBlow(run, u, action) {
+  if ( !u || !action || !run.prep.rules.pullsBlow?.(u, action) ) return false;
+  const spare = Number(behaviorOf(u).spareDowned) || 0;
+  return spare >= 1 || (spare > 0 && run.rng.chance(spare));
 }
 
 /** Knocked out, not killed: down at 0 hit points, unconscious and stable (the system may say more: rules.knockOut). */
@@ -599,14 +612,16 @@ function fell(run, u, source) {
 
 /**
  * The price of an attack, as the system sets it (rules.backlash): the target's harm to the attacker, or a price of
- * the system's own that it has paid already (Ironsworn's stress: its report, `said`).
+ * the system's own that it has paid already (Ironsworn's stress: its report, `said`). The system may put a friend in
+ * harm's way instead (cost.to: Ironsworn's "a friend is put in harm's way").
  */
 function backlash(run, u, target, action, degree, logging) {
   const cost = run.prep.rules.backlash?.(run, u, target, action, degree);
   if ( cost?.said?.text && logging ) log(run, u, { type: "endure", text: cost.said.text, ...cost.said.data });
-  if ( !cost?.damage?.length || !isUp(u) || target.status === STATUS.DEAD ) return;
-  const hit = rollHit(run, target, { name: cost.label ?? "", damage: cost.damage }, u, cost.damage, 1, false);
-  if ( logging ) log(run, u, {
+  const who = cost?.to && isUp(cost.to) ? cost.to : u;
+  if ( !cost?.damage?.length || !isUp(who) || target.status === STATUS.DEAD ) return;
+  const hit = rollHit(run, target, { name: cost.label ?? "", damage: cost.damage }, who, cost.damage, 1, false);
+  if ( logging ) log(run, who, {
     type: "backlash", label: cost.label ?? "", by: target.spec.name, byId: target.id, damage: hit.total, damageType: cost.damage[0]?.type ?? "untyped"
   });
   hit.apply();
@@ -650,7 +665,7 @@ function rollHit(run, u, action, t, parts, multiplier, crit, minimum = 0) {
       for ( const p of rolled.persistent ) {
         if ( !t.spec.iwr?.immune?.includes(p.type) ) t.persistent.push({ part: p, sourceId: u.id });
       }
-      dealDamage(run, u, t, amount, { crit, types: Object.keys(rolled.byType) });
+      dealDamage(run, u, t, amount, { crit, types: Object.keys(rolled.byType), action });
       return amount;
     }
   };
@@ -1346,9 +1361,9 @@ function executeBuff(run, u, action, targets, worth = 0, turn = null) {
   let check = null;
   if ( action.check && Number.isFinite(Number(action.check.mod)) ) {
     const rules = run.prep.rules;
-    const dc = Number(action.check.dc) || 0;
+    const dc = checkDc(run, u, action.check);
     const c = checkRoll(run, u, Number(action.check.mod));
-    const roll = rollCheck(rules, run.rng, c.mod, dc, { advantage: c.advantage, dice: c.dice, kind: "check", roller: u });
+    const roll = rollCheck(rules, run.rng, c.mod, dc, { advantage: c.advantage, dice: c.dice, kind: "check", roller: u, faces: action.check.faces });
     spendEdges(u, "check");
     check = { skill: action.check.label ?? "", natural: roll.natural, mod: c.mod, total: roll.total, dc, degree: roll.degree, challenge: roll.challenge ?? null };
     outcome = Array.isArray(action.onDegree) ? action.onDegree[roll.degree] ?? null : roll.degree >= 2 ? action.outcome : null;
@@ -1403,6 +1418,7 @@ function executeHeal(run, u, action, target) {
     roll = rollCheck(rules, run.rng, check.mod, action.healCheck.dc, { advantage: check.advantage, dice: check.dice, kind: "check", roller: u });
     spendEdges(u, "check", target.id);
     multiplier = rules.healCheckMultiplier ? rules.healCheckMultiplier(roll.degree) : [0, 0, 1, 2][roll.degree];
+    rules.afterRoll?.(run, u, roll, { kind: "heal", action, target, faces: roll.faces ?? 20 });
     // Someone's life on it: a healer with fate to spare tries again (the selfish less readily, for others).
     const dying = target.status === STATUS.DOWN && !target.stable;
     if ( !multiplier && dying && fateOf(u) > 0 && (u === target || run.rng.chance(clamp(1 - liveTrait(run, u, "selfish") / 100, 0.05, 0.95))) ) {
@@ -1608,7 +1624,7 @@ function workTheDoor(run, u, turn, door, target) {
       natural: roll.natural, mod: plan.strike.bonus ?? 0, total: roll.total, dc: door.ac, degree: roll.degree, ...where
     });
   } else {
-    const roll = rollCheck(rules, run.rng, plan.mod, plan.dc, { kind: "check", roller: u });
+    const roll = rollCheck(rules, run.rng, plan.mod, plan.dc, { kind: "check", roller: u, faces: plan.faces });
     const success = roll.degree >= 2;
     if ( success ) openDoor(run, door, state, plan.method === "force");
     else thwart(run, u, kind, target.id, 12);
@@ -1646,7 +1662,7 @@ function sizesUp(run, u, t, turn, room, { decided = false, wholeTurn = false } =
   if ( Number.isFinite(how?.mod) ) {
     const dc = Number.isFinite(how.dc) ? how.dc : rules.sizeUpDC?.(t) ?? typical(rules, "dc", t.spec.level ?? 0);
     const c = checkRoll(run, u, how.mod);
-    const roll = rollCheck(rules, run.rng, c.mod, dc, { advantage: c.advantage, dice: c.dice, kind: "check", roller: u });
+    const roll = rollCheck(rules, run.rng, c.mod, dc, { advantage: c.advantage, dice: c.dice, kind: "check", roller: u, faces: how.faces });
     spendEdges(u, "check");
     check = { skill: how.label ?? "", natural: roll.natural, mod: c.mod, total: roll.total, dc, degree: roll.degree, challenge: roll.challenge ?? null };
   }
@@ -2461,7 +2477,7 @@ function firstAid(run, u, target) {
   const rules = run.prep.rules;
   const dc = rules.firstAidDC(target);
   const check = checkRoll(run, u, u.spec.firstAid.mod, target);
-  const roll = rollCheck(rules, run.rng, check.mod, dc, { advantage: check.advantage, dice: check.dice, kind: "check", roller: u });
+  const roll = rollCheck(rules, run.rng, check.mod, dc, { advantage: check.advantage, dice: check.dice, kind: "check", roller: u, faces: u.spec.firstAid.faces });
   spendEdges(u, "check", target.id);
   const before = target.dying;
   rules.firstAid(target, roll.degree);
