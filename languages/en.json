@@ -1652,7 +1652,7 @@
       "fumble": "a fumble"
     },
     "AutoWords": {
-      "Hint": "Words that suggest a playstyle when FastFighting sets a character up by itself, found in its biography or description. Each matches as the start of a word, in any case. Separate them with commas.",
+      "Hint": "Words that suggest a playstyle when FastFighting sets a character up by itself, found in its biography or description. Each matches as the start of a word, in any case. Separate them with commas. A translation adds its own words to these: both are looked for, since a biography may be written in either language.",
       "chicken": "coward, timid, craven, skittish, fearful, meek, spineless",
       "cruel": "cruel, sadist, vicious, merciless, ruthless, brutal, torment, tortur, terroriz, terroris",
       "moralist": "righteous, honorab, honourab, virtuous, principled, compassion, merciful",

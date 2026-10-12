@@ -616,7 +616,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "04f2005cf6ef"
+   "hash": "04f2005cf6ef",
+   "changed": true
   },
   "core:FASTFIGHTING.AutoWords.impatient": {
    "repo": "core",

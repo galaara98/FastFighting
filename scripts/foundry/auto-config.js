@@ -19,7 +19,7 @@
 import { MODULE_ID } from "../constants.js";
 import { getAdapter } from "../api.js";
 import { CORE_API_VERSION } from "../core-api.js";
-import { hasWords, localize } from "../i18n.js";
+import { hasWords, localize, language } from "../i18n.js";
 import { TACTIC_CHOICES, TACTIC_KEYS, suggestTactics } from "../engine/tactics.js";
 import { PLAYSTYLES } from "../engine/playstyles.js";
 import { scorePlaystyles, pickPlaystyles, keywordHits } from "../engine/auto-playstyles.js";
@@ -62,12 +62,38 @@ export function autoPlan(stored, record, { api, sig, spec, force = false }) {
   return { pick, lets };
 }
 
-/** Each playstyle's keywords, from the language files (FASTFIGHTING.AutoWords: a comma-separated list for each). */
-export function autoWords() {
+/**
+ * The English keywords (languages/en.json), read once for a reader in another language: a translation's keywords add
+ * to the English ones, never take their place (a biography may be written in either). Called at startup.
+ */
+let englishWords = null;
+export async function loadEnglishWords() {
+  if ( language() === "en" ) return;
+  try {
+    const response = await fetch(`modules/${MODULE_ID}/languages/en.json`);
+    if ( response.ok ) englishWords = (await response.json())?.FASTFIGHTING?.AutoWords ?? null;
+  } catch ( err ) {
+    englishWords = null;
+  }
+}
+
+const splitWords = text => String(text ?? "").split(",").map(w => w.trim()).filter(Boolean);
+
+/**
+ * Each playstyle's keywords (FASTFIGHTING.AutoWords: a comma-separated list for each): the English ones, and the
+ * reader's language's as well, each once.
+ * @param {Record<string, string>|null} [english]   the English lists (default: those read at startup)
+ */
+export function autoWords(english = englishWords) {
   const out = {};
   for ( const id of Object.keys(PLAYSTYLES) ) {
     const key = `FASTFIGHTING.AutoWords.${id}`;
-    if ( hasWords(key) ) out[id] = localize(key).split(",").map(w => w.trim()).filter(Boolean);
+    const seen = new Set();
+    const list = [...splitWords(english?.[id]), ...(hasWords(key) ? splitWords(localize(key)) : [])].filter(w => {
+      const k = w.toLowerCase();
+      return !seen.has(k) && seen.add(k);
+    });
+    if ( list.length ) out[id] = list;
   }
   return out;
 }

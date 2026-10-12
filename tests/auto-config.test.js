@@ -58,6 +58,17 @@ describe("the playstyles that fit", () => {
     for ( const [a, b] of CLASHES ) expect(got.includes(a) && got.includes(b)).toBe(false);
   });
 
+  test("a translation's keywords add to the English ones, each once (a biography may be written in either)", () => {
+    const english = { thief: "thief, burglar", chicken: "coward" };
+    globalThis.game.i18n.has = key => key === "FASTFIGHTING.AutoWords.thief";
+    globalThis.game.i18n.localize = key => (key === "FASTFIGHTING.AutoWords.thief" ? "ladrón, Burglar, carterista" : key);
+    const words = autoWords(english);
+    expect(words.thief).toEqual(["thief", "burglar", "ladrón", "carterista"]);
+    expect(words.chicken).toEqual(["coward"]);
+    expect(keywordHits("Un ladrón astuto", words)).toEqual({ thief: 1 });
+    expect(keywordHits("A clever burglar", words)).toEqual({ thief: 1 });
+  });
+
   test("every playstyle has keywords in the language file", () => {
     const words = autoWords();
     expect(Object.keys(words).length).toBe(27);

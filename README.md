@@ -317,7 +317,7 @@ Answers save as they're made, and two players sharing a token see each other's c
 - **Its playstyles:** up to four, best first, from three things:
   - what its numbers and actions say: its traits, mindless or fearless, its weapons close or far, its magic and specialties, healing and help for friends, ways to hamper a foe, a shield or good armor, and skill at theft, lore and talk;
   - what its system's helper reads in it: its class, ancestry, kind of creature, alignment, gear and role;
-  - words in its biography and description (each playstyle's keywords are in the language files, so a translation brings its own).
+  - words in its biography and description (each playstyle's keywords, FASTFIGHTING.AutoWords in the language files: a translation adds its own words to the English ones, never replaces them, since a biography may be written in either language).
 
   It never picks two that pull against each other, such as a Chicken and a Martyr. A playstyle needs a fair score to be picked, so a plain creature may get none. They're picked once. After that they're the table's: changed or emptied, they stay that way, until someone presses **Reset**, which picks them again at once.
 - **What "Let it decide" stands for:** the calculated answer to every tactics question, from its numbers and its system's helper (a class that fights from afar, a creature that never runs), before its playstyles have their say. These are kept with the character. They're worked out again whenever they're missing or broken, the core API has moved on, or the character has changed (a level gained, a new spell, the world's defaults). Answers someone chose stay as they are.
@@ -398,6 +398,8 @@ A translation needs no code. All of FastFighting's words are in two text files, 
 4. Each FastFighting system module (PF2e, D&D 5e …) has its own `languages/en.json`, translated the same way. Its `hardcoded-toEN.json` names any words it keeps in English for now: leave those as they are.
 
 Anything a translation leaves out reads in English. The tests check every listed language for unknown keys and matching placeholders.
+
+One group is different: the keywords for setting characters up by themselves (`FASTFIGHTING.AutoWords`). A translation's keywords add to the English ones and never replace them, since a character's biography may be written in either language. List only your language's words there; the English ones are looked for anyway.
 
 ## Settings
 
