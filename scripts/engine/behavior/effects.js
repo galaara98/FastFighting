@@ -124,6 +124,15 @@ export function recompute(u) {
   }
 }
 
+/** A condition comes off, wherever it came from (its timed effects; the one it started with): Daggerheart's Hidden, when it attacks. */
+export function dropCondition(u, key) {
+  if ( !u?.conds?.[key] ) return false;
+  u.effects = (u.effects ?? []).filter(e => !e.conditions?.[key]);
+  if ( u.baseConds ) delete u.baseConds[key];
+  recompute(u);
+  return true;
+}
+
 /** Its immunities, weaknesses and resistances right now (its own, and any an effect lends it). */
 export function iwrOf(u) {
   return u.iwr ?? u.spec.iwr;

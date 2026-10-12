@@ -15,6 +15,8 @@ export { part, parseFormula, parseTypedFormula, samplePart, meanPart, maxPart, d
 export { degreeDistribution, rollD20 } from "./engine/probability.js";
 export { TALK_KINDS } from "./engine/behavior/talk.js";
 export { MORALE } from "./engine/behavior/morale.js";
+export { dropCondition } from "./engine/behavior/effects.js";
+export { edgeDistance } from "./engine/battle-state.js";
 export { bestReactionStrike } from "./engine/behavior/reactions.js";
 export { combineMods, describeMods, diceMean } from "./engine/mods.js";
 export { localize, hasWords, fillIn, listJoin, listItems, language, outcomeLine, commonOutcome, sideChangeLine, stillLine } from "./i18n.js";
