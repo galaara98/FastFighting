@@ -147,6 +147,37 @@ export class SystemAdapter {
     return null;
   }
 
+  /**
+   * The playstyles its system says fit a character (its class, ancestry or heritage, kind of creature, alignment, gear,
+   * role), for the one time FastFighting picks them itself (foundry/auto-config.js): {playstyleId: -1 to 1} (1, just
+   * like it; -1, nothing like it). The core weighs these with what its numbers and actions say and its biography's
+   * keywords. Optional.
+   * @param {Actor} actor
+   * @param {object} spec  its CombatantSpec
+   * @returns {Record<string, number>}
+   */
+  playstyleHints(actor, spec) {
+    return {};
+  }
+
+  /**
+   * The system's own answers to the tactics questions, where it knows better than the core's reading of the numbers
+   * (a class that fights from afar, a creature that never runs): {question: answer}, any of TACTIC_KEYS, each one of the
+   * question's choices (preferredAction: one of its actions' ids). What "Let it decide" stands for. Optional.
+   * @param {Actor} actor
+   * @param {object} spec   its CombatantSpec
+   * @param {object} calc   the core's answers, to build on
+   * @returns {Record<string, string>}
+   */
+  tacticHints(actor, spec, calc) {
+    return {};
+  }
+
+  /** Its biography and description, as plain text, for the playstyles' keywords (FASTFIGHTING.AutoWords). Optional. */
+  biography(actor) {
+    return "";
+  }
+
   /** Describe the changes commitOutcome would make, for the confirmation dialog. */
   describeOutcome(spec, final) {
     return [];

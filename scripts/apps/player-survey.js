@@ -8,6 +8,7 @@ import { MODULE_ID } from "../constants.js";
 import { getAdapter } from "../api.js";
 import { localize, hasStat } from "../i18n.js";
 import { sceneEncounter } from "../foundry/persistence.js";
+import { ensureAutoConfig, resetAndAutoConfig } from "../foundry/auto-config.js";
 import {
   questionsContext, setTactic, togglePlaystyle, syncTacticsDom, charactersForUser, setOwnSurveyStatus, SURVEY_STATUS, playstyleSignature
 } from "../foundry/tactics.js";
@@ -94,6 +95,8 @@ export class PlayerSurvey extends HandlebarsApplicationMixin(ApplicationV2) {
         if ( !spec ) continue;
         this.specs.set(e.key, spec);
       }
+      // (Never set up, or its calculated answers out of date: set up by itself first.)
+      await ensureAutoConfig(e.actor, spec);
       const others = game.users.filter(u => u !== game.user && !u.isGM && e.actor.testUserPermission(u, "OWNER"));
       sheets.push({
         id: e.key,
@@ -184,7 +187,7 @@ export class PlayerSurvey extends HandlebarsApplicationMixin(ApplicationV2) {
     const id = target.dataset.tokenId ?? this.activeTab;
     const actor = this.entries?.get(id)?.actor;
     if ( !actor ) return;
-    await actor.unsetFlag(MODULE_ID, "tactics");
+    await resetAndAutoConfig(actor, this.specs.get(id));
     this.render();
   }
 

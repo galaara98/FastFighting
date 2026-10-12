@@ -110,6 +110,26 @@
    "commit": null,
    "hash": "3fda8f3332ea"
   },
+  "core:code:scripts/foundry/auto-config.js:ask#1": {
+   "repo": "core",
+   "file": "scripts/foundry/auto-config.js",
+   "key": "scripts/foundry/auto-config.js:ask#1",
+   "area": "core/code",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "4a89760d10c8"
+  },
+  "core:code:scripts/foundry/auto-config.js:ensureAutoConfig#1": {
+   "repo": "core",
+   "file": "scripts/foundry/auto-config.js",
+   "key": "scripts/foundry/auto-config.js:ensureAutoConfig#1",
+   "area": "core/code",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "8449adcc7285"
+  },
   "core:code:scripts/foundry/battle.js:buildBattleSpec#1": {
    "repo": "core",
    "file": "scripts/foundry/battle.js",
@@ -526,6 +546,286 @@
    "date": null,
    "commit": null,
    "hash": "e6e5c4f19dfe"
+  },
+  "core:FASTFIGHTING.AutoWords.brawler": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.AutoWords.brawler",
+   "area": "core/AutoWords",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "93b683e37b11"
+  },
+  "core:FASTFIGHTING.AutoWords.chicken": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.AutoWords.chicken",
+   "area": "core/AutoWords",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "0b358bd5279f"
+  },
+  "core:FASTFIGHTING.AutoWords.cruel": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.AutoWords.cruel",
+   "area": "core/AutoWords",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "49cf5948f2ec"
+  },
+  "core:FASTFIGHTING.AutoWords.diplomat": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.AutoWords.diplomat",
+   "area": "core/AutoWords",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "9cb8490e18ed"
+  },
+  "core:FASTFIGHTING.AutoWords.enabler": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.AutoWords.enabler",
+   "area": "core/AutoWords",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "ffe481a9887f"
+  },
+  "core:FASTFIGHTING.AutoWords.fragile": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.AutoWords.fragile",
+   "area": "core/AutoWords",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "37d3bd498499"
+  },
+  "core:FASTFIGHTING.AutoWords.Hint": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.AutoWords.Hint",
+   "area": "core/AutoWords",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "04f2005cf6ef"
+  },
+  "core:FASTFIGHTING.AutoWords.impatient": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.AutoWords.impatient",
+   "area": "core/AutoWords",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "833cf8cba1ec"
+  },
+  "core:FASTFIGHTING.AutoWords.instigator": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.AutoWords.instigator",
+   "area": "core/AutoWords",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "0aee9facd633"
+  },
+  "core:FASTFIGHTING.AutoWords.lazy": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.AutoWords.lazy",
+   "area": "core/AutoWords",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "6d5623929d77"
+  },
+  "core:FASTFIGHTING.AutoWords.leader": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.AutoWords.leader",
+   "area": "core/AutoWords",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "c031e1191938"
+  },
+  "core:FASTFIGHTING.AutoWords.loreCollector": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.AutoWords.loreCollector",
+   "area": "core/AutoWords",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "1f96cf07a378"
+  },
+  "core:FASTFIGHTING.AutoWords.martyr": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.AutoWords.martyr",
+   "area": "core/AutoWords",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "821c3169c147"
+  },
+  "core:FASTFIGHTING.AutoWords.mercenary": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.AutoWords.mercenary",
+   "area": "core/AutoWords",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "8c84610c22f0"
+  },
+  "core:FASTFIGHTING.AutoWords.moralist": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.AutoWords.moralist",
+   "area": "core/AutoWords",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "9beaa6c033a7"
+  },
+  "core:FASTFIGHTING.AutoWords.peacekeeper": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.AutoWords.peacekeeper",
+   "area": "core/AutoWords",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "f0e78bc831a2"
+  },
+  "core:FASTFIGHTING.AutoWords.peoplePleaser": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.AutoWords.peoplePleaser",
+   "area": "core/AutoWords",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "b4dc2e0b3fde"
+  },
+  "core:FASTFIGHTING.AutoWords.puzzleManiac": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.AutoWords.puzzleManiac",
+   "area": "core/AutoWords",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "5fa2b6acb277"
+  },
+  "core:FASTFIGHTING.AutoWords.redeemSeeker": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.AutoWords.redeemSeeker",
+   "area": "core/AutoWords",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "eccde42e1246"
+  },
+  "core:FASTFIGHTING.AutoWords.relentless": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.AutoWords.relentless",
+   "area": "core/AutoWords",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "1d054c4207e2"
+  },
+  "core:FASTFIGHTING.AutoWords.skeptic": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.AutoWords.skeptic",
+   "area": "core/AutoWords",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "16b06f2a9886"
+  },
+  "core:FASTFIGHTING.AutoWords.speedRunner": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.AutoWords.speedRunner",
+   "area": "core/AutoWords",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "e4f4f5d08d63"
+  },
+  "core:FASTFIGHTING.AutoWords.tank": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.AutoWords.tank",
+   "area": "core/AutoWords",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "12fa30d7f8b2"
+  },
+  "core:FASTFIGHTING.AutoWords.thief": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.AutoWords.thief",
+   "area": "core/AutoWords",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "5881d41d5f76"
+  },
+  "core:FASTFIGHTING.AutoWords.unmundane": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.AutoWords.unmundane",
+   "area": "core/AutoWords",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "87a801b54576"
+  },
+  "core:FASTFIGHTING.AutoWords.vengeful": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.AutoWords.vengeful",
+   "area": "core/AutoWords",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "ba5cd5ada0fe"
+  },
+  "core:FASTFIGHTING.AutoWords.wallflower": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.AutoWords.wallflower",
+   "area": "core/AutoWords",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "5162f93c50a4"
+  },
+  "core:FASTFIGHTING.AutoWords.wildcard": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.AutoWords.wildcard",
+   "area": "core/AutoWords",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "69d1ffd3f753"
   },
   "core:FASTFIGHTING.Band.bold": {
    "repo": "core",

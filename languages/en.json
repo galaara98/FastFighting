@@ -1650,6 +1650,36 @@
       "sizedUp": "sized up",
       "cripplingBlow": "a crippling blow",
       "fumble": "a fumble"
+    },
+    "AutoWords": {
+      "Hint": "Words that suggest a playstyle when FastFighting sets a character up by itself, found in its biography or description. Each matches as the start of a word, in any case. Separate them with commas.",
+      "chicken": "coward, timid, craven, skittish, fearful, meek, spineless",
+      "cruel": "cruel, sadist, vicious, merciless, ruthless, brutal, torment, tortur",
+      "moralist": "righteous, honorab, honourab, virtuous, principled, compassion, merciful",
+      "peacekeeper": "peacekeep, peaceful, pacifis, mediat, peacemak",
+      "peoplePleaser": "eager to please, people-pleas, agreeable, obsequious, sycophan",
+      "fragile": "frail, sickly, fragile, feeble, delicate, elderly",
+      "impatient": "impatien, hothead, hot-headed, rash, impulsiv, restless",
+      "brawler": "brawl, thug, bruiser, pugilis, scrapper",
+      "skeptic": "skeptic, sceptic, suspicious, distrust, cynic, paranoi",
+      "speedRunner": "efficien, swift, hasty, in a hurry",
+      "leader": "leader, captain, chieftain, commander, warlord, general, sergeant, boss",
+      "instigator": "instigat, troublemak, agitator, provocat, firebrand, rabble-rous",
+      "diplomat": "diplomat, ambassador, envoy, negotiat, silver-tongued, persuasive",
+      "wallflower": "shy, quiet, reserved, introvert, wallflower, recluse, loner",
+      "martyr": "selfless, self-sacrific, martyr, devoted",
+      "tank": "bodyguard, defender, shield-bearer, shieldbearer, stalwart, bulwark, sentinel",
+      "mercenary": "mercenar, sellsword, hireling, bounty hunter, greed",
+      "enabler": "healer, medic, nurtur, caretaker, nurse",
+      "redeemSeeker": "redemption, redeem, atone, penance, forgiveness",
+      "loreCollector": "scholar, sage, historian, bookish, studious, archivist, learned, lore",
+      "puzzleManiac": "puzzle, riddle, tinker, inventor, engineer, alchemist",
+      "wildcard": "unpredictab, chaotic, erratic, eccentric, wild card",
+      "thief": "thief, pickpocket, burglar, cutpurse, smuggler, robber, bandit",
+      "vengeful": "vengeful, revenge, vengeance, grudge, avenge",
+      "relentless": "relentless, tireless, implacable, unstoppable, single-minded",
+      "lazy": "lazy, idle, slothful, lethargic, sluggish, indolent",
+      "unmundane": "wizard, sorcer, mage, arcane, spellcaster, witch, warlock, mystic, occult"
     }
   }
 }

@@ -21,6 +21,7 @@ import { buildStory, STORY_STYLES } from "../story/story.js";
 import { loadStoryTables } from "../story/tables.js";
 import { sceneDistance } from "../foundry/terrain.js";
 import { planMakeItSo, confirmMakeItSo, executeMakeItSo, undoMakeItSo, hasUndo, makingItSo } from "../foundry/make-it-so.js";
+import { ensureAutoConfig } from "../foundry/auto-config.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 const TEMPLATE = `modules/${MODULE_ID}/templates/planner.hbs`;
@@ -185,6 +186,9 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     this.holderUuid = this.holder?.uuid ?? null;
     this.setup = getSetup(this.holder);
     this.roster = await gatherRoster(this.setup);
+    // Anyone FastFighting hasn't seen before is set up by itself now (its playstyles, its calculated answers), and anyone
+    // whose calculated answers are missing, broken or out of date has them worked out again.
+    if ( game.user.isGM ) for ( const e of this.roster ) await ensureAutoConfig(e.token.actor, e.spec);
     for ( const e of this.roster ) tokenSetup(this.setup, e.token.id);
     proposeNeutralGroups(this.roster, this.setup); // friend groups for the neutrals, as the map stands now
     // A new plan, or one just cleared: who commands each group, picked once (after that, only the GM changes it).

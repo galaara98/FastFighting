@@ -20,6 +20,7 @@ import { DESIRE_KINDS, DESIRE_BAND_KEYS } from "../engine/behavior/desire.js";
 import { setting } from "../settings.js";
 import { distanceText, localize } from "../i18n.js";
 import { cleanMotive, cleanMotiveField, MOTIVE_KEY, motivesContext, NO_CATALOG } from "./motives.js";
+import { autoRecord, validLet } from "./auto-config.js";
 
 export const SOCKET = `module.${MODULE_ID}`;
 export const SURVEY_STATUS = Object.freeze({ NONE: "none", REQUESTED: "requested", ENTERING: "entering", CLOSED: "closed", DONE: "done" });
@@ -157,7 +158,10 @@ export function worldTacticDefaults() {
 export function tacticsFor(actor, spec) {
   const stored = getStoredTactics(actor);
   const playstyles = combinePlaystyles(stored.playstyles ?? [], { stayTrue: !!stored.stayTrue, roleplay: !!stored.roleplay });
-  const calc = suggestTactics(spec, worldTacticDefaults(), getAdapter()?.rules ?? null);
+  // What "Let it decide" stands for: its calculated answers, as its auto setup worked them out (foundry/auto-config.js),
+  // else worked out now.
+  const calc = { ...suggestTactics(spec, worldTacticDefaults(), getAdapter()?.rules ?? null) };
+  for ( const [k, v] of Object.entries(autoRecord(actor)?.lets ?? {}) ) if ( TACTIC_KEYS.includes(k) && validLet(k, v, spec) ) calc[k] = v;
   const suggested = { ...calc, ...playstyles.suggest };
   const resolved = resolveTactics(stored, suggested);
   if ( resolved.preferredAction && !spec.actions.some(a => a.id === resolved.preferredAction) ) resolved.preferredAction = calc.preferredAction;

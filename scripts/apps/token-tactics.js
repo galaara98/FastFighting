@@ -9,6 +9,7 @@ import { getAdapter } from "../api.js";
 import { localize } from "../i18n.js";
 import { questionsContext, setTactic, togglePlaystyle, syncTacticsDom, playstyleSignature } from "../foundry/tactics.js";
 import { HAZARD_MARKS, applyHazard } from "../foundry/battle.js";
+import { ensureAutoConfig, resetAndAutoConfig } from "../foundry/auto-config.js";
 
 const TAB = "fastFighting";
 const TEMPLATE = `modules/${MODULE_ID}/templates/token-tactics.hbs`;
@@ -77,6 +78,8 @@ async function fill(app, panel) {
   const markable = !actor.hasPlayerOwner;
   const hazard = markable ? actor.getFlag(MODULE_ID, "hazard") ?? "" : "";
   const isHazard = !!applyHazard({ ...spec, flags: { ...spec.flags } }, hazard).hazard;
+  // (Never set up, or its calculated answers out of date: set up by itself first.)
+  if ( !isHazard ) await ensureAutoConfig(actor, spec);
   const html = await foundry.applications.handlebars.renderTemplate(TEMPLATE, {
     hint: localize("FASTFIGHTING.TokenTactics.Hint"),
     hazard,
@@ -126,7 +129,7 @@ function listen(app, panel) {
     if ( button.dataset.ffAction === "togglePlaystyle" ) {
       if ( !await togglePlaystyle(actor, button.dataset.playstyle) ) ui.notifications.warn(localize("FASTFIGHTING.Playstyle.Max"));
     } else if ( button.dataset.ffAction === "setMotive" ) await setTactic(actor, `${button.dataset.motive}.kind`, button.dataset.kind);
-    else if ( button.dataset.ffAction === "resetAll" ) await actor.unsetFlag(MODULE_ID, "tactics");
+    else if ( button.dataset.ffAction === "resetAll" ) await resetAndAutoConfig(actor, specs.get(app));
     fill(app, panel);
   });
 }
