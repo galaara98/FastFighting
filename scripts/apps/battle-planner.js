@@ -15,7 +15,7 @@ import {
 } from "../foundry/tactics.js";
 import {
   gatherRoster, chosenSide, groupOf, proposeNeutralGroups, resolveAllegiances, simulate, swingFactors, replay, drawFight,
-  approachFor, commandChains, commandGroup, seedCommand, clearRole, ROLES, sideName, hostileGroupsIn, secretTeam, SECRET_TEAMS, LEANS
+  approachFor, commandChains, commandGroup, seedCommand, clearRole, ROLES, sideName, hostileGroupsIn, secretTeam, SECRET_TEAMS, LEANS, predictionSeconds
 } from "../foundry/battle.js";
 import { buildStory, STORY_STYLES } from "../story/story.js";
 import { loadStoryTables } from "../story/tables.js";
@@ -23,7 +23,7 @@ import { sceneDistance } from "../foundry/terrain.js";
 import { planMakeItSo, confirmMakeItSo, executeMakeItSo, undoMakeItSo, hasUndo, makingItSo } from "../foundry/make-it-so.js";
 import { ensureAutoConfig } from "../foundry/auto-config.js";
 import { PlayerSurvey } from "./player-survey.js";
-import { runsFor, MANY_CREATURES } from "../engine/run-budget.js";
+import { expectedRuns, ROUGH_RUNS } from "../engine/run-budget.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 const TEMPLATE = `modules/${MODULE_ID}/templates/planner.hbs`;
@@ -316,7 +316,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       adapterLabel: adapter?.label ?? loc("FASTFIGHTING.Planner.NoAdapter"),
       hasAdapter: !!adapter,
       options: setup.options,
-      // (So many creatures that the runs come down to what fits the time, or so many that it's slow even so.)
+      // (So many creatures that few fights fit the prediction's time.)
       runsNote: this.#runsNote(resolved),
       downedChoices: Object.fromEntries(Object.values(DOWNED_MODELS).map(k => [k, `FASTFIGHTING.Downed.${k}`])),
       aftermathChoices: Object.fromEntries(Object.values(AFTERMATH).map(k => [k, `FASTFIGHTING.Aftermath.${k}`])),
@@ -654,12 +654,15 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     this.render();
   }
 
-  /** What the number of creatures does to the runs: brought down to what fits the time, or slow even so; or nothing. */
+  /**
+   * So many creatures that few fights fit the prediction's time (the odds will be rough); or nothing. How many did, once
+   * it has run (this computer's speed); before, about how many will.
+   */
   #runsNote(resolved) {
     const creatures = this.roster.filter(e => resolved[e.token.id] && this.setup.tokens[e.token.id]?.include !== false).length;
-    const runs = runsFor(this.setup.options.runs, creatures, setting("hardware"));
-    if ( creatures > MANY_CREATURES ) return game.i18n.format("FASTFIGHTING.Planner.ManyCreatures", { creatures, runs });
-    return runs < this.setup.options.runs ? game.i18n.format("FASTFIGHTING.Planner.RunsCapped", { creatures, runs }) : null;
+    const seconds = predictionSeconds(this.setup);
+    const runs = this.results && !this.stale ? this.results.runs : expectedRuns(creatures, seconds);
+    return runs < ROUGH_RUNS ? game.i18n.format("FASTFIGHTING.Planner.ManyCreatures", { creatures, runs, seconds }) : null;
   }
 
   /** Ask a friendly character's players about it: its survey, on that character. */
@@ -691,6 +694,12 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     const el = this.element;
     el.style.minWidth = "1000px";
     el.style.minHeight = "600px";
+    // The prediction time's slider shows its seconds as it moves (it's saved when let go).
+    const seconds = el.querySelector('input[name="options.seconds"]');
+    seconds?.addEventListener("input", () => {
+      const shown = seconds.parentElement.querySelector(".ff-seconds-value");
+      if ( shown ) shown.textContent = seconds.value;
+    });
     // Right-click on a role pill: back to the automatic pick.
     for ( const pills of el.querySelectorAll(".ff-roles") ) {
       pills.addEventListener("contextmenu", async event => {
@@ -942,6 +951,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     await this.render();
     try {
       this.swing = await swingFactors(this.spec, this.results, {
+        seconds: predictionSeconds(this.setup),
         onProgress: p => {
           const bar = this.element?.querySelector(".ff-progress > span");
           if ( bar ) bar.style.width = `${Math.round(p * 100)}%`;

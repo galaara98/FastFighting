@@ -14,9 +14,8 @@ export const DEFAULT_SIDE_TRAITS = {
 
 const SETTINGS = {
   genericFallback: { type: Boolean, default: false, requiresReload: false, onChange: () => ui.combat?.render() },
-  runs: { type: Number, default: 2000, range: { min: 200, max: 20000, step: 100 } },
-  // (The GM's computer against the typical one the run caps for big battles are worked out for: engine/run-budget.js.)
-  hardware: { type: Number, default: 0, range: { min: -50, max: 50, step: 5 } },
+  // How long a prediction runs (seconds): fight after fight until it's up (engine/run-budget.js).
+  predictionTime: { type: Number, default: 10, range: { min: 6, max: 20, step: 1 } },
   maxRounds: { type: Number, default: 20, range: { min: 3, max: 100, step: 1 } },
   includeHidden: { type: Boolean, default: true },
   includeOtherLevels: { type: Boolean, default: false },

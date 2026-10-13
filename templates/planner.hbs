@@ -6,8 +6,9 @@
       <strong>{{sceneName}}</strong>
       <span class="ff-chip">{{adapterLabel}}</span>
     </div>
-    <label class="ff-field">{{localize "FASTFIGHTING.Planner.Runs"}}
-      <input type="number" name="options.runs" value="{{options.runs}}" min="100" max="20000" step="100" data-dtype="Number">
+    <label class="ff-field ff-seconds" data-tooltip="{{localize "FASTFIGHTING.Planner.SecondsHint"}}">{{localize "FASTFIGHTING.Planner.Seconds"}}
+      <input type="range" name="options.seconds" value="{{options.seconds}}" min="6" max="20" step="1" data-dtype="Number">
+      <output class="ff-seconds-value">{{options.seconds}}</output>
     </label>
     {{#if runsNote}}<span class="ff-runs-note"><i class="fa-solid fa-gauge-high"></i> {{runsNote}}</span>{{/if}}
     <label class="ff-field">{{localize "FASTFIGHTING.Planner.MaxRounds"}}

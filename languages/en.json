@@ -39,13 +39,9 @@
       "Intimidation": "Intimidation"
     },
     "Settings": {
-      "runs": {
-        "Name": "Simulations per estimate",
-        "Hint": "How many battles to simulate. More is steadier but slower; 2000 takes well under a second for a typical fight."
-      },
-      "hardware": {
-        "Name": "GM hardware: runs in big battles (%)",
-        "Hint": "The more creatures in a battle, the fewer runs fit in the time you'd wait (about 15 seconds on a typical computer): FastFighting brings the runs down for big battles. If your computer is faster or slower than typical, adjust it here: +50% lets a big battle run half as many fights again, -50% half as many. Battles small enough to run in full aren't affected, and it never runs more than you ask for."
+      "predictionTime": {
+        "Name": "Prediction time (seconds)",
+        "Hint": "How long the planner's prediction runs: fight after fight until the time is up (the one under way is finished). More time, more fights and surer odds. A big battle gets fewer fights in the same time, since every creature adds to each fight's work. The planner can change it for one battle."
       },
       "maxRounds": {
         "Name": "Max rounds",
@@ -344,9 +340,9 @@
     },
     "Planner": {
       "Title": "Battle Planner",
-      "Runs": "Runs",
-      "RunsCapped": "{creatures} creatures: {runs} runs (every creature adds to each fight's work).",
-      "ManyCreatures": "{creatures} creatures: only {runs} runs, and slow even so. The odds will be rough.",
+      "Seconds": "Seconds",
+      "SecondsHint": "How long the prediction runs (6 to 20 seconds): fight after fight until the time is up.",
+      "ManyCreatures": "{creatures} creatures: only about {runs} fights fit in {seconds} seconds, so the odds will be rough.",
       "MaxRounds": "Max rounds",
       "Seed": "Seed",
       "Random": "random",

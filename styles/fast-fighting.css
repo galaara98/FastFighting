@@ -401,7 +401,10 @@
 .ff-desire.is-empty select:not(:first-child) { opacity: 0.6; }
 
 /* What "Let this character decide" stands for, and the hidden scores: shown to a GM only. */
-/* The runs, brought down for a big battle. */
+/* The prediction's time: a slider (6 to 20 seconds) with its value beside it. */
+.ff-seconds input[type="range"] { width: 110px; vertical-align: middle; }
+.ff-seconds-value { display: inline-block; min-width: 2ch; font-weight: 700; text-align: right; }
+/* Too few fights fit the time for a big battle. */
 .ff-runs-note { align-self: center; font-size: 11px; color: var(--ff-accent); }
 /* A friendly character's survey, asked of its players (a quill), or opened for the GMs (an orange quill: GM-only). */
 .ff-ask { display: inline-flex; gap: 2px; }

@@ -47,6 +47,8 @@ const MAX_STEPS_PER_TURN = 8;
 const AFTERMATH_ROUNDS = 100;
 /** Batches give the browser back control this often (ms), so the GM's screen stays responsive. */
 const SLICE_MS = 25;
+/** The most of each pause (to let the browser draw) counted as the prediction's time (ms): a background tab's last a second. */
+const PAUSE_MS = 20;
 /** How much being hit makes a creature want to hit back, by tactical band: simple minds go for whoever hurt them. */
 const HIT_URGE = [40, 25, 10, 5, 3];
 
@@ -2818,16 +2820,24 @@ export function runOne(prep, seed, { log: withLog = false, capture = false } = {
  * @param {(fraction: number) => void} [opts.onProgress]
  * @param {AbortSignal} [opts.signal]
  */
-export async function runBatch(spec, rules, { runs = 2000, seed = randomSeed(), onProgress, signal } = {}) {
+export async function runBatch(spec, rules, { runs = 2000, seed = randomSeed(), onProgress, signal, maxMs = null } = {}) {
   const prep = prepareBattle(spec, rules);
   const agg = createAggregator(prep);
+  // (`maxMs`: fights until the time is up, `runs` at most. No fight is started once it's up; the one under way is
+  // finished. There's always one. The time is the time spent on it: a pause to let the browser draw counts, but only so
+  // much of one, since a browser tab in the background makes each pause last a second.)
+  let spent = 0;
   let sliceStart = performance.now();
   for ( let i = 0; i < runs; i++ ) {
+    if ( maxMs && i > 0 && spent + performance.now() - sliceStart >= maxMs ) break;
     const runSeed = deriveSeed(seed, i);
     agg.add(runOne(prep, runSeed), runSeed);
     if ( performance.now() - sliceStart > SLICE_MS ) {
-      onProgress?.((i + 1) / runs);
+      spent += performance.now() - sliceStart;
+      onProgress?.(maxMs ? Math.min(1, spent / maxMs) : (i + 1) / runs);
+      const paused = performance.now();
       await new Promise(resolve => setTimeout(resolve, 0));
+      spent += Math.min(PAUSE_MS, performance.now() - paused);
       if ( signal?.aborted ) break;
       sliceStart = performance.now();
     }

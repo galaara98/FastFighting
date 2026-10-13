@@ -412,7 +412,7 @@ The keywords read in characters' biographies aren't in the language files: they'
 ## Settings
 
 All settings are defaults that the planner can override per battle:
-- **Simulation:** runs and maximum rounds; hidden tokens and other levels; bystanders.
+- **Simulation:** the prediction time (6 to 20 seconds, 10 by default: fight after fight until it's up, finishing the one under way; a big battle gets fewer fights in that time, and the planner warns when they're too few for sure odds) and maximum rounds; hidden tokens and other levels; bystanders.
 - **Unaligned sides:** Neutral lean (takes no side, by default); how near a neutral must be to join a friend group the planner proposes (3 squares; 1 to 20).
 - **Dying and healing:** the downed model, after the fight, and PC healing and dying defaults.
 - **Modifiers:** leadership, morale, positioning, talking (and whether to ignore languages), how encounters open, and the initiative source.

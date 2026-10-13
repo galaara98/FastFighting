@@ -26,7 +26,7 @@ export function defaultSideSetup(side) {
 export function defaultSetup() {
   return {
     options: {
-      runs: setting("runs"),
+      seconds: setting("predictionTime"),
       maxRounds: setting("maxRounds"),
       seed: null,
       downedModel: setting("downedModel"),

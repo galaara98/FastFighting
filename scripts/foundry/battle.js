@@ -3,7 +3,10 @@
  */
 import { MODULE_ID, SIDES, ALLEGIANCE, DISPOSITION_SIDES, NEUTRAL_PARTY, HOSTILE_GROUPS, GROUPS, TRAITS, clamp } from "../constants.js";
 import { runBatch, replay } from "../engine/simulator.js";
-import { runsFor, swingRunsFor } from "../engine/run-budget.js";
+import { budgetMs, swingShareMs, MAX_RUNS, SWING_RUNS } from "../engine/run-budget.js";
+
+/** How long a battle's prediction runs (seconds): its plan's, else the world's Prediction time. */
+export const predictionSeconds = setup => setup?.options?.seconds ?? setting("predictionTime");
 import { deriveSeed } from "../engine/rng.js";
 import { characterSpec, getAdapter, getModifiers } from "../api.js";
 import { computeApproach, computeAwareness, environmentAt, positionOf, squareFeet } from "./terrain.js";
@@ -770,8 +773,10 @@ export async function simulate(roster, setup, { onProgress, signal } = {}) {
   spec.awareness = awarenessFor(roster);
   Hooks.callAll("fastFighting.preSimulate", spec, { setup, roster });
   const seed = setup.options.seed ?? undefined;
-  // (As many fights as the GM asks for, or as fit the time for so many creatures: engine/run-budget.js.)
-  const results = await runBatch(spec, adapter.rules, { runs: runsFor(setup.options.runs, spec.combatants.length, setting("hardware")), seed, onProgress, signal });
+  // (As many fights as the GM asks for, or as fit the time for so many creatures, and done when the time is up:
+  // engine/run-budget.js.)
+  // (Fight after fight until the prediction's time is up: engine/run-budget.js.)
+  const results = await runBatch(spec, adapter.rules, { runs: MAX_RUNS, seed, onProgress, signal, maxMs: budgetMs(predictionSeconds(setup)) });
   Hooks.callAll("fastFighting.postSimulate", results, { setup, roster, spec });
   return { spec, results, approach };
 }
@@ -782,10 +787,10 @@ const SWING_COMBATANTS = 12;
 /**
  * Swing factors: how much does the party's win chance move without each combatant, or with each modifier toggled? In a
  * big battle, only the SWING_COMBATANTS that weigh most (the highest level, then the toughest), each with as many fights
- * as fit the time (engine/run-budget.js).
+ * as fit its share of the time (engine/run-budget.js).
  * @returns {Promise<{label: string, delta: number}[]>} sorted by impact
  */
-export async function swingFactors(spec, baseline, { runs = null, onProgress } = {}) {
+export async function swingFactors(spec, baseline, { runs = null, seconds = null, onProgress } = {}) {
   const rules = getAdapter().rules;
   const friendlyWin = r => r.sides.friendly?.pWin ?? 0;
   const base = friendlyWin(baseline);
@@ -805,9 +810,10 @@ export async function swingFactors(spec, baseline, { runs = null, onProgress } =
     if ( spec.options[key] ) tests.push({ label: game.i18n.localize(label), make: s => ({ ...s, options: { ...s.options, [key]: false } }) });
   }
   const out = [];
-  const each = runs ?? swingRunsFor(spec.combatants.length, tests.length, { speed: setting("hardware") });
+  // (Each test: its share of three predictions' time, SWING_RUNS fights at most.)
+  const share = swingShareMs(tests.length, seconds ?? setting("predictionTime"));
   for ( const [i, t] of tests.entries() ) {
-    const r = await runBatch(t.make(spec), rules, { runs: each, seed: 99 });
+    const r = await runBatch(t.make(spec), rules, { runs: runs ?? SWING_RUNS, seed: 99, maxMs: runs ? null : share });
     out.push({ label: t.label, side: t.side ?? null, id: t.id ?? null, delta: friendlyWin(r) - base });
     onProgress?.((i + 1) / tests.length);
     await new Promise(resolve => setTimeout(resolve, 0));
