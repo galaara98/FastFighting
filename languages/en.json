@@ -88,15 +88,15 @@
         "Hint": "Use the combat tracker's initiative when present, roll Stealth for hidden or Secret tokens, or roll normally."
       },
       "lootMode": {
-        "Name": "Make it So: loot",
+        "Name": "Do it For Real Now: loot",
         "Hint": "What happens to a slain creature's gear: leave it on the corpse (lootable), drop it in a loot pile, or do nothing."
       },
       "corpseMode": {
-        "Name": "Make it So: corpses",
+        "Name": "Do it For Real Now: corpses",
         "Hint": "Keep slain tokens on the map with the dead marker, or remove them (when a loot pile is dropped)."
       },
       "fledMode": {
-        "Name": "Make it So: fled combatants",
+        "Name": "Do it For Real Now: fled combatants",
         "Hint": "Hide tokens that fled the battle, or leave them where they are."
       },
       "sideDefaults": {
@@ -114,7 +114,7 @@
       },
       "storyStyle": {
         "Name": "Story style",
-        "Hint": "How the story of a fight is told in the Sample fight tab and in chat after Make it So: Roleplay (prose), Standard (what everyone did) or Statistician (every roll)."
+        "Hint": "How the story of a fight is told in the Sample fight tab and in the chat by Do it For Real Now: Roleplay (prose), Standard (what everyone did) or Statistician (every roll, for the GMs)."
       },
       "storyMode": {
         "Name": "Story delivery",
@@ -145,12 +145,12 @@
         "Hint": "A thief who beats a player character's defenses still needs a hidden d100 at or under this to take anything. Higher means thieves succeed more often."
       },
       "playOnMap": {
-        "Name": "Make it So: play the fight on the map",
-        "Hint": "The tokens run through the fight as the story tells it, quickly and around walls, before settling where the fight left them. Off: they go straight to where they end up."
+        "Name": "Do it For Real Now: play the fight on the map",
+        "Hint": "Each turn's tokens move as its card is posted. Off: they go straight to where the fight leaves them."
       },
       "storyOdds": {
         "Name": "Show the odds in the posted story",
-        "Hint": "Adds each side's chance of winning, as the simulation saw it before the fight, to the story Make it So posts. Off by default; the planner has the same switch beside Make it So."
+        "Hint": "Adds each side's chance of winning, as the simulation saw it, to the end of the story. The planner has the same switch."
       },
       "standGround": {
         "Name": "Doesn't like to flee: how often it stays (%)",
@@ -520,29 +520,23 @@
       "Rounds": "rounds",
       "Unchanged": "No change",
       "Typical": "Most typical fight",
-      "TypicalHint": "A sample: the simulation's most common outcome. Make it So rolls a fight of its own."
+      "TypicalHint": "A sample: the simulation's most common outcome. Do it For Real Now plays a new fight."
     },
     "MakeItSo": {
-      "Title": "Make it So",
-      "Button": "Make it So",
-      "Confirm": "Commit this fight's outcome to the tokens? The following changes will be made:",
-      "UndoHint": "You can undo it from its summary in the chat.",
-      "Failed": "Make it So could not update {name}. See the console for details.",
-      "Done": "The outcome has been committed to the tokens.",
-      "Nothing": "Nothing would change.",
-      "Undo": "Undo Make it So",
-      "UndoTitle": "Undo Make it So",
-      "UndoConfirm": "Restore the tokens to how they were before the last Make it So on this scene?",
-      "Undone": "Make it So was undone.",
+      "Button": "Do it For Real Now",
+      "Failed": "Do it For Real Now could not update {name}. See the console for details.",
+      "Undo": "Rewind This Encounter",
+      "UndoTitle": "Rewind This Encounter",
+      "UndoConfirm": "Put this scene's last encounter back: tokens, outcomes and its chat cards?",
+      "Undone": "The encounter was rewound.",
       "Moves": "Moves {distance}",
-      "Hint": "Rolls one of the simulated fights and commits it: its story, token positions and outcomes. Undo reverses it.",
+      "Hint": "Closes the planner and plays one new fight: each turn in the chat as the tokens move. Rewind This Encounter takes it back.",
       "Gives": "Gives up {what} to {name}",
       "Receives": "Receives {what} from {name}",
       "Kept": "Agreed to give up {what}, but kept it (luck {luck})",
       "Reclaimed": "Gave up {what} to {name}, but got it back when {name} was beaten",
       "Stolen": "{what} stolen by {name}",
       "Steals": "Steals {what} from {name}",
-      "Doors": "Doors: {n} opened ({broken} of them broken or forced)",
       "Outcome": {
         "Hp": "{HP} {from} → {to}",
         "Stamina": "{SP} {from} → {to}",
@@ -569,7 +563,7 @@
         "Affliction": "{name} (stage {stage})",
         "AfflictionOnset": "{name} (takes hold in {n} rounds, stage {stage})"
       },
-      "UndoConfirmScene": "Restore the tokens on {scene} to how they were before this Make it So?",
+      "UndoConfirmScene": "Put the encounter on {scene} back: tokens, outcomes and its chat cards?",
       "UndoLaterFirst": "Not a recent simulation",
       "UndoBuried": "Chat has more than {n} cards after simulation"
     },
@@ -1215,7 +1209,8 @@
         "stalemate": "Stalemate"
       },
       "APrice": "a price",
-      "Desire": "{intensity} {verb}"
+      "Desire": "{intensity} {verb}",
+      "TurnRound": "Round {n}"
     },
     "Helper": {
       "Title": "FastFighting needs a helper module for {system}",
@@ -1767,6 +1762,13 @@
         "losing": "When it turns against us",
         "hurt": "When we're badly hurt"
       }
+    },
+    "Playback": {
+      "Unfinished": "The last Do it For Real Now on this scene didn't finish.",
+      "Playing": "A fight is playing on this scene.",
+      "Elsewhere": "{name} is playing a fight on this scene.",
+      "Continue": "Continue",
+      "RewindConfirm": "Put back everything this unfinished encounter did: tokens, outcomes and its chat cards?"
     }
   }
 }

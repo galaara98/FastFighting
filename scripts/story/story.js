@@ -394,6 +394,15 @@ function thinkAloud(e, roll, mentions) {
 }
 
 function roleplay(result, spec, tables, seed, title, mapType) {
+  const paragraphs = roleplayParagraphs(result, spec, tables, seed, mapType).map(p => p.text ?? p.sentences.map(x => x.text).join(" ")).filter(Boolean);
+  return { title, html: paragraphs.map(p => `<p>${esc(p)}</p>`).join(""), text: paragraphs.join("\n\n") };
+}
+
+/**
+ * The Roleplay telling, as paragraphs: the opening line ({text}), a round's sentences ({round, sentences: [{e,
+ * text}]}, each with the event it tells), and the ending ({e, text}).
+ */
+function roleplayParagraphs(result, spec, tables, seed, mapType) {
   const roll = makeRoller(tables, seed);
   const moment = createRng((seed + 7919) >>> 0); // when someone pauses to think
   const lastThought = new Map();
@@ -401,14 +410,14 @@ function roleplay(result, spec, tables, seed, title, mapType) {
   const { mentions } = storyCast(result, spec);
   const paragraphs = [];
   const opening = result.log.find(e => e.type === "surprise" || e.type === "standoff") ? null : roll("event.opening");
-  if ( opening ) paragraphs.push(opening);
+  if ( opening ) paragraphs.push({ text: opening });
   let current = null;
   let lastMoveKey = null;
   for ( const e of result.log ) {
     if ( e.type === "initiative" || !mentions(e) ) continue;
     // The outcome comes where the fighting stops; anything after it (tending the fallen) follows.
     if ( e.type === "end" ) {
-      paragraphs.push(ending(result, spec, e, roll));
+      paragraphs.push({ e, text: ending(result, spec, e, roll) });
       current = null;
       continue;
     }
@@ -428,20 +437,15 @@ function roleplay(result, spec, tables, seed, title, mapType) {
       const thought = thinkAloud(e, roll, mentions);
       if ( thought ) {
         lastThought.set(e.actorId, e.round);
-        current.sentences.push(capital(thought.trim()));
+        current.sentences.push({ e, text: capital(thought.trim()) });
       }
       continue;
     }
     const sentence = narrate(e, roll, rel, { mapType });
     rel.record(e);
-    if ( sentence ) current.sentences.push(capital(sentence.trim()));
+    if ( sentence ) current.sentences.push({ e, text: capital(sentence.trim()) });
   }
-  const html = paragraphs
-    .map(p => (typeof p === "string" ? p : p.sentences.join(" ")))
-    .filter(Boolean)
-    .map(p => `<p>${esc(p)}</p>`)
-    .join("");
-  return { title, html, text: paragraphs.map(p => (typeof p === "string" ? p : p.sentences.join(" "))).filter(Boolean).join("\n\n") };
+  return paragraphs;
 }
 
 /** The closing line, naming the survivors rather than the side. */
@@ -474,17 +478,18 @@ function ending(result, spec, end, roll) {
 /*  Standard                                    */
 /* -------------------------------------------- */
 
-function standard(result, spec, title) {
-  const w = (key, data = null) => localize(`FASTFIGHTING.Story.Labels.${key}`, data);
-  const { out, mentions } = storyCast(result, spec);
+const labelWord = (key, data = null) => localize(`FASTFIGHTING.Story.Labels.${key}`, data);
+
+/** What each did in these events (by actor id, in the order they first act): attacks, spells, talking, healing, moves. */
+function tally(events, mentions) {
   const by = new Map();
-  const entry = id => {
-    if ( !by.has(id) ) by.set(id, { attacks: new Map(), spells: new Map(), buffs: new Map(), talks: { tries: 0, wins: 0 }, heals: 0, healed: 0, potions: 0, aid: 0, stabilized: 0, feet: 0, damage: 0, notes: [] });
-    return by.get(id);
+  const entry = e => {
+    if ( !by.has(e.actorId) ) by.set(e.actorId, { name: e.actor, attacks: new Map(), spells: new Map(), buffs: new Map(), talks: { tries: 0, wins: 0 }, heals: 0, healed: 0, potions: 0, aid: 0, stabilized: 0, feet: 0, damage: 0, notes: [] });
+    return by.get(e.actorId);
   };
-  for ( const e of result.log ) {
+  for ( const e of events ) {
     if ( !e.actorId || !mentions(e) ) continue;
-    const s = entry(e.actorId);
+    const s = entry(e);
     if ( e.type === "control" ) {
       const a = s.spells.get(e.action) ?? { uses: 0, hits: 0, crits: 0, misses: 0 };
       a.uses += 1;
@@ -520,6 +525,33 @@ function standard(result, spec, title) {
     } else if ( e.type === "reclaim" ) s.notes.push(logTerm("NoteGotBack", { what: concessionText(e.concession), by: e.by }));
     else if ( ["join", "leave", "sway", "flee", "callHelp"].includes(e.type) ) s.notes.push(logLine(e));
   }
+  return by;
+}
+
+/** One tally as its parts: "2× Longsword (1 hit, 1 missed)", "moved 20 ft". */
+function tallyBits(s) {
+  const w = labelWord;
+  const bits = [];
+  const results = list => list.filter(Boolean).join(localize("FASTFIGHTING.Words.ListSeparator"));
+  for ( const [name, a] of s?.attacks ?? [] ) {
+    bits.push(w("Uses", { n: a.uses, name, results: results([w("Hits", { n: a.hits }), a.crits ? w("Crits", { n: a.crits }) : "", a.misses ? w("Misses", { n: a.misses }) : ""]) }));
+  }
+  for ( const [name, a] of s?.spells ?? [] ) {
+    bits.push(w("Uses", { n: a.uses, name, results: results([w("Hits", { n: a.hits }), a.misses ? w("Resisted", { n: a.misses }) : ""]) }));
+  }
+  for ( const [name, n] of s?.buffs ?? [] ) bits.push(w("Bolstered", { n, name }));
+  if ( s?.talks.tries ) bits.push(w("Talked", { n: s.talks.tries, wins: s.talks.wins }));
+  if ( s?.heals ) bits.push(w("Healed", { n: s.heals, hp: logTerm("HpN", { n: s.healed }) }));
+  if ( s?.potions ) bits.push(w("Potions", { n: s.potions }));
+  if ( s?.aid ) bits.push(w("FirstAid", { n: s.aid, stabilized: s.stabilized }));
+  if ( s?.feet ) bits.push(w("Moved", { distance: distanceText(s.feet) }));
+  return bits;
+}
+
+function standard(result, spec, title) {
+  const w = labelWord;
+  const { out, mentions } = storyCast(result, spec);
+  const by = tally(result.log, mentions);
   const end = result.log.find(e => e.type === "end");
   const summary = end ? endLine(end) : "";
   const rows = [];
@@ -527,20 +559,7 @@ function standard(result, spec, title) {
     if ( out.has(c.id) ) continue; // never took part
     const s = by.get(c.id);
     const final = result.units[c.id]?.final;
-    const bits = [];
-    const results = list => list.filter(Boolean).join(localize("FASTFIGHTING.Words.ListSeparator"));
-    for ( const [name, a] of s?.attacks ?? [] ) {
-      bits.push(w("Uses", { n: a.uses, name, results: results([w("Hits", { n: a.hits }), a.crits ? w("Crits", { n: a.crits }) : "", a.misses ? w("Misses", { n: a.misses }) : ""]) }));
-    }
-    for ( const [name, a] of s?.spells ?? [] ) {
-      bits.push(w("Uses", { n: a.uses, name, results: results([w("Hits", { n: a.hits }), a.misses ? w("Resisted", { n: a.misses }) : ""]) }));
-    }
-    for ( const [name, n] of s?.buffs ?? [] ) bits.push(w("Bolstered", { n, name }));
-    if ( s?.talks.tries ) bits.push(w("Talked", { n: s.talks.tries, wins: s.talks.wins }));
-    if ( s?.heals ) bits.push(w("Healed", { n: s.heals, hp: logTerm("HpN", { n: s.healed }) }));
-    if ( s?.potions ) bits.push(w("Potions", { n: s.potions }));
-    if ( s?.aid ) bits.push(w("FirstAid", { n: s.aid, stabilized: s.stabilized }));
-    if ( s?.feet ) bits.push(w("Moved", { distance: distanceText(s.feet) }));
+    const bits = tallyBits(s);
     if ( !bits.length ) bits.push(final?.active === false ? w("StayedOut") : w("Nothing"));
     const statusKey = final?.swayed === "switched" ? "switched" : final?.swayed === "conceded" ? "conceded"
       : final?.status === "standing" && final?.side === "neutralParty" ? (final.swayed === "neutral" ? "neutral" : "noSide") : final?.status;
@@ -590,6 +609,90 @@ export function buildStory(result, spec, style, { tables, seed = 1, title = "", 
   if ( style === "statistician" ) return statistician(result, spec, title);
   if ( style === "standard" ) return standard(result, spec, title);
   return roleplay(result, spec, tables, seed, title, damageType);
+}
+
+/** The words of a piece of the story as plain text: its HTML read back, tags gone and characters as they are. */
+const UNESCAPES = { "&amp;": "&", "&lt;": "<", "&gt;": ">", "&quot;": "\"", "&#39;": "'" };
+const plainText = html => html.replace(/<[^>]+>/g, " ").replace(/&(amp|lt|gt|quot|#39);/g, m => UNESCAPES[m]).replace(/\s+/g, " ").trim();
+
+/** Falls, told in a Standard turn after what everyone did. */
+const FALLS = new Set(["down", "death", "beaten", "struckDown"]);
+
+/**
+ * What a creature can do on its turn and still only be talking (the others' answers, such as being talked round,
+ * don't count): with nothing else, its turn is said aloud, as its own words in the chat.
+ */
+const TALKING = new Set(["talk", "parley", "haggle", "deal", "callHelp", "lastWord", "rally", "retreat", "command", "thought", "standoff"]);
+
+/**
+ * The story as it's told in the chat, one turn at a time: a beat for each turn of the fight (the opening's first),
+ * and a closing one (how it ended, and the aftermath). Each beat is {turns, round, actorId, html, text, closing,
+ * talking}: `turns` are the log's turns it tells, whose moves play on the map with it (a beat with nothing to say,
+ * html "", still has its moves); `talking`, a turn its creature spent only talking. Roleplay and Standard only (the
+ * Statistician's account is one card).
+ * @param {object} result   runOne(..., {log: true, capture: true}) output
+ * @param {object} spec     BattleSpec it came from
+ * @param {string} style    roleplay | standard
+ * @param {object} options  {tables, seed, damageType} as for buildStory
+ */
+export function storyBeats(result, spec, style, { tables, seed = 1, damageType = null } = {}) {
+  const log = result.log ?? [];
+  const end = log.find(e => e.type === "end");
+  const endTurn = end ? (end.turn ?? 0) : Infinity;
+  const keyOf = e => ((e?.turn ?? 0) >= endTurn ? "closing" : (e?.turn ?? 0));
+  // Every turn in the log, in order, with whose it is; whatever comes from the end on is the closing beat's.
+  const beats = [];
+  const byTurn = new Map();
+  for ( const e of log ) {
+    const key = keyOf(e);
+    if ( !byTurn.has(key) ) {
+      const closing = key === "closing";
+      const beat = { turns: [], round: e.round, actorId: closing ? null : (e.turnOf ?? null), closing, parts: [], events: [] };
+      byTurn.set(key, beat);
+      beats.push(beat);
+    }
+    const beat = byTurn.get(key);
+    if ( !beat.turns.includes(e.turn ?? 0) ) beat.turns.push(e.turn ?? 0);
+    beat.events.push(e);
+  }
+  if ( style === "standard" ) {
+    const { mentions } = storyCast(result, spec);
+    for ( const beat of beats ) {
+      if ( beat.closing ) continue;
+      const rows = [];
+      for ( const s of tally(beat.events, mentions).values() ) {
+        const bits = tallyBits(s);
+        if ( !bits.length && !s.notes.length ) continue;
+        const notes = s.notes.length ? ` <small>(${esc(s.notes.join("; "))})</small>` : "";
+        rows.push(`<li><strong>${esc(s.name)}</strong>: ${esc(bits.join("; "))}${notes}</li>`);
+      }
+      for ( const e of beat.events ) if ( FALLS.has(e.type) && mentions(e) ) rows.push(`<li>${esc(logLine(e))}</li>`);
+      if ( rows.length ) beat.parts.push(`<ul>${rows.join("")}</ul>`);
+    }
+    // The close: the whole fight's tally, and where everyone ended up.
+    const close = byTurn.get("closing");
+    if ( close ) close.parts.push(standard(result, spec, "").html);
+  } else {
+    let opening = null;
+    for ( const p of roleplayParagraphs(result, spec, tables, seed, damageType) ) {
+      if ( p.sentences ) for ( const x of p.sentences ) byTurn.get(keyOf(x.e))?.parts.push(x.text);
+      else if ( p.e ) byTurn.get(keyOf(p.e))?.parts.push(p.text);
+      else opening = p.text;
+    }
+    // (The opening line comes first, before anything: with what's said before the first turn, or on its own.)
+    if ( opening ) {
+      const first = byTurn.get(0);
+      if ( first ) first.parts.unshift(opening);
+      else beats.unshift({ turns: [], round: 0, actorId: null, closing: false, parts: [opening], events: [] });
+    }
+    for ( const beat of beats ) beat.parts = beat.parts.length ? [`<p>${beat.parts.map(esc).join(" ")}</p>`] : [];
+  }
+  return beats.map(({ turns, round, actorId, closing, parts, events }) => {
+    const html = parts.join("");
+    const own = events.filter(e => e.actorId && e.actorId === actorId);
+    const talking = !!actorId && own.some(e => e.type !== "thought") && own.every(e => TALKING.has(e.type));
+    return { turns, round, actorId, closing, talking, html, text: plainText(html) };
+  });
 }
 
 /** Where a creature ended up ("standing", "stood down"), in the reader's language. */

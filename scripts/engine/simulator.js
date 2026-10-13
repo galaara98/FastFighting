@@ -59,9 +59,19 @@ const HIT_URGE = [40, 25, 10, 5, 3];
 function log(run, u, data = {}) {
   if ( !run.log ) return;
   run.log.push({
-    round: run.round, actor: u?.spec.name ?? "", actorId: u?.id ?? null, side: u?.side ?? null,
+    round: run.round, turn: run.turn ?? 0, turnOf: run.turnOf ?? null, actor: u?.spec.name ?? "", actorId: u?.id ?? null, side: u?.side ?? null,
     type: data.type ?? "note", ...data
   });
+}
+
+/**
+ * A new turn in the log: what follows is u's turn (or, with no u, the fight's own moment: its end, the aftermath),
+ * until the next. Whatever happens meanwhile, others' reactions and falls too, is told with it.
+ */
+function startTurn(run, u = null) {
+  if ( !run.log ) return;
+  run.turn = (run.turn ?? 0) + 1;
+  run.turnOf = u?.id ?? null;
 }
 
 const primaryType = action => (action.damage ?? action.heal ?? [])[0]?.type ?? "untyped";
@@ -1918,6 +1928,7 @@ function legendaryMoment(run, after) {
     }
     if ( !best ) continue;
     u.legendaryLeft -= best.action.legendary;
+    startTurn(run, u);
     log(run, u, { type: "legendary", action: best.action.name, cost: best.action.legendary, target: best.t.spec.name, targetId: best.t.id });
     executeOffense(run, u, best.action, best.t, 0);
     spendUse(u, best.action);
@@ -2512,6 +2523,7 @@ function aftermath(run, order) {
   if ( !(simulated && run.units.some(isDying)) && !decided && !bodies.length ) return;
   const rounds = run.round;
   run.round = rounds + 1; // one paragraph in the story, after the fight
+  startTurn(run);
   log(run, null, { type: "aftermath", aftermath: true });
   const marker = run.log?.at(-1);
   if ( decided ) dealWithTheFallen(run, victors, fallen);
@@ -2773,7 +2785,11 @@ export function runOne(prep, seed, { log: withLog = false, capture = false } = {
   if ( surpriseSide ) {
     run.round = 0;
     log(run, null, { type: "surprise", sideLabel: prep.sides[surpriseSide]?.label ?? surpriseSide });
-    for ( const u of order ) if ( u.side === surpriseSide ) takeTurn(run, u);
+    for ( const u of order ) {
+      if ( u.side !== surpriseSide ) continue;
+      startTurn(run, u);
+      takeTurn(run, u);
+    }
   }
   let ended = battleOver(run);
   noteCommand(run, true);
@@ -2782,6 +2798,7 @@ export function runOne(prep, seed, { log: withLog = false, capture = false } = {
     refreshLeans(run); // (the underdog changes as the fight goes)
     // (Who acts, and when: the initiative order, or the system's own way of passing the turn: Daggerheart's spotlight.)
     for ( const u of prep.rules.roundTurns ? prep.rules.roundTurns(run, order) : order ) {
+      startTurn(run, u);
       noteCommand(run);
       takeTurn(run, u);
       if ( u.lastStand ) endLastStand(run, u);
@@ -2796,6 +2813,7 @@ export function runOne(prep, seed, { log: withLog = false, capture = false } = {
   // (Talks that collapsed: nobody's.)
   const winners = !ended ? [] : run.resolved ? [run.resolved.side].filter(Boolean) : activeSides(run);
   if ( withLog ) {
+    startTurn(run);
     const labels = winners.map(s => prep.sides[s]?.label ?? s);
     log(run, null, {
       type: "end", outcome: !ended ? "stalemate" : (winners.length ? "victory" : "none"), winners, winnerLabels: labels, rounds: run.round,

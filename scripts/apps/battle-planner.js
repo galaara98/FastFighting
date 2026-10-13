@@ -14,14 +14,16 @@ import {
   requestSurveys, requestCharacterSurvey, requestGmSurvey, SURVEY_STATUS, playstyleSignature, tacticsFor
 } from "../foundry/tactics.js";
 import {
-  gatherRoster, chosenSide, groupOf, proposeNeutralGroups, resolveAllegiances, simulate, swingFactors, drawFight, typicalFight,
+  gatherRoster, chosenSide, groupOf, proposeNeutralGroups, resolveAllegiances, simulate, swingFactors, typicalFight,
   approachFor, commandChains, commandGroup, seedCommand, clearRole, ROLES, sideName, hostileGroupsIn, secretTeam, SECRET_TEAMS, LEANS, predictionSeconds,
   battleFor
 } from "../foundry/battle.js";
 import { buildStory, STORY_STYLES } from "../story/story.js";
 import { loadStoryTables } from "../story/tables.js";
 import { sceneDistance } from "../foundry/terrain.js";
-import { planMakeItSo, confirmMakeItSo, executeMakeItSo, undoMakeItSo, hasUndo, makingItSo } from "../foundry/make-it-so.js";
+import {
+  planMakeItSo, doItForReal, undoMakeItSo, hasUndo, makingItSo, unfinishedPlayback, playingNow, continuePlayback, rewindPlayback
+} from "../foundry/make-it-so.js";
 import { ensureAutoConfig } from "../foundry/auto-config.js";
 import { PlayerSurvey } from "./player-survey.js";
 import { rememberRun, recallRun } from "../foundry/run-memory.js";
@@ -91,6 +93,8 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       swing: BattlePlanner.#onSwing,
       makeItSo: BattlePlanner.#onMakeItSo,
       undo: BattlePlanner.#onUndo,
+      continuePlayback: BattlePlanner.#onContinuePlayback,
+      rewindPlayback: BattlePlanner.#onRewindPlayback,
       preparePlayers: BattlePlanner.#onPreparePlayers,
       togglePlaystyle: BattlePlanner.#onTogglePlaystyle,
       setMotive: BattlePlanner.#onSetMotive,
@@ -182,7 +186,6 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     this.spec = null;
     this.swing = null;
     this.sample = null;
-    this.rolled = null;
     this.stale = false;
     this.restoredAt = null;
     this.storyCache.clear();
@@ -212,8 +215,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       this.results = saved.results;
       if ( approach ) this.approach = approach;
       this.sample = typicalFight(spec, saved.results);
-      this.rolled = null;
-      this.restoredAt = saved.at;
+        this.restoredAt = saved.at;
       this.stale = false;
     } catch ( err ) {
       console.warn(`${MODULE_ID} | the last run could not be shown again`, err);
@@ -378,6 +380,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       resultTab: this.resultTab,
       hasResults: !!this.results,
       canUndo: hasUndo(),
+      playback: this.#playbackContext(),
       players: this.#playersContext()
     };
     if ( this.results ) Object.assign(context, this.#resultsContext());
@@ -587,6 +590,18 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       totalRounds: result.rounds,
       finals: rows.map(r => ({ name: r.spec.name, side: r.spec.side, status: loc(`FASTFIGHTING.Status.${statusOf(r.final)}`), statusClass: statusOf(r.final), lines: r.lines.join("; ") || loc("FASTFIGHTING.Sample.Unchanged") }))
     };
+  }
+
+  /**
+   * A fight on this scene that's still being played, or was cut short (a crash, a lost connection): it's continued or
+   * rewound before anything else is done for real here.
+   */
+  #playbackContext() {
+    const state = unfinishedPlayback(canvas.scene);
+    if ( !state ) return null;
+    const now = playingNow(state);
+    const by = state.user === game.user.id ? null : game.users.get(state.user)?.name;
+    return { now, note: now && by ? game.i18n.format("FASTFIGHTING.Playback.Elsewhere", { name: by }) : loc(now ? "FASTFIGHTING.Playback.Playing" : "FASTFIGHTING.Playback.Unfinished") };
   }
 
   #playersContext() {
@@ -953,10 +968,9 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       this.approach = approach;
       this.stale = false;
       this.storyCache.clear();
-      // The sample shown: the most typical fight. (Make it So rolls one of its own.)
+      // The sample shown: the most typical fight. (Do it For Real Now plays a new one.)
       this.sample = typicalFight(spec, results);
-      this.rolled = null;
-      this.restoredAt = null;
+        this.restoredAt = null;
       if ( this.abort.signal.aborted ) ui.notifications.info("FASTFIGHTING.Planner.Stopped", { format: { n: results.runs } });
       // (Kept, to show again if the planner opens on this same battle: a run cut short isn't.)
       else rememberRun(this.holderUuid, spec, results);
@@ -1003,30 +1017,48 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
   static async #onMakeItSo() {
     if ( !this.results || !this.spec ) return;
     if ( canvas.scene?.id !== this.sceneId ) return ui.notifications.warn(loc("FASTFIGHTING.Planner.SceneChanged"));
+    if ( unfinishedPlayback(canvas.scene) ) return;
+    // The sample is only a sample: what's done for real is one more fight, that nobody has seen, so a 70% win is a
+    // loss three times in ten, as it should be. The planner closes, so the GM can watch it play out with the table.
+    let playing;
     try {
-      // The sample is only a sample: the fight committed is rolled from the simulated ones, so a 70% win is a loss
-      // three times in ten, as it should be. The GM sees it in the confirmation before anything is written; rolled
-      // once a run (cancelled and asked again, it's the same fight: no rolling until it comes out better).
-      this.rolled ??= drawFight(this.spec, this.results);
-      const fight = this.rolled;
-      if ( !fight ) return;
-      const rows = planMakeItSo(this.spec, fight.result);
-      if ( !rows.some(r => r.changed) && !rows.encounter && !Object.keys(fight.result.doors ?? {}).length ) return ui.notifications.info(loc("FASTFIGHTING.MakeItSo.Nothing"));
-      const ok = await confirmMakeItSo(rows, fight.result);
-      if ( !ok ) return;
-      // The Statistician's account is for the GM (who can show it to the table); everyone else gets the plain one.
-      const stories = this.storyStyle === "statistician"
-        ? { everyone: this.storyFor("standard", fight), gm: this.storyFor("statistician", fight) }
-        : { everyone: this.storyFor(this.storyStyle, fight) };
-      await executeMakeItSo(rows, fight.result, { stories, odds: setting("storyOdds") ? oddsText(this.results) : null });
-      ui.notifications.info(loc("FASTFIGHTING.MakeItSo.Done"));
+      playing = doItForReal(this.spec, { style: this.storyStyle, odds: setting("storyOdds") ? oddsText(this.results) : null, resume: !!this.pausedGame });
+    } catch ( err ) {
+      return reportError(err);
+    }
+    this.close();
+    try {
+      await playing;
+    } catch ( err ) {
+      reportError(err);
+    }
+  }
+
+  /** Go on with a fight cut short, from where it got to (the planner closes, to watch it). */
+  static async #onContinuePlayback() {
+    const playing = continuePlayback(canvas.scene);
+    this.close();
+    try {
+      await playing;
+    } catch ( err ) {
+      reportError(err);
+    }
+  }
+
+  /** Rewind a fight cut short: everything it did so far, chat cards included. */
+  static async #onRewindPlayback() {
+    const ok = await foundry.applications.api.DialogV2.confirm({
+      window: { title: loc("FASTFIGHTING.MakeItSo.UndoTitle") },
+      content: `<p>${loc("FASTFIGHTING.Playback.RewindConfirm")}</p>`
+    });
+    if ( !ok ) return;
+    try {
+      await rewindPlayback(canvas.scene);
+      ui.notifications.info(loc("FASTFIGHTING.MakeItSo.Undone"));
     } catch ( err ) {
       reportError(err);
     }
     this.roster = null;
-    this.results = null;
-    this.sample = null;
-    this.rolled = null;
     this.render();
   }
 

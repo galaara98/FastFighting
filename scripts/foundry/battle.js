@@ -7,7 +7,6 @@ import { budgetMs, swingShareMs, MAX_RUNS, SWING_RUNS } from "../engine/run-budg
 
 /** How long a battle's prediction runs (seconds): its plan's, else the world's Prediction time. */
 export const predictionSeconds = setup => setup?.options?.seconds ?? setting("predictionTime");
-import { deriveSeed } from "../engine/rng.js";
 import { characterSpec, getAdapter, getModifiers } from "../api.js";
 import { computeApproach, computeAwareness, environmentAt, positionOf, squareFeet } from "./terrain.js";
 import { proposeGroups } from "../engine/groups.js";
@@ -743,16 +742,6 @@ function sceneDoors() {
 export function invalidateApproach() {
   approachCache = { key: null, value: null };
   resetPathGrid();
-}
-
-/**
- * A fight rolled from the simulated ones, as Make it So commits it: any of them, as likely as it came up, so a 70% win
- * is a loss three times in ten.
- */
-export function drawFight(spec, results) {
-  if ( !results?.runs ) return null;
-  const seed = deriveSeed(results.seed, Math.floor(Math.random() * results.runs));
-  return { seed, result: replay(spec, getAdapter().rules, seed) };
 }
 
 /** The sample the planner shows: the simulation's most typical fight (its most common outcome, of the usual length). */
