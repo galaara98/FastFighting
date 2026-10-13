@@ -294,6 +294,22 @@
       "leadAttack": "Attack bonus",
       "leadAc": "{AC} bonus"
     },
+    "StatTip": {
+      "ac": "Makes it harder or easier to hit in this battle.",
+      "hp": "How much harm it can take in this battle.",
+      "attack": "Raises or lowers its attack rolls and save DCs in this battle.",
+      "damage": "Adds to or takes from each of its hits in this battle.",
+      "leadBrave": "Added to followers' bravery while their leader stands.",
+      "leadTactical": "Followers fight at least this cleverly while their leader stands.",
+      "leadAttack": "Added to followers' attack rolls while their leader stands.",
+      "leadAc": "Added to followers' {AC} while their leader stands."
+    },
+    "TraitTip": {
+      "tactical": "How cleverly it picks targets, moves and uses its best options.",
+      "brave": "How long it holds its ground before fleeing or giving up.",
+      "selfish": "How much it puts itself before its friends.",
+      "loyal": "How firmly it sticks with its side and its leader."
+    },
     "Kind": {
       "pc": "PC",
       "npc": "NPC",
@@ -342,6 +358,8 @@
       "Title": "Battle Planner",
       "Seconds": "Seconds",
       "KindLevel": "{kind} · Lv {level}",
+      "Level": "Lv {level}",
+      "TraitWhy": "{what} Why: {why}.",
       "SecondsHint": "How long the prediction runs: fight after fight until the time is up.",
       "ManyCreatures": "{creatures} creatures: only about {runs} fights fit in {seconds} seconds, so the odds will be rough.",
       "MaxRounds": "Max rounds",
@@ -369,7 +387,6 @@
       "RoleWantsToLead": "The only one who wants to lead",
       "NoLeader": "No leaders",
       "ChosenLeader": "Chosen by the GM",
-      "SideDefault": "side default",
       "PanTo": "Select and pan to token",
       "HiddenToken": "Hidden token",
       "IncludeHint": "Take part in the battle",
@@ -401,7 +418,6 @@
       "DifficultHere": "difficult terrain",
       "HazardHere": "hazard region",
       "ControlledBy": "Controlled by",
-      "Fudge": "fudge",
       "Talking": "Talking",
       "TalkingHint": "Characters may talk foes down: persuade, threaten or bluff.",
       "IgnoreLanguages": "Ignore languages",

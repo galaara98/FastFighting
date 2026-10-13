@@ -137,7 +137,7 @@
               <div class="ff-row-name" data-tooltip-text="{{name}}">
                 {{name}}
                 {{#if hidden}}<i class="fa-solid fa-eye-slash" data-tooltip="{{localize "FASTFIGHTING.Planner.HiddenToken"}}"></i>{{/if}}
-                <span class="ff-chip ff-kind-{{kind}}">{{kindLabel}}</span>
+                {{#if kindLabel}}<span class="ff-chip ff-kind-{{kind}}">{{kindLabel}}</span>{{/if}}
                 {{#if bystander}}<span class="ff-chip ff-bystander" data-tooltip="{{localize "FASTFIGHTING.Planner.BystandersHint"}}"><i class="fa-solid fa-eye"></i></span>{{/if}}
               </div>
             </div>

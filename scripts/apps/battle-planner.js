@@ -58,6 +58,18 @@ function simulatedDifficulty(results) {
   return "extreme";
 }
 
+/**
+ * A roster row's chip: its level, where the system has levels ("Lv 3"); and its kind where that says something (a
+ * hazard, a companion, a summon, a minion), never a PC or an NPC (the list is already by side). Empty: no chip.
+ */
+function kindChip(spec) {
+  const level = hasStat("level") && Number.isFinite(Number(spec.level)) ? spec.level : null;
+  const kind = ["pc", "npc"].includes(spec.kind) ? null : loc(`FASTFIGHTING.Kind.${spec.kind}`);
+  if ( kind && level !== null ) return game.i18n.format("FASTFIGHTING.Planner.KindLevel", { kind, level });
+  if ( level !== null ) return game.i18n.format("FASTFIGHTING.Planner.Level", { level });
+  return kind ?? "";
+}
+
 export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
   static DEFAULT_OPTIONS = {
     id: "fast-fighting-planner",
@@ -217,7 +229,10 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     }
   }
 
-  /** A fudgeable trait. `shift` is the playstyle adjustment, shown but not editable here. */
+  /**
+   * A fudgeable trait. `shift` is the playstyle adjustment, in its value but not editable here. Its tooltip says what the
+   * trait does, and why it's so where there's a reason.
+   */
   #traitView(trait, base, fudge, path, reason, shift = 0) {
     // (Shown in whole points: a trait worked out from its sheet can fall between them.)
     const value = clamp(Math.round(base + fudge + shift), 0, 100);
@@ -226,7 +241,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       trait, label: loc(`FASTFIGHTING.Trait.${trait}`), value, base, fudge, path, step: FUDGE_STEP.trait,
       band: loc(`FASTFIGHTING.Band.${traitBand(trait, value)}`),
       fudgeLabel: fudge ? signed(fudge) : "",
-      tooltip: brief(`${loc(`FASTFIGHTING.Trait.${trait}`)}: ${Math.round(base)}${fudge ? ` ${signed(fudge)} ${loc("FASTFIGHTING.Planner.Fudge")}` : ""}${shift ? ` ${signed(shift)} ${loc("FASTFIGHTING.Playstyle.Label")}` : ""}${reason ? ` (${reason})` : ""}`)
+      tooltip: brief(reason ? game.i18n.format("FASTFIGHTING.Planner.TraitWhy", { what: loc(`FASTFIGHTING.TraitTip.${trait}`), why: reason }) : loc(`FASTFIGHTING.TraitTip.${trait}`))
     };
   }
 
@@ -234,7 +249,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     return {
       trait: stat, label: statName(stat), value: base + fudge, base, fudge, path, step,
       fudgeLabel: fudge ? (fudge > 0 ? `+${fudge}` : `${fudge}`) : "",
-      tooltip: `${statName(stat)}: ${base}${fudge ? ` ${fudge > 0 ? "+" : ""}${fudge}` : ""}`
+      tooltip: localize(`FASTFIGHTING.StatTip.${stat}`)
     };
   }
 
@@ -289,7 +304,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
         // Neutrals only lean (they take no side until something crosses them). (A Secret token is on the team its row says.)
         lean: id === SIDES.NEUTRAL ? s.allegiance : null,
         leanChoices: id === SIDES.NEUTRAL ? Object.fromEntries(Object.values(ALLEGIANCE).map(k => [k, `FASTFIGHTING.Lean.${k}`])) : null,
-        traits: TRAITS.map(k => this.#traitView(k, defaults[k] ?? 50, s.traitFudge?.[k] ?? 0, `sides.${id}.traitFudge.${k}`, loc("FASTFIGHTING.Planner.SideDefault"))),
+        traits: TRAITS.map(k => this.#traitView(k, defaults[k] ?? 50, s.traitFudge?.[k] ?? 0, `sides.${id}.traitFudge.${k}`)),
         healAggro: s.healAggro,
         healChoices: Object.fromEntries(HEAL_AGGRO.map(k => [k, `FASTFIGHTING.HealAggro.${k}`])),
         morale: s.morale !== false,
@@ -370,7 +385,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       name: s.name,
       img: s.img,
       kind: s.kind,
-      kindLabel: game.i18n.format("FASTFIGHTING.Planner.KindLevel", { kind: loc(`FASTFIGHTING.Kind.${s.kind}`), level: s.level }),
+      kindLabel: kindChip(s),
       bystander: s.inEncounter === false,
       level: s.level,
       hp: `${s.hp.value + (fudge.hp ?? 0)}/${s.hp.max + (fudge.hp ?? 0)}`,

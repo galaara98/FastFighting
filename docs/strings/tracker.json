@@ -7380,7 +7380,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "c51ba39d4251"
+   "hash": "c51ba39d4251",
+   "gone": "2026-10-13"
   },
   "core:FASTFIGHTING.Planner.Group": {
    "repo": "core",
@@ -7543,6 +7544,16 @@
    "date": null,
    "commit": null,
    "hash": "fa3a0bd53dd1"
+  },
+  "core:FASTFIGHTING.Planner.Level": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Planner.Level",
+   "area": "core/Planner",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "de26750a7277"
   },
   "core:FASTFIGHTING.Planner.ManyCreatures": {
    "repo": "core",
@@ -7919,7 +7930,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "8224a9f11c77"
+   "hash": "8224a9f11c77",
+   "gone": "2026-10-13"
   },
   "core:FASTFIGHTING.Planner.SideMorale": {
    "repo": "core",
@@ -8051,6 +8063,16 @@
    "date": null,
    "commit": null,
    "hash": "e9cffbd7db68"
+  },
+  "core:FASTFIGHTING.Planner.TraitWhy": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Planner.TraitWhy",
+   "area": "core/Planner",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "4b0a6a25af04"
   },
   "core:FASTFIGHTING.Playstyle.AlwaysTalk": {
    "repo": "core",
@@ -10863,6 +10885,86 @@
    "date": null,
    "commit": null,
    "hash": "cc350ea33939"
+  },
+  "core:FASTFIGHTING.StatTip.ac": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.StatTip.ac",
+   "area": "core/StatTip",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "01f434512877"
+  },
+  "core:FASTFIGHTING.StatTip.attack": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.StatTip.attack",
+   "area": "core/StatTip",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "cab14038ed44"
+  },
+  "core:FASTFIGHTING.StatTip.damage": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.StatTip.damage",
+   "area": "core/StatTip",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "2f9f929c306b"
+  },
+  "core:FASTFIGHTING.StatTip.hp": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.StatTip.hp",
+   "area": "core/StatTip",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "8be2a7be8986"
+  },
+  "core:FASTFIGHTING.StatTip.leadAc": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.StatTip.leadAc",
+   "area": "core/StatTip",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "eefe894837b4"
+  },
+  "core:FASTFIGHTING.StatTip.leadAttack": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.StatTip.leadAttack",
+   "area": "core/StatTip",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "0ea08099243a"
+  },
+  "core:FASTFIGHTING.StatTip.leadBrave": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.StatTip.leadBrave",
+   "area": "core/StatTip",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "4188731c7567"
+  },
+  "core:FASTFIGHTING.StatTip.leadTactical": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.StatTip.leadTactical",
+   "area": "core/StatTip",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "a48d55f4e475"
   },
   "core:FASTFIGHTING.Status.beaten": {
    "repo": "core",
@@ -15739,6 +15841,46 @@
    "date": null,
    "commit": null,
    "hash": "91c56707adfd"
+  },
+  "core:FASTFIGHTING.TraitTip.brave": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.TraitTip.brave",
+   "area": "core/TraitTip",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "d7d725552194"
+  },
+  "core:FASTFIGHTING.TraitTip.loyal": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.TraitTip.loyal",
+   "area": "core/TraitTip",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "5ef1db7d0816"
+  },
+  "core:FASTFIGHTING.TraitTip.selfish": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.TraitTip.selfish",
+   "area": "core/TraitTip",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "08a5e554f46e"
+  },
+  "core:FASTFIGHTING.TraitTip.tactical": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.TraitTip.tactical",
+   "area": "core/TraitTip",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "6d5939234738"
   },
   "core:FASTFIGHTING.Translation.Disabled": {
    "repo": "core",
