@@ -90,3 +90,27 @@ describe("the story told a turn at a time", () => {
     expect(talking).toBeGreaterThan(0);
   });
 });
+
+describe("doing it again", () => {
+  test("the same blow at the same foe, to the same end, is told as again, not as if it were the first", () => {
+    const fill = (line, e) => line.replace("{actor}", e.actor).replace("{target}", e.target).replace("{weapon}", e.action);
+    let agains = 0;
+    for ( let seed = 1; seed <= 30; seed++ ) {
+      const spec = fight();
+      const result = replay(spec, pf2eRules, seed);
+      const text = buildStory(result, spec, "roleplay", { tables, seed }).text;
+      // Each attack that repeats an earlier one in its turn, to the same end.
+      const seen = new Map();
+      for ( const e of result.log ) {
+        if ( e.type !== "attack" || (e.degree !== 1 && e.degree !== 2) ) continue;
+        const key = `${e.turn}|${e.actorId}|${e.action}|${e.targetId}`;
+        if ( seen.get(key) === e.degree ) {
+          const lines = english[e.degree === 2 ? "event.againHit" : "event.againMiss"].map(l => fill(l, e));
+          if ( lines.some(l => text.includes(l.charAt(0).toUpperCase() + l.slice(1))) ) agains += 1;
+        }
+        seen.set(key, e.degree);
+      }
+    }
+    expect(agains).toBeGreaterThan(0);
+  });
+});

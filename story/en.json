@@ -2756,6 +2756,20 @@
       "It ends in a bitter stalemate.",
       "No one wins this day.",
       "The fight goes on past all reason."
+    ],
+    "againHit": [
+      "{actor}'s {weapon} finds {target} again.",
+      "Again {actor} hits {target}.",
+      "{actor} does it again: another hit on {target}.",
+      "Once more, {actor}'s {weapon} lands on {target}.",
+      "{target} takes another hit from {actor}'s {weapon}."
+    ],
+    "againMiss": [
+      "{actor} tries again, and misses again.",
+      "Again {actor}'s {weapon} misses {target}.",
+      "Once more, {target} avoids {actor}'s {weapon}.",
+      "Another try from {actor}, another miss.",
+      "{actor} tries again, to no better end."
     ]
   },
   "desire": {

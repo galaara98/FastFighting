@@ -391,6 +391,21 @@ function narrate(e, roll, rel, fill) {
   }
 }
 
+/**
+ * An attack that repeats one made earlier in the turn, to the same end (the same weapon at the same foe, a hit
+ * again or a miss again): told as doing it again, not as if it were the first. A critical hit or fumble is told in
+ * full. Returns the line, or "" (told as usual). `done`: what each has done so far this turn.
+ */
+function againLine(e, done, roll) {
+  if ( e.type !== "attack" ) return "";
+  const how = e.degree === 2 ? "hit" : e.degree === 1 ? "miss" : null;
+  const key = `${e.actorId}|${e.action}|${e.targetId}`;
+  const before = done.get(key);
+  done.set(key, how);
+  if ( !how || before !== how ) return "";
+  return roll(how === "hit" ? "event.againHit" : "event.againMiss", { actor: e.actor, target: e.target ?? "", weapon: e.action ?? e.item ?? "" });
+}
+
 /** How often a character's turn opens with a moment of thought (and never two rounds running for the same one). */
 const THOUGHT_CHANCE = 0.25;
 
@@ -436,8 +451,14 @@ function roleplayParagraphs(result, spec, tables, seed, mapType) {
   if ( opening ) paragraphs.push({ text: opening });
   let current = null;
   let lastMoveKey = null;
+  const done = new Map();
+  let doneTurn = null;
   for ( const e of tellingOrder(result.log) ) {
     if ( e.type === "initiative" || !mentions(e) ) continue;
+    if ( e.turn !== doneTurn ) {
+      done.clear();
+      doneTurn = e.turn;
+    }
     // The outcome comes where the fighting stops; anything after it (tending the fallen) follows.
     if ( e.type === "end" ) {
       paragraphs.push({ e, text: ending(result, spec, e, roll) });
@@ -464,7 +485,7 @@ function roleplayParagraphs(result, spec, tables, seed, mapType) {
       }
       continue;
     }
-    const sentence = narrate(e, roll, rel, { mapType });
+    const sentence = againLine(e, done, roll) || narrate(e, roll, rel, { mapType });
     rel.record(e);
     if ( sentence ) current.sentences.push({ e, text: capital(sentence.trim()) });
   }

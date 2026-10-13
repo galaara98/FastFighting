@@ -11613,6 +11613,26 @@
    "commit": null,
    "hash": "9c75c8d45ff0"
   },
+  "core:FASTFIGHTING.Story.Part.againHit": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Story.Part.againHit",
+   "area": "core/Story",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "136677ced085"
+  },
+  "core:FASTFIGHTING.Story.Part.againMiss": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Story.Part.againMiss",
+   "area": "core/Story",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "3759c7e65a8d"
+  },
   "core:FASTFIGHTING.Story.Part.agreedLeave": {
    "repo": "core",
    "file": "languages/en.json",
@@ -17469,6 +17489,26 @@
    "date": null,
    "commit": null,
    "hash": "82102b5e1fb2"
+  },
+  "core:story:event.againHit": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "event.againHit",
+   "area": "core/story.event",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "18cfcc92cd52"
+  },
+  "core:story:event.againMiss": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "event.againMiss",
+   "area": "core/story.event",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "22ffd86900b5"
   },
   "core:story:event.agreedLeave": {
    "repo": "core",

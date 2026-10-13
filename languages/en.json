@@ -1206,7 +1206,9 @@
         "victoryOne": "Victory One",
         "lastStanding": "Last Standing",
         "noOne": "No One",
-        "stalemate": "Stalemate"
+        "stalemate": "Stalemate",
+        "againHit": "Hits again",
+        "againMiss": "Misses again"
       },
       "APrice": "a price",
       "Desire": "{intensity} {verb}",
