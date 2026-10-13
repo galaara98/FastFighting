@@ -13,8 +13,15 @@ export const TRAIT_WORD_CAP = 15;
 
 /** How many words before a keyword a negation or a reversal may stand ("not a coward", "despises all cowards"). */
 const NEGATION_REACH = 3;
+/** How far back (in characters) a negation or a reversal is looked for: well past NEGATION_REACH words. */
+const NEGATION_WINDOW = 200;
 
-const escape = s => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+/**
+ * The most of one text that's read (in characters): a biography, a description, a page of notes. Past it, a long text
+ * says no more of a character than its start did, and reading it would only slow the GM's table.
+ */
+export const TEXT_CAP = 20000;
+
 const numbers = o => Object.fromEntries(Object.entries(o && typeof o === "object" ? o : {}).map(([k, v]) => [k, Number(v)]).filter(([, v]) => Number.isFinite(v) && v !== 0));
 
 /**
@@ -64,7 +71,57 @@ function takenAs(before, { negations = [], reversals = [] }) {
 }
 
 /** What an entry says, as one string: entries rated exactly alike (a word and its synonyms) count once together. */
-const ratingOf = entry => JSON.stringify([Object.entries(entry.playstyles ?? {}).sort(), Object.entries(entry.traits ?? {}).sort()]);
+const ratings = new WeakMap();
+const ratingOf = entry => {
+  let r = ratings.get(entry);
+  if ( r === undefined ) {
+    r = JSON.stringify([Object.entries(entry.playstyles ?? {}).sort(), Object.entries(entry.traits ?? {}).sort()]);
+    ratings.set(entry, r);
+  }
+  return r;
+};
+
+/**
+ * A text as it reads, without Foundry's markup for links and rolls: a link (`@UUID[...]{Goblin Chief}`, `@Check[...]`)
+ * is its label or nothing, an inline roll (`[[/r 1d6]]`) is its label or nothing. ("fortitude" in a save's markup isn't
+ * the character's fortitude.) Nothing is followed or looked up.
+ */
+export function withoutMarkup(text) {
+  return String(text ?? "")
+    .replace(/\[\[[\s\S]*?\]\]\]*(?:\{([^{}]*)\})?/g, (m, label) => ` ${label ?? ""} `)
+    .replace(/@[A-Za-z]+\[[^\]]*\](?:\{([^{}]*)\})?/g, (m, label) => ` ${label ?? ""} `);
+}
+
+/** A letter or a digit, the one at `i` in `s` (a pair of surrogates read as one). */
+const WORD_CHAR = /^[\p{L}\p{N}]/u;
+const wordCharAt = (s, i) => i >= 0 && i < s.length && WORD_CHAR.test(String.fromCodePoint(s.codePointAt(i)));
+/** Is the character just before `i` a letter or a digit? */
+function wordCharBefore(s, i) {
+  if ( i <= 0 ) return false;
+  const c = s.charCodeAt(i - 1);
+  return wordCharAt(s, (c >= 0xDC00 && c <= 0xDFFF && i >= 2) ? i - 2 : i - 1);
+}
+/** The rest of the word a keyword is found at the start of. */
+const REST_OF_WORD = /[\p{L}\p{N}'-]*/uy;
+
+/**
+ * A keyword set's words by how they start (their first two characters, or the one of a word of one), made once per set:
+ * at each word in a text, only the keywords that could start there are tried.
+ */
+const indexes = new WeakMap();
+function indexOf(words) {
+  let index = indexes.get(words);
+  if ( !index ) {
+    index = new Map();
+    for ( const [word, entry] of words ) {
+      const key = word.slice(0, 2);
+      if ( !index.has(key) ) index.set(key, []);
+      index.get(key).push([word, entry]);
+    }
+    indexes.set(words, index);
+  }
+  return index;
+}
 
 /**
  * What a text's keywords say. Each word or phrase is found as the start of a word, in any case (the whole word, for an
@@ -80,28 +137,36 @@ const ratingOf = entry => JSON.stringify([Object.entries(entry.playstyles ?? {})
  */
 export function keywordEffects(text, keywords) {
   const out = { playstyles: {}, traits: {}, found: [], byTrait: {} };
-  // (A curly apostrophe is a straight one: "wasn't" either way.)
-  const hay = String(text ?? "").toLowerCase().replace(/’/g, "'");
+  // (Its start only, as it reads without links' markup; a curly apostrophe is a straight one: "wasn't" either way.)
+  const hay = withoutMarkup(String(text ?? "").slice(0, TEXT_CAP * 2)).slice(0, TEXT_CAP).toLowerCase().replace(/’/g, "'");
   if ( !hay.trim() || !keywords?.words?.size ) return out;
 
-  // Every place an entry is found and taken (as it is, or the other way), to the end of the word it's in.
+  // Every place an entry is found (at the start of a word) and taken (as it is, or the other way), to the end of the
+  // word it's in.
+  const index = indexOf(keywords.words);
   const hits = [];
-  for ( const [word, entry] of keywords.words ) {
-    const re = new RegExp(`(?<![\\p{L}\\p{N}])${escape(word)}${entry.whole ? "(?![\\p{L}\\p{N}])" : ""}`, "gu");
-    for ( const m of hay.matchAll(re) ) {
-      const sign = takenAs(hay.slice(0, m.index), keywords);
+  const tryAt = (candidates, i) => {
+    for ( const [word, entry] of candidates ?? [] ) {
+      if ( !hay.startsWith(word, i) || (entry.whole && wordCharAt(hay, i + word.length)) ) continue;
+      const sign = takenAs(hay.slice(Math.max(0, i - NEGATION_WINDOW), i), keywords);
       if ( !sign ) continue;
-      const rest = hay.slice(m.index + word.length).match(/^[\p{L}\p{N}'-]*/u)[0];
-      hits.push({ word, entry, sign, start: m.index, end: m.index + word.length + rest.length });
+      REST_OF_WORD.lastIndex = i + word.length;
+      hits.push({ word, entry, sign, start: i, end: i + word.length + (REST_OF_WORD.exec(hay)?.[0].length ?? 0) });
     }
+  };
+  for ( let i = 0; i < hay.length; i++ ) {
+    if ( wordCharBefore(hay, i) ) continue;
+    const two = hay.slice(i, i + 2);
+    tryAt(index.get(two), i);
+    if ( two.length === 2 ) tryAt(index.get(hay[i]), i);
   }
 
   // Where entries overlap, the longest; then each entry, and each rating, once, as first found.
   hits.sort((a, b) => b.word.length - a.word.length || a.start - b.start);
-  const claimed = [];
+  const claimed = new Uint8Array(hay.length + 1);
   const kept = hits.filter(h => {
-    if ( claimed.some(([s, e]) => h.start < e && s < h.end) ) return false;
-    claimed.push([h.start, h.end]);
+    for ( let j = h.start; j < h.end; j++ ) if ( claimed[j] ) return false;
+    claimed.fill(1, h.start, h.end);
     return true;
   }).sort((a, b) => a.start - b.start);
   const words = new Set();

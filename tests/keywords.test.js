@@ -1,6 +1,6 @@
 import { describe, test, expect } from "vitest";
 import { readFileSync } from "fs";
-import { readKeywordFile, mergeKeywords, keywordEffects, biographyEffects, PLAYSTYLE_WORD_CAP, TRAIT_WORD_CAP, STORY_WEIGHT, AGAINST_WEIGHT } from "../scripts/engine/keywords.js";
+import { readKeywordFile, mergeKeywords, keywordEffects, biographyEffects, withoutMarkup, PLAYSTYLE_WORD_CAP, TRAIT_WORD_CAP, TEXT_CAP, STORY_WEIGHT, AGAINST_WEIGHT } from "../scripts/engine/keywords.js";
 import { applyBiography } from "../scripts/foundry/keywords.js";
 import { PLAYSTYLES } from "../scripts/engine/playstyles.js";
 import { TRAITS } from "../scripts/constants.js";
@@ -108,6 +108,22 @@ describe("what a text's keywords say", () => {
     expect(keywordEffects("A greedy man", both).traits.selfish).toBeGreaterThan(0);
     expect(keywordEffects("Cruel", both).traits.selfish).toBe(3);
     expect(keywordEffects("Nunca codicioso", both).found).toEqual([]);
+  });
+
+  test("Foundry's markup isn't text: a link is its label, a roll or a check is nothing", () => {
+    const fx = keywordEffects("Rolls @Check[type:fortitude|dc:20], [[/r 1d6[fire]]] and [[/r 2d6]]{a cruel blow}; friend of @UUID[Actor.abc]{the Brave Knight} @Embed[JournalEntryPage.xyz inline].", ENGLISH);
+    expect(fx.found).toEqual(["cruel", "brave"]);
+    expect(withoutMarkup("@UUID[Compendium.pf2e.bestiary.Item.x]{Goblin}").trim()).toBe("Goblin");
+  });
+
+  test("only a long text's start is read, and quickly, however long it is", () => {
+    const far = `${"0123456789 ".repeat(TEXT_CAP / 11 + 10)}cruel`;
+    expect(keywordEffects(far, ENGLISH).found).toEqual([]);
+    expect(keywordEffects(`cruel ${far}`, ENGLISH).found).toEqual(["cruel"]);
+    const huge = "brave ".repeat(200000);
+    const t0 = performance.now();
+    biographyEffects({ about: huge, story: huge, against: huge }, ENGLISH);
+    expect(performance.now() - t0).toBeLessThan(2000);
   });
 });
 
