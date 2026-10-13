@@ -637,7 +637,8 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
   static async #onPreparePlayers() {
     const players = playersOnScene(canvas.scene);
     if ( !players.length ) return ui.notifications.warn(loc("FASTFIGHTING.Survey.NoPlayers"));
-    await requestSurveys(players);
+    // (Everyone: a new round of the party's vote.)
+    await requestSurveys(players, canvas.scene, { party: "open" });
     ui.notifications.info("FASTFIGHTING.Survey.Sent", { format: { n: players.length } });
     this.render();
   }

@@ -140,7 +140,7 @@ Hooks.once("ready", () => {
     if ( !game.users.get(senderId)?.isGM || !data?.userIds?.includes(game.user.id) ) return;
     // (A player's survey never opens on a GM's screen; one character's for the GMs only on theirs.)
     if ( data.action === "openSurvey" && !game.user.isGM ) {
-      PlayerSurvey.open({ sceneId: data.sceneId, requestId: data.requestId, start: data.start, partyReadOnly: data.partyReadOnly });
+      PlayerSurvey.open({ sceneId: data.sceneId, requestId: data.requestId, start: data.start });
     }
     if ( data.action === "openGmSurvey" && game.user.isGM ) PlayerSurvey.open({ sceneId: data.sceneId, start: data.key, only: data.key });
   });
@@ -148,7 +148,7 @@ Hooks.once("ready", () => {
   if ( !game.user.isGM ) {
     const s = game.user.getFlag(MODULE_ID, "survey");
     if ( s && [SURVEY_STATUS.REQUESTED, SURVEY_STATUS.ENTERING].includes(s.status) && game.scenes.get(s.sceneId) ) {
-      PlayerSurvey.open({ sceneId: s.sceneId, requestId: s.requestId, start: s.start, partyReadOnly: s.partyReadOnly });
+      PlayerSurvey.open({ sceneId: s.sceneId, requestId: s.requestId, start: s.start });
     }
   }
 });

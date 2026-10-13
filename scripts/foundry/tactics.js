@@ -507,23 +507,33 @@ export function surveyStatus(user, scene = canvas.scene) {
   return Object.values(SURVEY_STATUS).includes(s.status) ? s : { ...s, status: SURVEY_STATUS.NONE };
 }
 
-export async function setOwnSurveyStatus(status, sceneId, requestId) {
+export async function setOwnSurveyStatus(status, sceneId, requestId, extra = {}) {
   const current = game.user.getFlag(MODULE_ID, "survey") ?? {};
-  await game.user.setFlag(MODULE_ID, "survey", { ...current, status, sceneId: sceneId ?? current.sceneId, requestId: requestId ?? current.requestId, updated: Date.now() });
+  await game.user.setFlag(MODULE_ID, "survey", { ...current, ...extra, status, sceneId: sceneId ?? current.sceneId, requestId: requestId ?? current.requestId, updated: Date.now() });
 }
 
 /** GM: ask some (or all) players on the scene to fill in their survey. */
-export async function requestSurveys(users, scene = canvas.scene, { start = "party", partyReadOnly = false } = {}) {
+/**
+ * GM: ask players (never a GM) to fill in their survey.
+ * @param {object} [options]
+ * @param {string} [options.start]  the tab it opens on: "party", or a character's key
+ * @param {"open"|"keep"|"closed"} [options.party]  "open": a new round of the party's vote (the survey sent to
+ *   everyone: each player votes until it locks in or closes the survey); "closed": the Party tab only to look at (a
+ *   question about one character); "keep": as it stands
+ */
+export async function requestSurveys(users, scene = canvas.scene, { start = "party", party = "keep" } = {}) {
   if ( !game.user.isGM || !scene ) return;
   // (Never a GM's or an assistant GM's: the survey is the players'. A GM answers for a character by its own request.)
   users = users.filter(u => !u.isGM);
   if ( !users.length ) return;
   const requestId = foundry.utils.randomID();
   // (One write for them all.)
-  const survey = { status: SURVEY_STATUS.REQUESTED, sceneId: scene.id, requestId, start, partyReadOnly, updated: Date.now() };
+  const survey = { status: SURVEY_STATUS.REQUESTED, sceneId: scene.id, requestId, start, updated: Date.now() };
+  if ( party === "open" ) Object.assign(survey, { partyRound: requestId, partyOpen: true });
+  else if ( party === "closed" ) survey.partyOpen = false;
   await game.users.documentClass.updateDocuments(users.map(u => ({ _id: u.id, [`flags.${MODULE_ID}.survey`]: survey })));
   const userIds = users.map(u => u.id);
-  game.socket.emit(SOCKET, { action: "openSurvey", userIds, sceneId: scene.id, requestId, start, partyReadOnly }, { recipients: userIds });
+  game.socket.emit(SOCKET, { action: "openSurvey", userIds, sceneId: scene.id, requestId, start }, { recipients: userIds });
 }
 
 /**
@@ -534,7 +544,7 @@ export async function requestSurveys(users, scene = canvas.scene, { start = "par
  */
 export async function requestCharacterSurvey(token, scene = canvas.scene) {
   const players = game.users.filter(u => !u.isGM && token?.actor?.testUserPermission(u, "OWNER"));
-  await requestSurveys(players, scene, { start: token.id, partyReadOnly: true });
+  await requestSurveys(players, scene, { start: token.id, party: "closed" });
   return players;
 }
 

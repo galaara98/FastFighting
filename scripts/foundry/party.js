@@ -30,6 +30,27 @@ export const PARTY_TACTICS = Object.freeze({
   retreat: { retreat: { never: "never", losing: "losing", hurt: "hurt" } }
 });
 
+/**
+ * Where a player stands in the party's vote: the round (the GM's last survey sent to everyone), whether it has locked
+ * its choices in for that round, and whether it can vote now (the round's survey still open, not locked in). Kept on
+ * the player's User: survey.partyRound and survey.partyOpen (written by the GM's request, closed when the player
+ * closes the survey) and partyLock (the round it locked in).
+ * @returns {{round: string|null, locked: boolean, open: boolean}}
+ */
+export function partyState(user = game.user) {
+  const survey = user?.getFlag?.(MODULE_ID, "survey");
+  const round = typeof survey?.partyRound === "string" ? survey.partyRound : null;
+  const locked = !!round && user.getFlag(MODULE_ID, "partyLock") === round;
+  return { round, locked, open: !!round && survey.partyOpen === true && !locked && !user.isGM };
+}
+
+/** Lock the player's choices in for this round: no more voting until the GM sends everyone a new survey. */
+export async function lockInParty() {
+  const { round, open } = partyState(game.user);
+  if ( !open ) return;
+  await game.user.update({ [`flags.${MODULE_ID}.partyLock`]: round, [`flags.${MODULE_ID}.survey.partyOpen`]: false });
+}
+
 /** A player's votes, as stored (only answers the questions have). */
 export function votesOf(user) {
   const raw = user?.getFlag?.(MODULE_ID, "party");
@@ -67,7 +88,7 @@ export const voters = () => (game.users ?? []).filter(u => !u.isGM && u.hasRole?
 
 /** Vote (or, voting the same again, take the vote back). */
 export async function castVote(question, answer) {
-  if ( game.user.isGM || !PARTY_QUESTIONS[question]?.includes(answer) ) return;
+  if ( !partyState(game.user).open || !PARTY_QUESTIONS[question]?.includes(answer) ) return;
   const mine = votesOf(game.user);
   if ( mine[question] === answer ) await game.user.unsetFlag(MODULE_ID, `party.${question}`);
   else await game.user.setFlag(MODULE_ID, `party.${question}`, answer);
@@ -88,18 +109,20 @@ export function partyWishes(players, swayPercent, leaders = []) {
 
 /**
  * The survey's Party tab: each question's pills, with every player's vote on them as a dot in the player's color (the
- * players logged in: their votes are the ones that count). `readOnly`: shown, not voted on (a GM's question about one
- * character).
+ * players logged in: their votes are the ones that count). The player votes while its round is open (partyState); else
+ * it's there to look at.
  */
-export function partyContext({ readOnly = false } = {}) {
+export function partyContext() {
+  const state = partyState(game.user);
   const players = voters();
   const ballots = players.map(u => [u, votesOf(u)]);
   const answers = majority(ballots.map(([, b]) => b));
   const mine = votesOf(game.user);
   const label = (q, k) => localize(`FASTFIGHTING.Party.${q}.${k}`);
   return {
-    canVote: !game.user.isGM && !readOnly,
-    readOnly: readOnly && !game.user.isGM,
+    canVote: state.open,
+    locked: state.locked,
+    readOnly: !game.user.isGM && !state.open && !state.locked,
     questions: Object.entries(PARTY_QUESTIONS).map(([q, options]) => ({
       key: q,
       label: label(q, "Label"),

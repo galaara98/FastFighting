@@ -27,7 +27,7 @@
   <footer class="ff-survey-foot">
     <nav class="ff-sheet-tabs">
       {{#each sheets}}
-      <button type="button" class="ff-sheet-tab {{#if active}}active{{/if}} {{#if party}}ff-party-tab{{/if}}" data-action="sheetTab" data-tab="{{id}}">{{#if icon}}<i class="{{icon}}"></i>{{else}}<img src="{{img}}" alt="">{{/if}} {{name}}</button>
+      <button type="button" class="ff-sheet-tab {{#if active}}active{{/if}} {{#if party}}ff-party-tab {{lock}}{{/if}}" data-action="sheetTab" data-tab="{{id}}" {{#if tooltip}}data-tooltip="{{tooltip}}"{{/if}}>{{#if icon}}<i class="{{icon}}"></i>{{else}}<img src="{{img}}" alt="">{{/if}} {{name}}</button>
       {{/each}}
     </nav>
     <button type="button" class="ff-btn ff-run" data-action="ready" {{#if empty}}{{#unless onParty}}disabled{{/unless}}{{/if}}><i class="fa-solid fa-check"></i> {{localize "FASTFIGHTING.Survey.Ready"}}</button>

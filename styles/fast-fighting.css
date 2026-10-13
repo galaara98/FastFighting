@@ -426,5 +426,26 @@
 }
 .ff-pill.is-winning { box-shadow: 0 0 0 2px var(--ff-accent); }
 .ff-sheet-tab.ff-party-tab i { margin-right: 4px; }
+/* The party's vote: green once locked in; orange when left open without locking in. */
+.ff-sheet-tab.ff-party-tab.is-locked { box-shadow: inset 0 0 0 2px var(--ff-friendly); }
+.ff-sheet-tab.ff-party-tab.is-unlocked { box-shadow: inset 0 0 0 2px var(--ff-accent); }
+/* Lock-in: a swipe (a range across its track; all the way locks the choices in). */
+.ff-lockin {
+  position: relative; height: 34px; margin: 14px 0 6px; border-radius: 17px;
+  background: var(--ff-surface); border: 1px solid var(--ff-line); overflow: hidden;
+}
+.ff-swipe { -webkit-appearance: none; appearance: none; position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; margin: 0; background: transparent; cursor: grab; }
+.ff-swipe:active { cursor: grabbing; }
+.ff-swipe::-webkit-slider-runnable-track { height: 100%; background: transparent; border: none; }
+.ff-swipe::-moz-range-track { height: 100%; background: transparent; border: none; }
+.ff-swipe::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 32px; height: 32px; border-radius: 50%;
+  background: var(--ff-friendly); border: 2px solid var(--color-light-1, #fff); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+.ff-swipe::-moz-range-thumb { width: 28px; height: 28px; border-radius: 50%; background: var(--ff-friendly); border: 2px solid #fff; }
+.ff-swipe-label {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 6px;
+  pointer-events: none; color: var(--ff-text-dim); font-weight: 700; letter-spacing: 0.04em;
+}
+.ff-locked { margin: 14px 0 6px; color: var(--ff-friendly); font-weight: 700; }
 
-/* The Party tab, until a player has looked at it (it can't confirm before). */

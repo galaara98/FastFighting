@@ -12,5 +12,16 @@
     </div>
   </div>
   {{/each}}
-  {{#if readOnly}}<p class="ff-hint"><i class="fa-solid fa-eye"></i> {{localize "FASTFIGHTING.Party.ReadOnly"}}</p>{{else}}{{#unless canVote}}<p class="ff-hint"><i class="fa-solid fa-eye"></i> {{localize "FASTFIGHTING.Party.GmView"}}</p>{{/unless}}{{/if}}
+  {{#if canVote}}
+  <div class="ff-lockin">
+    <input type="range" class="ff-swipe" data-swipe="lockIn" min="0" max="100" value="0" aria-label="{{localize "FASTFIGHTING.Party.LockIn"}}">
+    <span class="ff-swipe-label" aria-hidden="true">{{localize "FASTFIGHTING.Party.LockIn"}} <i class="fa-solid fa-angles-right"></i></span>
+  </div>
+  {{else if locked}}
+  <p class="ff-locked"><i class="fa-solid fa-lock"></i> {{localize "FASTFIGHTING.Party.LockedIn"}}</p>
+  {{else if readOnly}}
+  <p class="ff-hint"><i class="fa-solid fa-eye"></i> {{localize "FASTFIGHTING.Party.ReadOnly"}}</p>
+  {{else}}
+  <p class="ff-hint"><i class="fa-solid fa-eye"></i> {{localize "FASTFIGHTING.Party.GmView"}}</p>
+  {{/if}}
 </div>

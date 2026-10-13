@@ -2,7 +2,7 @@ import { describe, expect, test } from "vitest";
 import { replay } from "../scripts/engine/simulator.js";
 import { sampleRunTactics } from "../scripts/engine/playstyles.js";
 import { initDesires, partyWants, levelOf, PARTY_POINTS } from "../scripts/engine/behavior/desire.js";
-import { majority, partyWishes, PARTY_QUESTIONS, PARTY_TACTICS } from "../scripts/foundry/party.js";
+import { majority, partyWishes, partyState, PARTY_QUESTIONS, PARTY_TACTICS } from "../scripts/foundry/party.js";
 import { createRng } from "../scripts/engine/rng.js";
 import { pf2eRules } from "./fixtures/three-action-rules.js";
 import { creature, strike, battle } from "./helpers.js";
@@ -68,6 +68,18 @@ describe("the party's wishes (its players' votes)", () => {
     expect(majority(ballots, [ballots[2]]).retreat).toBe("hurt");
     // (Two of the leader's players split between the tied answers: it isn't settled.)
     expect(majority(ballots, [ballots[0], ballots[1]]).talk).toBeUndefined();
+  });
+
+  test("a player votes only in the round the GM opened for everyone, until it locks in or closes the survey", () => {
+    const user = (survey, lock = null, isGM = false) => ({ isGM, getFlag: (scope, key) => ({ survey, partyLock: lock }[key] ?? null) });
+    expect(partyState(user({ partyRound: "r1", partyOpen: true }))).toEqual({ round: "r1", locked: false, open: true });
+    // (Locked in this round: no more votes, and it shows. An old round's lock doesn't hold in a new one.)
+    expect(partyState(user({ partyRound: "r1", partyOpen: true }, "r1"))).toEqual({ round: "r1", locked: true, open: false });
+    expect(partyState(user({ partyRound: "r2", partyOpen: true }, "r1")).open).toBe(true);
+    // (Closed the survey, or asked about one character: to look at.)
+    expect(partyState(user({ partyRound: "r1", partyOpen: false })).open).toBe(false);
+    expect(partyState(user({ partyOpen: true })).open).toBe(false);
+    expect(partyState(user({ partyRound: "r1", partyOpen: true }, null, true)).open).toBe(false);
   });
 
   test("only the votes of players logged in count, and the leader's only if its player is one of them", () => {

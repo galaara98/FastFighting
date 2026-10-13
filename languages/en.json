@@ -1710,9 +1710,12 @@
     },
     "Party": {
       "Tab": "Party",
-      "Intro": "How do you want everyone in the party to act? One vote per player, and only the votes of players logged in count. Majority rules: the most-voted answer to each question is the party's, and it sways everyone on your side a little in every fight. A tie goes to the party's leader; a tie the leader doesn't settle counts as no answer. Vote again to take your vote back.",
+      "Intro": "How do you want everyone in the party to act? One vote per player, and only the votes of players logged in count. Majority rules: the most-voted answer to each question is the party's, and it sways everyone on your side a little in every fight. A tie goes to the party's leader; a tie the leader doesn't settle counts as no answer. Vote again to take your vote back; swipe Lock-in when you're done (until your GM sends everyone a new survey). Closing the survey locks your votes too.",
       "GmView": "Only the players vote. You see everyone's votes; the outlined answer is the party's.",
-      "ReadOnly": "Your GM asked about one character: the party's wishes are here to look at. Vote on them when the GM sends everyone the survey.",
+      "ReadOnly": "The party's wishes, to look at: you can vote on them again when your GM sends everyone the survey.",
+      "LockIn": "Lock-in",
+      "LockedIn": "Choices locked in",
+      "NotLockedIn": "Choices not locked in",
       "target": {
         "Label": "Who do we go after first?",
         "Hint": "The foe the party wants everyone to go for.",
