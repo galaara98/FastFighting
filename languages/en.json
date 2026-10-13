@@ -424,7 +424,6 @@
       "IgnoreLanguagesHint": "Anyone who speaks understands everyone who speaks.",
       "Bystanders": "Bystanders",
       "BystandersHint": "Tokens not in the encounter may notice it and join from the next round.",
-      "Bystander": "Bystander",
       "Stopped": "Stopped after {n} simulated fights.",
       "SceneChanged": "You're viewing a different scene now. Run the battle again for this scene.",
       "ActionFailed": "That didn't work: {error}",

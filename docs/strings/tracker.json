@@ -7330,7 +7330,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "ba475132313f"
+   "hash": "ba475132313f",
+   "gone": "2026-10-13"
   },
   "core:FASTFIGHTING.Planner.Bystanders": {
    "repo": "core",
