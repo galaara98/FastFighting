@@ -5,7 +5,7 @@
  */
 import { describe, expect, test } from "vitest";
 import { scorePlaystyles, pickPlaystyles, readSpec, CLASHES } from "../scripts/engine/auto-playstyles.js";
-import { autoPlan, validLets, specSignature, withHints, withWorldDefaults } from "../scripts/foundry/auto-config.js";
+import { autoPlan, validLets, specSignature, withHints, withWorldDefaults, sameAnswers } from "../scripts/foundry/auto-config.js";
 import { suggestMotives } from "../scripts/foundry/motives.js";
 import { readKeywordFile, keywordEffects } from "../scripts/engine/keywords.js";
 import { suggestTactics, TACTIC_KEYS } from "../scripts/engine/tactics.js";
@@ -134,6 +134,15 @@ describe("when to set a character up", () => {
     expect(set.why.healAggro).not.toBe("Healing Font");
     // (A creature that isn't a player character keeps its own.)
     expect(withWorldDefaults(hinted, spec, { healAggro: "conservative" }).lets.healAggro).toBe("aggressive");
+  });
+
+  test("the answers are worked out afresh each time and rewritten only when they differ (a helper's update shows at once)", () => {
+    const fresh = withHints(lets, { target: { value: "protect", why: "Champion" } }, spec);
+    expect(sameAnswers({ lets: { ...fresh.lets }, why: { ...fresh.why } }, fresh)).toBe(true);
+    expect(sameAnswers({ lets, why: {} }, fresh)).toBe(false);
+    // (The order a flag keeps its keys in doesn't matter.)
+    const reversed = Object.fromEntries(Object.entries(fresh.lets).reverse());
+    expect(sameAnswers({ lets: reversed, why: fresh.why }, fresh)).toBe(true);
   });
 
   test("whole and sound answers: one for every question, each a fair one", () => {

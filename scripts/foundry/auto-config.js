@@ -151,6 +151,12 @@ export function withHints(lets, hints, spec) {
   return { lets: out, why };
 }
 
+/** Are these the same calculated answers and reasons as the stored ones? */
+export function sameAnswers(record, { lets, why }) {
+  const sorted = o => JSON.stringify(Object.keys(o ?? {}).sort().map(k => [k, o[k]]));
+  return sorted(record?.lets) === sorted(lets) && sorted(record?.why) === sorted(why);
+}
+
 /** (One at a time for each actor: the planner and a token window may both ask.) */
 const running = new Map();
 
@@ -168,9 +174,13 @@ export async function ensureAutoConfig(actor, spec, { force = false } = {}) {
     const stored = getStoredTactics(actor);
     const sig = specSignature(spec, worldTacticDefaults());
     const plan = autoPlan(stored, record, { api: CORE_API_VERSION, sig, spec, force });
+    // (Worked out afresh each time: what its system's helper and the core make of it now, so an update to either shows
+    // at once. Written only when it differs.)
+    const fresh = autoLets(actor, spec);
+    if ( record && !plan.lets && !sameAnswers(record, fresh) ) plan.lets = true;
     if ( !plan.pick && !plan.lets ) return false;
     const next = { ...(record ?? {}), api: CORE_API_VERSION, sig, at: Date.now() };
-    if ( plan.lets ) Object.assign(next, autoLets(actor, spec));
+    if ( plan.lets ) Object.assign(next, fresh);
     if ( plan.pick ) {
       const scored = autoScores(actor, spec, await keywords());
       next.picked = pickPlaystyles(scored);
