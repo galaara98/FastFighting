@@ -484,10 +484,10 @@ export function studyBonus(u, t, { words = false } = {}) {
 export const sortOf = t => String(t?.spec?.actorId ?? String(t?.spec?.name ?? "").toLowerCase().replace(/[\s\d#.()-]+$/, "").trim());
 
 /** Has u sized t up: it, or another of its sort? */
-export const sizedUp = (u, t) => !!t && !!u.studied && (u.studied.has(t.id) || u.studied.has(`sort:${sortOf(t)}`));
+export const sizedUp = (u, t) => !!t && !!u.studied?.size && (u.studied.has(t.id) || u.studied.has(`sort:${sortOf(t)}`));
 
 /** Has u let t's sort go: tried and learned nothing, or decided against sizing it up? */
-export const passedOver = (u, t) => !!t && !!u.studied && (u.studied.has(`skip:${t.id}`) || u.studied.has(`skipsort:${sortOf(t)}`));
+export const passedOver = (u, t) => !!t && !!u.studied?.size && (u.studied.has(`skip:${t.id}`) || u.studied.has(`skipsort:${sortOf(t)}`));
 
 /** Does u have a boost against t (a Lore-Collector's payoff for sizing it up)? */
 export const boosted = (u, t) => boostOf(u, t) > 1;

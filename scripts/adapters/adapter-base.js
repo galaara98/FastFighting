@@ -127,6 +127,14 @@ export class SystemAdapter {
   }
 
   /**
+   * Does its Make it So leave loot (a lootable corpse, a pile of gear) and take a corpse away, as the lootMode and
+   * corpseMode settings ask? Without, those settings aren't shown.
+   */
+  get supportsLoot() {
+    return false;
+  }
+
+  /**
    * Commit one simulated outcome to a token ("Make it So").
    * @param {TokenDocument} tokenDoc
    * @param {object} spec        The CombatantSpec used in the simulation

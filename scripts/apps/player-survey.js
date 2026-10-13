@@ -201,8 +201,14 @@ export class PlayerSurvey extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /** Someone voted: the Party tab shows it. */
   syncParty() {
-    if ( this.rendered && this.activeTab === PARTY_TAB ) this.render();
+    // (Once, however many votes come in at once.)
+    this.#redrawParty ??= foundry.utils.debounce(() => {
+      if ( this.rendered && this.activeTab === PARTY_TAB ) this.render();
+    }, 150);
+    this.#redrawParty();
   }
+
+  #redrawParty = null;
 
   static async #onTab(event, target) {
     this.activeTab = target.dataset.tab;

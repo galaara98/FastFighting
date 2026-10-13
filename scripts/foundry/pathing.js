@@ -6,6 +6,8 @@
  */
 
 const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]];
+/** Each direction's way back (DIRS' index of the step the other way). */
+const BACK = [1, 0, 3, 2, 7, 6, 5, 4];
 /** Wall-free cost of a diagonal step, by the scene's diagonal rule (CONST.GRID_DIAGONALS). */
 const DIAGONAL = { 0: 1, 1: Math.SQRT2, 2: 1.5, 3: 2, 4: 1.5, 5: 1.5, 6: Infinity };
 /** Going through a wall when there's no way round: that square counts as 4x difficult terrain. */
@@ -64,6 +66,8 @@ export class WallGrid {
     this.doorsAt = new Map();
     this.fields = new Map();
     this.walls = canvas.scene.walls.filter(w => w.move !== CONST.WALL_MOVEMENT_TYPES.NONE);
+    // (With no one-way wall on the map, what's between two squares is the same both ways: worked out once for both.)
+    this.bothWays = !this.walls.some(w => w.dir);
   }
 
   covers(x, y) {
@@ -118,7 +122,9 @@ export class WallGrid {
           const doors = hit.length && hit.every(usableDoor) ? hit.map(w => w.id) : null;
           state = doors ? 3 : 2;
           if ( doors ) this.doorsAt.set(k, doors);
+          if ( doors && this.bothWays ) this.doorsAt.set(next * 8 + BACK[d], doors);
         }
+        if ( this.bothWays ) this.edges[next * 8 + BACK[d]] = state;
       }
       this.edges[k] = state;
     }
@@ -136,6 +142,11 @@ export class WallGrid {
    * through closed doors too (each costing a little extra). Cached.
    */
   field(from, doors = false) {
+    // (No door beside anywhere it can walk to: through doors is the same as around them.)
+    if ( doors ) {
+      const around = this.field(from);
+      if ( !this.doorsAt.size ) return around;
+    }
     const cacheKey = `${from}|${doors ? 1 : 0}`;
     let dist = this.fields.get(cacheKey);
     if ( dist ) return dist;

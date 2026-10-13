@@ -70,7 +70,7 @@ export function readSpec(spec, rules = null) {
     melee, ranged,
     // (Its specialties against its everyday weapons: the share of what it would do that's its own.)
     special: specials.length / Math.max(1, specials.length + weapons.length),
-    heals: actions.some(a => a.kind === "heal" && !a.selfOnly && !a.firstAid && !a.consumable),
+    heals: actions.some(a => a.kind === "heal" && !a.selfOnly && !a.firstAid && !a.consumable && isSpecial(a)), // (its own healing, not a move anyone makes)
     helps: actions.some(a => a.kind === "buff" && a.targets !== "self" && a.includeSelf !== false && isSpecial(a)),
     hampers: actions.some(a => a.kind === "control" && !a.goad),
     shield: !!spec.shield,

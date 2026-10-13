@@ -12,7 +12,7 @@ import { StoryTablesConfig } from "./apps/story-tables-config.js";
 import { invalidateStoryTables, installStoryTables } from "./story/tables.js";
 import { PlayerSurvey } from "./apps/player-survey.js";
 import { registerTokenTactics, syncTokenTactics } from "./apps/token-tactics.js";
-import { SOCKET, SURVEY_STATUS, charactersForUser } from "./foundry/tactics.js";
+import { SOCKET, SURVEY_STATUS, hasCharactersFor } from "./foundry/tactics.js";
 import { helperStatus, helperMessage, helperNoticeHtml } from "./helpers.js";
 import { invalidateApproach } from "./foundry/battle.js";
 import { undoConcession, revealStory, ownCard } from "./foundry/make-it-so.js";
@@ -97,7 +97,7 @@ function myTacticsButton(element) {
   const header = root?.querySelector(".combat-tracker-header") ?? root;
   if ( !header ) return;
   header.querySelector(".ff-my-tactics")?.remove();
-  if ( !helperStatus().ready || !charactersForUser(canvas.scene, game.user).length ) return;
+  if ( !helperStatus().ready || !hasCharactersFor(canvas.scene, game.user) ) return;
   const button = document.createElement("button");
   button.type = "button";
   button.className = "ff-tracker-open ff-my-tactics";
@@ -278,6 +278,10 @@ Hooks.on("renderSettingsConfig", (app, element) => {
   const section = root?.querySelector(`section[data-category="${MODULE_ID}"]`);
   if ( !section ) return;
   section.querySelector(".ff-helper-notice")?.remove();
+  // (Only the settings the system's helper acts on: leaving loot, taking a corpse away, only some do.)
+  if ( !getAdapter()?.supportsLoot ) {
+    for ( const key of ["lootMode", "corpseMode"] ) section.querySelector(`[name="${MODULE_ID}.${key}"]`)?.closest(".form-group")?.remove();
+  }
   const status = helperStatus();
   if ( status.specific ) return;
   section.insertAdjacentHTML("afterbegin", helperNoticeHtml(status));

@@ -206,6 +206,14 @@ export function tokensForUser(scene, user) {
   return scene.tokens.filter(t => t.actor && adapter.canHandle(t.actor) && t.actor.testUserPermission(user, "OWNER"));
 }
 
+/** Has a user anything to set tactics for (as charactersForUser, stopping at the first)? */
+export function hasCharactersFor(scene, user) {
+  const adapter = getAdapter();
+  if ( !adapter ) return false;
+  if ( scene?.tokens.some(t => t.actor && adapter.canHandle(t.actor) && t.actor.testUserPermission(user, "OWNER")) ) return true;
+  return (game.actors ?? []).some(a => a.hasPlayerOwner && a.testUserPermission(user, "OWNER") && adapter.canHandle(a));
+}
+
 /**
  * Everything a player can set tactics for: its tokens on the battle map, then its own characters with no token there.
  * A token linked to its actor is the actor (one set of answers, shared); an unlinked token on the map has answers of
@@ -508,9 +516,9 @@ export async function setOwnSurveyStatus(status, sceneId, requestId) {
 export async function requestSurveys(users, scene = canvas.scene) {
   if ( !game.user.isGM || !scene ) return;
   const requestId = foundry.utils.randomID();
-  for ( const user of users ) {
-    await user.setFlag(MODULE_ID, "survey", { status: SURVEY_STATUS.REQUESTED, sceneId: scene.id, requestId, updated: Date.now() });
-  }
+  // (One write for them all.)
+  const survey = { status: SURVEY_STATUS.REQUESTED, sceneId: scene.id, requestId, updated: Date.now() };
+  await game.users.documentClass.updateDocuments(users.map(u => ({ _id: u.id, [`flags.${MODULE_ID}.survey`]: survey })));
   const userIds = users.map(u => u.id);
   game.socket.emit(SOCKET, { action: "openSurvey", userIds, sceneId: scene.id, requestId }, { recipients: userIds });
 }

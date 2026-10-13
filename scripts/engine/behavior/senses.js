@@ -43,9 +43,13 @@ export function perceives(run, u, t, { crisis = false } = {}) {
     run.senseRound = run.round;
     run.senseCache = new Map();
   }
-  const key = `${u.id}|${t.id}|${crisis ? 1 : 0}`;
-  const cached = run.senseCache.get(key);
-  if ( cached !== undefined ) return cached;
+  // (Kept by who looks, then at whom: [as things are, in a crisis].)
+  let seen = run.senseCache.get(u);
+  if ( !seen ) run.senseCache.set(u, seen = new Map());
+  let pair = seen.get(t);
+  if ( !pair ) seen.set(t, pair = [undefined, undefined]);
+  const slot = crisis ? 1 : 0;
+  if ( pair[slot] !== undefined ) return pair[slot];
   const feet = edgeDistance(u, t) ?? separation(run, u, t);
   const blind = (u.conds?.blinded ?? 0) > 0;
   const deaf = (u.conds?.deafened ?? 0) > 0;
@@ -66,7 +70,7 @@ export function perceives(run, u, t, { crisis = false } = {}) {
     found = true;
     break;
   }
-  run.senseCache.set(key, found);
+  pair[slot] = found;
   return found;
 }
 

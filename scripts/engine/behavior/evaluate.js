@@ -65,9 +65,13 @@ export function upgradedDistribution(dist, t, type) {
 
 /** Mean damage of `action` against `target` after IWR, for normal and critical outcomes. Cached per batch. */
 export function meanDamageVs(run, action, target) {
-  const key = `${action.id}|${target.id}${target.iwrKey ? `|${target.iwrKey}` : ""}`;
-  const cache = run.prep.meanCache;
-  let hit = cache.get(key);
+  // (Kept by the action, then the target, then what the target resists just now.)
+  let byTarget = run.prep.meanCache.get(action.id);
+  if ( !byTarget ) run.prep.meanCache.set(action.id, byTarget = new Map());
+  let byIwr = byTarget.get(target.id);
+  if ( !byIwr ) byTarget.set(target.id, byIwr = new Map());
+  const iwrKey = target.iwrKey ?? "";
+  let hit = byIwr.get(iwrKey);
   if ( hit ) return hit;
   const rules = run.prep.rules;
   const iwr = iwrOf(target); // (with any resistance an effect lends it: Rage, Stoneskin)
@@ -79,7 +83,7 @@ export function meanDamageVs(run, action, target) {
     normal: times * (rules.applyIwr(iwr, meanByType(action.damage)) + persistentMean(action.damage)) + rider,
     critical: times * (rules.applyIwr(iwr, meanByType(crit)) + persistentMean(crit)) + rider + critExtraMean(action.crit)
   };
-  cache.set(key, hit);
+  byIwr.set(iwrKey, hit);
   return hit;
 }
 
