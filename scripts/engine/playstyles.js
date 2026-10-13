@@ -2,7 +2,7 @@
  * Playstyles: up to four labels per character (player-chosen for PCs, GM-chosen for NPCs) that predict how
  * they really fight. Each playstyle can
  *   - shift personality traits,
- *   - suggest tactics answers (what "Let them decide" means for this character),
+ *   - suggest tactics answers (what "Let this character decide" means for this character),
  *   - switch on engine behaviors (finishing the downed, parleying first, studying a foe, ...).
  *
  * Two modifiers:

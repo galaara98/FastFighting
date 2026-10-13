@@ -5,13 +5,14 @@
  * Storage
  *  - Actor flag `fast-fighting.tactics.<key>`: one field per answer, written individually so two players
  *    sharing a token can edit different questions at the same time without overwriting each other.
- *    Also `playstyles` (up to four ids), `stayTrue`, `roleplay`, `avoidConsumables` and `avoidCostlySpells` (booleans).
+ *    Also `playstyles` (up to four ids), `stayTrue`, `roleplay` and `avoidCostlySpells` (booleans). (An older sheet's
+ *    `avoidConsumables` box is its answer to Consumables: avoid.)
  *    Older tick-boxes read as answers while their question is unanswered: `alwaysTalk` (talk "always"), `avoidKilling` or
  *    `neverKill` (target "avoidKilling"), `avoidFleeing` (retreat "never"); answering the question sets them aside.
  *    And `offer` and `expect`: what it brings to a standoff, and what it wants out of it (foundry/motives.js).
  *  - User flag `fast-fighting.survey`: {status, sceneId, requestId, updated} for the GM's status indicators.
  */
-import { MODULE_ID } from "../constants.js";
+import { MODULE_ID, TRAITS, clamp, fudged, traitBand } from "../constants.js";
 import { TACTIC_CHOICES, TACTIC_KEYS, suggestTactics, resolveTactics } from "../engine/tactics.js";
 import { isSpecial } from "../engine/behavior/specialty.js";
 import { PLAYSTYLES, PLAYSTYLE_IDS, MAX_PLAYSTYLES, RENAMED_PLAYSTYLES, combinePlaystyles, isPlaystyle } from "../engine/playstyles.js";
@@ -19,15 +20,15 @@ import { getAdapter } from "../api.js";
 import { DESIRE_KINDS, DESIRE_BAND_KEYS } from "../engine/behavior/desire.js";
 import { setting } from "../settings.js";
 import { distanceText, localize } from "../i18n.js";
-import { cleanMotive, cleanMotiveField, MOTIVE_KEY, motivesContext, NO_CATALOG } from "./motives.js";
-import { autoRecord, validLet } from "./auto-config.js";
+import { cleanMotive, cleanMotiveField, MOTIVE_KEY, motivesContext, NO_CATALOG, suggestMotives } from "./motives.js";
+import { autoRecord, validLet, validMotive } from "./auto-config.js";
 
 export const SOCKET = `module.${MODULE_ID}`;
 export const SURVEY_STATUS = Object.freeze({ NONE: "none", REQUESTED: "requested", ENTERING: "entering", CLOSED: "closed", DONE: "done" });
 
 const loc = key => localize(key);
 
-const META_KEYS = ["stayTrue", "roleplay", "avoidConsumables", "avoidCostlySpells"];
+const META_KEYS = ["stayTrue", "roleplay", "avoidCostlySpells"];
 /** Stated desires: three slots, each "what, at whom, how badly". */
 const DESIRE_SLOTS = ["d0", "d1", "d2"];
 const DESIRE_KEY = /^desire\.(d[0-2])\.(kind|target|level)$/;
@@ -72,6 +73,7 @@ export function sanitizeTactics(raw) {
   if ( raw.alwaysTalk === true && unanswered("talk") ) out.talk = "always";
   if ( (raw.avoidKilling === true || raw.neverKill === true) && unanswered("target") ) out.target = "avoidKilling";
   if ( raw.avoidFleeing === true && unanswered("retreat") ) out.retreat = "never";
+  if ( raw.avoidConsumables === true && unanswered("consumables") ) out.consumables = "avoid";
   // What it brings to a standoff, and what it wants out of it (checked against what it has when a battle is built).
   for ( const which of ["offer", "expect"] ) {
     const m = cleanMotive(which, raw[which]);
@@ -151,21 +153,26 @@ export function worldTacticDefaults() {
 
 /**
  * Effective tactics for a spec + actor.
- *   calc       what the stats and calculated tactical level say (no playstyles)
- *   suggested  calc adjusted by playstyles: what "Let them decide" means for this character
+ *   calc       what "Let this character decide" stands for before its playstyles: its calculated answers as its auto
+ *              setup stored them (its system's, where its helper had one: foundry/auto-config.js), else worked out now;
+ *              with what it offers and expects (calc.offer, calc.expect)
+ *   why        a system's reason for a calculated answer ({key: reason})
+ *   suggested  calc adjusted by playstyles: what "Let this character decide" means for this character
  *   resolved   stored answers over suggested
  */
 export function tacticsFor(actor, spec) {
   const stored = getStoredTactics(actor);
   const playstyles = combinePlaystyles(stored.playstyles ?? [], { stayTrue: !!stored.stayTrue, roleplay: !!stored.roleplay });
-  // What "Let it decide" stands for: its calculated answers, as its auto setup worked them out (foundry/auto-config.js),
-  // else worked out now.
-  const calc = { ...suggestTactics(spec, worldTacticDefaults(), getAdapter()?.rules ?? null) };
-  for ( const [k, v] of Object.entries(autoRecord(actor)?.lets ?? {}) ) if ( TACTIC_KEYS.includes(k) && validLet(k, v, spec) ) calc[k] = v;
+  const record = autoRecord(actor);
+  const calc = { ...suggestTactics(spec, worldTacticDefaults(), getAdapter()?.rules ?? null), ...suggestMotives(spec) };
+  for ( const [k, v] of Object.entries(record?.lets ?? {}) ) {
+    if ( TACTIC_KEYS.includes(k) ? validLet(k, v, spec) : ["offer", "expect"].includes(k) && validMotive(k, v) ) calc[k] = v;
+  }
+  const why = record?.why && typeof record.why === "object" ? record.why : {};
   const suggested = { ...calc, ...playstyles.suggest };
   const resolved = resolveTactics(stored, suggested);
   if ( resolved.preferredAction && !spec.actions.some(a => a.id === resolved.preferredAction) ) resolved.preferredAction = calc.preferredAction;
-  return { calc, suggested, stored, resolved, playstyles };
+  return { calc, why, suggested, stored, resolved, playstyles };
 }
 
 /** Tokens a user controls (owns) on a scene that the active adapter can simulate. */
@@ -204,12 +211,12 @@ export function isPlayerControlled(spec, actor) {
 }
 
 /**
- * Compact fingerprint of what changes the sheet's shape: "Let them decide" (playstyles and the checkboxes), and the
+ * Compact fingerprint of what changes the sheet's shape: "Let this character decide" (playstyles and the checkboxes), and the
  * kind of offer and expectation (each shows fields of its own).
  */
 export function playstyleSignature(actor) {
   const t = getStoredTactics(actor);
-  return JSON.stringify([t.playstyles ?? [], !!t.stayTrue, !!t.roleplay, !!t.avoidConsumables, !!t.avoidCostlySpells, t.offer?.kind ?? "", t.expect?.kind ?? ""]);
+  return JSON.stringify([t.playstyles ?? [], !!t.stayTrue, !!t.roleplay, !!t.avoidCostlySpells, t.offer?.kind ?? "", t.expect?.kind ?? ""]);
 }
 
 /**
@@ -246,9 +253,10 @@ function actionLabel(a) {
  */
 export function questionsContext(spec, actor, uid, { questions: withQuestions = true, targets: named = [] } = {}) {
   const targets = named ?? [];
-  const { suggested, stored, playstyles } = tacticsFor(actor, spec);
+  const { suggested, stored, playstyles, why } = tacticsFor(actor, spec);
   const sourceOf = key => playstyles.ids.find(id => PLAYSTYLES[id].suggest[key] === suggested[key] && PLAYSTYLES[id].suggest[key] !== undefined);
-  const name = spec.name;
+  // (What "Let this character decide" stands for, and the hidden scores: for a GM or assistant GM only.)
+  const gm = !!game.user?.isGM;
   const offense = [];
   const seen = new Set();
   for ( const a of spec.actions ) {
@@ -261,19 +269,21 @@ export function questionsContext(spec, actor, uid, { questions: withQuestions = 
   const hasLimited = spec.actions.some(a => a.kind !== "heal" && (a.resource || Number.isFinite(a.uses)));
 
   const choiceLabel = (key, v) => loc(`FASTFIGHTING.Tactics.${key}.${v}`);
+  // What it chooses, and why: the playstyle that chose it, else its system's reason.
   const suggestionLabel = key => {
     const v = suggested[key];
-    if ( key === "preferredAction" ) return spec.actions.find(a => a.id === v)?.name ?? loc("FASTFIGHTING.Tactics.BestAvailable");
-    if ( !v ) return "";
+    const choice = key === "preferredAction" ? spec.actions.find(a => a.id === v)?.name ?? loc("FASTFIGHTING.Tactics.BestAvailable") : v ? choiceLabel(key, v) : "";
+    if ( !choice ) return "";
     const source = sourceOf(key);
-    return source ? `${choiceLabel(key, v)} (${loc(`FASTFIGHTING.Playstyle.${source}.Name`)})` : choiceLabel(key, v);
+    const reason = source ? loc(`FASTFIGHTING.Playstyle.${source}.Name`) : why[key];
+    return reason ? game.i18n.format("FASTFIGHTING.Tactics.AutoFrom", { choice, why: reason }) : choice;
   };
 
   const questions = [];
   const add = (key, values, { show = true } = {}) => {
     if ( !show || !withQuestions ) return;
     const value = stored[key] ?? "auto";
-    const choices = [{ value: "auto", label: game.i18n.format("FASTFIGHTING.Tactics.Auto", { name, choice: suggestionLabel(key) }), selected: value === "auto" || value === "" }];
+    const choices = [{ value: "auto", label: loc("FASTFIGHTING.Tactics.Auto"), selected: value === "auto" || value === "" }];
     for ( const v of values ) {
       const isObj = typeof v === "object";
       const val = isObj ? v.value : v;
@@ -286,7 +296,8 @@ export function questionsContext(spec, actor, uid, { questions: withQuestions = 
       hint: loc(`FASTFIGHTING.Tactics.${key}.Hint`),
       choices,
       isAuto: value === "auto" || value === "",
-      value
+      value,
+      autoValue: gm ? suggestionLabel(key) || null : null
     });
   };
 
@@ -297,6 +308,7 @@ export function questionsContext(spec, actor, uid, { questions: withQuestions = 
   add("style", TACTIC_CHOICES.style);
   add("resourceUse", TACTIC_CHOICES.resourceUse, { show: hasLimited });
   add("specialty", TACTIC_CHOICES.specialty, { show: spec.actions.some(isSpecial) });
+  add("consumables", TACTIC_CHOICES.consumables, { show: spec.actions.some(a => /^item:/.test(a.resource ?? "")) });
   add("healAggro", TACTIC_CHOICES.healAggro, { show: heals.some(a => !a.selfOnly) });
   add("potionThreshold", TACTIC_CHOICES.potionThreshold, { show: hasPotions });
   add("allyDying", TACTIC_CHOICES.allyDying);
@@ -336,10 +348,16 @@ export function questionsContext(spec, actor, uid, { questions: withQuestions = 
       empty: !d.kind
     };
   });
+  // Its hidden scores, as a fight would have them (its sheet, its biography, its playstyles), for the GM.
+  const hidden = gm && withQuestions ? TRAITS.map(k => {
+    const value = clamp(Math.round(fudged(spec.traits?.[k] ?? 50) + (playstyles.traits?.[k] ?? 0)), 0, 100);
+    return { key: k, label: loc(`FASTFIGHTING.Trait.${k}`), value, band: loc(`FASTFIGHTING.Band.${traitBand(k, value)}`), reason: spec.traitReasons?.[k] ?? "" };
+  }) : null;
   return {
     uid,
     actorUuid: actor.uuid,
     withQuestions,
+    hidden,
     questions,
     desires,
     // (In alphabetical order, as the player reads them.)
@@ -354,10 +372,11 @@ export function questionsContext(spec, actor, uid, { questions: withQuestions = 
     })).sort((a, b) => a.label.localeCompare(b.label, game.i18n.lang)),
     playstyleCount: game.i18n.format("FASTFIGHTING.Playstyle.Count", { n: picked.length, max: MAX_PLAYSTYLES }),
     // What it brings to a standoff, and what it wants out of it.
-    motives: withQuestions ? motivesContext(spec, stored, getAdapter()?.itemCatalog?.() ?? NO_CATALOG, uid, actor.uuid) : null,
+    motives: withQuestions ? motivesContext(spec, stored, getAdapter()?.itemCatalog?.() ?? NO_CATALOG, uid, actor.uuid, {
+      auto: { offer: suggested.offer, expect: suggested.expect }, why, gm
+    }) : null,
     stayTrue: { name: `tactic-${uid}-stayTrue`, checked: !!stored.stayTrue },
     roleplay: { name: `tactic-${uid}-roleplay`, checked: !!stored.roleplay },
-    avoidConsumables: { name: `tactic-${uid}-avoidConsumables`, checked: !!stored.avoidConsumables, show: spec.actions.some(a => /^item:/.test(a.resource ?? "")) },
     avoidCostlySpells: { name: `tactic-${uid}-avoidCostlySpells`, checked: !!stored.avoidCostlySpells, show: spec.actions.some(a => ((a.rank ?? 0) > 0 || a.spellId) && (a.resource || Number.isFinite(a.uses))) },
     conflict: !!stored.stayTrue && !!stored.roleplay
   };

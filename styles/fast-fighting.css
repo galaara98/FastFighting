@@ -400,3 +400,15 @@
 .ff-system-field { display: inline-flex; align-items: center; gap: 6px; }
 .ff-system-field .ff-pills { display: inline-flex; flex-wrap: wrap; gap: 2px; }
 .ff-desire.is-empty select:not(:first-child) { opacity: 0.6; }
+
+/* What "Let this character decide" stands for, and the hidden scores: shown to a GM only. */
+.ff-auto-value {
+  color: var(--ff-accent);
+  font-size: var(--font-size-12, 12px);
+  margin-top: 2px;
+}
+.ff-auto-value i { margin-right: 4px; }
+.ff-hidden-scores { margin: 6px 0 8px; }
+.ff-hidden-row { display: flex; flex-wrap: wrap; gap: 6px 14px; color: var(--ff-accent); }
+.ff-hidden-score { white-space: nowrap; cursor: help; }
+.ff-hidden-band { opacity: 0.8; font-size: var(--font-size-12, 12px); }

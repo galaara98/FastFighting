@@ -161,13 +161,17 @@ export class SystemAdapter {
   }
 
   /**
-   * The system's own answers to the tactics questions, where it knows better than the core's reading of the numbers
-   * (a class that fights from afar, a creature that never runs): {question: answer}, any of TACTIC_KEYS, each one of the
-   * question's choices (preferredAction: one of its actions' ids). What "Let it decide" stands for. Optional.
+   * The system's own answers to the tactics questions: the truest source of what a character would most likely do (its
+   * class and subclass, features, spells, gear, alignment, kind of creature), over the core's reading of its hidden
+   * scores. What "Let this character decide" stands for, kept with the character and shown to the GM with its reason.
+   * {question: answer} or {question: {value, why}} (why: the reason the GM sees, in the reader's language: a class's or
+   * feature's own name), any of TACTIC_KEYS, each one of the question's choices (preferredAction: one of its actions'
+   * ids); and `offer` and `expect` (API 14: what it puts on the table to end an argument and what it wants, as the
+   * survey stores them: {kind: "" | "money" | "noHarm" | "passage" | "leave", amount, coin}). Optional.
    * @param {Actor} actor
    * @param {object} spec   its CombatantSpec
    * @param {object} calc   the core's answers, to build on
-   * @returns {Record<string, string>}
+   * @returns {Record<string, string|object>}
    */
   tacticHints(actor, spec, calc) {
     return {};

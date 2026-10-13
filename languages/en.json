@@ -208,12 +208,14 @@
       "dead": "Down = dead"
     },
     "HealAggro": {
+      "auto": "Let each character decide",
       "conservative": "Conservative",
       "balanced": "Balanced",
       "aggressive": "Aggressive",
       "allCosts": "At all costs"
     },
     "AllyDying": {
+      "auto": "Let each character decide",
       "rescue": "Rescue them",
       "fight": "Keep fighting",
       "retreat": "Retreat",
@@ -561,7 +563,7 @@
       }
     },
     "Tactics": {
-      "Auto": "Let {name} decide: {choice}",
+      "Auto": "Let this character decide",
       "BestAvailable": "best available option",
       "ActionKind": {
         "strike": "weapon",
@@ -609,6 +611,14 @@
         "some": "A little more often",
         "strong": "Much more often",
         "always": "Whenever it can"
+      },
+      "consumables": {
+        "Label": "Consumables",
+        "Hint": "Potions, scrolls, bombs and the like: how readily this character uses them up. Even one who doesn't like to will when a life is at stake.",
+        "avoid": "I don't like to use consumables",
+        "sparing": "Only when it really counts",
+        "useful": "When they're the right tool",
+        "freely": "Consumables are here to get used"
       },
       "healAggro": {
         "Label": "Healing others",
@@ -669,7 +679,9 @@
         "stay": "Stay with the fight",
         "seekHelp": "Run for help when it goes badly",
         "hunt": "Hunt down enemies nearby"
-      }
+      },
+      "AutoFrom": "{choice} ({why})",
+      "AutoHint": "What \"Let this character decide\" chooses for this character, and why. Only a GM sees this."
     },
     "Survey": {
       "Title": "Prepare for Battle",
@@ -678,7 +690,7 @@
       "Level": "Level",
       "SharedWith": "Also controlled by",
       "Reset": "Reset answers",
-      "ResetHint": "Return every answer for this character to \"let them decide\".",
+      "ResetHint": "Return every answer for this character to \"Let this character decide\".",
       "Ready": "I'm ready",
       "Thanks": "Thanks! Your GM can see you're ready.",
       "Prepare": "Prepare Players",
@@ -711,11 +723,13 @@
         "simple": "Simple: fires once",
         "complex": "Complex: acts every round"
       },
-      "HazardNoTactics": "A hazard has no tactics to set."
+      "HazardNoTactics": "A hazard has no tactics to set.",
+      "Hidden": "Hidden scores",
+      "HiddenHint": "What this character's sheet, biography and playstyles make of it: what \"Let this character decide\" is worked out from, along with what its game system says. Only a GM sees these."
     },
     "Playstyle": {
       "Label": "Playstyles",
-      "Hint": "Pick up to four labels that describe how this character really plays, in order of importance: the number on each pill is its place. Every pill counts, the first in full and each later one less (75%, 55%, 40%): in personality, quirks, desires, and tactics (where pills disagree, each simulated fight goes with one of them, the first most often). Unpick one and the later ones move up. They change what \"Let them decide\" means, how the simulation predicts the character, and how it picks up desires.",
+      "Hint": "Pick up to four labels that describe how this character really plays, in order of importance: the number on each pill is its place. Every pill counts, the first in full and each later one less (75%, 55%, 40%): in personality, quirks, desires, and tactics (where pills disagree, each simulated fight goes with one of them, the first most often). Unpick one and the later ones move up. They change what \"Let this character decide\" means, how the simulation predicts the character, and how it picks up desires.",
       "Count": "{n} of {max}",
       "Max": "Pick at most four playstyles. Unpick one first.",
       "StayTrue": "Stay mostly true to my calculated tactical level",
@@ -816,8 +830,6 @@
         "Name": "Thief",
         "Hint": "Light fingers: when their side is winning, or they're unseen and someone is alone, they may rob a foe within reach instead of hitting them. A lock is an invitation."
       },
-      "AvoidConsumables": "I don't like to use consumables",
-      "AvoidConsumablesHint": "Potions, scrolls, bombs and the like get used far less, unless the moment demands it: a friend (or this character) close to death, or, with a helping playstyle, a friend in a bad way.",
       "AvoidCostlySpells": "I don't like to use spells that cost something",
       "AvoidCostlySpellsHint": "Spells that spend a slot, focus or a daily use get cast far less (cantrips are free), unless the moment demands it: a friend (or this character) close to death, or, with a helping playstyle, a friend in a bad way.",
       "vengeful": {
@@ -1231,7 +1243,8 @@
         "item": "One of my things",
         "noHarm": "Not to harm them",
         "passage": "To let them pass",
-        "leave": "To leave"
+        "leave": "To leave",
+        "auto": "Let this character decide"
       },
       "Expect": {
         "Label": "Do you expect something to end this argument?",
@@ -1241,7 +1254,8 @@
         "thing": "Something",
         "noHarm": "Not to be harmed",
         "passage": "To be let through",
-        "leave": "That they leave"
+        "leave": "That they leave",
+        "auto": "Let this character decide"
       },
       "Amount": "Amount",
       "Coin": "Coin",

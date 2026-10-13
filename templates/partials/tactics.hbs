@@ -9,10 +9,6 @@
       <i class="fa-solid fa-circle-question" data-tooltip="{{localize "FASTFIGHTING.Playstyle.StayTrueHint"}}"></i></label>
     <label class="ff-check"><input type="checkbox" name="{{roleplay.name}}" data-tactic="roleplay" data-actor-uuid="{{actorUuid}}" {{checked roleplay.checked}}> {{localize "FASTFIGHTING.Playstyle.Roleplay"}}
       <i class="fa-solid fa-circle-question" data-tooltip="{{localize "FASTFIGHTING.Playstyle.RoleplayHint"}}"></i></label>
-    {{#if avoidConsumables.show}}
-    <label class="ff-check"><input type="checkbox" name="{{avoidConsumables.name}}" data-tactic="avoidConsumables" data-actor-uuid="{{actorUuid}}" {{checked avoidConsumables.checked}}> {{localize "FASTFIGHTING.Playstyle.AvoidConsumables"}}
-      <i class="fa-solid fa-circle-question" data-tooltip="{{localize "FASTFIGHTING.Playstyle.AvoidConsumablesHint"}}"></i></label>
-    {{/if}}
     {{#if avoidCostlySpells.show}}
     <label class="ff-check"><input type="checkbox" name="{{avoidCostlySpells.name}}" data-tactic="avoidCostlySpells" data-actor-uuid="{{actorUuid}}" {{checked avoidCostlySpells.checked}}> {{localize "FASTFIGHTING.Playstyle.AvoidCostlySpells"}}
       <i class="fa-solid fa-circle-question" data-tooltip="{{localize "FASTFIGHTING.Playstyle.AvoidCostlySpellsHint"}}"></i></label>
@@ -32,6 +28,14 @@
   {{/each}}
 </div>
 {{/if}}
+{{#if hidden}}
+<div class="ff-hidden-scores">
+  <div class="ff-q-label">{{localize "FASTFIGHTING.TokenTactics.Hidden"}} <i class="fa-solid fa-eye" data-tooltip="{{localize "FASTFIGHTING.TokenTactics.HiddenHint"}}"></i></div>
+  <div class="ff-hidden-row">
+    {{#each hidden}}<span class="ff-hidden-score" data-tooltip="{{reason}}"><span class="ff-hidden-label">{{label}}</span> <strong>{{value}}</strong> <span class="ff-hidden-band">{{band}}</span></span>{{/each}}
+  </div>
+</div>
+{{/if}}
 {{#if withQuestions}}
 <div class="ff-tactics">
   {{#each questions}}
@@ -40,6 +44,7 @@
     <select id="{{name}}" name="{{name}}" data-tactic="{{key}}" data-actor-uuid="{{../actorUuid}}">
       {{#each choices}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}
     </select>
+    {{#if autoValue}}<div class="ff-auto-value" data-tooltip="{{localize "FASTFIGHTING.Tactics.AutoHint"}}"><i class="fa-solid fa-eye"></i> {{autoValue}}</div>{{/if}}
   </div>
   {{/each}}
 </div>
@@ -52,6 +57,7 @@
     <div class="ff-pills ff-motive-kinds">
       {{#each kinds}}<button type="button" class="ff-pill {{#if active}}active{{/if}}" data-action="setMotive" data-motive="{{../which}}" data-kind="{{value}}" data-actor-uuid="{{../actorUuid}}" aria-pressed="{{#if active}}true{{else}}false{{/if}}">{{label}}</button>{{/each}}
     </div>
+    {{#if autoValue}}<div class="ff-auto-value" data-tooltip="{{localize "FASTFIGHTING.Tactics.AutoHint"}}"><i class="fa-solid fa-eye"></i> {{autoValue}}</div>{{/if}}
     {{#if money}}
     <div class="ff-motive-fields">
       <input type="number" min="0" step="1" name="{{money.amount.name}}" value="{{money.amount.value}}" data-tactic="{{money.amount.key}}" data-actor-uuid="{{actorUuid}}" aria-label="{{localize "FASTFIGHTING.Motive.Amount"}}">

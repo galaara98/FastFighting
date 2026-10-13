@@ -1,13 +1,16 @@
 /**
  * Setting a character up by itself, the first time FastFighting sees it (the planner opening on its token, its token's
- * FastFighting tab, a player's survey): its playstyles and the answers "Let it decide" stands for.
+ * FastFighting tab, a player's survey): its playstyles and the answers "Let this character decide" stands for.
  *
  * Kept on the actor (an unlinked token's own; a prototype's is its actor's), flags.fast-fighting.auto:
  *   {api, sig, lets, picked, scores, at}
  *   api      the core API it was worked out under
  *   sig      what it was worked out from (its level, its traits, what it can do, the world's defaults): a change
  *            means working the answers out again
- *   lets     the calculated answer to every tactics question (what "Let it decide" shows, before its playstyles' say)
+ *   lets     the calculated answer to every tactics question, and what it offers and expects (what "Let this character
+ *            decide" stands for, before its playstyles' say): its system's answer where its helper has one, else the
+ *            core's reading of its hidden scores
+ *   why      a system's reason for an answer, where it gave one ({key: reason}: shown to the GM)
  *   picked   the playstyles picked for it, best first (once: see below); scores, the best few and their scores
  *
  * Playstyles are picked once: for a character that has never been set up and has none (up to four, best first:
@@ -25,6 +28,7 @@ import { scorePlaystyles, pickPlaystyles } from "../engine/auto-playstyles.js";
 import { biographyEffects } from "../engine/keywords.js";
 import { keywords, currentKeywords } from "./keywords.js";
 import { getStoredTactics, worldTacticDefaults } from "./tactics.js";
+import { cleanMotive, suggestMotives, AUTO } from "./motives.js";
 
 /** The actor's auto setup, or null. */
 export const autoRecord = actor => {
@@ -38,10 +42,16 @@ export function validLet(key, value, spec) {
   return (TACTIC_CHOICES[key] ?? []).includes(value);
 }
 
-/** Calculated answers that are whole and sound: one for every question, each a fair one. */
+/** Is this a fair calculated offer or expectation (a kind the survey has, not "Let this character decide")? */
+export function validMotive(which, m) {
+  const clean = cleanMotive(which, m);
+  return !!clean && clean.kind !== undefined && clean.kind !== AUTO;
+}
+
+/** Calculated answers that are whole and sound: one for every question, each a fair one, and an offer and expectation. */
 export function validLets(lets, spec) {
   if ( !lets || typeof lets !== "object" ) return false;
-  return TACTIC_KEYS.every(k => k in lets && validLet(k, lets[k], spec));
+  return TACTIC_KEYS.every(k => k in lets && validLet(k, lets[k], spec)) && validMotive("offer", lets.offer) && validMotive("expect", lets.expect);
 }
 
 /**
@@ -88,13 +98,36 @@ export function autoScores(actor, spec, words = currentKeywords()) {
   return scorePlaystyles(spec, { rules: adapter?.rules ?? null, hints, words: biographyEffects(bio, words).playstyles });
 }
 
-/** The calculated answer to every question: the core's reading of it, then its system's, where that knows better. */
+/**
+ * The calculated answer to every question, and what it offers and expects: the core's reading (its hidden scores and
+ * what it can do), then its system's, which is the truer source wherever its helper has an answer. A helper answers
+ * `{key: answer}` or `{key: {value, why}}` (why: its reason, shown to the GM), and an offer or expectation as the
+ * survey stores one.
+ * @returns {{lets: object, why: Record<string, string>}}
+ */
 export function autoLets(actor, spec) {
   const adapter = getAdapter();
-  const out = { ...suggestTactics(spec, worldTacticDefaults(), adapter?.rules ?? null) };
-  const own = ask("tacticHints", () => adapter?.tacticHints?.(actor, spec, { ...out }), {});
-  for ( const [k, v] of Object.entries(own) ) if ( TACTIC_KEYS.includes(k) && validLet(k, v, spec) ) out[k] = v;
-  return out;
+  const lets = { ...suggestTactics(spec, worldTacticDefaults(), adapter?.rules ?? null), ...suggestMotives(spec) };
+  const own = ask("tacticHints", () => adapter?.tacticHints?.(actor, spec, { ...lets }), {});
+  return withHints(lets, own, spec);
+}
+
+/**
+ * The core's answers with a system's over them: each fair one taken (`answer` or `{value, why}`; an offer or
+ * expectation as the survey stores one), with its reason.
+ * @returns {{lets: object, why: Record<string, string>}}
+ */
+export function withHints(lets, hints, spec) {
+  const out = { ...lets };
+  const why = {};
+  for ( const [k, raw] of Object.entries(hints ?? {}) ) {
+    const said = raw && typeof raw === "object" && "value" in raw ? raw : { value: raw };
+    const motive = ["offer", "expect"].includes(k);
+    if ( !(motive ? validMotive(k, said.value) : TACTIC_KEYS.includes(k) && validLet(k, said.value, spec)) ) continue;
+    out[k] = motive ? cleanMotive(k, said.value) : said.value;
+    if ( typeof said.why === "string" && said.why ) why[k] = said.why.slice(0, 120);
+  }
+  return { lets: out, why };
 }
 
 /** (One at a time for each actor: the planner and a token window may both ask.) */
@@ -116,7 +149,7 @@ export async function ensureAutoConfig(actor, spec, { force = false } = {}) {
     const plan = autoPlan(stored, record, { api: CORE_API_VERSION, sig, spec, force });
     if ( !plan.pick && !plan.lets ) return false;
     const next = { ...(record ?? {}), api: CORE_API_VERSION, sig, at: Date.now() };
-    if ( plan.lets ) next.lets = autoLets(actor, spec);
+    if ( plan.lets ) Object.assign(next, autoLets(actor, spec));
     if ( plan.pick ) {
       const scored = autoScores(actor, spec, await keywords());
       next.picked = pickPlaystyles(scored);

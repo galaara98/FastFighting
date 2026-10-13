@@ -134,7 +134,7 @@ export class PlayerSurvey extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /**
    * Keep other people's edits flowing in without stealing focus. Playstyle changes alter what
-   * "Let them decide" means, so those re-render.
+   * "Let this character decide" means, so those re-render.
    */
   syncActor(actor) {
     if ( !this.rendered ) return;

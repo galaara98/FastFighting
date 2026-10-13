@@ -1,17 +1,23 @@
 /**
- * Player-chosen tactics. Every question defaults to "auto": what this character would probably do, worked out
- * from its CombatantSpec. Pure, so the engine, the GM planner and the player survey all agree.
+ * Player-chosen tactics. Every question defaults to "auto" ("Let this character decide"): what this character would
+ * probably do, worked out from its CombatantSpec: what it can do, and its hidden scores (tactical, brave, selfish,
+ * loyal), every answer one of the question's own choices. A system helper has the last word where it knows better
+ * (adapter.tacticHints: foundry/auto-config.js), and its playstyles after that (foundry/tactics.js). Pure, so the
+ * engine, the GM planner and the player survey all agree.
  */
 import { clamp, tacticalTier, fudged, TACTICAL } from "../constants.js";
 import { meanPart } from "./dice.js";
 import { talkAffinity } from "./behavior/talk.js";
 import { typical } from "./battle-state.js";
 import { costOf, costUnits } from "./turn.js";
+import { isSpecial } from "./behavior/specialty.js";
 
 export const TACTIC_CHOICES = Object.freeze({
   style: ["frontline", "skirmisher", "ranged", "caster", "protector"],
   target: ["nearest", "weakest", "dangerous", "casters", "protect", "avoidKilling"],
   resourceUse: ["conserve", "balanced", "nova"],
+  // (Potions, scrolls, bombs: from "I don't like to use consumables" to "Consumables are here to get used": reluctance.js.)
+  consumables: ["avoid", "sparing", "useful", "freely"],
   // (How strongly it reaches for magic and its own specialties over the ordinary: behavior/specialty.js.)
   specialty: ["none", "some", "strong", "always"],
   healAggro: ["conservative", "balanced", "aggressive", "allCosts"],
@@ -30,7 +36,7 @@ export const TACTIC_CHOICES = Object.freeze({
  *  - talk: always talking (unless being hurt), "always prefers talking to fighting";
  *  - target: avoiding killing, "I avoid killing";
  *  - retreat: not liking to flee, "I don't like to flee".
- * "Let them decide" carries none, as an unticked box did.
+ * "Let this character decide" carries none, as an unticked box did.
  */
 export const TACTIC_WISHES = Object.freeze({
   talk: Object.freeze({ always: 1, first: 0.66, opportune: 0.33, never: 0 }),
@@ -39,7 +45,7 @@ export const TACTIC_WISHES = Object.freeze({
 });
 
 /** Question keys in survey order. `preferredAction` is special (its choices are the character's own actions). */
-export const TACTIC_KEYS = Object.freeze(["preferredAction", "style", "target", "resourceUse", "specialty", "talk", "healAggro", "potionThreshold", "allyDying", "selfRevived", "retreat", "shield", "beyond"]);
+export const TACTIC_KEYS = Object.freeze(["preferredAction", "style", "target", "resourceUse", "specialty", "consumables", "talk", "healAggro", "potionThreshold", "allyDying", "selfRevived", "retreat", "shield", "beyond"]);
 
 const isOffense = a => a.kind !== "heal" && a.kind !== "buff";
 const usesResource = a => !!a.resource || Number.isFinite(a.uses);
@@ -63,11 +69,24 @@ export function typicalValue(action, level, rules = null) {
 }
 
 /**
- * What the character would probably choose for every question.
+ * What the character would probably choose for every question: what it can do (its best attack, its healing, a
+ * shield, potions), and its hidden scores. A middle-of-the-road character (every score 50) answers as most would; the
+ * scores move it from there:
+ *  - style: what its best attack is; a shield and the loyalty to use it, a protector; the timid keep their distance;
+ *  - target: a poor head, the nearest; a fair one, the weakest; a good one, the most dangerous; a mastermind, the
+ *    spellcasters and healers; a protector, whoever attacks its friends; the self-serving, easy prey;
+ *  - resourceUse and consumables: the bold and rash spend freely; planners and the self-serving hold on;
+ *  - specialty: a good head leans on its tricks, where it has both tricks and the ordinary;
+ *  - healAggro, allyDying: the loyal and selfless rescue and keep friends up; the self-serving look after themselves;
+ *    the timid get out (a world's own default for player characters, if the GM set one);
+ *  - potionThreshold, selfRevived, retreat: nerve, loyalty and self-interest;
+ *  - shield: the timid keep it up; the bold and rash don't bother;
+ *  - talk: its words, and the timid would rather talk;
+ *  - beyond: the bold and self-serving hunt down whoever's near; a good head runs for help.
  * @param {object} spec      CombatantSpec
- * @param {object} [defaults] {healAggro, allyDying} world defaults
+ * @param {object} [defaults] {healAggro, allyDying} the world's defaults for player characters ("auto": let each character decide)
  * @param {object} [rules]    The system's rules (for what counts as typical at this level)
- * @returns {Record<string, string>}
+ * @returns {Record<string, string>} an answer, one of its own choices, for every question
  */
 export function suggestTactics(spec, defaults = {}, rules = null) {
   const offense = (spec.actions ?? []).filter(isOffense);
@@ -80,45 +99,100 @@ export function suggestTactics(spec, defaults = {}, rules = null) {
   }
   const bestAction = best?.a ?? null;
   const heals = (spec.actions ?? []).filter(a => a.kind === "heal");
+  const healsOthers = heals.some(a => !a.selfOnly);
   const hasPotions = heals.some(a => a.selfOnly);
+  const hasRanged = offense.some(a => a.range && !a.melee);
+  const specials = offense.filter(isSpecial).length;
   const sneaky = offense.some(a => a.bonusDamage?.some(b => [b.when].flat().some(w => ["offGuard", "exposed", "advantage"].includes(w))));
-  const tactical = fudged(spec.traits?.tactical ?? 50);
-  const brave = fudged(spec.traits?.brave ?? 50);
-  const tier = tacticalTier(tactical);
+  const T = fudged(spec.traits?.tactical ?? 50);
+  const B = fudged(spec.traits?.brave ?? 50);
+  const S = fudged(spec.traits?.selfish ?? 50);
+  const L = fudged(spec.traits?.loyal ?? 50);
+  const tier = tacticalTier(T);
+  // (A world's default for player characters, if the GM set one.)
+  const worldSays = key => (spec.kind === "pc" && defaults[key] && defaults[key] !== "auto" ? defaults[key] : null);
 
   let style = "frontline";
   if ( bestAction && ["save", "spell-attack", "auto"].includes(bestAction.kind) ) style = "caster";
   else if ( bestAction?.range && !bestAction.melee ) style = "ranged";
   else if ( sneaky ) style = "skirmisher";
-  else if ( spec.shield ) style = "protector";
+  else if ( spec.shield && L >= 40 && B >= 35 && S < 65 ) style = "protector";
+  else if ( B < 35 && hasRanged ) style = "ranged";
+  else if ( B < 35 ) style = "skirmisher";
 
   let target = "dangerous";
   if ( tier <= TACTICAL.INSTINCTIVE ) target = "nearest";
-  else if ( tier === TACTICAL.COMPETENT ) target = "weakest";
-  else if ( style === "protector" ) target = "protect";
+  else if ( style === "protector" || (L >= 90 && S <= 15) ) target = "protect";
+  else if ( tier === TACTICAL.COMPETENT || S >= 70 ) target = "weakest";
+  else if ( tier >= TACTICAL.MASTERMIND ) target = "casters";
+
+  let resourceUse = "balanced";
+  if ( B >= 70 && T < 50 ) resourceUse = "nova";
+  else if ( T >= 70 || S >= 65 ) resourceUse = "conserve";
+
+  let consumables = "useful";
+  if ( S >= 70 ) consumables = "avoid";
+  else if ( S >= 55 || T >= 75 ) consumables = "sparing";
+  else if ( (B >= 75 && T < 50) || (L >= 85 && S <= 20) ) consumables = "freely";
+
+  const specialty = specials && specials < offense.length && T >= 70 ? "some" : "none";
+
+  let healAggro = "conservative";
+  if ( healsOthers ) {
+    if ( L >= 90 && S <= 10 ) healAggro = "allCosts";
+    else if ( L >= 75 && S <= 30 ) healAggro = "aggressive";
+    else if ( S >= 60 || L < 40 ) healAggro = "conservative";
+    else healAggro = "balanced";
+  }
+
+  let potionThreshold = "never";
+  if ( hasPotions ) potionThreshold = B < 40 || S >= 70 ? "75" : B >= 80 && S < 40 ? "25" : "50";
+
+  let allyDying = "fight";
+  if ( healsOthers ? L >= 50 && S < 65 && B >= 35 : L >= 75 && B >= 60 ) allyDying = "rescue";
+  else if ( B < 35 ) allyDying = "retreat";
+  else if ( S >= 70 && L < 50 ) allyDying = "protectSelf";
+
+  let selfRevived = "rejoin";
+  if ( B < 40 || (S >= 70 && B < 60) ) selfRevived = "retreat";
+  else if ( heals.length && T >= 60 && B < 80 ) selfRevived = "healSelf";
+
+  let retreat = "hurt";
+  if ( B >= 70 ) retreat = "never";
+  else if ( S < 70 && ((L >= 70 && B >= 50) || T >= 70) ) retreat = "losing";
+
+  let shield = "never";
+  if ( spec.shield ) shield = B < 45 || (style === "protector" && L >= 75 && T >= 60) ? "always" : B >= 80 && T < 50 ? "never" : "spare";
+
+  let beyond = "stay";
+  if ( B >= 70 && (S >= 55 || T < 45) ) beyond = "hunt";
+  else if ( T >= 60 && L >= 60 && B < 70 ) beyond = "seekHelp";
 
   return {
     preferredAction: bestAction?.id ?? "",
     style,
     target,
-    resourceUse: "balanced",
-    specialty: "none",
-    healAggro: defaults.healAggro ?? (heals.some(a => !a.selfOnly) ? "balanced" : "conservative"),
-    potionThreshold: hasPotions ? "50" : "never",
-    allyDying: defaults.allyDying ?? (heals.some(a => !a.selfOnly) ? "rescue" : "fight"),
-    selfRevived: "rejoin",
-    retreat: brave >= 70 ? "never" : "hurt",
-    shield: spec.shield ? "spare" : "never",
-    talk: suggestTalk(spec, rules),
-    beyond: "stay"
+    resourceUse,
+    consumables,
+    specialty,
+    healAggro: worldSays("healAggro") ?? healAggro,
+    potionThreshold,
+    allyDying: worldSays("allyDying") ?? allyDying,
+    selfRevived,
+    retreat,
+    shield,
+    talk: suggestTalk(spec, rules, B),
+    beyond
   };
 }
 
-/** Would this character open with words, try them when they might work, or never bother? */
-function suggestTalk(spec, rules) {
+/** Would this character open with words, try them when they might work, or never bother? (The timid would rather talk.) */
+function suggestTalk(spec, rules, brave = 50) {
   const affinity = talkAffinity(spec, { tactical: fudged(spec.traits?.tactical ?? 50) }, rules);
-  if ( affinity >= 0.75 ) return "first";
-  if ( affinity >= 0.3 ) return "opportune";
+  if ( affinity <= 0 ) return "never";
+  const leaning = affinity + (brave < 40 ? (40 - brave) / 100 : 0);
+  if ( leaning >= 0.75 ) return "first";
+  if ( leaning >= 0.3 ) return "opportune";
   return "never";
 }
 

@@ -11,7 +11,7 @@ import { TACTIC_KEYS, TACTIC_WISHES } from "../engine/tactics.js";
 import { resetPathGrid } from "./pathing.js";
 import { tokenSetup, sceneEncounter } from "./persistence.js";
 import { tacticsFor, isPlayerControlled, statedDesires } from "./tactics.js";
-import { validMotives, NO_CATALOG } from "./motives.js";
+import { validMotives, NO_CATALOG, effectiveMotives } from "./motives.js";
 import { rankForCommand, autoLieutenants, partyRoles } from "./command-pick.js";
 import { setting } from "../settings.js";
 
@@ -290,7 +290,7 @@ function applyStatFudges(spec, fudge = {}) {
  *    strategy so "stay mostly true" can fall back to it.
  *  - NPCs: the answers the GM gave, and what their playstyles imply; everything else stays personality-driven.
  * Three questions carry a wish each, as strongly as the answer says (TACTIC_WISHES): always talking (unless hurt),
- * avoiding killing, not liking to flee. "Let them decide" carries none.
+ * avoiding killing, not liking to flee. "Let this character decide" carries none.
  * Playstyle trait shifts land on the trait fudges (already capped at ±10 when staying true).
  */
 function applyCharacterTactics(spec, entry) {
@@ -305,17 +305,17 @@ function applyCharacterTactics(spec, entry) {
   const wish = key => TACTIC_WISHES[key][stored[key]] ?? 0;
   spec.alwaysTalk = wish("talk");
   spec.desires = statedDesires(stored); // what the GM or player says it wants, at whom, how badly
-  spec.avoidConsumables = !!stored.avoidConsumables; // "I don't like to use consumables"
   spec.avoidCostlySpells = !!stored.avoidCostlySpells; // "I don't like to use spells that cost something"
   spec.avoidKilling = wish("target"); // holds back from a kill: knocks out, leaves the fallen be, spares them after
   spec.avoidFleeing = wish("retreat"); // stays when it would choose to run
   // What it brings to a standoff, and what it wants out of it: only what it really has, and the system's own kinds of thing.
-  const motives = validMotives(stored, spec.valuables, getAdapter()?.itemCatalog?.() ?? NO_CATALOG);
+  // (Left to the character: what "Let this character decide" stands for.)
+  const motives = validMotives(effectiveMotives(stored, { offer: calc.offer, expect: calc.expect }), spec.valuables, getAdapter()?.itemCatalog?.() ?? NO_CATALOG);
   if ( motives ) spec.motives = motives;
   for ( const [k, v] of Object.entries(playstyles.traits) ) {
     if ( spec.traits[k] ) spec.traits[k] = { ...spec.traits[k], fudge: (spec.traits[k].fudge ?? 0) + v };
   }
-  // Questions left to "Let them decide" where the pills disagree: each fight draws one pill's answer, by its place.
+  // Questions left to "Let this character decide" where the pills disagree: each fight draws one pill's answer, by its place.
   const mixFor = keys => {
     const out = Object.fromEntries(Object.entries(playstyles.mix ?? {}).filter(([k]) => keys.includes(k)));
     return Object.keys(out).length ? out : null;

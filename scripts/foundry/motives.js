@@ -19,6 +19,9 @@ import { formatMoney } from "../story/log-lines.js";
 export const OFFER_KINDS = Object.freeze(["", "money", "item", ...PROMISES]);
 export const EXPECT_KINDS = Object.freeze(["", "money", "thing", ...PROMISES]);
 
+/** "Let this character decide": what it offers or expects is worked out (suggestMotives), and stored with its answers. */
+export const AUTO = "auto";
+
 /** A survey field for a motive: offer.kind, expect.category ... */
 export const MOTIVE_KEY = /^(offer|expect)\.(kind|amount|coin|item|category|material|rarity|minValue|unvalued)$/;
 
@@ -32,7 +35,7 @@ export function cleanMotive(which, raw) {
   if ( !isPlain(raw) ) return null;
   const kinds = which === "offer" ? OFFER_KINDS : EXPECT_KINDS;
   const out = {};
-  if ( kinds.includes(raw.kind) ) out.kind = raw.kind;
+  if ( kinds.includes(raw.kind) || raw.kind === AUTO ) out.kind = raw.kind;
   for ( const k of ["amount", "coin", "minValue"] ) if ( k in raw ) out[k] = count(raw[k]);
   for ( const k of ["item", "category", "material", "rarity"] ) if ( k in raw ) out[k] = word(raw[k]);
   if ( "unvalued" in raw ) out.unvalued = raw.unvalued === true;
@@ -115,6 +118,61 @@ function validExpect(e, valuables, catalog) {
   };
 }
 
+/** Has it said what it offers or expects (anything but leaving it to the character)? */
+const said = m => !!m && m.kind !== undefined && m.kind !== AUTO;
+
+/**
+ * What it offers and expects: what it said, or, where it left it to the character, what the character would (its
+ * calculated answer, as stored).
+ */
+export function effectiveMotives(stored, auto) {
+  return {
+    offer: said(stored?.offer) ? stored.offer : auto?.offer ?? null,
+    expect: said(stored?.expect) ? stored.expect : auto?.expect ?? null
+  };
+}
+
+/**
+ * What a character would offer and expect to end an argument, when nobody says (stored-shape answers, as the survey
+ * writes them): the core's reading, from its hidden scores and what it carries. A system helper can say otherwise
+ * (adapter.tacticHints). Offer: the timid offer to leave; the selfless and loyal, not to harm the other side; a
+ * wealthy, clever, not very selfish one buys its way out with a tenth of its money. Expect: the self-serving want
+ * money (by its level); the timid, not to be harmed. The mindless, and those with no words, nothing.
+ * @param {object} spec   its CombatantSpec (traits, valuables, social)
+ * @returns {{offer: object, expect: object}}
+ */
+export function suggestMotives(spec) {
+  const none = { offer: { kind: "" }, expect: { kind: "" } };
+  if ( spec?.hazard || spec?.social?.mindless || !(spec?.social?.languages?.length ?? 0) ) return none;
+  const trait = k => Math.max(0, Math.min(100, (spec.traits?.[k]?.base ?? 50) + (spec.traits?.[k]?.fudge ?? 0)));
+  const [T, B, S, L] = ["tactical", "brave", "selfish", "loyal"].map(trait);
+  const v = spec.valuables ?? null;
+  const main = coinOf(v, null);
+  const level = Math.max(1, Number(spec.level) || 1);
+  let offer = { kind: "" };
+  if ( B < 40 ) offer = { kind: "leave" };
+  else if ( S <= 30 && L >= 60 ) offer = { kind: "noHarm" };
+  else if ( hasMoney(v) && main && S <= 45 && T >= 60 ) {
+    const amount = Math.floor((v.money ?? 0) / main.value / 10);
+    if ( amount >= 1 ) offer = { kind: "money", amount, coin: main.value };
+  }
+  let expect = { kind: "" };
+  if ( S >= 65 && hasMoney(v) && main ) {
+    // (So much of its main coin by its level: tens of gold, where there's a coin a hundred times the smallest.)
+    const amount = main.value >= 100 ? 10 * level : Math.max(1, Math.ceil(level / 2));
+    expect = { kind: "money", amount, coin: main.value };
+  } else if ( B < 40 ) expect = { kind: "noHarm" };
+  return { offer, expect };
+}
+
+/** A motive in words: "Nothing", "50 gp", "Not to harm them" (as the survey says it). */
+export function describeMotive(which, m, valuables) {
+  const side = which === "offer" ? "Offer" : "Expect";
+  if ( !m?.kind ) return localize(`FASTFIGHTING.Motive.${side}.none`);
+  if ( m.kind === "money" ) return formatMoney(inCoins(valuables, m.amount, m.coin), valuables?.denominations ?? []);
+  return localize(`FASTFIGHTING.Motive.${side}.${m.kind}`);
+}
+
 /** An empty item catalog: a system whose helper names no kinds of thing. */
 export const NO_CATALOG = Object.freeze({ categories: [], materials: [], rarities: [] });
 
@@ -126,8 +184,12 @@ export const NO_CATALOG = Object.freeze({ categories: [], materials: [], raritie
  * @param {object} catalog   the helper's item catalog
  * @param {string} uid       a suffix for input names in this form
  * @param {string} actorUuid whose answers these are
+ * @param {object} [options]
+ * @param {object} [options.auto]   what "Let this character decide" stands for ({offer, expect}), for the GM
+ * @param {object} [options.why]    why ({offer, expect}: a system's reason)
+ * @param {boolean} [options.gm]    show the GM what "Let this character decide" stands for
  */
-export function motivesContext(spec, stored, catalog, uid, actorUuid) {
+export function motivesContext(spec, stored, catalog, uid, actorUuid, { auto = null, why = {}, gm = false } = {}) {
   const v = spec.valuables ?? null;
   const money = hasMoney(v);
   const things = ownThings(v);
@@ -136,8 +198,10 @@ export function motivesContext(spec, stored, catalog, uid, actorUuid) {
   const listOf = (list, picked, any) => (list?.length ? [{ value: "", label: localize(any), selected: !picked }, ...list.map(x => ({ value: x.key, label: x.label, selected: x.key === picked }))] : null);
   const side = (which, kinds) => {
     const m = cleanMotive(which, stored?.[which]) ?? {};
-    const shown = kinds.filter(k => (k !== "money" || money) && (k !== "item" || things.length) && (k !== "thing" || v));
-    const kind = shown.includes(m.kind) ? m.kind : "";
+    const shown = [AUTO, ...kinds.filter(k => (k !== "money" || money) && (k !== "item" || things.length) && (k !== "thing" || v))];
+    // (Never said, or left to the character: "Let this character decide".)
+    const kind = m.kind === undefined ? AUTO : shown.includes(m.kind) ? m.kind : "";
+    const means = auto?.[which] ? describeMotive(which, auto[which], v) : null;
     const name = field => `motive-${uid}-${which}-${field}`;
     return {
       which,
@@ -146,6 +210,7 @@ export function motivesContext(spec, stored, catalog, uid, actorUuid) {
       hint: localize(`FASTFIGHTING.Motive.${which === "offer" ? "Offer" : "Expect"}.Hint`),
       kinds: shown.map(k => ({ value: k, label: localize(`FASTFIGHTING.Motive.${which === "offer" ? "Offer" : "Expect"}.${k || "none"}`), active: k === kind })),
       kind,
+      autoValue: gm && means ? (why?.[which] ? localize("FASTFIGHTING.Tactics.AutoFrom", { choice: means, why: why[which] }) : means) : null,
       money: kind === "money" ? {
         amount: { key: `${which}.amount`, name: name("amount"), value: m.amount ?? 0 },
         coin: coins.length > 1 ? { key: `${which}.coin`, name: name("coin"), choices: coinChoices(m.coin) } : null,

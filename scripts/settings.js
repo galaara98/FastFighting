@@ -23,8 +23,9 @@ const SETTINGS = {
   neutralReach: { type: Number, default: NEUTRAL_REACH, range: { min: 1, max: 20, step: 1 } },
   downedModel: { type: String, default: DOWNED_MODELS.SIMULATE, choices: choices(Object.values(DOWNED_MODELS), "Downed") },
   aftermath: { type: String, default: AFTERMATH.TELL, choices: choices(Object.values(AFTERMATH), "Aftermath") },
-  pcHealAggro: { type: String, default: "balanced", choices: choices(HEAL_AGGRO, "HealAggro") },
-  pcAllyDying: { type: String, default: "rescue", choices: choices(ALLY_DYING, "AllyDying") },
+  // (A party's own default, or "auto": let each character decide.)
+  pcHealAggro: { type: String, default: "auto", choices: choices(["auto", ...HEAL_AGGRO], "HealAggro") },
+  pcAllyDying: { type: String, default: "auto", choices: choices(["auto", ...ALLY_DYING], "AllyDying") },
   leadership: { type: Boolean, default: true },
   // How readily followers take their commander's lead (0-100; 50 the usual), and how much more readily a boss's.
   leaderInfluence: { type: Number, default: 50, range: { min: 0, max: 100, step: 5 } },
