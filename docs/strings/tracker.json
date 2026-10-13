@@ -7528,7 +7528,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "d739e0d32a13"
+   "hash": "d739e0d32a13",
+   "changed": true
   },
   "core:FASTFIGHTING.Planner.MaxRounds": {
    "repo": "core",
@@ -7828,7 +7829,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "848f54e89660"
+   "hash": "848f54e89660",
+   "gone": "2026-10-13"
   },
   "core:FASTFIGHTING.Planner.RunsCapped": {
    "repo": "core",
@@ -7838,7 +7840,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "1428fe6af664"
+   "hash": "1428fe6af664",
+   "gone": "2026-10-13"
   },
   "core:FASTFIGHTING.Planner.SceneChanged": {
    "repo": "core",
@@ -7849,6 +7852,26 @@
    "date": null,
    "commit": null,
    "hash": "a39c1a722656"
+  },
+  "core:FASTFIGHTING.Planner.Seconds": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Planner.Seconds",
+   "area": "core/Planner",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "381a8e969905"
+  },
+  "core:FASTFIGHTING.Planner.SecondsHint": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Planner.SecondsHint",
+   "area": "core/Planner",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "928f0876618e"
   },
   "core:FASTFIGHTING.Planner.Seed": {
    "repo": "core",
@@ -9926,7 +9949,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "656ec7f3c4d7"
+   "hash": "656ec7f3c4d7",
+   "gone": "2026-10-13"
   },
   "core:FASTFIGHTING.Settings.hardware.Name": {
    "repo": "core",
@@ -9936,7 +9960,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "a9d6541cf472"
+   "hash": "a9d6541cf472",
+   "gone": "2026-10-13"
   },
   "core:FASTFIGHTING.Settings.ignoreLanguages.Hint": {
    "repo": "core",
@@ -10261,6 +10286,26 @@
    "commit": null,
    "hash": "4e850d26c59f"
   },
+  "core:FASTFIGHTING.Settings.predictionTime.Hint": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Settings.predictionTime.Hint",
+   "area": "core/Settings",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "9b03cd50b9c8"
+  },
+  "core:FASTFIGHTING.Settings.predictionTime.Name": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Settings.predictionTime.Name",
+   "area": "core/Settings",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "5146e9e28d1b"
+  },
   "core:FASTFIGHTING.Settings.runs.Hint": {
    "repo": "core",
    "file": "languages/en.json",
@@ -10269,7 +10314,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "a0a12ee6c367"
+   "hash": "a0a12ee6c367",
+   "gone": "2026-10-13"
   },
   "core:FASTFIGHTING.Settings.runs.Name": {
    "repo": "core",
@@ -10279,7 +10325,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "e5b579a5a55e"
+   "hash": "e5b579a5a55e",
+   "gone": "2026-10-13"
   },
   "core:FASTFIGHTING.Settings.secretDefault.Hint": {
    "repo": "core",
