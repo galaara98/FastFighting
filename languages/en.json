@@ -477,7 +477,7 @@
       "Dangerous": "Most dangerous",
       "DmgAbbr": "dmg",
       "AtRisk": "Most at risk",
-      "Downed": "downed",
+      "Downed": "Downed",
       "Dead": "Dead",
       "Standing": "Standing",
       "Down": "Down",
@@ -495,12 +495,12 @@
       "EmptyTitle": "Plan the battle, then Run",
       "EmptyBody": "Every token on the scene is listed on the left by side. Adjust personalities, allegiances and dispositions, then run thousands of simulated fights.",
       "Swayed": "Foe talked down",
-      "TalkedDown": "talked down",
+      "TalkedDown": "Talked down",
       "Switched": "Switched sides",
       "Neutral": "Stood aside",
       "Peaceful": "Settled with words",
       "Collapsed": "Talks collapsed",
-      "Conceded": "gave something up"
+      "Conceded": "Gave something up"
     },
     "Swing": {
       "Without": "Without {name}",

@@ -9194,7 +9194,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "84c33b218d16"
+   "hash": "84c33b218d16",
+   "changed": true
   },
   "core:FASTFIGHTING.Results.Damage": {
    "repo": "core",
@@ -9254,7 +9255,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "f4186819cf1b"
+   "hash": "f4186819cf1b",
+   "changed": true
   },
   "core:FASTFIGHTING.Results.Duration": {
    "repo": "core",
@@ -9586,7 +9588,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "27ab4faac73e"
+   "hash": "27ab4faac73e",
+   "changed": true
   },
   "core:FASTFIGHTING.Results.Xp": {
    "repo": "core",
