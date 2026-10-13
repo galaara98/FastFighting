@@ -9,16 +9,19 @@
  *   memory      what the fight has stirred: whoever hurt it, whoever felled a friend. Cools a little every round.
  *   frustration what has thwarted it: a locked door that won't give, a target it can't reach, getting hurt on the
  *               way. It wears the desire down until the character moves on.
- *   social      what the others want. Each turn it may take its lead from whoever commands its group (its boss or
- *               leader, or a lieutenant who stepped up: battle-state.js command), as readily as the world's leader
- *               influence, its loyalty and its pills say (a boss, several times as readily): then it wants the
- *               topmost thing its commander wants that it can actually do, and its playstyle leans toward the
- *               commander's for the turn. Its team's wishes (the average of its friends') pull a little, always.
- *               With nobody able to lead, the team pulls together less: the team's pull and the wish to heal or guard
- *               each other dip (vengeance doesn't). Playstyles change how readily it follows: one who wants to lead
- *               (but doesn't) half ignores its commander, a chaotic one barely hears anyone, People-Pleasers and
+ *   social      what the others want. Whoever commands its group (its boss or leader, or a lieutenant who stepped
+ *               up: battle-state.js command) always counts a little: the topmost thing it wants that the follower can
+ *               actually do pulls a share of its strength (LEADER_SWAY, by the follower's loyalty and ear, a boss's
+ *               more), whatever the world's leader influence. And each turn the follower may take its lead outright,
+ *               as readily as the world's leader influence, its loyalty and its pills say (a boss, several times as
+ *               readily): then it takes that wish up in proportion (at least most of the leader's strength, all of it
+ *               under a boss), so a leader's mild wish can still lose to the follower's own strong one; and its
+ *               playstyle leans toward the commander's for the turn. With nobody able to lead, the wish to heal or
+ *               guard each other dips (vengeance doesn't). Playstyles change how readily it follows: one who wants to
+ *               lead (but doesn't) half ignores its commander, a chaotic one barely hears anyone, People-Pleasers and
  *               Enablers listen harder, and a contrarian (chaotic, or an instigator) may lean away from what its
- *               commander wants.
+ *               commander wants. The player party has wishes of its own too (partyWants): what its players voted for,
+ *               majority rules, at the world's Party's sway.
  *   taunt       taunts on it (effects.js): it wants to go for whoever taunted it, at least as badly as the taunt
  *               says, while the taunt lasts and the taunter stands. It counts like a stated desire, and blinds like one.
  *   asked       friends asking it for a buff (their "bolstered" desires naming it): no roll, only that they can make
@@ -264,14 +267,18 @@ export function leaderless(run, unitOrSide) {
   return !(typeof unitOrSide === "string" ? command(run, unitOrSide) : commandOf(run, unitOrSide));
 }
 
-/** A leaderless team pulls together a little less (vengeance aside). */
-export const LEADERLESS = Object.freeze({ team: 0.7, cooperative: 6 });
+/** A leaderless group looks after each other a little less (vengeance aside). */
+export const LEADERLESS = Object.freeze({ cooperative: 6 });
+
+/** A leader's steady sway: the share of its top wish a typical follower takes up every turn, followed or not. */
+export const LEADER_SWAY = 0.15;
 
 /**
- * How readily u, at the world's usual leader influence (50), takes its lead from its commander on a turn: a loyal
- * follower half its turns.
+ * How readily u, at the world's usual leader influence (50), takes its lead from its commander on a turn (a loyal
+ * follower half its turns), and how much of the leader's wish it takes up then: adopt, plus the rest as readily as it
+ * follows (a typical follower about four fifths, under a boss all of it).
  */
-export const FOLLOW = Object.freeze({ chance: 0.5, pull: 0.7, lean: 0.6, max: 0.95 });
+export const FOLLOW = Object.freeze({ chance: 0.5, adopt: 0.6, lean: 0.6, max: 0.95 });
 
 /**
  * How readily u takes its lead from whoever commands its group this turn: {cmd, raw, chance}, or null (nobody leads
@@ -365,14 +372,6 @@ function blendBehavior(own, lead, share) {
   return out;
 }
 
-/** How much the team's desires pull on u: a little, less without anyone to lead them. Playstyles shape it. */
-export function influence(run, u) {
-  const style = ownStyle(u);
-  const loyal = Math.max(0, Math.min(1.6, liveTrait(run, u, "loyal") / 60));
-  const team = 0.15 * loyal * style.team * (leaderless(run, u) ? LEADERLESS.team : 1);
-  return { team };
-}
-
 /**
  * The playstyle's say in what u wants this turn: points toward the foes and friends that suit its pills (the
  * nearest, the weakest, the most dangerous, casters, the fallen, their leader, a weakness to exploit; a friend to
@@ -439,13 +438,13 @@ export function styleWants(run, u, scored, { canHeal = false, canTalk = false, t
 }
 
 /**
- * Let the others' desires pull on u: its commander's, on a turn it follows (the topmost thing its commander wants
- * that it can actually do: a wish to heal someone means nothing to a creature that can't heal, so the next one counts),
- * and its team's (a little), as far as u can act on them. A contrarian leans away from its commander's top wish.
+ * Let its commander's desires pull on u (the topmost thing its commander wants that it can actually do: a wish to heal
+ * someone means nothing to a creature that can't heal, so the next one counts): always a little (LEADER_SWAY), and on
+ * a turn it follows, in proportion to how strongly the commander wants it and how readily u follows. A contrarian leans
+ * away from its commander's top wish.
  */
 export function listen(run, u, { canHeal = false, canTalk = false, canAid = false } = {}) {
   if ( !u.desire ) return;
-  const { team } = influence(run, u);
   const fits = kind => kind === "hurt" || kind === "avoid" || kind === "protect" || (kind === "heal" && canHeal) || (kind === "talk" && canTalk) || (kind === "aid" && canAid);
   const pull = (kind, targetId, amount) => {
     if ( !fits(kind) || targetId === u.id || !amount ) return;
@@ -467,18 +466,70 @@ export function listen(run, u, { canHeal = false, canTalk = false, canAid = fals
     const can = d => fits(d.kind) && d.targetId !== u.id && relevant(run, u, d.kind, run.byId.get(d.targetId))
       && (d.kind !== "hurt" || (u.prep.offense?.length ?? 0) > 0);
     const top = (leaderUnit.lastDesires ?? []).find(can);
-    if ( top && u.following ) pull(top.kind, top.targetId, FOLLOW.pull * top.level * (u.following.raw > u.following.chance ? u.following.raw / u.following.chance : 1));
-    else if ( top && u.contrarian ) pull(top.kind, top.targetId, -0.15 * top.level);
-  }
-  if ( team ) {
-    const friends = run.units.filter(o => o !== u && o.side === u.side && isStanding(o) && o.lastDesires?.length);
-    if ( friends.length ) {
-      const sums = new Map();
-      for ( const f of friends ) for ( const d of f.lastDesires ) sums.set(keyOf(d.kind, d.targetId), (sums.get(keyOf(d.kind, d.targetId)) ?? 0) + d.level);
-      for ( const [k, sum] of sums ) {
-        const [kind, targetId] = k.split("|");
-        pull(kind, targetId, team * sum / friends.length);
+    if ( top && u.contrarian ) pull(top.kind, top.targetId, -0.15 * top.level);
+    else if ( top ) {
+      // Always a little: whatever the world's leader influence, a leader counts.
+      const loyal = Math.max(0, Math.min(1.6, liveTrait(run, u, "loyal") / 60));
+      const boss = cmd.boss ? Number(run.prep.options?.bossInfluence) || 2 : 1;
+      pull(top.kind, top.targetId, LEADER_SWAY * loyal * (ownStyle(u).leader ?? 1) * boss * top.level);
+      // Following it this turn: it takes the wish up in proportion, at least that share of the leader's strength (most
+      // of it as a typical follower, all of it under a boss), so a mild wish can lose to a strong one of its own.
+      if ( u.following ) {
+        const adopt = Math.min(1, FOLLOW.adopt + (1 - FOLLOW.adopt) * u.following.raw);
+        const short = adopt * top.level - levelOf(u, top.kind, top.targetId);
+        if ( short > 0 ) pull(top.kind, top.targetId, short);
       }
+    }
+  }
+}
+
+/** How strongly the party's wishes pull, at a Party's sway of 100%: so many points (the desire scale is 0 to 100). */
+export const PARTY_POINTS = 100;
+
+/**
+ * The player party's wishes (its players' votes, majority rules: the side's party, battle-state.js), for each member of
+ * that side each turn, at the world's Party's sway: who to go after first (the nearest, the weakest, the most
+ * dangerous, spellcasters and healers, their leader), the fallen (finish them), and each other (heal the hurt, guard
+ * the weakest, or each for themselves: less of both). How the party wants them to act (talking, resources, when to pull
+ * out) sways their tactics instead (playstyles.js sampleRunTactics), and sparing the fallen their wish to (battle.js).
+ * @param {{t, moves}[]} scored  The foes its tactics weighed
+ */
+export function partyWants(run, u, scored, { canHeal = false } = {}) {
+  const party = run.prep.sides?.[u.side]?.party;
+  if ( !u.desire || !party?.sway ) return;
+  const points = PARTY_POINTS * party.sway;
+  const add = (kind, id, n) => {
+    if ( !n || !id || id === u.id ) return;
+    const k = keyOf(kind, id);
+    u.desire.social.set(k, (u.desire.social.get(k) ?? 0) + n);
+  };
+  const frac = t => (t.maxHp > 0 ? t.hp / t.maxHp : 1);
+  const looks = t => (areEnemies(run, u, t) ? apparentHealth(run, u, t) : frac(t));
+  const foes = scored.map(x => x.t);
+  if ( foes.length && party.target ) {
+    const min = Math.min(...scored.map(x => x.moves));
+    const danger = t => (Number(t.spec.level) || 0) * 2 + (t.damageDealt ?? 0) / 5;
+    const pick = {
+      nearest: () => scored.filter(x => x.moves === min).map(x => x.t),
+      weakest: () => [foes.reduce((a, b) => (looks(b) < looks(a) ? b : a))],
+      dangerous: () => [foes.reduce((a, b) => (danger(b) > danger(a) ? b : a))],
+      casters: () => foes.filter(t => t.prep?.isCaster || t.prep?.isHealer),
+      leader: () => foes.filter(t => commandOf(run, t)?.unit === t)
+    }[party.target];
+    for ( const t of pick?.() ?? [] ) add("hurt", t.id, points);
+  }
+  if ( party.fallen === "finish" ) {
+    for ( const t of enemiesOf(run, u) ) if ( t.active && t.status === STATUS.DOWN && !t.stable && perceives(run, u, t) ) add("hurt", t.id, points);
+  }
+  const friends = run.units.filter(a => a !== u && a.side === u.side && a.active && ![STATUS.DEAD, STATUS.FLED].includes(a.status));
+  if ( party.care === "heal" && canHeal ) {
+    for ( const a of friends ) if ( perceives(run, u, a, { crisis: true }) && (a.status === STATUS.DOWN || frac(a) < 0.75) ) add("heal", a.id, points);
+  } else if ( party.care === "guard" ) {
+    add("protect", friends.filter(isStanding).sort((a, b) => looks(a) - looks(b))[0]?.id, points);
+  } else if ( party.care === "self" ) {
+    for ( const k of new Set([...u.desire.logic.keys(), ...u.desire.style.keys()]) ) {
+      const [kind, targetId] = parseKey(k);
+      if ( (kind === "heal" || kind === "protect" || kind === "aid") && targetId !== u.id ) add(kind, targetId, -points);
     }
   }
 }

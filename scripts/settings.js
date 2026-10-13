@@ -30,6 +30,8 @@ const SETTINGS = {
   // How readily followers take their commander's lead (0-100; 50 the usual), and how much more readily a boss's.
   leaderInfluence: { type: Number, default: 50, range: { min: 0, max: 100, step: 5 } },
   bossInfluence: { type: Number, default: 2, range: { min: 1.25, max: 3, step: 0.05 } },
+  // How much the player party's wishes (its players' votes in the survey's Party tab) sway the friendly side (%).
+  partySway: { type: Number, default: 3, range: { min: 1, max: 20, step: 1 } },
   morale: { type: Boolean, default: true },
   talking: { type: Boolean, default: true },
   ignoreLanguages: { type: Boolean, default: false },

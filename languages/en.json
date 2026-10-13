@@ -174,7 +174,7 @@
       },
       "leaderInfluence": {
         "Name": "Leader's influence",
-        "Hint": "How readily followers take their lead from whoever commands their group, on a scale of 0 to 100 (50 is the usual; it isn't a percentage). Each turn a follower may follow, as its loyalty and playstyles allow: it then wants the topmost thing its commander wants that it can actually do (targets included), and its playstyle leans toward its commander's for the turn. 0: nobody follows; 100: twice as readily as usual."
+        "Hint": "How readily followers take their lead outright from whoever commands their group, on a scale of 0 to 100 (50 is the usual; it isn't a percentage). A leader always counts a little: its wishes pull on its followers every turn. On top of that, each turn a follower may follow outright, as its loyalty and playstyles allow: it then takes up what its commander wants most (that it can actually do) in proportion to how strongly the commander wants it, and its playstyle leans toward its commander's for the turn. 0: nobody follows outright; 100: twice as readily as usual."
       },
       "bossInfluence": {
         "Name": "Boss's influence",
@@ -191,6 +191,10 @@
       "tauntLuck": {
         "Name": "Playstyle taunts: taking hold (%)",
         "Hint": "A character whose playstyles make it a taunter (Tank most, then Instigator, Martyr, Brawler and Redeem-Seeker) may spend an action goading a foe into coming at it: its talking (threats or mockery) against the foe's resistance, then, if that gets through, a hidden d100 at or under this (default 42) times how much of a taunter it is (all of it for a Tank as its first pick; less for the others, and for a pill further down). Taken hold, the foe wants to go for it until the end of its next turn. Only playstyle taunts use this: a game system's taunts (skills, powers, spells) follow their own rules. 0: never; 100: always, when the talking works."
+      },
+      "partySway": {
+        "Name": "Party's sway (%)",
+        "Hint": "How much the player party's wishes (the players' votes in the survey's Party tab, majority rules) sway everyone on the friendly side: in that share of fights a character uses the party's answer where it left its own to \"Let this character decide\", and the party's wishes add that much to what each wants (on the 0 to 100 desire scale)."
       }
     },
     "Lean": {
@@ -1697,6 +1701,55 @@
       "sizedUp": "sized up",
       "cripplingBlow": "a crippling blow",
       "fumble": "a fumble"
+    },
+    "Party": {
+      "Tab": "Party",
+      "Intro": "How do you want everyone in the party to act? One vote per player. Majority rules: the most-voted answer to each question is the party's, and it sways everyone on your side a little in every fight. Vote again to take your vote back.",
+      "GmView": "Only the players vote. You see everyone's votes; the outlined answer is the party's.",
+      "target": {
+        "Label": "Who do we go after first?",
+        "Hint": "The foe the party wants everyone to go for.",
+        "nearest": "Whoever is closest",
+        "weakest": "The weakest",
+        "dangerous": "The most dangerous",
+        "casters": "Spellcasters and healers",
+        "leader": "Their leader"
+      },
+      "talk": {
+        "Label": "Do we talk first?",
+        "Hint": "Whether everyone should try words before weapons.",
+        "first": "Talk first",
+        "opportune": "Talk if it could work",
+        "never": "Let weapons do the talking"
+      },
+      "fallen": {
+        "Label": "What about foes who fall?",
+        "Hint": "What the party wants done with foes who are down.",
+        "finish": "Finish them",
+        "leave": "Leave them be",
+        "spare": "Spare them"
+      },
+      "care": {
+        "Label": "How do we look after each other?",
+        "Hint": "Whether everyone should heal and guard each other, or look after themselves.",
+        "heal": "Heal the hurt",
+        "guard": "Guard the weakest",
+        "self": "Each for themselves"
+      },
+      "resources": {
+        "Label": "Spells, focus and potions?",
+        "Hint": "How freely the party wants everyone to spend what doesn't come back.",
+        "conserve": "Save them",
+        "balanced": "When they count",
+        "nova": "All in"
+      },
+      "retreat": {
+        "Label": "When do we pull out?",
+        "Hint": "When the party wants everyone to retreat.",
+        "never": "Fight to the end",
+        "losing": "When it turns against us",
+        "hurt": "When we're badly hurt"
+      }
     }
   }
 }

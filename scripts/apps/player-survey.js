@@ -9,12 +9,15 @@ import { getAdapter, characterSpec } from "../api.js";
 import { localize, hasStat } from "../i18n.js";
 import { sceneEncounter } from "../foundry/persistence.js";
 import { ensureAutoConfig, resetAndAutoConfig } from "../foundry/auto-config.js";
+import { partyContext, castVote } from "../foundry/party.js";
 import {
   questionsContext, setTactic, togglePlaystyle, syncTacticsDom, charactersForUser, setOwnSurveyStatus, SURVEY_STATUS, playstyleSignature
 } from "../foundry/tactics.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 const loc = key => localize(key);
+/** The Party tab's id among the survey's tabs. */
+const PARTY_TAB = "party";
 
 /**
  * Who a player can name in a desire: the creatures it perceives on the battle map (the scene it's looking at, with token
@@ -35,13 +38,13 @@ export class PlayerSurvey extends HandlebarsApplicationMixin(ApplicationV2) {
     window: { title: "FASTFIGHTING.Survey.Title", icon: "fa-solid fa-clipboard-question", resizable: true },
     position: { width: 640, height: 640 },
     form: { handler: PlayerSurvey.#onChange, submitOnChange: true, closeOnSubmit: false },
-    actions: { sheetTab: PlayerSurvey.#onTab, ready: PlayerSurvey.#onReady, resetAll: PlayerSurvey.#onResetAll, togglePlaystyle: PlayerSurvey.#onTogglePlaystyle, setMotive: PlayerSurvey.#onSetMotive }
+    actions: { sheetTab: PlayerSurvey.#onTab, ready: PlayerSurvey.#onReady, resetAll: PlayerSurvey.#onResetAll, togglePlaystyle: PlayerSurvey.#onTogglePlaystyle, setMotive: PlayerSurvey.#onSetMotive, partyVote: PlayerSurvey.#onPartyVote }
   };
 
   static PARTS = {
     main: {
       template: `modules/${MODULE_ID}/templates/player-survey.hbs`,
-      templates: [`modules/${MODULE_ID}/templates/partials/tactics.hbs`],
+      templates: [`modules/${MODULE_ID}/templates/partials/tactics.hbs`, `modules/${MODULE_ID}/templates/partials/party.hbs`],
       scrollable: [".ff-survey-sheet"]
     }
   };
@@ -111,12 +114,18 @@ export class PlayerSurvey extends HandlebarsApplicationMixin(ApplicationV2) {
         tactics: questionsContext(spec, e.actor, e.key, { targets: nameable(scene).map(o => ({ id: o.id, name: o.name })) })
       });
     }
-    if ( !sheets.some(s => s.id === this.activeTab) ) this.activeTab = sheets[0]?.id ?? null;
-    for ( const s of sheets ) s.active = s.id === this.activeTab;
+    // The last tab: the party's wishes, every player's vote on them (one vote per player, not per character).
+    const partyTab = { id: PARTY_TAB, name: loc("FASTFIGHTING.Party.Tab"), icon: "fa-solid fa-people-group", party: true };
+    if ( this.activeTab !== PARTY_TAB && !sheets.some(s => s.id === this.activeTab) ) this.activeTab = sheets[0]?.id ?? PARTY_TAB;
+    const tabs = [...sheets, partyTab];
+    for ( const s of tabs ) s.active = s.id === this.activeTab;
+    const onParty = this.activeTab === PARTY_TAB;
     return {
       sceneName: scene?.name,
-      sheets,
-      active: sheets.find(s => s.active) ?? null,
+      sheets: tabs,
+      active: onParty ? null : sheets.find(s => s.active) ?? null,
+      onParty,
+      party: onParty ? partyContext() : null,
       empty: !sheets.length,
       intro: game.i18n.localize("FASTFIGHTING.Survey.Intro")
     };
@@ -169,6 +178,17 @@ export class PlayerSurvey extends HandlebarsApplicationMixin(ApplicationV2) {
     const actor = await fromUuid(target.dataset.actorUuid);
     await setTactic(actor, `${target.dataset.motive}.kind`, target.dataset.kind);
     this.render();
+  }
+
+  /** A vote on how the party should act (the same again: taken back). Everyone's survey shows it at once. */
+  static async #onPartyVote(event, target) {
+    await castVote(target.dataset.question, target.dataset.answer);
+    this.render();
+  }
+
+  /** Someone voted: the Party tab shows it. */
+  syncParty() {
+    if ( this.rendered && this.activeTab === PARTY_TAB ) this.render();
   }
 
   static #onTab(event, target) {

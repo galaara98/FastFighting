@@ -6697,6 +6697,356 @@
    "commit": null,
    "hash": "6b8de05cb48f"
   },
+  "core:FASTFIGHTING.Party.care.guard": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Party.care.guard",
+   "area": "core/Party",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "f4450dfac829"
+  },
+  "core:FASTFIGHTING.Party.care.heal": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Party.care.heal",
+   "area": "core/Party",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "457bb0ea0b8e"
+  },
+  "core:FASTFIGHTING.Party.care.Hint": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Party.care.Hint",
+   "area": "core/Party",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "1072a0334c3a"
+  },
+  "core:FASTFIGHTING.Party.care.Label": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Party.care.Label",
+   "area": "core/Party",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "9f2cbefe2df0"
+  },
+  "core:FASTFIGHTING.Party.care.self": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Party.care.self",
+   "area": "core/Party",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "02d82c30a33c"
+  },
+  "core:FASTFIGHTING.Party.fallen.finish": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Party.fallen.finish",
+   "area": "core/Party",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "3d80b4bc84d2"
+  },
+  "core:FASTFIGHTING.Party.fallen.Hint": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Party.fallen.Hint",
+   "area": "core/Party",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "61543146d007"
+  },
+  "core:FASTFIGHTING.Party.fallen.Label": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Party.fallen.Label",
+   "area": "core/Party",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "727aacda31fd"
+  },
+  "core:FASTFIGHTING.Party.fallen.leave": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Party.fallen.leave",
+   "area": "core/Party",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "c32b3ecddda1"
+  },
+  "core:FASTFIGHTING.Party.fallen.spare": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Party.fallen.spare",
+   "area": "core/Party",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "044174c8cb5c"
+  },
+  "core:FASTFIGHTING.Party.GmView": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Party.GmView",
+   "area": "core/Party",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "6027ce47be0a"
+  },
+  "core:FASTFIGHTING.Party.Intro": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Party.Intro",
+   "area": "core/Party",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "658078ecd7c9"
+  },
+  "core:FASTFIGHTING.Party.resources.balanced": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Party.resources.balanced",
+   "area": "core/Party",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "8c10c680b14c"
+  },
+  "core:FASTFIGHTING.Party.resources.conserve": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Party.resources.conserve",
+   "area": "core/Party",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "b5bc644f73b9"
+  },
+  "core:FASTFIGHTING.Party.resources.Hint": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Party.resources.Hint",
+   "area": "core/Party",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "c9b60d9888af"
+  },
+  "core:FASTFIGHTING.Party.resources.Label": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Party.resources.Label",
+   "area": "core/Party",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "9d1868711298"
+  },
+  "core:FASTFIGHTING.Party.resources.nova": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Party.resources.nova",
+   "area": "core/Party",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "8d307d38b122"
+  },
+  "core:FASTFIGHTING.Party.retreat.Hint": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Party.retreat.Hint",
+   "area": "core/Party",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "0b8c34715af0"
+  },
+  "core:FASTFIGHTING.Party.retreat.hurt": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Party.retreat.hurt",
+   "area": "core/Party",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "429f3451208c"
+  },
+  "core:FASTFIGHTING.Party.retreat.Label": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Party.retreat.Label",
+   "area": "core/Party",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "17026a06c598"
+  },
+  "core:FASTFIGHTING.Party.retreat.losing": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Party.retreat.losing",
+   "area": "core/Party",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "d3a9c7d38f14"
+  },
+  "core:FASTFIGHTING.Party.retreat.never": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Party.retreat.never",
+   "area": "core/Party",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "9bc21984fa5a"
+  },
+  "core:FASTFIGHTING.Party.Tab": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Party.Tab",
+   "area": "core/Party",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "dfa82f21b3f3"
+  },
+  "core:FASTFIGHTING.Party.talk.first": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Party.talk.first",
+   "area": "core/Party",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "9349bcb886e7"
+  },
+  "core:FASTFIGHTING.Party.talk.Hint": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Party.talk.Hint",
+   "area": "core/Party",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "f84fd282a72e"
+  },
+  "core:FASTFIGHTING.Party.talk.Label": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Party.talk.Label",
+   "area": "core/Party",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "22d3c73a7ef4"
+  },
+  "core:FASTFIGHTING.Party.talk.never": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Party.talk.never",
+   "area": "core/Party",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "3015f7ae4a52"
+  },
+  "core:FASTFIGHTING.Party.talk.opportune": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Party.talk.opportune",
+   "area": "core/Party",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "c3fc54f85709"
+  },
+  "core:FASTFIGHTING.Party.target.casters": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Party.target.casters",
+   "area": "core/Party",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "41fcc66dc1e4"
+  },
+  "core:FASTFIGHTING.Party.target.dangerous": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Party.target.dangerous",
+   "area": "core/Party",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "910503018338"
+  },
+  "core:FASTFIGHTING.Party.target.Hint": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Party.target.Hint",
+   "area": "core/Party",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "7624719506fb"
+  },
+  "core:FASTFIGHTING.Party.target.Label": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Party.target.Label",
+   "area": "core/Party",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "e7595a4b90d1"
+  },
+  "core:FASTFIGHTING.Party.target.leader": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Party.target.leader",
+   "area": "core/Party",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "df7ea77717ba"
+  },
+  "core:FASTFIGHTING.Party.target.nearest": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Party.target.nearest",
+   "area": "core/Party",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "3908262651b3"
+  },
+  "core:FASTFIGHTING.Party.target.weakest": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Party.target.weakest",
+   "area": "core/Party",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "016ab63dda40"
+  },
   "core:FASTFIGHTING.Planner.ActionFailed": {
    "repo": "core",
    "file": "languages/en.json",
@@ -9553,7 +9903,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "0e486ca46152"
+   "hash": "0e486ca46152",
+   "changed": true
   },
   "core:FASTFIGHTING.Settings.leaderInfluence.Name": {
    "repo": "core",
@@ -9704,6 +10055,26 @@
    "date": null,
    "commit": null,
    "hash": "68d98422fe2a"
+  },
+  "core:FASTFIGHTING.Settings.partySway.Hint": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Settings.partySway.Hint",
+   "area": "core/Settings",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "eb6701619d05"
+  },
+  "core:FASTFIGHTING.Settings.partySway.Name": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Settings.partySway.Name",
+   "area": "core/Settings",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "bdb157f68415"
   },
   "core:FASTFIGHTING.Settings.pcAllyDying.Hint": {
    "repo": "core",

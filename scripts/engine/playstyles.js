@@ -266,11 +266,15 @@ export function sampleRunTactics(spec, rng) {
       }
     }
   }
-  if ( !spec.stayTrue || !spec.tacticsCalc ) return tactics;
   const out = {};
   for ( const [key, value] of Object.entries(tactics) ) {
-    const calc = spec.tacticsCalc[key];
-    out[key] = (calc === undefined || calc === value || rng.next() < STAY_TRUE_CAP) ? value : calc;
+    const calc = spec.tacticsCalc?.[key];
+    out[key] = (!spec.stayTrue || calc === undefined || calc === value || rng.next() < STAY_TRUE_CAP) ? value : calc;
+  }
+  // The player party's say (its players' votes): in that share of fights, its answer to a question the character left
+  // to itself.
+  if ( spec.partyTactics && spec.partySway > 0 ) {
+    for ( const [key, value] of Object.entries(spec.partyTactics) ) if ( rng.next() < spec.partySway ) out[key] = value;
   }
   return out;
 }

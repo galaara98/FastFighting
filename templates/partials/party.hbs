@@ -1,0 +1,16 @@
+<div class="ff-party">
+  <p class="ff-hint">{{localize "FASTFIGHTING.Party.Intro"}}</p>
+  {{#each questions}}
+  <div class="ff-party-q">
+    <div class="ff-q-label">{{label}} <i class="fa-solid fa-circle-question" data-tooltip="{{hint}}"></i></div>
+    <div class="ff-pills">
+      {{#each options}}
+      <button type="button" class="ff-pill {{#if mine}}active{{/if}} {{#if winning}}is-winning{{/if}}" data-action="partyVote" data-question="{{../key}}" data-answer="{{value}}" aria-pressed="{{#if mine}}true{{else}}false{{/if}}" {{#unless @root.party.canVote}}disabled{{/unless}}>
+        {{label}}{{#each voters}}<span class="ff-voter" style="background: {{color}}" data-tooltip="{{name}}">{{initial}}</span>{{/each}}
+      </button>
+      {{/each}}
+    </div>
+  </div>
+  {{/each}}
+  {{#unless canVote}}<p class="ff-hint"><i class="fa-solid fa-eye"></i> {{localize "FASTFIGHTING.Party.GmView"}}</p>{{/unless}}
+</div>

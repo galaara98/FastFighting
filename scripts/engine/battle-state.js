@@ -130,7 +130,9 @@ export function prepareBattle(spec, rules) {
       leaderId: options.leadership ? (side.leaderId ?? null) : null,
       leadership: leadershipOf(side.leadership),
       healAggro: side.healAggro ?? "balanced",
-      morale: options.morale && side.morale !== false
+      morale: options.morale && side.morale !== false,
+      // (The player party's wishes, its players' votes: desire.js partyWants.)
+      party: side.party && Number(side.party.sway) > 0 ? side.party : null
     };
   }
   // Chains of command, by group: the boss or the leader first, then the lieutenants (at most two). A side with no chain

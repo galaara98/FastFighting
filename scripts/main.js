@@ -181,6 +181,10 @@ const refreshPlanner = foundry.utils.debounce(() => {
 }, 150);
 Hooks.on("updateUser", (user, changes) => {
   if ( game.user.isGM && (foundry.utils.hasProperty(changes, `flags.${MODULE_ID}`) || "active" in changes) ) refreshPlanner();
+  // (A player voted on the party's wishes: every open survey's Party tab shows it.)
+  if ( foundry.utils.hasProperty(changes, `flags.${MODULE_ID}.party`) || foundry.utils.hasProperty(changes, `flags.${MODULE_ID}.-=party`) ) {
+    foundry.applications.instances.get("fast-fighting-survey")?.syncParty?.();
+  }
 });
 Hooks.on("userConnected", () => {
   if ( game.user.isGM ) refreshPlanner();

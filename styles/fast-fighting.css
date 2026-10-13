@@ -412,3 +412,14 @@
 .ff-hidden-row { display: flex; flex-wrap: wrap; gap: 6px 14px; color: var(--ff-accent); }
 .ff-hidden-score { white-space: nowrap; cursor: help; }
 .ff-hidden-band { opacity: 0.8; font-size: var(--font-size-12, 12px); }
+
+/* The survey's Party tab: every player's vote, a dot in the player's color with its initial. */
+.ff-party-q { margin: 8px 0 12px; }
+.ff-voter {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 16px; height: 16px; margin-left: 4px; border-radius: 50%;
+  font-size: 10px; font-weight: 700; line-height: 1; color: #fff;
+  text-shadow: 0 0 2px rgba(0, 0, 0, 0.8); box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
+}
+.ff-pill.is-winning { box-shadow: 0 0 0 2px var(--ff-accent); }
+.ff-sheet-tab.ff-party-tab i { margin-right: 4px; }

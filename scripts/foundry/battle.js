@@ -10,7 +10,8 @@ import { proposeGroups } from "../engine/groups.js";
 import { TACTIC_KEYS, TACTIC_WISHES } from "../engine/tactics.js";
 import { resetPathGrid } from "./pathing.js";
 import { tokenSetup, sceneEncounter } from "./persistence.js";
-import { tacticsFor, isPlayerControlled, statedDesires } from "./tactics.js";
+import { tacticsFor, isPlayerControlled, statedDesires, getStoredTactics } from "./tactics.js";
+import { partyWishes, voters, PARTY_TACTICS } from "./party.js";
 import { validMotives, NO_CATALOG, effectiveMotives } from "./motives.js";
 import { rankForCommand, autoLieutenants, partyRoles } from "./command-pick.js";
 import { setting } from "../settings.js";
@@ -347,6 +348,33 @@ function applyCharacterTactics(spec, entry) {
   }
 }
 
+/** The player party's wishes for this fight (party.js): its players' votes, majority rules, at the world's Party's sway. */
+function partyFor(entries) {
+  const players = voters();
+  const inFight = players.filter(u => entries.some(e => e.token.actor?.testUserPermission?.(u, "OWNER")));
+  return partyWishes(inFight.length ? inFight : players, setting("partySway"));
+}
+
+/**
+ * The party's say in how a member of the friendly side acts: its answers to the questions the member left to "Let this
+ * character decide" (talking, resources, when to pull out), drawn in that share of fights (playstyles.js
+ * sampleRunTactics); and, sparing the fallen, as strong a wish to.
+ */
+function applyPartyWishes(spec, entry, party) {
+  const stored = entry.token.actor ? getStoredTactics(entry.token.actor) : {};
+  const open = k => [undefined, null, "", "auto"].includes(stored[k]);
+  const picks = {};
+  for ( const [question, keys] of Object.entries(PARTY_TACTICS) ) {
+    if ( !party[question] ) continue;
+    for ( const [key, map] of Object.entries(keys) ) if ( open(key) && map[party[question]] ) picks[key] = map[party[question]];
+  }
+  if ( Object.keys(picks).length && spec.tactics ) {
+    spec.partyTactics = picks;
+    spec.partySway = party.sway;
+  }
+  if ( party.fallen === "spare" ) spec.avoidKilling = Math.max(Number(spec.avoidKilling) || 0, party.sway);
+}
+
 /** Leader playstyles put a character forward as their side's leader. */
 /** The roles a token can hold in its group's chain of command (the planner's pills): boss or leader, then two lieutenants. */
 export const ROLES = Object.freeze(["boss", "leader", "lt1", "lt2"]);
@@ -510,6 +538,8 @@ export function buildBattleSpec(roster, setup, { approach = null, exclude = new 
   const sideDefaults = setting("sideDefaults");
   proposeNeutralGroups(roster, setup, { missingOnly: true }); // (a neutral put on the map since the planner opened)
   const resolved = resolveAllegiances(roster, setup);
+  // The player party's wishes: the votes of the players with a character on the friendly side (everyone's, if none).
+  const party = partyFor(roster.filter(e => resolved[e.token.id] === SIDES.FRIENDLY && !exclude.has(e.token.id)));
   const leans = resolveLeans(roster, setup);
   const hidden = new Set(roster.filter(e => e.token.document?.hidden).map(e => e.token.id));
   const combatants = [];
@@ -525,6 +555,7 @@ export function buildBattleSpec(roster, setup, { approach = null, exclude = new 
     if ( side === NEUTRAL_PARTY ) spec.group = neutralTeamOf(e, setup) ?? undefined; // its friend group
     spec.traits = fudgedTraits(e.spec, ts.fudge);
     applyCharacterTactics(spec, e);
+    if ( side === SIDES.FRIENDLY && party ) applyPartyWishes(spec, e, party);
     // (A player's character wants nothing of a token hidden from it: the survey never offers one, and a flag written by
     // hand can't name one either.)
     if ( e.token.actor?.hasPlayerOwner ) spec.desires = (spec.desires ?? []).filter(d => !hidden.has(d.targetId));
@@ -561,7 +592,8 @@ export function buildBattleSpec(roster, setup, { approach = null, exclude = new 
       leaderId: head?.id ?? null,
       leadership: head?.leadership ?? {},
       healAggro: s.healAggro ?? "balanced",
-      morale: s.morale !== false
+      morale: s.morale !== false,
+      ...(side === SIDES.FRIENDLY && party ? { party } : {})
     };
   }
 
