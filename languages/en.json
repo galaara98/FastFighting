@@ -512,30 +512,15 @@
       "Compute": "Compute swing factors"
     },
     "Sample": {
-      "partyWins": "A party victory",
-      "partyLoses": "A party defeat",
-      "pcDies": "A PC dies",
-      "closeCall": "A close call",
       "Outcome": {
         "stalemate": "Stalemate",
         "none": "No one standing"
       },
-      "Show": "Show",
-      "Roll": "Roll another",
       "Result": "Outcome",
       "Rounds": "rounds",
       "Unchanged": "No change",
-      "NotFound": "No simulated fight matched that outcome. It may be very unlikely.",
-      "any": "A fair draw",
-      "typical": "The most typical fight",
-      "How": {
-        "drawn": "Fair draw",
-        "typical": "Most typical",
-        "chosen": "Chosen by filter",
-        "another": "Another draw"
-      },
-      "Preview": "Preview",
-      "PreviewHint": "Preview only: Make it So commits the drawn fight."
+      "Typical": "Most typical fight",
+      "TypicalHint": "A sample: the simulation's most common outcome. Make it So rolls a fight of its own."
     },
     "MakeItSo": {
       "Title": "Make it So",
@@ -550,7 +535,7 @@
       "UndoConfirm": "Restore the tokens to how they were before the last Make it So on this scene?",
       "Undone": "Make it So was undone.",
       "Moves": "Moves {distance}",
-      "Hint": "Commit the drawn fight: its story, token positions and outcomes. Undo reverses it.",
+      "Hint": "Rolls one of the simulated fights and commits it: its story, token positions and outcomes. Undo reverses it.",
       "Gives": "Gives up {what} to {name}",
       "Receives": "Receives {what} from {name}",
       "Kept": "Agreed to give up {what}, but kept it (luck {luck})",
@@ -558,7 +543,6 @@
       "Stolen": "{what} stolen by {name}",
       "Steals": "Steals {what} from {name}",
       "Doors": "Doors: {n} opened ({broken} of them broken or forced)",
-      "BackToDrawn": "Back to the fight the simulation drew: that's the one Make it So commits.",
       "Outcome": {
         "Hp": "{HP} {from} → {to}",
         "Stamina": "{SP} {from} → {to}",

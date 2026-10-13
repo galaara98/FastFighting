@@ -1,8 +1,8 @@
 /**
  * The planner's last runs, kept in the GM's own browser (never in the world, where players could read the odds): for
- * each plan (an encounter's, a scene's), the results of its last run, the fight drawn from them, and a signature of
- * the battle they were for. Opening the planner on a battle that hasn't changed since (the same creatures, sheets,
- * answers, positions, party wishes and plan) shows them again instead of nothing.
+ * each plan (an encounter's, a scene's), the results of its last run and a signature of the battle they were for.
+ * Opening the planner on a battle that hasn't changed since (the same creatures, sheets, answers, positions, party
+ * wishes and plan) shows them again instead of nothing.
  */
 import { MODULE_ID } from "../constants.js";
 
@@ -32,15 +32,14 @@ function read(storage) {
 }
 
 /**
- * Keep a plan's run: its results, the seed of the fight drawn from them, and the battle's signature.
+ * Keep a plan's run: its results and the battle's signature.
  * @param {string} holder      the plan's holder (its encounter's or scene's uuid)
  * @param {object} spec        the battle that was simulated
  * @param {object} results     the run's results
- * @param {number|null} drawn  the drawn fight's seed
  */
-export function rememberRun(holder, spec, results, drawn, storage = globalThis.localStorage) {
+export function rememberRun(holder, spec, results, storage = globalThis.localStorage) {
   if ( !holder || !results ) return;
-  const entry = { holder, sig: battleSignature(spec), results, drawn: drawn ?? null, at: Date.now() };
+  const entry = { holder, sig: battleSignature(spec), results, at: Date.now() };
   const list = [entry, ...read(storage).filter(e => e.holder !== holder)].slice(0, KEEP_RUNS);
   try {
     storage?.setItem(KEY, JSON.stringify(list));
@@ -50,7 +49,7 @@ export function rememberRun(holder, spec, results, drawn, storage = globalThis.l
   }
 }
 
-/** A plan's last run, if it was for this very battle: {results, drawn, at}; else null. */
+/** A plan's last run, if it was for this very battle: {results, at}; else null. */
 export function recallRun(holder, spec, storage = globalThis.localStorage) {
   const entry = read(storage).find(e => e.holder === holder);
   return entry && entry.sig === battleSignature(spec) && entry.results ? entry : null;

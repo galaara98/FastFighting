@@ -5877,7 +5877,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "479682525560"
+   "hash": "479682525560",
+   "gone": "2026-10-13"
   },
   "core:FASTFIGHTING.MakeItSo.Button": {
    "repo": "core",
@@ -9630,7 +9631,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "9d32dc1dff63"
+   "hash": "9d32dc1dff63",
+   "gone": "2026-10-13"
   },
   "core:FASTFIGHTING.Sample.closeCall": {
    "repo": "core",
@@ -9640,7 +9642,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "efd70d89117f"
+   "hash": "efd70d89117f",
+   "gone": "2026-10-13"
   },
   "core:FASTFIGHTING.Sample.How.another": {
    "repo": "core",
@@ -9650,7 +9653,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "caede0a7c6a8"
+   "hash": "caede0a7c6a8",
+   "gone": "2026-10-13"
   },
   "core:FASTFIGHTING.Sample.How.chosen": {
    "repo": "core",
@@ -9660,7 +9664,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "ef9d0468c827"
+   "hash": "ef9d0468c827",
+   "gone": "2026-10-13"
   },
   "core:FASTFIGHTING.Sample.How.drawn": {
    "repo": "core",
@@ -9670,7 +9675,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "1633ebe3e31e"
+   "hash": "1633ebe3e31e",
+   "gone": "2026-10-13"
   },
   "core:FASTFIGHTING.Sample.How.typical": {
    "repo": "core",
@@ -9680,7 +9686,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "f74872253b64"
+   "hash": "f74872253b64",
+   "gone": "2026-10-13"
   },
   "core:FASTFIGHTING.Sample.NotFound": {
    "repo": "core",
@@ -9690,7 +9697,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "12562785de79"
+   "hash": "12562785de79",
+   "gone": "2026-10-13"
   },
   "core:FASTFIGHTING.Sample.Outcome.none": {
    "repo": "core",
@@ -9720,7 +9728,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "41fbd8a65e83"
+   "hash": "41fbd8a65e83",
+   "gone": "2026-10-13"
   },
   "core:FASTFIGHTING.Sample.partyWins": {
    "repo": "core",
@@ -9730,7 +9739,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "6f112f7c9e69"
+   "hash": "6f112f7c9e69",
+   "gone": "2026-10-13"
   },
   "core:FASTFIGHTING.Sample.pcDies": {
    "repo": "core",
@@ -9740,7 +9750,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "f22b31729646"
+   "hash": "f22b31729646",
+   "gone": "2026-10-13"
   },
   "core:FASTFIGHTING.Sample.Preview": {
    "repo": "core",
@@ -9750,7 +9761,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "324b134f57c7"
+   "hash": "324b134f57c7",
+   "gone": "2026-10-13"
   },
   "core:FASTFIGHTING.Sample.PreviewHint": {
    "repo": "core",
@@ -9761,7 +9773,8 @@
    "date": null,
    "commit": null,
    "hash": "7812b0c6936f",
-   "changed": true
+   "changed": true,
+   "gone": "2026-10-13"
   },
   "core:FASTFIGHTING.Sample.Result": {
    "repo": "core",
@@ -9781,7 +9794,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "3114a5ee3afc"
+   "hash": "3114a5ee3afc",
+   "gone": "2026-10-13"
   },
   "core:FASTFIGHTING.Sample.Round": {
    "repo": "core",
@@ -9812,7 +9826,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "0df6f1cad36c"
+   "hash": "0df6f1cad36c",
+   "gone": "2026-10-13"
   },
   "core:FASTFIGHTING.Sample.Start": {
    "repo": "core",
@@ -9833,7 +9848,28 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "7a78911dcb1e"
+   "hash": "7a78911dcb1e",
+   "gone": "2026-10-13"
+  },
+  "core:FASTFIGHTING.Sample.Typical": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Sample.Typical",
+   "area": "core/Sample",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "3dd78423a797"
+  },
+  "core:FASTFIGHTING.Sample.TypicalHint": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Sample.TypicalHint",
+   "area": "core/Sample",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "fd3a2532079f"
   },
   "core:FASTFIGHTING.Sample.Unchanged": {
    "repo": "core",

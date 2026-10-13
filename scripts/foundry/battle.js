@@ -746,13 +746,19 @@ export function invalidateApproach() {
 }
 
 /**
- * Draw one of the simulated fights at random: the fair choice for Make it So. Every fight in the batch is
- * equally likely to be picked, so outcomes come up as often as the odds say.
+ * A fight rolled from the simulated ones, as Make it So commits it: any of them, as likely as it came up, so a 70% win
+ * is a loss three times in ten.
  */
 export function drawFight(spec, results) {
   if ( !results?.runs ) return null;
   const seed = deriveSeed(results.seed, Math.floor(Math.random() * results.runs));
-  return { seed, result: replay(spec, getAdapter().rules, seed), how: "drawn" };
+  return { seed, result: replay(spec, getAdapter().rules, seed) };
+}
+
+/** The sample the planner shows: the simulation's most typical fight (its most common outcome, of the usual length). */
+export function typicalFight(spec, results) {
+  const seed = results?.representativeSeed;
+  return seed === null || seed === undefined ? null : { seed, result: replay(spec, getAdapter().rules, seed) };
 }
 
 /** Sight and sound from each bystander to each starting combatant (and between bystanders). */

@@ -1,10 +1,7 @@
 /**
  * Accumulates per-run summaries into batch statistics.
  */
-import { STATUS, NEUTRAL_PARTY, SIDES } from "../constants.js";
-
-/** The most seeds kept of each kind of fight the planner can show (a party win, a PC's death...). */
-const PICKS = 64;
+import { STATUS, NEUTRAL_PARTY } from "../constants.js";
 
 function percentile(sorted, p) {
   if ( !sorted.length ) return 0;
@@ -41,8 +38,7 @@ export function createAggregator(prep) {
       if ( result.outcome === "stalemate" ) stalemate += 1;
       else if ( result.outcome === "none" ) none += 1;
       else for ( const w of result.winners ) wins[w] += 1;
-      const sample = { seed, rounds: result.rounds, key: result.outcome === "victory" ? result.winners.join("+") : result.outcome };
-      samples.push(sample);
+      samples.push({ seed, rounds: result.rounds, key: result.outcome === "victory" ? result.winners.join("+") : result.outcome });
 
       let pcDead = false;
       let anySwayed = false;
@@ -82,9 +78,6 @@ export function createAggregator(prep) {
       if ( result.peaceful ) peacefulRuns += 1;
       if ( result.collapsed ) collapsedRuns += 1;
       if ( pcDowned ) anyPcDowned += 1;
-      sample.won = result.outcome === "victory" && result.winners.includes(SIDES.FRIENDLY);
-      sample.pcDead = pcDead;
-      sample.pcDowned = pcDowned;
     },
 
     finish() {
@@ -100,14 +93,6 @@ export function createAggregator(prep) {
       const modal = Object.values(byKey).sort((a, b) => b.length - a.length)[0] ?? [];
       modal.sort((a, b) => a.rounds - b.rounds);
       const representative = modal[Math.floor(modal.length / 2)] ?? null;
-      // Seeds of each kind of fight the planner can be asked to show, to replay one rather than search for one.
-      const pick = test => samples.filter(test).slice(0, PICKS).map(s => s.seed);
-      const picks = {
-        partyWins: pick(s => s.won),
-        partyLoses: pick(s => !s.won),
-        pcDies: pick(s => s.pcDead),
-        closeCall: pick(s => s.won && s.pcDowned)
-      };
 
       const combatants = {};
       for ( const c of prep.combatants ) {
@@ -157,8 +142,7 @@ export function createAggregator(prep) {
           histogram
         },
         combatants,
-        representativeSeed: representative?.seed ?? null,
-        picks
+        representativeSeed: representative?.seed ?? null
       };
     }
   };

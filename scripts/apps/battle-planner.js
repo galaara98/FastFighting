@@ -14,7 +14,7 @@ import {
   requestSurveys, requestCharacterSurvey, requestGmSurvey, SURVEY_STATUS, playstyleSignature, tacticsFor
 } from "../foundry/tactics.js";
 import {
-  gatherRoster, chosenSide, groupOf, proposeNeutralGroups, resolveAllegiances, simulate, swingFactors, replay, drawFight,
+  gatherRoster, chosenSide, groupOf, proposeNeutralGroups, resolveAllegiances, simulate, swingFactors, drawFight, typicalFight,
   approachFor, commandChains, commandGroup, seedCommand, clearRole, ROLES, sideName, hostileGroupsIn, secretTeam, SECRET_TEAMS, LEANS, predictionSeconds,
   battleFor
 } from "../foundry/battle.js";
@@ -35,7 +35,6 @@ const TACTICS_PARTIAL = `modules/${MODULE_ID}/templates/partials/tactics.hbs`;
 const SIDE_ORDER = [SIDES.FRIENDLY, SIDES.HOSTILE, SIDES.NEUTRAL, SIDES.SECRET];
 const SIDE_ICONS = { friendly: "fa-shield-heart", hostile: "fa-skull", neutral: "fa-scale-balanced", secret: "fa-user-secret" };
 const RESULT_TABS = ["overview", "combatants", "swing", "resources", "sample"];
-const SAMPLE_FILTERS = ["any", "typical", "partyWins", "partyLoses", "pcDies", "closeCall"];
 const STAT_FUDGES = [["ac", 1], ["hp", 5], ["attack", 1], ["damage", 1]];
 
 const loc = key => localize(key);
@@ -90,7 +89,6 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       toggleRow: BattlePlanner.#onToggleRow,
       panToken: BattlePlanner.#onPanToken,
       swing: BattlePlanner.#onSwing,
-      rollSample: BattlePlanner.#onRollSample,
       makeItSo: BattlePlanner.#onMakeItSo,
       undo: BattlePlanner.#onUndo,
       preparePlayers: BattlePlanner.#onPreparePlayers,
@@ -133,8 +131,6 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     this.spec = null;
     this.swing = null;
     this.sample = null;
-    this.drawn = null;
-    this.sampleFilter = "any";
     this.running = false;
     this.progress = 0;
     this.stale = false;
@@ -186,7 +182,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     this.spec = null;
     this.swing = null;
     this.sample = null;
-    this.drawn = null;
+    this.rolled = null;
     this.stale = false;
     this.restoredAt = null;
     this.storyCache.clear();
@@ -205,7 +201,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /**
    * The last run's results again, when nothing about this battle has changed since it ran (the same creatures, sheets,
-   * answers, positions, party wishes and plan), with the fight it drew for Make it So.
+   * answers, positions, party wishes and plan), with its most typical fight to show.
    */
   #recallRun() {
     try {
@@ -215,8 +211,8 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       this.spec = spec;
       this.results = saved.results;
       if ( approach ) this.approach = approach;
-      this.drawn = Number.isFinite(saved.drawn) ? { seed: saved.drawn, result: replay(spec, getAdapter().rules, saved.drawn), how: "drawn" } : drawFight(spec, saved.results);
-      this.sample = this.drawn;
+      this.sample = typicalFight(spec, saved.results);
+      this.rolled = null;
       this.restoredAt = saved.at;
       this.stale = false;
     } catch ( err ) {
@@ -556,8 +552,6 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
         argument: this.setup.options.opening === OPENING.ARGUMENT,
         foes, atRisk, combatants, resources, swing, sample
       },
-      sampleFilters: Object.fromEntries(SAMPLE_FILTERS.map(k => [k, `FASTFIGHTING.Sample.${k}`])),
-      sampleFilter: this.sampleFilter,
       storyStyles: Object.fromEntries(STORY_STYLES.map(k => [k, `FASTFIGHTING.Story.Style.${k}`])),
       storyStyle: this.storyStyle,
       storyOdds: setting("storyOdds")
@@ -565,17 +559,17 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /** The story of the current sample fight in the chosen style (the same text Make it So posts). */
-  storyFor(style = this.storyStyle) {
-    if ( !this.sample || !this.storyTables ) return null;
+  storyFor(style = this.storyStyle, fight = this.sample) {
+    if ( !fight || !this.storyTables ) return null;
     if ( this.storyCache.tables !== this.storyTables ) {
       this.storyCache.clear();
       this.storyCache.tables = this.storyTables;
     }
-    const key = `${this.sample.seed}|${style}`;
+    const key = `${fight.seed}|${style}`;
     if ( !this.storyCache.has(key) ) {
-      this.storyCache.set(key, buildStory(this.sample.result, this.spec, style, {
+      this.storyCache.set(key, buildStory(fight.result, this.spec, style, {
         tables: this.storyTables,
-        seed: this.sample.seed,
+        seed: fight.seed,
         title: game.i18n.format("FASTFIGHTING.Story.Title", { scene: canvas.scene?.name ?? "" }),
         damageType: getAdapter()?.rules?.storyDamageType?.bind(getAdapter().rules) ?? null
       }));
@@ -588,8 +582,6 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     const rows = planMakeItSo(this.spec, result);
     return {
       seed,
-      how: this.sample.how ? loc(`FASTFIGHTING.Sample.How.${this.sample.how}`) : "",
-      preview: this.sample !== this.drawn,
       outcome: result.outcome === "victory" ? listJoin(result.winners.map(w => this.spec?.sides?.[w]?.label ?? sideName(w, this.hostileGroups))) : loc(`FASTFIGHTING.Sample.Outcome.${result.outcome}`),
       story: this.storyFor()?.html ?? "",
       totalRounds: result.rounds,
@@ -792,9 +784,6 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     } else if ( name === "storyOdds" ) {
       await game.settings.set(MODULE_ID, "storyOdds", !!value); // remembered for the next fight too
       return;
-    } else if ( name === "sampleFilter" ) {
-      this.sampleFilter = value;
-      return;
     } else {
       if ( name.startsWith("tokens.") ) tokenSetup(this.setup, name.split(".")[1]);
       foundry.utils.setProperty(this.setup, name, value === "" ? null : value);
@@ -944,7 +933,6 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     this.progress = 0;
     this.swing = null;
     this.sample = null;
-    this.drawn = null;
     this.abort = new AbortController();
     await this.render();
     try {
@@ -965,14 +953,13 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       this.approach = approach;
       this.stale = false;
       this.storyCache.clear();
-      // The fight Make it So commits is drawn at random from the simulated fights, so a 70% win is a loss
-      // three times in ten, as it should be.
-      this.sample = drawFight(spec, results);
-      this.drawn = this.sample; // the only fight Make it So will commit (until the next run)
+      // The sample shown: the most typical fight. (Make it So rolls one of its own.)
+      this.sample = typicalFight(spec, results);
+      this.rolled = null;
       this.restoredAt = null;
       if ( this.abort.signal.aborted ) ui.notifications.info("FASTFIGHTING.Planner.Stopped", { format: { n: results.runs } });
       // (Kept, to show again if the planner opens on this same battle: a run cut short isn't.)
-      else rememberRun(this.holderUuid, spec, results, this.drawn?.seed);
+      else rememberRun(this.holderUuid, spec, results);
     } catch ( err ) {
       console.error(`${MODULE_ID} | simulation failed`, err);
       ui.notifications.error("FASTFIGHTING.Planner.RunFailed", { format: { error: err.message } });
@@ -1013,52 +1000,25 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     }
   }
 
-  static async #onRollSample() {
-    if ( !this.spec || !this.results ) return;
-    try {
-      const rules = getAdapter().rules;
-      let found;
-      if ( this.sampleFilter === "any" ) {
-        found = drawFight(this.spec, this.results);
-        if ( found ) found.how = "another"; // another fair draw: to look at, not to commit
-      }
-      else if ( this.sampleFilter === "typical" ) {
-        const seed = this.results.representativeSeed;
-        found = seed === null ? null : { seed, result: replay(this.spec, rules, seed), how: "typical" };
-      } else {
-        // (One of the simulation's own fights of that kind, replayed: none among its runs, and it's too rare to show.)
-        const seeds = this.results.picks?.[this.sampleFilter] ?? [];
-        const seed = seeds.length ? seeds[Math.floor(Math.random() * seeds.length)] : null;
-        found = seed === null ? null : { seed, result: replay(this.spec, rules, seed), how: "chosen" };
-      }
-      if ( !found ) ui.notifications.info(loc("FASTFIGHTING.Sample.NotFound"));
-      else this.sample = found;
-    } catch ( err ) {
-      reportError(err);
-    }
-    this.render();
-  }
-
   static async #onMakeItSo() {
-    if ( !this.drawn || !this.spec ) return;
+    if ( !this.results || !this.spec ) return;
     if ( canvas.scene?.id !== this.sceneId ) return ui.notifications.warn(loc("FASTFIGHTING.Planner.SceneChanged"));
-    // Only the fight the simulation drew can be committed: a preview (another draw, the most typical fight, one a
-    // filter chose) is put aside, and the GM confirms the real one.
-    if ( this.sample !== this.drawn ) {
-      this.sample = this.drawn;
-      await this.render();
-      ui.notifications.info(loc("FASTFIGHTING.MakeItSo.BackToDrawn"));
-    }
     try {
-      const rows = planMakeItSo(this.spec, this.sample.result);
-      if ( !rows.some(r => r.changed) && !rows.encounter && !Object.keys(this.sample.result.doors ?? {}).length ) return ui.notifications.info(loc("FASTFIGHTING.MakeItSo.Nothing"));
-      const ok = await confirmMakeItSo(rows, this.sample.result);
+      // The sample is only a sample: the fight committed is rolled from the simulated ones, so a 70% win is a loss
+      // three times in ten, as it should be. The GM sees it in the confirmation before anything is written; rolled
+      // once a run (cancelled and asked again, it's the same fight: no rolling until it comes out better).
+      this.rolled ??= drawFight(this.spec, this.results);
+      const fight = this.rolled;
+      if ( !fight ) return;
+      const rows = planMakeItSo(this.spec, fight.result);
+      if ( !rows.some(r => r.changed) && !rows.encounter && !Object.keys(fight.result.doors ?? {}).length ) return ui.notifications.info(loc("FASTFIGHTING.MakeItSo.Nothing"));
+      const ok = await confirmMakeItSo(rows, fight.result);
       if ( !ok ) return;
       // The Statistician's account is for the GM (who can show it to the table); everyone else gets the plain one.
       const stories = this.storyStyle === "statistician"
-        ? { everyone: this.storyFor("standard"), gm: this.storyFor("statistician") }
-        : { everyone: this.storyFor() };
-      await executeMakeItSo(rows, this.sample.result, { stories, odds: setting("storyOdds") ? oddsText(this.results) : null });
+        ? { everyone: this.storyFor("standard", fight), gm: this.storyFor("statistician", fight) }
+        : { everyone: this.storyFor(this.storyStyle, fight) };
+      await executeMakeItSo(rows, fight.result, { stories, odds: setting("storyOdds") ? oddsText(this.results) : null });
       ui.notifications.info(loc("FASTFIGHTING.MakeItSo.Done"));
     } catch ( err ) {
       reportError(err);
@@ -1066,7 +1026,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     this.roster = null;
     this.results = null;
     this.sample = null;
-    this.drawn = null;
+    this.rolled = null;
     this.render();
   }
 

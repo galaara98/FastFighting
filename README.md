@@ -4,7 +4,7 @@
 > - **Programming:** I am a skilled programmer by profession, but AI was used heavily as a co-pilot.
 > - **Strings:** ALL initial strings were created by AI. An AI-made Spanish translation was used to test localization and has since been removed.
 
-A [Foundry VTT](https://foundryvtt.com) module that resolves a battle, or a tense standoff, from the encounter on the scene, fairly and quickly, so the table can move on. It simulates the encounter thousands of times, round by round, with real dice math, and shows the odds. Then it tells the story of one fight drawn at random, and **Make it So** commits that fight to the tokens.
+A [Foundry VTT](https://foundryvtt.com) module that resolves a battle, or a tense standoff, from the encounter on the scene, fairly and quickly, so the table can move on. It simulates the encounter thousands of times, round by round, with real dice math, and shows the odds. Then it tells the story of the most typical fight, and **Make it So** rolls one of the simulated fights and commits it to the tokens.
 
 - **Foundry:** v14
 - **System support comes from helper modules.** See [systems.md](systems.md):
@@ -75,7 +75,7 @@ Its side, desires, nerve and personality decide the rest: a coward may still bre
   - **Combatants:** per token, standing, down, dead, fled, surrendered, stood down and switched odds, HP left, damage, healing, and chance to fall first.
   - **Swing factors:** what moves the party's odds most.
   - **Resources:** spell slots, focus points and consumables spent.
-  - **Sample fight:** the story of a fight.
+  - **Sample fight:** the story of the most typical fight (its most common outcome, of the usual length): a sample to look at.
 
 ## Trap avoiders
 
@@ -94,7 +94,7 @@ A taunt makes a foe want to go for the taunter: a strong desire (see **Desires**
 
 ## A fair ruling
 
-**Make it So commits the fight the simulation drew at random.** A 70% win is a loss three times in ten, as it should be, and the GM can't pick a better one: another draw, the most typical fight, or one a filter chose (a party victory, a defeat, a PC dies, a close call) are previews only, marked so. Make it So always goes back to the drawn fight; for a new one, run the simulation again. Undo still reverses a committed fight.
+**Make it So rolls a fight of its own.** The Sample fight tab shows the most typical fight, only a sample; Make it So rolls one of the simulated fights, as likely as each came up, so a 70% win is a loss three times in ten, as it should be. The GM sees what it will do in the confirmation before anything is written, and Undo still reverses a committed fight.
 
 **After the fight.** When the last foe falls, the survivors tend their dying, before the dying make their next roll. They use free help first (first aid, medicine feats), then spells and potions. Anyone left untended lives or dies by the system's rules for dying, so nobody is committed half-dead.
 
