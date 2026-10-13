@@ -1,8 +1,10 @@
 /**
  * The player's pre-battle survey: one spreadsheet-style tab per token they control on the battle map, and per character
- * of theirs with no token there (charactersForUser). Opened by the GM's "Prepare Players", or by the player any time
- * ("My tactics" in the Encounters tab). Answers save as they change and sync live between everyone who controls the
- * same token or character.
+ * of theirs with no token there (charactersForUser), and the Party tab last. Opened by the GM's "Prepare Players" (on
+ * the Party tab), by the GM's question about one character (on that character, the Party tab only to look at), or by
+ * the player any time ("My tactics" in the Encounters tab). A GM can open one character's survey for every GM, to
+ * answer for a player who's away (that character only). Answers save as they change and sync live between everyone
+ * who controls the same token or character.
  */
 import { MODULE_ID } from "../constants.js";
 import { getAdapter, characterSpec } from "../api.js";
@@ -55,15 +57,25 @@ export class PlayerSurvey extends HandlebarsApplicationMixin(ApplicationV2) {
     }
   };
 
-  /** Open (or focus) the survey for a scene. */
-  static async open({ sceneId, requestId } = {}) {
+  /**
+   * Open (or focus) the survey for a scene.
+   * @param {object} [options]
+   * @param {string} [options.start]          the tab it opens on: "party", or a character's key
+   * @param {boolean} [options.partyReadOnly] the Party tab to look at, not vote on (the GM asked about one character)
+   * @param {string} [options.only]           that character alone (a GM's survey for it)
+   */
+  static async open({ sceneId, requestId, start, partyReadOnly, only } = {}) {
     let app = foundry.applications.instances.get("fast-fighting-survey");
     if ( !app ) app = new PlayerSurvey();
     app.sceneId = sceneId ?? app.sceneId ?? canvas.scene?.id;
-    // (Opened by the player itself while the GM's request is still open: that request.)
+    // (Opened by the player itself while the GM's request is still open: that request, as the GM asked it.)
     const pending = !game.user.isGM && !requestId ? game.user.getFlag(MODULE_ID, "survey") : null;
-    const asked = pending && [SURVEY_STATUS.REQUESTED, SURVEY_STATUS.ENTERING].includes(pending.status) && pending.sceneId === app.sceneId ? pending.requestId : null;
-    app.requestId = requestId ?? asked ?? app.requestId ?? null;
+    const open = pending && [SURVEY_STATUS.REQUESTED, SURVEY_STATUS.ENTERING].includes(pending.status) && pending.sceneId === app.sceneId ? pending : null;
+    app.requestId = requestId ?? open?.requestId ?? app.requestId ?? null;
+    app.partyReadOnly = !!(partyReadOnly ?? open?.partyReadOnly);
+    app.only = game.user.isGM ? only ?? null : null;
+    const first = start ?? open?.start;
+    if ( first ) app.activeTab = first;
     app.finished = false;
     app.specs.clear(); // re-read characters each time the survey opens
     await app.render({ force: true });
@@ -77,6 +89,8 @@ export class PlayerSurvey extends HandlebarsApplicationMixin(ApplicationV2) {
     this.sceneId = null;
     this.requestId = null;
     this.activeTab = null;
+    this.partyReadOnly = false;
+    this.only = null;
     this.finished = false;
     this.specs = new Map();
   }
@@ -88,7 +102,7 @@ export class PlayerSurvey extends HandlebarsApplicationMixin(ApplicationV2) {
   async _prepareContext() {
     const adapter = getAdapter();
     const scene = this.scene;
-    const entries = charactersForUser(scene, game.user);
+    const entries = charactersForUser(scene, game.user).filter(e => !this.only || e.key === this.only);
     this.entries = new Map(entries.map(e => [e.key, e]));
     const targets = nameable(scene);
     const sheets = [];
@@ -121,22 +135,19 @@ export class PlayerSurvey extends HandlebarsApplicationMixin(ApplicationV2) {
         tactics: questionsContext(spec, e.actor, e.key, { targets })
       });
     }
-    // The last tab: the party's wishes, every player's vote on them (one vote per player, not per character).
-    const partyTab = { id: PARTY_TAB, name: loc("FASTFIGHTING.Party.Tab"), icon: "fa-solid fa-people-group", party: true };
-    if ( this.activeTab !== PARTY_TAB && !sheets.some(s => s.id === this.activeTab) ) this.activeTab = sheets[0]?.id ?? PARTY_TAB;
-    const tabs = [...sheets, partyTab];
+    // The last tab: the party's wishes, every player's vote on them (one vote per player, not per character). Not in a
+    // GM's survey for one character.
+    const partyTab = this.only ? null : { id: PARTY_TAB, name: loc("FASTFIGHTING.Party.Tab"), icon: "fa-solid fa-people-group", party: true };
+    if ( !(partyTab && this.activeTab === PARTY_TAB) && !sheets.some(s => s.id === this.activeTab) ) this.activeTab = sheets[0]?.id ?? (partyTab ? PARTY_TAB : null);
+    const tabs = partyTab ? [...sheets, partyTab] : sheets;
     for ( const s of tabs ) s.active = s.id === this.activeTab;
-    const onParty = this.activeTab === PARTY_TAB;
-    // (A player confirms only once it has looked at the Party tab: ever, not each time.)
-    const mustSeeParty = !game.user.isGM && !onParty && !game.user.getFlag(MODULE_ID, "partySeen");
-    if ( mustSeeParty ) partyTab.attention = true;
+    const onParty = !!partyTab && this.activeTab === PARTY_TAB;
     return {
-      mustSeeParty,
       sceneName: scene?.name,
       sheets: tabs,
       active: onParty ? null : sheets.find(s => s.active) ?? null,
       onParty,
-      party: onParty ? partyContext() : null,
+      party: onParty ? partyContext({ readOnly: this.partyReadOnly }) : null,
       empty: !sheets.length,
       intro: game.i18n.localize("FASTFIGHTING.Survey.Intro")
     };
@@ -144,8 +155,6 @@ export class PlayerSurvey extends HandlebarsApplicationMixin(ApplicationV2) {
 
   _onRender(context, options) {
     super._onRender?.(context, options);
-    // (Opened straight onto the Party tab: that counts as having looked.)
-    if ( context.onParty ) this.#sawParty();
     // A survey opened while the player's tab is in the background can be sized against a 0x0 viewport.
     if ( this.element.offsetWidth < 400 && window.innerWidth > 0 ) {
       const width = Math.min(640, window.innerWidth - 40);
@@ -195,6 +204,7 @@ export class PlayerSurvey extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /** A vote on how the party should act (the same again: taken back). Everyone's survey shows it at once. */
   static async #onPartyVote(event, target) {
+    if ( this.partyReadOnly ) return;
     await castVote(target.dataset.question, target.dataset.answer);
     this.render();
   }
@@ -212,18 +222,10 @@ export class PlayerSurvey extends HandlebarsApplicationMixin(ApplicationV2) {
 
   static async #onTab(event, target) {
     this.activeTab = target.dataset.tab;
-    await this.#sawParty();
     this.render();
   }
 
-  /** The player has looked at the Party tab (kept on its User: it's asked once). */
-  async #sawParty() {
-    if ( this.activeTab === PARTY_TAB && !game.user.isGM && !game.user.getFlag(MODULE_ID, "partySeen") ) await game.user.setFlag(MODULE_ID, "partySeen", true);
-  }
-
   static async #onReady() {
-    // (Not before it has looked at the Party tab.)
-    if ( !game.user.isGM && !game.user.getFlag(MODULE_ID, "partySeen") ) return ui.notifications.warn(loc("FASTFIGHTING.Survey.SeePartyFirst"));
     this.finished = true;
     if ( !game.user.isGM ) await setOwnSurveyStatus(SURVEY_STATUS.DONE, this.sceneId, this.requestId);
     ui.notifications.info(loc("FASTFIGHTING.Survey.Thanks"));

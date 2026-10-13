@@ -366,11 +366,15 @@ function knowable(token, targetId) {
   }
 }
 
-function partyFor(entries) {
-  const players = voters();
-  // (Only those with a character in the fight: with none, the GM's own friendly characters have no party wishes.)
-  const inFight = players.filter(u => entries.some(e => e.token.actor?.testUserPermission?.(u, "OWNER")));
-  return partyWishes(inFight, setting("partySway"));
+/**
+ * The party's wishes for a fight: the votes of the players logged in with a character on the friendly side (with none,
+ * the GM's own friendly characters have none), a tie settled by the players of its leader (its token, if it has one).
+ */
+function partyFor(entries, leaderId = null) {
+  const owns = (u, e) => !!e?.token.actor?.testUserPermission?.(u, "OWNER");
+  const inFight = voters().filter(u => entries.some(e => owns(u, e)));
+  const leader = entries.find(e => e.token.id === leaderId);
+  return partyWishes(inFight, setting("partySway"), inFight.filter(u => owns(u, leader)));
 }
 
 /**
@@ -556,8 +560,14 @@ export function buildBattleSpec(roster, setup, { approach = null, exclude = new 
   const sideDefaults = setting("sideDefaults");
   proposeNeutralGroups(roster, setup, { missingOnly: true }); // (a neutral put on the map since the planner opened)
   const resolved = resolveAllegiances(roster, setup);
-  // The player party's wishes: the votes of the players with a character on the friendly side (everyone's, if none).
-  const party = partyFor(roster.filter(e => resolved[e.token.id] === SIDES.FRIENDLY && !exclude.has(e.token.id)));
+  const options = { ...setup.options, ...optionOverrides };
+  // Who commands each group: its boss or leader, and its lieutenants. (The party's leader settles a tie in its wishes,
+  // whether or not leadership counts in this fight.)
+  const fighters = roster.filter(e => resolved[e.token.id] && !exclude.has(e.token.id));
+  const command = commandChains(fighters, setup, resolved, adapter);
+  const chains = options.leadership ? command : {};
+  // The player party's wishes: the votes of the players with a character on the friendly side.
+  const party = partyFor(fighters.filter(e => resolved[e.token.id] === SIDES.FRIENDLY), command[SIDES.FRIENDLY]?.[0]?.id ?? null);
   const leans = resolveLeans(roster, setup);
   const hidden = new Set(roster.filter(e => e.token.document?.hidden).map(e => e.token.id));
   const combatants = [];
@@ -587,9 +597,6 @@ export function buildBattleSpec(roster, setup, { approach = null, exclude = new 
     if ( masterActorId ) c.flags.masterId = combatants.find(o => o.actorId === masterActorId)?.id ?? null;
   }
 
-  const options = { ...setup.options, ...optionOverrides };
-  // Who commands each group: its boss or leader, and its lieutenants.
-  const chains = options.leadership ? commandChains(roster.filter(e => resolved[e.token.id] && !exclude.has(e.token.id)), setup, resolved, adapter) : {};
   const sides = {};
   const used = Object.keys(bySide);
   const fighting = used.filter(s => s !== NEUTRAL_PARTY); // (those who take no side are nobody's enemy, as a side)

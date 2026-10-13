@@ -58,6 +58,28 @@ describe("the party's wishes (its players' votes)", () => {
     expect(partyWishes([], 3)).toBeNull();
   });
 
+  test("a tie goes to the leader's players' answer; one the leader doesn't settle is no answer at all", () => {
+    const ballots = [{ talk: "first", retreat: "never" }, { talk: "never", retreat: "losing" }, { retreat: "hurt" }];
+    // (The leader's player voted "never" to talk: of the tied answers, that one.)
+    expect(majority(ballots, [ballots[1]]).talk).toBe("never");
+    expect(majority(ballots).talk).toBeUndefined();
+    // (A three-way tie the leader's player has no part in: no answer, as if nobody had voted.)
+    expect(majority(ballots, [{ retreat: "unknown" }]).retreat).toBeUndefined();
+    expect(majority(ballots, [ballots[2]]).retreat).toBe("hurt");
+    // (Two of the leader's players split between the tied answers: it isn't settled.)
+    expect(majority(ballots, [ballots[0], ballots[1]]).talk).toBeUndefined();
+  });
+
+  test("only the votes of players logged in count, and the leader's only if its player is one of them", () => {
+    const user = (id, party, active = true) => ({ id, active, getFlag: (scope, key) => (key === "party" ? party : null) });
+    const here = user("a", { talk: "first" });
+    const there = user("b", { talk: "never" });
+    const away = user("c", { talk: "never" }, false);
+    // (partyWishes counts whoever it's given: battle.js gives it only the players logged in.)
+    expect(partyWishes([here, there], 3, [there])).toEqual({ talk: "never", sway: 0.03 });
+    expect(partyWishes([here], 3, [away])).toEqual({ talk: "first", sway: 0.03 });
+  });
+
   test("six questions, answered with pills; three of them sway how everyone acts", () => {
     expect(Object.keys(PARTY_QUESTIONS)).toHaveLength(6);
     expect(Object.keys(PARTY_TACTICS).sort()).toEqual(["resources", "retreat", "talk"]);

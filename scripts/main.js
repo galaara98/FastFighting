@@ -97,7 +97,8 @@ function myTacticsButton(element) {
   const header = root?.querySelector(".combat-tracker-header") ?? root;
   if ( !header ) return;
   header.querySelector(".ff-my-tactics")?.remove();
-  if ( !helperStatus().ready || !hasCharactersFor(canvas.scene, game.user) ) return;
+  // (The players' survey: a GM answers for a character from the planner.)
+  if ( game.user.isGM || !helperStatus().ready || !hasCharactersFor(canvas.scene, game.user) ) return;
   const button = document.createElement("button");
   button.type = "button";
   button.className = "ff-tracker-open ff-my-tactics";
@@ -136,16 +137,18 @@ Hooks.once("ready", () => {
   // The GM's "Prepare Players" request opens the survey on the chosen players' screens. Foundry passes the
   // sender's user id; only a GM may open surveys on someone else's screen.
   game.socket.on(SOCKET, (data, senderId) => {
-    if ( !game.users.get(senderId)?.isGM ) return;
-    if ( data?.action === "openSurvey" && data.userIds?.includes(game.user.id) ) {
-      PlayerSurvey.open({ sceneId: data.sceneId, requestId: data.requestId });
+    if ( !game.users.get(senderId)?.isGM || !data?.userIds?.includes(game.user.id) ) return;
+    // (A player's survey never opens on a GM's screen; one character's for the GMs only on theirs.)
+    if ( data.action === "openSurvey" && !game.user.isGM ) {
+      PlayerSurvey.open({ sceneId: data.sceneId, requestId: data.requestId, start: data.start, partyReadOnly: data.partyReadOnly });
     }
+    if ( data.action === "openGmSurvey" && game.user.isGM ) PlayerSurvey.open({ sceneId: data.sceneId, start: data.key, only: data.key });
   });
   // A player who was asked while offline (or reloads mid-survey) gets it on login.
   if ( !game.user.isGM ) {
     const s = game.user.getFlag(MODULE_ID, "survey");
     if ( s && [SURVEY_STATUS.REQUESTED, SURVEY_STATUS.ENTERING].includes(s.status) && game.scenes.get(s.sceneId) ) {
-      PlayerSurvey.open({ sceneId: s.sceneId, requestId: s.requestId });
+      PlayerSurvey.open({ sceneId: s.sceneId, requestId: s.requestId, start: s.start, partyReadOnly: s.partyReadOnly });
     }
   }
 });

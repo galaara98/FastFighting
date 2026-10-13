@@ -513,12 +513,39 @@ export async function setOwnSurveyStatus(status, sceneId, requestId) {
 }
 
 /** GM: ask some (or all) players on the scene to fill in their survey. */
-export async function requestSurveys(users, scene = canvas.scene) {
+export async function requestSurveys(users, scene = canvas.scene, { start = "party", partyReadOnly = false } = {}) {
   if ( !game.user.isGM || !scene ) return;
+  // (Never a GM's or an assistant GM's: the survey is the players'. A GM answers for a character by its own request.)
+  users = users.filter(u => !u.isGM);
+  if ( !users.length ) return;
   const requestId = foundry.utils.randomID();
   // (One write for them all.)
-  const survey = { status: SURVEY_STATUS.REQUESTED, sceneId: scene.id, requestId, updated: Date.now() };
+  const survey = { status: SURVEY_STATUS.REQUESTED, sceneId: scene.id, requestId, start, partyReadOnly, updated: Date.now() };
   await game.users.documentClass.updateDocuments(users.map(u => ({ _id: u.id, [`flags.${MODULE_ID}.survey`]: survey })));
   const userIds = users.map(u => u.id);
-  game.socket.emit(SOCKET, { action: "openSurvey", userIds, sceneId: scene.id, requestId }, { recipients: userIds });
+  game.socket.emit(SOCKET, { action: "openSurvey", userIds, sceneId: scene.id, requestId, start, partyReadOnly }, { recipients: userIds });
+}
+
+/**
+ * Ask about one character: its players (any non-GM who controls it) get the survey on that character, with their other
+ * characters there too and the Party tab only to look at.
+ * @param {TokenDocument} token
+ * @returns {Promise<User[]>} who was asked
+ */
+export async function requestCharacterSurvey(token, scene = canvas.scene) {
+  const players = game.users.filter(u => !u.isGM && token?.actor?.testUserPermission(u, "OWNER"));
+  await requestSurveys(players, scene, { start: token.id, partyReadOnly: true });
+  return players;
+}
+
+/**
+ * One character's survey for every GM logged in (that character alone), to answer for a player who's away. The GM who
+ * asks gets it at once; the others by the socket.
+ * @param {TokenDocument} token
+ */
+export async function requestGmSurvey(token, scene = canvas.scene, open = null) {
+  if ( !game.user.isGM || !token || !scene ) return;
+  const userIds = game.users.filter(u => u.isGM && u.active && u !== game.user).map(u => u.id);
+  if ( userIds.length ) game.socket.emit(SOCKET, { action: "openGmSurvey", userIds, sceneId: scene.id, key: token.id }, { recipients: userIds });
+  await open?.({ sceneId: scene.id, start: token.id, only: token.id });
 }

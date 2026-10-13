@@ -11,7 +11,7 @@ import { listJoin, localize, term, hasStat } from "../i18n.js";
 import { getSetup, saveSetup, clearSetup, tokenSetup, planHolder, rememberPartyRole } from "../foundry/persistence.js";
 import {
   questionsContext, setTactic, togglePlaystyle, syncTacticsDom, isPlayerControlled, playersOnScene, tokensForUser, surveyStatus,
-  requestSurveys, SURVEY_STATUS, playstyleSignature, tacticsFor
+  requestSurveys, requestCharacterSurvey, requestGmSurvey, SURVEY_STATUS, playstyleSignature, tacticsFor
 } from "../foundry/tactics.js";
 import {
   gatherRoster, chosenSide, groupOf, proposeNeutralGroups, resolveAllegiances, simulate, swingFactors, replay, drawFight,
@@ -22,6 +22,7 @@ import { loadStoryTables } from "../story/tables.js";
 import { sceneDistance } from "../foundry/terrain.js";
 import { planMakeItSo, confirmMakeItSo, executeMakeItSo, undoMakeItSo, hasUndo, makingItSo } from "../foundry/make-it-so.js";
 import { ensureAutoConfig } from "../foundry/auto-config.js";
+import { PlayerSurvey } from "./player-survey.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 const TEMPLATE = `modules/${MODULE_ID}/templates/planner.hbs`;
@@ -85,6 +86,8 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       setTeam: BattlePlanner.#onSetTeam,
       setRole: BattlePlanner.#onSetRole,
       openSurvey: BattlePlanner.#onOpenSurvey,
+      surveyCharacter: BattlePlanner.#onSurveyCharacter,
+      surveyCharacterGm: BattlePlanner.#onSurveyCharacterGm,
       cancel: BattlePlanner.#onCancel
     }
   };
@@ -346,7 +349,8 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     const playerControlled = isPlayerControlled(s, e.token.actor);
     const { playstyles } = tacticsFor(e.token.actor, s);
     const shifts = playstyles.traits;
-    const controllers = game.users.filter(u => !u.isGM && e.token.actor?.testUserPermission(u, "OWNER")).map(u => u.name).join(", ");
+    const owners = game.users.filter(u => !u.isGM && e.token.actor?.testUserPermission(u, "OWNER"));
+    const controllers = owners.map(u => u.name).join(", ");
     const approach = this.#nearestEnemyApproach(e, resolved);
     const resolvedSide = resolved[e.token.id];
     const chosen = chosenSide(e, setup);
@@ -374,6 +378,11 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       showAc: hasStat("ac"),
       acName: term("ac"),
       hidden: s.hidden,
+      // (A friendly character's survey: its players asked about it; or every GM, to answer for a player who's away.)
+      survey: chosen === SIDES.FRIENDLY && !s.hazard ? {
+        players: owners.length > 0,
+        playersHint: game.i18n.format("FASTFIGHTING.Survey.AskPlayers", { names: listJoin(owners.map(u => u.name)) })
+      } : null,
       include: ts.include !== false,
       side: ts.side ?? e.baseSide,
       sideChoices: Object.fromEntries(SIDE_ORDER.map(k => [k, `FASTFIGHTING.Side.${k}`])),
@@ -639,6 +648,25 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     await requestSurveys([user]);
     if ( !user.active ) ui.notifications.info("FASTFIGHTING.Survey.WillOpen", { format: { name: user.name } });
     this.render();
+  }
+
+  /** Ask a friendly character's players about it: its survey, on that character. */
+  static async #onSurveyCharacter(event, target) {
+    const token = canvas.scene?.tokens.get(target.closest("[data-token-id]")?.dataset.tokenId);
+    if ( !token ) return;
+    const players = await requestCharacterSurvey(token);
+    if ( !players?.length ) return;
+    ui.notifications.info("FASTFIGHTING.Survey.AskedPlayers", { format: { names: listJoin(players.map(u => u.name)), name: token.name } });
+    for ( const u of players.filter(p => !p.active) ) ui.notifications.info("FASTFIGHTING.Survey.WillOpen", { format: { name: u.name } });
+    this.render();
+  }
+
+  /** A friendly character's survey for every GM logged in (that character alone), to answer for a player who's away. */
+  static async #onSurveyCharacterGm(event, target) {
+    const token = canvas.scene?.tokens.get(target.closest("[data-token-id]")?.dataset.tokenId);
+    if ( !token ) return;
+    await requestGmSurvey(token, canvas.scene, options => PlayerSurvey.open(options));
+    ui.notifications.info("FASTFIGHTING.Survey.AskedGms", { format: { name: token.name } });
   }
 
   /* -------------------------------------------- */

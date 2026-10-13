@@ -12,5 +12,5 @@
     </div>
   </div>
   {{/each}}
-  {{#unless canVote}}<p class="ff-hint"><i class="fa-solid fa-eye"></i> {{localize "FASTFIGHTING.Party.GmView"}}</p>{{/unless}}
+  {{#if readOnly}}<p class="ff-hint"><i class="fa-solid fa-eye"></i> {{localize "FASTFIGHTING.Party.ReadOnly"}}</p>{{else}}{{#unless canVote}}<p class="ff-hint"><i class="fa-solid fa-eye"></i> {{localize "FASTFIGHTING.Party.GmView"}}</p>{{/unless}}{{/if}}
 </div>

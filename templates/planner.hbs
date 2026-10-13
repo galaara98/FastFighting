@@ -155,6 +155,7 @@
               <span class="ff-roles" {{#if roles}}role="group" aria-label="{{localize "FASTFIGHTING.Planner.Command"}}" data-tooltip="{{roleHint}}"{{/if}}>{{#each roles}}<button type="button" class="ff-role-pill {{#if active}}active{{/if}} {{#if auto}}is-auto{{/if}}" data-action="setRole" data-role="{{key}}" aria-pressed="{{#if active}}true{{else}}false{{/if}}" aria-label="{{label}}">{{short}}</button>{{/each}}</span>
             </span>
             <select name="tokens.{{id}}.side" class="ff-side-select">{{selectOptions sideChoices selected=side localize=true}}</select>
+            {{#if survey}}<span class="ff-ask">{{#if survey.players}}<button type="button" class="ff-icon-btn ff-quill" data-action="surveyCharacter" data-tooltip-text="{{survey.playersHint}}" aria-label="{{survey.playersHint}}"><i class="fa-solid fa-feather-pointed"></i></button>{{/if}}<button type="button" class="ff-icon-btn ff-quill ff-quill-gm" data-action="surveyCharacterGm" data-tooltip="{{localize "FASTFIGHTING.Survey.AskGms"}}" aria-label="{{localize "FASTFIGHTING.Survey.AskGms"}}"><i class="fa-solid fa-feather-pointed"></i></button></span>{{/if}}
             <button type="button" class="ff-icon-btn" data-action="toggleRow" aria-label="{{localize "FASTFIGHTING.Planner.Details"}}"><i class="fa-solid {{#if expanded}}fa-chevron-up{{else}}fa-chevron-down{{/if}}"></i></button>
           </div>
           <div class="ff-trait-grid ff-compact">

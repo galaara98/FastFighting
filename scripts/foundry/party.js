@@ -1,7 +1,9 @@
 /**
  * The party's wishes: how the players want everyone on their side to act, voted in the survey's Party tab. One vote
  * per player (not per character) on each question, kept on the player's own User (flags.fast-fighting.party); every
- * player sees everyone's votes. Majority rules: a question's most-voted answer is the party's (a tie, none). In a fight
+ * player sees everyone's votes. Only the votes of players logged in count (a vote waits on its User for its player to
+ * be back). Majority rules: a question's most-voted answer is the party's; a tie goes to the party's leader (the answer
+ * its player voted for), and a tie the leader doesn't settle is no answer, as if nobody had voted. In a fight
  * the party's answers sway everyone on the friendly side by the world's Party's sway (engine/behavior/desire.js
  * partyWants for what they want; engine/playstyles.js sampleRunTactics for how they act).
  */
@@ -38,23 +40,30 @@ export function votesOf(user) {
 }
 
 /**
- * The party's answers: each question's most-voted answer (majority rules; a tie, or no votes, none).
- * @param {object[]} ballots   each player's votes ({question: answer})
+ * The party's answers: each question's most-voted answer (majority rules). A tie goes to the leader: the one of the
+ * tied answers its players voted for (just one of them); else it's no answer, as if nobody had voted.
+ * @param {object[]} ballots     each player's votes ({question: answer})
+ * @param {object[]} [leader]    the votes of the leader's players (among the ballots)
  * @returns {Record<string, string>}
  */
-export function majority(ballots) {
+export function majority(ballots, leader = []) {
   const out = {};
   for ( const [q, answers] of Object.entries(PARTY_QUESTIONS) ) {
     const tally = new Map();
     for ( const b of ballots ) if ( answers.includes(b?.[q]) ) tally.set(b[q], (tally.get(b[q]) ?? 0) + 1);
-    const ranked = [...tally].sort((a, b) => b[1] - a[1]);
-    if ( ranked.length && (ranked.length === 1 || ranked[0][1] > ranked[1][1]) ) out[q] = ranked[0][0];
+    const most = Math.max(0, ...tally.values());
+    const top = [...tally].filter(([, n]) => n === most).map(([a]) => a);
+    if ( top.length === 1 ) out[q] = top[0];
+    else if ( top.length > 1 ) {
+      const theirs = [...new Set(leader.map(b => b?.[q]).filter(a => top.includes(a)))];
+      if ( theirs.length === 1 ) out[q] = theirs[0];
+    }
   }
   return out;
 }
 
-/** The players who vote: everyone but the GMs. */
-export const voters = () => (game.users ?? []).filter(u => !u.isGM && u.hasRole?.("PLAYER"));
+/** The players who vote: everyone but the GMs, logged in now. */
+export const voters = () => (game.users ?? []).filter(u => !u.isGM && u.hasRole?.("PLAYER") && u.active);
 
 /** Vote (or, voting the same again, take the vote back). */
 export async function castVote(question, answer) {
@@ -65,26 +74,32 @@ export async function castVote(question, answer) {
 }
 
 /**
- * The party's wishes for a fight: the majority answers of the players with a character in it (everyone's, when none
- * has voted), and how much they sway (the world's Party's sway, as a share). Null when there are none.
+ * The party's wishes for a fight: the majority answers of the players with a character in it (a tie, the leader's
+ * players' say), and how much they sway (the world's Party's sway, as a share). Null when there are none.
  * @param {User[]} players   whose votes count
  * @param {number} swayPercent
+ * @param {User[]} [leaders] the party leader's players (who settle a tie)
  */
-export function partyWishes(players, swayPercent) {
-  const answers = majority(players.map(votesOf));
+export function partyWishes(players, swayPercent, leaders = []) {
+  const answers = majority(players.map(votesOf), leaders.filter(u => players.includes(u)).map(votesOf));
   if ( !Object.keys(answers).length ) return null;
   return { ...answers, sway: Math.max(0, Number(swayPercent) || 0) / 100 };
 }
 
-/** The survey's Party tab: each question's pills, with every player's vote on them as a dot in the player's color. */
-export function partyContext() {
+/**
+ * The survey's Party tab: each question's pills, with every player's vote on them as a dot in the player's color (the
+ * players logged in: their votes are the ones that count). `readOnly`: shown, not voted on (a GM's question about one
+ * character).
+ */
+export function partyContext({ readOnly = false } = {}) {
   const players = voters();
   const ballots = players.map(u => [u, votesOf(u)]);
   const answers = majority(ballots.map(([, b]) => b));
   const mine = votesOf(game.user);
   const label = (q, k) => localize(`FASTFIGHTING.Party.${q}.${k}`);
   return {
-    canVote: !game.user.isGM,
+    canVote: !game.user.isGM && !readOnly,
+    readOnly: readOnly && !game.user.isGM,
     questions: Object.entries(PARTY_QUESTIONS).map(([q, options]) => ({
       key: q,
       label: label(q, "Label"),
