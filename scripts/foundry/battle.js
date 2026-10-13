@@ -2,7 +2,7 @@
  * Turns the tokens on the viewed scene plus the GM's setup into a BattleSpec, runs it, and digs into the results.
  */
 import { MODULE_ID, SIDES, ALLEGIANCE, DISPOSITION_SIDES, NEUTRAL_PARTY, HOSTILE_GROUPS, GROUPS, TRAITS, clamp } from "../constants.js";
-import { runBatch, runBatchSync, replay, findSample } from "../engine/simulator.js";
+import { runBatch, replay } from "../engine/simulator.js";
 import { deriveSeed } from "../engine/rng.js";
 import { characterSpec, getAdapter, getModifiers } from "../api.js";
 import { computeApproach, computeAwareness, environmentAt, positionOf, squareFeet } from "./terrain.js";
@@ -11,6 +11,7 @@ import { TACTIC_KEYS, TACTIC_WISHES } from "../engine/tactics.js";
 import { resetPathGrid } from "./pathing.js";
 import { tokenSetup, sceneEncounter } from "./persistence.js";
 import { tacticsFor, isPlayerControlled, statedDesires, getStoredTactics } from "./tactics.js";
+import { ensureAutoConfig } from "./auto-config.js";
 import { partyWishes, voters, PARTY_TACTICS } from "./party.js";
 import { validMotives, NO_CATALOG, effectiveMotives } from "./motives.js";
 import { rankForCommand, autoLieutenants, partyRoles } from "./command-pick.js";
@@ -735,6 +736,8 @@ export function awarenessFor(roster) {
 export async function simulate(roster, setup, { onProgress, signal } = {}) {
   const adapter = getAdapter();
   const approach = setup.options.positioning ? approachFor(roster, setup) : null;
+  // (Each character's calculated answers as they are now, whatever was written to its flags since the roster was read.)
+  if ( game.user.isGM ) await Promise.all(roster.map(e => ensureAutoConfig(e.token?.actor, e.spec)));
 
   const spec = buildBattleSpec(roster, setup, { approach });
   spec.awareness = awarenessFor(roster);
@@ -767,7 +770,7 @@ export async function swingFactors(spec, baseline, { runs = 300, onProgress } = 
   }
   const out = [];
   for ( const [i, t] of tests.entries() ) {
-    const r = runBatchSync(t.make(spec), rules, { runs, seed: 99 });
+    const r = await runBatch(t.make(spec), rules, { runs, seed: 99 });
     out.push({ label: t.label, side: t.side ?? null, id: t.id ?? null, delta: friendlyWin(r) - base });
     onProgress?.((i + 1) / tests.length);
     await new Promise(resolve => setTimeout(resolve, 0));
@@ -775,4 +778,4 @@ export async function swingFactors(spec, baseline, { runs = 300, onProgress } = 
   return out.sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta));
 }
 
-export { replay, findSample };
+export { replay };

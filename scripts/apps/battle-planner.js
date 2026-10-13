@@ -2,7 +2,7 @@
  * The GM's Battle Planner: roster and per-side settings on the left, results on the right.
  */
 import {
-  MODULE_ID, SIDES, TRAITS, ALLEGIANCE, HEAL_AGGRO, DOWNED_MODELS, STATUS, AFTERMATH, OPENING, NEUTRAL_PARTY, HOSTILE_GROUPS, GROUPS,
+  MODULE_ID, SIDES, TRAITS, ALLEGIANCE, HEAL_AGGRO, DOWNED_MODELS, AFTERMATH, OPENING, NEUTRAL_PARTY, HOSTILE_GROUPS, GROUPS,
   traitBand, clamp, FUDGE_STEP
 } from "../constants.js";
 import { getAdapter } from "../api.js";
@@ -14,7 +14,7 @@ import {
   requestSurveys, SURVEY_STATUS, playstyleSignature, tacticsFor
 } from "../foundry/tactics.js";
 import {
-  gatherRoster, chosenSide, groupOf, proposeNeutralGroups, resolveAllegiances, simulate, swingFactors, replay, findSample, drawFight,
+  gatherRoster, chosenSide, groupOf, proposeNeutralGroups, resolveAllegiances, simulate, swingFactors, replay, drawFight,
   approachFor, commandChains, commandGroup, seedCommand, clearRole, ROLES, sideName, hostileGroupsIn, secretTeam, SECRET_TEAMS, LEANS
 } from "../foundry/battle.js";
 import { buildStory, STORY_STYLES } from "../story/story.js";
@@ -180,6 +180,9 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
   /*  Data                                        */
   /* -------------------------------------------- */
 
+  /** Characters are being set up by themselves (their writes don't each redraw the planner). */
+  #settingUp = false;
+
   async #loadRoster() {
     // The plan of the encounter it's tied to (or the scene's, with none): read and saved there.
     this.holder = planHolder();
@@ -188,7 +191,13 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     this.roster = await gatherRoster(this.setup);
     // Anyone FastFighting hasn't seen before is set up by itself now (its playstyles, its calculated answers), and anyone
     // whose calculated answers are missing, broken or out of date has them worked out again.
-    if ( game.user.isGM ) for ( const e of this.roster ) await ensureAutoConfig(e.token.actor, e.spec);
+    // (All at once; the planner draws itself once they're done, not once for each.)
+    this.#settingUp = true;
+    try {
+      if ( game.user.isGM ) await Promise.all(this.roster.map(e => ensureAutoConfig(e.token.actor, e.spec)));
+    } finally {
+      this.#settingUp = false;
+    }
     for ( const e of this.roster ) tokenSetup(this.setup, e.token.id);
     proposeNeutralGroups(this.roster, this.setup); // friend groups for the neutrals, as the map stands now
     // A new plan, or one just cleared: who commands each group, picked once (after that, only the GM changes it).
@@ -562,7 +571,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     const before = this.signatures.get(actor.uuid);
     this.signatures.set(actor.uuid, sig);
     const typing = this.element.contains(document.activeElement) && ["TEXTAREA", "INPUT"].includes(document.activeElement?.tagName) && document.activeElement.type !== "checkbox";
-    if ( before !== sig && !typing && !this.running ) this.render();
+    if ( before !== sig && !typing && !this.running && !this.#settingUp ) this.render();
   }
 
   static async #onTogglePlaystyle(event, target) {
@@ -909,14 +918,6 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     if ( !this.spec || !this.results ) return;
     try {
       const rules = getAdapter().rules;
-      const pcIds = new Set(this.spec.combatants.filter(c => c.kind === "pc").map(c => c.id));
-      const predicates = {
-        partyWins: r => r.outcome === "victory" && r.winners.includes(SIDES.FRIENDLY),
-        partyLoses: r => !(r.outcome === "victory" && r.winners.includes(SIDES.FRIENDLY)),
-        pcDies: r => Object.entries(r.units).some(([id, u]) => pcIds.has(id) && u.status === STATUS.DEAD),
-        closeCall: r => r.outcome === "victory" && r.winners.includes(SIDES.FRIENDLY)
-          && Object.entries(r.units).filter(([id]) => pcIds.has(id)).some(([, u]) => u.wasDowned)
-      };
       let found;
       if ( this.sampleFilter === "any" ) {
         found = drawFight(this.spec, this.results);
@@ -926,8 +927,10 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
         const seed = this.results.representativeSeed;
         found = seed === null ? null : { seed, result: replay(this.spec, rules, seed), how: "typical" };
       } else {
-        found = findSample(this.spec, rules, predicates[this.sampleFilter], { start: Math.floor(Math.random() * 1e9), tries: 600 });
-        if ( found ) found.how = "chosen";
+        // (One of the simulation's own fights of that kind, replayed: none among its runs, and it's too rare to show.)
+        const seeds = this.results.picks?.[this.sampleFilter] ?? [];
+        const seed = seeds.length ? seeds[Math.floor(Math.random() * seeds.length)] : null;
+        found = seed === null ? null : { seed, result: replay(this.spec, rules, seed), how: "chosen" };
       }
       if ( !found ) ui.notifications.info(loc("FASTFIGHTING.Sample.NotFound"));
       else this.sample = found;

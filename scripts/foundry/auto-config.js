@@ -31,10 +31,33 @@ import { keywords, currentKeywords } from "./keywords.js";
 import { getStoredTactics, worldTacticDefaults } from "./tactics.js";
 import { cleanMotive, suggestMotives, AUTO } from "./motives.js";
 
-/** The actor's auto setup, or null. */
+/** The longest reason a calculated answer may carry (a system's word or two of why). */
+const WHY_LENGTH = 120;
+const isPlain = v => !!v && typeof v === "object" && !Array.isArray(v);
+
+/**
+ * The actor's auto setup, or null: its known parts only, each of its kind. (Its owner can write the flag from the
+ * console: the answers are checked where they're used, and a reason is a short text for an answer it has.)
+ */
 export const autoRecord = actor => {
   const r = actor?.getFlag?.(MODULE_ID, "auto");
-  return r && typeof r === "object" ? r : null;
+  if ( !isPlain(r) ) return null;
+  const lets = isPlain(r.lets) ? r.lets : {};
+  const why = {};
+  for ( const [k, v] of Object.entries(isPlain(r.why) ? r.why : {}) ) {
+    if ( k in lets && typeof v === "string" && v.length <= WHY_LENGTH ) why[k] = v;
+  }
+  const scores = {};
+  for ( const [k, v] of Object.entries(isPlain(r.scores) ? r.scores : {}) ) if ( Number.isFinite(v) ) scores[k] = v;
+  return {
+    api: Number(r.api) || 0,
+    sig: typeof r.sig === "string" ? r.sig : "",
+    lets,
+    why,
+    picked: Array.isArray(r.picked) ? r.picked.filter(id => typeof id === "string").slice(0, 8) : [],
+    scores,
+    at: Number(r.at) || 0
+  };
 };
 
 /** Is this a fair answer to that question for this character? */
@@ -181,13 +204,15 @@ export async function ensureAutoConfig(actor, spec, { force = false } = {}) {
     if ( !plan.pick && !plan.lets ) return false;
     const next = { ...(record ?? {}), api: CORE_API_VERSION, sig, at: Date.now() };
     if ( plan.lets ) Object.assign(next, fresh);
+    // (One write for both: each write redraws whatever shows the actor.)
+    const changes = { [`flags.${MODULE_ID}.auto`]: next };
     if ( plan.pick ) {
       const scored = autoScores(actor, spec, await keywords());
       next.picked = pickPlaystyles(scored);
       next.scores = Object.fromEntries(scored.slice(0, 8).map(s => [s.id, s.score]));
-      if ( next.picked.length ) await actor.setFlag(MODULE_ID, "tactics", { ...(actor.getFlag(MODULE_ID, "tactics") ?? {}), playstyles: next.picked });
+      if ( next.picked.length ) changes[`flags.${MODULE_ID}.tactics.playstyles`] = next.picked;
     }
-    await actor.setFlag(MODULE_ID, "auto", next);
+    await actor.update(changes);
     return true;
   })();
   running.set(key, job);

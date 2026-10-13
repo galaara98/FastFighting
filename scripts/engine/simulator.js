@@ -2852,18 +2852,4 @@ export function replay(spec, rules, seed) {
   return runOne(prepareBattle(spec, rules), seed, { log: true, capture: true });
 }
 
-/**
- * Find a seed whose outcome matches a predicate (e.g. "party wins", "a PC dies"), for the sample-fight picker.
- * @returns {{seed: number, result: object}|null}
- */
-export function findSample(spec, rules, predicate, { start = 1, tries = 500 } = {}) {
-  const prep = prepareBattle(spec, rules);
-  for ( let i = 0; i < tries; i++ ) {
-    const seed = deriveSeed(start, i);
-    const result = runOne(prep, seed, { capture: true });
-    if ( predicate(result) ) return { seed, result: runOne(prep, seed, { log: true, capture: true }) };
-  }
-  return null;
-}
-
 export { prepareBattle, areEnemies, liveTrait };

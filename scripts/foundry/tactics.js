@@ -169,7 +169,7 @@ export function tacticsFor(actor, spec) {
   for ( const [k, v] of Object.entries(record?.lets ?? {}) ) {
     if ( TACTIC_KEYS.includes(k) ? validLet(k, v, spec) : ["offer", "expect"].includes(k) && validMotive(k, v) ) calc[k] = v;
   }
-  const why = record?.why && typeof record.why === "object" ? record.why : {};
+  const why = record?.why ?? {};
   const suggested = { ...calc, ...playstyles.suggest };
   const resolved = resolveTactics(stored, suggested);
   if ( resolved.preferredAction && !spec.actions.some(a => a.id === resolved.preferredAction) ) resolved.preferredAction = calc.preferredAction;
