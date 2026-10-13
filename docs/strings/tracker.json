@@ -12484,6 +12484,16 @@
    "commit": null,
    "hash": "a8b41baa4cf7"
   },
+  "core:FASTFIGHTING.Story.Part.emphasis": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Story.Part.emphasis",
+   "area": "core/Story",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "828ec091d523"
+  },
   "core:FASTFIGHTING.Story.Part.enemyLeader": {
    "repo": "core",
    "file": "languages/en.json",
@@ -12933,6 +12943,16 @@
    "date": null,
    "commit": null,
    "hash": "fc6e4a408d56"
+  },
+  "core:FASTFIGHTING.Story.Part.letdown": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Story.Part.letdown",
+   "area": "core/Story",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "480793392e91"
   },
   "core:FASTFIGHTING.Story.Part.lieAndRun": {
    "repo": "core",

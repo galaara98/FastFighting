@@ -1207,7 +1207,9 @@
         "noOne": "No One",
         "stalemate": "Stalemate",
         "againHit": "Hits again",
-        "againMiss": "Misses again"
+        "againMiss": "Misses again",
+        "emphasis": "Big moment",
+        "letdown": "Letdown"
       },
       "APrice": "a price",
       "Desire": "{intensity} {verb}",

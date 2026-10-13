@@ -45,10 +45,20 @@ function deliveryOf(e) {
   return e.ranged ? "ranged" : "melee";
 }
 
-/** The imagery family for a damage type: the system maps its own types (5e "lightning" reads as electricity). */
+/** Harm a plain blow does: told as itself. Every other kind is magic or energy. */
+const PHYSICAL = new Set(["bludgeoning", "piercing", "slashing", "bleed", "untyped"]);
+
+/**
+ * The imagery family an attack is told with: the system maps its own types (5e "lightning" reads as electricity). Magic
+ * shows over the blow that carries it: a sword that deals void damage too withers its target; it isn't told as a cut.
+ */
 function damageTypeOf(e, mapType) {
-  const type = mapType ? mapType(e.damageType) : e.damageType;
-  return DAMAGE_TYPES.includes(type) ? type : "untyped";
+  const family = t => {
+    const type = mapType ? mapType(t) : t;
+    return DAMAGE_TYPES.includes(type) ? type : "untyped";
+  };
+  const all = (e.damageTypes?.length ? e.damageTypes : [e.damageType]).map(family);
+  return all.find(t => !PHYSICAL.has(t)) ?? all[0] ?? "untyped";
 }
 
 /**
@@ -209,18 +219,41 @@ function relationshipClause(e, tier, rel, roll, fill) {
   return clause ? ` ${capital(clause)}` : "";
 }
 
+/** A blow that takes this much of its target's most hit points, or more, is a big one: it gets its emphasis too. */
+const BIG_SHARE = 1 / 3;
+
+/**
+ * One more sentence after a big moment: a critical hit or win, or a blow that takes a big bite out of its target
+ * (emphasis.<kind>: how bad the harm is, how well the words landed); or after a critical failure, how little came of it
+ * (letdown.<kind>). `kind` is the damage type, or the way of talking. "" when there's none.
+ */
+function followUp(e, tier, roll, f, kind, maxHp) {
+  let key = null;
+  if ( tier === "criticalFailure" ) key = `letdown.${kind}`;
+  else if ( tier === "criticalSuccess" ) key = `emphasis.${kind}`;
+  else if ( successful(tier) && e.damage > 0 && e.targetId ) {
+    const max = maxHp?.(e.targetId);
+    if ( max > 0 && e.damage >= max * BIG_SHARE ) key = `emphasis.${kind}`;
+  }
+  const line = key ? roll(key, f).trim() : "";
+  return line ? ` ${capital(line)}` : "";
+}
+
 function narrate(e, roll, rel, fill) {
   const base = { actor: e.actor, target: e.target ?? "", weapon: e.action ?? e.item ?? "", by: e.by ?? "", affliction: e.name ?? "" };
   const f = { ...base, ...fill };
   delete f.mapType;
+  delete f.maxHp;
   switch ( e.type ) {
     case "attack":
     case "save":
     case "auto": {
       const tier = e.type === "save" ? saveTier(e) : e.type === "auto" ? "success" : tierOf(e.degree, e.margin);
-      let text = roll(`action.${deliveryOf(e)}.${damageTypeOf(e, fill.mapType)}.${tier}`, f);
+      const type = damageTypeOf(e, fill.mapType);
+      let text = roll(`action.${deliveryOf(e)}.${type}.${tier}`, f);
       if ( roll.lang === "en" ) text = agreeWithWeapon(text, f.weapon);
       if ( e.attackerCover && e.ranged && e.natural % 3 === 0 ) text = `${roll("event.coverShoot", f)} ${capital(text)}`;
+      text += followUp(e, tier, roll, f, type, fill.maxHp);
       if ( e.targetCover && e.ranged && !successful(tier) && !rel.ducked.has(`${e.targetId}|${e.turn}`) ) {
         rel.ducked.add(`${e.targetId}|${e.turn}`);
         text += ` ${capital(roll("event.coverDuck", f))}`;
@@ -229,7 +262,9 @@ function narrate(e, roll, rel, fill) {
     }
     case "talk": {
       const tier = tierOf(e.degree, e.margin);
-      return roll(`talk.${e.kind ?? "persuade"}.${tier}`, f) + relationshipClause(e, tier, rel, roll, f);
+      const kind = e.kind ?? "persuade";
+      // (A big moment in words: only a system whose checks can be critical has one.)
+      return roll(`talk.${kind}.${tier}`, f) + followUp(e, tier, roll, f, kind) + relationshipClause(e, tier, rel, roll, f);
     }
     case "door": {
       const key = { open: "doorOpen", giveup: "doorGiveUp" }[e.method]
@@ -507,6 +542,8 @@ function roleplayParagraphs(result, spec, tables, seed, mapType) {
   const roll = makeRoller(tables, seed);
   const averted = avertedDeaths(result.log ?? []);
   const { call, named } = storyNames(spec);
+  const most = new Map((spec.combatants ?? []).map(c => [c.id, c.hp?.max ?? null]));
+  const maxHp = id => most.get(id) ?? null;
   const moment = createRng((seed + 7919) >>> 0); // when someone pauses to think
   const lastThought = new Map();
   const lastShield = new Map();
@@ -559,7 +596,7 @@ function roleplayParagraphs(result, spec, tables, seed, mapType) {
       }
       continue;
     }
-    const sentence = againLine(e, done, roll) || narrate(e, roll, rel, { mapType });
+    const sentence = againLine(e, done, roll) || narrate(e, roll, rel, { mapType, maxHp });
     rel.record(e);
     if ( sentence ) current.sentences.push({ e: logged, text: capital(sentence.trim()) });
   }

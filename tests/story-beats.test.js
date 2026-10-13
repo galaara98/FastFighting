@@ -142,3 +142,24 @@ describe("telling it well", () => {
     }
   });
 });
+
+describe("magic shows over the blow that carries it", () => {
+  test("a sword that also deals void damage is told by the void (it withers), never as a cut", () => {
+    const spec = fight();
+    const amiri = spec.combatants.find(c => c.id === "amiri");
+    amiri.actions[0].damage = [parseFormula("1d8", "slashing"), parseFormula("1d6", "void")];
+    const filled = key => Object.entries(english).filter(([k]) => k.startsWith(key))
+      .flatMap(([, lines]) => lines.map(l => l.replace("{actor}", "Amiri").replace("{target}", "Wolf").replace("{weapon}", "Bastard Sword")));
+    const voidLines = filled("action.melee.void.");
+    const cutLines = filled("action.melee.slashing.");
+    let told = 0;
+    for ( let seed = 1; seed <= 12; seed++ ) {
+      const result = replay(spec, pf2eRules, seed);
+      expect(result.log.filter(e => e.type === "attack" && e.actorId === "amiri").every(e => e.damageTypes.includes("void"))).toBe(true);
+      const text = buildStory(result, spec, "roleplay", { tables, seed }).text.toLowerCase();
+      told += voidLines.filter(l => text.includes(l.toLowerCase())).length;
+      expect(cutLines.filter(l => text.includes(l.toLowerCase()))).toEqual([]);
+    }
+    expect(told).toBeGreaterThan(0);
+  });
+});

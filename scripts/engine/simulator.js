@@ -75,6 +75,8 @@ function startTurn(run, u = null) {
 }
 
 const primaryType = action => (action.damage ?? action.heal ?? [])[0]?.type ?? "untyped";
+/** Every kind of harm an action deals (a flaming sword: slashing and fire), for the story to tell the one that shows. */
+const damageTypesOf = action => [...new Set((action.damage ?? []).map(p => p.type).filter(Boolean))];
 
 /** The run's logger, for helpers that log as they go (see luck.js). */
 const logger = run => (run.logTo ??= (unit, data) => log(run, unit, data));
@@ -820,7 +822,7 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
     }
 
     const common = logging ? {
-      action: action.name, actionKind: action.kind, damageType: primaryType(action), target: target.spec.name, targetId: target.id,
+      action: action.name, actionKind: action.kind, damageType: primaryType(action), damageTypes: damageTypesOf(action), target: target.spec.name, targetId: target.id,
       ranged, area: !!action.area, targetCover: !!target.spec.environment?.nearCover, attackerCover: !!u.spec.environment?.nearCover
     } : null;
 
