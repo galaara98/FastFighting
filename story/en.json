@@ -1080,16 +1080,16 @@
     "enemyLeader": {
       "success": [
         " The enemy leader is shaken.",
-        " Their commander falters, and the whole line feels it.",
+        " {target} falters, and their whole line feels it.",
         " A blow struck at the heart of the enemy.",
         " The enemy's leader is bloodied for all to see.",
-        " Their champion is not invincible after all."
+        " {target} is not invincible after all."
       ],
       "failure": [
         " The enemy leader shrugs it off with a sneer.",
-        " Their commander barely notices.",
+        " {target} barely notices.",
         " The enemy leader's followers cheer.",
-        " Their champion stands tall.",
+        " {target} stands tall.",
         " The leader is untouched, and everyone sees it."
       ]
     },
@@ -1151,7 +1151,7 @@
       ],
       "failure": [
         " {target} keeps pressing toward {actor}'s ally.",
-        " {actor} can't pull {target} off their friend.",
+        " {actor} can't pull {target} away from an ally.",
         " The ally is still in danger.",
         " {target} ignores {actor} completely.",
         " Protecting a friend is harder than it looks."
@@ -1524,11 +1524,11 @@
       "{actor} lifts the shield, waiting."
     ],
     "draw": [
-      "{actor} draws {weapon}.",
-      "{actor} readies {weapon}.",
-      "Steel rings as {actor} draws {weapon}.",
-      "{actor} pulls {weapon} free.",
-      "{actor} brings {weapon} to hand."
+      "{actor} draws their {weapon}.",
+      "{actor} readies their {weapon}.",
+      "Steel rings as {actor} draws their {weapon}.",
+      "{actor} pulls their {weapon} free.",
+      "{actor} brings their {weapon} to hand."
     ],
     "prone": [
       "{actor} is knocked flat.",
@@ -1969,9 +1969,9 @@
     "controlResisted": [
       "{target} shrugs off {actor}'s {weapon}.",
       "{actor}'s {weapon} washes over {target} without effect.",
-      "{target} fights free of {actor}'s {weapon}.",
+      "{target} holds firm against {actor}'s {weapon}.",
       "{actor}'s {weapon} fizzles against {target}.",
-      "{target} won't be bound by {actor}'s {weapon}."
+      "{target} won't give in to {actor}'s {weapon}."
     ],
     "taunted": [
       "{actor}'s {weapon} gets under {target}'s skin; now {target} wants {actor}, and no one else.",
@@ -1993,16 +1993,16 @@
     "buffMany": [
       "{actor}'s {weapon} washes over {targets}, leaving them {effect}.",
       "{actor} raises {weapon} over {targets}: they're {effect}.",
-      "{targets} feel {actor}'s {weapon} take hold, {effect}.",
+      "{targets} feel {actor}'s {weapon} take hold, and they're {effect}.",
       "{actor} calls on {weapon} for {targets}, and they're {effect}.",
-      "{actor}'s {weapon} spreads to {targets}, {effect}."
+      "{actor}'s {weapon} spreads to {targets}, leaving them {effect}."
     ],
     "buffWithSelf": [
       "{actor}'s {weapon} washes over {all}, leaving them {effect}.",
-      "{actor} calls on {weapon}: {all}, {effect}.",
+      "{actor} calls on {weapon}, and {all} are {effect}.",
       "{weapon} rises around {all}, and they're {effect}.",
-      "{all} feel {actor}'s {weapon} take hold, {effect}.",
-      "{actor} lifts {weapon} over the group: {all}, {effect}."
+      "{all} feel {actor}'s {weapon} take hold, and they're {effect}.",
+      "{actor} lifts {weapon} over the group, and {all} are {effect}."
     ],
     "dodge": [
       "{actor} keeps light on their feet, ready to dodge.",
@@ -2161,13 +2161,13 @@
     "fateSelf": [
       "{actor} spends {label} and cheats death.",
       "{actor} calls on {label}; death will have to wait.",
-      "{label} carries {actor} through.",
-      "{actor} isn't done yet: {label} sees to it.",
+      "{actor} pulls through on {label}.",
+      "{actor} isn't done yet, thanks to {label}.",
       "At the brink, {actor} spends {label}."
     ],
     "fateFor": [
       "{actor} spends {label} to save {target}.",
-      "{actor}'s {label} keeps {target} alive.",
+      "{actor} spends {label} to keep {target} alive.",
       "{actor} gives up {label} for {target}'s sake.",
       "{target} lives, thanks to {actor}'s {label}.",
       "{actor} won't let {target} die, and spends {label}."

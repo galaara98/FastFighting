@@ -17748,7 +17748,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "ddb31010c29a"
+   "hash": "ddb31010c29a",
+   "changed": true
   },
   "core:story:event.buffOne": {
    "repo": "core",
@@ -17778,7 +17779,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "ebccb567f380"
+   "hash": "ebccb567f380",
+   "changed": true
   },
   "core:story:event.callHelp": {
    "repo": "core",
@@ -17938,7 +17940,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "7d5d486f181a"
+   "hash": "7d5d486f181a",
+   "changed": true
   },
   "core:story:event.controlTakes": {
    "repo": "core",
@@ -18168,7 +18171,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "102f44f8f78d"
+   "hash": "102f44f8f78d",
+   "changed": true
   },
   "core:story:event.duelLose": {
    "repo": "core",
@@ -18271,7 +18275,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "318ecc01e213"
+   "hash": "318ecc01e213",
+   "changed": true
   },
   "core:story:event.fateSelf": {
    "repo": "core",
@@ -18281,7 +18286,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "cc62f111d4cf"
+   "hash": "cc62f111d4cf",
+   "changed": true
   },
   "core:story:event.feintMiss": {
    "repo": "core",
@@ -19768,7 +19774,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "6c0d6ed4eb88"
+   "hash": "6c0d6ed4eb88",
+   "changed": true
   },
   "core:story:relationship.enemyLeader.success": {
    "repo": "core",
@@ -19778,7 +19785,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "bcb758685552"
+   "hash": "bcb758685552",
+   "changed": true
   },
   "core:story:relationship.finishing.failure": {
    "repo": "core",
@@ -19828,7 +19836,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "1510e5e8a719"
+   "hash": "1510e5e8a719",
+   "changed": true
   },
   "core:story:relationship.protector.success": {
    "repo": "core",
