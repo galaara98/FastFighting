@@ -14566,7 +14566,8 @@
    "status": "approved",
    "date": "2026-10-11",
    "commit": "f7ee61e",
-   "hash": "702b4da6cbda"
+   "hash": "702b4da6cbda",
+   "changed": true
   },
   "core:FASTFIGHTING.Tactics.shield.Hint": {
    "repo": "core",
@@ -14576,7 +14577,8 @@
    "status": "approved",
    "date": "2026-10-11",
    "commit": "f7ee61e",
-   "hash": "109a96de079a"
+   "hash": "109a96de079a",
+   "changed": true
   },
   "core:FASTFIGHTING.Tactics.shield.Label": {
    "repo": "core",
@@ -14586,7 +14588,8 @@
    "status": "approved",
    "date": "2026-10-11",
    "commit": "f7ee61e",
-   "hash": "480d4be7d61f"
+   "hash": "480d4be7d61f",
+   "changed": true
   },
   "core:FASTFIGHTING.Tactics.shield.never": {
    "repo": "core",
@@ -14606,7 +14609,8 @@
    "status": "approved",
    "date": "2026-10-11",
    "commit": "f7ee61e",
-   "hash": "9218718c38c6"
+   "hash": "9218718c38c6",
+   "changed": true
   },
   "core:FASTFIGHTING.Tactics.specialty.always": {
    "repo": "core",

@@ -353,7 +353,8 @@ export function questionsContext(spec, actor, uid, { questions: withQuestions = 
   add("allyDying", TACTIC_CHOICES.allyDying);
   add("selfRevived", TACTIC_CHOICES.selfRevived);
   add("retreat", TACTIC_CHOICES.retreat);
-  add("shield", TACTIC_CHOICES.shield, { show: !!spec.shield });
+  // (A shield to raise, or a turn given to its own defense: 5e's Dodge.)
+  add("shield", TACTIC_CHOICES.shield, { show: !!spec.shield || spec.actions.some(a => a.guard) });
   add("beyond", TACTIC_CHOICES.beyond);
 
   const picked = playstyles.ids;

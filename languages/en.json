@@ -659,10 +659,10 @@
         "losing": "When the battle turns against us"
       },
       "shield": {
-        "Label": "Shield",
-        "Hint": "How this character uses Raise a Shield.",
-        "always": "Keep it raised every turn",
-        "spare": "Raise it with spare actions",
+        "Label": "Shield or defending",
+        "Hint": "How this character uses Raise a Shield, or a turn given to its own defense (such as Dodge).",
+        "always": "Every turn",
+        "spare": "With spare actions, or when it's worth it",
         "never": "Don't bother"
       },
       "talk": {
