@@ -1630,6 +1630,16 @@
    "commit": null,
    "hash": "d626c1872758"
   },
+  "core:FASTFIGHTING.Desire.Unknown": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Desire.Unknown",
+   "area": "core/Desire",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "2f71f5b5bdee"
+  },
   "core:FASTFIGHTING.Desire.What": {
    "repo": "core",
    "file": "languages/en.json",
@@ -2219,6 +2229,16 @@
    "date": null,
    "commit": null,
    "hash": "1576f85e764a"
+  },
+  "core:FASTFIGHTING.Helper.Module.daggerheart": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Helper.Module.daggerheart",
+   "area": "core/Helper",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "1ff62f96d985"
   },
   "core:FASTFIGHTING.Helper.Module.dcc": {
    "repo": "core",
@@ -6815,7 +6835,48 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "658078ecd7c9"
+   "hash": "658078ecd7c9",
+   "changed": true
+  },
+  "core:FASTFIGHTING.Party.LockedIn": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Party.LockedIn",
+   "area": "core/Party",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "49c61e9f1613"
+  },
+  "core:FASTFIGHTING.Party.LockIn": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Party.LockIn",
+   "area": "core/Party",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "e3711ecaf505"
+  },
+  "core:FASTFIGHTING.Party.NotLockedIn": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Party.NotLockedIn",
+   "area": "core/Party",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "7a14ceb2d8f5"
+  },
+  "core:FASTFIGHTING.Party.ReadOnly": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Party.ReadOnly",
+   "area": "core/Party",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "decf6c4c52d0"
   },
   "core:FASTFIGHTING.Party.resources.balanced": {
    "repo": "core",
@@ -7459,6 +7520,16 @@
    "commit": null,
    "hash": "fa3a0bd53dd1"
   },
+  "core:FASTFIGHTING.Planner.ManyCreatures": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Planner.ManyCreatures",
+   "area": "core/Planner",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "d739e0d32a13"
+  },
   "core:FASTFIGHTING.Planner.MaxRounds": {
    "repo": "core",
    "file": "languages/en.json",
@@ -7758,6 +7829,16 @@
    "date": null,
    "commit": null,
    "hash": "848f54e89660"
+  },
+  "core:FASTFIGHTING.Planner.RunsCapped": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Planner.RunsCapped",
+   "area": "core/Planner",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "1428fe6af664"
   },
   "core:FASTFIGHTING.Planner.SceneChanged": {
    "repo": "core",
@@ -8688,7 +8769,8 @@
    "status": "approved",
    "date": "2026-10-11",
    "commit": "f7ee61e",
-   "hash": "0af6f47aa43e"
+   "hash": "0af6f47aa43e",
+   "changed": true
   },
   "core:FASTFIGHTING.Playstyle.peoplePleaser.Name": {
    "repo": "core",
@@ -8788,7 +8870,8 @@
    "status": "todo",
    "date": "2026-10-11",
    "commit": "a33b78f",
-   "hash": "bfa3965c0fe8"
+   "hash": "bfa3965c0fe8",
+   "changed": true
   },
   "core:FASTFIGHTING.Playstyle.skeptic.Name": {
    "repo": "core",
@@ -9834,6 +9917,26 @@
    "date": null,
    "commit": null,
    "hash": "2d358053cf07"
+  },
+  "core:FASTFIGHTING.Settings.hardware.Hint": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Settings.hardware.Hint",
+   "area": "core/Settings",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "656ec7f3c4d7"
+  },
+  "core:FASTFIGHTING.Settings.hardware.Name": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Settings.hardware.Name",
+   "area": "core/Settings",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "a9d6541cf472"
   },
   "core:FASTFIGHTING.Settings.ignoreLanguages.Hint": {
    "repo": "core",
@@ -14003,6 +14106,46 @@
    "commit": null,
    "hash": "d568f8319e98"
   },
+  "core:FASTFIGHTING.Survey.AskedGms": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Survey.AskedGms",
+   "area": "core/Survey",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "5551ebaf05cc"
+  },
+  "core:FASTFIGHTING.Survey.AskedPlayers": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Survey.AskedPlayers",
+   "area": "core/Survey",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "49d3801e2d53"
+  },
+  "core:FASTFIGHTING.Survey.AskGms": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Survey.AskGms",
+   "area": "core/Survey",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "81bc90778e5a"
+  },
+  "core:FASTFIGHTING.Survey.AskPlayers": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Survey.AskPlayers",
+   "area": "core/Survey",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "ce6afb4a739f"
+  },
   "core:FASTFIGHTING.Survey.AutoHint": {
    "repo": "core",
    "file": "languages/en.json",
@@ -14163,7 +14306,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "46e4decdf99b"
+   "hash": "46e4decdf99b",
+   "gone": "2026-10-13"
   },
   "core:FASTFIGHTING.Survey.Sent": {
    "repo": "core",
@@ -14273,7 +14417,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "38bc5fba9708"
+   "hash": "38bc5fba9708",
+   "gone": "2026-10-13"
   },
   "core:FASTFIGHTING.Survey.WillOpen": {
    "repo": "core",
@@ -19597,6 +19742,26 @@
    "commit": null,
    "hash": "61fe0e78d94d"
   },
+  "daggerheart:FFDAGGERHEART.ActorType.companion": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.ActorType.companion",
+   "area": "daggerheart/ActorType",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "1dadb3284b8b"
+  },
+  "daggerheart:FFDAGGERHEART.ActorType.npc": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.ActorType.npc",
+   "area": "daggerheart/ActorType",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "f2d1dab08310"
+  },
   "daggerheart:FFDAGGERHEART.Condition.hidden": {
    "repo": "daggerheart",
    "file": "languages/en.json",
@@ -19918,6 +20083,16 @@
    "commit": null,
    "hash": "a7f33f557f37"
   },
+  "daggerheart:FFDAGGERHEART.Gold.title": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Gold.title",
+   "area": "daggerheart/Gold",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "6249df4367d0"
+  },
   "daggerheart:FFDAGGERHEART.Harm.magicalImmunity": {
    "repo": "daggerheart",
    "file": "languages/en.json",
@@ -19977,6 +20152,56 @@
    "date": null,
    "commit": null,
    "hash": "4b0dfd141735"
+  },
+  "daggerheart:FFDAGGERHEART.Hp": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Hp",
+   "area": "daggerheart/General",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "9449a7aaa80c"
+  },
+  "daggerheart:FFDAGGERHEART.ItemType.armor": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.ItemType.armor",
+   "area": "daggerheart/ItemType",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "a592855d0508"
+  },
+  "daggerheart:FFDAGGERHEART.ItemType.consumable": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.ItemType.consumable",
+   "area": "daggerheart/ItemType",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "5c108e70592b"
+  },
+  "daggerheart:FFDAGGERHEART.ItemType.loot": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.ItemType.loot",
+   "area": "daggerheart/ItemType",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "839e7c035334"
+  },
+  "daggerheart:FFDAGGERHEART.ItemType.weapon": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.ItemType.weapon",
+   "area": "daggerheart/ItemType",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "1710782c5d15"
   },
   "daggerheart:FFDAGGERHEART.Label": {
    "repo": "daggerheart",
@@ -20413,6 +20638,16 @@
    "date": null,
    "commit": null,
    "hash": "844c1b562331"
+  },
+  "daggerheart:FFDAGGERHEART.Reason.Partner": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Reason.Partner",
+   "area": "daggerheart/Reason",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "34a23b93d6bb"
   },
   "daggerheart:FFDAGGERHEART.Reason.Pc": {
    "repo": "daggerheart",
@@ -22326,6 +22561,86 @@
    "commit": null,
    "hash": "6cef4ccc1019"
   },
+  "dcc:FFDCC.Words.Beast": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.Words.Beast",
+   "area": "dcc/Words",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "e0c897025045"
+  },
+  "dcc:FFDCC.Words.Clever": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.Words.Clever",
+   "area": "dcc/Words",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "decc4f2652f8"
+  },
+  "dcc:FFDCC.Words.Damage.bludgeoning": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.Words.Damage.bludgeoning",
+   "area": "dcc/Words",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "9c2b39f826af"
+  },
+  "dcc:FFDCC.Words.Damage.piercing": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.Words.Damage.piercing",
+   "area": "dcc/Words",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "1dc70572b591"
+  },
+  "dcc:FFDCC.Words.Damage.slashing": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.Words.Damage.slashing",
+   "area": "dcc/Words",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "641a1d52f667"
+  },
+  "dcc:FFDCC.Words.Mindless": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.Words.Mindless",
+   "area": "dcc/Words",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "ab08b7b421e8"
+  },
+  "dcc:FFDCC.Words.SpeaksCommon": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.Words.SpeaksCommon",
+   "area": "dcc/Words",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "fd9c429e6107"
+  },
+  "dcc:FFDCC.Words.Title": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.Words.Title",
+   "area": "dcc/Words",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "f40650e6e30c"
+  },
   "dcc:module.json:description": {
    "repo": "dcc",
    "file": "module.json",
@@ -22345,6 +22660,16 @@
    "date": null,
    "commit": null,
    "hash": "25ddc004d4af"
+  },
+  "dnd5e:code:scripts/arithmetic.js:fail#1": {
+   "repo": "dnd5e",
+   "file": "scripts/arithmetic.js",
+   "key": "scripts/arithmetic.js:fail#1",
+   "area": "dnd5e/code",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "baba957f81aa"
   },
   "dnd5e:code:scripts/main.js:(top)#1": {
    "repo": "dnd5e",
@@ -23482,7 +23807,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "879da0c4e252"
+   "hash": "879da0c4e252",
+   "changed": true
   },
   "ironsworn:FFIRONSWORN.Attack": {
    "repo": "ironsworn",
@@ -25494,7 +25820,18 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "2d3a70466cfd"
+   "hash": "2d3a70466cfd",
+   "gone": "2026-10-13"
+  },
+  "pf2e:FFPF2E.Reason.PackHunter": {
+   "repo": "pf2e",
+   "file": "languages/en.json",
+   "key": "FFPF2E.Reason.PackHunter",
+   "area": "pf2e/Reason",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "a5ae599c7e0d"
   },
   "pf2e:FFPF2E.Reason.Party": {
    "repo": "pf2e",
@@ -25535,7 +25872,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "3e91631c87e0"
+   "hash": "3e91631c87e0",
+   "gone": "2026-10-13"
   },
   "pf2e:FFPF2E.Reason.Summoned": {
    "repo": "pf2e",
@@ -25576,6 +25914,16 @@
    "date": null,
    "commit": null,
    "hash": "62be87ca4222"
+  },
+  "pf2e:FFPF2E.Reason.WillAnimal": {
+   "repo": "pf2e",
+   "file": "languages/en.json",
+   "key": "FFPF2E.Reason.WillAnimal",
+   "area": "pf2e/Reason",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "df4d5d264452"
   },
   "pf2e:FFPF2E.RecallKnowledge": {
    "repo": "pf2e",
