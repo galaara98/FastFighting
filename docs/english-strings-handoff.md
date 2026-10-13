@@ -88,6 +88,7 @@ Where English lives today (counted 2026-10-11):
   - `DESIRE_INTENSITY`, `DESIRE_SELF`, `DESIRE_VERB`.
 
   Move them into a data file but **keep the building-block structure**, so the user writes about 1,640 phrases rather than 3,200 finished sentences.
+  - **Changed 2026-10-13:** the building blocks combined into clumsy sentences ("buries itself harmlessly nearby by a whisker") and can't be translated well into a language that inflects (Icelandic, Spanish). The user chose whole sentences with placeholders instead: `story/en.json` is now key -> sentences, 3 to 5 for every action and outcome (delivery, damage type, degree), about 3,300 in all.
   - `scripts/story/tables.js` already looks up translations in `story/<lang>.json`, a folder the release zip includes when it exists.
   - Choose the English file's location to fit that lookup, and check `.github/workflows/release.yml` packages it.
   - `installStoryTables` uses `1d<n>`, so tables can have any number of entries. `tests/story.test.js` currently requires exactly 5; relax it if the user wants fewer.

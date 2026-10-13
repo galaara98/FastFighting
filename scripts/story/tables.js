@@ -6,11 +6,11 @@
  *   2. The module's tables for the client language, from story/<lang>.json if a translation ships one.
  *   3. The English tables, built from story/en.json.
  *
- * A story file is JSON, either building blocks like story/en.json (see blocks.js) or finished tables:
- * { "<table key>": ["entry 1", ...], ... }. Missing keys fall back to English.
+ * A story file is JSON, key -> sentences: { "<table key>": ["sentence 1", ...], ... }. Missing keys fall back to
+ * English.
  */
 import { MODULE_ID } from "../constants.js";
-import { buildTables, isBlocks, tableName } from "./blocks.js";
+import { tableName } from "./blocks.js";
 import { language } from "../i18n.js";
 
 let english = null; // (a promise of them)
@@ -19,12 +19,12 @@ let localeLang = null;
 let worldCache = null;
 let resolved = null; // the tables object handed out until something changes
 
-/** A story file's tables (null: none), from building blocks or as they are. */
+/** A story file's tables (null: none): key -> sentences. */
 async function fetchTables(lang) {
   try {
     const response = await fetch(`modules/${MODULE_ID}/story/${lang}.json`);
     const data = response.ok ? await response.json() : null;
-    return isBlocks(data) ? buildTables(data) : data;
+    return data && typeof data === "object" && !Array.isArray(data) ? data : null;
   } catch ( err ) {
     return null;
   }

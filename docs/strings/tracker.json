@@ -16290,6 +16290,3846 @@
    "commit": null,
    "hash": "def53867503d"
   },
+  "core:story:action.melee.acid.criticalFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.acid.criticalFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "ed545b3f0ad8"
+  },
+  "core:story:action.melee.acid.criticalSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.acid.criticalSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "385a8adb7184"
+  },
+  "core:story:action.melee.acid.failure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.acid.failure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "06a7264bef66"
+  },
+  "core:story:action.melee.acid.majorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.acid.majorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "24cfca767391"
+  },
+  "core:story:action.melee.acid.majorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.acid.majorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "86d41b660f10"
+  },
+  "core:story:action.melee.acid.minorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.acid.minorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "464f982519a7"
+  },
+  "core:story:action.melee.acid.minorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.acid.minorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "0d35d7c81c75"
+  },
+  "core:story:action.melee.acid.success": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.acid.success",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "9958b1bad814"
+  },
+  "core:story:action.melee.bleed.criticalFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.bleed.criticalFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "b63c162a1b0a"
+  },
+  "core:story:action.melee.bleed.criticalSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.bleed.criticalSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "f8b32152bf6c"
+  },
+  "core:story:action.melee.bleed.failure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.bleed.failure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "7dc3d4c73311"
+  },
+  "core:story:action.melee.bleed.majorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.bleed.majorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "e97974687254"
+  },
+  "core:story:action.melee.bleed.majorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.bleed.majorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "64325d781803"
+  },
+  "core:story:action.melee.bleed.minorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.bleed.minorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "6ed75f73ea1e"
+  },
+  "core:story:action.melee.bleed.minorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.bleed.minorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "282e20defafe"
+  },
+  "core:story:action.melee.bleed.success": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.bleed.success",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "594bd19f4173"
+  },
+  "core:story:action.melee.bludgeoning.criticalFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.bludgeoning.criticalFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "22d5d199acfb"
+  },
+  "core:story:action.melee.bludgeoning.criticalSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.bludgeoning.criticalSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "12ef3890adae"
+  },
+  "core:story:action.melee.bludgeoning.failure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.bludgeoning.failure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "338915d22510"
+  },
+  "core:story:action.melee.bludgeoning.majorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.bludgeoning.majorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "91ca1b014c4d"
+  },
+  "core:story:action.melee.bludgeoning.majorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.bludgeoning.majorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "8c31b63d8d29"
+  },
+  "core:story:action.melee.bludgeoning.minorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.bludgeoning.minorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "f4dc7137d655"
+  },
+  "core:story:action.melee.bludgeoning.minorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.bludgeoning.minorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "d9708d271371"
+  },
+  "core:story:action.melee.bludgeoning.success": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.bludgeoning.success",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "8cba27db1ca7"
+  },
+  "core:story:action.melee.cold.criticalFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.cold.criticalFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "5ec49484788f"
+  },
+  "core:story:action.melee.cold.criticalSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.cold.criticalSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "1983ea648606"
+  },
+  "core:story:action.melee.cold.failure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.cold.failure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "f6bc8937a2c6"
+  },
+  "core:story:action.melee.cold.majorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.cold.majorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "9111f6fadcf0"
+  },
+  "core:story:action.melee.cold.majorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.cold.majorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "33fe68f7b3c2"
+  },
+  "core:story:action.melee.cold.minorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.cold.minorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "d13e9658fd74"
+  },
+  "core:story:action.melee.cold.minorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.cold.minorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "2e6e8d225b8b"
+  },
+  "core:story:action.melee.cold.success": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.cold.success",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "8fc8cffbe6f5"
+  },
+  "core:story:action.melee.electricity.criticalFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.electricity.criticalFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "bbd95c3187c4"
+  },
+  "core:story:action.melee.electricity.criticalSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.electricity.criticalSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "c87f32e68f32"
+  },
+  "core:story:action.melee.electricity.failure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.electricity.failure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "4ebf6f2f8d0e"
+  },
+  "core:story:action.melee.electricity.majorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.electricity.majorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "5b2cef68e93e"
+  },
+  "core:story:action.melee.electricity.majorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.electricity.majorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "061ff6699ecd"
+  },
+  "core:story:action.melee.electricity.minorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.electricity.minorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "dd8d200af072"
+  },
+  "core:story:action.melee.electricity.minorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.electricity.minorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "0d3c74c8a198"
+  },
+  "core:story:action.melee.electricity.success": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.electricity.success",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "130eed0ae7f6"
+  },
+  "core:story:action.melee.fire.criticalFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.fire.criticalFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "71aa98fe6ae5"
+  },
+  "core:story:action.melee.fire.criticalSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.fire.criticalSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "695517a76d9d"
+  },
+  "core:story:action.melee.fire.failure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.fire.failure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "440db9fbe483"
+  },
+  "core:story:action.melee.fire.majorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.fire.majorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "4ac5ca5e55e9"
+  },
+  "core:story:action.melee.fire.majorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.fire.majorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "48e0237f6f3e"
+  },
+  "core:story:action.melee.fire.minorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.fire.minorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "aa765d39363a"
+  },
+  "core:story:action.melee.fire.minorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.fire.minorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "36327ca6f3a0"
+  },
+  "core:story:action.melee.fire.success": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.fire.success",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "33d01a5209ec"
+  },
+  "core:story:action.melee.force.criticalFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.force.criticalFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "361ad2ebabc1"
+  },
+  "core:story:action.melee.force.criticalSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.force.criticalSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "6da8198e5e25"
+  },
+  "core:story:action.melee.force.failure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.force.failure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "9dd0e38facbe"
+  },
+  "core:story:action.melee.force.majorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.force.majorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "7ea73ff71c13"
+  },
+  "core:story:action.melee.force.majorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.force.majorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "0e566b69d33e"
+  },
+  "core:story:action.melee.force.minorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.force.minorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "48cdce2d5bf7"
+  },
+  "core:story:action.melee.force.minorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.force.minorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "10768953cde4"
+  },
+  "core:story:action.melee.force.success": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.force.success",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "2c4e54c0b6ed"
+  },
+  "core:story:action.melee.mental.criticalFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.mental.criticalFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "cc0096c77350"
+  },
+  "core:story:action.melee.mental.criticalSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.mental.criticalSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "983482531af3"
+  },
+  "core:story:action.melee.mental.failure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.mental.failure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "0bd87047c76d"
+  },
+  "core:story:action.melee.mental.majorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.mental.majorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "5ed8f9ce9ce1"
+  },
+  "core:story:action.melee.mental.majorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.mental.majorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "c5d335e613bb"
+  },
+  "core:story:action.melee.mental.minorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.mental.minorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "05afbd866561"
+  },
+  "core:story:action.melee.mental.minorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.mental.minorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "e5e0783ae80f"
+  },
+  "core:story:action.melee.mental.success": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.mental.success",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "18bd0455b9cb"
+  },
+  "core:story:action.melee.piercing.criticalFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.piercing.criticalFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "691ca980d09c"
+  },
+  "core:story:action.melee.piercing.criticalSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.piercing.criticalSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "99ba93918c56"
+  },
+  "core:story:action.melee.piercing.failure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.piercing.failure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "482b4f19aaa9"
+  },
+  "core:story:action.melee.piercing.majorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.piercing.majorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "4a7a03b538cb"
+  },
+  "core:story:action.melee.piercing.majorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.piercing.majorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "44751e7791b6"
+  },
+  "core:story:action.melee.piercing.minorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.piercing.minorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "d9b525e2103b"
+  },
+  "core:story:action.melee.piercing.minorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.piercing.minorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "f1f03d540b1f"
+  },
+  "core:story:action.melee.piercing.success": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.piercing.success",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "cb6c476c9b00"
+  },
+  "core:story:action.melee.poison.criticalFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.poison.criticalFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "9e0af7c53f1c"
+  },
+  "core:story:action.melee.poison.criticalSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.poison.criticalSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "be4374833889"
+  },
+  "core:story:action.melee.poison.failure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.poison.failure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "a907e3d5e9af"
+  },
+  "core:story:action.melee.poison.majorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.poison.majorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "09f66f78ce69"
+  },
+  "core:story:action.melee.poison.majorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.poison.majorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "3c4a94a61b86"
+  },
+  "core:story:action.melee.poison.minorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.poison.minorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "8392597a4804"
+  },
+  "core:story:action.melee.poison.minorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.poison.minorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "2ff7a4b04f21"
+  },
+  "core:story:action.melee.poison.success": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.poison.success",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "4ac4fb4eae55"
+  },
+  "core:story:action.melee.slashing.criticalFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.slashing.criticalFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "a6ed02abb75e"
+  },
+  "core:story:action.melee.slashing.criticalSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.slashing.criticalSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "30f41cdc0703"
+  },
+  "core:story:action.melee.slashing.failure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.slashing.failure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "0d5024958cf3"
+  },
+  "core:story:action.melee.slashing.majorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.slashing.majorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "43465d2e5d17"
+  },
+  "core:story:action.melee.slashing.majorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.slashing.majorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "a7fc7d458efc"
+  },
+  "core:story:action.melee.slashing.minorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.slashing.minorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "1d5413812452"
+  },
+  "core:story:action.melee.slashing.minorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.slashing.minorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "62713a55f1e6"
+  },
+  "core:story:action.melee.slashing.success": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.slashing.success",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "8aecb228a658"
+  },
+  "core:story:action.melee.sonic.criticalFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.sonic.criticalFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "1746939723fd"
+  },
+  "core:story:action.melee.sonic.criticalSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.sonic.criticalSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "34e760d6778f"
+  },
+  "core:story:action.melee.sonic.failure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.sonic.failure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "f6f98ba02ceb"
+  },
+  "core:story:action.melee.sonic.majorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.sonic.majorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "c0c0ef87ad01"
+  },
+  "core:story:action.melee.sonic.majorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.sonic.majorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "118613dc481a"
+  },
+  "core:story:action.melee.sonic.minorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.sonic.minorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "5ce38d973ee4"
+  },
+  "core:story:action.melee.sonic.minorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.sonic.minorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "e62015a38448"
+  },
+  "core:story:action.melee.sonic.success": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.sonic.success",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "dd601c1df3d5"
+  },
+  "core:story:action.melee.spirit.criticalFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.spirit.criticalFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "186364f75f94"
+  },
+  "core:story:action.melee.spirit.criticalSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.spirit.criticalSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "ba69f5cb2d46"
+  },
+  "core:story:action.melee.spirit.failure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.spirit.failure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "f38effb05a8b"
+  },
+  "core:story:action.melee.spirit.majorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.spirit.majorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "a500ea7067ef"
+  },
+  "core:story:action.melee.spirit.majorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.spirit.majorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "1e1e4cce1e94"
+  },
+  "core:story:action.melee.spirit.minorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.spirit.minorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "8b7f1b4f97af"
+  },
+  "core:story:action.melee.spirit.minorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.spirit.minorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "805ac52816d4"
+  },
+  "core:story:action.melee.spirit.success": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.spirit.success",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "13b072454330"
+  },
+  "core:story:action.melee.untyped.criticalFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.untyped.criticalFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "8269873d32f9"
+  },
+  "core:story:action.melee.untyped.criticalSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.untyped.criticalSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "cd688a4a363d"
+  },
+  "core:story:action.melee.untyped.failure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.untyped.failure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "3346d573b12a"
+  },
+  "core:story:action.melee.untyped.majorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.untyped.majorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "5984648dd794"
+  },
+  "core:story:action.melee.untyped.majorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.untyped.majorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "e8c778d9546c"
+  },
+  "core:story:action.melee.untyped.minorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.untyped.minorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "cc45a2b6feeb"
+  },
+  "core:story:action.melee.untyped.minorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.untyped.minorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "4bd9e6af0be2"
+  },
+  "core:story:action.melee.untyped.success": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.untyped.success",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "46972f5a0ce9"
+  },
+  "core:story:action.melee.vitality.criticalFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.vitality.criticalFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "bb1bab1f7c69"
+  },
+  "core:story:action.melee.vitality.criticalSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.vitality.criticalSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "ed3787313d64"
+  },
+  "core:story:action.melee.vitality.failure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.vitality.failure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "381b99ad6421"
+  },
+  "core:story:action.melee.vitality.majorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.vitality.majorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "98da99a69f5a"
+  },
+  "core:story:action.melee.vitality.majorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.vitality.majorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "c6d51c4c230b"
+  },
+  "core:story:action.melee.vitality.minorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.vitality.minorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "bcea5e2efc4d"
+  },
+  "core:story:action.melee.vitality.minorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.vitality.minorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "d83f75ac228a"
+  },
+  "core:story:action.melee.vitality.success": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.vitality.success",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "75cd5d22a37c"
+  },
+  "core:story:action.melee.void.criticalFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.void.criticalFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "79dda3020b6c"
+  },
+  "core:story:action.melee.void.criticalSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.void.criticalSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "2a4d9f1832df"
+  },
+  "core:story:action.melee.void.failure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.void.failure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "a3e477e0d25d"
+  },
+  "core:story:action.melee.void.majorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.void.majorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "c89e79706c43"
+  },
+  "core:story:action.melee.void.majorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.void.majorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "c1b9f87eca8a"
+  },
+  "core:story:action.melee.void.minorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.void.minorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "e6e66513c541"
+  },
+  "core:story:action.melee.void.minorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.void.minorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "0a5ede08b5c1"
+  },
+  "core:story:action.melee.void.success": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.melee.void.success",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "b622e9e23e8d"
+  },
+  "core:story:action.ranged.acid.criticalFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.acid.criticalFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "c3c6f224ce1f"
+  },
+  "core:story:action.ranged.acid.criticalSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.acid.criticalSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "21c6ae13c58f"
+  },
+  "core:story:action.ranged.acid.failure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.acid.failure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "5592d9380b39"
+  },
+  "core:story:action.ranged.acid.majorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.acid.majorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "f162131f76b9"
+  },
+  "core:story:action.ranged.acid.majorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.acid.majorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "c7be90266d15"
+  },
+  "core:story:action.ranged.acid.minorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.acid.minorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "5698f0315044"
+  },
+  "core:story:action.ranged.acid.minorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.acid.minorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "5dd86cf56fbe"
+  },
+  "core:story:action.ranged.acid.success": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.acid.success",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "151b9013fe13"
+  },
+  "core:story:action.ranged.bleed.criticalFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.bleed.criticalFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "131feac83b43"
+  },
+  "core:story:action.ranged.bleed.criticalSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.bleed.criticalSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "5d587285134b"
+  },
+  "core:story:action.ranged.bleed.failure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.bleed.failure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "69a3753360d7"
+  },
+  "core:story:action.ranged.bleed.majorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.bleed.majorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "0d43b0a9675f"
+  },
+  "core:story:action.ranged.bleed.majorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.bleed.majorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "9c77c40ec940"
+  },
+  "core:story:action.ranged.bleed.minorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.bleed.minorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "af143f820ab6"
+  },
+  "core:story:action.ranged.bleed.minorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.bleed.minorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "88506decd763"
+  },
+  "core:story:action.ranged.bleed.success": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.bleed.success",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "4043800a4c7b"
+  },
+  "core:story:action.ranged.bludgeoning.criticalFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.bludgeoning.criticalFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "487d785cd0fe"
+  },
+  "core:story:action.ranged.bludgeoning.criticalSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.bludgeoning.criticalSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "bffe715a8f83"
+  },
+  "core:story:action.ranged.bludgeoning.failure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.bludgeoning.failure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "038b76ddea98"
+  },
+  "core:story:action.ranged.bludgeoning.majorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.bludgeoning.majorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "4531495de270"
+  },
+  "core:story:action.ranged.bludgeoning.majorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.bludgeoning.majorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "cab4a824db53"
+  },
+  "core:story:action.ranged.bludgeoning.minorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.bludgeoning.minorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "ad99c3bca684"
+  },
+  "core:story:action.ranged.bludgeoning.minorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.bludgeoning.minorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "d57e6ac04554"
+  },
+  "core:story:action.ranged.bludgeoning.success": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.bludgeoning.success",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "dc5a2deabd44"
+  },
+  "core:story:action.ranged.cold.criticalFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.cold.criticalFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "8b6e3919a08b"
+  },
+  "core:story:action.ranged.cold.criticalSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.cold.criticalSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "39df5104c9bc"
+  },
+  "core:story:action.ranged.cold.failure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.cold.failure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "14da00681699"
+  },
+  "core:story:action.ranged.cold.majorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.cold.majorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "cdbb8f57bb85"
+  },
+  "core:story:action.ranged.cold.majorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.cold.majorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "331edccb5ec9"
+  },
+  "core:story:action.ranged.cold.minorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.cold.minorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "63c70b5a2661"
+  },
+  "core:story:action.ranged.cold.minorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.cold.minorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "1d45cd6ed5b6"
+  },
+  "core:story:action.ranged.cold.success": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.cold.success",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "bc2aa41b0e5a"
+  },
+  "core:story:action.ranged.electricity.criticalFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.electricity.criticalFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "a8e7788f8193"
+  },
+  "core:story:action.ranged.electricity.criticalSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.electricity.criticalSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "be9235c3bfeb"
+  },
+  "core:story:action.ranged.electricity.failure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.electricity.failure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "ceea51a2c471"
+  },
+  "core:story:action.ranged.electricity.majorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.electricity.majorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "d339bfbbe3a8"
+  },
+  "core:story:action.ranged.electricity.majorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.electricity.majorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "d25b55be1a6d"
+  },
+  "core:story:action.ranged.electricity.minorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.electricity.minorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "0a8895f863e6"
+  },
+  "core:story:action.ranged.electricity.minorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.electricity.minorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "b9aa17e15050"
+  },
+  "core:story:action.ranged.electricity.success": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.electricity.success",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "76696b4d3b6f"
+  },
+  "core:story:action.ranged.fire.criticalFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.fire.criticalFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "bcea2f462b25"
+  },
+  "core:story:action.ranged.fire.criticalSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.fire.criticalSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "30905e9b32d7"
+  },
+  "core:story:action.ranged.fire.failure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.fire.failure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "20cef9be1d8d"
+  },
+  "core:story:action.ranged.fire.majorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.fire.majorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "142f23e909ef"
+  },
+  "core:story:action.ranged.fire.majorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.fire.majorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "a15924c67a37"
+  },
+  "core:story:action.ranged.fire.minorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.fire.minorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "7830ab673fa5"
+  },
+  "core:story:action.ranged.fire.minorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.fire.minorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "3cfc884c3505"
+  },
+  "core:story:action.ranged.fire.success": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.fire.success",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "2f8ba1749489"
+  },
+  "core:story:action.ranged.force.criticalFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.force.criticalFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "ca4b66592147"
+  },
+  "core:story:action.ranged.force.criticalSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.force.criticalSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "0a9275260aa4"
+  },
+  "core:story:action.ranged.force.failure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.force.failure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "c425e7f48f60"
+  },
+  "core:story:action.ranged.force.majorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.force.majorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "68767148b787"
+  },
+  "core:story:action.ranged.force.majorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.force.majorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "e9b91a60161b"
+  },
+  "core:story:action.ranged.force.minorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.force.minorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "7896c1dfff8b"
+  },
+  "core:story:action.ranged.force.minorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.force.minorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "12f4833f47aa"
+  },
+  "core:story:action.ranged.force.success": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.force.success",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "ffb5353f75fa"
+  },
+  "core:story:action.ranged.mental.criticalFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.mental.criticalFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "c09ceed86dd6"
+  },
+  "core:story:action.ranged.mental.criticalSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.mental.criticalSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "46a4a22e4111"
+  },
+  "core:story:action.ranged.mental.failure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.mental.failure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "ad856aea3fa3"
+  },
+  "core:story:action.ranged.mental.majorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.mental.majorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "e2152790f8a4"
+  },
+  "core:story:action.ranged.mental.majorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.mental.majorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "ff6c0270c474"
+  },
+  "core:story:action.ranged.mental.minorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.mental.minorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "f8da763f8591"
+  },
+  "core:story:action.ranged.mental.minorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.mental.minorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "96a84a36a5e5"
+  },
+  "core:story:action.ranged.mental.success": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.mental.success",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "417f01f448a4"
+  },
+  "core:story:action.ranged.piercing.criticalFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.piercing.criticalFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "fa9d28c9e2dd"
+  },
+  "core:story:action.ranged.piercing.criticalSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.piercing.criticalSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "21487cea656c"
+  },
+  "core:story:action.ranged.piercing.failure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.piercing.failure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "fd7667373ecd"
+  },
+  "core:story:action.ranged.piercing.majorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.piercing.majorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "951a38f1c49d"
+  },
+  "core:story:action.ranged.piercing.majorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.piercing.majorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "be267a8c393a"
+  },
+  "core:story:action.ranged.piercing.minorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.piercing.minorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "2eaef771c7e5"
+  },
+  "core:story:action.ranged.piercing.minorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.piercing.minorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "4cd3dc8c13bc"
+  },
+  "core:story:action.ranged.piercing.success": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.piercing.success",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "bc92eac8c052"
+  },
+  "core:story:action.ranged.poison.criticalFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.poison.criticalFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "ff79c38e0b95"
+  },
+  "core:story:action.ranged.poison.criticalSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.poison.criticalSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "fb74ec4db3b9"
+  },
+  "core:story:action.ranged.poison.failure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.poison.failure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "9f0c2d48848a"
+  },
+  "core:story:action.ranged.poison.majorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.poison.majorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "940f7e33baf4"
+  },
+  "core:story:action.ranged.poison.majorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.poison.majorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "d78f918365b7"
+  },
+  "core:story:action.ranged.poison.minorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.poison.minorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "08636f889b42"
+  },
+  "core:story:action.ranged.poison.minorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.poison.minorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "a1702edf7ae9"
+  },
+  "core:story:action.ranged.poison.success": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.poison.success",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "04a10375fd04"
+  },
+  "core:story:action.ranged.slashing.criticalFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.slashing.criticalFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "7819afb2c709"
+  },
+  "core:story:action.ranged.slashing.criticalSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.slashing.criticalSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "f527377b8adb"
+  },
+  "core:story:action.ranged.slashing.failure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.slashing.failure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "61a278c259f6"
+  },
+  "core:story:action.ranged.slashing.majorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.slashing.majorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "87b52b65f3a3"
+  },
+  "core:story:action.ranged.slashing.majorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.slashing.majorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "609ad7710bc9"
+  },
+  "core:story:action.ranged.slashing.minorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.slashing.minorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "139dc3ba3d00"
+  },
+  "core:story:action.ranged.slashing.minorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.slashing.minorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "3d1572db3abf"
+  },
+  "core:story:action.ranged.slashing.success": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.slashing.success",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "a9299686c15f"
+  },
+  "core:story:action.ranged.sonic.criticalFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.sonic.criticalFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "bde8db5c830b"
+  },
+  "core:story:action.ranged.sonic.criticalSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.sonic.criticalSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "45cb321b2bf2"
+  },
+  "core:story:action.ranged.sonic.failure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.sonic.failure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "eba85ebd974c"
+  },
+  "core:story:action.ranged.sonic.majorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.sonic.majorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "d69dba4d836b"
+  },
+  "core:story:action.ranged.sonic.majorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.sonic.majorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "123878dc365a"
+  },
+  "core:story:action.ranged.sonic.minorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.sonic.minorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "f661a17f97a8"
+  },
+  "core:story:action.ranged.sonic.minorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.sonic.minorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "875534ee5224"
+  },
+  "core:story:action.ranged.sonic.success": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.sonic.success",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "b2497f139afe"
+  },
+  "core:story:action.ranged.spirit.criticalFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.spirit.criticalFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "79011c3aaebf"
+  },
+  "core:story:action.ranged.spirit.criticalSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.spirit.criticalSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "17d3bdb7658a"
+  },
+  "core:story:action.ranged.spirit.failure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.spirit.failure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "5b61e56dd5b3"
+  },
+  "core:story:action.ranged.spirit.majorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.spirit.majorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "8e1dd8e20a86"
+  },
+  "core:story:action.ranged.spirit.majorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.spirit.majorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "93d093708c79"
+  },
+  "core:story:action.ranged.spirit.minorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.spirit.minorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "40b669b292e4"
+  },
+  "core:story:action.ranged.spirit.minorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.spirit.minorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "8d14cc6dd782"
+  },
+  "core:story:action.ranged.spirit.success": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.spirit.success",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "d05774f67c19"
+  },
+  "core:story:action.ranged.untyped.criticalFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.untyped.criticalFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "6a1605714dca"
+  },
+  "core:story:action.ranged.untyped.criticalSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.untyped.criticalSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "68200406279f"
+  },
+  "core:story:action.ranged.untyped.failure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.untyped.failure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "4461ca723f4f"
+  },
+  "core:story:action.ranged.untyped.majorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.untyped.majorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "fe71e3d048ea"
+  },
+  "core:story:action.ranged.untyped.majorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.untyped.majorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "c58aeb4c5c49"
+  },
+  "core:story:action.ranged.untyped.minorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.untyped.minorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "b6f56fbd9dce"
+  },
+  "core:story:action.ranged.untyped.minorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.untyped.minorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "b062a93059d4"
+  },
+  "core:story:action.ranged.untyped.success": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.untyped.success",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "5b6e99e29a82"
+  },
+  "core:story:action.ranged.vitality.criticalFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.vitality.criticalFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "6b4fec7e943e"
+  },
+  "core:story:action.ranged.vitality.criticalSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.vitality.criticalSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "126197e08b09"
+  },
+  "core:story:action.ranged.vitality.failure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.vitality.failure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "c4ce9f0e1733"
+  },
+  "core:story:action.ranged.vitality.majorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.vitality.majorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "5051d187311c"
+  },
+  "core:story:action.ranged.vitality.majorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.vitality.majorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "5e1642ff9a55"
+  },
+  "core:story:action.ranged.vitality.minorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.vitality.minorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "db8fac5dfc30"
+  },
+  "core:story:action.ranged.vitality.minorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.vitality.minorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "8dfc7180a002"
+  },
+  "core:story:action.ranged.vitality.success": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.vitality.success",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "f2b83aaf808c"
+  },
+  "core:story:action.ranged.void.criticalFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.void.criticalFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "55906650fdad"
+  },
+  "core:story:action.ranged.void.criticalSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.void.criticalSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "798844f000a1"
+  },
+  "core:story:action.ranged.void.failure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.void.failure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "d858d045ff1c"
+  },
+  "core:story:action.ranged.void.majorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.void.majorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "e619f38df0aa"
+  },
+  "core:story:action.ranged.void.majorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.void.majorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "51e20274b7f8"
+  },
+  "core:story:action.ranged.void.minorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.void.minorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "d61520e1e484"
+  },
+  "core:story:action.ranged.void.minorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.void.minorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "0ccb93dc5cd4"
+  },
+  "core:story:action.ranged.void.success": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.ranged.void.success",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "a493e51a23f5"
+  },
+  "core:story:action.spell.acid.criticalFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.acid.criticalFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "f673505f0287"
+  },
+  "core:story:action.spell.acid.criticalSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.acid.criticalSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "5f36699beec3"
+  },
+  "core:story:action.spell.acid.failure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.acid.failure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "9cd9cfe3950c"
+  },
+  "core:story:action.spell.acid.majorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.acid.majorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "bd38b9e6d186"
+  },
+  "core:story:action.spell.acid.majorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.acid.majorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "8accb6c1e1ed"
+  },
+  "core:story:action.spell.acid.minorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.acid.minorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "649430e1571e"
+  },
+  "core:story:action.spell.acid.minorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.acid.minorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "d72f0dc14ed0"
+  },
+  "core:story:action.spell.acid.success": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.acid.success",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "b0078167f900"
+  },
+  "core:story:action.spell.bleed.criticalFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.bleed.criticalFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "67527cf010fb"
+  },
+  "core:story:action.spell.bleed.criticalSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.bleed.criticalSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "88875c8290ba"
+  },
+  "core:story:action.spell.bleed.failure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.bleed.failure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "f68993f73adc"
+  },
+  "core:story:action.spell.bleed.majorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.bleed.majorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "08ad736f2d34"
+  },
+  "core:story:action.spell.bleed.majorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.bleed.majorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "ab9a8837ef8a"
+  },
+  "core:story:action.spell.bleed.minorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.bleed.minorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "1b986274f153"
+  },
+  "core:story:action.spell.bleed.minorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.bleed.minorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "21c32c864736"
+  },
+  "core:story:action.spell.bleed.success": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.bleed.success",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "a832b26f7ec2"
+  },
+  "core:story:action.spell.bludgeoning.criticalFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.bludgeoning.criticalFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "c7cff7fe1747"
+  },
+  "core:story:action.spell.bludgeoning.criticalSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.bludgeoning.criticalSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "6ee0c9ed24d7"
+  },
+  "core:story:action.spell.bludgeoning.failure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.bludgeoning.failure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "7d1e479ee2fd"
+  },
+  "core:story:action.spell.bludgeoning.majorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.bludgeoning.majorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "d7c0431bce55"
+  },
+  "core:story:action.spell.bludgeoning.majorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.bludgeoning.majorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "2c0c530b4aa2"
+  },
+  "core:story:action.spell.bludgeoning.minorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.bludgeoning.minorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "8f47b7ade878"
+  },
+  "core:story:action.spell.bludgeoning.minorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.bludgeoning.minorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "9f91427922d2"
+  },
+  "core:story:action.spell.bludgeoning.success": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.bludgeoning.success",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "1aee14c47a36"
+  },
+  "core:story:action.spell.cold.criticalFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.cold.criticalFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "0eb0b83f9206"
+  },
+  "core:story:action.spell.cold.criticalSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.cold.criticalSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "a49b5b5f5328"
+  },
+  "core:story:action.spell.cold.failure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.cold.failure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "4498a7c9cb56"
+  },
+  "core:story:action.spell.cold.majorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.cold.majorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "65b4a801d00b"
+  },
+  "core:story:action.spell.cold.majorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.cold.majorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "952aa886e7be"
+  },
+  "core:story:action.spell.cold.minorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.cold.minorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "e8a7ab288042"
+  },
+  "core:story:action.spell.cold.minorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.cold.minorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "48abc6dbd58d"
+  },
+  "core:story:action.spell.cold.success": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.cold.success",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "29cf48bfcc9b"
+  },
+  "core:story:action.spell.electricity.criticalFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.electricity.criticalFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "fd620cb3e966"
+  },
+  "core:story:action.spell.electricity.criticalSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.electricity.criticalSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "e684436e7c48"
+  },
+  "core:story:action.spell.electricity.failure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.electricity.failure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "22454b4570af"
+  },
+  "core:story:action.spell.electricity.majorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.electricity.majorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "1983abdc38cd"
+  },
+  "core:story:action.spell.electricity.majorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.electricity.majorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "9a7fa4823f2a"
+  },
+  "core:story:action.spell.electricity.minorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.electricity.minorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "aea1116a5915"
+  },
+  "core:story:action.spell.electricity.minorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.electricity.minorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "b42b7e4df6be"
+  },
+  "core:story:action.spell.electricity.success": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.electricity.success",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "5ba0d8189f7c"
+  },
+  "core:story:action.spell.fire.criticalFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.fire.criticalFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "adb1cba91630"
+  },
+  "core:story:action.spell.fire.criticalSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.fire.criticalSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "736d092c0887"
+  },
+  "core:story:action.spell.fire.failure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.fire.failure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "9b1761f96ce0"
+  },
+  "core:story:action.spell.fire.majorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.fire.majorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "db0cf03781d5"
+  },
+  "core:story:action.spell.fire.majorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.fire.majorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "579f266b23e6"
+  },
+  "core:story:action.spell.fire.minorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.fire.minorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "5c5d74a38bfe"
+  },
+  "core:story:action.spell.fire.minorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.fire.minorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "6613996f4f8e"
+  },
+  "core:story:action.spell.fire.success": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.fire.success",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "fd51c1e63cff"
+  },
+  "core:story:action.spell.force.criticalFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.force.criticalFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "cc08cd2d618e"
+  },
+  "core:story:action.spell.force.criticalSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.force.criticalSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "4a1e91825402"
+  },
+  "core:story:action.spell.force.failure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.force.failure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "506f8021a894"
+  },
+  "core:story:action.spell.force.majorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.force.majorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "6bd4418cfe0f"
+  },
+  "core:story:action.spell.force.majorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.force.majorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "9d21ff215c22"
+  },
+  "core:story:action.spell.force.minorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.force.minorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "378b8adcb845"
+  },
+  "core:story:action.spell.force.minorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.force.minorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "f52ad80d947a"
+  },
+  "core:story:action.spell.force.success": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.force.success",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "52db559647f6"
+  },
+  "core:story:action.spell.mental.criticalFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.mental.criticalFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "32fb89877ebd"
+  },
+  "core:story:action.spell.mental.criticalSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.mental.criticalSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "f01705dc8622"
+  },
+  "core:story:action.spell.mental.failure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.mental.failure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "ea6ee3323bc8"
+  },
+  "core:story:action.spell.mental.majorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.mental.majorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "470912e6a3d6"
+  },
+  "core:story:action.spell.mental.majorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.mental.majorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "a928fc7ef496"
+  },
+  "core:story:action.spell.mental.minorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.mental.minorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "c9bd4ce74d3e"
+  },
+  "core:story:action.spell.mental.minorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.mental.minorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "9ebcb50216cf"
+  },
+  "core:story:action.spell.mental.success": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.mental.success",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "9c33da0c4ca5"
+  },
+  "core:story:action.spell.piercing.criticalFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.piercing.criticalFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "be7be7281e76"
+  },
+  "core:story:action.spell.piercing.criticalSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.piercing.criticalSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "a620a2a67e2e"
+  },
+  "core:story:action.spell.piercing.failure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.piercing.failure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "ddc3d5abb2f6"
+  },
+  "core:story:action.spell.piercing.majorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.piercing.majorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "0a04614037e3"
+  },
+  "core:story:action.spell.piercing.majorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.piercing.majorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "1dd46f8211b1"
+  },
+  "core:story:action.spell.piercing.minorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.piercing.minorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "7c04615eb62c"
+  },
+  "core:story:action.spell.piercing.minorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.piercing.minorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "3dad51103478"
+  },
+  "core:story:action.spell.piercing.success": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.piercing.success",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "b7cb2a5e88b6"
+  },
+  "core:story:action.spell.poison.criticalFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.poison.criticalFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "e541059e8e37"
+  },
+  "core:story:action.spell.poison.criticalSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.poison.criticalSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "7d34698f8af8"
+  },
+  "core:story:action.spell.poison.failure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.poison.failure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "cd7014b85a40"
+  },
+  "core:story:action.spell.poison.majorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.poison.majorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "b3bae59d7e01"
+  },
+  "core:story:action.spell.poison.majorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.poison.majorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "0cf2ff611573"
+  },
+  "core:story:action.spell.poison.minorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.poison.minorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "cd6effe6ce2c"
+  },
+  "core:story:action.spell.poison.minorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.poison.minorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "c2f5ead616d0"
+  },
+  "core:story:action.spell.poison.success": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.poison.success",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "835f4254fa90"
+  },
+  "core:story:action.spell.slashing.criticalFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.slashing.criticalFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "ae87a2cd3cc3"
+  },
+  "core:story:action.spell.slashing.criticalSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.slashing.criticalSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "ca11d00cb189"
+  },
+  "core:story:action.spell.slashing.failure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.slashing.failure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "343f6493328f"
+  },
+  "core:story:action.spell.slashing.majorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.slashing.majorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "13c72581369d"
+  },
+  "core:story:action.spell.slashing.majorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.slashing.majorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "76d30fcff493"
+  },
+  "core:story:action.spell.slashing.minorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.slashing.minorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "8dc549117049"
+  },
+  "core:story:action.spell.slashing.minorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.slashing.minorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "91cefb129162"
+  },
+  "core:story:action.spell.slashing.success": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.slashing.success",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "e0be4c95a5fe"
+  },
+  "core:story:action.spell.sonic.criticalFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.sonic.criticalFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "95bbdedcf116"
+  },
+  "core:story:action.spell.sonic.criticalSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.sonic.criticalSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "069b56cf3cc1"
+  },
+  "core:story:action.spell.sonic.failure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.sonic.failure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "67c1b3820cda"
+  },
+  "core:story:action.spell.sonic.majorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.sonic.majorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "4ca92ed2bbf7"
+  },
+  "core:story:action.spell.sonic.majorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.sonic.majorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "d5097e2c5565"
+  },
+  "core:story:action.spell.sonic.minorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.sonic.minorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "78317611a0ad"
+  },
+  "core:story:action.spell.sonic.minorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.sonic.minorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "a12ba3acbb3e"
+  },
+  "core:story:action.spell.sonic.success": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.sonic.success",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "07f16e94b304"
+  },
+  "core:story:action.spell.spirit.criticalFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.spirit.criticalFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "a60c585b8cf9"
+  },
+  "core:story:action.spell.spirit.criticalSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.spirit.criticalSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "cc6ca9f6146c"
+  },
+  "core:story:action.spell.spirit.failure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.spirit.failure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "d7d94a043e3b"
+  },
+  "core:story:action.spell.spirit.majorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.spirit.majorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "0c567ece6caa"
+  },
+  "core:story:action.spell.spirit.majorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.spirit.majorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "5334df05b02f"
+  },
+  "core:story:action.spell.spirit.minorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.spirit.minorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "577eea1b93d8"
+  },
+  "core:story:action.spell.spirit.minorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.spirit.minorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "b8e92eab2d12"
+  },
+  "core:story:action.spell.spirit.success": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.spirit.success",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "c43352e9b64e"
+  },
+  "core:story:action.spell.untyped.criticalFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.untyped.criticalFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "2d01924bb3f2"
+  },
+  "core:story:action.spell.untyped.criticalSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.untyped.criticalSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "ae656ee4a6b4"
+  },
+  "core:story:action.spell.untyped.failure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.untyped.failure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "20e067a453f0"
+  },
+  "core:story:action.spell.untyped.majorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.untyped.majorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "68495bf0786c"
+  },
+  "core:story:action.spell.untyped.majorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.untyped.majorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "b4d2cc61a528"
+  },
+  "core:story:action.spell.untyped.minorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.untyped.minorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "75bb96d03eb0"
+  },
+  "core:story:action.spell.untyped.minorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.untyped.minorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "1f8b58a8ede3"
+  },
+  "core:story:action.spell.untyped.success": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.untyped.success",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "16677b5e10dd"
+  },
+  "core:story:action.spell.vitality.criticalFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.vitality.criticalFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "fe637b2bc646"
+  },
+  "core:story:action.spell.vitality.criticalSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.vitality.criticalSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "0e08a0aed68d"
+  },
+  "core:story:action.spell.vitality.failure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.vitality.failure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "bdf47fc64501"
+  },
+  "core:story:action.spell.vitality.majorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.vitality.majorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "31e17f1af9a6"
+  },
+  "core:story:action.spell.vitality.majorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.vitality.majorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "ab5688b46111"
+  },
+  "core:story:action.spell.vitality.minorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.vitality.minorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "53ad4c38fe96"
+  },
+  "core:story:action.spell.vitality.minorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.vitality.minorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "021c2912199b"
+  },
+  "core:story:action.spell.vitality.success": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.vitality.success",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "3c198e6ec42f"
+  },
+  "core:story:action.spell.void.criticalFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.void.criticalFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "4a51f363e26e"
+  },
+  "core:story:action.spell.void.criticalSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.void.criticalSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "5c2c157b6de2"
+  },
+  "core:story:action.spell.void.failure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.void.failure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "6d6cde81465a"
+  },
+  "core:story:action.spell.void.majorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.void.majorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "51c170ddbc5d"
+  },
+  "core:story:action.spell.void.majorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.void.majorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "a593afe3f0af"
+  },
+  "core:story:action.spell.void.minorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.void.minorFailure",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "c5c9dbfe43a0"
+  },
+  "core:story:action.spell.void.minorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.void.minorSuccess",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "76d7624a4ca8"
+  },
+  "core:story:action.spell.void.success": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "action.spell.void.success",
+   "area": "core/story.action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "9018309fc950"
+  },
   "core:story:damage.acid.botch": {
    "repo": "core",
    "file": "story/en.json",
@@ -16298,7 +20138,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "5e1b5499517b"
+   "hash": "5e1b5499517b",
+   "gone": "2026-10-13"
   },
   "core:story:damage.acid.crit": {
    "repo": "core",
@@ -16308,7 +20149,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "d558e87a7a73"
+   "hash": "d558e87a7a73",
+   "gone": "2026-10-13"
   },
   "core:story:damage.acid.graze": {
    "repo": "core",
@@ -16318,7 +20160,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "abef1c328b86"
+   "hash": "abef1c328b86",
+   "gone": "2026-10-13"
   },
   "core:story:damage.acid.hit": {
    "repo": "core",
@@ -16328,7 +20171,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "fdd65e08500f"
+   "hash": "fdd65e08500f",
+   "gone": "2026-10-13"
   },
   "core:story:damage.acid.miss": {
    "repo": "core",
@@ -16338,7 +20182,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "73c4a4df8be7"
+   "hash": "73c4a4df8be7",
+   "gone": "2026-10-13"
   },
   "core:story:damage.acid.wound": {
    "repo": "core",
@@ -16348,7 +20193,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "c8659de7755f"
+   "hash": "c8659de7755f",
+   "gone": "2026-10-13"
   },
   "core:story:damage.bleed.botch": {
    "repo": "core",
@@ -16358,7 +20204,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "1f209a161970"
+   "hash": "1f209a161970",
+   "gone": "2026-10-13"
   },
   "core:story:damage.bleed.crit": {
    "repo": "core",
@@ -16368,7 +20215,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "42d0f0535ba2"
+   "hash": "42d0f0535ba2",
+   "gone": "2026-10-13"
   },
   "core:story:damage.bleed.graze": {
    "repo": "core",
@@ -16378,7 +20226,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "4c4dc5dbcf06"
+   "hash": "4c4dc5dbcf06",
+   "gone": "2026-10-13"
   },
   "core:story:damage.bleed.hit": {
    "repo": "core",
@@ -16388,7 +20237,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "bba3a67eb1c0"
+   "hash": "bba3a67eb1c0",
+   "gone": "2026-10-13"
   },
   "core:story:damage.bleed.miss": {
    "repo": "core",
@@ -16398,7 +20248,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "27f63a50f044"
+   "hash": "27f63a50f044",
+   "gone": "2026-10-13"
   },
   "core:story:damage.bleed.wound": {
    "repo": "core",
@@ -16408,7 +20259,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "515ff8e9a49f"
+   "hash": "515ff8e9a49f",
+   "gone": "2026-10-13"
   },
   "core:story:damage.bludgeoning.botch": {
    "repo": "core",
@@ -16418,7 +20270,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "f2e8c51f59dd"
+   "hash": "f2e8c51f59dd",
+   "gone": "2026-10-13"
   },
   "core:story:damage.bludgeoning.crit": {
    "repo": "core",
@@ -16428,7 +20281,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "d36445efadb9"
+   "hash": "d36445efadb9",
+   "gone": "2026-10-13"
   },
   "core:story:damage.bludgeoning.graze": {
    "repo": "core",
@@ -16438,7 +20292,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "303bf0304b10"
+   "hash": "303bf0304b10",
+   "gone": "2026-10-13"
   },
   "core:story:damage.bludgeoning.hit": {
    "repo": "core",
@@ -16448,7 +20303,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "ed02abab64ff"
+   "hash": "ed02abab64ff",
+   "gone": "2026-10-13"
   },
   "core:story:damage.bludgeoning.miss": {
    "repo": "core",
@@ -16458,7 +20314,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "bfcb25528e62"
+   "hash": "bfcb25528e62",
+   "gone": "2026-10-13"
   },
   "core:story:damage.bludgeoning.wound": {
    "repo": "core",
@@ -16468,7 +20325,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "283d068b4a23"
+   "hash": "283d068b4a23",
+   "gone": "2026-10-13"
   },
   "core:story:damage.cold.botch": {
    "repo": "core",
@@ -16478,7 +20336,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "8e4cc39324b2"
+   "hash": "8e4cc39324b2",
+   "gone": "2026-10-13"
   },
   "core:story:damage.cold.crit": {
    "repo": "core",
@@ -16488,7 +20347,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "f36661cf9a94"
+   "hash": "f36661cf9a94",
+   "gone": "2026-10-13"
   },
   "core:story:damage.cold.graze": {
    "repo": "core",
@@ -16498,7 +20358,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "975357c1e7f5"
+   "hash": "975357c1e7f5",
+   "gone": "2026-10-13"
   },
   "core:story:damage.cold.hit": {
    "repo": "core",
@@ -16508,7 +20369,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "20549ec5d07f"
+   "hash": "20549ec5d07f",
+   "gone": "2026-10-13"
   },
   "core:story:damage.cold.miss": {
    "repo": "core",
@@ -16518,7 +20380,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "1f8fe16c96b8"
+   "hash": "1f8fe16c96b8",
+   "gone": "2026-10-13"
   },
   "core:story:damage.cold.wound": {
    "repo": "core",
@@ -16528,7 +20391,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "7fe889d44c26"
+   "hash": "7fe889d44c26",
+   "gone": "2026-10-13"
   },
   "core:story:damage.electricity.botch": {
    "repo": "core",
@@ -16538,7 +20402,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "efc400e82964"
+   "hash": "efc400e82964",
+   "gone": "2026-10-13"
   },
   "core:story:damage.electricity.crit": {
    "repo": "core",
@@ -16548,7 +20413,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "3b0f82f23e93"
+   "hash": "3b0f82f23e93",
+   "gone": "2026-10-13"
   },
   "core:story:damage.electricity.graze": {
    "repo": "core",
@@ -16558,7 +20424,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "5ec2daeef81f"
+   "hash": "5ec2daeef81f",
+   "gone": "2026-10-13"
   },
   "core:story:damage.electricity.hit": {
    "repo": "core",
@@ -16568,7 +20435,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "ff941db15afc"
+   "hash": "ff941db15afc",
+   "gone": "2026-10-13"
   },
   "core:story:damage.electricity.miss": {
    "repo": "core",
@@ -16578,7 +20446,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "5058ceaa32d3"
+   "hash": "5058ceaa32d3",
+   "gone": "2026-10-13"
   },
   "core:story:damage.electricity.wound": {
    "repo": "core",
@@ -16588,7 +20457,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "59d531b4cd37"
+   "hash": "59d531b4cd37",
+   "gone": "2026-10-13"
   },
   "core:story:damage.fire.botch": {
    "repo": "core",
@@ -16598,7 +20468,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "27c0a8c582bb"
+   "hash": "27c0a8c582bb",
+   "gone": "2026-10-13"
   },
   "core:story:damage.fire.crit": {
    "repo": "core",
@@ -16608,7 +20479,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "9ceafa46503e"
+   "hash": "9ceafa46503e",
+   "gone": "2026-10-13"
   },
   "core:story:damage.fire.graze": {
    "repo": "core",
@@ -16618,7 +20490,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "4f69ce479901"
+   "hash": "4f69ce479901",
+   "gone": "2026-10-13"
   },
   "core:story:damage.fire.hit": {
    "repo": "core",
@@ -16628,7 +20501,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "b28a97a96b2d"
+   "hash": "b28a97a96b2d",
+   "gone": "2026-10-13"
   },
   "core:story:damage.fire.miss": {
    "repo": "core",
@@ -16638,7 +20512,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "6dad39692aed"
+   "hash": "6dad39692aed",
+   "gone": "2026-10-13"
   },
   "core:story:damage.fire.wound": {
    "repo": "core",
@@ -16648,7 +20523,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "55d323769912"
+   "hash": "55d323769912",
+   "gone": "2026-10-13"
   },
   "core:story:damage.force.botch": {
    "repo": "core",
@@ -16658,7 +20534,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "c154606b062f"
+   "hash": "c154606b062f",
+   "gone": "2026-10-13"
   },
   "core:story:damage.force.crit": {
    "repo": "core",
@@ -16668,7 +20545,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "571cc3a7d12c"
+   "hash": "571cc3a7d12c",
+   "gone": "2026-10-13"
   },
   "core:story:damage.force.graze": {
    "repo": "core",
@@ -16678,7 +20556,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "3b612141d725"
+   "hash": "3b612141d725",
+   "gone": "2026-10-13"
   },
   "core:story:damage.force.hit": {
    "repo": "core",
@@ -16688,7 +20567,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "328563866816"
+   "hash": "328563866816",
+   "gone": "2026-10-13"
   },
   "core:story:damage.force.miss": {
    "repo": "core",
@@ -16698,7 +20578,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "19ffff17f989"
+   "hash": "19ffff17f989",
+   "gone": "2026-10-13"
   },
   "core:story:damage.force.wound": {
    "repo": "core",
@@ -16708,7 +20589,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "1756ecf1782c"
+   "hash": "1756ecf1782c",
+   "gone": "2026-10-13"
   },
   "core:story:damage.mental.botch": {
    "repo": "core",
@@ -16718,7 +20600,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "328399513452"
+   "hash": "328399513452",
+   "gone": "2026-10-13"
   },
   "core:story:damage.mental.crit": {
    "repo": "core",
@@ -16728,7 +20611,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "8d9d4b3e6af3"
+   "hash": "8d9d4b3e6af3",
+   "gone": "2026-10-13"
   },
   "core:story:damage.mental.graze": {
    "repo": "core",
@@ -16738,7 +20622,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "a67bc99c3775"
+   "hash": "a67bc99c3775",
+   "gone": "2026-10-13"
   },
   "core:story:damage.mental.hit": {
    "repo": "core",
@@ -16748,7 +20633,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "ca4265f7cbbe"
+   "hash": "ca4265f7cbbe",
+   "gone": "2026-10-13"
   },
   "core:story:damage.mental.miss": {
    "repo": "core",
@@ -16758,7 +20644,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "d011637ff90f"
+   "hash": "d011637ff90f",
+   "gone": "2026-10-13"
   },
   "core:story:damage.mental.wound": {
    "repo": "core",
@@ -16768,7 +20655,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "6a0cb1654389"
+   "hash": "6a0cb1654389",
+   "gone": "2026-10-13"
   },
   "core:story:damage.piercing.botch": {
    "repo": "core",
@@ -16778,7 +20666,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "a479b71339c3"
+   "hash": "a479b71339c3",
+   "gone": "2026-10-13"
   },
   "core:story:damage.piercing.crit": {
    "repo": "core",
@@ -16788,7 +20677,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "cb7202adaadc"
+   "hash": "cb7202adaadc",
+   "gone": "2026-10-13"
   },
   "core:story:damage.piercing.graze": {
    "repo": "core",
@@ -16798,7 +20688,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "106090a7b55f"
+   "hash": "106090a7b55f",
+   "gone": "2026-10-13"
   },
   "core:story:damage.piercing.hit": {
    "repo": "core",
@@ -16808,7 +20699,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "0686f8d77eb4"
+   "hash": "0686f8d77eb4",
+   "gone": "2026-10-13"
   },
   "core:story:damage.piercing.miss": {
    "repo": "core",
@@ -16818,7 +20710,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "a0903c1b0964"
+   "hash": "a0903c1b0964",
+   "gone": "2026-10-13"
   },
   "core:story:damage.piercing.wound": {
    "repo": "core",
@@ -16828,7 +20721,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "a112ae8044bb"
+   "hash": "a112ae8044bb",
+   "gone": "2026-10-13"
   },
   "core:story:damage.poison.botch": {
    "repo": "core",
@@ -16838,7 +20732,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "9f73fdfdf3c7"
+   "hash": "9f73fdfdf3c7",
+   "gone": "2026-10-13"
   },
   "core:story:damage.poison.crit": {
    "repo": "core",
@@ -16848,7 +20743,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "08ad87ed7e35"
+   "hash": "08ad87ed7e35",
+   "gone": "2026-10-13"
   },
   "core:story:damage.poison.graze": {
    "repo": "core",
@@ -16858,7 +20754,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "fd070bdbf32a"
+   "hash": "fd070bdbf32a",
+   "gone": "2026-10-13"
   },
   "core:story:damage.poison.hit": {
    "repo": "core",
@@ -16868,7 +20765,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "5794660e0ae3"
+   "hash": "5794660e0ae3",
+   "gone": "2026-10-13"
   },
   "core:story:damage.poison.miss": {
    "repo": "core",
@@ -16878,7 +20776,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "baa232c1316f"
+   "hash": "baa232c1316f",
+   "gone": "2026-10-13"
   },
   "core:story:damage.poison.wound": {
    "repo": "core",
@@ -16888,7 +20787,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "e75819e5210f"
+   "hash": "e75819e5210f",
+   "gone": "2026-10-13"
   },
   "core:story:damage.slashing.botch": {
    "repo": "core",
@@ -16898,7 +20798,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "12c2d8281e91"
+   "hash": "12c2d8281e91",
+   "gone": "2026-10-13"
   },
   "core:story:damage.slashing.crit": {
    "repo": "core",
@@ -16908,7 +20809,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "80b626f5c363"
+   "hash": "80b626f5c363",
+   "gone": "2026-10-13"
   },
   "core:story:damage.slashing.graze": {
    "repo": "core",
@@ -16918,7 +20820,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "5ad175a83136"
+   "hash": "5ad175a83136",
+   "gone": "2026-10-13"
   },
   "core:story:damage.slashing.hit": {
    "repo": "core",
@@ -16928,7 +20831,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "c0e7eadd9f58"
+   "hash": "c0e7eadd9f58",
+   "gone": "2026-10-13"
   },
   "core:story:damage.slashing.miss": {
    "repo": "core",
@@ -16938,7 +20842,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "53b05c3b8517"
+   "hash": "53b05c3b8517",
+   "gone": "2026-10-13"
   },
   "core:story:damage.slashing.wound": {
    "repo": "core",
@@ -16948,7 +20853,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "7217ad593578"
+   "hash": "7217ad593578",
+   "gone": "2026-10-13"
   },
   "core:story:damage.sonic.botch": {
    "repo": "core",
@@ -16958,7 +20864,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "42b085b677da"
+   "hash": "42b085b677da",
+   "gone": "2026-10-13"
   },
   "core:story:damage.sonic.crit": {
    "repo": "core",
@@ -16968,7 +20875,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "24d1f024c686"
+   "hash": "24d1f024c686",
+   "gone": "2026-10-13"
   },
   "core:story:damage.sonic.graze": {
    "repo": "core",
@@ -16978,7 +20886,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "8ce7eb0600bb"
+   "hash": "8ce7eb0600bb",
+   "gone": "2026-10-13"
   },
   "core:story:damage.sonic.hit": {
    "repo": "core",
@@ -16988,7 +20897,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "537f2674ee2e"
+   "hash": "537f2674ee2e",
+   "gone": "2026-10-13"
   },
   "core:story:damage.sonic.miss": {
    "repo": "core",
@@ -16998,7 +20908,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "08854850779d"
+   "hash": "08854850779d",
+   "gone": "2026-10-13"
   },
   "core:story:damage.sonic.wound": {
    "repo": "core",
@@ -17008,7 +20919,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "786ed8a601d5"
+   "hash": "786ed8a601d5",
+   "gone": "2026-10-13"
   },
   "core:story:damage.spirit.botch": {
    "repo": "core",
@@ -17018,7 +20930,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "379fd0063879"
+   "hash": "379fd0063879",
+   "gone": "2026-10-13"
   },
   "core:story:damage.spirit.crit": {
    "repo": "core",
@@ -17028,7 +20941,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "c05cb8942af6"
+   "hash": "c05cb8942af6",
+   "gone": "2026-10-13"
   },
   "core:story:damage.spirit.graze": {
    "repo": "core",
@@ -17038,7 +20952,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "06a393c93a51"
+   "hash": "06a393c93a51",
+   "gone": "2026-10-13"
   },
   "core:story:damage.spirit.hit": {
    "repo": "core",
@@ -17048,7 +20963,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "2278a59ea3db"
+   "hash": "2278a59ea3db",
+   "gone": "2026-10-13"
   },
   "core:story:damage.spirit.miss": {
    "repo": "core",
@@ -17058,7 +20974,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "418406fa1e01"
+   "hash": "418406fa1e01",
+   "gone": "2026-10-13"
   },
   "core:story:damage.spirit.wound": {
    "repo": "core",
@@ -17068,7 +20985,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "1a16097fad8b"
+   "hash": "1a16097fad8b",
+   "gone": "2026-10-13"
   },
   "core:story:damage.untyped.botch": {
    "repo": "core",
@@ -17078,7 +20996,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "951d93871cc5"
+   "hash": "951d93871cc5",
+   "gone": "2026-10-13"
   },
   "core:story:damage.untyped.crit": {
    "repo": "core",
@@ -17088,7 +21007,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "d2122bd0c52e"
+   "hash": "d2122bd0c52e",
+   "gone": "2026-10-13"
   },
   "core:story:damage.untyped.graze": {
    "repo": "core",
@@ -17098,7 +21018,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "fb9abf483ebf"
+   "hash": "fb9abf483ebf",
+   "gone": "2026-10-13"
   },
   "core:story:damage.untyped.hit": {
    "repo": "core",
@@ -17108,7 +21029,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "034d74a676e8"
+   "hash": "034d74a676e8",
+   "gone": "2026-10-13"
   },
   "core:story:damage.untyped.miss": {
    "repo": "core",
@@ -17118,7 +21040,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "13dbe9240c4e"
+   "hash": "13dbe9240c4e",
+   "gone": "2026-10-13"
   },
   "core:story:damage.untyped.wound": {
    "repo": "core",
@@ -17128,7 +21051,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "2594c1d2ff7d"
+   "hash": "2594c1d2ff7d",
+   "gone": "2026-10-13"
   },
   "core:story:damage.vitality.botch": {
    "repo": "core",
@@ -17138,7 +21062,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "ce555c28d08a"
+   "hash": "ce555c28d08a",
+   "gone": "2026-10-13"
   },
   "core:story:damage.vitality.crit": {
    "repo": "core",
@@ -17148,7 +21073,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "499582c73f6c"
+   "hash": "499582c73f6c",
+   "gone": "2026-10-13"
   },
   "core:story:damage.vitality.graze": {
    "repo": "core",
@@ -17158,7 +21084,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "15d5fce86987"
+   "hash": "15d5fce86987",
+   "gone": "2026-10-13"
   },
   "core:story:damage.vitality.hit": {
    "repo": "core",
@@ -17168,7 +21095,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "82a07274e2cd"
+   "hash": "82a07274e2cd",
+   "gone": "2026-10-13"
   },
   "core:story:damage.vitality.miss": {
    "repo": "core",
@@ -17178,7 +21106,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "c0b89a3731eb"
+   "hash": "c0b89a3731eb",
+   "gone": "2026-10-13"
   },
   "core:story:damage.vitality.wound": {
    "repo": "core",
@@ -17188,7 +21117,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "9031c49384a4"
+   "hash": "9031c49384a4",
+   "gone": "2026-10-13"
   },
   "core:story:damage.void.botch": {
    "repo": "core",
@@ -17198,7 +21128,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "bd15eb3247ba"
+   "hash": "bd15eb3247ba",
+   "gone": "2026-10-13"
   },
   "core:story:damage.void.crit": {
    "repo": "core",
@@ -17208,7 +21139,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "c30a1a79afa5"
+   "hash": "c30a1a79afa5",
+   "gone": "2026-10-13"
   },
   "core:story:damage.void.graze": {
    "repo": "core",
@@ -17218,7 +21150,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "f5f7c23da9d2"
+   "hash": "f5f7c23da9d2",
+   "gone": "2026-10-13"
   },
   "core:story:damage.void.hit": {
    "repo": "core",
@@ -17228,7 +21161,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "1dc2810dec86"
+   "hash": "1dc2810dec86",
+   "gone": "2026-10-13"
   },
   "core:story:damage.void.miss": {
    "repo": "core",
@@ -17238,7 +21172,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "d1d8f3b43b5d"
+   "hash": "d1d8f3b43b5d",
+   "gone": "2026-10-13"
   },
   "core:story:damage.void.wound": {
    "repo": "core",
@@ -17248,7 +21183,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "6bcb3f0eeab2"
+   "hash": "6bcb3f0eeab2",
+   "gone": "2026-10-13"
   },
   "core:story:delivery.melee.aim": {
    "repo": "core",
@@ -17258,7 +21194,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "924a54d7f621"
+   "hash": "924a54d7f621",
+   "gone": "2026-10-13"
   },
   "core:story:delivery.melee.verb": {
    "repo": "core",
@@ -17268,7 +21205,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "25cc0029f263"
+   "hash": "25cc0029f263",
+   "gone": "2026-10-13"
   },
   "core:story:delivery.ranged.aim": {
    "repo": "core",
@@ -17278,7 +21216,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "6ee1f332e7c3"
+   "hash": "6ee1f332e7c3",
+   "gone": "2026-10-13"
   },
   "core:story:delivery.ranged.verb": {
    "repo": "core",
@@ -17288,7 +21227,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "a86ffa06237c"
+   "hash": "a86ffa06237c",
+   "gone": "2026-10-13"
   },
   "core:story:delivery.spell.aim": {
    "repo": "core",
@@ -17298,7 +21238,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "84745d4a5934"
+   "hash": "84745d4a5934",
+   "gone": "2026-10-13"
   },
   "core:story:delivery.spell.verb": {
    "repo": "core",
@@ -17308,7 +21249,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "0c405344d44a"
+   "hash": "0c405344d44a",
+   "gone": "2026-10-13"
   },
   "core:story:desire.intensity.determined": {
    "repo": "core",
@@ -19897,7 +23839,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "a3376904f6fb"
+   "hash": "a3376904f6fb",
+   "gone": "2026-10-13"
   },
   "core:story:shapes.melee.criticalSuccess": {
    "repo": "core",
@@ -19907,7 +23850,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "a176b383ba72"
+   "hash": "a176b383ba72",
+   "gone": "2026-10-13"
   },
   "core:story:shapes.melee.failure": {
    "repo": "core",
@@ -19917,7 +23861,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "340406fa09b1"
+   "hash": "340406fa09b1",
+   "gone": "2026-10-13"
   },
   "core:story:shapes.melee.majorFailure": {
    "repo": "core",
@@ -19927,7 +23872,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "8447634b99e2"
+   "hash": "8447634b99e2",
+   "gone": "2026-10-13"
   },
   "core:story:shapes.melee.majorSuccess": {
    "repo": "core",
@@ -19937,7 +23883,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "912d7cef2d06"
+   "hash": "912d7cef2d06",
+   "gone": "2026-10-13"
   },
   "core:story:shapes.melee.minorFailure": {
    "repo": "core",
@@ -19947,7 +23894,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "03b680a54864"
+   "hash": "03b680a54864",
+   "gone": "2026-10-13"
   },
   "core:story:shapes.melee.minorSuccess": {
    "repo": "core",
@@ -19957,7 +23905,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "bac60a7e8916"
+   "hash": "bac60a7e8916",
+   "gone": "2026-10-13"
   },
   "core:story:shapes.melee.success": {
    "repo": "core",
@@ -19967,7 +23916,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "2eaf460feecc"
+   "hash": "2eaf460feecc",
+   "gone": "2026-10-13"
   },
   "core:story:shapes.ranged.criticalFailure": {
    "repo": "core",
@@ -19977,7 +23927,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "883f407152e2"
+   "hash": "883f407152e2",
+   "gone": "2026-10-13"
   },
   "core:story:shapes.ranged.criticalSuccess": {
    "repo": "core",
@@ -19987,7 +23938,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "beb5d4b00782"
+   "hash": "beb5d4b00782",
+   "gone": "2026-10-13"
   },
   "core:story:shapes.ranged.failure": {
    "repo": "core",
@@ -19997,7 +23949,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "6d5407791014"
+   "hash": "6d5407791014",
+   "gone": "2026-10-13"
   },
   "core:story:shapes.ranged.majorFailure": {
    "repo": "core",
@@ -20007,7 +23960,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "5d878d6107a4"
+   "hash": "5d878d6107a4",
+   "gone": "2026-10-13"
   },
   "core:story:shapes.ranged.majorSuccess": {
    "repo": "core",
@@ -20017,7 +23971,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "57df50fb0a8a"
+   "hash": "57df50fb0a8a",
+   "gone": "2026-10-13"
   },
   "core:story:shapes.ranged.minorFailure": {
    "repo": "core",
@@ -20027,7 +23982,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "ec365429b6c3"
+   "hash": "ec365429b6c3",
+   "gone": "2026-10-13"
   },
   "core:story:shapes.ranged.minorSuccess": {
    "repo": "core",
@@ -20037,7 +23993,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "170b08cfec36"
+   "hash": "170b08cfec36",
+   "gone": "2026-10-13"
   },
   "core:story:shapes.ranged.success": {
    "repo": "core",
@@ -20047,7 +24004,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "23b4e5a9e35f"
+   "hash": "23b4e5a9e35f",
+   "gone": "2026-10-13"
   },
   "core:story:shapes.spell.criticalFailure": {
    "repo": "core",
@@ -20057,7 +24015,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "1762e6ba81da"
+   "hash": "1762e6ba81da",
+   "gone": "2026-10-13"
   },
   "core:story:shapes.spell.criticalSuccess": {
    "repo": "core",
@@ -20067,7 +24026,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "20da7fafad06"
+   "hash": "20da7fafad06",
+   "gone": "2026-10-13"
   },
   "core:story:shapes.spell.failure": {
    "repo": "core",
@@ -20077,7 +24037,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "f7a70381c638"
+   "hash": "f7a70381c638",
+   "gone": "2026-10-13"
   },
   "core:story:shapes.spell.majorFailure": {
    "repo": "core",
@@ -20087,7 +24048,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "486e932dbf37"
+   "hash": "486e932dbf37",
+   "gone": "2026-10-13"
   },
   "core:story:shapes.spell.majorSuccess": {
    "repo": "core",
@@ -20097,7 +24059,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "5e4a09667ade"
+   "hash": "5e4a09667ade",
+   "gone": "2026-10-13"
   },
   "core:story:shapes.spell.minorFailure": {
    "repo": "core",
@@ -20107,7 +24070,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "c79d8aa7e926"
+   "hash": "c79d8aa7e926",
+   "gone": "2026-10-13"
   },
   "core:story:shapes.spell.minorSuccess": {
    "repo": "core",
@@ -20117,7 +24081,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "319311d9ed20"
+   "hash": "319311d9ed20",
+   "gone": "2026-10-13"
   },
   "core:story:shapes.spell.success": {
    "repo": "core",
@@ -20127,7 +24092,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "10347c644f59"
+   "hash": "10347c644f59",
+   "gone": "2026-10-13"
   },
   "core:story:talk.deceive.bad": {
    "repo": "core",
@@ -20137,7 +24103,38 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "bd5bf3e7e9f5"
+   "hash": "bd5bf3e7e9f5",
+   "gone": "2026-10-13"
+  },
+  "core:story:talk.deceive.criticalFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "talk.deceive.criticalFailure",
+   "area": "core/story.talk",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "f7594a817983"
+  },
+  "core:story:talk.deceive.criticalSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "talk.deceive.criticalSuccess",
+   "area": "core/story.talk",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "7ddb8a40d266"
+  },
+  "core:story:talk.deceive.failure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "talk.deceive.failure",
+   "area": "core/story.talk",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "bf71684a4e78"
   },
   "core:story:talk.deceive.good": {
    "repo": "core",
@@ -20147,7 +24144,58 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "6bd4a0d38608"
+   "hash": "6bd4a0d38608",
+   "gone": "2026-10-13"
+  },
+  "core:story:talk.deceive.majorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "talk.deceive.majorFailure",
+   "area": "core/story.talk",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "2d76dad16915"
+  },
+  "core:story:talk.deceive.majorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "talk.deceive.majorSuccess",
+   "area": "core/story.talk",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "61a1c75b9b71"
+  },
+  "core:story:talk.deceive.minorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "talk.deceive.minorFailure",
+   "area": "core/story.talk",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "ff6029006430"
+  },
+  "core:story:talk.deceive.minorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "talk.deceive.minorSuccess",
+   "area": "core/story.talk",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "1203a82b86e7"
+  },
+  "core:story:talk.deceive.success": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "talk.deceive.success",
+   "area": "core/story.talk",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "2bff8cae597d"
   },
   "core:story:talk.deceive.verb": {
    "repo": "core",
@@ -20157,7 +24205,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "2e6875bd83fd"
+   "hash": "2e6875bd83fd",
+   "gone": "2026-10-13"
   },
   "core:story:talk.intimidate.bad": {
    "repo": "core",
@@ -20167,7 +24216,38 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "76732d4d4c63"
+   "hash": "76732d4d4c63",
+   "gone": "2026-10-13"
+  },
+  "core:story:talk.intimidate.criticalFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "talk.intimidate.criticalFailure",
+   "area": "core/story.talk",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "9de09d5ef324"
+  },
+  "core:story:talk.intimidate.criticalSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "talk.intimidate.criticalSuccess",
+   "area": "core/story.talk",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "fb80f0d096ff"
+  },
+  "core:story:talk.intimidate.failure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "talk.intimidate.failure",
+   "area": "core/story.talk",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "6586b985b562"
   },
   "core:story:talk.intimidate.good": {
    "repo": "core",
@@ -20177,7 +24257,58 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "813b2b684fad"
+   "hash": "813b2b684fad",
+   "gone": "2026-10-13"
+  },
+  "core:story:talk.intimidate.majorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "talk.intimidate.majorFailure",
+   "area": "core/story.talk",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "104197ca5b52"
+  },
+  "core:story:talk.intimidate.majorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "talk.intimidate.majorSuccess",
+   "area": "core/story.talk",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "5af873f800d4"
+  },
+  "core:story:talk.intimidate.minorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "talk.intimidate.minorFailure",
+   "area": "core/story.talk",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "a8a7a6071d98"
+  },
+  "core:story:talk.intimidate.minorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "talk.intimidate.minorSuccess",
+   "area": "core/story.talk",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "dcc5c27bfb5f"
+  },
+  "core:story:talk.intimidate.success": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "talk.intimidate.success",
+   "area": "core/story.talk",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "fb78db2f171d"
   },
   "core:story:talk.intimidate.verb": {
    "repo": "core",
@@ -20187,7 +24318,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "9ec92cd72016"
+   "hash": "9ec92cd72016",
+   "gone": "2026-10-13"
   },
   "core:story:talk.persuade.bad": {
    "repo": "core",
@@ -20197,7 +24329,38 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "057f6dc2c20f"
+   "hash": "057f6dc2c20f",
+   "gone": "2026-10-13"
+  },
+  "core:story:talk.persuade.criticalFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "talk.persuade.criticalFailure",
+   "area": "core/story.talk",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "757e110d971e"
+  },
+  "core:story:talk.persuade.criticalSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "talk.persuade.criticalSuccess",
+   "area": "core/story.talk",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "dd2d2f206b36"
+  },
+  "core:story:talk.persuade.failure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "talk.persuade.failure",
+   "area": "core/story.talk",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "3944a83d5a56"
   },
   "core:story:talk.persuade.good": {
    "repo": "core",
@@ -20207,7 +24370,58 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "96bb5d33a768"
+   "hash": "96bb5d33a768",
+   "gone": "2026-10-13"
+  },
+  "core:story:talk.persuade.majorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "talk.persuade.majorFailure",
+   "area": "core/story.talk",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "acbb9a7f69c8"
+  },
+  "core:story:talk.persuade.majorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "talk.persuade.majorSuccess",
+   "area": "core/story.talk",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "f82ddc279a42"
+  },
+  "core:story:talk.persuade.minorFailure": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "talk.persuade.minorFailure",
+   "area": "core/story.talk",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "e4a376aa3743"
+  },
+  "core:story:talk.persuade.minorSuccess": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "talk.persuade.minorSuccess",
+   "area": "core/story.talk",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "65420eaef7ee"
+  },
+  "core:story:talk.persuade.success": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "talk.persuade.success",
+   "area": "core/story.talk",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "8c5e93b79029"
   },
   "core:story:talk.persuade.verb": {
    "repo": "core",
@@ -20217,7 +24431,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "452b71b24bde"
+   "hash": "452b71b24bde",
+   "gone": "2026-10-13"
   },
   "core:story:talkShapes.criticalFailure": {
    "repo": "core",
@@ -20227,7 +24442,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "ab7101417f11"
+   "hash": "ab7101417f11",
+   "gone": "2026-10-13"
   },
   "core:story:talkShapes.criticalSuccess": {
    "repo": "core",
@@ -20237,7 +24453,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "b7d13890c3f5"
+   "hash": "b7d13890c3f5",
+   "gone": "2026-10-13"
   },
   "core:story:talkShapes.failure": {
    "repo": "core",
@@ -20247,7 +24464,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "501ae0493796"
+   "hash": "501ae0493796",
+   "gone": "2026-10-13"
   },
   "core:story:talkShapes.majorFailure": {
    "repo": "core",
@@ -20257,7 +24475,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "d00a534d4f53"
+   "hash": "d00a534d4f53",
+   "gone": "2026-10-13"
   },
   "core:story:talkShapes.majorSuccess": {
    "repo": "core",
@@ -20267,7 +24486,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "1563db136f06"
+   "hash": "1563db136f06",
+   "gone": "2026-10-13"
   },
   "core:story:talkShapes.minorFailure": {
    "repo": "core",
@@ -20277,7 +24497,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "618b78317faf"
+   "hash": "618b78317faf",
+   "gone": "2026-10-13"
   },
   "core:story:talkShapes.minorSuccess": {
    "repo": "core",
@@ -20287,7 +24508,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "c71dc34cc4d1"
+   "hash": "c71dc34cc4d1",
+   "gone": "2026-10-13"
   },
   "core:story:talkShapes.success": {
    "repo": "core",
@@ -20297,7 +24519,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "aa8dfc8d92cb"
+   "hash": "aa8dfc8d92cb",
+   "gone": "2026-10-13"
   },
   "daggerheart:code:scripts/main.js:(top)#1": {
    "repo": "daggerheart",

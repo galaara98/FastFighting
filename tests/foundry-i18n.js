@@ -6,7 +6,6 @@
  * markup kept). The tests pass whatever the wording, so any string can be rewritten without touching them.
  */
 import { readFileSync } from "fs";
-import { buildTables } from "../scripts/story/blocks.js";
 import { fillIn } from "../scripts/i18n.js";
 
 const read = path => JSON.parse(readFileSync(new URL(`../${path}`, import.meta.url), "utf8"));
@@ -52,8 +51,8 @@ export function fakeI18n(more = {}) {
 export const storyFile = () => rewordAll(read("story/en.json"));
 
 let tables = null;
-/** The story tables, key -> entries, built from story/en.json. */
+/** The story tables, key -> entries: story/en.json. */
 export function storyTables() {
-  tables ??= buildTables(storyFile());
+  tables ??= storyFile();
   return tables;
 }

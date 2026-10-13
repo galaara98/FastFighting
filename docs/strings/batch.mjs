@@ -73,7 +73,7 @@ function places() {
     ["Players' tactics survey", "The survey window", e => core(e, "FASTFIGHTING.Survey.")],
     ["Chat: the story of the fight", "The story card and its styles", e => core(e, "FASTFIGHTING.Story.") && !e.key.startsWith("FASTFIGHTING.Story.Labels.") && !e.key.startsWith("FASTFIGHTING.Story.Part.")],
     ["Chat: the story of the fight", "Standard story: each character's line", e => core(e, "FASTFIGHTING.Story.Labels.")],
-    ["Chat: the story of the fight", "Roleplay story: its phrases (story/en.json)", e => e.repo === "core" && e.file === "story/en.json"],
+    ["Chat: the story of the fight", "Roleplay story: its sentences (story/en.json)", e => e.repo === "core" && e.file === "story/en.json"],
     ["Chat: the story of the fight", "Statistician story: the battle log", e => core(e, "FASTFIGHTING.Log.")],
     ["Chat: the story of the fight", "Damage types", e => core(e, "FASTFIGHTING.DamageType.")],
     ["Rollable Tables sidebar", "Story table names", e => core(e, "FASTFIGHTING.Story.Part.")]
@@ -98,7 +98,7 @@ const readJson = (file, fallback) => (existsSync(file) ? JSON.parse(readFileSync
 /** What to keep: placeholders, spaces at either end, markup, a list's shape. */
 function keeps(e) {
   const notes = [];
-  if ( e.file === "story/en.json" ) notes.push("a list: one phrase per line (Alt+Enter starts a new line in a cell); as many phrases as you like");
+  if ( e.file === "story/en.json" ) notes.push("a list: one whole sentence per line (Alt+Enter starts a new line in a cell); 3 to 5 of them");
   if ( e.area.endsWith("/code") ) notes.push("${…} is where the code fills something in");
   const text = e.file === "story/en.json" ? JSON.parse(e.text).join("\n") : String(e.text);
   const marks = placeholders(text);

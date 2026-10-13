@@ -4,7 +4,6 @@ import { replay } from "../scripts/engine/simulator.js";
 import { localize, listJoin, commonOutcome, term, hasStat, setTermSource, escapeHtml, inertHtml, brief, TIP_WORDS, TIP_SENTENCES } from "../scripts/i18n.js";
 import { logLine } from "../scripts/story/log-lines.js";
 import { buildStory } from "../scripts/story/story.js";
-import { isBlocks, buildTables } from "../scripts/story/blocks.js";
 import { loadStoryTables, invalidateStoryTables } from "../scripts/story/tables.js";
 import { NEUTRAL_PARTY } from "../scripts/constants.js";
 import { pf2eRules } from "./fixtures/three-action-rules.js";
@@ -74,13 +73,11 @@ describe("the language files", () => {
     expect(files.filter(f => !listed.includes(f))).toEqual([]);
   });
 
-  test("every story file is building blocks shaped like English's, or finished tables of English's keys", () => {
-    const english = read("story/en.json");
-    expect(isBlocks(english)).toBe(true);
+  test("every story file is whole sentences, key -> sentences, of English's keys", () => {
     const keys = new Set(Object.keys(storyTables()));
+    for ( const [k, entries] of Object.entries(read("story/en.json")) ) expect([k, Array.isArray(entries) && entries.every(e => typeof e === "string")]).toEqual([k, true]);
     for ( const f of readdirSync(new URL("../story/", import.meta.url)).filter(f => f.endsWith(".json") && f !== "en.json") ) {
-      const data = read(`story/${f}`);
-      const tables = isBlocks(data) ? buildTables(data) : data;
+      const tables = read(`story/${f}`);
       expect([f, Object.keys(tables).filter(k => !keys.has(k))]).toEqual([f, []]);
       for ( const [k, entries] of Object.entries(tables) ) expect([f, k, Array.isArray(entries)]).toEqual([f, k, true]);
     }
@@ -200,33 +197,12 @@ describe("a language the module isn't (fully) translated into reads in English",
     expect(tables.get("event.opening")).toEqual(storyTables()["event.opening"]);
   });
 
-  test("story tables: a partial translation, as finished tables or as building blocks, falls back to English", async () => {
+  test("story tables: a partial translation falls back to English", async () => {
     storyWorld("xx", { "en.json": storyFile(), "xx.json": { "event.opening": ["⟦Ópéníng⟧"] } });
-    let tables = await loadStoryTables();
+    const tables = await loadStoryTables();
     expect(tables.lang).toBe("xx");
     expect(tables.get("event.opening")).toEqual(["⟦Ópéníng⟧"]);
     expect(tables.get("event.death")).toEqual(storyTables()["event.death"]);
-
-    invalidateStoryTables();
-    const blocks = storyFile();
-    blocks.event = { opening: ["⟦Ópéníng⟧"] };
-    storyWorld("yy", { "en.json": storyFile(), "yy.json": blocks });
-    tables = await loadStoryTables();
-    expect(tables.get("event.opening")).toEqual(["⟦Ópéníng⟧"]);
-    expect(tables.get("event.death")).toEqual(storyTables()["event.death"]);
-  });
-
-  test("story tables: building blocks half translated tell the rest in English, never a bare {placeholder}", async () => {
-    const blocks = storyFile();
-    blocks.shapes.melee.success = ["⟦{actor} {aim}: {hit} {target}⟧"];
-    delete blocks.damage;
-    blocks.talkShapes = {};
-    storyWorld("zz", { "en.json": storyFile(), "zz.json": blocks });
-    const tables = await loadStoryTables();
-    const english = storyTables();
-    expect(tables.get("action.melee.fire.success")).toEqual(english["action.melee.fire.success"]);
-    expect(tables.get("talk.persuade.success")).toEqual(english["talk.persuade.success"]);
-    expect(tables.get("event.opening")).toEqual(blocks.event.opening);
   });
 
   test("story tables: with no story file at all, the story is quiet rather than broken", async () => {
