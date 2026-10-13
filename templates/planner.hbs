@@ -202,6 +202,7 @@
       <div class="ff-results-body">
         {{#if hasResults}}
           {{#if stale}}<div class="ff-banner"><i class="fa-solid fa-triangle-exclamation"></i> {{localize "FASTFIGHTING.Results.Stale"}}</div>{{/if}}
+          {{#if restored}}<div class="ff-banner ff-restored"><i class="fa-solid fa-clock-rotate-left"></i> {{restored}}</div>{{/if}}
 
           {{#if (eq resultTab "overview")}}
           <div class="ff-overview">

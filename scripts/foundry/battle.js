@@ -763,19 +763,23 @@ export function awarenessFor(roster) {
   return computeAwareness(bystanders, roster.map(e => e.token), { darkvision });
 }
 
+/** The battle the planner simulates, as the map and the plan stand: its spec, and how each side comes at the other. */
+export function battleFor(roster, setup) {
+  const approach = setup.options.positioning ? approachFor(roster, setup) : null;
+  const spec = buildBattleSpec(roster, setup, { approach });
+  spec.awareness = awarenessFor(roster);
+  return { spec, approach };
+}
+
 /** Full pipeline used by the Battle Planner. */
 export async function simulate(roster, setup, { onProgress, signal } = {}) {
   const adapter = getAdapter();
-  const approach = setup.options.positioning ? approachFor(roster, setup) : null;
   // (Each character's calculated answers as they are now, whatever was written to its flags since the roster was read.)
   if ( game.user.isGM ) await Promise.all(roster.map(e => ensureAutoConfig(e.token?.actor, e.spec)));
 
-  const spec = buildBattleSpec(roster, setup, { approach });
-  spec.awareness = awarenessFor(roster);
+  const { spec, approach } = battleFor(roster, setup);
   Hooks.callAll("fastFighting.preSimulate", spec, { setup, roster });
   const seed = setup.options.seed ?? undefined;
-  // (As many fights as the GM asks for, or as fit the time for so many creatures, and done when the time is up:
-  // engine/run-budget.js.)
   // (Fight after fight until the prediction's time is up: engine/run-budget.js.)
   const results = await runBatch(spec, adapter.rules, { runs: MAX_RUNS, seed, onProgress, signal, maxMs: budgetMs(predictionSeconds(setup)) });
   Hooks.callAll("fastFighting.postSimulate", results, { setup, roster, spec });

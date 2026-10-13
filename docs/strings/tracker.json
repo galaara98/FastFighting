@@ -90,6 +90,16 @@
    "commit": null,
    "hash": "08d655006cb6"
   },
+  "core:code:scripts/apps/battle-planner.js:recallRun#1": {
+   "repo": "core",
+   "file": "scripts/apps/battle-planner.js",
+   "key": "scripts/apps/battle-planner.js:recallRun#1",
+   "area": "core/code",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "280e5d35b1d4"
+  },
   "core:code:scripts/apps/battle-planner.js:systemSection#1": {
    "repo": "core",
    "file": "scripts/apps/battle-planner.js",
@@ -9437,6 +9447,16 @@
    "date": null,
    "commit": null,
    "hash": "eb7a842ff958"
+  },
+  "core:FASTFIGHTING.Results.Restored": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Results.Restored",
+   "area": "core/Results",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "099702dfd7c1"
   },
   "core:FASTFIGHTING.Results.RoundN": {
    "repo": "core",

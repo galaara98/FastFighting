@@ -465,6 +465,7 @@
         "sample": "Sample fight"
       },
       "Stale": "Settings changed since this run. Run again to update.",
+      "Restored": "From the last run ({when}): nothing about this battle has changed since.",
       "Stalemate": "Stalemate",
       "NoOne": "No one left",
       "PartyWins": "Party wins",

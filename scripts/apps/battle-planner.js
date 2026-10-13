@@ -15,7 +15,8 @@ import {
 } from "../foundry/tactics.js";
 import {
   gatherRoster, chosenSide, groupOf, proposeNeutralGroups, resolveAllegiances, simulate, swingFactors, replay, drawFight,
-  approachFor, commandChains, commandGroup, seedCommand, clearRole, ROLES, sideName, hostileGroupsIn, secretTeam, SECRET_TEAMS, LEANS, predictionSeconds
+  approachFor, commandChains, commandGroup, seedCommand, clearRole, ROLES, sideName, hostileGroupsIn, secretTeam, SECRET_TEAMS, LEANS, predictionSeconds,
+  battleFor
 } from "../foundry/battle.js";
 import { buildStory, STORY_STYLES } from "../story/story.js";
 import { loadStoryTables } from "../story/tables.js";
@@ -23,6 +24,7 @@ import { sceneDistance } from "../foundry/terrain.js";
 import { planMakeItSo, confirmMakeItSo, executeMakeItSo, undoMakeItSo, hasUndo, makingItSo } from "../foundry/make-it-so.js";
 import { ensureAutoConfig } from "../foundry/auto-config.js";
 import { PlayerSurvey } from "./player-survey.js";
+import { rememberRun, recallRun } from "../foundry/run-memory.js";
 import { expectedRuns, ROUGH_RUNS } from "../engine/run-budget.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -136,6 +138,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     this.running = false;
     this.progress = 0;
     this.stale = false;
+    this.restoredAt = null;
     this.storyStyle = setting("storyStyle");
     this.storyTables = null;
     this.storyCache = new Map();
@@ -185,6 +188,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     this.sample = null;
     this.drawn = null;
     this.stale = false;
+    this.restoredAt = null;
     this.storyCache.clear();
   }
 
@@ -198,6 +202,27 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /** Characters are being set up by themselves (their writes don't each redraw the planner). */
   #settingUp = false;
+
+  /**
+   * The last run's results again, when nothing about this battle has changed since it ran (the same creatures, sheets,
+   * answers, positions, party wishes and plan), with the fight it drew for Make it So.
+   */
+  #recallRun() {
+    try {
+      const { spec, approach } = battleFor(this.roster, this.setup);
+      const saved = recallRun(this.holderUuid, spec);
+      if ( !saved ) return;
+      this.spec = spec;
+      this.results = saved.results;
+      if ( approach ) this.approach = approach;
+      this.drawn = Number.isFinite(saved.drawn) ? { seed: saved.drawn, result: replay(spec, getAdapter().rules, saved.drawn), how: "drawn" } : drawFight(spec, saved.results);
+      this.sample = this.drawn;
+      this.restoredAt = saved.at;
+      this.stale = false;
+    } catch ( err ) {
+      console.warn(`${MODULE_ID} | the last run could not be shown again`, err);
+    }
+  }
 
   async #loadRoster() {
     // The plan of the encounter it's tied to (or the scene's, with none): read and saved there.
@@ -227,6 +252,8 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       console.warn(`${MODULE_ID} | approach preview failed`, err);
       this.approach = null;
     }
+    // The last run's results again, if nothing about the battle has changed since.
+    if ( !this.results && this.roster.length ) this.#recallRun();
   }
 
   /**
@@ -349,6 +376,8 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       running: this.running,
       progress: Math.round(this.progress * 100),
       stale: this.stale && !!this.results,
+      // (Shown again from the last run: when it ran.)
+      restored: this.restoredAt && this.results && !this.stale ? game.i18n.format("FASTFIGHTING.Results.Restored", { when: new Date(this.restoredAt).toLocaleString(game.i18n.lang) }) : null,
       resultTabs: RESULT_TABS.map(id => ({ id, label: loc(`FASTFIGHTING.Results.Tab.${id}`), active: this.resultTab === id })),
       resultTab: this.resultTab,
       hasResults: !!this.results,
@@ -940,7 +969,10 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       // three times in ten, as it should be.
       this.sample = drawFight(spec, results);
       this.drawn = this.sample; // the only fight Make it So will commit (until the next run)
+      this.restoredAt = null;
       if ( this.abort.signal.aborted ) ui.notifications.info("FASTFIGHTING.Planner.Stopped", { format: { n: results.runs } });
+      // (Kept, to show again if the planner opens on this same battle: a run cut short isn't.)
+      else rememberRun(this.holderUuid, spec, results, this.drawn?.seed);
     } catch ( err ) {
       console.error(`${MODULE_ID} | simulation failed`, err);
       ui.notifications.error("FASTFIGHTING.Planner.RunFailed", { format: { error: err.message } });
