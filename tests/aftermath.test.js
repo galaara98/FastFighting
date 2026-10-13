@@ -5,7 +5,7 @@ import { pf2eRules } from "./fixtures/three-action-rules.js";
 import { parseFormula } from "../scripts/engine/dice.js";
 import { buildStory } from "../scripts/story/story.js";
 import { storyTables, text } from "./foundry-i18n.js";
-import { sanitizeTactics } from "../scripts/foundry/tactics.js";
+import { sanitizeTactics, statedDesires } from "../scripts/foundry/tactics.js";
 import { creature, strike, battle } from "./helpers.js";
 
 const english = storyTables();
@@ -170,5 +170,17 @@ describe("answers players store", () => {
     expect(sanitizeTactics({ alwaysTalk: true, talk: "opportune" }).talk).toBe("opportune");
     expect(sanitizeTactics({ alwaysTalk: false }).talk).toBeUndefined();
     expect(sanitizeTactics({ alwaysTalk: true }).alwaysTalk).toBeUndefined(); // (no tick-box of its own any more)
+  });
+
+  test("desires: only what the survey would offer the character, at one of its levels", () => {
+    const stored = sanitizeTactics({ desires: {
+      d0: { kind: "heal", target: "a", level: 99 },
+      d1: { kind: "talk", target: "b", level: 3 },
+      d2: { kind: "hurt", target: "c", level: 42 }
+    } });
+    const mute = { actions: [], social: { languages: [] } };
+    expect(statedDesires(stored, mute)).toEqual([{ kind: "hurt", targetId: "c", level: 50 }]);
+    const healer = { actions: [{ kind: "heal" }], social: { languages: ["common"] } };
+    expect(statedDesires(stored, healer).map(d => [d.kind, d.level])).toEqual([["heal", 90], ["talk", 10], ["hurt", 50]]);
   });
 });

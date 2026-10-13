@@ -90,11 +90,34 @@ export function sanitizeTactics(raw) {
   return out;
 }
 
-/** The desires a character's Tactics state, for the engine: [{kind, targetId, level}]. */
-export function statedDesires(stored) {
+/**
+ * What a character could want of someone: anyone can want to hurt, guard or keep away from someone; to heal or bolster
+ * someone, only one who can, and to talk to someone or be bolstered by a friend, one who can make itself understood.
+ */
+export function desireKindsFor(spec) {
+  const actions = spec?.actions ?? [];
+  const speaks = (spec?.social?.languages?.length ?? 0) > 0 && !spec?.social?.mindless;
+  const canDo = {
+    heal: actions.some(a => a.kind === "heal"),
+    aid: actions.some(a => a.kind === "buff" && !a.tell), // (Dodge and the like are moves, not bolstering)
+    talk: speaks,
+    bolstered: speaks
+  };
+  return DESIRE_KINDS.filter(k => canDo[k] !== false);
+}
+
+/** A desire's level as the survey has it: the nearest of its bands. */
+const bandLevel = level => Object.values(DESIRE_LEVELS).reduce((best, v) => (Math.abs(v - level) < Math.abs(best - level) ? v : best), DESIRE_LEVELS.determined);
+
+/**
+ * The desires a character's Tactics state, for the engine: [{kind, targetId, level}]. With its spec, only what the
+ * survey would offer it (a kind it could want, a level of one of the bands), whatever was written to the flag.
+ */
+export function statedDesires(stored, spec = null) {
+  const kinds = spec ? new Set(desireKindsFor(spec)) : null;
   return Object.values(stored?.desires ?? {})
-    .filter(d => d.kind && d.target)
-    .map(d => ({ kind: d.kind, targetId: d.target, level: d.level ?? DESIRE_LEVELS.determined }));
+    .filter(d => d.kind && d.target && (!kinds || kinds.has(d.kind)))
+    .map(d => ({ kind: d.kind, targetId: d.target, level: bandLevel(Number(d.level ?? DESIRE_LEVELS.determined)) }));
 }
 
 /** Stored answers, migrating the older `disposition` flag. */
@@ -367,18 +390,11 @@ export function questionsContext(spec, actor, uid, { questions: withQuestions = 
     numbered.set(t.name, (numbered.get(t.name) ?? 0) + 1);
     return { ...t, name: `${t.name} ${numbered.get(t.name)}` };
   }).filter(t => t.id !== (spec.tokenId ?? spec.id));
-  // Healing, bolstering and talking only for those who can (anyone can want to hurt, guard or avoid someone); asking
-  // a friend for a buff, for those who can make themselves understood.
-  const speaks = (spec.social?.languages?.length ?? 0) > 0 && !spec.social?.mindless;
-  const canDo = {
-    heal: heals.length > 0,
-    aid: spec.actions.some(a => a.kind === "buff" && !a.tell), // (Dodge and the like are moves, not bolstering)
-    talk: speaks,
-    bolstered: speaks
-  };
+  // (What it could want of someone; one it wants already stays shown.)
+  const possible = desireKindsFor(spec);
   const desires = !targets?.length ? null : DESIRE_SLOTS.map(slot => {
     const d = stored.desires?.[slot] ?? {};
-    const kinds = DESIRE_KINDS.filter(k => canDo[k] !== false || d.kind === k);
+    const kinds = DESIRE_KINDS.filter(k => possible.includes(k) || d.kind === k);
     const level = d.level ?? DESIRE_LEVELS.determined;
     const band = Object.entries(DESIRE_LEVELS).reduce((best, [k, v]) => (Math.abs(v - level) < Math.abs(DESIRE_LEVELS[best] - level) ? k : best), "determined");
     return {

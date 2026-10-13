@@ -306,7 +306,7 @@ function applyCharacterTactics(spec, entry) {
   // The wishes the answers carry, 0 to 1: always talking (unless being hurt), avoiding killing, not liking to flee.
   const wish = key => TACTIC_WISHES[key][stored[key]] ?? 0;
   spec.alwaysTalk = wish("talk");
-  spec.desires = statedDesires(stored); // what the GM or player says it wants, at whom, how badly
+  spec.desires = statedDesires(stored, spec); // what the GM or player says it wants, at whom, how badly
   spec.avoidCostlySpells = !!stored.avoidCostlySpells; // "I don't like to use spells that cost something"
   spec.avoidKilling = wish("target"); // holds back from a kill: knocks out, leaves the fallen be, spares them after
   spec.avoidFleeing = wish("retreat"); // stays when it would choose to run
@@ -350,6 +350,25 @@ function applyCharacterTactics(spec, entry) {
 }
 
 /** The player party's wishes for this fight (party.js): its players' votes, majority rules, at the world's Party's sway. */
+/**
+ * Could a character know of that token: it's in the fight (the encounter's), or within the character's sight (no wall
+ * that blocks sight between them)?
+ */
+function knowable(token, targetId) {
+  const scene = token.document?.parent ?? token.scene;
+  const target = scene?.tokens?.get(targetId);
+  if ( !target ) return false;
+  if ( sceneEncounter(scene)?.combatants?.some(c => c.tokenId === targetId) ) return true;
+  const from = token.center;
+  const to = target.object?.center;
+  if ( !from || !to ) return true;
+  try {
+    return !CONFIG.Canvas.polygonBackends.sight.testCollision(from, to, { type: "sight", mode: "any" });
+  } catch ( err ) {
+    return true;
+  }
+}
+
 function partyFor(entries) {
   const players = voters();
   // (Only those with a character in the fight: with none, the GM's own friendly characters have no party wishes.)
@@ -558,9 +577,9 @@ export function buildBattleSpec(roster, setup, { approach = null, exclude = new 
     spec.traits = fudgedTraits(e.spec, ts.fudge);
     applyCharacterTactics(spec, e);
     if ( side === SIDES.FRIENDLY && party ) applyPartyWishes(spec, e, party);
-    // (A player's character wants nothing of a token hidden from it: the survey never offers one, and a flag written by
-    // hand can't name one either.)
-    if ( e.token.actor?.hasPlayerOwner ) spec.desires = (spec.desires ?? []).filter(d => !hidden.has(d.targetId));
+    // (A player's character wants nothing of a token hidden from it, or of one it couldn't know is there (out of the
+    // fight and out of its sight): the survey never offers one, and a flag written by hand can't name one either.)
+    if ( e.token.actor?.hasPlayerOwner ) spec.desires = (spec.desires ?? []).filter(d => !hidden.has(d.targetId) && knowable(e.token, d.targetId));
     if ( ts.diesAtZero !== undefined ) spec.diesAtZero = ts.diesAtZero;
     combatants.push(spec);
     (bySide[side] ??= []).push(spec);
