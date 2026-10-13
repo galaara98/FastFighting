@@ -20,7 +20,7 @@ describe("reluctance", () => {
 
   test("a character who doesn't like using consumables drinks far fewer potions", () => {
     // (Hurt, but not near death: that's when reluctance holds.)
-    const pc = avoid => creature({ id: "pc", kind: "pc", diesAtZero: false, hp: { value: 60, max: 60, temp: 0 }, actions: [strike(), potion()], resources: { "item:p": 3 }, avoidConsumables: avoid, tactics: { potionThreshold: "75" } });
+    const pc = avoid => creature({ id: "pc", kind: "pc", diesAtZero: false, hp: { value: 60, max: 60, temp: 0 }, actions: [strike(), potion()], resources: { "item:p": 3 }, tactics: { potionThreshold: "75", ...(avoid ? { consumables: "avoid" } : {}) } });
     const brute = () => creature({ id: "brute", side: "hostile", hp: { value: 80, max: 80 }, actions: [strike({ bonus: 10, damage: [parseFormula("1d6+2", "slashing")] })] });
     // (The batch reports how many were used, on average.)
     const used = avoid => runBatchSync(battle([pc(avoid), brute()], { maxRounds: 6 }), pf2eRules, { runs: 300 }).combatants.pc.resources["item:p"] ?? 0;

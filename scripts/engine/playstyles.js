@@ -39,7 +39,7 @@ export const STAY_TRUE_CAP = 0.1;
  *   avoid     fear: of the most dangerous foe, of whoever is hurting it once it's hurt (attacker), of the nearest
  *   whim      a random foe now and then catches its eye
  *   ×1 multipliers: retaliate (hitting back), avenge (a fallen friend's killer), cool (how fast the fight's grudges
- *             fade), frustration (how fast obstacles wear desires down), leader, team (how much it listens),
+ *             fade), frustration (how fast obstacles wear desires down), leader (how much it listens to its leader),
  *             doorPatience (how long it keeps at a locked door); contrarian: the chance it goes against its leader
  */
 export const PLAYSTYLES = Object.freeze({
@@ -52,9 +52,9 @@ export const PLAYSTYLES = Object.freeze({
   // Never the fallen; the weakest friend comes first.
   moralist: { icon: "fa-scale-balanced", traits: { selfish: -15, loyal: 10 }, suggest: { allyDying: "rescue" }, behavior: { spareDowned: 1, helps: 1 },
     desire: { hurt: { downed: -100 }, heal: 10, protect: 10, aid: 5 } },
-  // Does what the others want: the leader's and the team's wishes pull hard.
+  // Does what the others want: its leader's wishes pull hard.
   peoplePleaser: { icon: "fa-face-smile", traits: { selfish: -20, loyal: 15 }, suggest: { healAggro: "aggressive", target: "protect", talk: "opportune" }, behavior: { followFocus: 0.5, helps: 1 },
-    desire: { talk: 10, aid: 10, leader: 2, team: 2.5 } },
+    desire: { talk: 10, aid: 10, leader: 2 } },
   // Fine until hurt; then it wants to mend itself (mend: healing itself, once hurt) and get away from whoever is
   // hurting it. (Not a coward: that's the Chicken. It doesn't shift bravery.)
   fragile: { icon: "fa-heart-crack", traits: {}, suggest: { retreat: "hurt", potionThreshold: "75", selfRevived: "healSelf" }, behavior: { lowProfile: 0.2, flighty: 0.6 },
@@ -68,7 +68,7 @@ export const PLAYSTYLES = Object.freeze({
   // Trusts its own judgment over anyone's, and isn't talked into things: an outsider's words (anyone not of its own
   // group) get a step further to go and up to 4 harder (wary, by the pill's place).
   skeptic: { icon: "fa-magnifying-glass", traits: { tactical: 10 }, suggest: { resourceUse: "conserve", healAggro: "conservative" }, behavior: { wary: 1, trapWary: 0.75, tauntProof: 0.6 },
-    desire: { talk: -15, leader: 0.5, team: 0.5, frustration: 0.8 } },
+    desire: { talk: -15, leader: 0.5, frustration: 0.8 } },
   // Ends it fast: the quickest kills.
   speedRunner: { icon: "fa-forward-fast", traits: { tactical: 5, brave: 5 }, suggest: { resourceUse: "nova", target: "weakest" }, behavior: { rush: 0.4 },
     desire: { hurt: { weakest: 20 }, frustration: 1.3 } },
@@ -92,7 +92,7 @@ export const PLAYSTYLES = Object.freeze({
     desire: { talk: 30, hurt: { downed: -50 } } },
   // Keeps its distance and out of the crowd.
   wallflower: { icon: "fa-user-ninja", traits: { brave: -10 }, suggest: { style: "ranged" }, behavior: { lowProfile: 0.45, hinders: 0.25, flighty: 0.3, trapWary: 0.35, tauntProof: 0.3 },
-    desire: { hurt: { nearest: -10 }, avoid: { nearest: 15 }, team: 0.7 } },
+    desire: { hurt: { nearest: -10 }, avoid: { nearest: 15 } } },
   // Shields the weakest friend, avenges the fallen, fears nothing.
   martyr: { icon: "fa-cross", traits: { brave: 20, selfish: -30, loyal: 20 }, suggest: { allyDying: "rescue", retreat: "never", healAggro: "allCosts", style: "protector", target: "protect" }, behavior: { drawAggro: 0.3, helps: 1, rally: 0.2, taunt: 0.55 },
     desire: { protect: 25, heal: 15, aid: 5, avenge: 2, avoid: { dangerous: -50, attacker: -50 } } },
@@ -103,7 +103,7 @@ export const PLAYSTYLES = Object.freeze({
     desire: { protect: 20, hurt: { dangerous: 10 }, avoid: { dangerous: -40, attacker: -40 }, retaliate: 0.7, frustration: 0.7 } },
   // In it for itself: easy pickings, little loyalty, gives up when it gets hard.
   mercenary: { icon: "fa-coins", traits: { selfish: 30, loyal: -20 }, suggest: { retreat: "losing", resourceUse: "conserve", allyDying: "fight" }, behavior: { flighty: 0.6 },
-    desire: { hurt: { weakest: 10 }, aid: -10, avenge: 0.3, team: 0.5, frustration: 1.3 } },
+    desire: { hurt: { weakest: 10 }, aid: -10, avenge: 0.3, frustration: 1.3 } },
   // Support first: heals and guards friends, backs the leader.
   enabler: { icon: "fa-hands-holding", traits: { selfish: -15, loyal: 10 }, suggest: { healAggro: "aggressive", target: "protect" }, behavior: { followFocus: 0.3, helps: 1 },
     desire: { heal: 25, protect: 15, aid: 20, leader: 1.3 } },
@@ -120,7 +120,7 @@ export const PLAYSTYLES = Object.freeze({
     desire: { hurt: { weakness: 20, casters: 10 }, frustration: 0.7, doorPatience: 2 } },
   // Unpredictable: something random catches its eye, nobody's voice counts for much, may defy its leader.
   wildcard: { icon: "fa-dice", traits: {}, suggest: {}, behavior: { random: 0.25 },
-    desire: { whim: 25, leader: 0.3, team: 0.3, contrarian: 0.5 } },
+    desire: { whim: 25, leader: 0.3, contrarian: 0.5 } },
   // Light fingers: a lock is an invitation.
   thief: { icon: "fa-mask", traits: { selfish: 10 }, suggest: {}, behavior: { steal: 1, trapWary: 1 },
     desire: { hurt: { weakest: 5 }, doorPatience: 1.5 } },
@@ -144,7 +144,7 @@ export const PLAYSTYLES = Object.freeze({
 });
 
 /** Desire keys that add up across pills, and those that multiply (a playstyle's ×1 is "no change"). */
-const DESIRE_MULTIPLIERS = ["retaliate", "avenge", "cool", "frustration", "leader", "team", "doorPatience"];
+const DESIRE_MULTIPLIERS = ["retaliate", "avenge", "cool", "frustration", "leader", "doorPatience"];
 
 /** The combined desire guide of a character's pills (roleplay leans on it harder; staying true halves it). */
 function combineDesires(chosen, { stayTrue, roleplay }) {

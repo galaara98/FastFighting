@@ -284,7 +284,6 @@
 /* ---------- Tactics questionnaire (planner rows and player survey) ---------- */
 .ff-tactics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 12px; }
 .ff-q { display: flex; flex-direction: column; gap: 2px; border-radius: 4px; padding: 2px 4px; }
-.ff-q-wide { grid-column: 1 / -1; }
 .ff-q-label { font-size: 11px; color: var(--ff-text-dim); }
 .ff-q-label i { opacity: 0.6; }
 .ff-q select { width: 100%; font-size: 12px; }

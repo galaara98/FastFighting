@@ -229,11 +229,6 @@ export function tauntLevel(taunt) {
   return level > 0 ? clamp(level, 0, 100) : 0;
 }
 
-/** Lay a crowd-control outcome's conditions on a target for its rounds (older name, kept for callers). */
-export function applyControl(target, outcome, sourceId) {
-  return applyOutcome(target, outcome, sourceId);
-}
-
 /** The bonuses each kind of roll draws on (and, for "defend", the marks that make it easier to hit). */
 const ROLL_KEYS = Object.freeze({
   attack: ["attack", "attackDie", "adv", "damage"], check: ["checks", "checkDie", "checkAdv"], save: ["saves", "saveDie", "saveAdv"], defend: ["defAdv", "ac"]

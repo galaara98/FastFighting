@@ -42,12 +42,6 @@ export async function keywords() {
 /** The keywords as they are now (nothing, before they're read). */
 export const currentKeywords = () => loaded;
 
-/** (For tests: these keywords, as if read.) */
-export function useKeywords(merged) {
-  loaded = merged;
-  loading = Promise.resolve(merged);
-}
-
 /**
  * What a character's biography and description say of its traits, added to its spec: each trait moved by the words
  * that speak to it (at most TRAIT_WORD_CAP either way), and those words in the trait's reason. Not for a hazard or the

@@ -14,7 +14,8 @@ export const KNOWN_HELPERS = Object.freeze({
   pf2e: { module: "fast-fighting-pf2e", url: "https://github.com/galaara98/FastFighting-PF2e" },
   dnd5e: { module: "fast-fighting-dnd5e", url: "https://github.com/galaara98/FastFighting-DnD5e" },
   dcc: { module: "fast-fighting-dcc", url: "https://github.com/galaara98/FastFighting-DCC" },
-  "foundry-ironsworn": { module: "fast-fighting-ironsworn", url: "https://github.com/galaara98/FastFighting-Ironsworn" }
+  "foundry-ironsworn": { module: "fast-fighting-ironsworn", url: "https://github.com/galaara98/FastFighting-Ironsworn" },
+  daggerheart: { module: "fast-fighting-daggerheart", url: "https://github.com/galaara98/FastFighting-Daggerheart" }
 });
 
 /**

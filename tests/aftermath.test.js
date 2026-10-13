@@ -19,7 +19,7 @@ function rescue({ medic = true, aftermath = "tell", holdsOff = false } = {}) {
   const dying = creature({ id: "down", name: "Valeros", kind: "pc", diesAtZero: false, hp: { value: 0, max: 30 }, dying: 2 });
   const friend = creature({ id: "friend", name: "Kyra", kind: "pc", diesAtZero: false, hp: { value: 40, max: 40 },
     actions: [strike({ id: "sword", bonus: 20, damage: [parseFormula("3d8+10", "slashing")] })],
-    firstAid: medic ? { mod: 20 } : null, disposition: holdsOff ? { allyDying: "protectSelf" } : undefined });
+    firstAid: medic ? { mod: 20 } : null, tactics: holdsOff ? { allyDying: "protectSelf" } : undefined });
   const foe = creature({ id: "foe", side: "hostile", hp: { value: 5, max: 5 }, defenses: { ac: 5 }, actions: [strike({ bonus: -50 })] });
   return battle([dying, friend, foe], { maxRounds: 5, aftermath });
 }

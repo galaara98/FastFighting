@@ -763,7 +763,7 @@
       },
       "peoplePleaser": {
         "Name": "People-Pleaser",
-        "Hint": "Goes along with the group: wants what its leader and friends want (and listens to them far more than most), heals generously, protects friends, likes to talk, and is happy to bolster a friend. Can't abide violence: it calms quarrels it sees and, taking no side, talks fighters into leaving."
+        "Hint": "Goes along with the group: wants what its leader wants (and listens to it far more than most), heals generously, protects friends, likes to talk, and is happy to bolster a friend. Can't abide violence: it calms quarrels it sees and, taking no side, talks fighters into leaving."
       },
       "fragile": {
         "Name": "Fragile",
@@ -779,7 +779,7 @@
       },
       "skeptic": {
         "Name": "Skeptic",
-        "Hint": "Careful and calculating: saves resources, heals sparingly. Trusts its own judgment: its leader and team sway it half as much, it's slow to talk, and an outsider's words have a harder time with it (a step further to talk it round, and harder to get through). Sees through most taunts."
+        "Hint": "Careful and calculating: saves resources, heals sparingly. Trusts its own judgment: its leader sways it half as much, it's slow to talk, and an outsider's words have a harder time with it (a step further to talk it round, and harder to get through). Sees through most taunts."
       },
       "speedRunner": {
         "Name": "Speed-Runner",
@@ -1220,7 +1220,8 @@
         "pf2e": "FastFighting PF2e",
         "dnd5e": "FastFighting D&D 5e",
         "dcc": "FastFighting DCC",
-        "foundry-ironsworn": "FastFighting Ironsworn"
+        "foundry-ironsworn": "FastFighting Ironsworn",
+        "daggerheart": "FastFighting Daggerheart"
       }
     },
     "Translation": {

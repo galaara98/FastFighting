@@ -67,7 +67,6 @@ export function getSetup(holder = planHolder()) {
   return foundry.utils.mergeObject(defaultSetup(), stored, { inplace: false });
 }
 
-/** Clear the plan: back to the defaults (an encounter's clears to the defaults, not to its scene's plan). */
 /**
  * Keep the GM's pick for a party member's role for the party's next fights (by actor): the partyCommand setting.
  * @param {string} actorId
@@ -78,6 +77,7 @@ export async function rememberPartyRole(actorId, role) {
   await game.settings.set(MODULE_ID, "partyCommand", rememberRole(setting("partyCommand") ?? {}, actorId, role));
 }
 
+/** Clear the plan: back to the defaults (an encounter's clears to the defaults, not to its scene's plan). */
 export async function clearSetup(holder = planHolder()) {
   if ( !holder || !game.user.isGM ) return;
   await holder.update({ [`flags.${MODULE_ID}.==setup`]: {} }, { render: false });

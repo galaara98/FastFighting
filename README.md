@@ -11,6 +11,8 @@ A [Foundry VTT](https://foundryvtt.com) module that resolves a battle, or a tens
   - [FastFighting PF2e](https://github.com/galaara98/FastFighting-PF2e) for Pathfinder Second Edition
   - [FastFighting D&D 5e](https://github.com/galaara98/FastFighting-DnD5e) for Dungeons & Dragons Fifth Edition
   - [FastFighting DCC](https://github.com/galaara98/FastFighting-DCC) for Dungeon Crawl Classics (and Xcrawl Classics)
+  - [FastFighting Ironsworn](https://github.com/galaara98/FastFighting-Ironsworn) for Ironsworn and Starforged
+  - [FastFighting Daggerheart](https://github.com/galaara98/FastFighting-Daggerheart) for Daggerheart
 - **Without a helper** for your world's system, FastFighting stays inactive. Its settings are greyed out, and the settings window and Combat Tracker point you to systems.md. An experimental generic d20 adapter can be switched on instead.
 
 ## Installation
@@ -342,11 +344,11 @@ Answers save as they're made, and two players sharing a token see each other's c
 | Mercenary | easy pickings; barely avenges anyone; gives up when it gets hard; leading, its flight takes others along; never pays a boss off |
 | Moralist | never the fallen, and pulls a killing blow where its system has a way to (a foe knocked out instead); heals friends, guards the weakest; can't abide violence |
 | Peacekeeper | hard to taunt; keeps the peace between anyone: everyone in a standoff with it (either side) loses patience half as fast; calms any quarrel it sees; foes it talks round stand down (a truce, even mid-fight: never a surrender, a payoff or a rout); its word is trusted (up to 2 easier) and it never threatens; spares the fallen (and pulls a killing blow, as a Moralist does); can't abide violence |
-| People-Pleaser | wants what its leader and friends want (listens far more than most); likes to talk and to bolster friends; can't abide violence |
+| People-Pleaser | wants what its leader wants (listens far more than most); likes to talk and to bolster friends; can't abide violence |
 | Puzzle-Maniac | weaknesses to exploit, casters, a clever lock-down, its own specialties a little more often, and locked doors (twice the patience); hard to taunt; a trap avoider (see **Trap avoiders**) |
 | Redeem-Seeker | the biggest threat; won't give up; now and then dares a foe to come at it |
 | Relentless | sticks with the foe it's on (the hardest of all to taunt); shrugs off setbacks; keeps at doors; a little wary of outsiders' words (half a Skeptic's) |
-| Skeptic | hard to taunt; its leader and team sway it half as much; slow to talk; wary of outsiders' words: anyone not of its own group needs a step more to talk it round, against up to 4 more DC (by the pill's place); a trap avoider (see **Trap avoiders**) |
+| Skeptic | hard to taunt; its leader sways it half as much; slow to talk; wary of outsiders' words: anyone not of its own group needs a step more to talk it round, against up to 4 more DC (by the pill's place); a trap avoider (see **Trap avoiders**) |
 | Speed-Runner | the quickest kills; in a hurry, as an Impatient one is |
 | Tank | stands in front and takes the blows: taunts foes off its friends (all of the slider, as its first pick: see **Taunting**), draws attacks, guards the weakest friend, fears nothing, never retreats, keeps its shield up, minds getting hit half as much |
 | Thief | robs when it's safe; a lock is an invitation; a trap avoider (see **Trap avoiders**) |
@@ -458,7 +460,7 @@ Declare your system in `module.json` (`relationships.systems`) so Foundry only o
 
 A spec may say what kind of creature it is (`creatureKind`: the system's own word, such as a 5e type and subtype or a PF2e ancestry), and the planner groups neutrals of a kind together; without it, the same stat block or name does.
 
-**Recognise things by slug, read them by what they do.** When a helper has to know a particular feature, action or spell, it looks for its slug or identifier (PF2e `slug`, dnd5e `system.identifier`), never its name: slugs are the same in every book, every edition of the free rules and every language, while names change with translations, reprints and homebrew copies (the name is only a fallback). Better still, read what an item does (its activities, effects, rule elements, and as a last resort its words), so paid books and homebrew nobody has seen yet still work. Both reference helpers work from the free rules (the SRD, the PF2e remaster) alone; anything more is read the same way.
+**Recognise things by slug, read them by what they do.** When a helper has to know a particular feature, action or spell, it looks for its slug or identifier (PF2e `slug`, dnd5e `system.identifier`), never its name: slugs are the same in every book, every edition of the free rules and every language, while names change with translations, reprints and homebrew copies (the name is only a fallback). Better still, read what an item does (its activities, effects, rule elements, and as a last resort its words), so paid books and homebrew nobody has seen yet still work. The helpers work from the free rules (the SRD, the PF2e remaster, each system's open content) alone; anything more is read the same way.
 
 **The rules object** is pure and is called thousands of times:
 - **The turn:** `turn(u)` gives the budget (`{actions: 3}` or `{action: 1, bonus: 1, move: 30}`).

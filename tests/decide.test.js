@@ -62,7 +62,7 @@ describe("consumables, from \"I don't like to\" to \"they're here to get used\""
     expect(w("useful")).toBe(1);
     expect(w("freely")).toBeGreaterThan(1);
     // (An older sheet's "I don't like to use consumables" box.)
-    expect(willingness(run, { ...unit(undefined), tac: {}, spec: { avoidConsumables: true } }, potion())).toBe(CONSUMABLE_WILL.avoid);
+    expect(willingness(run, { ...unit(undefined), tac: { consumables: "avoid" }, spec: {} }, potion())).toBe(CONSUMABLE_WILL.avoid);
   });
 });
 

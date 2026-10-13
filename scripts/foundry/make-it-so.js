@@ -626,4 +626,3 @@ async function undoFight(scene) {
   return true;
 }
 
-export { STATUS };

@@ -344,9 +344,6 @@ function applyCharacterTactics(spec, entry) {
     else if ( playstyles.suggest.target ) spec.tactics.target = playstyles.suggest.target;
     else delete spec.tactics.target;
   }
-  if ( spec.tactics ) {
-    spec.disposition = { healAggro: spec.tactics.healAggro, allyDying: spec.tactics.allyDying, selfRevived: spec.tactics.selfRevived };
-  }
 }
 
 /** The player party's wishes for this fight (party.js): its players' votes, majority rules, at the world's Party's sway. */
@@ -638,6 +635,8 @@ export function buildBattleSpec(roster, setup, { approach = null, exclude = new 
   const spec = {
     combatants,
     sides,
+    // (What those who stand aside mid-fight are called, in the reader's language.)
+    neutralLabel: sideName(NEUTRAL_PARTY),
     command: Object.fromEntries(Object.entries(chains).map(([k, chain]) => [k, chain.map(c => ({ id: c.id, role: c.role, leadership: c.leadership }))])),
     approach: options.positioning ? approach : null,
     doors: options.positioning ? sceneDoors() : {},

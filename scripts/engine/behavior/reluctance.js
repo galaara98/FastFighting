@@ -16,8 +16,8 @@ export const RELUCTANT = 0.1;
 /** How willing each answer to Consumables is, when nothing forces its hand (above 1: it values them more). */
 export const CONSUMABLE_WILL = Object.freeze({ avoid: RELUCTANT, sparing: 0.4, useful: 1, freely: 1.3 });
 
-/** u's answer to Consumables (an older sheet's "I don't like to use consumables" box: avoid). */
-export const consumablesAnswer = u => u.tac?.consumables ?? (u.spec.avoidConsumables ? "avoid" : "useful");
+/** u's answer to Consumables. */
+export const consumablesAnswer = u => u.tac?.consumables ?? "useful";
 
 /** "consumable", "costlySpell", or null for what costs nothing to use. */
 export function costKind(action) {

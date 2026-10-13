@@ -33,7 +33,7 @@ import { bargain } from "./behavior/bargain.js";
 import { talkActionsThisTurn, choosePitch, attemptTalk, shareLanguage } from "./behavior/talk.js";
 import { opensWithTalk, breaksStandoff, standoffPitches, charismaticLeader, canTalk, prefersTalk } from "./behavior/standoff.js";
 import { controlOutcome, controlRoll, isImmune, degreeShift } from "./behavior/control.js";
-import { recompute as recomputeConditions, applyOutcome, applyControl, beginConcentration, endConcentration, holdsAnything, noteConcentration, moveHeld, settleAllegiance, iwrOf, incoming, spendEdges, spendBoost, focusOf, tauntProof, withoutTaunt } from "./behavior/effects.js";
+import { recompute as recomputeConditions, applyOutcome, beginConcentration, endConcentration, holdsAnything, noteConcentration, moveHeld, settleAllegiance, iwrOf, incoming, spendEdges, spendBoost, focusOf, tauntProof, withoutTaunt } from "./behavior/effects.js";
 import { decideBuff, aidScores, checkDc } from "./behavior/support.js";
 import { perceives } from "./behavior/senses.js";
 import { stealChance, theftTarget, theftPlan, attemptTheft } from "./behavior/theft.js";
@@ -516,7 +516,7 @@ function applyEffects(run, u, action, target, degree) {
     } else if ( effect.kind === "condition" && (degree === 3 || !effect.critOnly) ) {
       // A rider such as "if it critically fails, it's also stunned 1": the system's own tags decide immunity.
       if ( isImmune(run, target, { traits: action.traits, onSave: [effect] }) ) continue;
-      applyControl(target, effect, u.id);
+      applyOutcome(target, effect, u.id);
       testConcentration(run, target);
       log(run, target, { type: "condition", by: u.spec.name, effect: effect.label ?? "" });
     } else if ( effect.kind === "save" && effect.save ) {
@@ -542,7 +542,7 @@ function saveRider(run, u, action, target, effect) {
   hit?.apply();
   if ( roll.degree > 1 || !effect.conditions || !isUp(target) ) return;
   if ( isImmune(run, target, { traits: action.traits, onSave: [effect] }) ) return;
-  applyControl(target, effect, u.id);
+  applyOutcome(target, effect, u.id);
   testConcentration(run, target);
   log(run, target, { type: "condition", by: u.spec.name, effect: effect.label ?? "" });
 }
@@ -2852,4 +2852,4 @@ export function replay(spec, rules, seed) {
   return runOne(prepareBattle(spec, rules), seed, { log: true, capture: true });
 }
 
-export { prepareBattle, areEnemies, liveTrait };
+export { prepareBattle };

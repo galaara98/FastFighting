@@ -40,7 +40,6 @@ const clashes = (a, b) => CLASHES.some(([x, y]) => (x === a && y === b) || (x ==
 
 const pos = n => Math.max(0, n);
 
-export { PC_BASELINE };
 
 /**
  * What a spec says about the character, as the scores need it. A player character's traits are read against the usual

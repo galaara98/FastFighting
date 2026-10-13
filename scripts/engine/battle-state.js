@@ -19,7 +19,6 @@
  * @property {Record<string, number>} [resources]  Pools such as "focus", "slot:3", "item:<id>"
  * @property {Record<string, {base:number, fudge:number}>} traits
  * @property {object} [flags]               packTactics, fearless, mindless, masterId, flying
- * @property {object} [disposition]         {healAggro, allyDying, selfRevived}
  * @property {boolean} [diesAtZero]         NPCs normally die at 0 HP
  * @property {object} [social]              Talking: {languages[], mindless, gullible?, resolve?, pitches, resist}
  *   pitches: {persuade|intimidate|deceive: {skill: display name, mod}}   what this creature can try on others
@@ -161,7 +160,7 @@ export function prepareBattle(spec, rules) {
   // Those who take no side: always there for anyone who stands aside mid-fight, and nobody's enemy as a side (each
   // of them turns on whoever crosses it, on its own).
   sides[NEUTRAL_PARTY] ??= {
-    id: NEUTRAL_PARTY, label: "Neutral", traits: Object.fromEntries(TRAITS.map(k => [k, fudged(50)])), leaderId: null,
+    id: NEUTRAL_PARTY, label: spec.neutralLabel ?? NEUTRAL_PARTY, traits: Object.fromEntries(TRAITS.map(k => [k, fudged(50)])), leaderId: null,
     leadership: { brave: fudged(0), tacticalFloor: fudged(0), attack: fudged(0), ac: fudged(0) }, healAggro: "balanced", morale: options.morale
   };
   sides[NEUTRAL_PARTY].enemies = new Set();
@@ -438,9 +437,9 @@ export function holdsBackThisRound(run, u) {
   return u.holdingBack;
 }
 
-/** Healing/dying answers for this fight: player tactics, else the older disposition record. */
+/** Healing/dying answers for this fight: its tactics. */
 export function dispositionOf(u) {
-  return u.tac ?? u.spec.disposition ?? {};
+  return u.tac ?? {};
 }
 
 /** Playstyle-driven behavior chances (see engine/playstyles.js): its own, leaning toward its leader's on a turn it follows. */
