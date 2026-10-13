@@ -289,15 +289,17 @@ describe("chat cards", () => {
 });
 
 describe("tooltips", () => {
-  const words = s => String(s).replace(/{[^}]+}/g, "X").split(/s+/).filter(Boolean).length;
-  const sentences = s => String(s).replace(/(e.g|i.e|etc|vs)./gi, "$1").split(/[.!?]+(?=s|$)/).filter(x => x.trim()).length;
+  const words = s => String(s).replace(/\{[^}]+\}/g, "X").split(/\s+/).filter(Boolean).length;
+  const sentences = s => String(s).replace(/\b(e\.g|i\.e|etc|vs)\./gi, "$1").split(/[.!?]+(?=\s|$)/).filter(x => x.trim()).length;
 
   test("every tooltip says it in 50 words and 3 sentences at most", () => {
     const strings = flatten(JSON.parse(readFileSync(new URL("../languages/en.json", import.meta.url), "utf8")));
-    const tips = new Set(Object.keys(strings).filter(k => /Hint$/.test(k) && !/.Settings./.test(k)));
+    const tips = new Set(Object.keys(strings).filter(k => /Hint$/.test(k) && !/\.Settings\./.test(k)));
     for ( const file of sources("templates", [".hbs"]) ) {
-      for ( const m of readFileSync(file, "utf8").matchAll(/data-tooltip="{{localize "([^"]+)"}}"/g) ) tips.add(m[1]);
+      for ( const m of readFileSync(new URL(`../${file}`, import.meta.url), "utf8").matchAll(/data-tooltip="\{\{localize "([^"]+)"\}\}"/g) ) tips.add(m[1]);
     }
+    // (The planner's own: a setting's hint, shown as a tooltip there.)
+    expect(tips.has("FASTFIGHTING.Settings.opening.Hint")).toBe(true);
     const long = [...tips].filter(k => strings[k] !== undefined && (words(strings[k]) > TIP_WORDS || sentences(strings[k]) > TIP_SENTENCES));
     expect(long).toEqual([]);
   });

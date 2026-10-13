@@ -6,9 +6,8 @@
       <strong>{{sceneName}}</strong>
       <span class="ff-chip">{{adapterLabel}}</span>
     </div>
-    <label class="ff-field ff-seconds">{{localize "FASTFIGHTING.Planner.Seconds"}} <i class="fa-solid fa-circle-question" data-tooltip="{{localize "FASTFIGHTING.Planner.SecondsHint"}}"></i>
-      <input type="range" name="options.seconds" value="{{options.seconds}}" min="6" max="20" step="1" data-dtype="Number">
-      <output class="ff-seconds-value">{{options.seconds}}</output>
+    <label class="ff-field ff-seconds"><span class="ff-field-label">{{localize "FASTFIGHTING.Planner.Seconds"}} <i class="fa-solid fa-circle-question" data-tooltip="{{localize "FASTFIGHTING.Planner.SecondsHint"}}"></i></span>
+      <span class="ff-seconds-control"><input type="range" name="options.seconds" value="{{options.seconds}}" min="6" max="20" step="1" data-dtype="Number"> <output class="ff-seconds-value">{{options.seconds}}</output></span>
     </label>
     {{#if runsNote}}<span class="ff-runs-note"><i class="fa-solid fa-gauge-high"></i> {{runsNote}}</span>{{/if}}
     <label class="ff-field">{{localize "FASTFIGHTING.Planner.MaxRounds"}}
@@ -33,10 +32,10 @@
       <label class="ff-field">{{localize "FASTFIGHTING.Planner.Downed"}}
         <select name="options.downedModel">{{selectOptions downedChoices selected=options.downedModel localize=true}}</select>
       </label>
-      <label class="ff-field">{{localize "FASTFIGHTING.Planner.Aftermath"}} <i class="fa-solid fa-circle-question" data-tooltip="{{localize "FASTFIGHTING.Settings.aftermath.Hint"}}"></i>
+      <label class="ff-field"><span class="ff-field-label">{{localize "FASTFIGHTING.Planner.Aftermath"}} <i class="fa-solid fa-circle-question" data-tooltip="{{localize "FASTFIGHTING.Settings.aftermath.Hint"}}"></i></span>
         <select name="options.aftermath">{{selectOptions aftermathChoices selected=options.aftermath localize=true}}</select>
       </label>
-      <label class="ff-field">{{localize "FASTFIGHTING.Planner.Opening"}} <i class="fa-solid fa-circle-question" data-tooltip="{{localize "FASTFIGHTING.Settings.opening.Hint"}}"></i>
+      <label class="ff-field"><span class="ff-field-label">{{localize "FASTFIGHTING.Planner.Opening"}} <i class="fa-solid fa-circle-question" data-tooltip="{{localize "FASTFIGHTING.Settings.opening.Hint"}}"></i></span>
         <select name="options.opening">{{selectOptions openingChoices selected=options.opening localize=true}}</select>
       </label>
       <label class="ff-field">{{localize "FASTFIGHTING.Planner.Initiative"}}
@@ -57,7 +56,7 @@
     <div class="ff-toolbar-row ff-system-row">
       <span class="ff-system-title" {{#if systemSection.hint}}data-tooltip="{{systemSection.hint}}"{{/if}}>{{systemSection.title}}</span>
       {{#each systemSection.fields}}
-      <div class="ff-field ff-system-field">{{label}}{{#if hint}} <i class="fa-solid fa-circle-question" data-tooltip="{{hint}}"></i>{{/if}}
+      <div class="ff-field ff-system-field"><span class="ff-field-label">{{label}}{{#if hint}} <i class="fa-solid fa-circle-question" data-tooltip="{{hint}}"></i>{{/if}}</span>
         {{#if isPills}}
         <span class="ff-pills">{{#each choices}}<button type="button" class="ff-pill {{#if active}}active{{/if}}" data-action="setSystem" data-key="{{../key}}" data-value="{{value}}" aria-pressed="{{#if active}}true{{else}}false{{/if}}" {{#if hint}}data-tooltip="{{hint}}"{{/if}}>{{label}}</button>{{/each}}</span>
         {{else}}
@@ -133,22 +132,14 @@
         <article class="ff-row {{#unless include}}is-excluded{{/unless}} {{#if expanded}}is-expanded{{/if}}" data-token-id="{{id}}">
           <div class="ff-row-head">
             <img src="{{img}}" alt="" data-action="panToken" data-tooltip="{{localize "FASTFIGHTING.Planner.PanTo"}}">
+            <button type="button" class="ff-icon-btn ff-row-toggle" data-action="toggleRow" aria-label="{{localize "FASTFIGHTING.Planner.Details"}}"><i class="fa-solid {{#if expanded}}fa-chevron-up{{else}}fa-chevron-down{{/if}}"></i></button>
             <div class="ff-row-id">
-              <div class="ff-row-name">
+              <div class="ff-row-name" data-tooltip-text="{{name}}">
                 {{name}}
                 {{#if hidden}}<i class="fa-solid fa-eye-slash" data-tooltip="{{localize "FASTFIGHTING.Planner.HiddenToken"}}"></i>{{/if}}
-                <span class="ff-chip ff-kind-{{kind}}">{{kindLabel}} {{level}}</span>
-                {{#if bystander}}<span class="ff-chip ff-bystander" data-tooltip="{{localize "FASTFIGHTING.Planner.BystandersHint"}}"><i class="fa-solid fa-eye"></i> {{localize "FASTFIGHTING.Planner.Bystander"}}</span>{{/if}}
-                {{#if controllers}}<span class="ff-chip" data-tooltip="{{localize "FASTFIGHTING.Planner.ControlledBy"}}"><i class="fa-solid fa-user"></i> {{controllers}}</span>{{/if}}
+                <span class="ff-chip ff-kind-{{kind}}">{{kindLabel}}</span>
+                {{#if bystander}}<span class="ff-chip ff-bystander" data-tooltip="{{localize "FASTFIGHTING.Planner.BystandersHint"}}"><i class="fa-solid fa-eye"></i></span>{{/if}}
               </div>
-              <div class="ff-row-meta">
-                <span data-tooltip="{{hpName}}"><i class="fa-solid fa-heart"></i> {{hp}}</span>
-                {{#if stamina}}<span data-tooltip="{{staminaName}}"><i class="fa-solid fa-bolt"></i> {{stamina}}</span>{{/if}}
-                {{#if showAc}}<span data-tooltip="{{acName}}"><i class="fa-solid fa-shield"></i> {{ac}}</span>{{/if}}
-                {{#if approach}}<span class="ff-approach"><i class="fa-solid fa-route"></i> {{approach}}</span>{{/if}}
-              </div>
-              {{#if resolvedLabel}}<div class="ff-row-note">{{resolvedLabel}}</div>{{/if}}
-              {{#if playstyleNames}}<div class="ff-row-playstyles"><i class="fa-solid fa-masks-theater"></i> {{playstyleNames}}</div>{{/if}}
             </div>
             <label class="ff-check" data-tooltip="{{localize "FASTFIGHTING.Planner.IncludeHint"}}"><input type="checkbox" name="tokens.{{id}}.include" {{checked include}}></label>
             <span class="ff-row-pills">
@@ -157,14 +148,22 @@
               <span class="ff-roles" {{#if roles}}role="group" aria-label="{{localize "FASTFIGHTING.Planner.Command"}}" data-tooltip="{{roleHint}}"{{/if}}>{{#each roles}}<button type="button" class="ff-role-pill {{#if active}}active{{/if}} {{#if auto}}is-auto{{/if}}" data-action="setRole" data-role="{{key}}" aria-pressed="{{#if active}}true{{else}}false{{/if}}" aria-label="{{label}}">{{short}}</button>{{/each}}</span>
             </span>
             <select name="tokens.{{id}}.side" class="ff-side-select">{{selectOptions sideChoices selected=side localize=true}}</select>
-            {{#if survey}}<span class="ff-ask">{{#if survey.players}}<button type="button" class="ff-icon-btn ff-quill" data-action="surveyCharacter" data-tooltip-text="{{survey.playersHint}}" aria-label="{{survey.playersHint}}"><i class="fa-solid fa-feather-pointed"></i></button>{{/if}}<button type="button" class="ff-icon-btn ff-quill ff-quill-gm" data-action="surveyCharacterGm" data-tooltip="{{localize "FASTFIGHTING.Survey.AskGms"}}" aria-label="{{localize "FASTFIGHTING.Survey.AskGms"}}"><i class="fa-solid fa-feather-pointed"></i></button></span>{{/if}}
-            <button type="button" class="ff-icon-btn" data-action="toggleRow" aria-label="{{localize "FASTFIGHTING.Planner.Details"}}"><i class="fa-solid {{#if expanded}}fa-chevron-up{{else}}fa-chevron-down{{/if}}"></i></button>
-          </div>
-          <div class="ff-trait-grid ff-compact">
-            {{#each traits}}{{> "modules/fast-fighting/templates/partials/fudge.hbs" this}}{{/each}}
+            {{#if survey}}<span class="ff-ask">{{#if survey.players}}<button type="button" class="ff-icon-btn ff-quill" data-action="surveyCharacter" data-tooltip-text="{{survey.playersHint}}" aria-label="{{survey.playersHint}}"><i class="fa-solid fa-feather-pointed"></i></button>{{/if}}<button type="button" class="ff-icon-btn ff-quill ff-quill-gm" data-action="surveyCharacterGm" data-tooltip="{{localize "FASTFIGHTING.Survey.AskGms"}}" aria-label="{{localize "FASTFIGHTING.Survey.AskGms"}}"><i class="fa-solid fa-feather-pointed"></i></button></span>{{else}}<span></span>{{/if}}
           </div>
           {{#if expanded}}
           <div class="ff-row-details">
+            <div class="ff-row-meta">
+              {{#if controllers}}<span data-tooltip="{{localize "FASTFIGHTING.Planner.ControlledBy"}}"><i class="fa-solid fa-user"></i> {{controllers}}</span>{{/if}}
+              <span data-tooltip="{{hpName}}"><i class="fa-solid fa-heart"></i> {{hp}}</span>
+              {{#if stamina}}<span data-tooltip="{{staminaName}}"><i class="fa-solid fa-bolt"></i> {{stamina}}</span>{{/if}}
+              {{#if showAc}}<span data-tooltip="{{acName}}"><i class="fa-solid fa-shield"></i> {{ac}}</span>{{/if}}
+              {{#if approach}}<span class="ff-approach"><i class="fa-solid fa-route"></i> {{approach}}</span>{{/if}}
+            </div>
+            {{#if resolvedLabel}}<div class="ff-row-note">{{resolvedLabel}}</div>{{/if}}
+            {{#if playstyleNames}}<div class="ff-row-playstyles"><i class="fa-solid fa-masks-theater"></i> {{playstyleNames}}</div>{{/if}}
+            <div class="ff-trait-grid ff-compact">
+              {{#each traits}}{{> "modules/fast-fighting/templates/partials/fudge.hbs" this}}{{/each}}
+            </div>
             <div class="ff-trait-grid ff-compact">
               {{#each stats}}{{> "modules/fast-fighting/templates/partials/fudge.hbs" this}}{{/each}}
             </div>

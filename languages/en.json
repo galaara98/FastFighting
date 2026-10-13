@@ -130,11 +130,11 @@
       },
       "aftermath": {
         "Name": "After the fight",
-        "Hint": "When the last enemy falls: survivors tend their dying and the story tells it; the same, but the story ends at the last blow; or everyone is left as the fight left them, for you to play out."
+        "Hint": "Survivors tend the dying (and the story tells it), the story ends at the last blow, or everyone stays as the fight left them."
       },
       "opening": {
         "Name": "How encounters open",
-        "Hint": "Talk if they'd rather: a standoff when the leaders, or nearly everyone, would rather talk. Always talk first, or straight to battle. Only an argument: a standoff that never comes to blows; the encounter ends instead."
+        "Hint": "Talk if they'd rather (a standoff when the leaders would rather talk), always talk first, straight to battle, or only an argument (never comes to blows)."
       },
       "concedeLuck": {
         "Name": "PC luck: handing over an item",
@@ -296,7 +296,7 @@
     },
     "Kind": {
       "pc": "PC",
-      "npc": "Lvl",
+      "npc": "NPC",
       "companion": "Companion",
       "summon": "Summon",
       "minion": "Minion",
@@ -341,7 +341,8 @@
     "Planner": {
       "Title": "Battle Planner",
       "Seconds": "Seconds",
-      "SecondsHint": "How long the prediction runs (6 to 20 seconds): fight after fight until the time is up.",
+      "KindLevel": "{kind} · Lv {level}",
+      "SecondsHint": "How long the prediction runs: fight after fight until the time is up.",
       "ManyCreatures": "{creatures} creatures: only about {runs} fights fit in {seconds} seconds, so the odds will be rough.",
       "MaxRounds": "Max rounds",
       "Seed": "Seed",
@@ -349,7 +350,7 @@
       "Downed": "Downed",
       "Initiative": "Initiative",
       "Positioning": "Terrain & positioning",
-      "PositioningHint": "Distances, movement types, terrain cost, walls and elevation",
+      "PositioningHint": "Distances, movement, terrain, walls and elevation.",
       "Morale": "Morale",
       "Leadership": "Leadership",
       "Hidden": "Hidden tokens",
@@ -384,8 +385,8 @@
       "RunFailed": "Simulation failed: {error}",
       "FightsWith": "Fights as {side}",
       "Group": "Group",
-      "HostileGroupHint": "Hostile group: each group fights the others as well as the party",
-      "NeutralGroupHint": "Friend group: they look out for each other. Proposed when the planner opened (by kind and closeness); click to move",
+      "HostileGroupHint": "Hostile group: fights the party and the other groups.",
+      "NeutralGroupHint": "Friend group: they look out for each other. Click to move.",
       "SitsOut": "Sits this one out",
       "TakesNoSide": {
         "neutral": "Takes no side (until crossed)",
@@ -402,11 +403,11 @@
       "ControlledBy": "Controlled by",
       "Fudge": "fudge",
       "Talking": "Talking",
-      "TalkingHint": "Let characters talk foes down by persuading, threatening or bluffing them",
+      "TalkingHint": "Characters may talk foes down: persuade, threaten or bluff.",
       "IgnoreLanguages": "Ignore languages",
-      "IgnoreLanguagesHint": "Anyone who speaks a language understands anyone else who speaks one",
+      "IgnoreLanguagesHint": "Anyone who speaks understands everyone who speaks.",
       "Bystanders": "Bystanders",
-      "BystandersHint": "Tokens on the map but not in the encounter: each turn they may notice the conflict, and take part from the next round",
+      "BystandersHint": "Tokens not in the encounter may notice it and join from the next round.",
       "Bystander": "Bystander",
       "Stopped": "Stopped after {n} simulated fights.",
       "SceneChanged": "You're viewing a different scene now. Run the battle again for this scene.",
@@ -437,7 +438,7 @@
           "Short": "2"
         }
       },
-      "RoleHint": "B boss (its lead {boss}× a leader's), L leader, 1 and 2 lieutenants, who step up when those before them can't lead. Faded: picked automatically. Click to give the role, click again to keep it out of command, right-click to clear."
+      "RoleHint": "L: Leader, B: Boss ({boss}× as compelling as a Leader), 1/2: Lieutenants (become Leaders when they are unavailable)"
     },
     "Results": {
       "Tab": {
@@ -490,7 +491,7 @@
       "NoLeadership": "Without leadership",
       "NoMorale": "Without morale",
       "NoPositioning": "Without terrain & positioning",
-      "Hint": "Re-runs the battle without each combatant and modifier to show what moves the party's odds most.",
+      "Hint": "Re-runs without each combatant and option to show what moves the odds most.",
       "Compute": "Compute swing factors"
     },
     "Sample": {
@@ -517,7 +518,7 @@
         "another": "Another draw"
       },
       "Preview": "Preview",
-      "PreviewHint": "Only to look at: Make it So commits the fight the simulation drew. Run the simulation again for a new one."
+      "PreviewHint": "Preview only: Make it So commits the drawn fight."
     },
     "MakeItSo": {
       "Title": "Make it So",
@@ -532,7 +533,7 @@
       "UndoConfirm": "Restore the tokens to how they were before the last Make it So on this scene?",
       "Undone": "Make it So was undone.",
       "Moves": "Moves {distance}",
-      "Hint": "Commit the fight the simulation drew: post its story, move every token to where the fight left it, and commit the outcome. Previews (another draw, the most typical fight, a filter's pick) can't be committed. Undo reverses all of it.",
+      "Hint": "Commit the drawn fight: its story, token positions and outcomes. Undo reverses it.",
       "Gives": "Gives up {what} to {name}",
       "Receives": "Receives {what} from {name}",
       "Kept": "Agreed to give up {what}, but kept it (luck {luck})",
@@ -582,11 +583,11 @@
       },
       "preferredAction": {
         "Label": "Favorite weapon or attack",
-        "Hint": "The attack this character reaches for first. They still switch when something else is clearly better."
+        "Hint": "Its go-to attack; it still switches when something else is clearly better."
       },
       "style": {
         "Label": "Fighting style",
-        "Hint": "How this character likes to fight.",
+        "Hint": "How it likes to fight.",
         "frontline": "Front line: close in and hold the line",
         "skirmisher": "Skirmisher: flank, strike twice, keep moving",
         "ranged": "Ranged: keep my distance and shoot",
@@ -595,7 +596,7 @@
       },
       "target": {
         "Label": "Who to attack first",
-        "Hint": "Target priority when there is a choice.",
+        "Hint": "Who it attacks first.",
         "nearest": "Whoever is closest",
         "weakest": "Finish off the weakest",
         "dangerous": "The most dangerous foe",
@@ -605,14 +606,14 @@
       },
       "resourceUse": {
         "Label": "Spell slots, focus and limited abilities",
-        "Hint": "How readily this character spends resources that only come back after rest.",
+        "Hint": "How readily it spends what only comes back after rest.",
         "conserve": "Save them for emergencies",
         "balanced": "Use them when they are clearly better",
         "nova": "Spend freely to end it fast"
       },
       "specialty": {
         "Label": "Magic and specialties",
-        "Hint": "How strongly this character reaches for its spells and its own special abilities (its class's, its kind's, a creature's powers) over what anyone could do: a plain weapon blow, the everyday moves, talking. Where it stands, close or far, still follows its other answers.",
+        "Hint": "How often it uses its spells and special abilities over a plain weapon, moves or talk.",
         "none": "No preference",
         "some": "A little more often",
         "strong": "Much more often",
@@ -620,7 +621,7 @@
       },
       "consumables": {
         "Label": "Consumables",
-        "Hint": "Potions, scrolls, bombs and the like: how readily this character uses them up. Even one who doesn't like to will when a life is at stake.",
+        "Hint": "How readily it uses up potions, scrolls and bombs. Anyone will to save a life.",
         "avoid": "I don't like to use consumables",
         "sparing": "Only when it really counts",
         "useful": "When they're the right tool",
@@ -628,7 +629,7 @@
       },
       "healAggro": {
         "Label": "Healing others",
-        "Hint": "How freely this character spends actions and resources healing allies.",
+        "Hint": "How freely it spends actions and resources healing allies.",
         "conservative": "Only when someone is dying or badly hurt",
         "balanced": "Heal allies who are hurting",
         "aggressive": "Keep everyone topped up",
@@ -639,12 +640,12 @@
         "50": "Below half my {HP}",
         "75": "As soon as I'm hurt",
         "Label": "Drinking my own potions",
-        "Hint": "When this character drinks healing potions or elixirs.",
+        "Hint": "When it drinks healing potions.",
         "never": "Never, save them for later"
       },
       "allyDying": {
         "Label": "When an ally is dying",
-        "Hint": "What this character does the moment a friend goes down.",
+        "Hint": "What it does when a friend goes down.",
         "rescue": "Drop everything to save them",
         "fight": "Keep fighting; heal if convenient",
         "retreat": "Get out of here",
@@ -652,28 +653,28 @@
       },
       "selfRevived": {
         "Label": "After I'm revived",
-        "Hint": "What this character does after getting back up.",
+        "Hint": "What it does after getting back up.",
         "rejoin": "Get back in the fight",
         "healSelf": "Heal myself first",
         "retreat": "Retreat"
       },
       "retreat": {
         "Label": "When to retreat",
-        "Hint": "When this character would leave the battle.",
+        "Hint": "When it leaves the battle.",
         "never": "Fight to the end",
         "hurt": "When I'm badly hurt",
         "losing": "When the battle turns against us"
       },
       "shield": {
         "Label": "Shield or defending",
-        "Hint": "How this character uses Raise a Shield, or a turn given to its own defense (such as Dodge).",
+        "Hint": "How it uses Raise a Shield or a defensive turn (Dodge).",
         "always": "Every turn",
         "spare": "With spare actions, or when it's worth it",
         "never": "Don't bother"
       },
       "talk": {
         "Label": "Talking instead of fighting",
-        "Hint": "Whether this character tries to end fights with words: persuading, threatening or bluffing foes who share a language into surrendering, fleeing or switching sides. It takes several successes to convince most foes, and anyone this character has hurt or failed to convince is much harder to sway.",
+        "Hint": "Tries to end fights with words: persuade, threaten or bluff foes who share a language.",
         "always": "Always talk unless I am currently being hurt",
         "first": "Talk first: try to end it with words",
         "opportune": "Talk when it could work",
@@ -681,13 +682,13 @@
       },
       "beyond": {
         "Label": "Others nearby",
-        "Hint": "Creatures on the map who aren't in the encounter yet. Run to fetch your allies when the fight goes badly, or hunt down enemies still about once the fight is won.",
+        "Hint": "Creatures on the map not in the encounter: run to them for help, or hunt them after winning.",
         "stay": "Stay with the fight",
         "seekHelp": "Run for help when it goes badly",
         "hunt": "Hunt down enemies nearby"
       },
       "AutoFrom": "{choice} ({why})",
-      "AutoHint": "What \"Let this character decide\" chooses for this character, and why. Where its playstyles disagree, or it stays mostly true to its calculated tactics, each answer with how often it comes up in a fight. Only a GM sees this.",
+      "AutoHint": "GM only: what \"Let this character decide\" picks, why, and how often.",
       "AutoChance": "{choice} {chance}"
     },
     "Survey": {
@@ -697,11 +698,11 @@
       "Level": "Level",
       "SharedWith": "Also controlled by",
       "Reset": "Reset answers",
-      "ResetHint": "Return every answer for this character to \"Let this character decide\".",
+      "ResetHint": "Reset every answer to \"Let this character decide\".",
       "Ready": "I'm ready",
       "Thanks": "Thanks! Your GM can see you're ready.",
       "Prepare": "Prepare Players",
-      "PrepareHint": "Open a tactics survey on every player's screen for the tokens they control on this map.",
+      "PrepareHint": "Open the survey for every player with tokens on this map.",
       "NoPlayers": "No players control tokens on this scene.",
       "NoPlayersHere": "No players control tokens on this scene. Fill in tactics yourself in each PC's row.",
       "Sent": "Survey sent to {n} player(s).",
@@ -717,9 +718,9 @@
         "done": "Ready"
       },
       "MyTactics": "My tactics",
-      "MyTacticsHint": "How your characters fight: tactics, playstyles and desires. Change them any time; your GM sees them as you go.",
-      "AskPlayers": "Ask {names} to answer this character's survey. It opens on this character; the Party tab is there to look at, not to vote on.",
-      "AskGms": "Open this character's survey for every GM logged in, to answer for a player who's away.",
+      "MyTacticsHint": "Your characters' tactics, playstyles and desires; change them any time.",
+      "AskPlayers": "Ask {names} to answer this character's survey (the Party tab view-only).",
+      "AskGms": "Open this character's survey for every GM logged in, to answer for an away player.",
       "AskedPlayers": "Asked {names} about {name}.",
       "AskedGms": "{name}'s survey is open for every GM logged in."
     },
@@ -727,7 +728,7 @@
       "Tab": "FastFighting",
       "Hint": "FastFighting's playstyles and desires for this token.",
       "Hazard": "Hazard",
-      "HazardHint": "A trap, a haunt or a dangerous feature fights as a hazard: it doesn't move, think or talk, nobody attacks it, and it doesn't keep its side in the fight. A simple one fires once; a complex one acts every round.",
+      "HazardHint": "Traps and dangerous features: don't move or talk, can't be attacked. Simple: fires once; complex: acts every round.",
       "HazardMark": {
         "system": "As the game system has it",
         "no": "Not a hazard",
@@ -736,131 +737,131 @@
       },
       "HazardNoTactics": "A hazard has no tactics to set.",
       "Hidden": "Hidden scores",
-      "HiddenHint": "What this character's sheet, biography and playstyles make of it: what \"Let this character decide\" is worked out from, along with what its game system says. Only a GM sees these."
+      "HiddenHint": "GM only: the hidden scores \"Let this character decide\" works from."
     },
     "Playstyle": {
       "Label": "Playstyles",
-      "Hint": "Pick up to four labels for how this character really plays, most important first. The first counts in full, each later one less. They shape its personality, desires and tactics, and what \"Let this character decide\" means.",
+      "Hint": "Up to 4, most important first; later ones count less. They shape \"Let this character decide\".",
       "Count": "{n} of {max}",
       "Max": "Pick at most four playstyles. Unpick one first.",
       "StayTrue": "Stay mostly true to my calculated tactical level",
-      "StayTrueHint": "Your playstyle will be heavily influenced by your stats, weapons and spells, which determine what you will probably do; the other settings on this screen will have only a minor effect.",
+      "StayTrueHint": "Stats, weapons and spells decide; the other settings here matter only a little.",
       "Roleplay": "Roleplaying is very important to me",
-      "RoleplayHint": "The simulation weighs your playstyles heavily: their personality shifts double and their quirks (finishing foes, parleying, studying enemies…) happen much more often.",
+      "RoleplayHint": "Playstyles weigh double: their quirks show much more often.",
       "Both": "Both boxes are checked: roleplay strengthens your playstyles, but staying true still caps how far they move you from the calculated strategy.",
       "NpcTitle": "Playstyles (GM)",
       "chicken": {
         "Name": "Chicken",
-        "Hint": "Much less brave: hangs back, drinks potions early and retreats when hurt. It keeps away from the most dangerous foe and gives up easily, taking its group along if it leads. A taunt often fails to draw it."
+        "Hint": "Much less brave: hangs back, drinks potions early, flees when hurt. Avoids the most dangerous foe."
       },
       "cruel": {
         "Name": "Cruel",
-        "Hint": "Picks on the weakest and finishes off the fallen; hits back hard, and enjoys leaving a foe hampered."
+        "Hint": "Picks on the weakest, finishes the fallen, hits back hard."
       },
       "moralist": {
         "Name": "Moralist",
-        "Hint": "Never strikes a fallen foe; wants to heal friends and guard the weakest of them. Can't abide violence: it calms quarrels it sees and, taking no side, talks fighters into leaving."
+        "Hint": "Never strikes a fallen foe; heals friends, guards the weakest, calms quarrels."
       },
       "peacekeeper": {
         "Name": "Peacekeeper",
-        "Hint": "Keeps the peace between anyone: a standoff near it lasts longer, quarrels calm, and foes it talks round stand down. Its word is trusted and it never threatens. It spares the fallen and seldom rises to a taunt."
+        "Hint": "Keeps the peace: calms quarrels, talks foes into standing down, never threatens, spares the fallen."
       },
       "peoplePleaser": {
         "Name": "People-Pleaser",
-        "Hint": "Goes along with the group: wants what its leader wants (and listens to it far more than most), heals generously, protects friends, likes to talk, and is happy to bolster a friend. Can't abide violence: it calms quarrels it sees and, taking no side, talks fighters into leaving."
+        "Hint": "Goes along with the group: follows its leader, heals freely, protects friends, talks fighters out of fighting."
       },
       "fragile": {
         "Name": "Fragile",
-        "Hint": "Drinks potions early and retreats when hurt. Once hurt, wants to get away from whoever is hurting it and to mend itself; setbacks wear it down. Leading a group, its flight takes others along."
+        "Hint": "Drinks potions early and flees when hurt; once hurt, wants to get away and mend."
       },
       "impatient": {
         "Name": "Impatient",
-        "Hint": "Charges the nearest foe, spends resources freely, skips the shield. A short fuse: setbacks wear it down twice as fast, and it has little patience for a locked door."
+        "Hint": "Charges the nearest foe, spends freely, skips the shield. Short fuse."
       },
       "brawler": {
         "Name": "Brawler",
-        "Hint": "Loves melee: front line, the nearest foe, braver, hits back hard, no talking. Now and then jeers a foe into coming at it."
+        "Hint": "Loves melee: front line, nearest foe, hits back hard, no talking."
       },
       "skeptic": {
         "Name": "Skeptic",
-        "Hint": "Careful and calculating: saves resources, heals sparingly. Trusts its own judgment: its leader sways it half as much, it's slow to talk, and an outsider's words have a harder time with it (a step further to talk it round, and harder to get through). Sees through most taunts."
+        "Hint": "Careful: saves resources, heals sparingly, hard to talk round, half swayed by its leader. Sees through taunts."
       },
       "speedRunner": {
         "Name": "Speed-Runner",
-        "Hint": "Wants it over fast: spends everything, goes for the quickest kills."
+        "Hint": "Wants it over fast: spends everything, quickest kills first."
       },
       "leader": {
         "Name": "Wants to Lead",
-        "Hint": "Wants to lead: braver and more loyal, goes for the biggest threat, bolsters its people and rallies them when they waver. It half ignores whoever commands it instead. Passed over, it may brood, and a treacherous one schemes against its leaders."
+        "Hint": "Wants to lead: braver, loyal, goes for the biggest threat, rallies its people. Half ignores other commanders."
       },
       "instigator": {
         "Name": "Instigator",
-        "Hint": "Acts first and spoils the other side's plans, locking foes down or weakening them rather than just hitting. Picks fights with the most dangerous foe and the enemy leader, and may defy its own. Taunts foes into coming at it."
+        "Hint": "Acts first: locks foes down, picks fights with the most dangerous foe and their leader. Taunts foes."
       },
       "diplomat": {
         "Name": "Diplomat",
-        "Hint": "Opens by trying to talk, wants to talk throughout, and often spares the fallen. Can't abide violence: it calms quarrels it sees and, taking no side, talks fighters into leaving. Keeps a cool head when taunted."
+        "Hint": "Talks first and throughout, calms quarrels, often spares the fallen. Cool-headed when taunted."
       },
       "wallflower": {
         "Name": "Wallflower",
-        "Hint": "Stays at range and out of notice; keeps its distance from whatever comes close, would rather hamper a foe from afar, and listens to the crowd less. Leading a group, its flight takes a few along. Often ignores a taunt."
+        "Hint": "Stays at range and out of notice; would rather hamper than hit. Often ignores taunts."
       },
       "martyr": {
         "Name": "Martyr",
-        "Hint": "Never retreats, heals at all costs, and wants above all to guard the weakest friend; fears nothing; avenges the fallen twice as hard; rallies friends who run or waver. Taunts foes off its friends."
+        "Hint": "Never retreats, heals at all costs, guards the weakest, avenges the fallen. Taunts foes off friends."
       },
       "tank": {
         "Name": "Tank",
-        "Hint": "Stands in front and takes the blows: taunts foes off its friends (an action, with its talking), draws attacks, guards the weakest friend, fears nothing, never retreats, keeps its shield up, and doesn't take getting hit personally."
+        "Hint": "Takes the blows: taunts foes off friends, guards the weakest, never retreats, shield up."
       },
       "mercenary": {
         "Name": "Mercenary",
-        "Hint": "Looks out for number one: easy pickings, conserves resources, keeps fighting over rescuing, retreats when it turns. Little loyalty: barely avenges anyone, gives up when it gets hard. Leading a group, its flight takes others along; it would never pay a boss off."
+        "Hint": "In it for itself: easy targets, saves resources, little loyalty, gives up when it gets hard."
       },
       "enabler": {
         "Name": "Enabler",
-        "Hint": "Support first: wants to heal, guard and bolster friends, and backs the leader."
+        "Hint": "Support first: heals, guards and bolsters friends; backs the leader."
       },
       "redeemSeeker": {
         "Name": "Redeem-Seeker",
-        "Hint": "Out to prove itself: takes on the biggest threat, fights on the front line to save others, never retreats, and won't give up. Now and then dares a foe to come at it."
+        "Hint": "Out to prove itself: takes on the biggest threat from the front line, never gives up."
       },
       "loreCollector": {
         "Name": "Lore-Collector",
-        "Hint": "Sizes up a new foe before fighting or talking to it, spending an action or a turn. It then rolls much better against that kind of foe, and may tell friends nearby what it learned. Drawn to foes it hasn't sized up yet."
+        "Hint": "Sizes up new foes first, then rolls much better against their kind; may share what it learns."
       },
       "puzzleManiac": {
         "Name": "Puzzle-Maniac",
-        "Hint": "Much more tactical: exploits weaknesses, goes after casters, likes a clever lock-down, and loves a locked door (keeps at it twice as long). Often sees a taunt for the ploy it is."
+        "Hint": "Very tactical: exploits weaknesses, targets casters, loves lock-downs and locked doors."
       },
       "wildcard": {
         "Name": "Wildcard",
-        "Hint": "Unpredictable: some foe catches its eye at random, nobody's voice counts for much, and it may defy its leader."
+        "Hint": "Unpredictable: random targets, ignores advice, may defy its leader."
       },
       "thief": {
         "Name": "Thief",
-        "Hint": "Light fingers: when their side is winning, or they're unseen and someone is alone, they may rob a foe within reach instead of hitting them. A lock is an invitation."
+        "Hint": "Light fingers: may rob a foe within reach when winning or unseen. A lock is an invitation."
       },
       "AvoidCostlySpells": "I don't like to use spells that cost something",
-      "AvoidCostlySpellsHint": "Spells that spend a slot, focus or a daily use get cast far less (cantrips are free), unless the moment demands it: a friend (or this character) close to death, or, with a helping playstyle, a friend in a bad way.",
+      "AvoidCostlySpellsHint": "Spells that use slots, focus or daily uses only when a life is at stake. Cantrips are free.",
       "vengeful": {
         "Name": "Vengeful",
-        "Hint": "Never forgets: hits back twice as hard, avenges fallen friends, and its grudges never cool."
+        "Hint": "Never forgets: hits back twice as hard, avenges fallen friends."
       },
       "relentless": {
         "Name": "Relentless",
-        "Hint": "Single-minded: sticks with the foe it's on, shrugs off setbacks, keeps at a locked door, and doesn't care for an outsider's reasons (a little harder to talk round). A taunt rarely pulls it off its foe."
+        "Hint": "Single-minded: sticks with its foe, shrugs off setbacks, hard to taunt away."
       },
       "lazy": {
         "Name": "Lazy",
-        "Hint": "Does as little as it can: fights the nearest foe, saves its resources, helps no one much and gives up fast. Leading, its flight takes others along. It can't always be bothered to answer a taunt."
+        "Hint": "Does as little as it can: nearest foe, saves resources, gives up fast."
       },
       "unmundane": {
         "Name": "Un-Mundane",
-        "Hint": "Would rather use what sets it apart (its magic, its class's and kind's own abilities) than fight or talk as anyone would, and spends what that takes freely."
+        "Hint": "Leans on its magic and special abilities over plain weapons or talk; spends freely."
       },
       "EffectItem": "{what} {n}",
-      "EffectsHint": "What the picked playstyles do together in a fight: how far they move each hidden score, and how strongly each habit shows (each pill counts less further down; more with roleplay, little when staying true). Only a GM sees this.",
+      "EffectsHint": "GM only: what these playstyles do to the hidden scores and habits.",
       "Effect": {
         "ambition": "Wants to lead",
         "drawAggro": "Draws attacks",
@@ -935,7 +936,7 @@
       "Installing": "Installing story tables…",
       "Installed": "Story tables: {created} installed, {kept} already present.",
       "ShowOdds": "Show the odds",
-      "ShowOddsHint": "Add each side's chance of winning to the posted story (remembered for later fights).",
+      "ShowOddsHint": "Add each side's odds to the posted story.",
       "Odds": "Before it began, the odds stood at {odds}.",
       "Reveal": "Show to everyone",
       "Themselves": "themselves",
@@ -1253,7 +1254,7 @@
     },
     "Desire": {
       "Label": "Desires",
-      "Hint": "What this character wants, at whom, and how badly, on top of what its tactics want each turn. The strongest desire leads. A desire fades when it's thwarted.",
+      "Hint": "What it wants, at whom, how badly. The strongest leads; thwarted desires fade.",
       "What": "What",
       "Who": "Who?",
       "HowMuch": "How badly",
@@ -1279,7 +1280,7 @@
     "Motive": {
       "Offer": {
         "Label": "Do you offer something to end this argument?",
-        "Hint": "In a standoff, or only an argument: what this character puts on the table to end it. Money it carries, one of its own things, or a promise. It can only offer what it has.",
+        "Hint": "What it offers to end a standoff or argument: money, one of its things, or a promise.",
         "none": "Nothing",
         "money": "{MONEY}",
         "item": "One of my things",
@@ -1290,7 +1291,7 @@
       },
       "Expect": {
         "Label": "Do you expect something to end this argument?",
-        "Hint": "What this character wants before it lets the matter rest: {MONEY}, something of a kind (never a particular item), or a promise. What nobody meets is haggled over.",
+        "Hint": "What it wants before letting it rest: {MONEY}, a kind of thing, or a promise.",
         "none": "Nothing",
         "money": "{MONEY}",
         "thing": "Something",
@@ -1720,7 +1721,7 @@
       "NotLockedIn": "Choices not locked in",
       "target": {
         "Label": "Who do we go after first?",
-        "Hint": "The foe the party wants everyone to go for.",
+        "Hint": "The foe everyone goes for.",
         "nearest": "Whoever is closest",
         "weakest": "The weakest",
         "dangerous": "The most dangerous",
@@ -1729,35 +1730,35 @@
       },
       "talk": {
         "Label": "Do we talk first?",
-        "Hint": "Whether everyone should try words before weapons.",
+        "Hint": "Words before weapons?",
         "first": "Talk first",
         "opportune": "Talk if it could work",
         "never": "Let weapons do the talking"
       },
       "fallen": {
         "Label": "What about foes who fall?",
-        "Hint": "What the party wants done with foes who are down.",
+        "Hint": "What to do with foes who are down.",
         "finish": "Finish them",
         "leave": "Leave them be",
         "spare": "Spare them"
       },
       "care": {
         "Label": "How do we look after each other?",
-        "Hint": "Whether everyone should heal and guard each other, or look after themselves.",
+        "Hint": "Heal and guard each other, or look after yourselves.",
         "heal": "Heal the hurt",
         "guard": "Guard the weakest",
         "self": "Each for themselves"
       },
       "resources": {
         "Label": "Spells, focus and potions?",
-        "Hint": "How freely the party wants everyone to spend what doesn't come back.",
+        "Hint": "How freely everyone spends what doesn't come back.",
         "conserve": "Save them",
         "balanced": "When they count",
         "nova": "All in"
       },
       "retreat": {
         "Label": "When do we pull out?",
-        "Hint": "When the party wants everyone to retreat.",
+        "Hint": "When everyone retreats.",
         "never": "Fight to the end",
         "losing": "When it turns against us",
         "hurt": "When we're badly hurt"

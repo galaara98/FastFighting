@@ -219,13 +219,14 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /** A fudgeable trait. `shift` is the playstyle adjustment, shown but not editable here. */
   #traitView(trait, base, fudge, path, reason, shift = 0) {
-    const value = clamp(base + fudge + shift, 0, 100);
+    // (Shown in whole points: a trait worked out from its sheet can fall between them.)
+    const value = clamp(Math.round(base + fudge + shift), 0, 100);
     const signed = n => (n > 0 ? `+${n}` : `${n}`);
     return {
       trait, label: loc(`FASTFIGHTING.Trait.${trait}`), value, base, fudge, path, step: FUDGE_STEP.trait,
       band: loc(`FASTFIGHTING.Band.${traitBand(trait, value)}`),
       fudgeLabel: fudge ? signed(fudge) : "",
-      tooltip: brief(`${loc(`FASTFIGHTING.Trait.${trait}`)}: ${base}${fudge ? ` ${signed(fudge)} ${loc("FASTFIGHTING.Planner.Fudge")}` : ""}${shift ? ` ${signed(shift)} ${loc("FASTFIGHTING.Playstyle.Label")}` : ""}${reason ? ` (${reason})` : ""}`)
+      tooltip: brief(`${loc(`FASTFIGHTING.Trait.${trait}`)}: ${Math.round(base)}${fudge ? ` ${signed(fudge)} ${loc("FASTFIGHTING.Planner.Fudge")}` : ""}${shift ? ` ${signed(shift)} ${loc("FASTFIGHTING.Playstyle.Label")}` : ""}${reason ? ` (${reason})` : ""}`)
     };
   }
 
@@ -369,7 +370,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       name: s.name,
       img: s.img,
       kind: s.kind,
-      kindLabel: loc(`FASTFIGHTING.Kind.${s.kind}`),
+      kindLabel: game.i18n.format("FASTFIGHTING.Planner.KindLevel", { kind: loc(`FASTFIGHTING.Kind.${s.kind}`), level: s.level }),
       bystander: s.inEncounter === false,
       level: s.level,
       hp: `${s.hp.value + (fudge.hp ?? 0)}/${s.hp.max + (fudge.hp ?? 0)}`,
