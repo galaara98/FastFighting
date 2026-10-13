@@ -1,7 +1,7 @@
 /**
  * Turns the tokens on the viewed scene plus the GM's setup into a BattleSpec, runs it, and digs into the results.
  */
-import { MODULE_ID, SIDES, ALLEGIANCE, DISPOSITION_SIDES, NEUTRAL_PARTY, HOSTILE_GROUPS, GROUPS, TRAITS, clamp } from "../constants.js";
+import { MODULE_ID, SIDES, ALLEGIANCE, DISPOSITION_SIDES, NEUTRAL_PARTY, HOSTILE_GROUPS, GROUPS, TRAITS, MAX_ROUNDS, clamp } from "../constants.js";
 import { runBatch, replay } from "../engine/simulator.js";
 import { budgetMs, swingShareMs, MAX_RUNS, SWING_RUNS } from "../engine/run-budget.js";
 
@@ -652,7 +652,8 @@ export function buildBattleSpec(roster, setup, { approach = null, exclude = new 
     approach: options.positioning ? approach : null,
     doors: options.positioning ? sceneDoors() : {},
     options: {
-      maxRounds: options.maxRounds,
+      // (A plan saved before the most rounds went to 4 to 12 is held to them.)
+      maxRounds: clamp(Math.round(Number(options.maxRounds) || MAX_ROUNDS.default), MAX_ROUNDS.min, MAX_ROUNDS.max),
       downedModel: options.downedModel,
       aftermath: options.aftermath,
       positioning: options.positioning && !!approach,

@@ -710,12 +710,13 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     const el = this.element;
     el.style.minWidth = "1000px";
     el.style.minHeight = "600px";
-    // The prediction time's slider shows its seconds as it moves (it's saved when let go).
-    const seconds = el.querySelector('input[name="options.seconds"]');
-    seconds?.addEventListener("input", () => {
-      const shown = seconds.parentElement.querySelector(".ff-seconds-value");
-      if ( shown ) shown.textContent = seconds.value;
-    });
+    // A slider (the prediction time, the most rounds) shows its value as it moves (it's saved when let go).
+    for ( const slider of el.querySelectorAll('.ff-slider input[type="range"]') ) {
+      slider.addEventListener("input", () => {
+        const shown = slider.parentElement.querySelector(".ff-slider-value");
+        if ( shown ) shown.textContent = slider.value;
+      });
+    }
     // Right-click on a role pill: back to the automatic pick.
     for ( const pills of el.querySelectorAll(".ff-roles") ) {
       pills.addEventListener("contextmenu", async event => {

@@ -1,7 +1,7 @@
 /**
  * World settings. Every setting is a default: the Battle Planner can override any of them per battle.
  */
-import { MODULE_ID, ALLEGIANCE, DOWNED_MODELS, HEAL_AGGRO, ALLY_DYING, AFTERMATH, OPENING, CONCEDE_LUCK, THEFT_LUCK, EXECUTE_LUCK, SWITCH_LUCK, TRAITOR_LUCK, TRAP_LUCK, TAUNT_LUCK, STAND_GROUND, AVOID_KILLING, NEUTRAL_REACH } from "./constants.js";
+import { MODULE_ID, ALLEGIANCE, DOWNED_MODELS, HEAL_AGGRO, ALLY_DYING, AFTERMATH, OPENING, CONCEDE_LUCK, THEFT_LUCK, EXECUTE_LUCK, SWITCH_LUCK, TRAITOR_LUCK, TRAP_LUCK, TAUNT_LUCK, STAND_GROUND, AVOID_KILLING, NEUTRAL_REACH, MAX_ROUNDS } from "./constants.js";
 
 const choices = (keys, prefix) => Object.fromEntries(keys.map(k => [k, `FASTFIGHTING.${prefix}.${k}`]));
 
@@ -15,8 +15,8 @@ export const DEFAULT_SIDE_TRAITS = {
 const SETTINGS = {
   genericFallback: { type: Boolean, default: false, requiresReload: false, onChange: () => ui.combat?.render() },
   // How long a prediction runs (seconds): fight after fight until it's up (engine/run-budget.js).
-  predictionTime: { type: Number, default: 10, range: { min: 6, max: 20, step: 1 } },
-  maxRounds: { type: Number, default: 20, range: { min: 3, max: 100, step: 1 } },
+  predictionTime: { type: Number, default: 6, range: { min: 4, max: 20, step: 1 } },
+  maxRounds: { type: Number, default: MAX_ROUNDS.default, range: { min: MAX_ROUNDS.min, max: MAX_ROUNDS.max, step: 1 } },
   includeHidden: { type: Boolean, default: true },
   includeOtherLevels: { type: Boolean, default: false },
   neutralDefault: { type: String, default: ALLEGIANCE.NEUTRAL, choices: choices(Object.values(ALLEGIANCE), "Lean") },

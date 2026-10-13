@@ -7,9 +7,9 @@ import { creature, strike, battle } from "./helpers.js";
 const duel = () => battle([creature({ id: "a", actions: [strike()] }), creature({ id: "b", side: "hostile", actions: [strike()] })], { maxRounds: 5 });
 
 describe("the prediction's time", () => {
-  test("6 to 20 seconds, 10 unless the world or the battle says otherwise", () => {
+  test("4 to 20 seconds, 6 unless the world or the battle says otherwise", () => {
     expect(budgetMs()).toBe(PREDICTION_SECONDS.default * 1000);
-    expect(budgetMs(3)).toBe(6000);
+    expect(budgetMs(3)).toBe(4000);
     expect(budgetMs(14)).toBe(14000);
     expect(budgetMs(60)).toBe(20000);
   });

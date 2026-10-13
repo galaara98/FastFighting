@@ -6,7 +6,7 @@
  *  - Actor flag `fast-fighting.tactics`: a character's tactics answers, carried between battles (foundry/tactics.js).
  *  - Scene flag `fast-fighting.undo`: the last Make it So undo records.
  */
-import { MODULE_ID, SIDES, TRAITS } from "../constants.js";
+import { MODULE_ID, SIDES, TRAITS, MAX_ROUNDS, clamp } from "../constants.js";
 import { setting } from "../settings.js";
 import { rememberRole } from "./command-pick.js";
 
@@ -64,7 +64,10 @@ export const planHolder = (scene = canvas.scene) => sceneEncounter(scene) ?? sce
  */
 export function getSetup(holder = planHolder()) {
   const stored = holder?.getFlag(MODULE_ID, "setup") ?? holder?.scene?.getFlag?.(MODULE_ID, "setup") ?? {};
-  return foundry.utils.mergeObject(defaultSetup(), stored, { inplace: false });
+  const setup = foundry.utils.mergeObject(defaultSetup(), stored, { inplace: false });
+  // (A plan saved before the most rounds went to 4 to 12 is held to them.)
+  setup.options.maxRounds = clamp(Math.round(Number(setup.options.maxRounds) || MAX_ROUNDS.default), MAX_ROUNDS.min, MAX_ROUNDS.max);
+  return setup;
 }
 
 /**

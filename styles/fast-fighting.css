@@ -55,7 +55,7 @@
 .ff-field input, .ff-field select { font-size: 12px; height: 26px; color: var(--color-text-primary, inherit); }
 .ff-field-label { white-space: nowrap; }
 .ff-field-label i { margin-left: 3px; opacity: 0.6; cursor: help; }
-.ff-seconds-control { display: inline-flex; align-items: center; gap: 6px; }
+.ff-slider-control { display: inline-flex; align-items: center; gap: 6px; }
 .ff-field input[type="number"] { width: 72px; }
 .ff-toolbar-row { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 6px 12px; flex-basis: 100%; }
 .ff-toggles { display: flex; flex-wrap: wrap; gap: 2px 12px; font-size: 12px; align-self: center; flex: 1 1 280px; }
@@ -405,9 +405,9 @@
 .ff-desire.is-empty select:not(:first-child) { opacity: 0.6; }
 
 /* What "Let this character decide" stands for, and the hidden scores: shown to a GM only. */
-/* The prediction's time: a slider (6 to 20 seconds) with its value beside it. */
-.ff-seconds input[type="range"] { width: 110px; vertical-align: middle; }
-.ff-seconds-value { display: inline-block; min-width: 2ch; font-weight: 700; text-align: right; }
+/* The planner's sliders (the prediction time, the most rounds), each with its value beside it. */
+.ff-slider input[type="range"] { width: 100px; vertical-align: middle; }
+.ff-slider-value { display: inline-block; min-width: 2ch; font-weight: 700; text-align: right; }
 /* Too few fights fit the time for a big battle. */
 .ff-runs-note { align-self: center; font-size: 11px; color: var(--ff-accent); }
 /* A friendly character's survey, asked of its players (a quill), or opened for the GMs (an orange quill: GM-only). */

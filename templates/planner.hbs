@@ -6,12 +6,12 @@
       <strong>{{sceneName}}</strong>
       <span class="ff-chip">{{adapterLabel}}</span>
     </div>
-    <label class="ff-field ff-seconds"><span class="ff-field-label">{{localize "FASTFIGHTING.Planner.Seconds"}} <i class="fa-solid fa-circle-question" data-tooltip="{{localize "FASTFIGHTING.Planner.SecondsHint"}}"></i></span>
-      <span class="ff-seconds-control"><input type="range" name="options.seconds" value="{{options.seconds}}" min="6" max="20" step="1" data-dtype="Number"> <output class="ff-seconds-value">{{options.seconds}}</output></span>
+    <label class="ff-field ff-slider"><span class="ff-field-label">{{localize "FASTFIGHTING.Planner.Seconds"}} <i class="fa-solid fa-circle-question" data-tooltip="{{localize "FASTFIGHTING.Planner.SecondsHint"}}"></i></span>
+      <span class="ff-slider-control"><input type="range" name="options.seconds" value="{{options.seconds}}" min="4" max="20" step="1" data-dtype="Number"> <output class="ff-slider-value">{{options.seconds}}</output></span>
     </label>
     {{#if runsNote}}<span class="ff-runs-note"><i class="fa-solid fa-gauge-high"></i> {{runsNote}}</span>{{/if}}
-    <label class="ff-field">{{localize "FASTFIGHTING.Planner.MaxRounds"}}
-      <input type="number" name="options.maxRounds" value="{{options.maxRounds}}" min="3" max="100" data-dtype="Number">
+    <label class="ff-field ff-slider"><span class="ff-field-label">{{localize "FASTFIGHTING.Planner.MaxRounds"}} <i class="fa-solid fa-circle-question" data-tooltip="{{localize "FASTFIGHTING.Settings.maxRounds.Hint"}}"></i></span>
+      <span class="ff-slider-control"><input type="range" name="options.maxRounds" value="{{options.maxRounds}}" min="4" max="12" step="1" data-dtype="Number"> <output class="ff-slider-value">{{options.maxRounds}}</output></span>
     </label>
     <label class="ff-field">{{localize "FASTFIGHTING.Planner.Seed"}}
       <input type="text" name="options.seed" value="{{options.seed}}" placeholder="{{localize "FASTFIGHTING.Planner.Random"}}" size="9">

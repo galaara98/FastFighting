@@ -142,3 +142,6 @@ export function traitBand(trait, value) {
 export function tacticalTier(value) {
   return clamp(Math.floor(value / 20), 0, 4);
 }
+
+/** The most rounds a planned battle is simulated for, before it counts as a stalemate: the setting's bounds and default. */
+export const MAX_ROUNDS = Object.freeze({ default: 12, min: 4, max: 12 });

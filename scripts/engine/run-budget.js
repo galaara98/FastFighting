@@ -1,6 +1,6 @@
 /**
  * How long the planner's prediction runs, and what that means for a big battle. The prediction runs fight after fight
- * until its time is up (the Prediction time: 6 to 20 seconds); a fight under way is always finished, and none is
+ * until its time is up (the Prediction time: 4 to 20 seconds); a fight under way is always finished, and none is
  * started after. At most MAX_RUNS (past that the odds don't get any surer). A fight's work grows with the square of the
  * creatures in it (each, on its turn, weighs everyone else): about FIGHT_MS_PER_PAIR × creatures² for a fight of six
  * rounds (measured on a desktop: 16 creatures 7.5 ms a fight, 32 21 ms, 64 76 ms, 100 173 ms, in fights of about four
@@ -10,7 +10,7 @@
  */
 
 /** How long the planner's prediction runs, unless the world (or the battle) says otherwise (seconds), and its bounds. */
-export const PREDICTION_SECONDS = Object.freeze({ default: 10, min: 6, max: 20 });
+export const PREDICTION_SECONDS = Object.freeze({ default: 6, min: 4, max: 20 });
 /** The most fights a prediction runs, however fast they go. */
 export const MAX_RUNS = 20000;
 /** Fewer fights than this, and the odds are rough (±5% and worse): the planner says so. */
