@@ -1218,7 +1218,7 @@
         "{actor} stalks toward {target}.",
         "{actor} isn't finished yet, and turns toward {target}.",
         "{actor} sets off after {target}.",
-        "{actor} prowls toward an unsuspecting {target}."
+        "{actor} prowls toward {target}, unseen."
       ],
       "help": [
         "{actor} runs for help.",
@@ -1429,7 +1429,7 @@
       "{actor}, already down, is struck again.",
       "{actor} is hit while helpless.",
       "Even fallen, {actor} isn't safe.",
-      "Another blow lands on the fallen {actor}.",
+      "Another blow lands on {actor}, already fallen.",
       "{actor} groans as the blow lands."
     ],
     "recoveryGood": [
@@ -1700,7 +1700,7 @@
     ],
     "noticeFled": [
       "{by} stumbles right into {actor}.",
-      "{actor} is nearly bowled over by the fleeing {by}.",
+      "{actor} is nearly bowled over as {by} flees.",
       "{by} crashes into {actor}'s path.",
       "{actor} is startled by {by} running past.",
       "{by} flees straight past {actor}."
@@ -1714,7 +1714,7 @@
     ],
     "noticeAttacked": [
       "{actor} is set upon without warning.",
-      "{by} falls upon an unsuspecting {actor}.",
+      "{by} falls upon {actor} without warning.",
       "{actor} has no warning before {by} attacks.",
       "{by} catches {actor} completely off guard.",
       "{actor} is ambushed by {by}."
@@ -2068,24 +2068,24 @@
       "{actor} crumples, out cold."
     ],
     "executeSpared": [
-      "{actor} stands over the fallen {target}, then turns away to face {next}.",
+      "{actor} stands over {target}, then turns away to face {next}.",
       "{actor} raises its weapon over {target}, and thinks better of it: {next} is the real threat.",
       "{actor} leaves {target} where they fell and goes after {next}.",
       "Something makes {actor} spare {target}; it rounds on {next} instead.",
       "{actor} steps over {target} without a second blow, eyes on {next}."
     ],
     "executeSparedAlone": [
-      "{actor} stands over the fallen {target}, then turns away.",
+      "{actor} stands over {target}, then turns away.",
       "{actor} raises its weapon over {target}, and lowers it again.",
       "{actor} leaves {target} where they fell.",
       "Something stays {actor}'s hand; {target} is spared.",
       "{actor} looks down at {target} and walks away."
     ],
     "executeGoes": [
-      "{actor} stands over the fallen {target} and means to finish it.",
-      "{actor} turns on the helpless {target}.",
+      "{actor} stands over {target} and means to finish them.",
+      "{actor} turns on {target}, helpless now.",
       "{actor} isn't done with {target}.",
-      "{actor} closes in on the fallen {target} for the kill.",
+      "{actor} closes in on {target} for the kill.",
       "There's no mercy in {actor} for {target}."
     ],
     "deed": [
@@ -2253,7 +2253,7 @@
       "{actor} stands over {target}: nobody finishes them.",
       "{actor} won't let anyone kill {target}.",
       "\"Enough.\" {actor} keeps the others away from {target}.",
-      "{actor} shields the fallen {target} from the rest.",
+      "{actor} shields {target} from the rest.",
       "{actor} insists {target} be taken alive."
     ],
     "shakeOff": [
@@ -2306,7 +2306,7 @@
       "{actor} fumbles the theft, and {target} knows it."
     ],
     "reclaim": [
-      "{actor} takes back {amount} from the fallen {by}.",
+      "{actor} takes back {amount} from {by}, now fallen.",
       "{actor} gets {amount} back from {by}.",
       "{actor} reclaims {amount}.",
       "With {by} beaten, {amount} returns to {actor}.",

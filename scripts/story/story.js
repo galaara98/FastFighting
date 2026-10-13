@@ -66,6 +66,8 @@ class Relationships {
     this.targetOf = new Map();    // attackerId -> last targetId
     this.down = new Set();
     this.told = new Set();
+    this.asideTurns = new Set(); // "actor|turn": an aside told
+    this.ducked = new Set();     // "target|turn": ducking into cover told
   }
 
   kind(e) {
@@ -144,12 +146,21 @@ export function tellingOrder(log = []) {
   return out;
 }
 
+/** How many of a table's latest lines are kept out of its next draw (fewer for a short table). */
+const RECENT = 3;
+
 function makeRoller(tables, seed) {
   const rng = createRng(seed >>> 0);
+  const recent = new Map();
   const roll = (key, fill = {}) => {
     const entries = tables.get(key);
     if ( !entries?.length ) return "";
-    const text = entries[Math.floor(rng.next() * entries.length)] ?? "";
+    // (The same line again soon after reads like a mistake: one not said lately, where the table has one.)
+    const used = recent.get(key) ?? [];
+    const fresh = entries.map((x, i) => i).filter(i => !used.includes(i));
+    const pick = fresh.length ? fresh[Math.floor(rng.next() * fresh.length)] : Math.floor(rng.next() * entries.length);
+    recent.set(key, [pick, ...used].slice(0, Math.min(RECENT, entries.length - 1)));
+    const text = entries[pick] ?? "";
     return text.replace(/\{(\w+)\}/g, (m, k) => {
       const v = fill[k];
       return v !== undefined && v !== null ? v : m;
@@ -183,9 +194,16 @@ function agreeWithWeapon(text, weapon) {
 function relationshipClause(e, tier, rel, roll, fill) {
   const kind = rel.kind(e);
   if ( kind === "none" ) return "";
+  // (Talking: only a nemesis in words is worth remarking on; a leader or a grudge is about blows.)
+  if ( e.type === "talk" && kind !== "talkingNemesis" ) return "";
+  if ( e.type !== "talk" && kind === "talkingNemesis" ) return "";
   const key = `${e.actorId}|${e.targetId}|${kind}`;
   const decisive = tier.startsWith("critical") || tier.startsWith("major");
   if ( rel.told.has(key) && !decisive ) return "";
+  // (One aside a character a turn: a second reads like the first said again.)
+  const turn = `${e.actorId}|${e.turn}`;
+  if ( rel.asideTurns.has(turn) ) return "";
+  rel.asideTurns.add(turn);
   rel.told.add(key);
   const clause = roll(`relationship.${kind}.${successful(tier) ? "success" : "failure"}`, fill).trim();
   return clause ? ` ${capital(clause)}` : "";
@@ -203,7 +221,10 @@ function narrate(e, roll, rel, fill) {
       let text = roll(`action.${deliveryOf(e)}.${damageTypeOf(e, fill.mapType)}.${tier}`, f);
       if ( roll.lang === "en" ) text = agreeWithWeapon(text, f.weapon);
       if ( e.attackerCover && e.ranged && e.natural % 3 === 0 ) text = `${roll("event.coverShoot", f)} ${capital(text)}`;
-      if ( e.targetCover && e.ranged && !successful(tier) ) text += ` ${capital(roll("event.coverDuck", f))}`;
+      if ( e.targetCover && e.ranged && !successful(tier) && !rel.ducked.has(`${e.targetId}|${e.turn}`) ) {
+        rel.ducked.add(`${e.targetId}|${e.turn}`);
+        text += ` ${capital(roll("event.coverDuck", f))}`;
+      }
       return text + relationshipClause(e, tier, rel, roll, f);
     }
     case "talk": {
@@ -427,7 +448,10 @@ function thinkAloud(e, roll, mentions) {
   };
   const first = phrase(desires[0]);
   if ( !first ) return "";
-  const second = desires[1] ? phrase(desires[1]) : "";
+  // (Both at the very top, "can think only of" twice, contradicts itself: the first alone.)
+  const top = DESIRE_BAND_KEYS.length - 1;
+  const both = desires[1] && !(desireBand(desires[0].level) === top && desireBand(desires[1].level) === top);
+  const second = both ? phrase(desires[1]) : "";
   return second ? roll("event.thoughtTwo", { actor: e.actor, first, second }) : roll("event.thoughtOne", { actor: e.actor, first });
 }
 
@@ -440,10 +464,52 @@ function roleplay(result, spec, tables, seed, title, mapType) {
  * The Roleplay telling, as paragraphs: the opening line ({text}), a round's sentences ({round, sentences: [{e,
  * text}]}, each with the event it tells), and the ending ({e, text}).
  */
+/**
+ * Deaths that didn't stand: a character's own fate turned them back at once (PF2e Heroic Recovery), so only that's
+ * told. (Any other fate rolls the blow again, and its death isn't in the log.)
+ */
+function avertedDeaths(log) {
+  const out = new Set();
+  log.forEach((e, i) => {
+    if ( e.type !== "fate" || !e.self ) return;
+    for ( let k = i - 1; k >= 0 && log[k].turn === e.turn; k-- ) {
+      const d = log[k];
+      if ( d.actorId === e.actorId && (d.type === "death" || (d.type === "recovery" && d.dead)) ) {
+        out.add(d);
+        break;
+      }
+    }
+  });
+  return out;
+}
+
+/**
+ * How the story calls each creature: by its name, or, for one known by what it is (spec.generic: "Goblin Warrior"),
+ * as the language puts that ("the Goblin Warrior"). An event's names, told that way.
+ */
+function storyNames(spec) {
+  const generic = new Set((spec.combatants ?? []).filter(c => c.generic).map(c => c.name));
+  const call = name => (typeof name === "string" && generic.has(name) ? localize("FASTFIGHTING.Story.TheName", { name }) : name);
+  const named = e => {
+    if ( !generic.size ) return e;
+    const out = { ...e };
+    for ( const [k, v] of Object.entries(e) ) {
+      if ( typeof v === "string" ) out[k] = call(v);
+      else if ( Array.isArray(v) && v.some(x => typeof x === "string") ) out[k] = v.map(call);
+    }
+    if ( Array.isArray(e.desires) ) out.desires = e.desires.map(d => ({ ...d, target: call(d.target) }));
+    return out;
+  };
+  return { call, named };
+}
+
 function roleplayParagraphs(result, spec, tables, seed, mapType) {
   const roll = makeRoller(tables, seed);
+  const averted = avertedDeaths(result.log ?? []);
+  const { call, named } = storyNames(spec);
   const moment = createRng((seed + 7919) >>> 0); // when someone pauses to think
   const lastThought = new Map();
+  const lastShield = new Map();
   const rel = new Relationships(spec);
   const { mentions } = storyCast(result, spec);
   const paragraphs = [];
@@ -453,15 +519,17 @@ function roleplayParagraphs(result, spec, tables, seed, mapType) {
   let lastMoveKey = null;
   const done = new Map();
   let doneTurn = null;
-  for ( const e of tellingOrder(result.log) ) {
-    if ( e.type === "initiative" || !mentions(e) ) continue;
+  for ( const logged of tellingOrder(result.log) ) {
+    if ( logged.type === "initiative" || !mentions(logged) || averted.has(logged) ) continue;
+    // (Told with each creature called as the story calls it; the sentence keeps the event it tells.)
+    const e = named(logged);
     if ( e.turn !== doneTurn ) {
       done.clear();
       doneTurn = e.turn;
     }
     // The outcome comes where the fighting stops; anything after it (tending the fallen) follows.
     if ( e.type === "end" ) {
-      paragraphs.push({ e, text: ending(result, spec, e, roll) });
+      paragraphs.push({ e: logged, text: ending(result, spec, e, roll, call) });
       current = null;
       continue;
     }
@@ -476,26 +544,32 @@ function roleplayParagraphs(result, spec, tables, seed, mapType) {
       if ( key === lastMoveKey ) continue;
       lastMoveKey = key;
     } else lastMoveKey = null;
+    // (Raising a shield every round: told once, and again only after a round without it.)
+    if ( e.type === "shield" ) {
+      const last = lastShield.get(e.actorId);
+      lastShield.set(e.actorId, e.round);
+      if ( last !== undefined && last >= e.round - 1 ) continue;
+    }
     if ( e.type === "thought" ) {
       if ( (lastThought.get(e.actorId) ?? -9) >= e.round - 1 || moment.next() > THOUGHT_CHANCE ) continue;
       const thought = thinkAloud(e, roll, mentions);
       if ( thought ) {
         lastThought.set(e.actorId, e.round);
-        current.sentences.push({ e, text: capital(thought.trim()) });
+        current.sentences.push({ e: logged, text: capital(thought.trim()) });
       }
       continue;
     }
     const sentence = againLine(e, done, roll) || narrate(e, roll, rel, { mapType });
     rel.record(e);
-    if ( sentence ) current.sentences.push({ e, text: capital(sentence.trim()) });
+    if ( sentence ) current.sentences.push({ e: logged, text: capital(sentence.trim()) });
   }
   return paragraphs;
 }
 
 /** The closing line, naming the survivors rather than the side. */
-function ending(result, spec, end, roll) {
+function ending(result, spec, end, roll, call = name => name) {
   const standing = spec.combatants.filter(c => end.winners?.includes(result.units[c.id]?.final?.side ?? c.side)
-    && result.units[c.id]?.final?.status === "standing" && result.units[c.id]?.final?.active !== false).map(c => c.name);
+    && result.units[c.id]?.final?.status === "standing" && result.units[c.id]?.final?.active !== false).map(c => call(c.name));
   const winners = standing.length > 3 ? localize("FASTFIGHTING.Story.Companions", { names: listItems(standing.slice(0, 2)) })
     : standing.length ? listJoin(standing) : listJoin(end.winnerLabels ?? []);
   // A lone survivor takes a singular verb ("Lini prevails").
@@ -512,7 +586,7 @@ function ending(result, spec, end, roll) {
   // Nobody's side left, but someone who took no side (and then turned on one) still stands.
   if ( end.outcome === "none" ) {
     const last = spec.combatants.filter(c => result.units[c.id]?.final?.status === "standing" && result.units[c.id]?.final?.side === "neutralParty"
-      && result.units[c.id]?.final?.against?.length).map(c => c.name);
+      && result.units[c.id]?.final?.against?.length).map(c => call(c.name));
     if ( last.length ) return roll("event.lastStanding", { winners: listJoin(last) });
   }
   return roll(end.outcome === "victory" ? victory : end.outcome === "none" ? "event.noOne" : "event.stalemate", { winners });

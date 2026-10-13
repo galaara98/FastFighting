@@ -1212,7 +1212,8 @@
       },
       "APrice": "a price",
       "Desire": "{intensity} {verb}",
-      "TurnRound": "Round {n}"
+      "TurnRound": "Round {n}",
+      "TheName": "the {name}"
     },
     "Helper": {
       "Title": "FastFighting needs a helper module for {system}",

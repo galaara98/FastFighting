@@ -103,6 +103,9 @@ export async function gatherRoster(setup, adapter = getAdapter()) {
       if ( !spec ) continue;
       spec.environment = environmentAt(token);
       spec.hidden = token.document.hidden;
+      // Known by what it is ("Goblin Warrior": the story says "the Goblin Warrior"), not by a name of its own: not a
+      // player's character, its token not linked to one actor, and not unique (a helper's rarity). A helper may say.
+      spec.generic ??= spec.kind !== "pc" && !token.document.actorLink && (spec.rarity ?? 0) < 3;
       spec.inEncounter = inEncounter.has(token.id);
       spec.position = positionOf(token);
       spec.perception ??= spec.initiative?.mod ?? 0;

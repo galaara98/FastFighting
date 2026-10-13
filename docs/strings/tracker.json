@@ -14405,6 +14405,16 @@
    "commit": null,
    "hash": "42ea40f608ce"
   },
+  "core:FASTFIGHTING.Story.TheName": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Story.TheName",
+   "area": "core/Story",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "cba4321c2317"
+  },
   "core:FASTFIGHTING.Story.Title": {
    "repo": "core",
    "file": "languages/en.json",
@@ -18218,7 +18228,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "08a707db0e15"
+   "hash": "08a707db0e15",
+   "changed": true
   },
   "core:story:event.executeSpared": {
    "repo": "core",
@@ -18228,7 +18239,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "e7f79de9a878"
+   "hash": "e7f79de9a878",
+   "changed": true
   },
   "core:story:event.executeSparedAlone": {
    "repo": "core",
@@ -18238,7 +18250,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "e0e4648283d7"
+   "hash": "e0e4648283d7",
+   "changed": true
   },
   "core:story:event.fallBack": {
    "repo": "core",
@@ -18558,7 +18571,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "196919d04e33"
+   "hash": "196919d04e33",
+   "changed": true
   },
   "core:story:event.moveDoor": {
    "repo": "core",
@@ -18608,7 +18622,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "994d7b232150"
+   "hash": "994d7b232150",
+   "changed": true
   },
   "core:story:event.noticeFled": {
    "repo": "core",
@@ -18618,7 +18633,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "a14620a87af4"
+   "hash": "a14620a87af4",
+   "changed": true
   },
   "core:story:event.noticeHelp": {
    "repo": "core",
@@ -18928,7 +18944,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "018e05a9b46e"
+   "hash": "018e05a9b46e",
+   "changed": true
   },
   "core:story:event.recoveryBad": {
    "repo": "core",
@@ -19188,7 +19205,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "21b981f06c18"
+   "hash": "21b981f06c18",
+   "changed": true
   },
   "core:story:event.stuck": {
    "repo": "core",
@@ -19709,7 +19727,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "f86aa343ab3f"
+   "hash": "f86aa343ab3f",
+   "changed": true
   },
   "core:story:move.walk.terrain": {
    "repo": "core",

@@ -114,3 +114,31 @@ describe("doing it again", () => {
     expect(agains).toBeGreaterThan(0);
   });
 });
+
+describe("telling it well", () => {
+  test("a creature known by what it is is always called as the language puts it (the Wolf)", () => {
+    const spec = fight();
+    spec.combatants.find(c => c.id === "wolf").generic = true;
+    const called = game.i18n.format("FASTFIGHTING.Story.TheName", { name: "Wolf" });
+    const forms = [called, called.charAt(0).toUpperCase() + called.slice(1)];
+    let times = 0;
+    for ( const seed of [3, 7, 11] ) {
+      let text = buildStory(replay(spec, pf2eRules, seed), spec, "roleplay", { tables, seed }).text;
+      for ( const f of forms ) {
+        times += text.split(f).length - 1;
+        text = text.split(f).join("");
+      }
+      // (Every mention of it is the way it's called.)
+      expect(text).not.toContain("Wolf");
+    }
+    expect(times).toBeGreaterThan(0);
+  });
+
+  test("no line from a table twice in a row", () => {
+    const spec = fight();
+    for ( let seed = 1; seed <= 20; seed++ ) {
+      const sentences = buildStory(replay(spec, pf2eRules, seed), spec, "roleplay", { tables, seed }).text.split(/(?<=[.!?])\s+/);
+      sentences.forEach((x, i) => { if ( i ) expect(x).not.toBe(sentences[i - 1]); });
+    }
+  });
+});
