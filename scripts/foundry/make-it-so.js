@@ -7,7 +7,7 @@
  * newest first, so several Make it So's can be undone in turn.
  */
 import { MODULE_ID, STATUS } from "../constants.js";
-import { escapeHtml as escape } from "../i18n.js";
+import { escapeHtml as escape, inertHtml } from "../i18n.js";
 import { getAdapter } from "../api.js";
 import { setting } from "../settings.js";
 import { pixelsFor, sceneDistance } from "./terrain.js";
@@ -351,7 +351,7 @@ async function commitFight(rows, replay, { story = null, stories = null, odds = 
       records.push(await adapter.commitOutcome(row.tokenDoc, row.spec, row.final, options));
     } catch ( err ) {
       console.error(`${MODULE_ID} | Make it So failed for ${row.spec.name}`, err);
-      ui.notifications.error(game.i18n.format("FASTFIGHTING.MakeItSo.Failed", { name: row.spec.name }));
+      ui.notifications.error("FASTFIGHTING.MakeItSo.Failed", { format: { name: row.spec.name } });
     }
   }
 
@@ -391,7 +391,7 @@ async function commitFight(rows, replay, { story = null, stories = null, odds = 
         }
       } catch ( err ) {
         console.error(`${MODULE_ID} | handing over what ${row.spec.name} gave up failed`, err);
-        ui.notifications.error(game.i18n.format("FASTFIGHTING.MakeItSo.Failed", { name: row.spec.name }));
+        ui.notifications.error("FASTFIGHTING.MakeItSo.Failed", { format: { name: row.spec.name } });
       }
       }
     }
@@ -403,7 +403,7 @@ async function commitFight(rows, replay, { story = null, stories = null, odds = 
       records.push(...((await adapter.commitEncounter(rows.encounter.spec, rows.encounter.replay, options)) ?? []));
     } catch ( err ) {
       console.error(`${MODULE_ID} | Make it So: the encounter's own record failed`, err);
-      ui.notifications.error(game.i18n.format("FASTFIGHTING.MakeItSo.Failed", { name: rows.encounter.title ?? "" }));
+      ui.notifications.error("FASTFIGHTING.MakeItSo.Failed", { format: { name: rows.encounter.title ?? "" } });
     }
   }
 
@@ -418,7 +418,7 @@ async function commitFight(rows, replay, { story = null, stories = null, odds = 
     const oddsHtml = odds ? `<p class="ff-odds"><em>${escape(odds)}</em></p>` : "";
     const reveal = gmOnly ? `<button type="button" data-ff-reveal><i class="fa-solid fa-eye"></i> ${loc("FASTFIGHTING.Story.Reveal")}</button>` : "";
     const message = await ChatMessage.create({
-      content: `<div class="fast-fighting-story"><header><i class="fa-solid fa-book-open"></i> ${escape(s.title)}</header>${s.html}${oddsHtml}${reveal}</div>`,
+      content: inertHtml(`<div class="fast-fighting-story"><header><i class="fa-solid fa-book-open"></i> ${escape(s.title)}</header>${s.html}${oddsHtml}${reveal}</div>`),
       speaker,
       whisper: gmOnly || setting("storyMode") === "whisper" ? gms : [],
       flags: { [MODULE_ID]: { story: true, revealable: gmOnly } }
@@ -429,7 +429,7 @@ async function commitFight(rows, replay, { story = null, stories = null, odds = 
   await post(stories.gm, { gmOnly: true });
   const summary = gmSummary(rows, replay, adapter);
   if ( summary ) {
-    const message = await ChatMessage.create({ content: summary, speaker, whisper: gms, flags: { [MODULE_ID]: { summary: true } } });
+    const message = await ChatMessage.create({ content: inertHtml(summary), speaker, whisper: gms, flags: { [MODULE_ID]: { summary: true } } });
     if ( message ) messages.push(message.id);
   }
 
@@ -570,7 +570,7 @@ async function concessionCard(giverName, receiverName, c, eventId, records) {
   const needed = c.how === "theft" ? (c.needed ?? setting("theftLuck")) : (c.needed ?? setting("concedeLuck"));
   const luck = c.luck ? `<p class="hint">${game.i18n.format(luckKey, { luck: c.luck, needed })}</p>` : "";
   return ChatMessage.create({
-    content: `<div class="fast-fighting-concession"><p>${text}</p>${luck}<button type="button" data-ff-undo-concession><i class="fa-solid fa-rotate-left"></i> ${loc("FASTFIGHTING.Concession.Undo")}</button></div>`,
+    content: inertHtml(`<div class="fast-fighting-concession"><p>${text}</p>${luck}<button type="button" data-ff-undo-concession><i class="fa-solid fa-rotate-left"></i> ${loc("FASTFIGHTING.Concession.Undo")}</button></div>`),
     speaker: { alias: loc("FASTFIGHTING.Story.Speaker") },
     whisper: game.users.filter(u => u.isGM).map(u => u.id),
     flags: { [MODULE_ID]: { concession: { eventId, sceneId: canvas.scene.id, records, undone: false } } }

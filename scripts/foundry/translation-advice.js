@@ -52,7 +52,8 @@ export function translationAdvice(moduleId) {
     language: esc(CONFIG.supportedLanguages?.[lang] ?? lang),
     title: esc(known.title ?? known.id),
     id: esc(known.id),
-    link: known.url ? `, <a href="${esc(known.url)}" target="_blank" rel="noopener">${esc(known.url)}</a>` : ""
+    // (A link only to a secure web page.)
+    link: /^https:\/\//i.test(known.url ?? "") ?`, <a href="${esc(known.url)}" target="_blank" rel="noopener">${esc(known.url)}</a>` : ""
   };
   return installed
     ? localize("FASTFIGHTING.Translation.Disabled", data)

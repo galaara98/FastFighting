@@ -72,6 +72,14 @@ export function localize(key, data = null) {
 const HTML_ESCAPES = { "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" };
 export const escapeHtml = s => String(s ?? "").replace(/[&<>"']/g, c => HTML_ESCAPES[c]);
 
+/**
+ * A chat message's HTML made inert. Chat runs every message through Foundry's enrichers, which make `[[...]]` a roll,
+ * `@UUID[...]` a link and `&Reference[...]` a reference: a name a player wrote could become one inside the GM's card.
+ * An invisible word joiner after each `[`, `@` and `&` keeps the text as it reads, and the markup from working.
+ */
+const JOINER = "⁠";
+export const inertHtml = html => String(html ?? "").replace(/\[/g, `[${JOINER}`).replace(/@/g, `@${JOINER}`).replace(/&amp;/g, `&amp;${JOINER}`);
+
 /** Names one after another ("Amiri, Ezren"), with the language file's separator. */
 export const listItems = items => items.join(localize("FASTFIGHTING.Words.ListSeparator"));
 

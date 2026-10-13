@@ -6,7 +6,7 @@
     <div class="ff-pills">
       {{#each options}}
       <button type="button" class="ff-pill {{#if mine}}active{{/if}} {{#if winning}}is-winning{{/if}}" data-action="partyVote" data-question="{{../key}}" data-answer="{{value}}" aria-pressed="{{#if mine}}true{{else}}false{{/if}}" {{#unless @root.party.canVote}}disabled{{/unless}}>
-        {{label}}{{#each voters}}<span class="ff-voter" style="background: {{color}}" data-tooltip="{{name}}">{{initial}}</span>{{/each}}
+        {{label}}{{#each voters}}<span class="ff-voter" style="background: {{color}}" data-tooltip-text="{{name}}">{{initial}}</span>{{/each}}
       </button>
       {{/each}}
     </div>

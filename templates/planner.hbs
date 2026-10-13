@@ -74,7 +74,7 @@
       <i class="fa-solid fa-clipboard-question"></i> {{localize "FASTFIGHTING.Survey.Prepare"}}
     </button>
     {{#each players}}
-    <div class="ff-player ff-status-{{status}}" data-tooltip="{{tokens}}">
+    <div class="ff-player ff-status-{{status}}" data-tooltip-text="{{tokens}}">
       <span class="ff-player-dot {{#if active}}is-online{{/if}}" style="--player-color: {{color}}"></span>
       <span class="ff-player-name">{{name}}</span>
       <span class="ff-player-status">{{#if entering}}<i class="fa-solid fa-pen-nib fa-beat-fade"></i> {{/if}}{{statusLabel}}</span>
@@ -117,7 +117,7 @@
           <label class="ff-field ff-grow">{{localize "FASTFIGHTING.Planner.Leader"}}
             <select name="sides.{{id}}.leaderId">{{selectOptions leaderChoices selected=leaderId}}</select>
           </label>
-          {{#if leaderReason}}<span class="ff-hint" data-tooltip="{{leaderReason}}"><i class="fa-solid fa-circle-info"></i> {{leaderReason}}</span>{{/if}}
+          {{#if leaderReason}}<span class="ff-hint" data-tooltip-text="{{leaderReason}}"><i class="fa-solid fa-circle-info"></i> {{leaderReason}}</span>{{/if}}
         </div>
         {{#if leadership.length}}
         <div class="ff-trait-grid">
@@ -150,7 +150,7 @@
             </div>
             <label class="ff-check" data-tooltip="{{localize "FASTFIGHTING.Planner.IncludeHint"}}"><input type="checkbox" name="tokens.{{id}}.include" {{checked include}}></label>
             <span class="ff-row-pills">
-              {{#each teams}}<span class="ff-groups {{kind}}" role="group" aria-label="{{label}}">{{#each pills}}<button type="button" class="ff-group-pill {{#if active}}active{{/if}}" data-action="setTeam" data-team="{{team}}" data-tooltip="{{name}}" aria-label="{{name}}" aria-pressed="{{#if active}}true{{else}}false{{/if}}">{{n}}</button>{{/each}}</span>{{/each}}
+              {{#each teams}}<span class="ff-groups {{kind}}" role="group" aria-label="{{label}}">{{#each pills}}<button type="button" class="ff-group-pill {{#if active}}active{{/if}}" data-action="setTeam" data-team="{{team}}" data-tooltip-text="{{name}}" aria-label="{{name}}" aria-pressed="{{#if active}}true{{else}}false{{/if}}">{{n}}</button>{{/each}}</span>{{/each}}
               <span class="ff-groups {{groupKind}}" {{#if groups}}role="group" aria-label="{{localize "FASTFIGHTING.Planner.Group"}}" data-tooltip="{{groupHint}}"{{/if}}>{{#each groups}}<button type="button" class="ff-group-pill {{#if active}}active{{/if}} {{#if auto}}is-auto{{/if}}" data-action="setGroup" data-group="{{n}}" aria-pressed="{{#if active}}true{{else}}false{{/if}}">{{n}}</button>{{/each}}</span>
               <span class="ff-roles" {{#if roles}}role="group" aria-label="{{localize "FASTFIGHTING.Planner.Command"}}" data-tooltip="{{roleHint}}"{{/if}}>{{#each roles}}<button type="button" class="ff-role-pill {{#if active}}active{{/if}} {{#if auto}}is-auto{{/if}}" data-action="setRole" data-role="{{key}}" aria-pressed="{{#if active}}true{{else}}false{{/if}}" aria-label="{{label}}">{{short}}</button>{{/each}}</span>
             </span>
@@ -204,7 +204,7 @@
           {{#if (eq resultTab "overview")}}
           <div class="ff-overview">
             <div class="ff-winbar">
-              {{#each results.segments}}<span style="width: {{width}}%; background: {{color}}" data-tooltip="{{label}}: {{pct}}">{{#if (gt width 9)}}{{label}} {{pct}}{{/if}}</span>{{/each}}
+              {{#each results.segments}}<span style="width: {{width}}%; background: {{color}}" data-tooltip-text="{{label}}: {{pct}}">{{#if (gt width 9)}}{{label}} {{pct}}{{/if}}</span>{{/each}}
             </div>
             <div class="ff-kpis">
               <div class="ff-kpi"><span class="ff-kpi-value">{{results.partyWin}}</span><span class="ff-kpi-label">{{localize "FASTFIGHTING.Results.PartyWins"}}</span></div>
@@ -245,7 +245,7 @@
             {{#each results.combatants}}
               <tr>
                 <td><span class="ff-dot {{sideClass}}"></span>{{name}}</td>
-                <td><div class="ff-fate">{{#each bars}}<span class="{{cls}}" style="width: {{w}}%" data-tooltip="{{label}}"></span>{{/each}}</div>
+                <td><div class="ff-fate">{{#each bars}}<span class="{{cls}}" style="width: {{w}}%" data-tooltip-text="{{label}}"></span>{{/each}}</div>
                   <small>{{localize "FASTFIGHTING.Results.Standing"}} {{standing}} · {{localize "FASTFIGHTING.Results.Dead"}} {{dead}} · {{localize "FASTFIGHTING.Results.Fled"}} {{fled}}{{#if talkedDown}} · {{localize "FASTFIGHTING.Results.TalkedDown"}} {{talkedDown}}{{/if}}{{#if conceded}} · {{localize "FASTFIGHTING.Results.Conceded"}} {{conceded}}{{/if}}</small></td>
                 <td>{{hpLeft}}</td><td>{{damage}}</td><td>{{healing}}</td><td>{{first}}</td>
               </tr>

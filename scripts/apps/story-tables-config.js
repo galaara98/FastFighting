@@ -35,7 +35,7 @@ export class StoryTablesConfig extends HandlebarsApplicationMixin(ApplicationV2)
   static async #onInstall() {
     ui.notifications.info(game.i18n.localize("FASTFIGHTING.Story.Installing"));
     const r = await installStoryTables();
-    ui.notifications.info(game.i18n.format("FASTFIGHTING.Story.Installed", r));
+    ui.notifications.info("FASTFIGHTING.Story.Installed", { format: r });
     this.render();
   }
 
@@ -47,7 +47,7 @@ export class StoryTablesConfig extends HandlebarsApplicationMixin(ApplicationV2)
     if ( !ok ) return;
     ui.notifications.info(game.i18n.localize("FASTFIGHTING.Story.Installing"));
     const r = await installStoryTables({ overwrite: true });
-    ui.notifications.info(game.i18n.format("FASTFIGHTING.Story.Installed", r));
+    ui.notifications.info("FASTFIGHTING.Story.Installed", { format: r });
     this.render();
   }
 }

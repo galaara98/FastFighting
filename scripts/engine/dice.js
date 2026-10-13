@@ -114,10 +114,13 @@ function evaluateLinear(tokens) {
   return sum();
 }
 
+/** The most dice of one kind rolled at once (as Foundry has it): a formula's "9999999d6" is read as this many. */
+export const MAX_DICE = 999;
+
 export function samplePart(p, rng) {
   let total = p.flat;
   for ( const { n, faces, mult = 1 } of p.dice ) {
-    const count = Math.abs(n);
+    const count = Math.min(Math.abs(n), MAX_DICE);
     let sum = 0;
     for ( let i = 0; i < count; i++ ) sum += rng.die(faces);
     total += (n < 0 ? -sum : sum) * mult;

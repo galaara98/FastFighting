@@ -54,7 +54,7 @@ export function majority(ballots) {
 }
 
 /** The players who vote: everyone but the GMs. */
-export const voters = () => (game.users ?? []).filter(u => !u.isGM);
+export const voters = () => (game.users ?? []).filter(u => !u.isGM && u.hasRole?.("PLAYER"));
 
 /** Vote (or, voting the same again, take the vote back). */
 export async function castVote(question, answer) {

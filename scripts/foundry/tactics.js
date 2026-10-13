@@ -479,7 +479,8 @@ export function syncTacticsDom(root, actor) {
 export function surveyStatus(user, scene = canvas.scene) {
   const s = user.getFlag(MODULE_ID, "survey");
   if ( !s || s.sceneId !== scene?.id ) return { status: SURVEY_STATUS.NONE };
-  return s;
+  // (A player writes its own: only a status the survey has.)
+  return Object.values(SURVEY_STATUS).includes(s.status) ? s : { ...s, status: SURVEY_STATUS.NONE };
 }
 
 export async function setOwnSurveyStatus(status, sceneId, requestId) {

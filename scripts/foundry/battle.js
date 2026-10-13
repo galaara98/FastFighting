@@ -352,8 +352,9 @@ function applyCharacterTactics(spec, entry) {
 /** The player party's wishes for this fight (party.js): its players' votes, majority rules, at the world's Party's sway. */
 function partyFor(entries) {
   const players = voters();
+  // (Only those with a character in the fight: with none, the GM's own friendly characters have no party wishes.)
   const inFight = players.filter(u => entries.some(e => e.token.actor?.testUserPermission?.(u, "OWNER")));
-  return partyWishes(inFight.length ? inFight : players, setting("partySway"));
+  return partyWishes(inFight, setting("partySway"));
 }
 
 /**

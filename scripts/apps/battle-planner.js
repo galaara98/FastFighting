@@ -629,7 +629,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     const players = playersOnScene(canvas.scene);
     if ( !players.length ) return ui.notifications.warn(loc("FASTFIGHTING.Survey.NoPlayers"));
     await requestSurveys(players);
-    ui.notifications.info(game.i18n.format("FASTFIGHTING.Survey.Sent", { n: players.length }));
+    ui.notifications.info("FASTFIGHTING.Survey.Sent", { format: { n: players.length } });
     this.render();
   }
 
@@ -637,7 +637,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     const user = game.users.get(target.dataset.userId);
     if ( !user ) return;
     await requestSurveys([user]);
-    if ( !user.active ) ui.notifications.info(game.i18n.format("FASTFIGHTING.Survey.WillOpen", { name: user.name }));
+    if ( !user.active ) ui.notifications.info("FASTFIGHTING.Survey.WillOpen", { format: { name: user.name } });
     this.render();
   }
 
@@ -874,10 +874,10 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       // three times in ten, as it should be.
       this.sample = drawFight(spec, results);
       this.drawn = this.sample; // the only fight Make it So will commit (until the next run)
-      if ( this.abort.signal.aborted ) ui.notifications.info(game.i18n.format("FASTFIGHTING.Planner.Stopped", { n: results.runs }));
+      if ( this.abort.signal.aborted ) ui.notifications.info("FASTFIGHTING.Planner.Stopped", { format: { n: results.runs } });
     } catch ( err ) {
       console.error(`${MODULE_ID} | simulation failed`, err);
-      ui.notifications.error(game.i18n.format("FASTFIGHTING.Planner.RunFailed", { error: err.message }));
+      ui.notifications.error("FASTFIGHTING.Planner.RunFailed", { format: { error: err.message } });
     } finally {
       this.abort = null;
       this.#doneRunning();
@@ -991,7 +991,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
 
 function reportError(err) {
   console.error(`${MODULE_ID} |`, err);
-  ui.notifications.error(game.i18n.format("FASTFIGHTING.Planner.ActionFailed", { error: err.message }));
+  ui.notifications.error("FASTFIGHTING.Planner.ActionFailed", { format: { error: err.message } });
 }
 
 /** "Before it began, the odds stood at Party 97% · Goblins 3%": each side's chance of winning, then a stalemate's. */

@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, test } from "vitest";
 import { readFileSync, readdirSync, statSync } from "fs";
 import { replay } from "../scripts/engine/simulator.js";
-import { localize, listJoin, commonOutcome, term, hasStat, setTermSource } from "../scripts/i18n.js";
+import { localize, listJoin, commonOutcome, term, hasStat, setTermSource, escapeHtml, inertHtml } from "../scripts/i18n.js";
 import { logLine } from "../scripts/story/log-lines.js";
 import { buildStory } from "../scripts/story/story.js";
 import { isBlocks, buildTables } from "../scripts/story/blocks.js";
@@ -276,5 +276,14 @@ describe("the game's words for armor class and hit points", () => {
       for ( const [, key] of source.matchAll(/\{\{localize "([^"]+)"/g) ) if ( /\{(AC|HP|SP|MONEY)\}/.test(en[key] ?? "") ) plain.push(`${file}: ${key}`);
     }
     expect(plain).toEqual([]);
+  });
+});
+
+describe("chat cards", () => {
+  test("a name can't become a roll, a link or a reference in a chat card, and still reads as written", () => {
+    const html = `<p>${escapeHtml("[[/r 1d6]] @UUID[Actor.x]{Boss} &Reference[prone]")}</p>`;
+    const inert = inertHtml(html);
+    expect(inert).not.toMatch(/\[\[|@UUID\[|&amp;Reference/);
+    expect(inert.replace(/⁠/g, "")).toBe(html);
   });
 });
