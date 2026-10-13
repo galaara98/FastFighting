@@ -526,7 +526,7 @@
       "Title": "Make it So",
       "Button": "Make it So",
       "Confirm": "Commit this fight's outcome to the tokens? The following changes will be made:",
-      "UndoHint": "You can undo this from the Sample fight tab.",
+      "UndoHint": "You can undo it from its summary in the chat.",
       "Failed": "Make it So could not update {name}. See the console for details.",
       "Done": "The outcome has been committed to the tokens.",
       "Nothing": "Nothing would change.",
@@ -568,7 +568,10 @@
         "Persistent": "Persistent {formula} {type}",
         "Affliction": "{name} (stage {stage})",
         "AfflictionOnset": "{name} (takes hold in {n} rounds, stage {stage})"
-      }
+      },
+      "UndoConfirmScene": "Restore the tokens on {scene} to how they were before this Make it So?",
+      "UndoLaterFirst": "Not a recent simulation",
+      "UndoBuried": "Chat has more than {n} cards after simulation"
     },
     "Tactics": {
       "Auto": "Let this character decide",

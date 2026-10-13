@@ -94,7 +94,7 @@ A taunt makes a foe want to go for the taunter: a strong desire (see **Desires**
 
 ## A fair ruling
 
-**Make it So rolls a fight of its own.** The Sample fight tab shows the most typical fight, only a sample; Make it So rolls one of the simulated fights, as likely as each came up, so a 70% win is a loss three times in ten, as it should be. The GM sees what it will do in the confirmation before anything is written, and Undo still reverses a committed fight.
+**Make it So rolls a fight of its own.** The Sample fight tab shows the most typical fight, only a sample; Make it So rolls one of the simulated fights, as likely as each came up, so a 70% win is a loss three times in ten, as it should be. The GM sees what it will do in the confirmation before anything is written. **Undo** is on the GM's summary of it in the chat, so a reload or a lost connection doesn't lose it: it works for the latest Make it So on that scene while the summary is no more than ten messages back (an older one is greyed out, and says why); the planner has it too.
 
 **After the fight.** When the last foe falls, the survivors tend their dying, before the dying make their next roll. They use free help first (first aid, medicine feats), then spells and potions. Anyone left untended lives or dies by the system's rules for dying, so nobody is committed half-dead.
 

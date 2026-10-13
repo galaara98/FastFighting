@@ -6281,6 +6281,16 @@
    "commit": null,
    "hash": "7310d4b424ce"
   },
+  "core:FASTFIGHTING.MakeItSo.UndoBuried": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.MakeItSo.UndoBuried",
+   "area": "core/MakeItSo",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "a4c95074a39c"
+  },
   "core:FASTFIGHTING.MakeItSo.UndoConfirm": {
    "repo": "core",
    "file": "languages/en.json",
@@ -6291,6 +6301,16 @@
    "commit": null,
    "hash": "2f0a35df7c88"
   },
+  "core:FASTFIGHTING.MakeItSo.UndoConfirmScene": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.MakeItSo.UndoConfirmScene",
+   "area": "core/MakeItSo",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "016abf45c52b"
+  },
   "core:FASTFIGHTING.MakeItSo.UndoHint": {
    "repo": "core",
    "file": "languages/en.json",
@@ -6299,7 +6319,18 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "4ffba4ec9666"
+   "hash": "4ffba4ec9666",
+   "changed": true
+  },
+  "core:FASTFIGHTING.MakeItSo.UndoLaterFirst": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.MakeItSo.UndoLaterFirst",
+   "area": "core/MakeItSo",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "e8b8988b08ad"
   },
   "core:FASTFIGHTING.MakeItSo.Undone": {
    "repo": "core",

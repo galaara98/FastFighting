@@ -16,6 +16,8 @@ import { concessionText } from "../story/story.js";
 
 const loc = key => game.i18n.localize(key);
 const UNDO_DEPTH = 5;
+/** The most chat messages after a Make it So's summary for its Undo to still work: further back, it's history. */
+export const UNDO_REACH = 10;
 
 /** Undo entries for a scene, newest first (older worlds stored a single entry). */
 function undoStack(scene) {
@@ -427,14 +429,26 @@ async function commitFight(rows, replay, { story = null, stories = null, odds = 
   };
   await post(stories.everyone);
   await post(stories.gm, { gmOnly: true });
+  // The GM's summary carries the Undo for this Make it So (it's in the chat, so a reload or a lost connection doesn't
+  // lose it): tied to its entry in the scene's undo stack, kept first so the card finds it as it's drawn; the card
+  // goes into the entry after, so undoing takes it away too.
+  const scene = canvas.scene;
+  const entry = { id: foundry.utils.randomID(), time: Date.now(), records, moves, messages, doors: [...doorsOpened.values()] };
+  const older = undoStack(scene);
+  const keep = () => scene.update({ [`flags.${MODULE_ID}.==undo`]: { stack: [entry, ...older].slice(0, UNDO_DEPTH) } });
+  await keep();
   const summary = gmSummary(rows, replay, adapter);
   if ( summary ) {
-    const message = await ChatMessage.create({ content: inertHtml(summary), speaker, whisper: gms, flags: { [MODULE_ID]: { summary: true } } });
-    if ( message ) messages.push(message.id);
+    const message = await ChatMessage.create({
+      content: inertHtml(summary), speaker, whisper: gms,
+      flags: { [MODULE_ID]: { summary: true, undoFight: { sceneId: scene.id, id: entry.id } } }
+    });
+    if ( message ) {
+      messages.push(message.id);
+      await keep();
+    }
   }
-
-  const stack = [{ time: Date.now(), records, moves, messages, doors: [...doorsOpened.values()] }, ...undoStack(canvas.scene)].slice(0, UNDO_DEPTH);
-  await canvas.scene.update({ [`flags.${MODULE_ID}.==undo`]: { stack } });
+  refreshUndoCards();
   Hooks.callAll("fastFighting.makeItSo", records);
   return records;
 }
@@ -478,7 +492,8 @@ function gmSummary(rows, replay, adapter) {
     : game.i18n.format("FASTFIGHTING.Summary.Time", { fight: timeText(fight), rounds: replay.rounds ?? 0 });
   return `<div class="fast-fighting-summary"><header><i class="fa-solid fa-clipboard-list"></i> ${loc("FASTFIGHTING.Summary.Title")}</header>
     <p>${escape(time)}</p>${items.length ? `<p>${loc("FASTFIGHTING.Summary.Spent")}</p><ul>${items.join("")}</ul>` : ""}
-    <p class="hint">${loc("FASTFIGHTING.Summary.Unchanged")}</p></div>`;
+    <p class="hint">${loc("FASTFIGHTING.Summary.Unchanged")}</p>
+    <button type="button" data-ff-undo-fight><i class="fa-solid fa-rotate-left"></i> ${loc("FASTFIGHTING.MakeItSo.Undo")}</button></div>`;
 }
 
 /** Show a GM-only story to everyone (the Reveal button on it). */
@@ -497,6 +512,43 @@ export async function revealStory(message) {
 
 export function hasUndo(scene = canvas.scene) {
   return undoStack(scene).length > 0;
+}
+
+/**
+ * Can this summary card's Make it So be undone: "ok" (the latest on its scene, and recent in the chat); "later" (not
+ * the latest: a later one on the same scene stands on it); "buried" (more than UNDO_REACH messages since, in the
+ * chat); "gone" (no longer kept: undone already, or too many since). Only "ok" undoes anything.
+ */
+export function cardUndoState(message) {
+  const data = message?.getFlag(MODULE_ID, "undoFight");
+  const stack = undoStack(game.scenes.get(data?.sceneId));
+  const at = stack.findIndex(e => e.id && e.id === data?.id);
+  if ( at < 0 ) return "gone";
+  if ( at > 0 ) return "later";
+  const since = (game.messages?.contents ?? []).filter(m => m.timestamp > message.timestamp).length;
+  return since > UNDO_REACH ? "buried" : "ok";
+}
+
+/** Each Make it So summary in the chat drawn again (its Undo works, or not, as things stand now). */
+export function refreshUndoCards() {
+  if ( !game.user.isGM ) return;
+  for ( const m of game.messages?.contents ?? [] ) if ( m.getFlag(MODULE_ID, "undoFight") ) ui.chat?.updateMessage?.(m);
+}
+
+/** Undo from a summary card in the chat: the Make it So it reports, on its own scene, once the GM confirms. */
+export async function undoFromCard(message) {
+  if ( !game.user.isGM || !ownCard(message) ) return false;
+  // (Not the latest on its scene, or too far back in the chat: nothing happens.)
+  if ( cardUndoState(message) !== "ok" ) return false;
+  const scene = game.scenes.get(message.getFlag(MODULE_ID, "undoFight").sceneId);
+  const ok = await foundry.applications.api.DialogV2.confirm({
+    window: { title: loc("FASTFIGHTING.MakeItSo.UndoTitle") },
+    content: `<p>${foundry.utils.escapeHTML(game.i18n.format("FASTFIGHTING.MakeItSo.UndoConfirmScene", { scene: scene.name }))}</p>`
+  });
+  if ( !ok || cardUndoState(message) !== "ok" ) return false;
+  await undoMakeItSo(scene);
+  ui.notifications.info(loc("FASTFIGHTING.MakeItSo.Undone"));
+  return true;
 }
 
 /** Put one undo record back: created documents removed, deleted ones restored, changed values reset. */
@@ -623,6 +675,7 @@ async function undoFight(scene) {
   if ( back.length ) await scene.moveTokens(Object.fromEntries(back), { animate: false });
   if ( rest.length ) await scene.update({ [`flags.${MODULE_ID}.==undo`]: { stack: rest } });
   else await scene.unsetFlag(MODULE_ID, "undo");
+  refreshUndoCards();
   return true;
 }
 
