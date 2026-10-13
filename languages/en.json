@@ -65,11 +65,11 @@
       },
       "pcHealAggro": {
         "Name": "Default PC healing",
-        "Hint": "How freely player characters spend spells, potions and actions on healing, unless set per character in the Battle Planner."
+        "Hint": "How freely player characters spend spells, potions and actions on healing, unless set per character. \"Let each character decide\" leaves it to each one: its class, its features and its nature."
       },
       "pcAllyDying": {
         "Name": "Default PC response to a dying ally",
-        "Hint": "What player characters prioritize when an ally is dying, unless set per character."
+        "Hint": "What player characters prioritize when an ally is dying, unless set per character. \"Let each character decide\" leaves it to each one: its class, its features and its nature."
       },
       "leadership": {
         "Name": "Leadership",

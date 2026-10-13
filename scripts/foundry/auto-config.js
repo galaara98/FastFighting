@@ -25,6 +25,7 @@ import { CORE_API_VERSION } from "../core-api.js";
 import { TRAITS, fudged } from "../constants.js";
 import { TACTIC_CHOICES, TACTIC_KEYS, suggestTactics } from "../engine/tactics.js";
 import { scorePlaystyles, pickPlaystyles } from "../engine/auto-playstyles.js";
+import { localize } from "../i18n.js";
 import { biographyEffects } from "../engine/keywords.js";
 import { keywords, currentKeywords } from "./keywords.js";
 import { getStoredTactics, worldTacticDefaults } from "./tactics.js";
@@ -109,7 +110,27 @@ export function autoLets(actor, spec) {
   const adapter = getAdapter();
   const lets = { ...suggestTactics(spec, worldTacticDefaults(), adapter?.rules ?? null), ...suggestMotives(spec) };
   const own = ask("tacticHints", () => adapter?.tacticHints?.(actor, spec, { ...lets }), {});
-  return withHints(lets, own, spec);
+  return withWorldDefaults(withHints(lets, own, spec), spec, worldTacticDefaults());
+}
+
+/** The world settings for a party's defaults, by the question they answer. */
+const WORLD_DEFAULTS = Object.freeze({ healAggro: "pcHealAggro", allyDying: "pcAllyDying" });
+
+/**
+ * A player character's answers with the GM's own defaults for the party over them, where the GM set one (not "auto":
+ * let each character decide): a house rule outweighs what its system would guess. The setting's name is the reason.
+ * @returns {{lets: object, why: object}}
+ */
+export function withWorldDefaults({ lets, why }, spec, defaults = {}) {
+  if ( spec?.kind !== "pc" ) return { lets, why };
+  const out = { lets: { ...lets }, why: { ...why } };
+  for ( const [key, setting] of Object.entries(WORLD_DEFAULTS) ) {
+    const v = defaults[key];
+    if ( !v || v === "auto" || !validLet(key, v, spec) ) continue;
+    out.lets[key] = v;
+    out.why[key] = localize(`FASTFIGHTING.Settings.${setting}.Name`);
+  }
+  return out;
 }
 
 /**

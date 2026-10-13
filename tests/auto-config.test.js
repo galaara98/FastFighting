@@ -5,7 +5,7 @@
  */
 import { describe, expect, test } from "vitest";
 import { scorePlaystyles, pickPlaystyles, readSpec, CLASHES } from "../scripts/engine/auto-playstyles.js";
-import { autoPlan, validLets, specSignature, withHints } from "../scripts/foundry/auto-config.js";
+import { autoPlan, validLets, specSignature, withHints, withWorldDefaults } from "../scripts/foundry/auto-config.js";
 import { suggestMotives } from "../scripts/foundry/motives.js";
 import { readKeywordFile, keywordEffects } from "../scripts/engine/keywords.js";
 import { suggestTactics, TACTIC_KEYS } from "../scripts/engine/tactics.js";
@@ -123,6 +123,17 @@ describe("when to set a character up", () => {
     expect(got).toMatchObject({ target: "protect", retreat: "never", style: lets.style, consumables: "freely", expect: { kind: "leave" }, offer: lets.offer });
     expect(why).toEqual({ target: "Champion", consumables: "Alchemist", expect: "Territorial" });
     expect(validLets(got, spec)).toBe(true);
+  });
+
+  test("the GM's own party defaults outweigh what a system would guess, for a player character, where the GM set one", () => {
+    const hinted = withHints(lets, { healAggro: { value: "aggressive", why: "Healing Font" }, allyDying: "rescue" }, spec);
+    const pc = { ...spec, kind: "pc" };
+    const set = withWorldDefaults(hinted, pc, { healAggro: "conservative", allyDying: "auto" });
+    expect(set.lets).toMatchObject({ healAggro: "conservative", allyDying: "rescue" });
+    expect(set.why.healAggro).toBeTruthy();
+    expect(set.why.healAggro).not.toBe("Healing Font");
+    // (A creature that isn't a player character keeps its own.)
+    expect(withWorldDefaults(hinted, spec, { healAggro: "conservative" }).lets.healAggro).toBe("aggressive");
   });
 
   test("whole and sound answers: one for every question, each a fair one", () => {

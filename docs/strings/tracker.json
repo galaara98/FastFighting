@@ -9713,7 +9713,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "8ea33ab209a5"
+   "hash": "8ea33ab209a5",
+   "changed": true
   },
   "core:FASTFIGHTING.Settings.pcAllyDying.Name": {
    "repo": "core",
@@ -9733,7 +9734,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "c555cb344b0d"
+   "hash": "c555cb344b0d",
+   "changed": true
   },
   "core:FASTFIGHTING.Settings.pcHealAggro.Name": {
    "repo": "core",
