@@ -1252,6 +1252,7 @@
       "What": "What",
       "Who": "Who?",
       "HowMuch": "How badly",
+      "Unknown": "Someone ({n})",
       "Kind": {
         "none": "—",
         "hurt": "Hurt",

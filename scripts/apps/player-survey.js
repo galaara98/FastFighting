@@ -22,12 +22,18 @@ const PARTY_TAB = "party";
 /**
  * Who a player can name in a desire: the creatures it perceives on the battle map (the scene it's looking at, with token
  * vision: not hidden, within its sight), so the survey never gives away what lurks in the dark. Where that can't be
- * told (another scene, no token vision), only the encounter's combatants there; with no encounter, nobody.
+ * told (another scene, no token vision), only the encounter's combatants there, not those hidden from the players; with
+ * no encounter, nobody. Each by its name only where the player could read it on the map (its nameplate shown to all,
+ * or its own token); else as someone, numbered.
  */
 function nameable(scene) {
   if ( !scene ) return [];
-  if ( canvas.scene?.id === scene.id && scene.tokenVision ) return scene.tokens.filter(o => o.actor && !o.hidden && o.object?.isVisible);
-  return (sceneEncounter(scene)?.combatants ?? []).map(c => c.token).filter(t => t?.actor && !t.hidden);
+  const tokens = canvas.scene?.id === scene.id && scene.tokenVision
+    ? scene.tokens.filter(o => o.actor && !o.hidden && o.object?.isVisible)
+    : (sceneEncounter(scene)?.combatants ?? []).filter(c => !c.hidden).map(c => c.token).filter(t => t?.actor && !t.hidden);
+  const shown = [CONST.TOKEN_DISPLAY_MODES.ALWAYS, CONST.TOKEN_DISPLAY_MODES.HOVER];
+  let unknown = 0;
+  return tokens.map(o => ({ id: o.id, name: o.isOwner || shown.includes(o.displayName) ? o.name : localize("FASTFIGHTING.Desire.Unknown", { n: ++unknown }) }));
 }
 
 export class PlayerSurvey extends HandlebarsApplicationMixin(ApplicationV2) {
@@ -84,6 +90,7 @@ export class PlayerSurvey extends HandlebarsApplicationMixin(ApplicationV2) {
     const scene = this.scene;
     const entries = charactersForUser(scene, game.user);
     this.entries = new Map(entries.map(e => [e.key, e]));
+    const targets = nameable(scene);
     const sheets = [];
     for ( const e of entries ) {
       // Reading strikes and spells is slow; answers don't change them, so keep what was read at opening. (A character
@@ -111,7 +118,7 @@ export class PlayerSurvey extends HandlebarsApplicationMixin(ApplicationV2) {
         level: spec.level,
         sharedWith: others.map(u => u.name).join(", "),
         sharedOnline: others.some(u => u.active),
-        tactics: questionsContext(spec, e.actor, e.key, { targets: nameable(scene).map(o => ({ id: o.id, name: o.name })) })
+        tactics: questionsContext(spec, e.actor, e.key, { targets })
       });
     }
     // The last tab: the party's wishes, every player's vote on them (one vote per player, not per character).
