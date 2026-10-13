@@ -19,7 +19,8 @@ import { PLAYSTYLES, PLAYSTYLE_IDS, MAX_PLAYSTYLES, RENAMED_PLAYSTYLES, combineP
 import { getAdapter } from "../api.js";
 import { DESIRE_KINDS, DESIRE_BAND_KEYS } from "../engine/behavior/desire.js";
 import { setting } from "../settings.js";
-import { distanceText, localize } from "../i18n.js";
+import { distanceText, localize, listItems, language } from "../i18n.js";
+import { signedNumber } from "../engine/trait-parts.js";
 import { cleanMotive, cleanMotiveField, MOTIVE_KEY, motivesContext, NO_CATALOG, suggestMotives } from "./motives.js";
 import { autoRecord, validLet, validMotive } from "./auto-config.js";
 
@@ -235,6 +236,40 @@ function storedValue(stored, key) {
 /*  Question view-model                         */
 /* -------------------------------------------- */
 
+/** Habits whose number is a bonus in points (initiative), not a share. */
+const POINT_HABITS = new Set(["initiative"]);
+
+/** A share as the reader's language writes it ("40%"). */
+function percentText(share) {
+  try {
+    return new Intl.NumberFormat(language(), { style: "percent", maximumFractionDigits: 0 }).format(share);
+  } catch ( err ) {
+    return `${Math.round(share * 100)}%`;
+  }
+}
+
+/**
+ * What the picked playstyles do together, in words, for the GM: their shifts to the hidden scores (signed points), then
+ * their habits, the strongest first (how strongly each applies; a bonus in points; one that's on or off, by its name).
+ * As a fight has them: each pill counting less further down, more with roleplay, little when staying true.
+ * @param {{traits: object, behavior: object}} combined   combinePlaystyles' result
+ * @returns {string} "" when they do nothing
+ */
+export function playstyleEffectsText(combined) {
+  const item = (what, n) => game.i18n.format("FASTFIGHTING.Playstyle.EffectItem", { what, n });
+  const traits = TRAITS.map(k => [k, Math.round(combined?.traits?.[k] ?? 0)]).filter(([, n]) => n)
+    .sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]))
+    .map(([k, n]) => item(loc(`FASTFIGHTING.Trait.${k}`), signedNumber(n)));
+  const habits = Object.entries(combined?.behavior ?? {}).filter(([, v]) => v === true || (Number.isFinite(v) && Math.abs(v) >= 0.005))
+    .sort((a, b) => (Number(b[1]) || 1) - (Number(a[1]) || 1))
+    .map(([k, v]) => {
+      const name = loc(`FASTFIGHTING.Playstyle.Effect.${k}`);
+      if ( v === true ) return name;
+      return item(name, POINT_HABITS.has(k) ? signedNumber(v) : percentText(Math.min(1, v)));
+    });
+  return listItems([...traits, ...habits]);
+}
+
 function actionLabel(a) {
   const kind = loc(`FASTFIGHTING.Tactics.ActionKind.${a.kind}`);
   const extra = a.range && !a.melee ? ` · ${distanceText(a.range.increment)}` : "";
@@ -371,6 +406,8 @@ export function questionsContext(spec, actor, uid, { questions: withQuestions = 
       disabled: !picked.includes(id) && picked.length >= MAX_PLAYSTYLES
     })).sort((a, b) => a.label.localeCompare(b.label, game.i18n.lang)),
     playstyleCount: game.i18n.format("FASTFIGHTING.Playstyle.Count", { n: picked.length, max: MAX_PLAYSTYLES }),
+    // (What they do together, for a GM or assistant GM.)
+    playstyleEffects: gm && picked.length ? playstyleEffectsText(playstyles) || null : null,
     // What it brings to a standoff, and what it wants out of it.
     motives: withQuestions ? motivesContext(spec, stored, getAdapter()?.itemCatalog?.() ?? NO_CATALOG, uid, actor.uuid, {
       auto: { offer: suggested.offer, expect: suggested.expect }, why, gm

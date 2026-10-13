@@ -847,6 +847,35 @@
       "unmundane": {
         "Name": "Un-Mundane",
         "Hint": "Would rather use what sets it apart (its magic, its class's and kind's own abilities) than fight or talk as anyone would, and spends what that takes freely."
+      },
+      "EffectItem": "{what} {n}",
+      "EffectsHint": "What the picked playstyles do together in a fight: how far they move each hidden score, and how strongly each habit shows (each pill counts less further down; more with roleplay, little when staying true). Only a GM sees this.",
+      "Effect": {
+        "ambition": "Wants to lead",
+        "drawAggro": "Draws attacks",
+        "exploitWeakness": "Exploits weaknesses",
+        "finishDowned": "Finishes the fallen",
+        "flighty": "Flighty",
+        "followFocus": "Follows the leader's target",
+        "helps": "Helps friends",
+        "hinders": "Hinders foes",
+        "initiative": "Initiative",
+        "lowProfile": "Keeps a low profile",
+        "meleeBias": "Prefers melee",
+        "observe": "Watches foes",
+        "parleyFirst": "Parleys first",
+        "peacekeeping": "Keeps the peace",
+        "rally": "Rallies friends",
+        "random": "Unpredictable",
+        "rush": "Rushes",
+        "share": "Shares what it learns",
+        "spareDowned": "Spares the fallen",
+        "steal": "Steals",
+        "study": "Sizes up foes",
+        "taunt": "Taunts",
+        "tauntProof": "Shrugs off taunts",
+        "trapWary": "Watches for traps",
+        "wary": "Wary of outsiders"
       }
     },
     "Tracker": {

@@ -4,6 +4,7 @@
   <div class="ff-pills" data-actor-uuid="{{actorUuid}}">
     {{#each playstyles}}<button type="button" class="ff-pill {{#if active}}active{{/if}}" data-action="togglePlaystyle" data-playstyle="{{id}}" data-actor-uuid="{{../actorUuid}}" aria-pressed="{{#if active}}true{{else}}false{{/if}}" {{#if disabled}}disabled{{/if}} data-tooltip="{{hint}}"><i class="fa-solid {{icon}}"></i> {{label}}<span class="ff-pill-order">{{#if active}}{{order}}{{/if}}</span></button>{{/each}}
   </div>
+  {{#if playstyleEffects}}<div class="ff-auto-value ff-pill-effects" data-tooltip="{{localize "FASTFIGHTING.Playstyle.EffectsHint"}}"><i class="fa-solid fa-eye"></i> {{playstyleEffects}}</div>{{/if}}
   <div class="ff-pill-flags">
     <label class="ff-check"><input type="checkbox" name="{{stayTrue.name}}" data-tactic="stayTrue" data-actor-uuid="{{actorUuid}}" {{checked stayTrue.checked}}> {{localize "FASTFIGHTING.Playstyle.StayTrue"}}
       <i class="fa-solid fa-circle-question" data-tooltip="{{localize "FASTFIGHTING.Playstyle.StayTrueHint"}}"></i></label>

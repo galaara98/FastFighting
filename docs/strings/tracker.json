@@ -7777,6 +7777,276 @@
    "commit": "f7ee61e",
    "hash": "c6a96a629f87"
   },
+  "core:FASTFIGHTING.Playstyle.Effect.ambition": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Playstyle.Effect.ambition",
+   "area": "core/Playstyle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "028a4350396b"
+  },
+  "core:FASTFIGHTING.Playstyle.Effect.drawAggro": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Playstyle.Effect.drawAggro",
+   "area": "core/Playstyle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "e3ba085da736"
+  },
+  "core:FASTFIGHTING.Playstyle.Effect.exploitWeakness": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Playstyle.Effect.exploitWeakness",
+   "area": "core/Playstyle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "c4bbabd785a0"
+  },
+  "core:FASTFIGHTING.Playstyle.Effect.finishDowned": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Playstyle.Effect.finishDowned",
+   "area": "core/Playstyle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "1255238f0f8d"
+  },
+  "core:FASTFIGHTING.Playstyle.Effect.flighty": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Playstyle.Effect.flighty",
+   "area": "core/Playstyle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "518a38739cb7"
+  },
+  "core:FASTFIGHTING.Playstyle.Effect.followFocus": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Playstyle.Effect.followFocus",
+   "area": "core/Playstyle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "eef057134027"
+  },
+  "core:FASTFIGHTING.Playstyle.Effect.helps": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Playstyle.Effect.helps",
+   "area": "core/Playstyle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "f2e77e18c599"
+  },
+  "core:FASTFIGHTING.Playstyle.Effect.hinders": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Playstyle.Effect.hinders",
+   "area": "core/Playstyle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "51507d46aa97"
+  },
+  "core:FASTFIGHTING.Playstyle.Effect.initiative": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Playstyle.Effect.initiative",
+   "area": "core/Playstyle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "3e687de48a6a"
+  },
+  "core:FASTFIGHTING.Playstyle.Effect.lowProfile": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Playstyle.Effect.lowProfile",
+   "area": "core/Playstyle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "4fb5fb79fda2"
+  },
+  "core:FASTFIGHTING.Playstyle.Effect.meleeBias": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Playstyle.Effect.meleeBias",
+   "area": "core/Playstyle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "ab0c6fe39b4e"
+  },
+  "core:FASTFIGHTING.Playstyle.Effect.observe": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Playstyle.Effect.observe",
+   "area": "core/Playstyle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "6a5045af0ff3"
+  },
+  "core:FASTFIGHTING.Playstyle.Effect.parleyFirst": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Playstyle.Effect.parleyFirst",
+   "area": "core/Playstyle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "04fe1d4aeea4"
+  },
+  "core:FASTFIGHTING.Playstyle.Effect.peacekeeping": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Playstyle.Effect.peacekeeping",
+   "area": "core/Playstyle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "c2e2fe2b0670"
+  },
+  "core:FASTFIGHTING.Playstyle.Effect.rally": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Playstyle.Effect.rally",
+   "area": "core/Playstyle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "5fc651fdf15f"
+  },
+  "core:FASTFIGHTING.Playstyle.Effect.random": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Playstyle.Effect.random",
+   "area": "core/Playstyle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "3cbe3defcd72"
+  },
+  "core:FASTFIGHTING.Playstyle.Effect.rush": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Playstyle.Effect.rush",
+   "area": "core/Playstyle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "2177b913f9da"
+  },
+  "core:FASTFIGHTING.Playstyle.Effect.share": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Playstyle.Effect.share",
+   "area": "core/Playstyle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "b9386300c9d4"
+  },
+  "core:FASTFIGHTING.Playstyle.Effect.spareDowned": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Playstyle.Effect.spareDowned",
+   "area": "core/Playstyle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "0e299ca9dc78"
+  },
+  "core:FASTFIGHTING.Playstyle.Effect.steal": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Playstyle.Effect.steal",
+   "area": "core/Playstyle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "c5d98b806201"
+  },
+  "core:FASTFIGHTING.Playstyle.Effect.study": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Playstyle.Effect.study",
+   "area": "core/Playstyle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "0e3c3adffa29"
+  },
+  "core:FASTFIGHTING.Playstyle.Effect.taunt": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Playstyle.Effect.taunt",
+   "area": "core/Playstyle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "924030324a36"
+  },
+  "core:FASTFIGHTING.Playstyle.Effect.tauntProof": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Playstyle.Effect.tauntProof",
+   "area": "core/Playstyle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "b0743d129f84"
+  },
+  "core:FASTFIGHTING.Playstyle.Effect.trapWary": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Playstyle.Effect.trapWary",
+   "area": "core/Playstyle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "aaee23269f7d"
+  },
+  "core:FASTFIGHTING.Playstyle.Effect.wary": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Playstyle.Effect.wary",
+   "area": "core/Playstyle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "78cb1f3749b3"
+  },
+  "core:FASTFIGHTING.Playstyle.EffectItem": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Playstyle.EffectItem",
+   "area": "core/Playstyle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "98bfef62a283"
+  },
+  "core:FASTFIGHTING.Playstyle.EffectsHint": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Playstyle.EffectsHint",
+   "area": "core/Playstyle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "070fb2b8158e"
+  },
   "core:FASTFIGHTING.Playstyle.enabler.Hint": {
    "repo": "core",
    "file": "languages/en.json",
@@ -21568,6 +21838,76 @@
    "commit": null,
    "hash": "5214e92bd733"
   },
+  "dcc:FFDCC.Why.Construct": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.Why.Construct",
+   "area": "dcc/Why",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "67e7c6e28e54"
+  },
+  "dcc:FFDCC.Why.Flies": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.Why.Flies",
+   "area": "dcc/Why",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "3bbdc6c9fb2c"
+  },
+  "dcc:FFDCC.Why.Mindless": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.Why.Mindless",
+   "area": "dcc/Why",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "95ed9d50ef93"
+  },
+  "dcc:FFDCC.Why.Morale": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.Why.Morale",
+   "area": "dcc/Why",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "b3e4d36a73cf"
+  },
+  "dcc:FFDCC.Why.PackTactics": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.Why.PackTactics",
+   "area": "dcc/Why",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "f58428564b08"
+  },
+  "dcc:FFDCC.Why.Trained": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.Why.Trained",
+   "area": "dcc/Why",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "0ca7c874e6d8"
+  },
+  "dcc:FFDCC.Why.TwoWeapons": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.Why.TwoWeapons",
+   "area": "dcc/Why",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "73cd51563a50"
+  },
   "dcc:FFDCC.Will": {
    "repo": "dcc",
    "file": "languages/en.json",
@@ -22063,6 +22403,16 @@
    "commit": null,
    "hash": "2ca9bd29a56a"
   },
+  "dnd5e:FFDND5E.LegendaryActions": {
+   "repo": "dnd5e",
+   "file": "languages/en.json",
+   "key": "FFDND5E.LegendaryActions",
+   "area": "dnd5e/General",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "d01af721084a"
+  },
   "dnd5e:FFDND5E.LegendaryResistance": {
    "repo": "dnd5e",
    "file": "languages/en.json",
@@ -22223,6 +22573,16 @@
    "commit": null,
    "hash": "5a0f5f99f9e5"
   },
+  "dnd5e:FFDND5E.Reason.HitDie": {
+   "repo": "dnd5e",
+   "file": "languages/en.json",
+   "key": "FFDND5E.Reason.HitDie",
+   "area": "dnd5e/Reason",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "c9d15d20badf"
+  },
   "dnd5e:FFDND5E.Reason.Immune": {
    "repo": "dnd5e",
    "file": "languages/en.json",
@@ -22283,6 +22643,16 @@
    "date": null,
    "commit": null,
    "hash": "f52e594f0e06"
+  },
+  "dnd5e:FFDND5E.Reason.NoLanguage": {
+   "repo": "dnd5e",
+   "file": "languages/en.json",
+   "key": "FFDND5E.Reason.NoLanguage",
+   "area": "dnd5e/Reason",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "32c44009b537"
   },
   "dnd5e:FFDND5E.Reason.NoParty": {
    "repo": "dnd5e",

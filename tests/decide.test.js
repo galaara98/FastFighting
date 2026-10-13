@@ -91,3 +91,20 @@ describe("what it offers and expects, when it's left to it", () => {
     expect(validMotives(effectiveMotives({}, auto), wealthy).expect).toMatchObject({ kind: "money", amount: 3000 });
   });
 });
+
+describe("what the picked playstyles do together, for the GM", () => {
+  test("their score shifts and habits, the strongest first, in one list; nothing for none", async () => {
+    const { playstyleEffectsText } = await import("../scripts/foundry/tactics.js");
+    const { combinePlaystyles, PLAYSTYLES } = await import("../scripts/engine/playstyles.js");
+    const { localize } = await import("../scripts/i18n.js");
+    const text = playstyleEffectsText(combinePlaystyles(["brawler", "tank"]));
+    expect(text).toContain(localize("FASTFIGHTING.Trait.brave"));
+    expect(text).toContain(localize("FASTFIGHTING.Playstyle.Effect.taunt"));
+    expect(text).toMatch(/%/);
+    expect(playstyleEffectsText(combinePlaystyles([]))).toBe("");
+    // (Every habit a playstyle has, named.)
+    for ( const p of Object.values(PLAYSTYLES) ) for ( const k of Object.keys(p.behavior ?? {}) ) {
+      expect(localize(`FASTFIGHTING.Playstyle.Effect.${k}`), k).not.toBe(`FASTFIGHTING.Playstyle.Effect.${k}`);
+    }
+  });
+});
