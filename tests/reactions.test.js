@@ -1,5 +1,6 @@
 import { describe, expect, test } from "vitest";
 import { replay } from "../scripts/engine/simulator.js";
+import { tellingOrder } from "../scripts/story/story.js";
 import { pf2eRules } from "./fixtures/three-action-rules.js";
 import { creature, strike, battle } from "./helpers.js";
 
@@ -23,6 +24,17 @@ describe("opportunity attacks", () => {
     expect(struckLeaving(without)).toBe(false);
     const withIt = replay(engaged({ reactiveStrike: true }), pf2eRules, 3);
     expect(struckLeaving(withIt)).toBe(true);
+  });
+
+  test("told after the move that gave the opening, with what came of the blow", () => {
+    const r = replay(engaged({ reactiveStrike: true }), pf2eRules, 3);
+    const told = tellingOrder(r.log);
+    const blow = told.findIndex(e => e.type === "opportunity" && e.targetId === "hero");
+    const move = told.findIndex(e => e.type === "move" && e.actorId === "hero");
+    expect(blow).toBeGreaterThan(move);
+    expect(told[blow + 1]).toMatchObject({ type: "attack", actorId: "brute", targetId: "hero" });
+    // (Only told differently: the log itself is as it happened.)
+    expect(told).toHaveLength(r.log.length);
   });
 
   test("a tactical fighter keeps to the foe beside it rather than turning its back", () => {

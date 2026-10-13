@@ -59,7 +59,8 @@ describe("martial actions in a fight", () => {
       reacted += guards.length;
       for ( const g of guards ) {
         const i = r.log.indexOf(g);
-        const blow = r.log.slice(i).find(e => e.type === "attack" && e.actor === "brute");
+        // (Told just after the blow it answers.)
+        const blow = r.log.slice(0, i).reverse().find(e => e.type === "attack" && e.actor === "brute");
         if ( blow && blow.target === "ward" ) expect(blow.lessened).toBeGreaterThan(0);
       }
     }

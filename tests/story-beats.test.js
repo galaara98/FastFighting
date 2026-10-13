@@ -31,6 +31,9 @@ describe("the story told a turn at a time", () => {
       const beats = storyBeats(result, spec, "roleplay", { tables, seed });
       const story = buildStory(result, spec, "roleplay", { tables, seed });
       expect(beats.map(b => b.text).filter(Boolean).join(" ")).toBe(words(story.html));
+      // (In the chat, each name in bold.)
+      expect(beats.some(b => b.html.includes("<strong>Wolf</strong>"))).toBe(true);
+      expect(beats.some(b => /<strong>[^<]*<strong>/.test(b.html))).toBe(false);
       // A beat for each turn, the closing last; a turn's beat is its creature's.
       // (Plain text: an apostrophe is an apostrophe, not &#39;.)
       expect(beats.some(b => /&(amp|lt|gt|quot|#39);/.test(b.text))).toBe(false);

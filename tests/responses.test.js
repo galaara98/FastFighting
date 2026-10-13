@@ -49,6 +49,26 @@ describe("reactions that answer an attack", () => {
     expect(reacted.length).toBeGreaterThan(3);
   });
 
+  test("a reaction is told after the attack it answers, never before (the dice come first, then the answer)", () => {
+    const shield = { id: "shield", label: "Shield", on: "hit", ac: 5, resource: "slot" };
+    const nimble = { id: "nimble", label: "Nimble Dodge", on: "attacked", ac: 2 };
+    const block = { id: "block", label: "Shield Block", on: "hit", reduce: part([], 5, "untyped"), physical: true };
+    let told = 0;
+    for ( const reactions of [[shield], [nimble], [block]] ) {
+      for ( const log of logs(battle([hero({ reactions, resources: { slot: 3 } }), brute()], { maxRounds: 3 })) ) {
+        log.forEach((e, i) => {
+          if ( e.type !== "reaction" ) return;
+          told += 1;
+          // (Several answers to one blow follow it together.)
+          let k = i - 1;
+          while ( log[k]?.type === "reaction" ) k -= 1;
+          expect(log[k]).toMatchObject({ type: "attack", actorId: e.targetId, targetId: e.actorId });
+        });
+      }
+    }
+    expect(told).toBeGreaterThan(5);
+  });
+
   test("Riposte: a melee miss is answered with a strike", () => {
     const riposte = { id: "riposte", label: "Riposte", on: "missed", strike: true };
     const fencer = hero({ defenses: { ac: 20, fortitude: 2, reflex: 2, will: 2 }, reactions: [riposte], actions: [strike({ id: "rapier", name: "Rapier", bonus: 6, damage: [parseFormula("1d8+3", "piercing")] })] });

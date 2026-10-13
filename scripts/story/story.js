@@ -121,6 +121,29 @@ function storyCast(result, spec) {
   return { out, mentions };
 }
 
+/** What gives a creature the chance to strike as it goes. */
+const LEAVING = new Set(["move", "flee", "leave"]);
+
+/**
+ * The log in the order it's told: a reaction comes after what it answers. (A blow at one leaving its reach is
+ * struck as it goes, so it's logged before the move: told after it, with whatever came of the blow.)
+ */
+export function tellingOrder(log = []) {
+  const out = [...log];
+  for ( let i = 0; i < out.length; i++ ) {
+    const e = out[i];
+    if ( e.type !== "opportunity" ) continue;
+    const j = out.findIndex((m, k) => k > i && m.turn === e.turn && m.actorId === e.targetId && LEAVING.has(m.type));
+    if ( j < 0 ) continue;
+    // (The move first; then everything from the blow to the move: the blow, what came of it, and anyone else who
+    // struck at it as it went.)
+    const [move] = out.splice(j, 1);
+    out.splice(i, 0, move);
+    i = j;
+  }
+  return out;
+}
+
 function makeRoller(tables, seed) {
   const rng = createRng(seed >>> 0);
   const roll = (key, fill = {}) => {
@@ -413,7 +436,7 @@ function roleplayParagraphs(result, spec, tables, seed, mapType) {
   if ( opening ) paragraphs.push({ text: opening });
   let current = null;
   let lastMoveKey = null;
-  for ( const e of result.log ) {
+  for ( const e of tellingOrder(result.log) ) {
     if ( e.type === "initiative" || !mentions(e) ) continue;
     // The outcome comes where the fighting stops; anything after it (tending the fallen) follows.
     if ( e.type === "end" ) {
@@ -577,7 +600,7 @@ function standard(result, spec, title) {
 function statistician(result, spec, title) {
   const { out, mentions } = storyCast(result, spec);
   const rounds = new Map();
-  for ( const e of result.log ) {
+  for ( const e of tellingOrder(result.log) ) {
     if ( !mentions(e) || e.type === "aftermath" ) continue;
     const key = e.aftermath ? "after" : e.round;
     if ( !rounds.has(key) ) rounds.set(key, []);
@@ -613,7 +636,25 @@ export function buildStory(result, spec, style, { tables, seed = 1, title = "", 
 
 /** The words of a piece of the story as plain text: its HTML read back, tags gone and characters as they are. */
 const UNESCAPES = { "&amp;": "&", "&lt;": "<", "&gt;": ">", "&quot;": "\"", "&#39;": "'" };
-const plainText = html => html.replace(/<[^>]+>/g, " ").replace(/&(amp|lt|gt|quot|#39);/g, m => UNESCAPES[m]).replace(/\s+/g, " ").trim();
+const plainText = html => html.replace(/<\/?(strong|em|small|b|i)>/g, "").replace(/<[^>]+>/g, " ").replace(/&(amp|lt|gt|quot|#39);/g, m => UNESCAPES[m]).replace(/\s+/g, " ").trim();
+
+/**
+ * Each creature's name in bold, in a piece of the story already escaped for HTML (for the chat cards): everyone the
+ * fight names, the summoned too. A longer name wins over one it contains ("Goblin Warrior" over "Goblin").
+ */
+function nameBolder(result, spec) {
+  const names = new Set((spec.combatants ?? []).map(c => c.name));
+  for ( const e of result.log ?? [] ) {
+    if ( e.actorId && e.actor ) names.add(e.actor);
+    if ( e.targetId && e.target ) names.add(e.target);
+  }
+  const list = [...names].filter(Boolean).map(n => esc(n)).sort((a, b) => b.length - a.length)
+    .map(n => n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+  if ( !list.length ) return html => html;
+  // (A whole name, not part of a word, and never inside an escaped character such as &#39;.)
+  const pattern = new RegExp(`(?<![\\p{L}\\p{N}&#])(?:${list.join("|")})(?![\\p{L}\\p{N}])`, "gu");
+  return html => html.replace(pattern, m => `<strong>${m}</strong>`);
+}
 
 /** Falls, told in a Standard turn after what everyone did. */
 const FALLS = new Set(["down", "death", "beaten", "struckDown"]);
@@ -636,7 +677,7 @@ const TALKING = new Set(["talk", "parley", "haggle", "deal", "callHelp", "lastWo
  * @param {object} options  {tables, seed, damageType} as for buildStory
  */
 export function storyBeats(result, spec, style, { tables, seed = 1, damageType = null } = {}) {
-  const log = result.log ?? [];
+  const log = tellingOrder(result.log);
   const end = log.find(e => e.type === "end");
   const endTurn = end ? (end.turn ?? 0) : Infinity;
   const keyOf = e => ((e?.turn ?? 0) >= endTurn ? "closing" : (e?.turn ?? 0));
@@ -655,6 +696,7 @@ export function storyBeats(result, spec, style, { tables, seed = 1, damageType =
     if ( !beat.turns.includes(e.turn ?? 0) ) beat.turns.push(e.turn ?? 0);
     beat.events.push(e);
   }
+  const bold = nameBolder(result, spec);
   if ( style === "standard" ) {
     const { mentions } = storyCast(result, spec);
     for ( const beat of beats ) {
@@ -663,10 +705,10 @@ export function storyBeats(result, spec, style, { tables, seed = 1, damageType =
       for ( const s of tally(beat.events, mentions).values() ) {
         const bits = tallyBits(s);
         if ( !bits.length && !s.notes.length ) continue;
-        const notes = s.notes.length ? ` <small>(${esc(s.notes.join("; "))})</small>` : "";
-        rows.push(`<li><strong>${esc(s.name)}</strong>: ${esc(bits.join("; "))}${notes}</li>`);
+        const notes = s.notes.length ? ` <small>(${bold(esc(s.notes.join("; ")))})</small>` : "";
+        rows.push(`<li><strong>${esc(s.name)}</strong>: ${bold(esc(bits.join("; ")))}${notes}</li>`);
       }
-      for ( const e of beat.events ) if ( FALLS.has(e.type) && mentions(e) ) rows.push(`<li>${esc(logLine(e))}</li>`);
+      for ( const e of beat.events ) if ( FALLS.has(e.type) && mentions(e) ) rows.push(`<li>${bold(esc(logLine(e)))}</li>`);
       if ( rows.length ) beat.parts.push(`<ul>${rows.join("")}</ul>`);
     }
     // The close: the whole fight's tally, and where everyone ended up.
@@ -685,7 +727,7 @@ export function storyBeats(result, spec, style, { tables, seed = 1, damageType =
       if ( first ) first.parts.unshift(opening);
       else beats.unshift({ turns: [], round: 0, actorId: null, closing: false, parts: [opening], events: [] });
     }
-    for ( const beat of beats ) beat.parts = beat.parts.length ? [`<p>${beat.parts.map(esc).join(" ")}</p>`] : [];
+    for ( const beat of beats ) beat.parts = beat.parts.length ? [`<p>${bold(beat.parts.map(esc).join(" "))}</p>`] : [];
   }
   return beats.map(({ turns, round, actorId, closing, parts, events }) => {
     const html = parts.join("");

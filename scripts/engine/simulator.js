@@ -860,12 +860,15 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
     const deed = r.deed ? chooseDeed(run, u, action, target) : null;
     const deedRoll = r.deed ? run.rng.die(r.deed) : 0;
     let ac = currentAc(run, target, u, action);
+    // Reactions to the attack itself are settled before its dice, but told after it: an answer to what was done.
+    const answers = [];
+    const tellAnswers = () => { for ( const tell of answers.splice(0) ) tell(); };
     // Seeing it coming (PF2e Nimble Dodge): a bonus to AC against this attack.
     if ( target.spec.reactions && target !== u ) {
       const dodge = respond(run, target, "attacked", { by: u, action, damage: meanDamageVs(run, action, target).normal });
       if ( dodge?.ac ) {
         ac += dodge.ac;
-        logReaction(run, target, u, dodge, "attacked");
+        answers.push(() => logReaction(run, target, u, dodge, "attacked"));
       }
     }
     // (A Lore-Collector that sized this foe up: the roll about 2.5 times as likely to land.)
@@ -898,7 +901,7 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
         by: u, action, roll, ac, crit: roll.degree === 3, damage: meanDamageVs(run, action, target)[roll.degree === 3 ? "critical" : "normal"], types: (action.damage ?? []).map(p => p.type)
       });
       if ( answer ) {
-        logReaction(run, target, u, answer, "hit");
+        answers.push(() => logReaction(run, target, u, answer, "hit"));
         if ( answer.ac ) {
           applyOutcome(target, { mods: { ac: answer.ac }, rounds: 1, label: answer.label }, target.id, { id: `reaction:${answer.id}`, name: answer.label });
           ac += answer.ac;
@@ -916,7 +919,7 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
         const r2 = respond(run, g, "allyHit", { by: u, ally: target, action, crit: roll.degree === 3, damage: expected, types });
         if ( r2 ) {
           guard = { g, r: r2 };
-          logReaction(run, g, u, r2, "allyHit");
+          answers.push(() => logReaction(run, g, u, r2, "allyHit"));
           break;
         }
       }
@@ -946,6 +949,7 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
         ...data, damage: amount, crit, sneak: extra.length > 0, advantage, riders: riders.map(x => x.label), critRoll: table?.total ?? null, critRowText: table?.row?.text ?? null,
         lessened: amount < hit.total ? hit.total - amount : 0, interceptedBy: intercepted !== null ? guard.g.spec.name : null, intercepted
       });
+      tellAnswers();
       const dealt = intercepted !== null ? 0 : hit.apply(amount);
       if ( intercepted > 0 ) dealDamage(run, u, guard.g, intercepted, { crit, types: hit.types });
       applyEffects(run, u, action, target, roll.degree);
@@ -960,6 +964,7 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
       }
     } else {
       if ( logging ) log(run, u, { ...data, damage: 0, advantage, savedBy: answer?.label ?? null });
+      tellAnswers();
       // A melee miss opens the attacker up (5e Riposte).
       if ( action.melee && target.spec.reactions && isUp(target) && target !== u ) {
         const back = respond(run, target, "missed", { by: u, action });
