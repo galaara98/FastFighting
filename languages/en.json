@@ -715,7 +715,9 @@
         "done": "Ready"
       },
       "MyTactics": "My tactics",
-      "MyTacticsHint": "How your characters fight: tactics, playstyles and desires. Change them any time; your GM sees them as you go."
+      "MyTacticsHint": "How your characters fight: tactics, playstyles and desires. Change them any time; your GM sees them as you go.",
+      "SeePartyFirst": "Look at the Party tab first: how you want everyone in the party to act.",
+      "VisitParty": "Visit the Party tab first"
     },
     "TokenTactics": {
       "Tab": "FastFighting",

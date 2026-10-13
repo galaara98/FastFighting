@@ -120,7 +120,11 @@ export class PlayerSurvey extends HandlebarsApplicationMixin(ApplicationV2) {
     const tabs = [...sheets, partyTab];
     for ( const s of tabs ) s.active = s.id === this.activeTab;
     const onParty = this.activeTab === PARTY_TAB;
+    // (A player confirms only once it has looked at the Party tab: ever, not each time.)
+    const mustSeeParty = !game.user.isGM && !onParty && !game.user.getFlag(MODULE_ID, "partySeen");
+    if ( mustSeeParty ) partyTab.attention = true;
     return {
+      mustSeeParty,
       sceneName: scene?.name,
       sheets: tabs,
       active: onParty ? null : sheets.find(s => s.active) ?? null,
@@ -133,6 +137,8 @@ export class PlayerSurvey extends HandlebarsApplicationMixin(ApplicationV2) {
 
   _onRender(context, options) {
     super._onRender?.(context, options);
+    // (Opened straight onto the Party tab: that counts as having looked.)
+    if ( context.onParty ) this.#sawParty();
     // A survey opened while the player's tab is in the background can be sized against a 0x0 viewport.
     if ( this.element.offsetWidth < 400 && window.innerWidth > 0 ) {
       const width = Math.min(640, window.innerWidth - 40);
@@ -191,12 +197,20 @@ export class PlayerSurvey extends HandlebarsApplicationMixin(ApplicationV2) {
     if ( this.rendered && this.activeTab === PARTY_TAB ) this.render();
   }
 
-  static #onTab(event, target) {
+  static async #onTab(event, target) {
     this.activeTab = target.dataset.tab;
+    await this.#sawParty();
     this.render();
   }
 
+  /** The player has looked at the Party tab (kept on its User: it's asked once). */
+  async #sawParty() {
+    if ( this.activeTab === PARTY_TAB && !game.user.isGM && !game.user.getFlag(MODULE_ID, "partySeen") ) await game.user.setFlag(MODULE_ID, "partySeen", true);
+  }
+
   static async #onReady() {
+    // (Not before it has looked at the Party tab.)
+    if ( !game.user.isGM && !game.user.getFlag(MODULE_ID, "partySeen") ) return ui.notifications.warn(loc("FASTFIGHTING.Survey.SeePartyFirst"));
     this.finished = true;
     if ( !game.user.isGM ) await setOwnSurveyStatus(SURVEY_STATUS.DONE, this.sceneId, this.requestId);
     ui.notifications.info(loc("FASTFIGHTING.Survey.Thanks"));

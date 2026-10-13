@@ -14155,6 +14155,16 @@
    "hash": "983e0d39bfc3",
    "changed": true
   },
+  "core:FASTFIGHTING.Survey.SeePartyFirst": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Survey.SeePartyFirst",
+   "area": "core/Survey",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "46e4decdf99b"
+  },
   "core:FASTFIGHTING.Survey.Sent": {
    "repo": "core",
    "file": "languages/en.json",
@@ -14254,6 +14264,16 @@
    "date": null,
    "commit": null,
    "hash": "0a7b94595989"
+  },
+  "core:FASTFIGHTING.Survey.VisitParty": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Survey.VisitParty",
+   "area": "core/Survey",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "38bc5fba9708"
   },
   "core:FASTFIGHTING.Survey.WillOpen": {
    "repo": "core",

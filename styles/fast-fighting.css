@@ -423,3 +423,14 @@
 }
 .ff-pill.is-winning { box-shadow: 0 0 0 2px var(--ff-accent); }
 .ff-sheet-tab.ff-party-tab i { margin-right: 4px; }
+
+/* The Party tab, until a player has looked at it (it can't confirm before). */
+.ff-sheet-tab.ff-attention { border-top-color: var(--ff-accent); color: var(--ff-accent); font-weight: 700; box-shadow: inset 0 0 0 2px var(--ff-accent); animation: ff-attention 1.6s ease-in-out infinite; }
+@keyframes ff-attention { 50% { box-shadow: inset 0 0 0 2px transparent; } }
+.ff-attention-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 16px; height: 16px; margin-left: 4px; border-radius: 50%;
+  background: var(--ff-hostile); color: #fff; font-weight: 700; font-size: 11px;
+}
+.ff-must-see { align-self: center; color: var(--ff-accent); font-weight: 600; margin: 0 4px 0 8px; white-space: nowrap; }
+.ff-must-see i { margin: 0 3px; }
