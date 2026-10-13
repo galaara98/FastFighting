@@ -108,3 +108,26 @@ describe("what the picked playstyles do together, for the GM", () => {
     }
   });
 });
+
+describe("how often each answer comes up, as a fight draws them", () => {
+  test("one pill: its answer; staying true: the calculated answer, the pill's only now and then", async () => {
+    const { answerChances, combinePlaystyles, STAY_TRUE_CAP } = await import("../scripts/engine/playstyles.js");
+    const brawler = combinePlaystyles(["brawler"]);
+    expect(answerChances("style", "ranged", brawler)).toEqual([["frontline", 1]]);
+    const steady = combinePlaystyles(["brawler"], { stayTrue: true });
+    expect(answerChances("style", "ranged", steady, true)).toEqual([["ranged", 1 - STAY_TRUE_CAP], ["frontline", STAY_TRUE_CAP]]);
+    // (A pill that agrees with the calculation: no departure.)
+    expect(answerChances("style", "frontline", steady, true)).toEqual([["frontline", 1]]);
+    // (No pill says anything: the calculated answer.)
+    expect(answerChances("beyond", "stay", combinePlaystyles([]))).toEqual([["stay", 1]]);
+  });
+
+  test("pills that disagree: each by its place", async () => {
+    const { answerChances, combinePlaystyles } = await import("../scripts/engine/playstyles.js");
+    const both = combinePlaystyles(["brawler", "wallflower"]);
+    const chances = answerChances("style", "frontline", both);
+    expect(chances[0][0]).toBe("frontline");
+    expect(chances.map(([v]) => v)).toContain("ranged");
+    expect(chances.reduce((s, [, p]) => s + p, 0)).toBeCloseTo(1);
+  });
+});

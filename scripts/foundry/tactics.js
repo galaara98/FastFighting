@@ -15,7 +15,7 @@
 import { MODULE_ID, TRAITS, clamp, fudged, traitBand } from "../constants.js";
 import { TACTIC_CHOICES, TACTIC_KEYS, suggestTactics, resolveTactics } from "../engine/tactics.js";
 import { isSpecial } from "../engine/behavior/specialty.js";
-import { PLAYSTYLES, PLAYSTYLE_IDS, MAX_PLAYSTYLES, RENAMED_PLAYSTYLES, combinePlaystyles, isPlaystyle } from "../engine/playstyles.js";
+import { PLAYSTYLES, PLAYSTYLE_IDS, MAX_PLAYSTYLES, RENAMED_PLAYSTYLES, combinePlaystyles, isPlaystyle, answerChances } from "../engine/playstyles.js";
 import { getAdapter } from "../api.js";
 import { DESIRE_KINDS, DESIRE_BAND_KEYS } from "../engine/behavior/desire.js";
 import { setting } from "../settings.js";
@@ -288,8 +288,7 @@ function actionLabel(a) {
  */
 export function questionsContext(spec, actor, uid, { questions: withQuestions = true, targets: named = [] } = {}) {
   const targets = named ?? [];
-  const { suggested, stored, playstyles, why } = tacticsFor(actor, spec);
-  const sourceOf = key => playstyles.ids.find(id => PLAYSTYLES[id].suggest[key] === suggested[key] && PLAYSTYLES[id].suggest[key] !== undefined);
+  const { calc, suggested, stored, playstyles, why } = tacticsFor(actor, spec);
   // (What "Let this character decide" stands for, and the hidden scores: for a GM or assistant GM only.)
   const gm = !!game.user?.isGM;
   const offense = [];
@@ -304,14 +303,19 @@ export function questionsContext(spec, actor, uid, { questions: withQuestions = 
   const hasLimited = spec.actions.some(a => a.kind !== "heal" && (a.resource || Number.isFinite(a.uses)));
 
   const choiceLabel = (key, v) => loc(`FASTFIGHTING.Tactics.${key}.${v}`);
-  // What it chooses, and why: the playstyle that chose it, else its system's reason.
-  const suggestionLabel = key => {
-    const v = suggested[key];
+  // What it chooses, and why: the playstyle that chose it, else its system's reason (its calculated answer).
+  const answerLabel = (key, v) => {
     const choice = key === "preferredAction" ? spec.actions.find(a => a.id === v)?.name ?? loc("FASTFIGHTING.Tactics.BestAvailable") : v ? choiceLabel(key, v) : "";
     if ( !choice ) return "";
-    const source = sourceOf(key);
-    const reason = source ? loc(`FASTFIGHTING.Playstyle.${source}.Name`) : why[key];
+    const source = playstyles.ids.find(id => PLAYSTYLES[id].suggest[key] === v);
+    const reason = source ? loc(`FASTFIGHTING.Playstyle.${source}.Name`) : v === calc[key] ? why[key] : null;
     return reason ? game.i18n.format("FASTFIGHTING.Tactics.AutoFrom", { choice, why: reason }) : choice;
+  };
+  // As a fight has it: where its pills disagree, or it stays true to its calculated answers, each answer with its chance.
+  const suggestionLabel = key => {
+    const chances = answerChances(key, calc[key], playstyles, !!stored.stayTrue).filter(([v, p]) => p >= 0.005 && answerLabel(key, v));
+    if ( chances.length <= 1 ) return answerLabel(key, chances[0]?.[0] ?? suggested[key]);
+    return listItems(chances.map(([v, p]) => game.i18n.format("FASTFIGHTING.Tactics.AutoChance", { choice: answerLabel(key, v), chance: percentText(p) })));
   };
 
   const questions = [];

@@ -225,6 +225,32 @@ export function combinePlaystyles(ids = [], { stayTrue = false, roleplay = false
  * @param {object} spec   CombatantSpec with tactics / tacticsCalc / stayTrue
  * @param {object} rng
  */
+/**
+ * How often each answer to a question left to the character comes up in a fight, as sampleRunTactics draws them: its
+ * pills' votes by their place (or its one suggestion, or its calculated answer); and, staying true to the calculated
+ * answer, any other only that much of the time (STAY_TRUE_CAP).
+ * @param {string} key          the question
+ * @param {*} calc              its calculated answer
+ * @param {object} combined     combinePlaystyles' result
+ * @param {boolean} [stayTrue]
+ * @returns {[*, number][]}     [answer, chance], the likeliest first
+ */
+export function answerChances(key, calc, combined, stayTrue = false) {
+  const suggested = combined?.suggest?.[key];
+  const votes = combined?.mix?.[key] ?? [{ value: suggested !== undefined ? suggested : calc, weight: 1 }];
+  const total = votes.reduce((s, v) => s + v.weight, 0) || 1;
+  const out = new Map();
+  const add = (value, p) => out.set(value, (out.get(value) ?? 0) + p);
+  for ( const v of votes ) {
+    const p = v.weight / total;
+    if ( stayTrue && calc !== undefined && v.value !== calc ) {
+      add(v.value, p * STAY_TRUE_CAP);
+      add(calc, p * (1 - STAY_TRUE_CAP));
+    } else add(v.value, p);
+  }
+  return [...out].sort((a, b) => b[1] - a[1]);
+}
+
 export function sampleRunTactics(spec, rng) {
   if ( !spec.tactics ) return null;
   let tactics = spec.tactics;

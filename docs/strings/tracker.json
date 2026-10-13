@@ -14093,6 +14093,16 @@
    "hash": "3b5c87cbee26",
    "changed": true
   },
+  "core:FASTFIGHTING.Tactics.AutoChance": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Tactics.AutoChance",
+   "area": "core/Tactics",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "bb16bb147037"
+  },
   "core:FASTFIGHTING.Tactics.AutoFrom": {
    "repo": "core",
    "file": "languages/en.json",
@@ -14111,7 +14121,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "5393c5dc08c7"
+   "hash": "5393c5dc08c7",
+   "changed": true
   },
   "core:FASTFIGHTING.Tactics.BestAvailable": {
    "repo": "core",
@@ -25288,6 +25299,46 @@
    "date": null,
    "commit": null,
    "hash": "ad95d79f5fbd"
+  },
+  "pf2e:FFPF2E.Why.Immune": {
+   "repo": "pf2e",
+   "file": "languages/en.json",
+   "key": "FFPF2E.Why.Immune",
+   "area": "pf2e/Why",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "8be38b43ada8"
+  },
+  "pf2e:FFPF2E.Why.NoLanguage": {
+   "repo": "pf2e",
+   "file": "languages/en.json",
+   "key": "FFPF2E.Why.NoLanguage",
+   "area": "pf2e/Why",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "32c44009b537"
+  },
+  "pf2e:FFPF2E.Why.Skill": {
+   "repo": "pf2e",
+   "file": "languages/en.json",
+   "key": "FFPF2E.Why.Skill",
+   "area": "pf2e/Why",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "f4400c07da03"
+  },
+  "pf2e:FFPF2E.Why.Untrained": {
+   "repo": "pf2e",
+   "file": "languages/en.json",
+   "key": "FFPF2E.Why.Untrained",
+   "area": "pf2e/Why",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "53d6da19a5cb"
   },
   "pf2e:module.json:description": {
    "repo": "pf2e",

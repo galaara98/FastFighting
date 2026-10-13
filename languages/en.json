@@ -681,7 +681,8 @@
         "hunt": "Hunt down enemies nearby"
       },
       "AutoFrom": "{choice} ({why})",
-      "AutoHint": "What \"Let this character decide\" chooses for this character, and why. Only a GM sees this."
+      "AutoHint": "What \"Let this character decide\" chooses for this character, and why. Where its playstyles disagree, or it stays mostly true to its calculated tactics, each answer with how often it comes up in a fight. Only a GM sees this.",
+      "AutoChance": "{choice} {chance}"
     },
     "Survey": {
       "Title": "Prepare for Battle",
