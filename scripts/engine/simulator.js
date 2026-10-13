@@ -75,6 +75,11 @@ function startTurn(run, u = null) {
 }
 
 const primaryType = action => (action.damage ?? action.heal ?? [])[0]?.type ?? "untyped";
+/**
+ * Harm with no look of its own, added to a blow (sneak attack, a backstab, a precise strike): a part a helper marks so,
+ * by its category or its type. The story tells it by how it came, not as more of the blow.
+ */
+const isPrecision = p => p?.category === "precision" || p?.type === "precision";
 /** Every kind of harm an action deals (a flaming sword: slashing and fire), for the story to tell the one that shows. */
 const damageTypesOf = action => [...new Set((action.damage ?? []).map(p => p.type).filter(Boolean))];
 
@@ -822,7 +827,7 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
     }
 
     const common = logging ? {
-      action: action.name, actionKind: action.kind, damageType: primaryType(action), damageTypes: damageTypesOf(action), target: target.spec.name, targetId: target.id,
+      action: action.name, actionKind: action.kind, damageType: primaryType(action), damageTypes: damageTypesOf(action), storyType: action.storyType ?? null, target: target.spec.name, targetId: target.id,
       ranged, area: !!action.area, targetCover: !!target.spec.environment?.nearCover, attackerCover: !!u.spec.environment?.nearCover
     } : null;
 
@@ -948,7 +953,7 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
       const intercepted = guard?.r.redirect && amount > 0 ? rules.applyIwr(iwrOf(guard.g), hit.byType, guard.g) : null;
       if ( intercepted !== null ) amount = 0;
       if ( logging ) log(run, u, {
-        ...data, damage: amount, crit, sneak: extra.length > 0, advantage, riders: riders.map(x => x.label), critRoll: table?.total ?? null, critRowText: table?.row?.text ?? null,
+        ...data, damage: amount, crit, sneak: extra.length > 0, precision: [...base, ...more].some(isPrecision) || undefined, advantage, riders: riders.map(x => x.label), critRoll: table?.total ?? null, critRowText: table?.row?.text ?? null,
         lessened: amount < hit.total ? hit.total - amount : 0, interceptedBy: intercepted !== null ? guard.g.spec.name : null, intercepted
       });
       tellAnswers();

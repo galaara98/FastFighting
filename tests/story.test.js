@@ -3,7 +3,7 @@ import { replay } from "../scripts/engine/simulator.js";
 import { pf2eRules } from "./fixtures/three-action-rules.js";
 import { parseFormula } from "../scripts/engine/dice.js";
 import { buildStory, tierOf } from "../scripts/story/story.js";
-import { TIERS, DELIVERIES, DAMAGE_TYPES, TALK_KINDS, RELATIONSHIPS, MOVE_MODES, MOVE_SITUATIONS } from "../scripts/story/blocks.js";
+import { TIERS, DAMAGE_TYPES, TALK_KINDS, RELATIONSHIPS, MOVE_MODES, MOVE_SITUATIONS } from "../scripts/story/blocks.js";
 import { storyTables, text } from "./foundry-i18n.js";
 import { creature, strike, battle } from "./helpers.js";
 
@@ -25,7 +25,10 @@ function fight() {
 describe("story tables", () => {
   test("every table has entries", () => {
     const keys = [];
-    for ( const d of DELIVERIES ) for ( const t of DAMAGE_TYPES ) for ( const tier of TIERS ) keys.push(`action.${d}.${t}.${tier}`);
+    for ( const t of DAMAGE_TYPES ) for ( const tier of TIERS ) keys.push(`action.${t}.${tier}`);
+    for ( const t of DAMAGE_TYPES ) keys.push(`emphasis.${t}`, `letdown.${t}`);
+    for ( const k of TALK_KINDS ) keys.push(`emphasis.${k}`, `letdown.${k}`);
+    keys.push("distance.near", "distance.far");
     for ( const s of TALK_KINDS ) for ( const tier of TIERS ) keys.push(`talk.${s}.${tier}`);
     for ( const r of RELATIONSHIPS ) for ( const p of ["success", "failure"] ) keys.push(`relationship.${r}.${p}`);
     for ( const m of MOVE_MODES ) for ( const s of MOVE_SITUATIONS ) keys.push(`move.${m}.${s}`);

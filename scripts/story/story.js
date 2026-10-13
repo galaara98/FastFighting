@@ -9,6 +9,7 @@
  */
 import { createRng } from "../engine/rng.js";
 import { DAMAGE_TYPES } from "./blocks.js";
+import { damageFamily } from "./families.js";
 import { desireBand, DESIRE_BAND_KEYS } from "../engine/behavior/desire.js";
 import { listJoin, listItems, localize, hasWords, distanceText, escapeHtml as esc } from "../i18n.js";
 import { logLine, endLine, logTerm, formatMoney, concessionText } from "./log-lines.js";
@@ -40,25 +41,14 @@ function saveTier(e) {
 
 const successful = tier => tier.toLowerCase().endsWith("success");
 
-function deliveryOf(e) {
-  if ( SPELL_KINDS.has(e.actionKind) ) return "spell";
-  return e.ranged ? "ranged" : "melee";
-}
-
-/** Harm a plain blow does: told as itself. Every other kind is magic or energy. */
-const PHYSICAL = new Set(["bludgeoning", "piercing", "slashing", "bleed", "untyped"]);
 
 /**
- * The imagery family an attack is told with: the system maps its own types (5e "lightning" reads as electricity). Magic
- * shows over the blow that carries it: a sword that deals void damage too withers its target; it isn't told as a cut.
+ * The family an attack is told with (story/families.js): the one named for it when its sheet was read (by its helper,
+ * or its name), else its damage's: a sword that deals void damage too withers its target; it isn't told as a cut.
  */
 function damageTypeOf(e, mapType) {
-  const family = t => {
-    const type = mapType ? mapType(t) : t;
-    return DAMAGE_TYPES.includes(type) ? type : "untyped";
-  };
-  const all = (e.damageTypes?.length ? e.damageTypes : [e.damageType]).map(family);
-  return all.find(t => !PHYSICAL.has(t)) ?? all[0] ?? "untyped";
+  if ( e.storyType && DAMAGE_TYPES.includes(e.storyType) ) return e.storyType;
+  return damageFamily(e.damageTypes?.length ? e.damageTypes : [e.damageType], mapType);
 }
 
 /**
@@ -250,10 +240,16 @@ function narrate(e, roll, rel, fill) {
     case "auto": {
       const tier = e.type === "save" ? saveTier(e) : e.type === "auto" ? "success" : tierOf(e.degree, e.margin);
       const type = damageTypeOf(e, fill.mapType);
-      let text = roll(`action.${deliveryOf(e)}.${type}.${tier}`, f);
+      // (A family a translation hasn't written yet is told as plain harm.)
+      let text = roll(`action.${type}.${tier}`, f) || roll(`action.untyped.${tier}`, f);
       if ( roll.lang === "en" ) text = agreeWithWeapon(text, f.weapon);
       if ( e.attackerCover && e.ranged && e.natural % 3 === 0 ) text = `${roll("event.coverShoot", f)} ${capital(text)}`;
       text += followUp(e, tier, roll, f, type, fill.maxHp);
+      // (Precision damage, a sneak attack's: no look of its own, so it's told by how it came.)
+      if ( e.precision && e.damage > 0 && successful(tier) ) {
+        const line = roll("emphasis.precision", f).trim();
+        if ( line ) text += ` ${capital(line)}`;
+      }
       if ( e.targetCover && e.ranged && !successful(tier) && !rel.ducked.has(`${e.targetId}|${e.turn}`) ) {
         rel.ducked.add(`${e.targetId}|${e.turn}`);
         text += ` ${capital(roll("event.coverDuck", f))}`;
@@ -462,6 +458,11 @@ function againLine(e, done, roll) {
   return roll(how === "hit" ? "event.againHit" : "event.againMiss", { actor: e.actor, target: e.target ?? "", weapon: e.action ?? e.item ?? "" });
 }
 
+/** How often a creature's first attack of its turn comes with a line on how far it was (distance.near / distance.far). */
+const DISTANCE_CHANCE = 0.35;
+/** What counts as an attack, for that. */
+const STRIKES = new Set(["attack", "save", "auto"]);
+
 /** How often a character's turn opens with a moment of thought (and never two rounds running for the same one). */
 const THOUGHT_CHANCE = 0.25;
 
@@ -547,6 +548,9 @@ function roleplayParagraphs(result, spec, tables, seed, mapType) {
   const moment = createRng((seed + 7919) >>> 0); // when someone pauses to think
   const lastThought = new Map();
   const lastShield = new Map();
+  const reach = createRng((seed + 104729) >>> 0); // when a first attack says how far it was
+  const struck = new Set(); // "actor|turn": its first attack this turn told
+  const closed = new Set(); // "actor|turn": it moved this turn (closing in is told already)
   const rel = new Relationships(spec);
   const { mentions } = storyCast(result, spec);
   const paragraphs = [];
@@ -596,7 +600,19 @@ function roleplayParagraphs(result, spec, tables, seed, mapType) {
       }
       continue;
     }
-    const sentence = againLine(e, done, roll) || narrate(e, roll, rel, { mapType, maxHp });
+    if ( e.type === "move" ) closed.add(`${e.actorId}|${e.turn}`);
+    // Now and then, a creature's first attack of its turn says how far it was: from afar, or up close (unless it just
+    // closed in, which said so).
+    let lead = "";
+    if ( STRIKES.has(e.type) && e.targetId && !struck.has(`${e.actorId}|${e.turn}`) ) {
+      struck.add(`${e.actorId}|${e.turn}`);
+      const near = !e.ranged;
+      if ( reach.next() < DISTANCE_CHANCE && !(near && closed.has(`${e.actorId}|${e.turn}`)) ) {
+        lead = roll(near ? "distance.near" : "distance.far", { actor: e.actor, target: e.target ?? "", weapon: e.action ?? "" }).trim();
+      }
+    }
+    const told = againLine(e, done, roll) || narrate(e, roll, rel, { mapType, maxHp });
+    const sentence = lead && told ? `${capital(lead)} ${capital(told.trim())}` : told;
     rel.record(e);
     if ( sentence ) current.sentences.push({ e: logged, text: capital(sentence.trim()) });
   }

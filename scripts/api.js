@@ -13,6 +13,8 @@
  *   fastFighting.postSimulate (results, context)      read or annotate results
  *   fastFighting.preMakeItSo (plan) / fastFighting.makeItSo (undoRecords)
  */
+import { storyTypeFor } from "./story/families.js";
+import { storyWordLists } from "./foundry/story-words.js";
 import { SystemAdapter } from "./adapters/adapter-base.js";
 import * as engine from "./engine/simulator.js";
 import * as dice from "./engine/dice.js";
@@ -109,6 +111,16 @@ export async function characterSpec(adapter, tokenDoc) {
     console.warn(`${MODULE_ID} | reading ${actor?.name ?? "a character"}'s biography failed`, err);
   }
   applyTraitRules(actor, spec);
+  try {
+    const lists = storyWordLists();
+    const mapType = adapter.rules?.storyDamageType?.bind(adapter.rules) ?? null;
+    for ( const action of spec.actions ?? [] ) {
+      const family = storyTypeFor(action, lists, mapType);
+      if ( family ) action.storyType = family;
+    }
+  } catch ( err ) {
+    console.warn(`${MODULE_ID} | reading how ${actor?.name ?? "a character"}'s attacks look failed`, err);
+  }
   return spec;
 }
 

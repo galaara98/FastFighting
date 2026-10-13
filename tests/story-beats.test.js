@@ -150,8 +150,8 @@ describe("magic shows over the blow that carries it", () => {
     amiri.actions[0].damage = [parseFormula("1d8", "slashing"), parseFormula("1d6", "void")];
     const filled = key => Object.entries(english).filter(([k]) => k.startsWith(key))
       .flatMap(([, lines]) => lines.map(l => l.replace("{actor}", "Amiri").replace("{target}", "Wolf").replace("{weapon}", "Bastard Sword")));
-    const voidLines = filled("action.melee.void.");
-    const cutLines = filled("action.melee.slashing.");
+    const voidLines = filled("action.void.");
+    const cutLines = filled("action.slashing.");
     let told = 0;
     for ( let seed = 1; seed <= 12; seed++ ) {
       const result = replay(spec, pf2eRules, seed);
@@ -160,6 +160,27 @@ describe("magic shows over the blow that carries it", () => {
       told += voidLines.filter(l => text.includes(l.toLowerCase())).length;
       expect(cutLines.filter(l => text.includes(l.toLowerCase()))).toEqual([]);
     }
+    expect(told).toBeGreaterThan(0);
+  });
+});
+
+describe("precision damage", () => {
+  test("a hit with precision damage (a sneak attack's) is followed by how surprising, shocking or subtle it was", () => {
+    const spec = fight();
+    const amiri = spec.combatants.find(c => c.id === "amiri");
+    amiri.actions[0].damage = [parseFormula("1d8", "slashing"), { ...parseFormula("1d6", "slashing"), category: "precision" }];
+    const lines = english["emphasis.precision"].map(l => l.replace("{target}", "Wolf").replace("{actor}", "Amiri").replace("{weapon}", "Bastard Sword").toLowerCase());
+    let hits = 0;
+    let told = 0;
+    for ( let seed = 1; seed <= 12; seed++ ) {
+      const result = replay(spec, pf2eRules, seed);
+      const landed = result.log.filter(e => e.type === "attack" && e.actorId === "amiri" && e.damage > 0);
+      expect(landed.every(e => e.precision)).toBe(true);
+      hits += landed.length;
+      const text = buildStory(result, spec, "roleplay", { tables, seed }).text.toLowerCase();
+      told += lines.filter(l => text.includes(l)).length;
+    }
+    expect(hits).toBeGreaterThan(0);
     expect(told).toBeGreaterThan(0);
   });
 });
