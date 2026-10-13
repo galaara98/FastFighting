@@ -43,6 +43,10 @@
         "Name": "Simulations per estimate",
         "Hint": "How many battles to simulate. More is steadier but slower; 2000 takes well under a second for a typical fight."
       },
+      "hardware": {
+        "Name": "GM hardware: runs in big battles (%)",
+        "Hint": "The more creatures in a battle, the fewer runs fit in the time you'd wait (about 15 seconds on a typical computer): FastFighting brings the runs down for big battles. If your computer is faster or slower than typical, adjust it here: +50% lets a big battle run half as many fights again, -50% half as many. Battles small enough to run in full aren't affected, and it never runs more than you ask for."
+      },
       "maxRounds": {
         "Name": "Max rounds",
         "Hint": "A simulated battle still going after this many rounds counts as a stalemate."
@@ -341,6 +345,8 @@
     "Planner": {
       "Title": "Battle Planner",
       "Runs": "Runs",
+      "RunsCapped": "{creatures} creatures: {runs} runs (every creature adds to each fight's work).",
+      "ManyCreatures": "{creatures} creatures: only {runs} runs, and slow even so. The odds will be rough.",
       "MaxRounds": "Max rounds",
       "Seed": "Seed",
       "Random": "random",

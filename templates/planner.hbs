@@ -9,6 +9,7 @@
     <label class="ff-field">{{localize "FASTFIGHTING.Planner.Runs"}}
       <input type="number" name="options.runs" value="{{options.runs}}" min="100" max="20000" step="100" data-dtype="Number">
     </label>
+    {{#if runsNote}}<span class="ff-runs-note"><i class="fa-solid fa-gauge-high"></i> {{runsNote}}</span>{{/if}}
     <label class="ff-field">{{localize "FASTFIGHTING.Planner.MaxRounds"}}
       <input type="number" name="options.maxRounds" value="{{options.maxRounds}}" min="3" max="100" data-dtype="Number">
     </label>

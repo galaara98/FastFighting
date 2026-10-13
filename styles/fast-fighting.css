@@ -401,6 +401,8 @@
 .ff-desire.is-empty select:not(:first-child) { opacity: 0.6; }
 
 /* What "Let this character decide" stands for, and the hidden scores: shown to a GM only. */
+/* The runs, brought down for a big battle. */
+.ff-runs-note { align-self: center; font-size: 11px; color: var(--ff-accent); }
 /* A friendly character's survey, asked of its players (a quill), or opened for the GMs (an orange quill: GM-only). */
 .ff-ask { display: inline-flex; gap: 2px; }
 .ff-quill i { color: var(--ff-friendly); }

@@ -3,6 +3,7 @@
  */
 import { MODULE_ID, SIDES, ALLEGIANCE, DISPOSITION_SIDES, NEUTRAL_PARTY, HOSTILE_GROUPS, GROUPS, TRAITS, clamp } from "../constants.js";
 import { runBatch, replay } from "../engine/simulator.js";
+import { runsFor, swingRunsFor } from "../engine/run-budget.js";
 import { deriveSeed } from "../engine/rng.js";
 import { characterSpec, getAdapter, getModifiers } from "../api.js";
 import { computeApproach, computeAwareness, environmentAt, positionOf, squareFeet } from "./terrain.js";
@@ -769,21 +770,30 @@ export async function simulate(roster, setup, { onProgress, signal } = {}) {
   spec.awareness = awarenessFor(roster);
   Hooks.callAll("fastFighting.preSimulate", spec, { setup, roster });
   const seed = setup.options.seed ?? undefined;
-  const results = await runBatch(spec, adapter.rules, { runs: setup.options.runs, seed, onProgress, signal });
+  // (As many fights as the GM asks for, or as fit the time for so many creatures: engine/run-budget.js.)
+  const results = await runBatch(spec, adapter.rules, { runs: runsFor(setup.options.runs, spec.combatants.length, setting("hardware")), seed, onProgress, signal });
   Hooks.callAll("fastFighting.postSimulate", results, { setup, roster, spec });
   return { spec, results, approach };
 }
 
+/** The most combatants the swing factors leave out one at a time (in a bigger battle, the ones likeliest to matter). */
+const SWING_COMBATANTS = 12;
+
 /**
- * Swing factors: how much does the party's win chance move without each combatant, or with each modifier toggled?
+ * Swing factors: how much does the party's win chance move without each combatant, or with each modifier toggled? In a
+ * big battle, only the SWING_COMBATANTS that weigh most (the highest level, then the toughest), each with as many fights
+ * as fit the time (engine/run-budget.js).
  * @returns {Promise<{label: string, delta: number}[]>} sorted by impact
  */
-export async function swingFactors(spec, baseline, { runs = 300, onProgress } = {}) {
+export async function swingFactors(spec, baseline, { runs = null, onProgress } = {}) {
   const rules = getAdapter().rules;
   const friendlyWin = r => r.sides.friendly?.pWin ?? 0;
   const base = friendlyWin(baseline);
   const tests = [];
-  for ( const c of spec.combatants ) {
+  const weightiest = [...spec.combatants]
+    .sort((a, b) => (Number(b.level) || 0) - (Number(a.level) || 0) || (Number(b.hp?.max) || 0) - (Number(a.hp?.max) || 0))
+    .slice(0, SWING_COMBATANTS);
+  for ( const c of spec.combatants.filter(x => weightiest.includes(x)) ) {
     tests.push({ label: game.i18n.format("FASTFIGHTING.Swing.Without", { name: c.name }), id: c.id, side: c.side, make: s => ({ ...s, combatants: s.combatants.filter(x => x.id !== c.id) }) });
   }
   const toggles = [
@@ -795,8 +805,9 @@ export async function swingFactors(spec, baseline, { runs = 300, onProgress } = 
     if ( spec.options[key] ) tests.push({ label: game.i18n.localize(label), make: s => ({ ...s, options: { ...s.options, [key]: false } }) });
   }
   const out = [];
+  const each = runs ?? swingRunsFor(spec.combatants.length, tests.length, { speed: setting("hardware") });
   for ( const [i, t] of tests.entries() ) {
-    const r = await runBatch(t.make(spec), rules, { runs, seed: 99 });
+    const r = await runBatch(t.make(spec), rules, { runs: each, seed: 99 });
     out.push({ label: t.label, side: t.side ?? null, id: t.id ?? null, delta: friendlyWin(r) - base });
     onProgress?.((i + 1) / tests.length);
     await new Promise(resolve => setTimeout(resolve, 0));

@@ -23,6 +23,7 @@ import { sceneDistance } from "../foundry/terrain.js";
 import { planMakeItSo, confirmMakeItSo, executeMakeItSo, undoMakeItSo, hasUndo, makingItSo } from "../foundry/make-it-so.js";
 import { ensureAutoConfig } from "../foundry/auto-config.js";
 import { PlayerSurvey } from "./player-survey.js";
+import { runsFor, MANY_CREATURES } from "../engine/run-budget.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 const TEMPLATE = `modules/${MODULE_ID}/templates/planner.hbs`;
@@ -315,6 +316,8 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       adapterLabel: adapter?.label ?? loc("FASTFIGHTING.Planner.NoAdapter"),
       hasAdapter: !!adapter,
       options: setup.options,
+      // (So many creatures that the runs come down to what fits the time, or so many that it's slow even so.)
+      runsNote: this.#runsNote(resolved),
       downedChoices: Object.fromEntries(Object.values(DOWNED_MODELS).map(k => [k, `FASTFIGHTING.Downed.${k}`])),
       aftermathChoices: Object.fromEntries(Object.values(AFTERMATH).map(k => [k, `FASTFIGHTING.Aftermath.${k}`])),
       openingChoices: Object.fromEntries(Object.values(OPENING).map(k => [k, `FASTFIGHTING.Opening.${k}`])),
@@ -649,6 +652,14 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     await requestSurveys([user]);
     if ( !user.active ) ui.notifications.info("FASTFIGHTING.Survey.WillOpen", { format: { name: user.name } });
     this.render();
+  }
+
+  /** What the number of creatures does to the runs: brought down to what fits the time, or slow even so; or nothing. */
+  #runsNote(resolved) {
+    const creatures = this.roster.filter(e => resolved[e.token.id] && this.setup.tokens[e.token.id]?.include !== false).length;
+    const runs = runsFor(this.setup.options.runs, creatures, setting("hardware"));
+    if ( creatures > MANY_CREATURES ) return game.i18n.format("FASTFIGHTING.Planner.ManyCreatures", { creatures, runs });
+    return runs < this.setup.options.runs ? game.i18n.format("FASTFIGHTING.Planner.RunsCapped", { creatures, runs }) : null;
   }
 
   /** Ask a friendly character's players about it: its survey, on that character. */
