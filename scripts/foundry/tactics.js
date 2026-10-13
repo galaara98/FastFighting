@@ -19,7 +19,7 @@ import { PLAYSTYLES, PLAYSTYLE_IDS, MAX_PLAYSTYLES, RENAMED_PLAYSTYLES, combineP
 import { getAdapter } from "../api.js";
 import { DESIRE_KINDS, DESIRE_BAND_KEYS } from "../engine/behavior/desire.js";
 import { setting } from "../settings.js";
-import { distanceText, localize, listItems, language } from "../i18n.js";
+import { distanceText, localize, listItems, language, brief } from "../i18n.js";
 import { signedNumber } from "../engine/trait-parts.js";
 import { cleanMotive, cleanMotiveField, MOTIVE_KEY, motivesContext, NO_CATALOG, suggestMotives } from "./motives.js";
 import { autoRecord, validLet, validMotive } from "./auto-config.js";
@@ -415,7 +415,7 @@ export function questionsContext(spec, actor, uid, { questions: withQuestions = 
   // Its hidden scores, as a fight would have them (its sheet, its biography, its playstyles), for the GM.
   const hidden = gm && withQuestions ? TRAITS.map(k => {
     const value = clamp(Math.round(fudged(spec.traits?.[k] ?? 50) + (playstyles.traits?.[k] ?? 0)), 0, 100);
-    return { key: k, label: loc(`FASTFIGHTING.Trait.${k}`), value, band: loc(`FASTFIGHTING.Band.${traitBand(k, value)}`), reason: spec.traitReasons?.[k] ?? "" };
+    return { key: k, label: loc(`FASTFIGHTING.Trait.${k}`), value, band: loc(`FASTFIGHTING.Band.${traitBand(k, value)}`), reason: brief(spec.traitReasons?.[k] ?? "") };
   }) : null;
   return {
     uid,

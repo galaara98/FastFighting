@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, test } from "vitest";
 import { readFileSync, readdirSync, statSync } from "fs";
 import { replay } from "../scripts/engine/simulator.js";
-import { localize, listJoin, commonOutcome, term, hasStat, setTermSource, escapeHtml, inertHtml } from "../scripts/i18n.js";
+import { localize, listJoin, commonOutcome, term, hasStat, setTermSource, escapeHtml, inertHtml, brief, TIP_WORDS, TIP_SENTENCES } from "../scripts/i18n.js";
 import { logLine } from "../scripts/story/log-lines.js";
 import { buildStory } from "../scripts/story/story.js";
 import { isBlocks, buildTables } from "../scripts/story/blocks.js";
@@ -285,5 +285,28 @@ describe("chat cards", () => {
     const inert = inertHtml(html);
     expect(inert).not.toMatch(/\[\[|@UUID\[|&amp;Reference/);
     expect(inert.replace(/⁠/g, "")).toBe(html);
+  });
+});
+
+describe("tooltips", () => {
+  const words = s => String(s).replace(/{[^}]+}/g, "X").split(/s+/).filter(Boolean).length;
+  const sentences = s => String(s).replace(/(e.g|i.e|etc|vs)./gi, "$1").split(/[.!?]+(?=s|$)/).filter(x => x.trim()).length;
+
+  test("every tooltip says it in 50 words and 3 sentences at most", () => {
+    const strings = flatten(JSON.parse(readFileSync(new URL("../languages/en.json", import.meta.url), "utf8")));
+    const tips = new Set(Object.keys(strings).filter(k => /Hint$/.test(k) && !/.Settings./.test(k)));
+    for ( const file of sources("templates", [".hbs"]) ) {
+      for ( const m of readFileSync(file, "utf8").matchAll(/data-tooltip="{{localize "([^"]+)"}}"/g) ) tips.add(m[1]);
+    }
+    const long = [...tips].filter(k => strings[k] !== undefined && (words(strings[k]) > TIP_WORDS || sentences(strings[k]) > TIP_SENTENCES));
+    expect(long).toEqual([]);
+  });
+
+  test("a tooltip built from a character's data is cut short", () => {
+    expect(brief("A. B. C. D.")).toBe("A. B. C.");
+    const long = Array.from({ length: 80 }, (_, i) => `word${i}`).join(" ");
+    expect(brief(long).split(" ")).toHaveLength(TIP_WORDS);
+    expect(brief(long).endsWith("…")).toBe(true);
+    expect(brief("Short and sweet.")).toBe("Short and sweet.");
   });
 });

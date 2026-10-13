@@ -1478,7 +1478,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "a753f0bc1d69"
+   "hash": "a753f0bc1d69",
+   "changed": true
   },
   "core:FASTFIGHTING.Desire.HowMuch": {
    "repo": "core",
@@ -7779,7 +7780,8 @@
    "status": "todo",
    "date": "2026-10-11",
    "commit": "3a70a39",
-   "hash": "9e9a7a967b0f"
+   "hash": "9e9a7a967b0f",
+   "changed": true
   },
   "core:FASTFIGHTING.Planner.RoleRemembered": {
    "repo": "core",
@@ -8169,7 +8171,8 @@
    "status": "todo",
    "date": "2026-10-11",
    "commit": "a33b78f",
-   "hash": "8bf8293fdced"
+   "hash": "8bf8293fdced",
+   "changed": true
   },
   "core:FASTFIGHTING.Playstyle.chicken.Name": {
    "repo": "core",
@@ -8580,7 +8583,8 @@
    "status": "todo",
    "date": "2026-10-11",
    "commit": "a33b78f",
-   "hash": "13104b79ca7e"
+   "hash": "13104b79ca7e",
+   "changed": true
   },
   "core:FASTFIGHTING.Playstyle.instigator.Name": {
    "repo": "core",
@@ -8610,7 +8614,8 @@
    "status": "todo",
    "date": "2026-10-11",
    "commit": "a33b78f",
-   "hash": "4362ac5ab5f1"
+   "hash": "4362ac5ab5f1",
+   "changed": true
   },
   "core:FASTFIGHTING.Playstyle.lazy.Name": {
    "repo": "core",
@@ -8630,7 +8635,8 @@
    "status": "approved",
    "date": "2026-10-11",
    "commit": "f7ee61e",
-   "hash": "153c6c3bed0a"
+   "hash": "153c6c3bed0a",
+   "changed": true
   },
   "core:FASTFIGHTING.Playstyle.leader.Name": {
    "repo": "core",
@@ -8650,7 +8656,8 @@
    "status": "approved",
    "date": "2026-10-11",
    "commit": "f7ee61e",
-   "hash": "080b38efcf75"
+   "hash": "080b38efcf75",
+   "changed": true
   },
   "core:FASTFIGHTING.Playstyle.loreCollector.Name": {
    "repo": "core",
@@ -8772,7 +8779,8 @@
    "status": "todo",
    "date": "2026-10-11",
    "commit": "a33b78f",
-   "hash": "742bc1ad9a71"
+   "hash": "742bc1ad9a71",
+   "changed": true
   },
   "core:FASTFIGHTING.Playstyle.peacekeeper.Name": {
    "repo": "core",
@@ -9749,7 +9757,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "ab9650cd603a"
+   "hash": "ab9650cd603a",
+   "changed": true
   },
   "core:FASTFIGHTING.Settings.aftermath.Name": {
    "repo": "core",
@@ -10172,7 +10181,8 @@
    "status": "todo",
    "date": "2026-10-11",
    "commit": "91cd5e7",
-   "hash": "b537da5852ea"
+   "hash": "b537da5852ea",
+   "changed": true
   },
   "core:FASTFIGHTING.Settings.opening.Name": {
    "repo": "core",
@@ -13931,7 +13941,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "9a346ba613b0"
+   "hash": "9a346ba613b0",
+   "changed": true
   },
   "core:FASTFIGHTING.Story.TablesInstalled": {
    "repo": "core",

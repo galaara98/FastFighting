@@ -7,7 +7,7 @@ import {
 } from "../constants.js";
 import { getAdapter } from "../api.js";
 import { setting } from "../settings.js";
-import { listJoin, localize, term, hasStat } from "../i18n.js";
+import { listJoin, listItems, localize, term, hasStat, brief } from "../i18n.js";
 import { getSetup, saveSetup, clearSetup, tokenSetup, planHolder, rememberPartyRole } from "../foundry/persistence.js";
 import {
   questionsContext, setTactic, togglePlaystyle, syncTacticsDom, isPlayerControlled, playersOnScene, tokensForUser, surveyStatus,
@@ -225,7 +225,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       trait, label: loc(`FASTFIGHTING.Trait.${trait}`), value, base, fudge, path, step: FUDGE_STEP.trait,
       band: loc(`FASTFIGHTING.Band.${traitBand(trait, value)}`),
       fudgeLabel: fudge ? signed(fudge) : "",
-      tooltip: `${loc(`FASTFIGHTING.Trait.${trait}`)}: ${base}${fudge ? ` ${signed(fudge)} ${loc("FASTFIGHTING.Planner.Fudge")}` : ""}${shift ? ` ${signed(shift)} ${loc("FASTFIGHTING.Playstyle.Label")}` : ""}${reason ? ` (${reason})` : ""}`
+      tooltip: brief(`${loc(`FASTFIGHTING.Trait.${trait}`)}: ${base}${fudge ? ` ${signed(fudge)} ${loc("FASTFIGHTING.Planner.Fudge")}` : ""}${shift ? ` ${signed(shift)} ${loc("FASTFIGHTING.Playstyle.Label")}` : ""}${reason ? ` (${reason})` : ""}`)
     };
   }
 
@@ -297,7 +297,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
           none: loc("FASTFIGHTING.Planner.NoLeader")
         },
         leaderId: s.leaderId === "none" ? "none" : "auto",
-        leaderReason: leader?.reason ?? "",
+        leaderReason: brief(leader?.reason ?? ""),
         leadership: leader ? [
           this.#statView("leadBrave", leader.bonus.brave, lf.brave ?? 0, `sides.${id}.leadershipFudge.brave`, 5),
           this.#statView("leadTactical", leader.bonus.tacticalFloor, lf.tacticalFloor ?? 0, `sides.${id}.leadershipFudge.tacticalFloor`, 5),
@@ -384,7 +384,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       // (A friendly character's survey: its players asked about it; or every GM, to answer for a player who's away.)
       survey: chosen === SIDES.FRIENDLY && !s.hazard ? {
         players: owners.length > 0,
-        playersHint: game.i18n.format("FASTFIGHTING.Survey.AskPlayers", { names: listJoin(owners.map(u => u.name)) })
+        playersHint: brief(game.i18n.format("FASTFIGHTING.Survey.AskPlayers", { names: listJoin(owners.map(u => u.name)) }))
       } : null,
       include: ts.include !== false,
       side: ts.side ?? e.baseSide,
@@ -567,7 +567,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
         status,
         statusLabel: loc(`FASTFIGHTING.Survey.Status.${status}`),
         entering: status === SURVEY_STATUS.ENTERING,
-        tokens: tokensForUser(scene, u).map(t => t.name).join(", "),
+        tokens: brief(listItems(tokensForUser(scene, u).map(t => t.name))),
         openLabel: loc(status === SURVEY_STATUS.NONE ? "FASTFIGHTING.Survey.OpenFirst" : "FASTFIGHTING.Survey.Reopen")
       };
     });

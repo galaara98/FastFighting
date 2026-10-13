@@ -80,6 +80,22 @@ export const escapeHtml = s => String(s ?? "").replace(/[&<>"']/g, c => HTML_ESC
 const JOINER = "⁠";
 export const inertHtml = html => String(html ?? "").replace(/\[/g, `[${JOINER}`).replace(/@/g, `@${JOINER}`).replace(/&amp;/g, `&amp;${JOINER}`);
 
+/** The most a tooltip says: so many words, so many sentences. */
+export const TIP_WORDS = 50;
+export const TIP_SENTENCES = 3;
+
+/**
+ * A tooltip's text, held to TIP_WORDS words and TIP_SENTENCES sentences: past that, cut short with an ellipsis (a
+ * character's reasons can run long).
+ */
+export function brief(text, { words = TIP_WORDS, sentences = TIP_SENTENCES } = {}) {
+  let s = String(text ?? "").trim();
+  const ends = [...s.matchAll(/[.!?](?=\s|$)/g)];
+  if ( ends.length > sentences ) s = s.slice(0, ends[sentences - 1].index + 1);
+  const list = s.split(/\s+/).filter(Boolean);
+  return list.length > words ? `${list.slice(0, words).join(" ")}…` : s;
+}
+
 /** Names one after another ("Amiri, Ezren"), with the language file's separator. */
 export const listItems = items => items.join(localize("FASTFIGHTING.Words.ListSeparator"));
 

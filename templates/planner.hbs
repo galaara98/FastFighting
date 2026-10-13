@@ -6,7 +6,7 @@
       <strong>{{sceneName}}</strong>
       <span class="ff-chip">{{adapterLabel}}</span>
     </div>
-    <label class="ff-field ff-seconds" data-tooltip="{{localize "FASTFIGHTING.Planner.SecondsHint"}}">{{localize "FASTFIGHTING.Planner.Seconds"}}
+    <label class="ff-field ff-seconds">{{localize "FASTFIGHTING.Planner.Seconds"}} <i class="fa-solid fa-circle-question" data-tooltip="{{localize "FASTFIGHTING.Planner.SecondsHint"}}"></i>
       <input type="range" name="options.seconds" value="{{options.seconds}}" min="6" max="20" step="1" data-dtype="Number">
       <output class="ff-seconds-value">{{options.seconds}}</output>
     </label>
@@ -33,10 +33,10 @@
       <label class="ff-field">{{localize "FASTFIGHTING.Planner.Downed"}}
         <select name="options.downedModel">{{selectOptions downedChoices selected=options.downedModel localize=true}}</select>
       </label>
-      <label class="ff-field" data-tooltip="{{localize "FASTFIGHTING.Settings.aftermath.Hint"}}">{{localize "FASTFIGHTING.Planner.Aftermath"}}
+      <label class="ff-field">{{localize "FASTFIGHTING.Planner.Aftermath"}} <i class="fa-solid fa-circle-question" data-tooltip="{{localize "FASTFIGHTING.Settings.aftermath.Hint"}}"></i>
         <select name="options.aftermath">{{selectOptions aftermathChoices selected=options.aftermath localize=true}}</select>
       </label>
-      <label class="ff-field" data-tooltip="{{localize "FASTFIGHTING.Settings.opening.Hint"}}">{{localize "FASTFIGHTING.Planner.Opening"}}
+      <label class="ff-field">{{localize "FASTFIGHTING.Planner.Opening"}} <i class="fa-solid fa-circle-question" data-tooltip="{{localize "FASTFIGHTING.Settings.opening.Hint"}}"></i>
         <select name="options.opening">{{selectOptions openingChoices selected=options.opening localize=true}}</select>
       </label>
       <label class="ff-field">{{localize "FASTFIGHTING.Planner.Initiative"}}
@@ -57,7 +57,7 @@
     <div class="ff-toolbar-row ff-system-row">
       <span class="ff-system-title" {{#if systemSection.hint}}data-tooltip="{{systemSection.hint}}"{{/if}}>{{systemSection.title}}</span>
       {{#each systemSection.fields}}
-      <div class="ff-field ff-system-field" {{#if hint}}data-tooltip="{{hint}}"{{/if}}>{{label}}
+      <div class="ff-field ff-system-field">{{label}}{{#if hint}} <i class="fa-solid fa-circle-question" data-tooltip="{{hint}}"></i>{{/if}}
         {{#if isPills}}
         <span class="ff-pills">{{#each choices}}<button type="button" class="ff-pill {{#if active}}active{{/if}}" data-action="setSystem" data-key="{{../key}}" data-value="{{value}}" aria-pressed="{{#if active}}true{{else}}false{{/if}}" {{#if hint}}data-tooltip="{{hint}}"{{/if}}>{{label}}</button>{{/each}}</span>
         {{else}}

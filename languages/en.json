@@ -130,11 +130,11 @@
       },
       "aftermath": {
         "Name": "After the fight",
-        "Hint": "When the last enemy falls: the survivors tend their dying (first aid, healing feats, spells and potions) and anyone left untended lives or dies by the system's rules for dying, and the story tells it; or the same happens but the story ends at the last blow; or everyone is left exactly as the fight left them, for you to play out."
+        "Hint": "When the last enemy falls: survivors tend their dying and the story tells it; the same, but the story ends at the last blow; or everyone is left as the fight left them, for you to play out."
       },
       "opening": {
         "Name": "How encounters open",
-        "Hint": "Talk if they'd rather: the encounter opens as a standoff when every side's leader (or most of a leaderless side) would rather talk, or when almost everyone would. Nobody fights until someone gets upset: an insult, failed pitches piling up, a beast that can't follow the talk, or an impatient temper. Always talk first: every encounter opens that way. Straight to battle: no standoff. Only an argument: it opens as a standoff and stays one; whatever would come to blows ends the encounter instead, the talks collapsing, and what was agreed before stands."
+        "Hint": "Talk if they'd rather: a standoff when the leaders, or nearly everyone, would rather talk. Always talk first, or straight to battle. Only an argument: a standoff that never comes to blows; the encounter ends instead."
       },
       "concedeLuck": {
         "Name": "PC luck: handing over an item",
@@ -437,7 +437,7 @@
           "Short": "2"
         }
       },
-      "RoleHint": "Command: B boss (not in the party; its lead {boss}× as compelling as a leader's, and a group with a boss has no leader), L leader, 1 and 2 lieutenants (they step up, as leaders, when those before them are down, gone, blinded, deafened or otherwise can't lead, and step back when they can again). Faded: picked automatically when this plan was made or cleared. Click to give this token the role; click again to keep it out of command; right-click to clear it."
+      "RoleHint": "B boss (its lead {boss}× a leader's), L leader, 1 and 2 lieutenants, who step up when those before them can't lead. Faded: picked automatically. Click to give the role, click again to keep it out of command, right-click to clear."
     },
     "Results": {
       "Tab": {
@@ -740,7 +740,7 @@
     },
     "Playstyle": {
       "Label": "Playstyles",
-      "Hint": "Pick up to four labels that describe how this character really plays, in order of importance: the number on each pill is its place. Every pill counts, the first in full and each later one less (75%, 55%, 40%): in personality, quirks, desires, and tactics (where pills disagree, each simulated fight goes with one of them, the first most often). Unpick one and the later ones move up. They change what \"Let this character decide\" means, how the simulation predicts the character, and how it picks up desires.",
+      "Hint": "Pick up to four labels for how this character really plays, most important first. The first counts in full, each later one less. They shape its personality, desires and tactics, and what \"Let this character decide\" means.",
       "Count": "{n} of {max}",
       "Max": "Pick at most four playstyles. Unpick one first.",
       "StayTrue": "Stay mostly true to my calculated tactical level",
@@ -751,7 +751,7 @@
       "NpcTitle": "Playstyles (GM)",
       "chicken": {
         "Name": "Chicken",
-        "Hint": "Much less brave: hangs back, drinks potions early, retreats when hurt, goes unnoticed. Wants above all to keep away from the most dangerous foe, gives up easily, and hits back half-heartedly. Leading a group, it takes it along when it runs; it would pay a boss to go rather than fight. Won't step up to a challenge: a taunt often fails to draw it."
+        "Hint": "Much less brave: hangs back, drinks potions early and retreats when hurt. It keeps away from the most dangerous foe and gives up easily, taking its group along if it leads. A taunt often fails to draw it."
       },
       "cruel": {
         "Name": "Cruel",
@@ -763,7 +763,7 @@
       },
       "peacekeeper": {
         "Name": "Peacekeeper",
-        "Hint": "Keeps the peace, between anyone: while a standoff holds, everyone there (either side) loses patience half as fast; it calms any quarrel it sees at once; foes it talks round stand down (a truce, even mid-fight: never a surrender, a payoff or a rout); its word is trusted (easier to accept) and it never threatens; it spares the fallen, and would pay a boss to go rather than fight. Seldom rises to a taunt."
+        "Hint": "Keeps the peace between anyone: a standoff near it lasts longer, quarrels calm, and foes it talks round stand down. Its word is trusted and it never threatens. It spares the fallen and seldom rises to a taunt."
       },
       "peoplePleaser": {
         "Name": "People-Pleaser",
@@ -791,11 +791,11 @@
       },
       "leader": {
         "Name": "Wants to Lead",
-        "Hint": "Wants to lead (whether or not it does: who leads is its group's chain of command, set in the planner): braver and more loyal, goes for the biggest threat (and now and then pins it down), looks after its people, bolsters them, and rallies them when friends run or waver. Whoever commands it instead, it half ignores. Not chosen, it may brood on it now and then (less often the further down its pills this is); with a treacherous streak (Cruel, Wildcard, Mercenary, Instigator) it schemes: that turn it won't help its leaders and is far easier to turn. Changing sides, it gives up wanting to lead."
+        "Hint": "Wants to lead: braver and more loyal, goes for the biggest threat, bolsters its people and rallies them when they waver. It half ignores whoever commands it instead. Passed over, it may brood, and a treacherous one schemes against its leaders."
       },
       "instigator": {
         "Name": "Instigator",
-        "Hint": "Acts first and spoils everyone else's plans: would rather lock a foe down, harass it or weaken it (trips, frights, hexes, holds) than simply hit it, more than any other playstyle. Picks fights with the most dangerous foe and the other side's leader, draws attacks, and may defy its own leader. Taunts foes into coming at it."
+        "Hint": "Acts first and spoils the other side's plans, locking foes down or weakening them rather than just hitting. Picks fights with the most dangerous foe and the enemy leader, and may defy its own. Taunts foes into coming at it."
       },
       "diplomat": {
         "Name": "Diplomat",
@@ -827,7 +827,7 @@
       },
       "loreCollector": {
         "Name": "Lore-Collector",
-        "Hint": "Sizes up a new foe before talking to it or fighting it (an action, or a whole turn where a turn has only one; in a standoff, most likely its whole first turn, watching the other side while the talk waits). When that works, its next rolls against that foe are much likelier to succeed, to make up for the time it took (how much is a setting in each game system's FastFighting module, 1.25 to 3 times; in Ironsworn it Secures an Advantage, for its next attack or words), and afterwards it still deals with that foe a little better. What it learns holds for every foe of the same sort: one goblin warrior sized up is all of them. It may spend an action telling what it learned to every friend within a move of it who understands it, so they deal with that sort a little better too; not everyone likes to share (the loyal, the unselfish, tactical minds and supportive playstyles more readily), and anyone but its side's leader half as readily, unless it would rather talk than fight anyway. Drawn to foes it hasn't sized up yet."
+        "Hint": "Sizes up a new foe before fighting or talking to it, spending an action or a turn. It then rolls much better against that kind of foe, and may tell friends nearby what it learned. Drawn to foes it hasn't sized up yet."
       },
       "puzzleManiac": {
         "Name": "Puzzle-Maniac",
@@ -853,7 +853,7 @@
       },
       "lazy": {
         "Name": "Lazy",
-        "Hint": "As little as it can get away with: whatever foe is nearest (and not one worth a long walk), saves its resources, isn't much help to anyone, gives up fast, barely bothers with a locked door, and can't be bothered to hold a grudge. Leading a group, its flight takes others along. Can't always be bothered to answer a taunt."
+        "Hint": "Does as little as it can: fights the nearest foe, saves its resources, helps no one much and gives up fast. Leading, its flight takes others along. It can't always be bothered to answer a taunt."
       },
       "unmundane": {
         "Name": "Un-Mundane",
@@ -926,7 +926,7 @@
       "TablesMenuName": "Story tables",
       "TablesMenuLabel": "Manage",
       "TablesMenuHint": "Install the story's sentences as editable RollTables in this world.",
-      "TablesHint": "Every sentence of the Roleplay story is rolled from a table: an action table (delivery, damage type and how well it went, e.g. Melee · Slashing · Minor Success) plus a relationship table (e.g. Relationship · Enemy Leader · Failure). Install them to edit, add entries or translate; your world tables always win over the built-in ones.",
+      "TablesHint": "Every sentence of the Roleplay story is rolled from a table: an action table (e.g. Melee · Slashing · Minor Success) and a relationship table. Install them to edit, add entries or translate; your world's tables win over the built-in ones.",
       "TablesInstalled": "story tables installed in this world",
       "TablesLocale": "Translators: a module can ship story/<language>.json with the same table keys; it is used automatically for that language.",
       "Install": "Install missing tables",
@@ -1253,7 +1253,7 @@
     },
     "Desire": {
       "Label": "Desires",
-      "Hint": "What this character wants, at whom, and how badly. Its tactics work out desires of their own each turn (the foe it would go for, a friend to heal); these come on top. The strongest leads, much weaker ones don't cross its mind, and a desire fades when it's thwarted (a locked door, a target out of reach, getting hurt on the way).",
+      "Hint": "What this character wants, at whom, and how badly, on top of what its tactics want each turn. The strongest desire leads. A desire fades when it's thwarted.",
       "What": "What",
       "Who": "Who?",
       "HowMuch": "How badly",
