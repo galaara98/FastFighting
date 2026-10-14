@@ -58,6 +58,8 @@
  * @property {number[]} [maps]              Multiple attack penalties
  * @property {boolean} [subjectToMAP]
  * @property {boolean} [melee]
+ * @property {boolean} [thrown]             A ranged strike that throws the weapon itself (a dagger, a javelin, a bomb): told as the
+ *                                          weapon flying, not as a shot from it
  * @property {number} [reach]
  * @property {{increment: number, max?: number}} [range]
  * @property {object[]} [damage]            DamagePart[]

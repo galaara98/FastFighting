@@ -5,7 +5,7 @@
  * as e.text) is shown as it comes.
  * Pure apart from reading Foundry's translations when they're there (../i18n.js).
  */
-import { localize, listJoin, listItems, hasWords, distanceText, term } from "../i18n.js";
+import { localize, listJoin, listItems, hasWords, distanceText, roundsText, term } from "../i18n.js";
 
 /** A phrase of the log, by its key (for the stories' own lists and headings). */
 export const logTerm = (key, data = null) => t(key, data);
@@ -312,7 +312,9 @@ function baseLine(e) {
 
 /** The fight's outcome in a line: who won, after how long. */
 export function endLine(e) {
-  const rounds = e.rounds ?? e.round ?? 0;
+  const rounds = roundsText(e.rounds ?? e.round ?? 0);
+  // (Only an argument, broken up before it came to blows: nobody won, and nobody fell.)
+  if ( e.resolved === "collapsed" ) return t("EndCollapsed", { rounds });
   if ( e.outcome === "stalemate" ) return t("EndStalemate", { rounds });
   if ( e.outcome === "none" || !(e.winnerLabels ?? []).length ) return t("EndNone", { rounds });
   return t("End", { winners: listJoin(e.winnerLabels), rounds });

@@ -34,6 +34,15 @@ const SYNONYMS = Object.freeze({
   "on-fire": "burning", ablaze: "burning", vulnerable: "offGuard", untethered: "adrift", "in-cover": "inCover"
 });
 
+/** Common names systems give the master list's maneuvers (their slugs), where they differ from its own. */
+const MANEUVER_SYNONYMS = Object.freeze({
+  "shield-block": "block", "reactive-shield": "raiseShield", "raise-a-shield": "raiseShield", "nimble-dodge": "defend",
+  dodge: "defend", parry: "defend", seek: "search", "take-cover": "takeCover", "drop-prone": "dropProne", stand: "standUp",
+  "point-out": "pointOut", "create-a-diversion": "distract", "administer-first-aid": "firstAid", "first-aid": "firstAid",
+  "force-open": "forceOpen", "disable-device": "disableDevice", "command-an-animal": "commandAnimal", "tumble-through": "tumbleThrough",
+  "high-jump": "leap", "long-jump": "leap", "leap": "leap", "escape": "escape", "interact": "interact", "steal": "steal"
+});
+
 const lower = new Map([...MANEUVERS, ...CONDITIONS].map(id => [id.toLowerCase(), id]));
 
 /** The master list's condition for a system's condition key, or null. */
@@ -42,7 +51,7 @@ export function conditionOf(key, map = null) {
   const mapped = map?.(key);
   if ( mapped && CONDITIONS.includes(mapped) ) return mapped;
   const k = String(key).toLowerCase();
-  const id = SYNONYMS[k] ?? lower.get(k) ?? lower.get(k.replace(/-(w)/g, (m, c) => c));
+  const id = SYNONYMS[k] ?? lower.get(k) ?? lower.get(k.replace(/-/g, ""));
   return id && CONDITIONS.includes(id) ? id : null;
 }
 
@@ -50,6 +59,6 @@ export function conditionOf(key, map = null) {
 export function maneuverOf(action) {
   if ( action?.maneuver && MANEUVERS.includes(action.maneuver) ) return action.maneuver;
   const last = String(action?.id ?? "").split(".").pop().toLowerCase();
-  const id = lower.get(last) ?? lower.get(last.replace(/-(w)/g, (m, c) => c));
+  const id = MANEUVER_SYNONYMS[last] ?? lower.get(last) ?? lower.get(last.replace(/-/g, ""));
   return id && MANEUVERS.includes(id) ? id : null;
 }

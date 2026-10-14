@@ -15,7 +15,9 @@
       "Fate": "fate",
       "Taunt": "taunt",
       "Biography": "biography ({words})",
-      "Reversed": "against {word}"
+      "Reversed": "against {word}",
+      "RoundOne": "{n} round",
+      "RoundMany": "{n} rounds"
     },
     "Generic": {
       "Label": "Generic d20 (configured paths)",
@@ -513,10 +515,10 @@
     "Sample": {
       "Outcome": {
         "stalemate": "Stalemate",
-        "none": "No one standing"
+        "none": "No one standing",
+        "collapsed": "Talks broke down"
       },
       "Result": "Outcome",
-      "Rounds": "rounds",
       "Unchanged": "No change",
       "Typical": "Most typical fight",
       "TypicalHint": "A sample: the simulation's most common outcome. Do it For Real Now plays a new fight."
@@ -1341,12 +1343,20 @@
         "irradiated": "Irradiated",
         "controlLands": "Control takes hold",
         "strain": "Worn down by words",
-        "strainEmpty": "Worn out by words"
+        "strainEmpty": "Worn out by words",
+        "hit": "Hit",
+        "miss": "Miss",
+        "struckDownLingering": "Harm lingers on the fallen",
+        "againTakes": "Again: it takes",
+        "againResisted": "Again: resisted",
+        "againBackfire": "Again: backfires",
+        "downed": "At one already down"
       },
       "APrice": "a price",
       "Desire": "{intensity} {verb}",
       "TurnRound": "Round {n}",
-      "TheName": "the {name}"
+      "TheName": "the {name}",
+      "Shot": "{weapon} shot"
     },
     "Helper": {
       "Title": "FastFighting needs a helper module for {system}",
@@ -1452,15 +1462,16 @@
     },
     "Summary": {
       "Title": "After the fight (GM only)",
-      "Time": "Time passed: {fight} of fighting ({rounds} rounds).",
-      "TimeAfter": "Time passed: {fight} of fighting ({rounds} rounds), then {after} tending the fallen.",
+      "Time": "Time passed: {fight} of fighting ({rounds}).",
+      "TimeAfter": "Time passed: {fight} of fighting ({rounds}), then {after} tending the fallen.",
       "Spent": "Used up by the players' characters:",
       "Nothing": "nothing",
       "Unchanged": "The encounter is still open and the world clock hasn't moved: close it and advance time when you're ready.",
       "Minute": "{n} minute",
       "Minutes": "{n} minutes",
       "Second": "{n} second",
-      "Seconds": "{n} seconds"
+      "Seconds": "{n} seconds",
+      "TimeTalk": "Time passed: {fight} of talking ({rounds})."
     },
     "Log": {
       "Roll": "d{faces} {natural} {mod} = {total} vs {label} {dc}",
@@ -1725,9 +1736,9 @@
       "StruckDown": "{actor} is struck while down (dying {n})",
       "RegenStopped": "{actor} dies, its regeneration stopped",
       "Draw": "{actor} draws {item}",
-      "End": "{winners} win after {rounds} rounds",
-      "EndNone": "No one is left after {rounds} rounds",
-      "EndStalemate": "Still fighting after {rounds} rounds",
+      "End": "{winners} win after {rounds}",
+      "EndNone": "No one is left after {rounds}",
+      "EndStalemate": "Still fighting after {rounds}",
       "Escape": "{actor} escapes the grab",
       "Stuck": "{actor} struggles against the grab",
       "FateSelf": "{actor} spends {label} to cheat death",
@@ -1801,7 +1812,8 @@
       "TerrainRegions": ": {regions}",
       "CallToArms": "{actor} calls {targets} into the fight",
       "WhyKin": "for their own",
-      "Lazy": "{actor} does nothing"
+      "Lazy": "{actor} does nothing",
+      "EndCollapsed": "The talks broke down after {rounds}"
     },
     "DamageType": {
       "bludgeoning": "bludgeoning",

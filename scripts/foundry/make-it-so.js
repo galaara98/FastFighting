@@ -10,7 +10,7 @@
  * first, so several can be rewound in turn.
  */
 import { MODULE_ID, STATUS } from "../constants.js";
-import { escapeHtml as escape, inertHtml } from "../i18n.js";
+import { escapeHtml as escape, inertHtml, roundsText } from "../i18n.js";
 import { getAdapter } from "../api.js";
 import { setting } from "../settings.js";
 import { pixelsFor, sceneDistance } from "./terrain.js";
@@ -603,9 +603,12 @@ function gmSummary(rows, replay, adapter) {
   const per = adapter.rules?.secondsPerRound ?? 6;
   const fight = (replay.rounds ?? 0) * per;
   const after = (replay.aftermathRounds ?? 0) * per;
+  // (Words only, never a blow: it was talking, not fighting.)
+  const blows = (replay.log ?? []).some(e => ["attack", "save", "auto"].includes(e.type));
+  const rounds = roundsText(replay.rounds ?? 0);
   const time = after > 0
-    ? game.i18n.format("FASTFIGHTING.Summary.TimeAfter", { fight: timeText(fight), rounds: replay.rounds ?? 0, after: timeText(after) })
-    : game.i18n.format("FASTFIGHTING.Summary.Time", { fight: timeText(fight), rounds: replay.rounds ?? 0 });
+    ? game.i18n.format("FASTFIGHTING.Summary.TimeAfter", { fight: timeText(fight), rounds, after: timeText(after) })
+    : game.i18n.format(blows ? "FASTFIGHTING.Summary.Time" : "FASTFIGHTING.Summary.TimeTalk", { fight: timeText(fight), rounds });
   return `<div class="fast-fighting-summary"><header><i class="fa-solid fa-clipboard-list"></i> ${loc("FASTFIGHTING.Summary.Title")}</header>
     <p>${escape(time)}</p>${items.length ? `<p>${loc("FASTFIGHTING.Summary.Spent")}</p><ul>${items.join("")}</ul>` : ""}
     <p class="hint">${loc("FASTFIGHTING.Summary.Unchanged")}</p>

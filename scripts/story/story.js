@@ -22,6 +22,8 @@ export const STORY_STYLES = ["roleplay", "standard", "statistician"];
 const SPELL_KINDS = new Set(["spell-attack", "save", "auto"]);
 
 const capital = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+/** Every sentence of a piece of the story starting with a capital ("Silence returns. The goblins have won."). */
+const capitalSentences = s => capital(s)?.replace(/([.!?]["'”’)]?\s+)(\p{Ll})/gu, (m, end, c) => end + c.toUpperCase());
 
 
 /** Outcome tier of a check from the actor's point of view. */
@@ -206,6 +208,8 @@ function relationshipClause(e, tier, rel, roll, fill) {
   // (Talking: only a nemesis in words is worth remarking on; a leader or a grudge is about blows.)
   if ( e.type === "talk" && kind !== "talkingNemesis" ) return "";
   if ( e.type !== "talk" && kind === "talkingNemesis" ) return "";
+  // (A leader felled isn't left "shaken": the fall says it.)
+  if ( kind === "enemyLeader" && fill.fells ) return "";
   const key = `${e.actorId}|${e.targetId}|${kind}`;
   const decisive = tier.startsWith("critical") || tier.startsWith("major");
   if ( rel.told.has(key) && !decisive ) return "";
@@ -234,13 +238,55 @@ function bigHit(e, maxHp) {
   return max > 0 && e.damage >= max * BIG_SHARE;
 }
 
-function followUp(e, tier, roll, f, kind, maxHp) {
+function followUp(e, tier, roll, f, kind, maxHp, { fells = false, said = "" } = {}) {
   let key = null;
   if ( tier === "criticalFailure" ) key = `letdown.${kind}`;
+  // (A blow that fells its target needs no more: the fall that follows says how bad it was.)
+  else if ( fells ) return "";
   else if ( tier === "criticalSuccess" ) key = `emphasis.${kind}`;
   else if ( successful(tier) && bigHit(e, maxHp) ) key = `emphasis.${kind}`;
-  const line = key ? roll(key, f).trim() : "";
+  const line = key ? freshLine(roll, key, f, said) : "";
   return line ? ` ${capital(line)}` : "";
+}
+
+/**
+ * A line from a table that doesn't echo what was just said ("swallows the lie whole" twice over): one sharing no
+ * word of five letters or more with it (names aside, and a word's ending ignored), if a few draws find one.
+ */
+function freshLine(roll, key, fill, said) {
+  const names = new Set(stems([fill.actor, fill.target, fill.weapon].join(" ")));
+  const before = new Set(stems(said).filter(w => !names.has(w)));
+  let line = "";
+  for ( let i = 0; i < 3; i++ ) {
+    line = roll(key, fill).trim();
+    if ( !stems(line).some(w => before.has(w) && !names.has(w)) ) break;
+  }
+  return line;
+}
+
+/** The longer words of a sentence, cut to their first five letters ("laughs", "laugh": the same). */
+const stems = text => String(text ?? "").toLowerCase().split(/[^\p{L}]+/u).filter(w => w.length >= 5).map(w => w.slice(0, 5));
+
+/** What struck: the weapon, or, for a shot that leaves it (an arrow, a bullet), the shot from it ("Shortbow shot"). */
+function weaponOf(e) {
+  const w = e.action ?? e.item ?? "";
+  return e.launched && w ? localize("FASTFIGHTING.Story.Shot", { weapon: w }) : w;
+}
+
+/** Blows that felled their target: the last one at it before it went down (or died), that turn. */
+function fellingBlows(log) {
+  const out = new Set();
+  log.forEach((e, i) => {
+    if ( !["down", "death"].includes(e.type) || e.lingering ) return;
+    for ( let k = i - 1; k >= 0 && log[k].turn === e.turn; k-- ) {
+      const b = log[k];
+      if ( STRIKES.has(b.type) && b.targetId === e.actorId ) {
+        out.add(b);
+        break;
+      }
+    }
+  });
+  return out;
 }
 
 /**
@@ -274,7 +320,7 @@ function controlLine(e, g, roll, mapCondition) {
 const hasTable = (roll, key) => !!roll.tables?.get(key)?.length;
 
 function narrate(e, roll, rel, fill) {
-  const base = { actor: e.actor, target: e.target ?? "", weapon: e.action ?? e.item ?? "", by: e.by ?? "", affliction: e.name ?? "" };
+  const base = { actor: e.actor, target: e.target ?? "", weapon: weaponOf(e), by: e.by ?? "", affliction: e.name ?? "" };
   const f = { ...base, ...fill };
   delete f.mapType;
   delete f.maxHp;
@@ -285,12 +331,14 @@ function narrate(e, roll, rel, fill) {
     case "auto": {
       let tier = e.type === "save" ? saveTier(e) : e.type === "auto" ? "success" : tierOf(e.degree, e.margin);
       if ( tier === "minorSuccess" && bigHit(e, fill.maxHp) ) tier = "success";
+      // (At one already down, who can do nothing about it: no dodging, ducking or wincing.)
+      if ( fill.helpless ) return roll(successful(tier) ? "downed.hit" : "downed.miss", f) + relationshipClause(e, tier, rel, roll, f);
       const type = damageTypeOf(e, fill.mapType);
       // (A family a translation hasn't written yet is told as plain harm.)
       let text = roll(`action.${type}.${tier}`, f) || roll(`action.untyped.${tier}`, f);
       if ( roll.lang === "en" ) text = agreeWithWeapon(text, f.weapon);
       if ( e.attackerCover && e.ranged && e.natural % 3 === 0 ) text = `${roll("event.coverShoot", f)} ${capital(text)}`;
-      text += followUp(e, tier, roll, f, type, fill.maxHp);
+      text += followUp(e, tier, roll, f, type, fill.maxHp, { fells: fill.fells, said: text });
       // (Precision damage, a sneak attack's: no look of its own, so it's told by how it came.)
       if ( e.precision && e.damage > 0 && successful(tier) ) {
         const line = roll("emphasis.precision", f).trim();
@@ -306,7 +354,8 @@ function narrate(e, roll, rel, fill) {
       const tier = tierOf(e.degree, e.margin);
       const kind = e.kind ?? "persuade";
       // (A big moment in words: only a system whose checks can be critical has one.)
-      return roll(`talk.${kind}.${tier}`, f) + followUp(e, tier, roll, f, kind) + relationshipClause(e, tier, rel, roll, f);
+      const said = roll(`talk.${kind}.${tier}`, f);
+      return said + followUp(e, tier, roll, f, kind, null, { said }) + relationshipClause(e, tier, rel, roll, f);
     }
     case "strain": {
       // (Worn down by words: and run dry, what it's left as, told of it.)
@@ -343,7 +392,10 @@ function narrate(e, roll, rel, fill) {
     case "death": return roll(e.finished && !e.lingering ? "event.finished" : "event.death", f);
     // Beaten (out of the fight, however the table decides), or killed by one who would kill.
     case "beaten": return roll(e.killed ? "event.beatenKilled" : "event.beaten", { ...f, by: e.by ?? "" });
-    case "struckDown": return roll("event.struckDown", f);
+    // (Hurt again while down: by what lingers, venom or a burn, or by a blow the line before already told.)
+    case "struckDown":
+      if ( e.lingering ) return roll("event.struckDownLingering", f);
+      return fill.toldHit ? "" : roll("event.struckDown", f);
     case "recovery":
       if ( e.dead ) return roll("event.death", f);
       if ( e.stable ) return roll("event.stabilize", f);
@@ -358,7 +410,7 @@ function narrate(e, roll, rel, fill) {
     case "waver": return roll("event.waver", f);
     case "holdGround": return roll(e.ordered ? "event.holdOrdered" : "event.holdGround", { ...f, target: e.by ?? "" });
     case "study": return roll(e.worked === false ? "event.studyFails" : "maneuver.assess", f);
-    case "observe": return roll("event.observe", { ...f, targets: listJoin(e.targets ?? []) });
+    case "observe": return roll("event.observe", { ...f, targets: fewNames(e.targets ?? []) });
     case "shareLore": return roll("event.shareLore", { ...f, allies: listJoin(e.with ?? []) });
     case "scheme": return roll("event.scheme", f);
     case "command":
@@ -457,6 +509,8 @@ function narrate(e, roll, rel, fill) {
         const own = roll(`event.${e.tell}`, fill);
         if ( own ) return own;
       }
+      // (One on the master list, told as what it is: a shield block, a dodge.)
+      if ( e.maneuver && hasTable(roll, `maneuver.${e.maneuver}`) ) return roll(`maneuver.${e.maneuver}`, fill);
       return roll({ hit: "event.reactHit", attacked: "event.reactAttacked", missed: "event.reactMissed", damaged: "event.reactDamaged" }[e.trigger] ?? "event.reactHit", fill);
     }
     case "counter": return roll(e.countered ? "event.counterTakes" : "event.counterFails", { ...f, weapon: e.reaction ?? "", spell: e.action ?? "", target: e.target ?? "" });
@@ -501,22 +555,47 @@ function narrate(e, roll, rel, fill) {
 }
 
 /**
- * An attack that repeats one made earlier in the turn, to the same end (the same weapon at the same foe, a hit
- * again or a miss again): told as doing it again, not as if it were the first. A critical hit or fumble is told in
- * full. Returns the line, or "" (told as usual). `done`: what each has done so far this turn.
+ * A list of names, kept short: past three, the first two and their companions.
+ */
+function fewNames(names) {
+  return names.length > 3 ? localize("FASTFIGHTING.Story.Companions", { names: listItems(names.slice(0, 2)) }) : listJoin(names);
+}
+
+/** How a repeat is told: a hit, a miss; a control action that takes, is resisted, or backfires. */
+const AGAIN = Object.freeze({
+  hit: "event.againHit", miss: "event.againMiss", takes: "event.againTakes", resisted: "event.againResisted", backfire: "event.againBackfire"
+});
+
+/** What a creature does that doesn't break a run of the same thing (a passing thought). */
+const UNBROKEN = new Set(["thought"]);
+
+/**
+ * An attack or control action that repeats the one the creature just made, to the same end (the same weapon at the
+ * same foe, a hit again or a miss again; a trip that's resisted again): told as doing it again, not as if it were the
+ * first. Anything else it does in between breaks the run. A critical hit or fumble is told in full. Returns the line,
+ * or "" (told as usual). `done`: what each did last this turn.
  */
 function againLine(e, done, roll) {
-  if ( e.type !== "attack" ) return "";
-  const how = e.degree === 2 ? "hit" : e.degree === 1 ? "miss" : null;
-  const key = `${e.actorId}|${e.action}|${e.targetId}`;
-  const before = done.get(key);
-  done.set(key, how);
-  if ( !how || before !== how ) return "";
-  return roll(how === "hit" ? "event.againHit" : "event.againMiss", { actor: e.actor, target: e.target ?? "", weapon: e.action ?? e.item ?? "" });
+  if ( !e.actorId ) return "";
+  let how = null;
+  if ( e.type === "attack" ) how = e.degree === 2 ? "hit" : e.degree === 1 ? "miss" : null;
+  else if ( e.type === "control" ) how = e.immune || e.taunt || e.goad || e.shrugged ? null : e.backfired ? "backfire" : e.took ? "takes" : "resisted";
+  else {
+    if ( !UNBROKEN.has(e.type) ) done.delete(e.actorId);
+    return "";
+  }
+  const key = `${e.type}|${e.action}|${e.targetId}|${how}`;
+  const before = done.get(e.actorId);
+  done.set(e.actorId, key);
+  if ( !how || before !== key ) return "";
+  return roll(AGAIN[how], { actor: e.actor, target: e.target ?? "", weapon: weaponOf(e) });
 }
 
 /** How often a creature's first attack of its turn comes with a line on how far it was (distance.near / distance.far). */
 const DISTANCE_CHANCE = 0.35;
+/** Within this many feet it's up close; from this many on, from afar (in between, nothing worth remarking on). */
+const NEAR_FEET = 10;
+const FAR_FEET = 30;
 /** What counts as an attack, for that. */
 const STRIKES = new Set(["attack", "save", "auto"]);
 
@@ -599,6 +678,12 @@ function storyNames(spec) {
 function roleplayParagraphs(result, spec, tables, seed, mapType, mapCondition = null) {
   const roll = makeRoller(tables, seed);
   const averted = avertedDeaths(result.log ?? []);
+  const fells = fellingBlows(result.log ?? []);
+  // (After the fight, the dying's every breath reads like a list: only where each ended up.)
+  const lastBreath = new Map();
+  for ( const e of result.log ?? [] ) if ( e.type === "recovery" && e.aftermath && !averted.has(e) ) lastBreath.set(e.actorId, e);
+  const onsets = new Set(); // "actor|affliction|turn": taken hold of, just now
+  let toldHit = null; // "target|turn": a blow at one already down, told
   const { call, named } = storyNames(spec);
   const most = new Map((spec.combatants ?? []).map(c => [c.id, c.hp?.max ?? null]));
   const maxHp = id => most.get(id) ?? null;
@@ -620,6 +705,11 @@ function roleplayParagraphs(result, spec, tables, seed, mapType, mapCondition = 
   let doneTurn = null;
   for ( const logged of tellingOrder(result.log) ) {
     if ( logged.type === "initiative" || !mentions(logged) || averted.has(logged) ) continue;
+    if ( logged.type === "recovery" && logged.aftermath && !logged.stable && !logged.dead && lastBreath.get(logged.actorId) !== logged ) continue;
+    // (Taking hold and its first harm are one moment: told once.)
+    const onset = `${logged.actorId}|${logged.name}|${logged.turn}`;
+    if ( logged.type === "afflictionSaveFail" ) onsets.add(onset);
+    if ( logged.type === "afflictionStage" && onsets.has(onset) ) continue;
     // (Told with each creature called as the story calls it; the sentence keeps the event it tells.)
     const e = named(logged);
     if ( e.turn !== doneTurn ) {
@@ -628,7 +718,7 @@ function roleplayParagraphs(result, spec, tables, seed, mapType, mapCondition = 
     }
     // The outcome comes where the fighting stops; anything after it (tending the fallen) follows.
     if ( e.type === "end" ) {
-      paragraphs.push({ e: logged, text: ending(result, spec, e, roll, call) });
+      paragraphs.push({ e: logged, text: capitalSentences(ending(result, spec, e, roll, call).trim()) });
       current = null;
       continue;
     }
@@ -662,17 +752,28 @@ function roleplayParagraphs(result, spec, tables, seed, mapType, mapCondition = 
     // Now and then, a creature's first attack of its turn says how far it was: from afar, or up close (unless it moved
     // this turn, which said so).
     let lead = "";
-    if ( STRIKES.has(e.type) && e.targetId && !struck.has(`${e.actorId}|${e.turn}`) ) {
+    // (One already down can do nothing about what comes at it.)
+    const helpless = STRIKES.has(e.type) && !!e.targetId && rel.down.has(e.targetId);
+    // (Only on its own turn: a blow struck as someone goes is no time to size up the distance.)
+    if ( STRIKES.has(e.type) && e.targetId && !helpless && (e.turnOf ?? e.actorId) === e.actorId && !struck.has(`${e.actorId}|${e.turn}`) ) {
       struck.add(`${e.actorId}|${e.turn}`);
-      const near = !e.ranged;
-      if ( reach.next() < DISTANCE_CHANCE && !closed.has(`${e.actorId}|${e.turn}`) ) {
-        lead = roll(near ? "distance.near" : "distance.far", { actor: e.actor, target: e.target ?? "", weapon: e.action ?? "" }).trim();
+      // (How far it really was, where the map says; else by the blow: a shot from afar, a swing up close.)
+      const near = Number.isFinite(e.feet) ? e.feet <= NEAR_FEET : !e.ranged;
+      const far = Number.isFinite(e.feet) ? e.feet >= FAR_FEET : !!e.ranged;
+      if ( (near || far) && reach.next() < DISTANCE_CHANCE && !closed.has(`${e.actorId}|${e.turn}`) ) {
+        lead = roll(near ? "distance.near" : "distance.far", { actor: e.actor, target: e.target ?? "", weapon: weaponOf(e) }).trim();
       }
     }
-    const told = againLine(e, done, roll) || narrate(e, roll, rel, { mapType, maxHp, mapCondition });
+    const told = (!helpless && againLine(e, done, roll)) || narrate(e, roll, rel, {
+      mapType, maxHp, mapCondition, helpless, fells: fells.has(logged), toldHit: toldHit === `${e.actorId}|${e.turn}`
+    });
+    if ( helpless ) {
+      done.delete(e.actorId);
+      toldHit = `${e.targetId}|${e.turn}`;
+    }
     const sentence = lead && told ? `${capital(lead)} ${capital(told.trim())}` : told;
     rel.record(e);
-    if ( sentence ) current.sentences.push({ e: logged, text: capital(sentence.trim()) });
+    if ( sentence ) current.sentences.push({ e: logged, text: capitalSentences(sentence.trim()) });
   }
   return paragraphs;
 }
@@ -935,8 +1036,10 @@ export function storyBeats(result, spec, style, { tables, seed = 1, damageType =
     }
     for ( const beat of beats ) beat.parts = beat.parts.length ? [`<p>${bold(beat.parts.map(esc).join(" "))}</p>`] : [];
   }
-  return beats.map(({ turns, round, actorId, closing, parts, events }) => {
+  return beats.map(({ turns, round, actorId: whose, closing, parts, events }) => {
     const html = parts.join("");
+    // (A command left with no one to take it is the story's to tell, not the fallen leader's to say.)
+    const actorId = events.length && events.every(e => e.type === "command" && e.lost) ? null : whose;
     const own = events.filter(e => e.actorId && e.actorId === actorId);
     const talking = !!actorId && own.some(e => e.type !== "thought") && own.every(e => TALKING.has(e.type));
     return { turns, round, actorId, closing, talking, html, text: plainText(html) };

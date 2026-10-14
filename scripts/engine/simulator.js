@@ -939,7 +939,11 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
 
     const common = logging ? {
       action: action.name, actionKind: action.kind, damageType: primaryType(action), damageTypes: damageTypesOf(action), storyType: action.storyType ?? null, target: target.spec.name, targetId: target.id,
-      ranged, area: !!action.area, targetCover: !!target.spec.environment?.nearCover, attackerCover: !!u.spec.environment?.nearCover
+      ranged, area: !!action.area, targetCover: !!target.spec.environment?.nearCover, attackerCover: !!u.spec.environment?.nearCover,
+      // (A shot that leaves its weapon, an arrow, a bolt, a bullet: not a thrown one, a spell or a breath. The story tells
+      // the shot, not the bow.)
+      launched: ranged && action.kind === "strike" && !action.thrown && !action.area,
+      feet: Number.isFinite(edgeDistance(u, target)) ? Math.round(edgeDistance(u, target)) : null
     } : null;
 
     if ( action.kind === "auto" ) {
@@ -1139,7 +1143,7 @@ function shieldWorth(run, u) {
 /** A reaction taken, for the log and the story. */
 function logReaction(run, u, by, r, trigger) {
   if ( !run.log ) return;
-  log(run, u, { type: "reaction", reaction: r.label, tell: r.tell ?? null, trigger, target: by.spec.name, targetId: by.id });
+  log(run, u, { type: "reaction", reaction: r.label, tell: r.tell ?? null, maneuver: maneuverOf(r), trigger, target: by.spec.name, targetId: by.id });
 }
 
 /** Hurt by a foe: the one hurt may answer (5e Hellish Rebuke: fire at whoever did it, a save for half). */

@@ -7,7 +7,7 @@ import {
 } from "../constants.js";
 import { getAdapter } from "../api.js";
 import { setting } from "../settings.js";
-import { listJoin, listItems, localize, term, hasStat, brief } from "../i18n.js";
+import { listJoin, listItems, localize, term, hasStat, brief, roundsText } from "../i18n.js";
 import { getSetup, saveSetup, clearSetup, tokenSetup, planHolder, rememberPartyRole } from "../foundry/persistence.js";
 import {
   questionsContext, setTactic, togglePlaystyle, syncTacticsDom, isPlayerControlled, playersOnScene, tokensForUser, surveyStatus,
@@ -584,11 +584,14 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
   #sampleContext() {
     const { seed, result } = this.sample;
     const rows = planMakeItSo(this.spec, result);
+    // (Only an argument that broke up before it came to blows: nobody won, and nobody fell.)
+    const collapsed = (result.log ?? []).some(e => e.type === "end" && e.resolved === "collapsed");
     return {
       seed,
-      outcome: result.outcome === "victory" ? listJoin(result.winners.map(w => this.spec?.sides?.[w]?.label ?? sideName(w, this.hostileGroups))) : loc(`FASTFIGHTING.Sample.Outcome.${result.outcome}`),
+      outcome: result.outcome === "victory" ? listJoin(result.winners.map(w => this.spec?.sides?.[w]?.label ?? sideName(w, this.hostileGroups)))
+        : loc(`FASTFIGHTING.Sample.Outcome.${collapsed ? "collapsed" : result.outcome}`),
       story: this.storyFor()?.html ?? "",
-      totalRounds: result.rounds,
+      totalRounds: roundsText(result.rounds ?? 0),
       finals: rows.map(r => ({ name: r.spec.name, side: r.spec.side, status: loc(`FASTFIGHTING.Status.${statusOf(r.final)}`), statusClass: statusOf(r.final), lines: r.lines.join("; ") || loc("FASTFIGHTING.Sample.Unchanged") }))
     };
   }

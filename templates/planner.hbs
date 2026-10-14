@@ -309,7 +309,7 @@
               <button type="button" class="ff-btn ff-make-it-so" data-action="makeItSo" {{#unless results.sample}}disabled{{/unless}} {{#if playback}}disabled{{/if}} data-tooltip="{{localize "FASTFIGHTING.MakeItSo.Hint"}}"><i class="fa-solid fa-gavel"></i> {{localize "FASTFIGHTING.MakeItSo.Button"}}</button>
             </div>
             {{#with results.sample}}
-            <div class="ff-sample-head"><span class="ff-chip" data-tooltip="{{localize "FASTFIGHTING.Sample.TypicalHint"}}"><i class="fa-solid fa-eye"></i> {{localize "FASTFIGHTING.Sample.Typical"}}</span> {{localize "FASTFIGHTING.Sample.Result"}}: <strong>{{outcome}}</strong> · {{totalRounds}} {{localize "FASTFIGHTING.Sample.Rounds"}} · {{localize "FASTFIGHTING.Planner.Seed"}} {{seed}}</div>
+            <div class="ff-sample-head"><span class="ff-chip" data-tooltip="{{localize "FASTFIGHTING.Sample.TypicalHint"}}"><i class="fa-solid fa-eye"></i> {{localize "FASTFIGHTING.Sample.Typical"}}</span> {{localize "FASTFIGHTING.Sample.Result"}}: <strong>{{outcome}}</strong> · {{totalRounds}} · {{localize "FASTFIGHTING.Planner.Seed"}} {{seed}}</div>
             <div class="ff-split">
               <article class="ff-story ff-story-{{@root.storyStyle}}">{{{story}}}</article>
               <ul class="ff-finals">

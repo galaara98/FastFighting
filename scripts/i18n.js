@@ -129,6 +129,11 @@ export function setDistanceUnit(unit) {
 }
 
 /** A distance given in feet, in the table's units and the reader's language ("30 ft", "9 m", "4,5 m"). */
+/** A number of rounds, as the language counts them ("1 round", "4 rounds"). */
+export function roundsText(n) {
+  return localize(n === 1 ? "FASTFIGHTING.Words.RoundOne" : "FASTFIGHTING.Words.RoundMany", { n });
+}
+
 export function distanceText(feet) {
   const u = distanceUnit;
   return localize("FASTFIGHTING.Units.Distance", { n: numberText(u ? feet / u.feetPer : feet), units: u ? u.label : localize("FASTFIGHTING.Units.Feet") });

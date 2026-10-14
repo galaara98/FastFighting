@@ -2000,7 +2000,7 @@
   "talk.persuade.success": [
     "{actor} makes a fair point, and {target} pauses to consider it.",
     "{target} hesitates as {actor} appeals to their good sense.",
-    "{actor} pleads between blows, and {target} wavers.",
+    "{actor} pleads, and {target} wavers.",
     "{actor} offers terms; {target} glances at their allies, uncertain.",
     "Something in {actor}'s words gives {target} pause."
   ],
@@ -2456,14 +2456,14 @@
     "{actor} collapses.",
     "{actor} crumples to the ground.",
     "{actor} drops, gasping.",
-    "{actor} falls and does not rise.",
+    "{actor} goes limp and drops.",
     "{actor} goes down hard."
   ],
   "event.death": [
     "{actor} is slain.",
     "{actor} falls, never to rise.",
     "{actor} breathes one last time.",
-    "{actor} lies still.",
+    "{actor} lies still and breathes no more.",
     "{actor}'s fight is over, forever."
   ],
   "event.beaten": [
@@ -3052,14 +3052,14 @@
   ],
   "event.executeSpared": [
     "{actor} stands over {target}, then turns away to face {next}.",
-    "{actor} raises its weapon over {target}, and thinks better of it: {next} is the real threat.",
+    "{actor} raises their weapon over {target}, and thinks better of it: {next} is the real threat.",
     "{actor} leaves {target} where they fell and goes after {next}.",
-    "Something makes {actor} spare {target}; it rounds on {next} instead.",
+    "Something makes {actor} spare {target} and turn on {next} instead.",
     "{actor} steps over {target} without a second blow, eyes on {next}."
   ],
   "event.executeSparedAlone": [
     "{actor} stands over {target}, then turns away.",
-    "{actor} raises its weapon over {target}, and lowers it again.",
+    "{actor} raises their weapon over {target}, and lowers it again.",
     "{actor} leaves {target} where they fell.",
     "Something stays {actor}'s hand; {target} is spared.",
     "{actor} looks down at {target} and walks away."
@@ -3184,10 +3184,10 @@
     "{actor} is already moving as {target} strikes."
   ],
   "event.reactMissed": [
-    "{target} overreaches, and {actor} makes them pay.",
+    "{target} overreaches, and {actor} strikes back.",
     "{actor} turns {target}'s miss into an opening.",
     "{target} swings wide; {actor} strikes back at once.",
-    "{actor} punishes {target}'s miss.",
+    "{actor} answers {target}'s miss at once.",
     "{actor} answers the miss with steel."
   ],
   "event.reactDamaged": [
@@ -3313,7 +3313,7 @@
     "{target} ducks as {actor}'s shot whistles by."
   ],
   "event.duelWin": [
-    "{actor} meets {target}'s {spell} with magic of its own, and unmakes it.",
+    "{actor} meets {target}'s {spell} with magic of their own, and unmakes it.",
     "{target}'s {spell} gutters out against {actor}'s answer.",
     "{actor} tears {target}'s {spell} apart before it can land."
   ],
@@ -3323,7 +3323,7 @@
     "{actor}'s answer comes too weak: {target}'s {spell} goes on."
   ],
   "event.promiseNoHarm": [
-    "{actor} gives {by} its word: no harm will come to them.",
+    "{actor} gives {by} their word: no harm will come to them.",
     "{actor} promises {by} that nobody will be hurt.",
     "\"No harm will come to you,\" {actor} tells {by}."
   ],
@@ -3339,7 +3339,7 @@
   ],
   "event.haggleLower": [
     "{by} talks {actor} into asking for less.",
-    "{actor} comes down on its price, at {by}'s urging.",
+    "{actor} comes down on their price, at {by}'s urging.",
     "{by} haggles, and {actor} gives a little ground."
   ],
   "event.haggleDrop": [
@@ -3560,17 +3560,17 @@
   ],
   "event.opportunity": [
     "{actor} lashes out as {target} pulls away.",
-    "{target} turns away, and {actor} makes them pay for it.",
+    "{target} turns away, and {actor} strikes at the opening.",
     "{actor} takes the opening as {target} breaks off.",
     "{target} leaves {actor} a gap, and {actor} takes it.",
-    "{actor} punishes {target} for turning their back."
+    "{actor} lunges as {target} turns their back."
   ],
   "event.thoughtTwo": [
-    "{actor} {first}, but also {second}.",
+    "{actor} {first}, but {second} as well.",
     "{actor} {first}; part of them {second}.",
-    "Above all, {actor} {first}, but also {second}.",
-    "{actor} {first}, and somewhere underneath also {second}.",
-    "{actor} {first}, yet also {second}."
+    "Above all, {actor} {first}; part of them {second} too.",
+    "{actor} {first}, and somewhere underneath {second} too.",
+    "{actor} {first}, yet {second} too."
   ],
   "event.thoughtOne": [
     "{actor} {first}.",
@@ -3679,7 +3679,7 @@
   ],
   "event.coverDuck": [
     "{target} ducks behind cover.",
-    "{target} presses against the wall as it passes.",
+    "{target} presses flat against the wall.",
     "{target} dives behind cover just in time.",
     "Cover saves {target}.",
     "{target} drops behind the nearest wall."
@@ -3892,7 +3892,7 @@
     "Not a nick, not a scratch, not so much as a frayed thread.",
     "{target} checks for cuts and finds none.",
     "Somewhere, a butter knife feels quietly superior.",
-    "Whatever was meant to slice, {target} comes away without a mark.",
+    "For all that slicing, {target} comes away without a mark.",
     "Tailors make more cuts before breakfast."
   ],
   "emphasis.fire": [
@@ -5383,7 +5383,7 @@
   ],
   "condition.lazy": [
     "{actor} hangs back and lets the others do the work.",
-    "{actor} watches the fight from a comfortable distance, in no hurry to join in.",
+    "{actor} watches from a comfortable distance, in no hurry to get involved.",
     "{actor} idles, content to let someone else take the risk."
   ],
   "condition.prone": [
@@ -5779,5 +5779,42 @@
     "Worn down by {target}, {actor} sags.",
     "{actor}'s composure finally gives out.",
     "{target} has worn {actor} down to nothing."
+  ],
+  "downed.hit": [
+    "{actor}'s {weapon} strikes {target} where they lie.",
+    "{target} can do nothing as {actor}'s {weapon} lands.",
+    "{actor} hits {target}, sprawled helpless on the ground.",
+    "{actor}'s {weapon} finds {target}, who doesn't stir.",
+    "{actor} strikes at {target} on the ground, and the blow lands."
+  ],
+  "downed.miss": [
+    "{actor}'s {weapon} strikes the ground beside {target}.",
+    "{actor} misses {target}, even lying helpless on the ground.",
+    "The blow meant for {target}, sprawled on the ground, goes wide.",
+    "{actor}'s {weapon} misses {target}, who never stirs.",
+    "{actor} strikes at {target} on the ground, and misses."
+  ],
+  "event.struckDownLingering": [
+    "{actor} lies helpless as the harm keeps working on them.",
+    "Even down, {actor} can't escape what's eating at them.",
+    "Whatever is in {actor} keeps taking its toll as they lie there.",
+    "{actor} twitches as the lingering harm takes more."
+  ],
+  "event.againTakes": [
+    "{actor} does it again to {target}.",
+    "Once more, {actor}'s {weapon} works on {target}.",
+    "Again {actor} gets the better of {target}.",
+    "{actor} manages it a second time."
+  ],
+  "event.againResisted": [
+    "{actor} tries {weapon} on {target} again, with no more luck.",
+    "Again {target} won't give in to {actor}.",
+    "{actor} tries again, and {target} holds firm again.",
+    "Once more, {target} shrugs off {actor}'s {weapon}."
+  ],
+  "event.againBackfire": [
+    "{actor} tries again, and it goes wrong again.",
+    "Again {actor}'s {weapon} turns against them.",
+    "{actor} makes the same mistake twice."
   ]
 }
