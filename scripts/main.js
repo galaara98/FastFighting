@@ -20,9 +20,11 @@ import { sceneUnit } from "./foundry/terrain.js";
 import { planHolder } from "./foundry/persistence.js";
 import { setDistanceUnit, setTermSource, localize } from "./i18n.js";
 import { loadKeywords } from "./foundry/keywords.js";
+import { registerLiveBattles } from "./foundry/live-battle.js";
 
 Hooks.once("init", () => {
   registerSettings(DefaultsConfig, GenericPathsConfig, StoryTablesConfig);
+  registerLiveBattles();
 
   // System support comes from helper modules (FastFighting PF2e, ...). The generic adapter ("*") is the
   // fallback for systems nobody supports yet.

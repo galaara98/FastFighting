@@ -79,21 +79,22 @@ export function liveRound(run, round) {
 }
 
 /** The dice for the next turn: its own, from the fight's seed and how many turns came before (the same on replay). */
-function nextDice(run) {
+function nextDice(run, salt = 0) {
   run.live.seq += 1;
   run.live.asked = new Map();
-  run.rng = createRng(deriveSeed(run.live.seed, run.live.seq));
+  // (A turn played again after a rewind: fresh dice, `salt` times over.)
+  run.rng = createRng(deriveSeed(run.live.seed, run.live.seq + salt * 100003));
 }
 
 /**
  * A simulated turn. `answers`: what was asked and answered for it so far (key -> true/false), when it's played again.
  * Returns {events, ended}; throws NeedsDecision when someone must be asked first (restore the snapshot taken before
- * it, ask, and play it again with the answer).
+ * it, ask, and play it again with the answer). `salt`: played again after a rewind, with fresh dice.
  */
-export function liveTurn(run, id, { answers = null } = {}) {
+export function liveTurn(run, id, { answers = null, salt = 0 } = {}) {
   const u = run.byId.get(id);
   if ( !u ) throw new Error(`No creature ${id} in this battle`);
-  nextDice(run);
+  nextDice(run, salt);
   run.live.answers = new Map(answers ?? []);
   const from = run.log.length;
   const ended = playTurn(run, u);
@@ -506,8 +507,11 @@ function decode(v, byId) {
   return out;
 }
 
-/** Everything the fight remembers, as plain data (for JSON): the creatures, the fight's own state, the log, the live state. */
-export function snapshotRun(run) {
+/**
+ * Everything the fight remembers, as plain data (for JSON): the creatures, the fight's own state, the log, the live
+ * state. Without `log`, only how long the log was (a turn's snapshot: the log itself is kept once, with the battle).
+ */
+export function snapshotRun(run, { log = true } = {}) {
   const units = new Set(run.units);
   const unitData = {};
   for ( const u of run.units ) {
@@ -526,14 +530,15 @@ export function snapshotRun(run) {
     if ( e !== undefined ) runData[k] = e;
   }
   const { decide: _d, mayReroll: _m, systemOwns: _s, ...live } = run.live ?? {};
-  return { units: unitData, run: runData, log: encode(run.log ?? [], units), live: encode(live, units) };
+  return { units: unitData, run: runData, ...(log ? { log: encode(run.log ?? [], units) } : { logLength: run.log?.length ?? 0 }), live: encode(live, units) };
 }
 
 /**
- * The fight as it was kept, on its battle (the same spec and rules it began with): ready for its next turn. (Creatures
- * summoned mid-fight aren't kept: live battles don't summon.)
+ * The fight as it was kept, on its battle (the same spec and rules it began with): ready for its next turn. A snapshot
+ * kept without its log takes `log` (the battle's, cut back to where it was). (Creatures summoned mid-fight aren't
+ * kept: live battles don't summon.)
  */
-export function restoreRun(spec, rules, snap) {
+export function restoreRun(spec, rules, snap, { log = null } = {}) {
   const run = createRun(prepareBattle(spec, rules));
   for ( const [id, data] of Object.entries(snap.units ?? {}) ) {
     const u = run.byId.get(id);
@@ -545,7 +550,7 @@ export function restoreRun(spec, rules, snap) {
     u.sharedPools = run.sharedPools;
     recompute(u);
   }
-  run.log = decode(snap.log ?? [], run.byId);
+  run.log = snap.log ? decode(snap.log, run.byId) : [...(log ?? [])].slice(0, snap.logLength ?? Infinity);
   run.trapLog = (unit, data) => log(run, unit, data);
   return attach(run, decode(snap.live ?? {}, run.byId));
 }

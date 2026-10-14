@@ -197,6 +197,10 @@
       "partySway": {
         "Name": "Party's sway (%)",
         "Hint": "How much the player party's wishes (the players' votes in the survey's Party tab, majority rules) sway everyone on the friendly side: in that share of fights a character uses the party's answer where it left its own to \"Let this character decide\", and the party's wishes add that much to what each wants (on the 0 to 100 desire scale)."
+      },
+      "playersRunPCs": {
+        "Name": "Players run their characters",
+        "Hint": "Do it For Real Now plays the battle on the combat tracker: players take their own turns, FastFighting plays everyone else. Off: FastFighting plays every turn. Each battle can say otherwise."
       }
     },
     "Lean": {
@@ -455,7 +459,9 @@
           "Short": "2"
         }
       },
-      "RoleHint": "L: Leader, B: Boss ({boss}× as compelling as a Leader), 1/2: Lieutenants (become Leaders when they are unavailable)"
+      "RoleHint": "L: Leader, B: Boss ({boss}× as compelling as a Leader), 1/2: Lieutenants (become Leaders when they are unavailable)",
+      "PlayersRun": "Players run their characters",
+      "PlayersRunHint": "On: players take their own turns on the tracker, FastFighting plays everyone else. Off: FastFighting plays every turn."
     },
     "Results": {
       "Tab": {
@@ -1356,7 +1362,8 @@
       "Desire": "{intensity} {verb}",
       "TurnRound": "Round {n}",
       "TheName": "the {name}",
-      "Shot": "{weapon} shot"
+      "Shot": "{weapon} shot",
+      "Attack": "attack"
     },
     "Helper": {
       "Title": "FastFighting needs a helper module for {system}",
@@ -1962,6 +1969,34 @@
       "acid": "acid, acidic, corrosive, caustic",
       "sonic": "sonic, thunder, thunderous, sound, shriek, scream, roar",
       "force": "force, arcane"
+    },
+    "Live": {
+      "Store": "FastFighting live battles",
+      "NoCombat": "There is no combat on this scene to play the battle on.",
+      "Failed": "The live battle hit a problem: {error}",
+      "Told": "{name}'s turn is told.",
+      "Continue": "Continue",
+      "RewindTurn": "Rewind Turn",
+      "Rewound": "Rewound to {name}'s turn.",
+      "Play": "Play it",
+      "Over": "The battle is over.",
+      "RewindAllConfirm": "Put the whole battle back as it was before it began: every turn, every card, every move?",
+      "PickedUp": "FastFighting picked up the live battle where it was.",
+      "AskTitle": "A reaction",
+      "Ask": "Should {creature} use {reaction}? {trigger}",
+      "Would": "FastFighting thinks it would.",
+      "WouldNot": "FastFighting thinks it wouldn't.",
+      "Opportunity": "a strike as they go",
+      "Trigger": {
+        "hit": "Hit by {by}.",
+        "attacked": "Attacked by {by}.",
+        "missed": "{by} missed.",
+        "damaged": "Hurt by {by}.",
+        "allyHit": "{by} hit {ally}.",
+        "spell": "{by} casts a spell.",
+        "leaveReach": "{by} is leaving their reach."
+      },
+      "NotHere": "That battle isn't being played in this browser."
     }
   }
 }

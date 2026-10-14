@@ -40,7 +40,8 @@ export function defaultSetup() {
       bystanders: setting("bystanders"),
       surprise: setting("surpriseDefault"),
       includeHidden: setting("includeHidden"),
-      includeOtherLevels: setting("includeOtherLevels")
+      includeOtherLevels: setting("includeOtherLevels"),
+      playersRunPCs: setting("playersRunPCs")
     },
     sides: Object.fromEntries(Object.values(SIDES).map(s => [s, defaultSideSetup(s)])),
     tokens: {}

@@ -346,7 +346,9 @@ function controlLine(e, g, roll, mapCondition) {
 const hasTable = (roll, key) => !!roll.tables?.get(key)?.length;
 
 function narrate(e, roll, rel, fill) {
-  const base = { actor: e.actor, target: e.target ?? "", weapon: weaponOf(e), by: e.by ?? "", affliction: e.name ?? "" };
+  // (A blow read from the table with no weapon to name: an attack.)
+  const weapon = weaponOf(e) || (STRIKES.has(e.type) ? localize("FASTFIGHTING.Story.Attack") : "");
+  const base = { actor: e.actor, target: e.target ?? "", weapon, by: e.by ?? "", affliction: e.name ?? "" };
   const f = { ...base, ...fill };
   delete f.mapType;
   delete f.maxHp;

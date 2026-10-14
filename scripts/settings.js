@@ -56,7 +56,9 @@ const SETTINGS = {
   lootMode: { type: String, default: "corpse", choices: choices(["corpse", "pile", "none"], "Loot") },
   corpseMode: { type: String, default: "keep", choices: choices(["keep", "remove"], "Corpse") },
   fledMode: { type: String, default: "hide", choices: choices(["hide", "leave"], "Fled") },
-  playOnMap: { type: Boolean, default: true }
+  playOnMap: { type: Boolean, default: true },
+  // Do it For Real Now, live: the players run their own characters (FastFighting plays everyone else).
+  playersRunPCs: { type: Boolean, default: true }
 };
 
 export function registerSettings(DefaultsConfig, GenericPathsConfig, StoryTablesConfig) {

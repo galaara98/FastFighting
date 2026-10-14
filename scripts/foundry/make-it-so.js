@@ -111,7 +111,7 @@ export function planMakeItSo(spec, replay, scene = canvas.scene) {
 /* -------------------------------------------- */
 
 /** Where a token really is. (While it's animating, a token's x and y follow the animation, not the move.) */
-const placeOf = doc => ({ x: doc._source.x, y: doc._source.y });
+export const placeOf = doc => ({ x: doc._source.x, y: doc._source.y });
 
 /** How fast tokens move through the fight on the map, in grid squares a second (and when they settle at the end). */
 const PLAYBACK_SPEED = 10;
@@ -129,7 +129,7 @@ export const makingItSo = () => busy;
  * it, whoever pauses or un-pauses meanwhile. After, the game is left as it was before (the planner keeps it paused
  * while it's open), unless someone paused or un-paused it meanwhile: that stands.
  */
-async function holdingPause(work, { resume = false } = {}) {
+export async function holdingPause(work, { resume = false } = {}) {
   // (`resume`: the game was going before a playback that was cut short, and goes on once it's done.)
   const wasPaused = game.paused && !resume;
   if ( !wasPaused ) game.togglePause(true, { broadcast: true });
@@ -186,7 +186,7 @@ async function quickMove(doc, waypoints, speed = PLAYBACK_SPEED) {
  * through where the fight went through), and each door opened as it's opened. A move a token has made already (a
  * playback continued after a crash) is simply where it is.
  */
-async function playMoves(events, docs, grid, doorsOpened, scene) {
+export async function playMoves(events, docs, grid, doorsOpened, scene) {
   for ( const e of events ) {
     if ( e.type === "door" && e.success ) {
       await openSceneDoor(scene, e.doorId, doorsOpened);
@@ -202,7 +202,7 @@ async function playMoves(events, docs, grid, doorsOpened, scene) {
 }
 
 /** Open a door on the scene (once), remembering how it was for Rewind. */
-async function openSceneDoor(scene, id, opened) {
+export async function openSceneDoor(scene, id, opened) {
   const wall = scene.walls.get(id);
   if ( !wall || opened.has(id) || wall.ds === CONST.WALL_DOOR_STATES.OPEN ) return;
   opened.set(id, { id, uuid: wall.uuid, ds: wall.ds });
@@ -320,9 +320,9 @@ export const packSpec = spec => JSON.stringify(spec, (key, v) => (typeof v === "
 
 export const unpackSpec = text => JSON.parse(text, (key, v) => (v && typeof v === "object" && Object.keys(v).length === 1 && NUMBER in v ? Number(v[NUMBER]) : v));
 
-const gmIds = () => game.users.filter(u => u.isGM).map(u => u.id);
-const chronicle = () => ({ alias: loc("FASTFIGHTING.Story.Speaker") });
-const storyTitle = scene => game.i18n.format("FASTFIGHTING.Story.Title", { scene: scene?.name ?? "" });
+export const gmIds = () => game.users.filter(u => u.isGM).map(u => u.id);
+export const chronicle = () => ({ alias: loc("FASTFIGHTING.Story.Speaker") });
+export const storyTitle = scene => game.i18n.format("FASTFIGHTING.Story.Title", { scene: scene?.name ?? "" });
 const ChatMessageClass = () => foundry.documents.ChatMessage ?? globalThis.ChatMessage;
 
 /** Note how far a playback has got, on its scene (only what changed is sent). */
@@ -426,7 +426,7 @@ async function tellStory(scene, state, spec, result, rows, doorsOpened) {
  * One turn's card. A creature that spent its turn only talking says it aloud: its own words in the chat, as a
  * player's would be (and a bubble over its token on the map, where those are on).
  */
-async function postBeat(scene, beat, docs, state) {
+export async function postBeat(scene, beat, docs, state) {
   const ChatMessage = ChatMessageClass();
   const doc = beat.actorId ? (docs.get(beat.actorId) ?? null) : null;
   const whisper = setting("storyMode") === "whisper" ? gmIds() : [];
@@ -444,7 +444,7 @@ async function postBeat(scene, beat, docs, state) {
 }
 
 /** A whole story in one card (the Statistician's: the GMs', with a button to show it to everyone). */
-async function postStory(story, odds, { gmOnly = false } = {}) {
+export async function postStory(story, odds, { gmOnly = false } = {}) {
   if ( !story?.html ) return null;
   const oddsHtml = odds ? `<p class="ff-odds"><em>${escape(odds)}</em></p>` : "";
   const reveal = gmOnly ? `<button type="button" data-ff-reveal><i class="fa-solid fa-eye"></i> ${loc("FASTFIGHTING.Story.Reveal")}</button>` : "";
@@ -570,7 +570,7 @@ async function closeFight(scene, state, result, rows) {
 }
 
 /** "1 minute 12 seconds" */
-function timeText(seconds) {
+export function timeText(seconds) {
   const m = Math.floor(seconds / 60);
   const s = Math.round(seconds % 60);
   const parts = [];
@@ -684,7 +684,7 @@ function statusesOf(actor) {
   return out;
 }
 
-async function revertRecord(r) {
+export async function revertRecord(r) {
   // Each step on its own: one that fails (a status the server has already dropped, say) mustn't stop the rest.
   const step = async (what, fn) => {
     try {
@@ -737,7 +737,7 @@ async function revertRecord(r) {
 /* -------------------------------------------- */
 
 /** The GM-only card for something a PC gave up, with an Undo for just that hand-over. */
-async function concessionCard(scene, giverName, receiverName, c, eventId, records) {
+export async function concessionCard(scene, giverName, receiverName, c, eventId, records) {
   const ChatMessage = foundry.documents.ChatMessage ?? globalThis.ChatMessage;
   const text = game.i18n.format(c.how === "theft" ? "FASTFIGHTING.Concession.CardTheft" : "FASTFIGHTING.Concession.Card", { giver: escape(giverName), what: escape(concessionText(c)), receiver: escape(receiverName ?? "") });
   const luckKey = c.how === "theft" ? "FASTFIGHTING.Concession.TheftLuck" : "FASTFIGHTING.Concession.Luck";
@@ -798,7 +798,7 @@ async function undoFight(scene) {
 }
 
 /** Put back what one fight did: its chat cards, outcomes, doors and positions. */
-async function revertEntry(scene, undo) {
+export async function revertEntry(scene, undo) {
   for ( const id of undo.messages ?? [] ) await game.messages.get(id)?.delete();
   for ( const r of [...(undo.records ?? [])].reverse() ) await revertRecord(r);
   // Doors as they were (closed, or locked).

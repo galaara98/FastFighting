@@ -59,6 +59,7 @@
         <label data-tooltip="{{localize "FASTFIGHTING.Planner.IgnoreLanguagesHint"}}"><input type="checkbox" name="options.ignoreLanguages" {{checked options.ignoreLanguages}}> {{localize "FASTFIGHTING.Planner.IgnoreLanguages"}}</label>
         <label data-tooltip="{{localize "FASTFIGHTING.Planner.BystandersHint"}}"><input type="checkbox" name="options.bystanders" {{checked options.bystanders}}> {{localize "FASTFIGHTING.Planner.Bystanders"}}</label>
         <label><input type="checkbox" name="options.includeHidden" {{checked options.includeHidden}}> {{localize "FASTFIGHTING.Planner.Hidden"}}</label>
+        {{#if live}}<label data-tooltip="{{localize "FASTFIGHTING.Planner.PlayersRunHint"}}"><input type="checkbox" name="options.playersRunPCs" {{checked options.playersRunPCs}}> {{localize "FASTFIGHTING.Planner.PlayersRun"}}</label>{{/if}}
       </div>
     </div>
     {{!-- The game system's own settings for this encounter --}}

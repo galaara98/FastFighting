@@ -27,6 +27,7 @@ import {
 import { ensureAutoConfig } from "../foundry/auto-config.js";
 import { PlayerSurvey } from "./player-survey.js";
 import { rememberRun, recallRun } from "../foundry/run-memory.js";
+import { startLiveBattle } from "../foundry/live-battle.js";
 import { expectedRuns, ROUGH_RUNS } from "../engine/run-budget.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -356,6 +357,8 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       sceneName: canvas.scene?.name,
       adapterLabel: adapter?.label ?? loc("FASTFIGHTING.Planner.NoAdapter"),
       hasAdapter: !!adapter,
+      // (Its helper can play a battle live, a turn at a time: the toggle for who runs the characters.)
+      live: !!adapter?.supportsLive,
       options: setup.options,
       // (So many creatures that few fights fit the prediction's time.)
       runsNote: this.#runsNote(resolved),
@@ -1026,7 +1029,14 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     // loss three times in ten, as it should be. The planner closes, so the GM can watch it play out with the table.
     let playing;
     try {
-      playing = doItForReal(this.spec, { style: this.storyStyle, odds: setting("storyOdds") ? oddsText(this.results) : null, resume: !!this.pausedGame });
+      const odds = setting("storyOdds") ? oddsText(this.results) : null;
+      // Live, where the system's helper can: the battle on the tracker, the players running their own characters (or,
+      // with the toggle off, FastFighting playing everyone), a turn at a time.
+      if ( getAdapter()?.supportsLive ) {
+        const players = this.setup.options.playersRunPCs === false ? []
+          : this.spec.combatants.filter(c => isPlayerControlled(c, canvas.scene.tokens.get(c.tokenId ?? c.id)?.actor)).map(c => c.id);
+        playing = startLiveBattle(this.spec, { style: this.storyStyle, odds, players });
+      } else playing = doItForReal(this.spec, { style: this.storyStyle, odds, resume: !!this.pausedGame });
     } catch ( err ) {
       return reportError(err);
     }
