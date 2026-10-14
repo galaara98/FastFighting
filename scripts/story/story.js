@@ -217,14 +217,18 @@ const BIG_SHARE = 1 / 3;
  * (emphasis.<kind>: how bad the harm is, how well the words landed); or after a critical failure, how little came of it
  * (letdown.<kind>). `kind` is the damage type, or the way of talking. "" when there's none.
  */
+/** Did this hit take a big bite out of its target (BIG_SHARE of its most hit points or more)? */
+function bigHit(e, maxHp) {
+  if ( !(e.damage > 0) || !e.targetId ) return false;
+  const max = maxHp?.(e.targetId);
+  return max > 0 && e.damage >= max * BIG_SHARE;
+}
+
 function followUp(e, tier, roll, f, kind, maxHp) {
   let key = null;
   if ( tier === "criticalFailure" ) key = `letdown.${kind}`;
   else if ( tier === "criticalSuccess" ) key = `emphasis.${kind}`;
-  else if ( successful(tier) && e.damage > 0 && e.targetId ) {
-    const max = maxHp?.(e.targetId);
-    if ( max > 0 && e.damage >= max * BIG_SHARE ) key = `emphasis.${kind}`;
-  }
+  else if ( successful(tier) && bigHit(e, maxHp) ) key = `emphasis.${kind}`;
   const line = key ? roll(key, f).trim() : "";
   return line ? ` ${capital(line)}` : "";
 }
@@ -238,7 +242,8 @@ function narrate(e, roll, rel, fill) {
     case "attack":
     case "save":
     case "auto": {
-      const tier = e.type === "save" ? saveTier(e) : e.type === "auto" ? "success" : tierOf(e.degree, e.margin);
+      let tier = e.type === "save" ? saveTier(e) : e.type === "auto" ? "success" : tierOf(e.degree, e.margin);
+      if ( tier === "minorSuccess" && bigHit(e, fill.maxHp) ) tier = "success";
       const type = damageTypeOf(e, fill.mapType);
       // (A family a translation hasn't written yet is told as plain harm.)
       let text = roll(`action.${type}.${tier}`, f) || roll(`action.untyped.${tier}`, f);

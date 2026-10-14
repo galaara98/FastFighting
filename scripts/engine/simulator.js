@@ -1824,9 +1824,11 @@ function noteCommand(run, quietly = false) {
     if ( quietly || before === undefined || before === id ) continue;
     const from = before ? run.byId.get(before) : null;
     if ( !cmd ) {
+      startTurn(run, from);
       log(run, from, { type: "command", group: key, lost: true, from: from?.spec.name ?? null });
       continue;
     }
+    startTurn(run, cmd.unit);
     // Back in charge (it commanded before), or taking command.
     const back = again;
     log(run, cmd.unit, {
@@ -2810,8 +2812,8 @@ export function runOne(prep, seed, { log: withLog = false, capture = false } = {
     refreshLeans(run); // (the underdog changes as the fight goes)
     // (Who acts, and when: the initiative order, or the system's own way of passing the turn: Daggerheart's spotlight.)
     for ( const u of prep.rules.roundTurns ? prep.rules.roundTurns(run, order) : order ) {
-      startTurn(run, u);
       noteCommand(run);
+      startTurn(run, u);
       takeTurn(run, u);
       if ( u.lastStand ) endLastStand(run, u);
       if ( battleOver(run) ) { ended = true; break; }

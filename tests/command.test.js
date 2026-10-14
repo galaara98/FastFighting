@@ -135,4 +135,15 @@ describe("the story of who's in charge", () => {
     }));
     expect(buildStory(r, spec, "roleplay", { tables, seed: 3 }).text).not.toMatch(/\{\w+\}/);
   });
+
+  test("taking command is its own moment, the new commander's, not part of whoever's turn is starting", () => {
+    const boss = goblin("boss", { name: "Boss", hp: { value: 1, max: 30 } });
+    const spec = { ...battle([boss, goblin("lt", { name: "Lieutenant", hp: { value: 200, max: 200 } }), hero("pc", { initiative: { mod: 50 }, actions: [strike({ bonus: 30, damage: [parseFormula("20", "slashing")] })] })], { leadership: true, maxRounds: 2 }),
+      command: { hostile: chain(["boss", "boss"], ["lt", "lieutenant"]) } };
+    const r = replay(spec, pf2eRules, 3);
+    const took = r.log.find(e => e.type === "command");
+    expect(took.turnOf).toBe("lt");
+    // (Nothing else is told in that moment: the next turn starts afresh.)
+    expect(r.log.filter(e => e.turn === took.turn).every(e => e === took)).toBe(true);
+  });
 });
