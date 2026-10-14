@@ -12282,7 +12282,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "2c8d72dda95d"
+   "hash": "2c8d72dda95d",
+   "gone": "2026-10-14"
   },
   "core:FASTFIGHTING.Story.Part.callToArms": {
    "repo": "core",
@@ -12832,7 +12833,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "8f5776cce47e"
+   "hash": "8f5776cce47e",
+   "gone": "2026-10-14"
   },
   "core:FASTFIGHTING.Story.Part.distance": {
    "repo": "core",
@@ -12992,7 +12994,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "61517c08b3bf"
+   "hash": "61517c08b3bf",
+   "gone": "2026-10-14"
   },
   "core:FASTFIGHTING.Story.Part.drawWeapon": {
    "repo": "core",
@@ -14904,7 +14907,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "480d4be7d61f"
+   "hash": "480d4be7d61f",
+   "gone": "2026-10-14"
   },
   "core:FASTFIGHTING.Story.Part.shove": {
    "repo": "core",
@@ -15055,7 +15059,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "2de251e0c4e8"
+   "hash": "2de251e0c4e8",
+   "gone": "2026-10-14"
   },
   "core:FASTFIGHTING.Story.Part.standAside": {
    "repo": "core",
@@ -15175,7 +15180,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "3ff5620b0294"
+   "hash": "3ff5620b0294",
+   "gone": "2026-10-14"
   },
   "core:FASTFIGHTING.Story.Part.studyFails": {
    "repo": "core",
@@ -28320,7 +28326,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "5b064b794e02"
+   "hash": "5b064b794e02",
+   "gone": "2026-10-14"
   },
   "core:story:event.callToArms": {
    "repo": "core",
@@ -28330,7 +28337,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "ad6f3f65f891"
+   "hash": "ad6f3f65f891",
+   "gone": "2026-10-14"
   },
   "core:story:event.calmed": {
    "repo": "core",
@@ -28591,7 +28599,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "0a632875f782"
+   "hash": "0a632875f782",
+   "gone": "2026-10-14"
   },
   "core:story:event.dodge": {
    "repo": "core",
@@ -28712,7 +28721,8 @@
    "date": null,
    "commit": null,
    "hash": "102f44f8f78d",
-   "changed": true
+   "changed": true,
+   "gone": "2026-10-14"
   },
   "core:story:event.duelLose": {
    "repo": "core",
@@ -28762,7 +28772,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "d2fb0a034303"
+   "hash": "d2fb0a034303",
+   "gone": "2026-10-14"
   },
   "core:story:event.executeGoes": {
    "repo": "core",
@@ -28887,7 +28898,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "113f31145133"
+   "hash": "113f31145133",
+   "gone": "2026-10-14"
   },
   "core:story:event.fumble": {
    "repo": "core",
@@ -28917,7 +28929,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "4afb017a84cb"
+   "hash": "4afb017a84cb",
+   "gone": "2026-10-14"
   },
   "core:story:event.haggleDrop": {
    "repo": "core",
@@ -29067,7 +29080,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "2805cefccf56"
+   "hash": "2805cefccf56",
+   "gone": "2026-10-14"
   },
   "core:story:event.leadRetreat": {
    "repo": "core",
@@ -29210,7 +29224,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "eb249496a455"
+   "hash": "eb249496a455",
+   "gone": "2026-10-14"
   },
   "core:story:event.noticeSound": {
    "repo": "core",
@@ -29220,7 +29235,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "fae7e9f206f9"
+   "hash": "fae7e9f206f9",
+   "gone": "2026-10-14"
   },
   "core:story:event.noticeStandoff": {
    "repo": "core",
@@ -29440,7 +29456,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "752b8f5c2e1a"
+   "hash": "752b8f5c2e1a",
+   "gone": "2026-10-14"
   },
   "core:story:event.rally": {
    "repo": "core",
@@ -29641,7 +29658,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "872f6d1d48ee"
+   "hash": "872f6d1d48ee",
+   "gone": "2026-10-14"
   },
   "core:story:event.spellFails": {
    "repo": "core",
@@ -29691,7 +29709,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "f84c04610b5a"
+   "hash": "f84c04610b5a",
+   "gone": "2026-10-14"
   },
   "core:story:event.standAside": {
    "repo": "core",
@@ -29741,7 +29760,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "e1c390c5d982"
+   "hash": "e1c390c5d982",
+   "gone": "2026-10-14"
   },
   "core:story:event.strayHit": {
    "repo": "core",
@@ -29792,7 +29812,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "66d542d91956"
+   "hash": "66d542d91956",
+   "gone": "2026-10-14"
   },
   "core:story:event.studyFails": {
    "repo": "core",

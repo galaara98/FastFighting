@@ -27,7 +27,7 @@ describe("lazy: a turn knowingly spent doing nothing", () => {
       for ( const e of turns ) expect(r.log.filter(o => o.turn === e.turn && o.actorId === "slob" && !["thought", "lazy"].includes(o.type))).toEqual([]);
       if ( turns.length ) {
         const text = buildStory(r, spec, "roleplay", { tables, seed }).text;
-        expect(english["event.lazy"].some(l => text.includes(l.replace("{actor}", "Slob")))).toBe(true);
+        expect(english["condition.lazy"].some(l => text.includes(l.replace("{actor}", "Slob")))).toBe(true);
       }
     }
     expect(lazy).toBeGreaterThan(0);

@@ -2569,48 +2569,6 @@
     "{target}'s eyes snap open as {actor}'s healing takes hold.",
     "{actor} refuses to let {target} go, and {target} wakes."
   ],
-  "event.stand": [
-    "{actor} gets back up.",
-    "{actor} staggers to their feet.",
-    "{actor} rises.",
-    "{actor} pushes up from the ground.",
-    "{actor} scrambles upright."
-  ],
-  "event.shield": [
-    "{actor} raises a shield.",
-    "{actor} sets their shield.",
-    "{actor} hunkers behind the shield.",
-    "{actor} braces behind the shield.",
-    "{actor} lifts the shield, waiting."
-  ],
-  "event.draw": [
-    "{actor} draws their {weapon}.",
-    "{actor} readies their {weapon}.",
-    "Steel rings as {actor} draws their {weapon}.",
-    "{actor} pulls their {weapon} free.",
-    "{actor} brings their {weapon} to hand."
-  ],
-  "event.prone": [
-    "{actor} is knocked flat.",
-    "{actor} goes sprawling.",
-    "{actor} is dragged down.",
-    "{actor} hits the ground.",
-    "{actor} is bowled over."
-  ],
-  "event.grabbed": [
-    "{actor} is seized by {by}.",
-    "{by} grabs {actor}.",
-    "{actor} is caught fast in {by}'s grip.",
-    "{by} pins {actor}.",
-    "{actor} struggles in {by}'s hold."
-  ],
-  "event.escape": [
-    "{actor} wrenches free.",
-    "{actor} twists loose.",
-    "{actor} breaks the hold.",
-    "{actor} slips the grip.",
-    "{actor} pulls free."
-  ],
   "event.stuck": [
     "{actor} struggles but can't break free.",
     "{actor} strains against the hold.",
@@ -2638,13 +2596,6 @@
     "{actor} will not run. Not today.",
     "{actor} shakes off the urge to flee and holds their ground.",
     "{actor} takes a step back, then no more."
-  ],
-  "event.flee": [
-    "{actor} breaks and runs.",
-    "{actor} has had enough and flees.",
-    "{actor} turns tail.",
-    "{actor} bolts.",
-    "{actor} abandons the fight."
   ],
   "event.answerCall": [
     "{target} calls out to {actor} for help.",
@@ -2723,40 +2674,12 @@
     "While the others talk, {actor} watches {targets}.",
     "{actor} keeps quiet, eyes on {targets}."
   ],
-  "event.study": [
-    "{actor} studies {target}, looking for weaknesses.",
-    "{actor} watches {target} carefully.",
-    "{actor} recalls everything known about {target}.",
-    "{actor} sizes {target} up.",
-    "{actor} searches memory for how to beat {target}."
-  ],
   "event.parley": [
     "{actor} calls out, trying to talk.",
     "{actor} raises a hand and shouts for peace.",
     "{actor} tries to reason, but no one understands.",
     "{actor} calls for a truce.",
     "{actor} tries words first."
-  ],
-  "event.callHelp": [
-    "{actor} shouts to {target} for help!",
-    "{actor} yells for {target}.",
-    "{actor} calls {target} to arms.",
-    "\"Help!\" {actor} cries to {target}.",
-    "{actor} rouses {target} with a desperate shout."
-  ],
-  "event.noticeSight": [
-    "{actor} sees the fight.",
-    "{actor} spots the commotion.",
-    "{actor} looks up at the violence.",
-    "{actor} catches sight of the battle.",
-    "{actor} turns toward the fighting."
-  ],
-  "event.noticeSound": [
-    "{actor} hears the sounds of battle.",
-    "The clash of steel reaches {actor}.",
-    "{actor} hears shouting nearby.",
-    "Distant screams reach {actor}.",
-    "{actor} pricks up their ears at the noise."
   ],
   "event.noticeFled": [
     "{by} stumbles right into {actor}.",
@@ -3642,13 +3565,6 @@
     "{target} leaves {actor} a gap, and {actor} takes it.",
     "{actor} punishes {target} for turning their back."
   ],
-  "event.disengage": [
-    "{actor} backs off carefully, guard up.",
-    "{actor} gives ground step by step, never turning their back.",
-    "{actor} slips out of reach.",
-    "{actor} disengages with care.",
-    "{actor} edges away, blade still raised."
-  ],
   "event.thoughtTwo": [
     "{actor} {first}, but also {second}.",
     "{actor} {first}; part of them {second}.",
@@ -3774,13 +3690,6 @@
     "Sheltered by the wall, {actor} takes aim.",
     "{actor} steadies against the stonework.",
     "{actor} fires from behind cover."
-  ],
-  "event.step": [
-    "{actor} steps back to a better position.",
-    "{actor} slides away to reset.",
-    "{actor} dances back out of reach.",
-    "{actor} repositions.",
-    "{actor} gives ground deliberately."
   ],
   "event.victory": [
     "When the dust settles, {winners} stand victorious.",
@@ -4392,26 +4301,12 @@
     "Time, it seems, is in no hurry today.",
     "The only thing that ages noticeably is everyone's patience."
   ],
-  "event.callToArms": [
-    "\"With me!\" {actor} calls to {targets}.",
-    "{actor} waves {targets} into the fight.",
-    "{actor} shouts for {targets} to stand with their own.",
-    "{actor} calls {targets} to arms.",
-    "{actor} turns and bellows for {targets} to come."
-  ],
   "event.offendedKin": [
     "{actor} won't let {victim} fight alone, and turns on {by} and their friends.",
     "{victim} is in it now, and so is {actor}: against {by}.",
     "{actor} takes up {victim}'s quarrel with {by}.",
     "For {victim}'s sake, {actor} goes after {by} and company.",
     "{actor} stands with {victim}, against {by}."
-  ],
-  "event.lazy": [
-    "{actor} hangs back, content to let everyone else do the work.",
-    "{actor} doesn't lift a finger this time.",
-    "{actor} could act, and simply doesn't.",
-    "Whatever the others are doing, {actor} can't be bothered.",
-    "{actor} finds a reason to do nothing at all."
   ],
   "maneuver.move": [
     "{actor} crosses the floor, closing the distance.",

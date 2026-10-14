@@ -289,7 +289,7 @@ function narrate(e, roll, rel, fill) {
     }
     case "flee":
       if ( e.retreat ) return roll(e.leads ? "event.leadRetreat" : "event.fallBack", { ...f, target: e.with ?? "" });
-      return roll(e.feet ? `move.${e.mode === "fly" ? "fly" : "walk"}.flee` : "event.flee", f);
+      return roll(e.feet ? `move.${e.mode === "fly" ? "fly" : "walk"}.flee` : "maneuver.flee", f);
     case "retreat": return e.what === "refused" ? roll("event.retreatRefused", { ...f, target: e.target ?? "" }) : roll(e.urged ? "event.retreatUrged" : "event.retreatCall", { ...f, target: e.by ?? "" });
     case "rally": return roll("event.rally", { ...f, allies: listJoin(e.with ?? []) });
     case "heal":
@@ -308,15 +308,16 @@ function narrate(e, roll, rel, fill) {
       if ( e.dead ) return roll("event.death", f);
       if ( e.stable ) return roll("event.stabilize", f);
       return roll(e.dying < e.before ? "event.recoveryGood" : "event.recoveryBad", f);
-    case "stand": return roll("event.stand", f);
-    case "shield": return roll("event.shield", f);
-    case "draw": return roll("event.draw", f);
-    case "prone": return roll("event.prone", f);
-    case "grabbed": return roll("event.grabbed", f);
-    case "escape": return roll(e.success ? "event.escape" : "event.stuck", f);
+    // (Maneuvers and conditions from the master list: docs/story-maneuvers-conditions.md.)
+    case "stand": return roll("maneuver.standUp", f);
+    case "shield": return roll("maneuver.raiseShield", f);
+    case "draw": return roll("maneuver.drawWeapon", f);
+    case "prone": return roll("condition.prone", f);
+    case "grabbed": return roll("condition.grabbed", f);
+    case "escape": return roll(e.success ? "maneuver.escape" : "event.stuck", f);
     case "waver": return roll("event.waver", f);
     case "holdGround": return roll(e.ordered ? "event.holdOrdered" : "event.holdGround", { ...f, target: e.by ?? "" });
-    case "study": return roll(e.worked === false ? "event.studyFails" : "event.study", f);
+    case "study": return roll(e.worked === false ? "event.studyFails" : "maneuver.assess", f);
     case "observe": return roll("event.observe", { ...f, targets: listJoin(e.targets ?? []) });
     case "shareLore": return roll("event.shareLore", { ...f, allies: listJoin(e.with ?? []) });
     case "scheme": return roll("event.scheme", f);
@@ -325,10 +326,10 @@ function narrate(e, roll, rel, fill) {
       return roll(e.back ? "event.commandBack" : e.from ? "event.commandTakes" : "event.commandTakesFresh", { ...f, target: e.from ?? "" });
     case "keepLore": return ""; // (kept to itself: nothing to see)
     case "parley": return roll("event.parley", f);
-    case "callHelp": return roll("event.callHelp", { ...f, target: e.toward });
-    case "lazy": return roll("event.lazy", f);
-    case "callToArms": return roll("event.callToArms", { ...f, targets: listJoin(e.targets ?? []) });
-    case "notice": return roll({ sight: "event.noticeSight", sound: "event.noticeSound", fledInto: "event.noticeFled", help: "event.noticeHelp", attacked: "event.noticeAttacked", standoff: "event.noticeStandoff" }[e.cause] ?? "event.noticeSound", f);
+    case "callHelp": return roll("maneuver.callForHelp", { ...f, target: e.toward });
+    case "lazy": return roll("condition.lazy", f);
+    case "callToArms": return roll("maneuver.callToArms", { ...f, targets: listJoin(e.targets ?? []) });
+    case "notice": return roll({ sight: "maneuver.noticeSight", sound: "maneuver.noticeSound", feel: "maneuver.noticeFeel", fledInto: "event.noticeFled", help: "event.noticeHelp", attacked: "event.noticeAttacked", standoff: "event.noticeStandoff" }[e.cause] ?? "event.noticeSound", f);
     case "join": return roll(e.why === "forced" ? "event.joinForced" : "event.join", f);
     case "watch": return roll(e.neutral ? "event.watchNeutral" : "event.watch", f);
     case "neutral": {
@@ -430,10 +431,10 @@ function narrate(e, roll, rel, fill) {
     // A failed save that leaves a condition is told by the condition that follows.
     case "riderSave": return e.degree > 1 && e.controls ? roll("event.riderSavePass", f) : "";
     case "opportunity": return roll("event.opportunity", f);
-    case "disengage": return e.made === false ? "" : roll("event.disengage", f); // (missed: the blows that follow tell it)
+    case "disengage": return e.made === false ? "" : roll("maneuver.step", f); // (missed: the blows that follow tell it)
     case "afflictionStage": return roll("event.afflictionStage", f);
     case "afflictionEnd": return roll("event.afflictionEnd", f);
-    case "step": return roll("event.step", f);
+    case "step": return roll("maneuver.step", f);
     case "surprise": return roll("event.surprise", f);
     case "aftermath": return roll(e.tended ? "event.aftermath" : "event.aftermathAlone", f);
     case "standoff": return roll("event.standoff", f);
