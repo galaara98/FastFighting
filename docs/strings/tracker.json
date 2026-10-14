@@ -13517,6 +13517,16 @@
    "commit": null,
    "hash": "bbd8c6ddb9cf"
   },
+  "core:FASTFIGHTING.Story.Part.callToArmsOne": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Story.Part.callToArmsOne",
+   "area": "core/Story",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "a062b3a4d4f7"
+  },
   "core:FASTFIGHTING.Story.Part.calmed": {
    "repo": "core",
    "file": "languages/en.json",
@@ -32391,6 +32401,16 @@
    "date": null,
    "commit": null,
    "hash": "82d693fff3a2"
+  },
+  "core:story:maneuver.callToArmsOne": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "maneuver.callToArmsOne",
+   "area": "core/story.maneuver",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "969fd2b6ca52"
   },
   "core:story:maneuver.catchFall": {
    "repo": "core",

@@ -4450,6 +4450,11 @@
     "{actor} races off to fetch {target}.",
     "{actor} raises the alarm, summoning {target} to the fight."
   ],
+  "maneuver.callToArmsOne": [
+    "{actor} calls {targets} into the fight.",
+    "{actor} bellows a command, and {targets} answers.",
+    "At a signal from {actor}, {targets} surges into the fray."
+  ],
   "maneuver.callToArms": [
     "{actor} calls {targets} into the fight.",
     "{actor} bellows a command, and {targets} answer.",
