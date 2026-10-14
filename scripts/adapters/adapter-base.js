@@ -245,6 +245,7 @@ export class SystemAdapter {
    * @param {object} options   {lootMode, corpseMode, fledMode}
    * @returns {Promise<object>} an undo record, as commitOutcome's
    */
+  // (options.before: the creature as the turn found it, captureUnit's shape, for what the change set leaves out.)
   async commitChanges(tokenDoc, spec, changes, final, options) {
     return this.commitOutcome(tokenDoc, spec, final, options);
   }
@@ -259,11 +260,13 @@ export class SystemAdapter {
 
   /**
    * A character's reactions, for its player to say always use / ask me / never: [{id, label}], each id as its
-   * CombatantSpec's reactions have it (and "opportunity" for the opportunity strike, where the system has one).
+   * CombatantSpec's reactions have it (and "opportunity" for the opportunity strike, where the system has one). A
+   * reaction marked `passive` (always on, like a brawler's Toughness) is no one's choice and isn't listed.
    * @param {object} spec   its CombatantSpec
    */
   reactionsOf(spec) {
-    const out = (spec?.reactions ?? []).map(r => ({ id: r.id, label: r.label ?? r.name ?? r.id }));
+    // (A passive one, always on, isn't a choice.)
+    const out = (spec?.reactions ?? []).filter(r => !r.passive).map(r => ({ id: r.id, label: r.label ?? r.name ?? r.id }));
     if ( this.rules?.opportunity ) out.push({ id: "opportunity", label: null });
     return out;
   }

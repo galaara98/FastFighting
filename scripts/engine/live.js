@@ -357,6 +357,7 @@ export function setApproach(run, approach) {
  * NPC as the engine judges, unless the GM wants to be asked. `would` is the engine's own judgement.
  */
 function decide(run, u, { reaction, trigger, by = null, ally = null, would }) {
+  if ( reaction?.passive ) return !!would; // (always on: no one chooses it)
   const live = run.live;
   const player = live.players.has(u.id);
   const id = reaction?.id ?? "";

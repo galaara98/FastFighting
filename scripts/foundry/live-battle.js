@@ -290,7 +290,7 @@ async function playTurn(u, combatant, key) {
       if ( !doc ) continue;
       const spec = { ...battle.run.byId.get(id).spec, resources: before[id].resources };
       try {
-        const record = await adapter.commitChanges(doc, spec, ch, after[id], options);
+        const record = await adapter.commitChanges(doc, spec, ch, after[id], { ...options, before: before[id] });
         if ( record ) turn.records.push(record);
       } catch ( err ) {
         console.error(`${MODULE_ID} | writing ${doc.name}'s turn`, err);
@@ -416,9 +416,12 @@ async function closePlayerTurn() {
   const adapter = getAdapter();
   const messages = pc.messages.map(id => game.messages.get(id)).filter(Boolean);
   const ids = Object.fromEntries(run.units.map(u => [u.spec.tokenId ?? u.id, u.id]));
+  // (By actor too, for a card that names only the actor: the first of its tokens.)
+  const actors = {};
+  for ( const u of run.units ) if ( u.spec.actorId && !(u.spec.actorId in actors) ) actors[u.spec.actorId] = u.id;
   let events = [];
   try {
-    events = adapter.readTurn?.(messages, { actorId: run.byId.get(pc.id)?.spec.actorId ?? null, tokenId: pc.id, ids }) ?? [];
+    events = adapter.readTurn?.(messages, { actorId: run.byId.get(pc.id)?.spec.actorId ?? null, tokenId: pc.id, ids, actors }) ?? [];
   } catch ( err ) {
     console.error(`${MODULE_ID} | reading ${pc.id}'s turn`, err);
   }
@@ -514,7 +517,7 @@ async function playerMoved(doc) {
       const target = docOf(id);
       if ( !target ) continue;
       try {
-        const record = await adapter.commitChanges(target, { ...run.byId.get(id).spec, resources: before[id].resources }, ch, after[id], { live: true, fledMode: setting("fledMode"), lootMode: setting("lootMode"), corpseMode: setting("corpseMode") });
+        const record = await adapter.commitChanges(target, { ...run.byId.get(id).spec, resources: before[id].resources }, ch, after[id], { live: true, before: before[id], fledMode: setting("fledMode"), lootMode: setting("lootMode"), corpseMode: setting("corpseMode") });
         if ( record ) pc.records.push(record);
       } catch ( err ) {
         console.error(`${MODULE_ID} | a reaction against ${doc.name}`, err);

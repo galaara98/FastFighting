@@ -132,6 +132,17 @@ describe("live battles: the engine a turn at a time", () => {
     }
   });
 
+  test("a passive reaction (always on, like a brawler's Toughness) is no one's choice: never asked, always used", () => {
+    const toughness = { id: "toughness", label: "Toughness", on: "hit", reduce: part([], 2, "untyped"), melee: true, passive: true };
+    let n = 0;
+    for ( const seed of [1, 2, 3, 4, 5, 6] ) {
+      const run = beginLive(skirmish({ valeros: { reactions: [toughness], hp: { value: 400, max: 400 }, position: at(0) }, orc: { desires: [{ kind: 'hurt', targetId: 'valeros', level: 95 }] }, kyra: { position: at(0, 300) }, goblin: { position: at(300) }, boar: { position: at(300, 300) } }), pf2eRules, { seed, players: ["valeros", "kyra"] });
+      liveRound(run, 1);
+      n += liveTurn(run, "orc").events.filter(e => e.type === "reaction").length;
+    }
+    expect(n).toBeGreaterThan(0);
+  });
+
   test("an NPC's reactions: as the engine judges, unless the GM wants to be asked", () => {
     const block = { id: "orcblock", label: "Shield Block", on: "hit", reduce: part([], 5, "untyped"), physical: true };
     const spec = () => skirmish({ orc: { reactions: [block], hp: { value: 400, max: 400 } }, valeros: { actions: [strike({ bonus: 20 })], desires: [{ kind: 'hurt', targetId: 'orc', level: 95 }] }, kyra: { position: at(0, 300) }, goblin: { position: at(300) }, boar: { position: at(300, 300) } });
