@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 import {
-  beginLive, liveRound, liveTurn, pcTurn, syncFromSheets, applyFact, mindOf, snapshotRun, restoreRun, NeedsDecision, bandLevel
+  beginLive, liveRound, liveTurn, pcTurn, pcTurnBegin, pcTurnEnd, leavingReach, reactNow, syncFromSheets, applyFact, mindOf, snapshotRun, restoreRun,
+  NeedsDecision, bandLevel
 } from "../scripts/engine/live.js";
 import { STATUS, SWAY } from "../scripts/constants.js";
 import { pf2eRules } from "./fixtures/three-action-rules.js";
@@ -200,6 +201,24 @@ describe("live battles: the engine a turn at a time", () => {
     liveRound(system, 1);
     expect(liveTurn(engine, "orc").events.some(e => e.type === "persistent")).toBe(true);
     expect(liveTurn(system, "orc").events.some(e => e.type === "persistent")).toBe(false);
+  });
+
+  test("a player's turn begun and ended apart: a foe's reaction in the middle of it is part of it", () => {
+    const run = beginLive(skirmish({ orc: { flags: { fearless: true, reactiveStrike: true }, hp: { value: 300, max: 300 } }, valeros: { position: at(5) } }), pf2eRules, { seed: 6, players: ["valeros", "kyra"] });
+    liveRound(run, 1);
+    pcTurnBegin(run, "valeros");
+    // Valeros walks away from the orc beside him: it may strike as he goes.
+    const leaving = leavingReach(run, "valeros", { x: 0, y: 60 });
+    expect(leaving.map(l => l.reactorId)).toEqual(["orc"]);
+    expect(leavingReach(run, "valeros", { x: 15, y: 0 })).toEqual([]); // (round to its other side: still beside it)
+    const turn = run.turn;
+    const struck = reactNow(run, "orc", "valeros", leaving[0].strike);
+    expect(struck[0]).toMatchObject({ type: "opportunity", actorId: "orc", targetId: "valeros", turn, turnOf: "valeros" });
+    expect(struck.some(e => e.type === "attack" && e.actorId === "orc")).toBe(true);
+    expect(run.byId.get("orc").reactionsLeft).toBe(0);
+    const { events } = pcTurnEnd(run, "valeros", [], { valeros: { position: { x: 0, y: 60 } } });
+    expect(events.every(e => e.turn === turn)).toBe(true);
+    expect(run.byId.get("valeros").adjacent.has("orc")).toBe(false);
   });
 
   test("syncing the sheets says what changed that the engine didn't do", () => {

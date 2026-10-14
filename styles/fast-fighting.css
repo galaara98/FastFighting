@@ -496,3 +496,7 @@
 .ff-reactions, .ff-rerolls { margin: 0.4rem 0; }
 .ff-reaction { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; margin: 0.2rem 0; }
 .ff-reaction select { max-width: 50%; }
+.ff-battle-review { padding: 0.5rem 0.75rem; border-bottom: 2px solid #f0a35b; background: color-mix(in srgb, #f0a35b 10%, transparent); }
+.ff-battle-review ul { list-style: none; margin: 0.3rem 0; padding: 0; }
+.ff-battle-review li { display: flex; gap: 0.3rem; align-items: center; flex-wrap: wrap; margin: 0.2rem 0; }
+.ff-battle-review li.is-unsure label { font-style: italic; }

@@ -29,8 +29,8 @@ import { storyBeats } from "../story/story.js";
 import { logLine } from "../story/log-lines.js";
 import { loadStoryTables } from "../story/tables.js";
 import {
-  beginLive, liveRound, liveTurn, pcTurn, syncFromSheets, setApproach, captureAll, snapshotRun, restoreRun, endLive, NeedsDecision,
-  applyFact, gmMoment
+  beginLive, liveRound, liveTurn, pcTurnBegin, pcTurnEnd, syncFromSheets, setApproach, captureAll, snapshotRun, restoreRun, endLive,
+  NeedsDecision, applyFact, gmMoment, leavingReach, reactNow
 } from "../engine/live.js";
 import { diffAll } from "../engine/changes.js";
 import { randomSeed } from "../engine/rng.js";
@@ -76,6 +76,9 @@ async function keep() {
   if ( !battle ) return;
   changed();
   battle.data.snapshot = snapshotRun(battle.run);
+  // (A player's turn under way: who, since when, what the GM said and what reactions wrote. Its cards are found again by time.)
+  const pc = battle.pc;
+  battle.data.pc = pc ? { combatantId: pc.combatantId, id: pc.id, round: pc.round, facts: pc.facts, records: pc.records, snapshot: pc.snapshot, from: pc.from } : null;
   const doc = await store();
   // (The battle's own key replaced whole, the store's other keys left as they are.)
   await doc.update({ [`flags.${MODULE_ID}.battles.==${battle.combat.id}`]: battle.data });
@@ -183,13 +186,20 @@ async function turnBegins(combatant) {
     return;
   }
   if ( battle.run.live.players.has(u.id) ) {
-    battle.pc = { combatantId: combatant.id, id: u.id, round: battle.combat.round, messages: [], facts: [], from: Date.now() };
-    changed();
+    await beginPlayerTurn(u, combatant);
     // (The players' turn: the game goes on, so they can move and roll.)
     if ( game.paused ) game.togglePause(false, { broadcast: true });
     return;
   }
   await playTurn(u, combatant, key);
+}
+
+/** A player's turn begins: kept as it was (for Rewind), begun in the engine, and its cards gathered from now on. */
+function beginPlayerTurn(u, combatant) {
+  const snapshot = snapshotRun(battle.run, { log: false });
+  pcTurnBegin(battle.run, u.id);
+  battle.pc = { combatantId: combatant.id, id: u.id, round: battle.combat.round, messages: [], facts: [], records: [], snapshot, from: Date.now() };
+  return keep();
 }
 
 /** A new round: those not yet in the fight look around, and one that notices joins the tracker. */
@@ -413,18 +423,107 @@ async function closePlayerTurn() {
     console.error(`${MODULE_ID} | reading ${pc.id}'s turn`, err);
   }
   const states = await readStates();
-  // (Harm the cards don't account for: the player's, as far as anyone can tell.)
-  const explained = new Set(events.filter(e => e.damage > 0).map(e => e.targetId));
-  for ( const [id, s] of Object.entries(states) ) {
-    const u = run.byId.get(id);
-    if ( !u || id === pc.id || explained.has(id) || !Number.isFinite(s.hp) || s.hp >= u.hp ) continue;
-    events.push({ type: "auto", targetId: id, action: "", damage: u.hp - s.hp, sure: false });
-  }
-  const snapshot = snapshotRun(run, { log: false });
-  const result = pcTurn(run, pc.id, events, states, pc.facts ?? []);
-  const turn = { key: `${pc.round}.${pc.combatantId}`, combatantId: pc.combatantId, round: pc.round, kind: "pc", records: [], messages: [], moves: [], doors: [], snapshot };
+  events = reconcile(run, pc.id, events, states);
+  // (Something it couldn't be sure of: the GM looks first. The battle waits.)
+  if ( events.some(e => e.sure === false) ) events = await review(pc, events);
+  const result = pcTurnEnd(run, pc.id, events, states, pc.facts ?? []);
+  const turn = { key: `${pc.round}.${pc.combatantId}`, combatantId: pc.combatantId, round: pc.round, kind: "pc", records: pc.records ?? [], messages: [], moves: [], doors: [], snapshot: pc.snapshot };
   turn.messages.push(...await tellNew());
   await settleTurn(turn, result.ended);
+}
+
+/**
+ * What the cards say, against what the sheets show: the harm a creature really took (its sheet's loss) is shared among
+ * the blows read at it; a creature that lost hit points no card explains took it from the player, as far as anyone
+ * can tell (the GM looks); a heal, as much as the sheet shows.
+ */
+function reconcile(run, pcId, events, states) {
+  const lost = id => {
+    const u = run.byId.get(id);
+    const s = states[id];
+    return u && Number.isFinite(s?.hp) ? Math.max(0, u.hp - s.hp) : 0;
+  };
+  const out = events.map(e => ({ ...e }));
+  const hitsAt = new Map();
+  for ( const e of out ) if ( ["attack", "save", "auto"].includes(e.type) && e.targetId ) (hitsAt.get(e.targetId) ?? hitsAt.set(e.targetId, []).get(e.targetId)).push(e);
+  for ( const [id, list] of hitsAt ) {
+    const real = lost(id);
+    const read = list.reduce((sum, e) => sum + (e.damage > 0 ? e.damage : 0), 0);
+    if ( !read ) continue;
+    // (Shared as the rolls had it; what's left over by rounding, on the last.)
+    let left = real;
+    list.filter(e => e.damage > 0).forEach((e, i, hits) => {
+      e.damage = i === hits.length - 1 ? left : Math.min(left, Math.round(real * e.damage / read));
+      left -= e.damage;
+    });
+  }
+  for ( const [id, s] of Object.entries(states) ) {
+    if ( id === pcId || hitsAt.has(id) ) continue;
+    const real = lost(id);
+    if ( real > 0 ) out.push({ type: "auto", targetId: id, action: "", damage: real, sure: false });
+  }
+  for ( const e of out ) {
+    if ( e.type !== "heal" || !e.targetId ) continue;
+    const u = run.byId.get(e.targetId);
+    const s = states[e.targetId];
+    if ( u && Number.isFinite(s?.hp) ) e.amount = Math.max(0, s.hp - u.hp);
+  }
+  return out;
+}
+
+/**
+ * The GM looks at a player's turn before it's told: what was read of it, each kept or dropped (and a talk's kind and how
+ * well it went, set right). Resolves with the events to tell.
+ */
+function review(pc, events) {
+  return new Promise(resolve => {
+    battle.review = { id: pc.id, combatantId: pc.combatantId, events, resolve: chosen => {
+      battle.review = null;
+      changed();
+      resolve(chosen);
+    } };
+    changed();
+  });
+}
+
+/** The GM's review done: the events as the GM left them (Battle Interface). */
+export function finishReview(events) {
+  battle?.review?.resolve(events);
+}
+
+/**
+ * A player's token moved: a foe whose reach it left may strike as it goes. FastFighting asks the GM, unless the GM lets
+ * it decide (then the foe strikes, as its tactics would). Done now, on the sheets; told with the player's turn.
+ */
+async function playerMoved(doc) {
+  const pc = battle?.pc;
+  if ( !pc || pc.id !== doc.id || !doc.object ) return;
+  const p = positionOf(doc.object);
+  const to = { x: p.x, y: p.y };
+  const run = battle.run;
+  for ( const { reactorId, strike } of leavingReach(run, pc.id, to) ) {
+    const use = run.live.npcReactions === "ask"
+      ? await ask({ unitId: reactorId, player: false, reactionId: "opportunity", reaction: strike.name, trigger: "leaveReach", byId: pc.id, would: true })
+      : true;
+    if ( !use ) continue;
+    const before = captureAll(run);
+    reactNow(run, reactorId, pc.id, strike);
+    const after = captureAll(run);
+    const adapter = getAdapter();
+    for ( const [id, ch] of Object.entries(diffAll(before, after)) ) {
+      const target = docOf(id);
+      if ( !target ) continue;
+      try {
+        const record = await adapter.commitChanges(target, { ...run.byId.get(id).spec, resources: before[id].resources }, ch, after[id], { live: true, fledMode: setting("fledMode"), lootMode: setting("lootMode"), corpseMode: setting("corpseMode") });
+        if ( record ) pc.records.push(record);
+      } catch ( err ) {
+        console.error(`${MODULE_ID} | a reaction against ${doc.name}`, err);
+      }
+    }
+  }
+  // (Where it is now, as the engine has it: the next move is from here.)
+  syncFromSheets(run, { [pc.id]: { position: to } });
+  await keep();
 }
 
 /* -------------------------------------------- */
@@ -499,6 +598,8 @@ export function rewindTurn() {
   return queue(async () => {
     const turn = battle?.data.turns.at(-1);
     if ( !turn ) return false;
+    // (A player's turn under way after it: what a foe's reaction wrote in it comes off first.)
+    if ( battle.pc?.records?.length ) await holdingPause(() => revertEntry(battle.scene, { records: battle.pc.records }));
     await holdingPause(() => revertEntry(battle.scene, turn));
     battle.run = restoreRun(battle.spec, battle.rules, turn.snapshot, { log: battle.run.log });
     battle.data.turns = battle.data.turns.slice(0, -1);
@@ -515,7 +616,7 @@ export function rewindTurn() {
     await keep();
     await battle.combat.setFlag(MODULE_ID, "live", { id: battle.data.id, active: true });
     const u = unitOf(battle.combat.combatant);
-    if ( u && battle.run.live.players.has(u.id) ) battle.pc = { combatantId: battle.combat.combatant.id, id: u.id, round: battle.combat.round, messages: [], from: Date.now() };
+    if ( u && battle.run.live.players.has(u.id) ) await beginPlayerTurn(u, battle.combat.combatant);
     else if ( u ) await rewoundCard(u);
     changed();
     return true;
@@ -572,7 +673,7 @@ export function liveFact(fact) {
     if ( !battle || battle.data.ended ) return false;
     if ( battle.pc ) {
       battle.pc.facts.push(fact);
-      changed();
+      await keep();
       return true;
     }
     gmMoment(battle.run, fact.id);
@@ -624,6 +725,10 @@ async function pickUp() {
     const rules = getAdapter()?.rules;
     if ( !rules ) return;
     battle = { combat, scene: combat.scene, spec, rules, run: restoreRun(spec, rules, data.snapshot), busy: null, pc: null, data };
+    if ( data.pc ) {
+      const own = m => m.getFlag(MODULE_ID, "story") || m.getFlag(MODULE_ID, "live");
+      battle.pc = { ...data.pc, messages: game.messages.filter(m => m.timestamp >= data.pc.from && !own(m)).map(m => m.id) };
+    }
     ui.notifications.info(loc("FASTFIGHTING.Live.PickedUp"));
     return;
   }
@@ -632,6 +737,10 @@ async function pickUp() {
 export function registerLiveBattles() {
   Hooks.once("ready", () => game.socket.on(SOCKET, onSocket));
   Hooks.on("combatTurnChange", onTurnChange);
+  Hooks.on("updateToken", (doc, changes) => {
+    if ( !battle?.pc || doc.id !== battle.pc.id || !("x" in changes || "y" in changes) || !runsHere(battle.data) ) return;
+    queue(() => playerMoved(doc));
+  });
   Hooks.on("createChatMessage", onMessage);
   Hooks.once("ready", () => pickUp());
   // (Its GM left: the active GM picks it up.)

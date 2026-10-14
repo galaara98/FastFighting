@@ -2,6 +2,24 @@
   {{#if none}}
     <p class="ff-battle-none">{{localize "FASTFIGHTING.Battle.None"}}</p>
   {{else}}
+    {{#if review}}
+    <section class="ff-battle-review">
+      <p><strong>{{review.title}}</strong></p>
+      <ul>
+        {{#each review.events}}
+        <li data-event="{{i}}" class="{{#if unsure}}is-unsure{{/if}}">
+          <label><input type="checkbox" name="keep" checked> {{text}}</label>
+          {{#if talk}}
+          <select name="target">{{#each targets}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select>
+          <select name="kind">{{#each kinds}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select>
+          <select name="degree">{{#each degrees}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select>
+          {{/if}}
+        </li>
+        {{/each}}
+      </ul>
+      <button type="button" class="ff-btn" data-action="tellIt"><i class="fa-solid fa-feather"></i> {{localize "FASTFIGHTING.Battle.TellIt"}}</button>
+    </section>
+    {{/if}}
     <header class="ff-battle-turn">
       <div class="ff-battle-now">
         <span class="ff-chip">{{localize "FASTFIGHTING.Battle.Round" n=round}}</span>

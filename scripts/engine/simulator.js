@@ -899,6 +899,11 @@ function tierIndex(run, action, tierAction) {
   return run.prep.tierActions?.get(action.id)?.indexOf(tierAction) ?? null;
 }
 
+/** A strike u makes out of its turn, now (a reaction: in a live battle, to something a player did). */
+export function strikeOutOfTurn(run, u, action, t) {
+  return executeOffense(run, u, action, t, 0);
+}
+
 function executeOffense(run, u, action, t, attacksMade) {
   if ( counterspelled(run, u, action) ) {
     run.blood = true;

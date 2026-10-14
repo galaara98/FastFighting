@@ -10,7 +10,7 @@ import { NEUTRAL_PARTY } from "../constants.js";
 import { DESIRE_BAND_KEYS } from "../engine/behavior/desire.js";
 import { mindOf, bandLevel } from "../engine/live.js";
 import {
-  liveBattle, continueBattle, rewindTurn, rewindEncounter, playCurrent, liveFact, dropHeldFact, setNpcReactions, setPlayThrough
+  liveBattle, continueBattle, rewindTurn, rewindEncounter, playCurrent, liveFact, dropHeldFact, setNpcReactions, setPlayThrough, finishReview
 } from "../foundry/live-battle.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -50,6 +50,7 @@ export class BattleInterface extends HandlebarsApplicationMixin(ApplicationV2) {
       forget: BattleInterface.#onForget,
       dropHeld: BattleInterface.#onDropHeld,
       npcReactions: BattleInterface.#onNpcReactions,
+      tellIt: BattleInterface.#onTellIt,
       playThrough: BattleInterface.#onPlayThrough
     }
   };
@@ -109,7 +110,22 @@ export class BattleInterface extends HandlebarsApplicationMixin(ApplicationV2) {
         others: others.filter(o => o.id !== u.id)
       };
     });
+    // A player's turn waiting on the GM: what was read of it, to keep or drop (and a talk set right).
+    const review = b.review ? {
+      title: fmt("FASTFIGHTING.Battle.ReviewTitle", { name: name(b.review.id) }),
+      events: b.review.events.map((e, i) => ({
+        i, unsure: e.sure === false, talk: e.type === "talk",
+        text: fmt(`FASTFIGHTING.Battle.Read.${game.i18n.has(`FASTFIGHTING.Battle.Read.${e.type}`) ? e.type : "other"}`, {
+          actor: name(b.review.id), target: name(e.targetId), action: e.action || e.skill || "", damage: e.damage ?? 0, amount: e.amount ?? 0,
+          degree: Number.isFinite(e.degree) ? loc(`FASTFIGHTING.Battle.Degree.${e.degree}`) : "", kind: e.kind ? loc(`FASTFIGHTING.Battle.Talk.${e.kind}`) : ""
+        }),
+        kinds: ["persuade", "intimidate", "deceive"].map(k => ({ value: k, label: loc(`FASTFIGHTING.Battle.Talk.${k}`), selected: e.kind === k })),
+        targets: [{ value: "", label: "—", selected: !e.targetId }, ...run.units.filter(u => u.id !== b.review.id).map(u => ({ value: u.id, label: u.spec.name, selected: e.targetId === u.id }))],
+        degrees: [3, 2, 1, 0].map(d => ({ value: d, label: loc(`FASTFIGHTING.Battle.Degree.${d}`), selected: (e.degree ?? 2) === d }))
+      }))
+    } : null;
     return {
+      review,
       round: b.combat.round,
       turn: current ? fmt(player ? "FASTFIGHTING.Battle.PlayerTurn" : "FASTFIGHTING.Battle.Turn", { name: current.spec.name }) : "",
       state, stateText: loc(`FASTFIGHTING.Battle.State.${state}`),
@@ -163,6 +179,27 @@ export class BattleInterface extends HandlebarsApplicationMixin(ApplicationV2) {
 
   static #onDropHeld(event, target) {
     dropHeldFact(Number(target.dataset.index));
+  }
+
+  /** The GM's review done: the events kept, a talk as the GM set it, all of them sure now. */
+  static #onTellIt(event, target) {
+    const b = liveBattle();
+    if ( !b?.review ) return;
+    const root = target.closest(".ff-battle-review");
+    const events = [];
+    b.review.events.forEach((e, i) => {
+      const row = root.querySelector(`[data-event="${i}"]`);
+      if ( row && !row.querySelector("[name=keep]")?.checked ) return;
+      const kept = { ...e, sure: true };
+      if ( e.type === "talk" && row ) {
+        kept.kind = row.querySelector("[name=kind]")?.value ?? e.kind;
+        kept.degree = Number(row.querySelector("[name=degree]")?.value ?? e.degree ?? 2);
+        kept.targetId = row.querySelector("[name=target]")?.value || e.targetId;
+        if ( !kept.targetId ) return; // (at no one: nothing to tell)
+      }
+      events.push(kept);
+    });
+    finishReview(events);
   }
 
   static async #onNpcReactions(event, target) {

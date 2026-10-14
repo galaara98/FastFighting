@@ -20,9 +20,10 @@
 import { STATUS, SWAY, NEUTRAL_PARTY, clamp } from "../constants.js";
 import {
   prepareBattle, beginRun, beginRound, playTurn, afterTurn, endRun, startTurn, noteCommand, log, notice, settleSides,
-  breakOnHarm, noteHarm, noteFall, noteHeal, captureUnit
+  breakOnHarm, noteHarm, noteFall, noteHeal, captureUnit, strikeOutOfTurn
 } from "./simulator.js";
 import { createRun, isStanding, areEnemies, edgeDistance } from "./battle-state.js";
+import { threats } from "./behavior/reactions.js";
 import { createRng, deriveSeed } from "./rng.js";
 import { recompute, applyOutcome } from "./behavior/effects.js";
 import { reactionsPerRound } from "./behavior/reactions.js";
@@ -110,20 +111,34 @@ export function liveTurn(run, id, { answers = null, salt = 0 } = {}) {
  * A player's turn, played at the table: what was read of it (events in the engine's own log shapes: attack, save,
  * auto, heal, talk, move, control, ...), then the sheets as they now are (`states`, as syncFromSheets takes them). A
  * creature the sheets show fallen fell to whoever harmed it this turn. `facts`: what the GM said came of it meanwhile
- * (applyFact's), told with it. Returns {events, ended, changes}.
+ * (applyFact's), told with it. Returns {events, ended, changes}. (Begun and ended apart, pcTurnBegin and pcTurnEnd,
+ * when something happens in the middle of it: a foe's reaction.)
  */
 export function pcTurn(run, id, events = [], states = null, facts = []) {
+  const from = run.log.length;
+  pcTurnBegin(run, id);
+  const out = pcTurnEnd(run, id, events, states, facts);
+  return { ...out, events: run.log.slice(from) };
+}
+
+/** A player's turn begins: its own dice, and what comes back to it (its reaction; being hurt now, if it was since). */
+export function pcTurnBegin(run, id) {
   const u = run.byId.get(id);
   if ( !u ) throw new Error(`No creature ${id} in this battle`);
   nextDice(run);
-  const from = run.log.length;
   noteCommand(run);
   startTurn(run, u);
-  // (What comes back at the start of its turn: its reaction; being hurt since its last turn means being hurt now.)
   u.beingHurt = !!u.hurtSinceTurn;
   u.hurtSinceTurn = false;
   u.reactionsLeft = reactionsPerRound(run.prep.rules, u);
   u.disengaged = false;
+}
+
+/** A player's turn ends: what was read of it, the sheets, the GM's facts (pcTurn's), and what comes after a turn. */
+export function pcTurnEnd(run, id, events = [], states = null, facts = []) {
+  const u = run.byId.get(id);
+  if ( !u ) throw new Error(`No creature ${id} in this battle`);
+  const from = run.log.length;
   const harmers = new Map();
   for ( const e of events ) observe(run, u, e, harmers);
   const changes = states ? syncFromSheets(run, states) : [];
@@ -295,6 +310,36 @@ function engage(run, u) {
       o.adjacent.add(u.id);
     }
   }
+}
+
+/**
+ * The foes whose reach a creature leaves by moving (in a live battle, a player's token, from where the engine has it to
+ * \`to\`, in feet): each that could strike as it goes, with the strike it would make.
+ */
+export function leavingReach(run, id, to) {
+  const u = run.byId.get(id);
+  if ( !u?.pos || !to ) return [];
+  const near = threats(run, u);
+  const from = u.pos;
+  u.pos = { x: to.x, y: to.y };
+  const out = near.filter(({ e, strike }) => (edgeDistance(e, u) ?? 0) > (strike.reach ?? 5) + 0.5).map(({ e, strike }) => ({ reactorId: e.id, strike }));
+  u.pos = from;
+  return out;
+}
+
+/**
+ * A foe's reaction to what a player did, now (its turn's dice): the strike as the player's character leaves its reach.
+ * Returns the events it made.
+ */
+export function reactNow(run, reactorId, targetId, strike) {
+  const e = run.byId.get(reactorId);
+  const t = run.byId.get(targetId);
+  if ( !e || !t || !strike ) return [];
+  const from = run.log.length;
+  e.reactionsLeft = Math.max(0, (e.reactionsLeft ?? 1) - 1);
+  log(run, e, { type: "opportunity", target: t.spec.name, targetId: t.id, action: strike.name });
+  strikeOutOfTurn(run, e, strike, t);
+  return run.log.slice(from);
 }
 
 /** How each creature could reach each other one, worked out again from the map (foundry/battle.js approachFor). */

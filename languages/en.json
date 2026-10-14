@@ -2063,6 +2063,22 @@
         "surrender": "Surrenders",
         "standDown": "Stands down",
         "noSide": "Takes no side"
+      },
+      "ReviewTitle": "{name}'s turn: what was read. Keep, drop or set right, then tell it.",
+      "TellIt": "Tell it",
+      "Read": {
+        "attack": "{actor} attacks {target} with {action}: {degree}, {damage} harm",
+        "save": "{actor}'s {action} at {target}: {degree}, {damage} harm",
+        "auto": "{target} lost {damage} hit points (to {actor}?)",
+        "talk": "{actor} {kind} {target}: {degree}",
+        "control": "{actor} tries {action} on {target}: {degree}",
+        "heal": "{actor} heals {target}: {amount}",
+        "other": "{actor}: {action}"
+      },
+      "Talk": {
+        "persuade": "Persuades",
+        "intimidate": "Threatens",
+        "deceive": "Lies to"
       }
     }
   }
