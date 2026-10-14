@@ -94,6 +94,10 @@ export async function loadStoryTables() {
     lang: loc ? language() : "en",
     get(key) {
       return world[key] ?? loc?.[key] ?? base[key] ?? null;
+    },
+    /** Every table's lines, as they're told (the story weighs which words are common). */
+    *values() {
+      for ( const key of new Set([...Object.keys(base), ...Object.keys(loc ?? {}), ...Object.keys(world)]) ) yield this.get(key);
     }
   };
   return resolved;

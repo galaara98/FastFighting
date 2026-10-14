@@ -254,18 +254,44 @@ function followUp(e, tier, roll, f, kind, maxHp, { fells = false, said = "" } = 
  * word of five letters or more with it (names aside, and a word's ending ignored), if a few draws find one.
  */
 function freshLine(roll, key, fill, said) {
+  const common = commonStems(roll.tables);
   const names = new Set(stems([fill.actor, fill.target, fill.weapon].join(" ")));
-  const before = new Set(stems(said).filter(w => !names.has(w)));
+  const telling = w => !names.has(w) && !common.has(w);
+  const before = new Set(stems(said).filter(telling));
   let line = "";
   for ( let i = 0; i < 3; i++ ) {
     line = roll(key, fill).trim();
-    if ( !stems(line).some(w => before.has(w) && !names.has(w)) ) break;
+    if ( !stems(line).some(w => before.has(w) && telling(w)) ) break;
   }
   return line;
 }
 
-/** The longer words of a sentence, cut to their first five letters ("laughs", "laugh": the same). */
-const stems = text => String(text ?? "").toLowerCase().split(/[^\p{L}]+/u).filter(w => w.length >= 5).map(w => w.slice(0, 5));
+/** The words of a sentence of four letters or more, cut to their first five ("laughs", "laugh": the same). */
+const stems = text => String(text ?? "").toLowerCase().split(/[^\p{L}]+/u).filter(w => w.length >= 4).map(w => w.slice(0, 5));
+
+/** How many of the story's lines a word may be in and still say something ("gash" does; "their" doesn't). */
+const COMMON_SHARE = 0.02;
+const commonCache = new WeakMap();
+
+/**
+ * The words too common in the story's own lines to count as an echo, whatever its language: those in more than
+ * COMMON_SHARE of them.
+ */
+function commonStems(tables) {
+  if ( !tables || typeof tables !== "object" ) return new Set();
+  if ( commonCache.has(tables) ) return commonCache.get(tables);
+  const counts = new Map();
+  let lines = 0;
+  for ( const list of typeof tables.values === "function" ? tables.values() : [] ) {
+    for ( const line of list ?? [] ) {
+      lines += 1;
+      for ( const w of new Set(stems(line.replace(/\{\w+\}/g, " "))) ) counts.set(w, (counts.get(w) ?? 0) + 1);
+    }
+  }
+  const out = new Set([...counts].filter(([, n]) => n > lines * COMMON_SHARE).map(([w]) => w));
+  commonCache.set(tables, out);
+  return out;
+}
 
 /** What struck: the weapon, or, for a shot that leaves it (an arrow, a bullet), the shot from it ("Shortbow shot"). */
 function weaponOf(e) {

@@ -2029,7 +2029,7 @@
     "{actor} fumbles the argument, and {target} stops listening.",
     "{actor}'s appeal backfires; {target} only grows angrier.",
     "{target} scoffs openly at {actor}'s clumsy plea.",
-    "{actor} proposes a deal so badly it sounds like a joke to {target}.",
+    "{actor} puts the deal so badly that it sounds like a joke to {target}.",
     "Every word {actor} says pushes {target} further away."
   ],
   "talk.persuade.criticalFailure": [
@@ -4449,9 +4449,9 @@
     "{actor} sets their shield firm against what's coming."
   ],
   "maneuver.block": [
-    "{actor} takes the blow on their shield.",
-    "The strike glances off {actor}'s armor.",
-    "{actor} catches the hit and turns it aside."
+    "{actor} takes the brunt of it on their shield.",
+    "{actor}'s armor turns the worst of the strike.",
+    "{actor} catches the hit and blunts it."
   ],
   "maneuver.defend": [
     "{actor} turns wholly to defense, giving nothing away.",

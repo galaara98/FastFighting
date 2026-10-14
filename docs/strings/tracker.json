@@ -30931,7 +30931,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "dc8012fb9719"
+   "hash": "dc8012fb9719",
+   "changed": true
   },
   "core:story:maneuver.block.amazing": {
    "repo": "core",
