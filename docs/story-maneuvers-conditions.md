@@ -11,7 +11,7 @@ This is a working master list for the FastFighting story core. A **maneuver** is
 - One system term should map to one id. Where a term has to be split by what caused it, the "Helper notes" section below says so.
 - The "what it looks like" lines are notes for whoever writes the story sentences. They are not final module strings: under the Foundry AI policy, the English story text has to be written by a person.
 
-Counts: 72 maneuvers, 61 conditions, and 21 bookkeeping-only entries. (Added after the research: flee, callForHelp, callToArms, noticeSight, noticeSound, noticeSmell, noticeFeel, noticeRadar, lazy.)
+Counts: 73 maneuvers, 61 conditions, and 21 bookkeeping-only entries. (Added after the research: flee, callForHelp, callToArms, noticeSight, noticeSound, noticeSmell, noticeFeel, noticeRadar, lazy.)
 
 ## Maneuvers (things a creature does)
 
@@ -55,6 +55,7 @@ Counts: 72 maneuvers, 61 conditions, and 21 bookkeeping-only entries. (Added aft
 | `hide` | slips out of sight into shadow, smoke or cover | PF2e/SF2e: Hide; 5e: Hide; DH: becoming Hidden; DCC: hide in shadows (thief) |
 | `sneak` | creeps, unseen, to a new spot | PF2e/SF2e: Sneak; 5e: moving while hidden (Stealth); DCC: sneak silently (thief) |
 | `search` | scans the room for a lurking foe | PF2e/SF2e: Seek; 5e: Search |
+| `spot` | sees through a foe's stealth: finds the hidden, makes out the invisible | PF2e/SF2e: a Seek that finds (hidden or undetected to observed); 5e: a Search that finds; DH: a hidden foe revealed; DCC: spotting a thief in the shadows |
 | `assess` | sizes up a foe, reading its weak spots or what it means to do | PF2e/SF2e: Recall Knowledge, Sense Motive; 5e (5.2): Study; Ironsworn/Starforged: Gather Information (during a fight) |
 | `pointOut` | shouts and points to where an unseen foe is lurking | PF2e/SF2e: Point Out |
 | **Words and nerve** | | |

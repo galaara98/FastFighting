@@ -15081,6 +15081,16 @@
    "commit": null,
    "hash": "57e39463d863"
   },
+  "core:FASTFIGHTING.Story.Part.spot": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Story.Part.spot",
+   "area": "core/Story",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "74f8092562bd"
+  },
   "core:FASTFIGHTING.Story.Part.squeeze": {
    "repo": "core",
    "file": "languages/en.json",
@@ -32236,6 +32246,36 @@
    "date": null,
    "commit": null,
    "hash": "9cb4deb4a0da"
+  },
+  "core:story:maneuver.spot": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "maneuver.spot",
+   "area": "core/story.maneuver",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "c09806916774"
+  },
+  "core:story:maneuver.spot.amazing": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "maneuver.spot.amazing",
+   "area": "core/story.maneuver",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "3c2ba9c28eee"
+  },
+  "core:story:maneuver.spot.terrible": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "maneuver.spot.terrible",
+   "area": "core/story.maneuver",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "7fe12fcaae48"
   },
   "core:story:maneuver.squeeze": {
    "repo": "core",

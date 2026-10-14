@@ -4478,6 +4478,11 @@
     "{actor} peers into every shadow, hunting for the hidden enemy.",
     "{actor} sweeps the area, alert to the slightest movement."
   ],
+  "maneuver.spot": [
+    "{actor} spots {target} lurking where no one else thought to look.",
+    "{actor} sees straight through {target}'s stealth.",
+    "A telltale flicker gives {target} away, and {actor} points straight at them."
+  ],
   "maneuver.assess": [
     "{actor} sizes up {target}, reading their weak spots.",
     "{actor} studies {target} closely, guessing their next move.",
@@ -4746,6 +4751,12 @@
   ],
   "maneuver.search.terrible": [
     "{actor} stares intently at an empty corner, utterly convinced something is lurking there."
+  ],
+  "maneuver.spot.amazing": [
+    "{actor} follows {target}'s every move as if they stood in plain sight."
+  ],
+  "maneuver.spot.terrible": [
+    "{actor} stares right at {target} for a long moment before finally noticing them."
   ],
   "maneuver.assess.amazing": [
     "{actor} reads {target} like an open book, every habit and weakness laid bare."

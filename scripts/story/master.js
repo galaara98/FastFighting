@@ -9,7 +9,7 @@ export const MANEUVERS = Object.freeze([
   "move", "dash", "step", "retreat", "charge", "tumbleThrough", "leap", "climb", "swim", "fly", "burrow", "crawl",
   "dropProne", "standUp", "balance", "squeeze", "catchFall", "mount", "flee", "callForHelp", "callToArms",
   "noticeSight", "noticeSound", "noticeSmell", "noticeFeel", "noticeRadar", "takeCover", "raiseShield", "block", "defend", "avertGaze", "hide",
-  "sneak", "search", "assess", "pointOut", "demoralize", "feint", "distract", "parley", "rally", "surrender", "aid",
+  "sneak", "search", "spot", "assess", "pointOut", "demoralize", "feint", "distract", "parley", "rally", "surrender", "aid",
   "ready", "gainGround", "grapple", "shove", "trip", "disarm", "reposition", "fling", "escape", "release",
   "constrict", "swallow", "engulf", "trample", "blindFoe", "drawWeapon", "reload", "useItem", "interact",
   "forceOpen", "steal", "disableDevice", "hack", "commandAnimal", "firstAid", "douseFlames", "fightOn", "aim",
