@@ -57,7 +57,7 @@ const HIT_URGE = [40, 25, 10, 5, 3];
  * Note an event in the run's log: its type and data, from which the log and the stories are told in the reader's
  * language (story/log-lines.js). A game system's own report carries its words as data.text, shown as they come.
  */
-function log(run, u, data = {}) {
+export function log(run, u, data = {}) {
   if ( !run.log ) return;
   run.log.push({
     round: run.round, turn: run.turn ?? 0, turnOf: run.turnOf ?? null, actor: u?.spec.name ?? "", actorId: u?.id ?? null, side: u?.side ?? null,
@@ -69,7 +69,7 @@ function log(run, u, data = {}) {
  * A new turn in the log: what follows is u's turn (or, with no u, the fight's own moment: its end, the aftermath),
  * until the next. Whatever happens meanwhile, others' reactions and falls too, is told with it.
  */
-function startTurn(run, u = null) {
+export function startTurn(run, u = null) {
   if ( !run.log ) return;
   run.turn = (run.turn ?? 0) + 1;
   run.turnOf = u?.id ?? null;
@@ -303,7 +303,7 @@ function slacksOff(run, u) {
 }
 
 /** After a turn: one able to act that did nothing in it (nothing logged of its own) was lazy. */
-function noteIdle(run, u) {
+export function noteIdle(run, u) {
   if ( !run.log || !inFight(u) || u.spec.hazard || u.summoner || !ableToAct(run, u) ) return;
   if ( run.log.some(e => e.turn === run.turn && e.actorId === u.id && e.type !== "thought") ) return;
   log(run, u, { type: "lazy" });
@@ -326,7 +326,7 @@ const joining = u => u.status === STATUS.STANDING && !u.active && u.aware && u.j
  * The turn of someone on the map who isn't in the conflict yet: does it notice it now (seeing or hearing an active
  * combatant, against the system's check)? Returns true if it takes part from this turn on (it noticed earlier).
  */
-function lookAround(run, b) {
+export function lookAround(run, b) {
   if ( joining(b) ) {
     if ( run.round < b.joinsRound ) return false;
     join(run, b, b.joinCause);
@@ -385,12 +385,13 @@ function huntable(run, u) {
 /*  Damage, healing, conditions                 */
 /* -------------------------------------------- */
 
-function dealDamage(run, source, target, amount, { crit = false, types = null, action = null, lingering = false } = {}) {
-  if ( amount <= 0 || target.status === STATUS.DEAD || target.status === STATUS.FLED ) return;
-  // Acid or fire on a troll: its regeneration stops, for its next turn.
+/**
+ * What harm undoes before it lands: a troll's regeneration stopped by acid or fire (for its next turn), a sleeper
+ * woken by a blow, a charm broken when its caster's side does the harm.
+ */
+export function breakOnHarm(run, source, target, types = null) {
   if ( target.spec.regen?.stoppedBy?.length && types?.some(t => target.spec.regen.stoppedBy.includes(t)) ) target.regenStopped = true;
   if ( target.effects?.some(e => e.endsOnDamage || e.endsOnHarm) ) {
-    // A blow wakes the sleeper; a charm breaks when its caster's side does the harm.
     const harms = e => {
       if ( e.endsOnDamage ) return true;
       const holder = run.byId.get(e.sourceId);
@@ -403,6 +404,51 @@ function dealDamage(run, source, target, amount, { crit = false, types = null, a
       settleSides(run);
     }
   }
+}
+
+/**
+ * What being hurt by someone sets going, apart from the hit points (which the blow, or in a live battle the sheet,
+ * already took): it's being hurt now; who did it is someone to pay back, the more so in a thinking creature, unless
+ * it's already trading blows with someone in front of it; and blood spilled ends a standoff's patience.
+ */
+export function noteHarm(run, source, target, harm) {
+  target.hurtSinceTurn = true; // (being hurt, whoever or whatever it is: "always talk unless I'm being hurt")
+  if ( !source ) return;
+  source.damageDealt += harm;
+  target.harmedBy.set(source.id, (target.harmedBy.get(source.id) ?? 0) + harm);
+  if ( run.standoff ) bloodInStandoff(run, source, target);
+  if ( areEnemies(run, source, target) ) {
+    // Hit from afar while already trading blows with someone: keep at the one in front of it.
+    const busy = !target.adjacent.has(source.id) && [...target.adjacent].some(id => { const o = run.byId.get(id); return o && isStanding(o) && areEnemies(run, target, o); });
+    want(target, "hurt", source.id, (busy ? 3 : (HIT_URGE[liveTier(run, target)] ?? 5)) * styleOf(target).retaliate);
+  }
+}
+
+/**
+ * Someone fallen (down, dead or beaten, as the system has it already): when and by whom, its grabs let go, its
+ * friends who see it want the one who did it, the fall is told, and the system says what it sets off.
+ */
+export function noteFall(run, target, source) {
+  target.fellRound ??= run.round;
+  target.killerId = source?.id ?? target.killerId ?? null;
+  run.firstFallen ??= target.id;
+  releaseGrabs(run, target);
+  // A friend's fall: the one who did it becomes someone to settle with, the more so for the loyal.
+  if ( source ) {
+    for ( const a of run.units ) {
+      if ( a !== target && a.side === target.side && isStanding(a) && perceives(run, a, target, { crisis: true }) ) want(a, "hurt", source.id, 15 * liveTrait(run, a, "loyal") / 60 * styleOf(a).avenge);
+    }
+  }
+  log(run, target, {
+    type: fallType(target), by: source?.spec.name ?? null, byId: source?.id ?? null, dying: target.dying, knockedOut: !!target.knockedOut, killed: !!target.killedBeaten,
+    note: takeFallNote(target)
+  });
+  fell(run, target, source);
+}
+
+function dealDamage(run, source, target, amount, { crit = false, types = null, action = null, lingering = false } = {}) {
+  if ( amount <= 0 || target.status === STATUS.DEAD || target.status === STATUS.FLED ) return;
+  breakOnHarm(run, source, target, types);
   const rules = run.prep.rules;
   const model = run.prep.options.downedModel;
   if ( target.status === STATUS.STANDING ) {
@@ -414,18 +460,8 @@ function dealDamage(run, source, target, amount, { crit = false, types = null, a
     const rest = amount - absorbed - winded;
     const dealt = Math.min(rest, target.hp);
     target.hp -= rest;
-    target.hurtSinceTurn = true; // (being hurt, whoever or whatever it is: "always talk unless I'm being hurt")
     if ( target.hp <= 0 && holdsOn(run, target, rest, crit, types) ) target.hp = 1;
-    if ( source ) {
-      source.damageDealt += dealt + absorbed + winded;
-      target.harmedBy.set(source.id, (target.harmedBy.get(source.id) ?? 0) + dealt + absorbed + winded);
-      if ( run.standoff ) bloodInStandoff(run, source, target);
-      if ( areEnemies(run, source, target) ) {
-        // Hit from afar while already trading blows with someone: keep at the one in front of it.
-        const busy = !target.adjacent.has(source.id) && [...target.adjacent].some(id => { const o = run.byId.get(id); return o && isStanding(o) && areEnemies(run, target, o); });
-        want(target, "hurt", source.id, (busy ? 3 : (HIT_URGE[liveTier(run, target)] ?? 5)) * styleOf(target).retaliate);
-      }
-    }
+    noteHarm(run, source, target, dealt + absorbed + winded);
     if ( target.hp <= 0 ) {
       target.hp = 0;
       target.wasDowned = true;
@@ -435,23 +471,7 @@ function dealDamage(run, source, target, amount, { crit = false, types = null, a
       regenerating(target);
     }
     // (Still up at 0, by the system's rules: Ironsworn characters fight on at 0 health.)
-    if ( target.hp <= 0 && target.status !== STATUS.STANDING ) {
-      target.fellRound ??= run.round;
-      target.killerId = source?.id ?? target.killerId ?? null;
-      run.firstFallen ??= target.id;
-      releaseGrabs(run, target);
-      // A friend's fall: the one who did it becomes someone to settle with, the more so for the loyal.
-      if ( source ) {
-        for ( const a of run.units ) {
-          if ( a !== target && a.side === target.side && isStanding(a) && perceives(run, a, target, { crisis: true }) ) want(a, "hurt", source.id, 15 * liveTrait(run, a, "loyal") / 60 * styleOf(a).avenge);
-        }
-      }
-      log(run, target, {
-        type: fallType(target), by: source?.spec.name ?? null, byId: source?.id ?? null, dying: target.dying, knockedOut: !!target.knockedOut, killed: !!target.killedBeaten,
-        note: takeFallNote(target)
-      });
-      fell(run, target, source);
-    }
+    if ( target.hp <= 0 && target.status !== STATUS.STANDING ) noteFall(run, target, source);
     // One track for many (Ironsworn's encounter objective, every foe part of it): what one takes, all of them take.
     if ( sharedOf(target) ) shareHarm(run, source, target);
     testConcentration(run, target, rest + absorbed);
@@ -1578,15 +1598,22 @@ function executeHeal(run, u, action, target) {
   const wasDown = target.status === STATUS.DOWN;
   const before = target.hp;
   if ( amount > 0 ) rules.onHealed(target, amount);
-  u.healingDone += target.hp - before;
   u.healedTargets.add(`${action.id}|${target.id}`);
   spendUse(u, action);
-  const revived = wasDown && target.status === STATUS.STANDING;
-  if ( run.neutral && target.hp > before ) crossed(run, u, target, "help", revived ? 1.5 : 0.75, logger(run));
-  if ( run.log ) log(run, u, {
-    type: "heal", action: action.name, target: target.spec.name, targetId: target.id, self: target === u, amount: target.hp - before, revived,
-    potion: !!action.selfOnly, check: roll ? { skill: action.healCheck.label ?? null, natural: roll.natural, mod: action.healCheck.mod, total: roll.total, dc: action.healCheck.dc, degree: roll.degree } : null
+  noteHeal(run, u, target, target.hp - before, wasDown && target.status === STATUS.STANDING, {
+    action: action.name, potion: !!action.selfOnly,
+    check: roll ? { skill: action.healCheck.label ?? null, natural: roll.natural, mod: action.healCheck.mod, total: roll.total, dc: action.healCheck.dc, degree: roll.degree } : null
   });
+}
+
+/**
+ * A healing given (the hit points already restored, by the engine or, in a live battle, on the sheet): the healer's
+ * tally, what someone taking no side makes of it, and the telling.
+ */
+export function noteHeal(run, u, target, healed, revived, { action = "", potion = false, check = null } = {}) {
+  u.healingDone += healed;
+  if ( run.neutral && healed > 0 ) crossed(run, u, target, "help", revived ? 1.5 : 0.75, logger(run));
+  if ( run.log ) log(run, u, { type: "heal", action, target: target.spec.name, targetId: target.id, self: target === u, amount: healed, revived, potion, check });
 }
 
 /* -------------------------------------------- */
@@ -1926,7 +1953,7 @@ function observes(run, u, turn) {
  * Who commands each group, as it changes: a lieutenant stepping up when the boss or the leader can't lead (down, dead,
  * gone, blinded, silenced ...), the boss or leader taking back over, nobody left to lead. Logged as it happens.
  */
-function noteCommand(run, quietly = false) {
+export function noteCommand(run, quietly = false) {
   if ( !run.prep.options.leadership ) return;
   run.commanders ??= new Map();
   run.everCommanded ??= new Set();
@@ -2210,7 +2237,29 @@ function hazardTurn(run, u) {
   run.acting = null;
 }
 
-function takeTurn(run, u) {
+/**
+ * What comes back at the start of a creature's turn, whoever plays it: its shield is down until it raises it again,
+ * being hurt since its last turn means it's being hurt now, its reaction returns, what recharges may, the system has
+ * its say, legendary actions come back.
+ */
+export function turnUpkeep(run, u) {
+  const rules = run.prep.rules;
+  u.shieldRaised = false;
+  // Hurt since its last turn: it's being hurt now.
+  u.beingHurt = !!u.hurtSinceTurn;
+  u.hurtSinceTurn = false;
+  // A creature's reaction comes back at the start of its turn.
+  u.reactionsLeft = reactionsPerRound(rules, u);
+  rechargeActions(run, u);
+  if ( rules.startTurn ) {
+    // (What the system says at the start of a turn: one report, or several, each about whoever it names.)
+    for ( const said of [rules.startTurn(run, u)].flat() ) if ( said?.text ) log(run, said.unit ?? u, { text: said.text, type: "startTurn", ...said.data });
+  }
+  if ( u.spec.legendary?.pool ) u.legendaryLeft = u.spec.legendary.pool; // (legendary actions come back)
+  u.disengaged = false;
+}
+
+export function takeTurn(run, u) {
   const { rules, options } = run.prep;
   if ( [STATUS.DEAD, STATUS.FLED, STATUS.SURRENDERED, STATUS.STOOD_DOWN, STATUS.BEATEN].includes(u.status) ) return;
   if ( u.spec.hazard ) return hazardTurn(run, u);
@@ -2226,19 +2275,7 @@ function takeTurn(run, u) {
     }
     if ( state === "idle" ) return;
   }
-  u.shieldRaised = false;
-  // Hurt since its last turn: it's being hurt now.
-  u.beingHurt = !!u.hurtSinceTurn;
-  u.hurtSinceTurn = false;
-  // A creature's reaction comes back at the start of its turn.
-  u.reactionsLeft = reactionsPerRound(rules, u);
-  rechargeActions(run, u);
-  if ( rules.startTurn ) {
-    // (What the system says at the start of a turn: one report, or several, each about whoever it names.)
-    for ( const said of [rules.startTurn(run, u)].flat() ) if ( said?.text ) log(run, said.unit ?? u, { text: said.text, type: "startTurn", ...said.data });
-  }
-  if ( u.spec.legendary?.pool ) u.legendaryLeft = u.spec.legendary.pool; // (legendary actions come back)
-  u.disengaged = false;
+  turnUpkeep(run, u);
 
   settleSides(run); // holds that took or ended since this creature's last turn
   regenerate(run, u);
@@ -2558,7 +2595,7 @@ function takeTurn(run, u) {
   endOfTurn(run, u);
 }
 
-function endOfTurn(run, u) {
+export function endOfTurn(run, u) {
   const rules = run.prep.rules;
   // A save at the end of each of its turns may shake an effect off (5e Hold Person).
   if ( isUp(u) && u.effects?.some(e => e.repeatSave) ) {
@@ -2891,6 +2928,37 @@ function endLastStand(run, u) {
 
 /** Simulate a single battle. */
 export function runOne(prep, seed, { log: withLog = false, capture = false } = {}) {
+  const run = beginRun(prep, seed, { log: withLog });
+  const order = run.order;
+  const surpriseSide = prep.options.surpriseSide;
+  if ( surpriseSide ) {
+    run.round = 0;
+    log(run, null, { type: "surprise", sideLabel: prep.sides[surpriseSide]?.label ?? surpriseSide });
+    for ( const u of order ) {
+      if ( u.side !== surpriseSide ) continue;
+      startTurn(run, u);
+      takeTurn(run, u);
+      noteIdle(run, u);
+    }
+  }
+  let ended = battleOver(run);
+  noteCommand(run, true);
+  for ( let round = 1; !ended && round <= prep.options.maxRounds; round++ ) {
+    beginRound(run, round);
+    // (Who acts, and when: the initiative order, or the system's own way of passing the turn: Daggerheart's spotlight.)
+    for ( const u of prep.rules.roundTurns ? prep.rules.roundTurns(run, order) : order ) {
+      if ( playTurn(run, u) ) { ended = true; break; }
+    }
+  }
+  return endRun(run, ended, { capture });
+}
+
+/**
+ * A fight set up and ready for its first turn: its creatures, their wants and leanings, the doors, the tactics each
+ * goes with this time, the system's own state, the traps they know of, the initiative order (run.order), and whether
+ * it opens with words (a standoff, logged). With `log`, everything that happens is kept in run.log.
+ */
+export function beginRun(prep, seed, { log: withLog = false } = {}) {
   const run = createRun(prep);
   run.rng = createRng(seed);
   for ( const u of run.units ) initDesires(u);
@@ -2919,41 +2987,48 @@ export function runOne(prep, seed, { log: withLog = false, capture = false } = {
   // Words before weapons, when the sides would rather talk (or the GM says so).
   run.standoff = opensWithTalk(run);
   if ( run.standoff ) log(run, null, { type: "standoff" });
+  return run;
+}
 
-  const surpriseSide = prep.options.surpriseSide;
-  if ( surpriseSide ) {
-    run.round = 0;
-    log(run, null, { type: "surprise", sideLabel: prep.sides[surpriseSide]?.label ?? surpriseSide });
-    for ( const u of order ) {
-      if ( u.side !== surpriseSide ) continue;
-      startTurn(run, u);
-      takeTurn(run, u);
-      noteIdle(run, u);
-    }
+/** A new round: its number, and which way those who take no side lean now (the underdog changes as the fight goes). */
+export function beginRound(run, round) {
+  run.round = round;
+  refreshLeans(run);
+}
+
+/**
+ * One creature's turn, as the fight's own: a change of command first, if there's been one, then the turn, then what
+ * comes after it (a last stand ending, a legendary creature's moment). True if the fight is over.
+ */
+export function playTurn(run, u) {
+  noteCommand(run);
+  startTurn(run, u);
+  takeTurn(run, u);
+  noteIdle(run, u);
+  return afterTurn(run, u);
+}
+
+/** What comes after anyone's turn: a last stand ending, a legendary creature's moment. True if the fight is over. */
+export function afterTurn(run, u) {
+  if ( u.lastStand ) endLastStand(run, u);
+  if ( battleOver(run) ) return true;
+  if ( run.legendary ) {
+    legendaryMoment(run, u);
+    if ( battleOver(run) ) return true;
   }
-  let ended = battleOver(run);
-  noteCommand(run, true);
-  for ( let round = 1; !ended && round <= prep.options.maxRounds; round++ ) {
-    run.round = round;
-    refreshLeans(run); // (the underdog changes as the fight goes)
-    // (Who acts, and when: the initiative order, or the system's own way of passing the turn: Daggerheart's spotlight.)
-    for ( const u of prep.rules.roundTurns ? prep.rules.roundTurns(run, order) : order ) {
-      noteCommand(run);
-      startTurn(run, u);
-      takeTurn(run, u);
-      noteIdle(run, u);
-      if ( u.lastStand ) endLastStand(run, u);
-      if ( battleOver(run) ) { ended = true; break; }
-      if ( run.legendary ) {
-        legendaryMoment(run, u);
-        if ( battleOver(run) ) { ended = true; break; }
-      }
-    }
-  }
+  return false;
+}
+
+/**
+ * The fight over (or out of rounds, `ended` false): who won, told; then the aftermath settles the fallen and goods
+ * go back; and what came of it, summed up (each creature's end state too, with `capture`).
+ */
+export function endRun(run, ended, { capture = false } = {}) {
+  const prep = run.prep;
   // Who won is decided when the last blow lands (or the deal is struck); the aftermath only settles the fallen.
   // (Talks that collapsed: nobody's.)
   const winners = !ended ? [] : run.resolved ? [run.resolved.side].filter(Boolean) : activeSides(run);
-  if ( withLog ) {
+  if ( run.log ) {
     startTurn(run);
     const labels = winners.map(s => prep.sides[s]?.label ?? s);
     log(run, null, {
@@ -2962,7 +3037,7 @@ export function runOne(prep, seed, { log: withLog = false, capture = false } = {
     });
   }
   if ( ended ) {
-    aftermath(run, order);
+    aftermath(run, run.order);
     reclaimGoods(run);
   }
   return summarize(run, ended, capture, winners);

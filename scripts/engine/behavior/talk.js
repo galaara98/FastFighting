@@ -679,9 +679,18 @@ function fallBack(run, a, leader, log) {
  * @param {(unit, text) => void} log
  */
 export function attemptTalk(run, talker, pitch, log) {
+  const roll = rollCheck(run.prep.rules, run.rng, pitch.mod, pitch.dc, { advantage: pitch.advantage ?? 0, dice: pitch.dice ?? null, kind: "check", roller: talker });
+  return resolveTalk(run, talker, pitch, roll, log);
+}
+
+/**
+ * What a pitch's roll comes to (the engine's own, or in a live battle a player's real one: {degree, natural, total,
+ * note, faces, challenge}): the persuasion track, the grudges, the strain, the system's say, and, convinced, the
+ * outcome. Returns true if the target was convinced.
+ */
+export function resolveTalk(run, talker, pitch, roll, log) {
   const t = pitch.target;
   const rules = run.prep.rules;
-  const roll = rollCheck(rules, run.rng, pitch.mod, pitch.dc, { advantage: pitch.advantage ?? 0, dice: pitch.dice ?? null, kind: "check", roller: talker });
   spendEdges(talker, "check", t.id);
   spendBoost(talker, t);
   const steps = stepsToConvince(t, run, talker);
@@ -795,3 +804,6 @@ export function talkAffinity(spec, traits, rules = null) {
   return clamp(a, 0, 1);
 }
 
+
+/** The talk outcomes, for a live battle: what the GM says a talk came to (an SWAY outcome), applied as the engine would. */
+export { applyOutcome as applySway, outcomeFor };
