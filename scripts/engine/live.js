@@ -365,16 +365,26 @@ export function leavingReach(run, id, to) {
 }
 
 /**
- * A foe's reaction to what a player did, now (its turn's dice): the strike as the player's character leaves its reach.
- * Returns the events it made.
+ * Foes whose opportunity strikes answer a player's character lowering its guard in their reach, where the system says
+ * so (rules.opportunityOn: "foeOpening", a ranged attack or a manipulate action, PF2e): [{reactorId, strike}].
  */
-export function reactNow(run, reactorId, targetId, strike) {
+export function openingFor(run, id, trigger = "foeOpening") {
+  const u = run.byId.get(id);
+  if ( !u ) return [];
+  return threats(run, u, null, trigger).map(({ e, strike }) => ({ reactorId: e.id, strike }));
+}
+
+/**
+ * A foe's reaction to what a player did, now (its turn's dice): the strike as the player's character leaves its reach,
+ * or (`trigger`) at another moment its opportunity strikes answer. Returns the events it made.
+ */
+export function reactNow(run, reactorId, targetId, strike, trigger = null) {
   const e = run.byId.get(reactorId);
   const t = run.byId.get(targetId);
   if ( !e || !t || !strike ) return [];
   const from = run.log.length;
   e.reactionsLeft = Math.max(0, (e.reactionsLeft ?? 1) - 1);
-  log(run, e, { type: "opportunity", target: t.spec.name, targetId: t.id, action: strike.name });
+  log(run, e, { type: "opportunity", target: t.spec.name, targetId: t.id, action: strike.name, ...(trigger && trigger !== "foeLeavesReach" ? { trigger } : {}) });
   strikeOutOfTurn(run, e, strike, t);
   return run.log.slice(from);
 }

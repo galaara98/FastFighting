@@ -251,6 +251,16 @@ export class SystemAdapter {
   }
 
   /**
+   * A live battle: whether a card a player's character made is it lowering its guard in a foe's reach (a ranged attack,
+   * a manipulate action), for the foes' opportunity strikes where the system's rules.opportunityOn names "foeOpening".
+   * @param {ChatMessage} message
+   * @param {string} tokenId   the character's token
+   */
+  liveOpening(message, tokenId) {
+    return false;
+  }
+
+  /**
    * How a live battle's turns come: "initiative" (the tracker's order, Next Turn) or "spotlight" (no initiative: the GM
    * gives the spotlight to whoever acts, as Daggerheart's tracker does; FastFighting can suggest whom).
    */

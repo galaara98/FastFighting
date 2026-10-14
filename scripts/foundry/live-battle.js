@@ -30,7 +30,7 @@ import { logLine } from "../story/log-lines.js";
 import { loadStoryTables } from "../story/tables.js";
 import {
   beginLive, liveRound, liveTurn, pcTurnBegin, pcTurnEnd, syncFromSheets, setApproach, captureAll, snapshotRun, restoreRun, endLive,
-  NeedsDecision, applyFact, gmMoment, leavingReach, reactNow, nextSpotlight
+  NeedsDecision, applyFact, gmMoment, leavingReach, openingFor, reactNow, nextSpotlight
 } from "../engine/live.js";
 import { diffAll } from "../engine/changes.js";
 import { randomSeed } from "../engine/rng.js";
@@ -474,7 +474,26 @@ function onSocket(data, senderId) {
 /** What a player's turn left in the chat, as it's made (not FastFighting's own cards). */
 function onMessage(message) {
   if ( !battle?.pc || !runsHere(battle.data) || message.getFlag(MODULE_ID, "story") || message.getFlag(MODULE_ID, "live") ) return;
-  battle.pc.messages.push(message.id);
+  const pc = battle.pc;
+  pc.messages.push(message.id);
+  // (A ranged attack or a manipulate action in a foe's reach, where the system's opportunity strikes answer it: PF2e.)
+  if ( getAdapter().liveOpening?.(message, pc.id) ) queue(() => openingTaken(pc));
+}
+
+/** A player's character lowered its guard in a foe's reach: each foe that can strikes (asked of the GM, or as reckoned). */
+async function openingTaken(pc) {
+  if ( battle?.pc !== pc ) return;
+  const run = battle.run;
+  for ( const { reactorId, strike } of openingFor(run, pc.id) ) {
+    const use = run.live.npcReactions === "ask"
+      ? await ask({ unitId: reactorId, player: false, reactionId: "opportunity", reaction: strike.name, trigger: "foeOpening", byId: pc.id, would: true })
+      : true;
+    if ( !use ) continue;
+    const before = captureAll(run);
+    reactNow(run, reactorId, pc.id, strike, "foeOpening");
+    await writeChanges(before, captureAll(run), pc.records);
+  }
+  await keep();
 }
 
 /**

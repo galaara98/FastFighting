@@ -307,7 +307,7 @@ The PF2e scan gives a rough order for what to add next. These are the busiest tr
 Still open:
 - **Damage that isn't an attack.** `wouldTakeDamage` is checked at `hit`, on expected damage, which works for blows. A spell, an area or a hazard has no moment before its damage lands, so Shield Block against a spell, a Daggerheart Armor Slot against a blast, or Ironsworn Endure Harm against a fall all go unchecked.
 - **A critical Reactive Strike disrupting the manipulate action it answered** (PF2e) is not played yet: the strike lands, the action goes on.
-- **In a live battle,** the watcher during a player's turn sees moves (`foeLeavesReach`); a player's ranged attack or spell in an NPC's reach (`foeOpening`) is not asked about yet.
+- **In a live battle,** the watcher during a player's turn sees moves (`foeLeavesReach`) and, where the helper reads them (`liveOpening`: PF2e), cards that lower the character's guard in an NPC's reach (`foeOpening`). Standing up at the table (`foeMovesInReach`) is not watched yet.
 
 ## Helper notes: how each system maps
 
