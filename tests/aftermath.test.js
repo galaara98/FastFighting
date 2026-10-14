@@ -7,6 +7,9 @@ import { buildStory } from "../scripts/story/story.js";
 import { storyTables, text } from "./foundry-i18n.js";
 import { sanitizeTactics, statedDesires } from "../scripts/foundry/tactics.js";
 import { creature, strike, battle } from "./helpers.js";
+import { beginLive, liveRound, liveTurn, endLive, liveAftermath, captureAll } from "../scripts/engine/live.js";
+import { diffAll } from "../scripts/engine/changes.js";
+import { STATUS } from "../scripts/constants.js";
 
 const english = storyTables();
 const tables = { get: k => english[k] };
@@ -23,6 +26,30 @@ function rescue({ medic = true, aftermath = "tell", holdsOff = false } = {}) {
   const foe = creature({ id: "foe", side: "hostile", hp: { value: 5, max: 5 }, defenses: { ac: 5 }, actions: [strike({ bonus: -50 })] });
   return battle([dying, friend, foe], { maxRounds: 5, aftermath });
 }
+
+describe("a live battle's aftermath, when the GM says", () => {
+  test("over: the dying tended or not, as the fight would have; its own moment after the end, and only once asked", () => {
+    let settled = 0;
+    for ( let seed = 1; seed <= 6; seed++ ) {
+      const run = beginLive(rescue({ holdsOff: true }), pf2eRules, { seed });
+      liveRound(run, 1);
+      for ( const u of run.units ) u.active = true;
+      // (Kyra finishes the foe.)
+      for ( let i = 0; i < 4 && run.byId.get("foe").status === STATUS.STANDING; i++ ) liveTurn(run, "friend");
+      if ( run.byId.get("foe").status === STATUS.STANDING ) continue;
+      endLive(run);
+      const end = run.log.length;
+      expect(run.byId.get("down").stable).toBe(false); // (nothing settled at the end itself)
+      const before = captureAll(run);
+      liveAftermath(run);
+      const told = run.log.slice(end);
+      expect(told.some(e => e.type === "aftermath")).toBe(true);
+      expect(Math.min(...told.map(e => e.turn))).toBeGreaterThan(Math.max(...run.log.slice(0, end).map(e => e.turn ?? 0)));
+      if ( diffAll(before, captureAll(run)).down ) settled += 1;
+    }
+    expect(settled).toBeGreaterThan(0);
+  });
+});
 
 describe("after the fight", () => {
   test("a fight already under way keeps a creature's dying value", () => {

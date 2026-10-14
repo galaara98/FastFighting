@@ -30,7 +30,7 @@ import { logLine } from "../story/log-lines.js";
 import { loadStoryTables } from "../story/tables.js";
 import {
   beginLive, liveRound, liveTurn, pcTurnBegin, pcTurnEnd, syncFromSheets, setApproach, captureAll, snapshotRun, restoreRun, endLive,
-  NeedsDecision, applyFact, gmMoment, leavingReach, openingFor, reactNow, nextSpotlight
+  NeedsDecision, applyFact, gmMoment, leavingReach, openingFor, reactNow, nextSpotlight, liveAftermath
 } from "../engine/live.js";
 import { diffAll } from "../engine/changes.js";
 import { randomSeed } from "../engine/rng.js";
@@ -337,7 +337,6 @@ async function playTurn(u, combatant, key) {
     }
   }
   const after = captureAll(battle.run);
-  const changes = diffAll(before, after);
   const turn = { key, combatantId: combatant.id, round: battle.combat.round, kind: "npc", records: [], messages: [], moves: [], doors: [], snapshot };
   await holdingPause(async () => {
     // Where everyone stood (for Rewind), then the moves and doors as the turn made them.
@@ -350,26 +349,10 @@ async function playTurn(u, combatant, key) {
     }
     turn.doors = [...doorsOpened.values()];
     // What the turn changed, onto the sheets (each written as it stood when the turn began).
-    const options = { lootMode: setting("lootMode"), corpseMode: setting("corpseMode"), fledMode: setting("fledMode"), live: true };
-    for ( const [id, ch] of Object.entries(changes) ) {
-      const doc = docs.get(id);
-      if ( !doc ) continue;
-      const spec = { ...battle.run.byId.get(id).spec, resources: before[id].resources };
-      try {
-        const record = await adapter.commitChanges(doc, spec, ch, after[id], { ...options, before: before[id] });
-        if ( record ) turn.records.push(record);
-      } catch ( err ) {
-        console.error(`${MODULE_ID} | writing ${doc.name}'s turn`, err);
-      }
-      for ( const c of ch.concessions ?? [] ) {
-        if ( c.kept || !adapter.commitConcession ) continue;
-        const to = docs.get(c.to);
-        const records = (await adapter.commitConcession(doc, to ?? null, c, { giver: spec, receiver: to ? battle.run.byId.get(c.to)?.spec : null, allies: [] })) ?? [];
-        turn.records.push(...records);
-      }
-    }
+    await writeChanges(before, after, turn.records);
     // (What the turn did to what the encounter keeps: Daggerheart's Fear.)
     try {
+      const options = { lootMode: setting("lootMode"), corpseMode: setting("corpseMode"), fledMode: setting("fledMode"), live: true };
       turn.records.push(...((await adapter.commitTurn(before, after, { ...options, spec: battle.spec, events: result.events })) ?? []));
     } catch ( err ) {
       console.error(`${MODULE_ID} | writing the turn's encounter changes`, err);
@@ -638,10 +621,16 @@ async function writeChanges(before, after, records) {
     const doc = docOf(id);
     if ( !doc ) continue;
     try {
-      const record = await adapter.commitChanges(doc, { ...battle.run.byId.get(id).spec, resources: before[id].resources }, ch, after[id], {
+      const spec = { ...battle.run.byId.get(id).spec, resources: before[id].resources };
+      const record = await adapter.commitChanges(doc, spec, ch, after[id], {
         live: true, before: before[id], fledMode: setting("fledMode"), lootMode: setting("lootMode"), corpseMode: setting("corpseMode")
       });
       if ( record ) records.push(record);
+      for ( const c of ch.concessions ?? [] ) {
+        if ( c.kept || !adapter.commitConcession ) continue;
+        const to = c.to ? docOf(c.to) : null;
+        records.push(...((await adapter.commitConcession(doc, to ?? null, c, { giver: spec, receiver: to ? battle.run.byId.get(c.to)?.spec : null, allies: [] })) ?? []));
+      }
     } catch ( err ) {
       console.error(`${MODULE_ID} | writing ${doc.name}'s changes`, err);
     }
@@ -681,6 +670,7 @@ async function tellNew() {
       if ( !beat.html ) continue;
       const message = await postBeat(battle.scene, beat, docs, { odds: battle.data.odds });
       if ( message ) out.push(message.id);
+      if ( message && beat.closing ) battle.data.closing = message.id;
     }
     battle.data.toldBeats = [...done];
   }
@@ -696,6 +686,7 @@ async function finish() {
   const ChatMessage = foundry.documents.ChatMessage ?? globalThis.ChatMessage;
   const card = await ChatMessage.create({
     content: inertHtml(`<div class="fast-fighting-live"><p>${escape(loc("FASTFIGHTING.Live.Over"))}</p>
+      <button type="button" data-ff-live="aftermath" data-tooltip="${escape(loc("FASTFIGHTING.Live.AftermathHint"))}"><i class="fa-solid fa-hand-holding-medical"></i> ${loc("FASTFIGHTING.Live.Aftermath")}</button>
       <button type="button" data-ff-live="rewindAll"><i class="fa-solid fa-backward"></i> ${loc("FASTFIGHTING.MakeItSo.Undo")}</button></div>`),
     speaker: chronicle(), whisper: gmIds(), flags: { [MODULE_ID]: { live: { battle: battle.data.id, over: true } } }
   });
@@ -708,6 +699,34 @@ async function finish() {
 /* -------------------------------------------- */
 /*  The GM's buttons                            */
 /* -------------------------------------------- */
+
+/**
+ * The aftermath, when the GM says (the battle over): the fallen settled, goods back with their owners, written onto the
+ * sheets; the closing card told again with it. Rewound like a turn.
+ */
+export function settleBattle() {
+  return queue(async () => {
+    if ( !battle?.data.ended || battle.data.settled ) return false;
+    const run = battle.run;
+    const snapshot = snapshotRun(run, { log: false });
+    const before = captureAll(run);
+    liveAftermath(run);
+    const after = captureAll(run);
+    const turn = { key: "aftermath", kind: "aftermath", combatantId: null, round: battle.combat.round, records: [], messages: [], moves: [], doors: [], snapshot };
+    await holdingPause(async () => {
+      await writeChanges(before, after, turn.records);
+      // (The closing card told at the end gives way to one with the aftermath.)
+      if ( battle.data.closing ) await game.messages.get(battle.data.closing)?.delete();
+      battle.data.toldBeats = (battle.data.toldBeats ?? []).filter(k => k !== "closing");
+      turn.messages.push(...await tellNew());
+    });
+    battle.data.turns = [...battle.data.turns, turn].slice(-REWIND_DEPTH);
+    battle.data.settled = true;
+    await keep();
+    changed();
+    return true;
+  });
+}
 
 /** Continue: the tracker moves on to the next turn. */
 export function continueBattle() {
@@ -730,6 +749,17 @@ export function rewindTurn() {
     battle.data.salt = (battle.data.salt ?? 0) + 1;
     battle.data.told = Math.max(0, ...battle.run.log.map(e => e.turn ?? 0));
     battle.pc = null;
+    if ( turn.kind === "aftermath" ) {
+      // (Still over; the closing told again as it was before the aftermath.)
+      battle.data.ended = true;
+      battle.data.settled = false;
+      battle.data.toldBeats = (battle.data.toldBeats ?? []).filter(k => k !== "closing");
+      const told = await tellNew();
+      battle.data.turns.at(-1)?.messages.push(...told);
+      await keep();
+      changed();
+      return true;
+    }
     // (The cards it told are gone: told again when it's played again.)
     const gone = new Set(battle.run.log.map(e => e.turn ?? 0));
     battle.data.toldBeats = (battle.data.toldBeats ?? []).filter(k => k === "closing" ? false : k.split(",").every(t => gone.has(Number(t))));
@@ -889,6 +919,7 @@ export function registerLiveBattles() {
         if ( what === "continue" ) await continueBattle();
         else if ( what === "rewind" ) await rewindTurn();
         else if ( what === "play" ) await playCurrent();
+        else if ( what === "aftermath" ) await settleBattle();
         else if ( what === "rewindAll" ) {
           const ok = await foundry.applications.api.DialogV2.confirm({
             window: { title: loc("FASTFIGHTING.MakeItSo.UndoTitle") }, content: `<p>${escape(loc("FASTFIGHTING.Live.RewindAllConfirm"))}</p>`

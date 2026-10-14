@@ -2000,6 +2000,8 @@
       "Rewound": "Rewound to {name}'s turn.",
       "Play": "Play it",
       "Over": "The battle is over.",
+      "Aftermath": "Settle the aftermath",
+      "AftermathHint": "FastFighting settles what's left: the dying bleed out or hold on, the beaten are dealt with, and goods go back to their owners.",
       "RewindAllConfirm": "Put the whole battle back as it was before it began: every turn, every card, every move?",
       "PickedUp": "FastFighting picked up the live battle where it was.",
       "AskTitle": "A reaction",

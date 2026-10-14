@@ -270,7 +270,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "3e43a5a9e44a"
+   "hash": "3e43a5a9e44a",
+   "changed": true
   },
   "core:code:scripts/foundry/live-battle.js:playTurn#2": {
    "repo": "core",
@@ -280,7 +281,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "8cdd424407a4"
+   "hash": "8cdd424407a4",
+   "gone": "2026-10-14"
   },
   "core:code:scripts/foundry/live-battle.js:queue#1": {
    "repo": "core",
@@ -3349,6 +3351,26 @@
    "date": null,
    "commit": null,
    "hash": "84350692d79f"
+  },
+  "core:FASTFIGHTING.Live.Aftermath": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Live.Aftermath",
+   "area": "core/Live",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "94df9b65563a"
+  },
+  "core:FASTFIGHTING.Live.AftermathHint": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Live.AftermathHint",
+   "area": "core/Live",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "6bcea1697c79"
   },
   "core:FASTFIGHTING.Live.Ask": {
    "repo": "core",

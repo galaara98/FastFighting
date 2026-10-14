@@ -11,7 +11,7 @@ import { DESIRE_BAND_KEYS } from "../engine/behavior/desire.js";
 import { mindOf, bandLevel } from "../engine/live.js";
 import {
   liveBattle, continueBattle, rewindTurn, rewindEncounter, playCurrent, liveFact, dropHeldFact, setNpcReactions, setPlayThrough, finishReview,
-  waitingOnGm, suggestedSpotlight, spotlightNext
+  waitingOnGm, suggestedSpotlight, spotlightNext, settleBattle
 } from "../foundry/live-battle.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -53,7 +53,8 @@ export class BattleInterface extends HandlebarsApplicationMixin(ApplicationV2) {
       npcReactions: BattleInterface.#onNpcReactions,
       tellIt: BattleInterface.#onTellIt,
       playThrough: BattleInterface.#onPlayThrough,
-      spotlight: BattleInterface.#onSpotlight
+      spotlight: BattleInterface.#onSpotlight,
+      aftermath: BattleInterface.#onAftermath
     }
   };
 
@@ -135,6 +136,7 @@ export class BattleInterface extends HandlebarsApplicationMixin(ApplicationV2) {
       turn: current ? fmt(player ? "FASTFIGHTING.Battle.PlayerTurn" : "FASTFIGHTING.Battle.Turn", { name: current.spec.name }) : "",
       state, stateText: loc(`FASTFIGHTING.Battle.State.${state}`),
       canContinue: state === "waiting", canPlay: state === "ready" && !player, canRewind: b.data.turns.length > 0,
+      canSettle: state === "ended" && !b.data.settled,
       npcAsk: run.live.npcReactions === "ask", playThrough: !!b.data.auto,
       held: (b.pc?.facts ?? []).map((f, i) => ({ i, text: factText(f, name) })),
       creatures,
@@ -146,6 +148,10 @@ export class BattleInterface extends HandlebarsApplicationMixin(ApplicationV2) {
 
   static async #onContinue() {
     await continueBattle();
+  }
+
+  static async #onAftermath() {
+    await settleBattle();
   }
 
   static async #onSpotlight() {

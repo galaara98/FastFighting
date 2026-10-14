@@ -20,7 +20,7 @@
 import { STATUS, SWAY, NEUTRAL_PARTY, clamp } from "../constants.js";
 import {
   prepareBattle, beginRun, beginRound, playTurn, afterTurn, endRun, startTurn, noteCommand, log, notice, settleSides,
-  breakOnHarm, noteHarm, noteFall, noteHeal, captureUnit, strikeOutOfTurn
+  breakOnHarm, noteHarm, noteFall, noteHeal, captureUnit, strikeOutOfTurn, settleAftermath
 } from "./simulator.js";
 import { createRun, isStanding, areEnemies, edgeDistance } from "./battle-state.js";
 import { threats } from "./behavior/reactions.js";
@@ -566,6 +566,11 @@ export const captureAll = run => Object.fromEntries(run.units.map(u => [u.id, ca
 /** The fight over: who won, and what came of it (the aftermath only when the GM says so: `settle`). */
 export function endLive(run, { ended = true, settle = false } = {}) {
   return endRun(run, ended, { capture: true, settle });
+}
+
+/** The aftermath of a live battle that's over, when the GM says (simulator.js settleAftermath). */
+export function liveAftermath(run) {
+  settleAftermath(run);
 }
 
 /* -------------------------------------------- */

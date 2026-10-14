@@ -3126,6 +3126,16 @@ export function afterTurn(run, u) {
  * go back (unless `settle` is false: a live battle's GM decides that); and what came of it, summed up (each
  * creature's end state too, with `capture`).
  */
+/**
+ * The aftermath on its own, after a fight already ended (a live battle's, when the GM says): the fallen settled (the
+ * dying bleed out or hold on, the beaten dealt with), goods taken back by their owners. Told as a moment of its own.
+ */
+export function settleAftermath(run) {
+  startTurn(run);
+  aftermath(run, run.order);
+  reclaimGoods(run);
+}
+
 export function endRun(run, ended, { capture = false, settle = true } = {}) {
   const prep = run.prep;
   // Who won is decided when the last blow lands (or the deal is struck); the aftermath only settles the fallen.
