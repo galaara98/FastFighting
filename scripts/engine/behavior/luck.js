@@ -38,11 +38,13 @@ function pointValue(b, own) {
 /** Who could pay for roller's roll: itself first, then a friend who can spend on others and sees it happen. */
 function payers(run, roller, kind) {
   const out = [];
-  for ( const b of roller.spec.boosts ?? [] ) {
+  // (A player's own resources are its player's to spend, in a live battle: never the engine's.)
+  const mine = a => !run.live?.players?.has(a.id);
+  for ( const b of mine(roller) ? roller.spec.boosts ?? [] : [] ) {
     if ( (!b.kinds || b.kinds.includes(kind)) && left(run, roller, b) > 0 ) out.push({ u: roller, b, own: true });
   }
   for ( const a of run.units ) {
-    if ( a === roller || !isStanding(a) || areEnemies(run, a, roller) || !a.spec.boosts ) continue;
+    if ( a === roller || !isStanding(a) || areEnemies(run, a, roller) || !a.spec.boosts || !mine(a) ) continue;
     for ( const b of a.spec.boosts ) {
       if ( !b.allies || (b.kinds && !b.kinds.includes(kind)) || left(run, a, b) <= 0 ) continue;
       const d = b.range ? edgeDistance(a, roller) : null;

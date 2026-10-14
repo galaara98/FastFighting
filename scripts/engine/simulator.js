@@ -202,7 +202,7 @@ function cueFrom(run, b, c) {
  * if it had been in the encounter all along (its side, its desires and its nerve decide what it does then; someone
  * taking no side starts weighing what it wants). Set upon, it's in the fight at once.
  */
-function notice(run, b, cause, source) {
+export function notice(run, b, cause, source) {
   if ( b.spec.hazard ) return; // (a hazard notices nothing)
   if ( b.aware && cause !== "attacked" ) return; // (it already knows; it's on its way)
   b.aware = true;
@@ -583,7 +583,7 @@ function releaseGrabs(run, u) {
 }
 
 /** Charmed and dominated creatures change sides as their holds take and end: tell it. */
-function settleSides(run) {
+export function settleSides(run) {
   for ( const { u, joined, home, holder } of settleAllegiance(run) ) {
     const homeLabel = run.prep.sides[home]?.label ?? home;
     log(run, u, {
@@ -1357,9 +1357,11 @@ const fateOf = u => u.resources?.fate ?? 0;
  * can tell it's happening (in a moment like this, any sense will do), the less selfish the likelier.
  */
 function fateSpender(run, victim) {
-  if ( fateOf(victim) > 0 ) return victim;
+  // (In a live battle a player's fate is spent only as its player said: on its own life, on a friend's.)
+  const may = a => !run.live || run.live.mayReroll(run, a, victim);
+  if ( fateOf(victim) > 0 && may(victim) ) return victim;
   for ( const a of run.units ) {
-    if ( a === victim || a.side !== victim.side || !isStanding(a) || fateOf(a) <= 0 ) continue;
+    if ( a === victim || a.side !== victim.side || !isStanding(a) || fateOf(a) <= 0 || !may(a) ) continue;
     if ( !perceives(run, a, victim, { crisis: true }) ) continue;
     if ( run.rng.chance(clamp(1 - liveTrait(run, a, "selfish") / 100, 0.05, 0.95)) ) return a;
   }
@@ -1583,7 +1585,7 @@ function executeHeal(run, u, action, target) {
     rules.afterRoll?.(run, u, roll, { kind: "heal", action, target, faces: roll.faces ?? 20 });
     // Someone's life on it: a healer with fate to spare tries again (the selfish less readily, for others).
     const dying = target.status === STATUS.DOWN && !target.stable;
-    if ( !multiplier && dying && fateOf(u) > 0 && (u === target || run.rng.chance(clamp(1 - liveTrait(run, u, "selfish") / 100, 0.05, 0.95))) ) {
+    if ( !multiplier && dying && fateOf(u) > 0 && (!run.live || run.live.mayReroll(run, u, target)) && (u === target || run.rng.chance(clamp(1 - liveTrait(run, u, "selfish") / 100, 0.05, 0.95))) ) {
       u.resources.fate -= 1;
       run.fateInPlay = run.units.some(o => fateOf(o) > 0);
       log(run, u, { type: "fate", target: target.spec.name, targetId: target.id, label: u.spec.fateLabel ?? localize("FASTFIGHTING.Words.Fate"), spent: 1 });
@@ -1625,6 +1627,9 @@ export function noteHeal(run, u, target, healed, revived, { action = "", potion 
  * strikes as it goes, unless u, mindful of it, first gets clear safely (5e Disengage, PF2e Step) when what's left
  * of the turn allows. Afterwards it's no longer beside them. Returns false if u didn't survive leaving.
  */
+/** The reaction every creature with an opportunity strike has (PF2e Reactive Strike, 5e Opportunity Attack), by its id. */
+export const OPPORTUNITY = "opportunity";
+
 function leaveReach(run, u, turn, keep = null, need = null) {
   const list = u.disengaged ? [] : threats(run, u, keep);
   if ( list.length ) {
@@ -1642,6 +1647,8 @@ function leaveReach(run, u, turn, keep = null, need = null) {
     if ( !clear ) {
       for ( const { e, strike } of list ) {
         if ( !isStanding(u) || battleOver(run) ) break;
+        // (In a live battle the player, or the GM, may say otherwise: engine/live.js.)
+        if ( run.live && !run.live.decide(run, e, { reaction: { id: OPPORTUNITY, label: strike.name }, trigger: "leaveReach", by: u, would: true }) ) continue;
         e.reactionsLeft -= 1;
         log(run, e, { type: "opportunity", target: u.spec.name, targetId: u.id, action: strike.name });
         executeOffense(run, e, strike, u, 0);
@@ -2282,7 +2289,7 @@ export function takeTurn(run, u) {
   if ( u.status === STATUS.DEAD ) return endOfTurn(run, u);
   if ( u.status === STATUS.DOWN && u.held ) return endOfTurn(run, u); // (held at the edge by its regeneration)
   if ( u.status === STATUS.DOWN ) {
-    if ( options.downedModel === DOWNED_MODELS.SIMULATE && rules.recoveryCheck ) {
+    if ( options.downedModel === DOWNED_MODELS.SIMULATE && rules.recoveryCheck && !systemOwns(run, u, "recovery") ) {
       fateful(run, u, null, () => {
         const before = u.dying;
         const text = rules.recoveryCheck(u, run.rng);
@@ -2595,10 +2602,16 @@ export function takeTurn(run, u) {
   endOfTurn(run, u);
 }
 
+/**
+ * In a live battle, does the game system already do this for u itself (its recovery checks, its persistent damage)?
+ * Then the engine leaves it be. Never, in a simulated fight.
+ */
+const systemOwns = (run, u, what) => !!run.live?.systemOwns?.(u, what);
+
 export function endOfTurn(run, u) {
   const rules = run.prep.rules;
   // A save at the end of each of its turns may shake an effect off (5e Hold Person).
-  if ( isUp(u) && u.effects?.some(e => e.repeatSave) ) {
+  if ( isUp(u) && u.effects?.some(e => e.repeatSave) && !systemOwns(run, u, "repeatSaves") ) {
     for ( const e of [...u.effects] ) {
       if ( !e.repeatSave ) continue;
       const s = saveRoll(run, u, e.repeatSave.type);
@@ -2620,7 +2633,7 @@ export function endOfTurn(run, u) {
       settleSides(run);
     }
   }
-  if ( u.persistent.length ) {
+  if ( u.persistent.length && !systemOwns(run, u, "persistent") ) {
     const remaining = [];
     for ( const entry of u.persistent ) {
       const amount = rules.applyIwr(iwrOf(u), { [entry.part.type]: Math.max(0, samplePart(entry.part, run.rng)) });
@@ -2630,7 +2643,7 @@ export function endOfTurn(run, u) {
     }
     u.persistent = remaining;
   }
-  if ( u.afflictions.length && u.status !== STATUS.DEAD ) {
+  if ( u.afflictions.length && u.status !== STATUS.DEAD && !systemOwns(run, u, "afflictions") ) {
     for ( const a of [...u.afflictions] ) {
       a.rounds += 1;
       if ( a.spec.maxDuration && a.rounds >= a.spec.maxDuration ) {
@@ -3021,9 +3034,10 @@ export function afterTurn(run, u) {
 
 /**
  * The fight over (or out of rounds, `ended` false): who won, told; then the aftermath settles the fallen and goods
- * go back; and what came of it, summed up (each creature's end state too, with `capture`).
+ * go back (unless `settle` is false: a live battle's GM decides that); and what came of it, summed up (each
+ * creature's end state too, with `capture`).
  */
-export function endRun(run, ended, { capture = false } = {}) {
+export function endRun(run, ended, { capture = false, settle = true } = {}) {
   const prep = run.prep;
   // Who won is decided when the last blow lands (or the deal is struck); the aftermath only settles the fallen.
   // (Talks that collapsed: nobody's.)
@@ -3036,7 +3050,7 @@ export function endRun(run, ended, { capture = false } = {}) {
       peaceful: ended && !run.blood, standoff: !!run.standoff, resolved: run.resolved?.outcome ?? null
     });
   }
-  if ( ended ) {
+  if ( ended && settle ) {
     aftermath(run, run.order);
     reclaimGoods(run);
   }

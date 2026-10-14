@@ -87,10 +87,11 @@ export function respond(run, u, trigger, ctx) {
       if ( ctx.by && trigger !== "hit" && trigger !== "attacked" && !perceives(run, u, ctx.by) ) continue;
     }
     const worth = worthOf(run, u, r, trigger, ctx);
-    if ( !(worth > 0) ) continue;
     // (A counterspell burns a slot of its level: the dearer the slot, the more the spell has to be worth stopping.)
     const price = priceOf(u, r, trigger === "spell" ? 6 * Math.max(1, Number(r.counter?.level ?? r.level) || 3) : (ctx.damage ?? 5));
-    if ( !careless && worth < price ) continue;
+    const would = worth > 0 && (careless || worth >= price);
+    // In a live battle the player (or the GM) may say otherwise: always, never, or asked (engine/live.js).
+    if ( !(run.live ? run.live.decide(run, u, { reaction: r, trigger, by: ctx.by ?? null, ally: ctx.ally ?? null, would }) : would) ) continue;
     pay(u, r);
     return r;
   }
