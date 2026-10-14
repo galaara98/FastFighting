@@ -20,7 +20,7 @@
 import { STATUS, SWAY, NEUTRAL_PARTY, clamp } from "../constants.js";
 import {
   prepareBattle, beginRun, beginRound, playTurn, afterTurn, endRun, startTurn, noteCommand, log, notice, settleSides,
-  breakOnHarm, noteHarm, noteFall, noteHeal
+  breakOnHarm, noteHarm, noteFall, noteHeal, captureUnit
 } from "./simulator.js";
 import { createRun, isStanding, areEnemies, edgeDistance } from "./battle-state.js";
 import { createRng, deriveSeed } from "./rng.js";
@@ -458,6 +458,9 @@ export function mindOf(run, id, { top = 5 } = {}) {
     swayed: u.swayOutcome ?? null
   };
 }
+
+/** Every creature as it stands (simulator.js captureUnit), by id: before and after a turn, for what it changed (changes.js). */
+export const captureAll = run => Object.fromEntries(run.units.map(u => [u.id, captureUnit(u, run.prep.rules)]));
 
 /** The fight over: who won, and what came of it (the aftermath only when the GM says so: `settle`). */
 export function endLive(run, { ended = true, settle = false } = {}) {

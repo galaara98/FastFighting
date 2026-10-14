@@ -118,4 +118,27 @@ export class GenericAdapter extends SystemAdapter {
     }
     return undo;
   }
+
+  get supportsLive() {
+    return true;
+  }
+
+  /** A live battle: one turn's changes (engine/changes.js), and only those: hit points, a death, a creature that ran. */
+  async commitChanges(tokenDoc, spec, changes, final, options = {}) {
+    const actor = tokenDoc.actor;
+    const path = this.paths.hp;
+    const undo = { tokenUuid: tokenDoc.uuid, actorUuid: actor.uuid, actorUpdate: {}, statuses: [], createdItems: [], deletedItems: [], itemUpdates: [], createdActors: [], createdTokens: [], deletedTokens: [] };
+    if ( path && changes.hp ) {
+      undo.actorUpdate[path] = foundry.utils.getProperty(actor, path);
+      await actor.update({ [path]: changes.hp.to });
+    }
+    if ( changes.died ) {
+      await actor.toggleStatusEffect(CONFIG.specialStatusEffects.DEFEATED, { active: true, overlay: true });
+      undo.statuses.push({ id: CONFIG.specialStatusEffects.DEFEATED, active: false, overlay: true });
+    } else if ( changes.status?.to === STATUS.FLED && options.fledMode !== "leave" && spec.kind !== "pc" ) {
+      undo.tokenUpdate = { hidden: tokenDoc.hidden };
+      await tokenDoc.update({ hidden: true });
+    }
+    return undo;
+  }
 }

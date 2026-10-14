@@ -201,4 +201,87 @@ export class SystemAdapter {
   describeOutcome(spec, final) {
     return [];
   }
+
+  /* -------------------------------------------- */
+  /*  Live battles                                */
+  /* -------------------------------------------- */
+
+  /**
+   * Can it play a live battle (the players run their characters, FastFighting the rest, a turn at a time)? Only a
+   * helper whose commitChanges writes one turn's changes safely, mid-fight; without, Do it For Real Now plays the
+   * whole fight out as before.
+   */
+  get supportsLive() {
+    return false;
+  }
+
+  /**
+   * A token as its sheet stands now, mid-fight, for the engine (engine/live.js syncFromSheets): {hp, temp, stamina,
+   * maxHp, dying, wounded, doomed, stable, status ("standing" | "down" | "dead"), conditions {engineKey: value},
+   * persistent [DamagePart], resources {key: n}, shieldRaised}. Positions the core reads itself. By default, from a
+   * fresh CombatantSpec; a helper may read only what changes, more cheaply.
+   * @param {TokenDocument} tokenDoc
+   * @returns {Promise<object|null>}
+   */
+  async readLiveState(tokenDoc) {
+    const spec = await this.toCombatantSpec(tokenDoc);
+    if ( !spec ) return null;
+    const dead = tokenDoc.actor?.statuses?.has?.("dead") || (spec.hp.value <= 0 && spec.diesAtZero);
+    return {
+      hp: spec.hp.value, temp: spec.hp.temp ?? 0, stamina: spec.hp.stamina?.value, maxHp: spec.hp.max, dying: spec.dying ?? 0,
+      wounded: spec.wounded ?? 0, doomed: spec.doomed ?? 0, status: dead ? "dead" : spec.hp.value > 0 ? "standing" : "down",
+      conditions: { ...(spec.conditions ?? {}) }, persistent: spec.persistent ?? [], resources: { ...(spec.resources ?? {}) }
+    };
+  }
+
+  /**
+   * Write one turn's change set (engine/changes.js) onto a token, mid-fight: only what changed, so writing it twice
+   * changes nothing more. By default, through commitOutcome with the creature's end state (a helper whose
+   * commitOutcome writes the whole fight's outcome should implement this for itself).
+   * @param {TokenDocument} tokenDoc
+   * @param {object} spec      its CombatantSpec, as read at the turn's start
+   * @param {object} changes   what the turn changed (changes.js)
+   * @param {object} final     its state after the turn (captureUnit)
+   * @param {object} options   {lootMode, corpseMode, fledMode}
+   * @returns {Promise<object>} an undo record, as commitOutcome's
+   */
+  async commitChanges(tokenDoc, spec, changes, final, options) {
+    return this.commitOutcome(tokenDoc, spec, final, options);
+  }
+
+  /**
+   * What the system already does itself for the creatures FastFighting plays, so the engine leaves it be: {recovery,
+   * persistent, afflictions, repeatSaves}, each true or false (default: FastFighting does it all).
+   */
+  liveOwnership() {
+    return {};
+  }
+
+  /**
+   * A character's reactions, for its player to say always use / ask me / never: [{id, label}], each id as its
+   * CombatantSpec's reactions have it (and "opportunity" for the opportunity strike, where the system has one).
+   * @param {object} spec   its CombatantSpec
+   */
+  reactionsOf(spec) {
+    const out = (spec?.reactions ?? []).map(r => ({ id: r.id, label: r.label ?? r.name ?? r.id }));
+    if ( this.rules?.opportunity ) out.push({ id: "opportunity", label: null });
+    return out;
+  }
+
+  /** The system's resource that buys a reroll (PF2e Hero Points, 5e Heroic Inspiration), by its word, or null. */
+  rerollResource() {
+    return null;
+  }
+
+  /**
+   * What a player did on their turn, read from the chat cards the turn made (the system's rolls): events in the
+   * engine's own log shapes (attack, save, heal, talk, control ...), each with a `sure` flag (false: the GM should
+   * look). Optional: by default nothing is read, and the core goes by the sheets.
+   * @param {ChatMessage[]} messages
+   * @param {object} context   {actorId, tokenId, ids: {tokenId: combatant id in the battle}}
+   * @returns {object[]}
+   */
+  readTurn(messages, context) {
+    return [];
+  }
 }

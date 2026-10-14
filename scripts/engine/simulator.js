@@ -2852,7 +2852,7 @@ export function battleOver(run) {
 }
 
 /** Everything "Make it So" needs to commit one unit's end state (plus whatever the system keeps: rules.capture). */
-function captureUnit(u, rules) {
+export function captureUnit(u, rules) {
   return {
     system: rules?.capture?.(u) ?? null,
     hp: u.hp,
