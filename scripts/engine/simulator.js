@@ -508,6 +508,20 @@ function dealDamage(run, source, target, amount, { crit = false, types = null, a
 }
 
 /**
+ * What a system's recovery check said, for the log: its words; whether it came back on its feet (5e's natural 20); and,
+ * where the system says, whether the roll went its way (`better`: a 5e death save made doesn't lower its dying, so
+ * that alone can't tell). rules.recoveryCheck returns its words, or {text, better}.
+ */
+function recoveryOf(said, u) {
+  const text = said && typeof said === "object" ? said.text : said;
+  if ( !text ) return null;
+  const out = { text };
+  if ( u.status === STATUS.STANDING ) out.revived = true;
+  if ( said && typeof said === "object" && typeof said.better === "boolean" ) out.better = said.better;
+  return out;
+}
+
+/**
  * A blow that would drop it, a reaction may keep it up (PF2e Orc Ferocity, 5e Relentless Endurance: stayUp {hp,
  * wounded}): at that many hit points (1), wounded the more.
  */
@@ -2379,8 +2393,8 @@ export function takeTurn(run, u) {
     if ( options.downedModel === DOWNED_MODELS.SIMULATE && rules.recoveryCheck && !systemOwns(run, u, "recovery") ) {
       fateful(run, u, null, () => {
         const before = u.dying;
-        const text = rules.recoveryCheck(u, run.rng);
-        if ( text ) log(run, u, { text, type: "recovery", before, dying: u.dying, dead: u.status === STATUS.DEAD, stable: u.stable });
+        const said = recoveryOf(rules.recoveryCheck(u, run.rng), u);
+        if ( said ) log(run, u, { ...said, type: "recovery", before, dying: u.dying, dead: u.status === STATUS.DEAD, stable: u.stable });
       });
     }
     endOfTurn(run, u);
@@ -2831,8 +2845,8 @@ function aftermath(run, order) {
       if ( !isDying(u) || !rules.recoveryCheck ) continue;
       fateful(run, u, null, () => {
         const before = u.dying;
-        const text = rules.recoveryCheck(u, run.rng);
-        if ( text ) log(run, u, { text, type: "recovery", before, dying: u.dying, dead: u.status === STATUS.DEAD, stable: u.stable, aftermath: true });
+        const said = recoveryOf(rules.recoveryCheck(u, run.rng), u);
+        if ( said ) log(run, u, { ...said, type: "recovery", before, dying: u.dying, dead: u.status === STATUS.DEAD, stable: u.stable, aftermath: true });
       });
     }
   }

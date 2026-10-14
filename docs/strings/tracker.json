@@ -16021,6 +16021,16 @@
    "commit": null,
    "hash": "75b5ccc19e0b"
   },
+  "core:FASTFIGHTING.Story.Part.recoveryRevived": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Story.Part.recoveryRevived",
+   "area": "core/Story",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "cdec263bc69c"
+  },
   "core:FASTFIGHTING.Story.Part.recruit": {
    "repo": "core",
    "file": "languages/en.json",
@@ -31192,6 +31202,16 @@
    "date": null,
    "commit": null,
    "hash": "6ac9a0a179da"
+  },
+  "core:story:event.recoveryRevived": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "event.recoveryRevived",
+   "area": "core/story.event",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "1f96902d8678"
   },
   "core:story:event.recruit": {
    "repo": "core",

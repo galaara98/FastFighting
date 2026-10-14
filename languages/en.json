@@ -1141,6 +1141,7 @@
         "reactAttacked": "React Attacked",
         "reactMissed": "React Missed",
         "reactDamaged": "React Damaged",
+        "recoveryRevived": "Recovery Revived",
         "reactAllyTargeted": "React Ally Targeted",
         "reactWouldDrop": "React Would Drop",
         "reactSlain": "React Slain",

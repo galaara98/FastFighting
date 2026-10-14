@@ -15,6 +15,19 @@ const bow = (over = {}) => strike({ id: "bow", name: "Shortbow", melee: false, r
 /** Every way a table's lines can start, with its placeholders filled. */
 const opening = (key, fill) => english[key].map(l => l.replace(/\{(\w+)\}/g, (m, k) => fill[k] ?? m).split(" ").slice(0, 4).join(" "));
 
+describe("the story of the dying, as a live 5e test showed it", () => {
+  test("a death save made reads as one made (5e: it doesn't lower the dying), and a natural 20 as getting back up", () => {
+    const spec = battle([creature({ id: "r", name: "Riswynn", kind: "pc" }), creature({ id: "g", name: "Goblin", side: "hostile" })]);
+    const base = { actor: "Riswynn", actorId: "r", side: "friendly", type: "recovery", before: 0, dying: 0, dead: false, stable: false };
+    const result = { log: [{ ...base, turn: 1, round: 1, text: "death save success", better: true }, { ...base, turn: 2, round: 2, text: "a natural 20", revived: true }], units: {} };
+    const told = buildStory(result, spec, "roleplay", { tables, seed: 3 }).text;
+    const any = key => english[key].some(l => told.includes(l.replace("{actor}", "Riswynn")));
+    expect(any("event.recoveryGood")).toBe(true);
+    expect(any("event.recoveryRevived")).toBe(true);
+    expect(any("event.recoveryBad")).toBe(false);
+  });
+});
+
 describe("the story, after a review of the chat cards", () => {
   test("a shot is told as the shot, not as the bow: never the bow itself plunging in", () => {
     let shots = 0;

@@ -2499,6 +2499,13 @@
     "{actor} refuses to let go.",
     "{actor} stirs faintly."
   ],
+  "event.recoveryRevived": [
+    "{actor} gasps and comes to.",
+    "{actor}'s eyes snap open, and they get back up.",
+    "Against all odds, {actor} stirs and rises.",
+    "{actor} drags in a breath and is back on their feet.",
+    "{actor} refuses to die, and gets up."
+  ],
   "event.recoveryBad": [
     "{actor} slips closer to death.",
     "{actor}'s breathing grows shallow.",

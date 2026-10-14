@@ -426,8 +426,9 @@ function narrate(e, roll, rel, fill) {
       return fill.toldHit ? "" : roll("event.struckDown", f);
     case "recovery":
       if ( e.dead ) return roll("event.death", f);
+      if ( e.revived ) return roll("event.recoveryRevived", f);
       if ( e.stable ) return roll("event.stabilize", f);
-      return roll(e.dying < e.before ? "event.recoveryGood" : "event.recoveryBad", f);
+      return roll((e.better ?? e.dying < e.before) ? "event.recoveryGood" : "event.recoveryBad", f);
     // (Maneuvers and conditions from the master list: docs/story-maneuvers-conditions.md.)
     case "stand": return roll("maneuver.standUp", f);
     case "shield": return roll("maneuver.raiseShield", f);
@@ -736,7 +737,7 @@ function roleplayParagraphs(result, spec, tables, seed, mapType, mapCondition = 
   let doneTurn = null;
   for ( const logged of tellingOrder(result.log) ) {
     if ( logged.type === "initiative" || !mentions(logged) || averted.has(logged) ) continue;
-    if ( logged.type === "recovery" && logged.aftermath && !logged.stable && !logged.dead && lastBreath.get(logged.actorId) !== logged ) continue;
+    if ( logged.type === "recovery" && logged.aftermath && !logged.stable && !logged.dead && !logged.revived && lastBreath.get(logged.actorId) !== logged ) continue;
     // (Taking hold and its first harm are one moment: told once.)
     const onset = `${logged.actorId}|${logged.name}|${logged.turn}`;
     if ( logged.type === "afflictionSaveFail" ) onsets.add(onset);
