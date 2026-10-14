@@ -343,7 +343,10 @@ async function newRound(round) {
       const doc = battle.scene.tokens.get(tokenIdOf(u));
       if ( doc && !battle.combat.combatants.some(c => c.tokenId === doc.id) ) {
         const [c] = await battle.combat.createEmbeddedDocuments("Combatant", [{ tokenId: doc.id, sceneId: battle.scene.id, actorId: doc.actorId }]);
-        if ( c ) battle.data.joined = [...(battle.data.joined ?? []), c.uuid];
+        if ( c ) {
+          battle.data.joined = [...(battle.data.joined ?? []), c.uuid];
+          await keep(); // (kept at once: Rewind This Encounter takes it back even if this is all that happens)
+        }
         if ( c && !battle.data.spotlight ) {
           const from = Date.now();
           await battle.combat.rollInitiative([c.id], { skipDialog: true }); // (no system roll dialog: PF2e opens one)
