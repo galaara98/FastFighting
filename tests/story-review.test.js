@@ -26,6 +26,14 @@ describe("the story of the dying, as a live 5e test showed it", () => {
     expect(any("event.recoveryRevived")).toBe(true);
     expect(any("event.recoveryBad")).toBe(false);
   });
+
+  test("hiding is told as hiding, not as a power drawn on ('draws on Hide: invisible')", () => {
+    const spec = battle([creature({ id: "r", name: "Riswynn", kind: "pc" }), creature({ id: "g", name: "Goblin", side: "hostile" })]);
+    const result = { log: [{ turn: 1, round: 1, type: "buff", actor: "Goblin", actorId: "g", side: "hostile", action: "Hide", effect: "Invisible", self: true, targets: ["Goblin"], targetIds: ["g"], withSelf: true, maneuver: "hide" }], units: {} };
+    const told = buildStory(result, spec, "roleplay", { tables, seed: 3 }).text;
+    expect(english["maneuver.hide"].some(l => told.includes(l.replace("{actor}", "Goblin").split(" ").slice(1, 4).join(" ")))).toBe(true);
+    expect(told).not.toMatch(/Invisible/i);
+  });
 });
 
 describe("the story, after a review of the chat cards", () => {

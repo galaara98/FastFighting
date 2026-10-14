@@ -514,6 +514,8 @@ function narrate(e, roll, rel, fill) {
       const fill = { ...f, effect: e.effect ?? "", target: others[0] ?? "", targets: listJoin(others), all: listJoin([e.actor, ...others]) };
       // (An edge that needed a roll, and didn't land.)
       if ( e.failed ) return roll(others.length ? "event.edgeFails" : "event.edgeFailsSelf", fill);
+      // (Something done on the master list, Hide or Take Cover, told as what it is rather than as a power drawn on.)
+      if ( !others.length && e.maneuver && hasTable(roll, `maneuver.${e.maneuver}`) ) return roll(`maneuver.${e.maneuver}`, fill);
       if ( !others.length ) return roll("event.buffSelf", fill);
       const asked = e.askedBy?.length ? `${roll("event.answerCall", { ...f, target: e.askedBy[0] })} ` : "";
       if ( e.withSelf ) return asked + roll("event.buffWithSelf", fill);

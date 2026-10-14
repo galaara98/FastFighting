@@ -1639,7 +1639,8 @@ function executeBuff(run, u, action, targets, worth = 0, turn = null) {
       against: landed.map(t => focus.get(t)?.spec.name ?? null),
       targetIds: landed.map(t => t.id), withSelf: landed.includes(u), tempHp: Number(outcome?.tempHp) || 0, aura: !!action.aura,
       askedBy: landed.filter(t => t !== u && u.heard?.has(t.id)).map(t => t.spec.name), // (friends who asked for it)
-      tell: action.tell ?? null // a story line of its own (dodge, reckless, surge), if the system names one
+      tell: action.tell ?? null, // a story line of its own (dodge, reckless, surge), if the system names one
+      maneuver: maneuverOf(action) ?? undefined // (one on the master list, Hide, Take Cover: told as what it is)
     });
   }
 }
