@@ -254,6 +254,7 @@ function baseLine(e) {
       if ( e.what === "keeps" ) return t("KeepsIt", { actor: e.actor, what: e.item?.name ?? "", luck: e.luck, needed: e.needed ?? 39 });
       return e.what === "drops" ? t("HaggleDrops", { actor: e.actor, by: e.by ?? "" }) : t("HaggleLowers", { actor: e.actor, by: e.by ?? "", what: expectText(e.expect) });
     case "callHelp": return t("CallHelp", { actor: e.actor, target: e.toward ?? "" });
+    case "lazy": return t("Lazy", { actor: e.actor });
     case "callToArms": return t("CallToArms", { actor: e.actor, targets: listJoin(e.targets ?? []) });
     case "condition": return t("Condition", { actor: e.actor, effect: e.effect || t("Reeling") });
     case "down": return e.knockedOut ? t("KnockedOut", a) : t("Down", { actor: e.actor, dying: e.dying ? t("DownDying", { n: e.dying }) : "" });

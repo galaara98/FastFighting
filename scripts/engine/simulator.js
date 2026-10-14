@@ -269,6 +269,33 @@ function callToArms(run, u, turn, cost) {
   }
 }
 
+/**
+ * Lazy: a creature able to act that does nothing on its turn, knowingly. Either it slacks off (behaviorOf(u).slacks:
+ * the Lazy playstyle's chance, with no foe beside it and its wounds not pressing), or nothing it could do was worth it
+ * (the engine found nothing): either way the story says so. Not one that couldn't act: that has its own reasons.
+ */
+const CANT_ACT = new Set(["incapacitated", "controlled", "unconscious", "paralyzed", "stunned", "confused", "fleeing", "petrified", "dazed"]);
+
+const ableToAct = (run, u) => {
+  for ( const k in u.conds ?? {} ) if ( u.conds[k] > 0 && CANT_ACT.has(k) ) return false;
+  return (run.prep.rules.modifiers?.actionsLost?.(u) ?? 0) < 3;
+};
+
+function slacksOff(run, u) {
+  const chance = behaviorOf(u).slacks;
+  if ( !(chance > 0) || !inFight(u) || !ableToAct(run, u) ) return false;
+  if ( u.maxHp > 0 && u.hp / u.maxHp < 0.5 ) return false;
+  if ( enemiesOf(run, u).some(o => isStanding(o) && (edgeDistance(u, o) ?? Infinity) <= 5) ) return false;
+  return run.rng.chance(chance);
+}
+
+/** After a turn: one able to act that did nothing in it (nothing logged of its own) was lazy. */
+function noteIdle(run, u) {
+  if ( !run.log || !inFight(u) || u.spec.hazard || u.summoner || !ableToAct(run, u) ) return;
+  if ( run.log.some(e => e.turn === run.turn && e.actorId === u.id && e.type !== "thought") ) return;
+  log(run, u, { type: "lazy" });
+}
+
 /** b takes part from now on (someone who takes no side watches, weighing what it wants). */
 function join(run, b, why) {
   b.active = true;
@@ -2245,6 +2272,11 @@ function takeTurn(run, u) {
       log(run, s, { type: "vanish", reason: "unsustained" });
     }
   }
+  // Slacking (the Lazy playstyle): with no foe beside it and its wounds not pressing, now and then it just doesn't.
+  if ( slacksOff(run, u) ) {
+    log(run, u, { type: "lazy", chose: true });
+    return;
+  }
   const morale = checkMorale(run, u);
   if ( morale === MORALE.ROUT && runs(run, u, "breaks and flees", turn, { why: "breaks" }) ) return;
   if ( morale !== MORALE.HOLD && !u.wavering ) {
@@ -2878,6 +2910,7 @@ export function runOne(prep, seed, { log: withLog = false, capture = false } = {
       if ( u.side !== surpriseSide ) continue;
       startTurn(run, u);
       takeTurn(run, u);
+      noteIdle(run, u);
     }
   }
   let ended = battleOver(run);
@@ -2890,6 +2923,7 @@ export function runOne(prep, seed, { log: withLog = false, capture = false } = {
       noteCommand(run);
       startTurn(run, u);
       takeTurn(run, u);
+      noteIdle(run, u);
       if ( u.lastStand ) endLastStand(run, u);
       if ( battleOver(run) ) { ended = true; break; }
       if ( run.legendary ) {

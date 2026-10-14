@@ -132,8 +132,8 @@ export const PLAYSTYLES = Object.freeze({
   relentless: { icon: "fa-crosshairs", traits: { brave: 10 }, suggest: {}, behavior: { wary: 0.5, tauntProof: 0.75 },
     desire: { hurt: { current: 15 }, frustration: 0.4, doorPatience: 1.5 } },
   // As little as it can get away with: whatever's nearest, no long walks, not much help for anyone, gives up fast,
-  // and can't be bothered to hold a grudge.
-  lazy: { icon: "fa-couch", traits: { tactical: -5, brave: -5 }, suggest: { resourceUse: "conserve" }, behavior: { flighty: 0.4, tauntProof: 0.25 },
+  // and can't be bothered to hold a grudge; and now and then, with nobody on top of it, it just doesn't (slacks).
+  lazy: { icon: "fa-couch", traits: { tactical: -5, brave: -5 }, suggest: { resourceUse: "conserve" }, behavior: { flighty: 0.4, tauntProof: 0.25, slacks: 0.15 },
     desire: { hurt: { nearest: 15, far: -20 }, heal: -10, protect: -10, aid: -10, frustration: 1.6, doorPatience: 0.4, cool: 1.5 } },
 
   // Un-Mundane: would rather use what sets it apart (its magic, its class's and kind's own abilities, a monster's

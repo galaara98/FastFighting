@@ -884,7 +884,8 @@
         "taunt": "Taunts",
         "tauntProof": "Shrugs off taunts",
         "trapWary": "Watches for traps",
-        "wary": "Wary of outsiders"
+        "wary": "Wary of outsiders",
+        "slacks": "Now and then does nothing"
       }
     },
     "Tracker": {
@@ -1225,7 +1226,8 @@
         "far": "From afar",
         "precision": "Precision",
         "callToArms": "Call to arms",
-        "offendedKin": "Kin's quarrel"
+        "offendedKin": "Kin's quarrel",
+        "lazy": "Lazy"
       },
       "APrice": "a price",
       "Desire": "{intensity} {verb}",
@@ -1679,7 +1681,8 @@
       "Separator": ", ",
       "TerrainRegions": ": {regions}",
       "CallToArms": "{actor} calls {targets} into the fight",
-      "WhyKin": "for their own"
+      "WhyKin": "for their own",
+      "Lazy": "{actor} does nothing"
     },
     "DamageType": {
       "bludgeoning": "bludgeoning",

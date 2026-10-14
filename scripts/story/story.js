@@ -326,6 +326,7 @@ function narrate(e, roll, rel, fill) {
     case "keepLore": return ""; // (kept to itself: nothing to see)
     case "parley": return roll("event.parley", f);
     case "callHelp": return roll("event.callHelp", { ...f, target: e.toward });
+    case "lazy": return roll("event.lazy", f);
     case "callToArms": return roll("event.callToArms", { ...f, targets: listJoin(e.targets ?? []) });
     case "notice": return roll({ sight: "event.noticeSight", sound: "event.noticeSound", fledInto: "event.noticeFled", help: "event.noticeHelp", attacked: "event.noticeAttacked", standoff: "event.noticeStandoff" }[e.cause] ?? "event.noticeSound", f);
     case "join": return roll(e.why === "forced" ? "event.joinForced" : "event.join", f);
@@ -710,7 +711,7 @@ function tally(events, mentions) {
       const c = e.concession;
       s.notes.push(c.kept ? logTerm("NoteKept", { what: concessionText(c), luck: c.luck }) : logTerm("NoteGave", { what: concessionText(c), name: c.toName }));
     } else if ( e.type === "reclaim" ) s.notes.push(logTerm("NoteGotBack", { what: concessionText(e.concession), by: e.by }));
-    else if ( ["join", "leave", "sway", "flee", "callHelp", "callToArms"].includes(e.type) ) s.notes.push(logLine(e));
+    else if ( ["join", "leave", "sway", "flee", "callHelp", "callToArms", "lazy"].includes(e.type) ) s.notes.push(logLine(e));
   }
   return by;
 }

@@ -4373,6 +4373,16 @@
    "commit": null,
    "hash": "9b839264d61a"
   },
+  "core:FASTFIGHTING.Log.Lazy": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.Lazy",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "72ff83fd7d63"
+  },
   "core:FASTFIGHTING.Log.LearnsNothing": {
    "repo": "core",
    "file": "languages/en.json",
@@ -8779,6 +8789,16 @@
    "commit": null,
    "hash": "b9386300c9d4"
   },
+  "core:FASTFIGHTING.Playstyle.Effect.slacks": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Playstyle.Effect.slacks",
+   "area": "core/Playstyle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "a1757c258cfa"
+  },
   "core:FASTFIGHTING.Playstyle.Effect.spareDowned": {
    "repo": "core",
    "file": "languages/en.json",
@@ -13143,6 +13163,16 @@
    "date": null,
    "commit": null,
    "hash": "62b73932920e"
+  },
+  "core:FASTFIGHTING.Story.Part.lazy": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Story.Part.lazy",
+   "area": "core/Story",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "7d1792c1768c"
   },
   "core:FASTFIGHTING.Story.Part.leadRetreat": {
    "repo": "core",
@@ -26118,6 +26148,16 @@
    "date": null,
    "commit": null,
    "hash": "68ba5961b7a2"
+  },
+  "core:story:event.lazy": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "event.lazy",
+   "area": "core/story.event",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "2805cefccf56"
   },
   "core:story:event.leadRetreat": {
    "repo": "core",

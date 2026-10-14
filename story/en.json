@@ -4405,5 +4405,12 @@
     "{actor} takes up {victim}'s quarrel with {by}.",
     "For {victim}'s sake, {actor} goes after {by} and company.",
     "{actor} stands with {victim}, against {by}."
+  ],
+  "event.lazy": [
+    "{actor} hangs back, content to let everyone else do the work.",
+    "{actor} doesn't lift a finger this time.",
+    "{actor} could act, and simply doesn't.",
+    "Whatever the others are doing, {actor} can't be bothered.",
+    "{actor} finds a reason to do nothing at all."
   ]
 }
