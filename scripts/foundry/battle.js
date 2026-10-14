@@ -13,7 +13,7 @@ import { proposeGroups } from "../engine/groups.js";
 import { TACTIC_KEYS, TACTIC_WISHES } from "../engine/tactics.js";
 import { resetPathGrid } from "./pathing.js";
 import { tokenSetup, sceneEncounter } from "./persistence.js";
-import { tacticsFor, isPlayerControlled, statedDesires, getStoredTactics } from "./tactics.js";
+import { tacticsFor, isPlayerControlled, statedDesires, getStoredTactics, reactionKey } from "./tactics.js";
 import { ensureAutoConfig } from "./auto-config.js";
 import { partyWishes, voters, PARTY_TACTICS } from "./party.js";
 import { validMotives, NO_CATALOG, effectiveMotives } from "./motives.js";
@@ -316,6 +316,12 @@ function applyCharacterTactics(spec, entry) {
   spec.avoidCostlySpells = !!stored.avoidCostlySpells; // "I don't like to use spells that cost something"
   spec.avoidKilling = wish("target"); // holds back from a kill: knocks out, leaves the fallen be, spares them after
   spec.avoidFleeing = wish("retreat"); // stays when it would choose to run
+  // A live battle: each reaction as its player said (always, ask, never), and whether rerolls may save a life.
+  if ( isPlayerControlled(entry.spec, actor) ) {
+    const said = stored.reactions ?? {};
+    spec.reactionPrefs = Object.fromEntries([...(spec.reactions ?? []).map(r => r.id), "opportunity"].map(id => [id, said[reactionKey(id)] ?? "ask"]));
+    spec.rerolls = { self: !!stored.rerolls?.self, team: !!stored.rerolls?.team };
+  }
   // What it brings to a standoff, and what it wants out of it: only what it really has, and the system's own kinds of thing.
   // (Left to the character: what "Let this character decide" stands for.)
   const motives = validMotives(effectiveMotives(stored, { offer: calc.offer, expect: calc.expect }), spec.valuables, getAdapter()?.itemCatalog?.() ?? NO_CATALOG);

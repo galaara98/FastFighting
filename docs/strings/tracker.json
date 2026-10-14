@@ -18210,6 +18210,116 @@
    "commit": "f7ee61e",
    "hash": "3b18e0da3db5"
   },
+  "core:FASTFIGHTING.Tactics.Reactions.always": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Tactics.Reactions.always",
+   "area": "core/Tactics",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "2c06b017165a"
+  },
+  "core:FASTFIGHTING.Tactics.Reactions.ask": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Tactics.Reactions.ask",
+   "area": "core/Tactics",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "c69dfdc674dc"
+  },
+  "core:FASTFIGHTING.Tactics.Reactions.Hint": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Tactics.Reactions.Hint",
+   "area": "core/Tactics",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "135302575827"
+  },
+  "core:FASTFIGHTING.Tactics.Reactions.Label": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Tactics.Reactions.Label",
+   "area": "core/Tactics",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "8a7ede6b5f07"
+  },
+  "core:FASTFIGHTING.Tactics.Reactions.never": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Tactics.Reactions.never",
+   "area": "core/Tactics",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "502357d4393d"
+  },
+  "core:FASTFIGHTING.Tactics.Reactions.Opportunity": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Tactics.Reactions.Opportunity",
+   "area": "core/Tactics",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "4066de36167c"
+  },
+  "core:FASTFIGHTING.Tactics.Reactions.Unnamed": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Tactics.Reactions.Unnamed",
+   "area": "core/Tactics",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "df9d52c79fb5"
+  },
+  "core:FASTFIGHTING.Tactics.Rerolls.Hint": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Tactics.Rerolls.Hint",
+   "area": "core/Tactics",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "1896a088d210"
+  },
+  "core:FASTFIGHTING.Tactics.Rerolls.Label": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Tactics.Rerolls.Label",
+   "area": "core/Tactics",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "ad00600922d8"
+  },
+  "core:FASTFIGHTING.Tactics.Rerolls.Self": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Tactics.Rerolls.Self",
+   "area": "core/Tactics",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "f141df6ab428"
+  },
+  "core:FASTFIGHTING.Tactics.Rerolls.Team": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Tactics.Rerolls.Team",
+   "area": "core/Tactics",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "066fc8d5760d"
+  },
   "core:FASTFIGHTING.Tactics.resourceUse.balanced": {
    "repo": "core",
    "file": "languages/en.json",
@@ -40506,6 +40616,16 @@
    "date": null,
    "commit": null,
    "hash": "4c93c2c050c7"
+  },
+  "pf2e:FFPF2E.Action.ReactiveStrike": {
+   "repo": "pf2e",
+   "file": "languages/en.json",
+   "key": "FFPF2E.Action.ReactiveStrike",
+   "area": "pf2e/Action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "bcd21e6c4816"
   },
   "pf2e:FFPF2E.Action.Trip": {
    "repo": "pf2e",

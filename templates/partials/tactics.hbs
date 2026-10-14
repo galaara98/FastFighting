@@ -29,6 +29,23 @@
   {{/each}}
 </div>
 {{/if}}
+{{#if reactions}}
+<div class="ff-reactions">
+  <div class="ff-q-label">{{localize "FASTFIGHTING.Tactics.Reactions.Label"}} <i class="fa-solid fa-circle-question" data-tooltip="{{localize "FASTFIGHTING.Tactics.Reactions.Hint"}}"></i></div>
+  {{#each reactions}}
+  <label class="ff-reaction">{{label}}
+    <select name="{{name}}" data-tactic="{{key}}" data-actor-uuid="{{../actorUuid}}">{{#each choices}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select>
+  </label>
+  {{/each}}
+</div>
+{{/if}}
+{{#if rerolls}}
+<div class="ff-rerolls">
+  <div class="ff-q-label">{{localize "FASTFIGHTING.Tactics.Rerolls.Label" resource=rerolls.resource}} <i class="fa-solid fa-circle-question" data-tooltip="{{localize "FASTFIGHTING.Tactics.Rerolls.Hint"}}"></i></div>
+  <label class="ff-check"><input type="checkbox" name="{{rerolls.self.name}}" data-tactic="{{rerolls.self.key}}" data-actor-uuid="{{actorUuid}}" {{checked rerolls.self.checked}}> {{localize "FASTFIGHTING.Tactics.Rerolls.Self"}}</label>
+  <label class="ff-check"><input type="checkbox" name="{{rerolls.team.name}}" data-tactic="{{rerolls.team.key}}" data-actor-uuid="{{actorUuid}}" {{checked rerolls.team.checked}}> {{localize "FASTFIGHTING.Tactics.Rerolls.Team"}}</label>
+</div>
+{{/if}}
 {{#if hidden}}
 <div class="ff-hidden-scores">
   <div class="ff-q-label">{{localize "FASTFIGHTING.TokenTactics.Hidden"}} <i class="fa-solid fa-eye" data-tooltip="{{localize "FASTFIGHTING.TokenTactics.HiddenHint"}}"></i></div>

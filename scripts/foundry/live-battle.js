@@ -21,6 +21,7 @@ import { positionOf } from "./terrain.js";
 import { approachFor } from "./battle.js";
 import { currentPathGrid, pathGridFor } from "./pathing.js";
 import { getSetup } from "./persistence.js";
+import { SOCKET } from "./tactics.js";
 import {
   holdingPause, playMoves, postBeat, postStory, revertEntry, gmIds, chronicle, storyTitle, packSpec, unpackSpec, placeOf
 } from "./make-it-so.js";
@@ -327,23 +328,61 @@ async function waitCard(turn) {
   });
 }
 
+/** How long a player has to answer a question about their reaction (ms) before the GM is asked instead. */
+const ASK_MS = 60000;
+/** Questions put to players, waiting for their answers: id -> resolve. */
+const asking = new Map();
+
 /**
- * Should someone use a reaction? A player's (asked of the GM for now, on the player's behalf), or an NPC's when the
- * GM wants to be asked. True to use it.
+ * Should someone use a reaction? A player's is asked of its player (any of its owners who's here); with none here, or
+ * no answer in time, of the GM. An NPC's (when the GM wants to be asked), of the GM. True to use it.
  */
 async function ask(request) {
   const run = battle.run;
   const name = id => (id ? run.byId.get(id)?.spec.name ?? "" : "");
-  const trigger = game.i18n.has(`FASTFIGHTING.Live.Trigger.${request.trigger}`)
-    ? fmt(`FASTFIGHTING.Live.Trigger.${request.trigger}`, { by: name(request.byId), ally: name(request.allyId) })
-    : request.trigger;
-  const reaction = request.reaction || (request.reactionId === "opportunity" ? loc("FASTFIGHTING.Live.Opportunity") : request.reactionId);
-  const question = fmt("FASTFIGHTING.Live.Ask", { creature: name(request.unitId), reaction, trigger });
-  const thinks = loc(request.would ? "FASTFIGHTING.Live.Would" : "FASTFIGHTING.Live.WouldNot");
+  const words = {
+    creature: name(request.unitId), reaction: request.reaction, reactionId: request.reactionId, trigger: request.trigger,
+    by: name(request.byId), ally: name(request.allyId), would: request.would
+  };
+  if ( request.player ) {
+    const actor = docOf(request.unitId)?.actor;
+    const owners = game.users.filter(u => !u.isGM && u.active && actor?.testUserPermission(u, "OWNER")).map(u => u.id);
+    if ( owners.length ) {
+      const id = foundry.utils.randomID();
+      const answer = await new Promise(resolve => {
+        asking.set(id, resolve);
+        game.socket.emit(SOCKET, { action: "liveAsk", userIds: owners, id, words }, { recipients: owners });
+        setTimeout(() => resolve(null), ASK_MS);
+      });
+      asking.delete(id);
+      if ( answer !== null ) return answer;
+    }
+  }
+  return askHere(words);
+}
+
+/** The question, in this client's language, and its answer (true: use it). */
+async function askHere(words) {
+  const trigger = game.i18n.has(`FASTFIGHTING.Live.Trigger.${words.trigger}`)
+    ? fmt(`FASTFIGHTING.Live.Trigger.${words.trigger}`, { by: words.by, ally: words.ally })
+    : words.trigger;
+  const reaction = words.reaction || (words.reactionId === "opportunity" ? loc("FASTFIGHTING.Live.Opportunity") : words.reactionId);
+  const question = fmt("FASTFIGHTING.Live.Ask", { creature: words.creature, reaction, trigger });
+  const thinks = loc(words.would ? "FASTFIGHTING.Live.Would" : "FASTFIGHTING.Live.WouldNot");
   return !!(await foundry.applications.api.DialogV2.confirm({
     window: { title: loc("FASTFIGHTING.Live.AskTitle") },
     content: `<p>${escape(question)}</p><p class="hint">${escape(thinks)}</p>`
   }));
+}
+
+/** The socket: a GM's question about a player's reaction, on that player's screen; the player's answer, back to the GM. */
+function onSocket(data, senderId) {
+  const sender = game.users.get(senderId);
+  if ( data?.action === "liveAsk" && sender?.isGM && data.userIds?.includes(game.user.id) ) {
+    askHere(data.words).then(answer => game.socket.emit(SOCKET, { action: "liveAnswer", id: data.id, answer }, { recipients: [senderId] }));
+  } else if ( data?.action === "liveAnswer" && game.user.isGM ) {
+    asking.get(data.id)?.(!!data.answer);
+  }
 }
 
 /* -------------------------------------------- */
@@ -591,6 +630,7 @@ async function pickUp() {
 }
 
 export function registerLiveBattles() {
+  Hooks.once("ready", () => game.socket.on(SOCKET, onSocket));
   Hooks.on("combatTurnChange", onTurnChange);
   Hooks.on("createChatMessage", onMessage);
   Hooks.once("ready", () => pickUp());

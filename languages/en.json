@@ -694,7 +694,22 @@
       },
       "AutoFrom": "{choice} ({why})",
       "AutoHint": "GM only: what \"Let this character decide\" picks, why, and how often.",
-      "AutoChance": "{choice} {chance}"
+      "AutoChance": "{choice} {chance}",
+      "Reactions": {
+        "Label": "Reactions",
+        "Hint": "In a live battle, what FastFighting does when one of these could be used during someone else's turn.",
+        "ask": "Ask me",
+        "always": "Always use it",
+        "never": "Never use it",
+        "Opportunity": "A strike as a foe leaves",
+        "Unnamed": "A reaction"
+      },
+      "Rerolls": {
+        "Label": "{resource}",
+        "Hint": "In a live battle, whether FastFighting may spend these to reroll a roll that would kill.",
+        "Self": "Save my life with them",
+        "Team": "Save a teammate's life with them"
+      }
     },
     "Survey": {
       "Title": "Prepare for Battle",

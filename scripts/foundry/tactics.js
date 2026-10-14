@@ -33,6 +33,12 @@ const META_KEYS = ["stayTrue", "roleplay", "avoidCostlySpells"];
 /** Stated desires: three slots, each "what, at whom, how badly". */
 const DESIRE_SLOTS = ["d0", "d1", "d2"];
 const DESIRE_KEY = /^desire\.(d[0-2])\.(kind|target|level)$/;
+/** A reaction's choice (always use it, ask its player, never), by the reaction's own key; a reroll setting. */
+const REACTION_KEY = /^reactions\.([\w-]+)$/;
+const REROLL_KEY = /^rerolls\.(self|team)$/;
+export const REACTION_CHOICES = Object.freeze(["ask", "always", "never"]);
+/** A reaction's key, the same fight after fight: its id without the actor's in front (PF2e "shield-block"). */
+export const reactionKey = id => String(id ?? "").split(".").pop();
 /** The level a band stands for (its middle). */
 export const DESIRE_LEVELS = Object.freeze({ passing: 10, wants: 30, determined: 50, driven: 70, obsessed: 90 });
 
@@ -80,6 +86,11 @@ export function sanitizeTactics(raw) {
     const m = cleanMotive(which, raw[which]);
     if ( m && Object.keys(m).length ) out[which] = m;
   }
+  if ( isPlain(raw.reactions) ) {
+    const r = Object.fromEntries(Object.entries(raw.reactions).filter(([k, v]) => /^[\w-]+$/.test(k) && REACTION_CHOICES.includes(v)));
+    if ( Object.keys(r).length ) out.reactions = r;
+  }
+  if ( isPlain(raw.rerolls) ) out.rerolls = { self: raw.rerolls.self === true, team: raw.rerolls.team === true };
   if ( isPlain(raw.desires) ) {
     out.desires = {};
     for ( const slot of DESIRE_SLOTS ) {
@@ -135,6 +146,17 @@ export async function setTactic(actor, key, value) {
     const clean = cleanMotiveField(which, field, value);
     if ( clean === null ) return;
     await actor.update({ [`flags.${MODULE_ID}.tactics.${which}.${field}`]: clean });
+    return;
+  }
+  const reaction = REACTION_KEY.exec(key ?? "");
+  if ( actor && reaction ) {
+    if ( !REACTION_CHOICES.includes(value) ) return;
+    await actor.update({ [`flags.${MODULE_ID}.tactics.reactions.${reaction[1]}`]: value });
+    return;
+  }
+  const reroll = REROLL_KEY.exec(key ?? "");
+  if ( actor && reroll ) {
+    await actor.update({ [`flags.${MODULE_ID}.tactics.rerolls.${reroll[1]}`]: value === true });
     return;
   }
   const desire = DESIRE_KEY.exec(key ?? "");
@@ -441,10 +463,40 @@ export function questionsContext(spec, actor, uid, { questions: withQuestions = 
     motives: withQuestions ? motivesContext(spec, stored, getAdapter()?.itemCatalog?.() ?? NO_CATALOG, uid, actor.uuid, {
       auto: { offer: suggested.offer, expect: suggested.expect }, why, gm
     }) : null,
+    ...reactionsContext(spec, actor, stored, uid),
     stayTrue: { name: `tactic-${uid}-stayTrue`, checked: !!stored.stayTrue },
     roleplay: { name: `tactic-${uid}-roleplay`, checked: !!stored.roleplay },
     avoidCostlySpells: { name: `tactic-${uid}-avoidCostlySpells`, checked: !!stored.avoidCostlySpells, show: spec.actions.some(a => ((a.rank ?? 0) > 0 || a.spellId) && (a.resource || Number.isFinite(a.uses))) },
     conflict: !!stored.stayTrue && !!stored.roleplay
+  };
+}
+
+/**
+ * A character a player runs: its reactions as its system has them, each always used, asked about, or never used (in a
+ * live battle FastFighting decides nothing for it), and whether a reroll (Hero Points, Inspiration) may save its life
+ * or a friend's. Nothing for anyone else.
+ */
+function reactionsContext(spec, actor, stored, uid) {
+  if ( !isPlayerControlled(spec, actor) ) return { reactions: null, rerolls: null };
+  const adapter = getAdapter();
+  const list = adapter?.reactionsOf?.(spec) ?? [];
+  const reactions = list.map(r => {
+    const key = reactionKey(r.id);
+    const value = stored.reactions?.[key] ?? "ask";
+    return {
+      key: `reactions.${key}`, name: `tactic-${uid}-reaction-${key}`,
+      label: r.label ?? loc(key === "opportunity" ? "FASTFIGHTING.Tactics.Reactions.Opportunity" : "FASTFIGHTING.Tactics.Reactions.Unnamed"),
+      choices: REACTION_CHOICES.map(c => ({ value: c, label: loc(`FASTFIGHTING.Tactics.Reactions.${c}`), selected: value === c }))
+    };
+  });
+  const resource = adapter?.rerollResource?.() ?? null;
+  return {
+    reactions: reactions.length ? reactions : null,
+    rerolls: resource ? {
+      resource,
+      self: { key: "rerolls.self", name: `tactic-${uid}-reroll-self`, checked: !!stored.rerolls?.self },
+      team: { key: "rerolls.team", name: `tactic-${uid}-reroll-team`, checked: !!stored.rerolls?.team }
+    } : null
   };
 }
 
