@@ -4412,5 +4412,1424 @@
     "{actor} could act, and simply doesn't.",
     "Whatever the others are doing, {actor} can't be bothered.",
     "{actor} finds a reason to do nothing at all."
+  ],
+  "maneuver.move": [
+    "{actor} crosses the floor, closing the distance.",
+    "{actor} makes for a new spot, never slowing.",
+    "{actor} shifts ground, taking up a fresh position in the fray."
+  ],
+  "maneuver.dash": [
+    "{actor} sprints flat out across the field.",
+    "{actor} bolts forward, eating up ground in a blur.",
+    "{actor} tears across the battlefield at a breakneck pace."
+  ],
+  "maneuver.step": [
+    "{actor} takes one careful step, slipping just out of reach.",
+    "{actor} edges around the nearest foe, giving them no opening.",
+    "{actor} eases a single pace aside, guard never wavering."
+  ],
+  "maneuver.retreat": [
+    "{actor} breaks off and falls back from the fight.",
+    "{actor} withdraws, putting the clash behind them.",
+    "{actor} gives ground steadily, backing away from the melee."
+  ],
+  "maneuver.charge": [
+    "{actor} rushes headlong at {target}.",
+    "{actor} barrels across the gap straight at {target}.",
+    "{actor} closes on {target} in one furious surge."
+  ],
+  "maneuver.tumbleThrough": [
+    "{actor} ducks low and slips right past {target}.",
+    "{actor} vaults through the very space {target} guards.",
+    "{actor} tumbles past {target}, coming up on the far side."
+  ],
+  "maneuver.leap": [
+    "{actor} jumps the gap in a single bound.",
+    "{actor} springs over the obstacle and lands clear.",
+    "{actor} launches upward and sails over whatever lies in the way."
+  ],
+  "maneuver.climb": [
+    "{actor} scrambles up the wall.",
+    "{actor} hauls themselves up the heap of rubble.",
+    "{actor} clambers higher, finding purchase where there seems to be none."
+  ],
+  "maneuver.swim": [
+    "{actor} strikes out through the water.",
+    "{actor} cuts through the current with steady strokes.",
+    "{actor} plunges in and surges ahead, spray churning in their wake."
+  ],
+  "maneuver.fly": [
+    "{actor} takes to the air.",
+    "{actor} banks hard overhead, then hovers, watching.",
+    "{actor} soars upward, rising above the fray."
+  ],
+  "maneuver.burrow": [
+    "{actor} digs down and vanishes beneath the ground.",
+    "{actor} tunnels through the earth, a ridge of soil rising above them.",
+    "{actor} sinks into the ground, moving unseen below the surface."
+  ],
+  "maneuver.crawl": [
+    "{actor} drags themselves along the ground.",
+    "{actor} inches forward, pressed flat to the floor.",
+    "{actor} worms across the dirt, staying low."
+  ],
+  "maneuver.dropProne": [
+    "{actor} throws themselves flat.",
+    "{actor} hits the deck.",
+    "{actor} drops to the ground and lies still."
+  ],
+  "maneuver.standUp": [
+    "{actor} scrambles back upright.",
+    "{actor} rises from the ground, ready again.",
+    "{actor} heaves themselves up off the floor."
+  ],
+  "maneuver.balance": [
+    "{actor} picks their way along the narrow beam.",
+    "{actor} edges across the slick floor without slipping.",
+    "{actor} wobbles, then steadies, crossing the precarious ground with care."
+  ],
+  "maneuver.squeeze": [
+    "{actor} wriggles through a gap far too tight for them.",
+    "{actor} contorts and forces their way through the narrow opening.",
+    "{actor} squeezes through the cramped space, scraping past the edges."
+  ],
+  "maneuver.catchFall": [
+    "{actor} catches a ledge just in time.",
+    "{actor} arrests the fall in midair.",
+    "{actor} slows the plunge and lands with barely a jolt."
+  ],
+  "maneuver.mount": [
+    "{actor} swings up into the saddle.",
+    "{actor} leaps down from their mount, landing ready.",
+    "{actor} settles astride their steed, ready to ride."
+  ],
+  "maneuver.flee": [
+    "{actor} panics and runs for it.",
+    "{actor} turns tail and bolts, anywhere away from the fight.",
+    "Terror wins out: {actor} scrambles away, never looking back."
+  ],
+  "maneuver.callForHelp": [
+    "{actor} shouts for {target} to come quickly.",
+    "{actor} races off to fetch {target}.",
+    "{actor} raises the alarm, summoning {target} to the fight."
+  ],
+  "maneuver.callToArms": [
+    "{actor} calls {targets} into the fight.",
+    "{actor} bellows a command, and {targets} answer.",
+    "At a signal from {actor}, {targets} surge into the fray."
+  ],
+  "maneuver.noticeSight": [
+    "{actor} spots the commotion and turns toward it.",
+    "Movement catches {actor}'s attention, and they turn to look.",
+    "{actor} glimpses the struggle across the way and wheels around."
+  ],
+  "maneuver.noticeSound": [
+    "{actor} hears the clash of battle.",
+    "A scream reaches {actor}, who whirls toward the sound.",
+    "{actor} goes still, listening to the shouts and crashes nearby."
+  ],
+  "maneuver.noticeFeel": [
+    "{actor} feels the ground tremble with the fighting.",
+    "The scent of blood reaches {actor}, who turns toward it.",
+    "{actor} senses something amiss and heads toward the struggle."
+  ],
+  "maneuver.takeCover": [
+    "{actor} ducks behind a pillar.",
+    "{actor} darts behind the nearest cover.",
+    "{actor} hunkers down behind whatever solid thing is closest."
+  ],
+  "maneuver.raiseShield": [
+    "{actor} brings their shield up and braces.",
+    "{actor} lifts their shield, settling in behind it.",
+    "{actor} sets their shield firm against what's coming."
+  ],
+  "maneuver.block": [
+    "{actor} takes the blow on their shield.",
+    "The strike glances off {actor}'s armor.",
+    "{actor} catches the hit and turns it aside."
+  ],
+  "maneuver.defend": [
+    "{actor} turns wholly to defense, giving nothing away.",
+    "{actor} weaves and parries, presenting no opening.",
+    "{actor} draws in tight, warding off every attack."
+  ],
+  "maneuver.avertGaze": [
+    "{actor} turns their eyes from the deadly stare.",
+    "{actor} looks away, refusing to meet that terrible gaze.",
+    "{actor} averts their face, shielding themselves from the killing glare."
+  ],
+  "maneuver.hide": [
+    "{actor} slips out of sight into the shadows.",
+    "{actor} vanishes into the smoke.",
+    "{actor} melts behind cover and is gone."
+  ],
+  "maneuver.sneak": [
+    "{actor} creeps, unseen, to a new spot.",
+    "{actor} steals silently across the ground.",
+    "{actor} glides through the gloom without a whisper."
+  ],
+  "maneuver.search": [
+    "{actor} scans the room for a lurking foe.",
+    "{actor} peers into every shadow, hunting for the hidden enemy.",
+    "{actor} sweeps the area, alert to the slightest movement."
+  ],
+  "maneuver.assess": [
+    "{actor} sizes up {target}, reading their weak spots.",
+    "{actor} studies {target} closely, guessing their next move.",
+    "{actor} watches {target}, searching for a flaw."
+  ],
+  "maneuver.pointOut": [
+    "{actor} gestures sharply toward the spot where {target} lurks.",
+    "\"There!\" {actor} cries, marking {target}'s hiding place.",
+    "{actor} calls out, revealing exactly where {target} crouches unseen."
+  ],
+  "maneuver.demoralize": [
+    "{actor} snarls a threat at {target}.",
+    "{actor} looms over {target}, trying to break their nerve.",
+    "{actor} lets out a terrible cry, meant to shake {target}'s courage."
+  ],
+  "maneuver.feint": [
+    "{actor} fakes one way and goes the other, fooling {target}.",
+    "{actor} draws {target} with a false move, then shifts.",
+    "{actor} sells {target} a bluff, then strikes from the unexpected side."
+  ],
+  "maneuver.distract": [
+    "{actor} shouts and waves, drawing {target}'s attention away.",
+    "{actor} tosses a pebble aside, and {target} turns to look.",
+    "{actor} makes a racket, pulling {target}'s focus elsewhere."
+  ],
+  "maneuver.parley": [
+    "{actor} calls out to {target}, offering terms.",
+    "{actor} orders {target} to yield while there is still time.",
+    "{actor} pauses mid-fight to talk {target} down."
+  ],
+  "maneuver.rally": [
+    "{actor} shouts encouragement, steadying wavering allies.",
+    "{actor} lifts their voice, and faltering comrades take heart.",
+    "\"Hold fast!\" {actor} cries, and the line firms up."
+  ],
+  "maneuver.surrender": [
+    "{actor} yields, abandoning any further resistance.",
+    "{actor} sinks low, all fight gone, begging for mercy.",
+    "{actor} surrenders, showing they mean no further harm."
+  ],
+  "maneuver.aid": [
+    "{actor} sets {target} up with a perfect opening.",
+    "{actor} creates a distraction to help {target}.",
+    "{actor} steadies {target}, lending support at the crucial moment."
+  ],
+  "maneuver.ready": [
+    "{actor} holds, poised, waiting for their moment.",
+    "{actor} keeps watch on the doorway, ready to strike.",
+    "{actor} tenses and bides their time."
+  ],
+  "maneuver.gainGround": [
+    "{actor} presses for position, setting up the next move.",
+    "{actor} works around for a better angle.",
+    "{actor} maneuvers patiently, claiming the better spot."
+  ],
+  "maneuver.grapple": [
+    "{actor} seizes {target} and holds on.",
+    "{actor} clamps onto {target}, refusing to let go.",
+    "{actor} locks {target} in a crushing grip."
+  ],
+  "maneuver.shove": [
+    "{actor} drives {target} back a pace.",
+    "{actor} slams into {target}, forcing them back.",
+    "{actor} heaves {target} away with a mighty push."
+  ],
+  "maneuver.move.amazing": [
+    "{actor} arrives exactly where they meant to be, as if the battlefield parted for them."
+  ],
+  "maneuver.move.terrible": [
+    "{actor} gets there eventually, after a detour around a puddle and a moment of doubt."
+  ],
+  "maneuver.dash.amazing": [
+    "{actor} moves so fast that the dust only settles long after they've gone."
+  ],
+  "maneuver.dash.terrible": [
+    "{actor} stumbles twice and arrives winded, having covered rather less ground than hoped."
+  ],
+  "maneuver.step.amazing": [
+    "The step is so neat that nearby foes don't even notice {actor} has moved."
+  ],
+  "maneuver.step.terrible": [
+    "{actor}'s careful step lands on a loose stone, and they teeter there, ungainly."
+  ],
+  "maneuver.retreat.amazing": [
+    "{actor} slips away so smoothly that the enemy is left swinging at empty air."
+  ],
+  "maneuver.retreat.terrible": [
+    "{actor} backs straight into a wall, retreating all of two paces."
+  ],
+  "maneuver.charge.amazing": [
+    "{actor} hits {target} like a battering ram, the ground shaking under the impact."
+  ],
+  "maneuver.charge.terrible": [
+    "{actor} loses steam halfway and arrives at {target} at little more than a brisk walk."
+  ],
+  "maneuver.tumbleThrough.amazing": [
+    "{target} spins around twice, utterly baffled as to where {actor} went."
+  ],
+  "maneuver.tumbleThrough.terrible": [
+    "{actor} gets through, but only after bumping clumsily into {target} along the way."
+  ],
+  "maneuver.leap.amazing": [
+    "{actor} clears it with room to spare, landing as lightly as a falling leaf."
+  ],
+  "maneuver.leap.terrible": [
+    "{actor} barely makes it, landing in an undignified sprawl at the far edge."
+  ],
+  "maneuver.climb.amazing": [
+    "{actor} reaches the top in moments, as though the climb were a flight of stairs."
+  ],
+  "maneuver.climb.terrible": [
+    "{actor} gets up there in the end, slipping twice and sending a shower of grit down below."
+  ],
+  "maneuver.swim.amazing": [
+    "{actor} knifes through the water so swiftly that barely a ripple marks their passing."
+  ],
+  "maneuver.swim.terrible": [
+    "{actor} splashes about more than they swim, making very little headway."
+  ],
+  "maneuver.fly.amazing": [
+    "{actor} wheels through the air with effortless grace, owning the sky."
+  ],
+  "maneuver.fly.terrible": [
+    "{actor} lurches aloft, bobbing unsteadily, barely above everyone's heads."
+  ],
+  "maneuver.burrow.amazing": [
+    "{actor} disappears into the earth so quickly the soil seems to swallow them whole."
+  ],
+  "maneuver.burrow.terrible": [
+    "{actor} digs only just deep enough, a wobbling mound betraying every move they make."
+  ],
+  "maneuver.crawl.amazing": [
+    "{actor} slides along so low and smooth that they seem part of the ground itself."
+  ],
+  "maneuver.crawl.terrible": [
+    "{actor} makes painfully slow progress, snagging on every pebble and root."
+  ],
+  "maneuver.dropProne.amazing": [
+    "{actor} flattens out so completely that they all but vanish into the ground."
+  ],
+  "maneuver.dropProne.terrible": [
+    "{actor} lands with a loud, graceless thud that everyone nearby hears."
+  ],
+  "maneuver.standUp.amazing": [
+    "{actor} springs up in one fluid motion, as if they had never been down."
+  ],
+  "maneuver.standUp.terrible": [
+    "{actor} gets halfway, wobbles, and needs a second attempt to make it all the way up."
+  ],
+  "maneuver.balance.amazing": [
+    "{actor} crosses with the poise of a dancer, never once looking down."
+  ],
+  "maneuver.balance.terrible": [
+    "{actor} makes it across, but only after a wild, teetering moment that draws every eye."
+  ],
+  "maneuver.squeeze.amazing": [
+    "{actor} slips through as easily as water through a crack."
+  ],
+  "maneuver.squeeze.terrible": [
+    "{actor} sticks fast halfway for an awkward moment before finally popping free."
+  ],
+  "maneuver.catchFall.amazing": [
+    "{actor} lands so lightly it looks like they meant to fall all along."
+  ],
+  "maneuver.catchFall.terrible": [
+    "{actor} still lands hard enough to raise a cloud of dust and a few winces."
+  ],
+  "maneuver.mount.amazing": [
+    "{actor} does it in one flawless, fluid move, steed and rider perfectly in step."
+  ],
+  "maneuver.mount.terrible": [
+    "{actor} manages it on the second try, with plenty of flailing and a disgruntled steed."
+  ],
+  "maneuver.flee.amazing": [
+    "{actor} is gone in a heartbeat, a distant speck before anyone can react."
+  ],
+  "maneuver.flee.terrible": [
+    "{actor} runs in a panicked circle before finally finding the way out."
+  ],
+  "maneuver.callForHelp.amazing": [
+    "{target} comes at once, rushing to {actor}'s side faster than anyone could have hoped."
+  ],
+  "maneuver.callForHelp.terrible": [
+    "{target} ambles over in no hurry at all, while {actor} waits impatiently."
+  ],
+  "maneuver.callToArms.amazing": [
+    "{targets} answer {actor} as one, fierce and eager, as if they'd waited for this moment."
+  ],
+  "maneuver.callToArms.terrible": [
+    "{targets} trickle in one at a time, in no hurry, despite {actor}'s urging."
+  ],
+  "maneuver.noticeSight.amazing": [
+    "{actor} takes in the whole scene at a glance, missing nothing."
+  ],
+  "maneuver.noticeSight.terrible": [
+    "{actor} peers in entirely the wrong direction for a long moment before finding the fight."
+  ],
+  "maneuver.noticeSound.amazing": [
+    "{actor} picks out every footfall and clash, pinpointing the fight exactly."
+  ],
+  "maneuver.noticeSound.terrible": [
+    "{actor} mistakes it for something harmless at first and wanders over without much urgency."
+  ],
+  "maneuver.noticeFeel.amazing": [
+    "Every tremor and twitch speaks to {actor}, who knows exactly where the fight rages."
+  ],
+  "maneuver.noticeFeel.terrible": [
+    "{actor} is only vaguely bothered, ambling toward the fight as if half asleep."
+  ],
+  "maneuver.takeCover.amazing": [
+    "{actor} is so well tucked away that hardly any part of them shows."
+  ],
+  "maneuver.takeCover.terrible": [
+    "{actor}'s cover turns out to be barely wide enough to hide behind."
+  ],
+  "maneuver.raiseShield.amazing": [
+    "{actor} plants the shield like a fortress wall, unshakable."
+  ],
+  "maneuver.raiseShield.terrible": [
+    "{actor} fumbles the shield, holding it at a wobbly, unconvincing angle."
+  ],
+  "maneuver.block.amazing": [
+    "{actor} deflects it so cleanly that the attacker stumbles past, thrown off balance."
+  ],
+  "maneuver.block.terrible": [
+    "{actor} catches it, just barely, and reels back a step from the jolt."
+  ],
+  "maneuver.defend.amazing": [
+    "{actor} becomes a whirl of motion, and not a single blow finds a way through."
+  ],
+  "maneuver.defend.terrible": [
+    "{actor}'s defense looks more like frantic flinching than any kind of skill."
+  ],
+  "maneuver.avertGaze.amazing": [
+    "{actor} doesn't so much as glance up, wholly safe from its baleful power."
+  ],
+  "maneuver.avertGaze.terrible": [
+    "{actor} turns away so dramatically that they nearly lose track of the whole fight."
+  ],
+  "maneuver.hide.amazing": [
+    "{actor} hides so well that even their allies wonder where they went."
+  ],
+  "maneuver.hide.terrible": [
+    "{actor} picks a hiding spot that leaves a good deal of them sticking out."
+  ],
+  "maneuver.sneak.amazing": [
+    "{actor} moves like a ghost, not a single eye turning their way."
+  ],
+  "maneuver.sneak.terrible": [
+    "{actor} steps on something that crunches loudly, then freezes, hoping no one noticed."
+  ],
+  "maneuver.search.amazing": [
+    "{actor}'s gaze misses nothing, from the faintest shadow to the slightest stir of dust."
+  ],
+  "maneuver.search.terrible": [
+    "{actor} stares intently at an empty corner, utterly convinced something is lurking there."
+  ],
+  "maneuver.assess.amazing": [
+    "{actor} reads {target} like an open book, every habit and weakness laid bare."
+  ],
+  "maneuver.assess.terrible": [
+    "{actor} squints at {target} for a while and learns nothing much at all."
+  ],
+  "maneuver.pointOut.amazing": [
+    "Every eye snaps to {target} at once, and {actor}'s quarry has nowhere left to hide."
+  ],
+  "maneuver.pointOut.terrible": [
+    "{actor}'s directions are so muddled that half the onlookers peer the wrong way."
+  ],
+  "maneuver.demoralize.amazing": [
+    "{target} visibly quails before {actor}, their nerve shattered, their will to fight draining away."
+  ],
+  "maneuver.demoralize.terrible": [
+    "{target} looks at {actor} more puzzled than afraid, perhaps even a little amused."
+  ],
+  "maneuver.feint.amazing": [
+    "{target} falls for it completely, lunging at empty air while {actor} is elsewhere."
+  ],
+  "maneuver.feint.terrible": [
+    "{target} isn't really fooled, but humors {actor} with a half-hearted flinch."
+  ],
+  "maneuver.distract.amazing": [
+    "{target} is utterly captivated by {actor}'s antics, the fight forgotten for a long moment."
+  ],
+  "maneuver.distract.terrible": [
+    "{target} spares {actor}'s antics a brief, bored glance, then looks right back."
+  ],
+  "maneuver.parley.amazing": [
+    "{target} actually hesitates, {actor}'s words clearly hitting home."
+  ],
+  "maneuver.parley.terrible": [
+    "{target} answers {actor} with a rude noise and does not budge an inch."
+  ],
+  "maneuver.rally.amazing": [
+    "{actor}'s words ring out like a war horn, and every ally stands taller."
+  ],
+  "maneuver.rally.terrible": [
+    "{actor}'s rousing words come out as a squeak, and a few allies wince."
+  ],
+  "maneuver.surrender.amazing": [
+    "{actor}'s surrender is so complete and so pitiful that even the hardest foe pauses."
+  ],
+  "maneuver.surrender.terrible": [
+    "{actor} gives up so half-heartedly that no one is quite sure they mean it."
+  ],
+  "maneuver.aid.amazing": [
+    "{target} finds the way laid wide open, as if {actor} had made the moment just for them."
+  ],
+  "maneuver.aid.terrible": [
+    "{actor} mostly gets in the way, though {target} appreciates the thought."
+  ],
+  "maneuver.ready.amazing": [
+    "{actor} is coiled and utterly still, ready to unleash in a heartbeat."
+  ],
+  "maneuver.ready.terrible": [
+    "{actor} fidgets and keeps glancing away, not quite as ready as they look."
+  ],
+  "maneuver.gainGround.amazing": [
+    "{actor} ends up in the perfect spot, with every foe right where they want them."
+  ],
+  "maneuver.gainGround.terrible": [
+    "{actor} shuffles around a good deal and ends up roughly where they started."
+  ],
+  "maneuver.grapple.amazing": [
+    "{target} is pinned so tightly by {actor} that they can barely twitch."
+  ],
+  "maneuver.grapple.terrible": [
+    "{actor}'s hold is loose and clumsy, and {target} looks more annoyed than trapped."
+  ],
+  "maneuver.shove.amazing": [
+    "{target} goes flying several paces from {actor}, barely staying upright."
+  ],
+  "maneuver.shove.terrible": [
+    "{target} rocks back a hair's breadth and gives {actor} a faintly offended look."
+  ],
+  "maneuver.trip": [
+    "{actor} hooks low and sends {target} crashing to the ground.",
+    "With a sudden sweep, {actor} cuts {target}'s footing out from under them.",
+    "{target} goes sprawling as {actor} drives in hard and topples them."
+  ],
+  "maneuver.disarm": [
+    "{actor} knocks the weapon from {target}'s grip, sending it clattering away.",
+    "With a sharp twist, {actor} tears {target}'s weapon loose.",
+    "{target}'s weapon goes spinning across the ground, struck free by {actor}."
+  ],
+  "maneuver.reposition": [
+    "{actor} hauls {target} sideways into a new spot.",
+    "Step by step, {actor} herds {target} right where they want them.",
+    "{actor} drags {target} closer, wrenching them out of position."
+  ],
+  "maneuver.fling": [
+    "{actor} hurls {target} through the air like a sack of grain.",
+    "{target} goes flying, tossed end over end by {actor}.",
+    "With a mighty heave, {actor} launches {target} across the battlefield."
+  ],
+  "maneuver.escape": [
+    "{actor} twists free of whatever held them.",
+    "With a wrench and a heave, {actor} tears loose.",
+    "{actor} wriggles out of the hold and darts clear."
+  ],
+  "maneuver.release": [
+    "{actor} lets go of {target}, who staggers free.",
+    "{actor} loosens their hold, and {target} slips out of it.",
+    "With a dismissive toss, {actor} casts {target} aside."
+  ],
+  "maneuver.constrict": [
+    "{actor} squeezes {target} hard, driving the breath from them.",
+    "{target} gasps as {actor}'s hold clamps down like a vise.",
+    "Something creaks as {actor} crushes {target} ever tighter."
+  ],
+  "maneuver.swallow": [
+    "{actor} gulps {target} down whole.",
+    "With one great swallow, {target} vanishes into {actor}'s gullet.",
+    "{actor}'s maw snaps shut, and {target} is gone."
+  ],
+  "maneuver.engulf": [
+    "{actor} washes over {target} and pulls them deep inside their mass.",
+    "{target} is swallowed up as {actor} surges over them.",
+    "{actor} flows across {target}, sealing them within."
+  ],
+  "maneuver.trample": [
+    "{actor} stampedes straight over {target}.",
+    "{target} disappears beneath {actor}'s pounding charge.",
+    "{actor} thunders through, flattening {target} underfoot."
+  ],
+  "maneuver.blindFoe": [
+    "{actor} sends a spray of grit straight into {target}'s eyes.",
+    "{target} reels back, half-blind, as {actor} flings dust in their face.",
+    "A sudden cloud of sand from {actor} leaves {target} blinking and sputtering."
+  ],
+  "maneuver.drawWeapon": [
+    "{actor} draws a weapon with a ringing scrape.",
+    "In one fluid motion, {actor} swaps to a different weapon.",
+    "{actor} readies their gear and squares up for what comes next."
+  ],
+  "maneuver.reload": [
+    "{actor} reloads with practiced speed.",
+    "With a sharp click, {actor} locks fresh ammunition into place.",
+    "{actor} pauses just long enough to rearm, then raises their weapon again."
+  ],
+  "maneuver.useItem": [
+    "{actor} gulps down a potion.",
+    "{actor} digs out a trinket and puts it to work.",
+    "With a click, {actor} triggers a gadget."
+  ],
+  "maneuver.interact": [
+    "{actor} yanks hard on a nearby lever.",
+    "{actor} slams a door, and the bang echoes.",
+    "{actor} darts aside to snatch something up from the ground."
+  ],
+  "maneuver.forceOpen": [
+    "{actor} smashes through the door in a shower of splinters.",
+    "With a groan of metal, {actor} wrenches the hatch open.",
+    "{actor} heaves until the way ahead bursts open."
+  ],
+  "maneuver.steal": [
+    "{actor} lifts something from {target}'s belt without a sound.",
+    "Quick as a whisper, {actor} pockets one of {target}'s belongings.",
+    "{target} never notices as {actor} makes off with their valuables."
+  ],
+  "maneuver.disableDevice": [
+    "{actor} jams the mechanism, and it grinds to a halt.",
+    "With a careful nudge, {actor} renders the trap harmless.",
+    "{actor} wedges something into the works until they seize."
+  ],
+  "maneuver.hack": [
+    "{actor} breaks into the nearest system, code flickering past.",
+    "{actor} slices through the firewall and seizes control.",
+    "A turret swivels as {actor} hijacks its targeting."
+  ],
+  "maneuver.commandAnimal": [
+    "{actor} barks an order, and {target} surges forward.",
+    "{target} snaps to obey at a sharp command from {actor}.",
+    "With a whistle and a gesture, {actor} sends {target} into the fray."
+  ],
+  "maneuver.firstAid": [
+    "{actor} works fast to bind {target}'s wound.",
+    "{actor} stoops over {target}, staunching the worst of the damage.",
+    "{target} steadies under {actor}'s quick, careful aid."
+  ],
+  "maneuver.douseFlames": [
+    "{actor} beats frantically at the flames until they die.",
+    "{actor} drops to the ground and smothers the fire.",
+    "Smoke curls up as {actor} snuffs out the last of the burning."
+  ],
+  "maneuver.fightOn": [
+    "{actor} should be down, but keeps fighting.",
+    "Somehow {actor} stays upright, refusing to fall.",
+    "{actor} sways, steadies, and stubbornly presses on."
+  ],
+  "maneuver.aim": [
+    "{actor} takes careful aim at {target}.",
+    "{actor} locks on to {target} and waits for the shot.",
+    "Holding perfectly still, {actor} tracks every move {target} makes."
+  ],
+  "maneuver.suppressingFire": [
+    "{actor} hoses the area with fire, pinning the enemy down.",
+    "A storm of rounds from {actor} sends everyone diving for cover.",
+    "{actor} lays down a wall of fire to shield their allies."
+  ],
+  "condition.blinded": [
+    "{actor} can't see a thing.",
+    "Sightless, {actor} gropes for their foes.",
+    "{actor} swings wildly at nothing, blind to the fight around them."
+  ],
+  "condition.dazzled": [
+    "{actor} squints, eyes streaming.",
+    "Glare swims across {actor}'s vision.",
+    "{actor} blinks hard against the dazzling sparks."
+  ],
+  "condition.deafened": [
+    "{actor} hears nothing but a ringing whine.",
+    "The world goes silent for {actor}.",
+    "Deafened, {actor} misses every shouted warning."
+  ],
+  "condition.silenced": [
+    "{actor}'s voice is gone.",
+    "{actor} tries to cry out, but nothing comes.",
+    "An eerie hush clings to {actor}."
+  ],
+  "condition.concealed": [
+    "Smoke swirls around {actor}, blurring their outline.",
+    "{actor} is hard to pin down in the gloom.",
+    "{actor} becomes a dim shape in the fog."
+  ],
+  "condition.hidden": [
+    "{actor} is nowhere to be seen.",
+    "{actor}'s foes lose track of them entirely.",
+    "{actor} slips out of sight."
+  ],
+  "condition.invisible": [
+    "{actor} fades from view.",
+    "With a shimmer, {actor} vanishes entirely.",
+    "{actor} is gone, only a faint ripple marking where they stood."
+  ],
+  "condition.frightened": [
+    "{actor} hangs back, eyes wide with fear.",
+    "Dread grips {actor}.",
+    "{actor} trembles, suddenly afraid."
+  ],
+  "condition.fleeing": [
+    "{actor} runs for their life.",
+    "Terror-stricken, {actor} bolts for safety.",
+    "{actor} breaks and scrambles away in a blind panic."
+  ],
+  "condition.shaken": [
+    "{actor} is rattled.",
+    "{actor}'s nerve frays.",
+    "{actor} falters, shaken to the core."
+  ],
+  "condition.charmed": [
+    "{actor} gazes at their enemy like an old friend.",
+    "{actor} now treats the foe as a trusted ally.",
+    "Suddenly, {actor} can't imagine harming such a dear companion."
+  ],
+  "condition.fascinated": [
+    "{actor} stares, spellbound.",
+    "{actor} can't look away.",
+    "Transfixed, {actor} forgets the fight entirely."
+  ],
+  "condition.confused": [
+    "{actor} lashes out at random, at friend and foe alike.",
+    "{actor} reels in confusion, striking at whatever is nearest.",
+    "{actor} spins about, unsure whom to attack."
+  ],
+  "condition.controlled": [
+    "{actor} moves like a puppet on someone else's strings.",
+    "{actor}'s will is no longer their own.",
+    "Jerkily, {actor} obeys a command only they can hear."
+  ],
+  "condition.befuddled": [
+    "{actor}'s thoughts cloud over.",
+    "{actor} stumbles over their words, slow to react.",
+    "Dazed, {actor} blinks as if waking from a dream."
+  ],
+  "condition.enraged": [
+    "{actor} is lost in a red rage.",
+    "Fury consumes {actor}.",
+    "{actor} bellows, seething with wrath."
+  ],
+  "condition.weakened": [
+    "{actor} sags as though weighed down by lead.",
+    "{actor}'s strength ebbs away.",
+    "Each strike from {actor} lands weaker than the last."
+  ],
+  "condition.clumsy": [
+    "{actor} fumbles, suddenly unsteady.",
+    "{actor} lurches and nearly loses their footing.",
+    "Every move {actor} makes is awkward and graceless."
+  ],
+  "condition.drained": [
+    "{actor} goes pale, their life leached away.",
+    "{actor} looks hollowed out, a husk of their former self.",
+    "Something vital has been drawn out of {actor}."
+  ],
+  "condition.exhausted": [
+    "{actor} gasps for breath, utterly spent.",
+    "{actor} can barely lift their limbs.",
+    "Bone-weary, {actor} sags and staggers."
+  ],
+  "maneuver.trip.amazing": [
+    "{target} flips clean over and lands with a thud that shakes the ground."
+  ],
+  "maneuver.trip.terrible": [
+    "{target} settles down so gently it looks more like a nap than a fall."
+  ],
+  "maneuver.disarm.amazing": [
+    "The weapon sails high, spins twice, and lands well out of {target}'s reach."
+  ],
+  "maneuver.disarm.terrible": [
+    "The weapon lands right beside {target}, close enough to scoop up again."
+  ],
+  "maneuver.reposition.amazing": [
+    "{target} ends up exactly where {actor} wanted, placed as neatly as a chess piece."
+  ],
+  "maneuver.reposition.terrible": [
+    "{target} shifts barely a step, looking more inconvenienced than moved."
+  ],
+  "maneuver.fling.amazing": [
+    "{target} sails so far they clear the whole fight before crashing down."
+  ],
+  "maneuver.fling.terrible": [
+    "{target} flops down a short hop away, more dropped than thrown."
+  ],
+  "maneuver.escape.amazing": [
+    "{actor} slips loose so smoothly the hold seems never to have existed at all."
+  ],
+  "maneuver.escape.terrible": [
+    "{actor} stumbles out of the hold in a graceless tangle, nearly falling over."
+  ],
+  "maneuver.release.amazing": [
+    "{target} reels away, spinning like a top before finding their balance."
+  ],
+  "maneuver.release.terrible": [
+    "It takes an awkward moment of fumbling before {actor} and {target} finally come apart."
+  ],
+  "maneuver.constrict.amazing": [
+    "Squeezed beyond bearing, {target} goes limp for one terrible moment."
+  ],
+  "maneuver.constrict.terrible": [
+    "The squeeze amounts to little more than a firm and rather awkward hug."
+  ],
+  "maneuver.swallow.amazing": [
+    "{actor} lets out a booming belch that echoes across the battlefield."
+  ],
+  "maneuver.swallow.terrible": [
+    "{actor} gags and strains, getting {target} down only after a long, lumpy struggle."
+  ],
+  "maneuver.engulf.amazing": [
+    "{target} vanishes so completely into {actor} that not even a ripple remains."
+  ],
+  "maneuver.engulf.terrible": [
+    "Parts of {target} keep bulging back out, like an overstuffed sack."
+  ],
+  "maneuver.trample.amazing": [
+    "{target} is pressed so flat they leave a creature-shaped dent in the ground."
+  ],
+  "maneuver.trample.terrible": [
+    "{actor} mostly stumbles over {target}, nearly tripping themselves in the process."
+  ],
+  "maneuver.blindFoe.amazing": [
+    "The grit lands perfectly, leaving {target} stumbling in blind circles."
+  ],
+  "maneuver.blindFoe.terrible": [
+    "Most of the dust drifts off on the breeze, and {target} merely blinks."
+  ],
+  "maneuver.drawWeapon.amazing": [
+    "The weapon flashes out with a flourish that turns heads across the field."
+  ],
+  "maneuver.drawWeapon.terrible": [
+    "The weapon snags on the way out, and {actor} fumbles for an awkward moment."
+  ],
+  "maneuver.reload.amazing": [
+    "{actor} is back in the fight so fast they hardly seem to have paused."
+  ],
+  "maneuver.reload.terrible": [
+    "Ammunition scatters everywhere, and {actor} scrabbles to gather it back up."
+  ],
+  "maneuver.useItem.amazing": [
+    "The item works perfectly, and its effect is greater than {actor} dared hope."
+  ],
+  "maneuver.useItem.terrible": [
+    "{actor} fumbles the item, and it nearly slips away before working at last."
+  ],
+  "maneuver.interact.amazing": [
+    "Everything goes exactly as {actor} intended, smooth as clockwork."
+  ],
+  "maneuver.interact.terrible": [
+    "{actor} gets it done, but only after a clumsy, embarrassing struggle."
+  ],
+  "maneuver.forceOpen.amazing": [
+    "The barrier gives way so violently it flies clean off its frame."
+  ],
+  "maneuver.forceOpen.terrible": [
+    "It opens at last, after an embarrassing amount of straining from {actor}."
+  ],
+  "maneuver.steal.amazing": [
+    "{actor} even has time to take a second prize, and {target} remains none the wiser."
+  ],
+  "maneuver.steal.terrible": [
+    "{actor}'s prize turns out to be a crumpled bit of nothing much."
+  ],
+  "maneuver.disableDevice.amazing": [
+    "The device dies with a final, harmless click, never to work again."
+  ],
+  "maneuver.disableDevice.terrible": [
+    "The mechanism lets out a worrying twang before finally going still."
+  ],
+  "maneuver.hack.amazing": [
+    "Every display nearby flashes {actor}'s signature as the whole network bows to them."
+  ],
+  "maneuver.hack.terrible": [
+    "The system lets {actor} in, but only after a string of blaring error tones."
+  ],
+  "maneuver.commandAnimal.amazing": [
+    "{target} obeys instantly, moving like a veteran of a hundred battles."
+  ],
+  "maneuver.commandAnimal.terrible": [
+    "{target} obeys eventually, after a long stare and some sulking."
+  ],
+  "maneuver.firstAid.amazing": [
+    "The wound closes neatly, and {target} looks ready to jump right back in."
+  ],
+  "maneuver.firstAid.terrible": [
+    "{actor}'s work on {target} is lopsided and messy, but it holds, mostly."
+  ],
+  "maneuver.douseFlames.amazing": [
+    "Not even a wisp of smoke remains once {actor} is done."
+  ],
+  "maneuver.douseFlames.terrible": [
+    "The flames die at last, leaving {actor} singed, smoking, and thoroughly embarrassed."
+  ],
+  "maneuver.fightOn.amazing": [
+    "{actor} straightens, grim and unshaken, as if every wound only feeds their resolve."
+  ],
+  "maneuver.fightOn.terrible": [
+    "{actor} stays up, but only just, wobbling like a newborn foal."
+  ],
+  "maneuver.aim.amazing": [
+    "{actor}'s focus on {target} becomes absolute, the rest of the world falling away."
+  ],
+  "maneuver.aim.terrible": [
+    "{actor}'s aim wavers, drifting off {target} more than once."
+  ],
+  "maneuver.suppressingFire.amazing": [
+    "The barrage is so dense that not a single foe dares to peek out."
+  ],
+  "maneuver.suppressingFire.terrible": [
+    "Most of the rounds sail harmlessly overhead, and the enemy barely flinches."
+  ],
+  "condition.blinded.amazing": [
+    "{actor} is lost in perfect darkness, without even a glimmer to cling to."
+  ],
+  "condition.blinded.terrible": [
+    "{actor} can still make out vague shapes, though only just."
+  ],
+  "condition.dazzled.amazing": [
+    "Blazing afterimages crowd {actor}'s sight until every shape becomes a smear of light."
+  ],
+  "condition.dazzled.terrible": [
+    "A few spots dance before {actor} for a moment, then mostly fade."
+  ],
+  "condition.deafened.amazing": [
+    "Even the clash of battle is gone for {actor}, swallowed by total silence."
+  ],
+  "condition.deafened.terrible": [
+    "Sounds still reach {actor}, muffled, as though through a thin wall."
+  ],
+  "condition.silenced.amazing": [
+    "Not even a whisper or a breath can escape {actor} now."
+  ],
+  "condition.silenced.terrible": [
+    "{actor} can still manage a hoarse croak, though barely."
+  ],
+  "condition.concealed.amazing": [
+    "{actor} becomes little more than a rumor in the haze."
+  ],
+  "condition.concealed.terrible": [
+    "The haze around {actor} is so thin that they are still easy to spot."
+  ],
+  "condition.hidden.amazing": [
+    "{actor} melts away so completely that foes start doubting they were ever there."
+  ],
+  "condition.hidden.terrible": [
+    "{actor}'s hiding spot is obvious to anyone who glances that way."
+  ],
+  "condition.invisible.amazing": [
+    "{actor} vanishes so completely that not even a shadow or a sound betrays them."
+  ],
+  "condition.invisible.terrible": [
+    "A faint, wobbling outline still gives away exactly where {actor} stands."
+  ],
+  "condition.frightened.amazing": [
+    "Terror floods {actor} so completely that they can scarcely think."
+  ],
+  "condition.frightened.terrible": [
+    "{actor} looks mildly uneasy, more startled than scared."
+  ],
+  "condition.fleeing.amazing": [
+    "{actor} tears away so fast that dust is still settling long after they are gone."
+  ],
+  "condition.fleeing.terrible": [
+    "{actor}'s retreat is more of a reluctant shuffle than a dash."
+  ],
+  "condition.shaken.amazing": [
+    "{actor} trembles visibly, every scrap of confidence in tatters."
+  ],
+  "condition.shaken.terrible": [
+    "{actor} is only a little unsettled, and hides it fairly well."
+  ],
+  "condition.charmed.amazing": [
+    "{actor} is utterly devoted, ready to defend their new friend with their life."
+  ],
+  "condition.charmed.terrible": [
+    "{actor}'s new affection seems lukewarm at best, more polite than adoring."
+  ],
+  "condition.fascinated.amazing": [
+    "{actor} is so entranced that the whole battle fades to nothing around them."
+  ],
+  "condition.fascinated.terrible": [
+    "{actor}'s attention keeps drifting back to the fight now and then."
+  ],
+  "condition.confused.amazing": [
+    "{actor} is utterly lost, unsure even which way is up."
+  ],
+  "condition.confused.terrible": [
+    "{actor} seems only a little muddled, mostly still telling friend from foe."
+  ],
+  "condition.controlled.amazing": [
+    "Not a flicker of {actor}'s own will remains behind their empty stare."
+  ],
+  "condition.controlled.terrible": [
+    "{actor} fights the compulsion, obeying sluggishly and with visible reluctance."
+  ],
+  "condition.befuddled.amazing": [
+    "{actor}'s mind is a thick fog; they can hardly remember their own name."
+  ],
+  "condition.befuddled.terrible": [
+    "{actor} just seems a little absent-minded, as if short on sleep."
+  ],
+  "condition.enraged.amazing": [
+    "{actor}'s rage burns so wild that they barely notice their own wounds."
+  ],
+  "condition.enraged.terrible": [
+    "{actor}'s fury is more of a petulant sulk than a rage."
+  ],
+  "condition.weakened.amazing": [
+    "{actor} trembles with the effort of simply staying upright."
+  ],
+  "condition.weakened.terrible": [
+    "{actor} seems only a little tired, still mostly hale."
+  ],
+  "condition.clumsy.amazing": [
+    "{actor} trips over nothing at all, flailing wildly to stay upright."
+  ],
+  "condition.clumsy.terrible": [
+    "{actor} just wobbles once before steadying."
+  ],
+  "condition.drained.amazing": [
+    "{actor} looks withered and gray, as if years have been stolen in a moment."
+  ],
+  "condition.drained.terrible": [
+    "{actor} looks a touch paler, but still has plenty of fight left."
+  ],
+  "condition.exhausted.amazing": [
+    "{actor} can barely keep from collapsing where they stand."
+  ],
+  "condition.exhausted.terrible": [
+    "{actor} seems merely winded, and catches their breath quickly."
+  ],
+  "condition.sickened": [
+    "{actor} doubles over, retching.",
+    "A wave of nausea sweeps through {actor}, who gags and sways.",
+    "{actor} goes a sickly shade and struggles not to heave."
+  ],
+  "condition.poisoned": [
+    "Venom spreads through {actor}, leaving them shaky and slick with sweat.",
+    "{actor} totters as the poison takes hold.",
+    "{actor} shudders, feverish, the toxin burning its way deeper."
+  ],
+  "condition.bloodied": [
+    "{actor} is badly hurt now, wounds showing red.",
+    "Blood streaks {actor}, who is plainly in bad shape.",
+    "{actor} staggers, battered and torn, the hurt plain to see."
+  ],
+  "condition.maimed": [
+    "{actor} is maimed, part of them ruined beyond quick mending.",
+    "Crippled by the wound, {actor} now favors their good side.",
+    "{actor} reels from a mangling injury that leaves them lopsided and diminished."
+  ],
+  "condition.cursed": [
+    "A curse settles over {actor} like a cold shadow.",
+    "{actor} shivers as ill omens gather around them.",
+    "Bad luck clings to {actor} now, dogging their every move."
+  ],
+  "condition.bleeding": [
+    "{actor} bleeds freely from an open wound.",
+    "Red drops trail from {actor} and spatter the ground.",
+    "A gash on {actor} keeps welling, refusing to close."
+  ],
+  "condition.burning": [
+    "{actor} catches fire!",
+    "Flames race over {actor}, who thrashes to put them out.",
+    "{actor} is ablaze, trailing sparks and a crackle of heat."
+  ],
+  "condition.corroding": [
+    "Acid hisses and eats into {actor}.",
+    "{actor} smokes as a caustic sheen bites deeper.",
+    "{actor} writhes as the corrosive slime pits and blisters them."
+  ],
+  "condition.lingeringHarm": [
+    "{actor} can't shake the harm, which gnaws at them long after the blow.",
+    "{actor} winces as the hurt refuses to fade.",
+    "Something keeps working at {actor}: a lingering chill, a crawling spark, a dull ache."
+  ],
+  "condition.suffocating": [
+    "{actor} chokes, starved of air.",
+    "{actor} gasps uselessly, unable to draw a breath.",
+    "{actor} thrashes as the air is torn away from them."
+  ],
+  "condition.lazy": [
+    "{actor} hangs back and lets the others do the work.",
+    "{actor} watches the fight from a comfortable distance, in no hurry to join in.",
+    "{actor} idles, content to let someone else take the risk."
+  ],
+  "condition.prone": [
+    "{actor} goes sprawling to the ground.",
+    "{actor} is down, flat in the dirt.",
+    "{actor} crashes down and lands in a heap."
+  ],
+  "condition.grabbed": [
+    "{actor} is caught fast and can't pull free.",
+    "{actor} strains against the grip that holds them.",
+    "Held tight, {actor} twists but goes nowhere."
+  ],
+  "condition.restrained": [
+    "{actor} is pinned and bound, all but helpless.",
+    "{actor} struggles uselessly, wrapped up tight.",
+    "Tangled and trussed, {actor} can barely twitch."
+  ],
+  "condition.immobilized": [
+    "{actor} is rooted to the spot, though they can still lash out.",
+    "{actor} strains but cannot budge from where they are.",
+    "Stuck fast in place, {actor} fights on without shifting an inch."
+  ],
+  "condition.swallowed": [
+    "{actor} disappears down the beast's gullet.",
+    "{actor} is gulped whole, squeezed into the churning dark within.",
+    "Trapped in a hot, slick belly, {actor} fights for room."
+  ],
+  "condition.engulfed": [
+    "{actor} is sucked into the ooze's quivering body.",
+    "The ooze closes over {actor}, who floats trapped inside like a fly in jelly.",
+    "{actor} thrashes within a stinging, gelatinous mass."
+  ],
+  "condition.inCover": [
+    "{actor} ducks behind cover.",
+    "{actor} hunkers down where the ground offers some shelter.",
+    "Tucked behind something solid, {actor} offers little to aim at."
+  ],
+  "condition.flanked": [
+    "{actor} is caught between two foes.",
+    "Enemies close on {actor} from both sides.",
+    "{actor} can't face both threats at once, hemmed in front and back."
+  ],
+  "condition.offGuard": [
+    "{actor} lets their guard slip.",
+    "{actor} is caught unready, a gap showing in their defense.",
+    "{actor} falters, left exposed for a heartbeat."
+  ],
+  "condition.pressed": [
+    "{actor} gives ground, forced onto the back foot.",
+    "{actor} is hard-pressed now, scrambling just to keep up.",
+    "Driven steadily backward, {actor} struggles to hold their place."
+  ],
+  "condition.surprised": [
+    "{actor} is caught completely unawares.",
+    "{actor} startles, not ready for the fight that bursts out around them.",
+    "Taken by surprise, {actor} scrambles to make sense of the chaos."
+  ],
+  "condition.marked": [
+    "{actor} is singled out as quarry.",
+    "A hunter's gaze locks onto {actor} and does not let go.",
+    "{actor} has been picked out of the crowd, a target painted on them."
+  ],
+  "condition.slowed": [
+    "{actor} slows, every motion dragging.",
+    "{actor} moves as if wading through mud.",
+    "Sluggish and heavy, {actor} struggles to keep pace."
+  ],
+  "condition.hastened": [
+    "{actor} quickens until they're a blur.",
+    "{actor} darts about with uncanny speed.",
+    "Suddenly lightning-fast, {actor} seems to be everywhere at once."
+  ],
+  "condition.reeling": [
+    "{actor} reels from the blow.",
+    "{actor} staggers, knocked off balance.",
+    "Rocked, {actor} sways for a moment, struggling to recover."
+  ],
+  "condition.stunned": [
+    "{actor} is knocked senseless.",
+    "{actor} goes blank, dazed and unable to do a thing.",
+    "{actor} wavers on the spot, the world spinning around them."
+  ],
+  "condition.paralyzed": [
+    "{actor} freezes rigid, unable to move.",
+    "{actor} locks up mid-motion, held stiff as a statue.",
+    "Paralysis grips {actor}, who stays utterly still."
+  ],
+  "condition.petrified": [
+    "{actor} hardens into stone.",
+    "Gray stone creeps over {actor} until nothing but a statue remains.",
+    "{actor} is petrified, cold and silent as granite."
+  ],
+  "condition.unconscious": [
+    "{actor} collapses, out cold.",
+    "Darkness takes {actor}, who goes limp.",
+    "{actor} drifts off into a heavy, helpless sleep."
+  ],
+  "condition.disarmed": [
+    "{actor} loses their weapon, which clatters out of reach.",
+    "Weaponless now, {actor} glances toward the spot where their weapon fell.",
+    "{actor} finds nothing in their grip but air."
+  ],
+  "condition.gearBroken": [
+    "{actor}'s gear cracks and gives way.",
+    "Something {actor} counts on snaps clean in two.",
+    "With a shower of sparks and splinters, {actor}'s protection fails."
+  ],
+  "condition.weaponJammed": [
+    "{actor}'s weapon jams at the worst moment.",
+    "{actor} curses as their weapon misfires.",
+    "With a dull clack, {actor}'s weapon seizes up and refuses to work."
+  ],
+  "condition.outOfAmmo": [
+    "{actor}'s weapon clicks dry.",
+    "{actor} goes for more ammunition and finds none left.",
+    "{actor} has spent the last shot they had."
+  ],
+  "condition.overheated": [
+    "{actor}'s gear glows red-hot and shuts down to cool.",
+    "Steam vents from {actor}, whose equipment is too hot to use.",
+    "{actor} recoils from scorching metal as warning lights flash."
+  ],
+  "condition.glitching": [
+    "{actor}'s systems sputter and fail.",
+    "Static crackles over {actor} as their tech glitches out.",
+    "{actor} jerks as error tones blare and circuits short."
+  ],
+  "condition.suppressed": [
+    "{actor} hugs the ground as fire pours in.",
+    "Pinned down by the barrage, {actor} dares not rise.",
+    "Shots snap past {actor}, who cannot risk moving from cover."
+  ],
+  "condition.adrift": [
+    "{actor} drifts helplessly in zero gravity.",
+    "{actor} tumbles slowly through the void, with nothing to push against.",
+    "Cut loose, {actor} floats free, flailing at nothing."
+  ],
+  "condition.irradiated": [
+    "{actor} sickens as radiation sears through them.",
+    "Blisters rise on {actor}, who fights a wave of nausea.",
+    "{actor} absorbs a dose of radiation and begins to wilt."
+  ],
+  "condition.sickened.amazing": [
+    "{actor} heaves until there is nothing left, then heaves again for good measure."
+  ],
+  "condition.sickened.terrible": [
+    "{actor} grimaces at a sour taste, then seems more or less fine."
+  ],
+  "condition.poisoned.amazing": [
+    "The venom hits {actor} all at once, and they sway like a reed in a gale."
+  ],
+  "condition.poisoned.terrible": [
+    "Apart from a brief queasy wince, {actor} hardly seems to notice the poison."
+  ],
+  "condition.bloodied.amazing": [
+    "{actor} looks like they crawled out of a slaughterhouse, and most of the blood is their own."
+  ],
+  "condition.bloodied.terrible": [
+    "{actor} looks more scuffed than hurt, the worst of it a scrape or two."
+  ],
+  "condition.maimed.amazing": [
+    "The injury is so gruesome that even {actor}'s foes wince at the sight of it."
+  ],
+  "condition.maimed.terrible": [
+    "{actor} flinches at the wound once, then carries on as if it were a bruise."
+  ],
+  "condition.cursed.amazing": [
+    "The curse lands so heavily that the very air around {actor} seems to sour and dim."
+  ],
+  "condition.cursed.terrible": [
+    "{actor} feels a faint chill, like a draft from a door left ajar, and nothing more."
+  ],
+  "condition.bleeding.amazing": [
+    "The blood comes in pulsing gouts, pooling around {actor} at an alarming rate."
+  ],
+  "condition.bleeding.terrible": [
+    "It's a trickle at most, and {actor} barely spares it a glance."
+  ],
+  "condition.burning.amazing": [
+    "The fire roars over {actor}, a pillar of flame bright enough to light the whole fight."
+  ],
+  "condition.burning.terrible": [
+    "A thin wisp of smoke curls off {actor}, and the smolder sputters out almost at once."
+  ],
+  "condition.corroding.amazing": [
+    "The acid foams and spits, chewing into {actor} with a sizzle heard across the field."
+  ],
+  "condition.corroding.terrible": [
+    "The acid barely fizzes on {actor}, more tingle than burn."
+  ],
+  "condition.lingeringHarm.amazing": [
+    "The harm burrows deep into {actor}, throbbing on like a second pulse."
+  ],
+  "condition.lingeringHarm.terrible": [
+    "Whatever lingers on {actor} is a faint itch at most, already fading."
+  ],
+  "condition.suffocating.amazing": [
+    "{actor} flails in silent panic, the world shrinking to a dim, airless pinprick."
+  ],
+  "condition.suffocating.terrible": [
+    "{actor} coughs once, finds a sip of air after all, and steadies."
+  ],
+  "condition.lazy.amazing": [
+    "{actor} could hardly be more at ease if someone brought them a cushion and a snack."
+  ],
+  "condition.lazy.terrible": [
+    "{actor} tries to look idle but keeps edging toward the fight, unable to resist."
+  ],
+  "condition.prone.amazing": [
+    "{actor} lands so hard the ground shudders, and a cloud of dust billows up around them."
+  ],
+  "condition.prone.terrible": [
+    "{actor} sinks down almost gently, as if settling in for a nap."
+  ],
+  "condition.grabbed.amazing": [
+    "The grip clamps down on {actor} like a vise, leaving no wriggle room at all."
+  ],
+  "condition.grabbed.terrible": [
+    "The hold on {actor} is loose and sloppy, and they nearly slip right out of it."
+  ],
+  "condition.restrained.amazing": [
+    "{actor} is bundled up so thoroughly that only a muffled squirm shows anyone is inside."
+  ],
+  "condition.restrained.terrible": [
+    "The bonds sag loosely around {actor}, who could almost wriggle free."
+  ],
+  "condition.immobilized.amazing": [
+    "{actor} is held so firmly in place that not even a tremor gets through."
+  ],
+  "condition.immobilized.terrible": [
+    "{actor} is barely stuck at all, working a little looser with every tug."
+  ],
+  "condition.swallowed.amazing": [
+    "{actor} vanishes in one smooth gulp, leaving nothing behind but a satisfied belch."
+  ],
+  "condition.swallowed.terrible": [
+    "{actor} only goes halfway down, wedged awkwardly and flailing in the beast's jaws."
+  ],
+  "condition.engulfed.amazing": [
+    "The ooze folds seamlessly around {actor}, who sinks deep into the cloudy jelly."
+  ],
+  "condition.engulfed.terrible": [
+    "{actor} only sinks in partway, stuck in the ooze and looking more annoyed than trapped."
+  ],
+  "condition.inCover.amazing": [
+    "{actor} vanishes so completely behind cover that foes start to wonder where they went."
+  ],
+  "condition.inCover.terrible": [
+    "{actor}'s cover hides about half of them, and not the important half."
+  ],
+  "condition.flanked.amazing": [
+    "{actor} is boxed in on every side, a ring of foes closing like a noose."
+  ],
+  "condition.flanked.terrible": [
+    "The foes around {actor} are so badly placed they mostly get in each other's way."
+  ],
+  "condition.offGuard.amazing": [
+    "{actor}'s defense falls wide open, practically inviting every blow in the fight."
+  ],
+  "condition.offGuard.terrible": [
+    "The lapse lasts barely a blink before {actor} is back on watch."
+  ],
+  "condition.pressed.amazing": [
+    "{actor} is driven back so far and fast they nearly run out of room to retreat."
+  ],
+  "condition.pressed.terrible": [
+    "{actor} gives up barely a hand's width of ground, then holds firm."
+  ],
+  "condition.surprised.amazing": [
+    "{actor} jolts so violently they spin around to face entirely the wrong direction."
+  ],
+  "condition.surprised.terrible": [
+    "{actor} gives a small start, then seems mostly ready anyway."
+  ],
+  "condition.marked.amazing": [
+    "{actor} might as well glow; every hunter on the field knows exactly where they are."
+  ],
+  "condition.marked.terrible": [
+    "The mark on {actor} is a vague one, and they could easily slip back into the crowd."
+  ],
+  "condition.slowed.amazing": [
+    "{actor} moves so slowly that dust settles on them before they finish a single motion."
+  ],
+  "condition.slowed.terrible": [
+    "{actor} is a touch sluggish, perhaps, though hardly anyone would notice."
+  ],
+  "condition.hastened.amazing": [
+    "{actor} streaks about so fast the air cracks in their wake, leaving afterimages behind."
+  ],
+  "condition.hastened.terrible": [
+    "{actor} is a bit brisker than before, more hurried than truly fast."
+  ],
+  "condition.reeling.amazing": [
+    "{actor} careens wildly, nearly toppling, with no idea which way is up."
+  ],
+  "condition.reeling.terrible": [
+    "{actor} wobbles for a breath, then rights themselves with hardly a pause."
+  ],
+  "condition.stunned.amazing": [
+    "{actor} is utterly gone, lost somewhere far away while the fight carries on around them."
+  ],
+  "condition.stunned.terrible": [
+    "{actor} shakes off the daze almost at once, only a little bleary."
+  ],
+  "condition.paralyzed.amazing": [
+    "{actor} is held so utterly still that a fly could land on them and stay."
+  ],
+  "condition.paralyzed.terrible": [
+    "{actor} stiffens, but a twitch here and there shows the hold is already slipping."
+  ],
+  "condition.petrified.amazing": [
+    "The stone is so flawless {actor} looks like a statue carved centuries ago, moss and all."
+  ],
+  "condition.petrified.terrible": [
+    "The stone only flakes over {actor} in patches, like a dusty crust."
+  ],
+  "condition.unconscious.amazing": [
+    "{actor} goes down like a felled tree, so far gone that nothing short of thunder could stir them."
+  ],
+  "condition.unconscious.terrible": [
+    "{actor} barely drifts off, stirring and mumbling as if about to wake any moment."
+  ],
+  "condition.disarmed.amazing": [
+    "The weapon sails end over end and lands far across the field, well out of {actor}'s reach."
+  ],
+  "condition.disarmed.terrible": [
+    "{actor}'s weapon lands right beside them, close enough to scoop up in a moment."
+  ],
+  "condition.gearBroken.amazing": [
+    "{actor}'s gear bursts apart, scattering pieces in every direction."
+  ],
+  "condition.gearBroken.terrible": [
+    "{actor}'s gear is barely scratched, a hairline crack and nothing worse."
+  ],
+  "condition.weaponJammed.amazing": [
+    "{actor}'s weapon seizes so badly that smoke curls from it and something inside rattles loose."
+  ],
+  "condition.weaponJammed.terrible": [
+    "One sharp knock, and {actor}'s weapon is very nearly working again."
+  ],
+  "condition.outOfAmmo.amazing": [
+    "{actor} rummages through every last pouch and finds nothing but lint and regret."
+  ],
+  "condition.outOfAmmo.terrible": [
+    "{actor} is out for now, but a spare is plainly close at hand."
+  ],
+  "condition.overheated.amazing": [
+    "{actor}'s gear glows so hot it sets the air shimmering and scorches the ground below."
+  ],
+  "condition.overheated.terrible": [
+    "{actor}'s gear is barely warm, and already ticking back toward normal."
+  ],
+  "condition.glitching.amazing": [
+    "{actor} spasms through a storm of sparks and garbled noise, every system crashing at once."
+  ],
+  "condition.glitching.terrible": [
+    "{actor} flickers once, emits a puzzled beep, and mostly carries on."
+  ],
+  "condition.suppressed.amazing": [
+    "The fire is so thick that the very air above {actor} seems to be solid lead."
+  ],
+  "condition.suppressed.terrible": [
+    "The shots go so wide {actor} hardly bothers keeping low."
+  ],
+  "condition.adrift.amazing": [
+    "{actor} spins end over end, drifting farther from anything solid with every passing moment."
+  ],
+  "condition.adrift.terrible": [
+    "{actor} drifts only a little, almost within reach of something solid."
+  ],
+  "condition.irradiated.amazing": [
+    "{actor} glows faintly in the dark, so soaked in radiation that instruments shriek nearby."
+  ],
+  "condition.irradiated.terrible": [
+    "{actor} feels a mild tingle at worst, the dose too faint to matter much."
   ]
 }
