@@ -47,7 +47,8 @@ function worthOf(run, u, action) {
  */
 export function decideSummon(run, u, turn) {
   const list = u.prep.summonActions;
-  if ( !list?.length || liveTier(run, u) <= TACTICAL.FERAL ) return null;
+  // (A live battle has no token or turn on the tracker for what would be called: nothing is, for now.)
+  if ( !list?.length || run.live || liveTier(run, u) <= TACTICAL.FERAL ) return null;
   const rules = run.prep.rules;
   const baseline = offenseBaseline(run, u);
   let best = null;

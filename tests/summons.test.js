@@ -4,6 +4,7 @@ import { parseFormula } from "../scripts/engine/dice.js";
 import { pf2eRules } from "./fixtures/three-action-rules.js";
 import { creature, strike, battle } from "./helpers.js";
 import { sustainSummons } from "../scripts/engine/behavior/summons.js";
+import { beginLive, liveRound, liveTurn } from "../scripts/engine/live.js";
 
 const traits = (tactical = 70) => ({ tactical: { base: tactical, fudge: 0 }, brave: { base: 95, fudge: 0 }, selfish: { base: 20, fudge: 0 }, loyal: { base: 60, fudge: 0 } });
 const wolf = { name: "Summoned Wolf", level: 1, hp: { value: 18, max: 18 }, defenses: { ac: 15, fortitude: 6, reflex: 7, will: 4 }, initiative: { mod: 5 }, speeds: { walk: 35 },
@@ -14,6 +15,23 @@ const ogre = (extra = {}) => creature({ id: "ogre", side: "hostile", hp: { value
   actions: [strike({ id: "club", name: "Club", bonus: 10, damage: [parseFormula("2d8+5", "bludgeoning")] })], flags: { fearless: true }, traits: traits(40), ...extra });
 
 describe("summoning", () => {
+  test("not in a live battle (no token or turn on the tracker for what it would call): the summoner does something else", () => {
+    const summon = { id: "summon-animal", name: "Summon Animal", kind: "summon", cost: 3, resource: "slot", creatures: [wolf, wolf], rounds: 10 };
+    const npc = creature({ id: "druid", side: "hostile", hp: { value: 200, max: 200 }, traits: traits(70), resources: { slot: 2 },
+      actions: [strike({ id: "staff", name: "Staff", bonus: 4, damage: [parseFormula("1d4", "bludgeoning")] }), summon] });
+    const hero = ogre({ id: "hero", side: "friendly", kind: "pc" });
+    // (Simulated, the same druid calls them.)
+    expect([1, 2, 3].some(seed => replay(battle([npc, hero], { maxRounds: 4 }), pf2eRules, seed).log.some(e => e.type === "summon" && e.actorId === "druid"))).toBe(true);
+    for ( const seed of [1, 2, 3] ) {
+      const run = beginLive(battle([npc, hero], { maxRounds: 4 }), pf2eRules, { seed, players: ["hero"] });
+      liveRound(run, 1);
+      for ( const u of run.units ) u.active = true;
+      const { events } = liveTurn(run, "druid");
+      expect(events.some(e => e.type === "summon")).toBe(false);
+      expect(run.units).toHaveLength(2);
+    }
+  });
+
   test("the summoner calls its creatures, they act right after it, and they aren't in the results", () => {
     const summon = { id: "summon-animal", name: "Summon Animal", kind: "summon", cost: 3, resource: "slot", creatures: [wolf, wolf], rounds: 10 };
     const r = replay(battle([druid(summon), ogre()], { maxRounds: 4 }), pf2eRules, 3);
