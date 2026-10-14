@@ -466,3 +466,28 @@
 }
 .ff-locked { margin: 14px 0 6px; color: var(--ff-friendly); font-weight: 700; }
 
+
+/* ---------- Battle Interface ---------- */
+.fast-fighting.ff-battle .window-content { padding: 0; overflow: hidden; }
+.ff-battle-body { display: flex; flex-direction: column; height: 100%; }
+.ff-battle-none { padding: 1rem; }
+.ff-battle-turn { padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--ff-line, #8884); display: flex; flex-direction: column; gap: 0.4rem; }
+.ff-battle-now { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+.ff-battle-state { margin-left: auto; font-size: 0.85em; opacity: 0.8; }
+.ff-battle-state.waiting { color: #f0a35b; opacity: 1; }
+.ff-battle-buttons { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+.ff-battle-held ul { margin: 0; padding-left: 1.2rem; }
+.ff-battle-creatures { list-style: none; margin: 0; padding: 0.5rem 0.75rem; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 0.5rem; }
+.ff-battle-creature { border: 1px solid var(--ff-line, #8884); border-left-width: 4px; border-radius: 6px; padding: 0.4rem 0.5rem; }
+.ff-battle-creature.friendly { border-left-color: #4caf50; }
+.ff-battle-creature.hostile { border-left-color: #e05555; }
+.ff-battle-creature.neutralParty { border-left-color: #c9a227; }
+.ff-battle-creature.is-current { box-shadow: 0 0 0 2px #f0a35b; }
+.ff-battle-who { display: flex; align-items: center; gap: 0.5rem; }
+.ff-battle-who img { width: 36px; height: 36px; border: none; object-fit: contain; }
+.ff-battle-meta { display: block; font-size: 0.85em; opacity: 0.8; }
+.ff-battle-mind { margin: 0.3rem 0 0; padding-left: 1.1rem; font-size: 0.9em; }
+.ff-battle-mind .is-gm { font-style: italic; }
+.ff-battle-fact summary { cursor: pointer; font-size: 0.85em; opacity: 0.85; margin-top: 0.25rem; }
+.ff-battle-fact-row { display: flex; gap: 0.3rem; flex-wrap: wrap; margin-top: 0.3rem; }
+.ff-battle-fact-row select { flex: 1 1 8rem; min-width: 0; }

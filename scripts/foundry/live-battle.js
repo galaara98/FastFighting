@@ -28,7 +28,8 @@ import { storyBeats } from "../story/story.js";
 import { logLine } from "../story/log-lines.js";
 import { loadStoryTables } from "../story/tables.js";
 import {
-  beginLive, liveRound, liveTurn, pcTurn, syncFromSheets, setApproach, captureAll, snapshotRun, restoreRun, endLive, NeedsDecision
+  beginLive, liveRound, liveTurn, pcTurn, syncFromSheets, setApproach, captureAll, snapshotRun, restoreRun, endLive, NeedsDecision,
+  applyFact, gmMoment
 } from "../engine/live.js";
 import { diffAll } from "../engine/changes.js";
 import { randomSeed } from "../engine/rng.js";
@@ -51,6 +52,9 @@ function runsHere(data) {
   return owner?.active ? owner.isSelf : !!game.user.isActiveGM;
 }
 
+/** Something changed in the battle: whatever shows it draws it again. */
+const changed = () => Hooks.callAll("fastFighting.liveBattle", battle);
+
 /* -------------------------------------------- */
 /*  Keeping it                                  */
 /* -------------------------------------------- */
@@ -69,6 +73,7 @@ async function store() {
 
 async function keep() {
   if ( !battle ) return;
+  changed();
   battle.data.snapshot = snapshotRun(battle.run);
   const doc = await store();
   // (The battle's own key replaced whole, the store's other keys left as they are.)
@@ -126,6 +131,7 @@ export async function startLiveBattle(spec, { style = setting("storyStyle"), odd
     }
   };
   await combat.setFlag(MODULE_ID, "live", { id: battle.data.id, active: true });
+  Hooks.callAll("fastFighting.liveBattleStarted", battle);
   await queue(async () => {
     battle.data.opening = await tellNew();
     await keep();
@@ -176,7 +182,8 @@ async function turnBegins(combatant) {
     return;
   }
   if ( battle.run.live.players.has(u.id) ) {
-    battle.pc = { combatantId: combatant.id, id: u.id, round: battle.combat.round, messages: [], from: Date.now() };
+    battle.pc = { combatantId: combatant.id, id: u.id, round: battle.combat.round, messages: [], facts: [], from: Date.now() };
+    changed();
     // (The players' turn: the game goes on, so they can move and roll.)
     if ( game.paused ) game.togglePause(false, { broadcast: true });
     return;
@@ -297,6 +304,11 @@ async function settleTurn(turn, ended) {
     await finish();
     return;
   }
+  if ( battle.data.auto && turn.kind === "npc" ) {
+    await keep();
+    battle.combat.nextTurn();
+    return;
+  }
   const card = await waitCard(turn);
   if ( card ) turn.messages.push(card.id);
   await keep();
@@ -370,7 +382,7 @@ async function closePlayerTurn() {
     events.push({ type: "auto", targetId: id, action: "", damage: u.hp - s.hp, sure: false });
   }
   const snapshot = snapshotRun(run, { log: false });
-  const result = pcTurn(run, pc.id, events, states);
+  const result = pcTurn(run, pc.id, events, states, pc.facts ?? []);
   const turn = { key: `${pc.round}.${pc.combatantId}`, combatantId: pc.combatantId, round: pc.round, kind: "pc", records: [], messages: [], moves: [], doors: [], snapshot };
   turn.messages.push(...await tellNew());
   await settleTurn(turn, result.ended);
@@ -466,6 +478,7 @@ export function rewindTurn() {
     const u = unitOf(battle.combat.combatant);
     if ( u && battle.run.live.players.has(u.id) ) battle.pc = { combatantId: battle.combat.combatant.id, id: u.id, round: battle.combat.round, messages: [], from: Date.now() };
     else if ( u ) await rewoundCard(u);
+    changed();
     return true;
   });
 }
@@ -493,6 +506,7 @@ export function rewindEncounter() {
     await combat.unsetFlag(MODULE_ID, "live");
     await forget(combat.id);
     battle = null;
+    changed();
     return true;
   });
 }
@@ -504,6 +518,54 @@ export function playCurrent() {
     battle.data.played = null;
     await turnBegins(battle.combat.combatant);
   });
+}
+
+/* -------------------------------------------- */
+/*  What the GM says                            */
+/* -------------------------------------------- */
+
+/**
+ * What the GM says came of the table's own rolls (engine/live.js applyFact's facts). In a player's turn, held for it
+ * and told with it; otherwise a moment of its own, told at once. True if it was taken.
+ */
+export function liveFact(fact) {
+  return queue(async () => {
+    if ( !battle || battle.data.ended ) return false;
+    if ( battle.pc ) {
+      battle.pc.facts.push(fact);
+      changed();
+      return true;
+    }
+    gmMoment(battle.run, fact.id);
+    const ok = applyFact(battle.run, fact);
+    const messages = await tellNew();
+    const last = battle.data.turns.at(-1);
+    if ( last ) last.messages.push(...messages);
+    await keep();
+    return ok;
+  });
+}
+
+/** A fact held for the player's turn, taken back before it's told. */
+export function dropHeldFact(index) {
+  if ( !battle?.pc?.facts?.[index] ) return;
+  battle.pc.facts.splice(index, 1);
+  changed();
+}
+
+/** NPC reactions: as FastFighting calculates them ("calculated"), or asked each time ("ask"). */
+export async function setNpcReactions(mode) {
+  if ( !battle ) return;
+  battle.run.live.npcReactions = mode === "ask" ? "ask" : "calculated";
+  await keep();
+}
+
+/** Play to the end: the turns FastFighting plays go on without waiting for the GM's Continue. */
+export async function setPlayThrough(on) {
+  if ( !battle ) return;
+  battle.data.auto = !!on;
+  await keep();
+  if ( on && battle.data.played === `${battle.combat.round}.${battle.combat.combatant?.id}` ) continueBattle();
 }
 
 /* -------------------------------------------- */

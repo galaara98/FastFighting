@@ -1997,6 +1997,58 @@
         "leaveReach": "{by} is leaving their reach."
       },
       "NotHere": "That battle isn't being played in this browser."
+    },
+    "Battle": {
+      "Title": "Battle Interface",
+      "None": "No live battle is being played in this browser.",
+      "Round": "Round {n}",
+      "Turn": "{name}'s turn",
+      "PlayerTurn": "{name}'s turn (the player's)",
+      "State": {
+        "ready": "Ready to play",
+        "waiting": "Told: waiting for Continue",
+        "player": "The player is acting",
+        "ended": "The battle is over"
+      },
+      "PlayThrough": "Play to the end",
+      "PlayThroughHint": "The turns FastFighting plays go on one after another, without waiting for Continue.",
+      "NpcAsk": "Ask me about NPC reactions",
+      "NpcAskHint": "On: FastFighting asks before an NPC uses a reaction. Off: it uses them as its tactics decide.",
+      "Held": "Told with this player's turn when it ends:",
+      "Drop": "Take it back",
+      "PlayerRuns": "Run by its player",
+      "Desire": "{what} {who} ({how})",
+      "Persuaded": "Talked round by {side}: {n} of {steps}",
+      "WontListen": "Won't listen to {names}",
+      "Wavering": "Shaken",
+      "Goaded": "Goaded by {name}",
+      "Forget": "Take back what you set",
+      "FactLabel": "What happened at the table",
+      "PickWho": "Pick who it was about first.",
+      "HowWell": "How well it went",
+      "Apply": "Apply",
+      "Degree": {
+        "0": "critical failure",
+        "1": "failure",
+        "2": "success",
+        "3": "critical success"
+      },
+      "Fact": {
+        "fear": "Is afraid of",
+        "hurt": "Wants to hurt",
+        "protect": "Wants to protect",
+        "taunt": "Is goaded by",
+        "persuade": "Was persuaded by",
+        "intimidate": "Was threatened by",
+        "deceive": "Was lied to by",
+        "insult": "Was insulted by",
+        "waver": "Is shaken",
+        "steady": "Steadies",
+        "flee": "Flees",
+        "surrender": "Surrenders",
+        "standDown": "Stands down",
+        "noSide": "Takes no side"
+      }
     }
   }
 }

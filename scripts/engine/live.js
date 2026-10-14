@@ -73,6 +73,11 @@ export function beginLive(spec, rules, { seed, players = [], owns = {}, npcReact
   return run;
 }
 
+/** A moment of the GM's own, outside anyone's turn (what the GM says came of the table's rolls): told on its own. */
+export function gmMoment(run, id = null) {
+  startTurn(run, id ? run.byId.get(id) ?? null : null);
+}
+
 /** A new round on the tracker. */
 export function liveRound(run, round) {
   beginRound(run, round);
@@ -104,9 +109,10 @@ export function liveTurn(run, id, { answers = null, salt = 0 } = {}) {
 /**
  * A player's turn, played at the table: what was read of it (events in the engine's own log shapes: attack, save,
  * auto, heal, talk, move, control, ...), then the sheets as they now are (`states`, as syncFromSheets takes them). A
- * creature the sheets show fallen fell to whoever harmed it this turn. Returns {events, ended, changes}.
+ * creature the sheets show fallen fell to whoever harmed it this turn. `facts`: what the GM said came of it meanwhile
+ * (applyFact's), told with it. Returns {events, ended, changes}.
  */
-export function pcTurn(run, id, events = [], states = null) {
+export function pcTurn(run, id, events = [], states = null, facts = []) {
   const u = run.byId.get(id);
   if ( !u ) throw new Error(`No creature ${id} in this battle`);
   nextDice(run);
@@ -121,6 +127,7 @@ export function pcTurn(run, id, events = [], states = null) {
   const harmers = new Map();
   for ( const e of events ) observe(run, u, e, harmers);
   const changes = states ? syncFromSheets(run, states) : [];
+  for ( const f of facts ) applyFact(run, f);
   for ( const c of changes ) {
     const t = run.byId.get(c.id);
     if ( t && c.fell ) noteFall(run, t, harmers.get(c.id) ?? null);

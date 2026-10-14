@@ -20,11 +20,14 @@ import { sceneUnit } from "./foundry/terrain.js";
 import { planHolder } from "./foundry/persistence.js";
 import { setDistanceUnit, setTermSource, localize } from "./i18n.js";
 import { loadKeywords } from "./foundry/keywords.js";
-import { registerLiveBattles } from "./foundry/live-battle.js";
+import { registerLiveBattles, liveBattle } from "./foundry/live-battle.js";
+import { BattleInterface, registerBattleInterface } from "./apps/battle-interface.js";
 
 Hooks.once("init", () => {
   registerSettings(DefaultsConfig, GenericPathsConfig, StoryTablesConfig);
   registerLiveBattles();
+  registerBattleInterface();
+  Hooks.on("fastFighting.liveBattleStarted", () => BattleInterface.open());
 
   // System support comes from helper modules (FastFighting PF2e, ...). The generic adapter ("*") is the
   // fallback for systems nobody supports yet.
@@ -34,7 +37,7 @@ Hooks.once("init", () => {
   // Text in templates that says {AC} or {HP}.
   Handlebars.registerHelper("ffLocalize", (key, options) => localize(key, options?.hash));
 
-  const api = buildApi({ openPlanner: () => openIfReady(), openSurvey: options => PlayerSurvey.open(options), installStoryTables, BattlePlanner, PlayerSurvey });
+  const api = buildApi({ openPlanner: () => openIfReady(), openBattleInterface: () => BattleInterface.open(), openSurvey: options => PlayerSurvey.open(options), installStoryTables, BattlePlanner, PlayerSurvey });
   game.modules.get(MODULE_ID).api = api;
   Hooks.callAll("fastFighting.init", api);
 
@@ -88,6 +91,19 @@ Hooks.on("renderCombatTracker", (app, element) => {
     openIfReady();
   });
   header.prepend(button);
+  // A live battle on this combat: its Battle Interface.
+  header.querySelector(".ff-battle-open")?.remove();
+  if ( liveBattle()?.combat === app.viewed ) {
+    const open = document.createElement("button");
+    open.type = "button";
+    open.className = "ff-tracker-open ff-battle-open";
+    open.innerHTML = `<i class="fa-solid fa-chess-knight"></i> ${game.i18n.localize("FASTFIGHTING.Battle.Title")}`;
+    open.addEventListener("click", event => {
+      event.preventDefault();
+      BattleInterface.open();
+    });
+    button.after(open);
+  }
 });
 
 /**

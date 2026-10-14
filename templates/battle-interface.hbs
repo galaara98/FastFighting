@@ -1,0 +1,60 @@
+<section class="ff-battle-body">
+  {{#if none}}
+    <p class="ff-battle-none">{{localize "FASTFIGHTING.Battle.None"}}</p>
+  {{else}}
+    <header class="ff-battle-turn">
+      <div class="ff-battle-now">
+        <span class="ff-chip">{{localize "FASTFIGHTING.Battle.Round" n=round}}</span>
+        <strong>{{turn}}</strong>
+        <span class="ff-battle-state {{state}}">{{stateText}}</span>
+      </div>
+      <div class="ff-battle-buttons">
+        {{#if canContinue}}<button type="button" class="ff-btn" data-action="continue"><i class="fa-solid fa-forward"></i> {{localize "FASTFIGHTING.Live.Continue"}}</button>{{/if}}
+        {{#if canPlay}}<button type="button" class="ff-btn" data-action="play"><i class="fa-solid fa-play"></i> {{localize "FASTFIGHTING.Live.Play"}}</button>{{/if}}
+        <button type="button" class="ff-btn" data-action="rewind" {{#unless canRewind}}disabled{{/unless}}><i class="fa-solid fa-backward-step"></i> {{localize "FASTFIGHTING.Live.RewindTurn"}}</button>
+        <button type="button" class="ff-btn" data-action="rewindAll"><i class="fa-solid fa-backward"></i> {{localize "FASTFIGHTING.MakeItSo.Undo"}}</button>
+      </div>
+      <div class="ff-toggles">
+        <label data-tooltip="{{localize "FASTFIGHTING.Battle.PlayThroughHint"}}"><input type="checkbox" data-action="playThrough" {{checked playThrough}}> {{localize "FASTFIGHTING.Battle.PlayThrough"}}</label>
+        <label data-tooltip="{{localize "FASTFIGHTING.Battle.NpcAskHint"}}"><input type="checkbox" data-action="npcReactions" {{checked npcAsk}}> {{localize "FASTFIGHTING.Battle.NpcAsk"}}</label>
+      </div>
+      {{#if held.length}}
+        <div class="ff-battle-held">
+          <p class="hint">{{localize "FASTFIGHTING.Battle.Held"}}</p>
+          <ul>{{#each held}}<li>{{text}} <a data-action="dropHeld" data-index="{{i}}" data-tooltip="{{localize "FASTFIGHTING.Battle.Drop"}}"><i class="fa-solid fa-xmark"></i></a></li>{{/each}}</ul>
+        </div>
+      {{/if}}
+    </header>
+
+    <ol class="ff-battle-creatures">
+      {{#each creatures}}
+        <li class="ff-battle-creature {{sideClass}} {{#if current}}is-current{{/if}}" data-creature="{{id}}">
+          <div class="ff-battle-who">
+            <img src="{{img}}" alt="">
+            <div>
+              <strong>{{name}}</strong>{{#if player}} <i class="fa-solid fa-user" data-tooltip="{{localize "FASTFIGHTING.Battle.PlayerRuns"}}"></i>{{/if}}
+              <span class="ff-battle-meta">{{side}} · {{status}} · {{hp}}</span>
+            </div>
+          </div>
+          <ul class="ff-battle-mind">
+            {{#each desires}}<li class="{{#if gm}}is-gm{{/if}}">{{text}}{{#if gm}} <a data-action="forget" data-creature="{{../id}}" data-kind="{{kind}}" data-who="{{targetId}}" data-tooltip="{{localize "FASTFIGHTING.Battle.Forget"}}"><i class="fa-solid fa-xmark"></i></a>{{/if}}</li>{{/each}}
+            {{#each sway}}<li>{{this}}</li>{{/each}}
+            {{#if wontListen}}<li>{{wontListen}}</li>{{/if}}
+            {{#if wavering}}<li>{{localize "FASTFIGHTING.Battle.Wavering"}}</li>{{/if}}
+            {{#each taunts}}<li>{{this}}</li>{{/each}}
+          </ul>
+          <details class="ff-battle-fact">
+            <summary>{{localize "FASTFIGHTING.Battle.FactLabel"}}</summary>
+            <div class="ff-battle-fact-row">
+              <select name="what">{{#each @root.facts}}<option value="{{key}}">{{label}}</option>{{/each}}</select>
+              <select name="who"><option value="">—</option>{{#each others}}<option value="{{id}}">{{name}}</option>{{/each}}</select>
+              <select name="band" data-tooltip="{{localize "FASTFIGHTING.Desire.HowMuch"}}">{{#each @root.bands}}<option value="{{value}}" {{#if (eq value 2)}}selected{{/if}}>{{label}}</option>{{/each}}</select>
+              <select name="degree" data-tooltip="{{localize "FASTFIGHTING.Battle.HowWell"}}">{{#each @root.degrees}}<option value="{{value}}" {{#if (eq value 2)}}selected{{/if}}>{{label}}</option>{{/each}}</select>
+              <button type="button" class="ff-btn" data-action="fact">{{localize "FASTFIGHTING.Battle.Apply"}}</button>
+            </div>
+          </details>
+        </li>
+      {{/each}}
+    </ol>
+  {{/if}}
+</section>
