@@ -373,7 +373,7 @@ async function readStates() {
   for ( const u of battle.run.units ) {
     const doc = docOf(u.id);
     if ( !doc ) continue;
-    const state = (await adapter.readLiveState(doc)) ?? {};
+    const state = (await adapter.readLiveState(doc, { spec: battle.spec, unit: u })) ?? {};
     if ( doc.object ) {
       const p = positionOf(doc.object);
       state.position = { x: p.x, y: p.y };

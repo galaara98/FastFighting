@@ -223,7 +223,9 @@ export class SystemAdapter {
    * @param {TokenDocument} tokenDoc
    * @returns {Promise<object|null>}
    */
-  async readLiveState(tokenDoc) {
+  // (context: {spec, unit}, the battle's spec and the creature as the engine has it: what the battle set up that its
+  // sheet alone doesn't say, such as Ironsworn's one track for the encounter.)
+  async readLiveState(tokenDoc, context = {}) {
     const spec = await this.toCombatantSpec(tokenDoc);
     if ( !spec ) return null;
     // (Its statuses as its effects carry them too: a system such as dcc leaves actor.statuses empty.)

@@ -1030,9 +1030,9 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
     const common = logging ? {
       action: action.name, actionKind: action.kind, damageType: primaryType(action), damageTypes: damageTypesOf(action), storyType: action.storyType ?? null, target: target.spec.name, targetId: target.id,
       ranged, area: !!action.area, targetCover: !!target.spec.environment?.nearCover, attackerCover: !!u.spec.environment?.nearCover,
-      // (A shot that leaves its weapon, an arrow, a bolt, a bullet: not a thrown one, a spell or a breath. The story tells
-      // the shot, not the bow.)
-      launched: ranged && action.kind === "strike" && !action.thrown && !action.area,
+      // (A shot that leaves its weapon, an arrow, a bolt, a bullet: not a thrown one, a spell or a breath, nor an action
+      // named for what's done rather than with what (launched: false, Ironsworn's Strike). The story tells the shot.)
+      launched: ranged && action.kind === "strike" && !action.thrown && !action.area && action.launched !== false,
       feet: Number.isFinite(edgeDistance(u, target)) ? Math.round(edgeDistance(u, target)) : null
     } : null;
 
