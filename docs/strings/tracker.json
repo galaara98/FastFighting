@@ -2980,6 +2980,16 @@
    "commit": null,
    "hash": "a717d7745318"
   },
+  "core:FASTFIGHTING.Log.CallToArms": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.CallToArms",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "f80467bf56cc"
+  },
   "core:FASTFIGHTING.Log.CantAct": {
    "repo": "core",
    "file": "languages/en.json",
@@ -6014,6 +6024,16 @@
    "date": null,
    "commit": null,
    "hash": "93b40167d560"
+  },
+  "core:FASTFIGHTING.Log.WhyKin": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.WhyKin",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "75ca3eb61507"
   },
   "core:FASTFIGHTING.Log.WhyRobbed": {
    "repo": "core",
@@ -12104,6 +12124,16 @@
    "commit": null,
    "hash": "2c8d72dda95d"
   },
+  "core:FASTFIGHTING.Story.Part.callToArms": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Story.Part.callToArms",
+   "area": "core/Story",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "bbd8c6ddb9cf"
+  },
   "core:FASTFIGHTING.Story.Part.calmed": {
    "repo": "core",
    "file": "languages/en.json",
@@ -13424,6 +13454,16 @@
    "date": null,
    "commit": null,
    "hash": "bdc5817532c0"
+  },
+  "core:FASTFIGHTING.Story.Part.offendedKin": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Story.Part.offendedKin",
+   "area": "core/Story",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "d53caff31f41"
   },
   "core:FASTFIGHTING.Story.Part.offendedRobbed": {
    "repo": "core",
@@ -25342,6 +25382,16 @@
    "commit": null,
    "hash": "5b064b794e02"
   },
+  "core:story:event.callToArms": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "event.callToArms",
+   "area": "core/story.event",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "ad6f3f65f891"
+  },
   "core:story:event.calmed": {
    "repo": "core",
    "file": "story/en.json",
@@ -26271,6 +26321,16 @@
    "date": null,
    "commit": null,
    "hash": "678dcc5a668e"
+  },
+  "core:story:event.offendedKin": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "event.offendedKin",
+   "area": "core/story.event",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "eb6120472f8d"
   },
   "core:story:event.offendedRobbed": {
    "repo": "core",

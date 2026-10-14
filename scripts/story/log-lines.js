@@ -67,7 +67,7 @@ export function concessionText(c) {
 
 const MODE = { walk: "ModeWalk", fly: "ModeFly", swim: "ModeSwim", climb: "ModeClimb", burrow: "ModeBurrow" };
 const DESIRE = { hurt: "DesireHurt", heal: "DesireHeal", protect: "DesireProtect", aid: "DesireAid", talk: "DesireTalk", avoid: "DesireAvoid" };
-const WHY = { hurt: "WhyHurt", harmed: "WhyHarmed", helped: "WhyHelped", robbed: "WhyRobbed", insulted: "WhyInsulted", impatient: "WhyImpatient" };
+const WHY = { hurt: "WhyHurt", harmed: "WhyHarmed", helped: "WhyHelped", robbed: "WhyRobbed", insulted: "WhyInsulted", impatient: "WhyImpatient", kin: "WhyKin" };
 const NOTICE = { sight: "NoticeSight", sound: "NoticeSound", standoff: "NoticeStandoff", fledInto: "NoticeFled", help: "NoticeHelp", attacked: "NoticeAttacked" };
 const BREAKS = { insulted: "BreakInsulted", beast: "BreakBeast", annoyed: "BreakAnnoyed", blood: "BreakBlood", impatient: "BreakImpatient", unmet: "BreakUnmet" };
 /** Only an argument: why the talks collapsed (nobody fights). */
@@ -254,6 +254,7 @@ function baseLine(e) {
       if ( e.what === "keeps" ) return t("KeepsIt", { actor: e.actor, what: e.item?.name ?? "", luck: e.luck, needed: e.needed ?? 39 });
       return e.what === "drops" ? t("HaggleDrops", { actor: e.actor, by: e.by ?? "" }) : t("HaggleLowers", { actor: e.actor, by: e.by ?? "", what: expectText(e.expect) });
     case "callHelp": return t("CallHelp", { actor: e.actor, target: e.toward ?? "" });
+    case "callToArms": return t("CallToArms", { actor: e.actor, targets: listJoin(e.targets ?? []) });
     case "condition": return t("Condition", { actor: e.actor, effect: e.effect || t("Reeling") });
     case "down": return e.knockedOut ? t("KnockedOut", a) : t("Down", { actor: e.actor, dying: e.dying ? t("DownDying", { n: e.dying }) : "" });
     // Beaten (out of the fight, however the table decides), or killed by one who would kill.

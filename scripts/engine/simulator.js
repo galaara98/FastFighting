@@ -13,7 +13,7 @@ import {
   prepareBattle, createRun, isStanding, isUp, enemiesOf, alliesOf, areEnemies, liveTier, liveTrait, currentAc,
   attackRoll, attackOptions, saveRoll, checkRoll, turnFor, moveToward, moveAway, bonusDamageParts, dispositionOf,
   behaviorOf, edgeDistance, movesNeeded, approach, canMove, moveTowardPoint, isMagical, upgradesSave, boostBonus, typical, sortOf, sizedUp, passedOver,
-  command, commandOf, heldOff, holdsBack, wish
+  command, commandOf, heldOff, holdsBack, wish, groupKeyOf, chainOf, canCommand
 } from "./battle-state.js";
 import { sampleRunTactics } from "./playstyles.js";
 import { chooseTarget, bestOptionVs, scoreTargets } from "./behavior/targeting.js";
@@ -201,6 +201,74 @@ function notice(run, b, cause, source) {
   b.joinCause = cause;
 }
 
+/**
+ * A group's leaders and its people. Word reaches a leader whose own people are in the fight: it notices it the more
+ * readily (KIN_BONUS on its check), and even out of sight and earshot (as a cue as hard to miss as KIN_DC). One who
+ * takes no side takes up its people's quarrel, now and then (KIN_QUARREL, its loyalty raising it). And a leader in the
+ * fight calls in its people who aren't: they hear, and come.
+ */
+const KIN_BONUS = 5;
+const KIN_DC = 12;
+const KIN_QUARREL = Object.freeze({ base: 0.2, loyal: 0.5 });
+
+/** Is u one of its group's chain of command (its boss, its leader or a lieutenant)? */
+function leadsGroup(run, u) {
+  const key = groupKeyOf(u);
+  return !!key && (chainOf(run, key) ?? []).some(c => c.id === u.id);
+}
+
+/** Is u in the fight (not yet to notice it, nor taking no side and turned on no one)? */
+const inFight = u => u.active && isStanding(u) && (!isNeutral(u) || u.against.size > 0);
+
+/** One of u's group in the fight, or null. */
+function kinInFight(run, u) {
+  const key = groupKeyOf(u);
+  return key ? run.units.find(o => o !== u && groupKeyOf(o) === key && inFight(o)) ?? null : null;
+}
+
+/** How readily u takes up its people's quarrel (or answers its leader's call to arms) when it takes no side. */
+const quarrelChance = (run, u) => clamp(KIN_QUARREL.base + KIN_QUARREL.loyal * liveTrait(run, u, "loyal") / 100, 0, 1);
+
+/**
+ * u takes no side but leads its people, and one of them is in the fight: it may take up their quarrel (turning on the
+ * side they fight). True if it did.
+ */
+export function kinsQuarrel(run, u, say) {
+  if ( !isNeutral(u) || u.against.size || !leadsGroup(run, u) ) return false;
+  const kin = kinInFight(run, u);
+  if ( !kin || !run.rng.chance(quarrelChance(run, u)) ) return false;
+  const side = [...kin.against][0];
+  const foe = run.units.find(o => o.side === side && isStanding(o));
+  if ( !foe ) return false;
+  turnOn(run, u, foe, "kin", say, kin);
+  return true;
+}
+
+/**
+ * A leader in the fight calls in its people who aren't: those yet to notice it who can see or hear it (they come
+ * next round), and those who take no side and are only watching (they may take up its quarrel). An action, and each
+ * is called once.
+ */
+function callToArms(run, u, turn, cost) {
+  if ( !inFight(u) || !leadsGroup(run, u) || !canCommand(u) || !turn.canAfford(cost) ) return;
+  const key = groupKeyOf(u);
+  // (Up, whether in the fight yet or not: isStanding counts only those in it.)
+  const out = run.units.filter(o => o !== u && groupKeyOf(o) === key && isUp(o) && !o.calledToArms
+    && ((!o.active && !o.aware && cueFrom(run, o, u)) || (o.active && isNeutral(o) && !o.against.size)));
+  if ( !out.length ) return;
+  turn.spend(cost);
+  for ( const o of out ) o.calledToArms = true;
+  log(run, u, { type: "callToArms", targets: out.map(o => o.spec.name), targetIds: out.map(o => o.id) });
+  const say = logger(run);
+  for ( const o of out ) {
+    if ( !o.active ) notice(run, o, "help", u);
+    else if ( run.rng.chance(quarrelChance(run, o)) ) {
+      const foe = enemiesOf(run, u).find(isStanding);
+      if ( foe ) turnOn(run, o, foe, "kin", say, u);
+    }
+  }
+}
+
 /** b takes part from now on (someone who takes no side watches, weighing what it wants). */
 function join(run, b, why) {
   b.active = true;
@@ -232,8 +300,11 @@ function lookAround(run, b) {
     const cue = cueFrom(run, b, c);
     if ( cue && (!best || cue.dc < best.cue.dc) ) best = { cue, c };
   }
+  // A leader whose own people are in the fight hears of it, even out of sight and earshot, and looks the harder.
+  const kin = leadsGroup(run, b) ? kinInFight(run, b) : null;
+  if ( kin && (!best || best.cue.dc > KIN_DC) ) best = { cue: { dc: KIN_DC, sense: "help" }, c: kin };
   if ( !best ) return false;
-  const perception = b.spec.perception ?? b.spec.initiative?.mod ?? 0;
+  const perception = (b.spec.perception ?? b.spec.initiative?.mod ?? 0) + (kin ? KIN_BONUS : 0);
   const check = checkRoll(run, b, perception);
   const roll = rollCheck(run.prep.rules, run.rng, check.mod, best.cue.dc, { advantage: check.advantage, kind: "check", roller: b });
   if ( roll.degree >= 2 ) notice(run, b, best.cue.sense, best.c);
@@ -1992,6 +2063,7 @@ function keepsPeace(run, u, actions) {
  */
 function neutralTurn(run, u) {
   const say = logger(run);
+  if ( kinsQuarrel(run, u, say) ) return true;
   // One who can't abide violence, seeing a fight, tries to stop it. Otherwise, leaning toward a side, it may get
   // involved (mostly not, unless that side is one it likes and looks like winning: neutral.js meddling): talking the
   // side it likes least out of the fight, or squeezing it for money.
@@ -2253,6 +2325,9 @@ function takeTurn(run, u) {
       if ( move.feet <= 0 ) break; // can't get any closer
     }
   }
+
+  // A leader in the fight calls in its people who aren't.
+  callToArms(run, u, turn, basic);
 
   // What it learned last turn, if it means to tell its friends: an action, first thing.
   tellLore(run, u, turn);

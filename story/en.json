@@ -4391,5 +4391,19 @@
     "{actor} has aged one whole moment, which everyone else managed without trying.",
     "Time, it seems, is in no hurry today.",
     "The only thing that ages noticeably is everyone's patience."
+  ],
+  "event.callToArms": [
+    "\"With me!\" {actor} calls to {targets}.",
+    "{actor} waves {targets} into the fight.",
+    "{actor} shouts for {targets} to stand with their own.",
+    "{actor} calls {targets} to arms.",
+    "{actor} turns and bellows for {targets} to come."
+  ],
+  "event.offendedKin": [
+    "{actor} won't let {victim} fight alone, and turns on {by} and their friends.",
+    "{victim} is in it now, and so is {actor}: against {by}.",
+    "{actor} takes up {victim}'s quarrel with {by}.",
+    "For {victim}'s sake, {actor} goes after {by} and company.",
+    "{actor} stands with {victim}, against {by}."
   ]
 }

@@ -1223,7 +1223,9 @@
         "distance": "Distance",
         "near": "Up close",
         "far": "From afar",
-        "precision": "Precision"
+        "precision": "Precision",
+        "callToArms": "Call to arms",
+        "offendedKin": "Kin's quarrel"
       },
       "APrice": "a price",
       "Desire": "{intensity} {verb}",
@@ -1675,7 +1677,9 @@
       "Money": "{n} {coin}",
       "ThoughtDesire": "{desire} {target} {level}",
       "Separator": ", ",
-      "TerrainRegions": ": {regions}"
+      "TerrainRegions": ": {regions}",
+      "CallToArms": "{actor} calls {targets} into the fight",
+      "WhyKin": "for their own"
     },
     "DamageType": {
       "bludgeoning": "bludgeoning",

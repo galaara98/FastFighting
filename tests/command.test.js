@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { replay, prepareBattle } from "../scripts/engine/simulator.js";
+import { replay, prepareBattle, kinsQuarrel } from "../scripts/engine/simulator.js";
 import { createRun, command, commandOf, liveTrait } from "../scripts/engine/battle-state.js";
 import { followChance, follow, listen, levelOf, leaderless, styleOf, initDesires } from "../scripts/engine/behavior/desire.js";
 import { combinePlaystyles } from "../scripts/engine/playstyles.js";
@@ -157,5 +157,57 @@ describe("the story of who's in charge", () => {
     expect(took.turnOf).toBe("lt");
     // (Nothing else is told in that moment: the next turn starts afresh.)
     expect(r.log.filter(e => e.turn === took.turn).every(e => e === took)).toBe(true);
+  });
+});
+
+describe("a group's own people", () => {
+  const spec = (combatants, command, awareness) => ({ ...battle(combatants, { leadership: true, maxRounds: 4 }), command, awareness });
+
+  test("a leader in the fight calls in its people who aren't (those who can see or hear it come)", () => {
+    let called = 0;
+    for ( let seed = 1; seed <= 8; seed++ ) {
+      const s = spec([goblin("chief", { name: "Chief", hp: { value: 300, max: 300 } }), goblin("runner", { name: "Runner", inEncounter: false }), hero("pc", { hp: { value: 300, max: 300 } })],
+        { hostile: chain(["chief", "leader"]) }, { runner: { chief: { hearDC: 40 } } }); // (in earshot, but it would hardly notice alone)
+      const r = replay(s, pf2eRules, seed);
+      const call = r.log.find(e => e.type === "callToArms" && e.actorId === "chief");
+      if ( !call ) continue;
+      called += 1;
+      expect(call.targetIds).toContain("runner");
+      expect(r.log.some(e => e.type === "notice" && e.actorId === "runner" && e.cause === "help")).toBe(true);
+    }
+    expect(called).toBeGreaterThan(0);
+  });
+
+  test("word reaches a leader whose people are in the fight, out of sight and earshot; not one who leads no one", () => {
+    const noticed = command => {
+      let n = 0;
+      for ( let seed = 1; seed <= 12; seed++ ) {
+        const s = spec([goblin("chief", { name: "Chief", inEncounter: false }), goblin("grunt", { name: "Grunt", hp: { value: 500, max: 500 } }), hero("pc", { hp: { value: 300, max: 300 } })],
+          command, { chief: {} }); // (a grunt that never loses, so never runs for help)
+        if ( replay(s, pf2eRules, seed).log.some(e => e.type === "notice" && e.actorId === "chief") ) n += 1;
+      }
+      return n;
+    };
+    expect(noticed({ hostile: chain(["chief", "leader"]) })).toBeGreaterThan(0);
+    expect(noticed({})).toBe(0);
+  });
+
+  test("one who takes no side, leading its people, takes up their quarrel (as its loyalty says)", () => {
+    const n = (id, extra = {}) => creature({ id, name: id, side: NEUTRAL_PARTY, originSide: "neutral", group: 1, traits: minded(90), ...extra });
+    const setUp = () => {
+      const run = createRun(prepareBattle(spec([n("elder"), n("villager"), goblin("gob", { name: "Gob" }), hero("pc")], { [`${NEUTRAL_PARTY}#1`]: chain(["elder", "leader"]) }), pf2eRules));
+      const [elder, villager] = ["elder", "villager"].map(id => run.byId.get(id));
+      elder.active = villager.active = true;
+      villager.against.add("hostile"); // (in it, against the goblins)
+      return { run, elder };
+    };
+    const yes = setUp();
+    yes.run.rng = { ...yes.run.rng, chance: () => true };
+    expect(kinsQuarrel(yes.run, yes.elder, () => {})).toBe(true);
+    expect(yes.elder.against.has("hostile")).toBe(true);
+    const no = setUp();
+    no.run.rng = { ...no.run.rng, chance: () => false };
+    expect(kinsQuarrel(no.run, no.elder, () => {})).toBe(false);
+    expect(no.elder.against.size).toBe(0);
   });
 });

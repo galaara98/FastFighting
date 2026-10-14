@@ -326,6 +326,7 @@ function narrate(e, roll, rel, fill) {
     case "keepLore": return ""; // (kept to itself: nothing to see)
     case "parley": return roll("event.parley", f);
     case "callHelp": return roll("event.callHelp", { ...f, target: e.toward });
+    case "callToArms": return roll("event.callToArms", { ...f, targets: listJoin(e.targets ?? []) });
     case "notice": return roll({ sight: "event.noticeSight", sound: "event.noticeSound", fledInto: "event.noticeFled", help: "event.noticeHelp", attacked: "event.noticeAttacked", standoff: "event.noticeStandoff" }[e.cause] ?? "event.noticeSound", f);
     case "join": return roll(e.why === "forced" ? "event.joinForced" : "event.join", f);
     case "watch": return roll(e.neutral ? "event.watchNeutral" : "event.watch", f);
@@ -333,7 +334,7 @@ function narrate(e, roll, rel, fill) {
       const g = { ...f, side: e.sideLabel ?? "", victim: e.victim ?? "" };
       switch ( e.what ) {
         case "truce": return roll(e.victim ? "event.truceVictim" : "event.truce", g);
-        case "offended": return roll(e.why === "hurt" ? "event.offendedHurt" : e.why === "robbed" ? "event.offendedRobbed" : e.why === "insulted" ? "event.offendedInsulted" : e.victim ? "event.offendedVictim" : "event.offended", g);
+        case "offended": return roll(e.why === "kin" ? "event.offendedKin" : e.why === "hurt" ? "event.offendedHurt" : e.why === "robbed" ? "event.offendedRobbed" : e.why === "insulted" ? "event.offendedInsulted" : e.victim ? "event.offendedVictim" : "event.offended", g);
         case "luck": return roll("event.nearlyTurns", g);
         case "amends": return roll("event.amends", g);
         case "calmed": return roll("event.calmed", g);
@@ -709,7 +710,7 @@ function tally(events, mentions) {
       const c = e.concession;
       s.notes.push(c.kept ? logTerm("NoteKept", { what: concessionText(c), luck: c.luck }) : logTerm("NoteGave", { what: concessionText(c), name: c.toName }));
     } else if ( e.type === "reclaim" ) s.notes.push(logTerm("NoteGotBack", { what: concessionText(e.concession), by: e.by }));
-    else if ( ["join", "leave", "sway", "flee", "callHelp"].includes(e.type) ) s.notes.push(logLine(e));
+    else if ( ["join", "leave", "sway", "flee", "callHelp", "callToArms"].includes(e.type) ) s.notes.push(logLine(e));
   }
   return by;
 }
@@ -826,7 +827,7 @@ const FALLS = new Set(["down", "death", "beaten", "struckDown"]);
  * What a creature can do on its turn and still only be talking (the others' answers, such as being talked round,
  * don't count): with nothing else, its turn is said aloud, as its own words in the chat.
  */
-const TALKING = new Set(["talk", "parley", "haggle", "deal", "callHelp", "lastWord", "rally", "retreat", "command", "thought", "standoff"]);
+const TALKING = new Set(["talk", "parley", "haggle", "deal", "callHelp", "callToArms", "lastWord", "rally", "retreat", "command", "thought", "standoff"]);
 
 /**
  * The story as it's told in the chat, one turn at a time: a beat for each turn of the fight (the opening's first),
