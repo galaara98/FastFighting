@@ -4,6 +4,7 @@ import {
   NeedsDecision, bandLevel
 } from "../scripts/engine/live.js";
 import { STATUS, SWAY } from "../scripts/constants.js";
+import { applyOutcome } from "../scripts/engine/behavior/effects.js";
 import { pf2eRules } from "./fixtures/three-action-rules.js";
 import { genericRules } from "../scripts/adapters/generic/rules.js";
 import { parseFormula, part } from "../scripts/engine/dice.js";
@@ -243,6 +244,30 @@ describe("live battles: the engine a turn at a time", () => {
     syncFromSheets(run, { orc: { hp: 35, status: "standing" } });
     expect(run.byId.get("orc").status).toBe(STATUS.FLED);
     expect(SWAY.SURRENDER).toBe("surrendered");
+    // (Dead stays dead while the sheet only says down: up again is the sheet's to show.)
+    run.byId.get("goblin").status = STATUS.DEAD;
+    syncFromSheets(run, { goblin: { hp: 0, status: "down" } });
+    expect(run.byId.get("goblin").status).toBe(STATUS.DEAD);
+    syncFromSheets(run, { goblin: { hp: 5, status: "standing" } });
+    expect(run.byId.get("goblin").status).toBe(STATUS.STANDING);
+  });
+
+  test("the sheet says what it has, the engine remembers why: who frightened it stays known while the sheet shows it", () => {
+    const run = beginLive(skirmish(), pf2eRules, { seed: 1, players: ["valeros", "kyra"] });
+    const valeros = run.byId.get("valeros");
+    applyOutcome(valeros, { conditions: { frightened: 2 }, rounds: 2, label: "Demoralize" }, "orc", { id: "orc.demoralize", name: "Demoralize" });
+    // The system wore it down to 1, and can only say "frightened 1": still the orc's doing.
+    syncFromSheets(run, { valeros: { conditions: { frightened: 1 } } });
+    const held = valeros.effects.find(e => e.sourceId === "orc");
+    expect(held).toMatchObject({ conditions: { frightened: 1 }, sheetHeld: true });
+    expect(valeros.conds.frightened).toBe(1);
+    // It lasts as long as the sheet shows it, and is kept with the turn.
+    const again = restoreRun(skirmish(), pf2eRules, snapshotRun(run));
+    expect(again.byId.get("valeros").effects.find(e => e.sourceId === "orc")).toMatchObject({ conditions: { frightened: 1 }, rounds: Infinity });
+    // Gone from the sheet: gone.
+    syncFromSheets(run, { valeros: { conditions: {} } });
+    expect(valeros.effects.some(e => e.sourceId === "orc")).toBe(false);
+    expect(valeros.conds.frightened ?? 0).toBe(0);
   });
 
   test("someone joins mid-fight (a player's summons): the battle grows, everyone else as they were, the newcomer in it", () => {

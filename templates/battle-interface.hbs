@@ -57,6 +57,7 @@
             <div>
               <strong>{{name}}</strong>{{#if player}} <i class="fa-solid fa-user" data-tooltip="{{localize "FASTFIGHTING.Battle.PlayerRuns"}}"></i>{{/if}}
               <span class="ff-battle-meta">{{side}} · {{status}} · {{hp}}</span>
+              {{#if playable}}<label class="ff-battle-automate" data-tooltip="{{localize "FASTFIGHTING.Battle.AutomateHint"}}"><input type="checkbox" data-action="automate" {{checked automated}}> {{localize "FASTFIGHTING.Battle.Automate"}}</label>{{/if}}
             </div>
           </div>
           <ul class="ff-battle-mind">

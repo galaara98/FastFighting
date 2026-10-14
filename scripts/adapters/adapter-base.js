@@ -226,7 +226,10 @@ export class SystemAdapter {
   async readLiveState(tokenDoc) {
     const spec = await this.toCombatantSpec(tokenDoc);
     if ( !spec ) return null;
-    const dead = tokenDoc.actor?.statuses?.has?.("dead") || (spec.hp.value <= 0 && spec.diesAtZero);
+    // (Its statuses as its effects carry them too: a system such as dcc leaves actor.statuses empty.)
+    const actor = tokenDoc.actor;
+    const marked = id => actor?.statuses?.has?.(id) || [...(actor?.effects ?? [])].some(e => !e.disabled && e.statuses?.has?.(id));
+    const dead = marked("dead") || (spec.hp.value <= 0 && spec.diesAtZero);
     return {
       hp: spec.hp.value, temp: spec.hp.temp ?? 0, stamina: spec.hp.stamina?.value, maxHp: spec.hp.max, dying: spec.dying ?? 0,
       wounded: spec.wounded ?? 0, doomed: spec.doomed ?? 0, status: dead ? "dead" : spec.hp.value > 0 ? "standing" : "down",

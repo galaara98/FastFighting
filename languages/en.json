@@ -2039,6 +2039,8 @@
         "spotlight": "No one has the spotlight"
       },
       "Spotlight": "Spotlight {name}",
+      "Automate": "FastFighting plays their turns",
+      "AutomateHint": "FastFighting plays the rest of this character's turns. Clear it to hand them back to their player.",
       "SpotlightHint": "Give the spotlight to whoever FastFighting would pick next.",
       "PlayThrough": "Play to the end",
       "PlayThroughHint": "The turns FastFighting plays go on one after another, without waiting for Continue.",

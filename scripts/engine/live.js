@@ -290,7 +290,9 @@ export function syncFromSheets(run, states) {
     if ( typeof s.stable === "boolean" ) u.stable = s.stable;
     if ( s.status && !ENGINE_STATUSES.has(u.status) ) {
       const was = u.status;
-      const now = s.status === "dead" ? STATUS.DEAD : s.status === "down" ? STATUS.DOWN : STATUS.STANDING;
+      let now = s.status === "dead" ? STATUS.DEAD : s.status === "down" ? STATUS.DOWN : STATUS.STANDING;
+      // (Dead stays dead unless the sheet has it up again: a sheet that only says "down" hasn't brought it back.)
+      if ( was === STATUS.DEAD && now === STATUS.DOWN ) now = STATUS.DEAD;
       if ( was === STATUS.STANDING && now !== STATUS.STANDING ) {
         c.fell = true;
         u.wasDowned = true;
@@ -304,7 +306,18 @@ export function syncFromSheets(run, states) {
       u.prone = !!conds.prone;
       delete conds.prone;
       u.baseConds = Object.fromEntries(Object.entries(conds).map(([k, v]) => [k, v === true ? 1 : Number(v) || 0]).filter(([, v]) => v > 0));
-      u.effects = (u.effects ?? []).filter(e => !sheetOwned(e));
+      // The sheet says what it has; the engine remembers why (who frightened it, whose spell holds it, who has it in
+      // its grip): a system's condition often can't say. An effect of the engine's whose conditions the sheet still
+      // shows stays, at no more than the sheet's value, for as long as the sheet shows it (the system, or the table,
+      // ends it); one the sheet no longer shows is gone.
+      const shown = u.baseConds;
+      u.effects = (u.effects ?? []).flatMap(e => {
+        if ( !sheetOwned(e) ) return [e];
+        const keys = Object.keys(e.conditions).filter(k => (shown[k] ?? 0) > 0);
+        if ( !keys.length ) return [];
+        const conditions = Object.fromEntries(keys.map(k => [k, Math.min(e.conditions[k] === true ? 1 : Number(e.conditions[k]) || 1, shown[k])]));
+        return [{ ...e, conditions, rounds: Infinity, sheetHeld: true }];
+      });
       recompute(u);
     }
     if ( Array.isArray(s.persistent) ) {

@@ -486,6 +486,7 @@
 .ff-battle-who { display: flex; align-items: center; gap: 0.5rem; }
 .ff-battle-who img { width: 36px; height: 36px; border: none; object-fit: contain; }
 .ff-battle-meta { display: block; font-size: 0.85em; opacity: 0.8; }
+.ff-battle-automate { display: flex; align-items: center; gap: 0.3em; font-size: 0.85em; }
 .ff-battle-mind { margin: 0.3rem 0 0; padding-left: 1.1rem; font-size: 0.9em; }
 .ff-battle-mind .is-gm { font-style: italic; }
 .ff-battle-fact summary { cursor: pointer; font-size: 0.85em; opacity: 0.85; margin-top: 0.25rem; }

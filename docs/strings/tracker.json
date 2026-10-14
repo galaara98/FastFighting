@@ -314,6 +314,16 @@
    "commit": null,
    "hash": "1c4f5726f8f8"
   },
+  "core:code:scripts/foundry/live-battle.js:rewindEncounter#1": {
+   "repo": "core",
+   "file": "scripts/foundry/live-battle.js",
+   "key": "scripts/foundry/live-battle.js:rewindEncounter#1",
+   "area": "core/code",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "4d9738c54726"
+  },
   "core:code:scripts/foundry/live-battle.js:writeChanges#1": {
    "repo": "core",
    "file": "scripts/foundry/live-battle.js",
@@ -1323,6 +1333,26 @@
    "date": null,
    "commit": null,
    "hash": "31e392d1c037"
+  },
+  "core:FASTFIGHTING.Battle.Automate": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.Automate",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "ba712722f804"
+  },
+  "core:FASTFIGHTING.Battle.AutomateHint": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.AutomateHint",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "af129c2f2b1d"
   },
   "core:FASTFIGHTING.Battle.Degree.0": {
    "repo": "core",

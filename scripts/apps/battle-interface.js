@@ -11,7 +11,7 @@ import { DESIRE_BAND_KEYS } from "../engine/behavior/desire.js";
 import { mindOf, bandLevel } from "../engine/live.js";
 import {
   liveBattle, continueBattle, rewindTurn, rewindEncounter, playCurrent, liveFact, dropHeldFact, setNpcReactions, setPlayThrough, finishReview,
-  waitingOnGm, suggestedSpotlight, spotlightNext, settleBattle
+  waitingOnGm, suggestedSpotlight, spotlightNext, settleBattle, setAutomated
 } from "../foundry/live-battle.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -54,7 +54,8 @@ export class BattleInterface extends HandlebarsApplicationMixin(ApplicationV2) {
       tellIt: BattleInterface.#onTellIt,
       playThrough: BattleInterface.#onPlayThrough,
       spotlight: BattleInterface.#onSpotlight,
-      aftermath: BattleInterface.#onAftermath
+      aftermath: BattleInterface.#onAftermath,
+      automate: BattleInterface.#onAutomate
     }
   };
 
@@ -87,7 +88,7 @@ export class BattleInterface extends HandlebarsApplicationMixin(ApplicationV2) {
     if ( !b ) return { none: true };
     const run = b.run;
     const combatant = b.combat.combatant;
-    const current = combatant ? run.byId.get(combatant.tokenId) : null;
+    const current = combatant ? run.units.find(u => (u.tokenId ?? u.spec.tokenId ?? u.id) === combatant.tokenId) ?? null : null;
     const name = id => run.byId.get(id)?.spec.name ?? "";
     const sideLabel = side => b.spec.sides?.[side]?.label ?? (game.i18n.has(`FASTFIGHTING.Side.${side}`) ? loc(`FASTFIGHTING.Side.${side}`) : side);
     const played = !!current && waitingOnGm();
@@ -98,10 +99,12 @@ export class BattleInterface extends HandlebarsApplicationMixin(ApplicationV2) {
     const others = run.units.map(u => ({ id: u.id, name: u.spec.name }));
     const creatures = run.units.filter(u => u.active || u.status !== "standing").map(u => {
       const mind = mindOf(run, u.id);
-      const doc = b.scene.tokens.get(u.spec.tokenId ?? u.id);
+      const doc = b.scene.tokens.get(u.tokenId ?? u.spec.tokenId ?? u.id);
+      // (A player's character, or one a player has: FastFighting may play it for the rest of the battle, or stop.)
+      const playable = u.spec.kind === "pc" || (b.data.players ?? []).includes(u.id) || !!doc?.actor?.hasPlayerOwner;
       return {
         id: u.id, name: u.spec.name, img: doc?.texture?.src ?? u.spec.img ?? "icons/svg/mystery-man.svg",
-        current: current?.id === u.id, player: run.live.players.has(u.id),
+        current: current?.id === u.id, player: run.live.players.has(u.id), playable, automated: playable && !run.live.players.has(u.id),
         hp: `${u.hp}/${u.maxHp}`, status: loc(`FASTFIGHTING.Status.${u.status}`), side: sideLabel(u.side), sideClass: u.side,
         desires: mind.desires.slice(0, 3).map(d => ({
           text: fmt("FASTFIGHTING.Battle.Desire", { what: loc(`FASTFIGHTING.Desire.Kind.${d.kind}`), who: name(d.targetId), how: loc(`FASTFIGHTING.Desire.Level.${DESIRE_BAND_KEYS[d.band]}`) }),
@@ -135,7 +138,7 @@ export class BattleInterface extends HandlebarsApplicationMixin(ApplicationV2) {
       spotlight: next ? fmt("FASTFIGHTING.Battle.Spotlight", { name: next.spec.name }) : "",
       turn: current ? fmt(player ? "FASTFIGHTING.Battle.PlayerTurn" : "FASTFIGHTING.Battle.Turn", { name: current.spec.name }) : "",
       state, stateText: loc(`FASTFIGHTING.Battle.State.${state}`),
-      canContinue: state === "waiting", canPlay: state === "ready" && !player, canRewind: b.data.turns.length > 0,
+      canContinue: state === "waiting", canPlay: state === "ready" && !player, canRewind: !!b.data.turns.at(-1)?.snapshot,
       canSettle: state === "ended" && !b.data.settled,
       npcAsk: run.live.npcReactions === "ask", playThrough: !!b.data.auto,
       held: (b.pc?.facts ?? []).map((f, i) => ({ i, text: factText(f, name) })),
@@ -148,6 +151,10 @@ export class BattleInterface extends HandlebarsApplicationMixin(ApplicationV2) {
 
   static async #onContinue() {
     await continueBattle();
+  }
+
+  static async #onAutomate(event, target) {
+    await setAutomated(target.closest("[data-creature]")?.dataset.creature, target.checked);
   }
 
   static async #onAftermath() {
