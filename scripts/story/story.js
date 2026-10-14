@@ -10,6 +10,7 @@
 import { createRng } from "../engine/rng.js";
 import { DAMAGE_TYPES } from "./blocks.js";
 import { damageFamily } from "./families.js";
+import { conditionOf } from "./master.js";
 import { desireBand, DESIRE_BAND_KEYS } from "../engine/behavior/desire.js";
 import { listJoin, listItems, localize, hasWords, distanceText, escapeHtml as esc } from "../i18n.js";
 import { logLine, endLine, logTerm, formatMoney, concessionText } from "./log-lines.js";
@@ -174,6 +175,7 @@ function makeRoller(tables, seed) {
     });
   };
   roll.lang = tables.lang ?? "en";
+  roll.tables = tables;
   return roll;
 }
 
@@ -241,11 +243,42 @@ function followUp(e, tier, roll, f, kind, maxHp) {
   return line ? ` ${capital(line)}` : "";
 }
 
+/**
+ * A control action's telling, from the master list (story/master.js) where the system says what it is: the maneuver
+ * ("{actor} sweeps {target}'s legs"), then the condition it lays, told of the one it's laid on ("{actor} hits the
+ * dirt"), then, at its best, that condition (or maneuver) over the top; at its worst, the maneuver underwhelming.
+ * Without either, the plain line with the system's own word for the effect.
+ */
+function controlLine(e, g, roll, mapCondition) {
+  // (Its best and worst, as the one acting sees it: a save turned around.)
+  const best = e.roll === "save" ? e.degree === 0 : e.degree === 3;
+  const worst = e.roll === "save" ? e.degree === 3 : e.degree === 0;
+  const m = e.maneuver;
+  const said = (key, fill) => roll(key, fill).trim();
+  if ( !e.took ) {
+    const parts = [said("event.controlResisted", { ...g, effect: e.effect ?? "" })];
+    if ( m && worst ) parts.push(said(`maneuver.${m}.terrible`, g));
+    return parts.filter(Boolean).map(capital).join(" ");
+  }
+  const c = (e.conditions ?? []).map(k => conditionOf(k, mapCondition)).find(id => id && hasTable(roll, `condition.${id}`)) ?? null;
+  if ( !m && !c ) return roll("event.controlTakes", { ...g, effect: e.effect ?? "" });
+  const parts = [m ? said(`maneuver.${m}`, g) : said("event.controlLands", g)];
+  // (The condition is the target's: told of it.)
+  const on = { actor: g.target, target: g.actor, weapon: g.weapon };
+  if ( c ) parts.push(said(`condition.${c}`, on));
+  if ( best ) parts.push(c ? said(`condition.${c}.amazing`, on) : said(`maneuver.${m}.amazing`, g));
+  return parts.filter(Boolean).map(capital).join(" ");
+}
+
+/** Does the story have words for this table? */
+const hasTable = (roll, key) => !!roll.tables?.get(key)?.length;
+
 function narrate(e, roll, rel, fill) {
   const base = { actor: e.actor, target: e.target ?? "", weapon: e.action ?? e.item ?? "", by: e.by ?? "", affliction: e.name ?? "" };
   const f = { ...base, ...fill };
   delete f.mapType;
   delete f.maxHp;
+  delete f.mapCondition;
   switch ( e.type ) {
     case "attack":
     case "save":
@@ -381,7 +414,7 @@ function narrate(e, roll, rel, fill) {
         const own = roll("event.tauntIgnored", g);
         if ( own ) return own;
       }
-      return roll(e.took ? "event.controlTakes" : "event.controlResisted", { ...g, effect: e.effect ?? "" });
+      return controlLine(e, g, roll, fill.mapCondition);
     }
     case "buff": {
       // Plain moves (Dodge, Reckless Attack, Action Surge) are told as what they are, not as magic.
@@ -508,8 +541,8 @@ function thinkAloud(e, roll, mentions) {
   return second ? roll("event.thoughtTwo", { actor: e.actor, first, second }) : roll("event.thoughtOne", { actor: e.actor, first });
 }
 
-function roleplay(result, spec, tables, seed, title, mapType) {
-  const paragraphs = roleplayParagraphs(result, spec, tables, seed, mapType).map(p => p.text ?? p.sentences.map(x => x.text).join(" ")).filter(Boolean);
+function roleplay(result, spec, tables, seed, title, mapType, mapCondition) {
+  const paragraphs = roleplayParagraphs(result, spec, tables, seed, mapType, mapCondition).map(p => p.text ?? p.sentences.map(x => x.text).join(" ")).filter(Boolean);
   return { title, html: paragraphs.map(p => `<p>${esc(p)}</p>`).join(""), text: paragraphs.join("\n\n") };
 }
 
@@ -556,7 +589,7 @@ function storyNames(spec) {
   return { call, named };
 }
 
-function roleplayParagraphs(result, spec, tables, seed, mapType) {
+function roleplayParagraphs(result, spec, tables, seed, mapType, mapCondition = null) {
   const roll = makeRoller(tables, seed);
   const averted = avertedDeaths(result.log ?? []);
   const { call, named } = storyNames(spec);
@@ -629,7 +662,7 @@ function roleplayParagraphs(result, spec, tables, seed, mapType) {
         lead = roll(near ? "distance.near" : "distance.far", { actor: e.actor, target: e.target ?? "", weapon: e.action ?? "" }).trim();
       }
     }
-    const told = againLine(e, done, roll) || narrate(e, roll, rel, { mapType, maxHp });
+    const told = againLine(e, done, roll) || narrate(e, roll, rel, { mapType, maxHp, mapCondition });
     const sentence = lead && told ? `${capital(lead)} ${capital(told.trim())}` : told;
     rel.record(e);
     if ( sentence ) current.sentences.push({ e: logged, text: capital(sentence.trim()) });
@@ -794,10 +827,10 @@ function statistician(result, spec, title) {
  * @param {string} style    roleplay | standard | statistician
  * @param {object} options  {tables, seed, title, damageType: (systemType) => imagery family}
  */
-export function buildStory(result, spec, style, { tables, seed = 1, title = "", damageType = null } = {}) {
+export function buildStory(result, spec, style, { tables, seed = 1, title = "", damageType = null, conditionType = null } = {}) {
   if ( style === "statistician" ) return statistician(result, spec, title);
   if ( style === "standard" ) return standard(result, spec, title);
-  return roleplay(result, spec, tables, seed, title, damageType);
+  return roleplay(result, spec, tables, seed, title, damageType, conditionType);
 }
 
 /** The words of a piece of the story as plain text: its HTML read back, tags gone and characters as they are. */
@@ -842,7 +875,7 @@ const TALKING = new Set(["talk", "parley", "haggle", "deal", "callHelp", "callTo
  * @param {string} style    roleplay | standard
  * @param {object} options  {tables, seed, damageType} as for buildStory
  */
-export function storyBeats(result, spec, style, { tables, seed = 1, damageType = null } = {}) {
+export function storyBeats(result, spec, style, { tables, seed = 1, damageType = null, conditionType = null } = {}) {
   const log = tellingOrder(result.log);
   const end = log.find(e => e.type === "end");
   const endTurn = end ? (end.turn ?? 0) : Infinity;
@@ -882,7 +915,7 @@ export function storyBeats(result, spec, style, { tables, seed = 1, damageType =
     if ( close ) close.parts.push(standard(result, spec, "").html);
   } else {
     let opening = null;
-    for ( const p of roleplayParagraphs(result, spec, tables, seed, damageType) ) {
+    for ( const p of roleplayParagraphs(result, spec, tables, seed, damageType, conditionType) ) {
       if ( p.sentences ) for ( const x of p.sentences ) byTurn.get(keyOf(x.e))?.parts.push(x.text);
       else if ( p.e ) byTurn.get(keyOf(p.e))?.parts.push(p.text);
       else opening = p.text;

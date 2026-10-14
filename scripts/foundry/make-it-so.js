@@ -395,7 +395,8 @@ async function tellStory(scene, state, spec, result, rows, doorsOpened) {
   }
   const adapter = getAdapter();
   const beats = storyBeats(result, spec, state.style, {
-    tables: await loadStoryTables(), seed: state.seed, damageType: adapter?.rules?.storyDamageType?.bind(adapter.rules) ?? null
+    tables: await loadStoryTables(), seed: state.seed, damageType: adapter?.rules?.storyDamageType?.bind(adapter.rules) ?? null,
+    conditionType: adapter?.rules?.storyCondition?.bind(adapter.rules) ?? null
   });
   const docs = new Map(rows.map(r => [r.spec.id, r.tokenDoc]));
   const play = setting("playOnMap");

@@ -1335,7 +1335,8 @@
         "glitching": "Glitching",
         "suppressed": "Suppressed",
         "adrift": "Adrift",
-        "irradiated": "Irradiated"
+        "irradiated": "Irradiated",
+        "controlLands": "Control takes hold"
       },
       "APrice": "a price",
       "Desire": "{intensity} {verb}",

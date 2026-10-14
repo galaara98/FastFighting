@@ -12545,6 +12545,16 @@
    "commit": null,
    "hash": "e88203cc6680"
   },
+  "core:FASTFIGHTING.Story.Part.controlLands": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Story.Part.controlLands",
+   "area": "core/Story",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "124f95269d50"
+  },
   "core:FASTFIGHTING.Story.Part.controlled": {
    "repo": "core",
    "file": "languages/en.json",
@@ -28479,6 +28489,16 @@
    "date": null,
    "commit": null,
    "hash": "1edd533fefb4"
+  },
+  "core:story:event.controlLands": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "event.controlLands",
+   "area": "core/story.event",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "c141a89cbb59"
   },
   "core:story:event.controlResisted": {
    "repo": "core",

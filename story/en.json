@@ -5726,5 +5726,12 @@
   ],
   "condition.irradiated.terrible": [
     "{actor} feels a mild tingle at worst, the dose too faint to matter much."
+  ],
+  "event.controlLands": [
+    "{actor}'s {weapon} takes hold of {target}.",
+    "{target} can't shake off {actor}'s {weapon}.",
+    "{actor}'s {weapon} works on {target}.",
+    "{target} falls under {actor}'s {weapon}.",
+    "{actor}'s {weapon} catches {target} fast."
   ]
 }

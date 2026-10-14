@@ -41,6 +41,7 @@ import { reactionsPerRound, threats, takesSafeWay } from "./behavior/reactions.j
 import { isNeutral, crossed, caughtInArea, refreshLeans, truceWith, truceBreaks, turnOn, settleTruce, peaceDesires, seemsFoe, meddling, inFray, fighting, dislikesViolence, annoyedBy, ANNOYED } from "./behavior/neutral.js";
 import { normalizeCost } from "./turn.js";
 import { localize } from "../i18n.js";
+import { maneuverOf } from "../story/master.js";
 
 const MAX_STEPS_PER_TURN = 8;
 /** After the last blow, how long the winners keep tending the dying (ten minutes of rounds, at most). */
@@ -1442,6 +1443,7 @@ function executeControl(run, u, action, target, attacksMade, common) {
   if ( logging ) {
     log(run, u, {
       controls: !!outcome?.conditions?.controlled,
+      maneuver: maneuverOf(action), conditions: Object.keys(outcome?.conditions ?? {}).filter(k => outcome.conditions[k]),
       type: "control", ...common, roll: r.kind, saveType: action.save?.type ?? null, against: action.check?.against ?? null,
       natural: roll.natural, mod: roll.mod, total: roll.total, dc, degree, margin: roll.total === null ? null : roll.total - dc,
       effect: outcome?.label ?? "", took: !!outcome, backfired: !!outcome?.self, damage, shifted: shift, taunt: !!outcome?.taunt, note: roll.note ?? null, faces: roll.faces ?? null,

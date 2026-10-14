@@ -227,3 +227,32 @@ describe("the review's fixes", () => {
     }
   });
 });
+
+describe("maneuvers and conditions from the master list", () => {
+  // A trip: an attack-style check; prone on a success (and longer on a critical).
+  const trip = { id: "amiri.trip", name: "Trip", kind: "control", cost: 1, bonus: 6, maps: [0, -5, -10], melee: true, reach: 5,
+    onHit: [null, null, { conditions: { prone: 1 }, rounds: 1, label: "prone" }, { conditions: { prone: 1 }, rounds: 2, label: "prone" }] };
+
+  test("a trip that lands is told as the trip, then the one tripped hitting the ground; one that fails never says they fell", () => {
+    const fill = (l, actor, target) => l.replace("{actor}", actor).replace("{target}", target).toLowerCase();
+    const tripLines = english["maneuver.trip"].map(l => fill(l, "Amiri", "Wolf"));
+    const proneLines = english["condition.prone"].map(l => fill(l, "Wolf", "Amiri"));
+    let landed = 0;
+    for ( let seed = 1; seed <= 30; seed++ ) {
+      const spec = fight();
+      const amiri = spec.combatants.find(c => c.id === "amiri");
+      amiri.actions = [trip];
+      const result = replay(spec, pf2eRules, seed);
+      const tries = result.log.filter(e => e.type === "control" && e.actorId === "amiri");
+      if ( !tries.length ) continue;
+      expect(tries.every(e => e.maneuver === "trip")).toBe(true);
+      const text = buildStory(result, spec, "roleplay", { tables, seed }).text.toLowerCase();
+      if ( tries.some(e => e.took) ) {
+        landed += 1;
+        expect(tripLines.some(l => text.includes(l))).toBe(true);
+        expect(proneLines.some(l => text.includes(l))).toBe(true);
+      } else expect(proneLines.some(l => text.includes(l))).toBe(false);
+    }
+    expect(landed).toBeGreaterThan(0);
+  });
+});

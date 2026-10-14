@@ -574,7 +574,8 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
         tables: this.storyTables,
         seed: fight.seed,
         title: game.i18n.format("FASTFIGHTING.Story.Title", { scene: canvas.scene?.name ?? "" }),
-        damageType: getAdapter()?.rules?.storyDamageType?.bind(getAdapter().rules) ?? null
+        damageType: getAdapter()?.rules?.storyDamageType?.bind(getAdapter().rules) ?? null,
+        conditionType: getAdapter()?.rules?.storyCondition?.bind(getAdapter().rules) ?? null
       }));
     }
     return this.storyCache.get(key);
