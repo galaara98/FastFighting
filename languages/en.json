@@ -1339,7 +1339,9 @@
         "suppressed": "Suppressed",
         "adrift": "Adrift",
         "irradiated": "Irradiated",
-        "controlLands": "Control takes hold"
+        "controlLands": "Control takes hold",
+        "strain": "Worn down by words",
+        "strainEmpty": "Worn out by words"
       },
       "APrice": "a price",
       "Desire": "{intensity} {verb}",
@@ -1523,6 +1525,8 @@
       "Save": "{target} saves vs {actor}'s {action} · {saveType} {roll} · {degree} ({margin}) · {damage}",
       "Auto": "{actor} → {target}: {action} (no roll) · {damage}",
       "Talk": "{actor} → {target}: {skill} · {roll} · {degree} ({margin}){boost} · persuasion {progress}/{steps}",
+      "Strain": "{actor} loses {lost} {pool} to {target} ({left} left)",
+      "StrainEmpty": "{actor} loses {lost} {pool} to {target}: none left",
       "Heal": "{actor} → {target}: {action}{check} · +{amount} {HP}{revived}",
       "Medicine": "medicine {roll} · {degree}",
       "HealCheck": "{skill} {roll} · {degree}",

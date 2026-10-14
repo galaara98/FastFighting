@@ -5766,5 +5766,18 @@
     "{actor}'s {weapon} works on {target}.",
     "{target} falls under {actor}'s {weapon}.",
     "{actor}'s {weapon} catches {target} fast."
+  ],
+  "event.strain": [
+    "The exchange wears on {actor}.",
+    "{actor} comes away from that rattled.",
+    "{target}'s words leave {actor} a little more frayed.",
+    "Losing that exchange costs {actor} something.",
+    "{actor} gives ground to {target}, and feels it."
+  ],
+  "event.strainEmpty": [
+    "{actor} has nothing left to argue with.",
+    "Worn down by {target}, {actor} sags.",
+    "{actor}'s composure finally gives out.",
+    "{target} has worn {actor} down to nothing."
   ]
 }

@@ -308,6 +308,13 @@ function narrate(e, roll, rel, fill) {
       // (A big moment in words: only a system whose checks can be critical has one.)
       return roll(`talk.${kind}.${tier}`, f) + followUp(e, tier, roll, f, kind) + relationshipClause(e, tier, rel, roll, f);
     }
+    case "strain": {
+      // (Worn down by words: and run dry, what it's left as, told of it.)
+      const parts = [roll(e.empty ? "event.strainEmpty" : "event.strain", f)];
+      const c = e.empty ? (e.conditions ?? []).map(k => conditionOf(k, fill.mapCondition)).find(id => id && hasTable(roll, `condition.${id}`)) : null;
+      if ( c ) parts.push(roll(`condition.${c}`, f));
+      return parts.map(p => capital(p.trim())).filter(Boolean).join(" ");
+    }
     case "door": {
       const key = { open: "doorOpen", giveup: "doorGiveUp" }[e.method]
         ?? (e.method === "attack" ? (e.success ? "doorSmashed" : e.hit ? "doorHit" : "doorMiss") : `door${e.method === "pick" ? "Picked" : "Forced"}${e.success ? "" : "Fail"}`);
@@ -862,7 +869,7 @@ const FALLS = new Set(["down", "death", "beaten", "struckDown"]);
  * What a creature can do on its turn and still only be talking (the others' answers, such as being talked round,
  * don't count): with nothing else, its turn is said aloud, as its own words in the chat.
  */
-const TALKING = new Set(["talk", "parley", "haggle", "deal", "callHelp", "callToArms", "lastWord", "rally", "retreat", "command", "thought", "standoff"]);
+const TALKING = new Set(["talk", "strain", "parley", "haggle", "deal", "callHelp", "callToArms", "lastWord", "rally", "retreat", "command", "thought", "standoff"]);
 
 /**
  * The story as it's told in the chat, one turn at a time: a beat for each turn of the fight (the opening's first),

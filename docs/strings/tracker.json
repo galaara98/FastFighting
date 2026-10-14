@@ -5574,6 +5574,26 @@
    "commit": null,
    "hash": "2dfad53e69a4"
   },
+  "core:FASTFIGHTING.Log.Strain": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.Strain",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "fa5091ce2e64"
+  },
+  "core:FASTFIGHTING.Log.StrainEmpty": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.StrainEmpty",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "5c9a637a9a2e"
+  },
   "core:FASTFIGHTING.Log.Stray": {
    "repo": "core",
    "file": "languages/en.json",
@@ -15201,6 +15221,26 @@
    "date": null,
    "commit": null,
    "hash": "8e6a6cca7aae"
+  },
+  "core:FASTFIGHTING.Story.Part.strain": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Story.Part.strain",
+   "area": "core/Story",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "a1e8698dbadf"
+  },
+  "core:FASTFIGHTING.Story.Part.strainEmpty": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Story.Part.strainEmpty",
+   "area": "core/Story",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "3d9b2817ccc8"
   },
   "core:FASTFIGHTING.Story.Part.strayHit": {
    "repo": "core",
@@ -29842,6 +29882,26 @@
    "commit": null,
    "hash": "e1c390c5d982",
    "gone": "2026-10-14"
+  },
+  "core:story:event.strain": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "event.strain",
+   "area": "core/story.event",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "6e4035004210"
+  },
+  "core:story:event.strainEmpty": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "event.strainEmpty",
+   "area": "core/story.event",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "3980bb58c51c"
   },
   "core:story:event.strayHit": {
    "repo": "core",

@@ -131,6 +131,7 @@ function baseLine(e) {
     case "counter": return t("Counter", { ...a, reaction: e.reaction, action: e.action, roll: e.natural !== null && e.natural !== undefined ? t("CounterRoll", { natural: e.natural, total: e.total }) : "", how: e.countered ? t("Countered") : t("GetsThrough") });
     case "save": return t("Save", { ...a, action: e.action, saveType: e.saveType, roll: dice(e.natural, e.mod, e.total, e.dc, t("DC")), degree: degree(e.degree), margin: signed(e.margin ?? 0), damage: damage(e.damage, e.damageType) || t("DamageN", { n: 0 }) });
     case "auto": return t("Auto", { ...a, action: e.action, damage: damage(e.damage, e.damageType) || t("DamageN", { n: e.damage ?? 0 }) });
+    case "strain": return t(e.empty ? "StrainEmpty" : "Strain", { actor: e.actor, target: e.target, lost: e.lost, pool: e.label ?? e.pool, left: e.left });
     case "talk": return t("Talk", { ...a, skill: e.skill, roll: dice(e.natural, e.mod, e.total, e.dc, t("DcOf", { stat: e.dcStat })), degree: degree(e.degree), margin: signed(e.margin ?? 0), boost: e.boost ? ` · ${t("SizedUp", { n: e.boost })}` : "", progress: e.progress, steps: e.steps });
     case "heal": return t("Heal", { actor: e.actor, target: e.self ? t("Self") : e.target, action: e.action, check: e.check ? ` · ${t(e.check.skill ? "HealCheck" : "Medicine", { skill: e.check.skill ?? "", roll: dice(e.check.natural, e.check.mod, e.check.total, e.check.dc, t("DC")), degree: degree(e.check.degree) })}` : "", amount: e.amount, revived: e.revived ? t("Revived") : "" });
     case "move": return t("Move", {

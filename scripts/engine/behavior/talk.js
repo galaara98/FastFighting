@@ -41,6 +41,7 @@ import { levelOf, allDesires } from "./desire.js";
 import { standsGround, callRetreat } from "./morale.js";
 import { bargainAim, holdsOut, calmsDown, irritated, haggled, pressed, expectOf, owed } from "./bargain.js";
 import { talkDamping } from "./specialty.js";
+import { strain } from "./strain.js";
 
 /**
  * Only an argument: nobody runs, and nobody pays and goes. Talked round, a creature backs down (where it would run or
@@ -711,6 +712,9 @@ export function attemptTalk(run, talker, pitch, log) {
   // press that gets nowhere irritates the one pressing.
   if ( aim === "haggle" ) (roll.degree >= 2 ? calmsDown : irritated)(t);
   if ( aim === "press" && roll.degree < 2 ) irritated(talker);
+  // Words that wear a creature down (behavior/strain.js): whoever lost the exchange pays.
+  if ( roll.degree >= 2 ) strain(run, t, talker, roll.degree === 3, log);
+  else strain(run, talker, t, roll.degree === 0, log);
   // What the pitch's result gives or costs the talker, by the system (Ironsworn: Compel's momentum, a miss's price).
   const said = run.prep.rules.afterTalk?.(run, talker, t, roll, { aim, kind: pitch.kind });
   if ( said?.text && run.log ) log(talker, { type: "endure", text: said.text, ...said.data });
