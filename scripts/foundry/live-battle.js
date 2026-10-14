@@ -506,7 +506,10 @@ async function closePlayerTurn() {
   events.push(...handoffs);
   syncPools(adapter);
   const result = pcTurnEnd(run, pc.id, events, states, pc.facts ?? []);
-  const turn = { key: `${pc.round}.${pc.combatantId}`, combatantId: pc.combatantId, round: pc.round, kind: "pc", records: pc.records ?? [], messages: [], moves: [], doors: [], snapshot: pc.snapshot };
+  // (What the engine itself made of the turn, past what the sheets say: a death burst, written.)
+  const records = pc.records ?? [];
+  await writeChanges(result.synced, captureAll(run), records);
+  const turn = { key: `${pc.round}.${pc.combatantId}`, combatantId: pc.combatantId, round: pc.round, kind: "pc", records, messages: [], moves: [], doors: [], snapshot: pc.snapshot };
   turn.messages.push(...await tellNew());
   await settleTurn(turn, result.ended);
 }
@@ -602,22 +605,28 @@ async function playerMoved(doc) {
     if ( !use ) continue;
     const before = captureAll(run);
     reactNow(run, reactorId, pc.id, strike);
-    const after = captureAll(run);
-    const adapter = getAdapter();
-    for ( const [id, ch] of Object.entries(diffAll(before, after)) ) {
-      const target = docOf(id);
-      if ( !target ) continue;
-      try {
-        const record = await adapter.commitChanges(target, { ...run.byId.get(id).spec, resources: before[id].resources }, ch, after[id], { live: true, before: before[id], fledMode: setting("fledMode"), lootMode: setting("lootMode"), corpseMode: setting("corpseMode") });
-        if ( record ) pc.records.push(record);
-      } catch ( err ) {
-        console.error(`${MODULE_ID} | a reaction against ${doc.name}`, err);
-      }
-    }
+    await writeChanges(before, captureAll(run), pc.records);
   }
   // (Where it is now, as the engine has it: the next move is from here.)
   syncFromSheets(run, { [pc.id]: { position: to } });
   await keep();
+}
+
+/** What the engine changed between two captures of everyone, onto the sheets; their undo records added to `records`. */
+async function writeChanges(before, after, records) {
+  const adapter = getAdapter();
+  for ( const [id, ch] of Object.entries(diffAll(before, after)) ) {
+    const doc = docOf(id);
+    if ( !doc ) continue;
+    try {
+      const record = await adapter.commitChanges(doc, { ...battle.run.byId.get(id).spec, resources: before[id].resources }, ch, after[id], {
+        live: true, before: before[id], fledMode: setting("fledMode"), lootMode: setting("lootMode"), corpseMode: setting("corpseMode")
+      });
+      if ( record ) records.push(record);
+    } catch ( err ) {
+      console.error(`${MODULE_ID} | writing ${doc.name}'s changes`, err);
+    }
+  }
 }
 
 /* -------------------------------------------- */

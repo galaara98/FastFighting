@@ -3197,6 +3197,27 @@
     "{target} hurt {actor}, and {weapon} follows.",
     "{actor} snarls and unleashes {weapon} on {target}."
   ],
+  "event.reactAllyTargeted": [
+    "{actor} steps in to cover their friend from {target}.",
+    "{actor} moves to shield their friend from {target}.",
+    "{actor}'s {weapon} spoils {target}'s aim at their friend.",
+    "{actor} throws themselves into {target}'s way.",
+    "{target} has to get past {actor} first."
+  ],
+  "event.reactWouldDrop": [
+    "{actor} should fall, but refuses to.",
+    "{actor} staggers, and somehow stays up.",
+    "That blow should have finished {actor}. It doesn't.",
+    "{actor} clings on through sheer fury.",
+    "{actor} won't go down: {weapon}."
+  ],
+  "event.reactSlain": [
+    "{weapon} bursts from {actor} as they fall.",
+    "{actor} goes down, and takes revenge on the way: {weapon}.",
+    "{actor} dies, and {weapon} lashes everything near them.",
+    "{actor}'s end comes with {weapon}.",
+    "{actor} falls, and {weapon} erupts around them."
+  ],
   "event.counterTakes": [
     "{actor}'s {weapon} unravels {target}'s {spell}.",
     "{target}'s {spell} dies on the air: {actor}'s {weapon}.",
@@ -3564,6 +3585,20 @@
     "{actor} takes the opening as {target} breaks off.",
     "{target} leaves {actor} a gap, and {actor} takes it.",
     "{actor} lunges as {target} turns their back."
+  ],
+  "event.opportunityOpening": [
+    "{target} lowers their guard within {actor}'s reach, and {actor} strikes.",
+    "{actor} punishes {target} for dropping their guard.",
+    "{target} forgets how close {actor} is.",
+    "{actor} strikes into the gap as {target}'s guard slips.",
+    "{target} leaves an opening, and {actor} is quick to use it."
+  ],
+  "event.opportunityStand": [
+    "{actor} strikes as {target} scrambles up.",
+    "{target} rises, and {actor} is waiting.",
+    "{actor} catches {target} halfway to their feet.",
+    "{target} gets up, straight into {actor}'s blow.",
+    "{actor} doesn't let {target} rise in peace."
   ],
   "event.thoughtTwo": [
     "{actor} {first}, but {second} as well.",

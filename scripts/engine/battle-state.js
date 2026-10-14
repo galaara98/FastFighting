@@ -102,6 +102,7 @@ import { Turn } from "./turn.js";
 import { combineMods, netAdvantage } from "./mods.js";
 import { degreeDistribution } from "./probability.js";
 import { combinePlaystyles } from "./playstyles.js";
+import { answersTo } from "../story/master.js";
 
 const DEFAULT_APPROACH = Object.freeze({ dist: 5, mult: 1, speed: 25, mode: "walk", los: true, meleeOk: true });
 const SIDE_WEIGHT = 0.3;
@@ -287,10 +288,11 @@ export function createRun(prep) {
     fateInPlay: units.some(u => (u.resources.fate ?? 0) > 0), // anyone with hero points or the like to spend
     neutral: units.some(u => u.side === NEUTRAL_PARTY),        // anyone standing aside (more may, mid-fight)
     boosting: units.some(u => u.spec.boosts?.length),       // anyone who can burn Luck (or the like) on a roll
-    counters: units.some(u => u.spec.reactions?.some(r => r.on === "spell")), // anyone with a counterspell
+    counters: units.some(u => u.spec.reactions?.some(r => answersTo(r, "foeCasts"))), // anyone with a counterspell
     legendary: units.some(u => u.prep.legendaryActions?.length),               // anyone with legendary actions
     auras: units.some(u => u.spec.saveAura),                                     // anyone whose aura helps friends' saves
-    guards: units.some(u => u.spec.reactions?.some(r => r.on === "allyHit")),     // anyone who reacts when a friend is hit
+    guards: units.some(u => u.spec.reactions?.some(r => answersTo(r, "allyHit"))),     // anyone who reacts when a friend is hit
+    wardens: units.some(u => u.spec.reactions?.some(r => answersTo(r, "allyTargeted"))), // anyone who covers a friend attacked
     untargetable: units.some(u => u.spec.untargetable),                           // anything nobody can attack (a hazard)
     byId: new Map(units.map(u => [u.id, u])),
     round: 0,

@@ -144,7 +144,7 @@ export function tellingOrder(log = []) {
   const out = [...log];
   for ( let i = 0; i < out.length; i++ ) {
     const e = out[i];
-    if ( e.type !== "opportunity" ) continue;
+    if ( e.type !== "opportunity" || (e.trigger && e.trigger !== "foeLeavesReach") ) continue;
     const j = out.findIndex((m, k) => k > i && m.turn === e.turn && m.actorId === e.targetId && LEAVING.has(m.type));
     if ( j < 0 ) continue;
     // (The move first; then everything from the blow to the move: the blow, what came of it, and anyone else who
@@ -539,7 +539,10 @@ function narrate(e, roll, rel, fill) {
       }
       // (One on the master list, told as what it is: a shield block, a dodge.)
       if ( e.maneuver && hasTable(roll, `maneuver.${e.maneuver}`) ) return roll(`maneuver.${e.maneuver}`, fill);
-      return roll({ hit: "event.reactHit", attacked: "event.reactAttacked", missed: "event.reactMissed", damaged: "event.reactDamaged" }[e.trigger] ?? "event.reactHit", fill);
+      return roll({
+        hit: "event.reactHit", attacked: "event.reactAttacked", missed: "event.reactMissed", damaged: "event.reactDamaged", allyTargeted: "event.reactAllyTargeted",
+        wouldDrop: "event.reactWouldDrop", slain: "event.reactSlain"
+      }[e.trigger] ?? "event.reactHit", fill);
     }
     case "counter": return roll(e.countered ? "event.counterTakes" : "event.counterFails", { ...f, weapon: e.reaction ?? "", spell: e.action ?? "", target: e.target ?? "" });
     case "allegiance": return roll(e.joined ? "event.allegianceTurn" : "event.allegianceBack", { ...f, by: e.by ?? "" });
@@ -552,7 +555,7 @@ function narrate(e, roll, rel, fill) {
     case "afflictionSave": return roll(e.degree <= 1 ? "event.afflictionSaveFail" : "event.afflictionSavePass", f);
     // A failed save that leaves a condition is told by the condition that follows.
     case "riderSave": return e.degree > 1 && e.controls ? roll("event.riderSavePass", f) : "";
-    case "opportunity": return roll("event.opportunity", f);
+    case "opportunity": return roll({ foeOpening: "event.opportunityOpening", foeMovesInReach: "event.opportunityStand" }[e.trigger] ?? "event.opportunity", f);
     case "disengage": return e.made === false ? "" : roll("maneuver.step", f); // (missed: the blows that follow tell it)
     case "afflictionStage": return roll("event.afflictionStage", f);
     case "afflictionEnd": return roll("event.afflictionEnd", f);

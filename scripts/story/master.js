@@ -1,7 +1,7 @@
 /**
  * The story's master list of maneuvers (what a creature does) and conditions (what it is), from
  * docs/story-maneuvers-conditions.md: each told by its own sentences (maneuver.<id>, condition.<id>, with .amazing and
- * .terrible), whatever a system calls it. A helper maps its own onto them: an action's maneuver by its slug (an id
+ * .terrible), whatever a system calls it. And the reactions' triggers and effects, from docs/reaction-triggers.md. A helper maps its own onto them: an action's maneuver by its slug (an id
  * ending ".trip"), or outright (action.maneuver); a condition by its key, or rules.storyCondition(key).
  * Pure.
  */
@@ -42,6 +42,93 @@ const MANEUVER_SYNONYMS = Object.freeze({
   "force-open": "forceOpen", "disable-device": "disableDevice", "command-an-animal": "commandAnimal", "tumble-through": "tumbleThrough",
   "high-jump": "leap", "long-jump": "leap", "leap": "leap", "escape": "escape", "interact": "interact", "steal": "steal"
 });
+
+/**
+ * Reaction triggers (docs/reaction-triggers.md): every moment in a fight a reaction may answer, by group. A reaction's
+ * `on` names one, or a list; a helper maps its system's reactions onto them. The engine checks those it knows the
+ * moment of (responses.js, reactions.js); the rest are named here for helpers, and for the engine to grow into.
+ */
+export const REACTION_TRIGGERS = Object.freeze({
+  atSelf: Object.freeze([
+    "attacked", "underFire", "inBlastArea", "hit", "missed", "wouldTakeDamage", "damaged", "badlyHurt", "wouldDrop",
+    "slain", "mustSave", "wouldGainCondition", "touched", "maneuvered", "grabbed", "knockedDown", "forcedMovement",
+    "falling"
+  ]),
+  atAlly: Object.freeze([
+    "allyTargeted", "allyHit", "allyDamaged", "allyWouldDrop", "allyDown", "allyRolls", "allyStrikes", "allyActs",
+    "commanded", "allyMoves", "allyAfflicted", "wardInPeril", "rideTargeted", "rideHurt"
+  ]),
+  foeAction: Object.freeze([
+    "foeOpening", "foeRolls", "foeFails", "heldFoeStruggles", "foeSpotted", "aboutToBeFound", "foeGoesForWeapon",
+    "breachAttempt"
+  ]),
+  movement: Object.freeze([
+    "foeApproaches", "foeMovesInReach", "foeLeavesReach", "inItsSpace", "foeMovesInOpen", "pursuerCloses"
+  ]),
+  magic: Object.freeze([
+    "foeCasts", "spellTargets", "magicNearby", "concentrationJolted"
+  ]),
+  tech: Object.freeze([
+    "lockedOn", "missileIncoming", "shieldsFailing", "gearBreaking", "overload", "aboutToBlow", "hacked"
+  ]),
+  social: Object.freeze([
+    "pressed", "deceived", "taunted", "speech", "ruleBroken"
+  ]),
+  fear: Object.freeze([
+    "suddenScare", "horrorSeen", "strained", "breakingPoint", "allyPanics", "leaderFalls"
+  ]),
+  turnRound: Object.freeze([
+    "fightStarts", "ownTurnStarts", "ownTurnEnds", "otherTurnStarts", "otherTurnEnds", "betweenTurns",
+    "readiedTrigger", "countdownEnds"
+  ]),
+  environment: Object.freeze([
+    "airFails", "bigImpact", "lightsOut", "alarmRaised", "disturbance", "environmentTurns"
+  ]),
+  hazard: Object.freeze([
+    "entersArea", "approachesHazard", "touchesObject", "disableAttempt", "hazardDamaged", "lingers", "hazardSensed"
+  ]),
+  other: Object.freeze([
+    "ownRoll", "ownRollFails", "ownRollSucceeds", "specialRoll", "ownHit", "ownMiss", "dropsFoe", "ownAction",
+    "deathNearby", "runsDry", "pointSpent", "complication"
+  ])
+});
+export const TRIGGERS = Object.freeze(Object.values(REACTION_TRIGGERS).flat());
+
+/** What a reaction does (docs/reaction-triggers.md), for helpers mapping their system's reactions. */
+export const REACTION_EFFECTS = Object.freeze([
+  "acBonus", "negate", "halve", "reduce", "shrugOff", "heal", "stayUp", "resist", "bolsterRoll", "helpAlly",
+  "guardAlly", "letAllyAct", "takeTheBlow", "rescue", "strike", "harmSource", "areaBurst", "redirectAttack", "rider",
+  "afflict", "spoilRoll", "trip", "moveFoe", "grab", "disarm", "disrupt", "counter", "taunt", "bluff", "move",
+  "takeCover", "standUp", "fallSafely", "escape", "hide", "actNow", "gainPoint", "boost", "useAbility", "create",
+  "transform", "learn", "alert", "investigate", "changeScene", "flashback", "panic", "freeze", "scream", "flee",
+  "lashOut", "strain", "pointDefense", "damageControl", "bailOut", "counterHack", "seal", "throwBack"
+]);
+
+/** The engine's older names for its triggers. */
+const TRIGGER_SYNONYMS = Object.freeze({ spell: "foeCasts", leaveReach: "foeLeavesReach", opportunity: "foeLeavesReach" });
+const TRIGGER_SET = new Set(TRIGGERS);
+
+/** A trigger as the master list names it (an older name, "spell", is "foeCasts"), or null. */
+export function triggerOf(key) {
+  if ( !key ) return null;
+  const id = TRIGGER_SYNONYMS[key] ?? key;
+  return TRIGGER_SET.has(id) ? id : null;
+}
+
+const listening = new WeakMap();
+/** The master triggers a reaction answers: its `on`, one or a list. */
+export function triggersOf(reaction) {
+  if ( !reaction || typeof reaction !== "object" ) return [];
+  let out = listening.get(reaction);
+  if ( !out ) {
+    out = (Array.isArray(reaction.on) ? reaction.on : [reaction.on]).map(triggerOf).filter(Boolean);
+    listening.set(reaction, out);
+  }
+  return out;
+}
+
+/** Does this reaction answer this trigger (either named as the master list names it, or by an older name)? */
+export const answersTo = (reaction, trigger) => triggersOf(reaction).includes(triggerOf(trigger));
 
 const lower = new Map([...MANEUVERS, ...CONDITIONS].map(id => [id.toLowerCase(), id]));
 

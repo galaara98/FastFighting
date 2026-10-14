@@ -16,8 +16,17 @@
  *                                                                redirect: it takes the blow instead, against its own
  *                                                                resistances (PF2e guardian's Intercept Attack)
  *   on "spell"      a foe casts a spell it can see:             counter: {level, mod} (5e Counterspell: a spell of
- *                                                                its level or lower simply fails; a higher one if
+ *   ("foeCasts")                                                 its level or lower simply fails; a higher one if
  *                                                                the check beats 10 + its level)
+ *   on "allyTargeted"  a foe attacks a friend near it (range):    ac (a bonus to the friend's defense against it: 5e
+ *                                                                Protection, Shield of the Cavalier)
+ *   on "wouldDrop"  a blow would drop it:                        stayUp: {hp, wounded} (it stays up at hp, 1 unless
+ *                                                                said: PF2e Orc Ferocity, 5e Relentless Endurance)
+ *   on "slain"      it drops or dies:                            areaBurst: {damage, save, range} at everyone within
+ *                                                                range (5e Death Burst); answered on the way down
+ *   on              a trigger from the master list (story/master.js REACTION_TRIGGERS), an older name ("spell"), or a
+ *                   list of them
+ *   free            it costs no reaction (a creature's nature: a death burst)
  *   range           how far it reaches, in feet (default: anywhere); melee / ranged: only those attacks; physical: only
  *                   bludgeoning, piercing and slashing; needsShield: only with its shield raised
  * Each takes the creature's reaction for the round, and whatever it says it costs. A creature uses it when it's
@@ -30,8 +39,11 @@ import { meanPart } from "../dice.js";
 import { meanDamageVs, threatOf } from "./evaluate.js";
 import { degreeDistribution } from "../probability.js";
 import { perceives } from "./senses.js";
+import { answersTo } from "../../story/master.js";
 
 const PHYSICAL = new Set(["bludgeoning", "piercing", "slashing", "physical"]);
+/** Moments about itself alone: whoever caused them, near or seen or not. */
+const SELF = new Set(["wouldDrop", "slain"]);
 
 /** What a reaction's price is worth to u now, in damage terms (a spell slot is dear when few are left). */
 function priceOf(u, r, scale) {
@@ -43,8 +55,11 @@ function priceOf(u, r, scale) {
   return style * (0.6 + 1.4 * (1 - frac)) * Math.max(1, scale);
 }
 
-function ready(run, u, r) {
-  if ( !isUp(u) || (u.reactionsLeft ?? 0) <= 0 || u.conds?.incapacitated || u.conds?.stunned || u.conds?.paralyzed ) return false;
+function ready(run, u, r, trigger) {
+  // (Slain: it answers on its way down. Free: it costs no reaction.)
+  const going = trigger === "slain";
+  if ( (!going && !isUp(u)) || (!r.free && (u.reactionsLeft ?? 0) <= 0) ) return false;
+  if ( !going && (u.conds?.incapacitated || u.conds?.stunned || u.conds?.paralyzed) ) return false;
   if ( r.needsShield && !u.shieldRaised ) return false;
   if ( r.resource ) return (u.resources[r.resource] ?? 0) >= (r.amount ?? 1);
   if ( Number.isFinite(r.uses) ) return (u.reactionUses?.[r.id] ?? r.uses) > 0;
@@ -52,7 +67,7 @@ function ready(run, u, r) {
 }
 
 function pay(u, r) {
-  u.reactionsLeft -= 1;
+  if ( !r.free ) u.reactionsLeft -= 1;
   if ( r.resource ) u.resources[r.resource] -= (r.amount ?? 1);
   else if ( Number.isFinite(r.uses) ) (u.reactionUses ??= {})[r.id] = (u.reactionUses[r.id] ?? r.uses) - 1;
 }
@@ -67,7 +82,7 @@ const near = (run, u, other, r) => {
  * Does u react to this? The first of its reactions for the trigger that's worth it, paid for; or null.
  * @param {object} run
  * @param {object} u          the one reacting
- * @param {string} trigger    "attacked" | "hit" | "missed" | "damaged" | "spell"
+ * @param {string} trigger    "attacked" | "hit" | "missed" | "damaged" | "allyHit" | "spell" | "allyTargeted" | "wouldDrop" | "slain"
  * @param {object} ctx        {by, action, roll, ac, crit, damage (expected), types (damage types), spell}
  */
 export function respond(run, u, trigger, ctx) {
@@ -76,13 +91,13 @@ export function respond(run, u, trigger, ctx) {
   const tier = liveTier(run, u);
   const careless = tier <= TACTICAL.FERAL;
   for ( const r of list ) {
-    if ( r.on !== trigger || !ready(run, u, r) ) continue;
+    if ( !answersTo(r, trigger) || !ready(run, u, r, trigger) ) continue;
     if ( r.melee && !ctx.action?.melee ) continue;
     if ( r.ranged && ctx.action?.melee ) continue;
     if ( r.physical && !(ctx.types ?? []).some(t => PHYSICAL.has(t)) ) continue;
-    if ( trigger === "allyHit" ) {
+    if ( trigger === "allyHit" || trigger === "allyTargeted" ) {
       if ( !ctx.ally || !near(run, u, ctx.ally, r) || !perceives(run, u, ctx.ally) || refusesToHelp(run, u, ctx.ally) ) continue;
-    } else {
+    } else if ( !SELF.has(trigger) ) {
       if ( ctx.by && !near(run, u, ctx.by, r) ) continue;
       if ( ctx.by && trigger !== "hit" && trigger !== "attacked" && !perceives(run, u, ctx.by) ) continue;
     }
@@ -103,8 +118,14 @@ function worthOf(run, u, r, trigger, ctx) {
   const expected = Math.max(0, ctx.damage ?? 0);
   switch ( trigger ) {
     case "attacked":
+    case "allyTargeted":
       // A bonus to AC against one attack: about a tenth of the blow per point.
       return (r.ac ?? 0) * 0.1 * Math.max(1, expected);
+    case "wouldDrop":
+      // Still standing: worth a good part of a fight.
+      return r.stayUp ? Math.max(5, (u.maxHp ?? 10) * 0.5) : 0;
+    case "slain":
+      return (r.areaBurst?.damage ?? []).reduce((s, p) => s + Math.max(0, meanPart(p)), 0) * (r.areaBurst?.save ? 0.65 : 1);
     case "hit": {
       let w = 0;
       // A bonus to AC that turns this hit into a miss (not a natural 20), and keeps helping until its next turn.

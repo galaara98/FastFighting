@@ -136,7 +136,11 @@ export function pcTurnBegin(run, id) {
   u.disengaged = false;
 }
 
-/** A player's turn ends: what was read of it, the sheets, the GM's facts (pcTurn's), and what comes after a turn. */
+/**
+ * A player's turn ends: what was read of it, the sheets, the GM's facts (pcTurn's), and what comes after a turn.
+ * Returns {events, ended, changes, synced}: `synced` everyone as the sheets had them, before what the engine made of
+ * the turn (a death burst, a fact's consequences), for the sheets to be told.
+ */
 export function pcTurnEnd(run, id, events = [], states = null, facts = []) {
   const u = run.byId.get(id);
   if ( !u ) throw new Error(`No creature ${id} in this battle`);
@@ -146,6 +150,8 @@ export function pcTurnEnd(run, id, events = [], states = null, facts = []) {
   // (A spotlight system's hand-off, as the roll read says: Daggerheart's roll with Fear, or one that failed.)
   if ( events.some(e => e.handoff) ) u.handoff = true;
   const changes = states ? syncFromSheets(run, states) : [];
+  // (Everyone as the sheets now have them: what the engine makes of the turn from here, a death burst, is its own.)
+  const synced = captureAll(run);
   for ( const f of facts ) applyFact(run, f);
   for ( const c of changes ) {
     const t = run.byId.get(c.id);
@@ -154,7 +160,7 @@ export function pcTurnEnd(run, id, events = [], states = null, facts = []) {
   tickEffects(run, u);
   u.turnsTaken += 1;
   const ended = afterTurn(run, u);
-  return { events: run.log.slice(from), ended, changes };
+  return { events: run.log.slice(from), ended, changes, synced };
 }
 
 /** Whose turn it was last, and when each had one (a spotlight system's next turn goes by it). */

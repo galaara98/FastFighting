@@ -4,6 +4,9 @@
  * One idea for every system that has them; the system's rules decide the rest:
  *   rules.opportunity(reactor, mover)  the melee strike the reactor makes, or null if it can't (in PF2e only some
  *                                      creatures can; in 5e anyone with a melee attack)
+ *   rules.opportunityOn                the moments it answers, from the master list (default ["foeLeavesReach"]; PF2e's
+ *                                      Reactive Strike also "foeOpening", a ranged attack or a manipulate action in
+ *                                      reach, and "foeMovesInReach", standing up there)
  *   rules.reactions(u)                 reactions a round (default 1), regained at the start of the creature's turn
  *   rules.disengage(u)                 how to leave safely, {cost, label, check?} (5e Disengage, PF2e Step; check:
  *                                      {mod, dc, dcMany}, a roll it has to make, harder against several foes: XCC's
@@ -25,12 +28,13 @@ export function reactionsPerRound(rules, u) {
 }
 
 /**
- * Foes beside u that would strike as it walks away (all but `keep`, the one it's walking toward), each with the
- * strike it would make.
+ * Foes beside u that would strike as it walks away (all but `keep`, the one it's walking toward), or at another
+ * moment the system's opportunity strikes answer (`trigger`), each with the strike it would make.
  */
-export function threats(run, u, keep = null) {
+export function threats(run, u, keep = null, trigger = "foeLeavesReach") {
   const rules = run.prep.rules;
   if ( !rules.opportunity || !run.prep.options.positioning ) return [];
+  if ( !(rules.opportunityOn ?? ["foeLeavesReach"]).includes(trigger) ) return [];
   const out = [];
   for ( const { e, d } of nearbyFoes(run, u) ) {
     if ( e === keep || !e.active || !isStanding(e) || (e.reactionsLeft ?? 0) <= 0 || e.conds.incapacitated ) continue;

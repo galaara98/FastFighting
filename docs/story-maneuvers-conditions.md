@@ -2,6 +2,8 @@
 
 This is a working master list for the FastFighting story core. A **maneuver** is something a creature does. A **condition** is something a creature is. Each system helper maps its own terms onto one master id, so the story can say "Valeros trips the goblin" or "the goblin is frightened" without game words.
 
+Reactions have a master list of their own: the moments they answer and what they do, in `reaction-triggers.md`.
+
 **Scope.** The list leaves out things other parts of the module already tell: attacks of every kind (Strike, Clash, Area Fire, Auto-Fire, Reactive Strike/opportunity attacks, breath weapons, Rend, End the Fight, Take Decisive Action, Battle), spellcasting, damage and hit points, and vehicles and starships. Class features are only listed when they are the usual way a system does something everyone does (rage, hunter's mark, aim).
 
 **Reading the tables.**

@@ -259,7 +259,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "27781a391254"
+   "hash": "27781a391254",
+   "gone": "2026-10-14"
   },
   "core:code:scripts/foundry/live-battle.js:playTurn#1": {
    "repo": "core",
@@ -290,6 +291,16 @@
    "date": null,
    "commit": null,
    "hash": "1c4f5726f8f8"
+  },
+  "core:code:scripts/foundry/live-battle.js:writeChanges#1": {
+   "repo": "core",
+   "file": "scripts/foundry/live-battle.js",
+   "key": "scripts/foundry/live-battle.js:writeChanges#1",
+   "area": "core/code",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "e636ef347dd7"
   },
   "core:code:scripts/foundry/make-it-so.js:commitFight#1": {
    "repo": "core",
@@ -3499,6 +3510,16 @@
    "commit": null,
    "hash": "c934451d8510"
   },
+  "core:FASTFIGHTING.Live.Trigger.allyTargeted": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Live.Trigger.allyTargeted",
+   "area": "core/Live",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "c69b796eb46d"
+  },
   "core:FASTFIGHTING.Live.Trigger.attacked": {
    "repo": "core",
    "file": "languages/en.json",
@@ -3518,6 +3539,26 @@
    "date": null,
    "commit": null,
    "hash": "5a2e80cf1d8e"
+  },
+  "core:FASTFIGHTING.Live.Trigger.foeMovesInReach": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Live.Trigger.foeMovesInReach",
+   "area": "core/Live",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "a30aa0138c25"
+  },
+  "core:FASTFIGHTING.Live.Trigger.foeOpening": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Live.Trigger.foeOpening",
+   "area": "core/Live",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "468e67092ff1"
   },
   "core:FASTFIGHTING.Live.Trigger.hit": {
    "repo": "core",
@@ -3549,6 +3590,16 @@
    "commit": null,
    "hash": "08032707f5fd"
   },
+  "core:FASTFIGHTING.Live.Trigger.slain": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Live.Trigger.slain",
+   "area": "core/Live",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "f375d4081c92"
+  },
   "core:FASTFIGHTING.Live.Trigger.spell": {
    "repo": "core",
    "file": "languages/en.json",
@@ -3558,6 +3609,16 @@
    "date": null,
    "commit": null,
    "hash": "5ec350b8d4bc"
+  },
+  "core:FASTFIGHTING.Live.Trigger.wouldDrop": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Live.Trigger.wouldDrop",
+   "area": "core/Live",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "2c70e071b11a"
   },
   "core:FASTFIGHTING.Live.Would": {
    "repo": "core",
@@ -15403,6 +15464,26 @@
    "commit": null,
    "hash": "e969f85c47ca"
   },
+  "core:FASTFIGHTING.Story.Part.opportunityOpening": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Story.Part.opportunityOpening",
+   "area": "core/Story",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "29bd065fd639"
+  },
+  "core:FASTFIGHTING.Story.Part.opportunityStand": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Story.Part.opportunityStand",
+   "area": "core/Story",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "cc5a8354f11d"
+  },
   "core:FASTFIGHTING.Story.Part.outOfAmmo": {
    "repo": "core",
    "file": "languages/en.json",
@@ -15734,6 +15815,16 @@
    "hash": "3f0b51a2492f",
    "gone": "2026-10-13"
   },
+  "core:FASTFIGHTING.Story.Part.reactAllyTargeted": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Story.Part.reactAllyTargeted",
+   "area": "core/Story",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "e8bb0e4e7583"
+  },
   "core:FASTFIGHTING.Story.Part.reactAttacked": {
    "repo": "core",
    "file": "languages/en.json",
@@ -15773,6 +15864,26 @@
    "date": null,
    "commit": null,
    "hash": "c5e403b69b49"
+  },
+  "core:FASTFIGHTING.Story.Part.reactSlain": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Story.Part.reactSlain",
+   "area": "core/Story",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "6b451e8f39c9"
+  },
+  "core:FASTFIGHTING.Story.Part.reactWouldDrop": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Story.Part.reactWouldDrop",
+   "area": "core/Story",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "0227e6c6ef78"
   },
   "core:FASTFIGHTING.Story.Part.ready": {
    "repo": "core",
@@ -30732,6 +30843,26 @@
    "hash": "c67ca28eb168",
    "changed": true
   },
+  "core:story:event.opportunityOpening": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "event.opportunityOpening",
+   "area": "core/story.event",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "56c523c51450"
+  },
+  "core:story:event.opportunityStand": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "event.opportunityStand",
+   "area": "core/story.event",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "9bde80527533"
+  },
   "core:story:event.paidKept": {
    "repo": "core",
    "file": "story/en.json",
@@ -30864,6 +30995,16 @@
    "commit": null,
    "hash": "3dc5b7b5bff6"
   },
+  "core:story:event.reactAllyTargeted": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "event.reactAllyTargeted",
+   "area": "core/story.event",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "507594808cfb"
+  },
   "core:story:event.reactAttacked": {
    "repo": "core",
    "file": "story/en.json",
@@ -30904,6 +31045,26 @@
    "commit": null,
    "hash": "7f211bcf009e",
    "changed": true
+  },
+  "core:story:event.reactSlain": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "event.reactSlain",
+   "area": "core/story.event",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "e7ac69b9befe"
+  },
+  "core:story:event.reactWouldDrop": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "event.reactWouldDrop",
+   "area": "core/story.event",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "bbd27d1e854b"
   },
   "core:story:event.reckless": {
    "repo": "core",

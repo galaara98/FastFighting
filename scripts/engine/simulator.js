@@ -41,7 +41,7 @@ import { reactionsPerRound, threats, takesSafeWay } from "./behavior/reactions.j
 import { isNeutral, crossed, caughtInArea, refreshLeans, truceWith, truceBreaks, turnOn, settleTruce, peaceDesires, seemsFoe, meddling, inFray, fighting, dislikesViolence, annoyedBy, ANNOYED } from "./behavior/neutral.js";
 import { normalizeCost } from "./turn.js";
 import { localize } from "../i18n.js";
-import { maneuverOf } from "../story/master.js";
+import { maneuverOf, answersTo } from "../story/master.js";
 
 const MAX_STEPS_PER_TURN = 8;
 /** After the last blow, how long the winners keep tending the dying (ten minutes of rounds, at most). */
@@ -428,7 +428,7 @@ export function noteHarm(run, source, target, harm) {
  * Someone fallen (down, dead or beaten, as the system has it already): when and by whom, its grabs let go, its
  * friends who see it want the one who did it, the fall is told, and the system says what it sets off.
  */
-export function noteFall(run, target, source) {
+export function noteFall(run, target, source, action = null) {
   target.fellRound ??= run.round;
   target.killerId = source?.id ?? target.killerId ?? null;
   run.firstFallen ??= target.id;
@@ -444,6 +444,7 @@ export function noteFall(run, target, source) {
     note: takeFallNote(target)
   });
   fell(run, target, source);
+  deathThroes(run, target, source, action);
 }
 
 function dealDamage(run, source, target, amount, { crit = false, types = null, action = null, lingering = false } = {}) {
@@ -461,6 +462,7 @@ function dealDamage(run, source, target, amount, { crit = false, types = null, a
     const dealt = Math.min(rest, target.hp);
     target.hp -= rest;
     if ( target.hp <= 0 && holdsOn(run, target, rest, crit, types) ) target.hp = 1;
+    else if ( target.hp <= 0 ) clingsOn(run, target, source, action, rest, crit, types);
     noteHarm(run, source, target, dealt + absorbed + winded);
     if ( target.hp <= 0 ) {
       target.hp = 0;
@@ -471,7 +473,7 @@ function dealDamage(run, source, target, amount, { crit = false, types = null, a
       regenerating(target);
     }
     // (Still up at 0, by the system's rules: Ironsworn characters fight on at 0 health.)
-    if ( target.hp <= 0 && target.status !== STATUS.STANDING ) noteFall(run, target, source);
+    if ( target.hp <= 0 && target.status !== STATUS.STANDING ) noteFall(run, target, source, action);
     // One track for many (Ironsworn's encounter objective, every foe part of it): what one takes, all of them take.
     if ( sharedOf(target) ) shareHarm(run, source, target);
     testConcentration(run, target, rest + absorbed);
@@ -488,6 +490,7 @@ function dealDamage(run, source, target, amount, { crit = false, types = null, a
         run.firstFallen ??= target.id;
         releaseGrabs(run, target);
         fell(run, target, source);
+        deathThroes(run, target, source, action);
       }
     }
     // Someone taking no side who was hurt, or who saw someone it wants safe hurt, takes note.
@@ -501,6 +504,52 @@ function dealDamage(run, source, target, amount, { crit = false, types = null, a
     const dead = target.status === STATUS.DEAD;
     if ( dead ) target.killerId = source?.id ?? target.killerId ?? null;
     log(run, target, { type: dead ? "death" : "struckDown", by: source?.spec.name ?? null, byId: source?.id ?? null, dying: target.dying, finished: dead, lingering: lingering || undefined, note: takeFallNote(target) });
+  }
+}
+
+/**
+ * A blow that would drop it, a reaction may keep it up (PF2e Orc Ferocity, 5e Relentless Endurance: stayUp {hp,
+ * wounded}): at that many hit points (1), wounded the more.
+ */
+function clingsOn(run, u, by, action, amount, crit, types) {
+  if ( !u.spec.reactions?.some(r => answersTo(r, "wouldDrop")) ) return;
+  const r = respond(run, u, "wouldDrop", { by, action, damage: amount, crit, types });
+  if ( !r?.stayUp ) return;
+  u.hp = Math.max(1, Number(r.stayUp.hp) || 1);
+  if ( Number(r.stayUp.wounded) > 0 ) u.wounded = (u.wounded ?? 0) + Number(r.stayUp.wounded);
+  logReaction(run, u, by ?? u, r, "wouldDrop");
+}
+
+/**
+ * Taken out, it may answer on its way down (5e Death Burst: areaBurst {damage, save, range}, at everyone within
+ * range, a save for half). Once.
+ */
+function deathThroes(run, u, by, action = null) {
+  if ( u.throes || !u.spec.reactions?.some(r => answersTo(r, "slain")) ) return;
+  u.throes = true;
+  const r = respond(run, u, "slain", { by });
+  const burst = r?.areaBurst;
+  if ( !burst?.damage?.length ) return;
+  logReaction(run, u, by ?? u, r, "slain");
+  const rules = run.prep.rules;
+  const range = Number(burst.range) || 5;
+  for ( const t of run.units ) {
+    if ( t === u || !isUp(t) ) continue;
+    // (Beside it: engaged, or the one whose blow felled it up close, or on the map within range.)
+    const d = u.adjacent.has(t.id) || (t === by && action?.melee) ? 0 : edgeDistance(u, t);
+    if ( d === null || d > range + 0.5 ) continue;
+    let mult = 1;
+    let roll = null;
+    if ( burst.save ) {
+      roll = rollSave(run, t, burst.save.type, burst.save.dc, { stakes: 0.3, label: r.label }).roll;
+      mult = saveMultiplier(rules, roll.degree, { basic: burst.save.basic !== false });
+    }
+    if ( mult <= 0 ) continue;
+    const hit = rollHit(run, u, { id: `reaction:${r.id}`, damage: burst.damage }, t, burst.damage, mult, false);
+    if ( run.log ) log(run, u, {
+      type: "auto", action: r.label, actionKind: "auto", damageType: burst.damage[0]?.type ?? "untyped", target: t.spec.name, targetId: t.id, damage: hit.total, reaction: true
+    });
+    hit.apply();
   }
 }
 
@@ -905,6 +954,8 @@ export function strikeOutOfTurn(run, u, action, t) {
 }
 
 function executeOffense(run, u, action, t, attacksMade) {
+  // Shooting, or working a spell with its hands, in a foe's reach opens it up, where the system says so (PF2e).
+  if ( ((action.range && !action.melee) || action.traits?.includes?.("manipulate")) && !provoke(run, u, "foeOpening") ) return;
   if ( counterspelled(run, u, action) ) {
     run.blood = true;
     return;
@@ -1010,6 +1061,19 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
     // Reactions to the attack itself are settled before its dice, but told after it: an answer to what was done.
     const answers = [];
     const tellAnswers = () => { for ( const tell of answers.splice(0) ) tell(); };
+    // A friend close by covers it (5e Protection, Shield of the Cavalier): a bonus to its defense against this attack.
+    if ( run.wardens && target !== u ) {
+      const expected = meanDamageVs(run, action, target).normal;
+      for ( const g of run.units ) {
+        if ( g === target || g === u || g.side !== target.side || !g.spec.reactions?.some(x => answersTo(x, "allyTargeted")) ) continue;
+        const cover = respond(run, g, "allyTargeted", { by: u, ally: target, action, damage: expected });
+        if ( cover?.ac ) {
+          ac += cover.ac;
+          answers.push(() => logReaction(run, g, u, cover, "allyTargeted"));
+          break;
+        }
+      }
+    }
     // Seeing it coming (PF2e Nimble Dodge): a bonus to AC against this attack.
     if ( target.spec.reactions && target !== u ) {
       const dodge = respond(run, target, "attacked", { by: u, action, damage: meanDamageVs(run, action, target).normal });
@@ -1062,7 +1126,7 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
       const types = (action.damage ?? []).map(p => p.type);
       const expected = meanDamageVs(run, action, target)[roll.degree === 3 ? "critical" : "normal"];
       for ( const g of run.units ) {
-        if ( g === target || g === u || g.side !== target.side || !g.spec.reactions?.some(x => x.on === "allyHit") ) continue;
+        if ( g === target || g === u || g.side !== target.side || !g.spec.reactions?.some(x => answersTo(x, "allyHit")) ) continue;
         const r2 = respond(run, g, "allyHit", { by: u, ally: target, action, crit: roll.degree === 3, damage: expected, types });
         if ( r2 ) {
           guard = { g, r: r2 };
@@ -1634,6 +1698,24 @@ export function noteHeal(run, u, target, healed, revived, { action = "", potion 
  */
 /** The reaction every creature with an opportunity strike has (PF2e Reactive Strike, 5e Opportunity Attack), by its id. */
 export const OPPORTUNITY = "opportunity";
+
+/**
+ * u does something in a foe's reach that opens it up, where the system's opportunity strikes answer it
+ * (rules.opportunityOn: "foeOpening", a ranged attack or a manipulate action; "foeMovesInReach", standing up): each foe
+ * that can strikes. Returns false if u didn't come through it standing.
+ */
+function provoke(run, u, trigger) {
+  if ( !run.prep.rules.opportunityOn?.includes(trigger) ) return true;
+  for ( const { e, strike } of threats(run, u, null, trigger) ) {
+    if ( !isStanding(u) || battleOver(run) ) break;
+    // (In a live battle the player, or the GM, may say otherwise: engine/live.js.)
+    if ( run.live && !run.live.decide(run, e, { reaction: { id: OPPORTUNITY, label: strike.name }, trigger, by: u, would: true }) ) continue;
+    e.reactionsLeft -= 1;
+    log(run, e, { type: "opportunity", target: u.spec.name, targetId: u.id, action: strike.name, trigger });
+    executeOffense(run, e, strike, u, 0);
+  }
+  return isStanding(u);
+}
 
 function leaveReach(run, u, turn, keep = null, need = null) {
   const list = u.disengaged ? [] : threats(run, u, keep);
@@ -2393,6 +2475,8 @@ export function takeTurn(run, u) {
     const stand = rules.standCost ? rules.standCost(u) : basic;
     if ( turn.canAfford(stand) ) {
       turn.spend(stand);
+      // (Getting up in a foe's reach may draw a strike: PF2e.)
+      if ( !provoke(run, u, "foeMovesInReach") ) return;
       u.prone = false;
       log(run, u, { type: "stand" });
     }

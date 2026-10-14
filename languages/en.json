@@ -1141,6 +1141,9 @@
         "reactAttacked": "React Attacked",
         "reactMissed": "React Missed",
         "reactDamaged": "React Damaged",
+        "reactAllyTargeted": "React Ally Targeted",
+        "reactWouldDrop": "React Would Drop",
+        "reactSlain": "React Slain",
         "counterTakes": "Counter Takes",
         "counterFails": "Counter Fails",
         "summonOne": "Summon One",
@@ -1197,6 +1200,8 @@
         "afflictionSaveFail": "Affliction Save Fail",
         "afflictionSavePass": "Affliction Save Pass",
         "opportunity": "Opportunity",
+        "opportunityOpening": "Opportunity Opening",
+        "opportunityStand": "Opportunity Stand",
         "thoughtTwo": "Thought Two",
         "thoughtOne": "Thought One",
         "moveDoor": "Move Door",
@@ -2009,7 +2014,12 @@
         "damaged": "Hurt by {by}.",
         "allyHit": "{by} hit {ally}.",
         "spell": "{by} casts a spell.",
-        "leaveReach": "{by} is leaving their reach."
+        "leaveReach": "{by} is leaving their reach.",
+        "foeOpening": "{by} lowers their guard within reach.",
+        "foeMovesInReach": "{by} moves within reach.",
+        "allyTargeted": "{by} attacks {ally}.",
+        "wouldDrop": "This blow would drop them.",
+        "slain": "They are going down."
       },
       "NotHere": "That battle isn't being played in this browser."
     },
