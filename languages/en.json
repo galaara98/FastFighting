@@ -2023,8 +2023,11 @@
         "ready": "Ready to play",
         "waiting": "Told: waiting for Continue",
         "player": "The player is acting",
-        "ended": "The battle is over"
+        "ended": "The battle is over",
+        "spotlight": "No one has the spotlight"
       },
+      "Spotlight": "Spotlight {name}",
+      "SpotlightHint": "Give the spotlight to whoever FastFighting would pick next.",
       "PlayThrough": "Play to the end",
       "PlayThroughHint": "The turns FastFighting plays go on one after another, without waiting for Continue.",
       "NpcAsk": "Ask me about NPC reactions",

@@ -251,6 +251,41 @@ export class SystemAdapter {
   }
 
   /**
+   * How a live battle's turns come: "initiative" (the tracker's order, Next Turn) or "spotlight" (no initiative: the GM
+   * gives the spotlight to whoever acts, as Daggerheart's tracker does; FastFighting can suggest whom).
+   */
+  get liveTurns() {
+    return "initiative";
+  }
+
+  /**
+   * A spotlight system: the spotlight given to a combatant, or handed back (null), the system's own way (its tracker may
+   * do more than set the turn). By default, the combat's turn set to it, or cleared.
+   * @param {Combat} combat
+   * @param {Combatant|null} combatant
+   */
+  async giveSpotlight(combat, combatant) {
+    const at = combatant ? combat.turns.findIndex(c => c.id === combatant.id) : -1;
+    return combat.update({ turn: at >= 0 ? at : null });
+  }
+
+  /**
+   * Pools the world keeps for everyone, not on any sheet (Daggerheart's Fear), as they stand now: {key: n} for the
+   * engine's shared pools, read before each turn it plays. Null: none.
+   */
+  livePools() {
+    return null;
+  }
+
+  /**
+   * What one live turn did to what the encounter keeps beyond each token (Daggerheart's Fear): written, with undo
+   * records returned. `before`, `after`: every creature as the turn found and left it (captureUnit's shape).
+   */
+  async commitTurn(before, after, options) {
+    return [];
+  }
+
+  /**
    * What the system already does itself for the creatures FastFighting plays, so the engine leaves it be: {recovery,
    * persistent, afflictions, repeatSaves}, each true or false (default: FastFighting does it all).
    */

@@ -101,6 +101,7 @@ export function liveTurn(run, id, { answers = null, salt = 0 } = {}) {
   const u = run.byId.get(id);
   if ( !u ) throw new Error(`No creature ${id} in this battle`);
   nextDice(run, salt);
+  spotlit(run, u);
   run.live.answers = new Map(answers ?? []);
   const from = run.log.length;
   const ended = playTurn(run, u);
@@ -126,6 +127,7 @@ export function pcTurnBegin(run, id) {
   const u = run.byId.get(id);
   if ( !u ) throw new Error(`No creature ${id} in this battle`);
   nextDice(run);
+  spotlit(run, u);
   noteCommand(run);
   startTurn(run, u);
   u.beingHurt = !!u.hurtSinceTurn;
@@ -141,6 +143,8 @@ export function pcTurnEnd(run, id, events = [], states = null, facts = []) {
   const from = run.log.length;
   const harmers = new Map();
   for ( const e of events ) observe(run, u, e, harmers);
+  // (A spotlight system's hand-off, as the roll read says: Daggerheart's roll with Fear, or one that failed.)
+  if ( events.some(e => e.handoff) ) u.handoff = true;
   const changes = states ? syncFromSheets(run, states) : [];
   for ( const f of facts ) applyFact(run, f);
   for ( const c of changes ) {
@@ -151,6 +155,30 @@ export function pcTurnEnd(run, id, events = [], states = null, facts = []) {
   u.turnsTaken += 1;
   const ended = afterTurn(run, u);
   return { events: run.log.slice(from), ended, changes };
+}
+
+/** Whose turn it was last, and when each had one (a spotlight system's next turn goes by it). */
+function spotlit(run, u) {
+  const spot = (run.live.spot ??= { last: null, up: {} });
+  spot.last = u.id;
+  spot.up[u.id] = run.live.seq;
+  u.handoff = false; // (a spotlight's hand-off is this turn's own)
+}
+
+/**
+ * A spotlight system's next turn (no initiative: the GM gives the spotlight): whom FastFighting would give it to, as
+ * the rules say (rules.nextSpotlight(run, {last, up}): `up` each one's last turn, by turn number), else the next able
+ * creature in order after the last to act. Null: no one.
+ */
+export function nextSpotlight(run) {
+  const spot = run.live.spot ?? { last: null, up: {} };
+  const last = spot.last ? run.byId.get(spot.last) ?? null : null;
+  const rules = run.prep.rules;
+  if ( rules.nextSpotlight ) return rules.nextSpotlight(run, { last, up: spot.up }) ?? null;
+  const able = run.order.filter(u => u.active && u.status === STATUS.STANDING);
+  if ( !able.length ) return null;
+  const at = last ? run.order.indexOf(last) : -1;
+  return able.find(u => run.order.indexOf(u) > at) ?? able[0];
 }
 
 /** An engine-only effect's rounds run down at the end of its bearer's turn (the system keeps its own conditions). */
@@ -170,7 +198,8 @@ const say = run => (unit, data) => log(run, unit, data);
 /**
  * One thing a player's character did, as the engine would have seen it: told in its own shape, and what it sets
  * going (a foe's grudge, its friends' vengeance, a neutral's view of it, a talk's persuasion). Hit points and
- * conditions come from the sheets, not from here.
+ * conditions come from the sheets, not from here. ({type: "handoff"}: a roll that told nothing but that the spotlight
+ * goes to the GM.)
  */
 export function observe(run, u, e, harmers = new Map()) {
   const t = e.targetId ? run.byId.get(e.targetId) : null;
@@ -215,6 +244,8 @@ export function observe(run, u, e, harmers = new Map()) {
       resolveTalk(run, u, pitch, { degree: clamp(Math.round(Number(e.degree) || 0), 0, 3), natural: e.natural ?? null, total: e.total ?? null }, say(run));
       return;
     }
+    case "handoff":
+      return; // (only the spotlight's hand-off: pcTurnEnd marks it)
     default:
       // (Anything else in the engine's own shape, told as it is: a move, a raised shield, a maneuver, a buff.)
       log(run, u, { ...e, ...named });

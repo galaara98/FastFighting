@@ -30,7 +30,7 @@ import { logLine } from "../story/log-lines.js";
 import { loadStoryTables } from "../story/tables.js";
 import {
   beginLive, liveRound, liveTurn, pcTurnBegin, pcTurnEnd, syncFromSheets, setApproach, captureAll, snapshotRun, restoreRun, endLive,
-  NeedsDecision, applyFact, gmMoment, leavingReach, reactNow
+  NeedsDecision, applyFact, gmMoment, leavingReach, reactNow, nextSpotlight
 } from "../engine/live.js";
 import { diffAll } from "../engine/changes.js";
 import { randomSeed } from "../engine/rng.js";
@@ -116,22 +116,25 @@ export async function startLiveBattle(spec, { style = setting("storyStyle"), odd
   if ( missing.length ) {
     await combat.createEmbeddedDocuments("Combatant", missing.map(c => ({ tokenId: c.tokenId ?? c.id, sceneId: scene.id, actorId: scene.tokens.get(c.tokenId ?? c.id)?.actorId })));
   }
-  // (Rolled straight away: no system's roll dialog for each one. Rewind This Encounter takes them back.)
-  const unrolled = combat.combatants.filter(c => c.initiative === null).map(c => c.id);
+  // (Rolled straight away: no system's roll dialog for each one. Rewind This Encounter takes them back. A spotlight
+  // system rolls none: whoever the GM spotlights acts.)
+  const adapter = getAdapter();
+  const spotlight = adapter.liveTurns === "spotlight";
+  const unrolled = spotlight ? [] : combat.combatants.filter(c => c.initiative === null).map(c => c.id);
   if ( unrolled.length ) await combat.rollInitiative(unrolled, { skipDialog: true });
   const started = !combat.started;
   if ( started ) await combat.startCombat();
+  if ( spotlight && combat.turn !== null ) await adapter.giveSpotlight(combat, null);
   const order = combat.turns.map(c => c.tokenId);
   const seed = randomSeed();
   const live = { ...spec, options: { ...spec.options, initiativeOrder: order } };
-  const adapter = getAdapter();
   const run = beginLive(live, adapter.rules, { seed, players, owns: adapter.liveOwnership?.() ?? {}, npcReactions: "calculated" });
   liveRound(run, combat.round || 1);
   battle = {
     combat, scene, spec: live, rules: adapter.rules, run, busy: null, pc: null,
     data: {
       id: foundry.utils.randomID(), user: game.user.id, spec: packSpec(live), seed, style, odds, players, told: 0, turns: [], first: snapshotRun(run),
-      ended: false, played: null, opening: [], rolled: unrolled, startedCombat: started
+      ended: false, played: null, opening: [], rolled: unrolled, startedCombat: started, spotlight, spots: 0
     }
   };
   await combat.setFlag(MODULE_ID, "live", { id: battle.data.id, active: true });
@@ -164,9 +167,65 @@ function onTurnChange(combat, prior, current) {
   if ( !battle || battle.combat !== combat || battle.data.ended || !runsHere(battle.data) ) return;
   queue(async () => {
     if ( battle.pc && battle.pc.combatantId !== combat.combatant?.id ) await closePlayerTurn();
-    if ( combat.round > (battle.run.round ?? 0) ) await newRound(combat.round);
+    if ( battle.data.spotlight ) await spotlightMoved(combat, prior);
+    else if ( combat.round > (battle.run.round ?? 0) ) await newRound(combat.round);
     await turnBegins(combat.combatant);
   });
+}
+
+/**
+ * A spotlight system (no initiative, no rounds on the tracker): each spotlight given is a turn of its own, and a player
+ * character given it again after the others had theirs begins a new round.
+ */
+async function spotlightMoved(combat, prior) {
+  const c = combat.combatant;
+  if ( !c || prior?.combatantId === c.id ) return;
+  battle.data.spots = (battle.data.spots ?? 0) + 1;
+  const u = unitOf(c);
+  if ( u?.spec.kind !== "pc" ) return;
+  const spot = (battle.run.live.spot ??= { last: null, up: {} });
+  spot.had ??= [];
+  if ( spot.had.includes(u.id) ) {
+    spot.had = [];
+    await newRound((battle.run.round ?? 1) + 1);
+  }
+  spot.had.push(u.id);
+}
+
+/** A turn's key: its round and combatant (a spotlight system's: which spotlight it is). */
+const turnKey = combatant => `${battle.data.spotlight ? `s${battle.data.spots ?? 0}` : battle.combat.round}.${combatant?.id}`;
+
+/**
+ * On to the next turn: the tracker's next; a spotlight system's spotlight handed back for the GM to give (or, with
+ * Play to the end and FastFighting playing everyone, given where FastFighting would give it).
+ */
+function moveOn() {
+  if ( !battle.data.spotlight ) return battle.combat.nextTurn();
+  if ( battle.data.auto && !battle.run.live.players.size ) return spotlightNext();
+  return getAdapter().giveSpotlight(battle.combat, null);
+}
+
+/** A spotlight system: the spotlight given where FastFighting would give it (engine/live.js nextSpotlight). */
+export async function spotlightNext() {
+  if ( !battle || battle.data.ended ) return null;
+  const u = nextSpotlight(battle.run);
+  const combatant = u ? battle.combat.combatants.find(c => c.tokenId === (u.spec.tokenId ?? u.id)) : null;
+  if ( !combatant ) return null;
+  const adapter = getAdapter();
+  // (The one who has it already: handed back first, then given again, a turn of its own.)
+  if ( battle.combat.combatant?.id === combatant.id ) await adapter.giveSpotlight(battle.combat, null);
+  return adapter.giveSpotlight(battle.combat, combatant);
+}
+
+/** Whether the turn the tracker is on has been played, and waits for the GM's Continue. */
+export function waitingOnGm() {
+  return !!battle?.combat.combatant && battle.data.played === turnKey(battle.combat.combatant);
+}
+
+/** Whom FastFighting would spotlight next, for the Battle Interface (a spotlight system's), or null. */
+export function suggestedSpotlight() {
+  if ( !battle?.data.spotlight || battle.data.ended ) return null;
+  return nextSpotlight(battle.run);
 }
 
 /** Out of the fight for good: no turn to play. */
@@ -178,11 +237,11 @@ const unitOf = combatant => (combatant ? battle.run.byId.get(combatant.tokenId) 
 async function turnBegins(combatant) {
   const u = unitOf(combatant);
   if ( !u || battle.data.ended ) return;
-  const key = `${battle.combat.round}.${combatant.id}`;
+  const key = turnKey(combatant);
   if ( battle.data.played === key ) return; // (played already: waiting on the GM)
   if ( GONE.has(u.status) ) {
     battle.data.played = key;
-    await battle.combat.nextTurn();
+    await moveOn();
     return;
   }
   if ( battle.run.live.players.has(u.id) ) {
@@ -212,7 +271,7 @@ async function newRound(round) {
       const doc = battle.scene.tokens.get(u.spec.tokenId ?? u.id);
       if ( doc && !battle.combat.combatants.some(c => c.tokenId === doc.id) ) {
         const [c] = await battle.combat.createEmbeddedDocuments("Combatant", [{ tokenId: doc.id, sceneId: battle.scene.id, actorId: doc.actorId }]);
-        if ( c ) await battle.combat.rollInitiative([c.id]);
+        if ( c && !battle.data.spotlight ) await battle.combat.rollInitiative([c.id]);
       }
     }
   }
@@ -242,6 +301,12 @@ async function readStates() {
   return out;
 }
 
+/** The pools the world keeps for everyone (Daggerheart's Fear), as they stand now: the engine draws on them. */
+function syncPools(adapter) {
+  const pools = adapter.livePools?.();
+  if ( pools ) Object.assign(battle.run.sharedPools, pools);
+}
+
 /** How everyone can reach everyone now they've moved. */
 function refreshApproach() {
   const roster = battle.run.units.map(u => ({ token: docOf(u.id)?.object, spec: u.spec })).filter(e => e.token);
@@ -255,6 +320,7 @@ function refreshApproach() {
 async function playTurn(u, combatant, key) {
   const adapter = getAdapter();
   syncFromSheets(battle.run, await readStates());
+  syncPools(adapter);
   refreshApproach();
   const before = captureAll(battle.run);
   const snapshot = snapshotRun(battle.run, { log: false });
@@ -302,6 +368,12 @@ async function playTurn(u, combatant, key) {
         turn.records.push(...records);
       }
     }
+    // (What the turn did to what the encounter keeps: Daggerheart's Fear.)
+    try {
+      turn.records.push(...((await adapter.commitTurn(before, after, options)) ?? []));
+    } catch ( err ) {
+      console.error(`${MODULE_ID} | writing the turn's encounter changes`, err);
+    }
     turn.messages.push(...await tellNew());
   });
   battle.data.played = key;
@@ -317,7 +389,7 @@ async function settleTurn(turn, ended) {
   }
   if ( battle.data.auto && turn.kind === "npc" ) {
     await keep();
-    battle.combat.nextTurn();
+    moveOn();
     return;
   }
   const card = await waitCard(turn);
@@ -426,9 +498,13 @@ async function closePlayerTurn() {
     console.error(`${MODULE_ID} | reading ${pc.id}'s turn`, err);
   }
   const states = await readStates();
-  events = reconcile(run, pc.id, events, states);
+  // (A spotlight's hand-off alone, nothing to tell or look at: kept aside.)
+  const handoffs = events.filter(e => e.type === "handoff");
+  events = reconcile(run, pc.id, events.filter(e => e.type !== "handoff"), states);
   // (Something it couldn't be sure of: the GM looks first. The battle waits.)
   if ( events.some(e => e.sure === false) ) events = await review(pc, events);
+  events.push(...handoffs);
+  syncPools(adapter);
   const result = pcTurnEnd(run, pc.id, events, states, pc.facts ?? []);
   const turn = { key: `${pc.round}.${pc.combatantId}`, combatantId: pc.combatantId, round: pc.round, kind: "pc", records: pc.records ?? [], messages: [], moves: [], doors: [], snapshot: pc.snapshot };
   turn.messages.push(...await tellNew());
@@ -593,7 +669,7 @@ async function finish() {
 /** Continue: the tracker moves on to the next turn. */
 export function continueBattle() {
   if ( !battle || battle.data.ended ) return null;
-  return battle.combat.nextTurn();
+  return moveOn();
 }
 
 /** Put the last turn back: what it wrote, its cards and moves, and the run as it was before it; the tracker on it again. */
@@ -708,7 +784,7 @@ export async function setPlayThrough(on) {
   if ( !battle ) return;
   battle.data.auto = !!on;
   await keep();
-  if ( on && battle.data.played === `${battle.combat.round}.${battle.combat.combatant?.id}` ) continueBattle();
+  if ( on && battle.combat.combatant && battle.data.played === turnKey(battle.combat.combatant) ) continueBattle();
 }
 
 /* -------------------------------------------- */

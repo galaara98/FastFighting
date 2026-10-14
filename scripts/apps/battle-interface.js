@@ -10,7 +10,8 @@ import { NEUTRAL_PARTY } from "../constants.js";
 import { DESIRE_BAND_KEYS } from "../engine/behavior/desire.js";
 import { mindOf, bandLevel } from "../engine/live.js";
 import {
-  liveBattle, continueBattle, rewindTurn, rewindEncounter, playCurrent, liveFact, dropHeldFact, setNpcReactions, setPlayThrough, finishReview
+  liveBattle, continueBattle, rewindTurn, rewindEncounter, playCurrent, liveFact, dropHeldFact, setNpcReactions, setPlayThrough, finishReview,
+  waitingOnGm, suggestedSpotlight, spotlightNext
 } from "../foundry/live-battle.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -51,7 +52,8 @@ export class BattleInterface extends HandlebarsApplicationMixin(ApplicationV2) {
       dropHeld: BattleInterface.#onDropHeld,
       npcReactions: BattleInterface.#onNpcReactions,
       tellIt: BattleInterface.#onTellIt,
-      playThrough: BattleInterface.#onPlayThrough
+      playThrough: BattleInterface.#onPlayThrough,
+      spotlight: BattleInterface.#onSpotlight
     }
   };
 
@@ -87,9 +89,11 @@ export class BattleInterface extends HandlebarsApplicationMixin(ApplicationV2) {
     const current = combatant ? run.byId.get(combatant.tokenId) : null;
     const name = id => run.byId.get(id)?.spec.name ?? "";
     const sideLabel = side => b.spec.sides?.[side]?.label ?? (game.i18n.has(`FASTFIGHTING.Side.${side}`) ? loc(`FASTFIGHTING.Side.${side}`) : side);
-    const played = !!current && b.data.played === `${b.combat.round}.${combatant.id}`;
+    const played = !!current && waitingOnGm();
     const player = !!current && run.live.players.has(current.id);
-    const state = b.data.ended ? "ended" : b.pc ? "player" : played ? "waiting" : "ready";
+    const state = b.data.ended ? "ended" : b.pc ? "player" : played ? "waiting" : b.data.spotlight && !current ? "spotlight" : "ready";
+    // (A spotlight system: whom FastFighting would give it to next.)
+    const next = state === "waiting" || state === "spotlight" ? suggestedSpotlight() : null;
     const others = run.units.map(u => ({ id: u.id, name: u.spec.name }));
     const creatures = run.units.filter(u => u.active || u.status !== "standing").map(u => {
       const mind = mindOf(run, u.id);
@@ -126,7 +130,8 @@ export class BattleInterface extends HandlebarsApplicationMixin(ApplicationV2) {
     } : null;
     return {
       review,
-      round: b.combat.round,
+      round: b.data.spotlight ? run.round : b.combat.round,
+      spotlight: next ? fmt("FASTFIGHTING.Battle.Spotlight", { name: next.spec.name }) : "",
       turn: current ? fmt(player ? "FASTFIGHTING.Battle.PlayerTurn" : "FASTFIGHTING.Battle.Turn", { name: current.spec.name }) : "",
       state, stateText: loc(`FASTFIGHTING.Battle.State.${state}`),
       canContinue: state === "waiting", canPlay: state === "ready" && !player, canRewind: b.data.turns.length > 0,
@@ -141,6 +146,10 @@ export class BattleInterface extends HandlebarsApplicationMixin(ApplicationV2) {
 
   static async #onContinue() {
     await continueBattle();
+  }
+
+  static async #onSpotlight() {
+    await spotlightNext();
   }
 
   static async #onRewind() {
