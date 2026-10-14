@@ -25,6 +25,7 @@ import {
 import { createRun, createUnit, isStanding, areEnemies, edgeDistance } from "./battle-state.js";
 import { threats } from "./behavior/reactions.js";
 import { createRng, deriveSeed } from "./rng.js";
+import { prepareDoors } from "./behavior/doors.js";
 import { recompute, applyOutcome } from "./behavior/effects.js";
 import { reactionsPerRound } from "./behavior/reactions.js";
 import { resolveTalk, applySway, aimOf, talkDC, stepsToConvince } from "./behavior/talk.js";
@@ -658,6 +659,8 @@ export function snapshotRun(run, { log = true } = {}) {
  */
 export function restoreRun(spec, rules, snap, { log = null } = {}) {
   const run = createRun(prepareBattle(spec, rules));
+  // (The scene's doors, as a fight begun has them: their states are kept with the run.)
+  run.prep.doors ??= prepareDoors(run.prep.spec, run.prep.rules);
   const called = [...(run.prep.summons?.values() ?? [])].flat();
   for ( const [id, data] of Object.entries(snap.units ?? {}) ) {
     if ( run.byId.has(id) || typeof data.summonOf !== "string" ) continue;

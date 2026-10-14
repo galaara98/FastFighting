@@ -2,6 +2,7 @@ import { describe, expect, test } from "vitest";
 import { replay } from "../scripts/engine/simulator.js";
 import { pf2eRules } from "./fixtures/three-action-rules.js";
 import { creature, strike, battle } from "./helpers.js";
+import { beginLive, liveRound, liveTurn, snapshotRun, restoreRun } from "../scripts/engine/live.js";
 import { parseFormula } from "../scripts/engine/dice.js";
 
 const at = (x, y = 0) => ({ x, y, size: 5 });
@@ -24,6 +25,20 @@ function behindDoor({ locked = true, hero = {}, decoy = false, rounds = 3 } = {}
   return spec;
 }
 const doorEvents = r => r.log.filter(e => e.type === "door" && e.actorId === "hero");
+
+describe("doors in a live battle", () => {
+  test("a turn kept and restored (a reload, a rewind) still knows the scene's doors and which are open", () => {
+    const spec = behindDoor({ locked: false });
+    const run = beginLive(spec, pf2eRules, { seed: 2 });
+    liveRound(run, 1);
+    for ( const u of run.units ) u.active = true;
+    const again = restoreRun(behindDoor({ locked: false }), pf2eRules, snapshotRun(run));
+    expect(again.prep.doors.get("d1")).toMatchObject({ x: 20, y: 0 });
+    expect(again.doors.get("d1")).toMatchObject({ open: false });
+    const { events } = liveTurn(again, "hero");
+    expect(events.some(e => e.type === "door" && e.actorId === "hero")).toBe(true);
+  });
+});
 
 describe("doors", () => {
   test("a closed door is walked to and opened, then it's on to the foe", () => {
