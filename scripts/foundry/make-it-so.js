@@ -265,6 +265,22 @@ function wallBetween(a, b) {
   }
 }
 
+/**
+ * Free grid spots beside a token (its own size), nearest first, on its side of any wall: where what it summons appears.
+ * @returns {{x: number, y: number}[]} top-left corners
+ */
+export function spotsBeside(tokenDoc, count, scene = tokenDoc.parent) {
+  const occupied = new Set();
+  for ( const t of scene.tokens ) if ( !t.hidden ) for ( const c of cellsOf(t._source.x, t._source.y, t) ) occupied.add(c);
+  const out = [];
+  for ( let i = 0; i < count; i++ ) {
+    const spot = freeSpot(tokenDoc, placeOf(tokenDoc), occupied);
+    for ( const c of cellsOf(spot.x, spot.y, tokenDoc) ) occupied.add(c);
+    out.push(spot);
+  }
+  return out;
+}
+
 /** Nearest free grid spot to `dest` (spiral search, on the same side of any wall), so tokens never end up stacked. */
 function freeSpot(tokenDoc, dest, occupied) {
   const size = canvas.dimensions.size;
@@ -693,6 +709,7 @@ export async function revertRecord(r) {
       console.error(`${MODULE_ID} | undo: ${what} failed`, r, err);
     }
   };
+  for ( const uuid of r.createdCombatants ?? [] ) await step("removing a combatant", async () => (await fromUuid(uuid))?.delete());
   for ( const uuid of r.createdTokens ?? [] ) await step("removing a token", async () => (await fromUuid(uuid))?.delete());
   for ( const uuid of r.createdActors ?? [] ) await step("removing an actor", async () => (await fromUuid(uuid))?.delete());
   for ( const t of r.deletedTokens ?? [] ) {

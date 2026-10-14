@@ -251,6 +251,39 @@ export class SystemAdapter {
   }
 
   /**
+   * A live battle: creatures a summoning called, onto the scene at `places` (top-left corners), on the summoner's side.
+   * By default each from the creature its CombatantSpec came from (spec.sourceUuid), brought into the world from its
+   * compendium if it's there (once: the same one is used again). A helper whose system summons (dnd5e) does it the
+   * system's way. Returns {tokens: [TokenDocument], records: [undo record]}, the tokens in the order of `creatures`.
+   * @param {Scene} scene
+   * @param {TokenDocument} summonerDoc
+   * @param {object} action        the summoning (an action of kind "summon")
+   * @param {object[]} creatures   their CombatantSpecs
+   * @param {{x: number, y: number}[]} places
+   */
+  async placeSummons(scene, summonerDoc, action, creatures, places) {
+    const data = [];
+    const createdActors = [];
+    for ( const [i, c] of creatures.entries() ) {
+      const source = c.sourceUuid ? await fromUuid(c.sourceUuid) : null;
+      if ( !source || !places[i] ) continue;
+      let actor = source;
+      if ( source.pack ) {
+        actor = game.actors.find(a => a._stats?.compendiumSource === source.uuid) ?? null;
+        if ( !actor ) {
+          actor = await Actor.implementation.create(game.actors.fromCompendium(source));
+          if ( actor ) createdActors.push(actor.uuid);
+        }
+      }
+      if ( !actor ) continue;
+      const token = await actor.getTokenDocument({ x: places[i].x, y: places[i].y, elevation: summonerDoc.elevation ?? 0, disposition: summonerDoc.disposition, actorLink: false });
+      data.push(token.toObject());
+    }
+    const tokens = data.length ? await scene.createEmbeddedDocuments("Token", data) : [];
+    return { tokens, records: [{ createdTokens: tokens.map(t => t.uuid), createdActors }] };
+  }
+
+  /**
    * A live battle: whether a card a player's character made is it lowering its guard in a foe's reach (a ranged attack,
    * a manipulate action), for the foes' opportunity strikes where the system's rules.opportunityOn names "foeOpening".
    * @param {ChatMessage} message

@@ -10,6 +10,8 @@
  *   sustainOrEnd   unpaid, they're gone (PF2e)
  * A summoned creature with `untargetable` (Spiritual Weapon: not a creature at all) can't be attacked and doesn't
  * keep its side in the fight. Summoned creatures aren't the table's: they're left out of the results and Make it So.
+ * In a live battle they're placed on the scene and the tracker as they're called (foundry/live-battle.js), and take
+ * turns of their own; a kept turn remembers them (summonOf), so a restored one has them again.
  * Pure: no Foundry globals.
  */
 import { STATUS, TACTICAL } from "../../constants.js";
@@ -47,8 +49,7 @@ function worthOf(run, u, action) {
  */
 export function decideSummon(run, u, turn) {
   const list = u.prep.summonActions;
-  // (A live battle has no token or turn on the tracker for what would be called: nothing is, for now.)
-  if ( !list?.length || run.live || liveTier(run, u) <= TACTICAL.FERAL ) return null;
+  if ( !list?.length || liveTier(run, u) <= TACTICAL.FERAL ) return null;
   const rules = run.prep.rules;
   const baseline = offenseBaseline(run, u);
   let best = null;
@@ -74,6 +75,7 @@ export function callSummons(run, u, action) {
     if ( run.byId.has(s.id) ) s.id = `${s.id}#${run.calls}`;
     s.summoner = u.id;
     s.summonedBy = action.id;
+    s.summonOf = p.spec.id; // (which of the summoning's creatures: a live battle kept and restored makes it again)
     s.expires = action.rounds ? run.round + action.rounds : null;
     s.joinedRound = run.round;
     s.sustainedRound = run.round; // the round it's called, it acts

@@ -4,7 +4,7 @@ import { parseFormula } from "../scripts/engine/dice.js";
 import { pf2eRules } from "./fixtures/three-action-rules.js";
 import { creature, strike, battle } from "./helpers.js";
 import { sustainSummons } from "../scripts/engine/behavior/summons.js";
-import { beginLive, liveRound, liveTurn } from "../scripts/engine/live.js";
+import { beginLive, liveRound, liveTurn, snapshotRun, restoreRun } from "../scripts/engine/live.js";
 
 const traits = (tactical = 70) => ({ tactical: { base: tactical, fudge: 0 }, brave: { base: 95, fudge: 0 }, selfish: { base: 20, fudge: 0 }, loyal: { base: 60, fudge: 0 } });
 const wolf = { name: "Summoned Wolf", level: 1, hp: { value: 18, max: 18 }, defenses: { ac: 15, fortitude: 6, reflex: 7, will: 4 }, initiative: { mod: 5 }, speeds: { walk: 35 },
@@ -15,21 +15,35 @@ const ogre = (extra = {}) => creature({ id: "ogre", side: "hostile", hp: { value
   actions: [strike({ id: "club", name: "Club", bonus: 10, damage: [parseFormula("2d8+5", "bludgeoning")] })], flags: { fearless: true }, traits: traits(40), ...extra });
 
 describe("summoning", () => {
-  test("not in a live battle (no token or turn on the tracker for what it would call): the summoner does something else", () => {
+  test("in a live battle: called on the summoner's turn, kept with the turn and made again when it's restored, acting on turns of their own", () => {
     const summon = { id: "summon-animal", name: "Summon Animal", kind: "summon", cost: 3, resource: "slot", creatures: [wolf, wolf], rounds: 10 };
     const npc = creature({ id: "druid", side: "hostile", hp: { value: 200, max: 200 }, traits: traits(70), resources: { slot: 2 },
       actions: [strike({ id: "staff", name: "Staff", bonus: 4, damage: [parseFormula("1d4", "bludgeoning")] }), summon] });
     const hero = ogre({ id: "hero", side: "friendly", kind: "pc" });
-    // (Simulated, the same druid calls them.)
-    expect([1, 2, 3].some(seed => replay(battle([npc, hero], { maxRounds: 4 }), pf2eRules, seed).log.some(e => e.type === "summon" && e.actorId === "druid"))).toBe(true);
-    for ( const seed of [1, 2, 3] ) {
-      const run = beginLive(battle([npc, hero], { maxRounds: 4 }), pf2eRules, { seed, players: ["hero"] });
+    const spec = () => battle([npc, hero], { maxRounds: 4 });
+    let called = 0;
+    for ( const seed of [1, 2, 3, 4] ) {
+      const run = beginLive(spec(), pf2eRules, { seed, players: ["hero"] });
       liveRound(run, 1);
       for ( const u of run.units ) u.active = true;
       const { events } = liveTurn(run, "druid");
-      expect(events.some(e => e.type === "summon")).toBe(false);
-      expect(run.units).toHaveLength(2);
+      const summoned = events.find(e => e.type === "summon");
+      if ( !summoned ) continue;
+      called += 1;
+      const wolves = run.units.filter(u => u.summoner === "druid");
+      expect(wolves).toHaveLength(2);
+      // (A token for each, as the battle places them.)
+      wolves.forEach((w, i) => { w.tokenId = `wolfToken${i}`; });
+      // Kept, and made again: the same wolves, still the druid's, with their tokens.
+      const again = restoreRun(spec(), pf2eRules, snapshotRun(run));
+      const back = again.units.filter(u => u.summoner === "druid");
+      expect(back.map(w => [w.id, w.tokenId, w.summonedBy, w.spec.name])).toEqual(wolves.map(w => [w.id, w.tokenId, w.summonedBy, w.spec.name]));
+      expect(again.order.map(u => u.id)).toEqual(run.order.map(u => u.id));
+      // Each takes a turn of its own.
+      const turn = liveTurn(again, back[0].id);
+      expect(turn.events.some(e => e.actorId === back[0].id)).toBe(true);
     }
+    expect(called).toBeGreaterThan(0);
   });
 
   test("the summoner calls its creatures, they act right after it, and they aren't in the results", () => {

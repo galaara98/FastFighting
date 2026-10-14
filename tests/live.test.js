@@ -244,4 +244,23 @@ describe("live battles: the engine a turn at a time", () => {
     expect(run.byId.get("orc").status).toBe(STATUS.FLED);
     expect(SWAY.SURRENDER).toBe("surrendered");
   });
+
+  test("someone joins mid-fight (a player's summons): the battle grows, everyone else as they were, the newcomer in it", () => {
+    const spec = skirmish();
+    const run = beginLive(spec, pf2eRules, { seed: 4, players: ["valeros", "kyra"] });
+    playRounds(run, 1);
+    const before = Object.fromEntries(run.units.map(u => [u.id, [u.hp, u.status]]));
+    const wolf = creature({ id: "wolfToken", name: "Wolf", kind: "npc", position: at(5, 5), hp: { value: 18, max: 18 }, tokenId: "wolfToken" });
+    const grown = { ...spec, combatants: [...spec.combatants, wolf] };
+    const again = restoreRun(grown, pf2eRules, snapshotRun(run, { log: false }), { log: run.log });
+    expect(Object.fromEntries(again.units.filter(u => u.id !== "wolfToken").map(u => [u.id, [u.hp, u.status]]))).toEqual(before);
+    const joined = again.byId.get("wolfToken");
+    expect(joined).toMatchObject({ side: "friendly", hp: 18 });
+    expect(again.live.players.has("valeros")).toBe(true);
+    // (It takes a turn like anyone.)
+    joined.active = true;
+    again.order.push(joined);
+    liveRound(again, 2);
+    expect(liveTurn(again, "wolfToken").events.some(e => e.actorId === "wolfToken")).toBe(true);
+  });
 });

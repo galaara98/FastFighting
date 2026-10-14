@@ -251,6 +251,26 @@
    "commit": null,
    "hash": "6bcada869a57"
   },
+  "core:code:scripts/foundry/live-battle.js:joinFight#1": {
+   "repo": "core",
+   "file": "scripts/foundry/live-battle.js",
+   "key": "scripts/foundry/live-battle.js:joinFight#1",
+   "area": "core/code",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "d7163ce16206"
+  },
+  "core:code:scripts/foundry/live-battle.js:placeSummons#1": {
+   "repo": "core",
+   "file": "scripts/foundry/live-battle.js",
+   "key": "scripts/foundry/live-battle.js:placeSummons#1",
+   "area": "core/code",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "2f6eb2bb3f07"
+  },
   "core:code:scripts/foundry/live-battle.js:playerMoved#1": {
    "repo": "core",
    "file": "scripts/foundry/live-battle.js",
@@ -396,7 +416,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "7b29fef3b9b8"
+   "hash": "7b29fef3b9b8",
+   "changed": true
   },
   "core:code:scripts/foundry/make-it-so.js:revertRecord#10": {
    "repo": "core",
@@ -450,6 +471,17 @@
    "status": "todo",
    "date": null,
    "commit": null,
+   "hash": "f72e346158ec",
+   "changed": true
+  },
+  "core:code:scripts/foundry/make-it-so.js:revertRecord#15": {
+   "repo": "core",
+   "file": "scripts/foundry/make-it-so.js",
+   "key": "scripts/foundry/make-it-so.js:revertRecord#15",
+   "area": "core/code",
+   "status": "todo",
+   "date": null,
+   "commit": null,
    "hash": "f72e346158ec"
   },
   "core:code:scripts/foundry/make-it-so.js:revertRecord#2": {
@@ -460,7 +492,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "ffe750104da6"
+   "hash": "ffe750104da6",
+   "changed": true
   },
   "core:code:scripts/foundry/make-it-so.js:revertRecord#3": {
    "repo": "core",
@@ -470,7 +503,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "e173f6574abf"
+   "hash": "e173f6574abf",
+   "changed": true
   },
   "core:code:scripts/foundry/make-it-so.js:revertRecord#4": {
    "repo": "core",

@@ -22,7 +22,7 @@ import {
   prepareBattle, beginRun, beginRound, playTurn, afterTurn, endRun, startTurn, noteCommand, log, notice, settleSides,
   breakOnHarm, noteHarm, noteFall, noteHeal, captureUnit, strikeOutOfTurn, settleAftermath
 } from "./simulator.js";
-import { createRun, isStanding, areEnemies, edgeDistance } from "./battle-state.js";
+import { createRun, createUnit, isStanding, areEnemies, edgeDistance } from "./battle-state.js";
 import { threats } from "./behavior/reactions.js";
 import { createRng, deriveSeed } from "./rng.js";
 import { recompute, applyOutcome } from "./behavior/effects.js";
@@ -640,11 +640,21 @@ export function snapshotRun(run, { log = true } = {}) {
 
 /**
  * The fight as it was kept, on its battle (the same spec and rules it began with): ready for its next turn. A snapshot
- * kept without its log takes `log` (the battle's, cut back to where it was). (Creatures summoned mid-fight aren't
- * kept: live battles don't summon.)
+ * kept without its log takes `log` (the battle's, cut back to where it was). Creatures summoned mid-fight are made
+ * again from their summoning (summonOf), then given what was kept of them.
  */
 export function restoreRun(spec, rules, snap, { log = null } = {}) {
   const run = createRun(prepareBattle(spec, rules));
+  const called = [...(run.prep.summons?.values() ?? [])].flat();
+  for ( const [id, data] of Object.entries(snap.units ?? {}) ) {
+    if ( run.byId.has(id) || typeof data.summonOf !== "string" ) continue;
+    const p = called.find(c => c.spec.id === data.summonOf);
+    if ( !p ) continue;
+    const s = createUnit(run.prep, p);
+    s.id = id;
+    run.units.push(s);
+    run.byId.set(id, s);
+  }
   for ( const [id, data] of Object.entries(snap.units ?? {}) ) {
     const u = run.byId.get(id);
     if ( !u ) continue;

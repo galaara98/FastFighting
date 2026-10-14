@@ -13,9 +13,9 @@
  * The run lives in the GM's browser while the battle goes; after every turn it's kept (snapshot, turns) on a journal
  * entry only GMs can see, the combat holding only that a battle is live. A reload picks it up again.
  */
-import { MODULE_ID, STATUS } from "../constants.js";
+import { MODULE_ID, STATUS, SIDES, DISPOSITION_SIDES, NEUTRAL_PARTY, HOSTILE_GROUPS } from "../constants.js";
 import { escapeHtml as escape, inertHtml } from "../i18n.js";
-import { getAdapter } from "../api.js";
+import { getAdapter, characterSpec } from "../api.js";
 import { setting } from "../settings.js";
 import { positionOf } from "./terrain.js";
 import { approachFor } from "./battle.js";
@@ -23,7 +23,7 @@ import { currentPathGrid, pathGridFor } from "./pathing.js";
 import { getSetup } from "./persistence.js";
 import { SOCKET } from "./tactics.js";
 import {
-  holdingPause, playMoves, postBeat, postStory, revertEntry, gmIds, chronicle, storyTitle, packSpec, unpackSpec, placeOf
+  holdingPause, playMoves, postBeat, postStory, revertEntry, gmIds, chronicle, storyTitle, packSpec, unpackSpec, placeOf, spotsBeside
 } from "./make-it-so.js";
 import { storyBeats } from "../story/story.js";
 import { logLine } from "../story/log-lines.js";
@@ -209,7 +209,7 @@ function moveOn() {
 export async function spotlightNext() {
   if ( !battle || battle.data.ended ) return null;
   const u = nextSpotlight(battle.run);
-  const combatant = u ? battle.combat.combatants.find(c => c.tokenId === (u.spec.tokenId ?? u.id)) : null;
+  const combatant = u ? battle.combat.combatants.find(c => c.tokenId === tokenIdOf(u)) : null;
   if ( !combatant ) return null;
   const adapter = getAdapter();
   // (The one who has it already: handed back first, then given again, a turn of its own.)
@@ -231,11 +231,15 @@ export function suggestedSpotlight() {
 /** Out of the fight for good: no turn to play. */
 const GONE = new Set([STATUS.DEAD, STATUS.FLED, STATUS.SURRENDERED, STATUS.STOOD_DOWN, STATUS.BEATEN]);
 
+/** A creature's token id: its spec's, or (summoned mid-fight) the one made for it. */
+const tokenIdOf = u => u.tokenId ?? u.spec.tokenId ?? u.id;
+
 /** The unit a combatant is (by its token). */
-const unitOf = combatant => (combatant ? battle.run.byId.get(combatant.tokenId) ?? null : null);
+const unitOf = combatant => (combatant ? battle.run.units.find(u => tokenIdOf(u) === combatant.tokenId) ?? null : null);
 
 async function turnBegins(combatant) {
-  const u = unitOf(combatant);
+  // (Someone on the tracker the battle doesn't know yet: a player's summons, one the GM brought in. It joins now.)
+  const u = unitOf(combatant) ?? (combatant && !battle.data.ended ? await joinFight(combatant) : null);
   if ( !u || battle.data.ended ) return;
   const key = turnKey(combatant);
   if ( battle.data.played === key ) return; // (played already: waiting on the GM)
@@ -253,6 +257,59 @@ async function turnBegins(combatant) {
   await playTurn(u, combatant, key);
 }
 
+/**
+ * A creature added to the battle's combat mid-fight that the battle doesn't know (a player's summons, one the GM brings
+ * in): it joins, read like any other. Friendly, and come in a player's character's turn, it's that character's (its
+ * side, the player's to run); otherwise its token's disposition says its side (one already in the fight, or it stays
+ * out). Made part of the battle itself, so a turn kept before it came still has it when restored. Returns its unit.
+ */
+async function joinFight(combatant) {
+  if ( !battle || battle.data.ended || battle.combat !== combatant.parent ) return null;
+  const known = unitOf(combatant);
+  if ( known ) return known;
+  const doc = combatant.token;
+  const adapter = getAdapter();
+  if ( !doc?.actor || !adapter.canHandle?.(doc.actor) ) return null;
+  const run = battle.run;
+  const sides = Object.keys(battle.spec.sides ?? {});
+  const caller = battle.pc ? run.byId.get(battle.pc.id) : null;
+  const friendly = doc.disposition === CONST.TOKEN_DISPOSITIONS.FRIENDLY;
+  const summoner = caller && friendly ? caller : null;
+  const wanted = DISPOSITION_SIDES[doc.disposition] ?? SIDES.HOSTILE;
+  const side = summoner?.side ?? (sides.includes(wanted) ? wanted
+    : wanted === SIDES.FRIENDLY ? run.units.find(u => u.spec.kind === "pc")?.side
+      : wanted === SIDES.HOSTILE ? sides.find(s => HOSTILE_GROUPS.includes(s)) : sides.includes(NEUTRAL_PARTY) ? NEUTRAL_PARTY : null);
+  if ( !side ) return null;
+  let spec;
+  try {
+    spec = await characterSpec(adapter, doc);
+  } catch ( err ) {
+    console.error(`${MODULE_ID} | reading ${doc.name}`, err);
+    return null;
+  }
+  if ( !spec || unitOf(combatant) ) return unitOf(combatant);
+  Object.assign(spec, { side, originSide: side, inEncounter: true, tokenId: doc.id, hidden: doc.hidden });
+  spec.generic ??= spec.kind !== "pc" && !doc.actorLink && (spec.rarity ?? 0) < 3;
+  if ( doc.object ) spec.position = positionOf(doc.object);
+  spec.perception ??= spec.initiative?.mod ?? 0;
+  battle.spec = { ...battle.spec, combatants: [...battle.spec.combatants, spec] };
+  battle.data.spec = packSpec(battle.spec);
+  battle.run = restoreRun(battle.spec, battle.rules, snapshotRun(run, { log: false }), { log: run.log });
+  const u = battle.run.byId.get(spec.id);
+  if ( !u ) return null;
+  u.active = true;
+  u.joinedRound = battle.run.round;
+  if ( !battle.run.order.includes(u) ) {
+    const at = summoner ? battle.run.order.findIndex(o => o.id === summoner.id) : -1;
+    battle.run.order.splice(at >= 0 ? at + 1 : battle.run.order.length, 0, u);
+  }
+  if ( (summoner && battle.run.live.players.has(summoner.id)) || doc.actor.hasPlayerOwner ) battle.run.live.players.add(u.id);
+  refreshApproach();
+  await keep();
+  changed();
+  return u;
+}
+
 /** A player's turn begins: kept as it was (for Rewind), begun in the engine, and its cards gathered from now on. */
 function beginPlayerTurn(u, combatant) {
   const snapshot = snapshotRun(battle.run, { log: false });
@@ -268,7 +325,7 @@ async function newRound(round) {
     if ( u.active || u.status !== STATUS.STANDING || u.spec.hazard ) continue;
     liveTurn(battle.run, u.id);
     if ( u.active || u.joinsRound ) {
-      const doc = battle.scene.tokens.get(u.spec.tokenId ?? u.id);
+      const doc = battle.scene.tokens.get(tokenIdOf(u));
       if ( doc && !battle.combat.combatants.some(c => c.tokenId === doc.id) ) {
         const [c] = await battle.combat.createEmbeddedDocuments("Combatant", [{ tokenId: doc.id, sceneId: battle.scene.id, actorId: doc.actorId }]);
         if ( c && !battle.data.spotlight ) await battle.combat.rollInitiative([c.id]);
@@ -282,7 +339,10 @@ async function newRound(round) {
 /*  The sheets                                  */
 /* -------------------------------------------- */
 
-const docOf = id => battle.scene.tokens.get(battle.run.byId.get(id)?.spec.tokenId ?? id);
+const docOf = id => {
+  const u = battle.run.byId.get(id);
+  return battle.scene.tokens.get(u ? tokenIdOf(u) : id);
+};
 
 /** Every creature's sheet as it stands, with where its token is. */
 async function readStates() {
@@ -348,6 +408,8 @@ async function playTurn(u, combatant, key) {
       await playMoves(result.events, docs, grid, doorsOpened, battle.scene);
     }
     turn.doors = [...doorsOpened.values()];
+    // What it summoned, onto the scene and the tracker.
+    await placeSummons(turn.records);
     // What the turn changed, onto the sheets (each written as it stood when the turn began).
     await writeChanges(before, after, turn.records);
     // (What the turn did to what the encounter keeps: Daggerheart's Fear.)
@@ -489,7 +551,7 @@ async function closePlayerTurn() {
   const run = battle.run;
   const adapter = getAdapter();
   const messages = pc.messages.map(id => game.messages.get(id)).filter(Boolean);
-  const ids = Object.fromEntries(run.units.map(u => [u.spec.tokenId ?? u.id, u.id]));
+  const ids = Object.fromEntries(run.units.map(u => [tokenIdOf(u), u.id]));
   // (By actor too, for a card that names only the actor: the first of its tokens.)
   const actors = {};
   for ( const u of run.units ) if ( u.spec.actorId && !(u.spec.actorId in actors) ) actors[u.spec.actorId] = u.id;
@@ -612,6 +674,47 @@ async function playerMoved(doc) {
   // (Where it is now, as the engine has it: the next move is from here.)
   syncFromSheets(run, { [pc.id]: { position: to } });
   await keep();
+}
+
+/**
+ * Creatures summoned since (the engine's, with no token yet): placed beside their summoner by the helper, and on the
+ * tracker right after it, to take their own turns (a player's character's, the player's to run). Undo records added to
+ * `records`. (One whose time runs out goes as one that ran: its token hidden, its turns passed over.)
+ */
+async function placeSummons(records) {
+  const run = battle.run;
+  const fresh = run.units.filter(s => s.summoner && !s.tokenId && !s.vanished && s.status !== STATUS.DEAD);
+  if ( !fresh.length ) return;
+  const adapter = getAdapter();
+  const groups = new Map();
+  for ( const s of fresh ) {
+    const key = `${s.summoner}|${s.summonedBy}|${s.joinedRound}`;
+    (groups.get(key) ?? groups.set(key, []).get(key)).push(s);
+  }
+  for ( const list of groups.values() ) {
+    const summoner = run.byId.get(list[0].summoner);
+    const doc = summoner ? docOf(summoner.id) : null;
+    const action = summoner?.prep.summonActions?.find(a => a.id === list[0].summonedBy);
+    if ( !doc || !action ) continue;
+    let placed;
+    try {
+      placed = await adapter.placeSummons(battle.scene, doc, action, list.map(s => s.spec), spotsBeside(doc, list.length, battle.scene));
+    } catch ( err ) {
+      console.error(`${MODULE_ID} | placing what ${doc.name} summoned`, err);
+      continue;
+    }
+    records.push(...(placed?.records ?? []));
+    const tokens = placed?.tokens ?? [];
+    tokens.forEach((t, i) => { if ( list[i] ) list[i].tokenId = t.id; });
+    if ( !tokens.length ) continue;
+    // (Right after the summoner on the tracker; a spotlight system's, when the GM gives it the spotlight.)
+    const after = battle.combat.combatants.find(c => c.tokenId === doc.id)?.initiative;
+    const created = await battle.combat.createEmbeddedDocuments("Combatant", tokens.map((t, i) => ({
+      tokenId: t.id, sceneId: battle.scene.id, actorId: t.actorId, initiative: battle.data.spotlight || !Number.isFinite(after) ? null : after - 0.01 * (i + 1)
+    })));
+    records.push({ createdCombatants: created.map(c => c.uuid) });
+    if ( run.live.players.has(summoner.id) ) for ( const s of list ) run.live.players.add(s.id);
+  }
 }
 
 /** What the engine changed between two captures of everyone, onto the sheets; their undo records added to `records`. */
@@ -894,6 +997,10 @@ export function registerLiveBattles() {
     queue(() => playerMoved(doc));
   });
   Hooks.on("createChatMessage", onMessage);
+  Hooks.on("createCombatant", combatant => {
+    if ( battle?.combat !== combatant.parent || battle.data.ended || !runsHere(battle.data) ) return;
+    queue(() => joinFight(combatant));
+  });
   Hooks.once("ready", () => pickUp());
   // (Its GM left: the active GM picks it up.)
   Hooks.on("userConnected", () => {
