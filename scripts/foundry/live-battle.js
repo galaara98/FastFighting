@@ -344,11 +344,17 @@ async function newRound(round) {
       if ( doc && !battle.combat.combatants.some(c => c.tokenId === doc.id) ) {
         const [c] = await battle.combat.createEmbeddedDocuments("Combatant", [{ tokenId: doc.id, sceneId: battle.scene.id, actorId: doc.actorId }]);
         if ( c ) battle.data.joined = [...(battle.data.joined ?? []), c.uuid];
-        if ( c && !battle.data.spotlight ) await battle.combat.rollInitiative([c.id]);
+        if ( c && !battle.data.spotlight ) {
+          const from = Date.now();
+          await battle.combat.rollInitiative([c.id]);
+          battle.data.rollCards = [...(battle.data.rollCards ?? []), ...game.messages.filter(m => m.timestamp >= from && m.getFlag("core", "initiativeRoll")).map(m => m.id)];
+        }
       }
     }
   }
-  await tellNew();
+  // (Told with the turn before it: rewound with it, and with the encounter.)
+  const told = await tellNew();
+  battle.data.turns.at(-1)?.messages.push(...told);
 }
 
 /* -------------------------------------------- */
