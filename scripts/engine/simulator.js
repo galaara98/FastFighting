@@ -274,7 +274,7 @@ function huntable(run, u) {
 /*  Damage, healing, conditions                 */
 /* -------------------------------------------- */
 
-function dealDamage(run, source, target, amount, { crit = false, types = null, action = null } = {}) {
+function dealDamage(run, source, target, amount, { crit = false, types = null, action = null, lingering = false } = {}) {
   if ( amount <= 0 || target.status === STATUS.DEAD || target.status === STATUS.FLED ) return;
   // Acid or fire on a troll: its regeneration stops, for its next turn.
   if ( target.spec.regen?.stoppedBy?.length && types?.some(t => target.spec.regen.stoppedBy.includes(t)) ) target.regenStopped = true;
@@ -369,7 +369,7 @@ function dealDamage(run, source, target, amount, { crit = false, types = null, a
     regenerating(target);
     const dead = target.status === STATUS.DEAD;
     if ( dead ) target.killerId = source?.id ?? target.killerId ?? null;
-    log(run, target, { type: dead ? "death" : "struckDown", by: source?.spec.name ?? null, byId: source?.id ?? null, dying: target.dying, finished: dead, note: takeFallNote(target) });
+    log(run, target, { type: dead ? "death" : "struckDown", by: source?.spec.name ?? null, byId: source?.id ?? null, dying: target.dying, finished: dead, lingering: lingering || undefined, note: takeFallNote(target) });
   }
 }
 
@@ -496,7 +496,7 @@ function applyAfflictionStage(run, target, affliction) {
   log(run, target, {
     type: "afflictionStage", name: affliction.spec.name, stage: affliction.stage, amount, damageType: stage.damage[0]?.type ?? "poison"
   });
-  dealDamage(run, run.byId.get(affliction.sourceId), target, amount);
+  dealDamage(run, run.byId.get(affliction.sourceId), target, amount, { lingering: true });
 }
 
 function exposeToAffliction(run, source, target, spec) {
@@ -2463,7 +2463,7 @@ function endOfTurn(run, u) {
     for ( const entry of u.persistent ) {
       const amount = rules.applyIwr(iwrOf(u), { [entry.part.type]: Math.max(0, samplePart(entry.part, run.rng)) });
       if ( run.log ) log(run, u, { type: "persistent", damageType: entry.part.type, amount });
-      dealDamage(run, run.byId.get(entry.sourceId), u, amount, { types: [entry.part.type] });
+      dealDamage(run, run.byId.get(entry.sourceId), u, amount, { types: [entry.part.type], lingering: true });
       if ( !rules.persistentFlatCheck(run.rng) ) remaining.push(entry);
     }
     u.persistent = remaining;

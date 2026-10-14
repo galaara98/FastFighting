@@ -59,6 +59,8 @@ class Relationships {
     // (Those who command a group: the heads of its chain, and its lieutenants.)
     this.leaders = new Set([...Object.values(spec.sides ?? {}).map(s => s.leaderId), ...Object.values(spec.command ?? {}).flatMap(c => (c ?? []).map(x => x.id))].filter(Boolean));
     this.sideOf = new Map((spec.combatants ?? []).map(c => [c.id, c.side]));
+    this.names = new Map((spec.combatants ?? []).map(c => [c.id, c.name]));
+    this.call = name => name; // (how the story calls a name: roleplay sets it)
     this.hurtBy = new Map();      // victimId -> Set(attackerId)
     this.downedBy = new Map();    // fallenId -> attackerName/id
     this.rebuffed = new Set();    // "talker|target" after a failed pitch
@@ -80,10 +82,15 @@ class Relationships {
     if ( this.leaders.has(t) && this.sideOf.get(t) !== this.sideOf.get(a) ) return "enemyLeader";
     if ( this.rebuffed.has(`${a}|${t}`) ) return "talkingNemesis";
     if ( this.hurtBy.get(a)?.has(t) ) return "grudge";
-    const victim = this.targetOf.get(t);
-    if ( victim && victim !== a && this.sideOf.get(victim) === this.sideOf.get(a) ) return "protector";
+    if ( this.protecting(e) ) return "protector";
     if ( (this.exchanges.get([a, t].sort().join("|")) ?? 0) >= 3 ) return "rival";
     return "none";
+  }
+
+  /** The friend whom a blow at its attacker protects (who that one last went for), or null. */
+  protecting(e) {
+    const victim = this.targetOf.get(e.targetId);
+    return victim && victim !== e.actorId && this.sideOf.get(victim) === this.sideOf.get(e.actorId) ? victim : null;
   }
 
   record(e) {
@@ -205,7 +212,8 @@ function relationshipClause(e, tier, rel, roll, fill) {
   if ( rel.asideTurns.has(turn) ) return "";
   rel.asideTurns.add(turn);
   rel.told.add(key);
-  const clause = roll(`relationship.${kind}.${successful(tier) ? "success" : "failure"}`, fill).trim();
+  const ally = kind === "protector" ? rel.call(rel.names.get(rel.protecting(e)) ?? "") : "";
+  const clause = roll(`relationship.${kind}.${successful(tier) ? "success" : "failure"}`, { ...fill, ally }).trim();
   return clause ? ` ${capital(clause)}` : "";
 }
 
@@ -291,7 +299,8 @@ function narrate(e, roll, rel, fill) {
     case "down": return roll(e.knockedOut ? "event.knockout" : "event.down", f);
     case "mercy": return roll("event.mercy", f);
     case "execute": return e.goes ? roll("event.executeGoes", f) : roll(e.next ? "event.executeSpared" : "event.executeSparedAlone", { ...f, next: e.next ?? "" });
-    case "death": return roll(e.finished ? "event.finished" : "event.death", f);
+    // (Finished off by a blow; one that lingered, venom or a burn, just kills.)
+    case "death": return roll(e.finished && !e.lingering ? "event.finished" : "event.death", f);
     // Beaten (out of the fight, however the table decides), or killed by one who would kill.
     case "beaten": return roll(e.killed ? "event.beatenKilled" : "event.beaten", { ...f, by: e.by ?? "" });
     case "struckDown": return roll("event.struckDown", f);
@@ -557,6 +566,7 @@ function roleplayParagraphs(result, spec, tables, seed, mapType) {
   const struck = new Set(); // "actor|turn": its first attack this turn told
   const closed = new Set(); // "actor|turn": it moved this turn (closing in is told already)
   const rel = new Relationships(spec);
+  rel.call = call;
   const { mentions } = storyCast(result, spec);
   const paragraphs = [];
   const opening = result.log.find(e => e.type === "surprise" || e.type === "standoff") ? null : roll("event.opening");
@@ -606,13 +616,13 @@ function roleplayParagraphs(result, spec, tables, seed, mapType) {
       continue;
     }
     if ( e.type === "move" ) closed.add(`${e.actorId}|${e.turn}`);
-    // Now and then, a creature's first attack of its turn says how far it was: from afar, or up close (unless it just
-    // closed in, which said so).
+    // Now and then, a creature's first attack of its turn says how far it was: from afar, or up close (unless it moved
+    // this turn, which said so).
     let lead = "";
     if ( STRIKES.has(e.type) && e.targetId && !struck.has(`${e.actorId}|${e.turn}`) ) {
       struck.add(`${e.actorId}|${e.turn}`);
       const near = !e.ranged;
-      if ( reach.next() < DISTANCE_CHANCE && !(near && closed.has(`${e.actorId}|${e.turn}`)) ) {
+      if ( reach.next() < DISTANCE_CHANCE && !closed.has(`${e.actorId}|${e.turn}`) ) {
         lead = roll(near ? "distance.near" : "distance.far", { actor: e.actor, target: e.target ?? "", weapon: e.action ?? "" }).trim();
       }
     }

@@ -59,8 +59,20 @@ describe("chains of command", () => {
   test("neutral friend groups have chains of their own", () => {
     const n = (id, group) => creature({ id, side: NEUTRAL_PARTY, originSide: "neutral", group, traits: minded() });
     const { run, by } = runOf([n("elder", 1), n("villager", 1), n("hermit", 2), hero("pc")], { [`${NEUTRAL_PARTY}#1`]: chain(["elder", "leader"]) });
+    // (Standing clear, watching, a leader isn't in the fight: it can't lead its group in it.)
+    expect(commandOf(run, by("villager"))).toBeNull();
+    // In it (it has turned on someone), it leads.
+    by("elder").against.add("pc");
     expect(commandOf(run, by("villager")).unit.id).toBe("elder");
     expect(commandOf(run, by("hermit"))).toBeNull();
+  });
+
+  test("a leader who hasn't come into the fight leads no one in it: the next in the chain does", () => {
+    const { run, by } = runOf([goblin("boss"), goblin("lt"), goblin("grunt"), hero("pc")], { hostile: chain(["boss", "boss"], ["lt", "lieutenant"]) });
+    by("boss").active = false; // (on the map, yet to notice the fight)
+    expect(commandOf(run, by("grunt")).unit.id).toBe("lt");
+    by("boss").active = true;
+    expect(commandOf(run, by("grunt")).unit.id).toBe("boss");
   });
 
   test("a side with only a leaderId still has that leader (older plans)", () => {

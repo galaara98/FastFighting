@@ -566,6 +566,12 @@ export const groupKeyOf = u => (u.side === NEUTRAL_PARTY ? (u.friendGroup ? `${N
 const CANT_COMMAND = new Set(["incapacitated", "controlled", "unconscious", "paralyzed", "stunned", "confused", "fleeing", "blinded", "deafened", "silenced", "petrified"]);
 
 /** Can u direct its group right now: up and in the fight, its own master, and able to see, hear and speak? */
+/**
+ * Is u in the fight? Not one who has yet to notice it, nor one who takes no side and hasn't turned on anyone (standing
+ * clear, watching): such a one can't lead its group in it. Its group looks to the next who can.
+ */
+const inTheFight = u => u.active !== false && (u.side !== NEUTRAL_PARTY || u.against?.size > 0);
+
 export function canCommand(u) {
   if ( !u || !isStanding(u) || u.controlledBy ) return false;
   for ( const k in u.conds ?? {} ) if ( u.conds[k] > 0 && CANT_COMMAND.has(k) ) return false;
@@ -590,7 +596,7 @@ export function command(run, key) {
   if ( !chain?.length ) return null;
   for ( let i = 0; i < chain.length; i++ ) {
     const u = run.byId.get(chain[i].id);
-    if ( !u || groupKeyOf(u) !== key || !canCommand(u) ) continue;
+    if ( !u || groupKeyOf(u) !== key || !canCommand(u) || !inTheFight(u) ) continue;
     const boss = i === 0 && chain[i].role === "boss";
     return { unit: u, role: boss ? "boss" : "leader", boss, leadership: chain[i].leadership, rank: i };
   }

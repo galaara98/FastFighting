@@ -27717,7 +27717,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "4688cff0f6aa"
+   "hash": "4688cff0f6aa",
+   "changed": true
   },
   "core:story:relationship.rival.failure": {
    "repo": "core",

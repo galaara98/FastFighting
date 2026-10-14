@@ -184,3 +184,46 @@ describe("precision damage", () => {
     expect(told).toBeGreaterThan(0);
   });
 });
+
+describe("the review's fixes", () => {
+  test("a death from harm that lingers (venom, a burn) isn't told as being finished off", () => {
+    const spec = fight();
+    const death = { round: 1, turn: 1, turnOf: "amiri", type: "death", actor: "Amiri", actorId: "amiri", by: "Wolf", byId: "wolf", finished: true, lingering: true };
+    const finished = english["event.finished"].map(l => l.replace("{by}", "Wolf").replace("{actor}", "Amiri"));
+    for ( let seed = 1; seed <= 10; seed++ ) {
+      const text = buildStory({ log: [death], units: {}, rounds: 1 }, spec, "roleplay", { tables, seed }).text;
+      expect(finished.some(l => text.includes(l))).toBe(false);
+    }
+  });
+
+  test("protecting a friend names the friend", () => {
+    const spec = fight();
+    const log = [
+      { round: 1, turn: 1, turnOf: "wolf", type: "attack", actor: "Wolf", actorId: "wolf", target: "Merisiel", targetId: "merisiel", degree: 2, margin: 3, damage: 3, damageType: "piercing" },
+      { round: 1, turn: 2, turnOf: "amiri", type: "attack", actor: "Amiri", actorId: "amiri", target: "Wolf", targetId: "wolf", degree: 2, margin: 3, damage: 3, damageType: "slashing" }
+    ];
+    const protector = [...english["relationship.protector.success"], ...english["relationship.protector.failure"]];
+    expect(protector.every(l => l.includes("{ally}"))).toBe(true);
+    for ( let seed = 1; seed <= 20; seed++ ) {
+      const text = buildStory({ log, units: {}, rounds: 1 }, spec, "roleplay", { tables, seed }).text;
+      expect(text).not.toContain("{ally}");
+      const told = protector.map(l => l.trim().replace("{ally}", "Merisiel").replace("{actor}", "Amiri").replace("{target}", "Wolf"));
+      if ( told.some(l => text.includes(l.charAt(0).toUpperCase() + l.slice(1))) ) return;
+    }
+    throw new Error("no protector aside told in 20 seeds");
+  });
+
+  test("a creature that moved this turn gets no line on how far it is", () => {
+    const spec = fight();
+    for ( let seed = 1; seed <= 20; seed++ ) {
+      const result = replay(spec, pf2eRules, seed);
+      for ( const b of storyBeats(result, spec, "roleplay", { tables, seed }) ) {
+        const moved = result.log.some(e => b.turns.includes(e.turn) && e.type === "move" && e.actorId === b.actorId);
+        if ( !moved || !b.actorId ) continue;
+        const who = spec.combatants.find(c => c.id === b.actorId).name;
+        const distance = [...english["distance.near"], ...english["distance.far"]].map(l => l.replace("{actor}", who).split("{target}")[0]).filter(s => s.length > 12);
+        for ( const d of distance ) expect(b.text.includes(d.charAt(0).toUpperCase() + d.slice(1))).toBe(false);
+      }
+    }
+  });
+});

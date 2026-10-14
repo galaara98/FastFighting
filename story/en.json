@@ -2222,18 +2222,18 @@
     " Rage and sorrow make {actor} careless."
   ],
   "relationship.protector.success": [
-    " {target} is driven away from {actor}'s friend.",
-    " {actor} stands between {target} and an ally.",
-    " No one touches {actor}'s friends.",
-    " {actor} draws {target}'s attention away from the wounded.",
-    " The ally behind {actor} breathes a little easier."
+    " {target} is driven away from {ally}.",
+    " {actor} stands between {target} and {ally}.",
+    " {actor} won't let {target} near {ally}.",
+    " {actor} draws {target}'s attention away from {ally}.",
+    " {ally} breathes a little easier."
   ],
   "relationship.protector.failure": [
-    " {target} keeps pressing toward {actor}'s ally.",
-    " {actor} can't pull {target} away from an ally.",
-    " The ally is still in danger.",
-    " {target} ignores {actor} completely.",
-    " Protecting a friend is harder than it looks."
+    " {target} keeps pressing toward {ally}.",
+    " {actor} can't pull {target} away from {ally}.",
+    " {ally} is still in danger.",
+    " {target} ignores {actor}, eyes still on {ally}.",
+    " Protecting {ally} is harder than it looks."
   ],
   "relationship.finishing.success": [
     " A cruel, final blow.",
