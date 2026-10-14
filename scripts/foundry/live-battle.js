@@ -346,7 +346,7 @@ async function newRound(round) {
         if ( c ) battle.data.joined = [...(battle.data.joined ?? []), c.uuid];
         if ( c && !battle.data.spotlight ) {
           const from = Date.now();
-          await battle.combat.rollInitiative([c.id]);
+          await battle.combat.rollInitiative([c.id], { skipDialog: true }); // (no system roll dialog: PF2e opens one)
           battle.data.rollCards = [...(battle.data.rollCards ?? []), ...game.messages.filter(m => m.timestamp >= from && m.getFlag("core", "initiativeRoll")).map(m => m.id)];
         }
       }
