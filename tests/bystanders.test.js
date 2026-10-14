@@ -6,7 +6,7 @@ import { creature, battle } from "./helpers.js";
 const at = (x, y) => ({ x, y, size: 5 });
 
 /** Party of two vs one foe, plus a hostile bystander far away. */
-function scene({ see = false, hearDC = null, flee = false, hunter = false } = {}) {
+function scene({ see = false, hearDC = null, smell = false, feel = false, radar = false, flee = false, hunter = false } = {}) {
   const pcs = [
     creature({ id: "pc1", kind: "pc", diesAtZero: false, position: at(0, 0), tactics: hunter ? { beyond: "hunt" } : null }),
     creature({ id: "pc2", kind: "pc", diesAtZero: false, position: at(0, 10) })
@@ -15,7 +15,7 @@ function scene({ see = false, hearDC = null, flee = false, hunter = false } = {}
   const foe = creature({ id: "foe", side: "hostile", position: at(10, 0), traits: { brave: { base: flee ? 0 : 60, fudge: 0 }, tactical: { base: 0, fudge: 0 } }, flags: { fearless: !flee } });
   const bystander = creature({ id: "guard", side: "hostile", inEncounter: false, position: at(60, 0) });
   const spec = battle([...pcs, foe, bystander], { positioning: true, maxRounds: 10 });
-  const cue = see || hearDC !== null ? { see, hearDC } : null;
+  const cue = see || smell || feel || radar || hearDC !== null ? { see, smell, feel, radar, hearDC } : null;
   spec.awareness = { guard: Object.fromEntries(["pc1", "pc2", "foe"].map(id => [id, cue])) };
   return spec;
 }
@@ -29,6 +29,18 @@ describe("bystanders", () => {
   test("a bystander who can see the fight often joins", () => {
     const r = runBatchSync(scene({ see: true }), pf2eRules, { runs: 300 });
     expect(r.combatants.guard.pInvolved).toBeGreaterThan(0.3);
+  });
+
+  test("a bystander noticing by smell, by feel (tremorsense, lifesense ...) or on radar says so", () => {
+    for ( const sense of ["smell", "feel", "radar"] ) {
+      const spec = scene({ [sense]: true });
+      const causes = new Set();
+      for ( let s = 1; s <= 40; s++ ) {
+        for ( const e of replay(spec, pf2eRules, s).log ) if ( e.type === "notice" && e.actor === "guard" ) causes.add(e.cause);
+      }
+      expect(causes.has(sense)).toBe(true);
+      expect([...causes].every(c => [sense, "fledInto", "help", "attacked"].includes(c))).toBe(true);
+    }
   });
 
   test("hearing through walls is harder than seeing", () => {

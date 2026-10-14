@@ -3,12 +3,14 @@
  *  - approach[a][b]: distance, the movement mode a would use (walk, fly, swim, climb, burrow), its terrain cost
  *    (Foundry region behaviors: walk 2x through rubble, fly 1x), the named regions crossed, line of sight, and
  *    whether melee is even possible (a high flyer out of reach of a ground-bound brute).
- *  - awareness[b][c]: can bystander b see combatant c, and how hard is it to hear them (walls muffle sound).
+ *  - awareness[b][c]: can bystander b see combatant c, smell it, feel it (its other senses), pick it up on radar (tech
+ *    sensing), and how hard is it to hear them (walls muffle sound).
  *  - cover: tokens standing beside walls can duck behind them (used by the story writer).
  */
 import { getAdapter } from "../api.js";
 import { distanceText } from "../i18n.js";
 import { pathGridFor, THROUGH_WALL } from "./pathing.js";
+import { senseReach, sightReach, DARK } from "../engine/behavior/senses.js";
 
 const MODES = ["walk", "fly", "swim", "climb", "burrow"];
 
@@ -213,28 +215,35 @@ function wallsBetween(a, b) {
 }
 
 /**
- * Who could notice whom: for each bystander, for each combatant, can they see it, and the DC to hear it.
+ * Who could notice whom: for each bystander, for each combatant, can they see it (in the scene's light, with a line of
+ * sight), smell it (no wall between), feel it (its other senses) or pick it up on radar (tech sensing), walls or not,
+ * each within its reach, and the DC to hear it (any that hears: the din of a fight carries).
  * @param {Token[]} bystanders
  * @param {Token[]} combatants
  * @param {object} [options]
- * @param {Set<string>} [options.darkvision]  Token ids that see in the dark (from the system helper's specs)
- * @returns {Record<string, Record<string, {see: boolean, hearDC: number|null}>>}
+ * @param {Map<string, object>} [options.senses]  By token id: its spec's senses (spec.senses, from the system helper)
+ * @param {number} [options.hearingFeet]          The system's ordinary hearing (rules.hearingFeet)
+ * @returns {Record<string, Record<string, {see: boolean, smell: boolean, feel: boolean, radar: boolean, hearDC: number|null}>>}
  */
-export function computeAwareness(bystanders, combatants, { darkvision = new Set() } = {}) {
+export function computeAwareness(bystanders, combatants, { senses = new Map(), hearingFeet } = {}) {
   const out = {};
-  const darkness = canvas.scene.environment?.darknessLevel ?? 0;
+  const dark = (canvas.scene.environment?.darknessLevel ?? 0) >= DARK;
   for ( const b of bystanders ) {
     const row = out[b.id] = {};
-    const visionFeet = (darkness > 0.7 && !darkvision.has(b.id)) ? 30 : VISION_FEET;
+    const r = senseReach({ senses: senses.get(b.id) }, hearingFeet);
+    const sightFeet = Math.min(VISION_FEET, sightReach(r, dark));
     for ( const c of combatants ) {
       if ( b === c ) continue;
       const feet = canvas.grid.measurePath([b.center, c.center]).distance;
-      const see = feet <= visionFeet && !b.checkCollision(c.center, { type: "sight", mode: "any" });
+      const see = feet <= sightFeet && !b.checkCollision(c.center, { type: "sight", mode: "any" });
+      const smell = feet <= r.smell && !b.checkCollision(c.center, { type: "move", mode: "any" });
+      const feel = feet <= r.feel;
+      const radar = feet <= r.radar;
       let hearDC = null;
-      if ( feet <= HEAR.maxFeet ) {
+      if ( r.hearing > 0 && feet <= HEAR.maxFeet ) {
         hearDC = Math.round(HEAR.baseDC + feet / HEAR.perFeet + HEAR.perWall * wallsBetween(b, c));
       }
-      row[c.id] = { see, hearDC };
+      row[c.id] = { see, smell, feel, radar, hearDC };
     }
   }
   return out;

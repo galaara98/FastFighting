@@ -659,7 +659,7 @@ export function buildBattleSpec(roster, setup, { approach = null, exclude = new 
       downedModel: options.downedModel,
       aftermath: options.aftermath,
       positioning: options.positioning && !!approach,
-      // How dark the scene is (0 to 1): in the dark, only darkvision and the like see far.
+      // How dark the scene is (0 to 1): in the dark, only those that see in the dark (spec.senses.lowlight) see far.
       darkness: canvas.scene?.environment?.darknessLevel ?? 0,
       morale: options.morale,
       leadership: options.leadership,
@@ -753,12 +753,12 @@ export function typicalFight(spec, results) {
   return seed === null || seed === undefined ? null : { seed, result: replay(spec, getAdapter().rules, seed) };
 }
 
-/** Sight and sound from each bystander to each starting combatant (and between bystanders). */
+/** Sight, sound, smell, feel and radar from each bystander to each starting combatant (and between bystanders). */
 export function awarenessFor(roster) {
   const bystanders = roster.filter(e => !e.spec.inEncounter).map(e => e.token);
   if ( !bystanders.length ) return {};
-  const darkvision = new Set(roster.filter(e => e.spec.darkvision).map(e => e.token.id));
-  return computeAwareness(bystanders, roster.map(e => e.token), { darkvision });
+  const senses = new Map(roster.map(e => [e.token.id, e.spec.senses]));
+  return computeAwareness(bystanders, roster.map(e => e.token), { senses, hearingFeet: getAdapter()?.rules?.hearingFeet });
 }
 
 /** The battle the planner simulates, as the map and the plan stand: its spec, and how each side comes at the other. */

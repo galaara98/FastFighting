@@ -4423,10 +4423,20 @@
     "A scream reaches {actor}, who whirls toward the sound.",
     "{actor} goes still, listening to the shouts and crashes nearby."
   ],
+  "maneuver.noticeSmell": [
+    "The scent of blood reaches {actor}, who turns toward it.",
+    "{actor} catches the smell of sweat and fear on the air.",
+    "{actor} sniffs the air, then follows the reek of the fight."
+  ],
   "maneuver.noticeFeel": [
     "{actor} feels the ground tremble with the fighting.",
-    "The scent of blood reaches {actor}, who turns toward it.",
+    "Something stirs at the edge of {actor}'s senses, and they turn toward the fight.",
     "{actor} senses something amiss and heads toward the struggle."
+  ],
+  "maneuver.noticeRadar": [
+    "{actor} detects the fighting nearby and turns toward it.",
+    "{actor} receives a ping: movement, and a lot of it, close by.",
+    "A blip flares on {actor}'s scanner, and they head toward the struggle."
   ],
   "maneuver.takeCover": [
     "{actor} ducks behind a pillar.",
@@ -4671,11 +4681,23 @@
   "maneuver.noticeSound.terrible": [
     "{actor} mistakes it for something harmless at first and wanders over without much urgency."
   ],
+  "maneuver.noticeSmell.amazing": [
+    "{actor} sorts every scent on the air and knows exactly who is fighting, and where."
+  ],
+  "maneuver.noticeSmell.terrible": [
+    "{actor} sniffs about for a long while, sneezes, and finally wanders toward the fight."
+  ],
   "maneuver.noticeFeel.amazing": [
     "Every tremor and twitch speaks to {actor}, who knows exactly where the fight rages."
   ],
   "maneuver.noticeFeel.terrible": [
     "{actor} is only vaguely bothered, ambling toward the fight as if half asleep."
+  ],
+  "maneuver.noticeRadar.amazing": [
+    "{actor}'s readout maps every combatant, down to the last heartbeat."
+  ],
+  "maneuver.noticeRadar.terrible": [
+    "{actor} taps the flickering readout twice before trusting what it shows."
   ],
   "maneuver.takeCover.amazing": [
     "{actor} is so well tucked away that hardly any part of them shows."

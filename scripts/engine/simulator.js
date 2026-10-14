@@ -174,15 +174,27 @@ function rollInitiative(run) {
 /* -------------------------------------------- */
 
 /**
- * Could bystander b notice combatant c this round? Uses precomputed sight and sound (walls muffle).
- * @returns {{dc: number, sense: "sight"|"sound"}|null}
+ * How hard a fight is to miss, seen, on the radar, felt or smelled (heard: harder with distance and walls, as the
+ * awareness has it).
+ */
+const NOTICE_DC = Object.freeze({ sight: 5, radar: 5, feel: 8, smell: 10 });
+
+/**
+ * Could bystander b notice combatant c this round? Uses precomputed sight, radar (tech sensing), feel (its other
+ * senses), smell and sound (walls muffle): the easiest of them.
+ * @returns {{dc: number, sense: "sight"|"radar"|"feel"|"smell"|"sound"}|null}
  */
 function cueFrom(run, b, c) {
   const aw = run.prep.spec.awareness?.[b.id]?.[c.id];
   if ( !aw ) return run.prep.spec.awareness ? null : { dc: 10, sense: "sound" };
-  if ( aw.see ) return { dc: 5, sense: "sight" };
-  if ( aw.hearDC !== null && aw.hearDC !== undefined ) return { dc: aw.hearDC, sense: "sound" };
-  return null;
+  const cues = [
+    aw.see && { dc: NOTICE_DC.sight, sense: "sight" },
+    aw.radar && { dc: NOTICE_DC.radar, sense: "radar" },
+    aw.feel && { dc: NOTICE_DC.feel, sense: "feel" },
+    aw.smell && { dc: NOTICE_DC.smell, sense: "smell" },
+    Number.isFinite(aw.hearDC) && { dc: aw.hearDC, sense: "sound" }
+  ].filter(Boolean);
+  return cues.reduce((best, cue) => (!best || cue.dc < best.dc ? cue : best), null);
 }
 
 /**
@@ -195,7 +207,7 @@ function notice(run, b, cause, source) {
   if ( b.aware && cause !== "attacked" ) return; // (it already knows; it's on its way)
   b.aware = true;
   // During a standoff there is no fighting to see or hear, only a tense crowd and raised voices.
-  if ( run.standoff && (cause === "sight" || cause === "sound") ) cause = "standoff";
+  if ( run.standoff && ["sight", "sound", "smell", "feel", "radar"].includes(cause) ) cause = "standoff";
   log(run, b, { type: "notice", cause, by: source?.spec.name ?? null, byId: source?.id ?? null });
   if ( cause === "attacked" ) return join(run, b, "forced");
   b.joinsRound ??= run.round + 1;

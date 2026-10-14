@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest";
 import { replay, prepareBattle } from "../scripts/engine/simulator.js";
 import { createRun } from "../scripts/engine/battle-state.js";
-import { perceives, apparentHealth } from "../scripts/engine/behavior/senses.js";
+import { perceives, apparentHealth, senseReach } from "../scripts/engine/behavior/senses.js";
 import { STATUS } from "../scripts/constants.js";
 import { pf2eRules } from "./fixtures/three-action-rules.js";
 import { parseFormula } from "../scripts/engine/dice.js";
@@ -77,8 +77,42 @@ describe("senses", () => {
     near.foe.pos = { x: 40, y: 0 };
     near.run.geo = (near.run.geo ?? 0) + 1;
     expect(perceives(near.run, near.a, near.foe)).toBe(true);
-    const keen = setup({ senses: [{ type: "tremorsense", range: 120, blind: true }] });
+    const keen = setup({ senses: { feel: 120 } });
     expect(perceives(keen.run, keen.a, keen.foe)).toBe(true);
+  });
+
+  test("radar is a device's: blinded and deafened, it still picks them up; feel is the creature's own", () => {
+    const tech = setup({ senses: { radar: 120 }, conditions: { blinded: 1, deafened: 1 } });
+    expect(perceives(tech.run, tech.a, tech.foe)).toBe(true);
+    tech.foe.pos = { x: 130, y: 0 };
+    tech.run.geo = (tech.run.geo ?? 0) + 1;
+    expect(perceives(tech.run, tech.a, tech.foe)).toBe(false); // (beyond its reach)
+  });
+
+  test("a nose: blind and deaf, it still smells them, but never through a wall", () => {
+    const nose = setup({ senses: { smell: 120 }, conditions: { blinded: 1, deafened: 1 } });
+    expect(perceives(nose.run, nose.a, nose.foe)).toBe(true); // (no sight between them, but the air is open)
+    const walled = setup({ senses: { smell: 120, hearing: 0, sight: 0 } });
+    walled.run.prep.spec.approach.a.foe.blocked = true;
+    walled.foe.pos = { x: 100, y: 0 };
+    expect(perceives(walled.run, walled.a, walled.foe)).toBe(false);
+    expect(perceives(walled.run, walled.a, walled.foe, { crisis: true })).toBe(false);
+  });
+
+  test("no sight, no seeing: even in the open, in the light", () => {
+    const eyeless = setup({ senses: { sight: 0, lowlight: 120, hearing: 0 } });
+    eyeless.run.prep.spec.approach.a.foe.los = true;
+    expect(perceives(eyeless.run, eyeless.a, eyeless.foe)).toBe(false);
+    const sighted = setup({ senses: { hearing: 0 } });
+    sighted.run.prep.spec.approach.a.foe.los = true;
+    expect(perceives(sighted.run, sighted.a, sighted.foe)).toBe(true);
+  });
+
+  test("the helper's reaches: left out, the ordinary; null, no limit; 0, none", () => {
+    expect(senseReach({})).toEqual({ sight: 1000, lowlight: 0, hearing: 60, smell: 0, feel: 0, radar: 0 });
+    expect(senseReach({ senses: { sight: null, lowlight: 60, hearing: 0, smell: 20, feel: 30, radar: "90" } }, 40))
+      .toEqual({ sight: Infinity, lowlight: 60, hearing: 0, smell: 20, feel: 30, radar: 90 });
+    expect(senseReach({}, 40).hearing).toBe(40);
   });
 
   test("in a crisis perception bends: a dying friend far off behind a wall is still noticed", () => {
@@ -89,7 +123,7 @@ describe("senses", () => {
     expect(perceives(run, a, b, { crisis: true })).toBe(true);
   });
 
-  test("darkness: darkvision sees, others don't", () => {
+  test("darkness: those that see in the dark (lowlight) see, others don't", () => {
     const dark = setup({}, 1);
     dark.run.prep.spec.approach.a.foe.los = true;
     dark.foe.pos = { x: 50, y: 0 };
@@ -98,7 +132,7 @@ describe("senses", () => {
     dark.foe.pos = { x: 90, y: 0 };
     dark.run.geo += 1;
     expect(perceives(dark.run, dark.a, dark.foe)).toBe(false);
-    const seer = setup({ senses: [{ type: "darkvision", range: 120, dark: true }] }, 1);
+    const seer = setup({ senses: { lowlight: 120 } }, 1);
     seer.run.prep.spec.approach.a.foe.los = true;
     seer.foe.pos = { x: 90, y: 0 };
     seer.run.geo = (seer.run.geo ?? 0) + 1;

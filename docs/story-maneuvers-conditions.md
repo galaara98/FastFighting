@@ -11,7 +11,7 @@ This is a working master list for the FastFighting story core. A **maneuver** is
 - One system term should map to one id. Where a term has to be split by what caused it, the "Helper notes" section below says so.
 - The "what it looks like" lines are notes for whoever writes the story sentences. They are not final module strings: under the Foundry AI policy, the English story text has to be written by a person.
 
-Counts: 70 maneuvers, 61 conditions, and 21 bookkeeping-only entries. (Added after the research: flee, callForHelp, callToArms, noticeSight, noticeSound, noticeFeel, lazy.)
+Counts: 72 maneuvers, 61 conditions, and 21 bookkeeping-only entries. (Added after the research: flee, callForHelp, callToArms, noticeSight, noticeSound, noticeSmell, noticeFeel, noticeRadar, lazy.)
 
 ## Maneuvers (things a creature does)
 
@@ -42,7 +42,9 @@ Counts: 70 maneuvers, 61 conditions, and 21 bookkeeping-only entries. (Added aft
 | **Noticing** | | |
 | `noticeSight` | sees the commotion and turns toward it | derived (the core's bystanders, by sight) |
 | `noticeSound` | hears the commotion: clashing steel, shouts, a scream | derived (the core's bystanders, by sound) |
-| `noticeFeel` | senses the commotion some other way: the ground trembling, the scent of blood, a psychic ripple | PF2e/SF2e: tremorsense, scent, lifesense, thoughtsense (imprecise senses); 5e: tremorsense, blindsight; derived |
+| `noticeSmell` | smells the commotion: blood, sweat, smoke on the air (never through a wall) | PF2e/SF2e: scent; derived (spec.senses.smell) |
+| `noticeFeel` | senses the commotion some other way: the ground trembling, the stir of life, a psychic ripple | PF2e/SF2e: tremorsense, lifesense, thoughtsense, echolocation ...; 5e: tremorsense, blindsight; derived (spec.senses.feel) |
+| `noticeRadar` | picks up the commotion on tech sensing: a ping on radar, a blip on a scanner, a motion tracker | SF2e: electromagnetic sense; sci-fi: radar, sonar, scanners; derived (spec.senses.radar) |
 | **Defending** | | |
 | `takeCover` | ducks behind a crate, a pillar or a wall | PF2e/SF2e: Take Cover; 5e: moving behind cover (no action); Starforged: React Under Fire (taking cover) |
 | `raiseShield` | brings its shield up and braces | PF2e/SF2e: Raise a Shield |

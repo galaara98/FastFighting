@@ -1,37 +1,64 @@
 /**
  * Senses: what a creature can tell about another, such as a friend in trouble or a foe weak enough to finish.
  *
- * spec.senses (from the system helper) lists what it has beyond plain sight and hearing:
- *   {type, range, dark?, blind?}   range in feet (null: as far as it goes); dark: works in darkness (darkvision,
- *                                  truesight); blind: needs no sight at all (blindsight, tremorsense, scent)
- * Everyone sees (in light, across the field; in darkness only 30 feet, by whatever light there is) and hears
- * (rules.hearingFeet, 60 feet by default). Sight needs a line of sight; hearing and the senses that need no sight
- * reach around corners, within their range. Blinded: no sight. Deafened: no hearing.
+ * spec.senses (from the system helper) says how far each of six senses reaches, in feet (null: as far as it goes;
+ * 0: it hasn't that sense; left out: as an ordinary creature's). The helper sorts its system's senses into them:
+ *   sight     seeing in good light (ordinary: across the field)
+ *   lowlight  seeing in the dark: darkvision, infravision, truesight ... (ordinary: none; only 30 feet, by whatever
+ *             light there is)
+ *   hearing   hearing well enough to tell how someone is doing (ordinary: rules.hearingFeet, 60 feet)
+ *   smell     scent, a keen nose (ordinary: none)
+ *   feel      any other sense of its own, one that needs no sight: blindsight, tremorsense, lifesense ... (the
+ *             farthest; ordinary: none)
+ *   radar     tech sensing of any kind: radar, sonar, scanners, motion trackers ... (ordinary: none)
+ * Sight needs a line of sight; smell, no wall between; hearing, feel and radar reach through walls and around corners,
+ * within their range. Blinded: no sight. Deafened: no hearing. Radar is a device's: neither stops it.
  *
  * In a crisis perception bends (helping a friend, keeping someone from dying, avenging a fallen friend): any sense
- * that could plausibly reach them will do, at twice its range, with no need for a line of sight or light.
+ * that could plausibly reach them will do, at twice its range, with no need for a line of sight or light (a smell
+ * still doesn't pass a wall).
  * Without positions everyone perceives everyone. Pure: no Foundry globals.
  */
 import { edgeDistance, separation, approach } from "../battle-state.js";
 
-/** Darkness from this level up (0 to 1, the scene's) needs darkvision to see far. */
-const DARK = 0.7;
+/** Darkness from this level up (0 to 1, the scene's) needs seeing in the dark to see far. */
+export const DARK = 0.7;
 const SIGHT_IN_LIGHT = 1000;
-const SIGHT_IN_DARK = 30;
+export const SIGHT_IN_DARK = 30;
 const HEARING = 60;
 
-/** The senses a creature has: plain sight and hearing, plus whatever its system gives it. */
+/** A sense's reach in feet, as the helper gave it (left out: the ordinary one). */
+function reach(v, ordinary) {
+  if ( v === undefined ) return ordinary;
+  if ( v === null ) return Infinity;
+  const n = Number(v);
+  return Number.isNaN(n) ? ordinary : Math.max(0, n);
+}
+
+/**
+ * How far a creature's six senses reach, in feet, from its spec (the helper's spec.senses, ordinary where it says
+ * nothing).
+ * @param {object} spec
+ * @param {number} [hearingFeet]  The system's ordinary hearing (rules.hearingFeet)
+ * @returns {{sight: number, lowlight: number, hearing: number, smell: number, feel: number, radar: number}}
+ */
+export function senseReach(spec, hearingFeet = HEARING) {
+  const s = spec?.senses && typeof spec.senses === "object" && !Array.isArray(spec.senses) ? spec.senses : {};
+  return {
+    sight: reach(s.sight, SIGHT_IN_LIGHT),
+    lowlight: reach(s.lowlight, 0),
+    hearing: reach(s.hearing, hearingFeet),
+    smell: reach(s.smell, 0),
+    feel: reach(s.feel, 0),
+    radar: reach(s.radar, 0)
+  };
+}
+
+/** How far it sees, in the light or the dark (seeing in the dark needs eyes: no sight, none). */
+export const sightReach = (r, dark) => dark ? Math.min(r.sight, Math.max(SIGHT_IN_DARK, r.lowlight)) : r.sight;
+
 function sensesOf(run, u) {
-  if ( u.prep.senses ) return u.prep.senses;
-  const extra = Array.isArray(u.spec.senses) ? u.spec.senses.filter(s => s && typeof s === "object") : [];
-  const darkvision = u.spec.darkvision && !extra.some(s => s.dark) ? [{ type: "darkvision", range: 60, dark: true }] : [];
-  u.prep.senses = [
-    { type: "sight", range: null, sight: true },
-    { type: "hearing", range: run.prep.rules.hearingFeet ?? HEARING, hearing: true },
-    ...darkvision,
-    ...extra.map(s => ({ ...s, range: Number.isFinite(Number(s.range)) && s.range !== null ? Number(s.range) : null, sight: !s.blind && s.type !== "hearing" }))
-  ];
-  return u.prep.senses;
+  return u.prep.senses ??= senseReach(u.spec, run.prep.rules.hearingFeet ?? HEARING);
 }
 
 /** Can u tell how t is doing (hurt, dying, nearly done for)? */
@@ -51,25 +78,15 @@ export function perceives(run, u, t, { crisis = false } = {}) {
   const slot = crisis ? 1 : 0;
   if ( pair[slot] !== undefined ) return pair[slot];
   const feet = edgeDistance(u, t) ?? separation(run, u, t);
+  const r = sensesOf(run, u);
+  const k = crisis ? 2 : 1;
   const blind = (u.conds?.blinded ?? 0) > 0;
   const deaf = (u.conds?.deafened ?? 0) > 0;
   const dark = (run.prep.options.darkness ?? 0) >= DARK;
-  const los = approach(run, u, t).los !== false || u.losGained?.has(t.id);
-  let found = false;
-  for ( const s of sensesOf(run, u) ) {
-    let range = s.range ?? Infinity;
-    if ( s.type === "sight" ) range = dark ? SIGHT_IN_DARK : SIGHT_IN_LIGHT;
-    if ( crisis ) range *= 2;
-    if ( feet > range ) continue;
-    if ( s.hearing ) {
-      if ( deaf ) continue;
-    } else if ( s.sight ) {
-      if ( blind ) continue;
-      if ( !los && !crisis ) continue;
-    }
-    found = true;
-    break;
-  }
+  const sees = () => !blind && feet <= sightReach(r, dark) * k
+    && (crisis || approach(run, u, t).los !== false || !!u.losGained?.has(t.id));
+  const smells = () => feet <= r.smell * k && approach(run, u, t).blocked !== true;
+  const found = (!deaf && feet <= r.hearing * k) || feet <= Math.max(r.feel, r.radar) * k || smells() || sees();
   pair[slot] = found;
   return found;
 }

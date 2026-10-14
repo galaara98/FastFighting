@@ -36,7 +36,10 @@
  * @property {Record<string, number|boolean>} [conditions]  Conditions already on the creature (frightened, slowed, ...)
  * @property {object[]} [persistent]        Persistent damage already running: DamagePart[] with persistent: true
  * @property {number} [perception]          Perception modifier, for bystanders noticing a fight
- * @property {boolean} [darkvision]         Sees in the dark (bystanders spotting a fight at night)
+ * @property {{sight?: number|null, lowlight?: number|null, hearing?: number|null, smell?: number|null, feel?: number|null, radar?: number|null}} [senses]
+ *                                          How far its senses reach, in feet (null: no limit; 0: none; left out: the
+ *                                          ordinary): seeing, seeing in the dark, hearing, smell, any other of its own,
+ *                                          and tech sensing (behavior/senses.js)
  * @property {{mod: number}} [firstAid]     Can stabilize the dying without magic (PF2e: trained in Medicine)
  * @property {number} [group]               A neutral token's friend group (1-3, from the planner): they look out for each other
  * @property {string} [creatureKind]        What kind of creature it is, as the system has it (5e: its type), for grouping neutrals

@@ -4844,6 +4844,16 @@
    "commit": null,
    "hash": "a2a62700188e"
   },
+  "core:FASTFIGHTING.Log.NoticeFeel": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.NoticeFeel",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "725f5d924472"
+  },
   "core:FASTFIGHTING.Log.NoticeFled": {
    "repo": "core",
    "file": "languages/en.json",
@@ -4864,6 +4874,16 @@
    "commit": null,
    "hash": "1a095752a393"
   },
+  "core:FASTFIGHTING.Log.NoticeRadar": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.NoticeRadar",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "b9ad2b0266b0"
+  },
   "core:FASTFIGHTING.Log.NoticeSight": {
    "repo": "core",
    "file": "languages/en.json",
@@ -4873,6 +4893,16 @@
    "date": null,
    "commit": null,
    "hash": "bd2c3ea57165"
+  },
+  "core:FASTFIGHTING.Log.NoticeSmell": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.NoticeSmell",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "b9d1b14c66ba"
   },
   "core:FASTFIGHTING.Log.NoticeSound": {
    "repo": "core",
@@ -14138,6 +14168,16 @@
    "commit": null,
    "hash": "b7fa5ac0f1bf"
   },
+  "core:FASTFIGHTING.Story.Part.noticeRadar": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Story.Part.noticeRadar",
+   "area": "core/Story",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "7b91ad3d79f2"
+  },
   "core:FASTFIGHTING.Story.Part.noticeSight": {
    "repo": "core",
    "file": "languages/en.json",
@@ -14147,6 +14187,16 @@
    "date": null,
    "commit": null,
    "hash": "1d8b3095c7c2"
+  },
+  "core:FASTFIGHTING.Story.Part.noticeSmell": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Story.Part.noticeSmell",
+   "area": "core/Story",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "2d5fdfc4977f"
   },
   "core:FASTFIGHTING.Story.Part.noticeSound": {
    "repo": "core",
@@ -31684,7 +31734,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "cc68afcb6890"
+   "hash": "cc68afcb6890",
+   "changed": true
   },
   "core:story:maneuver.noticeFeel.amazing": {
    "repo": "core",
@@ -31705,6 +31756,36 @@
    "date": null,
    "commit": null,
    "hash": "ee267ce0830b"
+  },
+  "core:story:maneuver.noticeRadar": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "maneuver.noticeRadar",
+   "area": "core/story.maneuver",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "72f9fc1cd946"
+  },
+  "core:story:maneuver.noticeRadar.amazing": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "maneuver.noticeRadar.amazing",
+   "area": "core/story.maneuver",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "8bac0d168471"
+  },
+  "core:story:maneuver.noticeRadar.terrible": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "maneuver.noticeRadar.terrible",
+   "area": "core/story.maneuver",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "234fba1caa36"
   },
   "core:story:maneuver.noticeSight": {
    "repo": "core",
@@ -31735,6 +31816,36 @@
    "date": null,
    "commit": null,
    "hash": "23c53339cbc2"
+  },
+  "core:story:maneuver.noticeSmell": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "maneuver.noticeSmell",
+   "area": "core/story.maneuver",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "68a8bf9b83a8"
+  },
+  "core:story:maneuver.noticeSmell.amazing": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "maneuver.noticeSmell.amazing",
+   "area": "core/story.maneuver",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "058b78c21572"
+  },
+  "core:story:maneuver.noticeSmell.terrible": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "maneuver.noticeSmell.terrible",
+   "area": "core/story.maneuver",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "965b705beb11"
   },
   "core:story:maneuver.noticeSound": {
    "repo": "core",

@@ -362,7 +362,7 @@ function narrate(e, roll, rel, fill) {
     case "callHelp": return roll("maneuver.callForHelp", { ...f, target: e.toward });
     case "lazy": return roll("condition.lazy", f);
     case "callToArms": return roll("maneuver.callToArms", { ...f, targets: listJoin(e.targets ?? []) });
-    case "notice": return roll({ sight: "maneuver.noticeSight", sound: "maneuver.noticeSound", feel: "maneuver.noticeFeel", fledInto: "event.noticeFled", help: "event.noticeHelp", attacked: "event.noticeAttacked", standoff: "event.noticeStandoff" }[e.cause] ?? "event.noticeSound", f);
+    case "notice": return roll({ sight: "maneuver.noticeSight", sound: "maneuver.noticeSound", smell: "maneuver.noticeSmell", feel: "maneuver.noticeFeel", radar: "maneuver.noticeRadar", fledInto: "event.noticeFled", help: "event.noticeHelp", attacked: "event.noticeAttacked", standoff: "event.noticeStandoff" }[e.cause] ?? "event.noticeSound", f);
     case "join": return roll(e.why === "forced" ? "event.joinForced" : "event.join", f);
     case "watch": return roll(e.neutral ? "event.watchNeutral" : "event.watch", f);
     case "neutral": {
