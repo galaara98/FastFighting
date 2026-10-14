@@ -370,7 +370,7 @@ async function playTurn(u, combatant, key) {
     }
     // (What the turn did to what the encounter keeps: Daggerheart's Fear.)
     try {
-      turn.records.push(...((await adapter.commitTurn(before, after, options)) ?? []));
+      turn.records.push(...((await adapter.commitTurn(before, after, { ...options, spec: battle.spec, events: result.events })) ?? []));
     } catch ( err ) {
       console.error(`${MODULE_ID} | writing the turn's encounter changes`, err);
     }
@@ -513,10 +513,11 @@ async function closePlayerTurn() {
 
 /**
  * What the cards say, against what the sheets show: the harm a creature really took (its sheet's loss) is shared among
- * the blows read at it; a creature that lost hit points no card explains took it from the player, as far as anyone
- * can tell (the GM looks); a heal, as much as the sheet shows.
+ * the blows read at it; blows read at no one (a system whose cards name no target, Ironsworn's) are at the one creature
+ * whose loss nothing else explains, when there's just one; a creature that lost hit points no card explains took it
+ * from the player, as far as anyone can tell (the GM looks); a heal, as much as the sheet shows.
  */
-function reconcile(run, pcId, events, states) {
+export function reconcile(run, pcId, events, states) {
   const lost = id => {
     const u = run.byId.get(id);
     const s = states[id];
@@ -525,6 +526,20 @@ function reconcile(run, pcId, events, states) {
   const out = events.map(e => ({ ...e }));
   const hitsAt = new Map();
   for ( const e of out ) if ( ["attack", "save", "auto"].includes(e.type) && e.targetId ) (hitsAt.get(e.targetId) ?? hitsAt.set(e.targetId, []).get(e.targetId)).push(e);
+  const aimless = out.filter(e => ["attack", "save"].includes(e.type) && !e.targetId);
+  if ( aimless.length ) {
+    const unexplained = Object.keys(states).filter(id => id !== pcId && !hitsAt.has(id) && lost(id) > 0);
+    if ( unexplained.length === 1 ) {
+      const [id] = unexplained;
+      for ( const e of aimless ) {
+        e.targetId = id;
+        if ( e.aimless ) e.sure = true; // (unsure only of whom it was at)
+        // (A hit's harm, as much as the sheet shows, shared below.)
+        if ( (e.degree ?? 2) >= 2 && !(e.damage > 0) ) e.damage = 1;
+      }
+      hitsAt.set(id, aimless);
+    }
+  }
   for ( const [id, list] of hitsAt ) {
     const real = lost(id);
     const read = list.reduce((sum, e) => sum + (e.damage > 0 ? e.damage : 0), 0);

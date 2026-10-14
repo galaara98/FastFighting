@@ -278,8 +278,9 @@ export class SystemAdapter {
   }
 
   /**
-   * What one live turn did to what the encounter keeps beyond each token (Daggerheart's Fear): written, with undo
-   * records returned. `before`, `after`: every creature as the turn found and left it (captureUnit's shape).
+   * What one live turn did to what the encounter keeps beyond each token (Daggerheart's Fear, Ironsworn's encounter
+   * track): written, with undo records returned. `before`, `after`: every creature as the turn found and left it
+   * (captureUnit's shape); options.spec the battle's, options.events the turn's log.
    */
   async commitTurn(before, after, options) {
     return [];

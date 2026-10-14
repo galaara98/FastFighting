@@ -9,6 +9,9 @@
         {{#each review.events}}
         <li data-event="{{i}}" class="{{#if unsure}}is-unsure{{/if}}">
           <label><input type="checkbox" name="keep" checked> {{text}}</label>
+          {{#if pick}}
+          <select name="target">{{#each targets}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select>
+          {{/if}}
           {{#if talk}}
           <select name="target">{{#each targets}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select>
           <select name="kind">{{#each kinds}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select>

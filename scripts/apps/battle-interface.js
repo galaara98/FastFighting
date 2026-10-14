@@ -118,7 +118,7 @@ export class BattleInterface extends HandlebarsApplicationMixin(ApplicationV2) {
     const review = b.review ? {
       title: fmt("FASTFIGHTING.Battle.ReviewTitle", { name: name(b.review.id) }),
       events: b.review.events.map((e, i) => ({
-        i, unsure: e.sure === false, talk: e.type === "talk",
+        i, unsure: e.sure === false, talk: e.type === "talk", pick: e.type !== "talk" && !e.targetId,
         text: fmt(`FASTFIGHTING.Battle.Read.${game.i18n.has(`FASTFIGHTING.Battle.Read.${e.type}`) ? e.type : "other"}`, {
           actor: name(b.review.id), target: name(e.targetId), action: e.action || e.skill || "", damage: e.damage ?? 0, amount: e.amount ?? 0,
           degree: Number.isFinite(e.degree) ? loc(`FASTFIGHTING.Battle.Degree.${e.degree}`) : "", kind: e.kind ? loc(`FASTFIGHTING.Battle.Talk.${e.kind}`) : ""
@@ -205,6 +205,10 @@ export class BattleInterface extends HandlebarsApplicationMixin(ApplicationV2) {
         kept.degree = Number(row.querySelector("[name=degree]")?.value ?? e.degree ?? 2);
         kept.targetId = row.querySelector("[name=target]")?.value || e.targetId;
         if ( !kept.targetId ) return; // (at no one: nothing to tell)
+      } else if ( !e.targetId && row ) {
+        // (A blow the cards put at no one: at whom the GM says.)
+        kept.targetId = row.querySelector("[name=target]")?.value || null;
+        if ( !kept.targetId && ["attack", "save", "auto"].includes(e.type) ) return;
       }
       events.push(kept);
     });
