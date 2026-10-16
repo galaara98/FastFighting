@@ -2,8 +2,6 @@
   "FASTFIGHTING": {
     "Keybinding": {
       "Open": "Open the Battle Planner",
-      "networkRemove": "Battle Interface: take it off",
-      "networkRemoveHint": "With a creature in focus, takes off the line or symbol the pointer is on (or Tab stepped to).",
       "networkLower": "Battle Interface: one less",
       "networkLowerHint": "With a creature in focus, lowers the line or symbol the pointer is on (or Tab stepped to); at its least, takes it off.",
       "networkRaise": "Battle Interface: one more",

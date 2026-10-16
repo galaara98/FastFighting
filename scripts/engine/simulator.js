@@ -749,16 +749,22 @@ function applyEffects(run, u, action, target, degree) {
       target.prone = true;
       log(run, target, { type: "prone", by: u.spec.name });
     } else if ( effect.kind === "grabbed" ) {
+      // (Not one that can't be grabbed: the system's immunities.)
+      if ( cantBeGrabbed(run, target, action) ) continue;
       target.grabbedBy = u.id;
+      target.grabKey = null;
       log(run, target, { type: "grabbed", by: u.spec.name });
+    } else if ( effect.kind === "move" && effect.move && (degree === 3 || !effect.critOnly) ) {
+      // (Pushed back by the blow: 5e Thunderous Smite, a creature's Push.)
+      forceMove(run, u, target, effect.move);
     } else if ( effect.kind === "affliction" ) {
       exposeToAffliction(run, u, target, effect);
     } else if ( effect.kind === "condition" && (degree === 3 || !effect.critOnly) ) {
       // A rider such as "if it critically fails, it's also stunned 1": the system's own tags decide immunity.
       if ( isImmune(run, target, { traits: action.traits, onSave: [effect] }) ) continue;
-      applyOutcome(target, effect, u.id);
-      testConcentration(run, target);
       log(run, target, { type: "condition", by: u.spec.name, effect: effect.label ?? "" });
+      landOutcome(run, u, target, effect, { traits: action.traits ?? [] }, { damage: false });
+      testConcentration(run, target);
     } else if ( effect.kind === "save" && effect.save ) {
       saveRider(run, u, action, target, effect);
     }
@@ -780,11 +786,12 @@ function saveRider(run, u, action, target, effect) {
     dc: effect.save.dc, degree: roll.degree, damage: hit?.total ?? 0, controls: !!effect.conditions
   });
   hit?.apply();
-  if ( roll.degree > 1 || !effect.conditions || !isUp(target) ) return;
-  if ( isImmune(run, target, { traits: action.traits, onSave: [effect] }) ) return;
-  applyOutcome(target, effect, u.id);
+  // (Failed: what it lays, and a push or a grab it carries: Thunderwave's.)
+  if ( roll.degree > 1 || !(effect.conditions || effect.move || effect.grab) || !isUp(target) ) return;
+  if ( effect.conditions && isImmune(run, target, { traits: action.traits, onSave: [effect] }) ) return;
+  if ( effect.conditions ) log(run, target, { type: "condition", by: u.spec.name, effect: effect.label ?? "" });
+  landOutcome(run, u, target, effect, { traits: action.traits ?? [] }, { damage: false });
   testConcentration(run, target);
-  log(run, target, { type: "condition", by: u.spec.name, effect: effect.label ?? "" });
 }
 
 /** The hit points a creature shares, by key (its own sharedHp, set in the fight: one who joined the track; else its spec's). */
@@ -1394,13 +1401,14 @@ function applyDeed(run, u, target, deed, deedRoll) {
   // (A defensive deed lands on the one who did it.)
   const on = tier?.outcome?.self ? u : target;
   const landed = !!tier && isUp(on) && (on === u || !isImmune(run, target, { id: `deed:${deed.id}:${tier.min}`, onSave: [tier.outcome] }));
+  // (Logged first: a push or a grab it brings follows it.)
+  log(run, u, {
+    type: "deed", deed: deed.label, maneuver: deed.maneuver ?? null, target: target.spec.name, targetId: target.id, roll: deedRoll, success: landed, effect: landed ? (tier.outcome?.label ?? "") : ""
+  });
   if ( landed ) {
-    applyOutcome(on, tier.outcome, u.id, { id: `deed:${deed.id}`, name: deed.label });
+    landOutcome(run, u, target, tier.outcome, { id: `deed:${deed.id}`, name: deed.label, traits: [] }, { damage: false });
     if ( on === target ) testConcentration(run, target);
   }
-  log(run, u, {
-    type: "deed", deed: deed.label, target: target.spec.name, targetId: target.id, roll: deedRoll, success: landed, effect: landed ? (tier.outcome?.label ?? "") : ""
-  });
 }
 
 /* -------------------------------------------- */
@@ -1539,6 +1547,37 @@ function fateful(run, victim, actor, attempt) {
   }
 }
 
+/**
+ * A maneuver's result landing (maneuvers.js: a control action's degree, a deed, a rider): what it lays (on the target,
+ * or a botch's on the one who tried it), a grab (unless the target can't be grabbed: the system's immunities; it lasts
+ * as long as what the grab laid with it, where it laid anything), a move (the target moved; a botch, the one who tried
+ * it, moved by the target), and its own damage at that degree (PF2e Trip, critically: 1d6). Returns the damage.
+ */
+function landOutcome(run, u, target, outcome, action, { damage: harms = true } = {}) {
+  const self = !!outcome.self;
+  const on = self ? u : target;
+  const effect = applyOutcome(on, outcome, u.id, action);
+  if ( outcome.grab && !self && isUp(on) && !cantBeGrabbed(run, on, action) ) {
+    on.grabbedBy = u.id;
+    on.grabKey = effect?.key ?? null;
+    log(run, on, { type: "grabbed", by: u.spec.name });
+  }
+  if ( outcome.move && isUp(on) ) {
+    if ( self ) forceMove(run, target, u, outcome.move);
+    else forceMove(run, u, target, outcome.move);
+  }
+  if ( !harms || !outcome.damage?.length || !isUp(on) ) return 0;
+  const hit = rollHit(run, u, action ?? { id: "outcome", damage: outcome.damage }, on, outcome.damage, 1, false);
+  hit.apply();
+  return hit.total;
+}
+
+/** Can't it be grabbed: the system's immunities say so, or its own (immune to grabbed, grappled)? */
+function cantBeGrabbed(run, t, action) {
+  if ( (t.spec.iwr?.immune ?? []).some(k => k === "grabbed" || k === "grappled") ) return true;
+  return isImmune(run, t, { traits: action?.traits ?? [], onSave: [{ grab: true }] });
+}
+
 /** A crowd-control action on one target: immunity, the roll, the outcome for that degree, any damage. */
 /**
  * t moved by u (shoved, dragged, put somewhere: behavior/forced.js): where it ends up, and what it finds there. Over a
@@ -1569,7 +1608,18 @@ function forceMove(run, u, t, move) {
     const amount = rules.applyIwr(iwrOf(t), rolled.byType, t);
     log(run, t, { type: "fall", feet: path.fall, amount });
     dealDamage(run, u, t, amount, { types: Object.keys(rolled.byType) });
-    if ( isUp(t) && rules.fallProne !== false ) t.prone = true;
+    const prone = typeof rules.fallProne === "function" ? rules.fallProne(t, amount) : rules.fallProne !== false;
+    if ( isUp(t) && prone ) t.prone = true;
+  }
+  // (Stopped short against a wall or someone: the system's collision, if it has one: Daggerheart's.)
+  if ( path.blocked && isUp(t) && typeof rules.collisionDamage === "function" ) {
+    const parts = rules.collisionDamage(t, { feetLeft: Math.max(0, (move.feet ?? 5) - (path.feet ?? 0)), into: path.into ?? null }) ?? [];
+    if ( parts.length ) {
+      const rolled = sampleDamage(parts, run.rng, 1);
+      const amount = rules.applyIwr(iwrOf(t), rolled.byType, t);
+      log(run, t, { type: "collision", amount, into: path.into?.spec?.name ?? null });
+      dealDamage(run, u, t, amount, { types: Object.keys(rolled.byType) });
+    }
   }
   if ( path.cell?.harm?.length && isUp(t) ) {
     const rolled = sampleDamage(path.cell.harm, run.rng, 1);
@@ -1615,6 +1665,8 @@ function executeControl(run, u, action, target, attacksMade, common) {
       if ( run.boosting && x.degree < 2 ) x = boost(run, r.kind === "save" ? target : u, x, r.dc, { kind: r.rollKind, stakes: r.kind === "save" ? 0.7 : 0.3, options: opts, label: action.name }, logger(run));
       if ( r.kind === "save" ) x = standFirm(run, target, x, r.dc, 0.7, action.name);
       if ( r.kind === "save" && x.degree === 2 && upgradesSave(target, action.save.type) ) x = { ...x, degree: 3 };
+      // (Its own roll, told to the system as any is: DCC's luck on a 20, hiding given up by an attack.)
+      if ( r.kind !== "save" ) rules.afterRoll?.(run, u, x, { kind: r.rollKind, control: true, action, target, faces: opts.faces });
       return { ...x, mod: r.mod + (x.die ?? 0) };
     })();
   // Some effects hold weaker on much stronger targets (PF2e incapacitation): their result counts one better.
@@ -1629,25 +1681,22 @@ function executeControl(run, u, action, target, attacksMade, common) {
   if ( shrugged ) outcome = withoutTaunt(outcome);
   // Most outcomes land on the target; a botched Trip lands on the one who tried it.
   const lands = outcome?.self ? u : target;
+  let damage = 0;
   if ( outcome && isUp(lands) ) {
     if ( !outcome.self ) moveHeld(run, u, action, lands);
     if ( !outcome.self && run.standoff && heldOff(run, u, lands) && areEnemies(run, u, lands) ) endStandoff(run, u, "blood");
-    applyOutcome(lands, outcome, u.id, action);
-    // (Grabbed by it; moved where it puts it: maneuvers.js.)
-    if ( outcome.grab && !outcome.self ) {
-      lands.grabbedBy = u.id;
-      log(run, lands, { type: "grabbed", by: u.spec.name });
-    }
-    if ( outcome.move && !outcome.self ) forceMove(run, u, lands, outcome.move);
+    // (What it lays, a grab, a move, its own damage at that degree: landOutcome.)
+    damage += landOutcome(run, u, target, outcome, action);
     testConcentration(run, lands);
     if ( run.neutral && !outcome.self ) crossed(run, u, lands, "harm", 1, logger(run));
   }
-  let damage = 0;
   if ( action.damage?.length ) {
     const mult = action.save ? saveMultiplier(rules, degree, action.save) : (degree >= 2 ? 1 : 0);
     if ( mult > 0 ) {
-      const hit = rollHit(run, u, action, target, action.damage, mult, false);
-      damage = hit.total;
+      // (An attack's critical hit is a critical's damage, unless the action says otherwise.)
+      const crit = degree === 3 && r.kind === "attack" && action.critDamage !== false;
+      const hit = rollHit(run, u, action, target, action.damage, mult, crit);
+      damage += hit.total;
       hit.apply();
     }
   }
@@ -3026,6 +3075,11 @@ export function endOfTurn(run, u) {
       recomputeConditions(u);
       settleSides(run);
     }
+  }
+  // (A grab that lasts as long as what it laid with it, PF2e's until the grabber's next turn: let go with it.)
+  if ( u.grabbedBy && u.grabKey && !u.effects.some(e => e.key === u.grabKey && e.sourceId === u.grabbedBy) ) {
+    u.grabbedBy = null;
+    u.grabKey = null;
   }
   if ( u.persistent.length && !systemOwns(run, u, "persistent") ) {
     const remaining = [];

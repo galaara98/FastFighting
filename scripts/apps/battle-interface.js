@@ -140,6 +140,11 @@ export class BattleInterface extends HandlebarsApplicationMixin(ApplicationV2) {
   /** Is the pointer over the window? The map's keys work only then (Delete elsewhere is the canvas's). */
   #hovering = false;
 
+  /** Is the pointer over it (its keys are for it then)? */
+  get hovering() {
+    return this.#hovering && this.rendered;
+  }
+
   _canRender() {
     return game.user.isGM;
   }
@@ -205,13 +210,12 @@ export class BattleInterface extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * One of the map of minds' keys (Configure Controls: remove, lower, raise, next, previous), with the pointer over the
-   * window: true if it was for the map. Delete over the window is never the canvas's (a token in focus is selected).
+   * One of the map of minds' keys (+ and -, whatever the keyboard; Configure Controls: lower, raise, next, previous),
+   * with the pointer over the window: true if it was for the map.
    */
   netKey(action) {
     if ( !this.#hovering || !this.rendered ) return false;
-    const done = this.#network?.act(action) ?? false;
-    return done || action === "remove";
+    return this.#network?.act(action) ?? false;
   }
 
   _onRender(context, options) {
@@ -739,12 +743,13 @@ export function registerBattleInterface() {
     soon = setTimeout(() => BattleInterface.refresh(), 250);
   };
   for ( const hook of ["updateCombat", "updateActor", "updateToken"] ) Hooks.on(hook, later);
-  // The map of minds' keys (Configure Controls): on what the GM points at (or stepped to), with the pointer over the
-  // Battle Interface; anywhere else, the keys are the canvas's.
+  // The map of minds' keys: on what the GM points at (or stepped to), with the pointer over the Battle Interface;
+  // anywhere else, the keys are the canvas's. + and - are the characters typed, wherever a keyboard has them (Foundry's
+  // bindings go by a key's place: the key right of 0 is + on some keyboards, - or ö on others); the bindings in
+  // Configure Controls (the number pad's, by default, and whatever else the GM sets) work too.
   const KEYS = {
-    networkRemove: { action: "remove", editable: [{ key: "Delete" }] },
-    networkLower: { action: "lower", editable: [{ key: "Minus" }, { key: "NumpadSubtract" }] },
-    networkRaise: { action: "raise", editable: [{ key: "Equal" }, { key: "Equal", modifiers: ["Shift"] }, { key: "NumpadAdd" }] },
+    networkLower: { action: "lower", editable: [{ key: "NumpadSubtract" }] },
+    networkRaise: { action: "raise", editable: [{ key: "NumpadAdd" }] },
     networkNext: { action: "next", editable: [{ key: "Tab" }] },
     networkPrevious: { action: "previous", editable: [{ key: "Tab", modifiers: ["Shift"] }] }
   };
@@ -755,6 +760,25 @@ export function registerBattleInterface() {
       onDown: () => foundry.applications.instances.get("fast-fighting-battle")?.netKey?.(action) ?? false
     });
   }
+  // (Ahead of Foundry's keys: + and - as typed, unless a binding of ours has that key already; and Delete over the
+  // window never reaches the canvas, where the creature in focus has its token selected.)
+  const bound = () => new Set(["networkRaise", "networkLower"].flatMap(n => game.keybindings.get(MODULE_ID, n) ?? []).map(b => b.key));
+  window.addEventListener("keydown", event => {
+    const app = foundry.applications.instances.get("fast-fighting-battle");
+    if ( !game.user?.isGM || !app?.hovering || event.isComposing ) return;
+    if ( event.target?.closest?.("input, textarea, select, [contenteditable]") ) return;
+    if ( event.key === "Delete" || event.key === "Backspace" ) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      return;
+    }
+    if ( event.ctrlKey || event.metaKey || event.altKey || bound().has(event.code) ) return;
+    const action = event.key === "+" || event.key === "=" ? "raise" : event.key === "-" || event.key === "_" ? "lower" : null;
+    if ( action && app.netKey(action) ) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+    }
+  }, { capture: true });
   Hooks.on("controlToken", (token, controlled) => {
     if ( !controlled || !game.user.isGM || canvas.tokens?.controlled.length !== 1 ) return;
     const app = foundry.applications.instances.get("fast-fighting-battle");

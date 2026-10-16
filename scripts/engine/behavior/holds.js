@@ -203,11 +203,16 @@ export function release(run, u, hold) {
       u.boundRound = null;
       if ( u.status === STATUS.BOUND ) u.status = u.hp > 0 ? STATUS.STANDING : STATUS.DOWN;
       break;
-    case "grabbed":
+    case "grabbed": {
+      // (And what the grab laid with it: a critical Grapple's restrained.)
+      const by = u.grabbedBy;
+      const with_ = u.grabKey;
       u.grabbedBy = null;
-      u.effects = (u.effects ?? []).filter(e => !(e.conditions?.grabbed && (e.key === "gm:grabbed" || e.key === hold.effectKey)));
+      u.grabKey = null;
+      u.effects = (u.effects ?? []).filter(e => !(e.conditions?.grabbed && (e.key === "gm:grabbed" || e.key === hold.effectKey)) && !(with_ && e.key === with_ && e.sourceId === by));
       if ( u.baseConds ) delete u.baseConds.grabbed;
       break;
+    }
     default:
       // (What holds goes, and what it held in place with it, below; the effect's other conditions stay: a web with
       // nothing else to it ends.)

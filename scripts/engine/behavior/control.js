@@ -66,12 +66,20 @@ export function isImmune(run, target, action) {
 function immuneNow(run, target, action) {
   // (A playstyle's taunt is words: only the mindless pay them no heed.)
   if ( action.goad ) return !!target.spec.social?.mindless;
+  // (A grab and nothing else, at one that can't be grabbed.)
+  if ( grabOnly(action) && (target.spec.iwr?.immune ?? []).some(k => k === "grabbed" || k === "grappled") ) return true;
   const rules = run.prep.rules;
   if ( rules.isImmune ) return !!rules.isImmune(target, action);
   const immune = new Set(target.spec.iwr?.immune ?? []);
   if ( (action.traits ?? []).some(t => immune.has(t)) ) return true;
-  const keys = new Set(outcomesOf(action).filter(o => !o.self).flatMap(o => Object.keys(o.conditions ?? {})));
+  const keys = new Set(outcomesOf(action).filter(o => !o.self).flatMap(o => [...Object.keys(o.conditions ?? {}), ...(o.grab ? ["grabbed"] : [])]));
   return keys.size > 0 && [...keys].every(k => immune.has(k));
+}
+
+/** Is all an action does to its target a grab (nothing else laid, moved or dealt)? */
+export function grabOnly(action) {
+  const outs = [...(action.onHit ?? []), ...(action.onSave ?? []), action.outcome].filter(o => o && !o.self);
+  return outs.length > 0 && outs.every(o => o.grab && !Object.keys(o.conditions ?? {}).length && !o.move && !o.damage?.length && !o.mods);
 }
 
 /** Degrees the target's result shifts for this action (PF2e incapacitation: +1 for much higher-level targets). */

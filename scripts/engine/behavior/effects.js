@@ -49,6 +49,13 @@ import { forcedWorth } from "./forced.js";
 import { PROFILES, profileOf, profiled, profileMods, hasTrait } from "../conditions.js";
 import { parseFormula } from "../dice.js";
 
+/** Mean damage of some parts, by type. */
+function meanByType(parts) {
+  const out = {};
+  for ( const p of parts ?? [] ) out[p.type] = (out[p.type] ?? 0) + Math.max(0, meanPart(p));
+  return out;
+}
+
 /** What one of the core's conditions harms each turn, on the whole, at that value (one laid by someone: as a typical one). */
 function harmMean(p, v) {
   const [formula, type] = p.harm;
@@ -550,7 +557,9 @@ export function outcomeWorth(run, by, t, outcome, { versus = null } = {}) {
   const rounds = uses ? 1 : usefulRounds(run, by?.side ?? t.side, outcome.rounds);
   let perRound = 0;
   // (Grabbed: held in place too, as the system has it.)
-  const fresh = freshConditions(t, outcome.grab ? { ...(outcome.conditions ?? {}), grabbed: 1, immobilized: 1 } : outcome.conditions);
+  // (Not one it already holds: a grab again is only what else it lays.)
+  const grabs = outcome.grab && !(by && t.grabbedBy === by.id);
+  const fresh = freshConditions(t, grabs ? { ...(outcome.conditions ?? {}), grabbed: 1, immobilized: 1 } : outcome.conditions);
   const weighed = {};
   for ( const [k, v] of Object.entries(fresh) ) {
     // Turned against its own side: what it would have done to them, and what it now does for the other.
@@ -608,6 +617,8 @@ export function outcomeWorth(run, by, t, outcome, { versus = null } = {}) {
   for ( const [k, v] of Object.entries(outcome.resources ?? {}) ) worth += Number(rules.resourceWorth?.(run, t, k, Number(v) || 0)) || 0;
   // Moved (shoved, dragged, put somewhere): what it would do to it there (behavior/forced.js).
   if ( outcome.move && by && by !== t ) worth -= forcedWorth(run, by, t, outcome.move);
+  // Its own damage at that degree (PF2e Trip, critically): as dealt.
+  if ( outcome.damage?.length && by && by !== t ) worth -= rules.applyIwr ? rules.applyIwr(iwrOf(t), meanByType(outcome.damage)) : outcome.damage.reduce((s, p) => s + Math.max(0, meanPart(p)), 0);
   return worth;
 }
 

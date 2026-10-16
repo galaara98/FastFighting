@@ -6,9 +6,12 @@
  * with no outcomes of its own takes these (withManeuver), one with its own keeps them.
  *
  * What a degree can do, besides conditions (effects.js): move (forced movement, behavior/forced.js: {kind: "push"
- * away from the one doing it, "pull" toward it, "place" anywhere within its reach, feet}) and grab (the one doing it
- * holds it: u.grabbedBy). From the doer's side: crit, success, fail, critFail; a botch with self: true lands on the
- * doer. The ids are the story's too (story/master.js MANEUVERS), told as what they are.
+ * away from the one doing it, "pull" toward it, "place" anywhere within its reach, feet; or to: a push until it's that
+ * far off}), grab (the one doing it holds it: u.grabbedBy; as long as what it lays with it, where it lays anything, else
+ * until it's broken or the holder falls), and damage (its own, at that degree only: PF2e's critical Trip). From the
+ * doer's side: crit, success, fail, critFail; a botch with self: true lands on the doer (a move: the target moves it).
+ * A rider on a blow can carry a move too ({kind: "move", move, critOnly}), and a save rider's failure a move or a grab.
+ * The ids are the story's too (story/master.js MANEUVERS), told as what they are.
  */
 const push = (feet, extra = {}) => Object.freeze({ move: Object.freeze({ kind: "push", feet }), ...extra });
 const pull = feet => Object.freeze({ move: Object.freeze({ kind: "pull", feet }) });

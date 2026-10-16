@@ -5,7 +5,7 @@
  * stand on the map; the GM drags them aside (the arrows stay on), pans, and zooms. A click (a press without a drag)
  * focuses a creature. Each arrow and symbol shows its intensity (a hidden 1 for one that's only on or off), with one
  * less and one more (none at its most). With a creature in focus, what the pointer is on (or Tab steps to: act("next"))
- * glows and says what it is, and act("remove" | "lower" | "raise") works on it; "raise" on the creature in focus asks
+ * glows and says what it is, and act("lower" | "raise") works on it; "raise" on the creature in focus asks
  * for a new line from it (onAdd). Ctrl-click (or Cmd-click) adds a creature to the selection or takes it away;
  * dragging one that's selected moves them all. A creature's menu (right-click): select or unselect it, select its
  * team, select its leader. The selection is kept in state.selected.
@@ -459,7 +459,6 @@ export function mountNetwork(root, graph, { state, focus = null, onFocus = () =>
       const it = armed.item;
       if ( it.adjust && action === "raise" && it.raise ) onAdjust(it.adjust, 1);
       else if ( it.adjust && action === "lower" && it.lower ) onAdjust(it.adjust, -1);
-      else if ( it.adjust && action === "remove" && it.lower ) onAdjust(it.adjust, -(Number(it.adjust.intensity) || 1));
       return true;
     },
     destroy() {

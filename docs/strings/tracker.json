@@ -5159,7 +5159,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "5536b390bd95"
+   "hash": "5536b390bd95",
+   "gone": "2026-10-16"
   },
   "core:FASTFIGHTING.Keybinding.networkRemoveHint": {
    "repo": "core",
@@ -5169,7 +5170,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "2a1ce6640137"
+   "hash": "2a1ce6640137",
+   "gone": "2026-10-16"
   },
   "core:FASTFIGHTING.Keybinding.Open": {
    "repo": "core",
