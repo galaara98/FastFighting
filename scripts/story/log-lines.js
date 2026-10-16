@@ -286,6 +286,13 @@ function baseLine(e) {
       const what = e.damageType ? damageType(e.damageType) : e.label ?? e.what;
       return t(e.success ? "Remedy" : "RemedyFails", { actor: e.actor, what, said: e.said ? ` · ${e.said}` : "" });
     }
+    case "forced": {
+      const how = { push: "ForcedPush", pull: "ForcedPull", place: "ForcedPlace" }[e.how] ?? "ForcedPush";
+      const into = e.into?.length ? ` · ${t("ForcedInto", { what: listJoin(e.into) })}` : "";
+      return t(how, { actor: e.actor, target: e.target, feet: distanceText(e.feet) }) + (e.blocked ? ` · ${t("ForcedBlocked")}` : "") + into;
+    }
+    case "fall": return t("Fall", { actor: e.actor, feet: distanceText(e.feet), damage: e.amount });
+    case "groundHarm": return t("GroundHarm", { actor: e.actor, damage: e.amount });
     case "free": {
       const roll = e.natural !== undefined ? ` · ${dice(e.natural, e.mod, e.total, e.dc, t("DC"))}` : e.said ? ` · ${e.said}` : "";
       return t(e.success ? "Free" : "FreeFails", { ...a, roll });

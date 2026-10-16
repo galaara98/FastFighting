@@ -443,6 +443,9 @@ function narrate(e, roll, rel, fill) {
     case "grabbed": return roll("condition.grabbed", f);
     case "escape": return roll(e.success ? "maneuver.escape" : e.hold === "bound" ? "event.stuckBonds" : "event.stuck", f);
     case "free": return roll(e.success ? "maneuver.untie" : "event.untieFails", f);
+    case "forced": return e.into?.length ? roll("event.shovedIntoHazard", { ...f, hazard: e.into[0] }) : e.feet ? null : roll("event.shoveBlocked", f);
+    case "fall": return roll("event.falls", f);
+    case "groundHarm": return roll("event.groundHarm", f);
     case "remedy": return roll(e.success ? (e.damageType === "fire" ? "maneuver.douseFlames" : e.damageType === "bleed" ? "maneuver.firstAid" : "event.shakeOff") : "event.shakeOffFails", f);
     case "waver": return roll("event.waver", f);
     case "holdGround": return roll(e.ordered ? "event.holdOrdered" : "event.holdGround", { ...f, target: e.by ?? "" });

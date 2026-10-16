@@ -94,6 +94,7 @@
  */
 import { keepClear } from "./behavior/traps.js";
 import { tiedOut } from "./behavior/holds.js";
+import { withManeuver } from "./maneuvers.js";
 import { STATUS, NEUTRAL_PARTY, AVOID_KILLING, clamp, fudged, tacticalTier, TRAITS } from "../constants.js";
 import { meanPart } from "./dice.js";
 import { typicalValue } from "./tactics.js";
@@ -246,8 +247,9 @@ function prepareCombatant(c, side) {
     traits[k] = clamp(Math.round(fudged(c.traits?.[k] ?? 50) * (1 - SIDE_WEIGHT) + side.traits[k] * SIDE_WEIGHT), 0, 100);
   }
   const meanHeal = a => (a.heal ?? []).reduce((s, p) => s + meanPart(p), 0);
-  // (Legendary actions are taken between others' turns, not on its own.)
-  const own = c.actions.filter(a => !a.legendary);
+  // (Legendary actions are taken between others' turns, not on its own. A maneuver the core knows, with no outcomes of
+  // its own: the core's, maneuvers.js.)
+  const own = c.actions.filter(a => !a.legendary).map(withManeuver);
   return {
     spec: c,
     traits,

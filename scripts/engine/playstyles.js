@@ -48,7 +48,7 @@ export const PLAYSTYLES = Object.freeze({
   chicken: { icon: "fa-ghost", traits: { brave: -30, selfish: 10 }, suggest: { retreat: "hurt", style: "ranged", potionThreshold: "75" }, behavior: { lowProfile: 0.3, flighty: 1, trapWary: 0.5, tauntProof: 0.35 },
     desire: { avoid: { dangerous: 35 }, frustration: 1.5, retaliate: 0.5, rid: 15 } },
   // Picks on the weak and the fallen.
-  cruel: { icon: "fa-skull-crossbones", traits: { selfish: 20, loyal: -5 }, suggest: { target: "weakest", beyond: "hunt", fallen: "finish" }, behavior: { finishDowned: 0.4, hinders: 0.25 },
+  cruel: { icon: "fa-skull-crossbones", traits: { selfish: 20, loyal: -5 }, suggest: { target: "weakest", beyond: "hunt", fallen: "finish" }, behavior: { finishDowned: 0.4, hinders: 0.25, shoves: 0.4 },
     desire: { hurt: { weakest: 15, downed: 25 }, rob: 10, retaliate: 1.3 } },
   // Never the fallen; the weakest friend comes first.
   moralist: { icon: "fa-scale-balanced", traits: { selfish: -15, loyal: 10 }, suggest: { allyDying: "rescue", fallen: "spare" }, behavior: { spareDowned: 1, helps: 1 },
@@ -64,7 +64,7 @@ export const PLAYSTYLES = Object.freeze({
   impatient: { icon: "fa-hourglass-end", traits: { tactical: -10 }, suggest: { resourceUse: "nova", target: "nearest", shield: "never" }, behavior: { rush: 0.5 },
     desire: { hurt: { nearest: 15 }, bind: -15, rob: -10, frustration: 2, doorPatience: 0.5, rid: 10 } },
   // Up close and personal: the nearest foe, hits back hard, no talking.
-  brawler: { icon: "fa-hand-fist", traits: { brave: 15, tactical: -5 }, suggest: { style: "frontline", target: "nearest", talk: "never" }, behavior: { meleeBias: 0.3, taunt: 0.4 },
+  brawler: { icon: "fa-hand-fist", traits: { brave: 15, tactical: -5 }, suggest: { style: "frontline", target: "nearest", talk: "never" }, behavior: { meleeBias: 0.3, taunt: 0.4, shoves: 0.5 },
     desire: { hurt: { nearest: 20 }, talk: -40, aid: -10, bind: -10, retaliate: 1.5, rid: -10 } },
   // Trusts its own judgment over anyone's, and isn't talked into things: an outsider's words (anyone not of its own
   // group) get a step further to go and up to 4 harder (wary, by the pill's place).
@@ -81,7 +81,7 @@ export const PLAYSTYLES = Object.freeze({
     desire: { hurt: { dangerous: 10 }, protect: 10, aid: 10, talk: 5, bind: 10, free: 15, leader: 0.4 } },
   // Starts trouble and spoils everyone else's plans: locks foes down, harasses and debuffs them (more than anyone),
   // goes for the most dangerous foe and their leader, and may defy its own leader.
-  instigator: { icon: "fa-fire", traits: { brave: 10, selfish: 5 }, suggest: { style: "frontline", target: "dangerous" }, behavior: { drawAggro: 0.35, initiative: 2, hinders: 1, taunt: 0.75 },
+  instigator: { icon: "fa-fire", traits: { brave: 10, selfish: 5 }, suggest: { style: "frontline", target: "dangerous" }, behavior: { drawAggro: 0.35, initiative: 2, hinders: 1, taunt: 0.75, shoves: 0.3 },
     desire: { hurt: { dangerous: 15, leader: 15 }, retaliate: 1.2, contrarian: 0.5 } },
   // Keeps the peace, between anyone (peacekeeping): everyone in a standoff with it loses patience half as fast, either
   // side; it calms any quarrel it sees; foes it talks round stand down (a truce, even mid-fight: never a surrender, a

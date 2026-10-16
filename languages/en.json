@@ -965,7 +965,8 @@
         "tauntProof": "Shrugs off taunts",
         "trapWary": "Watches for traps",
         "wary": "Wary of outsiders",
-        "slacks": "Now and then does nothing"
+        "slacks": "Now and then does nothing",
+        "shoves": "Shoves foes into harm"
       }
     },
     "Tracker": {
@@ -1443,7 +1444,14 @@
         "stuckBonds": "Stuck in Bonds",
         "untie": "Untie",
         "untieFails": "Untie Fails",
-        "shakeOffFails": "Shake Off Fails"
+        "shakeOffFails": "Shake Off Fails",
+        "drag": "Drag",
+        "cheapShot": "Cheap Shot",
+        "sunder": "Sunder",
+        "shovedIntoHazard": "Shoved Into a Hazard",
+        "shoveBlocked": "Shove Blocked",
+        "falls": "Falls",
+        "groundHarm": "Hurt Where They Land"
       },
       "APrice": "a price",
       "Desire": "{intensity} {verb}",
@@ -1913,7 +1921,14 @@
       "BoundAlone": "{actor} comes to, tied up",
       "DesireRid": "be rid of it",
       "Remedy": "{actor} is rid of {what}{said}",
-      "RemedyFails": "{actor} tries to be rid of {what}, and can't{said}"
+      "RemedyFails": "{actor} tries to be rid of {what}, and can't{said}",
+      "ForcedPush": "{actor} shoves {target} {feet}",
+      "ForcedPull": "{actor} drags {target} {feet}",
+      "ForcedPlace": "{actor} moves {target} {feet}",
+      "ForcedBlocked": "stopped",
+      "ForcedInto": "into {what}",
+      "Fall": "{actor} falls {feet}: {damage} damage",
+      "GroundHarm": "{actor} is hurt where they land: {damage} damage"
     },
     "DamageType": {
       "bludgeoning": "bludgeoning",

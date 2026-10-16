@@ -41,6 +41,7 @@ import { combineMods, diceMean } from "../mods.js";
 import { isStanding, areEnemies, enemiesOf, alliesOf, boostReaches, wish, behaviorOf } from "../battle-state.js";
 import { threatOf, unitsPerTurn, attacksIn } from "./evaluate.js";
 import { meanPart } from "../dice.js";
+import { forcedWorth } from "./forced.js";
 
 /** How badly a taunt makes its bearer want to go for the taunter, unless it says: "driven", above a clear choice. */
 export const TAUNT = 65;
@@ -503,7 +504,8 @@ export function outcomeWorth(run, by, t, outcome, { versus = null } = {}) {
   const share = uses ? { words, own: Math.min(1, uses / Math.max(1, hitsPerRound(run, t) / 0.6)), guard: Math.min(1, uses / 2) } : { words };
   const rounds = uses ? 1 : usefulRounds(run, by?.side ?? t.side, outcome.rounds);
   let perRound = 0;
-  const fresh = freshConditions(t, outcome.conditions);
+  // (Grabbed: held in place too, as the system has it.)
+  const fresh = freshConditions(t, outcome.grab ? { ...(outcome.conditions ?? {}), grabbed: 1, immobilized: 1 } : outcome.conditions);
   const weighed = {};
   for ( const [k, v] of Object.entries(fresh) ) {
     // Turned against its own side: what it would have done to them, and what it now does for the other.
@@ -551,6 +553,8 @@ export function outcomeWorth(run, by, t, outcome, { versus = null } = {}) {
   if ( temp > (t.temp ?? 0) ) worth += Math.min(temp - (t.temp ?? 0), inc * rounds);
   // Resources it gains (Ironsworn momentum): what the system says they're worth.
   for ( const [k, v] of Object.entries(outcome.resources ?? {}) ) worth += Number(rules.resourceWorth?.(run, t, k, Number(v) || 0)) || 0;
+  // Moved (shoved, dragged, put somewhere): what it would do to it there (behavior/forced.js).
+  if ( outcome.move && by && by !== t ) worth -= forcedWorth(run, by, t, outcome.move);
   return worth;
 }
 

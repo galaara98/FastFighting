@@ -40,6 +40,7 @@ import { perceives } from "./behavior/senses.js";
 import { stealChance, theftTarget, theftPlan, attemptTheft, robbable } from "./behavior/theft.js";
 import { fallenWishes, decideFallen, bind, rob, stayBound, takesPrisoners, robsTheFallen, freeFriend, rollOf } from "./behavior/fallen.js";
 import { holdsOf, known, tryHold, release, escapeCost, isBound, remediesOf, bears } from "./behavior/holds.js";
+import { forcedPath, fallDamage, resettle } from "./behavior/forced.js";
 import { reactionsPerRound, threats, takesSafeWay } from "./behavior/reactions.js";
 import { isNeutral, crossed, caughtInArea, refreshLeans, truceWith, truceBreaks, turnOn, settleTruce, peaceDesires, seemsFoe, meddling, inFray, fighting, dislikesViolence, annoyedBy, ANNOYED } from "./behavior/neutral.js";
 import { normalizeCost } from "./turn.js";
@@ -1521,6 +1522,54 @@ function fateful(run, victim, actor, attempt) {
 }
 
 /** A crowd-control action on one target: immunity, the roll, the outcome for that degree, any damage. */
+/**
+ * t moved by u (shoved, dragged, put somewhere: behavior/forced.js): where it ends up, and what it finds there. Over a
+ * drop, it falls (the system's fall damage, else 1d6 for each 10 feet) and lands prone; harm where it lands (a fire,
+ * acid: the scene's), dealt; a hazard whose reach it's in goes off at it, once.
+ */
+function forceMove(run, u, t, move) {
+  const rules = run.prep.rules;
+  const path = forcedPath(run, u, t, move);
+  const from = t.pos ? { x: t.pos.x, y: t.pos.y } : null;
+  if ( path.noMap ) {
+    // (No map: out of its reach, that's all.)
+    t.adjacent.delete(u.id);
+    u.adjacent.delete(t.id);
+  } else if ( path.feet > 0 ) {
+    t.pos.x = path.to.x;
+    t.pos.y = path.to.y;
+    t.feetMoved = (t.feetMoved ?? 0) + path.feet;
+    resettle(run, t);
+    run.geo = (run.geo ?? 0) + 1;
+  }
+  log(run, u, {
+    type: "forced", how: move.kind, feet: path.noMap ? move.feet ?? 5 : path.feet, target: t.spec.name, targetId: t.id, from, to: path.to ?? null,
+    fall: path.fall || 0, blocked: !!path.blocked, into: (path.hazards ?? []).map(h => h.spec.name), ground: path.cell?.h ? "hazardous" : path.cell?.d ? "difficult" : null
+  });
+  if ( path.fall > 0 && isUp(t) ) {
+    const rolled = sampleDamage(fallDamage(run, path.fall, t), run.rng, 1);
+    const amount = rules.applyIwr(iwrOf(t), rolled.byType, t);
+    log(run, t, { type: "fall", feet: path.fall, amount });
+    dealDamage(run, u, t, amount, { types: Object.keys(rolled.byType) });
+    if ( isUp(t) && rules.fallProne !== false ) t.prone = true;
+  }
+  if ( path.cell?.harm?.length && isUp(t) ) {
+    const rolled = sampleDamage(path.cell.harm, run.rng, 1);
+    const amount = rules.applyIwr(iwrOf(t), rolled.byType, t);
+    log(run, t, { type: "groundHarm", amount, damageTypes: Object.keys(rolled.byType) });
+    dealDamage(run, u, t, amount, { types: Object.keys(rolled.byType), lingering: true });
+  }
+  for ( const h of path.hazards ?? [] ) {
+    if ( !isUp(t) || h.spent ) continue;
+    const action = h.prep.offense.find(a => hasUses(h, a));
+    if ( !action ) continue;
+    log(run, h, { type: "trap", what: "springs", target: t.spec.name, targetId: t.id });
+    spendUse(h, action);
+    executeOffense(run, h, action, t, 0);
+    if ( h.spec.hazard?.once ) h.spent = true;
+  }
+}
+
 function executeControl(run, u, action, target, attacksMade, common) {
   const rules = run.prep.rules;
   const logging = !!run.log;
@@ -1566,6 +1615,12 @@ function executeControl(run, u, action, target, attacksMade, common) {
     if ( !outcome.self ) moveHeld(run, u, action, lands);
     if ( !outcome.self && run.standoff && heldOff(run, u, lands) && areEnemies(run, u, lands) ) endStandoff(run, u, "blood");
     applyOutcome(lands, outcome, u.id, action);
+    // (Grabbed by it; moved where it puts it: maneuvers.js.)
+    if ( outcome.grab && !outcome.self ) {
+      lands.grabbedBy = u.id;
+      log(run, lands, { type: "grabbed", by: u.spec.name });
+    }
+    if ( outcome.move && !outcome.self ) forceMove(run, u, lands, outcome.move);
     testConcentration(run, lands);
     if ( run.neutral && !outcome.self ) crossed(run, u, lands, "harm", 1, logger(run));
   }

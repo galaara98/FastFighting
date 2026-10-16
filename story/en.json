@@ -5931,5 +5931,58 @@
     "{actor} tries to shake it off, and can't.",
     "{actor} struggles with it, to no avail.",
     "Whatever {actor} does, it won't let go of them."
+  ],
+  "maneuver.drag": [
+    "{actor} hauls {target} along by the collar.",
+    "{actor} drags {target} off their footing and across the ground.",
+    "{actor} grabs a fistful of {target} and pulls."
+  ],
+  "maneuver.drag.amazing": [
+    "{actor} yanks {target} so hard their feet leave the ground."
+  ],
+  "maneuver.drag.terrible": [
+    "{actor} heaves at {target}, slips, and nearly goes down with them."
+  ],
+  "maneuver.cheapShot": [
+    "{actor} lands a low blow on {target}.",
+    "{actor} jabs {target} somewhere that really counts.",
+    "{actor} catches {target} with something less than honourable."
+  ],
+  "maneuver.cheapShot.amazing": [
+    "{actor}'s dirty trick leaves {target} reeling and gasping."
+  ],
+  "maneuver.cheapShot.terrible": [
+    "{actor} goes for a cheap shot and only embarrasses themselves."
+  ],
+  "maneuver.sunder": [
+    "{actor} smashes at {target}'s gear.",
+    "{actor} brings a blow down on what {target} is holding.",
+    "{actor} strikes to break {target}'s weapon."
+  ],
+  "maneuver.sunder.amazing": [
+    "{actor} shatters {target}'s gear in a single crack."
+  ],
+  "maneuver.sunder.terrible": [
+    "{actor} hacks at {target}'s gear and only notches their own."
+  ],
+  "event.shovedIntoHazard": [
+    "{target} stumbles straight into {hazard}.",
+    "{actor} sends {target} reeling into {hazard}.",
+    "{target} is pushed right into the reach of {hazard}."
+  ],
+  "event.shoveBlocked": [
+    "{target} doesn't budge: there's nowhere to go.",
+    "{actor} shoves, but {target} is pinned where they stand.",
+    "{target} braces against what's behind them and holds."
+  ],
+  "event.falls": [
+    "{actor} goes over the edge and hits the ground hard.",
+    "{actor} tumbles down and lands in a heap.",
+    "{actor} drops, and the fall knocks the wind out of them."
+  ],
+  "event.groundHarm": [
+    "{actor} lands somewhere that hurts.",
+    "Where {actor} lands, the ground itself bites.",
+    "{actor} comes down in the worst possible place."
   ]
 }
