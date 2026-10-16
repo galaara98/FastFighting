@@ -44,7 +44,7 @@ export const isBound = u => !!(u.bound ?? u.boundBy);
 
 /** How hard FastFighting's improvised bonds are to slip, for this creature (the system's say, or a typical DC). */
 export function bondsDC(run, u) {
-  const rules = run.prep.rules;
+  const rules = run.prep?.rules ?? {};
   return rules.bondsDC?.(u) ?? typical(rules, "dc", u.spec.level ?? 0) + BONDS_HARDER;
 }
 
@@ -55,7 +55,7 @@ const dcOf = v => (Number.isFinite(v) ? v : null);
  * condition can be held by more than one thing (a web and a grab): each is its own.
  */
 export function holdsOf(run, u) {
-  const rules = run.prep.rules;
+  const rules = run.prep?.rules ?? {};
   const out = [];
   if ( isBound(u) ) out.push({ key: "bound", byId: u.boundBy ?? null, dc: bondsDC(run, u), others: "untie" });
   if ( u.grabbedBy ) {
@@ -89,7 +89,7 @@ export function holdsOf(run, u) {
  * total?, dc?, said?}
  */
 export function tryHold(run, who, hold, { freeing = false } = {}) {
-  const rules = run.prep.rules;
+  const rules = run.prep?.rules ?? {};
   const own = typeof rules.breakFree === "function" ? rules.breakFree(run, who, hold, { freeing }) : null;
   if ( own ) return { ...own, success: !!own.success };
   if ( freeing && hold.others === "untie" ) return { success: true };

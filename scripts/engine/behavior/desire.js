@@ -554,10 +554,13 @@ export function conditionWishes(run, u) {
  * foe beside it to fight where it is (free to go, it can't). A grab with nothing to go on (no system way, no escape of
  * its own: holds.js known) is left to the turn's start, as the engine always had it. A friend held (one it can free:
  * tied up, or what the system says a friend can break), and it can tell: to free it, as loyal as it is (FREE), its
- * pills' word (style.free), the more so with no foe beside it; a friend lying down, tied, less.
+ * pills' word (style.free), its own answer to "When an ally is dying" (rescue, or look after itself), the more so with
+ * no foe beside it; a friend lying down, tied, less. About even, for an ordinarily loyal one, with the foe its tactics
+ * would pick across the room (desire.js levelsFromScores: up to 60): its answers, its pills and its party's wishes
+ * (partyWants) tip it.
  */
 export const BREAK_FREE = Object.freeze({ bound: 85, grabbed: 45, other: 55, open: 20 });
-export const FREE = Object.freeze({ base: 35, loyal: 0.35, open: 15, down: 0.5 });
+export const FREE = Object.freeze({ base: 25, loyal: 0.4, open: 10, down: 0.5, allyDying: Object.freeze({ rescue: 15, fight: 0, retreat: -5, protectSelf: -15 }) });
 export function holdWishes(run, u) {
   if ( !u.desire ) return;
   const engaged = [...(u.adjacent ?? [])].some(id => {
@@ -573,7 +576,8 @@ export function holdWishes(run, u) {
   if ( u.status !== STATUS.STANDING ) return;
   for ( const a of alliesOf(run, u) ) {
     if ( a === u || !a.active || !freeable(run, a) || !perceives(run, u, a) ) continue;
-    const level = (FREE.base + liveTrait(run, u, "loyal") * FREE.loyal + (styleOf(u).free ?? 0) + (engaged ? 0 : FREE.open)) * (a.status === STATUS.DOWN ? FREE.down : 1);
+    const answer = FREE.allyDying[u.tac?.allyDying] ?? 0;
+    const level = (FREE.base + liveTrait(run, u, "loyal") * FREE.loyal + (styleOf(u).free ?? 0) + answer + (engaged ? 0 : FREE.open)) * (a.status === STATUS.DOWN ? FREE.down : 1);
     think(u, "free", a.id, level);
   }
 }
@@ -616,6 +620,10 @@ export function partyWants(run, u, scored, { canHeal = false } = {}) {
   const fallenKind = { tie: "bind", rob: "rob" }[party.fallen];
   if ( fallenKind ) for ( const t of enemiesOf(run, u) ) if ( relevant(run, u, fallenKind, t) && perceives(run, u, t) ) add(fallenKind, t.id, points);
   const friends = run.units.filter(a => a !== u && a.side === u.side && a.active && ![STATUS.DEAD, STATUS.FLED].includes(a.status));
+  // (Healing the hurt or guarding the weakest, a friend held fast is worth getting loose: half the wish.)
+  if ( party.care === "heal" || party.care === "guard" ) {
+    for ( const a of friends ) if ( freeable(run, a) && perceives(run, u, a) ) add("free", a.id, points / 2);
+  }
   if ( party.care === "heal" && canHeal ) {
     for ( const a of friends ) if ( perceives(run, u, a, { crisis: true }) && (a.status === STATUS.DOWN || frac(a) < 0.75) ) add("heal", a.id, points);
   } else if ( party.care === "guard" ) {
@@ -623,7 +631,7 @@ export function partyWants(run, u, scored, { canHeal = false } = {}) {
   } else if ( party.care === "self" ) {
     for ( const k of new Set([...u.desire.logic.keys(), ...u.desire.style.keys()]) ) {
       const [kind, targetId] = parseKey(k);
-      if ( (kind === "heal" || kind === "protect" || kind === "aid") && targetId !== u.id ) add(kind, targetId, -points);
+      if ( (kind === "heal" || kind === "protect" || kind === "aid" || kind === "free") && targetId !== u.id ) add(kind, targetId, -points);
     }
   }
 }

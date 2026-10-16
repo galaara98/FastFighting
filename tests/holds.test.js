@@ -82,13 +82,24 @@ describe("breaking free", () => {
 });
 
 describe("freeing a friend", () => {
-  test("a friend tied up, and no foe on it: it goes over and unties them (no roll)", () => {
-    const run = fight([fighter("hero", "friendly", 0), fighter("kyra", "friendly", 10), fighter("orc", "hostile", 120)]);
+  test("a friend tied up, and no foe on it: one who'd rescue a friend goes over and unties them (no roll)", () => {
+    const run = fight([fighter("hero", "friendly", 0, { tactics: { allyDying: "rescue" } }), fighter("kyra", "friendly", 10), fighter("orc", "hostile", 120)]);
     const kyra = tie(run.byId.get("kyra"), "orc");
     const hero = run.byId.get("hero");
     takeTurn(run, hero);
     expect(run.log.find(e => e.actorId === "hero" && e.type === "free")).toMatchObject({ targetId: "kyra", hold: "bound", success: true });
     expect([kyra.status, isBound(kyra)]).toEqual(["standing", false]);
+  });
+
+  test("one who looks after itself goes for the foe instead; so does one with little loyalty", () => {
+    for ( const extra of [{ tactics: { allyDying: "protectSelf" } }, { traits: traits(30) }] ) {
+      const run = fight([fighter("hero", "friendly", 0, extra), fighter("kyra", "friendly", 10), fighter("orc", "hostile", 120)]);
+      tie(run.byId.get("kyra"), "orc");
+      const hero = run.byId.get("hero");
+      takeTurn(run, hero);
+      expect(run.log.some(e => e.actorId === "hero" && e.type === "free")).toBe(false);
+      expect(run.log.some(e => e.actorId === "hero" && e.type === "move" && e.towardId === "orc")).toBe(true);
+    }
   });
 
   test("what the system says a friend can break takes a roll (or the system's way, told it's a friend's)", () => {
