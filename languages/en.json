@@ -1,7 +1,17 @@
 {
   "FASTFIGHTING": {
     "Keybinding": {
-      "Open": "Open the Battle Planner"
+      "Open": "Open the Battle Planner",
+      "networkRemove": "Battle Interface: take it off",
+      "networkRemoveHint": "With a creature in focus, takes off the line or symbol the pointer is on (or Tab stepped to).",
+      "networkLower": "Battle Interface: one less",
+      "networkLowerHint": "With a creature in focus, lowers the line or symbol the pointer is on (or Tab stepped to); at its least, takes it off.",
+      "networkRaise": "Battle Interface: one more",
+      "networkRaiseHint": "With a creature in focus, raises the line or symbol the pointer is on (or Tab stepped to). On the creature itself, adds a line from it.",
+      "networkNext": "Battle Interface: next",
+      "networkNextHint": "Steps to the next of the focused creature's lines and symbols (with nobody in focus, the next creature).",
+      "networkPrevious": "Battle Interface: previous",
+      "networkPreviousHint": "Steps back to the last of the focused creature's lines and symbols (with nobody in focus, the creature before)."
     },
     "Units": {
       "Feet": "ft",
@@ -1649,6 +1659,7 @@
       "NoticeFled": "{by} runs into them",
       "NoticeHelp": "{by} calls for help",
       "NoticeAttacked": "attacked by {by}",
+      "NoticeGm": "at the table",
       "Study": "{actor} → {target}{kin}: sizes up{roll} · {pays}",
       "StudyKin": " (and the {kin} like them)",
       "LearnsNothing": "learns nothing",
@@ -2088,9 +2099,6 @@
       "PlayerRuns": "Run by its player",
       "Desire": "{what} {who} ({how})",
       "Persuaded": "Talked round by {side}: {n} of {steps}",
-      "WontListen": "Won't listen to {names}",
-      "Wavering": "Shaken",
-      "Forget": "Take back what you set",
       "FactLabel": "What happened at the table",
       "PickWho": "Pick who it was about first.",
       "HowWell": "How well it went",
@@ -2110,7 +2118,6 @@
       "Less": "One less",
       "Remove": "Take it off",
       "NotInFight": "not in the fight yet",
-      "Elsewhere": "On the map, not in this battle:",
       "BringIn": "Bring into the fight",
       "Relation": {
         "afraid": "Afraid of {name}",
@@ -2119,7 +2126,8 @@
         "controlled": "Controlled by {name}",
         "bound": "Tied up by {name}",
         "exposedTo": "Off guard to {name}",
-        "marked": "Marked by {name}"
+        "marked": "Marked by {name}",
+        "shuns": "Won't listen to {name}"
       },
       "RelationPick": {
         "afraid": "Afraid of…",
@@ -2164,7 +2172,83 @@
         "persuade": "Persuades",
         "intimidate": "Threatens",
         "deceive": "Lies to"
+      },
+      "Net": {
+        "Label": "Map of minds",
+        "ZoomIn": "Zoom in",
+        "ZoomOut": "Zoom out",
+        "Fit": "Fit everyone in view",
+        "Reset": "Lay them out as on the map again",
+        "FocusHint": "Click a creature here, or select its token on the map, to see what it wants and what's on it.",
+        "Unaware": "Hasn't noticed the fight",
+        "Notices": "It notices the fight",
+        "SetAside": "Set it aside",
+        "Held": "set by the GM",
+        "HeldList": "Set by the GM",
+        "SetAsideList": "Set aside by the GM",
+        "HandBack": "Hand it back to FastFighting",
+        "Wants": "Wants",
+        "WantedBy": "Wanted by",
+        "PlayerDecides": "Its player decides what it wants.",
+        "Nothing": "Nothing",
+        "NotInBattle": "On the map, not in this battle",
+        "Itself": "itself",
+        "Steady": "Steady again",
+        "RunNow": "It runs now",
+        "AddButton": "Add a line",
+        "AddTitle": "Add to {name}",
+        "AddHint": "What {name} wants of someone, or has on them, and from whom.",
+        "AddWhat": "What",
+        "NodeHint": "+ adds a line from it"
+      },
+      "Attitude": {
+        "wary": "Less willing to hear {name} out (×{n})",
+        "grudge": "Bears {name} a grudge: keeps away until they go for it",
+        "grudgeProvoked": "Out for {name}, for the grudge it bears",
+        "schemes": "Schemes against {name}",
+        "follows": "Takes its lead from {name}",
+        "truce": "Keeps a truce with {name}",
+        "serves": "Companion of {name}",
+        "summoned": "Summoned by {name}",
+        "leans": "Leans toward {side}",
+        "against": "Turned on {side}",
+        "holdsBack": "Agreed to let the quarrel be",
+        "contrarian": "Goes against its commander",
+        "meddles": "Getting involved, {how}",
+        "how": {
+          "down": "to bring someone down",
+          "extort": "to make someone pay"
+        },
+        "demands": "Wants {what} from the other side"
+      },
+      "Pitch": {
+        "persuade": "Persuade",
+        "intimidate": "Intimidate",
+        "deceive": "Deceive"
       }
+    },
+    "Goal": {
+      "openDoor": "Through {thing}, to reach {name}",
+      "avoidTrap": "Keep clear of {name}",
+      "runAway": "Thinking of running",
+      "closeDoor": "Close {thing}",
+      "lockDoor": "Lock {thing}",
+      "pickUp": "Pick up {thing}",
+      "reach": "Get to {thing}",
+      "swim": "Swim to {thing}",
+      "fly": "Fly to {thing}",
+      "climb": "Climb to {thing}",
+      "hide": "Hide",
+      "takeCover": "Take cover behind {thing}",
+      "escape": "Get away by {thing}",
+      "useObject": "Use {thing}",
+      "NotYet": "FastFighting doesn't act on this yet"
+    },
+    "Thing": {
+      "door": "the door",
+      "item": "the item",
+      "place": "the spot",
+      "object": "the thing"
     }
   }
 }

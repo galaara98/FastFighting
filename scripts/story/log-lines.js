@@ -68,7 +68,7 @@ export function concessionText(c) {
 const MODE = { walk: "ModeWalk", fly: "ModeFly", swim: "ModeSwim", climb: "ModeClimb", burrow: "ModeBurrow" };
 const DESIRE = { hurt: "DesireHurt", heal: "DesireHeal", protect: "DesireProtect", aid: "DesireAid", talk: "DesireTalk", avoid: "DesireAvoid", bind: "DesireBind", rob: "DesireRob" };
 const WHY = { hurt: "WhyHurt", harmed: "WhyHarmed", helped: "WhyHelped", robbed: "WhyRobbed", insulted: "WhyInsulted", impatient: "WhyImpatient", kin: "WhyKin" };
-const NOTICE = { sight: "NoticeSight", sound: "NoticeSound", smell: "NoticeSmell", feel: "NoticeFeel", radar: "NoticeRadar", standoff: "NoticeStandoff", fledInto: "NoticeFled", help: "NoticeHelp", attacked: "NoticeAttacked" };
+const NOTICE = { sight: "NoticeSight", sound: "NoticeSound", smell: "NoticeSmell", feel: "NoticeFeel", radar: "NoticeRadar", standoff: "NoticeStandoff", fledInto: "NoticeFled", help: "NoticeHelp", attacked: "NoticeAttacked", gm: "NoticeGm" };
 const BREAKS = { insulted: "BreakInsulted", beast: "BreakBeast", annoyed: "BreakAnnoyed", blood: "BreakBlood", impatient: "BreakImpatient", unmet: "BreakUnmet" };
 /** Only an argument: why the talks collapsed (nobody fights). */
 const COLLAPSES = { insulted: "CollapseInsulted", beast: "CollapseBeast", annoyed: "CollapseAnnoyed", blood: "CollapseBlood", impatient: "CollapseImpatient", fray: "CollapseFray", unmet: "CollapseUnmet" };

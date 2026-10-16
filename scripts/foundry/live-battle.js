@@ -31,7 +31,7 @@ import { loadStoryTables } from "../story/tables.js";
 import {
   beginLive, liveRound, liveTurn, pcTurnBegin, pcTurnEnd, syncFromSheets, setApproach, captureAll, snapshotRun, restoreRun, endLive,
   NeedsDecision, applyFact, gmMoment, leavingReach, openingFor, reactNow, nextSpotlight, liveAftermath,
-  setCondition, setRelation, clearRelation
+  setCondition, setRelation, clearRelation, setGoal, setAttitude
 } from "../engine/live.js";
 import { diffAll } from "../engine/changes.js";
 import { randomSeed } from "../engine/rng.js";
@@ -1075,6 +1075,27 @@ export function liveCondition(op) {
     if ( !done ) return false;
     const records = battle.pc?.records ?? battle.data.turns.at(-1)?.records ?? (battle.data.gmRecords ??= []);
     await holdingPause(() => writeChanges(before, captureAll(run), records));
+    await keep();
+    return true;
+  });
+}
+
+/**
+ * The GM changes what a creature wants (the Battle Interface's map of minds), at once: {op: "desire", id, kind, targetId,
+ * level} holds a desire there (0 sets it aside; null hands it back to FastFighting); {op: "goal", id, kind, thingId,
+ * level} a goal (engine/live.js setGoal); {op: "attitude", id, kind, byId, side, level} what it keeps toward others
+ * outside its desires (setAttitude: a grudge, a truce, how far it's been talked round). Nothing goes on a sheet; kept with the battle, and taken back with the turn it
+ * came after.
+ */
+export function liveMind(op) {
+  return queue(async () => {
+    if ( !playsHere() || !battle.run.byId.has(op?.id) ) return false;
+    const run = battle.run;
+    const done = op.op === "desire"
+      ? applyFact(run, op.level === null ? { kind: "forget", id: op.id, desire: op.kind, targetId: op.targetId } : { kind: "want", id: op.id, desire: op.kind, targetId: op.targetId, level: op.level })
+      : op.op === "goal" ? setGoal(run, op.id, op)
+        : op.op === "attitude" ? setAttitude(run, op.id, op) : false;
+    if ( !done ) return false;
     await keep();
     return true;
   });

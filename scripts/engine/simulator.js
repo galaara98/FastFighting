@@ -20,6 +20,7 @@ import { chooseTarget, bestOptionVs, scoreTargets } from "./behavior/targeting.j
 import { decideHeal, rescueOption, healScores } from "./behavior/healing.js";
 import { initDesires, newTurn, goaded, think, want, thwart, relieve, levelOf, mind, thoughts as thoughtsOf, levelsFromScores, listen, heed, remember, styleWants, styleOf, follow, conditionWishes, scheme, partyWants, CHOICE_LEVEL } from "./behavior/desire.js";
 import { prepareDoors, doorStates, doorAhead, atDoor, doorPlan, patienceFor, doorDamage } from "./behavior/doors.js";
+import { heldGoal } from "./behavior/goals.js";
 import { checkMorale, standsGround, callRetreat, rallies, MORALE } from "./behavior/morale.js";
 import { expectedDamage, spendUse, hasUses, attacksIn, criticalParts, saveMultiplier, saveMultiplierFor, meanDamageVs, unitsPerTurn } from "./behavior/evaluate.js";
 import { chooseDeed, deedTier, chooseHitRiders, rescueMiss, rollCrit, rollFumble, rallied } from "./behavior/riders.js";
@@ -1859,6 +1860,24 @@ function workTheDoor(run, u, turn, door, target) {
   const rules = run.prep.rules;
   const state = run.doors.get(door.id);
   const kind = areEnemies(run, u, target) ? "hurt" : "heal";
+  // (The GM's word on it, in a live battle: given up on, or wanted this badly. behavior/goals.js)
+  const held = heldGoal(u, "openDoor", door.id);
+  // The door is worth whatever u wants most on the far side of it.
+  const beyondIt = () => {
+    const beyond = enemiesOf(run, u).filter(o => isStanding(o) && (run.prep.approachOf(u.id, o.id)?.doors ?? []).includes(door.id));
+    if ( !beyond.includes(target) && areEnemies(run, u, target) ) beyond.push(target);
+    return beyond;
+  };
+  const giveUp = beyond => {
+    log(run, u, { type: "door", method: "giveup", success: false, doorId: door.id, target: target.spec.name, targetId: target.id });
+    for ( const o of beyond ) {
+      thwart(run, u, "hurt", o.id, 15);
+      (u.walledOff ??= new Map()).set(o.id, door.id);
+    }
+    if ( kind !== "hurt" ) thwart(run, u, kind, target.id, 15);
+    return "giveup";
+  };
+  if ( held === 0 ) return giveUp(beyondIt());
   if ( !atDoor(u, door) ) {
     if ( !canMove(run, u) || !leaveReach(run, u, turn, null) ) return "stuck";
     const budget = turn.payForMove(approach(run, u, target).speed);
@@ -1884,21 +1903,11 @@ function workTheDoor(run, u, turn, door, target) {
     return "worked";
   }
   const plan = doorPlan(run, u, door, state);
-  // The door is worth whatever u wants most on the far side of it; with nobody on this side to fight, there's
-  // nothing better to do, so it keeps at it longer.
-  const beyond = enemiesOf(run, u).filter(o => isStanding(o) && (run.prep.approachOf(u.id, o.id)?.doors ?? []).includes(door.id));
-  if ( !beyond.includes(target) && areEnemies(run, u, target) ) beyond.push(target);
-  const urge = Math.max(CHOICE_LEVEL, levelOf(u, kind, target.id), ...beyond.map(o => levelOf(u, "hurt", o.id)));
+  // With nobody on this side to fight, there's nothing better to do, so it keeps at it longer.
+  const beyond = beyondIt();
+  const urge = held ?? Math.max(CHOICE_LEVEL, levelOf(u, kind, target.id), ...beyond.map(o => levelOf(u, "hurt", o.id)));
   const nothingElse = !enemiesOf(run, u).some(o => isStanding(o) && !beyond.includes(o));
-  if ( !plan || plan.turns > patienceFor(urge) * (nothingElse ? 1.5 : 1) * styleOf(u).doorPatience ) {
-    log(run, u, { type: "door", method: "giveup", success: false, ...where });
-    for ( const o of beyond ) {
-      thwart(run, u, "hurt", o.id, 15);
-      (u.walledOff ??= new Map()).set(o.id, door.id);
-    }
-    if ( kind !== "hurt" ) thwart(run, u, kind, target.id, 15);
-    return "giveup";
-  }
+  if ( !plan || plan.turns > patienceFor(urge) * (nothingElse ? 1.5 : 1) * styleOf(u).doorPatience ) return giveUp(beyond);
   if ( !turn.canAfford(plan.cost) ) return "stuck";
   turn.spend(plan.cost);
   if ( plan.method === "attack" ) {

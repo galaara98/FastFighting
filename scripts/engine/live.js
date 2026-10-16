@@ -28,9 +28,11 @@ import { createRng, deriveSeed } from "./rng.js";
 import { prepareDoors } from "./behavior/doors.js";
 import { recompute, applyOutcome } from "./behavior/effects.js";
 import { reactionsPerRound } from "./behavior/reactions.js";
-import { resolveTalk, applySway, aimOf, talkDC, stepsToConvince } from "./behavior/talk.js";
-import { rankedDesires, desireBand, want, levelOf } from "./behavior/desire.js";
-import { validConditionKey } from "./conditions.js";
+import { resolveTalk, applySway, aimOf, talkDC, stepsToConvince, bestPitch } from "./behavior/talk.js";
+import { expectOf } from "./behavior/bargain.js";
+import { rankedDesires, desireBand, want, levelOf, holdDesire, releaseDesire } from "./behavior/desire.js";
+import { validConditionKey, CORE_CONDITIONS } from "./conditions.js";
+import { GOALS, holdGoal, goalsOf } from "./behavior/goals.js";
 import { joinSide, standAside, turnOn } from "./behavior/neutral.js";
 
 /** A question the turn can't go on without: whether {unitId} uses {reactionId} because of {trigger} (by {byId}). */
@@ -487,6 +489,7 @@ export const bandLevel = band => clamp(Math.round(Number(band) || 0), 0, 4) * 20
  *   {kind: "flee" | "surrender" | "standDown", id, byId?}       done with the fight
  *   {kind: "side", id, side}                                    takes no side (NEUTRAL_PARTY) or joins one
  *   {kind: "turnOn", id, byId}                                  one taking no side turns on byId's side
+ *   {kind: "notice", id}                                        a bystander notices the fight (and joins it next round)
  * Returns true if it was applied.
  */
 export function applyFact(run, fact) {
@@ -498,20 +501,15 @@ export function applyFact(run, fact) {
     case "want": {
       const t = run.byId.get(fact.targetId);
       if ( !t || !u.desire || t === u ) return false;
-      const key = `${fact.desire}|${t.id}`;
-      const mem = `${u.id}|${key}`;
-      // (What it had stated before, so taking the GM's word back leaves it as it was.)
-      if ( !run.live.gm.has(mem) ) run.live.gm.set(mem, u.desire.stated.has(key) ? u.desire.stated.get(key) : null);
-      u.desire.stated.set(key, clamp(Number(fact.level) || 0, 0, 100));
+      // (Held there, whatever else it would want, until the GM hands it back: 0 sets it aside.)
+      run.live.gm.set(`${u.id}|${fact.desire}|${t.id}`, true);
+      holdDesire(u, fact.desire, t.id, clamp(Number(fact.level) || 0, 0, 100));
       break;
     }
     case "forget": {
-      const key = `${fact.desire}|${fact.targetId}`;
-      const mem = `${u.id}|${key}`;
+      const mem = `${u.id}|${fact.desire}|${fact.targetId}`;
       if ( !run.live.gm.has(mem) || !u.desire ) return false;
-      const before = run.live.gm.get(mem);
-      if ( before === null ) u.desire.stated.delete(key);
-      else u.desire.stated.set(key, before);
+      releaseDesire(u, fact.desire, fact.targetId);
       run.live.gm.delete(mem);
       break;
     }
@@ -534,6 +532,10 @@ export function applyFact(run, fact) {
       break;
     case "waver":
       u.wavering = !!fact.on;
+      break;
+    case "notice":
+      if ( u.active || u.aware || u.status !== STATUS.STANDING ) return false;
+      notice(run, u, "gm");
       break;
     case "flee":
     case "surrender":
@@ -654,6 +656,35 @@ export function setRelation(run, id, { kind, byId, rounds = null, level = 2 } = 
   return true;
 }
 
+/**
+ * The GM's word on one of a creature's goals (behavior/goals.js): {kind, thingId, level}. 0 sets it aside: a door given
+ * up on, a trap forgotten, steady again (no longer thinking of running). A trap's other level is knowing it's there;
+ * running's, thinking of it (1) or running now (2). Any other goal is held at that level until handed back (level null).
+ */
+export function setGoal(run, id, { kind, thingId = null, level = null } = {}) {
+  const u = run.byId.get(id);
+  if ( !u || !Object.hasOwn(GOALS, kind) ) return false;
+  const n = level === null || level === undefined ? null : Math.max(0, Math.round(Number(level) || 0));
+  switch ( kind ) {
+    case "avoidTrap": {
+      const h = run.byId.get(thingId);
+      if ( !h?.spec.hazard || n === null ) return false;
+      if ( n > 0 ) {
+        (u.spottedTraps ??= new Set()).add(h.id);
+        run.trapsSpotted = true;
+      } else u.spottedTraps?.delete(h.id);
+      break;
+    }
+    case "runAway":
+      if ( n === null ) return false;
+      return n >= 2 ? applyFact(run, { kind: "flee", id }) : applyFact(run, { kind: "waver", id, on: n === 1 });
+    default:
+      holdGoal(u, kind, thingId, n ?? undefined);
+  }
+  run.live?.facts.push({ kind: "goal", id, goal: kind, thingId, level: n, round: run.round });
+  return true;
+}
+
 /** The GM takes a condition toward another creature off (whatever put it there: a power, the fight, the GM). */
 export function clearRelation(run, id, { kind, byId } = {}) {
   const u = run.byId.get(id);
@@ -663,7 +694,7 @@ export function clearRelation(run, id, { kind, byId } = {}) {
     case "afraid": {
       const key = `avoid|${byId}`;
       run.live?.gm?.delete(`${u.id}|${key}`);
-      for ( const layer of ["stated", "logic", "memory", "social", "style"] ) u.desire?.[layer]?.delete(key);
+      for ( const layer of ["stated", "logic", "memory", "social", "style", "gm"] ) u.desire?.[layer]?.delete(key);
       u.grudges?.delete(byId);
       break;
     }
@@ -689,6 +720,10 @@ export function clearRelation(run, id, { kind, byId } = {}) {
       break;
     case "marked":
       u.effects = u.effects.filter(e => !(e.mark?.length && from(e)));
+      break;
+    // (It won't listen to byId any more: talked round to hearing it out again.)
+    case "shuns":
+      if ( !u.offendedBy?.delete(byId) ) return false;
       break;
     default:
       return false;
@@ -719,7 +754,7 @@ export function conditionsOf(run, id) {
   const add = (kind, byId, extra = {}) => { if ( byId && run.byId.has(byId) ) relations.push({ kind, byId, ...extra }); };
   // (Afraid of: wanting to keep away from it, however it came about: the GM, a grudge, its pills, its fears.)
   const fears = new Set();
-  for ( const layer of ["stated", "logic", "memory", "social", "style"] ) for ( const k of u.desire?.[layer]?.keys() ?? [] ) if ( k.startsWith("avoid|") ) fears.add(k.slice(6));
+  for ( const layer of ["stated", "logic", "memory", "social", "style", "gm"] ) for ( const k of u.desire?.[layer]?.keys() ?? [] ) if ( k.startsWith("avoid|") ) fears.add(k.slice(6));
   for ( const byId of fears ) {
     const level = levelOf(u, "avoid", byId);
     if ( level > 0 ) add("afraid", byId, { level, band: desireBand(level), gm: !!run.live?.gm?.has(`${u.id}|avoid|${byId}`) });
@@ -753,7 +788,7 @@ export function mindOf(run, id, { top = 5 } = {}) {
     desires: rankedDesires(run, u).slice(0, top).map(d => ({ ...d, band: desireBand(d.level), gm: gm.has(`${d.kind}|${d.targetId}`) })),
     gm: [...gm].map(k => {
       const [kind, targetId] = k.split("|");
-      return { kind, targetId, level: u.desire?.stated.get(k) ?? 0 };
+      return { kind, targetId, level: u.desire?.gm?.get(k) ?? 0 };
     }),
     sway: [...(u.sway ?? [])].map(([side, progress]) => ({ side, progress, steps: stepsToConvince(u, run) })),
     offendedBy: [...(u.offendedBy ?? [])],
@@ -762,6 +797,191 @@ export function mindOf(run, id, { top = 5 } = {}) {
     wavering: !!u.wavering,
     swayed: u.swayOutcome ?? null
   };
+}
+
+/** The core's counted conditions (frightened 2): the rest are on or off. */
+const VALUED = new Set(CORE_CONDITIONS.filter(c => c.valued).map(c => c.key));
+/** A desire's intensity: its band, 1 (passing) to 5 (obsessed). */
+const bandIntensity = level => desireBand(level) + 1;
+/** Conditions that stand for a relation (grabbed by, controlled by): told as that. */
+const AS_RELATION = new Set(["grabbed", "controlled"]);
+
+/**
+ * Everything the Battle Interface's map of minds shows, in the engine's terms (the interface puts it in words). Each
+ * line and symbol has an intensity and its most (null: no most; 1: only on or off, a hidden 1):
+ *   creatures  [{id, status, side, active, pos, hazard, player}]
+ *   links      what's between two: from -> to
+ *     {type: "desire", kind, from (who wants), to, level, intensity, most: 5, gm}
+ *     {type: "condition", key, from (who caused it), to (who has it), value, valued, intensity, most, rounds, gm, sheet}
+ *     {type: "relation", kind, from, to, intensity: 1, most: 1, rounds, gm}   grabbed/goaded/controlled/bound/exposedTo/
+ *       marked: from the one who did it to the one it's on; shuns (won't listen to): from the one who won't to the other
+ *     {type: "goal", kind, from, to (a thing's id, or a hazard's), level, intensity, most, played, gm, via}
+ *   marks      what a creature has on its own: {type: "condition"|"status"|"goal"|"desire", on, key|kind, ...}
+ *   things     what goals are about, while they're wanted: [{id, type, x, y, name, locked}]
+ *   setAside   what the GM set aside (held at 0), to hand back: [{type: "desire"|"goal", id, kind, targetId|thingId}]
+ * A player's character FastFighting isn't playing shows no desires or goals (the player decides what it wants), only
+ * what's on it.
+ */
+export function networkOf(run) {
+  const creatures = [];
+  const links = [];
+  const marks = [];
+  const things = new Map();
+  const setAside = [];
+  const players = run.live?.players ?? new Set();
+  for ( const u of run.units ) {
+    creatures.push({ id: u.id, status: u.status, side: u.side, active: !!u.active, aware: !!u.aware, pos: u.pos ? { x: u.pos.x, y: u.pos.y } : null, hazard: !!u.spec.hazard, player: players.has(u.id) });
+    const minded = !players.has(u.id);
+    // What it wants of others (and of itself).
+    if ( minded ) {
+      for ( const d of rankedDesires(run, u) ) {
+        const at = { kind: d.kind, level: d.level, intensity: bandIntensity(d.level), most: 5, gm: u.desire?.gm?.has(`${d.kind}|${d.targetId}`) ?? false };
+        if ( d.targetId === u.id ) marks.push({ type: "desire", on: u.id, ...at });
+        else {
+          // (Talk: the way it would put it to them now, its best pitch: persuade, intimidate, deceive.)
+          if ( d.kind === "talk" ) {
+            const t = run.byId.get(d.targetId);
+            const pitch = t ? bestPitch(run, u, t) : null;
+            if ( pitch ) Object.assign(at, { pitch: pitch.kind, aim: pitch.aim ?? null });
+          }
+          links.push({ type: "desire", from: u.id, to: d.targetId, ...at });
+        }
+      }
+      attitudesOf(run, u, links, marks);
+      for ( const [k, v] of u.desire?.gm ?? [] ) {
+        if ( v > 0 ) continue;
+        const [kind, targetId] = k.split("|");
+        setAside.push({ type: "desire", id: u.id, kind, targetId });
+      }
+      for ( const g of goalsOf(run, u) ) {
+        const at = { kind: g.kind, level: g.level, intensity: g.scale === "band" ? bandIntensity(g.level) : g.level, most: g.scale === "band" ? 5 : (g.most ?? 1), played: g.played, gm: g.gm, via: g.via };
+        if ( g.thing ) {
+          things.set(g.thing.id, { ...g.thing });
+          links.push({ type: "goal", from: u.id, to: g.thing.id, thingId: g.thing.id, ...at });
+        } else if ( g.targetId ) links.push({ type: "goal", from: u.id, to: g.targetId, thingId: g.targetId, ...at });
+        else marks.push({ type: "goal", on: u.id, ...at });
+      }
+      for ( const [k, v] of u.goalHeld ?? [] ) {
+        if ( v > 0 ) continue;
+        const at = k.indexOf("|");
+        setAside.push({ type: "goal", id: u.id, kind: k.slice(0, at), thingId: k.slice(at + 1) === "self" ? null : k.slice(at + 1) });
+      }
+    }
+    // What's on it: each condition from whoever caused it (a line), or its own (a symbol).
+    const has = conditionsOf(run, u.id);
+    for ( const c of has.conditions ) {
+      if ( AS_RELATION.has(c.key) && has.relations.some(r => r.kind === c.key) ) continue;
+      const valued = VALUED.has(c.key) || c.value > 1;
+      const at = { key: c.key, value: c.value, valued, intensity: valued ? c.value : 1, most: valued ? null : 1, sheet: c.sheet };
+      const by = [...new Set(c.sources.map(x => x.byId).filter(id => id && id !== u.id && run.byId.has(id)))];
+      for ( const id of by ) {
+        const src = c.sources.find(x => x.byId === id);
+        links.push({ type: "condition", from: id, to: u.id, rounds: src.rounds, gm: src.gm, ...at });
+      }
+      if ( !by.length || c.sheet || c.sources.some(x => !x.byId) ) marks.push({ type: "condition", on: u.id, ...at });
+    }
+    for ( const r of has.relations ) {
+      if ( r.kind === "afraid" ) continue; // (a fear is its desire to keep away: shown as that)
+      links.push({ type: "relation", kind: r.kind, from: r.byId, to: u.id, intensity: 1, most: 1, rounds: r.rounds ?? null, gm: !!r.gm });
+    }
+    for ( const id of u.offendedBy ?? [] ) {
+      if ( run.byId.has(id) ) links.push({ type: "relation", kind: "shuns", from: u.id, to: id, intensity: 1, most: 1, rounds: null, gm: false });
+    }
+    // Not in the fight yet: it hasn't noticed it.
+    if ( !u.active && !u.aware && u.status === STATUS.STANDING && !u.spec.hazard ) marks.push({ type: "status", on: u.id, key: "unaware", intensity: 1, most: 1 });
+  }
+  return { creatures, links, marks, things: [...things.values()], setAside };
+}
+
+/**
+ * What a creature keeps toward others outside its desires, as lines (from it) and symbols (on it): who it's wary of
+ * hearing (rebuffed, each time harder), whom it bears a grudge (afraid of them until they go for it, then out for
+ * them), whom it schemes against and whom it follows (this turn), a truce it keeps; whose companion it is and who
+ * summoned it; which side a neutral leans to and which it has turned on, how far it's been talked round, a quarrel it
+ * agreed to let be, going against its commander, getting involved, and what it wants of the other side to end a
+ * standoff. Those it can be talked out of (or the GM can) have an intensity; the rest (`fixed`) only show.
+ */
+function attitudesOf(run, u, links, marks) {
+  const has = id => id && id !== u.id && run.byId.has(id);
+  const line = (kind, to, extra = {}) => { if ( has(to) ) links.push({ type: "attitude", kind, from: u.id, to, intensity: 1, most: 1, ...extra }); };
+  const mark = (kind, extra = {}) => marks.push({ type: "attitude", on: u.id, kind, intensity: 1, most: 1, ...extra });
+  for ( const [id, n] of u.rebuffed ?? [] ) if ( n > 0 ) line("wary", id, { intensity: n, most: null });
+  for ( const [id, g] of u.grudges ?? [] ) line("grudge", id, { provoked: !!g?.provoked });
+  if ( u.scheming?.against ) line("schemes", u.scheming.against);
+  if ( u.following?.id ) line("follows", u.following.id, { fixed: true });
+  if ( u.truce?.withId ) line("truce", u.truce.withId);
+  if ( u.spec.flags?.masterId ) line("serves", u.spec.flags.masterId, { fixed: true });
+  if ( u.summoner ) line("summoned", u.summoner, { fixed: true });
+  // (On it: a neutral's lean, the sides it turned on, how far it's been talked round, and the rest.)
+  if ( u.lean && u.status === STATUS.STANDING ) mark("leans", { side: u.lean, level: u.leanLevel ?? 50, intensity: desireBand(u.leanLevel ?? 50) + 1, most: 5 });
+  for ( const side of u.against ?? [] ) mark("against", { side });
+  const steps = stepsToConvince(u, run);
+  for ( const [side, n] of u.sway ?? [] ) if ( n > 0 && side !== u.side ) mark("swayed", { side, intensity: n, most: Math.max(1, steps - 1), steps });
+  if ( u.holdsBack ) mark("holdsBack");
+  if ( u.contrarian ) mark("contrarian");
+  if ( u.meddling?.how ) mark("meddles", { how: u.meddling.how, side: u.meddling.side ?? null, fixed: true });
+  const expect = run.standoff && !u.dealt && u.status === STATUS.STANDING ? expectOf(u) : null;
+  if ( expect ) mark("demands", { expect: { ...expect } });
+}
+
+/**
+ * The GM's word on what a creature keeps toward others (attitudesOf): {kind, byId | side, level}. 0 takes it away:
+ * hears byId out as before (wary), the grudge let go, the scheme dropped, the truce over, back on that side's good
+ * terms (against), no longer swayed toward that side, the quarrel no longer let be, no longer contrary, the demand let
+ * go. Wary of hearing byId, and swayed toward a side, take a count (up to one short of being talked round); a lean,
+ * how strongly (its band).
+ */
+export function setAttitude(run, id, { kind, byId = null, side = null, level = 0 } = {}) {
+  const u = run.byId.get(id);
+  if ( !u ) return false;
+  const n = Math.max(0, Math.round(Number(level) || 0));
+  switch ( kind ) {
+    case "wary":
+      if ( !run.byId.has(byId) ) return false;
+      if ( n ) (u.rebuffed ??= new Map()).set(byId, n);
+      else u.rebuffed?.delete(byId);
+      break;
+    case "grudge":
+      if ( n || !u.grudges?.delete(byId) ) return false;
+      break;
+    case "schemes":
+      if ( n || u.scheming?.against !== byId ) return false;
+      u.scheming = null;
+      break;
+    case "truce":
+      if ( n || u.truce?.withId !== byId ) return false;
+      u.truce = null;
+      break;
+    case "leans":
+      if ( !u.lean ) return false;
+      u.leanLevel = n ? bandLevel(n - 1) : 0;
+      break;
+    case "against":
+      if ( n || !u.against?.delete(side) ) return false;
+      settleSides(run);
+      break;
+    case "swayed": {
+      if ( !side ) return false;
+      const most = Math.max(1, stepsToConvince(u, run) - 1);
+      if ( n ) (u.sway ??= new Map()).set(side, Math.min(most, n));
+      else u.sway?.delete(side);
+      break;
+    }
+    case "holdsBack":
+      u.holdsBack = n > 0;
+      break;
+    case "contrarian":
+      u.contrarian = n > 0;
+      break;
+    case "demands":
+      if ( n ) return false;
+      u.expect = null;
+      break;
+    default:
+      return false;
+  }
+  run.live?.facts.push({ kind: "attitude", id, attitude: kind, byId, side, level: n, round: run.round });
+  return true;
 }
 
 /** Every creature as it stands (simulator.js captureUnit), by id: before and after a turn, for what it changed (changes.js). */

@@ -26,8 +26,10 @@
  *               says, while the taunt lasts and the taunter stands. It counts like a stated desire, and blinds like one.
  *   asked       friends asking it for a buff (their "bolstered" desires naming it): no roll, only that they can make
  *               themselves understood and that it's willing (see heed).
+ *   gm          what the GM holds it to in a live battle (the Battle Interface): that level and no other, whatever the
+ *               rest would make of it (0: set aside), until the GM hands it back. It counts like a stated desire.
  *
- * A desire's level is max(logic, stated, lean, taunt) + memory + social - frustration, 0 to 100:
+ * A desire's level is max(logic, stated, lean, taunt) + memory + social - frustration, 0 to 100 (or the GM's hold):
  *   {kind: "hurt" | "heal" | "protect" | "aid" | "talk" | "avoid" | "bind" | "rob" | "bolstered", targetId, level}
  *   (aid: bolster with a buff; bind: tie up a fallen foe, a prisoner; rob: take what a fallen foe carries
  *   (behavior/fallen.js); bolstered: to be bolstered by that friend. A request, not something it acts on itself: the
@@ -76,6 +78,7 @@ function parseKey(k) {
 function desireKeys(d) {
   const keys = new Set(d.logic.keys());
   for ( const m of [d.stated, d.lean, d.taunt, d.memory, d.social, d.style] ) for ( const k of m.keys() ) keys.add(k);
+  for ( const k of d.gm?.keys() ?? [] ) keys.add(k);
   return keys;
 }
 
@@ -88,7 +91,7 @@ export function desireBand(level) {
 
 /** A unit's desires at the start of the fight: what it was told to want. */
 export function initDesires(u) {
-  u.desire = { stated: new Map(), memory: new Map(), frustration: new Map(), logic: new Map(), social: new Map(), style: new Map(), lean: new Map(), taunt: new Map() };
+  u.desire = { stated: new Map(), memory: new Map(), frustration: new Map(), logic: new Map(), social: new Map(), style: new Map(), lean: new Map(), taunt: new Map(), gm: new Map() };
   for ( const d of u.spec.desires ?? [] ) {
     if ( !DESIRE_KINDS.includes(d.kind) || !d.targetId || d.targetId === u.id ) continue;
     u.desire.stated.set(keyOf(d.kind, d.targetId), clamp(Number(d.level) || 0));
@@ -142,8 +145,26 @@ export function levelOf(u, kind, targetId) {
   const d = u.desire;
   if ( !d ) return 0;
   const k = keyOf(kind, targetId);
+  if ( d.gm?.size ) {
+    const held = d.gm.get(k);
+    if ( held !== undefined ) return held;
+  }
   return clamp(Math.max(d.logic.get(k) ?? 0, d.stated.get(k) ?? 0, d.lean.get(k) ?? 0, d.taunt.get(k) ?? 0) + (d.style.get(k) ?? 0) + (d.memory.get(k) ?? 0) + (d.social.get(k) ?? 0) - (d.frustration.get(k) ?? 0));
 }
+
+/** The GM holds u's desire at this level (0: set aside) until handing it back. */
+export function holdDesire(u, kind, targetId, level) {
+  if ( !u.desire || !targetId ) return;
+  (u.desire.gm ??= new Map()).set(keyOf(kind, targetId), clamp(Math.round(Number(level) || 0)));
+}
+
+/** The GM's hold on it, handed back: the engine works it out again. */
+export function releaseDesire(u, kind, targetId) {
+  u.desire?.gm?.delete(keyOf(kind, targetId));
+}
+
+/** The level the GM holds it at, or undefined. */
+export const heldDesire = (u, kind, targetId) => u.desire?.gm?.get(keyOf(kind, targetId));
 
 /**
  * The taunts on u this turn (effects with a taunt, effects.js): each makes it want to go for its taunter, at least as
@@ -224,7 +245,7 @@ export function rankedDesires(run, u) {
     // What's driving it: the tactics' own reasoning, or something stated, taunted or stirred on top of it.
     const logic = d.logic.get(k) ?? 0;
     const stated = d.stated.get(k) ?? 0;
-    const driven = (d.taunt.get(k) ?? 0) > Math.max(logic, stated) ? "taunted" : stated > logic ? "stated" : (d.memory.get(k) ?? 0) >= 10 ? "memory" : (d.social.get(k) ?? 0) >= 10 ? "social" : "logic";
+    const driven = d.gm?.has(k) ? "stated" : (d.taunt.get(k) ?? 0) > Math.max(logic, stated) ? "taunted" : stated > logic ? "stated" : (d.memory.get(k) ?? 0) >= 10 ? "memory" : (d.social.get(k) ?? 0) >= 10 ? "social" : "logic";
     out.push({ kind, targetId, level, driven });
   }
   return out.sort((a, b) => b.level - a.level);
