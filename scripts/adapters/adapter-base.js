@@ -7,7 +7,8 @@
  *
  * The adapter has two halves:
  *  - Foundry side (async, may read documents): build CombatantSpecs, derive personality traits, find leaders,
- *    cross-check difficulty, and commit a chosen outcome back to the tokens ("Make it So").
+ *    cross-check difficulty, and write a live battle's turns onto the sheets (commitChanges; or, for a helper without
+ *    live battles, the whole fight's outcome, commitOutcome).
  *  - Pure side: `rules`, a plain object the engine calls thousands of times. It must not touch Foundry.
  *
  * Recognising things: find a system's features, actions and spells by their slug or identifier (PF2e `slug`,
@@ -36,9 +37,6 @@ export class SystemAdapter {
   }
 
   /**
-   * (commitOutcome's options.effectSource(id) finds the action that laid a lingering effect, final.effects, so the
-   * helper can leave it on the creature, from the action's own effectRef.)
-   *
    * Build a CombatantSpec (see scripts/engine/battle-state.js) for a token.
    * @param {TokenDocument} tokenDoc
    * @returns {Promise<object|null>}
@@ -96,7 +94,7 @@ export class SystemAdapter {
   }
 
   /**
-   * Apply the answers to the planner's system section to a battle (its combatants, spec.options.system for Make it So).
+   * Apply the answers to the planner's system section to a battle (its combatants, spec.options.system for the real fight).
    * @param {object} spec       the BattleSpec, as built
    * @param {object} settings   setup.system
    * @param {object} context    {setup, roster, resolved}
@@ -104,8 +102,8 @@ export class SystemAdapter {
   applyPlannerSettings(spec, settings, context) {}
 
   /**
-   * The encounter's own record, beyond each token's (Ironsworn: its progress track, kept on one character), for Make it
-   * So's confirmation: {title, lines}, or null for none.
+   * The encounter's own record, beyond each token's (Ironsworn: its progress track, kept on one character), for the
+   * summary of what a fight changes (the planner, the whole-fight playback): {title, lines}, or null for none.
    */
   describeEncounter(spec, replay) {
     return null;
@@ -127,7 +125,7 @@ export class SystemAdapter {
   }
 
   /**
-   * Does its Make it So leave loot (a lootable corpse, a pile of gear) and take a corpse away, as the lootMode and
+   * Does its real fight leave loot (a lootable corpse, a pile of gear) and take a corpse away, as the lootMode and
    * corpseMode settings ask? Without, those settings aren't shown.
    */
   get supportsLoot() {
@@ -135,7 +133,7 @@ export class SystemAdapter {
   }
 
   /**
-   * Commit one simulated outcome to a token ("Make it So").
+   * Commit one simulated fight's outcome to a token: the whole-fight playback, for a helper without live battles.
    * @param {TokenDocument} tokenDoc
    * @param {object} spec        The CombatantSpec used in the simulation
    * @param {object} final       Captured end state from the engine
@@ -143,6 +141,8 @@ export class SystemAdapter {
    * @returns {Promise<object>}  Undo record: {tokenUuid, actorUuid, actorUpdate, itemUpdates, createdItems, deletedItems,
    *   createdEffects, tokenUpdate, createdActors, createdTokens, deletedTokens, statuses, combatant}
    */
+  // (options.effectSource(id) finds the action that laid a lingering effect, final.effects, so the helper can leave it
+  // on the creature, from the action's own effectRef.)
   async commitOutcome(tokenDoc, spec, final, options) {
     throw new Error(`${this.constructor.name} does not support Make it So`);
   }
@@ -197,7 +197,7 @@ export class SystemAdapter {
     return "";
   }
 
-  /** Describe the changes commitOutcome would make, for the confirmation dialog. */
+  /** What commitOutcome would change, for the summary of a fight (the planner, the whole-fight playback). */
   describeOutcome(spec, final) {
     return [];
   }
@@ -208,8 +208,8 @@ export class SystemAdapter {
 
   /**
    * Can it play a live battle (the players run their characters, FastFighting the rest, a turn at a time)? Only a
-   * helper whose commitChanges writes one turn's changes safely, mid-fight; without, Do it For Real Now plays the
-   * whole fight out as before.
+   * helper whose commitChanges writes one turn's changes safely, mid-fight; without, Do it For Real Now simulates the
+   * whole fight and plays it back (make-it-so.js).
    */
   get supportsLive() {
     return false;
@@ -250,9 +250,20 @@ export class SystemAdapter {
    * @param {object} options   {lootMode, corpseMode, fledMode}
    * @returns {Promise<object>} an undo record, as commitOutcome's
    */
-  // (options.before: the creature as the turn found it, captureUnit's shape, for what the change set leaves out.)
+  // (options.before: the creature as the turn found it, captureUnit's shape, for what the change set leaves out;
+  // options.effectSource(key): the action that laid a buff or debuff, and whose spec, for a helper to put its effect on.)
   async commitChanges(tokenDoc, spec, changes, final, options) {
     return this.commitOutcome(tokenDoc, spec, final, options);
+  }
+
+  /**
+   * A live battle: whether this system's sheets can carry one of the engine's conditions (by its key). One they can't
+   * (PF2e has none for losing a turn to Command) the engine keeps itself between turns; one they can, the sheet says
+   * whether it's still there. By default, every one.
+   * @param {string} key
+   */
+  sheetCarries(key) {
+    return true;
   }
 
   /**

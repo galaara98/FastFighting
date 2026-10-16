@@ -238,6 +238,9 @@ export function resourceLeft(u, action) {
   return action.shared ? (u.sharedPools?.[action.shared] ?? 0) : (u.resources[action.resource] ?? 0);
 }
 
+/** An action that costs something it has only so much of: a resource, or uses. */
+export const limited = a => !!a.resource || Number.isFinite(a.uses);
+
 export function hasUses(u, action) {
   if ( u.lost?.has(action.id) ) return false; // a spell lost to a failed check (DCC)
   // (resourceCost: what one use takes, a point by default: Daggerheart's 3 Hope for a class's Hope feature.)

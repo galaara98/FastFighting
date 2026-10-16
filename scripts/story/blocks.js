@@ -22,7 +22,6 @@
 import { localize } from "../i18n.js";
 
 export const TIERS = ["criticalSuccess", "majorSuccess", "success", "minorSuccess", "minorFailure", "failure", "majorFailure", "criticalFailure"];
-/** Damage imagery families. Systems map their own damage types onto these (rules.storyDamageType). */
 /**
  * The story's damage families: how harm looks when it's told. Each system maps its own damage types onto them
  * (rules.storyDamageType: 5e lightning reads as electricity, necrotic as void), or names one for an attack outright

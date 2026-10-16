@@ -16,6 +16,7 @@
  *   resources: {key: {from, to}}        spent (or gained)
  *   uses: {actionId: {from, to}}
  *   side: true                          its side changed (won over, taking no side, turned on someone)
+ *   effects: {added: [...], ended: [...]}  buffs and debuffs (captureUnit's: bonuses, resistances, a mark) laid, ended
  *   concessions: [...]                  given up this turn
  *   moved: {from, to}                   where it went (the core moves the token)
  * }
@@ -70,6 +71,12 @@ export function diffOutcome(before, after) {
   }
 
   if ( changed(before.side, after.side) || changed(before.swayed, after.swayed) || !sameJson(before.against ?? [], after.against ?? []) ) out.side = true;
+  const tag = e => `${e.key}|${e.sourceId ?? ""}`;
+  const hadFx = new Map((before.effects ?? []).map(e => [tag(e), e]));
+  const hasFx = new Map((after.effects ?? []).map(e => [tag(e), e]));
+  const laid = [...hasFx].filter(([k]) => !hadFx.has(k)).map(([, e]) => e);
+  const lifted = [...hadFx].filter(([k]) => !hasFx.has(k)).map(([, e]) => e);
+  if ( laid.length || lifted.length ) out.effects = { added: laid, ended: lifted };
   const gave = (after.concessions ?? []).slice((before.concessions ?? []).length);
   if ( gave.length ) out.concessions = gave;
   if ( before.position && after.position && (before.position.x !== after.position.x || before.position.y !== after.position.y) ) {

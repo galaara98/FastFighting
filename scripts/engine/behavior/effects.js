@@ -494,7 +494,7 @@ export function outcomeWorth(run, by, t, outcome, { versus = null } = {}) {
   if ( outcome.vsFocus && !focus ) return 0;
   const out = focus ? (focus.kind === "hurt" ? damageOut(run, t, focus.unit) : 0) : damageOut(run, t, versus);
   const inc = incoming(run, t);
-  const words = focus ? (focus.kind === "hurt" ? 0 : Math.max(1, damageOut(run, t))) : Math.max(1, damageOut(run, t)) * checkShare(run, t);
+  const words = focus ? (focus.kind === "hurt" ? 0 : Math.max(1, damageOut(run, t))) : Math.max(1, damageOut(run, t)) * checkShare(t);
   // Good for one roll (or a few): the next attack of the round's, the next check, the next blow at it.
   const uses = Number(outcome.uses) > 0 ? Number(outcome.uses) : 0;
   const share = uses ? { words, own: Math.min(1, uses / Math.max(1, hitsPerRound(run, t) / 0.6)), guard: Math.min(1, uses / 2) } : { words };
@@ -569,7 +569,7 @@ function tauntGain(run, by, t) {
 }
 
 /** How much of t's turn goes into checks (talking, first aid), 0 to 1: what it was set on last turn, its knack for words. */
-function checkShare(run, t) {
+function checkShare(t) {
   // (As much as its answer leans to always talking.)
   const devoted = t.spec.stayTrue ? 0 : wish(t.spec.alwaysTalk);
   const lead = t.lastDesires?.[0]?.kind;

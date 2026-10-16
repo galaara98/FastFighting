@@ -40,7 +40,7 @@ const fmt = (key, data) => game.i18n.format(key, data);
 /** How many turns back Rewind Turn reaches (each keeps the run as it was before it). */
 const REWIND_DEPTH = 12;
 
-/** The battle in this GM's hands: {combat, scene, spec, rules, run, data (what's kept), busy, pc (a player's turn going)}. */
+/** The battle in this GM's hands: {combat, scene, spec, rules, run, data (what's kept), pc (a player's turn going), keptSpec}. */
 let battle = null;
 export const liveBattle = () => battle;
 
@@ -60,9 +60,14 @@ const changed = () => Hooks.callAll("fastFighting.liveBattle", battle);
 /*  Keeping it                                  */
 /* -------------------------------------------- */
 
-/** The journal entry that keeps live battles: GMs only (minds, plans and dice are spoilers). */
+/**
+ * The journal entry that keeps live battles: GMs only (minds, plans and dice are spoilers). Only one no player can see
+ * is trusted: a player who could edit it could rewrite what a Rewind puts back, and a GM's client would do it.
+ */
+const trustedStore = j => !!j.getFlag(MODULE_ID, "liveStore") && !game.users.some(u => !u.isGM && j.testUserPermission(u, "LIMITED"));
+
 async function store() {
-  const found = game.journal.find(j => j.getFlag(MODULE_ID, "liveStore"));
+  const found = game.journal.find(trustedStore);
   if ( found ) return found;
   const JournalEntry = foundry.documents.JournalEntry ?? globalThis.JournalEntry;
   return JournalEntry.create({
@@ -80,17 +85,24 @@ async function keep() {
   const pc = battle.pc;
   battle.data.pc = pc ? { combatantId: pc.combatantId, id: pc.id, round: pc.round, facts: pc.facts, records: pc.records, snapshot: pc.snapshot, from: pc.from } : null;
   const doc = await store();
-  // (The battle's own key replaced whole, the store's other keys left as they are.)
-  await doc.update({ [`flags.${MODULE_ID}.battles.==${battle.combat.id}`]: battle.data });
+  // (The battle's own key replaced whole, the store's other keys left as they are. Its spec, the biggest part, only
+  // when it's changed: kept beside it.)
+  const { spec, ...rest } = battle.data;
+  const update = { [`flags.${MODULE_ID}.battles.==${battle.combat.id}`]: rest };
+  if ( spec !== battle.keptSpec ) update[`flags.${MODULE_ID}.specs.==${battle.combat.id}`] = spec;
+  await doc.update(update);
+  battle.keptSpec = spec;
 }
 
 async function kept(combatId) {
-  return (await store())?.getFlag(MODULE_ID, `battles.${combatId}`) ?? null;
+  const doc = await store();
+  const data = doc?.getFlag(MODULE_ID, `battles.${combatId}`);
+  return data ? { ...data, spec: doc.getFlag(MODULE_ID, `specs.${combatId}`) } : null;
 }
 
 async function forget(combatId) {
   const doc = await store();
-  await doc?.update({ [`flags.${MODULE_ID}.battles.-=${combatId}`]: null });
+  await doc?.update({ [`flags.${MODULE_ID}.battles.-=${combatId}`]: null, [`flags.${MODULE_ID}.specs.-=${combatId}`]: null });
 }
 
 /* -------------------------------------------- */
@@ -124,7 +136,7 @@ export async function startLiveBattle(spec, { style = setting("storyStyle"), odd
   const unrolled = spotlight ? [] : combat.combatants.filter(c => c.initiative === null).map(c => c.id);
   const rolledFrom = Date.now();
   if ( unrolled.length ) await combat.rollInitiative(unrolled, { skipDialog: true });
-  const rollCards = unrolled.length ? game.messages.filter(m => m.timestamp >= rolledFrom && m.getFlag("core", "initiativeRoll")).map(m => m.id) : [];
+  const rollCards = unrolled.length ? initiativeCards(rolledFrom) : [];
   const started = !combat.started;
   if ( started ) await combat.startCombat();
   if ( spotlight && combat.turn !== null ) await adapter.giveSpotlight(combat, null);
@@ -134,9 +146,9 @@ export async function startLiveBattle(spec, { style = setting("storyStyle"), odd
   const run = beginLive(live, adapter.rules, { seed, players, owns: adapter.liveOwnership?.() ?? {}, npcReactions: "calculated" });
   liveRound(run, combat.round || 1);
   battle = {
-    combat, scene, spec: live, rules: adapter.rules, run, busy: null, pc: null,
+    combat, scene, spec: live, rules: adapter.rules, run, pc: null,
     data: {
-      id: foundry.utils.randomID(), user: game.user.id, sceneId: scene.id, spec: packSpec(live), seed, style, odds, players, told: 0, turns: [], first: snapshotRun(run),
+      id: foundry.utils.randomID(), user: game.user.id, sceneId: scene.id, spec: packSpec(live), seed, style, odds, players, told: 0, turns: [],
       ended: false, played: null, opening: [], rolled: unrolled, rollCards, joined: [], startedCombat: started, spotlight, spots: 0
     }
   };
@@ -246,6 +258,15 @@ function addPlayer(id) {
   battle.run.live.players.add(id);
 }
 
+/** Foundry's ChatMessage class. */
+const chatMessages = () => foundry.documents.ChatMessage ?? globalThis.ChatMessage;
+
+/** How a turn is written onto the sheets, as the world's settings say. */
+const writeOptions = () => ({ live: true, lootMode: setting("lootMode"), corpseMode: setting("corpseMode"), fledMode: setting("fledMode") });
+
+/** The initiative cards rolled since `from` (taken back with the encounter). */
+const initiativeCards = from => game.messages.filter(m => m.timestamp >= from && m.getFlag("core", "initiativeRoll")).map(m => m.id);
+
 /** A creature's token id: its spec's, or (summoned mid-fight) the one made for it. */
 const tokenIdOf = u => u.tokenId ?? u.spec.tokenId ?? u.id;
 
@@ -350,7 +371,7 @@ async function newRound(round) {
         if ( c && !battle.data.spotlight ) {
           const from = Date.now();
           await battle.combat.rollInitiative([c.id], { skipDialog: true }); // (no system roll dialog: PF2e opens one)
-          battle.data.rollCards = [...(battle.data.rollCards ?? []), ...game.messages.filter(m => m.timestamp >= from && m.getFlag("core", "initiativeRoll")).map(m => m.id)];
+          battle.data.rollCards = [...(battle.data.rollCards ?? []), ...initiativeCards(from)];
         }
       }
     }
@@ -377,6 +398,8 @@ async function readStates() {
     const doc = docOf(u.id);
     if ( !doc ) continue;
     const state = (await adapter.readLiveState(doc, { spec: battle.spec, unit: u })) ?? {};
+    // (Which of the engine's conditions its sheet can carry: what it can't, the engine keeps.)
+    state.carries ??= key => adapter.sheetCarries(key);
     if ( doc.object ) {
       const p = positionOf(doc.object);
       state.position = { x: p.x, y: p.y };
@@ -431,7 +454,7 @@ async function playTurn(u, combatant, key) {
     if ( setting("playOnMap") ) {
       const grid = currentPathGrid() ?? pathGridFor([...docs.values()].map(d => d.object).filter(Boolean));
       await playMoves(result.events, docs, grid, doorsOpened, battle.scene);
-    }
+    } else await playMoves(result.events, docs, null, doorsOpened, battle.scene, { instant: true });
     turn.doors = [...doorsOpened.values()];
     // What it summoned, onto the scene and the tracker.
     await placeSummons(turn.records);
@@ -439,8 +462,7 @@ async function playTurn(u, combatant, key) {
     await writeChanges(before, after, turn.records);
     // (What the turn did to what the encounter keeps: Daggerheart's Fear.)
     try {
-      const options = { lootMode: setting("lootMode"), corpseMode: setting("corpseMode"), fledMode: setting("fledMode"), live: true };
-      turn.records.push(...((await adapter.commitTurn(before, after, { ...options, spec: battle.spec, events: result.events })) ?? []));
+      turn.records.push(...((await adapter.commitTurn(before, after, { ...writeOptions(), spec: battle.spec, events: result.events })) ?? []));
     } catch ( err ) {
       console.error(`${MODULE_ID} | writing the turn's encounter changes`, err);
     }
@@ -481,7 +503,7 @@ async function settleTurn(turn, ended) {
 async function waitCard(turn) {
   if ( turn.kind !== "npc" ) return null;
   const name = battle.run.byId.get(battle.combat.combatants.get(turn.combatantId)?.tokenId)?.spec.name ?? "";
-  const ChatMessage = foundry.documents.ChatMessage ?? globalThis.ChatMessage;
+  const ChatMessage = chatMessages();
   return ChatMessage.create({
     content: inertHtml(`<div class="fast-fighting-live"><p>${escape(fmt("FASTFIGHTING.Live.Told", { name }))}</p>
       <button type="button" data-ff-live="continue"><i class="fa-solid fa-forward"></i> ${loc("FASTFIGHTING.Live.Continue")}</button>
@@ -512,7 +534,7 @@ async function ask(request) {
     if ( owners.length ) {
       const id = foundry.utils.randomID();
       const answer = await new Promise(resolve => {
-        asking.set(id, resolve);
+        asking.set(id, { resolve, owners });
         game.socket.emit(SOCKET, { action: "liveAsk", userIds: owners, id, words }, { recipients: owners });
         setTimeout(() => resolve(null), ASK_MS);
       });
@@ -543,7 +565,9 @@ function onSocket(data, senderId) {
   if ( data?.action === "liveAsk" && sender?.isGM && data.userIds?.includes(game.user.id) ) {
     askHere(data.words).then(answer => game.socket.emit(SOCKET, { action: "liveAnswer", id: data.id, answer }, { recipients: [senderId] }));
   } else if ( data?.action === "liveAnswer" && game.user.isGM ) {
-    asking.get(data.id)?.(!!data.answer);
+    // (Only from one it was asked of.)
+    const question = asking.get(data.id);
+    if ( question?.owners.includes(senderId) ) question.resolve(!!data.answer);
   }
 }
 
@@ -551,10 +575,20 @@ function onSocket(data, senderId) {
 /*  A turn a player plays                       */
 /* -------------------------------------------- */
 
+/**
+ * Whether a card counts as a player's character's: made by a GM or by one who owns it (anyone can name any speaker on
+ * a card, so another player's card at its turn isn't its doing).
+ */
+function madeFor(message, pcId) {
+  const author = message.author;
+  return !!author && (author.isGM || !!docOf(pcId)?.actor?.testUserPermission(author, "OWNER"));
+}
+
 /** What a player's turn left in the chat, as it's made (not FastFighting's own cards). */
 function onMessage(message) {
   if ( !battle?.pc || !runsHere(battle.data) || message.getFlag(MODULE_ID, "story") || message.getFlag(MODULE_ID, "live") ) return;
   const pc = battle.pc;
+  if ( !madeFor(message, pc.id) ) return;
   pc.messages.push(message.id);
   // (A ranged attack or a manipulate action in a foe's reach, where the system's opportunity strikes answer it: PF2e.)
   if ( getAdapter().liveOpening?.(message, pc.id) ) queue(() => openingTaken(pc));
@@ -697,6 +731,7 @@ async function playerMoved(doc) {
   const p = positionOf(doc.object);
   const to = { x: p.x, y: p.y };
   const run = battle.run;
+  let answered = false;
   for ( const { reactorId, strike } of leavingReach(run, pc.id, to) ) {
     const use = run.live.npcReactions === "ask"
       ? await ask({ unitId: reactorId, player: false, reactionId: "opportunity", reaction: strike.name, trigger: "leaveReach", byId: pc.id, would: true })
@@ -705,10 +740,12 @@ async function playerMoved(doc) {
     const before = captureAll(run);
     reactNow(run, reactorId, pc.id, strike);
     await writeChanges(before, captureAll(run), pc.records);
+    answered = true;
   }
-  // (Where it is now, as the engine has it: the next move is from here.)
+  // (Where it is now, as the engine has it: the next move is from here. Kept only when a foe answered it: otherwise
+  // the token itself says where it is, should the battle be picked up again.)
   syncFromSheets(run, { [pc.id]: { position: to } });
-  await keep();
+  if ( answered ) await keep();
 }
 
 /**
@@ -755,13 +792,19 @@ async function placeSummons(records) {
 /** What the engine changed between two captures of everyone, onto the sheets; their undo records added to `records`. */
 async function writeChanges(before, after, records) {
   const adapter = getAdapter();
+  // (Where a buff or debuff came from: the action that laid it, and whose, for the helper to put its effect on the sheet.)
+  let sources = null;
+  const effectSource = id => {
+    sources ??= new Map(battle.run.units.flatMap(u => (u.spec.actions ?? []).map(action => [action.id, { action, spec: u.spec }])));
+    return sources.get(id) ?? null;
+  };
   for ( const [id, ch] of Object.entries(diffAll(before, after)) ) {
     const doc = docOf(id);
     if ( !doc ) continue;
     try {
       const spec = { ...battle.run.byId.get(id).spec, resources: before[id].resources };
       const record = await adapter.commitChanges(doc, spec, ch, after[id], {
-        live: true, before: before[id], fledMode: setting("fledMode"), lootMode: setting("lootMode"), corpseMode: setting("corpseMode")
+        ...writeOptions(), before: before[id], effectSource
       });
       if ( record ) records.push(record);
       for ( const c of ch.concessions ?? [] ) {
@@ -812,7 +855,9 @@ async function tellNew() {
     }
     battle.data.toldBeats = [...done];
   }
-  battle.data.told = Math.max(told, ...run.log.map(e => e.turn ?? 0));
+  let last = told;
+  for ( const e of run.log ) if ( (e.turn ?? 0) > last ) last = e.turn;
+  battle.data.told = last;
   return out;
 }
 
@@ -821,7 +866,7 @@ async function finish() {
   endLive(battle.run, { ended: true, settle: false });
   const messages = await tellNew();
   battle.data.ended = true;
-  const ChatMessage = foundry.documents.ChatMessage ?? globalThis.ChatMessage;
+  const ChatMessage = chatMessages();
   const card = await ChatMessage.create({
     content: inertHtml(`<div class="fast-fighting-live"><p>${escape(loc("FASTFIGHTING.Live.Over"))}</p>
       <button type="button" data-ff-live="aftermath" data-tooltip="${escape(loc("FASTFIGHTING.Live.AftermathHint"))}"><i class="fa-solid fa-hand-holding-medical"></i> ${loc("FASTFIGHTING.Live.Aftermath")}</button>
@@ -916,7 +961,7 @@ export function rewindTurn() {
 
 /** The GMs' card after a rewind to a turn FastFighting plays: Play it (again, with fresh dice). */
 async function rewoundCard(u) {
-  const ChatMessage = foundry.documents.ChatMessage ?? globalThis.ChatMessage;
+  const ChatMessage = chatMessages();
   return ChatMessage.create({
     content: inertHtml(`<div class="fast-fighting-live"><p>${escape(fmt("FASTFIGHTING.Live.Rewound", { name: u.spec.name }))}</p>
       <button type="button" data-ff-live="play"><i class="fa-solid fa-play"></i> ${loc("FASTFIGHTING.Live.Play")}</button></div>`),
@@ -1049,16 +1094,28 @@ async function pickUp() {
     const data = await kept(combat.id);
     if ( !data?.snapshot || !runsHere(data) ) continue;
     data.user = game.user.id; // (its GM gone: this one plays it now)
-    const spec = unpackSpec(data.spec);
+    let spec;
+    try {
+      spec = unpackSpec(data.spec);
+    } catch ( err ) {
+      console.error(`${MODULE_ID} | a kept battle that won't read`, err);
+      continue;
+    }
     const rules = getAdapter()?.rules;
     if ( !rules ) return;
     // (Its scene: where it began, an encounter linked to no scene included.)
     const scene = game.scenes.get(data.sceneId) ?? combat.scene ?? canvas.scene;
-    battle = { combat, scene, spec, rules, run: restoreRun(spec, rules, data.snapshot), busy: null, pc: null, data };
+    battle = { combat, scene, spec, rules, run: restoreRun(spec, rules, data.snapshot), pc: null, data, keptSpec: data.spec };
     playersNow();
     if ( data.pc ) {
       const own = m => m.getFlag(MODULE_ID, "story") || m.getFlag(MODULE_ID, "live");
-      battle.pc = { ...data.pc, messages: game.messages.filter(m => m.timestamp >= data.pc.from && !own(m)).map(m => m.id) };
+      battle.pc = { ...data.pc, messages: game.messages.filter(m => m.timestamp >= data.pc.from && !own(m) && madeFor(m, data.pc.id)).map(m => m.id) };
+      // (Where its token is now: a move with nothing to answer isn't kept.)
+      const token = docOf(data.pc.id)?.object;
+      if ( token ) {
+        const p = positionOf(token);
+        syncFromSheets(battle.run, { [data.pc.id]: { position: { x: p.x, y: p.y } } });
+      }
     }
     ui.notifications.info(loc("FASTFIGHTING.Live.PickedUp"));
     return;

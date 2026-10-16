@@ -1,5 +1,10 @@
 /**
- * "Do it For Real Now": one more fight, that nobody has seen, played out for the table.
+ * The whole-fight playback, and what live battles share with it. Live battles (live-battle.js) are how Do it For Real
+ * Now plays now; this playback remains for a system helper that doesn't support them (supportsLive false, as helpers
+ * before 0.2.5 don't). Shared: token moves and doors (playMoves, holdingPause), story cards (postBeat, postStory),
+ * undo records (revertRecord, revertEntry), the Sample tab's outcomes (planMakeItSo).
+ *
+ * The playback: one more fight, that nobody has seen, played out for the table.
  *   1. The story is told in the chat a turn at a time, each turn's tokens moving as it's told (the Statistician's
  *      account is the GMs' alone: one card, and the tokens go straight to where the fight left them).
  *   2. Every token settles where the fight left it (snapped to the grid, never stacked, never through a wall).
@@ -184,9 +189,11 @@ async function quickMove(doc, waypoints, speed = PLAYBACK_SPEED) {
 /**
  * Walk tokens through part of the fight as the story tells it: each move in order, around walls (or straight
  * through where the fight went through), and each door opened as it's opened. A move a token has made already (a
- * playback continued after a crash) is simply where it is.
+ * playback continued after a crash) is simply where it is. `instant`: no walking, each straight to where it ended.
  */
-export async function playMoves(events, docs, grid, doorsOpened, scene) {
+export async function playMoves(events, docs, grid, doorsOpened, scene, { instant = false } = {}) {
+  // (Not played: each token straight to where the turn left it, unanimated, once its doors are open.)
+  const last = instant ? new Map() : null;
   for ( const e of events ) {
     if ( e.type === "door" && e.success ) {
       await openSceneDoor(scene, e.doorId, doorsOpened);
@@ -196,8 +203,15 @@ export async function playMoves(events, docs, grid, doorsOpened, scene) {
     const doc = docs.get(e.actorId);
     if ( !doc?.object || doc.hidden ) continue;
     const dest = clampToScene(pixelsFor(doc, e.to), doc);
+    if ( last ) {
+      last.set(doc, dest);
+      continue;
+    }
     if ( dest.x === doc._source.x && dest.y === doc._source.y ) continue;
     await quickMove(doc, grid ? grid.route(doc, dest, { doors: true }) : [dest]);
+  }
+  for ( const [doc, dest] of last ?? [] ) {
+    if ( dest.x !== doc._source.x || dest.y !== doc._source.y ) await doc.update({ x: dest.x, y: dest.y }, { animate: false });
   }
 }
 
@@ -631,13 +645,13 @@ function gmSummary(rows, replay, adapter) {
     <button type="button" data-ff-undo-fight><i class="fa-solid fa-backward"></i> ${loc("FASTFIGHTING.MakeItSo.Undo")}</button></div>`;
 }
 
-/** Show a GM-only story to everyone (the Reveal button on it). */
 /**
  * Is this one of FastFighting's own cards? Only a GM posts them. Anyone can post a chat message with any flags, so a
  * card a player wrote is never acted on: its "undo records" would run with the GM's rights.
  */
 export const ownCard = message => !!message?.author?.isGM;
 
+/** Show a GM-only story to everyone (the Reveal button on it). */
 export async function revealStory(message) {
   if ( !game.user.isGM || !ownCard(message) || !message.getFlag(MODULE_ID, "revealable") ) return false;
   const content = message.content.replace(/<button[^>]*data-ff-reveal[^>]*>[\s\S]*?<\/button>/, "");
@@ -689,7 +703,6 @@ export async function undoFromCard(message) {
   return true;
 }
 
-/** Put one undo record back: created documents removed, deleted ones restored, changed values reset. */
 /**
  * The statuses on an actor, read from its effects too: a system that applies effects its own way (dcc) may leave
  * actor.statuses empty.
@@ -700,6 +713,7 @@ function statusesOf(actor) {
   return out;
 }
 
+/** Put one undo record back: created documents removed, deleted ones restored, changed values reset. */
 export async function revertRecord(r) {
   // Each step on its own: one that fails (a status the server has already dropped, say) mustn't stop the rest.
   const step = async (what, fn) => {
@@ -716,7 +730,8 @@ export async function revertRecord(r) {
     await step("restoring a token", async () => (await fromUuid(t.parentUuid))?.createEmbeddedDocuments("Token", [t.data], { keepId: true }));
   }
   // (A world setting the system keeps a pool in: Daggerheart's Fear, the GM's.)
-  if ( r.setting ) await step("restoring a setting", () => game.settings.set(r.setting.namespace, r.setting.key, r.setting.value));
+  // (Only the system's own: an undo record is data, and never a way to change the core's or another module's settings.)
+  if ( r.setting && r.setting.namespace === game.system.id ) await step("restoring a setting", () => game.settings.set(r.setting.namespace, r.setting.key, r.setting.value));
   const tokenDoc = r.tokenUuid ? await fromUuid(r.tokenUuid) : null;
   const actor = tokenDoc?.actor ?? (r.actorUuid ? await fromUuid(r.actorUuid) : null);
   if ( !actor ) return;
@@ -745,7 +760,9 @@ export async function revertRecord(r) {
   }
   if ( r.tokenUpdate && tokenDoc ) await step("restoring the token", () => tokenDoc.update(r.tokenUpdate));
   // (A player's own, such as DCC's Fleeting Luck.)
-  if ( r.userId && r.userUpdate ) await step("restoring a player's", () => game.users.get(r.userId)?.update(r.userUpdate));
+  // (A player's flags, such as DCC's Fleeting Luck: nothing else of a user's, their role least of all.)
+  const flagsOnly = Object.fromEntries(Object.entries(foundry.utils.flattenObject(r.userUpdate ?? {})).filter(([k]) => k.startsWith("flags.")));
+  if ( r.userId && Object.keys(flagsOnly).length ) await step("restoring a player's", () => game.users.get(r.userId)?.update(flagsOnly));
   if ( r.combatant ) await step("the combat tracker", async () => (await fromUuid(r.combatant.uuid))?.update({ defeated: r.combatant.defeated }));
 }
 

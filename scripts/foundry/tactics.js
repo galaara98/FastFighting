@@ -12,7 +12,7 @@
  *    And `offer` and `expect`: what it brings to a standoff, and what it wants out of it (foundry/motives.js).
  *  - User flag `fast-fighting.survey`: {status, sceneId, requestId, updated} for the GM's status indicators.
  */
-import { MODULE_ID, TRAITS, clamp, fudged, traitBand } from "../constants.js";
+import { MODULE_ID, TRAITS, clamp, fudged, traitBand, isPlain } from "../constants.js";
 import { TACTIC_CHOICES, TACTIC_KEYS, suggestTactics, resolveTactics } from "../engine/tactics.js";
 import { isSpecial } from "../engine/behavior/specialty.js";
 import { PLAYSTYLES, PLAYSTYLE_IDS, MAX_PLAYSTYLES, RENAMED_PLAYSTYLES, combinePlaystyles, isPlaystyle, answerChances } from "../engine/playstyles.js";
@@ -54,7 +54,6 @@ function cleanDesire(raw) {
 const MAX_ACTION_ID = 2000;
 /** The tick-boxes that became answers, by the question that took each over. */
 const LEGACY = Object.freeze({ talk: ["alwaysTalk"], target: ["avoidKilling", "neverKill"], retreat: ["avoidFleeing"] });
-const isPlain = v => !!v && typeof v === "object" && !Array.isArray(v);
 
 /**
  * Keep only answers the survey could have produced. Players own these flags and can write anything to them

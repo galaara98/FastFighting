@@ -9,7 +9,7 @@
  */
 import { STATUS, TACTICAL, NEUTRAL_PARTY } from "../../constants.js";
 import { enemiesOf, isStanding, liveTier, liveTrait, movesNeeded, behaviorOf, heldOff, holdsBackThisRound } from "../battle-state.js";
-import { expectedDamage, hasUses, threatOf, costOf, costUnits, unitsPerTurn } from "./evaluate.js";
+import { expectedDamage, hasUses, limited, threatOf, costOf, costUnits, unitsPerTurn } from "./evaluate.js";
 import { mainPool } from "../turn.js";
 import { styleWeight } from "../tactics.js";
 import { threats, isWary } from "./reactions.js";
@@ -19,7 +19,6 @@ import { willingness } from "./reluctance.js";
 import { specialtyWeight } from "./specialty.js";
 import { perceives, apparentHealth } from "./senses.js";
 
-const limited = a => !!a.resource || Number.isFinite(a.uses);
 
 /** Is the unit (or its side) in trouble, so a careful character would spend limited resources? */
 function inCrisis(run, u) {

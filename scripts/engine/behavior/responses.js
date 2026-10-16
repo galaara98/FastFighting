@@ -55,7 +55,7 @@ function priceOf(u, r, scale) {
   return style * (0.6 + 1.4 * (1 - frac)) * Math.max(1, scale);
 }
 
-function ready(run, u, r, trigger) {
+function ready(u, r, trigger) {
   // (Slain: it answers on its way down. Free: it costs no reaction.)
   const going = trigger === "slain";
   if ( (!going && !isUp(u)) || (!r.free && (u.reactionsLeft ?? 0) <= 0) ) return false;
@@ -91,7 +91,7 @@ export function respond(run, u, trigger, ctx) {
   const tier = liveTier(run, u);
   const careless = tier <= TACTICAL.FERAL;
   for ( const r of list ) {
-    if ( !answersTo(r, trigger) || !ready(run, u, r, trigger) ) continue;
+    if ( !answersTo(r, trigger) || !ready(u, r, trigger) ) continue;
     if ( r.melee && !ctx.action?.melee ) continue;
     if ( r.ranged && ctx.action?.melee ) continue;
     if ( r.physical && !(ctx.types ?? []).some(t => PHYSICAL.has(t)) ) continue;

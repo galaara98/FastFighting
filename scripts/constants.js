@@ -126,6 +126,9 @@ export function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
 }
 
+/** A plain object (as stored JSON gives one): not null, not an array. For checking what players' flags hold. */
+export const isPlain = v => !!v && typeof v === "object" && !Array.isArray(v);
+
 /** Effective value of a fudgeable {base, fudge} pair (or a bare number). */
 export function fudged(value, min = 0, max = 100) {
   if ( typeof value === "number" ) return clamp(value, min, max);

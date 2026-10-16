@@ -259,7 +259,6 @@
 .ff-empty-state h3 { border: none; margin: 10px 0 4px; }
 
 /* ---------- Chat cards and dialogs ---------- */
-.ff-mis-list { max-height: 300px; overflow-y: auto; font-size: 12px; }
 
 /* ---------- Defaults config ---------- */
 .ff-defaults .ff-side-block { margin-bottom: 10px; }

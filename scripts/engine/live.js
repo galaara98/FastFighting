@@ -310,14 +310,20 @@ export function syncFromSheets(run, states) {
       // The sheet says what it has; the engine remembers why (who frightened it, whose spell holds it, who has it in
       // its grip): a system's condition often can't say. An effect of the engine's whose conditions the sheet still
       // shows stays, at no more than the sheet's value, for as long as the sheet shows it (the system, or the table,
-      // ends it); one the sheet no longer shows is gone.
+      // ends it); one the sheet no longer shows is gone. What a sheet can't carry at all (s.carries(key) false: PF2e has
+      // no condition for losing the turn to Command) the engine keeps as it was, for its own rounds.
       const shown = u.baseConds;
+      const carried = k => (typeof s.carries === "function" ? s.carries(k) : true);
       u.effects = (u.effects ?? []).flatMap(e => {
         if ( !sheetOwned(e) ) return [e];
-        const keys = Object.keys(e.conditions).filter(k => (shown[k] ?? 0) > 0);
-        if ( !keys.length ) return [];
-        const conditions = Object.fromEntries(keys.map(k => [k, Math.min(e.conditions[k] === true ? 1 : Number(e.conditions[k]) || 1, shown[k])]));
-        return [{ ...e, conditions, rounds: Infinity, sheetHeld: true }];
+        const own = Object.keys(e.conditions).filter(k => !carried(k));
+        const held = Object.keys(e.conditions).filter(k => carried(k) && (shown[k] ?? 0) > 0);
+        if ( !own.length && !held.length ) return [];
+        const conditions = Object.fromEntries([
+          ...own.map(k => [k, e.conditions[k]]),
+          ...held.map(k => [k, Math.min(e.conditions[k] === true ? 1 : Number(e.conditions[k]) || 1, shown[k])])
+        ]);
+        return [own.length ? { ...e, conditions } : { ...e, conditions, rounds: Infinity, sheetHeld: true }];
       });
       recompute(u);
     }

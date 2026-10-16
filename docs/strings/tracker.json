@@ -261,6 +261,16 @@
    "commit": null,
    "hash": "d7163ce16206"
   },
+  "core:code:scripts/foundry/live-battle.js:pickUp#1": {
+   "repo": "core",
+   "file": "scripts/foundry/live-battle.js",
+   "key": "scripts/foundry/live-battle.js:pickUp#1",
+   "area": "core/code",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "90f5b55e3c60"
+  },
   "core:code:scripts/foundry/live-battle.js:placeSummons#1": {
    "repo": "core",
    "file": "scripts/foundry/live-battle.js",
@@ -41023,7 +41033,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "bced41e16103"
+   "hash": "bced41e16103",
+   "changed": true
   },
   "pf2e:code:scripts/adapter.js:formula#1": {
    "repo": "pf2e",
@@ -41033,7 +41044,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "251affabb07d"
+   "hash": "251affabb07d",
+   "changed": true
   },
   "pf2e:code:scripts/effects.js:fail#1": {
    "repo": "pf2e",
@@ -41816,7 +41828,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "79f9abafd7ed"
+   "hash": "79f9abafd7ed",
+   "changed": true
   },
   "pf2e:module.json:title": {
    "repo": "pf2e",

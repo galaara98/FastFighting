@@ -33,7 +33,7 @@
 import { STATUS, TACTICAL } from "../../constants.js";
 import { alliesOf, enemiesOf, isStanding, liveTier, movesNeeded, edgeDistance, behaviorOf, checkRoll, refusesToHelp, defenseDc } from "../battle-state.js";
 import { degreeDistribution } from "../probability.js";
-import { hasUses, costOf, costUnits, threatOf, unitsPerTurn } from "./evaluate.js";
+import { hasUses, limited, costOf, costUnits, threatOf, unitsPerTurn } from "./evaluate.js";
 import { outcomeWorth, hasFresh, concentrationCost, heldElsewhere, focusOf } from "./effects.js";
 import { mind, levelOf } from "./desire.js";
 import { bringsItself } from "./reluctance.js";
@@ -43,7 +43,6 @@ import { specialtyLean } from "./specialty.js";
 /** How well each tactical band sees what a buff is worth (feral: not at all, beyond itself). */
 const SEES = [0.5, 0.6, 0.9, 1.05, 1.15];
 
-const limited = a => !!a.resource || Number.isFinite(a.uses);
 
 /** Can u lay this on a without moving? */
 function reaches(run, u, a, action) {

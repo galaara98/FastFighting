@@ -117,7 +117,7 @@ export function deedTier(deed, roll) {
  * What spending the rider's price is worth to u right now, in damage terms: the more of the pool is gone, the more a
  * use has to do (conservers want more, those going all out less). Free riders cost nothing.
  */
-function priceOf(run, u, r, baseHit) {
+function priceOf(u, r, baseHit) {
   if ( !r.resource && !Number.isFinite(r.uses) ) return 0;
   // A spell slot is dear by its level (r.dear); anything else by what the blow itself does.
   const scale = r.dear ? 4 * r.dear : Math.max(1, baseHit);
@@ -129,7 +129,7 @@ function priceOf(run, u, r, baseHit) {
 }
 
 /** Expected worth of a rider on this hit (crit: double dice where the rider says so). */
-function riderWorth(run, u, r, action, t, { crit, baseHit }) {
+function riderWorth(run, u, r, t, { crit, baseHit }) {
   let extra = (r.damage ?? []).reduce((s, p) => s + Math.max(0, meanPart(p)), 0);
   if ( crit && r.critDouble ) extra += (r.damage ?? []).reduce((s, p) => s + p.dice.reduce((x, d) => x + d.n * (d.faces + 1) / 2 * (d.mult ?? 1), 0), 0);
   let worth = extra;
@@ -154,8 +154,8 @@ export function chooseHitRiders(run, u, action, t, { crit = false } = {}) {
   const options = [];
   for ( const r of u.spec.riders ?? [] ) {
     if ( (r.when ?? "hit") !== "hit" || !fits(r, action, t) || !affordable(run, u, r) ) continue;
-    const worth = riderWorth(run, u, r, action, t, { crit, baseHit });
-    const price = priceOf(run, u, r, baseHit);
+    const worth = riderWorth(run, u, r, t, { crit, baseHit });
+    const price = priceOf(u, r, baseHit);
     if ( worth <= 0 || (!careless && worth < price) ) continue;
     options.push({ r, rate: price > 0 ? worth / price : Infinity, worth });
   }
@@ -181,7 +181,7 @@ export function rescueMiss(run, u, action, t, short) {
     if ( short > r.attackDie ) continue;
     const chance = atLeast(r.attackDie, short);
     const baseHit = meanDamageVs(run, action, t).normal;
-    if ( chance * baseHit < priceOf(run, u, r, baseHit) * 0.6 ) continue;
+    if ( chance * baseHit < priceOf(u, r, baseHit) * 0.6 ) continue;
     pay(u, r);
     return { rider: r, roll: run.rng.die(r.attackDie) };
   }

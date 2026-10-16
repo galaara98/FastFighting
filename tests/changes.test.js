@@ -35,6 +35,15 @@ describe("what a turn changed, for the sheets", () => {
     expect(diffOutcome(after, after)).toBeNull();
   });
 
+  test("buffs and debuffs laid and ended this turn (for a helper to put their effect on the sheet, and take it off)", () => {
+    const bless = { key: "cleric.bless", sourceId: "cleric", rounds: 10, label: "Bless" };
+    const bane = { key: "witch.bane", sourceId: "witch", rounds: 3, label: "Bane" };
+    expect(diffOutcome(state({ effects: [bane] }), state({ effects: [bane, bless] })).effects).toEqual({ added: [bless], ended: [] });
+    expect(diffOutcome(state({ effects: [bane, bless] }), state({ effects: [bless] })).effects).toEqual({ added: [], ended: [bane] });
+    // (Its rounds running down isn't a change.)
+    expect(diffOutcome(state({ effects: [bless] }), state({ effects: [{ ...bless, rounds: 9 }] }))).toBeNull();
+  });
+
   test("died, ran, won over: each said", () => {
     expect(diffOutcome(state({ status: STATUS.DOWN, hp: 0 }), state({ status: STATUS.DEAD, hp: 0 }))).toMatchObject({ died: true });
     expect(diffOutcome(state(), state({ status: STATUS.FLED }))).toMatchObject({ status: { to: STATUS.FLED } });

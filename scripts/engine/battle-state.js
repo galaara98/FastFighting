@@ -458,7 +458,7 @@ export function behaviorOf(u) {
 
 /**
  * u has changed sides: wanting to lead (a playstyle) goes, with whatever it was brooding over. Its pills are worked out
- * again without it, for the rest of the fight (and Make it So takes it off the character: final.ambitionDropped).
+ * again without it, for the rest of the fight (and the real fight takes it off the character: final.ambitionDropped).
  */
 export function dropAmbition(u) {
   const ids = u.spec.playstyles ?? [];

@@ -12,6 +12,7 @@
  * Money is whatever paying costs in the system: coins (stored as so many of one coin), or Ironsworn's Supply.
  */
 import { PROMISES } from "../engine/behavior/bargain.js";
+import { isPlain } from "../constants.js";
 import { localize } from "../i18n.js";
 import { formatMoney } from "../story/log-lines.js";
 
@@ -28,7 +29,6 @@ export const MOTIVE_KEY = /^(offer|expect)\.(kind|amount|coin|item|category|mate
 const MAX = 1e9;
 const count = v => { const n = Math.floor(Number(v)); return Number.isFinite(n) ? Math.max(0, Math.min(MAX, n)) : 0; };
 const word = v => (typeof v === "string" ? v.slice(0, 64) : "");
-const isPlain = v => !!v && typeof v === "object" && !Array.isArray(v);
 
 /** One motive as stored: only the fields the survey writes, of the right types. */
 export function cleanMotive(which, raw) {

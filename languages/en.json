@@ -537,7 +537,7 @@
       "UndoConfirm": "Put this scene's last encounter back: tokens, outcomes and its chat cards?",
       "Undone": "The encounter was rewound.",
       "Moves": "Moves {distance}",
-      "Hint": "Closes the planner and plays one new fight: each turn in the chat as the tokens move. Rewind This Encounter takes it back.",
+      "Hint": "Closes the planner and starts this fight on the Combat Tracker, a turn at a time: FastFighting plays its creatures, the players their characters (if they run them). Rewind This Encounter takes it back.",
       "Gives": "Gives up {what} to {name}",
       "Receives": "Receives {what} from {name}",
       "Kept": "Agreed to give up {what}, but kept it (luck {luck})",

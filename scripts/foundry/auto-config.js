@@ -22,7 +22,7 @@
 import { MODULE_ID } from "../constants.js";
 import { getAdapter } from "../api.js";
 import { CORE_API_VERSION } from "../core-api.js";
-import { TRAITS, fudged } from "../constants.js";
+import { TRAITS, fudged, isPlain } from "../constants.js";
 import { TACTIC_CHOICES, TACTIC_KEYS, suggestTactics } from "../engine/tactics.js";
 import { scorePlaystyles, pickPlaystyles } from "../engine/auto-playstyles.js";
 import { localize } from "../i18n.js";
@@ -33,7 +33,6 @@ import { cleanMotive, suggestMotives, AUTO } from "./motives.js";
 
 /** The longest reason a calculated answer may carry (a system's word or two of why). */
 const WHY_LENGTH = 120;
-const isPlain = v => !!v && typeof v === "object" && !Array.isArray(v);
 
 /**
  * The actor's auto setup, or null: its known parts only, each of its kind. (Its owner can write the flag from the

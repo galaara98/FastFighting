@@ -250,7 +250,7 @@ export function checkMorale(run, u) {
   const own = run.prep.rules.morale?.(run, u);
   if ( own ) {
     const said = typeof own === "object" ? own.said : null;
-    if ( said?.text && run.log ) run.log.push({ round: run.round, actor: u.spec.name, actorId: u.id, side: u.side, type: "morale", text: said.text, ...said.data });
+    if ( said?.text && run.log ) run.log.push({ round: run.round, turn: run.turn ?? 0, turnOf: run.turnOf ?? null, actor: u.spec.name, actorId: u.id, side: u.side, type: "morale", text: said.text, ...said.data });
     return typeof own === "object" ? own.result : own;
   }
   const brave = liveTrait(run, u, "brave");

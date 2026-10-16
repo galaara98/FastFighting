@@ -270,6 +270,18 @@ describe("live battles: the engine a turn at a time", () => {
     expect(valeros.conds.frightened ?? 0).toBe(0);
   });
 
+  test("what a sheet can't carry (PF2e has no condition for losing a turn to Command), the engine keeps, for its own rounds", () => {
+    const run = beginLive(skirmish(), pf2eRules, { seed: 1, players: ["valeros", "kyra"] });
+    const valeros = run.byId.get("valeros");
+    applyOutcome(valeros, { conditions: { incapacitated: 1 }, rounds: 1, label: "Command" }, "orc", { id: "orc.command", name: "Command" });
+    syncFromSheets(run, { valeros: { conditions: {}, carries: k => k !== "incapacitated" } });
+    expect(valeros.effects.find(e => e.sourceId === "orc")).toMatchObject({ conditions: { incapacitated: 1 }, rounds: 1 });
+    expect(valeros.conds.incapacitated).toBe(1);
+    // (Where the sheet can carry it and doesn't show it, it was ended at the table.)
+    syncFromSheets(run, { valeros: { conditions: {} } });
+    expect(valeros.effects.some(e => e.sourceId === "orc")).toBe(false);
+  });
+
   test("someone joins mid-fight (a player's summons): the battle grows, everyone else as they were, the newcomer in it", () => {
     const spec = skirmish();
     const run = beginLive(spec, pf2eRules, { seed: 4, players: ["valeros", "kyra"] });

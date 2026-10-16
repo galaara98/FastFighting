@@ -305,7 +305,12 @@ function slacksOff(run, u) {
 /** After a turn: one able to act that did nothing in it (nothing logged of its own) was lazy. */
 export function noteIdle(run, u) {
   if ( !run.log || !inFight(u) || u.spec.hazard || u.summoner || !ableToAct(run, u) ) return;
-  if ( run.log.some(e => e.turn === run.turn && e.actorId === u.id && e.type !== "thought") ) return;
+  // (This turn's entries are the log's last: read back to where it began.)
+  for ( let i = run.log.length - 1; i >= 0; i-- ) {
+    const e = run.log[i];
+    if ( e.turn < run.turn ) break;
+    if ( e.turn === run.turn && e.actorId === u.id && e.type !== "thought" ) return;
+  }
   log(run, u, { type: "lazy" });
 }
 
@@ -1179,7 +1184,7 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
       if ( intercepted > 0 ) dealDamage(run, u, guard.g, intercepted, { crit, types: hit.types });
       applyEffects(run, u, action, target, roll.degree);
       if ( table?.row ) applyCritRow(run, u, target, table);
-      for ( const x of riders ) applyRider(run, u, action, target, x);
+      for ( const x of riders ) applyRider(run, u, target, x);
       if ( deed ) applyDeed(run, u, target, deed, deedRoll);
       answerHarm(run, target, u, action, dealt);
       // (Retributive Strike: the champion's own blow at the attacker, if it's within reach.)
@@ -1332,7 +1337,7 @@ function applyFumble(run, u) {
 }
 
 /** An on-hit rider's lasting part: a save against it, or simply what it does. */
-function applyRider(run, u, action, target, rider) {
+function applyRider(run, u, target, rider) {
   let outcome = rider.save ? null : rider.outcome;
   let roll = null;
   if ( rider.save && isUp(target) ) {
@@ -1454,7 +1459,10 @@ function fateSpender(run, victim) {
 /** What a blow, a save or a recovery check can change on a creature, to put it back as it was. */
 function snapshotOf(u) {
   const s = {};
-  for ( const [k, v] of Object.entries(u) ) if ( v === null || typeof v !== "object" ) s[k] = v;
+  for ( const k in u ) {
+    const v = u[k];
+    if ( v === null || typeof v !== "object" ) s[k] = v;
+  }
   s.conds = { ...u.conds };
   s.effects = [...(u.effects ?? [])];
   s.persistent = [...(u.persistent ?? [])];
@@ -1463,6 +1471,9 @@ function snapshotOf(u) {
   s.usedThisTurn = u.usedThisTurn ? new Set(u.usedThisTurn) : u.usedThisTurn;
   return s;
 }
+
+/** Could anyone spend fate on `victim`: itself, or one on its side with some left? Otherwise nothing is taken back. */
+const savable = (run, victim) => run.units.some(o => fateOf(o) > 0 && (o === victim || o.side === victim.side));
 
 /**
  * Something that might kill `victim`: a blow, a save, a recovery check. If it does and someone spends fate, it's
@@ -1473,8 +1484,10 @@ function fateful(run, victim, actor, attempt) {
   if ( !run.fateInPlay || !victim || victim.status === STATUS.DEAD ) return attempt();
   const rules = run.prep.rules;
   for ( let tries = 0; ; tries++ ) {
-    const before = snapshotOf(victim);
-    const by = actor && actor !== victim ? snapshotOf(actor) : null;
+    // (As things were, to take it back: only when someone could.)
+    const keep = savable(run, victim);
+    const before = keep ? snapshotOf(victim) : null;
+    const by = keep && actor && actor !== victim ? snapshotOf(actor) : null;
     const logLength = run.log?.length ?? 0;
     const firstFallen = run.firstFallen;
     attempt();
@@ -1490,6 +1503,7 @@ function fateful(run, victim, actor, attempt) {
       log(run, victim, { type: "fate", self: true, label, spent, sure: true });
       return;
     }
+    if ( !before ) return;
     Object.assign(victim, before);
     if ( by ) Object.assign(actor, by);
     recomputeConditions(victim);
@@ -1772,7 +1786,7 @@ function leaveReach(run, u, turn, keep = null, need = null) {
  * alone if it can help it: it calls on its group to fall back with it (its commander decides, and may order it to hold
  * instead: behavior/morale.js callRetreat). Returns true if it ran.
  */
-function runs(run, u, reason, turn, why = {}) {
+function runs(run, u, turn, why = {}) {
   if ( standsGround(run, u) ) {
     if ( !u.heldGround ) log(run, u, { type: "holdGround" });
     u.heldGround = true;
@@ -1783,16 +1797,16 @@ function runs(run, u, reason, turn, why = {}) {
     log(run, u, { type: "holdGround", ordered: true, by: retreat.commander?.spec.name ?? null });
     return false;
   }
-  flee(run, u, reason, turn, why);
+  flee(run, u, turn, why);
   const leader = retreat.commander ?? u;
   for ( const a of retreat.followers ) {
     if ( a.status !== STATUS.STANDING ) continue;
-    flee(run, a, a === leader ? "leads the retreat" : `falls back with ${leader.spec.name}`, null, { retreat: true, with: leader.spec.name, withId: leader.id, leads: a === leader });
+    flee(run, a, null, { retreat: true, with: leader.spec.name, withId: leader.id, leads: a === leader });
   }
   return true;
 }
 
-function flee(run, u, reason, turn = null, extra = {}) {
+function flee(run, u, turn = null, extra = {}) {
   // Turning to run from a foe in reach invites a parting blow.
   if ( !leaveReach(run, u, turn) ) return;
   u.status = STATUS.FLED;
@@ -2232,7 +2246,7 @@ function keepsPeace(run, u, actions) {
     u.keptPeace = true;
     // (Told before the words it says.)
     const at = run.log ? run.log.length - made : 0;
-    if ( run.log ) run.log.splice(at, 0, { round: run.round, actor: u.spec.name, actorId: u.id, side: u.side, text: "tries to calm things down", type: "peacekeep" });
+    if ( run.log ) run.log.splice(at, 0, { round: run.round, turn: run.turn ?? 0, turnOf: run.turnOf ?? null, actor: u.spec.name, actorId: u.id, side: u.side, type: "peacekeep" });
   }
   return made > 0;
 }
@@ -2442,7 +2456,7 @@ export function takeTurn(run, u) {
     return;
   }
   const morale = checkMorale(run, u);
-  if ( morale === MORALE.ROUT && runs(run, u, "breaks and flees", turn, { why: "breaks" }) ) return;
+  if ( morale === MORALE.ROUT && runs(run, u, turn, { why: "breaks" }) ) return;
   if ( morale !== MORALE.HOLD && !u.wavering ) {
     u.wavering = true; // (shaken, even when it won't run)
     if ( morale === MORALE.WAVER ) log(run, u, { type: "waver" });
@@ -2464,13 +2478,13 @@ export function takeTurn(run, u) {
   if ( wants.lead?.kind === "avoid" && wants.lead.level >= 70 ) {
     const dread = run.byId.get(wants.lead.targetId);
     const d = dread ? edgeDistance(u, dread) : null;
-    if ( dread && (d === null || d <= 30) && runs(run, u, `runs from ${dread.spec.name}`, turn, { why: "dread", dread: dread.spec.name }) ) return;
+    if ( dread && (d === null || d <= 30) && runs(run, u, turn, { why: "dread", dread: dread.spec.name }) ) return;
   }
 
   const disposition = dispositionOf(u);
-  if ( u.prone && u.wasDowned && disposition.selfRevived === "retreat" && runs(run, u, "retreats after being revived", turn, { why: "revived" }) ) return;
+  if ( u.prone && u.wasDowned && disposition.selfRevived === "retreat" && runs(run, u, turn, { why: "revived" }) ) return;
   if ( disposition.allyDying === "retreat" && run.units.some(a => a.side === u.side && a !== u && a.status === STATUS.DOWN && a.active)
-    && runs(run, u, "retreats as an ally falls", turn, { why: "allyFalls" }) ) return;
+    && runs(run, u, turn, { why: "allyFalls" }) ) return;
 
   u.usedThisTurn = null; // once-per-turn riders such as sneak attack
   u.stoleThisTurn = false;
