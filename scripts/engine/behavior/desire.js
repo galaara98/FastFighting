@@ -90,6 +90,7 @@ function desireKeys(d) {
   for ( const m of [d.stated, d.lean, d.taunt, d.memory, d.social, d.style] ) for ( const k of m.keys() ) keys.add(k);
   for ( const k of d.gm?.keys() ?? [] ) keys.add(k);
   for ( const k of d.puppet?.keys() ?? [] ) keys.add(k);
+  for ( const k of d.cond?.keys() ?? [] ) keys.add(k);
   return keys;
 }
 
@@ -102,7 +103,7 @@ export function desireBand(level) {
 
 /** A unit's desires at the start of the fight: what it was told to want. */
 export function initDesires(u) {
-  u.desire = { stated: new Map(), memory: new Map(), frustration: new Map(), logic: new Map(), social: new Map(), style: new Map(), lean: new Map(), taunt: new Map(), gm: new Map() };
+  u.desire = { stated: new Map(), memory: new Map(), frustration: new Map(), logic: new Map(), social: new Map(), style: new Map(), lean: new Map(), taunt: new Map(), gm: new Map(), cond: new Map() };
   for ( const d of u.spec.desires ?? [] ) {
     if ( !DESIRE_KINDS.includes(d.kind) || !d.targetId || d.targetId === u.id ) continue;
     u.desire.stated.set(keyOf(d.kind, d.targetId), clamp(Number(d.level) || 0));
@@ -115,12 +116,21 @@ export function newTurn(u) {
   u.desire.logic.clear();
   u.desire.social.clear();
   u.desire.style.clear();
+  u.desire.cond?.clear();
   u.desire.puppet?.clear();
   const cool = 2 * styleOf(u).cool; // (a vengeful character's grudges never cool)
   for ( const [k, v] of u.desire.memory ) {
     if ( v <= cool ) u.desire.memory.delete(k);
     else u.desire.memory.set(k, v - cool);
   }
+}
+
+/** What a condition on it makes it want this turn (the cond layer: levelOf leaves it out without `conditions`). */
+function feel(u, kind, targetId, level) {
+  if ( !u.desire || !targetId || targetId === u.id ) return;
+  const m = (u.desire.cond ??= new Map());
+  const k = keyOf(kind, targetId);
+  m.set(k, Math.max(m.get(k) ?? 0, clamp(level)));
 }
 
 /** What the unit's tactics conclude this turn (the strongest reason for each kind and target wins). */
@@ -152,8 +162,11 @@ export function relieve(u, kind, targetId, share = 0.75) {
   if ( f ) u.desire.frustration.set(k, f * (1 - share));
 }
 
-/** How badly u wants this now. */
-export function levelOf(u, kind, targetId) {
+/**
+ * How badly u wants this now. Without `conditions`, leaving out what its conditions alone make it want (keeping away
+ * from whoever frightened it: the game's rule while it lasts, not its own wish to run).
+ */
+export function levelOf(u, kind, targetId, { conditions = true } = {}) {
   const d = u.desire;
   if ( !d ) return 0;
   const k = keyOf(kind, targetId);
@@ -162,7 +175,7 @@ export function levelOf(u, kind, targetId) {
     if ( held !== undefined ) return held;
   }
   if ( d.puppet?.size ) return d.puppet.get(k) ?? 0;
-  return clamp(Math.max(d.logic.get(k) ?? 0, d.stated.get(k) ?? 0, d.taunt.get(k) ?? 0) + (d.lean.get(k) ?? 0) + (d.style.get(k) ?? 0) + (d.memory.get(k) ?? 0) + (d.social.get(k) ?? 0) - (d.frustration.get(k) ?? 0));
+  return clamp(Math.max(d.logic.get(k) ?? 0, d.stated.get(k) ?? 0, d.taunt.get(k) ?? 0, conditions ? d.cond?.get(k) ?? 0 : 0) + (d.lean.get(k) ?? 0) + (d.style.get(k) ?? 0) + (d.memory.get(k) ?? 0) + (d.social.get(k) ?? 0) - (d.frustration.get(k) ?? 0));
 }
 
 /**
@@ -576,29 +589,84 @@ export function listen(run, u, { canHeal = false, canTalk = false, canAid = fals
 /** How strongly the party's wishes pull, at a Party's sway of 100%: so many points (the desire scale is 0 to 100). */
 export const PARTY_POINTS = 100;
 
-/** Fear of whoever frightened it: so much, and so much more for each step of the fright, at most this (short of running). */
+/**
+ * Fear of whoever frightened it (the core's own reading, where the system doesn't say): so much, and so much more for
+ * each step of the fright, at most this. What a condition makes it want is the game's rule while the condition lasts
+ * (the cond layer: it keeps away, it doesn't go for them), never its own wish to run or leave the fight: that's its
+ * nerve (morale.js), which a fright shakes.
+ */
 const FRIGHT = Object.freeze({ base: 20, step: 15, most: 65, brave: 0.3 });
-/** Whoever sent it fleeing (or turned it): enough to run from, close at hand. */
+/** Whoever sent it fleeing (or turned it): the strongest keeping away. */
 const FLEE_FROM = 80;
+/** The conditions the core reads as fear, where the system doesn't say what they mean. */
+const FEARS = new Set(["frightened", "fleeing", "turned"]);
+/** Its own wish to get away, once frightened often enough: enough to run from one close at hand (simulator.js). */
+const RUN_FROM = 75;
+/**
+ * How afraid a set of conditions makes it, in steps: frightened by its value; sent fleeing or turned (a critical fright),
+ * two; another of the system's fears (rules.fearConditions), its value.
+ */
+/** How afraid u is now, as its conditions stand (the system lowering them, or letting them lapse: less, or none). */
+export const fearNow = (run, u) => fearOn(u.conds, new Set([...FEARS, ...(run.prep.rules.fearConditions ?? [])]));
+
+function fearOn(c, fears) {
+  let most = 0;
+  for ( const key of fears ) {
+    const v = c?.[key];
+    if ( !(Number(v) > 0 || v === true) ) continue;
+    most = Math.max(most, key === "fleeing" || key === "turned" ? 2 : Number(v) || 1);
+  }
+  return most;
+}
+/** How afraid it has to be for that (fearOn's steps): three, two for the timid, four for the brave. */
+const fearToRun = (run, u) => Math.min(4, Math.max(2, Math.round(3 + (liveTrait(run, u, "brave") - 50) / 40)));
 /** Whoever holds it: set on, to break free. */
 const HELD = 50;
 
 /**
- * What its conditions make it want, by who caused them and how bad they are: whoever frightened it, it would rather
- * keep away from (the worse the fright, the more: frightened 2 or worse, enough not to go for them while it has
- * anything else to do); whoever sent it fleeing or turned it, it runs from; whoever holds it, it's set on, to break
- * free. (Who goads it: the taunt layer, goaded; who controls it: its side, settleAllegiance.)
+ * What its conditions make it want, by who caused them and how bad they are. A fear is the system's to say
+ * (rules.conditionWishes(run, u, {key, value, by}): [{kind, targetId, level}], what that condition makes it want, [] for
+ * nothing, or null for the core's reading): by default, whoever frightened it, it would rather keep away from (the
+ * worse the fright, the more: frightened 2 or worse, enough not to go for them while it has anything else to do), and
+ * whoever sent it fleeing or turned it, more. All of it only while the condition lasts, and never a reason to run or
+ * leave the fight (cond). Whoever holds it, it's set on, to break free. (Who goads it: the taunt layer, goaded; who
+ * controls it: its side, settleAllegiance.)
  */
 export function conditionWishes(run, u) {
   if ( !u.desire ) return;
+  const rules = run.prep.rules;
+  const fears = new Set([...FEARS, ...(rules.fearConditions ?? [])]);
+  const sources = new Set();
+  let fear = fearOn(u.conds, fears);
   for ( const e of u.effects ?? [] ) {
     const by = e.sourceId && !e.onlyVs ? run.byId.get(e.sourceId) : null;
     const c = e.conditions;
     if ( !by || by === u || !c || !isStanding(by) || !areEnemies(run, u, by) ) continue;
-    if ( (c.fleeing ?? 0) > 0 || (c.turned ?? 0) > 0 ) think(u, "avoid", by.id, FLEE_FROM);
+    const here = fearOn(c, fears);
+    if ( here > 0 ) sources.add(by);
+    fear = Math.max(fear, here);
+    let coreFear = true;
+    for ( const [key, value] of Object.entries(c) ) {
+      if ( !(Number(value) > 0 || value === true) ) continue;
+      const said = rules.conditionWishes?.(run, u, { key, value: Number(value) || 1, by }) ?? null;
+      if ( !Array.isArray(said) ) continue;
+      if ( fears.has(key) ) coreFear = false;
+      for ( const w of said ) if ( w?.kind && w.targetId ) feel(u, w.kind, w.targetId, Number(w.level) || 0);
+    }
+    if ( !coreFear ) continue;
+    if ( (c.fleeing ?? 0) > 0 || (c.turned ?? 0) > 0 ) feel(u, "avoid", by.id, FLEE_FROM);
     // (Frightened: the more so, the more it shrinks from them; less for the bold.)
-    else if ( (c.frightened ?? 0) > 0 ) think(u, "avoid", by.id, Math.min(FRIGHT.most, FRIGHT.base + FRIGHT.step * c.frightened) + (50 - liveTrait(run, u, "brave")) * FRIGHT.brave);
+    else if ( (c.frightened ?? 0) > 0 ) feel(u, "avoid", by.id, Math.min(FRIGHT.most, FRIGHT.base + FRIGHT.step * c.frightened) + (50 - liveTrait(run, u, "brave")) * FRIGHT.brave);
   }
+  // How afraid it is now, in any system, as the system has it (lowered, or lapsed: less, or none): it wears on its nerve
+  // (morale.js). Its fear made worse and worse, past what its nerve bears: a wish of its own to get away from whoever
+  // frightens it, apart from the condition, a reason to run as good as any (not talked into it, nor paid); only while
+  // the fear is that bad, gone with it.
+  u.fearSeen = fear;
+  const keys = fear >= fearToRun(run, u) ? [...sources].map(by => keyOf("avoid", by.id)) : [];
+  for ( const k of u.fearRun ?? [] ) if ( !keys.includes(k) ) u.desire.memory.delete(k);
+  for ( const k of keys ) u.desire.memory.set(k, Math.max(u.desire.memory.get(k) ?? 0, RUN_FROM));
+  u.fearRun = keys.length ? keys : null;
   const holder = u.grabbedBy ? run.byId.get(u.grabbedBy) : null;
   if ( holder && isStanding(holder) && areEnemies(run, u, holder) ) think(u, "hurt", holder.id, HELD * styleOf(u).retaliate);
   // (In a rage: the nearest foe, and nothing else.)

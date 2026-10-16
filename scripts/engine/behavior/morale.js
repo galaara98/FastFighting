@@ -24,7 +24,7 @@ import { STATUS, TACTICAL, STAND_GROUND, clamp } from "../../constants.js";
 import { alliesOf, enemiesOf, isStanding, liveTier, liveTrait, chainOf, commandOf, groupKeyOf, edgeDistance, behaviorOf, wish } from "../battle-state.js";
 import { threatOf } from "./evaluate.js";
 import { perceives } from "./senses.js";
-import { followChance } from "./desire.js";
+import { followChance, fearNow } from "./desire.js";
 import { canTalk } from "./standoff.js";
 
 export const MORALE = Object.freeze({ HOLD: "hold", WAVER: "waver", ROUT: "rout" });
@@ -43,7 +43,7 @@ export function standsGround(run, u) {
   return run.rng.chance((clamp(run.prep?.options.standGround ?? STAND_GROUND, 0, 100) / 100) * strength);
 }
 
-/** How much each step of being frightened weighs on its nerve. */
+/** How much each step of being afraid weighs on its nerve, while it lasts. */
 const FRIGHT_STRESS = 4;
 
 /**
@@ -88,8 +88,10 @@ export function moraleStress(run, u, floor = -Infinity) {
   // Rallied: steadier for a round (a commander's rally, more).
   if ( steadied(run, u) ) stress -= STEADY * (u.steadiedBy ?? 1);
 
-  // Frightened: the worse, the shakier.
-  stress += FRIGHT_STRESS * (Number(u.conds?.frightened) || 0);
+  // Afraid: the worse, the shakier, the less brave the more; as afraid as the system has it now (lowered, or lapsed:
+  // less, or none). (What the condition itself does is the system's.)
+  const afraid = fearNow(run, u);
+  stress += FRIGHT_STRESS * afraid * clamp(1.5 - liveTrait(run, u, "brave") / 100, 0.5, 1.5);
   // Someone who made them pay and is still standing, unanswered, weighs on them.
   for ( const [id, g] of u.grudges ?? [] ) {
     if ( !g.provoked && isStanding(run.byId.get(id) ?? {}) ) stress += 15;

@@ -2842,7 +2842,7 @@ function playFromHere(run, u) {
   // What it wants this turn, and what that means: a terror close at hand sends it running. (Tied up, it thought already.)
   if ( !u.thought ) deliberate(run, u);
   const wants = mind(run, u);
-  if ( wants.lead?.kind === "avoid" && wants.lead.level >= 70 ) {
+  if ( wants.lead?.kind === "avoid" && levelOf(u, "avoid", wants.lead.targetId, { conditions: false }) >= 70 ) {
     const dread = run.byId.get(wants.lead.targetId);
     const d = dread ? edgeDistance(u, dread) : null;
     if ( dread && (d === null || d <= 30) && runs(run, u, turn, { why: "dread", dread: dread.spec.name }) ) return;
