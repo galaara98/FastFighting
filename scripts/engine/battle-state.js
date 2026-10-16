@@ -408,6 +408,20 @@ export const isStanding = u => u.status === STATUS.STANDING && u.active !== fals
 /** On its feet, whether or not it has joined the fight. */
 export const isUp = u => u.status === STATUS.STANDING;
 
+/**
+ * Its regeneration right now: its own (spec.regen), or one an effect lends it (a Regenerate spell: effects.js), the
+ * stronger. {amount, stoppedBy, needsHp} or null.
+ */
+export function regenOf(u) {
+  const own = u.spec.regen ?? null;
+  const lent = u.fxRegen ?? null;
+  if ( !own || !lent ) return own ?? lent;
+  return (Number(lent.amount) || 0) > (Number(own.amount) || 0) ? lent : own;
+}
+
+/** Can it regain hit points (not under a wound that won't close: the unhealable condition)? */
+export const canHeal = u => !(Number(u.conds?.unhealable) > 0);
+
 /** Straight-line feet between two units' centers, or null without positions. */
 export function centerDistance(a, b) {
   if ( !a.pos || !b.pos ) return null;

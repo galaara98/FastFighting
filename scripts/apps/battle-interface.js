@@ -15,7 +15,7 @@ import { mindOf, bandLevel, networkOf, playerRuns } from "../engine/live.js";
 import { commandOf } from "../engine/battle-state.js";
 import { GM_RELATIONS } from "../engine/conditions.js";
 import { getAdapter } from "../api.js";
-import { roundsText } from "../i18n.js";
+import { roundsText, listJoin } from "../i18n.js";
 import { expectText } from "../story/log-lines.js";
 import { mountNetwork } from "./battle-network.js";
 import {
@@ -66,9 +66,16 @@ const ICONS = Object.freeze({
     reach: "location-dot", swim: "person-swimming", fly: "feather", climb: "mountain", hide: "user-secret", takeCover: "tree", escape: "person-walking-arrow-right", useObject: "gears"
   },
   thing: { door: "door-closed", item: "gem", place: "location-dot", object: "gears" },
+  affliction: { poison: "skull-crossbones", disease: "virus", curse: "book-skull", radiation: "radiation", parasite: "bug", other: "biohazard" },
   status: { unaware: "person-circle-question" }
 });
 const icon = (group, key) => `fa-solid fa-${ICONS[group]?.[key] ?? "circle-exclamation"}`;
+/** An affliction's sign: by what it is (a poison, a disease, a curse ...), else the condition a simple one stands for. */
+const afflictionIcon = a => {
+  const kind = (a.traits ?? []).find(t => ICONS.affliction[t]);
+  if ( kind ) return icon("affliction", kind);
+  return a.simple && ICONS.condition[a.simple] ? icon("condition", a.simple) : icon("affliction", "other");
+};
 
 /** What happens to a creature's status on the map of minds: standing as it is, down greyed, out of it faded. */
 const statusClass = status => (status === "standing" ? "" : status === "down" ? "is-down" : "is-out");
@@ -249,6 +256,8 @@ export class BattleInterface extends HandlebarsApplicationMixin(ApplicationV2) {
         return liveCondition({ op: "set", id: a.id, key: a.key, value: Math.max(0, n), byId: a.byId ?? null });
       case "rel":
         return liveCondition({ op: "unrelate", id: a.id, kind: a.kind, byId: a.byId });
+      case "affliction":
+        return liveCondition({ op: "affliction", id: a.id, afflictionId: a.afflictionId, stage: Math.max(0, n) });
       case "attitude":
         return liveMind({ op: "attitude", id: a.id, kind: a.kind, byId: a.byId ?? null, side: a.side ?? null, level: Math.max(0, n) });
       case "notice":
@@ -470,6 +479,14 @@ function networkView(b, current, focusId) {
   const docOf = id => b.scene.tokens.get(tokenOf(b, id));
   const condLabel = key => adapter?.conditionLabel?.(key) || (has(`FASTFIGHTING.Condition.${key}`) ? loc(`FASTFIGHTING.Condition.${key}`) : key);
   const valuedHere = new Set((adapter?.conditionChoices?.() ?? []).filter(c => c?.valued).map(c => c.key));
+  // (An affliction in words: its name (a simple one's, its condition's), its stage of its last, and what that lays.)
+  const afflictionWords = a => {
+    const what = Object.entries(a.conditions ?? {}).filter(([k]) => k !== a.simple).map(([k, v]) => `${condLabel(k)}${Number(v) > 1 ? ` ${v}` : ""}`);
+    return [fmt("FASTFIGHTING.Battle.Net.Affliction", { name: a.name || condLabel(a.simple ?? ""), stage: a.stage, most: a.most }),
+      ...(what.length ? [listJoin(what)] : []),
+      ...(a.onset > 0 ? [fmt("FASTFIGHTING.Battle.Net.Onset", { n: a.onset })] : []),
+      ...(a.settled ? [loc("FASTFIGHTING.Battle.Net.Settled")] : [])].join(" · ");
+  };
   const band = level => loc(`FASTFIGHTING.Desire.Level.${DESIRE_BAND_KEYS[Math.max(0, Math.min(4, Math.floor(level / 20)))]}`);
   const things = new Map(net.things.map(t => [t.id, t]));
   const thingName = id => {
@@ -518,6 +535,13 @@ function networkView(b, current, focusId) {
         adjust: { t: "cond", id: l.to, key: l.key, byId: l.from, intensity: valued ? l.value : 1 },
         ...stepsOf(valued ? l.value : 1, most)
       });
+    } else if ( l.type === "affliction" ) {
+      push(l, {
+        cls: `is-condition is-affliction w-${Math.min(5, l.intensity)}`, icon: afflictionIcon(l), text: String(l.stage),
+        tip: `${name(l.to)}: ${afflictionWords(l)} · ${fmt("FASTFIGHTING.Battle.From", { name: name(l.from) })}`,
+        adjust: { t: "affliction", id: l.to, afflictionId: l.afflictionId, intensity: l.stage },
+        ...stepsOf(l.stage, l.most)
+      });
     } else if ( l.type === "relation" ) {
       // (Won't listen to: the one who won't, toward the other. The rest: the one it's on, by whoever did it.)
       const on = l.kind === "shuns" ? l.from : l.to;
@@ -554,6 +578,13 @@ function networkView(b, current, focusId) {
         tip: `${condLabel(m.key)}${valued ? ` ${m.value}` : ""} · ${kept(m.key, m.on)}`,
         adjust: { t: "cond", id: m.on, key: m.key, byId: null, intensity: valued ? m.value : 1 },
         ...stepsOf(valued ? m.value : 1, valued ? null : 1)
+      });
+    } else if ( m.type === "affliction" ) {
+      markOn(m.on, {
+        id: `af:${m.afflictionId}`, cls: "is-condition is-affliction", icon: afflictionIcon(m), text: String(m.stage),
+        tip: afflictionWords(m),
+        adjust: { t: "affliction", id: m.on, afflictionId: m.afflictionId, intensity: m.stage },
+        ...stepsOf(m.stage, m.most)
       });
     } else if ( m.type === "status" ) {
       markOn(m.on, { id: `s:${m.key}`, cls: "is-status", icon: icon("status", m.key), text: "", tip: loc("FASTFIGHTING.Battle.Net.Unaware"), adjust: { t: "notice", id: m.on, intensity: 1 }, lower: loc("FASTFIGHTING.Battle.Net.Notices"), raise: null });

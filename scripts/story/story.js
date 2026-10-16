@@ -567,7 +567,12 @@ function narrate(e, roll, rel, fill) {
       return roll(e.noticed ? "event.theftCaught" : "event.theftEmpty", f);
     case "reclaim": return roll("event.reclaim", { ...f, amount: concessionText(e.concession) });
     case "persistent": return roll("event.persistent", f);
-    case "afflictionSave": return roll(e.degree <= 1 ? "event.afflictionSaveFail" : "event.afflictionSavePass", f);
+    case "afflictionSave":
+      // (A counted save that doesn't settle it yet: told when it's over.)
+      if ( e.tally ) return "";
+      return roll(e.degree <= 1 ? "event.afflictionSaveFail" : "event.afflictionSavePass", f);
+    case "afflicted": return roll("event.afflictionSaveFail", f);
+    case "afflictionSettles": return roll("event.afflictionStage", f);
     // A failed save that leaves a condition is told by the condition that follows.
     case "riderSave": return e.degree > 1 && e.controls ? roll("event.riderSavePass", f) : "";
     case "opportunity": return roll({ foeOpening: "event.opportunityOpening", foeMovesInReach: "event.opportunityStand" }[e.trigger] ?? "event.opportunity", f);
@@ -754,7 +759,7 @@ function roleplayParagraphs(result, spec, tables, seed, mapType, mapCondition = 
     if ( logged.type === "recovery" && logged.aftermath && !logged.stable && !logged.dead && !logged.revived && lastBreath.get(logged.actorId) !== logged ) continue;
     // (Taking hold and its first harm are one moment: told once.)
     const onset = `${logged.actorId}|${logged.name}|${logged.turn}`;
-    if ( logged.type === "afflictionSaveFail" ) onsets.add(onset);
+    if ( (logged.type === "afflictionSave" && logged.degree <= 1 && !logged.tally) || logged.type === "afflicted" ) onsets.add(onset);
     if ( logged.type === "afflictionStage" && onsets.has(onset) ) continue;
     // (Told with each creature called as the story calls it; the sentence keeps the event it tells.)
     const e = named(logged);

@@ -13,7 +13,7 @@ import {
   prepareBattle, createRun, isStanding, isUp, enemiesOf, alliesOf, areEnemies, liveTier, liveTrait, currentAc,
   attackRoll, attackOptions, saveRoll, checkRoll, turnFor, moveToward, moveAway, bonusDamageParts, dispositionOf,
   behaviorOf, edgeDistance, movesNeeded, approach, canMove, moveTowardPoint, isMagical, upgradesSave, boostBonus, typical, sortOf, sizedUp, passedOver,
-  command, commandOf, heldOff, holdsBack, wish, groupKeyOf, chainOf, canCommand
+  command, commandOf, heldOff, holdsBack, wish, groupKeyOf, chainOf, canCommand, regenOf, canHeal
 } from "./battle-state.js";
 import { sampleRunTactics } from "./playstyles.js";
 import { chooseTarget, bestOptionVs, scoreTargets } from "./behavior/targeting.js";
@@ -41,6 +41,7 @@ import { stealChance, theftTarget, theftPlan, attemptTheft, robbable } from "./b
 import { fallenWishes, decideFallen, bind, rob, stayBound, takesPrisoners, robsTheFallen, freeFriend, rollOf } from "./behavior/fallen.js";
 import { holdsOf, known, tryHold, release, escapeCost, isBound, remediesOf, bears } from "./behavior/holds.js";
 import { forcedPath, fallDamage, resettle } from "./behavior/forced.js";
+import { stepOf, stacks, stageRounds, stageMove } from "./behavior/afflictions.js";
 import { reactionsPerRound, threats, takesSafeWay } from "./behavior/reactions.js";
 import { isNeutral, crossed, caughtInArea, refreshLeans, truceWith, truceBreaks, turnOn, settleTruce, peaceDesires, seemsFoe, meddling, inFray, fighting, dislikesViolence, annoyedBy, ANNOYED } from "./behavior/neutral.js";
 import { normalizeCost } from "./turn.js";
@@ -138,12 +139,6 @@ function standFirm(run, target, roll, dc, stakes, label) {
     type: "standFirm", label: firm.label ?? "", against: label, natural: roll.natural, total: roll.total, dc
   });
   return { ...roll, degree: 2, firm: true };
-}
-
-/** How a degree of success moves an affliction along: on first exposure, and at each later save. */
-function afflictionStep(rules, degree, phase) {
-  if ( rules.afflictionStep ) return rules.afflictionStep(degree, phase);
-  return phase === "exposure" ? (degree <= 1 ? 1 : 0) : (degree <= 1 ? 1 : -1);
 }
 
 /* -------------------------------------------- */
@@ -399,7 +394,8 @@ function huntable(run, u) {
  * woken by a blow, a charm broken when its caster's side does the harm.
  */
 export function breakOnHarm(run, source, target, types = null) {
-  if ( target.spec.regen?.stoppedBy?.length && types?.some(t => target.spec.regen.stoppedBy.includes(t)) ) target.regenStopped = true;
+  const regen = regenOf(target);
+  if ( regen?.stoppedBy?.length && types?.some(t => regen.stoppedBy.includes(t)) ) target.regenStopped = true;
   if ( target.effects?.some(e => e.endsOnDamage || e.endsOnHarm) ) {
     const harms = e => {
       if ( e.endsOnDamage ) return true;
@@ -592,8 +588,9 @@ function holdsOn(run, u, amount, crit, types) {
 
 /** While its regeneration works, a creature can't be killed: it lies there, mending (a troll). */
 function regenerating(u) {
-  // (Not one that only regenerates with at least 1 hit point: at 0 it's simply dead.)
-  if ( u.status === STATUS.DEAD && u.spec.regen && !u.spec.regen.needsHp && !u.regenStopped ) {
+  // (Not one that only regenerates with at least 1 hit point: at 0 it's simply dead. Nor one whose wounds won't close.)
+  const regen = regenOf(u);
+  if ( u.status === STATUS.DEAD && regen && !regen.needsHp && !u.regenStopped && canHeal(u) ) {
     u.status = STATUS.DOWN;
     u.held = true; // (by its regeneration, not by its dying)
   }
@@ -602,13 +599,15 @@ function regenerating(u) {
 /**
  * Start of its turn: regeneration (spec.regen {amount, stoppedBy}: not this turn if it took one of those damage types
  * since its last; a creature down at 0 that can't regenerate dies, if 0 is death for it) and fast healing
- * (spec.fastHealing).
+ * (spec.fastHealing); its own, or lent by an effect (effects.js fastHealing, regen), the better of each. Not while its
+ * wounds won't close (unhealable).
  */
 function regenerate(run, u) {
-  const regen = u.spec.regen;
-  const fast = Number(u.spec.fastHealing) || 0;
+  const regen = regenOf(u);
+  const fast = Math.max(Number(u.spec.fastHealing) || 0, Number(u.fxHealing) || 0);
   if ( (!regen && !fast) || [STATUS.DEAD, STATUS.FLED].includes(u.status) ) return;
-  const stopped = !!u.regenStopped;
+  // (Wounds that won't close: as if fire or acid had stopped it.)
+  const stopped = !!u.regenStopped || !canHeal(u);
   u.regenStopped = false;
   if ( u.status === STATUS.DOWN && u.held && stopped ) {
     if ( u.spec.diesAtZero ) {
@@ -618,7 +617,7 @@ function regenerate(run, u) {
     }
     u.held = false; // (from here on, the system's dying rules)
   }
-  const amount = fast + (regen && !stopped && !(regen.needsHp && u.hp <= 0) ? regen.amount : 0);
+  const amount = canHeal(u) ? fast + (regen && !stopped && !(regen.needsHp && u.hp <= 0) ? regen.amount : 0) : 0;
   if ( amount <= 0 || u.hp >= u.maxHp ) return;
   const before = u.hp;
   const wasDown = u.status === STATUS.DOWN;
@@ -702,22 +701,32 @@ function applyAfflictionStage(run, target, affliction) {
   dealDamage(run, run.byId.get(affliction.sourceId), target, amount, { lingering: true });
 }
 
-function exposeToAffliction(run, source, target, spec) {
+/**
+ * Exposed to an affliction (behavior/afflictions.js): its save, and on a failure it takes hold (or, one with no save, it
+ * simply does). Already on it: a disease or a curse takes no more hold; a poison's fresh dose may worsen it, without
+ * making it last any longer.
+ */
+export function exposeToAffliction(run, source, target, spec) {
   if ( target.spec.iwr?.immune?.some(k => spec.traits?.includes(k)) ) return;
   const rules = run.prep.rules;
-  const { mod, advantage, dice } = saveRoll(run, target, spec.save.type);
-  const roll = rollCheck(rules, run.rng, mod, spec.save.dc, { advantage, dice, kind: "save", roller: target });
-  const increase = afflictionStep(rules, roll.degree, "exposure");
-  log(run, target, {
-    type: "afflictionSave", name: spec.name, saveType: spec.save.type, natural: roll.natural, mod, total: roll.total, dc: spec.save.dc, degree: roll.degree
-  });
-  if ( !(increase > 0) ) return;
   let affliction = target.afflictions.find(a => a.spec.id === spec.id);
+  if ( affliction && !stacks(spec) ) return;
+  let increase = 1;
+  if ( spec.save ) {
+    const { mod, advantage, dice } = saveRoll(run, target, spec.save.type);
+    const roll = rollCheck(rules, run.rng, mod, spec.save.dc, { advantage, dice, kind: "save", roller: target });
+    increase = stepOf(rules, roll.degree, "exposure");
+    log(run, target, {
+      type: "afflictionSave", name: spec.name, saveType: spec.save.type, natural: roll.natural, mod, total: roll.total, dc: spec.save.dc, degree: roll.degree
+    });
+  } else log(run, target, { type: "afflicted", name: spec.name, by: source?.spec.name ?? null, byId: source?.id ?? null });
+  if ( !(increase > 0) ) return;
   if ( !affliction ) {
-    affliction = { spec, stage: 0, rounds: 0, sourceId: source.id, onsetLeft: Math.max(0, spec.onset ?? 0) };
+    affliction = { spec, stage: Math.max(0, (Number(spec.start) || 1) - 1), rounds: 0, inStage: 0, sourceId: source?.id ?? null, onsetLeft: Math.max(0, spec.onset ?? 0) };
     target.afflictions.push(affliction);
   }
   affliction.stage = Math.min(spec.stages.length, affliction.stage + increase);
+  affliction.inStage = 0;
   if ( affliction.onsetLeft > 0 ) return; // it takes hold once the onset has passed
   applyAfflictionStage(run, target, affliction);
 }
@@ -1752,7 +1761,8 @@ function executeHeal(run, u, action, target) {
   // (A share of the target's own hit dice: DCC Lay on Hands.)
   let rolled = (action.heal ?? []).reduce((s, p) => s + samplePart(p, run.rng), 0);
   for ( let n = 0; n < (action.healDice ?? 0); n++ ) rolled += run.rng.die(target.spec.hitDie ?? 6);
-  const amount = Math.max(0, Math.floor(rolled * multiplier));
+  // (Wounds that won't close take none of it.)
+  const amount = canHeal(target) ? Math.max(0, Math.floor(rolled * multiplier)) : 0;
   const wasDown = target.status === STATUS.DOWN;
   const before = target.hp;
   if ( amount > 0 ) rules.onHealed(target, amount);
@@ -2961,9 +2971,31 @@ export function endOfTurn(run, u) {
         if ( a.onsetLeft <= 0 ) applyAfflictionStage(run, u, a); // the onset is over: the first stage takes hold
         continue;
       }
+      // (No save to work it off, or settled for the fight: it stays as it is.)
+      if ( !a.spec.save || a.settled ) continue;
       const { mod, advantage, dice } = saveRoll(run, u, a.spec.save.type);
+      if ( a.spec.tally ) {
+        // (5e's way: saves counted, until enough of one or the other.)
+        const roll = rollCheck(rules, run.rng, mod, a.spec.save.dc, { advantage, dice, kind: "save", roller: u });
+        const saved = roll.degree >= 2;
+        a.cured = (a.cured ?? 0) + (saved ? 1 : 0);
+        a.kept = (a.kept ?? 0) + (saved ? 0 : 1);
+        const said = { name: a.spec.name, natural: roll.natural, mod, total: roll.total, dc: a.spec.save.dc, degree: roll.degree };
+        if ( a.cured >= (a.spec.tally.cure ?? 3) ) {
+          u.afflictions.splice(u.afflictions.indexOf(a), 1);
+          log(run, u, { type: "afflictionEnd", ...said });
+        } else if ( a.kept >= (a.spec.tally.keep ?? 3) ) {
+          a.settled = true;
+          log(run, u, { type: "afflictionSettles", ...said });
+        } else log(run, u, { type: "afflictionSave", saveType: a.spec.save.type, tally: { cured: a.cured, kept: a.kept }, ...said });
+        continue;
+      }
+      // (A save at the end of each stage: a poison's round, a disease's days.)
+      a.inStage = (a.inStage ?? 0) + 1;
+      if ( a.inStage < stageRounds(a.spec, a.stage) ) continue;
+      a.inStage = 0;
       const roll = rollCheck(rules, run.rng, mod, a.spec.save.dc, { advantage, dice, kind: "save", roller: u });
-      a.stage = Math.min(a.spec.stages.length, a.stage + afflictionStep(rules, roll.degree, "stage"));
+      a.stage = Math.min(a.spec.stages.length, a.stage + stageMove(rules, a, roll.degree));
       if ( a.stage <= 0 ) {
         u.afflictions.splice(u.afflictions.indexOf(a), 1);
         log(run, u, { type: "afflictionEnd", name: a.spec.name, natural: roll.natural, mod, total: roll.total, dc: a.spec.save.dc, degree: roll.degree });

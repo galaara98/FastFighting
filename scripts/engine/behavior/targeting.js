@@ -8,7 +8,7 @@
  *   Mastermind   side-wide focus target; ruthless ones finish off the downed
  */
 import { STATUS, TACTICAL, NEUTRAL_PARTY } from "../../constants.js";
-import { enemiesOf, isStanding, liveTier, liveTrait, movesNeeded, behaviorOf, heldOff, holdsBackThisRound } from "../battle-state.js";
+import { enemiesOf, isStanding, liveTier, liveTrait, movesNeeded, behaviorOf, heldOff, holdsBackThisRound, regenOf } from "../battle-state.js";
 import { expectedDamage, hasUses, limited, threatOf, costOf, costUnits, unitsPerTurn } from "./evaluate.js";
 import { mainPool } from "../turn.js";
 import { styleWeight } from "../tactics.js";
@@ -59,7 +59,7 @@ export function bestOptionVs(run, u, t, attacksMade = 0, turn = null) {
     if ( behavior.meleeBias && action.melee ) weighted *= 1 + behavior.meleeBias;
     if ( behavior.exploitWeakness && (action.damage ?? []).some(p => t.spec.iwr?.weak?.[p.type] || t.spec.iwr?.exploit?.[p.type]) ) weighted *= 1 + behavior.exploitWeakness;
     // A foe down and regenerating: only what stops it (fire, acid) does any good.
-    if ( t.held && t.status === STATUS.DOWN ) weighted *= (action.damage ?? []).some(p => t.spec.regen?.stoppedBy?.includes(p.type)) ? 3 : 0.05;
+    if ( t.held && t.status === STATUS.DOWN ) weighted *= (action.damage ?? []).some(p => regenOf(t)?.stoppedBy?.includes(p.type)) ? 3 : 0.05;
     // Spoilers would rather lock a foe down, harass it or weaken it than simply hit it.
     if ( behavior.hinders && action.kind === "control" ) weighted *= 1 + 1.5 * behavior.hinders;
     // Magic and its own specialties, as strongly as its answer says (an Un-Mundane character's lean).
@@ -301,7 +301,7 @@ export function scoreTargets(run, u, behavior = behaviorOf(u)) {
 
 /** Has u something that stops f's regeneration (a fire or acid attack for a troll)? */
 function canStop(u, f) {
-  const stoppers = f.spec.regen?.stoppedBy ?? [];
+  const stoppers = regenOf(f)?.stoppedBy ?? [];
   return u.prep.offense.some(a => (a.damage ?? []).some(p => stoppers.includes(p.type)));
 }
 

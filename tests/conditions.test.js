@@ -45,7 +45,7 @@ describe("the GM sets a condition", () => {
     const goblin = run.byId.get("goblin");
     expect(setCondition(run, "goblin", { key: "frightened", value: 2, byId: "valeros", rounds: 3 })).toBe(true);
     expect(goblin.conds.frightened).toBe(2);
-    expect(conditionsOf(run, "goblin").conditions).toEqual([{ key: "frightened", value: 2, sheet: false, sources: [{ byId: "valeros", rounds: 3, gm: true, label: "" }] }]);
+    expect(conditionsOf(run, "goblin").conditions).toEqual([{ key: "frightened", value: 2, sheet: false, sources: [{ byId: "valeros", rounds: 3, gm: true, label: "" }], afflicted: [], onlyAffliction: false }]);
     // (Changed: the GM's word over whatever gave it, here the GM's own.)
     setCondition(run, "goblin", { key: "frightened", value: 1 });
     expect(goblin.conds.frightened).toBe(1);

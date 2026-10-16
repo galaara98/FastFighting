@@ -34,6 +34,7 @@ import { rankedDesires, desireBand, want, levelOf, holdDesire, releaseDesire, fo
 import { validConditionKey, CORE_CONDITIONS } from "./conditions.js";
 import { GOALS, holdGoal, goalsOf } from "./behavior/goals.js";
 import { isBound, release } from "./behavior/holds.js";
+import { afflictionFor } from "./behavior/afflictions.js";
 import { joinSide, standAside, turnOn } from "./behavior/neutral.js";
 
 /** A question the turn can't go on without: whether {unitId} uses {reactionId} because of {trigger} (by {byId}). */
@@ -589,9 +590,30 @@ function lift(u, key) {
     if ( !(key in (e.conditions ?? {})) ) return [e];
     const conditions = { ...e.conditions };
     delete conditions[key];
-    const rest = Object.keys(conditions).length || e.mods || e.mark?.length || e.iwr || e.boost || e.taunt || e.uses;
+    const rest = Object.keys(conditions).length || e.mods || e.mark?.length || e.iwr || e.boost || e.taunt || e.uses || e.fastHealing || e.regen;
     return rest ? [{ ...e, conditions }] : [];
   });
+}
+
+/**
+ * The GM moves an affliction on a creature to another stage (behavior/afflictions.js), or (0) ends it: {afflictionId,
+ * stage}. A simple one is its condition's value too (setCondition moves it).
+ */
+export function setAffliction(run, id, { afflictionId, stage } = {}) {
+  const u = run.byId.get(id);
+  const a = u?.afflictions?.find(x => x.spec.id === afflictionId);
+  if ( !a ) return false;
+  const n = Math.max(0, Math.round(Number(stage) || 0));
+  if ( n <= 0 ) u.afflictions = u.afflictions.filter(x => x !== a);
+  else {
+    a.stage = Math.min(a.spec.stages.length, n);
+    a.inStage = 0;
+    a.onsetLeft = 0;
+  }
+  recompute(u);
+  settleSides(run);
+  run.live?.facts.push({ kind: "affliction", id, afflictionId, stage: n, round: run.round });
+  return true;
 }
 
 /**
@@ -616,6 +638,9 @@ export function setCondition(run, id, { key, value = 1, byId = null, rounds = nu
     run.live?.facts.push({ kind: "condition", id, key, value: n, byId, rounds, round: run.round });
     return true;
   }
+  // (One a simple affliction stands for, he gave it a disease: its stage moves with it.)
+  const a = afflictionFor(u, key);
+  if ( a ) return setAffliction(run, id, { afflictionId: a.spec.id, stage: n });
   lift(u, key);
   if ( key === "prone" ) u.prone = n > 0;
   else if ( n > 0 ) {
@@ -784,11 +809,18 @@ export function conditionsOf(run, id) {
   if ( u.prone ) conds.unshift(["prone", 1]);
   // (Tied up: on it, from no one.)
   if ( isBound(u) ) conds.unshift(["bound", 1]);
-  const conditions = conds.map(([key, value]) => ({
-    key, value: Number(value) || 1,
-    sheet: (u.baseConds?.[key] ?? 0) > 0 || (u.effects ?? []).some(e => e.sheetHeld && e.conditions?.[key]),
-    sources: (u.effects ?? []).filter(e => !e.onlyVs && (e.conditions?.[key] ?? 0) > 0)
-      .map(e => ({ byId: e.sourceId ?? null, rounds: rounds(e), gm: !!e.gm, label: e.label || "" }))
+  // (What an affliction's stage lays: the affliction's, shown as that.)
+  const staged = a => (a.onsetLeft > 0 ? {} : a.spec.stages[a.stage - 1]?.conditions ?? {});
+  const conditions = conds.map(([key, value]) => {
+    const sources = (u.effects ?? []).filter(e => !e.onlyVs && (e.conditions?.[key] ?? 0) > 0)
+      .map(e => ({ byId: e.sourceId ?? null, rounds: rounds(e), gm: !!e.gm, label: e.label || "" }));
+    const sheet = (u.baseConds?.[key] ?? 0) > 0 || (u.effects ?? []).some(e => e.sheetHeld && e.conditions?.[key]);
+    const afflicted = (u.afflictions ?? []).filter(a => (Number(staged(a)[key]) || (staged(a)[key] === true ? 1 : 0)) > 0).map(a => a.spec.id);
+    return { key, value: Number(value) || 1, sheet, sources, afflicted, onlyAffliction: afflicted.length > 0 && !sources.length && !sheet };
+  });
+  const afflictions = (u.afflictions ?? []).map(a => ({
+    id: a.spec.id, name: a.spec.name ?? "", stage: a.stage, most: a.spec.stages.length, byId: a.sourceId && run.byId.has(a.sourceId) ? a.sourceId : null,
+    onset: a.onsetLeft > 0 ? a.onsetLeft : 0, simple: a.spec.simple?.key ?? null, traits: [...(a.spec.traits ?? [])], conditions: { ...staged(a) }, settled: !!a.settled
   }));
   const relations = [];
   const add = (kind, byId, extra = {}) => { if ( byId && run.byId.has(byId) ) relations.push({ kind, byId, ...extra }); };
@@ -806,7 +838,7 @@ export function conditionsOf(run, id) {
     if ( e.onlyVs ) add("exposedTo", e.sourceId, { rounds: rounds(e), gm: !!e.gm });
     if ( e.mark?.length ) add("marked", e.sourceId, { rounds: rounds(e) });
   }
-  return { id: u.id, status: u.status, conditions, relations };
+  return { id: u.id, status: u.status, conditions, relations, afflictions };
 }
 
 /* -------------------------------------------- */
@@ -852,6 +884,9 @@ const AS_RELATION = new Set(["grabbed", "controlled"]);
  *   links      what's between two: from -> to
  *     {type: "desire", kind, from (who wants), to, level, intensity, most: 5, gm}
  *     {type: "condition", key, from (who caused it), to (who has it), value, valued, intensity, most, rounds, gm, sheet}
+ *     {type: "affliction", afflictionId, name, from (who gave it), to, stage, intensity (its stage), most (its last),
+ *       onset (rounds before it takes hold), simple (the condition a simple one stands for), traits, conditions (what
+ *       its stage lays), settled}
  *     {type: "relation", kind, from, to, intensity: 1, most: 1, rounds, gm}   grabbed/goaded/controlled/bound/exposedTo/
  *       marked: from the one who did it to the one it's on; shuns (won't listen to): from the one who won't to the other
  *     {type: "goal", kind, from, to (a thing's id, or a hazard's), level, intensity, most, played, gm, via}
@@ -911,6 +946,7 @@ export function networkOf(run) {
     const has = conditionsOf(run, u.id);
     for ( const c of has.conditions ) {
       if ( AS_RELATION.has(c.key) && has.relations.some(r => r.kind === c.key) ) continue;
+      if ( c.onlyAffliction ) continue; // (its affliction's, shown below)
       const valued = VALUED.has(c.key) || c.value > 1;
       const at = { key: c.key, value: c.value, valued, intensity: valued ? c.value : 1, most: valued ? null : 1, sheet: c.sheet };
       const by = [...new Set(c.sources.map(x => x.byId).filter(id => id && id !== u.id && run.byId.has(id)))];
@@ -919,6 +955,12 @@ export function networkOf(run) {
         links.push({ type: "condition", from: id, to: u.id, rounds: src.rounds, gm: src.gm, ...at });
       }
       if ( !by.length || c.sheet || c.sources.some(x => !x.byId) ) marks.push({ type: "condition", on: u.id, ...at });
+    }
+    // Its afflictions: from whoever gave it (a line), or its own (a symbol); the stage its intensity, up to its last.
+    for ( const a of has.afflictions ) {
+      const at = { afflictionId: a.id, name: a.name, stage: a.stage, intensity: a.stage, most: a.most, onset: a.onset, simple: a.simple, traits: a.traits, conditions: a.conditions, settled: a.settled };
+      if ( a.byId && a.byId !== u.id ) links.push({ type: "affliction", from: a.byId, to: u.id, ...at });
+      else marks.push({ type: "affliction", on: u.id, ...at });
     }
     for ( const r of has.relations ) {
       if ( r.kind === "afraid" ) continue; // (a fear is its desire to keep away: shown as that)

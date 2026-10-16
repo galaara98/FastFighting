@@ -1928,7 +1928,10 @@
       "ForcedBlocked": "stopped",
       "ForcedInto": "into {what}",
       "Fall": "{actor} falls {feet}: {damage} damage",
-      "GroundHarm": "{actor} is hurt where they land: {damage} damage"
+      "GroundHarm": "{actor} is hurt where they land: {damage} damage",
+      "Afflicted": "{actor}: {name} takes hold",
+      "AfflictionSettles": "{actor}: {name} settles in · {roll} · {degree}",
+      "AfflictionTally": "{actor} vs {name} · {saveType} {roll} · {degree} · {cured} saved, {kept} failed"
     },
     "DamageType": {
       "bludgeoning": "bludgeoning",
@@ -2241,7 +2244,10 @@
         "SelectLeader": "Select its leader",
         "Team": "Team",
         "TeamHint": "Move it to this side: what it wants, and everyone's toward it, is worked out again.",
-        "Controlled": "Controlled by {name}: it wants what they want."
+        "Controlled": "Controlled by {name}: it wants what they want.",
+        "Affliction": "{name}, stage {stage} of {most}",
+        "Onset": "takes hold in {n} rounds",
+        "Settled": "settled in"
       },
       "Attitude": {
         "wary": "Less willing to hear {name} out (×{n})",

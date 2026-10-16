@@ -1990,6 +1990,16 @@
    "commit": null,
    "hash": "f8cf83a76a98"
   },
+  "core:FASTFIGHTING.Battle.Net.Affliction": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.Net.Affliction",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "6b509d3946c1"
+  },
   "core:FASTFIGHTING.Battle.Net.Controlled": {
    "repo": "core",
    "file": "languages/en.json",
@@ -2110,6 +2120,16 @@
    "commit": null,
    "hash": "15e6c735d125"
   },
+  "core:FASTFIGHTING.Battle.Net.Onset": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.Net.Onset",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "f96fda0cf5e2"
+  },
   "core:FASTFIGHTING.Battle.Net.PlayerDecides": {
    "repo": "core",
    "file": "languages/en.json",
@@ -2190,6 +2210,16 @@
    "date": null,
    "commit": null,
    "hash": "d6a144f93f07"
+  },
+  "core:FASTFIGHTING.Battle.Net.Settled": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.Net.Settled",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "c9a09909a026"
   },
   "core:FASTFIGHTING.Battle.Net.Steady": {
    "repo": "core",
@@ -5284,6 +5314,16 @@
    "hash": "08ab5d3aecdf",
    "gone": "2026-10-11"
   },
+  "core:FASTFIGHTING.Log.Afflicted": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.Afflicted",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "7756de3c140e"
+  },
   "core:FASTFIGHTING.Log.AfflictionCured": {
    "repo": "core",
    "file": "languages/en.json",
@@ -5314,6 +5354,16 @@
    "commit": null,
    "hash": "03b097e75bea"
   },
+  "core:FASTFIGHTING.Log.AfflictionSettles": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.AfflictionSettles",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "078bbf926275"
+  },
   "core:FASTFIGHTING.Log.AfflictionStage": {
    "repo": "core",
    "file": "languages/en.json",
@@ -5323,6 +5373,16 @@
    "date": null,
    "commit": null,
    "hash": "3904a07ccad2"
+  },
+  "core:FASTFIGHTING.Log.AfflictionTally": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.AfflictionTally",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "9c642834c447"
   },
   "core:FASTFIGHTING.Log.Aftermath": {
    "repo": "core",
@@ -39193,6 +39253,16 @@
    "commit": null,
    "hash": "c78689ebaa3b"
   },
+  "daggerheart:FFDAGGERHEART.Verb.shove": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Verb.shove",
+   "area": "daggerheart/Verb",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "638b48bdb5bb"
+  },
   "daggerheart:module.json:description": {
    "repo": "daggerheart",
    "file": "module.json",
@@ -39623,6 +39693,26 @@
    "date": null,
    "commit": null,
    "hash": "6e5b30907936"
+  },
+  "dcc:FFDCC.Deed.Pushback": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.Deed.Pushback",
+   "area": "dcc/Deed",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "b03eca8fef3d"
+  },
+  "dcc:FFDCC.Deed.PushedBack": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.Deed.PushedBack",
+   "area": "dcc/Deed",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "37e7c7e6236e"
   },
   "dcc:FFDCC.Deed.Rallied": {
    "repo": "dcc",
@@ -41694,6 +41784,16 @@
    "commit": null,
    "hash": "638b48bdb5bb"
   },
+  "dnd5e:FFDND5E.ShoveProne": {
+   "repo": "dnd5e",
+   "file": "languages/en.json",
+   "key": "FFDND5E.ShoveProne",
+   "area": "dnd5e/General",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "61667f63eac3"
+  },
   "dnd5e:FFDND5E.Skill.arc": {
    "repo": "dnd5e",
    "file": "languages/en.json",
@@ -43637,6 +43737,26 @@
    "commit": null,
    "hash": "bcd21e6c4816"
   },
+  "pf2e:FFPF2E.Action.Reposition": {
+   "repo": "pf2e",
+   "file": "languages/en.json",
+   "key": "FFPF2E.Action.Reposition",
+   "area": "pf2e/Action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "d70341a984de"
+  },
+  "pf2e:FFPF2E.Action.Shove": {
+   "repo": "pf2e",
+   "file": "languages/en.json",
+   "key": "FFPF2E.Action.Shove",
+   "area": "pf2e/Action",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "638b48bdb5bb"
+  },
   "pf2e:FFPF2E.Action.Trip": {
    "repo": "pf2e",
    "file": "languages/en.json",
@@ -43967,6 +44087,16 @@
    "commit": null,
    "hash": "b5cf1da40156"
   },
+  "pf2e:FFPF2E.Pushed": {
+   "repo": "pf2e",
+   "file": "languages/en.json",
+   "key": "FFPF2E.Pushed",
+   "area": "pf2e/General",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "37e7c7e6236e"
+  },
   "pf2e:FFPF2E.Reason.Ability": {
    "repo": "pf2e",
    "file": "languages/en.json",
@@ -44239,6 +44369,16 @@
    "date": null,
    "commit": null,
    "hash": "7906b7aee1f3"
+  },
+  "pf2e:FFPF2E.Repositioned": {
+   "repo": "pf2e",
+   "file": "languages/en.json",
+   "key": "FFPF2E.Repositioned",
+   "area": "pf2e/General",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "5edd1832df25"
   },
   "pf2e:FFPF2E.Settings.loreBoost.Hint": {
    "repo": "pf2e",

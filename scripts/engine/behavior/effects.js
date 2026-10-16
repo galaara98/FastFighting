@@ -6,6 +6,10 @@
  *                  controlled: charmed or dominated, it fights for whoever laid it on, until it ends)
  *     mods         bonuses and penalties (see engine/mods.js)
  *     tempHp       temporary hit points when it lands (they don't stack: the better stays)
+ *     fastHealing  hit points it regains at the start of each of its turns, for as long as it lasts (5e Regenerate,
+ *                  Healing Spirit, a healing elixir: fast healing; the best of what it has counts, its own or lent)
+ *     regen        {amount, stoppedBy, needsHp}: regeneration lent for as long as it lasts (PF2e Regenerate): as fast
+ *                  healing, and while it works it can't be killed; the damage types in stoppedBy stop it a turn
  *     mark         damage parts added to the source's own hits against it (Hunter's Mark, Hex)
  *     repeatSave   {type, dc}: a save at the end of each of its turns ends it (5e Hold Person)
  *     onlyVs       its conditions hold only against the source (PF2e Feint: off-guard to the feinter)
@@ -38,7 +42,7 @@
  */
 import { STATUS, clamp } from "../../constants.js";
 import { combineMods, diceMean } from "../mods.js";
-import { isStanding, areEnemies, enemiesOf, alliesOf, boostReaches, wish, behaviorOf } from "../battle-state.js";
+import { isStanding, areEnemies, enemiesOf, alliesOf, boostReaches, wish, behaviorOf, regenOf, canHeal } from "../battle-state.js";
 import { threatOf, unitsPerTurn, attacksIn } from "./evaluate.js";
 import { meanPart } from "../dice.js";
 import { forcedWorth } from "./forced.js";
@@ -59,6 +63,9 @@ export function recompute(u) {
   let controlledBy = null;
   const extra = { resist: {}, immune: new Set(), weak: {} };
   let hardened = false;
+  // (Healing over time an effect gives: the best of each, as fast healing and regeneration don't add up.)
+  let fastHealing = 0;
+  let regen = null;
   const raise = (into, k, v) => {
     const value = v === true ? 1 : Number(v) || 0;
     into[k] = Math.max(into[k] ?? 0, value);
@@ -88,11 +95,16 @@ export function recompute(u) {
       for ( const [k, v] of Object.entries(e.iwr.weak ?? {}) ) extra.weak[k] = Math.max(extra.weak[k] ?? 0, Number(v) || 0);
       for ( const k of e.iwr.immune ?? [] ) extra.immune.add(k);
     }
+    if ( e.fastHealing > fastHealing ) fastHealing = e.fastHealing;
+    if ( e.regen && (!regen || e.regen.amount > regen.amount) ) regen = e.regen;
   }
+  u.fxHealing = fastHealing || null;
+  u.fxRegen = regen;
   for ( const a of u.afflictions ?? [] ) {
     if ( a.onsetLeft > 0 ) continue; // not taken hold yet
     const stage = a.spec.stages[a.stage - 1];
     for ( const [k, v] of Object.entries(stage?.conditions ?? {}) ) raise(conds, k, v);
+    if ( stage?.mods ) mods.push(stage.mods);
   }
   u.conds = conds;
   u.vs = vs.size ? vs : null;
@@ -179,7 +191,11 @@ export function applyOutcome(target, outcome, sourceId = null, action = null) {
   // (A taunt needs a taunter, and someone else to be taunted.)
   const taunt = sourceId && target.id !== sourceId ? tauntLevel(outcome.taunt) : 0;
   const defy = taunt && outcome.defy && typeof outcome.defy === "object" && Object.keys(outcome.defy).length ? { ...outcome.defy } : null;
-  if ( !Object.keys(conditions).length && !mods && !mark && !iwr && !boost && !taunt ) return null;
+  // (Healing over time: hit points at the start of each of its turns, or regeneration, for as long as it lasts.)
+  const fastHealing = Number(outcome.fastHealing) > 0 ? Math.round(Number(outcome.fastHealing)) : null;
+  const regen = Number(outcome.regen?.amount) > 0
+    ? { amount: Math.round(Number(outcome.regen.amount)), stoppedBy: [...(outcome.regen.stoppedBy ?? [])], needsHp: !!outcome.regen.needsHp } : null;
+  if ( !Object.keys(conditions).length && !mods && !mark && !iwr && !boost && !taunt && !fastHealing && !regen ) return null;
   const key = action?.id ?? outcome.label ?? null;
   if ( key !== null ) target.effects = (target.effects ?? []).filter(e => !(e.key === key && e.sourceId === sourceId));
   // Effects run out at the end of the bearer's turns; one it lays on itself during its own turn would lose a round
@@ -202,7 +218,9 @@ export function applyOutcome(target, outcome, sourceId = null, action = null) {
     vsSort: typeof outcome.vsSort === "string" && outcome.vsSort ? outcome.vsSort : null,
     boost,
     taunt: taunt || null,
-    defy
+    defy,
+    fastHealing,
+    regen
   };
   (target.effects ??= []).push(effect);
   recompute(target);
@@ -221,7 +239,7 @@ export function tauntProof(u) {
 /** An outcome without its taunt (shrugged off, and with it what ignoring it would cost): the rest, or null if that was all. */
 export function withoutTaunt(outcome) {
   const { taunt, defy, ...rest } = outcome;
-  const does = ["conditions", "mods", "mark", "iwr", "boost", "tempHp", "resources", "actionsNow"]
+  const does = ["conditions", "mods", "mark", "iwr", "boost", "tempHp", "resources", "actionsNow", "fastHealing", "regen"]
     .some(k => rest[k] && (typeof rest[k] !== "object" || Object.keys(rest[k]).length));
   return does ? rest : null;
 }
@@ -551,6 +569,9 @@ export function outcomeWorth(run, by, t, outcome, { versus = null } = {}) {
   if ( now > 0 && by === t ) worth += now * out / Math.max(1, unitsPerTurn(rules, t));
   const temp = Number(outcome.tempHp) || 0;
   if ( temp > (t.temp ?? 0) ) worth += Math.min(temp - (t.temp ?? 0), inc * rounds);
+  // Healing over time: what it would mend each turn (beyond what it has already), as far as it's hurt or will be.
+  const mends = Math.max(0, Math.max(Number(outcome.fastHealing) || 0, Number(outcome.regen?.amount) || 0) - Math.max(t.fxHealing ?? 0, t.spec.fastHealing ?? 0, regenOf(t)?.amount ?? 0));
+  if ( mends > 0 && canHeal(t) ) worth += Math.min(mends * rounds, Math.max(0, (t.maxHp ?? 0) - (t.hp ?? 0)) + inc * rounds);
   // Resources it gains (Ironsworn momentum): what the system says they're worth.
   for ( const [k, v] of Object.entries(outcome.resources ?? {}) ) worth += Number(rules.resourceWorth?.(run, t, k, Number(v) || 0)) || 0;
   // Moved (shoved, dragged, put somewhere): what it would do to it there (behavior/forced.js).

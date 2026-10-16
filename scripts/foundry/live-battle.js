@@ -31,7 +31,7 @@ import { loadStoryTables } from "../story/tables.js";
 import {
   beginLive, liveRound, liveTurn, pcTurnBegin, pcTurnEnd, syncFromSheets, setApproach, captureAll, snapshotRun, restoreRun, endLive,
   NeedsDecision, applyFact, gmMoment, leavingReach, openingFor, reactNow, nextSpotlight, liveAftermath,
-  setCondition, setRelation, clearRelation, setGoal, setAttitude, setSide, playerRuns
+  setCondition, setRelation, clearRelation, setAffliction, setGoal, setAttitude, setSide, playerRuns
 } from "../engine/live.js";
 import { diffAll } from "../engine/changes.js";
 import { randomSeed } from "../engine/rng.js";
@@ -1059,7 +1059,8 @@ export function liveFact(fact) {
 
 /**
  * The GM changes a creature's conditions (the Battle Interface): {op: "set", id, key, value, byId, rounds} (value 0
- * takes it off); {op: "relate", id, kind, byId, rounds, level}; {op: "unrelate", id, kind, byId}. Done at once: in the
+ * takes it off); {op: "relate", id, kind, byId, rounds, level}; {op: "unrelate", id, kind, byId}; {op: "affliction",
+ * id, afflictionId, stage} (0 ends it). Done at once: in the
  * engine, and on the sheets for what the system's can show (through its helper: writeChanges); the rest the core keeps
  * (engine/live.js). Kept with the battle, and taken back with the turn it came after (a player's turn under way: with
  * that), or the whole encounter.
@@ -1071,7 +1072,8 @@ export function liveCondition(op) {
     const before = captureAll(run);
     const done = op.op === "set" ? setCondition(run, op.id, op)
       : op.op === "relate" ? setRelation(run, op.id, op)
-        : op.op === "unrelate" ? clearRelation(run, op.id, op) : false;
+        : op.op === "unrelate" ? clearRelation(run, op.id, op)
+          : op.op === "affliction" ? setAffliction(run, op.id, op) : false;
     if ( !done ) return false;
     const records = battle.pc?.records ?? battle.data.turns.at(-1)?.records ?? (battle.data.gmRecords ??= []);
     await holdingPause(() => writeChanges(before, captureAll(run), records));

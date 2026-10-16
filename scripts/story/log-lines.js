@@ -143,7 +143,11 @@ function baseLine(e) {
       actor: e.actor, mode: t(MODE[e.mode] ?? "ModeMove"), distance: distanceText(e.feet), toward: e.purpose === "door" ? t("TheDoor") : e.toward,
       terrain: e.mult > 1.05 ? t("Terrain", { mult: Number(e.mult).toFixed(2), regions: e.regions?.length ? t("TerrainRegions", { regions: listItems(e.regions) }) : "" }) : ""
     });
-    case "afflictionSave": return t("AfflictionSave", { actor: e.actor, name: e.name, saveType: e.saveType, roll: dice(e.natural, e.mod, e.total, e.dc, t("DC")), degree: degree(e.degree) });
+    case "afflictionSave":
+      if ( e.tally ) return t("AfflictionTally", { actor: e.actor, name: e.name, saveType: e.saveType, roll: dice(e.natural, e.mod, e.total, e.dc, t("DC")), degree: degree(e.degree), cured: e.tally.cured, kept: e.tally.kept });
+      return t("AfflictionSave", { actor: e.actor, name: e.name, saveType: e.saveType, roll: dice(e.natural, e.mod, e.total, e.dc, t("DC")), degree: degree(e.degree) });
+    case "afflicted": return t("Afflicted", { actor: e.actor, name: e.name });
+    case "afflictionSettles": return t("AfflictionSettles", { actor: e.actor, name: e.name, roll: dice(e.natural, e.mod, e.total, e.dc, t("DC")), degree: degree(e.degree) });
     case "afflictionStage": return t("AfflictionStage", { actor: e.actor, name: e.name, stage: e.stage, damage: damage(e.amount, e.damageType) });
     case "afflictionEnd": return Number.isFinite(e.natural) ? t("AfflictionCured", { actor: e.actor, name: e.name, roll: dice(e.natural, e.mod, e.total, e.dc, t("DC")), degree: degree(e.degree) }) : t("AfflictionEnd", { actor: e.actor, name: e.name });
     case "opportunity": return t("Opportunity", a);
