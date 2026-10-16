@@ -303,7 +303,7 @@ export class BattleVantage extends HandlebarsApplicationMixin(ApplicationV2) {
       .sort((a, c) => a.label.localeCompare(c.label, game.i18n.lang));
     const players = b.run.live.players.has(id);
     // (Not what it can only want of itself: getting loose, being rid of a burn.)
-    const desires = players ? [] : DESIRE_KINDS.filter(k => !["bolstered", "breakFree", "rid"].includes(k)).map(k => ({ value: `desire:${k}`, label: loc(`FASTFIGHTING.Desire.Kind.${k}`),
+    const desires = players ? [] : DESIRE_KINDS.filter(k => !["bolstered", "breakFree", "rid", "leave"].includes(k)).map(k => ({ value: `desire:${k}`, label: loc(`FASTFIGHTING.Desire.Kind.${k}`),
       data: { whom: whomFor(loc(`FASTFIGHTING.Desire.Kind.${k}`)), fields: "who band", needs: "who" } }));
     const relations = GM_RELATIONS.filter(k => k !== "afraid" || !players).map(k => ({ value: `rel:${k}`, label: loc(`FASTFIGHTING.Battle.RelationPick.${k}`),
       data: { whom: loc(`FASTFIGHTING.Battle.Net.WhomRel.${k}`), fields: k === "afraid" ? "who band" : "who rounds", needs: "who" } }));

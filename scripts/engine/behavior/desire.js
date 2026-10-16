@@ -57,9 +57,12 @@ export const styleOf = u => u.turnStyle ?? u.spec?.desireStyle ?? NEUTRAL_STYLE;
 /** Its own pills' guide, whoever it follows this turn (worked out again without a pill it lost: dropAmbition). */
 const ownStyle = u => u.ownDesireStyle ?? u.spec?.desireStyle ?? NEUTRAL_STYLE;
 
-export const DESIRE_KINDS = Object.freeze(["hurt", "heal", "protect", "aid", "talk", "avoid", "bind", "rob", "bolstered", "breakFree", "free", "rid"]);
-/** Desires a creature may have about itself: mending itself, bolstering itself, getting loose, being rid of a burn. */
-const SELF_KINDS = new Set(["heal", "aid", "breakFree", "rid"]);
+export const DESIRE_KINDS = Object.freeze(["hurt", "heal", "protect", "aid", "talk", "avoid", "bind", "rob", "bolstered", "breakFree", "free", "rid", "leave"]);
+/**
+ * Desires a creature may have about itself: mending itself, bolstering itself, getting loose, being rid of a burn,
+ * leaving the fight (behavior/leaving.js).
+ */
+const SELF_KINDS = new Set(["heal", "aid", "breakFree", "rid", "leave"]);
 /** Band floors: passing, wants, determined, driven, obsessed. */
 export const DESIRE_BANDS = Object.freeze([0, 20, 40, 60, 80]);
 export const DESIRE_BAND_KEYS = Object.freeze(["passing", "wants", "determined", "driven", "obsessed"]);
@@ -278,6 +281,8 @@ function relevant(run, u, kind, t) {
     // Loose of what holds it (itself), or a friend loose of what holds it.
     case "breakFree": return t === u && (t.status === STATUS.STANDING || t.status === STATUS.BOUND) && ownHolds(run, t).length > 0;
     case "rid": return t === u && t.status === STATUS.STANDING && remediesOf(run, t).length > 0;
+    // (Off the map: while it means to go.)
+    case "leave": return t === u && t.status === STATUS.STANDING && !!u.leaving;
     case "free": return t !== u && !areEnemies(run, u, t) && !refusesToHelp(run, u, t) && !!freeable(run, t);
     case "rob": return (t.status === STATUS.DOWN || t.status === STATUS.BOUND) && foe() && robbable(t) && !u.robbedFrom?.has(t.id);
     // (Wanting a friend's buff is for the friend to act on: see heed.)

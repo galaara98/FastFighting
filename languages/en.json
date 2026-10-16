@@ -166,6 +166,10 @@
         "Name": "Doesn't like to flee: how often it stays (%)",
         "Hint": "A character whose answer to when to retreat is Fight to the end ignores the urge to run away this often (half as often for When the battle turns against us), when running is its own choice (shaken nerve, a terror close by, a planned retreat); talked out of the fight, it gives up where it stands instead of running just as often. Fear a spell or the rules put on it still works as the system says."
       },
+      "leaveResolve": {
+        "Name": "Committed to leaving: how often it keeps going (%)",
+        "Hint": "A creature that has set out to leave the fight (its nerve gone, talked into it, a retreat called) keeps going this often when it's struck or spoken to on its way (0 to 100, default 79): all of it for one whose answers and playstyles lean to going, down to 70% of it for one who'd rather stay and fight. Stopped, it deals with what stopped it first and goes back to leaving; stopped often enough, it forgets leaving."
+      },
       "avoidKilling": {
         "Name": "Avoids killing: how often it holds back (%)",
         "Hint": "A character whose answer to who it attacks first is \"I avoid killing\" holds back this often (50 to 90, default 90; less for answers that lean less that way): a blow that would kill knocks out instead, it leaves the fallen be, and after the fight it spares them. Nobody controls the story entirely: now and then it kills all the same."
@@ -1564,7 +1568,8 @@
         "bolstered": "Be bolstered by",
         "breakFree": "Break free",
         "free": "Free",
-        "rid": "Be rid of it"
+        "rid": "Be rid of it",
+        "leave": "Leave the fight"
       },
       "Level": {
         "passing": "Passing",
@@ -1690,6 +1695,7 @@
       "ModeBurrow": "burrows",
       "ModeMove": "moves",
       "TheDoor": "the door",
+      "TheEdge": "the edge of the map",
       "AfflictionSave": "{actor} vs {name} · {saveType} {roll} · {degree}",
       "AfflictionStage": "{actor}: {name} stage {stage} · {damage}",
       "AfflictionEnd": "{actor}: {name} runs its course",
@@ -1933,6 +1939,10 @@
       "Stand": "{actor} stands up",
       "Shield": "{actor} raises a shield",
       "Leave": "{actor} slips away",
+      "OffMap": "{actor} is off the map",
+      "OffMapUnseen": "{actor} finds no way off the map, and is gone all the same",
+      "LeaveStopped": "{actor} stops on the way out to deal with {by} (d100 {roll}, kept going on {needed} or less)",
+      "LeaveForgot": "{actor} gives up on leaving and turns on {by} (d100 {roll}, kept going on {needed} or less)",
       "DeedLine": "{actor} → {target}: {deed} · deed {n} · {result}",
       "Rider": "{actor} → {target}: {rider}{mended}{saved}{effect}",
       "RiderMended": " · +{n}, {result}",

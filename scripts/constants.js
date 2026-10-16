@@ -115,6 +115,8 @@ export const TRAITOR_LUCK = 9;
  * the "standGround" world setting, 50 to 90).
  */
 export const STAND_GROUND = 90;
+/** How often a creature that has set out to leave the fight keeps going when struck or spoken to (behavior/leaving.js), %. */
+export const LEAVE_RESOLVE = 79;
 
 /**
  * Someone who avoids killing ("I avoid killing") holds back this often (percent: the "avoidKilling" world setting, 50

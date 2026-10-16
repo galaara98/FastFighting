@@ -404,7 +404,7 @@ function narrate(e, roll, rel, fill) {
       if ( e.purpose === "tend" ) return roll("event.moveTend", { ...f, target: e.toward });
       if ( e.purpose === "door" ) return roll("event.moveDoor", f);
       const mode = ["walk", "fly", "swim", "climb", "burrow"].includes(e.mode) ? e.mode : "walk";
-      const situation = e.purpose === "help" ? "help" : e.purpose === "hunt" ? "hunt" : (e.regions?.length && (e.mult > 1.05 || mode === "fly" || mode === "burrow" || mode === "climb")) ? "terrain" : "approach";
+      const situation = e.purpose === "leave" ? "flee" : e.purpose === "help" ? "help" : e.purpose === "hunt" ? "hunt" : (e.regions?.length && (e.mult > 1.05 || mode === "fly" || mode === "burrow" || mode === "climb")) ? "terrain" : "approach";
       return roll(`move.${mode}.${situation}`, { ...f, target: e.toward, region: e.regions?.[0] ?? "" });
     }
     case "flee":
@@ -491,6 +491,9 @@ function narrate(e, roll, rel, fill) {
       }
     }
     case "leave": return roll("event.leave", f);
+    // (Off the map, leaving the fight: as one who slips away. Stopped on its way: the GMs' to know, as the log has it.)
+    case "offMap": return roll("event.leave", f);
+    case "leaveStopped": return logLine(e);
     case "sway": {
       if ( e.lie ) return roll("event.lieAndRun", f);
       if ( e.outcome === "bribed" ) return roll("event.bribed", { ...f, amount: concessionText(e.concession) || localize("FASTFIGHTING.Story.APrice"), target: e.payer ?? e.by ?? "" });
@@ -1031,7 +1034,7 @@ const FALLS = new Set(["down", "death", "beaten", "struckDown"]);
  * What the players shouldn't learn from the chat, only the GM: who takes the lead, what a creature thinks or schemes,
  * what sizing a foe up told it, its nerve failing. Told apart, for the GMs alone (a beat's gmHtml).
  */
-export const SECRET = new Set(["command", "thought", "scheme", "study", "waver"]);
+export const SECRET = new Set(["command", "thought", "scheme", "study", "waver", "leaveStopped"]);
 
 /**
  * The story as it's told in the chat, one turn at a time: a beat for each turn of the fight (the opening's first),

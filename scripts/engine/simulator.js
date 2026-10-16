@@ -28,6 +28,7 @@ import { cast } from "./behavior/casting.js";
 import { boost } from "./behavior/luck.js";
 import { respond, riposteStrike } from "./behavior/responses.js";
 import { decideSummon, callSummons, sustainSummons, summonState, dismiss } from "./behavior/summons.js";
+import { mayLeave, startLeaving, isLeaving, wayOff, goAlong, confronted, dealsWithIt, backOnItsWay } from "./behavior/leaving.js";
 import { createAggregator } from "./aggregate.js";
 import { spotTraps, stepOut, learnTrap } from "./behavior/traps.js";
 import { bargain } from "./behavior/bargain.js";
@@ -1008,6 +1009,8 @@ function executeOffense(run, u, action, t, attacksMade) {
     run.blood = true;
     return;
   }
+  // (Struck at on its way off the map: it may turn to face it: behavior/leaving.js.)
+  if ( t?.leaving ) confronted(run, t, u, "attack", logger(run));
   if ( action.casting ) {
     const tier = castFor(run, u, action, t);
     run.blood = true;
@@ -1949,12 +1952,103 @@ function runs(run, u, turn, why = {}) {
     if ( a.status !== STATUS.STANDING ) continue;
     flee(run, a, null, { retreat: true, with: leader.spec.name, withId: leader.id, leads: a === leader });
   }
+  // (On a map, it makes for the edge with what's left of its turn.)
+  if ( isLeaving(u) && turn ) leavingTurn(run, u, turn, { whole: false });
   return true;
 }
 
 function flee(run, u, turn = null, extra = {}) {
+  // (On a map: it means to go, and makes for the edge on its turns, still in the fight until it's off: leaving.js.)
+  if ( mayLeave(run, u) ) {
+    startLeaving(run, u, { why: extra.why ?? (extra.retreat ? "retreat" : null) });
+    log(run, u, { type: "flee", leaving: true, feet: 0, ...extra });
+    return;
+  }
   // Turning to run from a foe in reach invites a parting blow.
   if ( !leaveReach(run, u, turn) ) return;
+  goneFrom(run, u);
+  const from = run.log && u.pos ? { x: u.pos.x, y: u.pos.y } : null;
+  const feet = moveAway(run, u, (Math.max(...Object.values(u.spec.speeds ?? { walk: 25 })) || 25) * 2);
+  log(run, u, { type: "flee", feet, mode: (u.spec.speeds?.fly ?? 0) > 0 ? "fly" : "walk", from, to: from ? { x: u.pos.x, y: u.pos.y } : null, ...extra });
+  alertOnTheWay(run, u);
+}
+
+/**
+ * A turn of a creature leaving the fight (behavior/leaving.js): up off the ground, loose of what holds it, then off
+ * the map as fast as it goes, whoever's in reach striking as it goes. Off the edge, it's gone; and two whole turns in
+ * a row given to going (LEAVING_TURNS: nothing stopping it), it's gone too, at the edge or not, with a way off or not.
+ * `whole`: a turn of its own, all of it (not what was left of the turn it set out in).
+ */
+function leavingTurn(run, u, turn, { whole = true } = {}) {
+  const rules = run.prep.rules;
+  const basic = rules.basicAction ?? 1;
+  u.leaving.turns += 1;
+  if ( whole ) u.leaving.whole = (u.leaving.whole ?? 0) + 1;
+  const gone = () => isLeaving(u) && (u.leaving.whole ?? 0) >= LEAVING_TURNS;
+  let way = wayOff(run, u);
+  if ( way && u.prone ) {
+    const stand = rules.standCost ? rules.standCost(u) : basic;
+    if ( turn.canAfford(stand) ) {
+      turn.spend(stand);
+      if ( !provoke(run, u, "foeMovesInReach") ) return;
+      u.prone = false;
+      log(run, u, { type: "stand" });
+    }
+  }
+  // (Nobody walks off held: loose first.)
+  for ( const hold of ownHolds(run, u) ) {
+    if ( hold.key === "bound" ) continue;
+    const cost = escapeCost(rules, u, hold, run);
+    if ( !turn.canAfford(cost) ) break;
+    turn.spend(cost);
+    const got = tryHold(run, u, hold);
+    if ( got.success ) release(run, u, hold);
+    log(run, u, { type: "escape", hold: hold.key, success: got.success, ...rollOf(got), ...(got.said?.text ? { said: got.said.text } : {}) });
+    if ( !got.success ) break;
+  }
+  if ( !way ) {
+    // (No way off: it looks for one; its turns given to going, it's gone all the same.)
+    endOfTurn(run, u);
+    if ( gone() ) offMap(run, u, { blinked: true });
+    return;
+  }
+  const speed = Math.max(...Object.values(u.spec.speeds ?? { walk: 25 })) || 25;
+  for ( let step = 0; step < MAX_STEPS_PER_TURN && way.feet > 0.5 && !ownHolds(run, u).some(h => h.key !== "bound"); step++ ) {
+    if ( !canMove(run, u) ) break;
+    // (Turning its back on a foe in reach: a parting blow, unless it gets clear safely.)
+    if ( !leaveReach(run, u, turn) ) return;
+    const budget = turn.payForMove(speed);
+    if ( !budget ) break;
+    const went = goAlong(run, u, way, budget);
+    turn.usedMove(went.feet);
+    if ( run.log && went.feet > 0 ) {
+      log(run, u, { type: "move", mode: (u.spec.speeds?.fly ?? 0) > 0 ? "fly" : "walk", feet: went.feet, mult: 1, regions: [], toward: null, towardId: null,
+        from: went.from, to: went.to, reached: went.off, purpose: "leave", tactical: liveTier(run, u), cover: false });
+    }
+    way = went.rest;
+    if ( went.off ) {
+      for ( const id of u.adjacent ) run.byId.get(id)?.adjacent.delete(u.id);
+      u.adjacent.clear();
+      offMap(run, u, {});
+      return;
+    }
+  }
+  endOfTurn(run, u);
+  if ( gone() ) offMap(run, u, { far: true });
+}
+
+/** u is off the map, leaving the fight (or, with no way off, gone unseen: blinked): fled. */
+/** Whole turns in a row given to going that see a creature leaving the fight gone, at the edge or not. */
+const LEAVING_TURNS = 2;
+
+function offMap(run, u, extra = {}) {
+  goneFrom(run, u);
+  u.leaving = null;
+  log(run, u, { type: "offMap", ...extra });
+}
+
+/** u is out of the fight, run off: its concentration and its holds on others go, and nobody's beside it any more. */
+function goneFrom(run, u) {
   u.status = STATUS.FLED;
   u.fellRound ??= run.round;
   u.ranRound = run.round; // (seen running: its friends take it hard)
@@ -1965,10 +2059,10 @@ function flee(run, u, turn = null, extra = {}) {
   for ( const id of u.adjacent ) run.byId.get(id)?.adjacent.delete(u.id);
   u.adjacent.clear();
   releaseGrabs(run, u);
-  const from = run.log && u.pos ? { x: u.pos.x, y: u.pos.y } : null;
-  const feet = moveAway(run, u, (Math.max(...Object.values(u.spec.speeds ?? { walk: 25 })) || 25) * 2);
-  log(run, u, { type: "flee", feet, mode: (u.spec.speeds?.fly ?? 0) > 0 ? "fly" : "walk", from, to: from ? { x: u.pos.x, y: u.pos.y } : null, ...extra });
-  // Fleeing into a bystander alerts them; an ally will hear the call for help.
+}
+
+/** Fleeing into a bystander alerts them; an ally will hear the call for help. */
+function alertOnTheWay(run, u) {
   for ( const b of run.units ) {
     if ( b.active || b.status !== STATUS.STANDING ) continue;
     const d = edgeDistance(u, b);
@@ -2719,6 +2813,10 @@ function playFromHere(run, u) {
       log(run, s, { type: "vanish", reason: "unsustained" });
     }
   }
+  // Leaving the fight: off the map, as fast as it goes; stopped on its way, this turn goes to what stopped it
+  // (behavior/leaving.js).
+  dealsWithIt(u);
+  if ( isLeaving(u) ) return leavingTurn(run, u, turn);
   // Slacking (the Lazy playstyle): with no foe beside it and its wounds not pressing, now and then it just doesn't.
   if ( slacksOff(run, u) ) {
     log(run, u, { type: "lazy", chose: true });
@@ -3079,6 +3177,7 @@ const systemOwns = (run, u, what) => !!run.live?.systemOwns?.(u, what);
 
 export function endOfTurn(run, u) {
   const rules = run.prep.rules;
+  backOnItsWay(run, u); // (stopped on its way off the map, and this turn given to that: going again)
   conditionUpkeep(run, u);
   // A save at the end of each of its turns may shake an effect off (5e Hold Person).
   if ( isUp(u) && u.effects?.some(e => e.repeatSave) && !systemOwns(run, u, "repeatSaves") ) {
@@ -3333,7 +3432,8 @@ function keepsSideIn(u) {
   // takes no side.)
   // (Someone who has noticed the fight and takes part next round counts: it's coming.)
   // (Nor does a troll lying there, mending: it will get back up unless someone burns it, or ties it up.)
-  return (isStanding(u) || joining(u) || (u.held && u.status === STATUS.DOWN && !isBound(u))) && !u.spec.untargetable && u.side !== NEUTRAL_PARTY;
+  // (Nor one on its way off the map: behavior/leaving.js.)
+  return (isStanding(u) || joining(u) || (u.held && u.status === STATUS.DOWN && !isBound(u))) && !u.spec.untargetable && u.side !== NEUTRAL_PARTY && !isLeaving(u);
 }
 
 function activeSides(run) {
@@ -3569,6 +3669,8 @@ export function endRun(run, ended, { capture = false, settle = true } = {}) {
   // Who won is decided when the last blow lands (or the deal is struck); the aftermath only settles the fallen.
   // (Talks that collapsed: nobody's.)
   const winners = !ended ? [] : run.resolved ? [run.resolved.side].filter(Boolean) : activeSides(run);
+  // (Those still on their way off the map have gone.)
+  for ( const u of run.units ) if ( isLeaving(u) ) offMap(run, u, { ended: true });
   if ( run.log ) {
     startTurn(run);
     const labels = winners.map(s => prep.sides[s]?.label ?? s);

@@ -435,6 +435,10 @@ export async function revertRecord(r) {
   for ( const t of r.deletedTokens ?? [] ) {
     await step("restoring a token", async () => (await fromUuid(t.parentUuid))?.createEmbeddedDocuments("Token", [t.data], { keepId: true }));
   }
+  // (One the fight took off the tracker, gone off the map: back on it, as it was.)
+  for ( const c of r.deletedCombatants ?? [] ) {
+    await step("restoring a combatant", async () => (await fromUuid(c.parentUuid))?.createEmbeddedDocuments("Combatant", [c.data], { keepId: true, turnEvents: false }));
+  }
   // (A world setting the system keeps a pool in: Daggerheart's Fear, the GM's.)
   // (Only the system's own: an undo record is data, and never a way to change the core's or another module's settings.)
   if ( r.setting && r.setting.namespace === game.system.id ) await step("restoring a setting", () => game.settings.set(r.setting.namespace, r.setting.key, r.setting.value));
