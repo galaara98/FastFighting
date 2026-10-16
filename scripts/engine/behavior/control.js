@@ -95,7 +95,7 @@ export function controlRoll(run, u, t, action, attacksMade = 0) {
   const kind = rollKind(action);
   if ( kind === "auto" ) return { kind };
   if ( kind === "save" ) {
-    const save = saveRoll(run, t, action.save.type, { magical: isMagical(action) });
+    const save = saveRoll(run, t, action.save.type, { magical: isMagical(action), from: u });
     return { kind, mod: save.mod, dc: Number(action.save.dc) || 10, advantage: netAdvantage(save.advantage, Number(action.save.advantage) || 0), dice: save.dice, rollKind: "save", roller: t };
   }
   if ( kind === "goad" ) {

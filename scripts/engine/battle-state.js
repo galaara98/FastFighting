@@ -768,7 +768,25 @@ export function currentAc(run, target, attacker, action) {
   if ( cmd ) ac += cmd.leadership.ac;
   ac += target.mods?.ac ?? 0;
   ac += run.prep.rules.modifiers?.defense?.(situation(run, target, attacker, action)) ?? 0;
+  ac += coverDefault(run, target, attacker);
   return ac;
+}
+
+/** A d20 point or two: what three quarters' cover or more adds to a defense where the system has no rule for cover. */
+export const COVER_POINTS = 2;
+
+/** The cover t has from `from`, by the scene's walls (behavior/space.js): "none", "some", "most", "total". */
+export const coverOf = (run, t, from) => (from && from !== t && wallsKnown(run) && t?.pos && from.pos ? coverFrom(run, from, t) : "none");
+
+/**
+ * What cover adds to t's defense against `from` (its AC against an attack, its save against what it set off), where
+ * the system has no rule of its own for cover (rules.handlesCover: its rules read situation.cover, and a save's
+ * cover, themselves): with three quarters of t hidden or more, COVER_POINTS, in the system's own points.
+ */
+export function coverDefault(run, t, from) {
+  if ( run.prep.rules.handlesCover ) return 0;
+  const cover = coverOf(run, t, from);
+  return cover === "most" || cover === "total" ? Math.max(1, Math.round(COVER_POINTS * (t.coreConds?.scale ?? 1))) : 0;
 }
 
 /** Typical numbers for a creature of this level, when the system didn't supply one. */
@@ -787,17 +805,19 @@ export const isMagical = action => !!action && (!!action.magical || action.rank 
  * friend's aura (spec.saveAura {bonus, range}: 5e Aura of Protection) adds to it while that friend is up and near
  * (the best one only).
  */
-export function saveRoll(run, target, type, { magical = false } = {}) {
+export function saveRoll(run, target, type, { magical = false, from = null } = {}) {
   if ( Array.isArray(type) ) {
-    const rolls = type.map(t => saveRoll(run, target, t, { magical }));
+    const rolls = type.map(t => saveRoll(run, target, t, { magical, from }));
     return rolls.reduce((best, r) => (r.mod + 3.5 * r.advantage > best.mod + 3.5 * best.advantage ? r : best), rolls[0] ?? saveRoll(run, target, "none"));
   }
   const base = target.spec.defenses[type] ?? typical(run.prep.rules, "save", target.spec.level ?? 0);
-  const m = run.prep.rules.modifiers?.save?.({ unit: target, type }) ?? {};
+  // (Against what `from` set off: the cover it has from it, for the system's rules (PF2e's Reflex, 5e's Dexterity), or
+  // the core's little more where they have none.)
+  const m = run.prep.rules.modifiers?.save?.({ unit: target, type, cover: coverOf(run, target, from), from }) ?? {};
   const mods = target.mods ?? {};
   let advantage = netAdvantage(m.advantage ?? 0, mods.saveAdv ?? 0);
   if ( magical && target.spec.magicResistance ) advantage = netAdvantage(advantage, 1);
-  return { mod: base + (m.bonus ?? 0) + (mods.saves ?? 0) + auraBonus(run, target), advantage, dice: mods.saveDie ?? null, roller: target };
+  return { mod: base + (m.bonus ?? 0) + (mods.saves ?? 0) + auraBonus(run, target) + coverDefault(run, target, from), advantage, dice: mods.saveDie ?? null, roller: target };
 }
 
 /** The best save aura over t from a friend who's up and within its reach (anywhere, without positions). */

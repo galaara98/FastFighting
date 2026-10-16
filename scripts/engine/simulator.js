@@ -113,9 +113,9 @@ function attackStakes(run, u, t, action) {
 }
 
 /** A save the target makes, with Luck burned on it if it falls short and someone will. */
-function rollSave(run, target, type, dc, { stakes = 0.3, label = "", magical = false } = {}) {
+function rollSave(run, target, type, dc, { stakes = 0.3, label = "", magical = false, from = null } = {}) {
   const rules = run.prep.rules;
-  const s = saveRoll(run, target, type, { magical });
+  const s = saveRoll(run, target, type, { magical, from });
   let roll = rollCheck(rules, run.rng, s.mod, dc, { advantage: s.advantage, dice: s.dice, kind: "save", roller: target });
   spendEdges(target, "save");
   if ( run.boosting && roll.degree < 2 ) roll = boost(run, target, roll, dc, { kind: "save", stakes, label }, logger(run));
@@ -778,7 +778,7 @@ function applyEffects(run, u, action, target, degree) {
 function saveRider(run, u, action, target, effect) {
   const rules = run.prep.rules;
   const harmful = (effect.damage ?? []).reduce((s, p) => s + Math.max(0, meanPart(p)), 0);
-  const { roll, mod } = rollSave(run, target, effect.save.type, effect.save.dc, { stakes: saveStakes(target, harmful, !!effect.conditions), label: effect.label || action.name, magical: isMagical(action) });
+  const { roll, mod } = rollSave(run, target, effect.save.type, effect.save.dc, { stakes: saveStakes(target, harmful, !!effect.conditions), label: effect.label || action.name, magical: isMagical(action), from: u });
   const mult = effect.damage?.length ? saveMultiplier(rules, roll.degree, effect.save) : 0;
   const hit = mult > 0 ? rollHit(run, u, action, target, effect.damage, mult, false) : null;
   log(run, target, {
@@ -1085,7 +1085,7 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
 
     if ( action.kind === "save" && action.save ) {
       const extra = bonusDamageParts(run, u, action, target, { commit: true });
-      const { roll, mod } = rollSave(run, target, action.save.type, action.save.dc, { stakes: saveStakes(target, meanDamageVs(run, action, target).normal, !!action.effects?.length), label: action.name, magical: isMagical(action) });
+      const { roll, mod } = rollSave(run, target, action.save.type, action.save.dc, { stakes: saveStakes(target, meanDamageVs(run, action, target).normal, !!action.effects?.length), label: action.name, magical: isMagical(action), from: u });
       const mult = saveMultiplierFor(rules, roll.degree, action.save, target);
       const data = !logging ? null : { type: "save", ...common, saveType: action.save.type, natural: roll.natural, mod: mod + (roll.die ?? 0), total: roll.total, dc: action.save.dc, degree: roll.degree, margin: roll.total - action.save.dc, note: roll.note ?? null, faces: roll.faces ?? null };
       if ( mult > 0 ) {

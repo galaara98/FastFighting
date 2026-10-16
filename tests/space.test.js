@@ -7,7 +7,7 @@
  */
 import { describe, expect, test } from "vitest";
 import { beginRun, beginRound, takeTurn, prepareBattle } from "../scripts/engine/simulator.js";
-import { movesNeeded, moveToward, edgeDistance } from "../scripts/engine/battle-state.js";
+import { movesNeeded, moveToward, edgeDistance, currentAc, saveRoll, COVER_POINTS } from "../scripts/engine/battle-state.js";
 import { inTheWay, spotWithin, lineOfSight, sightBlocked, coverFrom, crossed, pastCost } from "../scripts/engine/behavior/space.js";
 import { areEnemies } from "../scripts/engine/battle-state.js";
 import { pf2eRules } from "./fixtures/three-action-rules.js";
@@ -121,6 +121,26 @@ describe("sight past walls", () => {
     run.doors.set("d1", { open: true });
     run.geo = (run.geo ?? 0) + 1;
     expect(lineOfSight(run, a, b)).toBe(true);
+  });
+
+  test("cover the system has no rule for: three quarters of it hidden or more, a little more AC and saves against that one; none for less", () => {
+    // (A wall hiding the orc's upper corners and middle: three of its five points.)
+    const walls = [wall(20, -20, 20, 0.5)];
+    const run = fight([who("archer", "friendly", 0), who("orc", "hostile", 40)], { walls });
+    const [a, o] = get(run, "archer", "orc");
+    expect(coverFrom(run, a, o)).toBe("most");
+    expect(currentAc(run, o, a, bow) - o.spec.defenses.ac).toBe(COVER_POINTS);
+    expect(saveRoll(run, o, "reflex", { from: a }).mod - saveRoll(run, o, "reflex").mod).toBe(COVER_POINTS);
+    // (A system with its own: none of the core's; its rules see the cover.)
+    const seen = [];
+    const own = fight([who("archer", "friendly", 0), who("orc", "hostile", 40)], { walls, rules: { ...pf2eRules, handlesCover: true, modifiers: { ...pf2eRules.modifiers, defense: ctx => (seen.push(ctx.cover), 0) } } });
+    const [a2, o2] = get(own, "archer", "orc");
+    expect(currentAc(own, o2, a2, bow)).toBe(o2.spec.defenses.ac);
+    expect(seen).toContain("most");
+    // (Some of it only: nothing more.)
+    const some = fight([who("archer", "friendly", 0), who("orc", "hostile", 40)], { walls: [wall(20, -20, 20, -0.5)] });
+    const [a3, o3] = get(some, "archer", "orc");
+    expect(currentAc(some, o3, a3, bow)).toBe(o3.spec.defenses.ac);
   });
 
   test("cover: some of it hidden behind a wall's end", () => {
