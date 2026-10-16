@@ -11,7 +11,7 @@ import { MODULE_ID } from "../constants.js";
 import { escapeHtml as escape, inertHtml } from "../i18n.js";
 import { getAdapter } from "../api.js";
 import { setting } from "../settings.js";
-import { pixelsFor, sceneDistance } from "./terrain.js";
+import { pixelsFor, sceneDistance, squareFeet } from "./terrain.js";
 import { concessionText } from "../story/story.js";
 
 const loc = key => game.i18n.localize(key);
@@ -257,6 +257,27 @@ export function spotsBeside(tokenDoc, count, scene = tokenDoc.parent) {
     out.push(spot);
   }
   return out;
+}
+
+/**
+ * Where creatures a summoning called appear: where the engine put them (behavior/summons.js: the nearest space no
+ * one's in to where each would want to be), as top-left corners for their size; still the nearest free spot to that,
+ * should a token be standing there on the map. One the engine has nowhere for, beside its summoner.
+ * @param {TokenDocument} summonerDoc
+ * @param {object[]} units   the engine's creatures, as called (pos in feet, spec)
+ * @returns {{x: number, y: number}[]} top-left corners
+ */
+export function spotsFor(summonerDoc, units, scene = summonerDoc.parent) {
+  const occupied = new Set();
+  for ( const t of scene.tokens ) if ( !t.hidden ) for ( const c of cellsOf(t._source.x, t._source.y, t) ) occupied.add(c);
+  return units.map(s => {
+    const squares = Math.max(1, Math.round((s.spec.position?.size ?? squareFeet()) / squareFeet()));
+    const shape = { width: squares, height: squares };
+    const dest = s.pos ? clampToScene(pixelsFor(shape, s.pos), shape) : placeOf(summonerDoc);
+    const spot = freeSpot(shape, dest, occupied);
+    for ( const c of cellsOf(spot.x, spot.y, shape) ) occupied.add(c);
+    return spot;
+  });
 }
 
 /** Nearest free grid spot to `dest` (spiral search, on the same side of any wall), so tokens never end up stacked. */

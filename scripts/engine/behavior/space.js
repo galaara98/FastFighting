@@ -122,6 +122,26 @@ export function spotWithin(run, u, t, reach, from = u.pos) {
   return best;
 }
 
+/**
+ * The free spot nearest `point` for u to stand on (one where its move may end: inTheWay), on the grid of `lattice` (a
+ * creature already there), a ring of squares at a time out to `most` feet; only those `accept` takes (in range, in
+ * sight). {x, y} or null.
+ */
+export function freeSpotNear(run, u, point, { lattice = null, most = 30, accept = () => true } = {}) {
+  const grid = lattice?.pos ? lattice : { pos: point };
+  const at = p => onGrid(grid, p.x, p.y);
+  const spots = [];
+  for ( let dx = -most; dx <= most; dx += STEP ) {
+    for ( let dy = -most; dy <= most; dy += STEP ) {
+      const p = at({ x: point.x + dx, y: point.y + dy });
+      spots.push({ ...p, d: Math.hypot(p.x - point.x, p.y - point.y) });
+    }
+  }
+  spots.sort((a, b) => a.d - b.d);
+  const found = spots.find(p => p.d <= most + 0.5 && !inTheWay(run, u, p) && accept(p));
+  return found ? { x: found.x, y: found.y } : null;
+}
+
 /* -------------------------------------------- */
 /*  Sight                                       */
 /* -------------------------------------------- */

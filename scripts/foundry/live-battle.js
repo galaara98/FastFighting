@@ -23,7 +23,7 @@ import { currentPathGrid, pathGridFor } from "./pathing.js";
 import { getSetup, sceneEncounter } from "./persistence.js";
 import { QUERIES } from "./tactics.js";
 import {
-  holdingPause, playMoves, postBeat, postStory, revertEntry, gmIds, chronicle, storyTitle, packSpec, unpackSpec, placeOf, spotsBeside
+  holdingPause, playMoves, postBeat, postStory, revertEntry, gmIds, chronicle, storyTitle, packSpec, unpackSpec, placeOf, spotsFor
 } from "./make-it-so.js";
 import { storyBeats } from "../story/story.js";
 import { logLine } from "../story/log-lines.js";
@@ -788,7 +788,7 @@ async function placeSummons(records) {
     if ( !doc || !action ) continue;
     let placed;
     try {
-      placed = await adapter.placeSummons(battle.scene, doc, action, list.map(s => s.spec), spotsBeside(doc, list.length, battle.scene));
+      placed = await adapter.placeSummons(battle.scene, doc, action, list.map(s => s.spec), spotsFor(doc, list, battle.scene));
     } catch ( err ) {
       console.error(`${MODULE_ID} | placing what ${doc.name} summoned`, err);
       continue;

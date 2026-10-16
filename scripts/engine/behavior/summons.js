@@ -4,10 +4,12 @@
  * its side. They go when their time is up, when the summoner stops concentrating on them, or, where they must be
  * sustained (PF2e), when it doesn't.
  *
- * An action of kind "summon": {creatures: [CombatantSpec], rounds, concentration, sustain, sustainOrEnd}
+ * An action of kind "summon": {creatures: [CombatantSpec], rounds, concentration, sustain, sustainOrEnd, range}
  *   sustain        what the summoner spends at the start of each of its turns to keep them acting ({actions: 1} in
  *                  PF2e; a 5e Spiritual Weapon's bonus action); unpaid, they do nothing that round
  *   sustainOrEnd   unpaid, they're gone (PF2e)
+ *   range          how far off it calls them, in feet (or {max}: by default 30). Each appears in the nearest space no one's
+ *                  in, within it and in the summoner's sight: beside the foe it would go for, else beside the summoner
  * A summoned creature with `untargetable` (Spiritual Weapon: not a creature at all) can't be attacked and doesn't
  * keep its side in the fight. Summoned creatures aren't the table's: they're left out of the results and Make it So.
  * In a live battle they're placed on the scene and the tracker as they're called (foundry/live-battle.js), and take
@@ -15,7 +17,8 @@
  * Pure: no Foundry globals.
  */
 import { STATUS, TACTICAL } from "../../constants.js";
-import { createUnit, isUp, liveTier } from "../battle-state.js";
+import { createUnit, isUp, isStanding, liveTier, enemiesOf, edgeDistance } from "../battle-state.js";
+import { freeSpotNear, lineOfSight, wallsKnown } from "./space.js";
 import { costOf, costUnits, hasUses, unitsPerTurn } from "./evaluate.js";
 import { offenseBaseline } from "./support.js";
 import { usefulRounds } from "./effects.js";
@@ -62,6 +65,31 @@ export function decideSummon(run, u, turn) {
   return best?.action ?? null;
 }
 
+/** How far off a summoning can call its creatures, in feet, where it doesn't say (action.range): PF2e's usual 30. */
+const SUMMON_RANGE = 30;
+
+/**
+ * Where a summoned creature appears: the nearest space no one's in (behavior/space.js freeSpotNear) to where it would
+ * want to: beside the foe it would go for (the summoner's, else the nearest), if it fights hand to hand and that foe
+ * is within the summoning's range and in the summoner's sight; else beside the summoner. Only a space within that
+ * range the summoner can see. With none free, a step beside the summoner, as ever.
+ */
+function appearAt(run, u, s, action, i) {
+  const range = Number(action.range?.max ?? action.range?.increment ?? action.range) || SUMMON_RANGE;
+  const seen = o => !wallsKnown(run) || lineOfSight(run, u, o);
+  const within = p => (edgeDistance(u, { pos: p, spec: s.spec }) ?? 0) <= range + 0.5;
+  const accept = p => within(p) && seen({ pos: p, spec: s.spec });
+  const fights = (s.prep.offense ?? []).some(a => !a.range) || !!s.spec.untargetable;
+  if ( fights ) {
+    const foes = enemiesOf(run, u).filter(o => isStanding(o) && o.pos && within(o.pos) && seen(o));
+    const target = foes.find(o => o.id === u.targetId) ?? foes.sort((a, b) => (edgeDistance(u, a) ?? 0) - (edgeDistance(u, b) ?? 0))[0];
+    const spot = target ? freeSpotNear(run, s, target.pos, { lattice: target, most: 15, accept }) : null;
+    if ( spot ) return spot;
+  }
+  return freeSpotNear(run, s, u.pos, { lattice: u, most: Math.min(range, 30), accept })
+    ?? { x: u.pos.x + 5 * (1 + (i % 3)), y: u.pos.y + 5 * Math.floor(i / 3) };
+}
+
 /** Call the creatures: they join the fight right after u. Returns them. */
 export function callSummons(run, u, action) {
   const entries = run.prep.summons?.get(action.id) ?? [];
@@ -79,8 +107,9 @@ export function callSummons(run, u, action) {
     s.expires = action.rounds ? run.round + action.rounds : null;
     s.joinedRound = run.round;
     s.sustainedRound = run.round; // the round it's called, it acts
-    // Beside the summoner, a step apart from each other.
-    s.pos = u.pos ? { x: u.pos.x + 5 * (1 + (i % 3)), y: u.pos.y + 5 * Math.floor(i / 3) } : null;
+    // Where it would appear, in the nearest space no one's in: beside the foe it would go for, within the summoning's
+    // reach and in sight; else beside the summoner.
+    s.pos = u.pos ? appearAt(run, u, s, action, i) : null;
     initDesires(s);
     s.tac = sampleRunTactics(s.spec, run.rng);
     run.units.push(s);
