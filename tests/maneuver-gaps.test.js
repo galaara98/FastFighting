@@ -84,6 +84,24 @@ describe("a degree's own damage, a botch that moves, a blow that pushes", () => 
     expect(h.pos.x).toBeLessThan(0);
   });
 
+  test("a botched Grapple: the foe has hold of the one who tried", () => {
+    const run = fight([hero([sure({ check: { mod: -60, against: "fortitude" }, onHit: [{ self: true, grab: true }, null, { grab: true }, { grab: true }] })]), orc()]);
+    const [h] = ids(run);
+    takeTurn(run, h);
+    expect(h.grabbedBy).toBe("orc");
+  });
+
+  test("a paid rider's push lands (5e Thunderous Smite), and a crit table's knockback row (DCC)", () => {
+    const smite = { id: "smite", label: "Smite", when: "hit", melee: true, damage: [parseFormula("6", "thunder")], outcome: { move: { kind: "push", feet: 10 } } };
+    const run = fight([hero([strike({ bonus: 60, damage: [parseFormula("1", "slashing")] })], { riders: [smite] }), orc()]);
+    takeTurn(run, run.byId.get("hero"));
+    expect(run.log.some(e => e.type === "forced" && e.targetId === "orc")).toBe(true);
+    const crit = { die: parseFormula("1", "untyped"), mod: 0, rows: [{ lo: 0, hi: 99, outcome: { move: { kind: "push", feet: 10 }, label: "Hurled back" } }] };
+    const thrown = fight([hero([strike({ bonus: 60, damage: [parseFormula("1", "slashing")] })], { crit }), orc()]);
+    takeTurn(thrown, thrown.byId.get("hero"));
+    expect(thrown.log.some(e => e.type === "forced" && e.targetId === "orc")).toBe(true);
+  });
+
   test("a blow's rider pushes; a failed save's push too", () => {
     const smite = fight([hero([strike({ bonus: 60, damage: [parseFormula("1", "thunder")], effects: [{ kind: "move", move: { kind: "push", feet: 10 } }] })]), orc()]);
     takeTurn(smite, smite.byId.get("hero"));

@@ -1345,7 +1345,8 @@ function applyCritRow(run, u, target, { row, total }) {
     }
   }
   if ( row.outcome && isUp(target) && !isImmune(run, target, { id: `crit:${u.id}:${row.lo}`, onSave: [row.outcome] }) ) {
-    applyOutcome(target, row.outcome, u.id, { id: `crit:${u.id}`, name: row.outcome.label ?? localize("FASTFIGHTING.Effect.cripplingBlow") });
+    // (What it lays, a grab, a knockback: as any maneuver's result lands.)
+    landOutcome(run, u, target, row.outcome, { id: `crit:${u.id}`, name: row.outcome.label ?? localize("FASTFIGHTING.Effect.cripplingBlow"), traits: [] }, { damage: false });
     testConcentration(run, target);
   }
   if ( row.self && isUp(u) ) applyOutcome(u, row.self, u.id, { id: `critSelf:${u.id}`, name: row.self.label ?? "" });
@@ -1376,7 +1377,8 @@ function applyRider(run, u, target, rider) {
   const fake = { id: `rider:${rider.id}`, traits: rider.traits, onSave: outcome ? [outcome] : [] };
   const landed = !!outcome && isUp(target) && !isImmune(run, target, fake);
   if ( landed ) {
-    applyOutcome(target, outcome, u.id, { id: `rider:${rider.id}`, name: rider.label });
+    // (What it lays, and a push or a grab it carries: 5e Thunderous Smite, as any maneuver's result lands.)
+    landOutcome(run, u, target, outcome, { id: `rider:${rider.id}`, name: rider.label, traits: rider.traits ?? [] }, { damage: false });
     testConcentration(run, target);
   }
   if ( run.log ) log(run, u, {
@@ -1557,10 +1559,12 @@ function landOutcome(run, u, target, outcome, action, { damage: harms = true } =
   const self = !!outcome.self;
   const on = self ? u : target;
   const effect = applyOutcome(on, outcome, u.id, action);
-  if ( outcome.grab && !self && isUp(on) && !cantBeGrabbed(run, on, action) ) {
-    on.grabbedBy = u.id;
-    on.grabKey = effect?.key ?? null;
-    log(run, on, { type: "grabbed", by: u.spec.name });
+  // (A botched Grapple: the foe has hold of the one who tried.)
+  const holder = self ? target : u;
+  if ( outcome.grab && isUp(on) && isUp(holder) && !cantBeGrabbed(run, on, action) ) {
+    on.grabbedBy = holder.id;
+    on.grabKey = self ? null : effect?.key ?? null;
+    log(run, on, { type: "grabbed", by: holder.spec.name });
   }
   if ( outcome.move && isUp(on) ) {
     if ( self ) forceMove(run, target, u, outcome.move);
@@ -1613,7 +1617,7 @@ function forceMove(run, u, t, move) {
   }
   // (Stopped short against a wall or someone: the system's collision, if it has one: Daggerheart's.)
   if ( path.blocked && isUp(t) && typeof rules.collisionDamage === "function" ) {
-    const parts = rules.collisionDamage(t, { feetLeft: Math.max(0, (move.feet ?? 5) - (path.feet ?? 0)), into: path.into ?? null }) ?? [];
+    const parts = rules.collisionDamage(t, { feetLeft: Math.max(0, (move.feet ?? 5) - (path.feet ?? 0)), into: path.into ?? null, move, by: u }) ?? [];
     if ( parts.length ) {
       const rolled = sampleDamage(parts, run.rng, 1);
       const amount = rules.applyIwr(iwrOf(t), rolled.byType, t);

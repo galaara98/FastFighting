@@ -19,7 +19,7 @@ export { MORALE } from "./engine/behavior/morale.js";
 export { dropCondition, applyOutcome, tauntProof, withoutTaunt } from "./engine/behavior/effects.js";
 export { simpleAffliction } from "./engine/behavior/afflictions.js";
 export { CORE_CONDITIONS, CONDITION_SYNONYMS, coreKeyFor } from "./engine/conditions.js";
-export { edgeDistance, behaviorOf, isStanding } from "./engine/battle-state.js";
+export { edgeDistance, behaviorOf, isStanding, coverOf, COVER_POINTS } from "./engine/battle-state.js";
 export { goadLuck } from "./engine/behavior/goad.js";
 export { bestReactionStrike } from "./engine/behavior/reactions.js";
 export { combineMods, describeMods, diceMean } from "./engine/mods.js";

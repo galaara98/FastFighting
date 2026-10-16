@@ -2,7 +2,7 @@
  * Forced movement: a creature shoved away, dragged closer, or put anywhere in reach (maneuvers.js: an outcome's move,
  * {kind: "push" | "pull" | "place", feet}; or a push until it's so far off: {kind: "push", to: feet}). Stopped short
  * against a wall or another creature, the system may say what the collision does (rules.collisionDamage(t, {feetLeft,
- * into}): damage parts). Where it ends up (forcedPath), step by step, 5 feet at a time: a wall or
+ * into, move, by}): damage parts; `move` is the move itself, with anything the helper put on it). Where it ends up (forcedPath), step by step, 5 feet at a time: a wall or
  * another creature in the way stops it, and where the ground drops away (more than 5 feet down) it goes over the
  * edge and falls. What it finds there: the fall (rules.fallDamage(feet, unit): damage parts, else 1d6 for each 10
  * feet, at most 20d6; it lands prone), a hazard whose reach it's in (the hazard goes off: it strikes it once), harm

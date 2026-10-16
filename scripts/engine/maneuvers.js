@@ -9,7 +9,8 @@
  * away from the one doing it, "pull" toward it, "place" anywhere within its reach, feet; or to: a push until it's that
  * far off}), grab (the one doing it holds it: u.grabbedBy; as long as what it lays with it, where it lays anything, else
  * until it's broken or the holder falls), and damage (its own, at that degree only: PF2e's critical Trip). From the
- * doer's side: crit, success, fail, critFail; a botch with self: true lands on the doer (a move: the target moves it).
+ * doer's side: crit, success, fail, critFail; a botch with self: true lands on the doer (a move: the target moves it;
+ * a grab: the target has hold of it).
  * A rider on a blow can carry a move too ({kind: "move", move, critOnly}), and a save rider's failure a move or a grab.
  * The ids are the story's too (story/master.js MANEUVERS), told as what they are.
  */
