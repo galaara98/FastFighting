@@ -43,11 +43,12 @@
  * an obsessed character (OBSESSED+) stops worrying about its own safety.
  */
 import { STATUS } from "../../constants.js";
-import { areEnemies, isStanding, liveTrait, enemiesOf, alliesOf, sizedUp, command, commandOf, refusesToHelp, movesNeeded } from "../battle-state.js";
+import { areEnemies, isStanding, liveTrait, enemiesOf, alliesOf, sizedUp, command, commandOf, refusesToHelp, movesNeeded, edgeDistance } from "../battle-state.js";
 import { perceives, apparentHealth } from "./senses.js";
 import { seemsFoe } from "./neutral.js";
 import { robbable } from "./theft.js";
-import { holdsOf, isBound, freeable, known, remediesOf, bears } from "./holds.js";
+import { holdsOf, ownHolds, isBound, freeable, known, remediesOf, bears } from "./holds.js";
+import { hasTrait, profiled } from "../conditions.js";
 import { hasUses } from "./evaluate.js";
 
 /** A character's playstyle guide for desires (from its pills), or the neutral one. */
@@ -266,7 +267,7 @@ function relevant(run, u, kind, t) {
   const foe = () => !t.spec.untargetable && !t.spec.hazard && (areEnemies(run, u, t) || seemsFoe(run, u, t));
   switch ( kind ) {
     // (Nobody can attack what's untargetable: a hazard, a Spiritual Weapon.)
-    case "hurt": return !t.spec.untargetable && (areEnemies(run, u, t) || seemsFoe(run, u, t)) && t.status !== STATUS.SURRENDERED && t.status !== STATUS.STOOD_DOWN;
+    case "hurt": return !t.spec.untargetable && !hasTrait(t, "untouchable") && (areEnemies(run, u, t) || seemsFoe(run, u, t)) && t.status !== STATUS.SURRENDERED && t.status !== STATUS.STOOD_DOWN;
     case "avoid": return areEnemies(run, u, t) && isStanding(t);
     case "talk": return t.status === STATUS.STANDING;
     case "heal": return !areEnemies(run, u, t) && (t.status === STATUS.DOWN || t.hp < t.maxHp) && !refusesToHelp(run, u, t);
@@ -275,7 +276,7 @@ function relevant(run, u, kind, t) {
     // A fallen foe not tied up yet; one down (or tied up) with something on it to take.
     case "bind": return t.status === STATUS.DOWN && !isBound(t) && foe();
     // Loose of what holds it (itself), or a friend loose of what holds it.
-    case "breakFree": return t === u && (t.status === STATUS.STANDING || t.status === STATUS.BOUND) && holdsOf(run, t).length > 0;
+    case "breakFree": return t === u && (t.status === STATUS.STANDING || t.status === STATUS.BOUND) && ownHolds(run, t).length > 0;
     case "rid": return t === u && t.status === STATUS.STANDING && remediesOf(run, t).length > 0;
     case "free": return t !== u && !areEnemies(run, u, t) && !refusesToHelp(run, u, t) && !!freeable(run, t);
     case "rob": return (t.status === STATUS.DOWN || t.status === STATUS.BOUND) && foe() && robbable(t) && !u.robbedFrom?.has(t.id);
@@ -595,7 +596,20 @@ export function conditionWishes(run, u) {
   }
   const holder = u.grabbedBy ? run.byId.get(u.grabbedBy) : null;
   if ( holder && isStanding(holder) && areEnemies(run, u, holder) ) think(u, "hurt", holder.id, HELD * styleOf(u).retaliate);
+  // (In a rage: the nearest foe, and nothing else.)
+  if ( hasTrait(u, "rage") ) {
+    const nearest = enemiesOf(run, u).filter(o => isStanding(o) && !hasTrait(o, "untouchable"))
+      .map(o => ({ o, d: u.adjacent?.has(o.id) ? 0 : edgeDistance(u, o) ?? 30 })).sort((a, b) => a.d - b.d)[0]?.o;
+    if ( nearest ) think(u, "hurt", nearest.id, RAGE);
+  }
+  // (Swallowed, engulfed: whoever has it, from inside.)
+  for ( const [key, , p] of profiled(u) ) {
+    const by = p.hold?.bySource ? (u.effects ?? []).filter(e => e.conditions?.[key] && e.sourceId).map(e => run.byId.get(e.sourceId)).find(Boolean) : null;
+    if ( by && isStanding(by) && areEnemies(run, u, by) ) think(u, "hurt", by.id, HELD * styleOf(u).retaliate);
+  }
 }
+/** How badly a creature in a rage wants the nearest foe. */
+const RAGE = 80;
 
 /**
  * Held fast, it wants to break free: tied up with nothing it could do from its bonds, badly (BREAK_FREE.bound); able to
@@ -612,7 +626,7 @@ export function conditionWishes(run, u) {
  * would pick across the room (desire.js levelsFromScores: up to 60): its answers, its pills and its party's wishes
  * (partyWants) tip it.
  */
-export const BREAK_FREE = Object.freeze({ bound: 85, bearable: 45, brave: 0.5, grabbed: 45, other: 55, open: 20, hazard: 20 });
+export const BREAK_FREE = Object.freeze({ bound: 85, bearable: 45, brave: 0.5, grabbed: 45, other: 55, open: 20, hazard: 20, swallowed: 75, engulfed: 75, impregnated: 30, growing: 10 });
 
 /** Tied up, could it still do something from its bonds: a blow or a spell that needs no hands at a foe in reach as it lies, or a word? */
 export function actsHeld(run, u) {
@@ -632,11 +646,13 @@ export function holdWishes(run, u) {
   const fear = (50 - liveTrait(run, u, "brave")) * BREAK_FREE.brave;
   const style = styleOf(u).rid ?? 0;
   const bearing = !!run.prep?.options && bears(run, u);
-  for ( const h of holdsOf(run, u) ) {
+  for ( const h of ownHolds(run, u) ) {
     if ( h.key === "grabbed" && !known(run, u, h) ) continue;
     // (A hazard's hold: it's still in the hazard's reach, the worse for that.)
     const level = h.key === "bound" ? (actsHeld(run, u) ? (bearing ? 0 : BREAK_FREE.bearable + fear + style) : BREAK_FREE.bound)
-      : bearing ? 0 : (BREAK_FREE[h.key] ?? BREAK_FREE.other) + (engaged ? 0 : BREAK_FREE.open) + (h.hazard ? BREAK_FREE.hazard : 0) + style;
+      : bearing ? 0 : (BREAK_FREE[h.key] ?? BREAK_FREE.other) + (engaged ? 0 : BREAK_FREE.open) + (h.hazard ? BREAK_FREE.hazard : 0) + style
+        // (Something growing in it: the nearer it comes to tearing free, the more.)
+        + (h.worsens ? BREAK_FREE.growing * (Number(u.conds?.[h.key]) || 1) : 0);
     most = Math.max(most, level);
   }
   if ( most > 0 ) think(u, "breakFree", u.id, most);

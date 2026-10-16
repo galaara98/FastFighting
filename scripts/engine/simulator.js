@@ -6,7 +6,7 @@
  */
 import { STATUS, TACTICAL, DOWNED_MODELS, AFTERMATH, EXECUTE_LUCK, NEUTRAL_PARTY, OPENING, clamp } from "../constants.js";
 import { createRng, deriveSeed, randomSeed } from "./rng.js";
-import { sampleDamage, samplePart, meanPart, part } from "./dice.js";
+import { sampleDamage, samplePart, meanPart, part, parseFormula } from "./dice.js";
 import { rollCheck, regrade } from "./probability.js";
 import { costOf, mainPool } from "./turn.js";
 import {
@@ -39,9 +39,11 @@ import { decideBuff, aidScores, checkDc } from "./behavior/support.js";
 import { perceives } from "./behavior/senses.js";
 import { stealChance, theftTarget, theftPlan, attemptTheft, robbable } from "./behavior/theft.js";
 import { fallenWishes, decideFallen, bind, rob, stayBound, takesPrisoners, robsTheFallen, freeFriend, rollOf } from "./behavior/fallen.js";
-import { holdsOf, known, tryHold, release, escapeCost, isBound, remediesOf, bears } from "./behavior/holds.js";
+import { holdsOf, ownHolds, known, tryHold, release, escapeCost, isBound, remediesOf, bears } from "./behavior/holds.js";
 import { forcedPath, fallDamage, resettle } from "./behavior/forced.js";
 import { stepOf, stacks, stageRounds, stageMove } from "./behavior/afflictions.js";
+import { setConditionValue, layerOf, toughSave, healedOf, harmEnds, letGo } from "./behavior/troubles.js";
+import { profiled, hasTrait, barred } from "./conditions.js";
 import { reactionsPerRound, threats, takesSafeWay } from "./behavior/reactions.js";
 import { isNeutral, crossed, caughtInArea, refreshLeans, truceWith, truceBreaks, turnOn, settleTruce, peaceDesires, seemsFoe, meddling, inFray, fighting, dislikesViolence, annoyedBy, ANNOYED } from "./behavior/neutral.js";
 import { normalizeCost } from "./turn.js";
@@ -290,6 +292,7 @@ const CANT_ACT = new Set(["incapacitated", "controlled", "unconscious", "paralyz
 
 const ableToAct = (run, u) => {
   for ( const k in u.conds ?? {} ) if ( u.conds[k] > 0 && CANT_ACT.has(k) ) return false;
+  if ( barred(u, "act") ) return false;
   return (run.prep.rules.modifiers?.actionsLost?.(u) ?? 0) < 3;
 };
 
@@ -409,6 +412,8 @@ export function breakOnHarm(run, source, target, types = null) {
       settleSides(run);
     }
   }
+  // (The core's own: fascinated, by any harm; charmed, by its charmer's side's.)
+  if ( harmEnds(run, source, target).length ) settleSides(run);
 }
 
 /**
@@ -454,6 +459,8 @@ export function noteFall(run, target, source, action = null) {
 
 function dealDamage(run, source, target, amount, { crit = false, types = null, action = null, lingering = false } = {}) {
   if ( amount <= 0 || target.status === STATUS.DEAD || target.status === STATUS.FLED ) return;
+  // (Out of reach of all harm: in stasis, banished.)
+  if ( hasTrait(target, "untouchable") ) return;
   breakOnHarm(run, source, target, types);
   const rules = run.prep.rules;
   const model = run.prep.options.downedModel;
@@ -651,6 +658,8 @@ function knockOut(run, u) {
 
 function releaseGrabs(run, u) {
   for ( const other of run.units ) if ( other.grabbedBy === u.id ) other.grabbedBy = null;
+  // (In its gullet, in its body: out again.)
+  for ( const { u: o, key } of letGo(run, u) ) log(run, o, { type: "letGo", hold: key, by: u.spec.name, byId: u.id });
 }
 
 /** Charmed and dominated creatures change sides as their holds take and end: tell it. */
@@ -1780,6 +1789,7 @@ function executeHeal(run, u, action, target) {
  */
 export function noteHeal(run, u, target, healed, revived, { action = "", potion = false, check = null } = {}) {
   u.healingDone += healed;
+  if ( healed > 0 ) healedOf(target); // (a bleed stops)
   if ( run.neutral && healed > 0 ) crossed(run, u, target, "help", revived ? 1.5 : 0.75, logger(run));
   if ( run.log ) log(run, u, { type: "heal", action, target: target.spec.name, targetId: target.id, self: target === u, amount: healed, revived, potion, check });
   if ( revived ) stayBound(run, target, logger(run));
@@ -2509,7 +2519,7 @@ function struggle(run, u) {
  */
 function breakFree(run, u, turn) {
   const rules = run.prep.rules;
-  for ( const hold of holdsOf(run, u) ) {
+  for ( const hold of ownHolds(run, u) ) {
     if ( hold.key === "bound" ) continue;
     if ( hold.key === "grabbed" && !known(run, u, hold) ) {
       const basic = rules.basicAction ?? 1;
@@ -2540,7 +2550,7 @@ function getRid(run, u, turn) {
   if ( !r || !turn.canAfford(r.cost) ) return;
   turn.spend(r.cost);
   const got = r.try(run, u) ?? { success: false };
-  log(run, u, { type: "remedy", what: r.key, damageType: r.type ?? null, label: r.label ?? null, success: !!got.success, ...(got.said?.text ? { said: got.said.text } : {}) });
+  log(run, u, { type: "remedy", what: r.key, damageType: r.type ?? null, label: r.label ?? null, condition: r.condition ?? null, success: !!got.success, ...(got.said?.text ? { said: got.said.text } : {}) });
 }
 
 export function takeTurn(run, u) {
@@ -2918,6 +2928,74 @@ function playFromHere(run, u) {
 }
 
 /**
+ * The end of its turn, for the core's own conditions (engine/conditions.js PROFILES) the system says nothing of: what
+ * harms it each turn (a fire, a bleed, radiation, a gullet's acid); one frozen solid tries to break out, all it can do;
+ * a countdown runs on (a parasite growing, its breath running out) and, at its end, what comes (it tears free; it
+ * passes out); and what it carries spreads to whoever stands beside it (a save, or caught).
+ */
+function conditionUpkeep(run, u) {
+  if ( [STATUS.DEAD, STATUS.FLED].includes(u.status) || !profiled(u).length ) return;
+  const rules = run.prep.rules;
+  for ( const [key, v, p] of profiled(u) ) {
+    if ( p.harm ) {
+      const by = layerOf(run, u, key);
+      const [formula, type] = p.harm;
+      // (The system's own say first, its harm in its own terms: Ironsworn's a point; else by its value, or by the level
+      // of whoever laid it.)
+      const own = rules.conditionHarm?.(key, v, u, by);
+      const f = p.bySource ? `${1 + Math.floor((by?.spec.level ?? u.spec.level ?? 1) / 4)}d6` : formula(v);
+      const parts = own !== undefined ? own ?? [] : f ? [parseFormula(f, type)] : [];
+      if ( parts.length ) {
+        const rolled = sampleDamage(parts, run.rng);
+        const amount = rules.applyIwr(iwrOf(u), rolled.byType, u);
+        const types = Object.keys(rolled.byType);
+        if ( run.log ) log(run, u, { type: "persistent", damageType: types[0] ?? type, amount, condition: key });
+        dealDamage(run, by, u, amount, { types, lingering: true });
+        if ( u.status === STATUS.DEAD ) return;
+      }
+    }
+    if ( p.hold && p.act === false && u.status === STATUS.STANDING ) {
+      const hold = holdsOf(run, u).find(h => h.key === key && h.core);
+      if ( hold ) {
+        const got = tryHold(run, u, hold);
+        if ( got.success ) release(run, u, hold);
+        log(run, u, { type: "escape", hold: key, success: got.success, ...rollOf(got) });
+      }
+    }
+  }
+  for ( const [key, v, p] of profiled(u) ) {
+    if ( !p.grows ) continue;
+    const most = p.most ?? v + 1;
+    if ( v < most ) {
+      setConditionValue(u, key, v + 1);
+      if ( run.log ) log(run, u, { type: "worsens", condition: key, value: v + 1, most });
+      continue;
+    }
+    // (Its end: whatever grew in it tears free, or it passes out; either way, it falls.)
+    setConditionValue(u, key, 0);
+    log(run, u, { type: p.term === "burst" ? "burst" : "suffocates", condition: key });
+    if ( u.status === STATUS.STANDING ) dealDamage(run, layerOf(run, u, key), u, u.hp + (u.temp ?? 0) + (u.stamina ?? 0), { lingering: true });
+    if ( u.status === STATUS.DEAD ) return;
+  }
+  if ( u.status !== STATUS.STANDING ) return;
+  for ( const [key, v, p] of profiled(u) ) {
+    if ( !p.spreads ) continue;
+    const dc = typical(rules, "dc", u.spec.level ?? 0) + 2 * (v - 1);
+    for ( const o of run.units ) {
+      if ( o === u || !isUp(o) || o.spec.hazard || (o.conds?.[key] ?? 0) > 0 || hasTrait(o, "untouchable") ) continue;
+      if ( o.spec.iwr?.immune?.some(k => k === "disease" || k === key) ) continue;
+      const near = u.adjacent?.has(o.id) || (u.pos && o.pos && (edgeDistance(u, o) ?? Infinity) <= 5.5);
+      if ( !near ) continue;
+      const s = saveRoll(run, o, toughSave(run, o));
+      const roll = rollCheck(rules, run.rng, s.mod, dc, { advantage: s.advantage, dice: s.dice, kind: "save", roller: o });
+      if ( roll.degree >= 2 ) continue;
+      applyOutcome(o, { conditions: { [key]: 1 }, rounds: 999, label: "" }, u.id, { id: `spread:${key}` });
+      log(run, o, { type: "spread", condition: key, by: u.spec.name, byId: u.id, natural: roll.natural, mod: s.mod, total: roll.total, dc, degree: roll.degree });
+    }
+  }
+}
+
+/**
  * In a live battle, does the game system already do this for u itself (its recovery checks, its persistent damage)?
  * Then the engine leaves it be. Never, in a simulated fight.
  */
@@ -2925,6 +3003,7 @@ const systemOwns = (run, u, what) => !!run.live?.systemOwns?.(u, what);
 
 export function endOfTurn(run, u) {
   const rules = run.prep.rules;
+  conditionUpkeep(run, u);
   // A save at the end of each of its turns may shake an effect off (5e Hold Person).
   if ( isUp(u) && u.effects?.some(e => e.repeatSave) && !systemOwns(run, u, "repeatSaves") ) {
     for ( const e of [...u.effects] ) {

@@ -46,6 +46,16 @@ import { isStanding, areEnemies, enemiesOf, alliesOf, boostReaches, wish, behavi
 import { threatOf, unitsPerTurn, attacksIn } from "./evaluate.js";
 import { meanPart } from "../dice.js";
 import { forcedWorth } from "./forced.js";
+import { PROFILES, profileOf, profiled, profileMods, hasTrait } from "../conditions.js";
+import { parseFormula } from "../dice.js";
+
+/** What one of the core's conditions harms each turn, on the whole, at that value (one laid by someone: as a typical one). */
+function harmMean(p, v) {
+  const [formula, type] = p.harm;
+  const f = typeof formula === "function" ? formula(v) : formula ?? "2d6";
+  if ( !f ) return 0;
+  return Math.max(0, meanPart(parseFormula(f, type)));
+}
 
 /** How badly a taunt makes its bearer want to go for the taunter, unless it says: "driven", above a clear choice. */
 export const TAUNT = 65;
@@ -107,6 +117,17 @@ export function recompute(u) {
     if ( stage?.mods ) mods.push(stage.mods);
   }
   u.conds = conds;
+  // (The core's own conditions, where the system says nothing of them: their bonuses and penalties; lit up, hiding
+  // does it no good.)
+  for ( const [, v, p] of profiled(u) ) {
+    const m = profileMods(p, v, u.coreConds?.scale ?? 1);
+    if ( m ) mods.push(m);
+  }
+  if ( hasTrait(u, "reveals") ) {
+    delete conds.hidden;
+    delete conds.invisible;
+    if ( u.spec.hidden ) u.revealed = true;
+  }
   u.vs = vs.size ? vs : null;
   u.mods = combineMods(mods);
   // (Against one creature: those bonuses with everything else it has, the best of each kind still counting; against a
@@ -385,6 +406,12 @@ export function conditionWeight(rules, conditions = {}) {
     const value = raw === true ? 1 : Number(raw) || 0;
     const custom = rules.conditionWeight?.(key, value);
     if ( typeof custom === "number" ) { w += custom; continue; }
+    // (The core's own: what its profile says it takes away, beyond its bonuses and penalties; none, if those are all.)
+    const p = PROFILES[key];
+    if ( p ) {
+      w += p.weight ? p.weight(value) : p.act === false ? 1 : p.mods ? 0 : 0.08 * value;
+      continue;
+    }
     if ( key === "incapacitated" || key === "controlled" ) w += 1;
     else if ( key === "immobilized" ) w += 0.25;
     else if ( key === "prone" ) w += 0.15;
@@ -531,7 +558,12 @@ export function outcomeWorth(run, by, t, outcome, { versus = null } = {}) {
       perRound -= 2 * out * (outcome.endsOnDamage || outcome.endsOnHarm ? 0.6 : 1);
       continue;
     }
-    const asMods = rules.conditionMods?.(k, v);
+    // (The core's own conditions, where the system says nothing of them: their bonuses and penalties, and what more
+    // they take away; the harm they do each turn.)
+    const own = rules.conditionMods?.(k, v) ? null : profileOf(t, k);
+    const asMods = rules.conditionMods?.(k, v) ?? profileMods(own, v, t.coreConds?.scale ?? 1);
+    if ( own && (own.weight || own.act === false) ) weighed[k] = v;
+    if ( own?.harm ) perRound -= harmMean(own, v);
     if ( outcome.onlyVs && by && by !== t ) {
       // Off-guard to its source alone (PF2e Feint): only the source's own blows land easier, and its sneak attacks
       // now find their mark. Nothing else about t changes.

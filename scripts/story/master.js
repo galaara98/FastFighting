@@ -23,7 +23,8 @@ export const CONDITIONS = Object.freeze([
   "lingeringHarm", "suffocating", "lazy", "prone", "grabbed", "restrained", "immobilized", "swallowed", "engulfed",
   "inCover", "flanked", "offGuard", "pressed", "surprised", "marked", "slowed", "hastened", "reeling", "stunned",
   "paralyzed", "petrified", "unconscious", "dying", "dead", "disarmed", "gearBroken", "weaponJammed", "outOfAmmo",
-  "overheated", "glitching", "suppressed", "adrift", "irradiated"
+  "overheated", "glitching", "suppressed", "adrift", "irradiated", "frozen", "infectious", "impregnated", "stasis",
+  "banished", "transformed", "unhealable"
 ]);
 
 /** Common names systems give the master list's conditions (a helper's storyCondition comes first). */
@@ -33,7 +34,7 @@ const SYNONYMS = Object.freeze({
   dominated: "controlled", undetected: "hidden", unnoticed: "hidden", dazed: "reeling", nauseated: "sickened",
   "on-fire": "burning", ablaze: "burning", vulnerable: "offGuard", untethered: "adrift", "in-cover": "inCover",
   asleep: "unconscious", sleep: "unconscious", turned: "fleeing", held: "restrained", doomed: "cursed", broken: "gearBroken",
-  encumbered: "slowed", bound: "restrained"
+  encumbered: "slowed", bound: "restrained", chilled: "slowed", outlined: "marked", diseased: "sickened"
 });
 
 /** Common names systems give the master list's maneuvers (their slugs), where they differ from its own. */

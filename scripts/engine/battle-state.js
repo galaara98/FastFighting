@@ -102,6 +102,7 @@ import { talkAffinity } from "./behavior/talk.js";
 import { goadAction } from "./behavior/goad.js";
 import { Turn } from "./turn.js";
 import { combineMods, netAdvantage } from "./mods.js";
+import { conditionSetup, barred, profiled } from "./conditions.js";
 import { degreeDistribution } from "./probability.js";
 import { combinePlaystyles } from "./playstyles.js";
 import { answersTo } from "../story/master.js";
@@ -316,6 +317,8 @@ export function createUnit(prep, p) {
   const u = {
     prep: p,
     handActions,
+    // (Which of the core's conditions its system gives its own meaning, and its roll's points: engine/conditions.js.)
+    coreConds: conditionSetup(prep.rules),
     spec: s,
     id: s.id,
     side: s.side,
@@ -420,7 +423,7 @@ export function regenOf(u) {
 }
 
 /** Can it regain hit points (not under a wound that won't close: the unhealable condition)? */
-export const canHeal = u => !(Number(u.conds?.unhealable) > 0);
+export const canHeal = u => !barred(u, "heal");
 
 /** Straight-line feet between two units' centers, or null without positions. */
 export function centerDistance(a, b) {
@@ -612,7 +615,8 @@ const inTheFight = u => u.active !== false && (u.side !== NEUTRAL_PARTY || u.aga
 export function canCommand(u) {
   if ( !u || !isStanding(u) || u.controlledBy ) return false;
   for ( const k in u.conds ?? {} ) if ( u.conds[k] > 0 && CANT_COMMAND.has(k) ) return false;
-  return true;
+  // (The core's own: choking, swallowed, frozen solid, banished ...)
+  return !barred(u, "command");
 }
 
 /** A group's chain of command, as given (or a side's lone leader): [{id, role, leadership}]. */
@@ -833,7 +837,8 @@ export function turnFor(run, u) {
   const rules = run.prep.rules;
   // "incapacitated" (asleep, held) is the engine's own: no actions at all.
   // Haste and the like give an action (a negative loss); Slow takes one.
-  const lost = (rules.modifiers?.actionsLost?.(u) ?? 0) + (u.conds.incapacitated ? 99 : 0) - (u.mods?.actions ?? 0);
+  // (The core's own that take every action: frozen solid, in stasis, banished, fascinated.)
+  const lost = (rules.modifiers?.actionsLost?.(u) ?? 0) + (u.conds.incapacitated || barred(u, "act") ? 99 : 0) - (u.mods?.actions ?? 0);
   return new Turn(rules, u, lost);
 }
 
@@ -919,6 +924,9 @@ export function bonusDamageParts(run, attacker, action, target, { advantage = 0,
 export function canMove(run, u) {
   if ( u.conds.immobilized || u.spec.hazard ) return false; // (a hazard stays where it is)
   if ( u.bound || u.boundBy ) return false; // (tied up: it can't go anywhere)
+  // (The core's own: frozen solid, in a gullet; adrift, only flying.)
+  if ( barred(u, "move") ) return false;
+  if ( profiled(u).some(([, , p]) => p.move === "fly") && !((u.spec.speeds?.fly ?? 0) > 0) ) return false;
   const grabber = u.grabbedBy ? run.byId.get(u.grabbedBy) : null;
   return !(grabber && isStanding(grabber));
 }

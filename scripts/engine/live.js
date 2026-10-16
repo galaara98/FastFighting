@@ -31,7 +31,7 @@ import { reactionsPerRound } from "./behavior/reactions.js";
 import { resolveTalk, applySway, aimOf, talkDC, stepsToConvince, bestPitch } from "./behavior/talk.js";
 import { expectOf } from "./behavior/bargain.js";
 import { rankedDesires, desireBand, want, levelOf, holdDesire, releaseDesire, forgetSides, styleOf } from "./behavior/desire.js";
-import { validConditionKey, CORE_CONDITIONS } from "./conditions.js";
+import { validConditionKey, CORE_CONDITIONS, conditionMost } from "./conditions.js";
 import { GOALS, holdGoal, goalsOf } from "./behavior/goals.js";
 import { isBound, release } from "./behavior/holds.js";
 import { afflictionFor } from "./behavior/afflictions.js";
@@ -948,7 +948,7 @@ export function networkOf(run) {
       if ( AS_RELATION.has(c.key) && has.relations.some(r => r.kind === c.key) ) continue;
       if ( c.onlyAffliction ) continue; // (its affliction's, shown below)
       const valued = VALUED.has(c.key) || c.value > 1;
-      const at = { key: c.key, value: c.value, valued, intensity: valued ? c.value : 1, most: valued ? null : 1, sheet: c.sheet };
+      const at = { key: c.key, value: c.value, valued, intensity: valued ? c.value : 1, most: valued ? conditionMost(c.key) : 1, sheet: c.sheet };
       const by = [...new Set(c.sources.map(x => x.byId).filter(id => id && id !== u.id && run.byId.has(id)))];
       for ( const id of by ) {
         const src = c.sources.find(x => x.byId === id);
@@ -1084,7 +1084,7 @@ export function liveAftermath(run) {
 /* -------------------------------------------- */
 
 /** A creature's state that's only a convenience (worked out again as needed) or the battle itself (its spec). */
-const UNIT_SKIP = new Set(["prep", "spec", "turn", "nearby", "nearbyKey", "pool", "sharedPools"]);
+const UNIT_SKIP = new Set(["prep", "spec", "turn", "nearby", "nearbyKey", "pool", "sharedPools", "coreConds"]);
 /** The run's own: the battle, the creatures (kept apart), the dice and anything worked out again as needed. */
 const RUN_SKIP = new Set(["prep", "units", "byId", "rng", "logTo", "trapLog", "acting", "live"]);
 const CACHE = /(Cache|CacheInner|Round|Geo|Depth)$/;

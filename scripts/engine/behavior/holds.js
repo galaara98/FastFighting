@@ -39,18 +39,22 @@
  *   rules.remedies(run, u)                 what else bothers u that an action ends (remediesOf)
  *   rules.persistentRemedy(run, u, type)   the system's own try at ending persistent harm of a type ({success, said}),
  *   rules.persistentRemedyCost(u, type)    and what it costs (default: one more recovery roll, for the basic action)
+ * The core's own conditions bring theirs (behavior/troubles.js): frozen solid, in a gullet or an ooze, a parasite to
+ * cut out (by first aid: a failed try makes it worse); and what a friend beside it can do for one that tries its own
+ * way (friendOnly: beating out the flames, pressing a bleed, hauling it back in): only friends take those.
  * Tied up, a creature can't move, nor use what needs hands (needsHands); talking it always can. What it could still do
  * from its bonds weighs against getting loose (desire.js holdWishes): one willing to suffer them may not struggle. And
  * any creature may bear what holds or hurts it, for a turn, as selfless as it is (bears: the world's slider).
  * Pure: no Foundry globals.
  */
 import { STATUS, IGNORE_TROUBLES } from "../../constants.js";
-import { typical, isMagical, liveTrait } from "../battle-state.js";
+import { typical, isMagical, liveTrait, canMove } from "../battle-state.js";
 import { createRng, deriveSeed } from "../rng.js";
 import { meanPart } from "../dice.js";
 import { rollCheck } from "../probability.js";
 import { recompute } from "./effects.js";
 import { normalizeCost } from "../turn.js";
+import { troubleHolds, troubleRemedies, setConditionValue } from "./troubles.js";
 
 /**
  * What a hold keeps in place with it (a grab or restraints: can't move), cleared when it's broken unless another hold
@@ -138,6 +142,8 @@ export function holdsOf(run, u) {
   for ( const h of (typeof rules.holds === "function" ? rules.holds(run, u) : null) ?? [] ) {
     if ( h?.key && !out.some(o => o.key === h.key) ) out.push({ byId: null, others: null, ...h, dc: dcOf(h.dc), system: true });
   }
+  // (The core's own conditions' holds.)
+  for ( const h of troubleHolds(run, u) ) if ( !out.some(o => o.key === h.key) ) out.push(h);
   return out;
 }
 
@@ -148,9 +154,18 @@ export function holdsOf(run, u) {
  */
 export function tryHold(run, who, hold, { freeing = false, held = null } = {}) {
   const rules = run.prep?.rules ?? {};
-  const own = typeof rules.breakFree === "function" ? rules.breakFree(run, who, hold, { freeing, held: held ?? (freeing ? null : who) }) : null;
+  const own = hold.core ? null : typeof rules.breakFree === "function" ? rules.breakFree(run, who, hold, { freeing, held: held ?? (freeing ? null : who) }) : null;
   if ( own ) return { ...own, success: !!own.success };
   if ( freeing && hold.others === "untie" ) return { success: true };
+  // (Cut out, pressed shut: first aid, not an escape. Botched, a parasite's the worse for it.)
+  if ( hold.via === "medicine" ) {
+    const mod = who.spec.firstAid?.mod ?? typical(rules, "skill", who.spec.level ?? 0);
+    const roll = rollCheck(rules, run.rng, mod, hold.dc, { kind: "check", roller: who, faces: who.spec.firstAid?.faces });
+    const success = roll.degree >= 2;
+    const on = held ?? who;
+    if ( !success && hold.worsens ) setConditionValue(on, hold.key, (Number(on.conds?.[hold.key]) || 1) + 1);
+    return { success, natural: roll.natural, mod, total: roll.total, dc: hold.dc, degree: roll.degree };
+  }
   const work = who.spec.escapeWork;
   if ( Number.isFinite(work?.mod) && Number.isFinite(hold.dc) ) {
     const roll = rollCheck(rules, run.rng, work.mod, hold.dc, { kind: "check", roller: who, faces: work.faces });
@@ -172,7 +187,7 @@ function hazardHold(run, h, key) {
  * Does breaking this hold go by the system's or the creature's own numbers (not the old even chance at a grab)? A
  * creature with none of them tries to get out of a grab at the start of every turn, as the engine always had it.
  */
-export const known = (run, u, hold) => !!hold?.hazard || typeof run.prep.rules.breakFree === "function" || (Number.isFinite(u.spec.escapeWork?.mod) && Number.isFinite(hold?.dc));
+export const known = (run, u, hold) => !!hold?.hazard || !!hold?.core || typeof run.prep.rules.breakFree === "function" || (Number.isFinite(u.spec.escapeWork?.mod) && Number.isFinite(hold?.dc));
 
 /**
  * The hold is broken: u is free of it (and of its condition, where that's all the hold was), and of what it kept in
@@ -205,6 +220,8 @@ export function release(run, u, hold) {
         });
       }
       if ( (hold.sheet || hold.system) && u.baseConds ) delete u.baseConds[hold.key];
+      // (One of the core's own: gone, wherever it came from.)
+      if ( hold.core ) setConditionValue(u, hold.key, 0);
   }
   if ( along.length ) {
     recompute(u);
@@ -257,6 +274,8 @@ export function remediesOf(run, u) {
   for ( const r of (typeof rules.remedies === "function" ? rules.remedies(run, u) : null) ?? [] ) {
     if ( r?.key && typeof r.try === "function" ) out.push({ annoyance: REMEDY.other, ...r, cost: normalizeCost(rules, r.cost ?? rules.basicAction ?? 1) });
   }
+  // (The core's own conditions': drop and roll, get air, reboot ...)
+  out.push(...troubleRemedies(run, u, canMove(run, u)));
   return out;
 }
 
@@ -285,3 +304,6 @@ export function bears(run, u) {
 
 /** The hold a friend would free first (bonds before anything else), or null. */
 export const freeable = (run, t) => holdsOf(run, t).find(h => h.others) ?? null;
+
+/** The holds it breaks itself (not what only a friend does for it: holds.js friendOnly). */
+export const ownHolds = (run, u) => holdsOf(run, u).filter(h => !h.friendOnly);

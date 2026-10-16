@@ -9,6 +9,7 @@
  */
 import { STATUS, TACTICAL, NEUTRAL_PARTY } from "../../constants.js";
 import { enemiesOf, isStanding, liveTier, liveTrait, movesNeeded, behaviorOf, heldOff, holdsBackThisRound, regenOf } from "../battle-state.js";
+import { hasTrait } from "../conditions.js";
 import { expectedDamage, hasUses, limited, threatOf, costOf, costUnits, unitsPerTurn } from "./evaluate.js";
 import { mainPool } from "../turn.js";
 import { styleWeight } from "../tactics.js";
@@ -140,7 +141,7 @@ function foesOf(run, u) {
   // (A system may say who can be pressed right now: Ironsworn, not a foe who has the initiative over it.)
   const can = run.prep.rules.canTarget;
   // (Walled off: behind a locked door it decided wasn't worth the trouble.)
-  return foes.filter(f => !feared(u, f) && !avoids(run, u, f) && !charmedBy(u, f) && !u.walledOff?.has(f.id) && !spared?.has(f.id) && !heldOff(run, u, f) && (!can || can(run, u, f)));
+  return foes.filter(f => !feared(u, f) && !avoids(run, u, f) && !charmedBy(u, f) && !hasTrait(f, "untouchable") && !u.walledOff?.has(f.id) && !spared?.has(f.id) && !heldOff(run, u, f) && (!can || can(run, u, f)));
 }
 
 /**

@@ -9,6 +9,7 @@ import { controlValue } from "./control.js";
 import { iwrOf } from "./effects.js";
 import { critExtraMean } from "./riders.js";
 import { castChanceOf } from "./casting.js";
+import { hasTrait } from "../conditions.js";
 
 function meanByType(parts) {
   const out = {};
@@ -244,6 +245,8 @@ export const limited = a => !!a.resource || Number.isFinite(a.uses);
 export function hasUses(u, action) {
   if ( u.lost?.has(action.id) ) return false; // a spell lost to a failed check (DCC)
   if ( (u.bound || u.boundBy) && u.handActions?.has(action.id) ) return false; // tied up: nothing that needs hands
+  // (In another shape: nothing that needs hands, and no spells.)
+  if ( hasTrait(u, "noGear") && (u.handActions?.has(action.id) || isMagical(action)) ) return false;
   // (resourceCost: what one use takes, a point by default: Daggerheart's 3 Hope for a class's Hope feature.)
   if ( action.resource ) return resourceLeft(u, action) >= (action.resourceCost ?? 1);
   if ( Number.isFinite(action.uses) ) return (u.uses[action.id] ?? 0) > 0;

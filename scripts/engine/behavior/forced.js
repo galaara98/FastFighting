@@ -19,6 +19,7 @@ import { TACTICAL } from "../../constants.js";
 import { edgeDistance, centerDistance, isStanding, liveTier, behaviorOf } from "../battle-state.js";
 import { meanPart, parseFormula } from "../dice.js";
 import { dangerOf } from "./traps.js";
+import { iwrOf } from "./effects.js";
 
 const STEP = 5;
 /** The eight ways out of a cell, and their names (a cell's blocked directions). */
@@ -166,7 +167,29 @@ export function forcedWorth(run, by, t, move) {
   if ( !path.feet && !path.fall ) return 0;
   const tier = liveTier(run, by);
   const sees = tier >= TACTICAL.COMPETENT ? 1 : tier === TACTICAL.INSTINCTIVE ? 0.5 : 0.2;
-  return (PLAIN + harmThere(run, t, path) * sees) * (1 + (behaviorOf(by).shoves ?? 0));
+  return (PLAIN + harmThere(run, t, path) * sees) * damageScale(run, by, t) * (1 + (behaviorOf(by).shoves ?? 0));
+}
+
+/**
+ * Harm in the system's own terms, against `by`'s own blows: what its best blow would come to on t, by the system's
+ * rules (rules.applyIwr: Daggerheart's Hit Points marked, a few for a hit), over its dice. 1 where they're the same.
+ */
+function damageScale(run, by, t) {
+  const rules = run.prep.rules;
+  let best = null;
+  let raw = 0;
+  for ( const a of by.prep?.offense ?? [] ) {
+    const n = mean(a.damage);
+    if ( n > raw ) {
+      raw = n;
+      best = a.damage;
+    }
+  }
+  if ( !best || !(raw > 0) || typeof rules.applyIwr !== "function" ) return 1;
+  const byType = {};
+  for ( const p of best ) byType[p.type] = (byType[p.type] ?? 0) + Math.max(0, meanPart(p));
+  const counted = Number(rules.applyIwr(iwrOf(t), byType));
+  return Number.isFinite(counted) && counted > 0 ? counted / raw : 1;
 }
 
 /** Who's beside it now, it moved: in reach, or no longer. */

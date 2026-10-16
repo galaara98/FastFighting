@@ -287,7 +287,7 @@ function baseLine(e) {
     }
     case "remedy": {
       // (What it tried to be rid of: harm of a kind, or the system's own.)
-      const what = e.damageType ? damageType(e.damageType) : e.label ?? e.what;
+      const what = e.condition ? holdName(e.condition) : e.damageType ? damageType(e.damageType) : e.label ?? e.what;
       return t(e.success ? "Remedy" : "RemedyFails", { actor: e.actor, what, said: e.said ? ` · ${e.said}` : "" });
     }
     case "forced": {
@@ -323,7 +323,15 @@ function baseLine(e) {
     case "bound": return e.by ? t("Bound", { actor: e.actor, by: e.by }) : t("BoundAlone", { actor: e.actor });
     case "parley": return t("Parley", a);
     case "peacekeep": return t("Peacekeep", a);
-    case "persistent": return t("Persistent", { actor: e.actor, damage: damage(e.amount, e.damageType) });
+    case "persistent":
+      // (What a condition of the core's own does each turn: a fire, a bleed, radiation.)
+      if ( e.condition ) return t("PersistentCondition", { actor: e.actor, damage: damage(e.amount, e.damageType), what: holdName(e.condition) });
+      return t("Persistent", { actor: e.actor, damage: damage(e.amount, e.damageType) });
+    case "letGo": return t("LetGo", { actor: e.actor, what: holdName(e.hold), by: e.by ?? "" });
+    case "worsens": return t("Worsens", { actor: e.actor, what: holdName(e.condition), value: e.value, most: e.most });
+    case "burst": return t("Burst", { actor: e.actor, what: holdName(e.condition) });
+    case "suffocates": return t("Suffocates", { actor: e.actor });
+    case "spread": return t("Spread", { actor: e.actor, by: e.by ?? "", what: holdName(e.condition), roll: e.natural !== undefined ? ` · ${dice(e.natural, e.mod, e.total, e.dc, t("DC"))}` : "" });
     case "prone": return t("Prone", a);
     case "rally": return t("Rally", { actor: e.actor, allies: listJoin(e.with ?? []) });
     case "recharge": return t("Recharge", { actor: e.actor, action: e.action });

@@ -5984,5 +5984,107 @@
     "{actor} lands somewhere that hurts.",
     "Where {actor} lands, the ground itself bites.",
     "{actor} comes down in the worst possible place."
+  ],
+  "condition.frozen": [
+    "Ice closes over {actor}, locking them in place.",
+    "{actor} freezes solid, rimed in frost from head to foot.",
+    "A shell of ice seals {actor} where they stand."
+  ],
+  "condition.frozen.amazing": [
+    "{actor} is entombed in a block of clear ice, eyes still wide."
+  ],
+  "condition.frozen.terrible": [
+    "Frost creeps over {actor}, but cracks as they shrug it off."
+  ],
+  "condition.infectious": [
+    "{actor} is sick with something catching.",
+    "Fever takes {actor}, and whoever stands close may be next.",
+    "{actor} coughs, and the contagion goes looking for a new host."
+  ],
+  "condition.infectious.amazing": [
+    "{actor} is crawling with contagion; every breath near them is a risk."
+  ],
+  "condition.infectious.terrible": [
+    "{actor} picks up only a trace of the sickness."
+  ],
+  "condition.impregnated": [
+    "Something is planted inside {actor}, and it is growing.",
+    "{actor} doubles over as something takes root within.",
+    "A parasite settles deep in {actor}, waiting."
+  ],
+  "condition.impregnated.amazing": [
+    "{actor} feels it squirm already: it will not wait long."
+  ],
+  "condition.impregnated.terrible": [
+    "Whatever got into {actor} is weak, and slow to grow."
+  ],
+  "condition.stasis": [
+    "{actor} stops dead, held outside of time.",
+    "Time folds around {actor}, freezing them mid-motion.",
+    "{actor} hangs still, untouched and untouchable."
+  ],
+  "condition.stasis.amazing": [
+    "{actor} is sealed in a perfect stillness that nothing can reach."
+  ],
+  "condition.stasis.terrible": [
+    "{actor} flickers in and out of stillness, barely held."
+  ],
+  "condition.banished": [
+    "{actor} vanishes, sent somewhere far from here.",
+    "{actor} is torn out of the world and gone.",
+    "With a snap, {actor} is cast out of the fight."
+  ],
+  "condition.banished.amazing": [
+    "{actor} is flung so far away they may never find the way back."
+  ],
+  "condition.banished.terrible": [
+    "{actor} blinks away, only to waver at the edge of returning."
+  ],
+  "condition.transformed": [
+    "{actor} twists into a new and unfamiliar shape.",
+    "{actor}'s body warps into something else entirely.",
+    "Where {actor} stood, a strange creature blinks in confusion."
+  ],
+  "condition.transformed.amazing": [
+    "{actor} is remade completely, with no trace of their old self."
+  ],
+  "condition.transformed.terrible": [
+    "{actor} half-changes, still clumsy in a body caught between shapes."
+  ],
+  "condition.unhealable": [
+    "{actor}'s wounds will not close.",
+    "A rot settles into {actor}'s wounds, and no mending takes.",
+    "{actor} feels their body refuse to heal."
+  ],
+  "condition.unhealable.amazing": [
+    "{actor}'s flesh blackens around every wound, beyond any healing."
+  ],
+  "condition.unhealable.terrible": [
+    "A faint chill lingers in {actor}'s wounds, but it does not last."
+  ],
+  "event.burst": [
+    "Something tears its way out of {actor}.",
+    "{actor} convulses, and what grew inside bursts free.",
+    "With a wet crack, the thing inside {actor} breaks loose."
+  ],
+  "event.suffocates": [
+    "{actor} claws at their throat and goes limp.",
+    "Out of air, {actor} slumps and falls still.",
+    "{actor} gasps one last time and collapses."
+  ],
+  "event.spread": [
+    "{actor} catches the sickness from {by}.",
+    "Too close to {by}, {actor} starts to cough.",
+    "The contagion jumps from {by} to {actor}."
+  ],
+  "event.freed": [
+    "{actor} hauls {target} free.",
+    "{actor} works {target} loose.",
+    "With {actor}'s help, {target} gets out of it."
+  ],
+  "event.letGo": [
+    "As {by} falls, {actor} spills free.",
+    "{actor} tumbles out of {by}, alive.",
+    "{by} goes down, and {actor} breaks out at last."
   ]
 }

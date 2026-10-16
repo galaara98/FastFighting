@@ -19,6 +19,7 @@
  */
 import { TACTICAL, OPENING, NEUTRAL_PARTY, clamp } from "../../constants.js";
 import { waiting } from "./bargain.js";
+import { barred } from "../conditions.js";
 import { isStanding, areEnemies, liveTrait, liveTier, behaviorOf, typical, command, commandOf, wish, wishWins } from "../battle-state.js";
 import { isNeutral, feud, annoyedBy } from "./neutral.js";
 
@@ -43,7 +44,8 @@ const TEMPER = { impatient: 2.5, cruel: 2, instigator: 2, brawler: 1.8, speedRun
 /** Can this creature take part in a conversation at all? */
 export function canTalk(u) {
   const s = u.spec.social;
-  return !!s && !s.mindless && (s.languages?.length ?? 0) > 0;
+  // (Not choking, nor in a rage, nor sealed in an ooze: the core's own conditions that say so.)
+  return !!s && !s.mindless && (s.languages?.length ?? 0) > 0 && !barred(u, "talk");
 }
 
 /** Would this creature rather settle things with words? Its own answer wins; otherwise its knack for it. */

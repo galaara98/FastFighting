@@ -18,6 +18,7 @@ export { TALK_KINDS } from "./engine/behavior/talk.js";
 export { MORALE } from "./engine/behavior/morale.js";
 export { dropCondition, applyOutcome, tauntProof, withoutTaunt } from "./engine/behavior/effects.js";
 export { simpleAffliction } from "./engine/behavior/afflictions.js";
+export { CORE_CONDITIONS, CONDITION_SYNONYMS, coreKeyFor } from "./engine/conditions.js";
 export { edgeDistance, behaviorOf, isStanding } from "./engine/battle-state.js";
 export { goadLuck } from "./engine/behavior/goad.js";
 export { bestReactionStrike } from "./engine/behavior/reactions.js";

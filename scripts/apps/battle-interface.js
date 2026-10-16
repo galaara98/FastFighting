@@ -54,7 +54,12 @@ const ICONS = Object.freeze({
     unconscious: "bed", asleep: "moon", incapacitated: "ban", confused: "question", dazed: "star-half-stroke", fleeing: "person-running",
     turned: "person-walking-arrow-right", bound: "hands-bound", poisoned: "skull-crossbones", vulnerable: "heart-crack", disarmed: "hand", controlled: "hat-wizard",
     charmed: "heart", dazzled: "sun", doomed: "skull", wounded: "droplet", drained: "droplet-slash", fatigued: "battery-quarter", stupefied: "brain",
-    quickened: "bolt", concealed: "cloud", undetected: "user-secret", unnoticed: "user-secret", observed: "eye", encumbered: "weight-hanging", broken: "heart-crack"
+    quickened: "bolt", concealed: "cloud", undetected: "user-secret", unnoticed: "user-secret", observed: "eye", encumbered: "weight-hanging", broken: "heart-crack",
+    outlined: "lightbulb", fascinated: "eye", enraged: "face-angry", cursed: "book-skull", chilled: "temperature-low", frozen: "icicles", burning: "fire",
+    bleeding: "droplet", corroding: "flask", diseased: "virus", unhealable: "heart-circle-xmark", hastened: "bolt", gearBroken: "screwdriver-wrench",
+    glitching: "microchip", overheated: "temperature-high", suppressed: "person-rifle", irradiated: "radiation", infectious: "virus-covid",
+    impregnated: "bug", suffocating: "lungs", adrift: "user-astronaut", swallowed: "worm", engulfed: "droplet", stasis: "clock", banished: "door-open",
+    transformed: "paw"
   },
   relation: { grabbed: "hand-back-fist", goaded: "bullhorn", controlled: "hat-wizard", bound: "link", exposedTo: "crosshairs", marked: "bullseye", shuns: "comment-slash" },
   attitude: {
@@ -528,7 +533,7 @@ function networkView(b, current, focusId) {
       });
     } else if ( l.type === "condition" ) {
       const valued = l.valued || valuedHere.has(l.key);
-      const most = valued ? null : 1;
+      const most = valued ? l.most ?? null : 1;
       push(l, {
         cls: `is-condition w-${Math.min(5, l.intensity)}`, icon: icon("condition", l.key), text: valued ? String(l.value) : "",
         tip: `${name(l.to)}: ${condLabel(l.key)}${valued ? ` ${l.value}` : ""} · ${fmt("FASTFIGHTING.Battle.From", { name: name(l.from) })}${lasts(l.rounds)} · ${kept(l.key, l.to)}`,
@@ -577,7 +582,7 @@ function networkView(b, current, focusId) {
         id: `c:${m.key}`, cls: `is-condition ${m.sheet ? "is-sheet" : ""}`, icon: icon("condition", m.key), text: valued ? String(m.value) : "",
         tip: `${condLabel(m.key)}${valued ? ` ${m.value}` : ""} · ${kept(m.key, m.on)}`,
         adjust: { t: "cond", id: m.on, key: m.key, byId: null, intensity: valued ? m.value : 1 },
-        ...stepsOf(valued ? m.value : 1, valued ? null : 1)
+        ...stepsOf(valued ? m.value : 1, valued ? m.most ?? null : 1)
       });
     } else if ( m.type === "affliction" ) {
       markOn(m.on, {
