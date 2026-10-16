@@ -152,7 +152,7 @@ export const rollOf = got => Object.fromEntries(["natural", "mod", "total", "dc"
 
 /** u frees t of a hold (untying it, or as the system says), or tries to. */
 export function freeFriend(run, u, t, hold, say) {
-  const got = tryHold(run, u, hold, { freeing: true });
+  const got = tryHold(run, u, hold, { freeing: true, held: t });
   if ( got.success ) release(run, t, hold);
   say(u, { type: "free", target: t.spec.name, targetId: t.id, hold: hold.key, success: got.success, ...rollOf(got), ...(got.said?.text ? { said: got.said.text } : {}) });
 }

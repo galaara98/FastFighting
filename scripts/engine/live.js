@@ -20,7 +20,7 @@
 import { STATUS, SWAY, NEUTRAL_PARTY, clamp } from "../constants.js";
 import {
   prepareBattle, beginRun, beginRound, playTurn, afterTurn, endRun, startTurn, noteCommand, log, notice, settleSides,
-  breakOnHarm, noteHarm, noteFall, noteHeal, captureUnit, strikeOutOfTurn, settleAftermath
+  breakOnHarm, noteHarm, noteFall, noteHeal, captureUnit, strikeOutOfTurn, settleAftermath, rethink
 } from "./simulator.js";
 import { createRun, createUnit, isStanding, areEnemies, edgeDistance } from "./battle-state.js";
 import { threats } from "./behavior/reactions.js";
@@ -30,7 +30,7 @@ import { recompute, applyOutcome } from "./behavior/effects.js";
 import { reactionsPerRound } from "./behavior/reactions.js";
 import { resolveTalk, applySway, aimOf, talkDC, stepsToConvince, bestPitch } from "./behavior/talk.js";
 import { expectOf } from "./behavior/bargain.js";
-import { rankedDesires, desireBand, want, levelOf, holdDesire, releaseDesire } from "./behavior/desire.js";
+import { rankedDesires, desireBand, want, levelOf, holdDesire, releaseDesire, forgetSides, styleOf } from "./behavior/desire.js";
 import { validConditionKey, CORE_CONDITIONS } from "./conditions.js";
 import { GOALS, holdGoal, goalsOf } from "./behavior/goals.js";
 import { isBound, release } from "./behavior/holds.js";
@@ -225,7 +225,7 @@ export function observe(run, u, e, harmers = new Map()) {
       const held = t.grudges?.get(u.id);
       if ( held && !held.provoked ) {
         held.provoked = true; // they took from me, and now this
-        want(t, "hurt", u.id, 60);
+        want(t, "hurt", u.id, 60 * styleOf(t).retaliate);
       }
       u.revealed = true;
       run.blood = true;
@@ -671,6 +671,32 @@ export function setRelation(run, id, { kind, byId, rounds = null, level = 2 } = 
 }
 
 /**
+ * Is it the players' to run? A player's character (run.live.players), or one under a player's character's control (a
+ * charm, domination): the player decides for it as long as the control lasts.
+ */
+export function playerRuns(run, u) {
+  const players = run.live?.players;
+  if ( !players || !u ) return false;
+  return players.has(u.id) || (!!u.controlledBy && players.has(u.controlledBy));
+}
+
+/**
+ * The GM moves a creature to another side (or to none, NEUTRAL_PARTY): it joins it (neutral.js joinSide, standAside),
+ * its leader is its new side's, and what it wants is worked out again: what no longer fits goes (desire.js
+ * forgetSides), its own and everyone's toward it, and each creature in the fight thinks again (simulator.js rethink).
+ * One under someone's control fights for its controller's side whatever the GM says, and wants what its controller
+ * wants (desire.js puppetWishes).
+ */
+export function setSide(run, id, side) {
+  const u = run.byId.get(id);
+  if ( !u || u.side === side || (side !== NEUTRAL_PARTY && !run.prep.sides[side]) ) return false;
+  if ( !applyFact(run, { kind: "side", id, side }) ) return false;
+  forgetSides(run, u);
+  for ( const o of run.units ) rethink(run, o);
+  return true;
+}
+
+/**
  * The GM's word on one of a creature's goals (behavior/goals.js): {kind, thingId, level}. 0 sets it aside: a door given
  * up on, a trap forgotten, steady again (no longer thinking of running). A trap's other level is knowing it's there;
  * running's, thinking of it (1) or running now (2). Any other goal is held at that level until handed back (level null).
@@ -841,10 +867,10 @@ export function networkOf(run) {
   const marks = [];
   const things = new Map();
   const setAside = [];
-  const players = run.live?.players ?? new Set();
   for ( const u of run.units ) {
-    creatures.push({ id: u.id, status: u.status, side: u.side, active: !!u.active, aware: !!u.aware, pos: u.pos ? { x: u.pos.x, y: u.pos.y } : null, hazard: !!u.spec.hazard, player: players.has(u.id) });
-    const minded = !players.has(u.id);
+    const player = playerRuns(run, u);
+    creatures.push({ id: u.id, status: u.status, side: u.side, active: !!u.active, aware: !!u.aware, pos: u.pos ? { x: u.pos.x, y: u.pos.y } : null, hazard: !!u.spec.hazard, player, controlledBy: u.controlledBy ?? null });
+    const minded = !player;
     // What it wants of others (and of itself).
     if ( minded ) {
       for ( const d of rankedDesires(run, u) ) {

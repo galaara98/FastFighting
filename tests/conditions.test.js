@@ -10,6 +10,7 @@ import { applyOutcome } from "../scripts/engine/behavior/effects.js";
 import { diffAll } from "../scripts/engine/changes.js";
 import { levelOf, conditionWishes } from "../scripts/engine/behavior/desire.js";
 import { moraleStress } from "../scripts/engine/behavior/morale.js";
+import { liveTrait } from "../scripts/engine/battle-state.js";
 import { STATUS } from "../scripts/constants.js";
 import { pf2eRules } from "./fixtures/three-action-rules.js";
 import { parseFormula } from "../scripts/engine/dice.js";
@@ -146,16 +147,22 @@ describe("conditions toward someone", () => {
 });
 
 describe("conditions into behaviour", () => {
-  test("frightened by someone: it would rather keep away from them, the worse the more; fleeing from them: it runs", () => {
+  test("frightened by someone: it would rather keep away from them, the worse the more (the bold less); fleeing from them: it runs", () => {
     const run = start();
     const orc = run.byId.get("orc");
+    const nerve = (50 - liveTrait(run, orc, "brave")) * 0.3;
     applyOutcome(orc, { conditions: { frightened: 1 }, rounds: 3 }, "valeros", { id: "valeros.scare", name: "Scare" });
     conditionWishes(run, orc);
-    expect(levelOf(orc, "avoid", "valeros")).toBe(35);
+    expect(levelOf(orc, "avoid", "valeros")).toBeCloseTo(35 + nerve);
     orc.desire.logic.clear();
     applyOutcome(orc, { conditions: { frightened: 3 }, rounds: 3 }, "valeros", { id: "valeros.scare", name: "Scare" });
     conditionWishes(run, orc);
-    expect(levelOf(orc, "avoid", "valeros")).toBe(65);
+    expect(levelOf(orc, "avoid", "valeros")).toBeCloseTo(65 + nerve);
+    // (Fearful, more so.)
+    orc.desire.logic.clear();
+    orc.prep.traits.brave = 10;
+    conditionWishes(run, orc);
+    expect(levelOf(orc, "avoid", "valeros")).toBeGreaterThan(65 + nerve);
     orc.desire.logic.clear();
     applyOutcome(orc, { conditions: { fleeing: 1 }, rounds: 1 }, "kyra", { id: "kyra.fear", name: "Fear" });
     conditionWishes(run, orc);

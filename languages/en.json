@@ -211,6 +211,10 @@
       "playersRunPCs": {
         "Name": "Players run their characters",
         "Hint": "Do it For Real Now plays the battle on the combat tracker: players take their own turns, FastFighting plays everyone else. Off: FastFighting plays every turn. Each battle can say otherwise."
+      },
+      "ignoreTroubles": {
+        "Name": "Selfless creatures bear what holds or hurts them (%)",
+        "Hint": "Each turn a creature held fast, prone, or hurting (on fire, bleeding) would try to be rid of it as much as it bothers it. A fully selfless one that doesn't stop to calculate bears it instead, on a hidden d100 at or under this (default 29), and keeps at what it wants; the more self-serving or calculating it is, the smaller its share of this. Never what would kill it. 0: nobody bears it; 100: the selfless always do."
       }
     },
     "Lean": {
@@ -1438,7 +1442,8 @@
         "downed": "At one already down",
         "stuckBonds": "Stuck in Bonds",
         "untie": "Untie",
-        "untieFails": "Untie Fails"
+        "untieFails": "Untie Fails",
+        "shakeOffFails": "Shake Off Fails"
       },
       "APrice": "a price",
       "Desire": "{intensity} {verb}",
@@ -1500,7 +1505,8 @@
         "rob": "Rob",
         "bolstered": "Be bolstered by",
         "breakFree": "Break free",
-        "free": "Free"
+        "free": "Free",
+        "rid": "Be rid of it"
       },
       "Level": {
         "passing": "Passing",
@@ -1904,7 +1910,10 @@
       "StuckIn": "{actor} can't break free ({what}){roll}",
       "Free": "{actor} frees {target}{roll}",
       "FreeFails": "{actor} can't free {target}{roll}",
-      "BoundAlone": "{actor} comes to, tied up"
+      "BoundAlone": "{actor} comes to, tied up",
+      "DesireRid": "be rid of it",
+      "Remedy": "{actor} is rid of {what}{said}",
+      "RemedyFails": "{actor} tries to be rid of {what}, and can't{said}"
     },
     "DamageType": {
       "bludgeoning": "bludgeoning",

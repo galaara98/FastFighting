@@ -3710,6 +3710,16 @@
    "commit": null,
    "hash": "806c20d1d565"
   },
+  "core:FASTFIGHTING.Desire.Kind.rid": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Desire.Kind.rid",
+   "area": "core/Desire",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "7e25f9a649e7"
+  },
   "core:FASTFIGHTING.Desire.Kind.rob": {
    "repo": "core",
    "file": "languages/en.json",
@@ -6033,6 +6043,16 @@
    "commit": null,
    "hash": "680dce633db1"
   },
+  "core:FASTFIGHTING.Log.DesireRid": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.DesireRid",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "877387556030"
+  },
   "core:FASTFIGHTING.Log.DesireRob": {
    "repo": "core",
    "file": "languages/en.json",
@@ -7819,6 +7839,26 @@
    "date": null,
    "commit": null,
    "hash": "99129338bc12"
+  },
+  "core:FASTFIGHTING.Log.Remedy": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.Remedy",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "bf18adec0e50"
+  },
+  "core:FASTFIGHTING.Log.RemedyFails": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.RemedyFails",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "4c9c5794a240"
   },
   "core:FASTFIGHTING.Log.RetreatCall": {
    "repo": "core",
@@ -13269,6 +13309,26 @@
    "commit": null,
    "hash": "1f9bb07c0341"
   },
+  "core:FASTFIGHTING.Settings.ignoreTroubles.Hint": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Settings.ignoreTroubles.Hint",
+   "area": "core/Settings",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "07eea73c1686"
+  },
+  "core:FASTFIGHTING.Settings.ignoreTroubles.Name": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Settings.ignoreTroubles.Name",
+   "area": "core/Settings",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "497d26838e6b"
+  },
   "core:FASTFIGHTING.Settings.includeHidden.Hint": {
    "repo": "core",
    "file": "languages/en.json",
@@ -17949,6 +18009,16 @@
    "date": null,
    "commit": null,
    "hash": "c3e586633357"
+  },
+  "core:FASTFIGHTING.Story.Part.shakeOffFails": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Story.Part.shakeOffFails",
+   "area": "core/Story",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "a7006f4f01bf"
   },
   "core:FASTFIGHTING.Story.Part.shareLore": {
    "repo": "core",
@@ -33235,7 +33305,18 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "4b5c94296348"
+   "hash": "4b5c94296348",
+   "changed": true
+  },
+  "core:story:event.shakeOffFails": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "event.shakeOffFails",
+   "area": "core/story.event",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "02ae689cfbae"
   },
   "core:story:event.shareLore": {
    "repo": "core",
@@ -37427,6 +37508,26 @@
    "commit": null,
    "hash": "f2d1dab08310"
   },
+  "daggerheart:FFDAGGERHEART.BreakFree.Plain": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.BreakFree.Plain",
+   "area": "daggerheart/BreakFree",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "3cb9878f76a8"
+  },
+  "daggerheart:FFDAGGERHEART.BreakFree.Trait": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.BreakFree.Trait",
+   "area": "daggerheart/BreakFree",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "6f29afabd49d"
+  },
   "daggerheart:FFDAGGERHEART.Condition.hidden": {
    "repo": "daggerheart",
    "file": "languages/en.json",
@@ -38430,6 +38531,26 @@
    "date": null,
    "commit": null,
    "hash": "fa1c27ebc5dc"
+  },
+  "daggerheart:FFDAGGERHEART.Settings.tiedStopsSpells.Hint": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Settings.tiedStopsSpells.Hint",
+   "area": "daggerheart/Settings",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "f1b01473fa24"
+  },
+  "daggerheart:FFDAGGERHEART.Settings.tiedStopsSpells.Name": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Settings.tiedStopsSpells.Name",
+   "area": "daggerheart/Settings",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "f57f97acdaee"
   },
   "daggerheart:FFDAGGERHEART.Spotlight.Fear": {
    "repo": "daggerheart",
@@ -39932,6 +40053,26 @@
    "date": null,
    "commit": null,
    "hash": "fa1c27ebc5dc"
+  },
+  "dcc:FFDCC.Settings.tiedStopsSpells.Hint": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.Settings.tiedStopsSpells.Hint",
+   "area": "dcc/Settings",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "b118dc36bae5"
+  },
+  "dcc:FFDCC.Settings.tiedStopsSpells.Name": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.Settings.tiedStopsSpells.Name",
+   "area": "dcc/Settings",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "f57f97acdaee"
   },
   "dcc:FFDCC.Spellburn": {
    "repo": "dcc",
@@ -42019,6 +42160,36 @@
    "date": null,
    "commit": null,
    "hash": "3cb968a98208"
+  },
+  "ironsworn:FFIRONSWORN.Hold.Miss": {
+   "repo": "ironsworn",
+   "file": "languages/en.json",
+   "key": "FFIRONSWORN.Hold.Miss",
+   "area": "ironsworn/Hold",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "a9cfb8089f02"
+  },
+  "ironsworn:FFIRONSWORN.Hold.Strong": {
+   "repo": "ironsworn",
+   "file": "languages/en.json",
+   "key": "FFIRONSWORN.Hold.Strong",
+   "area": "ironsworn/Hold",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "59930cf3c760"
+  },
+  "ironsworn:FFIRONSWORN.Hold.Weak": {
+   "repo": "ironsworn",
+   "file": "languages/en.json",
+   "key": "FFIRONSWORN.Hold.Weak",
+   "area": "ironsworn/Hold",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "b8e8be5618d9"
   },
   "ironsworn:FFIRONSWORN.Label": {
    "repo": "ironsworn",

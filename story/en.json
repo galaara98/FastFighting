@@ -3268,11 +3268,9 @@
     "{actor} insists {target} be taken alive."
   ],
   "event.shakeOff": [
-    "{actor} shakes off {effect}.",
-    "{actor} fights free of being {effect}.",
-    "{actor} throws off {effect}.",
-    "{actor} is no longer {effect}.",
-    "{actor} breaks out of it: no longer {effect}."
+    "{actor} shakes it off.",
+    "{actor} takes a moment and is rid of it.",
+    "{actor} gets the better of what was troubling them."
   ],
   "event.controlImmune": [
     "{actor}'s {weapon} means nothing to {target}.",
@@ -5928,5 +5926,10 @@
     "{actor} claws at {target}'s bonds, but they won't come loose.",
     "{actor} can't get the knots off {target} in time.",
     "{actor} tries to free {target}, and fails."
+  ],
+  "event.shakeOffFails": [
+    "{actor} tries to shake it off, and can't.",
+    "{actor} struggles with it, to no avail.",
+    "Whatever {actor} does, it won't let go of them."
   ]
 }

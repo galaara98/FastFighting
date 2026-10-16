@@ -41,7 +41,7 @@
  */
 import { STATUS, NEUTRAL_PARTY, TACTICAL, SWAY, clamp } from "../../constants.js";
 import { isStanding, isUp, edgeDistance, liveTrait, liveTier, commandOf, dropAmbition, areEnemies, heldOff, wish } from "../battle-state.js";
-import { levelOf, want, think, setLean, allDesires } from "./desire.js";
+import { levelOf, want, think, setLean, allDesires, styleOf } from "./desire.js";
 import { perceives } from "./senses.js";
 import { prefersTalk, canTalk, impatience } from "./standoff.js";
 
@@ -184,8 +184,9 @@ export function feud(run, u, n, say) {
   n.aware = true;
   n.joinedRound ??= run.round;
   n.targetId = null;
-  want(u, "hurt", n.id, 40);
-  want(n, "hurt", u.id, 30);
+  // (As each repays a blow.)
+  want(u, "hurt", n.id, 40 * styleOf(u).retaliate);
+  want(n, "hurt", u.id, 30 * styleOf(n).retaliate);
   run.geo = (run.geo ?? 0) + 1; // friends and foes have changed
   say(u, { type: "neutral", what: "feud", target: n.spec.name, targetId: n.id });
   return true;
@@ -319,7 +320,7 @@ export function turnOn(run, n, by, why, say, victim = null) {
   n.aware = true;
   n.joinedRound ??= run.round;
   n.targetId = null;
-  want(n, "hurt", by.id, 40);
+  want(n, "hurt", by.id, 40 * styleOf(n).retaliate);
   run.geo = (run.geo ?? 0) + 1; // friends and foes have changed
   const sideLabel = run.prep.sides[by.side]?.label ?? by.side;
   say(n, {

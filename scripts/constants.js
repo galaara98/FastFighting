@@ -99,6 +99,11 @@ export const CONCEDE_LUCK = 39; // a PC talked into giving up an item loses it o
 export const THEFT_LUCK = 29;   // a thief who beats a PC's defenses still needs 29 or less
 export const EXECUTE_LUCK = 39; // a creature that wants to finish off a PC at 0 HP goes ahead only on 39 or less
 export const TRAP_LUCK = 59;    // a trap avoider spots a hazard only on 59 or less
+/**
+ * A fully selfless creature, held fast or hurting, bears it this turn (doesn't try to be rid of it) on a d100 at or under
+ * this; the more self-serving or calculating it is, the less of it ("ignoreTroubles": behavior/holds.js bears).
+ */
+export const IGNORE_TROUBLES = 29;
 /** A playstyle's taunt that gets through takes hold only on a d100 at or under this times its share ("tauntLuck"). */
 export const TAUNT_LUCK = 42;
 /** An enemy talked into changing sides (standing aside) goes through with it only on a d100 under this ("switchLuck"). */

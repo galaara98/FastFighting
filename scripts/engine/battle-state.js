@@ -93,6 +93,7 @@
  * @property {object} options                         {maxRounds, downedModel, positioning, morale, leadership, initiativeOrder, surpriseSide}
  */
 import { keepClear } from "./behavior/traps.js";
+import { needsHands } from "./behavior/holds.js";
 import { STATUS, NEUTRAL_PARTY, AVOID_KILLING, clamp, fudged, tacticalTier, TRAITS } from "../constants.js";
 import { meanPart } from "./dice.js";
 import { typicalValue } from "./tactics.js";
@@ -308,8 +309,11 @@ export function createUnit(prep, p) {
   const resources = { ...(s.resources ?? {}) };
   const uses = {};
   for ( const a of s.actions ) if ( Number.isFinite(a.uses) ) uses[a.id] = a.uses;
+  // (What it can't do tied up: behavior/holds.js needsHands.)
+  const handActions = new Set(s.actions.filter(a => needsHands(prep.rules, a)).map(a => a.id));
   const u = {
     prep: p,
+    handActions,
     spec: s,
     id: s.id,
     side: s.side,
@@ -898,6 +902,7 @@ export function bonusDamageParts(run, attacker, action, target, { advantage = 0,
 /** Can u move at all (not grabbed by someone standing, not immobilized)? */
 export function canMove(run, u) {
   if ( u.conds.immobilized || u.spec.hazard ) return false; // (a hazard stays where it is)
+  if ( u.bound || u.boundBy ) return false; // (tied up: it can't go anywhere)
   const grabber = u.grabbedBy ? run.byId.get(u.grabbedBy) : null;
   return !(grabber && isStanding(grabber));
 }

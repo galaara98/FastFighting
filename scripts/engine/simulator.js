@@ -18,7 +18,7 @@ import {
 import { sampleRunTactics } from "./playstyles.js";
 import { chooseTarget, bestOptionVs, scoreTargets } from "./behavior/targeting.js";
 import { decideHeal, rescueOption, healScores } from "./behavior/healing.js";
-import { initDesires, newTurn, goaded, think, want, thwart, relieve, levelOf, mind, thoughts as thoughtsOf, levelsFromScores, listen, heed, remember, styleWants, styleOf, follow, conditionWishes, holdWishes, scheme, partyWants, CHOICE_LEVEL } from "./behavior/desire.js";
+import { initDesires, newTurn, goaded, think, want, thwart, relieve, levelOf, mind, thoughts as thoughtsOf, levelsFromScores, listen, heed, remember, styleWants, styleOf, follow, conditionWishes, holdWishes, puppetWishes, actsHeld, scheme, partyWants, CHOICE_LEVEL } from "./behavior/desire.js";
 import { prepareDoors, doorStates, doorAhead, atDoor, doorPlan, patienceFor, doorDamage } from "./behavior/doors.js";
 import { heldGoal } from "./behavior/goals.js";
 import { checkMorale, standsGround, callRetreat, rallies, MORALE } from "./behavior/morale.js";
@@ -39,7 +39,7 @@ import { decideBuff, aidScores, checkDc } from "./behavior/support.js";
 import { perceives } from "./behavior/senses.js";
 import { stealChance, theftTarget, theftPlan, attemptTheft, robbable } from "./behavior/theft.js";
 import { fallenWishes, decideFallen, bind, rob, stayBound, takesPrisoners, robsTheFallen, freeFriend, rollOf } from "./behavior/fallen.js";
-import { holdsOf, known, tryHold, release, escapeCost, isBound } from "./behavior/holds.js";
+import { holdsOf, known, tryHold, release, escapeCost, isBound, remediesOf, bears } from "./behavior/holds.js";
 import { reactionsPerRound, threats, takesSafeWay } from "./behavior/reactions.js";
 import { isNeutral, crossed, caughtInArea, refreshLeans, truceWith, truceBreaks, turnOn, settleTruce, peaceDesires, seemsFoe, meddling, inFray, fighting, dislikesViolence, annoyedBy, ANNOYED } from "./behavior/neutral.js";
 import { normalizeCost } from "./turn.js";
@@ -1032,7 +1032,7 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
     const held = target.grudges?.get(u.id);
     if ( held && !held.provoked ) {
       held.provoked = true; // they took from me, and now this
-      want(target, "hurt", u.id, 60);
+      want(target, "hurt", u.id, GRUDGE.provoked * styleOf(target).retaliate);
     }
 
     const common = logging ? {
@@ -2119,6 +2119,29 @@ export function noteCommand(run, quietly = false) {
  * What u wants this turn: its tactics' reasoning (whom it would fight, and the runners-up; whom it would mend; whom it
  * would talk to; whom it fears), on top of what it was told to want and what the fight has stirred.
  */
+/**
+ * What u wants now, worked out again outside its turn (its side changed: the GM's word, a spell), as its next turn
+ * would have it: its tactics' reasoning, its leader's and its party's pull. Nothing told, none of the fight's dice (a
+ * throwaway roll of its own), nothing done. For a creature standing and in the fight.
+ */
+export function rethink(run, u) {
+  if ( !u.desire || !u.active || u.status !== STATUS.STANDING ) return;
+  const { rng, log: told } = run;
+  run.rng = createRng(deriveSeed(run.live?.seed ?? 1, 7919 * (run.round ?? 0) + run.units.indexOf(u) + 1));
+  run.log = null;
+  try {
+    deliberate(run, u);
+  } finally {
+    run.rng = rng;
+    run.log = told;
+  }
+}
+
+/** A grudge: wary of the one it's against until they go for it (the fearful more), then out for them (as it repays a blow). */
+const GRUDGE = Object.freeze({ wary: 50, brave: 0.3, provoked: 60 });
+/** The friend its tactics say to guard: as loyal as it is. */
+const WARD = Object.freeze({ base: 50, loyal: 0.3 });
+
 function deliberate(run, u) {
   newTurn(u);
   // Taunted: it wants the taunter (as long as the taunt lasts and the taunter stands).
@@ -2144,7 +2167,7 @@ function deliberate(run, u) {
     }
   }
   // Whoever took from it, until they attack it.
-  for ( const [id, g] of u.grudges ?? [] ) if ( !g.provoked ) think(u, "avoid", id, 50);
+  for ( const [id, g] of u.grudges ?? [] ) if ( !g.provoked ) think(u, "avoid", id, GRUDGE.wary + (50 - liveTrait(run, u, "brave")) * GRUDGE.brave);
   // Not one for killing: an enemy talked out of the fight is someone to talk away (or over), not to cut down.
   u.peace = null;
   // (As strongly as its answer leans to avoiding killing.)
@@ -2153,7 +2176,7 @@ function deliberate(run, u) {
   }
   if ( u.tac?.target === "protect" ) {
     const ward = run.units.find(a => a !== u && a.side === u.side && isStanding(a) && run.units.some(e => e.targetId === a.id && isStanding(e) && areEnemies(run, a, e)));
-    if ( ward ) think(u, "protect", ward.id, 50);
+    if ( ward ) think(u, "protect", ward.id, WARD.base + (liveTrait(run, u, "loyal") - 50) * WARD.loyal);
   }
   // Foes who fall, as it answered (or its party did): finish them off, tie them up, rob them (behavior/fallen.js).
   fallenWishes(run, u);
@@ -2170,6 +2193,8 @@ function deliberate(run, u) {
   // Friends asking it for a buff, who can make themselves understood: a willing one wants to oblige.
   heed(run, u, { canAid: !!u.prep.buffActions?.length, understands: (a, b) => !a.spec.social?.mindless && !b.spec.social?.mindless && shareLanguage(a, b, run) });
   remember(run, u);
+  // Under someone's control: what its controller wants, and nothing of its own.
+  puppetWishes(run, u);
   if ( run.log ) {
     const top = thoughtsOf(run, u);
     if ( top.length || u.following ) {
@@ -2400,14 +2425,11 @@ export function turnUpkeep(run, u) {
 }
 
 /**
- * A prisoner's turn (tied up and awake): it struggles against its bonds, the system's way or its escape against them
- * (behavior/holds.js); loose, it's in the fight again from its next turn. Nothing else: it's tied up.
+ * A prisoner struggling (tied up and awake, getting loose what it wants most): against its bonds, the system's way or its
+ * escape against them (behavior/holds.js); loose, it's in the fight again from its next turn.
  */
 function struggle(run, u) {
   if ( !u.active ) return;
-  // (What it wants, for the GM to see: to get loose.)
-  newTurn(u);
-  holdWishes(run, u);
   const hold = holdsOf(run, u).find(h => h.key === "bound");
   if ( !hold ) return;
   const got = tryHold(run, u, hold);
@@ -2443,10 +2465,42 @@ function breakFree(run, u, turn) {
   }
 }
 
+/**
+ * Something bothering it that an action ends (a burn, a bleed, the system's remedies: holds.js remediesOf), and being
+ * rid of it what it most wants: it tries, for what it costs, the worst of it first.
+ */
+function getRid(run, u, turn) {
+  if ( mind(run, u).lead?.kind !== "rid" ) return;
+  const r = remediesOf(run, u).find(x => x.key === u.ridOf) ?? remediesOf(run, u)[0];
+  if ( !r || !turn.canAfford(r.cost) ) return;
+  turn.spend(r.cost);
+  const got = r.try(run, u) ?? { success: false };
+  log(run, u, { type: "remedy", what: r.key, damageType: r.type ?? null, label: r.label ?? null, success: !!got.success, ...(got.said?.text ? { said: got.said.text } : {}) });
+}
+
 export function takeTurn(run, u) {
-  const { rules, options } = run.prep;
   stayBound(run, u, logger(run)); // (come to since, tied up)
-  if ( u.status === STATUS.BOUND ) return struggle(run, u);
+  // Tied up: what it wants, as it is. Getting loose: it struggles. Something it can do from its bonds (and it bears
+  // them): a turn from where it lies, with nothing that needs hands.
+  if ( u.status === STATUS.BOUND ) {
+    if ( !u.active ) return;
+    deliberate(run, u);
+    if ( mind(run, u).lead?.kind === "breakFree" || !actsHeld(run, u) ) return struggle(run, u);
+    u.status = STATUS.STANDING;
+    u.thought = true;
+    try {
+      return playFromHere(run, u);
+    } finally {
+      u.thought = false;
+      if ( isBound(u) && u.status === STATUS.STANDING ) u.status = STATUS.BOUND;
+    }
+  }
+  return playFromHere(run, u);
+}
+
+/** The rest of a creature's turn (takeTurn): all of it, but for one tied up who acts from its bonds. */
+function playFromHere(run, u) {
+  const { rules, options } = run.prep;
   if ( [STATUS.DEAD, STATUS.FLED, STATUS.SURRENDERED, STATUS.STOOD_DOWN, STATUS.BEATEN].includes(u.status) ) return;
   if ( u.spec.hazard ) return hazardTurn(run, u);
   // On the map but not in the conflict: it only looks around, until the round after it notices.
@@ -2465,7 +2519,8 @@ export function takeTurn(run, u) {
 
   settleSides(run); // holds that took or ended since this creature's last turn
   regenerate(run, u);
-  if ( u.status === STATUS.DEAD || stayBound(run, u, logger(run)) ) return endOfTurn(run, u);
+  // (Come to tied up: a prisoner now. One acting from its bonds this turn knows it already.)
+  if ( u.status === STATUS.DEAD || (!u.thought && stayBound(run, u, logger(run))) ) return endOfTurn(run, u);
   if ( u.status === STATUS.DOWN && u.held ) return endOfTurn(run, u); // (held at the edge by its regeneration)
   if ( u.status === STATUS.DOWN ) {
     if ( options.downedModel === DOWNED_MODELS.SIMULATE && rules.recoveryCheck && !systemOwns(run, u, "recovery") ) {
@@ -2535,8 +2590,8 @@ export function takeTurn(run, u) {
   // In the reach of a hazard it spotted: it steps out first, if it can (behavior/traps.js).
   if ( run.trapsSpotted ) stepOut(run, u, turn, run.trapLog);
 
-  // What it wants this turn, and what that means: a terror close at hand sends it running.
-  deliberate(run, u);
+  // What it wants this turn, and what that means: a terror close at hand sends it running. (Tied up, it thought already.)
+  if ( !u.thought ) deliberate(run, u);
   const wants = mind(run, u);
   if ( wants.lead?.kind === "avoid" && wants.lead.level >= 70 ) {
     const dread = run.byId.get(wants.lead.targetId);
@@ -2563,7 +2618,8 @@ export function takeTurn(run, u) {
     }
   }
   let attacksMade = 0;
-  if ( u.prone ) {
+  // (Prone: up, unless it bears it this turn, a selfless one fighting on from the ground.)
+  if ( u.prone && !(run.prep.options.ignoreTroubles > 0 && bears(run, u)) ) {
     const stand = rules.standCost ? rules.standCost(u) : basic;
     if ( turn.canAfford(stand) ) {
       turn.spend(stand);
@@ -2574,6 +2630,7 @@ export function takeTurn(run, u) {
     }
   }
   breakFree(run, u, turn);
+  getRid(run, u, turn);
 
   // Running for help: head toward an ally who hasn't joined yet and shout.
   const helper = turn.left > 0 && canMove(run, u) ? wantsHelp(run, u) : null;
@@ -3186,6 +3243,7 @@ export function runOne(prep, seed, { log: withLog = false, capture = false } = {
 export function beginRun(prep, seed, { log: withLog = false } = {}) {
   const run = createRun(prep);
   run.rng = createRng(seed);
+  run.seed = seed; // (for dice of a creature's own that mustn't touch the fight's: behavior/holds.js bears)
   for ( const u of run.units ) initDesires(u);
   refreshLeans(run); // which way those who take no side lean
   prep.doors ??= prepareDoors(prep.spec, prep.rules);

@@ -71,7 +71,7 @@ export function concessionText(c) {
 }
 
 const MODE = { walk: "ModeWalk", fly: "ModeFly", swim: "ModeSwim", climb: "ModeClimb", burrow: "ModeBurrow" };
-const DESIRE = { hurt: "DesireHurt", heal: "DesireHeal", protect: "DesireProtect", aid: "DesireAid", talk: "DesireTalk", avoid: "DesireAvoid", bind: "DesireBind", rob: "DesireRob", breakFree: "DesireBreakFree", free: "DesireFree" };
+const DESIRE = { hurt: "DesireHurt", heal: "DesireHeal", protect: "DesireProtect", aid: "DesireAid", talk: "DesireTalk", avoid: "DesireAvoid", bind: "DesireBind", rob: "DesireRob", breakFree: "DesireBreakFree", free: "DesireFree", rid: "DesireRid" };
 const WHY = { hurt: "WhyHurt", harmed: "WhyHarmed", helped: "WhyHelped", robbed: "WhyRobbed", insulted: "WhyInsulted", impatient: "WhyImpatient", kin: "WhyKin" };
 const NOTICE = { sight: "NoticeSight", sound: "NoticeSound", smell: "NoticeSmell", feel: "NoticeFeel", radar: "NoticeRadar", standoff: "NoticeStandoff", fledInto: "NoticeFled", help: "NoticeHelp", attacked: "NoticeAttacked", gm: "NoticeGm" };
 const BREAKS = { insulted: "BreakInsulted", beast: "BreakBeast", annoyed: "BreakAnnoyed", blood: "BreakBlood", impatient: "BreakImpatient", unmet: "BreakUnmet" };
@@ -276,13 +276,18 @@ function baseLine(e) {
     case "end": return endLine(e);
     case "escape": {
       // (A grab, a prisoner's bonds, or another hold; with what it rolled, if it rolled.)
-      const roll = e.natural !== undefined ? ` · ${dice(e.natural, e.mod, e.total, e.dc, t("DC"))}` : "";
+      const roll = e.natural !== undefined ? ` · ${dice(e.natural, e.mod, e.total, e.dc, t("DC"))}` : e.said ? ` · ${e.said}` : "";
       if ( e.hold === "bound" ) return t(e.success ? "EscapeBonds" : "StuckBonds", { ...a, roll });
       if ( e.hold && e.hold !== "grabbed" ) return t(e.success ? "EscapeFrom" : "StuckIn", { ...a, what: holdName(e.hold), roll });
       return e.success ? t("Escape", a) + roll : t("Stuck", a) + roll;
     }
+    case "remedy": {
+      // (What it tried to be rid of: harm of a kind, or the system's own.)
+      const what = e.damageType ? damageType(e.damageType) : e.label ?? e.what;
+      return t(e.success ? "Remedy" : "RemedyFails", { actor: e.actor, what, said: e.said ? ` · ${e.said}` : "" });
+    }
     case "free": {
-      const roll = e.natural !== undefined ? ` · ${dice(e.natural, e.mod, e.total, e.dc, t("DC"))}` : "";
+      const roll = e.natural !== undefined ? ` · ${dice(e.natural, e.mod, e.total, e.dc, t("DC"))}` : e.said ? ` · ${e.said}` : "";
       return t(e.success ? "Free" : "FreeFails", { ...a, roll });
     }
     case "fate":

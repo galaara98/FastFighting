@@ -674,6 +674,8 @@ export function buildBattleSpec(roster, setup, { approach = null, exclude = new 
       theftLuck: setting("theftLuck"),
       executeLuck: setting("executeLuck"),
       trapLuck: setting("trapLuck"),
+      // And how readily the selfless bear what holds or hurts them.
+      ignoreTroubles: setting("ignoreTroubles"),
       // And how readily a playstyle's taunt takes hold.
       tauntLuck: setting("tauntLuck"),
       // And the one that keeps enemies from changing sides too easily.

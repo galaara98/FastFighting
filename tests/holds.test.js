@@ -4,7 +4,8 @@
  */
 import { describe, expect, test } from "vitest";
 import { beginRun, beginRound, takeTurn, prepareBattle } from "../scripts/engine/simulator.js";
-import { holdsOf, tryHold, isBound } from "../scripts/engine/behavior/holds.js";
+import { holdsOf, tryHold, isBound, bears, release } from "../scripts/engine/behavior/holds.js";
+import { recompute } from "../scripts/engine/behavior/effects.js";
 import { mind } from "../scripts/engine/behavior/desire.js";
 import { beginLive, liveRound, setCondition, conditionsOf, networkOf } from "../scripts/engine/live.js";
 import { pf2eRules } from "./fixtures/three-action-rules.js";
@@ -13,6 +14,8 @@ import { creature, strike, battle } from "./helpers.js";
 
 const traits = (loyal = 60) => ({ tactical: { base: 60, fudge: 0 }, brave: { base: 95, fudge: 0 }, selfish: { base: 30, fudge: 0 }, loyal: { base: loyal, fudge: 0 } });
 const at = (x, y = 0) => ({ position: { x, y, size: 5 } });
+/** A neutral desire style, with what the test says on top. */
+const emptyStyle = () => ({ hurt: {}, avoid: {}, heal: 0, protect: 0, aid: 0, talk: 0, bind: 0, rob: 0, free: 0, rid: 0, whim: 0, contrarian: 0, retaliate: 1, avenge: 1, cool: 1, frustration: 1, leader: 1, doorPatience: 1 });
 const blade = () => strike({ id: "blade", bonus: 14, damage: [parseFormula("2d8+8", "slashing")] });
 const fighter = (id, side, x, extra = {}) => creature({ id, name: id, side, diesAtZero: false, hp: { value: 300, max: 300 }, traits: traits(), actions: [blade()], flags: { fearless: true }, ...at(x), ...extra });
 
@@ -78,6 +81,104 @@ describe("breaking free", () => {
     expect(tries[0]).toEqual(["orc", "restrained", false]);
     expect(run.log.find(e => e.actorId === "orc" && e.type === "escape")).toMatchObject({ hold: "restrained", success: true });
     expect(orc.baseConds.restrained).toBeUndefined();
+  });
+});
+
+describe("tied up, it may bear its bonds", () => {
+  // (A spell at range that needs no hands, or one the helper said nothing about.)
+  const bolt = (extra = {}) => strike({ id: "bolt", name: "Bolt", bonus: 20, range: { increment: 60, max: 120 }, melee: false, magical: true, damage: [parseFormula("3d6", "fire")], ...extra });
+  const caster = (brave, extra = {}) => fighter("mage", "hostile", 30, { traits: { ...traits(), brave: { base: brave, fudge: 0 } }, actions: [bolt(extra)], escapeWork: { mod: 60 } });
+
+  test("brave, with a spell that needs no hands at a foe in range: it casts from its bonds, and doesn't struggle", () => {
+    const run = fight([fighter("hero", "friendly", 0), caster(95, { hands: 0 })]);
+    const mage = tie(run.byId.get("mage"));
+    takeTurn(run, mage);
+    expect(run.log.some(e => e.actorId === "mage" && e.type === "attack" && e.targetId === "hero")).toBe(true);
+    expect(run.log.some(e => e.actorId === "mage" && e.type === "escape")).toBe(false);
+    expect([mage.status, isBound(mage)]).toEqual(["bound", true]);
+  });
+
+  test("fearful, the same spell or not: it would rather be loose", () => {
+    const run = fight([fighter("hero", "friendly", 0), caster(5, { hands: 0 })]);
+    const mage = tie(run.byId.get("mage"));
+    takeTurn(run, mage);
+    expect(run.log.some(e => e.actorId === "mage" && e.type === "escape")).toBe(true);
+  });
+
+  test("a spell the helper says nothing about: tied up stops it, unless the helper's setting says it doesn't", () => {
+    const run = fight([fighter("hero", "friendly", 0), caster(95)]);
+    const mage = tie(run.byId.get("mage"));
+    takeTurn(run, mage);
+    expect(run.log.some(e => e.actorId === "mage" && e.type === "attack")).toBe(false);
+    expect(run.log.some(e => e.actorId === "mage" && e.type === "escape")).toBe(true);
+    const free = fight([fighter("hero", "friendly", 0), caster(95)], { ...pf2eRules, tiedStopsSpells: false });
+    const m = tie(free.byId.get("mage"));
+    takeTurn(free, m);
+    expect(free.log.some(e => e.actorId === "mage" && e.type === "attack")).toBe(true);
+  });
+
+  test("tied up, it can't go anywhere: no moving toward a foe out of reach", () => {
+    const run = fight([fighter("hero", "friendly", 0), caster(95, { hands: 0, range: { increment: 10, max: 10 } })]);
+    const mage = tie(run.byId.get("mage"));
+    takeTurn(run, mage);
+    expect(run.log.some(e => e.actorId === "mage" && e.type === "move")).toBe(false);
+  });
+});
+
+describe("being rid of what hurts it, or bearing it", () => {
+  const burning = u => u.persistent.push({ part: parseFormula("2d6", "fire"), sourceId: "hero" });
+
+  test("on fire, a fearful one tries to put itself out (one more try at the system's recovery); a bold Martyr fights on", () => {
+    const run = fight([fighter("hero", "friendly", 0), fighter("orc", "hostile", 5, { traits: { ...traits(), brave: { base: 5, fudge: 0 } }, hp: { value: 30, max: 30 } })]);
+    const orc = run.byId.get("orc");
+    burning(orc);
+    takeTurn(run, orc);
+    expect(run.log.find(e => e.actorId === "orc" && e.type === "remedy")).toMatchObject({ what: "persistent:fire", damageType: "fire" });
+    const bold = fight([fighter("hero", "friendly", 0), fighter("orc", "hostile", 5, { traits: { ...traits(), brave: { base: 95, fudge: 0 } }, hp: { value: 300, max: 300 }, desireStyle: { ...emptyStyle(), rid: -25 } })]);
+    const b = bold.byId.get("orc");
+    burning(b);
+    takeTurn(bold, b);
+    expect(bold.log.some(e => e.actorId === "orc" && e.type === "remedy")).toBe(false);
+    expect(bold.log.some(e => e.actorId === "orc" && e.type === "attack")).toBe(true);
+  });
+
+  test("the slider: a fully selfless, uncalculating creature bears it that often, a calculating or selfish one less; never what would kill it", () => {
+    const run = fight([fighter("hero", "friendly", 0), fighter("orc", "hostile", 5)], { ...pf2eRules });
+    run.prep.options.ignoreTroubles = 29;
+    const orc = run.byId.get("orc");
+    const rate = (selfish, tactical) => {
+      Object.assign(orc.prep.traits, { selfish, tactical });
+      let n = 0;
+      for ( let r = 1; r <= 4000; r++ ) {
+        run.round = r;
+        if ( bears(run, orc) ) n += 1;
+      }
+      return n / 4000;
+    };
+    expect(rate(0, 0)).toBeCloseTo(0.29, 1);
+    expect(rate(50, 0)).toBeCloseTo(0.145, 1);
+    expect(rate(0, 100)).toBe(0);
+    // (Even the selfless don't want to die: harm that would drop it this round.)
+    Object.assign(orc.prep.traits, { selfish: 0, tactical: 0 });
+    orc.hp = 3;
+    burning(orc);
+    run.round = 9000;
+    let borne = 0;
+    for ( let r = 9000; r < 9200; r++ ) {
+      run.round = r;
+      if ( bears(run, orc) ) borne += 1;
+    }
+    expect(borne).toBe(0);
+  });
+
+  test("broken free of restraints, it can move again (unless another hold still keeps it in place)", () => {
+    const run = fight([fighter("hero", "friendly", 0), fighter("orc", "hostile", 40)]);
+    const orc = run.byId.get("orc");
+    orc.effects.push({ key: "web", conditions: { restrained: 1, immobilized: 1 }, sourceId: "hero", rounds: Infinity, escape: { dc: 10, others: null } });
+    recompute(orc);
+    const hold = holdsOf(run, orc).find(h => h.key === "restrained");
+    release(run, orc, hold);
+    expect([orc.conds.restrained ?? 0, orc.conds.immobilized ?? 0]).toEqual([0, 0]);
   });
 });
 

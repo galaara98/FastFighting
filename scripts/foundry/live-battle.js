@@ -31,7 +31,7 @@ import { loadStoryTables } from "../story/tables.js";
 import {
   beginLive, liveRound, liveTurn, pcTurnBegin, pcTurnEnd, syncFromSheets, setApproach, captureAll, snapshotRun, restoreRun, endLive,
   NeedsDecision, applyFact, gmMoment, leavingReach, openingFor, reactNow, nextSpotlight, liveAftermath,
-  setCondition, setRelation, clearRelation, setGoal, setAttitude
+  setCondition, setRelation, clearRelation, setGoal, setAttitude, setSide, playerRuns
 } from "../engine/live.js";
 import { diffAll } from "../engine/changes.js";
 import { randomSeed } from "../engine/rng.js";
@@ -308,7 +308,7 @@ async function turnBegins(combatant) {
     await moveOn();
     return;
   }
-  if ( battle.run.live.players.has(u.id) ) {
+  if ( playerRuns(battle.run, u) ) {
     await beginPlayerTurn(u, combatant);
     // (The players' turn: the game goes on, so they can move and roll.)
     if ( game.paused ) game.togglePause(false, { broadcast: true });
@@ -976,7 +976,7 @@ export function rewindTurn() {
     await keep();
     await battle.combat.setFlag(MODULE_ID, "live", flagOf(true));
     const u = unitOf(battle.combat.combatant);
-    if ( u && battle.run.live.players.has(u.id) ) await beginPlayerTurn(u, battle.combat.combatant);
+    if ( u && playerRuns(battle.run, u) ) await beginPlayerTurn(u, battle.combat.combatant);
     else if ( u ) await rewoundCard(u);
     changed();
     return true;
@@ -1084,7 +1084,9 @@ export function liveCondition(op) {
  * The GM changes what a creature wants (the Battle Interface's map of minds), at once: {op: "desire", id, kind, targetId,
  * level} holds a desire there (0 sets it aside; null hands it back to FastFighting); {op: "goal", id, kind, thingId,
  * level} a goal (engine/live.js setGoal); {op: "attitude", id, kind, byId, side, level} what it keeps toward others
- * outside its desires (setAttitude: a grudge, a truce, how far it's been talked round). Nothing goes on a sheet; kept with the battle, and taken back with the turn it
+ * outside its desires (setAttitude: a grudge, a truce, how far it's been talked round); {op: "side", id, side} another
+ * side (setSide: what it wants, and everyone's toward it, worked out again). Nothing goes on a sheet but the token's
+ * disposition (the helper's, with the turn's changes); kept with the battle, and taken back with the turn it
  * came after.
  */
 export function liveMind(op) {
@@ -1094,7 +1096,8 @@ export function liveMind(op) {
     const done = op.op === "desire"
       ? applyFact(run, op.level === null ? { kind: "forget", id: op.id, desire: op.kind, targetId: op.targetId } : { kind: "want", id: op.id, desire: op.kind, targetId: op.targetId, level: op.level })
       : op.op === "goal" ? setGoal(run, op.id, op)
-        : op.op === "attitude" ? setAttitude(run, op.id, op) : false;
+        : op.op === "attitude" ? setAttitude(run, op.id, op)
+          : op.op === "side" ? setSide(run, op.id, op.side) : false;
     if ( !done ) return false;
     await keep();
     return true;

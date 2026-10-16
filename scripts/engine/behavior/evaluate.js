@@ -243,6 +243,7 @@ export const limited = a => !!a.resource || Number.isFinite(a.uses);
 
 export function hasUses(u, action) {
   if ( u.lost?.has(action.id) ) return false; // a spell lost to a failed check (DCC)
+  if ( (u.bound || u.boundBy) && u.handActions?.has(action.id) ) return false; // tied up: nothing that needs hands
   // (resourceCost: what one use takes, a point by default: Daggerheart's 3 Hope for a class's Hope feature.)
   if ( action.resource ) return resourceLeft(u, action) >= (action.resourceCost ?? 1);
   if ( Number.isFinite(action.uses) ) return (u.uses[action.id] ?? 0) > 0;

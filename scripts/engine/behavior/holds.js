@@ -22,22 +22,54 @@
  *                                          for its level, a little harder)
  *   rules.escapeCost(u, hold)              what a try at breaking free costs (default: the basic action)
  *   rules.untieCost(u, t, hold)            what freeing a friend costs (default: the basic action)
- *   rules.breakFree(run, who, hold, {freeing, held})  the system's own try, for itself or (freeing) for the friend
- *                                          `held`: {success, degree, natural, mod, total, dc, said} or null (the core's)
+ *   rules.breakFree(run, who, hold, {freeing, held})  the system's own try, by `who`: for itself, or (freeing) for
+ *                                          `held`, the friend it frees. Returns {success, degree, natural, mod, total,
+ *                                          dc, said: {text}} (the numbers only for a d20 against a DC; the system's own
+ *                                          words in said), or null (the core's)
  *   spec.escapeWork {mod, faces}           a creature's best way out, as a check
  *   spec.escapeDC                          how hard a grab of this creature's is to break
+ *   action.hands, rules.handsKnown         how many free hands an action needs (0: none, a spell with no gesture, a
+ *                                          bite); handsKnown: the helper says it of every action
+ *   rules.tiedStopsSpells                  without handsKnown: whether tied up stops a spell (the helper's setting;
+ *                                          by default it does)
+ *   rules.remedies(run, u)                 what else bothers u that an action ends (remediesOf)
+ *   rules.persistentRemedy(run, u, type)   the system's own try at ending persistent harm of a type ({success, said}),
+ *   rules.persistentRemedyCost(u, type)    and what it costs (default: one more recovery roll, for the basic action)
+ * Tied up, a creature can't move, nor use what needs hands (needsHands); talking it always can. What it could still do
+ * from its bonds weighs against getting loose (desire.js holdWishes): one willing to suffer them may not struggle. And
+ * any creature may bear what holds or hurts it, for a turn, as selfless as it is (bears: the world's slider).
  * Pure: no Foundry globals.
  */
-import { STATUS } from "../../constants.js";
-import { typical } from "../battle-state.js";
+import { STATUS, IGNORE_TROUBLES } from "../../constants.js";
+import { typical, isMagical, liveTrait } from "../battle-state.js";
+import { createRng, deriveSeed } from "../rng.js";
+import { meanPart } from "../dice.js";
 import { rollCheck } from "../probability.js";
 import { recompute } from "./effects.js";
 import { normalizeCost } from "../turn.js";
+
+/**
+ * What a hold keeps in place with it (a grab or restraints: can't move), cleared when it's broken unless another hold
+ * still does it. A hold may name its own (hold.with, effect.escape.with: the system's).
+ */
+const WITH = Object.freeze({ grabbed: Object.freeze(["immobilized"]), restrained: Object.freeze(["immobilized"]) });
 
 /** Without a roll to make: how often a try gets loose (a grab, as the engine always had it; bonds, harder). */
 export const ESCAPE_CHANCE = Object.freeze({ grabbed: 0.5, bound: 0.35, other: 0.4 });
 /** How much harder improvised bonds are than the system's typical DC for the creature's level. */
 const BONDS_HARDER = 2;
+
+/**
+ * Does this action need free hands? What the helper says (action.hands); a helper that says it of every action
+ * (rules.handsKnown): none it didn't mark. Otherwise a spell as the helper's setting says (rules.tiedStopsSpells, by
+ * default it does), a natural attack (a bite, a claw) none, and anything else (a weapon, a manipulation) hands.
+ */
+export function needsHands(rules, action) {
+  if ( Number.isFinite(action?.hands) ) return action.hands > 0;
+  if ( rules?.handsKnown ) return false;
+  if ( isMagical(action) ) return rules?.tiedStopsSpells !== false;
+  return !action?.natural;
+}
 
 /** Is it tied up? (A battle kept before u.bound was: whoever tied it.) */
 export const isBound = u => !!(u.bound ?? u.boundBy);
@@ -66,7 +98,7 @@ export function holdsOf(run, u) {
     if ( !e.escape || e.onlyVs ) continue;
     for ( const [key, v] of Object.entries(e.conditions ?? {}) ) {
       if ( !(Number(v) > 0 || v === true) || (key === "grabbed" && u.grabbedBy) ) continue;
-      out.push({ key, byId: e.sourceId ?? null, dc: dcOf(e.escape.dc), others: e.escape.others ?? null, label: e.label || null, effectKey: e.key });
+      out.push({ key, byId: e.sourceId ?? null, dc: dcOf(e.escape.dc), others: e.escape.others ?? null, with: e.escape.with ?? null, label: e.label || null, effectKey: e.key });
     }
   }
   // (The system's own: on the sheet with nothing of the engine's behind it, and any other it knows.)
@@ -74,7 +106,7 @@ export function holdsOf(run, u) {
     for ( const [key, v] of Object.entries(u.baseConds ?? {}) ) {
       if ( !(Number(v) > 0) || out.some(h => h.key === key) ) continue;
       const h = rules.escapeFrom(run, u, key);
-      if ( h ) out.push({ key, byId: h.byId ?? null, dc: dcOf(h.dc), others: h.others ?? null, label: h.label ?? null, sheet: true });
+      if ( h ) out.push({ key, byId: h.byId ?? null, dc: dcOf(h.dc), others: h.others ?? null, with: h.with ?? null, label: h.label ?? null, sheet: true });
     }
   }
   for ( const h of (typeof rules.holds === "function" ? rules.holds(run, u) : null) ?? [] ) {
@@ -88,9 +120,9 @@ export function holdsOf(run, u) {
  * of its escape against the DC, else a chance; a friend untying needs no roll. {success, degree?, natural?, mod?,
  * total?, dc?, said?}
  */
-export function tryHold(run, who, hold, { freeing = false } = {}) {
+export function tryHold(run, who, hold, { freeing = false, held = null } = {}) {
   const rules = run.prep?.rules ?? {};
-  const own = typeof rules.breakFree === "function" ? rules.breakFree(run, who, hold, { freeing }) : null;
+  const own = typeof rules.breakFree === "function" ? rules.breakFree(run, who, hold, { freeing, held: held ?? (freeing ? null : who) }) : null;
   if ( own ) return { ...own, success: !!own.success };
   if ( freeing && hold.others === "untie" ) return { success: true };
   const work = who.spec.escapeWork;
@@ -107,8 +139,12 @@ export function tryHold(run, who, hold, { freeing = false } = {}) {
  */
 export const known = (run, u, hold) => typeof run.prep.rules.breakFree === "function" || (Number.isFinite(u.spec.escapeWork?.mod) && Number.isFinite(hold?.dc));
 
-/** The hold is broken: u is free of it (and of its condition, where that's all the hold was). */
+/**
+ * The hold is broken: u is free of it (and of its condition, where that's all the hold was), and of what it kept in
+ * place with it (WITH, hold.with), unless another hold still keeps it so.
+ */
 export function release(run, u, hold) {
+  const along = [...new Set([...(WITH[hold.key] ?? []), ...(hold.with ?? [])])];
   switch ( hold.key ) {
     case "bound":
       u.bound = false;
@@ -132,6 +168,19 @@ export function release(run, u, hold) {
       }
       if ( (hold.sheet || hold.system) && u.baseConds ) delete u.baseConds[hold.key];
   }
+  if ( along.length ) {
+    recompute(u);
+    const still = new Set(holdsOf(run, u).flatMap(h => [...(WITH[h.key] ?? []), ...(h.with ?? [])]));
+    for ( const k of along.filter(k => !still.has(k)) ) {
+      if ( u.baseConds ) delete u.baseConds[k];
+      u.effects = (u.effects ?? []).flatMap(e => {
+        if ( !(k in (e.conditions ?? {})) || !(e.key === hold.effectKey || e.key === "gm:grabbed") ) return [e];
+        const conditions = { ...e.conditions };
+        delete conditions[k];
+        return Object.keys(conditions).length || e.mods ? [{ ...e, conditions }] : [];
+      });
+    }
+  }
   recompute(u);
 }
 
@@ -140,6 +189,61 @@ export const escapeCost = (rules, u, hold) => normalizeCost(rules, rules.escapeC
 
 /** What freeing a friend costs from a turn. */
 export const untieCost = (rules, u, t, hold) => normalizeCost(rules, rules.untieCost?.(u, t, hold) ?? rules.basicAction ?? 1);
+
+/**
+ * What else bothers u that an action can end (its remedies), besides what holds it: persistent harm (a burn, a bleed,
+ * acid: by default an action for one more try at the system's recovery, rolling on the ground, pressing the wound) and
+ * whatever the system says a remedy ends (rules.remedies(run, u): [{key, cost, annoyance, label, try(run, u) ->
+ * {success, said}}]: PF2e Retch for sickened, a lower DC for fire). Each with how badly it bothers u (annoyance, 0-100:
+ * persistent harm by what it takes each round, of what u has), what a try costs, and the try.
+ */
+export function remediesOf(run, u) {
+  const rules = run.prep?.rules ?? {};
+  const out = [];
+  if ( u.persistent?.length && typeof rules.persistentFlatCheck === "function" ) {
+    const byType = new Map();
+    for ( const e of u.persistent ) byType.set(e.part.type, (byType.get(e.part.type) ?? 0) + Math.max(0, meanPart(e.part)));
+    for ( const [type, each] of byType ) {
+      const share = u.maxHp > 0 ? each / u.maxHp : 1;
+      out.push({
+        key: `persistent:${type}`, type, label: type, annoyance: Math.min(85, REMEDY.pain + REMEDY.painShare * share),
+        cost: normalizeCost(rules, rules.persistentRemedyCost?.(u, type) ?? rules.basicAction ?? 1),
+        try: (r, v) => {
+          const ok = rules.persistentRemedy ? rules.persistentRemedy(r, v, type) : { success: rules.persistentFlatCheck(r.rng) };
+          if ( ok?.success ) v.persistent = v.persistent.filter(e => e.part.type !== type);
+          return ok ?? { success: false };
+        }
+      });
+    }
+  }
+  for ( const r of (typeof rules.remedies === "function" ? rules.remedies(run, u) : null) ?? [] ) {
+    if ( r?.key && typeof r.try === "function" ) out.push({ annoyance: REMEDY.other, ...r, cost: normalizeCost(rules, r.cost ?? rules.basicAction ?? 1) });
+  }
+  return out;
+}
+
+/** Would the harm it's under (persistent: a burn, a bleed) take it to nothing this round? */
+const deadly = u => (u.persistent ?? []).reduce((n, e) => n + Math.max(0, meanPart(e.part)), 0) >= (u.hp ?? 0) + (u.temp ?? 0);
+
+/** How badly a remedy-able thing bothers a creature, before its personality: persistent harm, by what it takes. */
+export const REMEDY = Object.freeze({ pain: 30, painShare: 150, other: 35 });
+
+/**
+ * Does u bear what holds or hurts it this turn (not trying to be rid of it)? A d100 of its own (the fight's dice
+ * untouched) at or under the world's slider (ignoreTroubles) times how selfless it is, less the more calculating: all
+ * of it for a fully selfless creature, none for a wholly selfish or calculating one. Decided once a turn.
+ */
+export function bears(run, u) {
+  // (Even the selfless don't want to die: harm that would drop it this round is never borne.)
+  if ( deadly(u) ) return false;
+  const key = `${run.round ?? 0}|${run.turn ?? 0}`;
+  if ( u.bearsAt === key ) return !!u.bearing;
+  const chance = (run.prep?.options?.ignoreTroubles ?? IGNORE_TROUBLES) * ((100 - liveTrait(run, u, "selfish")) / 100) * ((100 - liveTrait(run, u, "tactical")) / 100);
+  const seed = deriveSeed(((run.seed ?? run.live?.seed ?? 1) >>> 0), 104729 * (run.round ?? 0) + 7919 * (run.turn ?? 0) + run.units.indexOf(u) + 1);
+  u.bearsAt = key;
+  u.bearing = chance > 0 && createRng(seed).die(100) <= chance;
+  return u.bearing;
+}
 
 /** The hold a friend would free first (bonds before anything else), or null. */
 export const freeable = (run, t) => holdsOf(run, t).find(h => h.others) ?? null;

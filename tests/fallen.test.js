@@ -40,7 +40,7 @@ describe("tying them up", () => {
     down.spec.escapeWork = { mod: -50 };
     takeTurn(run, down);
     expect(down.status).toBe("bound");
-    expect(run.log.at(-2)).toMatchObject({ type: "bound", byId: "hero" });
+    expect(run.log.some(e => e.type === "bound" && e.byId === "hero")).toBe(true);
     expect(run.log.at(-1)).toMatchObject({ type: "escape", hold: "bound", success: false });
     expect(run.log.some(e => e.actorId === "bandit" && e.type === "attack")).toBe(false);
   });
