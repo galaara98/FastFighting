@@ -2,13 +2,13 @@
   "FASTFIGHTING": {
     "Keybinding": {
       "Open": "Open the Battle Planner",
-      "networkLower": "Battle Interface: one less",
+      "networkLower": "Battle Vantage: one less",
       "networkLowerHint": "With a creature in focus, lowers the line or symbol the pointer is on (or Tab stepped to); at its least, takes it off.",
-      "networkRaise": "Battle Interface: one more",
+      "networkRaise": "Battle Vantage: one more",
       "networkRaiseHint": "With a creature in focus, raises the line or symbol the pointer is on (or Tab stepped to). On the creature itself, adds a line from it.",
-      "networkNext": "Battle Interface: next",
+      "networkNext": "Battle Vantage: next",
       "networkNextHint": "Steps to the next of the focused creature's lines and symbols (with nobody in focus, the next creature).",
-      "networkPrevious": "Battle Interface: previous",
+      "networkPrevious": "Battle Vantage: previous",
       "networkPreviousHint": "Steps back to the last of the focused creature's lines and symbols (with nobody in focus, the creature before)."
     },
     "Units": {
@@ -1006,7 +1006,7 @@
       "Survey": "Survey",
       "SurveyHint": "Asks every player with a character on this scene about it (Prepare Players), with or without a conflict.",
       "Planner": "Planner",
-      "Interface": "Interface"
+      "Vantage": "Vantage"
     },
     "Story": {
       "Title": "The battle at {scene}",
@@ -2175,7 +2175,7 @@
       "NotHere": "That battle isn't being played in this browser."
     },
     "Battle": {
-      "Title": "Battle Interface",
+      "Title": "Battle Vantage",
       "None": "No live battle is being played in this browser.",
       "Round": "Round {n}",
       "Turn": "{name}'s turn",

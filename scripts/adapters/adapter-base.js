@@ -260,7 +260,7 @@ export class SystemAdapter {
    * A live battle: whether this system's sheets carry one of the engine's conditions (by its key): its commitChanges
    * writes it there (changes.conditions set and cleared) and its readLiveState reads it back as that key. One they
    * carry, the sheet says whether it's still there; one they don't (PF2e has nothing for losing a turn to Command), the
-   * core keeps itself, between turns and in the Battle Interface. By default, none: a helper says which. Given the
+   * core keeps itself, between turns and in the Battle Vantage. By default, none: a helper says which. Given the
    * creature's actor, for that one's sheet (an Ironsworn foe has no debilities); without, for any.
    * @param {string} key
    * @param {Actor} [actor]
@@ -270,7 +270,7 @@ export class SystemAdapter {
   }
 
   /**
-   * The system's own word for one of the engine's conditions (by its key), for the Battle Interface; null for the
+   * The system's own word for one of the engine's conditions (by its key), for the Battle Vantage; null for the
    * core's own.
    * @param {string} key
    * @returns {string|null}

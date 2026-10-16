@@ -1,5 +1,5 @@
 /**
- * The Battle Interface's map of minds, in the engine's terms (live.js networkOf): every desire, condition, goal and
+ * The Battle Vantage's map of minds, in the engine's terms (live.js networkOf): every desire, condition, goal and
  * way toward others as a line (or, on the creature itself, a symbol), each with an intensity and its most; a player's
  * character FastFighting isn't playing shows no desires.
  */

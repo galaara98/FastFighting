@@ -370,7 +370,7 @@
   margin: 0 0 6px; height: 30px; font-weight: 700;
 }
 .ff-tracker-open:not(:disabled) { border-color: #f0a35b; }
-/* (One row: the planner, the Battle Interface, the survey; each as wide as there's room for.) */
+/* (One row: the planner, the Battle Vantage, the survey; each as wide as there's room for.) */
 .ff-tracker-row { display: flex; gap: 4px; margin: 0 0 6px; }
 .ff-tracker-row .ff-tracker-open { flex: 1 1 0; min-width: 0; margin: 0; padding: 0 4px; gap: 4px; font-size: 12px; }
 .ff-tracker-row .ff-tracker-open span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -482,7 +482,7 @@
 .ff-locked { margin: 14px 0 6px; color: var(--ff-friendly); font-weight: 700; }
 
 
-/* ---------- Battle Interface ---------- */
+/* ---------- Battle Vantage ---------- */
 .fast-fighting.ff-battle .window-content { padding: 0; overflow: hidden; }
 .ff-battle-body { display: flex; flex-direction: column; height: 100%; }
 .ff-battle-none { padding: 1rem; }

@@ -1,5 +1,5 @@
 /**
- * The Battle Interface's map of minds: every creature (and the things they want: a door, a trap, an item) as a node,
+ * The Battle Vantage's map of minds: every creature (and the things they want: a door, a trap, an item) as a node,
  * every desire, condition and goal toward someone or something as an arrow between them, and what a creature has on
  * its own (prone, unaware of the fight, thinking of running) as symbols around it. Nodes start where their tokens
  * stand on the map; the GM drags them aside (the arrows stay on), pans, and zooms. A click (a press without a drag)
@@ -10,7 +10,7 @@
  * dragging one that's selected moves them all. A creature's menu (right-click): select or unselect it, select its
  * team, select its leader. The selection is kept in state.selected.
  *
- * Built from the graph the Battle Interface makes ready (battle-interface.js networkView), with words already in it:
+ * Built from the graph the Battle Vantage makes ready (battle-vantage.js networkView), with words already in it:
  *   nodes: [{id, type: "creature"|"thing"|"elsewhere", name, img, icon, cls, status, x, y (feet), team, leaderId, marks: [mark]}]
  *   edges: [{id, from, to, cls, icon, text, tip, adjust, lower, raise}]
  *   mark:  {id, icon, text, tip, cls, adjust, lower, raise}

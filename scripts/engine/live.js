@@ -954,7 +954,7 @@ const bandIntensity = level => desireBand(level) + 1;
 const AS_RELATION = new Set(["grabbed", "controlled"]);
 
 /**
- * Everything the Battle Interface's map of minds shows, in the engine's terms (the interface puts it in words). Each
+ * Everything the Battle Vantage's map of minds shows, in the engine's terms (the interface puts it in words). Each
  * line and symbol has an intensity and its most (null: no most; 1: only on or off, a hidden 1):
  *   creatures  [{id, status, side, active, pos, hazard, player}]
  *   links      what's between two: from -> to

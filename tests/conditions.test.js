@@ -1,5 +1,5 @@
 /**
- * The GM's conditions in a live battle (the Battle Interface): any the core knows put on, changed and taken off, who
+ * The GM's conditions in a live battle (the Battle Vantage): any the core knows put on, changed and taken off, who
  * caused it remembered; those toward someone (afraid of, grabbed by, goaded by, controlled by, tied up by, off guard
  * to, marked by); what its sheet shows kept as the sheet says, the rest by the core alone.
  */

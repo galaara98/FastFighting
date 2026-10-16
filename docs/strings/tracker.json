@@ -99,7 +99,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "99ccf5a7ee3e"
+   "hash": "99ccf5a7ee3e",
+   "gone": "2026-10-16"
   },
   "core:code:scripts/apps/battle-network.js:click#1": {
    "repo": "core",
@@ -150,6 +151,16 @@
    "date": null,
    "commit": null,
    "hash": "2f40c0551613"
+  },
+  "core:code:scripts/apps/battle-vantage.js:onAdjust#1": {
+   "repo": "core",
+   "file": "scripts/apps/battle-vantage.js",
+   "key": "scripts/apps/battle-vantage.js:onAdjust#1",
+   "area": "core/code",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "99ccf5a7ee3e"
   },
   "core:code:scripts/apps/player-survey.js:_prepareContext#1": {
    "repo": "core",
@@ -2932,7 +2943,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "a5ce924e5cc5"
+   "hash": "a5ce924e5cc5",
+   "changed": true
   },
   "core:FASTFIGHTING.Battle.Toward": {
    "repo": "core",
@@ -5190,7 +5202,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "5669e31cac2a"
+   "hash": "5669e31cac2a",
+   "changed": true
   },
   "core:FASTFIGHTING.Keybinding.networkLowerHint": {
    "repo": "core",
@@ -5210,7 +5223,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "87d6c74b4463"
+   "hash": "87d6c74b4463",
+   "changed": true
   },
   "core:FASTFIGHTING.Keybinding.networkNextHint": {
    "repo": "core",
@@ -5230,7 +5244,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "882ca086a3cf"
+   "hash": "882ca086a3cf",
+   "changed": true
   },
   "core:FASTFIGHTING.Keybinding.networkPreviousHint": {
    "repo": "core",
@@ -5250,7 +5265,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "95b2100a2bea"
+   "hash": "95b2100a2bea",
+   "changed": true
   },
   "core:FASTFIGHTING.Keybinding.networkRaiseHint": {
    "repo": "core",
@@ -22268,7 +22284,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "c26b3ed4ce70"
+   "hash": "c26b3ed4ce70",
+   "gone": "2026-10-16"
   },
   "core:FASTFIGHTING.Tracker.NeedTwo": {
    "repo": "core",
@@ -22319,6 +22336,16 @@
    "date": null,
    "commit": null,
    "hash": "67508b220d56"
+  },
+  "core:FASTFIGHTING.Tracker.Vantage": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Tracker.Vantage",
+   "area": "core/Tracker",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "d6ae0b5b737e"
   },
   "core:FASTFIGHTING.Trait.brave": {
    "repo": "core",

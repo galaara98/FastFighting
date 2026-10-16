@@ -254,7 +254,7 @@ export function waitingOnGm() {
   return !!battle?.combat.combatant && battle.data.played === turnKey(battle.combat.combatant);
 }
 
-/** Whom FastFighting would spotlight next, for the Battle Interface (a spotlight system's), or null. */
+/** Whom FastFighting would spotlight next, for the Battle Vantage (a spotlight system's), or null. */
 export function suggestedSpotlight() {
   if ( !battle?.data.spotlight || battle.data.ended ) return null;
   return nextSpotlight(battle.run);
@@ -734,7 +734,7 @@ function review(pc, events) {
   });
 }
 
-/** The GM's review done: the events as the GM left them (Battle Interface). */
+/** The GM's review done: the events as the GM left them (Battle Vantage). */
 export function finishReview(events) {
   battle?.review?.resolve(events);
 }
@@ -1058,7 +1058,7 @@ export function liveFact(fact) {
 }
 
 /**
- * The GM changes a creature's conditions (the Battle Interface): {op: "set", id, key, value, byId, rounds} (value 0
+ * The GM changes a creature's conditions (the Battle Vantage): {op: "set", id, key, value, byId, rounds} (value 0
  * takes it off); {op: "relate", id, kind, byId, rounds, level}; {op: "unrelate", id, kind, byId}; {op: "affliction",
  * id, afflictionId, stage} (0 ends it). Done at once: in the
  * engine, and on the sheets for what the system's can show (through its helper: writeChanges); the rest the core keeps
@@ -1083,7 +1083,7 @@ export function liveCondition(op) {
 }
 
 /**
- * The GM changes what a creature wants (the Battle Interface's map of minds), at once: {op: "desire", id, kind, targetId,
+ * The GM changes what a creature wants (the Battle Vantage's map of minds), at once: {op: "desire", id, kind, targetId,
  * level} holds a desire there (0 sets it aside; null hands it back to FastFighting); {op: "goal", id, kind, thingId,
  * level} a goal (engine/live.js setGoal); {op: "attitude", id, kind, byId, side, level} what it keeps toward others
  * outside its desires (setAttitude: a grudge, a truce, how far it's been talked round); {op: "side", id, side, group} another

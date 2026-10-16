@@ -21,12 +21,12 @@ import { planHolder } from "./foundry/persistence.js";
 import { setDistanceUnit, setTermSource, localize } from "./i18n.js";
 import { loadKeywords } from "./foundry/keywords.js";
 import { registerLiveBattles, liveBattle } from "./foundry/live-battle.js";
-import { BattleInterface, registerBattleInterface } from "./apps/battle-interface.js";
+import { BattleVantage, registerBattleVantage } from "./apps/battle-vantage.js";
 
 Hooks.once("init", () => {
   registerSettings(DefaultsConfig, GenericPathsConfig, StoryTablesConfig);
   registerLiveBattles();
-  registerBattleInterface();
+  registerBattleVantage();
   registerGroundField();
   // The GM's "Prepare Players" request opens the survey on the chosen players' screens (a player's survey never on a
   // GM's); one character's for the GMs on theirs. Foundry says who asks: only a GM may.
@@ -40,7 +40,7 @@ Hooks.once("init", () => {
     PlayerSurvey.open({ sceneId: data?.sceneId, start: data?.key, only: data?.key });
     return true;
   };
-  Hooks.on("fastFighting.liveBattleStarted", () => BattleInterface.open());
+  Hooks.on("fastFighting.liveBattleStarted", () => BattleVantage.open());
 
   // System support comes from helper modules (FastFighting PF2e, ...). The generic adapter ("*") is the
   // fallback for systems nobody supports yet.
@@ -50,7 +50,7 @@ Hooks.once("init", () => {
   // Text in templates that says {AC} or {HP}.
   Handlebars.registerHelper("ffLocalize", (key, options) => localize(key, options?.hash));
 
-  const api = buildApi({ openPlanner: () => openIfReady(), openBattleInterface: () => BattleInterface.open(), openSurvey: options => PlayerSurvey.open(options), installStoryTables, BattlePlanner, PlayerSurvey });
+  const api = buildApi({ openPlanner: () => openIfReady(), openBattleVantage: () => BattleVantage.open(), openSurvey: options => PlayerSurvey.open(options), installStoryTables, BattlePlanner, PlayerSurvey });
   game.modules.get(MODULE_ID).api = api;
   Hooks.callAll("fastFighting.init", api);
 
@@ -104,7 +104,7 @@ Hooks.on("renderCombatTracker", (app, element) => {
     event.preventDefault();
     openIfReady();
   });
-  // (One row: the planner, the Battle Interface while a live battle is on this combat, and the players' survey.)
+  // (One row: the planner, the Battle Vantage while a live battle is on this combat, and the players' survey.)
   const row = document.createElement("div");
   row.className = "ff-tracker-row";
   row.append(button);
@@ -114,10 +114,10 @@ Hooks.on("renderCombatTracker", (app, element) => {
     open.type = "button";
     open.className = "ff-tracker-open ff-battle-open";
     open.dataset.tooltip = game.i18n.localize("FASTFIGHTING.Battle.Title");
-    open.innerHTML = `<i class="fa-solid fa-chess-knight"></i><span>${game.i18n.localize("FASTFIGHTING.Tracker.Interface")}</span>`;
+    open.innerHTML = `<i class="fa-solid fa-chess-knight"></i><span>${game.i18n.localize("FASTFIGHTING.Tracker.Vantage")}</span>`;
     open.addEventListener("click", event => {
       event.preventDefault();
-      BattleInterface.open();
+      BattleVantage.open();
     });
     row.append(open);
   }

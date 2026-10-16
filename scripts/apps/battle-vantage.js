@@ -1,5 +1,5 @@
 /**
- * The Battle Interface: the GM's window on a live battle (foundry/live-battle.js). Whose turn it is and what
+ * The Battle Vantage: the GM's window on a live battle (foundry/live-battle.js). Whose turn it is and what
  * FastFighting is waiting for (Continue, Rewind Turn, Play it, Rewind This Encounter, Play to the end, how NPCs'
  * reactions are decided); and a map of minds (battle-network.js): every creature on the map, every desire, condition,
  * goal and way toward others as a line between two (a symbol on the creature, for what's its own), each with its
@@ -86,34 +86,34 @@ const afflictionIcon = a => {
 /** What happens to a creature's status on the map of minds: standing as it is, down greyed, out of it faded. */
 const statusClass = status => (status === "standing" ? "" : status === "down" ? "is-down" : "is-out");
 
-export class BattleInterface extends HandlebarsApplicationMixin(ApplicationV2) {
+export class BattleVantage extends HandlebarsApplicationMixin(ApplicationV2) {
   static DEFAULT_OPTIONS = {
     id: "fast-fighting-battle",
     classes: ["fast-fighting", "ff-battle"],
     window: { title: "FASTFIGHTING.Battle.Title", icon: "fa-solid fa-chess-knight", resizable: true },
     position: { width: 980, height: 720 },
     actions: {
-      continue: BattleInterface.#onContinue,
-      rewind: BattleInterface.#onRewind,
-      play: BattleInterface.#onPlay,
-      rewindAll: BattleInterface.#onRewindAll,
-      dropHeld: BattleInterface.#onDropHeld,
-      npcReactions: BattleInterface.#onNpcReactions,
-      tellIt: BattleInterface.#onTellIt,
-      playThrough: BattleInterface.#onPlayThrough,
-      spotlight: BattleInterface.#onSpotlight,
-      aftermath: BattleInterface.#onAftermath,
-      automate: BattleInterface.#onAutomate,
-      adjust: BattleInterface.#onAdjust,
-      addLine: BattleInterface.#onAddLine,
-      setSide: BattleInterface.#onSetSide,
-      setRole: BattleInterface.#onSetRole,
-      bringIn: BattleInterface.#onBringIn
+      continue: BattleVantage.#onContinue,
+      rewind: BattleVantage.#onRewind,
+      play: BattleVantage.#onPlay,
+      rewindAll: BattleVantage.#onRewindAll,
+      dropHeld: BattleVantage.#onDropHeld,
+      npcReactions: BattleVantage.#onNpcReactions,
+      tellIt: BattleVantage.#onTellIt,
+      playThrough: BattleVantage.#onPlayThrough,
+      spotlight: BattleVantage.#onSpotlight,
+      aftermath: BattleVantage.#onAftermath,
+      automate: BattleVantage.#onAutomate,
+      adjust: BattleVantage.#onAdjust,
+      addLine: BattleVantage.#onAddLine,
+      setSide: BattleVantage.#onSetSide,
+      setRole: BattleVantage.#onSetRole,
+      bringIn: BattleVantage.#onBringIn
     }
   };
 
   static PARTS = {
-    main: { template: "modules/fast-fighting/templates/battle-interface.hbs", scrollable: [".ff-battle-side"] }
+    main: { template: "modules/fast-fighting/templates/battle-vantage.hbs", scrollable: [".ff-battle-side"] }
   };
 
   /** Open it (GMs only), or bring it to the front. */
@@ -124,7 +124,7 @@ export class BattleInterface extends HandlebarsApplicationMixin(ApplicationV2) {
       existing.bringToFront?.();
       return existing.render({ force: true });
     }
-    return new BattleInterface().render({ force: true });
+    return new BattleVantage().render({ force: true });
   }
 
   /** Drawn again, if it's open. */
@@ -478,7 +478,7 @@ export class BattleInterface extends HandlebarsApplicationMixin(ApplicationV2) {
 }
 
 /**
- * What the Battle Interface shows of a battle (whichever browser plays it), with `focusId` in focus: {context (the
+ * What the Battle Vantage shows of a battle (whichever browser plays it), with `focusId` in focus: {context (the
  * template's), graph (the map of minds: battle-network.js), focus (still there, or null)}.
  */
 export function battleContext(b, focusId = null) {
@@ -794,15 +794,15 @@ function factText(f, name) {
  * Drawn again whenever the battle changes, and when hit points or the tracker do; a single token the GM selects on
  * the map, in focus.
  */
-export function registerBattleInterface() {
-  Hooks.on("fastFighting.liveBattle", () => BattleInterface.refresh());
+export function registerBattleVantage() {
+  Hooks.on("fastFighting.liveBattle", () => BattleVantage.refresh());
   let soon = null;
   const later = () => {
     clearTimeout(soon);
-    soon = setTimeout(() => BattleInterface.refresh(), 250);
+    soon = setTimeout(() => BattleVantage.refresh(), 250);
   };
   for ( const hook of ["updateCombat", "updateActor", "updateToken"] ) Hooks.on(hook, later);
-  // The map of minds' keys: on what the GM points at (or stepped to), with the pointer over the Battle Interface;
+  // The map of minds' keys: on what the GM points at (or stepped to), with the pointer over the Battle Vantage;
   // anywhere else, the keys are the canvas's. + and - are the characters typed, wherever a keyboard has them (Foundry's
   // bindings go by a key's place: the key right of 0 is + on some keyboards, - or ö on others); the bindings in
   // Configure Controls (the number pad's, by default, and whatever else the GM sets) work too.

@@ -27,7 +27,7 @@
  *               says, while the taunt lasts and the taunter stands. It counts like a stated desire, and blinds like one.
  *   asked       friends asking it for a buff (their "bolstered" desires naming it): no roll, only that they can make
  *               themselves understood and that it's willing (see heed).
- *   gm          what the GM holds it to in a live battle (the Battle Interface): that level and no other, whatever the
+ *   gm          what the GM holds it to in a live battle (the Battle Vantage): that level and no other, whatever the
  *               rest would make of it (0: set aside), until the GM hands it back. It counts like a stated desire.
  *   puppet      under someone's control (a charm, domination: u.controlledBy), what its controller wants, worked out
  *               each turn (puppetWishes): those and nothing of its own, while the control lasts.
