@@ -1,10 +1,11 @@
 import { describe, expect, test } from "vitest";
 import {
   beginLive, liveRound, liveTurn, pcTurn, pcTurnBegin, pcTurnEnd, leavingReach, reactNow, syncFromSheets, applyFact, mindOf, snapshotRun, restoreRun,
-  NeedsDecision, bandLevel
+  NeedsDecision, bandLevel, captureAll
 } from "../scripts/engine/live.js";
 import { STATUS, SWAY } from "../scripts/constants.js";
-import { applyOutcome } from "../scripts/engine/behavior/effects.js";
+import { applyOutcome, recompute } from "../scripts/engine/behavior/effects.js";
+import { diffAll } from "../scripts/engine/changes.js";
 import { pf2eRules } from "./fixtures/three-action-rules.js";
 import { genericRules } from "../scripts/adapters/generic/rules.js";
 import { parseFormula, part } from "../scripts/engine/dice.js";
@@ -263,11 +264,37 @@ describe("live battles: the engine a turn at a time", () => {
     expect(valeros.conds.frightened).toBe(1);
     // It lasts as long as the sheet shows it, and is kept with the turn.
     const again = restoreRun(skirmish(), pf2eRules, snapshotRun(run));
-    expect(again.byId.get("valeros").effects.find(e => e.sourceId === "orc")).toMatchObject({ conditions: { frightened: 1 }, rounds: Infinity });
+    expect(again.byId.get("valeros").effects.find(e => e.sourceId === "orc")).toMatchObject({ conditions: { frightened: 1 }, rounds: 2 });
     // Gone from the sheet: gone.
     syncFromSheets(run, { valeros: { conditions: {} } });
     expect(valeros.effects.some(e => e.sourceId === "orc")).toBe(false);
     expect(valeros.conds.frightened ?? 0).toBe(0);
+  });
+
+  test("one it laid that the sheet shows, it answers for: its own rounds run out, and the turn clears it for the sheet", () => {
+    const run = beginLive(skirmish(), pf2eRules, { seed: 1, players: ["valeros", "kyra"] });
+    const valeros = run.byId.get("valeros");
+    applyOutcome(valeros, { conditions: { frightened: 2 }, rounds: 1, label: "Demoralize" }, "orc", { id: "orc.demoralize", name: "Demoralize" });
+    // Written to the sheet, read back: the orc's effect answers for it (the sheet's own record of it is its).
+    syncFromSheets(run, { valeros: { conditions: { frightened: 2 } } });
+    expect(valeros.baseConds.frightened).toBeUndefined();
+    expect(valeros.conds.frightened).toBe(2);
+    const before = captureAll(run);
+    pcTurnBegin(run, "valeros");
+    pcTurnEnd(run, "valeros", []);
+    expect(valeros.conds.frightened ?? 0).toBe(0);
+    expect(diffAll(before, captureAll(run)).valeros?.conditions?.cleared).toEqual(["frightened"]);
+    // One with a life of its own (ending on a repeated save) answers for it too: shaken off, cleared for the sheet.
+    applyOutcome(valeros, { conditions: { paralyzed: 1 }, rounds: 10, repeatSave: { type: "will", dc: 1 } }, "orc", { id: "orc.hold", name: "Hold" });
+    syncFromSheets(run, { valeros: { conditions: { paralyzed: 1 } } });
+    expect(valeros.baseConds.paralyzed).toBeUndefined();
+    valeros.effects = valeros.effects.filter(e => !e.repeatSave);
+    recompute(valeros);
+    expect(valeros.conds.paralyzed ?? 0).toBe(0);
+    // More on the sheet than it laid (from elsewhere): that stays the sheet's.
+    applyOutcome(valeros, { conditions: { frightened: 1 }, rounds: 1, label: "Demoralize" }, "orc", { id: "orc.demoralize", name: "Demoralize" });
+    syncFromSheets(run, { valeros: { conditions: { frightened: 3 } } });
+    expect(valeros.baseConds.frightened).toBe(3);
   });
 
   test("what a sheet can't carry (PF2e has no condition for losing a turn to Command), the engine keeps, for its own rounds", () => {

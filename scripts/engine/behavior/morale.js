@@ -43,6 +43,9 @@ export function standsGround(run, u) {
   return run.rng.chance((clamp(run.prep?.options.standGround ?? STAND_GROUND, 0, 100) / 100) * strength);
 }
 
+/** How much each step of being frightened weighs on its nerve. */
+const FRIGHT_STRESS = 4;
+
 /**
  * How shaken u is. With a floor (the stress it must reach for a new morale check), the costly reckoning of the odds is
  * skipped when even the worst odds couldn't bring it there.
@@ -85,6 +88,8 @@ export function moraleStress(run, u, floor = -Infinity) {
   // Rallied: steadier for a round (a commander's rally, more).
   if ( steadied(run, u) ) stress -= STEADY * (u.steadiedBy ?? 1);
 
+  // Frightened: the worse, the shakier.
+  stress += FRIGHT_STRESS * (Number(u.conds?.frightened) || 0);
   // Someone who made them pay and is still standing, unanswered, weighs on them.
   for ( const [id, g] of u.grudges ?? [] ) {
     if ( !g.provoked && isStanding(run.byId.get(id) ?? {}) ) stress += 15;

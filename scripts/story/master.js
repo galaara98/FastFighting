@@ -31,7 +31,9 @@ const SYNONYMS = Object.freeze({
   "off-guard": "offGuard", "flat-footed": "offGuard", grappled: "grabbed", enfeebled: "weakened", stupefied: "befuddled",
   fatigued: "exhausted", exhaustion: "exhausted", quickened: "hastened", hasted: "hastened", incapacitated: "stunned",
   dominated: "controlled", undetected: "hidden", unnoticed: "hidden", dazed: "reeling", nauseated: "sickened",
-  "on-fire": "burning", ablaze: "burning", vulnerable: "offGuard", untethered: "adrift", "in-cover": "inCover"
+  "on-fire": "burning", ablaze: "burning", vulnerable: "offGuard", untethered: "adrift", "in-cover": "inCover",
+  asleep: "unconscious", sleep: "unconscious", turned: "fleeing", held: "restrained", doomed: "cursed", broken: "gearBroken",
+  encumbered: "slowed"
 });
 
 /** Common names systems give the master list's maneuvers (their slugs), where they differ from its own. */

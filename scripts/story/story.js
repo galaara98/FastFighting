@@ -318,8 +318,9 @@ function fellingBlows(log) {
 /**
  * A control action's telling, from the master list (story/master.js) where the system says what it is: the maneuver
  * ("{actor} sweeps {target}'s legs"), then the condition it lays, told of the one it's laid on ("{actor} hits the
- * dirt"), then, at its best, that condition (or maneuver) over the top; at its worst, the maneuver underwhelming.
- * Without either, the plain line with the system's own word for the effect.
+ * dirt"), then, at its best, that condition (or maneuver) over the top; at its worst, the maneuver underwhelming, or
+ * the condition barely taking hold (it landed though the one it's laid on resisted it). Without either, the plain line
+ * with the system's own word for the effect.
  */
 function controlLine(e, g, roll, mapCondition) {
   // (Its best and worst, as the one acting sees it: a save turned around.)
@@ -339,6 +340,8 @@ function controlLine(e, g, roll, mapCondition) {
   const on = { actor: g.target, target: g.actor, weapon: g.weapon };
   if ( c ) parts.push(said(`condition.${c}`, on));
   if ( best ) parts.push(c ? said(`condition.${c}.amazing`, on) : said(`maneuver.${m}.amazing`, g));
+  // (Laid though it was resisted, a lesser effect: it barely takes hold.)
+  else if ( c && e.roll === "save" && e.degree >= 2 ) parts.push(said(`condition.${c}.terrible`, on));
   return parts.filter(Boolean).map(capital).join(" ");
 }
 

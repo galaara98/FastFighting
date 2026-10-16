@@ -30,7 +30,8 @@ import { logLine } from "../story/log-lines.js";
 import { loadStoryTables } from "../story/tables.js";
 import {
   beginLive, liveRound, liveTurn, pcTurnBegin, pcTurnEnd, syncFromSheets, setApproach, captureAll, snapshotRun, restoreRun, endLive,
-  NeedsDecision, applyFact, gmMoment, leavingReach, openingFor, reactNow, nextSpotlight, liveAftermath
+  NeedsDecision, applyFact, gmMoment, leavingReach, openingFor, reactNow, nextSpotlight, liveAftermath,
+  setCondition, setRelation, clearRelation
 } from "../engine/live.js";
 import { diffAll } from "../engine/changes.js";
 import { randomSeed } from "../engine/rng.js";
@@ -52,6 +53,22 @@ function runsHere(data) {
   const owner = data?.user ? game.users.get(data.user) : null;
   return owner?.active ? owner.isSelf : !!game.user.isActiveGM;
 }
+
+/**
+ * Is the battle this browser holds still its own to play? The combat's flag (every client sees it) says which battle
+ * is on it and whose browser plays it: another GM may have rewound it, begun another, or picked it up while this one
+ * was away.
+ */
+function stillHere() {
+  const flag = battle?.combat?.getFlag(MODULE_ID, "live");
+  return !!flag && flag.id === battle.data.id && (!flag.user || flag.user === game.user.id);
+}
+
+/** This browser plays the battle it holds now. */
+const playsHere = () => !!battle && runsHere(battle.data) && stillHere();
+
+/** The combat's flag for the battle: which it is, whether it's still going, and whose browser plays it. */
+const flagOf = active => ({ id: battle.data.id, active, user: battle.data.user });
 
 /** Something changed in the battle: whatever shows it draws it again. */
 const changed = () => Hooks.callAll("fastFighting.liveBattle", battle);
@@ -152,7 +169,7 @@ export async function startLiveBattle(spec, { style = setting("storyStyle"), odd
       ended: false, played: null, opening: [], rolled: unrolled, rollCards, joined: [], startedCombat: started, spotlight, spots: 0
     }
   };
-  await combat.setFlag(MODULE_ID, "live", { id: battle.data.id, active: true });
+  await combat.setFlag(MODULE_ID, "live", flagOf(true));
   Hooks.callAll("fastFighting.liveBattleStarted", battle);
   await queue(async () => {
     battle.data.opening = await tellNew();
@@ -179,7 +196,7 @@ function queue(work) {
 
 /** The tracker moved on: the turn that ended is closed (a player's, read and told), and the next begins. */
 function onTurnChange(combat, prior, current) {
-  if ( !battle || battle.combat !== combat || battle.data.ended || !runsHere(battle.data) ) return;
+  if ( battle?.combat !== combat || battle.data.ended || !playsHere() ) return;
   queue(async () => {
     if ( battle.pc && battle.pc.combatantId !== combat.combatant?.id ) await closePlayerTurn();
     if ( battle.data.spotlight ) await spotlightMoved(combat, prior);
@@ -406,7 +423,7 @@ async function readStates() {
     if ( !doc ) continue;
     const state = (await adapter.readLiveState(doc, { spec: battle.spec, unit: u })) ?? {};
     // (Which of the engine's conditions its sheet can carry: what it can't, the engine keeps.)
-    state.carries ??= key => adapter.sheetCarries(key);
+    state.carries ??= key => adapter.sheetCarries(key, doc.actor);
     if ( doc.object ) {
       const p = positionOf(doc.object);
       state.position = { x: p.x, y: p.y };
@@ -587,7 +604,7 @@ function madeFor(message, pcId) {
 
 /** What a player's turn left in the chat, as it's made (not FastFighting's own cards). */
 function onMessage(message) {
-  if ( !battle?.pc || !runsHere(battle.data) || message.getFlag(MODULE_ID, "story") || message.getFlag(MODULE_ID, "live") ) return;
+  if ( !battle?.pc || !playsHere() || message.getFlag(MODULE_ID, "story") || message.getFlag(MODULE_ID, "live") ) return;
   const pc = battle.pc;
   if ( !madeFor(message, pc.id) ) return;
   pc.messages.push(message.id);
@@ -883,7 +900,7 @@ async function finish() {
   const last = battle.data.turns.at(-1);
   if ( last ) last.messages.push(...messages, ...(card ? [card.id] : []));
   await keep();
-  await battle.combat.setFlag(MODULE_ID, "live", { id: battle.data.id, active: false });
+  await battle.combat.setFlag(MODULE_ID, "live", flagOf(false));
 }
 
 /* -------------------------------------------- */
@@ -957,7 +974,7 @@ export function rewindTurn() {
     const at = battle.combat.turns.findIndex(c => c.id === turn.combatantId);
     if ( at >= 0 ) await battle.combat.update({ round: turn.round, turn: at }, { turnEvents: false });
     await keep();
-    await battle.combat.setFlag(MODULE_ID, "live", { id: battle.data.id, active: true });
+    await battle.combat.setFlag(MODULE_ID, "live", flagOf(true));
     const u = unitOf(battle.combat.combatant);
     if ( u && battle.run.live.players.has(u.id) ) await beginPlayerTurn(u, battle.combat.combatant);
     else if ( u ) await rewoundCard(u);
@@ -981,6 +998,8 @@ export function rewindEncounter() {
   return queue(async () => {
     if ( !battle ) return false;
     for ( const turn of [...battle.data.turns].reverse() ) await holdingPause(() => revertEntry(battle.scene, turn));
+    // (What the GM changed before the first turn.)
+    if ( battle.data.gmRecords?.length ) await holdingPause(() => revertEntry(battle.scene, { records: battle.data.gmRecords }));
     const combat = battle.combat;
     // (Its opening cards, and the combat as it was: not started, the initiative it rolled taken back, and those who
     // joined it on the way gone from it.)
@@ -1036,6 +1055,38 @@ export function liveFact(fact) {
     await keep();
     return ok;
   });
+}
+
+/**
+ * The GM changes a creature's conditions (the Battle Interface): {op: "set", id, key, value, byId, rounds} (value 0
+ * takes it off); {op: "relate", id, kind, byId, rounds, level}; {op: "unrelate", id, kind, byId}. Done at once: in the
+ * engine, and on the sheets for what the system's can show (through its helper: writeChanges); the rest the core keeps
+ * (engine/live.js). Kept with the battle, and taken back with the turn it came after (a player's turn under way: with
+ * that), or the whole encounter.
+ */
+export function liveCondition(op) {
+  return queue(async () => {
+    if ( !playsHere() || !battle.run.byId.has(op?.id) ) return false;
+    const run = battle.run;
+    const before = captureAll(run);
+    const done = op.op === "set" ? setCondition(run, op.id, op)
+      : op.op === "relate" ? setRelation(run, op.id, op)
+        : op.op === "unrelate" ? clearRelation(run, op.id, op) : false;
+    if ( !done ) return false;
+    const records = battle.pc?.records ?? battle.data.turns.at(-1)?.records ?? (battle.data.gmRecords ??= []);
+    await holdingPause(() => writeChanges(before, captureAll(run), records));
+    await keep();
+    return true;
+  });
+}
+
+/** A token on the battle's map, not in the fight, brought into it: on the tracker, it joins (joinFight). */
+export async function bringIntoFight(tokenId) {
+  if ( !battle || !game.user.isGM ) return false;
+  const doc = battle.scene.tokens.get(tokenId);
+  if ( !doc || battle.combat.combatants.some(c => c.tokenId === tokenId) ) return false;
+  await battle.combat.createEmbeddedDocuments("Combatant", [{ tokenId, sceneId: battle.scene.id, actorId: doc.actorId }]);
+  return true;
 }
 
 /** A fact held for the player's turn, taken back before it's told. */
@@ -1102,6 +1153,7 @@ async function pickUp() {
     const data = await kept(combat.id);
     if ( !data?.snapshot || !runsHere(data) ) continue;
     data.user = game.user.id; // (its GM gone: this one plays it now)
+    await combat.setFlag(MODULE_ID, "live", { ...flag, user: game.user.id });
     let spec;
     try {
       spec = unpackSpec(data.spec);
@@ -1134,17 +1186,27 @@ export function registerLiveBattles() {
   CONFIG.queries[QUERIES.liveAsk] = answerAsk;
   Hooks.on("combatTurnChange", onTurnChange);
   Hooks.on("updateToken", (doc, changes) => {
-    if ( !battle?.pc || doc.id !== battle.pc.id || !("x" in changes || "y" in changes) || !runsHere(battle.data) ) return;
+    if ( !battle?.pc || doc.id !== battle.pc.id || !("x" in changes || "y" in changes) || !playsHere() ) return;
     queue(() => playerMoved(doc));
   });
   Hooks.on("createChatMessage", onMessage);
   Hooks.on("createCombatant", combatant => {
-    if ( battle?.combat !== combatant.parent || battle.data.ended || !runsHere(battle.data) ) return;
+    if ( battle?.combat !== combatant.parent || battle.data.ended || !playsHere() ) return;
     queue(() => joinFight(combatant));
   });
   Hooks.once("ready", () => pickUp());
   // (Its GM left: the active GM picks it up.)
   Hooks.on("userConnected", () => {
+    if ( !battle ) pickUp();
+  });
+  // (Another GM rewound it, began another, or picked it up while this one was away: this browser lets go of the one it
+  // held, and takes up one that's its own now.)
+  Hooks.on("updateCombat", (combat, changes) => {
+    if ( !foundry.utils.hasProperty(changes, `flags.${MODULE_ID}`) ) return;
+    if ( battle?.combat === combat && !stillHere() ) {
+      battle = null;
+      changed();
+    }
     if ( !battle ) pickUp();
   });
   Hooks.on("deleteCombat", combat => {

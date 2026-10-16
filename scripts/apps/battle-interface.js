@@ -1,17 +1,23 @@
 /**
  * The Battle Interface: the GM's window on a live battle (foundry/live-battle.js). Whose turn it is and what
  * FastFighting is waiting for (Continue, Rewind Turn, Play it, Rewind This Encounter, Play to the end, how NPCs'
- * reactions are decided); and each creature's mind as FastFighting has it (what it wants and how badly, its fears,
- * how far it's been talked round, who it won't listen to, whether it's shaken, who goads it), with what came of the
- * table's own rolls put in as the simulation would have it ("the goblin is afraid of Valeros", "Kyra's Diplomacy at
- * it: a success", "it surrenders").
+ * reactions are decided); and every creature on the map: its mind as FastFighting has it (what it wants and how
+ * badly, how far it's been talked round, who it won't listen to, whether it's shaken), its conditions (each with its
+ * value, who caused it, for how long, and whether its sheet shows it or FastFighting keeps it) and those toward someone
+ * (afraid of, grabbed by, goaded by, controlled by, tied up by, off guard to, marked by), to change or take off, and any
+ * the core knows to put on (engine/conditions.js); with what came of the table's own rolls put in as the simulation
+ * would have it ("Kyra's Diplomacy at it: a success", "it surrenders"). A token on the map not in the battle can be
+ * brought into it.
  */
 import { NEUTRAL_PARTY } from "../constants.js";
 import { DESIRE_BAND_KEYS } from "../engine/behavior/desire.js";
-import { mindOf, bandLevel } from "../engine/live.js";
+import { mindOf, bandLevel, conditionsOf } from "../engine/live.js";
+import { GM_RELATIONS } from "../engine/conditions.js";
+import { getAdapter } from "../api.js";
+import { roundsText } from "../i18n.js";
 import {
   liveBattle, continueBattle, rewindTurn, rewindEncounter, playCurrent, liveFact, dropHeldFact, setNpcReactions, setPlayThrough, finishReview,
-  waitingOnGm, suggestedSpotlight, spotlightNext, settleBattle, setAutomated
+  waitingOnGm, suggestedSpotlight, spotlightNext, settleBattle, setAutomated, liveCondition, bringIntoFight
 } from "../foundry/live-battle.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -20,10 +26,8 @@ const fmt = (key, data) => game.i18n.format(key, data);
 
 /** What the GM can say came of the table's rolls, each as engine/live.js applyFact takes it. */
 const FACTS = Object.freeze({
-  fear: { who: true, how: "band", fact: (id, by, band) => ({ kind: "want", id, desire: "avoid", targetId: by, level: bandLevel(band) }) },
   hurt: { who: true, how: "band", fact: (id, by, band) => ({ kind: "want", id, desire: "hurt", targetId: by, level: bandLevel(band) }) },
   protect: { who: true, how: "band", fact: (id, by, band) => ({ kind: "want", id, desire: "protect", targetId: by, level: bandLevel(band) }) },
-  taunt: { who: true, fact: (id, by) => ({ kind: "taunt", id, byId: by, rounds: 1 }) },
   persuade: { who: true, how: "degree", fact: (id, by, degree) => ({ kind: "talk", id, byId: by, talk: "persuade", degree }) },
   intimidate: { who: true, how: "degree", fact: (id, by, degree) => ({ kind: "talk", id, byId: by, talk: "intimidate", degree }) },
   deceive: { who: true, how: "degree", fact: (id, by, degree) => ({ kind: "talk", id, byId: by, talk: "deceive", degree }) },
@@ -55,7 +59,12 @@ export class BattleInterface extends HandlebarsApplicationMixin(ApplicationV2) {
       playThrough: BattleInterface.#onPlayThrough,
       spotlight: BattleInterface.#onSpotlight,
       aftermath: BattleInterface.#onAftermath,
-      automate: BattleInterface.#onAutomate
+      automate: BattleInterface.#onAutomate,
+      impose: BattleInterface.#onImpose,
+      condClear: BattleInterface.#onCondClear,
+      condStep: BattleInterface.#onCondStep,
+      relClear: BattleInterface.#onRelClear,
+      bringIn: BattleInterface.#onBringIn
     }
   };
 
@@ -97,8 +106,23 @@ export class BattleInterface extends HandlebarsApplicationMixin(ApplicationV2) {
     // (A spotlight system: whom FastFighting would give it to next.)
     const next = state === "waiting" || state === "spotlight" ? suggestedSpotlight() : null;
     const others = run.units.map(u => ({ id: u.id, name: u.spec.name }));
-    const creatures = run.units.filter(u => u.active || u.status !== "standing").map(u => {
+    // The conditions the GM can put on: the core's and the system's own, in the system's words where it has them, each
+    // saying whether its sheets show it (then it goes on the sheet) or FastFighting keeps it.
+    const adapter = getAdapter();
+    const label = key => adapter?.conditionLabel?.(key) || (game.i18n.has(`FASTFIGHTING.Condition.${key}`) ? loc(`FASTFIGHTING.Condition.${key}`) : key);
+    const seen = new Set();
+    const choices = (adapter?.conditionChoices?.() ?? []).filter(c => c?.key && !seen.has(c.key) && seen.add(c.key))
+      .map(c => ({ value: c.key, label: label(c.key), valued: !!c.valued }))
+      .sort((a, b) => a.label.localeCompare(b.label, game.i18n.lang));
+    const valued = new Set(choices.filter(c => c.valued).map(c => c.value));
+    // (Per creature: whose sheet it is can matter, a character's and not a foe's.)
+    const carries = (key, actor) => !!adapter?.sheetCarries?.(key, actor);
+    const conditionsFor = actor => choices.map(c => ({ ...c, label: `${c.label} · ${loc(carries(c.value, actor) ? "FASTFIGHTING.Battle.OnSheet" : "FASTFIGHTING.Battle.CoreOnly")}` }));
+    const relationsHere = GM_RELATIONS.map(k => ({ value: `rel:${k}`, label: loc(`FASTFIGHTING.Battle.RelationPick.${k}`) }));
+    // Every creature in the battle: those not in the fight yet (bystanders who haven't noticed it) too.
+    const creatures = run.units.map(u => {
       const mind = mindOf(run, u.id);
+      const has = conditionsOf(run, u.id);
       const doc = b.scene.tokens.get(u.tokenId ?? u.spec.tokenId ?? u.id);
       // (A player's character, or one a player has: FastFighting may play it for the rest of the battle, or stop.)
       const playable = u.spec.kind === "pc" || (b.data.players ?? []).includes(u.id) || !!doc?.actor?.hasPlayerOwner;
@@ -114,10 +138,27 @@ export class BattleInterface extends HandlebarsApplicationMixin(ApplicationV2) {
         sway: mind.sway.filter(s => s.progress > 0).map(s => fmt("FASTFIGHTING.Battle.Persuaded", { side: sideLabel(s.side), n: s.progress, steps: s.steps })),
         wontListen: mind.offendedBy.length ? fmt("FASTFIGHTING.Battle.WontListen", { names: mind.offendedBy.map(name).join(", ") }) : "",
         wavering: mind.wavering,
-        taunts: mind.taunts.map(t => fmt("FASTFIGHTING.Battle.Goaded", { name: name(t.byId) })),
-        others: others.filter(o => o.id !== u.id)
+        waiting: !u.active && u.status === "standing",
+        // (Where each is kept: on the sheet, where the system has a mark for it; else by FastFighting. One that stands
+        // for a condition toward someone, grabbed or controlled, is told as that.)
+        conditions: has.conditions.filter(c => !has.relations.some(r => r.kind === c.key)).map(c => ({
+          key: c.key, valued: valued.has(c.key), value: c.value, sheet: carries(c.key, doc?.actor),
+          text: valued.has(c.key) || c.value > 1 ? `${label(c.key)} ${c.value}` : label(c.key),
+          from: c.sources.map(s => [s.byId ? fmt("FASTFIGHTING.Battle.From", { name: name(s.byId) }) : "", s.rounds ? roundsText(s.rounds) : ""].filter(Boolean).join(", ")).filter(Boolean).join("; "),
+          by: c.sources.find(s => s.byId)?.byId ?? ""
+        })),
+        relations: has.relations.map(r => ({
+          kind: r.kind, byId: r.byId,
+          text: fmt(`FASTFIGHTING.Battle.Relation.${r.kind}`, { name: name(r.byId) })
+            + (r.kind === "afraid" ? ` (${loc(`FASTFIGHTING.Desire.Level.${DESIRE_BAND_KEYS[r.band]}`)})` : r.rounds ? ` (${roundsText(r.rounds)})` : "")
+        })),
+        others: others.filter(o => o.id !== u.id),
+        conditionsHere: conditionsFor(doc?.actor)
       };
     });
+    // Tokens on the map that aren't in the battle at all: to bring into it.
+    const inBattle = new Set(run.units.map(u => u.tokenId ?? u.spec.tokenId ?? u.id));
+    const elsewhere = b.scene.tokens.filter(t => t.actor && !inBattle.has(t.id)).map(t => ({ tokenId: t.id, name: t.name, img: t.texture?.src ?? "icons/svg/mystery-man.svg" }));
     // A player's turn waiting on the GM: what was read of it, to keep or drop (and a talk set right).
     const review = b.review ? {
       title: fmt("FASTFIGHTING.Battle.ReviewTitle", { name: name(b.review.id) }),
@@ -142,7 +183,7 @@ export class BattleInterface extends HandlebarsApplicationMixin(ApplicationV2) {
       canSettle: state === "ended" && !b.data.settled,
       npcAsk: run.live.npcReactions === "ask", playThrough: !!b.data.auto,
       held: (b.pc?.facts ?? []).map((f, i) => ({ i, text: factText(f, name) })),
-      creatures,
+      creatures, elsewhere, relationsHere,
       facts: Object.entries(FACTS).map(([key, f]) => ({ key, label: loc(`FASTFIGHTING.Battle.Fact.${key}`), who: !!f.who, how: f.how ?? "" })),
       bands: DESIRE_BAND_KEYS.map((k, i) => ({ value: i, label: loc(`FASTFIGHTING.Desire.Level.${k}`) })),
       degrees: [3, 2, 1, 0].map(d => ({ value: d, label: loc(`FASTFIGHTING.Battle.Degree.${d}`) }))
@@ -193,6 +234,50 @@ export class BattleInterface extends HandlebarsApplicationMixin(ApplicationV2) {
     await liveFact(f.fact(id, by, how));
   }
 
+  /**
+   * A condition put on (or one toward someone), as the creature's card says: which, how much, by whom, for how many
+   * rounds (none: until taken off). What its sheet can show goes on the sheet; the rest FastFighting keeps.
+   */
+  static async #onImpose(event, target) {
+    const row = target.closest("[data-creature]");
+    const id = row?.dataset.creature;
+    const pick = row?.querySelector("[name=cond]")?.value ?? "";
+    if ( !id || !pick ) return;
+    const byId = row.querySelector("[name=by]")?.value || null;
+    const rounds = Number(row.querySelector("[name=rounds]")?.value) || null;
+    if ( pick.startsWith("rel:") ) {
+      if ( !byId ) return ui.notifications.warn(loc("FASTFIGHTING.Battle.PickWho"));
+      const level = Number(row.querySelector("[name=band]")?.value ?? 2);
+      return liveCondition({ op: "relate", id, kind: pick.slice(4), byId, rounds, level });
+    }
+    const value = Math.max(1, Number(row.querySelector("[name=value]")?.value) || 1);
+    await liveCondition({ op: "set", id, key: pick, value, byId, rounds });
+  }
+
+  /** A condition taken off. */
+  static async #onCondClear(event, target) {
+    const id = target.closest("[data-creature]")?.dataset.creature;
+    await liveCondition({ op: "set", id, key: target.dataset.key, value: 0 });
+  }
+
+  /** A counted condition one more, or one less (none left: off). */
+  static async #onCondStep(event, target) {
+    const id = target.closest("[data-creature]")?.dataset.creature;
+    const { key, value, step, by } = target.dataset;
+    await liveCondition({ op: "set", id, key, value: Math.max(0, Number(value) + Number(step)), byId: by || null });
+  }
+
+  /** A condition toward someone taken off. */
+  static async #onRelClear(event, target) {
+    const id = target.closest("[data-creature]")?.dataset.creature;
+    await liveCondition({ op: "unrelate", id, kind: target.dataset.kind, byId: target.dataset.who });
+  }
+
+  /** A token on the map brought into the fight. */
+  static async #onBringIn(event, target) {
+    await bringIntoFight(target.dataset.token);
+  }
+
   /** A want the GM set, taken back. */
   static async #onForget(event, target) {
     const { creature, kind, who } = target.dataset;
@@ -240,7 +325,7 @@ export class BattleInterface extends HandlebarsApplicationMixin(ApplicationV2) {
 /** A held fact, in a few words: "Kyra: Was persuaded by (success)". */
 function factText(f, name) {
   const who = name(f.id);
-  const key = f.kind === "want" ? { avoid: "fear", hurt: "hurt", protect: "protect" }[f.desire] : f.kind === "talk" ? f.talk : f.kind === "waver" ? (f.on ? "waver" : "steady") : f.kind === "side" ? "noSide" : f.kind;
+  const key = f.kind === "want" ? { hurt: "hurt", protect: "protect" }[f.desire] : f.kind === "talk" ? f.talk : f.kind === "waver" ? (f.on ? "waver" : "steady") : f.kind === "side" ? "noSide" : f.kind;
   const label = game.i18n.has(`FASTFIGHTING.Battle.Fact.${key}`) ? loc(`FASTFIGHTING.Battle.Fact.${key}`) : key;
   const by = f.byId ?? f.targetId;
   return [who, label, by ? name(by) : "", f.kind === "talk" ? `(${loc(`FASTFIGHTING.Battle.Degree.${f.degree}`)})` : ""].filter(Boolean).join(" ");

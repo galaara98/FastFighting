@@ -126,9 +126,11 @@ function grudge(u, f) {
   return u.grudges?.get(f.id) ?? null;
 }
 const feared = (u, f) => { const g = grudge(u, f); return !!g && !g.provoked; };
+/** Charmed by f (a charm it caused): u won't attack it. */
+const charmedBy = (u, f) => (u.effects ?? []).some(e => (e.conditions?.charmed ?? 0) > 0 && e.sourceId === f.id);
 
 /**
- * Foes u is willing to go after (not the ones it's afraid of, or set on keeping away from), and anyone taking no side
+ * Foes u is willing to go after (not the ones it's afraid of, or set on keeping away from, or charmed by), and anyone taking no side
  * that it takes for a foe. A smart one holds off those a talk its side is having would be ruined by hurting. While a
  * standoff holds, only a quarrel with someone taking no side is fought.
  */
@@ -138,7 +140,7 @@ function foesOf(run, u) {
   // (A system may say who can be pressed right now: Ironsworn, not a foe who has the initiative over it.)
   const can = run.prep.rules.canTarget;
   // (Walled off: behind a locked door it decided wasn't worth the trouble.)
-  return foes.filter(f => !feared(u, f) && !avoids(run, u, f) && !u.walledOff?.has(f.id) && !spared?.has(f.id) && !heldOff(run, u, f) && (!can || can(run, u, f)));
+  return foes.filter(f => !feared(u, f) && !avoids(run, u, f) && !charmedBy(u, f) && !u.walledOff?.has(f.id) && !spared?.has(f.id) && !heldOff(run, u, f) && (!can || can(run, u, f)));
 }
 
 /**

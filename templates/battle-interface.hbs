@@ -56,7 +56,7 @@
             <img src="{{img}}" alt="">
             <div>
               <strong>{{name}}</strong>{{#if player}} <i class="fa-solid fa-user" data-tooltip="{{localize "FASTFIGHTING.Battle.PlayerRuns"}}"></i>{{/if}}
-              <span class="ff-battle-meta">{{side}} · {{status}} · {{hp}}</span>
+              <span class="ff-battle-meta">{{side}} · {{status}} · {{hp}}{{#if waiting}} · {{localize "FASTFIGHTING.Battle.NotInFight"}}{{/if}}</span>
               {{#if playable}}<label class="ff-battle-automate" data-tooltip="{{localize "FASTFIGHTING.Battle.AutomateHint"}}"><input type="checkbox" data-action="automate" {{checked automated}}> {{localize "FASTFIGHTING.Battle.Automate"}}</label>{{/if}}
             </div>
           </div>
@@ -65,8 +65,35 @@
             {{#each sway}}<li>{{this}}</li>{{/each}}
             {{#if wontListen}}<li>{{wontListen}}</li>{{/if}}
             {{#if wavering}}<li>{{localize "FASTFIGHTING.Battle.Wavering"}}</li>{{/if}}
-            {{#each taunts}}<li>{{this}}</li>{{/each}}
           </ul>
+          {{#if (or conditions.length relations.length)}}
+          <ul class="ff-battle-conds">
+            {{#each conditions}}
+            <li class="ff-cond {{#if sheet}}is-sheet{{/if}}" data-tooltip="{{#if from}}{{from}} · {{/if}}{{#if sheet}}{{localize "FASTFIGHTING.Battle.OnSheet"}}{{else}}{{localize "FASTFIGHTING.Battle.CoreOnly"}}{{/if}}">
+              <i class="fa-solid {{#if sheet}}fa-file-lines{{else}}fa-chess-knight{{/if}}"></i> {{text}}
+              {{#if valued}}<a data-action="condStep" data-key="{{key}}" data-value="{{value}}" data-step="-1" data-by="{{by}}" data-tooltip="{{localize "FASTFIGHTING.Battle.Less"}}"><i class="fa-solid fa-minus"></i></a><a data-action="condStep" data-key="{{key}}" data-value="{{value}}" data-step="1" data-by="{{by}}" data-tooltip="{{localize "FASTFIGHTING.Battle.More"}}"><i class="fa-solid fa-plus"></i></a>{{/if}}
+              <a data-action="condClear" data-key="{{key}}" data-tooltip="{{localize "FASTFIGHTING.Battle.Remove"}}"><i class="fa-solid fa-xmark"></i></a>
+            </li>
+            {{/each}}
+            {{#each relations}}
+            <li class="ff-cond is-relation"><i class="fa-solid fa-link"></i> {{text}} <a data-action="relClear" data-kind="{{kind}}" data-who="{{byId}}" data-tooltip="{{localize "FASTFIGHTING.Battle.Remove"}}"><i class="fa-solid fa-xmark"></i></a></li>
+            {{/each}}
+          </ul>
+          {{/if}}
+          <details class="ff-battle-fact ff-battle-impose">
+            <summary>{{localize "FASTFIGHTING.Battle.Impose"}}</summary>
+            <div class="ff-battle-fact-row">
+              <select name="cond">
+                <optgroup label="{{localize "FASTFIGHTING.Battle.Conditions"}}">{{#each conditionsHere}}<option value="{{value}}">{{label}}</option>{{/each}}</optgroup>
+                <optgroup label="{{localize "FASTFIGHTING.Battle.Toward"}}">{{#each @root.relationsHere}}<option value="{{value}}">{{label}}</option>{{/each}}</optgroup>
+              </select>
+              <select name="by" data-tooltip="{{localize "FASTFIGHTING.Battle.By"}}"><option value="">—</option>{{#each others}}<option value="{{id}}">{{name}}</option>{{/each}}</select>
+              <input type="number" name="value" min="1" step="1" value="1" data-tooltip="{{localize "FASTFIGHTING.Battle.Value"}}">
+              <input type="number" name="rounds" min="1" step="1" placeholder="{{localize "FASTFIGHTING.Battle.Until"}}" data-tooltip="{{localize "FASTFIGHTING.Battle.Rounds"}}">
+              <select name="band" data-tooltip="{{localize "FASTFIGHTING.Desire.HowMuch"}}">{{#each @root.bands}}<option value="{{value}}" {{#if (eq value 2)}}selected{{/if}}>{{label}}</option>{{/each}}</select>
+              <button type="button" class="ff-btn" data-action="impose" data-tooltip="{{localize "FASTFIGHTING.Battle.ImposeHint"}}">{{localize "FASTFIGHTING.Battle.Apply"}}</button>
+            </div>
+          </details>
           <details class="ff-battle-fact">
             <summary>{{localize "FASTFIGHTING.Battle.FactLabel"}}</summary>
             <div class="ff-battle-fact-row">
@@ -79,6 +106,12 @@
           </details>
         </li>
       {{/each}}
+      {{#if elsewhere.length}}
+      <li class="ff-battle-elsewhere">
+        <p class="hint">{{localize "FASTFIGHTING.Battle.Elsewhere"}}</p>
+        <ul>{{#each elsewhere}}<li><img src="{{img}}" alt=""> {{name}} <button type="button" class="ff-btn" data-action="bringIn" data-token="{{tokenId}}"><i class="fa-solid fa-right-to-bracket"></i> {{localize "FASTFIGHTING.Battle.BringIn"}}</button></li>{{/each}}</ul>
+      </li>
+      {{/if}}
     </ol>
   {{/if}}
 </section>

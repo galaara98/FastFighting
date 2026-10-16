@@ -16,6 +16,8 @@
  * and prefer reading what an item does (its activities, effects, rule elements) over recognising it at all, so
  * content nobody has seen yet (paid books, homebrew) still works.
  */
+import { CORE_CONDITIONS } from "../engine/conditions.js";
+
 export class SystemAdapter {
   /** @type {string} */
   static systemId = "";
@@ -255,13 +257,35 @@ export class SystemAdapter {
   }
 
   /**
-   * A live battle: whether this system's sheets can carry one of the engine's conditions (by its key). One they can't
-   * (PF2e has none for losing a turn to Command) the engine keeps itself between turns; one they can, the sheet says
-   * whether it's still there. By default, every one.
+   * A live battle: whether this system's sheets carry one of the engine's conditions (by its key): its commitChanges
+   * writes it there (changes.conditions set and cleared) and its readLiveState reads it back as that key. One they
+   * carry, the sheet says whether it's still there; one they don't (PF2e has nothing for losing a turn to Command), the
+   * core keeps itself, between turns and in the Battle Interface. By default, none: a helper says which. Given the
+   * creature's actor, for that one's sheet (an Ironsworn foe has no debilities); without, for any.
    * @param {string} key
+   * @param {Actor} [actor]
    */
-  sheetCarries(key) {
-    return true;
+  sheetCarries(key, actor) {
+    return false;
+  }
+
+  /**
+   * The system's own word for one of the engine's conditions (by its key), for the Battle Interface; null for the
+   * core's own.
+   * @param {string} key
+   * @returns {string|null}
+   */
+  conditionLabel(key) {
+    return null;
+  }
+
+  /**
+   * The conditions the GM can put on a creature here: the core's (engine/conditions.js), and any of the system's own
+   * that its rules give meaning to, as engine keys: [{key, valued}]. A helper adds its system's to the core's.
+   * @returns {{key: string, valued?: boolean}[]}
+   */
+  conditionChoices() {
+    return [...CORE_CONDITIONS];
   }
 
   /**

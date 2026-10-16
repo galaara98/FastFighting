@@ -29,7 +29,8 @@ import { prepareDoors } from "./behavior/doors.js";
 import { recompute, applyOutcome } from "./behavior/effects.js";
 import { reactionsPerRound } from "./behavior/reactions.js";
 import { resolveTalk, applySway, aimOf, talkDC, stepsToConvince } from "./behavior/talk.js";
-import { rankedDesires, desireBand, want } from "./behavior/desire.js";
+import { rankedDesires, desireBand, want, levelOf } from "./behavior/desire.js";
+import { validConditionKey } from "./conditions.js";
 import { joinSide, standAside, turnOn } from "./behavior/neutral.js";
 
 /** A question the turn can't go on without: whether {unitId} uses {reactionId} because of {trigger} (by {byId}). */
@@ -313,11 +314,15 @@ export function syncFromSheets(run, states) {
       u.baseConds = Object.fromEntries(Object.entries(conds).map(([k, v]) => [k, v === true ? 1 : Number(v) || 0]).filter(([, v]) => v > 0));
       // The sheet says what it has; the engine remembers why (who frightened it, whose spell holds it, who has it in
       // its grip): a system's condition often can't say. An effect of the engine's whose conditions the sheet still
-      // shows stays, at no more than the sheet's value, for as long as the sheet shows it (the system, or the table,
-      // ends it); one the sheet no longer shows is gone. What a sheet can't carry at all (s.carries(key) false: PF2e has
-      // no condition for losing the turn to Command) the engine keeps as it was, for its own rounds.
-      const shown = u.baseConds;
+      // shows stays, at no more than the sheet's value, until its own rounds run out or the sheet stops showing it (the
+      // system, or the table, ended it); one the sheet no longer shows is gone. While it holds, it answers for what the
+      // sheet shows of it: when it ends, the turn's change set clears it, and the helper takes it off the sheet (a
+      // creature FastFighting plays never clears its own). What the sheet shows beyond it (more of it, from elsewhere)
+      // stays the sheet's. What a sheet can't carry at all (s.carries(key) false: PF2e has no condition for losing the
+      // turn to Command) the engine keeps as it was, for its own rounds.
+      const shown = { ...u.baseConds };
       const carried = k => (typeof s.carries === "function" ? s.carries(k) : true);
+      const answered = new Map();
       u.effects = (u.effects ?? []).flatMap(e => {
         if ( !sheetOwned(e) ) return [e];
         const own = Object.keys(e.conditions).filter(k => !carried(k));
@@ -327,8 +332,17 @@ export function syncFromSheets(run, states) {
           ...own.map(k => [k, e.conditions[k]]),
           ...held.map(k => [k, Math.min(e.conditions[k] === true ? 1 : Number(e.conditions[k]) || 1, shown[k])])
         ]);
-        return [own.length ? { ...e, conditions } : { ...e, conditions, rounds: Infinity, sheetHeld: true }];
+        return [own.length ? { ...e, conditions } : { ...e, conditions, sheetHeld: true }];
       });
+      // (Any effect of the engine's answers for what the sheet shows of it: one with a life of its own too, ending on a
+      // repeated save or when harmed. Not one toward a single creature: that's never the sheet's.)
+      for ( const e of u.effects ) {
+        if ( e.onlyVs ) continue;
+        for ( const [k, v] of Object.entries(e.conditions ?? {}) ) {
+          if ( carried(k) && (shown[k] ?? 0) > 0 ) answered.set(k, Math.max(answered.get(k) ?? 0, v === true ? 1 : Number(v) || 0));
+        }
+      }
+      for ( const [k, v] of answered ) if ( (shown[k] ?? 0) <= v ) delete u.baseConds[k];
       recompute(u);
     }
     if ( Array.isArray(s.persistent) ) {
@@ -555,13 +569,180 @@ export function applyFact(run, fact) {
 }
 
 /* -------------------------------------------- */
+/*  Conditions, as the GM sets them             */
+/* -------------------------------------------- */
+
+/** How long the GM's word holds: so many rounds, or until it's taken off (by the GM, or the sheet). */
+const lasting = rounds => (Number(rounds) > 0 ? Math.round(Number(rounds)) : Infinity);
+
+/** A condition taken off a creature everywhere: its sheet's, and every effect's (one with nothing else to it goes). */
+function lift(u, key) {
+  if ( key === "prone" ) {
+    u.prone = false;
+    return;
+  }
+  if ( u.baseConds ) delete u.baseConds[key];
+  u.effects = (u.effects ?? []).flatMap(e => {
+    if ( !(key in (e.conditions ?? {})) ) return [e];
+    const conditions = { ...e.conditions };
+    delete conditions[key];
+    const rest = Object.keys(conditions).length || e.mods || e.mark?.length || e.iwr || e.boost || e.taunt || e.uses;
+    return rest ? [{ ...e, conditions }] : [];
+  });
+}
+
+/**
+ * The GM puts a condition on a creature, changes its value, or (0) takes it off: {key, value, byId, rounds}. Whatever
+ * gave it before gives way to the GM's word. `byId`: who caused it, remembered (frightened by whom); `rounds`: how long
+ * (none: until the GM takes it off, or its sheet does). What the system's sheets can show, the caller writes there
+ * (changes.js, the helper); the rest the engine keeps, as a condition of its own (engine/conditions.js).
+ */
+export function setCondition(run, id, { key, value = 1, byId = null, rounds = null } = {}) {
+  const u = run.byId.get(id);
+  if ( !u || !validConditionKey(key) ) return false;
+  const n = Math.max(0, Math.round(Number(value) || 0));
+  lift(u, key);
+  if ( key === "prone" ) u.prone = n > 0;
+  else if ( n > 0 ) {
+    const source = byId && run.byId.has(byId) && byId !== u.id ? byId : null;
+    u.effects.push({ key: `gm:${key}`, conditions: { [key]: n }, sourceId: source, rounds: lasting(rounds), label: "", gm: true });
+  }
+  recompute(u);
+  settleSides(run);
+  run.live?.facts.push({ kind: "condition", id, key, value: n, byId, rounds, round: run.round });
+  return true;
+}
+
+/**
+ * The GM puts a condition toward another creature on one (engine/conditions.js RELATIONS): {kind, byId, rounds,
+ * level}. Afraid of it (a fear: the desire to keep away, `level` its band), grabbed by it, goaded by it (for
+ * `rounds`, 1 by default), controlled by it (fighting for its side), tied up by it (a prisoner), off guard to it alone.
+ */
+export function setRelation(run, id, { kind, byId, rounds = null, level = 2 } = {}) {
+  const u = run.byId.get(id);
+  const by = run.byId.get(byId);
+  if ( !u || !by || by === u ) return false;
+  switch ( kind ) {
+    case "afraid":
+      return applyFact(run, { kind: "want", id, desire: "avoid", targetId: by.id, level: bandLevel(level) });
+    case "grabbed":
+      u.grabbedBy = by.id;
+      u.effects = u.effects.filter(e => e.key !== "gm:grabbed");
+      u.effects.push({ key: "gm:grabbed", conditions: { grabbed: 1 }, sourceId: by.id, rounds: lasting(rounds), label: "", gm: true });
+      break;
+    case "goaded":
+      return applyFact(run, { kind: "taunt", id, byId: by.id, rounds: Number(rounds) > 0 ? Math.round(rounds) : 1 });
+    case "controlled":
+      u.effects = u.effects.filter(e => !(e.gm && e.conditions?.controlled));
+      u.effects.push({ key: "gm:controlled", conditions: { controlled: 1 }, sourceId: by.id, rounds: lasting(rounds), label: "", gm: true });
+      break;
+    case "bound":
+      u.boundBy = by.id;
+      u.boundRound = run.round;
+      if ( u.status === STATUS.STANDING ) u.status = STATUS.BOUND;
+      break;
+    case "exposedTo":
+      u.effects = u.effects.filter(e => !(e.onlyVs && e.sourceId === by.id && e.gm));
+      u.effects.push({ key: `gm:exposedTo:${by.id}`, conditions: { offGuard: 1 }, onlyVs: true, sourceId: by.id, rounds: lasting(rounds), label: "", gm: true });
+      break;
+    default:
+      return false;
+  }
+  recompute(u);
+  settleSides(run);
+  run.live?.facts.push({ kind: "relation", id, relation: kind, byId, rounds, round: run.round });
+  return true;
+}
+
+/** The GM takes a condition toward another creature off (whatever put it there: a power, the fight, the GM). */
+export function clearRelation(run, id, { kind, byId } = {}) {
+  const u = run.byId.get(id);
+  if ( !u ) return false;
+  const from = e => e.sourceId === byId;
+  switch ( kind ) {
+    case "afraid": {
+      const key = `avoid|${byId}`;
+      run.live?.gm?.delete(`${u.id}|${key}`);
+      for ( const layer of ["stated", "logic", "memory", "social", "style"] ) u.desire?.[layer]?.delete(key);
+      u.grudges?.delete(byId);
+      break;
+    }
+    case "grabbed":
+      if ( u.grabbedBy === byId ) u.grabbedBy = null;
+      u.effects = u.effects.filter(e => !(e.key === "gm:grabbed" && from(e)));
+      break;
+    case "goaded":
+      u.effects = u.effects.filter(e => !(e.taunt > 0 && from(e)));
+      u.desire?.taunt?.delete(`hurt|${byId}`);
+      break;
+    case "controlled":
+      u.effects = u.effects.filter(e => !(e.conditions?.controlled && from(e)));
+      break;
+    case "bound":
+      if ( u.boundBy !== byId ) return false;
+      u.boundBy = null;
+      u.boundRound = null;
+      if ( u.status === STATUS.BOUND ) u.status = u.hp > 0 ? STATUS.STANDING : STATUS.DOWN;
+      break;
+    case "exposedTo":
+      u.effects = u.effects.filter(e => !(e.onlyVs && from(e)));
+      break;
+    case "marked":
+      u.effects = u.effects.filter(e => !(e.mark?.length && from(e)));
+      break;
+    default:
+      return false;
+  }
+  recompute(u);
+  settleSides(run);
+  run.live?.facts.push({ kind: "unrelate", id, relation: kind, byId, round: run.round });
+  return true;
+}
+
+/**
+ * Every condition a creature has, for the GM to see and change: each with its value, whether its sheet shows it, and
+ * where it came from (who caused it, for how long, whether the GM set it); and every one toward another creature.
+ */
+export function conditionsOf(run, id) {
+  const u = run.byId.get(id);
+  if ( !u ) return null;
+  const rounds = e => (Number.isFinite(e.rounds) ? e.rounds : null);
+  const conds = Object.entries(u.conds ?? {}).filter(([, v]) => (Number(v) || 0) > 0);
+  if ( u.prone ) conds.unshift(["prone", 1]);
+  const conditions = conds.map(([key, value]) => ({
+    key, value: Number(value) || 1,
+    sheet: (u.baseConds?.[key] ?? 0) > 0 || (u.effects ?? []).some(e => e.sheetHeld && e.conditions?.[key]),
+    sources: (u.effects ?? []).filter(e => !e.onlyVs && (e.conditions?.[key] ?? 0) > 0)
+      .map(e => ({ byId: e.sourceId ?? null, rounds: rounds(e), gm: !!e.gm, label: e.label || "" }))
+  }));
+  const relations = [];
+  const add = (kind, byId, extra = {}) => { if ( byId && run.byId.has(byId) ) relations.push({ kind, byId, ...extra }); };
+  // (Afraid of: wanting to keep away from it, however it came about: the GM, a grudge, its pills, its fears.)
+  const fears = new Set();
+  for ( const layer of ["stated", "logic", "memory", "social", "style"] ) for ( const k of u.desire?.[layer]?.keys() ?? [] ) if ( k.startsWith("avoid|") ) fears.add(k.slice(6));
+  for ( const byId of fears ) {
+    const level = levelOf(u, "avoid", byId);
+    if ( level > 0 ) add("afraid", byId, { level, band: desireBand(level), gm: !!run.live?.gm?.has(`${u.id}|avoid|${byId}`) });
+  }
+  add("grabbed", u.grabbedBy);
+  for ( const e of u.effects ?? [] ) {
+    if ( e.taunt > 0 ) add("goaded", e.sourceId, { rounds: rounds(e), gm: e.key === "gm-taunt" });
+    if ( e.conditions?.controlled > 0 ) add("controlled", e.sourceId, { rounds: rounds(e), gm: !!e.gm });
+    if ( e.onlyVs ) add("exposedTo", e.sourceId, { rounds: rounds(e), gm: !!e.gm });
+    if ( e.mark?.length ) add("marked", e.sourceId, { rounds: rounds(e) });
+  }
+  add("bound", u.boundBy);
+  return { id: u.id, status: u.status, conditions, relations };
+}
+
+/* -------------------------------------------- */
 /*  For the GM to see                           */
 /* -------------------------------------------- */
 
 /**
  * What a creature wants and feels: its strongest desires (kind, at whom, how badly, its band, what drives it, and
- * whether the GM set it), the persuasion each side has made on it, who it won't listen to, whether it's shaken, the
- * taunts on it, who has hurt it, and where it stands.
+ * whether the GM set it), the persuasion each side has made on it, who it won't listen to, whether it's shaken, who
+ * has hurt it, and where it stands. (Its conditions, and who goads it: conditionsOf.)
  */
 export function mindOf(run, id, { top = 5 } = {}) {
   const u = run.byId.get(id);
@@ -579,7 +760,6 @@ export function mindOf(run, id, { top = 5 } = {}) {
     rebuffed: Object.fromEntries(u.rebuffed ?? []),
     harmedBy: Object.fromEntries(u.harmedBy ?? []),
     wavering: !!u.wavering,
-    taunts: (u.effects ?? []).filter(e => e.taunt > 0 && e.sourceId).map(e => ({ byId: e.sourceId, level: e.taunt, rounds: e.rounds })),
     swayed: u.swayOutcome ?? null
   };
 }

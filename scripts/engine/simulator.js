@@ -18,7 +18,7 @@ import {
 import { sampleRunTactics } from "./playstyles.js";
 import { chooseTarget, bestOptionVs, scoreTargets } from "./behavior/targeting.js";
 import { decideHeal, rescueOption, healScores } from "./behavior/healing.js";
-import { initDesires, newTurn, goaded, think, want, thwart, relieve, levelOf, mind, thoughts as thoughtsOf, levelsFromScores, listen, heed, remember, styleWants, styleOf, follow, scheme, partyWants, CHOICE_LEVEL } from "./behavior/desire.js";
+import { initDesires, newTurn, goaded, think, want, thwart, relieve, levelOf, mind, thoughts as thoughtsOf, levelsFromScores, listen, heed, remember, styleWants, styleOf, follow, conditionWishes, scheme, partyWants, CHOICE_LEVEL } from "./behavior/desire.js";
 import { prepareDoors, doorStates, doorAhead, atDoor, doorPlan, patienceFor, doorDamage } from "./behavior/doors.js";
 import { checkMorale, standsGround, callRetreat, rallies, MORALE } from "./behavior/morale.js";
 import { expectedDamage, spendUse, hasUses, attacksIn, criticalParts, saveMultiplier, saveMultiplierFor, meanDamageVs, unitsPerTurn } from "./behavior/evaluate.js";
@@ -2147,6 +2147,8 @@ function deliberate(run, u) {
   }
   // Foes who fall, as it answered (or its party did): finish them off, tie them up, rob them (behavior/fallen.js).
   fallenWishes(run, u);
+  // What its conditions make it want: away from whoever frightened it, at whoever holds it.
+  conditionWishes(run, u);
   // Badly hurt, it loses heart for foes it would have to cross the field to reach.
   if ( u.maxHp > 0 && u.hp / u.maxHp < 0.35 ) for ( const x of scored ) if ( x.moves >= 2 ) thwart(run, u, "hurt", x.t.id, 5);
   // Its playstyle's leanings (the weakest, the fallen, a friend to guard, something to fear ...).

@@ -497,6 +497,32 @@ export function listen(run, u, { canHeal = false, canTalk = false, canAid = fals
 /** How strongly the party's wishes pull, at a Party's sway of 100%: so many points (the desire scale is 0 to 100). */
 export const PARTY_POINTS = 100;
 
+/** Fear of whoever frightened it: so much, and so much more for each step of the fright, at most this (short of running). */
+const FRIGHT = Object.freeze({ base: 20, step: 15, most: 65 });
+/** Whoever sent it fleeing (or turned it): enough to run from, close at hand. */
+const FLEE_FROM = 80;
+/** Whoever holds it: set on, to break free. */
+const HELD = 50;
+
+/**
+ * What its conditions make it want, by who caused them and how bad they are: whoever frightened it, it would rather
+ * keep away from (the worse the fright, the more: frightened 2 or worse, enough not to go for them while it has
+ * anything else to do); whoever sent it fleeing or turned it, it runs from; whoever holds it, it's set on, to break
+ * free. (Who goads it: the taunt layer, goaded; who controls it: its side, settleAllegiance.)
+ */
+export function conditionWishes(run, u) {
+  if ( !u.desire ) return;
+  for ( const e of u.effects ?? [] ) {
+    const by = e.sourceId && !e.onlyVs ? run.byId.get(e.sourceId) : null;
+    const c = e.conditions;
+    if ( !by || by === u || !c || !isStanding(by) || !areEnemies(run, u, by) ) continue;
+    if ( (c.fleeing ?? 0) > 0 || (c.turned ?? 0) > 0 ) think(u, "avoid", by.id, FLEE_FROM);
+    else if ( (c.frightened ?? 0) > 0 ) think(u, "avoid", by.id, Math.min(FRIGHT.most, FRIGHT.base + FRIGHT.step * c.frightened));
+  }
+  const holder = u.grabbedBy ? run.byId.get(u.grabbedBy) : null;
+  if ( holder && isStanding(holder) && areEnemies(run, u, holder) ) think(u, "hurt", holder.id, HELD);
+}
+
 /**
  * The player party's wishes (its players' votes, majority rules: the side's party, battle-state.js), for each member of
  * that side each turn, at the world's Party's sway: who to go after first (the nearest, the weakest, the most
