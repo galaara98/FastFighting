@@ -435,7 +435,8 @@
 /* The survey's Party tab: every player's vote, a dot in the player's color with its initial. */
 /* (A line under the instructions, setting them apart from the questions.) */
 .ff-party-intro { margin: 0 0 12px; padding-bottom: 10px; border-bottom: 1px solid var(--ff-line); }
-.ff-party-q { margin: 8px 0 12px; }
+.ff-party-q { margin: 8px 0 15px; }
+.ff-party-q > .ff-q-label { margin-bottom: 5px; }
 .ff-voter {
   display: inline-flex; align-items: center; justify-content: center;
   width: 16px; height: 16px; margin-left: 4px; border-radius: 50%;
