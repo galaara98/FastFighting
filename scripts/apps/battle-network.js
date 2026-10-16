@@ -228,8 +228,14 @@ export function mountNetwork(root, graph, { state, focus = null, onFocus = () =>
     view();
     onLayout();
   };
+  // (Fitted at once when it has a size; else as soon as it's drawn. Never without a view to pan and zoom.)
   if ( state.view ) view();
-  else requestAnimationFrame(fit);
+  else if ( root.clientWidth && root.clientHeight ) fit();
+  else {
+    state.view = { x: 0, y: 0, k: 1 };
+    view();
+    requestAnimationFrame(() => { if ( root.clientWidth ) fit(); });
+  }
 
   // Dragging a node (its arrows with it), panning the rest; a press that doesn't move is a click.
   let press = null;
