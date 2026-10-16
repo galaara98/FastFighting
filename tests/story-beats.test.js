@@ -2,7 +2,8 @@ import { describe, expect, test } from "vitest";
 import { replay } from "../scripts/engine/simulator.js";
 import { pf2eRules } from "./fixtures/three-action-rules.js";
 import { parseFormula } from "../scripts/engine/dice.js";
-import { buildStory, storyBeats } from "../scripts/story/story.js";
+import { buildStory, storyBeats, SECRET } from "../scripts/story/story.js";
+import { logLine } from "../scripts/story/log-lines.js";
 import { storyTables } from "./foundry-i18n.js";
 import { creature, strike, battle, social } from "./helpers.js";
 
@@ -30,7 +31,14 @@ describe("the story told a turn at a time", () => {
       const result = replay(spec, pf2eRules, seed);
       const beats = storyBeats(result, spec, "roleplay", { tables, seed });
       const story = buildStory(result, spec, "roleplay", { tables, seed });
-      expect(beats.map(b => b.text).filter(Boolean).join(" ")).toBe(words(story.html));
+      // (Every word, once: what everyone reads in the story's order, what only the GMs are told apart.)
+      const all = words(story.html).split(" ");
+      const open = beats.map(b => b.text).filter(Boolean).join(" ").split(" ");
+      const secret = beats.map(b => words(b.gmHtml.replace(/<\/?(strong|em|small|b|i)>/g, ""))).filter(Boolean).join(" ").split(" ").filter(Boolean);
+      expect([...open, ...secret].sort()).toEqual([...all].sort());
+      let k = 0;
+      for ( const w of all ) if ( w === open[k] ) k++;
+      expect(k).toBe(open.length);
       // (In the chat, each name in bold.)
       expect(beats.some(b => b.html.includes("<strong>Wolf</strong>"))).toBe(true);
       expect(beats.some(b => /<strong>[^<]*<strong>/.test(b.html))).toBe(false);
@@ -69,25 +77,25 @@ describe("the story told a turn at a time", () => {
     expect(beats.at(-1).html).toBe(buildStory(result, spec, "standard").html);
   });
 
-  test("a turn spent only talking is said aloud; one with a blow in it isn't", () => {
-    const talker = creature({ id: "talker", name: "Talker", kind: "pc", diesAtZero: false,
-      social: social({ diplomacy: 12, intimidation: 10, deception: 8 }), actions: [strike({ bonus: 2, damage: [parseFormula("1d4", "bludgeoning")] })] });
-    const bandit = creature({ id: "bandit", name: "Bandit", side: "hostile", social: social({ diplomacy: 3, intimidation: 3, deception: 3 }) });
-    let talking = 0;
-    for ( let seed = 1; seed <= 40; seed++ ) {
-      const spec = battle([talker, bandit]);
-      const result = replay(spec, pf2eRules, seed);
-      for ( const b of storyBeats(result, spec, "roleplay", { tables, seed }) ) {
-        const own = result.log.filter(e => b.turns.includes(e.turn) && e.actorId === b.actorId);
-        const struck = own.some(e => ["attack", "save", "move"].includes(e.type));
-        if ( b.talking ) {
-          talking++;
-          expect(struck).toBe(false);
-          expect(own.some(e => e.type === "talk")).toBe(true);
-        }
-      }
+  test("what the players shouldn't learn (who takes the lead, a creature's thoughts) is the GMs' alone, apart", () => {
+    // (A fight's log with a leader taken and a thought, beside a blow everyone sees.)
+    const spec = fight();
+    const result = replay(spec, pf2eRules, 1);
+    const blow = result.log.find(e => e.type === "attack");
+    const at = { turn: blow.turn, round: blow.round, turnOf: blow.turnOf };
+    const command = { ...at, type: "command", actorId: blow.actorId, actor: blow.actor, target: "", targetId: null };
+    const scheme = { ...at, type: "scheme", actorId: blow.actorId, actor: blow.actor, target: blow.target, targetId: blow.targetId };
+    const log = [...result.log];
+    log.splice(log.indexOf(blow) + 1, 0, command, scheme);
+    for ( const style of ["roleplay", "standard"] ) {
+      const beats = storyBeats({ ...result, log }, spec, style, { tables, seed: 1 });
+      const beat = beats.find(b => b.turns.includes(blow.turn));
+      expect(beat.gmHtml).toContain(blow.actor);
+      expect(beat.html).not.toBe("");
+      // (Nothing secret in what everyone reads, in any turn.)
+      for ( const b of beats ) expect(b.html.includes(logLine(command)) || b.html.includes(logLine(scheme))).toBe(false);
     }
-    expect(talking).toBeGreaterThan(0);
+    expect([...SECRET]).toEqual(expect.arrayContaining(["command", "thought", "scheme"]));
   });
 });
 

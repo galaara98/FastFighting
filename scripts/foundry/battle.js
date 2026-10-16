@@ -685,6 +685,7 @@ export function buildBattleSpec(roster, setup, { approach = null, exclude = new 
       // How often someone who doesn't like to flee ignores the urge to run.
       standGround: setting("standGround"),
       avoidKilling: setting("avoidKilling"),
+      leaveResolve: setting("leaveResolve"),
       initiativeOrder,
       stealthSides,
       surpriseSide
@@ -774,8 +775,18 @@ export function battleFor(roster, setup) {
     spec.ground = groundFor(roster);
     // (The walls that block sight near it: lines of sight from wherever each one stands.)
     spec.walls = computeWalls(roster.map(e => e.token));
+    // (Where the scene ends: a creature leaving the fight makes for it, engine/behavior/leaving.js.)
+    spec.bounds = sceneBounds();
   }
   return { spec, approach };
+}
+
+/** The scene's edges in the fight's feet (as positionOf has them): the middle of the squares along its edge. */
+function sceneBounds() {
+  const { sceneRect, size } = canvas.dimensions;
+  const feet = squareFeet();
+  const f = v => (v / size) * feet;
+  return { x0: f(sceneRect.x) + feet / 2, y0: f(sceneRect.y) + feet / 2, x1: f(sceneRect.x + sceneRect.width) - feet / 2, y1: f(sceneRect.y + sceneRect.height) - feet / 2 };
 }
 
 let groundCache = { key: null, value: null };

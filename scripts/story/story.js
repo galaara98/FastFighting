@@ -404,7 +404,7 @@ function narrate(e, roll, rel, fill) {
       if ( e.purpose === "tend" ) return roll("event.moveTend", { ...f, target: e.toward });
       if ( e.purpose === "door" ) return roll("event.moveDoor", f);
       const mode = ["walk", "fly", "swim", "climb", "burrow"].includes(e.mode) ? e.mode : "walk";
-      const situation = e.purpose === "help" ? "help" : e.purpose === "hunt" ? "hunt" : (e.regions?.length && (e.mult > 1.05 || mode === "fly" || mode === "burrow" || mode === "climb")) ? "terrain" : "approach";
+      const situation = e.purpose === "leave" ? "flee" : e.purpose === "help" ? "help" : e.purpose === "hunt" ? "hunt" : (e.regions?.length && (e.mult > 1.05 || mode === "fly" || mode === "burrow" || mode === "climb")) ? "terrain" : "approach";
       return roll(`move.${mode}.${situation}`, { ...f, target: e.toward, region: e.regions?.[0] ?? "" });
     }
     case "flee":
@@ -491,6 +491,9 @@ function narrate(e, roll, rel, fill) {
       }
     }
     case "leave": return roll("event.leave", f);
+    // (Off the map, leaving the fight: as one who slips away. Stopped on its way: the GMs' to know, as the log has it.)
+    case "offMap": return roll("event.leave", f);
+    case "leaveStopped": return logLine(e);
     case "sway": {
       if ( e.lie ) return roll("event.lieAndRun", f);
       if ( e.outcome === "bribed" ) return roll("event.bribed", { ...f, amount: concessionText(e.concession) || localize("FASTFIGHTING.Story.APrice"), target: e.payer ?? e.by ?? "" });
@@ -1028,17 +1031,17 @@ function nameBolder(result, spec) {
 const FALLS = new Set(["down", "death", "beaten", "struckDown"]);
 
 /**
- * What a creature can do on its turn and still only be talking (the others' answers, such as being talked round,
- * don't count): with nothing else, its turn is said aloud, as its own words in the chat.
+ * What the players shouldn't learn from the chat, only the GM: who takes the lead, what a creature thinks or schemes,
+ * what sizing a foe up told it, its nerve failing. Told apart, for the GMs alone (a beat's gmHtml).
  */
-const TALKING = new Set(["talk", "strain", "parley", "haggle", "deal", "callHelp", "callToArms", "lastWord", "rally", "retreat", "command", "thought", "standoff"]);
+export const SECRET = new Set(["command", "thought", "scheme", "study", "waver", "leaveStopped"]);
 
 /**
  * The story as it's told in the chat, one turn at a time: a beat for each turn of the fight (the opening's first),
- * and a closing one (how it ended, and the aftermath). Each beat is {turns, round, actorId, html, text, closing,
- * talking}: `turns` are the log's turns it tells, whose moves play on the map with it (a beat with nothing to say,
- * html "", still has its moves); `talking`, a turn its creature spent only talking. Roleplay and Standard only (the
- * Statistician's account is one card).
+ * and a closing one (how it ended, and the aftermath). Each beat is {turns, round, actorId, html, text, gmHtml,
+ * closing}: `turns` are the log's turns it tells, whose moves play on the map with it (a beat with nothing to say,
+ * html "", still has its moves); `gmHtml`, what of the turn only the GMs are told (SECRET). Roleplay and Standard only
+ * (the Statistician's account is one card, the GMs' already).
  * @param {object} result   runOne(..., {log: true, capture: true}) output
  * @param {object} spec     BattleSpec it came from
  * @param {string} style    roleplay | standard
@@ -1056,7 +1059,7 @@ export function storyBeats(result, spec, style, { tables, seed = 1, damageType =
     const key = keyOf(e);
     if ( !byTurn.has(key) ) {
       const closing = key === "closing";
-      const beat = { turns: [], round: e.round, actorId: closing ? null : (e.turnOf ?? null), closing, parts: [], events: [] };
+      const beat = { turns: [], round: e.round, actorId: closing ? null : (e.turnOf ?? null), closing, parts: [], secret: [], events: [] };
       byTurn.set(key, beat);
       beats.push(beat);
     }
@@ -1078,6 +1081,9 @@ export function storyBeats(result, spec, style, { tables, seed = 1, damageType =
       }
       for ( const e of beat.events ) if ( FALLS.has(e.type) && mentions(e) ) rows.push(`<li>${bold(esc(logLine(e)))}</li>`);
       if ( rows.length ) beat.parts.push(`<ul>${rows.join("")}</ul>`);
+      // (What only the GMs are told, as the log has it.)
+      const hidden = beat.events.filter(e => SECRET.has(e.type)).map(e => logLine(e)).filter(Boolean);
+      if ( hidden.length ) beat.secret.push(`<ul>${hidden.map(l => `<li>${bold(esc(l))}</li>`).join("")}</ul>`);
     }
     // The close: the whole fight's tally, and where everyone ended up.
     const close = byTurn.get("closing");
@@ -1085,25 +1091,28 @@ export function storyBeats(result, spec, style, { tables, seed = 1, damageType =
   } else {
     let opening = null;
     for ( const p of roleplayParagraphs(result, spec, tables, seed, damageType, conditionType) ) {
-      if ( p.sentences ) for ( const x of p.sentences ) byTurn.get(keyOf(x.e))?.parts.push(x.text);
-      else if ( p.e ) byTurn.get(keyOf(p.e))?.parts.push(p.text);
+      // (What only the GMs are told goes apart.)
+      const into = e => { const b = byTurn.get(keyOf(e)); return b ? (SECRET.has(e?.type) ? b.secret : b.parts) : null; };
+      if ( p.sentences ) for ( const x of p.sentences ) into(x.e)?.push(x.text);
+      else if ( p.e ) into(p.e)?.push(p.text);
       else opening = p.text;
     }
     // (The opening line comes first, before anything: with what's said before the first turn, or on its own.)
     if ( opening ) {
       const first = byTurn.get(0);
       if ( first ) first.parts.unshift(opening);
-      else beats.unshift({ turns: [], round: 0, actorId: null, closing: false, parts: [opening], events: [] });
+      else beats.unshift({ turns: [], round: 0, actorId: null, closing: false, parts: [opening], secret: [], events: [] });
     }
-    for ( const beat of beats ) beat.parts = beat.parts.length ? [`<p>${bold(beat.parts.map(esc).join(" "))}</p>`] : [];
+    for ( const beat of beats ) {
+      beat.parts = beat.parts.length ? [`<p>${bold(beat.parts.map(esc).join(" "))}</p>`] : [];
+      beat.secret = beat.secret.length ? [`<p>${bold(beat.secret.map(esc).join(" "))}</p>`] : [];
+    }
   }
-  return beats.map(({ turns, round, actorId: whose, closing, parts, events }) => {
+  return beats.map(({ turns, round, actorId: whose, closing, parts, secret, events }) => {
     const html = parts.join("");
     // (A command left with no one to take it is the story's to tell, not the fallen leader's to say.)
     const actorId = events.length && events.every(e => e.type === "command" && e.lost) ? null : whose;
-    const own = events.filter(e => e.actorId && e.actorId === actorId);
-    const talking = !!actorId && own.some(e => e.type !== "thought") && own.every(e => TALKING.has(e.type));
-    return { turns, round, actorId, closing, talking, html, text: plainText(html) };
+    return { turns, round, actorId, closing, html, text: plainText(html), gmHtml: secret.join("") };
   });
 }
 

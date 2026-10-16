@@ -140,7 +140,7 @@ function baseLine(e) {
     case "talk": return t("Talk", { ...a, skill: e.skill, roll: dice(e.natural, e.mod, e.total, e.dc, t("DcOf", { stat: e.dcStat })), degree: degree(e.degree), margin: signed(e.margin ?? 0), boost: e.boost ? ` · ${t("SizedUp", { n: e.boost })}` : "", progress: e.progress, steps: e.steps });
     case "heal": return t("Heal", { actor: e.actor, target: e.self ? t("Self") : e.target, action: e.action, check: e.check ? ` · ${t(e.check.skill ? "HealCheck" : "Medicine", { skill: e.check.skill ?? "", roll: dice(e.check.natural, e.check.mod, e.check.total, e.check.dc, t("DC")), degree: degree(e.check.degree) })}` : "", amount: e.amount, revived: e.revived ? t("Revived") : "" });
     case "move": return t("Move", {
-      actor: e.actor, mode: t(MODE[e.mode] ?? "ModeMove"), distance: distanceText(e.feet), toward: e.purpose === "door" ? t("TheDoor") : e.toward,
+      actor: e.actor, mode: t(MODE[e.mode] ?? "ModeMove"), distance: distanceText(e.feet), toward: e.purpose === "door" ? t("TheDoor") : e.purpose === "leave" ? t("TheEdge") : e.toward,
       terrain: e.mult > 1.05 ? t("Terrain", { mult: Number(e.mult).toFixed(2), regions: e.regions?.length ? t("TerrainRegions", { regions: listItems(e.regions) }) : "" }) : ""
     });
     case "afflictionSave":
@@ -350,6 +350,8 @@ function baseLine(e) {
     case "stand": return t("Stand", a);
     case "shield": return t("Shield", a);
     case "leave": return t("Leave", a);
+    case "offMap": return t(e.blinked ? "OffMapUnseen" : "OffMap", a);
+    case "leaveStopped": return t(e.forgot ? "LeaveForgot" : "LeaveStopped", { actor: e.actor, by: e.by ?? "", roll: e.roll, needed: e.needed });
     // (A system's own report: recovery checks, enduring harm, its start-of-turn rules. The system words these itself.)
     default: return `${e.actor ? `${e.actor}: ` : ""}${e.text ?? ""}`;
   }

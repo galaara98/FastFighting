@@ -17,9 +17,9 @@ import { MODULE_ID, STATUS, SIDES, DISPOSITION_SIDES, NEUTRAL_PARTY, HOSTILE_GRO
 import { escapeHtml as escape, inertHtml } from "../i18n.js";
 import { getAdapter, characterSpec } from "../api.js";
 import { setting } from "../settings.js";
-import { positionOf } from "./terrain.js";
+import { positionOf, squareFeet } from "./terrain.js";
 import { approachFor } from "./battle.js";
-import { currentPathGrid, pathGridFor } from "./pathing.js";
+import { currentPathGrid, pathGridFor, sceneWallGrid } from "./pathing.js";
 import { getSetup, sceneEncounter } from "./persistence.js";
 import { QUERIES } from "./tactics.js";
 import {
@@ -241,10 +241,68 @@ const turnKey = combatant => `${battle.data.spotlight ? `s${battle.data.spots ??
  * On to the next turn: the tracker's next; a spotlight system's spotlight handed back for the GM to give (or, with
  * Play to the end and FastFighting playing everyone, given where FastFighting would give it).
  */
-function moveOn() {
-  if ( !battle.data.spotlight ) return battle.combat.nextTurn();
-  if ( battle.data.auto && !battle.run.live.players.size ) return spotlightNext();
-  return getAdapter().giveSpotlight(battle.combat, null);
+async function moveOn() {
+  if ( !battle.data.spotlight ) await battle.combat.nextTurn();
+  else if ( battle.data.auto && !battle.run.live.players.size ) await spotlightNext();
+  else await getAdapter().giveSpotlight(battle.combat, null);
+  await takeOffTracker();
+}
+
+/**
+ * The way off the scene for u, from where it stands in the fight (engine/behavior/leaving.js run.live.exitOf): around
+ * the walls, through doors it could open; {none: true} when walls shut it in; null off a square grid (straight to the
+ * nearest edge, then).
+ */
+function exitOf(u) {
+  const grid = u.pos ? sceneWallGrid() : null;
+  if ( !grid ) return null;
+  const { size } = canvas.dimensions;
+  const feet = squareFeet();
+  const half = (u.spec.position?.size ?? feet) / 2;
+  const cell = grid.cellAt(((u.pos.x - half) / feet) * size, ((u.pos.y - half) / feet) * size);
+  if ( cell < 0 ) return null;
+  const way = grid.wayOff(cell);
+  if ( !way ) return { none: true };
+  const toFeet = c => [(c.x / size) * feet + half, (c.y / size) * feet + half];
+  return { path: [[u.pos.x, u.pos.y], ...way.corners.map(toFeet)], feet: way.steps * feet };
+}
+
+/**
+ * Those these events saw off the map (leaving the fight, or gone with no way off: the engine's offMap): hidden (the
+ * sheets' write did that, as the fled setting says) and put in the scene's first square, out of everyone's way, and
+ * off the tracker as it moves on (takeOffTracker). With fled tokens left where they are (the setting), they stay put.
+ * What it did goes in `turn`'s records and moves, for Rewind.
+ */
+async function sendOff(events, turn) {
+  if ( setting("fledMode") === "leave" ) return;
+  const gone = events.filter(e => e.type === "offMap").map(e => docOf(e.actorId)).filter(Boolean);
+  if ( !gone.length ) return;
+  const { sceneX = 0, sceneY = 0 } = canvas.dimensions;
+  const moves = {};
+  for ( const doc of gone ) {
+    if ( !doc.hidden ) {
+      turn.records.push({ tokenUuid: doc.uuid, tokenUpdate: { hidden: false } });
+      await doc.update({ hidden: true });
+    }
+    if ( !turn.moves.some(m => m.uuid === doc.uuid) ) turn.moves.push({ uuid: doc.uuid, ...placeOf(doc) });
+    moves[doc.id] = { destination: { x: sceneX, y: sceneY, action: "displace" } };
+    const c = battle.combat.combatants.find(x => x.tokenId === doc.id);
+    if ( c ) battle.data.offMap = [...new Set([...(battle.data.offMap ?? []), c.id])];
+  }
+  await battle.scene.moveTokens(moves, { animate: false });
+}
+
+/** Those gone off the map leave the tracker (all but the one whose turn it is): kept with the last turn, for Rewind. */
+async function takeOffTracker() {
+  if ( !battle?.data.offMap?.length ) return;
+  const combat = battle.combat;
+  const ids = battle.data.offMap.filter(id => combat.combatants.has(id) && id !== combat.combatant?.id);
+  battle.data.offMap = battle.data.offMap.filter(id => combat.combatants.has(id) && !ids.includes(id));
+  if ( !ids.length ) return;
+  const data = ids.map(id => combat.combatants.get(id).toObject());
+  await combat.deleteEmbeddedDocuments("Combatant", ids);
+  battle.data.turns.at(-1)?.records.push({ deletedCombatants: data.map(d => ({ parentUuid: combat.uuid, data: d })) });
+  await keep();
 }
 
 /** A spotlight system: the spotlight given where FastFighting would give it (engine/live.js nextSpotlight). */
@@ -285,7 +343,11 @@ async function followBack(prior) {
   const combatant = combat.combatant;
   const turns = battle.data.turns;
   const key = turnKey(combatant);
-  const place = t => ({ round: t.round, at: combat.turns.findIndex(c => c.id === t.combatantId) });
+  // (One no longer on the tracker, gone off the map: where it stood when it went.)
+  const place = t => {
+    const at = combat.turns.findIndex(c => c.id === t.combatantId);
+    return { round: t.round, at: at >= 0 ? at : (t.at ?? -1) };
+  };
   const { undo, own, reopen } = goingBack(turns, { round: combat.round, at: combat.turn ?? -1 }, key, place);
   if ( undo.length && !undo[0].snapshot ) {
     ui.notifications.warn(loc("FASTFIGHTING.Live.TooFarBack"));
@@ -299,6 +361,7 @@ async function followBack(prior) {
   if ( snapshot ) battle.run = playersNow(restoreRun(battle.spec, battle.rules, snapshot, { log: battle.run.log }));
   battle.data.turns = turns.slice(0, turns.length - undo.length);
   battle.data.played = null;
+  battle.data.offMap = [];
   battle.data.salt = (battle.data.salt ?? 0) + 1;
   battle.data.told = lastTurn(battle.run.log);
   battle.pc = null;
@@ -529,6 +592,7 @@ async function playTurn(u, combatant, key) {
   let result;
   for ( let tries = 0; ; tries++ ) {
     try {
+      battle.run.live.exitOf = exitOf; // (the way off the scene, for one leaving the fight)
       result = liveTurn(battle.run, u.id, { answers, salt: battle.data.salt ?? 0 });
       break;
     } catch ( err ) {
@@ -538,7 +602,7 @@ async function playTurn(u, combatant, key) {
     }
   }
   const after = captureAll(battle.run);
-  const turn = { key, combatantId: combatant.id, round: battle.combat.round, kind: "npc", records: [], messages: [], moves: [], doors: [], snapshot };
+  const turn = { key, combatantId: combatant.id, round: battle.combat.round, at: battle.combat.turn, kind: "npc", records: [], messages: [], moves: [], doors: [], snapshot };
   await holdingPause(async () => {
     // Where everyone stood (for Rewind), then the moves and doors as the turn made them.
     turn.moves = battle.run.units.map(x => docOf(x.id)).filter(Boolean).map(doc => ({ uuid: doc.uuid, ...placeOf(doc) }));
@@ -553,6 +617,8 @@ async function playTurn(u, combatant, key) {
     await placeSummons(turn.records);
     // What the turn changed, onto the sheets (each written as it stood when the turn began).
     await writeChanges(before, after, turn.records);
+    // (Those it saw off the map: out of the way, and off the tracker as it moves on.)
+    await sendOff(result.events, turn);
     // (What the turn did to what the encounter keeps: Daggerheart's Fear.)
     try {
       turn.records.push(...((await adapter.commitTurn(before, after, { ...writeOptions(), spec: battle.spec, events: result.events })) ?? []));
@@ -734,7 +800,7 @@ async function closePlayerTurn() {
   await writeChanges(result.synced, captureAll(run), records);
   // (With what it was read from, the player's own cards: the tracker taken back to it, it's theirs again.)
   const turn = {
-    key: `${pc.round}.${pc.combatantId}`, combatantId: pc.combatantId, round: pc.round, kind: "pc", records, messages: [], moves: [], doors: [], snapshot: pc.snapshot,
+    key: `${pc.round}.${pc.combatantId}`, combatantId: pc.combatantId, round: pc.round, at: battle.combat.turns.findIndex(c => c.id === pc.combatantId), kind: "pc", records, messages: [], moves: [], doors: [], snapshot: pc.snapshot,
     from: pc.from, cards: pc.messages, facts: pc.facts ?? []
   };
   turn.messages.push(...await tellNew());
@@ -950,10 +1016,10 @@ async function tellNew() {
       const key = beat.closing ? "closing" : beat.turns.join(",");
       if ( done.has(key) ) continue;
       done.add(key);
-      if ( !beat.html ) continue;
-      const message = await postBeat(battle.scene, beat, docs, { odds: battle.data.odds });
-      if ( message ) out.push(message.id);
-      if ( message && beat.closing ) battle.data.closing = message.id;
+      if ( !beat.html && !beat.gmHtml ) continue;
+      const messages = await postBeat(battle.scene, beat, docs, { odds: battle.data.odds });
+      out.push(...messages.map(m => m.id));
+      if ( messages.length && beat.closing && beat.html ) battle.data.closing = messages[0].id;
     }
     battle.data.toldBeats = [...done];
   }
@@ -963,7 +1029,18 @@ async function tellNew() {
 
 /** The battle over: who won, told; the GMs told it's over. (The combat stays for the GM to end.) */
 async function finish() {
+  const before = captureAll(battle.run);
+  const told = battle.run.log.length;
   endLive(battle.run, { ended: true, settle: false });
+  // (Those still on their way off the map are gone: written, and seen off, with the last turn.)
+  const last = battle.data.turns.at(-1);
+  const gone = battle.run.log.slice(told).filter(e => e.type === "offMap");
+  if ( gone.length && last ) {
+    await holdingPause(async () => {
+      await writeChanges(before, captureAll(battle.run), last.records);
+      await sendOff(gone, last);
+    });
+  }
   const messages = await tellNew();
   battle.data.ended = true;
   const ChatMessage = chatMessages();
@@ -973,7 +1050,6 @@ async function finish() {
       <button type="button" data-ff-live="rewindAll"><i class="fa-solid fa-backward"></i> ${loc("FASTFIGHTING.MakeItSo.Undo")}</button></div>`),
     speaker: chronicle(), whisper: gmIds(), flags: { [MODULE_ID]: { live: { battle: battle.data.id, over: true } } }
   });
-  const last = battle.data.turns.at(-1);
   if ( last ) last.messages.push(...messages, ...(card ? [card.id] : []));
   await keep();
   await battle.combat.setFlag(MODULE_ID, "live", flagOf(false));
@@ -1040,6 +1116,7 @@ export function rewindTurn() {
     battle.run = playersNow(restoreRun(battle.spec, battle.rules, turn.snapshot, { log: battle.run.log }));
     battle.data.turns = battle.data.turns.slice(0, -1);
     battle.data.played = null;
+    battle.data.offMap = [];
     battle.data.ended = false;
     battle.data.salt = (battle.data.salt ?? 0) + 1;
     battle.data.told = lastTurn(battle.run.log);

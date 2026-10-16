@@ -835,7 +835,7 @@ export function clearRelation(run, id, { kind, byId } = {}) {
     case "afraid": {
       const key = `avoid|${byId}`;
       run.live?.gm?.delete(`${u.id}|${key}`);
-      for ( const layer of ["stated", "logic", "memory", "social", "style", "gm"] ) u.desire?.[layer]?.delete(key);
+      for ( const layer of ["stated", "logic", "memory", "social", "style", "gm", "cond"] ) u.desire?.[layer]?.delete(key);
       u.grudges?.delete(byId);
       break;
     }

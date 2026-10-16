@@ -42,6 +42,7 @@ import { standsGround, callRetreat } from "./morale.js";
 import { bargainAim, holdsOut, calmsDown, irritated, haggled, pressed, expectOf, owed } from "./bargain.js";
 import { talkDamping } from "./specialty.js";
 import { strain } from "./strain.js";
+import { mayLeave, startLeaving, confronted } from "./leaving.js";
 
 /**
  * Only an argument: nobody runs, and nobody pays and goes. Talked round, a creature backs down (where it would run or
@@ -550,12 +551,8 @@ function concede(run, talker, t, log) {
   }
   if ( !given && t.spec.kind !== "pc" ) {
     // Nothing to give: they swear they have nothing and run.
-    for ( const id of t.adjacent ) run.byId.get(id)?.adjacent.delete(t.id);
-    t.adjacent.clear();
     t.swayOutcome = SWAY.FLEE;
-    t.status = STATUS.FLED;
-    t.fellRound ??= run.round;
-    t.ranRound = run.round;
+    runOff(run, t, talker);
     log(t, { type: "sway", outcome: SWAY.FLEE, lie: true, by: talker.spec.name, byId: talker.id });
     return;
   }
@@ -686,20 +683,34 @@ function applyOutcome(run, talker, t, outcome, log, aim = "down", luck = null) {
     return;
   }
   t.swayOutcome = outcome;
-  t.status = { [SWAY.FLEE]: STATUS.FLED, [SWAY.STAND_DOWN]: STATUS.STOOD_DOWN }[outcome] ?? STATUS.SURRENDERED;
-  t.fellRound ??= run.round;
-  if ( outcome === SWAY.FLEE ) t.ranRound = run.round;
+  if ( outcome === SWAY.FLEE ) runOff(run, t, talker);
+  else {
+    t.status = outcome === SWAY.STAND_DOWN ? STATUS.STOOD_DOWN : STATUS.SURRENDERED;
+    t.fellRound ??= run.round;
+  }
   log(t, { type: "sway", outcome, by: talker.spec.name, byId: talker.id });
 }
 
 /** a falls back with leader (a retreat it called, or answered): off the field. */
 function fallBack(run, a, leader, log) {
-  for ( const id of a.adjacent ) run.byId.get(id)?.adjacent.delete(a.id);
-  a.adjacent.clear();
-  a.status = STATUS.FLED;
-  a.fellRound ??= run.round;
-  a.ranRound = run.round;
-  log(a, { type: "flee", retreat: true, with: leader.spec.name, withId: leader.id, leads: a === leader });
+  runOff(run, a, null);
+  log(a, { type: "flee", retreat: true, with: leader.spec.name, withId: leader.id, leads: a === leader, ...(a.leaving ? { leaving: true, feet: 0 } : {}) });
+}
+
+/**
+ * t runs off, talked into it by `by` (or falling back with its group): on a map, it sets out for the edge, still in the
+ * fight until it's off, its quarrel with `by`'s side laid down (behavior/leaving.js); without one, it's gone at once.
+ */
+function runOff(run, t, by) {
+  if ( mayLeave(run, t) ) {
+    startLeaving(run, t, { by, why: by ? "talked" : "retreat" });
+    return;
+  }
+  for ( const id of t.adjacent ) run.byId.get(id)?.adjacent.delete(t.id);
+  t.adjacent.clear();
+  t.status = STATUS.FLED;
+  t.fellRound ??= run.round;
+  t.ranRound = run.round;
 }
 
 /**
@@ -719,6 +730,8 @@ export function attemptTalk(run, talker, pitch, log) {
 export function resolveTalk(run, talker, pitch, roll, log) {
   const t = pitch.target;
   const rules = run.prep.rules;
+  // (Spoken to on its way off the map: it may stop to answer: behavior/leaving.js.)
+  if ( t.leaving ) confronted(run, t, talker, "talk", log);
   spendEdges(talker, "check", t.id);
   spendBoost(talker, t);
   const steps = stepsToConvince(t, run, talker);
@@ -787,7 +800,7 @@ export function resolveTalk(run, talker, pitch, roll, log) {
   applyOutcome(run, talker, t, outcome, log, aim, luck);
 
   // Talked into running (in a fight), it tries to take its group with it (behavior/morale.js callRetreat).
-  if ( outcome === SWAY.FLEE && t.status === STATUS.FLED && !run.standoff ) {
+  if ( outcome === SWAY.FLEE && (t.status === STATUS.FLED || t.leaving) && !run.standoff ) {
     const retreat = callRetreat(run, t, log);
     const leader = retreat.commander ?? t;
     for ( const a of retreat.followers ) if ( isStanding(a) ) fallBack(run, a, leader, log);

@@ -126,7 +126,8 @@ export function desireKindsFor(spec) {
     talk: speaks,
     bolstered: speaks,
     bind: !spec?.social?.mindless,
-    rob: !spec?.social?.mindless
+    rob: !spec?.social?.mindless,
+    leave: false // (what leaving the fight sets: not a GM's pick)
   };
   return DESIRE_KINDS.filter(k => canDo[k] !== false);
 }

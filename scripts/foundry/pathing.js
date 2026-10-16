@@ -21,10 +21,20 @@ function usableDoor(wall) {
 }
 
 let cached = null;
+let sceneCached = null;
 
 /** Forget the grid (walls or tokens changed). */
 export function resetPathGrid() {
   cached = null;
+  sceneCached = null;
+}
+
+/** A grid over the whole scene (the way off it, for a creature leaving the fight), kept until reset; null off a square grid. */
+export function sceneWallGrid() {
+  if ( canvas.grid?.type !== CONST.GRID_TYPES.SQUARE || !canvas.scene ) return null;
+  if ( sceneCached?.sceneId === canvas.scene.id ) return sceneCached;
+  sceneCached = new WallGrid([], 0, { whole: true });
+  return sceneCached;
 }
 
 /** The grid for these fighters on the current scene (kept until reset, or until the fight moves elsewhere). */
@@ -44,8 +54,10 @@ export class WallGrid {
   /**
    * @param {Token[]} tokens   The fighters: the grid covers them and a margin around them
    * @param {number} [margin]  Grid squares of room around the fighters for going the long way round
+   * @param {object} [options]
+   * @param {boolean} [options.whole]  The whole scene instead (the way off it)
    */
-  constructor(tokens, margin = 12) {
+  constructor(tokens, margin = 12, { whole = false } = {}) {
     const { size, sceneRect } = canvas.dimensions;
     this.sceneId = canvas.scene.id;
     this.size = size;
@@ -53,10 +65,10 @@ export class WallGrid {
     const snap = v => Math.floor(v / size) * size;
     const xs = tokens.map(t => t.document.x);
     const ys = tokens.map(t => t.document.y);
-    const x0 = Math.max(snap(sceneRect.x), snap(Math.min(...xs)) - margin * size);
-    const y0 = Math.max(snap(sceneRect.y), snap(Math.min(...ys)) - margin * size);
-    const x1 = Math.min(sceneRect.x + sceneRect.width, Math.max(...xs) + (margin + 2) * size);
-    const y1 = Math.min(sceneRect.y + sceneRect.height, Math.max(...ys) + (margin + 2) * size);
+    const x0 = whole ? snap(sceneRect.x) : Math.max(snap(sceneRect.x), snap(Math.min(...xs)) - margin * size);
+    const y0 = whole ? snap(sceneRect.y) : Math.max(snap(sceneRect.y), snap(Math.min(...ys)) - margin * size);
+    const x1 = whole ? sceneRect.x + sceneRect.width : Math.min(sceneRect.x + sceneRect.width, Math.max(...xs) + (margin + 2) * size);
+    const y1 = whole ? sceneRect.y + sceneRect.height : Math.min(sceneRect.y + sceneRect.height, Math.max(...ys) + (margin + 2) * size);
     this.ox = x0;
     this.oy = y0;
     this.cols = Math.max(1, Math.ceil((x1 - x0) / size));
@@ -211,6 +223,46 @@ export class WallGrid {
       cell = best;
     }
     return found;
+  }
+
+  /**
+   * The nearest way off the grid from a cell, around walls and through closed doors (a creature can open them): the
+   * corners it turns at (top-left pixels), the last a square on the grid's edge, and how many squares it walks; null
+   * when walls shut it in.
+   */
+  wayOff(from) {
+    if ( from < 0 ) return null;
+    const dist = this.field(from, true);
+    const edge = c => {
+      const col = c % this.cols;
+      const row = Math.floor(c / this.cols);
+      return col === 0 || row === 0 || col === this.cols - 1 || row === this.rows - 1;
+    };
+    let best = -1;
+    for ( let c = 0; c < dist.length; c++ ) if ( Number.isFinite(dist[c]) && edge(c) && (best < 0 || dist[c] < dist[best]) ) best = c;
+    if ( best < 0 ) return null;
+    // (Walked back from the edge, downhill to where it stands.)
+    const cells = [best];
+    let cell = best;
+    for ( let guard = 0; cell !== from && guard < dist.length; guard++ ) {
+      let prev = -1;
+      for ( let k = 0; k < 8; k++ ) {
+        const p = this.#step(cell, k);
+        if ( p < 0 || !this.#open(p, BACK[k], true) ) continue;
+        if ( dist[p] < dist[cell] - 1e-6 && (prev < 0 || dist[p] < dist[prev]) ) prev = p;
+      }
+      if ( prev < 0 ) break;
+      cell = prev;
+      if ( cell !== from ) cells.unshift(cell);
+    }
+    // (Only where it turns, and where it ends.)
+    const corners = [];
+    for ( let i = 0; i < cells.length; i++ ) {
+      const before = i ? cells[i - 1] : from;
+      const next = cells[i + 1];
+      if ( next === undefined || (cells[i] - before) !== (next - cells[i]) ) corners.push(this.corner(cells[i]));
+    }
+    return { corners, steps: dist[best] };
   }
 
   /**

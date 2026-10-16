@@ -315,8 +315,9 @@ export const storyTitle = scene => game.i18n.format("FASTFIGHTING.Story.Title", 
 const ChatMessageClass = () => foundry.documents.ChatMessage ?? globalThis.ChatMessage;
 
 /**
- * One turn's card. A creature that spent its turn only talking says it aloud: its own words in the chat, as a
- * player's would be (and a bubble over its token on the map, where those are on).
+ * One turn's cards, told as a story (never as a creature's own words): what everyone may know, and what only the GMs
+ * are told (beat.gmHtml: who takes the lead, what a creature thinks), on a card of its own whispered to them. Returns
+ * the messages made.
  */
 export async function postBeat(scene, beat, docs, state) {
   const ChatMessage = ChatMessageClass();
@@ -324,15 +325,17 @@ export async function postBeat(scene, beat, docs, state) {
   const whisper = setting("storyMode") === "whisper" ? gmIds() : [];
   const flags = { [MODULE_ID]: { story: true, beat: true } };
   const speaker = doc ? ChatMessage.getSpeaker({ scene, token: doc }) : chronicle();
-  if ( beat.talking && doc ) {
-    const bubble = !whisper.length && !doc.hidden && !!game.settings.get("core", "chatBubbles");
-    return ChatMessage.create({ content: inertHtml(escape(beat.text)), speaker, style: CONST.CHAT_MESSAGE_STYLES.IC, whisper, flags }, { chatBubble: bubble });
-  }
   const head = beat.closing ? `<header><i class="fa-solid fa-book-open"></i> ${escape(storyTitle(scene))}</header>`
     : beat.round >= 1 ? `<header>${escape(game.i18n.format("FASTFIGHTING.Story.TurnRound", { n: beat.round }))}</header>` : "";
   const odds = beat.closing && state.odds ? `<p class="ff-odds"><em>${escape(state.odds)}</em></p>` : "";
   const kind = beat.closing ? "fast-fighting-story" : "fast-fighting-story fast-fighting-beat";
-  return ChatMessage.create({ content: inertHtml(`<div class="${kind}">${head}${beat.html}${odds}</div>`), speaker, whisper, flags });
+  const out = [];
+  if ( beat.html ) out.push(await ChatMessage.create({ content: inertHtml(`<div class="${kind}">${head}${beat.html}${odds}</div>`), speaker, whisper, flags }));
+  if ( beat.gmHtml ) {
+    const gm = `<header><i class="fa-solid fa-eye-slash"></i> ${escape(loc("FASTFIGHTING.Story.GmOnly"))}</header>`;
+    out.push(await ChatMessage.create({ content: inertHtml(`<div class="fast-fighting-story fast-fighting-beat ff-gm-only">${gm}${beat.gmHtml}</div>`), speaker, whisper: gmIds(), flags }));
+  }
+  return out.filter(Boolean);
 }
 
 /** A whole story in one card (the Statistician's: the GMs', with a button to show it to everyone). */
@@ -431,6 +434,10 @@ export async function revertRecord(r) {
   for ( const uuid of r.createdActors ?? [] ) await step("removing an actor", async () => (await fromUuid(uuid))?.delete());
   for ( const t of r.deletedTokens ?? [] ) {
     await step("restoring a token", async () => (await fromUuid(t.parentUuid))?.createEmbeddedDocuments("Token", [t.data], { keepId: true }));
+  }
+  // (One the fight took off the tracker, gone off the map: back on it, as it was.)
+  for ( const c of r.deletedCombatants ?? [] ) {
+    await step("restoring a combatant", async () => (await fromUuid(c.parentUuid))?.createEmbeddedDocuments("Combatant", [c.data], { keepId: true, turnEvents: false }));
   }
   // (A world setting the system keeps a pool in: Daggerheart's Fear, the GM's.)
   // (Only the system's own: an undo record is data, and never a way to change the core's or another module's settings.)
