@@ -1494,7 +1494,9 @@
         "suffocates": "Suffocates",
         "spread": "Spread",
         "freed": "Freed",
-        "letGo": "Let Go"
+        "letGo": "Let Go",
+        "tumbleFails": "Tumble Fails",
+        "collision": "Collision"
       },
       "APrice": "a price",
       "Desire": "{intensity} {verb}",
@@ -1980,7 +1982,11 @@
       "Burst": "{actor}: {what} tears free",
       "Suffocates": "{actor} passes out for want of air",
       "Spread": "{actor} catches it from {by} ({what}){roll}",
-      "PersistentCondition": "{actor} takes {damage} ({what})"
+      "PersistentCondition": "{actor} takes {damage} ({what})",
+      "Tumble": "{actor} tumbles past {target}{roll}",
+      "TumbleFails": "{actor} can't get past {target}, and stops{roll}",
+      "Collision": "{actor} hits {into} · {damage}",
+      "SomethingSolid": "something solid"
     },
     "DamageType": {
       "bludgeoning": "bludgeoning",

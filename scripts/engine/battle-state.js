@@ -103,6 +103,7 @@ import { goadAction } from "./behavior/goad.js";
 import { Turn } from "./turn.js";
 import { combineMods, netAdvantage } from "./mods.js";
 import { conditionSetup, barred, profiled } from "./conditions.js";
+import { inTheWay, crossed, pastCost, passOf, spotWithin, wallsKnown, lineOfSight, spotToShoot, coverFrom } from "./behavior/space.js";
 import { degreeDistribution } from "./probability.js";
 import { combinePlaystyles } from "./playstyles.js";
 import { answersTo } from "../story/master.js";
@@ -736,6 +737,11 @@ class Situation {
     }));
   }
 
+  /** The cover the target has from the attacker, by the scene's walls: "none", "some", "most", "total" (behavior/space.js). */
+  get cover() {
+    return this.#fact("cover", () => (wallsKnown(this.#run) && this.attacker?.pos && this.target?.pos ? coverFrom(this.#run, this.attacker, this.target) : "none"));
+  }
+
   get distance() {
     return this.#fact("distance", () => (this.attacker ? separation(this.#run, this.attacker, this.target) : 0));
   }
@@ -949,12 +955,17 @@ export function separation(run, a, t) {
   return Math.max(0, ap.dist - a.advance - t.advance);
 }
 
-/** Move actions a needs before it can make `action` against t (Infinity when impossible). */
+/**
+ * Move actions a needs before it can make `action` against t (Infinity when impossible). On a map with its walls, a
+ * ranged one needs a spot it can see t from (behavior/space.js: the nearest within two moves; none, it can't); a melee
+ * one, a free spot within reach (one with every spot round it taken, it can't), and the way round those in the way.
+ */
 export function movesNeeded(run, a, t, action) {
   if ( !run.prep.options.positioning ) return 0;
   const ap = approach(run, a, t);
   if ( action.range ) {
     const maxRange = action.range.max ?? action.range.increment * 3;
+    if ( wallsKnown(run) && a.pos && t.pos ) return movesToShoot(run, a, t, ap, maxRange);
     let moves = (ap.los || a.losGained.has(t.id)) ? 0 : 1;
     const gap = separation(run, a, t) - maxRange;
     if ( gap > 0 ) {
@@ -967,11 +978,41 @@ export function movesNeeded(run, a, t, action) {
   if ( a.adjacent.has(t.id) ) return 0;
   if ( !ap.meleeOk ) return Infinity;
   const reach = action.reach ?? 5;
-  const gap = Math.max(0, separation(run, a, t) - reach);
+  let gap = Math.max(0, separation(run, a, t) - reach);
   if ( gap <= 0.5 ) return 0;
   if ( !Number.isFinite(ap.mult) || ap.speed <= 0 ) return Infinity;
+  // (On the map: the free spot it would end on, and the way round whoever's in the way.)
+  if ( a.pos && t.pos ) {
+    const end = meleeEnd(run, a, t, reach);
+    if ( !end ) return Infinity;
+    gap = end.feet + pastCost(run, a, crossed(run, a, a.pos, end, t), areEnemies).extra;
+  }
   // (An action that moves first: PF2e Sudden Charge strides twice, then strikes.)
   return Math.max(0, Math.ceil((gap * ap.mult) / ap.speed) - (action.charge ?? 0));
+}
+
+/**
+ * Where a melee move toward t ends: straight in to within reach, unless someone's there (then the nearest free spot
+ * within reach); null when there's none. {x, y, feet} (feet from where a is).
+ */
+function meleeEnd(run, a, t, reach) {
+  const d = centerDistance(a, t);
+  const feet = Math.max(0, edgeDistance(a, t) - reach);
+  const p = d > 0 ? { x: a.pos.x + ((t.pos.x - a.pos.x) / d) * feet, y: a.pos.y + ((t.pos.y - a.pos.y) / d) * feet } : { x: a.pos.x, y: a.pos.y };
+  if ( !inTheWay(run, a, p) ) return { ...p, feet };
+  return spotWithin(run, a, t, reach);
+}
+
+/** Moves a needs to shoot t on a map with its walls: none if it can see it in range now; else to the nearest spot it can. */
+function movesToShoot(run, a, t, ap, range) {
+  if ( separation(run, a, t) <= range + 0.5 && lineOfSight(run, a, t) ) return 0;
+  if ( !Number.isFinite(ap.mult) || ap.speed <= 0 ) return Infinity;
+  const stride = ap.speed / ap.mult;
+  const spot = spotToShoot(run, a, t, range, stride * 2, edgeDistance);
+  if ( spot ) return Math.max(1, Math.ceil(spot.feet / stride));
+  // (Out of range by more than that: as many moves as it takes to get in range, where it'll look again.)
+  const gap = separation(run, a, t) - range;
+  return gap > stride * 2 ? Math.ceil(gap / stride) : Infinity;
 }
 
 /** One move toward a spot (a door): straight there, stopping `stopAt` feet short. */
@@ -995,23 +1036,41 @@ export function moveTowardPoint(run, a, point, budget, stopAt = 5) {
  * @returns {{feet: number, cost: number, mode: string, mult: number, regions: string[], reached: boolean}}
  *   feet covered (for the story) and movement spent (feet × terrain)
  */
-export function moveToward(run, a, t, reach = null, budget = null) {
-  run.geo = (run.geo ?? 0) + 1; // someone moved: distances are stale
-  const from = run.log && a.pos ? { x: a.pos.x, y: a.pos.y } : null; // for playing the fight back on the map
+export function moveToward(run, a, t, reach = null, budget = null, { range = null } = {}) {
   const ap = approach(run, a, t);
   const progress = Number.isFinite(ap.mult) && ap.mult > 0 ? (budget ?? ap.speed) / ap.mult : 0;
+  // (On a map with its walls, for a shot: to the nearest spot it can see t from.)
+  if ( reach === null && range !== null && wallsKnown(run) && a.pos && t.pos ) return moveToShoot(run, a, t, ap, progress, range);
+  run.geo = (run.geo ?? 0) + 1; // someone moved: distances are stale
+  const from = run.log && a.pos ? { x: a.pos.x, y: a.pos.y } : null; // for playing the fight back on the map
   let feet = progress;
+  let extra = 0;
+  let stopped = null;
   if ( a.pos && t.pos ) {
     const d = centerDistance(a, t);
     // Close the gap until the target is within reach (or simply adjacent when moving for a ranged shot).
     feet = Math.max(0, Math.min(progress, edgeDistance(a, t) - (reach ?? 5)));
     if ( d > 0 && feet > 0 ) {
       let to = { x: a.pos.x + ((t.pos.x - a.pos.x) / d) * feet, y: a.pos.y + ((t.pos.y - a.pos.y) / d) * feet };
-      // (A trap avoider keeps clear of the hazards it spotted: around them, or short of them.)
-      if ( run.trapsSpotted ) {
-        to = keepClear(run, a, t, to, run.trapLog);
-        feet = Math.hypot(to.x - a.pos.x, to.y - a.pos.y);
+      // (Someone already there: the nearest free spot within reach instead, as far as it gets toward it.)
+      if ( reach !== null && inTheWay(run, a, to) ) to = freeEnd(run, a, t, reach, progress) ?? to;
+      // (Those in the way: round them, through them, or tumbling past, as the system says: behavior/space.js.)
+      const past = passing(run, a, to, t);
+      extra = past.extra;
+      if ( past.stop ) {
+        to = past.stop.at;
+        stopped = past.stop.o;
+      } else if ( extra > 0 && Math.hypot(to.x - a.pos.x, to.y - a.pos.y) + extra > progress + 0.5 ) {
+        // (The way round takes some of the move: as far as the rest goes.)
+        const left = Math.max(0, progress - extra);
+        const k = left / Math.max(0.001, Math.hypot(to.x - a.pos.x, to.y - a.pos.y));
+        if ( k < 1 ) to = backOff(run, a, { x: a.pos.x + (to.x - a.pos.x) * k, y: a.pos.y + (to.y - a.pos.y) * k });
       }
+      // (Never ending in someone's space.)
+      if ( inTheWay(run, a, to) ) to = backOff(run, a, to);
+      // (A trap avoider keeps clear of the hazards it spotted: around them, or short of them.)
+      if ( run.trapsSpotted ) to = keepClear(run, a, t, to, run.trapLog);
+      feet = Math.hypot(to.x - a.pos.x, to.y - a.pos.y);
       a.pos.x = to.x;
       a.pos.y = to.y;
     }
@@ -1026,8 +1085,77 @@ export function moveToward(run, a, t, reach = null, budget = null) {
     t.adjacent.add(a.id);
     reached = true;
   }
-  return { feet: Math.round(feet), cost: feet * (ap.mult ?? 1), mode: ap.mode ?? "walk", mult: ap.mult ?? 1, regions: ap.regions ?? [], reached,
-    from, to: from ? { x: a.pos.x, y: a.pos.y } : null };
+  return { feet: Math.round(feet), cost: (feet + extra) * (ap.mult ?? 1), mode: ap.mode ?? "walk", mult: ap.mult ?? 1, regions: ap.regions ?? [], reached,
+    from, to: from ? { x: a.pos.x, y: a.pos.y } : null, ...(stopped ? { stoppedBy: stopped.id, tumbled: false } : {}) };
+}
+
+/** The nearest free spot within reach of t, or as far toward it as `progress` goes; null when every spot is taken. */
+function freeEnd(run, a, t, reach, progress) {
+  const spot = spotWithin(run, a, t, reach);
+  if ( !spot ) return null;
+  if ( spot.feet <= progress + 0.5 ) return { x: spot.x, y: spot.y };
+  const k = progress / spot.feet;
+  return { x: a.pos.x + (spot.x - a.pos.x) * k, y: a.pos.y + (spot.y - a.pos.y) * k };
+}
+
+/** Back along the way it came, 5 feet at a time, until it's in no one's space (as far back as where it started). */
+function backOff(run, a, to) {
+  const d = Math.hypot(to.x - a.pos.x, to.y - a.pos.y);
+  for ( let back = 0; back < d; back += 5 ) {
+    const k = (d - back) / d;
+    const p = { x: a.pos.x + (to.x - a.pos.x) * k, y: a.pos.y + (to.y - a.pos.y) * k };
+    if ( !inTheWay(run, a, p) ) return p;
+  }
+  return { x: a.pos.x, y: a.pos.y };
+}
+
+/**
+ * Getting past those between a and `to`: the extra feet round them (or through them as difficult ground), and a
+ * tumble past each one the system says to (rules.tumbleThrough): failed, its move stops short of that one ({stop: {o,
+ * at}}). Logged.
+ */
+function passing(run, a, to, t) {
+  const list = crossed(run, a, a.pos, to, t);
+  if ( !list.length ) return { extra: 0, stop: null };
+  const rules = run.prep.rules;
+  let extra = 0;
+  for ( const { o, k } of list ) {
+    const how = passOf(run, a, o, areEnemies);
+    if ( how === "around" || how === "difficult" ) extra += o.spec.position?.size ?? 5;
+    if ( how !== "tumble" ) continue;
+    const got = rules.tumbleThrough?.(run, a, o) ?? { success: false };
+    run.trapLog?.(a, { type: "tumble", target: o.spec.name, targetId: o.id, success: !!got.success, natural: got.natural, mod: got.mod, total: got.total, dc: got.dc, ...(got.said?.text ? { said: got.said.text } : {}) });
+    if ( got.success ) continue;
+    // (Stopped short of it: as near as it gets without sharing its space.)
+    const reachK = Math.max(0, k - ((a.spec.position?.size ?? 5) + (o.spec.position?.size ?? 5)) / 2 / Math.max(1, Math.hypot(to.x - a.pos.x, to.y - a.pos.y)));
+    return { extra, stop: { o, at: backOff(run, a, { x: a.pos.x + (to.x - a.pos.x) * reachK, y: a.pos.y + (to.y - a.pos.y) * reachK }) } };
+  }
+  return { extra, stop: null };
+}
+
+/**
+ * A move for a shot, on a map with its walls: to the nearest spot it can see t from with t in range, as far as this
+ * move goes (and on toward one farther off); with none near, straight on until t is in range.
+ */
+function moveToShoot(run, a, t, ap, progress, range) {
+  run.geo = (run.geo ?? 0) + 1;
+  const from = run.log ? { x: a.pos.x, y: a.pos.y } : null;
+  const spot = spotToShoot(run, a, t, range, progress * 2, edgeDistance);
+  let to;
+  if ( spot ) {
+    const k = spot.feet > progress ? progress / spot.feet : 1;
+    to = { x: a.pos.x + (spot.x - a.pos.x) * k, y: a.pos.y + (spot.y - a.pos.y) * k };
+  } else {
+    const d = centerDistance(a, t);
+    const feet = Math.max(0, Math.min(progress, edgeDistance(a, t) - range));
+    to = d > 0 ? { x: a.pos.x + ((t.pos.x - a.pos.x) / d) * feet, y: a.pos.y + ((t.pos.y - a.pos.y) / d) * feet } : { x: a.pos.x, y: a.pos.y };
+  }
+  if ( inTheWay(run, a, to) ) to = backOff(run, a, to);
+  const feet = Math.hypot(to.x - a.pos.x, to.y - a.pos.y);
+  a.pos.x = to.x;
+  a.pos.y = to.y;
+  a.feetMoved += feet;
+  return { feet: Math.round(feet), cost: feet * (ap.mult ?? 1), mode: ap.mode ?? "walk", mult: ap.mult ?? 1, regions: ap.regions ?? [], reached: false, from, to: from ? { x: a.pos.x, y: a.pos.y } : null };
 }
 
 /** Move u away from its nearest foes (fleeing): up to `feet` along the line away from them. */

@@ -104,6 +104,39 @@ export function computeGround(tokens) {
   return { size: CELL_FEET, cells };
 }
 
+/** How far beyond the fight's creatures the walls are read for lines of sight (a long bow's range). */
+const WALLS_REACH = 300;
+
+/**
+ * The scene's walls that block sight, near the fight (within WALLS_REACH of a creature in it), in feet, for the
+ * engine's lines of sight (engine/behavior/space.js): [{a: [x, y], b: [x, y], s (its sight: Foundry's sense type), d
+ * (one-way: Foundry's edge direction), door (its id, for a door), open (a door open now)}]. A secret door is a wall
+ * while it's shut, like any other.
+ * @param {Token[]} tokens
+ */
+export function computeWalls(tokens) {
+  const { size } = canvas.dimensions;
+  const feet = squareFeet();
+  const toFeet = v => (v / size) * feet;
+  const reach = (WALLS_REACH / feet) * size;
+  const xs = tokens.map(t => t.center.x);
+  const ys = tokens.map(t => t.center.y);
+  const box = xs.length ? { x0: Math.min(...xs) - reach, x1: Math.max(...xs) + reach, y0: Math.min(...ys) - reach, y1: Math.max(...ys) + reach } : null;
+  const out = [];
+  for ( const w of canvas.scene.walls ) {
+    const s = Number(w.sight) || 0;
+    if ( !s ) continue;
+    const [x1, y1, x2, y2] = w.c;
+    if ( box && (Math.max(x1, x2) < box.x0 || Math.min(x1, x2) > box.x1 || Math.max(y1, y2) < box.y0 || Math.min(y1, y2) > box.y1) ) continue;
+    const door = w.door && w.door !== CONST.WALL_DOOR_TYPES.NONE;
+    out.push({
+      a: [toFeet(x1), toFeet(y1)], b: [toFeet(x2), toFeet(y2)], s, d: Number(w.dir) || 0,
+      door: door ? w.id : null, open: !!door && w.ds === CONST.WALL_DOOR_STATES.OPEN
+    });
+  }
+  return out;
+}
+
 /**
  * FastFighting's field on a region's settings: its ground's height (a ledge, a platform; a pit's floor below), so a
  * creature shoved off it falls. Blank: the region isn't ground.

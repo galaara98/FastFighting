@@ -2818,7 +2818,7 @@ function playFromHere(run, u) {
       if ( !leaveReach(run, u, turn, heal.target, costOf(rules, heal.action)) ) break;
       const budget = turn.payForMove(approach(run, u, heal.target).speed);
       if ( !budget ) break;
-      const move = moveToward(run, u, heal.target, heal.action.range ? null : (heal.action.reach ?? 5), budget);
+      const move = moveToward(run, u, heal.target, heal.action.range ? null : (heal.action.reach ?? 5), budget, heal.action.range ? { range: heal.action.range.max ?? heal.action.range.increment * 3 } : {});
       turn.usedMove(move.cost);
       moveLog(run, u, move, heal.target, "tend");
       continue;
@@ -2908,7 +2908,7 @@ function playFromHere(run, u) {
       // PF2e: a Stride per action. 5e: the rest of the movement, then a Dash.
       const budget = turn.payForMove(approach(run, u, target).speed);
       if ( !budget ) break;
-      const move = moveToward(run, u, target, option.action.range ? null : (option.action.reach ?? 5), budget);
+      const move = moveToward(run, u, target, option.action.range ? null : (option.action.reach ?? 5), budget, option.action.range ? { range: option.action.range.max ?? option.action.range.increment * 3 } : {});
       turn.usedMove(move.cost);
       moveLog(run, u, move, target, target.active ? "approach" : "hunt");
       continue;

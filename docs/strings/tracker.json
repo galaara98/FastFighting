@@ -6186,6 +6186,16 @@
    "commit": null,
    "hash": "a55610d2758f"
   },
+  "core:FASTFIGHTING.Log.Collision": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.Collision",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "9e393fd1df43"
+  },
   "core:FASTFIGHTING.Log.CommandAfter": {
    "repo": "core",
    "file": "languages/en.json",
@@ -8713,6 +8723,16 @@
    "commit": null,
    "hash": "49767d832b58"
   },
+  "core:FASTFIGHTING.Log.SomethingSolid": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.SomethingSolid",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "38f28ea7151a"
+  },
   "core:FASTFIGHTING.Log.SparesThem": {
    "repo": "core",
    "file": "languages/en.json",
@@ -9262,6 +9282,26 @@
    "date": null,
    "commit": null,
    "hash": "f950b0ecc51b"
+  },
+  "core:FASTFIGHTING.Log.Tumble": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.Tumble",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "38e9d1af861a"
+  },
+  "core:FASTFIGHTING.Log.TumbleFails": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.TumbleFails",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "7ff53e19fa94"
   },
   "core:FASTFIGHTING.Log.TurnsOn": {
    "repo": "core",
@@ -16009,6 +16049,16 @@
    "commit": null,
    "hash": "be6eb1fc3b05"
   },
+  "core:FASTFIGHTING.Story.Part.collision": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Story.Part.collision",
+   "area": "core/Story",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "f68a6490116e"
+  },
   "core:FASTFIGHTING.Story.Part.commandAnimal": {
    "repo": "core",
    "file": "languages/en.json",
@@ -19536,6 +19586,16 @@
    "date": null,
    "commit": null,
    "hash": "f8667c681ee4"
+  },
+  "core:FASTFIGHTING.Story.Part.tumbleFails": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Story.Part.tumbleFails",
+   "area": "core/Story",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "428734faf182"
   },
   "core:FASTFIGHTING.Story.Part.tumbleThrough": {
    "repo": "core",
@@ -32962,6 +33022,16 @@
    "commit": null,
    "hash": "16a2517ceaf6"
   },
+  "core:story:event.collision": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "event.collision",
+   "area": "core/story.event",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "e2991eb758dc"
+  },
   "core:story:event.commandBack": {
    "repo": "core",
    "file": "story/en.json",
@@ -34847,6 +34917,16 @@
    "date": null,
    "commit": null,
    "hash": "e95850d5a87e"
+  },
+  "core:story:event.tumbleFails": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "event.tumbleFails",
+   "area": "core/story.event",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "15c9d9cbb38c"
   },
   "core:story:event.untieFails": {
    "repo": "core",

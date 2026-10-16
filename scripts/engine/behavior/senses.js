@@ -20,6 +20,7 @@
  * Without positions everyone perceives everyone. Pure: no Foundry globals.
  */
 import { edgeDistance, separation, approach } from "../battle-state.js";
+import { wallsKnown, lineOfSight } from "./space.js";
 
 /** Darkness from this level up (0 to 1, the scene's) needs seeing in the dark to see far. */
 export const DARK = 0.7;
@@ -83,8 +84,9 @@ export function perceives(run, u, t, { crisis = false } = {}) {
   const blind = (u.conds?.blinded ?? 0) > 0;
   const deaf = (u.conds?.deafened ?? 0) > 0;
   const dark = (run.prep.options.darkness ?? 0) >= DARK;
+  // (A line of sight: on a map with its walls, from where it stands now; else as the approach said, once moved toward.)
   const sees = () => !blind && feet <= sightReach(r, dark) * k
-    && (crisis || approach(run, u, t).los !== false || !!u.losGained?.has(t.id));
+    && (crisis || (wallsKnown(run) && u.pos && t.pos ? lineOfSight(run, u, t) : approach(run, u, t).los !== false || !!u.losGained?.has(t.id)));
   const smells = () => feet <= r.smell * k && approach(run, u, t).blocked !== true;
   const found = (!deaf && feet <= r.hearing * k) || feet <= Math.max(r.feel, r.radar) * k || smells() || sees();
   pair[slot] = found;

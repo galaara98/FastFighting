@@ -6086,5 +6086,15 @@
     "As {by} falls, {actor} spills free.",
     "{actor} tumbles out of {by}, alive.",
     "{by} goes down, and {actor} breaks out at last."
+  ],
+  "event.tumbleFails": [
+    "{actor} tries to slip past {target}, but is blocked.",
+    "{target} cuts off {actor}'s way through.",
+    "{actor} can't get around {target} and pulls up short."
+  ],
+  "event.collision": [
+    "{actor} slams hard into what stops them.",
+    "{actor} crashes to a halt with a bone-jarring thud.",
+    "Driven back, {actor} hits something solid."
   ]
 }

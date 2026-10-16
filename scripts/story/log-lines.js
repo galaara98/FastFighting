@@ -296,6 +296,8 @@ function baseLine(e) {
       return t(how, { actor: e.actor, target: e.target, feet: distanceText(e.feet) }) + (e.blocked ? ` · ${t("ForcedBlocked")}` : "") + into;
     }
     case "fall": return t("Fall", { actor: e.actor, feet: distanceText(e.feet), damage: e.amount });
+    case "tumble": return t(e.success ? "Tumble" : "TumbleFails", { actor: e.actor, target: e.target, roll: e.natural !== undefined && e.natural !== null ? ` · ${dice(e.natural, e.mod, e.total, e.dc, t("DC"))}` : e.said ? ` · ${e.said}` : "" });
+    case "collision": return t("Collision", { actor: e.actor, damage: damage(e.amount, null), into: e.into || t("SomethingSolid") });
     case "groundHarm": return t("GroundHarm", { actor: e.actor, damage: e.amount });
     case "free": {
       const roll = e.natural !== undefined ? ` · ${dice(e.natural, e.mod, e.total, e.dc, t("DC"))}` : e.said ? ` · ${e.said}` : "";
