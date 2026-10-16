@@ -1011,6 +1011,7 @@
     "Story": {
       "Title": "The battle at {scene}",
       "Speaker": "The Chronicle",
+      "GmOnly": "For the GM only",
       "StyleLabel": "Story",
       "Style": {
         "roleplay": "Roleplay",

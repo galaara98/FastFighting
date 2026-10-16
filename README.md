@@ -419,7 +419,7 @@ The fight is told in one of three styles:
 - **Standard:** what each character did and how they ended.
 - **Statistician:** every roll.
 
-Creatures that never joined the fight aren't listed, and hidden ones are never named. Every Roleplay sentence comes from a roll table, and you can install them as editable RollTables under **Settings → FastFighting → Story tables**.
+Creatures that never joined the fight aren't listed, and hidden ones are never named. In a live battle, what the players shouldn't learn (who takes command, what a creature thinks or schemes, what sizing up a foe told it, its nerve failing) goes on a card of its own, for the GMs only. The story is always told by the narrator, never as a creature's own words in the chat. Every Roleplay sentence comes from a roll table, and you can install them as editable RollTables under **Settings → FastFighting → Story tables**.
 
 ## Languages
 

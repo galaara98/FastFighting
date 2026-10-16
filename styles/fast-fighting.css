@@ -639,6 +639,8 @@
 .ff-battle-review ul { list-style: none; margin: 0.3rem 0; padding: 0; }
 .ff-battle-review li { display: flex; gap: 0.3rem; align-items: center; flex-wrap: wrap; margin: 0.2rem 0; }
 .ff-battle-review li.is-unsure label { font-style: italic; }
+/* A turn's card for the GMs only: what the players shouldn't learn. */
+.fast-fighting-story.ff-gm-only { border-left: 3px dashed var(--color-border-highlight, #ff6400); padding-left: 6px; }
 /* A live battle's cards in the chat: their buttons side by side, and low. */
 .fast-fighting-live { display: flex; flex-wrap: wrap; gap: 4px; }
 .fast-fighting-live p { flex: 1 0 100%; margin: 0 0 2px; }

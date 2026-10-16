@@ -950,10 +950,10 @@ async function tellNew() {
       const key = beat.closing ? "closing" : beat.turns.join(",");
       if ( done.has(key) ) continue;
       done.add(key);
-      if ( !beat.html ) continue;
-      const message = await postBeat(battle.scene, beat, docs, { odds: battle.data.odds });
-      if ( message ) out.push(message.id);
-      if ( message && beat.closing ) battle.data.closing = message.id;
+      if ( !beat.html && !beat.gmHtml ) continue;
+      const messages = await postBeat(battle.scene, beat, docs, { odds: battle.data.odds });
+      out.push(...messages.map(m => m.id));
+      if ( messages.length && beat.closing && beat.html ) battle.data.closing = messages[0].id;
     }
     battle.data.toldBeats = [...done];
   }
