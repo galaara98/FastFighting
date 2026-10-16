@@ -415,6 +415,9 @@ function narrate(e, roll, rel, fill) {
       return roll(e.self ? "event.healSelf" : "event.heal", f);
     case "down": return roll(e.knockedOut ? "event.knockout" : "event.down", f);
     case "mercy": return roll("event.mercy", f);
+    case "bind": return roll("event.bind", f);
+    case "rob": return e.stolen ? roll("event.rob", { ...f, amount: concessionText(e.stolen) }) : roll("event.robEmpty", f);
+    case "bound": return roll("event.bound", f);
     case "execute": return e.goes ? roll("event.executeGoes", f) : roll(e.next ? "event.executeSpared" : "event.executeSparedAlone", { ...f, next: e.next ?? "" });
     // (Finished off by a blow; one that lingered, venom or a burn, just kills.)
     case "death": return roll(e.finished && !e.lingering ? "event.finished" : "event.death", f);

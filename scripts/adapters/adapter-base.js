@@ -236,6 +236,25 @@ export class SystemAdapter {
   }
 
   /**
+   * A live battle: a creature tied up (a prisoner: engine/behavior/fallen.js), or no longer, marked on its sheet. By
+   * default, the system's status for being restrained (its "restrained", or Foundry's "restrain"); a helper whose
+   * system has a better way may do it its own. Returns an undo record, or null.
+   * @param {TokenDocument} tokenDoc
+   * @param {boolean} bound
+   */
+  async commitBound(tokenDoc, bound) {
+    const actor = tokenDoc?.actor;
+    // (Foundry keeps them as a list; a system may keep its own by id, as PF2e does.)
+    const all = Array.isArray(CONFIG.statusEffects) ? CONFIG.statusEffects : Object.values(CONFIG.statusEffects ?? {});
+    const id = ["restrained", "restrain", "bound"].find(s => all.some(e => e?.id === s));
+    if ( !actor || !id ) return null;
+    const has = actor.statuses?.has?.(id) || [...(actor.effects ?? [])].some(e => !e.disabled && e.statuses?.has?.(id));
+    if ( has === bound ) return null;
+    await actor.toggleStatusEffect(id, { active: bound });
+    return { tokenUuid: tokenDoc.uuid, actorUuid: actor.uuid, statuses: [{ id, active: !bound }] };
+  }
+
+  /**
    * A live battle: whether this system's sheets can carry one of the engine's conditions (by its key). One they can't
    * (PF2e has none for losing a turn to Command) the engine keeps itself between turns; one they can, the sheet says
    * whether it's still there. By default, every one.

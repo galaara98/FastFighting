@@ -260,7 +260,7 @@ export function observe(run, u, e, harmers = new Map()) {
 }
 
 /** Statuses only the engine knows (the sheets can't say a creature ran or gave up). */
-const ENGINE_STATUSES = new Set([STATUS.FLED, STATUS.SURRENDERED, STATUS.STOOD_DOWN, STATUS.BEATEN]);
+const ENGINE_STATUSES = new Set([STATUS.FLED, STATUS.SURRENDERED, STATUS.STOOD_DOWN, STATUS.BEATEN, STATUS.BOUND]);
 
 /**
  * An effect whose only lasting part is conditions the sheet now carries (written there after the turn it landed):
@@ -274,7 +274,7 @@ const sheetOwned = e => Object.keys(e.conditions ?? {}).length > 0 && !e.conditi
  * The sheets as they now are, by creature id: {hp, temp, stamina, maxHp, dying, wounded, doomed, stable, status
  * ("standing" | "down" | "dead"), conditions {key: value}, persistent [DamagePart], resources {key: n}, position
  * {x, y} (feet), shieldRaised}; anything left out stays as the engine has it. Returns what changed that the engine
- * didn't do: [{id, fell, died, revived, hp (the change), moved}].
+ * didn't do: [{id, fell, died, revived, bound, hp (the change), moved}].
  */
 export function syncFromSheets(run, states) {
   const changes = [];
@@ -289,17 +289,21 @@ export function syncFromSheets(run, states) {
     }
     for ( const k of ["temp", "stamina", "maxHp", "dying", "wounded", "doomed"] ) if ( Number.isFinite(s[k]) ) u[k] = s[k];
     if ( typeof s.stable === "boolean" ) u.stable = s.stable;
-    if ( s.status && !ENGINE_STATUSES.has(u.status) ) {
+    // (A prisoner stays one, unless its sheet has it dead.)
+    if ( s.status && (!ENGINE_STATUSES.has(u.status) || (u.status === STATUS.BOUND && s.status === "dead")) ) {
       const was = u.status;
       let now = s.status === "dead" ? STATUS.DEAD : s.status === "down" ? STATUS.DOWN : STATUS.STANDING;
       // (Dead stays dead unless the sheet has it up again: a sheet that only says "down" hasn't brought it back.)
       if ( was === STATUS.DEAD && now === STATUS.DOWN ) now = STATUS.DEAD;
+      // (Tied up and up again: a prisoner, not back in the fight.)
+      if ( now === STATUS.STANDING && u.boundBy ) now = STATUS.BOUND;
       if ( was === STATUS.STANDING && now !== STATUS.STANDING ) {
         c.fell = true;
         u.wasDowned = true;
       }
       if ( now === STATUS.DEAD && was !== STATUS.DEAD ) c.died = true;
       if ( was !== STATUS.STANDING && now === STATUS.STANDING ) c.revived = true;
+      if ( now === STATUS.BOUND && was !== STATUS.BOUND ) c.bound = true;
       u.status = now;
     }
     if ( s.conditions ) {
@@ -339,7 +343,7 @@ export function syncFromSheets(run, states) {
       c.moved = true;
       moved.push(u);
     }
-    if ( c.fell || c.died || c.revived || c.hp || c.moved ) changes.push(c);
+    if ( c.fell || c.died || c.revived || c.bound || c.hp || c.moved ) changes.push(c);
   }
   if ( moved.length ) {
     run.geo = (run.geo ?? 0) + 1;

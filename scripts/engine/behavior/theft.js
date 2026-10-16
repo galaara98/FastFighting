@@ -34,6 +34,12 @@ function worthRobbing(t) {
   return v.money > 0 || v.stowed.length > 0;
 }
 
+/** Has a fallen t anything to take: money, gear it carries, or (a creature's, not a PC's) what it was wielding? */
+export function robbable(t) {
+  const v = remaining(t);
+  return v.money > 0 || v.stowed.length > 0 || (t.spec.kind !== "pc" && v.wielded.length > 0);
+}
+
 /** Is u's side clearly winning: more of them standing, or the other side has lost noticeably more? */
 function winning(run, u) {
   const allies = alliesOf(run, u).filter(a => a.active !== false);

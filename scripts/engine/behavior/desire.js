@@ -28,9 +28,10 @@
  *               themselves understood and that it's willing (see heed).
  *
  * A desire's level is max(logic, stated, lean, taunt) + memory + social - frustration, 0 to 100:
- *   {kind: "hurt" | "heal" | "protect" | "aid" | "talk" | "avoid" | "bolstered", targetId, level}
- *   (aid: bolster with a buff; bolstered: to be bolstered by that friend. A request, not something it acts on itself:
- *   the friend hears it and, if willing, wants to aid it.)
+ *   {kind: "hurt" | "heal" | "protect" | "aid" | "talk" | "avoid" | "bind" | "rob" | "bolstered", targetId, level}
+ *   (aid: bolster with a buff; bind: tie up a fallen foe, a prisoner; rob: take what a fallen foe carries
+ *   (behavior/fallen.js); bolstered: to be bolstered by that friend. A request, not something it acts on itself: the
+ *   friend hears it and, if willing, wants to aid it.)
  *
  * The strongest desire leads. Much weaker ones (BLIND_GAP or more below it) don't cross the character's mind, and
  * an obsessed character (OBSESSED+) stops worrying about its own safety.
@@ -39,14 +40,15 @@ import { STATUS } from "../../constants.js";
 import { areEnemies, isStanding, liveTrait, enemiesOf, alliesOf, sizedUp, command, commandOf, refusesToHelp } from "../battle-state.js";
 import { perceives, apparentHealth } from "./senses.js";
 import { seemsFoe } from "./neutral.js";
+import { robbable } from "./theft.js";
 
 /** A character's playstyle guide for desires (from its pills), or the neutral one. */
-const NEUTRAL_STYLE = Object.freeze({ hurt: {}, avoid: {}, heal: 0, protect: 0, aid: 0, talk: 0, whim: 0, contrarian: 0, retaliate: 1, avenge: 1, cool: 1, frustration: 1, leader: 1, doorPatience: 1 });
+const NEUTRAL_STYLE = Object.freeze({ hurt: {}, avoid: {}, heal: 0, protect: 0, aid: 0, talk: 0, bind: 0, rob: 0, whim: 0, contrarian: 0, retaliate: 1, avenge: 1, cool: 1, frustration: 1, leader: 1, doorPatience: 1 });
 export const styleOf = u => u.turnStyle ?? u.spec?.desireStyle ?? NEUTRAL_STYLE;
 /** Its own pills' guide, whoever it follows this turn (worked out again without a pill it lost: dropAmbition). */
 const ownStyle = u => u.ownDesireStyle ?? u.spec?.desireStyle ?? NEUTRAL_STYLE;
 
-export const DESIRE_KINDS = Object.freeze(["hurt", "heal", "protect", "aid", "talk", "avoid", "bolstered"]);
+export const DESIRE_KINDS = Object.freeze(["hurt", "heal", "protect", "aid", "talk", "avoid", "bind", "rob", "bolstered"]);
 /** Desires a creature may have about itself: mending itself, bolstering itself. */
 const SELF_KINDS = new Set(["heal", "aid"]);
 /** Band floors: passing, wants, determined, driven, obsessed. */
@@ -190,6 +192,9 @@ export function allDesires(u) {
 function relevant(run, u, kind, t) {
   if ( !t || !t.active || (t === u && !SELF_KINDS.has(kind)) ) return false;
   if ( [STATUS.DEAD, STATUS.FLED, STATUS.BEATEN].includes(t.status) ) return false;
+  // (A prisoner, tied up and awake, is out of it: there's only what it carries.)
+  if ( t.status === STATUS.BOUND && kind !== "rob" ) return false;
+  const foe = () => !t.spec.untargetable && !t.spec.hazard && (areEnemies(run, u, t) || seemsFoe(run, u, t));
   switch ( kind ) {
     // (Nobody can attack what's untargetable: a hazard, a Spiritual Weapon.)
     case "hurt": return !t.spec.untargetable && (areEnemies(run, u, t) || seemsFoe(run, u, t)) && t.status !== STATUS.SURRENDERED && t.status !== STATUS.STOOD_DOWN;
@@ -198,6 +203,9 @@ function relevant(run, u, kind, t) {
     case "heal": return !areEnemies(run, u, t) && (t.status === STATUS.DOWN || t.hp < t.maxHp) && !refusesToHelp(run, u, t);
     case "protect": return !areEnemies(run, u, t) && !refusesToHelp(run, u, t);
     case "aid": return !areEnemies(run, u, t) && isStanding(t) && !refusesToHelp(run, u, t);
+    // A fallen foe not tied up yet; one down (or tied up) with something on it to take.
+    case "bind": return t.status === STATUS.DOWN && !t.boundBy && foe();
+    case "rob": return (t.status === STATUS.DOWN || t.status === STATUS.BOUND) && foe() && robbable(t) && !u.robbedFrom?.has(t.id);
     // (Wanting a friend's buff is for the friend to act on: see heed.)
     default: return false;
   }
@@ -357,7 +365,7 @@ function blendStyle(own, lead, share) {
   for ( const group of ["hurt", "avoid"] ) {
     for ( const k of new Set([...Object.keys(own[group] ?? {}), ...Object.keys(lead[group] ?? {})]) ) out[group][k] = mix(own[group]?.[k], lead[group]?.[k]);
   }
-  for ( const k of ["heal", "protect", "aid", "talk", "whim"] ) out[k] = mix(own[k], lead[k]);
+  for ( const k of ["heal", "protect", "aid", "talk", "bind", "rob", "whim"] ) out[k] = mix(own[k], lead[k]);
   for ( const k of ["retaliate", "avenge", "cool", "frustration", "doorPatience"] ) out[k] = (own[k] ?? 1) * (1 - share) + (lead[k] ?? 1) * share;
   return out;
 }
@@ -411,8 +419,11 @@ export function styleWants(run, u, scored, { canHeal = false, canTalk = false, t
     if ( h.current && t.id === u.targetId ) points += h.current;
     add("hurt", t.id, points);
   }
-  // The fallen: some can't resist finishing them, some never would.
+  // The fallen: some can't resist finishing them, some never would; some would rather take them prisoner, some
+  // would rather go through their pockets.
   if ( h.downed ) for ( const t of enemiesOf(run, u) ) if ( t.active && t.status === STATUS.DOWN && !t.stable && perceives(run, u, t) ) add("hurt", t.id, h.downed);
+  if ( s.bind ) for ( const t of enemiesOf(run, u) ) if ( relevant(run, u, "bind", t) && perceives(run, u, t) ) add("bind", t.id, s.bind);
+  if ( s.rob ) for ( const t of enemiesOf(run, u) ) if ( relevant(run, u, "rob", t) && perceives(run, u, t) ) add("rob", t.id, s.rob);
   // Friends: one to mend, one to guard.
   const friends = run.units.filter(a => a !== u && a.side === u.side && a.active && ![STATUS.DEAD, STATUS.FLED].includes(a.status));
   if ( canHeal && s.heal ) for ( const a of friends ) if ( perceives(run, u, a, { crisis: true }) && (a.status === STATUS.DOWN || frac(a) < 0.75) ) add("heal", a.id, s.heal);
@@ -445,7 +456,7 @@ export function styleWants(run, u, scored, { canHeal = false, canTalk = false, t
  */
 export function listen(run, u, { canHeal = false, canTalk = false, canAid = false } = {}) {
   if ( !u.desire ) return;
-  const fits = kind => kind === "hurt" || kind === "avoid" || kind === "protect" || (kind === "heal" && canHeal) || (kind === "talk" && canTalk) || (kind === "aid" && canAid);
+  const fits = kind => kind === "hurt" || kind === "avoid" || kind === "protect" || kind === "bind" || kind === "rob" || (kind === "heal" && canHeal) || (kind === "talk" && canTalk) || (kind === "aid" && canAid);
   const pull = (kind, targetId, amount) => {
     if ( !fits(kind) || targetId === u.id || !amount ) return;
     const k = keyOf(kind, targetId);
@@ -489,7 +500,7 @@ export const PARTY_POINTS = 100;
 /**
  * The player party's wishes (its players' votes, majority rules: the side's party, battle-state.js), for each member of
  * that side each turn, at the world's Party's sway: who to go after first (the nearest, the weakest, the most
- * dangerous, spellcasters and healers, their leader), the fallen (finish them), and each other (heal the hurt, guard
+ * dangerous, spellcasters and healers, their leader), the fallen (finish them, tie them up, rob them), and each other (heal the hurt, guard
  * the weakest, or each for themselves: less of both). How the party wants them to act (talking, resources, when to pull
  * out) sways their tactics instead (playstyles.js sampleRunTactics), and sparing the fallen their wish to (battle.js).
  * @param {{t, moves}[]} scored  The foes its tactics weighed
@@ -521,6 +532,8 @@ export function partyWants(run, u, scored, { canHeal = false } = {}) {
   if ( party.fallen === "finish" ) {
     for ( const t of enemiesOf(run, u) ) if ( t.active && t.status === STATUS.DOWN && !t.stable && perceives(run, u, t) ) add("hurt", t.id, points);
   }
+  const fallenKind = { tie: "bind", rob: "rob" }[party.fallen];
+  if ( fallenKind ) for ( const t of enemiesOf(run, u) ) if ( relevant(run, u, fallenKind, t) && perceives(run, u, t) ) add(fallenKind, t.id, points);
   const friends = run.units.filter(a => a !== u && a.side === u.side && a.active && ![STATUS.DEAD, STATUS.FLED].includes(a.status));
   if ( party.care === "heal" && canHeal ) {
     for ( const a of friends ) if ( perceives(run, u, a, { crisis: true }) && (a.status === STATUS.DOWN || frac(a) < 0.75) ) add("heal", a.id, points);

@@ -189,8 +189,12 @@ describe("answers players store", () => {
     // A renamed playstyle saved under its old id still counts; an object's own keys aren't playstyles.
     expect(sanitizeTactics({ playstyles: ["scaredyCat", "constructor", "toString", "chicken", "cruel"] }).playstyles).toEqual(["chicken", "cruel"]);
     // The tick-boxes that became answers read as those answers, while their question is unanswered.
-    expect(sanitizeTactics({ neverKill: true }).target).toBe("avoidKilling");
-    expect(sanitizeTactics({ avoidKilling: true }).target).toBe("avoidKilling");
+    // ("I avoid killing", a tick-box, then an answer to who it went for, spares the fallen now.)
+    expect(sanitizeTactics({ neverKill: true }).fallen).toBe("spare");
+    expect(sanitizeTactics({ avoidKilling: true }).fallen).toBe("spare");
+    expect(sanitizeTactics({ target: "avoidKilling" })).toMatchObject({ fallen: "spare" });
+    expect(sanitizeTactics({ target: "avoidKilling" }).target).toBeUndefined();
+    expect(sanitizeTactics({ target: "avoidKilling", fallen: "tie" }).fallen).toBe("tie");
     expect(sanitizeTactics({ alwaysTalk: true }).talk).toBe("always");
     expect(sanitizeTactics({ avoidFleeing: true }).retreat).toBe("never");
     expect(sanitizeTactics({ avoidFleeing: true, retreat: "hurt" }).retreat).toBe("hurt");

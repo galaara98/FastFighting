@@ -353,11 +353,13 @@
 .ff-kpi.talk .ff-kpi-value { color: light-dark(#2b7fa3, #5bb6db); }
 .ff-status.surrendered { background: light-dark(#2b7fa3, #5bb6db); color: #fff; }
 .ff-fate .stoodDown { background: light-dark(#3f8f6b, #74d1a4); }
+.ff-fate .bound { background: light-dark(#8a6a2f, #d2a85a); }
 .ff-fate .beaten { background: light-dark(#6d5a8f, #b7a2dd); }
 .ff-status.beaten { background: light-dark(#6d5a8f, #b7a2dd); color: #fff; }
 .ff-fate .conceded { background: light-dark(#9a7b1f, #e6c35c); }
 .ff-status.conceded { background: light-dark(#9a7b1f, #e6c35c); color: #fff; }
 .ff-status.stoodDown { background: light-dark(#3f8f6b, #74d1a4); color: #fff; }
+.ff-status.bound { background: light-dark(#8a6a2f, #d2a85a); color: #fff; }
 
 /* ---------- Combat Tracker button ---------- */
 .ff-tracker-open {

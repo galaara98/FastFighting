@@ -427,18 +427,26 @@ export const wishWins = (run, v) => {
 };
 
 /**
+ * How strongly u would rather not kill, this fight: its stated wish (spec.avoidKilling, from its answer), or what this
+ * fight's answer to "Foes who fall" means (its own, calculated, or its party's): sparing them all of it, taking them
+ * alive to tie up most of it (TAKING_ALIVE).
+ */
+const TAKING_ALIVE = Object.freeze({ spare: 1, tie: 0.66 });
+const avoidsKilling = u => Math.max(wish(u?.spec.avoidKilling), TAKING_ALIVE[u?.tac?.fallen] ?? 0);
+
+/**
  * One who avoids killing holds back from a kill this time? As often as the avoidKilling setting says (90% by default)
- * for "I avoid killing", less for answers that lean less that way: nobody controls the story entirely.
+ * for "Spare them: I avoid killing", less for answers that lean less that way: nobody controls the story entirely.
  */
 export function holdsBack(run, u) {
-  const strength = wish(u?.spec.avoidKilling);
+  const strength = avoidsKilling(u);
   if ( !strength ) return false;
   return run.rng.chance((clamp(run.prep.options.avoidKilling ?? AVOID_KILLING, 0, 100) / 100) * strength);
 }
 
 /** The same, decided once a round: choosing whom to strike, it doesn't change its mind with every look. */
 export function holdsBackThisRound(run, u) {
-  if ( !wish(u?.spec.avoidKilling) ) return false;
+  if ( !avoidsKilling(u) ) return false;
   if ( u.holdBackRound !== run.round ) {
     u.holdBackRound = run.round;
     u.holdingBack = holdsBack(run, u);

@@ -162,6 +162,7 @@ export function commonOutcome(spec, final, { hp = true } = {}) {
   else if ( final.status === "fled" ) lines.push(outcomeLine(spec.kind === "pc" ? "Retreated" : final.swayed ? "TalkedAway" : "Fled"));
   else if ( final.status === "surrendered" ) lines.push(outcomeLine("Surrenders"));
   else if ( final.status === "stoodDown" ) lines.push(outcomeLine("StandsDown"));
+  if ( final.bound && final.status !== "dead" ) lines.push(outcomeLine("TiedUp"));
   const side = sideChangeLine(final);
   if ( side ) lines.push(side);
   return lines;

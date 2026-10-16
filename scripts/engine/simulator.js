@@ -36,7 +36,8 @@ import { controlOutcome, controlRoll, isImmune, degreeShift } from "./behavior/c
 import { recompute as recomputeConditions, applyOutcome, beginConcentration, endConcentration, holdsAnything, noteConcentration, moveHeld, settleAllegiance, iwrOf, incoming, spendEdges, spendBoost, focusOf, tauntProof, withoutTaunt } from "./behavior/effects.js";
 import { decideBuff, aidScores, checkDc } from "./behavior/support.js";
 import { perceives } from "./behavior/senses.js";
-import { stealChance, theftTarget, theftPlan, attemptTheft } from "./behavior/theft.js";
+import { stealChance, theftTarget, theftPlan, attemptTheft, robbable } from "./behavior/theft.js";
+import { fallenWishes, decideFallen, bind, rob, stayBound, takesPrisoners, robsTheFallen } from "./behavior/fallen.js";
 import { reactionsPerRound, threats, takesSafeWay } from "./behavior/reactions.js";
 import { isNeutral, crossed, caughtInArea, refreshLeans, truceWith, truceBreaks, turnOn, settleTruce, peaceDesires, seemsFoe, meddling, inFray, fighting, dislikesViolence, annoyedBy, ANNOYED } from "./behavior/neutral.js";
 import { normalizeCost } from "./turn.js";
@@ -1714,6 +1715,7 @@ export function noteHeal(run, u, target, healed, revived, { action = "", potion 
   u.healingDone += healed;
   if ( run.neutral && healed > 0 ) crossed(run, u, target, "help", revived ? 1.5 : 0.75, logger(run));
   if ( run.log ) log(run, u, { type: "heal", action, target: target.spec.name, targetId: target.id, self: target === u, amount: healed, revived, potion, check });
+  if ( revived ) stayBound(run, target, logger(run));
 }
 
 /* -------------------------------------------- */
@@ -2143,6 +2145,8 @@ function deliberate(run, u) {
     const ward = run.units.find(a => a !== u && a.side === u.side && isStanding(a) && run.units.some(e => e.targetId === a.id && isStanding(e) && areEnemies(run, a, e)));
     if ( ward ) think(u, "protect", ward.id, 50);
   }
+  // Foes who fall, as it answered (or its party did): finish them off, tie them up, rob them (behavior/fallen.js).
+  fallenWishes(run, u);
   // Badly hurt, it loses heart for foes it would have to cross the field to reach.
   if ( u.maxHp > 0 && u.hp / u.maxHp < 0.35 ) for ( const x of scored ) if ( x.moves >= 2 ) thwart(run, u, "hurt", x.t.id, 5);
   // Its playstyle's leanings (the weakest, the fallen, a friend to guard, something to fear ...).
@@ -2384,7 +2388,8 @@ export function turnUpkeep(run, u) {
 
 export function takeTurn(run, u) {
   const { rules, options } = run.prep;
-  if ( [STATUS.DEAD, STATUS.FLED, STATUS.SURRENDERED, STATUS.STOOD_DOWN, STATUS.BEATEN].includes(u.status) ) return;
+  stayBound(run, u, logger(run)); // (come to since, tied up)
+  if ( [STATUS.DEAD, STATUS.FLED, STATUS.SURRENDERED, STATUS.STOOD_DOWN, STATUS.BEATEN, STATUS.BOUND].includes(u.status) ) return;
   if ( u.spec.hazard ) return hazardTurn(run, u);
   // On the map but not in the conflict: it only looks around, until the round after it notices.
   if ( !u.active && !lookAround(run, u) ) return;
@@ -2402,7 +2407,7 @@ export function takeTurn(run, u) {
 
   settleSides(run); // holds that took or ended since this creature's last turn
   regenerate(run, u);
-  if ( u.status === STATUS.DEAD ) return endOfTurn(run, u);
+  if ( u.status === STATUS.DEAD || stayBound(run, u, logger(run)) ) return endOfTurn(run, u);
   if ( u.status === STATUS.DOWN && u.held ) return endOfTurn(run, u); // (held at the edge by its regeneration)
   if ( u.status === STATUS.DOWN ) {
     if ( options.downedModel === DOWNED_MODELS.SIMULATE && rules.recoveryCheck && !systemOwns(run, u, "recovery") ) {
@@ -2605,6 +2610,23 @@ export function takeTurn(run, u) {
     if ( buff ) {
       turn.spend(costOf(rules, buff.action, u));
       executeBuff(run, u, buff.action, buff.targets, buff.worth, turn);
+      u.actsThisTurn += 1;
+      continue;
+    }
+    // Tie up (or rob) a fallen foe, when that's what it most wants and it can get to it this turn.
+    const fallen = decideFallen(run, u, turn);
+    if ( fallen?.moves > 0 ) {
+      if ( !leaveReach(run, u, turn, fallen.target, fallen.cost) ) break;
+      const budget = turn.payForMove(approach(run, u, fallen.target).speed);
+      if ( !budget ) break;
+      const move = moveToward(run, u, fallen.target, 5, budget);
+      turn.usedMove(move.cost);
+      moveLog(run, u, move, fallen.target);
+      continue;
+    }
+    if ( fallen ) {
+      turn.spend(fallen.cost);
+      (fallen.kind === "bind" ? bind : rob)(run, u, fallen.target, logger(run));
       u.actsThisTurn += 1;
       continue;
     }
@@ -2814,8 +2836,9 @@ function firstAid(run, u, target, { aftermath = true } = {}) {
  * Once the last enemy is gone, the fight isn't quite over: the winners tend their dying friends (free help such as
  * first aid or Battle Medicine before spending spells and potions), and anyone left untended lives or dies by their
  * recovery checks. What Make it So commits is then settled: stable, healed, or dead, never "dying 2".
- * The fallen on the losing side are dealt with as the victors' playstyles say (see mercyOf): spared and tended,
- * finished off, or left to their own recovery checks.
+ * The fallen on the losing side are dealt with as the victors' answers and playstyles say (see mercyOf): spared and
+ * tended, finished off, or left to their own recovery checks; and those still alive tied up (prisoners, tended too) and
+ * robbed (behavior/fallen.js).
  */
 function aftermath(run, order) {
   const { rules, options } = run.prep;
@@ -2824,7 +2847,7 @@ function aftermath(run, order) {
   // (A hazard still set wins nothing: it settles nobody's fate, and makes nobody's friend a fallen foe.)
   const victors = run.units.filter(u => isStanding(u) && !u.spec.hazard);
   const fallen = run.units.filter(u => u.status === STATUS.DOWN && victors.some(v => areEnemies(run, v, u)));
-  const decided = simulated && fallen.length > 0 && victors.some(v => mercyOf(run, v) !== "leave");
+  const decided = simulated && fallen.length > 0 && victors.some(v => mercyOf(run, v) !== "leave" || takesPrisoners(v) || robsTheFallen(v));
   // The system may give a fallen player character one last chance once friends reach the body (DCC: roll the body).
   const bodies = simulated && rules.recoverBody ? run.units.filter(u => u.status === STATUS.DEAD && u.spec.kind === "pc" && victors.some(v => v.side === u.side)) : [];
   if ( !(simulated && run.units.some(isDying)) && !decided && !bodies.length ) return;
@@ -2844,7 +2867,7 @@ function aftermath(run, order) {
       for ( let n = 0; n < MAX_STEPS_PER_TURN && turn.any; n++ ) {
         // Friends first; then, for one who spares the fallen, a foe it can help for free (first aid, not a spell).
         const friend = run.units.filter(a => a.side === u.side && a !== u && isDying(a)).sort((a, b) => (b.dying ?? 0) - (a.dying ?? 0))[0];
-        const foe = !friend && mercyOf(run, u) === "spare" ? run.units.find(a => a.spared && isDying(a)) : null;
+        const foe = !friend && (mercyOf(run, u) === "spare" || takesPrisoners(u)) ? run.units.find(a => a.spared && isDying(a)) : null;
         const dying = friend ?? foe;
         if ( !dying ) break;
         let option = rescueOption(run, u, dying, turn);
@@ -2876,19 +2899,25 @@ function aftermath(run, order) {
 }
 
 /**
- * What a victor does with a fallen foe once the fighting is over, by its playstyles: "spare" it (a Moralist, a Diplomat
- * most of the time, one who avoids killing as often as it holds back: decided once), "finish" it (the Cruel), or
- * "leave" it to fate.
+ * What a victor does with a fallen foe once the fighting is over: its answer to "Foes who fall" first (finish them,
+ * spare them), then its playstyles: "spare" it (a Moralist, a Diplomat most of the time, one who avoids killing as
+ * often as it holds back: decided once), "finish" it (the Cruel, with no other answer), or "leave" it to fate. (Tying
+ * them up and robbing them come after, for the living: behavior/fallen.js.)
  */
 export function mercyOf(run, u) {
   const b = behaviorOf(u);
+  const said = u.tac?.fallen;
+  if ( said === "finish" ) return "finish";
   u.sparesTheFallen ??= holdsBack(run, u);
-  if ( u.sparesTheFallen || (b.spareDowned ?? 0) >= 0.5 ) return "spare";
-  if ( b.finishDowned && !b.spareDowned ) return "finish";
+  if ( u.sparesTheFallen || said === "spare" || (b.spareDowned ?? 0) >= 0.5 ) return "spare";
+  if ( b.finishDowned && !b.spareDowned && !said ) return "finish";
   return "leave";
 }
 
-/** The victors settle the fallen: anyone sparing them stops the rest; otherwise the cruel finish them off. */
+/**
+ * The victors settle the fallen: anyone sparing them stops the rest; otherwise the cruel finish them off. Those still
+ * alive are then tied up by whoever takes prisoners (and tended like the spared), and robbed by whoever robs them.
+ */
 function dealWithTheFallen(run, victors, fallen) {
   for ( const f of fallen ) {
     // (Only its own foes: nobody finishes, or spares, a friend.)
@@ -2897,14 +2926,23 @@ function dealWithTheFallen(run, victors, fallen) {
     if ( sparer ) {
       f.spared = true;
       if ( finishers.length ) log(run, sparer, { type: "mercy", target: f.spec.name, targetId: f.id, aftermath: true });
-      continue;
+    } else {
+      const killer = finishers.find(k => executionCheck(run, k, f) === f);
+      if ( killer ) {
+        // Its everyday blows (no spell slots or potions on the helpless), until it's done.
+        const blows = killer.prep.offense.filter(a => !a.resource && !Number.isFinite(a.uses) && a.kind !== "control" && a.damage?.length);
+        const best = blows.reduce((top, a) => { const ev = expectedDamage(run, killer, a, f, 0); return !top || ev > top.ev ? { a, ev } : top; }, null);
+        for ( let n = 0; best && n < 4 && f.status === STATUS.DOWN; n++ ) executeOffense(run, killer, best.a, f, 0);
+      }
     }
-    const killer = finishers.find(k => executionCheck(run, k, f) === f);
-    if ( !killer ) continue;
-    // Its everyday blows (no spell slots or potions on the helpless), until it's done.
-    const blows = killer.prep.offense.filter(a => !a.resource && !Number.isFinite(a.uses) && a.kind !== "control" && a.damage?.length);
-    const best = blows.reduce((top, a) => { const ev = expectedDamage(run, killer, a, f, 0); return !top || ev > top.ev ? { a, ev } : top; }, null);
-    for ( let n = 0; best && n < 4 && f.status === STATUS.DOWN; n++ ) executeOffense(run, killer, best.a, f, 0);
+    if ( f.status !== STATUS.DOWN ) continue;
+    const binder = !f.boundBy ? victors.find(v => areEnemies(run, v, f) && takesPrisoners(v)) : null;
+    if ( binder ) {
+      bind(run, binder, f, logger(run), { aftermath: true });
+      f.spared = true; // (a prisoner is worth keeping alive)
+    }
+    const robber = victors.find(v => areEnemies(run, v, f) && robsTheFallen(v) && !v.robbedFrom?.has(f.id));
+    if ( robber && robbable(f) ) rob(run, robber, f, logger(run), { aftermath: true });
   }
 }
 
@@ -2912,7 +2950,7 @@ function dealWithTheFallen(run, victors, fallen) {
  * When the fight is over, whatever was given up comes back to its owner if the one who took it was beaten (dead,
  * down, surrendered, talked down, beaten); a taker who got away keeps it.
  */
-const BEATEN = new Set([STATUS.DEAD, STATUS.DOWN, STATUS.SURRENDERED, STATUS.STOOD_DOWN, STATUS.BEATEN]);
+const BEATEN = new Set([STATUS.DEAD, STATUS.DOWN, STATUS.SURRENDERED, STATUS.STOOD_DOWN, STATUS.BEATEN, STATUS.BOUND]);
 function reclaimGoods(run) {
   for ( const u of run.units ) {
     for ( const c of u.concessions ?? [] ) {
@@ -2937,8 +2975,8 @@ function keepsSideIn(u) {
   // (A summoned thing nobody can attack, a Spiritual Weapon, doesn't keep its side in the fight; nor does anyone who
   // takes no side.)
   // (Someone who has noticed the fight and takes part next round counts: it's coming.)
-  // (Nor does a troll lying there, mending: it will get back up unless someone burns it.)
-  return (isStanding(u) || joining(u) || (u.held && u.status === STATUS.DOWN)) && !u.spec.untargetable && u.side !== NEUTRAL_PARTY;
+  // (Nor does a troll lying there, mending: it will get back up unless someone burns it, or ties it up.)
+  return (isStanding(u) || joining(u) || (u.held && u.status === STATUS.DOWN && !u.boundBy)) && !u.spec.untargetable && u.side !== NEUTRAL_PARTY;
 }
 
 function activeSides(run) {
@@ -2999,6 +3037,8 @@ export function captureUnit(u, rules) {
     resources: { ...u.resources },
     uses: { ...u.uses },
     killerId: u.killerId ?? null,
+    // (Tied up: by whom. A prisoner, awake (status bound) or not.)
+    ...(u.boundBy ? { bound: { by: u.boundBy, round: u.boundRound ?? null } } : {}),
     position: u.pos ? { x: u.pos.x, y: u.pos.y } : null,
     feetMoved: Math.round(u.feetMoved)
   };
@@ -3011,7 +3051,8 @@ function summarize(run, ended, capture, winners) {
     if ( u.summoner ) continue; // summoned for this fight alone: not the table's
     const lost = ended && !winners.includes(u.side);
     units[u.id] = {
-      status: u.status,
+      // (Tied up and alive, awake or not: a prisoner.)
+      status: u.boundBy && u.status === STATUS.DOWN ? STATUS.BOUND : u.status,
       involved: u.active,
       atMercy: u.status === STATUS.DOWN && lost,
       wasDowned: u.wasDowned,
@@ -3180,6 +3221,7 @@ export function endRun(run, ended, { capture = false, settle = true } = {}) {
   }
   if ( ended && settle ) {
     aftermath(run, run.order);
+    for ( const u of run.units ) stayBound(run, u, logger(run));
     reclaimGoods(run);
   }
   return summarize(run, ended, capture, winners);

@@ -14,11 +14,13 @@ const share = (fn, n = 4000) => {
 
 describe("the wishes the answers carry", () => {
   test("every answer has a strength: the strongest all of the old tick-box, the opposite none", () => {
-    for ( const key of ["talk", "target", "retreat"] ) {
+    for ( const key of ["talk", "fallen", "retreat"] ) {
       expect(Object.keys(TACTIC_WISHES[key]).sort()).toEqual([...TACTIC_CHOICES[key]].sort());
     }
     expect(TACTIC_WISHES.talk).toMatchObject({ always: 1, never: 0 });
-    expect(TACTIC_WISHES.target).toMatchObject({ avoidKilling: 1, weakest: 0 });
+    // ("I avoid killing" is sparing the fallen now; taking them prisoner leans most of the way.)
+    expect(TACTIC_WISHES.fallen).toMatchObject({ spare: 1, tie: 0.66, finish: 0 });
+    expect(TACTIC_WISHES.target).toBeUndefined();
     expect(TACTIC_WISHES.retreat).toMatchObject({ never: 1, hurt: 0 });
     expect(wish(true)).toBe(1);
     expect(wish(undefined)).toBe(0);

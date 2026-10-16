@@ -64,6 +64,8 @@ export function planMakeItSo(spec, replay, scene = canvas.scene) {
   for ( const row of rows ) {
     for ( const c of row.final.concessions ?? [] ) {
     const what = concessionText(c);
+    // (Robbed while down is taken, as stolen is.)
+    const taken = c.how === "theft" || c.how === "loot";
     if ( c.kept ) {
       row.lines.push(game.i18n.format("FASTFIGHTING.MakeItSo.Kept", { what, luck: c.luck }));
       continue;
@@ -72,11 +74,11 @@ export function planMakeItSo(spec, replay, scene = canvas.scene) {
       row.lines.push(game.i18n.format("FASTFIGHTING.MakeItSo.Reclaimed", { what, name: c.toName }));
       continue;
     }
-    row.lines.push(game.i18n.format(c.how === "theft" ? "FASTFIGHTING.MakeItSo.Stolen" : "FASTFIGHTING.MakeItSo.Gives", { what, name: c.toName }));
+    row.lines.push(game.i18n.format(taken ? "FASTFIGHTING.MakeItSo.Stolen" : "FASTFIGHTING.MakeItSo.Gives", { what, name: c.toName }));
     row.changed = true;
     const to = rows.find(r => r.spec.id === c.to);
     if ( to ) {
-      to.lines.push(game.i18n.format(c.how === "theft" ? "FASTFIGHTING.MakeItSo.Steals" : "FASTFIGHTING.MakeItSo.Receives", { what, name: row.spec.name }));
+      to.lines.push(game.i18n.format(taken ? "FASTFIGHTING.MakeItSo.Steals" : "FASTFIGHTING.MakeItSo.Receives", { what, name: row.spec.name }));
       to.changed = true;
     }
     }

@@ -36,6 +36,7 @@ export const STAY_TRUE_CAP = 0.1;
  *             up), current (the one it's on)
  *   heal, protect, aid, talk   points toward healing hurt friends, guarding the weakest friend, bolstering a friend
  *             with a buff (its leader, for those who look to one; else whoever is doing the most fighting), talking
+ *   bind, rob points toward tying up a fallen foe (a prisoner: behavior/fallen.js), and robbing one
  *   avoid     fear: of the most dangerous foe, of whoever is hurting it once it's hurt (attacker), of the nearest
  *   whim      a random foe now and then catches its eye
  *   ×1 multipliers: retaliate (hitting back), avenge (a fallen friend's killer), cool (how fast the fight's grudges
@@ -47,11 +48,11 @@ export const PLAYSTYLES = Object.freeze({
   chicken: { icon: "fa-ghost", traits: { brave: -30, selfish: 10 }, suggest: { retreat: "hurt", style: "ranged", potionThreshold: "75" }, behavior: { lowProfile: 0.3, flighty: 1, trapWary: 0.5, tauntProof: 0.35 },
     desire: { avoid: { dangerous: 35 }, frustration: 1.5, retaliate: 0.5 } },
   // Picks on the weak and the fallen.
-  cruel: { icon: "fa-skull-crossbones", traits: { selfish: 20, loyal: -5 }, suggest: { target: "weakest", beyond: "hunt" }, behavior: { finishDowned: 0.4, hinders: 0.25 },
-    desire: { hurt: { weakest: 15, downed: 25 }, retaliate: 1.3 } },
+  cruel: { icon: "fa-skull-crossbones", traits: { selfish: 20, loyal: -5 }, suggest: { target: "weakest", beyond: "hunt", fallen: "finish" }, behavior: { finishDowned: 0.4, hinders: 0.25 },
+    desire: { hurt: { weakest: 15, downed: 25 }, rob: 10, retaliate: 1.3 } },
   // Never the fallen; the weakest friend comes first.
-  moralist: { icon: "fa-scale-balanced", traits: { selfish: -15, loyal: 10 }, suggest: { allyDying: "rescue" }, behavior: { spareDowned: 1, helps: 1 },
-    desire: { hurt: { downed: -100 }, heal: 10, protect: 10, aid: 5 } },
+  moralist: { icon: "fa-scale-balanced", traits: { selfish: -15, loyal: 10 }, suggest: { allyDying: "rescue", fallen: "spare" }, behavior: { spareDowned: 1, helps: 1 },
+    desire: { hurt: { downed: -100 }, heal: 10, protect: 10, aid: 5, bind: 15, rob: -30 } },
   // Does what the others want: its leader's wishes pull hard.
   peoplePleaser: { icon: "fa-face-smile", traits: { selfish: -20, loyal: 15 }, suggest: { healAggro: "aggressive", target: "protect", talk: "opportune" }, behavior: { followFocus: 0.5, helps: 1 },
     desire: { talk: 10, aid: 10, leader: 2 } },
@@ -61,23 +62,23 @@ export const PLAYSTYLES = Object.freeze({
     desire: { avoid: { attacker: 30 }, mend: 25, frustration: 1.3 } },
   // The nearest foe, now; no patience for obstacles (or locked doors).
   impatient: { icon: "fa-hourglass-end", traits: { tactical: -10 }, suggest: { resourceUse: "nova", target: "nearest", shield: "never" }, behavior: { rush: 0.5 },
-    desire: { hurt: { nearest: 15 }, frustration: 2, doorPatience: 0.5 } },
+    desire: { hurt: { nearest: 15 }, bind: -15, rob: -10, frustration: 2, doorPatience: 0.5 } },
   // Up close and personal: the nearest foe, hits back hard, no talking.
   brawler: { icon: "fa-hand-fist", traits: { brave: 15, tactical: -5 }, suggest: { style: "frontline", target: "nearest", talk: "never" }, behavior: { meleeBias: 0.3, taunt: 0.4 },
-    desire: { hurt: { nearest: 20 }, talk: -40, aid: -10, retaliate: 1.5 } },
+    desire: { hurt: { nearest: 20 }, talk: -40, aid: -10, bind: -10, retaliate: 1.5 } },
   // Trusts its own judgment over anyone's, and isn't talked into things: an outsider's words (anyone not of its own
   // group) get a step further to go and up to 4 harder (wary, by the pill's place).
   skeptic: { icon: "fa-magnifying-glass", traits: { tactical: 10 }, suggest: { resourceUse: "conserve", healAggro: "conservative" }, behavior: { wary: 1, trapWary: 0.75, tauntProof: 0.6 },
     desire: { talk: -15, leader: 0.5, frustration: 0.8 } },
   // Ends it fast: the quickest kills.
   speedRunner: { icon: "fa-forward-fast", traits: { tactical: 5, brave: 5 }, suggest: { resourceUse: "nova", target: "weakest" }, behavior: { rush: 0.4 },
-    desire: { hurt: { weakest: 20 }, frustration: 1.3 } },
+    desire: { hurt: { weakest: 20 }, bind: -15, rob: -15, frustration: 1.3 } },
   // Wants to lead (whether or not it does: that's its group's chain of command): goes for the biggest threat, looks
   // after its people, and half ignores whoever commands it instead.
   // Not chosen, it may brood (ambition: a turn's chance, by the pill's place); with a treacherous streak (Cruel, Wildcard,
   // Mercenary, Instigator), it schemes against whoever leads instead (desire.js scheme).
   leader: { icon: "fa-flag", traits: { brave: 10, loyal: 10, tactical: 5 }, suggest: { target: "dangerous" }, behavior: { hinders: 0.15, ambition: 0.25, rally: 0.25 },
-    desire: { hurt: { dangerous: 10 }, protect: 10, aid: 10, talk: 5, leader: 0.4 } },
+    desire: { hurt: { dangerous: 10 }, protect: 10, aid: 10, talk: 5, bind: 10, leader: 0.4 } },
   // Starts trouble and spoils everyone else's plans: locks foes down, harasses and debuffs them (more than anyone),
   // goes for the most dangerous foe and their leader, and may defy its own leader.
   instigator: { icon: "fa-fire", traits: { brave: 10, selfish: 5 }, suggest: { style: "frontline", target: "dangerous" }, behavior: { drawAggro: 0.35, initiative: 2, hinders: 1, taunt: 0.75 },
@@ -85,36 +86,36 @@ export const PLAYSTYLES = Object.freeze({
   // Keeps the peace, between anyone (peacekeeping): everyone in a standoff with it loses patience half as fast, either
   // side; it calms any quarrel it sees; foes it talks round stand down (a truce, even mid-fight: never a surrender, a
   // payoff or a rout); it's trusted for it (its words 2 easier to accept) and never threatens; it spares the fallen.
-  peacekeeper: { icon: "fa-hand-peace", traits: { selfish: -10, brave: 5 }, suggest: { talk: "first", allyDying: "rescue" }, behavior: { peacekeeping: 1, spareDowned: 1, tauntProof: 0.5 },
-    desire: { talk: 20, protect: 10, hurt: { downed: -100 } } },
+  peacekeeper: { icon: "fa-hand-peace", traits: { selfish: -10, brave: 5 }, suggest: { talk: "first", allyDying: "rescue", fallen: "spare" }, behavior: { peacekeeping: 1, spareDowned: 1, tauntProof: 0.5 },
+    desire: { talk: 20, protect: 10, hurt: { downed: -100 }, bind: 20, rob: -20 } },
   // Talks first, and spares the fallen.
-  diplomat: { icon: "fa-handshake", traits: { selfish: -10 }, suggest: { talk: "first", target: "dangerous" }, behavior: { parleyFirst: 0.6, spareDowned: 0.5, tauntProof: 0.35 },
-    desire: { talk: 30, hurt: { downed: -50 } } },
+  diplomat: { icon: "fa-handshake", traits: { selfish: -10 }, suggest: { talk: "first", target: "dangerous", fallen: "tie" }, behavior: { parleyFirst: 0.6, spareDowned: 0.5, tauntProof: 0.35 },
+    desire: { talk: 30, hurt: { downed: -50 }, bind: 15 } },
   // Keeps its distance and out of the crowd.
   wallflower: { icon: "fa-user-ninja", traits: { brave: -10 }, suggest: { style: "ranged" }, behavior: { lowProfile: 0.45, hinders: 0.25, flighty: 0.3, trapWary: 0.35, tauntProof: 0.3 },
     desire: { hurt: { nearest: -10 }, avoid: { nearest: 15 } } },
   // Shields the weakest friend, avenges the fallen, fears nothing.
   martyr: { icon: "fa-cross", traits: { brave: 20, selfish: -30, loyal: 20 }, suggest: { allyDying: "rescue", retreat: "never", healAggro: "allCosts", style: "protector", target: "protect" }, behavior: { drawAggro: 0.3, helps: 1, rally: 0.2, taunt: 0.55 },
-    desire: { protect: 25, heal: 15, aid: 5, avenge: 2, avoid: { dangerous: -50, attacker: -50 } } },
+    desire: { protect: 25, heal: 15, aid: 5, rob: -10, avenge: 2, avoid: { dangerous: -50, attacker: -50 } } },
   // Stands in front and takes the blows: taunts foes off its friends (all of the Taunting setting, as its first pick),
   // draws attacks, guards the weakest friend, fears nothing, keeps its shield up, never retreats, and doesn't take
   // getting hit personally (it minds the blows it draws half as much: effects.js tauntGain).
   tank: { icon: "fa-shield-halved", traits: { brave: 20, selfish: -20, loyal: 10 }, suggest: { style: "protector", target: "protect", retreat: "never", shield: "always", allyDying: "rescue" }, behavior: { taunt: 1, drawAggro: 0.35, helps: 1 },
     desire: { protect: 20, hurt: { dangerous: 10 }, avoid: { dangerous: -40, attacker: -40 }, retaliate: 0.7, frustration: 0.7 } },
   // In it for itself: easy pickings, little loyalty, gives up when it gets hard.
-  mercenary: { icon: "fa-coins", traits: { selfish: 30, loyal: -20 }, suggest: { retreat: "losing", resourceUse: "conserve", allyDying: "fight" }, behavior: { flighty: 0.6 },
-    desire: { hurt: { weakest: 10 }, aid: -10, avenge: 0.3, frustration: 1.3 } },
+  mercenary: { icon: "fa-coins", traits: { selfish: 30, loyal: -20 }, suggest: { retreat: "losing", resourceUse: "conserve", allyDying: "fight", fallen: "rob" }, behavior: { flighty: 0.6 },
+    desire: { hurt: { weakest: 10 }, aid: -10, bind: 10, rob: 20, avenge: 0.3, frustration: 1.3 } },
   // Support first: heals and guards friends, backs the leader.
   enabler: { icon: "fa-hands-holding", traits: { selfish: -15, loyal: 10 }, suggest: { healAggro: "aggressive", target: "protect" }, behavior: { followFocus: 0.3, helps: 1 },
     desire: { heal: 25, protect: 15, aid: 20, leader: 1.3 } },
   // Out to prove itself: takes on the biggest threat and won't quit.
   redeemSeeker: { icon: "fa-dove", traits: { brave: 15, selfish: -20 }, suggest: { allyDying: "rescue", retreat: "never", style: "frontline" }, behavior: { drawAggro: 0.15, helps: 1, taunt: 0.3 },
-    desire: { hurt: { dangerous: 20 }, protect: 10, frustration: 0.6 } },
+    desire: { hurt: { dangerous: 20 }, protect: 10, bind: 10, rob: -15, frustration: 0.6 } },
   // Curious: drawn to foes it hasn't sized up yet, and sizes them up before it deals with them (in a standoff, its
   // first turn most likely goes into watching the other side). It may tell its friends what it learned (more readily
   // leading its side, or as one who'd rather talk than fight).
-  loreCollector: { icon: "fa-book-open", traits: { tactical: 5 }, suggest: {}, behavior: { study: 0.5, observe: 0.85, share: 0.9, trapWary: 0.6 },
-    desire: { hurt: { unstudied: 10 }, frustration: 0.8 } },
+  loreCollector: { icon: "fa-book-open", traits: { tactical: 5 }, suggest: { fallen: "tie" }, behavior: { study: 0.5, observe: 0.85, share: 0.9, trapWary: 0.6 },
+    desire: { hurt: { unstudied: 10 }, bind: 10, frustration: 0.8 } },
   // Loves a weakness to exploit (and a lock to crack).
   puzzleManiac: { icon: "fa-puzzle-piece", traits: { tactical: 15 }, suggest: { target: "casters", specialty: "some" }, behavior: { exploitWeakness: 0.5, hinders: 0.3, trapWary: 0.9, tauntProof: 0.4 },
     desire: { hurt: { weakness: 20, casters: 10 }, frustration: 0.7, doorPatience: 2 } },
@@ -122,8 +123,8 @@ export const PLAYSTYLES = Object.freeze({
   wildcard: { icon: "fa-dice", traits: {}, suggest: {}, behavior: { random: 0.25 },
     desire: { whim: 25, leader: 0.3, contrarian: 0.5 } },
   // Light fingers: a lock is an invitation.
-  thief: { icon: "fa-mask", traits: { selfish: 10 }, suggest: {}, behavior: { steal: 1, trapWary: 1 },
-    desire: { hurt: { weakest: 5 }, doorPatience: 1.5 } },
+  thief: { icon: "fa-mask", traits: { selfish: 10 }, suggest: { fallen: "rob" }, behavior: { steal: 1, trapWary: 1 },
+    desire: { hurt: { weakest: 5 }, rob: 30, doorPatience: 1.5 } },
   // Never forgets: hits back twice as hard, avenges the fallen, and its grudges never cool.
   vengeful: { icon: "fa-bolt", traits: { brave: 5, selfish: 5 }, suggest: {}, behavior: {},
     desire: { retaliate: 2, avenge: 2.5, cool: 0 } },
@@ -134,7 +135,7 @@ export const PLAYSTYLES = Object.freeze({
   // As little as it can get away with: whatever's nearest, no long walks, not much help for anyone, gives up fast,
   // and can't be bothered to hold a grudge; and now and then, with nobody on top of it, it just doesn't (slacks).
   lazy: { icon: "fa-couch", traits: { tactical: -5, brave: -5 }, suggest: { resourceUse: "conserve" }, behavior: { flighty: 0.4, tauntProof: 0.25, slacks: 0.15 },
-    desire: { hurt: { nearest: 15, far: -20 }, heal: -10, protect: -10, aid: -10, frustration: 1.6, doorPatience: 0.4, cool: 1.5 } },
+    desire: { hurt: { nearest: 15, far: -20 }, heal: -10, protect: -10, aid: -10, bind: -15, frustration: 1.6, doorPatience: 0.4, cool: 1.5 } },
 
   // Un-Mundane: would rather use what sets it apart (its magic, its class's and kind's own abilities, a monster's
   // powers) than fight or talk as anyone would; spends what that takes freely; goes for the foes its powers find a weak
@@ -149,13 +150,13 @@ const DESIRE_MULTIPLIERS = ["retaliate", "avenge", "cool", "frustration", "leade
 /** The combined desire guide of a character's pills (roleplay leans on it harder; staying true halves it). */
 function combineDesires(chosen, { stayTrue, roleplay }) {
   const base = roleplay ? 1.5 : stayTrue ? 0.5 : 1;
-  const out = { hurt: {}, avoid: {}, heal: 0, mend: 0, protect: 0, aid: 0, talk: 0, whim: 0, contrarian: 0 };
+  const out = { hurt: {}, avoid: {}, heal: 0, mend: 0, protect: 0, aid: 0, talk: 0, bind: 0, rob: 0, whim: 0, contrarian: 0 };
   for ( const m of DESIRE_MULTIPLIERS ) out[m] = 1;
   for ( const [i, id] of chosen.entries() ) {
     const scale = base * ORDER_WEIGHTS[i];
     const d = PLAYSTYLES[id].desire ?? {};
     for ( const group of ["hurt", "avoid"] ) for ( const [k, v] of Object.entries(d[group] ?? {}) ) out[group][k] = (out[group][k] ?? 0) + v * scale;
-    for ( const k of ["heal", "mend", "protect", "aid", "talk", "whim"] ) out[k] += (d[k] ?? 0) * scale;
+    for ( const k of ["heal", "mend", "protect", "aid", "talk", "bind", "rob", "whim"] ) out[k] += (d[k] ?? 0) * scale;
     for ( const m of DESIRE_MULTIPLIERS ) if ( d[m] !== undefined ) out[m] *= 1 + (d[m] - 1) * scale;
     if ( d.contrarian ) out.contrarian = Math.min(1, Math.max(out.contrarian, d.contrarian * scale));
   }

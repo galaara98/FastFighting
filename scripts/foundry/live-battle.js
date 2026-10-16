@@ -244,7 +244,7 @@ export function suggestedSpotlight() {
 }
 
 /** Out of the fight for good: no turn to play. */
-const GONE = new Set([STATUS.DEAD, STATUS.FLED, STATUS.SURRENDERED, STATUS.STOOD_DOWN, STATUS.BEATEN]);
+const GONE = new Set([STATUS.DEAD, STATUS.FLED, STATUS.SURRENDERED, STATUS.STOOD_DOWN, STATUS.BEATEN, STATUS.BOUND]);
 
 /** The players' characters as the battle has them now (a run restored from a kept turn takes them). */
 function playersNow(run = battle.run) {
@@ -808,6 +808,11 @@ async function writeChanges(before, after, records) {
         ...writeOptions(), before: before[id], effectSource
       });
       if ( record ) records.push(record);
+      // (Tied up this turn: marked on the sheet, the system's way.)
+      if ( ch.bound !== undefined ) {
+        const marked = await adapter.commitBound(doc, ch.bound);
+        if ( marked ) records.push(marked);
+      }
       for ( const c of ch.concessions ?? [] ) {
         if ( c.kept || !adapter.commitConcession ) continue;
         const to = c.to ? docOf(c.to) : null;

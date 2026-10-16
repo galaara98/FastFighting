@@ -17,7 +17,8 @@
  *   uses: {actionId: {from, to}}
  *   side: true                          its side changed (won over, taking no side, turned on someone)
  *   effects: {added: [...], ended: [...]}  buffs and debuffs (captureUnit's: bonuses, resistances, a mark) laid, ended
- *   concessions: [...]                  given up this turn
+ *   concessions: [...]                  given up this turn (or taken off it: robbed while down)
+ *   bound: true | false                 tied up this turn (a prisoner: behavior/fallen.js), or no longer
  *   moved: {from, to}                   where it went (the core moves the token)
  * }
  * Pure.
@@ -77,6 +78,7 @@ export function diffOutcome(before, after) {
   const laid = [...hasFx].filter(([k]) => !hadFx.has(k)).map(([, e]) => e);
   const lifted = [...hadFx].filter(([k]) => !hasFx.has(k)).map(([, e]) => e);
   if ( laid.length || lifted.length ) out.effects = { added: laid, ended: lifted };
+  if ( !before.bound !== !after.bound ) out.bound = !!after.bound;
   const gave = (after.concessions ?? []).slice((before.concessions ?? []).length);
   if ( gave.length ) out.concessions = gave;
   if ( before.position && after.position && (before.position.x !== after.position.x || before.position.y !== after.position.y) ) {

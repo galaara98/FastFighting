@@ -92,9 +92,12 @@ describe("the party's wishes (its players' votes)", () => {
     expect(partyWishes([here], 3, [away])).toEqual({ talk: "first", sway: 0.03 });
   });
 
-  test("six questions, answered with pills; three of them sway how everyone acts", () => {
+  test("six questions, answered with pills; four of them sway how everyone acts", () => {
     expect(Object.keys(PARTY_QUESTIONS)).toHaveLength(6);
-    expect(Object.keys(PARTY_TACTICS).sort()).toEqual(["resources", "retreat", "talk"]);
+    expect(Object.keys(PARTY_TACTICS).sort()).toEqual(["fallen", "resources", "retreat", "talk"]);
+    // (Foes who fall: the party's answer is each character's, for those who left it to themselves.)
+    expect(PARTY_QUESTIONS.fallen).toEqual(["finish", "leave", "spare", "tie", "rob"]);
+    expect(Object.keys(PARTY_TACTICS.fallen.fallen)).toEqual([...PARTY_QUESTIONS.fallen]);
   });
 
   test("what they want: the party's pick of foe, the fallen, each other, at the party's sway", () => {

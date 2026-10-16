@@ -66,7 +66,7 @@ export function concessionText(c) {
 }
 
 const MODE = { walk: "ModeWalk", fly: "ModeFly", swim: "ModeSwim", climb: "ModeClimb", burrow: "ModeBurrow" };
-const DESIRE = { hurt: "DesireHurt", heal: "DesireHeal", protect: "DesireProtect", aid: "DesireAid", talk: "DesireTalk", avoid: "DesireAvoid" };
+const DESIRE = { hurt: "DesireHurt", heal: "DesireHeal", protect: "DesireProtect", aid: "DesireAid", talk: "DesireTalk", avoid: "DesireAvoid", bind: "DesireBind", rob: "DesireRob" };
 const WHY = { hurt: "WhyHurt", harmed: "WhyHarmed", helped: "WhyHelped", robbed: "WhyRobbed", insulted: "WhyInsulted", impatient: "WhyImpatient", kin: "WhyKin" };
 const NOTICE = { sight: "NoticeSight", sound: "NoticeSound", smell: "NoticeSmell", feel: "NoticeFeel", radar: "NoticeRadar", standoff: "NoticeStandoff", fledInto: "NoticeFled", help: "NoticeHelp", attacked: "NoticeAttacked" };
 const BREAKS = { insulted: "BreakInsulted", beast: "BreakBeast", annoyed: "BreakAnnoyed", blood: "BreakBlood", impatient: "BreakImpatient", unmet: "BreakUnmet" };
@@ -286,6 +286,10 @@ function baseLine(e) {
     case "lastWord": return t("LastWord", a);
     case "legendary": return t("Legendary", { ...a, action: e.action });
     case "mercy": return t("Mercy", a);
+    case "bind": return t("Bind", a);
+    // (A player character's luck check, like a thief's, is the GM's secret: a kept thing is just nothing taken.)
+    case "rob": return e.stolen ? t("Rob", { ...a, what: concessionText(e.stolen) }) : t("RobNothing", a);
+    case "bound": return t("Bound", { actor: e.actor, by: e.by ?? "" });
     case "parley": return t("Parley", a);
     case "peacekeep": return t("Peacekeep", a);
     case "persistent": return t("Persistent", { actor: e.actor, damage: damage(e.amount, e.damageType) });

@@ -32,7 +32,7 @@
  * Pure: no Foundry globals.
  */
 import { STATUS, SWAY, CONCEDE_LUCK, SWITCH_LUCK, TRAITOR_LUCK, TACTICAL, OPENING, clamp } from "../../constants.js";
-import { alliesOf, enemiesOf, isStanding, behaviorOf, typical, checkRoll, liveTier, liveTrait, studyBonus, boostBonus, chainOf, commandOf, groupKeyOf, wish, wishWins } from "../battle-state.js";
+import { alliesOf, enemiesOf, isStanding, behaviorOf, typical, checkRoll, liveTier, liveTrait, studyBonus, boostBonus, chainOf, commandOf, groupKeyOf, wish, wishWins, edgeDistance, areEnemies } from "../battle-state.js";
 import { spendEdges, spendBoost } from "./effects.js";
 import { degreeDistribution, rollCheck } from "../probability.js";
 import { isNeutral, standsAside, appeal, offend, turnOn, standAside, joinSide, calm, settleTruce, seemsFoe, leanSide, fighting, dislikesViolence } from "./neutral.js";
@@ -316,10 +316,38 @@ export function bestPitch(run, talker, t) {
   return best;
 }
 
-/** Choose who to talk to: likely to work, few steps left, and worth taking out of the fight (or bringing in). */
+/** How much more one its answer to "Who to pursue first" picks is worth talking round. */
+const PURSUED = 1.25;
+
+/**
+ * Who its answer to "Who to pursue first" picks among those it could talk to (nearest, weakest, most dangerous,
+ * spellcasters and healers, whoever is attacking its friends), or null with no answer.
+ */
+function pursued(run, talker, targets) {
+  const aim = talker.tac?.target;
+  if ( !aim || !targets.length ) return null;
+  const frac = t => (t.maxHp > 0 ? t.hp / t.maxHp : 1);
+  const danger = t => (Number(t.spec.level) || 0) * 2 + (t.damageDealt ?? 0) / 5;
+  const pick = (score, low = false) => [targets.reduce((a, b) => ((low ? score(b) < score(a) : score(b) > score(a)) ? b : a))];
+  switch ( aim ) {
+    case "nearest": return run.prep.options.positioning ? new Set(pick(t => edgeDistance(talker, t), true)) : null;
+    case "weakest": return new Set(pick(frac, true));
+    case "dangerous": return new Set(pick(danger));
+    case "casters": return new Set(targets.filter(t => t.prep?.isCaster || t.prep?.isHealer));
+    case "protect": return new Set(targets.filter(t => { const at = run.byId.get(t.targetId); return at && at !== talker && at.side === talker.side && areEnemies(run, at, t); }));
+    default: return null;
+  }
+}
+
+/**
+ * Choose who to talk to: likely to work, few steps left, and worth taking out of the fight (or bringing in); and,
+ * a little more, the one it would go after anyway (its answer to "Who to pursue first").
+ */
 export function choosePitch(run, talker, { only = null } = {}) {
   let best = null;
-  for ( const t of pitchTargets(run, talker) ) {
+  const targets = pitchTargets(run, talker);
+  const favored = pursued(run, talker, targets.filter(t => isStanding(t)));
+  for ( const t of targets ) {
     if ( !swayable(t) || !shareLanguage(talker, t, run) ) continue;
     if ( t.offendedBy.has(talker.id) ) continue;
     if ( only && !only(t) ) continue;
@@ -334,7 +362,7 @@ export function choosePitch(run, talker, { only = null } = {}) {
     // An enemy out of the fight (its commander, its side with it; or a fighter off the field); a new friend (a weak one
     // counts for less); a new enemy prevented; a quarrel settled or let be; money.
     const value = { down: (1 + commands) * health, leave: (1 + commands) * health, recruit: 0.8 * health * (t.prep.lowBattleWorth ? 0.5 : 1), dismiss: 0.9 * health, calm: 1.2 * health, pacify: 1.3 * health, settle: 1.5, extort: 1.2, haggle: 1.6 + commands, press: 2 + commands }[pitch.aim];
-    const score = pitch.pSuccess * value / remaining;
+    const score = pitch.pSuccess * value / remaining * (favored?.has(t) ? PURSUED : 1);
     if ( !best || score > best.score ) best = { target: t, ...pitch, remaining, score };
   }
   return best;

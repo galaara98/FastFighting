@@ -2527,6 +2527,16 @@
    "commit": null,
    "hash": "9c6353fe5b7f"
   },
+  "core:FASTFIGHTING.Desire.Kind.bind": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Desire.Kind.bind",
+   "area": "core/Desire",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "d4c85a6e9bc3"
+  },
   "core:FASTFIGHTING.Desire.Kind.bolstered": {
    "repo": "core",
    "file": "languages/en.json",
@@ -2576,6 +2586,16 @@
    "date": null,
    "commit": null,
    "hash": "806c20d1d565"
+  },
+  "core:FASTFIGHTING.Desire.Kind.rob": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Desire.Kind.rob",
+   "area": "core/Desire",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "9b059f912cb5"
   },
   "core:FASTFIGHTING.Desire.Kind.talk": {
    "repo": "core",
@@ -3950,6 +3970,16 @@
    "commit": null,
    "hash": "1e4e8b483b04"
   },
+  "core:FASTFIGHTING.Log.Bind": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.Bind",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "ceae3d397ff0"
+  },
   "core:FASTFIGHTING.Log.Bolstered": {
    "repo": "core",
    "file": "languages/en.json",
@@ -3989,6 +4019,16 @@
    "date": null,
    "commit": null,
    "hash": "99e2604e9768"
+  },
+  "core:FASTFIGHTING.Log.Bound": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.Bound",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "cab83f0edcd9"
   },
   "core:FASTFIGHTING.Log.BreakAnnoyed": {
    "repo": "core",
@@ -4550,6 +4590,16 @@
    "commit": null,
    "hash": "3270f7fe8ace"
   },
+  "core:FASTFIGHTING.Log.DesireBind": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.DesireBind",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "bcce8e19888b"
+  },
   "core:FASTFIGHTING.Log.DesireHeal": {
    "repo": "core",
    "file": "languages/en.json",
@@ -4579,6 +4629,16 @@
    "date": null,
    "commit": null,
    "hash": "680dce633db1"
+  },
+  "core:FASTFIGHTING.Log.DesireRob": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.DesireRob",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "84313ef39b0a"
   },
   "core:FASTFIGHTING.Log.DesireTalk": {
    "repo": "core",
@@ -6387,6 +6447,26 @@
    "commit": null,
    "hash": "e377c4c98679"
   },
+  "core:FASTFIGHTING.Log.Rob": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.Rob",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "ceb1dc9a72ad"
+  },
+  "core:FASTFIGHTING.Log.RobNothing": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.RobNothing",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "b2bce87411ff"
+  },
   "core:FASTFIGHTING.Log.RoleBoss": {
    "repo": "core",
    "file": "languages/en.json",
@@ -7607,6 +7687,16 @@
    "commit": null,
    "hash": "af3ebc91a32f"
   },
+  "core:FASTFIGHTING.MakeItSo.Outcome.TiedUp": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.MakeItSo.Outcome.TiedUp",
+   "area": "core/MakeItSo",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "776b3be15b8e"
+  },
   "core:FASTFIGHTING.MakeItSo.Outcome.TurnedOn": {
    "repo": "core",
    "file": "languages/en.json",
@@ -8289,6 +8379,16 @@
    "commit": null,
    "hash": "c32b3ecddda1"
   },
+  "core:FASTFIGHTING.Party.fallen.rob": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Party.fallen.rob",
+   "area": "core/Party",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "5f089ddda8f7"
+  },
   "core:FASTFIGHTING.Party.fallen.spare": {
    "repo": "core",
    "file": "languages/en.json",
@@ -8298,6 +8398,16 @@
    "date": null,
    "commit": null,
    "hash": "044174c8cb5c"
+  },
+  "core:FASTFIGHTING.Party.fallen.tie": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Party.fallen.tie",
+   "area": "core/Party",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "15ffce5ad083"
   },
   "core:FASTFIGHTING.Party.GmView": {
    "repo": "core",
@@ -12622,6 +12732,16 @@
    "commit": null,
    "hash": "3dbd042313d5"
   },
+  "core:FASTFIGHTING.Status.bound": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Status.bound",
+   "area": "core/Status",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "fadd4c7e41b4"
+  },
   "core:FASTFIGHTING.Status.conceded": {
    "repo": "core",
    "file": "languages/en.json",
@@ -13322,6 +13442,16 @@
    "commit": null,
    "hash": "ef2bec0e5f42"
   },
+  "core:FASTFIGHTING.Story.Part.bind": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Story.Part.bind",
+   "area": "core/Story",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "56b9b63d2831"
+  },
   "core:FASTFIGHTING.Story.Part.bleed": {
    "repo": "core",
    "file": "languages/en.json",
@@ -13431,6 +13561,16 @@
    "date": null,
    "commit": null,
    "hash": "d0aafdecb624"
+  },
+  "core:FASTFIGHTING.Story.Part.bound": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Story.Part.bound",
+   "area": "core/Story",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "d06cc9afdf7a"
   },
   "core:FASTFIGHTING.Story.Part.breakAnnoyed": {
    "repo": "core",
@@ -16267,6 +16407,26 @@
    "commit": null,
    "hash": "b1a3afafd798"
   },
+  "core:FASTFIGHTING.Story.Part.rob": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Story.Part.rob",
+   "area": "core/Story",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "9b059f912cb5"
+  },
+  "core:FASTFIGHTING.Story.Part.robEmpty": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Story.Part.robEmpty",
+   "area": "core/Story",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "e683ca92f557"
+  },
   "core:FASTFIGHTING.Story.Part.scheme": {
    "repo": "core",
    "file": "languages/en.json",
@@ -18540,6 +18700,77 @@
    "commit": null,
    "hash": "ba998bdae771"
   },
+  "core:FASTFIGHTING.Tactics.fallen.finish": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Tactics.fallen.finish",
+   "area": "core/Tactics",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "3d80b4bc84d2"
+  },
+  "core:FASTFIGHTING.Tactics.fallen.Hint": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Tactics.fallen.Hint",
+   "area": "core/Tactics",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "fd4a10f9ca1b",
+   "changed": true
+  },
+  "core:FASTFIGHTING.Tactics.fallen.Label": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Tactics.fallen.Label",
+   "area": "core/Tactics",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "359b878a1bdd"
+  },
+  "core:FASTFIGHTING.Tactics.fallen.leave": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Tactics.fallen.leave",
+   "area": "core/Tactics",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "c32b3ecddda1"
+  },
+  "core:FASTFIGHTING.Tactics.fallen.rob": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Tactics.fallen.rob",
+   "area": "core/Tactics",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "5f089ddda8f7"
+  },
+  "core:FASTFIGHTING.Tactics.fallen.spare": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Tactics.fallen.spare",
+   "area": "core/Tactics",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "c3581a6a74f6"
+  },
+  "core:FASTFIGHTING.Tactics.fallen.tie": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Tactics.fallen.tie",
+   "area": "core/Tactics",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "15ffce5ad083"
+  },
   "core:FASTFIGHTING.Tactics.healAggro.aggressive": {
    "repo": "core",
    "file": "languages/en.json",
@@ -19223,7 +19454,8 @@
    "status": "written",
    "date": "2026-10-11",
    "commit": "c95a988",
-   "hash": "ae2c86420e35"
+   "hash": "ae2c86420e35",
+   "gone": "2026-10-16"
   },
   "core:FASTFIGHTING.Tactics.target.casters": {
    "repo": "core",
@@ -19264,7 +19496,8 @@
    "status": "approved",
    "date": "2026-10-11",
    "commit": "f7ee61e",
-   "hash": "afaf3d3c65b4"
+   "hash": "afaf3d3c65b4",
+   "changed": true
   },
   "core:FASTFIGHTING.Tactics.target.nearest": {
    "repo": "core",
@@ -29219,6 +29452,16 @@
    "commit": null,
    "hash": "e19fea18471b"
   },
+  "core:story:desire.verb.bind": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "desire.verb.bind",
+   "area": "core/story.desire",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "c0438304d74b"
+  },
   "core:story:desire.verb.heal": {
    "repo": "core",
    "file": "story/en.json",
@@ -29248,6 +29491,16 @@
    "date": null,
    "commit": null,
    "hash": "28602855c5d0"
+  },
+  "core:story:desire.verb.rob": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "desire.verb.rob",
+   "area": "core/story.desire",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "e0a3dea8e18b"
   },
   "core:story:desire.verb.talk": {
    "repo": "core",
@@ -29849,6 +30102,16 @@
    "commit": null,
    "hash": "f62689ebb2dd"
   },
+  "core:story:event.bind": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "event.bind",
+   "area": "core/story.event",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "99fb6d45936a"
+  },
   "core:story:event.bodyAlive": {
    "repo": "core",
    "file": "story/en.json",
@@ -29888,6 +30151,16 @@
    "date": null,
    "commit": null,
    "hash": "5c972f91a902"
+  },
+  "core:story:event.bound": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "event.bound",
+   "area": "core/story.event",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "b62f9b02efe7"
   },
   "core:story:event.breakAnnoyed": {
    "repo": "core",
@@ -31380,6 +31653,26 @@
    "date": null,
    "commit": null,
    "hash": "8e5a60d90b8f"
+  },
+  "core:story:event.rob": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "event.rob",
+   "area": "core/story.event",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "765358a3dfce"
+  },
+  "core:story:event.robEmpty": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "event.robEmpty",
+   "area": "core/story.event",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "d5e1634e5dc5"
   },
   "core:story:event.scheme": {
    "repo": "core",

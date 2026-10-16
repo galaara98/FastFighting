@@ -504,6 +504,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
         { cls: "surrendered", w: (c.pSurrendered * 100).toFixed(1), label: `${loc("FASTFIGHTING.Status.surrendered")} ${pct(c.pSurrendered)}` },
         { cls: "stoodDown", w: (c.pStoodDown * 100).toFixed(1), label: `${loc("FASTFIGHTING.Status.stoodDown")} ${pct(c.pStoodDown)}` },
         { cls: "beaten", w: ((c.pBeaten ?? 0) * 100).toFixed(1), label: `${loc("FASTFIGHTING.Status.beaten")} ${pct(c.pBeaten ?? 0)}` },
+        { cls: "bound", w: ((c.pBound ?? 0) * 100).toFixed(1), label: `${loc("FASTFIGHTING.Status.bound")} ${pct(c.pBound ?? 0)}` },
         { cls: "switched", w: (c.pSwitched * 100).toFixed(1), label: `${loc("FASTFIGHTING.Results.Switched")} ${pct(c.pSwitched)}` },
         { cls: "neutral", w: ((c.pNeutral ?? 0) * 100).toFixed(1), label: `${loc("FASTFIGHTING.Results.Neutral")} ${pct(c.pNeutral ?? 0)}` }
       ],

@@ -298,7 +298,7 @@ function applyStatFudges(spec, fudge = {}) {
  *    strategy so "stay mostly true" can fall back to it.
  *  - NPCs: the answers the GM gave, and what their playstyles imply; everything else stays personality-driven.
  * Three questions carry a wish each, as strongly as the answer says (TACTIC_WISHES): always talking (unless hurt),
- * avoiding killing, not liking to flee. "Let this character decide" carries none.
+ * avoiding killing (the answer to "Foes who fall"), not liking to flee. "Let this character decide" carries none.
  * Playstyle trait shifts land on the trait fudges (already capped at ±10 when staying true).
  */
 function applyCharacterTactics(spec, entry) {
@@ -314,7 +314,7 @@ function applyCharacterTactics(spec, entry) {
   spec.alwaysTalk = wish("talk");
   spec.desires = statedDesires(stored, spec); // what the GM or player says it wants, at whom, how badly
   spec.avoidCostlySpells = !!stored.avoidCostlySpells; // "I don't like to use spells that cost something"
-  spec.avoidKilling = wish("target"); // holds back from a kill: knocks out, leaves the fallen be, spares them after
+  spec.avoidKilling = wish("fallen"); // holds back from a kill: knocks out, leaves the fallen be, spares them after
   spec.avoidFleeing = wish("retreat"); // stays when it would choose to run
   // A live battle: each reaction as its player said (always, ask, never), and whether rerolls may save a life.
   if ( isPlayerControlled(entry.spec, actor) ) {
@@ -348,14 +348,8 @@ function applyCharacterTactics(spec, entry) {
       spec.tacticsMix = mixFor(Object.keys(playstyles.mix ?? {}).filter(unanswered));
     }
   }
-  // (The engine hears "always" as talking first, the wish carried by alwaysTalk; avoiding killing leaves whom it goes
-  // for to what it would do anyway.)
+  // (The engine hears "always" as talking first, the wish carried by alwaysTalk.)
   if ( spec.tactics?.talk === "always" ) spec.tactics.talk = "first";
-  if ( spec.tactics?.target === "avoidKilling" ) {
-    if ( isPlayerControlled(entry.spec, actor) ) spec.tactics.target = { ...calc, ...playstyles.suggest }.target;
-    else if ( playstyles.suggest.target ) spec.tactics.target = playstyles.suggest.target;
-    else delete spec.tactics.target;
-  }
 }
 
 /** The player party's wishes for this fight (party.js): its players' votes, majority rules, at the world's Party's sway. */

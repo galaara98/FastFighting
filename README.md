@@ -98,7 +98,14 @@ A taunt makes a foe want to go for the taunter: a strong desire (see **Desires**
 
 **After the fight.** When the last foe falls, the survivors tend their dying, before the dying make their next roll. They use free help first (first aid, medicine feats), then spells and potions. Anyone left untended lives or dies by the system's rules for dying, so nobody is committed half-dead.
 
-**The fallen foes** are dealt with as the victors' playstyles say: one who spares them (a Moralist, a Diplomat most of the time, anyone whose answer to who it attacks first leans to avoiding killing, as often as it holds back) stops the rest from finishing them and gives them free first aid if it can; otherwise the Cruel finish them off; everyone else leaves them to the dice. "I never kill" also makes a character's killing blows knock out instead (unconscious and stable), and it never strikes the fallen.
+**The fallen foes** are dealt with as each victor's answer to **Foes who fall** says (its own, or its party's), then its playstyles:
+- **Spare them: I avoid killing:** one who spares them (that answer, a Moralist, a Diplomat most of the time, as often as it holds back) stops the rest from finishing them and gives them free first aid if it can. Its killing blows knock out instead (unconscious and stable), and it never strikes the fallen.
+- **Finish them:** otherwise those who finish them (that answer, or the Cruel with no other) finish them off.
+- **Tie them up:** taken alive: one who'd tie them up pulls its killing blows most of the time (they knock out instead), and the fallen still alive are tied up with whatever's to hand (a strap, a rope, their own belt): prisoners, out of the fight even if they're healed or come to, and tended after the fight as the spared are. Mid-fight, one who ties them up does it (an action beside them) when no foe stands within its reach on the map; without a map, after the fight. Peacekeepers, Moralists, Diplomats, Leaders, Mercenaries, Lore-Collectors and Redeem-Seekers lean that way.
+- **Rob them:** a fallen foe's purse comes off it (whole), else something it carries, else (a creature's) what it was holding, an action beside it, mid-fight or after; a player character's things only on the thief's luck check. Thieves and Mercenaries lean that way, the Cruel a little; Moralists and Peacekeepers never would. Taken back if the robber ends the fight beaten.
+- **Leave them be:** left to the dice.
+
+The planner's results show how often each creature ends up **Tied up**. In a live battle, being tied up is marked on the sheet with the system's restrained status.
 
 **The fallen PCs.** Each time a creature wants to finish off a player character at 0 HP, it rolls d100 against the **PC luck: being finished off** slider (39 by default): at or under, it goes ahead; over, it turns away, and everything it wanted of that PC goes to the next foe it would pick. And a character with **fate** to spend (PF2e Hero Points, 5e Heroic Inspiration) uses it when someone would die: a blow, a save or a recovery check that would kill is rolled again (a hit may become a miss), or, for one's own death where the system has a sure way out, that (PF2e Heroic Recovery: all of one's Hero Points). It always spends for itself; for a friend, the more selfish, the less likely.
 
@@ -149,9 +156,10 @@ A leader who wants to talk holds their side back. Before it breaks, a charismati
 **A quarrel beside the standoff.** A neutral (see below) may come to blows with one of the sides, most often when one of that side's members takes offense at a botched pitch from it. Only the two of them fight: the other side doesn't have to join in, and the standoff between the two sides holds, with exceptions:
 - **Impatience:** every blow struck beside the standoff wears on everyone's patience.
 - **Annoyance:** hurt or insulted by a neutral that seems to be with the other side, a creature may blame that side and break the standoff (a tactical mind sees through it, mostly).
-- **Peacemakers:** anyone on either side who can't abide violence (Diplomats, Moralists, People-Pleasers, those who answer "I avoid killing", those who answer "Always talk unless I am currently being hurt") spends its turns calming the quarrel at once: talking the neutral into letting it go, or the side's fighters into leaving the neutral be (until it hurts them again).
+- **Peacemakers:** anyone on either side who can't abide violence (Diplomats, Moralists, People-Pleasers, those who answer "Spare them: I avoid killing", those who answer "Always talk unless I am currently being hurt") spends its turns calming the quarrel at once: talking the neutral into letting it go, or the side's fighters into leaving the neutral be (until it hurts them again).
 
 **Pitches.** Persuade, intimidate or deceive, using whatever skills the system maps to each, against the system's DC for resisting. The target has to share a language with the talker, unless the **Ignore languages** setting (off by default; a toggle in each plan too) says anyone who speaks a language understands anyone else who does. A creature with no language at all can't be talked to either way.
+- **Whom it talks to:** whoever it's likeliest to talk round, with the fewest steps left, worth the most out of the fight; a little more, the one its answer to **Who to pursue first** picks (the nearest, the weakest, the most dangerous, spellcasters and healers, whoever is attacking its friends).
 - **The persuasion track:** most need 2–6 successes; the very gullible fold at once.
 - **Grudges:** hurting someone or failing to convince them makes them harder to sway. An insult (a critical failure) means they won't listen again.
 - **Strain:** in a system whose words wear people down (a pool of composure, focus or stamina), whoever loses an exchange pays: the talker when its pitch fails, the one it talks to when the pitch gets through, twice as much on a critical. Run dry, it's worn down, as the system says (a condition, a penalty). The story tells it.
@@ -196,9 +204,9 @@ A lean doesn't last: watching the side it leans toward hurt someone it cares abo
   - **Talking it out of the fight:** into running, standing down or handing something over (to the neutral). In a standoff that settles it for the side it leans toward, as if that side had done the talking. Leaning toward the party's enemies, it talks the party down instead (a player character can only pay up or back off).
   - **Squeezing it for money** (the greedier it is, the likelier): talked round, a member pays the neutral off (the usual 1–10% of its money, or an item) and stays where it is; paid, the neutral keeps out of it from then on.
   - A neutral in the encounter from the start is aware of the fight at once; one that isn't has to notice it first.
-- **Can't abide violence:** a neutral that's a Diplomat, Moralist or People-Pleaser, answers "I avoid killing" or "Always talk unless I am currently being hurt", seeing a fight, spends its turns trying to talk the fighters (either side: whoever it's likeliest to move) into leaving.
+- **Can't abide violence:** a neutral that's a Diplomat, Moralist or People-Pleaser, answers "Spare them: I avoid killing" or "Always talk unless I am currently being hurt", seeing a fight, spends its turns trying to talk the fighters (either side: whoever it's likeliest to move) into leaving.
 - **Keeping the peace:** while a neutral is having words with a side, that side's smart members (Tactical and up) hold off hurting it or anyone it wants safe, unless the talk is going against them anyway (nobody left who can talk to it, or it's nearly out of patience). Smart creatures likewise won't break an opening standoff unless their side is losing the talk.
-- **Not one for killing:** a character whose answer to who it attacks first leans to avoiding killing ("I avoid killing" most), seeing an enemy that was talked out of the fight, wants to talk to it again, just under whatever is most on its mind (unless it already wants to talk to it more): into leaving, or onto its side, as its playstyle leans (Wants to Lead, Diplomats, Moralists, People-Pleasers, Chickens, Wallflowers and the like would rather it left). Those who want to lead and talkers among them want it more, look for the chance with any neutral they see, and always try to send it away: one less fighter on the field is safer than one more, even a friendly one.
+- **Not one for killing:** a character whose answer to foes who fall leans to avoiding killing ("Spare them: I avoid killing" most), seeing an enemy that was talked out of the fight, wants to talk to it again, just under whatever is most on its mind (unless it already wants to talk to it more): into leaving, or onto its side, as its playstyle leans (Wants to Lead, Diplomats, Moralists, People-Pleasers, Chickens, Wallflowers and the like would rather it left). Those who want to lead and talkers among them want it more, look for the chance with any neutral they see, and always try to send it away: one less fighter on the field is safer than one more, even a friendly one.
 - **Results:** those who take no side never win or lose a fight, and don't keep one going. The planner shows how often a foe was talked into standing aside.
 
 ## Theft
@@ -214,7 +222,7 @@ Theft mid-fight is rare; most who want your things take them from your body afte
 ## Desires
 
 Every character has a list of desires: what it wants right now, at whom, and how badly (0 to 100: Passing, Wants, Determined, Driven, Obsessed). They're its reasoning made visible, and they decide what it does:
-- **Hurt, heal, protect, bolster (with a buff), talk to, keep away from, be bolstered by.**
+- **Hurt, heal, protect, bolster (with a buff), talk to, keep away from, tie up (a fallen foe), rob (a fallen foe), be bolstered by.**
 - **Where they come from:**
   - **its tactics:** each turn its tactical band weighs every foe it can reach (a Mastermind picks the healer to destroy, a Feral beast the nearest thing), every friend it could mend, whom it could talk round, whom it fears;
   - **its Tactics answers:** up to three desires stated for any character, PC or NPC (what, who, how badly; healing, bolstering and talking are offered only to those who can). Stated in the players' survey (or the planner), naming only creatures the player perceives on the battle map: on the scene it's looking at, with token vision, those within its sight; otherwise the encounter's combatants. With nobody to name, there are none to state;
@@ -392,7 +400,7 @@ Three questions carry a wish each, as strongly as the answer leans that way: the
 | Question | The wish | Answers, from all of it to none |
 |---|---|---|
 | Talking instead of fighting (first on the sheet) | talks whole turns at a time, even without much skill, and votes to open with a standoff; not while it's being hurt (hurt since its last turn); with "stay true", only a small nudge | Always talk unless I am currently being hurt (100%), Talk first: try to end it with words (66%), Talk when it could work (33%), Let my weapons do the talking (0%) |
-| Who to attack first (second) | avoids killing (see **The fallen foes**, and the Avoids killing slider); whom it goes for is left to it | I avoid killing (100%), Whoever is attacking my allies (66%), Whoever is closest, The most dangerous foe, Spellcasters and healers first (33%), Finish off the weakest (0%) |
+| Foes who fall (third) | avoids killing (see **The fallen foes**, and the Avoids killing slider) | Spare them: I avoid killing (100%), Tie them up (66%), Leave them be, Rob them (33%), Finish them (0%) |
 | When to retreat | doesn't like to flee (see **"I don't like to flee"**) | Fight to the end (100%), When the battle turns against us (50%), When I'm badly hurt (0%) |
 
 Every derived number has **fudge up / fudge down / remove fudge** buttons.
@@ -445,7 +453,7 @@ All settings are defaults that the planner can override per battle:
   - a PC scheming against the leader it wasn't chosen to be turning traitor (this or less), default 9;
   - a trap avoider spotting a hazard (this or less), default 59;
   - how often someone who doesn't like to flee stays, default 90 (50 to 90);
-  - how often someone who answers "I avoid killing" holds back (a blow that would kill knocks out, the fallen left be and spared after), default 90 (50 to 90); less for answers that lean less that way.
+  - how often someone who answers "Spare them: I avoid killing" holds back (a blow that would kill knocks out, the fallen left be and spared after), default 90 (50 to 90); less for answers that lean less that way.
 - **Story:** style, delivery, and whether the posted story shows the odds (off).
 - **Do it For Real Now:** loot, corpse and fled handling, and whether tokens walk their turns on the map (off: they go straight to where each turn leaves them).
 - **Defaults:** side personalities, and data paths for the generic adapter.

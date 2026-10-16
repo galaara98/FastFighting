@@ -14,7 +14,9 @@ import { isSpecial } from "./behavior/specialty.js";
 
 export const TACTIC_CHOICES = Object.freeze({
   style: ["frontline", "skirmisher", "ranged", "caster", "protector"],
-  target: ["nearest", "weakest", "dangerous", "casters", "protect", "avoidKilling"],
+  target: ["nearest", "weakest", "dangerous", "casters", "protect"],
+  // (Foes who fall: finish them, leave them be, spare them (avoiding killing), tie them up, rob them: behavior/fallen.js.)
+  fallen: ["finish", "leave", "spare", "tie", "rob"],
   resourceUse: ["conserve", "balanced", "nova"],
   // (Potions, scrolls, bombs: from "I don't like to use consumables" to "Consumables are here to get used": reluctance.js.)
   consumables: ["avoid", "sparing", "useful", "freely"],
@@ -34,18 +36,18 @@ export const TACTIC_CHOICES = Object.freeze({
  * How strongly an answer carries the wish its question took over from an old tick-box (0 to 1): the strongest answer
  * as if the box were ticked, the others less, down to none for the opposite.
  *  - talk: always talking (unless being hurt), "always prefers talking to fighting";
- *  - target: avoiding killing, "I avoid killing";
+ *  - fallen: sparing them, "I avoid killing" (once an answer to whom it went for); taking prisoners nearly as much;
  *  - retreat: not liking to flee, "I don't like to flee".
  * "Let this character decide" carries none, as an unticked box did.
  */
 export const TACTIC_WISHES = Object.freeze({
   talk: Object.freeze({ always: 1, first: 0.66, opportune: 0.33, never: 0 }),
-  target: Object.freeze({ avoidKilling: 1, protect: 0.66, nearest: 0.33, dangerous: 0.33, casters: 0.33, weakest: 0 }),
+  fallen: Object.freeze({ spare: 1, tie: 0.66, leave: 0.33, rob: 0.33, finish: 0 }),
   retreat: Object.freeze({ never: 1, losing: 0.5, hurt: 0 })
 });
 
 /** Question keys in survey order. `preferredAction` is special (its choices are the character's own actions). */
-export const TACTIC_KEYS = Object.freeze(["preferredAction", "style", "target", "resourceUse", "specialty", "consumables", "talk", "healAggro", "potionThreshold", "allyDying", "selfRevived", "retreat", "shield", "beyond"]);
+export const TACTIC_KEYS = Object.freeze(["preferredAction", "style", "target", "fallen", "resourceUse", "specialty", "consumables", "talk", "healAggro", "potionThreshold", "allyDying", "selfRevived", "retreat", "shield", "beyond"]);
 
 const isOffense = a => a.kind !== "heal" && a.kind !== "buff";
 const usesResource = a => !!a.resource || Number.isFinite(a.uses);
@@ -126,6 +128,16 @@ export function suggestTactics(spec, defaults = {}, rules = null) {
   else if ( tier === TACTICAL.COMPETENT || S >= 70 ) target = "weakest";
   else if ( tier >= TACTICAL.MASTERMIND ) target = "casters";
 
+  // Foes who fall: most leave them be (a beast always); the cruel-hearted and disloyal finish them, the greedy rob them,
+  // the most selfless spare them, and a very clear head takes them prisoner (someone to question, a captive to hand
+  // over).
+  let fallen = "leave";
+  if ( tier <= TACTICAL.INSTINCTIVE ) fallen = "leave";
+  else if ( S >= 80 && L < 40 ) fallen = "finish";
+  else if ( S >= 70 ) fallen = "rob";
+  else if ( S <= 15 && L >= 70 ) fallen = "spare";
+  else if ( T >= 75 && S < 40 ) fallen = "tie";
+
   let resourceUse = "balanced";
   if ( B >= 70 && T < 50 ) resourceUse = "nova";
   else if ( T >= 70 || S >= 65 ) resourceUse = "conserve";
@@ -172,6 +184,7 @@ export function suggestTactics(spec, defaults = {}, rules = null) {
     preferredAction: bestAction?.id ?? "",
     style,
     target,
+    fallen,
     resourceUse,
     consumables,
     specialty,

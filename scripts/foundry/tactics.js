@@ -65,7 +65,7 @@ function cleanDesire(raw) {
 }
 const MAX_ACTION_ID = 2000;
 /** The tick-boxes that became answers, by the question that took each over. */
-const LEGACY = Object.freeze({ talk: ["alwaysTalk"], target: ["avoidKilling", "neverKill"], retreat: ["avoidFleeing"] });
+const LEGACY = Object.freeze({ talk: ["alwaysTalk"], fallen: ["avoidKilling", "neverKill"], retreat: ["avoidFleeing"] });
 
 /**
  * Keep only answers the survey could have produced. Players own these flags and can write anything to them
@@ -85,11 +85,11 @@ export function sanitizeTactics(raw) {
   }
   for ( const key of META_KEYS ) if ( key in raw ) out[key] = raw[key] === true;
   // The tick-boxes that became answers: "always prefers talking" talks always (unless hurt); "I avoid killing" (once
-  // "I never kill") is an answer to who it goes for; "I don't like to flee", where it hadn't said when to retreat, never
-  // retreats.
+  // "I never kill", then an answer to who it went for) spares the fallen; "I don't like to flee", where it hadn't said
+  // when to retreat, never retreats.
   const unanswered = key => [undefined, "auto", ""].includes(out[key]);
   if ( raw.alwaysTalk === true && unanswered("talk") ) out.talk = "always";
-  if ( (raw.avoidKilling === true || raw.neverKill === true) && unanswered("target") ) out.target = "avoidKilling";
+  if ( (raw.avoidKilling === true || raw.neverKill === true || raw.target === "avoidKilling") && unanswered("fallen") ) out.fallen = "spare";
   if ( raw.avoidFleeing === true && unanswered("retreat") ) out.retreat = "never";
   if ( raw.avoidConsumables === true && unanswered("consumables") ) out.consumables = "avoid";
   // What it brings to a standoff, and what it wants out of it (checked against what it has when a battle is built).
@@ -114,7 +114,8 @@ export function sanitizeTactics(raw) {
 
 /**
  * What a character could want of someone: anyone can want to hurt, guard or keep away from someone; to heal or bolster
- * someone, only one who can, and to talk to someone or be bolstered by a friend, one who can make itself understood.
+ * someone, only one who can; to talk to someone or be bolstered by a friend, one who can make itself understood; and to
+ * tie up or rob a fallen foe, one with a mind for it.
  */
 export function desireKindsFor(spec) {
   const actions = spec?.actions ?? [];
@@ -123,7 +124,9 @@ export function desireKindsFor(spec) {
     heal: actions.some(a => a.kind === "heal"),
     aid: actions.some(a => a.kind === "buff" && !a.tell), // (Dodge and the like are moves, not bolstering)
     talk: speaks,
-    bolstered: speaks
+    bolstered: speaks,
+    bind: !spec?.social?.mindless,
+    rob: !spec?.social?.mindless
   };
   return DESIRE_KINDS.filter(k => canDo[k] !== false);
 }
@@ -407,6 +410,7 @@ export function questionsContext(spec, actor, uid, { questions: withQuestions = 
   // (Talking first, then who it goes for: the top of the sheet.)
   add("talk", TACTIC_CHOICES.talk, { show: (spec.social?.languages?.length ?? 0) > 0 && !spec.social?.mindless });
   add("target", TACTIC_CHOICES.target);
+  add("fallen", TACTIC_CHOICES.fallen);
   add("preferredAction", offense.map(a => ({ value: a.id, label: actionLabel(a) })), { show: offense.length > 1 });
   add("style", TACTIC_CHOICES.style);
   add("resourceUse", TACTIC_CHOICES.resourceUse, { show: hasLimited });

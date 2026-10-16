@@ -340,6 +340,7 @@
       "switched": "Switched sides",
       "stoodDown": "Stood down",
       "beaten": "Beaten",
+      "bound": "Tied up",
       "conceded": "Gave something up",
       "neutral": "Stood aside",
       "noSide": "Took no side"
@@ -558,6 +559,7 @@
         "Fled": "Fled the battle (token hidden)",
         "Surrenders": "Surrenders",
         "StandsDown": "Stands down (talked out of fighting)",
+        "TiedUp": "Tied up (a prisoner)",
         "SwitchesFriendly": "Switches sides (now friendly)",
         "SwitchesHostile": "Switches sides (now hostile)",
         "TurnedOn": "Turned on the party (now hostile)",
@@ -600,14 +602,22 @@
         "protector": "Protector: guard my allies, shield up"
       },
       "target": {
-        "Label": "Who to attack first",
-        "Hint": "Who it attacks first.",
+        "Label": "Who to pursue first",
+        "Hint": "Who it goes after first: to fight, or to talk round.",
         "nearest": "Whoever is closest",
         "weakest": "Finish off the weakest",
         "dangerous": "The most dangerous foe",
         "casters": "Spellcasters and healers first",
-        "protect": "Whoever is attacking my allies",
-        "avoidKilling": "I avoid killing"
+        "protect": "Whoever is attacking my allies"
+      },
+      "fallen": {
+        "Label": "Foes who fall",
+        "Hint": "What it does with a foe who's down. Spare them: never a killing blow, and first aid after. Tie them up: taken alive (mostly no killing blow), a prisoner even if healed.",
+        "finish": "Finish them",
+        "leave": "Leave them be",
+        "spare": "Spare them: I avoid killing",
+        "tie": "Tie them up",
+        "rob": "Rob them"
       },
       "resourceUse": {
         "Label": "Spell slots, focus and limited abilities",
@@ -1153,6 +1163,10 @@
         "mercy": "Mercy",
         "shakeOff": "Shake Off",
         "controlImmune": "Control Immune",
+        "bind": "Bind",
+        "rob": "Rob",
+        "robEmpty": "Rob Empty",
+        "bound": "Bound",
         "theftSuccess": "Theft Success",
         "theftEmpty": "Theft Empty",
         "feintMiss": "Feint Miss",
@@ -1436,6 +1450,8 @@
         "aid": "Bolster",
         "talk": "Talk to",
         "avoid": "Keep away from",
+        "bind": "Tie up",
+        "rob": "Rob",
         "bolstered": "Be bolstered by"
       },
       "Level": {
@@ -1588,6 +1604,8 @@
       "DesireAid": "bolster",
       "DesireTalk": "talk to",
       "DesireAvoid": "avoid",
+      "DesireBind": "tie up",
+      "DesireRob": "rob",
       "RiderSave": "{actor} vs {name} · {saveType} {roll} · {degree}{damage}",
       "Notice": "{actor} notices ({cause})",
       "NoticeSight": "sees the fight",
@@ -1776,6 +1794,10 @@
       "LastWord": "{actor} steps in for one last try at settling it",
       "Legendary": "{actor} takes a legendary action: {action} → {target}",
       "Mercy": "{actor} won't let anyone finish off {target}",
+      "Bind": "{actor} ties up {target}",
+      "Rob": "{actor} robs {target}: {what}",
+      "RobNothing": "{actor} robs {target}: nothing to take",
+      "Bound": "{actor} comes to, tied up (by {by})",
       "Parley": "{actor} tries to talk the other side down",
       "Peacekeep": "{actor} tries to calm things down",
       "Persistent": "{actor} takes {damage} (persistent)",
@@ -1917,7 +1939,9 @@
         "Hint": "What to do with foes who are down.",
         "finish": "Finish them",
         "leave": "Leave them be",
-        "spare": "Spare them"
+        "spare": "Spare them",
+        "tie": "Tie them up",
+        "rob": "Rob them"
       },
       "care": {
         "Label": "How do we look after each other?",

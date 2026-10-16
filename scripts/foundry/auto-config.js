@@ -163,8 +163,12 @@ export function withWorldDefaults({ lets, why }, spec, defaults = {}) {
 export function withHints(lets, hints, spec) {
   const out = { ...lets };
   const why = {};
-  for ( const [k, raw] of Object.entries(hints ?? {}) ) {
-    const said = raw && typeof raw === "object" && "value" in raw ? raw : { value: raw };
+  for ( const [hint, raw] of Object.entries(hints ?? {}) ) {
+    const given = raw && typeof raw === "object" && "value" in raw ? raw : { value: raw };
+    // (A helper's "I avoid killing", once an answer to whom it went for, is sparing the fallen now.)
+    const old = hint === "target" && given.value === "avoidKilling";
+    const k = old ? "fallen" : hint;
+    const said = old ? { ...given, value: "spare" } : given;
     const motive = ["offer", "expect"].includes(k);
     if ( !(motive ? validMotive(k, said.value) : TACTIC_KEYS.includes(k) && validLet(k, said.value, spec)) ) continue;
     out[k] = motive ? cleanMotive(k, said.value) : said.value;

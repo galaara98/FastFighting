@@ -84,7 +84,8 @@ export const STATUS = Object.freeze({
   FLED: "fled",
   SURRENDERED: "surrendered",
   STOOD_DOWN: "stoodDown", // persuaded to let it go: out of the conflict, but nobody's prisoner
-  BEATEN: "beaten" // out of the fight, alive, however the table decides (Ironsworn: its track complete)
+  BEATEN: "beaten", // out of the fight, alive, however the table decides (Ironsworn: its track complete)
+  BOUND: "bound" // tied up and awake: a prisoner, out of the fight (one tied up while down stays down: u.boundBy)
 });
 
 /** How a talked-down combatant leaves the fight. */

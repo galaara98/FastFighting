@@ -15,7 +15,7 @@ export function createAggregator(prep) {
   const units = {};
   for ( const c of prep.combatants ) {
     units[c.spec.id] = {
-      standing: 0, down: 0, dead: 0, fled: 0, surrendered: 0, stoodDown: 0, beaten: 0, conceded: 0, switched: 0, neutral: 0, talkedDown: 0, atMercy: 0, downed: 0, involved: 0,
+      standing: 0, down: 0, dead: 0, fled: 0, surrendered: 0, stoodDown: 0, beaten: 0, bound: 0, conceded: 0, switched: 0, neutral: 0, talkedDown: 0, atMercy: 0, downed: 0, involved: 0,
       hpFrac: 0, damage: 0, healing: 0, firstToFall: 0, resources: {}
     };
   }
@@ -54,6 +54,7 @@ export function createAggregator(prep) {
         else if ( r.status === STATUS.SURRENDERED ) u.surrendered += 1;
         else if ( r.status === STATUS.STOOD_DOWN ) u.stoodDown += 1;
         else if ( r.status === STATUS.BEATEN ) u.beaten += 1;
+        else if ( r.status === STATUS.BOUND ) u.bound += 1;
         if ( r.conceded ) u.conceded += 1;
         if ( r.swayed ) {
           u.talkedDown += 1;
@@ -109,6 +110,7 @@ export function createAggregator(prep) {
           pSurrendered: u.surrendered / n,
           pStoodDown: u.stoodDown / n,
           pBeaten: u.beaten / n,
+          pBound: u.bound / n,
           pConceded: u.conceded / n,
           pSwitched: u.switched / n,
           pNeutral: u.neutral / n,

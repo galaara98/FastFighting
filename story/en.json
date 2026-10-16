@@ -3281,6 +3281,34 @@
     "{weapon} slides off {target} entirely.",
     "{target} doesn't even notice {actor}'s {weapon}."
   ],
+  "event.bind": [
+    "{actor} ties {target} up with whatever's to hand.",
+    "{actor} lashes {target}'s wrists together.",
+    "{actor} binds {target} hand and foot where they lie.",
+    "{actor} trusses {target} up, out of the fight for good.",
+    "{actor} knots a strap tight around {target}'s arms."
+  ],
+  "event.rob": [
+    "{actor} goes through {target}'s pockets and comes away with {amount}.",
+    "{actor} relieves the fallen {target} of {amount}.",
+    "{actor} kneels by {target} and takes {amount}.",
+    "{target} lies still while {actor} takes {amount}.",
+    "{actor} pockets {amount} from {target}."
+  ],
+  "event.robEmpty": [
+    "{actor} searches {target} and finds nothing worth taking.",
+    "{actor} turns out {target}'s pockets: nothing.",
+    "{actor} rifles through {target}'s things and comes up empty.",
+    "{target} has nothing on them worth {actor}'s while.",
+    "{actor} pats down {target} for nothing."
+  ],
+  "event.bound": [
+    "{actor} comes to, tied up and going nowhere.",
+    "{actor} wakes with their hands bound.",
+    "{actor} stirs, and strains against the knots.",
+    "{actor} opens their eyes to find themselves a prisoner.",
+    "{actor} is back on their feet, but tied fast."
+  ],
   "event.theftSuccess": [
     "{actor} lifts {amount} from {target} unnoticed.",
     "Quick fingers: {actor} relieves {target} of {amount}.",
@@ -3823,6 +3851,20 @@
     "make {target} pay",
     "get at {target}",
     "finish {target}"
+  ],
+  "desire.verb.bind": [
+    "tie {target} up",
+    "take {target} prisoner",
+    "bind {target}",
+    "truss up {target}",
+    "see {target} tied"
+  ],
+  "desire.verb.rob": [
+    "rob {target}",
+    "go through {target}'s pockets",
+    "take what {target} carries",
+    "relieve {target} of their purse",
+    "pick {target} clean"
   ],
   "desire.verb.heal": [
     "heal {target}",

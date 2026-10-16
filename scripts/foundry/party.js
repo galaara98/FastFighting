@@ -14,7 +14,7 @@ import { localize } from "../i18n.js";
 export const PARTY_QUESTIONS = Object.freeze({
   target: Object.freeze(["nearest", "weakest", "dangerous", "casters", "leader"]),
   talk: Object.freeze(["first", "opportune", "never"]),
-  fallen: Object.freeze(["finish", "leave", "spare"]),
+  fallen: Object.freeze(["finish", "leave", "spare", "tie", "rob"]),
   care: Object.freeze(["heal", "guard", "self"]),
   resources: Object.freeze(["conserve", "balanced", "nova"]),
   retreat: Object.freeze(["never", "losing", "hurt"])
@@ -27,7 +27,8 @@ export const PARTY_TACTICS = Object.freeze({
     resourceUse: { conserve: "conserve", balanced: "balanced", nova: "nova" },
     consumables: { conserve: "sparing", balanced: "useful", nova: "freely" }
   },
-  retreat: { retreat: { never: "never", losing: "losing", hurt: "hurt" } }
+  retreat: { retreat: { never: "never", losing: "losing", hurt: "hurt" } },
+  fallen: { fallen: { finish: "finish", leave: "leave", spare: "spare", tie: "tie", rob: "rob" } }
 });
 
 /**
