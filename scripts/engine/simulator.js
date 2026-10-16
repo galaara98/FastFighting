@@ -18,7 +18,7 @@ import {
 import { sampleRunTactics } from "./playstyles.js";
 import { chooseTarget, bestOptionVs, scoreTargets } from "./behavior/targeting.js";
 import { decideHeal, rescueOption, healScores } from "./behavior/healing.js";
-import { initDesires, newTurn, goaded, think, want, thwart, relieve, levelOf, mind, thoughts as thoughtsOf, levelsFromScores, listen, heed, remember, styleWants, styleOf, follow, conditionWishes, holdWishes, puppetWishes, actsHeld, scheme, partyWants, CHOICE_LEVEL } from "./behavior/desire.js";
+import { initDesires, newTurn, goaded, think, want, thwart, relieve, levelOf, mind, rankedDesires, thoughts as thoughtsOf, levelsFromScores, listen, heed, remember, styleWants, styleOf, follow, conditionWishes, holdWishes, puppetWishes, actsHeld, scheme, partyWants, CHOICE_LEVEL } from "./behavior/desire.js";
 import { prepareDoors, doorStates, doorAhead, atDoor, doorPlan, patienceFor, doorDamage } from "./behavior/doors.js";
 import { heldGoal } from "./behavior/goals.js";
 import { checkMorale, standsGround, callRetreat, rallies, MORALE } from "./behavior/morale.js";
@@ -28,6 +28,7 @@ import { cast } from "./behavior/casting.js";
 import { boost } from "./behavior/luck.js";
 import { respond, riposteStrike } from "./behavior/responses.js";
 import { decideSummon, callSummons, sustainSummons, summonState, dismiss } from "./behavior/summons.js";
+import { sinkHopeless } from "./behavior/hopeless.js";
 import { mayLeave, startLeaving, isLeaving, wayOff, goAlong, confronted, dealsWithIt, backOnItsWay } from "./behavior/leaving.js";
 import { createAggregator } from "./aggregate.js";
 import { spotTraps, stepOut, learnTrap } from "./behavior/traps.js";
@@ -2501,6 +2502,8 @@ function deliberate(run, u) {
   remember(run, u);
   // Under someone's control: what its controller wants, and nothing of its own.
   puppetWishes(run, u);
+  // What it can't work on now sinks to the bottom; still out of reach since its last turn, given up (behavior/hopeless.js).
+  sinkHopeless(run, u, rankedDesires(run, u));
   if ( run.log ) {
     const top = thoughtsOf(run, u);
     if ( top.length || u.following ) {

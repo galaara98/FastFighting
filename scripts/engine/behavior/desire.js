@@ -317,9 +317,10 @@ export function rankedDesires(run, u) {
     const logic = d.logic.get(k) ?? 0;
     const stated = d.stated.get(k) ?? 0;
     const driven = d.gm?.has(k) ? "stated" : (d.taunt.get(k) ?? 0) > Math.max(logic, stated) ? "taunted" : stated > logic ? "stated" : (d.memory.get(k) ?? 0) >= 10 ? "memory" : (d.social.get(k) ?? 0) >= 10 ? "social" : "logic";
-    out.push({ kind, targetId, level, driven });
+    out.push({ kind, targetId, level, driven, ...(d.sunk?.has(k) ? { sunk: true } : {}) });
   }
-  return out.sort((a, b) => b.level - a.level);
+  // (What it can't work on now sinks below everything else, however strong: behavior/hopeless.js.)
+  return out.sort((a, b) => (Number(!!a.sunk) - Number(!!b.sunk)) || (b.level - a.level));
 }
 
 /**
@@ -328,7 +329,8 @@ export function rankedDesires(run, u) {
  */
 export function mind(run, u) {
   const ranked = rankedDesires(run, u);
-  const lead = ranked[0] ?? null;
+  // (Never one it can't work on now: behavior/hopeless.js.)
+  const lead = ranked.find(d => !d.sunk) ?? null;
   const floor = (lead?.level ?? 0) - BLIND_GAP;
   return {
     lead,
@@ -336,8 +338,8 @@ export function mind(run, u) {
     // Only a desire stated, taunted, or stirred by the fight, blinds; the tactics' own reasoning (and the others' pull)
     // weighs everything.
     blinding: !!lead && (lead.driven === "stated" || lead.driven === "taunted" || lead.driven === "memory"),
-    inView: (kind, targetId) => levelOf(u, kind, targetId) >= floor,
-    kindInView: kind => ranked.some(d => d.kind === kind && d.level >= floor),
+    inView: (kind, targetId) => !u.desire?.sunk?.has(keyOf(kind, targetId)) && levelOf(u, kind, targetId) >= floor,
+    kindInView: kind => ranked.some(d => d.kind === kind && !d.sunk && d.level >= floor),
     obsessed: !!lead && lead.level >= OBSESSED
   };
 }
