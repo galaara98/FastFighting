@@ -18,9 +18,13 @@
  * What a system can say (all optional; the rules a helper gives the engine, and its specs):
  *   rules.holds(run, u)                    more holds on u: [{key, byId, dc, others, label}]
  *   rules.escapeFrom(run, u, key)          a condition its sheet shows that an action breaks: {dc, others} or null
- *   rules.bondsDC(u)                       how hard FastFighting's improvised bonds are to slip (default: a typical DC
+ *   rules.bondsDC(u, run)                  how hard FastFighting's improvised bonds are to slip (default: a typical DC
  *                                          for its level, a little harder)
- *   rules.escapeCost(u, hold)              what a try at breaking free costs (default: the basic action)
+ *   rules.escapeCost(u, hold, run)         what a try at breaking free costs (default: the basic action)
+ *   rules.holdBrings(key)                  what a hold keeps in place with it, besides its own condition (PF2e's grab:
+ *                                          off guard and immobilized), cleared when it's broken
+ *   rules.tiedBars(action)                 what tied up rules out besides what needs hands (PF2e's restrained: any
+ *                                          attack)
  *   rules.untieCost(u, t, hold)            what freeing a friend costs (default: the basic action)
  *   rules.breakFree(run, who, hold, {freeing, held})  the system's own try, by `who`: for itself, or (freeing) for
  *                                          `held`, the friend it frees. Returns {success, degree, natural, mod, total,
@@ -53,6 +57,8 @@ import { normalizeCost } from "../turn.js";
  * still does it. A hold may name its own (hold.with, effect.escape.with: the system's).
  */
 const WITH = Object.freeze({ grabbed: Object.freeze(["immobilized"]), restrained: Object.freeze(["immobilized"]) });
+/** The conditions that hold a creature, first among an effect's (the one its hold is named for). */
+const HOLDING = Object.freeze(["restrained", "grabbed", "immobilized", "paralyzed", "petrified"]);
 
 /** Without a roll to make: how often a try gets loose (a grab, as the engine always had it; bonds, harder). */
 export const ESCAPE_CHANCE = Object.freeze({ grabbed: 0.5, bound: 0.35, other: 0.4 });
@@ -64,6 +70,9 @@ const BONDS_HARDER = 2;
  * (rules.handsKnown): none it didn't mark. Otherwise a spell as the helper's setting says (rules.tiedStopsSpells, by
  * default it does), a natural attack (a bite, a claw) none, and anything else (a weapon, a manipulation) hands.
  */
+/** Can't it do this tied up: it needs hands, or the system says tied up rules it out (rules.tiedBars)? */
+export const tiedOut = (rules, action) => needsHands(rules, action) || !!rules?.tiedBars?.(action);
+
 export function needsHands(rules, action) {
   if ( Number.isFinite(action?.hands) ) return action.hands > 0;
   if ( rules?.handsKnown ) return false;
@@ -77,7 +86,7 @@ export const isBound = u => !!(u.bound ?? u.boundBy);
 /** How hard FastFighting's improvised bonds are to slip, for this creature (the system's say, or a typical DC). */
 export function bondsDC(run, u) {
   const rules = run.prep?.rules ?? {};
-  return rules.bondsDC?.(u) ?? typical(rules, "dc", u.spec.level ?? 0) + BONDS_HARDER;
+  return rules.bondsDC?.(u, run) ?? typical(rules, "dc", u.spec.level ?? 0) + BONDS_HARDER;
 }
 
 const dcOf = v => (Number.isFinite(v) ? v : null);
@@ -95,10 +104,20 @@ export function holdsOf(run, u) {
     out.push({ key: "grabbed", byId: u.grabbedBy, dc: dcOf(g?.spec.escapeDC), others: null });
   }
   for ( const e of u.effects ?? [] ) {
-    if ( !e.escape || e.onlyVs ) continue;
-    for ( const [key, v] of Object.entries(e.conditions ?? {}) ) {
-      if ( !(Number(v) > 0 || v === true) || (key === "grabbed" && u.grabbedBy) ) continue;
-      out.push({ key, byId: e.sourceId ?? null, dc: dcOf(e.escape.dc), others: e.escape.others ?? null, with: e.escape.with ?? null, label: e.label || null, effectKey: e.key });
+    if ( e.onlyVs ) continue;
+    const on = Object.entries(e.conditions ?? {}).filter(([k, v]) => (Number(v) > 0 || v === true) && !(k === "grabbed" && u.grabbedBy)).map(([k]) => k);
+    if ( !on.length ) continue;
+    if ( e.escape ) {
+      // (One hold, the effect: its holding condition named, or the first that holds.)
+      const key = e.escape.key ?? on.find(k => HOLDING.includes(k)) ?? on[0];
+      out.push({ key, byId: e.sourceId ?? null, dc: dcOf(e.escape.dc), others: e.escape.others ?? null, with: e.escape.with ?? null, label: e.label || null, effectKey: e.key, whole: true });
+    } else if ( typeof rules.escapeFrom === "function" ) {
+      // (One laid with no word of its own, the GM's Restrained: as the system says of that condition.)
+      for ( const key of on ) {
+        if ( out.some(h => h.key === key) ) continue;
+        const h = rules.escapeFrom(run, u, key);
+        if ( h ) out.push({ key, byId: e.sourceId ?? null, dc: dcOf(h.dc), others: h.others ?? null, with: h.with ?? null, label: h.label ?? null, effectKey: e.key });
+      }
     }
   }
   // (The system's own: on the sheet with nothing of the engine's behind it, and any other it knows.)
@@ -144,7 +163,8 @@ export const known = (run, u, hold) => typeof run.prep.rules.breakFree === "func
  * place with it (WITH, hold.with), unless another hold still keeps it so.
  */
 export function release(run, u, hold) {
-  const along = [...new Set([...(WITH[hold.key] ?? []), ...(hold.with ?? [])])];
+  const brings = key => [...(WITH[key] ?? []), ...(run.prep?.rules?.holdBrings?.(key) ?? [])];
+  const along = [...new Set([...brings(hold.key), ...(hold.with ?? [])])];
   switch ( hold.key ) {
     case "bound":
       u.bound = false;
@@ -158,6 +178,8 @@ export function release(run, u, hold) {
       if ( u.baseConds ) delete u.baseConds.grabbed;
       break;
     default:
+      // (What holds goes, and what it held in place with it, below; the effect's other conditions stay: a web with
+      // nothing else to it ends.)
       if ( hold.effectKey ) {
         u.effects = (u.effects ?? []).flatMap(e => {
           if ( e.key !== hold.effectKey ) return [e];
@@ -170,7 +192,7 @@ export function release(run, u, hold) {
   }
   if ( along.length ) {
     recompute(u);
-    const still = new Set(holdsOf(run, u).flatMap(h => [...(WITH[h.key] ?? []), ...(h.with ?? [])]));
+    const still = new Set(holdsOf(run, u).flatMap(h => [...brings(h.key), ...(h.with ?? [])]));
     for ( const k of along.filter(k => !still.has(k)) ) {
       if ( u.baseConds ) delete u.baseConds[k];
       u.effects = (u.effects ?? []).flatMap(e => {
@@ -185,7 +207,7 @@ export function release(run, u, hold) {
 }
 
 /** What a try at breaking free costs from a turn. */
-export const escapeCost = (rules, u, hold) => normalizeCost(rules, rules.escapeCost?.(u, hold) ?? rules.basicAction ?? 1);
+export const escapeCost = (rules, u, hold, run = null) => normalizeCost(rules, rules.escapeCost?.(u, hold, run) ?? rules.basicAction ?? 1);
 
 /** What freeing a friend costs from a turn. */
 export const untieCost = (rules, u, t, hold) => normalizeCost(rules, rules.untieCost?.(u, t, hold) ?? rules.basicAction ?? 1);

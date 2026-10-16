@@ -88,6 +88,12 @@
             </div>
           </div>
 
+          <section class="ff-battle-teams">
+            <p>{{localize "FASTFIGHTING.Battle.Net.Team"}}</p>
+            <div>{{#each focus.teams}}<button type="button" class="ff-btn {{#if current}}is-current{{/if}}" data-action="setSide" data-side="{{side}}" {{#if current}}disabled{{/if}} data-tooltip="{{localize "FASTFIGHTING.Battle.Net.TeamHint"}}">{{label}}</button>{{/each}}</div>
+            {{#if focus.controlled}}<p class="hint">{{focus.controlled}}</p>{{/if}}
+          </section>
+
           <section>
             <p>{{localize "FASTFIGHTING.Battle.Net.Wants"}}</p>
             {{#if focus.decides}}

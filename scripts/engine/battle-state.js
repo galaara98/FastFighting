@@ -93,7 +93,7 @@
  * @property {object} options                         {maxRounds, downedModel, positioning, morale, leadership, initiativeOrder, surpriseSide}
  */
 import { keepClear } from "./behavior/traps.js";
-import { needsHands } from "./behavior/holds.js";
+import { tiedOut } from "./behavior/holds.js";
 import { STATUS, NEUTRAL_PARTY, AVOID_KILLING, clamp, fudged, tacticalTier, TRAITS } from "../constants.js";
 import { meanPart } from "./dice.js";
 import { typicalValue } from "./tactics.js";
@@ -309,8 +309,8 @@ export function createUnit(prep, p) {
   const resources = { ...(s.resources ?? {}) };
   const uses = {};
   for ( const a of s.actions ) if ( Number.isFinite(a.uses) ) uses[a.id] = a.uses;
-  // (What it can't do tied up: behavior/holds.js needsHands.)
-  const handActions = new Set(s.actions.filter(a => needsHands(prep.rules, a)).map(a => a.id));
+  // (What it can't do tied up: what needs hands, and what the system rules out: behavior/holds.js tiedOut.)
+  const handActions = new Set(s.actions.filter(a => tiedOut(prep.rules, a)).map(a => a.id));
   const u = {
     prep: p,
     handActions,

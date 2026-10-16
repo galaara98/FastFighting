@@ -2202,7 +2202,7 @@
         "FocusHint": "Click a creature here, or select its token on the map, to see what it wants and what's on it.",
         "Unaware": "Hasn't noticed the fight",
         "Notices": "It notices the fight",
-        "SetAside": "Set it aside",
+        "SetAside": "Delete",
         "Held": "set by the GM",
         "HeldList": "Set by the GM",
         "SetAsideList": "Set aside by the GM",
@@ -2219,7 +2219,14 @@
         "AddTitle": "Add to {name}",
         "AddHint": "What {name} wants of someone, has on them (and from whom), or what came of a roll at the table.",
         "AddWhat": "What",
-        "NodeHint": "+ adds a line from it"
+        "NodeHint": "+ adds a line from it",
+        "Select": "Select",
+        "Unselect": "Unselect",
+        "SelectTeam": "Select its team",
+        "SelectLeader": "Select its leader",
+        "Team": "Team",
+        "TeamHint": "Move it to this side: what it wants, and everyone's toward it, is worked out again.",
+        "Controlled": "Controlled by {name}: it wants what they want."
       },
       "Attitude": {
         "wary": "Less willing to hear {name} out (×{n})",

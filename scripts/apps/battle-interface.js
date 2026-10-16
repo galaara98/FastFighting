@@ -11,7 +11,8 @@
  */
 import { NEUTRAL_PARTY, MODULE_ID } from "../constants.js";
 import { DESIRE_BAND_KEYS, DESIRE_KINDS } from "../engine/behavior/desire.js";
-import { mindOf, bandLevel, networkOf } from "../engine/live.js";
+import { mindOf, bandLevel, networkOf, playerRuns } from "../engine/live.js";
+import { commandOf } from "../engine/battle-state.js";
 import { GM_RELATIONS } from "../engine/conditions.js";
 import { getAdapter } from "../api.js";
 import { roundsText } from "../i18n.js";
@@ -92,6 +93,7 @@ export class BattleInterface extends HandlebarsApplicationMixin(ApplicationV2) {
       automate: BattleInterface.#onAutomate,
       adjust: BattleInterface.#onAdjust,
       addLine: BattleInterface.#onAddLine,
+      setSide: BattleInterface.#onSetSide,
       bringIn: BattleInterface.#onBringIn
     }
   };
@@ -217,7 +219,10 @@ export class BattleInterface extends HandlebarsApplicationMixin(ApplicationV2) {
         this.#keepLayout();
         if ( redraw ) this.render();
       },
-      words: { zoomIn: loc("FASTFIGHTING.Battle.Net.ZoomIn"), zoomOut: loc("FASTFIGHTING.Battle.Net.ZoomOut"), fit: loc("FASTFIGHTING.Battle.Net.Fit"), reset: loc("FASTFIGHTING.Battle.Net.Reset") }
+      words: {
+        zoomIn: loc("FASTFIGHTING.Battle.Net.ZoomIn"), zoomOut: loc("FASTFIGHTING.Battle.Net.ZoomOut"), fit: loc("FASTFIGHTING.Battle.Net.Fit"), reset: loc("FASTFIGHTING.Battle.Net.Reset"),
+        select: loc("FASTFIGHTING.Battle.Net.Select"), unselect: loc("FASTFIGHTING.Battle.Net.Unselect"), selectTeam: loc("FASTFIGHTING.Battle.Net.SelectTeam"), selectLeader: loc("FASTFIGHTING.Battle.Net.SelectLeader")
+      }
     });
   }
 
@@ -311,6 +316,12 @@ export class BattleInterface extends HandlebarsApplicationMixin(ApplicationV2) {
     if ( kind === "desire" ) return liveMind({ op: "desire", id, kind: key, targetId: byId, level: bandLevel(band) });
     if ( kind === "rel" ) return liveCondition({ op: "relate", id, kind: key, byId, rounds, level: band });
     return liveCondition({ op: "set", id, key, value: Math.max(1, Number(picked.value) || 1), byId, rounds });
+  }
+
+  /** Another side for the creature in focus (what it wants worked out again: engine/live.js setSide). */
+  static async #onSetSide(event, target) {
+    const id = target.closest("[data-creature]")?.dataset.creature;
+    if ( id && target.dataset.side ) await liveMind({ op: "side", id, side: target.dataset.side });
   }
 
   static async #onAddLine(event, target) {
@@ -586,7 +597,8 @@ function networkView(b, current, focusId) {
       cls: [u.side, statusClass(u.status), current?.id === c.id ? "is-current" : "", c.hazard ? "is-hazard" : ""].join(" "),
       status: u.status === "standing" ? (c.hazard ? "" : `${u.hp}/${u.maxHp}`) : loc(`FASTFIGHTING.Status.${u.status}`),
       tip: [u.spec.name, sideLabel(u.side), c.player ? loc("FASTFIGHTING.Battle.PlayerRuns") : "", c.id === focusId ? loc("FASTFIGHTING.Battle.Net.NodeHint") : ""].filter(Boolean).join(" · "),
-      x: feet?.x ?? 0, y: feet?.y ?? 0, marks: marks.get(c.id) ?? []
+      x: feet?.x ?? 0, y: feet?.y ?? 0, marks: marks.get(c.id) ?? [],
+      team: u.side, leaderId: (() => { const cmd = commandOf(run, u)?.unit; return cmd && cmd !== u ? cmd.id : null; })()
     });
   }
   const inBattle = new Set(run.units.map(u => u.tokenId ?? u.spec.tokenId ?? u.id));
@@ -640,14 +652,18 @@ function panelOf(b, net, nodes, edges, focus, { name, docOf, sideLabel }) {
     icon: icon("desire", g.kind), text: `${loc(`FASTFIGHTING.Desire.Kind.${g.kind}`)} ${name(g.targetId)}`,
     adjust: JSON.stringify({ t: "release", type: "desire", id: focus, kind: g.kind, targetId: g.targetId })
   }));
-  const decides = players.has(focus);
+  const decides = playerRuns(run, u);
+  const sides = [...new Set([...Object.keys(b.spec.sides ?? {}), NEUTRAL_PARTY])];
+  const teams = sides.map(side => ({ side, label: sideLabel(side), current: u.side === side }));
+  const controller = u.controlledBy ? run.byId.get(u.controlledBy) : null;
   return {
     creature: true, id: focus, name: u.spec.name, img: node.img, side: sideLabel(u.side), status: loc(`FASTFIGHTING.Status.${u.status}`), hp: `${u.hp}/${u.maxHp}`,
     player: players.has(focus), playable, automated: playable && !players.has(focus), decides, waiting: !u.active && u.status === "standing",
     wants: decides ? [] : [...edges.filter(mine), ...symbols.filter(m => ["is-desire", "is-goal", "is-relation"].some(c => m.cls.includes(c)))].map(e => row(e)),
     on: [...edges.filter(onIt), ...symbols.filter(m => m.cls.includes("is-condition") || m.cls.includes("is-status"))].map(e => row(e)),
     wantedBy: edges.filter(wantsMe).map(e => row(e, false)),
-    setAside: decides ? [] : setAside, held: decides ? [] : held
+    setAside: decides ? [] : setAside, held: decides ? [] : held,
+    teams, controlled: controller ? fmt("FASTFIGHTING.Battle.Net.Controlled", { name: controller.spec.name }) : ""
   };
 }
 

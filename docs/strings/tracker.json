@@ -1990,6 +1990,16 @@
    "commit": null,
    "hash": "f8cf83a76a98"
   },
+  "core:FASTFIGHTING.Battle.Net.Controlled": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.Net.Controlled",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "5c63f109a7a6"
+  },
   "core:FASTFIGHTING.Battle.Net.Fit": {
    "repo": "core",
    "file": "languages/en.json",
@@ -2130,6 +2140,36 @@
    "commit": null,
    "hash": "a98f956752d6"
   },
+  "core:FASTFIGHTING.Battle.Net.Select": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.Net.Select",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "2a78025de6aa"
+  },
+  "core:FASTFIGHTING.Battle.Net.SelectLeader": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.Net.SelectLeader",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "ff720dda0048"
+  },
+  "core:FASTFIGHTING.Battle.Net.SelectTeam": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.Net.SelectTeam",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "6a53357bbb9d"
+  },
   "core:FASTFIGHTING.Battle.Net.SetAside": {
    "repo": "core",
    "file": "languages/en.json",
@@ -2138,7 +2178,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "a208bf666cd1"
+   "hash": "a208bf666cd1",
+   "changed": true
   },
   "core:FASTFIGHTING.Battle.Net.SetAsideList": {
    "repo": "core",
@@ -2160,6 +2201,26 @@
    "commit": null,
    "hash": "d455ab3b1fe0"
   },
+  "core:FASTFIGHTING.Battle.Net.Team": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.Net.Team",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "5985039f106d"
+  },
+  "core:FASTFIGHTING.Battle.Net.TeamHint": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.Net.TeamHint",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "f706b3ce2adf"
+  },
   "core:FASTFIGHTING.Battle.Net.Unaware": {
    "repo": "core",
    "file": "languages/en.json",
@@ -2169,6 +2230,16 @@
    "date": null,
    "commit": null,
    "hash": "a07e591ed2f0"
+  },
+  "core:FASTFIGHTING.Battle.Net.Unselect": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.Net.Unselect",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "ce9c9590ba6e"
   },
   "core:FASTFIGHTING.Battle.Net.WantedBy": {
    "repo": "core",

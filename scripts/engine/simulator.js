@@ -2456,7 +2456,7 @@ function breakFree(run, u, turn) {
       continue;
     }
     if ( mind(run, u).lead?.kind !== "breakFree" ) return;
-    const cost = escapeCost(rules, u, hold);
+    const cost = escapeCost(rules, u, hold, run);
     if ( !turn.canAfford(cost) ) return;
     turn.spend(cost);
     const got = tryHold(run, u, hold);

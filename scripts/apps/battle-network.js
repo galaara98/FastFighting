@@ -6,10 +6,12 @@
  * focuses a creature. Each arrow and symbol shows its intensity (a hidden 1 for one that's only on or off), with one
  * less and one more (none at its most). With a creature in focus, what the pointer is on (or Tab steps to: act("next"))
  * glows and says what it is, and act("remove" | "lower" | "raise") works on it; "raise" on the creature in focus asks
- * for a new line from it (onAdd).
+ * for a new line from it (onAdd). Ctrl-click (or Cmd-click) adds a creature to the selection or takes it away;
+ * dragging one that's selected moves them all. A creature's menu (right-click): select or unselect it, select its
+ * team, select its leader. The selection is kept in state.selected.
  *
  * Built from the graph the Battle Interface makes ready (battle-interface.js networkView), with words already in it:
- *   nodes: [{id, type: "creature"|"thing"|"elsewhere", name, img, icon, cls, status, x, y (feet), marks: [mark]}]
+ *   nodes: [{id, type: "creature"|"thing"|"elsewhere", name, img, icon, cls, status, x, y (feet), team, leaderId, marks: [mark]}]
  *   edges: [{id, from, to, cls, icon, text, tip, adjust, lower, raise}]
  *   mark:  {id, icon, text, tip, cls, adjust, lower, raise}
  */
@@ -134,6 +136,9 @@ export function mountNetwork(root, graph, { state, focus = null, onFocus = () =>
     });
   }
   const linked = id => !focus || id === focus;
+  // (The selection: kept between drawings; only nodes still here.)
+  state.selected = new Set([...(state.selected ?? [])].filter(id => byId.has(id)));
+  const selected = state.selected;
   const lit = e => !focus || e.from === focus || e.to === focus;
   const near = e => !!focus && (e.from === focus || e.to === focus);
 
@@ -146,7 +151,7 @@ export function mountNetwork(root, graph, { state, focus = null, onFocus = () =>
         <i class="${escape(e.icon)}"></i>${e.text ? `<span>${escape(e.text)}</span>` : ""}${steps(e)}</div>`).join("")}
       ${graph.nodes.map(n => {
         const marks = n.marks ?? [];
-        return `<div class="ff-net-node is-${escape(n.type)} ${escape(n.cls ?? "")} ${n.id === focus ? "is-focus" : ""} ${linked(n.id) ? "" : "is-dim"}" data-node="${escape(n.id)}"
+        return `<div class="ff-net-node is-${escape(n.type)} ${escape(n.cls ?? "")} ${n.id === focus ? "is-focus" : ""} ${selected.has(n.id) ? "is-selected" : ""} ${linked(n.id) ? "" : "is-dim"}" data-node="${escape(n.id)}"
           role="button" tabindex="0" data-tooltip="${escape(n.tip ?? n.name)}">
           <div class="ff-net-face">${n.img ? `<img src="${escape(n.img)}" alt="">` : `<i class="${escape(n.icon ?? "fa-solid fa-circle")}"></i>`}</div>
           <span class="ff-net-name">${escape(n.name)}</span>${n.status ? `<span class="ff-net-status">${escape(n.status)}</span>` : ""}
@@ -229,9 +234,16 @@ export function mountNetwork(root, graph, { state, focus = null, onFocus = () =>
   // Dragging a node (its arrows with it), panning the rest; a press that doesn't move is a click.
   let press = null;
   const down = event => {
-    if ( event.button !== 0 || event.target.closest(".ff-net-step, .ff-net-tools, [data-hit], [data-label], [data-mark]") ) return;
+    if ( event.button !== 0 || event.target.closest(".ff-net-step, .ff-net-tools, .ff-net-menu, [data-hit], [data-label], [data-mark]") ) return;
+    closeMenu();
     const el = event.target.closest("[data-node]");
-    press = { id: el?.dataset.node ?? null, x: event.clientX, y: event.clientY, moved: false, start: el ? { ...at.get(el.dataset.node) } : { ...state.view } };
+    const id = el?.dataset.node ?? null;
+    // (A selected one drags the whole selection with it.)
+    const group = id && selected.has(id) ? [...selected] : id ? [id] : [];
+    press = {
+      id, x: event.clientX, y: event.clientY, moved: false, toggle: event.ctrlKey || event.metaKey,
+      start: id ? { ...at.get(id) } : { ...state.view }, group: new Map(group.map(g => [g, { ...at.get(g) }]))
+    };
     root.setPointerCapture(event.pointerId);
   };
   const move = event => {
@@ -242,12 +254,14 @@ export function mountNetwork(root, graph, { state, focus = null, onFocus = () =>
     press.moved = true;
     root.classList.add("is-dragging");
     if ( press.id ) {
-      const p = at.get(press.id);
-      p.x = press.start.x + dx / state.view.k;
-      p.y = press.start.y + dy / state.view.k;
-      p.fixed = true;
-      place(press.id);
-      for ( const e of edges ) if ( e.from === press.id || e.to === press.id ) draw(e);
+      for ( const [g, start] of press.group ) {
+        const p = at.get(g);
+        p.x = start.x + dx / state.view.k;
+        p.y = start.y + dy / state.view.k;
+        p.fixed = true;
+        place(g);
+      }
+      for ( const e of edges ) if ( press.group.has(e.from) || press.group.has(e.to) ) draw(e);
     } else {
       state.view = { ...state.view, x: press.start.x + dx, y: press.start.y + dy };
       view();
@@ -255,18 +269,74 @@ export function mountNetwork(root, graph, { state, focus = null, onFocus = () =>
   };
   const up = () => {
     if ( !press ) return;
-    const { id, moved } = press;
+    const { id, moved, toggle, group } = press;
     press = null;
     root.classList.remove("is-dragging");
-    if ( !moved ) return onFocus(id);
-    if ( id ) {
-      const p = at.get(id);
-      state.pinned.set(id, { x: p.x, y: p.y });
+    if ( !moved ) {
+      // (Ctrl-click: in the selection or out of it. A plain click: in focus, the selection let go.)
+      if ( toggle && id ) return setSelected(selected.has(id) ? [...selected].filter(x => x !== id) : [...selected, id]);
+      if ( selected.size ) setSelected([], { quiet: true });
+      return onFocus(id);
+    }
+    for ( const g of group?.keys() ?? [] ) {
+      const p = at.get(g);
+      state.pinned.set(g, { x: p.x, y: p.y });
     }
     onLayout();
   };
+  /** The selection, as it is now (drawn on the nodes at once). */
+  const setSelected = (ids, { quiet = false } = {}) => {
+    selected.clear();
+    for ( const id of ids ) if ( byId.has(id) ) selected.add(id);
+    for ( const [id, el] of nodeEl ) el.classList.toggle("is-selected", selected.has(id));
+    if ( !quiet ) onLayout();
+  };
+
+  // A creature's menu (right-click): select or unselect it, its team, its leader.
+  let menu = null;
+  const closeMenu = () => {
+    menu?.remove();
+    menu = null;
+  };
+  const openMenu = (event, id) => {
+    closeMenu();
+    const n = byId.get(id);
+    if ( !n ) return;
+    const team = graph.nodes.filter(o => o.type === "creature" && o.team && o.team === n.team).map(o => o.id);
+    const items = [
+      { act: "toggle", icon: selected.has(id) ? "fa-square-minus" : "fa-square-check", text: selected.has(id) ? words.unselect : words.select },
+      ...(team.length > 1 ? [{ act: "team", icon: "fa-users", text: words.selectTeam }] : []),
+      ...(n.leaderId && byId.has(n.leaderId) ? [{ act: "leader", icon: "fa-crown", text: words.selectLeader }] : [])
+    ];
+    const r = root.getBoundingClientRect();
+    menu = document.createElement("menu");
+    menu.className = "ff-net-menu";
+    menu.style.left = `${event.clientX - r.left}px`;
+    menu.style.top = `${event.clientY - r.top}px`;
+    menu.innerHTML = items.map(i => `<li><button type="button" data-menu="${i.act}"><i class="fa-solid ${i.icon}"></i> ${escape(i.text)}</button></li>`).join("");
+    menu.addEventListener("click", e => {
+      const act = e.target.closest("[data-menu]")?.dataset.menu;
+      if ( !act ) return;
+      e.stopPropagation();
+      if ( act === "toggle" ) setSelected(selected.has(id) ? [...selected].filter(x => x !== id) : [...selected, id]);
+      else if ( act === "team" ) setSelected([...new Set([...selected, ...team])]);
+      else if ( act === "leader" ) setSelected([...new Set([...selected, n.leaderId])]);
+      closeMenu();
+    });
+    root.append(menu);
+  };
+  const context = event => {
+    const el = event.target.closest("[data-node]");
+    if ( !el ) return;
+    event.preventDefault();
+    openMenu(event, el.dataset.node);
+  };
+  const escapeKey = event => {
+    if ( event.key === "Escape" ) closeMenu();
+  };
   const wheel = event => {
     event.preventDefault();
+    closeMenu();
     const r = root.getBoundingClientRect();
     zoomAt(event.deltaY < 0 ? ZOOM.step : 1 / ZOOM.step, event.clientX - r.left, event.clientY - r.top);
   };
@@ -361,6 +431,8 @@ export function mountNetwork(root, graph, { state, focus = null, onFocus = () =>
     return true;
   };
   root.addEventListener("pointerover", over);
+  root.addEventListener("contextmenu", context);
+  root.addEventListener("keydown", escapeKey);
   root.addEventListener("pointerdown", down);
   root.addEventListener("pointermove", move);
   root.addEventListener("pointerup", up);
@@ -385,7 +457,10 @@ export function mountNetwork(root, graph, { state, focus = null, onFocus = () =>
       return true;
     },
     destroy() {
+      closeMenu();
       root.removeEventListener("pointerover", over);
+      root.removeEventListener("contextmenu", context);
+      root.removeEventListener("keydown", escapeKey);
       root.removeEventListener("pointerdown", down);
       root.removeEventListener("pointermove", move);
       root.removeEventListener("pointerup", up);

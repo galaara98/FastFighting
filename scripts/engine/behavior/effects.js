@@ -192,8 +192,9 @@ export function applyOutcome(target, outcome, sourceId = null, action = null) {
     label: outcome.label ?? action?.name ?? "",
     concentration: !!action?.concentration,
     repeatSave: outcome.repeatSave?.type && Number.isFinite(Number(outcome.repeatSave.dc)) ? { type: outcome.repeatSave.type, dc: Number(outcome.repeatSave.dc) } : null,
-    // (One an action breaks: behavior/holds.js. {dc, others, with}.)
-    ...(outcome.escape ? { escape: { dc: Number.isFinite(Number(outcome.escape.dc)) ? Number(outcome.escape.dc) : null, others: outcome.escape.others ?? null, with: outcome.escape.with ?? null } } : {}),
+    // (One an action breaks: behavior/holds.js. {dc, others, with, key}, and whatever else the system put on it: the
+    // check that breaks it.)
+    ...(outcome.escape ? { escape: { ...outcome.escape, dc: Number.isFinite(Number(outcome.escape.dc)) ? Number(outcome.escape.dc) : null, others: outcome.escape.others ?? null, with: outcome.escape.with ?? null } } : {}),
     onlyVs: !!outcome.onlyVs,
     uses: Number(outcome.uses) > 0 ? Math.round(Number(outcome.uses)) : null,
     vs: typeof outcome.vs === "string" && outcome.vs ? outcome.vs : null,

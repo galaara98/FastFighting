@@ -584,6 +584,13 @@
 .ff-net-node.is-out .ff-net-face img { filter: grayscale(1); }
 .ff-net-node.is-current .ff-net-face { outline: 2px dashed var(--ff-accent); outline-offset: 3px; }
 .ff-net-node.is-focus .ff-net-face { box-shadow: 0 0 0 3px var(--ff-accent), 0 0 14px var(--ff-accent); }
+.ff-net-node.is-selected .ff-net-face { outline: 3px dashed var(--ff-accent); outline-offset: 4px; }
+.ff-net-menu { position: absolute; z-index: 20; margin: 0; padding: 4px; list-style: none; min-width: 10rem; border-radius: 6px; border: 1px solid var(--ff-line); background: var(--ff-net-bg); box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35); }
+.ff-net-menu button { width: 100%; text-align: left; border: none; background: none; padding: 4px 8px; display: flex; gap: 6px; align-items: center; }
+.ff-net-menu button:hover { background: var(--ff-surface-2); }
+.ff-battle-teams div { display: flex; flex-wrap: wrap; gap: 4px; }
+.ff-battle-teams .ff-btn { width: auto; padding: 0 0.5rem; font-size: 0.85em; }
+.ff-battle-teams .ff-btn.is-current { border-color: var(--ff-accent); color: var(--ff-accent); opacity: 1; }
 .ff-net-node.is-dim { opacity: 0.4; }
 .ff-net-name, .ff-net-status { position: absolute; left: 0; transform: translateX(-50%); white-space: nowrap; pointer-events: none; text-shadow: 0 0 3px var(--ff-net-bg), 0 0 3px var(--ff-net-bg); }
 .ff-net-name { top: 33px; font-size: 12px; font-weight: 600; }
