@@ -250,7 +250,8 @@ export function hasUses(u, action) {
   // (In another shape: nothing that needs hands, and no spells.)
   if ( hasTrait(u, "noGear") && (u.handActions?.has(action.id) || isMagical(action)) ) return false;
   // (resourceCost: what one use takes, a point by default: Daggerheart's 3 Hope for a class's Hope feature.)
-  if ( action.resource ) return resourceLeft(u, action) >= (action.resourceCost ?? 1);
+  if ( action.resource && resourceLeft(u, action) < (action.resourceCost ?? 1) ) return false;
+  // (And so many uses, beside what it costs: a Fear, once a scene.)
   if ( Number.isFinite(action.uses) ) return (u.uses[action.id] ?? 0) > 0;
   return true;
 }
@@ -258,7 +259,7 @@ export function hasUses(u, action) {
 export function spendUse(u, action) {
   if ( action.resource && action.shared && u.sharedPools ) u.sharedPools[action.shared] -= action.resourceCost ?? 1;
   else if ( action.resource ) u.resources[action.resource] -= action.resourceCost ?? 1;
-  else if ( Number.isFinite(action.uses) ) u.uses[action.id] -= 1;
+  if ( Number.isFinite(action.uses) ) u.uses[action.id] -= 1;
 }
 
 export { costOf, costUnits };

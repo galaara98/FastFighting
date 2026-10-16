@@ -858,8 +858,8 @@ export const upgradesSave = (t, type) => !!t.spec.saveUpgrades?.length && [].con
  * The DC to beat with a skill against a target's defense (PF2e: Will DC for Demoralize, Reflex DC for Trip,
  * Perception DC for Feint): the system's, else 10 + the defense's modifier.
  */
-export function defenseDc(run, target, against) {
-  const own = run.prep.rules.defenseDc?.(target, against);
+export function defenseDc(run, target, against, by = null) {
+  const own = run.prep.rules.defenseDc?.(target, against, by);
   if ( Number.isFinite(own) ) return own;
   if ( against === "perception" ) return 10 + (target.spec.perception ?? target.spec.initiative?.mod ?? typical(run.prep.rules, "skill", target.spec.level ?? 0));
   if ( against === "ac" ) return target.spec.defenses.ac;

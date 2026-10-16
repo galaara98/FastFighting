@@ -139,6 +139,8 @@ const lower = new Map([...MANEUVERS, ...CONDITIONS].map(id => [id.toLowerCase(),
 export function conditionOf(key, map = null) {
   if ( !key ) return null;
   const mapped = map?.(key);
+  // (Not told in a fight at all, the system says: Ironsworn's burdens.)
+  if ( mapped === false ) return null;
   if ( mapped && CONDITIONS.includes(mapped) ) return mapped;
   const k = String(key).toLowerCase();
   const id = SYNONYMS[k] ?? lower.get(k) ?? lower.get(k.replace(/-/g, ""));

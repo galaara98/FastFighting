@@ -100,7 +100,7 @@ export function landing(run, u, action) {
 export function checkDc(run, u, check) {
   if ( !check?.against ) return Number(check?.dc) || 0;
   const foes = enemiesOf(run, u).filter(isStanding);
-  return foes.length ? Math.max(...foes.map(f => defenseDc(run, f, check.against))) : Number(check.dc) || 10;
+  return foes.length ? Math.max(...foes.map(f => defenseDc(run, f, check.against, u))) : Number(check.dc) || 10;
 }
 
 /** What a buff is worth to a friend, over what its roll may come to. */

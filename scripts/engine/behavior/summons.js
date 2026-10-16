@@ -48,11 +48,12 @@ function worthOf(run, u, action) {
 
 /**
  * Does u call its creatures now? The summoning worth the most, if it beats what attacking would do with the same
- * actions over the next couple of rounds. The feral don't; nobody calls what's already here.
+ * actions over the next couple of rounds. The feral don't (`always`: whatever its tactics, an environment's); nobody
+ * calls what's already here.
  */
-export function decideSummon(run, u, turn) {
+export function decideSummon(run, u, turn, { always = false } = {}) {
   const list = u.prep.summonActions;
-  if ( !list?.length || liveTier(run, u) <= TACTICAL.FERAL ) return null;
+  if ( !list?.length || (!always && liveTier(run, u) <= TACTICAL.FERAL) ) return null;
   const rules = run.prep.rules;
   const baseline = offenseBaseline(run, u);
   let best = null;

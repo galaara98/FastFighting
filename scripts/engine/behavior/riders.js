@@ -28,6 +28,7 @@ import { TACTICAL, clamp } from "../../constants.js";
 import { meanPart, samplePart } from "../dice.js";
 import { liveTier, isStanding, edgeDistance, behaviorOf } from "../battle-state.js";
 import { meanDamageVs, threatOf } from "./evaluate.js";
+import { isImmune } from "./control.js";
 import { outcomeWorth } from "./effects.js";
 
 const isWeapon = action => action.kind === "strike";
@@ -87,7 +88,9 @@ export function chooseDeed(run, u, action, t) {
     tiers.forEach((tier, i) => {
       const next = tiers[i + 1];
       const p = atLeast(faces, tier.min) - (next ? atLeast(faces, next.min) : 0);
-      if ( p > 0 ) worth += p * (tier.outcome?.allies ? rallied(run, u, tier.outcome).reduce((s, a) => s + outcomeWorth(run, u, a, tier.outcome), 0)
+      // (A tier its target is immune to, nothing: as applyDeed has it.)
+      if ( p <= 0 || (!tier.outcome?.allies && !tier.outcome?.self && isImmune(run, t, { id: `deed:${deed.id}:${tier.min}`, onSave: [tier.outcome] })) ) return;
+      worth += p * (tier.outcome?.allies ? rallied(run, u, tier.outcome).reduce((s, a) => s + outcomeWorth(run, u, a, tier.outcome), 0)
         : tier.outcome?.self ? outcomeWorth(run, u, u, tier.outcome) : harm(run, u, t, tier.outcome));
     });
     worth *= (deed.guard && u.tac?.shield === "always" ? 1.5 : 1) * (1 + (deed.leans ?? []).reduce((s, k) => s + Math.max(0, Number(b[k]) || 0), 0));

@@ -1562,6 +1562,7 @@ function landOutcome(run, u, target, outcome, action, { damage: harms = true } =
   const self = !!outcome.self;
   const on = self ? u : target;
   const effect = applyOutcome(on, outcome, u.id, action);
+  if ( isUp(on) ) gainResources(run, on, outcome);
   // (A botched Grapple: the foe has hold of the one who tried.)
   const holder = self ? target : u;
   if ( outcome.grab && isUp(on) && isUp(holder) && !cantBeGrabbed(run, on, action) ) {
@@ -1577,6 +1578,18 @@ function landOutcome(run, u, target, outcome, action, { damage: harms = true } =
   const hit = rollHit(run, u, action ?? { id: "outcome", damage: outcome.damage }, on, outcome.damage, 1, false);
   hit.apply();
   return hit.total;
+}
+
+/**
+ * The resources an outcome gives t (Ironsworn momentum) or takes from it (a negative amount: Daggerheart's Hope lost),
+ * as the system says (rules.gainResource), else simply added.
+ */
+function gainResources(run, t, outcome) {
+  for ( const [k, v] of Object.entries(outcome?.resources ?? {}) ) {
+    const n = Number(v) || 0;
+    if ( run.prep.rules.gainResource ) run.prep.rules.gainResource(t, k, n);
+    else t.resources[k] = (t.resources[k] ?? 0) + n;
+  }
 }
 
 /** Can't it be grabbed: the system's immunities say so, or its own (immune to grabbed, grappled)? */
@@ -1765,11 +1778,7 @@ function executeBuff(run, u, action, targets, worth = 0, turn = null) {
     const on = outcome.vsFocus ? focusOf(run, t) : null;
     if ( on ) focus.set(t, on.unit);
     applyOutcome(t, on ? { ...outcome, vs: on.unit.id } : outcome, u.id, action);
-    for ( const [k, v] of Object.entries(outcome.resources ?? {}) ) {
-      const n = Number(v) || 0;
-      if ( run.prep.rules.gainResource ) run.prep.rules.gainResource(t, k, n);
-      else t.resources[k] = (t.resources[k] ?? 0) + n;
-    }
+    gainResources(run, t, outcome);
     run.prep.rules.onOutcome?.(run, u, t, outcome);
   }
   if ( run.neutral ) for ( const t of landed ) crossed(run, u, t, "help", 0.5, logger(run));
@@ -1831,6 +1840,8 @@ function executeHeal(run, u, action, target) {
   const wasDown = target.status === STATUS.DOWN;
   const before = target.hp;
   if ( amount > 0 ) rules.onHealed(target, amount);
+  // (What else the heal gives, where it took: Stress cleared with it, Daggerheart's Bark at the Moon.)
+  if ( multiplier > 0 ) gainResources(run, target, action);
   u.healedTargets.add(`${action.id}|${target.id}`);
   spendUse(u, action);
   noteHeal(run, u, target, target.hp - before, wasDown && target.status === STATUS.STANDING, {
@@ -2046,7 +2057,7 @@ function workTheDoor(run, u, turn, door, target) {
     const roll = rollCheck(rules, run.rng, plan.strike.bonus ?? 0, door.ac, { kind: "attack", roller: u });
     let damage = 0;
     if ( roll.degree >= 2 ) {
-      const parts = roll.degree === 3 ? criticalParts(rules, plan.strike.damage) : plan.strike.damage;
+      const parts = roll.degree === 3 ? (plan.strike.critDamage ?? criticalParts(rules, plan.strike.damage)) : plan.strike.damage;
       const rolled = sampleDamage(parts ?? [], run.rng, 1);
       damage = doorDamage(rules, door, Object.values(rolled.byType).reduce((s, v) => s + v, 0));
       state.hp -= damage;
@@ -2059,13 +2070,15 @@ function workTheDoor(run, u, turn, door, target) {
       natural: roll.natural, mod: plan.strike.bonus ?? 0, total: roll.total, dc: door.ac, degree: roll.degree, ...where
     });
   } else {
-    const roll = rollCheck(rules, run.rng, plan.mod, plan.dc, { kind: "check", roller: u, faces: plan.faces });
-    const success = roll.degree >= 2;
+    // (The system's own try where it has one: Ironsworn's Face Danger, its momentum and price paid. Else a check.)
+    const own = rules.tryDoor?.(run, u, door, { method: plan.method, mod: plan.mod, dc: plan.dc }) ?? null;
+    const roll = own ?? rollCheck(rules, run.rng, plan.mod, plan.dc, { kind: "check", roller: u, faces: plan.faces });
+    const success = own ? !!own.success : roll.degree >= 2;
     if ( success ) openDoor(run, door, state, plan.method === "force");
     else thwart(run, u, kind, target.id, 12);
-    log(run, u, {
-      type: "door", method: plan.method, success, natural: roll.natural, mod: plan.mod, total: roll.total, dc: plan.dc, degree: roll.degree, ...where
-    });
+    log(run, u, own
+      ? { type: "door", method: plan.method, success, degree: own.degree, ...(own.said?.text ? { said: own.said.text } : {}), ...where }
+      : { type: "door", method: plan.method, success, natural: roll.natural, mod: plan.mod, total: roll.total, dc: plan.dc, degree: roll.degree, ...where });
   }
   if ( state.open ) relieve(u, kind, target.id);
   return "worked";
@@ -2518,6 +2531,13 @@ function hazardTurn(run, u) {
   run.acting = u;
   u.turn = turn;
   let made = 0;
+  // (One that calls creatures on its turn, an environment's: Daggerheart's Patient Hunter. No tactics hold it back.)
+  const summon = decideSummon(run, u, turn, { always: true });
+  if ( summon ) {
+    turn.spend(costOf(run.prep.rules, summon, u));
+    executeSummon(run, u, summon);
+    spendUse(u, summon);
+  }
   for ( let tries = 0; tries < 6 && !battleOver(run); tries++ ) {
     const action = u.prep.offense.find(a => turn.canAfford(costOf(run.prep.rules, a, u)) && hasUses(u, a) && nextTargetInReach(run, u, a));
     if ( !action ) break;

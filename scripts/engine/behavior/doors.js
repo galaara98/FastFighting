@@ -9,8 +9,9 @@
  * The core knows only the shape of it. The system says what a door is like (rules.door: its defense, hit points and
  * the DCs to force or pick it, plus anything its own rules need), what each way costs (rules.doorCosts), and how much
  * of a blow gets through (rules.doorDamage: PF2e takes off Hardness, 5e has a damage threshold); the helper says what
- * a creature can bring to it (spec.doorWork: {force: {mod}, pick: {mod}}). Each failed try wears down the desire
- * that brought it there.
+ * a creature can bring to it (spec.doorWork: {force: {mod}, pick: {mod}}). A system with its own way of forcing or
+ * picking one plays the try itself (rules.tryDoor(run, u, door, {method, mod, dc}): {success, degree, said: {text}},
+ * or null for the core's check: Ironsworn's Face Danger). Each failed try wears down the desire that brought it there.
  */
 import { degreeDistribution } from "../probability.js";
 import { costOf, costUnits, normalizeCost, mainPool } from "../turn.js";

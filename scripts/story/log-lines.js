@@ -157,7 +157,7 @@ function baseLine(e) {
       return t("Disengage", { actor: e.actor, label: e.label || t("Disengages") });
     case "door": {
       const method = { open: "DoorOpen", force: "DoorForce", pick: "DoorPick", attack: "DoorAttack", giveup: "DoorGiveUp" }[e.method] ?? "DoorOpen";
-      const roll = e.natural !== undefined ? ` · ${dice(e.natural, e.mod, e.total, e.dc, e.method === "attack" ? term("ac") : t("DC"))}` : "";
+      const roll = e.natural !== undefined ? ` · ${dice(e.natural, e.mod, e.total, e.dc, e.method === "attack" ? term("ac") : t("DC"))}` : e.said ? ` · ${e.said}` : "";
       return t("Door", { actor: e.actor, method: t(method), roll, damage: e.method === "attack" && e.hit ? ` · ${t("DamageN", { n: e.damage })}` : "", result: e.method === "giveup" ? t("DoorGaveUp") : e.success ? t("DoorOpened") : t("DoorHolds") });
     }
     case "thought": return t("Thought", {

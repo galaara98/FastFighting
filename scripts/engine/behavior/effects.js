@@ -619,6 +619,8 @@ export function outcomeWorth(run, by, t, outcome, { versus = null } = {}) {
   if ( outcome.move && by && by !== t ) worth -= forcedWorth(run, by, t, outcome.move);
   // Its own damage at that degree (PF2e Trip, critically): as dealt.
   if ( outcome.damage?.length && by && by !== t ) worth -= rules.applyIwr ? rules.applyIwr(iwrOf(t), meanByType(outcome.damage)) : outcome.damage.reduce((s, p) => s + Math.max(0, meanPart(p)), 0);
+  // (What else it's worth to t, as the system reckons it: DCC's rally, its morale.)
+  if ( rules.outcomeWorth ) worth += Number(rules.outcomeWorth(run, by, t, outcome)) || 0;
   return worth;
 }
 
