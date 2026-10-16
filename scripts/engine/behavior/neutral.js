@@ -45,10 +45,23 @@ import { levelOf, want, think, setLean, allDesires, styleOf } from "./desire.js"
 import { perceives } from "./senses.js";
 import { prefersTalk, canTalk, impatience } from "./standoff.js";
 
-/** How much a lean makes it want each member of that side safe ("determined"). */
+/** How strongly a neutral leans to a side (how readily it meddles for it, takes offense for it, looks like one of it). */
 export const LEAN = 50;
-/** How much neutral tokens want each other safe ("wants"). */
+/** How much neutral tokens want each other safe ("wants"), before their personality. */
 export const FELLOW = 30;
+/**
+ * Leaning isn't guarding: of a lean, wanting each of that side's members safe is a share ("wants", for an ordinary one),
+ * then the creature's personality: the loyal more, the selfish less, the bold more (keeping someone safe takes nerve),
+ * and half its pills' wish to protect (the rest goes to the friend it would guard: desire.js styleWants).
+ */
+export const LEAN_WANT = Object.freeze({ share: 0.6, loyal: 0.3, selfish: 0.3, brave: 0.2, pills: 0.5 });
+
+/** How much this creature wants someone safe, out of a lean (or a friend group's) of this strength. */
+export function leanWant(run, u, base) {
+  if ( !(base > 0) ) return 0;
+  const trait = k => liveTrait(run, u, k) - 50;
+  return clamp(base + trait("loyal") * LEAN_WANT.loyal - trait("selfish") * LEAN_WANT.selfish + trait("brave") * LEAN_WANT.brave + (styleOf(u).protect ?? 0) * LEAN_WANT.pills, 0, 100);
+}
 /** A lean this weak no longer makes it look like one of that side. */
 const SHOWS = 25;
 /** Offended at a side once what that side has done against its wishes adds up to this. */
@@ -110,10 +123,13 @@ export function refreshLeans(run) {
     const side = leanSide(run, u);
     const level = u.leanLevel ?? LEAN;
     const members = side && level > 0 ? run.units.filter(o => o !== u && o.side === side && o.status !== STATUS.DEAD).map(o => o.id) : [];
-    const key = `${side}|${members.length}|${Math.round(level)}`;
+    // (As much as it would want them safe, by its personality: leaning isn't guarding.)
+    const forMembers = leanWant(run, u, level * LEAN_WANT.share);
+    const forFellows = leanWant(run, u, FELLOW);
+    const key = `${side}|${members.length}|${Math.round(forMembers)}|${Math.round(forFellows)}`;
     if ( u.leaning === key ) continue;
     u.leaning = key;
-    setLean(u, [...fellows.map(id => ["protect", id, FELLOW]), ...members.map(id => ["protect", id, level])]);
+    setLean(u, [...fellows.map(id => ["protect", id, forFellows]), ...members.map(id => ["protect", id, forMembers])]);
   }
 }
 

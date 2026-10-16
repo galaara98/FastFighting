@@ -859,7 +859,7 @@ const AS_RELATION = new Set(["grabbed", "controlled"]);
  *   things     what goals are about, while they're wanted: [{id, type, x, y, name, locked}]
  *   setAside   what the GM set aside (held at 0), to hand back: [{type: "desire"|"goal", id, kind, targetId|thingId}]
  * A player's character FastFighting isn't playing shows no desires or goals (the player decides what it wants), only
- * what's on it.
+ * what's on it; nor does a bystander not in the fight yet (what it wants shows once it joins).
  */
 export function networkOf(run) {
   const creatures = [];
@@ -870,7 +870,8 @@ export function networkOf(run) {
   for ( const u of run.units ) {
     const player = playerRuns(run, u);
     creatures.push({ id: u.id, status: u.status, side: u.side, active: !!u.active, aware: !!u.aware, pos: u.pos ? { x: u.pos.x, y: u.pos.y } : null, hazard: !!u.spec.hazard, player, controlledBy: u.controlledBy ?? null });
-    const minded = !player;
+    // (A bystander's wants, its lean toward a side among them, show once it joins the fight: until then it hasn't.)
+    const minded = !player && !!u.active;
     // What it wants of others (and of itself).
     if ( minded ) {
       for ( const d of rankedDesires(run, u) ) {

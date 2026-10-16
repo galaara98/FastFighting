@@ -52,6 +52,18 @@ describe("the map of minds", () => {
     expect(networkOf(run).marks.some(m => m.on === "guard" && m.key === "unaware")).toBe(false);
   });
 
+  test("a bystander's wants (a lean toward a side) are kept, but shown only once it joins the fight", () => {
+    const run = scene();
+    const guard = run.byId.get("guard");
+    // (The guard is the foe's: it would want the foe safe.)
+    guard.desire.lean.set("protect|foe", 30);
+    expect(guard.active).toBe(false);
+    expect(linksOf(networkOf(run), "desire", "guard")).toEqual([]);
+    expect(networkOf(run).marks.find(m => m.on === "guard")).toMatchObject({ key: "unaware" });
+    guard.active = true;
+    expect(linksOf(networkOf(run), "desire", "guard").find(l => l.to === "foe")).toMatchObject({ kind: "protect", level: 30 });
+  });
+
   test("what the GM set aside, to hand back", () => {
     const run = scene();
     applyFact(run, { kind: "want", id: "hero", desire: "hurt", targetId: "foe", level: 0 });
