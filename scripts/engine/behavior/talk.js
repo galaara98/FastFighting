@@ -300,7 +300,7 @@ export function bestPitch(run, talker, t) {
     if ( (aim === "recruit" || aim === "pacify") && kind === "intimidate" ) continue; // nobody is threatened into friendship (or peace)
     if ( kind === "intimidate" && (behaviorOf(talker).peacekeeping ?? 0) >= 0.5 ) continue; // (a Peacekeeper never threatens)
     study ??= studyBonus(talker, t, { words: true });
-    const { mod: base, advantage, dice } = checkRoll(run, talker, pitch.mod + study, t);
+    const { mod: base, advantage, dice } = checkRoll(run, talker, pitch.mod + study, t, { purpose: "talk", skill: pitch.skill ?? kind });
     shared ??= talkDCShared(run, talker, t);
     const dc = talkDC(run, talker, t, kind, shared);
     // (A Lore-Collector that sized it up: about 2.5 times as likely to get through.)

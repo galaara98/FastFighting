@@ -94,6 +94,7 @@
  */
 import { keepClear } from "./behavior/traps.js";
 import { tiedOut } from "./behavior/holds.js";
+import { holderOf, cutOff } from "./behavior/troubles.js";
 import { withManeuver } from "./maneuvers.js";
 import { STATUS, NEUTRAL_PARTY, AVOID_KILLING, clamp, fudged, tacticalTier, TRAITS } from "../constants.js";
 import { meanPart } from "./dice.js";
@@ -823,15 +824,16 @@ export const isMagical = action => !!action && (!!action.magical || action.rank 
  * friend's aura (spec.saveAura {bonus, range}: 5e Aura of Protection) adds to it while that friend is up and near
  * (the best one only).
  */
-export function saveRoll(run, target, type, { magical = false, from = null } = {}) {
+export function saveRoll(run, target, type, { magical = false, from = null, action = null } = {}) {
   if ( Array.isArray(type) ) {
-    const rolls = type.map(t => saveRoll(run, target, t, { magical, from }));
+    const rolls = type.map(t => saveRoll(run, target, t, { magical, from, action }));
     return rolls.reduce((best, r) => (r.mod + 3.5 * r.advantage > best.mod + 3.5 * best.advantage ? r : best), rolls[0] ?? saveRoll(run, target, "none"));
   }
   const base = target.spec.defenses[type] ?? typical(run.prep.rules, "save", target.spec.level ?? 0);
   // (Against what `from` set off: the cover it has from it, for the system's rules (PF2e's Reflex, 5e's Dexterity), or
-  // the core's little more where they have none.)
-  const m = run.prep.rules.modifiers?.save?.({ unit: target, type, cover: coverOf(run, target, from), from }) ?? {};
+  // the core's little more where they have none; and the action it's against, where there is one: a stupefied caster's
+  // spell, PF2e's, is the easier to resist.)
+  const m = run.prep.rules.modifiers?.save?.({ unit: target, type, cover: coverOf(run, target, from), from, action }) ?? {};
   const mods = target.mods ?? {};
   let advantage = netAdvantage(m.advantage ?? 0, mods.saveAdv ?? 0);
   if ( magical && target.spec.magicResistance ) advantage = netAdvantage(advantage, 1);
@@ -868,10 +870,13 @@ export function defenseDc(run, target, against, by = null) {
 
 /**
  * A skill check (talking, first aid): the rules' situational bonus and advantage, and u's own bonuses to checks (a
- * die such as Guidance's, advantage), with those that count against `target` alone when there is one.
+ * die such as Guidance's, advantage), with those that count against `target` alone when there is one. The rules hear
+ * what it's for (`purpose`: "talk", "goad", "theft", "firstAid", "sizeUp", "notice", "heal", "aid", "control"), the
+ * skill where the spec names one (a pitch's, first aid's, theft's), and the action that calls for it: PF2e's
+ * attribute penalties.
  */
-export function checkRoll(run, u, mod, target = null) {
-  const m = run.prep.rules.modifiers?.check?.({ unit: u }) ?? {};
+export function checkRoll(run, u, mod, target = null, { purpose = null, skill = null, action = null } = {}) {
+  const m = run.prep.rules.modifiers?.check?.({ unit: u, target, purpose, skill, action }) ?? {};
   const own = modsAgainst(u, target);
   return { mod: (Number(mod) || 0) + (m.bonus ?? 0) + (own.checks ?? 0), advantage: netAdvantage(m.advantage ?? 0, own.checkAdv ?? 0), dice: own.checkDie ?? null, roller: u };
 }
@@ -999,7 +1004,10 @@ export function separation(run, a, t) {
  * one, a free spot within reach (one with every spot round it taken, it can't), and the way round those in the way.
  */
 export function movesNeeded(run, a, t, action) {
-  if ( !run.prep.options.positioning ) return 0;
+  // (Inside another creature: it reaches the one holding it from in there, and nothing outside, nor anything outside
+  // it: behavior/troubles.js cutOff.)
+  if ( cutOff(run, a, t) ) return Infinity;
+  if ( !run.prep.options.positioning || holderOf(run, a) === t ) return 0;
   const ap = approach(run, a, t);
   if ( action.range ) {
     const maxRange = action.range.max ?? action.range.increment * 3;

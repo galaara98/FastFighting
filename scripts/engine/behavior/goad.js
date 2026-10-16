@@ -58,7 +58,7 @@ export function goadPitch(run, talker, t, action) {
   for ( const kind of action.pitches ?? GOAD_KINDS ) {
     const pitch = talker.spec.social?.pitches?.[kind];
     if ( typeof pitch?.mod !== "number" ) continue;
-    const { mod: base, advantage, dice } = checkRoll(run, talker, pitch.mod + study, t);
+    const { mod: base, advantage, dice } = checkRoll(run, talker, pitch.mod + study, t, { purpose: "goad", skill: pitch.skill ?? kind, action });
     const dc = t.spec.social?.resist?.[kind]?.dc ?? typical(rules, "dc", t.spec.level ?? 0);
     const lift = boostBonus(rules, talker, t, base, dc, { advantage, dice, kind: "check", roller: talker });
     const mod = base + lift;

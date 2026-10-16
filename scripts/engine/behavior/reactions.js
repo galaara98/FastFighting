@@ -20,6 +20,7 @@ import { TACTICAL } from "../../constants.js";
 import { areEnemies, isStanding, liveTier, edgeDistance, heldOff, behaviorOf } from "../battle-state.js";
 import { meanPart } from "../dice.js";
 import { mind } from "./desire.js";
+import { cutOff } from "./troubles.js";
 
 /** Reactions u has each round: none in a system without opportunity attacks. */
 export function reactionsPerRound(rules, u) {
@@ -53,7 +54,8 @@ function nearbyFoes(run, u) {
   if ( u.nearbyKey === key ) return u.nearby;
   const list = [];
   for ( const e of run.units ) {
-    if ( e === u || !areEnemies(run, u, e) || heldOff(run, u, e) ) continue; // (not across a standoff)
+    // (Not across a standoff, nor into or out of another creature: one inside goes where it goes.)
+    if ( e === u || !areEnemies(run, u, e) || heldOff(run, u, e) || cutOff(run, u, e) ) continue;
     // Beside it: engaged in melee, or on the map within reach.
     const d = u.adjacent.has(e.id) ? 0 : edgeDistance(e, u);
     if ( d !== null && d <= 15.5 ) list.push({ e, d });

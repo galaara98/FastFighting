@@ -47,7 +47,7 @@ import { threatOf, unitsPerTurn, attacksIn } from "./evaluate.js";
 import { meanPart } from "../dice.js";
 import { forcedWorth } from "./forced.js";
 import { PROFILES, profileOf, profiled, profileMods, hasTrait } from "../conditions.js";
-import { parseFormula } from "../dice.js";
+import { harmParts } from "./troubles.js";
 
 /** Mean damage of some parts, by type. */
 function meanByType(parts) {
@@ -56,12 +56,16 @@ function meanByType(parts) {
   return out;
 }
 
-/** What one of the core's conditions harms each turn, on the whole, at that value (one laid by someone: as a typical one). */
-function harmMean(p, v) {
-  const [formula, type] = p.harm;
-  const f = typeof formula === "function" ? formula(v) : formula ?? "2d6";
-  if ( !f ) return 0;
-  return Math.max(0, meanPart(parseFormula(f, type)));
+/**
+ * What one of the core's conditions harms t with each turn, on the whole, at that value, laid by `by`: as the system
+ * puts it (rules.conditionHarm: a 5e gullet's own acid), else the core's (troubles.js harmParts), against t's
+ * resistances.
+ */
+function harmMean(run, t, key, v, p, by) {
+  const parts = harmParts(run, t, key, v, p, by ?? null);
+  if ( !parts.length ) return 0;
+  const rules = run.prep.rules;
+  return rules.applyIwr ? rules.applyIwr(iwrOf(t), meanByType(parts), t) : parts.reduce((s, x) => s + Math.max(0, meanPart(x)), 0);
 }
 
 /** How badly a taunt makes its bearer want to go for the taunter, unless it says: "driven", above a clear choice. */
@@ -561,6 +565,7 @@ export function outcomeWorth(run, by, t, outcome, { versus = null } = {}) {
   const grabs = outcome.grab && !(by && t.grabbedBy === by.id);
   const fresh = freshConditions(t, grabs ? { ...(outcome.conditions ?? {}), grabbed: 1, immobilized: 1 } : outcome.conditions);
   const weighed = {};
+  let held = false;
   for ( const [k, v] of Object.entries(fresh) ) {
     // Turned against its own side: what it would have done to them, and what it now does for the other.
     if ( k === "controlled" ) {
@@ -568,11 +573,12 @@ export function outcomeWorth(run, by, t, outcome, { versus = null } = {}) {
       continue;
     }
     // (The core's own conditions, where the system says nothing of them: their bonuses and penalties, and what more
-    // they take away; the harm they do each turn.)
+    // they take away; the harm they do each turn, in the system's terms; held inside `by`.)
     const own = rules.conditionMods?.(k, v) ? null : profileOf(t, k);
     const asMods = rules.conditionMods?.(k, v) ?? profileMods(own, v, t.coreConds?.scale ?? 1);
     if ( own && (own.weight || own.act === false) ) weighed[k] = v;
-    if ( own?.harm ) perRound -= harmMean(own, v);
+    if ( own?.harm ) perRound -= harmMean(run, t, k, v, own, by);
+    if ( own?.inside && by && by !== t ) held = true;
     if ( outcome.onlyVs && by && by !== t ) {
       // Off-guard to its source alone (PF2e Feint): only the source's own blows land easier, and its sneak attacks
       // now find their mark. Nothing else about t changes.
@@ -582,6 +588,12 @@ export function outcomeWorth(run, by, t, outcome, { versus = null } = {}) {
     else weighed[k] = v;
   }
   if ( Object.keys(weighed).length ) perRound -= conditionWeight(rules, weighed) * out * (outcome.endsOnDamage ? 0.6 : 1);
+  // Held inside `by` (swallowed, engulfed): it can fight none but `by`, so the blows it would have struck whoever else
+  // it's set on are spared them, `by` taking them instead.
+  if ( held ) {
+    const foe = typicalFoe(run, t);
+    if ( foe && foe !== by ) perRound -= Math.max(0, damageOut(run, t, foe) - damageOut(run, t, by));
+  }
   perRound += modsPerRound(run, t, outcome.mods, out, inc, share);
   if ( Array.isArray(outcome.mark) && by && by !== t ) {
     const extra = outcome.mark.reduce((s, p) => s + Math.max(0, meanPart(p)), 0);

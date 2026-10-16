@@ -6,9 +6,10 @@ import { degreeDistribution } from "../probability.js";
 import { attackRoll, attackOptions, currentAc, saveRoll, bonusDamageParts, enemiesOf, isStanding, isMagical, upgradesSave, boostBonus } from "../battle-state.js";
 import { costOf, costUnits, mainPool } from "../turn.js";
 import { controlValue } from "./control.js";
-import { iwrOf } from "./effects.js";
+import { iwrOf, outcomeWorth } from "./effects.js";
 import { critExtraMean } from "./riders.js";
 import { castChanceOf } from "./casting.js";
+import { stepOf } from "./afflictions.js";
 import { hasTrait } from "../conditions.js";
 
 function meanByType(parts) {
@@ -35,6 +36,46 @@ function effectMean(action) {
     if ( e.kind === "move" || e.move ) total += 1.5;
     // A save on a hit: about half the time it bites (the damage), and the condition is worth a little.
     if ( e.kind === "save" ) total += 0.6 * (e.damage ?? []).reduce((s, p) => s + Math.max(0, meanPart(p)), 0) + (e.conditions ? 0.75 : 0);
+  }
+  return total;
+}
+
+/** Does the action lay an affliction (a poison, a disease, a curse)? */
+const afflicts = action => !!action.effects?.some(e => e.kind === "affliction");
+
+/** Rounds an affliction's stage is reckoned to last, for its worth (no more than the fight will: effects.js usefulRounds). */
+const AFFLICTION_ROUNDS = 10;
+
+/** Each way an affliction's own exposure save may go for t: [[chance, stages it takes hold by]] (no save: it takes hold). */
+function exposureSteps(run, t, e) {
+  const rules = run.prep.rules;
+  if ( !e.save ) return [[1, 1]];
+  const save = saveRoll(run, t, e.save.type, { action: e });
+  const dist = upgradedDistribution(degreeDistribution(rules, save.mod, e.save.dc, { advantage: save.advantage, kind: "save", roller: t }), t, e.save.type);
+  return dist.map((p, d) => [p, stepOf(rules, d, "exposure")]);
+}
+
+/**
+ * What the afflictions an action lays would do to t besides their damage (effectMean counts that): the conditions and
+ * penalties of the stage each would take hold at, worth what any outcome's are (effects.js outcomeWorth), as often as
+ * it would take hold once the action has landed: by its own exposure save, or (bySave) as the action's own save went,
+ * at `degree`. Not one already on t, nor one it's immune to, nor deep inside another estimate (threatOf).
+ */
+function afflictionWorth(run, a, action, t, degree = null) {
+  if ( (run.threatDepth ?? 0) >= 2 ) return 0;
+  const rules = run.prep.rules;
+  let total = 0;
+  for ( const e of action.effects ?? [] ) {
+    if ( e.kind !== "affliction" || !e.stages?.length ) continue;
+    if ( t.afflictions?.some(x => x.spec.id === e.id) || t.spec.iwr?.immune?.some(k => e.traits?.includes(k)) ) continue;
+    const steps = e.bySave && degree !== null ? [[1, stepOf(rules, degree, "exposure")]] : exposureSteps(run, t, e);
+    for ( const [p, step] of steps ) {
+      if ( !(p > 0) || !(step > 0) ) continue;
+      const stage = e.stages[Math.min(e.stages.length, Math.max(1, (Number(e.start) || 1) - 1 + step)) - 1];
+      if ( !stage?.conditions && !stage?.mods ) continue;
+      const worth = outcomeWorth(run, a, t, { conditions: stage.conditions, mods: stage.mods, rounds: Number(e.maxDuration) || AFFLICTION_ROUNDS });
+      total += p * Math.max(0, -worth);
+    }
   }
   return total;
 }
@@ -118,9 +159,11 @@ export function expectedDamage(run, a, action, t, attacksMade = 0) {
   }
   if ( action.kind === "save" && action.save ) {
     const extra = bonusDamageParts(run, a, action, t).reduce((s, p) => s + Math.max(0, meanPart(p)), 0);
-    const save = saveRoll(run, t, action.save.type, { magical: isMagical(action) });
+    const save = saveRoll(run, t, action.save.type, { magical: isMagical(action), action });
     const dist = upgradedDistribution(degreeDistribution(rules, save.mod, action.save.dc, { advantage: save.advantage, kind: "save", roller: t }), t, action.save.type);
-    return targets * dist.reduce((s, p, d) => s + p * saveMultiplierFor(rules, d, action.save, t) * (dmg.normal + extra), 0);
+    // (What it lays on a failure, an affliction's conditions: as its save went.)
+    const laid = afflicts(action) ? (p, d) => (d <= 1 && saveMultiplierFor(rules, d, action.save, t) > 0 ? p * afflictionWorth(run, a, action, t, d) : 0) : () => 0;
+    return targets * dist.reduce((s, p, d) => s + p * saveMultiplierFor(rules, d, action.save, t) * (dmg.normal + extra) + laid(p, d), 0);
   }
   const roll = attackRoll(run, a, t, action, attacksMade);
   const extraParts = bonusDamageParts(run, a, action, t, { advantage: roll.advantage });
@@ -131,7 +174,9 @@ export function expectedDamage(run, a, action, t, attacksMade = 0) {
   const ac = currentAc(run, t, a, action);
   const opts = attackOptions(roll, { deed: true });
   const dist = degreeDistribution(rules, roll.bonus + boostBonus(rules, a, t, roll.bonus, ac, opts), ac, opts);
-  return targets * (dist[2] * (dmg.normal + extra) + dist[3] * (dmg.critical + extraCrit));
+  // (What a hit lays, an affliction's conditions, as often as it hits.)
+  const laid = afflicts(action) ? (dist[2] + dist[3]) * afflictionWorth(run, a, action, t) : 0;
+  return targets * (dist[2] * (dmg.normal + extra) + dist[3] * (dmg.critical + extraCrit) + laid);
 }
 
 /**

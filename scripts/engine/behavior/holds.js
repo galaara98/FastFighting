@@ -36,7 +36,8 @@
  *                                          bite); handsKnown: the helper says it of every action
  *   rules.tiedStopsSpells                  without handsKnown: whether tied up stops a spell (the helper's setting;
  *                                          by default it does)
- *   rules.remedies(run, u)                 what else bothers u that an action ends (remediesOf)
+ *   rules.remedies(run, u)                 what else bothers u that an action ends (remediesOf); one for a condition of
+ *                                          the core's own (`condition`: its key) is tried in place of the core's remedy
  *   rules.persistentRemedy(run, u, type)   the system's own try at ending persistent harm of a type ({success, said}),
  *   rules.persistentRemedyCost(u, type)    and what it costs (default: one more recovery roll, for the basic action)
  * The core's own conditions bring theirs (behavior/troubles.js): frozen solid, in a gullet or an ooze, a parasite to
@@ -119,7 +120,9 @@ export function holdsOf(run, u) {
       continue;
     }
     if ( e.escape ) {
-      // (One hold, the effect: its holding condition named, or the first that holds.)
+      // (One hold, the effect: its holding condition named, or the first that holds. Its named one gone, it holds no
+      // longer: what's left of it is no hold.)
+      if ( e.escape.key && !on.includes(e.escape.key) ) continue;
       const key = e.escape.key ?? on.find(k => HOLDING.includes(k)) ?? on[0];
       out.push({ key, byId: e.sourceId ?? null, dc: dcOf(e.escape.dc), others: e.escape.others ?? null, with: e.escape.with ?? null, label: e.label || null, effectKey: e.key, whole: true });
     } else if ( typeof rules.escapeFrom === "function" ) {
@@ -214,14 +217,15 @@ export function release(run, u, hold) {
       break;
     }
     default:
-      // (What holds goes, and what it held in place with it, below; the effect's other conditions stay: a web with
-      // nothing else to it ends.)
+      // (What holds goes, and what it held in place with it, below; the effect's other conditions stay, no hold any
+      // more: a web with nothing else to it ends.)
       if ( hold.effectKey ) {
         u.effects = (u.effects ?? []).flatMap(e => {
           if ( e.key !== hold.effectKey ) return [e];
           const conditions = { ...e.conditions };
           delete conditions[hold.key];
-          return Object.keys(conditions).length || e.mods ? [{ ...e, conditions }] : [];
+          const { escape: _held, ...rest } = e;
+          return Object.keys(conditions).length || e.mods ? [{ ...rest, conditions }] : [];
         });
       }
       if ( (hold.sheet || hold.system) && u.baseConds ) delete u.baseConds[hold.key];
@@ -276,11 +280,15 @@ export function remediesOf(run, u) {
       });
     }
   }
+  const own = new Set();
   for ( const r of (typeof rules.remedies === "function" ? rules.remedies(run, u) : null) ?? [] ) {
-    if ( r?.key && typeof r.try === "function" ) out.push({ annoyance: REMEDY.other, ...r, cost: normalizeCost(rules, r.cost ?? rules.basicAction ?? 1) });
+    if ( !r?.key || typeof r.try !== "function" ) continue;
+    out.push({ annoyance: REMEDY.other, ...r, cost: normalizeCost(rules, r.cost ?? rules.basicAction ?? 1) });
+    if ( r.condition ) own.add(r.condition);
   }
-  // (The core's own conditions': drop and roll, get air, reboot ...)
-  out.push(...troubleRemedies(run, u, canMove(run, u)));
+  // (The core's own conditions': drop and roll, get air, reboot ...; not one the system has a remedy of its own for,
+  // which is tried in its place.)
+  out.push(...troubleRemedies(run, u, canMove(run, u)).filter(r => !own.has(r.condition)));
   return out;
 }
 

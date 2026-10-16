@@ -7,7 +7,7 @@
  * Runtime registration goes through the API passed to the "fastFighting.init" hook.
  */
 /** Bumped when the helper-facing API changes incompatibly. */
-export const CORE_API_VERSION = 16;
+export const CORE_API_VERSION = 17;
 
 export { SystemAdapter } from "./adapters/adapter-base.js";
 export { MODULE_ID, STATUS, SWAY, DOWNED_MODELS, TRAITS, TACTICAL, PC_BASELINE, clamp, fudged, tacticalTier } from "./constants.js";
@@ -18,6 +18,7 @@ export { TALK_KINDS } from "./engine/behavior/talk.js";
 export { MORALE } from "./engine/behavior/morale.js";
 export { dropCondition, applyOutcome, tauntProof, withoutTaunt } from "./engine/behavior/effects.js";
 export { simpleAffliction } from "./engine/behavior/afflictions.js";
+export { holderOf, cutOff } from "./engine/behavior/troubles.js";
 export { CORE_CONDITIONS, CONDITION_SYNONYMS, coreKeyFor } from "./engine/conditions.js";
 export { edgeDistance, behaviorOf, isStanding, coverOf, COVER_POINTS } from "./engine/battle-state.js";
 export { goadLuck } from "./engine/behavior/goad.js";

@@ -180,13 +180,15 @@ function pickTarget(run, u) {
   // The tactics score every foe in reach; their pick and the runners-up become what the character wants.
   const scored = scoreTargets(run, u, behavior);
   for ( const { id, level } of levelsFromScores(scored.map(x => ({ id: x.t.id, score: x.score }))) ) think(u, "hurt", id, level);
-  // A stronger desire (stated in Tactics, or stirred by the fight) decides instead, if its target can be reached.
-  const { lead } = mind(run, u);
+  // A stronger desire (stated in Tactics, or stirred by the fight) decides instead, if its target can be reached; one of
+  // its own reckoning gives way to an opening only another foe allows.
+  const { lead, blinding } = mind(run, u);
   if ( lead?.kind === "hurt" ) {
     const wanted = run.byId.get(lead.targetId);
     if ( wanted && !u.walledOff?.has(wanted.id) && !sparedForTruce(run, u)?.has(wanted.id) && !heldOff(run, u, wanted) && Number.isFinite(minMoves(run, u, wanted)) ) {
-      if ( liveTier(run, u) >= TACTICAL.MASTERMIND ) run.sideFocus[u.side] = wanted.id;
-      return wanted;
+      const pick = blinding ? wanted : opening(run, u, wanted, standing);
+      if ( liveTier(run, u) >= TACTICAL.MASTERMIND ) run.sideFocus[u.side] = pick.id;
+      return pick;
     }
     thwart(run, u, "hurt", lead.targetId, 8); // can't get at them from here
   } else if ( lead?.kind === "protect" ) {
@@ -194,9 +196,34 @@ function pickTarget(run, u) {
     const threat = scored.find(x => x.t.targetId === ward?.id || x.t.adjacent.has(ward?.id));
     if ( threat ) return threat.t;
   }
-  const target = scored[0]?.t ?? null;
+  const target = opening(run, u, scored[0]?.t ?? null, standing);
   if ( target && liveTier(run, u) >= TACTICAL.MASTERMIND && isStanding(target) ) run.sideFocus[u.side] = target.id;
   return redirectForAttention(run, target, standing);
+}
+
+/** How much better than its best against the foe it picked an opening only another foe allows has to be, to take it. */
+const OPENING = 1.25;
+
+/**
+ * An option only some foes allow (the system's usable says no to the rest: 2014's behir swallows only the one it's
+ * grappling): what it would do to each foe that allows it, against u's best at the one it picked; clearly better
+ * (OPENING), that foe instead. Only where the system says no to some option against the one it picked.
+ */
+function opening(run, u, target, standing) {
+  const rules = run.prep.rules;
+  if ( !rules.usable || !target ) return target;
+  const picky = u.prep.offense.filter(a => hasUses(u, a) && !rules.usable(run, u, a, target));
+  if ( !picky.length ) return target;
+  let here = null;
+  let best = null;
+  for ( const { t } of standing ) {
+    if ( t === target || !picky.some(a => rules.usable(run, u, a, t)) ) continue;
+    const o = bestOptionVs(run, u, t);
+    if ( !o || !picky.includes(o.action) ) continue;
+    here ??= bestOptionVs(run, u, target)?.weighted ?? 0;
+    if ( o.weighted > here * OPENING && (!best || o.weighted > best.weighted) ) best = { t, weighted: o.weighted };
+  }
+  return best?.t ?? target;
 }
 
 /** Targets' playstyles: some draw attacks, some avoid notice. */

@@ -6,7 +6,7 @@
  */
 import { STATUS, TACTICAL, DOWNED_MODELS, AFTERMATH, EXECUTE_LUCK, NEUTRAL_PARTY, OPENING, clamp } from "../constants.js";
 import { createRng, deriveSeed, randomSeed } from "./rng.js";
-import { sampleDamage, samplePart, meanPart, part, parseFormula } from "./dice.js";
+import { sampleDamage, samplePart, meanPart, part } from "./dice.js";
 import { rollCheck, regrade } from "./probability.js";
 import { costOf, mainPool } from "./turn.js";
 import {
@@ -42,7 +42,7 @@ import { fallenWishes, decideFallen, bind, rob, stayBound, takesPrisoners, robsT
 import { holdsOf, ownHolds, known, tryHold, release, escapeCost, isBound, remediesOf, bears } from "./behavior/holds.js";
 import { forcedPath, fallDamage, resettle } from "./behavior/forced.js";
 import { stepOf, stacks, stageRounds, stageMove } from "./behavior/afflictions.js";
-import { setConditionValue, layerOf, toughSave, healedOf, harmEnds, letGo } from "./behavior/troubles.js";
+import { setConditionValue, layerOf, toughSave, healedOf, harmEnds, letGo, holderOf, cutOff, harmParts } from "./behavior/troubles.js";
 import { profiled, hasTrait, barred } from "./conditions.js";
 import { reactionsPerRound, threats, takesSafeWay } from "./behavior/reactions.js";
 import { isNeutral, crossed, caughtInArea, refreshLeans, truceWith, truceBreaks, turnOn, settleTruce, peaceDesires, seemsFoe, meddling, inFray, fighting, dislikesViolence, annoyedBy, ANNOYED } from "./behavior/neutral.js";
@@ -112,20 +112,23 @@ function attackStakes(run, u, t, action) {
   return Math.min(1, s);
 }
 
-/** A save the target makes, with Luck burned on it if it falls short and someone will. */
-function rollSave(run, target, type, dc, { stakes = 0.3, label = "", magical = false, from = null } = {}) {
+/**
+ * A save the target makes, with Luck burned on it if it falls short and someone will. The rules hear what it's against
+ * (`action`) and who set it off (`from`): a stupefied caster's spell, a flat check the caster must make (PF2e's).
+ */
+function rollSave(run, target, type, dc, { stakes = 0.3, label = "", magical = false, from = null, action = null } = {}) {
   const rules = run.prep.rules;
-  const s = saveRoll(run, target, type, { magical, from });
+  const s = saveRoll(run, target, type, { magical, from, action });
   let roll = rollCheck(rules, run.rng, s.mod, dc, { advantage: s.advantage, dice: s.dice, kind: "save", roller: target });
   spendEdges(target, "save");
   if ( run.boosting && roll.degree < 2 ) roll = boost(run, target, roll, dc, { kind: "save", stakes, label }, logger(run));
   roll = standFirm(run, target, roll, dc, stakes, label);
   if ( roll.degree === 2 && upgradesSave(target, type) ) roll = { ...roll, degree: 3 };
   if ( rules.adjustRoll ) {
-    roll = rules.adjustRoll(run, target, roll, { kind: "save", stakes, label }) ?? roll;
+    roll = rules.adjustRoll(run, target, roll, { kind: "save", stakes, label, action, from }) ?? roll;
     if ( roll.said ) log(run, target, { text: roll.said.text, type: "adjust", ...roll.said.data });
   }
-  rules.afterRoll?.(run, target, roll, { kind: "save", type, faces: 20 });
+  rules.afterRoll?.(run, target, roll, { kind: "save", type, faces: 20, action, from });
   return { roll, mod: s.mod };
 }
 
@@ -352,7 +355,7 @@ export function lookAround(run, b) {
   if ( kin && (!best || best.cue.dc > KIN_DC) ) best = { cue: { dc: KIN_DC, sense: "help" }, c: kin };
   if ( !best ) return false;
   const perception = (b.spec.perception ?? b.spec.initiative?.mod ?? 0) + (kin ? KIN_BONUS : 0);
-  const check = checkRoll(run, b, perception);
+  const check = checkRoll(run, b, perception, null, { purpose: "notice", skill: "perception" });
   const roll = rollCheck(run.prep.rules, run.rng, check.mod, best.cue.dc, { advantage: check.advantage, kind: "check", roller: b });
   if ( roll.degree >= 2 ) notice(run, b, best.cue.sense, best.c);
   return false;
@@ -457,7 +460,7 @@ export function noteFall(run, target, source, action = null) {
   deathThroes(run, target, source, action);
 }
 
-function dealDamage(run, source, target, amount, { crit = false, types = null, action = null, lingering = false } = {}) {
+function dealDamage(run, source, target, amount, { crit = false, types = null, byType = null, action = null, lingering = false } = {}) {
   if ( amount <= 0 || target.status === STATUS.DEAD || target.status === STATUS.FLED ) return;
   // (Out of reach of all harm: in stasis, banished.)
   if ( hasTrait(target, "untouchable") ) return;
@@ -489,10 +492,11 @@ function dealDamage(run, source, target, amount, { crit = false, types = null, a
     // One track for many (Ironsworn's encounter objective, every foe part of it): what one takes, all of them take.
     if ( sharedOf(target) ) shareHarm(run, source, target);
     testConcentration(run, target, rest + absorbed);
-    // What being hurt sets off, by the system (Ironsworn: Endure Harm, a roll to shake it off or lose heart).
+    // What being hurt sets off, by the system (Ironsworn: Endure Harm, a roll to shake it off or lose heart), told who
+    // did it and with what (PF2e: a blow from inside that ruptures its gullet).
     if ( rules.afterHarm && target.status !== STATUS.DEAD ) {
       const up = target.status === STATUS.STANDING;
-      const said = rules.afterHarm(run, target, rest + absorbed, run.rng);
+      const said = rules.afterHarm(run, target, rest + absorbed, run.rng, { by: source, types, byType, action, crit, lingering });
       if ( said?.text ) log(run, target, { text: said.text, type: "endure", ...said.data });
       // (Taken out by it: the fall counts like any other.)
       if ( up && target.status !== STATUS.STANDING ) {
@@ -662,6 +666,24 @@ function releaseGrabs(run, u) {
   for ( const { u: o, key } of letGo(run, u) ) log(run, o, { type: "letGo", hold: key, by: u.spec.name, byId: u.id });
 }
 
+/**
+ * Those held inside another (swallowed, engulfed: behavior/troubles.js holderOf) are where it is, gone where it went,
+ * and beside it; its grab on one is over, what holds it now being its gullet or its body.
+ */
+export function carryInside(run) {
+  for ( const u of run.units ) {
+    const holder = holderOf(run, u);
+    if ( !holder ) continue;
+    if ( holder.pos && u.pos && (u.pos.x !== holder.pos.x || u.pos.y !== holder.pos.y) ) {
+      u.pos = { x: holder.pos.x, y: holder.pos.y };
+      run.geo = (run.geo ?? 0) + 1; // (someone has moved)
+    }
+    if ( u.grabbedBy === holder.id ) release(run, u, { key: "grabbed", byId: holder.id });
+    u.adjacent.add(holder.id);
+    holder.adjacent.add(u.id);
+  }
+}
+
 /** Charmed and dominated creatures change sides as their holds take and end: tell it. */
 export function settleSides(run) {
   for ( const { u, joined, home, holder } of settleAllegiance(run) ) {
@@ -712,17 +734,22 @@ function applyAfflictionStage(run, target, affliction) {
 
 /**
  * Exposed to an affliction (behavior/afflictions.js): its save, and on a failure it takes hold (or, one with no save, it
- * simply does). Already on it: a disease or a curse takes no more hold; a poison's fresh dose may worsen it, without
- * making it last any longer.
+ * simply does). One that takes hold as the save of the action laying it went (spec.bySave, with that save's `degree`:
+ * PF2e's spell, 5e's Contagion) rolls none of its own: the rules' step for that degree (afflictionStep, "exposure"); its
+ * own save is for later (its stages, its tally). Already on it: a disease or a curse takes no more hold; a poison's
+ * fresh dose may worsen it, without making it last any longer.
  */
-export function exposeToAffliction(run, source, target, spec) {
+export function exposeToAffliction(run, source, target, spec, { degree = null } = {}) {
   if ( target.spec.iwr?.immune?.some(k => spec.traits?.includes(k)) ) return;
   const rules = run.prep.rules;
   let affliction = target.afflictions.find(a => a.spec.id === spec.id);
   if ( affliction && !stacks(spec) ) return;
   let increase = 1;
-  if ( spec.save ) {
-    const { mod, advantage, dice } = saveRoll(run, target, spec.save.type);
+  if ( spec.bySave && Number.isFinite(degree) ) {
+    increase = stepOf(rules, degree, "exposure");
+    if ( increase > 0 ) log(run, target, { type: "afflicted", name: spec.name, by: source?.spec.name ?? null, byId: source?.id ?? null });
+  } else if ( spec.save ) {
+    const { mod, advantage, dice } = saveRoll(run, target, spec.save.type, { action: spec });
     const roll = rollCheck(rules, run.rng, mod, spec.save.dc, { advantage, dice, kind: "save", roller: target });
     increase = stepOf(rules, roll.degree, "exposure");
     log(run, target, {
@@ -740,11 +767,19 @@ export function exposeToAffliction(run, source, target, spec) {
   applyAfflictionStage(run, target, affliction);
 }
 
-/** Riders on a successful hit: knockdown, grab, afflictions. */
-function applyEffects(run, u, action, target, degree) {
+/** Bigger than an outcome (or a rider) takes (its maxSize: 5e Push mastery, Large or smaller)? */
+const tooBig = (t, o) => Number.isFinite(o?.maxSize) && Number.isFinite(t.spec.size) && t.spec.size > o.maxSize;
+
+/**
+ * Riders on a successful hit: knockdown, grab, afflictions. `saveDegree`: the target's save, for a save action's (an
+ * affliction that takes hold as it went: bySave); `dealt`: what the blow did to it (a rider that only comes of a blow
+ * that hurt: hurtOnly, Daggerheart's Bear).
+ */
+function applyEffects(run, u, action, target, degree, { saveDegree = null, dealt = null } = {}) {
   for ( const effect of action.effects ?? [] ) {
     if ( !isUp(target) && effect.kind !== "affliction" ) continue;
     if ( target.status === STATUS.DEAD ) return;
+    if ( effect.hurtOnly && !(dealt > 0) ) continue;
     if ( effect.kind === "prone" && (degree === 3 || !effect.critOnly) ) {
       target.prone = true;
       log(run, target, { type: "prone", by: u.spec.name });
@@ -755,10 +790,12 @@ function applyEffects(run, u, action, target, degree) {
       target.grabKey = null;
       log(run, target, { type: "grabbed", by: u.spec.name });
     } else if ( effect.kind === "move" && effect.move && (degree === 3 || !effect.critOnly) ) {
-      // (Pushed back by the blow: 5e Thunderous Smite, a creature's Push.)
+      // (Pushed back by the blow: 5e Thunderous Smite, a creature's Push. Not one too big for it, nor one the system's
+      // immunities say it isn't moved by.)
+      if ( tooBig(target, effect) || isImmune(run, target, { traits: action.traits, onSave: [effect] }) ) continue;
       forceMove(run, u, target, effect.move);
     } else if ( effect.kind === "affliction" ) {
-      exposeToAffliction(run, u, target, effect);
+      exposeToAffliction(run, u, target, effect, { degree: saveDegree });
     } else if ( effect.kind === "condition" && (degree === 3 || !effect.critOnly) ) {
       // A rider such as "if it critically fails, it's also stunned 1": the system's own tags decide immunity.
       if ( isImmune(run, target, { traits: action.traits, onSave: [effect] }) ) continue;
@@ -778,7 +815,7 @@ function applyEffects(run, u, action, target, degree) {
 function saveRider(run, u, action, target, effect) {
   const rules = run.prep.rules;
   const harmful = (effect.damage ?? []).reduce((s, p) => s + Math.max(0, meanPart(p)), 0);
-  const { roll, mod } = rollSave(run, target, effect.save.type, effect.save.dc, { stakes: saveStakes(target, harmful, !!effect.conditions), label: effect.label || action.name, magical: isMagical(action), from: u });
+  const { roll, mod } = rollSave(run, target, effect.save.type, effect.save.dc, { stakes: saveStakes(target, harmful, !!effect.conditions), label: effect.label || action.name, magical: isMagical(action), from: u, action });
   const mult = effect.damage?.length ? saveMultiplier(rules, roll.degree, effect.save) : 0;
   const hit = mult > 0 ? rollHit(run, u, action, target, effect.damage, mult, false) : null;
   log(run, target, {
@@ -787,7 +824,7 @@ function saveRider(run, u, action, target, effect) {
   });
   hit?.apply();
   // (Failed: what it lays, and a push or a grab it carries: Thunderwave's.)
-  if ( roll.degree > 1 || !(effect.conditions || effect.move || effect.grab) || !isUp(target) ) return;
+  if ( roll.degree > 1 || !(effect.conditions || effect.move || effect.grab) || !isUp(target) || tooBig(target, effect) ) return;
   if ( effect.conditions && isImmune(run, target, { traits: action.traits, onSave: [effect] }) ) return;
   if ( effect.conditions ) log(run, target, { type: "condition", by: u.spec.name, effect: effect.label ?? "" });
   landOutcome(run, u, target, effect, { traits: action.traits ?? [] }, { damage: false });
@@ -912,7 +949,7 @@ function rollHit(run, u, action, t, parts, multiplier, crit, minimum = 0) {
       for ( const p of rolled.persistent ) {
         if ( !t.spec.iwr?.immune?.includes(p.type) ) t.persistent.push({ part: p, sourceId: u.id });
       }
-      dealDamage(run, u, t, amount, { crit, types: Object.keys(rolled.byType), action });
+      dealDamage(run, u, t, amount, { crit, types: Object.keys(rolled.byType), byType: rolled.byType, action });
       return amount;
     }
   };
@@ -1004,7 +1041,7 @@ export function strikeOutOfTurn(run, u, action, t) {
 function executeOffense(run, u, action, t, attacksMade) {
   // Shooting, or working a spell with its hands, in a foe's reach opens it up, where the system says so (PF2e).
   if ( ((action.range && !action.melee) || action.traits?.includes?.("manipulate")) && !provoke(run, u, "foeOpening") ) return;
-  if ( counterspelled(run, u, action) ) {
+  if ( counterspelled(run, u, action) || disrupted(run, u, action) ) {
     run.blood = true;
     return;
   }
@@ -1031,7 +1068,7 @@ function executeOffense(run, u, action, t, attacksMade) {
   run.blood = true; // a blow has been struck: whatever happens now, it wasn't settled with words
   const targets = [t];
   if ( action.area ) {
-    const others = enemiesOf(run, u).filter(o => o !== t && isStanding(o) && !heldOff(run, u, o));
+    const others = enemiesOf(run, u).filter(o => o !== t && isStanding(o) && !heldOff(run, u, o) && !cutOff(run, u, o));
     run.rng.shuffle(others);
     targets.push(...others.slice(0, Math.max(0, (action.area.targets ?? 2) - 1)));
     if ( run.neutral ) targets.push(...caughtInArea(run, u, targets));
@@ -1085,14 +1122,14 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
 
     if ( action.kind === "save" && action.save ) {
       const extra = bonusDamageParts(run, u, action, target, { commit: true });
-      const { roll, mod } = rollSave(run, target, action.save.type, action.save.dc, { stakes: saveStakes(target, meanDamageVs(run, action, target).normal, !!action.effects?.length), label: action.name, magical: isMagical(action), from: u });
+      const { roll, mod } = rollSave(run, target, action.save.type, action.save.dc, { stakes: saveStakes(target, meanDamageVs(run, action, target).normal, !!action.effects?.length), label: action.name, magical: isMagical(action), from: u, action });
       const mult = saveMultiplierFor(rules, roll.degree, action.save, target);
       const data = !logging ? null : { type: "save", ...common, saveType: action.save.type, natural: roll.natural, mod: mod + (roll.die ?? 0), total: roll.total, dc: action.save.dc, degree: roll.degree, margin: roll.total - action.save.dc, note: roll.note ?? null, faces: roll.faces ?? null };
       if ( mult > 0 ) {
         const hit = rollHit(run, u, action, target, (action.damage ?? []).concat(extra), mult, roll.degree === 0);
         if ( logging ) log(run, u, { ...data, damage: hit.total });
         const dealt = hit.apply();
-        if ( roll.degree <= 1 ) applyEffects(run, u, action, target, 3 - roll.degree);
+        if ( roll.degree <= 1 ) applyEffects(run, u, action, target, 3 - roll.degree, { saveDegree: roll.degree, dealt });
         answerHarm(run, target, u, action, dealt);
       } else if ( logging ) log(run, u, { ...data, damage: 0 });
       retort(run, target, u, action, roll.degree, logging);
@@ -1184,6 +1221,7 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
       }
     }
     const data = !logging ? null : { type: "attack", ...common, natural: roll.natural, mod: bonus + deedRoll + lift + (roll.die ?? 0), total: roll.total, dc: ac, degree: roll.degree, margin: roll.total - ac, attackNumber: attacksMade + 1, boost: lift || null, faces: roll.faces ?? opts.faces, deed: r.deed ? deedRoll : null, challenge: roll.challenge ?? null, burned: roll.burned ?? null, note: roll.note ?? null };
+    let struck = 0;
     if ( roll.degree >= 2 ) {
       const crit = roll.degree === 3;
       const extra = bonusDamageParts(run, u, action, target, { advantage, commit: true });
@@ -1210,8 +1248,9 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
       });
       tellAnswers();
       const dealt = intercepted !== null ? 0 : hit.apply(amount);
+      struck = dealt;
       if ( intercepted > 0 ) dealDamage(run, u, guard.g, intercepted, { crit, types: hit.types });
-      applyEffects(run, u, action, target, roll.degree);
+      applyEffects(run, u, action, target, roll.degree, { dealt });
       if ( table?.row ) applyCritRow(run, u, target, table);
       for ( const x of riders ) applyRider(run, u, target, x);
       if ( deed ) applyDeed(run, u, target, deed, deedRoll);
@@ -1243,6 +1282,8 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
     }
     // What the attempt costs the attacker, by the system (Ironsworn: a miss, or a weak Clash, is Pay the Price).
     backlash(run, u, target, action, roll.degree, logging);
+    // The attack over, its damage and all it laid done: the system's say (PF2e: a hidden attacker is seen now).
+    rules.afterAttack?.(run, u, target, { action, degree: roll.degree, dealt: struck });
   }
 }
 
@@ -1337,6 +1378,19 @@ function counterspelled(run, u, action) {
   return false;
 }
 
+/**
+ * A spell (a magical action) that comes to nothing as it's cast, as the system says (rules.disrupted(run, u, action):
+ * PF2e's stupefied, a DC 5 + its value flat check): lost, and told (the system's words, and its roll where it has one:
+ * {natural, dc, said: {text}}). Returns whether it was.
+ */
+function disrupted(run, u, action) {
+  if ( !run.prep.rules.disrupted || !isMagical(action) ) return false;
+  const lost = run.prep.rules.disrupted(run, u, action);
+  if ( !lost ) return false;
+  log(run, u, { type: "disrupted", action: action.name, text: lost.said?.text ?? "", natural: lost.natural ?? null, dc: lost.dc ?? null, ...lost.said?.data });
+  return true;
+}
+
 /** A crit table's row: its lasting effect on the foe (and on the attacker, rarely); some simply kill. */
 function applyCritRow(run, u, target, { row, total }) {
   if ( row.slay && target.status !== STATUS.DEAD ) {
@@ -1374,7 +1428,7 @@ function applyRider(run, u, target, rider) {
   let outcome = rider.save ? null : rider.outcome;
   let roll = null;
   if ( rider.save && isUp(target) ) {
-    roll = rollSave(run, target, rider.save.type, rider.save.dc, { stakes: 0.6, label: rider.label }).roll;
+    roll = rollSave(run, target, rider.save.type, rider.save.dc, { stakes: 0.6, label: rider.label, action: rider }).roll;
     outcome = rider.onSave?.[roll.degree] ?? (roll.degree < 2 ? rider.outcome : null);
   }
   const fake = { id: `rider:${rider.id}`, traits: rider.traits, onSave: outcome ? [outcome] : [] };
@@ -1574,6 +1628,8 @@ function landOutcome(run, u, target, outcome, action, { damage: harms = true } =
     if ( self ) forceMove(run, target, u, outcome.move);
     else forceMove(run, u, target, outcome.move);
   }
+  // (Taken inside the one who did it, swallowed, engulfed: where it is from now on.)
+  if ( effect && holderOf(run, on) ) carryInside(run);
   if ( !harms || !outcome.damage?.length || !isUp(on) ) return 0;
   const hit = rollHit(run, u, action ?? { id: "outcome", damage: outcome.damage }, on, outcome.damage, 1, false);
   hit.apply();
@@ -1656,6 +1712,8 @@ function forceMove(run, u, t, move) {
     executeOffense(run, h, action, t, 0);
     if ( h.spec.hazard?.once ) h.spent = true;
   }
+  // (Whatever it holds inside it went with it.)
+  if ( path.feet > 0 ) carryInside(run);
 }
 
 function executeControl(run, u, action, target, attacksMade, common) {
@@ -1731,11 +1789,13 @@ function executeControl(run, u, action, target, attacksMade, common) {
       debuff: !!(outcome?.mods || outcome?.mark), tempHp: Number(outcome?.tempHp) || 0
     });
   }
+  // (An attack roll's, over: the system's say, as for any attack.)
+  if ( r.kind === "attack" ) rules.afterAttack?.(run, u, target, { action, degree, dealt: damage, control: true });
 }
 
 /** Creatures called to fight: they join the order right after u (holding its concentration, if they need it). */
 function executeSummon(run, u, action) {
-  if ( counterspelled(run, u, action) ) return;
+  if ( counterspelled(run, u, action) || disrupted(run, u, action) ) return;
   const released = beginConcentration(run, u, action);
   if ( released.length ) log(run, u, { type: "concentrationEnd", effects: released, reason: "switch" });
   const called = callSummons(run, u, action);
@@ -1746,7 +1806,7 @@ function executeSummon(run, u, action) {
 
 /** A buff on its recipients (the user too, for an aura). An action it gains at once (Action Surge) goes on the turn. */
 function executeBuff(run, u, action, targets, worth = 0, turn = null) {
-  if ( counterspelled(run, u, action) ) return spendUse(u, action);
+  if ( counterspelled(run, u, action) || disrupted(run, u, action) ) return spendUse(u, action);
   if ( action.casting ) {
     const tier = castFor(run, u, action, targets[0] ?? null);
     if ( !tier || tier.kind !== "buff" ) return spendUse(u, action);
@@ -1766,7 +1826,7 @@ function executeBuff(run, u, action, targets, worth = 0, turn = null) {
   if ( action.check && Number.isFinite(Number(action.check.mod)) ) {
     const rules = run.prep.rules;
     const dc = checkDc(run, u, action.check);
-    const c = checkRoll(run, u, Number(action.check.mod));
+    const c = checkRoll(run, u, Number(action.check.mod), null, { purpose: "aid", action });
     const roll = rollCheck(rules, run.rng, c.mod, dc, { advantage: c.advantage, dice: c.dice, kind: "check", roller: u, faces: action.check.faces });
     spendEdges(u, "check");
     check = { skill: action.check.label ?? "", natural: roll.natural, mod: c.mod, total: roll.total, dc, degree: roll.degree, challenge: roll.challenge ?? null };
@@ -1802,7 +1862,7 @@ function executeBuff(run, u, action, targets, worth = 0, turn = null) {
 
 function executeHeal(run, u, action, target) {
   const rules = run.prep.rules;
-  if ( counterspelled(run, u, action) ) {
+  if ( counterspelled(run, u, action) || disrupted(run, u, action) ) {
     u.healedTargets.add(`${action.id}|${target.id}`);
     return spendUse(u, action);
   }
@@ -1817,7 +1877,7 @@ function executeHeal(run, u, action, target) {
   let multiplier = 1;
   let roll = null;
   if ( action.healCheck ) {
-    const check = checkRoll(run, u, action.healCheck.mod, target);
+    const check = checkRoll(run, u, action.healCheck.mod, target, { purpose: "heal", skill: action.healCheck.skill ?? null, action });
     roll = rollCheck(rules, run.rng, check.mod, action.healCheck.dc, { advantage: check.advantage, dice: check.dice, kind: "check", roller: u });
     spendEdges(u, "check", target.id);
     multiplier = rules.healCheckMultiplier ? rules.healCheckMultiplier(roll.degree) : [0, 0, 1, 2][roll.degree];
@@ -1840,8 +1900,16 @@ function executeHeal(run, u, action, target) {
   const wasDown = target.status === STATUS.DOWN;
   const before = target.hp;
   if ( amount > 0 ) rules.onHealed(target, amount);
-  // (What else the heal gives, where it took: Stress cleared with it, Daggerheart's Bark at the Moon.)
-  if ( multiplier > 0 ) gainResources(run, target, action);
+  // (What else the heal gives, where it took: Stress cleared with it, Daggerheart's Bark at the Moon; and what it lays
+  // on the one healed, as any outcome lands: Regenerate's hit point a turn, 5e's fast healing, PF2e's regeneration.)
+  if ( multiplier > 0 ) {
+    gainResources(run, target, action);
+    if ( action.outcome && target.status !== STATUS.DEAD ) {
+      applyOutcome(target, action.outcome, u.id, action);
+      gainResources(run, target, action.outcome);
+      rules.onOutcome?.(run, u, target, action.outcome);
+    }
+  }
   u.healedTargets.add(`${action.id}|${target.id}`);
   spendUse(u, action);
   noteHeal(run, u, target, target.hp - before, wasDown && target.status === STATUS.STANDING, {
@@ -2109,7 +2177,7 @@ function sizesUp(run, u, t, turn, room, { decided = false, wholeTurn = false } =
   let check = null;
   if ( Number.isFinite(how?.mod) ) {
     const dc = Number.isFinite(how.dc) ? how.dc : rules.sizeUpDC?.(t) ?? typical(rules, "dc", t.spec.level ?? 0);
-    const c = checkRoll(run, u, how.mod);
+    const c = checkRoll(run, u, how.mod, null, { purpose: "sizeUp", skill: how.skill ?? null });
     const roll = rollCheck(rules, run.rng, c.mod, dc, { advantage: c.advantage, dice: c.dice, kind: "check", roller: u, faces: how.faces });
     spendEdges(u, "check");
     check = { skill: how.label ?? "", natural: roll.natural, mod: c.mod, total: roll.total, dc, degree: roll.degree, challenge: roll.challenge ?? null };
@@ -2613,7 +2681,20 @@ function breakFree(run, u, turn) {
     const got = tryHold(run, u, hold);
     if ( got.success ) release(run, u, hold);
     log(run, u, { type: "escape", hold: hold.key, success: got.success, ...rollOf(got), ...(got.said?.text ? { said: got.said.text } : {}) });
+    harmHolder(run, u, hold, got);
   }
+}
+
+/**
+ * What a try at breaking a hold did to whoever holds it, as the system's try says (got.harm {byType}: damage as rolled,
+ * before the holder's resistances; PF2e: cutting itself free of a gullet hurts the swallower).
+ */
+function harmHolder(run, u, hold, got) {
+  const holder = hold.byId ? run.byId.get(hold.byId) : null;
+  const byType = got?.harm?.byType;
+  if ( !holder || !isUp(holder) || !byType || typeof byType !== "object" ) return;
+  const amount = run.prep.rules.applyIwr(iwrOf(holder), byType, holder);
+  if ( amount > 0 ) dealDamage(run, u, holder, amount, { types: Object.keys(byType), byType });
 }
 
 /**
@@ -2669,6 +2750,7 @@ function playFromHere(run, u) {
   turnUpkeep(run, u);
 
   settleSides(run); // holds that took or ended since this creature's last turn
+  startHarm(run, u); // (what harms it as its turn starts: 5e's Burning)
   regenerate(run, u);
   // (Come to tied up: a prisoner now. One acting from its bonds this turn knows it already.)
   if ( u.status === STATUS.DEAD || (!u.thought && stayBound(run, u, logger(run))) ) return endOfTurn(run, u);
@@ -3005,7 +3087,8 @@ function playFromHere(run, u) {
 
 /**
  * The end of its turn, for the core's own conditions (engine/conditions.js PROFILES) the system says nothing of: what
- * harms it each turn (a fire, a bleed, radiation, a gullet's acid); one frozen solid tries to break out, all it can do;
+ * harms it each turn (a fire, a bleed, radiation, a gullet's acid; at the start of it instead where the profile says
+ * so: startHarm); one frozen solid tries to break out, all it can do;
  * a countdown runs on (a parasite growing, its breath running out) and, at its end, what comes (it tears free; it
  * passes out); and what it carries spreads to whoever stands beside it (a save, or caught).
  */
@@ -3013,22 +3096,10 @@ function conditionUpkeep(run, u) {
   if ( [STATUS.DEAD, STATUS.FLED].includes(u.status) || !profiled(u).length ) return;
   const rules = run.prep.rules;
   for ( const [key, v, p] of profiled(u) ) {
-    if ( p.harm ) {
-      const by = layerOf(run, u, key);
-      const [formula, type] = p.harm;
-      // (The system's own say first, its harm in its own terms: Ironsworn's a point; else by its value, or by the level
-      // of whoever laid it.)
-      const own = rules.conditionHarm?.(key, v, u, by);
-      const f = p.bySource ? `${1 + Math.floor((by?.spec.level ?? u.spec.level ?? 1) / 4)}d6` : formula(v);
-      const parts = own !== undefined ? own ?? [] : f ? [parseFormula(f, type)] : [];
-      if ( parts.length ) {
-        const rolled = sampleDamage(parts, run.rng);
-        const amount = rules.applyIwr(iwrOf(u), rolled.byType, u);
-        const types = Object.keys(rolled.byType);
-        if ( run.log ) log(run, u, { type: "persistent", damageType: types[0] ?? type, amount, condition: key });
-        dealDamage(run, by, u, amount, { types, lingering: true });
-        if ( u.status === STATUS.DEAD ) return;
-      }
+    // (Its harm, at the end of its turn unless the profile says the start: startHarm.)
+    if ( p.harm && (p.harmAt ?? "end") === "end" ) {
+      conditionHarm(run, u, key, v, p);
+      if ( u.status === STATUS.DEAD ) return;
     }
     if ( p.hold && p.act === false && u.status === STATUS.STANDING ) {
       const hold = holdsOf(run, u).find(h => h.key === key && h.core);
@@ -3068,6 +3139,36 @@ function conditionUpkeep(run, u) {
       applyOutcome(o, { conditions: { [key]: 1 }, rounds: 999, label: "" }, u.id, { id: `spread:${key}` });
       log(run, o, { type: "spread", condition: key, by: u.spec.name, byId: u.id, natural: roll.natural, mod: s.mod, total: roll.total, dc, degree: roll.degree });
     }
+  }
+}
+
+/**
+ * One of the core's conditions harming it, now: the system's own say first, its harm in its own terms (Ironsworn's a
+ * point; behavior/troubles.js harmParts), else by its value, or by the level of whoever laid it. Told, and dealt by
+ * whoever laid it.
+ */
+function conditionHarm(run, u, key, v, p) {
+  const rules = run.prep.rules;
+  const by = layerOf(run, u, key);
+  const parts = harmParts(run, u, key, v, p, by);
+  if ( !parts.length ) return;
+  const rolled = sampleDamage(parts, run.rng);
+  const amount = rules.applyIwr(iwrOf(u), rolled.byType, u);
+  const types = Object.keys(rolled.byType);
+  if ( run.log ) log(run, u, { type: "persistent", damageType: types[0] ?? p.harm[1], amount, condition: key });
+  dealDamage(run, by, u, amount, { types, lingering: true });
+}
+
+/**
+ * The start of its turn, for the core's own conditions whose harm comes then (a profile's harmAt "start", as the system
+ * may say: 5e's Burning, a gullet's acid).
+ */
+function startHarm(run, u) {
+  if ( [STATUS.DEAD, STATUS.FLED].includes(u.status) ) return;
+  for ( const [key, v, p] of profiled(u) ) {
+    if ( !p.harm || p.harmAt !== "start" ) continue;
+    conditionHarm(run, u, key, v, p);
+    if ( u.status === STATUS.DEAD ) return;
   }
 }
 
@@ -3178,7 +3279,7 @@ const isDying = u => u.status === STATUS.DOWN && !u.stable;
 function firstAid(run, u, target, { aftermath = true } = {}) {
   const rules = run.prep.rules;
   const dc = rules.firstAidDC(target);
-  const check = checkRoll(run, u, u.spec.firstAid.mod, target);
+  const check = checkRoll(run, u, u.spec.firstAid.mod, target, { purpose: "firstAid", skill: u.spec.firstAid.skill ?? null });
   const roll = rollCheck(rules, run.rng, check.mod, dc, { advantage: check.advantage, dice: check.dice, kind: "check", roller: u, faces: u.spec.firstAid.faces });
   spendEdges(u, "check", target.id);
   const before = target.dying;
@@ -3533,13 +3634,18 @@ export function beginRound(run, round) {
 export function playTurn(run, u) {
   noteCommand(run);
   startTurn(run, u);
+  carryInside(run); // (those inside another: where it went)
   takeTurn(run, u);
   noteIdle(run, u);
   return afterTurn(run, u);
 }
 
-/** What comes after anyone's turn: a last stand ending, a legendary creature's moment. True if the fight is over. */
+/**
+ * What comes after anyone's turn: those inside another where it went, a last stand ending, a legendary creature's
+ * moment. True if the fight is over.
+ */
 export function afterTurn(run, u) {
+  carryInside(run);
   if ( u.lastStand ) endLastStand(run, u);
   if ( battleOver(run) ) return true;
   if ( run.legendary ) {

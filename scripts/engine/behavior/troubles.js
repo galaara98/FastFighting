@@ -3,20 +3,61 @@
  * (frozen solid: chipped out; swallowed: cut free or let go of when the swallower falls; a parasite: cut out), what a
  * creature can try itself to be rid of one (drop and roll, press the wound, get air, reboot), what a friend beside it
  * can do for it (beat the flames out, haul it back in), and changing one's value (a parasite growing, a reboot easing
- * a glitch). The turn's harm, a countdown's end and a spread are the simulator's (conditionUpkeep).
+ * a glitch); who holds a creature inside it, and the total cover between those inside and everything outside
+ * (holderOf, cutOff). The turn's harm, a countdown's end and a spread are the simulator's (conditionUpkeep).
  * A system that gives a condition its own meaning (conditions.js conditionSetup) gets none of this for that one.
  * Pure: no Foundry globals.
  */
-import { profileOf, profiled } from "../conditions.js";
+import { profileOf, profiled, INSIDE } from "../conditions.js";
 import { typical } from "../battle-state.js";
 import { recompute } from "./effects.js";
 import { afflictionFor } from "./afflictions.js";
 import { normalizeCost } from "../turn.js";
+import { parseFormula } from "../dice.js";
 
 /** Whoever laid a condition on it (the latest effect with it that says), or null. */
 export function layerOf(run, u, key) {
   const e = [...(u.effects ?? [])].reverse().find(x => !x.onlyVs && (Number(x.conditions?.[key]) || (x.conditions?.[key] === true ? 1 : 0)) > 0 && x.sourceId);
   return e ? run.byId.get(e.sourceId) ?? null : null;
+}
+
+/**
+ * Whoever holds it inside (swallowed it, engulfed it: a profile that's inside, laid by that one), or null. A corpse
+ * may still hold it, where the system says it keeps hold (rules.letGo).
+ */
+export function holderOf(run, u) {
+  for ( const key of INSIDE ) {
+    if ( !(Number(u?.conds?.[key]) > 0) || !profileOf(u, key)?.inside ) continue;
+    const by = layerOf(run, u, key);
+    if ( by ) return by;
+  }
+  return null;
+}
+
+/**
+ * Total cover between a and b: one of them inside a creature (holderOf) and the other neither that creature nor inside
+ * it too. Nothing reaches through it, either way: no blow, no spell, no heal, no hand.
+ */
+export function cutOff(run, a, b) {
+  if ( a === b ) return false;
+  const ha = holderOf(run, a);
+  const hb = holderOf(run, b);
+  if ( ha ) return b !== ha && hb !== ha;
+  return !!hb;
+}
+
+/**
+ * What one of the core's conditions harms it with each time (damage parts; none: no harm): the system's own say first
+ * (rules.conditionHarm(key, value, unit, by): its harm in its own terms; Ironsworn's a point), else by its value, or by
+ * the level of whoever laid it (in a gullet: the swallower's).
+ */
+export function harmParts(run, u, key, v, p, by = layerOf(run, u, key)) {
+  if ( !p?.harm ) return [];
+  const [formula, type] = p.harm;
+  const own = run.prep?.rules?.conditionHarm?.(key, v, u, by);
+  if ( own !== undefined ) return own ?? [];
+  const f = p.bySource ? `${1 + Math.floor((by?.spec.level ?? u.spec.level ?? 1) / 4)}d6` : formula?.(v);
+  return f ? [parseFormula(f, type)] : [];
 }
 
 /**
@@ -131,13 +172,19 @@ export function harmEnds(run, source, u) {
   return ended;
 }
 
-/** Laid by one who just fell (a swallower, an ooze): what it held, let go of. Returns those let go: [{u, key}]. */
+/**
+ * Laid by one who just fell (a swallower, an ooze): what it held, let go of, unless the system says it keeps hold
+ * (rules.letGo(run, u, key, holder) false: a corpse to cut open first, PF2e's Swallow Whole); the system's say on what
+ * comes of being let go meanwhile (5e: out of a dead worm, Prone). Returns those let go: [{u, key}].
+ */
 export function letGo(run, fallen) {
+  const rules = run.prep?.rules ?? {};
   const out = [];
   for ( const o of run.units ) {
     if ( o === fallen ) continue;
     for ( const [key, , p] of profiled(o) ) {
       if ( !p.hold?.bySource || layerOf(run, o, key) !== fallen ) continue;
+      if ( rules.letGo?.(run, o, key, fallen) === false ) continue;
       setConditionValue(o, key, 0);
       out.push({ u: o, key });
     }

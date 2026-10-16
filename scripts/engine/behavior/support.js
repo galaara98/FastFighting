@@ -39,6 +39,7 @@ import { mind, levelOf } from "./desire.js";
 import { bringsItself } from "./reluctance.js";
 import { castChanceOf } from "./casting.js";
 import { specialtyLean } from "./specialty.js";
+import { cutOff } from "./troubles.js";
 
 /** How well each tactical band sees what a buff is worth (feral: not at all, beyond itself). */
 const SEES = [0.5, 0.6, 0.9, 1.05, 1.15];
@@ -47,6 +48,7 @@ const SEES = [0.5, 0.6, 0.9, 1.05, 1.15];
 /** Can u lay this on a without moving? */
 function reaches(run, u, a, action) {
   if ( a === u ) return true;
+  if ( cutOff(run, u, a) ) return false; // (inside another creature, or it inside one: nothing reaches through)
   if ( action.aura ) {
     const d = edgeDistance(u, a);
     return d === null || d <= action.aura;
@@ -92,7 +94,7 @@ function besideFoe(run, u, a, action) {
 /** Chances of each degree for a buff that needs a roll to land ([0, 0, 1, 0] for one that doesn't). */
 export function landing(run, u, action) {
   if ( !action.check || !Number.isFinite(Number(action.check.mod)) ) return [0, 0, 1, 0];
-  const c = checkRoll(run, u, Number(action.check.mod));
+  const c = checkRoll(run, u, Number(action.check.mod), null, { purpose: "aid", action });
   return degreeDistribution(run.prep.rules, c.mod, checkDc(run, u, action.check), { advantage: c.advantage, dice: c.dice, kind: "check", roller: u, faces: action.check.faces });
 }
 

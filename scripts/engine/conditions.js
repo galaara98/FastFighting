@@ -8,7 +8,8 @@
  * Many of them (PROFILES) do something of their own in a fight where the system says nothing of them: bonuses and
  * penalties, losing its actions, harm each turn, a hold to break, a remedy to try, a countdown, a spread. A system that
  * gives one its own meaning says so (rules.ownConditions, or rules.conditionMods for it): then the core's steps aside
- * for that one. And CONDITION_SYNONYMS: the names systems give them, for a helper mapping its own (coreKeyFor).
+ * for that one; one that keeps the core's but for a part of it says which part (rules.conditionProfile). And
+ * CONDITION_SYNONYMS: the names systems give them, for a helper mapping its own (coreKeyFor).
  *
  * And the ones toward another creature (RELATIONS): afraid of it, grabbed by it, goaded by it, controlled by it, tied
  * up by it, off guard to it alone, marked by it (live.js setRelation). A condition laid by someone (swallowed by the
@@ -122,6 +123,10 @@ export const validConditionKey = key => typeof key === "string" && /^[a-zA-Z][\w
  *   harm          [formula, type] it takes at the end of each of its turns, by its value (formula: a function of v);
  *                 bySource: by the level of whoever laid it (in a gullet: the swallower's). A system may say what it is
  *                 in its own terms (rules.conditionHarm(key, value, unit, by): damage parts, or null for none)
+ *   harmAt        when its harm comes: "end" of each of its turns (by default), or "start"
+ *   inside        it's inside whoever laid it (its holder: behavior/troubles.js holderOf): where its holder is, and it
+ *                 goes where its holder goes; it reaches its holder from in there, and nothing outside reaches it, nor
+ *                 it them (total cover), but for others inside with it
  *   grows         its value rises at the end of each of its turns, to its most; term: what comes then, there ("burst":
  *                 whatever grows in it tears free, and it falls; "drop": it falls, out of breath)
  *   spreads       at the end of its turn, each creature beside it may catch it (a save against a typical DC for the
@@ -167,8 +172,8 @@ export const PROFILES = Object.freeze({
   impregnated: { most: 6, grows: true, term: "burst", mods: v => ({ attack: -Math.floor(v / 3), saves: -Math.floor(v / 3) }), hold: { others: "check", via: "medicine", harder: 5, worsens: true } },
   suffocating: { most: 3, grows: true, term: "drop", command: false, talk: false, remedy: { chance: 0.75, moves: true, annoyance: 90 } },
   adrift: { move: "fly", mods: () => ({ attack: -2 }), remedy: { chance: 0.4, moves: false, annoyance: 40 }, help: { others: "untie" } },
-  swallowed: { move: false, command: false, mods: () => ({ attack: -2 }), harm: it(null, "acid"), bySource: true, hold: { others: null, bySource: true } },
-  engulfed: { move: false, command: false, talk: false, mods: () => ({ attack: -2 }), harm: it(null, "acid"), bySource: true, hold: { others: null, bySource: true } },
+  swallowed: { move: false, command: false, mods: () => ({ attack: -2 }), harm: it(null, "acid"), bySource: true, hold: { others: null, bySource: true }, inside: true },
+  engulfed: { move: false, command: false, talk: false, mods: () => ({ attack: -2 }), harm: it(null, "acid"), bySource: true, hold: { others: null, bySource: true }, inside: true },
   stasis: { act: false, move: false, command: false, untouchable: true, weight: () => 1 },
   banished: { act: false, move: false, command: false, untouchable: true, weight: () => 1 },
   transformed: { noGear: true, command: false, weight: () => 0.4 }
@@ -182,9 +187,11 @@ export function conditionMost(key) {
 }
 
 /**
- * What the core needs of a system to play its conditions, kept with each creature (plain data, kept between turns):
- * the keys the system gives its own meaning (rules.ownConditions, or rules.conditionMods for it), and how many of its
- * roll's points one d20 point is worth.
+ * What the core needs of a system to play its conditions, kept with each creature (worked out again with it, never
+ * kept in a snapshot): the keys the system gives its own meaning (rules.ownConditions, or rules.conditionMods for it),
+ * how many of its roll's points one d20 point is worth, and the profiles the system changes a part of
+ * (rules.conditionProfile(key): the fields it names in place of the core's, null dropping one: {mods: null} keeps the
+ * harm and the hold but not the penalties, {remedy: null} no try of its own to be rid of it, {harmAt: "start"}).
  */
 export function conditionSetup(rules) {
   const own = new Set(rules?.ownConditions ?? []);
@@ -193,13 +200,25 @@ export function conditionSetup(rules) {
     if ( m && typeof m === "object" ) own.add(key);
   }
   const point = Number(rules?.rollPoint);
-  return { owned: [...own].filter(k => PROFILES[k]), scale: point > 0 ? D20_POINT / point : 1 };
+  const profiles = {};
+  for ( const key of Object.keys(PROFILES) ) {
+    if ( own.has(key) ) continue;
+    const change = rules?.conditionProfile?.(key);
+    if ( change && typeof change === "object" ) profiles[key] = Object.freeze({ ...PROFILES[key], ...change });
+  }
+  return { owned: [...own].filter(k => PROFILES[k]), scale: point > 0 ? D20_POINT / point : 1, ...(Object.keys(profiles).length ? { profiles } : {}) };
 }
 /** One point on a d20 (behavior/effects.js D20_POINT). */
 const D20_POINT = 0.085;
 
-/** What a condition does on this creature by the core's say: its profile, unless the system gives it its own meaning. */
-export const profileOf = (u, key) => (u?.coreConds?.owned?.includes(key) ? null : PROFILES[key] ?? null);
+/**
+ * What a condition does on this creature by the core's say: its profile (as far as the system changes a part of it),
+ * unless the system gives it its own meaning.
+ */
+export const profileOf = (u, key) => (u?.coreConds?.owned?.includes(key) ? null : u?.coreConds?.profiles?.[key] ?? PROFILES[key] ?? null);
+
+/** The core's conditions a creature is held inside another by (swallowed, engulfed: their profiles' inside). */
+export const INSIDE = Object.freeze(Object.keys(PROFILES).filter(k => PROFILES[k].inside));
 
 /** Its conditions (with their values) that do something by the core's say: [[key, value, profile]]. */
 export function profiled(u) {

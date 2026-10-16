@@ -95,7 +95,7 @@ export function controlRoll(run, u, t, action, attacksMade = 0) {
   const kind = rollKind(action);
   if ( kind === "auto" ) return { kind };
   if ( kind === "save" ) {
-    const save = saveRoll(run, t, action.save.type, { magical: isMagical(action), from: u });
+    const save = saveRoll(run, t, action.save.type, { magical: isMagical(action), from: u, action });
     return { kind, mod: save.mod, dc: Number(action.save.dc) || 10, advantage: netAdvantage(save.advantage, Number(action.save.advantage) || 0), dice: save.dice, rollKind: "save", roller: t };
   }
   if ( kind === "goad" ) {
@@ -105,7 +105,7 @@ export function controlRoll(run, u, t, action, attacksMade = 0) {
     return { kind, mod: pitch.mod, dc: pitch.dc, advantage: pitch.advantage, dice: pitch.dice, rollKind: "check", pitch, luck: goadLuck(run, action), roller: u };
   }
   if ( kind === "check" ) {
-    const check = checkRoll(run, u, action.check.mod, t);
+    const check = checkRoll(run, u, action.check.mod, t, { purpose: "control", action });
     const map = action.check.attack ? (run.prep.rules.attackPenalty?.(action, attacksMade) ?? 0) : 0;
     const dc = defenseDc(run, t, action.check.against ?? "will", u);
     const mod = check.mod + map;

@@ -13,6 +13,8 @@ import { perceives } from "./senses.js";
 import { meanPart } from "../dice.js";
 import { castChanceOf } from "./casting.js";
 import { specialtyWeight } from "./specialty.js";
+import { outcomeWorth } from "./effects.js";
+import { cutOff } from "./troubles.js";
 
 const THRESHOLD = { conservative: 0.3, balanced: 0.45, aggressive: 0.6, allCosts: 0.8 };
 
@@ -34,10 +36,12 @@ const perTurn = (rules, action) => Math.max(0.1, costUnits(rules, costOf(rules, 
 
 /**
  * Moves needed before a heal reaches its target: none for heals with no range given (or no map), else what it takes
- * to come within touch (reach) or range, like an attack.
+ * to come within touch (reach) or range, like an attack; never through the total cover of another creature's insides.
  */
 export function healMoves(run, u, action, target) {
-  if ( target === u || action.selfOnly || (!action.range && action.reach === undefined) ) return 0;
+  if ( target === u || action.selfOnly ) return 0;
+  if ( cutOff(run, u, target) ) return Infinity;
+  if ( !action.range && action.reach === undefined ) return 0;
   return movesNeeded(run, u, target, action);
 }
 
@@ -62,6 +66,7 @@ export function healScores(run, u, heals = u.prep.healActions) {
     if ( !mends && (isSelf || !(ally.status === STATUS.DOWN && !ally.stable)) ) continue;
     if ( !isSelf && (allyDying === "protectSelf" || allyDying === "retreat") ) continue;
     if ( !isSelf && !perceives(run, u, ally, { crisis: true }) ) continue; // it has to be able to tell
+    if ( !isSelf && cutOff(run, u, ally) ) continue; // (inside another creature, or it inside one: out of reach)
     if ( !isSelf && tier <= TACTICAL.FERAL ) continue; // feral healers only tend themselves
     if ( refusesToHelp(run, u, ally) ) continue; // (scheming against its leaders)
     const frac = ally.maxHp > 0 ? ally.hp / ally.maxHp : 0;
@@ -139,9 +144,13 @@ export function decideHeal(run, u, turn) {
   // Healing for what it costs from the turn, the walk there included: a bonus-action heal from afar (5e Healing Word)
   // leaves the action to fight with; a touch spell (Cure Wounds) heals more but means getting there and using the
   // action. Anyone down is back up with any heal, so for them the cheapest way wins.
-  const value = o => (o.a.firstAid ? 0.5 : best.status === STATUS.DOWN ? 1 + meanHeal(o.a, u) / 100 : meanHeal(o.a, u)) / (perTurn(rules, o.a) + o.units) * specialtyWeight(u, o.a);
+  // (And what it lays on them besides, as any outcome is weighed: Regenerate's hit point a turn.)
+  const lent = a => (a.outcome ? Math.max(0, outcomeWorth(run, u, best, a.outcome)) : 0);
+  const value = o => (o.a.firstAid ? 0.5 : best.status === STATUS.DOWN ? 1 + (meanHeal(o.a, u) + lent(o.a)) / 100 : meanHeal(o.a, u) + lent(o.a)) / (perTurn(rules, o.a) + o.units) * specialtyWeight(u, o.a);
   const options = heals
     .filter(a => !a.firstAid || (best !== u && best.status === STATUS.DOWN && !best.stable && (rules.canFirstAid?.(best) ?? true)))
+    // (What the system says it can't do now: PF2e's sickened, who can't drink a potion.)
+    .filter(a => !rules.usable || rules.usable(run, u, a, best))
     .filter(a => !a.oncePerTarget || !u.healedTargets.has(`${a.id}|${best.id}`))
     .filter(a => !a.selfOnly || best === u)
     .filter(a => !a.targetTrait || best.spec.creatureTraits?.includes(a.targetTrait))
