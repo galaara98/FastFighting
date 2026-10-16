@@ -173,8 +173,8 @@ describe("conditions into behaviour", () => {
     // (So afraid, past what its fearful nerve bears: it wants away from them on its own, apart from the condition.)
     expect(levelOf(orc, "avoid", "kyra", { conditions: false })).toBeGreaterThanOrEqual(70);
     expect(levelOf(orc, "avoid", "valeros", { conditions: false })).toBeGreaterThanOrEqual(70);
-    // (The fear lowered, then lapsed, as the system has it: that wish goes with it.)
-    orc.effects = orc.effects.filter(e => e.sourceId !== "kyra").map(e => (e.sourceId === "valeros" ? { ...e, conditions: { frightened: 1 } } : e));
+    // (The fear lapsed, as the system has it: that wish goes with it.)
+    orc.effects = orc.effects.filter(e => !e.conditions?.frightened && !e.conditions?.fleeing);
     recompute(orc);
     conditionWishes(run, orc);
     expect(levelOf(orc, "avoid", "valeros", { conditions: false })).toBe(0);

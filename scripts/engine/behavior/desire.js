@@ -606,8 +606,42 @@ const RUN_FROM = 75;
  * How afraid a set of conditions makes it, in steps: frightened by its value; sent fleeing or turned (a critical fright),
  * two; another of the system's fears (rules.fearConditions), its value.
  */
-/** How afraid u is now, as its conditions stand (the system lowering them, or letting them lapse: less, or none). */
-export const fearNow = (run, u) => fearOn(u.conds, new Set([...FEARS, ...(run.prep.rules.fearConditions ?? [])]));
+/**
+ * How afraid u is now, as its conditions stand (the system lowering them, or letting them lapse: less, or none): as the
+ * system counts it (rules.fearValued: PF2e's frightened 2), or, where a fear is only there or not, as it has built.
+ */
+export function fearNow(run, u) {
+  const now = fearOn(u.conds, new Set([...FEARS, ...(run.prep.rules.fearConditions ?? [])]));
+  return run.prep.rules.fearValued || !now ? now : Math.max(now, u.fearBuilt ?? 0);
+}
+
+/**
+ * Where a fear is only there or not (a system that doesn't count its steps: no rules.fearValued), how bad it has got,
+ * kept hidden: each fear that lands a step more (a new one, or one laid on again), each that lapses a step less, and
+ * none at all once no fear is left. (u.fearBuilt; each fear known by its effect, or the sheet's own.)
+ */
+function fearBuilt(run, u, fears) {
+  let built = u.fearBuilt ?? 0;
+  const before = u.fearKnown ?? [];
+  const now = [];
+  for ( const e of u.effects ?? [] ) {
+    if ( !fearOn(e.conditions, fears) ) continue;
+    if ( !e.fearId ) {
+      e.fearId = (u.fearIds = (u.fearIds ?? 0) + 1);
+      built += 1;
+    }
+    now.push({ id: e.fearId, key: e.key ?? null, src: e.sourceId ?? null });
+  }
+  // (Afraid on its sheet, with nothing here to say why: one fear.)
+  if ( !now.length && fearOn(u.conds, fears) > 0 ) {
+    if ( !before.some(f => f.id === "sheet") ) built += 1;
+    now.push({ id: "sheet", key: null, src: null });
+  }
+  // (Lapsed: a step less. One laid on again in its place hasn't lapsed.)
+  for ( const f of before ) if ( !now.some(x => x.id === f.id || (x.key === f.key && x.src === f.src)) ) built -= 1;
+  u.fearBuilt = now.length ? Math.max(0, built) : 0;
+  u.fearKnown = now;
+}
 
 function fearOn(c, fears) {
   let most = 0;
@@ -659,9 +693,11 @@ export function conditionWishes(run, u) {
     else if ( (c.frightened ?? 0) > 0 ) feel(u, "avoid", by.id, Math.min(FRIGHT.most, FRIGHT.base + FRIGHT.step * c.frightened) + (50 - liveTrait(run, u, "brave")) * FRIGHT.brave);
   }
   // How afraid it is now, in any system, as the system has it (lowered, or lapsed: less, or none): it wears on its nerve
-  // (morale.js). Its fear made worse and worse, past what its nerve bears: a wish of its own to get away from whoever
-  // frightens it, apart from the condition, a reason to run as good as any (not talked into it, nor paid); only while
-  // the fear is that bad, gone with it.
+  // (morale.js). Where a fear is only there or not, it builds (fearBuilt). Its fear made worse and worse, past what its
+  // nerve bears: a wish of its own to get away from whoever frightens it, apart from the condition, a reason to run as
+  // good as any (not talked into it, nor paid); only while the fear is that bad, gone with it.
+  fearBuilt(run, u, fears);
+  if ( !rules.fearValued && fear > 0 ) fear = Math.max(fear, u.fearBuilt ?? 0);
   u.fearSeen = fear;
   const keys = fear >= fearToRun(run, u) ? [...sources].map(by => keyOf("avoid", by.id)) : [];
   for ( const k of u.fearRun ?? [] ) if ( !keys.includes(k) ) u.desire.memory.delete(k);

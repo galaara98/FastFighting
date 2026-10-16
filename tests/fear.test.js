@@ -50,6 +50,44 @@ describe("fear, by default", () => {
   });
 });
 
+describe("how afraid", () => {
+  test("a fear only there or not: each that lands builds it, each that lapses lowers it, none left none", () => {
+    const run = fight();
+    const [o, g] = ["ogre", "goblin"].map(id => run.byId.get(id));
+    const scare = n => g.effects.push({ key: `scare:${n}`, conditions: { frightened: true }, sourceId: o.id, rounds: 3, mods: null });
+    scare(1);
+    scare(2);
+    takeTurn(run, g);
+    expect(g.fearBuilt).toBe(2);
+    expect(ran(run, "goblin")).toBe(false);
+    // (A third: past its nerve, it runs.)
+    scare(3);
+    takeTurn(run, g);
+    expect(run.log.find(e => e.type === "flee" && e.actorId === "goblin")).toMatchObject({ why: "dread" });
+
+    const lapsing = fight();
+    const [o2, g2] = ["ogre", "goblin"].map(id => lapsing.byId.get(id));
+    for ( const n of [1, 2] ) g2.effects.push({ key: `scare:${n}`, conditions: { frightened: true }, sourceId: o2.id, rounds: 3, mods: null });
+    takeTurn(lapsing, g2);
+    g2.effects = g2.effects.filter(e => e.key !== "scare:1");
+    takeTurn(lapsing, g2);
+    expect(g2.fearBuilt).toBe(1);
+    g2.effects = [];
+    takeTurn(lapsing, g2);
+    expect(g2.fearBuilt).toBe(0);
+  });
+
+  test("a system that counts its own steps (PF2e's frightened 2): as it counts them, lowered or lapsed", () => {
+    const rules = { ...pf2eRules, fearValued: true };
+    const run = fight(rules);
+    const [o, g] = ["ogre", "goblin"].map(id => run.byId.get(id));
+    for ( const n of [1, 2, 3] ) g.effects.push({ key: `scare:${n}`, conditions: { frightened: 1 }, sourceId: o.id, rounds: 3, mods: null });
+    takeTurn(run, g);
+    // (Three frightened 1s are frightened 1: not past its nerve.)
+    expect(ran(run, "goblin")).toBe(false);
+  });
+});
+
 describe("fear, as the system says", () => {
   test("a system whose fright means nothing to keep away from: nothing", () => {
     const rules = { ...pf2eRules, conditionWishes: (run, u, { key }) => (key === "frightened" ? [] : null) };
