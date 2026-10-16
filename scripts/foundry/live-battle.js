@@ -194,9 +194,19 @@ function queue(work) {
   return next;
 }
 
-/** The tracker moved on: the turn that ended is closed (a player's, read and told), and the next begins. */
+/**
+ * The tracker moved on: the turn that ended is closed (a player's, read and told), and the next begins (one FastFighting
+ * plays, played). Moved back (Previous Turn, Previous Round): the battle follows it (followBack).
+ */
 function onTurnChange(combat, prior, current) {
   if ( battle?.combat !== combat || battle.data.ended || !playsHere() ) return;
+  // (A spotlight system's tracker has no order to go back along: its Rewind is the battle's own.)
+  const back = !battle.data.spotlight && !!prior && current?.round > 0 && prior.combatantId !== current.combatantId
+    && (current.round < prior.round || (current.round === prior.round && (current.turn ?? -1) < (prior.turn ?? -1)));
+  if ( back ) {
+    queue(() => followBack(prior));
+    return;
+  }
   queue(async () => {
     if ( battle.pc && battle.pc.combatantId !== combat.combatant?.id ) await closePlayerTurn();
     if ( battle.data.spotlight ) await spotlightMoved(combat, prior);
@@ -249,7 +259,66 @@ export async function spotlightNext() {
   return adapter.giveSpotlight(battle.combat, combatant);
 }
 
-/** Whether the turn the tracker is on has been played, and waits for the GM's Continue. */
+/**
+ * The tracker gone back to `now` ({round, at}: its place in the order): the kept turns to take back (the latest, all
+ * those after it), the turn it's on (`key`) if it's kept, and that one again (reopen) when it's a player's to open
+ * again. `place(turn)` is where a kept turn stands on the tracker ({round, at}, at -1 for one no longer on it).
+ */
+export function goingBack(turns, now, key, place) {
+  const laterThan = (a, b) => a.round > b.round || (a.round === b.round && a.at > b.at);
+  let keepTo = turns.length;
+  while ( keepTo > 0 && laterThan(place(turns[keepTo - 1]), now) ) keepTo--;
+  const own = turns[keepTo - 1]?.key === key ? turns[keepTo - 1] : null;
+  const reopen = own?.kind === "pc" && own.from ? own : null;
+  return { undo: turns.slice(reopen ? keepTo - 1 : keepTo), own, reopen };
+}
+
+/**
+ * The tracker went back (the GM's Previous Turn or Previous Round, or Rewind): every turn after the one it's on now is
+ * taken back, last first (a player's turn under way too), so the battle stands as that turn left it. One FastFighting
+ * played waits for Next Turn; a player's is theirs again (their cards read again, all of them, when it ends); one never
+ * played is ready to Play (a player's begun). So far back that the fight wasn't kept as it was, the tracker goes back
+ * where it was: only Rewind This Encounter goes so far.
+ */
+async function followBack(prior) {
+  const combat = battle.combat;
+  const combatant = combat.combatant;
+  const turns = battle.data.turns;
+  const key = turnKey(combatant);
+  const place = t => ({ round: t.round, at: combat.turns.findIndex(c => c.id === t.combatantId) });
+  const { undo, own, reopen } = goingBack(turns, { round: combat.round, at: combat.turn ?? -1 }, key, place);
+  if ( undo.length && !undo[0].snapshot ) {
+    ui.notifications.warn(loc("FASTFIGHTING.Live.TooFarBack"));
+    await combat.update({ round: prior.round, turn: prior.turn }, { turnEvents: false });
+    changed();
+    return false;
+  }
+  if ( battle.pc?.records?.length ) await holdingPause(() => revertEntry(battle.scene, { records: battle.pc.records }));
+  for ( const turn of [...undo].reverse() ) await holdingPause(() => revertEntry(battle.scene, turn));
+  const snapshot = undo[0]?.snapshot ?? battle.pc?.snapshot;
+  if ( snapshot ) battle.run = playersNow(restoreRun(battle.spec, battle.rules, snapshot, { log: battle.run.log }));
+  battle.data.turns = turns.slice(0, turns.length - undo.length);
+  battle.data.played = null;
+  battle.data.salt = (battle.data.salt ?? 0) + 1;
+  battle.data.told = lastTurn(battle.run.log);
+  battle.pc = null;
+  // (The cards it told are gone: told again when they're played again.)
+  const gone = new Set(battle.run.log.map(e => e.turn ?? 0));
+  battle.data.toldBeats = (battle.data.toldBeats ?? []).filter(k => k !== "closing" && k.split(",").every(t => gone.has(Number(t))));
+  const u = unitOf(combatant);
+  if ( reopen && u ) {
+    pcTurnBegin(battle.run, u.id);
+    battle.pc = { combatantId: combatant.id, id: u.id, round: reopen.round, messages: reopen.cards ?? [], facts: reopen.facts ?? [], records: [], snapshot: reopen.snapshot, from: reopen.from };
+  } else if ( own || (u && GONE.has(u.status)) ) battle.data.played = key;
+  else if ( u && playerRuns(battle.run, u) ) await beginPlayerTurn(u, combatant);
+  else if ( u ) await rewoundCard(u);
+  await keep();
+  await combat.setFlag(MODULE_ID, "live", flagOf(true));
+  changed();
+  return true;
+}
+
+/** Whether the turn the tracker is on has been played, and waits for the GM's Next Turn. */
 export function waitingOnGm() {
   return !!battle?.combat.combatant && battle.data.played === turnKey(battle.combat.combatant);
 }
@@ -523,15 +592,18 @@ async function settleTurn(turn, ended) {
   await keep();
 }
 
-/** The GMs' card after a turn FastFighting played: Continue (the tracker moves on) or Rewind Turn. */
+/**
+ * The GMs' card after a turn FastFighting played: Rewind (the tracker's Previous Turn) or Next Turn (the tracker moves
+ * on), with the tracker's own arrows.
+ */
 async function waitCard(turn) {
   if ( turn.kind !== "npc" ) return null;
   const name = battle.run.byId.get(battle.combat.combatants.get(turn.combatantId)?.tokenId)?.spec.name ?? "";
   const ChatMessage = chatMessages();
   return ChatMessage.create({
     content: inertHtml(`<div class="fast-fighting-live"><p>${escape(fmt("FASTFIGHTING.Live.Told", { name }))}</p>
-      <button type="button" data-ff-live="continue"><i class="fa-solid fa-forward"></i> ${loc("FASTFIGHTING.Live.Continue")}</button>
-      <button type="button" data-ff-live="rewind"><i class="fa-solid fa-backward-step"></i> ${loc("FASTFIGHTING.Live.RewindTurn")}</button></div>`),
+      <button type="button" data-ff-live="rewind"><i class="fa-solid fa-arrow-left"></i> ${loc("FASTFIGHTING.Live.Rewind")}</button>
+      <button type="button" data-ff-live="continue"><i class="fa-solid fa-arrow-right"></i> ${loc("FASTFIGHTING.Live.NextTurn")}</button></div>`),
     speaker: chronicle(), whisper: gmIds(), flags: { [MODULE_ID]: { live: { battle: battle.data.id, turn: turn.key } } }
   });
 }
@@ -660,7 +732,11 @@ async function closePlayerTurn() {
   // (What the engine itself made of the turn, past what the sheets say: a death burst, written.)
   const records = pc.records ?? [];
   await writeChanges(result.synced, captureAll(run), records);
-  const turn = { key: `${pc.round}.${pc.combatantId}`, combatantId: pc.combatantId, round: pc.round, kind: "pc", records, messages: [], moves: [], doors: [], snapshot: pc.snapshot };
+  // (With what it was read from, the player's own cards: the tracker taken back to it, it's theirs again.)
+  const turn = {
+    key: `${pc.round}.${pc.combatantId}`, combatantId: pc.combatantId, round: pc.round, kind: "pc", records, messages: [], moves: [], doors: [], snapshot: pc.snapshot,
+    from: pc.from, cards: pc.messages, facts: pc.facts ?? []
+  };
   turn.messages.push(...await tellNew());
   await settleTurn(turn, result.ended);
 }
@@ -935,10 +1011,21 @@ export function settleBattle() {
   });
 }
 
-/** Continue: the tracker moves on to the next turn. */
+/** Next Turn: the tracker moves on to the next turn. */
 export function continueBattle() {
   if ( !battle || battle.data.ended ) return null;
   return moveOn();
+}
+
+/**
+ * Rewind (the Battle Vantage's, a card's): the tracker's Previous Turn, which the battle follows (followBack). At the
+ * battle's first turn, in a battle over, or in a spotlight system, the last turn put back instead, the tracker on it.
+ */
+export function rewind() {
+  if ( !battle ) return null;
+  const combat = battle.combat;
+  if ( battle.data.ended || battle.data.spotlight || (combat.round <= 1 && !combat.turn) ) return rewindTurn();
+  return combat.previousTurn();
 }
 
 /** Put the last turn back: what it wrote, its cards and moves, and the run as it was before it; the tracker on it again. */
@@ -1255,7 +1342,7 @@ export function registerLiveBattles() {
         button.disabled = true;
         const what = button.dataset.ffLive;
         if ( what === "continue" ) await continueBattle();
-        else if ( what === "rewind" ) await rewindTurn();
+        else if ( what === "rewind" ) await rewind();
         else if ( what === "play" ) await playCurrent();
         else if ( what === "aftermath" ) await settleBattle();
         else if ( what === "rewindAll" ) {

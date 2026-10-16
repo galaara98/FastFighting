@@ -30,12 +30,12 @@
         <span class="ff-battle-state {{state}}">{{stateText}}</span>
       </div>
       <div class="ff-battle-buttons">
-        {{#if canContinue}}<button type="button" class="ff-btn" data-action="continue"><i class="fa-solid fa-forward"></i> {{localize "FASTFIGHTING.Live.Continue"}}</button>{{/if}}
+        <button type="button" class="ff-btn" data-action="rewind" {{#unless canRewind}}disabled{{/unless}}><i class="fa-solid fa-arrow-left"></i> {{localize "FASTFIGHTING.Live.Rewind"}}</button>
+        {{#if canContinue}}<button type="button" class="ff-btn" data-action="continue"><i class="fa-solid fa-arrow-right"></i> {{localize "FASTFIGHTING.Live.NextTurn"}}</button>{{/if}}
         {{#if spotlight}}<button type="button" class="ff-btn" data-action="spotlight" data-tooltip="{{localize "FASTFIGHTING.Battle.SpotlightHint"}}"><i class="fa-solid fa-lightbulb"></i> {{spotlight}}</button>{{/if}}
         {{#if canSettle}}<button type="button" class="ff-btn" data-action="aftermath" data-tooltip="{{localize "FASTFIGHTING.Live.AftermathHint"}}"><i class="fa-solid fa-hand-holding-medical"></i> {{localize "FASTFIGHTING.Live.Aftermath"}}</button>{{/if}}
         {{#if canPlay}}<button type="button" class="ff-btn" data-action="play"><i class="fa-solid fa-play"></i> {{localize "FASTFIGHTING.Live.Play"}}</button>{{/if}}
-        <button type="button" class="ff-btn" data-action="rewind" {{#unless canRewind}}disabled{{/unless}}><i class="fa-solid fa-backward-step"></i> {{localize "FASTFIGHTING.Live.RewindTurn"}}</button>
-        <button type="button" class="ff-btn" data-action="rewindAll"><i class="fa-solid fa-backward"></i> {{localize "FASTFIGHTING.MakeItSo.Undo"}}</button>
+        <button type="button" class="ff-btn ff-far-right" data-action="rewindAll"><i class="fa-solid fa-backward"></i> {{localize "FASTFIGHTING.MakeItSo.Undo"}}</button>
       </div>
       <div class="ff-toggles">
         <label data-tooltip="{{localize "FASTFIGHTING.Battle.PlayThroughHint"}}"><input type="checkbox" data-action="playThrough" {{checked playThrough}}> {{localize "FASTFIGHTING.Battle.PlayThrough"}}</label>

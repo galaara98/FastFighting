@@ -491,6 +491,8 @@
 .ff-battle-state { margin-left: auto; font-size: 0.85em; opacity: 0.8; }
 .ff-battle-state.waiting { color: #f0a35b; opacity: 1; }
 .ff-battle-buttons { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+/* (Rewind This Encounter: well away from the rest, so it isn't clicked by mistake.) */
+.ff-battle-buttons .ff-far-right { margin-left: auto; }
 /* (The planner's toggles grow to fill a row; here, in a column, they'd take its height.) */
 .ff-battle-turn .ff-toggles { flex: none; display: flex; flex-wrap: wrap; gap: 0.25rem 1rem; }
 .ff-battle-held ul { margin: 0; padding-left: 1.2rem; }

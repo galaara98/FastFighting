@@ -20,7 +20,7 @@ import { roundsText, listJoin } from "../i18n.js";
 import { expectText } from "../story/log-lines.js";
 import { mountNetwork } from "./battle-network.js";
 import {
-  liveBattle, continueBattle, rewindTurn, rewindEncounter, playCurrent, liveFact, dropHeldFact, setNpcReactions, setPlayThrough, finishReview,
+  liveBattle, continueBattle, rewind, rewindEncounter, playCurrent, liveFact, dropHeldFact, setNpcReactions, setPlayThrough, finishReview,
   waitingOnGm, suggestedSpotlight, spotlightNext, settleBattle, setAutomated, liveCondition, liveMind, bringIntoFight
 } from "../foundry/live-battle.js";
 
@@ -420,7 +420,7 @@ export class BattleVantage extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   static async #onRewind() {
-    await rewindTurn();
+    await rewind();
   }
 
   static async #onPlay() {
@@ -513,7 +513,7 @@ export function battleContext(b, focusId = null) {
     round: b.data.spotlight ? run.round : b.combat.round,
     spotlight: next ? fmt("FASTFIGHTING.Battle.Spotlight", { name: next.spec.name }) : "",
     turn: current ? fmt(player ? "FASTFIGHTING.Battle.PlayerTurn" : "FASTFIGHTING.Battle.Turn", { name: current.spec.name }) : "",
-    state, stateText: loc(`FASTFIGHTING.Battle.State.${state}`),
+    state, stateText: fmt(`FASTFIGHTING.Battle.State.${state}`, { name: current?.spec.name ?? "" }),
     canContinue: state === "waiting", canPlay: state === "ready" && !player, canRewind: !!b.data.turns.at(-1)?.snapshot,
     canSettle: state === "ended" && !b.data.settled,
     npcAsk: run.live.npcReactions === "ask", playThrough: !!b.data.auto,
