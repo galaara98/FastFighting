@@ -12479,6 +12479,26 @@
    "commit": "f7ee61e",
    "hash": "d073b0d3cb4c"
   },
+  "core:FASTFIGHTING.Region.Ground": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Region.Ground",
+   "area": "core/Region",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "f580d1d7a535"
+  },
+  "core:FASTFIGHTING.Region.GroundHint": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Region.GroundHint",
+   "area": "core/Region",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "2d132a0a5b66"
+  },
   "core:FASTFIGHTING.Results.AtRisk": {
    "repo": "core",
    "file": "languages/en.json",

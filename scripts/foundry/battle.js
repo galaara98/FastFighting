@@ -8,7 +8,7 @@ import { budgetMs, swingShareMs, MAX_RUNS, SWING_RUNS } from "../engine/run-budg
 /** How long a battle's prediction runs (seconds): its plan's, else the world's Prediction time. */
 export const predictionSeconds = setup => setup?.options?.seconds ?? setting("predictionTime");
 import { characterSpec, getAdapter, getModifiers } from "../api.js";
-import { computeApproach, computeAwareness, environmentAt, positionOf, squareFeet } from "./terrain.js";
+import { computeApproach, computeAwareness, computeGround, environmentAt, positionOf, squareFeet } from "./terrain.js";
 import { proposeGroups } from "../engine/groups.js";
 import { TACTIC_KEYS, TACTIC_WISHES } from "../engine/tactics.js";
 import { resetPathGrid } from "./pathing.js";
@@ -768,7 +768,21 @@ export function battleFor(roster, setup) {
   const approach = setup.options.positioning ? approachFor(roster, setup) : null;
   const spec = buildBattleSpec(roster, setup, { approach });
   spec.awareness = awarenessFor(roster);
+  // (The ground around them, for forced movement: ledges, walls, bad ground. Reused until a token, a wall or a region
+  // changes.)
+  if ( setup.options.positioning ) spec.ground = groundFor(roster);
   return { spec, approach };
+}
+
+let groundCache = { key: null, value: null };
+function groundFor(roster) {
+  const scene = canvas.scene;
+  const key = JSON.stringify([
+    scene?.id, roster.map(e => [e.token.id, e.token.document._source.x, e.token.document._source.y]),
+    scene?.walls.size, scene?.regions.map(r => [r.id, r._stats?.modifiedTime ?? 0])
+  ]);
+  if ( groundCache.key !== key ) groundCache = { key, value: computeGround(roster.map(e => e.token)) };
+  return groundCache.value;
 }
 
 /** Full pipeline used by the Battle Planner. */

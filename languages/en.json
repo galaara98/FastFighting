@@ -2291,6 +2291,10 @@
       "item": "the item",
       "place": "the spot",
       "object": "the thing"
+    },
+    "Region": {
+      "Ground": "FastFighting: ground height",
+      "GroundHint": "Where the ground is in this region (in the scene's units): a ledge or a platform above the floor, a pit's floor below it. A creature shoved off it falls. Leave it blank if the region isn't ground."
     }
   }
 }

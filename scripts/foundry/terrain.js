@@ -8,6 +8,7 @@
  *  - cover: tokens standing beside walls can duck behind them (used by the story writer).
  */
 import { getAdapter } from "../api.js";
+import { MODULE_ID } from "../constants.js";
 import { distanceText } from "../i18n.js";
 import { pathGridFor, THROUGH_WALL } from "./pathing.js";
 import { senseReach, sightReach, DARK } from "../engine/behavior/senses.js";
@@ -28,6 +29,100 @@ function describeBehavior(behavior) {
   } catch ( err ) {
     return null;
   }
+}
+
+/**
+ * How far around each creature the ground is read for forced movement (a shove goes no farther than 20 feet), and the
+ * engine's cells (5 feet).
+ */
+const GROUND_REACH = 25;
+const CELL_FEET = 5;
+const OUT = Object.freeze([[1, 0, "e"], [1, 1, "se"], [0, 1, "s"], [-1, 1, "sw"], [-1, 0, "w"], [-1, -1, "nw"], [0, -1, "n"], [1, -1, "ne"]]);
+
+/** A region's ground height, in feet, as the GM gave it (FastFighting's field on its settings), or null. */
+export function regionGround(region) {
+  const v = region?.getFlag?.(MODULE_ID, "ground");
+  return v === null || v === undefined || v === "" || !Number.isFinite(Number(v)) ? null : Number(v) * feetPerUnit();
+}
+
+/**
+ * The ground around everyone in the battle, cell by cell (engine/behavior/forced.js): only the cells with something
+ * to them. A cell's ground height: the highest a region over it was given (a ledge 20, a pit -30; FastFighting's field
+ * on the region's settings), else the floor (0). Difficult: a region slowing walking. Hazardous: a region the system
+ * says harms (its helper's describeRegionBehavior, or a script). Blocked: which ways out of it a wall stops movement.
+ * @param {Token[]} tokens
+ * @returns {{size: number, cells: Array<[number, number, object]>}}
+ */
+export function computeGround(tokens) {
+  const perFoot = canvas.dimensions.size / squareFeet();
+  const cellPx = CELL_FEET * perFoot;
+  const regions = canvas.scene.regions.contents.map(region => ({
+    region, ground: regionGround(region),
+    difficult: region.behaviors.some(b => describeBehavior(b)?.difficult),
+    hazardous: region.behaviors.some(b => describeBehavior(b)?.hazardous)
+  })).filter(r => r.ground !== null || r.difficult || r.hazardous);
+  const backend = CONFIG.Canvas.polygonBackends.move;
+  const inside = (region, point) => {
+    try {
+      return region.polygonTree?.testPoint?.(point) ?? region.testPoint({ ...point, elevation: 0 });
+    } catch ( err ) {
+      return false;
+    }
+  };
+  const seen = new Set();
+  const cells = [];
+  for ( const t of tokens ) {
+    const fx = t.center.x / perFoot;
+    const fy = t.center.y / perFoot;
+    for ( let i = Math.floor((fx - GROUND_REACH) / CELL_FEET); i <= Math.floor((fx + GROUND_REACH) / CELL_FEET); i++ ) {
+      for ( let j = Math.floor((fy - GROUND_REACH) / CELL_FEET); j <= Math.floor((fy + GROUND_REACH) / CELL_FEET); j++ ) {
+        const key = `${i},${j}`;
+        if ( seen.has(key) ) continue;
+        seen.add(key);
+        const center = { x: (i + 0.5) * cellPx, y: (j + 0.5) * cellPx };
+        const cell = {};
+        let ground = null;
+        for ( const r of regions ) {
+          if ( !inside(r.region, center) ) continue;
+          if ( r.ground !== null ) ground = Math.max(ground ?? -Infinity, r.ground);
+          if ( r.difficult ) cell.d = true;
+          if ( r.hazardous ) cell.h = true;
+        }
+        if ( ground !== null && ground !== 0 ) cell.g = ground;
+        const blocked = OUT.filter(([dx, dy]) => {
+          try {
+            return backend.testCollision(center, { x: center.x + dx * cellPx, y: center.y + dy * cellPx }, { type: "move", mode: "any" });
+          } catch ( err ) {
+            return false;
+          }
+        }).map(([, , name]) => name);
+        if ( blocked.length ) cell.b = blocked;
+        if ( Object.keys(cell).length ) cells.push([i, j, cell]);
+      }
+    }
+  }
+  return { size: CELL_FEET, cells };
+}
+
+/**
+ * FastFighting's field on a region's settings: its ground's height (a ledge, a platform; a pit's floor below), so a
+ * creature shoved off it falls. Blank: the region isn't ground.
+ */
+export function registerGroundField() {
+  Hooks.on("renderRegionConfig", (app, html) => {
+    const root = html instanceof HTMLElement ? html : html?.[0];
+    const region = app.document;
+    if ( !root || !region || root.querySelector(".ff-region-ground") ) return;
+    const anchor = root.querySelector('[name="elevation.top"]')?.closest(".form-group") ?? root.querySelector(".form-group");
+    if ( !anchor ) return;
+    const group = document.createElement("div");
+    group.className = "form-group ff-region-ground";
+    const value = region.getFlag(MODULE_ID, "ground");
+    group.innerHTML = `<label>${foundry.utils.escapeHTML(game.i18n.localize("FASTFIGHTING.Region.Ground"))}</label>
+      <div class="form-fields"><input type="number" step="any" name="flags.${MODULE_ID}.ground" value="${value ?? ""}"></div>
+      <p class="hint">${foundry.utils.escapeHTML(game.i18n.localize("FASTFIGHTING.Region.GroundHint"))}</p>`;
+    anchor.after(group);
+  });
 }
 
 /** Hearing combat in the open: easy nearby, harder with distance, much harder through each wall. */

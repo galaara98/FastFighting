@@ -16,7 +16,7 @@ import { QUERIES, SURVEY_STATUS, hasCharactersFor } from "./foundry/tactics.js";
 import { helperStatus, helperMessage, helperNoticeHtml } from "./helpers.js";
 import { invalidateApproach } from "./foundry/battle.js";
 import { undoConcession, revealStory, ownCard, cardUndoState, undoFromCard, refreshUndoCards, UNDO_REACH } from "./foundry/make-it-so.js";
-import { sceneUnit } from "./foundry/terrain.js";
+import { sceneUnit, registerGroundField } from "./foundry/terrain.js";
 import { planHolder } from "./foundry/persistence.js";
 import { setDistanceUnit, setTermSource, localize } from "./i18n.js";
 import { loadKeywords } from "./foundry/keywords.js";
@@ -27,6 +27,7 @@ Hooks.once("init", () => {
   registerSettings(DefaultsConfig, GenericPathsConfig, StoryTablesConfig);
   registerLiveBattles();
   registerBattleInterface();
+  registerGroundField();
   // The GM's "Prepare Players" request opens the survey on the chosen players' screens (a player's survey never on a
   // GM's); one character's for the GMs on theirs. Foundry says who asks: only a GM may.
   CONFIG.queries[QUERIES.openSurvey] = (data, { user }) => {
