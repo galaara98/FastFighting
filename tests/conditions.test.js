@@ -30,7 +30,9 @@ describe("the core's conditions", () => {
     expect(new Set(keys).size).toBe(keys.length);
     expect(keys).toEqual(expect.arrayContaining(["prone", "offGuard", "frightened", "incapacitated", "immobilized", "unconscious", "blinded"]));
     expect(CORE_CONDITIONS.find(c => c.key === "frightened").valued).toBe(true);
-    expect(GM_RELATIONS).toEqual(RELATIONS.filter(k => k !== "marked"));
+    // (Tied up is on the creature, a condition of its own: not toward the one who tied it.)
+    expect(GM_RELATIONS).toEqual(RELATIONS.filter(k => k !== "marked" && k !== "bound"));
+    expect(CORE_CONDITIONS.some(c => c.key === "bound")).toBe(true);
     expect(validConditionKey("offGuard")).toBe(true);
     expect(validConditionKey("<script>")).toBe(false);
   });

@@ -29,16 +29,19 @@ function oneDown(heroExtra = {}, { far = 60 } = {}) {
 }
 
 describe("tying them up", () => {
-  test("mid-fight: with no foe on top of it, it ties up the fallen foe beside it; healed, that foe is a prisoner, and does nothing", () => {
+  test("mid-fight: with no foe on top of it, it ties up the fallen foe beside it; healed, that foe is a prisoner, and only struggles", () => {
     const { run, me, down } = oneDown({ tactics: { fallen: "tie" } });
     takeTurn(run, me);
     expect(down.boundBy).toBe("hero");
+    expect(down.bound).toBe(true);
     expect(run.log.some(e => e.type === "bind" && e.targetId === "bandit" && !e.aftermath)).toBe(true);
-    // (Back on its feet, by a friend's healing or its own: still tied up.)
+    // (Back on its feet, by a friend's healing or its own: still tied up. It struggles: the knots hold.)
     Object.assign(down, { status: "standing", hp: 10 });
+    down.spec.escapeWork = { mod: -50 };
     takeTurn(run, down);
     expect(down.status).toBe("bound");
-    expect(run.log.at(-1)).toMatchObject({ type: "bound", byId: "hero" });
+    expect(run.log.at(-2)).toMatchObject({ type: "bound", byId: "hero" });
+    expect(run.log.at(-1)).toMatchObject({ type: "escape", hold: "bound", success: false });
     expect(run.log.some(e => e.actorId === "bandit" && e.type === "attack")).toBe(false);
   });
 

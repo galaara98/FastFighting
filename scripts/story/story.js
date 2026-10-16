@@ -441,7 +441,8 @@ function narrate(e, roll, rel, fill) {
     case "draw": return roll("maneuver.drawWeapon", f);
     case "prone": return roll("condition.prone", f);
     case "grabbed": return roll("condition.grabbed", f);
-    case "escape": return roll(e.success ? "maneuver.escape" : "event.stuck", f);
+    case "escape": return roll(e.success ? "maneuver.escape" : e.hold === "bound" ? "event.stuckBonds" : "event.stuck", f);
+    case "free": return roll(e.success ? "maneuver.untie" : "event.untieFails", f);
     case "waver": return roll("event.waver", f);
     case "holdGround": return roll(e.ordered ? "event.holdOrdered" : "event.holdGround", { ...f, target: e.by ?? "" });
     case "study": return roll(e.worked === false ? "event.studyFails" : "maneuver.assess", f);

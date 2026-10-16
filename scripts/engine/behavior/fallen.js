@@ -12,6 +12,8 @@
  *    (rules.lootCost; by default the basic action), once for each who robs it. A player character's things go only on
  *    the luck check a thief needs against one (theftLuck): the GM's secret, never told. Like anything taken, it comes
  *    back if the robber ends the fight beaten.
+ *  - Freeing a friend tied up (or held as the system says a friend can break: behavior/holds.js): desire "free", acted
+ *    on the same way, beside it (holds.js untieCost); untying takes no roll unless the system says so.
  *  - Who does it: whoever wants to (desires "bind" and "rob": its answer to "Foes who fall" and its party's, its
  *    pills, its leader, or a desire stated for it). Mid-fight it acts on it only when that leads its desires, at a
  *    fallen foe it can get to this turn. Its answer's wish is stronger than the foe its tactics would pick when there's
@@ -27,6 +29,7 @@ import { remaining } from "./talk.js";
 import { robbable } from "./theft.js";
 import { perceives } from "./senses.js";
 import { mainPool, normalizeCost } from "../turn.js";
+import { isBound, freeable, untieCost, tryHold, release } from "./holds.js";
 
 /** An answer's wish for each fallen foe: a passing one while there's a foe it could fight where it stands ... */
 export const FALLEN_LEVEL = 30;
@@ -68,34 +71,37 @@ export function fallenWishes(run, u) {
   for ( const t of enemiesOf(run, u) ) {
     if ( !t.active || !perceives(run, u, t) ) continue;
     const fits = kind === "hurt" ? t.status === STATUS.DOWN && !t.stable
-      : kind === "bind" ? t.status === STATUS.DOWN && !t.boundBy
+      : kind === "bind" ? t.status === STATUS.DOWN && !isBound(t)
         : (t.status === STATUS.DOWN || t.status === STATUS.BOUND) && robbable(t) && !u.robbedFrom?.has(t.id);
     if ( fits ) think(u, kind, t.id, level);
   }
 }
 
 /**
- * Whether u ties up or robs a fallen foe now (the next step of its turn): when that's what it most wants, at one it
- * can get to this turn. {kind, target, moves, cost}, or null.
+ * Whether u ties up or robs a fallen foe (or frees a friend) now, the next step of its turn: when that's what it most
+ * wants, at one it can get to this turn. {kind, target, moves, cost, hold}, or null.
  */
 export function decideFallen(run, u, turn) {
   const lead = mind(run, u).lead;
-  if ( lead?.kind !== "bind" && lead?.kind !== "rob" ) return null;
+  if ( lead?.kind !== "bind" && lead?.kind !== "rob" && lead?.kind !== "free" ) return null;
   const t = run.byId.get(lead.targetId);
   if ( !t || (lead.kind === "rob" && u.robbedFrom?.has(t.id)) ) return null;
   const rules = run.prep.rules;
-  const cost = fallenCost(rules, lead.kind);
+  const hold = lead.kind === "free" ? freeable(run, t) : null;
+  if ( lead.kind === "free" && !hold ) return null;
+  const cost = hold ? untieCost(rules, u, t, hold) : fallenCost(rules, lead.kind);
   const moves = movesNeeded(run, u, t, BESIDE);
-  if ( !moves ) return turn.canAfford(cost) ? { kind: lead.kind, target: t, moves: 0, cost } : null;
+  if ( !moves ) return turn.canAfford(cost) ? { kind: lead.kind, target: t, moves: 0, cost, hold } : null;
   if ( !Number.isFinite(moves) || moves > 1 || !canMove(run, u) ) return null;
   // (Getting there and doing it, this turn.)
   const pool = mainPool(rules);
   const units = turn.unitsForMoves(moves, run.prep.approachOf(u.id, t.id).speed);
-  return turn.canAfford({ ...cost, [pool]: (cost[pool] ?? 0) + units }) ? { kind: lead.kind, target: t, moves, cost } : null;
+  return turn.canAfford({ ...cost, [pool]: (cost[pool] ?? 0) + units }) ? { kind: lead.kind, target: t, moves, cost, hold } : null;
 }
 
 /** u ties t up. */
 export function bind(run, u, t, say, { aftermath = false } = {}) {
+  t.bound = true;
   t.boundBy = u.id;
   t.boundRound = run.round;
   say(u, { type: "bind", target: t.spec.name, targetId: t.id, aftermath });
@@ -135,8 +141,18 @@ export function rob(run, u, t, say, { aftermath = false } = {}) {
  * out of the fight. True when it was.
  */
 export function stayBound(run, u, say) {
-  if ( !u.boundBy || u.status !== STATUS.STANDING ) return false;
+  if ( !isBound(u) || u.status !== STATUS.STANDING ) return false;
   u.status = STATUS.BOUND;
-  say?.(u, { type: "bound", by: run.byId.get(u.boundBy)?.spec.name ?? "", byId: u.boundBy });
+  say?.(u, { type: "bound", by: run.byId.get(u.boundBy)?.spec.name ?? "", byId: u.boundBy ?? null });
   return true;
+}
+
+/** A roll's numbers for the log (what a try at a hold rolled, if it rolled). */
+export const rollOf = got => Object.fromEntries(["natural", "mod", "total", "dc", "degree"].filter(k => got?.[k] !== undefined).map(k => [k, got[k]]));
+
+/** u frees t of a hold (untying it, or as the system says), or tries to. */
+export function freeFriend(run, u, t, hold, say) {
+  const got = tryHold(run, u, hold, { freeing: true });
+  if ( got.success ) release(run, t, hold);
+  say(u, { type: "free", target: t.spec.name, targetId: t.id, hold: hold.key, success: got.success, ...rollOf(got), ...(got.said?.text ? { said: got.said.text } : {}) });
 }

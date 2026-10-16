@@ -12,6 +12,11 @@ export const logTerm = (key, data = null) => t(key, data);
 
 /** One phrase, in the reader's language. */
 const t = (key, data = null) => localize(`FASTFIGHTING.Log.${key}`, data);
+/** A hold's name: the condition's word (its key, where there's none). */
+const holdName = key => {
+  const word = localize(`FASTFIGHTING.Condition.${key}`);
+  return word === `FASTFIGHTING.Condition.${key}` ? key : word;
+};
 
 const signed = n => (n >= 0 ? `+${n}` : `${n}`);
 const degree = d => t(`Degree${d ?? 1}`);
@@ -66,7 +71,7 @@ export function concessionText(c) {
 }
 
 const MODE = { walk: "ModeWalk", fly: "ModeFly", swim: "ModeSwim", climb: "ModeClimb", burrow: "ModeBurrow" };
-const DESIRE = { hurt: "DesireHurt", heal: "DesireHeal", protect: "DesireProtect", aid: "DesireAid", talk: "DesireTalk", avoid: "DesireAvoid", bind: "DesireBind", rob: "DesireRob" };
+const DESIRE = { hurt: "DesireHurt", heal: "DesireHeal", protect: "DesireProtect", aid: "DesireAid", talk: "DesireTalk", avoid: "DesireAvoid", bind: "DesireBind", rob: "DesireRob", breakFree: "DesireBreakFree", free: "DesireFree" };
 const WHY = { hurt: "WhyHurt", harmed: "WhyHarmed", helped: "WhyHelped", robbed: "WhyRobbed", insulted: "WhyInsulted", impatient: "WhyImpatient", kin: "WhyKin" };
 const NOTICE = { sight: "NoticeSight", sound: "NoticeSound", smell: "NoticeSmell", feel: "NoticeFeel", radar: "NoticeRadar", standoff: "NoticeStandoff", fledInto: "NoticeFled", help: "NoticeHelp", attacked: "NoticeAttacked", gm: "NoticeGm" };
 const BREAKS = { insulted: "BreakInsulted", beast: "BreakBeast", annoyed: "BreakAnnoyed", blood: "BreakBlood", impatient: "BreakImpatient", unmet: "BreakUnmet" };
@@ -269,7 +274,17 @@ function baseLine(e) {
     case "struckDown": return t("StruckDown", { actor: e.actor, n: e.dying ?? 0 });
     case "draw": return t("Draw", { actor: e.actor, item: e.item ?? "" });
     case "end": return endLine(e);
-    case "escape": return e.success ? t("Escape", a) : t("Stuck", a);
+    case "escape": {
+      // (A grab, a prisoner's bonds, or another hold; with what it rolled, if it rolled.)
+      const roll = e.natural !== undefined ? ` · ${dice(e.natural, e.mod, e.total, e.dc, t("DC"))}` : "";
+      if ( e.hold === "bound" ) return t(e.success ? "EscapeBonds" : "StuckBonds", { ...a, roll });
+      if ( e.hold && e.hold !== "grabbed" ) return t(e.success ? "EscapeFrom" : "StuckIn", { ...a, what: holdName(e.hold), roll });
+      return e.success ? t("Escape", a) + roll : t("Stuck", a) + roll;
+    }
+    case "free": {
+      const roll = e.natural !== undefined ? ` · ${dice(e.natural, e.mod, e.total, e.dc, t("DC"))}` : "";
+      return t(e.success ? "Free" : "FreeFails", { ...a, roll });
+    }
     case "fate":
       if ( e.sure ) return t("FateSure", { actor: e.actor, label: e.label });
       if ( e.self === undefined ) return t("FateRetry", { ...a, label: e.label });
@@ -289,7 +304,7 @@ function baseLine(e) {
     case "bind": return t("Bind", a);
     // (A player character's luck check, like a thief's, is the GM's secret: a kept thing is just nothing taken.)
     case "rob": return e.stolen ? t("Rob", { ...a, what: concessionText(e.stolen) }) : t("RobNothing", a);
-    case "bound": return t("Bound", { actor: e.actor, by: e.by ?? "" });
+    case "bound": return e.by ? t("Bound", { actor: e.actor, by: e.by }) : t("BoundAlone", { actor: e.actor });
     case "parley": return t("Parley", a);
     case "peacekeep": return t("Peacekeep", a);
     case "persistent": return t("Persistent", { actor: e.actor, damage: damage(e.amount, e.damageType) });

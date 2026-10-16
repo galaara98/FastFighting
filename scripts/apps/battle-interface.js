@@ -45,13 +45,13 @@ const FACTS = Object.freeze({
 
 /** Each line's and symbol's sign (Font Awesome): desires, conditions, relations, ways toward others, goals, things. */
 const ICONS = Object.freeze({
-  desire: { hurt: "hand-fist", heal: "heart-pulse", protect: "shield", aid: "hand-holding-heart", talk: "comments", avoid: "person-walking-arrow-loop-left", bind: "link", rob: "sack-dollar", bolstered: "hands-praying" },
+  desire: { hurt: "hand-fist", heal: "heart-pulse", protect: "shield", aid: "hand-holding-heart", talk: "comments", avoid: "person-walking-arrow-loop-left", bind: "link", rob: "sack-dollar", bolstered: "hands-praying", breakFree: "unlock", free: "link-slash" },
   condition: {
     prone: "person-falling", offGuard: "shield-halved", frightened: "face-surprise", sickened: "face-dizzy", slowed: "hourglass-half", stunned: "star",
     clumsy: "shoe-prints", enfeebled: "weight-hanging", exhaustion: "battery-quarter", blinded: "eye-slash", deafened: "ear-deaf", silenced: "comment-slash",
     hidden: "user-secret", invisible: "ghost", immobilized: "anchor", restrained: "link", grabbed: "hand-back-fist", paralyzed: "snowflake", petrified: "mountain",
     unconscious: "bed", asleep: "moon", incapacitated: "ban", confused: "question", dazed: "star-half-stroke", fleeing: "person-running",
-    turned: "person-walking-arrow-right", poisoned: "skull-crossbones", vulnerable: "heart-crack", disarmed: "hand", controlled: "hat-wizard",
+    turned: "person-walking-arrow-right", bound: "hands-bound", poisoned: "skull-crossbones", vulnerable: "heart-crack", disarmed: "hand", controlled: "hat-wizard",
     charmed: "heart", dazzled: "sun", doomed: "skull", wounded: "droplet", drained: "droplet-slash", fatigued: "battery-quarter", stupefied: "brain",
     quickened: "bolt", concealed: "cloud", undetected: "user-secret", unnoticed: "user-secret", observed: "eye", encumbered: "weight-hanging", broken: "heart-crack"
   },
@@ -83,7 +83,6 @@ export class BattleInterface extends HandlebarsApplicationMixin(ApplicationV2) {
       rewind: BattleInterface.#onRewind,
       play: BattleInterface.#onPlay,
       rewindAll: BattleInterface.#onRewindAll,
-      fact: BattleInterface.#onFact,
       dropHeld: BattleInterface.#onDropHeld,
       npcReactions: BattleInterface.#onNpcReactions,
       tellIt: BattleInterface.#onTellIt,
@@ -91,7 +90,6 @@ export class BattleInterface extends HandlebarsApplicationMixin(ApplicationV2) {
       spotlight: BattleInterface.#onSpotlight,
       aftermath: BattleInterface.#onAftermath,
       automate: BattleInterface.#onAutomate,
-      impose: BattleInterface.#onImpose,
       adjust: BattleInterface.#onAdjust,
       addLine: BattleInterface.#onAddLine,
       bringIn: BattleInterface.#onBringIn
@@ -274,18 +272,22 @@ export class BattleInterface extends HandlebarsApplicationMixin(ApplicationV2) {
       .map(c => ({ value: `cond:${c.key}`, label: `${label(c.key)} · ${loc(adapter?.sheetCarries?.(c.key, doc?.actor) ? "FASTFIGHTING.Battle.OnSheet" : "FASTFIGHTING.Battle.CoreOnly")}` }))
       .sort((a, c) => a.label.localeCompare(c.label, game.i18n.lang));
     const players = b.run.live.players.has(id);
-    const desires = players ? [] : DESIRE_KINDS.filter(k => k !== "bolstered").map(k => ({ value: `desire:${k}`, label: loc(`FASTFIGHTING.Desire.Kind.${k}`) }));
+    const desires = players ? [] : DESIRE_KINDS.filter(k => k !== "bolstered" && k !== "breakFree").map(k => ({ value: `desire:${k}`, label: loc(`FASTFIGHTING.Desire.Kind.${k}`) }));
     const relations = GM_RELATIONS.filter(k => k !== "afraid" || !players).map(k => ({ value: `rel:${k}`, label: loc(`FASTFIGHTING.Battle.RelationPick.${k}`) }));
     const others = b.run.units.filter(o => o.id !== id);
+    // (What happened at the table: what a want doesn't say already.)
+    const facts = Object.keys(FACTS).filter(k => k !== "hurt" && k !== "protect").map(k => ({ value: `fact:${k}`, label: loc(`FASTFIGHTING.Battle.Fact.${k}`) }));
     const content = `<div class="ff-add-line">
       <p class="hint">${foundry.utils.escapeHTML(fmt("FASTFIGHTING.Battle.Net.AddHint", { name: u.spec.name }))}</p>
       <div class="form-group"><label>${loc("FASTFIGHTING.Battle.Net.AddWhat")}</label><select name="what">
         ${desires.length ? `<optgroup label="${loc("FASTFIGHTING.Battle.Net.Wants")}">${desires.map(d => opt(d.value, d.label)).join("")}</optgroup>` : ""}
         <optgroup label="${loc("FASTFIGHTING.Battle.Conditions")}">${conditions.map(c => opt(c.value, c.label)).join("")}</optgroup>
         <optgroup label="${loc("FASTFIGHTING.Battle.Toward")}">${relations.map(r => opt(r.value, r.label)).join("")}</optgroup>
+        <optgroup label="${loc("FASTFIGHTING.Battle.FactLabel")}">${facts.map(f => opt(f.value, f.label)).join("")}</optgroup>
       </select></div>
       <div class="form-group"><label>${loc("FASTFIGHTING.Battle.By")}</label><select name="who"><option value="">—</option>${others.map(o => opt(o.id, o.spec.name)).join("")}</select></div>
       <div class="form-group"><label>${loc("FASTFIGHTING.Desire.HowMuch")}</label><select name="band">${DESIRE_BAND_KEYS.map((k, i) => `<option value="${i}" ${i === 2 ? "selected" : ""}>${loc(`FASTFIGHTING.Desire.Level.${k}`)}</option>`).join("")}</select></div>
+      <div class="form-group"><label>${loc("FASTFIGHTING.Battle.HowWell")}</label><select name="degree">${[3, 2, 1, 0].map(d => `<option value="${d}" ${d === 2 ? "selected" : ""}>${loc(`FASTFIGHTING.Battle.Degree.${d}`)}</option>`).join("")}</select></div>
       <div class="form-group"><label>${loc("FASTFIGHTING.Battle.Value")}</label><input type="number" name="value" min="1" step="1" value="1"></div>
       <div class="form-group"><label>${loc("FASTFIGHTING.Battle.Rounds")}</label><input type="number" name="rounds" min="1" step="1" placeholder="${loc("FASTFIGHTING.Battle.Until")}"></div>
     </div>`;
@@ -299,6 +301,12 @@ export class BattleInterface extends HandlebarsApplicationMixin(ApplicationV2) {
     const byId = picked.who || null;
     const rounds = Number(picked.rounds) || null;
     const band = Number(picked.band ?? 2);
+    if ( kind === "fact" ) {
+      const f = FACTS[key];
+      if ( !f ) return;
+      if ( f.who && !byId && !["surrender", "standDown"].includes(key) ) return ui.notifications.warn(loc("FASTFIGHTING.Battle.PickWho"));
+      return liveFact(f.fact(id, byId, f.how === "degree" ? Number(picked.degree ?? 2) : band));
+    }
     if ( (kind === "desire" || kind === "rel") && !byId ) return ui.notifications.warn(loc("FASTFIGHTING.Battle.PickWho"));
     if ( kind === "desire" ) return liveMind({ op: "desire", id, kind: key, targetId: byId, level: bandLevel(band) });
     if ( kind === "rel" ) return liveCondition({ op: "relate", id, kind: key, byId, rounds, level: band });
@@ -347,39 +355,6 @@ export class BattleInterface extends HandlebarsApplicationMixin(ApplicationV2) {
       window: { title: loc("FASTFIGHTING.MakeItSo.UndoTitle") }, content: `<p>${foundry.utils.escapeHTML(loc("FASTFIGHTING.Live.RewindAllConfirm"))}</p>`
     });
     if ( ok ) await rewindEncounter();
-  }
-
-  /** A fact from the table, as the panel says: what, by (or about) whom, how much (or how well). */
-  static async #onFact(event, target) {
-    const row = target.closest("[data-creature]");
-    const id = row?.dataset.creature;
-    const what = row?.querySelector("[name=what]")?.value;
-    const f = FACTS[what];
-    if ( !id || !f ) return;
-    const by = row.querySelector("[name=who]")?.value ?? "";
-    if ( f.who && !by && !["surrender", "standDown"].includes(what) ) return ui.notifications.warn(loc("FASTFIGHTING.Battle.PickWho"));
-    const how = Number(row.querySelector(f.how === "degree" ? "[name=degree]" : "[name=band]")?.value ?? 2);
-    await liveFact(f.fact(id, by, how));
-  }
-
-  /**
-   * A condition put on (or one toward someone), as the panel says: which, how much, by whom, for how many rounds
-   * (none: until taken off). What its sheet can show goes on the sheet; the rest FastFighting keeps.
-   */
-  static async #onImpose(event, target) {
-    const row = target.closest("[data-creature]");
-    const id = row?.dataset.creature;
-    const pick = row?.querySelector("[name=cond]")?.value ?? "";
-    if ( !id || !pick ) return;
-    const byId = row.querySelector("[name=by]")?.value || null;
-    const rounds = Number(row.querySelector("[name=rounds]")?.value) || null;
-    if ( pick.startsWith("rel:") ) {
-      if ( !byId ) return ui.notifications.warn(loc("FASTFIGHTING.Battle.PickWho"));
-      const level = Number(row.querySelector("[name=band]")?.value ?? 2);
-      return liveCondition({ op: "relate", id, kind: pick.slice(4), byId, rounds, level });
-    }
-    const value = Math.max(1, Number(row.querySelector("[name=value]")?.value) || 1);
-    await liveCondition({ op: "set", id, key: pick, value, byId, rounds });
   }
 
   /** A token on the map brought into the fight. */
@@ -466,12 +441,7 @@ export function battleContext(b, focusId = null) {
     canSettle: state === "ended" && !b.data.settled,
     npcAsk: run.live.npcReactions === "ask", playThrough: !!b.data.auto,
     held: (b.pc?.facts ?? []).map((f, i) => ({ i, text: factText(f, name) })),
-    focus: view.panel,
-    facts: Object.entries(FACTS).map(([key, f]) => ({ key, label: loc(`FASTFIGHTING.Battle.Fact.${key}`), who: !!f.who, how: f.how ?? "" })),
-    bands: DESIRE_BAND_KEYS.map((k, i) => ({ value: i, label: loc(`FASTFIGHTING.Desire.Level.${k}`) })),
-    degrees: [3, 2, 1, 0].map(d => ({ value: d, label: loc(`FASTFIGHTING.Battle.Degree.${d}`) })),
-    relationsHere: GM_RELATIONS.map(k => ({ value: `rel:${k}`, label: loc(`FASTFIGHTING.Battle.RelationPick.${k}`) })),
-    sideLabel
+    focus: view.panel
   };
   return { context, graph: view.graph, focus: view.graph.focus };
 }
@@ -661,12 +631,6 @@ function panelOf(b, net, nodes, edges, focus, { name, docOf, sideLabel }) {
   const onIt = e => e.to === focus && ["condition", "relation"].includes(e.link.type) && e.link.kind !== "shuns";
   const wantsMe = e => e.to === focus && e.link.type === "desire";
   const symbols = node.marks ?? [];
-  const adapter = getAdapter();
-  const label = key => adapter?.conditionLabel?.(key) || (has(`FASTFIGHTING.Condition.${key}`) ? loc(`FASTFIGHTING.Condition.${key}`) : key);
-  const seen = new Set();
-  const choices = (adapter?.conditionChoices?.() ?? []).filter(c => c?.key && !seen.has(c.key) && seen.add(c.key))
-    .map(c => ({ value: c.key, label: `${label(c.key)} · ${loc(adapter?.sheetCarries?.(c.key, doc?.actor) ? "FASTFIGHTING.Battle.OnSheet" : "FASTFIGHTING.Battle.CoreOnly")}` }))
-    .sort((a, b2) => a.label.localeCompare(b2.label, game.i18n.lang));
   const setAside = net.setAside.filter(s => s.id === focus).map(s => ({
     icon: s.type === "goal" ? icon("goal", s.kind) : icon("desire", s.kind),
     text: s.type === "goal" ? fmt(`FASTFIGHTING.Goal.${s.kind}`, { thing: s.thingId ?? "", name: name(s.thingId) }) : `${loc(`FASTFIGHTING.Desire.Kind.${s.kind}`)} ${name(s.targetId)}`,
@@ -683,9 +647,7 @@ function panelOf(b, net, nodes, edges, focus, { name, docOf, sideLabel }) {
     wants: decides ? [] : [...edges.filter(mine), ...symbols.filter(m => ["is-desire", "is-goal", "is-relation"].some(c => m.cls.includes(c)))].map(e => row(e)),
     on: [...edges.filter(onIt), ...symbols.filter(m => m.cls.includes("is-condition") || m.cls.includes("is-status"))].map(e => row(e)),
     wantedBy: edges.filter(wantsMe).map(e => row(e, false)),
-    setAside: decides ? [] : setAside, held: decides ? [] : held,
-    others: run.units.filter(o => o.id !== focus).map(o => ({ id: o.id, name: o.spec.name })),
-    conditionsHere: choices
+    setAside: decides ? [] : setAside, held: decides ? [] : held
   };
 }
 

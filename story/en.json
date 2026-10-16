@@ -5905,5 +5905,28 @@
     "{actor} tries again, and it goes wrong again.",
     "Again {actor}'s {weapon} turns against them.",
     "{actor} makes the same mistake twice."
+  ],
+  "event.stuckBonds": [
+    "{actor} strains at the knots, but they hold.",
+    "{actor} twists against the bonds and gets nowhere.",
+    "{actor} works at the ropes, rubbing their wrists raw.",
+    "The lashings bite into {actor}'s skin and don't give.",
+    "{actor} heaves against the bonds, to no avail."
+  ],
+  "maneuver.untie": [
+    "{actor} saws through the cords binding {target}.",
+    "{actor} picks at the knots until {target} shakes free.",
+    "{actor} tugs {target}'s bonds loose: they're back in it."
+  ],
+  "maneuver.untie.amazing": [
+    "One quick slash and {actor} has {target} free before anyone can react."
+  ],
+  "maneuver.untie.terrible": [
+    "{actor} fumbles the knots so badly that {target} has to help free themselves."
+  ],
+  "event.untieFails": [
+    "{actor} claws at {target}'s bonds, but they won't come loose.",
+    "{actor} can't get the knots off {target} in time.",
+    "{actor} tries to free {target}, and fails."
   ]
 }

@@ -10,7 +10,7 @@ export const MANEUVERS = Object.freeze([
   "dropProne", "standUp", "balance", "squeeze", "catchFall", "mount", "flee", "callForHelp", "callToArms",
   "noticeSight", "noticeSound", "noticeSmell", "noticeFeel", "noticeRadar", "takeCover", "raiseShield", "block", "defend", "avertGaze", "hide",
   "sneak", "search", "spot", "assess", "pointOut", "demoralize", "feint", "distract", "parley", "rally", "surrender", "aid",
-  "ready", "gainGround", "grapple", "shove", "trip", "disarm", "reposition", "fling", "escape", "release",
+  "ready", "gainGround", "grapple", "shove", "trip", "disarm", "reposition", "fling", "escape", "release", "untie",
   "constrict", "swallow", "engulf", "trample", "blindFoe", "drawWeapon", "reload", "useItem", "interact",
   "forceOpen", "steal", "disableDevice", "hack", "commandAnimal", "firstAid", "douseFlames", "fightOn", "aim",
   "suppressingFire"
@@ -33,7 +33,7 @@ const SYNONYMS = Object.freeze({
   dominated: "controlled", undetected: "hidden", unnoticed: "hidden", dazed: "reeling", nauseated: "sickened",
   "on-fire": "burning", ablaze: "burning", vulnerable: "offGuard", untethered: "adrift", "in-cover": "inCover",
   asleep: "unconscious", sleep: "unconscious", turned: "fleeing", held: "restrained", doomed: "cursed", broken: "gearBroken",
-  encumbered: "slowed"
+  encumbered: "slowed", bound: "restrained"
 });
 
 /** Common names systems give the master list's maneuvers (their slugs), where they differ from its own. */

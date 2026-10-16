@@ -149,30 +149,6 @@
           </section>
           {{/if}}
 
-          <details class="ff-battle-fact ff-battle-impose">
-            <summary>{{localize "FASTFIGHTING.Battle.Impose"}}</summary>
-            <div class="ff-battle-fact-row">
-              <select name="cond">
-                <optgroup label="{{localize "FASTFIGHTING.Battle.Conditions"}}">{{#each focus.conditionsHere}}<option value="{{value}}">{{label}}</option>{{/each}}</optgroup>
-                <optgroup label="{{localize "FASTFIGHTING.Battle.Toward"}}">{{#each relationsHere}}<option value="{{value}}">{{label}}</option>{{/each}}</optgroup>
-              </select>
-              <select name="by" data-tooltip="{{localize "FASTFIGHTING.Battle.By"}}"><option value="">—</option>{{#each focus.others}}<option value="{{id}}">{{name}}</option>{{/each}}</select>
-              <input type="number" name="value" min="1" step="1" value="1" data-tooltip="{{localize "FASTFIGHTING.Battle.Value"}}">
-              <input type="number" name="rounds" min="1" step="1" placeholder="{{localize "FASTFIGHTING.Battle.Until"}}" data-tooltip="{{localize "FASTFIGHTING.Battle.Rounds"}}">
-              <select name="band" data-tooltip="{{localize "FASTFIGHTING.Desire.HowMuch"}}">{{#each bands}}<option value="{{value}}" {{#if (eq value 2)}}selected{{/if}}>{{label}}</option>{{/each}}</select>
-              <button type="button" class="ff-btn" data-action="impose" data-tooltip="{{localize "FASTFIGHTING.Battle.ImposeHint"}}">{{localize "FASTFIGHTING.Battle.Apply"}}</button>
-            </div>
-          </details>
-          <details class="ff-battle-fact">
-            <summary>{{localize "FASTFIGHTING.Battle.FactLabel"}}</summary>
-            <div class="ff-battle-fact-row">
-              <select name="what">{{#each facts}}<option value="{{key}}">{{label}}</option>{{/each}}</select>
-              <select name="who"><option value="">—</option>{{#each focus.others}}<option value="{{id}}">{{name}}</option>{{/each}}</select>
-              <select name="band" data-tooltip="{{localize "FASTFIGHTING.Desire.HowMuch"}}">{{#each bands}}<option value="{{value}}" {{#if (eq value 2)}}selected{{/if}}>{{label}}</option>{{/each}}</select>
-              <select name="degree" data-tooltip="{{localize "FASTFIGHTING.Battle.HowWell"}}">{{#each degrees}}<option value="{{value}}" {{#if (eq value 2)}}selected{{/if}}>{{label}}</option>{{/each}}</select>
-              <button type="button" class="ff-btn" data-action="fact">{{localize "FASTFIGHTING.Battle.Apply"}}</button>
-            </div>
-          </details>
         </div>
         {{/if}}
       </aside>

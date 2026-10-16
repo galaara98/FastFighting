@@ -40,14 +40,15 @@ export const CORE_CONDITIONS = Object.freeze([
   { key: "turned" },
   { key: "poisoned" },
   { key: "vulnerable" },
-  { key: "disarmed" }
+  { key: "disarmed" },
+  { key: "bound" }
 ].map(Object.freeze));
 
 /** Conditions toward another creature: who it's afraid of, grabbed by, goaded by, controlled by, tied up by, off guard to, marked by. */
 export const RELATIONS = Object.freeze(["afraid", "grabbed", "goaded", "controlled", "bound", "exposedTo", "marked"]);
 
 /** Those the GM can put on (marked: a power's own, only taken off). */
-export const GM_RELATIONS = Object.freeze(RELATIONS.filter(k => k !== "marked"));
+export const GM_RELATIONS = Object.freeze(RELATIONS.filter(k => k !== "marked" && k !== "bound"));
 
 /** Is this a condition key worth taking (a short identifier)? */
 export const validConditionKey = key => typeof key === "string" && /^[a-zA-Z][\w-]{0,40}$/.test(key);

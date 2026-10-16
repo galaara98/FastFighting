@@ -1914,7 +1914,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "f69468d3ec37"
+   "hash": "f69468d3ec37",
+   "gone": "2026-10-16"
   },
   "core:FASTFIGHTING.Battle.ImposeHint": {
    "repo": "core",
@@ -1924,7 +1925,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "f70a1a2d056b"
+   "hash": "f70a1a2d056b",
+   "gone": "2026-10-16"
   },
   "core:FASTFIGHTING.Battle.Less": {
    "repo": "core",
@@ -1954,7 +1956,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "d87fc6f45ed8"
+   "hash": "d87fc6f45ed8",
+   "changed": true
   },
   "core:FASTFIGHTING.Battle.Net.AddHint": {
    "repo": "core",
@@ -1964,7 +1967,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "4597e09c9f8c"
+   "hash": "4597e09c9f8c",
+   "changed": true
   },
   "core:FASTFIGHTING.Battle.Net.AddTitle": {
    "repo": "core",
@@ -2434,7 +2438,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "c336ec860d0e"
+   "hash": "c336ec860d0e",
+   "gone": "2026-10-16"
   },
   "core:FASTFIGHTING.Battle.Relation.controlled": {
    "repo": "core",
@@ -2514,7 +2519,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "5e6e7cd5511c"
+   "hash": "5e6e7cd5511c",
+   "gone": "2026-10-16"
   },
   "core:FASTFIGHTING.Battle.RelationPick.controlled": {
    "repo": "core",
@@ -2862,6 +2868,16 @@
    "date": null,
    "commit": null,
    "hash": "f37106e829dc"
+  },
+  "core:FASTFIGHTING.Condition.bound": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Condition.bound",
+   "area": "core/Condition",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "fadd4c7e41b4"
   },
   "core:FASTFIGHTING.Condition.clumsy": {
    "repo": "core",
@@ -3633,6 +3649,26 @@
    "date": null,
    "commit": null,
    "hash": "65b119397209"
+  },
+  "core:FASTFIGHTING.Desire.Kind.breakFree": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Desire.Kind.breakFree",
+   "area": "core/Desire",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "e2f992c9203e"
+  },
+  "core:FASTFIGHTING.Desire.Kind.free": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Desire.Kind.free",
+   "area": "core/Desire",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "f411a1fb6275"
   },
   "core:FASTFIGHTING.Desire.Kind.heal": {
    "repo": "core",
@@ -5367,6 +5403,16 @@
    "commit": null,
    "hash": "cab83f0edcd9"
   },
+  "core:FASTFIGHTING.Log.BoundAlone": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.BoundAlone",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "dbd1fb6599cb"
+  },
   "core:FASTFIGHTING.Log.BreakAnnoyed": {
    "repo": "core",
    "file": "languages/en.json",
@@ -5937,6 +5983,26 @@
    "commit": null,
    "hash": "bcce8e19888b"
   },
+  "core:FASTFIGHTING.Log.DesireBreakFree": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.DesireBreakFree",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "7acc4ad35816"
+  },
+  "core:FASTFIGHTING.Log.DesireFree": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.DesireFree",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "ad95d5fa651b"
+  },
   "core:FASTFIGHTING.Log.DesireHeal": {
    "repo": "core",
    "file": "languages/en.json",
@@ -6270,6 +6336,26 @@
    "commit": null,
    "hash": "9562cfc86f23"
   },
+  "core:FASTFIGHTING.Log.EscapeBonds": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.EscapeBonds",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "85cb505c858f"
+  },
+  "core:FASTFIGHTING.Log.EscapeFrom": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.EscapeFrom",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "2be87cab81e0"
+  },
   "core:FASTFIGHTING.Log.Execute": {
    "repo": "core",
    "file": "languages/en.json",
@@ -6591,6 +6677,26 @@
    "date": null,
    "commit": null,
    "hash": "592bfba58da4"
+  },
+  "core:FASTFIGHTING.Log.Free": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.Free",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "f66b03fe5dd2"
+  },
+  "core:FASTFIGHTING.Log.FreeFails": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.FreeFails",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "ad37db824eb6"
   },
   "core:FASTFIGHTING.Log.Fumble": {
    "repo": "core",
@@ -8213,6 +8319,26 @@
    "date": null,
    "commit": null,
    "hash": "e8504f7bae52"
+  },
+  "core:FASTFIGHTING.Log.StuckBonds": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.StuckBonds",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "d389788e3c30"
+  },
+  "core:FASTFIGHTING.Log.StuckIn": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.StuckIn",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "195ee2a0f15a"
   },
   "core:FASTFIGHTING.Log.Study": {
    "repo": "core",
@@ -18147,6 +18273,16 @@
    "commit": null,
    "hash": "577c2254dc68"
   },
+  "core:FASTFIGHTING.Story.Part.stuckBonds": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Story.Part.stuckBonds",
+   "area": "core/Story",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "e462bac73366"
+  },
   "core:FASTFIGHTING.Story.Part.study": {
    "repo": "core",
    "file": "languages/en.json",
@@ -18557,6 +18693,26 @@
    "date": null,
    "commit": null,
    "hash": "4de5fe95b6a3"
+  },
+  "core:FASTFIGHTING.Story.Part.untie": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Story.Part.untie",
+   "area": "core/Story",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "22d815d8cbe1"
+  },
+  "core:FASTFIGHTING.Story.Part.untieFails": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Story.Part.untieFails",
+   "area": "core/Story",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "e17178491ad5"
   },
   "core:FASTFIGHTING.Story.Part.untyped": {
    "repo": "core",
@@ -33275,6 +33431,16 @@
    "commit": null,
    "hash": "8669de8f5614"
   },
+  "core:story:event.stuckBonds": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "event.stuckBonds",
+   "area": "core/story.event",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "aaa78c6ed3d0"
+  },
   "core:story:event.study": {
    "repo": "core",
    "file": "story/en.json",
@@ -33487,6 +33653,16 @@
    "date": null,
    "commit": null,
    "hash": "e95850d5a87e"
+  },
+  "core:story:event.untieFails": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "event.untieFails",
+   "area": "core/story.event",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "f3345cff3960"
   },
   "core:story:event.vanish": {
    "repo": "core",
@@ -36040,6 +36216,36 @@
    "date": null,
    "commit": null,
    "hash": "03232c8adb75"
+  },
+  "core:story:maneuver.untie": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "maneuver.untie",
+   "area": "core/story.maneuver",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "cb381192349b"
+  },
+  "core:story:maneuver.untie.amazing": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "maneuver.untie.amazing",
+   "area": "core/story.maneuver",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "554b84e83b98"
+  },
+  "core:story:maneuver.untie.terrible": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "maneuver.untie.terrible",
+   "area": "core/story.maneuver",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "e7acd9476c84"
   },
   "core:story:maneuver.useItem": {
    "repo": "core",

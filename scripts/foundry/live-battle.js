@@ -261,7 +261,7 @@ export function suggestedSpotlight() {
 }
 
 /** Out of the fight for good: no turn to play. */
-const GONE = new Set([STATUS.DEAD, STATUS.FLED, STATUS.SURRENDERED, STATUS.STOOD_DOWN, STATUS.BEATEN, STATUS.BOUND]);
+const GONE = new Set([STATUS.DEAD, STATUS.FLED, STATUS.SURRENDERED, STATUS.STOOD_DOWN, STATUS.BEATEN]);
 
 /** The players' characters as the battle has them now (a run restored from a kept turn takes them). */
 function playersNow(run = battle.run) {

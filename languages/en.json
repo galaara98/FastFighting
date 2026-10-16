@@ -371,7 +371,8 @@
       "poisoned": "Poisoned",
       "vulnerable": "Vulnerable",
       "disarmed": "Disarmed",
-      "controlled": "Controlled"
+      "controlled": "Controlled",
+      "bound": "Tied up"
     },
     "Status": {
       "standing": "Standing",
@@ -1434,7 +1435,10 @@
         "againTakes": "Again: it takes",
         "againResisted": "Again: resisted",
         "againBackfire": "Again: backfires",
-        "downed": "At one already down"
+        "downed": "At one already down",
+        "stuckBonds": "Stuck in Bonds",
+        "untie": "Untie",
+        "untieFails": "Untie Fails"
       },
       "APrice": "a price",
       "Desire": "{intensity} {verb}",
@@ -1494,7 +1498,9 @@
         "avoid": "Keep away from",
         "bind": "Tie up",
         "rob": "Rob",
-        "bolstered": "Be bolstered by"
+        "bolstered": "Be bolstered by",
+        "breakFree": "Break free",
+        "free": "Free"
       },
       "Level": {
         "passing": "Passing",
@@ -1889,7 +1895,16 @@
       "CallToArms": "{actor} calls {targets} into the fight",
       "WhyKin": "for their own",
       "Lazy": "{actor} does nothing",
-      "EndCollapsed": "The talks broke down after {rounds}"
+      "EndCollapsed": "The talks broke down after {rounds}",
+      "DesireBreakFree": "break free",
+      "DesireFree": "free",
+      "EscapeBonds": "{actor} slips their bonds{roll}",
+      "StuckBonds": "{actor} strains at their bonds{roll}",
+      "EscapeFrom": "{actor} breaks free ({what}){roll}",
+      "StuckIn": "{actor} can't break free ({what}){roll}",
+      "Free": "{actor} frees {target}{roll}",
+      "FreeFails": "{actor} can't free {target}{roll}",
+      "BoundAlone": "{actor} comes to, tied up"
     },
     "DamageType": {
       "bludgeoning": "bludgeoning",
@@ -2105,8 +2120,6 @@
       "Apply": "Apply",
       "Conditions": "Conditions",
       "Toward": "Toward someone",
-      "Impose": "Put a condition on it",
-      "ImposeHint": "A condition, or one toward someone. What its sheet can show goes on the sheet; the rest FastFighting keeps.",
       "By": "Caused by (or toward) whom",
       "Value": "How much",
       "Rounds": "For how many rounds",
@@ -2124,7 +2137,6 @@
         "grabbed": "Grabbed by {name}",
         "goaded": "Goaded by {name}",
         "controlled": "Controlled by {name}",
-        "bound": "Tied up by {name}",
         "exposedTo": "Off guard to {name}",
         "marked": "Marked by {name}",
         "shuns": "Won't listen to {name}"
@@ -2134,7 +2146,6 @@
         "grabbed": "Grabbed by…",
         "goaded": "Goaded by…",
         "controlled": "Controlled by…",
-        "bound": "Tied up by…",
         "exposedTo": "Off guard to…"
       },
       "Degree": {
@@ -2195,9 +2206,9 @@
         "Itself": "itself",
         "Steady": "Steady again",
         "RunNow": "It runs now",
-        "AddButton": "Add a line",
+        "AddButton": "Add",
         "AddTitle": "Add to {name}",
-        "AddHint": "What {name} wants of someone, or has on them, and from whom.",
+        "AddHint": "What {name} wants of someone, has on them (and from whom), or what came of a roll at the table.",
         "AddWhat": "What",
         "NodeHint": "+ adds a line from it"
       },

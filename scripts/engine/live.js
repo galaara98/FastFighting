@@ -33,6 +33,7 @@ import { expectOf } from "./behavior/bargain.js";
 import { rankedDesires, desireBand, want, levelOf, holdDesire, releaseDesire } from "./behavior/desire.js";
 import { validConditionKey, CORE_CONDITIONS } from "./conditions.js";
 import { GOALS, holdGoal, goalsOf } from "./behavior/goals.js";
+import { isBound, release } from "./behavior/holds.js";
 import { joinSide, standAside, turnOn } from "./behavior/neutral.js";
 
 /** A question the turn can't go on without: whether {unitId} uses {reactionId} because of {trigger} (by {byId}). */
@@ -299,7 +300,7 @@ export function syncFromSheets(run, states) {
       // (Dead stays dead unless the sheet has it up again: a sheet that only says "down" hasn't brought it back.)
       if ( was === STATUS.DEAD && now === STATUS.DOWN ) now = STATUS.DEAD;
       // (Tied up and up again: a prisoner, not back in the fight.)
-      if ( now === STATUS.STANDING && u.boundBy ) now = STATUS.BOUND;
+      if ( now === STATUS.STANDING && isBound(u) ) now = STATUS.BOUND;
       if ( was === STATUS.STANDING && now !== STATUS.STANDING ) {
         c.fell = true;
         u.wasDowned = true;
@@ -603,6 +604,18 @@ export function setCondition(run, id, { key, value = 1, byId = null, rounds = nu
   const u = run.byId.get(id);
   if ( !u || !validConditionKey(key) ) return false;
   const n = Math.max(0, Math.round(Number(value) || 0));
+  // (Tied up: on it, no one needed; who did it, if the GM says, only for the story.)
+  if ( key === "bound" ) {
+    if ( n > 0 ) {
+      u.bound = true;
+      u.boundBy = byId && run.byId.has(byId) && byId !== u.id ? byId : null;
+      u.boundRound = run.round;
+      if ( u.status === STATUS.STANDING ) u.status = STATUS.BOUND;
+    } else if ( isBound(u) ) release(run, u, { key: "bound" });
+    settleSides(run);
+    run.live?.facts.push({ kind: "condition", id, key, value: n, byId, rounds, round: run.round });
+    return true;
+  }
   lift(u, key);
   if ( key === "prone" ) u.prone = n > 0;
   else if ( n > 0 ) {
@@ -639,6 +652,7 @@ export function setRelation(run, id, { kind, byId, rounds = null, level = 2 } = 
       u.effects.push({ key: "gm:controlled", conditions: { controlled: 1 }, sourceId: by.id, rounds: lasting(rounds), label: "", gm: true });
       break;
     case "bound":
+      u.bound = true;
       u.boundBy = by.id;
       u.boundRound = run.round;
       if ( u.status === STATUS.STANDING ) u.status = STATUS.BOUND;
@@ -710,10 +724,8 @@ export function clearRelation(run, id, { kind, byId } = {}) {
       u.effects = u.effects.filter(e => !(e.conditions?.controlled && from(e)));
       break;
     case "bound":
-      if ( u.boundBy !== byId ) return false;
-      u.boundBy = null;
-      u.boundRound = null;
-      if ( u.status === STATUS.BOUND ) u.status = u.hp > 0 ? STATUS.STANDING : STATUS.DOWN;
+      if ( !isBound(u) ) return false;
+      release(run, u, { key: "bound" });
       break;
     case "exposedTo":
       u.effects = u.effects.filter(e => !(e.onlyVs && from(e)));
@@ -744,6 +756,8 @@ export function conditionsOf(run, id) {
   const rounds = e => (Number.isFinite(e.rounds) ? e.rounds : null);
   const conds = Object.entries(u.conds ?? {}).filter(([, v]) => (Number(v) || 0) > 0);
   if ( u.prone ) conds.unshift(["prone", 1]);
+  // (Tied up: on it, from no one.)
+  if ( isBound(u) ) conds.unshift(["bound", 1]);
   const conditions = conds.map(([key, value]) => ({
     key, value: Number(value) || 1,
     sheet: (u.baseConds?.[key] ?? 0) > 0 || (u.effects ?? []).some(e => e.sheetHeld && e.conditions?.[key]),
@@ -766,7 +780,6 @@ export function conditionsOf(run, id) {
     if ( e.onlyVs ) add("exposedTo", e.sourceId, { rounds: rounds(e), gm: !!e.gm });
     if ( e.mark?.length ) add("marked", e.sourceId, { rounds: rounds(e) });
   }
-  add("bound", u.boundBy);
   return { id: u.id, status: u.status, conditions, relations };
 }
 

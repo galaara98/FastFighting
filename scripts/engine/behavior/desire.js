@@ -30,10 +30,11 @@
  *               rest would make of it (0: set aside), until the GM hands it back. It counts like a stated desire.
  *
  * A desire's level is max(logic, stated, lean, taunt) + memory + social - frustration, 0 to 100 (or the GM's hold):
- *   {kind: "hurt" | "heal" | "protect" | "aid" | "talk" | "avoid" | "bind" | "rob" | "bolstered", targetId, level}
+ *   {kind: "hurt" | "heal" | "protect" | "aid" | "talk" | "avoid" | "bind" | "rob" | "bolstered" | "breakFree" | "free", targetId, level}
  *   (aid: bolster with a buff; bind: tie up a fallen foe, a prisoner; rob: take what a fallen foe carries
  *   (behavior/fallen.js); bolstered: to be bolstered by that friend. A request, not something it acts on itself: the
- *   friend hears it and, if willing, wants to aid it.)
+ *   friend hears it and, if willing, wants to aid it. breakFree: get loose of what holds it (itself: tied up, grabbed,
+ *   a hold the system says an action breaks); free: get a friend loose (behavior/holds.js).)
  *
  * The strongest desire leads. Much weaker ones (BLIND_GAP or more below it) don't cross the character's mind, and
  * an obsessed character (OBSESSED+) stops worrying about its own safety.
@@ -43,16 +44,17 @@ import { areEnemies, isStanding, liveTrait, enemiesOf, alliesOf, sizedUp, comman
 import { perceives, apparentHealth } from "./senses.js";
 import { seemsFoe } from "./neutral.js";
 import { robbable } from "./theft.js";
+import { holdsOf, isBound, freeable, known } from "./holds.js";
 
 /** A character's playstyle guide for desires (from its pills), or the neutral one. */
-const NEUTRAL_STYLE = Object.freeze({ hurt: {}, avoid: {}, heal: 0, protect: 0, aid: 0, talk: 0, bind: 0, rob: 0, whim: 0, contrarian: 0, retaliate: 1, avenge: 1, cool: 1, frustration: 1, leader: 1, doorPatience: 1 });
+const NEUTRAL_STYLE = Object.freeze({ hurt: {}, avoid: {}, heal: 0, protect: 0, aid: 0, talk: 0, bind: 0, rob: 0, free: 0, whim: 0, contrarian: 0, retaliate: 1, avenge: 1, cool: 1, frustration: 1, leader: 1, doorPatience: 1 });
 export const styleOf = u => u.turnStyle ?? u.spec?.desireStyle ?? NEUTRAL_STYLE;
 /** Its own pills' guide, whoever it follows this turn (worked out again without a pill it lost: dropAmbition). */
 const ownStyle = u => u.ownDesireStyle ?? u.spec?.desireStyle ?? NEUTRAL_STYLE;
 
-export const DESIRE_KINDS = Object.freeze(["hurt", "heal", "protect", "aid", "talk", "avoid", "bind", "rob", "bolstered"]);
-/** Desires a creature may have about itself: mending itself, bolstering itself. */
-const SELF_KINDS = new Set(["heal", "aid"]);
+export const DESIRE_KINDS = Object.freeze(["hurt", "heal", "protect", "aid", "talk", "avoid", "bind", "rob", "bolstered", "breakFree", "free"]);
+/** Desires a creature may have about itself: mending itself, bolstering itself, getting loose. */
+const SELF_KINDS = new Set(["heal", "aid", "breakFree"]);
 /** Band floors: passing, wants, determined, driven, obsessed. */
 export const DESIRE_BANDS = Object.freeze([0, 20, 40, 60, 80]);
 export const DESIRE_BAND_KEYS = Object.freeze(["passing", "wants", "determined", "driven", "obsessed"]);
@@ -213,8 +215,8 @@ export function allDesires(u) {
 function relevant(run, u, kind, t) {
   if ( !t || !t.active || (t === u && !SELF_KINDS.has(kind)) ) return false;
   if ( [STATUS.DEAD, STATUS.FLED, STATUS.BEATEN].includes(t.status) ) return false;
-  // (A prisoner, tied up and awake, is out of it: there's only what it carries.)
-  if ( t.status === STATUS.BOUND && kind !== "rob" ) return false;
+  // (A prisoner, tied up and awake, is out of it: there's only what it carries, its getting loose, and its friends'.)
+  if ( t.status === STATUS.BOUND && kind !== "rob" && kind !== "breakFree" && kind !== "free" ) return false;
   const foe = () => !t.spec.untargetable && !t.spec.hazard && (areEnemies(run, u, t) || seemsFoe(run, u, t));
   switch ( kind ) {
     // (Nobody can attack what's untargetable: a hazard, a Spiritual Weapon.)
@@ -225,7 +227,10 @@ function relevant(run, u, kind, t) {
     case "protect": return !areEnemies(run, u, t) && !refusesToHelp(run, u, t);
     case "aid": return !areEnemies(run, u, t) && isStanding(t) && !refusesToHelp(run, u, t);
     // A fallen foe not tied up yet; one down (or tied up) with something on it to take.
-    case "bind": return t.status === STATUS.DOWN && !t.boundBy && foe();
+    case "bind": return t.status === STATUS.DOWN && !isBound(t) && foe();
+    // Loose of what holds it (itself), or a friend loose of what holds it.
+    case "breakFree": return t === u && (t.status === STATUS.STANDING || t.status === STATUS.BOUND) && holdsOf(run, t).length > 0;
+    case "free": return t !== u && !areEnemies(run, u, t) && !refusesToHelp(run, u, t) && !!freeable(run, t);
     case "rob": return (t.status === STATUS.DOWN || t.status === STATUS.BOUND) && foe() && robbable(t) && !u.robbedFrom?.has(t.id);
     // (Wanting a friend's buff is for the friend to act on: see heed.)
     default: return false;
@@ -542,6 +547,35 @@ export function conditionWishes(run, u) {
   }
   const holder = u.grabbedBy ? run.byId.get(u.grabbedBy) : null;
   if ( holder && isStanding(holder) && areEnemies(run, u, holder) ) think(u, "hurt", holder.id, HELD);
+}
+
+/**
+ * Held fast, it wants to break free: tied up, all it can do (BREAK_FREE.bound); held otherwise, the more so with no
+ * foe beside it to fight where it is (free to go, it can't). A grab with nothing to go on (no system way, no escape of
+ * its own: holds.js known) is left to the turn's start, as the engine always had it. A friend held (one it can free:
+ * tied up, or what the system says a friend can break), and it can tell: to free it, as loyal as it is (FREE), its
+ * pills' word (style.free), the more so with no foe beside it; a friend lying down, tied, less.
+ */
+export const BREAK_FREE = Object.freeze({ bound: 85, grabbed: 45, other: 55, open: 20 });
+export const FREE = Object.freeze({ base: 35, loyal: 0.35, open: 15, down: 0.5 });
+export function holdWishes(run, u) {
+  if ( !u.desire ) return;
+  const engaged = [...(u.adjacent ?? [])].some(id => {
+    const e = run.byId.get(id);
+    return e && isStanding(e) && areEnemies(run, u, e);
+  });
+  let most = 0;
+  for ( const h of holdsOf(run, u) ) {
+    if ( h.key === "grabbed" && !known(run, u, h) ) continue;
+    most = Math.max(most, h.key === "bound" ? BREAK_FREE.bound : (BREAK_FREE[h.key] ?? BREAK_FREE.other) + (engaged ? 0 : BREAK_FREE.open));
+  }
+  if ( most > 0 ) think(u, "breakFree", u.id, most);
+  if ( u.status !== STATUS.STANDING ) return;
+  for ( const a of alliesOf(run, u) ) {
+    if ( a === u || !a.active || !freeable(run, a) || !perceives(run, u, a) ) continue;
+    const level = (FREE.base + liveTrait(run, u, "loyal") * FREE.loyal + (styleOf(u).free ?? 0) + (engaged ? 0 : FREE.open)) * (a.status === STATUS.DOWN ? FREE.down : 1);
+    think(u, "free", a.id, level);
+  }
 }
 
 /**

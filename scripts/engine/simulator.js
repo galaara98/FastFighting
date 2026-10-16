@@ -18,7 +18,7 @@ import {
 import { sampleRunTactics } from "./playstyles.js";
 import { chooseTarget, bestOptionVs, scoreTargets } from "./behavior/targeting.js";
 import { decideHeal, rescueOption, healScores } from "./behavior/healing.js";
-import { initDesires, newTurn, goaded, think, want, thwart, relieve, levelOf, mind, thoughts as thoughtsOf, levelsFromScores, listen, heed, remember, styleWants, styleOf, follow, conditionWishes, scheme, partyWants, CHOICE_LEVEL } from "./behavior/desire.js";
+import { initDesires, newTurn, goaded, think, want, thwart, relieve, levelOf, mind, thoughts as thoughtsOf, levelsFromScores, listen, heed, remember, styleWants, styleOf, follow, conditionWishes, holdWishes, scheme, partyWants, CHOICE_LEVEL } from "./behavior/desire.js";
 import { prepareDoors, doorStates, doorAhead, atDoor, doorPlan, patienceFor, doorDamage } from "./behavior/doors.js";
 import { heldGoal } from "./behavior/goals.js";
 import { checkMorale, standsGround, callRetreat, rallies, MORALE } from "./behavior/morale.js";
@@ -38,7 +38,8 @@ import { recompute as recomputeConditions, applyOutcome, beginConcentration, end
 import { decideBuff, aidScores, checkDc } from "./behavior/support.js";
 import { perceives } from "./behavior/senses.js";
 import { stealChance, theftTarget, theftPlan, attemptTheft, robbable } from "./behavior/theft.js";
-import { fallenWishes, decideFallen, bind, rob, stayBound, takesPrisoners, robsTheFallen } from "./behavior/fallen.js";
+import { fallenWishes, decideFallen, bind, rob, stayBound, takesPrisoners, robsTheFallen, freeFriend, rollOf } from "./behavior/fallen.js";
+import { holdsOf, known, tryHold, release, escapeCost, isBound } from "./behavior/holds.js";
 import { reactionsPerRound, threats, takesSafeWay } from "./behavior/reactions.js";
 import { isNeutral, crossed, caughtInArea, refreshLeans, truceWith, truceBreaks, turnOn, settleTruce, peaceDesires, seemsFoe, meddling, inFray, fighting, dislikesViolence, annoyedBy, ANNOYED } from "./behavior/neutral.js";
 import { normalizeCost } from "./turn.js";
@@ -2158,6 +2159,7 @@ function deliberate(run, u) {
   fallenWishes(run, u);
   // What its conditions make it want: away from whoever frightened it, at whoever holds it.
   conditionWishes(run, u);
+  holdWishes(run, u);
   // Badly hurt, it loses heart for foes it would have to cross the field to reach.
   if ( u.maxHp > 0 && u.hp / u.maxHp < 0.35 ) for ( const x of scored ) if ( x.moves >= 2 ) thwart(run, u, "hurt", x.t.id, 5);
   // Its playstyle's leanings (the weakest, the fallen, a friend to guard, something to fear ...).
@@ -2397,10 +2399,55 @@ export function turnUpkeep(run, u) {
   u.disengaged = false;
 }
 
+/**
+ * A prisoner's turn (tied up and awake): it struggles against its bonds, the system's way or its escape against them
+ * (behavior/holds.js); loose, it's in the fight again from its next turn. Nothing else: it's tied up.
+ */
+function struggle(run, u) {
+  if ( !u.active ) return;
+  // (What it wants, for the GM to see: to get loose.)
+  newTurn(u);
+  holdWishes(run, u);
+  const hold = holdsOf(run, u).find(h => h.key === "bound");
+  if ( !hold ) return;
+  const got = tryHold(run, u, hold);
+  if ( got.success ) release(run, u, hold);
+  log(run, u, { type: "escape", hold: "bound", success: got.success, ...rollOf(got), ...(got.said?.text ? { said: got.said.text } : {}) });
+}
+
+/**
+ * Held fast as its turn begins: it breaks free when that's what it most wants (the system's way, or its escape
+ * against the hold, for what it costs). A grab with nothing to go on: it tries at once, an even chance, as the engine
+ * always had it.
+ */
+function breakFree(run, u, turn) {
+  const rules = run.prep.rules;
+  for ( const hold of holdsOf(run, u) ) {
+    if ( hold.key === "bound" ) continue;
+    if ( hold.key === "grabbed" && !known(run, u, hold) ) {
+      const basic = rules.basicAction ?? 1;
+      if ( !turn.canAfford(basic) ) return;
+      turn.spend(basic);
+      const escaped = run.rng.chance(0.5);
+      if ( escaped ) u.grabbedBy = null;
+      log(run, u, { type: "escape", success: escaped });
+      continue;
+    }
+    if ( mind(run, u).lead?.kind !== "breakFree" ) return;
+    const cost = escapeCost(rules, u, hold);
+    if ( !turn.canAfford(cost) ) return;
+    turn.spend(cost);
+    const got = tryHold(run, u, hold);
+    if ( got.success ) release(run, u, hold);
+    log(run, u, { type: "escape", hold: hold.key, success: got.success, ...rollOf(got), ...(got.said?.text ? { said: got.said.text } : {}) });
+  }
+}
+
 export function takeTurn(run, u) {
   const { rules, options } = run.prep;
   stayBound(run, u, logger(run)); // (come to since, tied up)
-  if ( [STATUS.DEAD, STATUS.FLED, STATUS.SURRENDERED, STATUS.STOOD_DOWN, STATUS.BEATEN, STATUS.BOUND].includes(u.status) ) return;
+  if ( u.status === STATUS.BOUND ) return struggle(run, u);
+  if ( [STATUS.DEAD, STATUS.FLED, STATUS.SURRENDERED, STATUS.STOOD_DOWN, STATUS.BEATEN].includes(u.status) ) return;
   if ( u.spec.hazard ) return hazardTurn(run, u);
   // On the map but not in the conflict: it only looks around, until the round after it notices.
   if ( !u.active && !lookAround(run, u) ) return;
@@ -2526,13 +2573,7 @@ export function takeTurn(run, u) {
       log(run, u, { type: "stand" });
     }
   }
-  if ( u.grabbedBy && turn.canAfford(basic) ) {
-    // Escape attempt costs an action; succeed half the time.
-    turn.spend(basic);
-    const escaped = run.rng.chance(0.5);
-    if ( escaped ) u.grabbedBy = null;
-    log(run, u, { type: "escape", success: escaped });
-  }
+  breakFree(run, u, turn);
 
   // Running for help: head toward an ally who hasn't joined yet and shout.
   const helper = turn.left > 0 && canMove(run, u) ? wantsHelp(run, u) : null;
@@ -2637,7 +2678,8 @@ export function takeTurn(run, u) {
     }
     if ( fallen ) {
       turn.spend(fallen.cost);
-      (fallen.kind === "bind" ? bind : rob)(run, u, fallen.target, logger(run));
+      if ( fallen.kind === "free" ) freeFriend(run, u, fallen.target, fallen.hold, logger(run));
+      else (fallen.kind === "bind" ? bind : rob)(run, u, fallen.target, logger(run));
       u.actsThisTurn += 1;
       continue;
     }
@@ -2947,7 +2989,7 @@ function dealWithTheFallen(run, victors, fallen) {
       }
     }
     if ( f.status !== STATUS.DOWN ) continue;
-    const binder = !f.boundBy ? victors.find(v => areEnemies(run, v, f) && takesPrisoners(v)) : null;
+    const binder = !isBound(f) ? victors.find(v => areEnemies(run, v, f) && takesPrisoners(v)) : null;
     if ( binder ) {
       bind(run, binder, f, logger(run), { aftermath: true });
       f.spared = true; // (a prisoner is worth keeping alive)
@@ -2987,7 +3029,7 @@ function keepsSideIn(u) {
   // takes no side.)
   // (Someone who has noticed the fight and takes part next round counts: it's coming.)
   // (Nor does a troll lying there, mending: it will get back up unless someone burns it, or ties it up.)
-  return (isStanding(u) || joining(u) || (u.held && u.status === STATUS.DOWN && !u.boundBy)) && !u.spec.untargetable && u.side !== NEUTRAL_PARTY;
+  return (isStanding(u) || joining(u) || (u.held && u.status === STATUS.DOWN && !isBound(u))) && !u.spec.untargetable && u.side !== NEUTRAL_PARTY;
 }
 
 function activeSides(run) {
@@ -3049,7 +3091,7 @@ export function captureUnit(u, rules) {
     uses: { ...u.uses },
     killerId: u.killerId ?? null,
     // (Tied up: by whom. A prisoner, awake (status bound) or not.)
-    ...(u.boundBy ? { bound: { by: u.boundBy, round: u.boundRound ?? null } } : {}),
+    ...(isBound(u) ? { bound: { by: u.boundBy ?? null, round: u.boundRound ?? null } } : {}),
     position: u.pos ? { x: u.pos.x, y: u.pos.y } : null,
     feetMoved: Math.round(u.feetMoved)
   };
@@ -3063,7 +3105,7 @@ function summarize(run, ended, capture, winners) {
     const lost = ended && !winners.includes(u.side);
     units[u.id] = {
       // (Tied up and alive, awake or not: a prisoner.)
-      status: u.boundBy && u.status === STATUS.DOWN ? STATUS.BOUND : u.status,
+      status: isBound(u) && u.status === STATUS.DOWN ? STATUS.BOUND : u.status,
       involved: u.active,
       atMercy: u.status === STATUS.DOWN && lost,
       wasDowned: u.wasDowned,
