@@ -71,6 +71,19 @@ describe("room", () => {
     expect(o.pos.x).toBe(15);
   });
 
+  test("tumbling past: through, as through difficult ground, unless the system says not", () => {
+    const tumbling = difficult => ({ ...pf2eRules, passThrough: (r, u, o) => (areEnemies(r, u, o) ? "tumble" : null), tumbleThrough: () => ({ success: true, difficult }) });
+    const through = difficult => {
+      const run = fight([who("hero", "friendly", 0), who("orc", "hostile", 15), who("target", "hostile", 40)], { rules: tumbling(difficult) });
+      const [h, , t] = get(run, "hero", "orc", "target");
+      return moveToward(run, h, t, 5, 60);
+    };
+    const hard = through(undefined);
+    expect(hard.cost).toBe(hard.feet + 5);
+    const easy = through(false);
+    expect(easy.cost).toBe(easy.feet);
+  });
+
   test("ending in another's space, where the system allows it (a Tiny creature)", () => {
     const rules = { ...pf2eRules, endIn: (r, u, o) => o.id === "pixie" };
     const run = fight([who("hero", "friendly", 0), who("pixie", "friendly", 15)], { rules });

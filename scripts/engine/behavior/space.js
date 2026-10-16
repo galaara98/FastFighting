@@ -8,8 +8,8 @@
  *   "free"       through it as if it weren't there (by default: a friend, or anyone down)
  *   "difficult"  through it, as through difficult ground (5e: another creature's space)
  *   "around"     not through it: around it, which takes about its width more (by default: a foe on its feet)
- *   "tumble"     through it if a roll says so (rules.tumbleThrough(run, u, o): {success, ...}; PF2e Tumble Through):
- *                otherwise its move ends before it
+ *   "tumble"     through it if a roll says so (rules.tumbleThrough(run, u, o): {success, difficult, ...}; PF2e Tumble
+ *                Through: as through difficult ground, unless difficult is false); otherwise its move ends before it
  * A melee move ends on the nearest free spot within reach of what it's after (spotWithin); one with every spot round
  * it taken can't be reached, but from farther off (a reach weapon).
  *

@@ -1163,7 +1163,11 @@ function passing(run, a, to, t) {
     if ( how !== "tumble" ) continue;
     const got = rules.tumbleThrough?.(run, a, o) ?? { success: false };
     run.trapLog?.(a, { type: "tumble", target: o.spec.name, targetId: o.id, success: !!got.success, natural: got.natural, mod: got.mod, total: got.total, dc: got.dc, ...(got.said?.text ? { said: got.said.text } : {}) });
-    if ( got.success ) continue;
+    // (Through it, as through difficult ground, unless the system says not: PF2e's Tumble Through.)
+    if ( got.success ) {
+      if ( got.difficult !== false ) extra += o.spec.position?.size ?? 5;
+      continue;
+    }
     // (Stopped short of it: as near as it gets without sharing its space.)
     const reachK = Math.max(0, k - ((a.spec.position?.size ?? 5) + (o.spec.position?.size ?? 5)) / 2 / Math.max(1, Math.hypot(to.x - a.pos.x, to.y - a.pos.y)));
     return { extra, stop: { o, at: backOff(run, a, { x: a.pos.x + (to.x - a.pos.x) * reachK, y: a.pos.y + (to.y - a.pos.y) * reachK }) } };
