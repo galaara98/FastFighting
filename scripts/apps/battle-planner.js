@@ -22,7 +22,7 @@ import { buildStory, STORY_STYLES } from "../story/story.js";
 import { loadStoryTables } from "../story/tables.js";
 import { sceneDistance } from "../foundry/terrain.js";
 import {
-  planMakeItSo, doItForReal, undoMakeItSo, hasUndo, makingItSo, unfinishedPlayback, playingNow, continuePlayback, rewindPlayback
+  planMakeItSo, undoMakeItSo, hasUndo, makingItSo, unfinishedPlayback, rewindPlayback
 } from "../foundry/make-it-so.js";
 import { ensureAutoConfig } from "../foundry/auto-config.js";
 import { PlayerSurvey } from "./player-survey.js";
@@ -94,7 +94,6 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       swing: BattlePlanner.#onSwing,
       makeItSo: BattlePlanner.#onMakeItSo,
       undo: BattlePlanner.#onUndo,
-      continuePlayback: BattlePlanner.#onContinuePlayback,
       rewindPlayback: BattlePlanner.#onRewindPlayback,
       preparePlayers: BattlePlanner.#onPreparePlayers,
       togglePlaystyle: BattlePlanner.#onTogglePlaystyle,
@@ -170,7 +169,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     const resume = this.pausedGame;
     this.pausedGame = false;
     if ( !resume ) return;
-    // (Closed while Make it So is still writing the fight onto the map: the game goes on once it's done.)
+    // (Closed while a turn is still being written onto the map: the game goes on once it's done.)
     Promise.resolve(makingItSo()).then(() => {
       if ( game.paused ) game.togglePause(false, { broadcast: true });
     });
@@ -357,7 +356,8 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       sceneName: canvas.scene?.name,
       adapterLabel: adapter?.label ?? loc("FASTFIGHTING.Planner.NoAdapter"),
       hasAdapter: !!adapter,
-      // (Its helper can play a battle live, a turn at a time: the toggle for who runs the characters.)
+      // (Its helper can play a battle live, a turn at a time: the toggle for who runs the characters. One that can't
+      // is too old to do it for real at all.)
       live: !!adapter?.supportsLive,
       options: setup.options,
       // (So many creatures that few fights fit the prediction's time.)
@@ -600,15 +600,11 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * A fight on this scene that's still being played, or was cut short (a crash, a lost connection): it's continued or
-   * rewound before anything else is done for real here.
+   * A fight the old whole-fight playback left unfinished on this scene (a crash, a lost connection, before live
+   * battles): it's rewound before anything else is done for real here.
    */
   #playbackContext() {
-    const state = unfinishedPlayback(canvas.scene);
-    if ( !state ) return null;
-    const now = playingNow(state);
-    const by = state.user === game.user.id ? null : game.users.get(state.user)?.name;
-    return { now, note: now && by ? game.i18n.format("FASTFIGHTING.Playback.Elsewhere", { name: by }) : loc(now ? "FASTFIGHTING.Playback.Playing" : "FASTFIGHTING.Playback.Unfinished") };
+    return unfinishedPlayback(canvas.scene) ? { note: loc("FASTFIGHTING.Playback.Unfinished") } : null;
   }
 
   #playersContext() {
@@ -1030,27 +1026,15 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     let playing;
     try {
       const odds = setting("storyOdds") ? oddsText(this.results) : null;
-      // Live, where the system's helper can: the battle on the tracker, the players running their own characters (or,
-      // with the toggle off, FastFighting playing everyone), a turn at a time.
-      if ( getAdapter()?.supportsLive ) {
-        const players = this.setup.options.playersRunPCs === false ? []
-          : this.spec.combatants.filter(c => isPlayerControlled(c, canvas.scene.tokens.get(c.tokenId ?? c.id)?.actor)).map(c => c.id);
-        playing = startLiveBattle(this.spec, { style: this.storyStyle, odds, players });
-      } else playing = doItForReal(this.spec, { style: this.storyStyle, odds, resume: !!this.pausedGame });
+      // The battle on the tracker, the players running their own characters (or, with the toggle off, FastFighting
+      // playing everyone), a turn at a time. (A system helper too old for it: it says so, and nothing's done.)
+      if ( !getAdapter()?.supportsLive ) return ui.notifications.warn(loc("FASTFIGHTING.MakeItSo.NeedsUpdate"));
+      const players = this.setup.options.playersRunPCs === false ? []
+        : this.spec.combatants.filter(c => isPlayerControlled(c, canvas.scene.tokens.get(c.tokenId ?? c.id)?.actor)).map(c => c.id);
+      playing = startLiveBattle(this.spec, { style: this.storyStyle, odds, players });
     } catch ( err ) {
       return reportError(err);
     }
-    this.close();
-    try {
-      await playing;
-    } catch ( err ) {
-      reportError(err);
-    }
-  }
-
-  /** Go on with a fight cut short, from where it got to (the planner closes, to watch it). */
-  static async #onContinuePlayback() {
-    const playing = continuePlayback(canvas.scene);
     this.close();
     try {
       await playing;

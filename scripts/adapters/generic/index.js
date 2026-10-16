@@ -101,24 +101,6 @@ export class GenericAdapter extends SystemAdapter {
     return lines;
   }
 
-  async commitOutcome(tokenDoc, spec, final, options = {}) {
-    const actor = tokenDoc.actor;
-    const path = this.paths.hp;
-    const undo = { tokenUuid: tokenDoc.uuid, actorUuid: actor.uuid, actorUpdate: {}, statuses: [], createdItems: [], deletedItems: [], itemUpdates: [], createdActors: [], createdTokens: [], deletedTokens: [] };
-    if ( path && final.hp !== spec.hp.value ) {
-      undo.actorUpdate[path] = foundry.utils.getProperty(actor, path);
-      await actor.update({ [path]: final.hp });
-    }
-    if ( final.status === STATUS.DEAD ) {
-      await actor.toggleStatusEffect(CONFIG.specialStatusEffects.DEFEATED, { active: true, overlay: true });
-      undo.statuses.push({ id: CONFIG.specialStatusEffects.DEFEATED, active: false, overlay: true });
-    } else if ( final.status === STATUS.FLED && options.fledMode !== "leave" && spec.kind !== "pc" ) {
-      undo.tokenUpdate = { hidden: tokenDoc.hidden };
-      await tokenDoc.update({ hidden: true });
-    }
-    return undo;
-  }
-
   get supportsLive() {
     return true;
   }

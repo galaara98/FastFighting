@@ -1,6 +1,6 @@
 /**
  * Tactics questionnaire glue: stored answers on actors, the question list for templates, player survey status,
- * and the socket message that opens surveys on players' screens.
+ * and the queries (Foundry's User#query) that open surveys on players' screens.
  *
  * Storage
  *  - Actor flag `fast-fighting.tactics.<key>`: one field per answer, written individually so two players
@@ -24,7 +24,19 @@ import { signedNumber } from "../engine/trait-parts.js";
 import { cleanMotive, cleanMotiveField, MOTIVE_KEY, motivesContext, NO_CATALOG, suggestMotives } from "./motives.js";
 import { autoRecord, validLet, validMotive } from "./auto-config.js";
 
-export const SOCKET = `module.${MODULE_ID}`;
+/** The questions a GM's client puts to another's (CONFIG.queries: answered in main.js and live-battle.js). */
+export const QUERIES = Object.freeze({
+  openSurvey: `${MODULE_ID}.openSurvey`,
+  openGmSurvey: `${MODULE_ID}.openGmSurvey`,
+  liveAsk: `${MODULE_ID}.liveAsk`
+});
+
+/** Put a query to everyone of `users` who's here, not waiting on any answer (one who isn't here finds it on login). */
+export function tellUsers(users, name, data) {
+  for ( const u of users ) {
+    if ( u.active && !u.isSelf ) u.query(name, data).catch(err => console.warn(`${MODULE_ID} | ${name} to ${u.name}`, err));
+  }
+}
 export const SURVEY_STATUS = Object.freeze({ NONE: "none", REQUESTED: "requested", ENTERING: "entering", CLOSED: "closed", DONE: "done" });
 
 const loc = key => localize(key);
@@ -583,8 +595,7 @@ export async function requestSurveys(users, scene = canvas.scene, { start = "par
   if ( party === "open" ) Object.assign(survey, { partyRound: requestId, partyOpen: true });
   else if ( party === "closed" ) survey.partyOpen = false;
   await game.users.documentClass.updateDocuments(users.map(u => ({ _id: u.id, [`flags.${MODULE_ID}.survey`]: survey })));
-  const userIds = users.map(u => u.id);
-  game.socket.emit(SOCKET, { action: "openSurvey", userIds, sceneId: scene.id, requestId, start }, { recipients: userIds });
+  tellUsers(users, QUERIES.openSurvey, { sceneId: scene.id, requestId, start });
 }
 
 /**
@@ -601,12 +612,11 @@ export async function requestCharacterSurvey(token, scene = canvas.scene) {
 
 /**
  * One character's survey for every GM logged in (that character alone), to answer for a player who's away. The GM who
- * asks gets it at once; the others by the socket.
+ * asks gets it at once; the others by a query.
  * @param {TokenDocument} token
  */
 export async function requestGmSurvey(token, scene = canvas.scene, open = null) {
   if ( !game.user.isGM || !token || !scene ) return;
-  const userIds = game.users.filter(u => u.isGM && u.active && u !== game.user).map(u => u.id);
-  if ( userIds.length ) game.socket.emit(SOCKET, { action: "openGmSurvey", userIds, sceneId: scene.id, key: token.id }, { recipients: userIds });
+  tellUsers(game.users.filter(u => u.isGM), QUERIES.openGmSurvey, { sceneId: scene.id, key: token.id });
   await open?.({ sceneId: scene.id, start: token.id, only: token.id });
 }

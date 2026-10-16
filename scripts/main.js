@@ -12,7 +12,7 @@ import { StoryTablesConfig } from "./apps/story-tables-config.js";
 import { invalidateStoryTables, installStoryTables } from "./story/tables.js";
 import { PlayerSurvey } from "./apps/player-survey.js";
 import { registerTokenTactics, syncTokenTactics } from "./apps/token-tactics.js";
-import { SOCKET, SURVEY_STATUS, hasCharactersFor } from "./foundry/tactics.js";
+import { QUERIES, SURVEY_STATUS, hasCharactersFor } from "./foundry/tactics.js";
 import { helperStatus, helperMessage, helperNoticeHtml } from "./helpers.js";
 import { invalidateApproach } from "./foundry/battle.js";
 import { undoConcession, revealStory, ownCard, cardUndoState, undoFromCard, refreshUndoCards, UNDO_REACH } from "./foundry/make-it-so.js";
@@ -27,6 +27,18 @@ Hooks.once("init", () => {
   registerSettings(DefaultsConfig, GenericPathsConfig, StoryTablesConfig);
   registerLiveBattles();
   registerBattleInterface();
+  // The GM's "Prepare Players" request opens the survey on the chosen players' screens (a player's survey never on a
+  // GM's); one character's for the GMs on theirs. Foundry says who asks: only a GM may.
+  CONFIG.queries[QUERIES.openSurvey] = (data, { user }) => {
+    if ( !user?.isGM || game.user.isGM ) return false;
+    PlayerSurvey.open({ sceneId: data?.sceneId, requestId: data?.requestId, start: data?.start });
+    return true;
+  };
+  CONFIG.queries[QUERIES.openGmSurvey] = (data, { user }) => {
+    if ( !user?.isGM || !game.user.isGM ) return false;
+    PlayerSurvey.open({ sceneId: data?.sceneId, start: data?.key, only: data?.key });
+    return true;
+  };
   Hooks.on("fastFighting.liveBattleStarted", () => BattleInterface.open());
 
   // System support comes from helper modules (FastFighting PF2e, ...). The generic adapter ("*") is the
@@ -152,16 +164,6 @@ Hooks.once("ready", () => {
   // Tell the GM once if this system has no helper module yet.
   const status = helperStatus();
   if ( game.user.isGM && !status.specific ) ui.notifications[status.ready ? "info" : "warn"](helperMessage(status), { permanent: !status.ready });
-  // The GM's "Prepare Players" request opens the survey on the chosen players' screens. Foundry passes the
-  // sender's user id; only a GM may open surveys on someone else's screen.
-  game.socket.on(SOCKET, (data, senderId) => {
-    if ( !game.users.get(senderId)?.isGM || !data?.userIds?.includes(game.user.id) ) return;
-    // (A player's survey never opens on a GM's screen; one character's for the GMs only on theirs.)
-    if ( data.action === "openSurvey" && !game.user.isGM ) {
-      PlayerSurvey.open({ sceneId: data.sceneId, requestId: data.requestId, start: data.start });
-    }
-    if ( data.action === "openGmSurvey" && game.user.isGM ) PlayerSurvey.open({ sceneId: data.sceneId, start: data.key, only: data.key });
-  });
   // A player who was asked while offline (or reloads mid-survey) gets it on login.
   if ( !game.user.isGM ) {
     const s = game.user.getFlag(MODULE_ID, "survey");

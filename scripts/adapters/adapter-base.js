@@ -7,8 +7,7 @@
  *
  * The adapter has two halves:
  *  - Foundry side (async, may read documents): build CombatantSpecs, derive personality traits, find leaders,
- *    cross-check difficulty, and write a live battle's turns onto the sheets (commitChanges; or, for a helper without
- *    live battles, the whole fight's outcome, commitOutcome).
+ *    cross-check difficulty, and write a live battle's turns onto the sheets (commitChanges).
  *  - Pure side: `rules`, a plain object the engine calls thousands of times. It must not touch Foundry.
  *
  * Recognising things: find a system's features, actions and spells by their slug or identifier (PF2e `slug`,
@@ -103,15 +102,10 @@ export class SystemAdapter {
 
   /**
    * The encounter's own record, beyond each token's (Ironsworn: its progress track, kept on one character), for the
-   * summary of what a fight changes (the planner, the whole-fight playback): {title, lines}, or null for none.
+   * planner's summary of what a fight changes: {title, lines}, or null for none.
    */
   describeEncounter(spec, replay) {
     return null;
-  }
-
-  /** Write the encounter's own record (describeEncounter's); returns undo records. */
-  async commitEncounter(spec, replay, options) {
-    return [];
   }
 
   /**
@@ -130,21 +124,6 @@ export class SystemAdapter {
    */
   get supportsLoot() {
     return false;
-  }
-
-  /**
-   * Commit one simulated fight's outcome to a token: the whole-fight playback, for a helper without live battles.
-   * @param {TokenDocument} tokenDoc
-   * @param {object} spec        The CombatantSpec used in the simulation
-   * @param {object} final       Captured end state from the engine
-   * @param {object} options     {lootMode, corpseMode, fledMode}
-   * @returns {Promise<object>}  Undo record: {tokenUuid, actorUuid, actorUpdate, itemUpdates, createdItems, deletedItems,
-   *   createdEffects, tokenUpdate, createdActors, createdTokens, deletedTokens, statuses, combatant}
-   */
-  // (options.effectSource(id) finds the action that laid a lingering effect, final.effects, so the helper can leave it
-  // on the creature, from the action's own effectRef.)
-  async commitOutcome(tokenDoc, spec, final, options) {
-    throw new Error(`${this.constructor.name} does not support Make it So`);
   }
 
   /**
@@ -197,7 +176,7 @@ export class SystemAdapter {
     return "";
   }
 
-  /** What commitOutcome would change, for the summary of a fight (the planner, the whole-fight playback). */
+  /** What a fight changes on a creature (its end state, final), for the planner's summary of a fight. */
   describeOutcome(spec, final) {
     return [];
   }
@@ -208,8 +187,8 @@ export class SystemAdapter {
 
   /**
    * Can it play a live battle (the players run their characters, FastFighting the rest, a turn at a time)? Only a
-   * helper whose commitChanges writes one turn's changes safely, mid-fight; without, Do it For Real Now simulates the
-   * whole fight and plays it back (make-it-so.js).
+   * helper whose commitChanges writes one turn's changes safely, mid-fight; without, Do it For Real Now can't be done
+   * (the planner says the helper needs updating).
    */
   get supportsLive() {
     return false;
@@ -241,19 +220,19 @@ export class SystemAdapter {
 
   /**
    * Write one turn's change set (engine/changes.js) onto a token, mid-fight: only what changed, so writing it twice
-   * changes nothing more. By default, through commitOutcome with the creature's end state (a helper whose
-   * commitOutcome writes the whole fight's outcome should implement this for itself).
+   * changes nothing more. Every helper that plays live battles (supportsLive) has its own.
    * @param {TokenDocument} tokenDoc
    * @param {object} spec      its CombatantSpec, as read at the turn's start
    * @param {object} changes   what the turn changed (changes.js)
    * @param {object} final     its state after the turn (captureUnit)
-   * @param {object} options   {lootMode, corpseMode, fledMode}
-   * @returns {Promise<object>} an undo record, as commitOutcome's
+   * @param {object} options   {lootMode, corpseMode, fledMode, live}
+   * @returns {Promise<object>} an undo record: {tokenUuid, actorUuid, actorUpdate, itemUpdates, createdItems,
+   *   deletedItems, createdEffects, tokenUpdate, createdActors, createdTokens, deletedTokens, statuses, combatant}
    */
   // (options.before: the creature as the turn found it, captureUnit's shape, for what the change set leaves out;
   // options.effectSource(key): the action that laid a buff or debuff, and whose spec, for a helper to put its effect on.)
   async commitChanges(tokenDoc, spec, changes, final, options) {
-    return this.commitOutcome(tokenDoc, spec, final, options);
+    throw new Error(`${this.constructor.name} does not support live battles`);
   }
 
   /**

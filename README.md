@@ -4,7 +4,7 @@
 > - **Programming:** I am a skilled programmer by profession, but AI was used heavily as a co-pilot.
 > - **Strings:** ALL initial strings were created by AI. An AI-made Spanish translation was used to test localization and has since been removed.
 
-A [Foundry VTT](https://foundryvtt.com) module that resolves a battle, or a tense standoff, from the encounter on the scene, fairly and quickly, so the table can move on. It simulates the encounter thousands of times, round by round, with real dice math, and shows the odds. Then it tells the story of the most typical fight, and **Do it For Real Now** plays one new fight out for the table, a turn at a time, and commits it to the tokens.
+A [Foundry VTT](https://foundryvtt.com) module that resolves a battle, or a tense standoff, from the encounter on the scene, fairly and quickly, so the table can move on. It simulates the encounter thousands of times, round by round, with real dice math, and shows the odds. Then it tells the story of the most typical fight, and **Do it For Real Now** plays it for real on the Combat Tracker, a turn at a time: FastFighting runs the creatures, the players their characters.
 
 - **Foundry:** v14
 - **System support comes from helper modules.** See [systems.md](systems.md):
@@ -94,7 +94,7 @@ A taunt makes a foe want to go for the taunter: a strong desire (see **Desires**
 
 ## A fair ruling
 
-**Do it For Real Now plays a new fight.** The Sample fight tab shows the most typical fight, only a sample; Do it For Real Now runs one more simulation, that nobody has seen, so a 70% win is a loss three times in ten, as it should be. **Rewind This Encounter** is on the GM's summary of it in the chat, so a reload or a lost connection doesn't lose it: it works for the latest fight on that scene while the summary is no more than ten messages back (an older one is greyed out, and says why); the planner has it too.
+**Do it For Real Now plays a new fight.** The Sample fight tab shows the most typical fight, only a sample; Do it For Real Now plays the fight for real, on the Combat Tracker, with rolls nobody has seen, so a 70% win is a loss three times in ten, as it should be (see Live battles, below).
 
 **After the fight.** When the last foe falls, the survivors tend their dying, before the dying make their next roll. They use free help first (first aid, medicine feats), then spells and potions. Anyone left untended lives or dies by the system's rules for dying, so nobody is committed half-dead.
 
@@ -107,16 +107,23 @@ Choose one of:
 - tend them quietly, with the story ending at the last blow;
 - stop at the last blow and play the rest out yourself.
 
-**Do it For Real Now** closes the planner, so the GM can watch, and:
-- tells the story in the chat **a turn at a time**: one card per character's turn, from that character, with everything that happened in it (its thinking, its blows, the others' reactions, who fell), while its token moves on the map, around walls. Then the next turn, after time enough to read it. A creature that spends its turn **only talking** says it aloud: an ordinary in-character chat message, with a speech bubble over its token. The last card tells how it ended, and the aftermath. **Show the odds**, beside the button (off by default, remembered), adds each side's chance of winning to it. Cards go to everyone, or to the GMs by the story setting;
-- with the **Statistician** style, the story is one card for the GMs alone (with a button to show it to everyone), and the tokens go straight to where the fight left them;
-- settles everyone where the fight left them (snapped to the grid, never stacked). A setting turns the moves off, and the tokens go straight to their final spots;
-- writes the outcome onto the tokens through the system's helper: HP, dying, conditions, death, resources spent, loot, the fled and the surrendered, and **buffs and debuffs still running** (a Bless with 8 rounds left stays on, as the spell's own effect, for those 8 rounds);
-- then whispers the GMs a short **summary**: how much time passed (fighting, and tending the fallen), and what each player character used up (slots, focus, potions, hero points, limited uses). It doesn't close the encounter or move the world clock.
+## Live battles
 
-**Rewind This Encounter**, on the summary, reverses it all, every chat card included, and the last five are kept.
+**Do it For Real Now** closes the planner and plays the fight on the Combat Tracker, a turn at a time. It needs a helper for the world's system that plays live battles; with an older one, the button is greyed out and says to update it.
+- **The start:** everyone in the encounter goes on the tracker, initiative is rolled for whoever hasn't rolled it yet (a player who has keeps theirs), the encounter starts, and the opening is told in the chat. The **Battle Interface** opens for the GMs: the round, whose turn it is, and each creature's mind.
+- **A creature's turn** (and a character's, when FastFighting plays it): FastFighting decides and rolls it as the simulation would, writes it onto the sheets through the system's helper (hit points, conditions, dying, resources spent, the fled and the surrendered, buffs and debuffs as the spell's own effect), moves the tokens around walls and opens doors, and tells the turn in the chat. Then it waits for the GM: **Continue** (on the card, or in the Battle Interface) moves the tracker on. **Play to the end** goes on without waiting.
+- **A player's turn:** the player plays it with the system's own sheet and cards. When the turn ends, FastFighting reads what happened (the system's roll cards, through the helper, and what changed on the sheets) and takes it in as if it had seen it: grudges, fear, morale, who was talked round. Anything it isn't sure of, it shows the GMs first, to keep, drop or set right; then it tells the turn.
+- **Players run their characters** (a toggle in the planner, on by default): off, FastFighting plays every turn. In the Battle Interface, **FastFighting plays their turns** takes over the rest of one character's turns, for a player who has to leave; cleared, they're the player's again.
+- **Reactions:** each character's FastFighting tab lists its reactions with **Always use it**, **Ask me** or **Never use it**; asked, the player answers on their screen (or the GM, when they're away or don't answer in time). An NPC's reactions during a player's turn (a strike as a character leaves its reach) are the GMs' to allow, unless **Ask me about NPC reactions** is off in the Battle Interface: then its tactics decide.
+- **Rerolls:** where the system has a reroll to spend (PF2e Hero Points, 5e Inspiration), each character says whether FastFighting may spend them to save its own life, or a teammate's. FastFighting never spends any other player resource.
+- **What happened at the table:** the Battle Interface takes what FastFighting couldn't see (a creature now afraid of someone, talked round by a Diplomacy roll, wanting to hurt someone, shaken, fleeing, surrendering), and applies it as the simulation would have; **Take back what you set** undoes it.
+- **Bystanders** who notice the fight join the tracker and take their turns. **Summons** appear beside their summoner, as their own tokens.
+- **Spotlight systems** (Daggerheart, Ironsworn): there's no initiative, so the Battle Interface gives the spotlight to whoever FastFighting would pick next, or to whoever the GM picks.
+- **The end:** when one side has won, the chat says so; **Settle the aftermath** has FastFighting deal with what's left (the dying bleed out or hold on, the beaten are dealt with, goods go back to their owners). The encounter stays open for the GM to end.
 
-**Cut short?** Everything is kept on the scene as it's done: the cards posted, the moves, the outcomes written. If the GM's browser crashes or loses its connection partway through, the planner says so when it's opened again on that scene, with **Continue** (from where it got to) and **Rewind This Encounter** (everything it did so far, cards included). Until then, nothing else is done for real there.
+**Rewind Turn**, on each turn's card and in the Battle Interface, takes the last turn back: what it wrote on the sheets, its cards, its moves, and the minds as they were. **Rewind This Encounter** takes the whole battle back, to before it began. Everything is kept as it's done (in a journal entry only the GMs can see), so a reload, or a GM leaving, doesn't lose it: the next GM picks the battle up where it was.
+
+**Fights from before live battles.** An older version played the whole fight out at once. Those fights can still be rewound (from the GM's summary card, or the planner), and one that was cut short shows in the planner, to be rewound before anything else is done for real on that scene.
 
 ## Talking
 
@@ -162,7 +169,7 @@ A leader who wants to talk holds their side back. Before it breaks, a charismati
 
 **PCs decide their own fate.** Words can only make a PC pay up or run, and it takes two more successes than usual. A PC with nothing to give can only be scared off. A PC whose answer is "Let my weapons do the talking" won't listen at all.
 
-**Do it For Real Now hands goods over.** Each thing a PC loses gets its own GM-only chat card, with an Undo for just that hand-over.
+**Do it For Real Now hands goods over,** in the turn they change hands; Rewind Turn hands them back.
 
 ## Groups
 
@@ -253,7 +260,7 @@ Blinded creatures don't see, deafened ones don't hear; radar is a device's, so n
 Paths go round walls; a closed door on the way is walked to and opened. A locked one is worth only what the character wants most on the far side of it (more patience when there's nobody else to fight):
 - **force it** with the system's strength check, **hack it down** with its best weapon, or **pick the lock** if it has the skill and tools, whichever is quickest for that character;
 - every failed try wears the desire down; giving up turns it to something else;
-- a door the fight opened opens on the map when the story gets there, and stays open after Do it For Real Now; Rewind This Encounter closes (and relocks) it.
+- a door a turn opens opens on the map as the turn is told, and stays open; Rewind Turn or Rewind This Encounter closes (and relocks) it.
 
 The system says what a door is like and how hard it is to get through (its defense, hit points, DCs, and its own damage rules such as PF2e hardness or a 5e damage threshold). A GM can give a door its own numbers in the wall's flags (`fast-fighting.door`).
 
@@ -440,7 +447,7 @@ All settings are defaults that the planner can override per battle:
   - how often someone who doesn't like to flee stays, default 90 (50 to 90);
   - how often someone who answers "I avoid killing" holds back (a blow that would kill knocks out, the fallen left be and spared after), default 90 (50 to 90); less for answers that lean less that way.
 - **Story:** style, delivery, and whether the posted story shows the odds (off).
-- **Do it For Real Now:** loot, corpse and fled handling, and whether the fight plays out on the map.
+- **Do it For Real Now:** loot, corpse and fled handling, and whether tokens walk their turns on the map (off: they go straight to where each turn leaves them).
 - **Defaults:** side personalities, and data paths for the generic adapter.
 
 ## For system and module developers
@@ -449,7 +456,7 @@ FastFighting is split into a pure simulation engine (`scripts/engine/`), system 
 
 ```js
 Hooks.once("fastFighting.init", api => {
-  if ( (api.version ?? 1) < 5 ) return; // the helper interface this is written against
+  if ( (api.version ?? 1) < 15 ) return; // the helper interface this is written against
   class MySystemAdapter extends api.SystemAdapter {
     get label() { return "My System"; }
     get rules() { return myRules; }
@@ -461,13 +468,27 @@ Hooks.once("fastFighting.init", api => {
     term(key) { ... }                                // the system's word for "ac" / "hp" / "sp" / "money"; null: FastFighting's generic one; false: none
     itemCatalog() { ... }                            // {categories, materials, rarities}: [{key, label}], what a character can ask for
     plannerSettings({ roster, setup, resolved, chains }) { ... } // the planner's row for this system: {title, hint, fields: [{key, label, hint, type: "pills"|"select", value, choices}]}
-    applyPlannerSettings(spec, settings, context) { ... }        // setup.system's answers, onto the battle (spec.options.system for Do it For Real Now)
-    describeEncounter(spec, replay) { ... }          // the encounter's own record, for Do it For Real Now to write: {title, lines}
-    async commitEncounter(spec, replay, options) { ... } // write it; returns undo records
+    applyPlannerSettings(spec, settings, context) { ... }        // setup.system's answers, onto the battle (spec.options.system)
+    describeEncounter(spec, replay) { ... }          // the encounter's own record, for the planner's summary: {title, lines}
     resourceLabel(key, spec) { ... }
-    describeOutcome(spec, final) { ... }
-    async commitOutcome(tokenDoc, spec, final, options) { ... }      // returns an undo record
+    describeOutcome(spec, final) { ... }             // what a fight changes on a creature, for the planner's summary
     async commitConcession(giverDoc, receiverDoc, concession, { allies }) { ... } // returns undo records (allies: the giver's side, for pooled money)
+
+    // Live battles (Do it For Real Now): see scripts/adapters/adapter-base.js for each one's contract.
+    get supportsLive() { return true; }
+    async readLiveState(tokenDoc, { spec, unit }) { ... }            // the sheet as it stands, mid-fight (by default, from toCombatantSpec)
+    async commitChanges(tokenDoc, spec, changes, final, options) { ... } // one turn's change set (scripts/engine/changes.js); returns an undo record
+    async commitTurn(before, after, options) { ... } // what a turn did beyond the tokens (a shared pool, an encounter track); undo records
+    sheetCarries(key) { ... }                        // can the sheets show this engine condition? (no: the engine keeps it)
+    liveOwnership() { ... }                          // what the system does itself at a turn's start and end ({persistent, recovery})
+    readTurn(messages, context) { ... }              // a player's turn, read from the system's chat cards: engine events
+    liveOpening(message, tokenId) { ... }            // a card that gives foes an opening (a ranged attack in reach)
+    reactionsOf(spec) { ... }                        // its reactions, for its player's Always / Ask me / Never
+    rerollResource() { ... }                         // the name of what buys a reroll (Hero Points), or null
+    get liveTurns() { ... }                          // "initiative" (default) or "spotlight"
+    async giveSpotlight(combat, combatant) { ... }   // spotlight systems: hand the turn over
+    livePools() { ... }                              // the world's shared pools as they stand (Daggerheart's Fear)
+    async placeSummons(scene, summonerDoc, action, creatures, places) { ... } // summoned creatures as tokens; {tokens, records}
   }
   api.registerAdapter("my-system", MySystemAdapter, { priority: 10 });
 });

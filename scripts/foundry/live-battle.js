@@ -21,7 +21,7 @@ import { positionOf } from "./terrain.js";
 import { approachFor } from "./battle.js";
 import { currentPathGrid, pathGridFor } from "./pathing.js";
 import { getSetup, sceneEncounter } from "./persistence.js";
-import { SOCKET } from "./tactics.js";
+import { QUERIES } from "./tactics.js";
 import {
   holdingPause, playMoves, postBeat, postStory, revertEntry, gmIds, chronicle, storyTitle, packSpec, unpackSpec, placeOf, spotsBeside
 } from "./make-it-so.js";
@@ -257,6 +257,13 @@ function addPlayer(id) {
   battle.data.players = [...new Set([...(battle.data.players ?? []), id])];
   battle.run.live.players.add(id);
 }
+
+/** The latest turn in a log (0 for none). */
+const lastTurn = log => {
+  let last = 0;
+  for ( const e of log ) if ( (e.turn ?? 0) > last ) last = e.turn;
+  return last;
+};
 
 /** Foundry's ChatMessage class. */
 const chatMessages = () => foundry.documents.ChatMessage ?? globalThis.ChatMessage;
@@ -514,8 +521,6 @@ async function waitCard(turn) {
 
 /** How long a player has to answer a question about their reaction (ms) before the GM is asked instead. */
 const ASK_MS = 60000;
-/** Questions put to players, waiting for their answers: id -> resolve. */
-const asking = new Map();
 
 /**
  * Should someone use a reaction? A player's is asked of its player (any of its owners who's here); with none here, or
@@ -530,16 +535,18 @@ async function ask(request) {
   };
   if ( request.player ) {
     const actor = docOf(request.unitId)?.actor;
-    const owners = game.users.filter(u => !u.isGM && u.active && actor?.testUserPermission(u, "OWNER")).map(u => u.id);
+    const owners = game.users.filter(u => !u.isGM && u.active && actor?.testUserPermission(u, "OWNER"));
     if ( owners.length ) {
-      const id = foundry.utils.randomID();
-      const answer = await new Promise(resolve => {
-        asking.set(id, { resolve, owners });
-        game.socket.emit(SOCKET, { action: "liveAsk", userIds: owners, id, words }, { recipients: owners });
-        setTimeout(() => resolve(null), ASK_MS);
-      });
-      asking.delete(id);
-      if ( answer !== null ) return answer;
+      // (The first of them to answer; none in time, or none still here, and it's the GM's call.)
+      const late = new Promise((resolve, reject) => setTimeout(() => reject(new Error("late")), ASK_MS));
+      try {
+        return await Promise.any(owners.map(u => Promise.race([u.query(QUERIES.liveAsk, { words }, { timeout: ASK_MS }), late]).then(a => {
+          if ( typeof a !== "boolean" ) throw new Error("no answer");
+          return a;
+        })));
+      } catch ( err ) {
+        // (Asked the GM instead.)
+      }
     }
   }
   return askHere(words);
@@ -559,16 +566,10 @@ async function askHere(words) {
   }));
 }
 
-/** The socket: a GM's question about a player's reaction, on that player's screen; the player's answer, back to the GM. */
-function onSocket(data, senderId) {
-  const sender = game.users.get(senderId);
-  if ( data?.action === "liveAsk" && sender?.isGM && data.userIds?.includes(game.user.id) ) {
-    askHere(data.words).then(answer => game.socket.emit(SOCKET, { action: "liveAnswer", id: data.id, answer }, { recipients: [senderId] }));
-  } else if ( data?.action === "liveAnswer" && game.user.isGM ) {
-    // (Only from one it was asked of.)
-    const question = asking.get(data.id);
-    if ( question?.owners.includes(senderId) ) question.resolve(!!data.answer);
-  }
+/** A GM's question about a player's reaction, on that player's screen (Foundry says who asks: only a GM may). */
+function answerAsk(data, { user } = {}) {
+  if ( !user?.isGM || !data?.words ) return null;
+  return askHere(data.words);
 }
 
 /* -------------------------------------------- */
@@ -810,7 +811,10 @@ async function writeChanges(before, after, records) {
       for ( const c of ch.concessions ?? [] ) {
         if ( c.kept || !adapter.commitConcession ) continue;
         const to = c.to ? docOf(c.to) : null;
-        records.push(...((await adapter.commitConcession(doc, to ?? null, c, { giver: spec, receiver: to ? battle.run.byId.get(c.to)?.spec : null, allies: [] })) ?? []));
+        // (The giver's side, for what it shares: Ironsworn's Supply.)
+        const giver = battle.run.byId.get(id);
+        const allies = battle.run.units.filter(u => u !== giver && u.side === giver.side).map(u => docOf(u.id)).filter(Boolean);
+        records.push(...((await adapter.commitConcession(doc, to ?? null, c, { giver: spec, receiver: to ? battle.run.byId.get(c.to)?.spec : null, allies })) ?? []));
       }
     } catch ( err ) {
       console.error(`${MODULE_ID} | writing ${doc.name}'s changes`, err);
@@ -855,9 +859,7 @@ async function tellNew() {
     }
     battle.data.toldBeats = [...done];
   }
-  let last = told;
-  for ( const e of run.log ) if ( (e.turn ?? 0) > last ) last = e.turn;
-  battle.data.told = last;
+  battle.data.told = Math.max(told, lastTurn(run.log));
   return out;
 }
 
@@ -931,7 +933,7 @@ export function rewindTurn() {
     battle.data.played = null;
     battle.data.ended = false;
     battle.data.salt = (battle.data.salt ?? 0) + 1;
-    battle.data.told = Math.max(0, ...battle.run.log.map(e => e.turn ?? 0));
+    battle.data.told = lastTurn(battle.run.log);
     battle.pc = null;
     if ( turn.kind === "aftermath" ) {
       // (Still over; the closing told again as it was before the aftermath.)
@@ -978,6 +980,7 @@ export function rewindEncounter() {
     // (Its opening cards, and the combat as it was: not started, the initiative it rolled taken back, and those who
     // joined it on the way gone from it.)
     for ( const id of [...(battle.data.opening ?? []), ...(battle.data.rollCards ?? [])] ) await game.messages.get(id)?.delete();
+    for ( const m of game.messages.filter(x => x.getFlag(MODULE_ID, "live")?.battle === battle.data.id) ) await m.delete();
     for ( const uuid of battle.data.joined ?? [] ) {
       try {
         await (await fromUuid(uuid))?.delete();
@@ -1123,7 +1126,7 @@ async function pickUp() {
 }
 
 export function registerLiveBattles() {
-  Hooks.once("ready", () => game.socket.on(SOCKET, onSocket));
+  CONFIG.queries[QUERIES.liveAsk] = answerAsk;
   Hooks.on("combatTurnChange", onTurnChange);
   Hooks.on("updateToken", (doc, changes) => {
     if ( !battle?.pc || doc.id !== battle.pc.id || !("x" in changes || "y" in changes) || !runsHere(battle.data) ) return;

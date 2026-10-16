@@ -531,12 +531,12 @@
     },
     "MakeItSo": {
       "Button": "Do it For Real Now",
-      "Failed": "Do it For Real Now could not update {name}. See the console for details.",
       "Undo": "Rewind This Encounter",
       "UndoTitle": "Rewind This Encounter",
       "UndoConfirm": "Put this scene's last encounter back: tokens, outcomes and its chat cards?",
       "Undone": "The encounter was rewound.",
       "Moves": "Moves {distance}",
+      "NeedsUpdate": "This system's FastFighting helper is too old to play a fight for real: update it.",
       "Hint": "Closes the planner and starts this fight on the Combat Tracker, a turn at a time: FastFighting plays its creatures, the players their characters (if they run them). Rewind This Encounter takes it back.",
       "Gives": "Gives up {what} to {name}",
       "Receives": "Receives {what} from {name}",
@@ -1419,12 +1419,7 @@
       "argument": "Only an argument: no fighting"
     },
     "Concession": {
-      "Card": "<strong>{giver}</strong> gave up {what} to {receiver}.",
-      "Luck": "Luck check: {luck} on a d100 (needed {needed} or less).",
-      "Undo": "Undo just this",
-      "Undone": "Undone: it's back with its owner.",
-      "CardTheft": "<strong>{giver}</strong> was robbed of {what} by {receiver}.",
-      "TheftLuck": "Luck check: {luck} on a d100 (the thief needed {needed} or less)."
+      "Undone": "Undone: it's back with its owner."
     },
     "Desire": {
       "Label": "Desires",
@@ -1488,19 +1483,6 @@
       "MinValue": "Worth at least",
       "Unvalued": "Unvalued will do",
       "UnvaluedHint": "Something with no price at all: junk, or beyond price."
-    },
-    "Summary": {
-      "Title": "After the fight (GM only)",
-      "Time": "Time passed: {fight} of fighting ({rounds}).",
-      "TimeAfter": "Time passed: {fight} of fighting ({rounds}), then {after} tending the fallen.",
-      "Spent": "Used up by the players' characters:",
-      "Nothing": "nothing",
-      "Unchanged": "The encounter is still open and the world clock hasn't moved: close it and advance time when you're ready.",
-      "Minute": "{n} minute",
-      "Minutes": "{n} minutes",
-      "Second": "{n} second",
-      "Seconds": "{n} seconds",
-      "TimeTalk": "Time passed: {fight} of talking ({rounds})."
     },
     "Log": {
       "Roll": "d{faces} {natural} {mod} = {total} vs {label} {dc}",
@@ -1961,9 +1943,6 @@
     },
     "Playback": {
       "Unfinished": "The last Do it For Real Now on this scene didn't finish.",
-      "Playing": "A fight is playing on this scene.",
-      "Elsewhere": "{name} is playing a fight on this scene.",
-      "Continue": "Continue",
       "RewindConfirm": "Put back everything this unfinished encounter did: tokens, outcomes and its chat cards?"
     },
     "StoryWords": {

@@ -1,5 +1,15 @@
 {
  "strings": {
+  "core:code:scripts/adapters/adapter-base.js:commitChanges#1": {
+   "repo": "core",
+   "file": "scripts/adapters/adapter-base.js",
+   "key": "scripts/adapters/adapter-base.js:commitChanges#1",
+   "area": "core/code",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "c451f6732043"
+  },
   "core:code:scripts/adapters/adapter-base.js:commitOutcome#1": {
    "repo": "core",
    "file": "scripts/adapters/adapter-base.js",
@@ -8,7 +18,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "3196625dc254"
+   "hash": "3196625dc254",
+   "gone": "2026-10-16"
   },
   "core:code:scripts/adapters/adapter-base.js:rules#1": {
    "repo": "core",
@@ -240,6 +251,26 @@
    "date": null,
    "commit": null,
    "hash": "d5edbfe09ade"
+  },
+  "core:code:scripts/foundry/live-battle.js:ask#1": {
+   "repo": "core",
+   "file": "scripts/foundry/live-battle.js",
+   "key": "scripts/foundry/live-battle.js:ask#1",
+   "area": "core/code",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "089001a35679"
+  },
+  "core:code:scripts/foundry/live-battle.js:ask#2": {
+   "repo": "core",
+   "file": "scripts/foundry/live-battle.js",
+   "key": "scripts/foundry/live-battle.js:ask#2",
+   "area": "core/code",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "ad03eb5e16bb"
   },
   "core:code:scripts/foundry/live-battle.js:closePlayerTurn#1": {
    "repo": "core",
@@ -502,6 +533,17 @@
    "status": "todo",
    "date": null,
    "commit": null,
+   "hash": "f72e346158ec",
+   "changed": true
+  },
+  "core:code:scripts/foundry/make-it-so.js:revertRecord#16": {
+   "repo": "core",
+   "file": "scripts/foundry/make-it-so.js",
+   "key": "scripts/foundry/make-it-so.js:revertRecord#16",
+   "area": "core/code",
+   "status": "todo",
+   "date": null,
+   "commit": null,
    "hash": "f72e346158ec"
   },
   "core:code:scripts/foundry/make-it-so.js:revertRecord#2": {
@@ -611,7 +653,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "9724466e1a22"
+   "hash": "9724466e1a22",
+   "gone": "2026-10-16"
   },
   "core:code:scripts/foundry/make-it-so.js:undoFight#1": {
    "repo": "core",
@@ -632,7 +675,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "271d5f23a52b"
+   "hash": "271d5f23a52b",
+   "gone": "2026-10-16"
   },
   "core:code:scripts/foundry/make-it-so.js:writeOutcomes#2": {
    "repo": "core",
@@ -642,7 +686,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "e3eababc8549"
+   "hash": "e3eababc8549",
+   "gone": "2026-10-16"
   },
   "core:code:scripts/foundry/make-it-so.js:writeOutcomes#3": {
    "repo": "core",
@@ -652,7 +697,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "2683a7818ae9"
+   "hash": "2683a7818ae9",
+   "gone": "2026-10-16"
   },
   "core:code:scripts/foundry/make-it-so.js:writeOutcomes#4": {
    "repo": "core",
@@ -662,7 +708,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "f70b7769ae02"
+   "hash": "f70b7769ae02",
+   "gone": "2026-10-16"
   },
   "core:FASTFIGHTING.Aftermath.none": {
    "repo": "core",
@@ -1952,7 +1999,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "871b84f52b8c"
+   "hash": "871b84f52b8c",
+   "gone": "2026-10-16"
   },
   "core:FASTFIGHTING.Concession.CardTheft": {
    "repo": "core",
@@ -1962,7 +2010,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "53e1f3233bd1"
+   "hash": "53e1f3233bd1",
+   "gone": "2026-10-16"
   },
   "core:FASTFIGHTING.Concession.Luck": {
    "repo": "core",
@@ -1972,7 +2021,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "e65006bf9c43"
+   "hash": "e65006bf9c43",
+   "gone": "2026-10-16"
   },
   "core:FASTFIGHTING.Concession.TheftLuck": {
    "repo": "core",
@@ -1982,7 +2032,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "bba4e1c18b07"
+   "hash": "bba4e1c18b07",
+   "gone": "2026-10-16"
   },
   "core:FASTFIGHTING.Concession.Undo": {
    "repo": "core",
@@ -1992,7 +2043,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "fe4eb52732b4"
+   "hash": "fe4eb52732b4",
+   "gone": "2026-10-16"
   },
   "core:FASTFIGHTING.Concession.Undone": {
    "repo": "core",
@@ -7290,7 +7342,8 @@
    "date": null,
    "commit": null,
    "hash": "575a611cdee1",
-   "changed": true
+   "changed": true,
+   "gone": "2026-10-16"
   },
   "core:FASTFIGHTING.MakeItSo.Gives": {
    "repo": "core",
@@ -7332,6 +7385,16 @@
    "date": null,
    "commit": null,
    "hash": "b7e9d1eea23a"
+  },
+  "core:FASTFIGHTING.MakeItSo.NeedsUpdate": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.MakeItSo.NeedsUpdate",
+   "area": "core/MakeItSo",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "1be704cbada0"
   },
   "core:FASTFIGHTING.MakeItSo.Nothing": {
    "repo": "core",
@@ -9515,7 +9578,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "31fbef162594"
+   "hash": "31fbef162594",
+   "gone": "2026-10-16"
   },
   "core:FASTFIGHTING.Playback.Elsewhere": {
    "repo": "core",
@@ -9525,7 +9589,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "b3104359be58"
+   "hash": "b3104359be58",
+   "gone": "2026-10-16"
   },
   "core:FASTFIGHTING.Playback.Playing": {
    "repo": "core",
@@ -9535,7 +9600,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "091e64473b72"
+   "hash": "091e64473b72",
+   "gone": "2026-10-16"
   },
   "core:FASTFIGHTING.Playback.RewindConfirm": {
    "repo": "core",
@@ -17625,7 +17691,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "430b4dbe9295"
+   "hash": "430b4dbe9295",
+   "gone": "2026-10-16"
   },
   "core:FASTFIGHTING.Summary.Minutes": {
    "repo": "core",
@@ -17635,7 +17702,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "9a36ae74b40f"
+   "hash": "9a36ae74b40f",
+   "gone": "2026-10-16"
   },
   "core:FASTFIGHTING.Summary.Nothing": {
    "repo": "core",
@@ -17645,7 +17713,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "1785cfc3bc6a"
+   "hash": "1785cfc3bc6a",
+   "gone": "2026-10-16"
   },
   "core:FASTFIGHTING.Summary.Second": {
    "repo": "core",
@@ -17655,7 +17724,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "8d9eff4dc9fd"
+   "hash": "8d9eff4dc9fd",
+   "gone": "2026-10-16"
   },
   "core:FASTFIGHTING.Summary.Seconds": {
    "repo": "core",
@@ -17665,7 +17735,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "996a4adc403e"
+   "hash": "996a4adc403e",
+   "gone": "2026-10-16"
   },
   "core:FASTFIGHTING.Summary.Spent": {
    "repo": "core",
@@ -17675,7 +17746,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "89438fd391eb"
+   "hash": "89438fd391eb",
+   "gone": "2026-10-16"
   },
   "core:FASTFIGHTING.Summary.Time": {
    "repo": "core",
@@ -17686,7 +17758,8 @@
    "date": null,
    "commit": null,
    "hash": "441e7859d2b3",
-   "changed": true
+   "changed": true,
+   "gone": "2026-10-16"
   },
   "core:FASTFIGHTING.Summary.TimeAfter": {
    "repo": "core",
@@ -17697,7 +17770,8 @@
    "date": null,
    "commit": null,
    "hash": "7c6ca4580339",
-   "changed": true
+   "changed": true,
+   "gone": "2026-10-16"
   },
   "core:FASTFIGHTING.Summary.TimeTalk": {
    "repo": "core",
@@ -17707,7 +17781,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "12bc23e1f7c7"
+   "hash": "12bc23e1f7c7",
+   "gone": "2026-10-16"
   },
   "core:FASTFIGHTING.Summary.Title": {
    "repo": "core",
@@ -17717,7 +17792,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "c9f9ef8bab49"
+   "hash": "c9f9ef8bab49",
+   "gone": "2026-10-16"
   },
   "core:FASTFIGHTING.Summary.Unchanged": {
    "repo": "core",
@@ -17727,7 +17803,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "4f2a3566ae22"
+   "hash": "4f2a3566ae22",
+   "gone": "2026-10-16"
   },
   "core:FASTFIGHTING.Surprise.friendly": {
    "repo": "core",
@@ -19602,7 +19679,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "46de651d9abb"
+   "hash": "46de651d9abb",
+   "changed": true
   },
   "core:module.json:title": {
    "repo": "core",
@@ -36745,7 +36823,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "08280a95b6b1"
+   "hash": "08280a95b6b1",
+   "changed": true
   },
   "daggerheart:module.json:title": {
    "repo": "daggerheart",
@@ -38356,7 +38435,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "a8920541e813"
+   "hash": "a8920541e813",
+   "changed": true
   },
   "dcc:module.json:title": {
    "repo": "dcc",
@@ -39444,7 +39524,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "7cd7850d4f22"
+   "hash": "7cd7850d4f22",
+   "changed": true
   },
   "dnd5e:module.json:title": {
    "repo": "dnd5e",
@@ -41002,7 +41083,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "2f1eb5a172e3"
+   "hash": "2f1eb5a172e3",
+   "changed": true
   },
   "ironsworn:module.json:title": {
    "repo": "ironsworn",
@@ -41386,6 +41468,26 @@
    "date": null,
    "commit": null,
    "hash": "a4a8985d2ff8"
+  },
+  "pf2e:FFPF2E.Innate.AtWill": {
+   "repo": "pf2e",
+   "file": "languages/en.json",
+   "key": "FFPF2E.Innate.AtWill",
+   "area": "pf2e/Innate",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "2680f5916516"
+  },
+  "pf2e:FFPF2E.Innate.Constant": {
+   "repo": "pf2e",
+   "file": "languages/en.json",
+   "key": "FFPF2E.Innate.Constant",
+   "area": "pf2e/Innate",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "96f6549c6b97"
   },
   "pf2e:FFPF2E.Label": {
    "repo": "pf2e",
