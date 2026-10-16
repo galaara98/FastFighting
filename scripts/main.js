@@ -12,7 +12,7 @@ import { StoryTablesConfig } from "./apps/story-tables-config.js";
 import { invalidateStoryTables, installStoryTables } from "./story/tables.js";
 import { PlayerSurvey } from "./apps/player-survey.js";
 import { registerTokenTactics, syncTokenTactics } from "./apps/token-tactics.js";
-import { QUERIES, SURVEY_STATUS, hasCharactersFor } from "./foundry/tactics.js";
+import { QUERIES, SURVEY_STATUS, hasCharactersFor, playersOnScene, requestSurveys } from "./foundry/tactics.js";
 import { helperStatus, helperMessage, helperNoticeHtml } from "./helpers.js";
 import { invalidateApproach } from "./foundry/battle.js";
 import { undoConcession, revealStory, ownCard, cardUndoState, undoFromCard, refreshUndoCards, UNDO_REACH } from "./foundry/make-it-so.js";
@@ -84,6 +84,7 @@ Hooks.on("renderCombatTracker", (app, element) => {
   const root = element instanceof HTMLElement ? element : element?.[0];
   const header = root?.querySelector(".combat-tracker-header") ?? root;
   if ( !header ) return;
+  header.querySelector(".ff-tracker-row")?.remove();
   header.querySelector(".ff-tracker-open")?.remove();
   header.querySelector(".ff-helper-notice")?.remove();
   // Without a helper for this system, say so instead of offering the planner.
@@ -98,26 +99,50 @@ Hooks.on("renderCombatTracker", (app, element) => {
   button.className = "ff-tracker-open";
   button.disabled = !ready;
   button.dataset.tooltip = game.i18n.localize(ready ? "FASTFIGHTING.Tracker.OpenHint" : "FASTFIGHTING.Tracker.NeedTwo");
-  button.innerHTML = `<i class="fa-solid fa-swords"></i> ${game.i18n.localize("FASTFIGHTING.Planner.Title")}`;
+  button.innerHTML = `<i class="fa-solid fa-swords"></i><span>${game.i18n.localize("FASTFIGHTING.Tracker.Planner")}</span>`;
   button.addEventListener("click", event => {
     event.preventDefault();
     openIfReady();
   });
-  header.prepend(button);
-  // A live battle on this combat: its Battle Interface.
+  // (One row: the planner, the Battle Interface while a live battle is on this combat, and the players' survey.)
+  const row = document.createElement("div");
+  row.className = "ff-tracker-row";
+  row.append(button);
   header.querySelector(".ff-battle-open")?.remove();
   if ( liveBattle()?.combat === app.viewed ) {
     const open = document.createElement("button");
     open.type = "button";
     open.className = "ff-tracker-open ff-battle-open";
-    open.innerHTML = `<i class="fa-solid fa-chess-knight"></i> ${game.i18n.localize("FASTFIGHTING.Battle.Title")}`;
+    open.dataset.tooltip = game.i18n.localize("FASTFIGHTING.Battle.Title");
+    open.innerHTML = `<i class="fa-solid fa-chess-knight"></i><span>${game.i18n.localize("FASTFIGHTING.Tracker.Interface")}</span>`;
     open.addEventListener("click", event => {
       event.preventDefault();
       BattleInterface.open();
     });
-    button.after(open);
+    row.append(open);
   }
+  // Prepare Players without a conflict: every player with a character on the scene asked about it.
+  const survey = document.createElement("button");
+  survey.type = "button";
+  survey.className = "ff-tracker-open ff-survey-open";
+  survey.dataset.tooltip = game.i18n.localize("FASTFIGHTING.Tracker.SurveyHint");
+  survey.innerHTML = `<i class="fa-solid fa-feather-pointed"></i><span>${game.i18n.localize("FASTFIGHTING.Tracker.Survey")}</span>`;
+  survey.addEventListener("click", event => {
+    event.preventDefault();
+    preparePlayers();
+  });
+  row.append(survey);
+  header.prepend(row);
 });
+
+/** Prepare Players (the planner's), from the tracker, with or without a conflict: a new round of the party's vote too. */
+async function preparePlayers() {
+  if ( !game.user.isGM || !canvas.scene ) return;
+  const players = playersOnScene(canvas.scene);
+  if ( !players.length ) return ui.notifications.warn(game.i18n.localize("FASTFIGHTING.Survey.NoPlayers"));
+  await requestSurveys(players, canvas.scene, { party: "open" });
+  ui.notifications.info("FASTFIGHTING.Survey.Sent", { format: { n: players.length } });
+}
 
 /**
  * A player who controls a token on the battle map, or owns a character, can open its own tactics any time from the

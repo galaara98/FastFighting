@@ -22260,6 +22260,16 @@
    "hash": "c40d8d0b1081",
    "gone": "2026-10-11"
   },
+  "core:FASTFIGHTING.Tracker.Interface": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Tracker.Interface",
+   "area": "core/Tracker",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "c26b3ed4ce70"
+  },
   "core:FASTFIGHTING.Tracker.NeedTwo": {
    "repo": "core",
    "file": "languages/en.json",
@@ -22279,6 +22289,36 @@
    "date": null,
    "commit": null,
    "hash": "96617a582df6"
+  },
+  "core:FASTFIGHTING.Tracker.Planner": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Tracker.Planner",
+   "area": "core/Tracker",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "38581d183b73"
+  },
+  "core:FASTFIGHTING.Tracker.Survey": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Tracker.Survey",
+   "area": "core/Tracker",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "211bb3de5686"
+  },
+  "core:FASTFIGHTING.Tracker.SurveyHint": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Tracker.SurveyHint",
+   "area": "core/Tracker",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "67508b220d56"
   },
   "core:FASTFIGHTING.Trait.brave": {
    "repo": "core",
@@ -40665,7 +40705,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "b03eca8fef3d"
+   "hash": "b03eca8fef3d",
+   "changed": true
   },
   "dcc:FFDCC.Deed.PushedBack": {
    "repo": "dcc",

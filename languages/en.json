@@ -1002,7 +1002,11 @@
     },
     "Tracker": {
       "OpenHint": "Estimate how this encounter will go",
-      "NeedTwo": "Add at least two tokens to the encounter to plan the battle."
+      "NeedTwo": "Add at least two tokens to the encounter to plan the battle.",
+      "Survey": "Survey",
+      "SurveyHint": "Asks every player with a character on this scene about it (Prepare Players), with or without a conflict.",
+      "Planner": "Planner",
+      "Interface": "Interface"
     },
     "Story": {
       "Title": "The battle at {scene}",
