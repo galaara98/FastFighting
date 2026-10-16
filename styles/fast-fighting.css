@@ -639,3 +639,7 @@
 .ff-battle-review ul { list-style: none; margin: 0.3rem 0; padding: 0; }
 .ff-battle-review li { display: flex; gap: 0.3rem; align-items: center; flex-wrap: wrap; margin: 0.2rem 0; }
 .ff-battle-review li.is-unsure label { font-style: italic; }
+/* A live battle's cards in the chat: their buttons side by side, and low. */
+.fast-fighting-live { display: flex; flex-wrap: wrap; gap: 4px; }
+.fast-fighting-live p { flex: 1 0 100%; margin: 0 0 2px; }
+.fast-fighting-live button { flex: 1 1 0; width: auto; min-width: max-content; height: auto; min-height: 0; margin: 0; padding: 1px 6px; line-height: 1.5; }
