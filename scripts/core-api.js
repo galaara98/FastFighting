@@ -7,7 +7,7 @@
  * Runtime registration goes through the API passed to the "fastFighting.init" hook.
  */
 /** Bumped when the helper-facing API changes incompatibly. */
-export const CORE_API_VERSION = 15;
+export const CORE_API_VERSION = 16;
 
 export { SystemAdapter } from "./adapters/adapter-base.js";
 export { MODULE_ID, STATUS, SWAY, DOWNED_MODELS, TRAITS, TACTICAL, PC_BASELINE, clamp, fudged, tacticalTier } from "./constants.js";

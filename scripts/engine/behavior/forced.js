@@ -108,7 +108,7 @@ export function forcedPath(run, u, t, move) {
       break;
     }
   }
-  return { to: at, feet, fall, hazards: hazardsAt(run, t, at), cell: cellOf(map, at).cell, blocked, into };
+  return { to: at, feet, fall, hazards: hazardsAt(run, t, at), cell: cellOf(map, at).cell, blocked, into, goal: feetToGo };
 }
 
 /** Placed anywhere within the doer's reach (no farther than the move goes): the spot that would hurt it most. */

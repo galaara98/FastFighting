@@ -102,6 +102,21 @@ describe("a degree's own damage, a botch that moves, a blow that pushes", () => 
     expect(thrown.log.some(e => e.type === "forced" && e.targetId === "orc")).toBe(true);
   });
 
+  test("a reaction to being hurt knocks the one who did it back (Vengeful Fate)", () => {
+    const fate = { id: "fate", label: "Vengeful Fate", on: "damaged", move: { kind: "push", feet: 10 } };
+    const run = fight([hero([strike({ bonus: 60, cost: 3, damage: [parseFormula("3", "slashing")] })]), orc({ reactions: [fate] })]);
+    takeTurn(run, run.byId.get("hero"));
+    expect(run.log.some(e => e.type === "forced" && e.targetId === "hero" && e.actorId === "orc")).toBe(true);
+  });
+
+  test("direct damage, every part of it, is told to the system", () => {
+    const told = [];
+    const rules = { ...pf2eRules, applyIwr: (iwr, byType, t, opts) => (told.push(!!opts?.direct), Object.values(byType).reduce((s, v) => s + v, 0)) };
+    const run = fight([hero([strike({ bonus: 60, cost: 3, damage: [{ ...parseFormula("3", "slashing"), direct: true }] })]), orc()], { rules });
+    takeTurn(run, run.byId.get("hero"));
+    expect(told).toContain(true);
+  });
+
   test("a blow's rider pushes; a failed save's push too", () => {
     const smite = fight([hero([strike({ bonus: 60, damage: [parseFormula("1", "thunder")], effects: [{ kind: "move", move: { kind: "push", feet: 10 } }] })]), orc()]);
     takeTurn(smite, smite.byId.get("hero"));

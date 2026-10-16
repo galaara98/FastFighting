@@ -140,12 +140,15 @@ export function maxPart(p) {
 export function sampleDamage(parts, rng, multiplier = 1) {
   const byType = {};
   const persistent = [];
+  let direct = parts.length > 0;
   for ( const p of parts ) {
     if ( p.persistent ) { persistent.push(p); continue; }
     const amount = Math.max(0, Math.floor(samplePart(p, rng) * multiplier));
     byType[p.type] = (byType[p.type] ?? 0) + amount;
+    // (Direct damage, every part of it: Daggerheart's, no Armor Slot for it. The system's applyIwr is told.)
+    if ( !p.direct ) direct = false;
   }
-  return { byType, persistent };
+  return { byType, persistent, direct };
 }
 
 export function meanDamage(parts, multiplier = 1) {

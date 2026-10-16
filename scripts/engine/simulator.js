@@ -903,7 +903,7 @@ function rollHit(run, u, action, t, parts, multiplier, crit, minimum = 0) {
     const sum = types.reduce((s, k) => s + rolled.byType[k], 0);
     if ( types.length && sum < minimum ) rolled.byType[types[0]] += minimum - sum;
   }
-  const total = rules.applyIwr(iwrOf(t), rolled.byType, t);
+  const total = rules.applyIwr(iwrOf(t), rolled.byType, t, { direct: rolled.direct });
   return {
     total,
     byType: rolled.byType, // (as rolled, before anyone's resistances)
@@ -1233,7 +1233,7 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
           strikeTarget(run, target, strike, u, 0, false, logging);
         }
       }
-      if ( deed && logging ) log(run, u, { type: "deed", deed: deed.label, target: target.spec.name, targetId: target.id, roll: deedRoll, success: false });
+      if ( deed && logging ) log(run, u, { type: "deed", deed: deed.label, maneuver: deed.maneuver ?? null, target: target.spec.name, targetId: target.id, roll: deedRoll, success: false });
       // A shot into a melee that misses may stray toward one of the shooter's own friends there (rules.strayShot: DCC).
       if ( ranged && rules.strayShot ) {
         const friend = rules.strayShot(run, u, target, action);
@@ -1287,21 +1287,24 @@ function logReaction(run, u, by, r, trigger) {
 function answerHarm(run, target, by, action, dealt) {
   if ( !(dealt > 0) || !target.spec.reactions || !by || target === by || !isUp(target) || !isUp(by) ) return;
   const r = respond(run, target, "damaged", { by, action, damage: dealt });
-  if ( !r?.damage?.length ) return;
+  if ( !r?.damage?.length && !r?.move ) return;
   logReaction(run, target, by, r, "damaged");
   const rules = run.prep.rules;
   let mult = 1;
   let roll = null;
   if ( r.save ) {
-    roll = rollSave(run, by, r.save.type, r.save.dc, { stakes: 0.3, label: r.label }).roll;
+    roll = rollSave(run, by, r.save.type, r.save.dc, { stakes: 0.3, label: r.label, from: target }).roll;
     mult = saveMultiplier(rules, roll.degree, { basic: r.save.basic !== false });
   }
-  if ( mult <= 0 ) return;
-  const hit = rollHit(run, target, { id: `reaction:${r.id}`, damage: r.damage }, by, r.damage, mult, false);
-  if ( run.log ) log(run, target, {
-    type: "auto", action: r.label, actionKind: "auto", damageType: r.damage[0]?.type ?? "untyped", target: by.spec.name, targetId: by.id, damage: hit.total, reaction: true
-  });
-  hit.apply();
+  if ( r.damage?.length && mult > 0 ) {
+    const hit = rollHit(run, target, { id: `reaction:${r.id}`, damage: r.damage }, by, r.damage, mult, false);
+    if ( run.log ) log(run, target, {
+      type: "auto", action: r.label, actionKind: "auto", damageType: r.damage[0]?.type ?? "untyped", target: by.spec.name, targetId: by.id, damage: hit.total, reaction: true
+    });
+    hit.apply();
+  }
+  // (And moved: knocked back, on a failed save where it has one: Vengeful Fate.)
+  if ( r.move && isUp(by) && (!roll || roll.degree < 2) ) forceMove(run, target, by, r.move);
 }
 
 /**
@@ -1395,7 +1398,7 @@ function applyDeed(run, u, target, deed, deedRoll) {
     const friends = rallied(run, u, tier.outcome);
     for ( const a of friends ) applyOutcome(a, tier.outcome, u.id, { id: `deed:${deed.id}`, name: deed.label });
     log(run, u, {
-      type: "deed", deed: deed.label, target: target.spec.name, targetId: target.id, roll: deedRoll, success: friends.length > 0, effect: friends.length ? (tier.outcome.label ?? "") : "",
+      type: "deed", deed: deed.label, maneuver: deed.maneuver ?? null, target: target.spec.name, targetId: target.id, roll: deedRoll, success: friends.length > 0, effect: friends.length ? (tier.outcome.label ?? "") : "",
       allies: friends.map(a => a.spec.name)
     });
     return;
@@ -1609,7 +1612,7 @@ function forceMove(run, u, t, move) {
   });
   if ( path.fall > 0 && isUp(t) ) {
     const rolled = sampleDamage(fallDamage(run, path.fall, t), run.rng, 1);
-    const amount = rules.applyIwr(iwrOf(t), rolled.byType, t);
+    const amount = rules.applyIwr(iwrOf(t), rolled.byType, t, { direct: rolled.direct });
     log(run, t, { type: "fall", feet: path.fall, amount });
     dealDamage(run, u, t, amount, { types: Object.keys(rolled.byType) });
     const prone = typeof rules.fallProne === "function" ? rules.fallProne(t, amount) : rules.fallProne !== false;
@@ -1617,10 +1620,10 @@ function forceMove(run, u, t, move) {
   }
   // (Stopped short against a wall or someone: the system's collision, if it has one: Daggerheart's.)
   if ( path.blocked && isUp(t) && typeof rules.collisionDamage === "function" ) {
-    const parts = rules.collisionDamage(t, { feetLeft: Math.max(0, (move.feet ?? 5) - (path.feet ?? 0)), into: path.into ?? null, move, by: u }) ?? [];
+    const parts = rules.collisionDamage(t, { feetLeft: Math.max(0, (path.goal ?? move.feet ?? 5) - (path.feet ?? 0)), into: path.into ?? null, move, by: u }) ?? [];
     if ( parts.length ) {
       const rolled = sampleDamage(parts, run.rng, 1);
-      const amount = rules.applyIwr(iwrOf(t), rolled.byType, t);
+      const amount = rules.applyIwr(iwrOf(t), rolled.byType, t, { direct: rolled.direct });
       log(run, t, { type: "collision", amount, into: path.into?.spec?.name ?? null });
       dealDamage(run, u, t, amount, { types: Object.keys(rolled.byType) });
     }
