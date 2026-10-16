@@ -2202,7 +2202,6 @@
       "Apply": "Apply",
       "Conditions": "Conditions",
       "Toward": "Toward someone",
-      "By": "Caused by (or toward) whom",
       "Value": "How much",
       "Rounds": "For how many rounds",
       "Until": "until taken off",
@@ -2302,7 +2301,18 @@
         "Controlled": "Controlled by {name}: it wants what they want.",
         "Affliction": "{name}, stage {stage} of {most}",
         "Onset": "takes hold in {n} rounds",
-        "Settled": "settled in"
+        "Settled": "settled in",
+        "WhomFor": "{what} whom",
+        "WhomCause": "Caused by whom",
+        "WhomRel": {
+          "afraid": "Afraid of whom",
+          "grabbed": "Grabbed by whom",
+          "goaded": "Goaded by whom",
+          "controlled": "Controlled by whom",
+          "exposedTo": "Off guard to whom",
+          "surrender": "Surrenders to whom",
+          "standDown": "Stands down before whom"
+        }
       },
       "Attitude": {
         "wary": "Less willing to hear {name} out (×{n})",

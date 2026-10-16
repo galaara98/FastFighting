@@ -1609,7 +1609,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "07da1da59a05"
+   "hash": "07da1da59a05",
+   "gone": "2026-10-16"
   },
   "core:FASTFIGHTING.Battle.Conditions": {
    "repo": "core",
@@ -2290,6 +2291,96 @@
    "date": null,
    "commit": null,
    "hash": "d626c1872758"
+  },
+  "core:FASTFIGHTING.Battle.Net.WhomCause": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.Net.WhomCause",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "03f23f1b4d05"
+  },
+  "core:FASTFIGHTING.Battle.Net.WhomFor": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.Net.WhomFor",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "8d261e7497c0"
+  },
+  "core:FASTFIGHTING.Battle.Net.WhomRel.afraid": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.Net.WhomRel.afraid",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "c89d777253d2"
+  },
+  "core:FASTFIGHTING.Battle.Net.WhomRel.controlled": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.Net.WhomRel.controlled",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "5908ffd67a5e"
+  },
+  "core:FASTFIGHTING.Battle.Net.WhomRel.exposedTo": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.Net.WhomRel.exposedTo",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "9d39cad7e3ca"
+  },
+  "core:FASTFIGHTING.Battle.Net.WhomRel.goaded": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.Net.WhomRel.goaded",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "42502af72d20"
+  },
+  "core:FASTFIGHTING.Battle.Net.WhomRel.grabbed": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.Net.WhomRel.grabbed",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "8cf06468407e"
+  },
+  "core:FASTFIGHTING.Battle.Net.WhomRel.standDown": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.Net.WhomRel.standDown",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "f0202fcdea87"
+  },
+  "core:FASTFIGHTING.Battle.Net.WhomRel.surrender": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.Net.WhomRel.surrender",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "3ae5901fddc8"
   },
   "core:FASTFIGHTING.Battle.Net.ZoomIn": {
    "repo": "core",

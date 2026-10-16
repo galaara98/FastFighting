@@ -13,7 +13,7 @@ import { NEUTRAL_PARTY, MODULE_ID } from "../constants.js";
 import { DESIRE_BAND_KEYS, DESIRE_KINDS } from "../engine/behavior/desire.js";
 import { mindOf, bandLevel, networkOf, playerRuns } from "../engine/live.js";
 import { commandOf } from "../engine/battle-state.js";
-import { GM_RELATIONS } from "../engine/conditions.js";
+import { GM_RELATIONS, conditionMost } from "../engine/conditions.js";
 import { getAdapter } from "../api.js";
 import { roundsText, listJoin } from "../i18n.js";
 import { expectText } from "../story/log-lines.js";
@@ -280,7 +280,9 @@ export class BattleInterface extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /**
    * A new line from a creature, as the GM picks it in a dialog: a desire toward someone (how badly), a condition
-   * (how much, from whom, for how many rounds), or one toward someone (afraid of, grabbed by ...).
+   * (how much, from whom, for how many rounds), or one toward someone (afraid of, grabbed by ...). Nothing is chosen at
+   * first; once something is, only what it needs shows, and whom it's about is asked in its own words (Hurt whom,
+   * Afraid of whom, Caused by whom).
    */
   async #addLine(id) {
     const b = liveBattle();
@@ -288,35 +290,63 @@ export class BattleInterface extends HandlebarsApplicationMixin(ApplicationV2) {
     if ( !u ) return;
     const adapter = getAdapter();
     const doc = b.scene.tokens.get(tokenOf(b, id));
-    const opt = (value, label) => `<option value="${foundry.utils.escapeHTML(value)}">${foundry.utils.escapeHTML(label)}</option>`;
+    const opt = (value, label, data = {}) => `<option value="${foundry.utils.escapeHTML(value)}" ${Object.entries(data).map(([k, v]) => `data-${k}="${foundry.utils.escapeHTML(String(v))}"`).join(" ")}>${foundry.utils.escapeHTML(label)}</option>`;
+    // (What each choice asks: whom (required, or not), and in what words; how badly, how well, how much, how long.)
+    const whomFor = what => fmt("FASTFIGHTING.Battle.Net.WhomFor", { what });
     const label = key => adapter?.conditionLabel?.(key) || (has(`FASTFIGHTING.Condition.${key}`) ? loc(`FASTFIGHTING.Condition.${key}`) : key);
     const seen = new Set();
     const conditions = (adapter?.conditionChoices?.() ?? []).filter(c => c?.key && !seen.has(c.key) && seen.add(c.key))
-      .map(c => ({ value: `cond:${c.key}`, label: `${label(c.key)} · ${loc(adapter?.sheetCarries?.(c.key, doc?.actor) ? "FASTFIGHTING.Battle.OnSheet" : "FASTFIGHTING.Battle.CoreOnly")}` }))
+      .map(c => ({ value: `cond:${c.key}`, label: `${label(c.key)} · ${loc(adapter?.sheetCarries?.(c.key, doc?.actor) ? "FASTFIGHTING.Battle.OnSheet" : "FASTFIGHTING.Battle.CoreOnly")}`,
+        data: { whom: loc("FASTFIGHTING.Battle.Net.WhomCause"), fields: c.valued || (conditionMost(c.key) ?? 2) > 1 ? "who value rounds" : "who rounds" } }))
       .sort((a, c) => a.label.localeCompare(c.label, game.i18n.lang));
     const players = b.run.live.players.has(id);
-    const desires = players ? [] : DESIRE_KINDS.filter(k => k !== "bolstered" && k !== "breakFree").map(k => ({ value: `desire:${k}`, label: loc(`FASTFIGHTING.Desire.Kind.${k}`) }));
-    const relations = GM_RELATIONS.filter(k => k !== "afraid" || !players).map(k => ({ value: `rel:${k}`, label: loc(`FASTFIGHTING.Battle.RelationPick.${k}`) }));
+    // (Not what it can only want of itself: getting loose, being rid of a burn.)
+    const desires = players ? [] : DESIRE_KINDS.filter(k => !["bolstered", "breakFree", "rid"].includes(k)).map(k => ({ value: `desire:${k}`, label: loc(`FASTFIGHTING.Desire.Kind.${k}`),
+      data: { whom: whomFor(loc(`FASTFIGHTING.Desire.Kind.${k}`)), fields: "who band", needs: "who" } }));
+    const relations = GM_RELATIONS.filter(k => k !== "afraid" || !players).map(k => ({ value: `rel:${k}`, label: loc(`FASTFIGHTING.Battle.RelationPick.${k}`),
+      data: { whom: loc(`FASTFIGHTING.Battle.Net.WhomRel.${k}`), fields: k === "afraid" ? "who band" : "who rounds", needs: "who" } }));
     const others = b.run.units.filter(o => o.id !== id);
     // (What happened at the table: what a want doesn't say already.)
-    const facts = Object.keys(FACTS).filter(k => k !== "hurt" && k !== "protect").map(k => ({ value: `fact:${k}`, label: loc(`FASTFIGHTING.Battle.Fact.${k}`) }));
+    const facts = Object.keys(FACTS).filter(k => k !== "hurt" && k !== "protect").map(k => {
+      const f = FACTS[k];
+      const optional = k === "surrender" || k === "standDown";
+      const fields = [f.who || optional ? "who" : "", f.how === "band" ? "band" : "", f.how === "degree" ? "degree" : ""].filter(Boolean).join(" ");
+      const whom = optional ? loc(`FASTFIGHTING.Battle.Net.WhomRel.${k}`) : whomFor(loc(`FASTFIGHTING.Battle.Fact.${k}`));
+      return { value: `fact:${k}`, label: loc(`FASTFIGHTING.Battle.Fact.${k}`), data: { whom, fields, needs: f.who && !optional ? "who" : "" } };
+    });
     const content = `<div class="ff-add-line">
       <p class="hint">${foundry.utils.escapeHTML(fmt("FASTFIGHTING.Battle.Net.AddHint", { name: u.spec.name }))}</p>
       <div class="form-group"><label>${loc("FASTFIGHTING.Battle.Net.AddWhat")}</label><select name="what">
-        ${desires.length ? `<optgroup label="${loc("FASTFIGHTING.Battle.Net.Wants")}">${desires.map(d => opt(d.value, d.label)).join("")}</optgroup>` : ""}
-        <optgroup label="${loc("FASTFIGHTING.Battle.Conditions")}">${conditions.map(c => opt(c.value, c.label)).join("")}</optgroup>
-        <optgroup label="${loc("FASTFIGHTING.Battle.Toward")}">${relations.map(r => opt(r.value, r.label)).join("")}</optgroup>
-        <optgroup label="${loc("FASTFIGHTING.Battle.FactLabel")}">${facts.map(f => opt(f.value, f.label)).join("")}</optgroup>
+        <option value="" selected>—</option>
+        ${desires.length ? `<optgroup label="${loc("FASTFIGHTING.Battle.Net.Wants")}">${desires.map(d => opt(d.value, d.label, d.data)).join("")}</optgroup>` : ""}
+        <optgroup label="${loc("FASTFIGHTING.Battle.Conditions")}">${conditions.map(c => opt(c.value, c.label, c.data)).join("")}</optgroup>
+        <optgroup label="${loc("FASTFIGHTING.Battle.Toward")}">${relations.map(r => opt(r.value, r.label, r.data)).join("")}</optgroup>
+        <optgroup label="${loc("FASTFIGHTING.Battle.FactLabel")}">${facts.map(f => opt(f.value, f.label, f.data)).join("")}</optgroup>
       </select></div>
-      <div class="form-group"><label>${loc("FASTFIGHTING.Battle.By")}</label><select name="who"><option value="">—</option>${others.map(o => opt(o.id, o.spec.name)).join("")}</select></div>
-      <div class="form-group"><label>${loc("FASTFIGHTING.Desire.HowMuch")}</label><select name="band">${DESIRE_BAND_KEYS.map((k, i) => `<option value="${i}" ${i === 2 ? "selected" : ""}>${loc(`FASTFIGHTING.Desire.Level.${k}`)}</option>`).join("")}</select></div>
-      <div class="form-group"><label>${loc("FASTFIGHTING.Battle.HowWell")}</label><select name="degree">${[3, 2, 1, 0].map(d => `<option value="${d}" ${d === 2 ? "selected" : ""}>${loc(`FASTFIGHTING.Battle.Degree.${d}`)}</option>`).join("")}</select></div>
-      <div class="form-group"><label>${loc("FASTFIGHTING.Battle.Value")}</label><input type="number" name="value" min="1" step="1" value="1"></div>
-      <div class="form-group"><label>${loc("FASTFIGHTING.Battle.Rounds")}</label><input type="number" name="rounds" min="1" step="1" placeholder="${loc("FASTFIGHTING.Battle.Until")}"></div>
+      <div class="form-group" data-field="who"><label class="ff-whom"></label><select name="who"><option value="">—</option>${others.map(o => opt(o.id, o.spec.name)).join("")}</select></div>
+      <div class="form-group" data-field="band"><label>${loc("FASTFIGHTING.Desire.HowMuch")}</label><select name="band">${DESIRE_BAND_KEYS.map((k, i) => `<option value="${i}" ${i === 2 ? "selected" : ""}>${loc(`FASTFIGHTING.Desire.Level.${k}`)}</option>`).join("")}</select></div>
+      <div class="form-group" data-field="degree"><label>${loc("FASTFIGHTING.Battle.HowWell")}</label><select name="degree">${[3, 2, 1, 0].map(d => `<option value="${d}" ${d === 2 ? "selected" : ""}>${loc(`FASTFIGHTING.Battle.Degree.${d}`)}</option>`).join("")}</select></div>
+      <div class="form-group" data-field="value"><label>${loc("FASTFIGHTING.Battle.Value")}</label><input type="number" name="value" min="1" step="1" value="1"></div>
+      <div class="form-group" data-field="rounds"><label>${loc("FASTFIGHTING.Battle.Rounds")}</label><input type="number" name="rounds" min="1" step="1" placeholder="${loc("FASTFIGHTING.Battle.Until")}"></div>
     </div>`;
+    // (Shown as the choice needs: nothing but the choice itself until there is one.)
+    const shape = root => {
+      const chosen = root.querySelector('select[name="what"]')?.selectedOptions?.[0];
+      const fields = new Set((chosen?.dataset.fields ?? "").split(" ").filter(Boolean));
+      for ( const g of root.querySelectorAll("[data-field]") ) g.hidden = !fields.has(g.dataset.field);
+      const whom = root.querySelector(".ff-whom");
+      if ( whom ) whom.textContent = chosen?.dataset.whom ?? "";
+      const apply = root.querySelector('button[data-action="ok"]');
+      if ( apply ) apply.disabled = !chosen?.value;
+    };
     const picked = await foundry.applications.api.DialogV2.prompt({
       window: { title: fmt("FASTFIGHTING.Battle.Net.AddTitle", { name: u.spec.name }) }, content,
       ok: { label: loc("FASTFIGHTING.Battle.Apply"), callback: (event, button) => Object.fromEntries(new FormData(button.form).entries()) },
+      render: (event, dialog) => {
+        const root = dialog.element;
+        shape(root);
+        root.querySelector('select[name="what"]')?.addEventListener("change", () => shape(root));
+      },
       rejectClose: false
     });
     if ( !picked?.what ) return;
