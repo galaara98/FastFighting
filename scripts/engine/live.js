@@ -17,12 +17,12 @@
  * A player's other resources (Luck and the like) are never spent by the engine.
  * Pure: no Foundry globals.
  */
-import { STATUS, SWAY, NEUTRAL_PARTY, clamp } from "../constants.js";
+import { STATUS, SWAY, NEUTRAL_PARTY, HOSTILE_GROUPS, GROUPS, clamp } from "../constants.js";
 import {
   prepareBattle, beginRun, beginRound, playTurn, afterTurn, endRun, startTurn, noteCommand, log, notice, settleSides,
   breakOnHarm, noteHarm, noteFall, noteHeal, captureUnit, strikeOutOfTurn, settleAftermath, rethink
 } from "./simulator.js";
-import { createRun, createUnit, isStanding, areEnemies, edgeDistance } from "./battle-state.js";
+import { createRun, createUnit, isStanding, areEnemies, edgeDistance, groupKeyOf, leadershipOf, SLOTS, headsUp } from "./battle-state.js";
 import { threats } from "./behavior/reactions.js";
 import { createRng, deriveSeed } from "./rng.js";
 import { prepareDoors } from "./behavior/doors.js";
@@ -710,15 +710,91 @@ export function playerRuns(run, u) {
  * its leader is its new side's, and what it wants is worked out again: what no longer fits goes (desire.js
  * forgetSides), its own and everyone's toward it, and each creature in the fight thinks again (simulator.js rethink).
  * One under someone's control fights for its controller's side whatever the GM says, and wants what its controller
- * wants (desire.js puppetWishes).
+ * wants (desire.js puppetWishes). Taking no side, `group` is its friend group (1 to 3; none, on its own). A hostile
+ * group the fight doesn't have yet (the 2nd, the 3rd) joins it, every side's enemy but those taking no side.
  */
-export function setSide(run, id, side) {
+export function setSide(run, id, side, { group = null } = {}) {
   const u = run.byId.get(id);
-  if ( !u || u.side === side || (side !== NEUTRAL_PARTY && !run.prep.sides[side]) ) return false;
-  if ( !applyFact(run, { kind: "side", id, side }) ) return false;
+  if ( !u ) return false;
+  const friends = side === NEUTRAL_PARTY && GROUPS.includes(Number(group)) ? Number(group) : null;
+  if ( u.side === side && (side !== NEUTRAL_PARTY || (u.friendGroup ?? null) === friends) ) return false;
+  if ( side !== NEUTRAL_PARTY && !run.prep.sides[side] ) {
+    if ( !HOSTILE_GROUPS.includes(side) ) return false;
+    editPrep(run, { kind: "side", key: side });
+  }
+  if ( u.side !== side && !applyFact(run, { kind: "side", id, side }) ) return false;
+  if ( side === NEUTRAL_PARTY ) u.friendGroup = friends;
+  // (Its place in the chain of the group it left: given up.)
+  for ( const [key, chain] of Object.entries(run.prep.command ?? {}) ) {
+    if ( key !== groupKeyOf(u) && chain.some(c => c.id === id) ) editPrep(run, { kind: "command", key, chain: chain.filter(c => c.id !== id) });
+  }
   forgetSides(run, u);
   for ( const o of run.units ) rethink(run, o);
   return true;
+}
+
+/**
+ * The GM gives a creature its place in its group's chain of command (SLOTS: boss, leader, 1st or 2nd lieutenant; the
+ * boss or the leader is the one at the head, never both), or ("none") takes it out of the chain: `leadership`, what it
+ * lends those it leads ({brave, tacticalFloor, attack, ac}, as the helper ranks it). Whoever had that place gives it up.
+ * The group's side follows its new head. Everyone thinks again (leaders sway what their followers want).
+ */
+export function setRole(run, id, slot, leadership = null) {
+  const u = run.byId.get(id);
+  const key = u ? groupKeyOf(u) : null;
+  if ( !key || u.spec.hazard || (slot !== "none" && !SLOTS.includes(slot)) ) return false;
+  if ( slot === "boss" && u.side === "friendly" ) return false; // (the party never has a boss)
+  const head = s => s === "boss" || s === "leader";
+  let chain = (run.prep.command?.[key] ?? []).filter(c => c.id !== id && !(head(slot) ? head(c.slot) : c.slot === slot));
+  if ( slot !== "none" ) {
+    const lends = leadershipOf(leadership ?? {});
+    chain.push({ id, slot, role: slot === "boss" ? "boss" : slot === "leader" ? "leader" : "lieutenant", leadership: lends });
+  }
+  chain = chain.sort((a, b) => SLOTS.indexOf(a.slot) - SLOTS.indexOf(b.slot));
+  editPrep(run, { kind: "command", key, chain });
+  for ( const o of run.units ) rethink(run, o);
+  run.live?.facts.push({ kind: "role", id, slot, round: run.round });
+  return true;
+}
+
+/**
+ * A change to the fight itself (its sides, its chains of command) the GM made: done now, and kept (run.prepEdits) so a
+ * battle kept and restored, built afresh from its spec, has it again (restoreRun replays them).
+ */
+function editPrep(run, e, { keep = true } = {}) {
+  const prep = run.prep;
+  if ( e.kind === "side" ) {
+    if ( prep.sides[e.key] ) return;
+    const like = prep.sides.hostile ?? Object.values(prep.sides).find(s => !s.neutral) ?? {};
+    const side = {
+      id: e.key, label: e.key, enemies: new Set(), traits: { ...(like.traits ?? {}) }, leaderId: null,
+      leadership: leadershipOf({}), healAggro: like.healAggro ?? "balanced", morale: like.morale ?? true, party: null
+    };
+    for ( const s of Object.values(prep.sides) ) {
+      if ( s.neutral ) continue;
+      side.enemies.add(s.id);
+      s.enemies.add(e.key);
+    }
+    prep.sides[e.key] = side;
+  } else if ( e.kind === "command" ) {
+    prep.command ??= {};
+    // (Its head finds its words more readily; the one it had, as it was.)
+    const was = prep.command[e.key]?.[0]?.id ?? null;
+    if ( e.chain.length ) prep.command[e.key] = e.chain.map(c => ({ ...c }));
+    else delete prep.command[e.key];
+    const now = prep.command[e.key]?.[0]?.id ?? null;
+    if ( was !== now ) {
+      headsUp(prep.byId.get(was), false);
+      headsUp(prep.byId.get(now));
+    }
+    // (A side's own leader: whoever heads its chain now.)
+    const side = prep.sides[e.key];
+    if ( side ) {
+      side.leaderId = prep.command[e.key]?.[0]?.id ?? null;
+      side.leadership = prep.command[e.key]?.[0]?.leadership ?? leadershipOf({});
+    }
+  }
+  if ( keep ) (run.prepEdits ??= []).push(e);
 }
 
 /**
@@ -1169,6 +1245,8 @@ export function restoreRun(spec, rules, snap, { log = null } = {}) {
     for ( const [k, v] of Object.entries(data) ) u[k] = decode(v, run.byId);
   }
   for ( const [k, v] of Object.entries(snap.run ?? {}) ) run[k] = decode(v, run.byId);
+  // (What the GM changed of the fight itself, again: hostile groups it gained, chains of command.)
+  for ( const e of run.prepEdits ?? [] ) editPrep(run, e, { keep: false });
   for ( const u of run.units ) {
     u.sharedPools = run.sharedPools;
     recompute(u);

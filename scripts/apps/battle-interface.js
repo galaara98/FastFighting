@@ -9,10 +9,11 @@
  * character FastFighting isn't playing shows no desires: its player decides. A token on the map not in the battle can
  * be brought into it.
  */
-import { NEUTRAL_PARTY, MODULE_ID } from "../constants.js";
+import { NEUTRAL_PARTY, MODULE_ID, SIDES, HOSTILE_GROUPS, GROUPS } from "../constants.js";
 import { DESIRE_BAND_KEYS, DESIRE_KINDS } from "../engine/behavior/desire.js";
 import { mindOf, bandLevel, networkOf, playerRuns } from "../engine/live.js";
-import { commandOf } from "../engine/battle-state.js";
+import { commandOf, groupKeyOf, SLOTS } from "../engine/battle-state.js";
+import { PICKED_BONUS } from "../foundry/battle.js";
 import { GM_RELATIONS, conditionMost } from "../engine/conditions.js";
 import { getAdapter } from "../api.js";
 import { roundsText, listJoin } from "../i18n.js";
@@ -106,6 +107,7 @@ export class BattleInterface extends HandlebarsApplicationMixin(ApplicationV2) {
       adjust: BattleInterface.#onAdjust,
       addLine: BattleInterface.#onAddLine,
       setSide: BattleInterface.#onSetSide,
+      setRole: BattleInterface.#onSetRole,
       bringIn: BattleInterface.#onBringIn
     }
   };
@@ -366,10 +368,26 @@ export class BattleInterface extends HandlebarsApplicationMixin(ApplicationV2) {
     return liveCondition({ op: "set", id, key, value: Math.max(1, Number(picked.value) || 1), byId, rounds });
   }
 
-  /** Another side for the creature in focus (what it wants worked out again: engine/live.js setSide). */
+  /** Another side for the creature in focus, or another of its kind's groups (what it wants worked out again: engine/live.js setSide). */
   static async #onSetSide(event, target) {
     const id = target.closest("[data-creature]")?.dataset.creature;
-    if ( id && target.dataset.side ) await liveMind({ op: "side", id, side: target.dataset.side });
+    if ( !id || !target.dataset.side || target.classList.contains("active") ) return;
+    await liveMind({ op: "side", id, side: target.dataset.side, group: Number(target.dataset.group) || null });
+  }
+
+  /**
+   * Its place in its group's chain of command (boss, leader, 1st or 2nd lieutenant; again, out of it): what it lends
+   * those it leads, as its system ranks it (adapter.detectLeaders), else what a leader the GM picks lends.
+   */
+  static async #onSetRole(event, target) {
+    const id = target.closest("[data-creature]")?.dataset.creature;
+    const slot = target.dataset.role;
+    const u = liveBattle()?.run.byId.get(id);
+    if ( !u || !SLOTS.includes(slot) ) return;
+    if ( target.classList.contains("active") ) return liveMind({ op: "role", id, slot: "none" });
+    const ranked = getAdapter()?.detectLeaders?.([u.spec])?.find(r => r.id === id);
+    const lends = Object.fromEntries(["brave", "tacticalFloor", "attack", "ac"].map(k => [k, ranked?.bonus?.[k] ?? PICKED_BONUS[k] ?? 0]));
+    await liveMind({ op: "role", id, slot, leadership: lends });
   }
 
   static async #onAddLine(event, target) {
@@ -723,8 +741,19 @@ function panelOf(b, net, nodes, edges, focus, { name, docOf, sideLabel }) {
     adjust: JSON.stringify({ t: "release", type: "desire", id: focus, kind: g.kind, targetId: g.targetId })
   }));
   const decides = playerRuns(run, u);
-  const sides = [...new Set([...Object.keys(b.spec.sides ?? {}), NEUTRAL_PARTY])];
-  const teams = sides.map(side => ({ side, label: sideLabel(side), current: u.side === side }));
+  // Its team: a neutral friend group (1 2 3), a hostile group (1 2 3), or the party (F); and its place in its group's
+  // chain of command (B L 1 2; the party, no boss), as the planner has them.
+  const pill = (side, group, label, name, active) => ({ side, group, label, name, active });
+  const teams = [
+    { kind: "neutral", label: loc("FASTFIGHTING.Side.neutral"), pills: GROUPS.map(n => pill(NEUTRAL_PARTY, n, n, fmt("FASTFIGHTING.Side.neutralGroup", { n }), u.side === NEUTRAL_PARTY && u.friendGroup === n)) },
+    { kind: "hostile", label: loc("FASTFIGHTING.Side.hostile"), pills: HOSTILE_GROUPS.map((side, i) => pill(side, null, i + 1, fmt("FASTFIGHTING.Side.hostileGroup", { n: i + 1 }), u.side === side)) },
+    { kind: "friendly", label: loc("FASTFIGHTING.Side.friendly"), pills: [pill(SIDES.FRIENDLY, null, loc("FASTFIGHTING.Battle.Net.FriendlyShort"), loc("FASTFIGHTING.Side.friendly"), u.side === SIDES.FRIENDLY)] }
+  ];
+  const key = groupKeyOf(u);
+  const place = key ? (run.prep.command?.[key] ?? []).find(c => c.id === u.id)?.slot ?? null : null;
+  const roles = key && run.prep.options.leadership !== false && !u.spec.hazard
+    ? SLOTS.filter(s => s !== "boss" || u.side !== SIDES.FRIENDLY).map(s => ({ key: s, short: loc(`FASTFIGHTING.Planner.Role.${s}.Short`), label: loc(`FASTFIGHTING.Planner.Role.${s}.Name`), active: place === s }))
+    : null;
   const controller = u.controlledBy ? run.byId.get(u.controlledBy) : null;
   return {
     creature: true, id: focus, name: u.spec.name, img: node.img, side: sideLabel(u.side), status: loc(`FASTFIGHTING.Status.${u.status}`), hp: `${u.hp}/${u.maxHp}`,
@@ -733,7 +762,7 @@ function panelOf(b, net, nodes, edges, focus, { name, docOf, sideLabel }) {
     on: [...edges.filter(onIt), ...symbols.filter(m => m.cls.includes("is-condition") || m.cls.includes("is-status"))].map(e => row(e)),
     wantedBy: edges.filter(wantsMe).map(e => row(e, false)),
     setAside: decides ? [] : setAside, held: decides ? [] : held,
-    teams, controlled: controller ? fmt("FASTFIGHTING.Battle.Net.Controlled", { name: controller.spec.name }) : ""
+    teams, roles, controlled: controller ? fmt("FASTFIGHTING.Battle.Net.Controlled", { name: controller.spec.name }) : ""
   };
 }
 

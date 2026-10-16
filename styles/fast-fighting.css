@@ -25,6 +25,8 @@
   --ff-team-hostile-text: var(--ff-disposition-hostile-text, #fff);
   --ff-team-neutral: var(--ff-disposition-neutral, #e9c62b);
   --ff-team-neutral-text: var(--ff-disposition-neutral-text, #222);
+  --ff-team-friendly: var(--ff-disposition-friendly, #2f9e44);
+  --ff-team-friendly-text: var(--ff-disposition-friendly-text, #fff);
 }
 
 .ff-planner .window-content {
@@ -159,6 +161,7 @@
 .ff-group-pill.active.is-auto { background: color-mix(in srgb, var(--ff-accent) 60%, transparent); }
 .ff-groups.hostile .ff-group-pill.active { background: var(--ff-team-hostile); border-color: var(--ff-team-hostile); color: var(--ff-team-hostile-text); }
 .ff-groups.neutral .ff-group-pill.active { background: var(--ff-team-neutral); border-color: var(--ff-team-neutral); color: var(--ff-team-neutral-text); }
+.ff-groups.friendly .ff-group-pill.active { background: var(--ff-team-friendly); border-color: var(--ff-team-friendly); color: var(--ff-team-friendly-text); }
 .ff-groups.hostile .ff-group-pill.active.is-auto { background: color-mix(in srgb, var(--ff-team-hostile) 55%, transparent); }
 .ff-groups.neutral .ff-group-pill.active.is-auto { background: color-mix(in srgb, var(--ff-team-neutral) 55%, transparent); }
 .ff-groups + .ff-groups { margin-left: 4px; }
@@ -589,6 +592,8 @@
 .ff-net-menu button { width: 100%; text-align: left; border: none; background: none; padding: 4px 8px; display: flex; gap: 6px; align-items: center; }
 .ff-net-menu button:hover { background: var(--ff-surface-2); }
 .ff-battle-teams div { display: flex; flex-wrap: wrap; gap: 4px; }
+.ff-battle-teams .ff-team-pills { align-items: center; gap: 6px; }
+.ff-battle-teams .ff-roles { margin-left: 4px; }
 .ff-battle-teams .ff-btn { width: auto; padding: 0 0.5rem; font-size: 0.85em; }
 .ff-battle-teams .ff-btn.is-current { border-color: var(--ff-accent); color: var(--ff-accent); opacity: 1; }
 .ff-net-node.is-dim { opacity: 0.4; }

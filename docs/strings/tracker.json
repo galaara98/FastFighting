@@ -2031,6 +2031,16 @@
    "commit": null,
    "hash": "bb235485ad91"
   },
+  "core:FASTFIGHTING.Battle.Net.FriendlyShort": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.Net.FriendlyShort",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "f67ab10ad4e4"
+  },
   "core:FASTFIGHTING.Battle.Net.HandBack": {
    "repo": "core",
    "file": "languages/en.json",
@@ -2150,6 +2160,16 @@
    "date": null,
    "commit": null,
    "hash": "6def91aa8d6f"
+  },
+  "core:FASTFIGHTING.Battle.Net.RoleHint": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.Net.RoleHint",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "6a1a3034e4c3"
   },
   "core:FASTFIGHTING.Battle.Net.RunNow": {
    "repo": "core",

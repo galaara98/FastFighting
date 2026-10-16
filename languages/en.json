@@ -2312,7 +2312,9 @@
           "exposedTo": "Off guard to whom",
           "surrender": "Surrenders to whom",
           "standDown": "Stands down before whom"
-        }
+        },
+        "FriendlyShort": "F",
+        "RoleHint": "Its place in its group's chain of command: whoever had that place gives it up, and what everyone wants is worked out again. Again to take it out."
       },
       "Attitude": {
         "wary": "Less willing to hear {name} out (×{n})",

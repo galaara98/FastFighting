@@ -90,7 +90,10 @@
 
           <section class="ff-battle-teams">
             <p>{{localize "FASTFIGHTING.Battle.Net.Team"}}</p>
-            <div>{{#each focus.teams}}<button type="button" class="ff-btn {{#if current}}is-current{{/if}}" data-action="setSide" data-side="{{side}}" {{#if current}}disabled{{/if}} data-tooltip="{{localize "FASTFIGHTING.Battle.Net.TeamHint"}}">{{label}}</button>{{/each}}</div>
+            <div class="ff-team-pills" data-tooltip="{{localize "FASTFIGHTING.Battle.Net.TeamHint"}}">
+              {{#each focus.teams}}<span class="ff-groups {{kind}}" role="group" aria-label="{{label}}">{{#each pills}}<button type="button" class="ff-group-pill {{#if active}}active{{/if}}" data-action="setSide" data-side="{{side}}" {{#if group}}data-group="{{group}}"{{/if}} data-tooltip-text="{{name}}" aria-label="{{name}}" aria-pressed="{{#if active}}true{{else}}false{{/if}}">{{label}}</button>{{/each}}</span>{{/each}}
+              {{#if focus.roles}}<span class="ff-roles" role="group" aria-label="{{localize "FASTFIGHTING.Planner.Command"}}" data-tooltip="{{localize "FASTFIGHTING.Battle.Net.RoleHint"}}">{{#each focus.roles}}<button type="button" class="ff-role-pill {{#if active}}active{{/if}}" data-action="setRole" data-role="{{key}}" aria-pressed="{{#if active}}true{{else}}false{{/if}}" aria-label="{{label}}">{{short}}</button>{{/each}}</span>{{/if}}
+            </div>
             {{#if focus.controlled}}<p class="hint">{{focus.controlled}}</p>{{/if}}
           </section>
 

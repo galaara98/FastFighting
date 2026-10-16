@@ -150,9 +150,10 @@ export function prepareBattle(spec, rules) {
   if ( options.leadership ) {
     for ( const [key, chain] of Object.entries(spec.command ?? {}) ) {
       if ( !Array.isArray(chain) || !chain.length ) continue;
-      command[key] = chain.filter(c => c?.id).slice(0, 3).map((c, i) => ({
-        id: c.id, role: c.role === "boss" && i === 0 ? "boss" : c.role === "lieutenant" || i > 0 ? "lieutenant" : "leader", leadership: leadershipOf(c.leadership)
-      }));
+      command[key] = chain.filter(c => c?.id).slice(0, 3).map((c, i) => {
+        const role = c.role === "boss" && i === 0 ? "boss" : c.role === "lieutenant" || i > 0 ? "lieutenant" : "leader";
+        return { id: c.id, role, slot: SLOTS.includes(c.slot) ? c.slot : role === "lieutenant" ? (i > 1 ? "lt2" : "lt1") : role, leadership: leadershipOf(c.leadership) };
+      });
     }
     for ( const [id, side] of Object.entries(sides) ) {
       if ( !command[id] && side.leaderId ) command[id] = [{ id: side.leaderId, role: "leader", leadership: side.leadership }];
@@ -206,10 +207,7 @@ export function prepareBattle(spec, rules) {
 
   const byId = new Map(combatants.map(c => [c.spec.id, c]));
   // Whoever heads a group (its boss or its leader) finds its words more readily (one who only wants to lead doesn't).
-  for ( const chain of Object.values(command) ) {
-    const head = byId.get(chain[0]?.id);
-    if ( head && head.talkAffinity > 0 ) head.talkAffinity = Math.min(1, head.talkAffinity + 0.15);
-  }
+  for ( const chain of Object.values(command) ) headsUp(byId.get(chain[0]?.id));
   const approachOf = (aId, tId) => spec.approach?.[aId]?.[tId] ?? DEFAULT_APPROACH;
 
   // What each summoning calls, ready to join a fight (on the summoner's side, under its command).
@@ -232,8 +230,28 @@ export function prepareBattle(spec, rules) {
   return { spec, rules, options, sides, command, combatants, byId, approachOf, summons, meanCache: new Map() };
 }
 
+/** What heading a group lends a creature's words (prepareBattle; live.js when the GM changes who heads it). */
+const HEAD_WORDS = 0.15;
+
+/** One heading a group finds its words more readily; one who no longer does, as it was. */
+export function headsUp(c, on = true) {
+  if ( !c ) return;
+  if ( !on ) {
+    c.talkAffinity -= c.headWords ?? 0;
+    c.headWords = 0;
+    return;
+  }
+  if ( c.headWords || !(c.talkAffinity > 0) ) return;
+  const raised = Math.min(1, c.talkAffinity + HEAD_WORDS);
+  c.headWords = raised - c.talkAffinity;
+  c.talkAffinity = raised;
+}
+
+/** The places in a group's chain of command, in order: its boss or its leader, then two lieutenants. */
+export const SLOTS = Object.freeze(["boss", "leader", "lt1", "lt2"]);
+
 /** What a leader lends those it leads, as fudged numbers: bravery, a floor under tactics, attack and AC. */
-function leadershipOf(l = {}) {
+export function leadershipOf(l = {}) {
   return {
     brave: fudged(l?.brave ?? 0, -50, 50),
     tacticalFloor: fudged(l?.tacticalFloor ?? 0, 0, 100),

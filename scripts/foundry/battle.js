@@ -407,7 +407,7 @@ function applyPartyWishes(spec, entry, party) {
 /** The roles a token can hold in its group's chain of command (the planner's pills): boss or leader, then two lieutenants. */
 export const ROLES = Object.freeze(["boss", "leader", "lt1", "lt2"]);
 /** What a leader the system didn't rank (the GM's own pick) lends its group. */
-const PICKED_BONUS = Object.freeze({ brave: 10, tacticalFloor: 40, attack: 0, ac: 0 });
+export const PICKED_BONUS = Object.freeze({ brave: 10, tacticalFloor: 40, attack: 0, ac: 0 });
 
 /** The group a roster entry fights in, for command: its side, or (taking no side) its friend group, or null. */
 export function commandGroup(entry, setup, resolved) {
