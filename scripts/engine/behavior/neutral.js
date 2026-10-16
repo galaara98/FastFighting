@@ -47,20 +47,33 @@ import { prefersTalk, canTalk, impatience } from "./standoff.js";
 
 /** How strongly a neutral leans to a side (how readily it meddles for it, takes offense for it, looks like one of it). */
 export const LEAN = 50;
-/** How much neutral tokens want each other safe ("wants"), before their personality. */
+/** How much neutral tokens of a friend group pull each other toward keeping safe, before their loyalty. */
 export const FELLOW = 30;
 /**
- * Leaning isn't guarding: of a lean, wanting each of that side's members safe is a share ("wants", for an ordinary one),
- * then the creature's personality: the loyal more, the selfish less, the bold more (keeping someone safe takes nerve),
- * and half its pills' wish to protect (the rest goes to the friend it would guard: desire.js styleWants).
+ * A lean is a pull, as a leader's word is (desire.js listen): added to what the creature wants, not a wish in place of
+ * it. Toward the side it leans to: keeping each member safe more, hurting them less, by a share of the lean's strength
+ * (an ordinary lean, a nudge; a strong one, more); their foes, a little more to hurt (foes of it). As loyal as it is
+ * (its loyalty over LEAN_PULL.loyal, up to LEAN_PULL.most, as a leader's word), less for the selfish. A friend group's
+ * pull on its own, the same, from FELLOW (fellows of it).
  */
-export const LEAN_WANT = Object.freeze({ share: 0.6, loyal: 0.3, selfish: 0.3, brave: 0.2, pills: 0.5 });
+export const LEAN_PULL = Object.freeze({ share: 0.25, foes: 0.5, fellows: 0.5, loyal: 60, most: 1.6 });
 
-/** How much this creature wants someone safe, out of a lean (or a friend group's) of this strength. */
-export function leanWant(run, u, base) {
-  if ( !(base > 0) ) return 0;
-  const trait = k => liveTrait(run, u, k) - 50;
-  return clamp(base + trait("loyal") * LEAN_WANT.loyal - trait("selfish") * LEAN_WANT.selfish + trait("brave") * LEAN_WANT.brave + (styleOf(u).protect ?? 0) * LEAN_WANT.pills, 0, 100);
+/** How hard a lean (or a friend group's pull) of this strength pulls this creature. */
+export function leanPull(run, u, strength) {
+  if ( !(strength > 0) ) return 0;
+  const loyal = Math.min(LEAN_PULL.most, liveTrait(run, u, "loyal") / LEAN_PULL.loyal);
+  const selfless = 1 - Math.max(0, liveTrait(run, u, "selfish") - 50) / 100;
+  return strength * loyal * selfless;
+}
+
+/**
+ * What a neutral feels for someone on the side it leans to, apart from what it would do (a lean nudges that only):
+ * the lean's strength, as loyal as it is, less for the selfish. It's what makes it take their being hurt personally,
+ * spare them in a truce, and like the thought of joining them (crossed, sparedForTruce, appeal). 0 for anyone else.
+ */
+export function leanRegard(run, n, t) {
+  if ( !n.lean || !t || t === n || leanSide(run, n) !== t.side ) return 0;
+  return leanPull(run, n, n.leanLevel ?? LEAN);
 }
 /** A lean this weak no longer makes it look like one of that side. */
 const SHOWS = 25;
@@ -123,13 +136,19 @@ export function refreshLeans(run) {
     const side = leanSide(run, u);
     const level = u.leanLevel ?? LEAN;
     const members = side && level > 0 ? run.units.filter(o => o !== u && o.side === side && o.status !== STATUS.DEAD).map(o => o.id) : [];
-    // (As much as it would want them safe, by its personality: leaning isn't guarding.)
-    const forMembers = leanWant(run, u, level * LEAN_WANT.share);
-    const forFellows = leanWant(run, u, FELLOW);
-    const key = `${side}|${members.length}|${Math.round(forMembers)}|${Math.round(forFellows)}`;
+    // (A pull on what it wants: that side's members safer, less to hurt; their foes, a little more.)
+    const pull = leanPull(run, u, level * LEAN_PULL.share);
+    const together = leanPull(run, u, FELLOW * LEAN_PULL.fellows);
+    const enemies = side ? run.prep.sides[side]?.enemies : null;
+    const foes = pull > 0 && enemies?.size ? run.units.filter(o => o !== u && enemies.has(o.side) && o.status !== STATUS.DEAD).map(o => o.id) : [];
+    const key = `${side}|${members.length}|${foes.length}|${Math.round(pull)}|${Math.round(together)}`;
     if ( u.leaning === key ) continue;
     u.leaning = key;
-    setLean(u, [...fellows.map(id => ["protect", id, forFellows]), ...members.map(id => ["protect", id, forMembers])]);
+    setLean(u, [
+      ...fellows.map(id => ["protect", id, together]),
+      ...members.flatMap(id => [["protect", id, pull], ["hurt", id, -pull]]),
+      ...foes.map(id => ["hurt", id, pull * LEAN_PULL.foes])
+    ]);
   }
 }
 
@@ -269,6 +288,7 @@ export function sparedForTruce(run, u) {
     if ( !isNeutral(n) || n.truce?.side !== u.side || !isUp(n) || losingTruce(run, n) ) continue;
     (spared ??= new Set()).add(n.id);
     for ( const d of allDesires(n) ) if ( CARING.includes(d.kind) && d.level >= 20 ) spared.add(d.targetId);
+    for ( const t of run.units ) if ( leanRegard(run, n, t) >= 20 ) spared.add(t.id);
   }
   return spared;
 }
@@ -291,7 +311,7 @@ export function crossed(run, actor, target, how, weight, say) {
   for ( const n of run.units ) {
     if ( n === target || n === actor || !isNeutral(n) || !isUp(n) || !n.aware || n.against.has(side) ) continue;
     const spite = how === "help" ? levelOf(n, "hurt", target.id) : 0;
-    const care = how === "harm" ? Math.max(...CARING.map(k => levelOf(n, k, target.id))) : (spite >= SPITE ? spite - SPITE / 2 : 0);
+    const care = how === "harm" ? Math.max(leanRegard(run, n, target), ...CARING.map(k => levelOf(n, k, target.id))) : (spite >= SPITE ? spite - SPITE / 2 : 0);
     if ( care <= 0 || !perceives(run, n, target, { crisis: true }) ) continue;
     n.crossedBy.add(side);
     // The side it leans toward hurting someone it cares about: the lean wears down.
@@ -440,6 +460,15 @@ export function appeal(run, n, side) {
     const bad = (caring && foe) || (d.kind === "hurt" && friend);
     if ( good && (!fulfils || d.level > fulfils.level) ) fulfils = d;
     if ( bad && (!betrays || d.level > betrays.level) ) betrays = d;
+  }
+  // (Its regard for the side it leans to: joining it fulfils it; joining its foes betrays it.)
+  const leaning = n.lean ? leanSide(run, n) : null;
+  const regard = leaning ? leanPull(run, n, n.leanLevel ?? LEAN) : 0;
+  if ( regard > 0 ) {
+    const one = run.units.find(t => t !== n && t.side === leaning && ![STATUS.DEAD, STATUS.FLED].includes(t.status));
+    const d = one ? { kind: "protect", targetId: one.id, level: regard } : null;
+    if ( d && leaning === side && (!fulfils || regard > fulfils.level) ) fulfils = d;
+    if ( d && enemies?.has(leaning) && (!betrays || regard > betrays.level) ) betrays = d;
   }
   return { fulfils, betrays };
 }

@@ -3,7 +3,7 @@ import { runBatchSync, prepareBattle } from "../scripts/engine/simulator.js";
 import { createRun, areEnemies, alliesOf } from "../scripts/engine/battle-state.js";
 import { createRng } from "../scripts/engine/rng.js";
 import { initDesires } from "../scripts/engine/behavior/desire.js";
-import { crossed, refreshLeans, FELLOW, leanWant } from "../scripts/engine/behavior/neutral.js";
+import { crossed, refreshLeans, FELLOW, LEAN_PULL, leanPull } from "../scripts/engine/behavior/neutral.js";
 import { standsGround } from "../scripts/engine/behavior/morale.js";
 import { proposeGroups, squaresApart, sameKind } from "../scripts/engine/groups.js";
 import { NEUTRAL_PARTY } from "../scripts/constants.js";
@@ -74,7 +74,7 @@ describe("neutral friend groups in the fight", () => {
 
   test("a friend group looks out for its own, not for another group", () => {
     const { run, units } = ready([fighter(), brute(), neutral("miller", 1), neutral("wife", 1), neutral("tinker", 2)]);
-    expect(units.miller.desire.lean.get("protect|wife")).toBeCloseTo(leanWant(run, units.miller, FELLOW));
+    expect(units.miller.desire.lean.get("protect|wife")).toBeCloseTo(leanPull(run, units.miller, FELLOW * LEAN_PULL.fellows));
     expect(units.miller.desire.lean.get("protect|tinker")).toBeUndefined();
     expect(alliesOf(run, units.miller).map(u => u.id).sort()).toEqual(["miller", "wife"]);
     expect(alliesOf(run, units.tinker)).toEqual([units.tinker]);
@@ -93,7 +93,7 @@ describe("neutral friend groups in the fight", () => {
   test("a Secret token on a neutral team is in that team's friend group", () => {
     const { run, units } = ready([fighter(), brute(), neutral("miller", 2), neutral("spy", 2, { originSide: "secret" }), neutral("tinker", 1)]);
     expect(alliesOf(run, units.spy).map(u => u.id).sort()).toEqual(["miller", "spy"]);
-    expect(units.miller.desire.lean.get("protect|spy")).toBeCloseTo(leanWant(run, units.miller, FELLOW));
+    expect(units.miller.desire.lean.get("protect|spy")).toBeCloseTo(leanPull(run, units.miller, FELLOW * LEAN_PULL.fellows));
   });
 
   test("neutrals can be in three friend groups: each looks out for its own", () => {
@@ -101,7 +101,7 @@ describe("neutral friend groups in the fight", () => {
       neutral("monk", 3), neutral("nun", 3)]);
     for ( const [a, b] of [["miller", "wife"], ["tinker", "smith"], ["monk", "nun"]] ) {
       expect(alliesOf(run, units[a]).map(u => u.id).sort()).toEqual([a, b].sort());
-      expect(units[a].desire.lean.get(`protect|${b}`)).toBeCloseTo(leanWant(run, units[a], FELLOW));
+      expect(units[a].desire.lean.get(`protect|${b}`)).toBeCloseTo(leanPull(run, units[a], FELLOW * LEAN_PULL.fellows));
     }
     expect(units.monk.desire.lean.get("protect|tinker")).toBeUndefined();
     crossed(run, units.brute, units.nun, "harm", 1, say);

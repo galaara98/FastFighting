@@ -4,8 +4,9 @@
  *   logic       what its tactical thinking concludes this turn: the foe it would go for (and the runners-up), the
  *               friend it would heal, the one it would talk to, the one it fears. Worked out afresh each turn.
  *   stated      what the GM or player says it wants (Tactics), at the stated level.
- *   lean        which way someone who takes no side leans: the members of the side it would rather see safe
- *               (behavior/neutral.js). It counts like a stated desire, but it doesn't blind.
+ *   lean        which way someone who takes no side leans (behavior/neutral.js): a pull, like its leader's and its
+ *               friends' (social), added to what it wants: keeping that side's members safe more, hurting them less,
+ *               their foes a little more, the stronger the lean the more. A friend group's pull on its own, the same.
  *   memory      what the fight has stirred: whoever hurt it, whoever felled a friend. Cools a little every round.
  *   frustration what has thwarted it: a locked door that won't give, a target it can't reach, getting hurt on the
  *               way. It wears the desire down until the character moves on.
@@ -31,7 +32,7 @@
  *   puppet      under someone's control (a charm, domination: u.controlledBy), what its controller wants, worked out
  *               each turn (puppetWishes): those and nothing of its own, while the control lasts.
  *
- * A desire's level is max(logic, stated, lean, taunt) + memory + social - frustration, 0 to 100 (or the GM's hold):
+ * A desire's level is max(logic, stated, taunt) + lean + memory + social - frustration, 0 to 100 (or the GM's hold):
  *   {kind: "hurt" | "heal" | "protect" | "aid" | "talk" | "avoid" | "bind" | "rob" | "bolstered" | "breakFree" | "free", targetId, level}
  *   (aid: bolster with a buff; bind: tie up a fallen foe, a prisoner; rob: take what a fallen foe carries
  *   (behavior/fallen.js); bolstered: to be bolstered by that friend. A request, not something it acts on itself: the
@@ -157,7 +158,7 @@ export function levelOf(u, kind, targetId) {
     if ( held !== undefined ) return held;
   }
   if ( d.puppet?.size ) return d.puppet.get(k) ?? 0;
-  return clamp(Math.max(d.logic.get(k) ?? 0, d.stated.get(k) ?? 0, d.lean.get(k) ?? 0, d.taunt.get(k) ?? 0) + (d.style.get(k) ?? 0) + (d.memory.get(k) ?? 0) + (d.social.get(k) ?? 0) - (d.frustration.get(k) ?? 0));
+  return clamp(Math.max(d.logic.get(k) ?? 0, d.stated.get(k) ?? 0, d.taunt.get(k) ?? 0) + (d.lean.get(k) ?? 0) + (d.style.get(k) ?? 0) + (d.memory.get(k) ?? 0) + (d.social.get(k) ?? 0) - (d.frustration.get(k) ?? 0));
 }
 
 /**
@@ -229,14 +230,14 @@ export function goaded(run, u) {
   }
 }
 
-/** Point a lean (behavior/neutral.js) at these: [[kind, targetId, level]], in place of the last one. */
+/** Point a lean's pull (behavior/neutral.js) at these: [[kind, targetId, amount]] (less of it, below 0), in place of the last. */
 export function setLean(u, entries) {
   if ( !u.desire ) return;
   u.desire.lean.clear();
-  for ( const [kind, id, level] of entries ) {
-    if ( !id || id === u.id || !(level > 0) ) continue;
+  for ( const [kind, id, amount] of entries ) {
+    if ( !id || id === u.id || !amount ) continue;
     const k = keyOf(kind, id);
-    u.desire.lean.set(k, Math.max(u.desire.lean.get(k) ?? 0, clamp(level)));
+    u.desire.lean.set(k, Math.max(-100, Math.min(100, (u.desire.lean.get(k) ?? 0) + amount)));
   }
 }
 

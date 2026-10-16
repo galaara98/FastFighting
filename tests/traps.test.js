@@ -93,8 +93,8 @@ describe("trap avoiders", () => {
   }
   /** How badly the hero wants to hurt the goblin, every way a desire can be held. */
   function wanting(u, level) {
-    for ( const m of ["logic", "stated", "lean"] ) u.desire[m].set("hurt|goblin", level);
-    for ( const m of ["style", "memory", "social", "frustration"] ) u.desire[m].delete("hurt|goblin");
+    for ( const m of ["logic", "stated"] ) u.desire[m].set("hurt|goblin", level);
+    for ( const m of ["lean", "style", "memory", "social", "frustration"] ) u.desire[m].delete("hurt|goblin");
   }
 
   test("what it's after stands in the hazard's reach: it goes in only for something it wants badly enough", () => {

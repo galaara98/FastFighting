@@ -3,7 +3,7 @@ import { runBatchSync, replay, prepareBattle } from "../scripts/engine/simulator
 import { createRun, areEnemies, alliesOf, heldOff } from "../scripts/engine/battle-state.js";
 import { createRng } from "../scripts/engine/rng.js";
 import { initDesires } from "../scripts/engine/behavior/desire.js";
-import { crossed, refreshLeans, appeal, seemsFoe, sparedForTruce, meddling, inFray, dislikesViolence, GRIEVANCE, LEAN, LEAN_WANT, FELLOW, leanWant } from "../scripts/engine/behavior/neutral.js";
+import { crossed, refreshLeans, appeal, seemsFoe, sparedForTruce, meddling, inFray, dislikesViolence, GRIEVANCE, LEAN, LEAN_PULL, FELLOW, leanPull } from "../scripts/engine/behavior/neutral.js";
 import { attemptTalk, choosePitch, talkDC, stepsToConvince, aimOf } from "../scripts/engine/behavior/talk.js";
 import { breaksStandoff } from "../scripts/engine/behavior/standoff.js";
 import { chooseTarget } from "../scripts/engine/behavior/targeting.js";
@@ -54,8 +54,6 @@ describe("taking no side", () => {
     expect(units.guard.against.size).toBe(0); // one blow isn't enough
     expect(units.guard.grievance.get("hostile")).toBeGreaterThan(0);
     crossed(run, units.brute, units.fighter, "harm", 1.5, say);
-    // (A lean isn't guarding: an ordinary one takes a third blow to turn it.)
-    crossed(run, units.brute, units.fighter, "harm", 1, say);
     expect(units.guard.grievance.get("hostile")).toBeGreaterThanOrEqual(GRIEVANCE);
     expect(units.guard.against.has("hostile")).toBe(true);
     // The party hurting the brute means nothing to it.
@@ -91,9 +89,6 @@ describe("talking with those who take no side", () => {
     const { run, units } = ready([fighter(), talker(), creature({ id: "ally", social: social({ diplomacy: 14 }) }), listener({ lean: "friendly" })]);
     const party = units.ally;
     const foe = units.talker;
-    // (A strong lean: the party's safety matters to it.)
-    units.guard.leanLevel = 100;
-    refreshLeans(run);
     expect(appeal(run, units.guard, "friendly").fulfils?.kind).toBe("protect");
     expect(appeal(run, units.guard, "hostile").betrays?.kind).toBe("protect");
     expect(talkDC(run, foe, units.guard, "persuade")).toBeGreaterThan(talkDC(run, party, units.guard, "persuade"));
@@ -185,19 +180,20 @@ describe("leans don't last, and not everyone sees a neutral for what it is", () 
 
   test("neutral tokens want each other safe; a lean wears down as its side hurts them, and ends when its side hurts it", () => {
     const { run, say, units } = ready([fighter(), brute(), guard({ lean: "friendly" }), villager()]);
-    expect(units.guard.desire.lean.get("protect|villager")).toBeCloseTo(leanWant(run, units.guard, FELLOW));
-    // (Its lean, weighed: a share of it, by its personality.)
-    expect(units.guard.desire.lean.get("protect|fighter")).toBeCloseTo(leanWant(run, units.guard, LEAN * LEAN_WANT.share));
+    expect(units.guard.desire.lean.get("protect|villager")).toBeCloseTo(leanPull(run, units.guard, FELLOW * LEAN_PULL.fellows));
+    // (Its lean, a pull on what it wants: a share of it, by its loyalty; hurting them, less.)
+    expect(units.guard.desire.lean.get("protect|fighter")).toBeCloseTo(leanPull(run, units.guard, LEAN * LEAN_PULL.share));
+    expect(units.guard.desire.lean.get("hurt|fighter")).toBeCloseTo(-leanPull(run, units.guard, LEAN * LEAN_PULL.share));
     // The party hurts the villager: the guard's lean toward the party wears down.
     crossed(run, units.fighter, units.villager, "harm", 1, say);
     expect(units.guard.leanLevel).toBeLessThan(LEAN);
     expect(units.guard.lean).toBe("friendly");
-    expect(units.guard.desire.lean.get("protect|fighter")).toBeCloseTo(leanWant(run, units.guard, units.guard.leanLevel * LEAN_WANT.share));
+    expect(units.guard.desire.lean.get("protect|fighter")).toBeCloseTo(leanPull(run, units.guard, units.guard.leanLevel * LEAN_PULL.share));
     // The party hurts the guard itself: the lean is gone at once.
     crossed(run, units.fighter, units.guard, "harm", 0.5, say);
     expect(units.guard.lean).toBeNull();
     expect(units.guard.desire.lean.get("protect|fighter")).toBeUndefined();
-    expect(units.guard.desire.lean.get("protect|villager")).toBeCloseTo(leanWant(run, units.guard, FELLOW)); // still a friend of the villager
+    expect(units.guard.desire.lean.get("protect|villager")).toBeCloseTo(leanPull(run, units.guard, FELLOW * LEAN_PULL.fellows)); // still a friend of the villager
   });
 
   test("only tactical minds see someone taking no side for what it is; others go by appearances", () => {
