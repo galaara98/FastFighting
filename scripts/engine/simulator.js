@@ -2711,6 +2711,7 @@ function getRid(run, u, turn) {
 }
 
 export function takeTurn(run, u) {
+  carryInside(run); // (those inside another: where it went)
   stayBound(run, u, logger(run)); // (come to since, tied up)
   // Tied up: what it wants, as it is. Getting loose: it struggles. Something it can do from its bonds (and it bears
   // them): a turn from where it lies, with nothing that needs hands.
@@ -3634,7 +3635,6 @@ export function beginRound(run, round) {
 export function playTurn(run, u) {
   noteCommand(run);
   startTurn(run, u);
-  carryInside(run); // (those inside another: where it went)
   takeTurn(run, u);
   noteIdle(run, u);
   return afterTurn(run, u);

@@ -30,6 +30,7 @@ import { robbable } from "./theft.js";
 import { perceives } from "./senses.js";
 import { mainPool, normalizeCost } from "../turn.js";
 import { isBound, freeable, untieCost, tryHold, release } from "./holds.js";
+import { holderOf } from "./troubles.js";
 
 /** An answer's wish for each fallen foe: a passing one while there's a foe it could fight where it stands ... */
 export const FALLEN_LEVEL = 30;
@@ -90,7 +91,8 @@ export function decideFallen(run, u, turn) {
   const hold = lead.kind === "free" ? freeable(run, t) : null;
   if ( lead.kind === "free" && !hold ) return null;
   const cost = hold ? untieCost(rules, u, t, hold) : fallenCost(rules, lead.kind);
-  const moves = movesNeeded(run, u, t, BESIDE);
+  // (One held inside another, a corpse to cut open: the work's done beside the one holding it.)
+  const moves = movesNeeded(run, u, hold ? holderOf(run, t) ?? t : t, BESIDE);
   if ( !moves ) return turn.canAfford(cost) ? { kind: lead.kind, target: t, moves: 0, cost, hold } : null;
   if ( !Number.isFinite(moves) || moves > 1 || !canMove(run, u) ) return null;
   // (Getting there and doing it, this turn.)

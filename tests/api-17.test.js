@@ -12,6 +12,8 @@ import { holdsOf, release, remediesOf } from "../scripts/engine/behavior/holds.j
 import { holderOf, cutOff } from "../scripts/engine/behavior/troubles.js";
 import { expectedDamage } from "../scripts/engine/behavior/evaluate.js";
 import { decideHeal } from "../scripts/engine/behavior/healing.js";
+import { decideFallen } from "../scripts/engine/behavior/fallen.js";
+import { think } from "../scripts/engine/behavior/desire.js";
 import { chooseTarget } from "../scripts/engine/behavior/targeting.js";
 import { movesNeeded, turnFor, saveRoll, checkRoll } from "../scripts/engine/battle-state.js";
 import { simpleAffliction } from "../scripts/engine/behavior/afflictions.js";
@@ -216,6 +218,25 @@ describe("inside another creature, in every system", () => {
       if ( rules === keeps && key === "engulfed" ) expect(h.prone).toBe(true);
     }
     expect(seen).toEqual([["hero", "swallowed", "worm"], ["hero", "engulfed", "worm"]]);
+  });
+
+  test("kept inside a corpse, a friend frees it from beside the corpse, as the hold says (others: \"untie\")", () => {
+    const corpse = withHooks({ letGo: (run, u) => {
+      const e = u.effects.find(x => x.escape);
+      e.escape = { ...e.escape, others: "untie" };
+      return false;
+    } });
+    const run = fight([worm({ position: at(0) }), placed("hero", 30), placed("friend", 10), creature({ id: "knight", position: at(5), actions: [strike({ bonus: 50, damage: [parseFormula("100", "slashing")] })] })], corpse, { positioning: true });
+    const [w, h, f] = ["worm", "hero", "friend"].map(id => run.byId.get(id));
+    applyOutcome(h, { conditions: { swallowed: 1 }, rounds: 100, label: "", escape: { key: "swallowed", dc: 18, others: null } }, "worm", { id: "gulp" });
+    carryInside(run);
+    takeTurn(run, run.byId.get("knight"));
+    expect(w.status).toBe("dead");
+    expect(h.conds.swallowed).toBe(1);
+    think(f, "free", h.id, 90);
+    const plan = decideFallen(run, f, turnFor(run, f));
+    expect(plan).toMatchObject({ kind: "free", target: h, hold: { key: "swallowed", others: "untie" } });
+    expect(Number.isFinite(plan.moves)).toBe(true);
   });
 });
 
