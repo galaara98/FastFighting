@@ -182,6 +182,30 @@ describe("being rid of what hurts it, or bearing it", () => {
   });
 });
 
+describe("caught by a hazard", () => {
+  const snare = (x, extra = {}) => creature({ id: "snare", name: "Snare", side: "hostile", kind: "hazard", hazard: { once: false }, untargetable: true, speeds: {}, position: { x, y: 0, size: 5 }, ...extra });
+
+  test("held by a hazard, it always weighs getting out (worse in its reach); a friend who sees it ponders freeing it, with a roll", () => {
+    // (A foe across the room: the fight goes on.)
+    const run = fight([fighter("hero", "friendly", 0), fighter("kyra", "friendly", 10, { tactics: { allyDying: "rescue" }, escapeWork: { mod: 60 } }), snare(5, { escapeDC: 12 }), fighter("orc", "hostile", 200)]);
+    const hero = run.byId.get("hero");
+    hero.grabbedBy = "snare";
+    const hold = holdsOf(run, hero)[0];
+    expect(hold).toMatchObject({ key: "grabbed", byId: "snare", dc: 12, others: "check", hazard: true });
+    takeTurn(run, run.byId.get("kyra"));
+    expect(run.log.find(e => e.actorId === "kyra" && e.type === "free")).toMatchObject({ targetId: "hero", hold: "grabbed", success: true, dc: 12 });
+    expect(hero.grabbedBy).toBe(null);
+  });
+
+  test("its own escape: weighed as a desire (no even chance at the turn's start)", () => {
+    const run = fight([fighter("hero", "friendly", 0, { escapeWork: { mod: 60 } }), snare(5), fighter("orc", "hostile", 200)]);
+    const hero = run.byId.get("hero");
+    hero.grabbedBy = "snare";
+    takeTurn(run, hero);
+    expect(run.log.find(e => e.actorId === "hero" && e.type === "escape")).toMatchObject({ hold: "grabbed", success: true });
+  });
+});
+
 describe("freeing a friend", () => {
   test("a friend tied up, and no foe on it: one who'd rescue a friend goes over and unties them (no roll)", () => {
     const run = fight([fighter("hero", "friendly", 0, { tactics: { allyDying: "rescue" } }), fighter("kyra", "friendly", 10), fighter("orc", "hostile", 120)]);

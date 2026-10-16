@@ -612,7 +612,7 @@ export function conditionWishes(run, u) {
  * would pick across the room (desire.js levelsFromScores: up to 60): its answers, its pills and its party's wishes
  * (partyWants) tip it.
  */
-export const BREAK_FREE = Object.freeze({ bound: 85, bearable: 45, brave: 0.5, grabbed: 45, other: 55, open: 20 });
+export const BREAK_FREE = Object.freeze({ bound: 85, bearable: 45, brave: 0.5, grabbed: 45, other: 55, open: 20, hazard: 20 });
 
 /** Tied up, could it still do something from its bonds: a blow or a spell that needs no hands at a foe in reach as it lies, or a word? */
 export function actsHeld(run, u) {
@@ -634,8 +634,9 @@ export function holdWishes(run, u) {
   const bearing = !!run.prep?.options && bears(run, u);
   for ( const h of holdsOf(run, u) ) {
     if ( h.key === "grabbed" && !known(run, u, h) ) continue;
+    // (A hazard's hold: it's still in the hazard's reach, the worse for that.)
     const level = h.key === "bound" ? (actsHeld(run, u) ? (bearing ? 0 : BREAK_FREE.bearable + fear + style) : BREAK_FREE.bound)
-      : bearing ? 0 : (BREAK_FREE[h.key] ?? BREAK_FREE.other) + (engaged ? 0 : BREAK_FREE.open) + style;
+      : bearing ? 0 : (BREAK_FREE[h.key] ?? BREAK_FREE.other) + (engaged ? 0 : BREAK_FREE.open) + (h.hazard ? BREAK_FREE.hazard : 0) + style;
     most = Math.max(most, level);
   }
   if ( most > 0 ) think(u, "breakFree", u.id, most);
@@ -649,11 +650,15 @@ export function holdWishes(run, u) {
     }
   }
   if ( u.status !== STATUS.STANDING ) return;
-  for ( const a of alliesOf(run, u) ) {
-    if ( a === u || !a.active || !freeable(run, a) || !perceives(run, u, a) ) continue;
+  const allies = new Set(alliesOf(run, u));
+  for ( const a of run.units ) {
+    if ( a === u || !a.active || areEnemies(run, u, a) ) continue;
+    // (A friend; or anyone it wants safe, as much as it does.)
+    const cares = allies.has(a) ? Infinity : levelOf(u, "protect", a.id);
+    if ( !(cares > 0) || !freeable(run, a) || !perceives(run, u, a) ) continue;
     const answer = FREE.allyDying[u.tac?.allyDying] ?? 0;
     const level = (FREE.base + liveTrait(run, u, "loyal") * FREE.loyal + (styleOf(u).free ?? 0) + answer + (engaged ? 0 : FREE.open)) * (a.status === STATUS.DOWN ? FREE.down : 1);
-    think(u, "free", a.id, level);
+    think(u, "free", a.id, Math.min(level, cares));
   }
 }
 

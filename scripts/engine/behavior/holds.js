@@ -101,12 +101,19 @@ export function holdsOf(run, u) {
   if ( isBound(u) ) out.push({ key: "bound", byId: u.boundBy ?? null, dc: bondsDC(run, u), others: "untie" });
   if ( u.grabbedBy ) {
     const g = run.byId.get(u.grabbedBy);
-    out.push({ key: "grabbed", byId: u.grabbedBy, dc: dcOf(g?.spec.escapeDC), others: null });
+    // (A hazard's grip: a friend can try to pry it loose.)
+    out.push(g?.spec.hazard ? hazardHold(run, g, "grabbed") : { key: "grabbed", byId: u.grabbedBy, dc: dcOf(g?.spec.escapeDC), others: null });
   }
   for ( const e of u.effects ?? [] ) {
     if ( e.onlyVs ) continue;
     const on = Object.entries(e.conditions ?? {}).filter(([k, v]) => (Number(v) > 0 || v === true) && !(k === "grabbed" && u.grabbedBy)).map(([k]) => k);
     if ( !on.length ) continue;
+    const hazard = e.sourceId ? run.byId.get(e.sourceId) : null;
+    if ( !e.escape && hazard?.spec.hazard && on.some(k => HOLDING.includes(k)) ) {
+      // (A hazard holding it, with no word of its own on how: as a hazard's hold.)
+      out.push({ ...hazardHold(run, hazard, on.find(k => HOLDING.includes(k))), effectKey: e.key, whole: true });
+      continue;
+    }
     if ( e.escape ) {
       // (One hold, the effect: its holding condition named, or the first that holds.)
       const key = e.escape.key ?? on.find(k => HOLDING.includes(k)) ?? on[0];
@@ -153,10 +160,19 @@ export function tryHold(run, who, hold, { freeing = false, held = null } = {}) {
 }
 
 /**
+ * A hazard's hold (its grip, its jaws, its net): as hard as its own escape DC says (spec.escapeDC), else a typical DC
+ * for its level; a friend beside it can try to free it (a roll). Never the old even chance: always weighed.
+ */
+function hazardHold(run, h, key) {
+  const dc = Number.isFinite(h.spec.escapeDC) ? h.spec.escapeDC : typical(run.prep?.rules ?? {}, "dc", h.spec.level ?? 0);
+  return { key, byId: h.id, dc, others: "check", hazard: true };
+}
+
+/**
  * Does breaking this hold go by the system's or the creature's own numbers (not the old even chance at a grab)? A
  * creature with none of them tries to get out of a grab at the start of every turn, as the engine always had it.
  */
-export const known = (run, u, hold) => typeof run.prep.rules.breakFree === "function" || (Number.isFinite(u.spec.escapeWork?.mod) && Number.isFinite(hold?.dc));
+export const known = (run, u, hold) => !!hold?.hazard || typeof run.prep.rules.breakFree === "function" || (Number.isFinite(u.spec.escapeWork?.mod) && Number.isFinite(hold?.dc));
 
 /**
  * The hold is broken: u is free of it (and of its condition, where that's all the hold was), and of what it kept in
