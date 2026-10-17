@@ -3,7 +3,8 @@
  */
 import { meanPart, doubled } from "../dice.js";
 import { degreeDistribution } from "../probability.js";
-import { attackRoll, attackOptions, currentAc, saveRoll, bonusDamageParts, enemiesOf, isStanding, isMagical, upgradesSave, boostBonus } from "../battle-state.js";
+import { attackRoll, attackOptions, currentAc, saveRoll, bonusDamageParts, enemiesOf, isStanding, isMagical, upgradesSave, boostBonus, liveTier, inArea } from "../battle-state.js";
+import { TACTICAL } from "../../constants.js";
 import { costOf, costUnits, mainPool } from "../turn.js";
 import { controlValue } from "./control.js";
 import { iwrOf, outcomeWorth } from "./effects.js";
@@ -158,7 +159,7 @@ export function expectedDamage(run, a, action, t, attacksMade = 0) {
     return (dist[2] + dist[3]) * (t.hp + t.temp + (t.stamina ?? 0));
   }
   const dmg = meanDamageVs(run, action, t);
-  const targets = areaTargets(run, a, action);
+  const targets = areaTargets(run, a, action, t);
   if ( action.kind === "auto" ) {
     const extra = bonusDamageParts(run, a, action, t).reduce((s, p) => s + Math.max(0, meanPart(p)), 0);
     return targets * (dmg.normal + extra);
@@ -185,15 +186,33 @@ export function expectedDamage(run, a, action, t, attacksMade = 0) {
   return targets * (dist[2] * (dmg.normal + extra) + dist[3] * (dmg.critical + extraCrit) + laid);
 }
 
+/** What a costly area loses, to a creature that thinks it through, when it would catch only the one it's aimed at. */
+export const LONE_COSTLY_AREA = 0.85;
+/** What an area gains, to a creature that thinks it through, when it would catch three foes or more: well worth it. */
+export const CROWDED_AREA = 1.5;
+
+/** Does an action cost something to use: a spell slot or another resource, limited uses, a recharge? */
+const costly = action => !!action.resource || Number.isFinite(action.uses) || !!action.cooldown;
+
 /**
  * How many foes an area really catches: as many as it can take, but no more than are standing against u (a Mass
- * Suggestion for twelve, against two foes, takes two).
+ * Suggestion for twelve, against two foes, takes two). A creature that thinks it through (Tactical and up), aiming it at
+ * t on a map: as many as it would really catch there (inArea); a costly one that would catch only t a little less worth
+ * it (LONE_COSTLY_AREA), as it would rather save it for more; and one that would catch three or more a lot more worth it
+ * (CROWDED_AREA).
  */
-export function areaTargets(run, u, action) {
+export function areaTargets(run, u, action, t = null) {
   if ( !action.area ) return 1;
   const most = Math.max(1, action.area.targets ?? 2);
-  const foes = enemiesOf(run, u).filter(isStanding).length;
-  return Math.max(1, Math.min(most, foes));
+  const foes = enemiesOf(run, u).filter(isStanding);
+  let n = Math.max(1, Math.min(most, foes.length));
+  if ( t && run.prep.options.positioning && t.pos && liveTier(run, u) >= TACTICAL.TACTICAL ) {
+    const caught = 1 + foes.filter(o => o !== t && inArea(run, u, t, o, action.area)).length;
+    n = Math.max(1, Math.min(n, caught));
+    if ( caught < 2 && costly(action) ) n *= LONE_COSTLY_AREA;
+    else if ( n >= 3 ) n *= CROWDED_AREA;
+  }
+  return n;
 }
 
 /** Main-pool units a creature gets each turn (PF2e 3 actions; 5e 1 action). */

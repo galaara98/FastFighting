@@ -801,6 +801,37 @@ export function currentAc(run, target, attacker, action) {
 /** A d20 point or two: what three quarters' cover or more adds to a defense where the system has no rule for cover. */
 export const COVER_POINTS = 2;
 
+/**
+ * Could an area u aims at t also catch o? Off the map (no positions): anyone, as many as its count says. On it: o
+ * within the area's size (area.feet; 10 if the system doesn't say) of where it spreads from (u, for a cone, a line or
+ * an emanation; t, for a burst), a cone or a line only toward t (a quarter turn wide; 5 feet across), and nothing
+ * wholly in the way (walls: total cover from where it spreads).
+ */
+export function inArea(run, u, t, o, area) {
+  if ( !run.prep.options.positioning || !u.pos || !t.pos || !o.pos ) return true;
+  const shape = area.shape ?? "burst";
+  const feet = Number(area.feet) > 0 ? Number(area.feet) : 10;
+  const from = ["cone", "line", "emanation"].includes(shape) ? u : t;
+  const d = edgeDistance(from, o);
+  if ( d === null || d > feet + 0.5 ) return false;
+  if ( shape === "cone" || shape === "line" ) {
+    const ax = t.pos.x - u.pos.x;
+    const ay = t.pos.y - u.pos.y;
+    const bx = o.pos.x - u.pos.x;
+    const by = o.pos.y - u.pos.y;
+    const la = Math.hypot(ax, ay);
+    const lb = Math.hypot(bx, by);
+    if ( la && lb ) {
+      const cos = (ax * bx + ay * by) / (la * lb);
+      if ( cos <= 0 ) return false;
+      if ( shape === "cone" && cos < Math.SQRT1_2 ) return false;
+      // (5 feet across: a creature whose square touches it, half its width and the line's half, plus a little.)
+      if ( shape === "line" && lb * Math.sqrt(Math.max(0, 1 - cos * cos)) > 2.5 + (o.spec.position?.size ?? 5) / 2 + 0.5 ) return false;
+    }
+  }
+  return coverOf(run, o, from) !== "total";
+}
+
 /** The cover t has from `from`, by the scene's walls (behavior/space.js): "none", "some", "most", "total". */
 export const coverOf = (run, t, from) => (from && from !== t && wallsKnown(run) && t?.pos && from.pos ? coverFrom(run, from, t) : "none");
 

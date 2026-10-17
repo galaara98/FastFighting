@@ -12,7 +12,7 @@ import { costOf, mainPool } from "./turn.js";
 import {
   prepareBattle, createRun, isStanding, isUp, enemiesOf, alliesOf, areEnemies, liveTier, liveTrait, currentAc,
   attackRoll, attackOptions, saveRoll, checkRoll, turnFor, moveToward, moveAway, bonusDamageParts, dispositionOf,
-  behaviorOf, edgeDistance, coverOf, movesNeeded, approach, canMove, moveTowardPoint, isMagical, upgradesSave, boostBonus, typical, sortOf, sizedUp, passedOver,
+  behaviorOf, edgeDistance, coverOf, inArea, movesNeeded, approach, canMove, moveTowardPoint, isMagical, upgradesSave, boostBonus, typical, sortOf, sizedUp, passedOver,
   command, commandOf, heldOff, holdsBack, wish, groupKeyOf, chainOf, canCommand, regenOf, canHeal
 } from "./battle-state.js";
 import { sampleRunTactics } from "./playstyles.js";
@@ -1095,36 +1095,8 @@ function executeOffense(run, u, action, t, attacksMade) {
   if ( action.concentration && u.concentration?.actionId === action.id && !holdsAnything(run, u) ) u.concentration = null;
 }
 
-/**
- * Could an area u aims at t also catch o? Off the map (no positions): anyone, as many as its count says. On it: o
- * within the area's size (area.feet; 10 if the system doesn't say) of where it spreads from (u, for a cone, a line or
- * an emanation; t, for a burst), a cone or a line only toward t (a quarter turn wide; 5 feet across), and nothing
- * wholly in the way (walls: total cover from where it spreads).
- */
-export function inArea(run, u, t, o, area) {
-  if ( !run.prep.options.positioning || !u.pos || !t.pos || !o.pos ) return true;
-  const shape = area.shape ?? "burst";
-  const feet = Number(area.feet) > 0 ? Number(area.feet) : 10;
-  const from = ["cone", "line", "emanation"].includes(shape) ? u : t;
-  const d = edgeDistance(from, o);
-  if ( d === null || d > feet + 0.5 ) return false;
-  if ( shape === "cone" || shape === "line" ) {
-    const ax = t.pos.x - u.pos.x;
-    const ay = t.pos.y - u.pos.y;
-    const bx = o.pos.x - u.pos.x;
-    const by = o.pos.y - u.pos.y;
-    const la = Math.hypot(ax, ay);
-    const lb = Math.hypot(bx, by);
-    if ( la && lb ) {
-      const cos = (ax * bx + ay * by) / (la * lb);
-      if ( cos <= 0 ) return false;
-      if ( shape === "cone" && cos < Math.SQRT1_2 ) return false;
-      // (5 feet across: a creature whose square touches it, half its width and the line's half, plus a little.)
-      if ( shape === "line" && lb * Math.sqrt(Math.max(0, 1 - cos * cos)) > 2.5 + (o.spec.position?.size ?? 5) / 2 + 0.5 ) return false;
-    }
-  }
-  return coverOf(run, o, from) !== "total";
-}
+/** (Who an area catches: battle-state.js inArea, kept here for those that ask the simulator.) */
+export { inArea };
 
 /** What one use of an action does to one target: the attack or save, the damage, the riders. */
 /**

@@ -1731,7 +1731,7 @@ Code: `engine/probability.js` `degreeDistribution`, `naturalChance`, `rollCheck`
 
 ### Expected damage: what an attack is worth
 
-Search: expected damage, EV, damage per action, value of an attack, area attack, multiattack, persistent damage estimate, rider, sneak attack, deed die, crit table, finishing move
+Search: expected damage, EV, damage per action, value of an attack, area attack, area of effect, AoE, cone, burst, multiattack, persistent damage estimate, rider, sneak attack, deed die, crit table, finishing move
 
 Decides how much one use of an attack is worth to the creature weighing it.
 
@@ -1743,7 +1743,9 @@ Decides how much one use of an attack is worth to the creature weighing it.
   the target. A deed die adds (faces + 1) ÷ 2 to the damage and rides along on the roll.
 - Riders on a hit: an affliction 0.5 × 2 × its first stage's mean damage (plus what its conditions are worth); prone or
   a grab +1.5; a push or pull +1.5; a save-on-hit rider 0.6 × its damage, +0.75 if it lays conditions.
-- An area catches min(its targets (default 2), standing foes).
+- An area catches min(its targets (default 2), standing foes). Tactical and up, on a map, aimed at a foe: min(that, the foes it would
+  really catch there: within its size, a cone or line toward the foe, no wall between); a costly one (a spell slot or other
+  resource, limited uses, a recharge) that would catch only that foe × 0.85; one that would catch 3 or more × 1.5.
 - A multiattack is the sum of its strikes, each at its multiple attack penalty. A DCC spell check: × its success
   chance. A finishing move: P(hit) × everything the foe has left.
 - A crit table adds, on a crit, the mean of its rows: their damage, +2 for a lasting effect, +15 for a row that kills.
