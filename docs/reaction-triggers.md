@@ -299,10 +299,12 @@ One entry for each thing a reaction does, whatever set it off. A reaction can ca
 | a foe walks out of its reach (`reactions.js`) | `foeLeavesReach` | its opportunity strike |
 | a ranged attack, or a manipulate action, in its reach | `foeOpening` | its opportunity strike, where `rules.opportunityOn` names it (PF2e) |
 | standing up in its reach | `foeMovesInReach` | its opportunity strike, where `rules.opportunityOn` names it (PF2e) |
+| a friend ends a move beside it (`answerMove`) | `allyMoves` | step (feet: a move of its own to the best spot it finds), kin |
+| a foe comes into its reach (`answerMove`) | `foeApproaches` | strike, step, kin |
 
 A reaction marked `free` costs no reaction (a creature's nature: a death burst). One marked `passive` is always on (an XCC brawler's Toughness): never asked about in a live battle, and not listed on the character's tab.
 
-The PF2e scan gives a rough order for what to add next. These are the busiest triggers with no moment yet, by the approximate number of distinct PF2e reactions behind each: `ownRollFails` (94), `ownHit` (89), `spellTargets` (84), `magicNearby` (54), `mustSave` (53), `foeApproaches` (48). Across the other systems, `mustSave`, `ownRoll` and `ownHit` turn up in every one scanned, so they are the safest to add next. Hazards would need `entersArea` (251), `touchesObject` (219) and `approachesHazard` (141) first, if the engine ever runs traps.
+The PF2e scan gives a rough order for what to add next. These are the busiest triggers with no moment yet, by the approximate number of distinct PF2e reactions behind each: `ownRollFails` (94), `ownHit` (89), `spellTargets` (84), `magicNearby` (54), `mustSave` (53). (`foeApproaches`, 48, has one now.) Across the other systems, `mustSave`, `ownRoll` and `ownHit` turn up in every one scanned, so they are the safest to add next. Hazards would need `entersArea` (251), `touchesObject` (219) and `approachesHazard` (141) first, if the engine ever runs traps.
 
 Still open:
 - **Damage that isn't an attack.** `wouldTakeDamage` is checked at `hit`, on expected damage, which works for blows. A spell, an area or a hazard has no moment before its damage lands, so Shield Block against a spell, a Daggerheart Armor Slot against a blast, or Ironsworn Endure Harm against a fall all go unchecked.

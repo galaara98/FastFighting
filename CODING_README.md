@@ -236,7 +236,7 @@ See `behavior/riders.js`, `behavior/casting.js` and `behavior/luck.js`.
 ### Reactions and summons in a CombatantSpec
 
 See `behavior/responses.js` and `behavior/summons.js`.
-- `spec.reactions`: `[{id, label, on: "attacked" | "hit" | "missed" | "damaged" | "spell", ac, halve, reduce, strike, damage, save, counter: {level, mod} | {level, save}, resource, amount, uses, range, melee, ranged, physical, needsShield, tell}]`. They share `rules.reactions(u)` a round with opportunity attacks.
+- `spec.reactions`: `[{id, label, on: "attacked" | "hit" | "missed" | "damaged" | "spell" | "allyMoves" | "foeApproaches", ac, halve, reduce, strike, damage, save, counter: {level, mod} | {level, save}, step, kin, resource, amount, uses, range, melee, ranged, physical, needsShield, tell}]`. They share `rules.reactions(u)` a round with opportunity attacks. `allyMoves`: a friend ends a move beside it (a square, diagonals too; or `range`); `foeApproaches`: a foe comes into its melee reach (or `range`) from outside it. Either may `strike` (its best melee strike, at a foe) or `step: feet` (a move of its own outside its turn, no parting blows, to the spot `bestStep` finds best: a foe to strike, flanked if it can, out of the reach of those who'd strike it); `kin: [creature traits]` answers only those with one (PF2e Goblin Scuttle: a goblin). In a live battle the same answers a player's character's move (`movedBeside`), and a step is played on the map.
 - A summoning: `{kind: "summon", creatures: [CombatantSpec], rounds, concentration, sustain: cost, sustainOrEnd}`; a creature with `untargetable` can't be attacked. `spec.size` (0 tiny … 5 gargantuan) and an action's `maxSize` are for the system's `isImmune` to compare.
 
 ### Buffs, debuffs and control in a CombatantSpec

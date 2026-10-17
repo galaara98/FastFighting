@@ -30,7 +30,7 @@ import { logLine } from "../story/log-lines.js";
 import { loadStoryTables } from "../story/tables.js";
 import {
   beginLive, liveRound, liveOrder, liveDrop, liveTurn, pcTurnBegin, pcTurnEnd, syncFromSheets, setApproach, setScene, captureAll, snapshotRun, restoreRun, endLive, packLog, followCommand,
-  NeedsDecision, rollsKind, applyFact, gmMoment, leavingReach, openingFor, reactNow, nextSpotlight, liveAftermath,
+  NeedsDecision, rollsKind, applyFact, gmMoment, leavingReach, openingFor, reactNow, movedBeside, nextSpotlight, liveAftermath,
   setCondition, setRelation, clearRelation, setAffliction, setGoal, setAttitude, setSide, setRole, playerRuns
 } from "../engine/live.js";
 import { diffAll, sideAfter } from "../engine/changes.js";
@@ -1855,7 +1855,8 @@ export function finishReview(events) {
 
 /**
  * A player's token moved: a foe whose reach it left may strike as it goes. FastFighting asks the GM, unless the GM lets
- * it decide (then the foe strikes, as its tactics would). Done now, on the sheets; told with the player's turn.
+ * it decide (then the foe strikes, as its tactics would). Then those it came beside answer (answerArrival). Done now,
+ * on the sheets; told with the player's turn.
  */
 async function playerMoved(doc) {
   const pc = battle?.pc;
@@ -1885,11 +1886,43 @@ async function playerMoved(doc) {
     await keep();
     return;
   }
-  // (Where it is now, as the engine has it: the next move is from here. Kept only when a foe answered it: otherwise
+  // (Where it is now, as the engine has it: the next move is from here. Kept only when someone answered it: otherwise
   // the token itself says where it is, should the battle be picked up again.)
+  const from = u?.pos ? { x: u.pos.x, y: u.pos.y } : null;
   syncFromSheets(run, { [pc.id]: { position: to } });
   pc.lastAt = { x: doc.x, y: doc.y };
+  if ( await answerArrival(pc, from) ) answered = true;
   if ( answered ) await keep();
+}
+
+/**
+ * Those a player's character came beside, moving (its token, `from` where the engine had it): a foe whose reach it
+ * came into, a friend it stopped beside, where they have a reaction for it (engine/live.js movedBeside). Played as a
+ * turn FastFighting plays them is, anyone to be asked asked; done now, on the sheets and the map, told with the
+ * player's turn. True if anyone answered.
+ */
+async function answerArrival(pc, from) {
+  if ( !battle.run.movers || !from ) return false;
+  const before = captureAll(battle.run);
+  const snapshot = snapshotRun(battle.run, { log: false });
+  const nonce = freshNonce();
+  const answers = [];
+  let events = [];
+  for ( let tries = 0; ; tries++ ) {
+    try {
+      events = movedBeside(battle.run, pc.id, from, { answers, nonce });
+      break;
+    } catch ( err ) {
+      if ( !(err instanceof NeedsDecision) || tries > 50 ) throw err;
+      answers.push([err.request.key, await answerFor(err.request)]);
+      battle.run = restoreRun(battle.spec, battle.rules, snapshot, { log: battle.run.log });
+    }
+  }
+  if ( !events.length ) return false;
+  await writeChanges(before, captureAll(battle.run), pc.records);
+  const stage = turnStage();
+  await playMoves(events, stageDocs(stage), setting("playOnMap") ? stageGrid(stage) : null, stage.doorsOpened, battle.scene, { instant: !setting("playOnMap") });
+  return true;
 }
 
 /**

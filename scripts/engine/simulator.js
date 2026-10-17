@@ -26,7 +26,7 @@ import { expectedDamage, spendUse, hasUses, attacksIn, criticalParts, saveMultip
 import { chooseDeed, deedTier, chooseHitRiders, rescueMiss, rollCrit, rollFumble, rallied } from "./behavior/riders.js";
 import { cast } from "./behavior/casting.js";
 import { boost } from "./behavior/luck.js";
-import { respond, riposteStrike } from "./behavior/responses.js";
+import { respond, riposteStrike, bestStep } from "./behavior/responses.js";
 import { decideSummon, callSummons, sustainSummons, summonState, dismiss } from "./behavior/summons.js";
 import { sinkHopeless } from "./behavior/hopeless.js";
 import { mayLeave, startLeaving, isLeaving, wayOff, goAlong, confronted, dealsWithIt, backOnItsWay } from "./behavior/leaving.js";
@@ -2200,13 +2200,50 @@ function alertOnTheWay(run, u) {
   }
 }
 
+/** A move made, logged, and answered by those it ended beside (answerMove). Returns whether u is still on its feet. */
 function moveLog(run, u, move, toward, purpose = "approach") {
-  if ( !run.log || !(move.feet > 0) ) return;
-  log(run, u, {
-    type: "move", mode: move.mode, feet: move.feet, mult: move.mult, regions: move.regions, toward: toward.spec.name, towardId: toward.id,
-    from: move.from ?? null, to: move.to ?? null,
-    reached: move.reached, purpose, tactical: liveTier(run, u), cover: !!u.spec.environment?.nearCover
-  });
+  if ( run.log && move.feet > 0 ) {
+    log(run, u, {
+      type: "move", mode: move.mode, feet: move.feet, mult: move.mult, regions: move.regions, toward: toward.spec.name, towardId: toward.id,
+      from: move.from ?? null, to: move.to ?? null,
+      reached: move.reached, purpose, tactical: liveTier(run, u), cover: !!u.spec.environment?.nearCover
+    });
+  }
+  answerMove(run, u, move, toward);
+  return isStanding(u);
+}
+
+/**
+ * u ended a move (`move`, as moveToward made it, toward `toward`): those it came beside answer, where they have a
+ * reaction for it (behavior/responses.js): a friend it stopped beside ("allyMoves": PF2e Goblin Scuttle, a Step), a
+ * foe whose reach it came into ("foeApproaches": a strike at it, or a step).
+ */
+export function answerMove(run, u, move, toward = null) {
+  if ( !run.movers || !(move?.feet > 0) || !isStanding(u) ) return;
+  for ( const o of [...run.units] ) {
+    if ( o === u || !o.spec.reactions || battleOver(run) || !isStanding(u) ) continue;
+    const foe = areEnemies(run, u, o);
+    if ( foe && heldOff(run, u, o) ) continue;
+    const trigger = foe ? "foeApproaches" : "allyMoves";
+    const r = respond(run, o, trigger, { by: foe ? u : null, ally: foe ? null : u, from: move.from ?? null, toward, reached: !!move.reached });
+    if ( !r ) continue;
+    logReaction(run, o, u, r, trigger);
+    if ( r.step ) stepAside(run, o, r.step);
+    const strike = r.strike && foe ? riposteStrike(o) : null;
+    if ( strike && movesNeeded(run, o, u, strike) === 0 ) strikeTarget(run, o, strike, u, 0, false, !!run.log);
+  }
+}
+
+/** o steps, outside its turn, `feet` at most, to the best spot it finds (bestStep): no parting blows for it. */
+function stepAside(run, o, feet) {
+  const step = bestStep(run, o, feet);
+  if ( !step ) return;
+  run.geo = (run.geo ?? 0) + 1;
+  const from = { x: o.pos.x, y: o.pos.y };
+  o.pos.x = step.to.x;
+  o.pos.y = step.to.y;
+  resettle(run, o);
+  if ( run.log ) log(run, o, { type: "step", reaction: true, feet: Math.round(Math.hypot(o.pos.x - from.x, o.pos.y - from.y)), from, to: { x: o.pos.x, y: o.pos.y } });
 }
 
 /** A door gives way (or is simply opened): it's open for everyone now, and nobody's walled off by it any more. */
@@ -2257,7 +2294,8 @@ function workTheDoor(run, u, turn, door, target) {
         from: move.from, to: move.to, purpose: "door", reached: move.reached, tactical: liveTier(run, u)
       });
     }
-    return move.feet > 0 ? "moved" : "stuck";
+    answerMove(run, u, move);
+    return move.feet > 0 && isStanding(u) ? "moved" : "stuck";
   }
   const basic = rules.basicAction ?? 1;
   const where = { doorId: door.id, target: target.spec.name, targetId: target.id };
@@ -3079,7 +3117,7 @@ function playFromHere(run, u) {
       if ( !budget ) break;
       const move = moveToward(run, u, helper, 5, budget);
       turn.usedMove(move.cost);
-      moveLog(run, u, move, helper, "help");
+      if ( !moveLog(run, u, move, helper, "help") ) break;
       const d = edgeDistance(u, helper);
       if ( d === null || d <= 30 ) {
         helper.calledForHelp = true;
@@ -3140,7 +3178,8 @@ function playFromHere(run, u) {
   // (Each step, until it does something, it decides with one look at the map: battle-state.js movesNeeded. The look
   // goes the moment anything happens.)
   const happens = () => { run.movesCache = null; };
-  for ( let step = 0; turn.any && step < MAX_STEPS_PER_TURN && !battleOver(run); step++ ) {
+  // (Struck down mid-turn, by a reaction to a move: answerMove. Its turn is over.)
+  for ( let step = 0; turn.any && step < MAX_STEPS_PER_TURN && !battleOver(run) && isStanding(u); step++ ) {
     run.movesCache = new Map();
     const heal = waits("heal") ? null : decideHeal(run, u, turn);
     if ( !heal && leadGroup === "heal" && openUp() ) continue;
@@ -3312,7 +3351,7 @@ function playFromHere(run, u) {
     // An action that moves first (Sudden Charge): up to the foe, as part of it.
     if ( option.action.charge && option.action.melee && !u.adjacent.has(target.id) && canMove(run, u) ) {
       const move = moveToward(run, u, target, option.action.reach ?? 5, approach(run, u, target).speed * option.action.charge);
-      moveLog(run, u, move, target, "approach");
+      if ( !moveLog(run, u, move, target, "approach") ) break;
     }
     if ( option.action.oncePerTurn ) (u.usedThisTurn ??= new Set()).add(option.action.id);
     executeOffense(run, u, option.action, target, attacksMade);

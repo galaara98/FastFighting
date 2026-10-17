@@ -20,7 +20,7 @@
 import { STATUS, SWAY, NEUTRAL_PARTY, HOSTILE_GROUPS, GROUPS, clamp } from "../constants.js";
 import {
   prepareBattle, beginRun, beginRound, playTurn, afterTurn, endRun, startTurn, noteCommand, log, notice, settleSides, tickEffects,
-  breakOnHarm, noteHarm, noteFall, noteHeal, captureUnit, strikeOutOfTurn, settleAftermath, rethink
+  breakOnHarm, noteHarm, noteFall, noteHeal, captureUnit, strikeOutOfTurn, settleAftermath, rethink, answerMove
 } from "./simulator.js";
 import { createRun, createUnit, isStanding, areEnemies, edgeDistance, groupKeyOf, leadershipOf, SLOTS, headsUp } from "./battle-state.js";
 import { threats } from "./behavior/reactions.js";
@@ -459,6 +459,23 @@ export function reactNow(run, reactorId, targetId, strike, trigger = null) {
   log(run, e, { type: "opportunity", target: t.spec.name, targetId: t.id, action: strike.name, ...(trigger && trigger !== "foeLeavesReach" ? { trigger } : {}) });
   strikeOutOfTurn(run, e, strike, t);
   return run.log.slice(from);
+}
+
+/**
+ * A player's character ended a move (its token, from `from` to where the engine has it now, in feet): those it came
+ * beside answer it now (simulator.js answerMove: a foe whose reach it came into strikes, a friend it stopped beside
+ * steps). One who must be asked first stops it, as a turn FastFighting plays is stopped (NeedsDecision; `answers` as
+ * liveTurn's): restore the snapshot taken before it, ask, and play it again with the answer, the same `nonce`.
+ * Returns the events it made.
+ */
+export function movedBeside(run, id, from, { answers = null, nonce = 0 } = {}) {
+  const u = run.byId.get(id);
+  if ( !u?.pos || !from || !run.movers ) return [];
+  nextDice(run, 0, nonce);
+  run.live.answers = new Map(answers ?? []);
+  const start = run.log.length;
+  answerMove(run, u, { feet: Math.hypot(u.pos.x - from.x, u.pos.y - from.y), from, to: { x: u.pos.x, y: u.pos.y }, reached: false });
+  return run.log.slice(start);
 }
 
 /** How each creature could reach each other one, worked out again from the map (foundry/battle.js approachFor). */

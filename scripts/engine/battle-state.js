@@ -324,6 +324,7 @@ export function createRun(prep) {
     auras: units.some(u => u.spec.saveAura),                                     // anyone whose aura helps friends' saves
     guards: units.some(u => u.spec.reactions?.some(r => answersTo(r, "allyHit"))),     // anyone who reacts when a friend is hit
     wardens: units.some(u => u.spec.reactions?.some(r => answersTo(r, "allyTargeted"))), // anyone who covers a friend attacked
+    movers: units.some(u => u.spec.reactions?.some(r => answersTo(r, "allyMoves") || answersTo(r, "foeApproaches"))), // anyone who answers a move beside it
     untargetable: units.some(u => u.spec.untargetable),                           // anything nobody can attack (a hazard)
     byId: new Map(units.map(u => [u.id, u])),
     round: 0,
@@ -1134,7 +1135,7 @@ function movesToShoot(run, a, t, ap, range) {
 /** One move toward a spot (a door): straight there, stopping `stopAt` feet short. */
 export function moveTowardPoint(run, a, point, budget, stopAt = 5) {
   run.geo = (run.geo ?? 0) + 1;
-  const from = run.log && a.pos ? { x: a.pos.x, y: a.pos.y } : null;
+  const from = (run.log || run.movers) && a.pos ? { x: a.pos.x, y: a.pos.y } : null;
   if ( !a.pos ) return { feet: 0, cost: 0, mode: "walk", mult: 1, regions: [], reached: true, from, to: null };
   const d = Math.hypot(point.x - a.pos.x, point.y - a.pos.y);
   const feet = Math.max(0, Math.min(budget ?? a.spec.speeds?.walk ?? 25, d - stopAt));
@@ -1158,7 +1159,7 @@ export function moveToward(run, a, t, reach = null, budget = null, { range = nul
   // (On a map with its walls, for a shot: to the nearest spot it can see t from.)
   if ( reach === null && range !== null && wallsKnown(run) && a.pos && t.pos ) return moveToShoot(run, a, t, ap, progress, range);
   run.geo = (run.geo ?? 0) + 1; // someone moved: distances are stale
-  const from = run.log && a.pos ? { x: a.pos.x, y: a.pos.y } : null; // for playing the fight back on the map
+  const from = (run.log || run.movers) && a.pos ? { x: a.pos.x, y: a.pos.y } : null; // for playing the fight back on the map (and moves answered)
   let feet = progress;
   let extra = 0;
   let stopped = null;
@@ -1259,7 +1260,7 @@ function passing(run, a, to, t) {
  */
 function moveToShoot(run, a, t, ap, progress, range) {
   run.geo = (run.geo ?? 0) + 1;
-  const from = run.log ? { x: a.pos.x, y: a.pos.y } : null;
+  const from = run.log || run.movers ? { x: a.pos.x, y: a.pos.y } : null;
   const spot = spotToShoot(run, a, t, range, progress * 2, edgeDistance);
   let to;
   if ( spot ) {

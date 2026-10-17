@@ -1,7 +1,7 @@
 /**
  * Reactions that answer something done to a creature (opportunity attacks, which answer a foe walking away, are in
  * reactions.js): a spell that turns a hit into a miss, a dodge that halves a blow, fire for whoever hurt you, a
- * counterspell, a shield raised against a blow, a riposte.
+ * counterspell, a shield raised against a blow, a riposte, a step when a friend comes beside it.
  *
  * spec.reactions: [{id, label, on, ...what it does, resource?, amount?, uses?, range?, melee?, physical?, tell?}]
  *   on "attacked"   a foe attacks it, before the roll:          ac (a bonus against this attack: PF2e Nimble Dodge)
@@ -24,6 +24,11 @@
  *                                                                said: PF2e Orc Ferocity, 5e Relentless Endurance)
  *   on "slain"      it drops or dies:                            areaBurst: {damage, save, range} at everyone within
  *                                                                range (5e Death Burst); answered on the way down
+ *   on "allyMoves"  a friend ends a move beside it (range; a     step: feet (a move of its own to a better spot, the
+ *                   square beside it if not said)                best it finds: PF2e Goblin Scuttle's Step)
+ *   on "foeApproaches"  a foe ends a move in its reach (range;   strike (its best melee strike at it), step
+ *                   its melee reach if not said), from outside it
+ *   kin             only for those with one of these creature traits (Goblin Scuttle: a goblin friend)
  *   on              a trigger from the master list (story/master.js REACTION_TRIGGERS), an older name ("spell"), or a
  *                   list of them
  *   free            it costs no reaction (a creature's nature: a death burst)
@@ -34,16 +39,19 @@
  * Pure: no Foundry globals.
  */
 import { TACTICAL } from "../../constants.js";
-import { liveTier, edgeDistance, isUp, saveRoll, movesNeeded, refusesToHelp } from "../battle-state.js";
+import { liveTier, edgeDistance, isUp, isStanding, areEnemies, heldOff, saveRoll, movesNeeded, refusesToHelp } from "../battle-state.js";
 import { meanPart } from "../dice.js";
 import { meanDamageVs, threatOf } from "./evaluate.js";
 import { degreeDistribution } from "../probability.js";
 import { perceives } from "./senses.js";
+import { edgeAt, stepSpots } from "./space.js";
 import { answersTo } from "../../story/master.js";
 
 const PHYSICAL = new Set(["bludgeoning", "piercing", "slashing", "physical"]);
 /** Moments about itself alone: whoever caused them, near or seen or not. */
 const SELF = new Set(["wouldDrop", "slain"]);
+/** Moments a creature's move makes, ending beside it. */
+const MOVES = new Set(["allyMoves", "foeApproaches"]);
 
 /** What a reaction's price is worth to u now, in damage terms (a spell slot is dear when few are left). */
 function priceOf(u, r, scale) {
@@ -83,7 +91,9 @@ const near = (run, u, other, r) => {
  * @param {object} run
  * @param {object} u          the one reacting
  * @param {string} trigger    "attacked" | "hit" | "missed" | "damaged" | "allyHit" | "spell" | "allyTargeted" | "wouldDrop" | "slain"
- * @param {object} ctx        {by, action, roll, ac, crit, damage (expected), types (damage types), spell}
+ *                            | "allyMoves" | "foeApproaches"
+ * @param {object} ctx        {by, action, roll, ac, crit, damage (expected), types (damage types), spell}; a move's:
+ *                            {by (a foe) | ally, from (where it set out), toward, reached}
  */
 export function respond(run, u, trigger, ctx) {
   const list = u.spec.reactions;
@@ -95,7 +105,11 @@ export function respond(run, u, trigger, ctx) {
     if ( r.melee && !ctx.action?.melee ) continue;
     if ( r.ranged && ctx.action?.melee ) continue;
     if ( r.physical && !(ctx.types ?? []).some(t => PHYSICAL.has(t)) ) continue;
-    if ( trigger === "allyHit" || trigger === "allyTargeted" ) {
+    if ( MOVES.has(trigger) ) {
+      const mover = ctx.ally ?? ctx.by;
+      if ( !mover || !cameBeside(run, u, mover, r, trigger, ctx) || !perceives(run, u, mover) ) continue;
+      if ( r.kin?.length && !(mover.spec.creatureTraits ?? []).some(k => r.kin.includes(k)) ) continue;
+    } else if ( trigger === "allyHit" || trigger === "allyTargeted" ) {
       if ( !ctx.ally || !near(run, u, ctx.ally, r) || !perceives(run, u, ctx.ally) || refusesToHelp(run, u, ctx.ally) ) continue;
     } else if ( !SELF.has(trigger) ) {
       if ( ctx.by && !near(run, u, ctx.by, r) ) continue;
@@ -150,6 +164,15 @@ function worthOf(run, u, r, trigger, ctx) {
       const dmg = (r.damage ?? []).reduce((s, p) => s + Math.max(0, meanPart(p)), 0);
       return dmg * (r.save ? 0.65 : 1) + (ctx.by ? threatOf(run, ctx.by, u) * 0.1 : 0);
     }
+    case "allyMoves":
+    case "foeApproaches": {
+      // A strike at the foe come into reach; a step to a better spot.
+      let w = 0;
+      const strike = r.strike && ctx.by ? riposteStrike(u) : null;
+      if ( strike && movesNeeded(run, u, ctx.by, strike) === 0 ) w += meanStrike(run, u, ctx.by);
+      if ( r.step ) w += bestStep(run, u, r.step)?.worth ?? 0;
+      return w;
+    }
     case "spell": {
       // What the spell would do, roughly: the higher its level, the more; a hold or an area more still.
       const level = Number(ctx.action?.rank) || 1;
@@ -178,13 +201,68 @@ function meanStrike(run, u, t) {
   return best;
 }
 
+/** How good a strike is, roughly: its damage on average and half its bonus. */
+const strikeScore = a => (a.damage ?? []).reduce((s, p) => s + meanPart(p), 0) + (a.bonus ?? 0) * 0.5;
+
 /** Its best everyday melee strike (for a riposte), or null. */
 export function riposteStrike(u) {
   let best = null;
   for ( const a of u.prep.offense ) {
     if ( a.kind !== "strike" || !a.melee || a.sequence || a.resource || Number.isFinite(a.uses) ) continue;
-    const score = (a.damage ?? []).reduce((s, p) => s + meanPart(p), 0) + (a.bonus ?? 0) * 0.5;
+    const score = strikeScore(a);
     if ( !best || score > best.score ) best = { a, score };
   }
   return best?.a ?? null;
+}
+
+/**
+ * Did `mover`'s move bring it beside u (a reaction's range; else a square beside it, diagonals too, or for a foe, into
+ * u's melee reach)? A friend, ending there; a foe, from outside it. Off the map: a foe that reached u, a friend that
+ * reached a foe u is beside.
+ */
+function cameBeside(run, u, mover, r, trigger, { from = null, toward = null, reached = false } = {}) {
+  const reach = Number(r.range) > 0 ? Number(r.range) : trigger === "foeApproaches" ? riposteStrike(u)?.reach ?? 5 : 5 * Math.SQRT2;
+  if ( !run.prep.options.positioning || !u.pos || !mover.pos ) {
+    if ( !reached || !toward ) return false;
+    return trigger === "foeApproaches" ? toward === u : u.adjacent.has(toward.id);
+  }
+  const now = edgeDistance(u, mover);
+  if ( now === null || now > reach + 0.5 ) return false;
+  return trigger === "allyMoves" || !from || edgeAt(mover, from, u) > reach + 0.5;
+}
+
+/**
+ * The best spot for u to step to now, `feet` at most (a reaction's step: PF2e Goblin Scuttle), and what it gains, in
+ * damage terms: a fighter, a foe in reach to strike next (more so one a friend is beside too: flanked); anyone, out
+ * of the reach of foes that could strike it (a shooter or a caster most of all). Null where nowhere is better by much.
+ * {to: {x, y}, worth}.
+ */
+export function bestStep(run, u, feet) {
+  if ( !run.prep.options.positioning || !u.pos || !(feet > 0) ) return null;
+  const foes = run.units.filter(o => o !== u && o.pos && isStanding(o) && areEnemies(run, u, o) && !heldOff(run, u, o));
+  if ( !foes.length ) return null;
+  const melee = riposteStrike(u);
+  const shooter = !melee || u.prep.offense.some(a => a.kind === "strike" && a.range && !a.melee && strikeScore(a) > strikeScore(melee));
+  const foe = foes.map(f => {
+    const theirs = riposteStrike(f);
+    const flanked = run.units.some(a => a !== u && a.side === u.side && a.pos && isStanding(a) && (edgeDistance(a, f) ?? Infinity) <= 5.5);
+    return { f, reach: theirs ? (theirs.reach ?? 5) : -1, harm: theirs ? meanStrike(run, f, u) : 0, mine: melee && !shooter ? meanStrike(run, u, f) * (flanked ? 1.25 : 1) : 0 };
+  });
+  const value = p => {
+    let v = 0;
+    let best = 0;
+    for ( const { f, reach, harm, mine } of foe ) {
+      const d = edgeAt(u, p, f);
+      if ( reach >= 0 && d <= reach + 0.5 ) v -= harm * (shooter ? 1 : 0.5);
+      if ( mine && d <= (melee.reach ?? 5) + 0.5 ) best = Math.max(best, mine);
+    }
+    return v + best;
+  };
+  const here = value(u.pos);
+  let best = null;
+  for ( const p of stepSpots(run, u, feet) ) {
+    const gain = value(p) - here;
+    if ( gain >= 1 && (!best || gain > best.worth) ) best = { to: p, worth: gain };
+  }
+  return best;
 }

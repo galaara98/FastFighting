@@ -126,7 +126,26 @@ function onGrid(u, x, y) {
 }
 
 /** The feet between creatures' edges with u at p (as battle-state.js edgeDistance has it). */
-const edgeAt = (u, p, t) => Math.max(STEP, Math.hypot(p.x - t.pos.x, p.y - t.pos.y) - ((sizeOf(u) + sizeOf(t)) / 2 - STEP));
+export const edgeAt = (u, p, t) => Math.max(STEP, Math.hypot(p.x - t.pos.x, p.y - t.pos.y) - ((sizeOf(u) + sizeOf(t)) / 2 - STEP));
+
+/**
+ * Where u could step to, a move of its own outside its turn of `feet` at most (a reaction's: PF2e's Step): the free
+ * spots on its grid that far or nearer, a square's width a step (diagonals too), none past a wall. Not where it is.
+ */
+export function stepSpots(run, u, feet) {
+  if ( !u.pos ) return [];
+  const most = Math.max(STEP, Math.floor(feet / STEP) * STEP);
+  const out = [];
+  for ( let dx = -most; dx <= most; dx += STEP ) {
+    for ( let dy = -most; dy <= most; dy += STEP ) {
+      if ( !dx && !dy ) continue;
+      const p = onGrid(u, u.pos.x + dx, u.pos.y + dy);
+      if ( inTheWay(run, u, p) || (wallsKnown(run) && sightBlocked(run, u.pos, p)) ) continue;
+      out.push(p);
+    }
+  }
+  return out;
+}
 
 /**
  * Who takes up room on the map, as a count that goes up whenever anyone starts or stops (falls dead, runs off,

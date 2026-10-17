@@ -189,7 +189,8 @@ export async function playMoves(events, docs, grid, doorsOpened, scene, { instan
       await openSceneDoor(scene, e.doorId, doorsOpened);
       continue;
     }
-    if ( !["move", "flee", "leave", "forced"].includes(e.type) || !e.to ) continue;
+    // (A step: a reaction's, out of its turn, with where it went.)
+    if ( !["move", "flee", "leave", "forced", "step"].includes(e.type) || !e.to ) continue;
     // (Forced: the one it moved, not the one moving it.)
     const doc = docs.get(e.type === "forced" ? e.targetId : e.actorId);
     if ( !doc?.object || doc.hidden ) continue;
