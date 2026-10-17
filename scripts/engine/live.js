@@ -1140,8 +1140,9 @@ export function networkOf(run) {
   for ( const u of run.units ) {
     const player = playerRuns(run, u);
     creatures.push({ id: u.id, status: u.status, side: u.side, active: !!u.active, aware: !!u.aware, pos: u.pos ? { x: u.pos.x, y: u.pos.y } : null, hazard: !!u.spec.hazard, player, controlledBy: u.controlledBy ?? null });
-    // (A bystander's wants, its lean toward a side among them, show once it joins the fight: until then it hasn't.)
-    const minded = !player && !!u.active;
+    // (A bystander's wants, its lean toward a side among them, show once it joins the fight: until then it hasn't. A
+    // hazard has no mind: it goes off at whoever's in its reach.)
+    const minded = !player && !!u.active && !u.spec.hazard;
     // What it wants of others (and of itself).
     if ( minded ) {
       for ( const d of rankedDesires(run, u) ) {

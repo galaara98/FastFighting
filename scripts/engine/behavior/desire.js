@@ -202,7 +202,7 @@ function levelOfKey(d, k, conditions = true) {
  */
 export function wantsKind(u, kinds) {
   const d = u.desire;
-  if ( !d ) return false;
+  if ( !d || u.spec.hazard ) return false;
   for ( const k of desireKeys(d) ) {
     const [kind] = parseKey(k);
     if ( kinds.includes(kind) && levelOfKey(d, k) > 0 ) return true;
@@ -344,7 +344,8 @@ function relevant(run, u, kind, t) {
 /** Every desire the unit can act on, strongest first: [{kind, targetId, level}]. */
 export function rankedDesires(run, u) {
   const d = u.desire;
-  if ( !d ) return [];
+  // (A hazard wants nothing: it goes off at whoever's in its reach, simulator.js hazardTurn.)
+  if ( !d || u.spec.hazard ) return [];
   const out = [];
   const sunk = d.sunk?.size ? d.sunk : null;
   for ( const k of desireKeys(d) ) {

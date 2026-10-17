@@ -111,3 +111,21 @@ describe("any system's token can be a hazard: the GM's mark", () => {
     expect(struck).toBe(0);
   });
 });
+
+describe("a hazard has no mind", () => {
+  test("whatever stirs it, it wants nothing: no desires ranked, none on the map of minds, no attitudes or goals", async () => {
+    const { beginLive, liveRound, liveTurn, networkOf } = await import("../scripts/engine/live.js");
+    const { want, rankedDesires, wantsKind } = await import("../scripts/engine/behavior/desire.js");
+    const run = beginLive(battle([hero({ position: { x: 0, y: 0, size: 5 } }), goblin({ position: { x: 10, y: 0, size: 5 } }), trap({ position: { x: 5, y: 5, size: 5 } })], { talking: false, positioning: true }), pf2eRules, { seed: 3, players: ["hero"] });
+    liveRound(run, 1);
+    liveTurn(run, "trap");
+    const pit = run.byId.get("trap");
+    want(pit, "hurt", "hero", 40);
+    expect(rankedDesires(run, pit)).toEqual([]);
+    expect(wantsKind(pit, ["hurt"])).toBe(false);
+    const map = networkOf(run);
+    expect(map.creatures.find(c => c.id === "trap")).toMatchObject({ hazard: true });
+    expect(map.links.filter(l => l.from === "trap")).toEqual([]);
+    expect((map.marks ?? []).filter(m => m.on === "trap" && m.type !== "status")).toEqual([]);
+  });
+});
