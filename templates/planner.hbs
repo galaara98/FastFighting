@@ -30,6 +30,7 @@
       {{#if running}}
       <button type="button" class="ff-btn" data-action="cancel"><i class="fa-solid fa-stop"></i> {{localize "FASTFIGHTING.Planner.Cancel"}}</button>
       {{/if}}
+      {{#if fightCount}}<span class="ff-fight-count" data-tooltip="{{localize "FASTFIGHTING.Planner.FightsRunHint"}}">{{fightCount}}</span>{{/if}}
       <button type="button" class="ff-btn ff-run" data-action="run" {{#if running}}disabled{{/if}} {{#unless hasAdapter}}disabled{{/unless}}>
         <i class="fa-solid {{#if running}}fa-spinner fa-spin{{else}}fa-dice-d20{{/if}}"></i> {{localize "FASTFIGHTING.Planner.Run"}}
       </button>

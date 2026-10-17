@@ -3873,7 +3873,7 @@ export function endRun(run, ended, { capture = false, settle = true } = {}) {
  * @param {object} [opts]
  * @param {number} [opts.runs=2000]
  * @param {number} [opts.seed]
- * @param {(fraction: number) => void} [opts.onProgress]
+ * @param {(fraction: number, done: number) => void} [opts.onProgress]   how far along, and how many fights are done
  * @param {AbortSignal} [opts.signal]
  */
 export async function runBatch(spec, rules, { runs = 2000, seed = randomSeed(), onProgress, signal, maxMs = null } = {}) {
@@ -3883,14 +3883,16 @@ export async function runBatch(spec, rules, { runs = 2000, seed = randomSeed(), 
   // finished. There's always one. The time is the time spent on it: a pause to let the browser draw counts, but only so
   // much of one, since a browser tab in the background makes each pause last a second.)
   let spent = 0;
+  let done = 0;
   let sliceStart = performance.now();
   for ( let i = 0; i < runs; i++ ) {
     if ( maxMs && i > 0 && spent + performance.now() - sliceStart >= maxMs ) break;
     const runSeed = deriveSeed(seed, i);
     agg.add(runOne(prep, runSeed), runSeed);
+    done++;
     if ( performance.now() - sliceStart > SLICE_MS ) {
       spent += performance.now() - sliceStart;
-      onProgress?.(maxMs ? Math.min(1, spent / maxMs) : (i + 1) / runs);
+      onProgress?.(maxMs ? Math.min(1, spent / maxMs) : done / runs, done);
       const paused = performance.now();
       await new Promise(resolve => setTimeout(resolve, 0));
       spent += Math.min(PAUSE_MS, performance.now() - paused);
@@ -3898,7 +3900,7 @@ export async function runBatch(spec, rules, { runs = 2000, seed = randomSeed(), 
       sliceStart = performance.now();
     }
   }
-  onProgress?.(1);
+  onProgress?.(1, done);
   return { ...agg.finish(), seed };
 }
 

@@ -75,6 +75,9 @@ function kindChip(spec) {
   return kind ?? "";
 }
 
+/** How many fights a run has done, in the reader's numbers ("1,240 fights"). */
+const fightCount = n => game.i18n.format("FASTFIGHTING.Planner.FightsRun", { n: (Number(n) || 0).toLocaleString(game.i18n.lang) });
+
 export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
   static DEFAULT_OPTIONS = {
     id: "fast-fighting-planner",
@@ -386,6 +389,8 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       activeSide: sides.find(s => s.active),
       running: this.running,
       progress: Math.round(this.progress * 100),
+      // (The fights run: by tens while a run goes, then how many there were.)
+      fightCount: this.abort && Number.isFinite(this.counted) ? fightCount(this.counted) : (this.results && !this.stale ? fightCount(this.results.runs) : null),
       stale: this.stale && !!this.results,
       // (Shown again from the last run: when it ran.)
       restored: this.restoredAt && this.results && !this.stale ? game.i18n.format("FASTFIGHTING.Results.Restored", { when: new Date(this.restoredAt).toLocaleString(game.i18n.lang) }) : null,
@@ -969,6 +974,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     if ( !canvas.ready || !canvas.scene ) return ui.notifications.warn(loc("FASTFIGHTING.Planner.NoScene"));
     this.running = true;
     this.progress = 0;
+    this.counted = 0;
     this.swing = null;
     this.sample = null;
     this.abort = new AbortController();
@@ -979,11 +985,18 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       let lastPaint = 0;
       const { spec, results, approach } = await simulate(this.roster, this.setup, {
         signal: this.abort.signal,
-        onProgress: p => {
+        onProgress: (p, done = 0) => {
           this.progress = p;
+          // (The fights run so far, by tens: the true number once the time's up.)
+          this.counted = Math.floor(done / 10) * 10;
           const bar = this.element?.querySelector(".ff-progress > span");
+          const count = this.element?.querySelector(".ff-fight-count");
           const now = performance.now();
-          if ( bar && now - lastPaint > 50 ) { bar.style.width = `${Math.round(p * 100)}%`; lastPaint = now; }
+          if ( now - lastPaint > 50 ) {
+            if ( bar ) bar.style.width = `${Math.round(p * 100)}%`;
+            if ( count ) count.textContent = fightCount(this.counted);
+            lastPaint = now;
+          }
         }
       });
       this.spec = spec;

@@ -31,6 +31,11 @@ describe("the prediction's time", () => {
     expect(timed.runs).toBeGreaterThan(0);
     expect(timed.runs).toBeLessThan(MAX_RUNS);
     expect(performance.now() - t0).toBeLessThan(1000);
+    // (How many are done, with each step of its progress: the last, all of them.)
+    const counts = [];
+    const counted = await runBatch(duel(), pf2eRules, { runs: 300, seed: 1, onProgress: (p, done) => counts.push(done) });
+    expect(counts.at(-1)).toBe(counted.runs);
+    for ( let i = 1; i < counts.length; i++ ) expect(counts[i]).toBeGreaterThanOrEqual(counts[i - 1]);
     // (No time at all: still the one fight.)
     expect((await runBatch(duel(), pf2eRules, { runs: MAX_RUNS, seed: 1, maxMs: 0.0001 })).runs).toBe(1);
   });

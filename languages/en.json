@@ -472,6 +472,8 @@
       "ClearTitle": "Clear the plan?",
       "ClearConfirm": "Every choice made in the planner for this encounter (sides, groups, roles, fudges and options) goes back to the defaults. This can't be undone.",
       "Run": "Run",
+      "FightsRun": "{n} fights",
+      "FightsRunHint": "Fights simulated in the time allowed: counted in tens while it runs, then the exact number.",
       "Lean": "Lean",
       "Healing": "Healing",
       "SideMorale": "Can rout",
