@@ -717,7 +717,7 @@ function testConcentration(run, u, amount = 0) {
   if ( !broken && amount > 0 ) {
     dc = c.dc ? c.dc(amount) : Math.max(10, Math.floor(amount / 2));
     const s = saveRoll(run, u, c.save ?? "con");
-    const rolled = systemRolled(run, u, "save", { dc, save: c.save ?? "con", label: u.concentration.name });
+    const rolled = systemRolled(run, u, "save", { dc, save: c.save ?? "con", action: { id: u.concentration.actionId, name: u.concentration.name } });
     roll = { ...rollCheck(run.prep.rules, run.rng, s.mod, dc, { advantage: s.advantage, dice: s.dice, kind: "save", roller: u, rolled }), mod: s.mod };
     broken = roll.degree < 2;
   }
