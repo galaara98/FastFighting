@@ -24,6 +24,7 @@ import { STATUS, TACTICAL, STAND_GROUND, clamp } from "../../constants.js";
 import { alliesOf, enemiesOf, isStanding, liveTier, liveTrait, chainOf, commandOf, groupKeyOf, edgeDistance, behaviorOf, wish } from "../battle-state.js";
 import { threatOf } from "./evaluate.js";
 import { perceives } from "./senses.js";
+import { isAnimalistic, PACK_NERVE } from "./animal.js";
 import { followChance, fearNow } from "./desire.js";
 import { canTalk } from "./standoff.js";
 
@@ -72,6 +73,13 @@ export function moraleStress(run, u, floor = -Infinity) {
     const master = run.byId.get(masterId);
     if ( master && !isStanding(master) ) stress += (100 - liveTrait(run, u, "loyal")) * 0.6;
     else stress -= liveTrait(run, u, "loyal") * 0.2;
+  }
+
+  // A pack animal holds its nerve with its pack about it; alone, it breaks the sooner (a hyena: animal.js).
+  if ( isAnimalistic(u) && u.spec.flags?.packTactics ) {
+    const near = a => !run.prep.options.positioning || !u.pos || !a.pos || (edgeDistance(u, a) ?? 0) <= PACK_NERVE.near;
+    const pack = allies.filter(a => isStanding(a) && near(a)).length;
+    stress += pack ? -Math.min(PACK_NERVE.most, PACK_NERVE.each * pack) : PACK_NERVE.alone;
   }
 
   // Friends seen running (whatever sent them: nerve, words, magic), the more so one of its leaders: panic spreads.

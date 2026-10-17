@@ -43,6 +43,7 @@ import { STATUS, NEUTRAL_PARTY, TACTICAL, SWAY, clamp } from "../../constants.js
 import { isStanding, isUp, edgeDistance, liveTrait, liveTier, commandOf, dropAmbition, areEnemies, heldOff, wish } from "../battle-state.js";
 import { levelOf, want, think, setLean, allDesires, styleOf } from "./desire.js";
 import { perceives } from "./senses.js";
+import { preysOn } from "./animal.js";
 import { prefersTalk, canTalk, impatience, shareLanguage } from "./standoff.js";
 
 /** How strongly a neutral leans to a side (how readily it meddles for it, takes offense for it, looks like one of it). */
@@ -243,18 +244,21 @@ function wearLean(run, n, amount) {
 }
 
 /**
- * Does u take n, who takes no side, for a foe? A tactical mind (TACTICAL and up) sees it for what it is, unless it
- * wants it hurt. Anyone else goes by its desires and by appearances: one leaning toward u's enemies seems to be one
- * of them, and to a feral creature anything close enough to bite is fair game.
+ * Does u take n, who takes no side, for a foe? One it wants hurt, always. To a feral creature, anything close enough to
+ * bite. Below a tactical mind, one leaning toward u's enemies seems to be one of them. And any bystander it can make out
+ * is fair game to whoever is that way inclined this round (animal.js preysOn): an animal's prey drive and a feral mind
+ * nearly always, a dim instinctive one now and then, and the Cruel, the Wildcard and the Instigator as their natures run.
  */
 export function seemsFoe(run, u, n) {
   if ( !run.neutral || u === n || !isNeutral(n) || isNeutral(u) || n.against.has(u.side) || !isUp(n) ) return false;
   if ( levelOf(u, "hurt", n.id) >= 20 ) return true;
   const tier = liveTier(run, u);
-  if ( tier >= TACTICAL.TACTICAL ) return false;
-  const leaning = leanSide(run, n);
-  if ( leaning && (n.leanLevel ?? LEAN) >= SHOWS && run.prep.sides[u.side]?.enemies.has(leaning) ) return true;
-  return tier <= TACTICAL.FERAL && (edgeDistance(u, n) ?? Infinity) <= 10;
+  if ( tier <= TACTICAL.FERAL && (edgeDistance(u, n) ?? Infinity) <= 10 ) return true;
+  if ( tier < TACTICAL.TACTICAL ) {
+    const leaning = leanSide(run, n);
+    if ( leaning && (n.leanLevel ?? LEAN) >= SHOWS && run.prep.sides[u.side]?.enemies.has(leaning) ) return true;
+  }
+  return preysOn(run, u, tier) && perceives(run, u, n);
 }
 
 /**

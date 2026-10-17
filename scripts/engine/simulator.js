@@ -39,6 +39,7 @@ import { controlOutcome, controlRoll, isImmune, degreeShift } from "./behavior/c
 import { recompute as recomputeConditions, applyOutcome, beginConcentration, endConcentration, holdsAnything, noteConcentration, moveHeld, settleAllegiance, iwrOf, incoming, spendEdges, spendBoost, focusOf, tauntProof, withoutTaunt } from "./behavior/effects.js";
 import { decideBuff, aidScores, checkDc } from "./behavior/support.js";
 import { perceives } from "./behavior/senses.js";
+import { isAnimalistic, animalTactics } from "./behavior/animal.js";
 import { stealChance, theftTarget, theftPlan, attemptTheft, robbable } from "./behavior/theft.js";
 import { fallenWishes, decideFallen, bind, rob, stayBound, takesPrisoners, robsTheFallen, freeFriend, rollOf } from "./behavior/fallen.js";
 import { holdsOf, ownHolds, known, tryHold, release, escapeCost, isBound, remediesOf, bears } from "./behavior/holds.js";
@@ -2397,7 +2398,8 @@ function workTheDoor(run, u, turn, door, target) {
   }
   const basic = rules.basicAction ?? 1;
   const where = { doorId: door.id, target: target.spec.name, targetId: target.id };
-  if ( !state.locked ) {
+  // (No hands for a latch: an animal can only break a closed door, as a locked one: behavior/animal.js.)
+  if ( !state.locked && !isAnimalistic(u) ) {
     const cost = rules.doorCosts?.open ?? basic;
     if ( !turn.canAfford(cost) ) return "stuck";
     turn.spend(cost);
@@ -3980,6 +3982,8 @@ export function beginRun(prep, seed, { log: withLog = false } = {}) {
   // Each simulated fight decides which stated preferences win out (see "stay mostly true").
   for ( const u of run.units ) {
     u.tac = sampleRunTactics(u.spec, run.rng);
+    // (An animal's own answers where nothing else answered: behavior/animal.js.)
+    if ( isAnimalistic(u) ) u.tac = { ...animalTactics(u.spec), ...(u.tac ?? {}) };
     u.hunts = u.tac?.beyond === "hunt";
   }
   // The system's own state for the fight (Daggerheart: the GM's Fear).

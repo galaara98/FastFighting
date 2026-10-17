@@ -17,6 +17,7 @@ import { degreeDistribution } from "../probability.js";
 import { costOf, costUnits, normalizeCost, mainPool } from "../turn.js";
 import { meanPart } from "../dice.js";
 import { bestReactionStrike } from "./reactions.js";
+import { isAnimalistic } from "./animal.js";
 
 /** A plain door, where the system says nothing. */
 const DEFAULT_DOOR = Object.freeze({ ac: 15, hp: 20, forceDC: 15, pickDC: 15 });
@@ -83,7 +84,8 @@ export function doorPlan(run, u, door, state) {
     plans.push({ method, cost, chance, turns: costUnits(rules, cost) / (chance * perTurn), mod: work.mod, dc, faces: work.faces });
   };
   check("force", u.spec.doorWork?.force, door.forceDC);
-  check("pick", u.spec.doorWork?.pick, door.pickDC);
+  // (An animal picks no lock: behavior/animal.js.)
+  if ( !isAnimalistic(u) ) check("pick", u.spec.doorWork?.pick, door.pickDC);
   const strike = bestReactionStrike(u);
   if ( strike ) {
     const dist = degreeDistribution(rules, strike.bonus ?? 0, door.ac, { kind: "attack", roller: u });

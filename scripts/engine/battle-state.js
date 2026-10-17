@@ -19,6 +19,7 @@
  * @property {Record<string, number>} [resources]  Pools such as "focus", "slot:3", "item:<id>"
  * @property {Record<string, {base:number, fudge:number}>} traits
  * @property {object} [flags]               packTactics, fearless, mindless, masterId, flying
+ * @property {boolean} [animalistic]        Fights as an animal does (behavior/animal.js): the helper's call
  * @property {boolean} [diesAtZero]         NPCs normally die at 0 HP
  * @property {object} [social]              Talking: {languages[], mindless, gullible?, resolve?, pitches, resist}
  *   pitches: {persuade|intimidate|deceive: {skill: display name, mod}}   what this creature can try on others
@@ -96,7 +97,8 @@ import { keepClear } from "./behavior/traps.js";
 import { tiedOut } from "./behavior/holds.js";
 import { holderOf, cutOff } from "./behavior/troubles.js";
 import { withManeuver } from "./maneuvers.js";
-import { STATUS, NEUTRAL_PARTY, AVOID_KILLING, clamp, fudged, tacticalTier, TRAITS } from "../constants.js";
+import { STATUS, NEUTRAL_PARTY, AVOID_KILLING, TACTICAL, clamp, fudged, tacticalTier, TRAITS } from "../constants.js";
+import { isAnimalistic } from "./behavior/animal.js";
 import { meanPart } from "./dice.js";
 import { typicalValue } from "./tactics.js";
 import { talkAffinity } from "./behavior/talk.js";
@@ -692,7 +694,9 @@ export function liveTrait(run, u, trait) {
 }
 
 export function liveTier(run, u) {
-  return tacticalTier(liveTrait(run, u, "tactical"));
+  const tier = tacticalTier(liveTrait(run, u, "tactical"));
+  // (An animal reads the fight; it doesn't plan one: behavior/animal.js.)
+  return isAnimalistic(u) ? Math.min(tier, TACTICAL.INSTINCTIVE) : tier;
 }
 
 /* Rules-facing situation ------------------------------------------------

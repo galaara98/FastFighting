@@ -65,7 +65,7 @@ export function readSpec(spec, rules = null) {
     tactical: trait("tactical"), brave: trait("brave"), selfish: trait("selfish"), loyal: trait("loyal"),
     mindless: !!(spec.flags?.mindless || spec.social?.mindless),
     fearless: !!spec.flags?.fearless,
-    beast: !!spec.flags?.beast,
+    beast: !!(spec.animalistic ?? spec.flags?.beast),
     pc: spec.kind === "pc",
     melee, ranged,
     // (Its specialties against its everyday weapons: the share of what it would do that's its own.)

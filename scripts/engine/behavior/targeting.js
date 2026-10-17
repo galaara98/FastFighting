@@ -8,7 +8,8 @@
  *   Mastermind   side-wide focus target; ruthless ones finish off the downed
  */
 import { STATUS, TACTICAL, NEUTRAL_PARTY } from "../../constants.js";
-import { enemiesOf, isStanding, liveTier, liveTrait, movesNeeded, behaviorOf, heldOff, holdsBackThisRound, regenOf } from "../battle-state.js";
+import { enemiesOf, isStanding, liveTier, liveTrait, movesNeeded, behaviorOf, heldOff, holdsBackThisRound, regenOf, edgeDistance } from "../battle-state.js";
+import { isAnimalistic } from "./animal.js";
 import { hasTrait } from "../conditions.js";
 import { expectedDamage, hasUses, limited, threatOf, costOf, costUnits, unitsPerTurn } from "./evaluate.js";
 import { mainPool } from "../turn.js";
@@ -282,8 +283,10 @@ export function scoreTargets(run, u, behavior = behaviorOf(u), known = null) {
   // A friend who's been charmed or dominated is still a friend: anyone with a thought for it would rather not cut it
   // down (the loyal least of all).
   // Someone taking no side that only seems a foe is less of a priority than the foes who are fighting.
+  // (To an animal, prey is prey: a bystander is no less of it.)
+  const animal = isAnimalistic(u);
   const spare = t => (t.controlledBy && t.homeSide === u.side && tier >= TACTICAL.INSTINCTIVE ? Math.max(0.1, 0.5 - liveTrait(run, u, "loyal") / 250) : 1)
-    * (t.side === NEUTRAL_PARTY ? 0.6 : 1);
+    * (t.side === NEUTRAL_PARTY && !animal ? 0.6 : 1);
   const ranked = score => reachable.map(x => ({ ...x, score: Math.max(0, score(x)) * spare(x.t) })).sort((a, b) => b.score - a.score);
 
   // A player's stated target priority overrides the personality-driven choice.
@@ -308,6 +311,22 @@ export function scoreTargets(run, u, behavior = behaviorOf(u), known = null) {
         return ranked(x => (attacking(x) ? 2 + near(x) : near(x)));
       }
     }
+  }
+
+  // An animal, as a predator picks its prey (behavior/animal.js): what just hurt it, if it's close; else the nearest, the
+  // more so the hurt, the small and the lone, and (a pack hunter) the one its pack is already on.
+  if ( animal ) {
+    const size = t => Number(t.spec.size ?? 2);
+    const lone = t => !run.units.some(a => a !== t && isStanding(a) && a.side === t.side && t.side !== NEUTRAL_PARTY && a.pos && t.pos && (edgeDistance(a, t) ?? Infinity) <= 10);
+    const ganged = t => [...t.adjacent].filter(id => run.byId.get(id)?.side === u.side).length;
+    return ranked(x => {
+      if ( x.t.id === u.lastAttackerId && x.moves <= 1 ) return 10;
+      let s = near(x) * (1 + 0.6 * (1 - apparentHealth(run, u, x.t)));
+      s *= size(x.t) < size(u) ? 1.2 : size(x.t) > size(u) ? 0.8 : 1;
+      if ( lone(x.t) ) s *= 1.3;
+      if ( u.spec.flags?.packTactics ) s *= 1 + 0.5 * ganged(x.t);
+      return s;
+    });
   }
 
   switch ( tier ) {
