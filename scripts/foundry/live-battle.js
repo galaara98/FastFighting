@@ -923,7 +923,7 @@ async function playerRolls(request) {
     content: inertHtml(`<div class="fast-fighting-live"><p>${escape(fmt("FASTFIGHTING.Live.YourReaction", { name, reaction: request.strike?.name ?? request.reaction, target }))}</p>
       <button type="button" data-ff-live="reactionDone"><i class="fa-solid fa-check"></i> ${loc("FASTFIGHTING.Live.ReactionDone")}</button></div>`),
     speaker: chronicle(), whisper: [...new Set([...gmIds(), ...owners.map(u => u.id)])],
-    flags: { [MODULE_ID]: { live: { battle: battle.data.id, reaction: request.key, pcId: request.unitId } } }
+    flags: { [MODULE_ID]: { live: { battle: battle.data.id, reaction: request.key, pcId: request.unitId, pcToken: doc.uuid } } }
   });
   const done = await new Promise(resolve => {
     waiting = { key: request.key, unitId: request.unitId, name, card: card?.id ?? null, resolve };
@@ -2137,7 +2137,8 @@ export function registerLiveBattles() {
       const live = message.getFlag(MODULE_ID, "live");
       // (A player's reaction card: its button theirs too, the GM playing the battle told by a query.)
       if ( button.dataset.ffLive === "reactionDone" && live?.reaction && message.author?.isGM ) {
-        const actor = live.pcId ? docOf(live.pcId)?.actor ?? game.scenes.find(s => s.tokens.has(live.pcId))?.tokens.get(live.pcId)?.actor : null;
+        // (A player's browser has no battle in it: the character by its token's uuid.)
+        const actor = typeof live.pcToken === "string" ? fromUuidSync(live.pcToken)?.actor ?? null : null;
         if ( !game.user.isGM && !actor?.testUserPermission(game.user, "OWNER") ) {
           button.remove();
           continue;
