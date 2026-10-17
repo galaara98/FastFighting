@@ -16,7 +16,6 @@
     <label class="ff-field ff-slider"><span class="ff-field-label">{{localize "FASTFIGHTING.Planner.Seconds"}} <i class="fa-solid fa-circle-question" data-tooltip="{{localize "FASTFIGHTING.Planner.SecondsHint"}}"></i></span>
       <span class="ff-slider-control"><input type="range" name="options.seconds" value="{{options.seconds}}" min="4" max="20" step="1" data-dtype="Number"> <output class="ff-slider-value">{{options.seconds}}</output></span>
     </label>
-    {{#if runsNote}}<span class="ff-runs-note"><i class="fa-solid fa-gauge-high"></i> {{runsNote}}</span>{{/if}}
     <label class="ff-field ff-slider"><span class="ff-field-label">{{localize "FASTFIGHTING.Planner.MaxRounds"}} <i class="fa-solid fa-circle-question" data-tooltip="{{localize "FASTFIGHTING.Settings.maxRounds.Hint"}}"></i></span>
       <span class="ff-slider-control"><input type="range" name="options.maxRounds" value="{{options.maxRounds}}" min="4" max="12" step="1" data-dtype="Number"> <output class="ff-slider-value">{{options.maxRounds}}</output></span>
     </label>
@@ -35,6 +34,7 @@
         <i class="fa-solid {{#if running}}fa-spinner fa-spin{{else}}fa-dice-d20{{/if}}"></i> {{localize "FASTFIGHTING.Planner.Run"}}
       </button>
     </div>
+    {{#if runsNote}}<span class="ff-runs-note"><i class="fa-solid fa-gauge-high"></i> {{runsNote}}</span>{{/if}}
     {{!-- How the fight plays out --}}
     <div class="ff-toolbar-row">
       <label class="ff-field">{{localize "FASTFIGHTING.Planner.Downed"}}

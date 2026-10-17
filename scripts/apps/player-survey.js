@@ -8,13 +8,14 @@
  * they change and sync live between everyone who controls the same token or character.
  */
 import { MODULE_ID } from "../constants.js";
-import { getAdapter, characterSpec } from "../api.js";
+import { getAdapter } from "../api.js";
+import { cachedCharacterSpec, showsReactions } from "../foundry/sheet-watch.js";
 import { localize, hasStat } from "../i18n.js";
 import { sceneEncounter } from "../foundry/persistence.js";
 import { ensureAutoConfig, resetAndAutoConfig } from "../foundry/auto-config.js";
 import { partyContext, castVote, partyState, lockInParty } from "../foundry/party.js";
 import {
-  questionsContext, setTactic, togglePlaystyle, syncTacticsDom, charactersForUser, setOwnSurveyStatus, SURVEY_STATUS, playstyleSignature
+  questionsContext, setTactic, togglePlaystyle, syncTacticsDom, charactersForUser, setOwnSurveyStatus, SURVEY_STATUS, playstyleSignature, reactionsSignature
 } from "../foundry/tactics.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -111,7 +112,7 @@ export class PlayerSurvey extends HandlebarsApplicationMixin(ApplicationV2) {
       let spec = this.specs.get(e.key) ?? null;
       if ( !spec ) {
         try {
-          spec = await characterSpec(adapter, e.token ?? await e.actor.getTokenDocument());
+          spec = await cachedCharacterSpec(adapter, e.token ?? await e.actor.getTokenDocument());
         } catch ( err ) {
           console.warn(`${MODULE_ID} | survey could not read ${e.name}`, err);
         }
@@ -157,6 +158,29 @@ export class PlayerSurvey extends HandlebarsApplicationMixin(ApplicationV2) {
       empty: !sheets.length,
       intro: game.i18n.localize("FASTFIGHTING.Survey.Intro")
     };
+  }
+
+  /** Open: told when a character's reactions may have changed (sheet-watch.js); closed, no longer. */
+  _onFirstRender(context, options) {
+    super._onFirstRender?.(context, options);
+    this.unwatch = showsReactions({
+      shows: actor => this.rendered && [...(this.entries?.values() ?? [])].some(e => e.actor?.uuid === actor.uuid),
+      recheck: actor => this.recheckReactions(actor)
+    });
+  }
+
+  /** A character's items or effects changed: read again, and drawn again if the reactions it shows aren't the same. */
+  async recheckReactions(actor) {
+    let redraw = false;
+    for ( const e of this.entries?.values() ?? [] ) {
+      if ( e.actor?.uuid !== actor.uuid ) continue;
+      const before = this.specs.get(e.key);
+      const now = await cachedCharacterSpec(getAdapter(), e.token ?? await e.actor.getTokenDocument());
+      if ( !now || reactionsSignature(before, actor) === reactionsSignature(now, actor) ) continue;
+      this.specs.set(e.key, now);
+      redraw = true;
+    }
+    if ( redraw && this.rendered ) this.render();
   }
 
   _onRender(context, options) {
@@ -253,6 +277,7 @@ export class PlayerSurvey extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   async _onClose(options) {
+    this.unwatch?.();
     await super._onClose?.(options);
     if ( !game.user.isGM && !this.finished ) await setOwnSurveyStatus(SURVEY_STATUS.CLOSED, this.sceneId, this.requestId, { partyOpen: false });
   }

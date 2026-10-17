@@ -21,7 +21,7 @@ import { positionOf, squareFeet } from "./terrain.js";
 import { approachFor, sceneNow } from "./battle.js";
 import { currentPathGrid, pathGridFor, sceneWallGrid } from "./pathing.js";
 import { getSetup, sceneEncounter } from "./persistence.js";
-import { QUERIES } from "./tactics.js";
+import { QUERIES, isPlayerControlled, getStoredTactics, reactionPrefsFor } from "./tactics.js";
 import {
   holdingPause, playMoves, postBeat, postStory, revertEntry, gmIds, chronicle, storyTitle, packSpec, unpackSpec, placeOf, spotsFor
 } from "./make-it-so.js";
@@ -541,6 +541,35 @@ async function turnBegins(combatant) {
  * side, the player's to run); otherwise its token's disposition says its side (one already in the fight, or it stays
  * out). Made part of the battle itself, so a turn kept before it came still has it when restored. Returns its unit.
  */
+/** What a player says of a character's reactions and rerolls (its tactics), for its spec. */
+function playersSay(spec, actor) {
+  const stored = getStoredTactics(actor);
+  return { reactionPrefs: reactionPrefsFor(spec, stored), rerolls: { self: !!stored.rerolls?.self, team: !!stored.rerolls?.team } };
+}
+
+/**
+ * A player changed what they say of a character's reactions or rerolls mid-battle: used from the next time it's asked
+ * (its spec in the battle, and as kept).
+ */
+export function followPlayersSay(actor) {
+  if ( !battle || battle.data.ended || !playsHere() || !actor ) return;
+  const ids = new Set();
+  for ( const u of battle.run.units ) {
+    const doc = battle.scene?.tokens.get(tokenIdOf(u));
+    if ( doc?.actor?.uuid !== actor.uuid || !isPlayerControlled(u.spec, actor) ) continue;
+    const said = playersSay(u.spec, actor);
+    if ( JSON.stringify([u.spec.reactionPrefs, u.spec.rerolls]) === JSON.stringify([said.reactionPrefs, said.rerolls]) ) continue;
+    Object.assign(u.spec, said);
+    ids.add(u.spec.id);
+  }
+  if ( !ids.size ) return;
+  queue(async () => {
+    battle.spec = { ...battle.spec, combatants: battle.spec.combatants.map(c => (ids.has(c.id) ? { ...c, ...playersSay(c, actor) } : c)) };
+    battle.data.spec = packSpec(battle.spec);
+    await keep();
+  });
+}
+
 async function joinFight(combatant) {
   if ( !battle || battle.data.ended || battle.combat !== combatant.parent ) return null;
   const known = unitOf(combatant);
@@ -567,6 +596,8 @@ async function joinFight(combatant) {
   }
   if ( !spec || unitOf(combatant) ) return unitOf(combatant);
   Object.assign(spec, { side, originSide: side, inEncounter: true, tokenId: doc.id, hidden: doc.hidden });
+  // (A player's: its reactions and rerolls as its player said.)
+  if ( isPlayerControlled(spec, doc.actor) ) Object.assign(spec, playersSay(spec, doc.actor));
   spec.generic ??= spec.kind !== "pc" && !doc.actorLink && (spec.rarity ?? 0) < 3;
   if ( doc.object ) spec.position = positionOf(doc.object);
   spec.perception ??= spec.initiative?.mod ?? 0;

@@ -12,8 +12,9 @@ import { setAdhd } from "./token-tactics.js";
 import { getSetup, saveSetup, clearSetup, tokenSetup, planHolder, rememberPartyRole } from "../foundry/persistence.js";
 import {
   questionsContext, setTactic, togglePlaystyle, syncTacticsDom, isPlayerControlled, playersOnScene, tokensForUser, surveyStatus,
-  requestSurveys, requestCharacterSurvey, requestGmSurvey, SURVEY_STATUS, playstyleSignature, tacticsFor
+  requestSurveys, requestCharacterSurvey, requestGmSurvey, SURVEY_STATUS, playstyleSignature, tacticsFor, reactionsSignature
 } from "../foundry/tactics.js";
+import { cachedCharacterSpec, showsReactions } from "../foundry/sheet-watch.js";
 import {
   gatherRoster, chosenSide, groupOf, proposeNeutralGroups, resolveAllegiances, simulate, swingFactors, typicalFight,
   approachFor, commandChains, commandGroup, seedCommand, clearRole, ROLES, sideName, hostileGroupsIn, secretTeam, SECRET_TEAMS, LEANS, predictionSeconds,
@@ -164,10 +165,28 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     }
     // (Unpaused by hand meanwhile: closing the planner leaves the game as the GM has it.)
     this.pauseHook = Hooks.on("pauseGame", paused => { if ( !paused ) this.pausedGame = false; });
+    // (Told when a character's reactions may have changed: sheet-watch.js. Only an open row shows them.)
+    this.unwatchReactions = showsReactions({
+      shows: actor => this.rendered && !!this.roster?.some(e => e.token.actor?.uuid === actor.uuid && this.expanded.has(e.token.id)),
+      recheck: actor => this.recheckReactions(actor)
+    });
+  }
+
+  /**
+   * A character's items or effects changed while its row is open: the planner reads the tokens again if the reactions it
+   * shows aren't the same (as its Refresh button does).
+   */
+  async recheckReactions(actor) {
+    for ( const e of this.roster ?? [] ) {
+      if ( e.token.actor?.uuid !== actor.uuid || !this.expanded.has(e.token.id) ) continue;
+      const now = await cachedCharacterSpec(getAdapter(), e.token.document ?? e.token);
+      if ( now && reactionsSignature(e.spec, actor) !== reactionsSignature(now, actor) ) return this.rereadRoster();
+    }
   }
 
   _onClose(options) {
     super._onClose(options);
+    this.unwatchReactions?.();
     if ( this.pauseHook ) Hooks.off("pauseGame", this.pauseHook);
     this.pauseHook = null;
     const resume = this.pausedGame;

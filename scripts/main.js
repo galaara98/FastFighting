@@ -20,7 +20,8 @@ import { sceneUnit, registerGroundField } from "./foundry/terrain.js";
 import { planHolder } from "./foundry/persistence.js";
 import { setDistanceUnit, setTermSource, localize } from "./i18n.js";
 import { loadKeywords } from "./foundry/keywords.js";
-import { registerLiveBattles, liveBattle } from "./foundry/live-battle.js";
+import { registerLiveBattles, liveBattle, followPlayersSay } from "./foundry/live-battle.js";
+import { registerSheetWatch } from "./foundry/sheet-watch.js";
 import { BattleVantage, registerBattleVantage } from "./apps/battle-vantage.js";
 
 Hooks.once("init", () => {
@@ -202,6 +203,8 @@ Hooks.once("ready", () => {
 /* Live sync: answers are actor flags, so every open planner and survey patches itself in place. */
 function syncOpenViews(actor) {
   if ( !actor ) return;
+  // (A live battle under way: what its player says of its reactions, from now on.)
+  followPlayersSay(actor);
   foundry.applications.instances.get("fast-fighting-survey")?.syncActor(actor);
   foundry.applications.instances.get("fast-fighting-planner")?.syncActor(actor);
   syncTokenTactics(actor);
@@ -209,6 +212,9 @@ function syncOpenViews(actor) {
 
 // FastFighting's tab in the token windows (GM only): a token's tactics, playstyles and desires, or its prototype's.
 registerTokenTactics();
+
+// What's changed on each character: an unchanged one isn't read again, and the reactions a window shows follow its sheet.
+registerSheetWatch();
 
 const touchesTactics = changes => foundry.utils.hasProperty(changes, `flags.${MODULE_ID}`)
   || foundry.utils.hasProperty(changes, `delta.flags.${MODULE_ID}`);

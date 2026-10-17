@@ -49,8 +49,28 @@ const DESIRE_KEY = /^desire\.(d[0-2])\.(kind|target|level)$/;
 const REACTION_KEY = /^reactions\.([\w-]+)$/;
 const REROLL_KEY = /^rerolls\.(self|team)$/;
 export const REACTION_CHOICES = Object.freeze(["ask", "always", "never"]);
-/** A reaction's key, the same fight after fight: its id without the actor's in front (PF2e "shield-block"). */
-export const reactionKey = id => String(id ?? "").split(".").pop();
+/**
+ * A reaction's key, the same fight after fight: its id without the actor's in front (PF2e "shield-block"), and without
+ * the slot it's cast with (5e "shield@spell2"): one choice for all of them.
+ */
+export const reactionKey = id => String(id ?? "").split(".").pop().split("@")[0];
+
+/** A player's choices for a character's reactions (always, ask, never), by each reaction's id, as the engine asks them. */
+export function reactionPrefsFor(spec, stored) {
+  const said = stored?.reactions ?? {};
+  return Object.fromEntries([...(spec?.reactions ?? []).map(r => r.id), "opportunity"].map(id => [id, said[reactionKey(id)] ?? "ask"]));
+}
+
+/**
+ * The reactions a character's player chooses about, as a window shows them (its system's list, one row a key): what
+ * a window compares to know whether its list changed.
+ */
+export function reactionsSignature(spec, actor) {
+  if ( !spec || !isPlayerControlled(spec, actor) ) return "";
+  const rows = new Map();
+  for ( const r of getAdapter()?.reactionsOf?.(spec) ?? [] ) if ( !rows.has(reactionKey(r.id)) ) rows.set(reactionKey(r.id), r.label ?? "");
+  return JSON.stringify([...rows]);
+}
 /** The level a band stands for (its middle). */
 export const DESIRE_LEVELS = Object.freeze({ passing: 10, wants: 30, determined: 50, driven: 70, obsessed: 90 });
 
@@ -297,6 +317,11 @@ function storedValue(stored, key) {
   if ( motive ) return stored[motive[1]]?.[motive[2]];
   const desire = DESIRE_KEY.exec(key);
   if ( desire ) return stored.desires?.[desire[1]]?.[desire[2]] ?? (desire[2] === "level" ? DESIRE_LEVELS.determined : "");
+  // (A reaction's choice, "ask" until one's made; a reroll's.)
+  const reaction = REACTION_KEY.exec(key);
+  if ( reaction ) return stored.reactions?.[reaction[1]] ?? "ask";
+  const reroll = REROLL_KEY.exec(key);
+  if ( reroll ) return !!stored.rerolls?.[reroll[1]];
   return stored[key];
 }
 
@@ -495,7 +520,8 @@ export function questionsContext(spec, actor, uid, { questions: withQuestions = 
 function reactionsContext(spec, actor, stored, uid) {
   if ( !isPlayerControlled(spec, actor) ) return { reactions: null, rerolls: null };
   const adapter = getAdapter();
-  const list = adapter?.reactionsOf?.(spec) ?? [];
+  // (One row a reaction, however many ways its system lists it.)
+  const list = (adapter?.reactionsOf?.(spec) ?? []).filter((r, i, all) => all.findIndex(o => reactionKey(o.id) === reactionKey(r.id)) === i);
   const reactions = list.map(r => {
     const key = reactionKey(r.id);
     const value = stored.reactions?.[key] ?? "ask";

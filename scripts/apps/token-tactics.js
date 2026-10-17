@@ -5,9 +5,10 @@
  * Answers save as they change, as in the survey, and every open view of the same actor follows along.
  */
 import { MODULE_ID } from "../constants.js";
-import { getAdapter, characterSpec } from "../api.js";
+import { getAdapter } from "../api.js";
+import { cachedCharacterSpec, showsReactions } from "../foundry/sheet-watch.js";
 import { localize } from "../i18n.js";
-import { questionsContext, setTactic, togglePlaystyle, syncTacticsDom, playstyleSignature } from "../foundry/tactics.js";
+import { questionsContext, setTactic, togglePlaystyle, syncTacticsDom, playstyleSignature, reactionsSignature } from "../foundry/tactics.js";
 import { HAZARD_MARKS, applyHazard } from "../foundry/battle.js";
 import { ensureAutoConfig, resetAndAutoConfig } from "../foundry/auto-config.js";
 
@@ -18,9 +19,33 @@ const PARTIAL = `modules/${MODULE_ID}/templates/partials/tactics.hbs`;
 /** Reading strikes and spells is slow: each window keeps what it read. */
 const specs = new WeakMap();
 
+/** The open token windows with this tab, each with its panel. */
+function openTabs() {
+  const out = [];
+  for ( const app of foundry.applications.instances.values() ) {
+    const panel = app.element?.querySelector?.(`.tab[data-tab="${TAB}"]`);
+    if ( panel ) out.push([app, panel]);
+  }
+  return out;
+}
+
 /** The tab in every token window: the base class's render hook covers the Prototype Token and each system's own. */
 export function registerTokenTactics() {
   Hooks.once("init", () => foundry.applications.handlebars.loadTemplates([TEMPLATE, PARTIAL]));
+  // (A character's items or effects changed: its reactions read again, the tab drawn again if they're not the same.)
+  showsReactions({
+    shows: actor => openTabs().some(([app]) => actorOf(app)?.uuid === actor.uuid),
+    async recheck(actor) {
+      for ( const [app, panel] of openTabs() ) {
+        if ( actorOf(app)?.uuid !== actor.uuid ) continue;
+        const before = specs.get(app);
+        const now = await readSpec(app, actor);
+        if ( !now || reactionsSignature(before, actor) === reactionsSignature(now, actor) ) continue;
+        specs.set(app, now);
+        fill(app, panel);
+      }
+    }
+  });
   Hooks.on("renderTokenApplication", (app, element) => {
     if ( game.user.isGM ) addTab(app, element);
   });
@@ -54,6 +79,16 @@ function addTab(app, element) {
   fill(app, panel);
 }
 
+/** A window's character as it reads (read again only if it changed since: sheet-watch.js), or null. */
+async function readSpec(app, actor) {
+  try {
+    return await cachedCharacterSpec(getAdapter(), app.isPrototype ? await actor.getTokenDocument() : app.document);
+  } catch ( err ) {
+    console.warn(`${MODULE_ID} | the token window could not read ${actor.name}`, err);
+    return null;
+  }
+}
+
 /** The questions, as the survey asks them, for this window's actor. */
 async function fill(app, panel) {
   const actor = actorOf(app);
@@ -65,11 +100,7 @@ async function fill(app, panel) {
   }
   let spec = specs.get(app);
   if ( !spec ) {
-    try {
-      spec = await characterSpec(adapter, app.isPrototype ? await actor.getTokenDocument() : app.document);
-    } catch ( err ) {
-      console.warn(`${MODULE_ID} | the token window could not read ${actor.name}`, err);
-    }
+    spec = await readSpec(app, actor);
     if ( !spec ) return;
     specs.set(app, spec);
   }
@@ -158,9 +189,8 @@ export async function setAdhd(actor, value) {
 
 /** Someone else changed this actor's answers: every open token window showing it follows along. */
 export function syncTokenTactics(actor) {
-  for ( const app of foundry.applications.instances.values() ) {
-    const panel = app.element?.querySelector?.(`.tab[data-tab="${TAB}"]`);
-    if ( !panel || actorOf(app)?.uuid !== actor.uuid ) continue;
+  for ( const [app, panel] of openTabs() ) {
+    if ( actorOf(app)?.uuid !== actor.uuid ) continue;
     // (A change to what shows, such as the kind of offer: drawn again; anything else, patched in place.)
     if ( panel.dataset.ffSignature !== playstyleSignature(actor) ) fill(app, panel);
     else syncTacticsDom(panel, actor);
