@@ -252,6 +252,46 @@ describe("live battles: the engine a turn at a time", () => {
     expect(run.byId.get("valeros").adjacent.has("orc")).toBe(false);
   });
 
+  test("a foe's reaction the system rolled: its roll and its damage, not the engine's dice", () => {
+    for ( const [degree, natural, total, slashing] of [[3, 20, 31, 17], [2, 12, 23, 9], [0, 1, 4, 0]] ) {
+      const run = beginLive(skirmish({ orc: { flags: { fearless: true, reactiveStrike: true }, hp: { value: 300, max: 300 } }, valeros: { position: at(5), hp: { value: 400, max: 400 } } }), pf2eRules, { seed: 6, players: ["valeros", "kyra"] });
+      liveRound(run, 1);
+      pcTurnBegin(run, "valeros");
+      const [leaving] = leavingReach(run, "valeros", { x: 0, y: 60 });
+      run.live.forced = { unitId: "orc", targetId: "valeros", attack: { degree, natural, total }, damage: slashing ? { byType: { slashing } } : null };
+      const hp = run.byId.get("valeros").hp;
+      const attack = reactNow(run, "orc", "valeros", leaving.strike).find(e => e.type === "attack" && e.actorId === "orc");
+      expect(attack).toMatchObject({ degree, natural, total });
+      expect(hp - run.byId.get("valeros").hp).toBe(slashing);
+      expect(run.live.forced).toBeNull();
+    }
+  });
+
+  test("a player's reaction in a foe's turn, where the system rolls strikes: asked to be rolled, then played with that roll", () => {
+    const setUp = () => {
+      const run = beginLive(skirmish({ valeros: { position: at(5), reactionPrefs: { opportunity: "always" }, flags: { reactiveStrike: true }, actions: [strike({ id: "sword", name: "Longsword", bonus: 9, damage: [parseFormula("1d8+4", "slashing")] })] },
+        kyra: { position: at(70) }, orc: { desires: [{ kind: "hurt", targetId: "kyra", level: 95 }], flags: { fearless: true }, traits: minded(5) } }), pf2eRules, { seed: 4, players: ["valeros", "kyra"], systemRolls: true });
+      liveRound(run, 1);
+      return run;
+    };
+    const asked = [];
+    let run = setUp();
+    let request = null;
+    try {
+      liveTurn(run, "orc");
+    } catch ( err ) {
+      if ( !(err instanceof NeedsDecision) ) throw err;
+      request = err.request;
+    }
+    expect(request).not.toBeNull();
+    asked.push(request);
+    expect(request).toMatchObject({ unitId: "valeros", decided: true, strike: { id: "sword" } });
+    run = setUp();
+    const { events } = liveTurn(run, "orc", { answers: [[request.key, { use: true, roll: { attack: { degree: 2, natural: 15, total: 24 }, damage: { byType: { slashing: 11 } } } }]] });
+    const blow = events.find(e => e.type === "attack" && e.actorId === "valeros");
+    expect(blow).toMatchObject({ degree: 2, natural: 15, total: 24 });
+  });
+
   test("syncing the sheets says what changed that the engine didn't do", () => {
     const run = beginLive(skirmish(), pf2eRules, { seed: 1, players: ["valeros", "kyra"] });
     const changes = syncFromSheets(run, { goblin: { hp: 0, status: "down" }, kyra: { hp: 22 }, boar: { position: { x: 45, y: 0 } } });

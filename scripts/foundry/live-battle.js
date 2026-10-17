@@ -39,7 +39,7 @@ import { keepUpdate, keptBattle, forgetUpdate } from "./live-keeping.js";
 import { randomSeed } from "../engine/rng.js";
 import { holderOf } from "../engine/behavior/troubles.js";
 import { perceives } from "../engine/behavior/senses.js";
-import { isStanding } from "../engine/battle-state.js";
+import { isStanding, canMove } from "../engine/battle-state.js";
 
 const loc = key => game.i18n.localize(key);
 const fmt = (key, data) => game.i18n.format(key, data);
@@ -131,7 +131,7 @@ async function keepNow(b) {
   b.data.snapshot = snapshotRun(b.run, { log: false });
   // (A player's turn under way: who, since when, what the GM said and what reactions wrote. Its cards are found again by time.)
   const pc = b.pc;
-  b.data.pc = pc ? { combatantId: pc.combatantId, id: pc.id, round: pc.round, facts: pc.facts, records: pc.records, snapshot: pc.snapshot, from: pc.from, damage: pc.damage ?? [], dealt: pc.dealt ?? [] } : null;
+  b.data.pc = pc ? { combatantId: pc.combatantId, id: pc.id, round: pc.round, facts: pc.facts, records: pc.records, snapshot: pc.snapshot, from: pc.from, damage: pc.damage ?? [], dealt: pc.dealt ?? [], lastAt: pc.lastAt ?? null } : null;
   const doc = await store();
   // (The battle's own key replaced whole, the store's other keys left as they are. Its spec, the biggest part, only
   // when it's changed: kept beside it. Its turns and its log, each apart: only what's new.)
@@ -189,7 +189,7 @@ export async function startLiveBattle(spec, { style = setting("storyStyle"), odd
   const spotlight = adapter.liveTurns === "spotlight";
   const seed = randomSeed();
   const live = { ...spec, options: { ...spec.options, initiativeOrder: combat.turns.map(c => c.tokenId) } };
-  const run = beginLive(live, adapter.rules, { seed, players, owns: adapter.liveOwnership?.() ?? {}, npcReactions: "calculated" });
+  const run = beginLive(live, adapter.rules, { seed, players, owns: adapter.liveOwnership?.() ?? {}, npcReactions: "calculated", systemRolls: !!adapter.rollReaction });
   // (Prepared until the encounter begins: no turn played, nothing told.)
   battle = {
     combat, scene, spec: live, rules: adapter.rules, run, pc: null,
@@ -678,7 +678,8 @@ async function joinFight(combatant) {
 function beginPlayerTurn(u, combatant) {
   const snapshot = snapshotRun(battle.run, { log: false });
   pcTurnBegin(battle.run, u.id, { nonce: freshNonce() });
-  battle.pc = { combatantId: combatant.id, id: u.id, round: battle.combat.round, messages: [], facts: [], records: [], snapshot, from: Date.now() };
+  const doc = docOf(u.id);
+  battle.pc = { combatantId: combatant.id, id: u.id, round: battle.combat.round, messages: [], facts: [], records: [], snapshot, from: Date.now(), lastAt: doc ? { x: doc.x, y: doc.y } : null };
   return keep();
 }
 
@@ -790,7 +791,7 @@ async function playTurn(u, combatant, key) {
       break;
     } catch ( err ) {
       if ( !(err instanceof NeedsDecision) || tries > 20 ) throw err;
-      answers.push([err.request.key, await ask(err.request)]);
+      answers.push([err.request.key, await answerFor(err.request)]);
       battle.run = restoreRun(battle.spec, battle.rules, snapshot, { log: battle.run.log });
     }
   }
@@ -879,6 +880,95 @@ async function waitCard(turn) {
 const ASK_MS = 60000;
 
 /**
+ * A reaction's answer in a turn FastFighting plays: asked (of its player, or the GM), or already decided; and, used, a
+ * strike the system rolls itself (systemRoll), {use, roll} for the engine.
+ */
+async function answerFor(request) {
+  const use = request.decided ? true : await ask(request);
+  if ( !use || !request.strike ) return use;
+  const roll = await systemRoll(request);
+  return roll ? { use: true, roll } : true;
+}
+
+/** A finite number at least `least` (a roll from another player's screen is only data). */
+const counted = (v, least = 0) => (Number.isFinite(Number(v)) ? Math.max(least, Number(v)) : null);
+
+/**
+ * A reaction's strike rolled with the system's own roller, its cards in the chat: on its player's screen where a player
+ * runs it and is here (else on this one). Its damage, a player's at a creature FastFighting runs, goes as players'
+ * damage does: as rolled with Apply players' damage on (or where the system applies it); else a GM says how much.
+ * Returns {attack: {degree, natural, total}, damage: {byType} | null}, or null (the engine rolls it).
+ */
+async function systemRoll({ unitId, byId, strike }) {
+  const adapter = getAdapter();
+  const doc = docOf(unitId);
+  const target = byId ? docOf(byId) : null;
+  if ( !adapter.rollReaction || !doc || !strike ) return null;
+  const run = battle.run;
+  const player = run.live.players.has(unitId);
+  let roll = null;
+  if ( player ) {
+    for ( const user of game.users.filter(u => !u.isGM && u.active && doc.actor?.testUserPermission(u, "OWNER")) ) {
+      try {
+        roll = await user.query(QUERIES.liveRoll, { token: doc.uuid, target: target?.uuid ?? null, strike }, { timeout: ASK_MS });
+      } catch ( err ) {
+        roll = null; // (gone, or too slow: rolled here)
+      }
+      if ( roll ) break;
+    }
+  }
+  if ( !roll ) {
+    try {
+      roll = await adapter.rollReaction(doc, { action: strike, target });
+    } catch ( err ) {
+      console.error(`${MODULE_ID} | rolling a reaction`, err);
+      roll = null;
+    }
+  }
+  const degree = counted(roll?.attack?.degree);
+  if ( degree === null ) return null;
+  const out = { attack: { degree: Math.min(3, Math.round(degree)), natural: counted(roll.attack.natural), total: counted(roll.attack.total, -Infinity) }, damage: null };
+  const byType = roll.damage?.byType && typeof roll.damage.byType === "object"
+    ? Object.fromEntries(Object.entries(roll.damage.byType).map(([k, v]) => [String(k), counted(v)]).filter(([, v]) => v !== null)) : null;
+  if ( out.attack.degree < 2 || !byType || !Object.keys(byType).length ) return out;
+  // (A player's blow at a creature FastFighting runs: players' damage, as the battle has it.)
+  const t = byId ? run.byId.get(byId) : null;
+  let multiplier = 1;
+  if ( player && t && !run.live.players.has(t.id) && !battle.data.applyDamage && !systemApplies(adapter) ) {
+    const amount = Object.values(byType).reduce((s, v) => s + v, 0);
+    multiplier = await askDamage(run.byId.get(unitId)?.spec.name ?? "", t.spec.name, amount);
+  }
+  out.damage = { byType: Object.fromEntries(Object.entries(byType).map(([k, v]) => [k, Math.floor(v * multiplier)])) };
+  return out;
+}
+
+/** A GM's say on a player's reaction's damage: Apply (1), Half (0.5), Double (2) or Dismiss (0). */
+async function askDamage(by, target, amount) {
+  const choice = await foundry.applications.api.DialogV2.wait({
+    window: { title: loc("FASTFIGHTING.Battle.DamageWaiting") },
+    content: `<p>${escape(fmt("FASTFIGHTING.Battle.DamageLine", { by, target, amount }))}</p>`,
+    buttons: [
+      { action: "1", label: loc("FASTFIGHTING.Battle.DamageApply"), default: true },
+      { action: "0.5", label: loc("FASTFIGHTING.Battle.DamageHalf") },
+      { action: "2", label: loc("FASTFIGHTING.Battle.DamageDouble") },
+      { action: "0", label: loc("FASTFIGHTING.Battle.DamageDismiss") }
+    ],
+    rejectClose: false
+  });
+  const n = Number(choice);
+  return Number.isFinite(n) ? n : 1;
+}
+
+/** Asked by a GM's browser: roll this reaction's strike with the system's own roller, here (a player's own). */
+async function answerRoll(data, { user } = {}) {
+  if ( !user?.isGM || typeof data?.token !== "string" ) return null;
+  const doc = await fromUuid(data.token);
+  if ( !doc?.isOwner ) return null;
+  const target = typeof data.target === "string" ? await fromUuid(data.target) : null;
+  return (await getAdapter()?.rollReaction?.(doc, { action: data.strike, target })) ?? null;
+}
+
+/**
  * Should someone use a reaction? A player's is asked of its player (any of its owners who's here); with none here, or
  * no answer in time, of the GM. An NPC's (when the GM wants to be asked), of the GM. True to use it.
  */
@@ -948,7 +1038,7 @@ function onMessage(message) {
   if ( !madeFor(message, pc.id) ) return;
   pc.messages.push(message.id);
   // (A ranged attack or a manipulate action in a foe's reach, where the system's opportunity strikes answer it: PF2e.)
-  if ( getAdapter().liveOpening?.(message, pc.id) ) queue(() => openingTaken(pc));
+  if ( getAdapter().liveOpening?.(message, pc.id) ) queue(() => openingTaken(pc, message));
   // (A damage card at a creature FastFighting runs: applied at once, or put before a GM.)
   if ( getAdapter().damageCard ) queue(() => playerDamage(pc, message));
 }
@@ -1110,7 +1200,7 @@ export async function setApplyDamage(on) {
 }
 
 /** A player's character lowered its guard in a foe's reach: each foe that can strikes (asked of the GM, or as reckoned). */
-async function openingTaken(pc) {
+async function openingTaken(pc, message = null) {
   if ( battle?.pc !== pc ) return;
   const run = battle.run;
   for ( const { reactorId, strike } of openingFor(run, pc.id) ) {
@@ -1119,10 +1209,33 @@ async function openingTaken(pc) {
       : true;
     if ( !use ) continue;
     const before = captureAll(run);
-    reactNow(run, reactorId, pc.id, strike, "foeOpening");
+    await rollFirst(run, reactorId, pc.id, strike);
+    const events = reactNow(run, reactorId, pc.id, strike, "foeOpening");
     await writeChanges(before, captureAll(run), pc.records);
+    // (A blow that disrupts what the character was doing, as the system has it: PF2e's critical Reactive Strike.)
+    const crit = events.some(e => e.type === "attack" && e.actorId === reactorId && e.degree === 3);
+    if ( crit && message && getAdapter().disruptsAction?.(message) ) await tellStop(pc.id, fmt("FASTFIGHTING.Live.Disrupted", { name: run.byId.get(pc.id)?.spec.name ?? "", by: run.byId.get(reactorId)?.spec.name ?? "" }));
   }
   await keep();
+}
+
+/** A foe's strike at a player's character in its turn, rolled with the system's own roller first, where it can. */
+async function rollFirst(run, reactorId, targetId, strike) {
+  if ( !run.live.systemRolls ) return;
+  const roll = await systemRoll({ unitId: reactorId, byId: targetId, strike: { id: strike.id, name: strike.name } });
+  if ( roll ) run.live.forced = { unitId: reactorId, targetId, ...roll };
+}
+
+/** A word to a player's character's players and the GMs: its move stopped, or its action disrupted. */
+async function tellStop(pcId, text) {
+  const actor = docOf(pcId)?.actor;
+  const whisper = [...new Set([...gmIds(), ...game.users.filter(u => !u.isGM && actor?.testUserPermission(u, "OWNER")).map(u => u.id)])];
+  const ChatMessage = chatMessages();
+  const card = await ChatMessage.create({
+    content: inertHtml(`<div class="fast-fighting-live"><p>${escape(text)}</p></div>`), speaker: chronicle(), whisper,
+    flags: { [MODULE_ID]: { live: { battle: battle.data.id } } }
+  });
+  if ( card && battle.pc ) battle.pc.messages = battle.pc.messages.filter(id => id !== card.id);
 }
 
 /**
@@ -1257,13 +1370,25 @@ async function playerMoved(doc) {
       : true;
     if ( !use ) continue;
     const before = captureAll(run);
+    await rollFirst(run, reactorId, pc.id, strike);
     reactNow(run, reactorId, pc.id, strike);
     await writeChanges(before, captureAll(run), pc.records);
     answered = true;
   }
+  // (Stopped by it, knocked down, laid prone or held fast: the move goes no further. The token goes back where the move
+  // began, and its players are told why.)
+  const u = run.byId.get(pc.id);
+  const why = !u ? null : !isStanding(u) ? "down" : u.prone ? "prone" : !canMove(run, u) ? "held" : null;
+  if ( answered && why && pc.lastAt ) {
+    await doc.update({ x: pc.lastAt.x, y: pc.lastAt.y }, { animate: false });
+    await tellStop(pc.id, fmt("FASTFIGHTING.Live.MoveStopped", { name: u.spec.name, why: loc(`FASTFIGHTING.Live.Stopped.${why}`) }));
+    await keep();
+    return;
+  }
   // (Where it is now, as the engine has it: the next move is from here. Kept only when a foe answered it: otherwise
   // the token itself says where it is, should the battle be picked up again.)
   syncFromSheets(run, { [pc.id]: { position: to } });
+  pc.lastAt = { x: doc.x, y: doc.y };
   if ( answered ) await keep();
 }
 
@@ -1844,6 +1969,8 @@ async function pickUp() {
       continue;
     }
     battle = { combat, scene, spec, rules, run, pc: null, data, keptSpec: data.spec };
+    // (Reactions' strikes rolled with the system's own roller, where this helper can: a battle begun before, too.)
+    run.live.systemRolls = !!getAdapter()?.rollReaction;
     playersNow();
     if ( data.pc ) {
       const own = m => m.getFlag(MODULE_ID, "story") || m.getFlag(MODULE_ID, "live");
@@ -1862,6 +1989,7 @@ async function pickUp() {
 
 export function registerLiveBattles() {
   CONFIG.queries[QUERIES.liveAsk] = answerAsk;
+  CONFIG.queries[QUERIES.liveRoll] = answerRoll;
   Hooks.on("combatTurnChange", onTurnChange);
   Hooks.on("updateToken", (doc, changes) => {
     if ( !battle?.pc || doc.id !== battle.pc.id || !("x" in changes || "y" in changes) || !playsHere() ) return;

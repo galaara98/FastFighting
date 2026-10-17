@@ -28,7 +28,8 @@ import { autoRecord, validLet, validMotive } from "./auto-config.js";
 export const QUERIES = Object.freeze({
   openSurvey: `${MODULE_ID}.openSurvey`,
   openGmSurvey: `${MODULE_ID}.openGmSurvey`,
-  liveAsk: `${MODULE_ID}.liveAsk`
+  liveAsk: `${MODULE_ID}.liveAsk`,
+  liveRoll: `${MODULE_ID}.liveRoll`
 });
 
 /** Put a query to everyone of `users` who's here, not waiting on any answer (one who isn't here finds it on login). */

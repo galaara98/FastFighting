@@ -2184,6 +2184,13 @@
     "Live": {
       "SystemApplies": "{name} applies players' damage itself, so this does nothing while that's on.",
       "DamageWaits": "{name}'s damage waits in the Battle Vantage for a GM to apply.",
+      "MoveStopped": "{name} {why} and stops here.",
+      "Stopped": {
+        "down": "drops",
+        "prone": "is knocked prone",
+        "held": "is held in place"
+      },
+      "Disrupted": "{by}'s critical hit disrupts what {name} was doing.",
       "Store": "FastFighting live battles",
       "NoCombat": "There is no combat on this scene to play the battle on.",
       "Failed": "The live battle hit a problem: {error}",

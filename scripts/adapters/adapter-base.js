@@ -425,6 +425,24 @@ export class SystemAdapter {
   }
 
   /**
+   * API 19. A reaction's strike rolled with the system's own roller, as a player would roll it, its cards in the chat:
+   * the attack (`action`: the engine's strike, {id, name}, at `target`, a TokenDocument) and, a hit, its damage. Returns
+   * {attack: {degree: 0-3, natural, total}, damage: {byType: {type: amount}} | null} (damage as rolled, before
+   * resistances; a critical's as the system doubles it), or null where it can't (the engine rolls it). Optional.
+   */
+  rollReaction(token, { action, target }) {
+    return null;
+  }
+
+  /**
+   * API 19. Does a critical hit from a foe's reaction disrupt what the player's character did (the card `message` that
+   * opened it up)? PF2e: a manipulate action, against Reactive Strike. Default no.
+   */
+  disruptsAction(message) {
+    return false;
+  }
+
+  /**
    * API 19. Does the system let token nameplates decide whether players learn an NPC's name (PF2e's Tokens Determine
    * NPC Name Visibility)? Then a live battle's story names a creature only where its nameplate shows to everyone, as
    * the system's own cards do. Default false: the story names it once a player's character has seen it.

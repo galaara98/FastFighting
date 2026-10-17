@@ -928,11 +928,12 @@ function retort(run, saver, by, action, degree, logging) {
 }
 
 /** Roll damage for a hit; returns the total and a function that applies it (so the log reads in order). */
-function rollHit(run, u, action, t, parts, multiplier, crit, minimum = 0) {
+function rollHit(run, u, action, t, parts, multiplier, crit, minimum = 0, forced = null) {
   const rules = run.prep.rules;
-  const rolled = sampleDamage(parts, run.rng, multiplier);
+  // (The system's own damage roll, where it rolled it: its dice by type, before anyone's resistances.)
+  const rolled = forced?.byType ? { byType: { ...forced.byType }, persistent: [], direct: !!forced.direct } : sampleDamage(parts, run.rng, multiplier);
   // Rolled several times over (DCC magic missiles: so many missiles of so much each).
-  for ( let n = action.repeat ? Math.max(1, samplePart(action.repeat, run.rng)) : 1; n > 1; n-- ) {
+  for ( let n = action.repeat && !forced?.byType ? Math.max(1, samplePart(action.repeat, run.rng)) : 1; n > 1; n-- ) {
     const more = sampleDamage(parts, run.rng, multiplier);
     for ( const [k, v] of Object.entries(more.byType) ) rolled.byType[k] = (rolled.byType[k] ?? 0) + v;
   }
@@ -1089,6 +1090,17 @@ function executeOffense(run, u, action, t, attacksMade) {
 }
 
 /** What one use of an action does to one target: the attack or save, the damage, the riders. */
+/**
+ * The roll the system made for u's strike at target, a live battle's reaction rolled with the system's own roller
+ * (engine/live.js decide: run.live.forced), taken once: {attack: {degree, natural, total}, damage: {byType} | null}.
+ */
+function takeForced(run, u, target) {
+  const f = run.live?.forced;
+  if ( !f || f.unitId !== u.id || (f.targetId && f.targetId !== target.id) ) return null;
+  run.live.forced = null;
+  return f;
+}
+
 function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
   const rules = run.prep.rules;
   // Whoever a hazard goes for, hit or miss, knows it's there from now on (behavior/traps.js).
@@ -1174,18 +1186,21 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
     // (A Lore-Collector that sized this foe up: the roll about 2.5 times as likely to land.)
     const lift = boostBonus(rules, u, target, bonus + deedRoll, ac, opts);
     let roll = rollCheck(rules, run.rng, bonus + deedRoll + lift, ac, opts);
+    // (A live battle's reaction the system rolled itself, its card in the chat: that roll, as it came out.)
+    const forced = takeForced(run, u, target);
+    if ( forced?.attack ) roll = { ...roll, natural: forced.attack.natural ?? roll.natural, total: forced.attack.total ?? roll.total, degree: forced.attack.degree };
     spendEdges(u, "attack", target.id);
     spendEdges(target, "defend", u.id);
     spendBoost(u, target);
-    if ( run.boosting && roll.degree < 2 ) roll = boost(run, u, roll, ac, { kind: "attack", stakes: attackStakes(run, u, target, action), options: opts }, logger(run));
+    if ( run.boosting && roll.degree < 2 && !forced ) roll = boost(run, u, roll, ac, { kind: "attack", stakes: attackStakes(run, u, target, action), options: opts }, logger(run));
     // The system's own say once the dice are seen (Ironsworn: burning momentum), and what the roll means (initiative).
-    if ( rules.adjustRoll ) {
+    if ( rules.adjustRoll && !forced ) {
       roll = rules.adjustRoll(run, u, roll, { kind: "attack", stakes: attackStakes(run, u, target, action), label: action.name, action, target }) ?? roll;
       if ( roll.said ) log(run, u, { text: roll.said.text, type: "adjust", ...roll.said.data });
     }
     rules.afterRoll?.(run, u, roll, { kind: "attack", action, target, faces: opts.faces ?? 20 });
     // A close miss a die can mend (5e Precision Attack).
-    if ( roll.degree === 1 && u.spec.riders ) {
+    if ( roll.degree === 1 && u.spec.riders && !forced ) {
       const mend = rescueMiss(run, u, action, target, ac - roll.total);
       if ( mend ) {
         roll = { ...roll, total: roll.total + mend.roll };
@@ -1236,7 +1251,7 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
       for ( const x of riders ) if ( x.damage?.length ) more.push(...(crit && x.critDouble ? criticalParts(rules, x.damage) : x.damage));
       if ( table?.row?.damage?.length ) more.push(...table.row.damage);
       if ( deedRoll ) more.push(part([], deedRoll, primaryType(action)));
-      const hit = rollHit(run, u, action, target, more.length ? base.concat(more) : base, 1, crit, rules.minimumDamage ?? 0);
+      const hit = rollHit(run, u, action, target, more.length ? base.concat(more) : base, 1, crit, rules.minimumDamage ?? 0, forced?.damage ?? null);
       // A finishing move (an Ironsworn End the Fight): whatever it has left.
       let amount = action.finish ? target.hp + target.temp + (target.stamina ?? 0) : hit.total;
       // (A crit table's row that doubles or triples the blow: DCC's "double damage".)
@@ -1958,7 +1973,7 @@ function provoke(run, u, trigger) {
   for ( const { e, strike } of threats(run, u, null, trigger) ) {
     if ( !isStanding(u) || battleOver(run) ) break;
     // (In a live battle the player, or the GM, may say otherwise: engine/live.js.)
-    if ( run.live && !run.live.decide(run, e, { reaction: { id: OPPORTUNITY, label: strike.name }, trigger, by: u, would: true }) ) continue;
+    if ( run.live && !run.live.decide(run, e, { reaction: { id: OPPORTUNITY, label: strike.name }, trigger, by: u, would: true, strike }) ) continue;
     e.reactionsLeft -= 1;
     log(run, e, { type: "opportunity", target: u.spec.name, targetId: u.id, action: strike.name, trigger });
     executeOffense(run, e, strike, u, 0);
@@ -1984,7 +1999,7 @@ function leaveReach(run, u, turn, keep = null, need = null) {
       for ( const { e, strike } of list ) {
         if ( !isStanding(u) || battleOver(run) ) break;
         // (In a live battle the player, or the GM, may say otherwise: engine/live.js.)
-        if ( run.live && !run.live.decide(run, e, { reaction: { id: OPPORTUNITY, label: strike.name }, trigger: "leaveReach", by: u, would: true }) ) continue;
+        if ( run.live && !run.live.decide(run, e, { reaction: { id: OPPORTUNITY, label: strike.name }, trigger: "leaveReach", by: u, would: true, strike }) ) continue;
         e.reactionsLeft -= 1;
         log(run, e, { type: "opportunity", target: u.spec.name, targetId: u.id, action: strike.name });
         executeOffense(run, e, strike, u, 0);

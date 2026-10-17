@@ -477,6 +477,16 @@
    "commit": null,
    "hash": "5a7b236f9af6"
   },
+  "core:code:scripts/foundry/live-battle.js:systemRoll#1": {
+   "repo": "core",
+   "file": "scripts/foundry/live-battle.js",
+   "key": "scripts/foundry/live-battle.js:systemRoll#1",
+   "area": "core/code",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "32f6dbb2481b"
+  },
   "core:code:scripts/foundry/live-battle.js:writeChanges#1": {
    "repo": "core",
    "file": "scripts/foundry/live-battle.js",
@@ -5770,6 +5780,16 @@
    "commit": null,
    "hash": "d10b9a52f10b"
   },
+  "core:FASTFIGHTING.Live.Disrupted": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Live.Disrupted",
+   "area": "core/Live",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "3bb3f19312c4"
+  },
   "core:FASTFIGHTING.Live.Failed": {
    "repo": "core",
    "file": "languages/en.json",
@@ -5779,6 +5799,16 @@
    "date": null,
    "commit": null,
    "hash": "e70393b74a6a"
+  },
+  "core:FASTFIGHTING.Live.MoveStopped": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Live.MoveStopped",
+   "area": "core/Live",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "0253b42591e1"
   },
   "core:FASTFIGHTING.Live.NextTurn": {
    "repo": "core",
@@ -5902,6 +5932,36 @@
    "commit": null,
    "hash": "97bc9d3ccaec",
    "changed": true
+  },
+  "core:FASTFIGHTING.Live.Stopped.down": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Live.Stopped.down",
+   "area": "core/Live",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "471bcf3ba0df"
+  },
+  "core:FASTFIGHTING.Live.Stopped.held": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Live.Stopped.held",
+   "area": "core/Live",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "2813c98a35f5"
+  },
+  "core:FASTFIGHTING.Live.Stopped.prone": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Live.Stopped.prone",
+   "area": "core/Live",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "b3130f999463"
   },
   "core:FASTFIGHTING.Live.Store": {
    "repo": "core",

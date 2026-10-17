@@ -70,10 +70,11 @@ function attach(run, live) {
  * @param {object} [options.owns]                 what the system does itself (SYSTEM_DEFAULTS' keys)
  * @param {string} [options.npcReactions]         "calculated" (default) or "ask"
  */
-export function beginLive(spec, rules, { seed, players = [], owns = {}, npcReactions = "calculated" } = {}) {
+export function beginLive(spec, rules, { seed, players = [], owns = {}, npcReactions = "calculated", systemRolls = false } = {}) {
   const run = beginRun(prepareBattle(spec, rules), seed, { log: true });
   attach(run, {
-    seed, seq: 0, players: new Set(players), owns: { ...SYSTEM_DEFAULTS, ...owns }, npcReactions,
+    // (systemRolls: reactions' strikes rolled with the system's own roller, where the helper can: decide.)
+    seed, seq: 0, players: new Set(players), owns: { ...SYSTEM_DEFAULTS, ...owns }, npcReactions, systemRolls,
     answers: new Map(), asked: new Map(), gm: new Map(), facts: []
   });
   noteCommand(run, true);
@@ -510,23 +511,37 @@ export function setScene(run, { walls = null, doors = null } = {}) {
  * Does u use this reaction? A player's character as its player said (always, never, or ask: asked by default); an
  * NPC as the engine judges, unless the GM wants to be asked. `would` is the engine's own judgement.
  */
-function decide(run, u, { reaction, trigger, by = null, ally = null, would }) {
+function decide(run, u, { reaction, trigger, by = null, ally = null, would, strike = null }) {
   if ( reaction?.passive ) return !!would; // (always on: no one chooses it)
   const live = run.live;
   const player = live.players.has(u.id);
   const id = reaction?.id ?? "";
   const pref = player ? (u.spec.reactionPrefs?.[id] ?? "ask") : (live.npcReactions === "ask" ? "ask" : "calculated");
   if ( pref === "never" ) return false;
-  if ( pref === "always" ) return true;
-  if ( pref !== "ask" ) return !!would;
+  const use = pref === "always" ? true : pref === "ask" ? null : !!would;
+  if ( use === false ) return false;
+  // (A strike the system rolls itself, where the live battle's helper can: asked of the live side to roll, its card in
+  // the chat, and that roll the strike's. Otherwise the engine's own dice.)
+  const rolls = !!strike && !!live.systemRolls;
+  if ( use && !rolls ) return true;
   // (Asked once per time it comes up: the same key when the turn is played again, so the answer finds its place.)
   const base = [u.id, id, trigger, by?.id ?? "", ally?.id ?? ""].join("|");
   const n = (live.asked.get(base) ?? 0) + 1;
   live.asked.set(base, n);
   const key = `${base}#${n}`;
-  if ( live.answers.has(key) ) return !!live.answers.get(key);
+  if ( live.answers.has(key) ) {
+    const a = live.answers.get(key);
+    // ({use, roll}: used, and how the system rolled it.)
+    if ( a && typeof a === "object" ) {
+      if ( a.use && a.roll ) live.forced = { unitId: u.id, targetId: by?.id ?? null, ...a.roll };
+      return !!a.use;
+    }
+    return !!a;
+  }
   throw new NeedsDecision({
-    key, unitId: u.id, player, reactionId: id, reaction: reaction?.label ?? "", trigger, byId: by?.id ?? null, allyId: ally?.id ?? null, would: !!would
+    key, unitId: u.id, player, reactionId: id, reaction: reaction?.label ?? "", trigger, byId: by?.id ?? null, allyId: ally?.id ?? null, would: !!would,
+    // (Already decided, only to be rolled; and the strike, for the system to roll.)
+    decided: use === true, strike: rolls ? { id: strike.id, name: strike.name } : null
   });
 }
 
