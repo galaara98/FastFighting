@@ -1075,9 +1075,13 @@ function executeOffense(run, u, action, t, attacksMade) {
   run.blood = true; // a blow has been struck: whatever happens now, it wasn't settled with words
   const targets = [t];
   if ( action.area ) {
-    const others = enemiesOf(run, u).filter(o => o !== t && isStanding(o) && !heldOff(run, u, o) && !cutOff(run, u, o) && inArea(run, u, t, o, action.area));
+    // (A live battle lays the system's own shape on the map and says who's in it: run.live.inArea, null where it can't.)
+    const caught = o => run.live?.inArea?.(u, t, o, action) ?? inArea(run, u, t, o, action.area);
+    const others = enemiesOf(run, u).filter(o => o !== t && isStanding(o) && !heldOff(run, u, o) && !cutOff(run, u, o) && caught(o));
     run.rng.shuffle(others);
     targets.push(...others.slice(0, Math.max(0, (action.area.targets ?? 2) - 1)));
+    // (Where it was aimed, for a live battle to lay it on the map.)
+    if ( run.live && run.log ) log(run, u, { type: "area", actionId: action.id, action: action.name, targetId: t.id, target: t.spec.name });
     if ( run.neutral ) targets.push(...caughtInArea(run, u, targets));
   }
   const ranged = !!action.range && !action.melee;

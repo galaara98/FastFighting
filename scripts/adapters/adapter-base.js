@@ -435,6 +435,16 @@ export class SystemAdapter {
   }
 
   /**
+   * API 19. An area laid on the map in a live battle, as the system lays its own: `data` is the shape FastFighting made
+   * (Foundry's region shape data: {type: "cone"|"line"|"circle", x, y, radius|length, angle, width, rotation}, in
+   * pixels), `area` the action's ({shape, feet}). Return it as the system draws that area (PF2e: a cone is a quarter
+   * turn wide), or null to leave it. Who's in it is tested against this shape, walls blocking.
+   */
+  areaShape(data, { area } = {}) {
+    return null;
+  }
+
+  /**
    * API 19. Does a critical hit from a foe's reaction disrupt what the player's character did (the card `message` that
    * opened it up)? PF2e: a manipulate action, against Reactive Strike. Default no.
    */

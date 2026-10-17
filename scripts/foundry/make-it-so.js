@@ -422,6 +422,7 @@ export async function revertRecord(r) {
   const of = async (uuid, type) => (typeof uuid === "string" && foundry.utils.parseUuid(uuid)?.type === type ? fromUuid(uuid) : null);
   const summoned = a => !!a && !a.hasPlayerOwner && !!a._stats?.compendiumSource && !!game.users.get(a._stats?.createdBy)?.isGM;
   for ( const uuid of r.createdCombatants ?? [] ) await step("removing a combatant", async () => (await of(uuid, "Combatant"))?.delete());
+  for ( const uuid of r.createdRegions ?? [] ) await step("removing an area", async () => (await of(uuid, "Region"))?.delete());
   for ( const uuid of r.createdTokens ?? [] ) await step("removing a token", async () => (await of(uuid, "Token"))?.delete());
   for ( const uuid of r.createdActors ?? [] ) {
     await step("removing an actor", async () => {

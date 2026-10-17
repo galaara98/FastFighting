@@ -294,6 +294,7 @@ function onTurnChange(combat, prior, current) {
   }
   queue(async () => {
     pauseFor(unitOf(combat.combatant));
+    await clearAreas();
     if ( battle.pc && battle.pc.combatantId !== combat.combatant?.id ) await closePlayerTurn();
     if ( battle.data.spotlight ) await spotlightMoved(combat, prior);
     else if ( combat.round > (battle.run.round ?? 0) ) await newRound(combat.round);
@@ -791,6 +792,8 @@ async function playTurn(u, combatant, key) {
   for ( let tries = 0; ; tries++ ) {
     try {
       battle.run.live.exitOf = exitOf; // (the way off the scene, for one leaving the fight)
+      battle.run.live.inArea = areaTest; // (who an area catches, as the system's own shape has it on the map)
+      areaShapes.clear();
       result = liveTurn(battle.run, u.id, { answers, salt: battle.data.salt ?? 0, nonce });
       break;
     } catch ( err ) {
@@ -811,6 +814,8 @@ async function playTurn(u, combatant, key) {
       await playMoves(result.events, docs, grid, doorsOpened, battle.scene);
     } else await playMoves(result.events, docs, null, doorsOpened, battle.scene, { instant: true });
     turn.doors = [...doorsOpened.values()];
+    // (Its areas, laid on the map as the system lays them: who they caught was tested against them.)
+    await layAreas(result.events, turn.records);
     // What it summoned, onto the scene and the tracker.
     await placeSummons(turn.records);
     // (Those inside another, swallowed or engulfed: where their holder went.)
@@ -895,6 +900,100 @@ async function answerFor(request) {
   if ( theirs ) return theirs;
   const roll = await systemRoll(request);
   return roll ? { use: true, roll } : true;
+}
+
+/* -------------------------------------------- */
+/*  Areas on the map                            */
+/* -------------------------------------------- */
+
+/** The shapes of the areas the turn being played aimed, by caster, target and action: {data, origin}. */
+const areaShapes = new Map();
+
+/**
+ * The shape an area u aims at t makes on the map, as the system draws it (the helper's areaShape; else Foundry's own
+ * template defaults): a cone or a line from u toward t, a burst on t, an emanation round u. Null off this scene.
+ */
+function areaShapeFor(u, t, action) {
+  const key = `${u.id}|${t.id}|${action.id}`;
+  if ( areaShapes.has(key) ) return areaShapes.get(key);
+  let out = null;
+  const du = docOf(u.id)?.object;
+  const dt = docOf(t.id)?.object;
+  if ( du && dt && canvas.scene?.id === battle.scene.id && foundry.data?.ConeShapeData ) {
+    const area = action.area ?? {};
+    const shape = area.shape ?? "burst";
+    const px = canvas.grid.size / (canvas.grid.distance || 5);
+    const radius = (Number(area.feet) > 0 ? Number(area.feet) : 10) * px;
+    const cu = du.center;
+    const ct = dt.center;
+    const rotation = Math.toDegrees(Math.atan2(ct.y - cu.y, ct.x - cu.x));
+    const defaults = CONFIG.MeasuredTemplate?.defaults ?? {};
+    let data;
+    if ( shape === "cone" ) data = { type: "cone", x: cu.x, y: cu.y, radius, angle: defaults.angle ?? 90, rotation };
+    else if ( shape === "line" ) data = { type: "line", x: cu.x, y: cu.y, length: radius, width: (defaults.width ?? 1) * canvas.grid.size, rotation };
+    else if ( shape === "emanation" ) data = { type: "circle", x: cu.x, y: cu.y, radius: radius + Math.max(du.w, du.h) / 2 };
+    else data = { type: "circle", x: ct.x, y: ct.y, radius };
+    try {
+      data = getAdapter().areaShape?.({ ...data }, { area }) ?? data;
+    } catch ( err ) {
+      console.warn(`${MODULE_ID} | the system's shape for an area`, err);
+    }
+    const Shape = { cone: foundry.data.ConeShapeData, line: foundry.data.LineShapeData, circle: foundry.data.CircleShapeData, rectangle: foundry.data.RectangleShapeData }[data.type];
+    try {
+      if ( Shape ) out = { data, shape: new Shape(data), origin: data.type === "circle" && shape !== "emanation" ? ct : cu, actionId: action.id, name: action.name };
+    } catch ( err ) {
+      console.warn(`${MODULE_ID} | an area's shape`, err);
+    }
+  }
+  areaShapes.set(key, out);
+  return out;
+}
+
+/** Does an area u aims at t catch o: any square o's token covers inside its shape, and no wall in between? Null: can't tell. */
+function areaTest(u, t, o, action) {
+  const area = areaShapeFor(u, t, action);
+  const doc = docOf(o.id);
+  if ( !area || !doc?.object ) return null;
+  const points = [doc.object.center, ...(doc.getOccupiedGridSpaceOffsets?.() ?? []).map(off => canvas.grid.getCenterPoint(off))];
+  const walls = CONFIG.Canvas.polygonBackends?.move;
+  return points.some(p => area.shape.testPoint(p) && !walls?.testCollision(area.origin, p, { type: "move", mode: "any" }));
+}
+
+/** The areas a turn aimed (its "area" events), laid on the map as Regions; their undo kept with the turn's records. */
+async function layAreas(events, records) {
+  const run = battle.run;
+  for ( const e of events.filter(x => x.type === "area") ) {
+    const u = run.byId.get(e.actorId);
+    const t = run.byId.get(e.targetId);
+    const action = u?.spec.actions?.find(a => a.id === e.actionId);
+    const area = u && t && action ? areaShapes.get(`${u.id}|${t.id}|${action.id}`) ?? areaShapeFor(u, t, action) : null;
+    if ( !area ) continue;
+    try {
+      const [region] = await battle.scene.createEmbeddedDocuments("Region", [{
+        name: area.name, color: "#f0a35b", shapes: [area.data], visibility: CONST.REGION_VISIBILITY?.ALWAYS ?? 2,
+        flags: { [MODULE_ID]: { area: battle.data.id } }
+      }]);
+      if ( !region ) continue;
+      records.push({ ...undoRecord(null, null, { statusesBefore: false }), createdRegions: [region.uuid] });
+      battle.data.areas = [...(battle.data.areas ?? []), region.uuid];
+    } catch ( err ) {
+      console.warn(`${MODULE_ID} | laying an area on the map`, err);
+    }
+  }
+}
+
+/** The areas the last turn laid, cleared off the map as the tracker moves on. */
+async function clearAreas() {
+  const areas = battle?.data.areas ?? [];
+  if ( !areas.length ) return;
+  battle.data.areas = [];
+  for ( const uuid of areas ) {
+    try {
+      await (await fromUuid(uuid))?.delete();
+    } catch ( err ) {
+      // (Gone already: a Rewind took it, or a GM did.)
+    }
+  }
 }
 
 /** A reaction a player rolls themselves, waiting: {key, unitId, name, card, resolve}, or null. */
