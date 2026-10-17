@@ -1128,7 +1128,7 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
       const extra = bonusDamageParts(run, u, action, target, { commit: true });
       const { roll, mod } = rollSave(run, target, action.save.type, action.save.dc, { stakes: saveStakes(target, meanDamageVs(run, action, target).normal, !!action.effects?.length), label: action.name, magical: isMagical(action), from: u, action });
       const mult = saveMultiplierFor(rules, roll.degree, action.save, target);
-      const data = !logging ? null : { type: "save", ...common, saveType: action.save.type, natural: roll.natural, mod: mod + (roll.die ?? 0), total: roll.total, dc: action.save.dc, degree: roll.degree, margin: roll.total - action.save.dc, note: roll.note ?? null, faces: roll.faces ?? null };
+      const data = !logging ? null : { type: "save", ...common, saveType: action.save.type, natural: roll.natural, mod: mod + (roll.die ?? 0), total: roll.total, dc: action.save.dc, degree: roll.degree, margin: roll.total - action.save.dc, note: roll.note ?? null, faces: roll.faces ?? null, ...(roll.said?.data?.luck ? { luck: roll.said.data.luck } : {}) };
       if ( mult > 0 ) {
         const hit = rollHit(run, u, action, target, (action.damage ?? []).concat(extra), mult, roll.degree === 0);
         if ( logging ) log(run, u, { ...data, damage: hit.total });
@@ -1224,7 +1224,7 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
         }
       }
     }
-    const data = !logging ? null : { type: "attack", ...common, natural: roll.natural, mod: bonus + deedRoll + lift + (roll.die ?? 0), total: roll.total, dc: ac, degree: roll.degree, margin: roll.total - ac, attackNumber: attacksMade + 1, boost: lift || null, faces: roll.faces ?? opts.faces, deed: r.deed ? deedRoll : null, challenge: roll.challenge ?? null, burned: roll.burned ?? null, note: roll.note ?? null };
+    const data = !logging ? null : { type: "attack", ...common, natural: roll.natural, mod: bonus + deedRoll + lift + (roll.die ?? 0), total: roll.total, dc: ac, degree: roll.degree, margin: roll.total - ac, attackNumber: attacksMade + 1, boost: lift || null, faces: roll.faces ?? opts.faces, deed: r.deed ? deedRoll : null, challenge: roll.challenge ?? null, burned: roll.burned ?? null, note: roll.note ?? null, ...(roll.said?.data?.luck ? { luck: roll.said.data.luck } : {}) };
     let struck = 0;
     if ( roll.degree >= 2 ) {
       const crit = roll.degree === 3;

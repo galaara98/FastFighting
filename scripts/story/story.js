@@ -375,6 +375,12 @@ function narrate(e, roll, rel, fill) {
         const line = roll("emphasis.precision", f).trim();
         if ( line ) text += ` ${capital(line)}`;
       }
+      // (A miss a system's luck check made, told with why: the target hidden, hard to make out, the attacker dazzled. A save's
+      // the other way round: the spell passing it by.)
+      if ( e.luck && !successful(tier) ) {
+        const why = roll(`luck.${e.luck}`, f) || roll("luck.other", f);
+        if ( why ) text += ` ${capital(why)}`;
+      }
       if ( e.targetCover && e.ranged && !successful(tier) && !rel.ducked.has(`${e.targetId}|${e.turn}`) ) {
         rel.ducked.add(`${e.targetId}|${e.turn}`);
         text += ` ${capital(roll("event.coverDuck", f))}`;
@@ -493,6 +499,8 @@ function narrate(e, roll, rel, fill) {
     case "leave": return roll("event.leave", f);
     // (Off the map, leaving the fight: as one who slips away. Stopped on its way: the GMs' to know, as the log has it.)
     case "offMap": return roll("event.leave", f);
+    // (A spell lost as it's cast: PF2e's stupefied.)
+    case "disrupted": return roll("event.spellFizzles", { ...f, weapon: e.action ?? "" });
     case "leaveStopped": return logLine(e);
     case "sway": {
       if ( e.lie ) return roll("event.lieAndRun", f);

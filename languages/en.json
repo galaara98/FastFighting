@@ -1067,6 +1067,10 @@
       "Themselves": "themselves",
       "Companions": "{names} and their companions",
       "Part": {
+        "spellFizzles": "Spell fizzles",
+        "luck": "Bad luck",
+        "spell": "Spell",
+        "other": "Anything else",
         "action": "Action",
         "talk": "Talk",
         "relationship": "Relationship",
@@ -1946,6 +1950,7 @@
       "Shield": "{actor} raises a shield",
       "Leave": "{actor} slips away",
       "OffMap": "{actor} is off the map",
+      "Fizzles": "{actor}'s {action} fizzles{why}",
       "OffMapUnseen": "{actor} finds no way off the map, and is gone all the same",
       "LeaveStopped": "{actor} stops on the way out to deal with {by} (d100 {roll}, kept going on {needed} or less)",
       "LeaveForgot": "{actor} gives up on leaving and turns on {by} (d100 {roll}, kept going on {needed} or less)",

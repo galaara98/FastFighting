@@ -351,6 +351,7 @@ function baseLine(e) {
     case "shield": return t("Shield", a);
     case "leave": return t("Leave", a);
     case "offMap": return t(e.blinked ? "OffMapUnseen" : "OffMap", a);
+    case "disrupted": return t("Fizzles", { actor: e.actor, action: e.action ?? "", why: e.text ? ` · ${e.text}` : "" });
     case "leaveStopped": return t(e.forgot ? "LeaveForgot" : "LeaveStopped", { actor: e.actor, by: e.by ?? "", roll: e.roll, needed: e.needed });
     // (A system's own report: recovery checks, enduring harm, its start-of-turn rules. The system words these itself.)
     default: return `${e.actor ? `${e.actor}: ` : ""}${e.text ?? ""}`;

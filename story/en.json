@@ -6096,5 +6096,34 @@
     "{actor} slams hard into what stops them.",
     "{actor} crashes to a halt with a bone-jarring thud.",
     "Driven back, {actor} hits something solid."
+  ],
+  "event.spellFizzles": [
+    "{actor}'s {weapon} fizzles out before it takes shape.",
+    "{actor} loses the thread of {weapon}, and it fizzles.",
+    "{actor} reaches for {weapon}, but the words slip away and it sputters out."
+  ],
+  "luck.hidden": [
+    "{actor} couldn't find {target} to strike.",
+    "{target} was nowhere {actor} could see."
+  ],
+  "luck.concealed": [
+    "{target} was hard to make out, and the blow went astray.",
+    "{actor} lost {target} in the murk."
+  ],
+  "luck.dazzled": [
+    "Dazzled, {actor} struck at shadows.",
+    "{actor}, dazzled, couldn't see straight."
+  ],
+  "luck.blinded": [
+    "Blinded, {actor} swung at nothing.",
+    "{actor} couldn't see {target} at all."
+  ],
+  "luck.spell": [
+    "The spell couldn't find {target}.",
+    "{actor}'s spell slid past {target}, who it couldn't make out."
+  ],
+  "luck.other": [
+    "Luck wasn't with {actor}.",
+    "It just wasn't {actor}'s moment."
   ]
 }

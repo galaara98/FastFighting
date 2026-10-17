@@ -264,3 +264,17 @@ describe("maneuvers and conditions from the master list", () => {
     expect(landed).toBeGreaterThan(0);
   });
 });
+
+describe("what luck did", () => {
+  test("a miss a system's luck check made is told with why; a spell lost as it's cast fizzles", () => {
+    const spec = fight();
+    const result = replay(spec, pf2eRules, 3);
+    const miss = result.log.find(e => e.type === "attack" && e.degree < 2) ?? result.log.find(e => e.type === "attack");
+    const log = result.log.map(e => (e === miss ? { ...e, degree: 1, margin: -2, damage: 0, luck: "concealed" } : e));
+    log.splice(log.indexOf(log.find(e => e.turn === miss.turn && e.type === "attack")) + 1, 0, { turn: miss.turn, round: miss.round, turnOf: miss.turnOf, type: "disrupted", actorId: miss.actorId, actor: miss.actor, action: "Fireball", text: "" });
+    const html = buildStory({ ...result, log }, spec, "roleplay", { tables, seed: 3 }).html;
+    const said = lines => lines.some(l => html.includes(l.replace("{actor}", miss.actor).replace("{target}", miss.target).replace("{weapon}", "Fireball").split("{")[0]));
+    expect(said(english["luck.concealed"])).toBe(true);
+    expect(said(english["event.spellFizzles"])).toBe(true);
+  });
+});

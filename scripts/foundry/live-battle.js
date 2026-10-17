@@ -35,6 +35,7 @@ import {
 } from "../engine/live.js";
 import { diffAll } from "../engine/changes.js";
 import { randomSeed } from "../engine/rng.js";
+import { holderOf } from "../engine/behavior/troubles.js";
 
 const loc = key => game.i18n.localize(key);
 const fmt = (key, data) => game.i18n.format(key, data);
@@ -290,6 +291,26 @@ async function sendOff(events, turn) {
     if ( c ) battle.data.offMap = [...new Set([...(battle.data.offMap ?? []), c.id])];
   }
   await battle.scene.moveTokens(moves, { animate: false });
+}
+
+/**
+ * Those inside another (swallowed, engulfed: engine/behavior/troubles.js holderOf) are where their holder is: their tokens
+ * put on its square, without walking the map (its middle, on the grid, for a big one). Where they stood is in the turn's
+ * moves, for Rewind.
+ */
+async function carryInside() {
+  const size = battle.scene.grid?.size ?? canvas.dimensions.size;
+  const moves = {};
+  for ( const u of battle.run.units ) {
+    const holder = holderOf(battle.run, u);
+    const doc = holder ? docOf(u.id) : null;
+    const at = holder ? docOf(holder.id) : null;
+    if ( !doc || !at ) continue;
+    const x = at._source.x + Math.floor(Math.max(0, at.width - doc.width) / 2) * size;
+    const y = at._source.y + Math.floor(Math.max(0, at.height - doc.height) / 2) * size;
+    if ( doc._source.x !== x || doc._source.y !== y ) moves[doc.id] = { destination: { x, y, action: "displace" } };
+  }
+  if ( Object.keys(moves).length ) await battle.scene.moveTokens(moves, { animate: false });
 }
 
 /** Those gone off the map leave the tracker (all but the one whose turn it is): kept with the last turn, for Rewind. */
@@ -615,6 +636,8 @@ async function playTurn(u, combatant, key) {
     turn.doors = [...doorsOpened.values()];
     // What it summoned, onto the scene and the tracker.
     await placeSummons(turn.records);
+    // (Those inside another, swallowed or engulfed: where their holder went.)
+    await carryInside();
     // What the turn changed, onto the sheets (each written as it stood when the turn began).
     await writeChanges(before, after, turn.records);
     // (Those it saw off the map: out of the way, and off the tracker as it moves on.)
