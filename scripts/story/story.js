@@ -573,6 +573,8 @@ function narrate(e, roll, rel, fill) {
         const own = roll(`event.${e.tell}`, fill);
         if ( own ) return own;
       }
+      // (A friend shielded: whom, and, where it meant to strike back but couldn't reach, that too.)
+      if ( e.trigger === "allyHit" && e.ally ) return roll(e.struck === false ? "event.reactAllyHitFar" : "event.reactAllyHit", { ...fill, ally: e.ally });
       // (One on the master list, told as what it is: a shield block, a dodge.)
       if ( e.maneuver && hasTable(roll, `maneuver.${e.maneuver}`) ) return roll(`maneuver.${e.maneuver}`, fill);
       return roll({

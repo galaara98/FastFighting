@@ -292,7 +292,7 @@ One entry for each thing a reaction does, whatever set it off. A reaction can ca
 | an attack hits it, before damage | `hit`, and `wouldTakeDamage` when an attack deals the damage | ac, halve, reduce |
 | a melee attack misses it | `missed` | strike |
 | a foe's blow hurt it | `damaged` | damage and save |
-| an attack hits a friend near it | `allyHit` | reduce, strike, redirect |
+| an attack hits a friend near it (and, with `byRange`, the foe that near too) | `allyHit` | reduce (with `applies`, the system's own), strike (`strikeBack`: in reach, `strikeStep`, `strikeRanged`), redirect |
 | a blow would drop it | `wouldDrop` | stayUp {hp, wounded} (`stayUp`) |
 | it drops or dies | `slain` | areaBurst {damage, save, range} (`areaBurst`), answered on its way down |
 | a foe casts a spell it can see | `foeCasts` (`spell`) | counter |

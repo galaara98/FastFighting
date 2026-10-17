@@ -26,7 +26,7 @@ import { expectedDamage, spendUse, hasUses, attacksIn, criticalParts, saveMultip
 import { chooseDeed, deedTier, chooseHitRiders, rescueMiss, rollCrit, rollFumble, rallied } from "./behavior/riders.js";
 import { cast } from "./behavior/casting.js";
 import { boost } from "./behavior/luck.js";
-import { respond, riposteStrike, bestStep } from "./behavior/responses.js";
+import { respond, riposteStrike, bestStep, strikeBack } from "./behavior/responses.js";
 import { decideSummon, callSummons, sustainSummons, summonState, dismiss } from "./behavior/summons.js";
 import { sinkHopeless } from "./behavior/hopeless.js";
 import { mayLeave, startLeaving, isLeaving, wayOff, goAlong, confronted, dealsWithIt, backOnItsWay } from "./behavior/leaving.js";
@@ -1309,8 +1309,12 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
         if ( g === target || g === u || g.side !== target.side || !g.spec.reactions?.some(x => answersTo(x, "allyHit")) ) continue;
         const r2 = respond(run, g, "allyHit", { by: u, ally: target, action, crit: roll.degree === 3, damage: expected, types });
         if ( r2 ) {
-          guard = { g, r: r2 };
-          answers.push(() => logReaction(run, g, u, r2, "allyHit"));
+          // (Told with what it did: whom it shielded, how much it took off, whether it could strike back.)
+          guard = { g, r: r2, took: 0, back: r2.strike ? strikeBack(run, g, u, r2) : null };
+          const told = guard;
+          answers.push(() => logReaction(run, g, u, r2, "allyHit", {
+            ally: target.spec.name, allyId: target.id, took: told.took, ...(r2.strike ? { struck: !!told.back } : {})
+          }));
           break;
         }
       }
@@ -1338,20 +1342,33 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
       if ( !action.finish && Number(table?.row?.multiply) > 1 ) amount *= Number(table.row.multiply);
       if ( answer?.halve ) amount = Math.floor(amount / 2);
       if ( answer?.reduce ) amount = Math.max(0, amount - samplePart(answer.reduce, run.rng));
-      if ( guard?.r.reduce ) amount = Math.max(0, amount - samplePart(guard.r.reduce, run.rng));
+      if ( guard?.r.reduce ) {
+        const before = amount;
+        amount = Math.max(0, amount - samplePart(guard.r.reduce, run.rng));
+        guard.took = before - amount;
+      }
       // Taken instead (PF2e Intercept Attack): the friend takes none of it; its protector takes the blow, against its
       // own resistances.
       const intercepted = guard?.r.redirect && amount > 0 ? rules.applyIwr(iwrOf(guard.g), hit.byType, guard.g) : null;
       if ( intercepted !== null ) amount = 0;
       const lessened = amount < hit.total ? hit.total - amount : 0;
       // (The system's own damage card, landing as it was rolled: the system applies it, its resistances, shields and
-      // all, and the target takes what it lost by it. Lessened by a reaction the system's application does itself
-      // (answer.applies: PF2e's Shield Block, 5e's Uncanny Dodge halving it), applied with it; by any other, the
-      // engine's sum.)
-      const asRolled = !lessened || (!!answer?.applies && !guard?.r.reduce);
+      // all, and the target takes what it lost by it. Lessened by reactions the system's application does itself
+      // (`applies`: the target's own, PF2e's Shield Block or 5e's Uncanny Dodge halving it; a friend's, PF2e's
+      // Champion's Resistance, by whom), applied with them; by any other, the engine's sum.)
+      const ownByItself = !(answer?.halve || answer?.reduce) || !!answer?.applies;
+      const friendByItself = !guard?.r.reduce || !!guard?.r.applies;
+      const asRolled = !lessened || (ownByItself && friendByItself);
       if ( forced?.card && asRolled && intercepted === null && !action.finish ) {
-        const applied = run.live?.roll?.(run, { kind: "apply", unitId: u.id, targetId: target.id, card: forced.card, amount, applies: answer?.applies ?? null });
-        if ( Number.isFinite(applied?.lost) ) amount = Math.max(0, applied.lost);
+        const applies = [answer?.applies ? { key: answer.applies } : null, guard?.r.reduce && guard.r.applies ? { key: guard.r.applies, by: guard.g.id } : null].filter(Boolean);
+        const was = amount;
+        const applied = run.live?.roll?.(run, { kind: "apply", unitId: u.id, targetId: target.id, card: forced.card, amount, applies: applies.length ? applies : null });
+        if ( Number.isFinite(applied?.lost) ) {
+          amount = Math.max(0, applied.lost);
+          // (What the friend's reaction took off, as the system's application came out: all the blow lost but this.)
+          if ( guard?.r.applies && !answer?.reduce && !answer?.halve ) guard.took = Math.max(0, hit.total - amount);
+          else if ( guard ) guard.took = Math.max(0, guard.took + was - amount);
+        }
       }
       if ( logging ) log(run, u, {
         ...data, damage: amount, crit, sneak: extra.length > 0, precision: [...base, ...more].some(isPrecision) || undefined, advantage, riders: riders.map(x => x.label), critRoll: table?.total ?? null, critRowText: table?.row?.text ?? null,
@@ -1366,21 +1383,18 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
       for ( const x of riders ) applyRider(run, u, target, x);
       if ( deed ) applyDeed(run, u, target, deed, deedRoll);
       answerHarm(run, target, u, action, dealt);
-      // (Retributive Strike: the champion's own blow at the attacker, if it's within reach.)
-      if ( guard?.r.strike && isUp(guard.g) && isUp(u) ) {
-        const strike = riposteStrike(guard.g);
-        if ( strike && movesNeeded(run, guard.g, u, strike) === 0 ) strikeTarget(run, guard.g, strike, u, 0, false, logging);
-      }
+      // (Retributive Strike: the champion's own blow at the attacker, as the reaction allows: strikeBack.)
+      if ( guard?.back && isUp(guard.g) && isUp(u) ) reactStrike(run, guard.g, u, guard.r, logging, guard.back);
     } else {
       if ( logging ) log(run, u, { ...data, damage: 0, advantage, savedBy: answer?.label ?? null });
       tellAnswers();
       // A melee miss opens the attacker up (5e Riposte).
       if ( action.melee && target.spec.reactions && isUp(target) && target !== u ) {
         const back = respond(run, target, "missed", { by: u, action });
-        const strike = back?.strike ? riposteStrike(target) : null;
+        const strike = back?.strike ? strikeBack(run, target, u, back) : null;
         if ( strike ) {
           logReaction(run, target, u, back, "missed");
-          strikeTarget(run, target, strike, u, 0, false, logging);
+          reactStrike(run, target, u, back, logging, strike);
         }
       }
       if ( deed && logging ) log(run, u, { type: "deed", deed: deed.label, maneuver: deed.maneuver ?? null, target: target.spec.name, targetId: target.id, roll: deedRoll, success: false });
@@ -1430,9 +1444,26 @@ function shieldWorth(run, u) {
 }
 
 /** A reaction taken, for the log and the story. */
-function logReaction(run, u, by, r, trigger) {
+function logReaction(run, u, by, r, trigger, extra = {}) {
   if ( !run.log ) return;
-  log(run, u, { type: "reaction", reaction: r.label, tell: r.tell ?? null, maneuver: maneuverOf(r), trigger, target: by.spec.name, targetId: by.id });
+  log(run, u, { type: "reaction", reaction: r.label, tell: r.tell ?? null, maneuver: maneuverOf(r), trigger, target: by.spec.name, targetId: by.id, ...extra });
+}
+
+/**
+ * u's reaction strike at foe, as the reaction allows (behavior/responses.js strikeBack: in reach, a Step first, or a
+ * shot): the Step played first where it needs one, no parting blows for it, then the strike. `back`: strikeBack's, where
+ * it was found already. Returns whether it struck.
+ */
+function reactStrike(run, u, foe, r, logging, back = strikeBack(run, u, foe, r)) {
+  if ( !back ) return false;
+  if ( back.step > 0 && u.pos ) {
+    const from = { x: u.pos.x, y: u.pos.y };
+    moveToward(run, u, foe, back.strike.reach ?? 5, back.step);
+    resettle(run, u);
+    if ( run.log ) log(run, u, { type: "step", reaction: true, feet: Math.round(Math.hypot(u.pos.x - from.x, u.pos.y - from.y)), from, to: { x: u.pos.x, y: u.pos.y } });
+  }
+  strikeTarget(run, u, back.strike, foe, 0, !back.strike.melee, logging);
+  return true;
 }
 
 /** Hurt by a foe: the one hurt may answer (5e Hellish Rebuke: fire at whoever did it, a save for half). */
@@ -2295,8 +2326,7 @@ export function answerMove(run, u, move, toward = null) {
     if ( !r ) continue;
     logReaction(run, o, u, r, trigger);
     if ( r.step ) stepAside(run, o, r.step);
-    const strike = r.strike && foe ? riposteStrike(o) : null;
-    if ( strike && movesNeeded(run, o, u, strike) === 0 ) strikeTarget(run, o, strike, u, 0, false, !!run.log);
+    if ( r.strike && foe ) reactStrike(run, o, u, r, !!run.log);
   }
 }
 

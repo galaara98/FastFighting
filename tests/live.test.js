@@ -362,7 +362,7 @@ describe("live battles: the engine a turn at a time", () => {
     const block = applies => ({ reactions: [{ id: "kyra.shield-block", label: "Shield Block", on: "hit", physical: true, reduce: part([], 4), applies }], reactionPrefs: { "kyra.shield-block": "always" } });
     // (The system's own: applied with it, and what she lost by it is what she takes.)
     const own = playThrough(besideKyra(["strike", "apply"], block("shieldBlock")), "orc", r => (r.roll === "strike" ? hitFor(10, "card") : { lost: 6 }));
-    expect(own.requests.find(r => r.roll === "apply")).toMatchObject({ applies: "shieldBlock", card: "card" });
+    expect(own.requests.find(r => r.roll === "apply")).toMatchObject({ applies: [{ key: "shieldBlock" }], card: "card" });
     expect(own.events.find(e => e.type === "attack" && e.actorId === "orc")).toMatchObject({ damage: 6, lessened: 4 });
     // (One it doesn't: not applied its way; the engine's 10 less 4.)
     const engine = playThrough(besideKyra(["strike", "apply"], block(undefined)), "orc", r => (r.roll === "strike" ? hitFor(10, "card") : { lost: 99 }));
@@ -372,7 +372,7 @@ describe("live battles: the engine a turn at a time", () => {
     // (Halved, by one the system halves itself (5e's Uncanny Dodge): applied its way, with it.)
     const halving = { reactions: [{ id: "kyra.uncanny-dodge", label: "Uncanny Dodge", on: "hit", halve: true, applies: "halve" }], reactionPrefs: { "kyra.uncanny-dodge": "always" } };
     const halved = playThrough(besideKyra(["strike", "apply"], halving), "orc", r => (r.roll === "strike" ? hitFor(10, "card") : { lost: 5 }));
-    expect(halved.requests.find(r => r.roll === "apply")).toMatchObject({ applies: "halve" });
+    expect(halved.requests.find(r => r.roll === "apply")).toMatchObject({ applies: [{ key: "halve" }] });
     expect(halved.events.find(e => e.type === "attack" && e.actorId === "orc")).toMatchObject({ damage: 5, lessened: 5 });
   });
 

@@ -130,7 +130,12 @@ function baseLine(e) {
       return t("Cast", { actor: e.actor, action: e.action, faces: e.faces ?? 20, natural: e.natural, mod: signed(e.mod ?? 0), total: e.total, how });
     }
     case "boost": return t("Boost", { actor: e.actor, spent: e.spent, label: e.label, forTarget: e.self ? "" : t("BoostFor", { target: e.target }), from: e.from, to: e.to, dc: e.dc, made: e.made ? t("MadeIt") : t("StillShort") });
-    case "reaction": return t("Reaction", { ...a, reaction: e.reaction, trigger: TRIGGER[e.trigger] ? t(TRIGGER[e.trigger]) : e.trigger ?? "" });
+    case "reaction": {
+      const said = { ...a, reaction: e.reaction, trigger: TRIGGER[e.trigger] ? t(TRIGGER[e.trigger]) : e.trigger ?? "" };
+      // (A friend shielded: how much it took off, and whether the foe was out of its reach.)
+      if ( e.ally ) return t(e.struck === false ? "ReactionAllyFar" : "ReactionAlly", { ...said, ally: e.ally, n: e.took ?? 0 });
+      return t("Reaction", said);
+    }
     case "summon": return t("Summon", { actor: e.actor, action: e.action, names: listJoin(e.names ?? []) });
     case "vanish": return t("Vanish", { actor: e.actor, reason: VANISH[e.reason] ? t(VANISH[e.reason]) : e.reason ?? "" });
     case "counter": return t("Counter", { ...a, reaction: e.reaction, action: e.action, roll: e.natural !== null && e.natural !== undefined ? t("CounterRoll", { natural: e.natural, total: e.total }) : "", how: e.countered ? t("Countered") : t("GetsThrough") });

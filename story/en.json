@@ -3204,6 +3204,15 @@
     "{target} hurt {actor}, and {weapon} follows.",
     "{actor} snarls and unleashes {weapon} on {target}."
   ],
+  "event.reactAllyHit": [
+    "{actor} shields {ally} from {target}'s blow with {weapon}.",
+    "{weapon}: {actor} takes the worst of {target}'s blow off {ally}.",
+    "{actor} won't let {ally} take it alone: {weapon}."
+  ],
+  "event.reactAllyHitFar": [
+    "{actor} shields {ally} with {weapon}, but {target} is out of reach.",
+    "{weapon} spares {ally} the worst of it, though {target} stays out of {actor}'s reach."
+  ],
   "event.reactAllyTargeted": [
     "{actor} steps in to cover their friend from {target}.",
     "{actor} moves to shield their friend from {target}.",

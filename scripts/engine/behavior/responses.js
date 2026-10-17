@@ -11,10 +11,13 @@
  *   on "missed"     a melee attack misses it:                   strike (5e Riposte: its best melee strike back)
  *   on "damaged"    a foe's blow hurt it:                       damage and save (5e Hellish Rebuke, at the foe)
  *   on "allyHit"    an attack hits a friend near it (range):     reduce (taken off the friend's damage) and strike
- *                                                                (its best melee strike at the attacker, if in reach:
- *                                                                PF2e Retributive Strike, Glimpse of Redemption ...);
+ *                                                                (a strike back at the attacker: strikeBack, PF2e
+ *                                                                Retributive Strike, Glimpse of Redemption ...);
  *                                                                redirect: it takes the blow instead, against its own
- *                                                                resistances (PF2e guardian's Intercept Attack)
+ *                                                                resistances (PF2e guardian's Intercept Attack);
+ *                                                                applies: the system's own application does the
+ *                                                                reduce (PF2e's Champion's Resistance), as for the
+ *                                                                target's own reactions
  *   on "spell"      a foe casts a spell it can see:             counter: {level, mod} (5e Counterspell: a spell of
  *   ("foeCasts")                                                 its level or lower simply fails; a higher one if
  *                                                                the check beats 10 + its level)
@@ -34,12 +37,16 @@
  *   free            it costs no reaction (a creature's nature: a death burst)
  *   range           how far it reaches, in feet (default: anywhere); melee / ranged: only those attacks; physical: only
  *                   bludgeoning, piercing and slashing; needsShield: only with its shield raised
+ *   byRange         a friend's reaction (allyHit, allyTargeted): how near the one who set it off must be too, in feet
+ *                   (PF2e's champion's reactions: both the friend and the foe inside its aura)
+ *   strikeRanged    its strike back may be a shot, at a foe out of reach but in range (PF2e Nimble Reprisal)
+ *   strikeStep      feet it may Step first to bring the foe into reach for its strike back (Nimble Reprisal's 5)
  * Each takes the creature's reaction for the round, and whatever it says it costs. A creature uses it when it's
  * worth what it costs (the same reckoning as riders.js), thinking creatures more wisely than feral ones.
  * Pure: no Foundry globals.
  */
 import { TACTICAL } from "../../constants.js";
-import { liveTier, edgeDistance, isUp, isStanding, areEnemies, heldOff, saveRoll, movesNeeded, refusesToHelp } from "../battle-state.js";
+import { liveTier, edgeDistance, isUp, isStanding, areEnemies, heldOff, saveRoll, movesNeeded, refusesToHelp, canMove } from "../battle-state.js";
 import { meanPart } from "../dice.js";
 import { meanDamageVs, threatOf } from "./evaluate.js";
 import { degreeDistribution } from "../probability.js";
@@ -111,6 +118,8 @@ export function respond(run, u, trigger, ctx) {
       if ( r.kin?.length && !(mover.spec.creatureTraits ?? []).some(k => r.kin.includes(k)) ) continue;
     } else if ( trigger === "allyHit" || trigger === "allyTargeted" ) {
       if ( !ctx.ally || !near(run, u, ctx.ally, r) || !perceives(run, u, ctx.ally) || refusesToHelp(run, u, ctx.ally) ) continue;
+      // (The one who set it off as well, where the reaction says so: both inside a champion's aura.)
+      if ( r.byRange && ctx.by && !near(run, u, ctx.by, { range: r.byRange }) ) continue;
     } else if ( !SELF.has(trigger) ) {
       if ( ctx.by && !near(run, u, ctx.by, r) ) continue;
       if ( ctx.by && trigger !== "hit" && trigger !== "attacked" && !perceives(run, u, ctx.by) ) continue;
@@ -150,14 +159,13 @@ function worthOf(run, u, r, trigger, ctx) {
       return w;
     }
     case "missed":
-      return r.strike ? meanStrike(run, u, ctx.by) : 0;
+      return r.strike ? strikeWorth(run, u, ctx.by, r) : 0;
     case "allyHit": {
       // What it takes off the friend's blow, and a strike back at the attacker if it's within reach.
       let w = r.reduce ? Math.min(expected, meanPart(r.reduce)) : 0;
       // Taking it instead: worth more the more the friend needs it, less when it would drop the one taking it.
       if ( r.redirect ) w += expected * 0.5 + (ctx.ally && expected >= ctx.ally.hp ? expected : 0) - (expected >= u.hp ? expected : 0);
-      const strike = r.strike && ctx.by ? riposteStrike(u) : null;
-      if ( strike && movesNeeded(run, u, ctx.by, strike) === 0 ) w += meanStrike(run, u, ctx.by);
+      if ( r.strike && ctx.by ) w += strikeWorth(run, u, ctx.by, r);
       return w;
     }
     case "damaged": {
@@ -168,8 +176,7 @@ function worthOf(run, u, r, trigger, ctx) {
     case "foeApproaches": {
       // A strike at the foe come into reach; a step to a better spot.
       let w = 0;
-      const strike = r.strike && ctx.by ? riposteStrike(u) : null;
-      if ( strike && movesNeeded(run, u, ctx.by, strike) === 0 ) w += meanStrike(run, u, ctx.by);
+      if ( r.strike && ctx.by ) w += strikeWorth(run, u, ctx.by, r);
       if ( r.step ) w += bestStep(run, u, r.step)?.worth ?? 0;
       return w;
     }
@@ -213,6 +220,40 @@ export function riposteStrike(u) {
     if ( !best || score > best.score ) best = { a, score };
   }
   return best?.a ?? null;
+}
+
+/**
+ * The strike u's reaction makes back at `foe`, as the reaction allows: {strike, step} or null. Its best everyday melee
+ * strike, the foe in reach; else, where it may Step first (r.strikeStep, feet: PF2e Nimble Reprisal's 5), the foe that
+ * much past its reach (step: the feet it steps); else, where it may shoot instead (r.strikeRanged: Nimble Reprisal),
+ * its best everyday ranged strike, the foe in range and in sight.
+ */
+export function strikeBack(run, u, foe, r) {
+  if ( !foe || !r ) return null;
+  const melee = riposteStrike(u);
+  if ( melee && movesNeeded(run, u, foe, melee) === 0 ) return { strike: melee, step: 0 };
+  const step = Number(r.strikeStep) || 0;
+  if ( melee && step > 0 && u.pos && foe.pos && canMove(run, u) ) {
+    const d = edgeDistance(u, foe);
+    if ( d !== null && d <= (melee.reach ?? 5) + step + 0.5 ) return { strike: melee, step };
+  }
+  if ( r.strikeRanged ) {
+    let best = null;
+    for ( const a of u.prep.offense ) {
+      if ( a.kind !== "strike" || a.melee || !a.range || a.sequence || a.resource || Number.isFinite(a.uses) ) continue;
+      if ( movesNeeded(run, u, foe, a) !== 0 ) continue;
+      const score = strikeScore(a);
+      if ( !best || score > best.score ) best = { a, score };
+    }
+    if ( best ) return { strike: best.a, step: 0 };
+  }
+  return null;
+}
+
+/** What u's strike back at `foe` is worth (strikeBack), as expected damage, or nothing where it has none. */
+function strikeWorth(run, u, foe, r) {
+  const back = strikeBack(run, u, foe, r);
+  return back ? meanDamageVs(run, back.strike, foe).normal * 0.6 : 0;
 }
 
 /**

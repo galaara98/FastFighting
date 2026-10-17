@@ -1019,11 +1019,17 @@ async function applyStrike({ targetId, card, applies, multiplier = 1, amount = n
   const message = card ? game.messages.get(card) : null;
   if ( !u || !doc || !message ) return null;
   const was = await standing(u);
-  // (With the reaction the system's application does itself, where one was used: {shieldBlock: true}; a save's share
-  // of an area's damage: its multiplier, half or double.)
+  // (With the reactions the system's application does itself, where they were used: the target's own, {shieldBlock:
+  // true}; a friend's, {championsResistance: {by: the friend's token}}. A save's share of an area's damage: its
+  // multiplier, half or double.)
   const times = Number.isFinite(Number(multiplier)) ? Math.max(0, Number(multiplier)) : 1;
+  const reactions = {};
+  for ( const a of [].concat(applies ?? []) ) {
+    const key = typeof a === "string" ? a : a?.key;
+    if ( typeof key === "string" && key ) reactions[key] = a?.by ? { by: docOf(a.by) ?? null } : true;
+  }
   // (And what the engine makes of it, after the target's resistances: for a system whose own application has none.)
-  const options = { multiplier: times, ...(Number.isFinite(amount) ? { amount } : {}), ...(typeof applies === "string" && applies ? { [applies]: true } : {}) };
+  const options = { multiplier: times, ...(Number.isFinite(amount) ? { amount } : {}), ...reactions };
   const records = (await getAdapter().applyDamageCard(message, doc, options)) ?? [];
   stage.records.push(...records);
   const now = await standing(u);
