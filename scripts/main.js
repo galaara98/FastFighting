@@ -21,7 +21,7 @@ import { planHolder, sceneEncounter } from "./foundry/persistence.js";
 import { hasRun } from "./foundry/run-memory.js";
 import { setDistanceUnit, setTermSource, localize } from "./i18n.js";
 import { loadKeywords } from "./foundry/keywords.js";
-import { registerLiveBattles, liveBattle, followPlayersSay } from "./foundry/live-battle.js";
+import { registerLiveBattles, liveBattle, followPlayersSay, systemAppliesText } from "./foundry/live-battle.js";
 import { registerSheetWatch } from "./foundry/sheet-watch.js";
 import { BattleVantage, registerBattleVantage } from "./apps/battle-vantage.js";
 
@@ -285,6 +285,19 @@ for ( const hook of ["createWall", "updateWall", "deleteWall", "createRegion", "
   "createRegionBehavior", "updateRegionBehavior", "deleteRegionBehavior"] ) {
   Hooks.on(hook, () => invalidateApproach());
 }
+
+// (Players' damage applied by the system, or a module, itself: FastFighting's setting greyed out, saying so.)
+Hooks.on("renderSettingsConfig", (app, html) => {
+  const root = html instanceof HTMLElement ? html : html?.[0];
+  const input = root?.querySelector(`[name="${MODULE_ID}.applyPlayerDamage"]`);
+  const says = input ? systemAppliesText() : null;
+  if ( !says ) return;
+  input.disabled = true;
+  const group = input.closest(".form-group");
+  group?.classList.add("is-disabled");
+  const hint = group?.querySelector(".hint");
+  if ( hint ) hint.textContent = says;
+});
 
 // A GM-only story: the GM can show it to everyone.
 Hooks.on("renderChatMessageHTML", (message, html) => {

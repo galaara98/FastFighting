@@ -90,6 +90,19 @@ export function liveRound(run, round) {
   beginRound(run, round);
 }
 
+/**
+ * A creature its sheet has at 0 hit points that the system left standing (a player's blow, applied mid-turn): down or
+ * dead by the battle's rules, as such a blow leaves it. True if it fell.
+ */
+export function liveDrop(run, id) {
+  const u = run.byId.get(id);
+  if ( !u || u.status !== STATUS.STANDING || u.hp > 0 ) return false;
+  u.hp = 0;
+  u.wasDowned = true;
+  run.prep.rules.onDropped(u, { crit: false, model: run.prep.options.downedModel, amount: 0, overflow: 0, rng: run.rng });
+  return u.status !== STATUS.STANDING;
+}
+
 /** The tracker's order, once the encounter begins (its initiative rolled): those it names first, as it has them. */
 export function liveOrder(run, ids) {
   const known = [...new Set(ids.map(id => run.byId.get(id)).filter(Boolean))];

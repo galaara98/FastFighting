@@ -77,7 +77,7 @@ Hooks.once("fastFighting.init", api => {
 ```
 
 - **Declare your system** in `module.json` (`relationships.systems`) so Foundry only offers the helper in worlds of that system. The core also ignores adapters registered for another system. Among adapters for one system, the highest `priority` wins.
-- **Versions.** The helper-facing API version is `major.bug`: `CORE_API = { major: 18, bug: 0 }` and `CORE_API_VERSION = "18.0"` in `core-api.js`; the `fastFighting.init` api object carries `api.version` ("18.0"), `api.major` and `api.bug`. The major goes up when what a helper can use changes (something added that a helper may rely on, or something changed); the bug number goes up for a fix that changes nothing a helper uses.
+- **Versions.** The helper-facing API version is `major.bug`: `CORE_API = { major: 19, bug: 0 }` and `CORE_API_VERSION = "19.0"` in `core-api.js`; the `fastFighting.init` api object carries `api.version` ("19.0"), `api.major` and `api.bug`. The major goes up when what a helper can use changes (something added that a helper may rely on, or something changed); the bug number goes up for a fix that changes nothing a helper uses.
 - **Compatibility is the helper's call.** The core never refuses a helper for its version and keeps no list of which helpers fit it; `KNOWN_HELPERS` in `scripts/helpers.js` exists only to recommend a helper for a system. Each helper lists the majors it knows it works with (`KNOWN_API` in its `main.js`). Below the oldest, it doesn't register and tells the GM the core is too old; on any other major it isn't known to work with, it registers and warns the GM it hasn't been tried with that core yet. The minimum in its `module.json` `relationships.requires` is Foundry's install-time check, also the helper's to set.
 - **Ask for a hook when nothing fits.** When a helper builds something new that the core can't handle well enough with what it already offers, ask for a new core hook rather than forcing a poor fit or working around the core. A new hook raises the API's major, which the helper then adds to `KNOWN_API`; that is how the hooks marked "API n" below arrived.
 - **Recognise things by slug, read them by what they do.** To find a particular feature, action or spell, look for its slug or identifier (PF2e `slug`, dnd5e `system.identifier`), never its name: slugs are the same in every book, every edition of the free rules and every language, while names change with translations, reprints and homebrew copies (the name is only a fallback). Better still, read what an item does (its activities, effects, rule elements, and as a last resort its words), so paid books and homebrew nobody has seen yet still work. The helpers work from the free rules (the SRD, the PF2e remaster, each system's open content) alone; anything more is read the same way.
@@ -150,6 +150,15 @@ The rules object is pure and is called thousands of times.
 - What a roll is for: `modifiers.check` hears `{unit, target, purpose, skill, action}` (purpose: talk, goad, theft, firstAid, sizeUp, notice, heal, aid or control; the skill a spec names); `modifiers.save`, and `adjustRoll` and `afterRoll` on a save, hear the `action` it's against and `from` whom.
 - `rules.disrupted(run, u, action)`: a spell (a magical action) that comes to nothing as it's cast, lost and told (`{natural, dc, said: {text}}`: PF2e's stupefied flat check).
 - `rules.afterHarm(run, u, amount, rng, {by, types, byType, action, crit, lingering})`: who did it, and with what. `rules.afterAttack(run, u, target, {action, degree, dealt, control})`: once an attack's damage, and everything it laid, is done (PF2e: a hidden attacker seen only now).
+
+#### Players' damage (API 19)
+
+A player's damage card in a live battle, at a creature FastFighting runs, is applied at once (the **Apply players' damage** setting, the planner's per-battle toggle, the Battle Vantage's for now; off by default) or waits in the Battle Vantage for a GM (Apply, Half, Double, Dismiss; one with a save to roll first, several targets or none always waits). Three optional adapter hooks, none by default:
+- `damageCard(message, {ids})`: `{amount, kind: "damage"|"healing", targets: [tokenId], save}` for a damage roll, else null.
+- `applyDamageCard(message, token, {multiplier})`: applies it through the system's own damage handling and returns undo records (`undoRecord`, the values as they were), kept with the player's turn for Rewind.
+- `appliesPlayerDamage()`: the name of the system's (or a module's) own setting that applies players' damage, while it's on, else null. While it is, FastFighting's toggles are greyed out and apply nothing.
+
+A creature the blow leaves at 0 hit points that the system left standing falls by the battle's rules at once (`liveDrop` on a copy of the fight, written through `commitChanges`), so the players see it; the turn's reading at its end still credits the blow.
 
 #### Shared Foundry pieces (API 18)
 
@@ -239,7 +248,7 @@ Helpers import from `scripts/core-api.js`, never the core's internal layout: `Sy
 ## Other API and hooks
 
 `game.modules.get("fast-fighting").api`, also passed to `fastFighting.init`:
-- `version` ("18.0"), `major` and `bug` (see **Versions**), `SystemAdapter`, `registerAdapter(systemId, AdapterClass, {priority, source})`, `getAdapter(systemId)`, `listAdapters()`;
+- `version` ("19.0"), `major` and `bug` (see **Versions**), `SystemAdapter`, `registerAdapter(systemId, AdapterClass, {priority, source})`, `getAdapter(systemId)`, `listAdapters()`;
 - `registerModifier({id, label, apply(spec, context)})` (changes the BattleSpec just before a simulation) and `registerTraitRule({id, test(actor, spec), apply(traits, spec)})` (adjusts derived personality for matching actors);
 - `engine` (the simulator: `runBatch`, `runBatchSync`, `replay` and the rest), `dice` and `constants`;
 - `adviseTranslation` and `keepEnglish` (see **Words** above);

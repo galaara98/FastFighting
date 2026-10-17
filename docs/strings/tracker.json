@@ -304,6 +304,16 @@
    "commit": null,
    "hash": "d5edbfe09ade"
   },
+  "core:code:scripts/foundry/live-battle.js:applyDamage#1": {
+   "repo": "core",
+   "file": "scripts/foundry/live-battle.js",
+   "key": "scripts/foundry/live-battle.js:applyDamage#1",
+   "area": "core/code",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "ac55b344bbb7"
+  },
   "core:code:scripts/foundry/live-battle.js:ask#1": {
    "repo": "core",
    "file": "scripts/foundry/live-battle.js",
@@ -373,6 +383,16 @@
    "date": null,
    "commit": null,
    "hash": "2f6eb2bb3f07"
+  },
+  "core:code:scripts/foundry/live-battle.js:playerDamage#1": {
+   "repo": "core",
+   "file": "scripts/foundry/live-battle.js",
+   "key": "scripts/foundry/live-battle.js:playerDamage#1",
+   "area": "core/code",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "70d84d962605"
   },
   "core:code:scripts/foundry/live-battle.js:playerMoved#1": {
    "repo": "core",
@@ -446,6 +466,16 @@
    "date": null,
    "commit": null,
    "hash": "4d9738c54726"
+  },
+  "core:code:scripts/foundry/live-battle.js:systemAppliesText#1": {
+   "repo": "core",
+   "file": "scripts/foundry/live-battle.js",
+   "key": "scripts/foundry/live-battle.js:systemAppliesText#1",
+   "area": "core/code",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "5a7b236f9af6"
   },
   "core:code:scripts/foundry/live-battle.js:writeChanges#1": {
    "repo": "core",
@@ -1504,6 +1534,26 @@
    "commit": null,
    "hash": "31e392d1c037"
   },
+  "core:FASTFIGHTING.Battle.ApplyDamage": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.ApplyDamage",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "3d392fa31fb9"
+  },
+  "core:FASTFIGHTING.Battle.ApplyDamageHint": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.ApplyDamageHint",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "9d45a093605c"
+  },
   "core:FASTFIGHTING.Battle.Attitude.against": {
    "repo": "core",
    "file": "languages/en.json",
@@ -1724,6 +1774,86 @@
    "date": null,
    "commit": null,
    "hash": "f9e97f3e5910"
+  },
+  "core:FASTFIGHTING.Battle.DamageApply": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.DamageApply",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "31e392d1c037"
+  },
+  "core:FASTFIGHTING.Battle.DamageDismiss": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.DamageDismiss",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "48845bff334a"
+  },
+  "core:FASTFIGHTING.Battle.DamageDouble": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.DamageDouble",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "529441523bec"
+  },
+  "core:FASTFIGHTING.Battle.DamageHalf": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.DamageHalf",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "8082c15cbfa7"
+  },
+  "core:FASTFIGHTING.Battle.DamageLine": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.DamageLine",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "0c03de8e85cb"
+  },
+  "core:FASTFIGHTING.Battle.DamageNoTarget": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.DamageNoTarget",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "8581bd739761"
+  },
+  "core:FASTFIGHTING.Battle.DamageSave": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.DamageSave",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "5ef7b604fe6a"
+  },
+  "core:FASTFIGHTING.Battle.DamageWaiting": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.DamageWaiting",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "e80be0eb7cda"
   },
   "core:FASTFIGHTING.Battle.Degree.0": {
    "repo": "core",
@@ -5630,6 +5760,16 @@
    "hash": "31fbef162594",
    "gone": "2026-10-17"
   },
+  "core:FASTFIGHTING.Live.DamageWaits": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Live.DamageWaits",
+   "area": "core/Live",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "d10b9a52f10b"
+  },
   "core:FASTFIGHTING.Live.Failed": {
    "repo": "core",
    "file": "languages/en.json",
@@ -5772,6 +5912,16 @@
    "date": null,
    "commit": null,
    "hash": "f0dbee11b24b"
+  },
+  "core:FASTFIGHTING.Live.SystemApplies": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Live.SystemApplies",
+   "area": "core/Live",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "eef7e25de663"
   },
   "core:FASTFIGHTING.Live.Told": {
    "repo": "core",
@@ -11289,6 +11439,26 @@
    "hash": "060c3bc80ac4",
    "gone": "2026-10-11"
   },
+  "core:FASTFIGHTING.Planner.ApplyDamage": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Planner.ApplyDamage",
+   "area": "core/Planner",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "3d392fa31fb9"
+  },
+  "core:FASTFIGHTING.Planner.ApplyDamageHint": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Planner.ApplyDamageHint",
+   "area": "core/Planner",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "028c763a64e8"
+  },
   "core:FASTFIGHTING.Planner.Approach": {
    "repo": "core",
    "file": "languages/en.json",
@@ -14224,6 +14394,26 @@
    "date": null,
    "commit": null,
    "hash": "1f1a4067addb"
+  },
+  "core:FASTFIGHTING.Settings.applyPlayerDamage.Hint": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Settings.applyPlayerDamage.Hint",
+   "area": "core/Settings",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "d9139995e728"
+  },
+  "core:FASTFIGHTING.Settings.applyPlayerDamage.Name": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Settings.applyPlayerDamage.Name",
+   "area": "core/Settings",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "3d392fa31fb9"
   },
   "core:FASTFIGHTING.Settings.avoidKilling.Hint": {
    "repo": "core",

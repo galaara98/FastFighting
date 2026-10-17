@@ -496,6 +496,12 @@
 /* (Rewind This Encounter: well away from the rest, so it isn't clicked by mistake.) */
 .ff-battle-buttons .ff-far-right { margin-left: auto; }
 .ff-encounter-buttons { display: flex; gap: 0.35rem; }
+/* (A toggle the system's own setting takes over: greyed out.) */
+label.is-disabled, .form-group.is-disabled { opacity: 0.5; }
+/* (Players' damage waiting on a GM, in the Battle Vantage.) */
+.ff-battle-damage ul { margin: 0; padding-left: 1.2rem; }
+.ff-battle-damage li { display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap; }
+.ff-battle-damage li .ff-btn { padding: 0 6px; }
 /* (The planner or the Battle Vantage about to show another scene's or encounter's: two quick orange blinks.) */
 .ff-blink { animation: ff-blink 0.25s ease-in-out 2; }
 @keyframes ff-blink { 50% { outline: 3px solid #f0a35b; box-shadow: 0 0 14px 4px #f0a35b; } }

@@ -29,7 +29,7 @@ import { storyBeats } from "../story/story.js";
 import { logLine } from "../story/log-lines.js";
 import { loadStoryTables } from "../story/tables.js";
 import {
-  beginLive, liveRound, liveOrder, liveTurn, pcTurnBegin, pcTurnEnd, syncFromSheets, setApproach, setScene, captureAll, snapshotRun, restoreRun, endLive, packLog, followCommand,
+  beginLive, liveRound, liveOrder, liveDrop, liveTurn, pcTurnBegin, pcTurnEnd, syncFromSheets, setApproach, setScene, captureAll, snapshotRun, restoreRun, endLive, packLog, followCommand,
   NeedsDecision, applyFact, gmMoment, leavingReach, openingFor, reactNow, nextSpotlight, liveAftermath,
   setCondition, setRelation, clearRelation, setAffliction, setGoal, setAttitude, setSide, setRole, playerRuns
 } from "../engine/live.js";
@@ -129,7 +129,7 @@ async function keepNow(b) {
   b.data.snapshot = snapshotRun(b.run, { log: false });
   // (A player's turn under way: who, since when, what the GM said and what reactions wrote. Its cards are found again by time.)
   const pc = b.pc;
-  b.data.pc = pc ? { combatantId: pc.combatantId, id: pc.id, round: pc.round, facts: pc.facts, records: pc.records, snapshot: pc.snapshot, from: pc.from } : null;
+  b.data.pc = pc ? { combatantId: pc.combatantId, id: pc.id, round: pc.round, facts: pc.facts, records: pc.records, snapshot: pc.snapshot, from: pc.from, damage: pc.damage ?? [] } : null;
   const doc = await store();
   // (The battle's own key replaced whole, the store's other keys left as they are. Its spec, the biggest part, only
   // when it's changed: kept beside it. Its turns and its log, each apart: only what's new.)
@@ -167,7 +167,7 @@ function forget(combatId) {
  * Encounter takes the start back too, as it does one FastFighting made. `combatId`: the plan's encounter (a scene can
  * hold several; else the one the tracker shows).
  */
-export async function startLiveBattle(spec, { style = setting("storyStyle"), odds = null, players = [], begin = true, began = false, combatId = null } = {}) {
+export async function startLiveBattle(spec, { style = setting("storyStyle"), odds = null, players = [], begin = true, began = false, combatId = null, applyDamage = setting("applyPlayerDamage") } = {}) {
   if ( !game.user.isGM ) return null;
   const scene = canvas.scene;
   // (The plan's own encounter, by its id; else the scene's as the planner has it: the tracker's, linked to this scene or
@@ -193,7 +193,7 @@ export async function startLiveBattle(spec, { style = setting("storyStyle"), odd
     combat, scene, spec: live, rules: adapter.rules, run, pc: null,
     data: {
       id: foundry.utils.randomID(), user: game.user.id, sceneId: scene.id, spec: packSpec(live), seed, style, odds, players, told: 0, turns: [],
-      ended: false, played: null, opening: [], rolled: [], rollCards: [], joined: [], startedCombat: false, spotlight, spots: 0, prepared: true,
+      ended: false, played: null, opening: [], rolled: [], rollCards: [], joined: [], startedCombat: false, spotlight, spots: 0, prepared: true, applyDamage: !!applyDamage,
       startedBefore: combat.started && !began
     }
   };
@@ -947,6 +947,121 @@ function onMessage(message) {
   pc.messages.push(message.id);
   // (A ranged attack or a manipulate action in a foe's reach, where the system's opportunity strikes answer it: PF2e.)
   if ( getAdapter().liveOpening?.(message, pc.id) ) queue(() => openingTaken(pc));
+  // (A damage card at a creature FastFighting runs: applied at once, or put before a GM.)
+  if ( getAdapter().damageCard ) queue(() => playerDamage(pc, message));
+}
+
+/**
+ * "Daggerheart's Automation applies players' damage itself ...": the system's or a module's own setting that does, while
+ * it's on, in the GM's words (for the toggles it greys out); else null.
+ */
+export function systemAppliesText(adapter = getAdapter()) {
+  let name = null;
+  try {
+    name = adapter?.appliesPlayerDamage?.() ?? null;
+  } catch ( err ) {
+    console.warn(`${MODULE_ID} | asking whether the system applies damage`, err);
+  }
+  return name ? fmt("FASTFIGHTING.Live.SystemApplies", { name }) : null;
+}
+
+/** Does the system (or a module) apply players' damage itself? Then FastFighting applies none. */
+const systemApplies = adapter => {
+  try {
+    return !!adapter.appliesPlayerDamage?.();
+  } catch ( err ) {
+    return false;
+  }
+};
+
+/**
+ * A player's damage card in their turn, at creatures FastFighting runs (not another player's character): applied at
+ * once through the system (the battle's Apply players' damage), or put before the GMs in the Battle Vantage (a save to
+ * roll first, several targets or none, or the toggle off). Nothing while the system, or a module, applies it itself.
+ */
+async function playerDamage(pc, message) {
+  if ( battle?.pc !== pc ) return;
+  const adapter = getAdapter();
+  if ( systemApplies(adapter) ) return;
+  const run = battle.run;
+  let card = null;
+  try {
+    card = adapter.damageCard(message, { ids: Object.fromEntries(run.units.map(u => [tokenIdOf(u), u.id])) }) ?? null;
+  } catch ( err ) {
+    console.error(`${MODULE_ID} | reading a damage card`, err);
+  }
+  if ( !card || !(card.amount > 0) ) return;
+  const targets = card.targets ?? [];
+  const ours = targets.map(t => run.units.find(u => tokenIdOf(u) === t)).filter(u => u && !playerRuns(run, u));
+  // (At another player's character alone: theirs to apply.)
+  if ( targets.length && !ours.length ) return;
+  const healing = card.kind === "healing";
+  if ( battle.data.applyDamage && !card.save && !healing && ours.length === 1 && targets.length === 1 ) {
+    await applyDamage(pc, message, ours[0], 1);
+    return;
+  }
+  const by = run.byId.get(pc.id)?.spec.name ?? "";
+  const lines = (ours.length ? ours : [null]).map(u => ({ key: foundry.utils.randomID(), messageId: message.id, targetId: u?.id ?? null, amount: card.amount, save: !!card.save, healing, by }));
+  pc.damage = [...(pc.damage ?? []), ...lines];
+  changed();
+  ui.notifications.info(fmt("FASTFIGHTING.Live.DamageWaits", { name: by }));
+}
+
+/** A damage card applied to a creature (times `multiplier`), through the system: kept with the turn, for Rewind. */
+async function applyDamage(pc, message, u, multiplier = 1) {
+  const doc = docOf(u.id);
+  if ( !doc || !message ) return false;
+  let records;
+  try {
+    records = (await getAdapter().applyDamageCard(message, doc, { multiplier })) ?? [];
+  } catch ( err ) {
+    console.error(`${MODULE_ID} | applying a damage card`, err);
+    ui.notifications.error(fmt("FASTFIGHTING.Live.Failed", { error: err.message }));
+    return false;
+  }
+  pc.records.push(...records);
+  await markFallen(pc, u);
+  await keep();
+  return true;
+}
+
+/**
+ * A creature a player's blow has left at 0 hit points that the system left standing: down or dead as the battle's
+ * rules have it, marked on its sheet at once, so the players see it. Worked out on a copy of the fight: the turn's own
+ * reading, at its end, still finds the blow.
+ */
+async function markFallen(pc, u) {
+  const s = (await readStates())[u.id];
+  if ( !s || !Number.isFinite(s.hp) || s.hp > 0 ) return;
+  const copy = restoreRun(battle.spec, battle.rules, snapshotRun(battle.run, { log: false }));
+  syncFromSheets(copy, { [u.id]: s });
+  const before = captureAll(copy);
+  if ( !liveDrop(copy, u.id) ) return;
+  await writeChanges(before, captureAll(copy), pc.records);
+}
+
+/**
+ * A GM's answer to players' damage waiting in the Battle Vantage: applied (times `multiplier`, to `targetId`, picked
+ * where the card had none) or dismissed. True if it was taken.
+ */
+export function answerDamage(key, { multiplier = 1, targetId = null, dismiss = false } = {}) {
+  return queue(async () => {
+    const pc = battle?.pc;
+    const line = pc?.damage?.find(d => d.key === key);
+    if ( !line ) return false;
+    pc.damage = pc.damage.filter(d => d !== line);
+    const u = battle.run.byId.get(targetId ?? line.targetId);
+    if ( !dismiss && u ) await applyDamage(pc, game.messages.get(line.messageId), u, multiplier);
+    changed();
+    return true;
+  });
+}
+
+/** The battle's Apply players' damage, from now on (the Battle Vantage's toggle). */
+export async function setApplyDamage(on) {
+  if ( !battle ) return;
+  battle.data.applyDamage = !!on;
+  await keep();
 }
 
 /** A player's character lowered its guard in a foe's reach: each foe that can strikes (asked of the GM, or as reckoned). */

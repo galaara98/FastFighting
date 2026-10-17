@@ -44,7 +44,21 @@
       <div class="ff-toggles">
         <label data-tooltip="{{localize "FASTFIGHTING.Battle.PlayThroughHint"}}"><input type="checkbox" data-action="playThrough" {{checked playThrough}}> {{localize "FASTFIGHTING.Battle.PlayThrough"}}</label>
         <label data-tooltip="{{localize "FASTFIGHTING.Battle.NpcAskHint"}}"><input type="checkbox" data-action="npcReactions" {{checked npcAsk}}> {{localize "FASTFIGHTING.Battle.NpcAsk"}}</label>
+        <label class="{{#if systemApplies}}is-disabled{{/if}}" data-tooltip="{{#if systemApplies}}{{systemApplies}}{{else}}{{localize "FASTFIGHTING.Battle.ApplyDamageHint"}}{{/if}}"><input type="checkbox" data-action="applyDamage" {{checked applyDamage}} {{#if systemApplies}}disabled{{/if}}> {{localize "FASTFIGHTING.Battle.ApplyDamage"}}</label>
       </div>
+      {{#if damage.length}}
+        <div class="ff-battle-damage">
+          <p class="hint">{{localize "FASTFIGHTING.Battle.DamageWaiting"}}</p>
+          <ul>{{#each damage}}<li data-key="{{key}}">
+            <span>{{text}}</span>{{#if save}} <span class="ff-chip">{{localize "FASTFIGHTING.Battle.DamageSave"}}</span>{{/if}}
+            {{#if needsTarget}}<select name="damageTarget">{{#each targets}}<option value="{{value}}">{{label}}</option>{{/each}}</select>{{/if}}
+            <button type="button" class="ff-btn" data-action="damage" data-key="{{key}}" data-multiplier="1">{{localize "FASTFIGHTING.Battle.DamageApply"}}</button>
+            <button type="button" class="ff-btn" data-action="damage" data-key="{{key}}" data-multiplier="0.5">{{localize "FASTFIGHTING.Battle.DamageHalf"}}</button>
+            <button type="button" class="ff-btn" data-action="damage" data-key="{{key}}" data-multiplier="2">{{localize "FASTFIGHTING.Battle.DamageDouble"}}</button>
+            <button type="button" class="ff-btn" data-action="damage" data-key="{{key}}" data-dismiss="true">{{localize "FASTFIGHTING.Battle.DamageDismiss"}}</button>
+          </li>{{/each}}</ul>
+        </div>
+      {{/if}}
       {{#if held.length}}
         <div class="ff-battle-held">
           <p class="hint">{{localize "FASTFIGHTING.Battle.Held"}}</p>

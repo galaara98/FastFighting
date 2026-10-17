@@ -214,6 +214,10 @@
         "Name": "Party's sway (%)",
         "Hint": "How much the party's votes sway the characters on the friendly side (default 3)."
       },
+      "applyPlayerDamage": {
+        "Name": "Apply players' damage",
+        "Hint": "In a live battle, a player's damage card against a creature FastFighting runs is applied at once. Off: the Battle Vantage asks a GM to apply each one. Changeable per battle."
+      },
       "playersRunPCs": {
         "Name": "Players run their characters",
         "Hint": "In Do it For Real Now, players take their own characters' turns; FastFighting plays everyone else. Off: FastFighting plays every turn. Changeable per battle."
@@ -554,7 +558,9 @@
       },
       "RoleHint": "L: Leader, B: Boss ({boss}× as compelling), 1/2: Lieutenants (lead once the commander is gone)",
       "PlayersRun": "Players run their characters",
-      "PlayersRunHint": "On: players take their own turns; FastFighting plays the rest. Off: FastFighting plays every turn."
+      "PlayersRunHint": "On: players take their own turns; FastFighting plays the rest. Off: FastFighting plays every turn.",
+      "ApplyDamage": "Apply players' damage",
+      "ApplyDamageHint": "A player's damage card against a creature FastFighting runs is applied at once. Off: the Battle Vantage asks a GM."
     },
     "Results": {
       "Tab": {
@@ -2170,6 +2176,8 @@
       "force": "force, arcane"
     },
     "Live": {
+      "SystemApplies": "{name} applies players' damage itself, so this does nothing while that's on.",
+      "DamageWaits": "{name}'s damage waits in the Battle Vantage for a GM to apply.",
       "Store": "FastFighting live battles",
       "NoCombat": "There is no combat on this scene to play the battle on.",
       "Failed": "The live battle hit a problem: {error}",
@@ -2227,6 +2235,16 @@
       "Automate": "FastFighting plays their turns",
       "AutomateHint": "FastFighting plays the rest of this character's turns. Clear it to hand them back to their player.",
       "SpotlightHint": "Give the spotlight to whoever FastFighting would pick next.",
+      "ApplyDamage": "Apply players' damage",
+      "ApplyDamageHint": "A player's damage card against a creature FastFighting runs is applied at once. Off: it waits here for a GM.",
+      "DamageWaiting": "Players' damage to apply",
+      "DamageLine": "{by} → {target}: {amount}",
+      "DamageSave": "after its save",
+      "DamageNoTarget": "no target",
+      "DamageApply": "Apply",
+      "DamageHalf": "Half",
+      "DamageDouble": "Double",
+      "DamageDismiss": "Dismiss",
       "PlayThrough": "Play to the end",
       "PlayThroughHint": "FastFighting's turns run back to back, without waiting for Next Turn.",
       "NpcAsk": "Ask me about NPC reactions",

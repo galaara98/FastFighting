@@ -400,4 +400,35 @@ export class SystemAdapter {
   readTurn(messages, context) {
     return [];
   }
+
+  /**
+   * API 19. A chat card's damage, if it is one (a player's damage roll in a live battle, for the core to apply or to
+   * ask a GM to): {amount, kind: "damage"|"healing", targets: [tokenId], save (the target rolls a save first, so a GM
+   * decides how much lands)}, or null. Optional: by default null, and the core goes by the sheets at the turn's end.
+   * @param {ChatMessage} message
+   * @param {object} context   {ids: {tokenId: unit id in the battle}}
+   */
+  damageCard(message, context) {
+    return null;
+  }
+
+  /**
+   * API 19. Apply a damage card to one token through the system's own damage handling (its resistances, weaknesses,
+   * temporary hit points and dying rules), times `multiplier` (0.5 half, 2 double). Returns undo records
+   * (sheet-tools undoRecord, the values as they were) for Rewind.
+   * @param {ChatMessage} message
+   * @param {TokenDocument} token
+   * @returns {Promise<object[]>}
+   */
+  async applyDamageCard(message, token, { multiplier = 1 } = {}) {
+    return [];
+  }
+
+  /**
+   * API 19. The system's (or a module's) own setting that already applies players' damage, while it's on: its name, as
+   * the GM sees it in the settings; else null. While it is, FastFighting's own is greyed out and applies nothing.
+   */
+  appliesPlayerDamage() {
+    return null;
+  }
 }

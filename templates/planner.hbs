@@ -55,7 +55,8 @@
         <label data-tooltip="{{localize "FASTFIGHTING.Planner.IgnoreLanguagesHint"}}"><input type="checkbox" name="options.ignoreLanguages" {{checked options.ignoreLanguages}}> {{localize "FASTFIGHTING.Planner.IgnoreLanguages"}}</label>
         <label data-tooltip="{{localize "FASTFIGHTING.Planner.BystandersHint"}}"><input type="checkbox" name="options.bystanders" {{checked options.bystanders}}> {{localize "FASTFIGHTING.Planner.Bystanders"}}</label>
         <label><input type="checkbox" name="options.includeHidden" {{checked options.includeHidden}}> {{localize "FASTFIGHTING.Planner.Hidden"}}</label>
-        {{#if live}}<label data-tooltip="{{localize "FASTFIGHTING.Planner.PlayersRunHint"}}"><input type="checkbox" name="options.playersRunPCs" {{checked options.playersRunPCs}}> {{localize "FASTFIGHTING.Planner.PlayersRun"}}</label>{{/if}}
+        {{#if live}}<label data-tooltip="{{localize "FASTFIGHTING.Planner.PlayersRunHint"}}"><input type="checkbox" name="options.playersRunPCs" {{checked options.playersRunPCs}}> {{localize "FASTFIGHTING.Planner.PlayersRun"}}</label>
+        <label class="{{#if systemApplies}}is-disabled{{/if}}" data-tooltip="{{#if systemApplies}}{{systemApplies}}{{else}}{{localize "FASTFIGHTING.Planner.ApplyDamageHint"}}{{/if}}"><input type="checkbox" name="options.applyPlayerDamage" {{checked options.applyPlayerDamage}} {{#if systemApplies}}disabled{{/if}}> {{localize "FASTFIGHTING.Planner.ApplyDamage"}}</label>{{/if}}
       </div>
     </div>
     {{!-- The game system's own settings for this encounter --}}

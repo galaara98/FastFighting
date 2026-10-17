@@ -64,7 +64,9 @@ const SETTINGS = {
   fledMode: { type: String, default: "hide", choices: choices(["hide", "leave"], "Fled") },
   playOnMap: { type: Boolean, default: true },
   // Do it For Real Now, live: the players run their own characters (FastFighting plays everyone else).
-  playersRunPCs: { type: Boolean, default: true }
+  playersRunPCs: { type: Boolean, default: true },
+  // Live: a player's damage card against a creature FastFighting runs, applied at once (off: a GM is asked).
+  applyPlayerDamage: { type: Boolean, default: false }
 };
 
 export function registerSettings(DefaultsConfig, GenericPathsConfig, StoryTablesConfig) {

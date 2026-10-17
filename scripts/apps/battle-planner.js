@@ -29,7 +29,7 @@ import {
 import { ensureAutoConfig } from "../foundry/auto-config.js";
 import { PlayerSurvey } from "./player-survey.js";
 import { rememberRun, recallRun } from "../foundry/run-memory.js";
-import { startLiveBattle, liveBattle } from "../foundry/live-battle.js";
+import { startLiveBattle, liveBattle, systemAppliesText } from "../foundry/live-battle.js";
 import { BattleVantage } from "./battle-vantage.js";
 import { blink, keepTyping } from "./blink.js";
 import { expectedRuns, ROUGH_RUNS } from "../engine/run-budget.js";
@@ -403,6 +403,8 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       // The game system's own settings for this encounter (its helper's: Ironsworn's track and its rank).
       systemSection: this.#systemSection(adapter, resolved, chains),
       adapterLabel: adapter?.label ?? loc("FASTFIGHTING.Planner.NoAdapter"),
+      // (The system, or a module, applies players' damage itself: FastFighting's own toggle greyed out, saying so.)
+      systemApplies: systemAppliesText(adapter),
       hasAdapter: !!adapter,
       // (Its helper can play a battle live, a turn at a time: the toggle for who runs the characters. One that can't
       // is too old to do it for real at all.)
@@ -1235,7 +1237,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
         : this.spec.combatants.filter(c => isPlayerControlled(c, canvas.scene.tokens.get(c.tokenId ?? c.id)?.actor)).map(c => c.id);
       // (On this plan's own encounter, by its id.)
       const combatId = this.holder?.documentName === "Combat" ? this.holder.id : null;
-      playing = startLiveBattle(this.spec, { style: this.storyStyle, odds, players, begin, began, combatId });
+      playing = startLiveBattle(this.spec, { style: this.storyStyle, odds, players, begin, began, combatId, applyDamage: this.setup.options.applyPlayerDamage === true });
     } catch ( err ) {
       return reportError(err);
     }

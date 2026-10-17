@@ -26,7 +26,7 @@ import { mountNetwork } from "./battle-network.js";
 import { blink, keepTyping } from "./blink.js";
 import { sceneEncounter, encounterNumber } from "../foundry/persistence.js";
 import {
-  liveBattle, continueBattle, rewind, rewindEncounter, beginEncounter, endEncounter, playCurrent, liveFact, dropHeldFact, setNpcReactions, setPlayThrough, finishReview,
+  liveBattle, continueBattle, rewind, rewindEncounter, beginEncounter, endEncounter, playCurrent, answerDamage, setApplyDamage, systemAppliesText, liveFact, dropHeldFact, setNpcReactions, setPlayThrough, finishReview,
   waitingOnGm, suggestedSpotlight, spotlightNext, settleBattle, setAutomated, liveCondition, liveMind, bringIntoFight, tokenIdOf
 } from "../foundry/live-battle.js";
 
@@ -109,6 +109,8 @@ export class BattleVantage extends HandlebarsApplicationMixin(ApplicationV2) {
       npcReactions: BattleVantage.#onNpcReactions,
       tellIt: BattleVantage.#onTellIt,
       playThrough: BattleVantage.#onPlayThrough,
+      applyDamage: BattleVantage.#onApplyDamage,
+      damage: BattleVantage.#onDamage,
       spotlight: BattleVantage.#onSpotlight,
       aftermath: BattleVantage.#onAftermath,
       automate: BattleVantage.#onAutomate,
@@ -577,6 +579,18 @@ export class BattleVantage extends HandlebarsApplicationMixin(ApplicationV2) {
   static async #onPlayThrough(event, target) {
     await setPlayThrough(target.checked);
   }
+
+  /** Apply players' damage, for this battle, from now on. */
+  static async #onApplyDamage(event, target) {
+    await setApplyDamage(target.checked);
+  }
+
+  /** A player's damage waiting on a GM: applied (whole, half or double; to the creature picked, where it had none) or dismissed. */
+  static async #onDamage(event, target) {
+    const line = target.closest("[data-key]");
+    const picked = line?.querySelector("select[name='damageTarget']")?.value || null;
+    await answerDamage(target.dataset.key, { multiplier: Number(target.dataset.multiplier) || 1, targetId: picked, dismiss: target.dataset.dismiss === "true" });
+  }
 }
 
 /**
@@ -621,6 +635,13 @@ export function battleContext(b, focusId = null) {
     // (Foundry's encounter: Begin Encounter until it has, glowing while it waits; then End Encounter.)
     canBegin: !started, canEnd: started,
     npcAsk: run.live.npcReactions === "ask", playThrough: !!b.data.auto,
+    // (Players' damage: applied at once, or waiting here; greyed out while the system applies it itself.)
+    applyDamage: !!b.data.applyDamage, systemApplies: systemAppliesText(),
+    damage: (b.pc?.damage ?? []).map(d => ({
+      key: d.key, save: d.save, needsTarget: !d.targetId,
+      text: fmt("FASTFIGHTING.Battle.DamageLine", { by: d.by, target: d.targetId ? name(d.targetId) : loc("FASTFIGHTING.Battle.DamageNoTarget"), amount: d.amount }),
+      targets: d.targetId ? [] : run.units.filter(u => !run.live.players.has(u.id)).map(u => ({ value: u.id, label: u.spec.name }))
+    })),
     held: (b.pc?.facts ?? []).map((f, i) => ({ i, text: factText(f, name) })),
     focus: view.panel
   };
