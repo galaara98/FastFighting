@@ -349,6 +349,11 @@ describe("live battles: the engine a turn at a time", () => {
     const first = engine.events.find(e => e.type === "attack" && e.actorId === "orc");
     expect(first).toMatchObject({ damage: 6, lessened: 4 });
     expect(engine.requests.filter(r => r.roll === "apply").length).toBe(engine.requests.filter(r => r.roll === "strike").length - 1);
+    // (Halved, by one the system halves itself (5e's Uncanny Dodge): applied its way, with it.)
+    const halving = { reactions: [{ id: "kyra.uncanny-dodge", label: "Uncanny Dodge", on: "hit", halve: true, applies: "halve" }], reactionPrefs: { "kyra.uncanny-dodge": "always" } };
+    const halved = playThrough(besideKyra(["strike", "apply"], halving), "orc", r => (r.roll === "strike" ? hitFor(10, "card") : { lost: 5 }));
+    expect(halved.requests.find(r => r.roll === "apply")).toMatchObject({ applies: "halve" });
+    expect(halved.events.find(e => e.type === "attack" && e.actorId === "orc")).toMatchObject({ damage: 5, lessened: 5 });
   });
 
   test("the system's rolls are only asked for in a turn FastFighting plays: a foe's reaction in a player's turn, a planned fight, roll their own", () => {

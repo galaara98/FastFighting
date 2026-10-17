@@ -1293,8 +1293,9 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
       const lessened = amount < hit.total ? hit.total - amount : 0;
       // (The system's own damage card, landing as it was rolled: the system applies it, its resistances, shields and
       // all, and the target takes what it lost by it. Lessened by a reaction the system's application does itself
-      // (answer.applies: PF2e's Shield Block), applied with it; by any other, the engine's sum.)
-      const asRolled = !lessened || (!!answer?.applies && !answer.halve && !guard?.r.reduce);
+      // (answer.applies: PF2e's Shield Block, 5e's Uncanny Dodge halving it), applied with it; by any other, the
+      // engine's sum.)
+      const asRolled = !lessened || (!!answer?.applies && !guard?.r.reduce);
       if ( forced?.card && asRolled && intercepted === null && !action.finish ) {
         const applied = run.live?.roll?.(run, { kind: "apply", unitId: u.id, targetId: target.id, card: forced.card, amount, applies: answer?.applies ?? null });
         if ( Number.isFinite(applied?.lost) ) amount = Math.max(0, applied.lost);
