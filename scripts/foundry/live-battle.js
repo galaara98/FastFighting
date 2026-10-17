@@ -29,7 +29,7 @@ import { storyBeats } from "../story/story.js";
 import { logLine } from "../story/log-lines.js";
 import { loadStoryTables } from "../story/tables.js";
 import {
-  beginLive, liveRound, liveTurn, pcTurnBegin, pcTurnEnd, syncFromSheets, setApproach, setScene, captureAll, snapshotRun, restoreRun, endLive, packLog, followCommand,
+  beginLive, liveRound, liveOrder, liveTurn, pcTurnBegin, pcTurnEnd, syncFromSheets, setApproach, setScene, captureAll, snapshotRun, restoreRun, endLive, packLog, followCommand,
   NeedsDecision, applyFact, gmMoment, leavingReach, openingFor, reactNow, nextSpotlight, liveAftermath,
   setCondition, setRelation, clearRelation, setAffliction, setGoal, setAttitude, setSide, setRole, playerRuns
 } from "../engine/live.js";
@@ -160,11 +160,13 @@ function forget(combatId) {
 /* -------------------------------------------- */
 
 /**
- * A live battle, from the planner's battle (its spec, built as for a simulation). The encounter's combat is started
- * (the NPCs' initiative rolled; the players' rolled for them where they haven't), and the tracker's order is the
- * fight's. `players`: ids of the characters the players run (none: FastFighting plays everyone).
+ * A live battle, from the planner's battle (its spec, built as for a simulation), on the scene's encounter. `players`:
+ * ids of the characters the players run (none: FastFighting plays everyone). It begins at once (beginEncounter), or,
+ * with `begin` false, waits for the encounter to begin: the Battle Vantage's Begin Encounter, or Foundry's own.
+ * `began`: the encounter has only now begun, for this battle (Foundry's own button, the planner ready): Rewind This
+ * Encounter takes the start back too, as it does one FastFighting made.
  */
-export async function startLiveBattle(spec, { style = setting("storyStyle"), odds = null, players = [] } = {}) {
+export async function startLiveBattle(spec, { style = setting("storyStyle"), odds = null, players = [], begin = true, began = false } = {}) {
   if ( !game.user.isGM ) return null;
   const scene = canvas.scene;
   // (The scene's encounter as the planner has it: the tracker's, linked to this scene or to none.)
@@ -179,37 +181,69 @@ export async function startLiveBattle(spec, { style = setting("storyStyle"), odd
   if ( missing.length ) {
     await combat.createEmbeddedDocuments("Combatant", missing.map(c => ({ tokenId: c.tokenId ?? c.id, sceneId: scene.id, actorId: scene.tokens.get(c.tokenId ?? c.id)?.actorId })));
   }
-  // (Rolled straight away: no system's roll dialog for each one. Rewind This Encounter takes them back. A spotlight
-  // system rolls none: whoever the GM spotlights acts.)
   const adapter = getAdapter();
   const spotlight = adapter.liveTurns === "spotlight";
-  const unrolled = spotlight ? [] : combat.combatants.filter(c => c.initiative === null).map(c => c.id);
-  const rolledFrom = Date.now();
-  if ( unrolled.length ) await rollFor(combat, unrolled);
-  const rollCards = unrolled.length ? initiativeCards(rolledFrom) : [];
-  const started = !combat.started;
-  if ( started ) await combat.startCombat();
-  if ( spotlight && combat.turn !== null ) await adapter.giveSpotlight(combat, null);
-  const order = combat.turns.map(c => c.tokenId);
   const seed = randomSeed();
-  const live = { ...spec, options: { ...spec.options, initiativeOrder: order } };
+  const live = { ...spec, options: { ...spec.options, initiativeOrder: combat.turns.map(c => c.tokenId) } };
   const run = beginLive(live, adapter.rules, { seed, players, owns: adapter.liveOwnership?.() ?? {}, npcReactions: "calculated" });
-  liveRound(run, combat.round || 1);
+  // (Prepared until the encounter begins: no turn played, nothing told.)
   battle = {
     combat, scene, spec: live, rules: adapter.rules, run, pc: null,
     data: {
       id: foundry.utils.randomID(), user: game.user.id, sceneId: scene.id, spec: packSpec(live), seed, style, odds, players, told: 0, turns: [],
-      ended: false, played: null, opening: [], rolled: unrolled, rollCards, joined: [], startedCombat: started, spotlight, spots: 0
+      ended: false, played: null, opening: [], rolled: [], rollCards: [], joined: [], startedCombat: false, spotlight, spots: 0, prepared: true,
+      startedBefore: combat.started && !began
     }
   };
   await combat.setFlag(MODULE_ID, "live", flagOf(true));
   Hooks.callAll("fastFighting.liveBattleStarted", battle);
-  await queue(async () => {
+  if ( begin ) await beginEncounter();
+  else await keep();
+  return battle;
+}
+
+/** The encounter beginning (beginEncounter), while it does. */
+let beginning = null;
+
+/**
+ * The encounter begins, a battle prepared on it: the Battle Vantage's Begin Encounter, Foundry's own (the tracker's,
+ * noticed: registerLiveBattles), or Do it For Real Now. Those yet to roll initiative roll it, straight away (no
+ * system's roll dialog for each one; Rewind This Encounter takes them back; a spotlight system rolls none: whoever the
+ * GM spotlights acts). The combat starts, if it hasn't, the tracker's order is the fight's, and its first turn begins:
+ * played, if FastFighting plays it.
+ */
+export function beginEncounter() {
+  if ( !battle?.data.prepared ) return null;
+  if ( beginning ) return beginning;
+  beginning = queue(async () => {
+    if ( !battle?.data.prepared ) return;
+    const combat = battle.combat;
+    const adapter = getAdapter();
+    const unrolled = battle.data.spotlight ? [] : combat.combatants.filter(c => c.initiative === null).map(c => c.id);
+    const rolledFrom = Date.now();
+    if ( unrolled.length ) await rollFor(combat, unrolled);
+    const rollCards = unrolled.length ? initiativeCards(rolledFrom) : [];
+    if ( !combat.started ) await combat.startCombat();
+    // (Begun with Foundry's own button before the rolls: the tracker on the first of the order they made.)
+    else if ( unrolled.length && combat.turn !== 0 ) await combat.update({ turn: 0 }, { turnEvents: false });
+    // (Begun for this battle, whoever pressed the button: Rewind This Encounter takes it back.)
+    const started = !battle.data.startedBefore;
+    if ( battle.data.spotlight && combat.turn !== null ) await adapter.giveSpotlight(combat, null);
+    liveOrder(battle.run, combat.turns.map(c => unitOf(c)?.id).filter(Boolean));
+    battle.spec = { ...battle.spec, options: { ...battle.spec.options, initiativeOrder: combat.turns.map(c => c.tokenId) } };
+    battle.data.spec = packSpec(battle.spec);
+    liveRound(battle.run, combat.round || 1);
+    Object.assign(battle.data, { prepared: false, rolled: unrolled, rollCards, startedCombat: started });
     battle.data.opening = await tellNew();
     await keep();
     await turnBegins(combat.combatant);
-  });
-  return battle;
+  }).finally(() => { beginning = null; });
+  return beginning;
+}
+
+/** End Encounter (the Battle Vantage's): Foundry's own, which asks first and deletes the combat (and the battle with it). */
+export function endEncounter() {
+  return battle?.combat.started ? battle.combat.endCombat() : null;
 }
 
 /* -------------------------------------------- */
@@ -232,7 +266,8 @@ function queue(work) {
  * plays, played). Moved back (Previous Turn, Previous Round): the battle follows it (followBack).
  */
 function onTurnChange(combat, prior, current) {
-  if ( battle?.combat !== combat || battle.data.ended || !playsHere() ) return;
+  // (Prepared, not yet begun: the encounter's start is beginEncounter's.)
+  if ( battle?.combat !== combat || battle.data.ended || battle.data.prepared || !playsHere() ) return;
   // (Moved by a player some other way than ending their own character's turn: put back, and the GM told.)
   if ( !battle.data.spotlight && !movedRightly(combat, prior, current) ) {
     queue(async () => {
@@ -1633,6 +1668,10 @@ export function registerLiveBattles() {
   });
   // (Another GM rewound it, began another, or picked it up while this one was away: this browser lets go of the one it
   // held, and takes up one that's its own now.)
+  // (Foundry's own Begin Encounter, a battle prepared on it: the battle begins with it.)
+  Hooks.on("updateCombat", combat => {
+    if ( battle?.combat === combat && battle.data.prepared && combat.started && playsHere() ) beginEncounter();
+  });
   Hooks.on("updateCombat", (combat, changes) => {
     if ( !foundry.utils.hasProperty(changes, `flags.${MODULE_ID}`) ) return;
     if ( battle?.combat === combat && !stillHere() ) {
@@ -1642,7 +1681,10 @@ export function registerLiveBattles() {
     if ( !battle ) pickUp();
   });
   Hooks.on("deleteCombat", combat => {
-    if ( battle?.combat === combat ) battle = null;
+    if ( battle?.combat === combat ) {
+      battle = null;
+      changed();
+    }
     if ( game.user.isActiveGM ) forget(combat.id);
   });
   Hooks.on("renderChatMessageHTML", (message, html) => {

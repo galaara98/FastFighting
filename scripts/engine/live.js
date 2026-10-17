@@ -90,6 +90,12 @@ export function liveRound(run, round) {
   beginRound(run, round);
 }
 
+/** The tracker's order, once the encounter begins (its initiative rolled): those it names first, as it has them. */
+export function liveOrder(run, ids) {
+  const known = [...new Set(ids.map(id => run.byId.get(id)).filter(Boolean))];
+  run.order = known.concat(run.order.filter(u => !known.includes(u)));
+}
+
 /**
  * The dice for the next turn: its own, from the fight's seed and how many turns came before (the same on replay), and
  * `nonce`, drawn fresh as the turn begins (a live battle's: what's kept of the battle, which any player's client is sent,

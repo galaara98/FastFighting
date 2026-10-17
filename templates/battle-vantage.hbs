@@ -25,7 +25,7 @@
     {{/if}}
     <header class="ff-battle-turn">
       <div class="ff-battle-now">
-        <span class="ff-chip">{{localize "FASTFIGHTING.Battle.Round" n=round}}</span>
+        {{#if started}}<span class="ff-chip">{{localize "FASTFIGHTING.Battle.Round" n=round}}</span>{{/if}}
         <strong>{{turn}}</strong>
         <span class="ff-battle-state {{state}}">{{stateText}}</span>
       </div>
@@ -35,7 +35,11 @@
         {{#if spotlight}}<button type="button" class="ff-btn" data-action="spotlight" data-tooltip="{{localize "FASTFIGHTING.Battle.SpotlightHint"}}"><i class="fa-solid fa-lightbulb"></i> {{spotlight}}</button>{{/if}}
         {{#if canSettle}}<button type="button" class="ff-btn" data-action="aftermath" data-tooltip="{{localize "FASTFIGHTING.Live.AftermathHint"}}"><i class="fa-solid fa-hand-holding-medical"></i> {{localize "FASTFIGHTING.Live.Aftermath"}}</button>{{/if}}
         {{#if canPlay}}<button type="button" class="ff-btn" data-action="play"><i class="fa-solid fa-play"></i> {{localize "FASTFIGHTING.Live.Play"}}</button>{{/if}}
-        <button type="button" class="ff-btn ff-far-right" data-action="rewindAll"><i class="fa-solid fa-backward"></i> {{localize "FASTFIGHTING.MakeItSo.Undo"}}</button>
+        <span class="ff-far-right ff-encounter-buttons">
+          {{#if canBegin}}<button type="button" class="ff-btn ff-glow" data-action="beginEncounter"><i class="fa-solid fa-swords"></i> {{localize "COMBAT.Begin"}}</button>{{/if}}
+          {{#if canEnd}}<button type="button" class="ff-btn" data-action="endEncounter"><i class="fa-solid fa-xmark"></i> {{localize "COMBAT.End"}}</button>{{/if}}
+          <button type="button" class="ff-btn" data-action="rewindAll"><i class="fa-solid fa-backward"></i> {{localize "FASTFIGHTING.MakeItSo.Undo"}}</button>
+        </span>
       </div>
       <div class="ff-toggles">
         <label data-tooltip="{{localize "FASTFIGHTING.Battle.PlayThroughHint"}}"><input type="checkbox" data-action="playThrough" {{checked playThrough}}> {{localize "FASTFIGHTING.Battle.PlayThrough"}}</label>

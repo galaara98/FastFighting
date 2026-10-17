@@ -49,6 +49,11 @@ export function rememberRun(holder, spec, results, storage = globalThis.localSto
   }
 }
 
+/** Has the planner run this plan at least once (its last run kept, whatever has changed since)? */
+export function hasRun(holder, storage = globalThis.localStorage) {
+  return !!holder && read(storage).some(e => e.holder === holder && e.results);
+}
+
 /** A plan's last run, if it was for this very battle: {results, at}; else null. */
 export function recallRun(holder, spec, storage = globalThis.localStorage) {
   const entry = read(storage).find(e => e.holder === holder);

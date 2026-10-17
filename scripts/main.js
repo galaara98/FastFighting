@@ -17,7 +17,8 @@ import { helperStatus, helperMessage, helperNoticeHtml } from "./helpers.js";
 import { invalidateApproach } from "./foundry/battle.js";
 import { undoConcession, revealStory, ownCard, cardUndoState, undoFromCard, refreshUndoCards, UNDO_REACH } from "./foundry/make-it-so.js";
 import { sceneUnit, registerGroundField } from "./foundry/terrain.js";
-import { planHolder } from "./foundry/persistence.js";
+import { planHolder, sceneEncounter } from "./foundry/persistence.js";
+import { hasRun } from "./foundry/run-memory.js";
 import { setDistanceUnit, setTermSource, localize } from "./i18n.js";
 import { loadKeywords } from "./foundry/keywords.js";
 import { registerLiveBattles, liveBattle, followPlayersSay } from "./foundry/live-battle.js";
@@ -105,20 +106,30 @@ Hooks.on("renderCombatTracker", (app, element) => {
     event.preventDefault();
     openIfReady();
   });
-  // (One row: the planner, the Battle Vantage while a live battle is on this combat, and the players' survey.)
+  // (One row: the planner, the Battle Vantage, and the players' survey. The Vantage while a live battle is on this
+  // combat, or once the planner has run this encounter at least once: opened then, the battle is prepared from that
+  // run, and waits for the encounter to begin. No encounter, or one never planned: no Vantage.)
   const row = document.createElement("div");
   row.className = "ff-tracker-row";
   row.append(button);
   header.querySelector(".ff-battle-open")?.remove();
-  if ( liveBattle()?.combat === app.viewed ) {
+  const planner = foundry.applications.instances.get("fast-fighting-planner");
+  const live = !!app.viewed && liveBattle()?.combat === app.viewed;
+  const planned = !!app.viewed && app.viewed === sceneEncounter(canvas.scene) && !liveBattle() && !!getAdapter()?.supportsLive
+    && (planner?.readyForVantage?.() || hasRun(app.viewed.uuid));
+  if ( live || planned ) {
     const open = document.createElement("button");
     open.type = "button";
     open.className = "ff-tracker-open ff-battle-open";
     open.dataset.tooltip = game.i18n.localize("FASTFIGHTING.Battle.Title");
     open.innerHTML = `<i class="fa-solid fa-chess-knight"></i><span>${game.i18n.localize("FASTFIGHTING.Tracker.Vantage")}</span>`;
-    open.addEventListener("click", event => {
+    open.addEventListener("click", async event => {
       event.preventDefault();
-      BattleVantage.open();
+      if ( liveBattle() ) return BattleVantage.open();
+      // (From the plan's last run, as the planner recalls it: opened for it, if it isn't open.)
+      const plan = foundry.applications.instances.get("fast-fighting-planner") ?? await BattlePlanner.open();
+      if ( plan?.readyForVantage?.() ) return plan.openVantage();
+      ui.notifications.info(game.i18n.localize("FASTFIGHTING.Tracker.RunFirst"));
     });
     row.append(open);
   }

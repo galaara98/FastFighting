@@ -1018,7 +1018,8 @@
       "Survey": "Survey",
       "SurveyHint": "Survey every player with a character on this scene (Prepare Players), encounter or not.",
       "Planner": "Planner",
-      "Vantage": "Vantage"
+      "Vantage": "Vantage",
+      "RunFirst": "This battle changed since the planner last ran. Run it again, then open the Vantage."
     },
     "Story": {
       "Title": "The battle at {scene}",
@@ -2209,6 +2210,7 @@
       "PlayerTurn": "{name}'s turn (the player's)",
       "State": {
         "ready": "Ready to play",
+        "unstarted": "The encounter hasn't begun",
         "waiting": "{name}'s turn finished, update Vantage as needed and then press Next Turn",
         "player": "The player is acting",
         "ended": "The battle is over",

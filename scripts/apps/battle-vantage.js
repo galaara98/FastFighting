@@ -24,7 +24,7 @@ import { expectText } from "../story/log-lines.js";
 import { feetOnScene } from "../foundry/terrain.js";
 import { mountNetwork } from "./battle-network.js";
 import {
-  liveBattle, continueBattle, rewind, rewindEncounter, playCurrent, liveFact, dropHeldFact, setNpcReactions, setPlayThrough, finishReview,
+  liveBattle, continueBattle, rewind, rewindEncounter, beginEncounter, endEncounter, playCurrent, liveFact, dropHeldFact, setNpcReactions, setPlayThrough, finishReview,
   waitingOnGm, suggestedSpotlight, spotlightNext, settleBattle, setAutomated, liveCondition, liveMind, bringIntoFight, tokenIdOf
 } from "../foundry/live-battle.js";
 
@@ -101,6 +101,8 @@ export class BattleVantage extends HandlebarsApplicationMixin(ApplicationV2) {
       rewind: BattleVantage.#onRewind,
       play: BattleVantage.#onPlay,
       rewindAll: BattleVantage.#onRewindAll,
+      beginEncounter: BattleVantage.#onBeginEncounter,
+      endEncounter: BattleVantage.#onEndEncounter,
       dropHeld: BattleVantage.#onDropHeld,
       npcReactions: BattleVantage.#onNpcReactions,
       tellIt: BattleVantage.#onTellIt,
@@ -444,6 +446,19 @@ export class BattleVantage extends HandlebarsApplicationMixin(ApplicationV2) {
     await playCurrent();
   }
 
+  /** Begin Encounter: the battle prepared on it begins (or, one that has begun already, Foundry's own start). */
+  static async #onBeginEncounter() {
+    const b = liveBattle();
+    if ( !b || b.combat.started ) return;
+    if ( b.data.prepared ) await beginEncounter();
+    else await b.combat.startCombat();
+  }
+
+  /** End Encounter: Foundry's own (it asks first). */
+  static async #onEndEncounter() {
+    await endEncounter();
+  }
+
   static async #onRewindAll() {
     const ok = await foundry.applications.api.DialogV2.confirm({
       window: { title: loc("FASTFIGHTING.MakeItSo.UndoTitle") }, content: `<p>${foundry.utils.escapeHTML(loc("FASTFIGHTING.Live.RewindAllConfirm"))}</p>`
@@ -506,7 +521,8 @@ export function battleContext(b, focusId = null) {
   const name = id => run.byId.get(id)?.spec.name ?? "";
   const played = !!current && waitingOnGm();
   const player = !!current && run.live.players.has(current.id);
-  const state = b.data.ended ? "ended" : b.pc ? "player" : played ? "waiting" : b.data.spotlight && !current ? "spotlight" : "ready";
+  const started = !!b.combat.started;
+  const state = !started ? "unstarted" : b.data.ended ? "ended" : b.pc ? "player" : played ? "waiting" : b.data.spotlight && !current ? "spotlight" : "ready";
   // (A spotlight system: whom FastFighting would give it to next.)
   const next = state === "waiting" || state === "spotlight" ? suggestedSpotlight() : null;
   const view = networkView(b, current, focusId);
@@ -526,12 +542,14 @@ export function battleContext(b, focusId = null) {
   } : null;
   const context = {
     review,
-    round: b.data.spotlight ? run.round : b.combat.round,
+    round: b.data.spotlight ? run.round : b.combat.round, started,
     spotlight: next ? fmt("FASTFIGHTING.Battle.Spotlight", { name: next.spec.name }) : "",
     turn: current ? fmt(player ? "FASTFIGHTING.Battle.PlayerTurn" : "FASTFIGHTING.Battle.Turn", { name: current.spec.name }) : "",
     state, stateText: fmt(`FASTFIGHTING.Battle.State.${state}`, { name: current?.spec.name ?? "" }),
     canContinue: state === "waiting", canPlay: state === "ready" && !player, canRewind: !!b.data.turns.at(-1)?.snapshot,
     canSettle: state === "ended" && !b.data.settled,
+    // (Foundry's encounter: Begin Encounter until it has, glowing while it waits; then End Encounter.)
+    canBegin: !started, canEnd: started,
     npcAsk: run.live.npcReactions === "ask", playThrough: !!b.data.auto,
     held: (b.pc?.facts ?? []).map((f, i) => ({ i, text: factText(f, name) })),
     focus: view.panel
@@ -819,6 +837,10 @@ function factText(f, name) {
  */
 export function registerBattleVantage() {
   Hooks.on("fastFighting.liveBattle", () => BattleVantage.refresh());
+  // (Its encounter ended: no battle left to show, so it closes.)
+  Hooks.on("deleteCombat", () => setTimeout(() => {
+    if ( !liveBattle() ) foundry.applications.instances.get("fast-fighting-battle")?.close();
+  }, 0));
   let soon = null;
   const later = () => {
     clearTimeout(soon);

@@ -2973,6 +2973,16 @@
    "commit": null,
    "hash": "b82b93b5b256"
   },
+  "core:FASTFIGHTING.Battle.State.unstarted": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.State.unstarted",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "cccd1278405c"
+  },
   "core:FASTFIGHTING.Battle.State.waiting": {
    "repo": "core",
    "file": "languages/en.json",
@@ -22685,6 +22695,16 @@
    "date": null,
    "commit": null,
    "hash": "38581d183b73"
+  },
+  "core:FASTFIGHTING.Tracker.RunFirst": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Tracker.RunFirst",
+   "area": "core/Tracker",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "a942179c79df"
   },
   "core:FASTFIGHTING.Tracker.Survey": {
    "repo": "core",

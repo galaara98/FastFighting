@@ -9,7 +9,7 @@ import { getAdapter } from "../api.js";
 import { setting } from "../settings.js";
 import { listJoin, listItems, localize, term, hasStat, brief, roundsText } from "../i18n.js";
 import { setAdhd } from "./token-tactics.js";
-import { getSetup, saveSetup, clearSetup, tokenSetup, planHolder, rememberPartyRole } from "../foundry/persistence.js";
+import { getSetup, saveSetup, clearSetup, tokenSetup, planHolder, rememberPartyRole, sceneEncounter } from "../foundry/persistence.js";
 import {
   questionsContext, setTactic, togglePlaystyle, syncTacticsDom, isPlayerControlled, playersOnScene, tokensForUser, surveyStatus,
   requestSurveys, requestCharacterSurvey, requestGmSurvey, SURVEY_STATUS, playstyleSignature, tacticsFor, reactionsSignature, preparePlayers
@@ -29,7 +29,8 @@ import {
 import { ensureAutoConfig } from "../foundry/auto-config.js";
 import { PlayerSurvey } from "./player-survey.js";
 import { rememberRun, recallRun } from "../foundry/run-memory.js";
-import { startLiveBattle } from "../foundry/live-battle.js";
+import { startLiveBattle, liveBattle } from "../foundry/live-battle.js";
+import { BattleVantage } from "./battle-vantage.js";
 import { expectedRuns, ROUGH_RUNS } from "../engine/run-budget.js";
 import { signedNumber } from "../engine/trait-parts.js";
 
@@ -166,6 +167,11 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     }
     // (Unpaused by hand meanwhile: closing the planner leaves the game as the GM has it.)
     this.pauseHook = Hooks.on("pauseGame", paused => { if ( !paused ) this.pausedGame = false; });
+    // (The encounter begun with Foundry's own button, the Sample fight ready: FastFighting takes it up, as Do it For
+    // Real Now would, and plays its first turn if that's FastFighting's.)
+    this.combatHook = Hooks.on("updateCombat", (combat, changes, options, userId) => {
+      if ( combat.started && "round" in changes && combat === sceneEncounter(canvas.scene) && !liveBattle() && this.readyForVantage() ) this.#goLive({ begin: true, began: true });
+    });
     // (Told when a character's reactions may have changed: sheet-watch.js. Only an open row shows them.)
     this.unwatchReactions = showsReactions({
       shows: actor => this.rendered && !!this.roster?.some(e => e.token.actor?.uuid === actor.uuid && this.expanded.has(e.token.id)),
@@ -191,6 +197,11 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     this.settleSides();
     if ( this.pauseHook ) Hooks.off("pauseGame", this.pauseHook);
     this.pauseHook = null;
+    if ( this.combatHook ) Hooks.off("updateCombat", this.combatHook);
+    this.combatHook = null;
+    // (Its Sample fight no longer offers the Battle Vantage: the tracker's button goes.)
+    if ( this.offeredVantage ) ui.combat?.render();
+    this.offeredVantage = false;
     const resume = this.pausedGame;
     this.pausedGame = false;
     if ( !resume ) return;
@@ -777,6 +788,12 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
 
   _onRender(context, options) {
     super._onRender?.(context, options);
+    // (The Sample fight ready, or no longer: the tracker's Vantage button comes or goes with it.)
+    const ready = this.readyForVantage();
+    if ( ready !== !!this.offeredVantage ) {
+      this.offeredVantage = ready;
+      ui.combat?.render();
+    }
     // Keep the window at least 1000x600 while letting it grow.
     const el = this.element;
     el.style.minWidth = "1000px";
@@ -1128,10 +1145,33 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   static async #onMakeItSo() {
+    await this.#goLive({ begin: true });
+  }
+
+  /**
+   * Can the Battle Vantage be opened on this plan (the tracker's Vantage button): its Sample fight ready, as Do it For
+   * Real Now needs it, on the scene it was planned on, with no battle already going.
+   */
+  readyForVantage() {
+    return !!(this.results && this.spec && this.sample && !this.running && !this.abort) && canvas.scene?.id === this.sceneId
+      && !unfinishedPlayback(canvas.scene) && !!getAdapter()?.supportsLive && !liveBattle();
+  }
+
+  /** The tracker's Vantage button: the battle prepared as Do it For Real Now would, waiting for the encounter to begin. */
+  async openVantage() {
+    await this.#goLive({ begin: false });
+    if ( liveBattle() ) BattleVantage.open();
+  }
+
+  /**
+   * The plan played for real (Do it For Real Now), or prepared for the Battle Vantage to begin (`begin` false: it waits
+   * for Begin Encounter, the Vantage's or Foundry's own).
+   */
+  async #goLive({ begin, began = false }) {
     await this.settleSides();
     if ( !this.results || !this.spec ) return;
     if ( canvas.scene?.id !== this.sceneId ) return ui.notifications.warn(loc("FASTFIGHTING.Planner.SceneChanged"));
-    if ( unfinishedPlayback(canvas.scene) ) return;
+    if ( unfinishedPlayback(canvas.scene) || liveBattle() ) return;
     // The sample is only a sample: what's done for real is one more fight, that nobody has seen, so a 70% win is a
     // loss three times in ten, as it should be. The planner closes, so the GM can watch it play out with the table.
     let playing;
@@ -1142,7 +1182,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       if ( !getAdapter()?.supportsLive ) return ui.notifications.warn(loc("FASTFIGHTING.MakeItSo.NeedsUpdate"));
       const players = this.setup.options.playersRunPCs === false ? []
         : this.spec.combatants.filter(c => isPlayerControlled(c, canvas.scene.tokens.get(c.tokenId ?? c.id)?.actor)).map(c => c.id);
-      playing = startLiveBattle(this.spec, { style: this.storyStyle, odds, players });
+      playing = startLiveBattle(this.spec, { style: this.storyStyle, odds, players, begin, began });
     } catch ( err ) {
       return reportError(err);
     }
