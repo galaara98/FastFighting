@@ -1007,7 +1007,7 @@ async function standing(u) {
  * A strike's damage card applied the system's way to its target (the helper's applyDamageCard: resistances,
  * shields, temporary hit points, its own damage-taken card): {lost}, what the target lost by it. Null: the engine's sum.
  */
-async function applyStrike({ targetId, card, applies, multiplier = 1 }, stage) {
+async function applyStrike({ targetId, card, applies, multiplier = 1, amount = null }, stage) {
   const u = battle.run.byId.get(targetId);
   const doc = docOf(targetId);
   const message = card ? game.messages.get(card) : null;
@@ -1016,7 +1016,8 @@ async function applyStrike({ targetId, card, applies, multiplier = 1 }, stage) {
   // (With the reaction the system's application does itself, where one was used: {shieldBlock: true}; a save's share
   // of an area's damage: its multiplier, half or double.)
   const times = Number.isFinite(Number(multiplier)) ? Math.max(0, Number(multiplier)) : 1;
-  const options = { multiplier: times, ...(typeof applies === "string" && applies ? { [applies]: true } : {}) };
+  // (And what the engine makes of it, after the target's resistances: for a system whose own application has none.)
+  const options = { multiplier: times, ...(Number.isFinite(amount) ? { amount } : {}), ...(typeof applies === "string" && applies ? { [applies]: true } : {}) };
   const records = (await getAdapter().applyDamageCard(message, doc, options)) ?? [];
   stage.records.push(...records);
   const now = await standing(u);

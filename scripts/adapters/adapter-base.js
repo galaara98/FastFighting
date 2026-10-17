@@ -416,13 +416,15 @@ export class SystemAdapter {
    * API 19. Apply a damage card to one token through the system's own damage handling (its resistances, weaknesses,
    * temporary hit points and dying rules), times `multiplier` (0.5 half, 2 double). Also used for the damage of a
    * strike rolled with rollStrike, in a turn FastFighting plays: then the options may name a reaction the system's own
-   * application does (a reaction's `applies` in its spec, true here: PF2e's `shieldBlock`, 5e's `halve`). Returns undo records
-   * (sheet-tools undoRecord, the values as they were) for Rewind.
+   * application does (a reaction's `applies` in its spec, true here: PF2e's `shieldBlock`, 5e's `halve`), and `amount`
+   * is the engine's own sum, after the target's resistances and its share (for a system whose application has no
+   * resistances of its own: DCC's stat lines). Returns undo records (sheet-tools undoRecord, the values as they were) for
+   * Rewind.
    * @param {ChatMessage} message
    * @param {TokenDocument} token
    * @returns {Promise<object[]>}
    */
-  async applyDamageCard(message, token, { multiplier = 1 } = {}) {
+  async applyDamageCard(message, token, { multiplier = 1, amount = null } = {}) {
     return [];
   }
 
