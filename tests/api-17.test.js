@@ -19,7 +19,7 @@ import { movesNeeded, turnFor, saveRoll, checkRoll } from "../scripts/engine/bat
 import { simpleAffliction } from "../scripts/engine/behavior/afflictions.js";
 import { pf2eRules } from "./fixtures/three-action-rules.js";
 import { parseFormula } from "../scripts/engine/dice.js";
-import { CORE_API_VERSION } from "../scripts/core-api.js";
+import { CORE_API } from "../scripts/core-api.js";
 import { creature, strike, battle } from "./helpers.js";
 
 /** pf2eRules with some system hooks of its own. */
@@ -38,7 +38,7 @@ function fight(list, rules = pf2eRules, { seed = 5, positioning = false } = {}) 
 const lay = (u, conditions, by = null) => applyOutcome(u, { conditions, rounds: 20, label: "" }, by?.id ?? null, { id: `test:${Object.keys(conditions)[0]}` });
 const ofType = (run, type, id = null) => run.log.filter(e => e.type === type && (!id || e.actorId === id));
 
-test("the API is 17 or later", () => expect(CORE_API_VERSION).toBeGreaterThanOrEqual(17));
+test("the API is 17 or later", () => expect(CORE_API.major).toBeGreaterThanOrEqual(17));
 
 describe("heals", () => {
   const potion = (extra = {}) => ({ id: "potion", name: "Potion", kind: "heal", cost: 1, heal: [parseFormula("2d6", "healing")], selfOnly: true, ...extra });

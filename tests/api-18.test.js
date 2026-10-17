@@ -6,14 +6,17 @@
  */
 import { afterEach, describe, expect, test } from "vitest";
 import {
-  CORE_API_VERSION, sideAfter, statusesOf, statusEntry, toggleStatus, undoRecord, payFrom, handOverItem, englishName, englishDescription,
+  CORE_API, CORE_API_VERSION, sideAfter, statusesOf, statusEntry, toggleStatus, undoRecord, payFrom, handOverItem, englishName, englishDescription,
   DESCRIPTION_MOST, plainText, numberSetting, idFromUuid, tokenIdIn, partsOf, traitsFromParts, listWords, saysWord
 } from "../scripts/core-api.js";
 
 const was = { CONFIG: globalThis.CONFIG };
 afterEach(() => Object.assign(globalThis, was));
 
-test("the API is 18", () => expect(CORE_API_VERSION).toBe(18));
+test("the API is 18, major.bug: the version, and its parts", () => {
+  expect(CORE_API).toEqual({ major: 18, bug: 0 });
+  expect(CORE_API_VERSION).toBe("18.0");
+});
 
 describe("a creature's side after a change of heart", () => {
   test("won over, talked out of the fight, turned on the party; or nothing changed", () => {

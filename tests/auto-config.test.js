@@ -84,35 +84,35 @@ describe("when to set a character up", () => {
   const spec = creature({ actions: [strike({ id: "sword" })] });
   const lets = { ...suggestTactics(spec), ...suggestMotives(spec) };
   const sig = specSignature(spec);
-  const record = { api: 12, sig, lets, picked: ["tank"] };
+  const record = { api: "12.0", sig, lets, picked: ["tank"] };
 
   test("never set up and no playstyles: pick them, and work its answers out", () => {
-    expect(autoPlan({}, null, { api: 12, sig, spec })).toEqual({ pick: true, lets: true });
+    expect(autoPlan({}, null, { api: "12.0", sig, spec })).toEqual({ pick: true, lets: true });
   });
 
   test("set up by hand before (playstyles, no record): its playstyles stay; its answers are worked out", () => {
-    expect(autoPlan({ playstyles: ["thief"] }, null, { api: 12, sig, spec })).toEqual({ pick: false, lets: true });
+    expect(autoPlan({ playstyles: ["thief"] }, null, { api: "12.0", sig, spec })).toEqual({ pick: false, lets: true });
   });
 
   test("set up already: nothing, and its playstyles are never picked again, even with none left", () => {
-    expect(autoPlan({ playstyles: ["tank"] }, record, { api: 12, sig, spec })).toEqual({ pick: false, lets: false });
-    expect(autoPlan({}, record, { api: 12, sig, spec })).toEqual({ pick: false, lets: false });
+    expect(autoPlan({ playstyles: ["tank"] }, record, { api: "12.0", sig, spec })).toEqual({ pick: false, lets: false });
+    expect(autoPlan({}, record, { api: "12.0", sig, spec })).toEqual({ pick: false, lets: false });
   });
 
   test("its answers again (not its playstyles) when the core API moves on, the character changes, or they're missing or broken", () => {
-    expect(autoPlan({}, record, { api: 13, sig, spec })).toEqual({ pick: false, lets: true });
-    expect(autoPlan({}, record, { api: 12, sig: "other", spec })).toEqual({ pick: false, lets: true });
+    expect(autoPlan({}, record, { api: "13.0", sig, spec })).toEqual({ pick: false, lets: true });
+    expect(autoPlan({}, record, { api: "12.0", sig: "other", spec })).toEqual({ pick: false, lets: true });
     const { talk, ...missing } = lets;
-    expect(autoPlan({}, { ...record, lets: missing }, { api: 12, sig, spec })).toEqual({ pick: false, lets: true });
-    expect(autoPlan({}, { ...record, lets: { ...lets, retreat: "sometimes" } }, { api: 12, sig, spec })).toEqual({ pick: false, lets: true });
-    expect(autoPlan({}, { ...record, lets: { ...lets, preferredAction: "gone" } }, { api: 12, sig, spec })).toEqual({ pick: false, lets: true });
+    expect(autoPlan({}, { ...record, lets: missing }, { api: "12.0", sig, spec })).toEqual({ pick: false, lets: true });
+    expect(autoPlan({}, { ...record, lets: { ...lets, retreat: "sometimes" } }, { api: "12.0", sig, spec })).toEqual({ pick: false, lets: true });
+    expect(autoPlan({}, { ...record, lets: { ...lets, preferredAction: "gone" } }, { api: "12.0", sig, spec })).toEqual({ pick: false, lets: true });
     // (Stored before a character's offer and expectation were worked out: worked out again.)
     const { offer, ...noOffer } = lets;
-    expect(autoPlan({}, { ...record, lets: noOffer }, { api: 12, sig, spec })).toEqual({ pick: false, lets: true });
+    expect(autoPlan({}, { ...record, lets: noOffer }, { api: "12.0", sig, spec })).toEqual({ pick: false, lets: true });
   });
 
   test("a reset: both, at once", () => {
-    expect(autoPlan({}, null, { api: 12, sig, spec, force: true })).toEqual({ pick: true, lets: true });
+    expect(autoPlan({}, null, { api: "12.0", sig, spec, force: true })).toEqual({ pick: true, lets: true });
   });
 
   test("a system's answers over the core's, each fair one with its reason; an unfair one ignored", () => {

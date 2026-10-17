@@ -21,7 +21,7 @@ import * as dice from "./engine/dice.js";
 import * as constants from "./constants.js";
 import { MODULE_ID } from "./constants.js";
 import { keywords, applyBiography } from "./foundry/keywords.js";
-import { CORE_API_VERSION } from "./core-api.js";
+import { CORE_API, CORE_API_VERSION } from "./core-api.js";
 import { adviseTranslation } from "./foundry/translation-advice.js";
 import { keepEnglish } from "./foundry/keep-english.js";
 
@@ -126,7 +126,10 @@ export async function characterSpec(adapter, tokenDoc) {
 
 export function buildApi(extra = {}) {
   return {
+    // (The helper-facing API's version, "18.0", and its parts: a helper decides by api.major whether it works with this core.)
     version: CORE_API_VERSION,
+    major: CORE_API.major,
+    bug: CORE_API.bug,
     SystemAdapter,
     registerAdapter,
     getAdapter,

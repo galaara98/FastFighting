@@ -49,7 +49,7 @@ export const autoRecord = actor => {
   const scores = {};
   for ( const [k, v] of Object.entries(isPlain(r.scores) ? r.scores : {}) ) if ( Number.isFinite(v) ) scores[k] = v;
   return {
-    api: Number(r.api) || 0,
+    api: typeof r.api === "string" ? r.api : "",
     sig: typeof r.sig === "string" ? r.sig : "",
     lets,
     why,
