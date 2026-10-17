@@ -81,6 +81,8 @@ export function registerSettings(DefaultsConfig, GenericPathsConfig, StoryTables
   game.settings.register(MODULE_ID, "genericPaths", { scope: "world", config: false, type: Object, default: {} });
   // The party's roles the GM gave in earlier fights, by actor: {actorId: "leader" | "lt1" | "lt2"}.
   game.settings.register(MODULE_ID, "partyCommand", { scope: "world", config: false, type: Object, default: {} });
+  // The journal entry that keeps live battles (foundry/live-battle.js store): only a GM can write a world setting.
+  game.settings.register(MODULE_ID, "liveStore", { scope: "world", config: false, type: String, default: "" });
   if ( GenericPathsConfig ) {
     game.settings.registerMenu(MODULE_ID, "genericPathsMenu", {
       name: "FASTFIGHTING.Generic.MenuName",

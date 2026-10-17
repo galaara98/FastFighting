@@ -79,20 +79,28 @@ const changed = () => Hooks.callAll("fastFighting.liveBattle", battle);
 /* -------------------------------------------- */
 
 /**
- * The journal entry that keeps live battles: GMs only (minds, plans and dice are spoilers). Only one no player can see
- * is trusted: a player who could edit it could rewrite what a Rewind puts back, and a GM's client would do it.
+ * The journal entry that keeps live battles (what a Rewind puts back, run with a GM's rights): only the one the world's
+ * liveStore setting names (a setting only a GM can write), last written by a GM, and seen by no player. A player can
+ * make a journal entry no other player sees, flag it, and fill it: such a one is never trusted. (Every client is sent
+ * every journal entry, whatever its ownership: what's kept here isn't secret from a player who digs, only safe from
+ * one who would change it.)
  */
-const trustedStore = j => !!j.getFlag(MODULE_ID, "liveStore") && !game.users.some(u => !u.isGM && j.testUserPermission(u, "LIMITED"));
+const trustedStore = j => !!j?.getFlag(MODULE_ID, "liveStore") && !!game.users.get(j._stats?.lastModifiedBy)?.isGM
+  && !game.users.some(u => !u.isGM && j.testUserPermission(u, "LIMITED"));
 
 async function store() {
-  const found = game.journal.find(trustedStore);
-  if ( found ) return found;
+  const named = game.journal.get(setting("liveStore"));
+  if ( trustedStore(named) ) return named;
+  // (One from before the setting: the oldest a GM made, no player sees, and none has written since.)
+  const old = game.journal.filter(j => trustedStore(j) && game.users.get(j._stats?.createdBy)?.isGM).sort((a, b) => (a._stats.createdTime ?? 0) - (b._stats.createdTime ?? 0))[0];
   const JournalEntry = foundry.documents.JournalEntry ?? globalThis.JournalEntry;
-  return JournalEntry.create({
+  const doc = old ?? await JournalEntry.create({
     name: loc("FASTFIGHTING.Live.Store"),
     ownership: { default: CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE },
     flags: { [MODULE_ID]: { liveStore: true } }
   });
+  if ( doc ) await game.settings.set(MODULE_ID, "liveStore", doc.id);
+  return doc;
 }
 
 async function keep() {
@@ -201,6 +209,15 @@ function queue(work) {
  */
 function onTurnChange(combat, prior, current) {
   if ( battle?.combat !== combat || battle.data.ended || !playsHere() ) return;
+  // (Moved by a player some other way than ending their own character's turn: put back, and the GM told.)
+  if ( !battle.data.spotlight && !movedRightly(combat, prior, current) ) {
+    queue(async () => {
+      await combat.update({ round: prior.round, turn: prior.turn }, { turnEvents: false });
+      ui.notifications.warn(fmt("FASTFIGHTING.Live.TrackerRefused", { name: game.users.get(combat._stats?.lastModifiedBy)?.name ?? "" }));
+      changed();
+    });
+    return;
+  }
   // (A spotlight system's tracker has no order to go back along: its Rewind is the battle's own.)
   const back = !battle.data.spotlight && !!prior && current?.round > 0 && prior.combatantId !== current.combatantId
     && (current.round < prior.round || (current.round === prior.round && (current.turn ?? -1) < (prior.turn ?? -1)));
@@ -214,6 +231,20 @@ function onTurnChange(combat, prior, current) {
     else if ( combat.round > (battle.run.round ?? 0) ) await newRound(combat.round);
     await turnBegins(combat.combatant);
   });
+}
+
+/**
+ * Was the tracker moved as it may be? By a GM, any way; by a player, only forward, from the turn of a character of their
+ * own (ending it), into the next round at most. Foundry lets anyone set a combat's turn: a player going back would
+ * have the GM's client take back a foe's turn (and roll it again), one going on past others, skip theirs.
+ */
+function movedRightly(combat, prior, current) {
+  const by = game.users.get(combat._stats?.lastModifiedBy);
+  if ( !by || by.isGM ) return true;
+  if ( !prior ) return false;
+  const forward = current.round > prior.round || (current.round === prior.round && (current.turn ?? -1) > (prior.turn ?? -1));
+  const was = combat.combatants.get(prior.combatantId);
+  return forward && current.round - prior.round <= 1 && !!was?.actor?.testUserPermission(by, "OWNER");
 }
 
 /**
@@ -234,6 +265,9 @@ async function spotlightMoved(combat, prior) {
   }
   spot.had.push(u.id);
 }
+
+/** A turn's dice of its own, drawn as it begins and kept nowhere: nothing a player's client is sent foretells them. */
+const freshNonce = () => (globalThis.crypto?.getRandomValues?.(new Uint32Array(1))[0] || Math.floor(Math.random() * 0xFFFFFFFF)) >>> 0 || 1;
 
 /** A turn's key: its round and combatant (a spotlight system's: which spotlight it is). */
 const turnKey = combatant => `${battle.data.spotlight ? `s${battle.data.spots ?? 0}` : battle.combat.round}.${combatant?.id}`;
@@ -391,7 +425,7 @@ async function followBack(prior) {
   battle.data.toldBeats = (battle.data.toldBeats ?? []).filter(k => k !== "closing" && k.split(",").every(t => gone.has(Number(t))));
   const u = unitOf(combatant);
   if ( reopen && u ) {
-    pcTurnBegin(battle.run, u.id);
+    pcTurnBegin(battle.run, u.id, { nonce: freshNonce() });
     battle.pc = { combatantId: combatant.id, id: u.id, round: reopen.round, messages: reopen.cards ?? [], facts: reopen.facts ?? [], records: [], snapshot: reopen.snapshot, from: reopen.from };
   } else if ( own || (u && GONE.has(u.status)) ) battle.data.played = key;
   else if ( u && playerRuns(battle.run, u) ) await beginPlayerTurn(u, combatant);
@@ -451,11 +485,19 @@ const tokenIdOf = u => u.tokenId ?? u.spec.tokenId ?? u.id;
 const unitOf = combatant => (combatant ? battle.run.units.find(u => tokenIdOf(u) === combatant.tokenId) ?? null : null);
 
 async function turnBegins(combatant) {
-  // (Someone on the tracker the battle doesn't know yet: a player's summons, one the GM brought in. It joins now.)
-  const u = unitOf(combatant) ?? (combatant && !battle.data.ended ? await joinFight(combatant) : null);
+  // (Someone on the tracker the battle doesn't know yet: a player's summons, one the GM brought in. It joins now. Not
+  // one a player put on the tracker for a creature they don't own.)
+  const u = unitOf(combatant) ?? (combatant && !battle.data.ended && !battle.untrusted?.has(combatant.id) ? await joinFight(combatant) : null);
   if ( !u || battle.data.ended ) return;
   const key = turnKey(combatant);
   if ( battle.data.played === key ) return; // (played already: waiting on the GM)
+  // (A token on the tracker twice: one turn, its first combatant's. Another, a player's doing, has none.)
+  const first = battle.combat.combatants.find(c => c.tokenId === combatant.tokenId);
+  if ( first && first.id !== combatant.id ) {
+    battle.data.played = key;
+    await moveOn();
+    return;
+  }
   if ( GONE.has(u.status) ) {
     battle.data.played = key;
     await moveOn();
@@ -526,7 +568,7 @@ async function joinFight(combatant) {
 /** A player's turn begins: kept as it was (for Rewind), begun in the engine, and its cards gathered from now on. */
 function beginPlayerTurn(u, combatant) {
   const snapshot = snapshotRun(battle.run, { log: false });
-  pcTurnBegin(battle.run, u.id);
+  pcTurnBegin(battle.run, u.id, { nonce: freshNonce() });
   battle.pc = { combatantId: combatant.id, id: u.id, round: battle.combat.round, messages: [], facts: [], records: [], snapshot, from: Date.now() };
   return keep();
 }
@@ -610,11 +652,12 @@ async function playTurn(u, combatant, key) {
   const before = captureAll(battle.run);
   const snapshot = snapshotRun(battle.run, { log: false });
   const answers = [];
+  const nonce = freshNonce(); // (the turn's own dice, the same each time it's played again for an answer)
   let result;
   for ( let tries = 0; ; tries++ ) {
     try {
       battle.run.live.exitOf = exitOf; // (the way off the scene, for one leaving the fight)
-      result = liveTurn(battle.run, u.id, { answers, salt: battle.data.salt ?? 0 });
+      result = liveTurn(battle.run, u.id, { answers, salt: battle.data.salt ?? 0, nonce });
       break;
     } catch ( err ) {
       if ( !(err instanceof NeedsDecision) || tries > 20 ) throw err;
@@ -1031,7 +1074,7 @@ async function tellNew() {
     const adapter = getAdapter();
     const beats = storyBeats(result, battle.spec, style, {
       tables: await loadStoryTables(), seed: battle.data.seed, damageType: adapter?.rules?.storyDamageType?.bind(adapter.rules) ?? null,
-      conditionType: adapter?.rules?.storyCondition?.bind(adapter.rules) ?? null
+      conditionType: adapter?.rules?.storyCondition?.bind(adapter.rules) ?? null, open: setting("storyMode") !== "whisper"
     });
     const docs = new Map(run.units.map(u => [u.id, docOf(u.id)]).filter(([, d]) => d));
     const done = new Set(battle.data.toldBeats ?? []);
@@ -1380,7 +1423,16 @@ async function pickUp() {
     if ( !rules ) return;
     // (Its scene: where it began, an encounter linked to no scene included.)
     const scene = game.scenes.get(data.sceneId) ?? combat.scene ?? canvas.scene;
-    battle = { combat, scene, spec, rules, run: restoreRun(spec, rules, data.snapshot), pc: null, data, keptSpec: data.spec };
+    let run;
+    try {
+      run = restoreRun(spec, rules, data.snapshot);
+    } catch ( err ) {
+      // (A kept battle that won't restore: the GM told, the combat left as it is.)
+      console.error(`${MODULE_ID} | a kept battle that won't restore`, err);
+      ui.notifications.error(fmt("FASTFIGHTING.Live.Failed", { error: err.message }));
+      continue;
+    }
+    battle = { combat, scene, spec, rules, run, pc: null, data, keptSpec: data.spec };
     playersNow();
     if ( data.pc ) {
       const own = m => m.getFlag(MODULE_ID, "story") || m.getFlag(MODULE_ID, "live");
@@ -1405,8 +1457,14 @@ export function registerLiveBattles() {
     queue(() => playerMoved(doc));
   });
   Hooks.on("createChatMessage", onMessage);
-  Hooks.on("createCombatant", combatant => {
+  Hooks.on("createCombatant", (combatant, options, userId) => {
     if ( battle?.combat !== combatant.parent || battle.data.ended || !playsHere() ) return;
+    // (One a player added: only for a creature of their own, as a summoning of theirs would be.)
+    const user = game.users.get(userId);
+    if ( !user?.isGM && !combatant.token?.actor?.testUserPermission(user, "OWNER") ) {
+      (battle.untrusted ??= new Set()).add(combatant.id);
+      return;
+    }
     queue(() => joinFight(combatant));
   });
   Hooks.once("ready", () => pickUp());

@@ -106,8 +106,8 @@ function head(end, angle) {
 function steps(item) {
   if ( !item.adjust ) return "";
   const data = escape(JSON.stringify(item.adjust));
-  const less = item.lower ? `<a class="ff-net-step" data-adjust="${data}" data-step="-1" data-tooltip="${escape(item.lower)}"><i class="fa-solid fa-minus"></i></a>` : "";
-  const more = item.raise ? `<a class="ff-net-step" data-adjust="${data}" data-step="1" data-tooltip="${escape(item.raise)}"><i class="fa-solid fa-plus"></i></a>` : "";
+  const less = item.lower ? `<a class="ff-net-step" data-adjust="${data}" data-step="-1" data-tooltip-text="${escape(item.lower)}"><i class="fa-solid fa-minus"></i></a>` : "";
+  const more = item.raise ? `<a class="ff-net-step" data-adjust="${data}" data-step="1" data-tooltip-text="${escape(item.raise)}"><i class="fa-solid fa-plus"></i></a>` : "";
   return less || more ? `<span class="ff-net-steps">${less}${more}</span>` : "";
 }
 
@@ -145,30 +145,30 @@ export function mountNetwork(root, graph, { state, focus = null, onFocus = () =>
   root.innerHTML = `
     <div class="ff-net-world">
       <svg class="ff-net-edges" width="${2 * SHEET}" height="${2 * SHEET}" style="left:-${SHEET}px;top:-${SHEET}px" aria-hidden="true"><g transform="translate(${SHEET} ${SHEET})">
-        ${edges.map(e => `<g class="ff-net-edge ${escape(e.cls)} ${lit(e) ? "" : "is-dim"}" data-edge="${escape(e.id)}"><path class="ff-net-hit" data-hit="${escape(e.id)}" data-tooltip="${escape(e.tip)}"/><path class="ff-net-line"/><path class="ff-net-head"/></g>`).join("")}
+        ${edges.map(e => `<g class="ff-net-edge ${escape(e.cls)} ${lit(e) ? "" : "is-dim"}" data-edge="${escape(e.id)}"><path class="ff-net-hit" data-hit="${escape(e.id)}" data-tooltip-text="${escape(e.tip)}"/><path class="ff-net-line"/><path class="ff-net-head"/></g>`).join("")}
       </g></svg>
-      ${edges.map(e => `<div class="ff-net-label ${escape(e.cls)} ${lit(e) ? "is-lit" : "is-dim"} ${near(e) ? "is-near" : ""}" data-label="${escape(e.id)}" data-tooltip="${escape(e.tip)}">
+      ${edges.map(e => `<div class="ff-net-label ${escape(e.cls)} ${lit(e) ? "is-lit" : "is-dim"} ${near(e) ? "is-near" : ""}" data-label="${escape(e.id)}" data-tooltip-text="${escape(e.tip)}">
         <i class="${escape(e.icon)}"></i>${e.text ? `<span>${escape(e.text)}</span>` : ""}${steps(e)}</div>`).join("")}
       ${graph.nodes.map(n => {
         const marks = n.marks ?? [];
         return `<div class="ff-net-node is-${escape(n.type)} ${escape(n.cls ?? "")} ${n.id === focus ? "is-focus" : ""} ${selected.has(n.id) ? "is-selected" : ""} ${linked(n.id) ? "" : "is-dim"}" data-node="${escape(n.id)}"
-          role="button" tabindex="0" data-tooltip="${escape(n.tip ?? n.name)}">
+          role="button" tabindex="0" data-tooltip-text="${escape(n.tip ?? n.name)}">
           <div class="ff-net-face">${n.img ? `<img src="${escape(n.img)}" alt="">` : `<i class="${escape(n.icon ?? "fa-solid fa-circle")}"></i>`}</div>
           <span class="ff-net-name">${escape(n.name)}</span>${n.status ? `<span class="ff-net-status">${escape(n.status)}</span>` : ""}
           ${marks.map((m, i) => {
             const angle = -Math.PI / 2 + (i - (marks.length - 1) / 2) * 0.62;
             const ring = MARK_RING + Math.floor(i / 9) * 22;
-            return `<span class="ff-net-mark ${escape(m.cls ?? "")}" data-mark="${escape(`${n.id}|${m.id}`)}" style="left:${(Math.cos(angle) * ring).toFixed(1)}px;top:${(Math.sin(angle) * ring).toFixed(1)}px" data-tooltip="${escape(m.tip)}">
+            return `<span class="ff-net-mark ${escape(m.cls ?? "")}" data-mark="${escape(`${n.id}|${m.id}`)}" style="left:${(Math.cos(angle) * ring).toFixed(1)}px;top:${(Math.sin(angle) * ring).toFixed(1)}px" data-tooltip-text="${escape(m.tip)}">
               <i class="${escape(m.icon)}"></i>${m.text ? `<b>${escape(m.text)}</b>` : ""}${steps(m)}</span>`;
           }).join("")}
         </div>`;
       }).join("")}
     </div>
     <div class="ff-net-tools">
-      <button type="button" data-net="in" data-tooltip="${escape(words.zoomIn)}"><i class="fa-solid fa-magnifying-glass-plus"></i></button>
-      <button type="button" data-net="out" data-tooltip="${escape(words.zoomOut)}"><i class="fa-solid fa-magnifying-glass-minus"></i></button>
-      <button type="button" data-net="fit" data-tooltip="${escape(words.fit)}"><i class="fa-solid fa-expand"></i></button>
-      <button type="button" data-net="reset" data-tooltip="${escape(words.reset)}"><i class="fa-solid fa-map-location-dot"></i></button>
+      <button type="button" data-net="in" data-tooltip-text="${escape(words.zoomIn)}"><i class="fa-solid fa-magnifying-glass-plus"></i></button>
+      <button type="button" data-net="out" data-tooltip-text="${escape(words.zoomOut)}"><i class="fa-solid fa-magnifying-glass-minus"></i></button>
+      <button type="button" data-net="fit" data-tooltip-text="${escape(words.fit)}"><i class="fa-solid fa-expand"></i></button>
+      <button type="button" data-net="reset" data-tooltip-text="${escape(words.reset)}"><i class="fa-solid fa-map-location-dot"></i></button>
     </div>`;
 
   const world = root.querySelector(".ff-net-world");
@@ -407,7 +407,7 @@ export function mountNetwork(root, graph, { state, focus = null, onFocus = () =>
     for ( const el of looks(a) ) el?.classList.add("is-armed");
     // (Stepped to with a key: its words, as a hover would show them.)
     const el = tipOf(a);
-    const text = a.item?.tip ?? el?.dataset.tooltip;
+    const text = a.item?.tip ?? el?.dataset.tooltipText;
     if ( by === "key" && el && text ) game.tooltip?.activate(el, { text });
   };
   if ( focus && state.armed ) {

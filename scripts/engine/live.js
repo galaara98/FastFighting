@@ -90,12 +90,17 @@ export function liveRound(run, round) {
   beginRound(run, round);
 }
 
-/** The dice for the next turn: its own, from the fight's seed and how many turns came before (the same on replay). */
-function nextDice(run, salt = 0) {
+/**
+ * The dice for the next turn: its own, from the fight's seed and how many turns came before (the same on replay), and
+ * `nonce`, drawn fresh as the turn begins (a live battle's: what's kept of the battle, which any player's client is sent,
+ * never says what the next turn's dice will be).
+ */
+function nextDice(run, salt = 0, nonce = 0) {
   run.live.seq += 1;
   run.live.asked = new Map();
+  const base = nonce ? deriveSeed(run.live.seed, nonce) : run.live.seed;
   // (A turn played again after a rewind: fresh dice, `salt` times over.)
-  run.rng = createRng(deriveSeed(run.live.seed, run.live.seq + salt * 100003));
+  run.rng = createRng(deriveSeed(base, run.live.seq + salt * 100003));
 }
 
 /**
@@ -103,10 +108,10 @@ function nextDice(run, salt = 0) {
  * Returns {events, ended}; throws NeedsDecision when someone must be asked first (restore the snapshot taken before
  * it, ask, and play it again with the answer). `salt`: played again after a rewind, with fresh dice.
  */
-export function liveTurn(run, id, { answers = null, salt = 0 } = {}) {
+export function liveTurn(run, id, { answers = null, salt = 0, nonce = 0 } = {}) {
   const u = run.byId.get(id);
   if ( !u ) throw new Error(`No creature ${id} in this battle`);
-  nextDice(run, salt);
+  nextDice(run, salt, nonce);
   spotlit(run, u);
   run.live.answers = new Map(answers ?? []);
   const from = run.log.length;
@@ -129,10 +134,10 @@ export function pcTurn(run, id, events = [], states = null, facts = []) {
 }
 
 /** A player's turn begins: its own dice, and what comes back to it (its reaction; being hurt now, if it was since). */
-export function pcTurnBegin(run, id) {
+export function pcTurnBegin(run, id, { nonce = 0 } = {}) {
   const u = run.byId.get(id);
   if ( !u ) throw new Error(`No creature ${id} in this battle`);
-  nextDice(run);
+  nextDice(run, 0, nonce);
   spotlit(run, u);
   noteCommand(run);
   startTurn(run, u);

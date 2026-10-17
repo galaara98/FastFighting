@@ -278,3 +278,34 @@ describe("what luck did", () => {
     expect(said(english["event.spellFizzles"])).toBe(true);
   });
 });
+
+describe("what a player shouldn't learn from the story", () => {
+  test("a hidden creature not yet given away: what it does is the GMs' alone, and its card isn't in its name", () => {
+    const spec = fight();
+    spec.combatants.find(c => c.id === "wolf").hidden = true;
+    const result = replay(spec, pf2eRules, 7);
+    const sneak = { turn: 0, round: 1, turnOf: "wolf", type: "move", actorId: "wolf", actor: "Wolf", feet: 10, mode: "walk", purpose: "approach", toward: "Amiri", towardId: "amiri", from: null, to: null, regions: [], mult: 1 };
+    const beats = storyBeats({ ...result, log: [sneak, ...result.log.map(e => ({ ...e, turn: (e.turn ?? 0) + 1 }))] }, spec, "standard", { tables, seed: 7 });
+    const first = beats.find(b => b.turns.includes(0));
+    expect(first.html).not.toContain("Wolf");
+    expect(first.gmHtml).toContain("Wolf");
+    expect(first.anonymous).toBe(true);
+    // (Once it strikes, it's seen: told as ever.)
+    const blow = result.log.find(e => e.type === "attack" && e.actorId === "wolf");
+    if ( blow ) expect(beats.find(b => b.turns.includes((blow.turn ?? 0) + 1)).anonymous).toBeUndefined();
+  });
+
+  test("told openly, the closing card gives no foe's hit points as numbers; a player's character's, still", () => {
+    const spec = fight();
+    const result = replay(spec, pf2eRules, 3);
+    const closing = open => storyBeats(result, spec, "standard", { tables, seed: 3, open }).at(-1).html;
+    const wolf = result.units.wolf?.final;
+    const amiri = result.units.amiri?.final;
+    const wolfLine = html => html.match(/<li><strong>Wolf<\/strong>.*?<\/li>/)?.[0] ?? "";
+    const wolfHp = `${wolf.hp}/${spec.combatants.find(c => c.id === "wolf").hp.max}`;
+    expect(wolfLine(closing(false))).toContain(wolfHp);
+    expect(wolfLine(closing(true))).not.toContain(wolfHp);
+    expect(wolfLine(closing(true))).not.toMatch(/, <\/em>/);
+    expect(closing(true)).toContain(`${amiri.hp}/${spec.combatants.find(c => c.id === "amiri").hp.max}`);
+  });
+});

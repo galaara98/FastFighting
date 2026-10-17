@@ -19,10 +19,17 @@ const UNDO_DEPTH = 5;
 /** The most chat messages after a played fight's summary for its Rewind to still work: further back, it's history. */
 export const UNDO_REACH = 10;
 
-/** Undo entries for a scene, newest first (older worlds stored a single entry). */
+/**
+ * Undo entries for a scene, newest first (older worlds stored a single entry). Only a scene a GM last wrote: one a
+ * player owns, and wrote, could hold records a GM's Undo would run.
+ */
 function undoStack(scene) {
   const stored = scene?.getFlag(MODULE_ID, "undo");
   if ( !stored ) return [];
+  if ( scene._stats?.lastModifiedBy && !game.users.get(scene._stats.lastModifiedBy)?.isGM ) {
+    console.warn(`${MODULE_ID} | ${scene.name}: its undo records were last written by a player, and aren't trusted`);
+    return [];
+  }
   if ( Array.isArray(stored.stack) ) return stored.stack;
   return (stored.records || stored.moves || stored.messages || stored.doors) ? [stored] : [];
 }
@@ -324,7 +331,8 @@ export async function postBeat(scene, beat, docs, state) {
   const doc = beat.actorId ? (docs.get(beat.actorId) ?? null) : null;
   const whisper = setting("storyMode") === "whisper" ? gmIds() : [];
   const flags = { [MODULE_ID]: { story: true, beat: true } };
-  const speaker = doc ? ChatMessage.getSpeaker({ scene, token: doc }) : chronicle();
+  // (A hidden creature not yet given away: the narrator's card, not its own.)
+  const speaker = doc && !beat.anonymous ? ChatMessage.getSpeaker({ scene, token: doc }) : chronicle();
   const head = beat.closing ? `<header><i class="fa-solid fa-book-open"></i> ${escape(storyTitle(scene))}</header>`
     : beat.round >= 1 ? `<header>${escape(game.i18n.format("FASTFIGHTING.Story.TurnRound", { n: beat.round }))}</header>` : "";
   const odds = beat.closing && state.odds ? `<p class="ff-odds"><em>${escape(state.odds)}</em></p>` : "";
@@ -429,21 +437,30 @@ export async function revertRecord(r) {
       console.error(`${MODULE_ID} | undo: ${what} failed`, r, err);
     }
   };
-  for ( const uuid of r.createdCombatants ?? [] ) await step("removing a combatant", async () => (await fromUuid(uuid))?.delete());
-  for ( const uuid of r.createdTokens ?? [] ) await step("removing a token", async () => (await fromUuid(uuid))?.delete());
-  for ( const uuid of r.createdActors ?? [] ) await step("removing an actor", async () => (await fromUuid(uuid))?.delete());
+  // (An undo record is data: each thing it names only of the kind FastFighting's own records name, and an actor it
+  // would delete only one FastFighting brought in for a summoning: a GM's copy of a compendium's, no player's.)
+  const of = async (uuid, type) => (typeof uuid === "string" && foundry.utils.parseUuid(uuid)?.type === type ? fromUuid(uuid) : null);
+  const summoned = a => !!a && !a.hasPlayerOwner && !!a._stats?.compendiumSource && !!game.users.get(a._stats?.createdBy)?.isGM;
+  for ( const uuid of r.createdCombatants ?? [] ) await step("removing a combatant", async () => (await of(uuid, "Combatant"))?.delete());
+  for ( const uuid of r.createdTokens ?? [] ) await step("removing a token", async () => (await of(uuid, "Token"))?.delete());
+  for ( const uuid of r.createdActors ?? [] ) {
+    await step("removing an actor", async () => {
+      const a = await of(uuid, "Actor");
+      if ( summoned(a) ) await a.delete();
+    });
+  }
   for ( const t of r.deletedTokens ?? [] ) {
-    await step("restoring a token", async () => (await fromUuid(t.parentUuid))?.createEmbeddedDocuments("Token", [t.data], { keepId: true }));
+    await step("restoring a token", async () => (await of(t.parentUuid, "Scene"))?.createEmbeddedDocuments("Token", [tokenData(t.data)], { keepId: true }));
   }
   // (One the fight took off the tracker, gone off the map: back on it, as it was.)
   for ( const c of r.deletedCombatants ?? [] ) {
-    await step("restoring a combatant", async () => (await fromUuid(c.parentUuid))?.createEmbeddedDocuments("Combatant", [c.data], { keepId: true, turnEvents: false }));
+    await step("restoring a combatant", async () => (await of(c.parentUuid, "Combat"))?.createEmbeddedDocuments("Combatant", [c.data], { keepId: true, turnEvents: false }));
   }
   // (A world setting the system keeps a pool in: Daggerheart's Fear, the GM's.)
   // (Only the system's own: an undo record is data, and never a way to change the core's or another module's settings.)
   if ( r.setting && r.setting.namespace === game.system.id ) await step("restoring a setting", () => game.settings.set(r.setting.namespace, r.setting.key, r.setting.value));
-  const tokenDoc = r.tokenUuid ? await fromUuid(r.tokenUuid) : null;
-  const actor = tokenDoc?.actor ?? (r.actorUuid ? await fromUuid(r.actorUuid) : null);
+  const tokenDoc = r.tokenUuid ? await of(r.tokenUuid, "Token") : null;
+  const actor = tokenDoc?.actor ?? (r.actorUuid ? await of(r.actorUuid, "Actor") : null);
   if ( !actor ) return;
   if ( r.createdItems?.length ) {
     const ids = r.createdItems.filter(id => actor.items.has(id));
@@ -461,7 +478,8 @@ export async function revertRecord(r) {
     if ( statusesOf(actor).has(s.id) === s.active ) continue; // already as it was
     await step(`status ${s.id}`, () => actor.toggleStatusEffect(s.id, { active: s.active, overlay: s.overlay }));
   }
-  if ( Object.keys(r.actorUpdate ?? {}).length ) await step("restoring the actor", () => actor.update(r.actorUpdate));
+  const actorUpdate = actorData(r.actorUpdate);
+  if ( Object.keys(actorUpdate).length ) await step("restoring the actor", () => actor.update(actorUpdate));
   // Anything the system added along the way (dnd5e lays the unconscious down Prone) comes off too.
   if ( r.statusesBefore ) {
     const before = new Set(r.statusesBefore);
@@ -470,12 +488,34 @@ export async function revertRecord(r) {
       await step(`status ${id}`, () => (statusesOf(actor).has(id) ? actor.toggleStatusEffect(id, { active: false }) : null));
     }
   }
-  if ( r.tokenUpdate && tokenDoc ) await step("restoring the token", () => tokenDoc.update(r.tokenUpdate));
+  const tokenUpdate = tokenFields(r.tokenUpdate);
+  if ( tokenUpdate && tokenDoc ) await step("restoring the token", () => tokenDoc.update(tokenUpdate));
   // (A player's own, such as DCC's Fleeting Luck.)
   // (A player's flags, such as DCC's Fleeting Luck: nothing else of a user's, their role least of all.)
   const flagsOnly = Object.fromEntries(Object.entries(foundry.utils.flattenObject(r.userUpdate ?? {})).filter(([k]) => k.startsWith("flags.")));
   if ( r.userId && Object.keys(flagsOnly).length ) await step("restoring a player's", () => game.users.get(r.userId)?.update(flagsOnly));
-  if ( r.combatant ) await step("the combat tracker", async () => (await fromUuid(r.combatant.uuid))?.update({ defeated: r.combatant.defeated }));
+  if ( r.combatant ) await step("the combat tracker", async () => (await of(r.combatant.uuid, "Combatant"))?.update({ defeated: !!r.combatant.defeated }));
+}
+
+/** What of an actor an undo record puts back: its system's data, and FastFighting's and the system's flags; nothing else. */
+function actorData(update) {
+  const flat = foundry.utils.flattenObject(update ?? {});
+  const ok = k => k.startsWith("system.") || k.startsWith(`flags.${MODULE_ID}.`) || k.startsWith(`flags.${game.system.id}.`);
+  return Object.fromEntries(Object.entries(flat).filter(([k]) => ok(k)));
+}
+
+/** What of a token an undo record puts back: where it stood, and whether it's hidden; null for nothing. */
+const TOKEN_FIELDS = new Set(["x", "y", "elevation", "rotation", "hidden", "alpha"]);
+function tokenFields(update) {
+  if ( !update || typeof update !== "object" ) return null;
+  const out = Object.fromEntries(Object.entries(update).filter(([k]) => TOKEN_FIELDS.has(k)));
+  return Object.keys(out).length ? out : null;
+}
+
+/** A token an undo record puts back: as it was, but no one's ownership changed by it (that's its actor's). */
+function tokenData(data) {
+  const { ownership, ...rest } = data ?? {};
+  return rest;
 }
 
 /* -------------------------------------------- */

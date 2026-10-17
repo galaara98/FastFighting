@@ -2169,6 +2169,7 @@
       "NextTurn": "Next Turn",
       "Rewind": "Rewind",
       "Rewound": "Rewound to {name}'s turn.",
+      "TrackerRefused": "{name} moved the turn order of the live battle; FastFighting put it back. Only a GM moves it, apart from a player ending their own character's turn.",
       "TooFarBack": "FastFighting doesn't keep turns that far back, so the tracker is put back where it was. Rewind This Encounter can still take the whole battle back.",
       "Play": "Play it",
       "Over": "The battle is over.",

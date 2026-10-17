@@ -950,7 +950,7 @@ function tallyBits(s) {
   return bits;
 }
 
-function standard(result, spec, title) {
+function standard(result, spec, title, { open = false } = {}) {
   const w = labelWord;
   const { out, mentions } = storyCast(result, spec);
   const by = tally(result.log, mentions);
@@ -965,7 +965,9 @@ function standard(result, spec, title) {
     if ( !bits.length ) bits.push(final?.active === false ? w("StayedOut") : w("Nothing"));
     const statusKey = final?.swayed === "switched" ? "switched" : final?.swayed === "conceded" ? "conceded"
       : final?.status === "standing" && final?.side === "neutralParty" ? (final.swayed === "neutral" ? "neutral" : "noSide") : final?.status;
-    const status = final ? w("Status", { status: statusWord(statusKey), hp: logTerm("HpN", { n: `${final.hp}/${c.hp.max}` }) }) : "";
+    // (Told openly, a foe's hit points aren't: only a player's character's.)
+    const status = !final ? "" : open && c.kind !== "pc" ? statusWord(statusKey)
+      : w("Status", { status: statusWord(statusKey), hp: logTerm("HpN", { n: `${final.hp}/${c.hp.max}` }) });
     rows.push(`<li><strong>${esc(c.name)}</strong>: ${esc(bits.join("; "))}. <em>${esc(status)}</em>${s?.notes?.length ? ` <small>(${esc(s.notes.join("; "))})</small>` : ""}</li>`);
   }
   const html = `<p><strong>${esc(summary)}</strong></p><ul>${rows.join("")}</ul>`;
@@ -1044,6 +1046,26 @@ const FALLS = new Set(["down", "death", "beaten", "struckDown"]);
  */
 export const SECRET = new Set(["command", "thought", "scheme", "study", "waver", "leaveStopped"]);
 
+/** What gives a hidden creature away: anything it does that others see (a blow, a spell, words, a theft). */
+const GIVES_AWAY = new Set(["attack", "save", "auto", "cast", "control", "deed", "talk", "theft", "rob", "summon", "buff", "heal", "rider", "grabbed", "door"]);
+
+/**
+ * The events of hidden creatures not yet given away (spec.combatants' hidden: on the map, unseen), in the order told:
+ * until one does something that gives it away (GIVES_AWAY), or is struck at, what it does is the GMs' alone.
+ */
+function unseenEvents(log, spec) {
+  const unseen = new Set((spec.combatants ?? []).filter(c => c.hidden).map(c => c.id));
+  const out = new Set();
+  if ( !unseen.size ) return out;
+  for ( const e of log ) {
+    if ( e.targetId && unseen.has(e.targetId) && (e.type === "attack" || e.type === "save") ) unseen.delete(e.targetId);
+    if ( !e.actorId || !unseen.has(e.actorId) ) continue;
+    if ( GIVES_AWAY.has(e.type) ) unseen.delete(e.actorId);
+    else out.add(e);
+  }
+  return out;
+}
+
 /**
  * The story as it's told in the chat, one turn at a time: a beat for each turn of the fight (the opening's first),
  * and a closing one (how it ended, and the aftermath). Each beat is {turns, round, actorId, html, text, gmHtml,
@@ -1055,7 +1077,7 @@ export const SECRET = new Set(["command", "thought", "scheme", "study", "waver",
  * @param {string} style    roleplay | standard
  * @param {object} options  {tables, seed, damageType} as for buildStory
  */
-export function storyBeats(result, spec, style, { tables, seed = 1, damageType = null, conditionType = null } = {}) {
+export function storyBeats(result, spec, style, { tables, seed = 1, damageType = null, conditionType = null, open = false } = {}) {
   const log = tellingOrder(result.log);
   const end = log.find(e => e.type === "end");
   const endTurn = end ? (end.turn ?? 0) : Infinity;
@@ -1076,31 +1098,34 @@ export function storyBeats(result, spec, style, { tables, seed = 1, damageType =
     beat.events.push(e);
   }
   const bold = nameBolder(result, spec);
+  // (The GMs' alone: what the players shouldn't learn, and what a hidden creature not yet given away does.)
+  const hush = unseenEvents(log, spec);
+  const secretEvent = e => SECRET.has(e?.type) || hush.has(e);
   if ( style === "standard" ) {
     const { mentions } = storyCast(result, spec);
     for ( const beat of beats ) {
       if ( beat.closing ) continue;
       const rows = [];
-      for ( const s of tally(beat.events, mentions).values() ) {
+      for ( const s of tally(beat.events.filter(e => !secretEvent(e)), mentions).values() ) {
         const bits = tallyBits(s);
         if ( !bits.length && !s.notes.length ) continue;
         const notes = s.notes.length ? ` <small>(${bold(esc(s.notes.join("; ")))})</small>` : "";
         rows.push(`<li><strong>${esc(s.name)}</strong>: ${bold(esc(bits.join("; ")))}${notes}</li>`);
       }
-      for ( const e of beat.events ) if ( FALLS.has(e.type) && mentions(e) ) rows.push(`<li>${bold(esc(logLine(e)))}</li>`);
+      for ( const e of beat.events ) if ( FALLS.has(e.type) && mentions(e) && !secretEvent(e) ) rows.push(`<li>${bold(esc(logLine(e)))}</li>`);
       if ( rows.length ) beat.parts.push(`<ul>${rows.join("")}</ul>`);
       // (What only the GMs are told, as the log has it.)
-      const hidden = beat.events.filter(e => SECRET.has(e.type)).map(e => logLine(e)).filter(Boolean);
+      const hidden = beat.events.filter(secretEvent).map(e => logLine(e)).filter(Boolean);
       if ( hidden.length ) beat.secret.push(`<ul>${hidden.map(l => `<li>${bold(esc(l))}</li>`).join("")}</ul>`);
     }
     // The close: the whole fight's tally, and where everyone ended up.
     const close = byTurn.get("closing");
-    if ( close ) close.parts.push(standard(result, spec, "").html);
+    if ( close ) close.parts.push(standard(result, spec, "", { open }).html);
   } else {
     let opening = null;
     for ( const p of roleplayParagraphs(result, spec, tables, seed, damageType, conditionType) ) {
       // (What only the GMs are told goes apart.)
-      const into = e => { const b = byTurn.get(keyOf(e)); return b ? (SECRET.has(e?.type) ? b.secret : b.parts) : null; };
+      const into = e => { const b = byTurn.get(keyOf(e)); return b ? (secretEvent(e) ? b.secret : b.parts) : null; };
       if ( p.sentences ) for ( const x of p.sentences ) into(x.e)?.push(x.text);
       else if ( p.e ) into(p.e)?.push(p.text);
       else opening = p.text;
@@ -1120,7 +1145,10 @@ export function storyBeats(result, spec, style, { tables, seed = 1, damageType =
     const html = parts.join("");
     // (A command left with no one to take it is the story's to tell, not the fallen leader's to say.)
     const actorId = events.length && events.every(e => e.type === "command" && e.lost) ? null : whose;
-    return { turns, round, actorId, closing, html, text: plainText(html), gmHtml: secret.join("") };
+    // (A turn of a hidden creature not yet given away: not told in its name.)
+    const own = events.filter(e => e.actorId && e.actorId === actorId);
+    const anonymous = !!actorId && own.length > 0 && own.every(e => hush.has(e));
+    return { turns, round, actorId, closing, html, text: plainText(html), gmHtml: secret.join(""), ...(anonymous ? { anonymous } : {}) };
   });
 }
 
