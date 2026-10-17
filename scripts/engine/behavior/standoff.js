@@ -42,6 +42,17 @@ const ARGUMENT_BREAKS = 0.75;
 const TEMPER = { impatient: 2.5, cruel: 2, instigator: 2, brawler: 1.8, speedRunner: 1.5, moralist: 0.6, chicken: 0.5, peoplePleaser: 0.5, diplomat: 0.3, peacekeeper: 0.3 };
 
 /** Can this creature take part in a conversation at all? */
+/**
+ * Can a and b understand each other? A language in common; or, with languages set aside (options.ignoreLanguages),
+ * any language at all on both sides.
+ */
+export function shareLanguage(a, b, run = null) {
+  const la = a.spec.social?.languages ?? [];
+  const lb = b.spec.social?.languages ?? [];
+  if ( run?.prep.options.ignoreLanguages ) return la.length > 0 && lb.length > 0;
+  return la.some(l => lb.includes(l));
+}
+
 export function canTalk(u) {
   const s = u.spec.social;
   // (Not choking, nor in a rage, nor sealed in an ooze: the core's own conditions that say so.)

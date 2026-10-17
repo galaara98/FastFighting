@@ -22,6 +22,7 @@ import { edgeDistance, centerDistance, isStanding, liveTier, behaviorOf } from "
 import { meanPart, parseFormula } from "../dice.js";
 import { dangerOf } from "./traps.js";
 import { iwrOf } from "./effects.js";
+import { sharesSpace } from "./space.js";
 
 const STEP = 5;
 /** The eight ways out of a cell, and their names (a cell's blocked directions). */
@@ -57,11 +58,10 @@ const heightAt = (map, p) => Number(cellOf(map, p).cell?.g) || 0;
 const flies = t => (t.spec.speeds?.fly ?? 0) > 0 && !t.prone && !t.conds?.immobilized;
 
 /** Would t at that spot overlap one of them (sizes, center to center)? */
-const overlaps = (t, p, o) => (centerDistance({ pos: p, spec: t.spec }, o) ?? Infinity) < ((t.spec.position?.size ?? 5) + (o.spec.position?.size ?? 5)) / 2 - 0.5;
 
 /** Is that spot taken by someone else standing there (the doer counts: no shoving it into its own space)? */
 function taken(run, t, p) {
-  return run.units.some(o => o !== t && o.pos && isStanding(o) && !o.spec.hazard && overlaps(t, p, o));
+  return run.units.some(o => o !== t && o.pos && isStanding(o) && !o.spec.hazard && sharesSpace(t, p, o));
 }
 
 /** The nearest of the eight ways to go along (dx, dy). */
@@ -94,10 +94,10 @@ export function forcedPath(run, u, t, move) {
     if ( cellOf(map, at).cell?.b?.includes(name) ) { blocked = true; break; }
     const next = { x: at.x + sx * STEP, y: at.y + sy * STEP };
     // (Dragged: no closer than beside the one dragging it.)
-    if ( move.kind === "pull" && overlaps(t, next, u) ) break;
+    if ( move.kind === "pull" && sharesSpace(t, next, u) ) break;
     if ( taken(run, t, next) ) {
       blocked = true;
-      into = run.units.find(o => o !== t && o.pos && isStanding(o) && !o.spec.hazard && overlaps(t, next, o)) ?? null;
+      into = run.units.find(o => o !== t && o.pos && isStanding(o) && !o.spec.hazard && sharesSpace(t, next, o)) ?? null;
       break;
     }
     at = next;

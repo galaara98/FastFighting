@@ -19,18 +19,18 @@
  */
 import { STATUS, SWAY, NEUTRAL_PARTY, HOSTILE_GROUPS, GROUPS, clamp } from "../constants.js";
 import {
-  prepareBattle, beginRun, beginRound, playTurn, afterTurn, endRun, startTurn, noteCommand, log, notice, settleSides,
+  prepareBattle, beginRun, beginRound, playTurn, afterTurn, endRun, startTurn, noteCommand, log, notice, settleSides, tickEffects,
   breakOnHarm, noteHarm, noteFall, noteHeal, captureUnit, strikeOutOfTurn, settleAftermath, rethink
 } from "./simulator.js";
 import { createRun, createUnit, isStanding, areEnemies, edgeDistance, groupKeyOf, leadershipOf, SLOTS, headsUp } from "./battle-state.js";
 import { threats } from "./behavior/reactions.js";
 import { createRng, deriveSeed } from "./rng.js";
 import { prepareDoors } from "./behavior/doors.js";
-import { recompute, applyOutcome } from "./behavior/effects.js";
+import { recompute, applyOutcome, stillDoes } from "./behavior/effects.js";
 import { reactionsPerRound } from "./behavior/reactions.js";
 import { resolveTalk, applySway, aimOf, talkDC, stepsToConvince, bestPitch } from "./behavior/talk.js";
 import { expectOf } from "./behavior/bargain.js";
-import { rankedDesires, desireBand, want, levelOf, holdDesire, releaseDesire, forgetSides, styleOf } from "./behavior/desire.js";
+import { rankedDesires, desireBand, want, levelOf, holdDesire, releaseDesire, forgetSides, styleOf, keyOf, parseKey } from "./behavior/desire.js";
 import { validConditionKey, CORE_CONDITIONS, conditionMost } from "./conditions.js";
 import { GOALS, holdGoal, goalsOf } from "./behavior/goals.js";
 import { isBound, release } from "./behavior/holds.js";
@@ -199,17 +199,6 @@ export function nextSpotlight(run) {
 }
 
 /** An engine-only effect's rounds run down at the end of its bearer's turn (the system keeps its own conditions). */
-function tickEffects(run, u) {
-  if ( !u.effects?.length ) return;
-  for ( const e of u.effects ) e.rounds -= 1;
-  const before = u.effects.length;
-  u.effects = u.effects.filter(e => e.rounds > 0);
-  if ( u.effects.length !== before ) {
-    recompute(u);
-    settleSides(run);
-  }
-}
-
 const say = run => (unit, data) => log(run, unit, data);
 
 /**
@@ -642,8 +631,7 @@ function lift(u, key) {
     if ( !(key in (e.conditions ?? {})) ) return [e];
     const conditions = { ...e.conditions };
     delete conditions[key];
-    const rest = Object.keys(conditions).length || e.mods || e.mark?.length || e.iwr || e.boost || e.taunt || e.uses || e.fastHealing || e.regen;
-    return rest ? [{ ...e, conditions }] : [];
+    return stillDoes({ ...e, conditions }) ? [{ ...e, conditions }] : [];
   });
 }
 
@@ -885,7 +873,7 @@ export function clearRelation(run, id, { kind, byId } = {}) {
   const from = e => e.sourceId === byId;
   switch ( kind ) {
     case "afraid": {
-      const key = `avoid|${byId}`;
+      const key = keyOf("avoid", byId);
       run.live?.gm?.delete(`${u.id}|${key}`);
       for ( const layer of ["stated", "logic", "memory", "social", "style", "gm", "cond"] ) u.desire?.[layer]?.delete(key);
       u.grudges?.delete(byId);
@@ -954,7 +942,12 @@ export function conditionsOf(run, id) {
   const add = (kind, byId, extra = {}) => { if ( byId && run.byId.has(byId) ) relations.push({ kind, byId, ...extra }); };
   // (Afraid of: wanting to keep away from it, however it came about: the GM, a grudge, its pills, its fears.)
   const fears = new Set();
-  for ( const layer of ["stated", "logic", "memory", "social", "style", "gm"] ) for ( const k of u.desire?.[layer]?.keys() ?? [] ) if ( k.startsWith("avoid|") ) fears.add(k.slice(6));
+  for ( const layer of ["stated", "logic", "memory", "social", "style", "gm"] ) {
+    for ( const k of u.desire?.[layer]?.keys() ?? [] ) {
+      const [kind, byId] = parseKey(k);
+      if ( kind === "avoid" ) fears.add(byId);
+    }
+  }
   for ( const byId of fears ) {
     const level = levelOf(u, "avoid", byId);
     if ( level > 0 ) add("afraid", byId, { level, band: desireBand(level), gm: !!run.live?.gm?.has(`${u.id}|avoid|${byId}`) });
@@ -984,7 +977,7 @@ export function mindOf(run, id, { top = 5 } = {}) {
   const gm = new Set([...run.live?.gm?.keys() ?? []].filter(k => k.startsWith(`${u.id}|`)).map(k => k.slice(u.id.length + 1)));
   return {
     id: u.id, status: u.status, side: u.side, homeSide: u.homeSide, against: [...(u.against ?? [])],
-    desires: rankedDesires(run, u).slice(0, top).map(d => ({ ...d, band: desireBand(d.level), gm: gm.has(`${d.kind}|${d.targetId}`) })),
+    desires: rankedDesires(run, u).slice(0, top).map(d => ({ ...d, band: desireBand(d.level), gm: gm.has(keyOf(d.kind, d.targetId)) })),
     gm: [...gm].map(k => {
       const [kind, targetId] = k.split("|");
       return { kind, targetId, level: u.desire?.gm?.get(k) ?? 0 };

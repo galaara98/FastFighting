@@ -36,7 +36,7 @@ import { alliesOf, enemiesOf, isStanding, behaviorOf, typical, checkRoll, liveTi
 import { spendEdges, spendBoost } from "./effects.js";
 import { degreeDistribution, rollCheck } from "../probability.js";
 import { isNeutral, standsAside, appeal, offend, turnOn, standAside, joinSide, calm, settleTruce, seemsFoe, leanSide, fighting, dislikesViolence } from "./neutral.js";
-import { prefersTalk } from "./standoff.js";
+import { prefersTalk, shareLanguage } from "./standoff.js";
 import { levelOf, allDesires } from "./desire.js";
 import { standsGround, callRetreat } from "./morale.js";
 import { bargainAim, holdsOut, calmsDown, irritated, haggled, pressed, expectOf, owed } from "./bargain.js";
@@ -121,16 +121,7 @@ export function opposedToLean(run, n) {
 /** Always tries words before blows: "always prefers talking", a "talk first" answer, or a playstyle like the Diplomat. */
 const talksFirst = u => wish(u.spec.alwaysTalk) >= 0.66 || u.tac?.talk === "first" || !!behaviorOf(u).parleyFirst;
 
-/**
- * Can a and b understand each other? A language in common; or, with languages set aside (options.ignoreLanguages),
- * any language at all on both sides.
- */
-export function shareLanguage(a, b, run = null) {
-  const la = a.spec.social?.languages ?? [];
-  const lb = b.spec.social?.languages ?? [];
-  if ( run?.prep.options.ignoreLanguages ) return la.length > 0 && lb.length > 0;
-  return la.some(l => lb.includes(l));
-}
+export { shareLanguage };
 
 /**
  * What t still has to hand over (or have taken), after anything already lost this fight. (Money its side pools: after

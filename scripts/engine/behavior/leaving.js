@@ -16,7 +16,7 @@
 import { STATUS, LEAVE_RESOLVE, clamp } from "../../constants.js";
 import { ORDER_WEIGHTS } from "../playstyles.js";
 import { areEnemies, liveTrait } from "../battle-state.js";
-import { placeDesire } from "./desire.js";
+import { placeDesire, keyOf, pruneDesires } from "./desire.js";
 
 /** Desires toward others that leaving lays down: whatever would keep it in the quarrel. */
 const QUARREL = new Set(["hurt", "bind", "rob", "avoid"]);
@@ -76,14 +76,14 @@ export function confronted(run, u, by, cause, log = null) {
   if ( forgot ) {
     // (Going forgotten: it's in the fight again, stirred against whoever stopped it, as anything that stirs it fades.)
     stopLeaving(u);
-    u.desire?.memory.set(`${what}|${by.id}`, Math.max(u.desire.memory.get(`${what}|${by.id}`) ?? 0, FORGET + 1));
+    u.desire?.memory.set(keyOf(what, by.id), Math.max(u.desire.memory.get(keyOf(what, by.id)) ?? 0, FORGET + 1));
   } else {
     // (What stopped it, first; going, second: back on its way once it has dealt with that, unless something else stops it.)
-    if ( l.stopped ) u.desire?.stated.delete(`${l.stopped.kind}|${l.stopped.byId}`);
+    if ( l.stopped ) u.desire?.stated.delete(keyOf(l.stopped.kind, l.stopped.byId));
     l.stopped = { cause, kind: what, byId: by.id, acted: false };
     l.whole = 0; // (its turns given to going start over)
-    u.desire?.stated.set(`leave|${u.id}`, l.level);
-    u.desire?.stated.set(`${what}|${by.id}`, clamp(l.level + 1, 0, 100));
+    u.desire?.stated.set(keyOf("leave", u.id), l.level);
+    u.desire?.stated.set(keyOf(what, by.id), clamp(l.level + 1, 0, 100));
     placeDesire(u, what, by.id, "top");
     placeDesire(u, "leave", u.id, "second");
   }
@@ -103,7 +103,7 @@ export function dealsWithIt(u) {
 export function backOnItsWay(run, u) {
   const s = u.leaving?.stopped;
   if ( !s?.acted ) return;
-  u.desire?.stated.delete(`${s.kind}|${s.byId}`);
+  u.desire?.stated.delete(keyOf(s.kind, s.byId));
   u.leaving.stopped = null;
   layDown(run, u); // (what the turn stirred, laid down again)
   placeDesire(u, "leave", u.id, "top");
@@ -118,7 +118,7 @@ export function startLeaving(run, u, { by = null, why = null } = {}) {
   u.ranRound = run.round; // (seen running: its friends take it hard)
   layDown(run, u);
   // (Nothing it wants as badly: held there for as long as it's leaving, at the top of what it means to do.)
-  u.desire?.stated.set(`leave|${u.id}`, 100);
+  u.desire?.stated.set(keyOf("leave", u.id), 100);
   placeDesire(u, "leave", u.id, "top");
   return u.leaving;
 }
@@ -129,20 +129,13 @@ function layDown(run, u) {
   if ( !d || !u.leaving ) return;
   const side = u.leaving.bySide;
   const done = o => !!o && o !== u && (side ? o.side === side : areEnemies(run, u, o));
-  for ( const layer of ["stated", "memory", "frustration", "logic", "social", "style", "lean", "taunt", "puppet"] ) {
-    const m = d[layer];
-    if ( !m ) continue;
-    for ( const k of [...m.keys()] ) {
-      const at = k.indexOf("|");
-      if ( QUARREL.has(k.slice(0, at)) && done(run.byId.get(k.slice(at + 1))) ) m.delete(k);
-    }
-  }
+  pruneDesires(u, (kind, targetId) => QUARREL.has(kind) && done(run.byId.get(targetId)));
 }
 
 /** u gives up leaving: it's in the fight as before. */
 export function stopLeaving(u) {
   u.leaving = null;
-  u.desire?.stated.delete(`leave|${u.id}`);
+  u.desire?.stated.delete(keyOf("leave", u.id));
 }
 
 /**

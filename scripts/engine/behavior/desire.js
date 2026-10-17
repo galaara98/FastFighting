@@ -42,7 +42,7 @@
  * The strongest desire leads. Much weaker ones (BLIND_GAP or more below it) don't cross the character's mind, and
  * an obsessed character (OBSESSED+) stops worrying about its own safety.
  */
-import { STATUS, TACTICAL, ADHD } from "../../constants.js";
+import { STATUS, TACTICAL, ADHD, clamp } from "../../constants.js";
 import { areEnemies, isStanding, liveTrait, liveTier, enemiesOf, alliesOf, sizedUp, command, commandOf, refusesToHelp, movesNeeded, edgeDistance } from "../battle-state.js";
 import { perceives, apparentHealth } from "./senses.js";
 import { seemsFoe } from "./neutral.js";
@@ -72,15 +72,17 @@ export const CHOICE_LEVEL = 45;
 export const BLIND_GAP = 20;
 export const OBSESSED = 80;
 
-const clamp = v => Math.max(0, Math.min(100, v));
-const keyOf = (kind, targetId) => `${kind}|${targetId}`;
+/** A desire's level: 0 to 100. */
+const toLevel = v => clamp(v, 0, 100);
+/** A desire's key, what each layer keeps it under: its kind and its target ("hurt|goblin1"). */
+export const keyOf = (kind, targetId) => `${kind}|${targetId}`;
 /**
  * A key's kind and target, read once (desires are ranked many times a turn); started over past PARSED_MOST, so a long
  * session's battles, each with creatures of their own, don't keep every key they ever had.
  */
 const PARSED = new Map();
 const PARSED_MOST = 20000;
-function parseKey(k) {
+export function parseKey(k) {
   let p = PARSED.get(k);
   if ( !p ) {
     if ( PARSED.size >= PARSED_MOST ) PARSED.clear();
@@ -118,7 +120,7 @@ export function initDesires(u) {
   u.desire = { stated: new Map(), memory: new Map(), frustration: new Map(), logic: new Map(), social: new Map(), style: new Map(), lean: new Map(), taunt: new Map(), gm: new Map(), cond: new Map() };
   for ( const d of u.spec.desires ?? [] ) {
     if ( !DESIRE_KINDS.includes(d.kind) || !d.targetId || d.targetId === u.id ) continue;
-    u.desire.stated.set(keyOf(d.kind, d.targetId), clamp(Number(d.level) || 0));
+    u.desire.stated.set(keyOf(d.kind, d.targetId), toLevel(Number(d.level) || 0));
   }
 }
 
@@ -142,21 +144,21 @@ function feel(u, kind, targetId, level) {
   if ( !u.desire || !targetId || targetId === u.id ) return;
   const m = (u.desire.cond ??= new Map());
   const k = keyOf(kind, targetId);
-  m.set(k, Math.max(m.get(k) ?? 0, clamp(level)));
+  m.set(k, Math.max(m.get(k) ?? 0, toLevel(level)));
 }
 
 /** What the unit's tactics conclude this turn (the strongest reason for each kind and target wins). */
 export function think(u, kind, targetId, level) {
   if ( !u.desire || !targetId || (targetId === u.id && !SELF_KINDS.has(kind)) ) return;
   const k = keyOf(kind, targetId);
-  u.desire.logic.set(k, Math.max(u.desire.logic.get(k) ?? 0, clamp(level)));
+  u.desire.logic.set(k, Math.max(u.desire.logic.get(k) ?? 0, toLevel(level)));
 }
 
 /** The fight stirs something: want it more. */
 export function want(u, kind, targetId, amount) {
   if ( !u.desire || !targetId || targetId === u.id || !(amount > 0) ) return;
   const k = keyOf(kind, targetId);
-  u.desire.memory.set(k, clamp((u.desire.memory.get(k) ?? 0) + amount));
+  u.desire.memory.set(k, toLevel((u.desire.memory.get(k) ?? 0) + amount));
 }
 
 /** Something got in the way: the desire wears down (faster for the faint-hearted). */
@@ -191,7 +193,7 @@ function levelOfKey(d, k, conditions = true) {
     if ( held !== undefined ) return held;
   }
   if ( d.puppet?.size ) return d.puppet.get(k) ?? 0;
-  return clamp(Math.max(d.logic.get(k) ?? 0, d.stated.get(k) ?? 0, d.taunt.get(k) ?? 0, conditions ? d.cond?.get(k) ?? 0 : 0) + (d.lean.get(k) ?? 0) + (d.style.get(k) ?? 0) + (d.memory.get(k) ?? 0) + (d.social.get(k) ?? 0) - (d.frustration.get(k) ?? 0));
+  return toLevel(Math.max(d.logic.get(k) ?? 0, d.stated.get(k) ?? 0, d.taunt.get(k) ?? 0, conditions ? d.cond?.get(k) ?? 0 : 0) + (d.lean.get(k) ?? 0) + (d.style.get(k) ?? 0) + (d.memory.get(k) ?? 0) + (d.social.get(k) ?? 0) - (d.frustration.get(k) ?? 0));
 }
 
 /**
@@ -231,26 +233,33 @@ export function forgetSides(run, u) {
   const HARM = new Set(["hurt", "avoid", "bind", "rob"]);
   const CARE = new Set(["heal", "protect", "aid", "free", "bolstered"]);
   const unfit = (a, kind, t) => !!t && t !== a && (HARM.has(kind) ? !areEnemies(run, a, t) : CARE.has(kind) ? areEnemies(run, a, t) : false);
-  const prune = (a, only = null) => {
-    if ( !a.desire ) return;
-    for ( const layer of ["stated", "memory", "frustration", "logic", "social", "style", "lean", "taunt", "puppet"] ) {
-      const m = a.desire[layer];
-      if ( !m ) continue;
-      for ( const k of [...m.keys()] ) {
-        const [kind, targetId] = parseKey(k);
-        if ( only && targetId !== only ) continue;
-        if ( unfit(a, kind, run.byId.get(targetId)) ) m.delete(k);
-      }
+  pruneDesires(u, (kind, targetId) => unfit(u, kind, run.byId.get(targetId)));
+  for ( const o of run.units ) if ( o !== u ) pruneDesires(o, (kind, targetId) => targetId === u.id && unfit(o, kind, u));
+}
+
+/**
+ * The layers a quarrel is in, and what a change of heart prunes: everything but the GM's holds and its conditions'
+ * wishes (which come and go with the GM and the conditions).
+ */
+export const QUARREL_LAYERS = Object.freeze(["stated", "memory", "frustration", "logic", "social", "style", "lean", "taunt", "puppet"]);
+
+/** u's desires that drop(kind, targetId) says to, taken out of these layers. */
+export function pruneDesires(u, drop, layers = QUARREL_LAYERS) {
+  if ( !u?.desire ) return;
+  for ( const layer of layers ) {
+    const m = u.desire[layer];
+    if ( !m ) continue;
+    for ( const k of [...m.keys()] ) {
+      const [kind, targetId] = parseKey(k);
+      if ( drop(kind, targetId) ) m.delete(k);
     }
-  };
-  prune(u);
-  for ( const o of run.units ) if ( o !== u ) prune(o, u.id);
+  }
 }
 
 /** The GM holds u's desire at this level (0: set aside) until handing it back. */
 export function holdDesire(u, kind, targetId, level) {
   if ( !u.desire || !targetId ) return;
-  (u.desire.gm ??= new Map()).set(keyOf(kind, targetId), clamp(Math.round(Number(level) || 0)));
+  (u.desire.gm ??= new Map()).set(keyOf(kind, targetId), toLevel(Math.round(Number(level) || 0)));
   if ( Number(level) > 0 ) placeDesire(u, kind, targetId, "top");
 }
 
@@ -271,7 +280,7 @@ export function goaded(run, u) {
     const by = run.byId.get(e.sourceId);
     if ( !by || !isStanding(by) || !areEnemies(run, u, by) ) continue;
     const k = keyOf("hurt", by.id);
-    u.desire.taunt.set(k, Math.max(u.desire.taunt.get(k) ?? 0, clamp(e.taunt)));
+    u.desire.taunt.set(k, Math.max(u.desire.taunt.get(k) ?? 0, toLevel(e.taunt)));
     placeDesire(u, "hurt", by.id, "top"); // (a taunt takes its attention, for as long as it lasts)
   }
 }
@@ -744,7 +753,7 @@ export function listen(run, u, { canHeal = false, canTalk = false, canAid = fals
   // a fallen leader is a reason to settle scores, not to stop caring.)
   if ( leaderless(run, u) ) {
     for ( const k of new Set([...u.desire.logic.keys(), ...u.desire.style.keys(), ...u.desire.stated.keys()]) ) {
-      const [kind, targetId] = k.split("|");
+      const [kind, targetId] = parseKey(k);
       if ( (kind === "heal" || kind === "protect" || kind === "aid") && targetId !== u.id ) u.desire.social.set(k, (u.desire.social.get(k) ?? 0) - LEADERLESS.cooperative);
     }
   }

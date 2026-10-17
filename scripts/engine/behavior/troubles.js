@@ -10,7 +10,7 @@
  */
 import { profileOf, profiled, INSIDE } from "../conditions.js";
 import { typical } from "../battle-state.js";
-import { recompute } from "./effects.js";
+import { recompute, stillDoes } from "./effects.js";
 import { afflictionFor } from "./afflictions.js";
 import { normalizeCost } from "../turn.js";
 import { parseFormula } from "../dice.js";
@@ -83,8 +83,7 @@ export function setConditionValue(u, key, n) {
       conditions[key] = value;
       kept = true;
     } else delete conditions[key];
-    const rest = Object.keys(conditions).length || e.mods || e.mark?.length || e.iwr || e.boost || e.taunt || e.uses || e.fastHealing || e.regen;
-    return rest ? [{ ...e, conditions }] : [];
+    return stillDoes({ ...e, conditions }) ? [{ ...e, conditions }] : [];
   });
   if ( u.baseConds ) {
     if ( value > 0 && !kept ) u.baseConds[key] = value;

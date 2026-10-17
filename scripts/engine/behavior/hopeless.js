@@ -9,10 +9,11 @@ import { TACTICAL } from "../../constants.js";
 import { movesNeeded, liveTier } from "../battle-state.js";
 import { hasUses } from "./evaluate.js";
 import { perceives } from "./senses.js";
-import { canTalk } from "./standoff.js";
-import { shareLanguage } from "./talk.js";
+import { canTalk, shareLanguage } from "./standoff.js";
+import { keyOf } from "./desire.js";
 
 /** The layers a desire given up comes out of (all but the GM's, and its controller's). */
+/** Where an abandoned desire is let go of: everywhere but the GM's holds and a controller's wishes (theirs to keep). */
 const LAYERS = ["stated", "memory", "frustration", "logic", "social", "style", "lean", "taunt", "cond"];
 
 /** Something u can use, with a way to t from here. */
@@ -43,7 +44,7 @@ export function sinkHopeless(run, u, ranked) {
   const keeps = liveTier(run, u) >= TACTICAL.TACTICAL;
   const live = new Set();
   for ( const x of ranked ) {
-    const k = `${x.kind}|${x.targetId}`;
+    const k = keyOf(x.kind, x.targetId);
     live.add(k);
     if ( canWorkOn(run, u, x.kind, run.byId.get(x.targetId)) ) {
       sunk.delete(k);

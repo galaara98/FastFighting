@@ -2070,10 +2070,7 @@ function leavingTurn(run, u, turn, { whole = true } = {}) {
     const cost = escapeCost(rules, u, hold, run);
     if ( !turn.canAfford(cost) ) break;
     turn.spend(cost);
-    const got = tryHold(run, u, hold);
-    if ( got.success ) release(run, u, hold);
-    log(run, u, { type: "escape", hold: hold.key, success: got.success, ...rollOf(got), ...(got.said?.text ? { said: got.said.text } : {}) });
-    if ( !got.success ) break;
+    if ( !attemptEscape(run, u, hold).success ) break;
   }
   if ( !way ) {
     // (No way off: it looks for one; its turns given to going, it's gone all the same.)
@@ -2767,6 +2764,30 @@ export function turnUpkeep(run, u) {
   u.disengaged = false;
 }
 
+/** A round of u's effects gone by: those whose time is up end (and what they did to its conditions and its side). */
+export function tickEffects(run, u) {
+  if ( !u.effects?.length ) return;
+  for ( const e of u.effects ) e.rounds -= 1;
+  const before = u.effects.length;
+  u.effects = u.effects.filter(e => e.rounds > 0);
+  if ( u.effects.length !== before ) {
+    recomputeConditions(u);
+    settleSides(run);
+  }
+}
+
+/**
+ * A try at breaking a hold: the system's way or its escape against it (behavior/holds.js), loose on a success, told, and
+ * what the try did to whoever holds it (harmHolder: PF2e's cutting free of a gullet), whichever way it's tried.
+ */
+function attemptEscape(run, u, hold) {
+  const got = tryHold(run, u, hold);
+  if ( got.success ) release(run, u, hold);
+  log(run, u, { type: "escape", hold: hold.key, success: got.success, ...rollOf(got), ...(got.said?.text ? { said: got.said.text } : {}) });
+  harmHolder(run, u, hold, got);
+  return got;
+}
+
 /**
  * A prisoner struggling (tied up and awake, getting loose what it wants most): against its bonds, the system's way or its
  * escape against them (behavior/holds.js); loose, it's in the fight again from its next turn.
@@ -2774,10 +2795,7 @@ export function turnUpkeep(run, u) {
 function struggle(run, u) {
   if ( !u.active ) return;
   const hold = holdsOf(run, u).find(h => h.key === "bound");
-  if ( !hold ) return;
-  const got = tryHold(run, u, hold);
-  if ( got.success ) release(run, u, hold);
-  log(run, u, { type: "escape", hold: "bound", success: got.success, ...rollOf(got), ...(got.said?.text ? { said: got.said.text } : {}) });
+  if ( hold ) attemptEscape(run, u, hold);
 }
 
 /**
@@ -2802,10 +2820,7 @@ function breakFree(run, u, turn) {
     const cost = escapeCost(rules, u, hold, run);
     if ( !turn.canAfford(cost) ) return;
     turn.spend(cost);
-    const got = tryHold(run, u, hold);
-    if ( got.success ) release(run, u, hold);
-    log(run, u, { type: "escape", hold: hold.key, success: got.success, ...rollOf(got), ...(got.said?.text ? { said: got.said.text } : {}) });
-    harmHolder(run, u, hold, got);
+    attemptEscape(run, u, hold);
   }
 }
 
@@ -3274,11 +3289,7 @@ function conditionUpkeep(run, u) {
     }
     if ( p.hold && p.act === false && u.status === STATUS.STANDING ) {
       const hold = holdsOf(run, u).find(h => h.key === key && h.core);
-      if ( hold ) {
-        const got = tryHold(run, u, hold);
-        if ( got.success ) release(run, u, hold);
-        log(run, u, { type: "escape", hold: key, success: got.success, ...rollOf(got) });
-      }
+      if ( hold ) attemptEscape(run, u, hold);
     }
   }
   for ( const [key, v, p] of profiled(u) ) {
@@ -3367,15 +3378,7 @@ export function endOfTurn(run, u) {
       });
     }
   }
-  if ( u.effects?.length ) {
-    for ( const e of u.effects ) e.rounds -= 1;
-    const before = u.effects.length;
-    u.effects = u.effects.filter(e => e.rounds > 0);
-    if ( u.effects.length !== before ) {
-      recomputeConditions(u);
-      settleSides(run);
-    }
-  }
+  tickEffects(run, u);
   // (A grab that lasts as long as what it laid with it, PF2e's until the grabber's next turn: let go with it.)
   if ( u.grabbedBy && u.grabKey && !u.effects.some(e => e.key === u.grabKey && e.sourceId === u.grabbedBy) ) {
     u.grabbedBy = null;
