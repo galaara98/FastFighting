@@ -1926,8 +1926,8 @@ function executeBuff(run, u, action, targets, worth = 0, turn = null) {
     if ( !tier || tier.kind !== "buff" ) return spendUse(u, action);
     return executeBuff(run, u, { ...tier, id: action.id }, targets, worth, turn);
   }
-  // (A live battle's: the system's own card for a spell, as its caster shows it.)
-  if ( isMagical(action) ) showAction(run, u, action, targets[0] ?? null);
+  // (A live battle's: the system's own card for it, as its user shows it; one a check lands shows its check's card.)
+  if ( !action.check ) showAction(run, u, action, targets[0] ?? null);
   if ( action.oncePerTurn ) (u.usedThisTurn ??= new Set()).add(action.id);
   const now = Number(action.outcome?.actionsNow) || 0;
   if ( now > 0 && turn && targets.includes(u) ) turn.pools[mainPool(run.prep.rules)] = (turn.pools[mainPool(run.prep.rules)] ?? 0) + now;
@@ -1991,8 +1991,8 @@ function executeHeal(run, u, action, target) {
     if ( !tier || tier.kind !== "heal" ) return spendUse(u, action);
     return executeHeal(run, u, { ...tier, id: action.id }, target);
   }
-  // (A live battle's: the system's own card for a spell, as its caster shows it.)
-  if ( isMagical(action) ) showAction(run, u, action, target);
+  // (A live battle's: the system's own card for it, as its user shows it; a heal a check lands shows its check's card.)
+  if ( !action.healCheck ) showAction(run, u, action, target);
   let multiplier = 1;
   let roll = null;
   if ( action.healCheck ) {
