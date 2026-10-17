@@ -2515,7 +2515,7 @@ Status penalties don't stack: a roll takes the worst that applies to it. Frighte
 
 - A penalty already on the sheet when its numbers were read (a fight resumed, a live battle) isn't counted twice: the rolls count only what changed since.
 - Frightened is only a penalty: it doesn't keep a creature away from what frightened it. Fleeing makes it want to keep away at desire level 90 (obsessed). PF2e's fear steps (frightened 2) are its own; the core builds no hidden fear on top.
-- The AI weighs a condition as a share of the creature's fighting lost each round: slowed n/3, stunned min(1, n/3), paralyzed 1, fleeing 0.8, frightened or sickened 0.08n, clumsy 0.04n, enfeebled 0.05n, off-guard 0.08.
+- The Statistics Engine weighs a condition as a share of the creature's fighting lost each round: slowed n/3, stunned min(1, n/3), paralyzed 1, fleeing 0.8, frightened or sickened 0.08n, clumsy 0.04n, enfeebled 0.05n, off-guard 0.08.
 
 Code: `rules.js` `STATUS_ON`, `statusPenalty`, `conditionMods`, `conditionWeight`, `conditionWishes`, `modifiers`, `disrupted`, `drain`.
 
@@ -2849,7 +2849,7 @@ What it decides: what each condition does to rolls.
 
 - Frightened is on or off; it can't move closer to its source, so it keeps away at desire level 60, however bold.
 - Grappled is the core's grab; Charmed (or Dominate) is the core's controlled: it fights for its caster.
-- The AI weighs a condition as a share of its fighting lost each round: paralyzed, stunned, unconscious, petrified 1; swallowed 0.55; restrained 0.4; engulfed 0.4; blinded 0.35; charmed 0.3; slowed 0.3; frightened 0.25; poisoned 0.2.
+- The Statistics Engine weighs a condition as a share of its fighting lost each round: paralyzed, stunned, unconscious, petrified 1; swallowed 0.55; restrained 0.4; engulfed 0.4; blinded 0.35; charmed 0.3; slowed 0.3; frightened 0.25; poisoned 0.2.
 
 Code: `rules.js` `HELPLESS`, `HAMPERED`, `modifiers`, `conditionWishes`, `conditionWeight`; `conditions.js` `READ`.
 
@@ -2901,7 +2901,7 @@ Search: Shove, push 5 feet, knock prone, Grapple, Unarmed Strike, maneuver
 
 What it decides: the DC and result of a character's or humanoid's Shove and Grapple.
 
-- An action; the target saves with its better of Strength and Dexterity against 8 + the attacker's Strength + proficiency, at most one size larger. A failed save: pushed 5 feet, or knocked prone (two options, the AI picks); Grapple: grappled, and it takes a free hand.
+- An action; the target saves with its better of Strength and Dexterity against 8 + the attacker's Strength + proficiency, at most one size larger. A failed save: pushed 5 feet, or knocked prone (two options, the Statistics Engine picks); Grapple: grappled, and it takes a free hand.
 
 Code: `adapter.js` `#actions`.
 
@@ -3364,7 +3364,7 @@ What it decides: when a character spends Hope.
 
 - Before rolling, it spends a Hope on its best Experience when one fits (a 60% chance) and the bonus raises its chance of success by at least 20 points (Resources: conserve), 12 (balanced) or 6 (nova).
 - Unless nova, a character with a 3-Hope feature keeps 3 Hope back, except on a roll under 35% likely to work.
-- The AI weighs a Hope at 0.3 Hit Points, only as far as it has room.
+- The Statistics Engine weighs a Hope at 0.3 Hit Points, only as far as it has room.
 - Help an Ally: a Hope, no spotlight of its own, once a turn, within Close: a d6 on the friend's next action roll.
 
 Code: `rules.js` `experienceFor`, `HOPE_SPENDING`, `FITS`, `HOPE_WORTH`, `resourceWorth`; `actions.js` `helpAnAlly`; `adapter.js` `#character` (hopeReserve).
@@ -3398,7 +3398,7 @@ What it decides: how damage becomes Hit Points marked.
 - Then by the thresholds: under Major 1 HP, Major 2, Severe 3; twice Severe 4 with the **Massive Damage** rule. A feature's severity reduction takes steps off; immunity to Minor ignores a 1-HP hit.
 - A character marks an Armor Slot to take one step off, by its **Shields** answer: always (any hit), sparingly (Major or worse), never (only Severe). Unanswered: Major or worse, or any hit while it has more than half its slots. Direct damage: no Armor Slot.
 - Stress damage marks Stress; Stress it can't mark becomes Hit Points.
-- The AI weighs a Stress cleared at 0.25 Hit Points, 1.5 times that with no Stress left to mark.
+- The Statistics Engine weighs a Stress cleared at 0.25 Hit Points, 1.5 times that with no Stress left to mark.
 
 Code: `rules.js` `applyIwr`, `marksFor`, `marksArmor`, `STRESS_WORTH`; `adapter.js` `harmOf`.
 
@@ -3671,7 +3671,7 @@ What it decides: when a character burns momentum.
 | Balanced | stakes 0.1 or more | momentum 6+, or stakes 0.5+ |
 | All out | always | momentum 4+, or stakes 0.3+ |
 
-- The AI weighs a point of momentum at 0.2 × ticks per harm × its Strike's average harm.
+- The Statistics Engine weighs a point of momentum at 0.2 × ticks per harm × its Strike's average harm.
 
 Code: `moves.js` `MOMENTUM`, `burnGrade`; `rules.js` `adjustRoll`, `resetOf`, `resourceWorth`.
 
