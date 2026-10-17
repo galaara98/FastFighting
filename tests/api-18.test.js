@@ -7,7 +7,7 @@
 import { afterEach, describe, expect, test } from "vitest";
 import {
   CORE_API_VERSION, sideAfter, statusesOf, statusEntry, toggleStatus, undoRecord, payFrom, handOverItem, englishName, englishDescription,
-  DESCRIPTION_MOST, plainText, numberSetting, idFromUuid, partsOf, traitsFromParts, listWords, saysWord
+  DESCRIPTION_MOST, plainText, numberSetting, idFromUuid, tokenIdIn, partsOf, traitsFromParts, listWords, saysWord
 } from "../scripts/core-api.js";
 
 const was = { CONFIG: globalThis.CONFIG };
@@ -129,9 +129,12 @@ describe("the rest", () => {
     expect(set.read()).toBe(2);
   });
 
-  test("a uuid's last id", () => {
+  test("a uuid's last id; the token one names or is inside", () => {
     expect(idFromUuid("Scene.s.Token.t")).toBe("t");
     expect(idFromUuid("t")).toBe("t");
     expect(idFromUuid(null)).toBeNull();
+    expect(tokenIdIn("Scene.s.Token.t")).toBe("t");
+    expect(tokenIdIn("Scene.s.Token.t.Actor.a")).toBe("t");
+    expect(tokenIdIn("Actor.a")).toBeNull();
   });
 });

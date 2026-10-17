@@ -28,5 +28,5 @@ export { localize, hasWords, fillIn, listJoin, listItems, language, outcomeLine,
 export { sideAfter } from "./engine/changes.js";
 export {
   statusesOf, statusEntry, toggleStatus, undoRecord, payFrom, handOverItem, englishName, englishDescription, DESCRIPTION_MOST, plainText,
-  numberSetting, idFromUuid
+  numberSetting, idFromUuid, tokenIdIn
 } from "./foundry/sheet-tools.js";

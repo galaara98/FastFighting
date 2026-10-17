@@ -168,5 +168,11 @@ export function numberSetting(moduleId, key, { min, max, step = null, default: f
   };
 }
 
+/**
+ * The id of the token a uuid names or is inside ("Scene.s.Token.t", or an unlinked token's actor "Scene.s.Token.t.Actor.a":
+ * "t"), or null when it names none (a world actor's).
+ */
+export const tokenIdIn = uuid => (typeof uuid === "string" && uuid.includes("Token.") ? uuid.split("Token.").pop().split(".")[0] : null);
+
 /** The id at the end of a uuid ("Scene.x.Token.y": "y"), or the id itself; null for none. */
 export const idFromUuid = ref => (typeof ref === "string" && ref ? ref.split(".").pop() : null);
