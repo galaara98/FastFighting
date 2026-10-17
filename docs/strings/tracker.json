@@ -41447,7 +41447,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "248b11099031"
+   "hash": "248b11099031",
+   "changed": true
   },
   "dcc:FFDCC.Help": {
    "repo": "dcc",
@@ -42552,6 +42553,16 @@
    "date": null,
    "commit": null,
    "hash": "f40650e6e30c"
+  },
+  "dcc:FFDCC.Wrestling": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.Wrestling",
+   "area": "dcc/General",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "248b11099031"
   },
   "dcc:module.json:description": {
    "repo": "dcc",
