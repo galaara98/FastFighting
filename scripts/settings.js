@@ -84,6 +84,8 @@ export function registerSettings(DefaultsConfig, GenericPathsConfig, StoryTables
   game.settings.register(MODULE_ID, "partyCommand", { scope: "world", config: false, type: Object, default: {} });
   // The journal entry that keeps live battles (foundry/live-battle.js store): only a GM can write a world setting.
   game.settings.register(MODULE_ID, "liveStore", { scope: "world", config: false, type: String, default: "" });
+  // This computer's pace, from its last prediction (engine/run-budget.js paceOf): the planner's estimate goes by it.
+  game.settings.register(MODULE_ID, "runPace", { scope: "client", config: false, type: Number, default: 1 });
   game.settings.registerMenu(MODULE_ID, "genericPathsMenu", {
     name: "FASTFIGHTING.Generic.MenuName",
     label: "FASTFIGHTING.Generic.MenuLabel",

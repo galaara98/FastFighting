@@ -34,7 +34,7 @@ GMs get buttons at the top of the Combat Tracker: **Planner**, **Survey** (see [
 The window needs at least 1000×600 and uses any extra space.
 
 **Toolbar**
-- **Seconds** (how long the prediction runs), **Max rounds** and **Seed**.
+- **Seconds** (how long the prediction runs), **Max rounds** and **Seed**. Under 100 fights, the odds are rough and the planner says so; its estimate before a Run goes by how fast this computer ran the last one.
 - **Downed**, **After the fight** (see [After the fight](#after-the-fight)), **Opening** (see [Talking](#talking)) and **Initiative**.
 - Toggles: Terrain & positioning, Morale, Leadership, Talking, Ignore languages, Bystanders, Hidden tokens, and, with a helper that plays live battles, Players run their characters.
 - **Run** (**Stop** while it runs), Refresh, Clear and **Rewind This Encounter**.
@@ -342,6 +342,10 @@ World settings, under **Configure Settings → FastFighting**. The planner overr
 | Apply players' damage | off | A player's damage card against a creature FastFighting runs is applied at once; off, the Battle Vantage asks a GM. Per battle in the planner and the Battle Vantage; greyed out where the system applies players' damage itself. |
 
 Menus: **Story tables** (Manage), **Side personality defaults** (each side's Tactical, Brave, Selfish and Loyal), and **Generic system data paths**.
+
+## Performance survey
+
+Optional: the [FastFighting Performance Survey](https://tally.so/r/vXjzAv) asks about your setup, a battle you planned and how many fights the planner ran. It helps make FastFighting faster. The link is also at the foot of FastFighting's settings.
 
 ## What it doesn't do
 

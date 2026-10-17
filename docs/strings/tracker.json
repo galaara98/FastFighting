@@ -130,6 +130,17 @@
    "status": "todo",
    "date": null,
    "commit": null,
+   "hash": "08d655006cb6",
+   "changed": true
+  },
+  "core:code:scripts/apps/battle-planner.js:onRun#2": {
+   "repo": "core",
+   "file": "scripts/apps/battle-planner.js",
+   "key": "scripts/apps/battle-planner.js:onRun#2",
+   "area": "core/code",
+   "status": "todo",
+   "date": null,
+   "commit": null,
    "hash": "08d655006cb6"
   },
   "core:code:scripts/apps/battle-planner.js:recallRun#1": {
@@ -536,6 +547,16 @@
    "date": null,
    "commit": null,
    "hash": "32f6dbb2481b"
+  },
+  "core:code:scripts/foundry/live-battle.js:turnRoll#1": {
+   "repo": "core",
+   "file": "scripts/foundry/live-battle.js",
+   "key": "scripts/foundry/live-battle.js:turnRoll#1",
+   "area": "core/code",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "1ce4e3399cde"
   },
   "core:code:scripts/foundry/live-battle.js:writeChanges#1": {
    "repo": "core",
@@ -15421,6 +15442,26 @@
    "date": null,
    "commit": null,
    "hash": "3e687de48a6a"
+  },
+  "core:FASTFIGHTING.Settings.Survey.Hint": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Settings.Survey.Hint",
+   "area": "core/Settings",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "2027cb129dfb"
+  },
+  "core:FASTFIGHTING.Settings.Survey.Link": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Settings.Survey.Link",
+   "area": "core/Settings",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "83609b7a37b8"
   },
   "core:FASTFIGHTING.Settings.switchLuck.Hint": {
    "repo": "core",
@@ -43081,6 +43122,17 @@
    "repo": "dnd5e",
    "file": "scripts/adapter.js",
    "key": "scripts/adapter.js:rollDnd5eReaction#1",
+   "area": "dnd5e/code",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "2b9963c52fb9",
+   "gone": "2026-10-17"
+  },
+  "dnd5e:code:scripts/adapter.js:rollDnd5eStrike#1": {
+   "repo": "dnd5e",
+   "file": "scripts/adapter.js",
+   "key": "scripts/adapter.js:rollDnd5eStrike#1",
    "area": "dnd5e/code",
    "status": "todo",
    "date": null,

@@ -32,7 +32,7 @@ import { rememberRun, recallRun } from "../foundry/run-memory.js";
 import { startLiveBattle, liveBattle, systemAppliesText } from "../foundry/live-battle.js";
 import { BattleVantage } from "./battle-vantage.js";
 import { blink, keepTyping } from "./blink.js";
-import { expectedRuns, ROUGH_RUNS } from "../engine/run-budget.js";
+import { expectedRuns, paceOf, ROUGH_RUNS } from "../engine/run-budget.js";
 import { signedNumber } from "../engine/trait-parts.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -760,12 +760,12 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /**
    * So many creatures that few fights fit the prediction's time (the odds will be rough); or nothing. How many did, once
-   * it has run (this computer's speed); before, about how many will.
+   * it has run (this computer's speed); before, about how many will, at the pace its last prediction ran (runPace).
    */
   #runsNote(resolved) {
     const creatures = this.roster.filter(e => resolved[e.token.id] && this.setup.tokens[e.token.id]?.include !== false).length;
     const seconds = predictionSeconds(this.setup);
-    const runs = this.results && !this.stale ? this.results.runs : expectedRuns(creatures, seconds);
+    const runs = this.results && !this.stale ? this.results.runs : expectedRuns(creatures, seconds, setting("runPace"));
     return runs < ROUGH_RUNS ? game.i18n.format("FASTFIGHTING.Planner.ManyCreatures", { creatures, runs, seconds }) : null;
   }
 
@@ -1110,8 +1110,13 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       this.sample = typicalFight(spec, results);
         this.restoredAt = null;
       if ( this.abort.signal.aborted ) ui.notifications.info("FASTFIGHTING.Planner.Stopped", { format: { n: results.runs } });
-      // (Kept, to show again if the planner opens on this same battle: a run cut short isn't.)
-      else rememberRun(this.holderUuid, spec, results);
+      else {
+        // (Kept, to show again if the planner opens on this same battle: a run cut short isn't. And this computer's
+        // pace, for the next estimate.)
+        rememberRun(this.holderUuid, spec, results);
+        const pace = paceOf(spec.combatants.length, predictionSeconds(this.setup), results.runs);
+        if ( pace ) Promise.resolve().then(() => game.settings.set(MODULE_ID, "runPace", pace)).catch(err => console.warn(`${MODULE_ID} | keeping the pace`, err));
+      }
     } catch ( err ) {
       console.error(`${MODULE_ID} | simulation failed`, err);
       ui.notifications.error("FASTFIGHTING.Planner.RunFailed", { format: { error: err.message } });

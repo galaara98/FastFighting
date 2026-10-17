@@ -9,6 +9,16 @@ import { hasSystemAdapter } from "./api.js";
 
 export const SYSTEMS_URL = "https://github.com/galaara98/FastFighting/blob/main/systems.md";
 
+/** The optional performance survey: how many fights the planner runs, on what (linked at the foot of the settings). */
+export const SURVEY_URL = "https://tally.so/r/vXjzAv";
+
+/** The survey's link, for the foot of FastFighting's settings. */
+export function surveyHtml() {
+  return `<p class="ff-survey"><i class="fa-solid fa-gauge-high"></i>
+    <a href="${SURVEY_URL}" target="_blank" rel="noopener">${esc(game.i18n.localize("FASTFIGHTING.Settings.Survey.Link"))}</a>
+    <span class="hint">${esc(game.i18n.localize("FASTFIGHTING.Settings.Survey.Hint"))}</span></p>`;
+}
+
 /** Helper modules we know about, by game system id (keep in sync with systems.md). Their titles: FASTFIGHTING.Helper.Module. */
 export const KNOWN_HELPERS = Object.freeze({
   pf2e: { module: "fast-fighting-pf2e", url: "https://github.com/galaara98/FastFighting-PF2e" },

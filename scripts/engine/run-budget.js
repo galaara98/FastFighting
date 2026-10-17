@@ -5,7 +5,9 @@
  * creatures in it (each, on its turn, weighs everyone else), a little faster past fifty or so: about FIGHT_MS_PER_PAIR ×
  * creatures² for a fight of six rounds (measured on a desktop, two sides in blocks 40 feet apart, a third of each
  * shooting: 16 creatures 6.7 ms a fight, 32 27 ms, 64 142 ms, 100 502 ms, in fights of five or six rounds), so a big
- * battle gets fewer fights in the same time: the planner warns when so few fit that the odds will be rough.
+ * battle gets fewer fights in the same time: the planner warns when so few fit that the odds will be rough. Real
+ * battles take longer than that (creatures with a dozen actions, walls, three sides): each prediction tells this
+ * computer's pace (paceOf), and the planner's next estimate goes by it.
  * Pure: no Foundry globals.
  */
 
@@ -29,8 +31,21 @@ export function budgetMs(seconds) {
 /** About how long one fight takes with n creatures (ms). */
 export const fightMs = n => 0.5 + FIGHT_MS_PER_PAIR * Math.max(1, n) ** 2;
 
-/** About how many fights fit the prediction's time with n creatures (for the planner's warning). */
-export const expectedRuns = (n, seconds) => Math.max(1, Math.min(MAX_RUNS, Math.floor(budgetMs(seconds) / fightMs(n))));
+/**
+ * About how many fights fit the prediction's time with n creatures (for the planner's warning), at this computer's
+ * `pace` (paceOf: how many times longer its last prediction's fights took than fightMs says; 1, as it says).
+ */
+export const expectedRuns = (n, seconds, pace = 1) => Math.max(1, Math.min(MAX_RUNS, Math.floor(budgetMs(seconds) / (fightMs(n) * (pace > 0 ? pace : 1)))));
+
+/**
+ * This computer's pace, from a prediction that ran until its time was up: how many times longer its fights took than
+ * fightMs says (creatures with many actions, walls to see past and around, three sides, a slower computer: a 15-creature
+ * PF2e battle on a walled map, about 14). Null when it says nothing: none run, or every fight it could (MAX_RUNS).
+ */
+export function paceOf(n, seconds, runs) {
+  if ( !(runs > 0) || runs >= MAX_RUNS ) return null;
+  return budgetMs(seconds) / runs / fightMs(n);
+}
 
 /** Each of the swing factors' tests' share of three predictions' time (ms). */
 export const swingShareMs = (tests, seconds) => 3 * budgetMs(seconds) / Math.max(1, tests);

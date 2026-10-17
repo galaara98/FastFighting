@@ -13,7 +13,7 @@ import { invalidateStoryTables, installStoryTables } from "./story/tables.js";
 import { PlayerSurvey } from "./apps/player-survey.js";
 import { registerTokenTactics, syncTokenTactics } from "./apps/token-tactics.js";
 import { QUERIES, SURVEY_STATUS, hasCharactersFor, preparePlayers } from "./foundry/tactics.js";
-import { helperStatus, helperMessage, helperNoticeHtml } from "./helpers.js";
+import { helperStatus, helperMessage, helperNoticeHtml, surveyHtml } from "./helpers.js";
 import { invalidateApproach } from "./foundry/battle.js";
 import { undoConcession, revealStory, ownCard, cardUndoState, undoFromCard, refreshUndoCards, UNDO_REACH } from "./foundry/make-it-so.js";
 import { sceneUnit, registerGroundField } from "./foundry/terrain.js";
@@ -372,6 +372,9 @@ Hooks.on("renderSettingsConfig", (app, element) => {
   const section = root?.querySelector(`section[data-category="${MODULE_ID}"]`);
   if ( !section ) return;
   section.querySelector(".ff-helper-notice")?.remove();
+  // (At its foot, the optional performance survey.)
+  section.querySelector(".ff-survey")?.remove();
+  section.insertAdjacentHTML("beforeend", surveyHtml());
   // (Only the settings the system's helper acts on: leaving loot, taking a corpse away, only some do.)
   if ( !getAdapter()?.supportsLoot ) {
     for ( const key of ["lootMode", "corpseMode"] ) section.querySelector(`[name="${MODULE_ID}.${key}"]`)?.closest(".form-group")?.remove();

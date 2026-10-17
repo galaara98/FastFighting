@@ -1565,7 +1565,7 @@ Tactical 60–79, Mastermind 80–100 (live value, so a leader's tactical floor 
 
 ### The prediction: how many fights it runs
 
-Search: prediction time, Prediction time (seconds), predictionTime, Seconds, how many fights, runs, simulations, rough odds, slow, big battle, MAX_RUNS, FIGHT_MS_PER_PAIR, seed, random
+Search: prediction time, Prediction time (seconds), predictionTime, Seconds, how many fights, runs, simulations, rough odds, slow, big battle, MAX_RUNS, FIGHT_MS_PER_PAIR, pace, runPace, seed, random
 
 Decides how many simulated fights the planner runs before it shows the odds.
 
@@ -1575,12 +1575,18 @@ Decides how many simulated fights the planner runs before it shows the odds.
   overrides it for one battle.
 - Every 25 ms it lets the browser redraw; each pause counts against the time only up to 20 ms, so a background tab
   doesn't eat the budget.
-- Estimated time per fight with n creatures: 0.5 + 0.031 × n² ms (`FIGHT_MS_PER_PAIR` = 0.031, measured on fights of
-  five or six rounds). Estimated fights = min(20 000, floor(seconds × 1000 ÷ that)).
+- Estimated time per fight with n creatures: (0.5 + 0.031 × n²) × pace ms (`FIGHT_MS_PER_PAIR` = 0.031, measured on
+  simple creatures with an action or two, in fights of five or six rounds). Estimated fights = min(20 000,
+  floor(seconds × 1000 ÷ that)).
+- Pace: how many times longer this computer's last full prediction took per fight than that formula says (seconds ×
+  1000 ÷ fights run ÷ formula), kept in this browser (`runPace`, 1 until a prediction has run). Real battles run slower
+  than the formula: creatures with a dozen actions each (PF2e's maneuvers), walls to see past and around, three sides.
+  A 15-creature PF2e battle on a walled map, about 14 on a desktop. A prediction cut short, or one that ran all 20 000,
+  sets none.
 - Fewer than 100 fights (`ROUGH_RUNS`): the planner warns that the odds will be rough (about ±5% or worse). Before a
   run it uses the estimate, after a run the real count.
 
-Estimated fights (a fast machine fits more):
+Estimated fights at pace 1 (a fast machine fits more; a battle of many actions and walls, fewer):
 
 | Creatures | 4 s | 6 s | 10 s | 20 s |
 |---|---|---|---|---|
@@ -1594,8 +1600,8 @@ Estimated fights (a fast machine fits more):
 - **Seed**: blank picks a random one; a whole number repeats the same batch. Fight i gets its own seed derived from it,
   so any fight replays exactly.
 
-Code: `engine/run-budget.js` `budgetMs`, `fightMs`, `expectedRuns`; `engine/simulator.js` `runBatch`;
-`apps/battle-planner.js` `#runsNote`; `foundry/battle.js` `simulate`.
+Code: `engine/run-budget.js` `budgetMs`, `fightMs`, `expectedRuns`, `paceOf`; `engine/simulator.js` `runBatch`;
+`apps/battle-planner.js` `#runsNote`, `onRun`; `foundry/battle.js` `simulate`.
 
 ### Rounds, stalemates and the max-rounds cap
 

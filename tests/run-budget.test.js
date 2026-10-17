@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { budgetMs, expectedRuns, swingShareMs, MAX_RUNS, PREDICTION_SECONDS } from "../scripts/engine/run-budget.js";
+import { budgetMs, expectedRuns, paceOf, fightMs, swingShareMs, MAX_RUNS, PREDICTION_SECONDS, ROUGH_RUNS } from "../scripts/engine/run-budget.js";
 import { runBatch } from "../scripts/engine/simulator.js";
 import { pf2eRules } from "./fixtures/three-action-rules.js";
 import { creature, strike, battle } from "./helpers.js";
@@ -21,6 +21,20 @@ describe("the prediction's time", () => {
     expect(expectedRuns(30, 20)).toBeGreaterThan(expectedRuns(30, 6));
     expect(expectedRuns(1, 20)).toBe(MAX_RUNS);
     expect(swingShareMs(15, 10)).toBe(2000);
+  });
+
+  test("this computer's pace, from a prediction that ran out of time, and the next estimate at it", () => {
+    // (15 creatures, 8 seconds, 67 fights: about 16 times as long a fight as the formula says.)
+    const pace = paceOf(15, 8, 67);
+    expect(pace).toBeCloseTo(8000 / 67 / fightMs(15), 9);
+    expect(pace).toBeGreaterThan(15);
+    expect(expectedRuns(15, 8, pace)).toBe(67);
+    // (At 13 seconds, about 108: past the rough odds.)
+    expect(expectedRuns(15, 13, pace)).toBeGreaterThanOrEqual(ROUGH_RUNS);
+    // (Nothing to go by: no fights, or every fight it could. And no pace at all, the formula's.)
+    expect(paceOf(15, 8, 0)).toBeNull();
+    expect(paceOf(2, 20, MAX_RUNS)).toBeNull();
+    for ( const none of [undefined, 0, -3, NaN] ) expect(expectedRuns(15, 8, none)).toBe(expectedRuns(15, 8));
   });
 
   test("a prediction runs until its time is up: the fight under way finished, none started after", async () => {

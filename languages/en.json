@@ -229,6 +229,10 @@
       "ignoreTroubles": {
         "Name": "Selfless creatures bear what holds or hurts them (%)",
         "Hint": "How often a selfless creature ignores what holds or hurts it and carries on (default 29; 0: never)."
+      },
+      "Survey": {
+        "Link": "Optional performance survey",
+        "Hint": "Your setup, your battle and how many fights the planner ran: it helps make FastFighting faster."
       }
     },
     "Lean": {
