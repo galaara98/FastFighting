@@ -2397,7 +2397,7 @@ Code: `engine/simulator.js` `executionCheck`, `moveDesires`.
 
 Search: aftermath, After the fight, Tend the fallen and tell it, Tend the fallen quietly, Stop at the last blow, after the battle, bleeding out, first aid after, prisoners, spare or finish, mercy, goods returned
 
-Decides what happens between the last blow and Make it So.
+Decides what happens between the last blow and Do it For Real Now writing the fight to the sheets.
 
 - **After the fight** (`aftermath`): Tend the fallen and tell it (default); Tend the fallen quietly (the same, but the
   story ends at the last blow); Stop at the last blow (nothing happens). It works only with Simulate dying and healing.
@@ -2856,13 +2856,13 @@ Search: half cover, three-quarters cover, Hide, Stealth DC 15, invisible, Dodge,
 What it decides: the everyday edges.
 
 - Cover from walls: half +2, three-quarters +5, to AC and Dexterity saves.
-- Hide (an action; a bonus action with Cunning Action): Stealth against DC 15, never with a foe beside it. Hidden for up to 10 rounds, until it attacks. The AI weighs it as advantage on its attacks and disadvantage against it, but the rolls don't apply it; only an Invisible status on the sheet when the fight starts gives real advantage and disadvantage.
+- Hide (an action; a bonus action with Cunning Action): Stealth against DC 15, never with a foe beside it. Hidden for up to 10 rounds, until it attacks: its first attack has advantage, and attacks at it disadvantage (both hidden, or hidden and Poisoned, cancel out). The attack ends hiding once rolled, so a Multiattack's later strikes are plain. A token the GM hid on the map gets no advantage this way.
 - Dodge (an action): attacks against it at disadvantage until its next turn.
 - Help (an action): advantage on a friend's next attack or check at the foe it's set on, with that foe beside the helper.
 - Insight before talking (an action, proficient, with a language): DC 15; advantage on its next words to that one, for 2 rounds.
 - Reckless Attack: no action, advantage on its attacks and against it until its next turn. Action Surge: 1 more action this turn.
 
-Code: `rules.js` `coverBonus`, `usable`, `afterRoll`; `adapter.js` `#actions`; `edges.js` `INSIGHT_DC`, `helpAction`, `insightAction`.
+Code: `rules.js` `coverBonus`, `modifiers.attack`, `usable`, `afterRoll`; `adapter.js` `#actions`; `edges.js` `INSIGHT_DC`, `helpAction`, `insightAction`.
 
 ### Grapples, webs, nets and bonds
 
@@ -3697,9 +3697,9 @@ What it decides: what stress does to a character.
 
 - Stress comes off spirit (past 0, off momentum); then a roll with the better of spirit and heart, played as Endure Harm on spirit.
 - At 0 spirit a miss marks it shaken; already shaken, a d100: 1–10 Face Desolation (+heart; a miss gives up the fight, as one who fled); 11–50 falters (−1 momentum); 51–100 perseveres.
-- An ally going down costs each character on its side 1 stress, 2 when it's killed.
+- An ally going down costs 1 stress (2 when it's killed) to each character on its side who can see it (walls short of total cover) or is within 12 squares (60 ft, edge to edge). With Terrain & positioning off, every character on its side.
 
-Code: `rules.js` `endureStress`, `onFall`; `moves.js` `stressTable`.
+Code: `rules.js` `endureStress`, `onFall`, `witnessesFall`; `moves.js` `stressTable`.
 
 ### Enter the Fray
 
