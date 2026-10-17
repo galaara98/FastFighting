@@ -185,7 +185,7 @@ export async function startLiveBattle(spec, { style = setting("storyStyle"), odd
   const spotlight = adapter.liveTurns === "spotlight";
   const unrolled = spotlight ? [] : combat.combatants.filter(c => c.initiative === null).map(c => c.id);
   const rolledFrom = Date.now();
-  if ( unrolled.length ) await combat.rollInitiative(unrolled, { skipDialog: true });
+  if ( unrolled.length ) await rollFor(combat, unrolled);
   const rollCards = unrolled.length ? initiativeCards(rolledFrom) : [];
   const started = !combat.started;
   if ( started ) await combat.startCombat();
@@ -644,7 +644,7 @@ async function newRound(round) {
         }
         if ( c && !battle.data.spotlight ) {
           const from = Date.now();
-          await battle.combat.rollInitiative([c.id], { skipDialog: true }); // (no system roll dialog: PF2e opens one)
+          await rollFor(battle.combat, [c.id]);
           battle.data.rollCards = [...(battle.data.rollCards ?? []), ...initiativeCards(from)];
         }
       }
@@ -1144,6 +1144,24 @@ async function writeChanges(before, after, records) {
 /*  Telling                                     */
 /* -------------------------------------------- */
 
+/** Can the players not read a token's name on the map? No player's, and its nameplate shown only to its owners, or none. */
+function nameHidden(doc) {
+  const shown = [CONST.TOKEN_DISPLAY_MODES.ALWAYS, CONST.TOKEN_DISPLAY_MODES.HOVER];
+  return !!doc && !doc.actor?.hasPlayerOwner && !shown.includes(doc.displayName);
+}
+
+/**
+ * Initiative rolled for these combatants, with no system roll dialog (PF2e opens one): those whose names the players
+ * can't read on the map, for the GMs' eyes, as Foundry rolls a hidden combatant's (the card names it).
+ */
+async function rollFor(combat, ids) {
+  const all = ids.map(id => combat.combatants.get(id)).filter(Boolean);
+  const secret = all.filter(c => nameHidden(c.token)).map(c => c.id);
+  const open = all.filter(c => !nameHidden(c.token)).map(c => c.id);
+  if ( open.length ) await combat.rollInitiative(open, { skipDialog: true });
+  if ( secret.length ) await combat.rollInitiative(secret, { skipDialog: true, messageMode: "gm" });
+}
+
 /** A beat of the story, by the turns it tells (or the closing). */
 const beatKey = beat => (beat.closing ? "closing" : beat.turns.join(","));
 
@@ -1153,14 +1171,13 @@ const beatKey = beat => (beat.closing ? "closing" : beat.turns.join(","));
  * long: unit id -> what the open story calls it. One that shares its name with a creature whose name shows keeps it.
  */
 function unnamed(run, docs) {
-  const shown = [CONST.TOKEN_DISPLAY_MODES.ALWAYS, CONST.TOKEN_DISPLAY_MODES.HOVER];
   const hidden = [];
   const known = new Set();
   for ( const u of run.units ) {
     const doc = docs.get(u.id);
     if ( !doc ) continue;
-    if ( doc.actor?.hasPlayerOwner || shown.includes(doc.displayName) ) known.add(u.spec.name);
-    else hidden.push(u);
+    if ( nameHidden(doc) ) hidden.push(u);
+    else known.add(u.spec.name);
   }
   const numbers = (battle.data.someone ??= {});
   const out = new Map();

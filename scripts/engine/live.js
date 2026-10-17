@@ -797,6 +797,7 @@ export function followCommand(run) {
     const former = key ? u.formerPlaces?.[key] : null;
     if ( !former ) continue;
     delete u.formerPlaces[key];
+    if ( !Object.keys(u.formerPlaces).length ) delete u.formerPlaces;
     const chain = (run.prep.command?.[key] ?? []).filter(c => c.id !== u.id).map(c => ({ ...c }));
     const taken = chain.find(c => (head(former.slot) ? head(c.slot) : c.slot === former.slot));
     if ( taken ) {
