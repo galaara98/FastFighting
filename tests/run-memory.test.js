@@ -1,5 +1,6 @@
 import { describe, expect, test } from "vitest";
 import { battleSignature, rememberRun, recallRun, KEEP_RUNS } from "../scripts/foundry/run-memory.js";
+import { rosterOrder } from "../scripts/foundry/battle.js";
 
 /** A browser's storage, in memory. */
 const storage = () => {
@@ -12,6 +13,17 @@ describe("the planner's last runs", () => {
   test("a battle's signature changes with anything in it, and only then", () => {
     expect(battleSignature(battle())).toBe(battleSignature(battle()));
     expect(battleSignature(battle(19))).not.toBe(battleSignature(battle()));
+  });
+
+  test("the same tokens make the same battle, however the canvas has them ordered (hovered, selected): by name, then id", () => {
+    const token = (id, name) => ({ id, document: { name } });
+    const tokens = [token("t9", "Kobold Warrior 2"), token("t2", "Amiri"), token("t5", "Hyena"), token("t1", "Hyena"), token("t7", "Suli Dune Dancer")];
+    const shuffled = [tokens[3], tokens[0], tokens[4], tokens[1], tokens[2]];
+    const order = list => [...list].sort(rosterOrder).map(t => t.id);
+    expect(order(tokens)).toEqual(["t2", "t1", "t5", "t9", "t7"]);
+    expect(order(shuffled)).toEqual(order(tokens));
+    const specOf = list => ({ combatants: [...list].sort(rosterOrder).map(t => ({ id: t.id, name: t.document.name })) });
+    expect(battleSignature(specOf(shuffled))).toBe(battleSignature(specOf(tokens)));
   });
 
   test("shown again only for the very battle it was run for", () => {

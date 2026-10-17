@@ -78,7 +78,14 @@ export function encounterTokenIds(scene = canvas.scene) {
 }
 
 /**
- * Read every eligible token on the viewed scene.
+ * The order the roster keeps: by name, in the reader's alphabet, then by id. Always the same, so the battle a plan
+ * makes is the same battle until something in it changes (the planner's last run is shown again: run-memory.js), and
+ * the planner's lists don't shift. (The canvas's own order of its tokens changes as they're hovered or selected.)
+ */
+export const rosterOrder = (a, b) => String(a.document?.name ?? a.name ?? "").localeCompare(String(b.document?.name ?? b.name ?? "")) || String(a.id).localeCompare(String(b.id));
+
+/**
+ * Read every eligible token on the viewed scene, in rosterOrder.
  * @returns {Promise<{token: Token, spec: object, baseSide: string}[]>}
  */
 export async function gatherRoster(setup, adapter = getAdapter()) {
@@ -95,7 +102,7 @@ export async function gatherRoster(setup, adapter = getAdapter()) {
     if ( !starts && !setup.options.includeOtherLevels && levelId && t.document.level && t.document.level !== levelId ) return false;
     if ( !starts && !setup.options.includeHidden && t.document.hidden ) return false;
     return true;
-  });
+  }).sort(rosterOrder);
   const out = [];
   for ( const token of tokens ) {
     try {
