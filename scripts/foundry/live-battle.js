@@ -914,7 +914,7 @@ async function waitCard(turn) {
 /* -------------------------------------------- */
 
 /** The kinds of event that move someone on the map (make-it-so.js playMoves). */
-const MOVING = new Set(["move", "flee", "leave", "forced"]);
+const MOVING = new Set(["move", "flee", "leave", "forced", "step"]);
 
 /**
  * What a turn FastFighting plays has done on the map and in the chat before its rolls: how many of its events are
@@ -1985,14 +1985,15 @@ async function playerMoved(doc) {
 /**
  * Those a player's character came beside, moving (its token, `from` where the engine had it): a foe whose reach it
  * came into, a friend it stopped beside, where they have a reaction for it (engine/live.js movedBeside). Played as a
- * turn FastFighting plays them is, anyone to be asked asked; done now, on the sheets and the map, told with the
- * player's turn. True if anyone answered.
+ * turn FastFighting plays them is, anyone to be asked asked and the system's rolls rolled (turnRoll: a strike, its
+ * damage applied, a save); done now, on the sheets and the map, told with the player's turn. True if anyone answered.
  */
 async function answerArrival(pc, from) {
   if ( !battle.run.movers || !from ) return false;
   const before = captureAll(battle.run);
   const snapshot = snapshotRun(battle.run, { log: false });
   const nonce = freshNonce();
+  const stage = turnStage();
   const answers = [];
   let events = [];
   for ( let tries = 0; ; tries++ ) {
@@ -2001,14 +2002,18 @@ async function answerArrival(pc, from) {
       break;
     } catch ( err ) {
       if ( !(err instanceof NeedsDecision) || tries > 50 ) throw err;
-      answers.push([err.request.key, await answerFor(err.request)]);
+      const request = err.request;
+      const answer = request.roll ? await turnRoll(request, battle.run.log.slice(battle.run.live.turnFrom ?? battle.run.log.length), stage) : await answerFor(request);
+      answers.push([request.key, answer]);
       battle.run = restoreRun(battle.spec, battle.rules, snapshot, { log: battle.run.log });
     }
   }
-  if ( !events.length ) return false;
+  // (What the system's own rolls applied, its undo records, the player's turn's.)
+  pc.records.push(...stage.records);
+  if ( !events.length ) return stage.records.length > 0;
   await writeChanges(before, captureAll(battle.run), pc.records);
-  const stage = turnStage();
-  await playMoves(events, stageDocs(stage), setting("playOnMap") ? stageGrid(stage) : null, stage.doorsOpened, battle.scene, { instant: !setting("playOnMap") });
+  const rest = events.slice(stage.played);
+  await playMoves(rest, stageDocs(stage), setting("playOnMap") ? stageGrid(stage) : null, stage.doorsOpened, battle.scene, { instant: !setting("playOnMap") });
   return true;
 }
 

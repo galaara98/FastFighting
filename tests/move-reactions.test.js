@@ -125,6 +125,22 @@ describe("in a live battle: a player's character moves", () => {
     expect(events.find(e => e.type === "attack")).toMatchObject({ actorId: "guard", targetId: "hero" });
   });
 
+  test("its strike rolled by the system, where the system rolls strikes: asked, then played with the roll", () => {
+    const begin = () => beginLive(spec(), pf2eRules, { seed: 3, players: ["hero"], systemRolls: ["strike"] });
+    const run = begin();
+    let asked = null;
+    try {
+      movedBeside(run, "hero", walk(run), { nonce: 7 });
+    } catch ( err ) {
+      asked = err;
+    }
+    expect(asked?.request).toMatchObject({ roll: "strike", unitId: "guard", targetId: "hero", action: { id: "spear" } });
+    const again = begin();
+    const events = movedBeside(again, "hero", walk(again), { nonce: 7, answers: [[asked.request.key, { attack: { degree: 1, natural: 2, total: 5 }, damage: null }]] });
+    expect(events.find(e => e.type === "attack" && e.actorId === "guard")).toMatchObject({ natural: 2, total: 5 });
+    expect(again.live.playing).toBe(false);
+  });
+
   test("the GM asked first, where the GM wants to be: played again with the answer", () => {
     const run = beginLive(spec(), pf2eRules, { seed: 3, players: ["hero"], npcReactions: "ask" });
     const from = walk(run);
