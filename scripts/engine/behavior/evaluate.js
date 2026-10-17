@@ -109,6 +109,8 @@ export function upgradedDistribution(dist, t, type) {
 
 /** Mean damage of `action` against `target` after IWR, for normal and critical outcomes. Cached per batch. */
 export function meanDamageVs(run, action, target) {
+  // (An action with no id of its own can't be told from another: worked out each time.)
+  if ( action.id === undefined || action.id === null ) return meanDamageNow(run, action, target);
   // (Kept by the action, then the target, then what the target resists just now.)
   let byTarget = run.prep.meanCache.get(action.id);
   if ( !byTarget ) run.prep.meanCache.set(action.id, byTarget = new Map());
@@ -117,18 +119,22 @@ export function meanDamageVs(run, action, target) {
   const iwrKey = target.iwrKey ?? "";
   let hit = byIwr.get(iwrKey);
   if ( hit ) return hit;
+  hit = meanDamageNow(run, action, target);
+  byIwr.set(iwrKey, hit);
+  return hit;
+}
+
+function meanDamageNow(run, action, target) {
   const rules = run.prep.rules;
   const iwr = iwrOf(target); // (with any resistance an effect lends it: Rage, Stoneskin)
   const crit = action.critDamage ?? criticalParts(rules, action.damage);
   const rider = effectMean(action);
   // Rolled several times (magic missiles), and a crit table's extra on a crit.
   const times = action.repeat ? Math.max(1, meanPart(action.repeat)) : 1;
-  hit = {
+  return {
     normal: times * (rules.applyIwr(iwr, meanByType(action.damage)) + persistentMean(action.damage)) + rider,
     critical: times * (rules.applyIwr(iwr, meanByType(crit)) + persistentMean(crit)) + rider + critExtraMean(action.crit)
   };
-  byIwr.set(iwrKey, hit);
-  return hit;
 }
 
 /** Expected damage dealt by one use of `action` from a against t, given attacks already made this turn. */

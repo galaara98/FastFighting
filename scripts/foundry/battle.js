@@ -735,22 +735,33 @@ export function approachFor(roster, setup) {
  * door its own numbers in the wall's flags (`fast-fighting.door`: ac, hp, forceDC, pickDC, and whatever the system's
  * door rules use, such as PF2e hardness); otherwise the system's typical door applies.
  */
-function sceneDoors() {
+function sceneDoors({ open = false } = {}) {
   const { size } = canvas.dimensions;
   const feet = squareFeet();
   const out = {};
   for ( const w of canvas.scene.walls ) {
-    if ( w.door !== CONST.WALL_DOOR_TYPES.DOOR || w.ds === CONST.WALL_DOOR_STATES.OPEN ) continue;
+    const opened = w.ds === CONST.WALL_DOOR_STATES.OPEN;
+    if ( w.door !== CONST.WALL_DOOR_TYPES.DOOR || (opened && !open) ) continue;
     const [x1, y1, x2, y2] = w.c;
     const own = w.getFlag?.(MODULE_ID, "door") ?? {};
-    out[w.id] = { ...own, locked: w.ds === CONST.WALL_DOOR_STATES.LOCKED, x: ((x1 + x2) / 2 / size) * feet, y: ((y1 + y2) / 2 / size) * feet };
+    out[w.id] = { ...own, locked: w.ds === CONST.WALL_DOOR_STATES.LOCKED, x: ((x1 + x2) / 2 / size) * feet, y: ((y1 + y2) / 2 / size) * feet, ...(open ? { open: opened } : {}) };
   }
   return out;
 }
 
-/** Walls and regions change the paths, so forget the cached matrix when they do. */
+/**
+ * The scene's walls and doors as they are now, for a live battle under way (engine/live.js setScene): the walls that
+ * block sight near these tokens, and every ordinary door, open or shut.
+ * @param {Token[]} tokens
+ */
+export function sceneNow(tokens) {
+  return { walls: computeWalls(tokens), doors: sceneDoors({ open: true }) };
+}
+
+/** Walls and regions change the paths (and the ground: groundFor), so forget the cached matrix when they do. */
 export function invalidateApproach() {
   approachCache = { key: null, value: null };
+  groundCache = { key: null, value: null };
   resetPathGrid();
 }
 
@@ -796,9 +807,10 @@ function sceneBounds() {
 let groundCache = { key: null, value: null };
 function groundFor(roster) {
   const scene = canvas.scene;
+  // (Each wall as it is now, where it is, what it stops and a door's state: a door opened, or a wall moved, changes it.)
   const key = JSON.stringify([
     scene?.id, roster.map(e => [e.token.id, e.token.document._source.x, e.token.document._source.y]),
-    scene?.walls.size, scene?.regions.map(r => [r.id, r._stats?.modifiedTime ?? 0])
+    scene?.walls.map(w => [w.id, ...(w.c ?? []), w.move, w.door, w.ds, w.dir]) ?? [], scene?.regions.map(r => [r.id, r._stats?.modifiedTime ?? 0])
   ]);
   if ( groundCache.key !== key ) groundCache = { key, value: computeGround(roster.map(e => e.token)) };
   return groundCache.value;

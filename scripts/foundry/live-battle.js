@@ -18,7 +18,7 @@ import { escapeHtml as escape, inertHtml } from "../i18n.js";
 import { getAdapter, characterSpec } from "../api.js";
 import { setting } from "../settings.js";
 import { positionOf, squareFeet } from "./terrain.js";
-import { approachFor } from "./battle.js";
+import { approachFor, sceneNow } from "./battle.js";
 import { currentPathGrid, pathGridFor, sceneWallGrid } from "./pathing.js";
 import { getSetup, sceneEncounter } from "./persistence.js";
 import { QUERIES } from "./tactics.js";
@@ -29,7 +29,7 @@ import { storyBeats } from "../story/story.js";
 import { logLine } from "../story/log-lines.js";
 import { loadStoryTables } from "../story/tables.js";
 import {
-  beginLive, liveRound, liveTurn, pcTurnBegin, pcTurnEnd, syncFromSheets, setApproach, captureAll, snapshotRun, restoreRun, endLive,
+  beginLive, liveRound, liveTurn, pcTurnBegin, pcTurnEnd, syncFromSheets, setApproach, setScene, captureAll, snapshotRun, restoreRun, endLive,
   NeedsDecision, applyFact, gmMoment, leavingReach, openingFor, reactNow, nextSpotlight, liveAftermath,
   setCondition, setRelation, clearRelation, setAffliction, setGoal, setAttitude, setSide, setRole, playerRuns
 } from "../engine/live.js";
@@ -634,10 +634,19 @@ function syncPools(adapter) {
   if ( pools ) Object.assign(battle.run.sharedPools, pools);
 }
 
-/** How everyone can reach everyone now they've moved. */
+/**
+ * How everyone can reach everyone now they've moved; and the scene's walls and doors as they are now (a door a player
+ * opened, one the GM shut: engine/live.js setScene), kept with the battle when they've changed.
+ */
 function refreshApproach() {
   const roster = battle.run.units.map(u => ({ token: docOf(u.id)?.object, spec: u.spec })).filter(e => e.token);
   setApproach(battle.run, approachFor(roster, getSetup()));
+  if ( !battle.spec.options?.positioning ) return;
+  try {
+    if ( setScene(battle.run, sceneNow(roster.map(e => e.token))) ) battle.data.spec = packSpec(battle.spec);
+  } catch ( err ) {
+    console.warn(`${MODULE_ID} | reading the scene's walls and doors`, err);
+  }
 }
 
 /* -------------------------------------------- */

@@ -71,18 +71,19 @@ export function perceives(run, u, t, { crisis = false } = {}) {
     run.senseRound = run.round;
     run.senseCache = new Map();
   }
-  // (Kept by who looks, then at whom: [as things are, in a crisis].)
-  let seen = run.senseCache.get(u);
-  if ( !seen ) run.senseCache.set(u, seen = new Map());
-  let pair = seen.get(t);
-  if ( !pair ) seen.set(t, pair = [undefined, undefined]);
+  const blind = (u.conds?.blinded ?? 0) > 0;
+  const deaf = (u.conds?.deafened ?? 0) > 0;
+  // (Kept by who looks, as long as it's no more or less blind or deaf than it was, then at whom: [as things are, in a
+  // crisis].)
+  let kept = run.senseCache.get(u);
+  if ( !kept || kept.blind !== blind || kept.deaf !== deaf ) run.senseCache.set(u, kept = { blind, deaf, seen: new Map() });
+  let pair = kept.seen.get(t);
+  if ( !pair ) kept.seen.set(t, pair = [undefined, undefined]);
   const slot = crisis ? 1 : 0;
   if ( pair[slot] !== undefined ) return pair[slot];
   const feet = edgeDistance(u, t) ?? separation(run, u, t);
   const r = sensesOf(run, u);
   const k = crisis ? 2 : 1;
-  const blind = (u.conds?.blinded ?? 0) > 0;
-  const deaf = (u.conds?.deafened ?? 0) > 0;
   const dark = (run.prep.options.darkness ?? 0) >= DARK;
   // (A line of sight: on a map with its walls, from where it stands now; else as the approach said, once moved toward.)
   const sees = () => !blind && feet <= sightReach(r, dark) * k

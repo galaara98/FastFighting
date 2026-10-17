@@ -2,7 +2,8 @@ import { describe, expect, test } from "vitest";
 import { replay } from "../scripts/engine/simulator.js";
 import { pf2eRules } from "./fixtures/three-action-rules.js";
 import { creature, strike, battle } from "./helpers.js";
-import { beginLive, liveRound, liveTurn, snapshotRun, restoreRun } from "../scripts/engine/live.js";
+import { beginLive, liveRound, liveTurn, snapshotRun, restoreRun, setScene } from "../scripts/engine/live.js";
+import { lineOfSight } from "../scripts/engine/behavior/space.js";
 import { parseFormula } from "../scripts/engine/dice.js";
 
 const at = (x, y = 0) => ({ x, y, size: 5 });
@@ -37,6 +38,58 @@ describe("doors in a live battle", () => {
     expect(again.doors.get("d1")).toMatchObject({ open: false });
     const { events } = liveTurn(again, "hero");
     expect(events.some(e => e.type === "door" && e.actorId === "hero")).toBe(true);
+  });
+});
+
+describe("the scene changed at the table, in a live battle", () => {
+  const wall = (ax, ay, bx, by, extra = {}) => ({ a: [ax, ay], b: [bx, by], s: 20, d: 0, door: null, open: false, ...extra });
+  const scene = (walls, doors) => {
+    const spec = behindDoor({ locked: false });
+    spec.walls = walls;
+    spec.doors = doors;
+    return spec;
+  };
+
+  test("a door a player opened, the GM shut and locked, another shut since: as the scene has them, kept with the battle", () => {
+    const shut = [wall(20, -10, 20, 10, { door: "d1" })];
+    const run = beginLive(scene(shut, { d1: { locked: false, x: 20, y: 0 } }), pf2eRules, { seed: 2 });
+    liveRound(run, 1);
+    const [hero, foe] = ["hero", "foe"].map(id => run.byId.get(id));
+    expect(lineOfSight(run, hero, foe)).toBe(false);
+    // (A player opens it.)
+    expect(setScene(run, { walls: [wall(20, -10, 20, 10, { door: "d1", open: true })], doors: { d1: { locked: false, x: 20, y: 0, open: true } } })).toBe(true);
+    expect(run.doors.get("d1").open).toBe(true);
+    expect(lineOfSight(run, hero, foe)).toBe(true);
+    // (Nothing new: nothing changed.)
+    expect(setScene(run, { walls: [wall(20, -10, 20, 10, { door: "d1", open: true })], doors: { d1: { locked: false, x: 20, y: 0, open: true } } })).toBe(false);
+    // (The GM shuts and locks it, and shuts another the fight never knew, a wall away.)
+    const now = [wall(20, -10, 20, 10, { door: "d1" }), wall(0, 30, 10, 30, { door: "d2" })];
+    expect(setScene(run, { walls: now, doors: { d1: { locked: true, x: 20, y: 0, open: false }, d2: { locked: false, x: 5, y: 30, open: false } } })).toBe(true);
+    expect(run.doors.get("d1")).toMatchObject({ open: false, locked: true });
+    expect(lineOfSight(run, hero, foe)).toBe(false);
+    expect(run.prep.doors.get("d2")).toMatchObject({ x: 5, y: 30 });
+    expect(run.prep.spec.doors.d2).toMatchObject({ x: 5, y: 30 });
+    // (Kept and restored, as a reload has it: the same doors.)
+    const again = restoreRun(run.prep.spec, pf2eRules, JSON.parse(JSON.stringify(snapshotRun(run))));
+    expect(again.prep.doors.get("d2")).toMatchObject({ x: 5, y: 30 });
+    expect(again.doors.get("d1")).toMatchObject({ open: false, locked: true });
+    // (The wall taken away: sight through.)
+    expect(setScene(run, { walls: [], doors: {} })).toBe(true);
+    expect(lineOfSight(run, hero, foe)).toBe(true);
+  });
+
+  test("a door broken in the fight stays broken open, whatever the scene says", () => {
+    const run = beginLive(scene([wall(20, -10, 20, 10, { door: "d1" })], { d1: { locked: true, x: 20, y: 0 } }), pf2eRules, { seed: 2 });
+    Object.assign(run.doors.get("d1"), { open: true, broken: true });
+    expect(setScene(run, { doors: { d1: { locked: true, x: 20, y: 0, open: false } } })).toBe(false);
+    expect(run.doors.get("d1").open).toBe(true);
+  });
+
+  test("a fight off the map: no walls taken up", () => {
+    const spec = behindDoor({ locked: false });
+    const run = beginLive(spec, pf2eRules, { seed: 2 });
+    expect(setScene(run, { walls: [wall(20, -10, 20, 10)] })).toBe(false);
+    expect(run.prep.spec.walls).toBeUndefined();
   });
 });
 

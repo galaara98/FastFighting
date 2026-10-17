@@ -11,6 +11,7 @@ import { movesNeeded, moveToward, edgeDistance, currentAc, saveRoll, COVER_POINT
 import { inTheWay, spotWithin, lineOfSight, sightBlocked, coverFrom, crossed, pastCost } from "../scripts/engine/behavior/space.js";
 import { areEnemies } from "../scripts/engine/battle-state.js";
 import { snapshotRun } from "../scripts/engine/live.js";
+import { STATUS } from "../scripts/constants.js";
 import { pf2eRules } from "./fixtures/three-action-rules.js";
 import { creature, strike, battle } from "./helpers.js";
 
@@ -31,6 +32,17 @@ const get = (run, ...ids) => ids.map(id => run.byId.get(id));
 const wall = (ax, ay, bx, by, extra = {}) => ({ a: [ax, ay], b: [bx, by], s: 20, d: 0, door: null, open: false, ...extra });
 
 describe("room", () => {
+  test("a spot freed (whoever stood there killed, nobody moving): free at once, not as it was a moment ago", () => {
+    // (A goblin on the spot nearest the hero beside the orc; the next best is a step round.)
+    const run = fight([who("hero", "friendly", 0), who("goblin", "friendly", 35), who("orc", "hostile", 40)]);
+    const [h, g, o] = get(run, "hero", "goblin", "orc");
+    const round = spotWithin(run, h, o, 5);
+    expect(round).toBeTruthy();
+    expect(round.x === 35 && round.y === 0).toBe(false);
+    g.status = STATUS.DEAD; // (as the system's own recovery check would have it: nothing else said)
+    expect(spotWithin(run, h, o, 5)).toMatchObject({ x: 35, y: 0 });
+  });
+
   test("a melee move never ends in another's space: the nearest free spot within reach instead", () => {
     // (The orc at 20, a goblin already where the hero would stop, at 15.)
     const run = fight([who("hero", "friendly", 0), who("goblin", "friendly", 15), who("orc", "hostile", 20)]);

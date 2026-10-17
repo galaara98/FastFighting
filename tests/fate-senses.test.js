@@ -99,6 +99,20 @@ describe("senses", () => {
     expect(perceives(walled.run, walled.a, walled.foe, { crisis: true })).toBe(false);
   });
 
+  test("blinded or deafened mid-round, with nobody moving: what it could tell a moment ago, it can't now (and back)", () => {
+    const { run, a, foe } = setup({ senses: { hearing: 0 } });
+    run.prep.spec.approach.a.foe.los = true;
+    expect(perceives(run, a, foe)).toBe(true);
+    a.conds.blinded = 1;
+    expect(perceives(run, a, foe)).toBe(false);
+    a.conds.blinded = 0;
+    expect(perceives(run, a, foe)).toBe(true);
+    const ears = setup({ senses: { hearing: 150, sight: 0 } });
+    expect(perceives(ears.run, ears.a, ears.foe)).toBe(true);
+    ears.a.conds.deafened = 1;
+    expect(perceives(ears.run, ears.a, ears.foe)).toBe(false);
+  });
+
   test("no sight, no seeing: even in the open, in the light", () => {
     const eyeless = setup({ senses: { sight: 0, lowlight: 120, hearing: 0 } });
     eyeless.run.prep.spec.approach.a.foe.los = true;

@@ -74,11 +74,16 @@ export const OBSESSED = 80;
 
 const clamp = v => Math.max(0, Math.min(100, v));
 const keyOf = (kind, targetId) => `${kind}|${targetId}`;
-/** A key's kind and target, read once (desires are ranked many times a turn). */
+/**
+ * A key's kind and target, read once (desires are ranked many times a turn); started over past PARSED_MOST, so a long
+ * session's battles, each with creatures of their own, don't keep every key they ever had.
+ */
 const PARSED = new Map();
+const PARSED_MOST = 20000;
 function parseKey(k) {
   let p = PARSED.get(k);
   if ( !p ) {
+    if ( PARSED.size >= PARSED_MOST ) PARSED.clear();
     const at = k.indexOf("|");
     PARSED.set(k, p = [k.slice(0, at), k.slice(at + 1)]);
   }

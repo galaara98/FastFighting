@@ -129,13 +129,43 @@ function onGrid(u, x, y) {
 const edgeAt = (u, p, t) => Math.max(STEP, Math.hypot(p.x - t.pos.x, p.y - t.pos.y) - ((sizeOf(u) + sizeOf(t)) / 2 - STEP));
 
 /**
+ * Who takes up room on the map, as a count that goes up whenever anyone starts or stops (falls dead, runs off,
+ * vanishes, is swallowed, is called onto the map): with run.geo, what the free spots kept depend on. Looked at each time
+ * rather than told: the system's own rules can kill a creature too (a recovery check).
+ */
+function roomNow(run) {
+  const room = (run.roomCache ??= { takes: [], count: 0 });
+  const units = run.units;
+  let changed = room.takes.length !== units.length;
+  for ( let i = 0; i < units.length; i++ ) {
+    const takes = takesRoom(units[i]);
+    if ( room.takes[i] === takes ) continue;
+    room.takes[i] = takes;
+    changed = true;
+  }
+  if ( changed ) {
+    room.takes.length = units.length;
+    room.count += 1;
+  }
+  return room.count;
+}
+
+/** A cache of spots, kept until someone moves or the room on the map changes (`name`: the run's key it's kept under). */
+function spotsKept(run, name) {
+  const room = roomNow(run);
+  const kept = run[name];
+  if ( kept && kept.geo === run.geo && kept.room === room ) return kept;
+  return (run[name] = { geo: run.geo, room, map: new Map() });
+}
+
+/**
  * Where u can stand to have t within reach: the free spot nearest `from` (where u is), on u's grid; null when every
- * one is taken. Kept until someone moves.
+ * one is taken. Kept until someone moves, or someone takes up room or stops (spotsKept).
  */
 export function spotWithin(run, u, t, reach, from = u.pos) {
   if ( !u.pos || !t.pos ) return null;
-  const key = `${run.geo ?? 0}|${u.id}|${t.id}|${reach}|${from.x},${from.y}`;
-  const cache = run.spotCache && run.spotCache.geo === run.geo ? run.spotCache : (run.spotCache = { geo: run.geo, map: new Map() });
+  const key = `${u.id}|${t.id}|${reach}|${from.x},${from.y}`;
+  const cache = spotsKept(run, "spotCache");
   if ( cache.map.has(key) ) return cache.map.get(key);
   const far = reach + (sizeOf(u) + sizeOf(t)) / 2;
   let best = null;
@@ -309,12 +339,12 @@ export function coverFrom(run, u, t) {
 
 /**
  * The nearest spot (from u's) within `most` feet where u would see t with t within `range`, on u's grid and free:
- * {x, y, feet}, or null. Kept until someone moves.
+ * {x, y, feet}, or null. Kept until someone moves, or someone takes up room or stops (spotsKept).
  */
 export function spotToShoot(run, u, t, range, most, edgeDistance) {
   if ( !u.pos || !t.pos ) return null;
-  const key = `${run.geo ?? 0}|${u.id}|${t.id}|${range}|${most}`;
-  const cache = run.shootCache && run.shootCache.geo === run.geo ? run.shootCache : (run.shootCache = { geo: run.geo, map: new Map() });
+  const key = `${u.id}|${t.id}|${range}|${most}`;
+  const cache = spotsKept(run, "shootCache");
   if ( cache.map.has(key) ) return cache.map.get(key);
   // (Nearest first: the first that will do is the one.)
   const spots = [];

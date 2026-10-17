@@ -1,5 +1,6 @@
 import { describe, expect, test } from "vitest";
-import { replay } from "../scripts/engine/simulator.js";
+import { replay, beginRun, prepareBattle } from "../scripts/engine/simulator.js";
+import { meanDamageVs, expectedDamage } from "../scripts/engine/behavior/evaluate.js";
 import { pf2eRules } from "./fixtures/three-action-rules.js";
 import { parseFormula } from "../scripts/engine/dice.js";
 import { creature, strike, battle } from "./helpers.js";
@@ -17,6 +18,16 @@ describe("martial actions in a fight", () => {
     expect(swingAt).toBeGreaterThanOrEqual(0);
     const after = used[swingAt + 1];
     if ( after ) expect(after.attackNumber).toBe(used[swingAt].attackNumber + 2);
+  });
+
+  test("a multiattack's strikes with no ids of their own: each weighed for its own damage, not the first one's", () => {
+    const light = { ...strike({ bonus: 10, damage: [parseFormula("1d4", "slashing")] }), id: undefined };
+    const heavy = { ...strike({ bonus: 10, damage: [parseFormula("6d12+10", "slashing")] }), id: undefined };
+    const run = beginRun(prepareBattle(battle([creature({ id: "fighter" }), dummy()]), pf2eRules), 1);
+    const [f, d] = ["fighter", "dummy"].map(id => run.byId.get(id));
+    const weak = meanDamageVs(run, light, d).normal;
+    expect(meanDamageVs(run, heavy, d).normal).toBeGreaterThan(weak * 10);
+    expect(expectedDamage(run, f, heavy, d)).toBeGreaterThan(expectedDamage(run, f, light, d) * 10);
   });
 
   test("a sequence at the same penalty: both strikes at the first attack's bonus", () => {

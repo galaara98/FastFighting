@@ -442,6 +442,53 @@ export function setApproach(run, approach) {
   run.geo = (run.geo ?? 0) + 1;
 }
 
+/**
+ * The scene's walls and doors as they are now, changed at the table since the fight began or not (a door a player
+ * opened, one the GM shut or locked, a wall drawn or taken away): what sight goes by (`walls`, in spec.walls' shape),
+ * and each ordinary door's state (`doors`: id -> {open, locked, x, y, ...} as spec.doors has them, open ones too). A door
+ * the fight didn't know, shut now, joins it (in spec.doors too, so a battle kept and restored has it); one open that
+ * it never knew is nothing in its way. A door broken in the fight stays open. Walls only for a fight that had them (one
+ * on the map). Returns true if anything changed (the battle's spec with it: keep it again).
+ */
+export function setScene(run, { walls = null, doors = null } = {}) {
+  let changed = false;
+  const spec = run.prep.spec;
+  if ( Array.isArray(walls) && Array.isArray(spec.walls) && JSON.stringify(walls) !== JSON.stringify(spec.walls) ) {
+    spec.walls = walls;
+    run.prep.sightWalls = null; // (read again, and indexed again: behavior/space.js wallsOf)
+    run.prep.sightIndex = null;
+    changed = true;
+  }
+  run.doors ??= new Map();
+  for ( const [id, d] of Object.entries(doors ?? {}) ) {
+    if ( !d || typeof d !== "object" ) continue;
+    const open = !!d.open;
+    let state = run.doors.get(id);
+    if ( !run.prep.doors?.has(id) ) {
+      if ( open || !Number.isFinite(d.x) || !Number.isFinite(d.y) ) continue;
+      const { open: _o, ...door } = d;
+      spec.doors = { ...(spec.doors ?? {}), [id]: door };
+      run.prep.doors ??= new Map();
+      run.prep.doors.set(id, prepareDoors({ doors: { [id]: door } }, run.prep.rules).get(id));
+      changed = true;
+    }
+    if ( !state ) run.doors.set(id, state = { open: false, locked: !!d.locked, hp: run.prep.doors.get(id).hp, broken: false });
+    if ( state.broken ) continue;
+    if ( state.open !== open ) {
+      state.open = open;
+      changed = true;
+      // (Open now: nobody's walled off by it any more. simulator.js openDoor.)
+      if ( open ) for ( const o of run.units ) for ( const [tid, did] of o.walledOff ?? [] ) if ( did === id ) o.walledOff.delete(tid);
+    }
+    if ( !open && state.locked !== !!d.locked ) {
+      state.locked = !!d.locked;
+      changed = true;
+    }
+  }
+  if ( changed ) run.geo = (run.geo ?? 0) + 1;
+  return changed;
+}
+
 /* -------------------------------------------- */
 /*  Decisions                                   */
 /* -------------------------------------------- */

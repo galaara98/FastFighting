@@ -1,9 +1,11 @@
 import { describe, expect, test } from "vitest";
-import { replay, runBatchSync } from "../scripts/engine/simulator.js";
+import { replay, runBatchSync, beginRun, prepareBattle } from "../scripts/engine/simulator.js";
 import { parseFormula } from "../scripts/engine/dice.js";
 import { pf2eRules } from "./fixtures/three-action-rules.js";
 import { creature, strike, battle } from "./helpers.js";
-import { sustainSummons } from "../scripts/engine/behavior/summons.js";
+import { sustainSummons, callSummons } from "../scripts/engine/behavior/summons.js";
+import { threats } from "../scripts/engine/behavior/reactions.js";
+import { edgeDistance } from "../scripts/engine/battle-state.js";
 import { beginLive, liveRound, liveTurn, snapshotRun, restoreRun } from "../scripts/engine/live.js";
 
 const traits = (tactical = 70) => ({ tactical: { base: tactical, fudge: 0 }, brave: { base: 95, fudge: 0 }, selfish: { base: 20, fudge: 0 }, loyal: { base: 60, fudge: 0 } });
@@ -61,6 +63,19 @@ describe("summoning", () => {
     const without = runBatchSync(battle([druid({ ...summon, creatures: [] }), ogre(weak)], { maxRounds: 6 }), pf2eRules, { runs: 150, seed: 2 });
     const withThem = runBatchSync(battle([druid(summon), ogre(weak)], { maxRounds: 6 }), pf2eRules, { runs: 150, seed: 2 });
     expect(withThem.combatants.ogre.pDown + withThem.combatants.ogre.pDead).toBeGreaterThan(without.combatants.ogre.pDown + without.combatants.ogre.pDead);
+  });
+
+  test("called onto the map beside a foe: that foe knows at once they're there (who could strike it as it walks off)", () => {
+    const biter = { ...wolf, flags: { reactiveStrike: true } };
+    const call = { id: "summon-animal", name: "Summon Animal", kind: "summon", cost: 3, resource: "slot", creatures: [biter], rounds: 10, range: 30 };
+    const spec = battle([druid(call, { position: { x: 0, y: 0, size: 5 } }), ogre({ position: { x: 20, y: 0, size: 5 } })], { positioning: true, maxRounds: 4 });
+    const run = beginRun(prepareBattle(spec, pf2eRules), 1);
+    const [d, o] = ["druid", "ogre"].map(id => run.byId.get(id));
+    expect(threats(run, o)).toEqual([]);
+    const [w] = callSummons(run, d, call);
+    w.active = true;
+    expect(edgeDistance(w, o)).toBeLessThanOrEqual(5.5);
+    expect(threats(run, o).map(x => x.e)).toContain(w);
   });
 
   test("they go when their time is up", () => {

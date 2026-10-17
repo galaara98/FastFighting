@@ -119,6 +119,8 @@ export function callSummons(run, u, action) {
     if ( s.spec.untargetable ) run.untargetable = true;
     out.push(s);
   });
+  // (Someone new on the map: who's near whom, who sees whom, worked out again. battle-state.js moveToward.)
+  if ( out.some(s => s.pos) ) run.geo = (run.geo ?? 0) + 1;
   return out;
 }
 
