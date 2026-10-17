@@ -1224,7 +1224,9 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     await this.settleSides();
     if ( !this.results || !this.spec ) return;
     if ( canvas.scene?.id !== this.sceneId ) return ui.notifications.warn(loc("FASTFIGHTING.Planner.SceneChanged"));
-    if ( unfinishedPlayback(canvas.scene) || liveBattle() ) return;
+    if ( unfinishedPlayback(canvas.scene) ) return;
+    // (A battle on already, begun or waiting for Begin Encounter: its Battle Vantage, where it goes on.)
+    if ( liveBattle() ) return BattleVantage.open();
     // The sample is only a sample: what's done for real is one more fight, that nobody has seen, so a 70% win is a
     // loss three times in ten, as it should be. The planner closes, so the GM can watch it play out with the table.
     let playing;
