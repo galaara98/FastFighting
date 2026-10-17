@@ -18,7 +18,7 @@ import { think, thwart, mind, avoids, levelsFromScores } from "./desire.js";
 import { seemsFoe, sparedForTruce } from "./neutral.js";
 import { willingness } from "./reluctance.js";
 import { specialtyWeight } from "./specialty.js";
-import { perceives, apparentHealth } from "./senses.js";
+import { perceives, apparentHealth, knowsOf } from "./senses.js";
 
 
 /** Is the unit (or its side) in trouble, so a careful character would spend limited resources? */
@@ -142,8 +142,9 @@ function foesOf(run, u) {
   const spared = sparedForTruce(run, u);
   // (A system may say who can be pressed right now: Ironsworn, not a foe who has the initiative over it.)
   const can = run.prep.rules.canTarget;
-  // (Walled off: behind a locked door it decided wasn't worth the trouble.)
-  return foes.filter(f => !feared(u, f) && !avoids(run, u, f) && !charmedBy(u, f) && !hasTrait(f, "untouchable") && !u.walledOff?.has(f.id) && !spared?.has(f.id) && !heldOff(run, u, f) && (!can || can(run, u, f)));
+  // (Walled off: behind a locked door it decided wasn't worth the trouble. Unknown: out of its senses, never seen and
+  // never come to blows with: senses.js knowsOf.)
+  return foes.filter(f => !feared(u, f) && !avoids(run, u, f) && !charmedBy(u, f) && !hasTrait(f, "untouchable") && !u.walledOff?.has(f.id) && !spared?.has(f.id) && !heldOff(run, u, f) && (!can || can(run, u, f)) && knowsOf(run, u, f));
 }
 
 /**

@@ -94,6 +94,12 @@ export function perceives(run, u, t, { crisis = false } = {}) {
   return found;
 }
 
+/**
+ * Does u know t is there: in its senses now, seen before (desire.js seenFoes: it knows where it went), or come to
+ * blows with it, either way. A foe out of sight it has never met is no one it plans around.
+ */
+export const knowsOf = (run, u, t) => perceives(run, u, t) || !!u.seenFoes?.has(t.id) || !!u.harmedBy?.has(t.id) || !!t.harmedBy?.has(u.id);
+
 /** How hurt t looks to u: its real share of hit points if u can tell, else as if unhurt. */
 export function apparentHealth(run, u, t) {
   const frac = t.maxHp > 0 ? t.hp / t.maxHp : 0;
