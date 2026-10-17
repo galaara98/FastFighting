@@ -1080,8 +1080,11 @@ function executeOffense(run, u, action, t, attacksMade) {
     const others = enemiesOf(run, u).filter(o => o !== t && isStanding(o) && !heldOff(run, u, o) && !cutOff(run, u, o) && caught(o));
     run.rng.shuffle(others);
     targets.push(...others.slice(0, Math.max(0, (action.area.targets ?? 2) - 1)));
-    // (Where it was aimed, for a live battle to lay it on the map.)
-    if ( run.live && run.log ) log(run, u, { type: "area", actionId: action.id, action: action.name, targetId: t.id, target: t.spec.name });
+    // (Where it was aimed, and from where, for a live battle to lay it on the map.)
+    if ( run.live && run.log ) {
+      const at = p => (p ? { x: p.x, y: p.y } : null);
+      log(run, u, { type: "area", actionId: action.id, action: action.name, targetId: t.id, target: t.spec.name, from: at(u.pos), at: at(t.pos) });
+    }
     if ( run.neutral ) targets.push(...caughtInArea(run, u, targets));
   }
   const ranged = !!action.range && !action.melee;
@@ -1195,8 +1198,14 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
     // (A Lore-Collector that sized this foe up: the roll about 2.5 times as likely to land.)
     const lift = boostBonus(rules, u, target, bonus + deedRoll, ac, opts);
     let roll = rollCheck(rules, run.rng, bonus + deedRoll + lift, ac, opts);
-    // (A live battle's reaction the system rolled itself, its card in the chat: that roll, as it came out.)
-    const forced = takeForced(run, u, target);
+    // (A live battle's roll the system made itself, its cards in the chat: that roll, as it came out. A reaction's,
+    // rolled as it was decided (takeForced); any other, as it's made: engine/live.js systemRoll.)
+    const forced = takeForced(run, u, target)
+      ?? run.live?.roll?.(run, {
+        kind: "strike", unitId: u.id, targetId: target.id, attackNumber: attacksMade, advantage: advantage ?? 0,
+        action: { id: action.id, name: action.name, ranged: !!ranged, thrown: !!action.thrown && !!ranged }
+      })
+      ?? null;
     if ( forced?.attack ) roll = { ...roll, natural: forced.attack.natural ?? roll.natural, total: forced.attack.total ?? roll.total, degree: forced.attack.degree };
     spendEdges(u, "attack", target.id);
     spendEdges(target, "defend", u.id);
@@ -1248,7 +1257,9 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
         }
       }
     }
-    const data = !logging ? null : { type: "attack", ...common, natural: roll.natural, mod: bonus + deedRoll + lift + (roll.die ?? 0), total: roll.total, dc: ac, degree: roll.degree, margin: roll.total - ac, attackNumber: attacksMade + 1, boost: lift || null, faces: roll.faces ?? opts.faces, deed: r.deed ? deedRoll : null, challenge: roll.challenge ?? null, burned: roll.burned ?? null, note: roll.note ?? null, ...(roll.said?.data?.luck ? { luck: roll.said.data.luck } : {}) };
+    // (The system's roll: its own modifier, whatever it counted.)
+    const sysMod = forced?.attack && Number.isFinite(roll.total) && Number.isFinite(roll.natural) ? roll.total - roll.natural : null;
+    const data = !logging ? null : { type: "attack", ...common, natural: roll.natural, mod: sysMod ?? bonus + deedRoll + lift + (roll.die ?? 0), total: roll.total, dc: ac, degree: roll.degree, margin: roll.total - ac, attackNumber: attacksMade + 1, boost: lift || null, faces: roll.faces ?? opts.faces, deed: r.deed ? deedRoll : null, challenge: roll.challenge ?? null, burned: roll.burned ?? null, note: roll.note ?? null, ...(roll.said?.data?.luck ? { luck: roll.said.data.luck } : {}) };
     let struck = 0;
     if ( roll.degree >= 2 ) {
       const crit = roll.degree === 3;
@@ -1274,9 +1285,18 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
       // own resistances.
       const intercepted = guard?.r.redirect && amount > 0 ? rules.applyIwr(iwrOf(guard.g), hit.byType, guard.g) : null;
       if ( intercepted !== null ) amount = 0;
+      const lessened = amount < hit.total ? hit.total - amount : 0;
+      // (The system's own damage card, landing as it was rolled: the system applies it, its resistances, shields and
+      // all, and the target takes what it lost by it. Lessened by a reaction the system's application does itself
+      // (answer.applies: PF2e's Shield Block), applied with it; by any other, the engine's sum.)
+      const asRolled = !lessened || (!!answer?.applies && !answer.halve && !guard?.r.reduce);
+      if ( forced?.card && asRolled && intercepted === null && !action.finish ) {
+        const applied = run.live?.roll?.(run, { kind: "apply", unitId: u.id, targetId: target.id, card: forced.card, amount, applies: answer?.applies ?? null });
+        if ( Number.isFinite(applied?.lost) ) amount = Math.max(0, applied.lost);
+      }
       if ( logging ) log(run, u, {
         ...data, damage: amount, crit, sneak: extra.length > 0, precision: [...base, ...more].some(isPrecision) || undefined, advantage, riders: riders.map(x => x.label), critRoll: table?.total ?? null, critRowText: table?.row?.text ?? null,
-        lessened: amount < hit.total ? hit.total - amount : 0, interceptedBy: intercepted !== null ? guard.g.spec.name : null, intercepted
+        lessened, interceptedBy: intercepted !== null ? guard.g.spec.name : null, intercepted
       });
       tellAnswers();
       const dealt = intercepted !== null ? 0 : hit.apply(amount);

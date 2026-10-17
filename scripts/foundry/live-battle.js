@@ -30,7 +30,7 @@ import { logLine } from "../story/log-lines.js";
 import { loadStoryTables } from "../story/tables.js";
 import {
   beginLive, liveRound, liveOrder, liveDrop, liveTurn, pcTurnBegin, pcTurnEnd, syncFromSheets, setApproach, setScene, captureAll, snapshotRun, restoreRun, endLive, packLog, followCommand,
-  NeedsDecision, applyFact, gmMoment, leavingReach, openingFor, reactNow, nextSpotlight, liveAftermath,
+  NeedsDecision, rollsKind, applyFact, gmMoment, leavingReach, openingFor, reactNow, nextSpotlight, liveAftermath,
   setCondition, setRelation, clearRelation, setAffliction, setGoal, setAttitude, setSide, setRole, playerRuns
 } from "../engine/live.js";
 import { diffAll, sideAfter } from "../engine/changes.js";
@@ -43,6 +43,17 @@ import { SystemAdapter } from "../adapters/adapter-base.js";
 
 /** Does the helper do this itself (its own, not the base adapter's do-nothing)? */
 const offers = (adapter, name) => typeof adapter?.[name] === "function" && adapter[name] !== SystemAdapter.prototype[name];
+
+/**
+ * The kinds of roll the system makes itself in this battle, as its helper offers them (engine/live.js systemRoll):
+ * strikes (rollStrike), and their damage cards applied its own way (applyDamageCard).
+ */
+function systemRollKinds(adapter) {
+  const out = [];
+  if ( offers(adapter, "rollStrike") ) out.push("strike");
+  if ( out.includes("strike") && offers(adapter, "applyDamageCard") ) out.push("apply");
+  return out;
+}
 import { isStanding, canMove } from "../engine/battle-state.js";
 
 const loc = key => game.i18n.localize(key);
@@ -193,7 +204,7 @@ export async function startLiveBattle(spec, { style = setting("storyStyle"), odd
   const spotlight = adapter.liveTurns === "spotlight";
   const seed = randomSeed();
   const live = { ...spec, options: { ...spec.options, initiativeOrder: combat.turns.map(c => c.tokenId) } };
-  const run = beginLive(live, adapter.rules, { seed, players, owns: adapter.liveOwnership?.() ?? {}, npcReactions: "calculated", systemRolls: offers(adapter, "rollReaction"), readsRolls: offers(adapter, "readTurn") });
+  const run = beginLive(live, adapter.rules, { seed, players, owns: adapter.liveOwnership?.() ?? {}, npcReactions: "calculated", systemRolls: systemRollKinds(adapter), readsRolls: offers(adapter, "readTurn") });
   // (Prepared until the encounter begins: no turn played, nothing told.)
   battle = {
     combat, scene, spec: live, rules: adapter.rules, run, pc: null,
@@ -790,31 +801,39 @@ async function playTurn(u, combatant, key) {
   const snapshot = snapshotRun(battle.run, { log: false });
   const answers = [];
   const nonce = freshNonce(); // (the turn's own dice, the same each time it's played again for an answer)
+  // Where everyone stood (for Rewind), before the turn moves anyone; and what it's put on the map and in the chat
+  // before each of the system's rolls (turnRoll).
+  const stage = turnStage();
+  const startedAt = battle.run.units.map(x => docOf(x.id)).filter(Boolean).map(doc => ({ uuid: doc.uuid, ...placeOf(doc) }));
+  areaShapes.clear();
+  areaTests.clear();
   let result;
   for ( let tries = 0; ; tries++ ) {
     try {
       battle.run.live.exitOf = exitOf; // (the way off the scene, for one leaving the fight)
       battle.run.live.inArea = areaTest; // (who an area catches, as the system's own shape has it on the map)
-      areaShapes.clear();
       result = liveTurn(battle.run, u.id, { answers, salt: battle.data.salt ?? 0, nonce });
       break;
     } catch ( err ) {
-      if ( !(err instanceof NeedsDecision) || tries > 20 ) throw err;
-      answers.push([err.request.key, await answerFor(err.request)]);
+      if ( !(err instanceof NeedsDecision) || tries > 200 ) throw err;
+      const request = err.request;
+      // (A roll the system makes: what the turn did before it played on the map first. A question: asked.)
+      const answer = request.roll ? await turnRoll(request, battle.run.log.slice(battle.run.live.turnFrom ?? battle.run.log.length), stage) : await answerFor(request);
+      answers.push([request.key, answer]);
       battle.run = restoreRun(battle.spec, battle.rules, snapshot, { log: battle.run.log });
     }
   }
   const after = captureAll(battle.run);
-  const turn = { key, combatantId: combatant.id, round: battle.combat.round, at: battle.combat.turn, kind: "npc", records: [], messages: [], moves: [], doors: [], snapshot };
+  const turn = { key, combatantId: combatant.id, round: battle.combat.round, at: battle.combat.turn, kind: "npc", records: [...stage.records], messages: [...stage.messages], moves: [], doors: [], snapshot };
   await holdingPause(async () => {
-    // Where everyone stood (for Rewind), then the moves and doors as the turn made them.
-    turn.moves = battle.run.units.map(x => docOf(x.id)).filter(Boolean).map(doc => ({ uuid: doc.uuid, ...placeOf(doc) }));
-    const docs = new Map(battle.run.units.map(x => [x.id, docOf(x.id)]).filter(([, d]) => d));
-    const doorsOpened = new Map();
-    if ( setting("playOnMap") ) {
-      const grid = currentPathGrid() ?? pathGridFor([...docs.values()].map(d => d.object).filter(Boolean));
-      await playMoves(result.events, docs, grid, doorsOpened, battle.scene);
-    } else await playMoves(result.events, docs, null, doorsOpened, battle.scene, { instant: true });
+    // Where everyone stood (for Rewind), then the moves and doors as the turn made them (those after its last roll:
+    // the rest are on the map already).
+    turn.moves = startedAt;
+    const docs = stageDocs(stage);
+    const doorsOpened = stage.doorsOpened;
+    const rest = result.events.slice(stage.played);
+    if ( setting("playOnMap") ) await playMoves(rest, docs, stageGrid(stage), doorsOpened, battle.scene);
+    else await playMoves(rest, docs, null, doorsOpened, battle.scene, { instant: true });
     turn.doors = [...doorsOpened.values()];
     // (Its areas, laid on the map as the system lays them: who they caught was tested against them.)
     await layAreas(result.events, turn.records);
@@ -885,6 +904,113 @@ async function waitCard(turn) {
       <button type="button" data-ff-live="continue"><i class="fa-solid fa-arrow-right"></i> ${loc("FASTFIGHTING.Live.NextTurn")}</button></div>`),
     speaker: chronicle(), whisper: gmIds(), flags: { [MODULE_ID]: { live: { battle: battle.data.id, turn: turn.key } } }
   });
+}
+
+/* -------------------------------------------- */
+/*  The system's own rolls, in a turn it plays  */
+/* -------------------------------------------- */
+
+/** The kinds of event that move someone on the map (make-it-so.js playMoves). */
+const MOVING = new Set(["move", "flee", "leave", "forced"]);
+
+/**
+ * What a turn FastFighting plays has done on the map and in the chat before its rolls: how many of its events are
+ * played (`played`), the doors they opened, the undo records and cards of the rolls (for Rewind).
+ */
+const turnStage = () => ({ played: 0, records: [], messages: [], doorsOpened: new Map(), docs: null, grid: null });
+
+/** The battle's tokens by creature, for a turn's moves. */
+const stageDocs = stage => (stage.docs ??= new Map(battle.run.units.map(x => [x.id, docOf(x.id)]).filter(([, d]) => d)));
+
+/** The paths the turn's moves walk (the one it found its way by, else the scene's). */
+const stageGrid = stage => (stage.grid ??= currentPathGrid() ?? pathGridFor([...stageDocs(stage).values()].map(d => d.object).filter(Boolean)));
+
+/** The turn's events not played on the map yet, played: its moves, as far as it's got. */
+async function playSoFar(events, stage) {
+  const fresh = events.slice(stage.played);
+  stage.played = Math.max(stage.played, events.length);
+  if ( !fresh.some(e => MOVING.has(e.type)) ) return;
+  if ( setting("playOnMap") ) await playMoves(fresh, stageDocs(stage), stageGrid(stage), stage.doorsOpened, battle.scene);
+  else await playMoves(fresh, stageDocs(stage), null, stage.doorsOpened, battle.scene, { instant: true });
+}
+
+/**
+ * A roll in a turn FastFighting plays, made with the system's own roller (engine/live.js systemRoll): the moves the
+ * turn made before it played first (so the system sees range and flanking from where they stand), then the roll, its
+ * cards in the chat; or a strike's damage card applied the system's way. Its cards and undo records are the turn's.
+ * Returns what the engine takes of it, or null (the engine's own dice).
+ */
+async function turnRoll(request, events, stage) {
+  const seen = new Set(game.messages.keys());
+  let out = null;
+  await holdingPause(async () => {
+    try {
+      if ( request.roll === "apply" ) out = await applyStrike(request, stage);
+      else {
+        await playSoFar(events, stage);
+        if ( request.roll === "strike" ) out = await rollTurnStrike(request);
+      }
+    } catch ( err ) {
+      console.error(`${MODULE_ID} | the system's roll`, err);
+      out = null;
+    }
+  });
+  stage.messages.push(...game.messages.filter(m => !seen.has(m.id)).map(m => m.id));
+  return out;
+}
+
+/**
+ * A strike in a turn FastFighting plays, rolled with the system's own roller (the helper's rollStrike): its attack
+ * card and, on a hit, its damage card. {attack, damage: {byType} | null, card: the damage card's id}, or null.
+ */
+async function rollTurnStrike({ unitId, targetId, action, attackNumber }) {
+  const adapter = getAdapter();
+  const doc = docOf(unitId);
+  const target = docOf(targetId);
+  if ( !doc || !target ) return null;
+  const seen = new Set(game.messages.keys());
+  const raw = await adapter.rollStrike(doc, { action, target, attackNumber: Math.max(0, Number(attackNumber) || 0), secret: secretRoll(doc) });
+  const out = strikeRolled(raw);
+  if ( !out?.damage ) return out;
+  // (Its damage card, for the system to apply as its own: the one the helper names (null: none holds it all, the
+  // engine's sum), else the first damage card it made.)
+  if ( raw && Object.hasOwn(raw, "card") ) return { ...out, card: typeof raw.card === "string" && game.messages.get(raw.card) ? raw.card : null };
+  const ids = Object.fromEntries(battle.run.units.map(x => [tokenIdOf(x), x.id]));
+  const card = game.messages.contents.filter(m => !seen.has(m.id)).find(m => {
+    try {
+      return adapter.damageCard?.(m, { ids })?.kind === "damage";
+    } catch ( err ) {
+      return false;
+    }
+  });
+  return { ...out, card: card?.id ?? null };
+}
+
+/** What a creature has to lose, as its sheet has it now: hit points, temporary hit points and stamina. Null unread. */
+async function standing(u) {
+  const doc = docOf(u.id);
+  if ( !doc ) return null;
+  const s = await getAdapter().readLiveState(doc, { spec: battle.spec, unit: u });
+  if ( !s || !Number.isFinite(s.hp) ) return null;
+  return s.hp + (Number(s.temp) || 0) + (Number(s.stamina) || 0);
+}
+
+/**
+ * A strike's damage card applied the system's way to its target (the helper's applyDamageCard: resistances,
+ * shields, temporary hit points, its own damage-taken card): {lost}, what the target lost by it. Null: the engine's sum.
+ */
+async function applyStrike({ targetId, card, applies }, stage) {
+  const u = battle.run.byId.get(targetId);
+  const doc = docOf(targetId);
+  const message = card ? game.messages.get(card) : null;
+  if ( !u || !doc || !message ) return null;
+  const was = await standing(u);
+  // (With the reaction the system's application does itself, where one was used: {shieldBlock: true}.)
+  const options = { multiplier: 1, ...(typeof applies === "string" && applies ? { [applies]: true } : {}) };
+  const records = (await getAdapter().applyDamageCard(message, doc, options)) ?? [];
+  stage.records.push(...records);
+  const now = await standing(u);
+  return was !== null && now !== null ? { lost: Math.max(0, was - now) } : null;
 }
 
 /** How long a player has to answer a question about their reaction (ms) before the GM is asked instead. */
@@ -1004,32 +1130,63 @@ function sheetUndo(before) {
 /*  Areas on the map                            */
 /* -------------------------------------------- */
 
-/** The shapes of the areas the turn being played aimed, by caster, target and action: {data, origin}. */
+/**
+ * The shapes of the areas the turn being played aimed, and who they caught, by caster, target, action and where they
+ * stood: the same answers each time the turn is played again, whatever has moved on the map or opened since.
+ */
 const areaShapes = new Map();
+const areaTests = new Map();
+
+/**
+ * Where the engine has a creature, as a point on the map in pixels (its center): the map's own token where the
+ * engine has no position for it. `at` is a position in the engine's feet ({x, y}) to use instead.
+ */
+function pointOf(u, at = u.pos) {
+  if ( !at ) return docOf(u.id)?.object?.center ?? null;
+  const { size } = canvas.dimensions;
+  const feet = squareFeet();
+  return { x: (at.x / feet) * size, y: (at.y / feet) * size };
+}
+
+/** The centers of the squares a creature covers, where the engine has it (and its own center). */
+function squaresOf(o) {
+  const c = pointOf(o);
+  const doc = docOf(o.id);
+  if ( !c || !doc ) return [];
+  const size = canvas.dimensions.size;
+  const w = Math.max(1, Math.round(doc.width ?? 1));
+  const h = Math.max(1, Math.round(doc.height ?? 1));
+  const out = [c];
+  for ( let i = 0; i < w; i++ ) for ( let j = 0; j < h; j++ ) out.push({ x: c.x - (w * size) / 2 + (i + 0.5) * size, y: c.y - (h * size) / 2 + (j + 0.5) * size });
+  return out;
+}
+
+/** A position, as a key. */
+const spotKey = p => (p ? `${Math.round(p.x)},${Math.round(p.y)}` : "-");
 
 /**
  * The shape an area u aims at t makes on the map, as the system draws it (the helper's areaShape; else Foundry's own
- * template defaults): a cone or a line from u toward t, a burst on t, an emanation round u. Null off this scene.
+ * template defaults): a cone or a line from u toward t, a burst on t, an emanation round u; from where the engine has
+ * them (or `from` and `at`, where the turn's "area" event says they stood). Null off this scene.
  */
-function areaShapeFor(u, t, action) {
-  const key = `${u.id}|${t.id}|${action.id}`;
+function areaShapeFor(u, t, action, { from = u.pos, at = t.pos } = {}) {
+  const key = `${u.id}|${t.id}|${action.id}|${spotKey(from)}|${spotKey(at)}`;
   if ( areaShapes.has(key) ) return areaShapes.get(key);
   let out = null;
-  const du = docOf(u.id)?.object;
-  const dt = docOf(t.id)?.object;
-  if ( du && dt && canvas.scene?.id === battle.scene.id && foundry.data?.ConeShapeData ) {
+  const cu = pointOf(u, from);
+  const ct = pointOf(t, at);
+  const du = docOf(u.id);
+  if ( cu && ct && du && canvas.scene?.id === battle.scene.id && foundry.data?.ConeShapeData ) {
     const area = action.area ?? {};
     const shape = area.shape ?? "burst";
     const px = canvas.grid.size / (canvas.grid.distance || 5);
     const radius = (Number(area.feet) > 0 ? Number(area.feet) : 10) * px;
-    const cu = du.center;
-    const ct = dt.center;
     const rotation = Math.toDegrees(Math.atan2(ct.y - cu.y, ct.x - cu.x));
     const defaults = CONFIG.MeasuredTemplate?.defaults ?? {};
     let data;
     if ( shape === "cone" ) data = { type: "cone", x: cu.x, y: cu.y, radius, angle: defaults.angle ?? 90, rotation };
     else if ( shape === "line" ) data = { type: "line", x: cu.x, y: cu.y, length: radius, width: (defaults.width ?? 1) * canvas.grid.size, rotation };
-    else if ( shape === "emanation" ) data = { type: "circle", x: cu.x, y: cu.y, radius: radius + Math.max(du.w, du.h) / 2 };
+    else if ( shape === "emanation" ) data = { type: "circle", x: cu.x, y: cu.y, radius: radius + (Math.max(du.width ?? 1, du.height ?? 1) * canvas.grid.size) / 2 };
     else data = { type: "circle", x: ct.x, y: ct.y, radius };
     try {
       data = getAdapter().areaShape?.({ ...data }, { area }) ?? data;
@@ -1047,14 +1204,19 @@ function areaShapeFor(u, t, action) {
   return out;
 }
 
-/** Does an area u aims at t catch o: any square o's token covers inside its shape, and no wall in between? Null: can't tell. */
+/**
+ * Does an area u aims at t catch o: any square o covers (where the engine has it) inside its shape, and no wall in
+ * between? Null: can't tell. Asked again in the same turn with everyone where they were, the same answer.
+ */
 function areaTest(u, t, o, action) {
+  const key = `${u.id}|${t.id}|${o.id}|${action.id}|${spotKey(u.pos)}|${spotKey(t.pos)}|${spotKey(o.pos)}`;
+  if ( areaTests.has(key) ) return areaTests.get(key);
   const area = areaShapeFor(u, t, action);
-  const doc = docOf(o.id);
-  if ( !area || !doc?.object ) return null;
-  const points = [doc.object.center, ...(doc.getOccupiedGridSpaceOffsets?.() ?? []).map(off => canvas.grid.getCenterPoint(off))];
+  const points = area ? squaresOf(o) : [];
   const walls = CONFIG.Canvas.polygonBackends?.move;
-  return points.some(p => area.shape.testPoint(p) && !walls?.testCollision(area.origin, p, { type: "move", mode: "any" }));
+  const out = points.length ? points.some(p => area.shape.testPoint(p) && !walls?.testCollision(area.origin, p, { type: "move", mode: "any" })) : null;
+  areaTests.set(key, out);
+  return out;
 }
 
 /** The areas a turn aimed (its "area" events), laid on the map as Regions; their undo kept with the turn's records. */
@@ -1064,7 +1226,8 @@ async function layAreas(events, records) {
     const u = run.byId.get(e.actorId);
     const t = run.byId.get(e.targetId);
     const action = u?.spec.actions?.find(a => a.id === e.actionId);
-    const area = u && t && action ? areaShapes.get(`${u.id}|${t.id}|${action.id}`) ?? areaShapeFor(u, t, action) : null;
+    // (Where they stood as it was aimed, as the event says: either may have moved since.)
+    const area = u && t && action ? areaShapeFor(u, t, action, { from: e.from ?? u.pos, at: e.at ?? t.pos }) : null;
     if ( !area ) continue;
     try {
       const [region] = await battle.scene.createEmbeddedDocuments("Region", [{
@@ -1199,6 +1362,26 @@ function answerReactionDone(data, { user } = {}) {
 const counted = (v, least = 0) => (Number.isFinite(Number(v)) ? Math.max(least, Number(v)) : null);
 
 /**
+ * A strike as the helper's rollStrike says it went, made sure of (it may come from another player's screen):
+ * {attack: {degree, natural, total}, damage: {byType} | null}, damage only on a hit; null if it says no degree.
+ */
+function strikeRolled(roll) {
+  const degree = counted(roll?.attack?.degree);
+  if ( degree === null ) return null;
+  const out = { attack: { degree: Math.min(3, Math.round(degree)), natural: counted(roll.attack.natural), total: counted(roll.attack.total, -Infinity) }, damage: null };
+  const byType = roll.damage?.byType && typeof roll.damage.byType === "object"
+    ? Object.fromEntries(Object.entries(roll.damage.byType).map(([k, v]) => [String(k), counted(v)]).filter(([, v]) => v !== null)) : null;
+  if ( out.attack.degree >= 2 && byType && Object.keys(byType).length ) out.damage = { byType };
+  return out;
+}
+
+/**
+ * Is a creature's roll made for the GMs' eyes only? One the GM marked "Keep its name secret": the system's cards
+ * would name it. (Otherwise in the chat's own mode: where a system hides names by nameplate, PF2e, its cards do.)
+ */
+const secretRoll = doc => !!doc?.actor?.getFlag?.(MODULE_ID, "secretName");
+
+/**
  * A reaction's strike rolled with the system's own roller, its cards in the chat: on its player's screen where a player
  * runs it and is here (else on this one). Its damage, a player's at a creature FastFighting runs, goes as players'
  * damage does: as rolled with Apply players' damage on (or where the system applies it); else a GM says how much.
@@ -1208,7 +1391,7 @@ async function systemRoll({ unitId, byId, strike }) {
   const adapter = getAdapter();
   const doc = docOf(unitId);
   const target = byId ? docOf(byId) : null;
-  if ( !offers(adapter, "rollReaction") || !doc || !strike ) return null;
+  if ( !offers(adapter, "rollStrike") || !doc || !strike ) return null;
   const run = battle.run;
   const player = run.live.players.has(unitId);
   let roll = null;
@@ -1224,18 +1407,15 @@ async function systemRoll({ unitId, byId, strike }) {
   }
   if ( !roll ) {
     try {
-      roll = await adapter.rollReaction(doc, { action: strike, target });
+      roll = await adapter.rollStrike(doc, { action: strike, target, attackNumber: 0, secret: secretRoll(doc) });
     } catch ( err ) {
       console.error(`${MODULE_ID} | rolling a reaction`, err);
       roll = null;
     }
   }
-  const degree = counted(roll?.attack?.degree);
-  if ( degree === null ) return null;
-  const out = { attack: { degree: Math.min(3, Math.round(degree)), natural: counted(roll.attack.natural), total: counted(roll.attack.total, -Infinity) }, damage: null };
-  const byType = roll.damage?.byType && typeof roll.damage.byType === "object"
-    ? Object.fromEntries(Object.entries(roll.damage.byType).map(([k, v]) => [String(k), counted(v)]).filter(([, v]) => v !== null)) : null;
-  if ( out.attack.degree < 2 || !byType || !Object.keys(byType).length ) return out;
+  const out = strikeRolled(roll);
+  if ( !out?.damage ) return out;
+  const byType = out.damage.byType;
   // (A player's blow at a creature FastFighting runs: players' damage, as the battle has it.)
   const t = byId ? run.byId.get(byId) : null;
   let multiplier = 1;
@@ -1270,7 +1450,7 @@ async function answerRoll(data, { user } = {}) {
   const doc = await fromUuid(data.token);
   if ( !doc?.isOwner ) return null;
   const target = typeof data.target === "string" ? await fromUuid(data.target) : null;
-  return (await getAdapter()?.rollReaction?.(doc, { action: data.strike, target })) ?? null;
+  return (await getAdapter()?.rollStrike?.(doc, { action: data.strike, target, attackNumber: 0 })) ?? null;
 }
 
 /**
@@ -1526,7 +1706,7 @@ async function openingTaken(pc, message = null) {
 
 /** A foe's strike at a player's character in its turn, rolled with the system's own roller first, where it can. */
 async function rollFirst(run, reactorId, targetId, strike) {
-  if ( !run.live.systemRolls ) return;
+  if ( !rollsKind(run.live, "strike") ) return;
   const roll = await systemRoll({ unitId: reactorId, byId: targetId, strike: { id: strike.id, name: strike.name } });
   if ( roll ) run.live.forced = { unitId: reactorId, targetId, ...roll };
 }
@@ -2281,9 +2461,9 @@ async function pickUp() {
       continue;
     }
     battle = { combat, scene, spec, rules, run, pc: null, data, keptSpec: data.spec };
-    // (Reactions' strikes rolled with the system's own roller, where this helper can, and a player's by the player: a
-    // battle begun before, too.)
-    run.live.systemRolls = offers(getAdapter(), "rollReaction");
+    // (Rolls made with the system's own roller, where this helper can, and a player's reaction by the player: a battle
+    // begun before, too.)
+    run.live.systemRolls = systemRollKinds(getAdapter());
     run.live.readsRolls = offers(getAdapter(), "readTurn");
     playersNow();
     if ( data.pc ) {

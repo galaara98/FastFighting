@@ -22,6 +22,12 @@ test("a helper that knows nothing of damage cards reads none, applies none, and 
   expect(adapter.namesFollowNameplates()).toBe(false);
 });
 
+test("a helper with no roller of its own rolls no strikes: the engine's dice", () => {
+  const adapter = new SystemAdapter();
+  expect(adapter.rollStrike({}, { action: { id: "a" }, target: {}, attackNumber: 1 })).toBeNull();
+  expect(adapter.rollReaction).toBeUndefined();
+});
+
 test("a creature left at 0 hit points by a player's blow falls; one still standing on its feet, or already down, doesn't", () => {
   const run = beginLive(battle([creature({ id: "pc", kind: "pc", diesAtZero: false }), creature({ id: "orc", side: "hostile" })]), pf2eRules, { seed: 1 });
   liveRound(run, 1);

@@ -28,6 +28,27 @@ function skirmish(extra = {}) {
   ], { positioning: true, maxRounds: 10 });
 }
 
+/**
+ * A live turn played through its questions, as the live side plays it: each answered by `answer(request)` (null: the
+ * engine's own dice), the turn played again from a fresh `setUp()` each time. Returns {run, events, requests}.
+ */
+function playThrough(setUp, id, answer = () => null) {
+  const answers = [];
+  const requests = [];
+  for ( let tries = 0; tries < 60; tries++ ) {
+    const run = setUp();
+    try {
+      const { events } = liveTurn(run, id, { answers });
+      return { run, events, requests };
+    } catch ( err ) {
+      if ( !(err instanceof NeedsDecision) ) throw err;
+      requests.push(err.request);
+      answers.push([err.request.key, answer(err.request)]);
+    }
+  }
+  throw new Error("a turn that never stops asking");
+}
+
 /** Play the NPCs' turns of `rounds` rounds (players' turns passed with nothing read). */
 function playRounds(run, rounds, from = 1) {
   for ( let round = from; round < from + rounds; round++ ) {
@@ -269,30 +290,73 @@ describe("live battles: the engine a turn at a time", () => {
 
   test("a player's reaction in a foe's turn, where the system rolls strikes: asked to be rolled, then played with that roll", () => {
     // (Its player rolls it, read off their cards: readsRolls; or the system rolls it: systemRolls. Asked to be rolled either way.)
-    for ( const flags of [{ systemRolls: true }, { readsRolls: true }] ) {
-    const setUp = () => {
-      const run = beginLive(skirmish({ valeros: { position: at(5), reactionPrefs: { opportunity: "always" }, flags: { reactiveStrike: true }, actions: [strike({ id: "sword", name: "Longsword", bonus: 9, damage: [parseFormula("1d8+4", "slashing")] })] },
-        kyra: { position: at(70) }, orc: { desires: [{ kind: "hurt", targetId: "kyra", level: 95 }], flags: { fearless: true }, traits: minded(5) } }), pf2eRules, { seed: 4, players: ["valeros", "kyra"], ...flags });
-      liveRound(run, 1);
-      return run;
-    };
-    const asked = [];
-    let run = setUp();
-    let request = null;
-    try {
-      liveTurn(run, "orc");
-    } catch ( err ) {
-      if ( !(err instanceof NeedsDecision) ) throw err;
-      request = err.request;
+    for ( const flags of [{ systemRolls: ["strike"] }, { readsRolls: true }] ) {
+      const setUp = () => {
+        const run = beginLive(skirmish({ valeros: { position: at(5), reactionPrefs: { opportunity: "always" }, flags: { reactiveStrike: true }, actions: [strike({ id: "sword", name: "Longsword", bonus: 9, damage: [parseFormula("1d8+4", "slashing")] })] },
+          kyra: { position: at(70) }, orc: { desires: [{ kind: "hurt", targetId: "kyra", level: 95 }], flags: { fearless: true }, traits: minded(5) } }), pf2eRules, { seed: 4, players: ["valeros", "kyra"], ...flags });
+        liveRound(run, 1);
+        return run;
+      };
+      // (The orc's own strikes, where the system rolls them too, left to the engine's dice here.)
+      const { events, requests } = playThrough(setUp, "orc", r => (r.roll ? null : { use: true, roll: { attack: { degree: 2, natural: 15, total: 24 }, damage: { byType: { slashing: 11 } } } }));
+      expect(requests[0]).toMatchObject({ unitId: "valeros", decided: true, strike: { id: "sword" } });
+      const blow = events.find(e => e.type === "attack" && e.actorId === "valeros");
+      expect(blow).toMatchObject({ degree: 2, natural: 15, total: 24 });
     }
-    expect(request).not.toBeNull();
-    asked.push(request);
-    expect(request).toMatchObject({ unitId: "valeros", decided: true, strike: { id: "sword" } });
-    run = setUp();
-    const { events } = liveTurn(run, "orc", { answers: [[request.key, { use: true, roll: { attack: { degree: 2, natural: 15, total: 24 }, damage: { byType: { slashing: 11 } } } }]] });
-    const blow = events.find(e => e.type === "attack" && e.actorId === "valeros");
-    expect(blow).toMatchObject({ degree: 2, natural: 15, total: 24 });
-    }
+  });
+
+  /** The orc beside Kyra, set on her, in a live battle where the system makes these kinds of roll itself. */
+  const besideKyra = (kinds, kyra = {}) => () => {
+    const run = beginLive(skirmish({ valeros: { position: at(60) }, kyra: { position: at(5), hp: { value: 300, max: 300 }, ...kyra },
+      orc: { desires: [{ kind: "hurt", targetId: "kyra", level: 95 }], flags: { fearless: true }, traits: minded(5) } }), pf2eRules, { seed: 4, players: ["valeros", "kyra"], systemRolls: kinds });
+    liveRound(run, 1);
+    return run;
+  };
+  const hitFor = (slashing, card = null) => ({ attack: { degree: 2, natural: 14, total: 24 }, damage: { byType: { slashing } }, card });
+
+  test("a turn FastFighting plays, where the system rolls strikes: each strike asked for (its attacks before it counted), and played with that roll", () => {
+    const { run, events, requests } = playThrough(besideKyra(["strike"]), "orc", r => hitFor(10));
+    const strikes = requests.filter(r => r.roll === "strike");
+    expect(strikes.length).toBeGreaterThan(0);
+    expect(strikes[0]).toMatchObject({ kind: "strike", unitId: "orc", targetId: "kyra", action: { id: "axe", name: "Greataxe" }, attackNumber: 0 });
+    expect(strikes.map(r => r.attackNumber)).toEqual(strikes.map((_, i) => i));
+    expect(new Set(requests.map(r => r.key)).size).toBe(requests.length);
+    // (Its damage as rolled, through the target's resistances as the engine has them: none.)
+    const blows = events.filter(e => e.type === "attack" && e.actorId === "orc");
+    expect(blows.length).toBe(strikes.length);
+    for ( const b of blows ) expect(b).toMatchObject({ degree: 2, natural: 14, total: 24, mod: 10, damage: 10 });
+    expect(run.byId.get("kyra").hp).toBe(300 - 10 * blows.length);
+  });
+
+  test("a strike's damage card the system applies itself: asked to apply it, and the target takes what it lost by it", () => {
+    const { run, events, requests } = playThrough(besideKyra(["strike", "apply"]), "orc", r => (r.roll === "strike" ? hitFor(10, `card-${r.attackNumber}`) : { lost: 7 }));
+    const strikes = requests.filter(r => r.roll === "strike");
+    const applied = requests.filter(r => r.roll === "apply");
+    expect(applied.map(r => r.card)).toEqual(strikes.map(r => `card-${r.attackNumber}`));
+    expect(applied[0]).toMatchObject({ unitId: "orc", targetId: "kyra", amount: 10, applies: null });
+    for ( const b of events.filter(e => e.type === "attack" && e.actorId === "orc") ) expect(b.damage).toBe(7);
+    expect(run.byId.get("kyra").hp).toBe(300 - 7 * strikes.length);
+  });
+
+  test("a reaction that lessens the blow: applied the system's way with it where the system does it (Shield Block), else the engine's sum", () => {
+    const block = applies => ({ reactions: [{ id: "kyra.shield-block", label: "Shield Block", on: "hit", physical: true, reduce: part([], 4), applies }], reactionPrefs: { "kyra.shield-block": "always" } });
+    // (The system's own: applied with it, and what she lost by it is what she takes.)
+    const own = playThrough(besideKyra(["strike", "apply"], block("shieldBlock")), "orc", r => (r.roll === "strike" ? hitFor(10, "card") : { lost: 6 }));
+    expect(own.requests.find(r => r.roll === "apply")).toMatchObject({ applies: "shieldBlock", card: "card" });
+    expect(own.events.find(e => e.type === "attack" && e.actorId === "orc")).toMatchObject({ damage: 6, lessened: 4 });
+    // (One it doesn't: not applied its way; the engine's 10 less 4.)
+    const engine = playThrough(besideKyra(["strike", "apply"], block(undefined)), "orc", r => (r.roll === "strike" ? hitFor(10, "card") : { lost: 99 }));
+    const first = engine.events.find(e => e.type === "attack" && e.actorId === "orc");
+    expect(first).toMatchObject({ damage: 6, lessened: 4 });
+    expect(engine.requests.filter(r => r.roll === "apply").length).toBe(engine.requests.filter(r => r.roll === "strike").length - 1);
+  });
+
+  test("the system's rolls are only asked for in a turn FastFighting plays: a foe's reaction in a player's turn, a planned fight, roll their own", () => {
+    const run = beginLive(skirmish({ orc: { flags: { fearless: true, reactiveStrike: true }, hp: { value: 300, max: 300 } }, valeros: { position: at(5) } }), pf2eRules, { seed: 6, players: ["valeros", "kyra"], systemRolls: ["strike", "apply"] });
+    liveRound(run, 1);
+    pcTurnBegin(run, "valeros");
+    const [leaving] = leavingReach(run, "valeros", { x: 0, y: 60 });
+    expect(reactNow(run, "orc", "valeros", leaving.strike).some(e => e.type === "attack" && e.actorId === "orc")).toBe(true);
   });
 
   test("syncing the sheets says what changed that the engine didn't do", () => {

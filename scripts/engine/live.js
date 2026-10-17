@@ -55,6 +55,7 @@ const SYSTEM_DEFAULTS = Object.freeze({ recovery: false, persistent: false, affl
 function attach(run, live) {
   run.live = live;
   live.decide = decide;
+  live.roll = systemRoll;
   live.mayReroll = mayReroll;
   live.systemOwns = (u, what) => live.players.has(u.id) || !!live.owns[what];
   return run;
@@ -70,11 +71,11 @@ function attach(run, live) {
  * @param {object} [options.owns]                 what the system does itself (SYSTEM_DEFAULTS' keys)
  * @param {string} [options.npcReactions]         "calculated" (default) or "ask"
  */
-export function beginLive(spec, rules, { seed, players = [], owns = {}, npcReactions = "calculated", systemRolls = false, readsRolls = false } = {}) {
+export function beginLive(spec, rules, { seed, players = [], owns = {}, npcReactions = "calculated", systemRolls = [], readsRolls = false } = {}) {
   const run = beginRun(prepareBattle(spec, rules), seed, { log: true });
   attach(run, {
-    // (systemRolls: reactions' strikes rolled with the system's own roller, where the helper can; readsRolls: a
-    // player's own, rolled by the player and read from their cards: decide.)
+    // (systemRolls: the kinds of roll the system makes itself, with its own roller, where the helper can: systemRoll;
+    // readsRolls: a player's reaction, rolled by the player and read from their cards: decide.)
     seed, seq: 0, players: new Set(players), owns: { ...SYSTEM_DEFAULTS, ...owns }, npcReactions, systemRolls, readsRolls,
     answers: new Map(), asked: new Map(), gm: new Map(), facts: []
   });
@@ -137,7 +138,16 @@ export function liveTurn(run, id, { answers = null, salt = 0, nonce = 0 } = {}) 
   spotlit(run, u);
   run.live.answers = new Map(answers ?? []);
   const from = run.log.length;
-  const ended = playTurn(run, u);
+  // (Where the turn's own events begin, for the live side to play what came before a roll; and the turn's rolls the
+  // system's to make, while it's played: systemRoll.)
+  run.live.turnFrom = from;
+  run.live.playing = true;
+  let ended;
+  try {
+    ended = playTurn(run, u);
+  } finally {
+    run.live.playing = false;
+  }
   followCommand(run);
   return { events: run.log.slice(from), ended };
 }
@@ -521,9 +531,10 @@ function decide(run, u, { reaction, trigger, by = null, ally = null, would, stri
   if ( pref === "never" ) return false;
   const use = pref === "always" ? true : pref === "ask" ? null : !!would;
   if ( use === false ) return false;
-  // (A strike the system rolls itself, where the live battle's helper can: asked of the live side to roll, its card in
-  // the chat, and that roll the strike's. Otherwise the engine's own dice.)
-  const rolls = !!strike && (!!live.systemRolls || (player && !!live.readsRolls));
+  // (A player's reaction strike, rolled by its player where they're here (their card read), else by the system: asked of
+  // the live side, and that roll the strike's. Anyone else's strike, the system rolls as it's made: systemRoll. Where
+  // neither can, the engine's own dice.)
+  const rolls = !!strike && player && (!!live.readsRolls || rollsKind(live, "strike"));
   if ( use && !rolls ) return true;
   // (Asked once per time it comes up: the same key when the turn is played again, so the answer finds its place.)
   const base = [u.id, id, trigger, by?.id ?? "", ally?.id ?? ""].join("|");
@@ -544,6 +555,31 @@ function decide(run, u, { reaction, trigger, by = null, ally = null, would, stri
     // (Already decided, only to be rolled; and the strike, for the system to roll.)
     decided: use === true, strike: rolls ? { id: strike.id, name: strike.name } : null
   });
+}
+
+/** Does the system make this kind of roll itself, in this live battle (its helper's say: live.systemRolls)? */
+export const rollsKind = (live, kind) => Array.isArray(live?.systemRolls) && live.systemRolls.includes(kind);
+
+/**
+ * A roll in a turn FastFighting plays (liveTurn), made by the system itself, where it makes that kind
+ * (live.systemRolls): the turn stops for it (NeedsDecision, `roll` its kind) and is played again with what came of
+ * it, found by its key (the same each time the turn is played: once per time it comes up). Null: the engine's dice.
+ *   strike {unitId, targetId, action: {id, name}, attackNumber}  -> {attack: {degree, natural, total}, damage: {byType} | null, card}
+ *   apply  {unitId, targetId, card, amount}  -> {lost}: a strike's damage card (`card`) applied the system's way, and
+ *          what the target lost by it (its hit points and temporary hit points)
+ */
+function systemRoll(run, request) {
+  const live = run.live;
+  if ( !live?.playing || !rollsKind(live, request.kind) ) return null;
+  const base = ["roll", request.kind, request.unitId ?? "", request.targetId ?? "", request.action?.id ?? ""].join("|");
+  const n = (live.asked.get(base) ?? 0) + 1;
+  live.asked.set(base, n);
+  const key = `${base}#${n}`;
+  if ( live.answers.has(key) ) {
+    const a = live.answers.get(key);
+    return a && typeof a === "object" ? a : null;
+  }
+  throw new NeedsDecision({ ...request, key, roll: request.kind });
 }
 
 /** May this creature's fate be spent on victim's life? A player's, only as its player said; an NPC's, as ever. */
@@ -1339,7 +1375,7 @@ export function snapshotRun(run, { log = true } = {}) {
     const e = encode(v, units);
     if ( e !== undefined ) runData[k] = e;
   }
-  const { decide: _d, mayReroll: _m, systemOwns: _s, ...live } = run.live ?? {};
+  const { decide: _d, roll: _r, mayReroll: _m, systemOwns: _s, ...live } = run.live ?? {};
   return { units: unitData, run: runData, ...(log ? { log: encode(run.log ?? [], units) } : { logLength: run.log?.length ?? 0 }), live: encode(live, units) };
 }
 

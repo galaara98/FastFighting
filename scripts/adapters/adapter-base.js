@@ -414,7 +414,9 @@ export class SystemAdapter {
 
   /**
    * API 19. Apply a damage card to one token through the system's own damage handling (its resistances, weaknesses,
-   * temporary hit points and dying rules), times `multiplier` (0.5 half, 2 double). Returns undo records
+   * temporary hit points and dying rules), times `multiplier` (0.5 half, 2 double). Also used for the damage of a
+   * strike rolled with rollStrike, in a turn FastFighting plays: then the options may name a reaction the system's own
+   * application does (a reaction's `applies` in its spec, true here: PF2e's `shieldBlock`). Returns undo records
    * (sheet-tools undoRecord, the values as they were) for Rewind.
    * @param {ChatMessage} message
    * @param {TokenDocument} token
@@ -425,12 +427,17 @@ export class SystemAdapter {
   }
 
   /**
-   * API 19. A reaction's strike rolled with the system's own roller, as a player would roll it, its cards in the chat:
-   * the attack (`action`: the engine's strike, {id, name}, at `target`, a TokenDocument) and, a hit, its damage. Returns
-   * {attack: {degree: 0-3, natural, total}, damage: {byType: {type: amount}} | null} (damage as rolled, before
-   * resistances; a critical's as the system doubles it), or null where it can't (the engine rolls it). Optional.
+   * API 19. A strike rolled with the system's own roller, as a player would roll it, its cards in the chat: the attack
+   * (`action`: the engine's strike, {id, name}, at `target`, a TokenDocument) and, a hit, its damage. Every strike in a
+   * turn FastFighting plays in a live battle (the token's moves before it are on the map already), and a reaction's.
+   * `attackNumber`: the attacks it has made this turn before this one (0 for a reaction), for a multiple attack
+   * penalty. `secret`: for the GMs' eyes only (the GM keeps its name secret). Returns {attack: {degree: 0-3, natural,
+   * total}, damage: {byType: {type: amount}} | null} (damage as rolled, before resistances; a critical's as the system
+   * doubles it), or null where it can't (the engine rolls it). Its damage card, the first of the cards it made that
+   * damageCard reads as damage, is applied with applyDamageCard; or the one `card` names (a message id), where the
+   * result has it: `card: null` where no one card holds all of the blow (DCC: a critical's table damage). Optional.
    */
-  rollReaction(token, { action, target }) {
+  rollStrike(token, { action, target, attackNumber = 0, secret = false }) {
     return null;
   }
 
