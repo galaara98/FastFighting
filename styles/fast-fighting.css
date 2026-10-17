@@ -199,15 +199,11 @@
 .ff-winbar { display: flex; height: 30px; border-radius: 6px; overflow: hidden; background: var(--ff-surface-2); }
 .ff-winbar span { display: flex; align-items: center; justify-content: center; color: #fff; font-size: 12px; font-weight: 700; white-space: nowrap; overflow: hidden; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5); }
 .ff-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(92px, 1fr)); gap: 8px; }
-.ff-kpi.ff-difficulty { grid-column: span 2; }
 .ff-kpi { display: flex; flex-direction: column; padding: 8px; border-radius: 6px; background: var(--ff-surface); border: 1px solid var(--ff-line); }
 .ff-kpi-value { font-size: 22px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.1; }
 .ff-kpi-label { font-size: 11px; color: var(--ff-text-dim); }
 .ff-kpi.danger .ff-kpi-value { color: var(--ff-hostile); }
 .ff-kpi.warn .ff-kpi-value { color: var(--ff-down); }
-.ff-difficulty.trivial .ff-kpi-value, .ff-difficulty.low .ff-kpi-value { color: var(--ff-friendly); }
-.ff-difficulty.severe .ff-kpi-value { color: var(--ff-down); }
-.ff-difficulty.extreme .ff-kpi-value { color: var(--ff-hostile); }
 .ff-split { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .ff-panel { padding: 8px 10px; border: 1px solid var(--ff-line); border-radius: 6px; background: var(--ff-surface); }
 .ff-panel h4 { margin: 0 0 6px; font-size: 12px; border: none; }

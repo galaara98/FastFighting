@@ -445,13 +445,6 @@
       "neutral": "Stood aside",
       "noSide": "Took no side"
     },
-    "Difficulty": {
-      "trivial": "Trivial",
-      "low": "Low",
-      "moderate": "Moderate",
-      "severe": "Severe",
-      "extreme": "Extreme"
-    },
     "Fudge": {
       "Up": "Fudge up",
       "Down": "Fudge down",
@@ -587,7 +580,6 @@
       "PcDeath": "A PC dies",
       "PcDowned": "A PC goes down",
       "MedianRounds": "Rounds",
-      "Simulated": "Simulated difficulty",
       "Duration": "How long it lasts",
       "RoundN": "Round",
       "Dangerous": "Most dangerous",

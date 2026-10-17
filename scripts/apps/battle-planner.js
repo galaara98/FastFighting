@@ -57,16 +57,6 @@ function approachDistance(approach) {
   return sceneDistance(approach.dist * approach.mult);
 }
 
-function simulatedDifficulty(results) {
-  const win = results.sides.friendly?.pWin ?? 0;
-  const death = results.pAnyPcDead;
-  if ( win >= 0.99 && death < 0.005 ) return "trivial";
-  if ( win >= 0.95 && death < 0.02 ) return "low";
-  if ( win >= 0.85 && death < 0.06 ) return "moderate";
-  if ( win >= 0.65 && death < 0.15 ) return "severe";
-  return "extreme";
-}
-
 /**
  * A roster row's chip: its level, where the system has levels ("Lv 3"); and its kind where that says something (a
  * hazard, a companion, a summon, a minion), never a PC or an NPC (the list is already by side). Empty: no chip.
@@ -584,7 +574,6 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       }
     }
 
-    const sim = simulatedDifficulty(r);
     const swing = this.swing?.map(s => ({
       ...s, deltaLabel: `${s.delta >= 0 ? "+" : ""}${(s.delta * 100).toFixed(1)}%`, width: Math.min(50, Math.abs(s.delta) * 100).toFixed(1), positive: s.delta >= 0
     })) ?? null;
@@ -607,10 +596,6 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
         collapsedAny: (r.pCollapsed ?? 0) > 0 || this.setup.options.opening === OPENING.ARGUMENT,
         rounds: r.rounds,
         histogram,
-        simulated: loc(`FASTFIGHTING.Difficulty.${sim}`),
-        simulatedClass: sim,
-        // (A fight's difficulty means nothing for an argument.)
-        argument: this.setup.options.opening === OPENING.ARGUMENT,
         foes, atRisk, combatants, resources, swing, sample
       },
       storyStyles: Object.fromEntries(STORY_STYLES.map(k => [k, `FASTFIGHTING.Story.Style.${k}`])),

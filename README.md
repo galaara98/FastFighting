@@ -46,7 +46,7 @@ The window needs at least 1000×600 and uses any extra space.
 - Expanding a row shows HP, AC, personality traits and how it reaches the nearest enemy (mode, distance, terrain); stat fudges (**Fudge up**, **Fudge down** and **Remove fudge** on every derived number), **Ignores terrain**, **Dies at 0 HP**, and the character's tactics and playstyles.
 
 **Right: the results**
-- **Overview:** win odds, PC death and downed odds, foes talked down, fights settled with words, length, the simulated difficulty, the most dangerous foes and the allies most at risk.
+- **Overview:** win odds, PC death and downed odds, foes talked down, fights settled with words, length, the most dangerous foes and the allies most at risk.
 - **Combatants:** each token's odds of standing, down, dead, fled, surrendered, stood down and switched sides; HP left, damage, healing, and its chance to fall first.
 - **Swing factors:** runs the fight again without each combatant and option, to show what moves the party's odds most.
 - **Resources:** spell slots, focus points and consumables spent.

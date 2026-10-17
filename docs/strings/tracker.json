@@ -4783,7 +4783,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "8fca425ffb06"
+   "hash": "8fca425ffb06",
+   "gone": "2026-10-17"
   },
   "core:FASTFIGHTING.Difficulty.low": {
    "repo": "core",
@@ -4793,7 +4794,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "f793de205ead"
+   "hash": "f793de205ead",
+   "gone": "2026-10-17"
   },
   "core:FASTFIGHTING.Difficulty.moderate": {
    "repo": "core",
@@ -4803,7 +4805,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "5c42afc7a230"
+   "hash": "5c42afc7a230",
+   "gone": "2026-10-17"
   },
   "core:FASTFIGHTING.Difficulty.severe": {
    "repo": "core",
@@ -4813,7 +4816,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "aa93f64a309c"
+   "hash": "aa93f64a309c",
+   "gone": "2026-10-17"
   },
   "core:FASTFIGHTING.Difficulty.trivial": {
    "repo": "core",
@@ -4823,7 +4827,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "73fba898eeba"
+   "hash": "73fba898eeba",
+   "gone": "2026-10-17"
   },
   "core:FASTFIGHTING.Downed.dead": {
    "repo": "core",
@@ -14161,7 +14166,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "1edb4eef8e9d"
+   "hash": "1edb4eef8e9d",
+   "gone": "2026-10-17"
   },
   "core:FASTFIGHTING.Results.Stale": {
    "repo": "core",
