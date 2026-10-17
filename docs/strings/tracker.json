@@ -3044,6 +3044,26 @@
    "hash": "a5ce924e5cc5",
    "changed": true
   },
+  "core:FASTFIGHTING.Battle.TitleAt": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.TitleAt",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "dd21f955b907"
+  },
+  "core:FASTFIGHTING.Battle.TitleAtEncounter": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.TitleAtEncounter",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "fad2a203c551"
+  },
   "core:FASTFIGHTING.Battle.Toward": {
    "repo": "core",
    "file": "languages/en.json",
@@ -10928,7 +10948,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "fed8db2199a4"
+   "hash": "fed8db2199a4",
+   "changed": true
   },
   "core:FASTFIGHTING.Party.GmView": {
    "repo": "core",
@@ -12226,6 +12247,26 @@
    "date": null,
    "commit": null,
    "hash": "e9cffbd7db68"
+  },
+  "core:FASTFIGHTING.Planner.TitleAt": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Planner.TitleAt",
+   "area": "core/Planner",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "fbe1a31e9921"
+  },
+  "core:FASTFIGHTING.Planner.TitleAtEncounter": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Planner.TitleAtEncounter",
+   "area": "core/Planner",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "e57dbb8c56a9"
   },
   "core:FASTFIGHTING.Planner.TraitWhy": {
    "repo": "core",

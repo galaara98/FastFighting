@@ -24,7 +24,7 @@ import { expectText } from "../story/log-lines.js";
 import { feetOnScene } from "../foundry/terrain.js";
 import { mountNetwork } from "./battle-network.js";
 import { blink, keepTyping } from "./blink.js";
-import { sceneEncounter } from "../foundry/persistence.js";
+import { sceneEncounter, encounterNumber } from "../foundry/persistence.js";
 import {
   liveBattle, continueBattle, rewind, rewindEncounter, beginEncounter, endEncounter, playCurrent, liveFact, dropHeldFact, setNpcReactions, setPlayThrough, finishReview,
   waitingOnGm, suggestedSpotlight, spotlightNext, settleBattle, setAutomated, liveCondition, liveMind, bringIntoFight, tokenIdOf
@@ -147,6 +147,15 @@ export class BattleVantage extends HandlebarsApplicationMixin(ApplicationV2) {
   /** What the GM had picked in a player's turn under review, by battle, kept while another encounter is shown. */
   #drafts = new Map();
   #following = false;
+
+  /** In the title bar: the scene, and which of its encounters, when it has more than one (the tracker's number). */
+  get title() {
+    const b = BattleVantage.shown();
+    const scene = (b?.scene ?? canvas.scene)?.name;
+    if ( !scene ) return loc("FASTFIGHTING.Battle.Title");
+    const no = encounterNumber(b?.combat ?? sceneEncounter(canvas.scene));
+    return no ? fmt("FASTFIGHTING.Battle.TitleAtEncounter", { scene, n: no.n }) : fmt("FASTFIGHTING.Battle.TitleAt", { scene });
+  }
 
   /** The live battle, if it's on the encounter on screen (each scene, each encounter, its own). */
   static shown() {
@@ -286,6 +295,8 @@ export class BattleVantage extends HandlebarsApplicationMixin(ApplicationV2) {
 
   _onRender(context, options) {
     super._onRender?.(context, options);
+    // (The title bar as the encounter shown now is.)
+    if ( this.window?.title && this.window.title.textContent !== this.title ) this.window.title.textContent = this.title;
     this.#network?.destroy();
     this.#network = null;
     const root = this.element.querySelector(".ff-net");

@@ -9,7 +9,7 @@ import { getAdapter } from "../api.js";
 import { setting } from "../settings.js";
 import { listJoin, listItems, localize, term, hasStat, brief, roundsText } from "../i18n.js";
 import { setAdhd } from "./token-tactics.js";
-import { getSetup, saveSetup, clearSetup, tokenSetup, planHolder, rememberPartyRole, sceneEncounter } from "../foundry/persistence.js";
+import { getSetup, saveSetup, clearSetup, tokenSetup, planHolder, rememberPartyRole, sceneEncounter, encounterNumber } from "../foundry/persistence.js";
 import {
   questionsContext, setTactic, togglePlaystyle, syncTacticsDom, isPlayerControlled, playersOnScene, tokensForUser, surveyStatus,
   requestSurveys, requestCharacterSurvey, requestGmSurvey, SURVEY_STATUS, playstyleSignature, tacticsFor, reactionsSignature, preparePlayers
@@ -228,8 +228,12 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     this.storyCache.clear();
   }
 
+  /** In the title bar: the scene, and which of its encounters, when it has more than one (the tracker's number). */
   get title() {
-    return `${loc("FASTFIGHTING.Planner.Title")}: ${canvas.scene?.name ?? ""}`;
+    const scene = canvas.scene?.name;
+    if ( !scene ) return loc("FASTFIGHTING.Planner.Title");
+    const no = this.#encounterNo();
+    return no ? game.i18n.format("FASTFIGHTING.Planner.TitleAtEncounter", { scene, n: no.n }) : game.i18n.format("FASTFIGHTING.Planner.TitleAt", { scene });
   }
 
   /* -------------------------------------------- */
@@ -398,7 +402,6 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     const context = {
       // The game system's own settings for this encounter (its helper's: Ironsworn's track and its rank).
       systemSection: this.#systemSection(adapter, resolved, chains),
-      sceneName: canvas.scene?.name,
       adapterLabel: adapter?.label ?? loc("FASTFIGHTING.Planner.NoAdapter"),
       hasAdapter: !!adapter,
       // (Its helper can play a battle live, a turn at a time: the toggle for who runs the characters. One that can't
@@ -789,6 +792,8 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
 
   _onRender(context, options) {
     super._onRender?.(context, options);
+    // (The title bar as the plan now is: its encounter known only once the plan is read.)
+    if ( this.window?.title && this.window.title.textContent !== this.title ) this.window.title.textContent = this.title;
     // (The Sample fight ready, or no longer: the tracker's Vantage button comes or goes with it.)
     const ready = this.readyForVantage();
     if ( ready !== !!this.offeredVantage ) {
@@ -1161,6 +1166,18 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       && (!combat || combat.uuid === this.holderUuid) && !unfinishedPlayback(canvas.scene) && !!getAdapter()?.supportsLive && !liveBattle();
   }
 
+  /** This plan's encounter by the tracker's number for it, when the scene has more than one: {n, hint}, or null. */
+  #encounterNo() {
+    const no = encounterNumber(this.#holderCombat());
+    this.shownEncounter = no ? `${no.n}/${no.count}` : null;
+    return no;
+  }
+
+  /** The encounter this plan is for (none: the scene's own plan). */
+  #holderCombat() {
+    return (game.combats ?? []).find(c => c.uuid === this.holderUuid) ?? null;
+  }
+
   /** Is this the plan of the scene on screen and its encounter (each encounter has a plan of its own)? */
   get showsCurrent() {
     return this.sceneId === (canvas.scene?.id ?? null) && this.holderUuid === (planHolder()?.uuid ?? null);
@@ -1171,7 +1188,13 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
    * plan it was typed for; the window blinks, and shows the new one's plan. (During a run, once it's done.)
    */
   async followScene() {
-    if ( !this.rendered || this.running || this.showsCurrent || this.following ) return;
+    if ( !this.rendered || this.running || this.following ) return;
+    // (The same plan, but an encounter added to the scene or ended: its number drawn again.)
+    if ( this.showsCurrent ) {
+      const no = encounterNumber(this.#holderCombat());
+      if ( (no ? `${no.n}/${no.count}` : null) !== (this.shownEncounter ?? null) ) this.render();
+      return;
+    }
     this.following = true;
     try {
       keepTyping(this);

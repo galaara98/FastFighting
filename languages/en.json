@@ -451,6 +451,8 @@
     },
     "Planner": {
       "Title": "Battle Planner",
+      "TitleAt": "Battle Planner: {scene}",
+      "TitleAtEncounter": "Battle Planner: {scene}, encounter {n}",
       "Seconds": "Seconds",
       "KindLevel": "{kind} · Lv {level}",
       "Level": "Lv {level}",
@@ -2083,7 +2085,7 @@
     "Party": {
       "Tab": "Party",
       "TabFor": "Party: {name}",
-      "ForThem": "You're voting for {name}, who's away. They can change it when they're back.",
+      "ForThem": "You're voting for {name}, who's away.",
       "Intro": "One vote per question; the top answer sways your side a little. Vote again to undo; swipe Lock-in when done.",
       "GmView": "Only players vote. You see every vote; the outlined answer is the party's.",
       "ReadOnly": "View only: you can vote again when your GM sends everyone the survey.",
@@ -2207,6 +2209,8 @@
     },
     "Battle": {
       "Title": "Battle Vantage",
+      "TitleAt": "Battle Vantage: {scene}",
+      "TitleAtEncounter": "Battle Vantage: {scene}, encounter {n}",
       "None": "No live battle is being played in this browser.",
       "Round": "Round {n}",
       "Turn": "{name}'s turn",

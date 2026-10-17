@@ -146,7 +146,11 @@ export class PlayerSurvey extends HandlebarsApplicationMixin(ApplicationV2) {
     // (A GM's survey of those away: a Party tab for each player away instead, named for them, to vote in for them.)
     const away = this.keys || this.proxies;
     const partyTab = this.only || away ? null : { id: PARTY_TAB, name: loc("FASTFIGHTING.Party.Tab"), icon: "fa-solid fa-people-group", party: true };
-    const proxyTabs = away ? (this.proxies ?? []).map(u => ({ id: `${PARTY_TAB}:${u.id}`, name: localize("FASTFIGHTING.Party.TabFor", { name: u.name }), icon: "fa-solid fa-user-clock", party: true, user: u })) : [];
+    const proxyTabs = away ? (this.proxies ?? []).map(u => {
+      const locked = partyState(u).locked;
+      return { id: `${PARTY_TAB}:${u.id}`, name: localize("FASTFIGHTING.Party.TabFor", { name: u.name }), icon: "fa-solid fa-user-clock", party: true, user: u,
+        lock: locked ? "is-locked" : "", tooltip: loc(locked ? "FASTFIGHTING.Party.LockedIn" : "FASTFIGHTING.Party.NotLockedIn") };
+    }) : [];
     if ( partyTab && !game.user.isGM ) {
       // (Locked in: a green border. Left while the vote is open and not locked in: orange.)
       const state = partyState(game.user);
@@ -167,6 +171,7 @@ export class PlayerSurvey extends HandlebarsApplicationMixin(ApplicationV2) {
       onParty,
       party: onParty ? partyContext(onTab.user ?? game.user) : null,
       empty: !sheets.length,
+      gm: game.user.isGM,
       intro: game.i18n.localize("FASTFIGHTING.Survey.Intro")
     };
   }
@@ -222,7 +227,8 @@ export class PlayerSurvey extends HandlebarsApplicationMixin(ApplicationV2) {
     const el = event?.target;
     // (The Lock-in swipe: all the way across locks the choices in; short of it, back it goes.)
     if ( el?.dataset?.swipe === "lockIn" ) {
-      if ( Number(el.value) >= 95 ) await lockInParty();
+      // (On a Party tab for a player who's away: the GM locking in for them.)
+      if ( Number(el.value) >= 95 ) await lockInParty(this.#proxyUser() ?? game.user);
       else el.value = 0;
       return this.render();
     }
@@ -252,9 +258,13 @@ export class PlayerSurvey extends HandlebarsApplicationMixin(ApplicationV2) {
   /** A vote on how the party should act (the same again: taken back). Everyone's survey shows it at once. */
   static async #onPartyVote(event, target) {
     // (On a Party tab for a player who's away: the GM's vote for them.)
-    const proxy = this.activeTab?.startsWith(`${PARTY_TAB}:`) ? game.users.get(this.activeTab.slice(PARTY_TAB.length + 1)) : null;
-    await castVote(target.dataset.question, target.dataset.answer, proxy ?? game.user);
+    await castVote(target.dataset.question, target.dataset.answer, this.#proxyUser() ?? game.user);
     this.render();
+  }
+
+  /** The player who's away whose Party tab is open (a GM's survey of those away), or null. */
+  #proxyUser() {
+    return this.activeTab?.startsWith(`${PARTY_TAB}:`) ? game.users.get(this.activeTab.slice(PARTY_TAB.length + 1)) ?? null : null;
   }
 
   /** Someone voted: the Party tab shows it. */

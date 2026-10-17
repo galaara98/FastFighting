@@ -30,6 +30,10 @@
       <button type="button" class="ff-sheet-tab {{#if active}}active{{/if}} {{#if party}}ff-party-tab {{lock}}{{/if}}" data-action="sheetTab" data-tab="{{id}}" {{#if tooltip}}data-tooltip="{{tooltip}}"{{/if}}>{{#if icon}}<i class="{{icon}}"></i>{{else}}<img src="{{img}}" alt="">{{/if}} {{name}}</button>
       {{/each}}
     </nav>
+    {{#if gm}}
+    <button type="button" class="ff-btn" data-action="close"><i class="fa-solid fa-xmark"></i> {{localize "Close"}}</button>
+    {{else}}
     <button type="button" class="ff-btn ff-run" data-action="ready" {{#if empty}}{{#unless onParty}}disabled{{/unless}}{{/if}}><i class="fa-solid fa-check"></i> {{localize "FASTFIGHTING.Survey.Ready"}}</button>
+    {{/if}}
   </footer>
 </div>

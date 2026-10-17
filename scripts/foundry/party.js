@@ -45,11 +45,19 @@ export function partyState(user = game.user) {
   return { round, locked, open: !!round && survey.partyOpen === true && !locked && !user.isGM };
 }
 
-/** Lock the player's choices in for this round: no more voting until the GM sends everyone a new survey. */
-export async function lockInParty() {
-  const { round, open } = partyState(game.user);
+/**
+ * Lock the player's choices in for this round: no more voting until the GM sends everyone a new survey. `user`: a
+ * player who's away, a GM locking in for them (the others see it as they would the player's own).
+ */
+export async function lockInParty(user = game.user) {
+  const proxy = user !== game.user;
+  if ( proxy && (!game.user.isGM || user.isGM || user.active) ) return;
+  const { round, open } = partyState(user);
   if ( !open ) return;
-  await game.user.update({ [`flags.${MODULE_ID}.partyLock`]: round, [`flags.${MODULE_ID}.survey.partyOpen`]: false });
+  await user.update({
+    [`flags.${MODULE_ID}.partyLock`]: round, [`flags.${MODULE_ID}.survey.partyOpen`]: false,
+    ...(proxy ? { [`flags.${MODULE_ID}.partyProxy`]: round } : {})
+  });
 }
 
 /** A player's votes, as stored (only answers the questions have). */
@@ -149,7 +157,11 @@ export function partyContext(user = game.user) {
         label: label(q, o),
         mine: mine[q] === o,
         winning: answers[q] === o,
-        voters: ballots.filter(([, b]) => b[q] === o).map(([u]) => ({ name: u.name, initial: [...(u.name ?? "?")][0]?.toLocaleUpperCase() ?? "?", color: u.color?.css ?? String(u.color ?? "#888") }))
+        // (Each voter's dot, ringed once its choices are locked in: everyone can see who's done.)
+        voters: ballots.filter(([, b]) => b[q] === o).map(([u]) => {
+          const locked = partyState(u).locked;
+          return { name: locked ? `${u.name} · ${localize("FASTFIGHTING.Party.LockedIn")}` : u.name, locked, initial: [...(u.name ?? "?")][0]?.toLocaleUpperCase() ?? "?", color: u.color?.css ?? String(u.color ?? "#888") };
+        })
       }))
     }))
   };

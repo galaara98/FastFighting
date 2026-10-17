@@ -55,6 +55,16 @@ export function sceneEncounter(scene = canvas.scene) {
   return game.combats.find(c => c.scene?.id === scene?.id) ?? null;
 }
 
+/**
+ * An encounter's number, as the Combat Tracker numbers the scene's encounters, when the scene has more than one:
+ * {n, count}, else null.
+ */
+export function encounterNumber(combat) {
+  const all = game.combats?.combats ?? [];
+  const n = combat ? all.findIndex(c => c.uuid === combat.uuid) + 1 : 0;
+  return n && all.length > 1 ? { n, count: all.length } : null;
+}
+
 /** What holds the plan: the scene's encounter (its own plan, until it ends), else the scene. */
 export const planHolder = (scene = canvas.scene) => sceneEncounter(scene) ?? scene ?? null;
 
