@@ -1042,19 +1042,24 @@ export function separation(run, a, t) {
  * one, a free spot within reach (one with every spot round it taken, it can't), and the way round those in the way.
  * While a creature makes up its mind (run.movesCache, a Map: simulator.js deliberate, and each step of its turn until
  * it does something), nothing on the map changes, so each is worked out once: its tactics ask the same of every foe
- * several times over. Anywhere else (null), always afresh.
+ * several times over, and of every action that gets there the same way (reachShape: a Strike, a Trip and a Grapple at
+ * the same reach). Anywhere else (null), always afresh.
  */
 export function movesNeeded(run, a, t, action) {
   const cache = run.movesCache;
   if ( !cache ) return movesNow(run, a, t, action);
   let byAction = cache.get(a);
   if ( !byAction ) cache.set(a, byAction = new Map());
-  let byTarget = byAction.get(action);
-  if ( !byTarget ) byAction.set(action, byTarget = new Map());
+  const shape = reachShape(action);
+  let byTarget = byAction.get(shape);
+  if ( !byTarget ) byAction.set(shape, byTarget = new Map());
   let moves = byTarget.get(t);
   if ( moves === undefined ) byTarget.set(t, moves = movesNow(run, a, t, action));
   return moves;
 }
+
+/** All of an action movesNow reads: its range (as far as it shoots), or its reach and the moves it makes first. */
+export const reachShape = action => (action.range ? `r${action.range.max ?? action.range.increment * 3}` : `m${action.reach ?? 5}|${action.charge ?? 0}`);
 
 function movesNow(run, a, t, action) {
   // (Inside another creature: it reaches the one holding it from in there, and nothing outside, nor anything outside

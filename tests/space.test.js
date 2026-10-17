@@ -7,8 +7,8 @@
  */
 import { describe, expect, test } from "vitest";
 import { beginRun, beginRound, takeTurn, prepareBattle } from "../scripts/engine/simulator.js";
-import { movesNeeded, moveToward, edgeDistance, currentAc, saveRoll, COVER_POINTS } from "../scripts/engine/battle-state.js";
-import { inTheWay, spotWithin, lineOfSight, sightBlocked, coverFrom, crossed, pastCost } from "../scripts/engine/behavior/space.js";
+import { movesNeeded, moveToward, edgeDistance, currentAc, saveRoll, COVER_POINTS, reachShape } from "../scripts/engine/battle-state.js";
+import { inTheWay, spotWithin, spotToShoot, lineOfSight, sightBlocked, coverFrom, crossed, pastCost } from "../scripts/engine/behavior/space.js";
 import { areEnemies } from "../scripts/engine/battle-state.js";
 import { snapshotRun } from "../scripts/engine/live.js";
 import { STATUS } from "../scripts/constants.js";
@@ -217,11 +217,67 @@ describe("one look at the map while it decides", () => {
     const fresh = [movesNeeded(run, h, o, sword), movesNeeded(run, h, a, sword), movesNeeded(run, a, h, bow)];
     run.movesCache = new Map();
     expect([movesNeeded(run, h, o, sword), movesNeeded(run, h, a, sword), movesNeeded(run, a, h, bow)]).toEqual(fresh);
-    expect(run.movesCache.get(h).get(sword).get(o)).toBe(fresh[0]);
+    expect(run.movesCache.get(h).get(reachShape(sword)).get(o)).toBe(fresh[0]);
     takeTurn(run, h);
     expect(run.movesCache).toBeNull();
     // (Kept with a live battle, it isn't: snapshotRun leaves out anything named for a cache.)
     run.movesCache = new Map([[h, new Map()]]);
     expect(Object.keys(snapshotRun(run).run)).not.toContain("movesCache");
+  });
+
+  test("one action's moves kept for every action that gets there the same way (a Strike, a Trip): each as if worked out alone", () => {
+    const run = fight([who("hero", "friendly", 0), who("goblin", "friendly", 15), who("orc", "hostile", 40), who("archer", "hostile", 60, 20, { actions: [bow] })], { walls: [wall(20, -10, 20, 10)] });
+    const actions = [{ id: "cut", reach: 5 }, { id: "trip", reach: 5 }, { id: "glaive", reach: 10 }, { id: "charge", reach: 5, charge: 2 }, bow, { ...bow, id: "bow2" }, { id: "sling", range: { increment: 30 } }];
+    expect(reachShape(actions[0])).toBe(reachShape(actions[1]));
+    expect(reachShape(bow)).toBe(reachShape(actions[5]));
+    expect(new Set(actions.map(reachShape)).size).toBe(5);
+    const all = () => run.units.flatMap(a => run.units.filter(t => t !== a).flatMap(t => actions.map(x => movesNeeded(run, a, t, x))));
+    const alone = all();
+    run.movesCache = new Map();
+    const kept = all();
+    run.movesCache = null;
+    expect(kept).toEqual(alone);
+    expect(alone.some(m => m > 0)).toBe(true);
+  });
+
+  test("a spot to shoot from: the nearest within reach it would see its target from, as looking at every square in turn finds it", () => {
+    let seed = 11;
+    const rnd = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648;
+    const walls = Array.from({ length: 40 }, () => {
+      const x = -60 + 120 * rnd();
+      const y = -60 + 120 * rnd();
+      return wall(x, y, x + 30 * (rnd() - 0.5), y + 30 * (rnd() - 0.5));
+    });
+    const run = fight([who("a", "friendly", 0), who("b", "hostile", 40), who("c", "friendly", 10, 10)], { walls });
+    const [a, b] = get(run, "a", "b");
+    // (Every square within `most` of a, nearest first, and the first that will do: the search square by square.)
+    const bySquares = (range, most) => {
+      const spots = [];
+      const r = Math.floor(most / 5) * 5;
+      for ( let dx = -r; dx <= r; dx += 5 ) for ( let dy = -r; dy <= r; dy += 5 ) {
+        const p = { x: a.pos.x + dx, y: a.pos.y + dy, feet: Math.hypot(dx, dy) };
+        if ( p.feet <= most + 0.5 ) spots.push(p);
+      }
+      spots.sort((p, q) => p.feet - q.feet);
+      return spots.find(p => edgeDistance({ pos: p, spec: a.spec }, b) <= range + 0.5 && !(p.feet > 0 && inTheWay(run, a, p)) && lineOfSight(run, a, b, p)) ?? null;
+    };
+    const grid = () => 5 * Math.round((-90 + 180 * rnd()) / 5);
+    let found = 0;
+    let none = 0;
+    for ( let i = 0; i < 150; i++ ) {
+      a.pos = { ...a.pos, x: grid(), y: grid() };
+      b.pos = { ...b.pos, x: grid(), y: grid() };
+      run.geo = (run.geo ?? 0) + 1; // (someone moved: what was kept is stale)
+      for ( const [range, most] of [[15, 25], [30, 50], [60, 50], [10, 37.5]] ) {
+        const got = spotToShoot(run, a, b, range, most, edgeDistance);
+        const want = bySquares(range, most);
+        expect(got ? { x: got.x, y: got.y, feet: got.feet } : null).toEqual(want);
+        if ( got ) found += 1;
+        else none += 1;
+      }
+    }
+    // (Both kinds: spots found, and none, near and far.)
+    expect(found).toBeGreaterThan(100);
+    expect(none).toBeGreaterThan(100);
   });
 });

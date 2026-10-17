@@ -346,18 +346,41 @@ export function spotToShoot(run, u, t, range, most, edgeDistance) {
   const key = `${u.id}|${t.id}|${range}|${most}`;
   const cache = spotsKept(run, "shootCache");
   if ( cache.map.has(key) ) return cache.map.get(key);
+  // (Farther off than any spot within `most` could bring into range: none.)
+  if ( edgeDistance(u, t) - most - 0.5 > range + 0.5 ) {
+    cache.map.set(key, null);
+    return null;
+  }
   // (Nearest first: the first that will do is the one.)
-  const spots = [];
+  let best = null;
+  for ( const o of ringOf(most) ) {
+    const p = onGrid(u, u.pos.x + o.dx, u.pos.y + o.dy);
+    p.feet = Math.hypot(p.x - u.pos.x, p.y - u.pos.y);
+    if ( edgeDistance({ pos: p, spec: u.spec }, t) <= range + 0.5 && !(p.feet > 0 && inTheWay(run, u, p)) && lineOfSight(run, u, t, p) ) {
+      best = p;
+      break;
+    }
+  }
+  cache.map.set(key, best);
+  return best;
+}
+
+/** The squares round a creature's out to `most` feet, nearest first: the same for everyone (each has its own grid). */
+const RINGS = new Map();
+
+/** [{dx, dy, feet}] for `most` (worked out once, then kept). */
+export function ringOf(most) {
+  let ring = RINGS.get(most);
+  if ( ring ) return ring;
+  ring = [];
   const r = Math.floor(most / STEP) * STEP;
   for ( let dx = -r; dx <= r; dx += STEP ) {
     for ( let dy = -r; dy <= r; dy += STEP ) {
-      const p = onGrid(u, u.pos.x + dx, u.pos.y + dy);
-      const feet = Math.hypot(p.x - u.pos.x, p.y - u.pos.y);
-      if ( feet <= most + 0.5 ) spots.push({ x: p.x, y: p.y, feet });
+      const feet = Math.hypot(dx, dy);
+      if ( feet <= most + 0.5 ) ring.push({ dx, dy, feet });
     }
   }
-  spots.sort((a, b) => a.feet - b.feet);
-  const best = spots.find(p => edgeDistance({ pos: p, spec: u.spec }, t) <= range + 0.5 && !(p.feet > 0 && inTheWay(run, u, p)) && lineOfSight(run, u, t, p)) ?? null;
-  cache.map.set(key, best);
-  return best;
+  ring.sort((a, b) => a.feet - b.feet);
+  RINGS.set(most, ring);
+  return ring;
 }
