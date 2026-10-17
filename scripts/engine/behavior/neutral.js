@@ -34,7 +34,7 @@
  *  - Can't abide violence (peacekeepers, diplomats, moralists, people-pleasers, those who never kill, those who always talk): seeing
  *    a fight, it puts its words into stopping it, on either side: in a standoff, talking a quarrel's fighters into
  *    letting it be; once it's a fight, talking the fighters into leaving.
- *  - Enemies come here first: an enemy talked into changing sides stands aside (on a d100 under the switch luck),
+ *  - Enemies come here first: an enemy talked into changing sides stands aside (on a d100 at or under the switch luck),
  *    still leaning a little toward its old friends, the more so the more loyal it is; from here it can be won over
  *    like anyone else.
  * Pure: no Foundry globals.

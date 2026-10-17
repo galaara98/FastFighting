@@ -71,7 +71,7 @@ describe("one who wants to lead and doesn't", () => {
     expect(talkDC(run, by("talker"), sly, "persuade")).toBe(dc - 4);
   });
 
-  test("a player character scheming against the leader it wasn't chosen to be turns only on the traitor luck", () => {
+  test("a player character scheming against the leader it wasn't chosen to be turns only at or under the traitor luck", () => {
     const turns = traitorLuck => {
       const { run, by } = runOf([creature({ id: "talker", side: "hostile", social: social({ diplomacy: 30 }) }),
         creature({ id: "pc", kind: "pc", diesAtZero: false, traits: minded, social: social(), ...withPills(["leader", "wildcard"]) }), creature({ id: "chief", traits: minded })],
@@ -84,7 +84,9 @@ describe("one who wants to lead and doesn't", () => {
       return pc.side;
     };
     expect(turns(9)).toBe("neutralParty"); // (5 is under 9: it stands aside)
-    expect(turns(3)).toBe("friendly");     // (not under 3: it stays)
+    expect(turns(5)).toBe("neutralParty"); // (at or under: 5 on 5 passes)
+    expect(turns(4)).toBe("friendly");     // (over 4: it stays)
+    expect(turns(0)).toBe("friendly");     // (0: never)
   });
 
   test("changing sides, its wish to lead goes (and Make it So takes it off the character)", () => {

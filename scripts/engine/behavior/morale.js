@@ -30,15 +30,16 @@ import { canTalk } from "./standoff.js";
 export const MORALE = Object.freeze({ HOLD: "hold", WAVER: "waver", ROUT: "rout" });
 
 /**
- * Wanting to run, does u stay anyway? Only someone who doesn't like to flee (Tactics: "I don't like to flee"), and
- * only when running is its own choice (fear, a lost cause, a stated retreat): what a spell or a rule makes it do
- * (frightened, fleeing, turned) plays out as the system says. It stays the "standGround" percent of the time.
+ * Wanting to run, does u stay anyway? Only someone who doesn't like to flee (Tactics: "I don't like to flee", or a
+ * "Never" retreat, chosen or calculated), and only when running is its own choice (fear, a lost cause, a stated
+ * retreat): what a spell or a rule makes it do (frightened, fleeing, turned) plays out as the system says. It stays the
+ * "standGround" percent of the time.
  */
 export function standsGround(run, u) {
   // A boss almost never runs (one prone to it, a little more readily).
   if ( u.isBoss ) return !run.rng.chance(clamp(BOSS_RUNS * (1 + 3 * (behaviorOf(u).flighty ?? 0)), 0, 0.5));
   // (As often as the setting says for "Never" retreating; less for answers that lean less that way.)
-  const strength = wish(u.spec.avoidFleeing);
+  const strength = Math.max(wish(u.spec.avoidFleeing), u.tac?.retreat === "never" ? 1 : 0);
   if ( !strength ) return false;
   return run.rng.chance((clamp(run.prep?.options.standGround ?? STAND_GROUND, 0, 100) / 100) * strength);
 }
@@ -235,21 +236,22 @@ export function rallies(run, u) {
   return heard;
 }
 
-/** Roll morale at the start of u's turn when its stress has risen meaningfully. */
+/**
+ * Roll morale at the start of u's turn when its stress has risen meaningfully. A character's "When to retreat" answer
+ * (chosen or calculated) shapes it rather than replacing it: "When badly hurt" and "When we're losing" go once that
+ * comes, whatever the roll; short of it, its nerve is rolled as anyone's. "Never" is rolled too: shaken, it may waver,
+ * and it resists the urge to run as one who doesn't like to flee does (standsGround).
+ */
 export function checkMorale(run, u) {
   const side = run.prep.sides[u.side];
-  // A player's stated retreat rule replaces the bravery roll.
   const retreat = u.tac?.retreat;
-  if ( retreat ) {
-    if ( retreat === "never" ) return MORALE.HOLD;
-    // (Badly hurt: under a quarter, unless the system says otherwise; Ironsworn heroes fight on until 0 health.)
-    if ( retreat === "hurt" ) return (u.maxHp > 0 && u.hp / u.maxHp < (run.prep.rules.retreatAt ?? 0.25)) ? MORALE.ROUT : MORALE.HOLD;
-    if ( retreat === "losing" ) {
-      const friends = alliesOf(run, u).filter(isStanding).length;
-      const foes = enemiesOf(run, u).filter(isStanding).length;
-      const fallen = alliesOf(run, u).filter(a => a.status !== STATUS.STANDING).length;
-      return (fallen >= Math.ceil(alliesOf(run, u).length / 2) && foes > friends) ? MORALE.ROUT : MORALE.HOLD;
-    }
+  // (Badly hurt: under a quarter, unless the system says otherwise; Ironsworn heroes fight on until 0 health.)
+  if ( retreat === "hurt" && u.maxHp > 0 && u.hp / u.maxHp < (run.prep.rules.retreatAt ?? 0.25) ) return MORALE.ROUT;
+  if ( retreat === "losing" ) {
+    const friends = alliesOf(run, u).filter(isStanding).length;
+    const foes = enemiesOf(run, u).filter(isStanding).length;
+    const fallen = alliesOf(run, u).filter(a => a.status !== STATUS.STANDING).length;
+    if ( fallen >= Math.ceil(alliesOf(run, u).length / 2) && foes > friends ) return MORALE.ROUT;
   }
   if ( !side.morale ) return MORALE.HOLD;
   // A system's own morale rule, for those it covers (DCC: a Will save when a group's first falls, when half are down,

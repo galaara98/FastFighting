@@ -9,7 +9,7 @@
  *   deceive     bluff (backfires harder when it fails) Each success moves that enemy along a persuasion track; it takes several steps to
  * convince someone (2-6), unless they are very gullible (1). When the track fills, the enemy surrenders, flees,
  * gives something up (money or an item, then backs off), or (rarely, unless they were neutral) changes sides. An
- * enemy changing sides only stands aside (it takes no side now), and only on a d100 under the switch luck; otherwise
+ * enemy changing sides only stands aside (it takes no side now), and only on a d100 at or under the switch luck; otherwise
  * it's talked into one of the others.
  *
  * Those who take no side (behavior/neutral.js) are talked to as well: won over to join the talker's side (no luck
@@ -36,7 +36,7 @@ import { alliesOf, enemiesOf, isStanding, behaviorOf, typical, checkRoll, liveTi
 import { spendEdges, spendBoost } from "./effects.js";
 import { degreeDistribution, rollCheck } from "../probability.js";
 import { isNeutral, standsAside, appeal, offend, turnOn, standAside, joinSide, calm, settleTruce, seemsFoe, leanSide, fighting, dislikesViolence } from "./neutral.js";
-import { prefersTalk, shareLanguage } from "./standoff.js";
+import { prefersTalk, shareLanguage, talksFirstAnswer } from "./standoff.js";
 import { levelOf, allDesires } from "./desire.js";
 import { standsGround, callRetreat } from "./morale.js";
 import { bargainAim, holdsOut, calmsDown, irritated, haggled, pressed, expectOf, owed } from "./bargain.js";
@@ -119,7 +119,7 @@ export function opposedToLean(run, n) {
 }
 
 /** Always tries words before blows: "always prefers talking", a "talk first" answer, or a playstyle like the Diplomat. */
-const talksFirst = u => wish(u.spec.alwaysTalk) >= 0.66 || u.tac?.talk === "first" || !!behaviorOf(u).parleyFirst;
+const talksFirst = u => wish(u.spec.alwaysTalk) >= 0.66 || talksFirstAnswer(u.tac?.talk) || !!behaviorOf(u).parleyFirst;
 
 export { shareLanguage };
 
@@ -371,13 +371,13 @@ export function talkActionsThisTurn(run, u, actions) {
   const tactic = u.tac?.talk;
   if ( tactic === "never" ) return none;
   const affinity = u.prep.talkAffinity ?? 0;
-  if ( affinity <= 0 && tactic !== "first" ) return none;
+  if ( affinity <= 0 && !talksFirstAnswer(tactic) ) return none;
   const pitch = choosePitch(run, u);
   if ( !pitch ) return none;
   // "Always talk unless I am currently being hurt" (and not staying true to the calculated tactics): the whole turn; an
   // answer that leans less that way, as often as it leans.
   const devoted = !u.spec.stayTrue && !u.beingHurt && wishWins(run, u.spec.alwaysTalk);
-  const talker = affinity >= 0.75 || tactic === "first" || !!behaviorOf(u).parleyFirst || devoted;
+  const talker = affinity >= 0.75 || talksFirstAnswer(tactic) || !!behaviorOf(u).parleyFirst || devoted;
   if ( devoted ) return { count: actions, pitch };
   // The less battle-worthy, and skilled talkers with a promising pitch, put their whole voice into it.
   const max = Math.min(actions, (u.prep.lowBattleWorth || (talker && pitch.pSuccess >= 0.5)) ? 2 : 1);
@@ -770,14 +770,14 @@ export function resolveTalk(run, talker, pitch, roll, log) {
   // (A Peacekeeper's success is a truce: by how much of one it is.)
   const peace = (behaviorOf(talker).peacekeeping ?? 0) > 0 && run.rng.chance(behaviorOf(talker).peacekeeping);
   let outcome = outcomeFor(run, t, pitch.kind, aim, { peace });
-  // An enemy changing sides goes through with it only on a d100 under the switch luck (one scheming against its own
-  // leaders, more readily; a player character, only under the traitor luck); otherwise it's talked into something else.
+  // An enemy changing sides goes through with it only on a d100 at or under the switch luck (one scheming against its own
+  // leaders, more readily; a player character, only at or under the traitor luck); otherwise it's talked into something else.
   let luck = null;
   if ( outcome === SWAY.NEUTRAL && aim === "down" ) {
     const pc = t.spec.kind === "pc";
     const needed = pc ? run.prep.options.traitorLuck ?? TRAITOR_LUCK : Math.min(100, (run.prep.options.switchLuck ?? SWITCH_LUCK) + (t.scheming ? 20 : 0));
     luck = { roll: run.rng.die(100), needed, traitor: pc };
-    if ( luck.needed < 100 && luck.roll >= luck.needed ) { // (100: always)
+    if ( luck.needed < 100 && luck.roll > luck.needed ) { // (100: always)
       log(t, {
         type: "neutral", what: "luck", luck: luck.roll, needed: luck.needed, by: talker.spec.name, byId: talker.id
       });
@@ -827,7 +827,7 @@ export function talkAffinity(spec, traits, rules = null) {
   if ( ps.has("instigator") || ps.has("cruel") ) a += 0.1;
   if ( ps.has("brawler") || ps.has("impatient") || ps.has("speedRunner") ) a -= 0.25;
   if ( (traits?.tactical ?? 50) < 20 ) a -= 0.3;
-  if ( spec.tactics?.talk === "first" ) a = Math.max(a, 0.8);
+  if ( talksFirstAnswer(spec.tactics?.talk) ) a = Math.max(a, 0.8);
   if ( spec.roleplay && (ps.has("diplomat") || ps.has("peoplePleaser")) ) a += 0.15;
   // Always talking: much keener, however unskilled (as much as its answer leans that way); only a little when staying true.
   const keen = wish(spec.alwaysTalk);

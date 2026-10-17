@@ -4,6 +4,8 @@ import { createRun } from "../scripts/engine/battle-state.js";
 import { createRng } from "../scripts/engine/rng.js";
 import { initDesires } from "../scripts/engine/behavior/desire.js";
 import { talkActionsThisTurn } from "../scripts/engine/behavior/talk.js";
+import { talksFirstAnswer } from "../scripts/engine/behavior/standoff.js";
+import { commitment } from "../scripts/engine/behavior/leaving.js";
 import { pf2eRules } from "./fixtures/three-action-rules.js";
 import { creature, battle, social } from "./helpers.js";
 
@@ -17,7 +19,7 @@ describe("Always talk unless I am currently being hurt", () => {
     run.round = 2;
     for ( const u of run.units ) {
       initDesires(u);
-      u.tac = { talk: "first" };
+      u.tac = { talk: "always" };
     }
     return { run, talker: run.byId.get("talker") };
   }
@@ -41,4 +43,13 @@ describe("Always talk unless I am currently being hurt", () => {
     talker.turnsTaken = 1;
     expect(talkActionsThisTurn(run, talker, 3).count).toBeLessThan(3);
   });
+
+  test("it stays \"Always talk\" (not \"Talk first\"): it holds to talking harder when it would leave", () => {
+    const { run, talker } = setUp();
+    const always = commitment(run, talker, "talk");
+    talker.tac = { talk: "first" };
+    expect(always).toBeLessThan(commitment(run, talker, "talk"));
+    expect(talksFirstAnswer("always")).toBe(true);
+  });
 });
+

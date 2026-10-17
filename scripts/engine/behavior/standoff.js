@@ -41,7 +41,6 @@ const ARGUMENT_BREAKS = 0.75;
 /** Playstyles that make someone quicker (above 1) or slower (below 1) to lose patience. */
 const TEMPER = { impatient: 2.5, cruel: 2, instigator: 2, brawler: 1.8, speedRunner: 1.5, moralist: 0.6, chicken: 0.5, peoplePleaser: 0.5, diplomat: 0.3, peacekeeper: 0.3 };
 
-/** Can this creature take part in a conversation at all? */
 /**
  * Can a and b understand each other? A language in common; or, with languages set aside (options.ignoreLanguages),
  * any language at all on both sides.
@@ -53,11 +52,15 @@ export function shareLanguage(a, b, run = null) {
   return la.some(l => lb.includes(l));
 }
 
+/** Can this creature take part in a conversation at all? */
 export function canTalk(u) {
   const s = u.spec.social;
   // (Not choking, nor in a rage, nor sealed in an ooze: the core's own conditions that say so.)
   return !!s && !s.mindless && (s.languages?.length ?? 0) > 0 && !barred(u, "talk");
 }
+
+/** Is this talk answer one that tries words before blows ("Talk first", or "Always talk": all that and more)? */
+export const talksFirstAnswer = answer => answer === "first" || answer === "always";
 
 /** Would this creature rather settle things with words? Its own answer wins; otherwise its knack for it. */
 export function prefersTalk(u) {
@@ -65,12 +68,19 @@ export function prefersTalk(u) {
   if ( wish(u.spec.alwaysTalk) >= 1 ) return true; // "always talk unless I'm being hurt": a vote for words, always
   const answer = u.tac?.talk;
   if ( answer === "never" ) return false;
-  if ( answer === "first" ) return true;
+  if ( talksFirstAnswer(answer) ) return true;
   return (u.prep.talkAffinity ?? 0) >= 0.6 || !!behaviorOf(u).parleyFirst;
 }
 
 /** Present and visible: hidden ambushers aren't part of the conversation. */
 const present = u => isStanding(u) && !(u.spec.hidden && !u.revealed);
+/**
+ * Can u follow the talk: can it talk, and does it share a language with someone present on another side who can?
+ * (Speaking only its own side's tongue, it can't follow what's said across the standoff.)
+ */
+export function followsTalk(run, u) {
+  return canTalk(u) && run.units.some(o => o !== u && o.side !== u.side && present(o) && canTalk(o) && shareLanguage(u, o, run));
+}
 /** Present, and on one of the sides at odds (those who take no side don't open or hold up a standoff). */
 const party = u => present(u) && u.side !== NEUTRAL_PARTY && !u.spec.hazard; // (a hazard has no say)
 
@@ -101,8 +111,10 @@ export function opensWithTalk(run) {
 
 /** Chance that u loses patience this turn (the talk began in round `since`). */
 export function impatience(run, u, since = 1) {
-  const talker = prefersTalk(u);
-  let p = canTalk(u) ? BASE : CANT_FOLLOW;
+  // (One that can't follow the talk is no talker in it, whatever it would rather.)
+  const follows = followsTalk(run, u);
+  const talker = follows && prefersTalk(u);
+  let p = follows ? BASE : CANT_FOLLOW;
   if ( talker ) p *= 0.3;
   if ( u.tac?.talk === "never" ) p *= 4;
   p *= 1 + (liveTrait(run, u, "brave") - 50) / 100;   // the bold strike first
@@ -173,7 +185,7 @@ function breakCause(run, u, say) {
     return "annoyed";
   }
   if ( !run.rng.chance(impatience(run, u)) ) return null;
-  return !canTalk(u) ? "beast" : waiting(u) ? "unmet" : "impatient";
+  return !followsTalk(run, u) ? "beast" : waiting(u) ? "unmet" : "impatient";
 }
 
 /**

@@ -347,8 +347,6 @@ function applyCharacterTactics(spec, entry) {
       spec.tacticsMix = mixFor(Object.keys(playstyles.mix ?? {}).filter(unanswered));
     }
   }
-  // (The engine hears "always" as talking first, the wish carried by alwaysTalk.)
-  if ( spec.tactics?.talk === "always" ) spec.tactics.talk = "first";
 }
 
 /** The player party's wishes for this fight (party.js): its players' votes, majority rules, at the world's Party's sway. */

@@ -106,9 +106,9 @@ export const TRAP_LUCK = 59;    // a trap avoider spots a hazard only on 59 or l
 export const IGNORE_TROUBLES = 29;
 /** A playstyle's taunt that gets through takes hold only on a d100 at or under this times its share ("tauntLuck"). */
 export const TAUNT_LUCK = 42;
-/** An enemy talked into changing sides (standing aside) goes through with it only on a d100 under this ("switchLuck"). */
+/** An enemy talked into changing sides (standing aside) goes through with it only on a d100 at or under this ("switchLuck"). */
 export const SWITCH_LUCK = 69;
-/** A player character scheming against the leader it wasn't chosen to be turns on its side only on a d100 under this ("traitorLuck"). */
+/** A player character scheming against the leader it wasn't chosen to be turns on its side only on a d100 at or under this ("traitorLuck"). */
 export const TRAITOR_LUCK = 9;
 /**
  * Someone who doesn't like to flee ignores the urge to run, when running is its own choice, this often (percent:

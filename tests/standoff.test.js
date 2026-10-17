@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest";
 import { runBatchSync, replay, prepareBattle } from "../scripts/engine/simulator.js";
 import { createRun } from "../scripts/engine/battle-state.js";
-import { impatience, opensWithTalk } from "../scripts/engine/behavior/standoff.js";
+import { impatience, opensWithTalk, followsTalk } from "../scripts/engine/behavior/standoff.js";
 import { pf2eRules } from "./fixtures/three-action-rules.js";
 import { buildStory } from "../scripts/story/story.js";
 import { storyTables } from "./foundry-i18n.js";
@@ -41,6 +41,24 @@ describe("standoffs", () => {
     dull.sway.set("friendly", 2);
     expect(impatience(run, sharp)).toBeGreaterThan(calm * 2);
     expect(envoy.side).toBe("friendly");
+  });
+
+  test("one who shares no language with the other side loses patience as fast as a beast", () => {
+    const run = createRun(prepareBattle(battle([
+      creature({ id: "envoy", kind: "pc", diesAtZero: false, social: speaks() }),
+      creature({ id: "guard", side: "hostile", social: speaks() }),
+      creature({ id: "orc", side: "hostile", social: speaks({ languages: ["orcish"] }) }),
+      creature({ id: "hound", side: "hostile", social: null })
+    ]), pf2eRules));
+    const [, guard, orc, hound] = run.units;
+    for ( const u of run.units ) u.tac = {};
+    expect(followsTalk(run, guard)).toBe(true);
+    expect(followsTalk(run, orc)).toBe(false);
+    expect(impatience(run, orc)).toBeGreaterThan(impatience(run, guard) * 4);
+    expect(impatience(run, orc)).toBeCloseTo(impatience(run, hound), 6);
+    // (With languages set aside, it follows.)
+    run.prep.options.ignoreLanguages = true;
+    expect(followsTalk(run, orc)).toBe(true);
   });
 
   test("when everyone would rather talk, it opens with words", () => {

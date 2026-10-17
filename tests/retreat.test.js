@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest";
 import { prepareBattle, replay } from "../scripts/engine/simulator.js";
 import { createRun } from "../scripts/engine/battle-state.js";
-import { moraleStress, callRetreat, rallies, running, standsGround } from "../scripts/engine/behavior/morale.js";
+import { moraleStress, callRetreat, rallies, running, standsGround, checkMorale, MORALE } from "../scripts/engine/behavior/morale.js";
 import { attemptTalk, choosePitch, willingToPay } from "../scripts/engine/behavior/talk.js";
 import { createRng } from "../scripts/engine/rng.js";
 import { combinePlaystyles } from "../scripts/engine/playstyles.js";
@@ -243,5 +243,38 @@ describe("bosses", () => {
     const p = combinePlaystyles(["chicken"]);
     expect(followers()).toBe(0);
     expect(followers({ playstyles: ["chicken"], behavior: p.behavior })).toBe(3);
+  });
+});
+
+describe("a character's retreat answer shapes its morale", () => {
+  const timid = { ...minded, brave: { base: 10, fudge: 0 } };
+  const hero = retreat => {
+    const { run, by } = runOf([creature({ id: "pc", kind: "pc", diesAtZero: false, traits: timid }), goblin("orc")]);
+    const pc = by("pc");
+    pc.tac = { retreat };
+    run.rng = always;
+    return { run, pc };
+  };
+
+  test("short of what it said it retreats at, its nerve is rolled as anyone's", () => {
+    const { run, pc } = hero("hurt");
+    pc.hp = Math.round(pc.maxHp * 0.4); // hurt, not badly
+    expect(checkMorale(run, pc)).toBe(MORALE.ROUT);
+  });
+
+  test("past it, it goes whatever the roll", () => {
+    const { run, pc } = hero("hurt");
+    pc.hp = Math.round(pc.maxHp * 0.2);
+    run.rng = { ...always, chance: () => false };
+    expect(checkMorale(run, pc)).toBe(MORALE.ROUT);
+  });
+
+  test("\"Never\" rolls too, and resists the urge to run as one who doesn't like to flee", () => {
+    const { run, pc } = hero("never");
+    pc.hp = Math.round(pc.maxHp * 0.4);
+    expect(checkMorale(run, pc)).toBe(MORALE.ROUT);
+    expect(standsGround(run, pc)).toBe(true);
+    pc.tac = { retreat: "hurt" };
+    expect(standsGround(run, pc)).toBe(false);
   });
 });

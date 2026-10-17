@@ -67,7 +67,7 @@
       },
       "neutralDefault": {
         "Name": "Neutral tokens",
-        "Hint": "Default for tokens with Neutral disposition: they take no side, perhaps leaning one way. Whoever hurts, robs or crosses them turns them against that side; either side's talkers can win them over (harder against their lean). Changeable per battle and per token."
+        "Hint": "How Neutral-disposition tokens take part by default. Changeable per battle and per token."
       },
       "downedModel": {
         "Name": "Downed characters",
@@ -116,7 +116,7 @@
       },
       "talking": {
         "Name": "Talking",
-        "Hint": "Characters may talk foes who share a language into surrendering, fleeing, giving something up or (rarely, unless they started neutral) standing aside, and talk those who take no side into joining or leaving."
+        "Hint": "Characters may talk foes who share a language out of the fight, and win over those who take no side."
       },
       "ignoreLanguages": {
         "Name": "Ignore languages",
@@ -164,55 +164,55 @@
       },
       "standGround": {
         "Name": "Doesn't like to flee: how often it stays (%)",
-        "Hint": "How often a character whose retreat answer is Fight to the end resists its own urge to run (half as often for When the battle turns against us). Talked out of the fight, it surrenders in place as often. Fear from spells or rules works as the system says."
+        "Hint": "How often a character that fights to the end resists its own urge to run (default 90)."
       },
       "adhd": {
         "Name": "ADHD: how often a creature's mind jumps (%)",
-        "Hint": "This often (0 to 100, default 20), a creature drops what it's doing for the strongest thing it wants: twice as often if it can do it this turn, three times for the least thoughtful. Tactical creatures and better put what matters most first."
+        "Hint": "How often a creature drops what it's doing for the strongest thing it wants (default 20)."
       },
       "leaveResolve": {
         "Name": "Committed to leaving: how often it keeps going (%)",
-        "Hint": "How often a creature leaving the fight keeps going when struck or spoken to (0 to 100, default 79): all of it if its answers and playstyles lean to going, down to 70% of it if it would rather stay and fight. Stopped, it deals with the interruption, then sets off again; stopped often enough, it gives up on leaving."
+        "Hint": "How often a creature leaving the fight keeps going when struck or spoken to (default 79)."
       },
       "avoidKilling": {
         "Name": "Avoids killing: how often it holds back (%)",
-        "Hint": "How often a character whose answer to Foes who fall is \"Spare them: I avoid killing\" holds back (50 to 90, default 90; less for answers that lean less that way): a killing blow knocks out instead, it leaves the fallen be, and spares them after. Now and then it kills anyway."
+        "Hint": "How often a character that avoids killing holds back from a kill (default 90)."
       },
       "neutralReach": {
         "Name": "Neutral friend groups: reach (squares)",
-        "Hint": "The planner proposes friend groups for neutrals: the one nearest the map's top-left corner starts group 1 with every neutral of its kind; neutrals within this many squares of the group join, up to three steps out. Group 2 forms the same way; the rest are group 3. Move anyone with the 1 2 3 pills."
+        "Hint": "How near (in squares) a neutral must be to a friend group for the planner to propose it joins (default 3)."
       },
       "switchLuck": {
         "Name": "Luck: an enemy changing sides",
-        "Hint": "An enemy talked into changing sides does so only on a hidden d100 under this (100: always); otherwise it's talked into something else (surrender, standing down, running). Even then it only stands aside and must be won over from there. Charm, dominate and the like, and talking round those who take no side, are unaffected."
+        "Hint": "An enemy talked into changing sides stands aside only on a hidden d100 at or under this (default 69; 100: always)."
       },
       "executeLuck": {
         "Name": "PC luck: being finished off",
-        "Hint": "Each time a creature wants to kill a PC down at 0 HP, it goes ahead only on a hidden d100 at or under this; otherwise it turns to its next foe, taking what it wanted of that PC along."
+        "Hint": "A creature finishes off a PC at 0 HP only on a hidden d100 at or under this (default 39)."
       },
       "leaderInfluence": {
         "Name": "Leader's influence",
-        "Hint": "How readily followers take their commander's lead outright, 0 to 100 (50 is usual; not a percentage). A leader's wishes always pull a little. Each turn, as loyalty and playstyles allow, a follower may also follow outright: it takes up what its commander wants most (and it can do), in proportion to how badly the commander wants it, and leans to the commander's playstyle that turn. 0: nobody follows outright; 100: twice as readily as usual."
+        "Hint": "How readily followers take their commander's lead: 0 to 100, 50 usual (not a percentage)."
       },
       "bossInfluence": {
         "Name": "Boss's influence",
-        "Hint": "How much more readily followers take a boss's lead than a leader's: 1.25 to 3 times (default 2). A group with a boss has no leader; a lieutenant replacing a fallen boss leads as a leader. The party never has a boss."
+        "Hint": "How much more readily followers take a boss's lead than a leader's: 1.25 to 3 times (default 2)."
       },
       "traitorLuck": {
         "Name": "Luck check: a player character turning traitor",
-        "Hint": "A PC scheming against its group's leader (Wants to Lead with a treacherous playstyle such as Cruel or Wildcard) can be talked into changing sides only on a d100 under this (default 9). 0: never."
+        "Hint": "A PC talked into changing sides does so only on a d100 at or under this (default 9; 0: never)."
       },
       "trapLuck": {
         "Name": "Trap avoiders: spotting a trap (%)",
-        "Hint": "Characters with watchful playstyles (Thief most, then Puzzle-Maniac, Skeptic, Lore-Collector, Chicken, and Wallflower at about a third; less for a later pill) spot each hazard on a hidden d100 at or under this (default 59) times their watchfulness. They go around a spotted hazard, entering only for something they want badly enough. Anyone a hazard goes for knows it from then on. 0: never."
+        "Hint": "Trap avoiders (a Thief most) spot each hazard on a hidden d100 at or under this (default 59). 0: never."
       },
       "tauntLuck": {
         "Name": "Playstyle taunts: taking hold (%)",
-        "Hint": "A character with a taunting playstyle (Tank most, then Instigator, Martyr, Brawler, Redeem-Seeker; less for a later pill) may spend an action goading a foe: threats or mockery against its resistance, then a hidden d100 at or under this (default 42) times how much of a taunter it is (all of it for a first-pick Tank). A goaded foe wants to go for the taunter until the end of its next turn. A game system's own taunts follow its rules. 0: never."
+        "Hint": "A playstyle's landed taunt takes hold on a hidden d100 at or under this (default 42; less for lesser taunters)."
       },
       "partySway": {
         "Name": "Party's sway (%)",
-        "Hint": "How much the party's votes (the survey's Party tab, majority rules) sway the friendly side: in this share of fights, a character left on \"Let this character decide\" uses the party's answer, and the party's wishes add this much to each one's desires (0 to 100 scale)."
+        "Hint": "How much the party's votes sway the characters on the friendly side (default 3)."
       },
       "playersRunPCs": {
         "Name": "Players run their characters",
@@ -220,7 +220,7 @@
       },
       "ignoreTroubles": {
         "Name": "Selfless creatures bear what holds or hurts them (%)",
-        "Hint": "A creature held fast, prone or hurting (burning, bleeding) tries each turn to be rid of it, as much as it bothers it. A selfless one may bear it and carry on instead: a hidden d100 at or under this (default 29), scaled down the more selfish or calculating it is. Never when the harm would kill it. 0: nobody bears it."
+        "Hint": "How often a selfless creature ignores what holds or hurts it and carries on (default 29; 0: never)."
       }
     },
     "Lean": {
@@ -868,7 +868,7 @@
       "StayTrueHint": "Stats, weapons and spells decide; the other settings here matter only a little.",
       "Roleplay": "Roleplaying is very important to me",
       "RoleplayHint": "Playstyles weigh double: their quirks show much more often.",
-      "Both": "Both boxes are checked: roleplay strengthens your playstyles, but staying true still caps how far they move you from the calculated strategy.",
+      "Both": "Both checked: roleplay strengthens your playstyles; staying true still caps them.",
       "NpcTitle": "Playstyles (GM)",
       "chicken": {
         "Name": "Chicken",
@@ -888,7 +888,7 @@
       },
       "peoplePleaser": {
         "Name": "People-Pleaser",
-        "Hint": "Goes along with the group: follows its leader, heals freely, protects friends, talks fighters out of fighting."
+        "Hint": "Follows its leader closely, heals and guards friends, talks when it could work."
       },
       "fragile": {
         "Name": "Fragile",
@@ -912,7 +912,7 @@
       },
       "leader": {
         "Name": "Wants to Lead",
-        "Hint": "Wants to lead: braver, loyal, goes for the biggest threat, rallies its people. Half ignores other commanders."
+        "Hint": "Braver and loyal; goes for the biggest threat, rallies its people, half ignores its commander."
       },
       "instigator": {
         "Name": "Instigator",
@@ -1801,7 +1801,7 @@
       "TurnsOn": ", turns on {name}",
       "AllegianceTurn": "{actor} fights for {by}'s side (controlled)",
       "AllegianceBack": "{actor} returns to {side}",
-      "NeutralLuck": "{actor}: switch luck d100 {luck} (needs under {needed}) · won't change sides",
+      "NeutralLuck": "{actor}: switch luck d100 {luck} ({needed} or less) · won't change sides",
       "NeutralOffended": "{actor} turns on {side} ({why}{victim}, by {by})",
       "NeutralTruce": "{actor} confronts {by}{over} ({why}) · words first",
       "Over": " over {name}",
@@ -1830,7 +1830,7 @@
       "Reclaim": "{actor} gets back {what} from {by}",
       "Bribed": "{actor} is paid {what} by {payer} to go (with its people)",
       "Nothing": "nothing",
-      "StandsAsideLuck": "{actor} stands aside · switch luck d100 {luck} (needs under {needed})",
+      "StandsAsideLuck": "{actor} stands aside · switch luck d100 {luck} ({needed} or less)",
       "KeepsIt": "{actor} agrees to hand over {what} · luck d100 {luck} (needs {needed} or less) · keeps it",
       "Gives": "{actor} gives {what} to {to}{luck}",
       "GivesLuck": " · luck d100 {luck}",
@@ -2080,7 +2080,7 @@
     },
     "Party": {
       "Tab": "Party",
-      "Intro": "How should the party act? Each logged-in player gets one vote per question; the most-voted answer is the party's and sways everyone on your side a little in every fight. The party's leader breaks ties; a tie it doesn't break counts as no answer. Vote again to take a vote back. Swipe Lock-in when you're done, or close the survey; your votes stay locked until your GM sends a new one.",
+      "Intro": "One vote per question; the top answer sways your side a little. Vote again to undo; swipe Lock-in when done.",
       "GmView": "Only players vote. You see every vote; the outlined answer is the party's.",
       "ReadOnly": "View only: you can vote again when your GM sends everyone the survey.",
       "LockIn": "Lock-in",
@@ -2397,7 +2397,7 @@
     },
     "Region": {
       "Ground": "FastFighting: ground height",
-      "GroundHint": "Ground height in this region, in the scene's units: above the floor for a ledge or platform, below it for a pit. A creature shoved off it falls. Leave blank if the region isn't ground."
+      "GroundHint": "Ground height in scene units: above 0 for a ledge, below for a pit. Shoved off, a creature falls. Blank: not ground."
     }
   }
 }

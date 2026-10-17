@@ -193,6 +193,16 @@
    "commit": null,
    "hash": "3fda8f3332ea"
   },
+  "core:code:scripts/engine/arithmetic.js:fail#1": {
+   "repo": "core",
+   "file": "scripts/engine/arithmetic.js",
+   "key": "scripts/engine/arithmetic.js:fail#1",
+   "area": "core/code",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "baba957f81aa"
+  },
   "core:code:scripts/engine/live.js:liveTurn#1": {
    "repo": "core",
    "file": "scripts/engine/live.js",
@@ -2112,7 +2122,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "bb235485ad91"
+   "hash": "bb235485ad91",
+   "changed": true
   },
   "core:FASTFIGHTING.Battle.Net.FriendlyShort": {
    "repo": "core",
@@ -2252,7 +2263,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "6a1a3034e4c3"
+   "hash": "6a1a3034e4c3",
+   "changed": true
   },
   "core:FASTFIGHTING.Battle.Net.RunNow": {
    "repo": "core",
@@ -2353,7 +2365,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "f706b3ce2adf"
+   "hash": "f706b3ce2adf",
+   "changed": true
   },
   "core:FASTFIGHTING.Battle.Net.Unaware": {
    "repo": "core",
@@ -2543,7 +2556,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "aa6b179e3c76"
+   "hash": "aa6b179e3c76",
+   "changed": true
   },
   "core:FASTFIGHTING.Battle.OnSheet": {
    "repo": "core",
@@ -4205,7 +4219,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "baa9d60d5154"
+   "hash": "baa9d60d5154",
+   "changed": true
   },
   "core:FASTFIGHTING.Defaults.Restore": {
    "repo": "core",
@@ -4846,7 +4861,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "9282b4a700e1"
+   "hash": "9282b4a700e1",
+   "changed": true
   },
   "core:FASTFIGHTING.Generic.MenuLabel": {
    "repo": "core",
@@ -5166,7 +5182,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "0c1d4e1db5fa"
+   "hash": "0c1d4e1db5fa",
+   "changed": true
   },
   "core:FASTFIGHTING.Helper.generic": {
    "repo": "core",
@@ -5176,7 +5193,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "5083be390415"
+   "hash": "5083be390415",
+   "changed": true
   },
   "core:FASTFIGHTING.Helper.ListLink": {
    "repo": "core",
@@ -5276,7 +5294,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "f06f3c85a28a"
+   "hash": "f06f3c85a28a",
+   "changed": true
   },
   "core:FASTFIGHTING.Keybinding.networkLower": {
    "repo": "core",
@@ -5297,7 +5316,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "6a7304eb6f37"
+   "hash": "6a7304eb6f37",
+   "changed": true
   },
   "core:FASTFIGHTING.Keybinding.networkNext": {
    "repo": "core",
@@ -5318,7 +5338,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "0138559404e5"
+   "hash": "0138559404e5",
+   "changed": true
   },
   "core:FASTFIGHTING.Keybinding.networkPrevious": {
    "repo": "core",
@@ -5339,7 +5360,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "b8c163416fb4"
+   "hash": "b8c163416fb4",
+   "changed": true
   },
   "core:FASTFIGHTING.Keybinding.networkRaise": {
    "repo": "core",
@@ -5360,7 +5382,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "588474f330f9"
+   "hash": "588474f330f9",
+   "changed": true
   },
   "core:FASTFIGHTING.Keybinding.networkRemove": {
    "repo": "core",
@@ -5543,7 +5566,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "6bcea1697c79"
+   "hash": "6bcea1697c79",
+   "changed": true
   },
   "core:FASTFIGHTING.Live.Ask": {
    "repo": "core",
@@ -5674,7 +5698,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "7a5822bb14d6"
+   "hash": "7a5822bb14d6",
+   "changed": true
   },
   "core:FASTFIGHTING.Live.RewindTurn": {
    "repo": "core",
@@ -5705,7 +5730,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "97bc9d3ccaec"
+   "hash": "97bc9d3ccaec",
+   "changed": true
   },
   "core:FASTFIGHTING.Live.Store": {
    "repo": "core",
@@ -5735,7 +5761,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "de80457ca4ea"
+   "hash": "de80457ca4ea",
+   "changed": true
   },
   "core:FASTFIGHTING.Live.TrackerRefused": {
    "repo": "core",
@@ -5745,7 +5772,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "084c6a14dd70"
+   "hash": "084c6a14dd70",
+   "changed": true
   },
   "core:FASTFIGHTING.Live.Trigger.allyHit": {
    "repo": "core",
@@ -8184,7 +8212,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "85f9926fc131"
+   "hash": "85f9926fc131",
+   "changed": true
   },
   "core:FASTFIGHTING.Log.NeutralMeddle": {
    "repo": "core",
@@ -8964,7 +8993,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "b5abab47821e"
+   "hash": "b5abab47821e",
+   "changed": true
   },
   "core:FASTFIGHTING.Log.Shield": {
    "repo": "core",
@@ -9144,7 +9174,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "21e91959e2ba"
+   "hash": "21e91959e2ba",
+   "changed": true
   },
   "core:FASTFIGHTING.Log.StandsFirm": {
    "repo": "core",
@@ -9943,7 +9974,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "1be704cbada0"
+   "hash": "1be704cbada0",
+   "changed": true
   },
   "core:FASTFIGHTING.MakeItSo.Nothing": {
    "repo": "core",
@@ -10886,7 +10918,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "6027ce47be0a"
+   "hash": "6027ce47be0a",
+   "changed": true
   },
   "core:FASTFIGHTING.Party.Intro": {
    "repo": "core",
@@ -10937,7 +10970,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "decf6c4c52d0"
+   "hash": "decf6c4c52d0",
+   "changed": true
   },
   "core:FASTFIGHTING.Party.resources.balanced": {
    "repo": "core",
@@ -11315,7 +11349,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "e0e4a931ac05"
+   "hash": "e0e4a931ac05",
+   "changed": true
   },
   "core:FASTFIGHTING.Planner.ClearHint": {
    "repo": "core",
@@ -11435,7 +11470,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "d167a10970b7"
+   "hash": "d167a10970b7",
+   "changed": true
   },
   "core:FASTFIGHTING.Planner.FightsWith": {
    "repo": "core",
@@ -11720,7 +11756,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "d056bdfea2a0"
+   "hash": "d056bdfea2a0",
+   "changed": true
   },
   "core:FASTFIGHTING.Planner.Opening": {
    "repo": "core",
@@ -11780,7 +11817,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "04b2e669706e"
+   "hash": "04b2e669706e",
+   "changed": true
   },
   "core:FASTFIGHTING.Planner.Positioning": {
    "repo": "core",
@@ -12210,7 +12248,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "29fb18a283a4"
+   "hash": "29fb18a283a4",
+   "changed": true
   },
   "core:FASTFIGHTING.Playback.Unfinished": {
    "repo": "core",
@@ -12339,7 +12378,8 @@
    "status": "approved",
    "date": "2026-10-11",
    "commit": "f7ee61e",
-   "hash": "092d9672f2da"
+   "hash": "092d9672f2da",
+   "changed": true
   },
   "core:FASTFIGHTING.Playstyle.brawler.Hint": {
    "repo": "core",
@@ -13332,7 +13372,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "2d132a0a5b66"
+   "hash": "2d132a0a5b66",
+   "changed": true
   },
   "core:FASTFIGHTING.Results.AtRisk": {
    "repo": "core",
@@ -13464,7 +13505,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "eb57768a975a"
+   "hash": "eb57768a975a",
+   "changed": true
   },
   "core:FASTFIGHTING.Results.EmptyTitle": {
    "repo": "core",
@@ -14078,7 +14120,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "f7016eb7fe10"
+   "hash": "f7016eb7fe10",
+   "changed": true
   },
   "core:FASTFIGHTING.Settings.adhd.Name": {
    "repo": "core",
@@ -14119,7 +14162,8 @@
    "status": "todo",
    "date": "2026-10-11",
    "commit": "c95a988",
-   "hash": "91a2b6d4973b"
+   "hash": "91a2b6d4973b",
+   "changed": true
   },
   "core:FASTFIGHTING.Settings.avoidKilling.Name": {
    "repo": "core",
@@ -14139,7 +14183,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "4083fd000fdd"
+   "hash": "4083fd000fdd",
+   "changed": true
   },
   "core:FASTFIGHTING.Settings.bossInfluence.Name": {
    "repo": "core",
@@ -14159,7 +14204,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "93adb8e15fb4"
+   "hash": "93adb8e15fb4",
+   "changed": true
   },
   "core:FASTFIGHTING.Settings.bystanders.Name": {
    "repo": "core",
@@ -14179,7 +14225,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "f9ec279508fc"
+   "hash": "f9ec279508fc",
+   "changed": true
   },
   "core:FASTFIGHTING.Settings.concedeLuck.Name": {
    "repo": "core",
@@ -14199,7 +14246,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "d8a50b43f30c"
+   "hash": "d8a50b43f30c",
+   "changed": true
   },
   "core:FASTFIGHTING.Settings.corpseMode.Name": {
    "repo": "core",
@@ -14220,7 +14268,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "4d5514a07d8c"
+   "hash": "4d5514a07d8c",
+   "changed": true
   },
   "core:FASTFIGHTING.Settings.downedModel.Name": {
    "repo": "core",
@@ -14240,7 +14289,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "9fd972346ffa"
+   "hash": "9fd972346ffa",
+   "changed": true
   },
   "core:FASTFIGHTING.Settings.executeLuck.Name": {
    "repo": "core",
@@ -14260,7 +14310,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "25199b424278"
+   "hash": "25199b424278",
+   "changed": true
   },
   "core:FASTFIGHTING.Settings.fledMode.Name": {
    "repo": "core",
@@ -14323,7 +14374,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "1c9b4b332841"
+   "hash": "1c9b4b332841",
+   "changed": true
   },
   "core:FASTFIGHTING.Settings.ignoreLanguages.Name": {
    "repo": "core",
@@ -14343,7 +14395,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "07eea73c1686"
+   "hash": "07eea73c1686",
+   "changed": true
   },
   "core:FASTFIGHTING.Settings.ignoreTroubles.Name": {
    "repo": "core",
@@ -14444,7 +14497,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "264245c2b7a1"
+   "hash": "264245c2b7a1",
+   "changed": true
   },
   "core:FASTFIGHTING.Settings.leaveResolve.Name": {
    "repo": "core",
@@ -14464,7 +14518,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "359eda352a0c"
+   "hash": "359eda352a0c",
+   "changed": true
   },
   "core:FASTFIGHTING.Settings.lootMode.Name": {
    "repo": "core",
@@ -14525,7 +14580,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "f165dfb1bc47"
+   "hash": "f165dfb1bc47",
+   "changed": true
   },
   "core:FASTFIGHTING.Settings.neutralDefault.Name": {
    "repo": "core",
@@ -14545,7 +14601,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "e0eee713be5e"
+   "hash": "e0eee713be5e",
+   "changed": true
   },
   "core:FASTFIGHTING.Settings.neutralReach.Name": {
    "repo": "core",
@@ -14586,7 +14643,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "eb6701619d05"
+   "hash": "eb6701619d05",
+   "changed": true
   },
   "core:FASTFIGHTING.Settings.partySway.Name": {
    "repo": "core",
@@ -14648,7 +14706,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "10474ef30479"
+   "hash": "10474ef30479",
+   "changed": true
   },
   "core:FASTFIGHTING.Settings.playersRunPCs.Name": {
    "repo": "core",
@@ -14710,7 +14769,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "9b03cd50b9c8"
+   "hash": "9b03cd50b9c8",
+   "changed": true
   },
   "core:FASTFIGHTING.Settings.predictionTime.Name": {
    "repo": "core",
@@ -14774,7 +14834,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "a9dc02cc574f"
+   "hash": "a9dc02cc574f",
+   "changed": true
   },
   "core:FASTFIGHTING.Settings.sideDefaults.Label": {
    "repo": "core",
@@ -14804,7 +14865,8 @@
    "status": "todo",
    "date": "2026-10-11",
    "commit": "c95a988",
-   "hash": "9a9bb0d36063"
+   "hash": "9a9bb0d36063",
+   "changed": true
   },
   "core:FASTFIGHTING.Settings.standGround.Name": {
    "repo": "core",
@@ -14906,7 +14968,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "5b12470c9d8a"
+   "hash": "5b12470c9d8a",
+   "changed": true
   },
   "core:FASTFIGHTING.Settings.switchLuck.Name": {
    "repo": "core",
@@ -14926,7 +14989,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "141461e1a093"
+   "hash": "141461e1a093",
+   "changed": true
   },
   "core:FASTFIGHTING.Settings.talking.Name": {
    "repo": "core",
@@ -14946,7 +15010,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "b60c2abdbbbe"
+   "hash": "b60c2abdbbbe",
+   "changed": true
   },
   "core:FASTFIGHTING.Settings.tauntLuck.Name": {
    "repo": "core",
@@ -14966,7 +15031,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "ad432004768d"
+   "hash": "ad432004768d",
+   "changed": true
   },
   "core:FASTFIGHTING.Settings.theftLuck.Name": {
    "repo": "core",
@@ -14986,7 +15052,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "78f8afe95d22"
+   "hash": "78f8afe95d22",
+   "changed": true
   },
   "core:FASTFIGHTING.Settings.traitorLuck.Name": {
    "repo": "core",
@@ -15006,7 +15073,8 @@
    "status": "todo",
    "date": "2026-10-11",
    "commit": "e3eb035",
-   "hash": "cbac88c16ab6"
+   "hash": "cbac88c16ab6",
+   "changed": true
   },
   "core:FASTFIGHTING.Settings.trapLuck.Name": {
    "repo": "core",
@@ -20268,7 +20336,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "22aa690d27ae"
+   "hash": "22aa690d27ae",
+   "changed": true
   },
   "core:FASTFIGHTING.Story.Reveal": {
    "repo": "core",
@@ -20400,7 +20469,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "2fcf66c438ec"
+   "hash": "2fcf66c438ec",
+   "changed": true
   },
   "core:FASTFIGHTING.Story.TablesMenuHint": {
    "repo": "core",
@@ -20946,7 +21016,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "45b8534814b4"
+   "hash": "45b8534814b4",
+   "changed": true
   },
   "core:FASTFIGHTING.Survey.Level": {
    "repo": "core",
@@ -20997,7 +21068,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "b29abd9fe43d"
+   "hash": "b29abd9fe43d",
+   "changed": true
   },
   "core:FASTFIGHTING.Survey.NoTokens": {
    "repo": "core",
@@ -21833,7 +21905,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "135302575827"
+   "hash": "135302575827",
+   "changed": true
   },
   "core:FASTFIGHTING.Tactics.Reactions.Label": {
    "repo": "core",
@@ -22631,7 +22704,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "67508b220d56"
+   "hash": "67508b220d56",
+   "changed": true
   },
   "core:FASTFIGHTING.Tracker.Vantage": {
    "repo": "core",
@@ -22751,7 +22825,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "badf32a92680"
+   "hash": "badf32a92680",
+   "changed": true
   },
   "core:FASTFIGHTING.Translation.Missing": {
    "repo": "core",
@@ -22761,7 +22836,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "762c68469e9c"
+   "hash": "762c68469e9c",
+   "changed": true
   },
   "core:FASTFIGHTING.Units.Distance": {
    "repo": "core",
@@ -39423,7 +39499,18 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "810ab720fe6d"
+   "hash": "810ab720fe6d",
+   "changed": true
+  },
+  "daggerheart:FFDAGGERHEART.CoreUntested": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.CoreUntested",
+   "area": "daggerheart/General",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "3bad7a8dad46"
   },
   "daggerheart:FFDAGGERHEART.DeathMove.avoid": {
    "repo": "daggerheart",
@@ -39513,7 +39600,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "cd53ac53e95b"
+   "hash": "cd53ac53e95b",
+   "changed": true
   },
   "daggerheart:FFDAGGERHEART.DeathMove.RiskDies": {
    "repo": "daggerheart",
@@ -40384,7 +40472,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "df32f796e94c"
+   "hash": "df32f796e94c",
+   "changed": true
   },
   "daggerheart:FFDAGGERHEART.Settings.loreBoost.Name": {
    "repo": "daggerheart",
@@ -40404,7 +40493,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "f1b01473fa24"
+   "hash": "f1b01473fa24",
+   "changed": true
   },
   "daggerheart:FFDAGGERHEART.Settings.tiedStopsSpells.Name": {
    "repo": "daggerheart",
@@ -40895,7 +40985,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "0a0c018674c1"
+   "hash": "0a0c018674c1",
+   "changed": true
   },
   "dcc:FFDCC.Chaotic": {
    "repo": "dcc",
@@ -41026,6 +41117,16 @@
    "date": null,
    "commit": null,
    "hash": "d4497ec40d32"
+  },
+  "dcc:FFDCC.CoreUntested": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.CoreUntested",
+   "area": "dcc/General",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "f7b18c765e82"
   },
   "dcc:FFDCC.Deed.Ac": {
    "repo": "dcc",
@@ -41967,7 +42068,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "de04c5b6266a"
+   "hash": "de04c5b6266a",
+   "changed": true
   },
   "dcc:FFDCC.Settings.loreBoost.Name": {
    "repo": "dcc",
@@ -41987,7 +42089,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "b118dc36bae5"
+   "hash": "b118dc36bae5",
+   "changed": true
   },
   "dcc:FFDCC.Settings.tiedStopsSpells.Name": {
    "repo": "dcc",
@@ -42429,7 +42532,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "baba957f81aa"
+   "hash": "baba957f81aa",
+   "gone": "2026-10-17"
   },
   "dnd5e:code:scripts/main.js:(top)#1": {
    "repo": "dnd5e",
@@ -42650,7 +42754,18 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "2dd5b6fc44e4"
+   "hash": "2dd5b6fc44e4",
+   "changed": true
+  },
+  "dnd5e:FFDND5E.CoreUntested": {
+   "repo": "dnd5e",
+   "file": "languages/en.json",
+   "key": "FFDND5E.CoreUntested",
+   "area": "dnd5e/General",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "540690163794"
   },
   "dnd5e:FFDND5E.Death.Dies": {
    "repo": "dnd5e",
@@ -43268,7 +43383,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "f4f67ff4a42f"
+   "hash": "f4f67ff4a42f",
+   "changed": true
   },
   "dnd5e:FFDND5E.Settings.loreBoost.Name": {
    "repo": "dnd5e",
@@ -43491,7 +43607,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "b9b3e9cc326d"
+   "hash": "b9b3e9cc326d",
+   "changed": true
   },
   "dnd5e:FFDND5E.VsFiends": {
    "repo": "dnd5e",
@@ -43951,6 +44068,16 @@
    "commit": null,
    "hash": "3a5c07d0ce6d"
   },
+  "ironsworn:FFIRONSWORN.CoreUntested": {
+   "repo": "ironsworn",
+   "file": "languages/en.json",
+   "key": "FFIRONSWORN.CoreUntested",
+   "area": "ironsworn/General",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "8c186ce175b0"
+  },
   "ironsworn:FFIRONSWORN.Endure.Dying": {
    "repo": "ironsworn",
    "file": "languages/en.json",
@@ -43979,7 +44106,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "8b6a3afa1cff"
+   "hash": "8b6a3afa1cff",
+   "changed": true
   },
   "ironsworn:FFIRONSWORN.Endure.MortalBound": {
    "repo": "ironsworn",
@@ -43989,7 +44117,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "0e99a9fd3c74"
+   "hash": "0e99a9fd3c74",
+   "changed": true
   },
   "ironsworn:FFIRONSWORN.Endure.MortalDies": {
    "repo": "ironsworn",
@@ -44469,7 +44598,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "de697d69ba1b"
+   "hash": "de697d69ba1b",
+   "changed": true
   },
   "ironsworn:FFIRONSWORN.Out.Beaten": {
    "repo": "ironsworn",
@@ -44837,7 +44967,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "ea5fe69cb952"
+   "hash": "ea5fe69cb952",
+   "changed": true
   },
   "ironsworn:FFIRONSWORN.Settings.deadlyWeapons.Name": {
    "repo": "ironsworn",
@@ -44857,7 +44988,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "a9454b0164f6"
+   "hash": "a9454b0164f6",
+   "changed": true
   },
   "ironsworn:FFIRONSWORN.Settings.doorHarm.Name": {
    "repo": "ironsworn",
@@ -44877,7 +45009,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "8fa610a25bf0"
+   "hash": "8fa610a25bf0",
+   "changed": true
   },
   "ironsworn:FFIRONSWORN.Settings.loreBoost.Name": {
    "repo": "ironsworn",
@@ -44907,7 +45040,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "922e30d82ca4"
+   "hash": "922e30d82ca4",
+   "changed": true
   },
   "ironsworn:FFIRONSWORN.Settings.rulesPreference.Name": {
    "repo": "ironsworn",
@@ -45351,7 +45485,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "68c1a8ee9c37"
+   "hash": "68c1a8ee9c37",
+   "changed": true
   },
   "pf2e:FFPF2E.Affliction.DescriptionNoDc": {
    "repo": "pf2e",
@@ -45361,7 +45496,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "95c99a0db60b"
+   "hash": "95c99a0db60b",
+   "changed": true
   },
   "pf2e:FFPF2E.Affliction.Name": {
    "repo": "pf2e",
@@ -45421,7 +45557,18 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "30274e05ef3f"
+   "hash": "30274e05ef3f",
+   "changed": true
+  },
+  "pf2e:FFPF2E.CoreUntested": {
+   "repo": "pf2e",
+   "file": "languages/en.json",
+   "key": "FFPF2E.CoreUntested",
+   "area": "pf2e/General",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "e233c21e8a39"
   },
   "pf2e:FFPF2E.Dropped": {
    "repo": "pf2e",
@@ -45551,7 +45698,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "90cfc3e3392b"
+   "hash": "90cfc3e3392b",
+   "changed": true
   },
   "pf2e:FFPF2E.FlatCheckSpell": {
    "repo": "pf2e",
@@ -45561,7 +45709,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "db0f9dd73066"
+   "hash": "db0f9dd73066",
+   "changed": true
   },
   "pf2e:FFPF2E.Flustered": {
    "repo": "pf2e",
@@ -45601,7 +45750,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "d9e9e06b763b"
+   "hash": "d9e9e06b763b",
+   "changed": true
   },
   "pf2e:FFPF2E.Helpless": {
    "repo": "pf2e",
@@ -46074,7 +46224,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "a8c36ee4248b"
+   "hash": "a8c36ee4248b",
+   "changed": true
   },
   "pf2e:FFPF2E.Settings.loreBoost.Name": {
    "repo": "pf2e",
@@ -46134,7 +46285,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "b9b3e9cc326d"
+   "hash": "b9b3e9cc326d",
+   "changed": true
   },
   "pf2e:FFPF2E.TwoActions": {
    "repo": "pf2e",
