@@ -1239,6 +1239,8 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     } catch ( err ) {
       return reportError(err);
     }
+    // (From now on the battle keeps the game paused or going, by whose turn it is: closing doesn't un-pause it.)
+    this.pausedGame = false;
     this.close();
     try {
       await playing;

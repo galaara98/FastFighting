@@ -287,6 +287,7 @@ function onTurnChange(combat, prior, current) {
     return;
   }
   queue(async () => {
+    pauseFor(unitOf(combat.combatant));
     if ( battle.pc && battle.pc.combatantId !== combat.combatant?.id ) await closePlayerTurn();
     if ( battle.data.spotlight ) await spotlightMoved(combat, prior);
     else if ( combat.round > (battle.run.round ?? 0) ) await newRound(combat.round);
@@ -491,6 +492,8 @@ async function followBack(prior) {
   } else if ( own || (u && GONE.has(u.status)) ) battle.data.played = key;
   else if ( u && playerRuns(battle.run, u) ) await beginPlayerTurn(u, combatant);
   else if ( u ) await rewoundCard(u);
+  // (A player's turn again: the game goes on; anyone else's waits, paused, for the GM.)
+  pauseFor(u, !!battle.pc);
   await keep();
   await combat.setFlag(MODULE_ID, "live", flagOf(true));
   changed();
@@ -510,6 +513,16 @@ export function suggestedSpotlight() {
 
 /** Out of the fight for good: no turn to play. */
 const GONE = new Set([STATUS.DEAD, STATUS.FLED, STATUS.SURRENDERED, STATUS.STOOD_DOWN, STATUS.BEATEN]);
+
+/**
+ * The game paused while the fight is FastFighting's (reading a player's turn, deciding and playing its own, waiting on
+ * the GM's Next Turn), so no player moves a token meanwhile; going on for a player's turn, so they can move and roll.
+ * `u`: whose turn it is now (none: FastFighting's). A GM who pauses or un-pauses it meanwhile has the last word, until
+ * the next turn.
+ */
+function pauseFor(u, theirs = !!u && playerRuns(battle.run, u) && !GONE.has(u.status)) {
+  if ( game.user.isGM && game.paused === theirs ) game.togglePause(!theirs, { broadcast: true });
+}
 
 /** The players' characters as the battle has them now (a run restored from a kept turn takes them). */
 function playersNow(run = battle.run) {
@@ -567,9 +580,11 @@ async function turnBegins(combatant) {
   if ( playerRuns(battle.run, u) ) {
     await beginPlayerTurn(u, combatant);
     // (The players' turn: the game goes on, so they can move and roll.)
-    if ( game.paused ) game.togglePause(false, { broadcast: true });
+    pauseFor(u, true);
     return;
   }
+  // (FastFighting's: paused while it decides, plays it, and waits on the GM's Next Turn.)
+  pauseFor(u, false);
   await playTurn(u, combatant, key);
 }
 
