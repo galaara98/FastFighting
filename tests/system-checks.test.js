@@ -74,6 +74,15 @@ describe("a check the system rolls", () => {
     expect(run.byId.get("hero").conds.frightened).toBe(2);
   });
 
+  test("a check with the attack trait says how many attacks came before it (a multiple attack penalty); one without, none", () => {
+    const shove = { ...demoralize, id: "shove", name: "Shove", check: { mod: 10, against: "fortitude", attack: true }, oncePerTarget: false, melee: true, reach: 5, range: undefined };
+    const first = playThrough(setUp([shove], ["check"]), "witch", () => ({ degree: 1, natural: 2, total: 12 })).requests.filter(r => r.roll === "check");
+    expect(first[0]).toMatchObject({ purpose: "control", against: "fortitude", attackNumber: 0 });
+    if ( first[1] ) expect(first[1].attackNumber).toBe(1);
+    const scare = playThrough(setUp([demoralize], ["check"]), "witch", () => ({ degree: 1, natural: 2, total: 12 })).requests.find(r => r.roll === "check");
+    expect(scare.attackNumber).toBeUndefined();
+  });
+
   test("a failure the system rolled takes nothing", () => {
     const { run } = playThrough(setUp([demoralize], ["check"]), "witch", () => ({ degree: 1, natural: 2, total: 12 }));
     expect(run.byId.get("hero").conds.frightened ?? 0).toBe(0);

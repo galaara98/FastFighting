@@ -1797,7 +1797,7 @@ function executeControl(run, u, action, target, attacksMade, common) {
       const opts = { advantage: r.advantage, dice: r.dice, kind: r.rollKind, faces: r.faces ?? 20, critOn: r.critOn ?? null, fumbleOn: r.fumbleOn ?? null, roller: r.roller ?? null };
       // (A live battle's, the system's own roll where it makes them: the target's save, the user's check or its taunt.)
       const rolled = r.kind === "save" ? systemRolled(run, target, "save", { dc: r.dc, from: u, save: action.save.type, action })
-        : r.kind === "check" ? systemRolled(run, u, "check", { dc: r.dc, target, purpose: "control", skill: action.check.skill ?? null, against: action.check.against ?? "will", action })
+        : r.kind === "check" ? systemRolled(run, u, "check", { dc: r.dc, target, purpose: "control", skill: action.check.skill ?? null, against: action.check.against ?? "will", attackNumber: action.check.attack ? attacksMade : null, action })
           : r.kind === "goad" && r.pitch ? systemRolled(run, u, "check", { dc: r.dc, target, purpose: "talk", skill: r.pitch.skill ?? null, action }) : null;
       let x = rollCheck(rules, run.rng, r.mod, r.dc, { ...opts, rolled });
       if ( r.kind === "save" ) spendEdges(target, "save");
