@@ -2459,7 +2459,21 @@ const GRUDGE = Object.freeze({ wary: 50, brave: 0.3, provoked: 60 });
 /** The friend its tactics say to guard: as loyal as it is. */
 const WARD = Object.freeze({ base: 50, loyal: 0.3 });
 
+/**
+ * What u wants this turn, worked out afresh. Nothing on the map changes while it thinks: its reckonings share one look
+ * at who it can get at how soon (battle-state.js movesNeeded, run.movesCache).
+ */
 function deliberate(run, u) {
+  const was = run.movesCache;
+  run.movesCache = new Map();
+  try {
+    thinkOver(run, u);
+  } finally {
+    run.movesCache = was;
+  }
+}
+
+function thinkOver(run, u) {
   newTurn(u);
   // Taunted: it wants the taunter (as long as the taunt lasts and the taunter stands).
   goaded(run, u);
@@ -2812,7 +2826,8 @@ function harmHolder(run, u, hold, got) {
  * rid of it what it most wants: it tries, for what it costs, the worst of it first.
  */
 function getRid(run, u, turn) {
-  if ( mind(run, u).lead?.kind !== "rid" ) return;
+  // (Not bothered by anything at all: nothing to ask its mind.)
+  if ( levelOf(u, "rid", u.id) <= 0 || mind(run, u).lead?.kind !== "rid" ) return;
   const r = remediesOf(run, u).find(x => x.key === u.ridOf) ?? remediesOf(run, u)[0];
   if ( !r || !turn.canAfford(r.cost) ) return;
   turn.spend(r.cost);
@@ -2844,6 +2859,7 @@ export function takeTurn(run, u) {
 /** The rest of a creature's turn (takeTurn): all of it, but for one tied up who acts from its bonds. */
 function playFromHere(run, u) {
   const { rules, options } = run.prep;
+  run.movesCache = null; // (none left over: a turn broken off, a turn played again)
   if ( [STATUS.DEAD, STATUS.FLED, STATUS.SURRENDERED, STATUS.STOOD_DOWN, STATUS.BEATEN].includes(u.status) ) return;
   if ( u.spec.hazard ) return hazardTurn(run, u);
   // On the map but not in the conflict: it only looks around, until the round after it notices.
@@ -3046,10 +3062,17 @@ function playFromHere(run, u) {
   const waits = group => !opened && group !== leadGroup && !(leadActed && nextGroups.has(group));
   const openUp = () => !opened && (opened = true);
   const acted = group => { if ( group === leadGroup ) leadActed = true; };
+  // (Each step, until it does something, it decides with one look at the map: battle-state.js movesNeeded. The look
+  // goes the moment anything happens.)
+  const happens = () => { run.movesCache = null; };
   for ( let step = 0; turn.any && step < MAX_STEPS_PER_TURN && !battleOver(run); step++ ) {
+    run.movesCache = new Map();
     const heal = waits("heal") ? null : decideHeal(run, u, turn);
     if ( !heal && leadGroup === "heal" && openUp() ) continue;
-    if ( heal ) acted("heal");
+    if ( heal ) {
+      acted("heal");
+      happens();
+    }
     if ( heal?.moves > 0 ) {
       // Go to them first (a touch spell, or out of range).
       if ( !leaveReach(run, u, turn, heal.target, costOf(rules, heal.action)) ) break;
@@ -3069,6 +3092,7 @@ function playFromHere(run, u) {
     // Call creatures to fight beside it, when they'd do more over the fight than its own blows.
     const summon = waits("fight") ? null : decideSummon(run, u, turn);
     if ( summon ) {
+      happens();
       turn.spend(costOf(rules, summon, u));
       executeSummon(run, u, summon);
       spendUse(u, summon);
@@ -3079,6 +3103,7 @@ function playFromHere(run, u) {
     const buff = waits("aid") ? null : decideBuff(run, u, turn);
     if ( !buff && leadGroup === "aid" && openUp() ) continue;
     if ( buff ) {
+      happens();
       acted("aid");
       turn.spend(costOf(rules, buff.action, u));
       executeBuff(run, u, buff.action, buff.targets, buff.worth, turn);
@@ -3088,7 +3113,10 @@ function playFromHere(run, u) {
     // Tie up (or rob) a fallen foe, when that's what it most wants and it can get to it this turn.
     const fallen = waits("fallen") ? null : decideFallen(run, u, turn);
     if ( !fallen && leadGroup === "fallen" && openUp() ) continue;
-    if ( fallen ) acted("fallen");
+    if ( fallen ) {
+      acted("fallen");
+      happens();
+    }
     if ( fallen?.moves > 0 ) {
       if ( !leaveReach(run, u, turn, fallen.target, fallen.cost) ) break;
       const budget = turn.payForMove(approach(run, u, fallen.target).speed);
@@ -3126,6 +3154,7 @@ function playFromHere(run, u) {
       const chance = mark ? stealChance(run, u, mark) : 0;
       const plan = chance > 0 ? theftPlan(run, u, mark) : null;
       if ( plan && turn.canAfford(plan.cost) && run.rng.chance(chance) ) {
+        happens();
         turn.spend(plan.cost);
         const result = attemptTheft(run, u, mark, logger(run), { plan, attacksMade });
         attacksMade += result.attacks ?? 0;
@@ -3139,6 +3168,7 @@ function playFromHere(run, u) {
       break;
     }
     acted("fight");
+    happens();
     // A Lore-Collector sizes up a new foe before it attacks it: where a turn has several actions, when that leaves one
     // to fight with; where it has one, the whole turn (its payoff next turn makes up for it).
     if ( sizesUp(run, u, target, turn, several ? turn.howMany(basic) >= 2 : true, { wholeTurn: !several }) ) continue;
@@ -3219,6 +3249,7 @@ function playFromHere(run, u) {
     u.actsThisTurn += 1;
     if ( battleOver(run) ) break;
   }
+  happens();
 
   u.turnsTaken += 1;
   run.acting = null;

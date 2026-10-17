@@ -178,7 +178,7 @@ function pickTarget(run, u) {
     if ( most > 0 ) return rng.pick(focus.filter(x => x.n === most)).t;
   }
   // The tactics score every foe in reach; their pick and the runners-up become what the character wants.
-  const scored = scoreTargets(run, u, behavior);
+  const scored = scoreTargets(run, u, behavior, foes);
   for ( const { id, level } of levelsFromScores(scored.map(x => ({ id: x.t.id, score: x.score }))) ) think(u, "hurt", id, level);
   // A stronger desire (stated in Tactics, or stirred by the fight) decides instead, if its target can be reached; one of
   // its own reckoning gives way to an opening only another foe allows.
@@ -245,13 +245,14 @@ function redirectForAttention(run, target, standing) {
 
 /**
  * Every foe u could go for, scored by how its tactics think (best first): what it would pick, and how the
- * runners-up compare. The score's scale differs by band; only the order and the ratios matter.
+ * runners-up compare. The score's scale differs by band; only the order and the ratios matter. `known`: its foes
+ * (foesOf), where the caller has just worked them out.
  * @returns {{t, moves, score}[]}
  */
-export function scoreTargets(run, u, behavior = behaviorOf(u)) {
+export function scoreTargets(run, u, behavior = behaviorOf(u), known = null) {
   const tier = liveTier(run, u);
   const selfish = liveTrait(run, u, "selfish");
-  const foes = foesOf(run, u);
+  const foes = known ?? foesOf(run, u);
   let candidates = foes.filter(isStanding);
 
   // Ruthless tacticians consider finishing downed (dying) foes when nothing else is close; Moralists never do.

@@ -87,10 +87,17 @@ function parseKey(k) {
 /** Every key u has a desire under, once each. */
 function desireKeys(d) {
   const keys = new Set(d.logic.keys());
-  for ( const m of [d.stated, d.lean, d.taunt, d.memory, d.social, d.style] ) for ( const k of m.keys() ) keys.add(k);
-  for ( const k of d.gm?.keys() ?? [] ) keys.add(k);
-  for ( const k of d.puppet?.keys() ?? [] ) keys.add(k);
-  for ( const k of d.cond?.keys() ?? [] ) keys.add(k);
+  // (In this order, the layers that have any: the order desires of the same strength rank in.)
+  const add = m => { if ( m?.size ) for ( const k of m.keys() ) keys.add(k); };
+  add(d.stated);
+  add(d.lean);
+  add(d.taunt);
+  add(d.memory);
+  add(d.social);
+  add(d.style);
+  add(d.gm);
+  add(d.puppet);
+  add(d.cond);
   return keys;
 }
 
@@ -169,13 +176,31 @@ export function relieve(u, kind, targetId, share = 0.75) {
 export function levelOf(u, kind, targetId, { conditions = true } = {}) {
   const d = u.desire;
   if ( !d ) return 0;
-  const k = keyOf(kind, targetId);
+  return levelOfKey(d, keyOf(kind, targetId), conditions);
+}
+
+/** levelOf, by the desire's key (kind|targetId) in its desires `d`. */
+function levelOfKey(d, k, conditions = true) {
   if ( d.gm?.size ) {
     const held = d.gm.get(k);
     if ( held !== undefined ) return held;
   }
   if ( d.puppet?.size ) return d.puppet.get(k) ?? 0;
   return clamp(Math.max(d.logic.get(k) ?? 0, d.stated.get(k) ?? 0, d.taunt.get(k) ?? 0, conditions ? d.cond?.get(k) ?? 0 : 0) + (d.lean.get(k) ?? 0) + (d.style.get(k) ?? 0) + (d.memory.get(k) ?? 0) + (d.social.get(k) ?? 0) - (d.frustration.get(k) ?? 0));
+}
+
+/**
+ * Does u want anything of these kinds at all (whether or not it can act on it now)? Without, none of them can lead
+ * its mind: a quick look before asking mind() what does.
+ */
+export function wantsKind(u, kinds) {
+  const d = u.desire;
+  if ( !d ) return false;
+  for ( const k of desireKeys(d) ) {
+    const [kind] = parseKey(k);
+    if ( kinds.includes(kind) && levelOfKey(d, k) > 0 ) return true;
+  }
+  return false;
 }
 
 /**
@@ -310,16 +335,19 @@ export function rankedDesires(run, u) {
   const d = u.desire;
   if ( !d ) return [];
   const out = [];
+  const sunk = d.sunk?.size ? d.sunk : null;
   for ( const k of desireKeys(d) ) {
     const [kind, targetId] = parseKey(k);
     if ( !relevant(run, u, kind, run.byId.get(targetId)) ) continue;
-    const level = levelOf(u, kind, targetId);
+    const level = levelOfKey(d, k);
     if ( level <= 0 ) continue;
     // What's driving it: the tactics' own reasoning, or something stated, taunted or stirred on top of it.
     const logic = d.logic.get(k) ?? 0;
     const stated = d.stated.get(k) ?? 0;
     const driven = d.gm?.has(k) ? "stated" : (d.taunt.get(k) ?? 0) > Math.max(logic, stated) ? "taunted" : stated > logic ? "stated" : (d.memory.get(k) ?? 0) >= 10 ? "memory" : (d.social.get(k) ?? 0) >= 10 ? "social" : "logic";
-    out.push({ kind, targetId, level, driven, ...(d.sunk?.has(k) ? { sunk: true } : {}) });
+    const x = { kind, targetId, level, driven };
+    if ( sunk?.has(k) ) x.sunk = true;
+    out.push(x);
   }
   // (What it can't work on now sinks below everything else, however strong: behavior/hopeless.js.)
   return out.sort((a, b) => (Number(!!a.sunk) - Number(!!b.sunk)) || (b.level - a.level));

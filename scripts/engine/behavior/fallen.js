@@ -24,7 +24,7 @@
  */
 import { STATUS, THEFT_LUCK } from "../../constants.js";
 import { isStanding, enemiesOf, movesNeeded, canMove } from "../battle-state.js";
-import { mind, think, styleOf } from "./desire.js";
+import { mind, think, styleOf, wantsKind } from "./desire.js";
 import { remaining } from "./talk.js";
 import { robbable } from "./theft.js";
 import { perceives } from "./senses.js";
@@ -78,11 +78,16 @@ export function fallenWishes(run, u) {
   }
 }
 
+/** What it may want of a fallen foe (or a friend held). */
+const FALLEN_KINDS = Object.freeze(["bind", "rob", "free"]);
+
 /**
  * Whether u ties up or robs a fallen foe (or frees a friend) now, the next step of its turn: when that's what it most
  * wants, at one it can get to this turn. {kind, target, moves, cost, hold}, or null.
  */
 export function decideFallen(run, u, turn) {
+  // (Wanting none of these, none of them leads: no need to ask its mind, every step of every turn.)
+  if ( !wantsKind(u, FALLEN_KINDS) ) return null;
   const lead = mind(run, u).lead;
   if ( lead?.kind !== "bind" && lead?.kind !== "rob" && lead?.kind !== "free" ) return null;
   const t = run.byId.get(lead.targetId);

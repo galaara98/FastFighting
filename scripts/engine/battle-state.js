@@ -104,7 +104,7 @@ import { goadAction } from "./behavior/goad.js";
 import { Turn } from "./turn.js";
 import { combineMods, netAdvantage } from "./mods.js";
 import { conditionSetup, barred, profiled } from "./conditions.js";
-import { inTheWay, crossed, pastCost, passOf, spotWithin, wallsKnown, lineOfSight, spotToShoot, coverFrom } from "./behavior/space.js";
+import { inTheWay, crossed, crossedExtra, passOf, spotWithin, wallsKnown, lineOfSight, spotToShoot, coverFrom } from "./behavior/space.js";
 import { degreeDistribution } from "./probability.js";
 import { combinePlaystyles } from "./playstyles.js";
 import { answersTo } from "../story/master.js";
@@ -1009,8 +1009,23 @@ export function separation(run, a, t) {
  * Move actions a needs before it can make `action` against t (Infinity when impossible). On a map with its walls, a
  * ranged one needs a spot it can see t from (behavior/space.js: the nearest within two moves; none, it can't); a melee
  * one, a free spot within reach (one with every spot round it taken, it can't), and the way round those in the way.
+ * While a creature makes up its mind (run.movesCache, a Map: simulator.js deliberate, and each step of its turn until
+ * it does something), nothing on the map changes, so each is worked out once: its tactics ask the same of every foe
+ * several times over. Anywhere else (null), always afresh.
  */
 export function movesNeeded(run, a, t, action) {
+  const cache = run.movesCache;
+  if ( !cache ) return movesNow(run, a, t, action);
+  let byAction = cache.get(a);
+  if ( !byAction ) cache.set(a, byAction = new Map());
+  let byTarget = byAction.get(action);
+  if ( !byTarget ) byAction.set(action, byTarget = new Map());
+  let moves = byTarget.get(t);
+  if ( moves === undefined ) byTarget.set(t, moves = movesNow(run, a, t, action));
+  return moves;
+}
+
+function movesNow(run, a, t, action) {
   // (Inside another creature: it reaches the one holding it from in there, and nothing outside, nor anything outside
   // it: behavior/troubles.js cutOff.)
   if ( cutOff(run, a, t) ) return Infinity;
@@ -1038,7 +1053,7 @@ export function movesNeeded(run, a, t, action) {
   if ( a.pos && t.pos ) {
     const end = meleeEnd(run, a, t, reach);
     if ( !end ) return Infinity;
-    gap = end.feet + pastCost(run, a, crossed(run, a, a.pos, end, t), areEnemies).extra;
+    gap = end.feet + crossedExtra(run, a, a.pos, end, t, areEnemies);
   }
   // (An action that moves first: PF2e Sudden Charge strides twice, then strikes.)
   return Math.max(0, Math.ceil((gap * ap.mult) / ap.speed) - (action.charge ?? 0));

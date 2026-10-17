@@ -10,6 +10,7 @@ import { beginRun, beginRound, takeTurn, prepareBattle } from "../scripts/engine
 import { movesNeeded, moveToward, edgeDistance, currentAc, saveRoll, COVER_POINTS } from "../scripts/engine/battle-state.js";
 import { inTheWay, spotWithin, lineOfSight, sightBlocked, coverFrom, crossed, pastCost } from "../scripts/engine/behavior/space.js";
 import { areEnemies } from "../scripts/engine/battle-state.js";
+import { snapshotRun } from "../scripts/engine/live.js";
 import { pf2eRules } from "./fixtures/three-action-rules.js";
 import { creature, strike, battle } from "./helpers.js";
 
@@ -136,6 +137,37 @@ describe("sight past walls", () => {
     expect(lineOfSight(run, a, b)).toBe(true);
   });
 
+  test("a map with many walls: every line of sight comes out as looking at each wall would have it", () => {
+    // (Hundreds of short walls, some limited, some one-way, some doors (one open), and lines every which way: the walls'
+    // index against the same walls looked at one by one.)
+    let seed = 7;
+    const rnd = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648;
+    const walls = Array.from({ length: 300 }, (_, i) => {
+      const x = -200 + 400 * rnd();
+      const y = -200 + 400 * rnd();
+      return wall(x, y, x + 40 * (rnd() - 0.5), y + 40 * (rnd() - 0.5), { s: rnd() < 0.25 ? 10 : 20, d: rnd() < 0.1 ? 1 + Math.floor(2 * rnd()) : 0, door: i % 50 === 0 ? `d${i}` : null });
+    });
+    walls.push(wall(0, -300, 0, 300), wall(-100, 30, 100, 30, { s: 10 }));
+    const indexed = fight([who("a", "friendly", 0), who("b", "hostile", 40)], { walls });
+    const plain = fight([who("a", "friendly", 0), who("b", "hostile", 40)], { walls });
+    sightBlocked(plain, { x: 0, y: 0 }, { x: 1, y: 1 });
+    expect(plain.prep.sightIndex).toBeTruthy();
+    plain.prep.sightIndex = null; // (the same walls, each looked at)
+    for ( const run of [indexed, plain] ) run.doors.set("d50", { open: true });
+    let blocked = 0;
+    for ( let i = 0; i < 3000; i++ ) {
+      const p = { x: -220 + 440 * rnd(), y: -220 + 440 * rnd() };
+      const far = rnd() < 0.2 ? 400 : 60;
+      const q = { x: p.x + far * (rnd() - 0.5), y: p.y + far * (rnd() - 0.5) };
+      const got = sightBlocked(indexed, p, q);
+      expect(got).toBe(sightBlocked(plain, p, q));
+      if ( got ) blocked += 1;
+    }
+    // (Lines both ways: plenty blocked, plenty clear.)
+    expect(blocked).toBeGreaterThan(300);
+    expect(blocked).toBeLessThan(2700);
+  });
+
   test("cover the system has no rule for: three quarters of it hidden or more, a little more AC and saves against that one; none for less", () => {
     // (A wall hiding the orc's upper corners and middle: three of its five points.)
     const walls = [wall(20, -20, 20, 0.5)];
@@ -162,5 +194,22 @@ describe("sight past walls", () => {
     const [a, o] = get(run, "archer", "orc");
     expect(lineOfSight(run, a, o)).toBe(true);
     expect(coverFrom(run, a, o)).toBe("some");
+  });
+});
+
+describe("one look at the map while it decides", () => {
+  test("the moves it needs, kept while it makes up its mind (the same answers), and none kept once its turn is done", () => {
+    const run = fight([who("hero", "friendly", 0), who("goblin", "friendly", 15), who("orc", "hostile", 40), who("archer", "hostile", 60, 20, { actions: [bow] })]);
+    const [h, o, a] = get(run, "hero", "orc", "archer");
+    const sword = h.prep.offense[0];
+    const fresh = [movesNeeded(run, h, o, sword), movesNeeded(run, h, a, sword), movesNeeded(run, a, h, bow)];
+    run.movesCache = new Map();
+    expect([movesNeeded(run, h, o, sword), movesNeeded(run, h, a, sword), movesNeeded(run, a, h, bow)]).toEqual(fresh);
+    expect(run.movesCache.get(h).get(sword).get(o)).toBe(fresh[0]);
+    takeTurn(run, h);
+    expect(run.movesCache).toBeNull();
+    // (Kept with a live battle, it isn't: snapshotRun leaves out anything named for a cache.)
+    run.movesCache = new Map([[h, new Map()]]);
+    expect(Object.keys(snapshotRun(run).run)).not.toContain("movesCache");
   });
 });
