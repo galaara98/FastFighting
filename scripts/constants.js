@@ -117,6 +117,8 @@ export const TRAITOR_LUCK = 9;
 export const STAND_GROUND = 90;
 /** How often a creature that has set out to leave the fight keeps going when struck or spoken to (behavior/leaving.js), %. */
 export const LEAVE_RESOLVE = 79;
+/** How often a creature's mind jumps from what it's doing to the strongest thing it wants (behavior/desire.js orderAgenda), %. */
+export const ADHD = 20;
 
 /**
  * Someone who avoids killing ("I avoid killing") holds back this often (percent: the "avoidKilling" world setting, 50

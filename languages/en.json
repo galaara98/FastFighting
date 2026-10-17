@@ -166,6 +166,10 @@
         "Name": "Doesn't like to flee: how often it stays (%)",
         "Hint": "A character whose answer to when to retreat is Fight to the end ignores the urge to run away this often (half as often for When the battle turns against us), when running is its own choice (shaken nerve, a terror close by, a planned retreat); talked out of the fight, it gives up where it stands instead of running just as often. Fear a spell or the rules put on it still works as the system says."
       },
+      "adhd": {
+        "Name": "ADHD: how often a creature's mind jumps (%)",
+        "Hint": "A creature keeps at what it's doing. This often (0 to 100, default 20), the strongest thing it wants takes over instead: twice as often when it could do it this very turn, three times for the least thoughtful. Tactical creatures and better order what they want by what matters most instead."
+      },
       "leaveResolve": {
         "Name": "Committed to leaving: how often it keeps going (%)",
         "Hint": "A creature that has set out to leave the fight (its nerve gone, talked into it, a retreat called) keeps going this often when it's struck or spoken to on its way (0 to 100, default 79): all of it for one whose answers and playstyles lean to going, down to 70% of it for one who'd rather stay and fight. Stopped, it deals with what stopped it first and goes back to leaving; stopped often enough, it forgets leaving."

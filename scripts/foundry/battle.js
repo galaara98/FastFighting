@@ -686,6 +686,7 @@ export function buildBattleSpec(roster, setup, { approach = null, exclude = new 
       standGround: setting("standGround"),
       avoidKilling: setting("avoidKilling"),
       leaveResolve: setting("leaveResolve"),
+      adhd: setting("adhd"),
       initiativeOrder,
       stealthSides,
       surpriseSide

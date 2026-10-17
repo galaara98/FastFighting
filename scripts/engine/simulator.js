@@ -18,7 +18,7 @@ import {
 import { sampleRunTactics } from "./playstyles.js";
 import { chooseTarget, bestOptionVs, scoreTargets } from "./behavior/targeting.js";
 import { decideHeal, rescueOption, healScores } from "./behavior/healing.js";
-import { initDesires, newTurn, goaded, think, want, thwart, relieve, levelOf, mind, rankedDesires, thoughts as thoughtsOf, levelsFromScores, listen, heed, remember, styleWants, styleOf, follow, conditionWishes, holdWishes, puppetWishes, actsHeld, scheme, partyWants, CHOICE_LEVEL } from "./behavior/desire.js";
+import { initDesires, newTurn, goaded, think, want, thwart, relieve, levelOf, mind, rankedDesires, orderAgenda, thoughts as thoughtsOf, levelsFromScores, listen, heed, remember, styleWants, styleOf, follow, conditionWishes, holdWishes, puppetWishes, actsHeld, scheme, partyWants, CHOICE_LEVEL } from "./behavior/desire.js";
 import { prepareDoors, doorStates, doorAhead, atDoor, doorPlan, patienceFor, doorDamage } from "./behavior/doors.js";
 import { heldGoal } from "./behavior/goals.js";
 import { checkMorale, standsGround, callRetreat, rallies, MORALE } from "./behavior/morale.js";
@@ -2107,6 +2107,16 @@ function leavingTurn(run, u, turn, { whole = true } = {}) {
 }
 
 /** u is off the map, leaving the fight (or, with no way off, gone unseen: blinked): fled. */
+/** How urgent healing `ally` is, 0 to 90: down, 90; under half its hit points, the more the lower; else nothing. */
+function healUrgency(ally) {
+  if ( ally.status === STATUS.DOWN ) return 90;
+  const frac = ally.maxHp > 0 ? ally.hp / ally.maxHp : 1;
+  return frac < 0.5 ? Math.round(30 + 110 * (0.5 - frac)) : 0;
+}
+
+/** Which part of a turn works on each kind of desire (the top of its agenda first: playFromHere). */
+const AGENDA_GROUPS = Object.freeze({ heal: "heal", aid: "aid", bolstered: "aid", bind: "fallen", rob: "fallen", free: "fallen", hurt: "fight", protect: "fight" });
+
 /** Whole turns in a row given to going that see a creature leaving the fight gone, at the edge or not. */
 const LEAVING_TURNS = 2;
 
@@ -2462,7 +2472,8 @@ function deliberate(run, u) {
   const scored = scoreTargets(run, u);
   for ( const { id, level } of levelsFromScores(scored.map(x => ({ id: x.t.id, score: x.score }))) ) think(u, "hurt", id, level);
   // (When its healing logic says heal, that's at least as pressing as the foe it would pick.)
-  if ( u.prep.healActions?.length ) for ( const { ally, score } of healScores(run, u) ) think(u, "heal", ally.id, Math.max(45, 20 + 20 * score));
+  // (As urgent as the need: a friend down, as pressing as anything; one nearly so, nearly as much.)
+  if ( u.prep.healActions?.length ) for ( const { ally, score } of healScores(run, u) ) think(u, "heal", ally.id, Math.max(45, 20 + 20 * score, healUrgency(ally)));
   // (A buff that would do more than attacking: as pressing as the foe it would pick. Less: a passing thought.)
   if ( u.prep.buffActions?.length ) for ( const { ally, score } of aidScores(run, u).slice(0, 3) ) if ( score >= 0.4 ) think(u, "aid", ally.id, Math.min(75, 15 + 30 * score));
   let talkTarget = null;
@@ -2504,6 +2515,8 @@ function deliberate(run, u) {
   puppetWishes(run, u);
   // What it can't work on now sinks to the bottom; still out of reach since its last turn, given up (behavior/hopeless.js).
   sinkHopeless(run, u, rankedDesires(run, u));
+  // What it means to do, in order: its top what it works on now.
+  orderAgenda(run, u);
   if ( run.log ) {
     const top = thoughtsOf(run, u);
     if ( top.length || u.following ) {
@@ -3022,8 +3035,21 @@ function playFromHere(run, u) {
     if ( battleOver(run) ) break;
   }
 
+  // The top of what it means to do first (behavior/desire.js orderAgenda), for one that acts on impulse (instinctive or
+  // less); once it has acted on that, what comes next on it (its second and third) too; the rest waits until the top
+  // can't be done any more this turn (then everything's open). One that thinks (competent and better) has its top lead,
+  // and goes about it in the order its tactics make sense of (a bonus-action heal before the blow, say).
+  const leadGroup = AGENDA_GROUPS[mind(run, u).lead?.kind] ?? null;
+  const nextGroups = new Set((u.agenda ?? []).slice(1, 3).map(k => AGENDA_GROUPS[k.slice(0, k.indexOf("|"))]).filter(Boolean));
+  let opened = !leadGroup || liveTier(run, u) >= TACTICAL.COMPETENT;
+  let leadActed = false;
+  const waits = group => !opened && group !== leadGroup && !(leadActed && nextGroups.has(group));
+  const openUp = () => !opened && (opened = true);
+  const acted = group => { if ( group === leadGroup ) leadActed = true; };
   for ( let step = 0; turn.any && step < MAX_STEPS_PER_TURN && !battleOver(run); step++ ) {
-    const heal = decideHeal(run, u, turn);
+    const heal = waits("heal") ? null : decideHeal(run, u, turn);
+    if ( !heal && leadGroup === "heal" && openUp() ) continue;
+    if ( heal ) acted("heal");
     if ( heal?.moves > 0 ) {
       // Go to them first (a touch spell, or out of range).
       if ( !leaveReach(run, u, turn, heal.target, costOf(rules, heal.action)) ) break;
@@ -3041,7 +3067,7 @@ function playFromHere(run, u) {
       continue;
     }
     // Call creatures to fight beside it, when they'd do more over the fight than its own blows.
-    const summon = decideSummon(run, u, turn);
+    const summon = waits("fight") ? null : decideSummon(run, u, turn);
     if ( summon ) {
       turn.spend(costOf(rules, summon, u));
       executeSummon(run, u, summon);
@@ -3050,15 +3076,19 @@ function playFromHere(run, u) {
       continue;
     }
     // Bolster a friend (or itself) when that does more than attacking would.
-    const buff = decideBuff(run, u, turn);
+    const buff = waits("aid") ? null : decideBuff(run, u, turn);
+    if ( !buff && leadGroup === "aid" && openUp() ) continue;
     if ( buff ) {
+      acted("aid");
       turn.spend(costOf(rules, buff.action, u));
       executeBuff(run, u, buff.action, buff.targets, buff.worth, turn);
       u.actsThisTurn += 1;
       continue;
     }
     // Tie up (or rob) a fallen foe, when that's what it most wants and it can get to it this turn.
-    const fallen = decideFallen(run, u, turn);
+    const fallen = waits("fallen") ? null : decideFallen(run, u, turn);
+    if ( !fallen && leadGroup === "fallen" && openUp() ) continue;
+    if ( fallen ) acted("fallen");
     if ( fallen?.moves > 0 ) {
       if ( !leaveReach(run, u, turn, fallen.target, fallen.cost) ) break;
       const budget = turn.payForMove(approach(run, u, fallen.target).speed);
@@ -3085,7 +3115,10 @@ function playFromHere(run, u) {
         .sort((a, b) => a.moves - b.moves)[0];
       target = prey?.t ?? null;
     }
-    if ( !target ) break;
+    if ( !target ) {
+      if ( openUp() ) continue;
+      break;
+    }
     // A thief may rob someone within reach instead of hitting them (once a turn).
     if ( !u.stoleThisTurn ) {
       u.stoleThisTurn = true;
@@ -3101,7 +3134,11 @@ function playFromHere(run, u) {
     }
     u.targetId = target.id;
     const option = bestOptionVs(run, u, target, attacksMade, turn);
-    if ( !option ) break;
+    if ( !option ) {
+      if ( openUp() ) continue;
+      break;
+    }
+    acted("fight");
     // A Lore-Collector sizes up a new foe before it attacks it: where a turn has several actions, when that leaves one
     // to fight with; where it has one, the whole turn (its payoff next turn makes up for it).
     if ( sizesUp(run, u, target, turn, several ? turn.howMany(basic) >= 2 : true, { wholeTurn: !several }) ) continue;
@@ -3148,6 +3185,7 @@ function playFromHere(run, u) {
     }
     if ( !turn.canAfford(option.cost) ) {
       if ( canShield && tier >= TACTICAL.INSTINCTIVE ) { raiseShield(); continue; }
+      if ( openUp() ) continue;
       break;
     }
     // The last action: the shield up, when what it guards against is worth more than what the action would do.

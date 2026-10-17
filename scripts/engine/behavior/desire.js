@@ -42,8 +42,8 @@
  * The strongest desire leads. Much weaker ones (BLIND_GAP or more below it) don't cross the character's mind, and
  * an obsessed character (OBSESSED+) stops worrying about its own safety.
  */
-import { STATUS } from "../../constants.js";
-import { areEnemies, isStanding, liveTrait, enemiesOf, alliesOf, sizedUp, command, commandOf, refusesToHelp, movesNeeded, edgeDistance } from "../battle-state.js";
+import { STATUS, TACTICAL, ADHD } from "../../constants.js";
+import { areEnemies, isStanding, liveTrait, liveTier, enemiesOf, alliesOf, sizedUp, command, commandOf, refusesToHelp, movesNeeded, edgeDistance } from "../battle-state.js";
 import { perceives, apparentHealth } from "./senses.js";
 import { seemsFoe } from "./neutral.js";
 import { robbable } from "./theft.js";
@@ -221,6 +221,7 @@ export function forgetSides(run, u) {
 export function holdDesire(u, kind, targetId, level) {
   if ( !u.desire || !targetId ) return;
   (u.desire.gm ??= new Map()).set(keyOf(kind, targetId), clamp(Math.round(Number(level) || 0)));
+  if ( Number(level) > 0 ) placeDesire(u, kind, targetId, "top");
 }
 
 /** The GM's hold on it, handed back: the engine works it out again. */
@@ -244,6 +245,7 @@ export function goaded(run, u) {
     if ( !by || !isStanding(by) || !areEnemies(run, u, by) ) continue;
     const k = keyOf("hurt", by.id);
     u.desire.taunt.set(k, Math.max(u.desire.taunt.get(k) ?? 0, clamp(e.taunt)));
+    placeDesire(u, "hurt", by.id, "top"); // (a taunt takes its attention, for as long as it lasts)
   }
 }
 
@@ -329,19 +331,171 @@ export function rankedDesires(run, u) {
  */
 export function mind(run, u) {
   const ranked = rankedDesires(run, u);
-  // (Never one it can't work on now: behavior/hopeless.js.)
-  const lead = ranked.find(d => !d.sunk) ?? null;
+  // (The top of its agenda, what it's working on: orderAgenda. Never one it can't work on now: behavior/hopeless.js.)
+  const lead = agendaLead(u, ranked) ?? ranked.find(d => !d.sunk) ?? null;
   const floor = (lead?.level ?? 0) - BLIND_GAP;
+  // (What comes next on its agenda, its second and third, is in view however strong.)
+  const next = new Set((u.agenda ?? []).slice(0, 3));
+  const near = (k, level) => next.has(k) || level >= floor;
   return {
     lead,
     ranked,
     // Only a desire stated, taunted, or stirred by the fight, blinds; the tactics' own reasoning (and the others' pull)
     // weighs everything.
     blinding: !!lead && (lead.driven === "stated" || lead.driven === "taunted" || lead.driven === "memory"),
-    inView: (kind, targetId) => !u.desire?.sunk?.has(keyOf(kind, targetId)) && levelOf(u, kind, targetId) >= floor,
-    kindInView: kind => ranked.some(d => d.kind === kind && !d.sunk && d.level >= floor),
+    inView: (kind, targetId) => !u.desire?.sunk?.has(keyOf(kind, targetId)) && near(keyOf(kind, targetId), levelOf(u, kind, targetId)),
+    kindInView: kind => ranked.some(d => d.kind === kind && !d.sunk && near(keyOf(d.kind, d.targetId), d.level)),
     obsessed: !!lead && lead.level >= OBSESSED
   };
+}
+
+/* -------------------------------------------- */
+/*  The agenda: what it means to do, in order   */
+/* -------------------------------------------- */
+
+/**
+ * Where a desire goes in u's agenda when it next thinks its turn over (orderAgenda): "top" (what it works on now:
+ * setting out to leave, whatever stops it on the way, a taunt, the GM's say, a fear past bearing) or "second" (going
+ * again, once that's dealt with). Unplaced, a new one goes to the bottom, unless it suits the creature (agendaFit).
+ */
+export function placeDesire(u, kind, targetId, where) {
+  if ( !u.desire || !targetId ) return;
+  (u.desire.place ??= new Map()).set(keyOf(kind, targetId), where);
+}
+
+/** The top of u's agenda, as it stands among its desires (ranked), or null. */
+function agendaLead(u, ranked) {
+  for ( const k of u.agenda ?? [] ) {
+    const d = ranked.find(x => keyOf(x.kind, x.targetId) === k);
+    if ( d && !d.sunk ) return d;
+  }
+  return null;
+}
+
+/**
+ * How well a desire suits what the creature likes to do: 2, so well it goes first (its pills pull it there strongly,
+ * or its answers say so: finishing the fallen, tying them up, robbing them, always talking); 1, next after what it's on
+ * (a lesser pull: talking first, healing aggressively); 0, not especially. A Cruel one whose foe goes down: finishing
+ * it, first.
+ */
+function agendaFit(run, u, x) {
+  const t = run.byId.get(x.targetId);
+  const tac = u.tac ?? {};
+  const style = u.desire.style.get(keyOf(x.kind, x.targetId)) ?? 0;
+  let fit = style >= 25 ? 2 : style >= 10 ? 1 : 0;
+  if ( x.kind === "hurt" && t?.status === STATUS.DOWN && (tac.fallen === "finish" || behaviorOfUnit(u).finishDowned) ) fit = 2;
+  // (A protective one, and a foe at a friend: first if it can get at them this turn, next if not.)
+  if ( x.kind === "hurt" && t && isStanding(t) && protective(u) ) {
+    const prey = t.targetId ? run.byId.get(t.targetId) : null;
+    if ( prey && prey !== u && !areEnemies(run, u, prey) && (t.adjacent?.has(prey.id) || prey.targetedBy === t.id) ) fit = Math.max(fit, doableNow(run, u, x) ? 2 : 1);
+  }
+  if ( x.kind === "protect" && protective(u) ) fit = Math.max(fit, 1);
+  // (A damage-dealer, and a foe it has only now caught sight of: next.)
+  // (Its first look at the fight: nobody is newly seen yet.)
+  if ( x.kind === "hurt" && t && isStanding(t) && dealsDamage(u) && u.seenFoes && !u.seenFoes.has(t.id) && perceives(run, u, t) ) fit = Math.max(fit, 1);
+  if ( (x.kind === "bind" && tac.fallen === "tie") || (x.kind === "rob" && tac.fallen === "rob") ) fit = 2;
+  if ( x.kind === "talk" ) fit = Math.max(fit, tac.talk === "always" ? 2 : tac.talk === "first" ? 1 : 0);
+  if ( x.kind === "heal" ) {
+    fit = Math.max(fit, tac.healAggro === "allCosts" ? 2 : tac.healAggro === "aggressive" ? 1 : 0);
+    // (A friend down: first, for one who answered that it rescues a dying friend; next, for anyone else.)
+    if ( t && t !== u && t.status === STATUS.DOWN ) fit = Math.max(fit, tac.allyDying === "rescue" ? 2 : 1);
+    // (Itself, past where it said it reaches for a potion: first.)
+    const at = Number(tac.potionThreshold);
+    if ( t === u && at > 0 && u.maxHp > 0 && u.hp / u.maxHp < at / 100 ) fit = 2;
+  }
+  return fit;
+}
+const behaviorOfUnit = u => u.turnBehavior ?? u.ownBehavior ?? u.spec.behavior ?? {};
+/** One who looks after its friends: its style or its target the protector's, or its pills (Tank, Martyr, Enabler, Moralist). */
+const PROTECTORS = new Set(["tank", "martyr", "enabler", "moralist"]);
+const protective = u => u.tac?.style === "protector" || u.tac?.target === "protect" || (u.spec.playstyles ?? []).some(p => PROTECTORS.has(p));
+/** One whose job is damage: up front, skirmishing or shooting, or its pills (Brawler, Speed-Runner, Impatient, Cruel). */
+const STRIKERS = new Set(["brawler", "speedRunner", "impatient", "cruel"]);
+const dealsDamage = u => ["frontline", "skirmisher", "ranged"].includes(u.tac?.style) || (u.spec.playstyles ?? []).some(p => STRIKERS.has(p));
+/** How many places a desire climbs toward second each turn, by how intense it is: obsessed, all the way. */
+const climb = level => (level >= 80 ? Infinity : level >= 60 ? 3 : level >= 40 ? 2 : level >= 20 ? 1 : 0);
+
+/** Could u do this now, this very turn (whoever it would hurt within a move of a blow; anything else it can work on)? */
+function doableNow(run, u, x) {
+  const t = run.byId.get(x.targetId);
+  if ( !t ) return false;
+  if ( x.kind === "hurt" ) return perceives(run, u, t) && (u.prep.offense ?? []).some(a => hasUses(u, a) && movesNeeded(run, u, t, a) <= 1);
+  return !u.desire.sunk?.has(keyOf(x.kind, x.targetId));
+}
+
+/**
+ * What u means to do, in order (u.agenda: its desires' keys; its top, what it works on: mind's lead), as it thinks its
+ * turn over:
+ *  - what it no longer wants comes off; what it can't work on now goes to the bottom (behavior/hopeless.js);
+ *  - a new desire goes where it was placed (placeDesire), else first or second if it suits the creature (agendaFit),
+ *    else at the bottom; one that has come to suit it since (a foe it's fighting fallen, for a Cruel one) moves up so;
+ *  - one that plans ahead (tactical or better) orders it all by what matters most, as a soldier would: the strongest
+ *    first;
+ *  - the rest keep at what they were doing, but the mind jumps: now and then (the ADHD setting, 20% by default) the
+ *    strongest of the others takes the top, twice as readily when it could be done this very turn, three times for the
+ *    least thoughtful.
+ */
+export function orderAgenda(run, u) {
+  const d = u.desire;
+  if ( !d ) return;
+  const ranked = rankedDesires(run, u);
+  const byKey = new Map(ranked.map(x => [keyOf(x.kind, x.targetId), x]));
+  let list = (u.agenda ?? []).filter(k => byKey.has(k));
+  const fits = (d.fits ??= new Map());
+  const places = new Map(d.place ?? []);
+  for ( const x of ranked ) {
+    const k = keyOf(x.kind, x.targetId);
+    const fit = agendaFit(run, u, x);
+    const was = fits.get(k) ?? 0;
+    fits.set(k, fit);
+    if ( places.has(k) || fit <= was ) {
+      if ( !list.includes(k) && !places.has(k) ) list.push(k);
+      continue;
+    }
+    places.set(k, fit === 2 ? "top" : "second");
+  }
+  for ( const k of [...fits.keys()] ) if ( !byKey.has(k) ) fits.delete(k);
+  // (Where they were placed: the first places, then the second.)
+  for ( const where of ["top", "second"] ) {
+    for ( const [k, w] of places ) {
+      if ( w !== where || !byKey.has(k) ) continue;
+      list = list.filter(x => x !== k);
+      list.splice(where === "top" ? 0 : Math.min(1, list.length), 0, k);
+    }
+  }
+  d.place?.clear();
+  // (What it can't work on now: at the bottom.)
+  list = [...list.filter(k => !byKey.get(k).sunk), ...list.filter(k => byKey.get(k).sunk)];
+  // (Everything climbs toward second place, the faster the more intense, an obsession all the way at once: past what it
+  // wants less, never past what it wants as much or more, nor past what was put where it is this turn.)
+  for ( let i = 2; i < list.length; i++ ) {
+    const x = byKey.get(list[i]);
+    if ( x.sunk ) continue;
+    let to = i;
+    for ( let steps = climb(x.level); steps > 0 && to > 1; steps-- ) {
+      const above = byKey.get(list[to - 1]);
+      if ( places.has(list[to - 1]) || above.level >= x.level ) break;
+      to--;
+    }
+    if ( to < i ) list.splice(to, 0, ...list.splice(i, 1));
+  }
+  u.seenFoes = new Set([...(u.seenFoes ?? []), ...enemiesOf(run, u).filter(o => isStanding(o) && perceives(run, u, o)).map(o => o.id)]);
+  const tier = liveTier(run, u);
+  if ( tier >= TACTICAL.TACTICAL ) {
+    list.sort((a, b) => (Number(!!byKey.get(a).sunk) - Number(!!byKey.get(b).sunk)) || (byKey.get(b).level - byKey.get(a).level));
+  } else if ( list.length > 1 ) {
+    const top = byKey.get(list[0]);
+    const rival = ranked.find(x => !x.sunk && keyOf(x.kind, x.targetId) !== list[0]);
+    if ( rival && !top.sunk && rival.level > top.level ) {
+      const share = Math.min(100, Math.max(0, Number(run.prep.options?.adhd ?? ADHD))) / 100;
+      const chance = share * (doableNow(run, u, rival) ? (tier <= TACTICAL.INSTINCTIVE ? 3 : 2) : 1);
+      if ( run.rng.chance(Math.min(1, chance)) ) {
+        const k = keyOf(rival.kind, rival.targetId);
+        list = [k, ...list.filter(x => x !== k)];
+      }
+    }
+  }
+  u.agenda = list;
 }
 
 /** Is u set on keeping away from t (a fear that's on its mind)? */
@@ -703,7 +857,10 @@ export function conditionWishes(run, u) {
   u.fearSeen = fear;
   const keys = fear >= fearToRun(run, u) ? [...sources].map(by => keyOf("avoid", by.id)) : [];
   for ( const k of u.fearRun ?? [] ) if ( !keys.includes(k) ) u.desire.memory.delete(k);
-  for ( const k of keys ) u.desire.memory.set(k, Math.max(u.desire.memory.get(k) ?? 0, RUN_FROM));
+  for ( const k of keys ) {
+    if ( !(u.fearRun ?? []).includes(k) ) u.desire.place = new Map([...(u.desire.place ?? []), [k, "top"]]);
+    u.desire.memory.set(k, Math.max(u.desire.memory.get(k) ?? 0, RUN_FROM));
+  }
   u.fearRun = keys.length ? keys : null;
   const holder = u.grabbedBy ? run.byId.get(u.grabbedBy) : null;
   if ( holder && isStanding(holder) && areEnemies(run, u, holder) ) think(u, "hurt", holder.id, HELD * styleOf(u).retaliate);
