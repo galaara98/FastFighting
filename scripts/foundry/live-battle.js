@@ -1157,6 +1157,29 @@ async function playerRolls(request) {
   return { use: true, roll };
 }
 
+/**
+ * What a creature's sheet says now, in a player's turn (the engine hears it only as the turn ends): {hp, status}, for the
+ * Battle Vantage to show; null when nothing has changed on it since the turn began.
+ */
+export function sheetNow(id) {
+  return battle?.pc ? battle.pc.sheets?.get(id) ?? null : null;
+}
+
+/** A sheet changed in a player's turn: what it says now, noted for the Battle Vantage. */
+async function noteSheet(actor) {
+  const pc = battle?.pc;
+  const u = pc ? battle.run.units.find(x => docOf(x.id)?.actor === actor) : null;
+  if ( !u ) return;
+  try {
+    const s = await getAdapter().readLiveState(docOf(u.id), { spec: battle.spec, unit: u });
+    if ( !s || battle?.pc !== pc ) return;
+    (pc.sheets ??= new Map()).set(u.id, { hp: Number.isFinite(s.hp) ? s.hp : u.hp, status: s.status ?? null });
+    changed();
+  } catch ( err ) {
+    // (A sheet that can't be read: the engine's view stands.)
+  }
+}
+
 /** A player's reaction rolled (done) or left (skip): the battle goes on with it. True if one was waiting. */
 export function endReaction(key, how = "done") {
   if ( !waiting || (key && waiting.key !== key) ) return false;
@@ -2291,6 +2314,7 @@ export function registerLiveBattles() {
   // (Players' damage waiting on a GM, applied some other way: its line goes.)
   Hooks.on("updateActor", actor => {
     const pc = battle?.pc;
+    if ( pc && playsHere() ) noteSheet(actor);
     if ( !pc?.damage?.length || applying || !playsHere() ) return;
     queue(() => dropApplied(pc, actor));
   });

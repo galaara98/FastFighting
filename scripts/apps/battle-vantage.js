@@ -26,7 +26,7 @@ import { mountNetwork } from "./battle-network.js";
 import { blink, keepTyping } from "./blink.js";
 import { sceneEncounter, encounterNumber } from "../foundry/persistence.js";
 import {
-  liveBattle, continueBattle, rewind, rewindEncounter, beginEncounter, endEncounter, playCurrent, answerDamage, setApplyDamage, systemAppliesText, waitingReaction, endReaction, liveFact, dropHeldFact, setNpcReactions, setPlayThrough, finishReview,
+  liveBattle, continueBattle, rewind, rewindEncounter, beginEncounter, endEncounter, playCurrent, answerDamage, setApplyDamage, systemAppliesText, waitingReaction, endReaction, sheetNow, liveFact, dropHeldFact, setNpcReactions, setPlayThrough, finishReview,
   waitingOnGm, suggestedSpotlight, spotlightNext, settleBattle, setAutomated, liveCondition, liveMind, bringIntoFight, tokenIdOf
 } from "../foundry/live-battle.js";
 
@@ -87,6 +87,13 @@ const afflictionIcon = a => {
   const kind = (a.traits ?? []).find(t => ICONS.affliction[t]);
   if ( kind ) return icon("affliction", kind);
   return a.simple && ICONS.condition[a.simple] ? icon("condition", a.simple) : icon("affliction", "other");
+};
+
+/** A creature's hit points and status as shown: its sheet's, where a player's turn has changed it (sheetNow); else the engine's. */
+const shownHp = u => sheetNow(u.id)?.hp ?? u.hp;
+const shownStatus = u => {
+  const s = sheetNow(u.id)?.status;
+  return s === "dead" || s === "down" ? s : s === "standing" && (u.status === "dead" || u.status === "down") ? "standing" : u.status;
 };
 
 /** What happens to a creature's status on the map of minds: standing as it is, down greyed, out of it faded. */
@@ -636,7 +643,8 @@ export function battleContext(b, focusId = null) {
     spotlight: next ? fmt("FASTFIGHTING.Battle.Spotlight", { name: next.spec.name }) : "",
     turn: current ? fmt(player ? "FASTFIGHTING.Battle.PlayerTurn" : "FASTFIGHTING.Battle.Turn", { name: current.spec.name }) : "",
     state, stateText: fmt(`FASTFIGHTING.Battle.State.${state}`, { name: current?.spec.name ?? "" }),
-    canContinue: state === "waiting", canPlay: state === "ready" && !player, canRewind: !!b.data.turns.at(-1)?.snapshot,
+    // (Next Turn whenever the encounter is going, as the tracker's own: a player's turn, it ends it.)
+    canContinue: started && state !== "ended", canPlay: state === "ready" && !player, canRewind: !!b.data.turns.at(-1)?.snapshot,
     canSettle: state === "ended" && !b.data.settled,
     // (Foundry's encounter: Begin Encounter until it has, glowing while it waits; then End Encounter.)
     canBegin: !started, canEnd: started,
@@ -820,8 +828,8 @@ function networkView(b, current, focusId) {
     const feet = doc ? feetOnScene(b.scene, doc) : c.pos;
     nodes.push({
       id: c.id, type: "creature", name: u.spec.name, img: doc?.texture?.src ?? u.spec.img ?? "icons/svg/mystery-man.svg",
-      cls: [u.side, statusClass(u.status), current?.id === c.id ? "is-current" : "", c.hazard ? "is-hazard" : ""].join(" "),
-      status: u.status === "standing" ? (c.hazard ? "" : `${u.hp}/${u.maxHp}`) : loc(`FASTFIGHTING.Status.${u.status}`),
+      cls: [u.side, statusClass(shownStatus(u)), current?.id === c.id ? "is-current" : "", c.hazard ? "is-hazard" : ""].join(" "),
+      status: shownStatus(u) === "standing" ? (c.hazard ? "" : `${shownHp(u)}/${u.maxHp}`) : loc(`FASTFIGHTING.Status.${shownStatus(u)}`),
       tip: [u.spec.name, sideLabel(u.side), c.player ? loc("FASTFIGHTING.Battle.PlayerRuns") : "", c.id === focusId ? loc("FASTFIGHTING.Battle.Net.NodeHint") : ""].filter(Boolean).join(" · "),
       x: feet?.x ?? 0, y: feet?.y ?? 0, marks: marks.get(c.id) ?? [],
       team: u.side, leaderId: (() => { const cmd = commandOf(run, u)?.unit; return cmd && cmd !== u ? cmd.id : null; })()
@@ -906,7 +914,7 @@ function panelOf(b, net, nodes, edges, focus, { name, docOf, sideLabel }) {
     : null;
   const controller = u.controlledBy ? run.byId.get(u.controlledBy) : null;
   return {
-    creature: true, id: focus, name: u.spec.name, img: node.img, side: sideLabel(u.side), status: loc(`FASTFIGHTING.Status.${u.status}`), hp: `${u.hp}/${u.maxHp}`,
+    creature: true, id: focus, name: u.spec.name, img: node.img, side: sideLabel(u.side), status: loc(`FASTFIGHTING.Status.${shownStatus(u)}`), hp: `${shownHp(u)}/${u.maxHp}`,
     player: players.has(focus), playable, automated: playable && !players.has(focus), decides, waiting: !u.active && u.status === "standing",
     wants: decides ? [] : [...edges.filter(mine), ...symbols.filter(m => ["is-desire", "is-goal", "is-relation"].some(c => m.cls.includes(c)))].map(e => row(e)),
     on: [...edges.filter(onIt), ...symbols.filter(m => m.cls.includes("is-condition") || m.cls.includes("is-status"))].map(e => row(e)),
