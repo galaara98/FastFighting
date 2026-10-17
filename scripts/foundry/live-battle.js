@@ -1166,7 +1166,7 @@ const spotKey = p => (p ? `${Math.round(p.x)},${Math.round(p.y)}` : "-");
 
 /**
  * The shape an area u aims at t makes on the map, as the system draws it (the helper's areaShape; else Foundry's own
- * template defaults): a cone or a line from u toward t, a burst on t, an emanation round u; from where the engine has
+ * template defaults): a cone, a line or a cube from u toward t, a burst on t, an emanation round u; from where the engine has
  * them (or `from` and `at`, where the turn's "area" event says they stood). Null off this scene.
  */
 function areaShapeFor(u, t, action, { from = u.pos, at = t.pos } = {}) {
@@ -1184,9 +1184,15 @@ function areaShapeFor(u, t, action, { from = u.pos, at = t.pos } = {}) {
     const rotation = Math.toDegrees(Math.atan2(ct.y - cu.y, ct.x - cu.x));
     const defaults = CONFIG.MeasuredTemplate?.defaults ?? {};
     let data;
-    if ( shape === "cone" ) data = { type: "cone", x: cu.x, y: cu.y, radius, angle: defaults.angle ?? 90, rotation };
-    else if ( shape === "line" ) data = { type: "line", x: cu.x, y: cu.y, length: radius, width: (defaults.width ?? 1) * canvas.grid.size, rotation };
-    else if ( shape === "emanation" ) data = { type: "circle", x: cu.x, y: cu.y, radius: radius + (Math.max(du.width ?? 1, du.height ?? 1) * canvas.grid.size) / 2 };
+    const half = (Math.max(du.width ?? 1, du.height ?? 1) * canvas.grid.size) / 2;
+    if ( shape === "cone" ) data = { type: "cone", x: cu.x, y: cu.y, radius, angle: Number(area.angle) > 0 ? Number(area.angle) : defaults.angle ?? 90, rotation };
+    else if ( shape === "line" ) {
+      data = { type: "line", x: cu.x, y: cu.y, length: radius, width: Number(area.width) > 0 ? Number(area.width) * px : (defaults.width ?? 1) * canvas.grid.size, rotation };
+    } else if ( shape === "cube" ) {
+      // (One face against the caster's edge, toward its target.)
+      const r = Math.toRadians(rotation);
+      data = { type: "rectangle", x: cu.x + Math.cos(r) * half, y: cu.y + Math.sin(r) * half, width: radius, height: radius, anchorX: 0, anchorY: 0.5, rotation };
+    } else if ( shape === "emanation" ) data = { type: "circle", x: cu.x, y: cu.y, radius: radius + half };
     else data = { type: "circle", x: ct.x, y: ct.y, radius };
     try {
       data = getAdapter().areaShape?.({ ...data }, { area }) ?? data;

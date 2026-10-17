@@ -802,20 +802,26 @@ export function currentAc(run, target, attacker, action) {
 /** A d20 point or two: what three quarters' cover or more adds to a defense where the system has no rule for cover. */
 export const COVER_POINTS = 2;
 
+/** The shapes that spread from the one who makes them (the rest, bursts, from where they're aimed). */
+const FROM_USER = Object.freeze(["cone", "line", "emanation", "cube"]);
+
 /**
  * Could an area u aims at t also catch o? Off the map (no positions): anyone, as many as its count says. On it: o
- * within the area's size (area.feet; 10 if the system doesn't say) of where it spreads from (u, for a cone, a line or
- * an emanation; t, for a burst), a cone or a line only toward t (a quarter turn wide; 5 feet across), and nothing
- * wholly in the way (walls: total cover from where it spreads).
+ * within the area's size (area.feet; 10 if the system doesn't say) of where it spreads from (u, for a cone, a line, a
+ * cube or an emanation; t, for a burst), a cone, a line or a cube only toward t, and nothing wholly in the way (walls:
+ * total cover from where it spreads). A cone is area.angle degrees wide (a quarter turn if the system doesn't say); a
+ * line, area.width feet across (5); a cube, area.feet on a side, one face against u (5e's).
  */
 export function inArea(run, u, t, o, area) {
   if ( !run.prep.options.positioning || !u.pos || !t.pos || !o.pos ) return true;
   const shape = area.shape ?? "burst";
   const feet = Number(area.feet) > 0 ? Number(area.feet) : 10;
-  const from = ["cone", "line", "emanation"].includes(shape) ? u : t;
+  const from = FROM_USER.includes(shape) ? u : t;
   const d = edgeDistance(from, o);
-  if ( d === null || d > feet + 0.5 ) return false;
-  if ( shape === "cone" || shape === "line" ) {
+  // (A cube's far corners lie beyond its side: up to the diagonal of half of it.)
+  const most = shape === "cube" ? Math.hypot(feet, feet / 2) : feet;
+  if ( d === null || d > most + 0.5 ) return false;
+  if ( shape === "cone" || shape === "line" || shape === "cube" ) {
     const ax = t.pos.x - u.pos.x;
     const ay = t.pos.y - u.pos.y;
     const bx = o.pos.x - u.pos.x;
@@ -825,9 +831,14 @@ export function inArea(run, u, t, o, area) {
     if ( la && lb ) {
       const cos = (ax * bx + ay * by) / (la * lb);
       if ( cos <= 0 ) return false;
-      if ( shape === "cone" && cos < Math.SQRT1_2 ) return false;
-      // (5 feet across: a creature whose square touches it, half its width and the line's half, plus a little.)
-      if ( shape === "line" && lb * Math.sqrt(Math.max(0, 1 - cos * cos)) > 2.5 + (o.spec.position?.size ?? 5) / 2 + 0.5 ) return false;
+      const angle = Number(area.angle) > 0 ? Math.min(180, Number(area.angle)) : 90;
+      if ( shape === "cone" && cos < Math.cos((angle / 2) * Math.PI / 180) - 1e-9 ) return false;
+      // (Across it, a creature whose square touches it: half its width and half the line's or the cube's, plus a little.)
+      const half = shape === "cube" ? feet / 2 : (Number(area.width) > 0 ? Number(area.width) : 5) / 2;
+      const off = lb * Math.sqrt(Math.max(0, 1 - cos * cos));
+      if ( shape !== "cone" && off > half + (o.spec.position?.size ?? 5) / 2 + 0.5 ) return false;
+      // (Along it, a cube reaches only its side, from u's edge.)
+      if ( shape === "cube" && lb * cos - ((o.spec.position?.size ?? 5) + (u.spec.position?.size ?? 5)) / 2 > feet + 0.5 ) return false;
     }
   }
   return coverOf(run, o, from) !== "total";
