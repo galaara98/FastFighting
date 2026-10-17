@@ -1170,8 +1170,8 @@ const spotKey = p => (p ? `${Math.round(p.x)},${Math.round(p.y)}` : "-");
 
 /**
  * The shape an area u aims at t makes on the map, as the system draws it (the helper's areaShape; else Foundry's own
- * template defaults): a cone, a line or a cube from u toward t, a burst on t, an emanation round u; from where the engine has
- * them (or `from` and `at`, where the turn's "area" event says they stood). Null off this scene.
+ * template defaults): a cone, a line or a cube from u toward t, a burst or a square on t, an emanation round u; from
+ * where the engine has them (or `from` and `at`, where the turn's "area" event says they stood). Null off this scene.
  */
 function areaShapeFor(u, t, action, { from = u.pos, at = t.pos } = {}) {
   const key = `${u.id}|${t.id}|${action.id}|${spotKey(from)}|${spotKey(at)}`;
@@ -1196,7 +1196,8 @@ function areaShapeFor(u, t, action, { from = u.pos, at = t.pos } = {}) {
       // (One face against the caster's edge, toward its target.)
       const r = Math.toRadians(rotation);
       data = { type: "rectangle", x: cu.x + Math.cos(r) * half, y: cu.y + Math.sin(r) * half, width: radius, height: radius, anchorX: 0, anchorY: 0.5, rotation };
-    } else if ( shape === "emanation" ) data = { type: "circle", x: cu.x, y: cu.y, radius: radius + half };
+    } else if ( shape === "square" ) data = { type: "rectangle", x: ct.x, y: ct.y, width: radius, height: radius, anchorX: 0.5, anchorY: 0.5, rotation: 0 };
+    else if ( shape === "emanation" ) data = { type: "circle", x: cu.x, y: cu.y, radius: radius + half };
     else data = { type: "circle", x: ct.x, y: ct.y, radius };
     try {
       data = getAdapter().areaShape?.({ ...data }, { area }) ?? data;
@@ -1205,7 +1206,8 @@ function areaShapeFor(u, t, action, { from = u.pos, at = t.pos } = {}) {
     }
     const Shape = { cone: foundry.data.ConeShapeData, line: foundry.data.LineShapeData, circle: foundry.data.CircleShapeData, rectangle: foundry.data.RectangleShapeData }[data.type];
     try {
-      if ( Shape ) out = { data, shape: new Shape(data), origin: data.type === "circle" && shape !== "emanation" ? ct : cu, actionId: action.id, name: action.name };
+      const aimed = shape === "square" || (data.type === "circle" && shape !== "emanation");
+      if ( Shape ) out = { data, shape: new Shape(data), origin: aimed ? ct : cu, actionId: action.id, name: action.name };
     } catch ( err ) {
       console.warn(`${MODULE_ID} | an area's shape`, err);
     }

@@ -59,6 +59,15 @@ test("a cone as wide as the system says (5e: 53 degrees); a line as wide; a cube
   expect(catches(cube, "behind")).toBe(false);
 });
 
+test("a square: so many feet on a side round its target, its sides along the map's", () => {
+  const { catches } = setUp();
+  const square = { shape: "square", feet: 20 };
+  expect(catches(square, "near")).toBe(true);
+  expect(catches(square, "beside")).toBe(true); // (15, 5): 5 feet off on each side, inside its 10 and its own half
+  expect(catches(square, "behind")).toBe(false);
+  expect(catches(square, "aside")).toBe(false);
+});
+
 test("a burst: around its target, 10 feet when the system doesn't say", () => {
   const { catches } = setUp();
   expect(catches({ targets: 4 }, "beside")).toBe(true);

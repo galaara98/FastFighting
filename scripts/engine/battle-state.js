@@ -811,13 +811,20 @@ const FROM_USER = Object.freeze(["cone", "line", "emanation", "cube"]);
  * within the area's size (area.feet; 10 if the system doesn't say) of where it spreads from (u, for a cone, a line, a
  * cube or an emanation; t, for a burst), a cone, a line or a cube only toward t, and nothing wholly in the way (walls:
  * total cover from where it spreads). A cone is area.angle degrees wide (a quarter turn if the system doesn't say); a
- * line, area.width feet across (5); a cube, area.feet on a side, one face against u (5e's).
+ * line, area.width feet across (5); a cube, area.feet on a side, one face against u (5e's); a square, area.feet on a
+ * side round where it's aimed (a 5e cube placed at range), its sides along the map's.
  */
 export function inArea(run, u, t, o, area) {
   if ( !run.prep.options.positioning || !u.pos || !t.pos || !o.pos ) return true;
   const shape = area.shape ?? "burst";
   const feet = Number(area.feet) > 0 ? Number(area.feet) : 10;
   const from = FROM_USER.includes(shape) ? u : t;
+  if ( shape === "square" ) {
+    // (Any square of o's inside it: its middle within half the side, and half o's width, of the middle's.)
+    const half = feet / 2 + (o.spec.position?.size ?? 5) / 2 - 0.5;
+    if ( Math.abs(o.pos.x - t.pos.x) > half || Math.abs(o.pos.y - t.pos.y) > half ) return false;
+    return coverOf(run, o, t) !== "total";
+  }
   const d = edgeDistance(from, o);
   // (A cube's far corners lie beyond its side: up to the diagonal of half of it.)
   const most = shape === "cube" ? Math.hypot(feet, feet / 2) : feet;
