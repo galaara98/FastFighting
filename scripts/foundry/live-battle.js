@@ -39,6 +39,10 @@ import { keepUpdate, keptBattle, forgetUpdate } from "./live-keeping.js";
 import { randomSeed } from "../engine/rng.js";
 import { holderOf } from "../engine/behavior/troubles.js";
 import { perceives } from "../engine/behavior/senses.js";
+import { SystemAdapter } from "../adapters/adapter-base.js";
+
+/** Does the helper do this itself (its own, not the base adapter's do-nothing)? */
+const offers = (adapter, name) => typeof adapter?.[name] === "function" && adapter[name] !== SystemAdapter.prototype[name];
 import { isStanding, canMove } from "../engine/battle-state.js";
 
 const loc = key => game.i18n.localize(key);
@@ -189,7 +193,7 @@ export async function startLiveBattle(spec, { style = setting("storyStyle"), odd
   const spotlight = adapter.liveTurns === "spotlight";
   const seed = randomSeed();
   const live = { ...spec, options: { ...spec.options, initiativeOrder: combat.turns.map(c => c.tokenId) } };
-  const run = beginLive(live, adapter.rules, { seed, players, owns: adapter.liveOwnership?.() ?? {}, npcReactions: "calculated", systemRolls: !!adapter.rollReaction, readsRolls: !!adapter.readTurn });
+  const run = beginLive(live, adapter.rules, { seed, players, owns: adapter.liveOwnership?.() ?? {}, npcReactions: "calculated", systemRolls: offers(adapter, "rollReaction"), readsRolls: offers(adapter, "readTurn") });
   // (Prepared until the encounter begins: no turn played, nothing told.)
   battle = {
     combat, scene, spec: live, rules: adapter.rules, run, pc: null,
@@ -908,7 +912,7 @@ async function playerRolls(request) {
   const run = battle.run;
   const adapter = getAdapter();
   const doc = docOf(request.unitId);
-  if ( !run.live.players.has(request.unitId) || !adapter.readTurn || !doc?.actor ) return null;
+  if ( !run.live.players.has(request.unitId) || !offers(adapter, "readTurn") || !doc?.actor ) return null;
   const owners = game.users.filter(u => !u.isGM && u.active && doc.actor.testUserPermission(u, "OWNER"));
   if ( !owners.length ) return null;
   const name = run.byId.get(request.unitId)?.spec.name ?? "";
@@ -984,7 +988,7 @@ async function systemRoll({ unitId, byId, strike }) {
   const adapter = getAdapter();
   const doc = docOf(unitId);
   const target = byId ? docOf(byId) : null;
-  if ( !adapter.rollReaction || !doc || !strike ) return null;
+  if ( !offers(adapter, "rollReaction") || !doc || !strike ) return null;
   const run = battle.run;
   const player = run.live.players.has(unitId);
   let roll = null;
@@ -1121,7 +1125,7 @@ function onMessage(message) {
   // (A ranged attack or a manipulate action in a foe's reach, where the system's opportunity strikes answer it: PF2e.)
   if ( getAdapter().liveOpening?.(message, pc.id) ) queue(() => openingTaken(pc, message));
   // (A damage card at a creature FastFighting runs: applied at once, or put before a GM.)
-  if ( getAdapter().damageCard ) queue(() => playerDamage(pc, message));
+  if ( offers(getAdapter(), "damageCard") ) queue(() => playerDamage(pc, message));
 }
 
 /**
@@ -2052,8 +2056,8 @@ async function pickUp() {
     battle = { combat, scene, spec, rules, run, pc: null, data, keptSpec: data.spec };
     // (Reactions' strikes rolled with the system's own roller, where this helper can, and a player's by the player: a
     // battle begun before, too.)
-    run.live.systemRolls = !!getAdapter()?.rollReaction;
-    run.live.readsRolls = !!getAdapter()?.readTurn;
+    run.live.systemRolls = offers(getAdapter(), "rollReaction");
+    run.live.readsRolls = offers(getAdapter(), "readTurn");
     playersNow();
     if ( data.pc ) {
       const own = m => m.getFlag(MODULE_ID, "story") || m.getFlag(MODULE_ID, "live");
@@ -2089,7 +2093,7 @@ export function registerLiveBattles() {
   // (A card the system fills in after it's made: Daggerheart adds an attack's damage to its card.)
   Hooks.on("updateChatMessage", message => {
     const pc = battle?.pc;
-    if ( !pc || !playsHere() || !pc.messages.includes(message.id) || !getAdapter().damageCard ) return;
+    if ( !pc || !playsHere() || !pc.messages.includes(message.id) || !offers(getAdapter(), "damageCard") ) return;
     queue(() => playerDamage(pc, message));
   });
   Hooks.on("createCombatant", (combatant, options, userId) => {
