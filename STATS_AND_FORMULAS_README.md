@@ -1366,7 +1366,8 @@ Search: seems foe, mistaken for an enemy, caught in area, careless, area spell, 
 - **Taken for a foe**: yes if it wants to hurt it at 20+, or, for a feral creature, if it's within 10 ft. Below Tactical
   60, yes if the neutral leans (25+) toward its enemies. And any neutral it can make out, in a round it's so inclined
   (decided once a round): an animal 0.9, a feral creature 0.9, an Instinctive one 0.3, and at any tier Cruel 0.5,
-  Wildcard 0.35, Instigator 0.25, several each its own chance (1 − the product of each one's 1 − chance).
+  Wildcard 0.35, Instigator 0.25, several each its own chance (1 − the product of each one's 1 − chance). The party's
+  own creatures, and any with a master (a companion), count only their playstyles.
 - **Caught in an area**: each neutral adjacent to or within 10 ft of an area's targets is caught with chance clamp(0.8 −
   Tactical ÷ 100, 0.05, 0.75).
 - **Spared in a truce**: while a neutral confronts a side, that side's members with Tactical 60+ don't hurt it or

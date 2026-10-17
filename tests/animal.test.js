@@ -53,6 +53,10 @@ describe("prey", () => {
     expect(bystanderUrge(u(), TACTICAL.COMPETENT)).toBe(0);
     expect(bystanderUrge(u({ playstyles: ["cruel"] }), TACTICAL.MASTERMIND)).toBeCloseTo(BYSTANDER_URGE.cruel);
     expect(bystanderUrge(u({ playstyles: ["wildcard", "instigator"] }), TACTICAL.COMPETENT)).toBeCloseTo(1 - (1 - BYSTANDER_URGE.wildcard) * (1 - BYSTANDER_URGE.instigator));
+    // (The party's own, and a companion, are kept in hand: only their playstyles count.)
+    expect(bystanderUrge({ side: "friendly", spec: { animalistic: true } }, TACTICAL.FERAL)).toBe(0);
+    expect(bystanderUrge({ side: "hostile", spec: { animalistic: true, flags: { masterId: "druid" } } }, TACTICAL.FERAL)).toBe(0);
+    expect(bystanderUrge({ side: "friendly", spec: { playstyles: ["cruel"] } }, TACTICAL.COMPETENT)).toBeCloseTo(BYSTANDER_URGE.cruel);
   });
 
   test("a bystander it can make out is prey to an animal; never to a competent mind with no such nature", () => {

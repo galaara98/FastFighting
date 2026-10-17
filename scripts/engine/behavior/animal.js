@@ -16,7 +16,7 @@
  * Its answers give way to the GM's and its playstyles' (animalTactics fills only what they leave).
  * Pure: no Foundry globals.
  */
-import { TACTICAL } from "../../constants.js";
+import { TACTICAL, SIDES } from "../../constants.js";
 
 /** Is it animalistic? Its spec's say; an older helper's flags.beast, the same. */
 export const isAnimalistic = u => !!(u?.spec?.animalistic ?? u?.spec?.flags?.beast);
@@ -51,13 +51,18 @@ export function animalTactics(spec) {
  */
 export const BYSTANDER_URGE = Object.freeze({ animal: 0.9, feral: 0.9, instinctive: 0.3, cruel: 0.5, wildcard: 0.35, instigator: 0.25 });
 
-/** Its chance a round of taking a bystander for fair game (BYSTANDER_URGE), 0 to 1. */
+/**
+ * Its chance a round of taking a bystander for fair game (BYSTANDER_URGE), 0 to 1. The party's own, and anything with a
+ * master (a companion), are kept in hand: only their playstyles' natures count.
+ */
 export function bystanderUrge(u, tier) {
   let miss = 1;
   const take = chance => { miss *= 1 - chance; };
-  if ( isAnimalistic(u) ) take(BYSTANDER_URGE.animal);
-  else if ( tier <= TACTICAL.FERAL ) take(BYSTANDER_URGE.feral);
-  else if ( tier === TACTICAL.INSTINCTIVE ) take(BYSTANDER_URGE.instinctive);
+  if ( u.side !== SIDES.FRIENDLY && !u.spec.flags?.masterId ) {
+    if ( isAnimalistic(u) ) take(BYSTANDER_URGE.animal);
+    else if ( tier <= TACTICAL.FERAL ) take(BYSTANDER_URGE.feral);
+    else if ( tier === TACTICAL.INSTINCTIVE ) take(BYSTANDER_URGE.instinctive);
+  }
   for ( const style of ["cruel", "wildcard", "instigator"] ) if ( u.spec.playstyles?.includes(style) ) take(BYSTANDER_URGE[style]);
   return 1 - miss;
 }
