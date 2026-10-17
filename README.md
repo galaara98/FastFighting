@@ -4,647 +4,399 @@
 > - **Programming:** I am a skilled programmer by profession, but AI was used heavily as a co-pilot.
 > - **Strings:** ALL initial strings were proposed by a LLM to get the concepts out, ALL strings were  tracked to make sure they were re-written (for simple or ttrpg/game specific phrases, approved by) a native speaker.
 
-A [Foundry VTT](https://foundryvtt.com) module that resolves a battle, or a tense standoff, from the encounter on the scene, fairly and quickly, so the table can move on. It simulates the encounter thousands of times, round by round, with real dice math, and shows the odds. Then it tells the story of the most typical fight, and **Do it For Real Now** plays it for real on the Combat Tracker, a turn at a time: FastFighting runs the creatures, the players their characters.
+A [Foundry VTT](https://foundryvtt.com) module that resolves a battle, or a tense standoff, from the encounter on the scene, so the table can move on. It simulates the encounter thousands of times, round by round, with real dice math, and shows the odds. It tells the story of the most typical fight, and **Do it For Real Now** plays the fight for real on the Combat Tracker, a turn at a time: FastFighting runs the creatures, the players run their characters.
 
-- **Foundry:** v14
-- **System support comes from helper modules.** See [systems.md](systems.md):
+## Requirements and installation
+
+- **Foundry:** v14.
+- **A helper module for your game system.** The core holds no game rules; the helper supplies them. See [systems.md](systems.md):
   - [FastFighting PF2e](https://github.com/galaara98/FastFighting-PF2e) for Pathfinder Second Edition
   - [FastFighting D&D 5e](https://github.com/galaara98/FastFighting-DnD5e) for Dungeons & Dragons Fifth Edition
   - [FastFighting DCC](https://github.com/galaara98/FastFighting-DCC) for Dungeon Crawl Classics (and Xcrawl Classics)
   - [FastFighting Ironsworn](https://github.com/galaara98/FastFighting-Ironsworn) for Ironsworn and Starforged
   - [FastFighting Daggerheart](https://github.com/galaara98/FastFighting-Daggerheart) for Daggerheart
-- **Without a helper** for your world's system, FastFighting stays inactive. Its settings are greyed out, and the settings window and Combat Tracker point you to systems.md. An experimental generic d20 adapter can be switched on instead.
+- **Without a helper** for your world's system, FastFighting stays inactive: its settings are greyed out, and the settings window and the Combat Tracker point you to systems.md. **Use the experimental generic adapter** switches on a generic d20 adapter instead.
 
-## Installation
-
-In Foundry, go to **Add-on Modules → Install Module** and paste this manifest URL, then install your system's helper (see [systems.md](systems.md)):
+In Foundry, go to **Add-on Modules → Install Module**, paste this manifest URL, then install your system's helper:
 
 ```
 https://github.com/galaara98/FastFighting/releases/latest/download/module.json
 ```
 
-## Using it
+## The Battle Planner
 
-**The encounter starts it.** Add combatants to an encounter in the Combat Tracker. Once it has at least two tokens, a **Battle Planner** button appears at the top of the tracker; it's GM only. <kbd>Shift</kbd>+<kbd>B</kbd> opens the planner too. It picks up an encounter already under way from whoever's turn it is, keeping wounds, dying and conditions.
+GMs get buttons at the top of the Combat Tracker: **Planner**, **Survey** (see [Prepare Players](#prepare-players)) and, while a live battle runs on that encounter, **Vantage** (see [Live battles](#do-it-for-real-now-live-battles)). The planner needs at least two tokens in the encounter; <kbd>Shift</kbd>+<kbd>B</kbd> opens it too. It picks up an encounter already under way from whoever's turn it is, keeping wounds, dying and conditions.
 
-**A plan for each encounter.** The planner ties itself to the encounter on the scene (the one the Combat Tracker shows), and keeps everything you choose there (sides, groups, roles, fudges and options) with that encounter until it ends. Each encounter has a plan of its own: view another one in the tracker and the planner follows. Someone joining the encounter mid-plan (or a token coming or going on the map) is taken in, and your choices stand. A new encounter starts from whatever you set up on the scene before it began; a fresh one puts every hostile token in one group, for you to split. **Clear** (the eraser, beside Refresh) puts the plan back to the defaults, after asking. With no encounter on the scene, the plan is the scene's.
+**One plan per encounter.** The planner follows the encounter the tracker shows and keeps your choices (sides, groups, roles, fudges, options) with that encounter until it ends. Combatants who join and tokens that come or go are taken in, and your choices stand. A new encounter starts from what you set up on the scene before it began; a fresh one puts every hostile token in one group. **Clear** (the eraser beside Refresh) resets the plan to the defaults, after asking. With no encounter, the plan belongs to the scene.
 
-**The game system's own settings.** A system's helper can add a row of its own to the planner, under the options, for what its rules need to know about this encounter (FastFighting Ironsworn: how the encounter is tracked, its rank, and whose sheet keeps the track). What you pick there is kept with the plan, like everything else.
+**Pausing.** The fight is read off the map, so opening the planner pauses the game. Closing it un-pauses, unless the game was paused before or you un-paused it meanwhile. Do it For Real Now and Rewind This Encounter keep the game paused while they write to the map. A pause stops only players: the GM's changes and token movement go on.
 
-**In the encounter, or just on the map.** Being in the encounter means being aware of the conflict when the simulation starts. Every other token on the map (a bystander) only checks, on its own turn, whether it becomes aware of the conflict now; once it is, it takes its turns from the next round, as if it had been in the encounter all along. It becomes aware when:
-- it sees or hears a combatant (walls muffle sound), against the system's Perception (or the like);
-- an ally runs to it calling for help;
-- someone fleeing runs into it;
-- someone attacks it (a hunter, a careless spell): then it's in the fight at once.
+The window needs at least 1000×600 and uses any extra space.
 
-What a token does then depends on its disposition (the planner can move any token to another side, or leave it out):
+**Toolbar**
+- **Seconds** (how long the prediction runs), **Max rounds** and **Seed**.
+- **Downed**, **After the fight** (see [After the fight](#after-the-fight)), **Opening** (see [Talking](#talking)) and **Initiative**.
+- Toggles: Terrain & positioning, Morale, Leadership, Talking, Ignore languages, Bystanders, Hidden tokens, and, with a helper that plays live battles, Players run their characters.
+- **Run** (**Stop** while it runs), Refresh, Clear and **Rewind This Encounter**.
+- A helper may add a row for its system's encounter settings (FastFighting Ironsworn: how the encounter is tracked, its rank, and whose sheet keeps the track). The plan keeps them.
 
-| Disposition | In the encounter (aware from the start) | On the map, not in the encounter |
-|---|---|---|
-| **Friendly** | Fights for the party from round 1. | Checks each turn whether it notices; fights for the party from the round after. |
-| **Hostile** | Fights for its hostile group from round 1 (group 1 unless the GM moves it; each group fights the others as well as the party). | Checks each turn whether it notices; fights for its group from the round after. |
-| **Neutral** | Takes no side, but weighs what it wants from round 1: its lean (the planner's Neutral tab), its friend group among the other neutrals, whatever its Tactics say. It may be offended, confront someone, or be won over (see **Taking no side**). | Checks each turn whether it notices; from the round after, takes no side but starts weighing what it wants. |
-| **Secret** | Hidden until it acts; fights with the team the GM puts it on: a hostile group (group 1 by default), or a neutral team, taking no side as a Neutral does. | Checks each turn whether it notices; from the round after, as in the encounter. |
+**Left: the sides**, a tab each for Friendly, Hostile, Neutral and Secret.
+- Side settings: group personality, healing aggressiveness, **Can rout**, leaders (Auto or No leaders) and the leadership bonus. Neutral adds a lean (see [Taking no side](#taking-no-side)).
+- Each token row: HP, AC and personality traits; how it reaches the nearest enemy (mode, moves, terrain); a side override and an include toggle; group pills **1 2 3** for Hostile and Neutral tokens; for a Secret token, pills for hostile groups **1 2 3** and neutral teams **1 2 3**; and command pills **B L 1 2** (see [Leaders and bosses](#leaders-and-bosses)).
+- Expanding a row shows stat fudges (**Fudge up**, **Fudge down** and **Remove fudge** on every derived number), **Ignores terrain**, **Dies at 0 HP**, and the character's tactics and playstyles.
 
-Its side, desires, nerve and personality decide the rest: a coward may still break and run, a talker may try words first. The encounter is the Combat Tracker's encounter for the scene; with none, everyone on the map is in it. The planner's toggles leave out bystanders, hidden tokens and tokens on other levels.
+**Right: the results**
+- **Overview:** win odds, PC death and downed odds, foes talked down, fights settled with words, length, the simulated difficulty beside the system's own rating, the most dangerous foes and the allies most at risk.
+- **Combatants:** each token's odds of standing, down, dead, fled, surrendered, stood down and switched sides; HP left, damage, healing, and its chance to fall first.
+- **Swing factors:** runs the fight again without each combatant and option, to show what moves the party's odds most.
+- **Resources:** spell slots, focus points and consumables spent.
+- **Sample fight:** the story of the most typical fight (the most common outcome, of the usual length). It's a sample, not the ruling: Do it For Real Now plays a new fight with rolls nobody has seen, so a 70% win is a loss three times in ten.
 
-**The planner** needs at least 1000×600 and uses any extra space you give it. Opening it pauses the game, since the fight is read off the map; closing it un-pauses, unless the game was already paused or you un-paused it yourself meanwhile. Do it For Real Now and Rewind This Encounter keep the game paused while they write the fight onto the map, so no player drags a token into the middle of it (the planner closes for Do it For Real Now, and the game goes on once it's done). A pause only stops players: the GM's changes and the tokens' movement play out regardless, so pausing or un-pausing partway through never holds a fight up, and whoever paused or un-paused meanwhile has the last word.
+A big battle gets fewer fights in the time given, and the planner warns when they're too few for sure odds. Reopened on a battle that hasn't changed, the planner shows its last run again; runs are kept in the GM's browser, never in the world, where players could read the odds.
 
-- **Toolbar:**
-  - runs, maximum rounds and seed;
-  - how downed creatures are handled;
-  - **After the fight** (see below);
-  - **Opening:** talk if they'd rather, always talk first, or straight to battle;
-  - initiative source;
-  - toggles for positioning, morale, leadership, talking, bystanders and hidden tokens;
-  - **Run** (with **Stop** while it runs), refresh, and **Rewind This Encounter**.
-- **Left: the sides.** There's a tab per side: Friendly, Hostile, Neutral, Secret.
-  - **Side settings:**
-    - group personality, healing aggressiveness, and whether the side can rout;
-    - whether its groups have leaders (Auto, or No leaders), and the leadership bonus;
-    - for Neutral, a lean: takes no side, or leans toward the party, the enemy, the nearest side or the underdog (see **Taking no side**); or it's left out, or fights everyone.
-  - **Each token row:**
-    - HP, AC and its personality traits;
-    - how it would reach the nearest enemy (mode, moves and terrain);
-    - side override and include toggle;
-    - for a Hostile or Neutral token, its group: three small pills, **1 2 3**, one click to move it;
-    - for a Secret token, its team: pills for hostile groups **1 2 3** and neutral teams **1 2 3** (hostile group 1 until the GM picks another; a number no one else has is a team of its own).
-  - **Expanding a row** gives stat fudges, *ignores terrain* and *dies at 0 HP*, plus that character's tactics and playstyles.
-- **Right: the results.**
-  - **Overview:** win odds, PC death and downed odds, foes talked down, fights settled with words, length, the simulated difficulty next to the system's own rating, the most dangerous foes and most-at-risk allies.
-  - **Combatants:** per token, standing, down, dead, fled, surrendered, stood down and switched odds, HP left, damage, healing, and chance to fall first.
-  - **Swing factors:** what moves the party's odds most.
-  - **Resources:** spell slots, focus points and consumables spent.
-  - **Sample fight:** the story of the most typical fight (its most common outcome, of the usual length): a sample to look at.
+## Who takes part
 
-## Trap avoiders
+Tokens in the encounter know about the conflict from the start. Every other token on the map is a bystander: on each of its turns it checks whether it notices the fight and, once it does, acts from the next round. It notices when it sees or hears a combatant (against the system's Perception or the like; walls muffle sound), when an ally runs to it for help, when someone fleeing runs into it, or when someone attacks it (then it joins at once). With no encounter on the scene, everyone on the map is in it. The **Bystanders** and **Hidden tokens** toggles and the **Include other scene levels** setting decide who else counts.
 
-Hazards (traps, haunts, dangerous features) fire at whoever is in their reach. Some characters watch for them, some a great deal, some a little: a **Thief** most, then a **Puzzle-Maniac** (90%), **Skeptic** (75%), **Lore-Collector** (60%), **Chicken** (50%) and **Wallflower** (35%); a pill further down counts less (×0.75, ×0.55, ×0.4). With positions on the map:
-- At the start of a fight, a trap avoider rolls d100 for each hazard against the **Trap avoiders: spotting a trap** slider (59 by default) times how watchful it is: at or under, it spots it. A Thief spots on 59 or less; a Wallflower, on 21 or less.
-- Anyone a hazard goes for, hit or miss, knows that hazard from then on, always, trap avoider or not.
-- Moving, it keeps out of the reach of the hazards it knows: it goes around them, or with no way around, stops short.
-- When what it's after is in a hazard's reach, it asks itself whether it wants it badly enough: driven or more, it goes in; merely wanting it, it doesn't; determined, it might, the likelier the more it wants it. The story says which.
-- Starting its turn in a hazard's reach with nobody beside it, it steps out first.
+A token's disposition sets its side; the planner can move any token to another side or leave it out.
+- **Friendly** fights for the party.
+- **Hostile** fights for its hostile group (group 1 unless you move it). Each group fights the others as well as the party.
+- **Neutral** takes no side but weighs what it wants: its lean, its friend group, its tactics. It may take offense, confront someone or be won over.
+- **Secret** stays hidden until it acts and fights with the team you put it on: a hostile group (group 1 by default) or a neutral team, which takes no side as a Neutral does.
 
-## Taunting
-
-A taunt makes a foe want to go for the taunter: a strong desire (see **Desires**), not a command. Something it wants more of its own (an obsession, a grudge, a cruel streak) can still win out; a taunter it can't reach wears it down; the want ends when the taunter falls. Game systems lay taunts with their own skills, powers and spells (XCC's Draw Agro); some playstyles taunt too:
-- **Taunters:** a **Tank** most, then an **Instigator** (75%), **Martyr** (55%), **Brawler** (40%) and **Redeem-Seeker** (30%); a pill further down counts less (×0.75, ×0.55, ×0.4). Its taunt is an action, as dear as its game system says (PF2e one action, 5e an action, DCC an action die, Ironsworn a move), within 30 feet: its talking, the better of threats (Intimidation) and mockery (Deception), against the foe's resistance to it, with anything it has learned about the foe and any edge it has. Getting through, it takes hold only if a hidden d100 comes up at or under the **Playstyle taunts: taking hold** slider (42 by default) times how much of a taunter it is: a Tank on 42 or less, a Redeem-Seeker on 13 or less. Taken hold, the foe wants it ("driven"; on a critical success, past anything but an obsession) until the end of its next turn. It takes a voice, and a foe with a mind to rile: never the mindless. The simulation taunts when drawing a foe off a friend spares more than the taunter takes (a Tank minds the blows half as much). Only playstyle taunts use the slider.
-- **Hard to taunt:** some shrug off any taunt (a playstyle's, or a game system's) as it lands, this often: **Relentless** 75%, **Skeptic** 60%, **Peacekeeper** 50%, **Puzzle-Maniac** 40%, **Diplomat** and **Chicken** 35%, **Wallflower** 30%, **Lazy** 25%; less for a pill further down; never more than 90%.
-
-## A fair ruling
-
-**Do it For Real Now plays a new fight.** The Sample fight tab shows the most typical fight, only a sample; Do it For Real Now plays the fight for real, on the Combat Tracker, with rolls nobody has seen, so a 70% win is a loss three times in ten, as it should be (see Live battles, below).
-
-**After the fight.** When the last foe falls, the survivors tend their dying, before the dying make their next roll. They use free help first (first aid, medicine feats), then spells and potions. Anyone left untended lives or dies by the system's rules for dying, so nobody is committed half-dead.
-
-**The fallen foes** are dealt with as each victor's answer to **Foes who fall** says (its own, or its party's), then its playstyles:
-- **Spare them: I avoid killing:** one who spares them (that answer, a Moralist, a Diplomat most of the time, as often as it holds back) stops the rest from finishing them and gives them free first aid if it can. Its killing blows knock out instead (unconscious and stable), and it never strikes the fallen.
-- **Finish them:** otherwise those who finish them (that answer, or the Cruel with no other) finish them off.
-- **Tie them up:** taken alive: one who'd tie them up pulls its killing blows most of the time (they knock out instead), and the fallen still alive are tied up with whatever's to hand (a strap, a rope, their own belt): prisoners, out of the fight even if they're healed or come to, and tended after the fight as the spared are. Mid-fight, one who ties them up does it (an action beside them) when no foe stands within its reach on the map; without a map, after the fight. Peacekeepers, Moralists, Diplomats, Leaders, Mercenaries, Lore-Collectors and Redeem-Seekers lean that way.
-- **Breaking free, and freeing a friend:** a prisoner struggles against its bonds on its turn (the only thing it can do); loose, it's back in the fight from its next turn. Anyone held (grabbed, or by a condition its system says an action can break: a web, a net) wants to break free, the more so with no foe beside it to fight where it stands; a friend tied up (or held by what a friend can break) is untied by whoever wants to free them, an action beside them: loyal friends most, and Martyrs, Moralists, Enablers and Leaders more than most (the Lazy less). Each system's helper can say how it's done there: its own Escape, the check, its DC, what it costs (see **For developers**).
-- **Bearing it, or being rid of it:** what holds or hurts a creature (tied up, grabbed, on fire, bleeding, prone, and whatever its system says an action ends) bothers it as much as it hurts, and it would rather be rid of it: the fearful most, Chickens and the Fragile more, Martyrs, Tanks and the Relentless less. It weighs that against what else it wants: tied up with a spell that needs no hands and a foe in range, a bold one may cast from its bonds rather than struggle (tied up, nothing that needs hands: the system says which do, or, where it doesn't, its helper's **Tied up stops spells** setting). And a selfless creature may simply bear it, now and then: **Selfless creatures bear what holds or hurts them** (default 29%) is how often a fully selfless one that doesn't stop to calculate does, each turn; the more self-serving or calculating, the less. Never what would kill it.
-- **Under someone's control** (a charm, domination), a creature wants what its controller wants and nothing of its own; controlled by a player's character, it's that player's to run. Moved to another side by the GM (the Battle Vantage), what it wants is worked out again, and everyone's toward it, and its new side's leader is its leader.
-- **Rob them:** a fallen foe's purse comes off it (whole), else something it carries, else (a creature's) what it was holding, an action beside it, mid-fight or after; a player character's things only on the thief's luck check. Thieves and Mercenaries lean that way, the Cruel a little; Moralists and Peacekeepers never would. Taken back if the robber ends the fight beaten.
-- **Leave them be:** left to the dice.
-
-The planner's results show how often each creature ends up **Tied up**. In a live battle, being tied up is marked on the sheet with the system's restrained status.
-
-**The fallen PCs.** Each time a creature wants to finish off a player character at 0 HP, it rolls d100 against the **PC luck: being finished off** slider (39 by default): at or under, it goes ahead; over, it turns away, and everything it wanted of that PC goes to the next foe it would pick. And a character with **fate** to spend (PF2e Hero Points, 5e Heroic Inspiration) uses it when someone would die: a blow, a save or a recovery check that would kill is rolled again (a hit may become a miss), or, for one's own death where the system has a sure way out, that (PF2e Heroic Recovery: all of one's Hero Points). It always spends for itself; for a friend, the more selfish, the less likely.
-
-Choose one of:
-- tend the fallen and tell it;
-- tend them quietly, with the story ending at the last blow;
-- stop at the last blow and play the rest out yourself.
-
-## Live battles
-
-**Do it For Real Now** closes the planner and plays the fight on the Combat Tracker, a turn at a time. It needs a helper for the world's system that plays live battles; with an older one, the button is greyed out and says to update it.
-- **The start:** everyone in the encounter goes on the tracker, initiative is rolled for whoever hasn't rolled it yet (a player who has keeps theirs), the encounter starts, and the opening is told in the chat. The **Battle Vantage** opens for the GMs: the round, whose turn it is, and each creature's mind.
-- **A creature's turn** (and a character's, when FastFighting plays it): FastFighting decides and rolls it as the simulation would, writes it onto the sheets through the system's helper (hit points, conditions, dying, resources spent, the fled and the surrendered, buffs and debuffs as the spell's own effect), moves the tokens around walls and opens doors, and tells the turn in the chat. Then it waits for the GM: **Next Turn** (on the card, in the Battle Vantage, or the tracker's own) moves the tracker on, and a creature FastFighting plays has its turn played as the tracker reaches it. **Play to the end** goes on without waiting.
-- **A player's turn:** the player plays it with the system's own sheet and cards. When the turn ends, FastFighting reads what happened (the system's roll cards, through the helper, and what changed on the sheets) and takes it in as if it had seen it: grudges, fear, morale, who was talked round. Anything it isn't sure of, it shows the GMs first, to keep, drop or set right; then it tells the turn.
-- **Players run their characters** (a toggle in the planner, on by default): off, FastFighting plays every turn. In the Battle Vantage, **FastFighting plays their turns** takes over the rest of one character's turns, for a player who has to leave; cleared, they're the player's again.
-- **Reactions:** each character's FastFighting tab lists its reactions with **Always use it**, **Ask me** or **Never use it**; asked, the player answers on their screen (or the GM, when they're away or don't answer in time). An NPC's reactions during a player's turn (a strike as a character leaves its reach) are the GMs' to allow, unless **Ask me about NPC reactions** is off in the Battle Vantage: then its tactics decide.
-- **Rerolls:** where the system has a reroll to spend (PF2e Hero Points, 5e Inspiration), each character says whether FastFighting may spend them to save its own life, or a teammate's. FastFighting never spends any other player resource.
-- **What happened at the table:** the Battle Vantage takes what FastFighting couldn't see (talked round by a Diplomacy roll, wanting to hurt someone, shaken, fleeing, surrendering), and applies it as the simulation would have.
-- **The map of minds:** the Battle Vantage shows every creature on the map as a node, laid out as their tokens stand; drag them aside, pan, and zoom. Each desire, and each condition from someone, is an arrow between two creatures: wanting to hurt someone, to talk them round (and how: persuade, intimidate, deceive), afraid of, frightened by, grabbed by, holding a grudge, won't listen to. What a creature has on its own (prone, hasn't noticed the fight, thinking of running) floats round it. A goal that isn't about someone points at the thing: the door it wants through, a trap it keeps clear of. Goals FastFighting doesn't act on yet (close a door, pick something up, get to a spot, swim, fly, climb, hide, take cover, get away) can be shown too, marked as such. Every line and symbol has an intensity (a desire's runs from passing to obsessed). The GM can raise one, lower it, or set it aside at 0; what the GM sets holds until it's handed back. A player's character that FastFighting isn't playing shows no desires: its player decides.
-- **Focus:** click a creature (or select its single token on the map, and the Battle Vantage follows) to see it beside the map: what it wants, what's on it, who wants something of it, and the conditions and table rolls to put on it. With a creature in focus, the line or symbol under the pointer glows: Delete takes it off, − and + lower and raise it, and Tab and Shift+Tab step through the creature's lines (all in **Configure Controls**). + on the creature itself, or **Add a line**, adds one: wants to hurt someone, frightened 3 by someone, grabbed by someone.
-- **Conditions:** each with its value, who caused it, for how long, and whether its sheet shows it or FastFighting keeps it. The GM can put on any condition the core knows (and the system's own), change a value, or take one off, and the ones toward someone: afraid of, grabbed by, goaded by, controlled by, tied up by, off guard to (and a power's mark, taken off). What the system's sheets can show goes on the sheet through its helper; the rest FastFighting keeps itself, with the battle. Rewind takes a change back with the turn it came after. A token on the map that isn't in the battle can be brought into the fight.
-- **Conditions drive what a creature does,** not just its numbers: frightened by someone, it would rather keep away from them (frightened 2 or worse, it won't go for them; fleeing from them, it runs); grabbed, it's set on whoever holds it; charmed, it never attacks its charmer; and fright weighs on its nerve, the worse the more.
-- **Bystanders** who notice the fight join the tracker and take their turns. **Summons** appear beside their summoner, as their own tokens.
-- **Spotlight systems** (Daggerheart, Ironsworn): there's no initiative, so the Battle Vantage gives the spotlight to whoever FastFighting would pick next, or to whoever the GM picks.
-- **The end:** when one side has won, the chat says so; **Settle the aftermath** has FastFighting deal with what's left (the dying bleed out or hold on, the beaten are dealt with, goods go back to their owners). The encounter stays open for the GM to end.
-
-**Rewind**, on each turn's card and in the Battle Vantage, is the tracker's Previous Turn, and the battle follows the tracker back however it goes (its own Previous Turn and Previous Round too): each turn after the one it goes back to is taken back, last first: what it wrote on the sheets, its cards, its moves, and the minds as they were. A turn FastFighting played stands as it ended, waiting for Next Turn (and Next Turn plays the one after it again, with fresh dice); a player's turn is theirs again, and all its cards are read again when it ends. At the battle's first turn, Rewind takes that turn back and waits to Play it again. The last 12 turns are kept that way; further back, the tracker is put back where it was. **Rewind This Encounter** takes the whole battle back, to before it began. Everything is kept as it's done (in a journal entry only the GMs can see), so a reload, or a GM leaving, doesn't lose it: the next GM picks the battle up where it was.
-
-**Fights from before live battles.** An older version played the whole fight out at once. Those fights can still be rewound (from the GM's summary card, or the planner), and one that was cut short shows in the planner, to be rewound before anything else is done for real on that scene.
-
-## Talking
-
-A fight can be talked down at any point, and some encounters never come to blows.
-
-**Standoffs.** An encounter opens as a standoff when every side's voice would rather talk, or when almost everyone would. A side's voice is its leader, or most of its members if it has none. Nobody attacks while it lasts. It ends one of two ways:
-- **Words win.** The persuaded stand down, or a threat makes them yield or run. If someone gives something up or runs, the whole conflict is settled.
-- **Someone gets upset.** That could be an insulting pitch, failed pitches piling up, rounds dragging on, a beast that can't follow the talk, or an impatient temper. A blow struck between the two sides (a stray one too) ends it at once. From that turn on, it's a battle.
-
-A leader who wants to talk holds their side back. Before it breaks, a charismatic NPC leader may take one last turn to press the party.
-
-**Only an argument.** Some conflicts are words and nothing else: a negotiation, a hearing, a haggle that mustn't turn bloody. Pick **Only an argument: no fighting** as the planner's opening (or the world's default). The encounter opens as a standoff and stays one, and whatever would come to blows ends it instead: someone takes offense, loses patience, can't follow the talk, a blow lands, or a quarrel turns ugly. The talks collapse and everyone goes their own way; nobody fights. Nobody runs or yields in an argument either: talked round, a creature backs down; made to pay, it pays to end the argument and stays where it is (a boss is paid to drop it, not to go). With no blows to come to, it falls apart somewhat less often than a standoff that could come to blows (3 times in 4). Whatever was agreed before it collapsed stands: a deal struck, someone backing down. Talks that settle nothing before the round limit stall. The results show how often the talks collapsed (beside how often it was settled with words, which no longer counts a collapse); there's no simulated difficulty, since nobody fights. The story tells what was agreed, and who walked out and why.
-
-**Bargaining.** Every survey (and each token's FastFighting tab, and the planner's tactics panel) asks two more questions, for any standoff:
-- **Do you offer something to end this argument?** Nothing; money (so much, in the coin picked); one of its own things; or a promise: not to harm them, to let them pass, to leave.
-- **Do you expect something to end this argument?** Nothing; money; something of a kind, never a particular item: the system's own categories, materials and rarities (a cold iron weapon, a rare piece of armor), worth at least so much, or unvalued (junk, or beyond price) if that will do; or a promise: not to be harmed, to be let through, that they leave.
-- **Anti-cheating:** only what the character really has counts (money up to what it carries; one of its own things, still with it), and only the system's own kinds of thing. Anything else is dropped before the battle is built.
-- **On its turn**, one who expects something asks for it: whoever on the other side has it and would part with it (or offered it) hands it over. One who offers puts it to the other side: whoever expects what it meets takes it; with nothing stated, the greedy may take goods, the timid a promise. A player character hands over only what it offered, unless it's talked into more. A deal ends the encounter, for the side that got what it wanted (a promise of no harm: a truce, nobody's).
-- **What isn't met is talked over,** with the usual checks. The other side haggles: each success calms the one who expects (it keeps talking); talked round, it comes down (half the money; any material and rarity, then half the value, then unvalued will do; leaving becomes passage, passage becomes no harm), and agrees when the talker meets the new price; pressed again, it lets it go. The one who expects presses: talked round, whoever it pressed hands it over. Both against the resolve of whoever's being talked round: the greedy hold out for their due and hold on to what they have (Mercenaries, Thieves most), the peaceable come round (Peacekeepers, Diplomats, People-Pleasers most). A failed haggle irritates the one who expects, as does a failed press of its own; while nothing meets it, its patience wears faster, and when it runs out, the standoff breaks (only an argument: the talks collapse).
-- **Made to pay** in a standoff (talked into giving something up, paying a boss to go, squeezed by a neutral), a creature pays what the other side expects, if it has it; else what it offered; else the usual (below). A player character's things still go only on the luck check.
-- **Systems without coins or goods** (Ironsworn): paying costs Supply, which the side shares (what one pays, all of them have that much less of, and Do it For Real Now lowers every friendly character's Supply, and every character the system shares it with); a foe made to give something up gives ground instead, a mark of progress on its own track, the winners' reward.
-
-**A quarrel beside the standoff.** A neutral (see below) may come to blows with one of the sides, most often when one of that side's members takes offense at a botched pitch from it. Only the two of them fight: the other side doesn't have to join in, and the standoff between the two sides holds, with exceptions:
-- **Impatience:** every blow struck beside the standoff wears on everyone's patience.
-- **Annoyance:** hurt or insulted by a neutral that seems to be with the other side, a creature may blame that side and break the standoff (a tactical mind sees through it, mostly).
-- **Peacemakers:** anyone on either side who can't abide violence (Diplomats, Moralists, People-Pleasers, those who answer "Spare them: I avoid killing", those who answer "Always talk unless I am currently being hurt") spends its turns calming the quarrel at once: talking the neutral into letting it go, or the side's fighters into leaving the neutral be (until it hurts them again).
-
-**Pitches.** Persuade, intimidate or deceive, using whatever skills the system maps to each, against the system's DC for resisting. The target has to share a language with the talker, unless the **Ignore languages** setting (off by default; a toggle in each plan too) says anyone who speaks a language understands anyone else who does. A creature with no language at all can't be talked to either way.
-- **Whom it talks to:** whoever it's likeliest to talk round, with the fewest steps left, worth the most out of the fight; a little more, the one its answer to **Who to pursue first** picks (the nearest, the weakest, the most dangerous, spellcasters and healers, whoever is attacking its friends).
-- **The persuasion track:** most need 2–6 successes; the very gullible fold at once.
-- **Grudges:** hurting someone or failing to convince them makes them harder to sway. An insult (a critical failure) means they won't listen again.
-- **Strain:** in a system whose words wear people down (a pool of composure, focus or stamina), whoever loses an exchange pays: the talker when its pitch fails, the one it talks to when the pitch gets through, twice as much on a critical. Run dry, it's worn down, as the system says (a condition, a penalty). The story tells it.
-- **Outcomes:** surrender, flee, stand down, change sides (rare unless neutral), or **give something up**.
-- **Changing sides:** an enemy talked into it only stands aside, taking no side (see below), and only if a hidden d100 comes up under the **switch luck** slider (69 by default); otherwise it's talked into one of the other outcomes. Spells and abilities made for it (charm, dominate) don't take this roll, and still turn a creature straight over until they end.
-
-**Giving something up:**
-- **What:** in a standoff, what the other side expects, if they have it, else what they offered (see Bargaining); otherwise 1–10% of their money, or an item they carry but don't wield or wear (in a system without them, ground given: progress on their track).
-- **A PC** hands over an item only on a hidden luck check (39 or less by default).
-- **An NPC** with nothing spare gives up what it's wielding; with nothing at all, it lies and runs.
-- **Who gets it:** the talker.
-- **In a standoff** it settles everything.
-- **Mid-fight** the giver fights on. They're bitter: they won't listen to the taker again, and they fear the taker until it attacks them. Then the taker becomes their target of choice.
-- **Taken back:** if the taker ends the fight beaten, the goods go back to their owner.
-
-**PCs decide their own fate.** Words can only make a PC pay up or run, and it takes two more successes than usual. A PC with nothing to give can only be scared off. A PC whose answer is "Let my weapons do the talking" won't listen at all.
-
-**Do it For Real Now hands goods over,** in the turn they change hands; Rewind hands them back.
-
-## Groups
-
-**Hostile groups.** Every hostile token starts in group 1. Move any of them to group 2 or 3 with the pills: each group is a side of its own, the others' enemy as much as the party's (two warbands that hate each other, a monster loose among bandits). They share the Hostile tab's settings; each has its own leader (the one you pick, if it's in that group; otherwise the best of the group). The results show each group's chance of winning.
-
-**Neutral friend groups.** The moment the planner opens, it proposes up to three friend groups for the neutral tokens:
-1. From the map's top-left corner, the nearest neutral starts group 1, and every neutral of its kind joins it: the same stat block, or what the system calls the same type of creature (5e: its type and subtype; PF2e: its ancestry, else its creature types; Ironsworn: what the foe is).
-2. Anyone within 3 squares of someone in the group joins it, then anyone within 3 squares of those, and of those (three steps out, no further). The reach is a world setting (1 to 20 squares), not a per-plan one, since it's used as the planner opens.
-3. Group 2 starts the same way from whoever is left; everyone left after that is group 3.
-
-Move anyone with the pills; your pick stands (a proposed group shows lighter). A friend group looks out for its own: its members want each other safe, stand together as allies, and hurting one builds a grievance in the rest. Different groups are nothing to each other.
-
-## Taking no side
-
-Neutral tokens, and enemies talked out of the fight, stand on the field taking no side. Nobody fights them and they fight no one, each with its friend group alone. The planner's lean for the Neutral side doesn't put them on a side. It nudges what they want, as a leader's word does: that side's members safer, less to hurt, their foes a little more, by a share of the lean's strength and as loyal as each is (less for the selfish), on top of everything else they want. Leaning isn't guarding. What they feel for that side is the lean in full: watching them hurt, they take it personally (see below), they spare them while they talk, and joining them appeals. The underdog's members change as the fight goes. A friend group pulls toward keeping its own safe the same way (the villagers, the caravan; see **Groups**). An enemy who stands aside still leans a little toward its old friends, the more so the more loyal it is.
-
-A lean doesn't last: watching the side it leans toward hurt someone it cares about wears it down, and that side hurting it ends it at once (either way round).
-
-- **Crossed:** whoever hurts it (a careless area spell catches one standing within 10 ft of its targets; careful casters aim around them), robs it, or insults it with a botched pitch offends it at once. Seeing someone hurt or hinder a creature it wants safe, or heal or bolster one it badly wants hurt, builds a grievance against the doer's side, faster the more it cares and the worse the harm; enough of it offends it too. Offended, it turns on that side (only that side) and fights it. Do it For Real Now turns a neutral that turned on the party Hostile.
-- **Words first:** a talker who can make itself understood confronts the offender instead: a truce between the two of them in the middle of the fight. The offender's side can talk it round; it can talk the offender into making amends (handing something over, or an apology). It turns on them when it loses patience, or the moment that side crosses it again.
-- **Won over:** either side's talkers can talk it into joining them, against its lean too, with no luck roll, as long as it hasn't seen that side cross it. Talkers weigh what joining would mean to it: a pitch that gives it what it wants (keeping someone safe, a chance at someone it wants hurt) is easier and quicker, so one already leaning their way doesn't take much; one that betrays what it wants is harder and slower. Nobody is threatened into friendship. Do it For Real Now changes the token's disposition to its new side, and a creature that stood aside to Neutral.
-- **Who knows:** only a tactical mind (Tactical and up) sees someone taking no side for what it is, and only a tactical talker knows it could be won over. Anyone else goes by appearances and its desires: a neutral leaning toward its enemies looks like one of them, and to a feral creature anything close is fair game, so it may attack (which offends the neutral, and ends any lean toward its side). One who always tries words first (a Diplomat, "talk first", "always prefers talking") talks to a neutral it takes for a foe, and may win it over by accident; a desire to talk to it (stated, or its leader's) does the same.
-- **Getting involved:** a neutral leaning toward a side decides, once for the standoff and again once it's a fight, whether to get involved at all. Most keep out of it: about 1 in 12, unless the side it leans toward is one it likes well enough (the strength of its lean) and looks like winning (its standing members' hit points against its enemies'), up to about 2 in 3; the bold, the greedy and the talkers get involved more readily. Involved, it goes after the side it likes least, in words:
-  - **Talking it out of the fight:** into running, standing down or handing something over (to the neutral). In a standoff that settles it for the side it leans toward, as if that side had done the talking. Leaning toward the party's enemies, it talks the party down instead (a player character can only pay up or back off).
-  - **Squeezing it for money** (the greedier it is, the likelier): talked round, a member pays the neutral off (the usual 1–10% of its money, or an item) and stays where it is; paid, the neutral keeps out of it from then on.
-  - A neutral in the encounter from the start is aware of the fight at once; one that isn't has to notice it first.
-- **Can't abide violence:** a neutral that's a Diplomat, Moralist or People-Pleaser, answers "Spare them: I avoid killing" or "Always talk unless I am currently being hurt", seeing a fight, spends its turns trying to talk the fighters (either side: whoever it's likeliest to move) into leaving.
-- **Keeping the peace:** while a neutral is having words with a side, that side's smart members (Tactical and up) hold off hurting it or anyone it wants safe, unless the talk is going against them anyway (nobody left who can talk to it, or it's nearly out of patience). Smart creatures likewise won't break an opening standoff unless their side is losing the talk.
-- **Not one for killing:** a character whose answer to foes who fall leans to avoiding killing ("Spare them: I avoid killing" most), seeing an enemy that was talked out of the fight, wants to talk to it again, just under whatever is most on its mind (unless it already wants to talk to it more): into leaving, or onto its side, as its playstyle leans (Wants to Lead, Diplomats, Moralists, People-Pleasers, Chickens, Wallflowers and the like would rather it left). Those who want to lead and talkers among them want it more, look for the chance with any neutral they see, and always try to send it away: one less fighter on the field is safer than one more, even a friendly one.
-- **Results:** those who take no side never win or lose a fight, and don't keep one going. The planner shows how often a foe was talked into standing aside.
-
-## Theft
-
-Theft mid-fight is rare; most who want your things take them from your body afterwards.
-- **Who:** only a **Thief** (a playstyle) or someone with the system's stealing skill well above typical for their level.
-- **When:** only when it's safe. Either their side is clearly winning, or they're hidden and their mark is alone. Alone means no friends within 30 ft, or the two of them more than one ordinary move from everyone else.
-- **Openly:** the thief feints with its weapon first (it must hit, for no damage), then makes the system's stealing test.
-- **Against a PC:** it also needs a hidden luck check (29 or less by default). The story never mentions it.
-- **Getting caught** reveals the thief and makes it the victim's target. Thieves rob those who take no side too; getting caught by one turns it on the thief's side.
-- **Taken back:** stolen goods return if the thief is beaten.
-
-## Desires
-
-Every character has a list of desires: what it wants right now, at whom, and how badly (0 to 100: Passing, Wants, Determined, Driven, Obsessed). They're its reasoning made visible, and they decide what it does:
-- **Hurt, heal, protect, bolster (with a buff), talk to, keep away from, tie up (a fallen foe), rob (a fallen foe), be bolstered by.**
-- **Where they come from:**
-  - **its tactics:** each turn its tactical band weighs every foe it can reach (a Mastermind picks the healer to destroy, a Feral beast the nearest thing), every friend it could mend, whom it could talk round, whom it fears;
-  - **its Tactics answers:** up to three desires stated for any character, PC or NPC (what, who, how badly; healing, bolstering and talking are offered only to those who can). Stated in the players' survey (or the planner), naming only creatures the player perceives on the battle map: on the scene it's looking at, with token vision, those within its sight; otherwise the encounter's combatants. With nobody to name, there are none to state;
-  - **the fight:** whoever hurt it (simple minds go straight for whoever just hurt them; hit from afar while already trading blows, they keep at the one in front of them), whoever felled a friend, a grudge;
-  - **whoever commands it:** a leader always counts a little: every turn, the topmost thing its commander wants that it can actually do (a commander who'd heal a friend, followed by one who can't heal: its next wish, say a foe to hurt) pulls on it by a share of its strength (15%, by its loyalty and playstyles; a boss's more), whatever the Leader influence setting. On top of that, each turn it may take its lead outright (see **Chains of command**), as readily as the Leader influence setting, its loyalty and its playstyles allow (a boss's, by the Boss influence setting, more readily). Following, it takes that wish up in proportion to how strongly its commander wants it (most of its strength for a typical follower, all of it under a boss), so a leader's mild wish can lose to its own strong one, and its playstyle leans toward its commander's for the turn (about a third of the way for a typical follower, more under a boss: the commander's leanings, and quirks such as finishing off the fallen). With nobody able to lead, friends look after each other a little less, except when it comes to vengeance.
-  - **the party, if it's in the player party:** the players vote, in the survey's **Party** tab (one vote per player, not per character; everyone sees everyone's votes as a dot in the player's color with the player's initial), on six questions: who to go after first, whether to talk first, what to do with foes who fall, how to look after each other, how freely to spend spells, focus and potions, and when to pull out. Only the votes of players logged in, with a character in the fight, count. Majority rules: each question's most-voted answer is the party's; a tie goes to the party leader's player, and a tie the leader doesn't settle is no answer, as if nobody had voted. It sways everyone on the friendly side by the **Party's sway** setting (1% to 20%, default 3%): the party's wishes add that much to what each wants (on the 0 to 100 scale), and in that share of fights each uses the party's answer to talking, spending and pulling out where it left its own to "Let this character decide". Other groups have no party wishes: their leaders and their own wishes are enough. A contrarian (an Instigator, a Wildcard) may lean away from its commander's wish instead;
-  - **a friend asking for a buff:** a character who wants to **be bolstered by** a friend (a desire in its Tactics) asks; no roll, only that the two can understand each other (a language in common, and minds that follow it) and that the friend is willing (the loyal gladly, the selfish grudgingly, helpers more than most, a contrarian never for the leader it defies). A friend with a buff to give then wants to bolster the asker, as much as the asking times its willingness, and a single-target buff goes to the one it most wants to bolster. The story tells the call and the answer;
-  - **its playstyles:** each pill guides how it picks up desires (below), added up across up to four.
-- **The strongest leads.** Desires 20 or more below a stated or fight-stirred one don't cross the character's mind, and an obsession leaves no room for caution (it forgets about opportunity attacks).
-- **Thwarted desires fade:** a locked door that won't give, a target it can't reach, getting hurt on the way, being badly hurt with the target far off. The character moves on when something gets too hard or too dangerous.
-- **The story** now and then pauses on a character's two strongest desires: *"Charlette really wants to heal Brent, but also kind of wants to hurt the wolf."* The phrases are roll tables you can edit.
-
-## Buffs, debuffs and control
-
-Spells, songs, skills and features that change the numbers instead of (or as well as) dealing damage. The system helper reads them; the core plays them out the same way in every system:
-- **Buffs** for friends or itself: Bless, Heroism, Shield of Faith, Haste, Courageous Anthem, Rage, Dodge, Action Surge. One friend, several, or everyone in an aura.
-- **Debuffs and control** on foes: Bane, Faerie Fire, Slow, Hold Person, frightened, prone, Hunter's Mark and Hex (extra damage on the caster's own hits), a Demoralize or a Trip (a skill against the foe's defense), a Feint (off guard to the feinter alone).
-- **What they change:** attack rolls, AC, saves and checks (a flat bonus, or a die such as Bless's d4), damage, speed, actions (Haste, Slow), advantage and disadvantage, temporary hit points, resistances (Rage, Stoneskin), conditions.
-- **How long:** for their rounds; a save at the end of each turn can shake them off (Hold Person); damage ends some (sleep). Where the system has **concentration**, one spell at a time, and a hard knock or being taken out ends it.
-- **Charmed or dominated:** the creature fights for whoever holds it until the hold ends (it runs out, a save, the holder loses concentration or falls, or the holder's side harms a charmed one). Its friends are reluctant to cut it down. The story still counts it as one of its own.
-- **Choosing them:** a buff is worth casting when what it adds up to, across everyone it reaches, over the rounds it will matter, beats attacking with the same actions. Thinking minds see this best; feral ones only look after themselves. Late in a won fight, nobody bothers.
-- **Gaining an edge:** some help is good for one roll, or only against one creature: 5e Help (advantage on a friend's next attack at a foe beside the helper), Guidance and Bardic Inspiration (a die on the next roll), Friends (advantage on words to one creature), PF2e Aid (a check against DC 15 for +1 to a friend's next roll, more on a critical success, -1 on a critical failure), Sure Strike, Ironsworn's Secure an Advantage and Aid Your Ally (+1 on the next move, or momentum). Laid on a friend, it counts against whoever that friend is set on: the foe it wants to hurt, the one it wants to talk round, or the friend it wants to tend (first aid, a Medicine check). It's spent by the roll it helps. Bonuses to checks count for talkers and healers, so a talker is worth guiding before it speaks.
-- **Spoilers:** the **Instigator** pill loves locking foes down, harassing and debuffing them (up to 2.5 times the appeal). Puzzle-Maniac, Cruel, Wallflower and Wants to Lead lean that way a little.
-- **The story** tells it: *"Akra lifts Bless over the group: Akra, Zanna and Randal, emboldened."* Dodge, Reckless Attack and Action Surge get lines of their own.
-
-A system that has none of this (no concentration, no skill DCs) simply leaves it out; nothing else changes.
-
-## Senses
-
-To know that a friend needs help, or that a foe is hurt badly enough to finish, a character has to perceive them. Every creature has six senses, each reaching so far (the system's helper sorts the system's own senses into them):
-
-- **Sight:** a line of sight and light. In the dark, only 30 feet by whatever light there is.
-- **Lowlight:** sight in the dark (darkvision, infravision, truesight ...).
-- **Hearing:** 60 feet, through walls.
-- **Smell:** scent, a keen nose. Never through a wall.
-- **Feel:** any other sense of the creature's own that needs no sight (blindsight, tremorsense, lifesense, echolocation ...), through walls.
-- **Radar:** tech sensing of any kind (radar, sonar, scanners, motion trackers), through walls.
-
-Blinded creatures don't see, deafened ones don't hear; radar is a device's, so neither stops it. A foe it can't perceive looks unhurt to it, and it doesn't go after the fallen it can't make out. In a crisis perception bends: helping a friend, keeping someone from dying, or avenging a fallen friend, any sense that could plausibly reach them will do (twice the range, no line of sight or light needed; a smell still doesn't pass a wall). Bystanders notice a fight the same way: seen, picked up on radar, felt, smelled or heard (the din of a fight carries farther than 60 feet, harder to make out with distance and walls), and the story says which.
-
-## Doors
-
-Paths go round walls; a closed door on the way is walked to and opened. A locked one is worth only what the character wants most on the far side of it (more patience when there's nobody else to fight):
-- **force it** with the system's strength check, **hack it down** with its best weapon, or **pick the lock** if it has the skill and tools, whichever is quickest for that character;
-- every failed try wears the desire down; giving up turns it to something else;
-- a door a turn opens opens on the map as the turn is told, and stays open; Rewind or Rewind This Encounter closes (and relocks) it.
-
-The system says what a door is like and how hard it is to get through (its defense, hit points, DCs, and its own damage rules such as PF2e hardness or a 5e damage threshold). A GM can give a door its own numbers in the wall's flags (`fast-fighting.door`).
-
-## Reluctance
-
-Two boxes beside the playstyle pills: **"I don't like to use consumables"** and **"I don't like to use spells that cost something"** (cantrips are free). The character is about a tenth as willing to spend them, until the moment demands it: a friend (or itself) close to death, or, for a character whose playstyle is to help, a friend in a bad way.
-
-**"I don't like to flee"** (the answer **Fight to the end** to when to retreat; less for answers that lean less that way): when running would be the character's own choice (its nerve breaks, a terror is close by, a retreat it planned), it ignores the urge and stays, 90% of the time by default for Fight to the end (a world setting, 50% to 90%), half that for When the battle turns against us. It is still shaken, and the story says it held its ground. Talked out of the fight, it mostly gives up where it stands instead of running. Fear that a spell or the rules put on it (frightened, fleeing, turned) still works as the system says.
-
-## What else the simulation models
-
-- **Rules:** whatever the system's helper provides, such as the turn's actions, degrees of success, attack penalties, advantage, criticals, resistances and dying.
-- **Afflictions:** stage by stage, with onset.
-- **Persistent damage.**
-- **Riders:** knockdown, grab, sneak attack, pack attack or Pack Tactics, and saves on a hit (a wolf's bite: Strength or prone; a spider's venom: half on a success).
-- **What a hit can carry, for a price:** extras a creature adds to a hit when it thinks it worth spending on (a smite's spell slot, a stunning strike's ki, a maneuver's superiority die), and a die that mends a close miss. The emptier the pool, the more a use has to be worth; conservers want more, those going all out less.
-- **Deeds:** a deed die rolled with every attack, added to the roll and the damage, and a deed declared before it (DCC Mighty Deeds: trip, blind, disarm, a defensive stance) that happens on a hit if the die shows enough.
-- **Crit and fumble tables:** where a system crits by table instead of doubling (DCC), a crit rolls on the attacker's table for extra damage and a lasting effect, and a fumble on the fumbler's.
-- **Action dice other than a d20:** a giant's d24, a second action on a d16, crit ranges scaled to the die.
-- **Checks that pick the result:** a spell check whose total says what the spell does (DCC), with spells lost on a failure or a god's patience wearing thin.
-- **Luck:** points burned after a roll falls short to make it (DCC), the more readily the more is at stake; some spend it for friends.
-- **Reactions that answer** (besides opportunity attacks), each taking the round's reaction when it's worth what it costs: a spell that turns a hit into a miss (Shield), a dodge that halves a blow (Uncanny Dodge), damage taken off it (Parry, Shield Block, Deflect Attacks), a bonus to AC as the attack comes (Nimble Dodge), fire for whoever hurt you (Hellish Rebuke), a strike back at a melee miss (Riposte), and counterspells (by the spell's level, a check, or the caster's save).
-- **Summons:** creatures called mid-fight (Spiritual Weapon, Conjure Animals, Summon Animal ...) join right after their summoner and fight for its side, worth it when they'd do more over the fight than its own blows. They go when their time runs out, when the summoner's concentration breaks, or when it stops sustaining them (PF2e); something that isn't a creature (a spiritual weapon) can't be attacked and doesn't hold the field alone. They aren't the table's: left out of the results and Do it For Real Now, though the story tells what they did.
-- **Legendary creatures:** legendary actions are taken between other creatures' turns, from a pool that comes back at the start of the creature's own turn, each the best blow it can strike from where it stands. Legendary Resistance turns a failed save that would take it out of the fight (a hold, a stun, a killing blast) into a success while it lasts.
-- **Regeneration and fast healing:** hit points back at the start of the creature's turn. Regeneration stops for a turn after the damage that stops it (a troll's acid or fire), and while it works the creature can't be killed: cut down, it lies there mending and gets back up, so the fight isn't over, and anyone with fire or acid goes to finish it. A creature that ends up at 0 with its regeneration stopped dies, if 0 is death for it. Some creatures shrug off a blow that would drop them, staying at 1 hit point on a save (5e Undead Fortitude).
-- **Saves out of the ordinary:** Magic Resistance (advantage on saves against spells and other magic), a friend's aura (a paladin's Aura of Protection: the best one within reach, while its bearer is up), evasion (5e: nothing from a save for half on a success, half on a failure), and a success that counts as a critical success (PF2e Evasion, Juggernaut, Resolve).
-- **Abilities that come back:** a 5e "Recharge 5–6" rolls at the start of the creature's turn; a PF2e "can't use it again for 1d4 rounds" waits that long.
-- **Size:** you can only shove or trip a creature up to one size larger.
-- **Crowd control:** spells that slow, frighten, trip, immobilize, paralyze or put foes to sleep, by degree of success, for their duration.
-  - They're valued by the damage they prevent.
-  - The system's tags decide immunity (mental, fear, sleep and others), and some systems let strong targets resist better (PF2e incapacitation).
-  - Thinking creatures don't waste them on the immune. Feral casters cast at random, or whatever does the most right now.
-- **Healing:** spells, potions and first aid.
-  - Heals have a range: a touch means walking over first, and a heal that leaves the main action free (a bonus action) is preferred.
-  - Anyone down is back up with any heal, so for them the cheapest way wins.
-- **Opportunity attacks** (in systems that have them; the helper says who can make one):
-  - Walking out of a foe's reach gives it one melee attack, its reaction for the round.
-  - Tactical and Mastermind characters always weigh it: they keep fighting the foe beside them, and when they must leave (to heal, to flee) they get clear safely first (5e Disengage, PF2e Step) if the turn still allows what they're leaving for.
-  - Competent characters think of it half the time; Feral and Instinctive ones never do. A character whose player ticked "roleplaying is very important to me" forgets half the time.
-  - A way out that doesn't cost the main action (5e Nimble Escape, Cunning Action) is second nature to anything that isn't feral.
-- **Personality: Tactical, Brave, Selfish, Loyal,** from 0 to 100 with named bands. They come from creature data and blend with the side's personality. A player character starts as the usual hero (bold, loyal, unselfish, a good head) and its sheet moves it from there, a little for each thing its system's helper reads (its stats, saves, class, background, feats ...). Words in a character's biography and description move them too ("cowardly", "ruthless", "loyal": [keywords/](keywords/README.md)), up to 15 points each. Each trait's tooltip in the planner lists where it started and everything that moved it.
-  - *Feral:* the closest foe, or whoever hurt it last.
-  - *Instinctive:* wounded prey; pack hunters gang up.
-  - *Competent:* focus fire and flanking.
-  - *Tactical:* healers and casters first, and reads the odds.
-  - *Mastermind:* a side-wide focus, an ambush edge, and the ruthless finish off the downed.
-- **Morale:** losses, wounds, a fallen leader or master, bad odds, and friends seen running, all against Brave. Combatants hold, waver or rout.
-- **What it means to do, in order:** each creature keeps its desires in an order, its top what it's working on, kept from turn to turn.
-  - **New desires** go in at the bottom, unless something puts them higher: at the top, setting out to leave, whatever stops it on the way, a taunt, the GM's say, a fear past what its nerve bears; second, leaving again once that's dealt with.
-  - **A good fit** for what it likes to do goes in first or second, as does one that has come to fit since: a foe it was fighting fallen, for a Cruel one or one that finishes the fallen; whoever is at a friend it can reach this turn, for a protector (Tank, Martyr, Enabler, Moralist); a foe newly seen, for a damage-dealer; a friend down, for a healer (first for one that rescues the dying); itself past its potion threshold, first.
-  - **Everything climbs toward second** each turn, past what it wants less, the faster the more intense (an obsession all the way at once).
-  - **Its mind jumps:** the **ADHD** world setting (20% by default) is the hidden chance, each turn, that the strongest thing it wants takes the top from what it's doing: twice as likely when that could be done this very turn, three times for the least thoughtful. Tactical creatures and better order their desires by what matters most instead, as a soldier would. Each creature also has its own **ADHD** (0% by default, on its token's FastFighting tab and in the planner): it makes the creature more likely to act on impulse, its Tactical down to 70% of what it is at 100%.
-  - **In the turn:** a creature acting on impulse (instinctive or feral) works on its top first, then its second and third, the rest only once the top can't be done any more this turn. One that thinks has its top lead and goes about it in the order its tactics make sense of (a bonus-action heal before the blow).
-  - **Healing** is as urgent as the need: a friend down, as pressing as anything.
-- **Desires it can't act on:** on its turn, a desire it couldn't work on now (whoever it would hurt nowhere to be found or out of reach, a friend to heal with no healing left, words for one who couldn't understand them) sinks to the bottom of what it wants and can't lead. If it's still impossible on the creature's next turn, the creature gives it up, unless it's tactical or better: then it keeps it at the bottom until the chance comes. What the GM holds a creature to stays.
-- **Fear:** a fear condition (frightened, fleeing, turned) does what the system says while it lasts. By default the creature keeps away from whoever frightened it. It doesn't make it run or leave the fight; when the fear ends, it's itself again. Being afraid does wear on its nerve, more so for the less brave, and a fear made worse and worse past what its nerve bears gives it a wish of its own to get away, a reason to run like any other. Both follow the fear as the system has it: lowered or lapsed, less or none. Where the system's fear is only there or not, FastFighting counts how bad it has got itself, hidden: each fear that lands builds it, each that lapses lowers it.
-- **Leaving the field:** on a map, a creature that runs (or is talked into leaving, or falls back with its group) doesn't vanish.
-  - It sets out for the nearest way off the scene, around the walls and through doors it could open, wanting nothing so much as to be gone. It drops its quarrel with whoever talked it into leaving (with all its foes, when its own nerve sent it).
-  - On its turns it goes as fast as it can, breaking free of a grab first. It can still be struck, or talked to, on the way.
-  - **It's gone** when it reaches the edge, or after two whole turns in a row given to leaving, whether or not it got there. That includes a creature the walls shut in.
-  - In a live battle its token is hidden and put in the scene's first square, and it comes off the tracker when the tracker moves on. With fled tokens set to be left where they are, it stays where it went.
-  - **Committed to leaving** (a world setting, 79% by default): struck or spoken to on its way, it keeps going this often. One whose answers and playstyles lean to going (retreating once hurt, a Chicken) gets all of that share. One who'd rather stay (Fight to the end, the brave, Vengeful or Relentless when struck, a Diplomat when spoken to) gets less, never under 70% of it.
-  - **Stopped:** it deals with what stopped it first (that becomes its strongest desire, leaving its second), then sets off again, needing two whole turns again. Each blow and each word is a new check. Every stop weakens its wish to leave, the more so for one who'd rather stay, and a creature stopped often enough forgets leaving and is back in the fight. The GM sees each check on the GM-only card.
-  - A creature still on its way when the fight ends has gone. A side whose only creatures left are leaving has lost. Without a map (no positions), it's gone at once, as before.
-- **Running together:** nobody runs alone if it can help it, and nobody watches a friend run without wondering.
-  - **Seen running**, whatever sent it (its nerve, a terror, a retreat rule, someone's words, a spell or rule such as fleeing or turned): every friend in its group takes it hard, and wonders at its next turn whether to run too. One of its leaders running hits harder, the more so one prone to running (a Chicken above all; Fragile, Mercenary, Lazy, Wallflower). A group with nobody able to lead it takes it harder still; one whose commander stands there steady takes it easier (a boss's presence, much easier: by the Boss influence setting).
-  - **Calling a retreat:** whenever one decides to run (any of the reasons above, or talked into leaving), it first tries to take its group with it. Its commander decides: one who commands calls it itself (a pack runs with its leader); anyone else has to talk its commander into it, which works the more shaken the commander is and the better the case (a lieutenant's word, a way with words). Refusing, the commander orders it to hold, and it does as readily as it would take its commander's lead. Called, the group falls back together: each member as readily as it would take its commander's lead (the Leader influence setting; a boss's, more), more when shaken, much more under a leader prone to running. With nobody to lead it, a group runs together more readily still: nobody tells it to stay. Never the fearless, nor a player character (they decide for themselves). The story tells who calls the retreat and who goes with it.
-  - **Rallying:** seeing friends run or waver, its commander (or one brave and loyal enough with the voice for it; Wants to Lead and Martyrs, more readily) may spend an action holding the rest together: those who hear it (60 feet) are steadier this round and the next (less stress, slower to answer a call to retreat) and may shake off wavering. A commander's rally carries more, by the Leader influence setting, a boss's by the Boss influence too.
-- **Bosses:** almost never run (about 1 in 20 times they would; a Chicken boss, 1 in 5) and almost never agree to a retreat someone else urges; they never stand aside. Their presence and their word multiply what a leader's would do, by the Boss influence setting. They can't be talked down: in a standoff, talking a boss round means paying it to go (11–30% of the payer's money, or something it carries, from whoever on the talker's side has the most and is willing to pay), and it leaves with its whole group, which settles the standoff. A bribe isn't a shakedown: the payer must be one who'd pay to be spared the trouble (a Diplomat, People-Pleaser, Moralist, Enabler, Chicken, Lazy, Fragile or Wallflower first pick; one who can't abide violence; an unselfish one who'd rather talk or isn't very bold), never a Brawler, Instigator, Cruel, Vengeful, Relentless, Mercenary, Thief or Redeem-Seeker. Nobody willing, or nothing to pay with: the boss can't be won there. In a fight, a boss only gives up badly hurt; otherwise words at most buy it off for the moment.
-- **Leadership:** the best social or warfare skill, plus commanding features (the system's own ranking of who leads best).
-- **Chains of command:** every group (the party, each hostile group, each neutral friend group) has a **boss** (never the party) or a **leader**, and up to two **lieutenants**: B L 1 2 pills on each token in the planner, picked by the GM (click a pill to give the role, click again to keep a token out of command, right-click to clear it) or automatically, once: when the plan is new or just cleared (faded pills; after that only the GM changes them, and tokens joining the fight or moving between groups reshuffle nothing). Outside the party, the group's best heads it (as a boss when it outranks everyone else in it by 2 levels or more): the system's ranking of who leads (social and warfare skills, a commander's class, rallying abilities) counts double, and how bossy each member is sways it (its playstyles, Wants to Lead above all, then Instigator and Cruel, while People Pleaser, Wallflower and Chicken hold back; its Brave and Tactical); a group of five or more gets a lieutenant too, and a group of one has nobody to command. The party gets the roles the GM gave its members in earlier fights (kept by actor, from one encounter to the next), or else a leader only when one member, and only one, wants to lead. Whoever comes first and can lead commands the group: its leadership bonus counts, its wishes are followed, its words carry (talking it down can take its group with it). When the boss or leader is down, dead, gone, or can't make itself seen and heard (blinded, deafened, silenced, stunned, confused, controlled ...), the 1st lieutenant steps up, then the 2nd; a lieutenant leads as a leader, never as a boss; the boss or leader takes back over when it can. Nobody able to lead: the group is leaderless. The story tells who takes command.
-- **Scheming:** one who wants to lead (the Wants to Lead pill) and doesn't command its group may brood over it on a turn: a quarter of its turns as its first pick, less further down (×0.75, ×0.55, ×0.4), more with roleplay, at most a tenth staying true. Only one with a treacherous streak (Cruel, Wildcard, Mercenary, Instigator) makes anything of it: it wonders how to be rid of its commander (the story says so), and that turn it refuses its leaders any help (no healing, bolstering, guarding, following, or answering their requests), and it's far easier to talk into changing sides (2 steps fewer, the DC 4 lower, the switch far likelier, the switch luck 20 higher; a player character only on the traitor luck, 9 by default). Changing sides, it gives up wanting to lead: in the fight, and on the character when you Do it For Real Now (Rewind This Encounter puts it back).
-- **Terrain and movement:** travel cost per movement mode from Foundry's region terrain, so rubble doesn't slow a flyer. A high flyer can't be hit in melee by a ground-bound creature.
-- **Walls:** they block sight, and movement goes the shortest way round (a quick grid search over the fighters' part of the map). Climbers go over and burrowers under. With no way round, crossing a wall counts as four times difficult terrain for that square, and a creature that can't manage that in one move gives up on going that way.
-- **Any grid and any units:** distances come from the scene's grid size and units, whatever the system calls them (ft, feet, m, metres ...; a metre counted the table way, 1.5 m to a 5-foot square). Units it doesn't know count each square as 5 ft.
+Personality decides the rest: a coward may still run, a talker may try words first.
 
 ## Prepare Players
 
-**Prepare Players** opens a survey on each player's screen, with one tab per token they control. Every question starts on *"Let ⟨character⟩ decide: …"*, showing what the character would probably do:
-- favorite attack, fighting style and first target;
-- spending limited resources, healing others and drinking potions;
-- **magic and specialties:** how strongly it reaches for its spells and its own abilities (its class's, its kind's, a creature's powers) over what anyone could do (a plain weapon blow, the everyday moves, talking; talking only while none of its specialties make it better with words, such as a charm or an edge to its checks): no preference, a little more often, much more often (three times as likely: it casts wherever a spell does nearly as well as its sword), or whenever it can. Where it stands, close or far, still follows its fighting style. It shows only for a character with something special to use. What counts: magic, anything with uses or a resource of its own (not gear), and whatever the system's helper marks as a class's or creature's own;
-- what to do when an ally is dying, and after being revived;
-- when to retreat, shield use and talking;
-- **others nearby:** stay with the fight, run for help when it goes badly, or hunt down enemies about.
+**Prepare Players** (the tracker's **Survey** button) opens a survey on each player's screen, a tab per token they control. Every question starts on *"Let ⟨character⟩ decide: …"*, which shows what the character would probably do. The questions:
+- favorite weapon or attack, fighting style, and who to pursue first;
+- spell slots, focus and limited abilities; magic and specialties; consumables; healing others; drinking its own potions;
+- when an ally is dying, and after being revived;
+- when to retreat, shield or defending, and talking instead of fighting;
+- others nearby: stay with the fight, run for help when it goes badly, or hunt down enemies nearby;
+- up to three desires (see [Desires](#desires));
+- what it offers and expects to end an argument (see [Talking](#talking));
+- for live battles, its reactions and rerolls.
 
-Answers save as they're made, and two players sharing a token see each other's changes live. The planner shows each player's status, with a button to (re)open their survey. Surveys go only to players, never to a GM or an assistant GM, even one who controls tokens.
+**Magic and specialties** appears only for a character with something special: magic, anything with uses or a resource of its own (not gear), or whatever its helper marks as a class's or creature's own. It sets how often the character reaches for these over what anyone could do (a plain blow, the everyday moves, talking): No preference, A little more often, Much more often (three times as likely) or Whenever it can. Its fighting style still decides where it stands.
 
-**The Party tab** (the survey's last): how the players want everyone on their side to act, one vote per player. The survey Prepare Players sends to everyone opens on it, and starts a new round of the vote. A player votes until it swipes **Lock-in** (its tab turns green) or closes the survey; left without locking in, the tab turns orange. After that it's there to look at until the GM sends everyone a new survey. Only the votes of players logged in count; a tie goes to the party leader's player, and a tie the leader doesn't settle counts as no answer.
+Answers save as they're made, and two players sharing a token see each other's changes live. The planner shows each player's status, with a button to (re)open their survey. Surveys go only to players, never to a GM or assistant GM, even one who controls tokens.
 
-**Asking about one character:** each friendly character's row in the planner has a quill. The green one asks its players about it: their survey opens on that character (their other characters are there too), with the Party tab to look at, not vote on. The orange one opens that character's survey, and only that one, for every GM logged in, to answer for a player who's away.
+**The Party tab** (the survey's last) asks six questions for the whole friendly side: who to go after first, whether to talk first, what to do with foes who fall, how to look after each other, how freely to spend spells, focus and potions, and when to pull out. Each player has one vote, shown to everyone as a dot in the player's color with their initial. A player votes until they swipe **Lock-in** (the tab turns green) or close the survey (orange: not locked in); the tab then stays read-only until the GM sends a new survey, which starts a new vote. Only logged-in players with a character in the fight count. The most-voted answer is the party's; the party leader's player breaks a tie, and a tie the leader doesn't settle counts as no answer. The party's answers add **Party's sway** (1% to 20%, default 3%) to what each friendly creature wants, and in that share of fights replace "Let this character decide" on talking, spending and pulling out.
 
-**My tactics:** players don't have to wait to be asked. Any player who controls a token on the battle map, or owns a character, gets a **My tactics** button in the Encounters tab that opens the same survey any time, in a fight or not. It shows one tab for each of their tokens on the map, plus one for each of their characters that has no token there. A token linked to its actor shares that actor's answers. An unlinked token keeps its own answers, and while it's on the map it stands in for its actor.
+**Asking about one character.** Each friendly row in the planner has a quill. The green one asks that character's players: their survey opens on it, with the Party tab to look at, not vote on. The orange one opens that character's survey for every GM logged in, to answer for a player who's away.
 
-**In the token windows (GM):** every token's window, and the Prototype Token window opened from an actor, has a FastFighting tab beside Identity, Appearance and Vision with the same playstyles and questions (not desires: a desire names a creature someone perceives on the battle map, which only the survey can tell), and whether the token is a hazard (a trap, a haunt, a dangerous feature: simple, firing once, or complex, acting every round), in any game system. A token on the map, linked or not, edits its own answers (a linked token's are its actor's); the Prototype Token edits the actor's, where every new token of it starts. They save as they change, like the survey.
+**My tactics.** A player who controls a token on the map, or owns a character, gets a **My tactics** button in the Encounters tab that opens the same survey at any time. It has a tab for each of their tokens on the map and for each of their characters with no token there. A linked token shares its actor's answers; an unlinked token keeps its own and stands in for its actor while on the map.
 
-**Set up by itself:** the first time FastFighting sees a character, it sets the character up. That happens when the planner opens on a scene with its token, when its token's FastFighting tab opens (the Prototype Token's too), or when a player's survey opens.
-- **Its playstyles:** up to four, best first, from three things:
-  - what its numbers and actions say: its traits (a player character's only where they differ from the usual hero's: bold, loyal and unselfish, as every system gives one by default; and at half weight, since its player says more about who it is), mindless or fearless, its weapons close or far, its magic and specialties, healing and help for friends, ways to hamper a foe, a shield or good armor, and skill at theft, lore and talk;
-  - what its system's helper reads in it: its class, ancestry, kind of creature, alignment, gear and role;
-  - words in its biography and description ([keywords/en.json](keywords/en.json): each word or phrase says how much it raises or lowers each playstyle, and its personality; a translation adds its own words to the English ones, never replaces them, since a biography may be written in either language).
+**The token's FastFighting tab (GM).** Every token's window, and the Prototype Token window, has a FastFighting tab with the same playstyles and questions (not desires: only the survey knows who a character perceives) and a **Hazard** mark: As the game system has it, Not a hazard, Simple: fires once, or Complex: acts every round. A token on the map edits its own answers (a linked one's are its actor's); the Prototype Token edits the actor's, where each new token starts.
 
-  It never picks two that pull against each other, such as a Chicken and a Martyr. A playstyle needs a fair score to be picked, so a plain creature may get none. They're picked once. After that they're the table's: changed or emptied, they stay that way, until someone presses **Reset**, which picks them again at once.
-- **What "Let this character decide" stands for:** the calculated answer to every tactics question, and what it offers and expects to end an argument. Its game system's helper answers first, from what the system knows of it (its class and subclass, features, spells, gear, alignment, kind of creature), and gives its reason; where it says nothing, the core reads the character's hidden scores (tactical, brave, selfish, loyal) and what it can do. Then its playstyles have their say. These are kept with the character. They're worked out again whenever they're missing or broken, the core API has moved on, or the character has changed (a level gained, its traits, a new spell, the world's defaults). Answers someone chose stay as they are.
-- **What the GM sees:** a GM or assistant GM sees, on a character's FastFighting tab (and in the planner and the survey), its hidden scores above the questions (with what each comes from, on hover), and in orange under each question and under "Do you offer" and "Do you expect", what "Let this character decide" chooses and why. Players see only "Let this character decide".
+**Set up by itself.** The first time FastFighting sees a character (in the planner, its token's tab or a survey), it picks up to four playstyles from its numbers and actions, what its helper reads (class, ancestry, kind of creature, alignment, gear, role), and words in its biography ([keywords/en.json](keywords/en.json)). It never picks two that pull against each other, such as a Chicken and a Martyr, and a plain creature may get none. After that the playstyles are the table's. **Reset answers** sets every answer back to "Let this character decide" and picks the playstyles again. "Let this character decide" stands for answers the helper works out from the character (class, features, spells, gear, alignment), or the core from its hidden scores where the helper says nothing. They're worked out again when the character changes; answers someone chose stay.
 
-**Playstyles:** up to four pills per character, PC or NPC, picked in order of importance (each pill shows its place, 1 to 4). Every pill counts, the first in full and each later one less (75%, 55%, 40%): in personality, quirks, desires, and tactics (where pills disagree on a tactic, each simulated fight goes with one of them, the first most often). Unpicking one moves the later ones up. They shift traits, change the defaults, switch on quirks, and guide how the character picks up desires:
+**What the GM sees.** GMs and assistant GMs see a character's hidden scores (Tactical, Brave, Selfish, Loyal) above its questions, and, in orange under each question, what "Let this character decide" chooses and why. Players see only "Let this character decide".
 
-| Pill | Desires |
+### Playstyles
+
+Up to four pills per character, PC or NPC, in order of importance: the first counts in full, the others 75%, 55% and 40%. Unpicking one moves the later ones up. Where pills disagree on a tactic, each simulated fight goes with one of them, the first most often. Pills shift traits, change the defaults, switch on quirks and steer desires:
+
+| Pill | What it does |
 | --- | --- |
-| Brawler | the nearest foe; hits back hard; no talking; now and then a jeer (see **Taunting**) |
-| Chicken | keeps away from the most dangerous foe; gives up easily; hits back half-heartedly; hard to taunt (see **Taunting**); leading, takes its group with it when it runs (see **Running together**); a trap avoider (see **Trap avoiders**) |
+| Brawler | the nearest foe; hits back hard; doesn't talk; jeers now and then (a taunt) |
+| Chicken | keeps away from the most dangerous foe; gives up easily; hits back half-heartedly; hard to taunt; leading, takes its group with it when it runs; trap avoider |
 | Cruel | the weakest, and the fallen; hits back hard; likes leaving a foe hampered |
-| Diplomat | talking; spares the fallen (now and then pulling a killing blow, as a Moralist does); hard to taunt; can't abide violence (calms quarrels, talks fighters into leaving: see Standoffs and Taking no side) |
+| Diplomat | talks; spares the fallen; hard to taunt; can't abide violence |
 | Enabler | heals, guards and bolsters friends; backs the leader |
-| Fragile | once hurt: away from whoever is hurting it, and mends itself (wants to heal itself, if it can); setbacks wear it down; leading, its flight takes others along |
-| Impatient | the nearest foe; setbacks wear it down twice as fast; little patience for locks; in a hurry: doesn't stop to get clear of a foe beside it, raise a shield or set anything up (each system's helper may add its own: Daggerheart's Sprint, DCC's charge, Ironsworn's End the Fight) |
-| Instigator | spoils everyone's plans: locks foes down, harasses and debuffs them more than anyone; the most dangerous foe and the other side's leader; may defy its own leader; taunts (see **Taunting**) |
-| Lazy | the nearest foe and no long walks; can't always be bothered to answer a taunt; not much help to anyone; gives up fast; can't hold a grudge; leading, its flight takes others along |
-| Lore-Collector | foes it hasn't sized up yet; sizes up a new foe before talking to it or attacking it (an action when the turn has one to spare; with one action a turn, the whole turn; in a standoff, most likely its whole first turn, watching while the talk waits). When it works (the system's check, if it has one), its next rolls against that foe are much likelier to succeed, to make up for the time (each system's module has a **Lore-Collector advantage** setting, 1.25× to 3×; 2.5× without one); never without paying for it. What it learns holds for every foe of the same sort (the same stat block, or the same name but for the number): one turn for three goblin warriors, and the payoff against any of them. Afterwards it still hits them and talks to them a little better. It may tell its friends what it learned, though not everyone likes to: its pill's chance times how minded it is (from even odds, more for the loyal, less for the selfish, more for a tactical mind and for pills that lean on supporting friends, Enablers, People-Pleasers, those who'd lead; less for the lazy, brawlers, mercenaries); its side's leader that readily, anyone else half as readily, unless it would rather talk than fight anyway. It's an action (now, or first thing next turn), to every friend within a move of it (its speed: as far as it can properly explain it in the time) who understands it. They deal with that sort a little better too. Every Lore-Collector chance (sizing up, watching, sharing) is smaller the further down its pills it is (×0.75, ×0.55, ×0.4); a trap avoider (see **Trap avoiders**) |
-| Martyr | guards the weakest friend; fears nothing; avenges the fallen twice as hard; rallies friends who waver; taunts foes off its friends |
-| Mercenary | easy pickings; barely avenges anyone; gives up when it gets hard; leading, its flight takes others along; never pays a boss off |
-| Moralist | never the fallen, and pulls a killing blow where its system has a way to (a foe knocked out instead); heals friends, guards the weakest; can't abide violence |
-| Peacekeeper | hard to taunt; keeps the peace between anyone: everyone in a standoff with it (either side) loses patience half as fast; calms any quarrel it sees; foes it talks round stand down (a truce, even mid-fight: never a surrender, a payoff or a rout); its word is trusted (up to 2 easier) and it never threatens; spares the fallen (and pulls a killing blow, as a Moralist does); can't abide violence |
-| People-Pleaser | wants what its leader wants (listens far more than most); likes to talk and to bolster friends; can't abide violence |
-| Puzzle-Maniac | weaknesses to exploit, casters, a clever lock-down, its own specialties a little more often, and locked doors (twice the patience); hard to taunt; a trap avoider (see **Trap avoiders**) |
+| Fragile | once hurt, keeps away from whoever hurts it and heals itself; setbacks wear it down; its flight takes others along |
+| Impatient | the nearest foe; setbacks wear it down twice as fast; little patience for locks; in a hurry: won't stop to get clear of a foe, raise a shield or set anything up |
+| Instigator | locks foes down, harasses and debuffs them more than anyone; the most dangerous foe and the enemy leader; may defy its own leader; taunts |
+| Lazy | the nearest foe, no long walks; sometimes ignores a taunt; little help to anyone; gives up fast; holds no grudge; its flight takes others along |
+| Lore-Collector | sizes up a new foe before acting against it, then rolls much better against every foe of that sort (each helper's **Lore-Collector advantage** setting, 1.25× to 3×; 2.5× without one); may share what it learned; trap avoider |
+| Martyr | guards the weakest friend; fears nothing; avenges the fallen twice as hard; rallies; taunts foes off its friends |
+| Mercenary | easy pickings; barely avenges anyone; gives up when it gets hard; its flight takes others along; never pays a boss off |
+| Moralist | never strikes the fallen and pulls killing blows where the system allows; heals friends, guards the weakest; can't abide violence |
+| Peacekeeper | hard to taunt; a standoff with it loses patience half as fast; calms quarrels; foes it talks round stand down; trusted (up to 2 easier) and never threatens; spares the fallen; can't abide violence |
+| People-Pleaser | wants what its leader wants; likes to talk and to bolster friends; can't abide violence |
+| Puzzle-Maniac | weaknesses, casters, clever lock-downs, its own specialties, and locked doors (twice the patience); hard to taunt; trap avoider |
 | Redeem-Seeker | the biggest threat; won't give up; now and then dares a foe to come at it |
-| Relentless | sticks with the foe it's on (the hardest of all to taunt); shrugs off setbacks; keeps at doors; a little wary of outsiders' words (half a Skeptic's) |
-| Skeptic | hard to taunt; its leader sways it half as much; slow to talk; wary of outsiders' words: anyone not of its own group needs a step more to talk it round, against up to 4 more DC (by the pill's place); a trap avoider (see **Trap avoiders**) |
+| Relentless | sticks with its foe (the hardest of all to taunt); shrugs off setbacks; keeps at doors; a little wary of outsiders' words |
+| Skeptic | hard to taunt; half swayed by its leader; slow to talk; outsiders need one more success, against up to 4 more DC, to talk it round; trap avoider |
 | Speed-Runner | the quickest kills; in a hurry, as an Impatient one is |
-| Tank | stands in front and takes the blows: taunts foes off its friends (all of the slider, as its first pick: see **Taunting**), draws attacks, guards the weakest friend, fears nothing, never retreats, keeps its shield up, minds getting hit half as much |
-| Thief | robs when it's safe; a lock is an invitation; a trap avoider (see **Trap avoiders**) |
+| Tank | stands in front: taunts foes off its friends, draws attacks, guards the weakest, fears nothing, never retreats, keeps its shield up, minds getting hit half as much |
+| Thief | robs when it's safe; a lock is an invitation; trap avoider |
+| Un-Mundane | its magic and specialties over plain blows and talk ("Much more often"), spending freely; foes its powers find a weak spot in |
 | Vengeful | hits back twice as hard; avenges fallen friends; its grudges never cool |
-| Wallflower | keeps its distance; often ignores a taunt; would rather hamper foes from afar; listens to the crowd less; leading, its flight takes a few along; a trap avoider (see **Trap avoiders**) |
-| Wants to Lead | the biggest threat (now and then pins it down); looks after, bolsters and rallies its people; half ignores whoever commands it (it wants to lead; whether it does is its group's chain of command); not chosen, it may scheme (see **Chains of command**) |
-| Un-Mundane | would rather use its magic and its own specialties than fight or talk as anyone would ("magic and specialties: much more often"), and spends freely what that takes; goes for foes its powers find a weak spot in; talks less, unless its specialties make it better with words (a charm, an edge to its checks: then it talks as much as anyone, and reaches for them first) |
+| Wallflower | keeps its distance; often ignores a taunt; hampers foes from afar; listens to the crowd less; its flight takes a few along; trap avoider |
+| Wants to Lead | the biggest threat; looks after, bolsters and rallies its people; half ignores its commander; may scheme if not chosen to lead |
 | Wildcard | something random catches its eye; nobody's voice counts for much; may defy its leader |
 
-Checkboxes go with the pills:
+Checkboxes beside the pills:
 - **Stay mostly true to my calculated tactical level:** playstyles and answers move the calculated strategy by about 10% at most.
-- **Roleplaying is very important to me:** playstyles weigh heavily.
-- **I don't like to use consumables** (and, for casters, spells that cost something).
+- **Roleplaying is very important to me:** playstyles weigh double, and their quirks show much more often.
+- **I don't like to use spells that cost something:** spells that use slots, focus or daily uses are about a tenth as likely, until a life is at stake. Cantrips are free. The Consumables answer **I don't like to use consumables** does the same for potions, scrolls and bombs.
 
-Three questions carry a wish each, as strongly as the answer leans that way: the strongest answer all of it, the others less, the opposite none ("Let them decide" none, so a character nobody has answered for is as it was). The answers count for PCs and NPCs alike.
+Three answers carry a wish, as strongly as the answer leans that way:
 
 | Question | The wish | Answers, from all of it to none |
 |---|---|---|
-| Talking instead of fighting (first on the sheet) | talks whole turns at a time, even without much skill, and votes to open with a standoff; not while it's being hurt (hurt since its last turn); with "stay true", only a small nudge | Always talk unless I am currently being hurt (100%), Talk first: try to end it with words (66%), Talk when it could work (33%), Let my weapons do the talking (0%) |
-| Foes who fall (third) | avoids killing (see **The fallen foes**, and the Avoids killing slider) | Spare them: I avoid killing (100%), Tie them up (66%), Leave them be, Rob them (33%), Finish them (0%) |
-| When to retreat | doesn't like to flee (see **"I don't like to flee"**) | Fight to the end (100%), When the battle turns against us (50%), When I'm badly hurt (0%) |
+| Talking instead of fighting | talks whole turns at a time, even without much skill, and votes to open with a standoff; not while it's being hurt | Always talk unless I am currently being hurt (100%), Talk first: try to end it with words (66%), Talk when it could work (33%), Let my weapons do the talking (0%) |
+| Foes who fall | avoids killing (see [After the fight](#after-the-fight)) | Spare them: I avoid killing (100%), Tie them up (66%), Leave them be, Rob them (33%), Finish them (0%) |
+| When to retreat | doesn't like to flee (see [Morale and leaving](#morale-and-leaving)) | Fight to the end (100%), When the battle turns against us (50%), When I'm badly hurt (0%) |
 
-Every derived number has **fudge up / fudge down / remove fudge** buttons.
+## Do it For Real Now: live battles
+
+**Do it For Real Now** closes the planner and plays the fight on the Combat Tracker, a turn at a time. It needs a helper that plays live battles; with an older helper the button is greyed out and says to update it.
+
+- **The start:** everyone in the encounter goes on the tracker, initiative is rolled for whoever hasn't rolled (a player keeps their roll), the encounter starts, and the chat tells the opening. The **Battle Vantage** opens for the GMs.
+- **FastFighting's turns** (the creatures', and a character's when FastFighting plays it): it decides and rolls the turn as the simulation would, writes it onto the sheets through the helper (hit points, conditions, dying, resources spent, the fled and the surrendered, buffs and debuffs as the spell's own effect), moves tokens around walls, opens doors, and tells the turn in the chat. Then it waits for **Next Turn** (on the card, in the Battle Vantage, or the tracker's own). **Play to the end** goes on without waiting.
+- **A player's turn:** the player plays it with the system's own sheet and cards. When the turn ends, FastFighting reads the roll cards (through the helper) and the sheet changes, and takes them in as if it had seen them: grudges, fear, morale, who was talked round. Anything it isn't sure of goes to the GMs first, to keep, drop or set right; then it tells the turn.
+- **Players run their characters** (a planner toggle, on by default). Off, FastFighting plays every turn. In the Battle Vantage, **FastFighting plays their turns** takes over one character for a player who has to leave; clear it to hand the character back.
+- **Reactions:** each character's FastFighting tab lists its reactions with **Always use it**, **Ask me** or **Never use it**. Asked, the player answers on their screen (the GM answers when they're away or don't answer in time). An NPC's reactions during a player's turn are the GMs' to allow, unless **Ask me about NPC reactions** is off in the Battle Vantage; then its tactics decide.
+- **Rerolls:** where the system has a reroll to spend (PF2e Hero Points, 5e Inspiration), each character says whether FastFighting may spend it to save its own life or a teammate's.
+- **Bystanders** who notice the fight join the tracker and take their turns. **Summons** appear as tokens beside their summoner.
+- **Spotlight systems** (Daggerheart, Ironsworn) have no initiative: the Battle Vantage gives the spotlight to whoever FastFighting would pick next, or to whoever the GM picks.
+- **The end:** the chat says which side won. **Settle the aftermath** has FastFighting deal with what's left (the dying bleed out or hold on, the beaten are dealt with, goods go back to their owners). The encounter stays open for the GM to end.
+
+### The Battle Vantage
+
+The GMs' window for a live battle: the round, whose turn it is, and each creature's mind.
+- **Map of minds:** every creature on the map as a node, laid out as its token stands; drag, pan and zoom. Each desire, and each condition from someone, is an arrow between two creatures (wants to hurt, wants to talk round and how, afraid of, grabbed by, holds a grudge, won't listen to). What a creature has on its own (prone, hasn't noticed the fight, thinking of running) floats round it. A goal about a thing points at it: the door it wants through, the trap it keeps clear of. Every line and symbol has an intensity; the GM can raise it, lower it or set it aside at 0, and what the GM sets holds until it's handed back. A character its player runs shows no desires.
+- **Focus:** click a creature, or select its single token on the map, to see what it wants, what's on it, who wants something of it, and the conditions and table rolls to put on it. The line under the pointer glows: Delete removes it, − and + lower and raise it, Tab and Shift+Tab step through the creature's lines (all in **Configure Controls**). + on the creature itself, or its **Add** button, adds one.
+- **What happened at the table:** what FastFighting couldn't see (talked round by a Diplomacy roll, wanting to hurt someone, shaken, fleeing, surrendering), applied as the simulation would have.
+- **Conditions:** each with its value, its source, its duration, and whether the sheet shows it or FastFighting keeps it. The GM can put on any condition the core or the system knows, change a value, or take one off, including those toward someone (afraid of, grabbed by, goaded by, controlled by, tied up by, off guard to, and a power's mark). What the sheets can show goes on the sheet; the rest FastFighting keeps with the battle. Rewind takes a GM's change back with the turn it came after. Conditions drive behavior, not only numbers: frightened by someone, a creature keeps away from them (frightened 2 or worse, it won't go for them; fleeing from them, it runs); grabbed, it's set on whoever holds it; charmed, it never attacks its charmer.
+- **Moving a creature** to another team works out again what it wants, and everyone's wishes toward it. A token on the map that isn't in the battle can be brought in.
+
+### Rewind
+
+**Rewind**, on each turn's card and in the Battle Vantage, is the tracker's Previous Turn, and the battle follows the tracker back however it goes (its own Previous Turn and Previous Round too). Each turn after the one it goes back to is taken back, last first: what it wrote on the sheets, its cards, its moves, and the minds as they were. A turn FastFighting played stands as it ended, and Next Turn plays the next one again with fresh dice; a player's turn is theirs again, and all its cards are read again when it ends. At the battle's first turn, Rewind takes that turn back and waits for **Play it**. The last 12 turns rewind this way; further back, the tracker is put back where it was. **Rewind This Encounter** takes the whole battle back to before it began. The battle is saved as it's played (in a journal entry only GMs can see), so a reload or a GM leaving loses nothing: the next GM picks it up where it was.
+
+**Fights from before live battles.** Older versions played the whole fight at once. Those fights can still be rewound from the GM's summary card or the planner, and one that was cut short shows in the planner, to be rewound before anything else is done for real on that scene.
+
+## After the fight
+
+When the last foe falls, the survivors tend their dying before the dying make their next roll: free help first (first aid, medicine feats), then spells and potions. Anyone left untended lives or dies by the system's rules for dying. **After the fight** picks how much of this happens: **Tend the fallen and tell it**, **Tend the fallen quietly** (the story ends at the last blow), or **Stop at the last blow** (you play the rest out).
+
+**Fallen foes** are dealt with by each victor's answer to **Foes who fall** (its own, or its party's), then its playstyles:
+- **Spare them: I avoid killing** (also Moralists, and Diplomats most of the time): it stops others from finishing them and gives free first aid if it can. Its killing blows knock out instead, and it never strikes the fallen. **Avoids killing: how often it holds back (%)** sets how often (90 by default, 50 to 90; less for answers that lean less that way).
+- **Finish them** (also the Cruel, with no other answer): it finishes them off.
+- **Tie them up:** it pulls killing blows most of the time and ties up the fallen with whatever's to hand. Prisoners are out of the fight even if healed, and tended after it. Mid-fight it ties someone up when no foe stands within its reach (without a map, after the fight). A prisoner struggles against its bonds, and friends may untie it. In a live battle the sheet shows it with the system's restrained status; the results show how often each creature ends up **Tied up**.
+- **Rob them:** it takes a fallen foe's purse, else something it carries or held, during the fight or after; a player character's things only on its luck check. The robber gives it back if it ends the fight beaten.
+- **Leave them be:** left to the dice.
+
+**Fallen PCs.** Each time a creature wants to finish off a player character at 0 HP, it rolls d100 against **PC luck: being finished off** (39 by default): at or under, it goes ahead; over, it turns to the next foe. A character with **fate** to spend (PF2e Hero Points, 5e Heroic Inspiration) uses it when someone would die: the killing blow, save or recovery check is rolled again, or, for its own death where the system has a sure way out, that (PF2e Heroic Recovery). It always spends for itself; for a friend, the more selfish it is, the less likely.
+
+## How creatures decide
+
+The simulation and the live battle use the same decisions. [CODING_README.md](CODING_README.md#engine-behavior-in-detail) has the full detail.
+
+### Personality
+
+Four traits from 0 to 100, with named bands: **Tactical**, **Brave**, **Selfish** and **Loyal**. They come from the creature's data and blend with its side's personality (**Side personality defaults**, and the side's group personality in the planner). A player character starts as the usual hero (bold, loyal, unselfish, a good head), and its sheet moves it from there. Words in a biography ("cowardly", "ruthless", "loyal": see [keywords/](keywords/README.md)) move them up to 15 points each. Each trait's tooltip in the planner lists everything that moved it. Tactical bands:
+- *Feral:* the closest foe, or whoever hurt it last.
+- *Instinctive:* wounded prey; pack hunters gang up.
+- *Competent:* focus fire and flanking.
+- *Tactical:* healers and casters first; reads the odds.
+- *Mastermind:* a side-wide focus, an ambush edge; the ruthless finish off the downed.
+
+### Desires
+
+Every creature keeps a list of desires: what it wants, of whom, and how badly, from 0 to 100 in five bands (Passing, Wants, Determined, Driven, Obsessed). It can want to hurt, heal, protect, bolster, talk to, keep away from, tie up, rob, be bolstered by, break free, free a friend, be rid of something, or leave the fight. Desires come from:
+- its tactics: each turn it weighs every foe it can reach, every friend it could mend, whom it could talk round, whom it fears;
+- its stated desires: up to three, set in the survey or the planner, naming only creatures it perceives on the battle map;
+- the fight: whoever hurt it or felled a friend, grudges;
+- its commander's wishes, the party's vote, and a friend asking it for a buff;
+- its playstyles.
+
+The strongest leads: desires 20 or more below a stated or fight-stirred one don't cross its mind, and an obsessed creature forgets caution (it ignores opportunity attacks). Thwarted desires fade: a locked door that won't give, a target it can't reach, getting hurt on the way. Each turn there's a hidden chance that its strongest desire takes over from what it's doing: **ADHD: how often a creature's mind jumps (%)** (20 by default), more for the least thoughtful; Tactical creatures and better act on what matters most instead. Each creature also has its own **ADHD** (0% by default, on its token's FastFighting tab and in the planner). The story now and then voices a creature's two strongest desires: *"Charlette really wants to heal Brent, but also kind of wants to hurt the wolf."*
+
+### Talking
+
+A fight can be talked down at any point, and some encounters never come to blows. Talkers persuade, intimidate or deceive, with the skills the system maps to each, against the system's DC for resisting. Talker and listener must share a language, unless **Ignore languages** is on; a creature with no language can't be talked to. Most need 2–6 successes. Hurting someone or failing to convince them makes them harder to sway, and an insult (a critical failure) means they won't listen again. A creature talked round surrenders, flees, stands down, changes sides, or gives something up. An enemy talked into changing sides only stands aside, and only on a hidden d100 under **Luck: an enemy changing sides** (69 by default); charm and dominate skip that roll.
+
+**PCs decide their own fate.** Words can only make a PC pay up or run, and it takes two more successes than usual. A PC with nothing to give can only be scared off; one whose answer is "Let my weapons do the talking" won't listen at all.
+
+**Standoffs.** An encounter opens as a standoff when every side's voice (its leader, or most of its members) would rather talk, or when almost everyone would; **Opening** can instead force **Always talk first** or **Straight to battle**. Nobody attacks while it lasts. Words can win it, and anyone giving something up or running settles the whole conflict. It breaks when someone gets upset (an insulting pitch, failures piling up, rounds dragging on, a beast that can't follow the talk, an impatient temper) or a blow lands between the two sides.
+
+**Only an argument: no fighting** (an Opening choice, or the world default) is for a negotiation or a hearing that mustn't turn bloody. Whatever would come to blows makes the talks collapse instead, somewhat less often than a standoff would break (3 times in 4), and everyone goes their own way. Nobody runs or yields: a creature talked round backs down, and one made to pay pays and stays. What was agreed before a collapse stands. The results show how often the talks collapsed, and no simulated difficulty.
+
+**Bargaining.** Two more questions, in the survey, the token's tab and the planner: **Do you offer something to end this argument?** and **Do you expect something to end this argument?** The answers: nothing, money, an item (one of its own things to offer; to expect, something of a kind: the system's categories, materials and rarities, worth at least so much, or unvalued), or a promise (no harm, passage, leaving). Only what a character really carries counts. A deal ends the encounter for the side that got what it wanted (a promise of no harm: a truce). Unmet demands are haggled down with the usual checks: the greedy hold out longer, the peaceable come round sooner. A player character hands over only what it offered, unless it's talked into more. In a system without coins or goods (Ironsworn), paying costs the side's shared Supply, and a foe made to give something up gives ground on its own track.
+
+**Giving something up.** A creature made to pay gives what the other side expects, else what it offered, else 1–10% of its money or an item it carries but doesn't wield or wear. A PC hands over an item only on **PC luck: handing over an item** (39 or less by default). The talker gets it; if the talker ends the fight beaten, it goes back. Mid-fight the giver fights on, bitter. Do it For Real Now hands goods over in the turn they change hands; Rewind hands them back.
+
+**Quarrels.** A neutral may come to blows with one side, most often after a botched pitch. Only those two fight, and the standoff holds while everyone's patience wears thin.
+
+### Groups
+
+**Hostile groups.** Every hostile token starts in group 1; move any of them to group 2 or 3 with the pills. Each group is a side of its own, the others' enemy as much as the party's (rival warbands, a monster loose among bandits). Groups share the Hostile tab's settings, and each has its own leader. The results show each group's chance of winning.
+
+**Neutral friend groups.** When the planner opens, it proposes up to three friend groups among the neutrals: the neutral nearest the map's top-left corner starts group 1 with every neutral of its kind (the same stat block, or the system's type of creature); anyone within 3 squares of a member joins, up to three steps out; group 2 starts the same way from whoever is left, and everyone left after that is group 3. **Neutral friend groups: reach (squares)** sets the reach (1 to 20). Move anyone with the pills; your pick stands (a proposed group shows lighter). Members of a friend group want each other safe and stand together, and hurting one builds a grievance in the rest.
+
+### Taking no side
+
+Neutral tokens, and enemies talked out of the fight, take no side: nobody fights them and they fight no one. The Neutral tab's lean (takes no side; leans toward the party, the enemy, the nearest side or the underdog; left out; or fights everyone) doesn't put them on a side; it nudges what they want. A lean wears down when the favored side hurts someone the neutral cares about, and ends at once if that side hurts the neutral.
+- **Crossed:** hurting it (a careless area spell catches a neutral within 10 ft of its targets), robbing it, insulting it, or hurting someone it wants safe offends it. Offended, it turns on that side alone, or, if it can talk, confronts the offender first. Do it For Real Now turns a neutral that turned on the party Hostile.
+- **Won over:** either side's talkers can talk it into joining them, with no luck roll, if it hasn't seen that side cross it. Nobody is threatened into friendship. Do it For Real Now changes the token's disposition to its new side.
+- **Who knows:** only a Tactical mind or better sees a neutral for what it is. Others may take it for an enemy, and a feral creature may attack anything close.
+- **Getting involved:** a neutral with a lean gets involved about 1 time in 12, up to about 2 in 3 when it likes the side well and that side looks like winning. Involved, it works with words against the side it likes least.
+- **Can't abide violence:** Diplomats, Moralists, People-Pleasers, and those who answer "Spare them: I avoid killing" or "Always talk unless I am currently being hurt", spend their turns talking the fighters into leaving.
+
+Those who take no side never win or lose a fight. The results show how often a foe was talked into standing aside.
+
+### Leaders and bosses
+
+Every group (the party, each hostile group, each neutral friend group) has a **boss** (never the party) or a **leader**, and up to two **lieutenants**: the **B L 1 2** pills. Click a pill to give the role, click again to keep a token out of command, right-click to clear it. FastFighting fills them once, when the plan is new or just cleared (shown faded); after that only the GM changes them. Outside the party the best leader heads the group, as a boss when it outranks everyone else by 2 levels or more. The party keeps the roles you gave its members in earlier fights; otherwise it gets a leader only when exactly one member wants to lead.
+
+The one in command adds its leadership bonus, its wishes pull on its followers (**Leader's influence**), and talking it down can take its group with it. When it's down, gone, or can't make itself seen and heard (blinded, deafened, silenced, stunned, confused, controlled), the 1st lieutenant steps up, then the 2nd. The story tells who takes command.
+
+**Bosses** multiply what a leader does, by **Boss's influence**. They almost never run (about 1 in 20 of the times they would; a Chicken boss, 1 in 5) and never stand aside. They can't be talked down: in a standoff, talking a boss round means paying it to go (11–30% of the payer's money, or something it carries), and it leaves with its whole group. In a fight, a boss gives up only when badly hurt.
+
+**Scheming.** A Wants to Lead character not in command may brood. With a treacherous streak (Cruel, Wildcard, Mercenary, Instigator), it withholds help from its leaders and is far easier to turn. A player character turns traitor only on **Luck check: a player character turning traitor** (9 by default).
+
+### Morale and leaving
+
+Losses, wounds, a fallen leader, bad odds and friends seen running weigh against Brave; combatants hold, waver or rout. A friend seen running shakes its group. One who decides to run first tries to take its group along; its commander decides whether the group goes. A commander, or someone brave and loyal enough, may spend an action rallying: those within 60 feet are steadier this round and the next.
+
+**Fear conditions** (frightened, fleeing, turned) do what the system says while they last: by default the creature keeps away from whoever frightened it. Fear alone doesn't make it run, but it wears on its nerve, and fear piled past what its nerve can bear gives it a reason to.
+
+**Leaving the field.** On a map, a creature that runs doesn't vanish. It heads for the nearest way off the scene, around walls and through doors it can open, and can still be struck or talked to on the way. It's gone when it reaches the edge, or after two whole turns in a row given to leaving. Struck or spoken to, it keeps going as often as **Committed to leaving: how often it keeps going (%)** says (79 by default; less for those who'd rather stay); stopped, it deals with what stopped it and sets off again. A side whose only creatures left are leaving has lost. In a live battle, its token is hidden (or left in place, by **Do it For Real Now: fled combatants**) and comes off the tracker.
+
+**"I don't like to flee."** A character whose answer to When to retreat is **Fight to the end** ignores its own urge to run 90% of the time by default (**Doesn't like to flee: how often it stays (%)**, 50 to 90), half that for When the battle turns against us. It's still shaken, and the story says it held its ground. Fear from a spell or the rules still works as the system says.
+
+### Held, hurt or controlled
+
+A creature held (grabbed, tied up, caught in a web or a net) wants to break free, the more so with no foe beside it; friends free a tied-up ally, loyal ones most. What holds or hurts a creature (on fire, bleeding, prone) bothers it as much as it hurts, and it weighs being rid of it against what else it wants. A selfless creature may simply bear it: **Selfless creatures bear what holds or hurts them (%)** (29 by default) is how often a fully selfless one that doesn't stop to calculate does, each turn; never what would kill it. Tied up, it can't use what needs hands (the system says which; otherwise its helper's **Tied up stops spells** setting). A charmed or dominated creature wants what its controller wants; controlled by a player's character, it's that player's to run.
+
+### Taunts, traps and theft
+
+**Taunting.** A taunt makes a foe want to go for the taunter: a strong desire, not a command. A stronger want can still win, and the want ends when the taunter falls. Game systems taunt with their own skills and spells (XCC's Draw Agro). Some playstyles taunt too: a Tank most, then an Instigator (75%), Martyr (55%), Brawler (40%) and Redeem-Seeker (30%). A playstyle's taunt is an action within 30 feet, the better of Intimidation and Deception against the foe's resistance. If it gets through, it takes hold on a hidden d100 at or under **Playstyle taunts: taking hold (%)** (42 by default) times the taunter's share: a Tank on 42 or less, a Redeem-Seeker on 13 or less. It never works on the mindless. Some shrug off any taunt as it lands: Relentless 75%, Skeptic 60%, Peacekeeper 50%, Puzzle-Maniac 40%, Diplomat and Chicken 35%, Wallflower 30%, Lazy 25% (never more than 90%).
+
+**Trap avoiders.** Hazards (traps, haunts, dangerous features) fire at whoever is in reach; a GM marks a token as one in its FastFighting tab. Some playstyles watch for them: a Thief most, then a Puzzle-Maniac (90%), Skeptic (75%), Lore-Collector (60%), Chicken (50%) and Wallflower (35%). At the start of a fight each rolls d100 per hazard against **Trap avoiders: spotting a trap (%)** (59 by default) times its share: a Thief spots it on 59 or less, a Wallflower on 21 or less. Anyone a hazard goes for knows it from then on. A creature keeps out of the hazards it knows, unless what it's after is inside and it wants it badly enough.
+
+**Theft** in a fight is rare; most thieves take your things from your body afterwards. Only a **Thief**, or someone with the system's stealing skill well above typical for its level, steals mid-fight, and only when it's safe: its side clearly winning, or hidden with its mark alone. Against a PC it also needs **PC luck: being robbed** (29 or less by default), and the story never mentions it. Caught, the thief is revealed and becomes the victim's target. Stolen goods return if the thief is beaten.
+
+### Buffs, debuffs and control
+
+Spells, songs, skills and features that change the numbers (Bless, Haste, Rage, Bane, Faerie Fire, Hold Person, Hunter's Mark, a Demoralize, a Trip, a Feint) work the same way in every system: they change attack rolls, AC, saves and checks, damage, speed, actions, advantage, temporary hit points, resistances and conditions, for their duration, with saves to shake them off and concentration where the system has it. A creature casts a buff when its worth across everyone it reaches beats attacking with the same actions; thinking minds judge this best, and feral ones look after only themselves. Charmed or dominated creatures fight for their controller until the hold ends. One-roll edges (5e Help, Guidance, Bardic Inspiration, PF2e Aid, Ironsworn's Secure an Advantage) count for a friend's next roll against whoever it's set on. The Instigator loves debuffs most. A system without concentration or skill DCs leaves those parts out.
+
+### Senses
+
+To know a friend needs help, or a foe is hurt badly enough to finish, a creature has to perceive them. Every creature has six senses, and the helper sorts the system's own into them:
+- **Sight:** a line of sight and light; in the dark, 30 feet by whatever light there is.
+- **Lowlight:** sight in the dark (darkvision, infravision, truesight).
+- **Hearing:** 60 feet, through walls.
+- **Smell:** scent; never through a wall.
+- **Feel:** any other sense needing no sight (blindsight, tremorsense, lifesense, echolocation), through walls.
+- **Radar:** tech sensing of any kind, through walls.
+
+Blinded creatures don't see and deafened ones don't hear; radar is a device's, so neither stops it. A foe it can't perceive looks unhurt to it. In a crisis (helping a friend, keeping someone from dying, avenging a fallen friend), any sense that could plausibly reach will do. Bystanders notice a fight the same way, and the story says how.
+
+### Doors
+
+Paths go round walls, and a creature walks to a closed door on its way and opens it. A locked door is worth only what it wants on the far side: it forces it, hacks it down or picks the lock, whichever is quickest for it, and each failure wears the desire down. A door opened in a live battle stays open; Rewind closes and relocks it. The system says how hard a door is to get through; a GM can give a door its own numbers in the wall's flags (`fast-fighting.door`).
+
+### What else the simulation models
+
+- The system's own rules, from its helper: the turn's actions, degrees of success, attack penalties, advantage, criticals, resistances and dying.
+- Afflictions stage by stage, persistent damage, and riders on a hit (knockdown, grab, sneak attack, Pack Tactics, a save against prone or venom).
+- Extras paid for on a hit (a smite's slot, a stunning strike's ki, a superiority die), spent more readily the fuller the pool.
+- DCC's deed dice and Mighty Deeds, crit and fumble tables, action dice other than a d20, spell checks, and Luck burned to make a roll.
+- Reactions besides opportunity attacks: Shield, Uncanny Dodge, Parry, Shield Block, Deflect Attacks, Nimble Dodge, Hellish Rebuke, Riposte, and counterspells.
+- Opportunity attacks where the system has them: Tactical and Mastermind characters get clear safely (Disengage, Step) when they must leave; Competent ones think of it half the time; Feral and Instinctive ones never do.
+- Summons, which join right after their summoner and fight for its side until their time or its concentration runs out. The planner's results don't count them.
+- Legendary actions and Legendary Resistance; regeneration and fast healing (while regeneration works, the creature can't be killed); Undead Fortitude.
+- Magic Resistance, save auras, evasion, and successes that count as critical successes; Recharge 5–6 and PF2e cooldowns; size limits on shoves and trips.
+- Crowd control (slow, frighten, trip, immobilize, paralyze, sleep), valued by the damage it prevents; thinking creatures don't waste it on the immune.
+- Healing by spells, potions and first aid, with range: a touch means walking over first.
+- Terrain from Foundry's regions, by movement mode (rubble doesn't slow a flyer); walls block sight and movement goes round them; climbers go over and burrowers under. A high flyer can't be hit in melee from the ground.
+- Any grid and units: distances come from the scene (a metre counted the table way, 1.5 m to a 5-foot square); units it doesn't know count each square as 5 ft.
 
 ## The story
 
-The fight is told in one of three styles:
-- **Roleplay:** prose. It narrates cover, terrain, climbing, flying and burrowing, and relationships: an enemy leader, a grudge, vengeance, a talking nemesis, a protector, a rival.
-- **Standard:** what each character did and how they ended.
-- **Statistician:** every roll.
-
-Creatures that never joined the fight aren't listed, and hidden ones are never named. In a live battle, what the players shouldn't learn (who takes command, what a creature thinks or schemes, what sizing up a foe told it, its nerve failing) goes on a card of its own, for the GMs only. The story is always told by the narrator, never as a creature's own words in the chat. Every Roleplay sentence comes from a roll table, and you can install them as editable RollTables under **Settings → FastFighting → Story tables**.
+The fight is told in one of three styles (**Story style**): **Roleplay** (prose, with cover, terrain, climbing, flying, burrowing, and relationships such as an enemy leader, a grudge, vengeance, a protector or a rival), **Standard** (what each character did and how it ended) or **Statistician** (every roll). Creatures that never joined the fight aren't listed, and hidden ones are never named. In a live battle, what the players shouldn't learn (who takes command, what a creature thinks or schemes, what sizing up a foe told it, its nerve failing) goes on a card for the GMs only. The narrator tells the story, never a creature in its own voice. Every Roleplay sentence comes from a roll table; **Settings → FastFighting → Story tables** installs them as editable RollTables.
 
 ## Languages
 
-FastFighting ships in **English** and is built to be translated. Each person sees it in the language they picked in Foundry (Configure Settings → Language), and anything a translation leaves out reads in English.
-- **What a translation covers:** every window, setting, label and hint; the story in all three styles, including every line of the Statistician log and the Roleplay prose (a translation can write its own sentences rather than translate them line by line).
-- **What comes from elsewhere:** names of characters, items, spells and effects are whatever your game system and its compendiums call them (a translation of the system gives names in that language). The system helper modules write some lines of their own (a recovery check, why a trait is what it is); those follow each helper's own languages.
-- **The game system in your language:** a system has its own words (its actions, conditions, skills and compendiums), and a translation of it is a module of its own. When yours isn't English and the system's translation isn't on in this world, each FastFighting system module says so at the bottom of its settings, naming the last translation module we knew of (Spanish: pf2e-es for PF2e; translate-dnd5e-sdr2-es for D&D 5e). With a translation that rewords compendium items (Babele), the system modules still read their rules from the English Babele keeps.
-- **Regional variants:** Foundry matches a language code exactly and falls back only to English, so a translation should use the code Foundry's own translation for that language uses (`es` for Spanish, for example, in a Spanish that reads naturally in every region).
-- **Story tables:** installing the story tables (Settings → FastFighting → Story tables) installs them in the GM's language. Tables you've installed or edited always win over the built-in ones.
-- **Distances, imperial or metric:** distances read in the units of the scene's grid (Configure Scene → Grid: `m` and 1.5 per square on a metric map), counted the table way, 1.5 m to a 5-foot square. A scene with no units named reads in feet. Numbers are written as the reader's language writes them (4.5 m, 4,5 m).
-- **Words kept in English:** each system module's `hardcoded-toEN.json` lists words it keeps in English for now, whatever the reader's language, where a translation would contradict a game system that isn't translated yet.
+FastFighting ships in **English** and is built to be translated. Each person sees it in the language they picked in Foundry (Configure Settings → Language); anything a translation leaves out reads in English.
+- **A translation covers** every window, setting, label and hint, and the story in all three styles (a translation can write its own Roleplay sentences rather than translate line by line).
+- **Names** of characters, items, spells and effects are whatever your game system and its compendiums call them. Each helper writes some lines of its own (a recovery check, why a trait is what it is), in that helper's languages.
+- **The game system in your language:** a system's translation is a module of its own. When your language isn't English and that translation isn't on in this world, each helper says so at the bottom of its settings, naming the last translation module we knew of (Spanish: pf2e-es for PF2e; translate-dnd5e-sdr2-es for D&D 5e). With a translation that rewords compendium items (Babele), the helpers still read their rules from the English Babele keeps.
+- **Regional variants:** Foundry matches a language code exactly and falls back only to English, so a translation should use the code Foundry's own translation uses (`es` for a Spanish that reads naturally in every region).
+- **Story tables** install in the GM's language. Tables you've installed or edited always win over the built-in ones.
+- **Distances** read in the scene grid's units (Configure Scene → Grid: `m` and 1.5 per square on a metric map), counted the table way, 1.5 m to a 5-foot square. A scene with no units named reads in feet. Numbers follow the reader's language (4.5 m, 4,5 m).
+- **Words kept in English:** each helper's `hardcoded-toEN.json` lists words it keeps in English for now, where a translation would contradict a game system that isn't translated yet.
 
 ### Translating
 
 A translation needs no code. All of FastFighting's words are in two text files, and a translation is a copy of each:
-1. Copy `languages/en.json` to `languages/<code>.json` (`fr.json` for French) and translate the text after each key. Keep the keys, and anything in `{braces}`, as they are: the braces are filled in with names and numbers, in whatever order the sentence puts them. Some entries are pieces of a longer line (their leading space or ` · ` included); the key's group shows where they go.
+1. Copy `languages/en.json` to `languages/<code>.json` (`fr.json` for French) and translate the text after each key. Keep the keys, and anything in `{braces}`, as they are: the braces are filled in with names and numbers, in whatever order your sentence puts them. Some entries are pieces of a longer line (their leading space or ` · ` included); the key's group shows where they go.
 2. Add the language to the `"languages"` list in `module.json`, the way English is listed there.
-3. For the Roleplay prose, copy `story/en.json` to `story/<code>.json` and translate its phrases. Sentences are built from them: a sentence shape like `{actor} {aim} and their {weapon} {crit}!` takes one phrase from each list it names. Where your language needs whole sentences instead, a file can also list finished sentences for any table, by the table's key (`{"event.opening": ["…", "…"]}`). A list can have as many entries as you like.
-4. Each FastFighting system module (PF2e, D&D 5e …) has its own `languages/en.json`, translated the same way. Its `hardcoded-toEN.json` names any words it keeps in English for now: leave those as they are.
+3. For the Roleplay prose, copy `story/en.json` to `story/<code>.json` and translate its phrases. Sentences are built from them: a shape like `{actor} {aim} and their {weapon} {crit}!` takes one phrase from each list it names. Where your language needs whole sentences instead, a file can list finished sentences for any table, by the table's key (`{"event.opening": ["…", "…"]}`). A list can have as many entries as you like.
+4. Each helper has its own `languages/en.json`, translated the same way. Leave the words its `hardcoded-toEN.json` names as they are.
 
 Anything a translation leaves out reads in English. The tests check every listed language for unknown keys and matching placeholders.
 
-The keywords read in characters' biographies aren't in the language files: they're in [keywords/](keywords/README.md), one file for each language (`keywords/en.json`, and yours beside it: `keywords/es.json`), each word with what it raises and lowers. A translation's keywords add to the English ones and never replace them, since a character's biography may be written in either language: list only your language's words, and your negations ("nunca", "no"). [keywords/README.md](keywords/README.md) explains the ratings.
+The words read in biographies are in [keywords/](keywords/README.md), one file per language (`keywords/en.json`, and yours beside it, such as `keywords/es.json`), each word with what it raises and lowers. A translation's keywords add to the English ones and never replace them, since a biography may be written in either language: list only your language's words, and your negations ("nunca", "no"). [keywords/README.md](keywords/README.md) explains the ratings.
 
 ## Settings
 
-All settings are defaults that the planner can override per battle:
-- **Simulation:** the prediction time (4 to 20 seconds, 6 by default: fight after fight until it's up, finishing the one under way; a big battle gets fewer fights in that time, and the planner warns when they're too few for sure odds) and maximum rounds (4 to 12, 12 by default: a battle still going after that counts as a stalemate); hidden tokens and other levels; bystanders.
-- **Unaligned sides:** Neutral lean (takes no side, by default); how near a neutral must be to join a friend group the planner proposes (3 squares; 1 to 20).
-- **Dying and healing:** the downed model, after the fight, and PC healing and dying defaults.
-- **Modifiers:** leadership, morale, positioning, talking (and whether to ignore languages), how encounters open, and the initiative source.
-- **Leadership** (sliders): **Leader influence**, how readily followers take their commander's lead (0 to 100, a scale where 50 is the usual; 0 nobody follows, 100 twice as readily); **Boss influence**, how much more readily a boss's than a leader's (1.25× to 3×, default 2×).
-- **Luck checks** (sliders):
-  - a PC handing over an item, default 39;
-  - a PC being robbed, default 29;
-  - a PC being finished off at 0 HP, default 39;
-  - an enemy changing sides (under this), default 69;
-  - a PC scheming against the leader it wasn't chosen to be turning traitor (this or less), default 9;
-  - a trap avoider spotting a hazard (this or less), default 59;
-  - how often someone who doesn't like to flee stays, default 90 (50 to 90);
-  - how often someone who answers "Spare them: I avoid killing" holds back (a blow that would kill knocks out, the fallen left be and spared after), default 90 (50 to 90); less for answers that lean less that way.
-- **Story:** style, delivery, and whether the posted story shows the odds (off).
-- **Do it For Real Now:** loot, corpse and fled handling, and whether tokens walk their turns on the map (off: they go straight to where each turn leaves them).
-- **Defaults:** side personalities, and data paths for the generic adapter.
+World settings, under **Configure Settings → FastFighting**. The planner overrides some for one battle: Seconds, Max rounds, Downed, After the fight, Opening, Initiative, the toolbar toggles, and the side settings (the Neutral lean, healing).
 
-## For system and module developers
+| Setting | Default | What it does |
+| --- | --- | --- |
+| Use the experimental generic adapter | off | A generic d20 adapter for a system with no helper. **Generic system data paths** sets where actors keep HP, AC, attack bonus and damage. |
+| Prediction time (seconds) | 6 | 4 to 20: fight after fight until the time is up. |
+| Max rounds | 12 | 4 to 12; a battle still going after that is a stalemate. |
+| Include hidden tokens | on | |
+| Include other scene levels | off | |
+| Bystanders can join | on | Tokens outside the encounter may notice the fight and join it. |
+| Positioning and terrain | on | Distances, movement, terrain, walls and elevation. |
+| Neutral tokens | Takes no side (until crossed) | The Neutral side's lean. |
+| Neutral friend groups: reach (squares) | 3 | 1 to 20; world only, used as the planner opens. |
+| Downed characters | Simulate dying and healing | Or Down = out of the fight, or Down = dead. |
+| After the fight | Tend the fallen and tell it | Or Tend the fallen quietly, or Stop at the last blow. |
+| Default PC healing | Let each character decide | Or Conservative, Balanced, Aggressive, At all costs. |
+| Default PC response to a dying ally | Let each character decide | Or Rescue them, Keep fighting, Retreat, Protect self. |
+| Leadership | on | |
+| Leader's influence | 50 | 0 to 100: how readily followers take their commander's lead (0 nobody follows, 100 twice as readily). |
+| Boss's influence | 2× | 1.25× to 3×: how much more readily a boss's lead is taken than a leader's. |
+| Party's sway (%) | 3 | 1 to 20: how much the Party tab's vote sways the friendly side. |
+| Morale and routing | on | |
+| Talking | on | |
+| Ignore languages | off | Anyone who speaks understands everyone who speaks. |
+| How encounters open | Talk if they'd rather | Or Always talk first, Straight to battle, or Only an argument: no fighting. |
+| Initiative | Combat tracker | Or Roll normally, or Stealth for hidden. The planner adds Party surprises and Enemy surprises. |
+| PC luck: handing over an item | 39 | |
+| PC luck: being robbed | 29 | |
+| PC luck: being finished off | 39 | |
+| Luck: an enemy changing sides | 69 | It goes through with it under this. |
+| Luck check: a player character turning traitor | 9 | |
+| Trap avoiders: spotting a trap (%) | 59 | |
+| Playstyle taunts: taking hold (%) | 42 | Only the playstyles' taunts; a system's taunts follow its rules. |
+| Selfless creatures bear what holds or hurts them (%) | 29 | |
+| Doesn't like to flee: how often it stays (%) | 90 | 50 to 90. |
+| Avoids killing: how often it holds back (%) | 90 | 50 to 90. |
+| Committed to leaving: how often it keeps going (%) | 79 | |
+| ADHD: how often a creature's mind jumps (%) | 20 | |
+| Story style | Roleplay | Or Standard, or Statistician. |
+| Story delivery | Public | Or Whisper to GMs. |
+| Show the odds in the posted story | off | |
+| Do it For Real Now: loot | Leave on corpse (lootable) | Or Drop a loot pile, or Do nothing. Shown only with a helper that handles loot. |
+| Do it For Real Now: corpses | Keep, marked dead | Or Remove token (only when a loot pile is dropped). Shown only with a helper that handles loot. |
+| Do it For Real Now: fled combatants | Hide token | Or Leave in place. |
+| Do it For Real Now: play the fight on the map | on | Tokens walk their turns; off, they go straight to where each turn leaves them. |
+| Players run their characters | on | Off: FastFighting plays every turn. |
 
-FastFighting is split into a pure simulation engine (`scripts/engine/`), system **helpers**, and the Foundry UI. The core owns only its own ideas: personality, morale, leadership, positioning, standoffs, the story, and how creatures leave a fight. Every game rule comes from the helper. FastFighting PF2e, FastFighting D&D 5e and FastFighting DCC are reference implementations of three very different systems.
+Menus: **Story tables** (Manage), **Side personality defaults** (each side's Tactical, Brave, Selfish and Loyal), and **Generic system data paths**.
 
-```js
-Hooks.once("fastFighting.init", api => {
-  if ( (api.version ?? 1) < 17 ) return; // the helper API this is written against
-  class MySystemAdapter extends api.SystemAdapter {
-    get label() { return "My System"; }
-    get rules() { return myRules; }
-    canHandle(actor) { ... }
-    async toCombatantSpec(tokenDoc) { ... }          // see CombatantSpec in scripts/engine/battle-state.js
-    deriveTraits(actor) { ... }                      // {traits, flags, reasons}: api.traitsFromParts builds traits and reasons from parts
-    detectLeaders(specs) { ... }
-    describeRegionBehavior(behavior) { ... }         // system region behaviors -> {types, difficult, hazardous}
-    term(key) { ... }                                // the system's word for "ac" / "hp" / "sp" / "money"; null: FastFighting's generic one; false: none
-    itemCatalog() { ... }                            // {categories, materials, rarities}: [{key, label}], what a character can ask for
-    plannerSettings({ roster, setup, resolved, chains }) { ... } // the planner's row for this system: {title, hint, fields: [{key, label, hint, type: "pills"|"select", value, choices}]}
-    applyPlannerSettings(spec, settings, context) { ... }        // setup.system's answers, onto the battle (spec.options.system)
-    describeEncounter(spec, replay) { ... }          // the encounter's own record, for the planner's summary: {title, lines}
-    resourceLabel(key, spec) { ... }
-    describeOutcome(spec, final) { ... }             // what a fight changes on a creature, for the planner's summary
-    async commitConcession(giverDoc, receiverDoc, concession, { allies }) { ... } // returns undo records (allies: the giver's side, for pooled money)
+## What it doesn't do
 
-    // Live battles (Do it For Real Now): see scripts/adapters/adapter-base.js for each one's contract.
-    get supportsLive() { return true; }
-    async readLiveState(tokenDoc, { spec, unit }) { ... }            // the sheet as it stands, mid-fight (by default, from toCombatantSpec)
-    async commitChanges(tokenDoc, spec, changes, final, options) { ... } // one turn's change set (scripts/engine/changes.js); returns an undo record
-    async commitTurn(before, after, options) { ... } // what a turn did beyond the tokens (a shared pool, an encounter track); undo records
-    sheetCarries(key) { ... }                        // does this helper write this engine condition and read it back? (default no: the core keeps it)
-    conditionLabel(key) { ... }                      // the system's own word for an engine condition, or null
-    conditionChoices() { ... }                       // the system's own conditions as engine keys [{key, valued}], then super's
-    liveOwnership() { ... }                          // what the system does itself at a turn's start and end ({persistent, recovery})
-    readTurn(messages, context) { ... }              // a player's turn, read from the system's chat cards: engine events
-    liveOpening(message, tokenId) { ... }            // a card that gives foes an opening (a ranged attack in reach)
-    reactionsOf(spec) { ... }                        // its reactions, for its player's Always / Ask me / Never
-    rerollResource() { ... }                         // the name of what buys a reroll (Hero Points), or null
-    get liveTurns() { ... }                          // "initiative" (default) or "spotlight"
-    async giveSpotlight(combat, combatant) { ... }   // spotlight systems: hand the turn over
-    livePools() { ... }                              // the world's shared pools as they stand (Daggerheart's Fear)
-    async placeSummons(scene, summonerDoc, action, creatures, places) { ... } // summoned creatures as tokens; {tokens, records}
-  }
-  api.registerAdapter("my-system", MySystemAdapter, { priority: 10 });
-});
-```
+- It holds no game rules of its own: without a helper for your system, or the experimental generic adapter, it does nothing.
+- The Sample fight isn't the ruling: Do it For Real Now rolls a new fight.
+- While **Players run their characters** is on, it doesn't play a player's turn unless you hand it that character, and it shows no desires for a character its player runs.
+- In a live battle it spends no player resource except the rerolls each character allows.
+- It doesn't end the encounter: the GM does.
+- Some goals show in the Battle Vantage, marked as such, but don't change what a creature does yet: closing or locking a door, picking up an item, getting to a place, swimming, flying or climbing somewhere, hiding, taking cover, escaping by a way out, and using an object (a lever, a winch, a ritual circle).
+- The planner's results leave out summoned creatures.
+- Surveys never go to GMs or assistant GMs.
 
-Declare your system in `module.json` (`relationships.systems`) so Foundry only offers the helper in worlds of that system; the core also ignores adapters registered for another system.
+---
 
-A spec may say what kind of creature it is (`creatureKind`: the system's own word, such as a 5e type and subtype or a PF2e ancestry), and the planner groups neutrals of a kind together; without it, the same stat block or name does.
-
-**Recognise things by slug, read them by what they do.** When a helper has to know a particular feature, action or spell, it looks for its slug or identifier (PF2e `slug`, dnd5e `system.identifier`), never its name: slugs are the same in every book, every edition of the free rules and every language, while names change with translations, reprints and homebrew copies (the name is only a fallback). Better still, read what an item does (its activities, effects, rule elements, and as a last resort its words), so paid books and homebrew nobody has seen yet still work. The helpers work from the free rules (the SRD, the PF2e remaster, each system's open content) alone; anything more is read the same way.
-
-**The rules object** is pure and is called thousands of times:
-- **The turn:** `turn(u)` gives the budget (`{actions: 3}` or `{action: 1, bonus: 1, move: 30}`).
-  - `mainPool` names the pool a plain-number cost uses.
-  - `movement` is `"actions"` (each move costs an action) or `"feet"` (spend movement, then Dash).
-  - `costOf(action)`, `basicAction`, `talkCost`, `stealCost`, `feintCost`, `firstAidCost`, `shieldCost` and `standCost(u)` set what things cost.
-- **Rolls:**
-  - `degreeOfSuccess(natural, total, dc, kind, die)` returns 0–3, where `kind` is attack, save or check, and `die` (when it isn't a plain d20) is `{faces, critOn, fumbleOn}`: the die rolled, the d20-relative natural that threatens a crit (the rules scale it to the die) and the natural at or under which it fumbles;
-  - `actionDie(u, n)`: the die a creature's n-th action this turn rolls (DCC action dice), when actions don't say;
-  - `roll(rng, mod, dc, {advantage, kind})`;
-  - `attackPenalty(action, attacksMade)`;
-  - `saveMultiplier(degree, save)`, `afflictionStep(degree, phase)`, `critical(parts)` and `healCheckMultiplier(degree)`;
-  - `minimumDamage`.
-- **Situations:** `modifiers.attack`, `defense`, `save`, `check`, `steal`, `exposed` and `actionsLost`. The engine passes the facts (prone, grabbed, flanked, distance, allies adjacent, engaged, conditions); the rules return bonuses and advantage.
-- **Damage and dying:**
-  - `applyIwr(iwr, byType)`;
-  - `onDropped(unit, {crit, model, amount, overflow})` (it may leave the unit `beaten`: out of the fight, alive, however the table decides; one who would kill it, the Cruel or a creature that isn't a player character unless it holds back, kills it instead, and the story says so), `onHealed(unit, amount)` and `recoveryCheck(unit, rng)`;
-  - `firstAidDC(unit)`, `firstAid(unit, degree)` and `persistentFlatCheck(rng)`.
-- **Crowd control, buffs and debuffs:**
-  - `isImmune(target, action)`, `controlShift(ctx)`, `conditionWeight(key, value)`, and `conditionMods(key, value)` (a condition as bonuses and penalties, so it's weighed like any other: PF2e frightened 1 is -1 to everything);
-  - `defenseDc(target, against, by)` (the DC a skill action rolls against, `by` the one rolling where there is one: DCC's grapple by size; default 10 + the defense) and `resistShare(value)` (how much of a blow a resistance stops; default half);
-  - `concentration: {save, dc(damage), breaksOn: [conditions]}`, where the system has it.
-- **Doors:** `door` (the typical door: defense, hit points, DCs and whatever its own rules use), `doorCosts` (`open`, `force`, `pick`), and `doorDamage(door, damage)` (how much of a blow gets through). The helper puts `doorWork: {force: {mod}, pick: {mod}}` on each spec. `tryDoor(run, unit, door, {method, mod, dc})` plays a force or pick try the system's own way (`{success, degree, said: {text}}`, or null for the core's check: Ironsworn's Face Danger, with its momentum); a strong hit on a door uses the action's `critDamage` where it has one.
-- **Breaking free, and freeing a friend** (behavior/holds.js): on each spec, `escapeWork: {mod, faces}` (its best way out as a check: Athletics, Acrobatics, an unarmed attack) and `escapeDC` (how hard its own grab is to break); on an effect, `escape: {dc, others}` (an action breaks it; `others: "untie"` a friend frees it with an action and no roll, `"check"` with a roll, none: it can't). The rules may add `holds(run, unit)` (holds of its own: manacles, being swallowed), `escapeFrom(run, unit, key)` (a condition its sheet shows that an action breaks: `{dc, others}`), `bondsDC(unit)` (FastFighting's improvised bonds), `escapeCost(unit, hold)` and `untieCost(unit, friend, hold)` (what a try costs), and `breakFree(run, who, hold, {freeing})` (the system's own try, for itself or a friend: `{success, degree, natural, mod, total, dc, said}`, or null for the core's). What needs hands: `action.hands` (free hands it needs: 0 for a spell with no gesture, a bite) with `rules.handsKnown` (the helper says it of every action); otherwise weapons do, natural attacks (`action.natural`) don't, and spells as `rules.tiedStopsSpells` says (a helper setting). What else an action ends: `rules.remedies(run, unit)` (`[{key, cost, annoyance, label, condition, try(run, unit)}]`; one for a core condition, by its `condition`, in place of the core's own), and for persistent harm `rules.persistentRemedy(run, unit, type)` and `rules.persistentRemedyCost(unit, type)` (by default one more try at the system's recovery, for the basic action).
-- **Reactions:** `opportunity(reactor, mover)` returns the strike a creature makes at a foe leaving its reach, or null if it can't; `reactions(u)` (default 1 a round); `disengage(u)` returns `{cost, label}`, how to leave safely. `bestReactionStrike(u)` in core-api picks the usual strike.
-- **What's typical for a level:** `typical.ac`, `save`, `skill` and `dc`.
-- **Per-fight state:** `initUnit(u)` and `capture(u)`.
-- **After the fight:** `recoverBody(u, rng)`: a dead player character's last chance once friends reach it (DCC: roll the body). It sets the unit's status and hit points and returns the line to log.
-- **The story:** an attack is told by its **damage family**: how the harm looks, never the type's name (only the Statistician's log names types). The families: bludgeoning, piercing, slashing, ballistic (gunfire), explosive, bleed; fire, cold, electricity, acid, sonic, force, laser, plasma, radiation, gravity, time; wind, water, earth, plant; vitality (life), void (death, necrotic), radiant (holy light), unholy (profane); mental (psychic), spirit; poison; untyped. Map your system's every damage type onto the nearest with `storyDamageType(type)` (5e: lightning → electricity, thunder → sonic, necrotic → void, radiant → radiant, psychic → mental; a type it doesn't know is told as untyped). Where you can tell more than the damage does, name the family on the action, by slug or id: `action.storyType` (a firearm group is `"ballistic"`; a laser rifle that deals fire is `"laser"`; a plain blow with the air trait is `"wind"`). Otherwise the core reads the attack's name against the language file's word lists (`FASTFIGHTING.StoryWords.<family>`: "Laser Pistol", "Wind Blade"), but only to tell more than a plain blow or plain magic, never over damage with a look of its own ("Life Drain" dealing void stays void). An attack that deals several types is told by the one that shows: magic or energy over the blow that carries it, then a blast, then gunfire. A ranged strike sends a shot (told as the "Shortbow shot", never as the bow itself striking) unless it is marked `action.thrown` (a javelin, a dagger, a bomb: the weapon flies itself). **Precision damage**, harm with no look of its own added to a blow (a sneak attack, a backstab, a precise strike, a critical's extra dice of no type), is a damage part marked `category: "precision"` (or of type `"precision"`), its type the weapon's: a hit that carries it is followed by a sentence on how surprising, shocking or subtle it was, and it never changes the family. PF2e's formulas say "precision" themselves; 5e's sneak attack and DCC's backstab are marked by their helpers. **Maneuvers and conditions** are told from one master list too (`docs/story-maneuvers-conditions.md`: 73 maneuvers, 61 conditions, each with its own sentences, an over-the-top one and an underwhelming one). A control action's maneuver is read from its id's last part by slug (`…trip`, `…demoralize`), or named outright (`action.maneuver: "distract"`); the conditions it lays are mapped by key (common names such as off-guard, grappled, enfeebled or fatigued are known), or by `storyCondition(key)` in your rules where yours differ (Daggerheart's Restrained is `immobilized`; `false` for one that isn't told in a fight at all, such as Ironsworn's burdens).
-
-**Senses, fate and what's already on a creature:**
-- **Maneuvers, the map, conditions and afflictions** (API 16):
-  - Maneuvers (engine/maneuvers.js): a control action names one (`action.maneuver`: shove, drag, reposition, fling, trip, grapple, disarm, feint, demoralize, cheapShot, blindFoe, trample, sunder) and takes its results by degree unless it gives its own. A result can `move` the target (`{kind: "push" | "pull" | "place", feet}`, or `{kind: "push", to: feet}` to push it until it's that far off), `grab` it, deal its own `damage` at that degree only, or with `self` land on the one who tried (moved by the target, or held by it). The same results land from a deed's tier, a paid rider (`spec.riders`), a crit table's row, a blow's rider (`{kind: "move", move, critOnly}`) and a failed save rider (`move`, `grab`).
-  - Forced movement (behavior/forced.js): `rules.fallDamage(feet, unit)` (damage parts), `rules.fallProne` (true, false, or `(unit, dealt)`), `rules.collisionDamage(unit, {feetLeft, into, move, by})` when a push is stopped short. The ground comes from the scene (`spec.ground`: heights, difficult and hazardous cells, walls).
-  - Room (behavior/space.js): nobody's move ends in another's space unless `rules.endIn(run, mover, other)`; getting past one is `rules.passThrough(run, mover, other)` ("free", "difficult", "around", "tumble"), and a tumble `rules.tumbleThrough(run, mover, other)` (`{success, natural, mod, total, dc}`; through it as through difficult ground unless `difficult: false`).
-  - Sight past walls (`spec.walls`, from the scene): ranged attacks need a clear line from where the attacker stands. Cover reaches the system's rules as `situation.cover` and a save's `cover` (`"none" | "some" | "most" | "total"`); a system with its own rules for it sets `rules.handlesCover`, else three quarters hidden or more adds `COVER_POINTS` to AC and saves. core-api exports `coverOf`.
-  - Conditions (engine/conditions.js): many of the core's own do something where the system says nothing of them (`PROFILES`: penalties, losing actions, harm each turn, holds, remedies, countdowns, spreading, out of reach). A system that gives one its own meaning claims it (`rules.ownConditions`, or `rules.conditionMods` for it); `rules.conditionHarm(key, value, unit, by)` puts a condition's harm in the system's terms; `rules.toughSave` is the save against what spreads (default Fortitude or Constitution); flat penalties are in d20 points, scaled by `rules.rollPoint`. `CONDITION_SYNONYMS` and `coreKeyFor(word)` map a system's own names onto the core's keys. **Fear** is the system's to say: `rules.conditionWishes(run, unit, {key, value, by})` returns what a condition makes a creature want while it lasts (`[{kind, targetId, level}]`, `[]` for nothing, or null for the core's reading: keeping away from whoever frightened it), and `rules.fearConditions` names the system's own fears beyond frightened, fleeing and turned. A system whose fear has steps of its own (PF2e's frightened 2) says `rules.fearValued`, and the core goes by them; otherwise a fear only there or not builds, hidden: each fear that lands (or is laid again) a step more, each that lapses a step less, none once none is left. A condition's wishes never send a creature running or out of the fight. Only its own fear does: its nerve (morale), or its fear made worse and worse past what its nerve bears (three steps, two for the timid, four for the brave), and that goes when the system lowers the fear or lets it lapse.
-  - Damage parts with `direct: true` (all of a hit's) reach `rules.applyIwr(iwr, byType, target, {direct})` as direct (Daggerheart: no Armor Slot). A reaction to being hurt may carry a `move` (the one who hurt it knocked back, on a failed save where it has one).
-  - An outcome's `resources` (`{hope: -1}`) are gained or lost wherever it lands (a blow's rider, a maneuver's degree, a deed, a buff), and an action's `resources` with its heal, through `rules.gainResource`; `rules.outcomeWorth(run, by, target, outcome)` adds the system's own worth of an outcome (DCC's rally). An action may have `uses` beside a resource cost (a Fear, once a scene). An environment's summons are called on its turn, whatever its tactics.
-  - Afflictions (behavior/afflictions.js): a stage's `duration` (a save at its end), `virulent`, `stacks` (a fresh exposure worsens it: by default not for a disease or a curse), `tally: {cure, keep}` (5e's three successes or failures), no `save` (it simply takes hold); `simpleAffliction({key, most, every, save, ...})` builds one whose stage is a condition's value (he gave it a disease).
-  - Healing over time an effect lends: `outcome.fastHealing` (hit points each turn) and `outcome.regen` (`{amount, stoppedBy, needsHp}`); the `unhealable` condition stops all healing.
-  - Summons appear in the nearest free space to where they'd want to be, within `action.range` (feet, or `{max}`; default 30) and the summoner's sight.
-- **Heals, conditions, holds and the AI** (API 17):
-  - A heal's `outcome` lands on the one healed where the heal took (5e Regenerate's `fastHealing`, PF2e's `regen`), and counts when heals are weighed. `rules.usable(run, u, action, target)` is asked of heals too (PF2e: one sickened drinks no potion).
-  - A blow's rider honours its `maxSize` and the system's immunities to it (`rules.isImmune(target, {traits, onSave: [rider]})`) as a failed save's does: 5e's Push mastery, Large or smaller. `hurtOnly` on a rider: only when the blow hurt (Daggerheart's Bear).
-  - An affliction with `bySave`, laid by a save action, takes hold as that save went (`rules.afflictionStep(degree, "exposure")`: PF2e's spell, a critical failure stage 2; 5e's Contagion), rolling no save of its own; its `save` is for later (its stages, its tally).
-  - A `rules.remedies` entry with `condition` (one of the core's keys) is tried in place of the core's own remedy for it. `rules.conditionProfile(key)` changes part of a core condition's profile, the fields it names in place of the core's (null drops one): `{mods: null}` keeps the harm and the hold but not the penalties (5e's own Disadvantage inside a gullet), `{remedy: null}` (no scraping corroding off), `{harmAt: "start"}` (its harm at the start of the bearer's turns: 5e's Burning).
-  - Swallowed and engulfed, in every system (a profile's `inside`): the one held is where its holder is and goes where it goes, its holder's grab on it ends, it reaches its holder from inside, and nothing outside reaches it, nor it anything outside (total cover; others inside with it, yes). core-api exports `holderOf(run, u)` and `cutOff(run, a, b)`. `rules.letGo(run, u, key, holder)`, as a holder falls: what comes of being let go (5e: out Prone), or `false` to keep hold (PF2e: a Swallow Whole corpse, to be cut open first).
-  - The AI weighs a condition's harm in the system's terms (`rules.conditionHarm`, not the core's dice), that a foe held inside fights none but its holder, an affliction's stages' conditions as well as their damage, and an option only one foe allows (`rules.usable` says no to the rest): clearly better, it goes for that foe (2014's behir swallows the one it's grappling).
-  - Holds: an effect whose escape condition is gone is no hold, so what it laid with it clears as it's broken. `rules.breakFree` may return `harm: {byType}`, what the try does to whoever holds it (damage as rolled, against its resistances: cutting free of a gullet).
-  - What a roll is for: `modifiers.check` hears `{unit, target, purpose, skill, action}` (purpose: talk, goad, theft, firstAid, sizeUp, notice, heal, aid or control; the skill a spec names); `modifiers.save`, and `adjustRoll` and `afterRoll` on a save, hear the `action` it's against and `from` whom.
-  - `rules.disrupted(run, u, action)`: a spell (a magical action) that comes to nothing as it's cast, lost and told (`{natural, dc, said: {text}}`: PF2e's stupefied flat check).
-  - `rules.afterHarm(run, u, amount, rng, {by, types, byType, action, crit, lingering})`: who did it, and with what. `rules.afterAttack(run, u, target, {action, degree, dealt, control})`: once an attack's damage, and everything it laid, is done (PF2e: a hidden attacker seen only now).
-- `spec.senses`: `{sight, lowlight, hearing, smell, feel, radar}`, how far each reaches in feet (`null`: no limit; `0`: it hasn't that sense; left out: the ordinary, which is sight across the field, hearing `rules.hearingFeet` (default 60), and none of the rest). Sort your system's senses into them, the farthest of each: seeing in the dark is `lowlight`; scent is `smell`; tech sensing is `radar`; any other sense the creature has of its own (blindsight, tremorsense, lifesense, echolocation, thoughtsense ...) is `feel`. A creature with no eyes is `sight: 0`. Most systems have no use for smell or radar; leave them out. The scene's darkness comes in `options.darkness`.
-- `spec.resources.fate` and `spec.fateLabel`: points spent to keep someone from dying; `rules.avertDeath(u)` is the system's sure way out for one's own death, if it has one.
-- `spec.mods`: bonuses already on it when the fight starts (one, or a list), but only what the system's own numbers don't already include.
-- `rules.knockOut(u)` (a blow from someone who avoids killing, holding back).
-- Lingering effects: `final.effects` lists what's still running; `commitChanges`' `options.effectSource(id)` finds the action that laid each, whose `effectRef` (the helper's own) says what to copy onto the creature.
-
-**Dice, deeds, tables, checks and Luck in a CombatantSpec** (see `behavior/riders.js`, `behavior/casting.js` and `behavior/luck.js`):
-- On an action: `die` (its own die), `critOn`, `fumbleOn`, `deedDie` (rolled with the attack, added to the roll and the damage), `crit: {die, mod, rows}` (its crit table), `repeat` (a DamagePart: how many times the damage is rolled), `healDice` (so many of the target's own hit dice, `spec.hitDie`).
-- A table row: `{lo, hi, damage, multiply, outcome, self, slay}`. `spec.fumble`: the fumbler's table, `{die, mod, rows}`. `spec.critAgainst`: taken off crit rolls made against it by anyone but a player character.
-- `spec.riders`: `[{id, label, when: "hit" | "miss", melee, ranged, weapon, resource, amount, uses, oncePerTurn, damage, critDouble, save, onSave, outcome, attackDie, tell}]`.
-- `spec.hazard` (a combatant): a trap, a haunt, a hazardous feature: `{once}` (a simple hazard fires once; a complex one each round), with `kind: "hazard"` and `untargetable: true`. It doesn't move, think or talk, nobody attacks it, it keeps no side in the fight, it fires at its side's enemies in its reach, and it waits out a standoff. It's set from the start (one outside the encounter counts while Bystanders is on); on the Neutral side it's taken as Hostile. Any system's token can be one: the GM marks it in the token's FastFighting tab (as the system has it, not a hazard, simple, complex), and the core makes it one (applyHazard).
-- `spec.command` (the BattleSpec, beside `sides`): chains of command by group (a side; a neutral friend group is `"neutralParty#n"`): `[{id, role: "boss" | "leader" | "lieutenant", leadership: {brave, tacticalFloor, attack, ac}}]`, the head first. Without one, a side's `leaderId` leads it. `options.leaderInfluence` (0-100) and `options.bossInfluence` (×).
-- `spec.deeds`: `[{id, label, melee, ranged, tiers: [{min, outcome}]}]` (an outcome with `self` lands on the one who did it; with `allies: feet`, on the friends that close: a rally).
-- A check with tiers: `casting: {mod, faces, fumbleOn, lostOnFail, disapproval, label}`, `tiers: [{min, max, ...fields}]` (a save's `dc: "check"` is the check's total), `castChance`; the action's own fields are what a success most often does.
-- `spec.boosts`: `[{pool, label, per, faces, allies, range, kinds, keep, recovers}]`, spending `spec.resources[pool]`.
-- Legendary: `spec.legendary: {pool}` and actions with `legendary: cost` (taken between others' turns, never on its own); `spec.standFirm: {pool, label}` (a resource that turns a failed save that matters into a success).
-- Mending: `spec.regen: {amount, stoppedBy: [damage types]}`, `spec.fastHealing: amount`, `spec.holdOn: {save, base, except: [damage types], notOnCrit, label}` (a save against base + the damage, to stay at 1 hit point).
-- Saves: `spec.magicResistance`, `spec.saveAura: {bonus, range}`, `spec.evasion: "dex"` (with `rules.evasion(degree, save)` for a system's own version), `spec.saveUpgrades: [save types]`; an action counts as magical with a `rank`, `casting`, `spellId` or `magical`.
-- Martial: an action's `attacks` (how many it counts as for a multiple attack penalty), `sameMap` (a sequence all at the same penalty), `charge` (moves it includes before its Strike), `oncePerTurn`; a reaction `on: "allyHit"` (a friend within `range` is hit: `reduce` off its damage, `strike` back at the attacker in reach, or `redirect`: take the blow instead, against its own resistances; `tell` names its story line).
-- Dice by who rolls, and a round of the system's own (API 10, Daggerheart): every roll names its roller (`options.roller`), and `rules.dieOf(roller, kind)` says which dice it rolls (a number, or the system's own name, which its `roll` and `distribution` read as `faces`; `roll` gets the roller too, for what the dice mean to it); a roll's `note` (the system's word on its dice) is logged with it and shown after its line; `rules.roundTurns(run, order)` gives who acts in a round, in order (a generator, so it can answer what happened: Daggerheart's spotlight); `rules.initRun(run)` sets up the system's own state for a fight; `rules.onDropped` gets the dice (`rng`), may leave `unit.fallNote` (logged with the fall) or `unit.lastStand: {turns, label}` (it fights on at 0 for so many of its turns, then dies: Blaze of Glory); an action's `resourceCost` (points a use takes) and `shared` (a key in run.sharedPools: a pool its side draws on, the GM's Fear); an undo record's `setting: {namespace, key, value}` (a world setting, put back).
-- `spec.rarity` (0 common, 1 uncommon, 2 rare, 3 unique; for a system that rates creatures' rarity, PF2e): a rarer creature has a slight edge for command of a group outside the party (leader, boss, lieutenant), enough to settle a near thing, never to beat a plainly better leader.
-- A character's traits from many small parts (API 13): `traitsFromParts(base, parts, {from})` adds up `[{trait, n, why}]` from where the traits start (`PC_BASELINE`, the usual hero's, for a player character) and gives `{traits, reasons}`, each reason listing where it started and every part that moved it by its size ("player character 75, Will for its level +6, criminal -8"), as the planner's tooltip on the trait shows. The calculated answers ("Let it decide") are worked out again when a character's traits change.
-- What a character would do, from its system (API 14): `adapter.tacticHints(actor, spec, calc)` answers any tactics question, `consumables` too, as `answer` or `{value, why}` (why: the reason the GM sees), and `offer` and `expect` as the survey stores them. They're kept with the character as what "Let this character decide" stands for, over the core's reading of its hidden scores.
-- Setting a character up by itself (API 12): `adapter.playstyleHints(actor, spec)` (the playstyles its system says fit it: `{id: -1 to 1}`, from its class, ancestry, kind of creature, alignment, gear and role), `adapter.tacticHints(actor, spec, calc)` (the system's own answers to the tactics questions, where it knows better: `{key: answer}`), and `adapter.biography(actor)` (its biography and description as plain text, for the keywords in [keywords/](keywords/README.md): they move its traits wherever it's read, and its playstyles when it's set up). The core weighs these with what the spec's numbers and actions say (engine/auto-playstyles.js) and keeps what it worked out in `flags.fast-fighting.auto` (foundry/auto-config.js).
-- What playstyle perks lean on, in any system (API 11): a buff can be a `guard` (a turn given to its own defense, 5e Dodge: the shield answer says how readily, where there is no shield to raise), a `setup` (one in a hurry, an Impatient or Speed-Runner, doesn't stop for it), `leans: [behavior keys]` (likelier by those perks' strength: Hide leans on lowProfile, Secure an Advantage on hinders and exploitWeakness) and `check.against` (its roll against the foes' best defense of that kind, "perception" for Hide); one in a hurry doesn't stop to get clear of a foe beside it (it takes the free swings); a skill (`theft`, `firstAid`, `sizeUp`, `doorWork`, an action's `check`) may name its die (`faces`: DCC's untrained d10); `iwr.exploit` (a kind of harm a foe guards less well, without a weakness's doubling: a weak spot to a Puzzle-Maniac); `rules.pullsBlow(unit, action)` (one who spares the fallen knocks a foe out instead of killing it, where the system has a way to: 5e a melee blow, PF2e a nonlethal attack, DCC a subduing weapon); `rules.backlash` may return `to` (a friend put in harm's way takes the price instead: Ironsworn); `spec.caster` (a caster by the system's say, with no spell to show for it); `rules.afterRoll` sees heal checks (`kind: "heal"`); `rules.stealthInitiative` (a low-profile character rolls Stealth for initiative when it's better: PF2e's Avoid Notice). A deed may carry `leans` and `guard` as a buff does (DCC: a trip leans on hinders, a rally on rally, a defensive maneuver as the shield answer says); `rules.optionWeight(run, unit, action, target, moves)` weighs an attack option the system's own way (DCC: one in a hurry would rather charge). First aid (`spec.firstAid: {mod, skill, faces}` with `rules.firstAid` and `rules.firstAidDC`; `rules.canFirstAid(target)`: whether it can be tried on that one now) is given in the fight too, to a dying friend, as dear as `rules.firstAidCost`: a heal of its own kind (`firstAid: true`) beside the system's heals. core-api.js also exports `applyOutcome`, `tauntProof`, `withoutTaunt`, `behaviorOf`, `isStanding` and `goadLuck`.
-- System hooks (all optional, API 6): `rules.roll(rng, mod, dc, options)` and `rules.distribution(mod, dc, options)` for dice of its own (an action die against challenge dice); `rules.adjustRoll(run, unit, roll, ctx)` after the dice are seen (a roll back with `said: {text, data}` is logged: burning momentum); `rules.afterRoll(run, unit, roll, ctx)` (who has the initiative); `rules.usable(run, unit, action, target)`; `rules.canTarget(run, attacker, target)`; `rules.backlash(run, attacker, target, action, degree)` and `rules.retort(run, saver, by, action, degree)` (what the attempt costs, or the blow back: `{label, damage}`; or a price the system paid itself, `{said}`); `rules.afterHarm(run, unit, amount, rng)` (a roll after being hurt); `rules.startTurn(run, unit)` (one report, or several `{unit, text, data}`); `rules.afterTalk(run, talker, target, roll, {aim, kind})` (what a pitch gives or costs); `rules.talkStrain` or `spec.social.strain` (`{pool, amount, crit, label, empty}`: a resource drained from whoever loses an exchange of words, the talker on a failure, its target on a success, `crit` on a critical (twice `amount` by default), and `empty`, an effect outcome laid on it when the pool runs dry; the creature's own wins; `rules.talkStrain` may be a function of the unit; behavior/strain.js); `rules.onFall(run, unit, {dead, source})` (someone down, beaten or killed: its friends' reaction, `[{unit, text, data}]`); `rules.onAllegiance(run, unit, {joined, against})` (someone taking a side mid-fight); `rules.applyIwr(iwr, byType, target)` gets the creature too; `rules.morale(run, unit)` (a morale rule of the system's own, for those it covers: `"hold"`, `"waver"` or `"rout"` (core-api's MORALE), or `{result, said}` to show the roll; null: FastFighting's); `rules.duel(run, caster, action)` (a spell duel: `{by, counter}`, someone answering a spell that worked with a spell of its own; the two checks compared, the higher standing, a tie neither: DCC); `rules.disengage(u)` may carry a `check` (`{mod, dc, dcMany}`: a roll to get clear, harder against several foes; missed, the free attacks come: XCC's acrobatics); `rules.strayShot(run, shooter, target, action)` (a missed shot into a melee: the friend it strays toward, attacked again; DCC); `spec.initiative.die` (an initiative die other than a d20: DCC's d16 two-handing); a boost's `shared` key (a pool several creatures draw on together, run.sharedPools: DCC's Fleeting Luck); `rules.afterRoll` gets the die's `faces`, and spell checks too (`kind: "cast"`); an undo record's `userId` and `userUpdate` (a player's own, put back); `spec.sharedHp` (a key: hit points several creatures share, falling together) and `social.steps` (successes to convince, the system's own number); an attack modifier's `score` (the score to roll outright: a progress roll, with `action.progressRoll`); `action.finish` (everything the target has left, on a hit).
-- An action with `uses` can come back: `recharge: {on, die}` (5e "Recharge 5–6": `{on: 5, die: 6}`, rolled at the start of its turn) or `cooldown: {n, faces}` (PF2e "can't use it again for 1d4 rounds": `{n: 1, faces: 4}`).
-- Riders also take `vs` (only against creatures with one of these traits), `group` (one of a group per hit), `cost` (what it takes from the turn, on one's own turn: `{bonus: 1, slot: 1}`) and `dear` (a spell slot's level, which prices it).
-
-**Reactions and summons in a CombatantSpec** (see `behavior/responses.js` and `behavior/summons.js`):
-- `spec.reactions`: `[{id, label, on: "attacked" | "hit" | "missed" | "damaged" | "spell", ac, halve, reduce, strike, damage, save, counter: {level, mod} | {level, save}, resource, amount, uses, range, melee, ranged, physical, needsShield, tell}]`. They share `rules.reactions(u)` a round with opportunity attacks.
-- A summoning: `{kind: "summon", creatures: [CombatantSpec], rounds, concentration, sustain: cost, sustainOrEnd}`; a creature with `untargetable` can't be attacked. `spec.size` (0 tiny … 5 gargantuan) and an action's `maxSize` are for the system's `isImmune` to compare.
-
-**Buffs, debuffs and control in a CombatantSpec** (see `scripts/engine/mods.js`, `behavior/effects.js`, `behavior/control.js` and `behavior/support.js`):
-- **An outcome** is `{conditions, mods, tempHp, mark, iwr, actionsNow, rounds, label, endsOnDamage, endsOnHarm, repeatSave: {type, dc}, onlyVs, self, uses, vs, vsFocus, boost, thisTurn, resources, taunt, defy}`, all optional. `mods` holds `attack`, `ac`, `saves`, `checks`, `damage`, `speed`, `actions` (numbers), `attackDie` / `saveDie` / `checkDie` (signed faces: 4 is +1d4), and `adv`, `defAdv`, `saveAdv`, `checkAdv` (+1 or -1). The engine's own conditions are `prone`, `immobilized`, `incapacitated` and `controlled`.
-  - A playstyle's taunt (behavior `taunt`, its share of `options.tauntLuck`): a control action with `goad` (behavior/goad.js), costing `rules.tauntCost` (a cost, or `(spec) => cost`; without one, `rules.talkCost`), its best of the `intimidate` and `deceive` pitches against `social.resist`, then the luck check. Behavior `tauntProof` (0-0.9): the chance any taunt is shrugged off as it lands.
-  - Taunts: `taunt` (a desire level, 0 to 100, or `true` for 65, "driven"): while it lasts and its source stands, the bearer wants to go for the source at least that badly. It's one desire among its others (a stronger one of its own still wins; a taunter it can't reach wears it down) and blinds it like a stated one. `defy` (mods): what ignoring the taunt costs, on its rolls against anyone but the taunter (5e Compelled Duel `{adv: -1}`, PF2e Taunt `{attack: -1}`). The AI weighs a taunt by the blows it draws off a friend, less the ones the taunter takes.
-  - Edges (API 7): `uses` (spent by that many rolls it helps; a defense mark by attacks against it), `vs` (a creature id: only rolls against that one), `vsFocus` (laid on a friend: against whoever it's set on, its strongest hurt, talk or heal desire), `resources` (`{momentum: 2}`, through `rules.gainResource(unit, key, amount)`, weighed by `rules.resourceWorth(run, unit, key, amount)`). `rules.onOutcome(run, by, unit, outcome)` plays out anything else of the system's own (Ironsworn: in control).
-- **A buff:** `{kind: "buff", outcome, targets: "self" | aura: feet | area: {targets}, range | reach, concentration, oncePerTurn, economy, tell}`. One that needs a roll to land: `check: {mod, dc, label}` and `onDegree: [critical failure, failure, success, critical success]` (an outcome or null each). `besideFoe: feet`: only for a friend whose foe is that close to the user (5e Help).
-- **Sizing up a foe:** `spec.sizeUp: {mod, dc, label, boost, uses, anyFoe, missOutcome}` is the check a Lore-Collector makes (PF2e Recall Knowledge, 5e Study, Ironsworn Secure an Advantage); without `dc`, `rules.sizeUpDC(target)`, else the typical DC for its level. Without `sizeUp`, sizing up always works. What it pays off with: its rolls about `boost` times as likely to succeed (default 2.5), against that foe (or, with `anyFoe`, anyone), for so many rolls (`uses`; default all of them while it lasts); `missOutcome` is what a miss costs, through `rules.onOutcome`.
-- **Control or a debuff:** `{kind: "control", save: {type, dc, advantage} | check: {mod, against, attack} | bonus | auto: true, onSave | onHit | outcome, oncePerTarget, concentration, freeWhileHeld}`.
-
-Helpers import shared pieces from `scripts/core-api.js`, such as `SystemAdapter`, `parseFormula`, `parseTypedFormula`, `rollD20`, `TALK_KINDS`, `bestReactionStrike`, `combineMods`, `describeMods` and `CORE_API_VERSION`.
-
-The engine counts distance in feet: give speeds, reach and ranges in feet (convert metric data), and the core converts the scene's grid. Heal actions can carry `reach` (touch) or `range`.
-
-**Other API** on `game.modules.get("fast-fighting").api`:
-- `registerModifier` and `registerTraitRule`;
-- `engine` (`runBatch`, `replay`, `findSample`), `dice` and `constants`;
-- `openPlanner()`.
-
-**Hooks:**
-- `fastFighting.init(api)`;
-- `fastFighting.preSimulate`, `fastFighting.postSimulate`;
-- `fastFighting.liveBattleStarted(battle)`, and `fastFighting.liveBattle(battle)` whenever something in a live battle changes.
-
-## Development
-
-- Junction or symlink this folder into Foundry's data folder as `Data/modules/fast-fighting`.
-- `npm install`, then `npm test` (Vitest) for the engine, story and parser tests. `npm run test:reworded` runs them again with every word in the language files reworded, so the tests never depend on the wording.
-- **Words:** every word a GM or player reads is in `languages/en.json` or `story/en.json`. The code names keys and never holds the English; the tests read the words from those files.
-- **Releasing:** push a `vX.Y.Z` tag. The release workflow runs the tests, sets the version and builds `module.zip`.
+Writing a helper for another system, the API, hooks and the engine's internals: see [CODING_README.md](CODING_README.md).

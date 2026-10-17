@@ -1,11 +1,8 @@
 # FastFighting: supported systems
 
-FastFighting Core is system agnostic, but it needs a **helper module** to understand each game system. The helper explains:
-- how actors store HP, defenses, attacks and spells
-- the system's rules for hitting, saving and dying
-- how outcomes are written back
+FastFighting Core is system agnostic: a **helper module** for each game system tells it how actors store HP, defenses, attacks and spells, the system's rules for hitting, saving and dying, and how to write outcomes back.
 
-Without a helper for your world's system, FastFighting stays inactive: its settings are greyed out and the Combat Tracker shows a notice. If you want to try anyway, turn on *Use the experimental generic adapter*.
+Without a helper for your world's system, FastFighting stays inactive: its settings are greyed out and the Combat Tracker shows a notice. To try anyway, turn on *Use the experimental generic adapter*.
 
 | System | Foundry system id | Helper module | Repository | Manifest URL |
 | --- | --- | --- | --- | --- |
@@ -15,8 +12,8 @@ Without a helper for your world's system, FastFighting stays inactive: its setti
 | Ironsworn and Starforged | `foundry-ironsworn` | FastFighting Ironsworn (`fast-fighting-ironsworn`) | https://github.com/galaara98/FastFighting-Ironsworn | https://github.com/galaara98/FastFighting-Ironsworn/releases/latest/download/module.json |
 | Daggerheart | `daggerheart` | FastFighting Daggerheart (`fast-fighting-daggerheart`) | https://github.com/galaara98/FastFighting-Daggerheart | https://github.com/galaara98/FastFighting-Daggerheart/releases/latest/download/module.json |
 
-Each helper declares its system in `module.json` (`relationships.systems`), so Foundry only offers it in worlds of that system. The core also ignores any helper that registers for a different system than the world's.
+Each helper declares its system in `module.json` (`relationships.systems`), so Foundry offers it only in worlds of that system, and the core ignores a helper registered for a system other than the world's.
 
 ## Writing a helper for another system
 
-See the *For system and module developers* section of the [README](README.md). FastFighting PF2e is the reference implementation. When yours is published, open a pull request adding a row to the table above, and an entry to `KNOWN_HELPERS` in `scripts/helpers.js`, so GMs on that system are pointed to it.
+See [CODING_README.md](CODING_README.md#writing-a-system-helper). FastFighting PF2e is the reference implementation. Once yours is published, open a pull request that adds a row to the table above and an entry to `KNOWN_HELPERS` in `scripts/helpers.js`, so GMs on that system are pointed to it.
