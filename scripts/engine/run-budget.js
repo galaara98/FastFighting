@@ -2,10 +2,10 @@
  * How long the planner's prediction runs, and what that means for a big battle. The prediction runs fight after fight
  * until its time is up (the Prediction time: 4 to 20 seconds); a fight under way is always finished, and none is
  * started after. At most MAX_RUNS (past that the odds don't get any surer). A fight's work grows with the square of the
- * creatures in it (each, on its turn, weighs everyone else): about FIGHT_MS_PER_PAIR × creatures² for a fight of six
- * rounds (measured on a desktop: 16 creatures 7.5 ms a fight, 32 21 ms, 64 76 ms, 100 173 ms, in fights of about four
- * rounds), so a big battle gets fewer fights in the same time: the planner warns when so few fit that the odds will be
- * rough.
+ * creatures in it (each, on its turn, weighs everyone else), a little faster past fifty or so: about FIGHT_MS_PER_PAIR ×
+ * creatures² for a fight of six rounds (measured on a desktop, two sides in blocks 40 feet apart, a third of each
+ * shooting: 16 creatures 6.7 ms a fight, 32 27 ms, 64 142 ms, 100 502 ms, in fights of five or six rounds), so a big
+ * battle gets fewer fights in the same time: the planner warns when so few fit that the odds will be rough.
  * Pure: no Foundry globals.
  */
 
@@ -18,7 +18,7 @@ export const ROUGH_RUNS = 100;
 /** The most fights for each of the swing factors' tests. */
 export const SWING_RUNS = 300;
 /** A fight's work for each pair of creatures (ms), in a fight of six rounds. */
-export const FIGHT_MS_PER_PAIR = 0.035;
+export const FIGHT_MS_PER_PAIR = 0.031;
 
 /** The prediction's time (ms), from seconds (the Prediction time, bounded). */
 export function budgetMs(seconds) {
