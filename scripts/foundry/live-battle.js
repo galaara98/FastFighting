@@ -479,7 +479,7 @@ async function followBack(prior) {
     changed();
     return false;
   }
-  if ( battle.pc?.records?.length ) await holdingPause(() => revertEntry(battle.scene, { records: battle.pc.records }));
+  await revertOpenTurn();
   for ( const turn of [...undo].reverse() ) await holdingPause(() => revertEntry(battle.scene, turn));
   const snapshot = undo[0]?.snapshot ?? battle.pc?.snapshot;
   if ( snapshot ) battle.run = playersNow(restoreRun(battle.spec, battle.rules, snapshot, { log: battle.run.log }));
@@ -685,6 +685,8 @@ function beginPlayerTurn(u, combatant) {
   pcTurnBegin(battle.run, u.id, { nonce: freshNonce() });
   const doc = docOf(u.id);
   battle.pc = { combatantId: combatant.id, id: u.id, round: battle.combat.round, messages: [], facts: [], records: [], snapshot, from: Date.now(), lastAt: doc ? { x: doc.x, y: doc.y } : null };
+  // (Every sheet and token as the turn begins, for Rewind to put back whatever the turn changed by hand.)
+  sheetsAt.set(battle.pc, captureSheets());
   return keep();
 }
 
@@ -900,6 +902,102 @@ async function answerFor(request) {
   if ( theirs ) return theirs;
   const roll = await systemRoll(request);
   return roll ? { use: true, roll } : true;
+}
+
+/* -------------------------------------------- */
+/*  What a player's turn changed by hand        */
+/* -------------------------------------------- */
+
+/**
+ * A player's turn still open, taken back: what FastFighting wrote in it (reactions, players' damage), then what was
+ * changed by hand since it began, every sheet and token as it began.
+ */
+async function revertOpenTurn() {
+  const pc = battle?.pc;
+  if ( !pc ) return;
+  const before = sheetsAt.get(pc);
+  const records = [...(before ? sheetUndo(before) : []), ...(pc.records ?? [])];
+  if ( records.length ) await holdingPause(() => revertEntry(battle.scene, { records }));
+}
+
+/** Each player's turn's sheets as it began (captureSheets), in this browser. */
+const sheetsAt = new WeakMap();
+
+/** Every creature's token and actor in the battle, as they are now: {uuid: {token: {x, y, elevation, rotation}, actor}}. */
+function captureSheets() {
+  const out = {};
+  for ( const u of battle.run.units ) {
+    const doc = docOf(u.id);
+    if ( !doc?.actor ) continue;
+    try {
+      out[doc.uuid] = { token: { x: doc.x, y: doc.y, elevation: doc.elevation, rotation: doc.rotation }, actor: doc.actor.toObject() };
+    } catch ( err ) {
+      console.warn(`${MODULE_ID} | noting ${doc.name}'s sheet`, err);
+    }
+  }
+  return out;
+}
+
+/** The values of `before` that `now` no longer has, by flattened key (a key now added isn't taken away). */
+function changedBack(before, now) {
+  const a = foundry.utils.flattenObject(before ?? {});
+  const b = foundry.utils.flattenObject(now ?? {});
+  const out = {};
+  for ( const [k, v] of Object.entries(a) ) if ( JSON.stringify(v) !== JSON.stringify(b[k]) ) out[k] = v;
+  return out;
+}
+
+/**
+ * Undo records for whatever changed on each sheet and token since `before` (captureSheets): where a token stood, its
+ * actor's data (hit points, resources, spell slots), its items (changed, used up, added) and its effects (put on, taken
+ * off), as they were.
+ */
+function sheetUndo(before) {
+  const out = [];
+  for ( const [uuid, was] of Object.entries(before) ) {
+    const doc = fromUuidSync(uuid);
+    if ( !doc?.actor ) continue;
+    const now = doc.actor.toObject();
+    const record = undoRecord(doc, doc.actor, { statusesBefore: false });
+    let any = false;
+    // (Where it stood.)
+    const moved = Object.fromEntries(Object.entries(was.token).filter(([k, v]) => doc[k] !== v));
+    if ( Object.keys(moved).length ) {
+      record.tokenUpdate = moved;
+      any = true;
+    }
+    // (Its actor's own data.)
+    const system = changedBack({ system: was.actor.system }, { system: now.system });
+    if ( Object.keys(system).length ) {
+      record.actorUpdate = system;
+      any = true;
+    }
+    // (Its items and its effects: changed, gone, new.)
+    for ( const [kind, created, deleted] of [["items", "createdItems", "deletedItems"], ["effects", "createdEffects", "deletedEffects"]] ) {
+      const then = new Map((was.actor[kind] ?? []).map(d => [d._id, d]));
+      const nowById = new Map((now[kind] ?? []).map(d => [d._id, d]));
+      for ( const [id, d] of then ) {
+        if ( !nowById.has(id) ) {
+          record[deleted].push(d);
+          any = true;
+        } else if ( kind === "items" ) {
+          const update = changedBack({ system: d.system, name: d.name }, { system: nowById.get(id).system, name: nowById.get(id).name });
+          if ( Object.keys(update).length ) {
+            record.itemUpdates.push({ id, update });
+            any = true;
+          }
+        }
+      }
+      for ( const id of nowById.keys() ) {
+        if ( !then.has(id) ) {
+          record[created].push(id);
+          any = true;
+        }
+      }
+    }
+    if ( any ) out.push(record);
+  }
+  return out;
 }
 
 /* -------------------------------------------- */
@@ -1453,6 +1551,11 @@ async function closePlayerTurn() {
   const result = pcTurnEnd(run, pc.id, events, states, pc.facts ?? []);
   // (What the engine itself made of the turn, past what the sheets say: a death burst, written.)
   const records = pc.records ?? [];
+  // (What the turn changed by hand, the player's or a GM's: moves, hit points, resources, items, effects. First, so a
+  // Rewind puts it back last: every sheet as the turn began.)
+  const before = sheetsAt.get(pc);
+  sheetsAt.delete(pc);
+  if ( before ) records.unshift(...sheetUndo(before));
   await writeChanges(result.synced, captureAll(run), records);
   // (With what it was read from, the player's own cards: the tracker taken back to it, it's theirs again.)
   const turn = {
@@ -1894,7 +1997,7 @@ export function rewindTurn() {
     // (So far back, only the whole encounter can be rewound.)
     if ( !turn?.snapshot ) return false;
     // (A player's turn under way after it: what a foe's reaction wrote in it comes off first.)
-    if ( battle.pc?.records?.length ) await holdingPause(() => revertEntry(battle.scene, { records: battle.pc.records }));
+    await revertOpenTurn();
     await holdingPause(() => revertEntry(battle.scene, turn));
     battle.run = playersNow(restoreRun(battle.spec, battle.rules, turn.snapshot, { log: battle.run.log }));
     battle.data.turns = battle.data.turns.slice(0, -1);
@@ -1944,6 +2047,8 @@ async function rewoundCard(u) {
 export function rewindEncounter() {
   return queue(async () => {
     if ( !battle ) return false;
+    // (A player's turn still open: what it changed, by hand and by FastFighting, first.)
+    await revertOpenTurn();
     for ( const turn of [...battle.data.turns].reverse() ) await holdingPause(() => revertEntry(battle.scene, turn));
     // (What the GM changed before the first turn.)
     if ( battle.data.gmRecords?.length ) await holdingPause(() => revertEntry(battle.scene, { records: battle.data.gmRecords }));
