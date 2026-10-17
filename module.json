@@ -1,7 +1,7 @@
 {
   "id": "fast-fighting",
   "title": "FastFighting Core",
-  "description": "Estimate, narrate and resolve battles from the encounter on the scene: Monte Carlo simulation with personalities, tactics, talking, terrain and bystanders, a story of the fight, and Do it For Real Now to play it on the Combat Tracker, a turn at a time. System support comes from helper modules such as FastFighting PF2e; a generic adapter covers the rest.",
+  "description": "Simulates the scene's encounter to estimate the odds, tells the fight as a story, and plays it on the Combat Tracker turn by turn. Helper modules such as FastFighting PF2e add each game system.",
   "version": "0.3.0",
   "authors": [
     {

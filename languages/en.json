@@ -3,13 +3,13 @@
     "Keybinding": {
       "Open": "Open the Battle Planner",
       "networkLower": "Battle Vantage: one less",
-      "networkLowerHint": "With a creature in focus, lowers the line or symbol the pointer is on (or Tab stepped to); at its least, takes it off.",
+      "networkLowerHint": "Lowers the hovered or Tab-picked line or symbol of the creature in focus; at its lowest, removes it.",
       "networkRaise": "Battle Vantage: one more",
-      "networkRaiseHint": "With a creature in focus, raises the line or symbol the pointer is on (or Tab stepped to). On the creature itself, adds a line from it.",
+      "networkRaiseHint": "Raises the hovered or Tab-picked line or symbol of the creature in focus; on the creature itself, adds a line from it.",
       "networkNext": "Battle Vantage: next",
-      "networkNextHint": "Steps to the next of the focused creature's lines and symbols (with nobody in focus, the next creature).",
+      "networkNextHint": "Steps to the focused creature's next line or symbol (with no one in focus, the next creature).",
       "networkPrevious": "Battle Vantage: previous",
-      "networkPreviousHint": "Steps back to the last of the focused creature's lines and symbols (with nobody in focus, the creature before)."
+      "networkPreviousHint": "Steps back to the focused creature's previous line or symbol (with no one in focus, the previous creature)."
     },
     "Units": {
       "Feet": "ft",
@@ -32,7 +32,7 @@
       "Attack": "Attack",
       "MenuName": "Generic system data paths",
       "MenuLabel": "Configure",
-      "MenuHint": "For game systems without a FastFighting helper module: where to find HP, AC, attack bonus and damage on actors.",
+      "MenuHint": "For systems without a FastFighting helper module: where actors keep HP, AC, attack bonus and damage.",
       "Hint": "Property paths on the actor, e.g. system.attributes.hp.value. Leave attack or damage empty to estimate them from level.",
       "Path": {
         "hp": "Current HP",
@@ -51,7 +51,7 @@
     "Settings": {
       "predictionTime": {
         "Name": "Prediction time (seconds)",
-        "Hint": "How long the planner's prediction runs: fight after fight until the time is up (the one under way is finished). More time, more fights and surer odds. A big battle gets fewer fights in the same time, since every creature adds to each fight's work. The planner can change it for one battle."
+        "Hint": "How long the planner simulates fights. More time, more fights and surer odds; a bigger battle fits fewer fights. Changeable per battle."
       },
       "maxRounds": {
         "Name": "Max rounds",
@@ -67,19 +67,19 @@
       },
       "neutralDefault": {
         "Name": "Neutral tokens",
-        "Hint": "Default handling of tokens with Neutral disposition. They stand on the field taking no side, perhaps leaning one way: whoever hurts or robs them, or crosses what they want (hurting someone they lean toward), turns them against their side, and either side's talkers can try to win them over (harder against their lean). Can be changed per battle and per token."
+        "Hint": "Default for tokens with Neutral disposition: they take no side, perhaps leaning one way. Whoever hurts, robs or crosses them turns them against that side; either side's talkers can win them over (harder against their lean). Changeable per battle and per token."
       },
       "downedModel": {
         "Name": "Downed characters",
-        "Hint": "How falling to 0 HP is simulated. 'Simulate dying and healing' follows the system's rules for dying, recovery and revival."
+        "Hint": "What 0 HP means. 'Simulate dying and healing' follows the system's rules for dying, recovery and revival."
       },
       "pcHealAggro": {
         "Name": "Default PC healing",
-        "Hint": "How freely player characters spend spells, potions and actions on healing, unless set per character. \"Let each character decide\" leaves it to each one: its class, its features and its nature."
+        "Hint": "How freely PCs spend spells, potions and actions on healing, unless set per character. \"Let each character decide\" goes by class, features and nature."
       },
       "pcAllyDying": {
         "Name": "Default PC response to a dying ally",
-        "Hint": "What player characters prioritize when an ally is dying, unless set per character. \"Let each character decide\" leaves it to each one: its class, its features and its nature."
+        "Hint": "What PCs put first when an ally is dying, unless set per character. \"Let each character decide\" goes by class, features and nature."
       },
       "leadership": {
         "Name": "Leadership",
@@ -99,32 +99,32 @@
       },
       "lootMode": {
         "Name": "Do it For Real Now: loot",
-        "Hint": "What happens to a slain creature's gear: leave it on the corpse (lootable), drop it in a loot pile, or do nothing."
+        "Hint": "What happens to a slain creature's gear."
       },
       "corpseMode": {
         "Name": "Do it For Real Now: corpses",
-        "Hint": "Keep slain tokens on the map with the dead marker, or remove them (when a loot pile is dropped)."
+        "Hint": "Keep slain tokens, marked dead, or remove them (only when a loot pile is dropped)."
       },
       "fledMode": {
         "Name": "Do it For Real Now: fled combatants",
-        "Hint": "Hide tokens that fled the battle, or leave them where they are."
+        "Hint": "What happens to tokens that fled the battle."
       },
       "sideDefaults": {
         "Name": "Side personality defaults",
         "Label": "Configure",
-        "Hint": "Default group Tactical, Brave, Selfish and Loyal values for Friendly, Hostile, Neutral and Secret sides."
+        "Hint": "Each side's default group personality: Tactical, Brave, Selfish and Loyal."
       },
       "talking": {
         "Name": "Talking",
-        "Hint": "Characters may try to de-escalate: talk enemies who share a language into surrendering, fleeing, giving something up or (rarely, unless they came as neutrals) standing aside; and talk those who take no side into joining them, or leaving."
+        "Hint": "Characters may talk foes who share a language into surrendering, fleeing, giving something up or (rarely, unless they started neutral) standing aside, and talk those who take no side into joining or leaving."
       },
       "ignoreLanguages": {
         "Name": "Ignore languages",
-        "Hint": "Anyone who speaks at least one language understands anyone else who does, so talking never fails for want of a shared language. Creatures with no language at all (beasts, the mindless) still can't be talked to. Can be changed per battle."
+        "Hint": "Anyone who speaks a language understands everyone who does. Creatures with no language (beasts, the mindless) still can't be talked to. Changeable per battle."
       },
       "storyStyle": {
         "Name": "Story style",
-        "Hint": "How the story of a fight is told in the Sample fight tab and in the chat by Do it For Real Now: Roleplay (prose), Standard (what everyone did) or Statistician (every roll, for the GMs)."
+        "Hint": "How the Sample fight tab and Do it For Real Now's chat cards tell a fight: Roleplay (prose), Standard (what everyone did) or Statistician (every roll, GMs only)."
       },
       "storyMode": {
         "Name": "Story delivery",
@@ -132,7 +132,7 @@
       },
       "bystanders": {
         "Name": "Bystanders can join",
-        "Hint": "Tokens on the map that are not in the encounter may notice the fight (by sight or sound, muffled by walls), be called for help, be hunted, or be run into by someone fleeing, and then decide whether to join."
+        "Hint": "Tokens outside the encounter may notice the fight (by sight, or by sound muffled by walls), be called for help, hunted, or run into by someone fleeing, then decide whether to join."
       },
       "genericFallback": {
         "Name": "Use the experimental generic adapter",
@@ -140,87 +140,87 @@
       },
       "aftermath": {
         "Name": "After the fight",
-        "Hint": "Survivors tend the dying (and the story tells it), the story ends at the last blow, or everyone stays as the fight left them."
+        "Hint": "Whether survivors tend the dying after the fight, and whether the story tells it."
       },
       "opening": {
         "Name": "How encounters open",
-        "Hint": "Talk if they'd rather (a standoff when the leaders would rather talk), always talk first, straight to battle, or only an argument (never comes to blows)."
+        "Hint": "Whether a fight opens with talk. \"Talk if they'd rather\": a standoff when the leaders would rather talk."
       },
       "concedeLuck": {
         "Name": "PC luck: handing over an item",
-        "Hint": "When a player character is talked into giving up an item, they lose it only if a hidden d100 comes up at or under this. Higher means PCs lose items more often."
+        "Hint": "A PC talked into giving up an item loses it only on a hidden d100 at or under this."
       },
       "theftLuck": {
         "Name": "PC luck: being robbed",
-        "Hint": "A thief who beats a player character's defenses still needs a hidden d100 at or under this to take anything. Higher means thieves succeed more often."
+        "Hint": "A thief who beats a PC's defenses still needs a hidden d100 at or under this to take anything."
       },
       "playOnMap": {
         "Name": "Do it For Real Now: play the fight on the map",
-        "Hint": "Each turn's tokens move as its card is posted. Off: they go straight to where the fight leaves them."
+        "Hint": "Tokens move as each turn's card is posted. Off: they jump to where the fight leaves them."
       },
       "storyOdds": {
         "Name": "Show the odds in the posted story",
-        "Hint": "Adds each side's chance of winning, as the simulation saw it, to the end of the story. The planner has the same switch."
+        "Hint": "Ends the story with each side's odds of winning, as simulated. The planner has the same switch."
       },
       "standGround": {
         "Name": "Doesn't like to flee: how often it stays (%)",
-        "Hint": "A character whose answer to when to retreat is Fight to the end ignores the urge to run away this often (half as often for When the battle turns against us), when running is its own choice (shaken nerve, a terror close by, a planned retreat); talked out of the fight, it gives up where it stands instead of running just as often. Fear a spell or the rules put on it still works as the system says."
+        "Hint": "How often a character whose retreat answer is Fight to the end resists its own urge to run (half as often for When the battle turns against us). Talked out of the fight, it surrenders in place as often. Fear from spells or rules works as the system says."
       },
       "adhd": {
         "Name": "ADHD: how often a creature's mind jumps (%)",
-        "Hint": "A creature keeps at what it's doing. This often (0 to 100, default 20), the strongest thing it wants takes over instead: twice as often when it could do it this very turn, three times for the least thoughtful. Tactical creatures and better order what they want by what matters most instead."
+        "Hint": "This often (0 to 100, default 20), a creature drops what it's doing for the strongest thing it wants: twice as often if it can do it this turn, three times for the least thoughtful. Tactical creatures and better put what matters most first."
       },
       "leaveResolve": {
         "Name": "Committed to leaving: how often it keeps going (%)",
-        "Hint": "A creature that has set out to leave the fight (its nerve gone, talked into it, a retreat called) keeps going this often when it's struck or spoken to on its way (0 to 100, default 79): all of it for one whose answers and playstyles lean to going, down to 70% of it for one who'd rather stay and fight. Stopped, it deals with what stopped it first and goes back to leaving; stopped often enough, it forgets leaving."
+        "Hint": "How often a creature leaving the fight keeps going when struck or spoken to (0 to 100, default 79): all of it if its answers and playstyles lean to going, down to 70% of it if it would rather stay and fight. Stopped, it deals with the interruption, then sets off again; stopped often enough, it gives up on leaving."
       },
       "avoidKilling": {
         "Name": "Avoids killing: how often it holds back (%)",
-        "Hint": "A character whose answer to who it attacks first is \"I avoid killing\" holds back this often (50 to 90, default 90; less for answers that lean less that way): a blow that would kill knocks out instead, it leaves the fallen be, and after the fight it spares them. Nobody controls the story entirely: now and then it kills all the same."
+        "Hint": "How often a character whose answer to Foes who fall is \"Spare them: I avoid killing\" holds back (50 to 90, default 90; less for answers that lean less that way): a killing blow knocks out instead, it leaves the fallen be, and spares them after. Now and then it kills anyway."
       },
       "neutralReach": {
         "Name": "Neutral friend groups: reach (squares)",
-        "Hint": "When the Battle Planner opens, it proposes friend groups for the neutral tokens: from the map's top-left corner, the nearest neutral starts group 1 with every neutral of its kind; anyone within this many squares of the group joins it, and so on, up to three steps out. Group 2 starts the same way; everyone left is group 3. The GM can move anyone with the 1 2 3 pills."
+        "Hint": "The planner proposes friend groups for neutrals: the one nearest the map's top-left corner starts group 1 with every neutral of its kind; neutrals within this many squares of the group join, up to three steps out. Group 2 forms the same way; the rest are group 3. Move anyone with the 1 2 3 pills."
       },
       "switchLuck": {
         "Name": "Luck: an enemy changing sides",
-        "Hint": "When an enemy is talked into changing sides, it goes through with it only if a hidden d100 comes up under this; otherwise it's talked into something else (surrendering, standing down, running). Even then it only stands aside, taking no side, and has to be won over from there. 100 means it always does. Doesn't touch spells and abilities made for it (charm, dominate), or talking round someone who already takes no side."
+        "Hint": "An enemy talked into changing sides does so only on a hidden d100 under this (100: always); otherwise it's talked into something else (surrender, standing down, running). Even then it only stands aside and must be won over from there. Charm, dominate and the like, and talking round those who take no side, are unaffected."
       },
       "executeLuck": {
         "Name": "PC luck: being finished off",
-        "Hint": "Each time a creature wants to kill a player character who's down at 0 HP, it goes ahead only if a hidden d100 comes up at or under this; otherwise it turns away to its next foe, taking everything it wanted of that PC along. Higher means fallen PCs die more often."
+        "Hint": "Each time a creature wants to kill a PC down at 0 HP, it goes ahead only on a hidden d100 at or under this; otherwise it turns to its next foe, taking what it wanted of that PC along."
       },
       "leaderInfluence": {
         "Name": "Leader's influence",
-        "Hint": "How readily followers take their lead outright from whoever commands their group, on a scale of 0 to 100 (50 is the usual; it isn't a percentage). A leader always counts a little: its wishes pull on its followers every turn. On top of that, each turn a follower may follow outright, as its loyalty and playstyles allow: it then takes up what its commander wants most (that it can actually do) in proportion to how strongly the commander wants it, and its playstyle leans toward its commander's for the turn. 0: nobody follows outright; 100: twice as readily as usual."
+        "Hint": "How readily followers take their commander's lead outright, 0 to 100 (50 is usual; not a percentage). A leader's wishes always pull a little. Each turn, as loyalty and playstyles allow, a follower may also follow outright: it takes up what its commander wants most (and it can do), in proportion to how badly the commander wants it, and leans to the commander's playstyle that turn. 0: nobody follows outright; 100: twice as readily as usual."
       },
       "bossInfluence": {
         "Name": "Boss's influence",
-        "Hint": "How much more readily followers take a boss's lead than a leader's: 1.25 to 3 times (default 2). A group with a boss has no leader; a lieutenant who steps up for a fallen boss leads as a leader, never as a boss. The party never has a boss."
+        "Hint": "How much more readily followers take a boss's lead than a leader's: 1.25 to 3 times (default 2). A group with a boss has no leader; a lieutenant replacing a fallen boss leads as a leader. The party never has a boss."
       },
       "traitorLuck": {
         "Name": "Luck check: a player character turning traitor",
-        "Hint": "A player character who wants to lead, isn't its group's leader, and is scheming against whoever is (a playstyle like Cruel or Wildcard with Wants to Lead) can be talked into changing sides only on a d100 roll of this or less (default 9). 0: never."
+        "Hint": "A PC scheming against its group's leader (Wants to Lead with a treacherous playstyle such as Cruel or Wildcard) can be talked into changing sides only on a d100 under this (default 9). 0: never."
       },
       "trapLuck": {
         "Name": "Trap avoiders: spotting a trap (%)",
-        "Hint": "A trap avoider (a character whose playstyles keep it watchful: Thief most, then Puzzle-Maniac, Skeptic, Lore-Collector, Chicken and Wallflower) spots each hazard only if a hidden d100 comes up at or under this (default 59) times how watchful it is: all of it for a Thief, about a third for a Wallflower, less for a pill further down. It then keeps out of that hazard's reach as it moves, going around it, and goes in only for something it wants badly enough. Anyone a hazard goes for knows it from then on. 0: never; 100: always."
+        "Hint": "Characters with watchful playstyles (Thief most, then Puzzle-Maniac, Skeptic, Lore-Collector, Chicken, and Wallflower at about a third; less for a later pill) spot each hazard on a hidden d100 at or under this (default 59) times their watchfulness. They go around a spotted hazard, entering only for something they want badly enough. Anyone a hazard goes for knows it from then on. 0: never."
       },
       "tauntLuck": {
         "Name": "Playstyle taunts: taking hold (%)",
-        "Hint": "A character whose playstyles make it a taunter (Tank most, then Instigator, Martyr, Brawler and Redeem-Seeker) may spend an action goading a foe into coming at it: its talking (threats or mockery) against the foe's resistance, then, if that gets through, a hidden d100 at or under this (default 42) times how much of a taunter it is (all of it for a Tank as its first pick; less for the others, and for a pill further down). Taken hold, the foe wants to go for it until the end of its next turn. Only playstyle taunts use this: a game system's taunts (skills, powers, spells) follow their own rules. 0: never; 100: always, when the talking works."
+        "Hint": "A character with a taunting playstyle (Tank most, then Instigator, Martyr, Brawler, Redeem-Seeker; less for a later pill) may spend an action goading a foe: threats or mockery against its resistance, then a hidden d100 at or under this (default 42) times how much of a taunter it is (all of it for a first-pick Tank). A goaded foe wants to go for the taunter until the end of its next turn. A game system's own taunts follow its rules. 0: never."
       },
       "partySway": {
         "Name": "Party's sway (%)",
-        "Hint": "How much the player party's wishes (the players' votes in the survey's Party tab, majority rules) sway everyone on the friendly side: in that share of fights a character uses the party's answer where it left its own to \"Let this character decide\", and the party's wishes add that much to what each wants (on the 0 to 100 desire scale)."
+        "Hint": "How much the party's votes (the survey's Party tab, majority rules) sway the friendly side: in this share of fights, a character left on \"Let this character decide\" uses the party's answer, and the party's wishes add this much to each one's desires (0 to 100 scale)."
       },
       "playersRunPCs": {
         "Name": "Players run their characters",
-        "Hint": "Do it For Real Now plays the battle on the combat tracker: players take their own turns, FastFighting plays everyone else. Off: FastFighting plays every turn. Each battle can say otherwise."
+        "Hint": "In Do it For Real Now, players take their own characters' turns; FastFighting plays everyone else. Off: FastFighting plays every turn. Changeable per battle."
       },
       "ignoreTroubles": {
         "Name": "Selfless creatures bear what holds or hurts them (%)",
-        "Hint": "Each turn a creature held fast, prone, or hurting (on fire, bleeding) would try to be rid of it as much as it bothers it. A fully selfless one that doesn't stop to calculate bears it instead, on a hidden d100 at or under this (default 29), and keeps at what it wants; the more self-serving or calculating it is, the smaller its share of this. Never what would kill it. 0: nobody bears it; 100: the selfless always do."
+        "Hint": "A creature held fast, prone or hurting (burning, bleeding) tries each turn to be rid of it, as much as it bothers it. A selfless one may bear it and carry on instead: a hidden d100 at or under this (default 29), scaled down the more selfish or calculating it is. Never when the harm would kill it. 0: nobody bears it."
       }
     },
     "Lean": {
@@ -446,7 +446,7 @@
       "Remove": "Remove fudge"
     },
     "Defaults": {
-      "Hint": "Group personality for each side. Every member's own values are blended with these, and both can be fudged per battle.",
+      "Hint": "Each side's group personality. Members' own values blend with these; the planner can fudge both per battle.",
       "Restore": "Restore defaults"
     },
     "Planner": {
@@ -470,10 +470,10 @@
       "RefreshHint": "Re-read the tokens on the scene",
       "ClearHint": "Clear this plan",
       "ClearTitle": "Clear the plan?",
-      "ClearConfirm": "Every choice made in the planner for this encounter (sides, groups, roles, fudges and options) goes back to the defaults. This can't be undone.",
+      "ClearConfirm": "Every planner choice for this encounter (sides, groups, roles, fudges and options) returns to the defaults. This can't be undone.",
       "Run": "Run",
       "FightsRun": "{n} fights",
-      "FightsRunHint": "Fights simulated in the time allowed: counted in tens while it runs, then the exact number.",
+      "FightsRunHint": "Fights simulated: in tens while running, then the exact count.",
       "Lean": "Lean",
       "Healing": "Healing",
       "SideMorale": "Can rout",
@@ -529,7 +529,7 @@
       "Opening": "Opening",
       "AroundWalls": "around walls",
       "ThroughWall": "no way round: through a wall",
-      "NoScene": "No scene is showing on the canvas. View the encounter's scene, then run the battle.",
+      "NoScene": "No scene on the canvas. View the encounter's scene, then run the battle.",
       "AutoLeaders": "Leaders: {names}",
       "Command": "Command",
       "Role": {
@@ -550,9 +550,9 @@
           "Short": "2"
         }
       },
-      "RoleHint": "L: Leader, B: Boss ({boss}× as compelling as a Leader), 1/2: Lieutenants (become Leaders when they are unavailable)",
+      "RoleHint": "L: Leader, B: Boss ({boss}× as compelling), 1/2: Lieutenants (lead once the commander is gone)",
       "PlayersRun": "Players run their characters",
-      "PlayersRunHint": "On: players take their own turns on the tracker, FastFighting plays everyone else. Off: FastFighting plays every turn."
+      "PlayersRunHint": "On: players take their own turns; FastFighting plays the rest. Off: FastFighting plays every turn."
     },
     "Results": {
       "Tab": {
@@ -592,7 +592,7 @@
       "AvgUsed": "Average used",
       "NoResources": "No limited resources were spent.",
       "EmptyTitle": "Plan the battle, then Run",
-      "EmptyBody": "Every token on the scene is listed on the left by side. Adjust personalities, allegiances and dispositions, then run thousands of simulated fights.",
+      "EmptyBody": "The scene's tokens are on the left, by side. Adjust personalities, allegiances and dispositions, then Run.",
       "Swayed": "Foe talked down",
       "TalkedDown": "Talked down",
       "Switched": "Switched sides",
@@ -618,7 +618,7 @@
       "Result": "Outcome",
       "Unchanged": "No change",
       "Typical": "Most typical fight",
-      "TypicalHint": "A sample: the simulation's most common outcome. Do it For Real Now plays a new fight."
+      "TypicalHint": "One fight with the most common outcome. Do it For Real Now plays a new one."
     },
     "MakeItSo": {
       "Button": "Do it For Real Now",
@@ -627,8 +627,8 @@
       "UndoConfirm": "Put this scene's last encounter back: tokens, outcomes and its chat cards?",
       "Undone": "The encounter was rewound.",
       "Moves": "Moves {distance}",
-      "NeedsUpdate": "This system's FastFighting helper is too old to play a fight for real: update it.",
-      "Hint": "Closes the planner and starts this fight on the Combat Tracker, a turn at a time: FastFighting plays its creatures, the players their characters (if they run them). Rewind This Encounter takes it back.",
+      "NeedsUpdate": "Update this system's FastFighting helper to play fights for real.",
+      "Hint": "Plays this fight on the Combat Tracker, turn by turn: FastFighting plays its creatures, the players their characters (if they run them). Rewind This Encounter undoes it.",
       "Gives": "Gives up {what} to {name}",
       "Receives": "Receives {what} from {name}",
       "Kept": "Agreed to give up {what}, but kept it (luck {luck})",
@@ -702,7 +702,7 @@
       },
       "fallen": {
         "Label": "Foes who fall",
-        "Hint": "What it does with a foe who's down. Spare them: never a killing blow, and first aid after. Tie them up: taken alive (mostly no killing blow), a prisoner even if healed.",
+        "Hint": "What it does with a downed foe. Spare them: avoids killing blows, first aid after. Tie them up: mostly takes them alive, as prisoners even if healed.",
         "finish": "Finish them",
         "leave": "Leave them be",
         "spare": "Spare them: I avoid killing",
@@ -718,7 +718,7 @@
       },
       "specialty": {
         "Label": "Magic and specialties",
-        "Hint": "How often it uses its spells and special abilities over a plain weapon, moves or talk.",
+        "Hint": "How often it picks spells and special abilities over weapons, moves or talk.",
         "none": "No preference",
         "some": "A little more often",
         "strong": "Much more often",
@@ -797,7 +797,7 @@
       "AutoChance": "{choice} {chance}",
       "Reactions": {
         "Label": "Reactions",
-        "Hint": "In a live battle, what FastFighting does when one of these could be used during someone else's turn.",
+        "Hint": "In a live battle: whether FastFighting uses these on others' turns, or asks.",
         "ask": "Ask me",
         "always": "Always use it",
         "never": "Never use it",
@@ -813,7 +813,7 @@
     },
     "Survey": {
       "Title": "Prepare for Battle",
-      "Intro": "Your GM wants to know how your characters fight in this upcoming conflict. Answers save as you go, and anyone sharing a character sees changes live.",
+      "Intro": "How do your characters fight in this coming conflict? Answers save as you go; anyone sharing a character sees changes live.",
       "NoTokens": "You don't control any tokens on this battle map.",
       "Level": "Level",
       "SharedWith": "Also controlled by",
@@ -824,7 +824,7 @@
       "Prepare": "Prepare Players",
       "PrepareHint": "Open the survey for every player with tokens on this map.",
       "NoPlayers": "No players control tokens on this scene.",
-      "NoPlayersHere": "No players control tokens on this scene. Fill in tactics yourself in each PC's row.",
+      "NoPlayersHere": "No players control tokens on this scene. Set tactics in each PC's row.",
       "Sent": "Survey sent to {n} player(s).",
       "WillOpen": "{name} is offline; their survey will open when they log in.",
       "OpenFirst": "Open this player's survey",
@@ -848,7 +848,7 @@
       "Tab": "FastFighting",
       "Hint": "FastFighting's playstyles and desires for this token.",
       "Hazard": "Hazard",
-      "HazardHint": "Traps and dangerous features: don't move or talk, can't be attacked. Simple: fires once; complex: acts every round.",
+      "HazardHint": "Traps and dangerous features: they don't move or talk, and can't be attacked.",
       "HazardMark": {
         "system": "As the game system has it",
         "no": "Not a hazard",
@@ -884,7 +884,7 @@
       },
       "peacekeeper": {
         "Name": "Peacekeeper",
-        "Hint": "Keeps the peace: calms quarrels, talks foes into standing down, never threatens, spares the fallen."
+        "Hint": "Calms quarrels, talks foes into standing down, never threatens, spares the fallen."
       },
       "peoplePleaser": {
         "Name": "People-Pleaser",
@@ -904,7 +904,7 @@
       },
       "skeptic": {
         "Name": "Skeptic",
-        "Hint": "Careful: saves resources, heals sparingly, hard to talk round, half swayed by its leader. Sees through taunts."
+        "Hint": "Careful: saves resources, heals sparingly, hard to talk round or taunt, half swayed by its leader."
       },
       "speedRunner": {
         "Name": "Speed-Runner",
@@ -916,7 +916,7 @@
       },
       "instigator": {
         "Name": "Instigator",
-        "Hint": "Acts first: locks foes down, picks fights with the most dangerous foe and their leader. Taunts foes."
+        "Hint": "Acts first: locks foes down, goes for the most dangerous foe and its leader, taunts."
       },
       "diplomat": {
         "Name": "Diplomat",
@@ -1016,7 +1016,7 @@
       "OpenHint": "Estimate how this encounter will go",
       "NeedTwo": "Add at least two tokens to the encounter to plan the battle.",
       "Survey": "Survey",
-      "SurveyHint": "Asks every player with a character on this scene about it (Prepare Players), with or without a conflict.",
+      "SurveyHint": "Survey every player with a character on this scene (Prepare Players), encounter or not.",
       "Planner": "Planner",
       "Vantage": "Vantage"
     },
@@ -1054,12 +1054,12 @@
       "TablesMenuName": "Story tables",
       "TablesMenuLabel": "Manage",
       "TablesMenuHint": "Install the story's sentences as editable RollTables in this world.",
-      "TablesHint": "Every sentence of the Roleplay story is rolled from a table: an action table (e.g. Melee · Slashing · Minor Success) and a relationship table. Install them to edit, add entries or translate; your world's tables win over the built-in ones.",
+      "TablesHint": "The Roleplay story rolls each sentence from an action table (e.g. Melee · Slashing · Minor Success) and a relationship table. Install them to edit, extend or translate; your world's tables override the built-in ones.",
       "TablesInstalled": "story tables installed in this world",
-      "TablesLocale": "Translators: a module can ship story/<language>.json with the same table keys; it is used automatically for that language.",
+      "TablesLocale": "Translators: ship story/<language>.json with the same table keys; it's used automatically for that language.",
       "Install": "Install missing tables",
       "Reinstall": "Reinstall all",
-      "ReinstallConfirm": "Replace every installed story table with the built-in version? Your edits to them will be lost.",
+      "ReinstallConfirm": "Replace every installed story table with the built-in one? Your edits will be lost.",
       "Installing": "Installing story tables…",
       "Installed": "Story tables: {created} installed, {kept} already present.",
       "ShowOdds": "Show the odds",
@@ -1529,10 +1529,10 @@
     "Helper": {
       "Title": "FastFighting needs a helper module for {system}",
       "ok": "{system} is supported.",
-      "generic": "No helper for {system}: using the experimental generic adapter. Results will be rough. See {list} for supported systems.",
-      "disabled": "{module} is installed but not enabled in this world. Enable it in Manage Modules.",
+      "generic": "No helper for {system}: using the experimental generic adapter, with rough results. Supported systems: {list}",
+      "disabled": "{module} is installed but not enabled. Enable it in Manage Modules.",
       "notInstalled": "Install {module} ({url}) to use FastFighting with {system}.",
-      "unknown": "There is no FastFighting helper for {system} yet, so FastFighting is inactive in this world. Supported systems are listed at {list}.",
+      "unknown": "No FastFighting helper for {system} yet, so FastFighting is inactive in this world. Supported systems: {list}",
       "ListLink": "Supported systems",
       "Module": {
         "pf2e": "FastFighting PF2e",
@@ -1543,8 +1543,8 @@
       }
     },
     "Translation": {
-      "Disabled": "<strong>{system}</strong> isn't translated into your language ({language}) in this world, so its own words (its actions, conditions, skills and compendiums) stay in English. The last known translation module, <strong>{title}</strong> (<code>{id}</code>), is installed but not enabled: enable it in Manage Modules.",
-      "Missing": "<strong>{system}</strong> isn't translated into your language ({language}) in this world, so its own words (its actions, conditions, skills and compendiums) stay in English. The last known translation module was <strong>{title}</strong> (<code>{id}</code>{link}): install it in Add-on Modules, and enable it in this world."
+      "Disabled": "<strong>{system}</strong> isn't translated into {language} in this world: its actions, conditions, skills and compendiums stay in English. Its last known translation module, <strong>{title}</strong> (<code>{id}</code>), is installed but not enabled: enable it in Manage Modules.",
+      "Missing": "<strong>{system}</strong> isn't translated into {language} in this world: its actions, conditions, skills and compendiums stay in English. Its last known translation module is <strong>{title}</strong> (<code>{id}</code>{link}): install it in Add-on Modules, then enable it here."
     },
     "Aftermath": {
       "tell": "Tend the fallen and tell it",
@@ -1594,7 +1594,7 @@
     "Motive": {
       "Offer": {
         "Label": "Do you offer something to end this argument?",
-        "Hint": "What it offers to end a standoff or argument: money, one of its things, or a promise.",
+        "Hint": "What it offers to end a standoff or argument.",
         "none": "Nothing",
         "money": "{MONEY}",
         "item": "One of my things",
@@ -1764,7 +1764,7 @@
       "RoleLeader": "leader",
       "RoleLieutenant": "lieutenant {n}",
       "Scheme": "{actor} schemes against {target}{boss}: wants to lead; won't help its leaders this turn, and is far easier to turn",
-      "ShareLore": "{actor} → {allies}: shares what it knows of {target} (an action; they know its sort too){chance}",
+      "ShareLore": "{actor} → {allies}: shares what it knows of {target} and its kind (an action){chance}",
       "MindedToShare": " · minded to share {n}%",
       "KeepLore": "{actor} keeps what it learned of {target} to itself · minded to share {n}%",
       "FirstAid": "{actor} → {target}: first aid · {skill} {roll} · {degree} · {result}",
@@ -2080,9 +2080,9 @@
     },
     "Party": {
       "Tab": "Party",
-      "Intro": "How do you want everyone in the party to act? One vote per player, and only the votes of players logged in count. Majority rules: the most-voted answer to each question is the party's, and it sways everyone on your side a little in every fight. A tie goes to the party's leader; a tie the leader doesn't settle counts as no answer. Vote again to take your vote back; swipe Lock-in when you're done (until your GM sends everyone a new survey). Closing the survey locks your votes too.",
-      "GmView": "Only the players vote. You see everyone's votes; the outlined answer is the party's.",
-      "ReadOnly": "The party's wishes, to look at: you can vote on them again when your GM sends everyone the survey.",
+      "Intro": "How should the party act? Each logged-in player gets one vote per question; the most-voted answer is the party's and sways everyone on your side a little in every fight. The party's leader breaks ties; a tie it doesn't break counts as no answer. Vote again to take a vote back. Swipe Lock-in when you're done, or close the survey; your votes stay locked until your GM sends a new one.",
+      "GmView": "Only players vote. You see every vote; the outlined answer is the party's.",
+      "ReadOnly": "View only: you can vote again when your GM sends everyone the survey.",
       "LockIn": "Lock-in",
       "LockedIn": "Choices locked in",
       "NotLockedIn": "Choices not locked in",
@@ -2135,7 +2135,7 @@
     },
     "Playback": {
       "Unfinished": "The last Do it For Real Now on this scene didn't finish.",
-      "RewindConfirm": "Put back everything this unfinished encounter did: tokens, outcomes and its chat cards?"
+      "RewindConfirm": "Undo everything this unfinished encounter did: tokens, outcomes and chat cards?"
     },
     "StoryWords": {
       "plasma": "plasma",
@@ -2171,14 +2171,14 @@
       "NextTurn": "Next Turn",
       "Rewind": "Rewind",
       "Rewound": "Rewound to {name}'s turn.",
-      "SheetUnread": "{name}'s sheet couldn't be read, so FastFighting keeps it as it last knew it. The console says why.",
-      "TrackerRefused": "{name} moved the turn order of the live battle; FastFighting put it back. Only a GM moves it, apart from a player ending their own character's turn.",
-      "TooFarBack": "FastFighting doesn't keep turns that far back, so the tracker is put back where it was. Rewind This Encounter can still take the whole battle back.",
+      "SheetUnread": "Couldn't read {name}'s sheet; FastFighting keeps what it last knew. The console says why.",
+      "TrackerRefused": "{name} moved the live battle's turn order; FastFighting put it back. Only a GM may, though players can end their own turns.",
+      "TooFarBack": "FastFighting doesn't keep turns that far back, so it put the tracker back where it was. Rewind This Encounter can still undo the whole battle.",
       "Play": "Play it",
       "Over": "The battle is over.",
       "Aftermath": "Settle the aftermath",
-      "AftermathHint": "FastFighting settles what's left: the dying bleed out or hold on, the beaten are dealt with, and goods go back to their owners.",
-      "RewindAllConfirm": "Put the whole battle back as it was before it began: every turn, every card, every move?",
+      "AftermathHint": "The dying bleed out or hold on, the beaten are dealt with, and goods go back to their owners.",
+      "RewindAllConfirm": "Undo the whole battle: every turn, card and move?",
       "PickedUp": "FastFighting picked up the live battle where it was.",
       "AskTitle": "A reaction",
       "Ask": "Should {creature} use {reaction}? {trigger}",
@@ -2219,9 +2219,9 @@
       "AutomateHint": "FastFighting plays the rest of this character's turns. Clear it to hand them back to their player.",
       "SpotlightHint": "Give the spotlight to whoever FastFighting would pick next.",
       "PlayThrough": "Play to the end",
-      "PlayThroughHint": "The turns FastFighting plays go on one after another, without waiting for Next Turn.",
+      "PlayThroughHint": "FastFighting's turns run back to back, without waiting for Next Turn.",
       "NpcAsk": "Ask me about NPC reactions",
-      "NpcAskHint": "On: FastFighting asks before an NPC uses a reaction. Off: it uses them as its tactics decide.",
+      "NpcAskHint": "On: FastFighting asks before an NPC uses a reaction. Off: its tactics decide.",
       "Held": "Told with this player's turn when it ends:",
       "Drop": "Take it back",
       "PlayerRuns": "Run by its player",
@@ -2301,7 +2301,7 @@
         "ZoomOut": "Zoom out",
         "Fit": "Fit everyone in view",
         "Reset": "Lay them out as on the map again",
-        "FocusHint": "Click a creature here, or select its token on the map, to see what it wants and what's on it.",
+        "FocusHint": "Click a creature here or select its token to see what it wants and what's on it.",
         "Unaware": "Hasn't noticed the fight",
         "Notices": "It notices the fight",
         "SetAside": "Delete",
@@ -2327,7 +2327,7 @@
         "SelectTeam": "Select its team",
         "SelectLeader": "Select its leader",
         "Team": "Team",
-        "TeamHint": "Move it to this side: what it wants, and everyone's toward it, is worked out again.",
+        "TeamHint": "Move it to this side: its desires, and everyone's toward it, are worked out again.",
         "Controlled": "Controlled by {name}: it wants what they want.",
         "Affliction": "{name}, stage {stage} of {most}",
         "Onset": "takes hold in {n} rounds",
@@ -2344,7 +2344,7 @@
           "standDown": "Stands down before whom"
         },
         "FriendlyShort": "F",
-        "RoleHint": "Its place in its group's chain of command: whoever had that place gives it up, and what everyone wants is worked out again. Again to take it out."
+        "RoleHint": "Its place in the group's chain of command: whoever held it steps down, and desires are worked out again. Click again to take it out."
       },
       "Attitude": {
         "wary": "Less willing to hear {name} out (×{n})",
@@ -2397,7 +2397,7 @@
     },
     "Region": {
       "Ground": "FastFighting: ground height",
-      "GroundHint": "Where the ground is in this region (in the scene's units): a ledge or a platform above the floor, a pit's floor below it. A creature shoved off it falls. Leave it blank if the region isn't ground."
+      "GroundHint": "Ground height in this region, in the scene's units: above the floor for a ledge or platform, below it for a pit. A creature shoved off it falls. Leave blank if the region isn't ground."
     }
   }
 }
