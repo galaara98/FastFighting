@@ -1989,7 +1989,7 @@ async function playerMoved(doc) {
  * damage applied, a save); done now, on the sheets and the map, told with the player's turn. True if anyone answered.
  */
 async function answerArrival(pc, from) {
-  if ( !battle.run.movers || !from ) return false;
+  if ( (!battle.run.movers && !battle.run.reachers) || !from ) return false;
   const before = captureAll(battle.run);
   const snapshot = snapshotRun(battle.run, { log: false });
   const nonce = freshNonce();

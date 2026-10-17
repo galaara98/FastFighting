@@ -299,6 +299,7 @@ One entry for each thing a reaction does, whatever set it off. A reaction can ca
 | a foe walks out of its reach (`reactions.js`) | `foeLeavesReach` | its opportunity strike |
 | a ranged attack, or a manipulate action, in its reach | `foeOpening` | its opportunity strike, where `rules.opportunityOn` names it (PF2e) |
 | standing up in its reach | `foeMovesInReach` | its opportunity strike, where `rules.opportunityOn` names it (PF2e) |
+| a move that ends in its reach after a square or more inside it (a reach weapon walked into: `throughReach`) | `foeMovesInReach` | its opportunity strike, where `rules.opportunityOn` names it (PF2e) |
 | a friend ends a move beside it (`answerMove`) | `allyMoves` | step (feet: a move of its own to the best spot it finds), kin |
 | a foe comes into its reach (`answerMove`) | `foeApproaches` | strike, step, kin |
 

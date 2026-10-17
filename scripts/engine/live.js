@@ -470,7 +470,7 @@ export function reactNow(run, reactorId, targetId, strike, trigger = null) {
  */
 export function movedBeside(run, id, from, { answers = null, nonce = 0 } = {}) {
   const u = run.byId.get(id);
-  if ( !u?.pos || !from || !run.movers ) return [];
+  if ( !u?.pos || !from || (!run.movers && !run.reachers) ) return [];
   nextDice(run, 0, nonce);
   run.live.answers = new Map(answers ?? []);
   const start = run.log.length;

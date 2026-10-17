@@ -105,6 +105,35 @@ test("in a whole fight: an archer beside the foe scuttles clear as its friend ru
   expect(steps).toBeGreaterThan(0);
 });
 
+describe("PF2e's Reactive Strike at a foe walking in through a reach weapon's reach (foeMovesInReach)", () => {
+  const rules = { ...pf2eRules, opportunityOn: ["foeLeavesReach", "foeOpening", "foeMovesInReach"] };
+  const setting = reach => {
+    const run = beginRun(prepareBattle(battle([
+      creature({ id: "guard", position: at(0, 0), flags: { reactiveStrike: true }, actions: [strike({ id: "glaive", name: "Glaive", reach, bonus: 30 })] }),
+      creature({ id: "orc", side: "hostile", position: at(40, 0), hp: { value: 200, max: 200 }, flags: { fearless: true } })
+    ], { positioning: true, maxRounds: 3 }), rules), 1, { log: true });
+    return { run, by: id => run.byId.get(id) };
+  };
+
+  test("a square or more inside its 10-foot reach: it strikes", () => {
+    const { run, by } = setting(10);
+    expect(run.reachers).toBe(true);
+    moveTo(run, by("orc"), { x: 5, y: 0 });
+    expect(run.log.find(e => e.type === "opportunity")).toMatchObject({ actorId: "guard", targetId: "orc", trigger: "foeMovesInReach" });
+    expect(by("guard").reactionsLeft).toBe(0);
+  });
+
+  test("stopping at the edge of its reach, or a 5-foot reach walked up to: nothing", () => {
+    const edge = setting(10);
+    moveTo(edge.run, edge.by("orc"), { x: 10, y: 0 });
+    expect(edge.run.log.some(e => e.type === "opportunity")).toBe(false);
+    const short = setting(5);
+    expect(short.run.reachers).toBe(false);
+    moveTo(short.run, short.by("orc"), { x: 5, y: 0 });
+    expect(short.run.log.some(e => e.type === "opportunity")).toBe(false);
+  });
+});
+
 describe("in a live battle: a player's character moves", () => {
   const spec = () => battle([
     creature({ id: "hero", kind: "pc", position: at(20, 0), hp: { value: 200, max: 200 } }),

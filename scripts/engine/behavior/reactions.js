@@ -6,7 +6,8 @@
  *                                      creatures can; in 5e anyone with a melee attack)
  *   rules.opportunityOn                the moments it answers, from the master list (default ["foeLeavesReach"]; PF2e's
  *                                      Reactive Strike also "foeOpening", a ranged attack or a manipulate action in
- *                                      reach, and "foeMovesInReach", standing up there)
+ *                                      reach, and "foeMovesInReach", standing up there or walking a square or
+ *                                      more into a reach weapon's reach: simulator.js throughReach)
  *   rules.reactions(u)                 reactions a round (default 1), regained at the start of the creature's turn
  *   rules.disengage(u)                 how to leave safely, {cost, label, check?} (5e Disengage, PF2e Step; check:
  *                                      {mod, dc, dcMany}, a roll it has to make, harder against several foes: XCC's

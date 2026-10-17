@@ -2235,6 +2235,7 @@ function moveLog(run, u, move, toward, purpose = "approach") {
  * foe whose reach it came into ("foeApproaches": a strike at it, or a step).
  */
 export function answerMove(run, u, move, toward = null) {
+  if ( run.reachers ) throughReach(run, u, move);
   if ( !run.movers || !(move?.feet > 0) || !isStanding(u) ) return;
   for ( const o of [...run.units] ) {
     if ( o === u || !o.spec.reactions || battleOver(run) || !isStanding(u) ) continue;
@@ -2247,6 +2248,39 @@ export function answerMove(run, u, move, toward = null) {
     if ( r.step ) stepAside(run, o, r.step);
     const strike = r.strike && foe ? riposteStrike(o) : null;
     if ( strike && movesNeeded(run, o, u, strike) === 0 ) strikeTarget(run, o, strike, u, 0, false, !!run.log);
+  }
+}
+
+/**
+ * u's move ended in a foe's reach after a square or more of it inside that reach, where the system's opportunity
+ * strikes answer a foe moving in reach (rules.opportunityOn "foeMovesInReach": PF2e's Reactive Strike, a reach weapon
+ * that a foe walks in through): each such foe strikes, as provoke has it. One that only stepped into reach at the end
+ * of its move left no square inside it: nothing.
+ */
+function throughReach(run, u, move) {
+  const from = move?.from;
+  if ( !from || !u.pos || !(move.feet > 0) || !isStanding(u) ) return;
+  const length = Math.hypot(u.pos.x - from.x, u.pos.y - from.y);
+  if ( length < 4.5 ) return;
+  for ( const { e, strike } of threats(run, u, null, "foeMovesInReach") ) {
+    if ( !isStanding(u) || battleOver(run) ) break;
+    const reach = (strike.reach ?? 5) + 0.5;
+    const half = ((u.spec.position?.size ?? 5) + (e.spec.position?.size ?? 5)) / 2 - 5;
+    const inReach = p => Math.max(5, Math.hypot(p.x - e.pos.x, p.y - e.pos.y) - half) <= reach;
+    // (Where along it the move came into reach, a foot at a time: the rest of it was inside.)
+    let entered = null;
+    for ( let k = 0; k <= Math.ceil(length); k++ ) {
+      const f = Math.min(1, k / length);
+      if ( inReach({ x: from.x + (u.pos.x - from.x) * f, y: from.y + (u.pos.y - from.y) * f }) ) {
+        entered = f;
+        break;
+      }
+    }
+    if ( entered === null || (1 - entered) * length < 4.5 ) continue;
+    if ( run.live && !run.live.decide(run, e, { reaction: { id: OPPORTUNITY, label: strike.name }, trigger: "foeMovesInReach", by: u, would: true, strike }) ) continue;
+    e.reactionsLeft -= 1;
+    log(run, e, { type: "opportunity", target: u.spec.name, targetId: u.id, action: strike.name, trigger: "foeMovesInReach" });
+    executeOffense(run, e, strike, u, 0);
   }
 }
 
