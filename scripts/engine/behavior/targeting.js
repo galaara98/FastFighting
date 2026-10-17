@@ -76,7 +76,9 @@ export function bestOptionVs(run, u, t, attacksMade = 0, turn = null) {
   const SPELLS = ["spell-attack", "save", "auto", "control"];
   if ( liveTier(run, u) <= TACTICAL.FERAL && options.some(o => SPELLS.includes(o.action.kind)) ) {
     const affordable = turn ? options.filter(o => turn.canAfford({ ...o.cost, [main]: (o.cost[main] ?? 0) + o.moveUnits })) : options;
-    const pool = affordable.length ? affordable : options;
+    // (Anything that does something, that is: not a Demoralize the foe has already shrugged off, worth nothing now.)
+    const able = affordable.length ? affordable : options;
+    const pool = able.some(o => o.ev > 0) ? able.filter(o => o.ev > 0) : able;
     if ( run.rng && run.rng.chance(0.5) ) return run.rng.pick(pool);
     return pool.reduce((best, o) => (!best || o.ev > best.ev ? o : best), null);
   }
