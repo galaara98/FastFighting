@@ -56,6 +56,7 @@ function systemRollKinds(adapter) {
   if ( offers(adapter, "rollCheck") ) out.push("check");
   if ( offers(adapter, "useAction") ) out.push("use");
   if ( offers(adapter, "rollDamage") ) out.push("damage");
+  if ( offers(adapter, "adjustRolled") ) out.push("adjust");
   if ( (out.includes("strike") || out.includes("damage")) && offers(adapter, "applyDamageCard") ) out.push("apply");
   return out;
 }
@@ -960,6 +961,7 @@ async function turnRoll(request, events, stage) {
         if ( request.roll === "strike" ) out = await rollTurnStrike(request);
         else if ( request.roll === "save" || request.roll === "check" ) out = await rollTurnCheck(request);
         else if ( request.roll === "use" ) out = await useTurnAction(request);
+        else if ( request.roll === "adjust" ) out = await adjustTurnRoll(request);
         else if ( request.roll === "damage" ) out = await rollTurnDamage(request);
       }
     } catch ( err ) {
@@ -1026,6 +1028,19 @@ async function applyStrike({ targetId, card, applies, multiplier = 1, amount = n
   stage.records.push(...records);
   const now = await standing(u);
   return was !== null && now !== null ? { lost: Math.max(0, was - now) } : null;
+}
+
+/**
+ * A change the rules made to a roll the system made, in a turn FastFighting plays, carried out on its card the system's
+ * way (the helper's adjustRolled: Ironsworn's momentum burned): {done}, done false where it couldn't (the rules then
+ * keep the roll as it fell).
+ */
+async function adjustTurnRoll({ unitId, card, adjust }) {
+  const doc = docOf(unitId);
+  const message = typeof card === "string" ? game.messages.get(card) : null;
+  if ( !doc || !message || !offers(getAdapter(), "adjustRolled") ) return { done: false };
+  const raw = await getAdapter().adjustRolled(doc, { card, adjust, secret: secretRoll(doc) });
+  return { done: !!raw?.done };
 }
 
 /**
@@ -1555,11 +1570,12 @@ async function rollTurnCheck(request) {
   return checkRolled(raw);
 }
 
-/** A save or a check as the helper says it went, made sure of: {degree, natural, total, dice}, or null (no degree). */
+/** A save or a check as the helper says it went, made sure of: {degree, natural, total, dice, card}, or null (no degree). */
 function checkRolled(roll) {
   const degree = counted(roll?.degree);
   if ( degree === null ) return null;
   const out = { degree: Math.min(3, Math.round(degree)), natural: counted(roll.natural), total: counted(roll.total, -Infinity) };
+  if ( typeof roll.card === "string" && game.messages.get(roll.card) ) out.card = roll.card;
   const dice = roll.dice && typeof roll.dice === "object" ? Object.fromEntries(Object.entries(roll.dice).filter(([, v]) => Number.isFinite(v))) : null;
   if ( dice && Object.keys(dice).length ) out.dice = dice;
   return out;

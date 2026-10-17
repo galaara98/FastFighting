@@ -471,11 +471,23 @@ export class SystemAdapter {
    * a turn FastFighting plays in a live battle (on its player's screen, where a player's character makes it and they're
    * here). `save`: the save's key as the helper's rules name it; `dc`; `action`: what it's against ({id, name}: an
    * action's id as the helper gave it, else null and a name: a condition, a sickness); `from`: the TokenDocument of
-   * whoever made it save, or null; `secret`: for the GMs' eyes only. Returns {degree: 0-3, natural, total, dice}; or
+   * whoever made it save, or null; `secret`: for the GMs' eyes only. Returns {degree: 0-3, natural, total, dice, card}
+   * (`card`, optional: its message id, for a change the rules make to it: adjustRolled); or
    * {gm: true} where the system's roll needs a GM's judgment the helper's code can't make (a GM says how it went); or
    * null (the engine rolls it). Optional.
    */
   rollSave(token, { save, dc, action, from = null, secret = false }) {
+    return null;
+  }
+
+  /**
+   * API 19. A change the helper's rules made to a roll the system made (rules.adjustRoll with ctx.rolled true, asking
+   * run.live.roll for kind "adjust"), carried out on that roll's card the system's way, as its player would from the
+   * card (Ironsworn: momentum burned). `card`: the message id the roll's result named (rollSave's or rollCheck's
+   * `card`); `adjust`: what the rules made of it (the helper's own word: "burnMomentum"); `secret`. Returns {done: true},
+   * or null where it couldn't (the rules keep the roll as it fell). Optional.
+   */
+  adjustRolled(token, { card, adjust, secret = false }) {
     return null;
   }
 

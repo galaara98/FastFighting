@@ -75,6 +75,28 @@ describe("a save the system rolls", () => {
     expect(seen.at(-1)).toEqual(["save", true]);
   });
 
+  test("the rules change a roll the system made on its own card (adjust: Ironsworn's burn), or keep it as it fell", () => {
+    const rules = { ...pf2eRules, adjustRoll(run, u, roll, ctx) {
+      if ( !ctx.rolled || ctx.kind !== "save" || roll.degree >= 2 ) return roll;
+      const done = run.live?.roll?.(run, { kind: "adjust", unitId: u.id, card: roll.card ?? null, adjust: "burnMomentum" });
+      return done?.done ? { ...roll, degree: 2 } : roll;
+    } };
+    const make = () => {
+      const run = beginLive(battle([
+        creature({ id: "hero", kind: "pc", position: at(0), hp: { value: 100, max: 100 }, diesAtZero: false }),
+        creature({ id: "witch", side: "hostile", position: at(20), hp: { value: 100, max: 100 }, actions: [blast], traits: minded(60), flags: { fearless: true } })
+      ], { positioning: true, maxRounds: 5 }), rules, { seed: 2, players: ["hero"], systemRolls: ["save", "adjust"] });
+      liveRound(run, 1);
+      return run;
+    };
+    const failed = { degree: 1, natural: 3, total: 9, card: "save-card" };
+    const burned = playThrough(make, "witch", r => (r.roll === "save" ? failed : r.roll === "adjust" ? { done: true } : null));
+    expect(burned.requests.find(r => r.roll === "adjust")).toMatchObject({ unitId: "hero", card: "save-card", adjust: "burnMomentum" });
+    expect(burned.events.find(e => e.type === "save" && e.targetId === "hero")).toMatchObject({ degree: 2 });
+    const kept = playThrough(make, "witch", r => (r.roll === "save" ? failed : r.roll === "adjust" ? { done: false } : null));
+    expect(kept.events.find(e => e.type === "save" && e.targetId === "hero")).toMatchObject({ degree: 1 });
+  });
+
   test("null: the engine's own dice; and not asked where the system doesn't roll saves", () => {
     const own = playThrough(setUp([blast], ["save"]), "witch", () => null);
     expect(own.events.some(e => e.type === "save" && e.targetId === "hero")).toBe(true);

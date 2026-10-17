@@ -104,6 +104,8 @@ export function rollCheck(rules, rng, modifier, dc, options = {}) {
     const r = options.rolled;
     const roll = rules.asRolled?.(r, modifier, dc, own) ?? { natural: r.natural ?? null, total: r.total ?? null, degree: r.degree };
     roll.faces ??= own.faces;
+    // (Its card, where the system named it: for the rules to change it the system's way, adjustRoll's.)
+    if ( typeof r.card === "string" ) roll.card ??= r.card;
     return roll;
   }
   // A die that rides along (Bless, Bane) is rolled first and simply adds to the modifier, so a system's own roll

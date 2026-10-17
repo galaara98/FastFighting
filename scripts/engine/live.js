@@ -596,6 +596,8 @@ export const rollsKind = (live, kind) => Array.isArray(live?.systemRolls) && liv
  *   damage {unitId, targetId, card, action: {id, name}}  -> {damage: {byType}, card}: the damage of one that isn't an
  *          attack (a save's, an auto's), rolled once for all it catches; each target's share then applied as `apply`,
  *          with its `multiplier` (a save's half or double)
+ *   adjust {unitId, card, adjust}  -> {done}: a change the rules made to a roll the system made (adjustRoll's, with
+ *          ctx.rolled: Ironsworn's "burnMomentum"), carried out on its card (`card`, the roll's) the system's way
  *   save   {unitId (who saves), targetId (who made it), save, dc, action: {id, name}}  -> {degree, natural, total, dice}
  *   check  {unitId, targetId, purpose, skill, against, dc, action: {id, name}}        -> {degree, natural, total, dice}
  *          (battle-state.js systemRolled asks for both)
