@@ -11893,7 +11893,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "1f1e3d3d93ab"
+   "hash": "1f1e3d3d93ab",
+   "changed": true
   },
   "core:FASTFIGHTING.Planner.FightsRun": {
    "repo": "core",

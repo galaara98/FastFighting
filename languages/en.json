@@ -470,7 +470,7 @@
       "Level": "Lv {level}",
       "TraitWhy": "{what} Why: {why}.",
       "SecondsHint": "How long the prediction runs: fight after fight until the time is up.",
-      "FewFights": "For the most accurate results, you want at least {least} iterations.",
+      "FewFights": "For the most accurate results, you want at least {least} fights.",
       "BattleSize": "Creatures {creatures} · Actions {actions} · Tiles {tiles} · Walls {walls}",
       "MaxRounds": "Max rounds",
       "Seed": "Seed",
