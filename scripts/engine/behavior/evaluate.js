@@ -133,7 +133,7 @@ function meanDamageNow(run, action, target) {
   const times = action.repeat ? Math.max(1, meanPart(action.repeat)) : 1;
   return {
     normal: times * (rules.applyIwr(iwr, meanByType(action.damage)) + persistentMean(action.damage)) + rider,
-    critical: times * (rules.applyIwr(iwr, meanByType(crit)) + persistentMean(crit)) + rider + critExtraMean(action.crit)
+    critical: times * (rules.applyIwr(iwr, meanByType(crit)) + persistentMean(crit)) + rider + critExtraMean(action.crit, rules.applyIwr(iwr, meanByType(crit)) + persistentMean(crit))
   };
 }
 

@@ -3082,13 +3082,13 @@ What it decides: how a DCC attack and check land.
 
 - One action per action die (a giant's d24 then d16; a high-level character's second die). Each action rolls its die.
 - An attack: a natural at or under its fumble range misses (and a player character rolls the fumble table); the top face always hits; a hit whose natural is in the crit range crits. The crit range scales to the die: 19–20 on a d20 is 23–24 on a d24. A stat line's "crit on 21+" is read on the die it names.
-- A crit rolls the crit die + Luck modifier on the crit table (the attacker's); a monster's crit on a player character takes that character's Luck modifier off. Without a book: the crit die as extra damage.
+- A crit rolls the crit die + Luck modifier on the crit table (the attacker's); a monster's crit on a player character takes that character's Luck modifier off. A row's extra damage goes on top of the blow; a row that says double or triple damage multiplies the whole blow by 2 or 3. Without a book: the crit die as extra damage.
 - A fumble: the fumble die (from its armor) − Luck modifier on the fumble table.
 - A check or save: a natural 1 fails, the top face of a d20 or bigger succeeds; else the DC. A hit deals at least 1.
 - Initiative: a d20, a d16 with a two-handed weapon in hand, or a weapon's own.
 - Two weapons (primary and off hand): one action, each on the die the system stepped down; a hand with no crits can't crit, one that crits on its highest face only does so there.
 
-Code: `rules.js` `degreeOfSuccess`, `actionDie`, `turn`; `adapter.js` `#weaponAction`, `#crit`, `#fumble`, `initiativeDie`; `text.js` `critOnFor`.
+Code: `rules.js` `degreeOfSuccess`, `actionDie`, `turn`; `adapter.js` `#weaponAction`, `#crit`, `#fumble`, `initiativeDie`; `text.js` `critOnFor`, `damageMultiple`; the core's `engine/simulator.js` (a row's `multiply`).
 
 ### Lore-Collector advantage
 

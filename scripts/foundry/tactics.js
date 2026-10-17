@@ -289,9 +289,12 @@ export function charactersForUser(scene, user) {
   return out;
 }
 
-/** Non-GM users who control at least one token on the scene. */
-/** Prepare Players: every player on the scene asked for their survey, and a new round of the party's vote. */
-export async function preparePlayers(scene = canvas.scene) {
+/**
+ * Prepare Players: every player on the scene asked for their survey, and a new round of the party's vote. Players
+ * who are away leave it to the GMs (absentOnScene): every GM logged in gets a survey of their characters, and a Party
+ * tab for each of them to vote in. `open`: opens that survey here (PlayerSurvey.open).
+ */
+export async function preparePlayers(scene = canvas.scene, open = null) {
   if ( !game.user.isGM || !scene ) return false;
   const players = playersOnScene(scene);
   if ( !players.length ) {
@@ -300,9 +303,43 @@ export async function preparePlayers(scene = canvas.scene) {
   }
   await requestSurveys(players, scene, { party: "open" });
   ui.notifications.info("FASTFIGHTING.Survey.Sent", { format: { n: players.length } });
+  const away = absentOnScene(scene);
+  if ( away.tokens.length || away.players.length ) {
+    await requestAbsentSurvey(scene, away, open);
+    ui.notifications.info(loc("FASTFIGHTING.Survey.ForAway"));
+  }
   return true;
 }
 
+/**
+ * Who's away, on a scene: the tokens of player characters none of whose players is logged in, and the players logged
+ * out who have a token there that no other player shares. Each by the system's helper's reckoning of what can fight.
+ * @returns {{tokens: TokenDocument[], players: User[]}}
+ */
+export function absentOnScene(scene) {
+  const adapter = getAdapter();
+  if ( !scene || !adapter ) return { tokens: [], players: [] };
+  const players = game.users.filter(u => !u.isGM);
+  const owned = scene.tokens.filter(t => t.actor && adapter.canHandle(t.actor))
+    .map(t => ({ token: t, owners: players.filter(u => t.actor.testUserPermission(u, "OWNER")) })).filter(x => x.owners.length);
+  return {
+    tokens: owned.filter(x => !x.owners.some(u => u.active)).map(x => x.token),
+    players: players.filter(u => !u.active && owned.some(x => x.owners.length === 1 && x.owners[0] === u))
+  };
+}
+
+/**
+ * The survey of those away for every GM logged in: a tab for each of their characters (absentOnScene), and a Party tab
+ * for each of them, to vote in for them. The GM who asks gets it at once (`open`); the others by a query.
+ */
+export async function requestAbsentSurvey(scene, { tokens = [], players = [] }, open = null) {
+  if ( !game.user.isGM || !scene || (!tokens.length && !players.length) ) return;
+  const data = { sceneId: scene.id, keys: tokens.map(t => t.id), proxies: players.map(u => u.id), start: tokens[0]?.id ?? `party:${players[0].id}` };
+  tellUsers(game.users.filter(u => u.isGM), QUERIES.openGmSurvey, data);
+  await open?.(data);
+}
+
+/** Non-GM users who control at least one token on the scene. */
 export function playersOnScene(scene) {
   return game.users.filter(u => !u.isGM && tokensForUser(scene, u).length);
 }

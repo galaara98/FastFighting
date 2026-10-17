@@ -495,6 +495,9 @@
 /* (Rewind This Encounter: well away from the rest, so it isn't clicked by mistake.) */
 .ff-battle-buttons .ff-far-right { margin-left: auto; }
 .ff-encounter-buttons { display: flex; gap: 0.35rem; }
+/* (The planner or the Battle Vantage about to show another scene's or encounter's: two quick orange blinks.) */
+.ff-blink { animation: ff-blink 0.25s ease-in-out 2; }
+@keyframes ff-blink { 50% { outline: 3px solid #f0a35b; box-shadow: 0 0 14px 4px #f0a35b; } }
 /* (Begin Encounter, while the encounter waits on it.) */
 .ff-btn.ff-glow { border-color: #f0a35b; box-shadow: 0 0 6px 1px #f0a35b; animation: ff-glow 1.6s ease-in-out infinite; }
 @keyframes ff-glow { 50% { box-shadow: 0 0 12px 3px #f0a35b; } }

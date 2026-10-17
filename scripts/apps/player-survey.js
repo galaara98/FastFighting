@@ -64,8 +64,10 @@ export class PlayerSurvey extends HandlebarsApplicationMixin(ApplicationV2) {
    * @param {object} [options]
    * @param {string} [options.start]          the tab it opens on: "party", or a character's key
    * @param {string} [options.only]           that character alone (a GM's survey for it)
+   * @param {string[]} [options.keys]         those characters alone (a GM's survey of those away)
+   * @param {string[]} [options.proxies]      players away: a Party tab each, for a GM to vote in for them
    */
-  static async open({ sceneId, requestId, start, only } = {}) {
+  static async open({ sceneId, requestId, start, only, keys, proxies } = {}) {
     let app = foundry.applications.instances.get("fast-fighting-survey");
     if ( !app ) app = new PlayerSurvey();
     app.sceneId = sceneId ?? app.sceneId ?? canvas.scene?.id;
@@ -74,6 +76,8 @@ export class PlayerSurvey extends HandlebarsApplicationMixin(ApplicationV2) {
     const open = pending && [SURVEY_STATUS.REQUESTED, SURVEY_STATUS.ENTERING].includes(pending.status) && pending.sceneId === app.sceneId ? pending : null;
     app.requestId = requestId ?? open?.requestId ?? app.requestId ?? null;
     app.only = game.user.isGM ? only ?? null : null;
+    app.keys = game.user.isGM && Array.isArray(keys) ? keys : null;
+    app.proxies = game.user.isGM && Array.isArray(proxies) ? proxies.map(id => game.users.get(id)).filter(u => u && !u.isGM) : null;
     const first = start ?? open?.start;
     if ( first ) app.activeTab = first;
     app.finished = false;
@@ -90,6 +94,8 @@ export class PlayerSurvey extends HandlebarsApplicationMixin(ApplicationV2) {
     this.requestId = null;
     this.activeTab = null;
     this.only = null;
+    this.keys = null;
+    this.proxies = null;
     this.sawParty = false;
     this.finished = false;
     this.specs = new Map();
@@ -102,7 +108,7 @@ export class PlayerSurvey extends HandlebarsApplicationMixin(ApplicationV2) {
   async _prepareContext() {
     const adapter = getAdapter();
     const scene = this.scene;
-    const entries = charactersForUser(scene, game.user).filter(e => !this.only || e.key === this.only);
+    const entries = charactersForUser(scene, game.user).filter(e => (!this.only || e.key === this.only) && (!this.keys || this.keys.includes(e.key)));
     this.entries = new Map(entries.map(e => [e.key, e]));
     const targets = nameable(scene);
     const sheets = [];
@@ -137,24 +143,29 @@ export class PlayerSurvey extends HandlebarsApplicationMixin(ApplicationV2) {
     }
     // The last tab: the party's wishes, every player's vote on them (one vote per player, not per character). Not in a
     // GM's survey for one character.
-    const partyTab = this.only ? null : { id: PARTY_TAB, name: loc("FASTFIGHTING.Party.Tab"), icon: "fa-solid fa-people-group", party: true };
+    // (A GM's survey of those away: a Party tab for each player away instead, named for them, to vote in for them.)
+    const away = this.keys || this.proxies;
+    const partyTab = this.only || away ? null : { id: PARTY_TAB, name: loc("FASTFIGHTING.Party.Tab"), icon: "fa-solid fa-people-group", party: true };
+    const proxyTabs = away ? (this.proxies ?? []).map(u => ({ id: `${PARTY_TAB}:${u.id}`, name: localize("FASTFIGHTING.Party.TabFor", { name: u.name }), icon: "fa-solid fa-user-clock", party: true, user: u })) : [];
     if ( partyTab && !game.user.isGM ) {
       // (Locked in: a green border. Left while the vote is open and not locked in: orange.)
       const state = partyState(game.user);
       partyTab.tooltip = loc(state.locked ? "FASTFIGHTING.Party.LockedIn" : "FASTFIGHTING.Party.NotLockedIn");
       partyTab.lock = state.locked ? "is-locked" : state.open && this.sawParty && this.activeTab !== PARTY_TAB ? "is-unlocked" : "";
     }
-    if ( !(partyTab && this.activeTab === PARTY_TAB) && !sheets.some(s => s.id === this.activeTab) ) this.activeTab = sheets[0]?.id ?? (partyTab ? PARTY_TAB : null);
-    const tabs = partyTab ? [...sheets, partyTab] : sheets;
+    const partyTabs = [...(partyTab ? [partyTab] : []), ...proxyTabs];
+    if ( !partyTabs.some(p => p.id === this.activeTab) && !sheets.some(s => s.id === this.activeTab) ) this.activeTab = sheets[0]?.id ?? partyTabs[0]?.id ?? null;
+    const tabs = [...sheets, ...partyTabs];
     for ( const s of tabs ) s.active = s.id === this.activeTab;
-    const onParty = !!partyTab && this.activeTab === PARTY_TAB;
+    const onTab = partyTabs.find(p => p.id === this.activeTab) ?? null;
+    const onParty = !!onTab;
     if ( onParty ) this.sawParty = true;
     return {
       sceneName: scene?.name,
       sheets: tabs,
       active: onParty ? null : sheets.find(s => s.active) ?? null,
       onParty,
-      party: onParty ? partyContext() : null,
+      party: onParty ? partyContext(onTab.user ?? game.user) : null,
       empty: !sheets.length,
       intro: game.i18n.localize("FASTFIGHTING.Survey.Intro")
     };
@@ -240,7 +251,9 @@ export class PlayerSurvey extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /** A vote on how the party should act (the same again: taken back). Everyone's survey shows it at once. */
   static async #onPartyVote(event, target) {
-    await castVote(target.dataset.question, target.dataset.answer);
+    // (On a Party tab for a player who's away: the GM's vote for them.)
+    const proxy = this.activeTab?.startsWith(`${PARTY_TAB}:`) ? game.users.get(this.activeTab.slice(PARTY_TAB.length + 1)) : null;
+    await castVote(target.dataset.question, target.dataset.answer, proxy ?? game.user);
     this.render();
   }
 
@@ -248,7 +261,7 @@ export class PlayerSurvey extends HandlebarsApplicationMixin(ApplicationV2) {
   syncParty() {
     // (Once, however many votes come in at once.)
     this.#redrawParty ??= foundry.utils.debounce(() => {
-      if ( this.rendered && this.activeTab === PARTY_TAB ) this.render();
+      if ( this.rendered && this.activeTab?.startsWith(PARTY_TAB) ) this.render();
     }, 150);
     this.#redrawParty();
   }

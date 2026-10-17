@@ -19,7 +19,7 @@
  *
  * Crits and fumbles from tables (spec.crit / action.crit, spec.fumble): a critical hit rolls on the attacker's table
  * for extra damage and a lasting effect on the foe; a fumble rolls on its own for what befalls the fumbler.
- *   {die: DamagePart, mod, rows: [{lo, hi, damage?, outcome?, self?, slay?}]}
+ *   {die: DamagePart, mod, rows: [{lo, hi, damage?, multiply?, outcome?, self?, slay?}]}
  * spec.critAgainst: taken off crit rolls made against this creature by anyone but a player character (DCC: a PC's
  * Luck modifier works against a monster's crits).
  * Pure: no Foundry globals.
@@ -226,18 +226,24 @@ export function rollFumble(run, u) {
 
 const critMeans = new WeakMap();
 
-/** Mean extra damage a crit-table roll adds (over the crit die's spread), for behavior's estimates. */
-export function critExtraMean(crit) {
+/**
+ * Mean extra damage a crit-table roll adds (over the crit die's spread), for behavior's estimates. `base`: the blow's
+ * own mean damage, which a row that doubles or triples it (`multiply`) adds to again.
+ */
+export function critExtraMean(crit, base = 0) {
   if ( !crit?.rows?.length ) return 0;
   let v = critMeans.get(crit);
-  if ( v !== undefined ) return v;
-  const die = crit.die ?? { dice: [], flat: 0 };
-  const single = die.dice.length === 1 && Math.abs(die.dice[0].n) === 1;
-  const totals = single
-    ? Array.from({ length: die.dice[0].faces }, (_, i) => i + 1 + die.flat + (crit.mod ?? 0))
-    : [Math.round(meanPart(die) + (crit.mod ?? 0))];
-  const rowMean = r => (r.damage ?? []).reduce((s, p) => s + Math.max(0, meanPart(p)), 0) + (r.outcome ? 2 : 0) + (r.slay ? 15 : 0);
-  v = totals.reduce((s, total) => s + rowMean(rowFor(crit.rows, total)), 0) / totals.length;
-  critMeans.set(crit, v);
-  return v;
+  if ( v === undefined ) {
+    const die = crit.die ?? { dice: [], flat: 0 };
+    const single = die.dice.length === 1 && Math.abs(die.dice[0].n) === 1;
+    const totals = single
+      ? Array.from({ length: die.dice[0].faces }, (_, i) => i + 1 + die.flat + (crit.mod ?? 0))
+      : [Math.round(meanPart(die) + (crit.mod ?? 0))];
+    const rowMean = r => (r.damage ?? []).reduce((s, p) => s + Math.max(0, meanPart(p)), 0) + (r.outcome ? 2 : 0) + (r.slay ? 15 : 0);
+    const times = r => Math.max(1, Number(r.multiply) || 1) - 1;
+    const rows = totals.map(total => rowFor(crit.rows, total));
+    v = { extra: rows.reduce((s, r) => s + rowMean(r), 0) / rows.length, times: rows.reduce((s, r) => s + times(r), 0) / rows.length };
+    critMeans.set(crit, v);
+  }
+  return v.extra + v.times * Math.max(0, base);
 }

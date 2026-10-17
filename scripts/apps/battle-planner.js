@@ -31,6 +31,7 @@ import { PlayerSurvey } from "./player-survey.js";
 import { rememberRun, recallRun } from "../foundry/run-memory.js";
 import { startLiveBattle, liveBattle } from "../foundry/live-battle.js";
 import { BattleVantage } from "./battle-vantage.js";
+import { blink, keepTyping } from "./blink.js";
 import { expectedRuns, ROUGH_RUNS } from "../engine/run-budget.js";
 import { signedNumber } from "../engine/trait-parts.js";
 
@@ -170,7 +171,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     // (The encounter begun with Foundry's own button, the Sample fight ready: FastFighting takes it up, as Do it For
     // Real Now would, and plays its first turn if that's FastFighting's.)
     this.combatHook = Hooks.on("updateCombat", (combat, changes, options, userId) => {
-      if ( combat.started && "round" in changes && combat === sceneEncounter(canvas.scene) && !liveBattle() && this.readyForVantage() ) this.#goLive({ begin: true, began: true });
+      if ( combat.started && "round" in changes && this.readyForVantage(combat) ) this.#goLive({ begin: true, began: true });
     });
     // (Told when a character's reactions may have changed: sheet-watch.js. Only an open row shows them.)
     this.unwatchReactions = showsReactions({
@@ -741,7 +742,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   static async #onPreparePlayers() {
-    if ( await preparePlayers(canvas.scene) ) this.render();
+    if ( await preparePlayers(canvas.scene, options => PlayerSurvey.open(options)) ) this.render();
   }
 
   static async #onOpenSurvey(event, target) {
@@ -1116,7 +1117,9 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
   /** A run (or a swing study) is over: take in anyone who joined or left meanwhile, and show it. */
   #doneRunning() {
     this.running = false;
-    if ( this.rosterChanged ) this.rereadRoster();
+    // (Another scene or encounter shown meanwhile: its plan now.)
+    if ( !this.showsCurrent ) this.followScene();
+    else if ( this.rosterChanged ) this.rereadRoster();
     else this.render();
   }
 
@@ -1150,11 +1153,36 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /**
    * Can the Battle Vantage be opened on this plan (the tracker's Vantage button): its Sample fight ready, as Do it For
-   * Real Now needs it, on the scene it was planned on, with no battle already going.
+   * Real Now needs it, on the scene it was planned on, with no battle already going. With `combat`: and this plan is
+   * that encounter's (by its id: a scene can hold several).
    */
-  readyForVantage() {
+  readyForVantage(combat = null) {
     return !!(this.results && this.spec && this.sample && !this.running && !this.abort) && canvas.scene?.id === this.sceneId
-      && !unfinishedPlayback(canvas.scene) && !!getAdapter()?.supportsLive && !liveBattle();
+      && (!combat || combat.uuid === this.holderUuid) && !unfinishedPlayback(canvas.scene) && !!getAdapter()?.supportsLive && !liveBattle();
+  }
+
+  /** Is this the plan of the scene on screen and its encounter (each encounter has a plan of its own)? */
+  get showsCurrent() {
+    return this.sceneId === (canvas.scene?.id ?? null) && this.holderUuid === (planHolder()?.uuid ?? null);
+  }
+
+  /**
+   * Another scene on screen, or another encounter viewed (or one begun or ended): what the GM was typing kept, in the
+   * plan it was typed for; the window blinks, and shows the new one's plan. (During a run, once it's done.)
+   */
+  async followScene() {
+    if ( !this.rendered || this.running || this.showsCurrent || this.following ) return;
+    this.following = true;
+    try {
+      keepTyping(this);
+      await this.settleSides();
+      await blink(this);
+      if ( !this.rendered || this.showsCurrent ) return;
+      this.resetForScene();
+      await this.render();
+    } finally {
+      this.following = false;
+    }
   }
 
   /** The tracker's Vantage button: the battle prepared as Do it For Real Now would, waiting for the encounter to begin. */
@@ -1182,7 +1210,9 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       if ( !getAdapter()?.supportsLive ) return ui.notifications.warn(loc("FASTFIGHTING.MakeItSo.NeedsUpdate"));
       const players = this.setup.options.playersRunPCs === false ? []
         : this.spec.combatants.filter(c => isPlayerControlled(c, canvas.scene.tokens.get(c.tokenId ?? c.id)?.actor)).map(c => c.id);
-      playing = startLiveBattle(this.spec, { style: this.storyStyle, odds, players, begin, began });
+      // (On this plan's own encounter, by its id.)
+      const combatId = this.holder?.documentName === "Combat" ? this.holder.id : null;
+      playing = startLiveBattle(this.spec, { style: this.storyStyle, odds, players, begin, began, combatId });
     } catch ( err ) {
       return reportError(err);
     }

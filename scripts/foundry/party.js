@@ -84,15 +84,28 @@ export function majority(ballots, leader = []) {
   return out;
 }
 
-/** The players who vote: everyone but the GMs, logged in now. */
-export const voters = () => (game.users ?? []).filter(u => !u.isGM && u.hasRole?.("PLAYER") && u.active);
+/** Did a GM vote for this player, away, in this round (the survey of those away: tactics.js requestAbsentSurvey)? */
+export function votedForThem(user) {
+  const { round } = partyState(user);
+  return !!round && user.getFlag?.(MODULE_ID, "partyProxy") === round;
+}
 
-/** Vote (or, voting the same again, take the vote back). */
-export async function castVote(question, answer) {
-  if ( !partyState(game.user).open || !PARTY_QUESTIONS[question]?.includes(answer) ) return;
-  const mine = votesOf(game.user);
-  if ( mine[question] === answer ) await game.user.unsetFlag(MODULE_ID, `party.${question}`);
-  else await game.user.setFlag(MODULE_ID, `party.${question}`, answer);
+/** The players who vote: everyone but the GMs, logged in now, or away with a GM voting for them this round. */
+export const voters = () => (game.users ?? []).filter(u => !u.isGM && u.hasRole?.("PLAYER") && (u.active || votedForThem(u)));
+
+/**
+ * Vote (or, voting the same again, take the vote back). `user`: a player who's away, a GM voting for them (their
+ * own vote, when they're back, is theirs to change).
+ */
+export async function castVote(question, answer, user = game.user) {
+  const proxy = user !== game.user;
+  if ( proxy && (!game.user.isGM || user.isGM || user.active) ) return;
+  const { open, round } = partyState(user);
+  if ( !open || !PARTY_QUESTIONS[question]?.includes(answer) ) return;
+  const mine = votesOf(user);
+  if ( mine[question] === answer ) await user.unsetFlag(MODULE_ID, `party.${question}`);
+  else await user.setFlag(MODULE_ID, `party.${question}`, answer);
+  if ( proxy ) await user.setFlag(MODULE_ID, "partyProxy", round);
 }
 
 /**
@@ -113,15 +126,18 @@ export function partyWishes(players, swayPercent, leaders = []) {
  * players logged in: their votes are the ones that count). The player votes while its round is open (partyState); else
  * it's there to look at.
  */
-export function partyContext() {
-  const state = partyState(game.user);
+export function partyContext(user = game.user) {
+  // (A GM voting for a player who's away: that player's votes, and no lock-in.)
+  const proxy = user !== game.user;
+  const state = partyState(user);
   const players = voters();
   const ballots = players.map(u => [u, votesOf(u)]);
   const answers = majority(ballots.map(([, b]) => b));
-  const mine = votesOf(game.user);
+  const mine = votesOf(user);
   const label = (q, k) => localize(`FASTFIGHTING.Party.${q}.${k}`);
   return {
-    canVote: state.open,
+    proxy: proxy ? localize("FASTFIGHTING.Party.ForThem", { name: user.name }) : null,
+    canVote: state.open && (!proxy || (game.user.isGM && !user.active)),
     locked: state.locked,
     readOnly: !game.user.isGM && !state.open && !state.locked,
     questions: Object.entries(PARTY_QUESTIONS).map(([q, options]) => ({

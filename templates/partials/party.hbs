@@ -12,7 +12,9 @@
     </div>
   </div>
   {{/each}}
-  {{#if canVote}}
+  {{#if proxy}}
+  <p class="ff-hint"><i class="fa-solid fa-user-clock"></i> {{proxy}}</p>
+  {{else if canVote}}
   <div class="ff-lockin">
     <input type="range" class="ff-swipe" data-swipe="lockIn" min="0" max="100" value="0" aria-label="{{localize "FASTFIGHTING.Party.LockIn"}}">
     <span class="ff-swipe-label" aria-hidden="true">{{localize "FASTFIGHTING.Party.LockIn"}} <i class="fa-solid fa-angles-right"></i></span>

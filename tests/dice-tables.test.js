@@ -1,4 +1,5 @@
 import { describe, expect, test } from "vitest";
+import { critExtraMean } from "../scripts/engine/behavior/riders.js";
 import { replay, runBatchSync } from "../scripts/engine/simulator.js";
 import { degreeDistribution } from "../scripts/engine/probability.js";
 import { parseFormula, part } from "../scripts/engine/dice.js";
@@ -116,6 +117,19 @@ describe("crit and fumble tables", () => {
     const plain = runBatchSync(battle([hero({ actions: [strike({ id: "sword", bonus: 2, critOn: 15, damage: [parseFormula("1d8", "slashing")] })] }), dummy()], { maxRounds: 3 }), rules, { runs: 200, seed: 3 });
     const tabled = runBatchSync(spec, rules, { runs: 200, seed: 3 });
     expect(tabled.combatants.hero.meanDamage).toBeGreaterThan(plain.combatants.hero.meanDamage * 1.3);
+  });
+
+  test("a row that doubles the blow (DCC's \"double damage\") doubles all of it", () => {
+    const double = { die: parseFormula("1d4"), mod: 0, rows: [{ lo: -99, hi: 99, multiply: 2, text: "double damage" }] };
+    const killer = hero({ actions: [strike({ id: "sword", bonus: 2, critOn: 15, crit: double, damage: [parseFormula("1d8", "slashing")] })] });
+    const hits = events(battle([killer, dummy()], { maxRounds: 3 }), "attack").filter(e => e.crit && e.actorId === "hero");
+    expect(hits.length).toBeGreaterThan(3);
+    for ( const h of hits ) {
+      expect(h.damage % 2).toBe(0);
+      expect(h.damage).toBeGreaterThanOrEqual(2);
+      expect(h.damage).toBeLessThanOrEqual(16);
+    }
+    expect(critExtraMean(double, 4.5)).toBeCloseTo(4.5, 6);
   });
 
   test("a fumble rolls on the fumbler's own table", () => {

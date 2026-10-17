@@ -11,7 +11,7 @@
  * Other hooks fired by FastFighting:
  *   fastFighting.preSimulate (battleSpec, context)   mutate the spec before a batch runs
  *   fastFighting.postSimulate (results, context)      read or annotate results
- *   fastFighting.liveBattleStarted (battle) / fastFighting.liveBattle (battle)   a live battle begun; changed (or over: null)
+ *   fastFighting.liveBattleStarted (battle) / fastFighting.liveBattle (battle)   a live battle prepared or begun; changed (or over: null)
  */
 import { storyTypeFor } from "./story/families.js";
 import { storyWordLists } from "./foundry/story-words.js";

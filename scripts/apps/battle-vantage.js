@@ -23,6 +23,8 @@ import { roundsText, listJoin } from "../i18n.js";
 import { expectText } from "../story/log-lines.js";
 import { feetOnScene } from "../foundry/terrain.js";
 import { mountNetwork } from "./battle-network.js";
+import { blink, keepTyping } from "./blink.js";
+import { sceneEncounter } from "../foundry/persistence.js";
 import {
   liveBattle, continueBattle, rewind, rewindEncounter, beginEncounter, endEncounter, playCurrent, liveFact, dropHeldFact, setNpcReactions, setPlayThrough, finishReview,
   waitingOnGm, suggestedSpotlight, spotlightNext, settleBattle, setAutomated, liveCondition, liveMind, bringIntoFight, tokenIdOf
@@ -140,6 +142,60 @@ export class BattleVantage extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /** The creature (or token, or thing) in focus: its node's id. */
   #focus = null;
+  /** The encounter it shows (by id): the scene's on screen, as the tracker views it. */
+  #shownId = undefined;
+  /** What the GM had picked in a player's turn under review, by battle, kept while another encounter is shown. */
+  #drafts = new Map();
+  #following = false;
+
+  /** The live battle, if it's on the encounter on screen (each scene, each encounter, its own). */
+  static shown() {
+    const b = liveBattle();
+    return b && b.combat?.id === sceneEncounter(canvas.scene)?.id ? b : null;
+  }
+
+  /**
+   * Another scene on screen, or another encounter viewed: what the GM had picked kept, the window blinks, and it shows
+   * that encounter's battle (or that there's none).
+   */
+  async follow() {
+    const now = sceneEncounter(canvas.scene)?.id ?? null;
+    if ( !this.rendered || this.#following || this.#shownId === undefined || now === this.#shownId ) return;
+    this.#following = true;
+    try {
+      keepTyping(this);
+      this.#keepDraft();
+      await blink(this);
+      await this.render();
+    } finally {
+      this.#following = false;
+    }
+  }
+
+  /** A player's turn under review: what the GM had ticked and picked, kept for when its battle is shown again. */
+  #keepDraft() {
+    const b = liveBattle();
+    const review = this.element?.querySelector(".ff-battle-review");
+    if ( !b || !review ) return;
+    this.#drafts.set(b.data.id, [...review.querySelectorAll("[data-event]")].map(li => ({
+      i: li.dataset.event, values: [...li.querySelectorAll("input, select")].map(f => (f.type === "checkbox" ? f.checked : f.value))
+    })));
+  }
+
+  #restoreDraft(b) {
+    const draft = b ? this.#drafts.get(b.data.id) : null;
+    const review = this.element?.querySelector(".ff-battle-review");
+    if ( !draft || !review ) return;
+    this.#drafts.delete(b.data.id);
+    for ( const { i, values } of draft ) {
+      const fields = [...(review.querySelector(`[data-event="${i}"]`)?.querySelectorAll("input, select") ?? [])];
+      fields.forEach((f, k) => {
+        if ( !(k in values) ) return;
+        if ( f.type === "checkbox" ) f.checked = !!values[k];
+        else f.value = values[k];
+      });
+    }
+  }
   /** The map of minds as the GM has laid it out and zoomed it, for this battle: {battleId, pinned, view}. */
   #layout = null;
   /** The map of minds being drawn, and what it's drawn from. */
@@ -205,7 +261,9 @@ export class BattleVantage extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   async _prepareContext() {
-    const { context, graph, focus } = battleContext(liveBattle(), this.#focus);
+    const b = BattleVantage.shown();
+    this.#shownId = sceneEncounter(canvas.scene)?.id ?? null;
+    const { context, graph, focus } = battleContext(b, this.#focus);
     this.#graph = graph;
     this.#focus = focus;
     return context;
@@ -231,7 +289,8 @@ export class BattleVantage extends HandlebarsApplicationMixin(ApplicationV2) {
     this.#network?.destroy();
     this.#network = null;
     const root = this.element.querySelector(".ff-net");
-    const b = liveBattle();
+    const b = BattleVantage.shown();
+    this.#restoreDraft(b);
     if ( !root || !b || !this.#graph ) return;
     const state = this.#layoutFor(b.data.id);
     this.#network = mountNetwork(root, this.#graph, {
@@ -841,6 +900,10 @@ export function registerBattleVantage() {
   Hooks.on("deleteCombat", () => setTimeout(() => {
     if ( !liveBattle() ) foundry.applications.instances.get("fast-fighting-battle")?.close();
   }, 0));
+  // (Another scene on screen, or another encounter viewed on the tracker: it follows, showing that one's battle.)
+  const follow = () => foundry.applications.instances.get("fast-fighting-battle")?.follow?.();
+  Hooks.on("canvasReady", follow);
+  Hooks.on("renderCombatTracker", follow);
   let soon = null;
   const later = () => {
     clearTimeout(soon);

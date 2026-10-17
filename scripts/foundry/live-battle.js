@@ -164,13 +164,15 @@ function forget(combatId) {
  * ids of the characters the players run (none: FastFighting plays everyone). It begins at once (beginEncounter), or,
  * with `begin` false, waits for the encounter to begin: the Battle Vantage's Begin Encounter, or Foundry's own.
  * `began`: the encounter has only now begun, for this battle (Foundry's own button, the planner ready): Rewind This
- * Encounter takes the start back too, as it does one FastFighting made.
+ * Encounter takes the start back too, as it does one FastFighting made. `combatId`: the plan's encounter (a scene can
+ * hold several; else the one the tracker shows).
  */
-export async function startLiveBattle(spec, { style = setting("storyStyle"), odds = null, players = [], begin = true, began = false } = {}) {
+export async function startLiveBattle(spec, { style = setting("storyStyle"), odds = null, players = [], begin = true, began = false, combatId = null } = {}) {
   if ( !game.user.isGM ) return null;
   const scene = canvas.scene;
-  // (The scene's encounter as the planner has it: the tracker's, linked to this scene or to none.)
-  const combat = sceneEncounter(scene);
+  // (The plan's own encounter, by its id; else the scene's as the planner has it: the tracker's, linked to this scene or
+  // to none.)
+  const combat = (combatId ? game.combats.get(combatId) : null) ?? sceneEncounter(scene);
   if ( !combat ) {
     ui.notifications.warn(loc("FASTFIGHTING.Live.NoCombat"));
     return null;

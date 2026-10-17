@@ -39,7 +39,9 @@ Hooks.once("init", () => {
   };
   CONFIG.queries[QUERIES.openGmSurvey] = (data, { user }) => {
     if ( !user?.isGM || !game.user.isGM ) return false;
-    PlayerSurvey.open({ sceneId: data?.sceneId, start: data?.key, only: data?.key });
+    // (One character's survey, or the survey of those away: their characters, and a Party tab for each of them.)
+    const ids = v => (Array.isArray(v) ? v.filter(x => typeof x === "string") : undefined);
+    PlayerSurvey.open({ sceneId: data?.sceneId, start: typeof data?.start === "string" ? data.start : data?.key, only: data?.key, keys: ids(data?.keys), proxies: ids(data?.proxies) });
     return true;
   };
   Hooks.on("fastFighting.liveBattleStarted", () => BattleVantage.open());
@@ -113,10 +115,11 @@ Hooks.on("renderCombatTracker", (app, element) => {
   row.className = "ff-tracker-row";
   row.append(button);
   header.querySelector(".ff-battle-open")?.remove();
+  // (Each by the encounter's id: a scene can hold several, and the battle is on one of them.)
   const planner = foundry.applications.instances.get("fast-fighting-planner");
-  const live = !!app.viewed && liveBattle()?.combat === app.viewed;
-  const planned = !!app.viewed && app.viewed === sceneEncounter(canvas.scene) && !liveBattle() && !!getAdapter()?.supportsLive
-    && (planner?.readyForVantage?.() || hasRun(app.viewed.uuid));
+  const live = !!app.viewed && liveBattle()?.combat?.id === app.viewed.id;
+  const planned = !!app.viewed && app.viewed.id === sceneEncounter(canvas.scene)?.id && !liveBattle() && !!getAdapter()?.supportsLive
+    && (planner?.readyForVantage?.(app.viewed) || hasRun(app.viewed.uuid));
   if ( live || planned ) {
     const open = document.createElement("button");
     open.type = "button";
@@ -128,7 +131,7 @@ Hooks.on("renderCombatTracker", (app, element) => {
       if ( liveBattle() ) return BattleVantage.open();
       // (From the plan's last run, as the planner recalls it: opened for it, if it isn't open.)
       const plan = foundry.applications.instances.get("fast-fighting-planner") ?? await BattlePlanner.open();
-      if ( plan?.readyForVantage?.() ) return plan.openVantage();
+      if ( plan?.readyForVantage?.(ui.combat.viewed) ) return plan.openVantage();
       ui.notifications.info(game.i18n.localize("FASTFIGHTING.Tracker.RunFirst"));
     });
     row.append(open);
@@ -141,7 +144,7 @@ Hooks.on("renderCombatTracker", (app, element) => {
   survey.innerHTML = `<i class="fa-solid fa-feather-pointed"></i><span>${game.i18n.localize("FASTFIGHTING.Tracker.Survey")}</span>`;
   survey.addEventListener("click", event => {
     event.preventDefault();
-    preparePlayers();
+    preparePlayers(canvas.scene, options => PlayerSurvey.open(options));
   });
   row.append(survey);
   header.prepend(row);
@@ -258,15 +261,13 @@ Hooks.on("updateScene", (scene, changes) => {
 
 // The planner belongs to the scene on screen, and to its encounter: each encounter has a plan of its own, so viewing
 // another scene, or another encounter (or one starting or ending), starts it on that one.
-const followPlan = () => {
-  const app = foundry.applications.instances.get("fast-fighting-planner");
-  if ( !app?.rendered || app.running ) return;
-  if ( app.sceneId === canvas.scene?.id && app.holderUuid === (planHolder()?.uuid ?? null) ) return;
-  app.resetForScene();
-  app.render();
-};
+// (What the GM was typing is kept first, in the plan it was typed for, and the window blinks before it changes. The
+// Battle Vantage follows the same way: battle-vantage.js.)
+const followPlan = () => foundry.applications.instances.get("fast-fighting-planner")?.followScene?.();
 Hooks.on("canvasReady", followPlan);
 for ( const hook of ["createCombat", "deleteCombat", "updateCombat"] ) Hooks.on(hook, () => followPlan());
+// (Another encounter viewed on the tracker: no document changes, only the tracker drawn again.)
+Hooks.on("renderCombatTracker", () => followPlan());
 
 // Someone joins (or leaves) the planner's encounter, it starts, or a token comes or goes on its scene: the planner takes
 // them in, keeping the GM's plan as it stands (only the encounter ending, or the GM clearing the plan, starts it afresh).

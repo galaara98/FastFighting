@@ -1239,6 +1239,8 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
       const hit = rollHit(run, u, action, target, more.length ? base.concat(more) : base, 1, crit, rules.minimumDamage ?? 0);
       // A finishing move (an Ironsworn End the Fight): whatever it has left.
       let amount = action.finish ? target.hp + target.temp + (target.stamina ?? 0) : hit.total;
+      // (A crit table's row that doubles or triples the blow: DCC's "double damage".)
+      if ( !action.finish && Number(table?.row?.multiply) > 1 ) amount *= Number(table.row.multiply);
       if ( answer?.halve ) amount = Math.floor(amount / 2);
       if ( answer?.reduce ) amount = Math.max(0, amount - samplePart(answer.reduce, run.rng));
       if ( guard?.r.reduce ) amount = Math.max(0, amount - samplePart(guard.r.reduce, run.rng));

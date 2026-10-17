@@ -842,7 +842,8 @@
       "AskPlayers": "Ask {names} to answer this character's survey (the Party tab view-only).",
       "AskGms": "Open this character's survey for every GM logged in, to answer for an away player.",
       "AskedPlayers": "Asked {names} about {name}.",
-      "AskedGms": "{name}'s survey is open for every GM logged in."
+      "AskedGms": "{name}'s survey is open for every GM logged in.",
+      "ForAway": "Some players are away: every GM logged in has a survey to answer for them."
     },
     "TokenTactics": {
       "Tab": "FastFighting",
@@ -2081,6 +2082,8 @@
     },
     "Party": {
       "Tab": "Party",
+      "TabFor": "Party: {name}",
+      "ForThem": "You're voting for {name}, who's away. They can change it when they're back.",
       "Intro": "One vote per question; the top answer sways your side a little. Vote again to undo; swipe Lock-in when done.",
       "GmView": "Only players vote. You see every vote; the outlined answer is the party's.",
       "ReadOnly": "View only: you can vote again when your GM sends everyone the survey.",

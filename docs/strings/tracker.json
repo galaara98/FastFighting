@@ -10920,6 +10920,16 @@
    "commit": null,
    "hash": "15ffce5ad083"
   },
+  "core:FASTFIGHTING.Party.ForThem": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Party.ForThem",
+   "area": "core/Party",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "fed8db2199a4"
+  },
   "core:FASTFIGHTING.Party.GmView": {
    "repo": "core",
    "file": "languages/en.json",
@@ -11094,6 +11104,16 @@
    "date": null,
    "commit": null,
    "hash": "dfa82f21b3f3"
+  },
+  "core:FASTFIGHTING.Party.TabFor": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Party.TabFor",
+   "area": "core/Party",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "3a52f162b79b"
   },
   "core:FASTFIGHTING.Party.talk.first": {
    "repo": "core",
@@ -21017,6 +21037,16 @@
    "commit": null,
    "hash": "185ba2b22995",
    "gone": "2026-10-11"
+  },
+  "core:FASTFIGHTING.Survey.ForAway": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Survey.ForAway",
+   "area": "core/Survey",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "234e4f09a537"
   },
   "core:FASTFIGHTING.Survey.Intro": {
    "repo": "core",
