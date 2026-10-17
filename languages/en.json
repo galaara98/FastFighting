@@ -94,8 +94,8 @@
         "Hint": "Use token distances, movement types, terrain costs, walls and elevation. Turn off for theater-of-the-mind scenes."
       },
       "surpriseDefault": {
-        "Name": "Initiative",
-        "Hint": "Use the combat tracker's initiative when present, roll Stealth for hidden or Secret tokens, or roll normally."
+        "Name": "Surprise",
+        "Hint": "Who is surprised as a fight starts: as the system's rules have it, no one, or one side. Follow System is greyed out where the system has no surprise rules."
       },
       "lootMode": {
         "Name": "Do it For Real Now: loot",
@@ -264,11 +264,10 @@
       "protectSelf": "Protect self"
     },
     "Surprise": {
-      "none": "Roll normally",
-      "tracker": "Combat tracker",
-      "stealth": "Stealth for hidden",
-      "friendly": "Party surprises",
-      "hostile": "Enemy surprises"
+      "system": "Follow System",
+      "none": "- No one is surprised -",
+      "friendlySurprised": "Friendlies are surprised",
+      "friendlySurprise": "Friendlies surprise others"
     },
     "Loot": {
       "corpse": "Leave on corpse (lootable)",
@@ -469,7 +468,7 @@
       "Seed": "Seed",
       "Random": "random",
       "Downed": "Downed",
-      "Initiative": "Initiative",
+      "Surprise": "Surprise",
       "Positioning": "Terrain & positioning",
       "PositioningHint": "Distances, movement, terrain, walls and elevation.",
       "Morale": "Morale",
@@ -1958,6 +1957,7 @@
       "Standoff": "A tense standoff: words before weapons",
       "Step": "{actor} steps back to a better position",
       "Surprise": "Surprise round for {side}",
+      "Surprised": "{actor} is surprised: its first turn goes by",
       "Sustain": "{actor} sustains {action}",
       "Watch": "{actor} watches, taking no side",
       "Waver": "{actor} wavers",

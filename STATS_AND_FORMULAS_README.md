@@ -1088,7 +1088,7 @@ Decides whether a fight starts as a standoff: nobody attacks or advances; talker
 
 | How encounters open (`opening`) | Standoff? |
 |---|---|
-| Talk if they'd rather (`auto`, default) | Yes when every side's voice would rather talk, or at least 75% of everyone present would. Never after an ambush (a surprise side), or with fewer than two sides present. |
+| Talk if they'd rather (`auto`, default) | Yes when every side's voice would rather talk, or at least 75% of everyone present would. Never in an ambush (a side with surprise), or with fewer than two sides present. |
 | Always talk first (`talk`) | Yes, when Talking is on |
 | Straight to battle (`fight`) | No |
 | Only an argument: no fighting (`argument`) | Always (see Only an argument) |
@@ -1620,7 +1620,7 @@ Decides when a fight stops.
   a neutral who turned on a side still standing, keeps it going.
 - **Max rounds** (`maxRounds`), default 12, range 4–12 (also a planner slider). Still going after that: a
   stalemate, with no winner. Plans saved with other values are clamped to 4–12.
-- Surprise (Initiative "Party surprises" or "Enemy surprises"): that side takes turns in a round 0 before round 1.
+- Surprise (Friendlies are surprised, or Friendlies surprise others; a system's surprise round): that side takes turns in a round 0 before round 1.
 - A fight's length is the round it ended in (a stalemate: max rounds). The planner shows the median and the 10th–90th
   percentile (entry round(p × (n − 1)) of the sorted lengths) and a bar per round.
 
@@ -1681,19 +1681,32 @@ Code: `foundry/battle.js` `swingFactors`; `engine/run-budget.js` `swingShareMs`.
 
 ### Initiative and turn order
 
-Search: initiative, Initiative, surpriseDefault, turn order, Combat tracker, Stealth for hidden, Roll normally, Party surprises, Enemy surprises, ambush
+Search: initiative, Surprise, surpriseDefault, turn order, Combat tracker, Follow System, surprised, Friendlies are surprised, Friendlies surprise others, Stealth, ambush
 
 Decides who acts when.
 
 - Each creature rolls its die (a d20, or its own: DCC's d16 for a two-handed weapon) + its initiative modifier,
   +2 for a Mastermind, + the Instigator playstyle's bonus (2, less for a later pill), + a tie-breaker under 0.01.
-- **Initiative** (`surpriseDefault`): Combat tracker (default) keeps a tracker's rolled order, from whoever's turn it
-  is; anyone not in it rolls and goes after. Stealth for hidden: sides with a hidden token roll Stealth. Roll normally.
-  The planner adds Party surprises and Enemy surprises (a round 0 for that side).
+- The Combat Tracker's rolled order is always kept, from whoever's turn it is; anyone not in it rolls and goes after.
+- **Surprise** (`surpriseDefault`, the planner per battle; `engine/behavior/surprise.js`):
+  - Follow System (default): the system's own rule (`rules.surprise`), greyed out where it has none (then No one).
+    PF2e: hidden tokens roll Stealth for initiative, and one whose Stealth (d20 + Stealth) beats every foe's Perception
+    DC (10 + Perception) starts hidden, its first blow finding its target off-guard. 5e: each hidden token rolls
+    Stealth; anyone against them whose passive Perception (10 + Perception) is under every roll is surprised: the
+    2014 rules, its first turn lost and no reaction until then; the 2024 rules, initiative at a disadvantage (the lower
+    of two dice). DCC: a side with hidden tokens gets a surprise round. Ironsworn: a side with hidden tokens ambushes
+    (Enter the Fray: +shadow for it, +wits for the rest). Daggerheart: none.
+  - No one is surprised.
+  - Friendlies are surprised: every side against the party takes turns in a round 0 before round 1.
+  - Friendlies surprise others: the party takes that round 0. (Ironsworn has no rounds: surprise without one.)
+  - A plan saved with the old Initiative choices: Combat tracker and Stealth for hidden as Follow System, Party
+    surprises and Enemy surprises as the two above, Roll normally as No one.
 - Where the system says so (PF2e Avoid Notice), a low-profile creature uses its Stealth if that's higher.
+- A live battle keeps the tracker's order and plays no round 0; a creature FastFighting plays that the system's rule
+  leaves surprised (5e's 2014 rules) loses its first turn.
 - A simple hazard goes first. Summoned creatures act right after their summoner.
 
-Code: `engine/simulator.js` `rollInitiative`, `beginRun`; `foundry/battle.js` `buildBattleSpec`.
+Code: `engine/behavior/surprise.js` `resolveSurprise`; `engine/simulator.js` `rollInitiative`, `beginRun`, `runOne`; `foundry/battle.js` `buildBattleSpec`, `surpriseMode`.
 
 ### Dice, degrees of success and advantage
 

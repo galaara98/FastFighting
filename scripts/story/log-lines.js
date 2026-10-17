@@ -345,6 +345,7 @@ function baseLine(e) {
     case "standoff": return t("Standoff");
     case "step": return t("Step", a);
     case "surprise": return t("Surprise", { side: e.sideLabel ?? "" });
+    case "surprised": return t("Surprised", a);
     case "sustain": return t("Sustain", { actor: e.actor, action: e.action });
     case "waver": return t("Waver", a);
     case "stand": return t("Stand", a);

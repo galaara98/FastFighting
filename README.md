@@ -35,7 +35,7 @@ The window needs at least 1000×600 and uses any extra space.
 
 **Toolbar**
 - **Seconds** (how long the prediction runs), **Max rounds** and **Seed**. Under 100 fights, the odds are rough: the planner says so, with what makes the battle slow to simulate (its creatures, their actions, the map's tiles and walls). Its estimate before a Run goes by how fast this computer ran the last one.
-- **Downed**, **After the fight** (see [After the fight](#after-the-fight)), **Opening** (see [Talking](#talking)) and **Initiative**.
+- **Downed**, **After the fight** (see [After the fight](#after-the-fight)), **Opening** (see [Talking](#talking)) and **Surprise**: Follow System (the system's own surprise rules; greyed out where it has none), No one is surprised, Friendlies are surprised, or Friendlies surprise others. The turn order is always the Combat Tracker's once initiative is rolled.
 - Toggles: Terrain & positioning, Morale, Leadership, Talking, Ignore languages, Bystanders, Hidden tokens, and, with a helper that plays live battles, Players run their characters.
 - **Run** (**Stop** while it runs), Refresh, Clear and **Rewind This Encounter**.
 - A helper may add a row for its system's encounter settings (FastFighting Ironsworn: how the encounter is tracked, its rank, and whose sheet keeps the track). The plan keeps them.
@@ -292,7 +292,7 @@ The words read in biographies are in [keywords/](keywords/README.md), one file p
 
 ## Settings
 
-World settings, under **Configure Settings → FastFighting**. The planner overrides some for one battle: Seconds, Max rounds, Downed, After the fight, Opening, Initiative, the toolbar toggles, and the side settings (the Neutral lean, healing). The luck settings and those marked (%) are chances out of 100. [STATS_AND_FORMULAS_README.md](STATS_AND_FORMULAS_README.md) gives each number's range and what it changes.
+World settings, under **Configure Settings → FastFighting**. The planner overrides some for one battle: Seconds, Max rounds, Downed, After the fight, Opening, Surprise, the toolbar toggles, and the side settings (the Neutral lean, healing). The luck settings and those marked (%) are chances out of 100. [STATS_AND_FORMULAS_README.md](STATS_AND_FORMULAS_README.md) gives each number's range and what it changes.
 
 | Setting | Default | What it controls |
 | --- | --- | --- |
@@ -317,7 +317,7 @@ World settings, under **Configure Settings → FastFighting**. The planner overr
 | Talking | on | Talking foes out of the fight. |
 | Ignore languages | off | Anyone who speaks understands everyone who speaks. |
 | How encounters open | Talk if they'd rather | Whether a fight opens as a standoff. |
-| Initiative | Combat tracker | How turn order is set; the planner adds Party surprises and Enemy surprises. |
+| Surprise | Follow System | Who is surprised as a fight starts; No one where the system has no surprise rules. |
 | PC luck: handing over an item | 39 | A PC losing an item it was talked out of. |
 | PC luck: being robbed | 29 | A thief taking something from a PC. |
 | PC luck: being finished off | 39 | A creature finishing off a PC at 0 HP. |

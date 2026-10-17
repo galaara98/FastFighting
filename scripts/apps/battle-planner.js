@@ -18,8 +18,9 @@ import { cachedCharacterSpec, showsReactions } from "../foundry/sheet-watch.js";
 import {
   gatherRoster, chosenSide, groupOf, proposeNeutralGroups, resolveAllegiances, simulate, swingFactors, typicalFight,
   approachFor, commandChains, commandGroup, seedCommand, clearRole, ROLES, sideName, hostileGroupsIn, secretTeam, SECRET_TEAMS, LEANS, predictionSeconds,
-  battleFor
+  battleFor, surpriseMode, systemSurprise
 } from "../foundry/battle.js";
+import { SURPRISE } from "../engine/behavior/surprise.js";
 import { buildStory, STORY_STYLES } from "../story/story.js";
 import { loadStoryTables } from "../story/tables.js";
 import { sceneDistance } from "../foundry/terrain.js";
@@ -406,13 +407,11 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       downedChoices: Object.fromEntries(Object.values(DOWNED_MODELS).map(k => [k, `FASTFIGHTING.Downed.${k}`])),
       aftermathChoices: Object.fromEntries(Object.values(AFTERMATH).map(k => [k, `FASTFIGHTING.Aftermath.${k}`])),
       openingChoices: Object.fromEntries(Object.values(OPENING).map(k => [k, `FASTFIGHTING.Opening.${k}`])),
-      surpriseChoices: {
-        none: "FASTFIGHTING.Surprise.none",
-        tracker: "FASTFIGHTING.Surprise.tracker",
-        stealth: "FASTFIGHTING.Surprise.stealth",
-        friendly: "FASTFIGHTING.Surprise.friendly",
-        hostile: "FASTFIGHTING.Surprise.hostile"
-      },
+      // (Follow System greyed out where the system has no surprise rules: no one surprised, then.)
+      surpriseChoices: Object.values(SURPRISE).map(value => ({
+        value, label: loc(`FASTFIGHTING.Surprise.${value}`), selected: value === surpriseMode(setup.options.surprise),
+        disabled: value === SURPRISE.SYSTEM && !systemSurprise()
+      })),
       sides,
       activeSide: sides.find(s => s.active),
       running: this.running,

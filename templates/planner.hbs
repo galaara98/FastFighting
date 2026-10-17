@@ -44,8 +44,8 @@
       <label class="ff-field"><span class="ff-field-label">{{localize "FASTFIGHTING.Planner.Opening"}} <i class="fa-solid fa-circle-question" data-tooltip="{{localize "FASTFIGHTING.Settings.opening.Hint"}}"></i></span>
         <select name="options.opening">{{selectOptions openingChoices selected=options.opening localize=true}}</select>
       </label>
-      <label class="ff-field">{{localize "FASTFIGHTING.Planner.Initiative"}}
-        <select name="options.surprise">{{selectOptions surpriseChoices selected=options.surprise localize=true}}</select>
+      <label class="ff-field">{{localize "FASTFIGHTING.Planner.Surprise"}}
+        <select name="options.surprise">{{#each surpriseChoices}}<option value="{{value}}" {{#if selected}}selected{{/if}} {{#if disabled}}disabled{{/if}}>{{label}}</option>{{/each}}</select>
       </label>
       <div class="ff-toggles">
         <label data-tooltip="{{localize "FASTFIGHTING.Planner.PositioningHint"}}"><input type="checkbox" name="options.positioning" {{checked options.positioning}}> {{localize "FASTFIGHTING.Planner.Positioning"}}</label>

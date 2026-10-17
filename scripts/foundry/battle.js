@@ -13,6 +13,7 @@ import { proposeGroups } from "../engine/groups.js";
 import { TACTIC_KEYS, TACTIC_WISHES } from "../engine/tactics.js";
 import { resetPathGrid } from "./pathing.js";
 import { tokenSetup, sceneEncounter } from "./persistence.js";
+import { SURPRISE } from "../engine/behavior/surprise.js";
 import { tacticsFor, isPlayerControlled, statedDesires, getStoredTactics, reactionPrefsFor } from "./tactics.js";
 import { ensureAutoConfig } from "./auto-config.js";
 import { partyWishes, voters, PARTY_TACTICS } from "./party.js";
@@ -163,6 +164,19 @@ function neutralTeamOf(entry, setup) {
   if ( chosenSide(entry, setup) === SIDES.NEUTRAL ) return groupOf(entry, setup);
   const team = secretTeam(entry, setup);
   return team?.side === "neutral" ? team.group : null;
+}
+
+/** Does the system have surprise rules of its own (its helper's rules.surprise), for Follow System? */
+export const systemSurprise = (adapter = getAdapter()) => typeof adapter?.rules?.surprise === "function";
+
+/** The choices a plan's Surprise had before (when it was Initiative), as the ones that took their place. */
+const OLD_SURPRISE = Object.freeze({ tracker: SURPRISE.SYSTEM, stealth: SURPRISE.SYSTEM, friendly: SURPRISE.PARTY_SURPRISES, hostile: SURPRISE.PARTY_SURPRISED });
+
+/** What a plan's Surprise comes to: its choice (an old one as the new); Follow System where the system has no rules, no one. */
+export function surpriseMode(value, adapter = getAdapter()) {
+  const v = OLD_SURPRISE[value] ?? value;
+  const mode = Object.values(SURPRISE).includes(v) ? v : SURPRISE.SYSTEM;
+  return mode === SURPRISE.SYSTEM && !systemSurprise(adapter) ? SURPRISE.NONE : mode;
 }
 
 /** The side a hostile group fights as (group 1 is the hostile side itself). */
@@ -635,21 +649,13 @@ export function buildBattleSpec(roster, setup, { approach = null } = {}) {
     };
   }
 
-  // Initiative and surprise
+  // Initiative: the tracker's, once it's rolled, as a live battle will have it (an encounter already under way picks up
+  // from whoever's turn it is). Surprise: as the plan has it (engine/behavior/surprise.js).
   let initiativeOrder = null;
-  let stealthSides = [];
-  let surpriseSide = null;
-  if ( options.surprise === "tracker" ) {
-    const combat = sceneEncounter();
-    if ( combat?.combatants.some(x => x.initiative !== null) ) {
-      // An encounter already under way picks up from whoever's turn it is.
-      const turns = combat.started ? [...combat.turns.slice(combat.turn ?? 0), ...combat.turns.slice(0, combat.turn ?? 0)] : combat.turns;
-      initiativeOrder = turns.filter(t => t.initiative !== null && t.tokenId).map(t => t.tokenId);
-    }
-  } else if ( options.surprise === "stealth" ) {
-    stealthSides = used.filter(s => combatants.some(c => c.side === s && c.hidden));
-  } else if ( used.includes(options.surprise) ) {
-    surpriseSide = options.surprise;
+  const combat = sceneEncounter();
+  if ( combat?.combatants.some(x => x.initiative !== null) ) {
+    const turns = combat.started ? [...combat.turns.slice(combat.turn ?? 0), ...combat.turns.slice(0, combat.turn ?? 0)] : combat.turns;
+    initiativeOrder = turns.filter(t => t.initiative !== null && t.tokenId).map(t => t.tokenId);
   }
 
   const spec = {
@@ -697,8 +703,7 @@ export function buildBattleSpec(roster, setup, { approach = null } = {}) {
       roleplayForgets: setting("roleplayForgets"),
       adhd: setting("adhd"),
       initiativeOrder,
-      stealthSides,
-      surpriseSide
+      surprise: surpriseMode(options.surprise)
     }
   };
   for ( const m of getModifiers() ) {

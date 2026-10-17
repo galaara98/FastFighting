@@ -14,7 +14,7 @@ import { PlayerSurvey } from "./apps/player-survey.js";
 import { registerTokenTactics, syncTokenTactics } from "./apps/token-tactics.js";
 import { QUERIES, SURVEY_STATUS, hasCharactersFor, preparePlayers } from "./foundry/tactics.js";
 import { helperStatus, helperMessage, helperNoticeHtml, surveyHtml } from "./helpers.js";
-import { invalidateApproach } from "./foundry/battle.js";
+import { invalidateApproach, systemSurprise } from "./foundry/battle.js";
 import { undoConcession, revealStory, ownCard, cardUndoState, undoFromCard, refreshUndoCards, UNDO_REACH } from "./foundry/make-it-so.js";
 import { sceneUnit, registerGroundField } from "./foundry/terrain.js";
 import { planHolder, sceneEncounter } from "./foundry/persistence.js";
@@ -375,6 +375,13 @@ Hooks.on("renderSettingsConfig", (app, element) => {
   // (At its foot, the optional performance survey.)
   section.querySelector(".ff-survey")?.remove();
   section.insertAdjacentHTML("beforeend", surveyHtml());
+  // (Follow System, greyed out where the system has no surprise rules: no one surprised, then.)
+  const surprise = section.querySelector(`[name="${MODULE_ID}.surpriseDefault"]`);
+  if ( surprise && !systemSurprise() ) {
+    const follow = surprise.querySelector('option[value="system"]');
+    if ( follow ) follow.disabled = true;
+    if ( surprise.value === "system" ) surprise.value = "none";
+  }
   // (Only the settings the system's helper acts on: leaving loot, taking a corpse away, only some do.)
   if ( !getAdapter()?.supportsLoot ) {
     for ( const key of ["lootMode", "corpseMode"] ) section.querySelector(`[name="${MODULE_ID}.${key}"]`)?.closest(".form-group")?.remove();

@@ -90,7 +90,7 @@
  *   friend group: "neutralParty#2"): [{id, role: "boss" | "leader" | "lieutenant", leadership}], the boss or the leader
  *   first, then the 1st and 2nd lieutenants. Without it, a side's leaderId leads it.
  * @property {Record<string, Record<string, object>>} [approach]  approach[a][t] = {dist, mult, speed, mode, los, meleeOk}
- * @property {object} options                         {maxRounds, downedModel, positioning, morale, leadership, initiativeOrder, surpriseSide}
+ * @property {object} options                         {maxRounds, downedModel, positioning, morale, leadership, initiativeOrder, surprise}
  */
 import { keepClear } from "./behavior/traps.js";
 import { tiedOut } from "./behavior/holds.js";

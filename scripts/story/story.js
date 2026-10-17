@@ -602,6 +602,8 @@ function narrate(e, roll, rel, fill) {
     case "afflictionEnd": return roll("event.afflictionEnd", f);
     case "step": return roll("maneuver.step", f);
     case "surprise": return roll("event.surprise", f);
+    // (Its first turn gone by, caught unawares: 5e's 2014 surprise.)
+    case "surprised": return roll("condition.surprised", f);
     case "aftermath": return roll(e.tended ? "event.aftermath" : "event.aftermathAlone", f);
     case "standoff": return roll("event.standoff", f);
     case "breakStandoff": return roll({ insulted: "event.breakInsulted", beast: "event.breakBeast", annoyed: "event.breakAnnoyed", blood: "event.breakBlood", unmet: "event.breakUnmet" }[e.cause] ?? "event.breakStandoff", f);

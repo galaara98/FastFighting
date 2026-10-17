@@ -49,6 +49,7 @@ import { profiled, hasTrait, barred } from "./conditions.js";
 import { reactionsPerRound, threats, takesSafeWay } from "./behavior/reactions.js";
 import { isNeutral, crossed, caughtInArea, refreshLeans, truceWith, truceBreaks, turnOn, settleTruce, peaceDesires, seemsFoe, meddling, inFray, fighting, dislikesViolence, annoyedBy, ANNOYED } from "./behavior/neutral.js";
 import { normalizeCost } from "./turn.js";
+import { resolveSurprise } from "./behavior/surprise.js";
 import { localize } from "../i18n.js";
 import { maneuverOf, answersTo } from "../story/master.js";
 
@@ -154,7 +155,9 @@ function standFirm(run, target, roll, dc, stakes, label) {
 
 function rollInitiative(run) {
   const { options } = run.prep;
-  const stealthSides = new Set(options.stealthSides ?? []);
+  // (Surprise: sides sneaking up roll Stealth; the surprised, in some systems, roll at a disadvantage: behavior/surprise.js.)
+  const stealthSides = new Set(run.surprise?.stealthSides ?? options.stealthSides ?? []);
+  const disadvantage = new Set(run.surprise?.disadvantage ?? []);
   const fixed = options.initiativeOrder ?? null;
   const rolled = new Map();
   for ( const u of run.units ) {
@@ -164,8 +167,10 @@ function rollInitiative(run) {
     if ( run.prep.rules.stealthInitiative && (behaviorOf(u).lowProfile ?? 0) > 0 && Number.isFinite(init.stealth) ) mod = Math.max(mod, init.stealth);
     mod += behaviorOf(u).initiative ?? 0; // Instigators jump in first
     if ( liveTier(run, u) >= TACTICAL.MASTERMIND ) mod += 2; // ambush instincts
-    // (A die of the system's own: DCC's d16 for a two-handed weapon.)
-    rolled.set(u.id, run.rng.die(init.die ?? 20) + mod + run.rng.next() * 0.01);
+    // (A die of the system's own: DCC's d16 for a two-handed weapon. Surprised, where it costs that: the lower of two.)
+    let die = run.rng.die(init.die ?? 20);
+    if ( disadvantage.has(u.id) ) die = Math.min(die, run.rng.die(init.die ?? 20));
+    rolled.set(u.id, die + mod + run.rng.next() * 0.01);
   }
   if ( fixed?.length ) {
     const known = fixed.map(id => run.byId.get(id)).filter(Boolean);
@@ -2938,6 +2943,12 @@ function playFromHere(run, u) {
     if ( state === "idle" ) return;
   }
   turnUpkeep(run, u);
+  // Surprised, where it costs that (5e's 2014 rules): its first turn goes by, and with it what kept it from reacting.
+  if ( !u.turnsTaken && run.surprise?.surprised?.includes(u.id) && u.status === STATUS.STANDING ) {
+    log(run, u, { type: "surprised" });
+    u.turnsTaken += 1;
+    return endOfTurn(run, u);
+  }
 
   settleSides(run); // holds that took or ended since this creature's last turn
   startHarm(run, u); // (what harms it as its turn starts: 5e's Burning)
@@ -3786,12 +3797,13 @@ function endLastStand(run, u) {
 export function runOne(prep, seed, { log: withLog = false, capture = false } = {}) {
   const run = beginRun(prep, seed, { log: withLog });
   const order = run.order;
-  const surpriseSide = prep.options.surpriseSide;
-  if ( surpriseSide ) {
+  // A round of their own first, for those with surprise, where it comes to that (behavior/surprise.js).
+  const surprise = run.surprise;
+  if ( surprise?.round && surprise.by.length ) {
     run.round = 0;
-    log(run, null, { type: "surprise", sideLabel: prep.sides[surpriseSide]?.label ?? surpriseSide });
+    for ( const side of surprise.by ) log(run, null, { type: "surprise", sideLabel: prep.sides[side]?.label ?? side });
     for ( const u of order ) {
-      if ( u.side !== surpriseSide ) continue;
+      if ( !surprise.by.includes(u.side) ) continue;
       startTurn(run, u);
       takeTurn(run, u);
       noteIdle(run, u);
@@ -3833,6 +3845,17 @@ export function beginRun(prep, seed, { log: withLog = false } = {}) {
   // Trap avoiders: the hazards they spot (behavior/traps.js), kept clear of as they move.
   run.trapLog = logger(run);
   spotTraps(run, run.trapLog);
+  // Who has surprise, and who's caught by it (behavior/surprise.js): as the plan has it, or the system's own rule. The
+  // surprised can't react until their first turn has gone by; those who sneaked up unnoticed start hidden.
+  run.surprise = resolveSurprise(run);
+  for ( const id of run.surprise.surprised ) {
+    const u = run.byId.get(id);
+    if ( u ) u.reactionsLeft = 0;
+  }
+  for ( const id of run.surprise.hidden ) {
+    const u = run.byId.get(id);
+    if ( u ) applyOutcome(u, { conditions: { hidden: 1 }, rounds: 10 }, u.id, { id: "surprise:hidden", name: "" });
+  }
   const order = rollInitiative(run);
   // A simple hazard goes off first: it's what set things off, while whoever set it off is still there.
   order.sort((a, b) => (b.spec.hazard?.once ? 1 : 0) - (a.spec.hazard?.once ? 1 : 0));

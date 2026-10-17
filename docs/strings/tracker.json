@@ -9764,6 +9764,16 @@
    "commit": null,
    "hash": "6331cb9a78da"
   },
+  "core:FASTFIGHTING.Log.Surprised": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.Surprised",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "c67789dc429e"
+  },
   "core:FASTFIGHTING.Log.Sustain": {
    "repo": "core",
    "file": "languages/en.json",
@@ -12063,7 +12073,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "3e687de48a6a"
+   "hash": "3e687de48a6a",
+   "gone": "2026-10-17"
   },
   "core:FASTFIGHTING.Planner.KindLevel": {
    "repo": "core",
@@ -12545,6 +12556,16 @@
    "date": null,
    "commit": null,
    "hash": "aae328773863"
+  },
+  "core:FASTFIGHTING.Planner.Surprise": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Planner.Surprise",
+   "area": "core/Planner",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "b6ae9214d555"
   },
   "core:FASTFIGHTING.Planner.TakesNoSide.closest": {
    "repo": "core",
@@ -15459,7 +15480,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "401442633c05"
+   "hash": "401442633c05",
+   "changed": true
   },
   "core:FASTFIGHTING.Settings.surpriseDefault.Name": {
    "repo": "core",
@@ -15469,7 +15491,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "3e687de48a6a"
+   "hash": "3e687de48a6a",
+   "changed": true
   },
   "core:FASTFIGHTING.Settings.Survey.Hint": {
    "repo": "core",
@@ -21444,7 +21467,28 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "c9060dcbe7c1"
+   "hash": "c9060dcbe7c1",
+   "gone": "2026-10-17"
+  },
+  "core:FASTFIGHTING.Surprise.friendlySurprise": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Surprise.friendlySurprise",
+   "area": "core/Surprise",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "e3e09e82ef20"
+  },
+  "core:FASTFIGHTING.Surprise.friendlySurprised": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Surprise.friendlySurprised",
+   "area": "core/Surprise",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "c7fa6d9f22ae"
   },
   "core:FASTFIGHTING.Surprise.hostile": {
    "repo": "core",
@@ -21454,7 +21498,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "35e7672fcbbf"
+   "hash": "35e7672fcbbf",
+   "gone": "2026-10-17"
   },
   "core:FASTFIGHTING.Surprise.none": {
    "repo": "core",
@@ -21464,7 +21509,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "a043ef4bffe6"
+   "hash": "a043ef4bffe6",
+   "changed": true
   },
   "core:FASTFIGHTING.Surprise.stealth": {
    "repo": "core",
@@ -21474,7 +21520,18 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "dd15aa9e63df"
+   "hash": "dd15aa9e63df",
+   "gone": "2026-10-17"
+  },
+  "core:FASTFIGHTING.Surprise.system": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Surprise.system",
+   "area": "core/Surprise",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "5fb458ceaaef"
   },
   "core:FASTFIGHTING.Surprise.tracker": {
    "repo": "core",
@@ -21484,7 +21541,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "d568f8319e98"
+   "hash": "d568f8319e98",
+   "gone": "2026-10-17"
   },
   "core:FASTFIGHTING.Survey.AskedGms": {
    "repo": "core",

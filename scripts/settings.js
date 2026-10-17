@@ -57,7 +57,7 @@ const SETTINGS = {
   adhd: { type: Number, default: ADHD, range: { min: 0, max: 100, step: 1 } },
   bystanders: { type: Boolean, default: true },
   positioning: { type: Boolean, default: true },
-  surpriseDefault: { type: String, default: "tracker", choices: choices(["none", "tracker", "stealth"], "Surprise") },
+  surpriseDefault: { type: String, default: "system", choices: choices(["system", "none", "friendlySurprised", "friendlySurprise"], "Surprise") },
   storyStyle: { type: String, default: "roleplay", choices: choices(["roleplay", "standard", "statistician"], "Story.Style") },
   storyMode: { type: String, default: "public", choices: choices(["public", "whisper"], "Story.Mode") },
   storyOdds: { type: Boolean, default: false },
