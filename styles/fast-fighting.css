@@ -132,7 +132,6 @@
 .ff-fudge .ff-reset { grid-area: reset; }
 .ff-fudge-value { grid-area: value; font-weight: 700; min-width: 30px; text-align: center; font-variant-numeric: tabular-nums; }
 .ff-fudge-value sup { color: var(--ff-accent); font-size: 9px; margin-left: 1px; }
-.ff-band { font-size: 10px; color: var(--ff-text-dim); opacity: 0.85; }
 .ff-icon-btn {
   width: 20px; height: 20px; min-height: 0; padding: 0; line-height: 18px; font-size: 9px; flex: none;
   display: inline-flex; align-items: center; justify-content: center;
