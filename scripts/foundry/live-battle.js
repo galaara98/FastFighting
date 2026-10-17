@@ -29,7 +29,7 @@ import { storyBeats } from "../story/story.js";
 import { logLine } from "../story/log-lines.js";
 import { loadStoryTables } from "../story/tables.js";
 import {
-  beginLive, liveRound, liveTurn, pcTurnBegin, pcTurnEnd, syncFromSheets, setApproach, setScene, captureAll, snapshotRun, restoreRun, endLive, packLog,
+  beginLive, liveRound, liveTurn, pcTurnBegin, pcTurnEnd, syncFromSheets, setApproach, setScene, captureAll, snapshotRun, restoreRun, endLive, packLog, followCommand,
   NeedsDecision, applyFact, gmMoment, leavingReach, openingFor, reactNow, nextSpotlight, liveAftermath,
   setCondition, setRelation, clearRelation, setAffliction, setGoal, setAttitude, setSide, setRole, playerRuns
 } from "../engine/live.js";
@@ -1367,6 +1367,7 @@ export function liveFact(fact) {
     }
     gmMoment(battle.run, fact.id);
     const ok = applyFact(battle.run, fact);
+    if ( ok ) followCommand(battle.run);
     const messages = await tellNew();
     const last = battle.data.turns.at(-1);
     if ( last ) last.messages.push(...messages);

@@ -9,7 +9,10 @@
  * character FastFighting isn't playing shows no desires: its player decides. A token on the map not in the battle can
  * be brought into it.
  */
-import { NEUTRAL_PARTY, MODULE_ID, SIDES, HOSTILE_GROUPS, GROUPS } from "../constants.js";
+import { NEUTRAL_PARTY, MODULE_ID, SIDES, HOSTILE_GROUPS, GROUPS, SIDE_SETTLE_MS } from "../constants.js";
+
+/** A side picked for a creature, not yet worked out (SIDE_SETTLE_MS): {id, side, group, timer}, or null. */
+let pendingSide = null;
 import { DESIRE_BAND_KEYS, DESIRE_KINDS, desireBand } from "../engine/behavior/desire.js";
 import { mindOf, bandLevel, networkOf, playerRuns } from "../engine/live.js";
 import { commandOf, groupKeyOf, SLOTS } from "../engine/battle-state.js";
@@ -248,6 +251,7 @@ export class BattleVantage extends HandlebarsApplicationMixin(ApplicationV2) {
   _onClose(options) {
     this.#network?.destroy();
     this.#network = null;
+    settleSide();
     super._onClose?.(options);
   }
 
@@ -369,11 +373,23 @@ export class BattleVantage extends HandlebarsApplicationMixin(ApplicationV2) {
     return liveCondition({ op: "set", id, key, value: Math.max(1, Number(picked.value) || 1), byId, rounds });
   }
 
-  /** Another side for the creature in focus, or another of its kind's groups (what it wants worked out again: engine/live.js setSide). */
+  /**
+   * Another side for the creature in focus, or another of its kind's groups (what it wants worked out again: engine/live.js
+   * setSide), once the pick has stood SIDE_SETTLE_MS: picked back where it was meanwhile, nothing is worked out.
+   */
   static async #onSetSide(event, target) {
     const id = target.closest("[data-creature]")?.dataset.creature;
-    if ( !id || !target.dataset.side || target.classList.contains("active") ) return;
-    await liveMind({ op: "side", id, side: target.dataset.side, group: Number(target.dataset.group) || null });
+    if ( !id || !target.dataset.side ) return;
+    const side = target.dataset.side;
+    const group = Number(target.dataset.group) || null;
+    const u = liveBattle()?.run.byId.get(id);
+    clearTimeout(pendingSide?.timer);
+    pendingSide = null;
+    // (Shown picked at once.)
+    for ( const b of target.closest("[data-creature]")?.querySelectorAll("[data-action=setSide]") ?? [] ) b.classList.toggle("active", b === target);
+    const where = u && u.side === side && (side !== NEUTRAL_PARTY || (u.friendGroup ?? null) === group);
+    if ( !u || where ) return;
+    pendingSide = { id, side, group, timer: setTimeout(() => settleSide(), SIDE_SETTLE_MS) };
   }
 
   /**
@@ -711,6 +727,15 @@ function networkView(b, current, focusId) {
 }
 
 /** The one in focus, beside the map: who it is, what it wants, what's on it, and what the GM can put on it. */
+/** The side picked in the Battle Vantage, worked out now (its time is up, or the window closes). */
+async function settleSide() {
+  const p = pendingSide;
+  pendingSide = null;
+  if ( !p ) return;
+  clearTimeout(p.timer);
+  await liveMind({ op: "side", id: p.id, side: p.side, group: p.group });
+}
+
 function panelOf(b, net, nodes, edges, focus, { name, docOf, sideLabel }) {
   if ( !focus ) return { none: true };
   const node = nodes.find(n => n.id === focus);
@@ -745,7 +770,10 @@ function panelOf(b, net, nodes, edges, focus, { name, docOf, sideLabel }) {
   const decides = playerRuns(run, u);
   // Its team: a neutral friend group (1 2 3), a hostile group (1 2 3), or the party (F); and its place in its group's
   // chain of command (B L 1 2; the party, no boss), as the planner has them.
-  const pill = (side, group, label, name, active) => ({ side, group, label, name, active });
+  const picked = pendingSide?.id === focus ? pendingSide : null;
+  const pill = (side, group, label, name, active) => ({
+    side, group, label, name, active: picked ? picked.side === side && (side !== NEUTRAL_PARTY || picked.group === group) : active
+  });
   const teams = [
     { kind: "neutral", label: loc("FASTFIGHTING.Side.neutral"), pills: GROUPS.map(n => pill(NEUTRAL_PARTY, n, n, fmt("FASTFIGHTING.Side.neutralGroup", { n }), u.side === NEUTRAL_PARTY && u.friendGroup === n)) },
     { kind: "hostile", label: loc("FASTFIGHTING.Side.hostile"), pills: HOSTILE_GROUPS.map((side, i) => pill(side, null, i + 1, fmt("FASTFIGHTING.Side.hostileGroup", { n: i + 1 }), u.side === side)) },

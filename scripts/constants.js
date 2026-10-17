@@ -127,6 +127,13 @@ export const ADHD = 20;
 export const AVOID_KILLING = 90;
 
 /**
+ * How long a side the GM picks for a creature (the planner, the Battle Vantage) must stand before what it does is worked
+ * out (its group, its role, what everyone wants, its leader's sway): a slip of the mouse, picked back at once, costs
+ * nothing.
+ */
+export const SIDE_SETTLE_MS = 990;
+
+/**
  * How an encounter opens: decided by who would rather talk (AUTO), always with words (TALK), straight into battle
  * (FIGHT), or only an argument, talk and nothing else (ARGUMENT: what would come to blows ends it).
  */

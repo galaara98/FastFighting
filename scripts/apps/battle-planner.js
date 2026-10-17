@@ -3,7 +3,7 @@
  */
 import {
   MODULE_ID, SIDES, TRAITS, ALLEGIANCE, HEAL_AGGRO, DOWNED_MODELS, AFTERMATH, OPENING, NEUTRAL_PARTY, HOSTILE_GROUPS, GROUPS,
-  traitBand, clamp, FUDGE_STEP
+  traitBand, clamp, FUDGE_STEP, SIDE_SETTLE_MS
 } from "../constants.js";
 import { getAdapter } from "../api.js";
 import { setting } from "../settings.js";
@@ -188,6 +188,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
   _onClose(options) {
     super._onClose(options);
     this.unwatchReactions?.();
+    this.settleSides();
     if ( this.pauseHook ) Hooks.off("pauseGame", this.pauseHook);
     this.pauseHook = null;
     const resume = this.pausedGame;
@@ -835,13 +836,11 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       return;
     } else {
       if ( name.startsWith("tokens.") ) tokenSetup(this.setup, name.split(".")[1]);
+      // (A side picked: worked out once it has stood a moment, settleSides, in case it was a slip.)
+      const side = /^tokens\.([^.]+)\.side$/.exec(name);
+      if ( side ) this.#holdSide(side[1]);
       foundry.utils.setProperty(this.setup, name, value === "" ? null : value);
-      // A token moved to another side starts in that side's first group (a neutral, in the one proposed for it).
-      if ( /^tokens\.[^.]+\.side$/.test(name) ) {
-        this.setup.tokens[name.split(".")[1]].group = null;
-        delete this.setup.tokens[name.split(".")[1]].team;
-        clearRole(this.setup.tokens[name.split(".")[1]]); // (its role was in the group it left)
-      }
+      if ( side ) return;
       if ( name === "options.seed" ) this.setup.options.seed = Number.isFinite(Number.parseInt(value, 10)) ? Number.parseInt(value, 10) >>> 0 : null;
       await saveSetup(this.setup, this.holder);
       this.stale = true;
@@ -915,12 +914,72 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     const id = target.closest("[data-token-id]")?.dataset.tokenId;
     const team = target.dataset.team;
     if ( !id || !SECRET_TEAMS.includes(team) || target.classList.contains("active") ) return;
-    const ts = tokenSetup(this.setup, id);
-    ts.team = team;
-    clearRole(ts); // (its role was in the team it left)
+    // (Worked out once it has stood a moment, settleSides, in case it was a slip.)
+    this.#holdSide(id);
+    tokenSetup(this.setup, id).team = team;
+    for ( const b of target.parentElement?.querySelectorAll("[data-team]") ?? [] ) b.classList.toggle("active", b === target);
+  }
+
+  /** Each token whose side or team was picked meanwhile: where it was before (its side, team and group). */
+  #sidesBefore = null;
+  #sideTimer = null;
+
+  /** A side or team picked for a token: worked out SIDE_SETTLE_MS after the last pick (settleSides). */
+  #holdSide(id) {
+    this.#sidesBefore ??= new Map();
+    if ( !this.#sidesBefore.has(id) ) {
+      const ts = tokenSetup(this.setup, id);
+      this.#sidesBefore.set(id, { side: ts.side, team: ts.team, key: this.#groupOf(id) });
+    }
+    clearTimeout(this.#sideTimer);
+    this.#sideTimer = setTimeout(() => this.settleSides(), SIDE_SETTLE_MS);
+  }
+
+  /** The group a token commands in (or is commanded in) as the plan stands: its side's, or its team's. */
+  #groupOf(id) {
+    const me = this.roster?.find(e => e.token.id === id);
+    return me ? commandGroup(me, this.setup, resolveAllegiances(this.roster, this.setup)) : null;
+  }
+
+  /**
+   * The sides and teams picked meanwhile, worked out (at once, before a run or Do it For Real Now, or as the planner
+   * closes). A token picked back where it was: nothing. Moved to another side, it starts in that side's first group (a
+   * neutral, in the one proposed for it). In another group, its role there is given up, and remembered
+   * (ts.formerRoles, by group); back in a group it had one in, it takes it again (whoever has it now gives it up).
+   */
+  async settleSides() {
+    clearTimeout(this.#sideTimer);
+    this.#sideTimer = null;
+    const before = this.#sidesBefore;
+    this.#sidesBefore = null;
+    if ( !before?.size ) return;
+    let moved = false;
+    for ( const [id, was] of before ) {
+      const ts = tokenSetup(this.setup, id);
+      if ( (ts.side ?? null) !== (was.side ?? null) ) {
+        ts.group = null;
+        delete ts.team;
+      }
+      const key = this.#groupOf(id);
+      if ( key === was.key ) continue;
+      moved = true;
+      if ( was.key && ts.role && ts.role !== "none" ) (ts.formerRoles ??= {})[was.key] = { role: ts.role, roleAuto: ts.roleAuto, roleWhy: ts.roleWhy };
+      clearRole(ts);
+      const back = key ? ts.formerRoles?.[key] : null;
+      if ( !back ) continue;
+      delete ts.formerRoles[key];
+      const resolved = resolveAllegiances(this.roster, this.setup);
+      const head = back.role === "boss" || back.role === "leader" ? ["boss", "leader"] : [back.role];
+      for ( const e of this.roster ?? [] ) {
+        const other = this.setup.tokens[e.token.id];
+        if ( e.token.id === id || !other || !head.includes(other.role) ) continue;
+        if ( commandGroup(e, this.setup, resolved) === key ) clearRole(other);
+      }
+      Object.assign(ts, Object.fromEntries(Object.entries(back).filter(([, v]) => v !== undefined)));
+    }
     await saveSetup(this.setup, this.holder);
-    this.stale = true;
-    this.render();
+    if ( moved ) this.stale = true;
+    if ( this.rendered ) this.render();
   }
 
   static #onSideTab(event, target) {
@@ -983,6 +1042,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
 
   static async #onRun() {
     if ( this.running ) return;
+    await this.settleSides();
     if ( !getAdapter() ) return ui.notifications.warn(loc("FASTFIGHTING.Planner.NoAdapter"));
     // The battle is read off the map: there has to be one on the canvas (there isn't right after a reload).
     if ( !canvas.ready || !canvas.scene ) return ui.notifications.warn(loc("FASTFIGHTING.Planner.NoScene"));
@@ -1065,6 +1125,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   static async #onMakeItSo() {
+    await this.settleSides();
     if ( !this.results || !this.spec ) return;
     if ( canvas.scene?.id !== this.sceneId ) return ui.notifications.warn(loc("FASTFIGHTING.Planner.SceneChanged"));
     if ( unfinishedPlayback(canvas.scene) ) return;

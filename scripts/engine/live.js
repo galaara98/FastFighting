@@ -116,6 +116,7 @@ export function liveTurn(run, id, { answers = null, salt = 0, nonce = 0 } = {}) 
   run.live.answers = new Map(answers ?? []);
   const from = run.log.length;
   const ended = playTurn(run, u);
+  followCommand(run);
   return { events: run.log.slice(from), ended };
 }
 
@@ -171,6 +172,7 @@ export function pcTurnEnd(run, id, events = [], states = null, facts = []) {
   tickEffects(run, u);
   u.turnsTaken += 1;
   const ended = afterTurn(run, u);
+  followCommand(run);
   return { events: run.log.slice(from), ended, changes, synced };
 }
 
@@ -764,13 +766,49 @@ export function setSide(run, id, side, { group = null } = {}) {
   }
   if ( u.side !== side && !applyFact(run, { kind: "side", id, side }) ) return false;
   if ( side === NEUTRAL_PARTY ) u.friendGroup = friends;
-  // (Its place in the chain of the group it left: given up.)
-  for ( const [key, chain] of Object.entries(run.prep.command ?? {}) ) {
-    if ( key !== groupKeyOf(u) && chain.some(c => c.id === id) ) editPrep(run, { kind: "command", key, chain: chain.filter(c => c.id !== id) });
-  }
+  // (Its place in the chain of the group it left: given up, and remembered; back in one it had a place in, it takes it back.)
+  followCommand(run);
   forgetSides(run, u);
   for ( const o of run.units ) rethink(run, o);
   return true;
+}
+
+/**
+ * Whoever is in another group now than its chain of command has it in (moved by the GM, talked over, charmed, turned on
+ * its side, back again): its place in the group it left given up (those after it step up) and remembered, by group
+ * (u.formerPlaces); back in a group it had a place in, it takes that place back (it re-asserts itself), and whoever
+ * holds it now moves down to the next place free after it, or out of the chain. Returns whether anything changed.
+ */
+export function followCommand(run) {
+  let changed = false;
+  for ( const [key, chain] of Object.entries(run.prep.command ?? {}) ) {
+    const gone = chain.filter(c => {
+      const u = run.byId.get(c.id);
+      return u && groupKeyOf(u) !== key;
+    });
+    if ( !gone.length ) continue;
+    for ( const c of gone ) (run.byId.get(c.id).formerPlaces ??= {})[key] = { slot: c.slot, role: c.role, leadership: c.leadership };
+    editPrep(run, { kind: "command", key, chain: chain.filter(c => !gone.includes(c)) });
+    changed = true;
+  }
+  const head = slot => slot === "boss" || slot === "leader";
+  for ( const u of run.units ) {
+    const key = groupKeyOf(u);
+    const former = key ? u.formerPlaces?.[key] : null;
+    if ( !former ) continue;
+    delete u.formerPlaces[key];
+    const chain = (run.prep.command?.[key] ?? []).filter(c => c.id !== u.id).map(c => ({ ...c }));
+    const taken = chain.find(c => (head(former.slot) ? head(c.slot) : c.slot === former.slot));
+    if ( taken ) {
+      const free = SLOTS.find(slot => !head(slot) && SLOTS.indexOf(slot) > SLOTS.indexOf(former.slot) && !chain.some(c => c !== taken && c.slot === slot));
+      if ( free ) Object.assign(taken, { slot: free, role: "lieutenant" });
+      else chain.splice(chain.indexOf(taken), 1);
+    }
+    chain.push({ id: u.id, slot: former.slot, role: former.role, leadership: former.leadership });
+    editPrep(run, { kind: "command", key, chain: chain.sort((a, b) => SLOTS.indexOf(a.slot) - SLOTS.indexOf(b.slot)) });
+    changed = true;
+  }
+  return changed;
 }
 
 /**
@@ -785,6 +823,7 @@ export function setRole(run, id, slot, leadership = null) {
   if ( !key || u.spec.hazard || (slot !== "none" && !SLOTS.includes(slot)) ) return false;
   if ( slot === "boss" && u.side === "friendly" ) return false; // (the party never has a boss)
   const head = s => s === "boss" || s === "leader";
+  followCommand(run);
   let chain = (run.prep.command?.[key] ?? []).filter(c => c.id !== id && !(head(slot) ? head(c.slot) : c.slot === slot));
   if ( slot !== "none" ) {
     const lends = leadershipOf(leadership ?? {});

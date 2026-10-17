@@ -4,7 +4,7 @@
  * lieutenants); what everyone wants worked out again at once; kept with the battle, and there again when it's restored.
  */
 import { describe, expect, test } from "vitest";
-import { beginLive, liveRound, setSide, setRole, snapshotRun, restoreRun } from "../scripts/engine/live.js";
+import { beginLive, liveRound, setSide, setRole, snapshotRun, restoreRun, followCommand } from "../scripts/engine/live.js";
 import { areEnemies, alliesOf, commandOf, groupKeyOf } from "../scripts/engine/battle-state.js";
 import { rankedDesires } from "../scripts/engine/behavior/desire.js";
 import { rethink } from "../scripts/engine/simulator.js";
@@ -91,6 +91,32 @@ describe("chains of command", () => {
     expect(setRole(run, "hero", "boss")).toBe(false);
     setSide(run, "boss", "hostile2");
     expect(run.prep.command.hostile ?? []).toHaveLength(0);
+  });
+
+  test("one who leaves its group by any means gives up its place, and coming back takes it again", () => {
+    const { run, spec } = live();
+    setRole(run, "orc", "lt1");
+    // (Moved by the GM: the lieutenant leads; back, the boss leads again and the lieutenant is one again.)
+    setSide(run, "boss", "friendly");
+    expect(commandOf(run, run.byId.get("goblin")).unit.id).toBe("orc");
+    expect(run.prep.command.hostile.map(c => c.id)).toEqual(["orc"]);
+    expect(run.byId.get("boss").formerPlaces.hostile).toMatchObject({ slot: "leader" });
+    setSide(run, "boss", "hostile");
+    expect(run.prep.command.hostile.map(c => [c.id, c.slot])).toEqual([["boss", "leader"], ["orc", "lt1"]]);
+    expect(commandOf(run, run.byId.get("goblin")).unit.id).toBe("boss");
+    // (Talked over, as a turn would: given up at the turn's end; and the GM's new leader meanwhile steps down to a
+    // lieutenant's place when the old one comes back.)
+    run.byId.get("boss").side = "friendly";
+    followCommand(run);
+    setRole(run, "goblin", "leader");
+    expect(run.prep.command.hostile.map(c => [c.id, c.slot])).toEqual([["goblin", "leader"], ["orc", "lt1"]]);
+    run.byId.get("boss").side = "hostile";
+    followCommand(run);
+    expect(run.prep.command.hostile.map(c => [c.id, c.slot])).toEqual([["boss", "leader"], ["orc", "lt1"], ["goblin", "lt2"]]);
+    // (Remembered with the battle.)
+    setSide(run, "boss", "friendly");
+    const back = restoreRun(spec, pf2eRules, snapshotRun(run));
+    expect(back.byId.get("boss").formerPlaces.hostile).toMatchObject({ slot: "leader" });
   });
 
   test("kept with the battle: a restored one has the new group and the new chain", () => {
