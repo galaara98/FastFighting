@@ -940,6 +940,34 @@ function retort(run, saver, by, action, degree, logging) {
 }
 
 /** Roll damage for a hit; returns the total and a function that applies it (so the log reads in order). */
+/**
+ * A live battle's card for an action, as its user shows it (a spell's, a breath's: the helper's useAction), asked of
+ * the system in a turn FastFighting plays (engine/live.js systemRoll "use"): {card}, or null. Nothing rolled or spent.
+ */
+function showAction(run, u, action, t = null) {
+  return run.live?.roll?.(run, { kind: "use", unitId: u.id, targetId: t?.id ?? null, action: { id: action.id, name: action.name } }) ?? null;
+}
+
+/**
+ * The damage the system rolled for this action, once for all it catches (run.liveDamage), as one target takes it:
+ * times `mult` (a save's half, a critical failure's double), rounded down. {byType, card}, or null (the engine's dice).
+ */
+function liveDamageOf(run, action, mult = 1) {
+  const d = run.liveDamage;
+  if ( !d || d.actionId !== action.id ) return null;
+  return { byType: Object.fromEntries(Object.entries(d.byType).map(([k, v]) => [k, Math.max(0, Math.floor(v * mult))])), card: d.card };
+}
+
+/**
+ * A live battle's damage the system rolled (`sys`), applied its way to `target` (engine/live.js systemRoll "apply",
+ * times `mult`): what the target lost by it; else `amount`, the engine's sum.
+ */
+function appliedLive(run, u, target, sys, amount, mult) {
+  if ( !sys?.card ) return amount;
+  const applied = run.live?.roll?.(run, { kind: "apply", unitId: u.id, targetId: target.id, card: sys.card, amount, multiplier: mult, applies: null });
+  return Number.isFinite(applied?.lost) ? Math.max(0, applied.lost) : amount;
+}
+
 function rollHit(run, u, action, t, parts, multiplier, crit, minimum = 0, forced = null) {
   const rules = run.prep.rules;
   // (The system's own damage roll, where it rolled it: its dice by type, before anyone's resistances.)
@@ -1085,6 +1113,15 @@ function executeOffense(run, u, action, t, attacksMade) {
   }
   u.revealed = true;
   run.blood = true; // a blow has been struck: whatever happens now, it wasn't settled with words
+  // (A live battle's: the system's own card for a spell, a breath, a blast, as its user shows it; and the damage of one
+  // that isn't an attack, rolled the system's way once for everyone it catches: liveDamage.)
+  if ( (action.kind !== "strike" && action.kind !== "control") || isMagical(action) ) {
+    const shown = showAction(run, u, action, t);
+    if ( (action.kind === "save" || action.kind === "auto") && action.damage?.length ) {
+      const rolled = run.live?.roll?.(run, { kind: "damage", unitId: u.id, targetId: t?.id ?? null, card: shown?.card ?? null, action: { id: action.id, name: action.name } }) ?? null;
+      run.liveDamage = rolled?.damage?.byType ? { actionId: action.id, byType: rolled.damage.byType, card: rolled.card ?? null } : null;
+    }
+  }
   const targets = [t];
   if ( action.area ) {
     // (A live battle lays the system's own shape on the map and says who's in it: run.live.inArea, null where it can't.)
@@ -1102,6 +1139,7 @@ function executeOffense(run, u, action, t, attacksMade) {
   const ranged = !!action.range && !action.melee;
   const logging = !!run.log; // thousands of unlogged runs shouldn't pay for building log text
   for ( const target of targets ) fateful(run, target, u, () => strikeTarget(run, u, action, target, attacksMade, ranged, logging));
+  run.liveDamage = null;
   if ( action.melee ) {
     u.adjacent.add(t.id);
     t.adjacent.add(u.id);
@@ -1149,9 +1187,11 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
 
     if ( action.kind === "auto" ) {
       const extra = bonusDamageParts(run, u, action, target, { commit: true });
-      const hit = rollHit(run, u, action, target, (action.damage ?? []).concat(extra), 1, false);
-      if ( logging ) log(run, u, { type: "auto", ...common, damage: hit.total });
-      answerHarm(run, target, u, action, hit.apply());
+      const sys = liveDamageOf(run, action);
+      const hit = rollHit(run, u, action, target, (action.damage ?? []).concat(extra), 1, false, 0, sys);
+      const amount = appliedLive(run, u, target, sys, hit.total, 1);
+      if ( logging ) log(run, u, { type: "auto", ...common, damage: amount });
+      answerHarm(run, target, u, action, hit.apply(amount));
       return;
     }
 
@@ -1166,9 +1206,13 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
       const mult = saveMultiplierFor(rules, roll.degree, action.save, target);
       const data = !logging ? null : { type: "save", ...common, saveType: action.save.type, natural: roll.natural, mod: mod + (roll.die ?? 0), total: roll.total, dc: action.save.dc, degree: roll.degree, margin: roll.total - action.save.dc, note: roll.note ?? null, faces: roll.faces ?? null, ...(roll.said?.data?.luck ? { luck: roll.said.data.luck } : {}) };
       if ( mult > 0 ) {
-        const hit = rollHit(run, u, action, target, (action.damage ?? []).concat(extra), mult, roll.degree === 0);
-        if ( logging ) log(run, u, { ...data, damage: hit.total });
-        const dealt = hit.apply();
+        // (A live battle's damage the system rolled, once for all: this target's share by its save, applied the system's
+        // way, and what it lost by it.)
+        const sys = liveDamageOf(run, action, mult);
+        const hit = rollHit(run, u, action, target, (action.damage ?? []).concat(extra), mult, roll.degree === 0, 0, sys);
+        const amount = appliedLive(run, u, target, sys, hit.total, mult);
+        if ( logging ) log(run, u, { ...data, damage: amount });
+        const dealt = hit.apply(amount);
         if ( roll.degree <= 1 ) applyEffects(run, u, action, target, 3 - roll.degree, { saveDegree: roll.degree, dealt });
         answerHarm(run, target, u, action, dealt);
       } else if ( logging ) log(run, u, { ...data, damage: 0 });
@@ -1882,6 +1926,8 @@ function executeBuff(run, u, action, targets, worth = 0, turn = null) {
     if ( !tier || tier.kind !== "buff" ) return spendUse(u, action);
     return executeBuff(run, u, { ...tier, id: action.id }, targets, worth, turn);
   }
+  // (A live battle's: the system's own card for a spell, as its caster shows it.)
+  if ( isMagical(action) ) showAction(run, u, action, targets[0] ?? null);
   if ( action.oncePerTurn ) (u.usedThisTurn ??= new Set()).add(action.id);
   const now = Number(action.outcome?.actionsNow) || 0;
   if ( now > 0 && turn && targets.includes(u) ) turn.pools[mainPool(run.prep.rules)] = (turn.pools[mainPool(run.prep.rules)] ?? 0) + now;
@@ -1945,6 +1991,8 @@ function executeHeal(run, u, action, target) {
     if ( !tier || tier.kind !== "heal" ) return spendUse(u, action);
     return executeHeal(run, u, { ...tier, id: action.id }, target);
   }
+  // (A live battle's: the system's own card for a spell, as its caster shows it.)
+  if ( isMagical(action) ) showAction(run, u, action, target);
   let multiplier = 1;
   let roll = null;
   if ( action.healCheck ) {

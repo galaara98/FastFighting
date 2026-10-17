@@ -443,6 +443,28 @@ export class SystemAdapter {
   }
 
   /**
+   * API 19. An action's own card, as its user would show it from the sheet (a spell's, a breath's, a blast's), in a
+   * turn FastFighting plays: nothing rolled, spent or applied (FastFighting does those). `action`: {id, name}, the
+   * action's id as the helper gave it; `targets`: TokenDocuments it's aimed at (the user's targets may be set for the
+   * card); `secret`: for the GMs' eyes only. Returns {card: message id} (its damage is rolled from it: rollDamage), or
+   * null where there's none to show (a card its strike or check roll shows already). Optional.
+   */
+  useAction(token, { action, targets = [], secret = false }) {
+    return null;
+  }
+
+  /**
+   * API 19. The damage of an action that isn't an attack (one a save resists, or that simply lands), rolled with the
+   * system's own roller once for all it catches, its card in the chat; FastFighting applies each target's share
+   * through applyDamageCard, with its save's multiplier. `action`: {id, name}; `card`: useAction's card, where it made
+   * one; `secret`. Returns {damage: {byType: {type: amount}}, card: message id} (as rolled, before resistances), or null
+   * (the engine rolls it). Optional.
+   */
+  rollDamage(token, { action, card = null, secret = false }) {
+    return null;
+  }
+
+  /**
    * API 19. A save rolled with the system's own roller, as its player would roll it, its card in the chat: every save in
    * a turn FastFighting plays in a live battle (on its player's screen, where a player's character makes it and they're
    * here). `save`: the save's key as the helper's rules name it; `dc`; `action`: what it's against ({id, name}: an

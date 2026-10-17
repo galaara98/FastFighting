@@ -46,15 +46,17 @@ const offers = (adapter, name) => typeof adapter?.[name] === "function" && adapt
 
 /**
  * The kinds of roll the system makes itself in this battle, as its helper offers them (engine/live.js systemRoll):
- * strikes (rollStrike), and their damage cards applied its own way (applyDamageCard); saves (rollSave); checks
- * (rollCheck).
+ * strikes (rollStrike); saves (rollSave); checks (rollCheck); an action's own card (useAction) and its damage, once
+ * for all it catches (rollDamage); and the damage cards of strikes and those applied its own way (applyDamageCard).
  */
 function systemRollKinds(adapter) {
   const out = [];
   if ( offers(adapter, "rollStrike") ) out.push("strike");
-  if ( out.includes("strike") && offers(adapter, "applyDamageCard") ) out.push("apply");
   if ( offers(adapter, "rollSave") ) out.push("save");
   if ( offers(adapter, "rollCheck") ) out.push("check");
+  if ( offers(adapter, "useAction") ) out.push("use");
+  if ( offers(adapter, "rollDamage") ) out.push("damage");
+  if ( (out.includes("strike") || out.includes("damage")) && offers(adapter, "applyDamageCard") ) out.push("apply");
   return out;
 }
 import { isStanding, canMove } from "../engine/battle-state.js";
@@ -953,6 +955,8 @@ async function turnRoll(request, events, stage) {
         await playSoFar(events, stage);
         if ( request.roll === "strike" ) out = await rollTurnStrike(request);
         else if ( request.roll === "save" || request.roll === "check" ) out = await rollTurnCheck(request);
+        else if ( request.roll === "use" ) out = await useTurnAction(request);
+        else if ( request.roll === "damage" ) out = await rollTurnDamage(request);
       }
     } catch ( err ) {
       console.error(`${MODULE_ID} | the system's roll`, err);
@@ -1003,18 +1007,47 @@ async function standing(u) {
  * A strike's damage card applied the system's way to its target (the helper's applyDamageCard: resistances,
  * shields, temporary hit points, its own damage-taken card): {lost}, what the target lost by it. Null: the engine's sum.
  */
-async function applyStrike({ targetId, card, applies }, stage) {
+async function applyStrike({ targetId, card, applies, multiplier = 1 }, stage) {
   const u = battle.run.byId.get(targetId);
   const doc = docOf(targetId);
   const message = card ? game.messages.get(card) : null;
   if ( !u || !doc || !message ) return null;
   const was = await standing(u);
-  // (With the reaction the system's application does itself, where one was used: {shieldBlock: true}.)
-  const options = { multiplier: 1, ...(typeof applies === "string" && applies ? { [applies]: true } : {}) };
+  // (With the reaction the system's application does itself, where one was used: {shieldBlock: true}; a save's share
+  // of an area's damage: its multiplier, half or double.)
+  const times = Number.isFinite(Number(multiplier)) ? Math.max(0, Number(multiplier)) : 1;
+  const options = { multiplier: times, ...(typeof applies === "string" && applies ? { [applies]: true } : {}) };
   const records = (await getAdapter().applyDamageCard(message, doc, options)) ?? [];
   stage.records.push(...records);
   const now = await standing(u);
   return was !== null && now !== null ? { lost: Math.max(0, was - now) } : null;
+}
+
+/**
+ * An action's own card in a turn FastFighting plays, as its user shows it (the helper's useAction: a spell's, a
+ * breath's), nothing rolled or spent: {card} (its message id, null for none), for its damage to be rolled from.
+ */
+async function useTurnAction({ unitId, targetId, action }) {
+  const doc = docOf(unitId);
+  if ( !doc || !offers(getAdapter(), "useAction") ) return null;
+  const target = targetId ? docOf(targetId) : null;
+  const raw = await getAdapter().useAction(doc, { action, targets: target ? [target] : [], secret: secretRoll(doc) });
+  const card = typeof raw?.card === "string" && game.messages.get(raw.card) ? raw.card : null;
+  return raw ? { card } : null;
+}
+
+/**
+ * The damage of an action that isn't an attack, rolled the system's way once for all it catches (the helper's
+ * rollDamage: a spell's, a breath's), its card in the chat: {damage: {byType}, card}, or null (the engine's dice).
+ */
+async function rollTurnDamage({ unitId, action, card }) {
+  const doc = docOf(unitId);
+  if ( !doc || !offers(getAdapter(), "rollDamage") ) return null;
+  const raw = await getAdapter().rollDamage(doc, { action, card: card ?? null, secret: secretRoll(doc) });
+  const byType = raw?.damage?.byType && typeof raw.damage.byType === "object"
+    ? Object.fromEntries(Object.entries(raw.damage.byType).map(([k, v]) => [String(k), counted(v)]).filter(([, v]) => v !== null)) : null;
+  if ( !byType || !Object.keys(byType).length ) return null;
+  return { damage: { byType }, card: typeof raw.card === "string" && game.messages.get(raw.card) ? raw.card : null };
 }
 
 /** How long a player has to answer a question about their reaction (ms) before the GM is asked instead. */

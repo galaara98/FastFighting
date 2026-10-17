@@ -82,6 +82,37 @@ describe("a save the system rolls", () => {
   });
 });
 
+describe("a spell's own card and its damage, the system's", () => {
+  const answer = r => ({
+    use: { card: "card-1" },
+    damage: { damage: { byType: { fire: 30 } }, card: "dmg-1" },
+    save: { degree: 2, natural: 15, total: 22 },
+    apply: { lost: 14 }
+  })[r.roll] ?? null;
+
+  test("its card first, its damage rolled once, the save's share applied the system's way: what the sheet lost", () => {
+    const { run, events, requests } = playThrough(setUp([blast], ["use", "damage", "save", "apply"]), "witch", answer);
+    const asked = Object.fromEntries(requests.map(r => [r.roll, r]));
+    expect(asked.use).toMatchObject({ unitId: "witch", targetId: "hero", action: { id: "blast", name: "Fire Blast" } });
+    expect(asked.damage).toMatchObject({ unitId: "witch", card: "card-1", action: { id: "blast" } });
+    expect(asked.apply).toMatchObject({ unitId: "witch", targetId: "hero", card: "dmg-1", multiplier: 0.5, amount: 15 });
+    expect(requests.map(r => r.roll).indexOf("use")).toBeLessThan(requests.map(r => r.roll).indexOf("damage"));
+    expect(events.find(e => e.type === "save" && e.targetId === "hero")).toMatchObject({ degree: 2, damage: 14 });
+    expect(run.byId.get("hero").hp).toBe(86);
+  });
+
+  test("no roller for its damage: the engine's dice, nothing applied the system's way", () => {
+    const { run, requests } = playThrough(setUp([blast], ["use", "save"]), "witch", answer);
+    expect(requests.some(r => r.roll === "apply" || r.roll === "damage")).toBe(false);
+    expect(run.byId.get("hero").hp).toBe(90); // (20, halved)
+  });
+
+  test("a strike or a maneuver shows no card of its own here: its roll's card does", () => {
+    const { requests } = playThrough(setUp([demoralize], ["use", "check"]), "witch", answer);
+    expect(requests.some(r => r.roll === "use")).toBe(false);
+  });
+});
+
 describe("a check the system rolls", () => {
   test("a control check: the user's, at its target, for what and against which defense", () => {
     const { run, requests } = playThrough(setUp([demoralize], ["check"]), "witch", () => ({ degree: 3, natural: 20, total: 30 }));
