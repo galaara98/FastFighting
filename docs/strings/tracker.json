@@ -314,6 +314,26 @@
    "commit": null,
    "hash": "ac55b344bbb7"
   },
+  "core:code:scripts/foundry/live-battle.js:areaShapeFor#1": {
+   "repo": "core",
+   "file": "scripts/foundry/live-battle.js",
+   "key": "scripts/foundry/live-battle.js:areaShapeFor#1",
+   "area": "core/code",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "6f014de6449d"
+  },
+  "core:code:scripts/foundry/live-battle.js:areaShapeFor#2": {
+   "repo": "core",
+   "file": "scripts/foundry/live-battle.js",
+   "key": "scripts/foundry/live-battle.js:areaShapeFor#2",
+   "area": "core/code",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "9bb0897c38cd"
+  },
   "core:code:scripts/foundry/live-battle.js:ask#1": {
    "repo": "core",
    "file": "scripts/foundry/live-battle.js",
@@ -334,6 +354,16 @@
    "commit": null,
    "hash": "ad03eb5e16bb"
   },
+  "core:code:scripts/foundry/live-battle.js:captureSheets#1": {
+   "repo": "core",
+   "file": "scripts/foundry/live-battle.js",
+   "key": "scripts/foundry/live-battle.js:captureSheets#1",
+   "area": "core/code",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "3d9a20552827"
+  },
   "core:code:scripts/foundry/live-battle.js:closePlayerTurn#1": {
    "repo": "core",
    "file": "scripts/foundry/live-battle.js",
@@ -353,6 +383,16 @@
    "date": null,
    "commit": null,
    "hash": "d7163ce16206"
+  },
+  "core:code:scripts/foundry/live-battle.js:layAreas#1": {
+   "repo": "core",
+   "file": "scripts/foundry/live-battle.js",
+   "key": "scripts/foundry/live-battle.js:layAreas#1",
+   "area": "core/code",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "23fa5ce9e367"
   },
   "core:code:scripts/foundry/live-battle.js:pickUp#1": {
    "repo": "core",
@@ -683,6 +723,17 @@
    "repo": "core",
    "file": "scripts/foundry/make-it-so.js",
    "key": "scripts/foundry/make-it-so.js:revertRecord#17",
+   "area": "core/code",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "f72e346158ec",
+   "changed": true
+  },
+  "core:code:scripts/foundry/make-it-so.js:revertRecord#18": {
+   "repo": "core",
+   "file": "scripts/foundry/make-it-so.js",
+   "key": "scripts/foundry/make-it-so.js:revertRecord#18",
    "area": "core/code",
    "status": "todo",
    "date": null,
@@ -2788,6 +2839,16 @@
    "date": null,
    "commit": null,
    "hash": "a8c0bd25307d"
+  },
+  "core:FASTFIGHTING.Battle.PlayerTurnOf": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.PlayerTurnOf",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "2cf6c3cdedb0"
   },
   "core:FASTFIGHTING.Battle.PlayThrough": {
    "repo": "core",
@@ -43015,6 +43076,16 @@
    "date": null,
    "commit": null,
    "hash": "25ddc004d4af"
+  },
+  "dnd5e:code:scripts/adapter.js:rollDnd5eReaction#1": {
+   "repo": "dnd5e",
+   "file": "scripts/adapter.js",
+   "key": "scripts/adapter.js:rollDnd5eReaction#1",
+   "area": "dnd5e/code",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "2b9963c52fb9"
   },
   "dnd5e:code:scripts/arithmetic.js:fail#1": {
    "repo": "dnd5e",

@@ -2238,6 +2238,7 @@
       "Round": "Round {n}",
       "Turn": "{name}'s turn",
       "PlayerTurn": "{name}'s turn (the player's)",
+      "PlayerTurnOf": "{name}'s turn ({player})",
       "State": {
         "ready": "Ready to play",
         "unstarted": "The encounter hasn't begun",

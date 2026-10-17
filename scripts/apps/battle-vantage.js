@@ -89,6 +89,19 @@ const afflictionIcon = a => {
   return a.simple && ICONS.condition[a.simple] ? icon("condition", a.simple) : icon("affliction", "other");
 };
 
+/**
+ * "Valeros's turn (Player 1)": whose turn it is, and for a player's character, its players by name (those here first;
+ * none known, "the player's").
+ */
+function turnText(b, u, player) {
+  if ( !player ) return fmt("FASTFIGHTING.Battle.Turn", { name: u.spec.name });
+  const actor = b.scene.tokens.get(tokenIdOf(u))?.actor;
+  const owners = actor ? game.users.filter(x => !x.isGM && actor.testUserPermission(x, "OWNER")) : [];
+  const here = owners.filter(x => x.active);
+  const names = (here.length ? here : owners).map(x => x.name);
+  return names.length ? fmt("FASTFIGHTING.Battle.PlayerTurnOf", { name: u.spec.name, player: listJoin(names) }) : fmt("FASTFIGHTING.Battle.PlayerTurn", { name: u.spec.name });
+}
+
 /** A creature's hit points and status as shown: its sheet's, where a player's turn has changed it (sheetNow); else the engine's. */
 const shownHp = u => sheetNow(u.id)?.hp ?? u.hp;
 const shownStatus = u => {
@@ -641,7 +654,7 @@ export function battleContext(b, focusId = null) {
     review,
     round: b.data.spotlight ? run.round : b.combat.round, started,
     spotlight: next ? fmt("FASTFIGHTING.Battle.Spotlight", { name: next.spec.name }) : "",
-    turn: current ? fmt(player ? "FASTFIGHTING.Battle.PlayerTurn" : "FASTFIGHTING.Battle.Turn", { name: current.spec.name }) : "",
+    turn: current ? turnText(b, current, player) : "",
     state, stateText: fmt(`FASTFIGHTING.Battle.State.${state}`, { name: current?.spec.name ?? "" }),
     // (Next Turn whenever the encounter is going, as the tracker's own: a player's turn, it ends it.)
     canContinue: started && state !== "ended", canPlay: state === "ready" && !player, canRewind: !!b.data.turns.at(-1)?.snapshot,
