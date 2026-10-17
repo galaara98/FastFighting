@@ -32,7 +32,7 @@
  * Pure: no Foundry globals.
  */
 import { STATUS, SWAY, CONCEDE_LUCK, SWITCH_LUCK, TRAITOR_LUCK, TACTICAL, OPENING, clamp } from "../../constants.js";
-import { alliesOf, enemiesOf, isStanding, behaviorOf, typical, checkRoll, liveTier, liveTrait, studyBonus, boostBonus, chainOf, commandOf, groupKeyOf, wish, wishWins, edgeDistance, areEnemies } from "../battle-state.js";
+import { alliesOf, enemiesOf, isStanding, behaviorOf, typical, checkRoll, liveTier, liveTrait, studyBonus, boostBonus, chainOf, commandOf, groupKeyOf, wish, wishWins, edgeDistance, areEnemies, systemRolled } from "../battle-state.js";
 import { spendEdges, spendBoost } from "./effects.js";
 import { degreeDistribution, rollCheck } from "../probability.js";
 import { isNeutral, standsAside, appeal, offend, turnOn, standAside, joinSide, calm, settleTruce, seemsFoe, leanSide, fighting, dislikesViolence } from "./neutral.js";
@@ -724,7 +724,9 @@ function runOff(run, t, by) {
  * @param {(unit, text) => void} log
  */
 export function attemptTalk(run, talker, pitch, log) {
-  const roll = rollCheck(run.prep.rules, run.rng, pitch.mod, pitch.dc, { advantage: pitch.advantage ?? 0, dice: pitch.dice ?? null, kind: "check", roller: talker });
+  // (A live battle's, the system's own roll where it makes checks: battle-state.js systemRolled.)
+  const rolled = systemRolled(run, talker, "check", { dc: pitch.dc, target: pitch.target ?? null, purpose: "talk", skill: pitch.skill ?? pitch.kind ?? null, label: pitch.kind ?? "" });
+  const roll = rollCheck(run.prep.rules, run.rng, pitch.mod, pitch.dc, { advantage: pitch.advantage ?? 0, dice: pitch.dice ?? null, kind: "check", roller: talker, rolled });
   return resolveTalk(run, talker, pitch, roll, log);
 }
 

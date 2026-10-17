@@ -584,6 +584,9 @@ export const rollsKind = (live, kind) => Array.isArray(live?.systemRolls) && liv
  *   strike {unitId, targetId, action: {id, name}, attackNumber}  -> {attack: {degree, natural, total}, damage: {byType} | null, card}
  *   apply  {unitId, targetId, card, amount}  -> {lost}: a strike's damage card (`card`) applied the system's way, and
  *          what the target lost by it (its hit points and temporary hit points)
+ *   save   {unitId (who saves), targetId (who made it), save, dc, action: {id, name}}  -> {degree, natural, total, dice}
+ *   check  {unitId, targetId, purpose, skill, against, dc, action: {id, name}}        -> {degree, natural, total, dice}
+ *          (battle-state.js systemRolled asks for both)
  */
 function systemRoll(run, request) {
   const live = run.live;

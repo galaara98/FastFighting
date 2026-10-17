@@ -1,0 +1,87 @@
+/**
+ * API 19: saves and checks in a turn FastFighting plays, rolled by the system (run.live.systemRolls "save", "check";
+ * battle-state.js systemRolled): asked where the engine would roll them, the turn played again with how they went.
+ * Null: the engine's own dice.
+ */
+import { describe, expect, test } from "vitest";
+import { beginLive, liveRound, liveTurn, NeedsDecision } from "../scripts/engine/live.js";
+import { SystemAdapter } from "../scripts/core-api.js";
+import { parseFormula } from "../scripts/engine/dice.js";
+import { pf2eRules } from "./fixtures/three-action-rules.js";
+import { creature, battle } from "./helpers.js";
+
+const at = (x, y = 0) => ({ x, y, size: 5 });
+const minded = n => ({ tactical: { base: n, fudge: 0 }, brave: { base: 60, fudge: 0 }, selfish: { base: 30, fudge: 0 }, loyal: { base: 60, fudge: 0 } });
+
+/** The NPC's turn played through its questions, each answered by `answer(request)`. */
+function playThrough(setUp, id, answer) {
+  const answers = [];
+  const requests = [];
+  for ( let tries = 0; tries < 60; tries++ ) {
+    const run = setUp();
+    try {
+      const { events } = liveTurn(run, id, { answers });
+      return { run, events, requests };
+    } catch ( err ) {
+      if ( !(err instanceof NeedsDecision) ) throw err;
+      requests.push(err.request);
+      answers.push([err.request.key, answer(err.request)]);
+    }
+  }
+  throw new Error("a turn that never stops asking");
+}
+
+const blast = { id: "blast", name: "Fire Blast", kind: "save", cost: 2, rank: 1, save: { type: "reflex", dc: 20, basic: true },
+  damage: [parseFormula("20", "fire")], range: { increment: 60, max: 60, noPenalty: true }, melee: false };
+const demoralize = { id: "demoralize", name: "Demoralize", kind: "control", cost: 1, check: { mod: 10, against: "will" }, oncePerTarget: true,
+  range: { increment: 30, max: 30, noPenalty: true }, melee: false, traits: ["mental"],
+  onHit: [null, null, { conditions: { frightened: 1 }, rounds: 1, label: "frightened 1" }, { conditions: { frightened: 2 }, rounds: 2, label: "frightened 2" }] };
+
+function setUp(actions, kinds) {
+  return () => {
+    const run = beginLive(battle([
+      creature({ id: "hero", kind: "pc", position: at(0), hp: { value: 100, max: 100 }, diesAtZero: false }),
+      creature({ id: "witch", side: "hostile", position: at(20), hp: { value: 100, max: 100 }, actions, traits: minded(60), flags: { fearless: true } })
+    ], { positioning: true, maxRounds: 5 }), pf2eRules, { seed: 2, players: ["hero"], systemRolls: kinds });
+    liveRound(run, 1);
+    return run;
+  };
+}
+
+describe("a save the system rolls", () => {
+  test("asked of the one who saves, against what and whose; its degree is the save's", () => {
+    const { events, requests } = playThrough(setUp([blast], ["save"]), "witch", () => ({ degree: 3, natural: 19, total: 30 }));
+    expect(requests.find(r => r.roll === "save")).toMatchObject({ kind: "save", unitId: "hero", targetId: "witch", save: "reflex", dc: 20, action: { id: "blast", name: "Fire Blast" } });
+    expect(events.find(e => e.type === "save" && e.targetId === "hero")).toMatchObject({ degree: 3, natural: 19, total: 30, damage: 0 });
+  });
+
+  test("a critical failure the system rolled: double the damage (a basic save)", () => {
+    const { run } = playThrough(setUp([blast], ["save"]), "witch", () => ({ degree: 0, natural: 1, total: 5 }));
+    expect(run.byId.get("hero").hp).toBe(60);
+  });
+
+  test("null: the engine's own dice; and not asked where the system doesn't roll saves", () => {
+    const own = playThrough(setUp([blast], ["save"]), "witch", () => null);
+    expect(own.events.some(e => e.type === "save" && e.targetId === "hero")).toBe(true);
+    expect(playThrough(setUp([blast], ["strike"]), "witch", () => null).requests.some(r => r.roll === "save")).toBe(false);
+  });
+});
+
+describe("a check the system rolls", () => {
+  test("a control check: the user's, at its target, for what and against which defense", () => {
+    const { run, requests } = playThrough(setUp([demoralize], ["check"]), "witch", () => ({ degree: 3, natural: 20, total: 30 }));
+    expect(requests.find(r => r.roll === "check")).toMatchObject({ kind: "check", unitId: "witch", targetId: "hero", purpose: "control", against: "will", action: { id: "demoralize" } });
+    expect(run.byId.get("hero").conds.frightened).toBe(2);
+  });
+
+  test("a failure the system rolled takes nothing", () => {
+    const { run } = playThrough(setUp([demoralize], ["check"]), "witch", () => ({ degree: 1, natural: 2, total: 12 }));
+    expect(run.byId.get("hero").conds.frightened ?? 0).toBe(0);
+  });
+});
+
+test("a helper with no roller of its own rolls no saves or checks: the engine's dice", () => {
+  const adapter = new SystemAdapter();
+  expect(adapter.rollSave({}, { save: "reflex", dc: 20, action: { id: null, name: "" } })).toBeNull();
+  expect(adapter.rollCheck({}, { purpose: "control", dc: 15, action: { id: "a", name: "A" } })).toBeNull();
+});

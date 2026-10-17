@@ -46,12 +46,15 @@ const offers = (adapter, name) => typeof adapter?.[name] === "function" && adapt
 
 /**
  * The kinds of roll the system makes itself in this battle, as its helper offers them (engine/live.js systemRoll):
- * strikes (rollStrike), and their damage cards applied its own way (applyDamageCard).
+ * strikes (rollStrike), and their damage cards applied its own way (applyDamageCard); saves (rollSave); checks
+ * (rollCheck).
  */
 function systemRollKinds(adapter) {
   const out = [];
   if ( offers(adapter, "rollStrike") ) out.push("strike");
   if ( out.includes("strike") && offers(adapter, "applyDamageCard") ) out.push("apply");
+  if ( offers(adapter, "rollSave") ) out.push("save");
+  if ( offers(adapter, "rollCheck") ) out.push("check");
   return out;
 }
 import { isStanding, canMove } from "../engine/battle-state.js";
@@ -949,6 +952,7 @@ async function turnRoll(request, events, stage) {
       else {
         await playSoFar(events, stage);
         if ( request.roll === "strike" ) out = await rollTurnStrike(request);
+        else if ( request.roll === "save" || request.roll === "check" ) out = await rollTurnCheck(request);
       }
     } catch ( err ) {
       console.error(`${MODULE_ID} | the system's roll`, err);
@@ -1454,13 +1458,94 @@ async function askDamage(by, target, amount) {
   return Number.isFinite(n) ? n : 1;
 }
 
-/** Asked by a GM's browser: roll this reaction's strike with the system's own roller, here (a player's own). */
+/**
+ * Asked by a GM's browser: roll this with the system's own roller, here (a player's own character): a reaction's strike,
+ * or (`kind`) a save or a check in a turn FastFighting plays (checkOptions' options, the other token by its uuid).
+ */
 async function answerRoll(data, { user } = {}) {
   if ( !user?.isGM || typeof data?.token !== "string" ) return null;
   const doc = await fromUuid(data.token);
   if ( !doc?.isOwner ) return null;
   const target = typeof data.target === "string" ? await fromUuid(data.target) : null;
-  return (await getAdapter()?.rollStrike?.(doc, { action: data.strike, target, attackNumber: 0 })) ?? null;
+  const adapter = getAdapter();
+  if ( data.kind === "save" || data.kind === "check" ) {
+    const how = data.kind === "save" ? "rollSave" : "rollCheck";
+    if ( !offers(adapter, how) ) return null;
+    return (await adapter[how](doc, { ...checkOptions(data.kind, data.options ?? {}, target) })) ?? null;
+  }
+  return (await adapter?.rollStrike?.(doc, { action: data.strike, target, attackNumber: 0 })) ?? null;
+}
+
+/** What the helper's rollSave or rollCheck hears of a request: the save's or the check's own, the other token. */
+function checkOptions(kind, request, other) {
+  const action = { id: request.action?.id ?? null, name: request.action?.name ?? "" };
+  return kind === "save"
+    ? { save: request.save ?? null, dc: request.dc, action, from: other ?? null }
+    : { purpose: request.purpose ?? null, skill: request.skill ?? null, against: request.against ?? null, dc: request.dc, action, target: other ?? null };
+}
+
+/**
+ * A save or a check in a turn FastFighting plays, rolled with the system's own roller (the helper's rollSave or
+ * rollCheck), its card in the chat: on its player's screen where a player's character makes it and they're here, else
+ * here. One the helper says its code can't roll ({gm: true}), a GM settles (gmSettles). {degree, natural, total,
+ * dice}, or null (the engine's dice).
+ */
+async function rollTurnCheck(request) {
+  const adapter = getAdapter();
+  const kind = request.roll;
+  const how = kind === "save" ? "rollSave" : "rollCheck";
+  const doc = docOf(request.unitId);
+  const other = request.targetId ? docOf(request.targetId) : null;
+  if ( !doc || !offers(adapter, how) ) return null;
+  const options = checkOptions(kind, request, other);
+  let raw = null;
+  if ( battle.run.live.players.has(request.unitId) ) {
+    const data = { kind, token: doc.uuid, target: other?.uuid ?? null, options: { ...options, from: null, target: null } };
+    for ( const user of game.users.filter(u => !u.isGM && u.active && doc.actor?.testUserPermission(u, "OWNER")) ) {
+      try {
+        raw = await user.query(QUERIES.liveRoll, data, { timeout: ASK_MS });
+      } catch ( err ) {
+        raw = null; // (gone, or too slow: rolled here)
+      }
+      if ( raw ) break;
+    }
+  }
+  raw ??= await adapter[how](doc, { ...options, secret: secretRoll(doc) });
+  if ( raw?.gm ) return gmSettles(request);
+  return checkRolled(raw);
+}
+
+/** A save or a check as the helper says it went, made sure of: {degree, natural, total, dice}, or null (no degree). */
+function checkRolled(roll) {
+  const degree = counted(roll?.degree);
+  if ( degree === null ) return null;
+  const out = { degree: Math.min(3, Math.round(degree)), natural: counted(roll.natural), total: counted(roll.total, -Infinity) };
+  const dice = roll.dice && typeof roll.dice === "object" ? Object.fromEntries(Object.entries(roll.dice).filter(([, v]) => Number.isFinite(v))) : null;
+  if ( dice && Object.keys(dice).length ) out.dice = dice;
+  return out;
+}
+
+/**
+ * A save or a check the system's helper can't roll (it said so: {gm: true}), settled by a GM: how it went, a critical
+ * success to a critical failure, or the engine rolls it. {degree} or null.
+ */
+async function gmSettles(request) {
+  const who = battle.run.byId.get(request.unitId)?.spec.name ?? "";
+  const what = request.action?.name || request.skill || request.purpose || "";
+  const line = request.roll === "save"
+    ? fmt("FASTFIGHTING.Battle.GmRoll.Save", { who, save: request.save ?? "", what, dc: request.dc })
+    : fmt("FASTFIGHTING.Battle.GmRoll.Check", { who, what, dc: request.dc });
+  const choice = await foundry.applications.api.DialogV2.wait({
+    window: { title: loc("FASTFIGHTING.Battle.GmRoll.Title") },
+    content: `<p>${escape(line)}</p>`,
+    buttons: [
+      ...[3, 2, 1, 0].map(n => ({ action: String(n), label: loc(`FASTFIGHTING.Battle.Degree.${n}`) })),
+      { action: "engine", label: loc("FASTFIGHTING.Battle.GmRoll.Engine"), default: true }
+    ],
+    rejectClose: false
+  });
+  const n = Number(choice);
+  return choice !== "engine" && Number.isInteger(n) && n >= 0 && n <= 3 ? { degree: n } : null;
 }
 
 /**

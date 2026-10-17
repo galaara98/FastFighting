@@ -49,7 +49,7 @@
  * Pure: no Foundry globals.
  */
 import { STATUS, IGNORE_TROUBLES } from "../../constants.js";
-import { typical, isMagical, liveTrait, canMove } from "../battle-state.js";
+import { typical, isMagical, liveTrait, canMove, systemRolled } from "../battle-state.js";
 import { createRng, deriveSeed } from "../rng.js";
 import { meanPart } from "../dice.js";
 import { rollCheck } from "../probability.js";
@@ -163,7 +163,8 @@ export function tryHold(run, who, hold, { freeing = false, held = null } = {}) {
   // (Cut out, pressed shut: first aid, not an escape. Botched, a parasite's the worse for it.)
   if ( hold.via === "medicine" ) {
     const mod = who.spec.firstAid?.mod ?? typical(rules, "skill", who.spec.level ?? 0);
-    const roll = rollCheck(rules, run.rng, mod, hold.dc, { kind: "check", roller: who, faces: who.spec.firstAid?.faces });
+    const rolled = systemRolled(run, who, "check", { dc: hold.dc, target: held, purpose: "firstAid", skill: who.spec.firstAid?.skill ?? null, label: hold.key });
+    const roll = rollCheck(rules, run.rng, mod, hold.dc, { kind: "check", roller: who, faces: who.spec.firstAid?.faces, rolled });
     const success = roll.degree >= 2;
     const on = held ?? who;
     if ( !success && hold.worsens ) setConditionValue(on, hold.key, (Number(on.conds?.[hold.key]) || 1) + 1);
@@ -171,7 +172,8 @@ export function tryHold(run, who, hold, { freeing = false, held = null } = {}) {
   }
   const work = who.spec.escapeWork;
   if ( Number.isFinite(work?.mod) && Number.isFinite(hold.dc) ) {
-    const roll = rollCheck(rules, run.rng, work.mod, hold.dc, { kind: "check", roller: who, faces: work.faces });
+    const rolled = systemRolled(run, who, "check", { dc: hold.dc, target: held, purpose: "escape", skill: work.skill ?? null, label: hold.key });
+    const roll = rollCheck(rules, run.rng, work.mod, hold.dc, { kind: "check", roller: who, faces: work.faces, rolled });
     return { success: roll.degree >= 2, natural: roll.natural, mod: work.mod, total: roll.total, dc: hold.dc, degree: roll.degree };
   }
   return { success: run.rng.chance(ESCAPE_CHANCE[hold.key] ?? ESCAPE_CHANCE.other) };

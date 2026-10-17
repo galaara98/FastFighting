@@ -15,6 +15,7 @@
  * Pure: no Foundry globals.
  */
 import { rollCheck } from "../probability.js";
+import { systemRolled } from "../battle-state.js";
 import { boost } from "./luck.js";
 
 /** The action as it is at each tier, lowest first (worked out once a batch). */
@@ -56,7 +57,9 @@ export function cast(run, u, action, { stakes = 0.5, log = null } = {}) {
   const faces = c.faces ?? rules.actionDie?.(u, u.actsThisTurn ?? 0) ?? 20;
   const tiers = tierActionsOf(run.prep, action);
   const lowest = tiers[0]?.min ?? Infinity;
-  let roll = rollCheck(rules, run.rng, Number(c.mod) || 0, lowest, { kind: "check", faces, roller: c.faces ? null : u });
+  // (A live battle's, the system's own spell check where it makes checks: its total finds the tier, as the engine's.)
+  const rolled = Number.isFinite(lowest) ? systemRolled(run, u, "check", { dc: lowest, purpose: "cast", action }) : null;
+  let roll = rollCheck(rules, run.rng, Number(c.mod) || 0, lowest, { kind: "check", faces, roller: c.faces ? null : u, rolled });
   // (What the roll means beyond the spell, by the system: DCC's Fleeting Luck.)
   rules.afterRoll?.(run, u, roll, { kind: "cast", action, faces });
   const range = c.disapproval ? (u.disapproval ?? c.disapproval) : 0;

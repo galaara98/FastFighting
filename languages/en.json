@@ -2261,6 +2261,12 @@
       "DamageHalf": "Half",
       "DamageDouble": "Double",
       "DamageDismiss": "Dismiss",
+      "GmRoll": {
+        "Title": "A roll for the GM",
+        "Save": "{who}'s {save} save against {what}, DC {dc}: how did it go?",
+        "Check": "{who}'s check for {what}, DC {dc}: how did it go?",
+        "Engine": "Let FastFighting roll it"
+      },
       "PlayThrough": "Play to the end",
       "PlayThroughHint": "FastFighting's turns run back to back, without waiting for Next Turn.",
       "NpcAsk": "Ask me about NPC reactions",

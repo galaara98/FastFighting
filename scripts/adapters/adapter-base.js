@@ -443,6 +443,31 @@ export class SystemAdapter {
   }
 
   /**
+   * API 19. A save rolled with the system's own roller, as its player would roll it, its card in the chat: every save in
+   * a turn FastFighting plays in a live battle (on its player's screen, where a player's character makes it and they're
+   * here). `save`: the save's key as the helper's rules name it; `dc`; `action`: what it's against ({id, name}: an
+   * action's id as the helper gave it, else null and a name: a condition, a sickness); `from`: the TokenDocument of
+   * whoever made it save, or null; `secret`: for the GMs' eyes only. Returns {degree: 0-3, natural, total, dice}; or
+   * {gm: true} where the system's roll needs a GM's judgment the helper's code can't make (a GM says how it went); or
+   * null (the engine rolls it). Optional.
+   */
+  rollSave(token, { save, dc, action, from = null, secret = false }) {
+    return null;
+  }
+
+  /**
+   * API 19. A check rolled with the system's own roller, its card in the chat: every check in a turn FastFighting plays
+   * in a live battle (a maneuver, a taunt or a threat, words, first aid, an escape, a theft, a spell check). `purpose`:
+   * what it's for ("control", "talk", "aid", "heal", "firstAid", "escape", "theft", "disengage", "cast"); `skill`: the
+   * skill the spec names, where it names one; `against`: the defense it's rolled against (a control check's); `dc`;
+   * `action` ({id, name}); `target`: the TokenDocument it's aimed at, or null; `secret`. Returns as rollSave does.
+   * Optional.
+   */
+  rollCheck(token, { purpose, skill = null, against = null, dc, action, target = null, secret = false }) {
+    return null;
+  }
+
+  /**
    * API 19. An area laid on the map in a live battle, as the system lays its own: `data` is the shape FastFighting made
    * (Foundry's region shape data: {type: "cone"|"line"|"circle", x, y, radius|length, angle, width, rotation}, in
    * pixels), `area` the action's ({shape, feet}). Return it as the system draws that area (PF2e: a cone is a quarter

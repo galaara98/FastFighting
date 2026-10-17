@@ -13,7 +13,7 @@ import {
   prepareBattle, createRun, isStanding, isUp, enemiesOf, alliesOf, areEnemies, liveTier, liveTrait, currentAc,
   attackRoll, attackOptions, saveRoll, checkRoll, turnFor, moveToward, moveAway, bonusDamageParts, dispositionOf,
   behaviorOf, edgeDistance, coverOf, inArea, movesNeeded, approach, canMove, moveTowardPoint, isMagical, upgradesSave, boostBonus, typical, sortOf, sizedUp, passedOver,
-  command, commandOf, heldOff, holdsBack, wish, groupKeyOf, chainOf, canCommand, regenOf, canHeal
+  command, commandOf, heldOff, holdsBack, wish, groupKeyOf, chainOf, canCommand, regenOf, canHeal, systemRolled
 } from "./battle-state.js";
 import { sampleRunTactics } from "./playstyles.js";
 import { chooseTarget, bestOptionVs, scoreTargets } from "./behavior/targeting.js";
@@ -122,12 +122,15 @@ function attackStakes(run, u, t, action) {
 function rollSave(run, target, type, dc, { stakes = 0.3, label = "", magical = false, from = null, action = null } = {}) {
   const rules = run.prep.rules;
   const s = saveRoll(run, target, type, { magical, from, action });
-  let roll = rollCheck(rules, run.rng, s.mod, dc, { advantage: s.advantage, dice: s.dice, kind: "save", roller: target });
+  // (A live battle's, the system's own roll where it makes saves: systemRolled. Its card says how it went; no Luck or
+  // momentum after it.)
+  const rolled = systemRolled(run, target, "save", { dc, from, save: type, action, label });
+  let roll = rollCheck(rules, run.rng, s.mod, dc, { advantage: s.advantage, dice: s.dice, kind: "save", roller: target, rolled });
   spendEdges(target, "save");
-  if ( run.boosting && roll.degree < 2 ) roll = boost(run, target, roll, dc, { kind: "save", stakes }, logger(run));
+  if ( run.boosting && roll.degree < 2 && !rolled ) roll = boost(run, target, roll, dc, { kind: "save", stakes }, logger(run));
   roll = standFirm(run, target, roll, dc, stakes, label);
   if ( roll.degree === 2 && upgradesSave(target, type) ) roll = { ...roll, degree: 3 };
-  if ( rules.adjustRoll ) {
+  if ( rules.adjustRoll && !rolled ) {
     roll = rules.adjustRoll(run, target, roll, { kind: "save", stakes, label, action, from }) ?? roll;
     if ( roll.said ) log(run, target, { text: roll.said.text, type: "adjust", ...roll.said.data });
   }
@@ -714,7 +717,8 @@ function testConcentration(run, u, amount = 0) {
   if ( !broken && amount > 0 ) {
     dc = c.dc ? c.dc(amount) : Math.max(10, Math.floor(amount / 2));
     const s = saveRoll(run, u, c.save ?? "con");
-    roll = { ...rollCheck(run.prep.rules, run.rng, s.mod, dc, { advantage: s.advantage, dice: s.dice, kind: "save", roller: u }), mod: s.mod };
+    const rolled = systemRolled(run, u, "save", { dc, save: c.save ?? "con", label: u.concentration.name });
+    roll = { ...rollCheck(run.prep.rules, run.rng, s.mod, dc, { advantage: s.advantage, dice: s.dice, kind: "save", roller: u, rolled }), mod: s.mod };
     broken = roll.degree < 2;
   }
   if ( !broken ) return;
@@ -757,7 +761,8 @@ export function exposeToAffliction(run, source, target, spec, { degree = null } 
     if ( increase > 0 ) log(run, target, { type: "afflicted", name: spec.name, by: source?.spec.name ?? null, byId: source?.id ?? null });
   } else if ( spec.save ) {
     const { mod, advantage, dice } = saveRoll(run, target, spec.save.type, { action: spec });
-    const roll = rollCheck(rules, run.rng, mod, spec.save.dc, { advantage, dice, kind: "save", roller: target });
+    const rolled = systemRolled(run, target, "save", { dc: spec.save.dc, from: source, save: spec.save.type, action: spec });
+    const roll = rollCheck(rules, run.rng, mod, spec.save.dc, { advantage, dice, kind: "save", roller: target, rolled });
     increase = stepOf(rules, roll.degree, "exposure");
     log(run, target, {
       type: "afflictionSave", name: spec.name, saveType: spec.save.type, natural: roll.natural, mod, total: roll.total, dc: spec.save.dc, degree: roll.degree
@@ -1790,7 +1795,11 @@ function executeControl(run, u, action, target, attacksMade, common) {
   const roll = r.kind === "auto" ? { natural: null, total: null, degree: 2, mod: null }
     : (() => {
       const opts = { advantage: r.advantage, dice: r.dice, kind: r.rollKind, faces: r.faces ?? 20, critOn: r.critOn ?? null, fumbleOn: r.fumbleOn ?? null, roller: r.roller ?? null };
-      let x = rollCheck(rules, run.rng, r.mod, r.dc, opts);
+      // (A live battle's, the system's own roll where it makes them: the target's save, the user's check or its taunt.)
+      const rolled = r.kind === "save" ? systemRolled(run, target, "save", { dc: r.dc, from: u, save: action.save.type, action })
+        : r.kind === "check" ? systemRolled(run, u, "check", { dc: r.dc, target, purpose: "control", skill: action.check.skill ?? null, against: action.check.against ?? "will", action })
+          : r.kind === "goad" && r.pitch ? systemRolled(run, u, "check", { dc: r.dc, target, purpose: "talk", skill: r.pitch.skill ?? null, action }) : null;
+      let x = rollCheck(rules, run.rng, r.mod, r.dc, { ...opts, rolled });
       if ( r.kind === "save" ) spendEdges(target, "save");
       else {
         spendEdges(u, r.rollKind, target.id);
@@ -1798,7 +1807,7 @@ function executeControl(run, u, action, target, attacksMade, common) {
         if ( r.rollKind === "attack" ) spendEdges(target, "defend", u.id);
       }
       // Luck: the target on a save against it, the user on its own roll.
-      if ( run.boosting && x.degree < 2 ) x = boost(run, r.kind === "save" ? target : u, x, r.dc, { kind: r.rollKind, stakes: r.kind === "save" ? 0.7 : 0.3, options: opts }, logger(run));
+      if ( run.boosting && x.degree < 2 && !rolled ) x = boost(run, r.kind === "save" ? target : u, x, r.dc, { kind: r.rollKind, stakes: r.kind === "save" ? 0.7 : 0.3, options: opts }, logger(run));
       if ( r.kind === "save" ) x = standFirm(run, target, x, r.dc, 0.7, action.name);
       if ( r.kind === "save" && x.degree === 2 && upgradesSave(target, action.save.type) ) x = { ...x, degree: 3 };
       // (Its own roll, told to the system as any is: DCC's luck on a 20, hiding given up by an attack.)
@@ -1885,7 +1894,8 @@ function executeBuff(run, u, action, targets, worth = 0, turn = null) {
     const rules = run.prep.rules;
     const dc = checkDc(run, u, action.check);
     const c = checkRoll(run, u, Number(action.check.mod), null, { purpose: "aid", action });
-    const roll = rollCheck(rules, run.rng, c.mod, dc, { advantage: c.advantage, dice: c.dice, kind: "check", roller: u, faces: action.check.faces });
+    const rolled = systemRolled(run, u, "check", { dc, target: Array.isArray(targets) ? targets[0] ?? null : null, purpose: "aid", skill: action.check.skill ?? null, action });
+    const roll = rollCheck(rules, run.rng, c.mod, dc, { advantage: c.advantage, dice: c.dice, kind: "check", roller: u, faces: action.check.faces, rolled });
     spendEdges(u, "check");
     check = { skill: action.check.label ?? "", natural: roll.natural, mod: c.mod, total: roll.total, dc, degree: roll.degree, challenge: roll.challenge ?? null };
     outcome = Array.isArray(action.onDegree) ? action.onDegree[roll.degree] ?? null : roll.degree >= 2 ? action.outcome : null;
@@ -1936,7 +1946,8 @@ function executeHeal(run, u, action, target) {
   let roll = null;
   if ( action.healCheck ) {
     const check = checkRoll(run, u, action.healCheck.mod, target, { purpose: "heal", skill: action.healCheck.skill ?? null, action });
-    roll = rollCheck(rules, run.rng, check.mod, action.healCheck.dc, { advantage: check.advantage, dice: check.dice, kind: "check", roller: u });
+    const rolled = systemRolled(run, u, "check", { dc: action.healCheck.dc, target, purpose: "heal", skill: action.healCheck.skill ?? null, action });
+    roll = rollCheck(rules, run.rng, check.mod, action.healCheck.dc, { advantage: check.advantage, dice: check.dice, kind: "check", roller: u, rolled });
     spendEdges(u, "check", target.id);
     multiplier = rules.healCheckMultiplier ? rules.healCheckMultiplier(roll.degree) : [0, 0, 1, 2][roll.degree];
     rules.afterRoll?.(run, u, roll, { kind: "heal", action, target, faces: roll.faces ?? 20 });
@@ -1946,7 +1957,8 @@ function executeHeal(run, u, action, target) {
       u.resources.fate -= 1;
       run.fateInPlay = run.units.some(o => fateOf(o) > 0);
       log(run, u, { type: "fate", target: target.spec.name, targetId: target.id, label: u.spec.fateLabel ?? localize("FASTFIGHTING.Words.Fate"), spent: 1 });
-      roll = rollCheck(rules, run.rng, check.mod, action.healCheck.dc, { advantage: check.advantage, dice: check.dice, kind: "check", roller: u });
+      const again = systemRolled(run, u, "check", { dc: action.healCheck.dc, target, purpose: "heal", skill: action.healCheck.skill ?? null, action });
+      roll = rollCheck(rules, run.rng, check.mod, action.healCheck.dc, { advantage: check.advantage, dice: check.dice, kind: "check", roller: u, rolled: again });
       multiplier = rules.healCheckMultiplier ? rules.healCheckMultiplier(roll.degree) : [0, 0, 1, 2][roll.degree];
     }
   }
@@ -2027,7 +2039,8 @@ function leaveReach(run, u, turn, keep = null, need = null) {
       turn.spend(safe.cost);
       // (A way out that takes a check, when the system has one: XCC's acrobatics, harder against several foes.)
       const dc = list.length > 1 ? safe.check?.dcMany ?? safe.check?.dc : safe.check?.dc;
-      const check = safe.check ? rollCheck(run.prep.rules, run.rng, Number(safe.check.mod) || 0, dc, { kind: "check", roller: u }) : null;
+      const rolled = safe.check ? systemRolled(run, u, "check", { dc, purpose: "disengage", skill: safe.check.skill ?? null, label: safe.label ?? "" }) : null;
+      const check = safe.check ? rollCheck(run.prep.rules, run.rng, Number(safe.check.mod) || 0, dc, { kind: "check", roller: u, rolled }) : null;
       clear = !check || check.degree >= 2;
       u.disengaged = clear;
       log(run, u, { type: "disengage", label: safe.label ?? "", natural: check?.natural ?? null, total: check?.total ?? null, dc: check ? dc : null, made: clear });
@@ -3415,7 +3428,8 @@ function conditionUpkeep(run, u) {
       const near = u.adjacent?.has(o.id) || (u.pos && o.pos && (edgeDistance(u, o) ?? Infinity) <= 5.5);
       if ( !near ) continue;
       const s = saveRoll(run, o, toughSave(run, o));
-      const roll = rollCheck(rules, run.rng, s.mod, dc, { advantage: s.advantage, dice: s.dice, kind: "save", roller: o });
+      const rolled = systemRolled(run, o, "save", { dc, from: u, save: toughSave(run, o), label: key });
+      const roll = rollCheck(rules, run.rng, s.mod, dc, { advantage: s.advantage, dice: s.dice, kind: "save", roller: o, rolled });
       if ( roll.degree >= 2 ) continue;
       applyOutcome(o, { conditions: { [key]: 1 }, rounds: 999, label: "" }, u.id, { id: `spread:${key}` });
       log(run, o, { type: "spread", condition: key, by: u.spec.name, byId: u.id, natural: roll.natural, mod: s.mod, total: roll.total, dc, degree: roll.degree });
@@ -3468,7 +3482,8 @@ export function endOfTurn(run, u) {
     for ( const e of [...u.effects] ) {
       if ( !e.repeatSave ) continue;
       const s = saveRoll(run, u, e.repeatSave.type);
-      const roll = rollCheck(rules, run.rng, s.mod, e.repeatSave.dc, { advantage: s.advantage, dice: s.dice, kind: "save", roller: u });
+      const rolled = systemRolled(run, u, "save", { dc: e.repeatSave.dc, save: e.repeatSave.type, label: e.label ?? "" });
+      const roll = rollCheck(rules, run.rng, s.mod, e.repeatSave.dc, { advantage: s.advantage, dice: s.dice, kind: "save", roller: u, rolled });
       if ( roll.degree < 2 ) continue;
       u.effects.splice(u.effects.indexOf(e), 1);
       recomputeConditions(u);
@@ -3511,7 +3526,8 @@ export function endOfTurn(run, u) {
       const { mod, advantage, dice } = saveRoll(run, u, a.spec.save.type);
       if ( a.spec.tally ) {
         // (5e's way: saves counted, until enough of one or the other.)
-        const roll = rollCheck(rules, run.rng, mod, a.spec.save.dc, { advantage, dice, kind: "save", roller: u });
+        const rolled = systemRolled(run, u, "save", { dc: a.spec.save.dc, save: a.spec.save.type, action: a.spec });
+        const roll = rollCheck(rules, run.rng, mod, a.spec.save.dc, { advantage, dice, kind: "save", roller: u, rolled });
         const saved = roll.degree >= 2;
         a.cured = (a.cured ?? 0) + (saved ? 1 : 0);
         a.kept = (a.kept ?? 0) + (saved ? 0 : 1);
@@ -3529,7 +3545,8 @@ export function endOfTurn(run, u) {
       a.inStage = (a.inStage ?? 0) + 1;
       if ( a.inStage < stageRounds(a.spec, a.stage) ) continue;
       a.inStage = 0;
-      const roll = rollCheck(rules, run.rng, mod, a.spec.save.dc, { advantage, dice, kind: "save", roller: u });
+      const rolled = systemRolled(run, u, "save", { dc: a.spec.save.dc, save: a.spec.save.type, action: a.spec });
+      const roll = rollCheck(rules, run.rng, mod, a.spec.save.dc, { advantage, dice, kind: "save", roller: u, rolled });
       a.stage = Math.min(a.spec.stages.length, a.stage + stageMove(rules, a, roll.degree));
       if ( a.stage <= 0 ) {
         u.afflictions.splice(u.afflictions.indexOf(a), 1);
@@ -3556,7 +3573,8 @@ function firstAid(run, u, target, { aftermath = true } = {}) {
   const rules = run.prep.rules;
   const dc = rules.firstAidDC(target);
   const check = checkRoll(run, u, u.spec.firstAid.mod, target, { purpose: "firstAid", skill: u.spec.firstAid.skill ?? null });
-  const roll = rollCheck(rules, run.rng, check.mod, dc, { advantage: check.advantage, dice: check.dice, kind: "check", roller: u, faces: u.spec.firstAid.faces });
+  const rolled = systemRolled(run, u, "check", { dc, target, purpose: "firstAid", skill: u.spec.firstAid.skill ?? null });
+  const roll = rollCheck(rules, run.rng, check.mod, dc, { advantage: check.advantage, dice: check.dice, kind: "check", roller: u, faces: u.spec.firstAid.faces, rolled });
   spendEdges(u, "check", target.id);
   const before = target.dying;
   rules.firstAid(target, roll.degree);
