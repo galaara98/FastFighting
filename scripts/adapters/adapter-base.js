@@ -458,7 +458,8 @@ export class SystemAdapter {
   /**
    * API 19. A check rolled with the system's own roller, its card in the chat: every check in a turn FastFighting plays
    * in a live battle (a maneuver, a taunt or a threat, words, first aid, an escape, a theft, a spell check). `purpose`:
-   * what it's for ("control", "talk", "aid", "heal", "firstAid", "escape", "theft", "disengage", "cast"); `skill`: the
+   * what it's for ("control", "talk", "aid", "heal", "firstAid", "escape", "theft", "disengage", "cast"; or one the
+   * helper's own rules ask for through systemRolled, PF2e's "flat" and "tumble"); `skill`: the
    * skill the spec names, where it names one; `against`: the defense it's rolled against (a control check's);
    * `attackNumber`: for a check with the attack trait, the attacks made this turn before it (a multiple attack penalty;
    * else null); `dc`; `action` ({id, name}); `target`: the TokenDocument it's aimed at, or null; `secret`. Returns as

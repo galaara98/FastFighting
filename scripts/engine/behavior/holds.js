@@ -275,7 +275,7 @@ export function remediesOf(run, u) {
         key: `persistent:${type}`, type, label: type, annoyance: Math.min(85, REMEDY.pain + REMEDY.painShare * share),
         cost: normalizeCost(rules, rules.persistentRemedyCost?.(u, type) ?? rules.basicAction ?? 1),
         try: (r, v) => {
-          const ok = rules.persistentRemedy ? rules.persistentRemedy(r, v, type) : { success: rules.persistentFlatCheck(r.rng) };
+          const ok = rules.persistentRemedy ? rules.persistentRemedy(r, v, type) : { success: rules.persistentFlatCheck(r.rng, { run: r, unit: v, type }) };
           if ( ok?.success ) v.persistent = v.persistent.filter(e => e.part.type !== type);
           return ok ?? { success: false };
         }

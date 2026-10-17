@@ -60,6 +60,21 @@ describe("a save the system rolls", () => {
     expect(run.byId.get("hero").hp).toBe(60);
   });
 
+  test("the rules' say after the dice still comes (a flat check), told the system rolled them", () => {
+    const seen = [];
+    const rules = { ...pf2eRules, adjustRoll: (run, u, roll, ctx) => (seen.push([ctx.kind, ctx.rolled]), roll) };
+    const make = () => {
+      const run = beginLive(battle([
+        creature({ id: "hero", kind: "pc", position: at(0), hp: { value: 100, max: 100 }, diesAtZero: false }),
+        creature({ id: "witch", side: "hostile", position: at(20), hp: { value: 100, max: 100 }, actions: [blast], traits: minded(60), flags: { fearless: true } })
+      ], { positioning: true, maxRounds: 5 }), rules, { seed: 2, players: ["hero"], systemRolls: ["save"] });
+      liveRound(run, 1);
+      return run;
+    };
+    playThrough(make, "witch", () => ({ degree: 2, natural: 12, total: 21 }));
+    expect(seen.at(-1)).toEqual(["save", true]);
+  });
+
   test("null: the engine's own dice; and not asked where the system doesn't roll saves", () => {
     const own = playThrough(setUp([blast], ["save"]), "witch", () => null);
     expect(own.events.some(e => e.type === "save" && e.targetId === "hero")).toBe(true);

@@ -130,8 +130,10 @@ function rollSave(run, target, type, dc, { stakes = 0.3, label = "", magical = f
   if ( run.boosting && roll.degree < 2 && !rolled ) roll = boost(run, target, roll, dc, { kind: "save", stakes }, logger(run));
   roll = standFirm(run, target, roll, dc, stakes, label);
   if ( roll.degree === 2 && upgradesSave(target, type) ) roll = { ...roll, degree: 3 };
-  if ( rules.adjustRoll && !rolled ) {
-    roll = rules.adjustRoll(run, target, roll, { kind: "save", stakes, label, action, from }) ?? roll;
+  // (The system's say after the dice, told whether they were the system's own (`rolled`): a flat check still stands,
+  // luck or momentum is no one's to spend on a card already shown.)
+  if ( rules.adjustRoll ) {
+    roll = rules.adjustRoll(run, target, roll, { kind: "save", stakes, label, action, from, rolled: !!rolled }) ?? roll;
     if ( roll.said ) log(run, target, { text: roll.said.text, type: "adjust", ...roll.said.data });
   }
   rules.afterRoll?.(run, target, roll, { kind: "save", type, faces: 20, action, from });
@@ -1221,9 +1223,10 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
     spendEdges(target, "defend", u.id);
     spendBoost(u, target);
     if ( run.boosting && roll.degree < 2 && !forced ) roll = boost(run, u, roll, ac, { kind: "attack", stakes: attackStakes(run, u, target, action), options: opts }, logger(run));
-    // The system's own say once the dice are seen (Ironsworn: burning momentum), and what the roll means (initiative).
-    if ( rules.adjustRoll && !forced ) {
-      roll = rules.adjustRoll(run, u, roll, { kind: "attack", stakes: attackStakes(run, u, target, action), label: action.name, action, target }) ?? roll;
+    // The system's own say once the dice are seen (Ironsworn: burning momentum; PF2e: a flat check), told whether they
+    // were the system's own (`rolled`), and what the roll means (initiative).
+    if ( rules.adjustRoll ) {
+      roll = rules.adjustRoll(run, u, roll, { kind: "attack", stakes: attackStakes(run, u, target, action), label: action.name, action, target, rolled: !!forced?.attack }) ?? roll;
       if ( roll.said ) log(run, u, { text: roll.said.text, type: "adjust", ...roll.said.data });
     }
     rules.afterRoll?.(run, u, roll, { kind: "attack", action, target, faces: opts.faces ?? 20 });
@@ -3504,7 +3507,7 @@ export function endOfTurn(run, u) {
       const amount = rules.applyIwr(iwrOf(u), { [entry.part.type]: Math.max(0, samplePart(entry.part, run.rng)) });
       if ( run.log ) log(run, u, { type: "persistent", damageType: entry.part.type, amount });
       dealDamage(run, run.byId.get(entry.sourceId), u, amount, { types: [entry.part.type], lingering: true });
-      if ( !rules.persistentFlatCheck(run.rng) ) remaining.push(entry);
+      if ( !rules.persistentFlatCheck(run.rng, { run, unit: u, type: entry.part.type }) ) remaining.push(entry);
     }
     u.persistent = remaining;
   }
