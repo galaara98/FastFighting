@@ -1245,14 +1245,16 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
     let struck = 0;
     if ( roll.degree >= 2 ) {
       const crit = roll.degree === 3;
-      const extra = bonusDamageParts(run, u, action, target, { advantage, commit: true });
-      const riders = u.spec.riders ? chooseHitRiders(run, u, action, target, { crit }) : [];
-      const table = crit ? rollCrit(run, u, action, target) : null;
+      // (A blow the system rolled is the whole blow, its own bonuses in it: nothing more added, nor anything spent on it.)
+      const whole = !!forced?.damage;
+      const extra = whole ? [] : bonusDamageParts(run, u, action, target, { advantage, commit: true });
+      const riders = u.spec.riders && !whole ? chooseHitRiders(run, u, action, target, { crit }) : [];
+      const table = crit && !whole ? rollCrit(run, u, action, target) : null;
       const base = crit ? (action.critDamage ?? criticalParts(rules, action.damage)) : (action.damage ?? []);
       const more = crit ? criticalParts(rules, extra) : [...extra];
       for ( const x of riders ) if ( x.damage?.length ) more.push(...(crit && x.critDouble ? criticalParts(rules, x.damage) : x.damage));
       if ( table?.row?.damage?.length ) more.push(...table.row.damage);
-      if ( deedRoll ) more.push(part([], deedRoll, primaryType(action)));
+      if ( deedRoll && !whole ) more.push(part([], deedRoll, primaryType(action)));
       const hit = rollHit(run, u, action, target, more.length ? base.concat(more) : base, 1, crit, rules.minimumDamage ?? 0, forced?.damage ?? null);
       // A finishing move (an Ironsworn End the Fight): whatever it has left.
       let amount = action.finish ? target.hp + target.temp + (target.stamina ?? 0) : hit.total;
