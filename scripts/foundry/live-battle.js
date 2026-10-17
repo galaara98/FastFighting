@@ -129,7 +129,7 @@ async function keepNow(b) {
   b.data.snapshot = snapshotRun(b.run, { log: false });
   // (A player's turn under way: who, since when, what the GM said and what reactions wrote. Its cards are found again by time.)
   const pc = b.pc;
-  b.data.pc = pc ? { combatantId: pc.combatantId, id: pc.id, round: pc.round, facts: pc.facts, records: pc.records, snapshot: pc.snapshot, from: pc.from, damage: pc.damage ?? [] } : null;
+  b.data.pc = pc ? { combatantId: pc.combatantId, id: pc.id, round: pc.round, facts: pc.facts, records: pc.records, snapshot: pc.snapshot, from: pc.from, damage: pc.damage ?? [], dealt: pc.dealt ?? [] } : null;
   const doc = await store();
   // (The battle's own key replaced whole, the store's other keys left as they are. Its spec, the biggest part, only
   // when it's changed: kept beside it. Its turns and its log, each apart: only what's new.)
@@ -991,6 +991,9 @@ async function playerDamage(pc, message) {
     console.error(`${MODULE_ID} | reading a damage card`, err);
   }
   if ( !card || !(card.amount > 0) ) return;
+  // (Each card's damage once: a card the system updates again, its damage rerolled, isn't applied twice.)
+  if ( pc.dealt?.includes(message.id) ) return;
+  pc.dealt = [...(pc.dealt ?? []), message.id];
   const targets = card.targets ?? [];
   const ours = targets.map(t => run.units.find(u => tokenIdOf(u) === t)).filter(u => u && !playerRuns(run, u));
   // (At another player's character alone: theirs to apply.)
@@ -1783,6 +1786,12 @@ export function registerLiveBattles() {
     queue(() => playerMoved(doc));
   });
   Hooks.on("createChatMessage", onMessage);
+  // (A card the system fills in after it's made: Daggerheart adds an attack's damage to its card.)
+  Hooks.on("updateChatMessage", message => {
+    const pc = battle?.pc;
+    if ( !pc || !playsHere() || !pc.messages.includes(message.id) || !getAdapter().damageCard ) return;
+    queue(() => playerDamage(pc, message));
+  });
   Hooks.on("createCombatant", (combatant, options, userId) => {
     if ( battle?.combat !== combatant.parent || battle.data.ended || !playsHere() ) return;
     // (One a player added: only for a creature of their own, as a summoning of theirs would be.)
