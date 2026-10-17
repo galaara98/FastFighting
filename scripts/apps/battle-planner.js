@@ -968,6 +968,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       const back = key ? ts.formerRoles?.[key] : null;
       if ( !back ) continue;
       delete ts.formerRoles[key];
+      if ( !Object.keys(ts.formerRoles).length ) delete ts.formerRoles;
       const resolved = resolveAllegiances(this.roster, this.setup);
       const head = back.role === "boss" || back.role === "leader" ? ["boss", "leader"] : [back.role];
       for ( const e of this.roster ?? [] ) {
@@ -978,7 +979,9 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       Object.assign(ts, Object.fromEntries(Object.entries(back).filter(([, v]) => v !== undefined)));
     }
     await saveSetup(this.setup, this.holder);
-    if ( moved ) this.stale = true;
+    // (Picked back where it was: nothing to draw again.)
+    if ( !moved ) return;
+    this.stale = true;
     if ( this.rendered ) this.render();
   }
 
