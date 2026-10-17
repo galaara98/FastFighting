@@ -1202,16 +1202,16 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
     }
     // (A Lore-Collector that sized this foe up: the roll about 2.5 times as likely to land.)
     const lift = boostBonus(rules, u, target, bonus + deedRoll, ac, opts);
-    let roll = rollCheck(rules, run.rng, bonus + deedRoll + lift, ac, opts);
-    // (A live battle's roll the system made itself, its cards in the chat: that roll, as it came out. A reaction's,
-    // rolled as it was decided (takeForced); any other, as it's made: engine/live.js systemRoll.)
+    // (A live battle's roll the system made itself, its cards in the chat: that roll, as it came out, in place of the
+    // engine's dice (rollCheck: rolled). A reaction's, rolled as it was decided (takeForced); any other, as it's made:
+    // engine/live.js systemRoll.)
     const forced = takeForced(run, u, target)
       ?? run.live?.roll?.(run, {
         kind: "strike", unitId: u.id, targetId: target.id, attackNumber: attacksMade, advantage: advantage ?? 0,
         action: { id: action.id, name: action.name, ranged: !!ranged, thrown: !!action.thrown && !!ranged }
       })
       ?? null;
-    if ( forced?.attack ) roll = { ...roll, natural: forced.attack.natural ?? roll.natural, total: forced.attack.total ?? roll.total, degree: forced.attack.degree };
+    let roll = rollCheck(rules, run.rng, bonus + deedRoll + lift, ac, { ...opts, rolled: forced?.attack ?? null });
     spendEdges(u, "attack", target.id);
     spendEdges(target, "defend", u.id);
     spendBoost(u, target);

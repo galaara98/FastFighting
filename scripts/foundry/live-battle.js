@@ -1369,12 +1369,16 @@ const counted = (v, least = 0) => (Number.isFinite(Number(v)) ? Math.max(least, 
 
 /**
  * A strike as the helper's rollStrike says it went, made sure of (it may come from another player's screen):
- * {attack: {degree, natural, total}, damage: {byType} | null}, damage only on a hit; null if it says no degree.
+ * {attack: {degree, natural, total, dice}, damage: {byType} | null}, damage only on a hit; null if it says no degree.
  */
 function strikeRolled(roll) {
   const degree = counted(roll?.attack?.degree);
   if ( degree === null ) return null;
   const out = { attack: { degree: Math.min(3, Math.round(degree)), natural: counted(roll.attack.natural), total: counted(roll.attack.total, -Infinity) }, damage: null };
+  // (The system's own dice, for its rules to read (rules.asRolled: Daggerheart's Hope and Fear): numbers only.)
+  const dice = roll.attack.dice && typeof roll.attack.dice === "object"
+    ? Object.fromEntries(Object.entries(roll.attack.dice).filter(([, v]) => Number.isFinite(v))) : null;
+  if ( dice && Object.keys(dice).length ) out.attack.dice = dice;
   const byType = roll.damage?.byType && typeof roll.damage.byType === "object"
     ? Object.fromEntries(Object.entries(roll.damage.byType).map(([k, v]) => [String(k), counted(v)]).filter(([, v]) => v !== null)) : null;
   if ( out.attack.degree >= 2 && byType && Object.keys(byType).length ) out.damage = { byType };

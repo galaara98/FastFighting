@@ -432,8 +432,9 @@ export class SystemAdapter {
    * turn FastFighting plays in a live battle (the token's moves before it are on the map already), and a reaction's.
    * `attackNumber`: the attacks it has made this turn before this one (0 for a reaction), for a multiple attack
    * penalty. `secret`: for the GMs' eyes only (the GM keeps its name secret). Returns {attack: {degree: 0-3, natural,
-   * total}, damage: {byType: {type: amount}} | null} (damage as rolled, before resistances; a critical's as the system
-   * doubles it), or null where it can't (the engine rolls it). Its damage card, the first of the cards it made that
+   * total, dice}, damage: {byType: {type: amount}} | null} (damage as rolled, before resistances; a critical's as the
+   * system doubles it; `dice`, optional numbers, the system's own dice for rules.asRolled), or null where it can't (the
+   * engine rolls it). Its damage card, the first of the cards it made that
    * damageCard reads as damage, is applied with applyDamageCard; or the one `card` names (a message id), where the
    * result has it: `card: null` where no one card holds all of the blow (DCC: a critical's table damage). Optional.
    */

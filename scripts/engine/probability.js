@@ -92,8 +92,20 @@ export function rollD20(rules, rng, modifier, dc, { advantage = 0, kind = "check
   return { natural, total, degree: rules.degreeOfSuccess(natural, total, dc, kind, die) };
 }
 
-/** Roll a check the system's way: its own roll() if it has one, otherwise a plain die. */
+/**
+ * Roll a check the system's way: its own roll() if it has one, otherwise a plain die. `options.rolled`: the roll the
+ * system made itself in a live battle ({degree, natural, total, dice}), taken as it came out, no dice of the engine's:
+ * the rules' `asRolled` makes it theirs (what their own roll would have done with those dice: Daggerheart's Hope or
+ * Fear), else it's {natural, total, degree} as it stands.
+ */
 export function rollCheck(rules, rng, modifier, dc, options = {}) {
+  if ( options.rolled ) {
+    const own = { ...options, faces: facesOf(rules, options) };
+    const r = options.rolled;
+    const roll = rules.asRolled?.(r, modifier, dc, own) ?? { natural: r.natural ?? null, total: r.total ?? null, degree: r.degree };
+    roll.faces ??= own.faces;
+    return roll;
+  }
   // A die that rides along (Bless, Bane) is rolled first and simply adds to the modifier, so a system's own roll
   // needs to know nothing about it.
   let extra = 0;
