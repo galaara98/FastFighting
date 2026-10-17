@@ -82,6 +82,7 @@ export function beginLive(spec, rules, { seed, players = [], owns = {}, npcReact
 
 /** A moment of the GM's own, outside anyone's turn (what the GM says came of the table's rolls): told on its own. */
 export function gmMoment(run, id = null) {
+  if ( !run.rng ) nextDice(run);
   startTurn(run, id ? run.byId.get(id) ?? null : null);
 }
 
@@ -439,6 +440,8 @@ export function reactNow(run, reactorId, targetId, strike, trigger = null) {
   const e = run.byId.get(reactorId);
   const t = run.byId.get(targetId);
   if ( !e || !t || !strike ) return [];
+  // (A battle picked up mid-turn, after a reload, has no dice of its own yet: some now.)
+  if ( !run.rng ) nextDice(run);
   const from = run.log.length;
   e.reactionsLeft = Math.max(0, (e.reactionsLeft ?? 1) - 1);
   log(run, e, { type: "opportunity", target: t.spec.name, targetId: t.id, action: strike.name, ...(trigger && trigger !== "foeLeavesReach" ? { trigger } : {}) });

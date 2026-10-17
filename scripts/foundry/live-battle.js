@@ -1004,10 +1004,47 @@ async function playerDamage(pc, message) {
     return;
   }
   const by = run.byId.get(pc.id)?.spec.name ?? "";
-  const lines = (ours.length ? ours : [null]).map(u => ({ key: foundry.utils.randomID(), messageId: message.id, targetId: u?.id ?? null, amount: card.amount, save: !!card.save, healing, by }));
+  const lines = [];
+  for ( const u of ours.length ? ours : [null] ) {
+    // (Its hit points as the card came: a GM who applies it some other way, the card's own button, clears its line.)
+    lines.push({ key: foundry.utils.randomID(), messageId: message.id, targetId: u?.id ?? null, amount: card.amount, save: !!card.save, healing, by, hpAt: u ? await hpOf(u) : null });
+  }
   pc.damage = [...(pc.damage ?? []), ...lines];
   changed();
   ui.notifications.info(fmt("FASTFIGHTING.Live.DamageWaits", { name: by }));
+  Hooks.callAll("fastFighting.damageWaits", battle);
+}
+
+/** A creature's hit points on its sheet now (null where it can't be read). */
+async function hpOf(u) {
+  const doc = docOf(u.id);
+  if ( !doc ) return null;
+  try {
+    const hp = (await getAdapter().readLiveState(doc, { spec: battle.spec, unit: u }))?.hp;
+    return Number.isFinite(hp) ? hp : null;
+  } catch ( err ) {
+    return null;
+  }
+}
+
+/** FastFighting applying players' damage itself, now (what it changes is no GM's doing). */
+let applying = 0;
+
+/**
+ * A creature with players' damage waiting on a GM was hurt (or healed) some other way, a GM using the card's own
+ * button: the oldest line for it goes, so it isn't applied a second time.
+ */
+async function dropApplied(pc, actor) {
+  if ( battle?.pc !== pc || !pc.damage?.length ) return;
+  for ( const line of pc.damage ) {
+    const u = line.targetId ? battle.run.byId.get(line.targetId) : null;
+    if ( !u || docOf(u.id)?.actor !== actor || line.hpAt === null ) continue;
+    const hp = await hpOf(u);
+    if ( hp === null || (line.healing ? hp <= line.hpAt : hp >= line.hpAt) ) continue;
+    pc.damage = pc.damage.filter(d => d !== line);
+    await keep();
+    return;
+  }
 }
 
 /** A damage card applied to a creature (times `multiplier`), through the system: kept with the turn, for Rewind. */
@@ -1015,15 +1052,18 @@ async function applyDamage(pc, message, u, multiplier = 1) {
   const doc = docOf(u.id);
   if ( !doc || !message ) return false;
   let records;
+  applying++;
   try {
     records = (await getAdapter().applyDamageCard(message, doc, { multiplier })) ?? [];
+    pc.records.push(...records);
+    await markFallen(pc, u);
   } catch ( err ) {
     console.error(`${MODULE_ID} | applying a damage card`, err);
     ui.notifications.error(fmt("FASTFIGHTING.Live.Failed", { error: err.message }));
     return false;
+  } finally {
+    applying--;
   }
-  pc.records.push(...records);
-  await markFallen(pc, u);
   await keep();
   return true;
 }
@@ -1786,6 +1826,12 @@ export function registerLiveBattles() {
     queue(() => playerMoved(doc));
   });
   Hooks.on("createChatMessage", onMessage);
+  // (Players' damage waiting on a GM, applied some other way: its line goes.)
+  Hooks.on("updateActor", actor => {
+    const pc = battle?.pc;
+    if ( !pc?.damage?.length || applying || !playsHere() ) return;
+    queue(() => dropApplied(pc, actor));
+  });
   // (A card the system fills in after it's made: Daggerheart adds an attack's damage to its card.)
   Hooks.on("updateChatMessage", message => {
     const pc = battle?.pc;

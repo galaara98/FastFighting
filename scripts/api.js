@@ -12,6 +12,7 @@
  *   fastFighting.preSimulate (battleSpec, context)   mutate the spec before a batch runs
  *   fastFighting.postSimulate (results, context)      read or annotate results
  *   fastFighting.liveBattleStarted (battle) / fastFighting.liveBattle (battle)   a live battle prepared or begun; changed (or over: null)
+ *   fastFighting.damageWaits (battle)   a player's damage card waits in the Battle Vantage for a GM
  */
 import { storyTypeFor } from "./story/families.js";
 import { storyWordLists } from "./foundry/story-words.js";

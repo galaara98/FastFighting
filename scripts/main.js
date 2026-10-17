@@ -45,6 +45,8 @@ Hooks.once("init", () => {
     return true;
   };
   Hooks.on("fastFighting.liveBattleStarted", () => BattleVantage.open());
+  // (A player's damage waiting on a GM: the Battle Vantage opens on it.)
+  Hooks.on("fastFighting.damageWaits", () => BattleVantage.open());
 
   // System support comes from helper modules (FastFighting PF2e, ...). The generic adapter ("*") is the
   // fallback for systems nobody supports yet.
