@@ -20,7 +20,7 @@ export { MODULE_ID, STATUS, SWAY, DOWNED_MODELS, TRAITS, TACTICAL, PC_BASELINE, 
 export { traitsFromParts, partsOf, signedNumber } from "./engine/trait-parts.js";
 export { part, parseFormula, parseTypedFormula, samplePart, meanPart, maxPart, doubled, sampleDamage, meanDamage } from "./engine/dice.js";
 export { formulaNumber, plainDice } from "./engine/arithmetic.js";
-export { degreeDistribution, rollD20 } from "./engine/probability.js";
+export { degreeDistribution, rollD20, rollCheck } from "./engine/probability.js";
 export { TALK_KINDS } from "./engine/behavior/talk.js";
 export { MORALE } from "./engine/behavior/morale.js";
 export { dropCondition, applyOutcome, tauntProof, withoutTaunt } from "./engine/behavior/effects.js";
