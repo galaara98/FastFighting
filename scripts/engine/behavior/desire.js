@@ -47,7 +47,7 @@ import { areEnemies, isStanding, liveTrait, liveTier, enemiesOf, alliesOf, sized
 import { perceives, apparentHealth } from "./senses.js";
 import { seemsFoe } from "./neutral.js";
 import { robbable } from "./theft.js";
-import { holdsOf, ownHolds, isBound, freeable, known, remediesOf, bears } from "./holds.js";
+import { ownHolds, isBound, freeable, known, remediesOf, bears } from "./holds.js";
 import { hasTrait, profiled } from "../conditions.js";
 import { hasUses } from "./evaluate.js";
 
@@ -258,9 +258,6 @@ export function holdDesire(u, kind, targetId, level) {
 export function releaseDesire(u, kind, targetId) {
   u.desire?.gm?.delete(keyOf(kind, targetId));
 }
-
-/** The level the GM holds it at, or undefined. */
-export const heldDesire = (u, kind, targetId) => u.desire?.gm?.get(keyOf(kind, targetId));
 
 /**
  * The taunts on u this turn (effects with a taunt, effects.js): each makes it want to go for its taunter, at least as

@@ -729,7 +729,6 @@ export function attemptTalk(run, talker, pitch, log) {
  */
 export function resolveTalk(run, talker, pitch, roll, log) {
   const t = pitch.target;
-  const rules = run.prep.rules;
   // (Spoken to on its way off the map: it may stop to answer: behavior/leaving.js.)
   if ( t.leaving ) confronted(run, t, talker, "talk", log);
   spendEdges(talker, "check", t.id);

@@ -192,4 +192,3 @@ export function letGo(run, fallen) {
   return out;
 }
 
-export { profileOf };

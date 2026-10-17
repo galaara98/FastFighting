@@ -1,6 +1,6 @@
 /**
  * What live battles (live-battle.js) share for the map and the chat: token moves and doors (playMoves, holdingPause),
- * spots beside a token (spotsBeside), story cards (postBeat, postStory), undo records (revertRecord, revertEntry), and
+ * story cards (postBeat, postStory), undo records (revertRecord, revertEntry), and
  * the Sample tab's list of what a fight changes (planMakeItSo).
  *
  * And what's left of the whole-fight playback FastFighting played before live battles: the fights it played can still
@@ -248,22 +248,6 @@ function wallBetween(a, b) {
   } catch ( err ) {
     return false;
   }
-}
-
-/**
- * Free grid spots beside a token (its own size), nearest first, on its side of any wall: where what it summons appears.
- * @returns {{x: number, y: number}[]} top-left corners
- */
-export function spotsBeside(tokenDoc, count, scene = tokenDoc.parent) {
-  const occupied = new Set();
-  for ( const t of scene.tokens ) if ( !t.hidden ) for ( const c of cellsOf(t._source.x, t._source.y, t) ) occupied.add(c);
-  const out = [];
-  for ( let i = 0; i < count; i++ ) {
-    const spot = freeSpot(tokenDoc, placeOf(tokenDoc), occupied);
-    for ( const c of cellsOf(spot.x, spot.y, tokenDoc) ) occupied.add(c);
-    out.push(spot);
-  }
-  return out;
 }
 
 /**

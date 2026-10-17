@@ -877,4 +877,3 @@ export async function swingFactors(spec, baseline, { runs = null, seconds = null
   return out.sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta));
 }
 
-export { replay };

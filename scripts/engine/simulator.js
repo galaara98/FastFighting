@@ -123,7 +123,7 @@ function rollSave(run, target, type, dc, { stakes = 0.3, label = "", magical = f
   const s = saveRoll(run, target, type, { magical, from, action });
   let roll = rollCheck(rules, run.rng, s.mod, dc, { advantage: s.advantage, dice: s.dice, kind: "save", roller: target });
   spendEdges(target, "save");
-  if ( run.boosting && roll.degree < 2 ) roll = boost(run, target, roll, dc, { kind: "save", stakes, label }, logger(run));
+  if ( run.boosting && roll.degree < 2 ) roll = boost(run, target, roll, dc, { kind: "save", stakes }, logger(run));
   roll = standFirm(run, target, roll, dc, stakes, label);
   if ( roll.degree === 2 && upgradesSave(target, type) ) roll = { ...roll, degree: 3 };
   if ( rules.adjustRoll ) {
@@ -1177,7 +1177,7 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
     spendEdges(u, "attack", target.id);
     spendEdges(target, "defend", u.id);
     spendBoost(u, target);
-    if ( run.boosting && roll.degree < 2 ) roll = boost(run, u, roll, ac, { kind: "attack", stakes: attackStakes(run, u, target, action), options: opts, label: action.name }, logger(run));
+    if ( run.boosting && roll.degree < 2 ) roll = boost(run, u, roll, ac, { kind: "attack", stakes: attackStakes(run, u, target, action), options: opts }, logger(run));
     // The system's own say once the dice are seen (Ironsworn: burning momentum), and what the roll means (initiative).
     if ( rules.adjustRoll ) {
       roll = rules.adjustRoll(run, u, roll, { kind: "attack", stakes: attackStakes(run, u, target, action), label: action.name, action, target }) ?? roll;
@@ -1744,7 +1744,7 @@ function executeControl(run, u, action, target, attacksMade, common) {
         if ( r.rollKind === "attack" ) spendEdges(target, "defend", u.id);
       }
       // Luck: the target on a save against it, the user on its own roll.
-      if ( run.boosting && x.degree < 2 ) x = boost(run, r.kind === "save" ? target : u, x, r.dc, { kind: r.rollKind, stakes: r.kind === "save" ? 0.7 : 0.3, options: opts, label: action.name }, logger(run));
+      if ( run.boosting && x.degree < 2 ) x = boost(run, r.kind === "save" ? target : u, x, r.dc, { kind: r.rollKind, stakes: r.kind === "save" ? 0.7 : 0.3, options: opts }, logger(run));
       if ( r.kind === "save" ) x = standFirm(run, target, x, r.dc, 0.7, action.name);
       if ( r.kind === "save" && x.degree === 2 && upgradesSave(target, action.save.type) ) x = { ...x, degree: 3 };
       // (Its own roll, told to the system as any is: DCC's luck on a 20, hiding given up by an attack.)

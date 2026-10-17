@@ -547,7 +547,6 @@
 .ff-net .r-grabbed { color: var(--ff-hostile3); }
 .ff-net .r-goaded { color: var(--ff-hostile); }
 .ff-net .r-controlled { color: var(--ff-hostile2); }
-.ff-net .r-bound { color: var(--ff-net-bind); }
 .ff-net .r-exposedTo { color: var(--ff-muted); }
 .ff-net .r-marked { color: var(--ff-secret); }
 .ff-net .r-shuns { color: var(--ff-muted); }
@@ -626,10 +625,6 @@
 .ff-battle-who img { width: 40px; height: 40px; border: none; object-fit: contain; }
 .ff-battle-meta { display: block; font-size: 0.85em; opacity: 0.8; }
 .ff-battle-automate { display: flex; align-items: center; gap: 0.3em; font-size: 0.85em; }
-.ff-battle-fact summary { cursor: pointer; font-size: 0.85em; opacity: 0.85; }
-.ff-battle-fact-row { display: flex; gap: 0.3rem; flex-wrap: wrap; margin-top: 0.3rem; }
-.ff-battle-fact-row select { flex: 1 1 8rem; min-width: 0; }
-.ff-battle-fact-row input[type=number] { flex: 0 1 5rem; min-width: 3.5rem; }
 
 
 /* ---------- Reactions and rerolls (the character's tab) ---------- */

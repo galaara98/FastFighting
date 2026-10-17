@@ -2171,6 +2171,7 @@
       "NextTurn": "Next Turn",
       "Rewind": "Rewind",
       "Rewound": "Rewound to {name}'s turn.",
+      "SheetUnread": "{name}'s sheet couldn't be read, so FastFighting keeps it as it last knew it. The console says why.",
       "TrackerRefused": "{name} moved the turn order of the live battle; FastFighting put it back. Only a GM moves it, apart from a player ending their own character's turn.",
       "TooFarBack": "FastFighting doesn't keep turns that far back, so the tracker is put back where it was. Rewind This Encounter can still take the whole battle back.",
       "Play": "Play it",
@@ -2244,7 +2245,6 @@
       "NotInFight": "not in the fight yet",
       "BringIn": "Bring into the fight",
       "Relation": {
-        "afraid": "Afraid of {name}",
         "grabbed": "Grabbed by {name}",
         "goaded": "Goaded by {name}",
         "controlled": "Controlled by {name}",

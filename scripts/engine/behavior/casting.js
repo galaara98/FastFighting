@@ -63,7 +63,7 @@ export function cast(run, u, action, { stakes = 0.5, log = null } = {}) {
   // (A cleric's natural 1 is disapproval, not a fumble: it's inside the range.)
   const fumble = !range && roll.natural <= (c.fumbleOn ?? 1);
   const disapproved = !!range && roll.natural <= range;
-  if ( !fumble && !disapproved && roll.total < lowest ) roll = boost(run, u, roll, lowest, { kind: "cast", stakes, options: { faces }, label: action.name }, log);
+  if ( !fumble && !disapproved && roll.total < lowest ) roll = boost(run, u, roll, lowest, { kind: "cast", stakes, options: { faces } }, log);
   const ok = !fumble && !disapproved && roll.total >= lowest;
   if ( ok ) {
     let tier = tiers[0];

@@ -487,7 +487,6 @@ export function battleContext(b, focusId = null) {
   const combatant = b.combat.combatant;
   const current = combatant ? run.units.find(u => (u.tokenId ?? u.spec.tokenId ?? u.id) === combatant.tokenId) ?? null : null;
   const name = id => run.byId.get(id)?.spec.name ?? "";
-  const sideLabel = side => b.spec.sides?.[side]?.label ?? (has(`FASTFIGHTING.Side.${side}`) ? loc(`FASTFIGHTING.Side.${side}`) : side);
   const played = !!current && waitingOnGm();
   const player = !!current && run.live.players.has(current.id);
   const state = b.data.ended ? "ended" : b.pc ? "player" : played ? "waiting" : b.data.spotlight && !current ? "spotlight" : "ready";

@@ -670,7 +670,18 @@ async function readStates() {
   for ( const u of battle.run.units ) {
     const doc = docOf(u.id);
     if ( !doc ) continue;
-    const state = (await adapter.readLiveState(doc, { spec: battle.spec, unit: u })) ?? {};
+    // (A sheet that can't be read: the creature as the engine last knew it, the GM told once. Not the turn lost.)
+    let state;
+    try {
+      state = (await adapter.readLiveState(doc, { spec: battle.spec, unit: u })) ?? {};
+    } catch ( err ) {
+      console.error(`${MODULE_ID} | reading ${doc.name}'s sheet`, err);
+      if ( !(battle.unread ??= new Set()).has(u.id) ) {
+        battle.unread.add(u.id);
+        ui.notifications.warn(fmt("FASTFIGHTING.Live.SheetUnread", { name: doc.name }));
+      }
+      continue;
+    }
     // (Which of the engine's conditions its sheet can carry: what it can't, the engine keeps.)
     state.carries ??= key => adapter.sheetCarries(key, doc.actor);
     if ( doc.object ) {
@@ -982,7 +993,7 @@ export function reconcile(run, pcId, events, states) {
       left -= e.damage;
     });
   }
-  for ( const [id, s] of Object.entries(states) ) {
+  for ( const id of Object.keys(states) ) {
     if ( id === pcId || hitsAt.has(id) ) continue;
     const real = lost(id);
     if ( real > 0 ) out.push({ type: "auto", targetId: id, action: "", damage: real, sure: false });

@@ -62,10 +62,10 @@ function payers(run, roller, kind) {
  * @param {object} roller   who made the roll
  * @param {object} roll     {natural, total, degree}
  * @param {number} dc
- * @param {object} ctx      {kind: "attack"|"save"|"cast"|"check", stakes, options: the roll's die options, label}
+ * @param {object} ctx      {kind: "attack"|"save"|"cast"|"check", stakes, options: the roll's die options}
  * @param {Function} log    (unit, data): the run's log
  */
-export function boost(run, roller, roll, dc, { kind, stakes = 0.3, options = {}, label = "" } = {}, log = null) {
+export function boost(run, roller, roll, dc, { kind, stakes = 0.3, options = {} } = {}, log = null) {
   if ( !roll || roll.degree >= 2 || !Number.isFinite(dc) || !Number.isFinite(roll.total) ) return roll;
   if ( roller.status === STATUS.DEAD ) return roll;
   const rules = run.prep.rules;
