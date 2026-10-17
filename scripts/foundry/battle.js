@@ -8,7 +8,7 @@ import { budgetMs, swingShareMs, MAX_RUNS, SWING_RUNS } from "../engine/run-budg
 /** How long a battle's prediction runs (seconds): its plan's, else the world's Prediction time. */
 export const predictionSeconds = setup => setup?.options?.seconds ?? setting("predictionTime");
 import { characterSpec, getAdapter, getModifiers } from "../api.js";
-import { computeApproach, computeAwareness, computeGround, computeWalls, environmentAt, positionOf, squareFeet } from "./terrain.js";
+import { computeApproach, computeAwareness, computeGround, computeWalls, environmentAt, forgetGround, positionOf, squareFeet } from "./terrain.js";
 import { proposeGroups } from "../engine/groups.js";
 import { TACTIC_KEYS, TACTIC_WISHES } from "../engine/tactics.js";
 import { resetPathGrid } from "./pathing.js";
@@ -713,9 +713,13 @@ export function buildBattleSpec(roster, setup, { approach = null, exclude = new 
 
 /**
  * Terrain-aware approach matrix for the roster, reused until a token moves, changes elevation or speed, or the
- * GM changes who ignores terrain. Measuring every pair's path is the slowest step on a busy map.
+ * GM changes who ignores terrain. Measuring every pair's path is the slowest step on a busy map: when some have moved
+ * (a live battle's every turn), only the pairs with one of them in it are measured again (approachPairs).
  */
 let approachCache = { key: null, value: null };
+/** Each pair as it was last measured (terrain.js computeApproach's `pairs`); at most APPROACH_PAIRS, then started over. */
+let approachPairs = new Map();
+const APPROACH_PAIRS = 20000;
 export function approachFor(roster, setup) {
   const ignoreTerrainFor = new Set(Object.entries(setup.tokens ?? {}).filter(([, t]) => t?.ignoreTerrain).map(([id]) => id));
   const key = JSON.stringify([
@@ -725,7 +729,8 @@ export function approachFor(roster, setup) {
   ]);
   if ( approachCache.key !== key ) {
     const specs = new Map(roster.map(e => [e.token.id, e.spec]));
-    approachCache = { key, value: computeApproach(roster.map(e => e.token), specs, { ignoreTerrainFor }) };
+    if ( approachPairs.size > APPROACH_PAIRS ) approachPairs = new Map();
+    approachCache = { key, value: computeApproach(roster.map(e => e.token), specs, { ignoreTerrainFor, pairs: approachPairs }) };
   }
   return approachCache.value;
 }
@@ -761,7 +766,9 @@ export function sceneNow(tokens) {
 /** Walls and regions change the paths (and the ground: groundFor), so forget the cached matrix when they do. */
 export function invalidateApproach() {
   approachCache = { key: null, value: null };
+  approachPairs = new Map();
   groundCache = { key: null, value: null };
+  forgetGround();
   resetPathGrid();
 }
 

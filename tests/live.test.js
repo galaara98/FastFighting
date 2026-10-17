@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest";
 import {
   beginLive, liveRound, liveTurn, pcTurn, pcTurnBegin, pcTurnEnd, leavingReach, reactNow, syncFromSheets, applyFact, mindOf, snapshotRun, restoreRun,
-  NeedsDecision, bandLevel, captureAll
+  NeedsDecision, bandLevel, captureAll, packLog
 } from "../scripts/engine/live.js";
 import { STATUS, SWAY } from "../scripts/constants.js";
 import { applyOutcome, recompute } from "../scripts/engine/behavior/effects.js";
@@ -66,6 +66,24 @@ describe("live battles: the engine a turn at a time", () => {
         expect([v.hp, v.status, [...v.harmedBy], [...v.desire.memory]]).toEqual([u.hp, u.status, [...u.harmedBy], [...u.desire.memory]]);
       }
     }
+  });
+
+  test("kept with its log apart, a piece at a time (as a live battle keeps it): brought back the same", () => {
+    const straight = beginLive(skirmish(), pf2eRules, { seed: 5, players: ["kyra"] });
+    const pieces = [JSON.parse(JSON.stringify(packLog(straight, 0)))]; // (what's told as it begins)
+    for ( let round = 1; round <= 3; round++ ) {
+      const from = straight.log.length;
+      playRounds(straight, 1, round);
+      pieces.push(JSON.parse(JSON.stringify(packLog(straight, from))));
+    }
+    const snap = JSON.parse(JSON.stringify(snapshotRun(straight, { log: false })));
+    const whole = restoreRun(skirmish(), pf2eRules, JSON.parse(JSON.stringify(snapshotRun(straight))));
+    const back = restoreRun(skirmish(), pf2eRules, { ...snap, log: pieces.flat() });
+    expect(back.log).toEqual(whole.log);
+    expect(back.log.length).toBe(straight.log.length);
+    playRounds(whole, 1, 4);
+    playRounds(back, 1, 4);
+    expect(goldenOf({ log: back.log, units: {} })).toEqual(goldenOf({ log: whole.log, units: {} }));
   });
 
   test("a player's blow, read from the table, stirs what the engine's own would: a grudge, a friend's vengeance", () => {

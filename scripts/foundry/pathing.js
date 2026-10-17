@@ -77,7 +77,13 @@ export class WallGrid {
     this.edges = new Uint8Array(this.cols * this.rows * 8);
     this.doorsAt = new Map();
     this.fields = new Map();
+    this.ways = new Map();
     this.walls = canvas.scene.walls.filter(w => w.move !== CONST.WALL_MOVEMENT_TYPES.NONE);
+    // (Each wall's box: a step only asks which walls stop it of those whose box its own touches.)
+    this.boxes = this.walls.map(w => {
+      const [x1, y1, x2, y2] = w.c;
+      return [Math.min(x1, x2), Math.min(y1, y2), Math.max(x1, x2), Math.max(y1, y2)];
+    });
     // (With no one-way wall on the map, what's between two squares is the same both ways: worked out once for both.)
     this.bothWays = !this.walls.some(w => w.dir);
   }
@@ -129,8 +135,17 @@ export class WallGrid {
           blocked = false;
         }
         if ( blocked ) {
-          // Which walls? If every one in the way is a door, it's a door to open (or break, or pick).
-          const hit = this.walls.filter(w => foundry.utils.lineSegmentIntersects(a, b, { x: w.c[0], y: w.c[1] }, { x: w.c[2], y: w.c[3] }));
+          // Which walls? If every one in the way is a door, it's a door to open (or break, or pick). (Only those whose
+          // box the step's touches can be in its way: the rest aren't asked.)
+          const x0 = Math.min(a.x, b.x);
+          const y0 = Math.min(a.y, b.y);
+          const x1 = Math.max(a.x, b.x);
+          const y1 = Math.max(a.y, b.y);
+          const hit = this.walls.filter((w, i) => {
+            const box = this.boxes[i];
+            if ( box[2] < x0 || box[0] > x1 || box[3] < y0 || box[1] > y1 ) return false;
+            return foundry.utils.lineSegmentIntersects(a, b, { x: w.c[0], y: w.c[1] }, { x: w.c[2], y: w.c[3] });
+          });
           const doors = hit.length && hit.every(usableDoor) ? hit.map(w => w.id) : null;
           state = doors ? 3 : 2;
           if ( doors ) this.doorsAt.set(k, doors);
@@ -167,22 +182,60 @@ export class WallGrid {
     dist[from] = 0;
     const heap = new MinHeap();
     heap.push(from, 0);
-    while ( heap.size ) {
-      const [cell, d] = heap.pop();
-      if ( d > dist[cell] ) continue;
-      for ( let k = 0; k < 8; k++ ) {
-        const base = k < 4 ? 1 : this.diagonal;
-        if ( !Number.isFinite(base) || !this.#open(cell, k, doors) ) continue;
-        const next = this.#step(cell, k);
-        const nd = d + base + (this.#edge(cell, k) === 3 ? DOOR_STEPS : 0);
-        if ( nd < dist[next] ) {
-          dist[next] = nd;
-          heap.push(next, nd);
-        }
-      }
-    }
+    while ( heap.size ) this.#settle(heap, dist, doors);
     this.fields.set(cacheKey, dist);
     return dist;
+  }
+
+  /**
+   * One step of working out a field (field, #toEdge): the nearest cell not yet settled, and the steps to its neighbors
+   * through it. Returns that cell and its steps, or null for one settled already. (The steps are kept as 32-bit
+   * numbers: one is settled already only when its kept steps are fewer than these, as kept.)
+   */
+  #settle(heap, dist, doors) {
+    const [cell, d] = heap.pop();
+    if ( Math.fround(d) > dist[cell] ) return null;
+    for ( let k = 0; k < 8; k++ ) {
+      const base = k < 4 ? 1 : this.diagonal;
+      if ( !Number.isFinite(base) || !this.#open(cell, k, doors) ) continue;
+      const next = this.#step(cell, k);
+      const nd = d + base + (this.#edge(cell, k) === 3 ? DOOR_STEPS : 0);
+      if ( nd < dist[next] ) {
+        dist[next] = nd;
+        heap.push(next, nd);
+      }
+    }
+    return [cell, d];
+  }
+
+  /** Is a cell on the grid's edge? */
+  #onEdge(c) {
+    const col = c % this.cols;
+    const row = Math.floor(c / this.cols);
+    return col === 0 || row === 0 || col === this.cols - 1 || row === this.rows - 1;
+  }
+
+  /**
+   * field(from, true) only as far as the nearest cell on the grid's edge: the steps to every cell nearer than that one
+   * (as the whole field has them), and that cell ({dist, best}; best -1 when there's none), the first by number of
+   * those as near. The rest of the scene isn't looked at.
+   */
+  #toEdge(from) {
+    const dist = new Float32Array(this.cols * this.rows).fill(Infinity);
+    dist[from] = 0;
+    const heap = new MinHeap();
+    heap.push(from, 0);
+    let reach = null;
+    while ( heap.size ) {
+      // (Past the nearest edge: everything as near as it settled, nothing more to find.)
+      if ( reach !== null && Math.fround(heap.peek()) > reach ) break;
+      const settled = this.#settle(heap, dist, true);
+      if ( settled && reach === null && this.#onEdge(settled[0]) ) reach = dist[settled[0]];
+    }
+    if ( reach === null ) return { dist, best: -1 };
+    let best = -1;
+    for ( let c = 0; c < dist.length; c++ ) if ( dist[c] === reach && this.#onEdge(c) ) { best = c; break; }
+    return { dist, best };
   }
 
   /**
@@ -228,18 +281,16 @@ export class WallGrid {
   /**
    * The nearest way off the grid from a cell, around walls and through closed doors (a creature can open them): the
    * corners it turns at (top-left pixels), the last a square on the grid's edge, and how many squares it walks; null
-   * when walls shut it in.
+   * when walls shut it in. Worked out only as far as that edge (#toEdge), once from each cell (until the grid is reset).
    */
   wayOff(from) {
     if ( from < 0 ) return null;
-    const dist = this.field(from, true);
-    const edge = c => {
-      const col = c % this.cols;
-      const row = Math.floor(c / this.cols);
-      return col === 0 || row === 0 || col === this.cols - 1 || row === this.rows - 1;
-    };
-    let best = -1;
-    for ( let c = 0; c < dist.length; c++ ) if ( Number.isFinite(dist[c]) && edge(c) && (best < 0 || dist[c] < dist[best]) ) best = c;
+    if ( !this.ways.has(from) ) this.ways.set(from, this.#wayOffNow(from));
+    return this.ways.get(from);
+  }
+
+  #wayOffNow(from) {
+    const { dist, best } = this.#toEdge(from);
     if ( best < 0 ) return null;
     // (Walked back from the edge, downhill to where it stands.)
     const cells = [best];
@@ -307,6 +358,10 @@ class MinHeap {
   #items = [];
   get size() {
     return this.#items.length;
+  }
+  /** The smallest priority (with none, undefined). */
+  peek() {
+    return this.#items[0]?.[1];
   }
   push(cell, p) {
     const a = this.#items;

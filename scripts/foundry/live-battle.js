@@ -29,11 +29,12 @@ import { storyBeats } from "../story/story.js";
 import { logLine } from "../story/log-lines.js";
 import { loadStoryTables } from "../story/tables.js";
 import {
-  beginLive, liveRound, liveTurn, pcTurnBegin, pcTurnEnd, syncFromSheets, setApproach, setScene, captureAll, snapshotRun, restoreRun, endLive,
+  beginLive, liveRound, liveTurn, pcTurnBegin, pcTurnEnd, syncFromSheets, setApproach, setScene, captureAll, snapshotRun, restoreRun, endLive, packLog,
   NeedsDecision, applyFact, gmMoment, leavingReach, openingFor, reactNow, nextSpotlight, liveAftermath,
   setCondition, setRelation, clearRelation, setAffliction, setGoal, setAttitude, setSide, setRole, playerRuns
 } from "../engine/live.js";
 import { diffAll } from "../engine/changes.js";
+import { keepUpdate, keptBattle, forgetUpdate } from "./live-keeping.js";
 import { randomSeed } from "../engine/rng.js";
 import { holderOf } from "../engine/behavior/troubles.js";
 
@@ -103,32 +104,54 @@ async function store() {
   return doc;
 }
 
-async function keep() {
-  if ( !battle ) return;
+/**
+ * A battle is kept on the store a part at a time (live-keeping.js): each keep writes the battle as it stands, and of its
+ * turns and its log only what's new or changed since the keep before (b.kept: what that one wrote; none, the first keep
+ * of a battle begun or picked up, writes them all). One write to the store at a time (inTurn: keep, forget), so each
+ * keep goes from what the one before it wrote.
+ */
+let keeping = Promise.resolve();
+function inTurn(work) {
+  const next = keeping.then(work, work);
+  keeping = next.catch(() => null);
+  return next;
+}
+
+function keep() {
+  const b = battle;
+  return inTurn(() => keepNow(b));
+}
+
+async function keepNow(b) {
+  if ( !b ) return;
   changed();
-  battle.data.snapshot = snapshotRun(battle.run);
+  b.data.snapshot = snapshotRun(b.run, { log: false });
   // (A player's turn under way: who, since when, what the GM said and what reactions wrote. Its cards are found again by time.)
-  const pc = battle.pc;
-  battle.data.pc = pc ? { combatantId: pc.combatantId, id: pc.id, round: pc.round, facts: pc.facts, records: pc.records, snapshot: pc.snapshot, from: pc.from } : null;
+  const pc = b.pc;
+  b.data.pc = pc ? { combatantId: pc.combatantId, id: pc.id, round: pc.round, facts: pc.facts, records: pc.records, snapshot: pc.snapshot, from: pc.from } : null;
   const doc = await store();
   // (The battle's own key replaced whole, the store's other keys left as they are. Its spec, the biggest part, only
-  // when it's changed: kept beside it.)
-  const { spec, ...rest } = battle.data;
-  const update = { [`flags.${MODULE_ID}.battles.==${battle.combat.id}`]: rest };
-  if ( spec !== battle.keptSpec ) update[`flags.${MODULE_ID}.specs.==${battle.combat.id}`] = spec;
+  // when it's changed: kept beside it. Its turns and its log, each apart: only what's new.)
+  const spec = b.data.spec;
+  const { update, kept: now } = keepUpdate(b.kept ?? null, b.combat.id, b.data, {
+    log: b.run.log ?? [], pack: (from, to) => packLog(b.run, from, to), root: `flags.${MODULE_ID}`, keptSpec: b.keptSpec ?? null
+  });
   await doc.update(update);
-  battle.keptSpec = spec;
+  b.keptSpec = spec;
+  b.kept = now;
 }
 
+/** A battle as it was kept (live-keeping.js keptBattle), or null. */
 async function kept(combatId) {
   const doc = await store();
-  const data = doc?.getFlag(MODULE_ID, `battles.${combatId}`);
-  return data ? { ...data, spec: doc.getFlag(MODULE_ID, `specs.${combatId}`) } : null;
+  return doc ? keptBattle(path => doc.getFlag(MODULE_ID, path), combatId) : null;
 }
 
-async function forget(combatId) {
-  const doc = await store();
-  await doc?.update({ [`flags.${MODULE_ID}.battles.-=${combatId}`]: null, [`flags.${MODULE_ID}.specs.-=${combatId}`]: null });
+function forget(combatId) {
+  return inTurn(async () => {
+    const doc = await store();
+    await doc?.update(forgetUpdate(combatId, `flags.${MODULE_ID}`));
+  });
 }
 
 /* -------------------------------------------- */
@@ -700,6 +723,12 @@ async function playTurn(u, combatant, key) {
     } catch ( err ) {
       console.error(`${MODULE_ID} | writing the turn's encounter changes`, err);
     }
+    // (Where they stood kept only for those it moved: everyone else is where they were, and a Rewind leaves them be.)
+    const byUuid = new Map([...docs.values()].map(d => [d.uuid, d]));
+    turn.moves = turn.moves.filter(m => {
+      const doc = byUuid.get(m.uuid);
+      return !doc || doc._source.x !== m.x || doc._source.y !== m.y;
+    });
     turn.messages.push(...await tellNew());
   });
   battle.data.played = key;
@@ -1434,7 +1463,9 @@ async function pickUp() {
     const scene = game.scenes.get(data.sceneId) ?? combat.scene ?? canvas.scene;
     let run;
     try {
-      run = restoreRun(spec, rules, data.snapshot);
+      // (Kept with its log apart: the snapshot given it back. Kept the old way, the log's in the snapshot.)
+      run = restoreRun(spec, rules, Array.isArray(data.log) ? { ...data.snapshot, log: data.log } : data.snapshot);
+      delete data.log;
     } catch ( err ) {
       // (A kept battle that won't restore: the GM told, the combat left as it is.)
       console.error(`${MODULE_ID} | a kept battle that won't restore`, err);

@@ -45,18 +45,34 @@ export function regionGround(region) {
   return v === null || v === undefined || v === "" || !Number.isFinite(Number(v)) ? null : Number(v) * feetPerUnit();
 }
 
+/** The ground's cells read so far, by scene and cell size (computeGround); at most GROUND_KEPT, then started over. */
+let groundCells = { sceneId: null, cellPx: null, cells: new Map() };
+const GROUND_KEPT = 200000;
+
+/** Walls or regions changed: the ground is read again, cell by cell, as it's wanted. */
+export function forgetGround() {
+  groundCells = { sceneId: null, cellPx: null, cells: new Map() };
+}
+
 /**
  * The ground around everyone in the battle, cell by cell (engine/behavior/forced.js): only the cells with something
  * to them. A cell's ground height: the highest a region over it was given (a ledge 20, a pit -30; FastFighting's field
  * on the region's settings), else the floor (0). Difficult: a region slowing walking. Hazardous: a region the system
  * says harms (its helper's describeRegionBehavior, or a script). Blocked: which ways out of it a wall stops movement.
+ * Each cell, once read, is kept (groundCells) until walls or regions change (forgetGround): only cells new to the
+ * fight are read when its creatures have moved.
  * @param {Token[]} tokens
  * @returns {{size: number, cells: Array<[number, number, object]>}}
  */
 export function computeGround(tokens) {
   const perFoot = canvas.dimensions.size / squareFeet();
   const cellPx = CELL_FEET * perFoot;
-  const regions = canvas.scene.regions.contents.map(region => ({
+  if ( groundCells.sceneId !== canvas.scene?.id || groundCells.cellPx !== cellPx || groundCells.cells.size > GROUND_KEPT ) {
+    groundCells = { sceneId: canvas.scene?.id, cellPx, cells: new Map() };
+  }
+  const known = groundCells.cells;
+  let regions = null;
+  const regionsNow = () => regions ??= canvas.scene.regions.contents.map(region => ({
     region, ground: regionGround(region),
     difficult: region.behaviors.some(b => describeBehavior(b)?.difficult),
     hazardous: region.behaviors.some(b => describeBehavior(b)?.hazardous)
@@ -79,10 +95,15 @@ export function computeGround(tokens) {
         const key = `${i},${j}`;
         if ( seen.has(key) ) continue;
         seen.add(key);
+        if ( known.has(key) ) {
+          const kept = known.get(key);
+          if ( kept ) cells.push([i, j, kept]);
+          continue;
+        }
         const center = { x: (i + 0.5) * cellPx, y: (j + 0.5) * cellPx };
         const cell = {};
         let ground = null;
-        for ( const r of regions ) {
+        for ( const r of regionsNow() ) {
           if ( !inside(r.region, center) ) continue;
           if ( r.ground !== null ) ground = Math.max(ground ?? -Infinity, r.ground);
           if ( r.difficult ) cell.d = true;
@@ -97,7 +118,9 @@ export function computeGround(tokens) {
           }
         }).map(([, , name]) => name);
         if ( blocked.length ) cell.b = blocked;
-        if ( Object.keys(cell).length ) cells.push([i, j, cell]);
+        const something = Object.keys(cell).length > 0;
+        known.set(key, something ? cell : null);
+        if ( something ) cells.push([i, j, cell]);
       }
     }
   }
@@ -238,13 +261,17 @@ function terrainMultiplier(a, b, action) {
   }
 }
 
-/** Names of regions with difficult terrain (for walkers) along the straight line from a to b. */
-function regionsCrossed(a, b) {
+/** The scene's regions with difficult terrain (for walkers). */
+const difficultRegions = () => canvas.scene.regions.filter(region => region.behaviors.some(beh => describeBehavior(beh)?.difficult));
+
+/**
+ * Names of regions with difficult terrain (for walkers) along the straight line from a to b (`difficult`: those regions,
+ * where the caller has them already).
+ */
+function regionsCrossed(a, b, difficult = difficultRegions()) {
   const names = new Set();
   const steps = 8;
-  for ( const region of canvas.scene.regions ) {
-    const difficult = region.behaviors.some(beh => describeBehavior(beh)?.difficult);
-    if ( !difficult ) continue;
+  for ( const region of difficult ) {
     for ( let i = 1; i < steps; i++ ) {
       const t = i / steps;
       const point = { x: a.center.x + (b.center.x - a.center.x) * t, y: a.center.y + (b.center.y - a.center.y) * t, elevation: a.document.elevation };
@@ -262,23 +289,44 @@ function regionsCrossed(a, b) {
  * @param {object} [options]
  * @param {boolean} [options.ignoreTerrain]  Treat all terrain as normal
  * @param {Set<string>} [options.ignoreTerrainFor]  Token ids that ignore terrain (GM override)
+ * @param {Map<string, object>} [options.pairs]  Each pair as it was worked out last (kept by the caller): a pair
+ *                                               neither of which has moved (nor changed its speeds, its reach, or
+ *                                               whether it ignores terrain) is taken as it was. The caller forgets it
+ *                                               when walls or regions change (battle.js invalidateApproach).
  * @returns {Record<string, Record<string, object>>}  approach[aId][tId] = {dist, mult, speed, mode, los, meleeOk, modes, regions}
  */
-export function computeApproach(tokens, specs, { ignoreTerrain = false, ignoreTerrainFor = new Set() } = {}) {
+export function computeApproach(tokens, specs, { ignoreTerrain = false, ignoreTerrainFor = new Set(), pairs = null } = {}) {
   const approach = {};
   // Walls: the way around them, from a grid over the fight (or through, at 4x, when there's none).
   const grid = pathGridFor(tokens);
   const square = squareFeet();
+  let difficult = null;
+  // (What a pair's reckoning depends on, besides the walls and regions: the scene and its grid, the grid the way round is
+  // found on, where each token is (its centre too: a token mid-move), how high, how big.)
+  const where = t => {
+    const d = t.document;
+    return [d._source?.x ?? d.x, d._source?.y ?? d.y, t.center?.x, t.center?.y, d.elevation ?? 0, d.width, d.height];
+  };
+  const field = grid ? [grid.sceneId, grid.ox, grid.oy, grid.cols, grid.rows] : null;
+  const scene = [canvas.scene?.id, canvas.dimensions?.size, canvas.dimensions?.distance, canvas.grid?.type, canvas.grid?.diagonals, square, field];
   for ( const a of tokens ) {
     const specA = specs.get(a.id);
     if ( !specA ) continue;
     approach[a.id] = {};
     const speeds = specA.speeds ?? { walk: 25 };
     const reach = Math.max(5, ...specA.actions.filter(x => x.melee).map(x => x.reach ?? 5));
+    const ignores = ignoreTerrain || ignoreTerrainFor.has(a.id);
+    const fromA = pairs ? JSON.stringify([scene, where(a), speeds, reach, ignores]) : null;
     for ( const b of tokens ) {
       if ( a === b ) continue;
       const specB = specs.get(b.id);
       if ( !specB ) continue;
+      const pairKey = pairs ? `${fromA}|${JSON.stringify(where(b))}` : null;
+      const known = pairs?.get(`${a.id}|${b.id}`);
+      if ( known && known.key === pairKey ) {
+        approach[a.id][b.id] = known.value;
+        continue;
+      }
       const dist = edgeDistance(a, b);
       const elevDiff = Math.abs((a.document.elevation ?? 0) - (b.document.elevation ?? 0));
       const blocked = a.checkCollision(b.center, { type: "move", mode: "any" });
@@ -286,16 +334,19 @@ export function computeApproach(tokens, specs, { ignoreTerrain = false, ignoreTe
       const doorsBy = {};
       const modes = {};
       let best = null;
+      // (The way round, once for the pair: the same whichever way it moves.)
+      let round;
+      const wayRound = () => (round === undefined ? (round = grid?.stepsBetween(a, b)) : round);
       for ( const mode of MODES ) {
         const speed = speeds[mode];
         if ( !(speed > 0) ) continue;
-        let mult = (ignoreTerrain || ignoreTerrainFor.has(a.id)) ? 1 : terrainMultiplier(a, b, mode);
+        let mult = ignores ? 1 : terrainMultiplier(a, b, mode);
         // Blocked by walls: walkers, swimmers and flyers go the long way round; climbers go over; burrowers under.
         // With no way round, through the wall counts as 4x difficult terrain for that square, and a creature
         // that can't manage that in one move gives up on going that way.
         if ( blocked && !["burrow", "climb"].includes(mode) ) {
           // A closed door on the way is walked to and opened (or forced, or picked) in the fight itself.
-          const way = grid?.stepsBetween(a, b);
+          const way = wayRound();
           const straight = Math.max(1, dist / square);
           if ( !way ) mult *= 1.5;
           else if ( Number.isFinite(way.steps) ) {
@@ -314,7 +365,7 @@ export function computeApproach(tokens, specs, { ignoreTerrain = false, ignoreTe
       // reach a flyer hovering above their reach.
       const canFly = (speeds.fly ?? 0) > 0;
       const meleeOk = canFly || elevDiff <= reach;
-      approach[a.id][b.id] = {
+      const value = {
         dist,
         mult: best?.mult ?? Infinity,
         speed: best?.speed ?? 0,
@@ -325,8 +376,10 @@ export function computeApproach(tokens, specs, { ignoreTerrain = false, ignoreTe
         blocked,
         throughWall,
         doors: (best && doorsBy[best.mode]) ?? [],
-        regions: best?.mode === "walk" || best?.mode === "swim" ? regionsCrossed(a, b) : []
+        regions: best?.mode === "walk" || best?.mode === "swim" ? regionsCrossed(a, b, difficult ??= difficultRegions()) : []
       };
+      approach[a.id][b.id] = value;
+      pairs?.set(`${a.id}|${b.id}`, { key: pairKey, value });
     }
   }
   return approach;

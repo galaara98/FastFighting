@@ -1273,6 +1273,14 @@ export function snapshotRun(run, { log = true } = {}) {
 }
 
 /**
+ * Log entries `from` up to `to`, as plain data (for JSON, as snapshotRun keeps the log): a battle keeps its log apart,
+ * a piece at a time. Given back to restoreRun as a snapshot's `log` (the pieces in order), they're as they were.
+ */
+export function packLog(run, from = 0, to = run.log?.length ?? 0) {
+  return encode((run.log ?? []).slice(from, to), new Set(run.units));
+}
+
+/**
  * The fight as it was kept, on its battle (the same spec and rules it began with): ready for its next turn. A snapshot
  * kept without its log takes `log` (the battle's, cut back to where it was). Creatures summoned mid-fight are made
  * again from their summoning (summonOf), then given what was kept of them.
