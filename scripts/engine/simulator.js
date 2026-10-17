@@ -3465,6 +3465,8 @@ export function endOfTurn(run, u) {
         log(run, u, { type: "afflictionEnd", name: a.spec.name, natural: roll.natural, mod, total: roll.total, dc: a.spec.save.dc, degree: roll.degree });
         continue;
       }
+      // (The save told, as the stage it leaves it at: a worse one, the same, or a better one.)
+      log(run, u, { type: "afflictionSave", name: a.spec.name, saveType: a.spec.save.type, natural: roll.natural, mod, total: roll.total, dc: a.spec.save.dc, degree: roll.degree, stage: a.stage });
       applyAfflictionStage(run, u, a);
     }
     recomputeConditions(u);
