@@ -1144,6 +1144,46 @@ async function writeChanges(before, after, records) {
 /*  Telling                                     */
 /* -------------------------------------------- */
 
+/** A beat of the story, by the turns it tells (or the closing). */
+const beatKey = beat => (beat.closing ? "closing" : beat.turns.join(","));
+
+/**
+ * The creatures whose names the players can't read on the map (no player's, its nameplate shown only to its owners, or
+ * on hover to them, or to none), each as someone, numbered (as the player survey has it), the same number all battle
+ * long: unit id -> what the open story calls it. One that shares its name with a creature whose name shows keeps it.
+ */
+function unnamed(run, docs) {
+  const shown = [CONST.TOKEN_DISPLAY_MODES.ALWAYS, CONST.TOKEN_DISPLAY_MODES.HOVER];
+  const hidden = [];
+  const known = new Set();
+  for ( const u of run.units ) {
+    const doc = docs.get(u.id);
+    if ( !doc ) continue;
+    if ( doc.actor?.hasPlayerOwner || shown.includes(doc.displayName) ) known.add(u.spec.name);
+    else hidden.push(u);
+  }
+  const numbers = (battle.data.someone ??= {});
+  const out = new Map();
+  for ( const u of hidden ) {
+    if ( known.has(u.spec.name) ) continue;
+    numbers[u.id] ??= Object.keys(numbers).length + 1;
+    out.set(u.id, game.i18n.format("FASTFIGHTING.Desire.Unknown", { n: numbers[u.id] }));
+  }
+  return out;
+}
+
+/** The fight as the open story tells it: the unnamed called as someone (unnamed), in its spec and its log. */
+export function namedAs(result, spec, someone) {
+  const names = new Map();
+  for ( const c of spec.combatants ?? [] ) if ( someone.has(c.id) ) names.set(c.name, someone.get(c.id));
+  const call = v => (typeof v === "string" ? names.get(v) ?? v : Array.isArray(v) ? v.map(call) : v && typeof v === "object" ? swap(v) : v);
+  const swap = o => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, call(v)]));
+  return [
+    { ...result, log: result.log.map(swap) },
+    { ...spec, combatants: (spec.combatants ?? []).map(c => (someone.has(c.id) ? { ...c, name: someone.get(c.id), generic: false } : c)) }
+  ];
+}
+
 /** The cards for every turn not told yet (the story told over the whole log, so it reads as one). Returns their ids. */
 async function tellNew() {
   const run = battle.run;
@@ -1160,14 +1200,25 @@ async function tellNew() {
     }
   } else {
     const adapter = getAdapter();
-    const beats = storyBeats(result, battle.spec, style, {
+    const open = setting("storyMode") !== "whisper";
+    const options = {
       tables: await loadStoryTables(), seed: battle.data.seed, damageType: adapter?.rules?.storyDamageType?.bind(adapter.rules) ?? null,
-      conditionType: adapter?.rules?.storyCondition?.bind(adapter.rules) ?? null, open: setting("storyMode") !== "whisper"
-    });
+      conditionType: adapter?.rules?.storyCondition?.bind(adapter.rules) ?? null, open
+    };
+    const beats = storyBeats(result, battle.spec, style, options);
     const docs = new Map(run.units.map(u => [u.id, docOf(u.id)]).filter(([, d]) => d));
+    // (Told openly: one whose name the players can't read on the map, as someone. The GMs' cards keep its name.)
+    const someone = open ? unnamed(run, docs) : null;
+    if ( someone?.size ) {
+      const told = new Map(storyBeats(...namedAs(result, battle.spec, someone), style, options).map(b => [beatKey(b), b]));
+      for ( const beat of beats ) {
+        beat.html = told.get(beatKey(beat))?.html ?? beat.html;
+        if ( someone.has(beat.actorId) ) beat.anonymous = true;
+      }
+    }
     const done = new Set(battle.data.toldBeats ?? []);
     for ( const beat of beats ) {
-      const key = beat.closing ? "closing" : beat.turns.join(",");
+      const key = beatKey(beat);
       if ( done.has(key) ) continue;
       done.add(key);
       if ( !beat.html && !beat.gmHtml ) continue;

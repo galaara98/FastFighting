@@ -309,3 +309,19 @@ describe("what a player shouldn't learn from the story", () => {
     expect(closing(true)).toContain(`${amiri.hp}/${spec.combatants.find(c => c.id === "amiri").hp.max}`);
   });
 });
+
+describe("told openly, a creature whose name the players can't read", () => {
+  test("is someone, numbered, in every turn's card; the turns are the same ones; the GMs' cards keep its name", async () => {
+    const { namedAs } = await import("../scripts/foundry/live-battle.js");
+    const spec = fight();
+    const result = replay(spec, pf2eRules, 7);
+    const real = storyBeats(result, spec, "standard", { tables, seed: 7, open: true });
+    const told = storyBeats(...namedAs(result, spec, new Map([["wolf", "Someone (1)"]])), "standard", { tables, seed: 7, open: true });
+    const key = b => (b.closing ? "closing" : b.turns.join(","));
+    expect(told.map(key)).toEqual(real.map(key));
+    expect(real.some(b => b.html.includes("Wolf"))).toBe(true);
+    expect(told.some(b => b.html.includes("Wolf"))).toBe(false);
+    expect(told.some(b => b.html.includes("Someone (1)"))).toBe(true);
+    expect(result.log.some(e => e.actor === "Wolf")).toBe(true);
+  });
+});
