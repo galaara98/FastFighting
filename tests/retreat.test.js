@@ -77,7 +77,8 @@ describe("calling a retreat", () => {
     run.rng = always;
     const monk = by("monk");
     monk.calming = "leave";
-    for ( let i = 0; i < 4 && by("boss").status === STATUS.STANDING; i++ ) attemptTalk(run, monk, { target: by("boss"), kind: "persuade", aim: "leave", mod: 40, dc: 10 }, say);
+    // (A pitch a turn: one step a turn from each talker.)
+    for ( let i = 0; i < 4 && by("boss").status === STATUS.STANDING; i++, monk.turnsTaken++ ) attemptTalk(run, monk, { target: by("boss"), kind: "persuade", aim: "leave", mod: 40, dc: 10 }, say);
     expect(by("boss").status).toBe(STATUS.FLED);
     expect(by("w1").status).toBe(STATUS.FLED);
     expect(run.log.some(e => e.type === "flee" && e.retreat && e.actor === "w2")).toBe(true);
@@ -216,7 +217,7 @@ describe("bosses", () => {
     run.rng = always;
     const pitch = choosePitch(run, by("pc"), { only: o => o.id === "boss" });
     expect(pitch?.target.id).toBe("boss");
-    for ( let i = 0; i < 6 && by("boss").status === STATUS.STANDING; i++ ) attemptTalk(run, by("pc"), { target: by("boss"), kind: "persuade", aim: "down", mod: 40, dc: 10 }, say);
+    for ( let i = 0; i < 6 && by("boss").status === STATUS.STANDING; i++, by("pc").turnsTaken++ ) attemptTalk(run, by("pc"), { target: by("boss"), kind: "persuade", aim: "down", mod: 40, dc: 10 }, say);
     expect(by("boss").status).toBe(STATUS.STOOD_DOWN);
     expect(by("w1").status).toBe(STATUS.STOOD_DOWN);
     expect(by("pc").concessions?.[0]).toMatchObject({ kind: "money", to: "boss", bribe: true });

@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest";
-import { runBatchSync, replay, prepareBattle } from "../scripts/engine/simulator.js";
+import { runBatchSync, replay, prepareBattle, beginRun } from "../scripts/engine/simulator.js";
 import { createRun } from "../scripts/engine/battle-state.js";
-import { stepsToConvince, talkDC, talkAffinity, shareLanguage } from "../scripts/engine/behavior/talk.js";
+import { stepsToConvince, talkDC, talkAffinity, shareLanguage, foesKnown, movedThisTurn, resolveTalk, bestPitch, choosePitch } from "../scripts/engine/behavior/talk.js";
 import { pf2eRules } from "./fixtures/three-action-rules.js";
 import { parseFormula } from "../scripts/engine/dice.js";
 import { creature, strike, battle, social as talkData } from "./helpers.js";
@@ -134,5 +134,64 @@ describe("languages set aside", () => {
     expect(r.pAnySwayed).toBe(0);
     const on = runBatchSync(battle([talker(), bandit({ social: social({ languages: ["aklo"] }) })], { ignoreLanguages: true }), pf2eRules, { runs: 200 });
     expect(on.pAnySwayed).toBeGreaterThan(0);
+  });
+});
+
+describe("talk: what's fair in a crowded fight", () => {
+  const wall = (ax, ay, bx, by) => ({ a: [ax, ay], b: [bx, by], s: 20, d: 0, door: null, open: false });
+  const at = (x, y = 0) => ({ position: { x, y, size: 5 } });
+
+  test("outnumbered: by the foes it knows of, not a third side it can't see", () => {
+    // (The talker and the bandit face to face; two beasts of a third side far off behind a wall, out of earshot.)
+    const sides = { friendly: { label: "Party", enemies: ["hostile", "hostile2"] }, hostile: { label: "Bandits", enemies: ["friendly", "hostile2"] }, hostile2: { label: "Beasts", enemies: ["friendly", "hostile"] } };
+    const beasts = [creature({ id: "b1", side: "hostile2", ...at(400, 0) }), creature({ id: "b2", side: "hostile2", ...at(400, 10) })];
+    const set = (walls, far) => {
+      const spec = battle([talker(at(0)), bandit(at(10)), ...far], { positioning: true }, sides);
+      spec.walls = walls;
+      return createRun(prepareBattle(spec, pf2eRules));
+    };
+    const alone = set([], []);
+    const hidden = set([wall(200, -100, 200, 100)], beasts);
+    const seen = set([], beasts.map(b => ({ ...b, position: { ...b.position, x: 40 } })));
+    const show = run => {
+      const [t, b] = run.units;
+      return [foesKnown(run, b).length, stepsToConvince(b, run, t), talkDC(run, t, b, "persuade")];
+    };
+    expect(show(hidden)).toEqual(show(alone));
+    // (In plain sight, three foes against one: outnumbered.)
+    const [known, steps, dc] = show(seen);
+    expect(known).toBe(3);
+    expect(steps).toBe(show(alone)[1] - 1);
+    expect(dc).toBe(show(alone)[2] - 2);
+    // (One that hurt it counts, wherever it is.)
+    const [, b] = hidden.units;
+    b.harmedBy.set("b1", 3);
+    expect(foesKnown(hidden, b).map(o => o.id)).toEqual(["talker", "b1"]);
+  });
+
+  test("one step a turn from each talker: a second success at it that turn adds nothing, and its next pitch goes elsewhere", () => {
+    // (A stalwart bandit: three steps or more, outnumbered as it is, so the track has room to fill.)
+    const stalwart = bandit({ hp: { value: 300, max: 300 }, traits: { loyal: { base: 90, fudge: 0 }, brave: { base: 90, fudge: 0 }, selfish: { base: 30, fudge: 0 }, tactical: { base: 50, fudge: 0 } } });
+    const run = beginRun(prepareBattle(battle([talker(), creature({ id: "friend", kind: "pc", diesAtZero: false, social: social({ diplomacy: 12 }) }), stalwart]), pf2eRules), 3, { log: false });
+    const [t, friend, b] = ["talker", "friend", "bandit"].map(id => run.byId.get(id));
+    expect(stepsToConvince(b, run, t)).toBeGreaterThanOrEqual(3);
+    const pitch = { ...bestPitch(run, t, b), target: b };
+    const say = () => {};
+    resolveTalk(run, t, pitch, { degree: 2, natural: 15, total: 25 }, say);
+    expect(b.sway.get(t.side)).toBe(1);
+    expect(movedThisTurn(b, t)).toBe(true);
+    resolveTalk(run, t, pitch, { degree: 2, natural: 15, total: 25 }, say);
+    expect(b.sway.get(t.side)).toBe(1);
+    expect(choosePitch(run, t)).toBeNull();
+    // (Another talker of the side fills the same track, in its own turn.)
+    resolveTalk(run, friend, { ...bestPitch(run, friend, b), target: b }, { degree: 2, natural: 15, total: 25 }, say);
+    expect(b.sway.get(t.side)).toBe(2);
+    // (The talker's next turn: a step again; a critical success still counts twice.)
+    t.turnsTaken += 1;
+    expect(movedThisTurn(b, t)).toBe(false);
+    expect(choosePitch(run, t)?.target).toBe(b);
+    const before = b.sway.get(t.side);
+    resolveTalk(run, t, pitch, { degree: 3, natural: 20, total: 35 }, say);
+    expect(b.sway.get(t.side) === before + 2 || b.swayOutcome).toBeTruthy();
   });
 });

@@ -930,7 +930,7 @@ The DC is the base above plus every line that applies.
 | Pressed for safe passage, or to leave | + round((Brave − 50) ÷ 20) |
 | Being won over | + round(betrayed wish ÷ 10) − round(fulfilled wish ÷ 10) |
 | Being sent away | + round(strongest care for someone still standing ÷ 10) + round((Brave − 50) ÷ 20) |
-| Outnumbered (more foes standing than friends) | −3 for threats, −2 otherwise |
+| Outnumbered (more foes standing that it knows of than friends standing) | −3 for threats, −2 otherwise |
 | Threats | + round((Brave − 50) ÷ 20) |
 | Stands aside (takes no side, or came as a Neutral token) | −4 to persuade, −2 otherwise |
 
@@ -953,7 +953,12 @@ Decides how many successful pitches it takes.
 | Critical failure | −1 (not below 0) | 2 rebuffs; it never listens to this talker again; someone taking no side takes offense |
 
 The track belongs to the talker's side: every talker on that side fills the same track on that creature. Rebuffs and
-offense belong to the one talker. Only a success that brings the track to the steps convinces it.
+offense belong to the one talker. Only a success that brings the track to the steps convinces it. Each talker moves a
+creature's track once per turn of its own: a second success at it in the same turn adds nothing, so its next pitch
+goes to someone else (a critical success still adds 2).
+
+Outnumbered (here and for the DC): more foes standing that it knows of (in its senses, or one it has come to blows
+with) than friends standing. A third side it can't see doesn't count.
 
 **Steps**: the system's own number if it gives one (Ironsworn, by rank 1–5: 2, 3, 6, 12, 24). Otherwise 1 if gullible
 or its resolve is −5 or less (resolve: its will against a typical creature of its level, from the system). Otherwise
@@ -977,7 +982,7 @@ outnumbered; a PC at the usual traits (Loyal 80) takes 6.
 A system may also drain a pool on a lost exchange (talker on a failed pitch, target on a success: 1, or 2 on a
 critical; worn down when it runs dry) or add its own price or gain (Ironsworn's Compel).
 
-Code: `engine/behavior/talk.js` `stepsToConvince`, `resolveTalk`; `engine/behavior/strain.js` `strain`.
+Code: `engine/behavior/talk.js` `stepsToConvince`, `resolveTalk`, `foesKnown`, `movedThisTurn`, `choosePitch`; `engine/behavior/strain.js` `strain`.
 
 ### What a convinced foe does
 

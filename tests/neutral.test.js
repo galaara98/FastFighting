@@ -166,6 +166,7 @@ describe("enemies changing sides", () => {
       b.status = "standing";
       b.sway.set("friendly", 10);
       attemptTalk(run, units.talker, pitch, say);
+      units.talker.turnsTaken += 1; // (a pitch a turn: one step a turn from each talker)
     }
     expect(b.side).toBe(NEUTRAL_PARTY);
     expect(b.swayOutcome).toBe("neutral");
@@ -371,7 +372,8 @@ describe("getting involved, or keeping out of it", () => {
     expect(meddling(run, g)).toMatchObject({ how: "extort", against: ["hostile"] });
     expect(aimOf(g, units.brute)).toBe("extort");
     expect(aimOf(g, units.fighter)).not.toBe("extort"); // (only the side it likes least)
-    for ( let i = 0; i < 4 && !units.brute.concessions; i++ ) attemptTalk(run, g, { target: units.brute, kind: "persuade", aim: "extort", mod: 40, dc: 10 }, say);
+    // (A pitch a turn: one step a turn from each talker.)
+    for ( let i = 0; i < 4 && !units.brute.concessions; i++, g.turnsTaken++ ) attemptTalk(run, g, { target: units.brute, kind: "persuade", aim: "extort", mod: 40, dc: 10 }, say);
     expect(units.brute.concessions?.[0]).toMatchObject({ kind: "money", to: "guard" });
     expect(units.brute.status).toBe("standing");
     expect(run.resolved ?? null).toBeNull(); // (the standoff isn't settled by it)
@@ -448,10 +450,10 @@ describe("can't abide violence", () => {
     expect(choosePitch(run, units.fighter)?.aim).toBe("pacify");
     expect(aimOf(units.fighter, units.guard)).toBe("pacify");
     expect(aimOf(units.fighter, units.brute)).toBe("pacify");
-    for ( let i = 0; i < 4 && units.guard.against.size; i++ ) attemptTalk(run, units.fighter, { target: units.guard, kind: "persuade", aim: "pacify", mod: 40, dc: 10 }, say);
+    for ( let i = 0; i < 4 && units.guard.against.size; i++, units.fighter.turnsTaken++ ) attemptTalk(run, units.fighter, { target: units.guard, kind: "persuade", aim: "pacify", mod: 40, dc: 10 }, say);
     expect(units.guard.against.size).toBe(0);
     units.guard.against.add("hostile");
-    for ( let i = 0; i < 4 && !units.brute.holdsBack; i++ ) attemptTalk(run, units.fighter, { target: units.brute, kind: "persuade", aim: "pacify", mod: 40, dc: 10 }, say);
+    for ( let i = 0; i < 4 && !units.brute.holdsBack; i++, units.fighter.turnsTaken++ ) attemptTalk(run, units.fighter, { target: units.brute, kind: "persuade", aim: "pacify", mod: 40, dc: 10 }, say);
     expect(units.brute.holdsBack).toBe(true);
     expect(inFray(run, units.brute)).toBe(false); // (it lets it be, until it's hurt again)
   });

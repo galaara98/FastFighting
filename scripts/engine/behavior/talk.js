@@ -38,6 +38,7 @@ import { degreeDistribution, rollCheck } from "../probability.js";
 import { isNeutral, standsAside, appeal, offend, turnOn, standAside, joinSide, calm, settleTruce, seemsFoe, leanSide, fighting, dislikesViolence } from "./neutral.js";
 import { prefersTalk, shareLanguage, talksFirstAnswer } from "./standoff.js";
 import { levelOf, allDesires } from "./desire.js";
+import { perceives } from "./senses.js";
 import { standsGround, callRetreat } from "./morale.js";
 import { bargainAim, holdsOut, calmsDown, irritated, haggled, pressed, expectOf, owed } from "./bargain.js";
 import { talkDamping } from "./specialty.js";
@@ -167,6 +168,18 @@ const outsider = (talker, t) => { const g = groupKeyOf(talker); return g === nul
  * Successful pitches needed to convince t (2-6, or 1 if very gullible). With `run`, the situation counts:
  * a badly hurt or outnumbered enemy is one step easier to talk down.
  */
+/**
+ * The foes standing against t that it knows of, for whether it's outnumbered: those in its senses, and any it has come
+ * to blows with. (A third side it can't see, busy with others, doesn't press on it.)
+ */
+export const foesKnown = (run, t) => enemiesOf(run, t).filter(o => isStanding(o) && (perceives(run, t, o) || t.harmedBy.has(o.id) || o.harmedBy.has(t.id)));
+
+/**
+ * Has `talker` already won t over a step this turn of its own? One step a turn, from each talker: a second pitch at it
+ * in the same turn gains nothing more (a critical success still counts twice).
+ */
+export const movedThisTurn = (t, talker) => t.swayTurn?.get(talker.id) === talker.turnsTaken;
+
 export function stepsToConvince(t, run = null, talker = null) {
   const s = t.spec.social ?? {};
   // (A system's own number: Ironsworn's, by the encounter's rank, as the fight has left it.)
@@ -203,7 +216,7 @@ export function stepsToConvince(t, run = null, talker = null) {
   }
   if ( run ) {
     if ( t.maxHp > 0 && t.hp / t.maxHp < 0.5 ) steps -= 1;
-    else if ( enemiesOf(run, t).filter(isStanding).length > alliesOf(run, t).filter(isStanding).length ) steps -= 1;
+    else if ( foesKnown(run, t).length > alliesOf(run, t).filter(isStanding).length ) steps -= 1;
   }
   return clamp(steps, 2, t.spec.kind === "pc" ? 8 : 6);
 }
@@ -242,7 +255,7 @@ function talkDCShared(run, talker, t) {
   else if ( frac < 0.5 ) dc -= 2;
   if ( t.wavering ) dc -= 2;
   const theirs = alliesOf(run, t).filter(isStanding).length;
-  const ours = enemiesOf(run, t).filter(isStanding).length;
+  const ours = foesKnown(run, t).length;
   // (Its leaders all down, or none of them able to lead: nobody holding it together.)
   if ( chainOf(run, groupKeyOf(t))?.length && !commandOf(run, t) ) dc -= 2;
 
@@ -342,6 +355,8 @@ export function choosePitch(run, talker, { only = null } = {}) {
   for ( const t of targets ) {
     if ( !swayable(t) || !shareLanguage(talker, t, run) ) continue;
     if ( t.offendedBy.has(talker.id) ) continue;
+    // (Already won a step from it this turn: the next pitch goes elsewhere, or none.)
+    if ( movedThisTurn(t, talker) ) continue;
     if ( only && !only(t) ) continue;
     const pitch = bestPitch(run, talker, t);
     if ( !pitch || pitch.pSuccess <= 0.05 - 0.04 * wish(talker.spec.alwaysTalk) ) continue;
@@ -727,7 +742,11 @@ export function resolveTalk(run, talker, pitch, roll, log) {
   const steps = stepsToConvince(t, run, talker);
   const aim = pitch.aim ?? aimOf(talker, t, run);
   let progress = t.sway.get(talker.side) ?? 0;
-  switch ( roll.degree ) {
+  // (One step a turn from each talker: a second success this turn wins nothing more, movedThisTurn.)
+  const moved = roll.degree >= 2 && movedThisTurn(t, talker);
+  if ( roll.degree >= 2 && !moved ) t.swayTurn.set(talker.id, talker.turnsTaken);
+  switch ( moved ? -1 : roll.degree ) {
+    case -1: break;
     case 3: progress += 2; break;
     case 2: progress += 1; break;
     case 1:

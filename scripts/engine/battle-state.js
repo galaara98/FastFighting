@@ -405,6 +405,7 @@ export function createUnit(prep, p) {
     rebuffed: new Map(),   // talkerId -> failed pitches
     offendedBy: new Set(), // talkers this unit will no longer listen to
     sway: new Map(),       // talker side -> persuasion progress
+    swayTurn: new Map(),   // talkerId -> the talker's turn (turnsTaken) it last won a step (behavior/talk.js movedThisTurn)
     swayOutcome: null,
     // Taking no side (NEUTRAL_PARTY): the side it leans to, the sides it has turned on, how much each has crossed
     // it, and a quarrel it's still trying to settle with words. (See behavior/neutral.js.)
