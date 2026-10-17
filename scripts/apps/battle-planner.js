@@ -32,7 +32,7 @@ import { rememberRun, recallRun } from "../foundry/run-memory.js";
 import { startLiveBattle, liveBattle, systemAppliesText } from "../foundry/live-battle.js";
 import { BattleVantage } from "./battle-vantage.js";
 import { blink, keepTyping } from "./blink.js";
-import { expectedRuns, paceOf, ROUGH_RUNS } from "../engine/run-budget.js";
+import { expectedRuns, paceOf, ROUGH_RUNS, PREDICTION_SECONDS } from "../engine/run-budget.js";
 import { signedNumber } from "../engine/trait-parts.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -412,6 +412,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       options: setup.options,
       // (So many creatures that few fights fit the prediction's time.)
       runsNote: this.#runsNote(resolved),
+      secondsRange: PREDICTION_SECONDS,
       downedChoices: Object.fromEntries(Object.values(DOWNED_MODELS).map(k => [k, `FASTFIGHTING.Downed.${k}`])),
       aftermathChoices: Object.fromEntries(Object.values(AFTERMATH).map(k => [k, `FASTFIGHTING.Aftermath.${k}`])),
       openingChoices: Object.fromEntries(Object.values(OPENING).map(k => [k, `FASTFIGHTING.Opening.${k}`])),
@@ -759,14 +760,24 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * So many creatures that few fights fit the prediction's time (the odds will be rough); or nothing. How many did, once
-   * it has run (this computer's speed); before, about how many will, at the pace its last prediction ran (runPace).
+   * Too few fights for the prediction's time (fewer than ROUGH_RUNS: the odds will be rough), with what makes a battle
+   * slow to simulate: its creatures, their actions, the map's tiles and walls; or nothing. How many fights did, once it
+   * has run (this computer's speed); before, about how many will, at the pace its last prediction ran (runPace).
+   * {text, size}.
    */
   #runsNote(resolved) {
-    const creatures = this.roster.filter(e => resolved[e.token.id] && this.setup.tokens[e.token.id]?.include !== false).length;
+    const taking = this.roster.filter(e => resolved[e.token.id] && this.setup.tokens[e.token.id]?.include !== false);
+    const creatures = taking.length;
     const seconds = predictionSeconds(this.setup);
     const runs = this.results && !this.stale ? this.results.runs : expectedRuns(creatures, seconds, setting("runPace"));
-    return runs < ROUGH_RUNS ? game.i18n.format("FASTFIGHTING.Planner.ManyCreatures", { creatures, runs, seconds }) : null;
+    if ( runs >= ROUGH_RUNS ) return null;
+    const actions = taking.reduce((n, e) => n + (e.spec.actions?.length ?? 0), 0);
+    const { sceneRect, size } = canvas.dimensions ?? {};
+    const tiles = size ? Math.round((sceneRect.width / size) * (sceneRect.height / size)) : 0;
+    return {
+      text: game.i18n.format("FASTFIGHTING.Planner.FewFights", { least: ROUGH_RUNS }),
+      size: game.i18n.format("FASTFIGHTING.Planner.BattleSize", { creatures, actions, tiles, walls: canvas.scene?.walls?.size ?? 0 })
+    };
   }
 
   /** Ask a friendly character's players about it: its survey, on that character. */

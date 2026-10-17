@@ -8,6 +8,7 @@
  */
 import { MODULE_ID, SIDES, TRAITS, MAX_ROUNDS, clamp } from "../constants.js";
 import { setting } from "../settings.js";
+import { PREDICTION_SECONDS } from "../engine/run-budget.js";
 import { rememberRole } from "./command-pick.js";
 
 const emptyFudge = () => Object.fromEntries(TRAITS.map(k => [k, 0]));
@@ -79,6 +80,8 @@ export function getSetup(holder = planHolder()) {
   const setup = foundry.utils.mergeObject(defaultSetup(), stored, { inplace: false });
   // (A plan saved before the most rounds went to 4 to 12 is held to them.)
   setup.options.maxRounds = clamp(Math.round(Number(setup.options.maxRounds) || MAX_ROUNDS.default), MAX_ROUNDS.min, MAX_ROUNDS.max);
+  // (And one saved before the prediction's time went to 6 to 60 seconds, to them.)
+  setup.options.seconds = clamp(Math.round(Number(setup.options.seconds) || setting("predictionTime")), PREDICTION_SECONDS.min, PREDICTION_SECONDS.max);
   return setup;
 }
 

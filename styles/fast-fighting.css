@@ -432,6 +432,7 @@
 .ff-slider-value { display: inline-block; min-width: 2ch; font-weight: 700; text-align: right; }
 /* Too few fights fit the time for a big battle. */
 .ff-runs-note { flex-basis: 100%; text-align: right; font-size: 11px; color: var(--ff-accent); }
+.ff-runs-note .ff-battle-size { display: block; color: var(--ff-text-dim); }
 /* A friendly character's survey, asked of its players (a quill), or opened for the GMs (an orange quill: GM-only). */
 .ff-ask { display: inline-flex; gap: 2px; }
 .ff-quill i { color: var(--ff-friendly); }

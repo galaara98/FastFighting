@@ -11712,6 +11712,16 @@
    "commit": null,
    "hash": "f17b1353d6ec"
   },
+  "core:FASTFIGHTING.Planner.BattleSize": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Planner.BattleSize",
+   "area": "core/Planner",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "c73cd9c1e767"
+  },
   "core:FASTFIGHTING.Planner.Bystander": {
    "repo": "core",
    "file": "languages/en.json",
@@ -11874,6 +11884,16 @@
    "date": null,
    "commit": null,
    "hash": "b65f88302ac2"
+  },
+  "core:FASTFIGHTING.Planner.FewFights": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Planner.FewFights",
+   "area": "core/Planner",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "1f1e3d3d93ab"
   },
   "core:FASTFIGHTING.Planner.FightsRun": {
    "repo": "core",
@@ -12098,7 +12118,8 @@
    "date": null,
    "commit": null,
    "hash": "d739e0d32a13",
-   "changed": true
+   "changed": true,
+   "gone": "2026-10-17"
   },
   "core:FASTFIGHTING.Planner.MaxRounds": {
    "repo": "core",

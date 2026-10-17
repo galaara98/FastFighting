@@ -34,7 +34,7 @@ GMs get buttons at the top of the Combat Tracker: **Planner**, **Survey** (see [
 The window needs at least 1000×600 and uses any extra space.
 
 **Toolbar**
-- **Seconds** (how long the prediction runs), **Max rounds** and **Seed**. Under 100 fights, the odds are rough and the planner says so; its estimate before a Run goes by how fast this computer ran the last one.
+- **Seconds** (how long the prediction runs), **Max rounds** and **Seed**. Under 100 fights, the odds are rough: the planner says so, with what makes the battle slow to simulate (its creatures, their actions, the map's tiles and walls). Its estimate before a Run goes by how fast this computer ran the last one.
 - **Downed**, **After the fight** (see [After the fight](#after-the-fight)), **Opening** (see [Talking](#talking)) and **Initiative**.
 - Toggles: Terrain & positioning, Morale, Leadership, Talking, Ignore languages, Bystanders, Hidden tokens, and, with a helper that plays live battles, Players run their characters.
 - **Run** (**Stop** while it runs), Refresh, Clear and **Rewind This Encounter**.
@@ -297,7 +297,7 @@ World settings, under **Configure Settings → FastFighting**. The planner overr
 | Setting | Default | What it controls |
 | --- | --- | --- |
 | Use the experimental generic adapter | off | A generic d20 adapter for a system with no helper (see **Generic system data paths**). |
-| Prediction time (seconds) | 6 | How long the planner simulates. |
+| Prediction time (seconds) | 10 | How long the planner simulates (6 to 60). |
 | Max rounds | 12 | Rounds before a battle is a stalemate. |
 | Include hidden tokens | on | Hidden tokens take part. |
 | Include other scene levels | off | Tokens on the scene's other levels take part. |

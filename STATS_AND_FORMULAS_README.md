@@ -1571,7 +1571,7 @@ Decides how many simulated fights the planner runs before it shows the odds.
 
 - It runs fight after fight until the time is up, finishes the fight under way, and starts no more. At least 1 fight,
   at most 20 000 (`MAX_RUNS`).
-- Time: **Prediction time (seconds)** (`predictionTime`), default 6, range 4–20. The planner's **Seconds** slider
+- Time: **Prediction time (seconds)** (`predictionTime`), default 10, range 6–60. The planner's **Seconds** slider
   overrides it for one battle.
 - Every 25 ms it lets the browser redraw; each pause counts against the time only up to 20 ms, so a background tab
   doesn't eat the budget.
@@ -1588,14 +1588,14 @@ Decides how many simulated fights the planner runs before it shows the odds.
 
 Estimated fights at pace 1 (a fast machine fits more; a battle of many actions and walls, fewer):
 
-| Creatures | 4 s | 6 s | 10 s | 20 s |
+| Creatures | 6 s | 10 s | 30 s | 60 s |
 |---|---|---|---|---|
-| 8 | 1 610 | 2 415 | 4 025 | 8 051 |
-| 16 | 474 | 711 | 1 185 | 2 370 |
-| 32 | 124 | 186 | 310 | 620 |
-| 64 | 31 | 47 | 78 | 156 |
-| 100 | 12 | 19 | 32 | 64 |
-| Warning from | 36 | 44 | 57 | 81 |
+| 8 | 2 415 | 4 025 | 12 077 | 20 000 |
+| 16 | 711 | 1 185 | 3 556 | 7 112 |
+| 32 | 186 | 310 | 930 | 1 860 |
+| 64 | 47 | 78 | 235 | 470 |
+| 100 | 19 | 32 | 96 | 193 |
+| Warning from | 44 | 57 | 99 | 140 |
 
 - **Seed**: blank picks a random one; a whole number repeats the same batch. Fight i gets its own seed derived from it,
   so any fight replays exactly.
