@@ -151,7 +151,7 @@ export function outcomeLine(id, data = null) {
  * down), and a change of side. A system adds its own (dying, wounds, resources) around them.
  * @param {object} spec    its CombatantSpec
  * @param {object} final   where the fight left it
- * @param {object} [o]     {hp: false} to leave hit points to the system (Ironsworn calls them health)
+ * @param {object} [o]     {hp: false} to leave hit points to the system (one that calls them something else)
  */
 export function commonOutcome(spec, final, { hp = true } = {}) {
   const lines = [];
@@ -174,6 +174,35 @@ export function sideChangeLine(final) {
   if ( final.side !== "neutralParty" || final.status === "dead" ) return null;
   if ( final.against?.includes("friendly") ) return outcomeLine("TurnedOn");
   return final.swayed === "neutral" ? outcomeLine("StandsAside") : null;
+}
+
+/** Foundry's English for a key when the reader's language is another (its fallback, as Foundry reads it); null for none. */
+export function englishWords(key) {
+  const text = globalThis.foundry?.utils?.getProperty?.(globalThis.game?.i18n?._fallback ?? {}, key);
+  return typeof text === "string" ? text : null;
+}
+
+/** The words of a comma-separated list: each trimmed of anything but letters and digits at either end, spaces single, lower case. */
+export const listWords = text => String(text ?? "").split(",")
+  .map(w => w.trim().replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, "").replace(/\s+/g, " ").toLowerCase()).filter(Boolean);
+
+const wordLists = new Map();
+
+/**
+ * A word list in a language file (its full key), in the reader's language and in English too: a name may say either
+ * (a compendium is often in English whatever the table reads). Lower case, each once. Empty for none.
+ */
+export function wordList(key) {
+  if ( !wordLists.has(key) ) wordLists.set(key, [...new Set([...(hasWords(key) ? listWords(localize(key)) : []), ...listWords(englishWords(key))])]);
+  return wordLists.get(key);
+}
+
+const escaped = w => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+/** Does a text hold one of these words, whole (not inside a longer one), in any case? */
+export function saysWord(words, text) {
+  if ( !words?.length || !text ) return false;
+  return new RegExp(`(?<![\\p{L}\\p{N}])(?:${words.map(escaped).join("|")})(?![\\p{L}\\p{N}])`, "iu").test(String(text));
 }
 
 /** "Still frightened (2 more rounds)". */

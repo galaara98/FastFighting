@@ -166,7 +166,7 @@ export function computeWalls(tokens) {
  */
 export function registerGroundField() {
   Hooks.on("renderRegionConfig", (app, html) => {
-    const root = html instanceof HTMLElement ? html : html?.[0];
+    const root = html;
     const region = app.document;
     if ( !root || !region || root.querySelector(".ff-region-ground") ) return;
     const anchor = root.querySelector('[name="elevation.top"]')?.closest(".form-group") ?? root.querySelector(".form-group");
@@ -287,7 +287,6 @@ function regionsCrossed(a, b, difficult = difficultRegions()) {
  * @param {Token[]} tokens                 Placeables taking part
  * @param {Map<string, object>} specs      tokenId -> CombatantSpec (for speeds and reach)
  * @param {object} [options]
- * @param {boolean} [options.ignoreTerrain]  Treat all terrain as normal
  * @param {Set<string>} [options.ignoreTerrainFor]  Token ids that ignore terrain (GM override)
  * @param {Map<string, object>} [options.pairs]  Each pair as it was worked out last (kept by the caller): a pair
  *                                               neither of which has moved (nor changed its speeds, its reach, or
@@ -295,7 +294,7 @@ function regionsCrossed(a, b, difficult = difficultRegions()) {
  *                                               when walls or regions change (battle.js invalidateApproach).
  * @returns {Record<string, Record<string, object>>}  approach[aId][tId] = {dist, mult, speed, mode, los, meleeOk, modes, regions}
  */
-export function computeApproach(tokens, specs, { ignoreTerrain = false, ignoreTerrainFor = new Set(), pairs = null } = {}) {
+export function computeApproach(tokens, specs, { ignoreTerrainFor = new Set(), pairs = null } = {}) {
   const approach = {};
   // Walls: the way around them, from a grid over the fight (or through, at 4x, when there's none).
   const grid = pathGridFor(tokens);
@@ -315,7 +314,7 @@ export function computeApproach(tokens, specs, { ignoreTerrain = false, ignoreTe
     approach[a.id] = {};
     const speeds = specA.speeds ?? { walk: 25 };
     const reach = Math.max(5, ...specA.actions.filter(x => x.melee).map(x => x.reach ?? 5));
-    const ignores = ignoreTerrain || ignoreTerrainFor.has(a.id);
+    const ignores = ignoreTerrainFor.has(a.id);
     const fromA = pairs ? JSON.stringify([scene, where(a), speeds, reach, ignores]) : null;
     for ( const b of tokens ) {
       if ( a === b ) continue;
@@ -482,6 +481,16 @@ export function positionOf(token) {
   const cx = doc._source.x + (doc.width * size) / 2;
   const cy = doc._source.y + (doc.height * size) / 2;
   return { x: (cx / size) * feet, y: (cy / size) * feet, size: sizeFeet(doc) };
+}
+
+/**
+ * Where a token stands on its own scene (not only the one on the canvas), in feet from the corner (its center), as
+ * positionOf counts them: the scene's grid in its own units, in feet.
+ */
+export function feetOnScene(scene, doc) {
+  const size = scene?.grid?.size || 100;
+  const feet = (scene?.grid?.distance || 5) * feetPerUnit(scene);
+  return { x: ((doc.x + ((doc.width ?? 1) * size) / 2) / size) * feet, y: ((doc.y + ((doc.height ?? 1) * size) / 2) / size) * feet };
 }
 
 /** Convert an engine position (feet, center) back to a token's top-left x/y in pixels, snapped to the grid. */

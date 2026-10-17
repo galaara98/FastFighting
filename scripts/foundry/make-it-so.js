@@ -7,6 +7,7 @@
  * be rewound (each scene keeps its last few, newest first: from their summary cards, or the planner), and one a crash
  * cut short, though no longer continued.
  */
+import { statusesOf, statusEntry } from "./sheet-tools.js";
 import { MODULE_ID } from "../constants.js";
 import { escapeHtml as escape, inertHtml } from "../i18n.js";
 import { getAdapter } from "../api.js";
@@ -405,11 +406,6 @@ export async function undoFromCard(message) {
  * The statuses on an actor, read from its effects too: a system that applies effects its own way (dcc) may leave
  * actor.statuses empty.
  */
-function statusesOf(actor) {
-  const out = new Set(actor?.statuses ?? []);
-  for ( const e of actor?.effects ?? [] ) if ( !e.disabled ) for ( const s of e.statuses ?? [] ) out.add(s);
-  return out;
-}
 
 /** Put one undo record back: created documents removed, deleted ones restored, changed values reset. */
 export async function revertRecord(r) {
@@ -468,7 +464,7 @@ export async function revertRecord(r) {
   if ( r.statusesBefore ) {
     const before = new Set(r.statusesBefore);
     for ( const id of [...statusesOf(actor)] ) {
-      if ( before.has(id) || !CONFIG.statusEffects.some(s => s.id === id) ) continue;
+      if ( before.has(id) || !statusEntry(id) ) continue;
       await step(`status ${id}`, () => (statusesOf(actor).has(id) ? actor.toggleStatusEffect(id, { active: false }) : null));
     }
   }

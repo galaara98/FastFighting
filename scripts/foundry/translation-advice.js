@@ -21,7 +21,7 @@ export function adviseTranslation(moduleId, system, known = {}) {
   if ( hooked ) return;
   hooked = true;
   Hooks.on("renderSettingsConfig", (app, element) => {
-    const root = element instanceof HTMLElement ? element : element?.[0];
+    const root = element;
     for ( const id of advised.keys() ) {
       const section = root?.querySelector(`section.tab[data-category="${id}"]`);
       if ( !section ) continue;

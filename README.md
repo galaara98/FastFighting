@@ -589,8 +589,8 @@ A spec may say what kind of creature it is (`creatureKind`: the system's own wor
 - `spec.senses`: `{sight, lowlight, hearing, smell, feel, radar}`, how far each reaches in feet (`null`: no limit; `0`: it hasn't that sense; left out: the ordinary, which is sight across the field, hearing `rules.hearingFeet` (default 60), and none of the rest). Sort your system's senses into them, the farthest of each: seeing in the dark is `lowlight`; scent is `smell`; tech sensing is `radar`; any other sense the creature has of its own (blindsight, tremorsense, lifesense, echolocation, thoughtsense ...) is `feel`. A creature with no eyes is `sight: 0`. Most systems have no use for smell or radar; leave them out. The scene's darkness comes in `options.darkness`.
 - `spec.resources.fate` and `spec.fateLabel`: points spent to keep someone from dying; `rules.avertDeath(u)` is the system's sure way out for one's own death, if it has one.
 - `spec.mods`: bonuses already on it when the fight starts (one, or a list), but only what the system's own numbers don't already include.
-- `rules.knockOut(u)` (a blow from someone who avoids killing, holding back) and `rules.secondsPerRound` (default 6, for the GM's summary).
-- Lingering effects: `final.effects` lists what's still running; `commitOutcome`'s `options.effectSource(id)` finds the action that laid each, whose `effectRef` (the helper's own) says what to copy onto the creature.
+- `rules.knockOut(u)` (a blow from someone who avoids killing, holding back).
+- Lingering effects: `final.effects` lists what's still running; `commitChanges`' `options.effectSource(id)` finds the action that laid each, whose `effectRef` (the helper's own) says what to copy onto the creature.
 
 **Dice, deeds, tables, checks and Luck in a CombatantSpec** (see `behavior/riders.js`, `behavior/casting.js` and `behavior/luck.js`):
 - On an action: `die` (its own die), `critOn`, `fumbleOn`, `deedDie` (rolled with the attack, added to the roll and the damage), `crit: {die, mod, rows}` (its crit table), `repeat` (a DamagePart: how many times the damage is rolled), `healDice` (so many of the target's own hit dice, `spec.hitDie`).
@@ -640,7 +640,7 @@ The engine counts distance in feet: give speeds, reach and ranges in feet (conve
 **Hooks:**
 - `fastFighting.init(api)`;
 - `fastFighting.preSimulate`, `fastFighting.postSimulate`;
-- `fastFighting.preMakeItSo`, `fastFighting.makeItSo`.
+- `fastFighting.liveBattleStarted(battle)`, and `fastFighting.liveBattle(battle)` whenever something in a live battle changes.
 
 ## Development
 

@@ -85,7 +85,7 @@ function cleanDesire(raw) {
 }
 const MAX_ACTION_ID = 2000;
 /** The tick-boxes that became answers, by the question that took each over. */
-const LEGACY = Object.freeze({ talk: ["alwaysTalk"], fallen: ["avoidKilling", "neverKill"], retreat: ["avoidFleeing"] });
+const LEGACY = Object.freeze({ talk: ["alwaysTalk"], fallen: ["avoidKilling", "neverKill"], retreat: ["avoidFleeing"], consumables: ["avoidConsumables"] });
 
 /**
  * Keep only answers the survey could have produced. Players own these flags and can write anything to them
@@ -290,6 +290,19 @@ export function charactersForUser(scene, user) {
 }
 
 /** Non-GM users who control at least one token on the scene. */
+/** Prepare Players: every player on the scene asked for their survey, and a new round of the party's vote. */
+export async function preparePlayers(scene = canvas.scene) {
+  if ( !game.user.isGM || !scene ) return false;
+  const players = playersOnScene(scene);
+  if ( !players.length ) {
+    ui.notifications.warn(loc("FASTFIGHTING.Survey.NoPlayers"));
+    return false;
+  }
+  await requestSurveys(players, scene, { party: "open" });
+  ui.notifications.info("FASTFIGHTING.Survey.Sent", { format: { n: players.length } });
+  return true;
+}
+
 export function playersOnScene(scene) {
   return game.users.filter(u => !u.isGM && tokensForUser(scene, u).length);
 }

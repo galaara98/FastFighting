@@ -13,9 +13,9 @@ import { damageFamily } from "./families.js";
 import { conditionOf } from "./master.js";
 import { desireBand, DESIRE_BAND_KEYS } from "../engine/behavior/desire.js";
 import { listJoin, listItems, localize, hasWords, distanceText, escapeHtml as esc } from "../i18n.js";
-import { logLine, endLine, logTerm, formatMoney, concessionText } from "./log-lines.js";
+import { logLine, endLine, logTerm, concessionText } from "./log-lines.js";
 
-export { formatMoney, concessionText };
+export { concessionText };
 
 export const STORY_STYLES = ["roleplay", "standard", "statistician"];
 

@@ -18,6 +18,9 @@ export function signedNumber(n) {
   }
 }
 
+/** Parts from a leaning ({trait: n}: a class's, a playstyle's), each with the reason it's shown with. */
+export const partsOf = (lean, why, scale = 1) => Object.entries(lean ?? {}).map(([trait, n]) => ({ trait, n: n * scale, why }));
+
 /**
  * The traits, from where they start and the parts that move them.
  * @param {Record<string, number>} base   where each trait starts (PC_BASELINE for a player character)
@@ -26,11 +29,12 @@ export function signedNumber(n) {
  * @param {object} [options]
  * @param {string|Record<string, string>} [options.from]   the reason for where they start ("player character"), shown
  *        first with the starting number
+ * @param {Record<string, string>} [options.lead]   reasons shown before all of these (a helper's own, read elsewhere)
  * @param {number} [options.min=5]
  * @param {number} [options.max=95]
  * @returns {{traits: Record<string, number>, reasons: Record<string, string>}}
  */
-export function traitsFromParts(base, parts = [], { from = null, min = 5, max = 95 } = {}) {
+export function traitsFromParts(base, parts = [], { from = null, lead = null, min = 5, max = 95 } = {}) {
   const traits = {};
   const reasons = {};
   const item = (why, n) => localize("FASTFIGHTING.Words.Part", { why, n });
@@ -46,6 +50,7 @@ export function traitsFromParts(base, parts = [], { from = null, min = 5, max = 
       ...(startWhy ? [item(startWhy, Math.round(start))] : []),
       ...shown.map(([why, n]) => item(why, signedNumber(n)))
     ]);
+    if ( lead?.[k] ) reasons[k] = listItems([lead[k], reasons[k]].filter(Boolean));
   }
   return { traits, reasons };
 }

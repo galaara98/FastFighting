@@ -4,7 +4,8 @@ import { createRun } from "../scripts/engine/battle-state.js";
 import { opensWithTalk } from "../scripts/engine/behavior/standoff.js";
 import { talkAffinity } from "../scripts/engine/behavior/talk.js";
 import { pf2eRules } from "./fixtures/three-action-rules.js";
-import { buildStory, formatMoney } from "../scripts/story/story.js";
+import { buildStory } from "../scripts/story/story.js";
+import { formatMoney } from "../scripts/story/log-lines.js";
 import { storyTables } from "./foundry-i18n.js";
 import { creature, battle, social } from "./helpers.js";
 

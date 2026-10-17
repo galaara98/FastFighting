@@ -68,31 +68,27 @@ const SETTINGS = {
 };
 
 export function registerSettings(DefaultsConfig, GenericPathsConfig, StoryTablesConfig) {
-  if ( StoryTablesConfig ) {
-    game.settings.registerMenu(MODULE_ID, "storyTablesMenu", {
-      name: "FASTFIGHTING.Story.TablesMenuName",
-      label: "FASTFIGHTING.Story.TablesMenuLabel",
-      hint: "FASTFIGHTING.Story.TablesMenuHint",
-      icon: "fa-solid fa-table-list",
-      type: StoryTablesConfig,
-      restricted: true
-    });
-  }
+  game.settings.registerMenu(MODULE_ID, "storyTablesMenu", {
+    name: "FASTFIGHTING.Story.TablesMenuName",
+    label: "FASTFIGHTING.Story.TablesMenuLabel",
+    hint: "FASTFIGHTING.Story.TablesMenuHint",
+    icon: "fa-solid fa-table-list",
+    type: StoryTablesConfig,
+    restricted: true
+  });
   game.settings.register(MODULE_ID, "genericPaths", { scope: "world", config: false, type: Object, default: {} });
   // The party's roles the GM gave in earlier fights, by actor: {actorId: "leader" | "lt1" | "lt2"}.
   game.settings.register(MODULE_ID, "partyCommand", { scope: "world", config: false, type: Object, default: {} });
   // The journal entry that keeps live battles (foundry/live-battle.js store): only a GM can write a world setting.
   game.settings.register(MODULE_ID, "liveStore", { scope: "world", config: false, type: String, default: "" });
-  if ( GenericPathsConfig ) {
-    game.settings.registerMenu(MODULE_ID, "genericPathsMenu", {
-      name: "FASTFIGHTING.Generic.MenuName",
-      label: "FASTFIGHTING.Generic.MenuLabel",
-      hint: "FASTFIGHTING.Generic.MenuHint",
-      icon: "fa-solid fa-route",
-      type: GenericPathsConfig,
-      restricted: true
-    });
-  }
+  game.settings.registerMenu(MODULE_ID, "genericPathsMenu", {
+    name: "FASTFIGHTING.Generic.MenuName",
+    label: "FASTFIGHTING.Generic.MenuLabel",
+    hint: "FASTFIGHTING.Generic.MenuHint",
+    icon: "fa-solid fa-route",
+    type: GenericPathsConfig,
+    restricted: true
+  });
   for ( const [key, data] of Object.entries(SETTINGS) ) {
     game.settings.register(MODULE_ID, key, {
       name: `FASTFIGHTING.Settings.${key}.Name`,
@@ -108,16 +104,14 @@ export function registerSettings(DefaultsConfig, GenericPathsConfig, StoryTables
     type: Object,
     default: DEFAULT_SIDE_TRAITS
   });
-  if ( DefaultsConfig ) {
-    game.settings.registerMenu(MODULE_ID, "sideDefaultsMenu", {
-      name: "FASTFIGHTING.Settings.sideDefaults.Name",
-      label: "FASTFIGHTING.Settings.sideDefaults.Label",
-      hint: "FASTFIGHTING.Settings.sideDefaults.Hint",
-      icon: "fa-solid fa-people-group",
-      type: DefaultsConfig,
-      restricted: true
-    });
-  }
+  game.settings.registerMenu(MODULE_ID, "sideDefaultsMenu", {
+    name: "FASTFIGHTING.Settings.sideDefaults.Name",
+    label: "FASTFIGHTING.Settings.sideDefaults.Label",
+    hint: "FASTFIGHTING.Settings.sideDefaults.Hint",
+    icon: "fa-solid fa-people-group",
+    type: DefaultsConfig,
+    restricted: true
+  });
 }
 
 export function setting(key) {

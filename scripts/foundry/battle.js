@@ -558,17 +558,17 @@ export function clearRole(ts) {
  * Build the BattleSpec the engine runs.
  * @param {object[]} roster      From gatherRoster
  * @param {object} setup         Scene setup
- * @param {object} [extra]       {approach, exclude: Set<tokenId>, optionOverrides}
+ * @param {object} [extra]       {approach}
  */
-export function buildBattleSpec(roster, setup, { approach = null, exclude = new Set(), optionOverrides = {} } = {}) {
+export function buildBattleSpec(roster, setup, { approach = null } = {}) {
   const adapter = getAdapter();
   const sideDefaults = setting("sideDefaults");
   proposeNeutralGroups(roster, setup, { missingOnly: true }); // (a neutral put on the map since the planner opened)
   const resolved = resolveAllegiances(roster, setup);
-  const options = { ...setup.options, ...optionOverrides };
+  const options = { ...setup.options };
   // Who commands each group: its boss or leader, and its lieutenants. (The party's leader settles a tie in its wishes,
   // whether or not leadership counts in this fight.)
-  const fighters = roster.filter(e => resolved[e.token.id] && !exclude.has(e.token.id));
+  const fighters = roster.filter(e => resolved[e.token.id]);
   const command = commandChains(fighters, setup, resolved, adapter);
   const chains = options.leadership ? command : {};
   // The player party's wishes: the votes of the players with a character on the friendly side.
@@ -579,7 +579,7 @@ export function buildBattleSpec(roster, setup, { approach = null, exclude = new 
   const bySide = {};
   for ( const e of roster ) {
     const side = resolved[e.token.id];
-    if ( !side || exclude.has(e.token.id) ) continue;
+    if ( !side ) continue;
     const ts = tokenSetup(setup, e.token.id);
     const spec = applyStatFudges(e.spec, ts.fudge);
     spec.side = side;
@@ -846,7 +846,7 @@ const SWING_COMBATANTS = 12;
  * as fit its share of the time (engine/run-budget.js).
  * @returns {Promise<{label: string, delta: number}[]>} sorted by impact
  */
-export async function swingFactors(spec, baseline, { runs = null, seconds = null, onProgress } = {}) {
+export async function swingFactors(spec, baseline, { seconds = null, onProgress } = {}) {
   const rules = getAdapter().rules;
   const friendlyWin = r => r.sides.friendly?.pWin ?? 0;
   const base = friendlyWin(baseline);
@@ -869,7 +869,7 @@ export async function swingFactors(spec, baseline, { runs = null, seconds = null
   // (Each test: its share of three predictions' time, SWING_RUNS fights at most.)
   const share = swingShareMs(tests.length, seconds ?? setting("predictionTime"));
   for ( const [i, t] of tests.entries() ) {
-    const r = await runBatch(t.make(spec), rules, { runs: runs ?? SWING_RUNS, seed: 99, maxMs: runs ? null : share });
+    const r = await runBatch(t.make(spec), rules, { runs: SWING_RUNS, seed: 99, maxMs: share });
     out.push({ label: t.label, side: t.side ?? null, id: t.id ?? null, delta: friendlyWin(r) - base });
     onProgress?.((i + 1) / tests.length);
     await new Promise(resolve => setTimeout(resolve, 0));

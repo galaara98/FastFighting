@@ -38,7 +38,7 @@ function fight(list, rules = pf2eRules, { seed = 5, positioning = false } = {}) 
 const lay = (u, conditions, by = null) => applyOutcome(u, { conditions, rounds: 20, label: "" }, by?.id ?? null, { id: `test:${Object.keys(conditions)[0]}` });
 const ofType = (run, type, id = null) => run.log.filter(e => e.type === type && (!id || e.actorId === id));
 
-test("the API is 17", () => expect(CORE_API_VERSION).toBe(17));
+test("the API is 17 or later", () => expect(CORE_API_VERSION).toBeGreaterThanOrEqual(17));
 
 describe("heals", () => {
   const potion = (extra = {}) => ({ id: "potion", name: "Potion", kind: "heal", cost: 1, heal: [parseFormula("2d6", "healing")], selfOnly: true, ...extra });

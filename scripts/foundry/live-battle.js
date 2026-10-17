@@ -33,7 +33,8 @@ import {
   NeedsDecision, applyFact, gmMoment, leavingReach, openingFor, reactNow, nextSpotlight, liveAftermath,
   setCondition, setRelation, clearRelation, setAffliction, setGoal, setAttitude, setSide, setRole, playerRuns
 } from "../engine/live.js";
-import { diffAll } from "../engine/changes.js";
+import { diffAll, sideAfter } from "../engine/changes.js";
+import { undoRecord } from "./sheet-tools.js";
 import { keepUpdate, keptBattle, forgetUpdate } from "./live-keeping.js";
 import { randomSeed } from "../engine/rng.js";
 import { holderOf } from "../engine/behavior/troubles.js";
@@ -502,7 +503,7 @@ const writeOptions = () => ({ live: true, lootMode: setting("lootMode"), corpseM
 const initiativeCards = from => game.messages.filter(m => m.timestamp >= from && m.getFlag("core", "initiativeRoll")).map(m => m.id);
 
 /** A creature's token id: its spec's, or (summoned mid-fight) the one made for it. */
-const tokenIdOf = u => u.tokenId ?? u.spec.tokenId ?? u.id;
+export const tokenIdOf = u => u.tokenId ?? u.spec.tokenId ?? u.id;
 
 /** The unit a combatant is (by its token). */
 const unitOf = combatant => (combatant ? battle.run.units.find(u => tokenIdOf(u) === combatant.tokenId) ?? null : null);
@@ -1113,6 +1114,13 @@ async function writeChanges(before, after, records) {
         ...writeOptions(), before: before[id], effectSource
       });
       if ( record ) records.push(record);
+      // (Won over, talked out of the fight, turned on the party: its token shows it, whatever its system wrote.)
+      const side = ch.side ? sideAfter(after[id]) : null;
+      const disposition = side ? CONST.TOKEN_DISPOSITIONS[{ friendly: "FRIENDLY", hostile: "HOSTILE", neutral: "NEUTRAL" }[side]] : undefined;
+      if ( disposition !== undefined && doc.disposition !== disposition ) {
+        records.push({ ...undoRecord(doc, doc.actor, { statusesBefore: false }), tokenUpdate: { disposition: doc.disposition } });
+        await doc.update({ disposition });
+      }
       // (Tied up this turn: marked on the sheet, the system's way.)
       if ( ch.bound !== undefined ) {
         const marked = await adapter.commitBound(doc, ch.bound);

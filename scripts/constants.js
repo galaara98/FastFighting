@@ -126,8 +126,10 @@ export const ADHD = 20;
  */
 export const AVOID_KILLING = 90;
 
-/** How an encounter opens: decided by who would rather talk, always with words, or straight into battle. */
-/** How an encounter opens. ARGUMENT: only an argument, talk and nothing else (what would come to blows ends it). */
+/**
+ * How an encounter opens: decided by who would rather talk (AUTO), always with words (TALK), straight into battle
+ * (FIGHT), or only an argument, talk and nothing else (ARGUMENT: what would come to blows ends it).
+ */
 export const OPENING = Object.freeze({ AUTO: "auto", TALK: "talk", FIGHT: "fight", ARGUMENT: "argument" });
 
 export const FUDGE_STEP = Object.freeze({ trait: 5 });

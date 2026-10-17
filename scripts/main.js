@@ -12,7 +12,7 @@ import { StoryTablesConfig } from "./apps/story-tables-config.js";
 import { invalidateStoryTables, installStoryTables } from "./story/tables.js";
 import { PlayerSurvey } from "./apps/player-survey.js";
 import { registerTokenTactics, syncTokenTactics } from "./apps/token-tactics.js";
-import { QUERIES, SURVEY_STATUS, hasCharactersFor, playersOnScene, requestSurveys } from "./foundry/tactics.js";
+import { QUERIES, SURVEY_STATUS, hasCharactersFor, preparePlayers } from "./foundry/tactics.js";
 import { helperStatus, helperMessage, helperNoticeHtml } from "./helpers.js";
 import { invalidateApproach } from "./foundry/battle.js";
 import { undoConcession, revealStory, ownCard, cardUndoState, undoFromCard, refreshUndoCards, UNDO_REACH } from "./foundry/make-it-so.js";
@@ -82,7 +82,7 @@ function openIfReady() {
 
 Hooks.on("renderCombatTracker", (app, element) => {
   if ( !game.user.isGM ) return myTacticsButton(element);
-  const root = element instanceof HTMLElement ? element : element?.[0];
+  const root = element;
   const header = root?.querySelector(".combat-tracker-header") ?? root;
   if ( !header ) return;
   header.querySelector(".ff-tracker-row")?.remove();
@@ -136,21 +136,13 @@ Hooks.on("renderCombatTracker", (app, element) => {
   header.prepend(row);
 });
 
-/** Prepare Players (the planner's), from the tracker, with or without a conflict: a new round of the party's vote too. */
-async function preparePlayers() {
-  if ( !game.user.isGM || !canvas.scene ) return;
-  const players = playersOnScene(canvas.scene);
-  if ( !players.length ) return ui.notifications.warn(game.i18n.localize("FASTFIGHTING.Survey.NoPlayers"));
-  await requestSurveys(players, canvas.scene, { party: "open" });
-  ui.notifications.info("FASTFIGHTING.Survey.Sent", { format: { n: players.length } });
-}
 
 /**
  * A player who controls a token on the battle map, or owns a character, can open its own tactics any time from the
  * Encounters tab (in a fight or not, asked by the GM or not).
  */
 function myTacticsButton(element) {
-  const root = element instanceof HTMLElement ? element : element?.[0];
+  const root = element;
   const header = root?.querySelector(".combat-tracker-header") ?? root;
   if ( !header ) return;
   header.querySelector(".ff-my-tactics")?.remove();
@@ -171,19 +163,6 @@ function myTacticsButton(element) {
 // A player's characters on the map change: its button comes and goes.
 const refreshMyTactics = foundry.utils.debounce(() => { if ( !game.user.isGM ) ui.combat?.render(); }, 300);
 for ( const hook of ["createToken", "deleteToken", "canvasReady", "createActor", "deleteActor"] ) Hooks.on(hook, () => refreshMyTactics());
-Hooks.on("updateActor", (actor, changes) => { if ( "ownership" in changes ) refreshMyTactics(); });
-
-// Encounter changes re-read the roster in an open planner.
-const refreshRoster = foundry.utils.debounce(() => {
-  const app = foundry.applications.instances.get("fast-fighting-planner");
-  if ( app?.rendered && !app.running ) {
-    app.roster = null;
-    app.render();
-  }
-}, 200);
-for ( const hook of ["createCombatant", "deleteCombatant", "createCombat", "deleteCombat", "combatStart"] ) {
-  Hooks.on(hook, () => { if ( game.user.isGM ) refreshRoster(); });
-}
 
 Hooks.once("ready", () => {
   // (The keywords read in characters' biographies: English, and the reader's language's on top.)
@@ -220,6 +199,8 @@ const touchesTactics = changes => foundry.utils.hasProperty(changes, `flags.${MO
   || foundry.utils.hasProperty(changes, `delta.flags.${MODULE_ID}`);
 
 Hooks.on("updateActor", (actor, changes) => {
+  // (Its owners changed: whose My Tactics button shows.)
+  if ( "ownership" in changes ) refreshMyTactics();
   if ( touchesTactics(changes) ) syncOpenViews(actor);
 });
 Hooks.on("updateToken", (tokenDoc, changes) => {
@@ -276,13 +257,14 @@ const followPlan = () => {
 Hooks.on("canvasReady", followPlan);
 for ( const hook of ["createCombat", "deleteCombat", "updateCombat"] ) Hooks.on(hook, () => followPlan());
 
-// Someone joins (or leaves) the planner's encounter, or a token comes or goes on its scene: the planner takes them in,
-// keeping the GM's plan as it stands (only the encounter ending, or the GM clearing the plan, starts it afresh).
+// Someone joins (or leaves) the planner's encounter, it starts, or a token comes or goes on its scene: the planner takes
+// them in, keeping the GM's plan as it stands (only the encounter ending, or the GM clearing the plan, starts it afresh).
 const rereadRoster = foundry.utils.debounce(() => {
   const app = foundry.applications.instances.get("fast-fighting-planner");
   if ( app?.rendered ) app.rereadRoster(); // (during a run, as soon as it ends)
 }, 150);
 Hooks.on("createCombatant", combatant => { if ( combatant.parent?.uuid === planHolder()?.uuid ) rereadRoster(); });
+Hooks.on("combatStart", combat => { if ( combat.uuid === planHolder()?.uuid ) rereadRoster(); });
 Hooks.on("deleteCombatant", combatant => { if ( combatant.parent?.uuid === planHolder()?.uuid ) rereadRoster(); });
 for ( const hook of ["createToken", "deleteToken"] ) Hooks.on(hook, token => { if ( token.parent?.id === canvas.scene?.id ) rereadRoster(); });
 
@@ -359,7 +341,7 @@ for ( const hook of ["createRollTable", "updateRollTable", "deleteRollTable", "c
 
 /* Without a helper the settings are greyed out, with a notice pointing at the supported systems. */
 Hooks.on("renderSettingsConfig", (app, element) => {
-  const root = element instanceof HTMLElement ? element : element?.[0];
+  const root = element;
   const section = root?.querySelector(`section[data-category="${MODULE_ID}"]`);
   if ( !section ) return;
   section.querySelector(".ff-helper-notice")?.remove();

@@ -12,7 +12,7 @@ import { setAdhd } from "./token-tactics.js";
 import { getSetup, saveSetup, clearSetup, tokenSetup, planHolder, rememberPartyRole } from "../foundry/persistence.js";
 import {
   questionsContext, setTactic, togglePlaystyle, syncTacticsDom, isPlayerControlled, playersOnScene, tokensForUser, surveyStatus,
-  requestSurveys, requestCharacterSurvey, requestGmSurvey, SURVEY_STATUS, playstyleSignature, tacticsFor, reactionsSignature
+  requestSurveys, requestCharacterSurvey, requestGmSurvey, SURVEY_STATUS, playstyleSignature, tacticsFor, reactionsSignature, preparePlayers
 } from "../foundry/tactics.js";
 import { cachedCharacterSpec, showsReactions } from "../foundry/sheet-watch.js";
 import {
@@ -31,6 +31,7 @@ import { PlayerSurvey } from "./player-survey.js";
 import { rememberRun, recallRun } from "../foundry/run-memory.js";
 import { startLiveBattle } from "../foundry/live-battle.js";
 import { expectedRuns, ROUGH_RUNS } from "../engine/run-budget.js";
+import { signedNumber } from "../engine/trait-parts.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 const TEMPLATE = `modules/${MODULE_ID}/templates/planner.hbs`;
@@ -284,11 +285,10 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
   #traitView(trait, base, fudge, path, reason, shift = 0) {
     // (Shown in whole points: a trait worked out from its sheet can fall between them.)
     const value = clamp(Math.round(base + fudge + shift), 0, 100);
-    const signed = n => (n > 0 ? `+${n}` : `${n}`);
     return {
       trait, label: loc(`FASTFIGHTING.Trait.${trait}`), value, base, fudge, path, step: FUDGE_STEP.trait,
       band: loc(`FASTFIGHTING.Band.${traitBand(trait, value)}`),
-      fudgeLabel: fudge ? signed(fudge) : "",
+      fudgeLabel: fudge ? signedNumber(fudge) : "",
       tooltip: brief(reason ? game.i18n.format("FASTFIGHTING.Planner.TraitWhy", { what: loc(`FASTFIGHTING.TraitTip.${trait}`), why: reason }) : loc(`FASTFIGHTING.TraitTip.${trait}`))
     };
   }
@@ -729,12 +729,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   static async #onPreparePlayers() {
-    const players = playersOnScene(canvas.scene);
-    if ( !players.length ) return ui.notifications.warn(loc("FASTFIGHTING.Survey.NoPlayers"));
-    // (Everyone: a new round of the party's vote.)
-    await requestSurveys(players, canvas.scene, { party: "open" });
-    ui.notifications.info("FASTFIGHTING.Survey.Sent", { format: { n: players.length } });
-    this.render();
+    if ( await preparePlayers(canvas.scene) ) this.render();
   }
 
   static async #onOpenSurvey(event, target) {

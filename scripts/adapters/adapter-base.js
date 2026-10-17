@@ -17,6 +17,7 @@
  * content nobody has seen yet (paid books, homebrew) still works.
  */
 import { CORE_CONDITIONS } from "../engine/conditions.js";
+import { statusesOf, statusEntry, toggleStatus } from "../foundry/sheet-tools.js";
 
 export class SystemAdapter {
   /** @type {string} */
@@ -56,10 +57,10 @@ export class SystemAdapter {
 
   /**
    * Rank possible leaders on one side.
-   * @param {object[]} entries  [{spec, actor}]
+   * @param {object[]} specs   the side's CombatantSpecs
    * @returns {{id: string, score: number, reason: string, bonus: object}[]}
    */
-  detectLeaders(entries) {
+  detectLeaders(specs) {
     return [];
   }
 
@@ -75,8 +76,9 @@ export class SystemAdapter {
 
   /**
    * The system's own word for a stat, for {AC}, {HP}, {SP} and {MONEY} in FastFighting's text (in the client's language).
-   * @param {"ac"|"hp"|"sp"|"money"} key   ac: how hard a creature is to hit; hp: how much harm it can take; sp:
-   *   stamina, spent before hit points (a spec's hp.stamina); money: what paying costs (coins; Ironsworn's Supply)
+   * @param {"ac"|"hp"|"sp"|"money"|"level"} key   ac: how hard a creature is to hit; hp: how much harm it can take; sp:
+   *   stamina, spent before hit points (a spec's hp.stamina); money: what paying costs (coins; Ironsworn's Supply);
+   *   level: how far along a creature is (the planner shows it beside each one)
    * @returns {string|null|false}  the word; null: FastFighting's generic one; false: the system has none (not shown)
    */
   term(key) {
@@ -210,9 +212,7 @@ export class SystemAdapter {
     const spec = await this.toCombatantSpec(tokenDoc);
     if ( !spec ) return null;
     // (Its statuses as its effects carry them too: a system such as dcc leaves actor.statuses empty.)
-    const actor = tokenDoc.actor;
-    const marked = id => actor?.statuses?.has?.(id) || [...(actor?.effects ?? [])].some(e => !e.disabled && e.statuses?.has?.(id));
-    const dead = marked("dead") || (spec.hp.value <= 0 && spec.diesAtZero);
+    const dead = statusesOf(tokenDoc.actor).has("dead") || (spec.hp.value <= 0 && spec.diesAtZero);
     return {
       hp: spec.hp.value, temp: spec.hp.temp ?? 0, stamina: spec.hp.stamina?.value, maxHp: spec.hp.max, dying: spec.dying ?? 0,
       wounded: spec.wounded ?? 0, doomed: spec.doomed ?? 0, status: dead ? "dead" : spec.hp.value > 0 ? "standing" : "down",
@@ -246,14 +246,10 @@ export class SystemAdapter {
    */
   async commitBound(tokenDoc, bound) {
     const actor = tokenDoc?.actor;
-    // (Foundry keeps them as a list; a system may keep its own by id, as PF2e does.)
-    const all = Array.isArray(CONFIG.statusEffects) ? CONFIG.statusEffects : Object.values(CONFIG.statusEffects ?? {});
-    const id = ["restrained", "restrain", "bound"].find(s => all.some(e => e?.id === s));
+    const id = ["restrained", "restrain", "bound"].find(s => statusEntry(s));
     if ( !actor || !id ) return null;
-    const has = actor.statuses?.has?.(id) || [...(actor.effects ?? [])].some(e => !e.disabled && e.statuses?.has?.(id));
-    if ( has === bound ) return null;
-    await actor.toggleStatusEffect(id, { active: bound });
-    return { tokenUuid: tokenDoc.uuid, actorUuid: actor.uuid, statuses: [{ id, active: !bound }] };
+    const undo = { tokenUuid: tokenDoc.uuid, actorUuid: actor.uuid, statuses: [] };
+    return (await toggleStatus(actor, id, bound, undo)) ? undo : null;
   }
 
   /**

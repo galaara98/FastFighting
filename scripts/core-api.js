@@ -7,11 +7,11 @@
  * Runtime registration goes through the API passed to the "fastFighting.init" hook.
  */
 /** Bumped when the helper-facing API changes incompatibly. */
-export const CORE_API_VERSION = 17;
+export const CORE_API_VERSION = 18;
 
 export { SystemAdapter } from "./adapters/adapter-base.js";
 export { MODULE_ID, STATUS, SWAY, DOWNED_MODELS, TRAITS, TACTICAL, PC_BASELINE, clamp, fudged, tacticalTier } from "./constants.js";
-export { traitsFromParts, signedNumber } from "./engine/trait-parts.js";
+export { traitsFromParts, partsOf, signedNumber } from "./engine/trait-parts.js";
 export { part, parseFormula, parseTypedFormula, samplePart, meanPart, maxPart, doubled, sampleDamage, meanDamage } from "./engine/dice.js";
 export { degreeDistribution, rollD20 } from "./engine/probability.js";
 export { TALK_KINDS } from "./engine/behavior/talk.js";
@@ -24,4 +24,9 @@ export { edgeDistance, behaviorOf, isStanding, coverOf, COVER_POINTS } from "./e
 export { goadLuck } from "./engine/behavior/goad.js";
 export { bestReactionStrike } from "./engine/behavior/reactions.js";
 export { combineMods, describeMods, diceMean } from "./engine/mods.js";
-export { localize, hasWords, fillIn, listJoin, listItems, language, outcomeLine, commonOutcome, sideChangeLine, stillLine } from "./i18n.js";
+export { localize, hasWords, fillIn, listJoin, listItems, language, outcomeLine, commonOutcome, sideChangeLine, stillLine, englishWords, listWords, wordList, saysWord } from "./i18n.js";
+export { sideAfter } from "./engine/changes.js";
+export {
+  statusesOf, statusEntry, toggleStatus, undoRecord, payFrom, handOverItem, englishName, englishDescription, DESCRIPTION_MOST, plainText,
+  numberSetting, idFromUuid
+} from "./foundry/sheet-tools.js";

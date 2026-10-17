@@ -40,7 +40,7 @@ export const DAMAGE_TYPES = [
   "wind", "water", "earth", "plant",
   "vitality", "void", "radiant", "unholy", "mental", "spirit", "poison", "untyped"
 ];
-export const TALK_KINDS = ["persuade", "intimidate", "deceive"];
+export { TALK_KINDS } from "../engine/behavior/talk.js";
 export const RELATIONSHIPS = ["none", "enemyLeader", "talkingNemesis", "grudge", "avenger", "protector", "finishing", "rival"];
 export const MOVE_MODES = ["walk", "fly", "swim", "climb", "burrow"];
 export const MOVE_SITUATIONS = ["approach", "terrain", "flee", "hunt", "help"];

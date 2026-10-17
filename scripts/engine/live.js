@@ -1008,7 +1008,7 @@ const AS_RELATION = new Set(["grabbed", "controlled"]);
  *     {type: "affliction", afflictionId, name, from (who gave it), to, stage, intensity (its stage), most (its last),
  *       onset (rounds before it takes hold), simple (the condition a simple one stands for), traits, conditions (what
  *       its stage lays), settled}
- *     {type: "relation", kind, from, to, intensity: 1, most: 1, rounds, gm}   grabbed/goaded/controlled/bound/exposedTo/
+ *     {type: "relation", kind, from, to, intensity: 1, most: 1, rounds, gm}   grabbed/goaded/controlled/exposedTo/
  *       marked: from the one who did it to the one it's on; shuns (won't listen to): from the one who won't to the other
  *     {type: "goal", kind, from, to (a thing's id, or a hazard's), level, intensity, most, played, gm, via}
  *   marks      what a creature has on its own: {type: "condition"|"status"|"goal"|"desire", on, key|kind, ...}

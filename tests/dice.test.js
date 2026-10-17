@@ -50,6 +50,12 @@ describe("dice", () => {
     const plain = parseTypedFormula("1d4 - 1 bludgeoning");
     expect(meanPart(plain[0])).toBeCloseTo(1.5);
 
+    // (A die with no count before it: one of them.)
+    const bare = parseTypedFormula("d8 fire");
+    expect(bare).toHaveLength(1);
+    expect(bare[0]).toMatchObject({ type: "fire", flat: 0 });
+    expect(meanPart(bare[0])).toBeCloseTo(4.5);
+
     const untyped = parseTypedFormula("1d8", "healing");
     expect(untyped[0].type).toBe("healing");
   });

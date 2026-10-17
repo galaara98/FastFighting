@@ -96,3 +96,16 @@ export function diffAll(before, after) {
   }
   return out;
 }
+
+/**
+ * Whose side a creature is on now, when words (or a quarrel) changed it: won over (switched sides), talked out of the
+ * fight (it takes no side now), or one taking no side that turned on the party. Null when nothing changed.
+ * @param {object} final   its state after (captureUnit)
+ * @returns {"friendly"|"hostile"|"neutral"|null}
+ */
+export function sideAfter(final) {
+  if ( final?.swayed === "switched" ) return final.side === "friendly" ? "friendly" : "hostile";
+  if ( final?.side !== "neutralParty" || final.status === "dead" ) return null;
+  if ( final.against?.includes("friendly") ) return "hostile";
+  return final.swayed === "neutral" ? "neutral" : null;
+}

@@ -8,7 +8,7 @@
  * feet, at most 20d6; it lands prone), a hazard whose reach it's in (the hazard goes off: it strikes it once), harm
  * where it lands (the scene's: a fire, acid), difficult ground (slower to come back).
  *
- * What the map is like comes with the battle (spec.ground, foundry/battle.js groundOf): {size, cells: [[i, j, cell]]},
+ * What the map is like comes with the battle (spec.ground, foundry/battle.js groundFor): {size, cells: [[i, j, cell]]},
  * a cell {g: its ground's height in feet, d: difficult, h: hazardous, harm: [damage parts], b: [directions blocked
  * out of it: "n", "ne", ... "nw"]}. Without it, open level ground. Without positions at all, a push only takes it out
  * of the doer's reach.

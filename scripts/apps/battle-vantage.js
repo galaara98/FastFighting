@@ -10,7 +10,7 @@
  * be brought into it.
  */
 import { NEUTRAL_PARTY, MODULE_ID, SIDES, HOSTILE_GROUPS, GROUPS } from "../constants.js";
-import { DESIRE_BAND_KEYS, DESIRE_KINDS } from "../engine/behavior/desire.js";
+import { DESIRE_BAND_KEYS, DESIRE_KINDS, desireBand } from "../engine/behavior/desire.js";
 import { mindOf, bandLevel, networkOf, playerRuns } from "../engine/live.js";
 import { commandOf, groupKeyOf, SLOTS } from "../engine/battle-state.js";
 import { PICKED_BONUS } from "../foundry/battle.js";
@@ -18,10 +18,11 @@ import { GM_RELATIONS, conditionMost } from "../engine/conditions.js";
 import { getAdapter } from "../api.js";
 import { roundsText, listJoin } from "../i18n.js";
 import { expectText } from "../story/log-lines.js";
+import { feetOnScene } from "../foundry/terrain.js";
 import { mountNetwork } from "./battle-network.js";
 import {
   liveBattle, continueBattle, rewind, rewindEncounter, playCurrent, liveFact, dropHeldFact, setNpcReactions, setPlayThrough, finishReview,
-  waitingOnGm, suggestedSpotlight, spotlightNext, settleBattle, setAutomated, liveCondition, liveMind, bringIntoFight
+  waitingOnGm, suggestedSpotlight, spotlightNext, settleBattle, setAutomated, liveCondition, liveMind, bringIntoFight, tokenIdOf
 } from "../foundry/live-battle.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -485,7 +486,7 @@ export function battleContext(b, focusId = null) {
   if ( !b ) return { context: { none: true }, graph: null, focus: null };
   const run = b.run;
   const combatant = b.combat.combatant;
-  const current = combatant ? run.units.find(u => (u.tokenId ?? u.spec.tokenId ?? u.id) === combatant.tokenId) ?? null : null;
+  const current = combatant ? run.units.find(u => tokenIdOf(u) === combatant.tokenId) ?? null : null;
   const name = id => run.byId.get(id)?.spec.name ?? "";
   const played = !!current && waitingOnGm();
   const player = !!current && run.live.players.has(current.id);
@@ -534,7 +535,9 @@ function networkView(b, current, focusId) {
   const sideLabel = side => b.spec.sides?.[side]?.label ?? (has(`FASTFIGHTING.Side.${side}`) ? loc(`FASTFIGHTING.Side.${side}`) : side);
   const docOf = id => b.scene.tokens.get(tokenOf(b, id));
   const condLabel = key => adapter?.conditionLabel?.(key) || (has(`FASTFIGHTING.Condition.${key}`) ? loc(`FASTFIGHTING.Condition.${key}`) : key);
-  const valuedHere = new Set((adapter?.conditionChoices?.() ?? []).filter(c => c?.valued).map(c => c.key));
+  const choices = new Map();
+  for ( const c of adapter?.conditionChoices?.() ?? [] ) if ( c?.key && !choices.has(c.key) ) choices.set(c.key, c);
+  const valuedHere = new Set([...choices.values()].filter(c => c.valued).map(c => c.key));
   // (An affliction in words: its name (a simple one's, its condition's), its stage of its last, and what that lays.)
   const afflictionWords = a => {
     const what = Object.entries(a.conditions ?? {}).filter(([k]) => k !== a.simple).map(([k, v]) => `${condLabel(k)}${Number(v) > 1 ? ` ${v}` : ""}`);
@@ -543,7 +546,7 @@ function networkView(b, current, focusId) {
       ...(a.onset > 0 ? [fmt("FASTFIGHTING.Battle.Net.Onset", { n: a.onset })] : []),
       ...(a.settled ? [loc("FASTFIGHTING.Battle.Net.Settled")] : [])].join(" · ");
   };
-  const band = level => loc(`FASTFIGHTING.Desire.Level.${DESIRE_BAND_KEYS[Math.max(0, Math.min(4, Math.floor(level / 20)))]}`);
+  const band = level => loc(`FASTFIGHTING.Desire.Level.${DESIRE_BAND_KEYS[desireBand(level)]}`);
   const things = new Map(net.things.map(t => [t.id, t]));
   const thingName = id => {
     const t = things.get(id);
@@ -678,7 +681,7 @@ function networkView(b, current, focusId) {
   for ( const c of net.creatures ) {
     const u = run.byId.get(c.id);
     const doc = docOf(c.id);
-    const feet = doc ? feetOf(b.scene, doc) : c.pos;
+    const feet = doc ? feetOnScene(b.scene, doc) : c.pos;
     nodes.push({
       id: c.id, type: "creature", name: u.spec.name, img: doc?.texture?.src ?? u.spec.img ?? "icons/svg/mystery-man.svg",
       cls: [u.side, statusClass(u.status), current?.id === c.id ? "is-current" : "", c.hazard ? "is-hazard" : ""].join(" "),
@@ -688,10 +691,10 @@ function networkView(b, current, focusId) {
       team: u.side, leaderId: (() => { const cmd = commandOf(run, u)?.unit; return cmd && cmd !== u ? cmd.id : null; })()
     });
   }
-  const inBattle = new Set(run.units.map(u => u.tokenId ?? u.spec.tokenId ?? u.id));
+  const inBattle = new Set(run.units.map(tokenIdOf));
   const elsewhere = b.scene.tokens.filter(t => t.actor && !inBattle.has(t.id));
   for ( const t of elsewhere ) {
-    const feet = feetOf(b.scene, t);
+    const feet = feetOnScene(b.scene, t);
     nodes.push({ id: `token:${t.id}`, type: "elsewhere", name: t.name, img: t.texture?.src ?? "icons/svg/mystery-man.svg", cls: "", status: loc("FASTFIGHTING.Battle.NotInFight"), tip: `${t.name} · ${loc("FASTFIGHTING.Battle.Net.NotInBattle")}`, x: feet.x, y: feet.y, marks: [] });
   }
   for ( const t of net.things ) {
@@ -704,7 +707,7 @@ function networkView(b, current, focusId) {
     });
   }
   const focus = nodes.some(n => n.id === focusId) ? focusId : null;
-  return { graph: { nodes, edges, focus }, panel: panelOf(b, net, nodes, edges, focus, { name, docOf, condLabel, sideLabel, valuedHere }) };
+  return { graph: { nodes, edges, focus }, panel: panelOf(b, net, nodes, edges, focus, { name, docOf, sideLabel }) };
 }
 
 /** The one in focus, beside the map: who it is, what it wants, what's on it, and what the GM can put on it. */
@@ -770,14 +773,7 @@ export function tokenOf(b, id) {
   if ( !b || !id ) return null;
   if ( id.startsWith("token:") ) return id.slice(6);
   const u = b.run.byId.get(id);
-  return u ? (u.tokenId ?? u.spec.tokenId ?? u.id) : null;
-}
-
-/** Where a token stands on its map, in feet from the corner (its center), as the engine counts positions. */
-function feetOf(scene, doc) {
-  const size = scene.grid?.size || 100;
-  const feet = scene.grid?.distance || 5;
-  return { x: ((doc.x + ((doc.width ?? 1) * size) / 2) / size) * feet, y: ((doc.y + ((doc.height ?? 1) * size) / 2) / size) * feet };
+  return u ? tokenIdOf(u) : null;
 }
 
 /** A held fact, in a few words: "Kyra: Was persuaded by (success)". */

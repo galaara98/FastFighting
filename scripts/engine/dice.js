@@ -41,8 +41,9 @@ export function parseFormula(formula, type = "untyped") {
  * Multiplication by a constant is supported (dice keep a `mult`).
  */
 export function parseTypedFormula(formula, defaultType = "untyped") {
-  const tokens = String(formula ?? "").replace(/\[([^\]]*)\]/g, " $1 ").replace(/,/g, " ")
-    .match(/\d+d\d+|\d+(?:\.\d+)?|[a-z][a-z-]*|[()+\-*/]/gi) ?? [];
+  // (A die with no count before it, "d8": one of them, as parseFormula reads it.)
+  const tokens = (String(formula ?? "").replace(/\[([^\]]*)\]/g, " $1 ").replace(/,/g, " ")
+    .match(/\d*d\d+|\d+(?:\.\d+)?|[a-z][a-z-]*|[()+\-*/]/gi) ?? []).map(t => (/^d\d+$/i.test(t) ? `1${t}` : t));
   const parts = [];
   let expr = [];
   let words = [];
