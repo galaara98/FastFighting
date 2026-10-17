@@ -29,7 +29,7 @@ GMs get buttons at the top of the Combat Tracker: **Planner**, **Survey** (see [
 
 **One plan per encounter.** The planner follows the encounter the tracker shows and keeps your choices (sides, groups, roles, fudges, options) with that encounter until it ends. Combatants who join and tokens that come or go are taken in, and your choices stand. A new encounter starts from what you set up on the scene before it began; a fresh one puts every hostile token in one group. **Clear** (the eraser beside Refresh) resets the plan to the defaults, after asking. With no encounter, the plan belongs to the scene.
 
-**Pausing.** The fight is read off the map, so opening the planner pauses the game. Closing it un-pauses, unless the game was paused before or you un-paused it meanwhile. Do it For Real Now and Rewind This Encounter keep the game paused while they write to the map. A pause stops only players: the GM's changes and token movement go on.
+**Pausing.** The fight is read off the map, so opening the planner pauses the game. Closing it un-pauses, unless the game was paused before or you un-paused it meanwhile. In a live battle the game is paused while the fight is FastFighting's (playing a turn, reading a player's, waiting for **Next Turn**) and goes on for a player's turn; pause or un-pause it yourself and that holds until the next turn. Rewind This Encounter keeps it paused while it writes to the map. A pause stops only players: the GM's changes and token movement go on.
 
 The window needs at least 1000×600 and uses any extra space.
 
