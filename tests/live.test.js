@@ -62,6 +62,26 @@ function playRounds(run, rounds, from = 1) {
 }
 
 describe("live battles: the engine a turn at a time", () => {
+  test("a turn played on the fight as it stands goes as it does played again from its snapshot (no caches carried)", () => {
+    // (The live side plays a turn again from its snapshot for every roll and answer: the first pass, on the fight as it
+    // stands with the round's caches warm, must choose as the passes after it do.)
+    for ( const seed of [1, 2, 3, 4, 5, 6] ) {
+      const spec = skirmish({ orc: { flags: { fearless: true } }, goblin: { flags: { fearless: true } } });
+      const run = beginLive(spec, pf2eRules, { seed, players: [] });
+      for ( let round = 1; round <= 3; round++ ) {
+        liveRound(run, round);
+        for ( const u of [...run.order] ) {
+          if ( !u.active ) continue;
+          const kept = snapshotRun(run, { log: false });
+          const again = restoreRun(spec, pf2eRules, kept, { log: run.log });
+          const fresh = liveTurn(again, u.id, { nonce: 11 + round }).events;
+          const warm = liveTurn(run, u.id, { nonce: 11 + round }).events;
+          expect(JSON.stringify(warm)).toBe(JSON.stringify(fresh));
+        }
+      }
+    }
+  });
+
   test("the same seed plays the same fight, turn by turn", () => {
     const a = beginLive(skirmish(), pf2eRules, { seed: 11, players: ["valeros", "kyra"] });
     const b = beginLive(skirmish(), pf2eRules, { seed: 11, players: ["valeros", "kyra"] });

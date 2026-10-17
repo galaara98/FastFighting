@@ -134,6 +134,7 @@ function nextDice(run, salt = 0, nonce = 0) {
 export function liveTurn(run, id, { answers = null, salt = 0, nonce = 0 } = {}) {
   const u = run.byId.get(id);
   if ( !u ) throw new Error(`No creature ${id} in this battle`);
+  freshCaches(run);
   nextDice(run, salt, nonce);
   spotlit(run, u);
   run.live.answers = new Map(answers ?? []);
@@ -471,6 +472,7 @@ export function reactNow(run, reactorId, targetId, strike, trigger = null) {
 export function movedBeside(run, id, from, { answers = null, nonce = 0 } = {}) {
   const u = run.byId.get(id);
   if ( !u?.pos || !from || (!run.movers && !run.reachers) ) return [];
+  freshCaches(run);
   nextDice(run, 0, nonce);
   run.live.answers = new Map(answers ?? []);
   const start = run.log.length;
@@ -1354,6 +1356,17 @@ const UNIT_SKIP = new Set(["prep", "spec", "turn", "nearby", "nearbyKey", "pool"
 /** The run's own: the battle, the creatures (kept apart), the dice and anything worked out again as needed. */
 const RUN_SKIP = new Set(["prep", "units", "byId", "rng", "logTo", "trapLog", "acting", "live"]);
 const CACHE = /(Cache|CacheInner|Round|Geo|Depth)$/;
+/** A creature's own worked-out-again keys, kept by no snapshot. */
+const UNIT_CACHES = Object.freeze(["turn", "nearby", "nearbyKey"]);
+
+/**
+ * The fight's caches dropped (what snapshotRun keeps none of, worked out again as needed): a turn played from the fight
+ * as it stands goes exactly as it goes played again from a snapshot of it (liveTurn's passes, one per answer).
+ */
+function freshCaches(run) {
+  for ( const k of Object.keys(run) ) if ( CACHE.test(k) && !RUN_SKIP.has(k) ) delete run[k];
+  for ( const u of run.units ) for ( const k of UNIT_CACHES ) delete u[k];
+}
 
 function encode(v, units) {
   if ( v === null || v === undefined ) return v ?? null;

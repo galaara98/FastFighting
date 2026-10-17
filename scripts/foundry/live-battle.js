@@ -804,6 +804,10 @@ async function playTurn(u, combatant, key) {
   refreshApproach();
   const before = captureAll(battle.run);
   const snapshot = snapshotRun(battle.run, { log: false });
+  // (Every pass of the turn, the first too, from the fight as the snapshot keeps it: the per-round caches the fight
+  // carried from earlier turns aren't kept, and a first pass that saw them could choose otherwise than the passes after
+  // it, its rolls' cards left in the chat for a blow that never came.)
+  battle.run = restoreRun(battle.spec, battle.rules, snapshot, { log: battle.run.log });
   const answers = [];
   const nonce = freshNonce(); // (the turn's own dice, the same each time it's played again for an answer)
   // Where everyone stood (for Rewind), before the turn moves anyone; and what it's put on the map and in the chat
@@ -2026,6 +2030,8 @@ async function answerArrival(pc, from) {
   if ( (!battle.run.movers && !battle.run.reachers) || !from ) return false;
   const before = captureAll(battle.run);
   const snapshot = snapshotRun(battle.run, { log: false });
+  // (Every pass from the snapshot, the first too: playTurn's.)
+  battle.run = restoreRun(battle.spec, battle.rules, snapshot, { log: battle.run.log });
   const nonce = freshNonce();
   const stage = turnStage();
   const answers = [];
