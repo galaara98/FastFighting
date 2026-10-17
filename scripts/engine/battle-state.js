@@ -261,12 +261,19 @@ export function leadershipOf(l = {}) {
   };
 }
 
+/** How much a creature's own ADHD, at 100%, takes off its Tactical (a share of it). */
+const ADHD_TACTICAL = 0.3;
+
 /** A combatant as a batch uses it: its traits blended with its side's, and its actions sorted by what they're for. */
 function prepareCombatant(c, side) {
   const traits = {};
   for ( const k of TRAITS ) {
     traits[k] = clamp(Math.round(fudged(c.traits?.[k] ?? 50) * (1 - SIDE_WEIGHT) + side.traits[k] * SIDE_WEIGHT), 0, 100);
   }
+  // (Its own ADHD, 0 to 100%: its Tactical down to 70% of what it is, at 100%. The world's ADHD is the chance it follows
+  // its urges: behavior/desire.js orderAgenda.)
+  const adhd = clamp(Number(c.adhd) || 0, 0, 100);
+  if ( adhd > 0 ) traits.tactical = clamp(Math.round(traits.tactical * (1 - ADHD_TACTICAL * adhd / 100)), 0, 100);
   const meanHeal = a => (a.heal ?? []).reduce((s, p) => s + meanPart(p), 0);
   // (Legendary actions are taken between others' turns, not on its own. A maneuver the core knows, with no outcomes of
   // its own: the core's, maneuvers.js.)

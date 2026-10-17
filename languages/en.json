@@ -284,7 +284,8 @@
       "tactical": "Tactical",
       "brave": "Brave",
       "selfish": "Selfish",
-      "loyal": "Loyal"
+      "loyal": "Loyal",
+      "adhd": "ADHD"
     },
     "Band": {
       "feral": "Feral",
@@ -334,7 +335,8 @@
       "tactical": "How cleverly it picks targets, moves and uses its best options.",
       "brave": "How long it holds its ground before fleeing or giving up.",
       "selfish": "How much it puts itself before its friends.",
-      "loyal": "How firmly it sticks with its side and its leader."
+      "loyal": "How firmly it sticks with its side and its leader.",
+      "adhd": "Increases the likelihood this creature would act on impulse."
     },
     "Kind": {
       "pc": "PC",

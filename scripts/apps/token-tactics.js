@@ -82,6 +82,7 @@ async function fill(app, panel) {
   if ( !isHazard ) await ensureAutoConfig(actor, spec);
   const html = await foundry.applications.handlebars.renderTemplate(TEMPLATE, {
     hint: localize("FASTFIGHTING.TokenTactics.Hint"),
+    adhd: Math.round(Number(actor.getFlag(MODULE_ID, "adhd")) || 0),
     hazard,
     markable,
     hazardChoices: Object.fromEntries(HAZARD_MARKS.map(k => [k, localize(`FASTFIGHTING.TokenTactics.HazardMark.${k || "system"}`)])),
@@ -101,8 +102,19 @@ async function fill(app, panel) {
 
 /** Answers save as they change. */
 function listen(app, panel) {
+  // (The ADHD slider's number follows it as it's dragged.)
+  panel.addEventListener("input", event => {
+    if ( event.target?.dataset?.ffSetting !== "adhd" ) return;
+    const shown = panel.querySelector("[data-ff-adhd-value]");
+    if ( shown ) shown.textContent = `${event.target.value}%`;
+  });
   panel.addEventListener("change", async event => {
     const el = event.target;
+    // Its own ADHD: kept with its tactics.
+    if ( el?.dataset?.ffSetting === "adhd" ) {
+      event.stopPropagation();
+      return setAdhd(actorOf(app), Number(el.value));
+    }
     // Whether it's a hazard: kept with its tactics.
     if ( el?.dataset?.ffSetting === "hazard" ) {
       event.stopPropagation();
@@ -132,6 +144,16 @@ function listen(app, panel) {
     else if ( button.dataset.ffAction === "resetAll" ) await resetAndAutoConfig(actor, specs.get(app));
     fill(app, panel);
   });
+}
+
+/**
+ * A creature's own ADHD, 0 to 100% (its actor's flag; none at 0): a nudge to its Tactical, engine/battle-state.js. Set
+ * from its token's FastFighting tab or the planner.
+ */
+export async function setAdhd(actor, value) {
+  const v = Math.max(0, Math.min(100, Math.round(Number(value) || 0)));
+  if ( v ) await actor.setFlag(MODULE_ID, "adhd", v);
+  else await actor.unsetFlag(MODULE_ID, "adhd");
 }
 
 /** Someone else changed this actor's answers: every open token window showing it follows along. */

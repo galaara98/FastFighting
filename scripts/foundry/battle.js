@@ -588,6 +588,9 @@ export function buildBattleSpec(roster, setup, { approach = null, exclude = new 
     if ( side === NEUTRAL_PARTY ) spec.lean = leans[e.token.id] ?? null;
     if ( side === NEUTRAL_PARTY ) spec.group = neutralTeamOf(e, setup) ?? undefined; // its friend group
     spec.traits = fudgedTraits(e.spec, ts.fudge);
+    // (Its own ADHD, kept with the creature: a nudge to its Tactical.)
+    const adhd = clamp(Number(e.token.actor?.getFlag(MODULE_ID, "adhd")) || 0, 0, 100);
+    if ( adhd > 0 ) spec.adhd = adhd;
     applyCharacterTactics(spec, e);
     if ( side === SIDES.FRIENDLY && party ) applyPartyWishes(spec, e, party);
     // (A player's character wants nothing of a token hidden from it, or of one it couldn't know is there (out of the

@@ -8,6 +8,7 @@ import {
 import { getAdapter } from "../api.js";
 import { setting } from "../settings.js";
 import { listJoin, listItems, localize, term, hasStat, brief, roundsText } from "../i18n.js";
+import { setAdhd } from "./token-tactics.js";
 import { getSetup, saveSetup, clearSetup, tokenSetup, planHolder, rememberPartyRole } from "../foundry/persistence.js";
 import {
   questionsContext, setTactic, togglePlaystyle, syncTacticsDom, isPlayerControlled, playersOnScene, tokensForUser, surveyStatus,
@@ -270,6 +271,15 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     };
   }
 
+  /**
+   * A creature's own ADHD, 0 to 100%: a nudge to its Tactical (engine/battle-state.js prepareCombatant). Kept with the
+   * creature (its actor's flag), as its token's FastFighting tab has it.
+   */
+  #adhdView(value, path) {
+    const v = clamp(Math.round(Number(value) || 0), 0, 100);
+    return { trait: "adhd", label: loc("FASTFIGHTING.Trait.adhd"), value: `${v}%`, base: 0, fudge: v, path, step: 10, band: "", fudgeLabel: "", tooltip: brief(loc("FASTFIGHTING.TraitTip.adhd")) };
+  }
+
   #statView(stat, base, fudge, path, step) {
     return {
       trait: stat, label: statName(stat), value: base + fudge, base, fudge, path, step,
@@ -457,7 +467,8 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       }) : null,
       roleHint: game.i18n.format("FASTFIGHTING.Planner.RoleHint", { boss: setting("bossInfluence") }),
       groupHint: loc(chosen === SIDES.NEUTRAL ? "FASTFIGHTING.Planner.NeutralGroupHint" : "FASTFIGHTING.Planner.HostileGroupHint"),
-      traits: TRAITS.map(k => this.#traitView(k, s.traits[k]?.base ?? 50, fudge[k] ?? 0, `tokens.${e.token.id}.fudge.${k}`, s.traitReasons?.[k], shifts[k] ?? 0)),
+      traits: [...TRAITS.map(k => this.#traitView(k, s.traits[k]?.base ?? 50, fudge[k] ?? 0, `tokens.${e.token.id}.fudge.${k}`, s.traitReasons?.[k], shifts[k] ?? 0)),
+        this.#adhdView(e.token.actor?.getFlag(MODULE_ID, "adhd") ?? 0, `tokens.${e.token.id}.fudge.adhd`)],
       expanded: this.expanded.has(e.token.id),
       stats: STAT_FUDGES.filter(([k]) => hasStat(k)).map(([k, step]) => {
         const base = k === "ac" ? s.defenses.ac : k === "hp" ? s.hp.max : 0;
@@ -823,6 +834,14 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     const { path, step, dir } = target.dataset;
     if ( path.startsWith("tokens.") ) tokenSetup(this.setup, path.split(".")[1]);
     const current = foundry.utils.getProperty(this.setup, path) ?? 0;
+    // (Its own ADHD: kept with the creature, as on its token's FastFighting tab, not with this encounter.)
+    if ( path.endsWith(".fudge.adhd") ) {
+      const actor = this.roster?.find(e => e.token.id === path.split(".")[1])?.token.actor;
+      if ( actor ) await setAdhd(actor, Number(dir) === 0 ? 0 : (Number(actor.getFlag(MODULE_ID, "adhd")) || 0) + Number(dir) * Number(step || 10));
+      this.stale = true;
+      this.render();
+      return;
+    }
     const next = Number(dir) === 0 ? 0 : current + Number(dir) * Number(step || 1);
     foundry.utils.setProperty(this.setup, path, next);
     await saveSetup(this.setup, this.holder);

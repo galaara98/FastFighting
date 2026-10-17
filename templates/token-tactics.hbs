@@ -7,6 +7,14 @@
 {{else}}
 <p class="ff-hint">{{localize "FASTFIGHTING.TokenTactics.HazardNoTactics"}}</p>
 {{/if}}
+{{#unless isHazard}}
+<div class="ff-token-adhd">
+  <label class="ff-q-label">{{localize "FASTFIGHTING.Trait.adhd"}} <span data-ff-adhd-value>{{adhd}}%</span>
+    <input type="range" min="0" max="100" step="10" value="{{adhd}}" data-ff-setting="adhd">
+  </label>
+  <p class="ff-hint">{{localize "FASTFIGHTING.TraitTip.adhd"}}</p>
+</div>
+{{/unless}}
 {{#if markable}}
 <div class="ff-token-hazard">
   <label class="ff-q-label">{{localize "FASTFIGHTING.TokenTactics.Hazard"}}
