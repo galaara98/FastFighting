@@ -686,6 +686,8 @@ export function buildBattleSpec(roster, setup, { approach = null } = {}) {
       standGround: setting("standGround"),
       avoidKilling: setting("avoidKilling"),
       leaveResolve: setting("leaveResolve"),
+      // How often a character played for the story forgets opportunity attacks.
+      roleplayForgets: setting("roleplayForgets"),
       adhd: setting("adhd"),
       initiativeOrder,
       stealthSides,

@@ -15043,6 +15043,26 @@
    "commit": null,
    "hash": "5146e9e28d1b"
   },
+  "core:FASTFIGHTING.Settings.roleplayForgets.Hint": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Settings.roleplayForgets.Hint",
+   "area": "core/Settings",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "0baef315929b"
+  },
+  "core:FASTFIGHTING.Settings.roleplayForgets.Name": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Settings.roleplayForgets.Name",
+   "area": "core/Settings",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "9cf24dd3b970"
+  },
   "core:FASTFIGHTING.Settings.runs.Hint": {
    "repo": "core",
    "file": "languages/en.json",
@@ -39721,6 +39741,46 @@
    "date": null,
    "commit": null,
    "hash": "f2d1dab08310"
+  },
+  "daggerheart:FFDAGGERHEART.AutoApply.Menu": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.AutoApply.Menu",
+   "area": "daggerheart/AutoApply",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "1c8331dadf7c"
+  },
+  "daggerheart:FFDAGGERHEART.AutoApply.Name": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.AutoApply.Name",
+   "area": "daggerheart/AutoApply",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "910eac28a468"
+  },
+  "daggerheart:FFDAGGERHEART.AutoApply.Players": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.AutoApply.Players",
+   "area": "daggerheart/AutoApply",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "84e12ac655dd"
+  },
+  "daggerheart:FFDAGGERHEART.AutoApply.Setting": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.AutoApply.Setting",
+   "area": "daggerheart/AutoApply",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "92b4a5518c00"
   },
   "daggerheart:FFDAGGERHEART.BreakFree.Plain": {
    "repo": "daggerheart",

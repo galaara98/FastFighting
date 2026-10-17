@@ -326,6 +326,7 @@ World settings, under **Configure Settings → FastFighting**. The planner overr
 | Doesn't like to flee: how often it stays (%) | 90 | A Fight to the end character resisting its urge to run. |
 | Avoids killing: how often it holds back (%) | 90 | A character that avoids killing holding back from a kill. |
 | Committed to leaving: how often it keeps going (%) | 79 | A leaving creature keeping on when struck or spoken to. |
+| Roleplayers forget opportunity attacks (%) | 33 | A character played for the story forgetting to play safe around opportunity attacks. |
 | ADHD: how often a creature's mind jumps (%) | 20 | A creature dropping what it's doing for its strongest desire. |
 | Story style | Roleplay | How the story is told. |
 | Story delivery | Public | Who sees the story. |

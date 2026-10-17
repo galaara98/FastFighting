@@ -174,6 +174,10 @@
         "Name": "Committed to leaving: how often it keeps going (%)",
         "Hint": "How often a creature leaving the fight keeps going when struck or spoken to (default 79)."
       },
+      "roleplayForgets": {
+        "Name": "Roleplayers forget opportunity attacks (%)",
+        "Hint": "How often a character whose player ticked \"Roleplaying is very important to me\" forgets to play safe around opportunity attacks (default 33)."
+      },
       "avoidKilling": {
         "Name": "Avoids killing: how often it holds back (%)",
         "Hint": "How often a character that avoids killing holds back from a kill (default 90)."

@@ -6,7 +6,7 @@
 import { describe, expect, test } from "vitest";
 import { replay } from "../scripts/engine/simulator.js";
 import { prepareBattle, createRun, turnFor } from "../scripts/engine/battle-state.js";
-import { takesSafeWay } from "../scripts/engine/behavior/reactions.js";
+import { takesSafeWay, isWary } from "../scripts/engine/behavior/reactions.js";
 import { decideBuff, checkDc } from "../scripts/engine/behavior/support.js";
 import { STATUS } from "../scripts/constants.js";
 import { createRng } from "../scripts/engine/rng.js";
@@ -23,6 +23,24 @@ const runOf = (combatants, rules = pf2eRules, options = {}) => {
 const dodge = { id: "me.dodge", name: "Dodge", kind: "buff", targets: "self", cost: 1, traits: [], tell: "dodge", guard: true, setup: true, outcome: { mods: { defAdv: -1 }, rounds: 1, label: "Dodging" } };
 const hopeless = () => strike({ bonus: -30, damage: [parseFormula("1", "bludgeoning")] });
 const brute = () => creature({ id: "brute", side: "hostile", hp: { value: 300, max: 300 }, flags: { fearless: true }, actions: [strike({ bonus: 20, damage: [parseFormula("3d10+10", "slashing")] })] });
+
+describe("one played for the story", () => {
+  test("forgets opportunity attacks as often as the setting says: a third of the time by default", () => {
+    const wary = forget => {
+      let n = 0;
+      for ( let seed = 1; seed <= 600; seed++ ) {
+        const run = runOf([creature({ id: "me", traits: sharp, roleplay: true }), brute()], pf2eRules, forget === undefined ? {} : { roleplayForgets: forget });
+        run.rng = createRng(seed);
+        if ( isWary(run, run.byId.get("me")) ) n++;
+      }
+      return n / 600;
+    };
+    expect(wary()).toBeGreaterThan(0.6);
+    expect(wary()).toBeLessThan(0.74);
+    expect(wary(0)).toBe(1);
+    expect(wary(100)).toBe(0);
+  });
+});
 
 describe("one in a hurry", () => {
   test("doesn't stop to get clear of a foe beside it: it takes the free swings", () => {

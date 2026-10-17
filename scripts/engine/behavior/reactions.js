@@ -14,9 +14,9 @@
  *
  * Thinking combatants have a healthy respect for it: tactical minds always weigh it, competent ones half the time,
  * feral and instinctive ones never. A character played for the story (the "roleplaying is very important" box)
- * forgets about it half the time.
+ * forgets about it as often as the "roleplayForgets" setting says (a third of the time, by default).
  */
-import { TACTICAL } from "../../constants.js";
+import { TACTICAL, ROLEPLAY_FORGETS, clamp } from "../../constants.js";
 import { areEnemies, isStanding, liveTier, edgeDistance, heldOff, behaviorOf } from "../battle-state.js";
 import { meanPart } from "../dice.js";
 import { mind } from "./desire.js";
@@ -65,13 +65,16 @@ function nearbyFoes(run, u) {
   return list;
 }
 
+/** How often u, played for the story, forgets opportunity attacks (0 to 1; 0 for anyone else). */
+const forgets = (run, u) => (u.spec.roleplay ? clamp((run.prep.options.roleplayForgets ?? ROLEPLAY_FORGETS) / 100, 0, 1) : 0);
+
 /** Does u think about opportunity attacks this round? (Decided once a round, so it doesn't flicker mid-turn.) */
 export function isWary(run, u) {
   if ( u.waryRound === run.round ) return u.wary;
   const tier = liveTier(run, u);
   let p = tier >= TACTICAL.TACTICAL ? 1 : tier === TACTICAL.COMPETENT ? 0.5 : 0;
   if ( mind(run, u).obsessed ) p = 0; // an obsession leaves no room for caution
-  if ( u.spec.roleplay ) p *= 0.5;
+  p *= 1 - forgets(run, u);
   u.waryRound = run.round;
   u.wary = p >= 1 || (p > 0 && run.rng.chance(p));
   return u.wary;
@@ -97,7 +100,8 @@ export function takesSafeWay(run, u, safe, turn, need = null) {
   if ( isWary(run, u) ) return true;
   const main = run.prep.rules.mainPool ?? "actions";
   const cheap = !(safe.cost?.[main] > 0);
-  return cheap && liveTier(run, u) >= TACTICAL.INSTINCTIVE && (!u.spec.roleplay || run.rng.chance(0.5));
+  const forget = forgets(run, u);
+  return cheap && liveTier(run, u) >= TACTICAL.INSTINCTIVE && (!forget || !run.rng.chance(forget));
 }
 
 /**

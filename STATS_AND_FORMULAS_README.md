@@ -2154,7 +2154,7 @@ Code: `engine/simulator.js` `lookAround`, `cueFrom`, `notice`, `NOTICE_DC`, `KIN
 
 ### Opportunity attacks and getting clear
 
-Search: opportunity attack, attack of opportunity, Reactive Strike, free swing, Disengage, Step, wary, reaction, leaving reach
+Search: opportunity attack, attack of opportunity, Reactive Strike, free swing, Disengage, Step, wary, reaction, leaving reach, roleplay, roleplayForgets, Roleplayers forget opportunity attacks
 
 Decides who strikes as a creature walks away, and when it plays safe.
 
@@ -2162,9 +2162,11 @@ Decides who strikes as a creature walks away, and when it plays safe.
   strikes, if it has a reaction left; reactions come back at the start of its turn (1 a round by default). PF2e's also
   answer a shot or a manipulate action in reach, and standing up.
 - Wary of them: Tactical and up always, Competent half the time (decided once a round), the rest never; an obsessed
-  creature never; the "roleplaying is very important" box halves it.
+  creature never; the "roleplaying is very important" box takes Roleplayers forget opportunity attacks (%)
+  (`roleplayForgets`, 0 to 100, default 33) off it: × (1 − 0.33).
 - A wary creature takes the safe way out (Disengage, Step) if it can afford it and still do what it's moving for. A
-  safe way that costs no main action is used by anything Instinctive and up (half the time when played for the story).
+  safe way that costs no main action is used by anything Instinctive and up (played for the story, it forgets it at
+  that same rate: 33% by default).
   A creature rushing this turn never stops for it.
 - Struck on its way to something: its desire for it wears down by 6 × (1.3 − Brave ÷ 100).
 
