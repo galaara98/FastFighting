@@ -268,9 +268,11 @@ describe("live battles: the engine a turn at a time", () => {
   });
 
   test("a player's reaction in a foe's turn, where the system rolls strikes: asked to be rolled, then played with that roll", () => {
+    // (Its player rolls it, read off their cards: readsRolls; or the system rolls it: systemRolls. Asked to be rolled either way.)
+    for ( const flags of [{ systemRolls: true }, { readsRolls: true }] ) {
     const setUp = () => {
       const run = beginLive(skirmish({ valeros: { position: at(5), reactionPrefs: { opportunity: "always" }, flags: { reactiveStrike: true }, actions: [strike({ id: "sword", name: "Longsword", bonus: 9, damage: [parseFormula("1d8+4", "slashing")] })] },
-        kyra: { position: at(70) }, orc: { desires: [{ kind: "hurt", targetId: "kyra", level: 95 }], flags: { fearless: true }, traits: minded(5) } }), pf2eRules, { seed: 4, players: ["valeros", "kyra"], systemRolls: true });
+        kyra: { position: at(70) }, orc: { desires: [{ kind: "hurt", targetId: "kyra", level: 95 }], flags: { fearless: true }, traits: minded(5) } }), pf2eRules, { seed: 4, players: ["valeros", "kyra"], ...flags });
       liveRound(run, 1);
       return run;
     };
@@ -290,6 +292,7 @@ describe("live battles: the engine a turn at a time", () => {
     const { events } = liveTurn(run, "orc", { answers: [[request.key, { use: true, roll: { attack: { degree: 2, natural: 15, total: 24 }, damage: { byType: { slashing: 11 } } } }]] });
     const blow = events.find(e => e.type === "attack" && e.actorId === "valeros");
     expect(blow).toMatchObject({ degree: 2, natural: 15, total: 24 });
+    }
   });
 
   test("syncing the sheets says what changed that the engine didn't do", () => {

@@ -70,11 +70,12 @@ function attach(run, live) {
  * @param {object} [options.owns]                 what the system does itself (SYSTEM_DEFAULTS' keys)
  * @param {string} [options.npcReactions]         "calculated" (default) or "ask"
  */
-export function beginLive(spec, rules, { seed, players = [], owns = {}, npcReactions = "calculated", systemRolls = false } = {}) {
+export function beginLive(spec, rules, { seed, players = [], owns = {}, npcReactions = "calculated", systemRolls = false, readsRolls = false } = {}) {
   const run = beginRun(prepareBattle(spec, rules), seed, { log: true });
   attach(run, {
-    // (systemRolls: reactions' strikes rolled with the system's own roller, where the helper can: decide.)
-    seed, seq: 0, players: new Set(players), owns: { ...SYSTEM_DEFAULTS, ...owns }, npcReactions, systemRolls,
+    // (systemRolls: reactions' strikes rolled with the system's own roller, where the helper can; readsRolls: a
+    // player's own, rolled by the player and read from their cards: decide.)
+    seed, seq: 0, players: new Set(players), owns: { ...SYSTEM_DEFAULTS, ...owns }, npcReactions, systemRolls, readsRolls,
     answers: new Map(), asked: new Map(), gm: new Map(), facts: []
   });
   noteCommand(run, true);
@@ -522,7 +523,7 @@ function decide(run, u, { reaction, trigger, by = null, ally = null, would, stri
   if ( use === false ) return false;
   // (A strike the system rolls itself, where the live battle's helper can: asked of the live side to roll, its card in
   // the chat, and that roll the strike's. Otherwise the engine's own dice.)
-  const rolls = !!strike && !!live.systemRolls;
+  const rolls = !!strike && (!!live.systemRolls || (player && !!live.readsRolls));
   if ( use && !rolls ) return true;
   // (Asked once per time it comes up: the same key when the turn is played again, so the answer finds its place.)
   const base = [u.id, id, trigger, by?.id ?? "", ally?.id ?? ""].join("|");

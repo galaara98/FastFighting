@@ -931,9 +931,11 @@ function retort(run, saver, by, action, degree, logging) {
 function rollHit(run, u, action, t, parts, multiplier, crit, minimum = 0, forced = null) {
   const rules = run.prep.rules;
   // (The system's own damage roll, where it rolled it: its dice by type, before anyone's resistances.)
-  const rolled = forced?.byType ? { byType: { ...forced.byType }, persistent: [], direct: !!forced.direct } : sampleDamage(parts, run.rng, multiplier);
+  // (A total read off a player's card: the blow's own damage type.)
+  const forcedBy = forced?.byType ?? (Number.isFinite(forced?.total) ? { [parts[0]?.type ?? "untyped"]: Math.max(0, forced.total) } : null);
+  const rolled = forcedBy ? { byType: { ...forcedBy }, persistent: [], direct: !!forced.direct } : sampleDamage(parts, run.rng, multiplier);
   // Rolled several times over (DCC magic missiles: so many missiles of so much each).
-  for ( let n = action.repeat && !forced?.byType ? Math.max(1, samplePart(action.repeat, run.rng)) : 1; n > 1; n-- ) {
+  for ( let n = action.repeat && !forcedBy ? Math.max(1, samplePart(action.repeat, run.rng)) : 1; n > 1; n-- ) {
     const more = sampleDamage(parts, run.rng, multiplier);
     for ( const [k, v] of Object.entries(more.byType) ) rolled.byType[k] = (rolled.byType[k] ?? 0) + v;
   }

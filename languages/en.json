@@ -2191,6 +2191,8 @@
         "held": "is held in place"
       },
       "Disrupted": "{by}'s critical hit disrupts what {name} was doing.",
+      "YourReaction": "{name}: roll your {reaction} at {target} now, as you would on your turn, then press the button.",
+      "ReactionDone": "I've done my reaction",
       "Store": "FastFighting live battles",
       "NoCombat": "There is no combat on this scene to play the battle on.",
       "Failed": "The live battle hit a problem: {error}",
@@ -2251,6 +2253,9 @@
       "ApplyDamage": "Apply players' damage",
       "ApplyDamageHint": "A player's damage card against a creature FastFighting runs is applied at once. Off: it waits here for a GM.",
       "DamageWaiting": "Players' damage to apply",
+      "WaitingReaction": "Waiting for {name}'s reaction",
+      "ReactionRolled": "They've rolled it",
+      "ReactionSkip": "Go on without it",
       "DamageLine": "{by} → {target}: {amount}",
       "DamageSave": "after its save",
       "DamageNoTarget": "no target",

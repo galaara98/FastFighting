@@ -189,7 +189,7 @@ export async function startLiveBattle(spec, { style = setting("storyStyle"), odd
   const spotlight = adapter.liveTurns === "spotlight";
   const seed = randomSeed();
   const live = { ...spec, options: { ...spec.options, initiativeOrder: combat.turns.map(c => c.tokenId) } };
-  const run = beginLive(live, adapter.rules, { seed, players, owns: adapter.liveOwnership?.() ?? {}, npcReactions: "calculated", systemRolls: !!adapter.rollReaction });
+  const run = beginLive(live, adapter.rules, { seed, players, owns: adapter.liveOwnership?.() ?? {}, npcReactions: "calculated", systemRolls: !!adapter.rollReaction, readsRolls: !!adapter.readTurn });
   // (Prepared until the encounter begins: no turn played, nothing told.)
   battle = {
     combat, scene, spec: live, rules: adapter.rules, run, pc: null,
@@ -886,8 +886,89 @@ const ASK_MS = 60000;
 async function answerFor(request) {
   const use = request.decided ? true : await ask(request);
   if ( !use || !request.strike ) return use;
+  // (A player's, theirs to roll while they're here; a creature's, or one whose players are gone, the system's.)
+  const theirs = await playerRolls(request);
+  if ( theirs ) return theirs;
   const roll = await systemRoll(request);
   return roll ? { use: true, roll } : true;
+}
+
+/** A reaction a player rolls themselves, waiting: {key, unitId, name, card, resolve}, or null. */
+let waiting = null;
+/** The reaction a player is rolling, for the Battle Vantage (its name and key), or null. */
+export const waitingReaction = () => (waiting ? { key: waiting.key, name: waiting.name } : null);
+
+/**
+ * A player's reaction, theirs to roll as they would on their turn: a card to them and the GMs (roll it, then I've done
+ * my reaction), and the battle waits, the Battle Vantage saying so (They've rolled it, Go on without it). What they
+ * rolled since is read off their cards (the helper's readTurn) and played as the strike's roll; its damage, as players'
+ * damage goes. Null when none of its players is here, or the helper can't read their cards.
+ */
+async function playerRolls(request) {
+  const run = battle.run;
+  const adapter = getAdapter();
+  const doc = docOf(request.unitId);
+  if ( !run.live.players.has(request.unitId) || !adapter.readTurn || !doc?.actor ) return null;
+  const owners = game.users.filter(u => !u.isGM && u.active && doc.actor.testUserPermission(u, "OWNER"));
+  if ( !owners.length ) return null;
+  const name = run.byId.get(request.unitId)?.spec.name ?? "";
+  const target = request.byId ? run.byId.get(request.byId)?.spec.name ?? "" : "";
+  const from = Date.now();
+  const ChatMessage = chatMessages();
+  const card = await ChatMessage.create({
+    content: inertHtml(`<div class="fast-fighting-live"><p>${escape(fmt("FASTFIGHTING.Live.YourReaction", { name, reaction: request.strike?.name ?? request.reaction, target }))}</p>
+      <button type="button" data-ff-live="reactionDone"><i class="fa-solid fa-check"></i> ${loc("FASTFIGHTING.Live.ReactionDone")}</button></div>`),
+    speaker: chronicle(), whisper: [...new Set([...gmIds(), ...owners.map(u => u.id)])],
+    flags: { [MODULE_ID]: { live: { battle: battle.data.id, reaction: request.key, pcId: request.unitId } } }
+  });
+  const done = await new Promise(resolve => {
+    waiting = { key: request.key, unitId: request.unitId, name, card: card?.id ?? null, resolve };
+    changed();
+  });
+  waiting = null;
+  await card?.delete();
+  changed();
+  if ( done !== "done" ) return { use: false };
+  // (What they rolled since the card: their cards, not FastFighting's own.)
+  const own = m => m.getFlag(MODULE_ID, "story") || m.getFlag(MODULE_ID, "live");
+  const messages = game.messages.filter(m => m.timestamp >= from && !own(m) && madeFor(m, request.unitId));
+  const ids = Object.fromEntries(run.units.map(u => [tokenIdOf(u), u.id]));
+  const actors = {};
+  for ( const u of run.units ) if ( u.spec.actorId && !(u.spec.actorId in actors) ) actors[u.spec.actorId] = u.id;
+  let events = [];
+  try {
+    events = adapter.readTurn(messages, { actorId: run.byId.get(request.unitId)?.spec.actorId ?? null, tokenId: request.unitId, ids, actors }) ?? [];
+  } catch ( err ) {
+    console.error(`${MODULE_ID} | reading ${name}'s reaction`, err);
+  }
+  const hit = events.find(e => e.type === "attack" && (!e.targetId || !request.byId || e.targetId === request.byId));
+  const degree = counted(hit?.degree);
+  // (Nothing rolled: the reaction not used after all.)
+  if ( degree === null ) return { use: false };
+  const roll = { attack: { degree: Math.min(3, Math.round(degree)), natural: counted(hit.natural), total: counted(hit.total, -Infinity) }, damage: null };
+  const amount = counted(hit.damage);
+  if ( roll.attack.degree >= 2 && amount > 0 ) {
+    const t = request.byId ? run.byId.get(request.byId) : null;
+    let multiplier = 1;
+    if ( t && !run.live.players.has(t.id) && !battle.data.applyDamage && !systemApplies(adapter) ) multiplier = await askDamage(name, t.spec.name, amount);
+    roll.damage = { total: Math.floor(amount * multiplier) };
+  }
+  return { use: true, roll };
+}
+
+/** A player's reaction rolled (done) or left (skip): the battle goes on with it. True if one was waiting. */
+export function endReaction(key, how = "done") {
+  if ( !waiting || (key && waiting.key !== key) ) return false;
+  waiting.resolve(how);
+  return true;
+}
+
+/** Asked by a player's browser: their reaction's card pressed (they've rolled it). */
+function answerReactionDone(data, { user } = {}) {
+  if ( !waiting || data?.key !== waiting.key ) return false;
+  const actor = docOf(waiting.unitId)?.actor;
+  if ( !user?.isGM && !actor?.testUserPermission(user, "OWNER") ) return false;
+  return endReaction(waiting.key, "done");
 }
 
 /** A finite number at least `least` (a roll from another player's screen is only data). */
@@ -1969,8 +2050,10 @@ async function pickUp() {
       continue;
     }
     battle = { combat, scene, spec, rules, run, pc: null, data, keptSpec: data.spec };
-    // (Reactions' strikes rolled with the system's own roller, where this helper can: a battle begun before, too.)
+    // (Reactions' strikes rolled with the system's own roller, where this helper can, and a player's by the player: a
+    // battle begun before, too.)
     run.live.systemRolls = !!getAdapter()?.rollReaction;
+    run.live.readsRolls = !!getAdapter()?.readTurn;
     playersNow();
     if ( data.pc ) {
       const own = m => m.getFlag(MODULE_ID, "story") || m.getFlag(MODULE_ID, "live");
@@ -1990,6 +2073,7 @@ async function pickUp() {
 export function registerLiveBattles() {
   CONFIG.queries[QUERIES.liveAsk] = answerAsk;
   CONFIG.queries[QUERIES.liveRoll] = answerRoll;
+  CONFIG.queries[QUERIES.liveReactionDone] = answerReactionDone;
   Hooks.on("combatTurnChange", onTurnChange);
   Hooks.on("updateToken", (doc, changes) => {
     if ( !battle?.pc || doc.id !== battle.pc.id || !("x" in changes || "y" in changes) || !playsHere() ) return;
@@ -2047,6 +2131,22 @@ export function registerLiveBattles() {
   Hooks.on("renderChatMessageHTML", (message, html) => {
     for ( const button of html.querySelectorAll?.("[data-ff-live]") ?? [] ) {
       const live = message.getFlag(MODULE_ID, "live");
+      // (A player's reaction card: its button theirs too, the GM playing the battle told by a query.)
+      if ( button.dataset.ffLive === "reactionDone" && live?.reaction && message.author?.isGM ) {
+        const actor = live.pcId ? docOf(live.pcId)?.actor ?? game.scenes.find(s => s.tokens.has(live.pcId))?.tokens.get(live.pcId)?.actor : null;
+        if ( !game.user.isGM && !actor?.testUserPermission(game.user, "OWNER") ) {
+          button.remove();
+          continue;
+        }
+        button.addEventListener("click", async event => {
+          event.preventDefault();
+          button.disabled = true;
+          if ( endReaction(live.reaction, "done") ) return;
+          const gm = game.users.get(message.author.id)?.active ? game.users.get(message.author.id) : game.users.activeGM;
+          await gm?.query(QUERIES.liveReactionDone, { key: live.reaction }).catch(() => null);
+        });
+        continue;
+      }
       if ( !game.user.isGM || !message.author?.isGM || !live ) {
         button.remove();
         continue;

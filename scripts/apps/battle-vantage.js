@@ -26,7 +26,7 @@ import { mountNetwork } from "./battle-network.js";
 import { blink, keepTyping } from "./blink.js";
 import { sceneEncounter, encounterNumber } from "../foundry/persistence.js";
 import {
-  liveBattle, continueBattle, rewind, rewindEncounter, beginEncounter, endEncounter, playCurrent, answerDamage, setApplyDamage, systemAppliesText, liveFact, dropHeldFact, setNpcReactions, setPlayThrough, finishReview,
+  liveBattle, continueBattle, rewind, rewindEncounter, beginEncounter, endEncounter, playCurrent, answerDamage, setApplyDamage, systemAppliesText, waitingReaction, endReaction, liveFact, dropHeldFact, setNpcReactions, setPlayThrough, finishReview,
   waitingOnGm, suggestedSpotlight, spotlightNext, settleBattle, setAutomated, liveCondition, liveMind, bringIntoFight, tokenIdOf
 } from "../foundry/live-battle.js";
 
@@ -111,6 +111,7 @@ export class BattleVantage extends HandlebarsApplicationMixin(ApplicationV2) {
       playThrough: BattleVantage.#onPlayThrough,
       applyDamage: BattleVantage.#onApplyDamage,
       damage: BattleVantage.#onDamage,
+      reaction: BattleVantage.#onReaction,
       spotlight: BattleVantage.#onSpotlight,
       aftermath: BattleVantage.#onAftermath,
       automate: BattleVantage.#onAutomate,
@@ -580,6 +581,11 @@ export class BattleVantage extends HandlebarsApplicationMixin(ApplicationV2) {
     await setPlayThrough(target.checked);
   }
 
+  /** A player's reaction waiting: they've rolled it (read off their cards), or the battle goes on without it. */
+  static #onReaction(event, target) {
+    endReaction(target.dataset.key, target.dataset.how === "skip" ? "skip" : "done");
+  }
+
   /** Apply players' damage, for this battle, from now on. */
   static async #onApplyDamage(event, target) {
     await setApplyDamage(target.checked);
@@ -635,6 +641,11 @@ export function battleContext(b, focusId = null) {
     // (Foundry's encounter: Begin Encounter until it has, glowing while it waits; then End Encounter.)
     canBegin: !started, canEnd: started,
     npcAsk: run.live.npcReactions === "ask", playThrough: !!b.data.auto,
+    // (A player rolling a reaction: the battle waits on them.)
+    reaction: (() => {
+      const w = waitingReaction();
+      return w ? { key: w.key, text: fmt("FASTFIGHTING.Battle.WaitingReaction", { name: w.name }) } : null;
+    })(),
     // (Players' damage: applied at once, or waiting here; greyed out while the system applies it itself.)
     applyDamage: !!b.data.applyDamage, systemApplies: systemAppliesText(),
     damage: (b.pc?.damage ?? []).map(d => ({

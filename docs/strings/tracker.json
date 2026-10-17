@@ -405,6 +405,16 @@
    "hash": "27781a391254",
    "gone": "2026-10-14"
   },
+  "core:code:scripts/foundry/live-battle.js:playerRolls#1": {
+   "repo": "core",
+   "file": "scripts/foundry/live-battle.js",
+   "key": "scripts/foundry/live-battle.js:playerRolls#1",
+   "area": "core/code",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "076154ddadaf"
+  },
   "core:code:scripts/foundry/live-battle.js:playTurn#1": {
    "repo": "core",
    "file": "scripts/foundry/live-battle.js",
@@ -2800,6 +2810,26 @@
    "hash": "a0008dd73076",
    "changed": true
   },
+  "core:FASTFIGHTING.Battle.ReactionRolled": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.ReactionRolled",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "88f9feafaab2"
+  },
+  "core:FASTFIGHTING.Battle.ReactionSkip": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.ReactionSkip",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "3e4acc9dae59"
+  },
   "core:FASTFIGHTING.Battle.Read.attack": {
    "repo": "core",
    "file": "languages/en.json",
@@ -3243,6 +3273,16 @@
    "date": null,
    "commit": null,
    "hash": "82fa6da4cd41"
+  },
+  "core:FASTFIGHTING.Battle.WaitingReaction": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.WaitingReaction",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "1aefb0675010"
   },
   "core:FASTFIGHTING.Battle.Wavering": {
    "repo": "core",
@@ -5880,6 +5920,16 @@
    "commit": null,
    "hash": "890650836e7d"
   },
+  "core:FASTFIGHTING.Live.ReactionDone": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Live.ReactionDone",
+   "area": "core/Live",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "a10e15b42c58"
+  },
   "core:FASTFIGHTING.Live.Rewind": {
    "repo": "core",
    "file": "languages/en.json",
@@ -6154,6 +6204,16 @@
    "date": null,
    "commit": null,
    "hash": "f7ce509fed7c"
+  },
+  "core:FASTFIGHTING.Live.YourReaction": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Live.YourReaction",
+   "area": "core/Live",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "9773a5214426"
   },
   "core:FASTFIGHTING.Log.AC": {
    "repo": "core",

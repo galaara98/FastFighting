@@ -46,6 +46,13 @@
         <label data-tooltip="{{localize "FASTFIGHTING.Battle.NpcAskHint"}}"><input type="checkbox" data-action="npcReactions" {{checked npcAsk}}> {{localize "FASTFIGHTING.Battle.NpcAsk"}}</label>
         <label class="{{#if systemApplies}}is-disabled{{/if}}" data-tooltip="{{#if systemApplies}}{{systemApplies}}{{else}}{{localize "FASTFIGHTING.Battle.ApplyDamageHint"}}{{/if}}"><input type="checkbox" data-action="applyDamage" {{checked applyDamage}} {{#if systemApplies}}disabled{{/if}}> {{localize "FASTFIGHTING.Battle.ApplyDamage"}}</label>
       </div>
+      {{#if reaction}}
+        <div class="ff-battle-damage">
+          <p class="hint">{{reaction.text}}</p>
+          <button type="button" class="ff-btn" data-action="reaction" data-key="{{reaction.key}}" data-how="done"><i class="fa-solid fa-check"></i> {{localize "FASTFIGHTING.Battle.ReactionRolled"}}</button>
+          <button type="button" class="ff-btn" data-action="reaction" data-key="{{reaction.key}}" data-how="skip"><i class="fa-solid fa-forward"></i> {{localize "FASTFIGHTING.Battle.ReactionSkip"}}</button>
+        </div>
+      {{/if}}
       {{#if damage.length}}
         <div class="ff-battle-damage">
           <p class="hint">{{localize "FASTFIGHTING.Battle.DamageWaiting"}}</p>
