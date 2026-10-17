@@ -425,6 +425,15 @@ export class SystemAdapter {
   }
 
   /**
+   * API 19. Does the system let token nameplates decide whether players learn an NPC's name (PF2e's Tokens Determine
+   * NPC Name Visibility)? Then a live battle's story names a creature only where its nameplate shows to everyone, as
+   * the system's own cards do. Default false: the story names it once a player's character has seen it.
+   */
+  namesFollowNameplates() {
+    return false;
+  }
+
+  /**
    * API 19. The system's (or a module's) own setting that already applies players' damage, while it's on: its name, as
    * the GM sees it in the settings; else null. While it is, FastFighting's own is greyed out and applies nothing.
    */

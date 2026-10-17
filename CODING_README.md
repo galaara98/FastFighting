@@ -157,6 +157,7 @@ A player's damage card in a live battle, at a creature FastFighting runs, is app
 - `damageCard(message, {ids})`: `{amount, kind: "damage"|"healing", targets: [tokenId], save}` for a damage roll, else null.
 - `applyDamageCard(message, token, {multiplier})`: applies it through the system's own damage handling and returns undo records (`undoRecord`, the values as they were), kept with the player's turn for Rewind.
 - `appliesPlayerDamage()`: the name of the system's (or a module's) own setting that applies players' damage, while it's on, else null. While it is, FastFighting's toggles are greyed out and apply nothing.
+- `namesFollowNameplates()`: true where the system lets token nameplates decide whether players learn an NPC's name (PF2e's Tokens Determine NPC Name Visibility); the story then names a creature only where its nameplate shows to everyone. Otherwise it's named once a player's character has seen it (in sight, or it came to blows or words with one), unless the GM ticked **Keep its name secret** on its FastFighting tab.
 
 A creature the blow leaves at 0 hit points that the system left standing falls by the battle's rules at once (`liveDrop` on a copy of the fight, written through `commitChanges`), so the players see it; the turn's reading at its end still credits the blow.
 

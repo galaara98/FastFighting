@@ -22915,6 +22915,26 @@
    "hash": "a0b9ab13e3e1",
    "gone": "2026-10-11"
   },
+  "core:FASTFIGHTING.TokenTactics.SecretName": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.TokenTactics.SecretName",
+   "area": "core/TokenTactics",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "d633802bbfcc"
+  },
+  "core:FASTFIGHTING.TokenTactics.SecretNameHint": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.TokenTactics.SecretNameHint",
+   "area": "core/TokenTactics",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "4dc05882832c"
+  },
   "core:FASTFIGHTING.TokenTactics.Tab": {
    "repo": "core",
    "file": "languages/en.json",

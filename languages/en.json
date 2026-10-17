@@ -862,6 +862,8 @@
       "Hint": "FastFighting's playstyles and desires for this token.",
       "Hazard": "Hazard",
       "HazardHint": "Traps and dangerous features: they don't move or talk, and can't be attacked.",
+      "SecretName": "Keep its name secret",
+      "SecretNameHint": "A live battle's story calls it someone, however long the players have seen it. Off: it's named once a player's character has seen it, or from the start if its nameplate shows to everyone.",
       "HazardMark": {
         "system": "As the game system has it",
         "no": "Not a hazard",

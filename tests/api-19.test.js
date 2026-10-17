@@ -19,6 +19,7 @@ test("a helper that knows nothing of damage cards reads none, applies none, and 
   expect(adapter.damageCard({})).toBeNull();
   expect(await adapter.applyDamageCard({}, {})).toEqual([]);
   expect(adapter.appliesPlayerDamage()).toBeNull();
+  expect(adapter.namesFollowNameplates()).toBe(false);
 });
 
 test("a creature left at 0 hit points by a player's blow falls; one still standing on its feet, or already down, doesn't", () => {

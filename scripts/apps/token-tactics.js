@@ -117,6 +117,8 @@ async function fill(app, panel) {
     hazard,
     markable,
     hazardChoices: Object.fromEntries(HAZARD_MARKS.map(k => [k, localize(`FASTFIGHTING.TokenTactics.HazardMark.${k || "system"}`)])),
+    // (Its name kept from the players in a live battle's story, however long they've seen it.)
+    secretName: markable && !!actor.getFlag(MODULE_ID, "secretName"),
     isHazard,
     // (No desires here: a desire names a creature someone can perceive on the battle map, which a token window can't tell.)
     tactics: isHazard ? null : questionsContext(spec, actor, `token-${app.id}`, { targets: null })
@@ -145,6 +147,14 @@ function listen(app, panel) {
     if ( el?.dataset?.ffSetting === "adhd" ) {
       event.stopPropagation();
       return setAdhd(actorOf(app), Number(el.value));
+    }
+    // Its name kept secret in the story: kept with its tactics.
+    if ( el?.dataset?.ffSetting === "secretName" ) {
+      event.stopPropagation();
+      const actor = actorOf(app);
+      if ( el.checked ) await actor.setFlag(MODULE_ID, "secretName", true);
+      else await actor.unsetFlag(MODULE_ID, "secretName");
+      return;
     }
     // Whether it's a hazard: kept with its tactics.
     if ( el?.dataset?.ffSetting === "hazard" ) {

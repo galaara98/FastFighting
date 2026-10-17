@@ -38,6 +38,8 @@ import { undoRecord } from "./sheet-tools.js";
 import { keepUpdate, keptBattle, forgetUpdate } from "./live-keeping.js";
 import { randomSeed } from "../engine/rng.js";
 import { holderOf } from "../engine/behavior/troubles.js";
+import { perceives } from "../engine/behavior/senses.js";
+import { isStanding } from "../engine/battle-state.js";
 
 const loc = key => game.i18n.localize(key);
 const fmt = (key, data) => game.i18n.format(key, data);
@@ -1354,10 +1356,48 @@ async function writeChanges(before, after, records) {
 /*  Telling                                     */
 /* -------------------------------------------- */
 
-/** Can the players not read a token's name on the map? No player's, and its nameplate shown only to its owners, or none. */
-function nameHidden(doc) {
-  const shown = [CONST.TOKEN_DISPLAY_MODES.ALWAYS, CONST.TOKEN_DISPLAY_MODES.HOVER];
-  return !!doc && !doc.actor?.hasPlayerOwner && !shown.includes(doc.displayName);
+/**
+ * Is a creature's name kept from the players in the story? Not a player's own; not one whose nameplate shows to
+ * everyone (Always, Hover). One the GM marked "Keep its name secret" (its FastFighting tab) always is. Where the system
+ * lets nameplates decide (namesFollowNameplates: PF2e's own setting), any other is, as the system's cards have it;
+ * elsewhere, until a player's character has seen it this fight (`u.partySaw`: noteSeen).
+ */
+function nameHidden(doc, u = null, byNameplate = nameplatesDecide()) {
+  if ( !doc || doc.actor?.hasPlayerOwner ) return false;
+  if ( doc.actor?.getFlag(MODULE_ID, "secretName") ) return true;
+  const modes = CONST.TOKEN_DISPLAY_MODES;
+  if ( [modes.ALWAYS, modes.HOVER].includes(doc.displayName) ) return false;
+  return byNameplate || !u?.partySaw;
+}
+
+/** Does the system let token nameplates decide whether players learn an NPC's name? */
+function nameplatesDecide() {
+  try {
+    return !!getAdapter()?.namesFollowNameplates?.();
+  } catch ( err ) {
+    return false;
+  }
+}
+
+/**
+ * Each creature a player's character has seen this fight, marked (`partySaw`): one in its sight (not hidden), or one
+ * it came to blows or words with. Named in the story from then on (nameHidden). Kept on the creature, so a Rewind takes
+ * it back with the turn.
+ */
+function noteSeen(run) {
+  const party = new Set(run.units.filter(p => p.spec.kind === "pc" || run.live.players.has(p.id) || docOf(p.id)?.actor?.hasPlayerOwner));
+  if ( !party.size ) return;
+  const met = new Set();
+  for ( const e of run.log ) {
+    const a = run.byId.get(e.actorId);
+    const t = run.byId.get(e.targetId);
+    if ( a && t && (party.has(a) || party.has(t)) ) met.add(a.id).add(t.id);
+  }
+  for ( const u of run.units ) {
+    if ( u.partySaw || party.has(u) ) continue;
+    const hidden = u.spec.hidden && !u.revealed;
+    if ( met.has(u.id) || (!hidden && [...party].some(p => isStanding(p) && perceives(run, p, u))) ) u.partySaw = true;
+  }
 }
 
 /**
@@ -1383,10 +1423,11 @@ const beatKey = beat => (beat.closing ? "closing" : beat.turns.join(","));
 function unnamed(run, docs) {
   const hidden = [];
   const known = new Set();
+  const byNameplate = nameplatesDecide();
   for ( const u of run.units ) {
     const doc = docs.get(u.id);
     if ( !doc ) continue;
-    if ( nameHidden(doc) ) hidden.push(u);
+    if ( nameHidden(doc, u, byNameplate) ) hidden.push(u);
     else known.add(u.spec.name);
   }
   const numbers = (battle.data.someone ??= {});
@@ -1434,7 +1475,8 @@ async function tellNew() {
     };
     const beats = storyBeats(result, battle.spec, style, options);
     const docs = new Map(run.units.map(u => [u.id, docOf(u.id)]).filter(([, d]) => d));
-    // (Told openly: one whose name the players can't read on the map, as someone. The GMs' cards keep its name.)
+    // (Told openly: one whose name the players haven't learned, as someone. The GMs' cards keep its name.)
+    if ( open ) noteSeen(run);
     const someone = open ? unnamed(run, docs) : null;
     if ( someone?.size ) {
       const told = new Map(storyBeats(...namedAs(result, battle.spec, someone), style, options).map(b => [beatKey(b), b]));
