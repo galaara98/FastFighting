@@ -133,10 +133,13 @@ function affects(run, b, aura, t) {
   return aura.foesOnly ? areEnemies(run, b, t) : true;
 }
 
-/** Is t immune to b's aura just now, for having saved against it (or one of its kind)? */
+/** Is t immune to b's aura just now: for having saved against it (or one of its kind), or by its traits (expose)? */
 function immuneNow(run, b, aura, t) {
-  const until = t.auraImmune?.get(immunityKey(b, aura));
-  return until !== undefined && run.round < until;
+  if ( !t.auraImmune?.size ) return false;
+  return [auraKey(b, aura), immunityKey(b, aura)].some(k => {
+    const until = t.auraImmune.get(k);
+    return until !== undefined && run.round < until;
+  });
 }
 
 /** Can t sense b's aura as it must to be affected (aura.needs)? */
@@ -201,9 +204,10 @@ function expose(run, b, aura, t, cause, play) {
   if ( immuneNow(run, b, aura, t) || !senses(run, b, aura, t) ) return;
   (t.auraLast ??= new Map()).set(key, run.round);
   const common = { aura: aura.label, action: aura.label, auraId: aura.id, cause, target: t.spec.name, targetId: t.id, saveType: aura.save.type, dc: aura.save.dc };
-  // (Immune by its traits or what it lays: the system's say, as for any action.)
+  // (Immune by its traits or what it lays: the system's say, as for any action. Told once: immune to it for the fight.)
   if ( isImmune(run, t, aura.action) ) {
     play.log(run, b, { type: "aura", ...common, immune: true, took: false });
+    (t.auraImmune ??= new Map()).set(key, Infinity);
     return;
   }
   const rules = run.prep.rules;

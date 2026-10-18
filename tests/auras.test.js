@@ -146,6 +146,16 @@ describe("an aura that sickens", () => {
     expect(auraEvents(run).map(e => e.round)).toEqual([1, 2]);
   });
 
+  test("one immune to it by its traits: told once, not every turn it starts inside", () => {
+    const run = ready([creature({ id: "golem", name: "Golem", creatureTraits: ["mindless"], position: at(0, 0), actions: [] }),
+      creature({ id: "ghast", name: "Ghast", side: "hostile", position: at(10, 0), actions: [], auras: [reek({ traits: ["aura", "mental"] })] })]);
+    const golem = run.byId.get("golem");
+    playTurn(run, golem);
+    run.round = 2;
+    playTurn(run, golem);
+    expect(auraEvents(run).map(e => e.immune)).toEqual([true]);
+  });
+
   test("one that can't smell is untouched by a reek", () => {
     const run = ready([creature({ id: "hero", name: "Hero", position: at(0, 0), senses: { smell: 0 } }), creature({ id: "ghast", name: "Ghast", side: "hostile", position: at(10, 0), auras: [reek()] })]);
     playTurn(run, run.byId.get("hero"));
