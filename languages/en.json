@@ -937,10 +937,6 @@
         "Name": "Skeptic",
         "Hint": "Careful: saves resources, heals sparingly, hard to talk round or taunt, half swayed by its leader."
       },
-      "speedRunner": {
-        "Name": "Speed-Runner",
-        "Hint": "Wants it over fast: spends everything, quickest kills first."
-      },
       "leader": {
         "Name": "Wants to Lead",
         "Hint": "Braver and loyal; goes for the biggest threat, rallies its people, half ignores its commander."
@@ -975,7 +971,15 @@
       },
       "enabler": {
         "Name": "Enabler",
-        "Hint": "Support first: heals, guards and bolsters friends; backs the leader."
+        "Hint": "Makes friends better: bolsters them first, then gives them an edge over foes; heals only when it has nothing else to give."
+      },
+      "medic": {
+        "Name": "Medic",
+        "Hint": "Heals first and early, the dying above all; keeps its healing for healing, bolsters when nobody's hurt, stays close."
+      },
+      "dps": {
+        "Name": "DPS",
+        "Hint": "Damage above all: its most damaging option every time, spent until it's gone; picks the foes it hurts most."
       },
       "redeemSeeker": {
         "Name": "Redeem-Seeker",
@@ -1045,7 +1049,10 @@
         "wary": "Wary of outsiders",
         "slacks": "Now and then does nothing",
         "shoves": "Shoves foes into harm",
-        "kite": "Keeps its distance"
+        "kite": "Keeps its distance",
+        "medic": "Heals first and early",
+        "dps": "Damage first",
+        "enable": "Bolsters friends first"
       }
     },
     "Tracker": {

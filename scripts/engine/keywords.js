@@ -6,6 +6,7 @@
  * cowards", "hates violence") counts the other way. Pure: no Foundry globals.
  */
 import { TRAITS, clamp } from "../constants.js";
+import { currentPlaystyleMap } from "./playstyles.js";
 
 /** The most the words found can raise or lower a playstyle (in keywords) and a trait (in points). */
 export const PLAYSTYLE_WORD_CAP = 2;
@@ -35,7 +36,8 @@ export function readKeywordFile(file) {
   for ( const [raw, entry] of Object.entries(file?.words ?? {}) ) {
     const word = String(raw).trim().toLowerCase().replace(/’/g, "'");
     if ( !word || !entry || typeof entry !== "object" ) continue;
-    words.set(word, { playstyles: numbers(entry.playstyles), traits: numbers(entry.traits), whole: entry.whole === true });
+    // (A renamed playstyle as it is now: a file written before it was renamed still counts.)
+    words.set(word, { playstyles: currentPlaystyleMap(numbers(entry.playstyles)), traits: numbers(entry.traits), whole: entry.whole === true });
   }
   const list = l => (Array.isArray(l) ? l : []).map(n => String(n).trim().toLowerCase().replace(/’/g, "'")).filter(Boolean);
   return { words, negations: list(file?.negations), reversals: list(file?.reversals) };

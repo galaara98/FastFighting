@@ -24,7 +24,11 @@ export const STAY_TRUE_CAP = 0.1;
  * traits:    additive shifts on 0-100 traits
  * suggest:   tactics answers this playstyle implies (first selected playstyle wins on conflicts)
  * behavior:  engine hooks; numbers are base chances per opportunity (scaled by intensity). kite: how much it minds
- *             ending its turn in a foe's reach, and keeps its distance (a Kiter; behavior/prepare.js). hinders: how much it
+ *             ending its turn in a foe's reach, and keeps its distance (a Kiter; behavior/prepare.js). medic: heals
+ *             earlier, keeps what heals for healing, bolsters before it attacks, gives friends its potions, keeps close
+ *             (healing.js, targeting.js, support.js, prepare.js). dps: its most damaging option, spent freely, support
+ *             and control less (targeting.js, support.js, healing.js). enable: bolsters and gives its friends an edge
+ *             before it heals or attacks (support.js, targeting.js, prepare.js). hinders: how much it
  *             likes locking foes down, harassing and debuffing them (control actions count for up to 2.5 times more);
  *             trapWary: a trap avoider, how watchful (the share of the Trap avoiders luck it gets: Thief all of it, then
  *             Puzzle-Maniac, Skeptic, Lore-Collector, Chicken, Wallflower; behavior/traps.js); taunt: a taunter, its share
@@ -35,7 +39,7 @@ export const STAY_TRUE_CAP = 0.1;
  *   hurt      points toward foes that suit it: nearest, far (two moves or more away), weakest, dangerous, casters,
  *             healers, downed, leader (theirs), weakness (foes its attacks exploit), unstudied (foes it hasn't sized
  *             up), current (the one it's on), slow (foes that can't follow it: held still, prone, slowed, slower than
- *             it, or struggling through the ground to get at it)
+ *             it, or struggling through the ground to get at it), softest (the foe its blows would hurt most)
  *   heal, protect, aid, talk   points toward healing hurt friends, guarding the weakest friend, bolstering a friend
  *             with a buff (its leader, for those who look to one; else whoever is doing the most fighting), talking
  *   bind, rob points toward tying up a fallen foe (a prisoner: behavior/fallen.js), and robbing one
@@ -72,9 +76,6 @@ export const PLAYSTYLES = Object.freeze({
   // group) get a step further to go and up to 4 harder (wary, by the pill's place).
   skeptic: { icon: "fa-magnifying-glass", traits: { tactical: 10 }, suggest: { resourceUse: "conserve", healAggro: "conservative" }, behavior: { wary: 1, trapWary: 0.75, tauntProof: 0.6 },
     desire: { talk: -15, leader: 0.5, frustration: 0.8 } },
-  // Ends it fast: the quickest kills.
-  speedRunner: { icon: "fa-forward-fast", traits: { tactical: 5, brave: 5 }, suggest: { resourceUse: "nova", target: "weakest" }, behavior: { rush: 0.4 },
-    desire: { hurt: { weakest: 20 }, bind: -15, rob: -15, frustration: 1.3 } },
   // Wants to lead (whether or not it does: that's its group's chain of command): goes for the biggest threat, looks
   // after its people, and half ignores whoever commands it instead.
   // Not chosen, it may brood (ambition: a turn's chance, by the pill's place); with a treacherous streak (Cruel, Wildcard,
@@ -93,13 +94,13 @@ export const PLAYSTYLES = Object.freeze({
   // Talks first, and spares the fallen.
   diplomat: { icon: "fa-handshake", traits: { selfish: -10 }, suggest: { talk: "first", target: "dangerous", fallen: "tie" }, behavior: { parleyFirst: 0.6, spareDowned: 0.5, tauntProof: 0.35 },
     desire: { talk: 30, hurt: { downed: -50 }, bind: 15 } },
-  // Keeps its distance and out of the crowd.
   // Keeps its distance: strikes from where its foes can't answer and slips away again (a ranged one at the edge of its
   // first range increment, beyond a foe's move and reach; a melee one in, a blow, and out), would rather go for foes that
   // can't follow, falls back toward its friends, and minds ending its turn in reach far more than most (kite:
   // behavior/prepare.js). Cornered, it fights.
   kiter: { icon: "fa-person-running", traits: { tactical: 10 }, suggest: {}, behavior: { kite: 1 },
     desire: { hurt: { slow: 15 }, frustration: 0.8 } },
+  // Keeps its distance and out of the crowd.
   wallflower: { icon: "fa-user-ninja", traits: { brave: -10 }, suggest: { style: "ranged" }, behavior: { lowProfile: 0.45, hinders: 0.25, flighty: 0.3, trapWary: 0.35, tauntProof: 0.3 },
     desire: { hurt: { nearest: -10 }, avoid: { nearest: 15 } } },
   // Shields the weakest friend, avenges the fallen, fears nothing.
@@ -113,9 +114,22 @@ export const PLAYSTYLES = Object.freeze({
   // In it for itself: easy pickings, little loyalty, gives up when it gets hard.
   mercenary: { icon: "fa-coins", traits: { selfish: 30, loyal: -20 }, suggest: { retreat: "losing", resourceUse: "conserve", allyDying: "fight", fallen: "rob" }, behavior: { flighty: 0.6 },
     desire: { hurt: { weakest: 10 }, aid: -10, bind: 10, rob: 20, avenge: 0.3, frustration: 1.3 } },
-  // Support first: heals and guards friends, backs the leader.
-  enabler: { icon: "fa-hands-holding", traits: { selfish: -15, loyal: 10 }, suggest: { healAggro: "aggressive", target: "protect" }, behavior: { followFocus: 0.3, helps: 1 },
-    desire: { heal: 25, protect: 15, aid: 20, free: 15, leader: 1.3 } },
+  // Makes its friends better, in this order: bolsters them (its buffs before anything: enable), then gives them an edge
+  // over their foes (Aid, a foe knocked down, grabbed, made off guard or shaken; a flank for a friend), then heals,
+  // and hurts last. A dying friend still comes first, and with nothing to give it fights.
+  enabler: { icon: "fa-hands-holding", traits: { selfish: -15, loyal: 10 }, suggest: { target: "protect" }, behavior: { followFocus: 0.3, helps: 1, enable: 1 },
+    desire: { aid: 30, protect: 10, heal: 5, free: 15, leader: 1.3 } },
+  // Heals first, and earlier than most (a friend at three quarters is reason enough: medic), the downed and dying
+  // before anyone; keeps its healing for healing (no slot, focus or potion its heals use spent on a blow); bolsters its
+  // friends when nobody needs mending; gives a friend its own potion; keeps close to its friends. It still fights
+  // when nobody needs it.
+  medic: { icon: "fa-kit-medical", traits: { selfish: -15, loyal: 10 }, suggest: { healAggro: "aggressive", allyDying: "rescue" }, behavior: { medic: 1, helps: 1 },
+    desire: { heal: 30, aid: 10, protect: 5, free: 10, hurt: { downed: -20 } } },
+  // Damage above all: its most damaging option every time, spending what it takes (slots, focus, consumables) until
+  // it's gone, then the next; foes its blows hurt most (a weakness, a soft defense, off guard); flanking and hiding for
+  // a sneak attack; support and control only when a friend is about to die. Impatient with talk (dps).
+  dps: { icon: "fa-burst", traits: { brave: 5 }, suggest: { resourceUse: "nova", consumables: "freely", specialty: "some" }, behavior: { dps: 1 },
+    desire: { hurt: { weakness: 15, softest: 15 }, aid: -10, bind: -15, rob: -10, talk: -10, frustration: 1.2 } },
   // Out to prove itself: takes on the biggest threat and won't quit.
   redeemSeeker: { icon: "fa-dove", traits: { brave: 15, selfish: -20 }, suggest: { allyDying: "rescue", retreat: "never", style: "frontline" }, behavior: { drawAggro: 0.15, helps: 1, taunt: 0.3 },
     desire: { hurt: { dangerous: 20 }, protect: 10, bind: 10, rob: -15, free: 10, frustration: 0.6 } },
@@ -176,7 +190,30 @@ export const PLAYSTYLE_IDS = Object.freeze(Object.keys(PLAYSTYLES));
 /** Whether an id is a playstyle (its own key: never "constructor" and the like). */
 export const isPlaystyle = id => typeof id === "string" && Object.hasOwn(PLAYSTYLES, id);
 /** Playstyles renamed since, by their old ids: answers saved under an old id still count. */
-export const RENAMED_PLAYSTYLES = Object.freeze({ scaredyCat: "chicken" });
+export const RENAMED_PLAYSTYLES = Object.freeze({
+  scaredyCat: "chicken",
+  // (temporary: remove at 0.7.0 with tests/temporary/speedrunner-to-dps.test.js)
+  speedRunner: "dps"
+});
+
+/** A playstyle id as it is now: a renamed one's new id (RENAMED_PLAYSTYLES), anything else as it was. */
+export const currentPlaystyle = id => (typeof id === "string" && Object.hasOwn(RENAMED_PLAYSTYLES, id) ? RENAMED_PLAYSTYLES[id] : id);
+
+/**
+ * Playstyle ids read from anywhere they're kept (a character's flags, a helper's hints, a keyword file): each as it is
+ * now, the ones that aren't playstyles dropped, each once, in their order.
+ */
+export const currentPlaystyles = ids => [...new Set((Array.isArray(ids) ? ids : []).map(currentPlaystyle).filter(isPlaystyle))];
+
+/** A map by playstyle id (hints, keyword points) with renamed ids as they are now, their values added together. */
+export function currentPlaystyleMap(map) {
+  const out = {};
+  for ( const [id, v] of Object.entries(map ?? {}) ) {
+    const now = currentPlaystyle(id);
+    if ( isPlaystyle(now) && Number.isFinite(Number(v)) ) out[now] = (out[now] ?? 0) + Number(v);
+  }
+  return out;
+}
 
 /** How strongly playstyles act: 1 normally, heavier for roleplay. */
 export function intensity({ roleplay = false } = {}) {

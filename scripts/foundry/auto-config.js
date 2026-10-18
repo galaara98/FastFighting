@@ -25,6 +25,7 @@ import { CORE_API_VERSION } from "../core-api.js";
 import { TRAITS, fudged, isPlain } from "../constants.js";
 import { TACTIC_CHOICES, TACTIC_KEYS, suggestTactics } from "../engine/tactics.js";
 import { scorePlaystyles, pickPlaystyles } from "../engine/auto-playstyles.js";
+import { currentPlaystyles, currentPlaystyleMap } from "../engine/playstyles.js";
 import { localize } from "../i18n.js";
 import { biographyEffects } from "../engine/keywords.js";
 import { keywords, currentKeywords } from "./keywords.js";
@@ -53,7 +54,7 @@ export const autoRecord = actor => {
     sig: typeof r.sig === "string" ? r.sig : "",
     lets,
     why,
-    picked: Array.isArray(r.picked) ? r.picked.filter(id => typeof id === "string").slice(0, 8) : [],
+    picked: Array.isArray(r.picked) ? currentPlaystyles(r.picked).slice(0, 8) : [],
     scores,
     at: Number(r.at) || 0
   };
@@ -116,7 +117,8 @@ function ask(what, fn, otherwise) {
  */
 export function autoScores(actor, spec, words = currentKeywords()) {
   const adapter = getAdapter();
-  const hints = ask("playstyleHints", () => adapter?.playstyleHints?.(actor, spec), {});
+  // (A helper's hints with any renamed playstyle as it is now: engine/playstyles.js.)
+  const hints = currentPlaystyleMap(ask("playstyleHints", () => adapter?.playstyleHints?.(actor, spec), {}));
   const bio = ask("biography", () => adapter?.biography?.(actor), "");
   return scorePlaystyles(spec, { rules: adapter?.rules ?? null, hints, words: biographyEffects(bio, words).playstyles });
 }

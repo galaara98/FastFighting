@@ -104,12 +104,15 @@ Up to four pills per character, PC or NPC, in order of importance: the first cou
 | Chicken | keeps away from the most dangerous foe; gives up easily; hits back half-heartedly; hard to taunt; leading, takes its group with it when it runs; trap avoider |
 | Cruel | the weakest, and the fallen; hits back hard; likes leaving a foe hampered |
 | Diplomat | talks; spares the fallen; hard to taunt; can't abide violence |
-| Enabler | heals, guards and bolsters friends; backs the leader |
+| DPS | its most damaging option every time, spending what it takes until it's gone; the foes it hurts most; flanks and hides for a sneak attack; impatient with talk |
+| Enabler | bolsters friends first, then gives them an edge (Aid, a foe knocked down, grabbed, shaken; a flank); heals only when it has nothing else to give; backs the leader |
 | Fragile | once hurt, keeps away from whoever hurts it and heals itself; setbacks wear it down; its flight takes others along |
 | Impatient | the nearest foe; setbacks wear it down fastest; little patience for locks; in a hurry: won't stop to get clear of a foe, raise a shield or set anything up |
+| Kiter | keeps its distance: a shot from out of reach, or in, a blow and out again; falls back as foes close, toward its friends; picks on foes that can't follow; cornered, it fights |
 | Instigator | locks foes down, harasses and debuffs them more than anyone; the most dangerous foe and the enemy leader; may defy its own leader; taunts |
 | Lazy | the nearest foe, no long walks; sometimes ignores a taunt; little help to anyone; gives up fast; holds no grudge; its flight takes others along |
 | Lore-Collector | sizes up a new foe before acting against it, then rolls much better against every foe of that sort (by each helper's **Lore-Collector advantage** setting); may share what it learned; trap avoider |
+| Medic | heals first and early (a friend at three quarters is reason enough), the dying above all; keeps its healing for healing; bolsters when nobody's hurt; gives a friend its own potion; stays close |
 | Martyr | guards the weakest friend; fears nothing; avenges the fallen fiercely; rallies; taunts foes off its friends |
 | Mercenary | easy pickings; barely avenges anyone; gives up when it gets hard; its flight takes others along; never pays a boss off |
 | Moralist | never strikes the fallen and pulls killing blows where the system allows; heals friends, guards the weakest; can't abide violence |
@@ -119,7 +122,6 @@ Up to four pills per character, PC or NPC, in order of importance: the first cou
 | Redeem-Seeker | the biggest threat; won't give up; now and then dares a foe to come at it |
 | Relentless | sticks with its foe (the hardest of all to taunt); shrugs off setbacks; keeps at doors; a little wary of outsiders' words |
 | Skeptic | hard to taunt; listens less to its leader; slow to talk; harder for outsiders to talk round; trap avoider |
-| Speed-Runner | the quickest kills; in a hurry, as an Impatient one is |
 | Tank | stands in front: taunts foes off its friends, draws attacks, guards the weakest, fears nothing, never retreats, keeps its shield up, minds getting hit less |
 | Thief | robs when it's safe; a lock is an invitation; trap avoider |
 | Un-Mundane | its magic and specialties over plain blows and talk ("Much more often"), spending freely; foes its powers find a weak spot in |
@@ -262,6 +264,7 @@ The numbers are under [Fighting and the simulation](STATS_AND_FORMULAS_README.md
 - Magic Resistance, save auras, evasion, recharges and cooldowns, and size limits on shoves and trips.
 - Crowd control, valued by the damage it prevents; thinking creatures don't waste it on the immune.
 - Healing by spells, potions and first aid, with range: a touch means walking over first.
+- [Getting ready](STATS_AND_FORMULAS_README.md#getting-ready-draws-reloads-and-a-turn-for-the-next): a weapon drawn and loaded (a crossbow's Reload), a potion got out, a healer on its way, when the turn can't do what it wants; and what's spare after its main actions spent on where it stands next: into reach or range, a flank, cover, between its friends and their foes, or out of reach.
 - Terrain from Foundry's regions, by movement mode; walls block sight and movement; climbers go over and burrowers under, and a high flyer can't be hit in melee from the ground.
 - Any grid and units, from the scene (1.5 m to a 5-foot square); units it doesn't know count each square as 5 ft.
 

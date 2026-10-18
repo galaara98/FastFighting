@@ -81,11 +81,6 @@
                 "minimum": -2,
                 "maximum": 2
               },
-              "speedRunner": {
-                "type": "number",
-                "minimum": -2,
-                "maximum": 2
-              },
               "leader": {
                 "type": "number",
                 "minimum": -2,
@@ -132,6 +127,16 @@
                 "maximum": 2
               },
               "enabler": {
+                "type": "number",
+                "minimum": -2,
+                "maximum": 2
+              },
+              "medic": {
+                "type": "number",
+                "minimum": -2,
+                "maximum": 2
+              },
+              "dps": {
                 "type": "number",
                 "minimum": -2,
                 "maximum": 2

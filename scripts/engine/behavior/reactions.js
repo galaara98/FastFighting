@@ -139,7 +139,7 @@ export function addCosts(a = {}, b = {}) {
  */
 export function takesSafeWay(run, u, safe, turn, need = null) {
   if ( !safe || !turn || !turn.canAfford(addCosts(safe.cost, need)) ) return false;
-  // In a hurry (Impatient, Speed-Runner), it doesn't stop to get clear: it takes the free swings.
+  // In a hurry (Impatient), it doesn't stop to get clear: it takes the free swings.
   const rush = behaviorOf(u).rush ?? 0;
   if ( rush > 0 && run.rng.chance(rush) ) return false;
   if ( isWary(run, u) ) return true;

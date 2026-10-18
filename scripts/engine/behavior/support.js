@@ -22,7 +22,7 @@
  *   guard                a turn given to its own defense (5e Dodge): the shield answer says how readily, as for a shield
  *                        (always: half again as readily; never: not at all)
  *   setup                it sets something up rather than getting on with it (Dodge, Hide, Secure an Advantage): one in
- *                        a hurry (Impatient, Speed-Runner) doesn't stop for it
+ *                        a hurry (Impatient) doesn't stop for it
  *   leans: [keys]        playstyle behaviors that make it likelier, each by its strength (Hide: lowProfile; Secure an
  *                        Advantage: hinders, exploitWeakness): what it would do is worth that much more to them
  *   check.against        its roll is against the foes' best defense of that kind ("perception": Hide), not check.dc
@@ -172,8 +172,11 @@ export function decideBuff(run, u, turn) {
   // Set on it (driven or more, and not just its own reckoning: told to, stirred by the fight, a friend who asked):
   // it bolsters that friend with whatever reaches them, worth it or not.
   const devoted = leadAid && wants.lead.level >= 60 && wants.lead.driven !== "logic";
-  // Helpers think helping is worth more than it is; everyone else weighs it against hitting something.
-  const baseline = devoted ? 0 : offenseBaseline(run, u) * (behaviorOf(u).helps ? 0.8 : 1);
+  // Helpers think helping is worth more than it is; everyone else weighs it against hitting something. A medic
+  // bolsters before it attacks, an enabler sooner still; a damage-dealer would rather hit.
+  const lean = behaviorOf(u);
+  const baseline = devoted ? 0 : offenseBaseline(run, u) * (lean.helps ? 0.8 : 1) * (1 - 0.5 * (Number(lean.medic) || 0)) * (1 - 0.85 * Math.min(1, Number(lean.enable) || 0))
+    * (1 + 0.5 * (Number(lean.dps) || 0));
   let best = null;
   const b = behaviorOf(u);
   // (In a hurry, decided once a turn's look: it doesn't stop to set anything up.)

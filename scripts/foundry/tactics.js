@@ -15,7 +15,7 @@
 import { MODULE_ID, TRAITS, clamp, fudged, traitBand, isPlain } from "../constants.js";
 import { TACTIC_CHOICES, TACTIC_KEYS, suggestTactics, resolveTactics } from "../engine/tactics.js";
 import { isSpecial } from "../engine/behavior/specialty.js";
-import { PLAYSTYLES, PLAYSTYLE_IDS, MAX_PLAYSTYLES, RENAMED_PLAYSTYLES, combinePlaystyles, isPlaystyle, answerChances } from "../engine/playstyles.js";
+import { PLAYSTYLES, PLAYSTYLE_IDS, MAX_PLAYSTYLES, combinePlaystyles, isPlaystyle, answerChances, currentPlaystyles } from "../engine/playstyles.js";
 import { getAdapter } from "../api.js";
 import { DESIRE_KINDS, DESIRE_BAND_KEYS } from "../engine/behavior/desire.js";
 import { setting } from "../settings.js";
@@ -101,10 +101,8 @@ export function sanitizeTactics(raw) {
     if ( v === "auto" || choices.includes(v) ) out[key] = v;
   }
   if ( typeof raw.preferredAction === "string" ) out.preferredAction = raw.preferredAction.slice(0, MAX_ACTION_ID);
-  if ( Array.isArray(raw.playstyles) ) {
-    const current = id => (Object.hasOwn(RENAMED_PLAYSTYLES, id) ? RENAMED_PLAYSTYLES[id] : id);
-    out.playstyles = [...new Set(raw.playstyles.filter(id => typeof id === "string").map(current).filter(isPlaystyle))].slice(0, MAX_PLAYSTYLES);
-  }
+  // (A renamed playstyle as it is now, each once: engine/playstyles.js currentPlaystyles.)
+  if ( Array.isArray(raw.playstyles) ) out.playstyles = currentPlaystyles(raw.playstyles).slice(0, MAX_PLAYSTYLES);
   for ( const key of META_KEYS ) if ( key in raw ) out[key] = raw[key] === true;
   // The tick-boxes that became answers: "always prefers talking" talks always (unless hurt); "I avoid killing" (once
   // "I never kill", then an answer to who it went for) spares the fallen; "I don't like to flee", where it hadn't said

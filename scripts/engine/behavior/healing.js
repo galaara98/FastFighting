@@ -3,7 +3,7 @@
  * PCs follow their GM-entered disposition; monsters scale with Tactical, but always consider healing they have.
  */
 import { STATUS, TACTICAL, clamp } from "../../constants.js";
-import { alliesOf, liveTier, liveTrait, dispositionOf, movesNeeded, canMove, refusesToHelp } from "../battle-state.js";
+import { alliesOf, liveTier, liveTrait, dispositionOf, movesNeeded, canMove, refusesToHelp, behaviorOf } from "../battle-state.js";
 import { hasUses, costOf, costUnits } from "./evaluate.js";
 import { mainPool } from "../turn.js";
 import { threats, isWary, addCosts } from "./reactions.js";
@@ -17,6 +17,14 @@ import { outcomeWorth } from "./effects.js";
 import { cutOff } from "./troubles.js";
 
 const THRESHOLD = { conservative: 0.3, balanced: 0.45, aggressive: 0.6, allCosts: 0.8 };
+
+/** A potion given to a friend (action.administer): the same potion, for one in reach. */
+const GIVEN = new WeakMap();
+function given(a) {
+  let g = GIVEN.get(a);
+  if ( !g ) GIVEN.set(a, g = { ...a, selfOnly: false, reach: a.reach ?? 5, administered: true });
+  return g;
+}
 
 export function healAggroOf(run, u) {
   const disposition = dispositionOf(u);
@@ -61,7 +69,11 @@ export function healScores(run, u, heals = u.prep.healActions) {
   const mends = heals.some(a => !a.firstAid);
   const potionAt = u.tac?.potionThreshold;
   const aggro = healAggroOf(run, u);
-  const threshold = THRESHOLD[aggro] ?? 0.45;
+  // (A medic acts on a friend at three quarters of its hit points; one who'd rather bolster or hit, only when it must.)
+  const lean = behaviorOf(u);
+  const medic = Number(lean.medic) || 0;
+  const threshold = Math.max(THRESHOLD[aggro] ?? 0.45, medic > 0 ? 0.6 + 0.15 * Math.min(1, medic) : 0);
+  const other = (1 - 0.5 * (Number(lean.enable) || 0)) * (1 - 0.6 * (Number(lean.dps) || 0));
   const selfish = liveTrait(run, u, "selfish");
   const tier = liveTier(run, u);
   const allyDying = dispositionOf(u).allyDying ?? (selfish >= 70 ? "protectSelf" : "rescue");
@@ -83,7 +95,8 @@ export function healScores(run, u, heals = u.prep.healActions) {
       if ( ally.dying >= 2 ) score += 1;
     } else if ( frac < threshold ) {
       score = 1 - frac;
-      if ( aggro === "conservative" && frac >= 0.25 ) score = 0;
+      if ( aggro === "conservative" && frac >= 0.25 && !medic ) score = 0;
+      if ( !isSelf ) score *= other;
     }
     if ( isSelf && potionAt && potionAt !== "never" && frac < Number(potionAt) / 100 && heals.some(a => a.selfOnly) ) {
       score = Math.max(score, 1 - frac);
@@ -107,7 +120,9 @@ export function decideHeal(run, u, turn) {
   const rules = run.prep.rules;
   const potionAt = u.tac?.potionThreshold;
   const ownFrac = u.maxHp > 0 ? u.hp / u.maxHp : 0;
-  const heals = u.prep.healActions.filter(a => {
+  // (A medic gives a friend its own potion where the system lets it: action.administer, PF2e's.)
+  const gives = (Number(behaviorOf(u).medic) || 0) > 0;
+  const heals = u.prep.healActions.flatMap(a => (gives && a.selfOnly && a.administer ? [a, given(a)] : [a])).filter(a => {
     if ( !turn.canAfford(costOf(rules, a, u)) || !hasUses(u, a) ) return false;
     // Players decide when to drink their own potions.
     if ( a.selfOnly && potionAt ) return potionAt !== "never" && ownFrac < Number(potionAt) / 100;

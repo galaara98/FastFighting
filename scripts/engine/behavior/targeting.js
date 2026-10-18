@@ -8,7 +8,8 @@
  *   Mastermind   side-wide focus target; ruthless ones finish off the downed
  */
 import { STATUS, TACTICAL, NEUTRAL_PARTY } from "../../constants.js";
-import { enemiesOf, isStanding, liveTier, liveTrait, movesNeeded, behaviorOf, heldOff, holdsBackThisRound, regenOf, edgeDistance } from "../battle-state.js";
+import { enemiesOf, isStanding, liveTier, liveTrait, movesNeeded, behaviorOf, heldOff, holdsBackThisRound, regenOf, edgeDistance, isExposed } from "../battle-state.js";
+import { meanPart } from "../dice.js";
 import { isAnimalistic } from "./animal.js";
 import { hasTrait } from "../conditions.js";
 import { expectedDamage, hasUses, limited, threatOf, costOf, costUnits, unitsPerTurn } from "./evaluate.js";
@@ -51,8 +52,10 @@ export function bestOptionVs(run, u, t, attacksMade = 0, turn = null) {
     if ( !meets(run, u, action, t) ) continue; // (what it needs first: a grab, a hit, two hits on this foe: requires.js)
     const moves = movesNeeded(run, u, t, action);
     if ( !Number.isFinite(moves) ) continue;
-    // (And what it would set up: a claw that makes a Rend possible is worth more than its own damage.)
-    const ev = expectedDamage(run, u, action, t, attacksMade) + followUpWorth(run, u, action, t, attacksMade, turn);
+    // (And what it would set up: a claw that makes a Rend possible is worth more than its own damage; and a blow
+    // struck where a friend already is, flanking it (a sneak attack's extra, off guard).)
+    const edge = flankEdge(run, u, action, t, moves);
+    const ev = expectedDamage(run, u, action, t, attacksMade) + followUpWorth(run, u, action, t, attacksMade, turn) + edge;
     const cost = costOf(rules, action, u);
     // Drawing a weapon is a one-time cost, so spread it over the attacks it enables; every shot's Reload is its own
     // (engine/gear.js: a heavy crossbow's shot is three actions, loaded now or not).
@@ -71,8 +74,15 @@ export function bestOptionVs(run, u, t, attacksMade = 0, turn = null) {
     if ( behavior.exploitWeakness && (action.damage ?? []).some(p => t.spec.iwr?.weak?.[p.type] || t.spec.iwr?.exploit?.[p.type]) ) weighted *= 1 + behavior.exploitWeakness;
     // A foe down and regenerating: only what stops it (fire, acid) does any good.
     if ( t.held && t.status === STATUS.DOWN ) weighted *= (action.damage ?? []).some(p => regenOf(t)?.stoppedBy?.includes(p.type)) ? 3 : 0.05;
-    // Spoilers would rather lock a foe down, harass it or weaken it than simply hit it.
+    // Spoilers would rather lock a foe down, harass it or weaken it than simply hit it; an enabler, to give its friends
+    // the edge; a damage-dealer would rather simply hit it.
     if ( behavior.hinders && action.kind === "control" ) weighted *= 1 + 1.5 * behavior.hinders;
+    if ( behavior.enable && action.kind === "control" ) weighted *= 1 + 1.5 * behavior.enable;
+    if ( behavior.dps && action.kind === "control" && !(action.damage?.length) ) weighted *= 1 - 0.5 * Math.min(1, behavior.dps);
+    // (A damage-dealer goes the extra step for a sneak attack: each blow of the turn has it, flanking.)
+    if ( behavior.dps && edge > 0 ) weighted *= 1 + 0.5 * behavior.dps;
+    // A medic keeps what heals for healing: no slot, focus or potion its heals use, spent on a blow.
+    if ( behavior.medic && action.resource && healsWith(u).has(action.resource) ) weighted *= 1 - 0.9 * Math.min(1, behavior.medic);
     // Magic and its own specialties, as strongly as its answer says (an Un-Mundane character's lean).
     weighted *= specialtyWeight(u, action);
     // The system's own lean (DCC: one in a hurry would rather charge in).
@@ -115,6 +125,26 @@ export function bestOptionVs(run, u, t, attacksMade = 0, turn = null) {
   let best = null;
   for ( const o of pool ) if ( !best || o.weighted > best.weighted ) best = o;
   return best;
+}
+
+/** The pools its heals draw on (a slot, focus, a potion's): kept once a creature. */
+const healsWith = u => (u.prep.healPools ??= new Set((u.prep.healActions ?? []).map(a => a.resource).filter(Boolean)));
+
+/**
+ * What a melee blow gains by being struck beside a friend already on t, where getting there takes a move (flanked:
+ * what an off-guard foe adds to its damage, a sneak attack's, as often as it hits), for one who coordinates
+ * (Competent and up, or a pack hunter); nothing where it's exposed to u already.
+ */
+function flankEdge(run, u, action, t, moves) {
+  if ( !action.melee || !(moves > 0) || !(action.bonusDamage?.length) ) return 0;
+  if ( liveTier(run, u) < TACTICAL.COMPETENT && !u.spec.flags?.packTactics ) return 0;
+  // (A friend beside it: engaged with it, or standing there on the map.)
+  const beside = a => a !== u && a.side === u.side && isStanding(a) && (t.adjacent?.has(a.id) || (edgeDistance(a, t) ?? Infinity) <= 5.5);
+  if ( !run.units.some(beside) ) return 0;
+  const sneaky = action.bonusDamage.filter(b => [].concat(b.when).some(w => w === "offGuard" || w === "exposed"));
+  if ( !sneaky.length || isExposed(run, t, u, action) ) return 0;
+  const mean = sneaky.reduce((s, b) => s + (b.parts ?? []).reduce((x, p) => x + Math.max(0, meanPart(p)), 0), 0);
+  return 0.6 * mean;
 }
 
 /** The longest reach of t's own melee strikes (5 feet if it has none). */

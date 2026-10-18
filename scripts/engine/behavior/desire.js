@@ -49,7 +49,7 @@ import { seemsFoe } from "./neutral.js";
 import { robbable } from "./theft.js";
 import { ownHolds, isBound, freeable, known, remediesOf, bears } from "./holds.js";
 import { hasTrait, profiled } from "../conditions.js";
-import { hasUses } from "./evaluate.js";
+import { hasUses, threatOf } from "./evaluate.js";
 
 /** A character's playstyle guide for desires (from its pills), or the neutral one. */
 const NEUTRAL_STYLE = Object.freeze({ hurt: {}, avoid: {}, heal: 0, protect: 0, aid: 0, talk: 0, bind: 0, rob: 0, free: 0, rid: 0, whim: 0, contrarian: 0, retaliate: 1, avenge: 1, cool: 1, frustration: 1, leader: 1, doorPatience: 1 });
@@ -437,8 +437,10 @@ function agendaFit(run, u, x) {
   if ( x.kind === "talk" ) fit = Math.max(fit, tac.talk === "always" ? 2 : tac.talk === "first" ? 1 : 0);
   if ( x.kind === "heal" ) {
     fit = Math.max(fit, tac.healAggro === "allCosts" ? 2 : tac.healAggro === "aggressive" ? 1 : 0);
-    // (A friend down: first, for one who answered that it rescues a dying friend; next, for anyone else.)
+    // (A friend down: first, for one who answered that it rescues a dying friend; next, for anyone else. A medic's
+    // healing: first.)
     if ( t && t !== u && t.status === STATUS.DOWN ) fit = Math.max(fit, tac.allyDying === "rescue" ? 2 : 1);
+    if ( t && t !== u && (Number(behaviorOfUnit(u).medic) || 0) > 0 ) fit = 2;
     // (Itself, past where it said it reaches for a potion: first.)
     const at = Number(tac.potionThreshold);
     if ( t === u && at > 0 && u.maxHp > 0 && u.hp / u.maxHp < at / 100 ) fit = 2;
@@ -449,8 +451,8 @@ const behaviorOfUnit = u => u.turnBehavior ?? u.ownBehavior ?? u.spec.behavior ?
 /** One who looks after its friends: its style or its target the protector's, or its pills (Tank, Martyr, Enabler, Moralist). */
 const PROTECTORS = new Set(["tank", "martyr", "enabler", "moralist"]);
 export const protective = u => u.tac?.style === "protector" || u.tac?.target === "protect" || (u.spec.playstyles ?? []).some(p => PROTECTORS.has(p));
-/** One whose job is damage: up front, skirmishing or shooting, or its pills (Brawler, Speed-Runner, Impatient, Cruel). */
-const STRIKERS = new Set(["brawler", "speedRunner", "impatient", "cruel"]);
+/** One whose job is damage: up front, skirmishing or shooting, or its pills (Brawler, DPS, Impatient, Cruel). */
+const STRIKERS = new Set(["brawler", "dps", "impatient", "cruel"]);
 const dealsDamage = u => ["frontline", "skirmisher", "ranged"].includes(u.tac?.style) || (u.spec.playstyles ?? []).some(p => STRIKERS.has(p));
 /** How many places a desire climbs toward second each turn, by how intense it is: obsessed, all the way. */
 const climb = level => (level >= 80 ? Infinity : level >= 60 ? 3 : level >= 40 ? 2 : level >= 20 ? 1 : 0);
@@ -692,6 +694,8 @@ export function styleWants(run, u, scored, { canHeal = false, canTalk = false, t
   const weakest = foes.length ? foes.reduce((a, b) => (looks(b) < looks(a) ? b : a)) : null;
   const dangerous = foes.length ? foes.reduce((a, b) => (danger(b) > danger(a) ? b : a)) : null;
   const mine = new Set((u.prep.offense ?? []).flatMap(a => (a.damage ?? []).map(p => p.type)));
+  // (The foe its blows would hurt most: its weaknesses, a soft defense, off guard, all in what it would do to each.)
+  const softest = h.softest && foes.length ? foes.reduce((a, b) => (threatOf(run, u, b) > threatOf(run, u, a) ? b : a)) : null;
   for ( const x of scored ) {
     const t = x.t;
     let points = 0;
@@ -706,6 +710,7 @@ export function styleWants(run, u, scored, { canHeal = false, canTalk = false, t
     if ( h.unstudied && !sizedUp(u, t) ) points += h.unstudied;
     if ( h.current && t.id === u.targetId ) points += h.current;
     if ( h.slow && cantFollow(run, u, t) ) points += h.slow;
+    if ( h.softest && t === softest ) points += h.softest;
     add("hurt", t.id, points);
   }
   // The fallen: some can't resist finishing them, some never would; some would rather take them prisoner, some

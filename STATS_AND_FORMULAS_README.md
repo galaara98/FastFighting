@@ -293,7 +293,7 @@ fear past bearing.
 | | A striker, and a foe it has just caught sight of |
 
 Protector: style protector, target "Whoever is attacking my allies", or Tank, Martyr, Enabler, Moralist. Striker: style
-frontline, skirmisher or ranged, or Brawler, Speed-Runner, Impatient, Cruel.
+frontline, skirmisher or ranged, or Brawler, DPS, Impatient, Cruel.
 
 On its turn, an Instinctive or Feral creature works the top first, then the 2nd and 3rd, and the rest only once the top
 can't be done; Competent or better works any of it.
@@ -724,7 +724,7 @@ Code: `engine/playstyles.js` `combinePlaystyles`, `combineDesires`, `answerChanc
 
 ### Playstyle numbers
 
-Search: Chicken, Cruel, Moralist, People-Pleaser, Fragile, Impatient, Brawler, Skeptic, Speed-Runner, Wants to Lead, Instigator, Peacekeeper, Diplomat, Kiter, Wallflower, Martyr, Tank, Mercenary, Enabler, Redeem-Seeker, Lore-Collector, Puzzle-Maniac, Wildcard, Thief, Vengeful, Relentless, Lazy, Un-Mundane
+Search: Chicken, Cruel, Moralist, People-Pleaser, Fragile, Impatient, Brawler, Skeptic, Wants to Lead, Instigator, Peacekeeper, Diplomat, Kiter, Wallflower, Martyr, Tank, Mercenary, Enabler, Redeem-Seeker, Lore-Collector, Puzzle-Maniac, Wildcard, Thief, Vengeful, Relentless, Lazy, Un-Mundane
 
 Each pill at first place. Desire points are added to the matching desires each turn (Pulls from others); a multiplier
 of 1 changes nothing.
@@ -739,7 +739,6 @@ of 1 changes nothing.
 | Impatient | Tactical −10 | hurt nearest +15, bind −15, rob −10, rid +10 | frustration 2, doorPatience 0.5 | rush 0.5 |
 | Brawler | Brave +15, Tactical −5 | hurt nearest +20, aid −10, talk −40, bind −10, rid −10 | retaliate 1.5 | meleeBias 0.3, taunt 0.4, shoves 0.5 |
 | Skeptic | Tactical +10 | talk −15 | frustration 0.8, leader 0.5 | wary 1, trapWary 0.75, tauntProof 0.6 |
-| Speed-Runner | Tactical +5, Brave +5 | hurt weakest +20, bind −15, rob −15 | frustration 1.3 | rush 0.4 |
 | Wants to Lead | Brave +10, Loyal +10, Tactical +5 | hurt dangerous +10, protect +10, aid +10, talk +5, bind +10, free +15 | leader 0.4 | hinders 0.15, ambition 0.25, rally 0.25 |
 | Instigator | Brave +10, Selfish +5 | hurt dangerous +15, hurt leader +15 | retaliate 1.2; contrarian 0.5 | drawAggro 0.35, initiative +2, hinders 1, taunt 0.75, shoves 0.3 |
 | Peacekeeper | Selfish −10, Brave +5 | hurt downed −100, protect +10, talk +20, bind +20, rob −20, free +10 | | peacekeeping 1, spareDowned 1, tauntProof 0.5 |
@@ -749,7 +748,9 @@ of 1 changes nothing.
 | Martyr | Brave +20, Selfish −30, Loyal +20 | avoid dangerous −50, avoid attacker −50, heal +15, protect +25, aid +5, rob −10, free +25, rid −25 | avenge 2 | drawAggro 0.3, helps 1, rally 0.2, taunt 0.55 |
 | Tank | Brave +20, Selfish −20, Loyal +10 | hurt dangerous +10, avoid dangerous −40, avoid attacker −40, protect +20, free +10, rid −15 | retaliate 0.7, frustration 0.7 | taunt 1, drawAggro 0.35, helps 1 |
 | Mercenary | Selfish +30, Loyal −20 | hurt weakest +10, aid −10, bind +10, rob +20 | avenge 0.3, frustration 1.3 | flighty 0.6 |
-| Enabler | Selfish −15, Loyal +10 | heal +25, protect +15, aid +20, free +15 | leader 1.3 | followFocus 0.3, helps 1 |
+| Enabler | Selfish −15, Loyal +10 | aid +30, protect +10, heal +5, free +15 | leader 1.3 | followFocus 0.3, helps 1, enable 1 |
+| Medic | Selfish −15, Loyal +10 | heal +30, aid +10, protect +5, free +10, hurt downed −20 | | medic 1, helps 1 |
+| DPS | Brave +5 | hurt weakness +15, hurt softest +15, aid −10, bind −15, rob −10, talk −10 | frustration 1.2 | dps 1 |
 | Redeem-Seeker | Brave +15, Selfish −20 | hurt dangerous +20, protect +10, bind +10, rob −15, free +10 | frustration 0.6 | drawAggro 0.15, helps 1, taunt 0.3 |
 | Lore-Collector | Tactical +5 | hurt unstudied +10, bind +10 | frustration 0.8 | study 0.5, observe 0.85, share 0.9, trapWary 0.6 |
 | Puzzle-Maniac | Tactical +15 | hurt weakness +20, hurt casters +10 | frustration 0.7, doorPatience 2 | exploitWeakness 0.5, hinders 0.3, trapWary 0.9, tauntProof 0.4 |
@@ -765,7 +766,14 @@ runs × (1 + 3 × flighty)); **rally** (Rallying); **ambition** (Scheming); **co
 **helps** (+0.25 willingness); **followFocus** (a chance to go for the foe most of its side is on); **slacks** (with no
 foe within 5 ft and HP at half or more, a chance each turn to do nothing). Others: **lowProfile** (an attacker picks
 someone else nearby; Stealth for initiative where the system rolls it), **drawAggro** (draws attacks aimed near it),
-**rush** (skips setting up, raising a shield or getting clear safely), **kite** (minds ending its turn in a foe's reach
+**rush** (skips setting up, raising a shield or getting clear safely), **medic** (a friend healed at under 75% of its HP
+(0.6 + 0.15 × medic), its heals first on its agenda, offense from a pool its heals use × (1 − 0.9 × medic), a buff's
+baseline × (1 − 0.5 × medic), its potions given to a friend in reach where the system allows, + medic for a friend
+within 30 ft where it ends its turn), **dps** (control with no damage × (1 − 0.5 × dps), a melee blow that flanks for a
+sneak attack × (1 + 0.5 × dps), a buff's baseline × (1 + 0.5 × dps), mending a friend who isn't down × (1 − 0.6 × dps),
+its next turn's offense × (1 + 0.5 × dps) where it ends its turn), **enable** (a buff's baseline × (1 − 0.85 × enable),
+control × (1 + 1.5 × enable), mending a friend who isn't down × (1 − 0.5 × enable) and only when no buff is worth
+giving, + 0.15 × a friend's threat at a foe it would flank for that friend where it ends its turn), **kite** (minds ending its turn in a foe's reach
 2.5 × kite more, keeps its distance, falls back as foes close, strikes and slips away; a melee option that outreaches
 its foe × (1 + 0.3 × kite): Getting ready), **meleeBias**, **exploitWeakness** (those
 actions worth × (1 + chance)), **hinders** (control actions × (1 + 1.5 × chance)), **shoves**, **random** (a random
@@ -857,7 +865,7 @@ argument").
 - 0 with no language, mindless, or no pitch skill.
 - a = 0.35 + 0.08 × (best pitch modifier − typical skill for its level). Typical skill: the system's; core
   fallback ⌈level ÷ 2⌉ + 2.
-- Diplomat +0.45, Peacekeeper +0.3, People-Pleaser +0.2, Instigator or Cruel +0.1; Brawler, Impatient or Speed-Runner
+- Diplomat +0.45, Peacekeeper +0.3, People-Pleaser +0.2, Instigator or Cruel +0.1; Brawler, Impatient or DPS
   −0.25 (once); Tactical under 20 −0.3.
 - Answer Talk first: at least 0.8. (Here and below, Talk first includes Always.) Roleplay with Diplomat or
   People-Pleaser: +0.15.
@@ -1155,7 +1163,7 @@ do). Then:
 | Brave | × (1 + (Brave − 50) ÷ 100) |
 | Selfish | × (1 + (Selfish − 50) ÷ 150) |
 | Feral (Tactical under 20) | × 2 |
-| Each pill, regardless of place | Impatient × 2.5, Cruel × 2, Instigator × 2, Brawler × 1.8, Speed-Runner × 1.5, Moralist × 0.6, Chicken × 0.5, People-Pleaser × 0.5, Diplomat × 0.3, Peacekeeper × 0.3 |
+| Each pill, regardless of place | Impatient × 2.5, Cruel × 2, Instigator × 2, Brawler × 1.8, DPS × 1.5, Moralist × 0.6, Chicken × 0.5, People-Pleaser × 0.5, Diplomat × 0.3, Peacekeeper × 0.3 |
 | A Peacekeeper present (strongest share s) | × (1 − 0.5 × s) |
 | Waiting on what it expects | × (1 + 0.25 × min(4, turns unmet)) |
 | Each round of talk after the first (a truce: after the round it began) | + 0.03 |
@@ -1968,7 +1976,7 @@ Decides when a creature raises its shield instead of attacking.
 | Its last action | Competent and up, if the shield is worth more than the attack |
 | After 2 attacks | Competent and up, if this attack is worth under 0.3 × its first (0.65 × with a block ready) |
 
-- Impatient (base 50%) and Speed-Runner (40%) rush some turns and skip it. Dodge-like actions are weighed as buffs.
+- Impatient (base 50%) rushes some turns and skips it. Dodge-like actions are weighed as buffs.
 - With actions to spare at its turn's end, a raised shield is one of the things it may do with them (Getting ready).
 
 Code: `engine/simulator.js` `shieldWorth`, `playFromHere`.
@@ -3602,7 +3610,7 @@ Search: death move, Avoid Death, Risk It All, Blaze of Glory, scar, last Hit Poi
 
 What it decides: what happens when a character marks its last Hit Point.
 
-- Its playstyles choose: Martyr or Redeem-Seeker Blaze of Glory; Wildcard, Impatient, Brawler, Speed-Runner, Instigator, Vengeful or Relentless Risk It All; Chicken, Fragile, Lazy, Mercenary, Diplomat, Peacekeeper, Skeptic or Wallflower Avoid Death. Otherwise Brave 80 or more, or never retreating, Risks It All; the rest Avoid Death.
+- Its playstyles choose: Martyr or Redeem-Seeker Blaze of Glory; Wildcard, Impatient, Brawler, Instigator, Vengeful or Relentless Risk It All; Chicken, Fragile, Lazy, Mercenary, Diplomat, Peacekeeper, Skeptic or Wallflower Avoid Death. Otherwise Brave 80 or more, or never retreating, Risks It All; the rest Avoid Death.
 - Avoid Death: out cold; a d12 (the Hope die) at or under its level leaves a scar.
 - Risk It All: the Duality Dice. Hope higher: it clears that many Hit Points and fights on. Fear higher (45.8%): it dies. Matching (8.3%): every Hit Point and Stress cleared.
 - Blaze of Glory: one last action, a critical success, then it dies.
@@ -3821,7 +3829,7 @@ Search: End the Fight, Take Decisive Action, progress roll, objective, finish
 
 What it decides: when a character ends a foe's part in the fight.
 
-- A progress roll, in control, once the track has 5 boxes (each foe's own) or 7 (the encounter's); one in a hurry (Impatient, Speed-Runner) 2 boxes sooner.
+- A progress roll, in control, once the track has 5 boxes (each foe's own) or 7 (the encounter's); one in a hurry (Impatient) 2 boxes sooner.
 - A hit ends that foe's part in the fight (the encounter's: the objective achieved). A weak hit also costs 2 momentum. A miss loses the initiative and pays the price, the foe's harm + 1; on the encounter's track it loses the objective, and the fight.
 
 Code: `rules.js` `usable`, `afterRoll`, `backlash`, `progressScore`; `build.js` `characterMoves`.

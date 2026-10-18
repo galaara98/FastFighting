@@ -13,6 +13,7 @@ import { PLAYSTYLES, MAX_PLAYSTYLES } from "./playstyles.js";
 import { fudged, PC_BASELINE } from "../constants.js";
 import { typical } from "./battle-state.js";
 import { isSpecial } from "./behavior/specialty.js";
+import { typicalValue } from "./tactics.js";
 import { PLAYSTYLE_WORD_CAP } from "./keywords.js";
 
 /** The least score a playstyle needs to be picked. */
@@ -31,7 +32,8 @@ export const CLASHES = Object.freeze([
   ["chicken", "martyr"], ["chicken", "tank"], ["chicken", "relentless"], ["chicken", "instigator"], ["chicken", "redeemSeeker"],
   ["cruel", "moralist"], ["cruel", "peacekeeper"], ["cruel", "enabler"], ["cruel", "martyr"],
   ["brawler", "diplomat"], ["brawler", "peacekeeper"], ["instigator", "peacekeeper"], ["instigator", "diplomat"],
-  ["lazy", "speedRunner"], ["lazy", "relentless"], ["lazy", "martyr"], ["lazy", "tank"],
+  ["lazy", "dps"], ["lazy", "relentless"], ["lazy", "martyr"], ["lazy", "tank"], ["lazy", "medic"],
+  ["medic", "dps"], ["medic", "cruel"], ["enabler", "dps"],
   ["wallflower", "tank"], ["wallflower", "instigator"], ["wallflower", "brawler"],
   ["mercenary", "martyr"], ["mercenary", "peoplePleaser"], ["mercenary", "redeemSeeker"], ["mercenary", "moralist"],
   ["fragile", "tank"], ["fragile", "martyr"], ["fragile", "relentless"],
@@ -79,6 +81,12 @@ export function readSpec(spec, rules = null) {
     // (Its specialties against its everyday weapons: the share of what it would do that's its own.)
     special: specials.length / Math.max(1, specials.length + weapons.length),
     heals: actions.some(a => a.kind === "heal" && !a.selfOnly && !a.firstAid && !a.consumable && isSpecial(a)), // (its own healing, not a move anyone makes)
+    // (How many ways it has to mend another, first aid among them: a healer's kit.)
+    healing: actions.filter(a => a.kind === "heal" && !a.selfOnly).length + (spec.firstAid ? 1 : 0),
+    // (Its best everyday blow per action against a typical creature's of its level (a hit's 6 + 1.6 a level, landing 3
+    // times in 5), and a sneak attack's extra: a striker.)
+    punch: Math.max(0, ...offense.map(a => typicalValue(a, level, rules))) / (0.6 * (6 + 1.6 * Math.max(0, level))),
+    sneaky: offense.some(a => (a.bonusDamage ?? []).some(b => [].concat(b.when).some(w => w === "offGuard" || w === "exposed"))),
     helps: actions.some(a => a.kind === "buff" && a.targets !== "self" && a.includeSelf !== false && isSpecial(a)),
     hampers: actions.some(a => a.kind === "control" && !a.goad),
     shield: !!spec.shield,
@@ -106,7 +114,7 @@ export function numbersFit(s) {
     impatient: pos(50 - T) * 0.6 + pos(B - 55) * 0.6,
     brawler: (s.melee && !s.ranged && s.special < 0.3 ? 15 : 0) + pos(B - 60) * 0.6 + pos(50 - T) * 0.5 + (s.beast ? 20 : 0),
     skeptic: pos(T - 60) * 0.6 + pos(50 - L) * 0.6,
-    speedRunner: pos(T - 60) * 0.5 + pos(B - 55) * 0.5 + pos(S - 50) * 0.3,
+    dps: pos(s.punch - 1.4) * 35 + (s.sneaky ? 15 : 0) + pos(B - 55) * 0.3 + pos(S - 50) * 0.3,
     leader: s.talks ? pos(T - 55) * 0.4 + pos(B - 55) * 0.4 + pos(L - 55) * 0.3 + pos(s.persuade) * 2 : 0,
     instigator: pos(B - 60) * 0.6 + pos(S - 50) * 0.4 + (s.hampers ? 12 : 0) + pos(s.threaten) * 2,
     diplomat: s.talks ? pos(s.persuade) * 8 + pos(T - 50) * 0.3 : 0,
@@ -114,7 +122,8 @@ export function numbersFit(s) {
     martyr: pos(B - 65) * 0.8 + pos(L - 65) * 0.8 + pos(35 - S) * 0.8,
     tank: s.melee ? (s.shield ? 25 : 0) + pos(s.armor) * 4 + pos(B - 60) * 0.5 + pos(L - 50) * 0.3 : 0,
     mercenary: S > 55 && L < 50 ? (S - 55) + (50 - L) : 0,
-    enabler: (s.helps ? 25 : 0) + (s.heals ? 25 : 0) + pos(45 - S) * 0.5,
+    enabler: (s.helps ? 30 : 0) + (s.hampers ? 8 : 0) + (s.heals ? 5 : 0) + pos(45 - S) * 0.5,
+    medic: (s.heals ? 30 : 0) + Math.min(2, pos(s.healing - 1)) * 5 + (s.helps ? 5 : 0) + pos(45 - S) * 0.3,
     redeemSeeker: 0,
     loreCollector: pos(s.lore) * 6 + pos(T - 60) * 0.4,
     puzzleManiac: pos(T - 70) + (s.hampers || s.special >= 0.5 ? 10 : 0),

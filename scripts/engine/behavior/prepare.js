@@ -382,6 +382,20 @@ function guardAt(run, u, p, ctx) {
   return total * ctx.guard;
 }
 
+/**
+ * What standing at p gives its friends, for an enabler: beside a foe a friend is already on, that friend flanks it
+ * (a share of what the friend does to it).
+ */
+function flankFor(run, u, p, ctx) {
+  if ( !ctx.enable ) return 0;
+  let total = 0;
+  for ( const foe of ctx.foes ) {
+    if ( edgeAt(u, p, foe.f) > 5.5 ) continue;
+    for ( const a of ctx.friends ) if ( a.adjacent?.has(foe.f.id) ) total += 0.15 * threatOf(run, a, foe.f);
+  }
+  return ctx.enable * total;
+}
+
 /** Is p across the way from a to b (within a square and a half of the line between them, between the two)? */
 function across(p, a, b) {
   const dx = b.x - a.x;
@@ -525,6 +539,9 @@ function lookAhead(run, u) {
     guard: protective(u) ? 0.8 + liveTrait(run, u, "loyal") / 250 : 0.3,
     draws: Number(behavior.drawAggro) || 0,
     harmW: harmWeight(run, u),
+    medic: Number(behavior.medic) || 0,
+    dps: Number(behavior.dps) || 0,
+    enable: Number(behavior.enable) || 0,
     hider: hiderOf(run, u),
     kiter: kiter ? Number(behavior.kite) : 0,
     perTurn: unitsPerTurn(rules, u),
@@ -535,8 +552,14 @@ function lookAhead(run, u) {
 /** What ending the turn at p is worth, as u sees the coming round. */
 function spotWorth(run, u, p, ctx) {
   const harm = harmAt(run, u, p, ctx);
-  let v = PREP.next * (offenseAt(run, u, p, ctx) + healAt(run, u, p, ctx) + guardAt(run, u, p, ctx) + hideAt(run, u, p, ctx, harm));
+  // (A damage-dealer sets up its blows the more: a flank, cover to hide in, range.)
+  let v = PREP.next * (offenseAt(run, u, p, ctx) * (1 + 0.5 * ctx.dps) + healAt(run, u, p, ctx) + guardAt(run, u, p, ctx) + hideAt(run, u, p, ctx, harm) + flankFor(run, u, p, ctx));
   v -= PREP.harm * ctx.harmW * harm;
+  // (A medic keeps close to its friends, to be there when they need it.)
+  if ( ctx.medic && ctx.friends.length ) {
+    const near = ctx.friends.reduce((m, a) => Math.min(m, edgeAt(u, p, a)), Infinity);
+    v += ctx.medic * (near <= 30 ? 1 : 30 / near);
+  }
   if ( ctx.kiter || ctx.harmW >= 0.8 ) {
     // (Back toward its friends rather than away from them; a kiter never into a corner.)
     const near = ctx.friends.reduce((m, a) => Math.min(m, edgeAt(u, p, a)), Infinity);

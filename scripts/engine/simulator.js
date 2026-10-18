@@ -3648,7 +3648,9 @@ function playFromHere(run, u) {
   // (Struck down mid-turn, by a reaction to a move: answerMove. Its turn is over.)
   for ( let step = 0; turn.any && step < MAX_STEPS_PER_TURN && !battleOver(run) && isStanding(u); step++ ) {
     run.movesCache = new Map();
-    const heal = waits("heal") ? null : decideHeal(run, u, turn);
+    let heal = waits("heal") ? null : decideHeal(run, u, turn);
+    // (An enabler bolsters its friends first, and heals one only when it has nothing to give: never one that's down.)
+    if ( heal && (Number(behavior.enable) || 0) > 0 && heal.target.status !== STATUS.DOWN && decideBuff(run, u, turn) ) heal = null;
     // (Healing it means to give and can't this turn: on its way to the friend, or the potion got out, for the next:
     // behavior/prepare.js.)
     if ( !heal && leadGroup === "heal" ) {
