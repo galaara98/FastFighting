@@ -77,7 +77,7 @@ Hooks.once("fastFighting.init", api => {
 ```
 
 - **Declare your system** in `module.json` (`relationships.systems`) so Foundry only offers the helper in worlds of that system. The core also ignores adapters registered for another system. Among adapters for one system, the highest `priority` wins.
-- **Versions.** The helper-facing API version is `major.bug`: `CORE_API = { major: 19, bug: 0 }` and `CORE_API_VERSION = "19.0"` in `core-api.js`; the `fastFighting.init` api object carries `api.version` ("19.0"), `api.major` and `api.bug`. The major goes up when what a helper can use changes (something added that a helper may rely on, or something changed); the bug number goes up for a fix that changes nothing a helper uses.
+- **Versions.** The helper-facing API version is `major.bug`: `CORE_API = { major: 20, bug: 0 }` and `CORE_API_VERSION = "20.0"` in `core-api.js`; the `fastFighting.init` api object carries `api.version` ("20.0"), `api.major` and `api.bug`. The major goes up when what a helper can use changes (something added that a helper may rely on, or something changed); the bug number goes up for a fix that changes nothing a helper uses.
 - **Compatibility is the helper's call.** The core never refuses a helper for its version and keeps no list of which helpers fit it; `KNOWN_HELPERS` in `scripts/helpers.js` exists only to recommend a helper for a system. Each helper lists the majors it knows it works with (`KNOWN_API` in its `main.js`). Below the oldest, it doesn't register and tells the GM the core is too old; on any other major it isn't known to work with, it registers and warns the GM it hasn't been tried with that core yet. The minimum in its `module.json` `relationships.requires` is Foundry's install-time check, also the helper's to set.
 - **Ask for a hook when nothing fits.** When a helper builds something new that the core can't handle well enough with what it already offers, ask for a new core hook rather than forcing a poor fit or working around the core. A new hook raises the API's major, which the helper then adds to `KNOWN_API`; that is how the hooks marked "API n" below arrived.
 - **Recognise things by slug, read them by what they do.** To find a particular feature, action or spell, look for its slug or identifier (PF2e `slug`, dnd5e `system.identifier`), never its name: slugs are the same in every book, every edition of the free rules and every language, while names change with translations, reprints and homebrew copies (the name is only a fallback). Better still, read what an item does (its activities, effects, rule elements, and as a last resort its words), so paid books and homebrew nobody has seen yet still work. The helpers work from the free rules (the SRD, the PF2e remaster, each system's open content) alone; anything more is read the same way.
@@ -169,6 +169,15 @@ A player's damage card in a live battle, at a creature FastFighting runs, is app
 - `namesFollowNameplates()`: true where the system lets token nameplates decide whether players learn an NPC's name (PF2e's Tokens Determine NPC Name Visibility); the story then names a creature only where its nameplate shows to everyone. Otherwise it's named once a player's character has seen it (in sight, or it came to blows or words with one), unless the GM ticked **Keep its name secret** on its FastFighting tab.
 
 A creature the blow leaves at 0 hit points that the system left standing falls by the battle's rules at once (`liveDrop` on a copy of the fight, written through `commitChanges`), so the players see it; the turn's reading at its end still credits the blow.
+
+#### What a CombatantSpec may say since API 20
+
+Spec fields a helper may now rely on, each documented where it belongs below or in its file's header:
+- `animalistic`: a creature that fights as an animal does (`behavior/animal.js`).
+- `saveVs`: situational saves, bonuses or advantage against effects with some tags only (`behavior/save-vs.js`); an action's `traits` are what they match.
+- `auras`: auras that make foes save as they come inside or start a turn there (`behavior/auras.js`).
+- An action's `requires` (what it needs first: **What an action needs first** below) and `rechargeOnCrit`; `social.anyLanguage`.
+- Reactions: one set of effects at every moment (`harm`, `afflict`, `boost`, `heal`, `recharge`, `strike`: `behavior/reaction-effects.js`), the `ownHit` moment, the filters `crit`, `damageTypes` and `actions`, and for a friend's reaction `byRange`, `strikeRanged`, `strikeStep` and `applies` (`behavior/responses.js`).
 
 #### Shared Foundry pieces (API 18)
 

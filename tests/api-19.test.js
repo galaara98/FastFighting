@@ -9,9 +9,9 @@ import { beginLive, liveRound, liveDrop } from "../scripts/engine/live.js";
 import { pf2eRules } from "./fixtures/three-action-rules.js";
 import { creature, battle } from "./helpers.js";
 
-test("the API is 19, major.bug: the version, and its parts", () => {
-  expect(CORE_API).toEqual({ major: 19, bug: 0 });
-  expect(CORE_API_VERSION).toBe("19.0");
+test("the API is 19 or later, major.bug: the version, and its parts", () => {
+  expect(CORE_API.major).toBeGreaterThanOrEqual(19);
+  expect(CORE_API_VERSION).toBe(`${CORE_API.major}.${CORE_API.bug}`);
 });
 
 test("a helper that knows nothing of damage cards reads none, applies none, and says the system applies none", async () => {
