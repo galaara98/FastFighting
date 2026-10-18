@@ -434,6 +434,7 @@ function narrate(e, roll, rel, fill) {
     case "retreat": return e.what === "refused" ? roll("event.retreatRefused", { ...f, target: e.target ?? "" }) : roll(e.urged ? "event.retreatUrged" : "event.retreatCall", { ...f, target: e.by ?? "" });
     case "rally": return roll("event.rally", { ...f, allies: listJoin(e.with ?? []) });
     case "heal":
+      if ( e.given ) return roll("event.potionGiven", f);
       if ( e.potion ) return roll("event.potion", f);
       if ( e.revived ) return roll("event.revive", f);
       return roll(e.self ? "event.healSelf" : "event.heal", f);
@@ -461,6 +462,7 @@ function narrate(e, roll, rel, fill) {
     case "shield": return roll("maneuver.raiseShield", f);
     case "draw": return roll("maneuver.drawWeapon", f);
     case "reload": return roll("maneuver.reload", f);
+    case "allOut": return roll("event.allOut", f);
     // (Getting ready for next turn, told by what it's for: behavior/prepare.js. The draw, Reload or move it takes is
     // told by this, not again on its own.)
     case "prepare": return roll(`prepare.${e.step}`, { ...f, weapon: e.item ?? f.weapon ?? "" });

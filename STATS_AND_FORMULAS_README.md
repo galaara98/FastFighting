@@ -769,7 +769,8 @@ someone else nearby; Stealth for initiative where the system rolls it), **drawAg
 **rush** (skips setting up, raising a shield or getting clear safely), **medic** (a friend healed at under 75% of its HP
 (0.6 + 0.15 × medic), its heals first on its agenda, offense from a pool its heals use × (1 − 0.9 × medic), a buff's
 baseline × (1 − 0.5 × medic), its potions given to a friend in reach where the system allows, + medic for a friend
-within 30 ft where it ends its turn), **dps** (control with no damage × (1 − 0.5 × dps), a melee blow that flanks for a
+within 30 ft where it ends its turn; a potion given is told so), **dps** (the first slot, focus or bomb it spends on a
+blow each turn told as going all out; control with no damage × (1 − 0.5 × dps), a melee blow that flanks for a
 sneak attack × (1 + 0.5 × dps), a buff's baseline × (1 + 0.5 × dps), mending a friend who isn't down × (1 − 0.6 × dps),
 its next turn's offense × (1 + 0.5 × dps) where it ends its turn), **enable** (a buff's baseline × (1 − 0.85 × enable),
 control × (1 + 1.5 × enable), mending a friend who isn't down × (1 − 0.5 × enable) and only when no buff is worth

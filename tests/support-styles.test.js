@@ -50,6 +50,17 @@ describe("Medic", () => {
     });
   });
 
+  test("gives a friend its own potion where the system allows (administer); another keeps it for itself", () => {
+    const potion = { id: "potion", name: "Healing Potion", kind: "heal", cost: 1, heal: [parseFormula("3d8+5", "healing")], selfOnly: true, administer: true, reach: 5, resource: "item:potion", consumable: true };
+    const team = medic => battle([
+      (medic ? styled : (ids, o) => creature(o))(["medic"], { id: "doc", position: at(0), actions: [strike(), potion], resources: { "item:potion": 2 }, tactics: { consumables: "freely" } }),
+      creature({ id: "friend", position: at(5), hp: { value: 12, max: 30 }, conditions: { immobilized: 1 } }),
+      dummy({ position: at(0, 30), conditions: { immobilized: 1 } })
+    ], { positioning: true, maxRounds: 1, initiativeOrder: ["doc", "friend", "dummy"] });
+    many(team(true), pf2eRules, [1, 2, 3], r => expect(r.log.find(e => e.actorId === "doc" && e.type === "heal")).toMatchObject({ targetId: "friend", given: true }));
+    many(team(false), pf2eRules, [1, 2, 3], r => expect(r.log.some(e => e.actorId === "doc" && e.type === "heal" && e.targetId === "friend")).toBe(false));
+  });
+
   test("doesn't burn its healing slots on attacks", () => {
     const blast = { id: "blast", name: "Blast", kind: "save", cost: 2, rank: 1, spellId: "blast", resource: "slots:1", save: { type: "reflex", dc: 30, basic: true }, damage: [parseFormula("4d6", "fire")] };
     const team = medic => battle([
@@ -71,6 +82,8 @@ describe("DPS", () => {
       dummy({ position: at(30), hp: { value: 2000, max: 2000 } })
     ], { positioning: true, maxRounds: 5 });
     many(spec, pf2eRules, [1, 2], r => {
+      // (Holding nothing back, told: once a turn it spends something on a blow.)
+      expect(r.log.filter(e => e.actorId === "mage" && e.type === "allOut" && e.round === 1)).toHaveLength(1);
       const casts = r.log.filter(e => e.actorId === "mage" && e.type === "save").map(e => e.action);
       expect(casts.slice(0, 3)).toEqual(["big", "small", "small"]);
       expect(casts.slice(3).every(n => n === "cantrip")).toBe(true);

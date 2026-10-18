@@ -1578,7 +1578,9 @@
         "tend": "To Tend",
         "guard": "Guard",
         "cover": "Cover",
-        "hitAndRun": "Hit and Run"
+        "hitAndRun": "Hit and Run",
+        "potionGiven": "A Potion Given",
+        "allOut": "All Out"
       },
       "APrice": "a price",
       "Desire": "{intensity} {verb}",
@@ -1967,6 +1969,7 @@
       "Draw": "{actor} draws {item}",
       "Retrieve": "{actor} gets out {item}",
       "Reload": "{actor} reloads {item}",
+      "AllOut": "{actor} holds nothing back: {action}",
       "Prepare": "{actor} gets ready for next turn: {step}{why} (worth {worth})",
       "PrepareFor": ", to {desire} {target}",
       "PrepareForSelf": ", to {desire}",

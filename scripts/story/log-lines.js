@@ -290,6 +290,7 @@ function baseLine(e) {
     case "struckDown": return t("StruckDown", { actor: e.actor, n: e.dying ?? 0 });
     case "draw": return t(e.retrieve ? "Retrieve" : "Draw", { actor: e.actor, item: e.item ?? "" });
     case "reload": return t("Reload", { actor: e.actor, item: e.item ?? "" });
+    case "allOut": return t("AllOut", { actor: e.actor, action: e.action ?? "" });
     // (Getting ready for next turn: what it did, and for what: behavior/prepare.js.)
     case "prepare": return t("Prepare", { actor: e.actor, step: t(`PrepareStep.${e.step}`), why: e.desire ? t(e.target ? "PrepareFor" : "PrepareForSelf", { desire: t(`PrepareDesire.${e.desire}`), target: e.target ?? "" }) : "", worth: e.worth ?? 0 });
     case "end": return endLine(e);

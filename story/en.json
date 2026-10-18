@@ -3747,6 +3747,16 @@
     "{actor} closes the gap to {target}.",
     "{actor} runs to {target}."
   ],
+  "event.potionGiven": [
+    "{actor} presses a potion into {target}'s hands and helps them drink.",
+    "{actor} tips a healing draught down {target}'s throat.",
+    "Kneeling beside {target}, {actor} gets a potion into them."
+  ],
+  "event.allOut": [
+    "{actor} holds nothing back.",
+    "{actor} spends everything on this one.",
+    "No saving it for later: {actor} goes all out."
+  ],
   "prepare.draw": [
     "{actor} has no shot this turn, so the {weapon} comes out now, ready for the next.",
     "There's no time to use it yet, but {actor} gets the {weapon} into hand all the same.",

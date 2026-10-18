@@ -2268,7 +2268,7 @@ function executeHeal(run, u, action, target) {
   u.healedTargets.add(`${action.id}|${target.id}`);
   spendUse(u, action);
   noteHeal(run, u, target, target.hp - before, wasDown && target.status === STATUS.STANDING, {
-    action: action.name, potion: !!action.selfOnly,
+    action: action.name, potion: !!action.selfOnly, given: !!action.administered,
     check: roll ? { skill: action.healCheck.label ?? null, natural: roll.natural, mod: action.healCheck.mod, total: roll.total, dc: action.healCheck.dc, degree: roll.degree } : null
   });
 }
@@ -2277,11 +2277,11 @@ function executeHeal(run, u, action, target) {
  * A healing given (the hit points already restored, by the engine or, in a live battle, on the sheet): the healer's
  * tally, what someone taking no side makes of it, and the telling.
  */
-export function noteHeal(run, u, target, healed, revived, { action = "", potion = false, check = null } = {}) {
+export function noteHeal(run, u, target, healed, revived, { action = "", potion = false, check = null, given = false } = {}) {
   u.healingDone += healed;
   if ( healed > 0 ) healedOf(target); // (a bleed stops)
   if ( run.neutral && healed > 0 ) crossed(run, u, target, "help", revived ? 1.5 : 0.75, logger(run));
-  if ( run.log ) log(run, u, { type: "heal", action, target: target.spec.name, targetId: target.id, self: target === u, amount: healed, revived, potion, check });
+  if ( run.log ) log(run, u, { type: "heal", action, target: target.spec.name, targetId: target.id, self: target === u, amount: healed, revived, potion, check, ...(given ? { given } : {}) });
   if ( revived ) stayBound(run, target, logger(run));
 }
 
@@ -3542,6 +3542,7 @@ function playFromHere(run, u) {
   let attacksMade = 0;
   u.turnAttacks = 0;
   u.fellBack = false;
+  u.allOut = false;
   // (A kiter, falling back out of reach as foes close: behavior/prepare.js.)
   const kiting = (Number(behavior.kite) || 0) > 0 && !!run.prep.options.positioning && !!u.pos;
   // What getting ready for next turn takes of the simulator's own (behavior/prepare.js).
@@ -3859,6 +3860,11 @@ function playFromHere(run, u) {
       if ( !moveLog(run, u, move, target, "approach") ) break;
     }
     if ( option.action.oncePerTurn ) (u.usedThisTurn ??= new Set()).add(option.action.id);
+    // (A damage-dealer holding nothing back: the first slot, focus or bomb it spends on a blow this turn, told.)
+    if ( (Number(behavior.dps) || 0) > 0 && !u.allOut && (option.action.resource || Number.isFinite(option.action.uses)) ) {
+      u.allOut = true;
+      log(run, u, { type: "allOut", action: option.action.name ?? "" });
+    }
     executeOffense(run, u, option.action, target, attacksMade);
     used(u, option.action); // (a shot fired: loaded no more; a bomb thrown: gone from the hand)
     setupUsed(u, option.action); // (what set it up, used up: Rend wants two fresh hits)
