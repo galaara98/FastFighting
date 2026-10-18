@@ -6,7 +6,7 @@
  */
 import { STATUS, TACTICAL, DOWNED_MODELS, AFTERMATH, EXECUTE_LUCK, NEUTRAL_PARTY, OPENING, clamp } from "../constants.js";
 import { createRng, deriveSeed, randomSeed } from "./rng.js";
-import { sampleDamage, samplePart, meanPart, part } from "./dice.js";
+import { sampleDamage, samplePart, meanPart, part, addTo } from "./dice.js";
 import { diceAt, tableRoll, recordingRng, rollsWaiting, markRerolled } from "./table-rolls.js";
 import { rollCheck, regrade } from "./probability.js";
 import { costOf, mainPool } from "./turn.js";
@@ -23,7 +23,7 @@ import { initDesires, newTurn, goaded, think, want, thwart, relieve, levelOf, mi
 import { prepareDoors, doorStates, doorAhead, atDoor, doorPlan, patienceFor, doorDamage } from "./behavior/doors.js";
 import { heldGoal } from "./behavior/goals.js";
 import { checkMorale, standsGround, callRetreat, rallies, MORALE } from "./behavior/morale.js";
-import { expectedDamage, spendUse, hasUses, attacksIn, criticalParts, saveMultiplier, saveMultiplierFor, meanDamageVs, unitsPerTurn } from "./behavior/evaluate.js";
+import { expectedDamage, spendUse, hasUses, attacksIn, criticalParts, saveMultiplier, saveMultiplierFor, meanDamageVs, unitsPerTurn, iwrContext, critDoubles } from "./behavior/evaluate.js";
 import { chooseDeed, deedTier, chooseHitRiders, rescueMiss, rollCrit, rollFumble, rallied } from "./behavior/riders.js";
 import { cast } from "./behavior/casting.js";
 import { boost } from "./behavior/luck.js";
@@ -1011,7 +1011,7 @@ function rollHit(run, u, action, t, parts, multiplier, crit, minimum = 0, forced
   // (A live battle's engine dice, a table roll each: the damage as rolled, before the target's resistances. Its share
   // by a save, `multiplier`, said with it. engine/table-rolls.js; nothing where nothing records.)
   let at = forcedBy ? -1 : diceAt(run);
-  const rolled = forcedBy ? { byType: { ...forcedBy }, persistent: [], direct: !!forced.direct } : sampleDamage(parts, run.rng, multiplier);
+  const rolled = forcedBy ? { byType: { ...forcedBy }, persistent: [], direct: !!forced.direct, byCategory: {} } : sampleDamage(parts, run.rng, multiplier);
   if ( at >= 0 ) shownDamage(run, at, u, t, action, parts, multiplier, crit);
   // Rolled several times over (DCC magic missiles: so many missiles of so much each).
   if ( action.repeat && !forcedBy ) {
@@ -1023,6 +1023,7 @@ function rollHit(run, u, action, t, parts, multiplier, crit, minimum = 0, forced
       const more = sampleDamage(parts, run.rng, multiplier);
       if ( at >= 0 ) shownDamage(run, at, u, t, action, parts, multiplier, crit);
       for ( const [k, v] of Object.entries(more.byType) ) rolled.byType[k] = (rolled.byType[k] ?? 0) + v;
+      for ( const [c, row] of Object.entries(more.byCategory) ) for ( const [k, v] of Object.entries(row) ) addTo(rolled.byCategory, c, k, v);
     }
   }
   // Some systems guarantee a hit does at least some damage before resistances (PF2e: 1).
@@ -1031,11 +1032,14 @@ function rollHit(run, u, action, t, parts, multiplier, crit, minimum = 0, forced
     const sum = types.reduce((s, k) => s + rolled.byType[k], 0);
     if ( types.length && sum < minimum ) rolled.byType[types[0]] += minimum - sum;
   }
-  // (What dealt it, by its traits too: PF2e's weakness to holy is to whatever has the holy trait, whatever its damage.)
-  const total = rules.applyIwr(iwrOf(t), rolled.byType, t, { direct: rolled.direct, traits: action.traits ?? [] });
+  // (What dealt it too: its traits, PF2e's weakness to holy, whatever the damage; its materials, cold iron; an area's;
+  // a critical hit; how much of it is precision or splash. evaluate.js iwrContext.)
+  const ctx = iwrContext(action, { crit, byCategory: rolled.byCategory, direct: rolled.direct });
+  const total = rules.applyIwr(iwrOf(t), rolled.byType, t, ctx);
   return {
     total,
     byType: rolled.byType, // (as rolled, before anyone's resistances)
+    ctx, // (what else applyIwr heard, for another who takes the blow instead)
     types: Object.keys(rolled.byType),
     apply: (amount = total) => {
       for ( const p of rolled.persistent ) {
@@ -1338,7 +1342,8 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
       ?? null;
     let roll = rollCheck(rules, run.rng, bonus + deedRoll + lift, ac, { ...opts, rolled: forced?.attack ?? null, by: u, label: action.name, target });
     spendEdges(u, "attack", target.id);
-    spendEdges(target, "defend", u.id);
+    // (Spent by this attack: a mark on its defense; off-guard to this attacker for its next melee attack, PF2e's Feint.)
+    spendEdges(target, "defend", u.id, { melee: !!action.melee });
     spendBoost(u, target);
     if ( run.boosting && roll.degree < 2 && !forced ) roll = boost(run, u, roll, ac, { kind: "attack", stakes: attackStakes(run, u, target, action), options: opts }, logger(run));
     // The system's own say once the dice are seen (Ironsworn: burning momentum; PF2e: a flat check), told whether they
@@ -1400,21 +1405,24 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
     let struck = 0;
     if ( roll.degree >= 2 ) {
       const crit = roll.degree === 3;
+      // (A critical hit on one immune to its doubling, PF2e's immunity to critical hits: a normal hit's damage, its
+      // crit table's extra none; still a critical hit for everything else. evaluate.js critDoubles.)
+      const doubles = crit && critDoubles(rules, target, action);
       // (A blow the system rolled is the whole blow, its own bonuses in it: nothing more added, nor anything spent on it.)
       const whole = !!forced?.damage;
       const extra = whole ? [] : bonusDamageParts(run, u, action, target, { advantage, commit: true });
       const riders = u.spec.riders && !whole ? chooseHitRiders(run, u, action, target, { crit }) : [];
       const table = crit && !whole ? rollCrit(run, u, action, target) : null;
-      const base = crit ? (action.critDamage ?? criticalParts(rules, action.damage)) : (action.damage ?? []);
-      const more = crit ? criticalParts(rules, extra) : [...extra];
-      for ( const x of riders ) if ( x.damage?.length ) more.push(...(crit && x.critDouble ? criticalParts(rules, x.damage) : x.damage));
-      if ( table?.row?.damage?.length ) more.push(...table.row.damage);
+      const base = doubles ? (action.critDamage ?? criticalParts(rules, action.damage)) : (action.damage ?? []);
+      const more = doubles ? criticalParts(rules, extra) : [...extra];
+      for ( const x of riders ) if ( x.damage?.length ) more.push(...(doubles && x.critDouble ? criticalParts(rules, x.damage) : x.damage));
+      if ( doubles && table?.row?.damage?.length ) more.push(...table.row.damage);
       if ( deedRoll && !whole ) more.push(part([], deedRoll, primaryType(action)));
       const hit = rollHit(run, u, action, target, more.length ? base.concat(more) : base, 1, crit, rules.minimumDamage ?? 0, forced?.damage ?? null);
       // A finishing move (an Ironsworn End the Fight): whatever it has left.
       let amount = action.finish ? target.hp + target.temp + (target.stamina ?? 0) : hit.total;
       // (A crit table's row that doubles or triples the blow: DCC's "double damage".)
-      if ( !action.finish && Number(table?.row?.multiply) > 1 ) amount *= Number(table.row.multiply);
+      if ( !action.finish && doubles && Number(table?.row?.multiply) > 1 ) amount *= Number(table.row.multiply);
       if ( answer?.halve ) amount = Math.floor(amount / 2);
       if ( answer?.reduce ) amount = Math.max(0, amount - reduced(run, target, answer, u));
       if ( guard?.r.reduce ) {
@@ -1424,7 +1432,7 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
       }
       // Taken instead (PF2e Intercept Attack): the friend takes none of it; its protector takes the blow, against its
       // own resistances.
-      const intercepted = guard?.r.redirect && amount > 0 ? rules.applyIwr(iwrOf(guard.g), hit.byType, guard.g) : null;
+      const intercepted = guard?.r.redirect && amount > 0 ? rules.applyIwr(iwrOf(guard.g), hit.byType, guard.g, hit.ctx) : null;
       if ( intercepted !== null ) amount = 0;
       const lessened = amount < hit.total ? hit.total - amount : 0;
       // (The system's own damage card, landing as it was rolled: the system applies it, its resistances, shields and
@@ -2009,7 +2017,7 @@ function executeControl(run, u, action, target, attacksMade, common) {
       else {
         spendEdges(u, r.rollKind, target.id);
         spendBoost(u, target);
-        if ( r.rollKind === "attack" ) spendEdges(target, "defend", u.id);
+        if ( r.rollKind === "attack" ) spendEdges(target, "defend", u.id, { melee: !!action.melee });
       }
       // Luck: the target on a save against it, the user on its own roll.
       if ( run.boosting && x.degree < 2 && !rolled ) x = boost(run, r.kind === "save" ? target : u, x, r.dc, { kind: r.rollKind, stakes: r.kind === "save" ? 0.7 : 0.3, options: opts }, logger(run));

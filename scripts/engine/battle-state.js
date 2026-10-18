@@ -800,7 +800,9 @@ class Situation {
 
   /** Off guard against this attacker in particular (PF2e Feint). */
   get exposedTo() {
-    return this.#fact("exposedTo", () => !!(this.attacker && this.target.vs?.get(this.attacker.id)?.offGuard));
+    // (Off-guard to this attacker alone, or to its melee attacks alone: effects.js onlyVs.)
+    return this.#fact("exposedTo", () => !!(this.attacker && (this.target.vs?.get(this.attacker.id)?.offGuard
+      || (this.action?.melee && this.target.vsMelee?.get(this.attacker.id)?.offGuard))));
   }
 }
 
@@ -937,7 +939,9 @@ export function saveRoll(run, target, type, { magical = false, from = null, acti
   if ( magical && target.spec.magicResistance ) advantage = netAdvantage(advantage, 1);
   const vs = target.spec.saveVs ? saveVsBonus(target, type, { action, from, magical }) : null;
   if ( vs?.advantage ) advantage = netAdvantage(advantage, vs.advantage);
-  return { mod: base + (m.bonus ?? 0) + (mods.saves ?? 0) + (vs?.bonus ?? 0) + auraBonus(run, target) + coverDefault(run, target, from), advantage, dice: mods.saveDie ?? null, roller: target };
+  // (Its bonuses to every save, and to this one alone: mods.js bySave.)
+  const own = (mods.saves ?? 0) + (Number(mods.bySave?.[type]) || 0);
+  return { mod: base + (m.bonus ?? 0) + own + (vs?.bonus ?? 0) + auraBonus(run, target) + coverDefault(run, target, from), advantage, dice: mods.saveDie ?? null, roller: target };
 }
 
 /** The best save aura over t from a friend who's up and within its reach (anywhere, without positions). */
@@ -963,7 +967,8 @@ export const upgradesSave = (t, type) => !!t.spec.saveUpgrades?.length && [].con
 export function defenseDc(run, target, against, by = null) {
   const own = run.prep.rules.defenseDc?.(target, against, by);
   if ( Number.isFinite(own) ) return own;
-  if ( against === "perception" ) return 10 + (target.spec.perception ?? target.spec.initiative?.mod ?? typical(run.prep.rules, "skill", target.spec.level ?? 0));
+  // (A Perception DC moves with its checks: its bonuses to every check and to Perception alone, mods.js byCheck.)
+  if ( against === "perception" ) return 10 + (target.spec.perception ?? target.spec.initiative?.mod ?? typical(run.prep.rules, "skill", target.spec.level ?? 0)) + checkMods(target.mods, "perception");
   if ( against === "ac" ) return target.spec.defenses.ac;
   return 10 + saveRoll(run, target, against).mod;
 }
@@ -978,8 +983,11 @@ export function defenseDc(run, target, against, by = null) {
 export function checkRoll(run, u, mod, target = null, { purpose = null, skill = null, action = null } = {}) {
   const m = run.prep.rules.modifiers?.check?.({ unit: u, target, purpose, skill, action }) ?? {};
   const own = modsAgainst(u, target);
-  return { mod: (Number(mod) || 0) + (m.bonus ?? 0) + (own.checks ?? 0), advantage: netAdvantage(m.advantage ?? 0, own.checkAdv ?? 0), dice: own.checkDie ?? null, roller: u };
+  return { mod: (Number(mod) || 0) + (m.bonus ?? 0) + checkMods(own, skill), advantage: netAdvantage(m.advantage ?? 0, own.checkAdv ?? 0), dice: own.checkDie ?? null, roller: u };
 }
+
+/** Its bonuses to every check, and to checks of this skill alone (mods.js byCheck: "perception", a skill's key). */
+const checkMods = (mods, skill = null) => (Number(mods?.checks) || 0) + (skill ? Number(mods?.byCheck?.[skill]) || 0 : 0);
 
 /** A fresh turn budget for u, minus what conditions take away (stunned, slowed, paralyzed ...). */
 export function turnFor(run, u) {

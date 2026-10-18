@@ -11,25 +11,43 @@
  *   saveAdv                             its saves: +1 advantage, -1 disadvantage
  *   speed                               feet (+10 Longstrider, -10 Ray of Frost)
  *   actions                             main-pool units each turn (+1 Haste or quickened, -1 Slow)
+ *   bySave, byCheck                     {key: n}: to one save alone, by the system's save key, or one check alone, by
+ *                                       its skill's key or "perception" (PF2e Bon Mot: {bySave: {will: -2}, byCheck:
+ *                                       {perception: -2}}); a Perception check's and the Perception DC
  *
  * Bonuses of one kind don't add up: the best bonus and the worst penalty count, which is close to both PF2e's typed
- * bonuses and 5e's "the same spell doesn't stack". Any advantage and any disadvantage cancel. Unknown keys and
- * values that aren't numbers are ignored. Pure: no imports, no Foundry.
+ * bonuses and 5e's "the same spell doesn't stack". A bonus to one save is of a kind with one to every save (and a
+ * check's with every check's): combined, bySave and byCheck hold what each key adds over `saves` and `checks`, so a
+ * roll counts both (`saves` + `bySave[key]`). Any advantage and any disadvantage cancel. Unknown keys and values that
+ * aren't numbers are ignored. Pure: no imports, no Foundry.
  */
 import { localize } from "../i18n.js";
 
 export const FLAT_MODS = Object.freeze(["attack", "ac", "saves", "checks", "damage", "speed", "actions"]);
 export const DIE_MODS = Object.freeze(["attackDie", "saveDie", "checkDie"]);
 export const SIGN_MODS = Object.freeze(["adv", "defAdv", "saveAdv", "checkAdv"]);
+/** Bonuses to one save or check alone, {key: n}, and the bonus to all of them they're of a kind with. */
+export const KEYED_MODS = Object.freeze({ bySave: "saves", byCheck: "checks" });
 const KNOWN = new Set([...FLAT_MODS, ...DIE_MODS, ...SIGN_MODS]);
 
 /** Combine several mods objects into one: {attack: 1, attackDie: [4, -4], adv: 1, ...}; empty when nothing applies. */
 export function combineMods(list) {
   const best = {};
   const worst = {};
+  const keyed = {}; // (bySave, byCheck: {key: {best, worst}})
   for ( const m of list ?? [] ) {
     if ( !m || typeof m !== "object" ) continue;
     for ( const [k, raw] of Object.entries(m) ) {
+      if ( k in KEYED_MODS ) {
+        for ( const [key, n] of Object.entries(raw && typeof raw === "object" ? raw : {}) ) {
+          const v = Number(n);
+          if ( !Number.isFinite(v) || !v ) continue;
+          const row = ((keyed[k] ??= {})[key] ??= { best: 0, worst: 0 });
+          if ( v > 0 ) row.best = Math.max(row.best, v);
+          else row.worst = Math.min(row.worst, v);
+        }
+        continue;
+      }
       if ( !KNOWN.has(k) ) continue;
       const v = Number(raw);
       if ( !Number.isFinite(v) || !v ) continue;
@@ -49,6 +67,17 @@ export function combineMods(list) {
   for ( const k of SIGN_MODS ) {
     const v = (best[k] ? 1 : 0) - (worst[k] ? 1 : 0);
     if ( v ) out[k] = v;
+  }
+  // (One save's, or one check's: the best bonus and the worst penalty among its own and every save's, less what every
+  // save's already give.)
+  for ( const [k, rows] of Object.entries(keyed) ) {
+    const all = KEYED_MODS[k];
+    const b = best[all] ?? 0;
+    const w = worst[all] ?? 0;
+    for ( const [key, row] of Object.entries(rows) ) {
+      const v = Math.max(b, row.best) + Math.min(w, row.worst) - (b + w);
+      if ( v ) (out[k] ??= {})[key] = v;
+    }
   }
   return out;
 }
@@ -72,7 +101,9 @@ export function netAdvantage(...values) {
 const word = key => localize(`FASTFIGHTING.Effect.${key}`);
 
 export function describeMods(mods = {}, { tempHp = 0 } = {}) {
-  const raw = k => Math.sign(Array.isArray(mods[k]) ? mods[k][0] : Number(mods[k]) || 0);
+  // (One save's or check's, bySave and byCheck: by the sum of them.)
+  const value = v => (Array.isArray(v) ? v[0] : v && typeof v === "object" ? Object.values(v).reduce((s, n) => s + (Number(n) || 0), 0) : Number(v) || 0);
+  const raw = k => Math.sign(value(mods[k]));
   // For something mostly good (a Rage: +2 damage, -1 AC), only its good side names it; mostly bad, its bad side.
   // (defAdv counts the other way round: attacks against it are easier.)
   const lean = Object.keys(mods).reduce((s, k) => s + (k === "defAdv" ? -raw(k) : raw(k)), 0) + (tempHp > 0 ? 1 : 0);
@@ -83,15 +114,15 @@ export function describeMods(mods = {}, { tempHp = 0 } = {}) {
   if ( sign("attack") < 0 || sign("attackDie") < 0 ) return word("weakened");
   if ( sign("ac") > 0 || sign("defAdv") < 0 ) return word("shielded");
   if ( sign("ac") < 0 || sign("defAdv") > 0 ) return word("exposed");
-  if ( sign("saves") > 0 || sign("saveDie") > 0 ) return word("steeled");
-  if ( sign("saves") < 0 || sign("saveDie") < 0 ) return word("shaken");
+  if ( sign("saves") > 0 || sign("saveDie") > 0 || sign("bySave") > 0 ) return word("steeled");
+  if ( sign("saves") < 0 || sign("saveDie") < 0 || sign("bySave") < 0 ) return word("shaken");
   if ( sign("damage") > 0 ) return word("empowered");
   if ( sign("damage") < 0 ) return word("enfeebled");
   if ( sign("adv") > 0 ) return word("focused");
   if ( sign("adv") < 0 ) return word("rattled");
   if ( sign("speed") > 0 ) return word("fleetFooted");
   if ( sign("speed") < 0 ) return word("slowed");
-  if ( sign("checks") > 0 || sign("checkDie") > 0 || sign("checkAdv") > 0 ) return word("inspired");
+  if ( sign("checks") > 0 || sign("checkDie") > 0 || sign("checkAdv") > 0 || sign("byCheck") > 0 ) return word("inspired");
   if ( tempHp > 0 ) return word("bolstered");
   return word("affected");
 }

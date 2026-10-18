@@ -1,7 +1,7 @@
 /**
  * Expected-value helpers used by behavior decisions. The simulation itself always rolls real dice.
  */
-import { meanPart, doubled } from "../dice.js";
+import { meanPart, doubled, addTo } from "../dice.js";
 import { degreeDistribution } from "../probability.js";
 import { attackRoll, attackOptions, currentAc, saveRoll, bonusDamageParts, enemiesOf, isStanding, isMagical, upgradesSave, boostBonus, liveTier, inArea } from "../battle-state.js";
 import { TACTICAL } from "../../constants.js";
@@ -21,6 +21,35 @@ function meanByType(parts) {
     out[p.type] = (out[p.type] ?? 0) + Math.max(0, meanPart(p));
   }
   return out;
+}
+
+/** As meanByType, how much of each type each category's parts are (precision, splash): sampleDamage's byCategory. */
+function meanByCategory(parts) {
+  const out = {};
+  for ( const p of parts ?? [] ) if ( !p.persistent && p.category ) addTo(out, p.category, p.type, Math.max(0, meanPart(p)));
+  return out;
+}
+
+/**
+ * What a blow's damage reaches rules.applyIwr with, beside its amounts by type (API 20), for a weakness or resistance
+ * to what deals it rather than to its type: the action itself and its `traits` (PF2e's holy), `materials` (cold iron,
+ * silver), whether it's `magical` and an `area`'s; a critical hit (`crit`: an attack's, not a save's); how much of each
+ * type is of a category (`byCategory`: precision, splash); `direct` (Daggerheart's).
+ */
+export function iwrContext(action, { crit = false, byCategory = null, direct = false } = {}) {
+  return {
+    direct: !!direct, traits: action?.traits ?? [], materials: action?.materials ?? [], magical: isMagical(action), area: !!action?.area,
+    crit: !!crit && action?.kind !== "save" && action?.kind !== "auto", byCategory: byCategory ?? {}, action: action ?? null
+  };
+}
+
+/**
+ * Does a critical hit by `action` deal t a critical's damage? Not where the system says t is immune to that
+ * (rules.critImmune: PF2e's immunity to critical hits): the hit deals a normal hit's damage, and is still a critical
+ * hit for everything else.
+ */
+export function critDoubles(rules, t, action) {
+  return !rules.critImmune?.(t, action);
 }
 
 function persistentMean(parts) {
@@ -126,19 +155,31 @@ export function meanDamageVs(run, action, target) {
   return hit;
 }
 
-function meanDamageNow(run, action, target) {
+/**
+ * meanDamageNow with `extra` parts this use adds (bonusDamageParts: a sneak attack's precision, a flat bonus, a mark),
+ * each type's immunities, weaknesses and resistances counted once over all of it, as rollHit counts them. With none,
+ * meanDamageVs's (cached).
+ */
+export function meanDamageWith(run, action, target, extra = []) {
+  return extra.length ? meanDamageNow(run, action, target, extra) : meanDamageVs(run, action, target);
+}
+
+function meanDamageNow(run, action, target, extra = []) {
   const rules = run.prep.rules;
   const iwr = iwrOf(target); // (with any resistance an effect lends it: Rage, Stoneskin)
-  const crit = action.critDamage ?? criticalParts(rules, action.damage);
+  // (A critical hit on one immune to its doubling: a normal hit's damage, its crit table's extra none.)
+  const doubles = critDoubles(rules, target, action);
+  const base = (action.damage ?? []).concat(extra);
+  const crit = doubles ? (action.critDamage ?? criticalParts(rules, action.damage)).concat(extra.length ? criticalParts(rules, extra) : []) : base;
   const rider = effectMean(action);
   // Rolled several times (magic missiles), and a crit table's extra on a crit.
   const times = action.repeat ? Math.max(1, meanPart(action.repeat)) : 1;
-  // (Against the target's resistances, the action's traits with them: rollHit's.)
-  const ctx = { traits: action.traits ?? [] };
-  const critMean = rules.applyIwr(iwr, meanByType(crit), target, ctx) + persistentMean(crit);
+  // (Against the target's resistances, what deals it with them, as rollHit has it: iwrContext.)
+  const vs = (parts, isCrit) => rules.applyIwr(iwr, meanByType(parts), target, iwrContext(action, { crit: isCrit, byCategory: meanByCategory(parts) })) + persistentMean(parts);
+  const critMean = vs(crit, true);
   return {
-    normal: times * (rules.applyIwr(iwr, meanByType(action.damage), target, ctx) + persistentMean(action.damage)) + rider,
-    critical: times * critMean + rider + critExtraMean(action.crit, critMean)
+    normal: times * vs(base, false) + rider,
+    critical: times * critMean + rider + (doubles ? critExtraMean(action.crit, critMean) : 0)
   };
 }
 
@@ -162,33 +203,29 @@ export function expectedDamage(run, a, action, t, attacksMade = 0) {
     const dist = degreeDistribution(rules, r.bonus + boostBonus(rules, a, t, r.bonus, ac, attackOptions(r)), ac, attackOptions(r));
     return (dist[2] + dist[3]) * (t.hp + t.temp + (t.stamina ?? 0));
   }
-  const dmg = meanDamageVs(run, action, t);
   const targets = areaTargets(run, a, action, t);
-  if ( action.kind === "auto" ) {
-    const extra = bonusDamageParts(run, a, action, t).reduce((s, p) => s + Math.max(0, meanPart(p)), 0);
-    return targets * (dmg.normal + extra);
-  }
+  // (What this use adds, a sneak attack's precision among it, with the action's own damage: against t's immunities,
+  // weaknesses and resistances together, as the blow lands: meanDamageWith.)
+  if ( action.kind === "auto" ) return targets * meanDamageWith(run, action, t, bonusDamageParts(run, a, action, t)).normal;
   if ( action.kind === "save" && action.save ) {
-    const extra = bonusDamageParts(run, a, action, t).reduce((s, p) => s + Math.max(0, meanPart(p)), 0);
+    const dmg = meanDamageWith(run, action, t, bonusDamageParts(run, a, action, t));
     const save = saveRoll(run, t, action.save.type, { magical: isMagical(action), action });
     const dist = upgradedDistribution(degreeDistribution(rules, save.mod, action.save.dc, { advantage: save.advantage, kind: "save", roller: t }), t, action.save.type);
     // (What it lays on a failure, an affliction's conditions: as its save went.)
     const laid = afflicts(action) ? (p, d) => (d <= 1 && saveMultiplierFor(rules, d, action.save, t) > 0 ? p * afflictionWorth(run, a, action, t, d) : 0) : () => 0;
-    return targets * dist.reduce((s, p, d) => s + p * saveMultiplierFor(rules, d, action.save, t) * (dmg.normal + extra) + laid(p, d), 0);
+    return targets * dist.reduce((s, p, d) => s + p * saveMultiplierFor(rules, d, action.save, t) * dmg.normal + laid(p, d), 0);
   }
   const roll = attackRoll(run, a, t, action, attacksMade);
-  const extraParts = bonusDamageParts(run, a, action, t, { advantage: roll.advantage });
+  const dmg = meanDamageWith(run, action, t, bonusDamageParts(run, a, action, t, { advantage: roll.advantage }));
   // A deed die adds what it shows to the damage, as well as to the roll.
   const deed = roll.deed ? (roll.deed + 1) / 2 : 0;
-  const extra = extraParts.reduce((s, p) => s + Math.max(0, meanPart(p)), 0) + deed;
-  const extraCrit = (extraParts.length ? criticalParts(rules, extraParts).reduce((s, p) => s + Math.max(0, meanPart(p)), 0) : 0) + deed;
   const ac = currentAc(run, t, a, action);
   const opts = attackOptions(roll, { deed: true });
   const dist = degreeDistribution(rules, roll.bonus + boostBonus(rules, a, t, roll.bonus, ac, opts), ac, opts);
   // (What a hit lays, an affliction's conditions, as often as it hits; a maneuver it makes on a hit, as its roll goes.)
   const laid = afflicts(action) ? (dist[2] + dist[3]) * afflictionWorth(run, a, action, t) : 0;
   const tries = maneuverWorth(run, a, action, t);
-  return targets * (dist[2] * (dmg.normal + extra + tries.hit) + dist[3] * (dmg.critical + extraCrit + tries.crit) + laid);
+  return targets * (dist[2] * (dmg.normal + deed + tries.hit) + dist[3] * (dmg.critical + deed + tries.crit) + laid);
 }
 
 /**

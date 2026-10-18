@@ -1779,9 +1779,15 @@ Decides how much one use of an attack is worth to the creature weighing it.
 - Attack roll: P(hit) × (mean damage + extra) + P(critical) × (critical mean + critical extra), times targets.
 - Save: the sum over degrees of P(degree) × what that degree lets through × (mean + extra), times targets.
 - Automatic: (mean + extra) × targets.
-- Mean damage is after the target's resistances. Persistent damage counts 2.5 × its mean.
+- Mean damage is after the target's immunities, weaknesses and resistances, as the system applies them to the mean of
+  each type, told what deals it (its traits, materials, an area's, a critical hit's, how much of it is precision or
+  splash). Persistent damage counts 2.5 × its mean.
 - Extra: bonus damage whose condition holds now (sneak attack on an exposed foe), flat damage bonuses, its marks on
-  the target. A deed die adds (faces + 1) ÷ 2 to the damage and rides along on the roll.
+  the target: counted with the action's own damage, each type's resistances once over all of it, so a sneak attack's
+  precision is nothing against one immune to precision. A deed die adds (faces + 1) ÷ 2 to the damage and rides along
+  on the roll.
+- A target the system makes immune to critical hits (`rules.critImmune`): the critical's mean is a normal hit's, with
+  no crit table.
 - Riders on a hit: an affliction 0.5 × 2 × its first stage's mean damage (plus what its conditions are worth); prone or
   a grab +1.5; a push or pull +1.5; a save-on-hit rider 0.6 × its damage, +0.75 if it lays conditions.
 - An area catches min(its targets (default 2), standing foes). Tactical and up, on a map, aimed at a foe: min(that, the foes it would
@@ -2039,7 +2045,10 @@ Decides how the creatures weigh any effect, in damage-like points: worth per rou
 | ±1 ft speed | out × 0.004 |
 | ±1 AC; attacks against it with advantage | incoming × 0.085; incoming × 0.35 |
 | ±1 to saves; advantage on saves | incoming × 0.25 × 0.085; incoming × 0.25 × 0.35 |
+| ±1 to one save alone (Will) | a third of ±1 to saves |
 | ±1 to checks | max(1, out) × share of its turn spent on checks (talking 0.8, first aid 0.4) × 0.085 |
+| ±1 to one check alone (Perception) | a third of ±1 to checks |
+| Off-guard to one creature alone (a Feint) | that creature's damage to it per round × 0.085 × 2 (the system's AC penalty), − its exposed bonus (sneak attack) × 0.6 if not already off-guard; for so many attacks (uses), that share of its attacks |
 | A condition with no numbers | out × weight: incapacitated or controlled 1, immobilized 0.25, prone 0.15, any other 0.08 per point (the system may say) |
 | Prone, as bonuses and penalties | half |
 | Controlled (charmed, dominated) | −2 × out |
@@ -2051,6 +2060,7 @@ Decides how the creatures weigh any effect, in damage-like points: worth per rou
 | A taunt | (1 − its shrug-off chance) × clamp(0.5 + (taunt − its current lead desire) ÷ 30, 0, 1) × the blows its friend is spared; a plain taunt counts 65 |
 
 - Good for one roll ("uses"): one round, and only that share of its attacks or of the attacks on it.
+- A bonus to one save and one to every save are of a kind: the best bonus and the worst penalty across both count (−1 to every save and −2 to Will: Will −2).
 - On dice other than a d20, a point is worth what the system says (`rollPoint`).
 
 Code: `engine/behavior/effects.js` `outcomeWorth`, `modsPerRound`, `conditionWeight`, `tauntGain`.

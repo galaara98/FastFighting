@@ -7,7 +7,9 @@
  * @property {number} flat
  * @property {string} type            Damage type slug ("slashing", "fire", "healing" ...)
  * @property {boolean} [persistent]   Applied at end of the target's turn until removed
- * @property {string} [category]      "precision" | "splash" | null
+ * @property {string} [category]      "precision" | "splash" | null: what kind of damage it is within its type (a sneak
+ *                                    attack's precision, a bomb's splash), for the system's immunities, weaknesses and
+ *                                    resistances (rules.applyIwr hears how much of each type is of each category)
  */
 
 export function part(dice = [], flat = 0, type = "untyped", extra = {}) {
@@ -137,19 +139,31 @@ export function maxPart(p) {
   return p.flat + p.dice.reduce((s, { n, faces, mult = 1 }) => s + (n > 0 ? n * faces : n) * mult, 0);
 }
 
-/** Sample a list of parts; returns {byType: {type: amount}, persistent: DamagePart[]}. Each roll is at least 0. */
+/**
+ * Sample a list of parts; returns {byType: {type: amount}, persistent: DamagePart[], direct, byCategory}. Each roll is
+ * at least 0. `byCategory` ({precision: {type: amount}, splash: ...}) is how much of byType's each category's parts
+ * rolled: part of it, not more.
+ */
 export function sampleDamage(parts, rng, multiplier = 1) {
   const byType = {};
+  const byCategory = {};
   const persistent = [];
   let direct = parts.length > 0;
   for ( const p of parts ) {
     if ( p.persistent ) { persistent.push(p); continue; }
     const amount = Math.max(0, Math.floor(samplePart(p, rng) * multiplier));
     byType[p.type] = (byType[p.type] ?? 0) + amount;
+    if ( p.category ) addTo(byCategory, p.category, p.type, amount);
     // (Direct damage, every part of it: Daggerheart's, no Armor Slot for it. The system's applyIwr is told.)
     if ( !p.direct ) direct = false;
   }
-  return { byType, persistent, direct };
+  return { byType, persistent, direct, byCategory };
+}
+
+/** Add `amount` to a {category: {type: amount}} map. */
+export function addTo(byCategory, category, type, amount) {
+  const row = (byCategory[category] ??= {});
+  row[type] = (row[type] ?? 0) + amount;
 }
 
 export function meanDamage(parts, multiplier = 1) {

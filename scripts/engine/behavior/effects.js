@@ -12,13 +12,15 @@
  *                  healing, and while it works it can't be killed; the damage types in stoppedBy stop it a turn
  *     mark         damage parts added to the source's own hits against it (Hunter's Mark, Hex)
  *     repeatSave   {type, dc}: a save at the end of each of its turns ends it (5e Hold Person)
- *     onlyVs       its conditions hold only against the source (PF2e Feint: off-guard to the feinter)
+ *     onlyVs       its conditions hold only against the source (off-guard to it); "melee": only against the source's
+ *                  melee attacks (PF2e Feint: off-guard to the feinter's melee attacks)
  *     self         it lands on the one who acted, not the target (PF2e Trip, critically failed: you fall)
  *     endsOnHarm   it ends when its source or the source's side harms the bearer (5e Charm Person)
  *     iwr          {resist: {type: value}, immune: [types], weak: {type: value}} for as long as it lasts (Rage, Stoneskin)
  *     actionsNow   main-pool units it gains at once, this turn only (5e Action Surge)
- *     uses         spent after that many rolls it helps (or, for a mark on its defense, attacks against it): 5e Help,
- *                  Guidance, Bardic Inspiration, PF2e Aid and Sure Strike, Ironsworn "+1 on your next move"
+ *     uses         spent after that many rolls it helps (or, for a mark on its defense, attacks against it; for onlyVs
+ *                  conditions, attacks against it by its source, melee ones for "melee"): 5e Help, Guidance, Bardic
+ *                  Inspiration, PF2e Aid and Sure Strike, Ironsworn "+1 on your next move", PF2e Feint's next attack
  *     vs           a creature id: its bonuses count only for rolls against that one (its attacks, or its words or
  *                  first aid aimed at it)
  *     vsFocus      laid on a friend: against whoever that friend is set on (the foe it would hurt, the one it would
@@ -89,6 +91,7 @@ export const stillDoes = e => Object.keys(e.conditions ?? {}).length > 0
 export function recompute(u) {
   const conds = { ...u.baseConds };
   const vs = new Map();
+  const vsMelee = new Map(); // (conditions against one creature's melee attacks only: onlyVs "melee")
   const mods = [].concat(u.baseMods ?? []);
   const marks = [];
   let controlledBy = null;
@@ -105,9 +108,10 @@ export function recompute(u) {
   const defied = new Map(); // a taunt's price, paid against everyone but the taunter: id -> [mods]
   for ( const e of u.effects ?? [] ) {
     if ( e.onlyVs && e.sourceId ) {
-      const row = vs.get(e.sourceId) ?? {};
+      const map = e.onlyVs === "melee" ? vsMelee : vs;
+      const row = map.get(e.sourceId) ?? {};
       for ( const [k, v] of Object.entries(e.conditions ?? {}) ) raise(row, k, v);
-      vs.set(e.sourceId, row);
+      map.set(e.sourceId, row);
     } else for ( const [k, v] of Object.entries(e.conditions ?? {}) ) raise(conds, k, v);
     if ( e.mods && e.vs ) {
       if ( !against.has(e.vs) ) against.set(e.vs, []);
@@ -150,6 +154,7 @@ export function recompute(u) {
     if ( u.spec.hidden ) u.revealed = true;
   }
   u.vs = vs.size ? vs : null;
+  u.vsMelee = vsMelee.size ? vsMelee : null;
   u.mods = combineMods(mods);
   // (Against one creature: those bonuses with everything else it has, the best of each kind still counting; against a
   // taunter, without what ignoring its taunt costs.)
@@ -257,7 +262,7 @@ export function applyOutcome(target, outcome, sourceId = null, action = null) {
     // (One an action breaks: behavior/holds.js. {dc, others, with, key}, and whatever else the system put on it: the
     // check that breaks it.)
     ...(outcome.escape ? { escape: { ...outcome.escape, dc: Number.isFinite(Number(outcome.escape.dc)) ? Number(outcome.escape.dc) : null, others: outcome.escape.others ?? null, with: outcome.escape.with ?? null } } : {}),
-    onlyVs: !!outcome.onlyVs,
+    onlyVs: outcome.onlyVs === "melee" ? "melee" : !!outcome.onlyVs,
     uses: Number(outcome.uses) > 0 ? Math.round(Number(outcome.uses)) : null,
     vs: typeof outcome.vs === "string" && outcome.vs ? outcome.vs : null,
     vsSort: typeof outcome.vsSort === "string" && outcome.vsSort ? outcome.vsSort : null,
@@ -298,20 +303,23 @@ export function tauntLevel(taunt) {
 
 /** The bonuses each kind of roll draws on (and, for "defend", the marks that make it easier to hit). */
 const ROLL_KEYS = Object.freeze({
-  attack: ["attack", "attackDie", "adv", "damage"], check: ["checks", "checkDie", "checkAdv"], save: ["saves", "saveDie", "saveAdv"], defend: ["defAdv", "ac"]
+  attack: ["attack", "attackDie", "adv", "damage"], check: ["checks", "checkDie", "checkAdv", "byCheck"], save: ["saves", "saveDie", "saveAdv", "bySave"], defend: ["defAdv", "ac"]
 });
 
 /**
  * A roll was made: effects good for only so many rolls (`uses`) that helped it are spent (for one against a single
- * creature, only a roll against that one). `kind`: attack, check, save, or defend (an attack against u).
+ * creature, only a roll against that one). `kind`: attack, check, save, or defend (an attack against u, `targetId` the
+ * attacker's, `melee` whether it's a melee attack: conditions against that attacker alone, onlyVs, are spent by it too,
+ * PF2e's Feint).
  */
-export function spendEdges(u, kind, targetId = null) {
+export function spendEdges(u, kind, targetId = null, { melee = false } = {}) {
   const keys = ROLL_KEYS[kind];
   if ( !keys || !u?.effects?.length ) return;
   let spent = false;
   for ( const e of u.effects ) {
-    if ( !(e.uses > 0) || !e.mods || (e.vs && e.vs !== targetId) ) continue;
-    if ( !keys.some(k => e.mods[k]) ) continue;
+    if ( !(e.uses > 0) ) continue;
+    const against = kind === "defend" && e.onlyVs && e.sourceId === targetId && (e.onlyVs !== "melee" || melee) && Object.keys(e.conditions ?? {}).length > 0;
+    if ( !against && (!e.mods || (e.vs && e.vs !== targetId) || !keys.some(k => e.mods[k])) ) continue;
     e.uses -= 1;
     spent = true;
   }
@@ -450,6 +458,8 @@ const D20_POINT = 0.085;
 const ADVANTAGE = 0.35;
 /** Saves decide less of what comes at a creature than attacks do. */
 const SAVE_SHARE = 0.25;
+/** A bonus to one save, or one check, alone (mods.js bySave, byCheck): one of the usual three, as near as it goes. */
+const KEYED_SHARE = 1 / 3;
 /**
  * Knocked prone, it gets up on its next turn: being easier to hit lasts only until then, and only for foes close
  * enough to take advantage (in some systems those further off do worse). About half of what it would be worth.
@@ -575,6 +585,8 @@ function modsPerRound(run, t, mods, out, inc, { words = 0, own = 1, guard = 1 } 
   const num = k => Number(mods[k]) || 0;
   const sign = k => Math.sign(num(k));
   const die = k => (Number.isFinite(Number(mods[k])) ? diceMean([Number(mods[k])]) : diceMean(mods[k]));
+  // (To one save or one check alone, bySave and byCheck: one of a few, KEYED_SHARE of what it would be to all of them.)
+  const keyed = k => KEYED_SHARE * Object.values(mods[k] && typeof mods[k] === "object" ? mods[k] : {}).reduce((s, n) => s + (Number(n) || 0), 0);
   let v = 0;
   // Its own fighting: rolls, advantage, damage, actions, getting there.
   v += own * (out * (ROLL_POINT * (num("attack") + die("attackDie")) + ADVANTAGE * sign("adv")) + num("damage") * hitsPerRound(run, t));
@@ -583,9 +595,9 @@ function modsPerRound(run, t, mods, out, inc, { words = 0, own = 1, guard = 1 } 
   v += out * 0.004 * num("speed");
   // What comes at it: AC, being easy or hard to hit, its saves.
   v += guard * inc * (ROLL_POINT * num("ac") - ADVANTAGE * sign("defAdv"));
-  v += inc * SAVE_SHARE * (ROLL_POINT * (num("saves") + die("saveDie")) + ADVANTAGE * sign("saveAdv"));
+  v += inc * SAVE_SHARE * (ROLL_POINT * (num("saves") + die("saveDie") + keyed("bySave")) + ADVANTAGE * sign("saveAdv"));
   // Its checks: talking someone round, first aid.
-  v += words * (ROLL_POINT * (num("checks") + die("checkDie")) + ADVANTAGE * sign("checkAdv"));
+  v += words * (ROLL_POINT * (num("checks") + die("checkDie") + keyed("byCheck")) + ADVANTAGE * sign("checkAdv"));
   return v;
 }
 
@@ -632,9 +644,10 @@ export function outcomeWorth(run, by, t, outcome, { versus = null } = {}) {
     if ( own?.harm ) perRound -= harmMean(run, t, k, v, own, by);
     if ( own?.inside && by && by !== t ) held = true;
     if ( outcome.onlyVs && by && by !== t ) {
-      // Off-guard to its source alone (PF2e Feint): only the source's own blows land easier, and its sneak attacks
-      // now find their mark. Nothing else about t changes.
-      perRound += modsPerRound(run, t, { ac: asMods?.ac ?? -2 }, 0, damageOut(run, by, t));
+      // Off-guard to its source alone (PF2e Feint): only the source's own blows land easier (for so many of them, with
+      // uses), and its sneak attacks now find their mark. Nothing else about t changes.
+      const blows = uses ? Math.min(1, uses / Math.max(1, hitsPerRound(run, by) / 0.6)) : 1;
+      perRound += modsPerRound(run, t, { ac: asMods?.ac ?? -2 }, 0, damageOut(run, by, t), { guard: blows });
       if ( !t.conds?.offGuard && !t.prone ) perRound -= exposedBonus(by) * 0.6;
     } else if ( asMods && typeof asMods === "object" ) perRound += modsPerRound(run, t, asMods, out, inc) * (k === "prone" ? PRONE_SHARE : 1);
     else weighed[k] = v;
@@ -682,7 +695,7 @@ export function outcomeWorth(run, by, t, outcome, { versus = null } = {}) {
   // Moved (shoved, dragged, put somewhere): what it would do to it there (behavior/forced.js).
   if ( outcome.move && by && by !== t ) worth -= forcedWorth(run, by, t, outcome.move);
   // Its own damage at that degree (PF2e Trip, critically): as dealt.
-  if ( outcome.damage?.length && by && by !== t ) worth -= rules.applyIwr ? rules.applyIwr(iwrOf(t), meanByType(outcome.damage)) : outcome.damage.reduce((s, p) => s + Math.max(0, meanPart(p)), 0);
+  if ( outcome.damage?.length && by && by !== t ) worth -= rules.applyIwr ? rules.applyIwr(iwrOf(t), meanByType(outcome.damage), t) : outcome.damage.reduce((s, p) => s + Math.max(0, meanPart(p)), 0);
   // (What else it's worth to t, as the system reckons it: DCC's rally, its morale.)
   if ( rules.outcomeWorth ) worth += Number(rules.outcomeWorth(run, by, t, outcome)) || 0;
   return worth;

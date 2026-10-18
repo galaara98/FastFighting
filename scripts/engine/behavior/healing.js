@@ -45,6 +45,12 @@ export function healMoves(run, u, action, target) {
   return movesNeeded(run, u, target, action);
 }
 
+/** Does the system say heal `a` can't mend t (rules.usable: PF2e's vitality healing on one with void healing)? */
+function refused(run, u, a, t) {
+  const rules = run.prep.rules;
+  return !a.firstAid && !!rules.usable && rules.usable(run, u, a, t) === false;
+}
+
 /**
  * How much each friend (or u itself) needs u's healing, as its healing logic weighs it: [{ally, score}] best first,
  * only those worth healing. These become u's desires to heal.
@@ -69,6 +75,7 @@ export function healScores(run, u, heals = u.prep.healActions) {
     if ( !isSelf && cutOff(run, u, ally) ) continue; // (inside another creature, or it inside one: out of reach)
     if ( !isSelf && tier <= TACTICAL.FERAL ) continue; // feral healers only tend themselves
     if ( refusesToHelp(run, u, ally) ) continue; // (scheming against its leaders)
+    if ( heals.every(a => refused(run, u, a, ally)) ) continue; // (the system says none of its heals mends this one)
     const frac = ally.maxHp > 0 ? ally.hp / ally.maxHp : 0;
     let score = 0;
     if ( ally.status === STATUS.DOWN ) {
@@ -172,7 +179,8 @@ export function rescueOption(run, u, target, turn) {
   const rules = run.prep.rules;
   const fits = a => !a.firstAid && turn.canAfford(costOf(rules, a)) && hasUses(u, a) && !a.selfOnly
     && (!a.oncePerTarget || !u.healedTargets.has(`${a.id}|${target.id}`))
-    && (!a.targetTrait || target.spec.creatureTraits?.includes(a.targetTrait));
+    && (!a.targetTrait || target.spec.creatureTraits?.includes(a.targetTrait))
+    && (!rules.usable || rules.usable(run, u, a, target) !== false);
   const heals = u.prep.healActions.filter(fits);
   const free = heals.find(a => !a.resource && !Number.isFinite(a.uses));
   if ( free ) return free;
