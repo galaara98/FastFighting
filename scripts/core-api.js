@@ -21,6 +21,8 @@ export { traitsFromParts, partsOf, signedNumber } from "./engine/trait-parts.js"
 export { part, parseFormula, parseTypedFormula, samplePart, meanPart, maxPart, doubled, sampleDamage, meanDamage } from "./engine/dice.js";
 export { formulaNumber, plainDice } from "./engine/arithmetic.js";
 export { degreeDistribution, rollD20, rollCheck } from "./engine/probability.js";
+export { rolledParts } from "./engine/table-rolls.js";
+export { rollJson, AUDIENCE } from "./foundry/table-rolls.js";
 export { TALK_KINDS } from "./engine/behavior/talk.js";
 export { MORALE } from "./engine/behavior/morale.js";
 export { dropCondition, applyOutcome, tauntProof, withoutTaunt } from "./engine/behavior/effects.js";

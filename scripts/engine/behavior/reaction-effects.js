@@ -370,8 +370,9 @@ function playHarm(run, u, r, aim, kit, play) {
   }
   if ( harm.damage?.length && mult > 0 ) {
     const sys = rolled?.damage?.byType ? { byType: Object.fromEntries(Object.entries(rolled.damage.byType).map(([k, v]) => [k, Math.max(0, Math.floor(v * mult))])), card: rolled.card ?? null } : null;
-    const hit = kit.rollHit(run, u, { id: `reaction:${r.id}`, damage: harm.damage }, aim, harm.damage, mult, false, 0, sys);
-    const amount = kit.appliedLive(run, u, aim, sys, hit.total, mult);
+    const hit = kit.rollHit(run, u, { id: `reaction:${r.id}`, name: r.label ?? "", damage: harm.damage }, aim, harm.damage, mult, false, 0, sys);
+    // (The system's damage card, or the engine's dice shown as one: applied the system's way.)
+    const amount = kit.appliedLive(run, u, aim, hit, hit.total, mult);
     if ( run.log ) kit.log(run, u, { type: "auto", action: r.label, actionKind: "auto", damageType: harm.damage[0]?.type ?? "untyped", target: aim.spec.name, targetId: aim.id, damage: amount, reaction: true });
     hit.apply(amount);
   }
@@ -399,9 +400,10 @@ function playAfflict(run, u, r, aim, kit, play) {
   if ( !outcome || isImmune(run, aim, { id: `reaction:${r.id}`, traits: asAction(r).traits, onSave: [outcome] }) ) return;
   const action = asAction(r);
   if ( outcome.damage?.length ) {
-    const hit = kit.rollHit(run, u, { id: `reaction:${r.id}`, damage: outcome.damage }, aim, outcome.damage, 1, false);
-    if ( run.log ) kit.log(run, u, { type: "auto", action: r.label, actionKind: "auto", damageType: outcome.damage[0]?.type ?? "untyped", target: aim.spec.name, targetId: aim.id, damage: hit.total, reaction: true });
-    hit.apply();
+    const hit = kit.rollHit(run, u, { id: `reaction:${r.id}`, name: r.label ?? "", damage: outcome.damage }, aim, outcome.damage, 1, false);
+    const dealt = kit.appliedLive(run, u, aim, hit, hit.total, 1);
+    if ( run.log ) kit.log(run, u, { type: "auto", action: r.label, actionKind: "auto", damageType: outcome.damage[0]?.type ?? "untyped", target: aim.spec.name, targetId: aim.id, damage: dealt, reaction: true });
+    hit.apply(dealt);
     if ( !isUp(aim) ) return;
   }
   const { damage: _d, ...rest } = outcome;
@@ -425,9 +427,10 @@ function playBurst(run, u, r, ctx, kit) {
       mult = saveMultiplier(rules, roll.degree, { basic: burst.save.basic !== false });
     }
     if ( mult <= 0 ) continue;
-    const hit = kit.rollHit(run, u, { id: `reaction:${r.id}`, damage: burst.damage }, t, burst.damage, mult, false);
-    if ( run.log ) kit.log(run, u, { type: "auto", action: r.label, actionKind: "auto", damageType: burst.damage[0]?.type ?? "untyped", target: t.spec.name, targetId: t.id, damage: hit.total, reaction: true });
-    hit.apply();
+    const hit = kit.rollHit(run, u, { id: `reaction:${r.id}`, name: r.label ?? "", damage: burst.damage }, t, burst.damage, mult, false);
+    const dealt = kit.appliedLive(run, u, t, hit, hit.total, mult);
+    if ( run.log ) kit.log(run, u, { type: "auto", action: r.label, actionKind: "auto", damageType: burst.damage[0]?.type ?? "untyped", target: t.spec.name, targetId: t.id, damage: dealt, reaction: true });
+    hit.apply(dealt);
   }
 }
 

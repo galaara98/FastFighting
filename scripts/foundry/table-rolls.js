@@ -2,7 +2,10 @@
  * The engine's own table rolls in the chat (engine/table-rolls.js records them as a live battle plays): each a Foundry
  * Roll carrying the very dice the engine rolled, so the roll's tooltip shows them and Dice So Nice throws them.
  *   - After a turn is written onto the sheets, its rolls are posted: one message for each creature that rolled and each
- *     audience, its token the speaker (postRolls).
+ *     audience, its token the speaker (postRolls). Where the helper shows rolls its system's way (showTableRoll, API
+ *     20), each roll is its system's own card instead (PF2e's check and damage cards), one roll to a card, in order; a
+ *     roll it leaves alone is a plain one. One the system showed already (`shown`: a damage card made in the turn, and
+ *     the rolls before it) isn't posted again.
  *   - Who sees them (rollAudience): a player's character's, everyone; a creature the players can't see (a hidden token,
  *     one the fight has hidden or unseen, one whose name the GM keeps secret), the GMs only; any other, as the GM's own
  *     roll mode says, and never fewer than the GMs.
@@ -197,17 +200,52 @@ export function audiencesFor(rolls, { docOf, unitOf }) {
 }
 
 /**
- * A turn's table rolls posted: a message for each creature and audience, its token the speaker (the narrator's, with
- * none), every roll a Foundry Roll with the engine's dice. `flags`: the battle's own (live: {battle, turn}), so Rewind
+ * A turn's table rolls posted, every roll a Foundry Roll with the engine's dice, its token the speaker (the narrator's,
+ * with none): a message for each creature and audience. `flags`: the battle's own (live: {battle, turn}), so Rewind
  * finds them. `audiences`: who sees each roller's, as audiencesFor found them earlier (else as things stand now).
+ * `show` (API 20): the helper's own way of showing a roll, as its system's card (showTableRoll, through the live side:
+ * `show(roll, {token, target, audience, flavor, flags})`, its messages' ids or null), tried for each roll in the order
+ * rolled; a roll it doesn't show is a plain message of its own between them, so the chat reads in order, one roll to a
+ * card as the system posts them. `cards`: a Map, given each roll `show` showed, with its messages' ids.
  * Returns the messages' ids.
  */
-export async function postRolls(rolls, { scene, docOf, unitOf, flags = {}, speakerless = null, audiences = null } = {}) {
+export async function postRolls(rolls, { scene, docOf, unitOf, flags = {}, speakerless = null, audiences = null, show = null, cards = null } = {}) {
   if ( !rolls?.length ) return [];
+  const audienceOf = id => audiences?.get(id ?? null) ?? audienceFor(id, { docOf, unitOf });
+  const own = { [MODULE_ID]: { live: { ...flags, rolls: true } } };
+  const plain = messages => postPlain(messages, { scene, docOf, flags: own, speakerless });
+  if ( typeof show !== "function" ) return plain(rollMessages(rolls, audienceOf));
+  const ids = [];
+  for ( const r of rolls ) {
+    const audience = audienceOf(r.by ?? null);
+    let shown = null;
+    try {
+      // (Its words without the DC: the system shows a DC its own way, to whom its settings say.)
+      shown = await show(r, {
+        token: r.by ? docOf(r.by) ?? null : null, target: r.target ? docOf(r.target) ?? null : null, audience,
+        flavor: rollFlavor(r, { dc: false }), flags: structuredClone(own)
+      });
+    } catch ( err ) {
+      console.error(`${MODULE_ID} | showing the engine's roll the system's way`, err);
+      shown = null;
+    }
+    const list = [].concat(shown ?? []).filter(id => typeof id === "string" && id);
+    if ( list.length ) {
+      ids.push(...list);
+      cards?.set(r, list);
+      continue;
+    }
+    ids.push(...await plain([{ by: r.by ?? null, audience, rolls: [r] }]));
+  }
+  return ids;
+}
+
+/** Plain rolls posted, a message for each of `messages` ({by, audience, rolls}: rollMessages'). Returns their ids. */
+async function postPlain(messages, { scene, docOf, flags, speakerless = null }) {
   const ChatMessage = ChatMessageClass();
   const Roll = foundry.dice?.Roll ?? globalThis.Roll;
   const ids = [];
-  for ( const m of rollMessages(rolls, id => audiences?.get(id ?? null) ?? audienceFor(id, { docOf, unitOf })) ) {
+  for ( const m of messages ) {
     try {
       const doc = m.by ? docOf(m.by) : null;
       const gm = m.audience === AUDIENCE.GM;
@@ -216,8 +254,7 @@ export async function postRolls(rolls, { scene, docOf, unitOf, flags = {}, speak
       if ( !list.length ) continue;
       const speaker = doc ? ChatMessage.getSpeaker({ scene, token: doc }) : (speakerless ?? { alias: localize("FASTFIGHTING.Story.Speaker") });
       const message = await ChatMessage.create({
-        speaker, rolls: list, whisper: gm ? gmIds() : [], sound: CONFIG.sounds?.dice,
-        flags: { [MODULE_ID]: { live: { ...flags, rolls: true } } }
+        speaker, rolls: list, whisper: gm ? gmIds() : [], sound: CONFIG.sounds?.dice, flags
       });
       if ( message ) ids.push(message.id);
     } catch ( err ) {

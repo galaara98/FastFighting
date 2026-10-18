@@ -44,7 +44,7 @@
  * turn's change set, as any save's does; its damage is the engine's dice, written as any damage the engine deals. A
  * player's character starting its turn inside an aura is the table's to settle: FastFighting rolls nothing for it.
  *
- * What it needs of the simulation (simulator.js passes it: `play`): rollSave, rollHit, landOutcome,
+ * What it needs of the simulation (simulator.js passes it: `play`): rollSave, rollHit, appliedLive, landOutcome,
  * testConcentration and log.
  * Pure: no Foundry globals.
  */
@@ -216,13 +216,15 @@ function expose(run, b, aura, t, cause, play) {
   const outcome = aura.byDegree[degree];
   const mult = aura.damage ? saveMultiplierFor(rules, degree, aura.save, t) : 0;
   const hit = mult > 0 ? play.rollHit(run, b, aura.action, t, aura.damage, mult, false) : null;
+  // (A live battle's: the engine's dice shown as the system's damage card and applied its way, where it can.)
+  const dealt = hit ? play.appliedLive(run, b, t, hit, hit.total, mult) : 0;
   const conditions = outcome ? Object.keys(outcome.conditions ?? {}).filter(k => outcome.conditions[k]) : [];
   play.log(run, b, {
     type: "aura", ...common, natural: roll.natural, mod: mod + (roll.die ?? 0), total: roll.total, degree, margin: roll.total - aura.save.dc,
-    damage: hit?.total ?? 0, damageType: aura.damage?.[0]?.type ?? null, conditions, effect: outcome?.label ?? "", took: !!outcome || (hit?.total ?? 0) > 0,
+    damage: dealt, damageType: aura.damage?.[0]?.type ?? null, conditions, effect: outcome?.label ?? "", took: !!outcome || dealt > 0,
     note: roll.note ?? null, faces: roll.faces ?? null
   });
-  hit?.apply();
+  hit?.apply(dealt);
   if ( outcome && isUp(t) ) {
     play.landOutcome(run, b, t, outcome, aura.action, { damage: false });
     play.testConcentration(run, t);

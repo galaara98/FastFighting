@@ -100,7 +100,8 @@ export function rollD20(rules, rng, modifier, dc, { advantage = 0, kind = "check
  *
  * In a live battle (a recording rng: engine/table-rolls.js) the engine's own dice are a table roll, shown in the chat:
  * `options.by` (else `roller`) rolls it, `label` or `what` says what for, `as` its kind where it isn't `kind` (a flat
- * check), `target` at whom; `quiet` keeps one the Statistics Engine makes for itself out of it (a bystander noticing).
+ * check), `target` at whom, `actionId` the action it's for and `stat` a save's key (for the system's own card: API
+ * 20); `quiet` keeps one the Statistics Engine makes for itself out of it (a bystander noticing).
  * A system's own roll() may say how its dice show (roll.shown, as table-rolls.js `split`: an Ironsworn action roll
  * against its challenge dice). None of this changes a die.
  */
@@ -110,7 +111,8 @@ export function rollCheck(rules, rng, modifier, dc, options = {}) {
   if ( at === undefined ) return roll;
   rng.record(at, {
     by: options.by ?? options.roller ?? null, target: options.target ?? null, kind: options.as ?? options.kind ?? "check",
-    label: options.label ?? "", what: options.what ?? null, mod: modifier, total: roll.total, dc, natural: roll.natural, degree: roll.degree,
+    label: options.label ?? "", what: options.what ?? null, action: options.actionId ?? null, stat: options.stat ?? null,
+    mod: modifier, total: roll.total, dc, natural: roll.natural, degree: roll.degree,
     extras: (options.dice ?? []).map(f => Math.sign(f) * Math.max(1, Math.abs(Math.round(f)))),
     keep: options.advantage ? (options.advantage > 0 ? "kh" : "kl") : null, split: roll.shown ?? null
   });

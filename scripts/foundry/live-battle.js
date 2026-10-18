@@ -53,7 +53,8 @@ const offers = (adapter, name) => typeof adapter?.[name] === "function" && adapt
 /**
  * The kinds of roll the system makes itself in this battle, as its helper offers them (engine/live.js systemRoll):
  * strikes (rollStrike); saves (rollSave); checks (rollCheck); an action's own card (useAction) and its damage, once
- * for all it catches (rollDamage); and the damage cards of strikes and those applied its own way (applyDamageCard).
+ * for all it catches (rollDamage); the engine's own damage shown as the system's damage card (showTableRoll, API 20,
+ * with applyDamageCard); and the damage cards of strikes and those applied its own way (applyDamageCard).
  */
 function systemRollKinds(adapter) {
   const out = [];
@@ -63,7 +64,8 @@ function systemRollKinds(adapter) {
   if ( offers(adapter, "useAction") ) out.push("use");
   if ( offers(adapter, "rollDamage") ) out.push("damage");
   if ( offers(adapter, "adjustRolled") ) out.push("adjust");
-  if ( (out.includes("strike") || out.includes("damage")) && offers(adapter, "applyDamageCard") ) out.push("apply");
+  if ( offers(adapter, "showTableRoll") && offers(adapter, "applyDamageCard") ) out.push("card");
+  if ( (out.includes("strike") || out.includes("damage") || out.includes("card")) && offers(adapter, "applyDamageCard") ) out.push("apply");
   return out;
 }
 import { isStanding, canMove } from "../engine/battle-state.js";
@@ -996,6 +998,7 @@ async function turnRoll(request, events, stage) {
         else if ( request.roll === "use" ) out = await useTurnAction(request);
         else if ( request.roll === "adjust" ) out = await adjustTurnRoll(request);
         else if ( request.roll === "damage" ) out = await rollTurnDamage(request);
+        else if ( request.roll === "card" ) out = await showTurnCard(request);
       }
     } catch ( err ) {
       console.error(`${MODULE_ID} | the system's roll`, err);
@@ -1111,6 +1114,32 @@ async function rollTurnDamage({ unitId, targetId, action, card }) {
     ? Object.fromEntries(Object.entries(raw.damage.byType).map(([k, v]) => [String(k), counted(v)]).filter(([, v]) => v !== null)) : null;
   if ( !byType || !Object.keys(byType).length ) return null;
   return { damage: { byType }, card: typeof raw.card === "string" && game.messages.get(raw.card) ? raw.card : null };
+}
+
+/**
+ * Damage the engine rolled itself in a turn FastFighting plays, shown as the system's own damage card (the helper's
+ * showTableRoll, API 20), the table rolls still waiting before it (`table`, the damage last) shown first, each the
+ * system's way where it can, so the chat reads in order: {card}, the damage card's message id (null: none, the roll
+ * a plain one), for the system to apply it ("apply"). Null (the rolls shown with the turn's others, the engine's sum)
+ * while the battle plays through to the end, its rolls on the GMs' one card.
+ */
+async function showTurnCard({ table }) {
+  if ( battle.data.auto || !Array.isArray(table) || !table.length || !offers(getAdapter(), "showTableRoll") ) return null;
+  const cards = new Map();
+  await showRolls(table, null, { cards });
+  const card = cards.get(table.at(-1))?.[0] ?? null;
+  return { card: card && game.messages.get(card) ? card : null };
+}
+
+/**
+ * A table roll shown as its system's own card (the helper's showTableRoll, API 20): its messages' ids, or null for the
+ * core's plain roll. They carry the battle's flags (`options.flags`), so they're FastFighting's: never read as a
+ * player's own card, and deleted with their turn.
+ */
+async function showSystemRoll(roll, options) {
+  const raw = await getAdapter().showTableRoll(roll, { ...options, scene: battle.scene });
+  const ids = [].concat(raw ?? []).filter(id => typeof id === "string" && game.messages.get(id));
+  return ids.length ? ids : null;
 }
 
 /** How long a player has to answer a question about their reaction (ms) before the GM is asked instead. */
@@ -2150,8 +2179,11 @@ async function answerArrival(pc, from) {
       battle.run = restoreRun(battle.spec, battle.rules, snapshot, { log: battle.run.log });
     }
   }
-  // (What the system's own rolls applied, its undo records, the player's turn's.)
+  // (What the system's own rolls applied, its undo records, the player's turn's; and the engine's rolls shown as the
+  // system's cards meanwhile, FastFighting's own (its flags: no player's), taken back with the turn.)
   pc.records.push(...stage.records);
+  const shownHere = stage.messages.filter(id => game.messages.get(id)?.getFlag(MODULE_ID, "live"));
+  if ( shownHere.length ) pc.rollCards = [...(pc.rollCards ?? []), ...shownHere];
   if ( !events.length ) return stage.records.length > 0;
   await writeChanges(before, captureAll(battle.run), pc.records);
   await showPcRolls(pc);
@@ -2403,17 +2435,22 @@ async function tellNew() {
 /**
  * The table rolls the engine's own dice made (engine/table-rolls.js), shown: real rolls in the chat, each creature's
  * its own message, seen as table-rolls.js rollAudience says; `turn`'s, for Rewind (null: the battle's own, its opening).
- * `settle`: rolls of a fight played through (Play to the end, the aftermath), on the GMs' one card for them instead
- * (tally). Returns the messages' ids (none for the card: a Rewind trims it, untally).
+ * Each as its system's own card where the helper shows them (showTableRoll, API 20: showSystemRoll); none the system
+ * showed already (`shown`: the engine's damage made the system's card in its turn, and the rolls before it). `settle`:
+ * rolls of a fight played through (Play to the end, the aftermath), on the GMs' one card for them instead (tally).
+ * `cards`: a Map, given each roll shown the system's way, with its messages' ids. Returns the messages' ids (none for
+ * the card: a Rewind trims it, untally).
  */
-async function showRolls(rolls, turn, { settle = false, audiences = null } = {}) {
-  if ( !rolls?.length || !battle ) return [];
+async function showRolls(rolls, turn, { settle = false, audiences = null, cards = null } = {}) {
+  rolls = (rolls ?? []).filter(r => !r?.shown);
+  if ( !rolls.length || !battle ) return [];
   if ( settle && turn ) {
     await tally(turn, rolls);
     return [];
   }
   return postRolls(rolls, {
-    scene: battle.scene, docOf, unitOf: id => battle.run.byId.get(id) ?? null, speakerless: chronicle(), audiences,
+    scene: battle.scene, docOf, unitOf: id => battle.run.byId.get(id) ?? null, speakerless: chronicle(), audiences, cards,
+    show: offers(getAdapter(), "showTableRoll") ? showSystemRoll : null,
     flags: { battle: battle.data.id, ...(turn?.key ? { turn: turn.key } : {}) }
   });
 }

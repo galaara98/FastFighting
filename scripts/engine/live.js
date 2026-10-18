@@ -605,6 +605,10 @@ export const rollsKind = (live, kind) => Array.isArray(live?.systemRolls) && liv
  *   strike {unitId, targetId, action: {id, name}, attackNumber}  -> {attack: {degree, natural, total}, damage: {byType} | null, card}
  *   apply  {unitId, targetId, card, amount}  -> {lost}: a strike's damage card (`card`) applied the system's way, and
  *          what the target lost by it (its hit points and temporary hit points)
+ *   card   {unitId, targetId, action: {id, name}, table: [rolls]}  -> {card}: damage the engine rolled itself, shown as
+ *          the system's own damage card (API 20: the helper's showTableRoll), the last of `table`, the table rolls still
+ *          waiting before it shown first; `card` its message id (null: none), then applied as `apply`. Answered at
+ *          all, every roll in `table` is marked shown (simulator.js engineCard)
  *   use    {unitId, targetId, action: {id, name}}  -> {card}: the action's own card, as its user shows it (a spell's)
  *   damage {unitId, targetId, card, action: {id, name}}  -> {damage: {byType}, card}: the damage of one that isn't an
  *          attack (a save's, an auto's), rolled once for all it catches; each target's share then applied as `apply`,

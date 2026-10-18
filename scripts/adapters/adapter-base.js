@@ -513,6 +513,24 @@ export class SystemAdapter {
   }
 
   /**
+   * API 20. A table roll the engine made with its own dice in a live battle (engine/table-rolls.js: `roll`, {by, target,
+   * kind, label, what, action, stat, source, mod, total, dc, natural, degree, dice, groups, multiplier, crit}), shown as
+   * the system's own card: its check card for an attack, a save, a check or a flat check (the target, the DC, the
+   * outcome, the engine's die and modifier), its damage card for damage and healing (`rolledParts(roll)`, core-api: each
+   * part's type and dice as they fell), and so on. Styling only: the engine's result stands, its dice exactly, and
+   * nothing the system does with the card may change it. `token`: the roller's TokenDocument (null: no one's); `target`:
+   * the one it was at, or null; `audience`: "public" or "gm" (the GMs only: table-rolls.js rollAudience); `flavor`: the
+   * core's words for it, no DC; `flags`: FastFighting's own, to put on every message it makes (so it's never read as a
+   * player's card, and Rewind finds it); `scene`. A damage card made here may be applied with applyDamageCard (in a turn
+   * FastFighting plays, damage the engine rolled: the "card" roll then "apply"), so mark it as one the system's own
+   * buttons mustn't apply again. Returns its messages' ids, a damage roll's damage card first; or null, for the core's
+   * plain roll. Optional: without it, every table roll is a plain Foundry Roll.
+   */
+  showTableRoll(roll, { token = null, target = null, audience = "public", flavor = "", flags = {}, scene = null } = {}) {
+    return null;
+  }
+
+  /**
    * API 19. An area laid on the map in a live battle, as the system lays its own: `data` is the shape FastFighting made
    * (Foundry's region shape data: {type: "cone"|"line"|"circle", x, y, radius|length, angle, width, rotation}, in
    * pixels), `area` the action's ({shape, feet}). Return it as the system draws that area (PF2e: a cone is a quarter

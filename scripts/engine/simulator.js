@@ -7,7 +7,7 @@
 import { STATUS, TACTICAL, DOWNED_MODELS, AFTERMATH, EXECUTE_LUCK, NEUTRAL_PARTY, OPENING, clamp } from "../constants.js";
 import { createRng, deriveSeed, randomSeed } from "./rng.js";
 import { sampleDamage, samplePart, meanPart, part, addTo } from "./dice.js";
-import { diceAt, tableRoll, recordingRng, rollsWaiting, markRerolled } from "./table-rolls.js";
+import { diceAt, tableRoll, recordingRng, rollsWaiting, markRerolled, pendingRolls, markShown } from "./table-rolls.js";
 import { rollCheck, regrade } from "./probability.js";
 import { costOf, mainPool } from "./turn.js";
 import {
@@ -104,7 +104,7 @@ const damageTypesOf = action => [...new Set((action.damage ?? []).map(p => p.typ
 const logger = run => (run.logTo ??= (unit, data) => log(run, unit, data));
 
 /** What an aura's save needs of the simulation (behavior/auras.js). */
-const AURA_PLAY = Object.freeze({ rollSave, rollHit, landOutcome, testConcentration, log });
+const AURA_PLAY = Object.freeze({ rollSave, rollHit, appliedLive, landOutcome, testConcentration, log });
 
 /**
  * How much rides on a save (for burning Luck on one that falls short): a blow that would drop the saver, or a hold
@@ -134,7 +134,10 @@ function rollSave(run, target, type, dc, { stakes = 0.3, label = "", magical = f
   // (A live battle's, the system's own roll where it makes saves: systemRolled. Its card says how it went; no Luck or
   // momentum after it.)
   const rolled = systemRolled(run, target, "save", { dc, from, save: type, action, label });
-  let roll = rollCheck(rules, run.rng, s.mod, dc, { advantage: s.advantage, dice: s.dice, kind: "save", roller: target, rolled, label: label || action?.name || "", target: from });
+  let roll = rollCheck(rules, run.rng, s.mod, dc, {
+    advantage: s.advantage, dice: s.dice, kind: "save", roller: target, rolled, label: label || action?.name || "", target: from,
+    actionId: action?.id ?? null, stat: typeof type === "string" ? type : null
+  });
   spendEdges(target, "save");
   if ( run.boosting && roll.degree < 2 && !rolled ) roll = boost(run, target, roll, dc, { kind: "save", stakes }, logger(run));
   roll = standFirm(run, target, roll, dc, stakes, label);
@@ -760,8 +763,8 @@ function applyAfflictionStage(run, target, affliction) {
   if ( !stage?.damage?.length ) return;
   const at = diceAt(run);
   const rolled = sampleDamage(stage.damage, run.rng);
-  if ( at >= 0 ) tableRoll(run, at, { by: target, kind: "damage", label: affliction.spec.name ?? "", what: "affliction", parts: stage.damage });
-  const amount = run.prep.rules.applyIwr(iwrOf(target), rolled.byType, target);
+  const shown = at >= 0 ? tableRoll(run, at, { by: target, target, kind: "damage", label: affliction.spec.name ?? "", what: "affliction", parts: stage.damage }) : null;
+  const amount = landsRolled(run, null, target, shown, run.prep.rules.applyIwr(iwrOf(target), rolled.byType, target));
   log(run, target, {
     type: "afflictionStage", name: affliction.spec.name, stage: affliction.stage, amount, damageType: stage.damage[0]?.type ?? "poison"
   });
@@ -861,11 +864,12 @@ function saveRider(run, u, action, target, effect) {
   const { roll, mod } = rollSave(run, target, effect.save.type, effect.save.dc, { stakes: saveStakes(target, harmful, !!effect.conditions), label: effect.label || action.name, magical: isMagical(action), from: u, action });
   const mult = effect.damage?.length ? saveMultiplier(rules, roll.degree, effect.save) : 0;
   const hit = mult > 0 ? rollHit(run, u, action, target, effect.damage, mult, false) : null;
+  const dealt = hit ? appliedLive(run, u, target, hit, hit.total, mult) : 0;
   log(run, target, {
     type: "riderSave", name: effect.label || action.name, by: u.spec.name, saveType: effect.save.type, natural: roll.natural, mod, total: roll.total,
-    dc: effect.save.dc, degree: roll.degree, damage: hit?.total ?? 0, controls: !!effect.conditions
+    dc: effect.save.dc, degree: roll.degree, damage: dealt, controls: !!effect.conditions
   });
-  hit?.apply();
+  hit?.apply(dealt);
   // (Failed: what it lays, and a push or a grab it carries: Thunderwave's.)
   if ( roll.degree > 1 || !(effect.conditions || effect.move || effect.grab) || !isUp(target) || tooBig(target, effect) ) return;
   if ( effect.conditions && isImmune(run, target, { traits: action.traits, onSave: [effect] }) ) return;
@@ -948,10 +952,11 @@ function backlash(run, u, target, action, degree, logging) {
   const who = cost?.to && isUp(cost.to) ? cost.to : u;
   if ( !cost?.damage?.length || !isUp(who) || target.status === STATUS.DEAD ) return;
   const hit = rollHit(run, target, { name: cost.label ?? "", damage: cost.damage }, who, cost.damage, 1, false);
+  const dealt = appliedLive(run, target, who, hit, hit.total, 1);
   if ( logging ) log(run, who, {
-    type: "backlash", label: cost.label ?? "", by: target.spec.name, byId: target.id, damage: hit.total, damageType: cost.damage[0]?.type ?? "untyped"
+    type: "backlash", label: cost.label ?? "", by: target.spec.name, byId: target.id, damage: dealt, damageType: cost.damage[0]?.type ?? "untyped"
   });
-  hit.apply();
+  hit.apply(dealt);
 }
 
 /**
@@ -962,10 +967,11 @@ function retort(run, saver, by, action, degree, logging) {
   const back = run.prep.rules.retort?.(run, saver, by, action, degree);
   if ( !back?.damage?.length || !isUp(saver) || !isUp(by) ) return;
   const hit = rollHit(run, saver, { name: back.label ?? "", damage: back.damage }, by, back.damage, 1, degree === 3);
+  const dealt = appliedLive(run, saver, by, hit, hit.total, 1);
   if ( logging ) log(run, saver, {
-    type: "attack", action: back.label ?? "", target: by.spec.name, targetId: by.id, damage: hit.total, degree, retort: true, damageType: back.damage[0]?.type ?? "untyped"
+    type: "attack", action: back.label ?? "", target: by.spec.name, targetId: by.id, damage: dealt, degree, retort: true, damageType: back.damage[0]?.type ?? "untyped"
   });
-  hit.apply();
+  hit.apply(dealt);
 }
 
 /** Roll damage for a hit; returns the total and a function that applies it (so the log reads in order). */
@@ -988,19 +994,53 @@ function liveDamageOf(run, action, mult = 1) {
 }
 
 /**
- * A live battle's damage the system rolled (`sys`), applied its way to `target` (engine/live.js systemRoll "apply",
- * times `mult`): what the target lost by it; else `amount`, the engine's sum.
+ * A live battle's damage card (`sys.card`: the system's own roll's, or the engine's dice shown as the system's card,
+ * a hit's `card`), applied its way to `target` (engine/live.js systemRoll "apply", times `mult`): what the target lost
+ * by it; else `amount`, the engine's sum.
  */
 function appliedLive(run, u, target, sys, amount, mult) {
   if ( !sys?.card ) return amount;
-  const applied = run.live?.roll?.(run, { kind: "apply", unitId: u.id, targetId: target.id, card: sys.card, amount, multiplier: mult, applies: null });
+  const applied = run.live?.roll?.(run, { kind: "apply", unitId: (u ?? target).id, targetId: target.id, card: sys.card, amount, multiplier: mult, applies: null });
   return Number.isFinite(applied?.lost) ? Math.max(0, applied.lost) : amount;
 }
 
-/** A blow's damage the engine rolled, shown (a live battle's table roll: engine/table-rolls.js); healing, as healing. */
+/**
+ * Damage the engine rolled itself in a turn a live battle plays (its table roll, `record`), shown as the system's own
+ * damage card where its helper shows table rolls (engine/live.js systemRoll "card", API 20): the rolls waiting before it
+ * shown first, so the chat reads in order, all of them marked shown (never posted again). The card's message id, for
+ * the system to apply it its own way ("apply"); null for none (the engine's sum, written with the turn's changes).
+ * The dice are the engine's either way: nothing here rolls.
+ */
+function engineCard(run, record) {
+  if ( !record || record.kind !== "damage" || !run.live?.playing ) return null;
+  const table = pendingRolls(run);
+  const answer = run.live.roll?.(run, {
+    kind: "card", unitId: record.by, targetId: record.target, action: { id: record.action ?? "", name: record.label ?? "" }, table
+  });
+  if ( !answer ) return null;
+  markShown(table);
+  const card = typeof answer.card === "string" && answer.card ? answer.card : null;
+  if ( card ) record.card = card;
+  return card;
+}
+
+/**
+ * Damage the engine rolled itself (its table roll, `record`) dealt to t by `by` in a live battle: the system's card of
+ * it, applied the system's way (engineCard, appliedLive), and what t lost by it; else `amount`, the engine's sum.
+ */
+function landsRolled(run, by, t, record, amount) {
+  const card = engineCard(run, record);
+  return card ? appliedLive(run, by ?? t, t, { card }, amount, 1) : amount;
+}
+
+/**
+ * A blow's damage the engine rolled, shown (a live battle's table roll: engine/table-rolls.js); healing, as healing.
+ * Its action's id, and whether it was an attack's or a save's, for the system's own card. The roll recorded, or null.
+ */
 function shownDamage(run, at, u, t, action, parts, multiplier, crit) {
   const kind = parts.length && parts.every(p => p.type === "healing") ? "healing" : "damage";
-  tableRoll(run, at, { by: u, target: t, kind, label: action.name ?? "", parts, multiplier, crit });
+  const source = action.kind === "strike" || (action.kind === "control" && action.check?.attack) ? "attack" : action.save ? "save" : null;
+  return tableRoll(run, at, { by: u, target: t, kind, label: action.name ?? "", action: typeof action.id === "string" ? action.id : null, source, parts, multiplier, crit });
 }
 
 function rollHit(run, u, action, t, parts, multiplier, crit, minimum = 0, forced = null) {
@@ -1012,7 +1052,7 @@ function rollHit(run, u, action, t, parts, multiplier, crit, minimum = 0, forced
   // by a save, `multiplier`, said with it. engine/table-rolls.js; nothing where nothing records.)
   let at = forcedBy ? -1 : diceAt(run);
   const rolled = forcedBy ? { byType: { ...forcedBy }, persistent: [], direct: !!forced.direct, byCategory: {} } : sampleDamage(parts, run.rng, multiplier);
-  if ( at >= 0 ) shownDamage(run, at, u, t, action, parts, multiplier, crit);
+  const record = at >= 0 ? shownDamage(run, at, u, t, action, parts, multiplier, crit) : null;
   // Rolled several times over (DCC magic missiles: so many missiles of so much each).
   if ( action.repeat && !forcedBy ) {
     at = diceAt(run);
@@ -1036,11 +1076,15 @@ function rollHit(run, u, action, t, parts, multiplier, crit, minimum = 0, forced
   // a critical hit; how much of it is precision or splash. evaluate.js iwrContext.)
   const ctx = iwrContext(action, { crit, byCategory: rolled.byCategory, direct: rolled.direct });
   const total = rules.applyIwr(iwrOf(t), rolled.byType, t, ctx);
+  // (A live battle's: the engine's own dice shown as the system's damage card, for the system to apply: engineCard. Not
+  // a blow rolled several times over, its rolls several cards.)
+  const card = forced?.card ?? (record && !action.repeat ? engineCard(run, record) : null);
   return {
     total,
     byType: rolled.byType, // (as rolled, before anyone's resistances)
     ctx, // (what else applyIwr heard, for another who takes the blow instead)
     types: Object.keys(rolled.byType),
+    card, // (its damage card in a live battle, the system's or the engine's dice shown as one: appliedLive applies it)
     apply: (amount = total) => {
       for ( const p of rolled.persistent ) {
         if ( !t.spec.iwr?.immune?.includes(p.type) ) t.persistent.push({ part: p, sourceId: u.id });
@@ -1248,7 +1292,7 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
       const extra = bonusDamageParts(run, u, action, target, { commit: true });
       const sys = liveDamageOf(run, action);
       const hit = rollHit(run, u, action, target, (action.damage ?? []).concat(extra), 1, false, 0, sys);
-      const amount = appliedLive(run, u, target, sys, hit.total, 1);
+      const amount = appliedLive(run, u, target, hit, hit.total, 1);
       if ( logging ) log(run, u, { type: "auto", ...common, damage: amount });
       answerHarm(run, target, u, action, hit.apply(amount));
       return;
@@ -1269,7 +1313,7 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
         // way, and what it lost by it.)
         const sys = liveDamageOf(run, action, mult);
         const hit = rollHit(run, u, action, target, (action.damage ?? []).concat(extra), mult, roll.degree === 0, 0, sys);
-        const amount = appliedLive(run, u, target, sys, hit.total, mult);
+        const amount = appliedLive(run, u, target, hit, hit.total, mult);
         if ( logging ) log(run, u, { ...data, damage: amount });
         const dealt = hit.apply(amount);
         if ( roll.degree <= 1 ) applyEffects(run, u, action, target, 3 - roll.degree, { saveDegree: roll.degree, dealt });
@@ -1340,7 +1384,7 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
         action: { id: action.id, name: action.name, ranged: !!ranged, thrown: !!action.thrown && !!ranged }
       })
       ?? null;
-    let roll = rollCheck(rules, run.rng, bonus + deedRoll + lift, ac, { ...opts, rolled: forced?.attack ?? null, by: u, label: action.name, target });
+    let roll = rollCheck(rules, run.rng, bonus + deedRoll + lift, ac, { ...opts, rolled: forced?.attack ?? null, by: u, label: action.name, target, actionId: action.id });
     spendEdges(u, "attack", target.id);
     // (Spent by this attack: a mark on its defense; off-guard to this attacker for its next melee attack, PF2e's Feint.)
     spendEdges(target, "defend", u.id, { melee: !!action.melee });
@@ -1442,10 +1486,13 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
       const ownByItself = !(answer?.halve || answer?.reduce) || !!answer?.applies;
       const friendByItself = !guard?.r.reduce || !!guard?.r.applies;
       const asRolled = !lessened || (ownByItself && friendByItself);
-      if ( forced?.card && asRolled && intercepted === null && !action.finish ) {
+      // (The system's own roll's card; or, where the system left the strike to the engine (PF2e's Strike refused it),
+      // the engine's dice shown as the system's card: rollHit's.)
+      const card = forced?.card ?? hit.card ?? null;
+      if ( card && asRolled && intercepted === null && !action.finish ) {
         const applies = [answer?.applies ? { key: answer.applies } : null, guard?.r.reduce && guard.r.applies ? { key: guard.r.applies, by: guard.g.id } : null].filter(Boolean);
         const was = amount;
-        const applied = run.live?.roll?.(run, { kind: "apply", unitId: u.id, targetId: target.id, card: forced.card, amount, applies: applies.length ? applies : null });
+        const applied = run.live?.roll?.(run, { kind: "apply", unitId: u.id, targetId: target.id, card, amount, applies: applies.length ? applies : null });
         if ( Number.isFinite(applied?.lost) ) {
           amount = Math.max(0, applied.lost);
           // (What the friend's reaction took off, as the system's application came out: all the blow lost but this.)
@@ -1521,8 +1568,9 @@ function strayShot(run, u, action, friend, logging) {
     return;
   }
   const hit = rollHit(run, u, action, friend, action.damage ?? [], 1, false, rules.minimumDamage ?? 0);
-  if ( logging ) log(run, u, { type: "stray", action: action.name, target: friend.spec.name, targetId: friend.id, natural: roll.natural, total: roll.total, dc: ac, hit: true, damage: hit.total });
-  hit.apply();
+  const dealt = appliedLive(run, u, friend, hit, hit.total, 1);
+  if ( logging ) log(run, u, { type: "stray", action: action.name, target: friend.spec.name, targetId: friend.id, natural: roll.natural, total: roll.total, dc: ac, hit: true, damage: dealt });
+  hit.apply(dealt);
 }
 
 /**
@@ -1678,8 +1726,8 @@ function applyFumble(run, u) {
   if ( row.damage?.length ) {
     const at = diceAt(run);
     const rolled = sampleDamage(row.damage, run.rng);
-    if ( at >= 0 ) tableRoll(run, at, { by: u, target: u, kind: "damage", what: "fumble", parts: row.damage });
-    const amount = run.prep.rules.applyIwr(iwrOf(u), rolled.byType, u);
+    const shown = at >= 0 ? tableRoll(run, at, { by: u, target: u, kind: "damage", what: "fumble", parts: row.damage }) : null;
+    const amount = landsRolled(run, u, u, shown, run.prep.rules.applyIwr(iwrOf(u), rolled.byType, u));
     if ( amount > 0 ) dealDamage(run, null, u, amount);
   }
   if ( row.outcome && isUp(u) ) applyOutcome(u, row.outcome, u.id, { id: `fumble:${u.id}`, name: row.outcome.label ?? localize("FASTFIGHTING.Effect.fumble") });
@@ -1901,8 +1949,7 @@ function landOutcome(run, u, target, outcome, action, { damage: harms = true } =
   if ( effect && holderOf(run, on) ) carryInside(run);
   if ( !harms || !outcome.damage?.length || !isUp(on) ) return 0;
   const hit = rollHit(run, u, action ?? { id: "outcome", damage: outcome.damage }, on, outcome.damage, 1, false);
-  hit.apply();
-  return hit.total;
+  return hit.apply(appliedLive(run, u, on, hit, hit.total, 1));
 }
 
 /**
@@ -1952,8 +1999,8 @@ function forceMove(run, u, t, move) {
     const fall = fallDamage(run, path.fall, t);
     const at = diceAt(run);
     const rolled = sampleDamage(fall, run.rng, 1);
-    if ( at >= 0 ) tableRoll(run, at, { by: t, target: t, kind: "damage", what: "fall", parts: fall });
-    const amount = rules.applyIwr(iwrOf(t), rolled.byType, t, { direct: rolled.direct });
+    const shown = at >= 0 ? tableRoll(run, at, { by: t, target: t, kind: "damage", what: "fall", parts: fall }) : null;
+    const amount = landsRolled(run, u, t, shown, rules.applyIwr(iwrOf(t), rolled.byType, t, { direct: rolled.direct }));
     log(run, t, { type: "fall", feet: path.fall, amount });
     dealDamage(run, u, t, amount, { types: Object.keys(rolled.byType) });
     const prone = typeof rules.fallProne === "function" ? rules.fallProne(t, amount) : rules.fallProne !== false;
@@ -1965,8 +2012,8 @@ function forceMove(run, u, t, move) {
     if ( parts.length ) {
       const at = diceAt(run);
       const rolled = sampleDamage(parts, run.rng, 1);
-      if ( at >= 0 ) tableRoll(run, at, { by: t, target: t, kind: "damage", what: "collision", parts });
-      const amount = rules.applyIwr(iwrOf(t), rolled.byType, t, { direct: rolled.direct });
+      const shown = at >= 0 ? tableRoll(run, at, { by: t, target: t, kind: "damage", what: "collision", parts }) : null;
+      const amount = landsRolled(run, u, t, shown, rules.applyIwr(iwrOf(t), rolled.byType, t, { direct: rolled.direct }));
       log(run, t, { type: "collision", amount, into: path.into?.spec?.name ?? null });
       dealDamage(run, u, t, amount, { types: Object.keys(rolled.byType) });
     }
@@ -1974,8 +2021,8 @@ function forceMove(run, u, t, move) {
   if ( path.cell?.harm?.length && isUp(t) ) {
     const at = diceAt(run);
     const rolled = sampleDamage(path.cell.harm, run.rng, 1);
-    if ( at >= 0 ) tableRoll(run, at, { by: t, target: t, kind: "damage", what: "ground", parts: path.cell.harm });
-    const amount = rules.applyIwr(iwrOf(t), rolled.byType, t);
+    const shown = at >= 0 ? tableRoll(run, at, { by: t, target: t, kind: "damage", what: "ground", parts: path.cell.harm }) : null;
+    const amount = landsRolled(run, u, t, shown, rules.applyIwr(iwrOf(t), rolled.byType, t));
     log(run, t, { type: "groundHarm", amount, damageTypes: Object.keys(rolled.byType) });
     dealDamage(run, u, t, amount, { types: Object.keys(rolled.byType), lingering: true });
   }
@@ -2055,8 +2102,9 @@ function executeControl(run, u, action, target, attacksMade, common) {
       // (An attack's critical hit is a critical's damage, unless the action says otherwise.)
       const crit = degree === 3 && r.kind === "attack" && action.critDamage !== false;
       const hit = rollHit(run, u, action, target, action.damage, mult, crit);
-      damage += hit.total;
-      hit.apply();
+      const dealt = appliedLive(run, u, target, hit, hit.total, mult);
+      damage += dealt;
+      hit.apply(dealt);
     }
   }
   if ( logging ) {
@@ -3776,8 +3824,8 @@ function conditionHarm(run, u, key, v, p) {
   if ( !parts.length ) return;
   const at = diceAt(run);
   const rolled = sampleDamage(parts, run.rng);
-  if ( at >= 0 ) tableRoll(run, at, { by: u, target: u, kind: "damage", what: "persistent", parts });
-  const amount = rules.applyIwr(iwrOf(u), rolled.byType, u);
+  const shown = at >= 0 ? tableRoll(run, at, { by: u, target: u, kind: "damage", what: "persistent", parts }) : null;
+  const amount = landsRolled(run, by, u, shown, rules.applyIwr(iwrOf(u), rolled.byType, u));
   const types = Object.keys(rolled.byType);
   if ( run.log ) log(run, u, { type: "persistent", damageType: types[0] ?? p.harm[1], amount, condition: key });
   dealDamage(run, by, u, amount, { types, lingering: true });
@@ -3828,8 +3876,9 @@ export function endOfTurn(run, u) {
     const remaining = [];
     for ( const entry of u.persistent ) {
       const at = diceAt(run);
-      const amount = rules.applyIwr(iwrOf(u), { [entry.part.type]: Math.max(0, samplePart(entry.part, run.rng)) });
-      if ( at >= 0 ) tableRoll(run, at, { by: u, target: u, kind: "damage", what: "persistent", parts: [{ ...entry.part, persistent: false }] });
+      const own = rules.applyIwr(iwrOf(u), { [entry.part.type]: Math.max(0, samplePart(entry.part, run.rng)) });
+      const shown = at >= 0 ? tableRoll(run, at, { by: u, target: u, kind: "damage", what: "persistent", parts: [{ ...entry.part, persistent: false }] }) : null;
+      const amount = landsRolled(run, run.byId.get(entry.sourceId) ?? u, u, shown, own);
       if ( run.log ) log(run, u, { type: "persistent", damageType: entry.part.type, amount });
       dealDamage(run, run.byId.get(entry.sourceId), u, amount, { types: [entry.part.type], lingering: true });
       if ( !persistentEnds(run, u, entry.part.type) ) remaining.push(entry);

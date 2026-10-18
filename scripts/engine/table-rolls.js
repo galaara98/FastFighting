@@ -18,12 +18,20 @@
  * A helper's rules hear only the rng (rules.recoveryCheck(unit, rng)): `rng.mark?.()` and `rng.record?.(at, roll)` do
  * the same, and nothing where nothing records (an older core, a simulation).
  *
- * A roll: {by, target, kind, label, what, mod, total, dc, natural, degree, dice: [{faces, result}], groups, rolls,
- * multiplier, crit}. `by` and `target` are creature ids. `kind`: attack, save, check, flat, damage, healing, recharge or
- * other. `label`: what it was for, in words the fight already has (an action's name, a helper's words); else `what`,
- * a key the Foundry side words (FASTFIGHTING.Rolls.What). `groups` say how its dice read as a formula (shapeOf: from
- * the `parts`, `extras`, `split`, `keep` or `each` it's recorded with), `rolls` each of its rolls' modifier and total
- * where it shows as several.
+ * A roll: {by, target, kind, label, what, action, stat, source, mod, total, dc, natural, degree, dice: [{faces, result}],
+ * groups, rolls, multiplier, crit}. `by` and `target` are creature ids. `kind`: attack, save, check, flat, damage,
+ * healing, recharge or other. `label`: what it was for, in words the fight already has (an action's name, a helper's
+ * words); else `what`, a key the Foundry side words (FASTFIGHTING.Rolls.What). `action`: the id of the action it was
+ * for, where there is one (a helper's own id: its item, for the system's card); `stat`: a save's key (the rules' own:
+ * "reflex"); `source`: what a damage roll's blow was, "attack" or "save", where it says. `groups` say how its dice read
+ * as a formula (shapeOf: from the `parts`, `extras`, `split`, `keep` or `each` it's recorded with; a damage part's
+ * groups say its `type`, `category` and which `part` they are), `rolls` each of its rolls' modifier and total where it
+ * shows as several.
+ *
+ * Shown by the system (API 20): a live battle may show a roll as its system's own card (the helper's showTableRoll),
+ * and a damage roll the engine deals in a turn it plays as the system's damage card, applied the system's way
+ * (simulator.js engineCard: engine/live.js systemRoll "card"). Those, and every roll still waiting before it, are marked
+ * `shown` (markShown; a damage card's id as `card`) and never posted again.
  * Pure: no Foundry globals.
  */
 import { MAX_DICE } from "./dice.js";
@@ -70,6 +78,14 @@ export function takeRolls(run) {
 /** How many table rolls are waiting to be taken (where a fate's reroll begins: markRerolled). */
 export const rollsWaiting = run => run?.rng?.tray?.rolls.length ?? 0;
 
+/** The table rolls recorded and not yet shown (where a roll the system shows now begins: simulator.js engineCard). */
+export const pendingRolls = run => (run?.rng?.tray?.rolls ?? []).filter(r => !r.shown);
+
+/** Rolls the system has shown already (its own cards): never posted again. */
+export function markShown(rolls) {
+  for ( const r of rolls ?? [] ) r.shown = true;
+}
+
 /** The rolls since `from` were taken back by a reroll (fate, a Hero Point): still shown, as rerolled. */
 export function markRerolled(run, from) {
   for ( const r of run?.rng?.tray?.rolls.slice(from) ?? [] ) r.rerolled = true;
@@ -97,6 +113,8 @@ function claim(tray, at, roll = {}) {
     mod: finite(roll.mod) ?? 0, total: finite(roll.total), dc: finite(roll.dc), natural: finite(roll.natural), degree: finite(roll.degree),
     dice
   };
+  // (What it was for, where the caller says: the action's id, a save's key, an attack's or a save's blow.)
+  for ( const key of ["action", "stat", "source"] ) if ( typeof roll[key] === "string" && roll[key] ) out[key] = roll[key];
   const shape = shapeOf(dice, roll);
   out.groups = shape.groups;
   if ( out.total === null ) out.total = shape.total ?? totalOf(out.groups, 0, out.mod);
@@ -183,30 +201,50 @@ function runsOf(dice) {
 
 /**
  * Damage parts' dice, as dice.js rolls them (each part's dice in order, a persistent part's not at all; at most
- * MAX_DICE of a kind): a group for each, and a group of no dice for a part's flat (so the formula has it). Null when the
+ * MAX_DICE of a kind): a group for each, and a group of no dice for a part's flat (so the formula has it), each saying
+ * its part's `type`, `category` and which `part` it is (for a system's own damage card: rolledParts). Null when the
  * dice rolled don't match the parts (rolled some other way): plain runs then.
  */
 function partGroups(dice, parts) {
   const groups = [];
   let i = 0;
   let total = 0;
+  let n = 0;
   for ( const p of parts ) {
     if ( !p || p.persistent ) continue;
     const own = [];
-    for ( const { n, faces, mult = 1 } of p.dice ?? [] ) {
-      const count = Math.min(Math.abs(n), MAX_DICE);
+    const of = { type: typeof p.type === "string" ? p.type : "untyped", category: p.category ?? null, part: n++ };
+    for ( const { n: count0, faces, mult = 1 } of p.dice ?? [] ) {
+      const count = Math.min(Math.abs(count0), MAX_DICE);
       if ( !count ) continue;
       const rolled = dice.slice(i, i + count);
       if ( rolled.length !== count || rolled.some(d => d.faces !== faces) ) return null;
-      own.push({ faces, results: rolled.map(d => d.result), sign: n < 0 ? -1 : 1, mult, keep: null, roll: 0 });
+      own.push({ faces, results: rolled.map(d => d.result), sign: count0 < 0 ? -1 : 1, mult, keep: null, roll: 0, ...of });
       i += count;
     }
-    if ( p.flat ) own.push({ faces: 0, results: [], flat: p.flat, sign: 1, mult: 1, keep: null, roll: 0 });
+    if ( p.flat ) own.push({ faces: 0, results: [], flat: p.flat, sign: 1, mult: 1, keep: null, roll: 0, ...of });
     groups.push(...own);
     // (Each part as dice.js samples it: rounded down, and none below 0.)
     total += Math.max(0, Math.floor(own.reduce((s, g) => s + groupValue(g), 0)));
   }
   return i === dice.length ? { groups, total } : null;
+}
+
+/**
+ * A damage roll's parts as they were rolled, for a system's own damage card (API 20): [{type, category, dice: [{faces,
+ * results, sign, mult}], flat}], in the order rolled (a part's dice in order, its flat after them). Empty for a roll
+ * whose dice weren't recorded by part (not a damage roll's, or rolled some other way).
+ */
+export function rolledParts(roll) {
+  const out = [];
+  for ( const g of roll?.groups ?? [] ) {
+    if ( !Number.isInteger(g.part) ) return [];
+    let p = out[g.part];
+    if ( !p ) p = out[g.part] = { type: g.type ?? "untyped", category: g.category ?? null, dice: [], flat: 0 };
+    if ( g.faces ) p.dice.push({ faces: g.faces, results: [...g.results], sign: g.sign ?? 1, mult: g.mult ?? 1 });
+    else p.flat += Number(g.flat) || 0;
+  }
+  return out.filter(Boolean);
 }
 
 /** A group's value: its dice (the one kept, where it keeps one), signed, times its multiplier; a flat its number. */
