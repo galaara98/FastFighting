@@ -1,0 +1,64 @@
+<div class="ff-live-data-body">
+  <p class="hint">{{localize "FASTFIGHTING.LiveData.Hint"}}</p>
+  <p>{{total}}</p>
+
+  <h3>{{localize "FASTFIGHTING.LiveData.Transcripts"}}</h3>
+  {{#if transcripts.length}}
+  <table class="ff-table">
+    <thead>
+      <tr>
+        <th>{{localize "FASTFIGHTING.LiveData.Col.Name"}}</th>
+        <th>{{localize "FASTFIGHTING.LiveData.Col.Combat"}}</th>
+        <th>{{localize "FASTFIGHTING.LiveData.Col.State"}}</th>
+        <th>{{localize "FASTFIGHTING.LiveData.Col.Kept"}}</th>
+        <th>{{localize "FASTFIGHTING.LiveData.Col.Size"}}</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {{#each transcripts}}
+      <tr>
+        <td>{{name}}</td>
+        <td>{{combat}}</td>
+        <td>{{state}}</td>
+        <td>{{kept}}</td>
+        <td class="ff-live-size">{{size}}</td>
+        <td><button type="button" class="ff-live-export" data-action="exportOne" data-id="{{id}}" data-tooltip="{{localize "FASTFIGHTING.LiveData.ExportOne"}}" aria-label="{{localize "FASTFIGHTING.LiveData.ExportOne"}}"><i class="fa-solid fa-file-export" inert></i></button></td>
+      </tr>
+      {{/each}}
+    </tbody>
+  </table>
+  {{else}}
+  <p class="hint">{{localize "FASTFIGHTING.LiveData.NoTranscripts"}}</p>
+  {{/if}}
+
+  {{#if others.length}}
+  <h3>{{localize "FASTFIGHTING.LiveData.Others"}}</h3>
+  <table class="ff-table">
+    <thead>
+      <tr>
+        <th>{{localize "FASTFIGHTING.LiveData.Col.Name"}}</th>
+        <th>{{localize "FASTFIGHTING.LiveData.Col.Owner"}}</th>
+        <th>{{localize "FASTFIGHTING.LiveData.Col.Created"}}</th>
+        <th>{{localize "FASTFIGHTING.LiveData.Col.Modified"}}</th>
+        <th>{{localize "FASTFIGHTING.LiveData.Col.Why"}}</th>
+        <th>{{localize "FASTFIGHTING.LiveData.Col.Size"}}</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {{#each others}}
+      <tr>
+        <td>{{name}}</td>
+        <td>{{owner}}</td>
+        <td>{{created}}</td>
+        <td>{{modified}}</td>
+        <td>{{why}}</td>
+        <td class="ff-live-size">{{size}}</td>
+        <td><button type="button" class="ff-live-export" data-action="exportOne" data-id="{{id}}" data-tooltip="{{localize "FASTFIGHTING.LiveData.ExportOne"}}" aria-label="{{localize "FASTFIGHTING.LiveData.ExportOne"}}"><i class="fa-solid fa-file-export" inert></i></button></td>
+      </tr>
+      {{/each}}
+    </tbody>
+  </table>
+  {{/if}}
+</div>

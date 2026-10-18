@@ -9,6 +9,7 @@ import { DefaultsConfig } from "./apps/defaults-config.js";
 import { GenericAdapter } from "./adapters/generic/index.js";
 import { GenericPathsConfig } from "./apps/generic-paths-config.js";
 import { StoryTablesConfig } from "./apps/story-tables-config.js";
+import { LiveDataConfig } from "./apps/live-data.js";
 import { invalidateStoryTables, installStoryTables } from "./story/tables.js";
 import { PlayerSurvey } from "./apps/player-survey.js";
 import { registerTokenTactics, syncTokenTactics } from "./apps/token-tactics.js";
@@ -26,7 +27,7 @@ import { registerSheetWatch } from "./foundry/sheet-watch.js";
 import { BattleVantage, registerBattleVantage } from "./apps/battle-vantage.js";
 
 Hooks.once("init", () => {
-  registerSettings(DefaultsConfig, GenericPathsConfig, StoryTablesConfig);
+  registerSettings(DefaultsConfig, GenericPathsConfig, StoryTablesConfig, LiveDataConfig);
   registerLiveBattles();
   registerBattleVantage();
   registerGroundField();
@@ -391,7 +392,8 @@ Hooks.on("renderSettingsConfig", (app, element) => {
   section.insertAdjacentHTML("afterbegin", helperNoticeHtml(status));
   if ( status.generic ) return; // the GM opted into the generic adapter: everything stays usable
   for ( const el of section.querySelectorAll("input, select, textarea, button, file-picker, range-picker") ) {
-    if ( el.name === `${MODULE_ID}.genericFallback` || el.closest(".ff-helper-notice") ) continue;
+    // (Live battles' journals, from before the helper went: still the GM's to export and clean up.)
+    if ( el.name === `${MODULE_ID}.genericFallback` || el.dataset?.key === `${MODULE_ID}.liveDataMenu` || el.closest(".ff-helper-notice") ) continue;
     el.disabled = true;
     el.closest(".form-group")?.classList.add("ff-disabled");
   }

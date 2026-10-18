@@ -13,8 +13,9 @@
  *     for the GMs.
  *   - Rewind Turn puts the last turn back (last first): what it wrote, its cards, its moves, and the run as it was.
  *     Rewind This Encounter puts every turn back.
- * The run lives in the GM's browser while the battle goes; after every turn it's kept (snapshot, turns) on a journal
- * entry only GMs can see, the combat holding only that a battle is live. A reload picks it up again.
+ * The run lives in the GM's browser while the battle goes; after every turn it's kept (snapshot, turns) on its
+ * transcript, a journal entry only GMs can see (live-journals.js), the combat holding only that a battle is live. A
+ * reload picks it up again.
  */
 import { MODULE_ID, STATUS, SIDES, DISPOSITION_SIDES, NEUTRAL_PARTY, HOSTILE_GROUPS } from "../constants.js";
 import { escapeHtml as escape, inertHtml } from "../i18n.js";
@@ -39,7 +40,8 @@ import {
 import { postRolls, postTally, tallyOf, audiencesFor } from "./table-rolls.js";
 import { diffAll, sideAfter } from "../engine/changes.js";
 import { undoRecord } from "./sheet-tools.js";
-import { keepUpdate, keptBattle, forgetUpdate } from "./live-keeping.js";
+import { keepUpdate, keptBattle } from "./live-keeping.js";
+import { transcriptOf, newTranscript, oldStore, dropTranscripts, tidyOnLogin } from "./live-journals.js";
 import { randomSeed } from "../engine/rng.js";
 import { holderOf } from "../engine/behavior/troubles.js";
 import { perceives } from "../engine/behavior/senses.js";
@@ -108,35 +110,11 @@ const changed = () => Hooks.callAll("fastFighting.liveBattle", battle);
 /* -------------------------------------------- */
 
 /**
- * The journal entry that keeps live battles (what a Rewind puts back, run with a GM's rights): only the one the world's
- * liveStore setting names (a setting only a GM can write), last written by a GM, and seen by no player. A player can
- * make a journal entry no other player sees, flag it, and fill it: such a one is never trusted. (Every client is sent
- * every journal entry, whatever its ownership: what's kept here isn't secret from a player who digs, only safe from
- * one who would change it.)
- */
-const trustedStore = j => !!j?.getFlag(MODULE_ID, "liveStore") && !!game.users.get(j._stats?.lastModifiedBy)?.isGM
-  && !game.users.some(u => !u.isGM && j.testUserPermission(u, "LIMITED"));
-
-async function store() {
-  const named = game.journal.get(setting("liveStore"));
-  if ( trustedStore(named) ) return named;
-  // (One from before the setting: the oldest a GM made, no player sees, and none has written since.)
-  const old = game.journal.filter(j => trustedStore(j) && game.users.get(j._stats?.createdBy)?.isGM).sort((a, b) => (a._stats.createdTime ?? 0) - (b._stats.createdTime ?? 0))[0];
-  const JournalEntry = foundry.documents.JournalEntry ?? globalThis.JournalEntry;
-  const doc = old ?? await JournalEntry.create({
-    name: loc("FASTFIGHTING.Live.Store"),
-    ownership: { default: CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE },
-    flags: { [MODULE_ID]: { liveStore: true } }
-  });
-  if ( doc ) await game.settings.set(MODULE_ID, "liveStore", doc.id);
-  return doc;
-}
-
-/**
- * A battle is kept on the store a part at a time (live-keeping.js): each keep writes the battle as it stands, and of its
- * turns and its log only what's new or changed since the keep before (b.kept: what that one wrote; none, the first keep
- * of a battle begun or picked up, writes them all). One write to the store at a time (inTurn: keep, forget), so each
- * keep goes from what the one before it wrote.
+ * A battle is kept on its transcript, a journal of its own found by its combat's id and its own (live-journals.js:
+ * trusted only, made at its first keep), a part at a time (live-keeping.js): each keep writes the battle as it stands, and of its
+ * turns and its log only what's new or changed since the keep before (b.kept: what that one wrote, to that journal;
+ * none, the first keep of a battle begun or picked up, or a journal new since, writes them all), and when it was kept.
+ * One write at a time (inTurn: keep, forget), so each keep goes from what the one before it wrote.
  */
 let keeping = Promise.resolve();
 function inTurn(work) {
@@ -157,29 +135,35 @@ async function keepNow(b) {
   // (A player's turn under way: who, since when, what the GM said and what reactions wrote. Its cards are found again by time.)
   const pc = b.pc;
   b.data.pc = pc ? { combatantId: pc.combatantId, id: pc.id, round: pc.round, facts: pc.facts, records: pc.records, snapshot: pc.snapshot, from: pc.from, damage: pc.damage ?? [], dealt: pc.dealt ?? [], lastAt: pc.lastAt ?? null, rollCards: pc.rollCards ?? [] } : null;
-  const doc = await store();
-  // (The battle's own key replaced whole, the store's other keys left as they are. Its spec, the biggest part, only
-  // when it's changed: kept beside it. Its turns and its log, each apart: only what's new.)
+  const doc = transcriptOf(b.combat.id, b.data.id) ?? await newTranscript(b.combat.id);
+  if ( !doc ) return;
+  // (The battle's own key replaced whole, the journal's other keys left as they are. Its spec, the biggest part, only
+  // when it's changed: kept beside it. Its turns and its log, each apart: only what's new. A journal other than the one
+  // the last keep wrote to: all of it.)
+  const same = doc.id === b.transcriptId;
   const spec = b.data.spec;
-  const { update, kept: now } = keepUpdate(b.kept ?? null, b.combat.id, b.data, {
-    log: b.run.log ?? [], pack: (from, to) => packLog(b.run, from, to), root: `flags.${MODULE_ID}`, keptSpec: b.keptSpec ?? null
+  const { update, kept: now } = keepUpdate(same ? b.kept ?? null : null, b.combat.id, b.data, {
+    log: b.run.log ?? [], pack: (from, to) => packLog(b.run, from, to), root: `flags.${MODULE_ID}`, keptSpec: same ? b.keptSpec ?? null : null, keptAt: Date.now()
   });
   await doc.update(update);
+  b.transcriptId = doc.id;
   b.keptSpec = spec;
   b.kept = now;
 }
 
-/** A battle as it was kept (live-keeping.js keptBattle), or null. */
-async function kept(combatId) {
-  const doc = await store();
-  return doc ? keptBattle(path => doc.getFlag(MODULE_ID, path), combatId) : null;
+/**
+ * A battle as it was kept (live-keeping.js keptBattle), and the journal it was read from: its transcript (the battle's
+ * on this combat, by its id), else (not yet moved out, live-journals.js moveOldStore) the old single store; or null.
+ */
+function kept(combatId, battleId) {
+  const doc = transcriptOf(combatId, battleId) ?? oldStore();
+  const data = doc ? keptBattle(path => doc.getFlag(MODULE_ID, path), combatId) : null;
+  return data ? { data, doc } : null;
 }
 
-function forget(combatId) {
-  return inTurn(async () => {
-    const doc = await store();
-    await doc?.update(forgetUpdate(combatId, `flags.${MODULE_ID}`));
-  });
+/** Rewind This Encounter: the battle is undone, and its transcript goes. */
+function forget(combatId, battleId) {
+  return inTurn(() => dropTranscripts("rewound", combatId, battleId));
 }
 
 /* -------------------------------------------- */
@@ -2548,7 +2532,7 @@ export function rewindEncounter() {
     if ( battle.data.rolled?.length ) await combat.updateEmbeddedDocuments("Combatant", battle.data.rolled.filter(id => combat.combatants.has(id)).map(id => ({ _id: id, initiative: null })));
     if ( battle.data.startedCombat ) await combat.update({ round: 0, turn: null });
     await combat.unsetFlag(MODULE_ID, "live");
-    await forget(combat.id);
+    await forget(combat.id, battle.data.id);
     battle = null;
     changed();
     return true;
@@ -2712,7 +2696,8 @@ async function pickUp() {
   for ( const combat of game.combats ) {
     const flag = combat.getFlag(MODULE_ID, "live");
     if ( !flag?.active ) continue;
-    const data = await kept(combat.id);
+    const found = kept(combat.id, flag.id);
+    const data = found?.data;
     if ( !data?.snapshot || !runsHere(data) ) continue;
     data.user = game.user.id; // (its GM gone: this one plays it now)
     await combat.setFlag(MODULE_ID, "live", { ...flag, user: game.user.id });
@@ -2738,7 +2723,7 @@ async function pickUp() {
       ui.notifications.error(fmt("FASTFIGHTING.Live.Failed", { error: err.message }));
       continue;
     }
-    battle = { combat, scene, spec, rules, run, pc: null, data, keptSpec: data.spec };
+    battle = { combat, scene, spec, rules, run, pc: null, data, keptSpec: data.spec, transcriptId: found.doc.id };
     // (Rolls made with the system's own roller, where this helper can, and a player's reaction by the player: a battle
     // begun before, too.)
     run.live.systemRolls = systemRollKinds(getAdapter());
@@ -2792,7 +2777,15 @@ export function registerLiveBattles() {
     }
     queue(() => joinFight(combatant));
   });
-  Hooks.once("ready", () => pickUp());
+  // (The active GM: the old store moved out and the transcripts tidied first, as the troubleshooting setting says.)
+  Hooks.once("ready", async () => {
+    try {
+      await tidyOnLogin();
+    } catch ( err ) {
+      console.error(`${MODULE_ID} | tidying the live battles' transcripts`, err);
+    }
+    pickUp();
+  });
   // (Its GM left: the active GM picks it up.)
   Hooks.on("userConnected", () => {
     if ( !battle ) pickUp();
@@ -2816,7 +2809,8 @@ export function registerLiveBattles() {
       battle = null;
       changed();
     }
-    if ( game.user.isActiveGM ) forget(combat.id);
+    // (Its transcript goes with it, unless the GM is troubleshooting: live-journals.js.)
+    if ( game.user.isActiveGM ) inTurn(() => dropTranscripts("combatDeleted", combat.id));
   });
   Hooks.on("renderChatMessageHTML", (message, html) => {
     for ( const button of html.querySelectorAll?.("[data-ff-live]") ?? [] ) {

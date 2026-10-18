@@ -664,3 +664,7 @@ label.is-disabled, .form-group.is-disabled { opacity: 0.5; }
 .fast-fighting-live { display: flex; flex-wrap: wrap; gap: 4px; }
 .fast-fighting-live p { flex: 1 0 100%; margin: 0 0 2px; }
 .fast-fighting-live button { flex: 1 1 0; width: auto; min-width: max-content; height: auto; min-height: 0; margin: 0; padding: 1px 6px; line-height: 1.5; }
+/* Live battle data (a settings menu): the journals live battles are kept in. */
+.ff-live-data .ff-live-data-body h3 { margin: 0.6rem 0 0.2rem; }
+.ff-live-data .ff-live-size { white-space: nowrap; text-align: right; }
+.ff-live-data .ff-live-export { width: auto; height: auto; min-height: 0; margin: 0; padding: 1px 6px; line-height: 1.5; }

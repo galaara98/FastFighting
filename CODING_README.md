@@ -19,9 +19,29 @@ FastFighting is split into a pure simulation engine, system **helpers**, and the
 - **The plan** (per-battle options, side settings, per-token overrides, groups and fudges): a `fast-fighting.setup` flag on the encounter the planner is tied to, so it ends with the encounter; with no encounter, on the scene (`foundry/persistence.js`).
 - **A character's answers:** actor flag `fast-fighting.tactics.<key>`, one field per answer, so two players sharing a token can edit different questions at once. Also `playstyles`, `stayTrue`, `roleplay`, `avoidCostlySpells`, `offer` and `expect` (`foundry/tactics.js`). What it worked out by itself: `flags.fast-fighting.auto` (`foundry/auto-config.js`).
 - **Party votes:** on each player's User (`flags.fast-fighting.party`, `foundry/party.js`); survey status in the User flag `fast-fighting.survey`. The party's roles from earlier fights: the hidden world setting `partyCommand`, by actor.
-- **The planner's last runs:** in the GM's own browser, never in the world where players could read the odds; the newest 5 plans (`foundry/run-memory.js`). Each plan is its encounter's, by its uuid; `hasRun` says whether the planner has run an encounter, which the tracker's Vantage button needs.
-- **Live battles:** a journal entry only GMs can see (the hidden `liveStore` setting names it), written a turn at a time (`foundry/live-keeping.js`); the last 12 turns keep the run as it was before them, for Rewind (`REWIND_DEPTH` in `foundry/live-battle.js`).
+- **The planner's last runs:** in the GM's own browser, never in the world where players could read the odds (but the very last one while troubleshooting: **Live battles' journals** below); the newest 5 plans (`foundry/run-memory.js`). Each plan is its encounter's, by its uuid; `hasRun` says whether the planner has run an encounter, which the tracker's Vantage button needs.
+- **Live battles:** a journal entry for each battle, only GMs see it, written a turn at a time (`foundry/live-keeping.js`); the last 12 turns keep the run as it was before them, for Rewind (`REWIND_DEPTH` in `foundry/live-battle.js`). See **Live battles' journals** below.
 - **Older one-shot fights:** the scene flag `fast-fighting.undo` holds their undo records.
+
+### Live battles' journals
+
+`foundry/live-store.js` decides (pure, tested in `tests/live-store.test.js`); `foundry/live-journals.js` finds, makes and deletes; `apps/live-data.js` is the GM's **Live battle data** menu.
+- **Transcripts:** each battle has a journal of its own, `FF_FF_LiveBattle_Transcript_<n>`, `n` the tracker's encounter number as the battle began (`encounterNumber`, 1 for a scene's only encounter). The number repeats across scenes and over time, so a taken name gets `_2`, `_3` and so on. All live in the folder `FF_FF_LiveBattle_Transcripts`, ownership None. These names are identifiers, never translated. Flags: `liveBattle` (the combat's id), `encounter` (n), `keptAt` (ms, written with every keep), and the battle in live-keeping.js's parts (`battles`, `specs`, `turns`, `snaps`, `logs`, each by combat id). A battle's transcript is found by its flags (its combat, and the battle's own id, `battles.<combat>.id`), never by its name.
+- **Trust:** a journal holds a battle only while it's flagged, last changed by a GM, and no player has Limited or more (`distrustOf`). Otherwise a new one is made, and the old one stays, listed in Live battle data with why.
+- **The Troubleshooting setting** (world, off by default) says how long they last (`whatGoes`):
+  - Off: a transcript goes when its combat is deleted; and on the active GM's login, any whose combat is gone.
+  - On: transcripts outlive their combat. On the active GM's login, those last kept more than 30 days ago (`KEEP_DAYS`) go, never one still in play on a combat that's there; the GM is told if any went. The planner's last run is kept too, in `FF_FF_BattlePlan_LastRun` (flag `planRun`, same folder and trust), replaced after each run: `ranAt`, `scene`, `encounter`, `holder`, `setup` (the plan with its options), `spec`, `results`, `seed`, `sample` (`{seed, log}`), `stopped` and `context` (as an export's). That puts the odds in the world, where a player who digs into what their browser was sent could read them; nothing is written while it's off, and a failure only warns in the console.
+  - Either way, Rewind This Encounter deletes that battle's transcript, and only what's trusted goes by itself.
+- **Clean up** (Live battle data): every journal of FastFighting's last kept more than 30 days ago (`keptAt`, else `_stats.modifiedTime`), whatever it is and whether trusted or not, but never one holding a battle still in play on a combat that's there. It shows what goes and what's held back, asks, deletes, and tells the GM.
+- **Export** (Live battle data, one journal or all; nothing changes): `fastfighting-live-battles-<world>-<yyyy-mm-dd>.json`, a single journal's name after the date:
+  ```
+  {format: "fastfighting-live-battles", version: 1,
+   context: {at, world, foundry: {version, generation, build}, system: {id, version}, modules: [{id, version}], coreApi,
+             combats: {<combat id>: still there?}},
+   journals: [{id, name, kind, trusted, distrust, createdTime, modifiedTime, createdBy, lastModifiedBy, lastKept, size, flags}]}
+  ```
+  `kind` is transcript, plan, store (the old single store) or leftover (a store no longer trusted); `flags` is the module's flags on it, whole; `modules` lists every active FastFighting module, the core and its helpers.
+- **The old single store** (the hidden `liveStore` setting named it): the active GM's next login moves each battle on it into a transcript (`keptAt` the store's last change, the most conservative), then deletes it and clears the setting. Until then, a battle with no transcript is read from it.
 
 ## Writing a system helper
 

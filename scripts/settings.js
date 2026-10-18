@@ -68,10 +68,13 @@ const SETTINGS = {
   // Do it For Real Now, live: the players run their own characters (FastFighting plays everyone else).
   playersRunPCs: { type: Boolean, default: true },
   // Live: a player's damage card against a creature FastFighting runs, applied at once (off: a GM is asked).
-  applyPlayerDamage: { type: Boolean, default: false }
+  applyPlayerDamage: { type: Boolean, default: false },
+  // Troubleshooting: live battles' transcripts kept for 30 days, and the planner's last run with them (off: a transcript
+  // goes with its combat; foundry/live-journals.js). A world setting: only a GM changes it.
+  troubleshooting: { type: Boolean, default: false }
 };
 
-export function registerSettings(DefaultsConfig, GenericPathsConfig, StoryTablesConfig) {
+export function registerSettings(DefaultsConfig, GenericPathsConfig, StoryTablesConfig, LiveDataConfig) {
   game.settings.registerMenu(MODULE_ID, "storyTablesMenu", {
     name: "FASTFIGHTING.Story.TablesMenuName",
     label: "FASTFIGHTING.Story.TablesMenuLabel",
@@ -83,7 +86,8 @@ export function registerSettings(DefaultsConfig, GenericPathsConfig, StoryTables
   game.settings.register(MODULE_ID, "genericPaths", { scope: "world", config: false, type: Object, default: {} });
   // The party's roles the GM gave in earlier fights, by actor: {actorId: "leader" | "lt1" | "lt2"}.
   game.settings.register(MODULE_ID, "partyCommand", { scope: "world", config: false, type: Object, default: {} });
-  // The journal entry that keeps live battles (foundry/live-battle.js store): only a GM can write a world setting.
+  // The old single journal entry that kept every live battle, before each had a transcript of its own: read only to
+  // move its battles out (foundry/live-journals.js moveOldStore), then cleared. Only a GM can write a world setting.
   game.settings.register(MODULE_ID, "liveStore", { scope: "world", config: false, type: String, default: "" });
   // This computer's pace, from its last prediction (engine/run-budget.js paceOf): the planner's estimate goes by it.
   game.settings.register(MODULE_ID, "runPace", { scope: "client", config: false, type: Number, default: 1 });
@@ -116,6 +120,15 @@ export function registerSettings(DefaultsConfig, GenericPathsConfig, StoryTables
     hint: "FASTFIGHTING.Settings.sideDefaults.Hint",
     icon: "fa-solid fa-people-group",
     type: DefaultsConfig,
+    restricted: true
+  });
+  // Live battles' transcripts: what's kept, exported for a bug report, and cleaned up (GMs only).
+  game.settings.registerMenu(MODULE_ID, "liveDataMenu", {
+    name: "FASTFIGHTING.LiveData.MenuName",
+    label: "FASTFIGHTING.LiveData.MenuLabel",
+    hint: "FASTFIGHTING.LiveData.MenuHint",
+    icon: "fa-solid fa-box-archive",
+    type: LiveDataConfig,
     restricted: true
   });
 }

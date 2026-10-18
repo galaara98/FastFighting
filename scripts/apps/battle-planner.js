@@ -31,6 +31,7 @@ import { ensureAutoConfig } from "../foundry/auto-config.js";
 import { PlayerSurvey } from "./player-survey.js";
 import { rememberRun, recallRun } from "../foundry/run-memory.js";
 import { startLiveBattle, liveBattle, systemAppliesText } from "../foundry/live-battle.js";
+import { savePlanRun } from "../foundry/live-journals.js";
 import { BattleVantage } from "./battle-vantage.js";
 import { blink, keepTyping } from "./blink.js";
 import { expectedRuns, paceOf, ROUGH_RUNS, PREDICTION_SECONDS } from "../engine/run-budget.js";
@@ -1120,6 +1121,9 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       // The sample shown: the most typical fight. (Do it For Real Now plays a new one.)
       this.sample = typicalFight(spec, results);
         this.restoredAt = null;
+      // (Troubleshooting: this run kept in the world, in place of the last; not waited for.)
+      const stopped = this.abort.signal.aborted;
+      savePlanRun(() => this.#runForTroubleshooting(spec, results, stopped));
       if ( this.abort.signal.aborted ) ui.notifications.info("FASTFIGHTING.Planner.Stopped", { format: { n: results.runs } });
       else {
         // (Kept, to show again if the planner opens on this same battle: a run cut short isn't. And this computer's
@@ -1135,6 +1139,22 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       this.abort = null;
       this.#doneRunning();
     }
+  }
+
+  /**
+   * A run as it's kept for troubleshooting (live-journals.js savePlanRun): the scene and encounter, the plan with its
+   * options, the battle, the results, the seed, and the sample shown (its seed and log).
+   */
+  #runForTroubleshooting(spec, results, stopped) {
+    const combat = this.#holderCombat();
+    return {
+      scene: { id: canvas.scene?.id ?? null, name: canvas.scene?.name ?? null },
+      encounter: combat ? { id: combat.id, n: encounterNumber(combat)?.n ?? 1 } : null,
+      holder: this.holderUuid ?? null,
+      setup: this.setup, spec, results, seed: results?.seed ?? null,
+      sample: this.sample ? { seed: this.sample.seed, log: this.sample.result?.log ?? [] } : null,
+      stopped
+    };
   }
 
   /** A run (or a swing study) is over: take in anyone who joined or left meanwhile, and show it. */

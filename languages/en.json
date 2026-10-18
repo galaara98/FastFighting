@@ -230,6 +230,10 @@
         "Name": "Selfless creatures bear what holds or hurts them (%)",
         "Hint": "How often a selfless creature ignores what holds or hurts it and carries on (default 29; 0: never)."
       },
+      "troubleshooting": {
+        "Name": "Troubleshooting",
+        "Hint": "Keeps each live battle's transcript for 30 days, even after its encounter is deleted, and the planner's last run beside them. Turn it on before reporting a bug, then export them from Live battle data. Off: a transcript goes with its encounter."
+      },
       "Survey": {
         "Link": "Optional performance survey",
         "Hint": "Your setup, your battle and how many fights the planner ran: it helps make FastFighting faster."
@@ -2284,7 +2288,6 @@
       "Disrupted": "{by}'s critical hit disrupts what {name} was doing.",
       "YourReaction": "{name}: roll your {reaction} at {target} now, as you would on your turn, then press the button.",
       "ReactionDone": "I've done my reaction",
-      "Store": "FastFighting live battles",
       "NoCombat": "There is no combat on this scene to play the battle on.",
       "Failed": "The live battle hit a problem: {error}",
       "Told": "{name}'s Turn is complete.",
@@ -2321,6 +2324,50 @@
         "ownHit": "Their blow lands on {by}."
       },
       "NotHere": "That battle isn't being played in this browser."
+    },
+    "LiveData": {
+      "MenuName": "Live battle data",
+      "MenuLabel": "Open",
+      "MenuHint": "Each live battle's transcript, and the planner's last run while troubleshooting: export them for a bug report, or clean up old ones.",
+      "Hint": "Each live battle is kept in a journal of its own that only GMs see. Export one, or all of them, to attach to a bug report; exporting changes nothing.",
+      "Total": "{n} journals, {size} in all. Clean up deletes those last kept more than {days} days ago.",
+      "Transcripts": "Transcripts",
+      "NoTranscripts": "No live battle is kept.",
+      "Others": "Other journals",
+      "Col": {
+        "Name": "Journal",
+        "Combat": "Encounter",
+        "State": "Battle",
+        "Kept": "Last kept",
+        "Size": "Size",
+        "Owner": "Made by",
+        "Created": "Created",
+        "Modified": "Last changed",
+        "Why": "Why it's here"
+      },
+      "CombatHere": "{scene}, encounter {n}",
+      "CombatGone": "Deleted ({id})",
+      "State": {
+        "ended": "Ended",
+        "inPlay": "In play",
+        "plan": "Planner's last run"
+      },
+      "Why": {
+        "store": "The old single store: its battles move to transcripts of their own when the active GM next logs in.",
+        "leftover": "An older store, no longer used.",
+        "player": "Not trusted: a player can see it.",
+        "editor": "Not trusted: last changed by someone who isn't a GM.",
+        "inPlay": "still in play on its encounter"
+      },
+      "ExportOne": "Export this journal",
+      "ExportAll": "Export all",
+      "CleanUp": "Clean up older than a month",
+      "WillRemove": "Delete these {n} journals, last kept more than {days} days ago?",
+      "Held": "Kept, though just as old ({n}):",
+      "NothingOld": "Nothing was last kept more than {days} days ago.",
+      "NothingOldHeld": "Nothing to delete: the {n} journals older than {days} days are still in play.",
+      "Removed": "Deleted {n} live battle journals: {names}.",
+      "Pruned": "Troubleshooting: deleted {n} live battle journals last kept more than {days} days ago."
     },
     "Battle": {
       "Title": "Battle Vantage",

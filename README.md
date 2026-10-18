@@ -342,8 +342,11 @@ World settings, under **Configure Settings → FastFighting**. The planner overr
 | Do it For Real Now: play the fight on the map | on | Tokens walk their turns; off, they jump to where each turn leaves them. |
 | Players run their characters | on | Players take their own characters' turns; off, FastFighting plays every turn. |
 | Apply players' damage | off | A player's damage card against a creature FastFighting runs is applied at once; off, the Battle Vantage asks a GM. Per battle in the planner and the Battle Vantage; greyed out where the system applies players' damage itself. |
+| Troubleshooting | off | Keeps each live battle's transcript, and the planner's last run, for 30 days. Off, a transcript goes with its encounter. |
 
-Menus: **Story tables** (Manage), **Side personality defaults** (each side's Tactical, Brave, Selfish and Loyal), and **Generic system data paths**.
+Menus: **Story tables** (Manage), **Side personality defaults** (each side's Tactical, Brave, Selfish and Loyal), **Generic system data paths**, and **Live battle data** (each live battle's journal: export one or all, or clean up those over a month old).
+
+**Reporting a bug?** Turn on **Troubleshooting** first, play or plan the fight again, then export from **Live battle data** and attach the file.
 
 ## Performance survey
 
