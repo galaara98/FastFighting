@@ -908,14 +908,18 @@ export const isMagical = action => !!action && (!!action.magical || action.rank 
  * systemRoll: "save", "check"): {degree, natural, total, dice}, for rollCheck's `rolled`; null, the engine's dice. A
  * save: u's, against what `from` did (`save`: its key, as the rules name it). A check: u's, at `target` (`purpose`, as
  * modifiers.check hears it; `skill`, where the spec names one; `against`, the defense it's rolled against;
- * `attackNumber`, the attacks it made this turn before it, for one with the attack trait: a multiple attack penalty).
+ * `attackNumber`, the attacks it made this turn before it, for one with the attack trait: a multiple attack penalty;
+ * `standoff`, true while a standoff holds, no blows struck yet: a system's words may differ then).
  */
 export function systemRolled(run, u, kind, { dc, from = null, target = null, save = null, skill = null, purpose = null, against = null, attackNumber = null, action = null, label = "" } = {}) {
   if ( !run.live?.playing || !u || !Number.isFinite(Number(dc)) ) return null;
   const what = { id: typeof action?.id === "string" ? action.id : null, name: action?.name ?? label ?? "" };
   const request = kind === "save"
     ? { kind, unitId: u.id, targetId: from?.id ?? null, save: save ?? null, dc: Number(dc), action: what }
-    : { kind, unitId: u.id, targetId: target?.id ?? null, purpose: purpose ?? null, skill: skill ?? null, against: against ?? null, ...(Number.isInteger(attackNumber) ? { attackNumber } : {}), dc: Number(dc), action: what };
+    : {
+      kind, unitId: u.id, targetId: target?.id ?? null, purpose: purpose ?? null, skill: skill ?? null, against: against ?? null, ...(Number.isInteger(attackNumber) ? { attackNumber } : {}),
+      ...(run.standoff ? { standoff: true } : {}), dc: Number(dc), action: what
+    };
   return run.live.roll?.(run, request) ?? null;
 }
 

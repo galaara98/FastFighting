@@ -501,10 +501,11 @@ export class SystemAdapter {
    * helper's own rules ask for through systemRolled, PF2e's "flat" and "tumble"); `skill`: the
    * skill the spec names, where it names one; `against`: the defense it's rolled against (a control check's);
    * `attackNumber`: for a check with the attack trait, the attacks made this turn before it (a multiple attack penalty;
-   * else null); `dc`; `action` ({id, name}); `target`: the TokenDocument it's aimed at, or null; `secret`. Returns as
+   * else null); `standoff` (API 20): true while a standoff holds, no blows struck yet (PF2e's words: Make an Impression,
+   * not Request); `dc`; `action` ({id, name}); `target`: the TokenDocument it's aimed at, or null; `secret`. Returns as
    * rollSave does. Optional.
    */
-  rollCheck(token, { purpose, skill = null, against = null, attackNumber = null, dc, action, target = null, secret = false }) {
+  rollCheck(token, { purpose, skill = null, against = null, attackNumber = null, standoff = false, dc, action, target = null, secret = false }) {
     return null;
   }
 

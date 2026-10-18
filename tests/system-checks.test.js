@@ -5,7 +5,7 @@
  */
 import { describe, expect, test } from "vitest";
 import { beginLive, liveRound, liveTurn, NeedsDecision } from "../scripts/engine/live.js";
-import { SystemAdapter } from "../scripts/core-api.js";
+import { SystemAdapter, systemRolled } from "../scripts/core-api.js";
 import { parseFormula } from "../scripts/engine/dice.js";
 import { pf2eRules } from "./fixtures/three-action-rules.js";
 import { creature, battle } from "./helpers.js";
@@ -154,6 +154,17 @@ describe("a check the system rolls", () => {
   test("a failure the system rolled takes nothing", () => {
     const { run } = playThrough(setUp([demoralize], ["check"]), "witch", () => ({ degree: 1, natural: 2, total: 12 }));
     expect(run.byId.get("hero").conds.frightened ?? 0).toBe(0);
+  });
+
+  test("API 20: one while a standoff holds says so (a system's words may differ then: PF2e's Make an Impression); in a fight, not", () => {
+    const asked = [];
+    const run = { live: { playing: true, roll: (r, request) => (asked.push(request), null) }, standoff: true };
+    const pitch = { dc: 17, target: { id: "hero" }, purpose: "talk", skill: "Diplomacy", label: "persuade" };
+    systemRolled(run, { id: "envoy" }, "check", pitch);
+    run.standoff = false;
+    systemRolled(run, { id: "envoy" }, "check", pitch);
+    expect(asked[0]).toMatchObject({ kind: "check", unitId: "envoy", targetId: "hero", purpose: "talk", standoff: true, dc: 17, action: { id: null, name: "persuade" } });
+    expect(asked[1]).not.toHaveProperty("standoff");
   });
 });
 

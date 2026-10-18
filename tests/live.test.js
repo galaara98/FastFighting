@@ -6,6 +6,7 @@ import {
 import { STATUS, SWAY } from "../scripts/constants.js";
 import { applyOutcome, recompute } from "../scripts/engine/behavior/effects.js";
 import { diffAll } from "../scripts/engine/changes.js";
+import { moraleStress } from "../scripts/engine/behavior/morale.js";
 import { pf2eRules } from "./fixtures/three-action-rules.js";
 import { genericRules } from "../scripts/adapters/generic/rules.js";
 import { parseFormula, part } from "../scripts/engine/dice.js";
@@ -250,6 +251,25 @@ describe("live battles: the engine a turn at a time", () => {
     applyFact(run, { kind: "surrender", id: "boar", byId: "kyra" });
     expect(run.byId.get("boar").status).toBe(STATUS.SURRENDERED);
     expect(run.live.facts.map(f => f.kind)).toEqual(["want", "forget", "talk", "talk", "surrender"]);
+  });
+
+  test("a player's threat that frightens too (PF2e's Demoralize: a maneuver and words): the fear weighs on its nerve once, the words sway", () => {
+    const turn = words => {
+      const run = beginLive(skirmish(), pf2eRules, { seed: 4, players: ["valeros", "kyra"] });
+      liveRound(run, 1);
+      const scare = { type: "control", targetId: "orc", action: "Demoralize", maneuver: "demoralize", took: true, degree: 2, roll: "check", sure: true };
+      const threat = { type: "talk", targetId: "orc", kind: "intimidate", skill: "Demoralize", degree: 2, natural: 15, total: 22, dc: 17, sure: true };
+      pcTurn(run, "kyra", words ? [scare, threat] : [scare], { orc: { conditions: { frightened: 1 } } });
+      const orc = run.byId.get("orc");
+      return { stress: moraleStress(run, orc), sway: orc.sway.get("friendly") ?? 0, log: run.log };
+    };
+    const scared = turn(false);
+    const swayed = turn(true);
+    // (The frightened the sheet shows is the morale's; the threat moves the persuasion track only.)
+    expect(swayed.stress).toBe(scared.stress);
+    expect(scared.stress).toBeGreaterThan(0);
+    expect([scared.sway, swayed.sway]).toEqual([0, 1]);
+    expect(swayed.log.filter(e => e.type === "talk" && e.actorId === "kyra")).toEqual([expect.objectContaining({ targetId: "orc", kind: "intimidate", degree: 2, dc: 17 })]);
   });
 
   test("the GM's fear changes what the creature does: afraid of Valeros close by, it runs", () => {

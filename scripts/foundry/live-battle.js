@@ -1580,7 +1580,10 @@ function checkOptions(kind, request, other) {
   const action = { id: request.action?.id ?? null, name: request.action?.name ?? "" };
   return kind === "save"
     ? { save: request.save ?? null, dc: request.dc, action, from: other ?? null }
-    : { purpose: request.purpose ?? null, skill: request.skill ?? null, against: request.against ?? null, attackNumber: Number.isInteger(request.attackNumber) ? request.attackNumber : null, dc: request.dc, action, target: other ?? null };
+    : {
+      purpose: request.purpose ?? null, skill: request.skill ?? null, against: request.against ?? null, attackNumber: Number.isInteger(request.attackNumber) ? request.attackNumber : null,
+      standoff: request.standoff === true, dc: request.dc, action, target: other ?? null
+    };
 }
 
 /**
