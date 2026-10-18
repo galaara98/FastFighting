@@ -7,6 +7,7 @@ import { rollCheck } from "../scripts/engine/probability.js";
 import { parseFormula, part, sampleDamage } from "../scripts/engine/dice.js";
 import { rollAudience, rollJson, rollJsons, rollMessages, rollFlavor, tallyHtml, audiencesFor, AUDIENCE } from "../scripts/foundry/table-rolls.js";
 import { pf2eRules } from "./fixtures/three-action-rules.js";
+import { localize } from "../scripts/i18n.js";
 import { creature, strike, battle } from "./helpers.js";
 
 const at = (x, y = 0) => ({ x, y, size: 5 });
@@ -240,8 +241,12 @@ describe("table rolls in the chat", () => {
     const shown = entries.flatMap(e => e.rolls).flatMap(r => rollJsons(r)).length;
     expect(html.match(/class="inline-roll inline-result"/g)?.length).toBe(shown);
     // (Rounds, then the aftermath, each folded; each creature folded inside.)
-    expect(html.indexOf("Round 1")).toBeLessThan(html.indexOf("Round 2"));
-    expect(html.indexOf("Round 2")).toBeLessThan(html.indexOf("Aftermath"));
+    const round1 = html.indexOf(localize("FASTFIGHTING.Rolls.Tally.Round", { round: 1, n: 2 }));
+    const round2 = html.indexOf(localize("FASTFIGHTING.Rolls.Tally.Round", { round: 2, n: rolls.length - 2 }));
+    const after = html.indexOf(localize("FASTFIGHTING.Rolls.Tally.Aftermath", { n: 1 }));
+    expect(round1).toBeGreaterThan(-1);
+    expect(round1).toBeLessThan(round2);
+    expect(round2).toBeLessThan(after);
     expect(html.match(/<details>/g).length).toBe(3 + 3);
     expect(html).toContain("Orc");
     expect(html).not.toContain(" open");
