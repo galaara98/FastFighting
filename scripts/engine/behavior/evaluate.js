@@ -133,9 +133,12 @@ function meanDamageNow(run, action, target) {
   const rider = effectMean(action);
   // Rolled several times (magic missiles), and a crit table's extra on a crit.
   const times = action.repeat ? Math.max(1, meanPart(action.repeat)) : 1;
+  // (Against the target's resistances, the action's traits with them: rollHit's.)
+  const ctx = { traits: action.traits ?? [] };
+  const critMean = rules.applyIwr(iwr, meanByType(crit), target, ctx) + persistentMean(crit);
   return {
-    normal: times * (rules.applyIwr(iwr, meanByType(action.damage)) + persistentMean(action.damage)) + rider,
-    critical: times * (rules.applyIwr(iwr, meanByType(crit)) + persistentMean(crit)) + rider + critExtraMean(action.crit, rules.applyIwr(iwr, meanByType(crit)) + persistentMean(crit))
+    normal: times * (rules.applyIwr(iwr, meanByType(action.damage), target, ctx) + persistentMean(action.damage)) + rider,
+    critical: times * critMean + rider + critExtraMean(action.crit, critMean)
   };
 }
 

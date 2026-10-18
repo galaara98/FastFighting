@@ -185,6 +185,7 @@ Spec fields a helper may now rely on, each documented where it belongs below or 
   - a blow's rider `{kind: "control", control, critOnly}`: a control action of its own tried at once at the one hit, with its own roll (PF2e's Improved Grab, a free Grapple that takes no multiple attack penalty: a check without `attack`), worth its control's worth as often as the blow hits;
   - a control action's `card`: in a live battle, its own card first (`use`), then its roll (an ability whose roll is a maneuver's);
   - `followUpWorth` counts a maneuver as a follow-up (a Strike that would let a Grab follow, at its control's worth) and as a set-up (a maneuver, or a blow's maneuver rider, that would lay a hold or prone for another's requirement: a Grab before a Constrict).
+- `rules.applyIwr(iwr, byType, target, {direct, traits})`: a blow's damage (and the Statistics Engine's estimate of an action's) comes with the action's `traits`, for a weakness or resistance to what deals it rather than to its damage type (PF2e's holy and unholy).
 
 #### Table rolls: the engine's own dice, shown
 
@@ -281,7 +282,7 @@ A Strike counts only on the creature's own turn, and "its last action" is the la
 - `rules.afterHarm(run, unit, amount, rng)` (a roll after being hurt); `rules.startTurn(run, unit)` (one report, or several `{unit, text, data}`).
 - `rules.afterTalk(run, talker, target, roll, {aim, kind})` (what a pitch gives or costs); `rules.talkStrain` or `spec.social.strain` (`{pool, amount, crit, label, empty}`: a resource drained from whoever loses an exchange of words, the talker on a failure, its target on a success, `crit` on a critical (twice `amount` by default), and `empty`, an effect outcome laid on it when the pool runs dry; the creature's own wins; `rules.talkStrain` may be a function of the unit; `behavior/strain.js`).
 - `rules.onFall(run, unit, {dead, source})` (someone down, beaten or killed: its friends' reaction, `[{unit, text, data}]`); `rules.onAllegiance(run, unit, {joined, against})` (someone taking a side mid-fight).
-- `rules.applyIwr(iwr, byType, target)` gets the creature too.
+- `rules.applyIwr(iwr, byType, target)` gets the creature too (and, since API 20, `{traits}`: the action's).
 - `rules.morale(run, unit)`: a morale rule of the system's own, for those it covers: `"hold"`, `"waver"` or `"rout"` (core-api's `MORALE`), or `{result, said}` to show the roll; null: FastFighting's.
 - `rules.duel(run, caster, action)`: a spell duel (`{by, counter}`, someone answering a spell that worked with a spell of its own; the two checks compared, the higher standing, a tie neither: DCC).
 - `rules.disengage(u)` may carry a `check` (`{mod, dc, dcMany}`: a roll to get clear, harder against several foes; missed, the free attacks come: XCC's acrobatics).

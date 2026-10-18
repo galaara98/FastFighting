@@ -1031,7 +1031,8 @@ function rollHit(run, u, action, t, parts, multiplier, crit, minimum = 0, forced
     const sum = types.reduce((s, k) => s + rolled.byType[k], 0);
     if ( types.length && sum < minimum ) rolled.byType[types[0]] += minimum - sum;
   }
-  const total = rules.applyIwr(iwrOf(t), rolled.byType, t, { direct: rolled.direct });
+  // (What dealt it, by its traits too: PF2e's weakness to holy is to whatever has the holy trait, whatever its damage.)
+  const total = rules.applyIwr(iwrOf(t), rolled.byType, t, { direct: rolled.direct, traits: action.traits ?? [] });
   return {
     total,
     byType: rolled.byType, // (as rolled, before anyone's resistances)

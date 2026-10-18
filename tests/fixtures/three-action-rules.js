@@ -17,6 +17,9 @@ function iwrMatches(key, type) {
   return false;
 }
 
+/** Weaknesses and resistances to what deals the damage, by its traits (the remaster's holy and unholy). */
+const TRAIT_IWR = Object.freeze({ holy: "holy", unholy: "unholy" });
+
 /** Spell traits that PF2e immunities name differently. */
 const TRAIT_IMMUNITY = { fear: "fear-effects", death: "death-effects" };
 /** Engine conditions -> PF2e condition immunities. */
@@ -193,7 +196,7 @@ export const pf2eRules = {
    * Apply immunities, weaknesses and resistances to a {type: amount} map.
    * @returns {number} total damage after IWR
    */
-  applyIwr(iwr, byType) {
+  applyIwr(iwr, byType, target = null, { traits = [] } = {}) {
     let total = 0;
     for ( const [type, raw] of Object.entries(byType) ) {
       if ( raw <= 0 ) continue;
@@ -205,6 +208,14 @@ export const pf2eRules = {
       for ( const [k, v] of Object.entries(iwr?.resist ?? {}) ) if ( iwrMatches(k, type) ) resist = Math.max(resist, v);
       amount = Math.max(0, amount + weak - resist);
       total += amount;
+    }
+    // (Holy or unholy, whatever its damage: once for the whole blow.)
+    const keys = (traits ?? []).map(t => TRAIT_IWR[t]).filter(Boolean);
+    if ( keys.length && Object.values(byType).some(v => v > 0) ) {
+      if ( keys.some(k => iwr?.immune?.includes(k)) ) return 0;
+      const weak = Math.max(0, ...keys.map(k => Number(iwr?.weak?.[k]) || 0));
+      const resist = Math.max(0, ...keys.map(k => Number(iwr?.resist?.[k]) || 0));
+      total = Math.max(0, total + weak - resist);
     }
     return total;
   },
@@ -271,9 +282,9 @@ export const pf2eRules = {
     return `recovery check (${["critical failure", "failure", "success", "critical success"][degree]}): dying ${c.dying}`;
   },
 
-  /** Administer First Aid (stabilize): Medicine against DC 15 + the dying value. */
+  /** Administer First Aid (stabilize): Medicine against 5 + its recovery check's DC (10 + the dying value). */
   firstAidDC(c) {
-    return 15 + (c.dying ?? 0);
+    return 5 + (c.spec?.recoveryDC ?? 10) + (c.dying ?? 0);
   },
 
   /** Result of first aid: success stops the dying (unconscious, wounded +1); a critical failure makes it worse. */
