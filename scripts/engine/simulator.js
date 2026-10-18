@@ -35,7 +35,7 @@ import { mayLeave, startLeaving, isLeaving, wayOff, goAlong, confronted, dealsWi
 import { createAggregator } from "./aggregate.js";
 import { spotTraps, stepOut, learnTrap } from "./behavior/traps.js";
 import { bargain } from "./behavior/bargain.js";
-import { talkActionsThisTurn, choosePitch, attemptTalk, shareLanguage } from "./behavior/talk.js";
+import { talkActionsThisTurn, choosePitch, attemptTalk, shareLanguage, resolveTalk, aimOf } from "./behavior/talk.js";
 import { opensWithTalk, breaksStandoff, standoffPitches, charismaticLeader, canTalk, prefersTalk } from "./behavior/standoff.js";
 import { controlOutcome, controlRoll, isImmune, degreeShift } from "./behavior/control.js";
 import { recompute as recomputeConditions, applyOutcome, renewHolds, beginConcentration, endConcentration, holdsAnything, noteConcentration, moveHeld, settleAllegiance, iwrOf, incoming, spendEdges, spendBoost, focusOf, tauntProof, withoutTaunt } from "./behavior/effects.js";
@@ -2069,6 +2069,13 @@ function executeControl(run, u, action, target, attacksMade, common) {
       goad: !!action.goad, skill: r.pitch?.skill ?? null, dcStat: r.pitch?.dcLabel ?? null, luck: luck?.roll ?? null, needed: luck?.needed ?? null, shrugged,
       debuff: !!(outcome?.mods || outcome?.mark), tempHp: Number(outcome?.tempHp) || 0
     });
+  }
+  // (A Demoralize is words as well as fear: an intimidation at its target, at the same degree and against the same DC,
+  // with no roll of its own, as a player's Demoralize card counts in a live battle (talk.js resolveTalk): a success
+  // wears its will to fight, a critical failure offends it.)
+  if ( maneuverOf(action) === "demoralize" && target !== u && isUp(target) && roll.total !== null ) {
+    const pitch = { target, kind: "intimidate", aim: aimOf(u, target, run), skill: r.pitch?.skill ?? action.check?.skill ?? "intimidate", mod: roll.mod ?? 0, dc, dcLabel: r.pitch?.dcLabel ?? "DC" };
+    resolveTalk(run, u, pitch, { degree, natural: roll.natural, total: roll.total }, logger(run));
   }
   // (An attack roll that hit, a spell attack's: what it does on its own hit, reaction-effects.js.)
   if ( r.kind === "attack" && degree >= 2 && isUp(target) ) {

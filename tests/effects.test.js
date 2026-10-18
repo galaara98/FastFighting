@@ -128,6 +128,23 @@ describe("debuffs", () => {
     expect(tries[0].took).toBe(true);
   });
 
+  test("a Demoralize is words too: an intimidation at its target, at its degree, no roll of its own; botched, it offends", () => {
+    const demoralize = mod => ({ id: "demoralize", name: "Demoralize", kind: "control", cost: 1, check: { mod, against: "will" }, oncePerTarget: true, range: { increment: 30, max: 30, noPenalty: true }, melee: false,
+      traits: ["mental", "fear"], onHit: [null, null, { conditions: { frightened: 1 }, rounds: 1, label: "frightened 1" }, { conditions: { frightened: 2 }, rounds: 2, label: "frightened 2" }] });
+    const r = replay(battle([cleric([demoralize(30)]), brute()], { maxRounds: 5 }), pf2eRules, 1);
+    const tried = r.log.find(e => e.type === "control" && e.action === "Demoralize");
+    const talked = r.log.find(e => e.type === "talk" && e.kind === "intimidate");
+    expect(talked).toMatchObject({ actorId: tried.actorId, targetId: tried.targetId, degree: tried.degree, total: tried.total, dc: tried.dc });
+    expect(talked.progress).toBeGreaterThan(0);
+    // (Botched: the target takes offense at the one who tried.)
+    let botched = null;
+    for ( let seed = 1; seed <= 60 && !botched; seed++ ) {
+      const b = replay(battle([cleric([demoralize(0)]), brute()], { maxRounds: 5 }), pf2eRules, seed);
+      if ( b.log.some(e => e.type === "control" && e.action === "Demoralize" && e.degree === 0) ) botched = b.log.find(e => e.type === "talk" && e.kind === "intimidate");
+    }
+    expect(botched).toMatchObject({ degree: 0, offended: true });
+  });
+
   test("a botched Trip lands its user on the floor", () => {
     const trip = { id: "trip", name: "Trip", kind: "control", cost: 1, check: { mod: -30, against: "reflex", attack: true }, melee: true, reach: 5,
       onHit: [{ conditions: { prone: 1 }, self: true, rounds: 1, label: "prone" }, null, { conditions: { prone: 1 }, rounds: 1, label: "prone" }, { conditions: { prone: 1 }, rounds: 1, label: "prone" }] };
