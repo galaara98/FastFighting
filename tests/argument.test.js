@@ -52,6 +52,27 @@ describe("only an argument", () => {
     expect(fought).toBeGreaterThan(0);
   });
 
+  test("why the talks collapsed: each fight says why and by whom, and the odds keep the most common reason", () => {
+    for ( let seed = 1; seed <= 40; seed++ ) {
+      const r = replay(meeting({ hound: true }), pf2eRules, seed);
+      if ( !r.collapsed ) {
+        expect(r.collapseCause).toBeNull();
+        continue;
+      }
+      const told = r.log.find(e => e.type === "collapse");
+      expect(r.collapseCause).toEqual({ cause: told.cause, by: told.actorId });
+    }
+    const results = runBatchSync(meeting({ hound: true }), pf2eRules, { runs: 300, seed: 3 });
+    const top = results.collapseCause;
+    // (The hound can't follow the talk: it breaks it most.)
+    expect(top.cause).toBe("beast");
+    expect(top.by[0]).toBe("hound");
+    expect(top.by.length).toBeLessThanOrEqual(3);
+    expect(top.share).toBeGreaterThan(0.5);
+    expect(top.share).toBeLessThanOrEqual(1);
+    expect(runBatchSync(meeting(), pf2eRules, { runs: 50, seed: 3 }).collapseCause?.cause ?? null).not.toBe("beast");
+  });
+
   test("the odds: talks collapsed counted apart, everything adds up, and nobody is hurt", () => {
     const results = runBatchSync(meeting({ hound: true }), pf2eRules, { runs: 300, seed: 3 });
     expect(results.pCollapsed).toBeGreaterThan(0);

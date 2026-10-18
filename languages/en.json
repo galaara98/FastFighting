@@ -607,7 +607,18 @@
       "Neutral": "Stood aside",
       "Peaceful": "Settled with words",
       "Collapsed": "Talks collapsed",
-      "Conceded": "Gave something up"
+      "Conceded": "Gave something up",
+      "CollapseTop": "Talks collapsed in {pct} of battles. Most often: {why} ({share} of collapses).",
+      "CollapseSomeone": "someone",
+      "CollapseWhy": {
+        "beast": "{names} couldn't follow the talk",
+        "impatient": "{names} lost patience",
+        "insulted": "{names} took offense",
+        "annoyed": "{names} blamed the other side",
+        "blood": "{names} landed a blow",
+        "fray": "{names} got pulled into a quarrel",
+        "unmet": "{names} tired of waiting for what they asked"
+      }
     },
     "Swing": {
       "Without": "Without {name}",

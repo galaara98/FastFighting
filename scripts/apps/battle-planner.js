@@ -50,6 +50,8 @@ const loc = key => localize(key);
 /** A stat's name: the game's word for armor class and hit points (its helper's, or FastFighting's generic one). */
 const statName = stat => (stat === "ac" || stat === "hp" ? term(stat) : loc(`FASTFIGHTING.Stat.${stat}`));
 const pct = (p, d = 0) => `${(p * 100).toFixed(d)}%`;
+/** Talks that collapse more often than this: the planner says why, most often (#collapseNote). */
+const COLLAPSE_NOTE = 0.1;
 /** Status key for a creature's end state ("conceded" stood down after giving something up). */
 const statusOf = final => (final.swayed === "conceded" ? "conceded" : final.status);
 
@@ -593,6 +595,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
         // (Only an argument: how often the talks collapsed.)
         collapsed: pct(r.pCollapsed ?? 0, 1),
         collapsedAny: (r.pCollapsed ?? 0) > 0 || this.setup.options.opening === OPENING.ARGUMENT,
+        collapseNote: this.#collapseNote(r),
         rounds: r.rounds,
         histogram,
         foes, atRisk, combatants, resources, swing, sample
@@ -621,6 +624,19 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       }));
     }
     return this.storyCache.get(key);
+  }
+
+  /**
+   * Talks that collapsed in more than a tenth of the battles: the most common reason, and the creatures that most often
+   * broke them for it ("Talks collapsed in 96% of battles. Most often: the River Drake couldn't follow the talk"), or null.
+   */
+  #collapseNote(r) {
+    const top = r.collapseCause;
+    if ( !((r.pCollapsed ?? 0) > COLLAPSE_NOTE) || !top ) return null;
+    const why = ["beast", "impatient", "insulted", "annoyed", "blood", "fray", "unmet"].includes(top.cause) ? top.cause : "impatient";
+    const names = (top.by ?? []).map(id => r.combatants?.[id]?.name).filter(Boolean);
+    const reason = localize(`FASTFIGHTING.Results.CollapseWhy.${why}`, { names: names.length ? listJoin(names) : localize("FASTFIGHTING.Results.CollapseSomeone") });
+    return localize("FASTFIGHTING.Results.CollapseTop", { pct: pct(r.pCollapsed, 0), why: reason, share: pct(top.share, 0) });
   }
 
   #sampleContext() {

@@ -9,6 +9,18 @@ function percentile(sorted, p) {
   return sorted[idx];
 }
 
+/**
+ * Only an argument: the most common reason the talks collapsed, `{cause, share (of the collapses), by: [ids]}` (the
+ * creatures that most often broke them for it, at most three, most often first), or null (none collapsed).
+ */
+function topCollapse(collapses, total) {
+  let top = null;
+  for ( const [cause, c] of collapses ) if ( !top || c.n > top[1].n ) top = [cause, c];
+  if ( !top || !total ) return null;
+  const by = [...top[1].by.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3).map(([id]) => id);
+  return { cause: top[0], share: top[1].n / total, by };
+}
+
 export function createAggregator(prep) {
   const sideIds = Object.keys(prep.sides).filter(id => id !== NEUTRAL_PARTY); // (those who take no side never win)
   const wins = Object.fromEntries(sideIds.map(id => [id, 0]));
@@ -29,6 +41,7 @@ export function createAggregator(prep) {
   let swayedRuns = 0;
   let peacefulRuns = 0;
   let collapsedRuns = 0; // (only an argument: the talks collapsed)
+  const collapses = new Map(); // (why they collapsed: cause -> {n, by: id -> n})
   const pcIds = prep.combatants.filter(c => c.spec.kind === "pc").map(c => c.spec.id);
 
   return {
@@ -77,7 +90,15 @@ export function createAggregator(prep) {
       if ( pcDead ) anyPcDead += 1;
       if ( anySwayed ) swayedRuns += 1;
       if ( result.peaceful ) peacefulRuns += 1;
-      if ( result.collapsed ) collapsedRuns += 1;
+      if ( result.collapsed ) {
+        collapsedRuns += 1;
+        const why = result.collapseCause?.cause ?? "impatient";
+        if ( !collapses.has(why) ) collapses.set(why, { n: 0, by: new Map() });
+        const c = collapses.get(why);
+        c.n += 1;
+        const who = result.collapseCause?.by;
+        if ( who ) c.by.set(who, (c.by.get(who) ?? 0) + 1);
+      }
       if ( pcDowned ) anyPcDowned += 1;
     },
 
@@ -136,6 +157,7 @@ export function createAggregator(prep) {
         pAnySwayed: swayedRuns / n,
         pPeaceful: peacefulRuns / n,
         pCollapsed: collapsedRuns / n,
+        collapseCause: topCollapse(collapses, collapsedRuns),
         rounds: {
           mean: rounds.reduce((s, r) => s + r, 0) / n,
           median: percentile(sorted, 0.5),

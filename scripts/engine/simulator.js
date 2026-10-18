@@ -1067,7 +1067,7 @@ function endStandoff(run, u, cause) {
  */
 function collapse(run, u, cause) {
   if ( run.resolved ) return;
-  run.resolved = { side: null, outcome: "collapsed" };
+  run.resolved = { side: null, outcome: "collapsed", cause: cause ?? null, by: u?.id ?? null };
   log(run, u, { type: "collapse", cause });
 }
 
@@ -4140,8 +4140,10 @@ function summarize(run, ended, capture, winners) {
   for ( const [id, s] of run.doors ?? [] ) if ( s.open ) doors[id] = { open: true, broken: !!s.broken };
   // (Talks that collapsed came to no blows, but settled nothing.)
   const collapsed = run.resolved?.outcome === "collapsed";
+  // (And why, and by whom: for the planner's most common reason.)
+  const collapseCause = collapsed ? { cause: run.resolved.cause ?? null, by: run.resolved.by ?? null } : null;
   return { outcome, winners, rounds: run.round, aftermathRounds: run.aftermathRounds ?? 0, firstFallen: run.firstFallen, peaceful: ended && !run.blood && !collapsed,
-    collapsed, units, doors, log: run.log };
+    collapsed, collapseCause, units, doors, log: run.log };
 }
 
 /**
