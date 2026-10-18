@@ -2538,8 +2538,8 @@ What it decides: how a d20 roll turns into one of PF2e's four degrees.
 - Total ≥ DC + 10: critical success; ≥ DC: success; ≤ DC − 10: critical failure; else failure. A natural 20 raises the degree one step, a natural 1 lowers it one.
 - Fortune (advantage): the higher of two d20s; misfortune: the lower.
 - Damage a save lets through: basic save ×2 / ×1 / ×½ / ×0 (critical failure → critical success); a non-basic save ×2 / ×1 / 0 / 0.
-- A critical hit doubles all damage. A hit deals at least 1 damage before resistances.
-- A check against a defense (Trip against Reflex, Feint against Perception) uses DC = 10 + that modifier (a save's with the target's own penalties).
+- A critical hit doubles all damage; on a creature immune to critical hits (its exceptions aside), a normal hit's damage. A hit deals at least 1 damage before resistances.
+- A check against a defense (Trip against Reflex, Feint against Perception) uses DC = 10 + that modifier (a save's with the target's own penalties; Perception's with its bonuses and penalties to Perception).
 
 Code: `rules.js` `degreeOfSuccess`, `roll`, `saveMultiplier`, `critical`, `minimumDamage`; core `battle-state.js` `defenseDc`.
 
@@ -2676,9 +2676,9 @@ All 1 action. The Athletics ones are attacks: a free hand, a target at most one 
 | Disarm (a foe with a weapon in hand) | Reflex DC | you're off-guard, 1 round | −2 to its attacks, 1 round | it drops the weapon: −2 to attacks and 1 action lost, 1 round |
 | Shove | Fortitude DC | you fall prone | pushed 5 ft | pushed 10 ft |
 | Reposition | Fortitude DC | it moves you 5 ft | moved 5 ft | moved 10 ft |
-| Feint (melee reach) | Perception DC | — | off-guard to you this turn | off-guard to you through your next turn |
+| Feint (melee reach) | Perception DC | — | off-guard to your next melee attack this turn | off-guard to your melee attacks through your next turn |
 | Demoralize | Will DC | — | frightened 1 | frightened 2 |
-| Bon Mot (with the feat) | Will DC | you take −2 to saves and checks | −2 to saves and checks, 10 rounds | −3 |
+| Bon Mot (with the feat, within 30 ft) | Will DC | you take −2 to Will saves and Perception | −2 to Will saves and Perception (and the Will and Perception DCs), 10 rounds | −3 |
 
 - A creature's Knockdown or Trip on a hit: prone; Grab: grabbed; Push or Pull: moved as far as its slug or English name lists ("Push 10 feet"), else 5 feet, with no Shove roll.
 
@@ -2790,9 +2790,14 @@ Search: weakness, resistance, IWR, physical, energy, all-damage, hardness
 
 What it decides: how much of each damage type gets through.
 
-- Per type: immunity stops it; otherwise damage + the largest matching weakness − the largest matching resistance, at least 0. "physical" covers bludgeoning, piercing, slashing and bleed; "energy" acid, cold, electricity, fire, sonic, force, vitality and void; "all-damage" everything.
+As PF2e's own applyIWR. Each damage type a blow deals is one instance, tested with what deals it.
+- Vitality harms only a creature with void healing (the undead, or one with the ability), void only one without; a hazard neither, unless it has a weakness or resistance to it.
+- An immunity that fits stops the instance (none of its exceptions fitting). Immunity to precision takes the instance's precision off (a sneak attack: nothing of it). Immunity to critical hits: a critical hit deals a normal hit's damage (its extras undoubled), and is still a critical hit for everything else.
+- Then + the largest weakness that fits (a weakness to precision where it has precision, to splash where it has splash), − the largest resistance that fits and none of whose exceptions fit, at least 0. A resistance doubled where its doubleVs fits (a ghost's against non-magical damage); one to precision takes no more than the precision; one to critical hits no more than half the instance.
+- Holy, unholy, an element's, a tradition's, spells': a weakness once a blow, whichever of its types fit.
+- What fits: the damage type; "physical" (bludgeoning, piercing, slashing, bleed); "energy" (acid, cold, electricity, fire, sonic, force, vitality, void); "all-damage"; area damage (an area's: a spell's or an ability's); a critical hit; magical or non-magical (a spell, a magic weapon); the action's traits; the Strike's materials (cold iron's weakness fits sovereign steel too, silver's dawnsilver; adamantine's exception keep-stone); a ghost touch rune.
 
-Code: `rules.js` `applyIwr`.
+Code: `iwr.js` `applyPf2eIwr`, `critImmune`, `unaffected`; `adapter.js` `iwrOf`, `strikeMaterials`.
 
 ### Healing, Battle Medicine and class features
 
@@ -2800,7 +2805,7 @@ Search: Heal spell, Battle Medicine, Sneak Attack, Vicious Swing, Power Attack, 
 
 What it decides: the numbers FastFighting adds to class features it reads by slug.
 
-- Heal: one action is a touch; two actions reach 30 feet and add 8 × rank to the healing.
+- Heal: one action is a touch; two actions reach 30 feet and add 8 × rank to the healing. It mends the living only; on a creature with void healing, its vitality damage (basic Fortitude). Harm, the other way round: its void damage on the living, its healing (8 × rank more with two actions) for those with void healing. A healing potion's vitality mends no one with void healing.
 - Battle Medicine (1 action, a touch, once per target): 2d8 against DC 15; expert DC 20 +10, master DC 30 +30, legendary DC 40 +50.
 - Sneak Attack, where the damage formula doesn't show it: 1d6, 2d6 from level 5, 3d6 from 11, 4d6 from 17.
 - Vicious Swing (Power Attack): 2 actions, counts as 2 attacks, 1 more weapon die (2 from level 10, 3 from 18).
