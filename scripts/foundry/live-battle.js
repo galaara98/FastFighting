@@ -250,7 +250,7 @@ export function beginEncounter() {
     battle.spec = { ...battle.spec, options: { ...battle.spec.options, initiativeOrder: combat.turns.map(c => c.tokenId) } };
     battle.data.spec = packSpec(battle.spec);
     liveRound(battle.run, combat.round || 1);
-    Object.assign(battle.data, { prepared: false, rolled: unrolled, rollCards, startedCombat: started });
+    Object.assign(battle.data, { prepared: false, rolled: unrolled, rollCards, startedCombat: started, beganAt: rolledFrom });
     const shown = await showRolls(battle.data.openingRolls ?? [], null);
     battle.data.openingRolls = [];
     battle.data.opening = [...shown, ...await tellNew()];
@@ -464,6 +464,19 @@ export function goingBack(turns, now, key, place) {
   const own = turns[keepTo - 1]?.key === key ? turns[keepTo - 1] : null;
   const reopen = own?.kind === "pc" && own.from ? own : null;
   return { undo: turns.slice(reopen ? keepTo - 1 : keepTo), own, reopen };
+}
+
+/**
+ * Rewind This Encounter's last sweep: the chat's roll cards made since the battle began (`since`, ms) by a creature in
+ * it (its token, or its actor, by id), that no turn took: a player's roll between turns, a card from before a turn was
+ * kept. Only cards: one with a roll, the system's own card (`system`: its flags' key, with a context), or one with a
+ * flavor (the heading an action's card has: PF2e's Interact to draw a weapon); words alone stay.
+ */
+export function strayCards(messages, { since, tokens = new Set(), actors = new Set(), system = null } = {}) {
+  if ( !Number.isFinite(since) ) return [];
+  return messages.filter(m => (m.timestamp ?? 0) >= since
+    && (tokens.has(m.speaker?.token) || actors.has(m.speaker?.actor))
+    && ((m.rolls?.length ?? 0) > 0 || (system && !!m.flags?.[system]?.context) || !!String(m.flavor ?? "").trim()));
 }
 
 /**
@@ -2639,6 +2652,10 @@ export function rewindEncounter() {
     // joined it on the way gone from it.)
     for ( const id of [...(battle.data.opening ?? []), ...(battle.data.rollCards ?? [])] ) await game.messages.get(id)?.delete();
     for ( const m of game.messages.filter(x => x.getFlag(MODULE_ID, "live")?.battle === battle.data.id) ) await m.delete();
+    // (And whatever else a creature in it rolled since it began, that no turn took.)
+    const tokens = new Set(battle.run.units.map(u => tokenIdOf(u)));
+    const actors = new Set(battle.run.units.map(u => docOf(u.id)?.actor?.id).filter(Boolean));
+    for ( const m of strayCards(game.messages.contents, { since: battle.data.beganAt, tokens, actors, system: game.system?.id }) ) await m.delete();
     for ( const uuid of battle.data.joined ?? [] ) {
       try {
         await (await fromUuid(uuid))?.delete();

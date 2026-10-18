@@ -3,7 +3,7 @@
  * the latest first; the one it's on stays as it ended (one FastFighting played), or is opened again (a player's).
  */
 import { describe, expect, test } from "vitest";
-import { goingBack, undoEntries } from "../scripts/foundry/live-battle.js";
+import { goingBack, undoEntries, strayCards } from "../scripts/foundry/live-battle.js";
 
 // (The order on the tracker: a, b, c, d.)
 const order = ["a", "b", "c", "d"];
@@ -70,5 +70,25 @@ describe("what going back deletes", () => {
     expect(entries[2].messages).toEqual(["m3"]);
     // (The turns themselves are left as they were.)
     expect(pc2.messages).toEqual([]);
+  });
+});
+
+describe("Rewind This Encounter's last sweep", () => {
+  const card = (id, at, speaker, extra = {}) => ({ id, timestamp: at, speaker, rolls: [], flags: {}, ...extra });
+  const messages = [
+    card("before", 500, { token: "amiri" }, { rolls: [{}] }),
+    card("draw", 1500, { token: "amiri" }, { flags: { pf2e: { context: { type: "action" } } } }),
+    card("demoralize", 1600, { token: "amiri" }, { rolls: [{}] }),
+    card("byActor", 1700, { actor: "harskActor" }, { rolls: [{}] }),
+    card("talk", 1800, { token: "amiri" }),
+    card("interact", 1850, { token: "amiri" }, { flavor: "<h4 class=\"action\">Interact</h4>" }),
+    card("stranger", 1900, { token: "someoneElse" }, { rolls: [{}] })
+  ];
+  test("the battle's creatures' roll cards since it began go; words alone, older cards and others' stay", () => {
+    const gone = strayCards(messages, { since: 1000, tokens: new Set(["amiri"]), actors: new Set(["harskActor"]), system: "pf2e" });
+    expect(gone.map(m => m.id)).toEqual(["draw", "demoralize", "byActor", "interact"]);
+  });
+  test("a battle with no start kept (one from before): nothing swept", () => {
+    expect(strayCards(messages, { tokens: new Set(["amiri"]) })).toEqual([]);
   });
 });
