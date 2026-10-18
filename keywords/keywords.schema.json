@@ -111,6 +111,11 @@
                 "minimum": -2,
                 "maximum": 2
               },
+              "kiter": {
+                "type": "number",
+                "minimum": -2,
+                "maximum": 2
+              },
               "martyr": {
                 "type": "number",
                 "minimum": -2,

@@ -47,8 +47,8 @@ describe("pick order", () => {
 });
 
 describe("playstyle combination", () => {
-  test("twenty-seven playstyles, at most four count", () => {
-    expect(PLAYSTYLE_IDS).toHaveLength(27);
+  test("twenty-eight playstyles, at most four count", () => {
+    expect(PLAYSTYLE_IDS).toHaveLength(28);
     expect(combinePlaystyles(PLAYSTYLE_IDS).ids).toHaveLength(MAX_PLAYSTYLES);
   });
 

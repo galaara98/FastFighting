@@ -43,7 +43,7 @@
  * an obsessed character (OBSESSED+) stops worrying about its own safety.
  */
 import { STATUS, TACTICAL, ADHD, clamp } from "../../constants.js";
-import { areEnemies, isStanding, liveTrait, liveTier, enemiesOf, alliesOf, sizedUp, command, commandOf, refusesToHelp, movesNeeded, edgeDistance } from "../battle-state.js";
+import { areEnemies, isStanding, liveTrait, liveTier, enemiesOf, alliesOf, sizedUp, command, commandOf, refusesToHelp, movesNeeded, edgeDistance, canMove } from "../battle-state.js";
 import { perceives, apparentHealth } from "./senses.js";
 import { seemsFoe } from "./neutral.js";
 import { robbable } from "./theft.js";
@@ -705,6 +705,7 @@ export function styleWants(run, u, scored, { canHeal = false, canTalk = false, t
     if ( h.weakness && Object.keys({ ...t.spec.iwr?.weak, ...t.spec.iwr?.exploit }).some(k => mine.has(k)) ) points += h.weakness;
     if ( h.unstudied && !sizedUp(u, t) ) points += h.unstudied;
     if ( h.current && t.id === u.targetId ) points += h.current;
+    if ( h.slow && cantFollow(run, u, t) ) points += h.slow;
     add("hurt", t.id, points);
   }
   // The fallen: some can't resist finishing them, some never would; some would rather take them prisoner, some
@@ -734,6 +735,18 @@ export function styleWants(run, u, scored, { canHeal = false, canTalk = false, t
   if ( avoid.nearest ) add("avoid", scored.find(x => x.moves === min)?.t.id, avoid.nearest);
   // A whim: some foe catches its eye.
   if ( s.whim && foes.length && run.rng.chance(0.3) ) add("hurt", run.rng.pick(foes).id, s.whim);
+}
+
+/**
+ * Can t not follow u (a Kiter's favourite foe): held where it is, on the ground, slowed, slower than u, or struggling
+ * through the ground to get at it.
+ */
+function cantFollow(run, u, t) {
+  if ( !canMove(run, t) || t.prone || (Number(t.conds?.slowed) || 0) > 0 ) return true;
+  const fastest = x => Math.max(0, ...Object.values(x.spec.speeds ?? { walk: 25 }).map(Number).filter(Number.isFinite)) + (x.mods?.speed ?? 0);
+  if ( fastest(t) < fastest(u) ) return true;
+  const way = run.prep.approachOf?.(t.id, u.id);
+  return Number.isFinite(way?.mult) && way.mult > 1.05;
 }
 
 /**

@@ -23,7 +23,8 @@ export const STAY_TRUE_CAP = 0.1;
 /**
  * traits:    additive shifts on 0-100 traits
  * suggest:   tactics answers this playstyle implies (first selected playstyle wins on conflicts)
- * behavior:  engine hooks; numbers are base chances per opportunity (scaled by intensity). hinders: how much it
+ * behavior:  engine hooks; numbers are base chances per opportunity (scaled by intensity). kite: how much it minds
+ *             ending its turn in a foe's reach, and keeps its distance (a Kiter; behavior/prepare.js). hinders: how much it
  *             likes locking foes down, harassing and debuffing them (control actions count for up to 2.5 times more);
  *             trapWary: a trap avoider, how watchful (the share of the Trap avoiders luck it gets: Thief all of it, then
  *             Puzzle-Maniac, Skeptic, Lore-Collector, Chicken, Wallflower; behavior/traps.js); taunt: a taunter, its share
@@ -33,7 +34,8 @@ export const STAY_TRUE_CAP = 0.1;
  * desire:    how the character picks up desires (see engine/behavior/desire.js), added up across its pills:
  *   hurt      points toward foes that suit it: nearest, far (two moves or more away), weakest, dangerous, casters,
  *             healers, downed, leader (theirs), weakness (foes its attacks exploit), unstudied (foes it hasn't sized
- *             up), current (the one it's on)
+ *             up), current (the one it's on), slow (foes that can't follow it: held still, prone, slowed, slower than
+ *             it, or struggling through the ground to get at it)
  *   heal, protect, aid, talk   points toward healing hurt friends, guarding the weakest friend, bolstering a friend
  *             with a buff (its leader, for those who look to one; else whoever is doing the most fighting), talking
  *   bind, rob points toward tying up a fallen foe (a prisoner: behavior/fallen.js), and robbing one
@@ -92,6 +94,12 @@ export const PLAYSTYLES = Object.freeze({
   diplomat: { icon: "fa-handshake", traits: { selfish: -10 }, suggest: { talk: "first", target: "dangerous", fallen: "tie" }, behavior: { parleyFirst: 0.6, spareDowned: 0.5, tauntProof: 0.35 },
     desire: { talk: 30, hurt: { downed: -50 }, bind: 15 } },
   // Keeps its distance and out of the crowd.
+  // Keeps its distance: strikes from where its foes can't answer and slips away again (a ranged one at the edge of its
+  // first range increment, beyond a foe's move and reach; a melee one in, a blow, and out), would rather go for foes that
+  // can't follow, falls back toward its friends, and minds ending its turn in reach far more than most (kite:
+  // behavior/prepare.js). Cornered, it fights.
+  kiter: { icon: "fa-person-running", traits: { tactical: 10 }, suggest: {}, behavior: { kite: 1 },
+    desire: { hurt: { slow: 15 }, frustration: 0.8 } },
   wallflower: { icon: "fa-user-ninja", traits: { brave: -10 }, suggest: { style: "ranged" }, behavior: { lowProfile: 0.45, hinders: 0.25, flighty: 0.3, trapWary: 0.35, tauntProof: 0.3 },
     desire: { hurt: { nearest: -10 }, avoid: { nearest: 15 } } },
   // Shields the weakest friend, avenges the fallen, fears nothing.

@@ -27,8 +27,8 @@ suggest a change (an issue or a pull request against `keywords/en.json`). The te
 - **`playstyles`**, in keywords' worth: **1** a clear sign, **0.5** a leaning, **0.3** a hint, below 0 against it (a
   pacifist is no Brawler). Up to 2 either way. The ids are the playstyles' own: chicken, cruel, moralist,
   peacekeeper, peoplePleaser, fragile, impatient, brawler, skeptic, speedRunner, leader, instigator, diplomat,
-  wallflower, martyr, tank, mercenary, enabler, redeemSeeker, loreCollector, puzzleManiac, wildcard, thief, vengeful,
-  relentless, lazy, unmundane.
+  kiter, wallflower, martyr, tank, mercenary, enabler, redeemSeeker, loreCollector, puzzleManiac, wildcard, thief,
+  vengeful, relentless, lazy, unmundane.
 - **`traits`**, in points: **2** slight, **5** clear, **8** strong, **12** defining; up to 15 either way. Tactical (a
   good head), brave (nerve), selfish (looks out for itself), loyal (stands by its side).
 

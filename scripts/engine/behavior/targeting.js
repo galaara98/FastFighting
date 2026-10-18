@@ -66,6 +66,8 @@ export function bestOptionVs(run, u, t, attacksMade = 0, turn = null) {
     // Walking into a foe's aura to get there: what the aura would cost it, weighed against the blow (auras.js).
     if ( moves > 0 && run.foeAuras ) weighted *= auraToll(run, u, t, action, ev);
     if ( behavior.meleeBias && action.melee ) weighted *= 1 + behavior.meleeBias;
+    // A kiter would rather strike from beyond its foe's own reach (a reach weapon), where it can't answer.
+    if ( behavior.kite && action.melee && (action.reach ?? 5) > foeReach(t) ) weighted *= 1 + 0.3 * behavior.kite;
     if ( behavior.exploitWeakness && (action.damage ?? []).some(p => t.spec.iwr?.weak?.[p.type] || t.spec.iwr?.exploit?.[p.type]) ) weighted *= 1 + behavior.exploitWeakness;
     // A foe down and regenerating: only what stops it (fire, acid) does any good.
     if ( t.held && t.status === STATUS.DOWN ) weighted *= (action.damage ?? []).some(p => regenOf(t)?.stoppedBy?.includes(p.type)) ? 3 : 0.05;
@@ -113,6 +115,13 @@ export function bestOptionVs(run, u, t, attacksMade = 0, turn = null) {
   let best = null;
   for ( const o of pool ) if ( !best || o.weighted > best.weighted ) best = o;
   return best;
+}
+
+/** The longest reach of t's own melee strikes (5 feet if it has none). */
+function foeReach(t) {
+  let reach = 5;
+  for ( const a of t.prep?.offense ?? [] ) if ( a.melee && hasUses(t, a) ) reach = Math.max(reach, a.reach ?? 5);
+  return reach;
 }
 
 function minMoves(run, u, t) {

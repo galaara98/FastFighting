@@ -31,7 +31,7 @@ import { costOf, costUnits, mainPool, normalizeCost } from "../turn.js";
 import { expectedDamage, threatOf, hasUses, unitsPerTurn } from "./evaluate.js";
 import { mind, levelOf, protective } from "./desire.js";
 import { threats } from "./reactions.js";
-import { edgeAt, inTheWay, wallsKnown, sightBlocked, blockedPoints } from "./space.js";
+import { edgeAt, inTheWay, wallsKnown, sightBlocked, blockedPoints, crossed } from "./space.js";
 import { meanPart } from "../dice.js";
 
 /**
@@ -232,6 +232,8 @@ function spotsWithin(run, u, feet) {
       seen.add(key);
       if ( Math.hypot(p.x - u.pos.x, p.y - u.pos.y) > feet + 0.5 || !onMap(run, p) || inTheWay(run, u, p) ) continue;
       if ( walls && sightBlocked(run, u.pos, p) ) continue;
+      // (Not through a foe on its feet: the way round it is no straight move.)
+      if ( crossed(run, u, u.pos, p).some(({ o }) => isStanding(o) && areEnemies(run, u, o)) ) continue;
       out.push(p);
     }
   }
@@ -257,8 +259,8 @@ function reachOf(f) {
 function reachFactor(run, f, d, info) {
   if ( info.range > 0 && d <= info.range + 0.5 ) return 1;
   if ( info.reach < 0 ) return 0;
-  const gap = d - info.reach;
-  if ( gap <= 0.5 ) return 1;
+  const gap = d - info.reach - 0.5;
+  if ( gap <= 0 ) return 1;
   if ( info.still || !(info.speed > 0) ) return 0;
   const moves = Math.ceil(gap / info.speed);
   const rules = run.prep.rules;
@@ -540,9 +542,17 @@ function spotWorth(run, u, p, ctx) {
     const near = ctx.friends.reduce((m, a) => Math.min(m, edgeAt(u, p, a)), Infinity);
     if ( Number.isFinite(near) ) v += (ctx.kiter ? 1 : 0.5) * (near <= 30 ? 1 : 30 / near);
     if ( ctx.kiter && cornered(run, u, p, ctx) ) v -= ctx.kiter * 0.5 * ctx.foes.reduce((s, f) => s + f.threat, 0);
+    // (A kiter: the more room between it and the nearest foe, the better, as far as its shots stay sure.)
+    if ( ctx.kiter ) v += ctx.kiter * 0.05 * Math.min(ctx.foes.reduce((m, f) => Math.min(m, edgeAt(u, p, f.f)), Infinity), kiteRange(ctx));
   }
   return v;
 }
+
+/** How far a kiter's best option reaches without a penalty: its first range increment, or its melee reach. */
+const kiteRange = ctx => {
+  const a = ctx.option?.action;
+  return a?.range ? a.range.increment ?? a.range.max ?? 30 : (a?.reach ?? 5) + 25;
+};
 
 /** What walking from where it is to p would draw: the blows of those whose reach it leaves (`near`: moveThreats'). */
 function moveRisk(u, p, near) {

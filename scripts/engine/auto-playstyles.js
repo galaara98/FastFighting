@@ -34,11 +34,15 @@ export const CLASHES = Object.freeze([
   ["lazy", "speedRunner"], ["lazy", "relentless"], ["lazy", "martyr"], ["lazy", "tank"],
   ["wallflower", "tank"], ["wallflower", "instigator"], ["wallflower", "brawler"],
   ["mercenary", "martyr"], ["mercenary", "peoplePleaser"], ["mercenary", "redeemSeeker"], ["mercenary", "moralist"],
-  ["fragile", "tank"], ["fragile", "martyr"], ["fragile", "relentless"]
+  ["fragile", "tank"], ["fragile", "martyr"], ["fragile", "relentless"],
+  ["kiter", "tank"], ["kiter", "martyr"], ["kiter", "lazy"]
 ]);
 const clashes = (a, b) => CLASHES.some(([x, y]) => (x === a && y === b) || (x === b && y === a));
 
 const pos = n => Math.max(0, n);
+
+/** The reach a creature's size gives it (feet), for a reach that's more than that: tiny to medium 5, large 10, huge 15, gargantuan 20. */
+const sizeReach = size => (Number.isFinite(Number(size)) ? Math.max(5, (Number(size) - 1) * 5) : 5);
 
 
 /**
@@ -68,6 +72,10 @@ export function readSpec(spec, rules = null) {
     beast: !!(spec.animalistic ?? spec.flags?.beast),
     pc: spec.kind === "pc",
     melee, ranged,
+    // (How fast it goes, its fastest, and how far its best melee strike reaches past what its size gives it: a glaive,
+    // a whip, a creature's long arms.)
+    speed: Math.max(0, ...Object.values(spec.speeds ?? {}).map(Number).filter(Number.isFinite)),
+    reach: Math.max(0, Math.max(0, ...offense.filter(a => a.melee).map(a => Number(a.reach) || 5)) - sizeReach(spec.size)),
     // (Its specialties against its everyday weapons: the share of what it would do that's its own.)
     special: specials.length / Math.max(1, specials.length + weapons.length),
     heals: actions.some(a => a.kind === "heal" && !a.selfOnly && !a.firstAid && !a.consumable && isSpecial(a)), // (its own healing, not a move anyone makes)
@@ -115,11 +123,27 @@ export function numbersFit(s) {
     vengeful: pos(S - 50) * 0.4 + pos(B - 60) * 0.4 + pos(50 - T) * 0.2,
     relentless: (s.mindless ? 35 : 0) + (s.fearless ? 15 : 0) + pos(B - 75) * 0.8,
     lazy: pos(40 - T) * 0.8 + pos(45 - B) * 0.5,
+    kiter: kiterFit(s),
     unmundane: s.special >= 0.5 ? s.special * 50 : 0
   };
-  // (The mindless don't talk, scheme or care: no talker's, schemer's or carer's pill.)
-  if ( s.mindless ) for ( const id of ["peacekeeper", "diplomat", "peoplePleaser", "leader", "moralist", "skeptic", "mercenary", "loreCollector", "puzzleManiac", "thief"] ) out[id] = 0;
+  // (The mindless don't talk, scheme, plan or care: no talker's, schemer's, planner's or carer's pill.)
+  if ( s.mindless ) for ( const id of ["peacekeeper", "diplomat", "peoplePleaser", "leader", "moralist", "skeptic", "mercenary", "loreCollector", "puzzleManiac", "thief", "kiter"] ) out[id] = 0;
   return out;
+}
+
+/**
+ * A Kiter's fit: fast and shooting (as many ways to shoot as to strike up close, or more), or fast up close with a good defense to slip away behind;
+ * a reach beyond its size's a lean of its own, a clear sign together with speed or a ranged hand. Speed is what it
+ * builds on: 30 feet is ordinary, each 10 more a fair step (PF2e's and 5e's alike).
+ */
+function kiterFit(s) {
+  const fast = pos(s.speed - 30) * 1.5;
+  const reach = Math.min(2, s.reach / 5) * 8;
+  let fit = 0;
+  if ( s.ranged && s.ranged >= s.melee ) fit = 15 + fast;
+  else if ( s.melee ) fit = fast > 0 ? fast + pos(s.armor) * 3 : 0;
+  // (A reach on its own a lean; with speed, or a ranged hand too, a clear sign.)
+  return fit + (fast > 0 || s.ranged ? reach * 2 : reach);
 }
 
 /**
