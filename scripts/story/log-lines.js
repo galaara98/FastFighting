@@ -78,7 +78,7 @@ const BREAKS = { insulted: "BreakInsulted", beast: "BreakBeast", annoyed: "Break
 /** Only an argument: why the talks collapsed (nobody fights). */
 const COLLAPSES = { insulted: "CollapseInsulted", beast: "CollapseBeast", annoyed: "CollapseAnnoyed", blood: "CollapseBlood", impatient: "CollapseImpatient", fray: "CollapseFray", unmet: "CollapseUnmet" };
 const PROMISE = { noHarm: "PromiseNoHarm", passage: "PromisePassage", leave: "PromiseLeave" };
-const TRIGGER = { hit: "TriggerHit", attacked: "TriggerAttacked", missed: "TriggerMissed", damaged: "TriggerDamaged", spell: "TriggerSpell" };
+const TRIGGER = { hit: "TriggerHit", attacked: "TriggerAttacked", missed: "TriggerMissed", damaged: "TriggerDamaged", spell: "TriggerSpell", foeCasts: "TriggerSpell", ownHit: "TriggerOwnHit" };
 const VANISH = { expired: "VanishExpired", released: "VanishReleased", unsustained: "VanishUnsustained", idle: "VanishIdle" };
 const role = r => (r === "boss" ? t("RoleBoss") : r === "leader" ? t("RoleLeader") : String(r ?? "").startsWith("lieutenant") ? t("RoleLieutenant", { n: String(r).split(" ")[1] ?? "" }) : r ?? "");
 

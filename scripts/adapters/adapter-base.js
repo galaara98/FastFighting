@@ -232,7 +232,8 @@ export class SystemAdapter {
    *   deletedItems, createdEffects, tokenUpdate, createdActors, createdTokens, deletedTokens, statuses, combatant}
    */
   // (options.before: the creature as the turn found it, captureUnit's shape, for what the change set leaves out;
-  // options.effectSource(key): the action that laid a buff or debuff, and whose spec, for a helper to put its effect on.)
+  // options.effectSource(key): the action (or reaction) that laid a buff or debuff, and whose spec, for a helper to put its
+  // effect on.)
   async commitChanges(tokenDoc, spec, changes, final, options) {
     throw new Error(`${this.constructor.name} does not support live battles`);
   }

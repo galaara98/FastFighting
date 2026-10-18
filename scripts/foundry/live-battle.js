@@ -2123,10 +2123,11 @@ async function placeSummons(records) {
 /** What the engine changed between two captures of everyone, onto the sheets; their undo records added to `records`. */
 async function writeChanges(before, after, records) {
   const adapter = getAdapter();
-  // (Where a buff or debuff came from: the action that laid it, and whose, for the helper to put its effect on the sheet.)
+  // (Where a buff or debuff came from: the action that laid it, or the reaction (its boost, what it lays), and whose, for
+  // the helper to put its effect on the sheet.)
   let sources = null;
   const effectSource = id => {
-    sources ??= new Map(battle.run.units.flatMap(u => (u.spec.actions ?? []).map(action => [action.id, { action, spec: u.spec }])));
+    sources ??= new Map(battle.run.units.flatMap(u => [...(u.spec.actions ?? []), ...(u.spec.reactions ?? [])].map(action => [action.id, { action, spec: u.spec }])));
     return sources.get(id) ?? null;
   };
   for ( const [id, ch] of Object.entries(diffAll(before, after)) ) {

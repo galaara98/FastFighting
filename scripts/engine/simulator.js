@@ -27,6 +27,7 @@ import { chooseDeed, deedTier, chooseHitRiders, rescueMiss, rollCrit, rollFumble
 import { cast } from "./behavior/casting.js";
 import { boost } from "./behavior/luck.js";
 import { respond, riposteStrike, bestStep, strikeBack } from "./behavior/responses.js";
+import { playEffects, hasEffects, wouldPlay } from "./behavior/reaction-effects.js";
 import { decideSummon, callSummons, sustainSummons, summonState, dismiss } from "./behavior/summons.js";
 import { sinkHopeless } from "./behavior/hopeless.js";
 import { mayLeave, startLeaving, isLeaving, wayOff, goAlong, confronted, dealsWithIt, backOnItsWay } from "./behavior/leaving.js";
@@ -556,44 +557,28 @@ function recoveryOf(said, u) {
  */
 function clingsOn(run, u, by, action, amount, crit, types) {
   if ( !u.spec.reactions?.some(r => answersTo(r, "wouldDrop")) ) return;
-  const r = respond(run, u, "wouldDrop", { by, action, damage: amount, crit, types });
+  const ctx = { by, action, damage: amount, crit, types };
+  const r = respond(run, u, "wouldDrop", ctx);
   if ( !r?.stayUp ) return;
   u.hp = Math.max(1, Number(r.stayUp.hp) || 1);
   if ( Number(r.stayUp.wounded) > 0 ) u.wounded = (u.wounded ?? 0) + Number(r.stayUp.wounded);
   logReaction(run, u, by ?? u, r, "wouldDrop");
+  // (And whatever else it does, standing again: reaction-effects.js.)
+  playEffects(run, u, r, "wouldDrop", ctx, KIT);
 }
 
 /**
  * Taken out, it may answer on its way down (5e Death Burst: areaBurst {damage, save, range}, at everyone within
- * range, a save for half). Once.
+ * range, a save for half; a last strike or harm at the one who felled it: reaction-effects.js). Once.
  */
 function deathThroes(run, u, by, action = null) {
   if ( u.throes || !u.spec.reactions?.some(r => answersTo(r, "slain")) ) return;
   u.throes = true;
-  const r = respond(run, u, "slain", { by });
-  const burst = r?.areaBurst;
-  if ( !burst?.damage?.length ) return;
+  const ctx = { by, action };
+  const r = respond(run, u, "slain", ctx);
+  if ( !r || !wouldPlay(run, u, r, "slain", ctx) ) return;
   logReaction(run, u, by ?? u, r, "slain");
-  const rules = run.prep.rules;
-  const range = Number(burst.range) || 5;
-  for ( const t of run.units ) {
-    if ( t === u || !isUp(t) ) continue;
-    // (Beside it: engaged, or the one whose blow felled it up close, or on the map within range.)
-    const d = u.adjacent.has(t.id) || (t === by && action?.melee) ? 0 : edgeDistance(u, t);
-    if ( d === null || d > range + 0.5 ) continue;
-    let mult = 1;
-    let roll = null;
-    if ( burst.save ) {
-      roll = rollSave(run, t, burst.save.type, burst.save.dc, { stakes: 0.3, label: r.label }).roll;
-      mult = saveMultiplier(rules, roll.degree, { basic: burst.save.basic !== false });
-    }
-    if ( mult <= 0 ) continue;
-    const hit = rollHit(run, u, { id: `reaction:${r.id}`, damage: burst.damage }, t, burst.damage, mult, false);
-    if ( run.log ) log(run, u, {
-      type: "auto", action: r.label, actionKind: "auto", damageType: burst.damage[0]?.type ?? "untyped", target: t.spec.name, targetId: t.id, damage: hit.total, reaction: true
-    });
-    hit.apply();
-  }
+  playEffects(run, u, r, "slain", ctx, KIT);
 }
 
 /**
@@ -1231,14 +1216,26 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
     // Reactions to the attack itself are settled before its dice, but told after it: an answer to what was done.
     const answers = [];
     const tellAnswers = () => { for ( const tell of answers.splice(0) ) tell(); };
+    // (One that does something of its own before the roll, a strike, harm, a buff, is told and played at once: an
+    // attacker it fells, or leaves unable to act, never makes the attack. Its bonus to AC still counts.)
+    let first = false;
+    const answerFirst = (g, r, trigger, ctx) => {
+      if ( !hasEffects(r) || !wouldPlay(run, g, r, trigger, ctx) ) return false;
+      logReaction(run, g, u, r, trigger);
+      playEffects(run, g, r, trigger, ctx, KIT);
+      return (first = true);
+    };
+    let acBonus = 0;
     // A friend close by covers it (5e Protection, Shield of the Cavalier): a bonus to its defense against this attack.
     if ( run.wardens && target !== u ) {
       const expected = meanDamageVs(run, action, target).normal;
       for ( const g of run.units ) {
         if ( g === target || g === u || g.side !== target.side || !g.spec.reactions?.some(x => answersTo(x, "allyTargeted")) ) continue;
-        const cover = respond(run, g, "allyTargeted", { by: u, ally: target, action, damage: expected });
+        const ctx = { by: u, ally: target, action, damage: expected };
+        const cover = respond(run, g, "allyTargeted", ctx);
+        if ( cover?.ac ) acBonus += cover.ac;
+        if ( cover && answerFirst(g, cover, "allyTargeted", ctx) ) break;
         if ( cover?.ac ) {
-          ac += cover.ac;
           answers.push(() => logReaction(run, g, u, cover, "allyTargeted"));
           break;
         }
@@ -1246,12 +1243,17 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
     }
     // Seeing it coming (PF2e Nimble Dodge): a bonus to AC against this attack.
     if ( target.spec.reactions && target !== u ) {
-      const dodge = respond(run, target, "attacked", { by: u, action, damage: meanDamageVs(run, action, target).normal });
-      if ( dodge?.ac ) {
-        ac += dodge.ac;
-        answers.push(() => logReaction(run, target, u, dodge, "attacked"));
-      }
+      const ctx = { by: u, action, damage: meanDamageVs(run, action, target).normal };
+      const dodge = respond(run, target, "attacked", ctx);
+      if ( dodge?.ac ) acBonus += dodge.ac;
+      if ( dodge && !answerFirst(target, dodge, "attacked", ctx) && dodge.ac ) answers.push(() => logReaction(run, target, u, dodge, "attacked"));
     }
+    if ( first ) {
+      // (Felled or stopped by it: no attack.)
+      if ( !isStanding(u) || u.conds?.incapacitated || u.conds?.stunned || u.conds?.paralyzed || !isUp(target) ) return;
+      ac = currentAc(run, target, u, action);
+    }
+    ac += acBonus;
     // (A Lore-Collector that sized this foe up: the roll about 2.5 times as likely to land.)
     const lift = boostBonus(rules, u, target, bonus + deedRoll, ac, opts);
     // (A live battle's roll the system made itself, its cards in the chat: that roll, as it came out, in place of the
@@ -1293,6 +1295,8 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
       });
       if ( answer ) {
         answers.push(() => logReaction(run, target, u, answer, "hit"));
+        // (A buff on itself at once, for this blow's damage: told with the answer.)
+        playEffects(run, target, answer, "hit", { by: u, action }, KIT, { only: ["boost"], tell: (unit, data) => answers.push(() => log(run, unit, data)) });
         if ( answer.ac ) {
           applyOutcome(target, { mods: { ac: answer.ac }, rounds: 1, label: answer.label }, target.id, { id: `reaction:${answer.id}`, name: answer.label });
           ac += answer.ac;
@@ -1382,19 +1386,22 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
       if ( table?.row ) applyCritRow(run, u, target, table);
       for ( const x of riders ) applyRider(run, u, target, x);
       if ( deed ) applyDeed(run, u, target, deed, deedRoll);
-      answerHarm(run, target, u, action, dealt);
-      // (Retributive Strike: the champion's own blow at the attacker, as the reaction allows: strikeBack.)
-      if ( guard?.back && isUp(guard.g) && isUp(u) ) reactStrike(run, guard.g, u, guard.r, logging, guard.back);
+      answerHarm(run, target, u, action, dealt, crit, hit.types);
+      // (Retributive Strike: the champion's own blow at the attacker, as the reaction allows: strikeBack; and whatever
+      // else the friend's answer does, now the blow is done.)
+      if ( guard && isUp(guard.g) ) playEffects(run, guard.g, guard.r, "allyHit", { by: u, ally: target, action, crit }, KIT, { back: guard.back });
+      // (Its own blow landed: what it does on a hit, reaction-effects.js.)
+      ownHit(run, u, target, action, crit, dealt, hit.types);
     } else {
       if ( logging ) log(run, u, { ...data, damage: 0, advantage, savedBy: answer?.label ?? null });
       tellAnswers();
-      // A melee miss opens the attacker up (5e Riposte).
-      if ( action.melee && target.spec.reactions && isUp(target) && target !== u ) {
-        const back = respond(run, target, "missed", { by: u, action });
-        const strike = back?.strike ? strikeBack(run, target, u, back) : null;
-        if ( strike ) {
+      // A miss opens the attacker up (5e Riposte, a melee one).
+      if ( target.spec.reactions && isUp(target) && target !== u ) {
+        const ctx = { by: u, action, crit: roll.degree === 0 };
+        const back = respond(run, target, "missed", ctx);
+        if ( back && wouldPlay(run, target, back, "missed", ctx) ) {
           logReaction(run, target, u, back, "missed");
-          reactStrike(run, target, u, back, logging, strike);
+          playEffects(run, target, back, "missed", ctx, KIT);
         }
       }
       if ( deed && logging ) log(run, u, { type: "deed", deed: deed.label, maneuver: deed.maneuver ?? null, target: target.spec.name, targetId: target.id, roll: deedRoll, success: false });
@@ -1405,6 +1412,8 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
       }
       if ( roll.degree === 0 && u.spec.fumble ) applyFumble(run, u);
     }
+    // (What answered the hit, now the blow is done: its harm, a strike back, what it lays.)
+    if ( answer && isUp(target) ) playEffects(run, target, answer, "hit", { by: u, action, crit: roll.degree === 3 }, KIT, { skip: ["boost"] });
     // What the attempt costs the attacker, by the system (Ironsworn: a miss, or a weak Clash, is Pay the Price).
     backlash(run, u, target, action, roll.degree, logging);
     // The attack over, its damage and all it laid done: the system's say (PF2e: a hidden attacker is seen now).
@@ -1450,6 +1459,25 @@ function logReaction(run, u, by, r, trigger, extra = {}) {
 }
 
 /**
+ * u's own attack hit `target` (a Strike, a spell attack): it may answer with a reaction or a free action of its own
+ * ("ownHit": a second bite, a condition on the one it hit, a breath weapon ready again on a critical hit). Not for a
+ * strike its own answer made (u.answering), nor when it isn't up.
+ */
+function ownHit(run, u, target, action, crit, dealt, types = null) {
+  if ( !u.spec.reactions || u.answering || !isUp(u) ) return;
+  const ctx = { target, action, crit, damage: dealt, types: types ?? (action.damage ?? []).map(p => p.type) };
+  const r = respond(run, u, "ownHit", ctx);
+  if ( !r || !wouldPlay(run, u, r, "ownHit", ctx) ) return;
+  logReaction(run, u, target, r, "ownHit");
+  u.answering = true;
+  try {
+    playEffects(run, u, r, "ownHit", ctx, KIT);
+  } finally {
+    u.answering = false;
+  }
+}
+
+/**
  * u's reaction strike at foe, as the reaction allows (behavior/responses.js strikeBack: in reach, a Step first, or a
  * shot): the Step played first where it needs one, no parting blows for it, then the strike. `back`: strikeBack's, where
  * it was found already. Returns whether it struck.
@@ -1466,28 +1494,22 @@ function reactStrike(run, u, foe, r, logging, back = strikeBack(run, u, foe, r))
   return true;
 }
 
-/** Hurt by a foe: the one hurt may answer (5e Hellish Rebuke: fire at whoever did it, a save for half). */
-function answerHarm(run, target, by, action, dealt) {
+/**
+ * The simulator's own moves, for reaction-effects.js to play a reaction's effects with (it can't import this file).
+ */
+const KIT = Object.freeze({ log, rollSave, rollHit, landOutcome, reactStrike, stepAside, forceMove, showAction, appliedLive, noteHeal, testConcentration });
+
+/**
+ * Hurt by a foe: the one hurt may answer (5e Hellish Rebuke: fire at whoever did it, a save for half; a buff, a strike
+ * back, what it lays: reaction-effects.js).
+ */
+function answerHarm(run, target, by, action, dealt, crit = false, types = null) {
   if ( !(dealt > 0) || !target.spec.reactions || !by || target === by || !isUp(target) || !isUp(by) ) return;
-  const r = respond(run, target, "damaged", { by, action, damage: dealt });
-  if ( !r?.damage?.length && !r?.move ) return;
+  const ctx = { by, action, damage: dealt, crit, types: types ?? (action?.damage ?? []).map(p => p.type) };
+  const r = respond(run, target, "damaged", ctx);
+  if ( !r || !wouldPlay(run, target, r, "damaged", ctx) ) return;
   logReaction(run, target, by, r, "damaged");
-  const rules = run.prep.rules;
-  let mult = 1;
-  let roll = null;
-  if ( r.save ) {
-    roll = rollSave(run, by, r.save.type, r.save.dc, { stakes: 0.3, label: r.label, from: target }).roll;
-    mult = saveMultiplier(rules, roll.degree, { basic: r.save.basic !== false });
-  }
-  if ( r.damage?.length && mult > 0 ) {
-    const hit = rollHit(run, target, { id: `reaction:${r.id}`, damage: r.damage }, by, r.damage, mult, false);
-    if ( run.log ) log(run, target, {
-      type: "auto", action: r.label, actionKind: "auto", damageType: r.damage[0]?.type ?? "untyped", target: by.spec.name, targetId: by.id, damage: hit.total, reaction: true
-    });
-    hit.apply();
-  }
-  // (And moved: knocked back, on a failed save where it has one: Vengeful Fate.)
-  if ( r.move && isUp(by) && (!roll || roll.degree < 2) ) forceMove(run, target, by, r.move);
+  playEffects(run, target, r, "damaged", ctx, KIT);
 }
 
 /**
@@ -1501,8 +1523,18 @@ function counterspelled(run, u, action) {
   const rules = run.prep.rules;
   for ( const e of run.units ) {
     if ( !e.spec.reactions || !areEnemies(run, u, e) || heldOff(run, u, e) ) continue;
-    const r = respond(run, e, "spell", { by: u, action });
-    if ( !r?.counter ) continue;
+    const ctx = { by: u, action };
+    const r = respond(run, e, "spell", ctx);
+    if ( !r ) continue;
+    if ( !r.counter ) {
+      // (Something else at the caster: a strike, harm, what it lays. A caster felled by it casts nothing.)
+      if ( wouldPlay(run, e, r, "spell", ctx) ) {
+        logReaction(run, e, u, r, "spell");
+        playEffects(run, e, r, "spell", ctx, KIT);
+      }
+      if ( !isStanding(u) ) return true;
+      continue;
+    }
     let countered = !r.counter.save && (r.counter.level ?? 0) >= action.rank;
     let roll = null;
     if ( r.counter.save ) {
@@ -1935,6 +1967,10 @@ function executeControl(run, u, action, target, attacksMade, common) {
       debuff: !!(outcome?.mods || outcome?.mark), tempHp: Number(outcome?.tempHp) || 0
     });
   }
+  // (An attack roll that hit, a spell attack's: what it does on its own hit, reaction-effects.js.)
+  if ( r.kind === "attack" && degree >= 2 && isUp(target) ) {
+    ownHit(run, u, target, action, degree === 3, damage);
+  }
   // (An attack roll's, over: the system's say, as for any attack.)
   if ( r.kind === "attack" ) rules.afterAttack?.(run, u, target, { action, degree, dealt: damage, control: true });
 }
@@ -2322,11 +2358,12 @@ export function answerMove(run, u, move, toward = null) {
     const foe = areEnemies(run, u, o);
     if ( foe && heldOff(run, u, o) ) continue;
     const trigger = foe ? "foeApproaches" : "allyMoves";
-    const r = respond(run, o, trigger, { by: foe ? u : null, ally: foe ? null : u, from: move.from ?? null, toward, reached: !!move.reached });
+    const ctx = { by: foe ? u : null, ally: foe ? null : u, from: move.from ?? null, toward, reached: !!move.reached };
+    const r = respond(run, o, trigger, ctx);
     if ( !r ) continue;
     logReaction(run, o, u, r, trigger);
-    if ( r.step ) stepAside(run, o, r.step);
-    if ( r.strike && foe ) reactStrike(run, o, u, r, !!run.log);
+    // (A step first, then a strike at the foe come into reach, and the rest: reaction-effects.js.)
+    playEffects(run, o, r, trigger, ctx, KIT);
   }
 }
 
