@@ -226,6 +226,10 @@
         "Name": "Players run their characters",
         "Hint": "In Do it For Real Now, players take their own characters' turns; FastFighting plays everyone else. Off: FastFighting plays every turn. Changeable per battle."
       },
+      "absentPlayers": {
+        "Name": "FastFighting plays absent players' characters",
+        "Hint": "In a live battle, a character whose players aren't connected when its turn comes is played by FastFighting, until one of them is back. Off: its turn waits for someone to play it."
+      },
       "ignoreTroubles": {
         "Name": "Selfless creatures bear what holds or hurts them (%)",
         "Hint": "How often a selfless creature ignores what holds or hurts it and carries on (default 29; 0: never)."
@@ -2291,6 +2295,8 @@
       "NoCombat": "There is no combat on this scene to play the battle on.",
       "Failed": "The live battle hit a problem: {error}",
       "Told": "{name}'s Turn is complete.",
+      "PlayerAway": "{name}'s player isn't here: FastFighting plays their turns until they're back.",
+      "PlayerBack": "{name}'s player is back: their turns are theirs again.",
       "NextTurn": "Next Turn",
       "Rewind": "Rewind",
       "Rewound": "Rewound to {name}'s turn.",

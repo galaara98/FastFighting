@@ -35,7 +35,7 @@ import { loadStoryTables } from "../story/tables.js";
 import {
   beginLive, liveRound, liveOrder, liveDrop, liveTurn, pcTurnBegin, pcTurnEnd, syncFromSheets, setApproach, setScene, captureAll, snapshotRun, restoreRun, endLive, packLog, followCommand,
   NeedsDecision, rollsKind, applyFact, gmMoment, leavingReach, openingFor, reactNow, movedBeside, nextSpotlight, liveAftermath,
-  setCondition, setRelation, clearRelation, setAffliction, setGoal, setAttitude, setSide, setRole, playerRuns, takeRolls
+  setCondition, setRelation, clearRelation, setAffliction, setGoal, setAttitude, setSide, setRole, playerRuns, takeRolls, handOver
 } from "../engine/live.js";
 import { postRolls, postTally, tallyOf, audiencesFor } from "./table-rolls.js";
 import { diffAll, sideAfter } from "../engine/changes.js";
@@ -594,6 +594,8 @@ async function turnBegins(combatant) {
     await moveOn();
     return;
   }
+  // (Its players away: FastFighting plays it, while none of them is here; one back, it's theirs again.)
+  await awayOrBack(u);
   if ( playerRuns(battle.run, u) ) {
     await beginPlayerTurn(u, combatant);
     // (The players' turn: the game goes on, so they can move and roll.)
@@ -603,6 +605,39 @@ async function turnBegins(combatant) {
   // (FastFighting's: paused while it decides, plays it, and waits on the GM's Next Turn.)
   pauseFor(u, false);
   await playTurn(u, combatant, key);
+}
+
+/** Is one of the players who own this creature (or the one controlling it) connected now? */
+function playerHere(u) {
+  const actor = docOf(u.id)?.actor;
+  return !!actor && game.users.some(p => !p.isGM && p.active && actor.testUserPermission(p, "OWNER"));
+}
+
+/**
+ * A character the players run, as its turn begins (engine/live.js handOver): none of its players here (the
+ * absentPlayers setting on), FastFighting takes it over (battle.data.away) and plays its turns; one of them back, it's
+ * theirs again. The GMs are told either way. A GM's own say (setAutomated) settles it instead.
+ */
+async function awayOrBack(u) {
+  const players = new Set(battle.data.players ?? []);
+  const away = new Set(battle.data.away ?? []);
+  const owner = battle.run.byId.get(players.has(u.id) || away.has(u.id) ? u.id : u.controlledBy) ?? u;
+  const step = handOver({ id: u.id, controlledBy: u.controlledBy ?? null, players, away, here: playerHere(owner), absentPlayers: setting("absentPlayers") });
+  if ( !step ) return;
+  if ( step.result === "away" ) {
+    players.delete(step.id);
+    away.add(step.id);
+  } else {
+    away.delete(step.id);
+    players.add(step.id);
+  }
+  battle.data.players = [...players];
+  battle.data.away = [...away];
+  playersNow();
+  await keep();
+  changed();
+  const name = battle.run.byId.get(step.id)?.spec.name ?? "";
+  ui.notifications?.info(fmt(step.result === "away" ? "FASTFIGHTING.Live.PlayerAway" : "FASTFIGHTING.Live.PlayerBack", { name }));
 }
 
 /**
@@ -2654,6 +2689,8 @@ export function setAutomated(id, on) {
     if ( on ) players.delete(id);
     else players.add(id);
     battle.data.players = [...players];
+    // (The GM's say: no longer one taken over for its players being away.)
+    battle.data.away = (battle.data.away ?? []).filter(x => x !== id);
     playersNow();
     const pc = battle.pc;
     if ( on && pc?.id === id && pc.snapshot && !pc.messages.length && !pc.records?.length && !pc.facts?.length ) {

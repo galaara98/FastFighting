@@ -67,6 +67,9 @@ const SETTINGS = {
   playOnMap: { type: Boolean, default: true },
   // Do it For Real Now, live: the players run their own characters (FastFighting plays everyone else).
   playersRunPCs: { type: Boolean, default: true },
+  // Live: a character the players run, none of its players connected as its turn begins: FastFighting plays it until one
+  // is back (live-battle.js awayOrBack). Off: its turn waits, as any player's does.
+  absentPlayers: { type: Boolean, default: true },
   // Live: a player's damage card against a creature FastFighting runs, applied at once (off: a GM is asked).
   applyPlayerDamage: { type: Boolean, default: false },
   // Troubleshooting: live battles' transcripts kept for 30 days, and the planner's last run with them (off: a transcript
