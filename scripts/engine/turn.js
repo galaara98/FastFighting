@@ -7,6 +7,7 @@
  * Costs are objects over the same pools ({ actions: 2 }, { action: 1 }, { bonus: 1 }, { move: 15 }). A plain number
  * is shorthand for the rules' main pool. Pure: no Foundry globals.
  */
+import { readyUnits, reloadPerUse } from "./gear.js";
 
 /** The pool a plain-number cost draws from, and the pool "how many actions are left" counts. */
 export function mainPool(rules) {
@@ -20,18 +21,27 @@ export function normalizeCost(rules, cost) {
   return cost;
 }
 
-/** What an action costs: the rules decide (PF2e: its action count; 5e: an action or a bonus action). */
+/**
+ * What an action costs: the rules decide (PF2e: its action count; 5e: an action or a bonus action). For a creature
+ * (`u`), what its gear needs first too (engine/gear.js): drawing it (PF2e's Interact), and a Reload where it's empty.
+ */
 export function costOf(rules, action, u = null) {
   // (fixedCost: a cost the rules have already set, a playstyle's taunt's: rules.tauntCost.)
   const base = action.fixedCost ? action.cost : rules.costOf ? rules.costOf(action, u) : action.cost;
   const cost = { ...normalizeCost(rules, base) };
-  // Drawing an unready weapon the first time (PF2e Interact) adds to the main pool.
-  if ( u && action.drawCost && !u.drawn?.has(action.id) ) {
+  const ready = u ? readyUnits(u, action) : 0;
+  if ( ready > 0 ) {
     const pool = mainPool(rules);
-    cost[pool] = (cost[pool] ?? 0) + action.drawCost;
+    cost[pool] = (cost[pool] ?? 0) + ready;
   }
   return cost;
 }
+
+/**
+ * Main-pool units one use takes over the fight, for what it's worth per action: its cost, and every shot's Reload
+ * (engine/gear.js reloadPerUse: a heavy crossbow's shot is three actions, though a loaded one fires with one).
+ */
+export const unitsPerUse = (rules, action) => costUnits(rules, costOf(rules, action)) + reloadPerUse(action);
 
 /** Main-pool units a cost needs (for heuristics such as "damage per action"). */
 export function costUnits(rules, cost) {

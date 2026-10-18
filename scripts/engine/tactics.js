@@ -10,6 +10,7 @@ import { meanPart } from "./dice.js";
 import { talkAffinity } from "./behavior/talk.js";
 import { typical } from "./battle-state.js";
 import { costOf, costUnits } from "./turn.js";
+import { reloadPerUse } from "./gear.js";
 import { isSpecial } from "./behavior/specialty.js";
 
 export const TACTIC_CHOICES = Object.freeze({
@@ -56,7 +57,8 @@ const usesResource = a => !!a.resource || Number.isFinite(a.uses);
 export function typicalValue(action, level, rules = null) {
   // (What needs setting up first, a Rend after two hits, is no typical turn's: behavior/requires.js.)
   if ( action.requires ) return 0;
-  const units = rules ? Math.max(0.1, costUnits(rules, costOf(rules, action))) : Math.max(1, action.cost ?? 1);
+  // (A shot's Reload counts too: engine/gear.js.)
+  const units = (rules ? Math.max(0.1, costUnits(rules, costOf(rules, action))) : Math.max(1, action.cost ?? 1)) + reloadPerUse(action);
   if ( action.sequence?.length ) {
     return action.sequence.reduce((s, strike) => s + typicalValue({ ...strike, cost: 1 }, level, null), 0) / units;
   }

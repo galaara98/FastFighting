@@ -108,7 +108,7 @@ export function decideHeal(run, u, turn) {
   const potionAt = u.tac?.potionThreshold;
   const ownFrac = u.maxHp > 0 ? u.hp / u.maxHp : 0;
   const heals = u.prep.healActions.filter(a => {
-    if ( !turn.canAfford(costOf(rules, a)) || !hasUses(u, a) ) return false;
+    if ( !turn.canAfford(costOf(rules, a, u)) || !hasUses(u, a) ) return false;
     // Players decide when to drink their own potions.
     if ( a.selfOnly && potionAt ) return potionAt !== "never" && ownFrac < Number(potionAt) / 100;
     return true;
@@ -135,7 +135,7 @@ export function decideHeal(run, u, turn) {
     if ( !moves ) return { a, moves: 0, units: 0 };
     if ( !Number.isFinite(moves) || !canMove(run, u) ) return null;
     const units = turn.unitsForMoves(moves, speed);
-    const cost = { ...costOf(rules, a) };
+    const cost = { ...costOf(rules, a, u) };
     const pool = mainPool(rules);
     cost[pool] = (cost[pool] ?? 0) + units;
     if ( !turn.canAfford(cost) ) return null;

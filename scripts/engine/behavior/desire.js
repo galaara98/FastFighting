@@ -448,7 +448,7 @@ function agendaFit(run, u, x) {
 const behaviorOfUnit = u => u.turnBehavior ?? u.ownBehavior ?? u.spec.behavior ?? {};
 /** One who looks after its friends: its style or its target the protector's, or its pills (Tank, Martyr, Enabler, Moralist). */
 const PROTECTORS = new Set(["tank", "martyr", "enabler", "moralist"]);
-const protective = u => u.tac?.style === "protector" || u.tac?.target === "protect" || (u.spec.playstyles ?? []).some(p => PROTECTORS.has(p));
+export const protective = u => u.tac?.style === "protector" || u.tac?.target === "protect" || (u.spec.playstyles ?? []).some(p => PROTECTORS.has(p));
 /** One whose job is damage: up front, skirmishing or shooting, or its pills (Brawler, Speed-Runner, Impatient, Cruel). */
 const STRIKERS = new Set(["brawler", "speedRunner", "impatient", "cruel"]);
 const dealsDamage = u => ["frontline", "skirmisher", "ranged"].includes(u.tac?.style) || (u.spec.playstyles ?? []).some(p => STRIKERS.has(p));

@@ -3747,6 +3747,66 @@
     "{actor} closes the gap to {target}.",
     "{actor} runs to {target}."
   ],
+  "prepare.draw": [
+    "{actor} has no shot this turn, so the {weapon} comes out now, ready for the next.",
+    "There's no time to use it yet, but {actor} gets the {weapon} into hand all the same.",
+    "{actor} draws the {weapon}, eyes already on {target}."
+  ],
+  "prepare.reload": [
+    "{actor} reloads the {weapon}, ready for the next shot.",
+    "{actor} takes the time to load the {weapon}; {target} can wait one more turn.",
+    "With no shot to spare this turn, {actor} cranks the {weapon} and loads it."
+  ],
+  "prepare.retrieve": [
+    "{actor} digs out the {weapon} and keeps it close for later.",
+    "{actor} pulls the {weapon} from its pouch, ready to use it next.",
+    "Thinking ahead, {actor} gets the {weapon} into hand."
+  ],
+  "prepare.stand": [
+    "{actor} gets back on their feet while there's a moment.",
+    "{actor} uses the lull to stand up."
+  ],
+  "prepare.approach": [
+    "{actor} closes on {target}, ready to strike next.",
+    "{actor} moves up on {target}; the blow will have to wait.",
+    "{actor} gets within striking distance of {target}."
+  ],
+  "prepare.range": [
+    "{actor} moves to get a clear shot at {target}.",
+    "{actor} finds a spot with {target} in range.",
+    "{actor} shifts position, lining up {target} for the next shot."
+  ],
+  "prepare.flank": [
+    "{actor} circles round to take {target} from the other side.",
+    "{actor} slips round {target}, setting up a flank.",
+    "{actor} moves to catch {target} between them and a friend."
+  ],
+  "prepare.tend": [
+    "{actor} hurries toward {target}, ready to tend to them.",
+    "{actor} makes for {target}; help is on its way.",
+    "{actor} pushes toward {target}, too far to help just yet."
+  ],
+  "prepare.guard": [
+    "{actor} steps into the way, between the enemy and {target}.",
+    "{actor} plants themselves in front of {target}.",
+    "{actor} moves up to draw the blows away from {target}."
+  ],
+  "prepare.cover": [
+    "{actor} slips behind cover, out of {target}'s sight.",
+    "{actor} ducks into the shadows, ready to vanish.",
+    "{actor} makes for cover, keeping low."
+  ],
+  "prepare.fallBack": [
+    "{actor} falls back out of {target}'s reach.",
+    "{actor} gives ground, keeping out of {target}'s way.",
+    "{actor} backs off behind their friends.",
+    "{actor} pulls back, putting space between themselves and {target}."
+  ],
+  "prepare.hitAndRun": [
+    "{actor} darts back out of {target}'s reach before they can answer.",
+    "Strike made, {actor} is already slipping away from {target}.",
+    "{actor} hits and runs, leaving {target} swinging at air."
+  ],
   "event.auraTakes": [
     "{target} comes too close to {actor}, and {actor}'s {weapon} takes hold.",
     "{actor}'s {weapon} reaches {target}.",

@@ -6,6 +6,7 @@ import { degreeDistribution } from "../probability.js";
 import { attackRoll, attackOptions, currentAc, saveRoll, bonusDamageParts, enemiesOf, isStanding, isMagical, upgradesSave, boostBonus, liveTier, inArea } from "../battle-state.js";
 import { TACTICAL } from "../../constants.js";
 import { costOf, costUnits, mainPool } from "../turn.js";
+import { usable as gearUsable, reloadPerUse, canReload } from "../gear.js";
 import { controlValue } from "./control.js";
 import { iwrOf, outcomeWorth } from "./effects.js";
 import { critExtraMean } from "./riders.js";
@@ -327,13 +328,15 @@ function threatNow(run, u, versus) {
       bestBonus = Math.max(bestBonus, expectedDamage(run, u, action, versus, 0));
       continue;
     }
-    const each = Math.max(1e-9, cost[main] ?? 1);
+    // (A shot that needs reloading takes its Reload too, every one of them: engine/gear.js. One no turn can reload
+    // has its one shot.)
+    const each = Math.max(1e-9, cost[main] ?? 1) + reloadPerUse(action);
     let total = 0;
     let made = 0;
     for ( let spent = 0; spent + each <= perTurn + 1e-9; spent += each ) {
       total += expectedDamage(run, u, action, versus, made);
       made += attacksIn(action);
-      if ( Number.isFinite(action.uses) || action.resource ) break;
+      if ( Number.isFinite(action.uses) || action.resource || (action.reload && !canReload(action, perTurn)) ) break;
     }
     // A spell or item it can only use so often counts in a round's threat only as far as what's left could last a
     // typical fight (a single Meteor Swarm isn't three rounds of Meteor Swarms); a shot, as far as its ammunition does.
@@ -400,8 +403,9 @@ export function hasUses(u, action) {
   if ( hasTrait(u, "noGear") && (u.handActions?.has(action.id) || isMagical(action)) ) return false;
   // (resourceCost: what one use takes, a point by default: Daggerheart's 3 Hope for a class's Hope feature.)
   if ( action.resource && resourceLeft(u, action) < (action.resourceCost ?? 1) ) return false;
-  // (Ammunition for the shot: PF2e's bolts.)
+  // (Ammunition for the shot: PF2e's bolts. And loaded, or a Reload a turn can hold: engine/gear.js.)
   if ( !hasAmmo(u, action) ) return false;
+  if ( action.reload && !gearUsable(u, action) ) return false;
   // (And so many uses, beside what it costs: a Fear, once a scene.)
   if ( Number.isFinite(action.uses) ) return (u.uses[action.id] ?? 0) > 0;
   return true;

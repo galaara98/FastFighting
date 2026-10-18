@@ -85,6 +85,12 @@
  * @property {string} [resource]            Pool key consumed per use
  * @property {string} [ammo]                Pool key its shots come from (API 20: ammunition, never saved up), and
  * @property {number} [ammoCost]            the rounds a shot takes (1)
+ * @property {string} [gear]                What it uses, as a key: actions sharing one share whether it's in hand and
+ *                                          loaded (API 20, engine/gear.js; default its own id)
+ * @property {number} [drawCost]            Main-pool units to get it in hand (PF2e's Interact); with it, it starts out of hand
+ * @property {number} [reload]              Main-pool units a Reload takes, apart from its cost (Infinity: none in a fight)
+ * @property {boolean|number} [loaded]      Whether it starts loaded (default true), or the rounds loaded in it
+ * @property {number} [capacity]            The rounds it holds loaded (1); a Reload loads one
  * @property {number} [uses]                Uses per battle when not pool-based
  * @property {boolean} [rechargeOnCrit]     Its uses come back when its user scores a critical hit with a Strike (PF2e
  *                                          Draconic Momentum: the Breath Weapon)
@@ -123,6 +129,7 @@ import { typicalValue } from "./tactics.js";
 import { talkAffinity } from "./behavior/talk.js";
 import { goadAction } from "./behavior/goad.js";
 import { Turn } from "./turn.js";
+import { initGear } from "./gear.js";
 import { combineMods, netAdvantage } from "./mods.js";
 import { conditionSetup, barred, profiled } from "./conditions.js";
 import { inTheWay, crossed, crossedExtra, passOf, spotWithin, wallsKnown, lineOfSight, spotToShoot, coverFrom } from "./behavior/space.js";
@@ -410,7 +417,9 @@ export function createUnit(prep, p) {
     fellRound: null,
     wasDowned: false,
     healedTargets: new Set(),
+    // (Its gear in hand, and what's loaded in what it reloads: engine/gear.js.)
     drawn: new Set(),
+    loaded: new Map(),
     conds: Object.fromEntries(Object.entries(s.conditions ?? {}).filter(([k]) => k !== "prone").map(([k, v]) => [k, v === true ? 1 : Number(v) || 0])),
     baseConds: null, // set below: conditions that were there before any affliction
     afflictions: [],
@@ -450,6 +459,7 @@ export function createUnit(prep, p) {
     feetMoved: 0
   };
   u.baseConds = { ...u.conds };
+  initGear(u, s.actions);
   prep.rules.initUnit?.(u); // the system's own per-fight state (5e: death saves already on the sheet)
   // Ready to react from the start (5e opportunity attacks, PF2e Reactive Strike); none if the system has none.
   u.reactionsLeft = prep.rules.opportunity || s.reactions?.length ? (prep.rules.reactions ? prep.rules.reactions(u) : 1) : 0;

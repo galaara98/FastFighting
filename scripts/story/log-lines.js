@@ -144,7 +144,7 @@ function baseLine(e) {
     case "strain": return t(e.empty ? "StrainEmpty" : "Strain", { actor: e.actor, target: e.target, lost: e.lost, pool: e.label ?? e.pool, left: e.left });
     case "talk": return t("Talk", { ...a, skill: e.skill, roll: dice(e.natural, e.mod, e.total, e.dc, t("DcOf", { stat: e.dcStat })), degree: degree(e.degree), margin: signed(e.margin ?? 0), boost: e.boost ? ` · ${t("SizedUp", { n: e.boost })}` : "", progress: e.progress, steps: e.steps });
     case "heal": return t("Heal", { actor: e.actor, target: e.self ? t("Self") : e.target, action: e.action, check: e.check ? ` · ${t(e.check.skill ? "HealCheck" : "Medicine", { skill: e.check.skill ?? "", roll: dice(e.check.natural, e.check.mod, e.check.total, e.check.dc, t("DC")), degree: degree(e.check.degree) })}` : "", amount: e.amount, revived: e.revived ? t("Revived") : "" });
-    case "move": return t("Move", {
+    case "move": return t(e.away ? "MoveAway" : "Move", {
       actor: e.actor, mode: t(MODE[e.mode] ?? "ModeMove"), distance: distanceText(e.feet), toward: e.purpose === "door" ? t("TheDoor") : e.purpose === "leave" ? t("TheEdge") : e.toward,
       terrain: e.mult > 1.05 ? t("Terrain", { mult: Number(e.mult).toFixed(2), regions: e.regions?.length ? t("TerrainRegions", { regions: listItems(e.regions) }) : "" }) : ""
     });
@@ -288,7 +288,10 @@ function baseLine(e) {
       if ( e.finished ) return t("Finished", a);
       return t("Slain", a);
     case "struckDown": return t("StruckDown", { actor: e.actor, n: e.dying ?? 0 });
-    case "draw": return t("Draw", { actor: e.actor, item: e.item ?? "" });
+    case "draw": return t(e.retrieve ? "Retrieve" : "Draw", { actor: e.actor, item: e.item ?? "" });
+    case "reload": return t("Reload", { actor: e.actor, item: e.item ?? "" });
+    // (Getting ready for next turn: what it did, and for what: behavior/prepare.js.)
+    case "prepare": return t("Prepare", { actor: e.actor, step: t(`PrepareStep.${e.step}`), why: e.desire ? t(e.target ? "PrepareFor" : "PrepareForSelf", { desire: t(`PrepareDesire.${e.desire}`), target: e.target ?? "" }) : "", worth: e.worth ?? 0 });
     case "end": return endLine(e);
     case "escape": {
       // (A grab, a prisoner's bonds, or another hold; with what it rolled, if it rolled.)

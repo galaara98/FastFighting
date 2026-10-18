@@ -54,7 +54,8 @@ describe("its strike back (strikeBack)", () => {
     let told = null;
     for ( let seed = 1; seed <= 12 && !told; seed++ ) {
       const r = replay(battle([
-        creature({ id: "seelah", position: at(0), reactions: [champion()], actions: [strike({ id: "sword", bonus: 0, damage: [parseFormula("1", "slashing")] })] }),
+        // (Held where it is: out of reach, it stays so, and says so.)
+        creature({ id: "seelah", position: at(0), conditions: { immobilized: 1 }, reactions: [champion()], actions: [strike({ id: "sword", bonus: 0, damage: [parseFormula("1", "slashing")] })] }),
         creature({ id: "lem", position: at(0, 10), hp: { value: 200, max: 200 }, actions: [strike({ bonus: 0, damage: [parseFormula("1", "slashing")] })] }),
         creature({ id: "scout", side: "hostile", position: at(5, 14), hp: { value: 200, max: 200 }, flags: { fearless: true }, tactics: { target: "nearest" }, actions: [bow()] })
       ], { positioning: true, maxRounds: 2 }), pf2eRules, seed);

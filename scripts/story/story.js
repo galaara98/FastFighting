@@ -460,6 +460,10 @@ function narrate(e, roll, rel, fill) {
     case "stand": return roll("maneuver.standUp", f);
     case "shield": return roll("maneuver.raiseShield", f);
     case "draw": return roll("maneuver.drawWeapon", f);
+    case "reload": return roll("maneuver.reload", f);
+    // (Getting ready for next turn, told by what it's for: behavior/prepare.js. The draw, Reload or move it takes is
+    // told by this, not again on its own.)
+    case "prepare": return roll(`prepare.${e.step}`, { ...f, weapon: e.item ?? f.weapon ?? "" });
     case "prone": return roll("condition.prone", f);
     case "grabbed": return roll("condition.grabbed", f);
     case "escape": return roll(e.success ? "maneuver.escape" : e.hold === "bound" ? "event.stuckBonds" : "event.stuck", f);
@@ -795,8 +799,12 @@ function roleplayParagraphs(result, spec, tables, seed, mapType, mapCondition = 
   let lastMoveKey = null;
   const done = new Map();
   let doneTurn = null;
+  // (Whoever moves in a turn, before its blow or after: closing in, or falling back, is told already.)
+  for ( const e of result.log ) if ( e.type === "move" ) closed.add(`${e.actorId}|${e.turn}`);
   for ( const logged of tellingOrder(result.log) ) {
     if ( logged.type === "initiative" || !mentions(logged) || averted.has(logged) ) continue;
+    // (A step taken for next turn is told by its `prepare` event, once.)
+    if ( logged.prepared ) continue;
     if ( logged.type === "recovery" && logged.aftermath && !logged.stable && !logged.dead && !logged.revived && lastBreath.get(logged.actorId) !== logged ) continue;
     // (Taking hold and its first harm are one moment: told once.)
     const onset = `${logged.actorId}|${logged.name}|${logged.turn}`;

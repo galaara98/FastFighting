@@ -12,7 +12,8 @@ import { enemiesOf, isStanding, liveTier, liveTrait, movesNeeded, behaviorOf, he
 import { isAnimalistic } from "./animal.js";
 import { hasTrait } from "../conditions.js";
 import { expectedDamage, hasUses, limited, threatOf, costOf, costUnits, unitsPerTurn } from "./evaluate.js";
-import { mainPool } from "../turn.js";
+import { mainPool, unitsPerUse } from "../turn.js";
+import { needsDraw } from "../gear.js";
 import { styleWeight } from "../tactics.js";
 import { threats, isWary } from "./reactions.js";
 import { think, thwart, mind, avoids, levelsFromScores } from "./desire.js";
@@ -53,9 +54,9 @@ export function bestOptionVs(run, u, t, attacksMade = 0, turn = null) {
     // (And what it would set up: a claw that makes a Rend possible is worth more than its own damage.)
     const ev = expectedDamage(run, u, action, t, attacksMade) + followUpWorth(run, u, action, t, attacksMade, turn);
     const cost = costOf(rules, action, u);
-    const base = costUnits(rules, costOf(rules, action));
-    // Drawing a weapon is a one-time cost, so spread it over the attacks it enables.
-    const amortized = base + ((cost[main] ?? 0) - (costOf(rules, action)[main] ?? 0)) * 0.25;
+    // Drawing a weapon is a one-time cost, so spread it over the attacks it enables; every shot's Reload is its own
+    // (engine/gear.js: a heavy crossbow's shot is three actions, loaded now or not).
+    const amortized = unitsPerUse(rules, action) + (needsDraw(u, action) ? Number(action.drawCost) : 0) * 0.25;
     const moveUnits = turn ? turn.unitsForMoves(moves, run.prep.approachOf(u.id, t.id).speed) : moves;
     const perAction = ev / Math.max(0.1, amortized + moveUnits);
     // (Reluctant to spend a potion or a spell slot? Far less likely, unless the moment demands it.)
@@ -369,7 +370,7 @@ function canStop(u, f) {
 function pace(run, u, option) {
   const rules = run.prep.rules;
   const perTurn = unitsPerTurn(rules, u);
-  const units = option ? Math.max(1e-9, costUnits(rules, costOf(rules, option.action))) : 1;
+  const units = option ? Math.max(1e-9, unitsPerUse(rules, option.action)) : 1;
   const dpr = Math.max(0.1, (option?.ev ?? 0) * Math.max(1, Math.floor(perTurn / units)));
   // PF2e: every action can be a Stride; 5e: a move and a Dash.
   const movesPerTurn = rules.movement === "feet" ? 2 : perTurn;

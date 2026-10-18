@@ -39,6 +39,7 @@ import { outcomeWorth, applyOutcome } from "./effects.js";
 import { isImmune } from "./control.js";
 import { stepSpots, edgeAt } from "./space.js";
 import { triggerOf } from "../../story/master.js";
+import { needsDraw, isLoaded } from "../gear.js";
 
 /** The effects this file plays, in the order a reaction plays them. */
 export const GENERAL_EFFECTS = Object.freeze(["step", "strike", "harm", "afflict", "areaBurst", "boost", "heal", "recharge"]);
@@ -113,15 +114,19 @@ export function riposteStrike(u) {
  * best of those it names that reach the foe), else its best everyday melee strike, the foe in reach; else, where it may
  * Step first (r.strikeStep, feet: PF2e Nimble Reprisal's 5), the foe that much past its reach (step: the feet it
  * steps); else, where it may shoot instead (r.strikeRanged: Nimble Reprisal), its best everyday ranged strike, the foe
- * in range and in sight. A shot only with the ammunition for it (action.ammo).
+ * in range and in sight. A shot only with the ammunition for it (action.ammo), in hand and loaded (engine/gear.js: no
+ * time to draw or reload in a reaction).
  */
+/** Ready to strike with as a reaction: its ammunition, in hand, loaded. */
+const ready = (u, a) => hasAmmo(u, a) && !needsDraw(u, a) && isLoaded(u, a);
+
 export function strikeBack(run, u, foe, r) {
   if ( !foe || !r ) return null;
   const named = namedStrikes(r);
   if ( named ) {
     let best = null;
     for ( const a of u.prep.offense ) {
-      if ( a.kind !== "strike" || !named.includes(a.id) || !hasAmmo(u, a) || movesNeeded(run, u, foe, a) !== 0 ) continue;
+      if ( a.kind !== "strike" || !named.includes(a.id) || !ready(u, a) || movesNeeded(run, u, foe, a) !== 0 ) continue;
       const score = strikeScore(a);
       if ( !best || score > best.score ) best = { a, score };
     }
@@ -137,7 +142,7 @@ export function strikeBack(run, u, foe, r) {
   if ( r.strikeRanged ) {
     let best = null;
     for ( const a of u.prep.offense ) {
-      if ( !everyday(a) || a.melee || !a.range || !hasAmmo(u, a) ) continue;
+      if ( !everyday(a) || a.melee || !a.range || !ready(u, a) ) continue;
       if ( movesNeeded(run, u, foe, a) !== 0 ) continue;
       const score = strikeScore(a);
       if ( !best || score > best.score ) best = { a, score };
