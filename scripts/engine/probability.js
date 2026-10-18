@@ -97,8 +97,27 @@ export function rollD20(rules, rng, modifier, dc, { advantage = 0, kind = "check
  * system made itself in a live battle ({degree, natural, total, dice}), taken as it came out, no dice of the engine's:
  * the rules' `asRolled` makes it theirs (what their own roll would have done with those dice: Daggerheart's Hope or
  * Fear), else it's {natural, total, degree} as it stands.
+ *
+ * In a live battle (a recording rng: engine/table-rolls.js) the engine's own dice are a table roll, shown in the chat:
+ * `options.by` (else `roller`) rolls it, `label` or `what` says what for, `as` its kind where it isn't `kind` (a flat
+ * check), `target` at whom; `quiet` keeps one the Statistics Engine makes for itself out of it (a bystander noticing).
+ * A system's own roll() may say how its dice show (roll.shown, as table-rolls.js `split`: an Ironsworn action roll
+ * against its challenge dice). None of this changes a die.
  */
 export function rollCheck(rules, rng, modifier, dc, options = {}) {
+  const at = options.rolled || options.quiet ? undefined : rng?.mark?.();
+  const roll = rollChecked(rules, rng, modifier, dc, options);
+  if ( at === undefined ) return roll;
+  rng.record(at, {
+    by: options.by ?? options.roller ?? null, target: options.target ?? null, kind: options.as ?? options.kind ?? "check",
+    label: options.label ?? "", what: options.what ?? null, mod: modifier, total: roll.total, dc, natural: roll.natural, degree: roll.degree,
+    extras: (options.dice ?? []).map(f => Math.sign(f) * Math.max(1, Math.abs(Math.round(f)))),
+    keep: options.advantage ? (options.advantage > 0 ? "kh" : "kl") : null, split: roll.shown ?? null
+  });
+  return roll;
+}
+
+function rollChecked(rules, rng, modifier, dc, options = {}) {
   if ( options.rolled ) {
     const own = { ...options, faces: facesOf(rules, options) };
     const r = options.rolled;

@@ -15,6 +15,10 @@
  * friend's); an NPC's reactions as the GM says (live.npcReactions: "calculated", the engine's own judgement, or "ask").
  * A question stops the turn (NeedsDecision); the turn is played again from its snapshot, the same dice and the answer.
  * A player's other resources (Luck and the like) are never spent by the engine.
+ * The dice the engine rolls for what the table would roll (damage, a save, a recharge ...) are recorded as each turn's
+ * pass plays (engine/table-rolls.js): a fresh tray each pass, so a pass played again for an answer records only its
+ * own. What the final pass recorded comes back with it (liveTurn's `rolls`; takeRolls after any other), for the live
+ * side to show.
  * Pure: no Foundry globals.
  */
 import { STATUS, SWAY, NEUTRAL_PARTY, HOSTILE_GROUPS, GROUPS, clamp } from "../constants.js";
@@ -25,6 +29,7 @@ import {
 import { createRun, createUnit, isStanding, areEnemies, edgeDistance, groupKeyOf, leadershipOf, SLOTS, headsUp } from "./battle-state.js";
 import { threats } from "./behavior/reactions.js";
 import { createRng, deriveSeed } from "./rng.js";
+import { recordingRng, takeRolls } from "./table-rolls.js";
 import { prepareDoors } from "./behavior/doors.js";
 import { recompute, applyOutcome, stillDoes } from "./behavior/effects.js";
 import { reactionsPerRound } from "./behavior/reactions.js";
@@ -72,7 +77,8 @@ function attach(run, live) {
  * @param {string} [options.npcReactions]         "calculated" (default) or "ask"
  */
 export function beginLive(spec, rules, { seed, players = [], owns = {}, npcReactions = "calculated", systemRolls = [], readsRolls = false } = {}) {
-  const run = beginRun(prepareBattle(spec, rules), seed, { log: true });
+  // (Recording from the start: the system's own surprise, rolled as it begins, is the table's. takeRolls has it.)
+  const run = beginRun(prepareBattle(spec, rules), seed, { log: true, record: true });
   attach(run, {
     // (systemRolls: the kinds of roll the system makes itself, with its own roller, where the helper can: systemRoll;
     // readsRolls: a player's reaction, rolled by the player and read from their cards: decide.)
@@ -122,14 +128,17 @@ function nextDice(run, salt = 0, nonce = 0) {
   run.live.seq += 1;
   run.live.asked = new Map();
   const base = nonce ? deriveSeed(run.live.seed, nonce) : run.live.seed;
-  // (A turn played again after a rewind: fresh dice, `salt` times over.)
-  run.rng = createRng(deriveSeed(base, run.live.seq + salt * 100003));
+  // (A turn played again after a rewind: fresh dice, `salt` times over. Recorded as they fall, a fresh tray: the table's
+  // rolls among them are shown.)
+  run.rng = recordingRng(createRng(deriveSeed(base, run.live.seq + salt * 100003)));
 }
 
 /**
  * A simulated turn. `answers`: what was asked and answered for it so far (key -> true/false), when it's played again.
- * Returns {events, ended}; throws NeedsDecision when someone must be asked first (restore the snapshot taken before
- * it, ask, and play it again with the answer). `salt`: played again after a rewind, with fresh dice.
+ * Returns {events, ended, rolls}: `rolls` the table rolls the engine's own dice made in it (engine/table-rolls.js), to
+ * show. Throws NeedsDecision when someone must be asked first (restore the snapshot taken before it, ask, and play it
+ * again with the answer: that pass, and what it recorded, thrown away). `salt`: played again after a rewind, with
+ * fresh dice.
  */
 export function liveTurn(run, id, { answers = null, salt = 0, nonce = 0 } = {}) {
   const u = run.byId.get(id);
@@ -150,8 +159,11 @@ export function liveTurn(run, id, { answers = null, salt = 0, nonce = 0 } = {}) 
     run.live.playing = false;
   }
   followCommand(run);
-  return { events: run.log.slice(from), ended };
+  return { events: run.log.slice(from), ended, rolls: takeRolls(run) };
 }
+
+/** The table rolls the engine's dice made since they were last taken (engine/table-rolls.js), taken: for the live side. */
+export { takeRolls };
 
 /**
  * A player's turn, played at the table: what was read of it (events in the engine's own log shapes: attack, save,

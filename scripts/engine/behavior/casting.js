@@ -59,7 +59,7 @@ export function cast(run, u, action, { stakes = 0.5, log = null } = {}) {
   const lowest = tiers[0]?.min ?? Infinity;
   // (A live battle's, the system's own spell check where it makes checks: its total finds the tier, as the engine's.)
   const rolled = Number.isFinite(lowest) ? systemRolled(run, u, "check", { dc: lowest, purpose: "cast", action }) : null;
-  let roll = rollCheck(rules, run.rng, Number(c.mod) || 0, lowest, { kind: "check", faces, roller: c.faces ? null : u, rolled });
+  let roll = rollCheck(rules, run.rng, Number(c.mod) || 0, lowest, { kind: "check", faces, roller: c.faces ? null : u, rolled, by: u, label: c.label || action.name || "", what: "cast" });
   // (What the roll means beyond the spell, by the system: DCC's Fleeting Luck.)
   rules.afterRoll?.(run, u, roll, { kind: "cast", action, faces });
   const range = c.disapproval ? (u.disapproval ?? c.disapproval) : 0;

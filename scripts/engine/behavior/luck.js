@@ -24,6 +24,7 @@ import { clamp, STATUS } from "../../constants.js";
 import { isStanding, liveTrait, areEnemies, edgeDistance } from "../battle-state.js";
 import { regrade } from "../probability.js";
 import { perceives } from "./senses.js";
+import { diceAt, tableRoll } from "../table-rolls.js";
 
 const left = (run, u, b) => (b.shared ? run.sharedPools?.[b.shared] ?? 0 : u.resources[b.pool] ?? 0);
 
@@ -84,10 +85,13 @@ export function boost(run, roller, roll, dc, { kind, stakes = 0.3, options = {} 
     // Spend a point at a time until it's enough (a rolled die may need more, or fewer, than reckoned).
     let spent = 0;
     let total = roll.total;
+    const at = diceAt(run);
     while ( total < dc && spent < cap ) {
       total += value.roll(run.rng);
       spent += 1;
     }
+    // (A die for each point, a DCC thief's luck die: a table roll, the spender's.)
+    if ( at >= 0 ) tableRoll(run, at, { by: u, target: roller, kind: "other", what: "luck", label: b.label ?? "", total: total - roll.total });
     if ( b.shared ) run.sharedPools[b.shared] -= spent;
     else u.resources[b.pool] -= spent;
     const next = { ...roll, total, boosted: spent };

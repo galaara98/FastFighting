@@ -8,6 +8,9 @@
  *     creatures FastFighting plays feel it as they would have (engine/live.js pcTurn).
  *   - A reaction someone must decide (a player's "ask me", or an NPC's when the GM wants to be asked): the turn stops,
  *     the question is put, and the turn is played again from where it began, with the same dice and the answer.
+ *   - The dice the engine rolls itself for what the table would roll (damage, a save, a recharge ...) are shown as real
+ *     rolls, the turn's own cards (table-rolls.js); a fight played through (Play to the end, the aftermath) on one card
+ *     for the GMs.
  *   - Rewind Turn puts the last turn back (last first): what it wrote, its cards, its moves, and the run as it was.
  *     Rewind This Encounter puts every turn back.
  * The run lives in the GM's browser while the battle goes; after every turn it's kept (snapshot, turns) on a journal
@@ -31,8 +34,9 @@ import { loadStoryTables } from "../story/tables.js";
 import {
   beginLive, liveRound, liveOrder, liveDrop, liveTurn, pcTurnBegin, pcTurnEnd, syncFromSheets, setApproach, setScene, captureAll, snapshotRun, restoreRun, endLive, packLog, followCommand,
   NeedsDecision, rollsKind, applyFact, gmMoment, leavingReach, openingFor, reactNow, movedBeside, nextSpotlight, liveAftermath,
-  setCondition, setRelation, clearRelation, setAffliction, setGoal, setAttitude, setSide, setRole, playerRuns
+  setCondition, setRelation, clearRelation, setAffliction, setGoal, setAttitude, setSide, setRole, playerRuns, takeRolls
 } from "../engine/live.js";
+import { postRolls, postTally, tallyOf, audiencesFor } from "./table-rolls.js";
 import { diffAll, sideAfter } from "../engine/changes.js";
 import { undoRecord } from "./sheet-tools.js";
 import { keepUpdate, keptBattle, forgetUpdate } from "./live-keeping.js";
@@ -152,7 +156,7 @@ async function keepNow(b) {
   b.data.snapshot = snapshotRun(b.run, { log: false });
   // (A player's turn under way: who, since when, what the GM said and what reactions wrote. Its cards are found again by time.)
   const pc = b.pc;
-  b.data.pc = pc ? { combatantId: pc.combatantId, id: pc.id, round: pc.round, facts: pc.facts, records: pc.records, snapshot: pc.snapshot, from: pc.from, damage: pc.damage ?? [], dealt: pc.dealt ?? [], lastAt: pc.lastAt ?? null } : null;
+  b.data.pc = pc ? { combatantId: pc.combatantId, id: pc.id, round: pc.round, facts: pc.facts, records: pc.records, snapshot: pc.snapshot, from: pc.from, damage: pc.damage ?? [], dealt: pc.dealt ?? [], lastAt: pc.lastAt ?? null, rollCards: pc.rollCards ?? [] } : null;
   const doc = await store();
   // (The battle's own key replaced whole, the store's other keys left as they are. Its spec, the biggest part, only
   // when it's changed: kept beside it. Its turns and its log, each apart: only what's new.)
@@ -211,13 +215,15 @@ export async function startLiveBattle(spec, { style = setting("storyStyle"), odd
   const seed = randomSeed();
   const live = { ...spec, options: { ...spec.options, initiativeOrder: combat.turns.map(c => c.tokenId) } };
   const run = beginLive(live, adapter.rules, { seed, players, owns: adapter.liveOwnership?.() ?? {}, npcReactions: "calculated", systemRolls: systemRollKinds(adapter), readsRolls: offers(adapter, "readTurn") });
+  // (What the system rolled as the fight was set up, its surprise: shown with the opening.)
+  const openingRolls = takeRolls(run);
   // (Prepared until the encounter begins: no turn played, nothing told.)
   battle = {
     combat, scene, spec: live, rules: adapter.rules, run, pc: null,
     data: {
       id: foundry.utils.randomID(), user: game.user.id, sceneId: scene.id, spec: packSpec(live), seed, style, odds, players, told: 0, turns: [],
       ended: false, played: null, opening: [], rolled: [], rollCards: [], joined: [], startedCombat: false, spotlight, spots: 0, prepared: true, applyDamage: !!applyDamage,
-      startedBefore: combat.started && !began
+      startedBefore: combat.started && !began, openingRolls
     }
   };
   await combat.setFlag(MODULE_ID, "live", flagOf(true));
@@ -259,7 +265,9 @@ export function beginEncounter() {
     battle.data.spec = packSpec(battle.spec);
     liveRound(battle.run, combat.round || 1);
     Object.assign(battle.data, { prepared: false, rolled: unrolled, rollCards, startedCombat: started });
-    battle.data.opening = await tellNew();
+    const shown = await showRolls(battle.data.openingRolls ?? [], null);
+    battle.data.openingRolls = [];
+    battle.data.opening = [...shown, ...await tellNew()];
     await keep();
     await turnBegins(combat.combatant);
   }).finally(() => { beginning = null; });
@@ -498,6 +506,7 @@ async function followBack(prior) {
   }
   await revertOpenTurn();
   for ( const turn of [...undo].reverse() ) await holdingPause(() => revertEntry(battle.scene, turn));
+  await untally(undo);
   const snapshot = undo[0]?.snapshot ?? battle.pc?.snapshot;
   if ( snapshot ) battle.run = playersNow(restoreRun(battle.spec, battle.rules, snapshot, { log: battle.run.log }));
   battle.data.turns = turns.slice(0, turns.length - undo.length);
@@ -512,7 +521,7 @@ async function followBack(prior) {
   const u = unitOf(combatant);
   if ( reopen && u ) {
     pcTurnBegin(battle.run, u.id, { nonce: freshNonce() });
-    battle.pc = { combatantId: combatant.id, id: u.id, round: reopen.round, messages: reopen.cards ?? [], facts: reopen.facts ?? [], records: [], snapshot: reopen.snapshot, from: reopen.from };
+    battle.pc = { combatantId: combatant.id, id: u.id, round: reopen.round, messages: reopen.cards ?? [], facts: reopen.facts ?? [], records: [], snapshot: reopen.snapshot, from: reopen.from, rollCards: [] };
   } else if ( own || (u && GONE.has(u.status)) ) battle.data.played = key;
   else if ( u && playerRuns(battle.run, u) ) await beginPlayerTurn(u, combatant);
   else if ( u ) await rewoundCard(u);
@@ -701,7 +710,7 @@ function beginPlayerTurn(u, combatant) {
   const snapshot = snapshotRun(battle.run, { log: false });
   pcTurnBegin(battle.run, u.id, { nonce: freshNonce() });
   const doc = docOf(u.id);
-  battle.pc = { combatantId: combatant.id, id: u.id, round: battle.combat.round, messages: [], facts: [], records: [], snapshot, from: Date.now(), lastAt: doc ? { x: doc.x, y: doc.y } : null };
+  battle.pc = { combatantId: combatant.id, id: u.id, round: battle.combat.round, messages: [], facts: [], records: [], snapshot, from: Date.now(), lastAt: doc ? { x: doc.x, y: doc.y } : null, rollCards: [] };
   // (Every sheet and token as the turn begins, for Rewind to put back whatever the turn changed by hand.)
   sheetsAt.set(battle.pc, captureSheets());
   return keep();
@@ -712,6 +721,7 @@ async function newRound(round) {
   liveRound(battle.run, round);
   for ( const u of [...battle.run.order] ) {
     if ( u.active || u.status !== STATUS.STANDING || u.spec.hazard ) continue;
+    // (Whether it notices: FastFighting's own reckoning, nothing rolled the table would see.)
     liveTurn(battle.run, u.id);
     if ( u.active || u.joinsRound ) {
       const doc = battle.scene.tokens.get(tokenIdOf(u));
@@ -851,8 +861,12 @@ async function playTurn(u, combatant, key) {
     await placeSummons(turn.records);
     // (Those inside another, swallowed or engulfed: where their holder went.)
     await carryInside();
+    // (Who sees the engine's rolls, as the tokens are before the turn's writing hides one that fled.)
+    const audiences = rollAudiences(result.rolls);
     // What the turn changed, onto the sheets (each written as it stood when the turn began).
     await writeChanges(before, after, turn.records);
+    // (The engine's own dice for what the table would roll, shown: the turn's cards. Played through, the GMs' card.)
+    turn.messages.push(...await showRolls(result.rolls, turn, { settle: !!battle.data.auto, audiences }));
     // (Those it saw off the map: out of the way, and off the tracker as it moves on.)
     await sendOff(result.events, turn);
     // (What the turn did to what the encounter keeps: Daggerheart's Fear.)
@@ -1066,10 +1080,12 @@ async function useTurnAction({ unitId, targetId, action }) {
  * The damage of an action that isn't an attack, rolled the system's way once for all it catches (the helper's
  * rollDamage: a spell's, a breath's), its card in the chat: {damage: {byType}, card}, or null (the engine's dice).
  */
-async function rollTurnDamage({ unitId, action, card }) {
+async function rollTurnDamage({ unitId, targetId, action, card }) {
   const doc = docOf(unitId);
   if ( !doc || !offers(getAdapter(), "rollDamage") ) return null;
-  const raw = await getAdapter().rollDamage(doc, { action, card: card ?? null, secret: secretRoll(doc) });
+  // (Its first target, for a roller that wants one: a Strike's damage, PF2e's Rend.)
+  const target = targetId ? docOf(targetId) ?? null : null;
+  const raw = await getAdapter().rollDamage(doc, { action, card: card ?? null, secret: secretRoll(doc), target });
   const byType = raw?.damage?.byType && typeof raw.damage.byType === "object"
     ? Object.fromEntries(Object.entries(raw.damage.byType).map(([k, v]) => [String(k), counted(v)]).filter(([, v]) => v !== null)) : null;
   if ( !byType || !Object.keys(byType).length ) return null;
@@ -1106,7 +1122,10 @@ async function revertOpenTurn() {
   if ( !pc ) return;
   const before = sheetsAt.get(pc);
   const records = [...(before ? sheetUndo(before) : []), ...(pc.records ?? [])];
-  if ( records.length ) await holdingPause(() => revertEntry(battle.scene, { records }));
+  // (And the engine's rolls shown in it so far: a foe's reaction's.)
+  const messages = pc.rollCards ?? [];
+  pc.rollCards = [];
+  if ( records.length || messages.length ) await holdingPause(() => revertEntry(battle.scene, { records, messages }));
 }
 
 /** Each player's turn's sheets as it began (captureSheets), in this browser. */
@@ -1854,6 +1873,7 @@ async function openingTaken(pc, message = null) {
     await rollFirst(run, reactorId, pc.id, strike);
     const events = reactNow(run, reactorId, pc.id, strike, "foeOpening");
     await writeChanges(before, captureAll(run), pc.records);
+    await showPcRolls(pc);
     // (A blow that disrupts what the character was doing, as the system has it: PF2e's critical Reactive Strike.)
     const crit = events.some(e => e.type === "attack" && e.actorId === reactorId && e.degree === 3);
     if ( crit && message && getAdapter().disruptsAction?.(message) ) await tellStop(pc.id, fmt("FASTFIGHTING.Live.Disrupted", { name: run.byId.get(pc.id)?.spec.name ?? "", by: run.byId.get(reactorId)?.spec.name ?? "" }));
@@ -1909,6 +1929,10 @@ async function closePlayerTurn() {
   events.push(...handoffs);
   syncPools(adapter);
   const result = pcTurnEnd(run, pc.id, events, states, pc.facts ?? []);
+  // (What the engine's dice did as it ended, a foe's death throes, an effect's save: shown with the turn, seen as the
+  // tokens are before its writing.)
+  const endRolls = takeRolls(run);
+  const audiences = rollAudiences(endRolls);
   // (What the engine itself made of the turn, past what the sheets say: a death burst, written.)
   const records = pc.records ?? [];
   // (What the turn changed by hand, the player's or a GM's: moves, hit points, resources, items, effects. First, so a
@@ -1922,6 +1946,7 @@ async function closePlayerTurn() {
     key: `${pc.round}.${pc.combatantId}`, combatantId: pc.combatantId, round: pc.round, at: battle.combat.turns.findIndex(c => c.id === pc.combatantId), kind: "pc", records, messages: [], moves: [], doors: [], snapshot: pc.snapshot,
     from: pc.from, cards: pc.messages, facts: pc.facts ?? []
   };
+  turn.messages.push(...(pc.rollCards ?? []), ...await showRolls(endRolls, turn, { audiences }));
   turn.messages.push(...await tellNew());
   await settleTurn(turn, result.ended);
 }
@@ -2021,6 +2046,7 @@ async function playerMoved(doc) {
     await rollFirst(run, reactorId, pc.id, strike);
     reactNow(run, reactorId, pc.id, strike);
     await writeChanges(before, captureAll(run), pc.records);
+    await showPcRolls(pc);
     answered = true;
   }
   // (Stopped by it, knocked down, laid prone or held fast: the move goes no further. The token goes back where the move
@@ -2074,6 +2100,7 @@ async function answerArrival(pc, from) {
   pc.records.push(...stage.records);
   if ( !events.length ) return stage.records.length > 0;
   await writeChanges(before, captureAll(battle.run), pc.records);
+  await showPcRolls(pc);
   const rest = events.slice(stage.played);
   await playMoves(rest, stageDocs(stage), setting("playOnMap") ? stageGrid(stage) : null, stage.doorsOpened, battle.scene, { instant: !setting("playOnMap") });
   return true;
@@ -2315,6 +2342,54 @@ async function tellNew() {
   return out;
 }
 
+/* -------------------------------------------- */
+/*  The engine's own rolls                      */
+/* -------------------------------------------- */
+
+/**
+ * The table rolls the engine's own dice made (engine/table-rolls.js), shown: real rolls in the chat, each creature's
+ * its own message, seen as table-rolls.js rollAudience says; `turn`'s, for Rewind (null: the battle's own, its opening).
+ * `settle`: rolls of a fight played through (Play to the end, the aftermath), on the GMs' one card for them instead
+ * (tally). Returns the messages' ids (none for the card: a Rewind trims it, untally).
+ */
+async function showRolls(rolls, turn, { settle = false, audiences = null } = {}) {
+  if ( !rolls?.length || !battle ) return [];
+  if ( settle && turn ) {
+    await tally(turn, rolls);
+    return [];
+  }
+  return postRolls(rolls, {
+    scene: battle.scene, docOf, unitOf: id => battle.run.byId.get(id) ?? null, speakerless: chronicle(), audiences,
+    flags: { battle: battle.data.id, ...(turn?.key ? { turn: turn.key } : {}) }
+  });
+}
+
+/** Who sees each roller's rolls now (table-rolls.js audiencesFor). */
+const rollAudiences = rolls => audiencesFor(rolls, { docOf, unitOf: id => battle.run.byId.get(id) ?? null });
+
+/** What the engine's dice did in a player's turn so far (a foe's reaction), shown now: the turn's, for Rewind. */
+async function showPcRolls(pc) {
+  const ids = await showRolls(takeRolls(battle.run), null);
+  if ( ids.length ) pc.rollCards = [...(pc.rollCards ?? []), ...ids];
+}
+
+/** A turn's rolls onto the GMs' card for rolls settled at once (made, or brought up to date), by its turn. */
+async function tally(turn, rolls) {
+  const { entries, names } = tallyOf(battle.data.tally);
+  entries.push({ turn: turn.key, round: turn.round ?? battle.combat.round, aftermath: turn.kind === "aftermath", rolls });
+  for ( const r of rolls ) if ( r.by && !names[r.by] ) names[r.by] = battle.run.byId.get(r.by)?.spec.name ?? "";
+  battle.data.tally = await postTally(battle.data.tally, entries, { names, flags: { battle: battle.data.id } });
+  turn.tallied = true;
+}
+
+/** Turns taken back: their rolls off the GMs' card (the card gone with the last of them). */
+async function untally(turns) {
+  const keys = new Set((turns ?? []).filter(t => t?.tallied).map(t => t.key));
+  if ( !keys.size || !battle.data.tally ) return;
+  const { entries, names } = tallyOf(battle.data.tally);
+  battle.data.tally = await postTally(battle.data.tally, entries.filter(e => !keys.has(e.turn)), { names, flags: { battle: battle.data.id } });
+}
+
 /** The battle over: who won, told; the GMs told it's over. (The combat stays for the GM to end.) */
 async function finish() {
   const before = captureAll(battle.run);
@@ -2329,7 +2404,8 @@ async function finish() {
       await sendOff(gone, last);
     });
   }
-  const messages = await tellNew();
+  const shown = await showRolls(takeRolls(battle.run), last ?? null);
+  const messages = [...shown, ...await tellNew()];
   battle.data.ended = true;
   const ChatMessage = chatMessages();
   const card = await ChatMessage.create({
@@ -2362,6 +2438,8 @@ export function settleBattle() {
     const turn = { key: "aftermath", kind: "aftermath", combatantId: null, round: battle.combat.round, records: [], messages: [], moves: [], doors: [], snapshot };
     await holdingPause(async () => {
       await writeChanges(before, after, turn.records);
+      // (Its rolls, the dying's and their friends': on the GMs' card for rolls settled at once.)
+      await showRolls(takeRolls(run), turn, { settle: true });
       // (The closing card told at the end gives way to one with the aftermath.)
       if ( battle.data.closing ) await game.messages.get(battle.data.closing)?.delete();
       battle.data.toldBeats = (battle.data.toldBeats ?? []).filter(k => k !== "closing");
@@ -2401,6 +2479,7 @@ export function rewindTurn() {
     // (A player's turn under way after it: what a foe's reaction wrote in it comes off first.)
     await revertOpenTurn();
     await holdingPause(() => revertEntry(battle.scene, turn));
+    await untally([turn]);
     battle.run = playersNow(restoreRun(battle.spec, battle.rules, turn.snapshot, { log: battle.run.log }));
     battle.data.turns = battle.data.turns.slice(0, -1);
     battle.data.played = null;
@@ -2504,8 +2583,8 @@ export function liveFact(fact) {
     gmMoment(battle.run, fact.id);
     const ok = applyFact(battle.run, fact);
     if ( ok ) followCommand(battle.run);
-    const messages = await tellNew();
     const last = battle.data.turns.at(-1);
+    const messages = [...await showRolls(takeRolls(battle.run), last ?? null), ...await tellNew()];
     if ( last ) last.messages.push(...messages);
     await keep();
     return ok;

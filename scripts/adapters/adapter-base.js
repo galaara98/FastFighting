@@ -459,11 +459,13 @@ export class SystemAdapter {
   /**
    * API 19. The damage of an action that isn't an attack (one a save resists, or that simply lands), rolled with the
    * system's own roller once for all it catches, its card in the chat; FastFighting applies each target's share
-   * through applyDamageCard, with its save's multiplier. `action`: {id, name}; `card`: useAction's card, where it made
-   * one; `secret`. Returns {damage: {byType: {type: amount}}, card: message id} (as rolled, before resistances), or null
-   * (the engine rolls it). Optional.
+   * through applyDamageCard, with its save's multiplier. `action`: {id, name, strikeOf} (`strikeOf`: the id of the
+   * Strike whose damage it deals with no roll of its own, where the helper's action named one: PF2e's Rend); `card`:
+   * useAction's card, where it made one; `target`: the TokenDocument it's aimed at first, or null; `secret`. Returns
+   * {damage: {byType: {type: amount}}, card: message id} (as rolled, before resistances), or null (the engine rolls
+   * it, and shows its dice: engine/table-rolls.js). Optional.
    */
-  rollDamage(token, { action, card = null, secret = false }) {
+  rollDamage(token, { action, card = null, secret = false, target = null }) {
     return null;
   }
 

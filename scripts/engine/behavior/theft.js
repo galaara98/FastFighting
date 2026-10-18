@@ -142,7 +142,7 @@ export function attemptTheft(run, u, t, log, { plan = null, attacksMade = 0 } = 
     // Out in the open: a feint with the weapon first, a hit that does no harm, to get close enough to lift something.
     const { bonus, advantage } = attackRoll(run, u, t, plan.weapon, attacksMade);
     const ac = currentAc(run, t, u, plan.weapon);
-    const roll = rollCheck(rules, run.rng, bonus, ac, { advantage, kind: "attack", roller: u });
+    const roll = rollCheck(rules, run.rng, bonus, ac, { advantage, kind: "attack", roller: u, label: plan.weapon.name ?? "", what: "feint", target: t });
     feint = { weapon: plan.weapon.name, natural: roll.natural, mod: bonus, total: roll.total, ac, hit: roll.degree >= 2 };
     if ( !feint.hit ) {
       log(u, {
@@ -157,7 +157,7 @@ export function attemptTheft(run, u, t, log, { plan = null, attacksMade = 0 } = 
   const extra = rules.modifiers?.steal?.({ thief: u, target: t }) ?? {};
   const mod = check.mod + (extra.bonus ?? 0);
   const rolled = systemRolled(run, u, "check", { dc, target: t, purpose: "theft", skill: u.spec.theft.skill ?? null });
-  const roll = rollCheck(rules, run.rng, mod, dc, { advantage: (check.advantage ?? 0) + (extra.advantage ?? 0), dice: check.dice, kind: "check", roller: u, faces: u.spec.theft.faces, rolled });
+  const roll = rollCheck(rules, run.rng, mod, dc, { advantage: (check.advantage ?? 0) + (extra.advantage ?? 0), dice: check.dice, kind: "check", roller: u, faces: u.spec.theft.faces, rolled, what: "steal", target: t });
   const data = {
     type: "theft", target: t.spec.name, targetId: t.id, skill: u.spec.theft.skill ?? "theft", natural: roll.natural, mod, total: roll.total,
     dc, dcStat: resist?.label ?? "DC", degree: roll.degree, margin: roll.total - dc, feint

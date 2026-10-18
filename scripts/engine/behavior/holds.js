@@ -53,6 +53,7 @@ import { typical, isMagical, liveTrait, canMove, systemRolled } from "../battle-
 import { createRng, deriveSeed } from "../rng.js";
 import { meanPart } from "../dice.js";
 import { rollCheck } from "../probability.js";
+import { diceAt, tableRoll } from "../table-rolls.js";
 import { recompute } from "./effects.js";
 import { normalizeCost } from "../turn.js";
 import { troubleHolds, troubleRemedies, setConditionValue } from "./troubles.js";
@@ -164,7 +165,7 @@ export function tryHold(run, who, hold, { freeing = false, held = null } = {}) {
   if ( hold.via === "medicine" ) {
     const mod = who.spec.firstAid?.mod ?? typical(rules, "skill", who.spec.level ?? 0);
     const rolled = systemRolled(run, who, "check", { dc: hold.dc, target: held, purpose: "firstAid", skill: who.spec.firstAid?.skill ?? null, label: hold.key });
-    const roll = rollCheck(rules, run.rng, mod, hold.dc, { kind: "check", roller: who, faces: who.spec.firstAid?.faces, rolled });
+    const roll = rollCheck(rules, run.rng, mod, hold.dc, { kind: "check", roller: who, faces: who.spec.firstAid?.faces, rolled, what: "firstAid", target: held });
     const success = roll.degree >= 2;
     const on = held ?? who;
     if ( !success && hold.worsens ) setConditionValue(on, hold.key, (Number(on.conds?.[hold.key]) || 1) + 1);
@@ -173,7 +174,7 @@ export function tryHold(run, who, hold, { freeing = false, held = null } = {}) {
   const work = who.spec.escapeWork;
   if ( Number.isFinite(work?.mod) && Number.isFinite(hold.dc) ) {
     const rolled = systemRolled(run, who, "check", { dc: hold.dc, target: held, purpose: "escape", skill: work.skill ?? null, label: hold.key });
-    const roll = rollCheck(rules, run.rng, work.mod, hold.dc, { kind: "check", roller: who, faces: work.faces, rolled });
+    const roll = rollCheck(rules, run.rng, work.mod, hold.dc, { kind: "check", roller: who, faces: work.faces, rolled, what: freeing ? "free" : "escape", target: held && held !== who ? held : null });
     return { success: roll.degree >= 2, natural: roll.natural, mod: work.mod, total: roll.total, dc: hold.dc, degree: roll.degree };
   }
   return { success: run.rng.chance(ESCAPE_CHANCE[hold.key] ?? ESCAPE_CHANCE.other) };
@@ -275,7 +276,10 @@ export function remediesOf(run, u) {
         key: `persistent:${type}`, type, label: type, annoyance: Math.min(85, REMEDY.pain + REMEDY.painShare * share),
         cost: normalizeCost(rules, rules.persistentRemedyCost?.(u, type) ?? rules.basicAction ?? 1),
         try: (r, v) => {
+          const at = diceAt(r);
           const ok = rules.persistentRemedy ? rules.persistentRemedy(r, v, type) : { success: rules.persistentFlatCheck(r.rng, { run: r, unit: v, type }) };
+          // (Its flat check, where the helper didn't show it itself.)
+          if ( at >= 0 ) tableRoll(r, at, { by: v, kind: "flat", what: "persistentEnd", each: true });
           if ( ok?.success ) v.persistent = v.persistent.filter(e => e.part.type !== type);
           return ok ?? { success: false };
         }

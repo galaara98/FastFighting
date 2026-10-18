@@ -68,7 +68,11 @@ export const genericRules = {
 
   recoveryCheck: null,
 
-  persistentFlatCheck(rng) {
-    return rng.d20() >= 11;
+  /** A DC 11 flat check ends it; in a live battle, shown (engine/table-rolls.js: rng.mark and rng.record). */
+  persistentFlatCheck(rng, { unit = null } = {}) {
+    const at = rng.mark?.();
+    const natural = rng.d20();
+    if ( at !== undefined ) rng.record(at, { by: unit, kind: "flat", what: "persistentEnd", total: natural, natural, dc: 11 });
+    return natural >= 11;
   }
 };
