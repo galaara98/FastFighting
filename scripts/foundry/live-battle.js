@@ -467,6 +467,15 @@ export function goingBack(turns, now, key, place) {
 }
 
 /**
+ * What taking turns back undoes, each turn as revertEntry takes it: a player's turn taken back whole loses its player's
+ * own cards too (`cards`: what they rolled in it); the one reopened (goingBack's `reopen`) keeps them, read again when
+ * it ends.
+ */
+export function undoEntries(undo, reopen = null) {
+  return undo.map(turn => (turn !== reopen && turn.cards?.length ? { ...turn, messages: [...(turn.messages ?? []), ...turn.cards] } : turn));
+}
+
+/**
  * The tracker went back (the GM's Previous Turn or Previous Round, or Rewind): every turn after the one it's on now is
  * taken back, last first (a player's turn under way too), so the battle stands as that turn left it. One FastFighting
  * played waits for Next Turn; a player's is theirs again (their cards read again, all of them, when it ends); one never
@@ -491,7 +500,7 @@ async function followBack(prior) {
     return false;
   }
   await revertOpenTurn();
-  for ( const turn of [...undo].reverse() ) await holdingPause(() => revertEntry(battle.scene, turn));
+  for ( const turn of undoEntries(undo, reopen).reverse() ) await holdingPause(() => revertEntry(battle.scene, turn));
   await untally(undo);
   const snapshot = undo[0]?.snapshot ?? battle.pc?.snapshot;
   if ( snapshot ) battle.run = playersNow(restoreRun(battle.spec, battle.rules, snapshot, { log: battle.run.log }));
@@ -1173,8 +1182,9 @@ async function revertOpenTurn() {
   if ( !pc ) return;
   const before = sheetsAt.get(pc);
   const records = [...(before ? sheetUndo(before) : []), ...(pc.records ?? [])];
-  // (And the engine's rolls shown in it so far: a foe's reaction's.)
-  const messages = pc.rollCards ?? [];
+  // (And the cards of it: its player's own, and the engine's rolls shown in it so far, a foe's reaction's.)
+  const messages = [...(pc.messages ?? []), ...(pc.rollCards ?? [])];
+  pc.messages = [];
   pc.rollCards = [];
   if ( records.length || messages.length ) await holdingPause(() => revertEntry(battle.scene, { records, messages }));
 }
@@ -2621,7 +2631,7 @@ export function rewindEncounter() {
     if ( !battle ) return false;
     // (A player's turn still open: what it changed, by hand and by FastFighting, first.)
     await revertOpenTurn();
-    for ( const turn of [...battle.data.turns].reverse() ) await holdingPause(() => revertEntry(battle.scene, turn));
+    for ( const turn of undoEntries(battle.data.turns).reverse() ) await holdingPause(() => revertEntry(battle.scene, turn));
     // (What the GM changed before the first turn.)
     if ( battle.data.gmRecords?.length ) await holdingPause(() => revertEntry(battle.scene, { records: battle.data.gmRecords }));
     const combat = battle.combat;
