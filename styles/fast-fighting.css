@@ -653,6 +653,13 @@ label.is-disabled, .form-group.is-disabled { opacity: 0.5; }
 .ff-battle-review li.is-unsure label { font-style: italic; }
 /* A turn's card for the GMs only: what the players shouldn't learn. */
 .fast-fighting-story.ff-gm-only { border-left: 3px dashed var(--color-border-highlight, #ff6400); padding-left: 6px; }
+/* The engine's rolls of a fight played through, for the GMs: by round and creature, folded away. */
+.fast-fighting-rolls header { font-weight: 700; margin-bottom: 4px; display: flex; gap: 6px; align-items: center; }
+.fast-fighting-rolls details { margin: 0 0 2px; }
+.fast-fighting-rolls details details { margin-left: 12px; }
+.fast-fighting-rolls summary { cursor: pointer; }
+.fast-fighting-rolls ul { list-style: none; margin: 2px 0 4px 12px; padding: 0; }
+.fast-fighting-rolls li { margin: 1px 0; }
 /* A live battle's cards in the chat: their buttons side by side, and low. */
 .fast-fighting-live { display: flex; flex-wrap: wrap; gap: 4px; }
 .fast-fighting-live p { flex: 1 0 100%; margin: 0 0 2px; }

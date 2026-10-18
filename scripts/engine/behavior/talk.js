@@ -726,7 +726,7 @@ function runOff(run, t, by) {
 export function attemptTalk(run, talker, pitch, log) {
   // (A live battle's, the system's own roll where it makes checks: battle-state.js systemRolled.)
   const rolled = systemRolled(run, talker, "check", { dc: pitch.dc, target: pitch.target ?? null, purpose: "talk", skill: pitch.skill ?? pitch.kind ?? null, label: pitch.kind ?? "" });
-  const roll = rollCheck(run.prep.rules, run.rng, pitch.mod, pitch.dc, { advantage: pitch.advantage ?? 0, dice: pitch.dice ?? null, kind: "check", roller: talker, rolled });
+  const roll = rollCheck(run.prep.rules, run.rng, pitch.mod, pitch.dc, { advantage: pitch.advantage ?? 0, dice: pitch.dice ?? null, kind: "check", roller: talker, rolled, what: pitch.kind ?? "talk", target: pitch.target ?? null });
   return resolveTalk(run, talker, pitch, roll, log);
 }
 

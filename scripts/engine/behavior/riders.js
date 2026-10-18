@@ -26,6 +26,7 @@
  */
 import { TACTICAL, clamp } from "../../constants.js";
 import { meanPart, samplePart } from "../dice.js";
+import { diceAt, tableRoll } from "../table-rolls.js";
 import { liveTier, isStanding, edgeDistance, behaviorOf } from "../battle-state.js";
 import { meanDamageVs, threatOf } from "./evaluate.js";
 import { isImmune } from "./control.js";
@@ -186,7 +187,10 @@ export function rescueMiss(run, u, action, t, short) {
     const baseHit = meanDamageVs(run, action, t).normal;
     if ( chance * baseHit < priceOf(u, r, baseHit) * 0.6 ) continue;
     pay(u, r);
-    return { rider: r, roll: run.rng.die(r.attackDie) };
+    const at = diceAt(run);
+    const roll = run.rng.die(r.attackDie);
+    if ( at >= 0 ) tableRoll(run, at, { by: u, target: t, kind: "other", label: r.label ?? "", what: "rider", total: roll });
+    return { rider: r, roll };
   }
   return null;
 }
@@ -211,8 +215,10 @@ export function critTableOf(u, action) {
 export function rollCrit(run, u, action, t) {
   const crit = critTableOf(u, action);
   if ( !crit ) return null;
+  const at = diceAt(run);
   let total = samplePart(crit.die, run.rng) + (crit.mod ?? 0);
   if ( u.spec.kind !== "pc" ) total -= t.spec.critAgainst ?? 0;
+  if ( at >= 0 ) tableRoll(run, at, { by: u, target: t, kind: "other", what: "crit", label: action.name ?? "", parts: [crit.die], mod: (crit.mod ?? 0) - (u.spec.kind !== "pc" ? t.spec.critAgainst ?? 0 : 0), total });
   return { row: rowFor(crit.rows, total), total };
 }
 
@@ -220,7 +226,9 @@ export function rollCrit(run, u, action, t) {
 export function rollFumble(run, u) {
   const fumble = u.spec.fumble;
   if ( !fumble?.rows?.length ) return null;
+  const at = diceAt(run);
   const total = samplePart(fumble.die, run.rng) + (fumble.mod ?? 0);
+  if ( at >= 0 ) tableRoll(run, at, { by: u, kind: "other", what: "fumble", parts: [fumble.die], mod: fumble.mod ?? 0, total });
   return { row: rowFor(fumble.rows, total), total };
 }
 

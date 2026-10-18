@@ -32,6 +32,7 @@
 import { STATUS } from "../../constants.js";
 import { isUp, isStanding, areEnemies, edgeDistance, heldOff, saveRoll, movesNeeded, canMove, canHeal } from "../battle-state.js";
 import { meanPart, samplePart } from "../dice.js";
+import { diceAt, tableRoll } from "../table-rolls.js";
 import { meanDamageVs, threatOf, expectedDamage, saveMultiplier } from "./evaluate.js";
 import { degreeDistribution } from "../probability.js";
 import { outcomeWorth, applyOutcome } from "./effects.js";
@@ -434,7 +435,9 @@ function playBurst(run, u, r, ctx, kit) {
 function playHeal(run, u, r, kit, play) {
   if ( !canHeal(u) || u.status === STATUS.DEAD ) return;
   cardOf(run, u, r, u, kit, play);
+  const at = diceAt(run);
   const amount = r.heal.reduce((s, p) => s + Math.max(0, samplePart(p, run.rng)), 0);
+  if ( at >= 0 ) tableRoll(run, at, { by: u, target: u, kind: "healing", label: r.label ?? "", parts: r.heal, total: amount });
   const before = u.hp;
   const wasDown = u.status === STATUS.DOWN;
   if ( amount > 0 ) run.prep.rules.onHealed(u, amount);

@@ -7,6 +7,7 @@
 import { STATUS, TACTICAL, DOWNED_MODELS, AFTERMATH, EXECUTE_LUCK, NEUTRAL_PARTY, OPENING, clamp } from "../constants.js";
 import { createRng, deriveSeed, randomSeed } from "./rng.js";
 import { sampleDamage, samplePart, meanPart, part } from "./dice.js";
+import { diceAt, tableRoll, recordingRng, rollsWaiting, markRerolled } from "./table-rolls.js";
 import { rollCheck, regrade } from "./probability.js";
 import { costOf, mainPool } from "./turn.js";
 import {
@@ -132,7 +133,7 @@ function rollSave(run, target, type, dc, { stakes = 0.3, label = "", magical = f
   // (A live battle's, the system's own roll where it makes saves: systemRolled. Its card says how it went; no Luck or
   // momentum after it.)
   const rolled = systemRolled(run, target, "save", { dc, from, save: type, action, label });
-  let roll = rollCheck(rules, run.rng, s.mod, dc, { advantage: s.advantage, dice: s.dice, kind: "save", roller: target, rolled });
+  let roll = rollCheck(rules, run.rng, s.mod, dc, { advantage: s.advantage, dice: s.dice, kind: "save", roller: target, rolled, label: label || action?.name || "", target: from });
   spendEdges(target, "save");
   if ( run.boosting && roll.degree < 2 && !rolled ) roll = boost(run, target, roll, dc, { kind: "save", stakes }, logger(run));
   roll = standFirm(run, target, roll, dc, stakes, label);
@@ -375,7 +376,8 @@ export function lookAround(run, b) {
   if ( !best ) return false;
   const perception = (b.spec.perception ?? b.spec.initiative?.mod ?? 0) + (kin ? KIN_BONUS : 0);
   const check = checkRoll(run, b, perception, null, { purpose: "notice", skill: "perception" });
-  const roll = rollCheck(run.prep.rules, run.rng, check.mod, best.cue.dc, { advantage: check.advantage, kind: "check", roller: b });
+  // (FastFighting's own reckoning of who notices the fight, not a roll the table makes: never shown.)
+  const roll = rollCheck(run.prep.rules, run.rng, check.mod, best.cue.dc, { advantage: check.advantage, kind: "check", roller: b, quiet: true });
   if ( roll.degree >= 2 ) notice(run, b, best.cue.sense, best.c);
   return false;
 }
@@ -557,6 +559,33 @@ function recoveryOf(said, u) {
 }
 
 /**
+ * A system's recovery check (rules.recoveryCheck: PF2e's flat check, 5e's death save), its words. In a live battle its
+ * dice are a table roll: the helper's own (rng.record, with its DC), else shown plainly here.
+ */
+function recoveryCheck(run, u) {
+  const at = diceAt(run);
+  const said = run.prep.rules.recoveryCheck(u, run.rng);
+  if ( at >= 0 ) tableRoll(run, at, { by: u, kind: "flat", what: "recovery", each: true });
+  return said;
+}
+
+/** Persistent harm's end (rules.persistentFlatCheck: PF2e's DC 15 flat check), shown as recoveryCheck's is. */
+function persistentEnds(run, u, type) {
+  const at = diceAt(run);
+  const ends = run.prep.rules.persistentFlatCheck(run.rng, { run, unit: u, type });
+  if ( at >= 0 ) tableRoll(run, at, { by: u, kind: "flat", what: "persistentEnd", each: true });
+  return ends;
+}
+
+/** What a reaction takes off a blow (its `reduce`: 5e Deflect Missiles, PF2e Shield Block's hardness), as rolled. */
+function reduced(run, who, r, by) {
+  const at = diceAt(run);
+  const amount = samplePart(r.reduce, run.rng);
+  if ( at >= 0 ) tableRoll(run, at, { by: who, target: by, kind: "other", what: "reduce", label: r.label ?? "", parts: [r.reduce] });
+  return amount;
+}
+
+/**
  * A blow that would drop it, a reaction may keep it up (PF2e Orc Ferocity, 5e Relentless Endurance: stayUp {hp,
  * wounded}): at that many hit points (1), wounded the more.
  */
@@ -711,7 +740,7 @@ function testConcentration(run, u, amount = 0) {
     dc = c.dc ? c.dc(amount) : Math.max(10, Math.floor(amount / 2));
     const s = saveRoll(run, u, c.save ?? "con");
     const rolled = systemRolled(run, u, "save", { dc, save: c.save ?? "con", action: { id: u.concentration.actionId, name: u.concentration.name } });
-    roll = { ...rollCheck(run.prep.rules, run.rng, s.mod, dc, { advantage: s.advantage, dice: s.dice, kind: "save", roller: u, rolled }), mod: s.mod };
+    roll = { ...rollCheck(run.prep.rules, run.rng, s.mod, dc, { advantage: s.advantage, dice: s.dice, kind: "save", roller: u, rolled, label: u.concentration.name ?? "", what: "concentration" }), mod: s.mod };
     broken = roll.degree < 2;
   }
   if ( !broken ) return;
@@ -728,7 +757,9 @@ function applyAfflictionStage(run, target, affliction) {
   const stage = affliction.spec.stages[affliction.stage - 1];
   recomputeConditions(target);
   if ( !stage?.damage?.length ) return;
+  const at = diceAt(run);
   const rolled = sampleDamage(stage.damage, run.rng);
+  if ( at >= 0 ) tableRoll(run, at, { by: target, kind: "damage", label: affliction.spec.name ?? "", what: "affliction", parts: stage.damage });
   const amount = run.prep.rules.applyIwr(iwrOf(target), rolled.byType, target);
   log(run, target, {
     type: "afflictionStage", name: affliction.spec.name, stage: affliction.stage, amount, damageType: stage.damage[0]?.type ?? "poison"
@@ -755,7 +786,7 @@ export function exposeToAffliction(run, source, target, spec, { degree = null } 
   } else if ( spec.save ) {
     const { mod, advantage, dice } = saveRoll(run, target, spec.save.type, { action: spec });
     const rolled = systemRolled(run, target, "save", { dc: spec.save.dc, from: source, save: spec.save.type, action: spec });
-    const roll = rollCheck(rules, run.rng, mod, spec.save.dc, { advantage, dice, kind: "save", roller: target, rolled });
+    const roll = rollCheck(rules, run.rng, mod, spec.save.dc, { advantage, dice, kind: "save", roller: target, rolled, label: spec.name ?? "", what: "affliction", target: source });
     increase = stepOf(rules, roll.degree, "exposure");
     log(run, target, {
       type: "afflictionSave", name: spec.name, saveType: spec.save.type, natural: roll.natural, mod, total: roll.total, dc: spec.save.dc, degree: roll.degree
@@ -959,16 +990,33 @@ function appliedLive(run, u, target, sys, amount, mult) {
   return Number.isFinite(applied?.lost) ? Math.max(0, applied.lost) : amount;
 }
 
+/** A blow's damage the engine rolled, shown (a live battle's table roll: engine/table-rolls.js); healing, as healing. */
+function shownDamage(run, at, u, t, action, parts, multiplier, crit) {
+  const kind = parts.length && parts.every(p => p.type === "healing") ? "healing" : "damage";
+  tableRoll(run, at, { by: u, target: t, kind, label: action.name ?? "", parts, multiplier, crit });
+}
+
 function rollHit(run, u, action, t, parts, multiplier, crit, minimum = 0, forced = null) {
   const rules = run.prep.rules;
   // (The system's own damage roll, where it rolled it: its dice by type, before anyone's resistances.)
   // (A total read off a player's card: the blow's own damage type.)
   const forcedBy = forced?.byType ?? (Number.isFinite(forced?.total) ? { [parts[0]?.type ?? "untyped"]: Math.max(0, forced.total) } : null);
+  // (A live battle's engine dice, a table roll each: the damage as rolled, before the target's resistances. Its share
+  // by a save, `multiplier`, said with it. engine/table-rolls.js; nothing where nothing records.)
+  let at = forcedBy ? -1 : diceAt(run);
   const rolled = forcedBy ? { byType: { ...forcedBy }, persistent: [], direct: !!forced.direct } : sampleDamage(parts, run.rng, multiplier);
+  if ( at >= 0 ) shownDamage(run, at, u, t, action, parts, multiplier, crit);
   // Rolled several times over (DCC magic missiles: so many missiles of so much each).
-  for ( let n = action.repeat && !forcedBy ? Math.max(1, samplePart(action.repeat, run.rng)) : 1; n > 1; n-- ) {
-    const more = sampleDamage(parts, run.rng, multiplier);
-    for ( const [k, v] of Object.entries(more.byType) ) rolled.byType[k] = (rolled.byType[k] ?? 0) + v;
+  if ( action.repeat && !forcedBy ) {
+    at = diceAt(run);
+    const repeats = Math.max(1, samplePart(action.repeat, run.rng));
+    if ( at >= 0 ) tableRoll(run, at, { by: u, kind: "other", what: "repeat", label: action.name ?? "", parts: [action.repeat] });
+    for ( let n = repeats; n > 1; n-- ) {
+      at = diceAt(run);
+      const more = sampleDamage(parts, run.rng, multiplier);
+      if ( at >= 0 ) shownDamage(run, at, u, t, action, parts, multiplier, crit);
+      for ( const [k, v] of Object.entries(more.byType) ) rolled.byType[k] = (rolled.byType[k] ?? 0) + v;
+    }
   }
   // Some systems guarantee a hit does at least some damage before resistances (PF2e: 1).
   if ( minimum > 0 ) {
@@ -1109,7 +1157,9 @@ function executeOffense(run, u, action, t, attacksMade) {
   if ( (action.kind !== "strike" && action.kind !== "control") || isMagical(action) ) {
     const shown = showAction(run, u, action, t);
     if ( (action.kind === "save" || action.kind === "auto") && action.damage?.length ) {
-      const rolled = run.live?.roll?.(run, { kind: "damage", unitId: u.id, targetId: t?.id ?? null, card: shown?.card ?? null, action: { id: action.id, name: action.name } }) ?? null;
+      // (An action whose damage is a Strike's, dealt with no roll of its own, names it: PF2e's Rend, `strikeOf`.)
+      const what = { id: action.id, name: action.name, ...(action.strikeOf ? { strikeOf: action.strikeOf } : {}) };
+      const rolled = run.live?.roll?.(run, { kind: "damage", unitId: u.id, targetId: t?.id ?? null, card: shown?.card ?? null, action: what }) ?? null;
       run.liveDamage = rolled?.damage?.byType ? { actionId: action.id, byType: rolled.damage.byType, card: rolled.card ?? null } : null;
     }
   }
@@ -1216,7 +1266,9 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
     const opts = attackOptions(r);
     // A deed is declared before the roll (DCC Mighty Deeds); the deed die adds to the roll and, on a hit, the damage.
     const deed = r.deed ? chooseDeed(run, u, action, target) : null;
+    const deedAt = diceAt(run);
     const deedRoll = r.deed ? run.rng.die(r.deed) : 0;
+    if ( r.deed && deedAt >= 0 ) tableRoll(run, deedAt, { by: u, target, kind: "other", what: "deed", label: action.name, total: deedRoll });
     let ac = currentAc(run, target, u, action);
     // Reactions to the attack itself are settled before its dice, but told after it: an answer to what was done.
     const answers = [];
@@ -1270,7 +1322,7 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
         action: { id: action.id, name: action.name, ranged: !!ranged, thrown: !!action.thrown && !!ranged }
       })
       ?? null;
-    let roll = rollCheck(rules, run.rng, bonus + deedRoll + lift, ac, { ...opts, rolled: forced?.attack ?? null });
+    let roll = rollCheck(rules, run.rng, bonus + deedRoll + lift, ac, { ...opts, rolled: forced?.attack ?? null, by: u, label: action.name, target });
     spendEdges(u, "attack", target.id);
     spendEdges(target, "defend", u.id);
     spendBoost(u, target);
@@ -1350,10 +1402,10 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
       // (A crit table's row that doubles or triples the blow: DCC's "double damage".)
       if ( !action.finish && Number(table?.row?.multiply) > 1 ) amount *= Number(table.row.multiply);
       if ( answer?.halve ) amount = Math.floor(amount / 2);
-      if ( answer?.reduce ) amount = Math.max(0, amount - samplePart(answer.reduce, run.rng));
+      if ( answer?.reduce ) amount = Math.max(0, amount - reduced(run, target, answer, u));
       if ( guard?.r.reduce ) {
         const before = amount;
-        amount = Math.max(0, amount - samplePart(guard.r.reduce, run.rng));
+        amount = Math.max(0, amount - reduced(run, guard.g, guard.r, u));
         guard.took = before - amount;
       }
       // Taken instead (PF2e Intercept Attack): the friend takes none of it; its protector takes the blow, against its
@@ -1441,7 +1493,7 @@ function strayShot(run, u, action, friend, logging) {
   const r = attackRoll(run, u, friend, action, 0);
   const opts = attackOptions(r);
   const ac = currentAc(run, friend, u, action);
-  const roll = rollCheck(rules, run.rng, r.bonus, ac, opts);
+  const roll = rollCheck(rules, run.rng, r.bonus, ac, { ...opts, by: u, label: action.name, target: friend });
   if ( roll.degree < 2 ) {
     if ( logging ) log(run, u, { type: "stray", action: action.name, target: friend.spec.name, targetId: friend.id, natural: roll.natural, total: roll.total, dc: ac, hit: false, damage: 0 });
     return;
@@ -1552,7 +1604,7 @@ function counterspelled(run, u, action) {
       roll = rollSave(run, u, r.counter.save.type, r.counter.save.dc, { stakes: 0.5, label: action.name }).roll;
       countered = roll.degree < 2;
     } else if ( !countered ) {
-      roll = rollCheck(rules, run.rng, Number(r.counter.mod) || 0, 10 + action.rank, { kind: "check", roller: e });
+      roll = rollCheck(rules, run.rng, Number(r.counter.mod) || 0, 10 + action.rank, { kind: "check", roller: e, label: r.label ?? "", what: "counter", target: u });
       countered = roll.degree >= 2;
     }
     log(run, e, {
@@ -1601,7 +1653,10 @@ function applyFumble(run, u) {
   if ( !table?.row ) return;
   const { row, total } = table;
   if ( row.damage?.length ) {
-    const amount = run.prep.rules.applyIwr(iwrOf(u), sampleDamage(row.damage, run.rng).byType, u);
+    const at = diceAt(run);
+    const rolled = sampleDamage(row.damage, run.rng);
+    if ( at >= 0 ) tableRoll(run, at, { by: u, target: u, kind: "damage", what: "fumble", parts: row.damage });
+    const amount = run.prep.rules.applyIwr(iwrOf(u), rolled.byType, u);
     if ( amount > 0 ) dealDamage(run, null, u, amount);
   }
   if ( row.outcome && isUp(u) ) applyOutcome(u, row.outcome, u.id, { id: `fumble:${u.id}`, name: row.outcome.label ?? localize("FASTFIGHTING.Effect.fumble") });
@@ -1764,6 +1819,7 @@ function fateful(run, victim, actor, attempt) {
     const by = keep && actor && actor !== victim ? snapshotOf(actor) : null;
     const logLength = run.log?.length ?? 0;
     const firstFallen = run.firstFallen;
+    const shownFrom = rollsWaiting(run);
     attempt();
     if ( victim.status !== STATUS.DEAD || tries >= 3 ) return;
     const spender = fateSpender(run, victim);
@@ -1783,6 +1839,8 @@ function fateful(run, victim, actor, attempt) {
     recomputeConditions(victim);
     if ( run.log ) run.log.length = logLength;
     run.firstFallen = firstFallen;
+    // (Its dice were rolled all the same, at the table too: shown, as taken back.)
+    markRerolled(run, shownFrom);
     spender.resources.fate -= 1;
     run.fateInPlay = run.units.some(o => fateOf(o) > 0);
     log(run, spender, {
@@ -1865,7 +1923,10 @@ function forceMove(run, u, t, move) {
     fall: path.fall || 0, blocked: !!path.blocked, into: (path.hazards ?? []).map(h => h.spec.name), ground: path.cell?.h ? "hazardous" : path.cell?.d ? "difficult" : null
   });
   if ( path.fall > 0 && isUp(t) ) {
-    const rolled = sampleDamage(fallDamage(run, path.fall, t), run.rng, 1);
+    const fall = fallDamage(run, path.fall, t);
+    const at = diceAt(run);
+    const rolled = sampleDamage(fall, run.rng, 1);
+    if ( at >= 0 ) tableRoll(run, at, { by: t, target: t, kind: "damage", what: "fall", parts: fall });
     const amount = rules.applyIwr(iwrOf(t), rolled.byType, t, { direct: rolled.direct });
     log(run, t, { type: "fall", feet: path.fall, amount });
     dealDamage(run, u, t, amount, { types: Object.keys(rolled.byType) });
@@ -1876,14 +1937,18 @@ function forceMove(run, u, t, move) {
   if ( path.blocked && isUp(t) && typeof rules.collisionDamage === "function" ) {
     const parts = rules.collisionDamage(t, { feetLeft: Math.max(0, (path.goal ?? move.feet ?? 5) - (path.feet ?? 0)), into: path.into ?? null, move, by: u }) ?? [];
     if ( parts.length ) {
+      const at = diceAt(run);
       const rolled = sampleDamage(parts, run.rng, 1);
+      if ( at >= 0 ) tableRoll(run, at, { by: t, target: t, kind: "damage", what: "collision", parts });
       const amount = rules.applyIwr(iwrOf(t), rolled.byType, t, { direct: rolled.direct });
       log(run, t, { type: "collision", amount, into: path.into?.spec?.name ?? null });
       dealDamage(run, u, t, amount, { types: Object.keys(rolled.byType) });
     }
   }
   if ( path.cell?.harm?.length && isUp(t) ) {
+    const at = diceAt(run);
     const rolled = sampleDamage(path.cell.harm, run.rng, 1);
+    if ( at >= 0 ) tableRoll(run, at, { by: t, target: t, kind: "damage", what: "ground", parts: path.cell.harm });
     const amount = rules.applyIwr(iwrOf(t), rolled.byType, t);
     log(run, t, { type: "groundHarm", amount, damageTypes: Object.keys(rolled.byType) });
     dealDamage(run, u, t, amount, { types: Object.keys(rolled.byType), lingering: true });
@@ -1922,7 +1987,7 @@ function executeControl(run, u, action, target, attacksMade, common) {
       const rolled = r.kind === "save" ? systemRolled(run, target, "save", { dc: r.dc, from: u, save: action.save.type, action })
         : r.kind === "check" ? systemRolled(run, u, "check", { dc: r.dc, target, purpose: "control", skill: action.check.skill ?? null, against: action.check.against ?? "will", attackNumber: action.check.attack ? attacksMade : null, action })
           : r.kind === "goad" && r.pitch ? systemRolled(run, u, "check", { dc: r.dc, target, purpose: "talk", skill: r.pitch.skill ?? null, action }) : null;
-      let x = rollCheck(rules, run.rng, r.mod, r.dc, { ...opts, rolled });
+      let x = rollCheck(rules, run.rng, r.mod, r.dc, { ...opts, rolled, by: r.roller ?? (r.kind === "save" ? target : u), label: action.name, target: r.kind === "save" ? u : target });
       if ( r.kind === "save" ) spendEdges(target, "save");
       else {
         spendEdges(u, r.rollKind, target.id);
@@ -2024,7 +2089,7 @@ function executeBuff(run, u, action, targets, worth = 0, turn = null) {
     const dc = checkDc(run, u, action.check);
     const c = checkRoll(run, u, Number(action.check.mod), null, { purpose: "aid", action });
     const rolled = systemRolled(run, u, "check", { dc, target: Array.isArray(targets) ? targets[0] ?? null : null, purpose: "aid", skill: action.check.skill ?? null, action });
-    const roll = rollCheck(rules, run.rng, c.mod, dc, { advantage: c.advantage, dice: c.dice, kind: "check", roller: u, faces: action.check.faces, rolled });
+    const roll = rollCheck(rules, run.rng, c.mod, dc, { advantage: c.advantage, dice: c.dice, kind: "check", roller: u, faces: action.check.faces, rolled, label: action.check.label || action.name });
     spendEdges(u, "check");
     check = { skill: action.check.label ?? "", natural: roll.natural, mod: c.mod, total: roll.total, dc, degree: roll.degree, challenge: roll.challenge ?? null };
     outcome = Array.isArray(action.onDegree) ? action.onDegree[roll.degree] ?? null : roll.degree >= 2 ? action.outcome : null;
@@ -2078,7 +2143,7 @@ function executeHeal(run, u, action, target) {
   if ( action.healCheck ) {
     const check = checkRoll(run, u, action.healCheck.mod, target, { purpose: "heal", skill: action.healCheck.skill ?? null, action });
     const rolled = systemRolled(run, u, "check", { dc: action.healCheck.dc, target, purpose: "heal", skill: action.healCheck.skill ?? null, action });
-    roll = rollCheck(rules, run.rng, check.mod, action.healCheck.dc, { advantage: check.advantage, dice: check.dice, kind: "check", roller: u, rolled });
+    roll = rollCheck(rules, run.rng, check.mod, action.healCheck.dc, { advantage: check.advantage, dice: check.dice, kind: "check", roller: u, rolled, label: action.healCheck.label || action.name, target });
     spendEdges(u, "check", target.id);
     multiplier = rules.healCheckMultiplier ? rules.healCheckMultiplier(roll.degree) : [0, 0, 1, 2][roll.degree];
     rules.afterRoll?.(run, u, roll, { kind: "heal", action, target, faces: roll.faces ?? 20 });
@@ -2089,13 +2154,18 @@ function executeHeal(run, u, action, target) {
       run.fateInPlay = run.units.some(o => fateOf(o) > 0);
       log(run, u, { type: "fate", target: target.spec.name, targetId: target.id, label: u.spec.fateLabel ?? localize("FASTFIGHTING.Words.Fate"), spent: 1 });
       const again = systemRolled(run, u, "check", { dc: action.healCheck.dc, target, purpose: "heal", skill: action.healCheck.skill ?? null, action });
-      roll = rollCheck(rules, run.rng, check.mod, action.healCheck.dc, { advantage: check.advantage, dice: check.dice, kind: "check", roller: u, rolled: again });
+      roll = rollCheck(rules, run.rng, check.mod, action.healCheck.dc, { advantage: check.advantage, dice: check.dice, kind: "check", roller: u, rolled: again, label: action.healCheck.label || action.name, target });
       multiplier = rules.healCheckMultiplier ? rules.healCheckMultiplier(roll.degree) : [0, 0, 1, 2][roll.degree];
     }
   }
   // (A share of the target's own hit dice: DCC Lay on Hands.)
+  const healAt = diceAt(run);
   let rolled = (action.heal ?? []).reduce((s, p) => s + samplePart(p, run.rng), 0);
   for ( let n = 0; n < (action.healDice ?? 0); n++ ) rolled += run.rng.die(target.spec.hitDie ?? 6);
+  if ( healAt >= 0 ) {
+    const hitDice = action.healDice ? [part([{ n: action.healDice, faces: target.spec.hitDie ?? 6 }], 0, "healing")] : [];
+    tableRoll(run, healAt, { by: u, target, kind: "healing", label: action.name ?? "", parts: [...(action.heal ?? []), ...hitDice], total: rolled, multiplier });
+  }
   // (Wounds that won't close take none of it.)
   const amount = canHeal(target) ? Math.max(0, Math.floor(rolled * multiplier)) : 0;
   const wasDown = target.status === STATUS.DOWN;
@@ -2172,7 +2242,7 @@ function leaveReach(run, u, turn, keep = null, need = null) {
       // (A way out that takes a check, when the system has one: XCC's acrobatics, harder against several foes.)
       const dc = list.length > 1 ? safe.check?.dcMany ?? safe.check?.dc : safe.check?.dc;
       const rolled = safe.check ? systemRolled(run, u, "check", { dc, purpose: "disengage", skill: safe.check.skill ?? null, label: safe.label ?? "" }) : null;
-      const check = safe.check ? rollCheck(run.prep.rules, run.rng, Number(safe.check.mod) || 0, dc, { kind: "check", roller: u, rolled }) : null;
+      const check = safe.check ? rollCheck(run.prep.rules, run.rng, Number(safe.check.mod) || 0, dc, { kind: "check", roller: u, rolled, label: safe.label ?? "", what: "disengage" }) : null;
       clear = !check || check.degree >= 2;
       u.disengaged = clear;
       log(run, u, { type: "disengage", label: safe.label ?? "", natural: check?.natural ?? null, total: check?.total ?? null, dc: check ? dc : null, made: clear });
@@ -2500,11 +2570,13 @@ function workTheDoor(run, u, turn, door, target) {
   if ( !turn.canAfford(plan.cost) ) return "stuck";
   turn.spend(plan.cost);
   if ( plan.method === "attack" ) {
-    const roll = rollCheck(rules, run.rng, plan.strike.bonus ?? 0, door.ac, { kind: "attack", roller: u });
+    const roll = rollCheck(rules, run.rng, plan.strike.bonus ?? 0, door.ac, { kind: "attack", roller: u, label: plan.strike.name ?? "", what: "door" });
     let damage = 0;
     if ( roll.degree >= 2 ) {
       const parts = roll.degree === 3 ? (plan.strike.critDamage ?? criticalParts(rules, plan.strike.damage)) : plan.strike.damage;
+      const at = diceAt(run);
       const rolled = sampleDamage(parts ?? [], run.rng, 1);
+      if ( at >= 0 ) tableRoll(run, at, { by: u, kind: "damage", label: plan.strike.name ?? "", what: "door", parts: parts ?? [], crit: roll.degree === 3 });
       damage = doorDamage(rules, door, Object.values(rolled.byType).reduce((s, v) => s + v, 0));
       state.hp -= damage;
     }
@@ -2518,7 +2590,7 @@ function workTheDoor(run, u, turn, door, target) {
   } else {
     // (The system's own try where it has one: Ironsworn's Face Danger, its momentum and price paid. Else a check.)
     const own = rules.tryDoor?.(run, u, door, { method: plan.method, mod: plan.mod, dc: plan.dc }) ?? null;
-    const roll = own ?? rollCheck(rules, run.rng, plan.mod, plan.dc, { kind: "check", roller: u, faces: plan.faces });
+    const roll = own ?? rollCheck(rules, run.rng, plan.mod, plan.dc, { kind: "check", roller: u, faces: plan.faces, what: "door" });
     const success = own ? !!own.success : roll.degree >= 2;
     if ( success ) openDoor(run, door, state, plan.method === "force");
     else thwart(run, u, kind, target.id, 12);
@@ -2556,7 +2628,7 @@ function sizesUp(run, u, t, turn, room, { decided = false, wholeTurn = false } =
   if ( Number.isFinite(how?.mod) ) {
     const dc = Number.isFinite(how.dc) ? how.dc : rules.sizeUpDC?.(t) ?? typical(rules, "dc", t.spec.level ?? 0);
     const c = checkRoll(run, u, how.mod, null, { purpose: "sizeUp", skill: how.skill ?? null });
-    const roll = rollCheck(rules, run.rng, c.mod, dc, { advantage: c.advantage, dice: c.dice, kind: "check", roller: u, faces: how.faces });
+    const roll = rollCheck(rules, run.rng, c.mod, dc, { advantage: c.advantage, dice: c.dice, kind: "check", roller: u, faces: how.faces, label: how.label ?? "", what: "sizeUp", target: t });
     spendEdges(u, "check");
     check = { skill: how.label ?? "", natural: roll.natural, mod: c.mod, total: roll.total, dc, degree: roll.degree, challenge: roll.challenge ?? null };
   }
@@ -2821,12 +2893,17 @@ function rechargeActions(run, u) {
   for ( const a of u.spec.actions ) {
     if ( !(a.recharge || a.cooldown) || !Number.isFinite(a.uses) || (u.uses[a.id] ?? 0) >= a.uses ) continue;
     let back;
-    if ( a.recharge ) back = run.rng.die(a.recharge.die ?? 6) >= (a.recharge.on ?? 6);
-    else {
+    const at = diceAt(run);
+    if ( a.recharge ) {
+      const die = run.rng.die(a.recharge.die ?? 6);
+      back = die >= (a.recharge.on ?? 6);
+      if ( at >= 0 ) tableRoll(run, at, { by: u, kind: "recharge", label: a.name ?? "", total: die, dc: a.recharge.on ?? 6 });
+    } else {
       u.readyAt ??= {};
       if ( u.readyAt[a.id] === undefined ) {
         let rounds = 0;
         for ( let i = 0; i < (a.cooldown.n ?? 1); i++ ) rounds += run.rng.die(a.cooldown.faces ?? 4);
+        if ( at >= 0 ) tableRoll(run, at, { by: u, kind: "recharge", label: a.name ?? "", what: "cooldown", total: rounds });
         u.readyAt[a.id] = run.round - 1 + rounds; // (counted from the round it was used)
       }
       back = run.round >= u.readyAt[a.id];
@@ -3199,7 +3276,7 @@ function playFromHere(run, u) {
     if ( options.downedModel === DOWNED_MODELS.SIMULATE && rules.recoveryCheck && !systemOwns(run, u, "recovery") ) {
       fateful(run, u, null, () => {
         const before = u.dying;
-        const said = recoveryOf(rules.recoveryCheck(u, run.rng), u);
+        const said = recoveryOf(recoveryCheck(run, u), u);
         if ( said ) log(run, u, { ...said, type: "recovery", before, dying: u.dying, dead: u.status === STATUS.DEAD, stable: u.stable });
       });
     }
@@ -3618,7 +3695,7 @@ function conditionUpkeep(run, u) {
       if ( !near ) continue;
       const s = saveRoll(run, o, toughSave(run, o));
       const rolled = systemRolled(run, o, "save", { dc, from: u, save: toughSave(run, o), label: key });
-      const roll = rollCheck(rules, run.rng, s.mod, dc, { advantage: s.advantage, dice: s.dice, kind: "save", roller: o, rolled });
+      const roll = rollCheck(rules, run.rng, s.mod, dc, { advantage: s.advantage, dice: s.dice, kind: "save", roller: o, rolled, what: "spread", target: u });
       if ( roll.degree >= 2 ) continue;
       applyOutcome(o, { conditions: { [key]: 1 }, rounds: 999, label: "" }, u.id, { id: `spread:${key}` });
       log(run, o, { type: "spread", condition: key, by: u.spec.name, byId: u.id, natural: roll.natural, mod: s.mod, total: roll.total, dc, degree: roll.degree });
@@ -3636,7 +3713,9 @@ function conditionHarm(run, u, key, v, p) {
   const by = layerOf(run, u, key);
   const parts = harmParts(run, u, key, v, p, by);
   if ( !parts.length ) return;
+  const at = diceAt(run);
   const rolled = sampleDamage(parts, run.rng);
+  if ( at >= 0 ) tableRoll(run, at, { by: u, target: u, kind: "damage", what: "persistent", parts });
   const amount = rules.applyIwr(iwrOf(u), rolled.byType, u);
   const types = Object.keys(rolled.byType);
   if ( run.log ) log(run, u, { type: "persistent", damageType: types[0] ?? p.harm[1], amount, condition: key });
@@ -3672,7 +3751,7 @@ export function endOfTurn(run, u) {
       if ( !e.repeatSave ) continue;
       const s = saveRoll(run, u, e.repeatSave.type);
       const rolled = systemRolled(run, u, "save", { dc: e.repeatSave.dc, save: e.repeatSave.type, label: e.label ?? "" });
-      const roll = rollCheck(rules, run.rng, s.mod, e.repeatSave.dc, { advantage: s.advantage, dice: s.dice, kind: "save", roller: u, rolled });
+      const roll = rollCheck(rules, run.rng, s.mod, e.repeatSave.dc, { advantage: s.advantage, dice: s.dice, kind: "save", roller: u, rolled, label: e.label ?? "", what: "repeatSave" });
       if ( roll.degree < 2 ) continue;
       u.effects.splice(u.effects.indexOf(e), 1);
       recomputeConditions(u);
@@ -3690,10 +3769,12 @@ export function endOfTurn(run, u) {
   if ( u.persistent.length && !systemOwns(run, u, "persistent") ) {
     const remaining = [];
     for ( const entry of u.persistent ) {
+      const at = diceAt(run);
       const amount = rules.applyIwr(iwrOf(u), { [entry.part.type]: Math.max(0, samplePart(entry.part, run.rng)) });
+      if ( at >= 0 ) tableRoll(run, at, { by: u, target: u, kind: "damage", what: "persistent", parts: [{ ...entry.part, persistent: false }] });
       if ( run.log ) log(run, u, { type: "persistent", damageType: entry.part.type, amount });
       dealDamage(run, run.byId.get(entry.sourceId), u, amount, { types: [entry.part.type], lingering: true });
-      if ( !rules.persistentFlatCheck(run.rng, { run, unit: u, type: entry.part.type }) ) remaining.push(entry);
+      if ( !persistentEnds(run, u, entry.part.type) ) remaining.push(entry);
     }
     u.persistent = remaining;
   }
@@ -3716,7 +3797,7 @@ export function endOfTurn(run, u) {
       if ( a.spec.tally ) {
         // (5e's way: saves counted, until enough of one or the other.)
         const rolled = systemRolled(run, u, "save", { dc: a.spec.save.dc, save: a.spec.save.type, action: a.spec });
-        const roll = rollCheck(rules, run.rng, mod, a.spec.save.dc, { advantage, dice, kind: "save", roller: u, rolled });
+        const roll = rollCheck(rules, run.rng, mod, a.spec.save.dc, { advantage, dice, kind: "save", roller: u, rolled, label: a.spec.name ?? "", what: "affliction" });
         const saved = roll.degree >= 2;
         a.cured = (a.cured ?? 0) + (saved ? 1 : 0);
         a.kept = (a.kept ?? 0) + (saved ? 0 : 1);
@@ -3735,7 +3816,7 @@ export function endOfTurn(run, u) {
       if ( a.inStage < stageRounds(a.spec, a.stage) ) continue;
       a.inStage = 0;
       const rolled = systemRolled(run, u, "save", { dc: a.spec.save.dc, save: a.spec.save.type, action: a.spec });
-      const roll = rollCheck(rules, run.rng, mod, a.spec.save.dc, { advantage, dice, kind: "save", roller: u, rolled });
+      const roll = rollCheck(rules, run.rng, mod, a.spec.save.dc, { advantage, dice, kind: "save", roller: u, rolled, label: a.spec.name ?? "", what: "affliction" });
       a.stage = Math.min(a.spec.stages.length, a.stage + stageMove(rules, a, roll.degree));
       if ( a.stage <= 0 ) {
         u.afflictions.splice(u.afflictions.indexOf(a), 1);
@@ -3763,7 +3844,7 @@ function firstAid(run, u, target, { aftermath = true } = {}) {
   const dc = rules.firstAidDC(target);
   const check = checkRoll(run, u, u.spec.firstAid.mod, target, { purpose: "firstAid", skill: u.spec.firstAid.skill ?? null });
   const rolled = systemRolled(run, u, "check", { dc, target, purpose: "firstAid", skill: u.spec.firstAid.skill ?? null });
-  const roll = rollCheck(rules, run.rng, check.mod, dc, { advantage: check.advantage, dice: check.dice, kind: "check", roller: u, faces: u.spec.firstAid.faces, rolled });
+  const roll = rollCheck(rules, run.rng, check.mod, dc, { advantage: check.advantage, dice: check.dice, kind: "check", roller: u, faces: u.spec.firstAid.faces, rolled, what: "firstAid", target });
   spendEdges(u, "check", target.id);
   const before = target.dying;
   rules.firstAid(target, roll.degree);
@@ -3824,13 +3905,16 @@ function aftermath(run, order) {
       if ( !isDying(u) || !rules.recoveryCheck ) continue;
       fateful(run, u, null, () => {
         const before = u.dying;
-        const said = recoveryOf(rules.recoveryCheck(u, run.rng), u);
+        const said = recoveryOf(recoveryCheck(run, u), u);
         if ( said ) log(run, u, { ...said, type: "recovery", before, dying: u.dying, dead: u.status === STATUS.DEAD, stable: u.stable, aftermath: true });
       });
     }
   }
   for ( const u of bodies ) {
+    const at = diceAt(run);
     const text = rules.recoverBody(u, run.rng);
+    // (The system's roll, where its helper didn't show it itself: its dice as a plain roll.)
+    if ( at >= 0 ) tableRoll(run, at, { by: u, kind: "check", what: "body", each: true });
     if ( text ) log(run, u, { text, type: "body", alive: u.status !== STATUS.DEAD, aftermath: true });
     if ( u.status !== STATUS.DEAD ) tended = true;
   }
@@ -4071,11 +4155,12 @@ export function runOne(prep, seed, { log: withLog = false, capture = false } = {
 /**
  * A fight set up and ready for its first turn: its creatures, their wants and leanings, the doors, the tactics each
  * goes with this time, the system's own state, the traps they know of, the initiative order (run.order), and whether
- * it opens with words (a standoff, logged). With `log`, everything that happens is kept in run.log.
+ * it opens with words (a standoff, logged). With `log`, everything that happens is kept in run.log. With `record` (a
+ * live battle's), its dice are recorded as they fall (engine/table-rolls.js: the system's surprise, rolled as it begins).
  */
-export function beginRun(prep, seed, { log: withLog = false } = {}) {
+export function beginRun(prep, seed, { log: withLog = false, record = false } = {}) {
   const run = createRun(prep);
-  run.rng = createRng(seed);
+  run.rng = record ? recordingRng(createRng(seed)) : createRng(seed);
   run.seed = seed; // (for dice of a creature's own that mustn't touch the fight's: behavior/holds.js bears)
   for ( const u of run.units ) initDesires(u);
   refreshLeans(run); // which way those who take no side lean
