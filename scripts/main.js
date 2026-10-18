@@ -24,6 +24,7 @@ import { setDistanceUnit, setTermSource, localize } from "./i18n.js";
 import { loadKeywords } from "./foundry/keywords.js";
 import { registerLiveBattles, liveBattle, followPlayersSay, systemAppliesText } from "./foundry/live-battle.js";
 import { registerSheetWatch } from "./foundry/sheet-watch.js";
+import { registerSheetButton } from "./foundry/sheet-button.js";
 import { BattleVantage, registerBattleVantage } from "./apps/battle-vantage.js";
 
 Hooks.once("init", () => {
@@ -208,6 +209,8 @@ function syncOpenViews(actor) {
 
 // FastFighting's tab in the token windows (GM only): a token's tactics, playstyles and desires, or its prototype's.
 registerTokenTactics();
+// FastFighting on a character sheet, for its owner who can't open its token windows (sheet-button.js).
+registerSheetButton();
 
 // What's changed on each character: an unchanged one isn't read again, and the reactions a window shows follow its sheet.
 registerSheetWatch();

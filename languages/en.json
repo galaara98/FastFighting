@@ -866,6 +866,7 @@
       },
       "MyTactics": "My tactics",
       "MyTacticsHint": "Your characters' tactics, playstyles and desires; change them any time.",
+      "SheetButton": "FastFighting",
       "AskPlayers": "Ask {names} to answer this character's survey (the Party tab view-only).",
       "AskGms": "Open this character's survey for every GM logged in, to answer for an away player.",
       "AskedPlayers": "Asked {names} about {name}.",
