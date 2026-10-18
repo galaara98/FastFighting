@@ -26,7 +26,13 @@
  *     vsSort       a sort of creature (battle-state.js sortOf): a boost against every one of that sort
  *     boost        its rolls against `vs` are about this many times as likely to succeed as they would have been
  *                  (worked out roll by roll, as far as the dice allow): a Lore-Collector's payoff for sizing a foe up
- *     thisTurn     laid on itself, it lasts only to the end of this turn (not through its next one)
+ *     thisTurn     laid on itself, it lasts only to the end of this turn (not through its next one); laid by its
+ *                  source out of its own turn with until: "source", to the end of the source's next turn, not one more
+ *     until        "source": laid on another, it runs out at the end of its source's turns, not its bearer's (PF2e's
+ *                  Grapple: grabbed until the end of the grappler's next turn); while its source can't take turns (down,
+ *                  dead, gone), at the end of its bearer's. A grab laid with it ends with it.
+ *     renew        a control's outcome on one it holds: its holds there (its grab, and the effects it laid that hold it)
+ *                  last `rounds` more instead of laying anything new (PF2e's Grab on a creature it has grabbed)
  *     resources    resources it gains at once ({momentum: 2}): the system says how (rules.gainResource)
  *     taunt        a taunt: for as long as it lasts, the bearer wants to go for whoever laid it on, this badly (a
  *                  desire level, 0 to 100; true: TAUNT, "driven"). It's a desire like any other (behavior/desire.js):
@@ -235,11 +241,14 @@ export function applyOutcome(target, outcome, sourceId = null, action = null) {
   const key = action?.id ?? outcome.label ?? null;
   if ( key !== null ) target.effects = (target.effects ?? []).filter(e => !(e.key === key && e.sourceId === sourceId));
   // Effects run out at the end of the bearer's turns; one it lays on itself during its own turn would lose a round
-  // straight away, so "until your next turn" gets the extra one it needs.
+  // straight away, so "until your next turn" gets the extra one it needs. So does one laid on another that runs out at
+  // the end of its source's turns (until: "source").
   const self = sourceId !== null && target.id === sourceId;
+  const bySource = outcome.until === "source" && sourceId !== null && !self;
   const effect = {
     key, conditions, mods, mark, iwr, sourceId,
-    rounds: Math.max(1, Math.round(Number(outcome.rounds) || 1)) + (self && !outcome.thisTurn ? 1 : 0),
+    rounds: Math.max(1, Math.round(Number(outcome.rounds) || 1)) + ((self || bySource) && !outcome.thisTurn ? 1 : 0),
+    ...(bySource ? { until: "source" } : {}),
     endsOnDamage: !!outcome.endsOnDamage,
     endsOnHarm: !!outcome.endsOnHarm,
     label: outcome.label ?? action?.name ?? "",
@@ -338,10 +347,47 @@ export function focusOf(run, t) {
 
 /**
  * Does the target already carry this action's effect (from this source, or anyone's)? Effects run out at the end of
- * the bearer's turn, so one that's there still covers its next turn: doing it again now gains nothing.
+ * the bearer's turn, so one that's there still covers its next turn: doing it again now gains nothing. One that runs
+ * out by its source's turns (until: "source") with a round left ends as this turn of its source's does: not fresh.
  */
 export function hasFresh(target, action, sourceId = null) {
-  return (target.effects ?? []).some(e => e.key === action.id && (sourceId === null || e.sourceId === sourceId));
+  return (target.effects ?? []).some(e => e.key === action.id && (sourceId === null || e.sourceId === sourceId) && (e.until !== "source" || e.rounds > 1));
+}
+
+/**
+ * The effects u laid that hold t: its grab's (t.grabKey), a restraint, a grab or a paralysis it laid, one an Escape
+ * breaks (as requires.js `holds` counts a hold). What a `renew` keeps up.
+ */
+export function heldBy(u, t) {
+  if ( !u || !t || u === t ) return [];
+  const grab = t.grabbedBy === u.id ? t.grabKey : null;
+  return (t.effects ?? []).filter(e => e.sourceId === u.id && !e.onlyVs && ((grab && e.key === grab) || e.escape
+    || Number(e.conditions?.restrained) > 0 || Number(e.conditions?.grabbed) > 0 || Number(e.conditions?.paralyzed) > 0));
+}
+
+/** How long a renew (an outcome's `renew`) would have each of u's holds last: its rounds, one more for a source's own turn. */
+const renewedRounds = (run, u, e, outcome) => Math.max(1, Math.round(Number(outcome.rounds) || 1)) + (e.until === "source" && run.acting === u ? 1 : 0);
+
+/**
+ * u's holds on t kept up (an outcome's `renew`): each effect u laid that holds t (heldBy) lasts the outcome's rounds from
+ * now, as if laid again, where that's longer than it has left.
+ */
+export function renewHolds(run, u, t, outcome) {
+  for ( const e of heldBy(u, t) ) e.rounds = Math.max(e.rounds, renewedRounds(run, u, e, outcome));
+}
+
+/**
+ * What a renew keeps that would otherwise end sooner: the conditions of u's holds on t that it lengthens (a grab's
+ * hold with them: held in place), as they'd be weighed fresh.
+ */
+function keptConditions(run, u, t, outcome) {
+  const out = {};
+  for ( const e of heldBy(u, t) ) {
+    if ( e.rounds >= renewedRounds(run, u, e, outcome) ) continue;
+    for ( const [k, v] of Object.entries(e.conditions ?? {}) ) if ( (Number(v) || (v === true ? 1 : 0)) > 0 ) out[k] = Math.max(out[k] ?? 0, Number(v) || 1);
+    if ( t.grabbedBy === u.id && e.key === t.grabKey ) Object.assign(out, { grabbed: Math.max(out.grabbed ?? 0, 1), immobilized: 1 });
+  }
+  return out;
 }
 
 /** Begin concentrating on an action: whatever the source held before ends first. */
@@ -567,7 +613,9 @@ export function outcomeWorth(run, by, t, outcome, { versus = null } = {}) {
   // (Grabbed: held in place too, as the system has it.)
   // (Not one it already holds: a grab again is only what else it lays.)
   const grabs = outcome.grab && !(by && t.grabbedBy === by.id);
-  const fresh = freshConditions(t, grabs ? { ...(outcome.conditions ?? {}), grabbed: 1, immobilized: 1 } : outcome.conditions);
+  // (Its holds there kept up, renew: what they lay, as if fresh, where they'd otherwise end sooner.)
+  const kept = outcome.renew && by && by !== t ? keptConditions(run, by, t, outcome) : null;
+  const fresh = { ...freshConditions(t, grabs ? { ...(outcome.conditions ?? {}), grabbed: 1, immobilized: 1 } : outcome.conditions), ...kept };
   const weighed = {};
   let held = false;
   for ( const [k, v] of Object.entries(fresh) ) {

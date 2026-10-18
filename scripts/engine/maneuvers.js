@@ -11,7 +11,8 @@
  * until it's broken or the holder falls), and damage (its own, at that degree only: PF2e's critical Trip). From the
  * doer's side: crit, success, fail, critFail; a botch with self: true lands on the doer (a move: the target moves it;
  * a grab: the target has hold of it).
- * A rider on a blow can carry a move too ({kind: "move", move, critOnly}), and a save rider's failure a move or a grab.
+ * A rider on a blow can carry a move too ({kind: "move", move, critOnly}), or be a maneuver of its own with its own roll
+ * ({kind: "control", control, critOnly}: PF2e's Improved Grab), and a save rider's failure a move or a grab.
  * The ids are the story's too (story/master.js MANEUVERS), told as what they are.
  */
 const push = (feet, extra = {}) => Object.freeze({ move: Object.freeze({ kind: "push", feet }), ...extra });

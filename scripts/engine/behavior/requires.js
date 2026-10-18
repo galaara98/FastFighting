@@ -26,7 +26,9 @@ import { STATUS } from "../../constants.js";
 import { degreeDistribution } from "../probability.js";
 import { attackRoll, attackOptions, currentAc, boostBonus, isExposed } from "../battle-state.js";
 import { costOf, normalizeCost, mainPool } from "../turn.js";
-import { expectedDamage, hasUses } from "./evaluate.js";
+import { expectedDamage, hasUses, attacksIn } from "./evaluate.js";
+import { controlDistribution, controlOutcome } from "./control.js";
+import { withManeuver } from "../maneuvers.js";
 
 /** The vocabulary, for anyone checking a spec (and the docs). */
 export const REQUIRES = Object.freeze(["holding", "target", "lastHit", "hits", "self", "shieldRaised"]);
@@ -155,8 +157,27 @@ function hitChance(run, u, action, t, made) {
   return dist[2] + dist[3];
 }
 
-/** Does a Strike's hit lay this on its target (its riders: a grab, a knockdown)? */
-const lays = (action, key) => (action.sequence?.length ? action.sequence.at(-1) : action).effects?.some(e => e.kind === key) ?? false;
+/** Does an outcome lay this on its target (grabbed: a grab, or a hold that comes with one)? */
+const laysKey = (o, key) => !!o && typeof o === "object" && !o.self
+  && (key === "grabbed" ? !!o.grab || Number(o.conditions?.grabbed) > 0 || Number(o.conditions?.restrained) > 0 : Number(o.conditions?.[key]) > 0);
+
+/** The chance a control action lays this on t, as its roll goes (behavior/control.js). */
+function controlLays(run, u, action, t, key, attacksMade = 0) {
+  return controlDistribution(run, u, t, action, attacksMade).reduce((s, p, d) => s + (laysKey(controlOutcome(action, d), key) ? p : 0), 0);
+}
+
+/**
+ * The chance a Strike's hit lays this on its target, by its riders: a grab, a knockdown (sure); a maneuver of its own
+ * (kind "control": PF2e's Improved Grab), as its roll goes.
+ */
+function riderLays(run, u, action, t, key) {
+  let p = 0;
+  for ( const e of (action.sequence?.length ? action.sequence.at(-1) : action).effects ?? [] ) {
+    if ( e.kind === key ) return 1;
+    if ( e.kind === "control" && e.control && !e.critOnly ) p = Math.max(p, controlLays(run, u, withManeuver(e.control), t, key));
+  }
+  return p;
+}
 
 /** The ids an option's blow would count as (a multiattack: its last part's). */
 const blowIds = action => idsOf(action.sequence?.length ? action.sequence.at(-1) : action);
@@ -166,34 +187,44 @@ const followUpsOf = u => (u.prep.followUps ??= (u.prep.offense ?? []).filter(a =
 
 /**
  * What an option against t is worth beyond its own damage, for what it sets up this turn (or, for a hold, from now on):
- * the chance it brings a follow-up's requirement about, times what the follow-up would then do (its own expected damage,
- * SETUP_SHARE of it), as long as the turn left can pay for both.
- *  - lastHit: a Strike that would make its last action a hit with one of the listed Strikes.
+ * the chance it brings a follow-up's requirement about, times what the follow-up would then do (its own expected worth:
+ * its damage, a maneuver's control; SETUP_SHARE of it), as long as the turn left can pay for both.
+ *  - lastHit: a Strike that would make its last action a hit with one of the listed Strikes (PF2e's Grab after it).
  *  - hits: a Strike that would make the run of hits on t one longer (all of it, if the turn has room for the rest).
- *  - holding, or a target condition its blow lays (grabbed, prone): a Strike whose hit grabs t or knocks it down.
+ *  - holding, or a target condition it lays (grabbed, prone): a Strike whose hit grabs t or knocks it down (a rider, or
+ *    a maneuver rider as its roll goes), or a maneuver that would (a control action, even one that needs something
+ *    first itself: PF2e's Grab, setting up a Constrict).
  * @param {object} [turn]  what's left of the turn (Turn); without one, a whole turn is assumed
  */
 export function followUpWorth(run, u, action, t, attacksMade = 0, turn = null) {
-  if ( requirementsOf(action) ) return 0;
   const followUps = followUpsOf(u);
-  if ( !followUps.length || !(action.kind === "strike" || action.kind === "spell-attack") ) return 0;
+  if ( !followUps.length ) return 0;
+  const blow = action.kind === "strike" || action.kind === "spell-attack";
+  const control = action.kind === "control";
+  // (What needs a blow first sets nothing up by its own blow: Rend wants fresh hits. A maneuver may lay what another needs.)
+  if ( !(control || (blow && !requirementsOf(action))) ) return 0;
   const rules = run.prep.rules;
   const main = mainPool(rules);
   const units = cost => normalizeCost(rules, cost)[main] ?? 0;
   const left = turn ? turn.left : (rules.turn ? rules.turn(u)?.[main] : rules.actionsPerTurn) ?? 1;
   const own = units(costOf(rules, action, u));
-  const made = attacksMade + (action.sequence?.length ?? 1);
+  const made = attacksMade + (control ? attacksIn(action) : (action.sequence?.length ?? 1));
   let best = 0;
   let p = null;
   const chance = () => (p ??= hitChance(run, u, action, t, attacksMade));
+  const lays = key => {
+    if ( control ) return controlLays(run, u, action, t, key, attacksMade);
+    const sure = riderLays(run, u, action, t, key);
+    return sure > 0 ? chance() * sure : 0;
+  };
   for ( const f of followUps ) {
-    if ( !hasUses(u, f) ) continue;
+    if ( f === action || !hasUses(u, f) ) continue;
     const fCost = units(costOf(rules, f, u));
     for ( const r of requirementsOf(f) ) {
       let odds = 0;
       let room = own + fCost <= left;
-      if ( r.lastHit && madeWith(blowIds(action), withOf(r.lastHit)) ) odds = chance();
-      else if ( r.hits && madeWith(blowIds(action), r.hits.with ?? null) ) {
+      if ( blow && r.lastHit && madeWith(blowIds(action), withOf(r.lastHit)) ) odds = chance();
+      else if ( blow && r.hits && madeWith(blowIds(action), r.hits.with ?? null) ) {
         const n = Math.max(1, Number(r.hits.n) || 2);
         const blows = freshBlows(run, u, f);
         let have = 0;
@@ -201,10 +232,10 @@ export function followUpWorth(run, u, action, t, attacksMade = 0, turn = null) {
         const missing = Math.max(1, n - have);
         room = own * missing + fCost <= left;
         odds = chance() ** missing / missing;
-      } else if ( (r.holding || r.target?.includes("grabbed")) && lays(action, "grabbed") && !t.grabbedBy ) {
-        odds = chance();
+      } else if ( (r.holding || r.target?.includes("grabbed")) && !t.grabbedBy ) {
+        odds = lays("grabbed");
         room = true; // (a hold lasts: what it sets up can wait for its next turn)
-      } else if ( r.target?.includes("prone") && lays(action, "prone") && !t.prone ) odds = chance();
+      } else if ( r.target?.includes("prone") && !t.prone ) odds = lays("prone");
       if ( !(odds > 0) || !room ) continue;
       best = Math.max(best, odds * SETUP_SHARE * expectedDamage(run, u, f, t, made));
     }

@@ -38,7 +38,7 @@ import { bargain } from "./behavior/bargain.js";
 import { talkActionsThisTurn, choosePitch, attemptTalk, shareLanguage } from "./behavior/talk.js";
 import { opensWithTalk, breaksStandoff, standoffPitches, charismaticLeader, canTalk, prefersTalk } from "./behavior/standoff.js";
 import { controlOutcome, controlRoll, isImmune, degreeShift } from "./behavior/control.js";
-import { recompute as recomputeConditions, applyOutcome, beginConcentration, endConcentration, holdsAnything, noteConcentration, moveHeld, settleAllegiance, iwrOf, incoming, spendEdges, spendBoost, focusOf, tauntProof, withoutTaunt } from "./behavior/effects.js";
+import { recompute as recomputeConditions, applyOutcome, renewHolds, beginConcentration, endConcentration, holdsAnything, noteConcentration, moveHeld, settleAllegiance, iwrOf, incoming, spendEdges, spendBoost, focusOf, tauntProof, withoutTaunt } from "./behavior/effects.js";
 import { decideBuff, aidScores, checkDc } from "./behavior/support.js";
 import { perceives } from "./behavior/senses.js";
 import { isAnimalistic, animalTactics } from "./behavior/animal.js";
@@ -57,6 +57,7 @@ import { auraMoved, auraTurnStart } from "./behavior/auras.js";
 import { localize } from "../i18n.js";
 import { maneuverOf, answersTo } from "../story/master.js";
 import { meets, noteBlow, freshTurn, setupUsed } from "./behavior/requires.js";
+import { withManeuver } from "./maneuvers.js";
 
 const MAX_STEPS_PER_TURN = 8;
 /** After the last blow, how long the winners keep tending the dying (ten minutes of rounds, at most). */
@@ -807,9 +808,9 @@ export function exposeToAffliction(run, source, target, spec, { degree = null } 
 const tooBig = (t, o) => Number.isFinite(o?.maxSize) && Number.isFinite(t.spec.size) && t.spec.size > o.maxSize;
 
 /**
- * Riders on a successful hit: knockdown, grab, afflictions. `saveDegree`: the target's save, for a save action's (an
- * affliction that takes hold as it went: bySave); `dealt`: what the blow did to it (a rider that only comes of a blow
- * that hurt: hurtOnly, Daggerheart's Bear).
+ * Riders on a successful hit: knockdown, grab, afflictions, a maneuver with a roll of its own (kind "control"). `saveDegree`:
+ * the target's save, for a save action's (an affliction that takes hold as it went: bySave); `dealt`: what the blow did to
+ * it (a rider that only comes of a blow that hurt: hurtOnly, Daggerheart's Bear).
  */
 function applyEffects(run, u, action, target, degree, { saveDegree = null, dealt = null } = {}) {
   for ( const effect of action.effects ?? [] ) {
@@ -840,6 +841,12 @@ function applyEffects(run, u, action, target, degree, { saveDegree = null, dealt
       testConcentration(run, target);
     } else if ( effect.kind === "save" && effect.save ) {
       saveRider(run, u, action, target, effect);
+    } else if ( effect.kind === "control" && effect.control && (degree === 3 || !effect.critOnly) ) {
+      // (A maneuver of its own at the one it hit, with its own roll: PF2e's Improved Grab, a free Grapple that neither
+      // takes nor adds to the multiple attack penalty. A live battle shows its own card first, where it has one.)
+      const control = withManeuver(effect.control);
+      if ( control.card ) showAction(run, u, control, target);
+      executeControl(run, u, control, target, 0, run.log ? logCommon(u, control, target, false) : null);
     }
   }
 }
@@ -1152,9 +1159,10 @@ function executeOffense(run, u, action, t, attacksMade) {
   }
   u.revealed = true;
   run.blood = true; // a blow has been struck: whatever happens now, it wasn't settled with words
-  // (A live battle's: the system's own card for a spell, a breath, a blast, as its user shows it; and the damage of one
-  // that isn't an attack, rolled the system's way once for everyone it catches: liveDamage.)
-  if ( (action.kind !== "strike" && action.kind !== "control") || isMagical(action) ) {
+  // (A live battle's: the system's own card for a spell, a breath, a blast, as its user shows it, and for a control
+  // action that says it has one of its own (`card`: an ability whose roll is a maneuver's, PF2e's Grab); and the damage
+  // of one that isn't an attack, rolled the system's way once for everyone it catches: liveDamage.)
+  if ( (action.kind !== "strike" && action.kind !== "control") || isMagical(action) || (action.kind === "control" && action.card) ) {
     const shown = showAction(run, u, action, t);
     if ( (action.kind === "save" || action.kind === "auto") && action.damage?.length ) {
       // (An action whose damage is a Strike's, dealt with no roll of its own, names it: PF2e's Rend, `strikeOf`.)
@@ -1204,6 +1212,18 @@ function takeForced(run, u, target) {
   return f;
 }
 
+/** What every log entry of an action at a target says (the attack's, the save's, the control's). */
+function logCommon(u, action, target, ranged) {
+  return {
+    action: action.name, actionKind: action.kind, damageType: primaryType(action), damageTypes: damageTypesOf(action), storyType: action.storyType ?? null, target: target.spec.name, targetId: target.id,
+    ranged, area: !!action.area, targetCover: !!target.spec.environment?.nearCover, attackerCover: !!u.spec.environment?.nearCover,
+    // (A shot that leaves its weapon, an arrow, a bolt, a bullet: not a thrown one, a spell or a breath, nor an action
+    // named for what's done rather than with what (launched: false, Ironsworn's Strike). The story tells the shot.)
+    launched: ranged && action.kind === "strike" && !action.thrown && !action.area && action.launched !== false,
+    feet: Number.isFinite(edgeDistance(u, target)) ? Math.round(edgeDistance(u, target)) : null
+  };
+}
+
 function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
   const rules = run.prep.rules;
   // Whoever a hazard goes for, hit or miss, knows it's there from now on (behavior/traps.js).
@@ -1217,14 +1237,7 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
       want(target, "hurt", u.id, GRUDGE.provoked * styleOf(target).retaliate);
     }
 
-    const common = logging ? {
-      action: action.name, actionKind: action.kind, damageType: primaryType(action), damageTypes: damageTypesOf(action), storyType: action.storyType ?? null, target: target.spec.name, targetId: target.id,
-      ranged, area: !!action.area, targetCover: !!target.spec.environment?.nearCover, attackerCover: !!u.spec.environment?.nearCover,
-      // (A shot that leaves its weapon, an arrow, a bolt, a bullet: not a thrown one, a spell or a breath, nor an action
-      // named for what's done rather than with what (launched: false, Ironsworn's Strike). The story tells the shot.)
-      launched: ranged && action.kind === "strike" && !action.thrown && !action.area && action.launched !== false,
-      feet: Number.isFinite(edgeDistance(u, target)) ? Math.round(edgeDistance(u, target)) : null
-    } : null;
+    const common = logging ? logCommon(u, action, target, ranged) : null;
 
     if ( action.kind === "auto" ) {
       const extra = bonusDamageParts(run, u, action, target, { commit: true });
@@ -1858,7 +1871,10 @@ function fateful(run, victim, actor, attempt) {
 function landOutcome(run, u, target, outcome, action, { damage: harms = true } = {}) {
   const self = !!outcome.self;
   const on = self ? u : target;
-  const effect = applyOutcome(on, outcome, u.id, action);
+  // (Its holds on the one it holds, kept up: PF2e's Grab on a creature it has grabbed.)
+  if ( outcome.renew && !self ) renewHolds(run, u, on, outcome);
+  // (Until the end of its source's next turn, laid out of the source's own turn: no round more for that turn.)
+  const effect = applyOutcome(on, outcome.until === "source" && run.acting !== u ? { ...outcome, thisTurn: true } : outcome, u.id, action);
   if ( isUp(on) ) gainResources(run, on, outcome);
   // (A botched Grapple: the foe has hold of the one who tried.)
   const holder = self ? target : u;
@@ -3132,16 +3148,44 @@ export function turnUpkeep(run, u) {
   u.disengaged = false;
 }
 
-/** A round of u's effects gone by: those whose time is up end (and what they did to its conditions and its side). */
-export function tickEffects(run, u) {
-  if ( !u.effects?.length ) return;
-  for ( const e of u.effects ) e.rounds -= 1;
-  const before = u.effects.length;
-  u.effects = u.effects.filter(e => e.rounds > 0);
-  if ( u.effects.length !== before ) {
-    recomputeConditions(u);
-    settleSides(run);
+/**
+ * Does an effect run out by its source's turns (until: "source"), its source still there to take them? Else its bearer's
+ * turns run it out (its source down, dead or gone).
+ */
+const bySource = (run, e) => e.until === "source" && !!e.sourceId && isUp(run.byId.get(e.sourceId) ?? { status: null });
+
+/** A grab that lasted as long as what it laid with it (PF2e's, until the grabber's next turn), let go with it. */
+function grabLapsed(u) {
+  if ( u.grabbedBy && u.grabKey && !(u.effects ?? []).some(e => e.key === u.grabKey && e.sourceId === u.grabbedBy) ) {
+    u.grabbedBy = null;
+    u.grabKey = null;
   }
+}
+
+/**
+ * A round of u's turns gone by: its effects whose time is up end (and what they did to its conditions and its side), and
+ * so do those it laid on others to last until the end of its own turns (until: "source"; a grab with them).
+ */
+export function tickEffects(run, u) {
+  let ended = false;
+  for ( const o of run.units ) {
+    if ( !o.effects?.length ) continue;
+    const ticks = o === u ? e => !bySource(run, e) : e => e.sourceId === u.id && bySource(run, e);
+    let ticked = false;
+    for ( const e of o.effects ) {
+      if ( !ticks(e) ) continue;
+      e.rounds -= 1;
+      ticked = true;
+    }
+    if ( !ticked ) continue;
+    const before = o.effects.length;
+    o.effects = o.effects.filter(e => e.rounds > 0);
+    if ( o.effects.length === before ) continue;
+    recomputeConditions(o);
+    if ( o !== u ) grabLapsed(o);
+    ended = true;
+  }
+  if ( ended ) settleSides(run);
 }
 
 /**
@@ -3761,11 +3805,8 @@ export function endOfTurn(run, u) {
     }
   }
   tickEffects(run, u);
-  // (A grab that lasts as long as what it laid with it, PF2e's until the grabber's next turn: let go with it.)
-  if ( u.grabbedBy && u.grabKey && !u.effects.some(e => e.key === u.grabKey && e.sourceId === u.grabbedBy) ) {
-    u.grabbedBy = null;
-    u.grabKey = null;
-  }
+  // (A grab that lasts as long as what it laid with it: let go with it.)
+  grabLapsed(u);
   if ( u.persistent.length && !systemOwns(run, u, "persistent") ) {
     const remaining = [];
     for ( const entry of u.persistent ) {

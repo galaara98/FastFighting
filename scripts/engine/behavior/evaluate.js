@@ -12,6 +12,7 @@ import { critExtraMean } from "./riders.js";
 import { castChanceOf } from "./casting.js";
 import { stepOf } from "./afflictions.js";
 import { hasTrait } from "../conditions.js";
+import { withManeuver } from "../maneuvers.js";
 
 function meanByType(parts) {
   const out = {};
@@ -181,9 +182,26 @@ export function expectedDamage(run, a, action, t, attacksMade = 0) {
   const ac = currentAc(run, t, a, action);
   const opts = attackOptions(roll, { deed: true });
   const dist = degreeDistribution(rules, roll.bonus + boostBonus(rules, a, t, roll.bonus, ac, opts), ac, opts);
-  // (What a hit lays, an affliction's conditions, as often as it hits.)
+  // (What a hit lays, an affliction's conditions, as often as it hits; a maneuver it makes on a hit, as its roll goes.)
   const laid = afflicts(action) ? (dist[2] + dist[3]) * afflictionWorth(run, a, action, t) : 0;
-  return targets * (dist[2] * (dmg.normal + extra) + dist[3] * (dmg.critical + extraCrit) + laid);
+  const tries = maneuverWorth(run, a, action, t);
+  return targets * (dist[2] * (dmg.normal + extra + tries.hit) + dist[3] * (dmg.critical + extraCrit + tries.crit) + laid);
+}
+
+/**
+ * What a blow's maneuver riders (kind "control": a roll of their own on a hit, PF2e's Improved Grab) are worth to a
+ * against t: {hit, crit}, a critical hit's with those that come of one only (critOnly).
+ */
+function maneuverWorth(run, a, action, t) {
+  let hit = 0;
+  let crit = 0;
+  for ( const e of action.effects ?? [] ) {
+    if ( e.kind !== "control" || !e.control ) continue;
+    const v = controlValue(run, a, withManeuver(e.control), t, 0);
+    crit += v;
+    if ( !e.critOnly ) hit += v;
+  }
+  return { hit, crit };
 }
 
 /** What a costly area loses, to a creature that thinks it through, when it would catch only the one it's aimed at. */

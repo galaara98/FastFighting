@@ -120,7 +120,7 @@ export function controlRoll(run, u, t, action, attacksMade = 0) {
 }
 
 /** Chance of each degree, from the target's side for a save and from the user's otherwise ([1] for "auto": a hit). */
-function controlDistribution(run, u, t, action, attacksMade) {
+export function controlDistribution(run, u, t, action, attacksMade = 0) {
   const roll = controlRoll(run, u, t, action, attacksMade);
   if ( roll.kind === "auto" ) return [0, 0, 1, 0];
   let dist = [...degreeDistribution(run.prep.rules, roll.mod, roll.dc, { advantage: roll.advantage, kind: roll.rollKind, dice: roll.dice, faces: roll.faces ?? 20, critOn: roll.critOn ?? null, fumbleOn: roll.fumbleOn ?? null, roller: roll.roller ?? null })];

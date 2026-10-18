@@ -74,6 +74,11 @@
  * @property {{increment: number, max?: number}} [range]
  * @property {object[]} [damage]            DamagePart[]
  * @property {object[]} [critDamage]        DamagePart[] (defaults to doubled damage)
+ * @property {object[]} [effects]           A hit's riders: {kind: "prone" | "grabbed" | "move" | "condition" | "save" |
+ *                                          "affliction" | "control", critOnly, ...}; "control" carries `control`, a
+ *                                          maneuver with its own roll (PF2e's Improved Grab: simulator.js applyEffects)
+ * @property {boolean} [card]               A control action with a card of its own: a live battle shows it (`use`)
+ *                                          before its roll
  * @property {{type: string, dc: number, basic: boolean}} [save]
  * @property {{targets: number}} [area]
  * @property {object[]} [heal]              DamagePart[] of healing
