@@ -55,6 +55,9 @@ export class Turn {
     const pool = mainPool(rules);
     if ( lost ) this.pools[pool] = Math.max(0, (this.pools[pool] ?? 0) - lost);
     this.feetMovement = rules.movement === "feet";
+    // (What it has paid for so far this turn, an action, a Stride, a bonus action each: for "its last action was ...",
+    // behavior/requires.js.)
+    this.acts = 0;
   }
 
   /** Main-pool units left (PF2e actions; 5e: 1 until the action is used). */
@@ -75,6 +78,7 @@ export class Turn {
   spend(cost) {
     const c = normalizeCost(this.rules, cost);
     for ( const [k, v] of Object.entries(c) ) this.pools[k] = (this.pools[k] ?? 0) - v;
+    this.acts += 1;
   }
 
   /** How many times this cost could be paid from what's left. */
@@ -106,12 +110,14 @@ export class Turn {
     if ( !this.feetMovement ) {
       if ( this.left < 1 ) return 0;
       this.pools[mainPool(this.rules)] -= 1;
+      this.acts += 1;
       return speed;
     }
     if ( (this.pools.move ?? 0) <= 0.5 ) {
       if ( this.left < 1 ) return 0;
       this.pools[mainPool(this.rules)] -= 1; // Dash
       this.pools.move = (this.pools.move ?? 0) + speed;
+      this.acts += 1;
     }
     return this.pools.move;
   }

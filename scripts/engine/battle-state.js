@@ -21,7 +21,8 @@
  * @property {object} [flags]               packTactics, fearless, mindless, masterId, flying
  * @property {boolean} [animalistic]        Fights as an animal does (behavior/animal.js): the helper's call
  * @property {boolean} [diesAtZero]         NPCs normally die at 0 HP
- * @property {object} [social]              Talking: {languages[], mindless, gullible?, resolve?, pitches, resist}
+ * @property {object} [social]              Talking: {languages[], anyLanguage?, mindless, gullible?, resolve?, pitches,
+ *                                          resist} (anyLanguage: it understands and speaks every language)
  *   pitches: {persuade|intimidate|deceive: {skill: display name, mod}}   what this creature can try on others
  *   resist:  {persuade|intimidate|deceive: {dc, label}}                  the DC others face, and what it's called
  *   resolve: how much more strong-willed than typical for its level (0 typical; -5 or less: very gullible)
@@ -59,6 +60,10 @@
  * @property {number|object} cost           What one use costs: a number of the rules' main pool (PF2e actions), or
  *                                          {action: 1} / {bonus: 1} ... (see engine/turn.js); rules.costOf may decide
  * @property {object[]} [sequence]          A multiattack: component strikes made in order with one use
+ * @property {string} [from]                A strike built on another (a multiattack's part): that one's id, so it counts
+ *                                          as it for what needs a hit with it (requires)
+ * @property {object|object[]} [requires]   What it needs first: {holding, target, lastHit, hits, self, shieldRaised}, all
+ *                                          of them; a list, any one (see behavior/requires.js)
  * @property {number} [bonus]               Attack modifier
  * @property {number[]} [maps]              Multiple attack penalties
  * @property {boolean} [subjectToMAP]
@@ -74,6 +79,8 @@
  * @property {object[]} [heal]              DamagePart[] of healing
  * @property {string} [resource]            Pool key consumed per use
  * @property {number} [uses]                Uses per battle when not pool-based
+ * @property {boolean} [rechargeOnCrit]     Its uses come back when its user scores a critical hit with a Strike (PF2e
+ *                                          Draconic Momentum: the Breath Weapon)
  * @property {boolean} [attack]             Counts toward MAP
  * @property {number} [die]                 The die its attack rolls, if not the creature's usual (DCC action dice)
  * @property {number} [critOn]              A natural this high threatens a crit (the system scales it to the die)

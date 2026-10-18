@@ -43,12 +43,14 @@ const TEMPER = { impatient: 2.5, cruel: 2, instigator: 2, brawler: 1.8, speedRun
 
 /**
  * Can a and b understand each other? A language in common; or, with languages set aside (options.ignoreLanguages),
- * any language at all on both sides.
+ * any language at all on both sides. One that understands and speaks every language (social.anyLanguage: PF2e's
+ * constant tongues) understands anyone with a language, and is understood by them.
  */
 export function shareLanguage(a, b, run = null) {
   const la = a.spec.social?.languages ?? [];
   const lb = b.spec.social?.languages ?? [];
   if ( run?.prep.options.ignoreLanguages ) return la.length > 0 && lb.length > 0;
+  if ( (a.spec.social?.anyLanguage && lb.length > 0) || (b.spec.social?.anyLanguage && la.length > 0) ) return true;
   return la.some(l => lb.includes(l));
 }
 

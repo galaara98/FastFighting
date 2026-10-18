@@ -21,6 +21,7 @@ import { willingness } from "./reluctance.js";
 import { specialtyWeight } from "./specialty.js";
 import { perceives, apparentHealth, knowsOf } from "./senses.js";
 import { auraToll } from "./auras.js";
+import { meets, followUpWorth } from "./requires.js";
 
 
 /** Is the unit (or its side) in trouble, so a careful character would spend limited resources? */
@@ -46,9 +47,11 @@ export function bestOptionVs(run, u, t, attacksMade = 0, turn = null) {
     if ( !hasUses(u, action) ) continue;
     if ( action.oncePerTurn && u.usedThisTurn?.has(action.id) ) continue; // (PF2e Flurry of Blows)
     if ( run.prep.rules.usable && !run.prep.rules.usable(run, u, action, t) ) continue; // (Ironsworn: Strike needs the initiative)
+    if ( !meets(run, u, action, t) ) continue; // (what it needs first: a grab, a hit, two hits on this foe: requires.js)
     const moves = movesNeeded(run, u, t, action);
     if ( !Number.isFinite(moves) ) continue;
-    const ev = expectedDamage(run, u, action, t, attacksMade);
+    // (And what it would set up: a claw that makes a Rend possible is worth more than its own damage.)
+    const ev = expectedDamage(run, u, action, t, attacksMade) + followUpWorth(run, u, action, t, attacksMade, turn);
     const cost = costOf(rules, action, u);
     const base = costUnits(rules, costOf(rules, action));
     // Drawing a weapon is a one-time cost, so spread it over the attacks it enables.
@@ -213,18 +216,20 @@ const OPENING = 1.25;
 
 /**
  * An option only some foes allow (the system's usable says no to the rest: 2014's behir swallows only the one it's
- * grappling): what it would do to each foe that allows it, against u's best at the one it picked; clearly better
- * (OPENING), that foe instead. Only where the system says no to some option against the one it picked.
+ * grappling; or what it needs first holds only for them: the one it has grabbed, the one it hit twice, requires.js):
+ * what it would do to each foe that allows it, against u's best at the one it picked; clearly better (OPENING), that
+ * foe instead. Only where some option is ruled out against the one it picked.
  */
 function opening(run, u, target, standing) {
   const rules = run.prep.rules;
-  if ( !rules.usable || !target ) return target;
-  const picky = u.prep.offense.filter(a => hasUses(u, a) && !rules.usable(run, u, a, target));
+  if ( !target ) return target;
+  const allows = (a, t) => (!rules.usable || rules.usable(run, u, a, t)) && meets(run, u, a, t);
+  const picky = u.prep.offense.filter(a => hasUses(u, a) && !allows(a, target));
   if ( !picky.length ) return target;
   let here = null;
   let best = null;
   for ( const { t } of standing ) {
-    if ( t === target || !picky.some(a => rules.usable(run, u, a, t)) ) continue;
+    if ( t === target || !picky.some(a => allows(a, t)) ) continue;
     const o = bestOptionVs(run, u, t);
     if ( !o || !picky.includes(o.action) ) continue;
     here ??= bestOptionVs(run, u, target)?.weighted ?? 0;
