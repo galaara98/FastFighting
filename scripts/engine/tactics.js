@@ -54,6 +54,8 @@ const usesResource = a => !!a.resource || Number.isFinite(a.uses);
 
 /** Rough expected damage per action of `action` against a same-level foe (the system says what's typical). */
 export function typicalValue(action, level, rules = null) {
+  // (What needs setting up first, a Rend after two hits, is no typical turn's: behavior/requires.js.)
+  if ( action.requires ) return 0;
   const units = rules ? Math.max(0.1, costUnits(rules, costOf(rules, action))) : Math.max(1, action.cost ?? 1);
   if ( action.sequence?.length ) {
     return action.sequence.reduce((s, strike) => s + typicalValue({ ...strike, cost: 1 }, level, null), 0) / units;

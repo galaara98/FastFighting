@@ -262,6 +262,8 @@ function threatNow(run, u, versus) {
   let bestMain = 0;
   let bestBonus = 0;
   for ( const action of u.prep.offense ) {
+    // (What needs setting up first, a Rend after two hits, isn't a turn's usual: what sets it up counts instead.)
+    if ( action.requires ) continue;
     const cost = costOf(rules, action);
     if ( cost.bonus && !cost[main] ) {
       bestBonus = Math.max(bestBonus, expectedDamage(run, u, action, versus, 0));

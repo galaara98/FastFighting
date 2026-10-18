@@ -53,6 +53,7 @@ import { normalizeCost } from "./turn.js";
 import { resolveSurprise } from "./behavior/surprise.js";
 import { localize } from "../i18n.js";
 import { maneuverOf, answersTo } from "../story/master.js";
+import { meets, noteBlow, freshTurn, setupUsed } from "./behavior/requires.js";
 
 const MAX_STEPS_PER_TURN = 8;
 /** After the last blow, how long the winners keep tending the dying (ten minutes of rounds, at most). */
@@ -1404,6 +1405,12 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
         if ( friend && isUp(friend) ) strayShot(run, u, action, friend, logging);
       }
       if ( roll.degree === 0 && u.spec.fumble ) applyFumble(run, u);
+    }
+    // (A Strike on its own turn, for what needs one first: its last action a hit, two hits in a row: requires.js. And a
+    // critical hit with one brings back what a crit recharges: PF2e Draconic Momentum.)
+    if ( action.kind === "strike" ) {
+      noteBlow(run, u, action, target, roll.degree);
+      if ( roll.degree === 3 ) rechargeOnCrit(run, u);
     }
     // What the attempt costs the attacker, by the system (Ironsworn: a miss, or a weak Clash, is Pay the Price).
     backlash(run, u, target, action, roll.degree, logging);
@@ -2785,6 +2792,19 @@ function rechargeActions(run, u) {
 }
 
 /**
+ * What a critical hit with a Strike brings back (action.rechargeOnCrit: PF2e Draconic Momentum recharges a dragon's
+ * Breath Weapon), whenever the crit comes: its uses back, and any wait it had left forgotten.
+ */
+function rechargeOnCrit(run, u) {
+  for ( const a of u.spec.actions ) {
+    if ( !a.rechargeOnCrit || !Number.isFinite(a.uses) || (u.uses[a.id] ?? 0) >= a.uses ) continue;
+    u.uses[a.id] = a.uses;
+    if ( u.readyAt ) delete u.readyAt[a.id];
+    log(run, u, { type: "recharge", action: a.name });
+  }
+}
+
+/**
  * Legendary actions (5e): after each other creature's turn, a legendary creature may spend some of its pool
  * (spec.legendary.pool, back at the start of its own turn) on one of its legendary options (action.legendary: what
  * it costs), the best value it can get against a foe already in reach. Not while it can't act, or a standoff holds.
@@ -2950,7 +2970,9 @@ function hazardTurn(run, u) {
     spendUse(u, summon);
   }
   for ( let tries = 0; tries < 6 && !battleOver(run); tries++ ) {
-    const action = u.prep.offense.find(a => turn.canAfford(costOf(run.prep.rules, a, u)) && hasUses(u, a) && nextTargetInReach(run, u, a));
+    // (Someone in its reach, and what it needs first, where it needs something: requires.js.)
+    const ready = a => { const t = nextTargetInReach(run, u, a); return !!t && meets(run, u, a, t); };
+    const action = u.prep.offense.find(a => turn.canAfford(costOf(run.prep.rules, a, u)) && hasUses(u, a) && ready(a));
     if ( !action ) break;
     turn.spend(costOf(run.prep.rules, action, u));
     spendUse(u, action);
@@ -3212,6 +3234,7 @@ function playFromHere(run, u) {
     && runs(run, u, turn, { why: "allyFalls" }) ) return;
 
   u.usedThisTurn = null; // once-per-turn riders such as sneak attack
+  freshTurn(u); // (no Strikes yet this turn, for what needs them: requires.js)
   u.stoleThisTurn = false;
   u.actsThisTurn = 0;     // (which action die the next action rolls, where there are several: DCC)
   const basic = rules.basicAction ?? 1; // a simple action: stand, escape, size up a foe, step
@@ -3485,6 +3508,7 @@ function playFromHere(run, u) {
     }
     if ( option.action.oncePerTurn ) (u.usedThisTurn ??= new Set()).add(option.action.id);
     executeOffense(run, u, option.action, target, attacksMade);
+    setupUsed(u, option.action); // (what set it up, used up: Rend wants two fresh hits)
     settleSides(run);
     if ( option.action.concentration && u.concentration?.actionId === option.action.id ) noteConcentration(u, option.ev);
     if ( !holding || !option.action.freeWhileHeld ) spendUse(u, option.action);
