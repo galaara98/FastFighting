@@ -9,7 +9,7 @@ that change them, and `Code:` (where it lives, to check it). The settings menu s
 
 - **[Minds](#minds)**: [Personality traits](#personality-traits), [Tactical tiers](#tactical-tiers), [Animals](#animals), [Desires and their level](#desires-and-their-level), [How desires are raised each turn](#how-desires-are-raised-each-turn), [What the fight stirs, and how it cools](#what-the-fight-stirs-and-how-it-cools), [Frustration](#frustration), [Pulls from others: style, social, lean](#pulls-from-others-style-social-lean), [What comes to mind](#what-comes-to-mind), [The agenda](#the-agenda), [Desires it can't work on](#desires-it-cant-work-on), [ADHD](#adhd), [Fear](#fear), [Morale stress](#morale-stress), [Morale check: hold, waver, rout](#morale-check-hold-waver-rout), [Wavering](#wavering), [Running away](#running-away), [Standing its ground](#standing-its-ground), [Calling a retreat](#calling-a-retreat), [Rallying](#rallying), [Leaving the fight](#leaving-the-fight), [Being stopped on the way out](#being-stopped-on-the-way-out), [Standing down](#standing-down), [Chain of command](#chain-of-command), [What a leader lends](#what-a-leader-lends), [Following the leader](#following-the-leader), [Scheming](#scheming), [Party's sway](#partys-sway), [Playstyles: how pills combine](#playstyles-how-pills-combine), [Playstyle numbers](#playstyle-numbers), [Tactics answers: wishes and "Let this character decide"](#tactics-answers-wishes-and-let-this-character-decide)
 - **[Words and sides](#words-and-sides)**: [Luck rolls at a glance](#luck-rolls-at-a-glance), [Who talks, and how often](#who-talks-and-how-often), [Choosing a pitch](#choosing-a-pitch), [Pitch DC](#pitch-dc), [The persuasion track](#the-persuasion-track), [What a convinced foe does](#what-a-convinced-foe-does), [Switch luck: changing sides](#switch-luck-changing-sides), [Traitor luck: a PC turning traitor](#traitor-luck-a-pc-turning-traitor), [Giving something up](#giving-something-up), [How an encounter opens](#how-an-encounter-opens), [Impatience: what breaks a standoff](#impatience-what-breaks-a-standoff), [Only an argument](#only-an-argument), [Bargaining: offers and expectations](#bargaining-offers-and-expectations), [Haggling and pressing](#haggling-and-pressing), [Paying off a boss](#paying-off-a-boss), [Taking no side: neutral tokens and leans](#taking-no-side-neutral-tokens-and-leans), [Crossed: grievance, truce and turning on a side](#crossed-grievance-truce-and-turning-on-a-side), [Winning over, calming and sending away](#winning-over-calming-and-sending-away), [Meddling: neutrals getting involved](#meddling-neutrals-getting-involved), [Taken for a foe, caught in the blast, spared in a truce](#taken-for-a-foe-caught-in-the-blast-spared-in-a-truce), [Neutral friend groups (reach)](#neutral-friend-groups-reach), [Taunts (goading)](#taunts-goading), [Theft mid-fight](#theft-mid-fight), [Trap avoiders](#trap-avoiders), [Reluctance: consumables and costly spells](#reluctance-consumables-and-costly-spells), [Avoiding killing (mercy)](#avoiding-killing-mercy), [The fallen: tying up and robbing](#the-fallen-tying-up-and-robbing), [Execute luck: finishing off a PC](#execute-luck-finishing-off-a-pc), [Bearing a hold or hurt (ignore troubles)](#bearing-a-hold-or-hurt-ignore-troubles), [The party's vote](#the-partys-vote)
-- **[Fighting and the simulation](#fighting-and-the-simulation)**: [The prediction: how many fights it runs](#the-prediction-how-many-fights-it-runs), [Rounds, stalemates and the max-rounds cap](#rounds-stalemates-and-the-max-rounds-cap), [Odds and outcomes](#odds-and-outcomes), [The most typical fight (Sample fight)](#the-most-typical-fight-sample-fight), [Swing factors](#swing-factors), [Initiative and turn order](#initiative-and-turn-order), [Dice, degrees of success and advantage](#dice-degrees-of-success-and-advantage), [Expected damage: what an attack is worth](#expected-damage-what-an-attack-is-worth), [Threat: how dangerous a creature looks](#threat-how-dangerous-a-creature-looks), [Choosing whom to attack](#choosing-whom-to-attack), [Choosing an action](#choosing-an-action), [Reluctance: potions, scrolls and costly spells](#reluctance-potions-scrolls-and-costly-spells), [Shields and defensive turns](#shields-and-defensive-turns), [Healing decisions](#healing-decisions), [Buffs and support](#buffs-and-support), [What a condition, bonus or penalty is worth](#what-a-condition-bonus-or-penalty-is-worth), [Control and debuffs](#control-and-debuffs), [Situational saves and auras](#situational-saves-and-auras), [Concentration](#concentration), [Movement, reach and getting there](#movement-reach-and-getting-there), [Crowds: getting past creatures and where a move ends](#crowds-getting-past-creatures-and-where-a-move-ends), [Line of sight and cover](#line-of-sight-and-cover), [Senses: what a creature can tell](#senses-what-a-creature-can-tell), [Noticing the fight: bystanders](#noticing-the-fight-bystanders), [Opportunity attacks and getting clear](#opportunity-attacks-and-getting-clear), [Forced movement, falls and dangerous ground](#forced-movement-falls-and-dangerous-ground), [Holds and escapes](#holds-and-escapes), [Harm each turn: conditions, persistent damage, spreading](#harm-each-turn-conditions-persistent-damage-spreading), [Afflictions: poisons, diseases, curses](#afflictions-poisons-diseases-curses), [Summons](#summons), [Luck pools: spending after the roll](#luck-pools-spending-after-the-roll), [Fate: rerolls that keep someone alive](#fate-rerolls-that-keep-someone-alive), [Last-ditch saves and refusing to drop](#last-ditch-saves-and-refusing-to-drop), [Damage, 0 HP and the downed models](#damage-0-hp-and-the-downed-models), [Finishing off a downed PC](#finishing-off-a-downed-pc), [The aftermath](#the-aftermath), [Recharges, cooldowns, legendary actions and counterspells](#recharges-cooldowns-legendary-actions-and-counterspells), [Strain: words that wear a creature down](#strain-words-that-wear-a-creature-down)
+- **[Fighting and the simulation](#fighting-and-the-simulation)**: [The prediction: how many fights it runs](#the-prediction-how-many-fights-it-runs), [Rounds, stalemates and the max-rounds cap](#rounds-stalemates-and-the-max-rounds-cap), [Odds and outcomes](#odds-and-outcomes), [The most typical fight (Sample fight)](#the-most-typical-fight-sample-fight), [Swing factors](#swing-factors), [Initiative and turn order](#initiative-and-turn-order), [Dice, degrees of success and advantage](#dice-degrees-of-success-and-advantage), [Expected damage: what an attack is worth](#expected-damage-what-an-attack-is-worth), [Threat: how dangerous a creature looks](#threat-how-dangerous-a-creature-looks), [Choosing whom to attack](#choosing-whom-to-attack), [Choosing an action](#choosing-an-action), [Reluctance: potions, scrolls and costly spells](#reluctance-potions-scrolls-and-costly-spells), [Shields and defensive turns](#shields-and-defensive-turns), [Getting ready: draws, reloads and a turn for the next](#getting-ready-draws-reloads-and-a-turn-for-the-next), [Healing decisions](#healing-decisions), [Buffs and support](#buffs-and-support), [What a condition, bonus or penalty is worth](#what-a-condition-bonus-or-penalty-is-worth), [Control and debuffs](#control-and-debuffs), [Situational saves and auras](#situational-saves-and-auras), [Concentration](#concentration), [Movement, reach and getting there](#movement-reach-and-getting-there), [Crowds: getting past creatures and where a move ends](#crowds-getting-past-creatures-and-where-a-move-ends), [Line of sight and cover](#line-of-sight-and-cover), [Senses: what a creature can tell](#senses-what-a-creature-can-tell), [Noticing the fight: bystanders](#noticing-the-fight-bystanders), [Opportunity attacks and getting clear](#opportunity-attacks-and-getting-clear), [Forced movement, falls and dangerous ground](#forced-movement-falls-and-dangerous-ground), [Holds and escapes](#holds-and-escapes), [Harm each turn: conditions, persistent damage, spreading](#harm-each-turn-conditions-persistent-damage-spreading), [Afflictions: poisons, diseases, curses](#afflictions-poisons-diseases-curses), [Summons](#summons), [Luck pools: spending after the roll](#luck-pools-spending-after-the-roll), [Fate: rerolls that keep someone alive](#fate-rerolls-that-keep-someone-alive), [Last-ditch saves and refusing to drop](#last-ditch-saves-and-refusing-to-drop), [Damage, 0 HP and the downed models](#damage-0-hp-and-the-downed-models), [Finishing off a downed PC](#finishing-off-a-downed-pc), [The aftermath](#the-aftermath), [Recharges, cooldowns, legendary actions and counterspells](#recharges-cooldowns-legendary-actions-and-counterspells), [Strain: words that wear a creature down](#strain-words-that-wear-a-creature-down)
 - **[Pathfinder 2e](#pathfinder-2e)**: [Checks and degrees of success](#checks-and-degrees-of-success), [Actions, the multiple attack penalty and Strikes](#actions-the-multiple-attack-penalty-and-strikes), [Lore-Collector advantage (Recall Knowledge)](#lore-collector-advantage-recall-knowledge), [Conditions and their penalties](#conditions-and-their-penalties), [Flat checks: hidden, concealed, dazzled](#flat-checks-hidden-concealed-dazzled), [Cover, Hide and Take Cover](#cover-hide-and-take-cover), [Holds and Escape](#holds-and-escape), [Swallow Whole and Engulf](#swallow-whole-and-engulf), [Maneuvers (skill actions)](#maneuvers-skill-actions), [Aid](#aid), [Dying, wounded, doomed and recovery](#dying-wounded-doomed-and-recovery), [Hero Points](#hero-points), [Ferocity](#ferocity), [Persistent damage, bleeding and retching](#persistent-damage-bleeding-and-retching), [Afflictions](#afflictions), [Incapacitation and immunity](#incapacitation-and-immunity), [Auras and situational saves](#auras-and-situational-saves), [Weakness, resistance and immunity](#weakness-resistance-and-immunity), [Healing, Battle Medicine and class features](#healing-battle-medicine-and-class-features), [Reactions](#reactions), [Summons](#summons-1), [Doors, falls and moving past others](#doors-falls-and-moving-past-others), [Talking, theft and leadership](#talking-theft-and-leadership), [Personality from the sheet](#personality-from-the-sheet), [Typical numbers and areas](#typical-numbers-and-areas)
 - **[D&D 5e](#dd-5e)**: [Rolls, advantage and critical hits](#rolls-advantage-and-critical-hits), [Lore-Collector advantage (Study)](#lore-collector-advantage-study), [Conditions](#conditions), [Cover, Hide, Dodge, Help and Insight](#cover-hide-dodge-help-and-insight), [Grapples, webs, nets and bonds](#grapples-webs-nets-and-bonds), [Swallowed and engulfed](#swallowed-and-engulfed), [Shove and Grapple](#shove-and-grapple), [Pushes, falls and moving past others](#pushes-falls-and-moving-past-others), [Dying and death saves](#dying-and-death-saves), [Inspiration (fate)](#inspiration-fate), [Concentration](#concentration-1), [Undead Fortitude, Relentless Endurance and Regeneration](#undead-fortitude-relentless-endurance-and-regeneration), [Burning and lingering acid](#burning-and-lingering-acid), [Riders on a hit](#riders-on-a-hit), [Reactions](#reactions-1), [Turn, attacks and resources](#turn-attacks-and-resources), [Doors, talking, theft and leadership](#doors-talking-theft-and-leadership), [Personality from the sheet](#personality-from-the-sheet-1), [Typical numbers by challenge rating](#typical-numbers-by-challenge-rating)
 - **[DCC](#dcc)**: [Action dice, crits and fumbles](#action-dice-crits-and-fumbles), [Lore-Collector advantage](#lore-collector-advantage), [Conditions and situational modifiers](#conditions-and-situational-modifiers), [Mighty Deeds](#mighty-deeds), [Grapples and holds](#grapples-and-holds), [Tied up stops spells](#tied-up-stops-spells), [Luck, spellburn, Fleeting Luck and Mojo](#luck-spellburn-fleeting-luck-and-mojo), [Spells, Lay on Hands and Turn Unholy](#spells-lay-on-hands-and-turn-unholy), [Spell duels](#spell-duels), [Morale](#morale), [Dying: bleeding out, binding wounds and the body](#dying-bleeding-out-binding-wounds-and-the-body), [Regeneration](#regeneration), [Help, Hide, theft and doors](#help-hide-theft-and-doors), [XCC classes](#xcc-classes), [Talking and leadership](#talking-and-leadership), [Personality from the sheet](#personality-from-the-sheet-2), [Typical numbers by level](#typical-numbers-by-level)
@@ -724,7 +724,7 @@ Code: `engine/playstyles.js` `combinePlaystyles`, `combineDesires`, `answerChanc
 
 ### Playstyle numbers
 
-Search: Chicken, Cruel, Moralist, People-Pleaser, Fragile, Impatient, Brawler, Skeptic, Speed-Runner, Wants to Lead, Instigator, Peacekeeper, Diplomat, Wallflower, Martyr, Tank, Mercenary, Enabler, Redeem-Seeker, Lore-Collector, Puzzle-Maniac, Wildcard, Thief, Vengeful, Relentless, Lazy, Un-Mundane
+Search: Chicken, Cruel, Moralist, People-Pleaser, Fragile, Impatient, Brawler, Skeptic, Speed-Runner, Wants to Lead, Instigator, Peacekeeper, Diplomat, Kiter, Wallflower, Martyr, Tank, Mercenary, Enabler, Redeem-Seeker, Lore-Collector, Puzzle-Maniac, Wildcard, Thief, Vengeful, Relentless, Lazy, Un-Mundane
 
 Each pill at first place. Desire points are added to the matching desires each turn (Pulls from others); a multiplier
 of 1 changes nothing.
@@ -744,6 +744,7 @@ of 1 changes nothing.
 | Instigator | Brave +10, Selfish +5 | hurt dangerous +15, hurt leader +15 | retaliate 1.2; contrarian 0.5 | drawAggro 0.35, initiative +2, hinders 1, taunt 0.75, shoves 0.3 |
 | Peacekeeper | Selfish −10, Brave +5 | hurt downed −100, protect +10, talk +20, bind +20, rob −20, free +10 | | peacekeeping 1, spareDowned 1, tauntProof 0.5 |
 | Diplomat | Selfish −10 | hurt downed −50, talk +30, bind +15 | | parleyFirst 0.6, spareDowned 0.5, tauntProof 0.35 |
+| Kiter | Tactical +10 | hurt slow +15 | frustration 0.8 | kite 1 |
 | Wallflower | Brave −10 | hurt nearest −10, avoid nearest +15 | | lowProfile 0.45, hinders 0.25, flighty 0.3, trapWary 0.35, tauntProof 0.3 |
 | Martyr | Brave +20, Selfish −30, Loyal +20 | avoid dangerous −50, avoid attacker −50, heal +15, protect +25, aid +5, rob −10, free +25, rid −25 | avenge 2 | drawAggro 0.3, helps 1, rally 0.2, taunt 0.55 |
 | Tank | Brave +20, Selfish −20, Loyal +10 | hurt dangerous +10, avoid dangerous −40, avoid attacker −40, protect +20, free +10, rid −15 | retaliate 0.7, frustration 0.7 | taunt 1, drawAggro 0.35, helps 1 |
@@ -764,7 +765,9 @@ runs × (1 + 3 × flighty)); **rally** (Rallying); **ambition** (Scheming); **co
 **helps** (+0.25 willingness); **followFocus** (a chance to go for the foe most of its side is on); **slacks** (with no
 foe within 5 ft and HP at half or more, a chance each turn to do nothing). Others: **lowProfile** (an attacker picks
 someone else nearby; Stealth for initiative where the system rolls it), **drawAggro** (draws attacks aimed near it),
-**rush** (skips setting up, raising a shield or getting clear safely), **meleeBias**, **exploitWeakness** (those
+**rush** (skips setting up, raising a shield or getting clear safely), **kite** (minds ending its turn in a foe's reach
+2.5 × kite more, keeps its distance, falls back as foes close, strikes and slips away; a melee option that outreaches
+its foe × (1 + 0.3 × kite): Getting ready), **meleeBias**, **exploitWeakness** (those
 actions worth × (1 + chance)), **hinders** (control actions × (1 + 1.5 × chance)), **shoves**, **random** (a random
 target), **finishDowned**, **spareDowned**, **parleyFirst**, **peacekeeping**, **study**, **observe**, **share**,
 **steal**, **wary**, **trapWary**, **taunt**, **tauntProof** (`engine/behavior/targeting.js`, `talk.js`, `traps.js`,
@@ -1891,8 +1894,11 @@ Decides what a creature does with its turn, and with which attack.
   impulse (Instinctive or less) works first on the kind of thing it most wants (then its second and third); Competent
   and up take them in the order that makes sense.
 - Each attack option against the target: per action = expected damage ÷ max(0.1, cost + moves). Cost counts a main
-  action as 1, a bonus action 0.5, movement 0.1; drawing a weapon adds a quarter of its cost. Moves count the actions
-  spent walking (PF2e: one per Stride; 5e: a Dash for each speed beyond the move left).
+  action as 1, a bonus action 0.5, movement 0.1; drawing a weapon adds a quarter of its draw; a shot's Reload counts in
+  full, loaded now or not (a heavy crossbow's shot is 1 + 2 actions; one no fight can reload, its one shot). Moves count
+  the actions spent walking (PF2e: one per Stride; 5e: a Dash for each speed beyond the move left).
+- What it pays this turn: the cost, plus its draw where the weapon isn't in hand and its Reload where it's empty (a
+  shot empties it). An option it can't pay for this turn is got ready for the next (Getting ready).
 - Weighted = per action × the factors below; the highest wins.
 
 | Factor | Multiplier |
@@ -1958,13 +1964,86 @@ Decides when a creature raises its shield instead of attacking.
 |---|---|
 | "Every turn" | with its last action |
 | Skirmisher style, after 2 attacks | shield, or a step |
-| It can't afford the attack | Instinctive and up |
+| It can't afford the attack (and getting its weapon ready is worth less) | Instinctive and up |
 | Its last action | Competent and up, if the shield is worth more than the attack |
 | After 2 attacks | Competent and up, if this attack is worth under 0.3 × its first (0.65 × with a block ready) |
 
 - Impatient (base 50%) and Speed-Runner (40%) rush some turns and skip it. Dodge-like actions are weighed as buffs.
+- With actions to spare at its turn's end, a raised shield is one of the things it may do with them (Getting ready).
 
 Code: `engine/simulator.js` `shieldWorth`, `playFromHere`.
+
+### Getting ready: draws, reloads and a turn for the next
+
+Search: getting ready, prepare, preparing, draw, Interact, reload, loaded, capacity, potion, retrieve, spare actions, spare movement, leftover movement, position, flank, cover, hide, guard, protector, fall back, behind friends, hit and run, kiter, healer moving close
+
+Decides what a creature does with a turn, or what's left of one, when what it wants most can't be done with it.
+
+- **Its gear** (any system's actions may say it: `engine/gear.js`): a weapon or a potion not in hand is drawn first
+  (`drawCost`, PF2e's Interact); one that's empty is reloaded (`reload` actions, apart from the shot), and a shot
+  empties it (`capacity` rounds, a Reload loading one). With nothing said, a weapon starts loaded. A Reload no turn
+  can hold (a minute's) never comes: it has the shot it's loaded with.
+- **Can't afford its best option this turn:** it takes the first thing the option still needs that the turn pays for
+  (its draw, then its Reload), unless a raised shield is worth more, and the turn goes on.
+- **Healing it means to give and can't this turn** (its top desire): it moves toward the friend, only as far as the
+  heal needs (into range, beside them for a touch), or gets a potion out to drink next turn; whatever's left of the
+  turn goes to the rest of what it wants.
+- **What's spare** once its turn's main actions are done (actions it found nothing better for, 5e's movement after its
+  action, a PF2e third action a Strike at the full penalty is worth less than, a kiter's second): the best of its gear
+  for next turn's option, a potion got out, standing up, a raised shield, a better spot to end on, one after another
+  while any is worth PREP.least (0.5). Never in place of an attack, a heal or a step it's already taking.
+
+**What a step is worth** (`engine/behavior/prepare.js`; NEXT = 0.75, HARM = 0.85):
+
+| Step | Worth |
+|---|---|
+| Its gear, `u` actions of it done now | max(what its best option does next turn with them done − with them still to do, u × its first use's damage ÷ (cost + Reload)) × NEXT × matters |
+| A potion got out | the potion's mean × NEXT × min(1, 2 × (1 − HP fraction)) |
+| Standing up | 0.12 × (next turn's offense + the harm it faces) |
+| A raised shield | as in Shields and defensive turns |
+| A move to spot p | worth(p) − worth(where it stands) − the opportunity strikes of those whose reach it leaves (a Step: none) |
+
+- **Matters:** a foe, 1 − 0.8 × its friends' threat at it ÷ its HP (0.2 to 1); its gear against any foe, 0.95 while
+  two or more stand; a friend, 0.9.
+- **Next turn's uses** of an option, `units` spent first (moves, draw, Reload): 0 if the rest is under its cost, else
+  1 + ⌊(rest − cost) ÷ (cost + Reload)⌋ (at most 3), their expected damage in order. Moves beyond what one turn holds
+  wait whole turns: worth × NEXT per turn waited, and × (1 − 0.1 × the gap ÷ 4 moves, at most 0.1), so closing in still
+  counts.
+
+**What a spot is worth** at the end of its turn, as the coming round looks:
+
+worth(p) = NEXT × (offense + heal + guard + hide) − HARM × harm weight × harm (+ a kiter's or a timid creature's terms)
+
+| Term | At spot p |
+|---|---|
+| offense | its best option's uses next turn on the foe it most wants (a kiter's range: its first increment); × 1.15 beside it with a friend there too (flanked), Competent and up |
+| heal | the heal it means to give (10 + a quarter of their max HP for one down, + the heal's mean), × NEXT per turn it would have to walk first |
+| guard | for each foe and each friend it guards: the foe's threat at the friend × the share it would turn on u instead (u's pull ÷ (u's + the friend's), each its reach factor ÷ (1 + feet ÷ 15), u's × (1 + drawAggro)); + 0.3 (at most 0.9) standing across its way; × the friend's weight (its protect desire ÷ 50, or 0.6 for a weak one: under half HP, a caster, a healer, a shooter); all × 0.8 + loyal ÷ 250 for a protector, else 0.3 |
+| hide | a hider (a Hide of its own, and a sneak attack, a low profile or camouflage) where it can hide from every foe that could see it: (0.5 + lowProfile, at most 1) × (0.5 × harm + 0.6 × its sneak damage's mean) |
+| harm | each foe's threat at it × its reach factor at p (in reach or range 1; PF2e one Stride first 0.8, two 0.5, three 0; 5e a move 0.9, a Dash 0) × 1 ÷ (1 + friends nearer that foe) (0.75 for the foe already on it) × a shooter's cover (some 0.85, most 0.6, total 0) |
+
+- **Harm weight** (0.05 to 3): 0.1 + 0.4 × (selfish − 50) ÷ 50 + 0.4 × (50 − brave) ÷ 50 (each from 0) + 0.6 ×
+  lowProfile + 0.2 × flighty + 1.2 × (0.5 − HP fraction, below half) + 0.3 for a ranged or caster style + 2.5 × kite;
+  × 0.5 for a protector or one who draws the blows; × 0.3 obsessed.
+- **The timid and the kiter** (harm weight 0.8 or more, or a kiter): + up to 0.5 (a kiter 1) for a friend within 30
+  ft (back toward friends, not away); a kiter also + 0.05 × kite × the feet to its nearest foe (up to its range) and
+  − kite × 0.5 × its foes' threat where it's cornered (no free way back from the nearest foe: walls, the map's edge,
+  others).
+- **Spots** looked at: rings 5, 10, half and all of a move round it, 16 ways, free, on the map, not past a wall nor
+  through a foe. A move costs what the system's does (a Stride; 5e's movement, or a Dash); a Step (the system's way out)
+  moves a square with no reactions drawn.
+- **Told by** what gains most there: approach, range, flank, tend, guard, cover, fallBack (a kiter after a blow:
+  hitAndRun). The log's `prepare` event names the step, the desire it serves, at whom, and its worth.
+- **A kiter in a foe's reach** falls back first (a Step or a move) when what it gains is worth more than its last blow
+  of the turn, and shoots with what's left; after one blow, with its last action, it weighs the spare move against
+  another.
+- **Lazy creatures still slack** (Playstyle numbers): being unable to act directly is no reason to idle any more.
+- Not played: dragging a fallen friend clear (no system's rules give it the core yet); a creature's hands filling up
+  as it draws.
+
+Code: `engine/behavior/prepare.js` `gearStep`, `gearWorth`, `nextOption`, `usesIn`, `paceOf`, `spareBest`, `bestSpot`,
+`harmWeight`, `healAhead`, `potionStep`; `engine/gear.js`; `engine/turn.js` `costOf`, `unitsPerUse`;
+`engine/simulator.js` `playFromHere`, `walkTo`, `tendAhead`.
 
 ### Healing decisions
 
@@ -2551,7 +2630,10 @@ What it decides: what a turn holds and what each Strike costs.
 
 - 3 actions a turn; a minion (a summoned creature) 2.
 - Multiple attack penalty: 0 / −5 / −10; agile 0 / −4 / −8. A ranger's Hunter's Edge (Flurry): 0 / −3 / −6, agile 0 / −2 / −4.
-- A Strike costs 1 action plus its reload value; drawing an unready weapon (a character's) 1 more.
+- A Strike costs 1 action; first its Reload (its reload value) where it's empty, and drawing it (a character's, not in
+  hand) by its own Draw or Retrieve, 1 action, 2 from a pack. Loaded as its sheet has it (what's in it); a creature's
+  attack starts loaded. A capacity weapon holds as many shots as its trait says. Repeating weapons shoot from their
+  magazines (no Reload played); a 1-minute reload has its loaded shot only.
 - Range: −2 for each range increment past the first; maximum range is the weapon's, else 6 increments.
 - Melee underwater without a swim speed: −2.
 - Reactive Strike: only creatures with it (Attack of Opportunity before the remaster), once a round, not while incapacitated, paralyzed or stunned. A Step (1 action) leaves reach safely.

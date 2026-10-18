@@ -8,6 +8,8 @@ import { costOf } from "../scripts/engine/turn.js";
 import { gearOf, needsDraw, isLoaded, roundsLoaded, startLoaded, readyUnits, reloadPerUse, initGear, draw, load, fire, used, gearState, syncGear, usable } from "../scripts/engine/gear.js";
 import { hasUses } from "../scripts/engine/behavior/evaluate.js";
 import { coverOf, enemiesOf } from "../scripts/engine/battle-state.js";
+import { beginLive, syncFromSheets } from "../scripts/engine/live.js";
+import { gearOfSpec } from "../scripts/adapters/adapter-base.js";
 import { combinePlaystyles } from "../scripts/engine/playstyles.js";
 import { parseFormula } from "../scripts/engine/dice.js";
 import { pf2eRules } from "./fixtures/three-action-rules.js";
@@ -66,6 +68,20 @@ describe("gear: in hand and loaded (engine/gear.js)", () => {
     expect(usable(u, minute)).toBe(false);
     expect(hasUses(u, minute)).toBe(false);
     expect(reloadPerUse(minute)).toBe(0);
+  });
+
+  test("a live battle: the sheet's word on what's in hand and loaded (readLiveState's gear), over the engine's", () => {
+    const xbow = heavyCrossbow({ drawCost: 1, loaded: false, gear: "w1" });
+    const spec = battle([creature({ id: "harsk", actions: [xbow, fist()] }), post("foe", 60)], { positioning: true });
+    expect(gearOfSpec(spec.combatants[0])).toEqual({ inHand: [], out: ["w1"], loaded: { w1: 0 } });
+    const run = beginLive(spec, pf2eRules, { seed: 1 });
+    const u = run.byId.get("harsk");
+    expect(needsDraw(u, xbow)).toBe(true);
+    syncFromSheets(run, { harsk: { gear: { inHand: ["w1"], loaded: { w1: 1 } } } });
+    expect(needsDraw(u, xbow)).toBe(false);
+    expect(isLoaded(u, xbow)).toBe(true);
+    syncFromSheets(run, { harsk: { gear: { out: ["w1"] } } });
+    expect(needsDraw(u, xbow)).toBe(true);
   });
 
   test("used: a potion drunk (drawEach) is gone from the hand", () => {

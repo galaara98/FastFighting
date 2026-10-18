@@ -897,6 +897,8 @@ async function playTurn(u, combatant, key) {
     const rest = result.events.slice(stage.played);
     if ( setting("playOnMap") ) await playMoves(rest, docs, stageGrid(stage), doorsOpened, battle.scene);
     else await playMoves(rest, docs, null, doorsOpened, battle.scene, { instant: true });
+    // (What it did to get ready since: drawn, loaded, up off the ground, as the system does it.)
+    await playGear(rest, turn);
     turn.doors = [...doorsOpened.values()];
     // (Its areas, laid on the map as the system lays them: who they caught was tested against them.)
     await layAreas(result.events, turn.records);
@@ -992,13 +994,44 @@ const stageDocs = stage => (stage.docs ??= new Map(battle.run.units.map(x => [x.
 /** The paths the turn's moves walk (the one it found its way by, else the scene's). */
 const stageGrid = stage => (stage.grid ??= currentPathGrid() ?? pathGridFor([...stageDocs(stage).values()].map(d => d.object).filter(Boolean)));
 
-/** The turn's events not played on the map yet, played: its moves, as far as it's got. */
+/** The turn's events not played on the map yet, played: its moves, as far as it's got, and its getting ready. */
 async function playSoFar(events, stage) {
   const fresh = events.slice(stage.played);
   stage.played = Math.max(stage.played, events.length);
-  if ( !fresh.some(e => MOVING.has(e.type)) ) return;
-  if ( setting("playOnMap") ) await playMoves(fresh, stageDocs(stage), stageGrid(stage), stage.doorsOpened, battle.scene);
-  else await playMoves(fresh, stageDocs(stage), null, stage.doorsOpened, battle.scene, { instant: true });
+  if ( fresh.some(e => MOVING.has(e.type)) ) {
+    if ( setting("playOnMap") ) await playMoves(fresh, stageDocs(stage), stageGrid(stage), stage.doorsOpened, battle.scene);
+    else await playMoves(fresh, stageDocs(stage), null, stage.doorsOpened, battle.scene, { instant: true });
+  }
+  await playGear(fresh, stage);
+}
+
+/** The kinds of event that get a creature ready on its own turn (behavior/prepare.js): a draw, a Reload, up off the ground. */
+const READYING = new Set(["draw", "reload", "stand"]);
+
+/**
+ * A turn FastFighting plays: what its creature did to get ready, onto its sheet the system's way, in the order it did
+ * it (the helper's readyGear, API 20: PF2e's Interact to draw or get a potion out, its Reload, its Stand), so the
+ * system's next roll sees it. Its cards and undo records are the turn's (`into`: {records, messages}), for Rewind.
+ */
+async function playGear(events, into) {
+  const adapter = getAdapter();
+  if ( typeof adapter.readyGear !== "function" ) return;
+  for ( const e of events ) {
+    if ( !READYING.has(e.type) || !e.actorId || (e.turnOf ?? null) !== e.actorId ) continue;
+    const doc = docOf(e.actorId);
+    if ( !doc ) continue;
+    const seen = new Set(game.messages.keys());
+    try {
+      const raw = await adapter.readyGear(doc, {
+        step: e.type === "draw" && e.retrieve ? "retrieve" : e.type, actionId: e.actionId ?? null, gear: e.gear ?? null, item: e.item ?? "",
+        hands: Number(e.hands) || 0, secret: secretRoll(doc)
+      });
+      into.records.push(...rollRecords(raw, doc));
+    } catch ( err ) {
+      console.error(`${MODULE_ID} | getting ${doc.name} ready on its sheet`, err);
+    }
+    into.messages.push(...game.messages.filter(m => !seen.has(m.id)).map(m => m.id));
+  }
 }
 
 /**

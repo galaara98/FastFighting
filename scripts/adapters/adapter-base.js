@@ -18,6 +18,22 @@
  */
 import { CORE_CONDITIONS } from "../engine/conditions.js";
 import { statusesOf, statusEntry, toggleStatus } from "../foundry/sheet-tools.js";
+import { gearOf, startLoaded, reloads } from "../engine/gear.js";
+
+/**
+ * A spec's gear as its sheet had it when the spec was read (readLiveState's `gear`): what must be drawn first is out of
+ * hand, what needs no draw in hand; what reloads, loaded as it says.
+ */
+export function gearOfSpec(spec) {
+  const inHand = new Set();
+  const out = new Set();
+  const loaded = {};
+  for ( const a of spec?.actions ?? [] ) {
+    if ( a.drawCost !== undefined ) ((Number(a.drawCost) || 0) > 0 ? out : inHand).add(gearOf(a));
+    if ( reloads(a) ) loaded[gearOf(a)] = startLoaded(a);
+  }
+  return { inHand: [...inHand].filter(k => !out.has(k)), out: [...out], loaded };
+}
 
 export class SystemAdapter {
   /** @type {string} */
@@ -201,8 +217,10 @@ export class SystemAdapter {
   /**
    * A token as its sheet stands now, mid-fight, for the engine (engine/live.js syncFromSheets): {hp, temp, stamina,
    * maxHp, dying, wounded, doomed, stable, status ("standing" | "down" | "dead"), conditions {engineKey: value},
-   * persistent [DamagePart], resources {key: n}, shieldRaised}. Positions the core reads itself. By default, from a
-   * fresh CombatantSpec; a helper may read only what changes, more cheaply.
+   * persistent [DamagePart], resources {key: n}, shieldRaised, gear: {inHand, out, loaded} (API 20: its weapons and things
+   * in hand or not, by gear key, and the rounds loaded in what reloads: engine/gear.js)}. Positions the core reads
+   * itself. By default, from a fresh CombatantSpec (its actions' drawCost and loaded); a helper may read only what
+   * changes, more cheaply.
    * @param {TokenDocument} tokenDoc
    * @returns {Promise<object|null>}
    */
@@ -216,8 +234,24 @@ export class SystemAdapter {
     return {
       hp: spec.hp.value, temp: spec.hp.temp ?? 0, stamina: spec.hp.stamina?.value, maxHp: spec.hp.max, dying: spec.dying ?? 0,
       wounded: spec.wounded ?? 0, doomed: spec.doomed ?? 0, status: dead ? "dead" : spec.hp.value > 0 ? "standing" : "down",
-      conditions: { ...(spec.conditions ?? {}) }, persistent: spec.persistent ?? [], resources: { ...(spec.resources ?? {}) }
+      conditions: { ...(spec.conditions ?? {}) }, persistent: spec.persistent ?? [], resources: { ...(spec.resources ?? {}) },
+      gear: gearOfSpec(spec)
     };
+  }
+
+  /**
+   * A live battle (API 20): a step a creature FastFighting plays took to get ready (behavior/prepare.js), carried out on
+   * its sheet the system's way, as it happens in the turn (before the system's next roll): `step` "draw" (the action's
+   * weapon in hand, `hands` of them), "retrieve" (an item got out: a potion), "reload" (loaded) or "stand" (up off the
+   * ground); `actionId`, `gear` (its gear key) and `item` (its name) say what. Its cards are the system's own (PF2e's
+   * Interact card, its Stand). Returns {records: undo records, about this token's and actor's sheet only (Rewind puts
+   * them back)}, or null (nothing done: the turn's change set has what it can say, a stand's prone).
+   * @param {TokenDocument} tokenDoc
+   * @param {object} step   {step, actionId, gear, item, hands, secret}
+   * @returns {Promise<object|null>}
+   */
+  async readyGear(tokenDoc, step) {
+    return null;
   }
 
   /**

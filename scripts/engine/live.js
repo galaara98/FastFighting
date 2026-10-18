@@ -40,6 +40,7 @@ import { validConditionKey, CORE_CONDITIONS, conditionMost } from "./conditions.
 import { GOALS, holdGoal, goalsOf } from "./behavior/goals.js";
 import { isBound, release } from "./behavior/holds.js";
 import { afflictionFor } from "./behavior/afflictions.js";
+import { syncGear } from "./gear.js";
 import { joinSide, standAside, turnOn } from "./behavior/neutral.js";
 
 /** A question the turn can't go on without: whether {unitId} uses {reactionId} because of {trigger} (by {byId}). */
@@ -319,7 +320,8 @@ const sheetOwned = e => Object.keys(e.conditions ?? {}).length > 0 && !e.conditi
 /**
  * The sheets as they now are, by creature id: {hp, temp, stamina, maxHp, dying, wounded, doomed, stable, status
  * ("standing" | "down" | "dead"), conditions {key: value}, persistent [DamagePart], resources {key: n}, position
- * {x, y} (feet), shieldRaised}; anything left out stays as the engine has it. Returns what changed that the engine
+ * {x, y} (feet), shieldRaised, gear: {inHand: [gear keys], out: [gear keys], loaded: {key: rounds}} (engine/gear.js)}; anything
+ * left out stays as the engine has it. Returns what changed that the engine
  * didn't do: [{id, fell, died, revived, bound, hp (the change), moved}].
  */
 export function syncFromSheets(run, states) {
@@ -396,6 +398,8 @@ export function syncFromSheets(run, states) {
       u.persistent = s.persistent.map(part => ({ part, sourceId: known.get(JSON.stringify(part)) ?? null }));
     }
     if ( s.resources ) Object.assign(u.resources, s.resources);
+    // (Its weapons in hand or not, and what's loaded in them, as the sheet has them: engine/gear.js.)
+    if ( s.gear ) syncGear(u, s.gear);
     if ( typeof s.shieldRaised === "boolean" ) u.shieldRaised = s.shieldRaised;
     if ( s.position && Number.isFinite(s.position.x) && Number.isFinite(s.position.y) && (!u.pos || u.pos.x !== s.position.x || u.pos.y !== s.position.y) ) {
       u.pos = { x: s.position.x, y: s.position.y };

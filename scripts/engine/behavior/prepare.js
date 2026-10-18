@@ -65,11 +65,11 @@ export function readyNow(u, action, say) {
 function doGear(u, action, step, say, prepared = false) {
   if ( step === "reload" ) {
     load(u, action);
-    say?.(u, { type: "reload", item: action.name ?? "", gear: gearOf(action), ...(action.ammoName ? { ammo: action.ammoName } : {}), ...(prepared ? { prepared } : {}) });
+    say?.(u, { type: "reload", item: action.name ?? "", actionId: action.id ?? null, gear: gearOf(action), ...(action.ammoName ? { ammo: action.ammoName } : {}), ...(prepared ? { prepared } : {}) });
     return;
   }
   draw(u, action);
-  say?.(u, { type: "draw", item: action.name ?? "", gear: gearOf(action), ...(step === "retrieve" ? { retrieve: true } : {}), ...(prepared ? { prepared } : {}) });
+  say?.(u, { type: "draw", item: action.name ?? "", actionId: action.id ?? null, gear: gearOf(action), hands: Number(action.hands) || 0, ...(step === "retrieve" ? { retrieve: true } : {}), ...(prepared ? { prepared } : {}) });
 }
 
 /**

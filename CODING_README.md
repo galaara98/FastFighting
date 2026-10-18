@@ -92,6 +92,7 @@ Hooks.once("fastFighting.init", api => {
     livePools() { ... }                              // the world's shared pools as they stand (Daggerheart's Fear)
     async placeSummons(scene, summonerDoc, action, creatures, places) { ... } // summoned creatures as tokens; {tokens, records}
     async showTableRoll(roll, { token, target, audience, flavor, flags }) { ... } // the engine's own roll as the system's card (API 20)
+    async readyGear(tokenDoc, { step, actionId, gear, item, hands, secret }) { ... } // a step it took to get ready, on its sheet the system's way (API 20)
   }
   api.registerAdapter("my-system", MySystemAdapter, { priority: 10 });
 });
@@ -212,6 +213,23 @@ Spec fields a helper may now rely on, each documented where it belongs below or 
   - a blow's rider `{kind: "control", control, critOnly}`: a control action of its own tried at once at the one hit, with its own roll (PF2e's Improved Grab, a free Grapple that takes no multiple attack penalty: a check without `attack`), worth its control's worth as often as the blow hits;
   - a control action's `card`: in a live battle, its own card first (`use`), then its roll (an ability whose roll is a maneuver's);
   - `followUpWorth` counts a maneuver as a follow-up (a Strike that would let a Grab follow, at its control's worth) and as a set-up (a maneuver, or a blow's maneuver rider, that would lay a hold or prone for another's requirement: a Grab before a Constrict).
+- Getting ready (`engine/gear.js`, `behavior/prepare.js`; **Getting ready** below): an action's
+  - `gear` (what it uses, as a key: actions with one share whether it's in hand and loaded; default its own id);
+  - `drawCost` (main-pool units to get it in hand: PF2e's Interact; with it, it starts out of hand) and `drawEach` (each
+    use leaves the hand empty: a potion drunk, a bomb thrown);
+  - `reload` (main-pool units a Reload takes, apart from its `cost`; Infinity: none fits a fight), `loaded` (whether it
+    starts loaded, or the rounds in it; left out, loaded, as most tables assume) and `capacity` (the rounds it holds, 1
+    if not said). A use costs its `cost`, plus its draw where it isn't in hand and a Reload where it's empty (turn.js
+    `costOf`); each use fires a round. Its worth per action counts every shot's Reload (`unitsPerUse`).
+  - In a live battle, `readLiveState` may say `gear: {inHand, out, loaded}` (gear keys in hand or not, rounds loaded:
+    the sheet's word, engine/live.js `syncFromSheets`; by default from the spec, adapter-base.js `gearOfSpec`), and the
+    adapter hook `readyGear(tokenDoc, {step, actionId, gear, item, hands, secret})` carries out each step a creature
+    FastFighting plays took to get ready (`draw`, `retrieve`, `reload`, `stand`), in the turn's order, before the
+    system's next roll: its cards the system's own, its undo records (`{records}`, the token's and actor's sheet only)
+    the turn's, for Rewind (`live-battle.js` `playGear`).
+  - The log: `prepare` (`step`, the `desire` it serves, its `target`, the `item`, its `worth`), `reload` and `draw`
+    (`actionId`, `gear`, `hands`, `retrieve` for an item got out), a move's `prepared` and `away`; the story tells a
+    step for later by its `prepare` event (`prepare.<step>` tables).
 - An action's `ammo` (a key of `spec.resources`: the rounds its shots come from) and `ammoCost` (the rounds a shot takes, 1 if not said): with fewer left it can't be used, and each use spends them, a reaction's shot too (`behavior/evaluate.js` `hasAmmo`, `spendAmmo`); its worth in a round's threat counts what's left as a resource's does. Ammunition is no `resource`: nothing saves it up (no reluctance, no gate against free options, no specialty), and it's still an everyday strike. Several actions may shoot from one key. PF2e's bolts and arrows. The planner names the pool by the system's `resourceLabel`, else the action that shoots it.
 - `rollStrike`'s `records`: what the roll changed on the striker's sheet, undone with the turn (**Players' damage** above).
 - `rules.applyIwr(iwr, byType, target, ctx)`: a blow's damage (and the Statistics Engine's estimate of an action's) comes with what deals it, for a weakness or resistance to that rather than to its damage type (`evaluate.js` `iwrContext`): `traits` (the action's: PF2e's holy and unholy), `materials` (the action's `materials`, what its weapon is made of: PF2e's cold iron, silver), `magical` (the core's `isMagical`), `area` (an area's damage), `crit` (a critical hit; an attack's, not a save's critical failure), `byCategory` (`{precision: {type: amount}, splash: ...}`: how much of each type its parts of that category dealt, `sampleDamage`), `action` (the action itself, for anything else of the system's own on it) and `direct`. Its estimate counts what a use adds (a sneak attack, a damage bonus, a mark) with the action's own damage, each type's resistances once over all of it, as the blow lands.
@@ -389,11 +407,12 @@ Hooks:
 - Pills weigh 1, 0.75, 0.55 and 0.4 by place (`ORDER_WEIGHTS`). **Stay mostly true** caps trait shifts at ±10 and any behavior that departs from the calculation at 10% of fights, and halves the desire guide. **Roleplaying is very important** doubles trait shifts, makes behaviors 1.8 times as likely, and weighs the desire guide 1.5 times (`engine/playstyles.js`).
 - **Reluctance** (`behavior/reluctance.js`): the Consumables answers are worth 0.1 (I don't like to use consumables), 0.4 (Only when it really counts), 1 (When they're the right tool) and 1.3 (Consumables are here to get used); **I don't like to use spells that cost something** is 0.1 for spells with a resource or uses. A friend down and unstable, or itself under a quarter of its hit points, raises it to 0.9; for a playstyle that helps, a friend under half its hit points raises it to 0.6. The choice is made once a round for each kind of cost.
 - **The wish table:** "Let this character decide" carries none of a wish, so a character nobody has answered for is as it was. With Stay mostly true, the talking wish is only a small nudge.
-- **Auto playstyles** (`engine/auto-playstyles.js`) score each pill from three things: what the numbers and actions say (its traits, a player character's only where they differ from the usual hero's and at half weight, since its player says more about who it is; mindless or fearless; weapons close or far; magic and specialties; healing and help for friends; ways to hamper a foe; a shield or good armor; skill at theft, lore and talk); the helper's `playstyleHints`; and biography keywords. A pill needs a fair score to be picked. They're picked once; after that they're the table's.
+- **Auto playstyles** (`engine/auto-playstyles.js`) score each pill from three things: what the numbers and actions say (its traits, a player character's only where they differ from the usual hero's and at half weight, since its player says more about who it is; mindless or fearless; weapons close or far; its speed, and a melee reach beyond its size's; magic and specialties; healing and help for friends; ways to hamper a foe; a shield or good armor; skill at theft, lore and talk); the helper's `playstyleHints`; and biography keywords. A pill needs a fair score to be picked. They're picked once; after that they're the table's.
 - **"Let this character decide"**: the helper's `tacticHints` answer first, with a reason; where it says nothing, the core reads the hidden scores and what the character can do; then its playstyles have their say. These are kept with the character and worked out again when missing or broken, when the core API has moved on, or when the character changes (a level gained, its traits, a new spell, the world's defaults). The GM sees each hidden score's sources on hover.
 - **Playstyle details:**
   - Brawler: now and then a jeer (a taunt). Chicken: leading, takes its group with it when it runs. Diplomat: now and then pulls a killing blow, as a Moralist does. Fragile: once hurt, wants to heal itself if it can.
   - Impatient and Speed-Runner: each helper may add its own hurried moves (Daggerheart's Sprint, DCC's charge, Ironsworn's End the Fight).
+  - Kiter: keeps its distance (behavior `kite`, **Getting ready** below): a ranged one at the edge of its first range increment, beyond its foes' move and reach; a melee one in, a blow, and out again, a reach weapon that outreaches its foe first; falls back as foes close, toward its friends; goes for foes that can't follow (held, prone, slowed, slower, or struggling through the ground: desire `hurt.slow`). Cornered, it fights. Set up by itself: a fast shooter, or fast up close with a good defense; a reach beyond its size's leans it that way.
   - Lore-Collector: sizing up takes an action when the turn has one to spare; with one action a turn, the whole turn; in a standoff, most likely its whole first turn, watching while the talk waits. When it works (the system's check, if any), its next rolls against that foe are much likelier to succeed; never without paying for it. What it learns holds for every foe of the same sort (the same stat block, or the same name but for the number): one turn for three goblin warriors, and the payoff against any of them. Afterwards it still hits and talks to them a little better. It may tell its friends: its pill's chance times how minded it is (from even odds; more for the loyal, a tactical mind, and pills that lean on supporting friends: Enablers, People-Pleasers, those who'd lead; less for the selfish, the lazy, brawlers, mercenaries); its side's leader that readily, anyone else half as readily, unless it would rather talk than fight anyway. Telling is an action, now or first thing next turn, to every friend within a move of it (its speed) who understands it; they deal with that sort a little better too. Every Lore-Collector chance (sizing up, watching, sharing) shrinks further down its pills (×0.75, ×0.55, ×0.4).
   - Peacekeeper: everyone in a standoff with it, either side, loses patience half as fast; foes it talks round stand down (a truce, even mid-fight: never a surrender, a payoff or a rout).
   - People-Pleaser listens to its leader far more than most. Relentless: half a Skeptic's wariness of outsiders' words. Skeptic: the extra DC (up to 4) goes by the pill's place.
@@ -490,6 +509,23 @@ Hooks:
 - **Buffs:** one friend, several, or everyone in an aura. A save at the end of each turn can shake some off (Hold Person); damage ends some (sleep). With concentration, one spell at a time, and a hard knock or being taken out ends it. A buff's worth counts the rounds it will matter; late in a won fight, nobody bothers. A charm or domination ends when it runs out, on a save, when the holder loses concentration or falls, or when the holder's side harms a charmed one; its friends are reluctant to cut it down, and the story still counts it as one of its own. Edges: PF2e Aid is a check against DC 15 for +1 to a friend's next roll, more on a critical success, -1 on a critical failure; Friends gives advantage on words to one creature; Sure Strike; Ironsworn's Aid Your Ally gives +1 on the next move, or momentum. Laid on a friend, an edge counts against whoever that friend is set on (the foe it wants to hurt or talk round, or the friend it wants to tend), and it's spent by the roll it helps; bonuses to checks count for talkers and healers, so a talker is worth guiding before it speaks. The story: *"Akra lifts Bless over the group: Akra, Zanna and Randal, emboldened."* Dodge, Reckless Attack and Action Surge get lines of their own.
 - **Senses** (`behavior/senses.js`): a foe it can't perceive looks unhurt, and it doesn't go after the fallen it can't make out. In a crisis, twice the range, no line of sight or light needed (a smell still doesn't pass a wall). The din of a fight carries farther than 60 feet, harder to make out with distance and walls; bystanders notice it seen, picked up on radar, felt, smelled or heard.
 - **Doors** (`behavior/doors.js`): more patience with a locked door when there's nobody else to fight; giving up turns the desire to something else. The system's door has its defense, hit points, DCs and its own damage rules (PF2e hardness, a 5e damage threshold).
+
+### Getting ready
+
+`engine/gear.js` and `behavior/prepare.js`; the numbers in [STATS_AND_FORMULAS_README](STATS_AND_FORMULAS_README.md#getting-ready-draws-reloads-and-a-turn-for-the-next).
+- **Its weapon not in hand or not loaded:** a turn that can't pay for its best option draws or reloads it, for the
+  next. A creature that can pay for it all does it in one (draw, Reload, shot).
+- **Healing it can't give this turn** (its top desire): it goes to the friend, as far as the heal needs, or gets a
+  potion out; the rest of the turn goes to what else it wants.
+- **What's spare after its main actions** (actions it found nothing better for, 5e's movement after its action, a PF2e
+  third action a Strike at the full penalty isn't worth): its gear for next turn, a potion, standing up, a raised
+  shield, or a better spot to end on: where it can strike or heal next turn, a flanking spot, cover for a hider,
+  between its foes and the friends a protector guards, out of reach and behind its friends for the timid. It never
+  takes the place of an attack, a heal or a step it's already taking.
+- **How it's weighed:** what it enables next turn, discounted, as likely as it is to matter; a spot also by the harm it
+  spares, as much as the creature minds being hit (the selfish, the timid, the badly hurt, shooters and kiters more,
+  protectors less), less the reactions moving there provokes. The same reckoning as `followUpWorth`'s.
+- **Lazy creatures still slack** now and then; being unable to act directly is no reason to idle any more.
 
 ### Combat details
 
