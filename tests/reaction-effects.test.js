@@ -249,6 +249,27 @@ describe("its own blow lands (ownHit)", () => {
   });
 });
 
+describe("a foe moving in or out of its reach: a strike of its own reaction's", () => {
+  const at = (x, y = 0) => ({ x, y, size: 5 });
+  const lash = { id: "lash", label: "Tail Lash", on: ["foeLeavesReach", "foeMovesInReach"], strike: "tail", uses: 1 };
+  /** A careless hero beside a beast with a tail (no Reactive Strike), a beaten foe a short walk away. */
+  const engaged = reactions => battle([
+    creature({ id: "hero", position: at(0), traits: traits(25), initiative: { mod: 50 } }),
+    creature({ id: "beast", side: "hostile", position: at(5), hp: { value: 500, max: 500, temp: 0 }, reactions,
+      actions: [strike({ id: "jaws", name: "Jaws", bonus: -50 }), strike({ id: "tail", name: "Tail", bonus: -50, reach: 10 })] }),
+    creature({ id: "straggler", side: "hostile", position: at(25), hp: { value: 1, max: 20, temp: 0 }, actions: [strike({ bonus: -50 })] })
+  ], { positioning: true, maxRounds: 1, aftermath: "none" });
+
+  test("walking away, it's struck with the strike the reaction names, as an opportunity strike is; its uses spent", () => {
+    for ( const ruleset of [pf2eRules, { ...rules, opportunity: undefined }] ) {
+      const run = replay(engaged([lash]), ruleset, 3);
+      const blows = run.log.filter(e => e.type === "opportunity" && e.targetId === "hero");
+      expect(blows).toEqual([expect.objectContaining({ actorId: "beast", action: "Tail" })]);
+    }
+    expect(replay(engaged([]), pf2eRules, 3).log.some(e => e.type === "opportunity")).toBe(false);
+  });
+});
+
 describe("a foe casts", () => {
   test("not only a counterspell: harm at the caster as it casts", () => {
     const hold = { id: "hold", name: "Hold", kind: "control", rank: 2, cost: 1, save: { type: "will", dc: 30 }, range: { increment: 90 },

@@ -299,14 +299,14 @@ Every moment below takes the effects that answer any moment (`behavior/reaction-
 | it drops or dies | `slain` | (its effects, answered on its way down: areaBurst, a last strike or harm at the one who felled it) |
 | a foe casts a spell it can see | `foeCasts` (`spell`) | counter; or its effects at the caster, who casts nothing if they fell it |
 | its own attack (a Strike or a spell attack) hits | `ownHit` | (its effects, at the one it hit; `crit`, `melee`, `ranged`, `actions` say which blows) |
-| a foe walks out of its reach (`reactions.js`) | `foeLeavesReach` | its opportunity strike |
+| a foe walks out of its reach (`reactions.js`) | `foeLeavesReach` | its opportunity strike; or its own reaction's `strike` (the strike it names, or its best), struck the same way |
 | a ranged attack, or a manipulate action, in its reach | `foeOpening` | its opportunity strike, where `rules.opportunityOn` names it (PF2e) |
 | standing up in its reach | `foeMovesInReach` | its opportunity strike, where `rules.opportunityOn` names it (PF2e) |
-| a move that ends in its reach after a square or more inside it (a reach weapon walked into: `throughReach`) | `foeMovesInReach` | its opportunity strike, where `rules.opportunityOn` names it (PF2e) |
+| a move that ends in its reach after a square or more inside it (a reach weapon walked into: `throughReach`) | `foeMovesInReach` | its opportunity strike, where `rules.opportunityOn` names it (PF2e); or its own reaction's `strike` |
 | a friend ends a move beside it (`answerMove`) | `allyMoves` | kin (its effects: step) |
 | a foe comes into its reach (`answerMove`) | `foeApproaches` | kin (its effects: strike, step) |
 
-A reaction marked `free` costs no reaction (a creature's nature: a death burst; PF2e's triggered free actions). One marked `passive` is always on (an XCC brawler's Toughness, PF2e's Draconic Momentum): never asked about in a live battle, and not listed on the character's tab. Filters on any of them: `range`, `melee`, `ranged`, `physical`, `damageTypes`, `crit`, `actions` (by id), `needsShield`, `kin`, `byRange`.
+A reaction marked `free` costs no reaction (a creature's nature: a death burst; PF2e's triggered free actions). One marked `passive` is always on (an XCC brawler's Toughness): never asked about in a live battle, and not listed on the character's tab. Filters on any of them: `range`, `melee`, `ranged`, `physical`, `damageTypes`, `crit`, `actions` (by id), `needsShield`, `kin`, `byRange`.
 
 In a live battle, a harm's damage is the system's (the reaction's card, its damage roll and its application, through the helper), saves are the system's, strikes are the system's, and what a reaction lays or buffs reaches the sheet with the turn's changes (an effect it laid names the reaction as its source). A heal's amount is the engine's dice, as every heal's is, and a recharge is the engine's to keep.
 

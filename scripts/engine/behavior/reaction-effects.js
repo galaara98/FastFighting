@@ -13,8 +13,8 @@
  *   boost      an outcome on itself (a short buff: bonuses, resistances, temporary hit points), until the end of its
  *              next turn unless it says longer.
  *   heal       damage parts: hit points it regains.
- *   recharge   an action id (or a list; true: every one of its own that recharges): used, it's ready again (PF2e
- *              Draconic Momentum's Breath Weapon).
+ *   recharge   an action id (or a list; true: every one of its own that recharges): used, it's ready again (a breath
+ *              weapon back when a critical hit lands).
  *   strike     its best everyday strike at the one who set it off (strikeBack: in reach, a Step first, or a shot), or the
  *              strike an action id names (a list: the best of them); on ownHit, another blow at the one it hit.
  *   step       feet: a move of its own to the best spot it finds (bestStep).

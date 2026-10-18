@@ -48,7 +48,7 @@ import { forcedPath, fallDamage, resettle } from "./behavior/forced.js";
 import { stepOf, stacks, stageRounds, stageMove } from "./behavior/afflictions.js";
 import { setConditionValue, layerOf, toughSave, healedOf, harmEnds, letGo, holderOf, cutOff, harmParts } from "./behavior/troubles.js";
 import { profiled, hasTrait, barred } from "./conditions.js";
-import { reactionsPerRound, threats, takesSafeWay } from "./behavior/reactions.js";
+import { reactionsPerRound, threats, takesSafeWay, spendOwnStrike, hasMoveStrikers } from "./behavior/reactions.js";
 import { isNeutral, crossed, caughtInArea, refreshLeans, truceWith, truceBreaks, turnOn, settleTruce, peaceDesires, seemsFoe, meddling, inFray, fighting, dislikesViolence, annoyedBy, ANNOYED } from "./behavior/neutral.js";
 import { normalizeCost } from "./turn.js";
 import { resolveSurprise } from "./behavior/surprise.js";
@@ -2138,11 +2138,12 @@ export const OPPORTUNITY = "opportunity";
  */
 function provoke(run, u, trigger) {
   if ( !run.prep.rules.opportunityOn?.includes(trigger) ) return true;
-  for ( const { e, strike } of threats(run, u, null, trigger) ) {
+  for ( const { e, strike, reaction } of threats(run, u, null, trigger) ) {
     if ( !isStanding(u) || battleOver(run) ) break;
     // (In a live battle the player, or the GM, may say otherwise: engine/live.js.)
-    if ( run.live && !run.live.decide(run, e, { reaction: { id: OPPORTUNITY, label: strike.name }, trigger, by: u, would: true, strike }) ) continue;
+    if ( run.live && !run.live.decide(run, e, { reaction: reaction ?? { id: OPPORTUNITY, label: strike.name }, trigger, by: u, would: true, strike }) ) continue;
     e.reactionsLeft -= 1;
+    spendOwnStrike(e, reaction);
     log(run, e, { type: "opportunity", target: u.spec.name, targetId: u.id, action: strike.name, trigger });
     executeOffense(run, e, strike, u, 0);
   }
@@ -2165,11 +2166,13 @@ function leaveReach(run, u, turn, keep = null, need = null) {
       log(run, u, { type: "disengage", label: safe.label ?? "", natural: check?.natural ?? null, total: check?.total ?? null, dc: check ? dc : null, made: clear });
     }
     if ( !clear ) {
-      for ( const { e, strike } of list ) {
+      for ( const { e, strike, reaction } of list ) {
         if ( !isStanding(u) || battleOver(run) ) break;
-        // (In a live battle the player, or the GM, may say otherwise: engine/live.js.)
-        if ( run.live && !run.live.decide(run, e, { reaction: { id: OPPORTUNITY, label: strike.name }, trigger: "leaveReach", by: u, would: true, strike }) ) continue;
+        // (In a live battle the player, or the GM, may say otherwise: engine/live.js. A strike of its own reaction's
+        // spends what that costs: behavior/reactions.js ownMoveStrike.)
+        if ( run.live && !run.live.decide(run, e, { reaction: reaction ?? { id: OPPORTUNITY, label: strike.name }, trigger: "leaveReach", by: u, would: true, strike }) ) continue;
         e.reactionsLeft -= 1;
+        spendOwnStrike(e, reaction);
         log(run, e, { type: "opportunity", target: u.spec.name, targetId: u.id, action: strike.name });
         executeOffense(run, e, strike, u, 0);
       }
@@ -2351,7 +2354,7 @@ function moveLog(run, u, move, toward, purpose = "approach") {
  * foe whose reach it came into ("foeApproaches": a strike at it, or a step).
  */
 export function answerMove(run, u, move, toward = null) {
-  if ( run.reachers ) throughReach(run, u, move);
+  if ( run.reachers || hasMoveStrikers(run) ) throughReach(run, u, move);
   if ( !run.movers || !(move?.feet > 0) || !isStanding(u) ) return;
   for ( const o of [...run.units] ) {
     if ( o === u || !o.spec.reactions || battleOver(run) || !isStanding(u) ) continue;
@@ -2378,7 +2381,7 @@ function throughReach(run, u, move) {
   if ( !from || !u.pos || !(move.feet > 0) || !isStanding(u) ) return;
   const length = Math.hypot(u.pos.x - from.x, u.pos.y - from.y);
   if ( length < 4.5 ) return;
-  for ( const { e, strike } of threats(run, u, null, "foeMovesInReach") ) {
+  for ( const { e, strike, reaction } of threats(run, u, null, "foeMovesInReach") ) {
     if ( !isStanding(u) || battleOver(run) ) break;
     const reach = (strike.reach ?? 5) + 0.5;
     const half = ((u.spec.position?.size ?? 5) + (e.spec.position?.size ?? 5)) / 2 - 5;
@@ -2393,8 +2396,9 @@ function throughReach(run, u, move) {
       }
     }
     if ( entered === null || (1 - entered) * length < 4.5 ) continue;
-    if ( run.live && !run.live.decide(run, e, { reaction: { id: OPPORTUNITY, label: strike.name }, trigger: "foeMovesInReach", by: u, would: true, strike }) ) continue;
+    if ( run.live && !run.live.decide(run, e, { reaction: reaction ?? { id: OPPORTUNITY, label: strike.name }, trigger: "foeMovesInReach", by: u, would: true, strike }) ) continue;
     e.reactionsLeft -= 1;
+    spendOwnStrike(e, reaction);
     log(run, e, { type: "opportunity", target: u.spec.name, targetId: u.id, action: strike.name, trigger: "foeMovesInReach" });
     executeOffense(run, e, strike, u, 0);
   }
