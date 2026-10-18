@@ -23,7 +23,7 @@ import { initDesires, newTurn, goaded, think, want, thwart, relieve, levelOf, mi
 import { prepareDoors, doorStates, doorAhead, atDoor, doorPlan, patienceFor, doorDamage } from "./behavior/doors.js";
 import { heldGoal } from "./behavior/goals.js";
 import { checkMorale, standsGround, callRetreat, rallies, MORALE } from "./behavior/morale.js";
-import { expectedDamage, spendUse, hasUses, attacksIn, criticalParts, saveMultiplier, saveMultiplierFor, meanDamageVs, unitsPerTurn, iwrContext, critDoubles } from "./behavior/evaluate.js";
+import { expectedDamage, spendUse, spendAmmo, hasUses, attacksIn, criticalParts, saveMultiplier, saveMultiplierFor, meanDamageVs, unitsPerTurn, iwrContext, critDoubles } from "./behavior/evaluate.js";
 import { chooseDeed, deedTier, chooseHitRiders, rescueMiss, rollCrit, rollFumble, rallied } from "./behavior/riders.js";
 import { cast } from "./behavior/casting.js";
 import { boost } from "./behavior/luck.js";
@@ -1564,8 +1564,8 @@ function ownHit(run, u, target, action, crit, dealt, types = null) {
 
 /**
  * u's reaction strike at foe, as the reaction allows (behavior/responses.js strikeBack: in reach, a Step first, or a
- * shot): the Step played first where it needs one, no parting blows for it, then the strike. `back`: strikeBack's, where
- * it was found already. Returns whether it struck.
+ * shot): the Step played first where it needs one, no parting blows for it, then the strike, its ammunition spent.
+ * `back`: strikeBack's, where it was found already. Returns whether it struck.
  */
 function reactStrike(run, u, foe, r, logging, back = strikeBack(run, u, foe, r)) {
   if ( !back ) return false;
@@ -1576,6 +1576,7 @@ function reactStrike(run, u, foe, r, logging, back = strikeBack(run, u, foe, r))
     if ( run.log ) log(run, u, { type: "step", reaction: true, feet: Math.round(Math.hypot(u.pos.x - from.x, u.pos.y - from.y)), from, to: { x: u.pos.x, y: u.pos.y } });
   }
   strikeTarget(run, u, back.strike, foe, 0, !back.strike.melee, logging);
+  spendAmmo(u, back.strike);
   return true;
 }
 

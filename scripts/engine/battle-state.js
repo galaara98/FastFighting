@@ -83,6 +83,8 @@
  * @property {{targets: number}} [area]
  * @property {object[]} [heal]              DamagePart[] of healing
  * @property {string} [resource]            Pool key consumed per use
+ * @property {string} [ammo]                Pool key its shots come from (API 20: ammunition, never saved up), and
+ * @property {number} [ammoCost]            the rounds a shot takes (1)
  * @property {number} [uses]                Uses per battle when not pool-based
  * @property {boolean} [rechargeOnCrit]     Its uses come back when its user scores a critical hit with a Strike (PF2e
  *                                          Draconic Momentum: the Breath Weapon)

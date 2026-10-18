@@ -33,7 +33,7 @@ import { STATUS } from "../../constants.js";
 import { isUp, isStanding, areEnemies, edgeDistance, heldOff, saveRoll, movesNeeded, canMove, canHeal } from "../battle-state.js";
 import { meanPart, samplePart } from "../dice.js";
 import { diceAt, tableRoll } from "../table-rolls.js";
-import { meanDamageVs, threatOf, expectedDamage, saveMultiplier } from "./evaluate.js";
+import { meanDamageVs, threatOf, expectedDamage, saveMultiplier, hasAmmo } from "./evaluate.js";
 import { degreeDistribution } from "../probability.js";
 import { outcomeWorth, applyOutcome } from "./effects.js";
 import { isImmune } from "./control.js";
@@ -113,7 +113,7 @@ export function riposteStrike(u) {
  * best of those it names that reach the foe), else its best everyday melee strike, the foe in reach; else, where it may
  * Step first (r.strikeStep, feet: PF2e Nimble Reprisal's 5), the foe that much past its reach (step: the feet it
  * steps); else, where it may shoot instead (r.strikeRanged: Nimble Reprisal), its best everyday ranged strike, the foe
- * in range and in sight.
+ * in range and in sight. A shot only with the ammunition for it (action.ammo).
  */
 export function strikeBack(run, u, foe, r) {
   if ( !foe || !r ) return null;
@@ -121,7 +121,7 @@ export function strikeBack(run, u, foe, r) {
   if ( named ) {
     let best = null;
     for ( const a of u.prep.offense ) {
-      if ( a.kind !== "strike" || !named.includes(a.id) || movesNeeded(run, u, foe, a) !== 0 ) continue;
+      if ( a.kind !== "strike" || !named.includes(a.id) || !hasAmmo(u, a) || movesNeeded(run, u, foe, a) !== 0 ) continue;
       const score = strikeScore(a);
       if ( !best || score > best.score ) best = { a, score };
     }
@@ -137,7 +137,7 @@ export function strikeBack(run, u, foe, r) {
   if ( r.strikeRanged ) {
     let best = null;
     for ( const a of u.prep.offense ) {
-      if ( !everyday(a) || a.melee || !a.range ) continue;
+      if ( !everyday(a) || a.melee || !a.range || !hasAmmo(u, a) ) continue;
       if ( movesNeeded(run, u, foe, a) !== 0 ) continue;
       const score = strikeScore(a);
       if ( !best || score > best.score ) best = { a, score };

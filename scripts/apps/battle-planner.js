@@ -569,8 +569,9 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       for ( const [key, used] of Object.entries(c.resources) ) {
         if ( used <= 0.005 ) continue;
         const start = cs?.resources?.[key] ?? 0;
-        const action = cs?.actions.find(a => a.resource === key);
-        // The system names its own pools (focus points, spell slots, ki ...); otherwise the action that uses it.
+        const action = cs?.actions.find(a => a.resource === key || a.ammo === key);
+        // The system names its own pools (focus points, spell slots, ki ...); otherwise the action that uses it (or
+        // shoots it).
         const label = adapter?.resourceLabel?.(key, cs) ?? action?.name ?? key;
         resources.push({ name: c.name, label, used: used.toFixed(2), start, width: start ? Math.min(100, (used / start) * 100).toFixed(1) : 0 });
       }

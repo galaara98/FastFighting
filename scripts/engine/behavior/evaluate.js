@@ -336,8 +336,9 @@ function threatNow(run, u, versus) {
       if ( Number.isFinite(action.uses) || action.resource ) break;
     }
     // A spell or item it can only use so often counts in a round's threat only as far as what's left could last a
-    // typical fight (a single Meteor Swarm isn't three rounds of Meteor Swarms).
-    const left = action.resource ? resourceLeft(u, action) / Math.max(1, action.resourceCost ?? 1) : Number.isFinite(action.uses) ? (u.uses?.[action.id] ?? action.uses) : Infinity;
+    // typical fight (a single Meteor Swarm isn't three rounds of Meteor Swarms); a shot, as far as its ammunition does.
+    const own = action.resource ? resourceLeft(u, action) / Math.max(1, action.resourceCost ?? 1) : Number.isFinite(action.uses) ? (u.uses?.[action.id] ?? action.uses) : Infinity;
+    const left = Math.min(own, shotsLeft(u, action));
     // (One that recharges is there whenever it's ready, and may well be again.)
     if ( action.recharge || action.cooldown ) total *= left > 0 ? 1 : 0.4;
     else if ( Number.isFinite(left) ) total *= Math.min(1, left / TYPICAL_ROUNDS);
@@ -374,6 +375,24 @@ export function resourceLeft(u, action) {
 /** An action that costs something it has only so much of: a resource, or uses. */
 export const limited = a => !!a.resource || Number.isFinite(a.uses);
 
+/**
+ * The shots an action has left from its ammunition (API 20, `action.ammo`: a key of spec.resources, its rounds;
+ * `ammoCost` a shot, 1 if not said); Infinity for one that takes none. Ammunition is no resource: nothing saves it up
+ * (it's no consumable or costly spell, nor a gated or special option), but with none left the shot can't be made.
+ */
+export function shotsLeft(u, action) {
+  if ( !action?.ammo ) return Infinity;
+  return Math.floor((u.resources?.[action.ammo] ?? 0) / Math.max(1, Number(action.ammoCost) || 1));
+}
+
+/** Has it the ammunition for one shot of this (an action that takes none, always)? */
+export const hasAmmo = (u, action) => shotsLeft(u, action) >= 1;
+
+/** A shot's ammunition spent (a turn's strike, a reaction's shot). */
+export function spendAmmo(u, action) {
+  if ( action?.ammo && u.resources ) u.resources[action.ammo] = (u.resources[action.ammo] ?? 0) - Math.max(1, Number(action.ammoCost) || 1);
+}
+
 export function hasUses(u, action) {
   if ( u.lost?.has(action.id) ) return false; // a spell lost to a failed check (DCC)
   if ( (u.bound || u.boundBy) && u.handActions?.has(action.id) ) return false; // tied up: nothing that needs hands
@@ -381,6 +400,8 @@ export function hasUses(u, action) {
   if ( hasTrait(u, "noGear") && (u.handActions?.has(action.id) || isMagical(action)) ) return false;
   // (resourceCost: what one use takes, a point by default: Daggerheart's 3 Hope for a class's Hope feature.)
   if ( action.resource && resourceLeft(u, action) < (action.resourceCost ?? 1) ) return false;
+  // (Ammunition for the shot: PF2e's bolts.)
+  if ( !hasAmmo(u, action) ) return false;
   // (And so many uses, beside what it costs: a Fear, once a scene.)
   if ( Number.isFinite(action.uses) ) return (u.uses[action.id] ?? 0) > 0;
   return true;
@@ -389,6 +410,7 @@ export function hasUses(u, action) {
 export function spendUse(u, action) {
   if ( action.resource && action.shared && u.sharedPools ) u.sharedPools[action.shared] -= action.resourceCost ?? 1;
   else if ( action.resource ) u.resources[action.resource] -= action.resourceCost ?? 1;
+  spendAmmo(u, action);
   if ( Number.isFinite(action.uses) ) u.uses[action.id] -= 1;
 }
 

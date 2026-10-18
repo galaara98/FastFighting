@@ -857,7 +857,7 @@ async function playTurn(u, combatant, key) {
       if ( !(err instanceof NeedsDecision) || tries > 200 ) throw err;
       const request = err.request;
       // (A roll the system makes: what the turn did before it played on the map first. A question: asked.)
-      const answer = request.roll ? await turnRoll(request, battle.run.log.slice(battle.run.live.turnFrom ?? battle.run.log.length), stage) : await answerFor(request);
+      const answer = request.roll ? await turnRoll(request, battle.run.log.slice(battle.run.live.turnFrom ?? battle.run.log.length), stage) : await answerFor(request, stage);
       answers.push([request.key, answer]);
       battle.run = restoreRun(battle.spec, battle.rules, snapshot, { log: battle.run.log });
     }
@@ -991,7 +991,7 @@ async function turnRoll(request, events, stage) {
       if ( request.roll === "apply" ) out = await applyStrike(request, stage);
       else {
         await playSoFar(events, stage);
-        if ( request.roll === "strike" ) out = await rollTurnStrike(request);
+        if ( request.roll === "strike" ) out = await rollTurnStrike(request, stage);
         else if ( request.roll === "save" || request.roll === "check" ) out = await rollTurnCheck(request);
         else if ( request.roll === "use" ) out = await useTurnAction(request);
         else if ( request.roll === "adjust" ) out = await adjustTurnRoll(request);
@@ -1008,15 +1008,17 @@ async function turnRoll(request, events, stage) {
 
 /**
  * A strike in a turn FastFighting plays, rolled with the system's own roller (the helper's rollStrike): its attack
- * card and, on a hit, its damage card. {attack, damage: {byType} | null, card: the damage card's id}, or null.
+ * card and, on a hit, its damage card. {attack, damage: {byType} | null, card: the damage card's id}, or null. What the
+ * roll changed on the striker's sheet (PF2e's ammunition, loaded and spent) is undone with the turn (`stage`).
  */
-async function rollTurnStrike({ unitId, targetId, action, attackNumber }) {
+async function rollTurnStrike({ unitId, targetId, action, attackNumber }, stage = null) {
   const adapter = getAdapter();
   const doc = docOf(unitId);
   const target = docOf(targetId);
   if ( !doc || !target ) return null;
   const seen = new Set(game.messages.keys());
   const raw = await adapter.rollStrike(doc, { action, target, attackNumber: Math.max(0, Number(attackNumber) || 0), secret: secretRoll(doc) });
+  stage?.records.push(...rollRecords(raw, doc));
   const out = strikeRolled(raw);
   if ( !out?.damage ) return out;
   // (Its damage card, for the system to apply as its own: the one the helper names (null: none holds it all, the
@@ -1116,15 +1118,16 @@ const ASK_MS = 60000;
 
 /**
  * A reaction's answer in a turn FastFighting plays: asked (of its player, or the GM), or already decided; and, used, a
- * strike the system rolls itself (systemRoll), {use, roll} for the engine.
+ * strike the system rolls itself (systemRoll), {use, roll} for the engine; what its roll changed on the sheet undone
+ * with the turn (`stage`).
  */
-async function answerFor(request) {
+async function answerFor(request, stage = null) {
   const use = request.decided ? true : await ask(request);
   if ( !use || !request.strike ) return use;
   // (A player's, theirs to roll while they're here; a creature's, or one whose players are gone, the system's.)
   const theirs = await playerRolls(request);
   if ( theirs ) return theirs;
-  const roll = await systemRoll(request);
+  const roll = await systemRoll(request, stage?.records);
   return roll ? { use: true, roll } : true;
 }
 
@@ -1470,6 +1473,30 @@ function answerReactionDone(data, { user } = {}) {
 /** A finite number at least `least` (a roll from another player's screen is only data). */
 const counted = (v, least = 0) => (Number.isFinite(Number(v)) ? Math.max(least, Number(v)) : null);
 
+/** What of an undo record a strike's roll may return: the striker's own sheet, its data and its items. */
+const SHEET_RECORD = ["actorUpdate", "itemUpdates", "createdItems", "deletedItems"];
+
+/**
+ * The undo records a strike's roll returns (rollStrike's `records`, API 20: what it changed on the striker's sheet
+ * beyond its cards, PF2e's ammunition loaded and spent), whether or not it says how the strike went. Only those about
+ * the striker's own token and actor, and only their sheet's part: a roll may come from a player's screen, and an undo
+ * record is only data.
+ */
+export function rollRecords(raw, doc) {
+  if ( !Array.isArray(raw?.records) || !doc ) return [];
+  const own = new Set([doc.uuid, doc.actor?.uuid].filter(Boolean));
+  const out = [];
+  for ( const r of raw.records ) {
+    if ( !r || typeof r !== "object" ) continue;
+    const named = [r.tokenUuid, r.actorUuid].filter(x => x !== undefined && x !== null);
+    if ( !named.length || !named.every(x => own.has(x)) ) continue;
+    const kept = { tokenUuid: r.tokenUuid ?? null, actorUuid: r.actorUuid ?? null };
+    for ( const key of SHEET_RECORD ) if ( r[key] !== undefined ) kept[key] = r[key];
+    out.push(kept);
+  }
+  return out;
+}
+
 /**
  * A strike as the helper's rollStrike says it went, made sure of (it may come from another player's screen):
  * {attack: {degree, natural, total, dice}, damage: {byType} | null}, damage only on a hit; null if it says no degree.
@@ -1498,9 +1525,10 @@ const secretRoll = doc => !!doc?.actor?.getFlag?.(MODULE_ID, "secretName");
  * A reaction's strike rolled with the system's own roller, its cards in the chat: on its player's screen where a player
  * runs it and is here (else on this one). Its damage, a player's at a creature FastFighting runs, goes as players'
  * damage does: as rolled with Apply players' damage on (or where the system applies it); else a GM says how much.
+ * What the roll changed on the striker's sheet goes into `records` (its undo records, the turn's), where given.
  * Returns {attack: {degree, natural, total}, damage: {byType} | null}, or null (the engine rolls it).
  */
-async function systemRoll({ unitId, byId, strike }) {
+async function systemRoll({ unitId, byId, strike }, records = null) {
   const adapter = getAdapter();
   const doc = docOf(unitId);
   const target = byId ? docOf(byId) : null;
@@ -1526,6 +1554,7 @@ async function systemRoll({ unitId, byId, strike }) {
       roll = null;
     }
   }
+  records?.push(...rollRecords(roll, doc));
   const out = strikeRolled(roll);
   if ( !out?.damage ) return out;
   const byType = out.damage.byType;
@@ -1892,7 +1921,7 @@ async function openingTaken(pc, message = null) {
       : true;
     if ( !use ) continue;
     const before = captureAll(run);
-    await rollFirst(run, reactorId, pc.id, strike);
+    await rollFirst(run, reactorId, pc.id, strike, pc.records);
     const events = reactNow(run, reactorId, pc.id, strike, "foeOpening");
     await writeChanges(before, captureAll(run), pc.records);
     await showPcRolls(pc);
@@ -1903,10 +1932,13 @@ async function openingTaken(pc, message = null) {
   await keep();
 }
 
-/** A foe's strike at a player's character in its turn, rolled with the system's own roller first, where it can. */
-async function rollFirst(run, reactorId, targetId, strike) {
+/**
+ * A foe's strike at a player's character in its turn, rolled with the system's own roller first, where it can; what the
+ * roll changed on the foe's sheet into `records` (the player's turn's).
+ */
+async function rollFirst(run, reactorId, targetId, strike, records = null) {
   if ( !rollsKind(run.live, "strike") ) return;
-  const roll = await systemRoll({ unitId: reactorId, byId: targetId, strike: { id: strike.id, name: strike.name } });
+  const roll = await systemRoll({ unitId: reactorId, byId: targetId, strike: { id: strike.id, name: strike.name } }, records);
   if ( roll ) run.live.forced = { unitId: reactorId, targetId, ...roll };
 }
 
@@ -2065,7 +2097,7 @@ async function playerMoved(doc) {
       : true;
     if ( !use ) continue;
     const before = captureAll(run);
-    await rollFirst(run, reactorId, pc.id, strike);
+    await rollFirst(run, reactorId, pc.id, strike, pc.records);
     reactNow(run, reactorId, pc.id, strike);
     await writeChanges(before, captureAll(run), pc.records);
     await showPcRolls(pc);
@@ -2113,7 +2145,7 @@ async function answerArrival(pc, from) {
     } catch ( err ) {
       if ( !(err instanceof NeedsDecision) || tries > 50 ) throw err;
       const request = err.request;
-      const answer = request.roll ? await turnRoll(request, battle.run.log.slice(battle.run.live.turnFrom ?? battle.run.log.length), stage) : await answerFor(request);
+      const answer = request.roll ? await turnRoll(request, battle.run.log.slice(battle.run.live.turnFrom ?? battle.run.log.length), stage) : await answerFor(request, stage);
       answers.push([request.key, answer]);
       battle.run = restoreRun(battle.spec, battle.rules, snapshot, { log: battle.run.log });
     }

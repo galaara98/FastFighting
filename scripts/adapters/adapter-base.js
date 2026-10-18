@@ -439,7 +439,10 @@ export class SystemAdapter {
    * system doubles it; `dice`, optional numbers, the system's own dice for rules.asRolled), or null where it can't (the
    * engine rolls it). Its damage card, the first of the cards it made that
    * damageCard reads as damage, is applied with applyDamageCard; or the one `card` names (a message id), where the
-   * result has it: `card: null` where no one card holds all of the blow (DCC: a critical's table damage). Optional.
+   * result has it: `card: null` where no one card holds all of the blow (DCC: a critical's table damage). API 20:
+   * `records`, undo records for what the roll changed on the striker's own sheet beyond its cards (PF2e: ammunition
+   * loaded and spent), kept with the turn for Rewind; taken even from a result that says no degree (`{records}`: the
+   * engine rolls it). Optional.
    */
   rollStrike(token, { action, target, attackNumber = 0, secret = false }) {
     return null;
