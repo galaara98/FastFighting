@@ -2663,10 +2663,13 @@ export function rewindEncounter() {
         console.error(`${MODULE_ID} | taking back one who joined`, err);
       }
     }
-    if ( battle.data.rolled?.length ) await combat.updateEmbeddedDocuments("Combatant", battle.data.rolled.filter(id => combat.combatants.has(id)).map(id => ({ _id: id, initiative: null })));
-    if ( battle.data.startedCombat ) await combat.update({ round: 0, turn: null });
+    // (The battle's own data kept apart: taking the combat's flag off lets this browser go of the battle (the
+    // updateCombat hook), so `battle` may be gone by the end.)
+    const data = battle.data;
+    if ( data.rolled?.length ) await combat.updateEmbeddedDocuments("Combatant", data.rolled.filter(id => combat.combatants.has(id)).map(id => ({ _id: id, initiative: null })));
+    if ( data.startedCombat ) await combat.update({ round: 0, turn: null });
     await combat.unsetFlag(MODULE_ID, "live");
-    await forget(combat.id, battle.data.id);
+    await forget(combat.id, data.id);
     battle = null;
     changed();
     return true;

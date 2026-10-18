@@ -124,6 +124,9 @@ export function journalFacts() {
 /** The combats still there. */
 export const combatsHere = () => new Set(game.combats.map(c => c.id));
 
+/** Each combat's live battle, as its flag names it (null: none). */
+export const liveBattlesHere = () => new Map(game.combats.map(c => [c.id, c.getFlag(MODULE_ID, "live")?.id ?? null]));
+
 /**
  * What the world runs, for an export's context and the planner's last run: the world, Foundry, the system, every active
  * FastFighting module (the core, and each helper: by its id, or by the adapters registered), and the core API.
@@ -194,7 +197,7 @@ export async function tidyOnLogin() {
     console.error(`${MODULE_ID} | moving live battles off the old store`, err);
   }
   const troubleshooting = !!setting("troubleshooting");
-  const { remove } = whatGoes("login", journalFacts(), { troubleshooting, now: Date.now(), combatIds: combatsHere() });
+  const { remove } = whatGoes("login", journalFacts(), { troubleshooting, now: Date.now(), combatIds: combatsHere(), liveOn: liveBattlesHere() });
   const gone = await deleteJournals(remove.map(j => j.id));
   if ( troubleshooting && gone.length ) ui.notifications.info("FASTFIGHTING.LiveData.Pruned", { format: { n: gone.length, days: KEEP_DAYS } });
 }

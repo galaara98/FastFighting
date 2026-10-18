@@ -107,6 +107,20 @@ describe("the troubleshooting setting: what goes at each moment", () => {
     expect(keep).toEqual([]);
   });
 
+  test("off, the active GM logs in: a transcript whose battle its combat no longer names goes too (rewound, or replaced)", () => {
+    const flags = { liveBattle: "cLive", battles: { cLive: { id: "b-stale", ended: false } } };
+    const stale = { id: "stale", name: "stale", kind: "transcript", trusted: true, flags, modifiedTime: NOW };
+    const current = { ...stale, id: "current", flags: { liveBattle: "cLive", battles: { cLive: { id: "b-now", ended: false } } } };
+    const liveOn = new Map([["cLive", "b-now"]]);
+    expect(ids(whatGoes("login", [stale, current], { troubleshooting: false, now: NOW, combatIds: HERE, liveOn }).remove)).toEqual(["stale"]);
+    // (Its combat names no battle at all: rewound.)
+    expect(ids(whatGoes("login", [stale], { troubleshooting: false, now: NOW, combatIds: HERE, liveOn: new Map([["cLive", null]]) }).remove)).toEqual(["stale"]);
+    // (Not knowing what the combats name: as before, only those whose combat is gone.)
+    expect(ids(whatGoes("login", [stale], { troubleshooting: false, now: NOW, combatIds: HERE }).remove)).toEqual([]);
+    expect(inPlayOn(stale, HERE, liveOn)).toBeNull();
+    expect(inPlayOn(current, HERE, liveOn)).toBe("cLive");
+  });
+
   test("on, the active GM logs in: trusted transcripts and the planner's run older than a month, never one in play", () => {
     const { remove, keep } = goes("login", { troubleshooting: true });
     expect(ids(remove)).toEqual(["oldEnded", "oldOrphan", "plan"]);

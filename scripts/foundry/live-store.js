@@ -66,9 +66,18 @@ export function combatIdsOf(j) {
 export const transcriptFor = (j, combatId, battleId = null) => j?.kind === "transcript" && j.flags?.liveBattle === combatId
   && (!battleId || j.flags.battles?.[combatId]?.id === battleId);
 
-/** A battle in it still in play (not ended) on a combat that's still there: that combat's id, or null. */
-export function inPlayOn(j, combatIds) {
-  for ( const [id, data] of Object.entries(j?.flags?.battles ?? {}) ) if ( combatIds.has(id) && data && !data.ended ) return id;
+/** The battle a transcript keeps: its id, or null. */
+export const battleOf = j => j?.flags?.battles?.[j?.flags?.liveBattle]?.id ?? null;
+
+/**
+ * A battle in it still in play (not ended) on a combat that's still there: that combat's id, or null. With `liveOn`
+ * (combat id -> the battle its flag names, or null), only the battle its combat still names: one rewound or replaced
+ * isn't in play, whatever it says of itself.
+ */
+export function inPlayOn(j, combatIds, liveOn = null) {
+  for ( const [id, data] of Object.entries(j?.flags?.battles ?? {}) ) {
+    if ( combatIds.has(id) && data && !data.ended && (!liveOn || liveOn.get(id) === data.id) ) return id;
+  }
   return null;
 }
 
@@ -77,8 +86,9 @@ export function inPlayOn(j, combatIds) {
  *   combatDeleted  off: that combat's transcripts. On: nothing (kept for KEEP_DAYS).
  *   rewound        Rewind This Encounter: that battle's transcript, either way (the battle is undone; one played
  *                  before it on the same combat stays).
- *   login          the active GM logs in. Off: every transcript whose combat is gone, whatever its age. On: transcripts
- *                  and the planner's last run older than KEEP_DAYS.
+ *   login          the active GM logs in. Off: every transcript whose combat is gone, or (`liveOn` given) whose battle
+ *                  its combat no longer names (rewound, or another begun on it), whatever its age. On: transcripts and
+ *                  the planner's last run older than KEEP_DAYS.
  *   cleanup        the GM's Clean up: every one of FastFighting's journals older than KEEP_DAYS, whatever it is.
  * Only trusted transcripts and runs go by themselves; a store, a leftover or an untrusted journal only by the GM's
  * Clean up, which shows them first. Never a battle still in play on a combat that's still there, however old (but a
@@ -91,16 +101,17 @@ export function inPlayOn(j, combatIds) {
  * @param {Set<string>} [options.combatIds]    The combats that are still there (without one being deleted)
  * @param {string|null} [options.combatId]     The combat deleted or rewound ...
  * @param {string|null} [options.battleId]     ... and the battle rewound
+ * @param {Map<string,string|null>} [options.liveOn]  Each combat's battle, as its flag names it (none given: unknown)
  * @returns {{remove: object[], keep: object[]}}  `keep`: those that would go but are held back (`why`, `combatId`)
  */
-export function whatGoes(moment, journals, { troubleshooting = false, now = 0, combatIds = new Set(), combatId = null, battleId = null, days = KEEP_DAYS } = {}) {
+export function whatGoes(moment, journals, { troubleshooting = false, now = 0, combatIds = new Set(), combatId = null, battleId = null, days = KEEP_DAYS, liveOn = null } = {}) {
   const transcript = j => j.trusted && j.kind === "transcript";
   const its = j => j.trusted && transcriptFor(j, combatId, moment === "rewound" ? battleId : null);
   const goes = {
     combatDeleted: j => !troubleshooting && its(j),
     rewound: its,
     login: j => (troubleshooting ? (transcript(j) || (j.trusted && j.kind === "plan")) && isOld(j, now, days)
-      : transcript(j) && !combatIds.has(j.flags.liveBattle)),
+      : transcript(j) && (!combatIds.has(j.flags.liveBattle) || (!!liveOn && liveOn.get(j.flags.liveBattle) !== battleOf(j)))),
     cleanup: j => !!j.kind && isOld(j, now, days)
   }[moment] ?? (() => false);
   // (A combat deleted isn't there, whatever the list says.)
@@ -109,7 +120,7 @@ export function whatGoes(moment, journals, { troubleshooting = false, now = 0, c
   const keep = [];
   for ( const j of journals ) {
     if ( !goes(j) ) continue;
-    const playing = moment === "rewound" ? null : inPlayOn(j, there);
+    const playing = moment === "rewound" ? null : inPlayOn(j, there, liveOn);
     if ( playing ) keep.push({ ...j, why: "inPlay", combatId: playing });
     else remove.push(j);
   }
