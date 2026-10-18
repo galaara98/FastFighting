@@ -3733,6 +3733,27 @@
     "{actor} closes the gap to {target}.",
     "{actor} runs to {target}."
   ],
+  "event.auraTakes": [
+    "{target} comes too close to {actor}, and {actor}'s {weapon} takes hold.",
+    "{actor}'s {weapon} reaches {target}.",
+    "{target} feels {actor}'s {weapon} close around them.",
+    "There's no ignoring {actor}'s {weapon}, and {target} doesn't.",
+    "{actor}'s {weapon} gets to {target}."
+  ],
+  "event.auraResisted": [
+    "{target} braves {actor}'s {weapon}.",
+    "{actor}'s {weapon} rolls over {target}, who barely notices.",
+    "{target} holds steady inside {actor}'s {weapon}.",
+    "{target} won't let {actor}'s {weapon} get to them.",
+    "{actor}'s {weapon} does nothing to {target}."
+  ],
+  "event.auraHarms": [
+    "{actor}'s {weapon} hurts {target}.",
+    "{target} is caught in {actor}'s {weapon}.",
+    "Too close to {actor}, {target} pays for it.",
+    "{actor}'s {weapon} lashes {target}.",
+    "{target} takes the brunt of {actor}'s {weapon}."
+  ],
   "event.riderSavePass": [
     "{actor} keeps their footing.",
     "{actor} shrugs it off.",

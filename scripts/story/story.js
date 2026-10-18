@@ -348,6 +348,21 @@ function controlLine(e, g, roll, mapCondition) {
 /** Does the story have words for this table? */
 const hasTable = (roll, key) => !!roll.tables?.get(key)?.length;
 
+/**
+ * A foe's aura going off at someone (behavior/auras.js): shrugged off; or what it lays, told of the one it's laid on
+ * (the condition's own words, as a control action's are); or its harm. One immune to it: nothing to tell.
+ */
+function auraLine(e, f, roll, mapCondition) {
+  if ( e.immune ) return "";
+  const said = (key, fill) => roll(key, fill).trim();
+  if ( !e.took ) return capital(said("event.auraResisted", f));
+  const c = (e.conditions ?? []).map(k => conditionOf(k, mapCondition)).find(id => id && hasTable(roll, `condition.${id}`)) ?? null;
+  const parts = [said(c || !(e.damage > 0) ? "event.auraTakes" : "event.auraHarms", { ...f, effect: e.effect ?? "" })];
+  // (The condition is the target's: told of it.)
+  if ( c ) parts.push(said(`condition.${c}`, { actor: f.target, target: f.actor, weapon: f.weapon }));
+  return parts.filter(Boolean).map(capital).join(" ");
+}
+
 function narrate(e, roll, rel, fill) {
   // (A blow read from the table with no weapon to name: an attack.)
   const weapon = weaponOf(e) || (STRIKES.has(e.type) ? localize("FASTFIGHTING.Story.Attack") : "");
@@ -598,6 +613,7 @@ function narrate(e, roll, rel, fill) {
     case "afflictionSettles": return roll("event.afflictionStage", f);
     // A failed save that leaves a condition is told by the condition that follows.
     case "riderSave": return e.degree > 1 && e.controls ? roll("event.riderSavePass", f) : "";
+    case "aura": return auraLine(e, f, roll, fill.mapCondition);
     case "opportunity": return roll({ foeOpening: "event.opportunityOpening", foeMovesInReach: "event.opportunityStand" }[e.trigger] ?? "event.opportunity", f);
     case "disengage": return e.made === false ? "" : roll("maneuver.step", f); // (missed: the blows that follow tell it)
     case "afflictionStage": return roll("event.afflictionStage", f);
@@ -1051,7 +1067,7 @@ const FALLS = new Set(["down", "death", "beaten", "struckDown"]);
 export const SECRET = new Set(["command", "thought", "scheme", "study", "waver", "leaveStopped"]);
 
 /** What gives a hidden creature away: anything it does that others see (a blow, a spell, words, a theft). */
-const GIVES_AWAY = new Set(["attack", "save", "auto", "cast", "control", "deed", "talk", "theft", "rob", "summon", "buff", "heal", "rider", "grabbed", "door"]);
+const GIVES_AWAY = new Set(["attack", "save", "auto", "cast", "control", "deed", "talk", "theft", "rob", "summon", "buff", "heal", "rider", "grabbed", "door", "aura"]);
 
 /**
  * The events of hidden creatures not yet given away (spec.combatants' hidden: on the map, unseen), in the order told:

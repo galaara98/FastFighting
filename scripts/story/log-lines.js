@@ -171,6 +171,13 @@ function baseLine(e) {
       following: e.following ? t("Following", { name: e.following.name, boss: e.following.boss ? t("Boss") : "", chance: Math.round(e.following.chance * 100) }) : ""
     });
     case "riderSave": return t("RiderSave", { actor: e.actor, name: e.name, saveType: e.saveType, roll: dice(e.natural, e.mod, e.total, e.dc, t("DC")), degree: degree(e.degree), damage: e.damage ? ` · ${t("DamageN", { n: e.damage })}` : "" });
+    // (A foe's aura, as its target came into it or started its turn there: behavior/auras.js.)
+    case "aura": {
+      const how = t(e.cause === "turnStart" ? "AuraTurnStart" : "AuraEnter");
+      if ( e.immune ) return t("AuraImmune", { ...a, how, action: e.action });
+      return t("Aura", { ...a, how, action: e.action, saveType: e.saveType, roll: dice(e.natural, e.mod, e.total, e.dc, t("DC")), degree: degree(e.degree), margin: signed(e.margin ?? 0),
+        effect: e.effect ? ` · ${e.effect}` : "", damage: e.damage ? ` · ${damage(e.damage, e.damageType)}` : "" });
+    }
     case "notice": return t("Notice", { actor: e.actor, cause: NOTICE[e.cause] ? t(NOTICE[e.cause], { by: e.by ?? "" }) : e.cause ?? "" });
     case "study": {
       const c = e.check;

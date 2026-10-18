@@ -2049,7 +2049,7 @@ async function playerMoved(doc) {
  * damage applied, a save); done now, on the sheets and the map, told with the player's turn. True if anyone answered.
  */
 async function answerArrival(pc, from) {
-  if ( (!battle.run.movers && !battle.run.reachers) || !from ) return false;
+  if ( (!battle.run.movers && !battle.run.reachers && !battle.run.foeAuras) || !from ) return false;
   const before = captureAll(battle.run);
   const snapshot = snapshotRun(battle.run, { log: false });
   // (Every pass from the snapshot, the first too: playTurn's.)
@@ -2126,7 +2126,8 @@ async function writeChanges(before, after, records) {
   // (Where a buff or debuff came from: the action that laid it, and whose, for the helper to put its effect on the sheet.)
   let sources = null;
   const effectSource = id => {
-    sources ??= new Map(battle.run.units.flatMap(u => (u.spec.actions ?? []).map(action => [action.id, { action, spec: u.spec }])));
+    // (Or the aura that laid it: behavior/auras.js.)
+    sources ??= new Map(battle.run.units.flatMap(u => [...(u.spec.actions ?? []), ...(u.spec.auras ?? [])].map(action => [action.id, { action, spec: u.spec }])));
     return sources.get(id) ?? null;
   };
   for ( const [id, ch] of Object.entries(diffAll(before, after)) ) {

@@ -20,6 +20,7 @@ import { seemsFoe, sparedForTruce } from "./neutral.js";
 import { willingness } from "./reluctance.js";
 import { specialtyWeight } from "./specialty.js";
 import { perceives, apparentHealth, knowsOf } from "./senses.js";
+import { auraToll } from "./auras.js";
 
 
 /** Is the unit (or its side) in trouble, so a careful character would spend limited resources? */
@@ -58,6 +59,8 @@ export function bestOptionVs(run, u, t, attacksMade = 0, turn = null) {
     let weighted = perAction * styleWeight(tactics, action) * willingness(run, u, action);
     // Walking off from another foe invites a free swing: the wary would rather use what reaches from here.
     if ( moves > 0 && (wary ??= !!run.prep.rules.opportunity && isWary(run, u) && threats(run, u, t).length > 0) ) weighted *= 0.3;
+    // Walking into a foe's aura to get there: what the aura would cost it, weighed against the blow (auras.js).
+    if ( moves > 0 && run.foeAuras ) weighted *= auraToll(run, u, t, action, ev);
     if ( behavior.meleeBias && action.melee ) weighted *= 1 + behavior.meleeBias;
     if ( behavior.exploitWeakness && (action.damage ?? []).some(p => t.spec.iwr?.weak?.[p.type] || t.spec.iwr?.exploit?.[p.type]) ) weighted *= 1 + behavior.exploitWeakness;
     // A foe down and regenerating: only what stops it (fire, acid) does any good.

@@ -47,6 +47,10 @@
  * @property {number} [avoidFleeing]        not liking to flee, 0 to 1 (its answer to when to retreat; true: 1)
  * @property {number} [avoidKilling]        avoiding killing, 0 to 1 (its answer to who it goes for; true: 1)
  * @property {number} [alwaysTalk]          always talking unless being hurt, 0 to 1 (its answer to talking; true: 1)
+ * @property {object[]} [saveVs]            Situational saves: bonuses (or advantage) against effects with some tags only
+ *                                          (behavior/save-vs.js)
+ * @property {object[]} [auras]             Auras that make foes save, as they come inside or start a turn there
+ *                                          (behavior/auras.js)
  *
  * @typedef {object} ActionSpec
  * @property {string} id
@@ -96,6 +100,7 @@
 import { keepClear } from "./behavior/traps.js";
 import { tiedOut } from "./behavior/holds.js";
 import { holderOf, cutOff } from "./behavior/troubles.js";
+import { saveVsBonus } from "./behavior/save-vs.js";
 import { withManeuver } from "./maneuvers.js";
 import { STATUS, NEUTRAL_PARTY, AVOID_KILLING, TACTICAL, clamp, fudged, tacticalTier, TRAITS } from "../constants.js";
 import { isAnimalistic } from "./behavior/animal.js";
@@ -324,6 +329,7 @@ export function createRun(prep) {
     counters: units.some(u => u.spec.reactions?.some(r => answersTo(r, "foeCasts"))), // anyone with a counterspell
     legendary: units.some(u => u.prep.legendaryActions?.length),               // anyone with legendary actions
     auras: units.some(u => u.spec.saveAura),                                     // anyone whose aura helps friends' saves
+    foeAuras: units.some(u => u.spec.auras?.length),                             // anyone whose aura makes foes save (behavior/auras.js)
     guards: units.some(u => u.spec.reactions?.some(r => answersTo(r, "allyHit"))),     // anyone who reacts when a friend is hit
     wardens: units.some(u => u.spec.reactions?.some(r => answersTo(r, "allyTargeted"))), // anyone who covers a friend attacked
     movers: units.some(u => u.spec.reactions?.some(r => answersTo(r, "allyMoves") || answersTo(r, "foeApproaches"))), // anyone who answers a move beside it
@@ -902,7 +908,7 @@ export function systemRolled(run, u, kind, { dc, from = null, target = null, sav
 /**
  * A save's modifier and advantage. With `magical`, Magic Resistance (spec.magicResistance) gives advantage. A
  * friend's aura (spec.saveAura {bonus, range}: 5e Aura of Protection) adds to it while that friend is up and near
- * (the best one only).
+ * (the best one only). Its situational saves (spec.saveVs: behavior/save-vs.js) against what `action` is, from `from`.
  */
 export function saveRoll(run, target, type, { magical = false, from = null, action = null } = {}) {
   if ( Array.isArray(type) ) {
@@ -917,7 +923,9 @@ export function saveRoll(run, target, type, { magical = false, from = null, acti
   const mods = target.mods ?? {};
   let advantage = netAdvantage(m.advantage ?? 0, mods.saveAdv ?? 0);
   if ( magical && target.spec.magicResistance ) advantage = netAdvantage(advantage, 1);
-  return { mod: base + (m.bonus ?? 0) + (mods.saves ?? 0) + auraBonus(run, target) + coverDefault(run, target, from), advantage, dice: mods.saveDie ?? null, roller: target };
+  const vs = target.spec.saveVs ? saveVsBonus(target, type, { action, from, magical }) : null;
+  if ( vs?.advantage ) advantage = netAdvantage(advantage, vs.advantage);
+  return { mod: base + (m.bonus ?? 0) + (mods.saves ?? 0) + (vs?.bonus ?? 0) + auraBonus(run, target) + coverDefault(run, target, from), advantage, dice: mods.saveDie ?? null, roller: target };
 }
 
 /** The best save aura over t from a friend who's up and within its reach (anywhere, without positions). */

@@ -51,6 +51,7 @@ import { reactionsPerRound, threats, takesSafeWay } from "./behavior/reactions.j
 import { isNeutral, crossed, caughtInArea, refreshLeans, truceWith, truceBreaks, turnOn, settleTruce, peaceDesires, seemsFoe, meddling, inFray, fighting, dislikesViolence, annoyedBy, ANNOYED } from "./behavior/neutral.js";
 import { normalizeCost } from "./turn.js";
 import { resolveSurprise } from "./behavior/surprise.js";
+import { auraMoved, auraTurnStart } from "./behavior/auras.js";
 import { localize } from "../i18n.js";
 import { maneuverOf, answersTo } from "../story/master.js";
 
@@ -97,6 +98,9 @@ const damageTypesOf = action => [...new Set((action.damage ?? []).map(p => p.typ
 
 /** The run's logger, for helpers that log as they go (see luck.js). */
 const logger = run => (run.logTo ??= (unit, data) => log(run, unit, data));
+
+/** What an aura's save needs of the simulation (behavior/auras.js). */
+const AURA_PLAY = Object.freeze({ rollSave, rollHit, landOutcome, testConcentration, log });
 
 /**
  * How much rides on a save (for burning Luck on one that falls short): a blow that would drop the saver, or a hold
@@ -1856,6 +1860,7 @@ function forceMove(run, u, t, move) {
   }
   // (Whatever it holds inside it went with it.)
   if ( path.feet > 0 ) carryInside(run);
+  if ( run.foeAuras && path.feet > 0 && isUp(t) ) auraMoved(run, t, AURA_PLAY); // (moved into an aura: behavior/auras.js)
 }
 
 function executeControl(run, u, action, target, attacksMade, common) {
@@ -2316,6 +2321,7 @@ function moveLog(run, u, move, toward, purpose = "approach") {
  */
 export function answerMove(run, u, move, toward = null) {
   if ( run.reachers ) throughReach(run, u, move);
+  if ( run.foeAuras && isStanding(u) ) auraMoved(run, u, AURA_PLAY); // (into an aura, or its own onto others: behavior/auras.js)
   if ( !run.movers || !(move?.feet > 0) || !isStanding(u) ) return;
   for ( const o of [...run.units] ) {
     if ( o === u || !o.spec.reactions || battleOver(run) || !isStanding(u) ) continue;
@@ -3122,6 +3128,7 @@ function playFromHere(run, u) {
   settleSides(run); // holds that took or ended since this creature's last turn
   startHarm(run, u); // (what harms it as its turn starts: 5e's Burning)
   regenerate(run, u);
+  if ( run.foeAuras ) auraTurnStart(run, u, AURA_PLAY); // (a foe's aura it starts its turn in: behavior/auras.js)
   // (Come to tied up: a prisoner now. One acting from its bonds this turn knows it already.)
   if ( u.status === STATUS.DEAD || (!u.thought && stayBound(run, u, logger(run))) ) return endOfTurn(run, u);
   if ( u.status === STATUS.DOWN && u.held ) return endOfTurn(run, u); // (held at the edge by its regeneration)
