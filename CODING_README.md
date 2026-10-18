@@ -177,6 +177,7 @@ What the helpers had each written for themselves is in the core, exported from `
 ### Senses, fate and what's already on a creature
 
 - `spec.senses`: `{sight, lowlight, hearing, smell, feel, radar}`, how far each reaches in feet (`null`: no limit; `0`: it hasn't that sense; left out: the ordinary, which is sight across the field, hearing `rules.hearingFeet` (default 60), and none of the rest). Sort your system's senses into them, the farthest of each: seeing in the dark is `lowlight`; scent is `smell`; tech sensing is `radar`; any other sense of the creature's own (blindsight, tremorsense, lifesense, echolocation, thoughtsense ...) is `feel`. A creature with no eyes is `sight: 0`. Most systems have no use for smell or radar; leave them out. The scene's darkness comes in `options.darkness`.
+- `spec.social.anyLanguage`: it understands and speaks every language (PF2e's constant tongues), so it can talk with anyone who has a language at all.
 - `spec.resources.fate` and `spec.fateLabel`: points spent to keep someone from dying; `rules.avertDeath(u)` is the system's sure way out of one's own death, if it has one.
 - `spec.mods`: bonuses already on it when the fight starts (one, or a list), but only what the system's own numbers don't already include.
 - `rules.knockOut(u)`: a blow from someone who avoids killing, holding back.

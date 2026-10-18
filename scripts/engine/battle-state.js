@@ -21,7 +21,8 @@
  * @property {object} [flags]               packTactics, fearless, mindless, masterId, flying
  * @property {boolean} [animalistic]        Fights as an animal does (behavior/animal.js): the helper's call
  * @property {boolean} [diesAtZero]         NPCs normally die at 0 HP
- * @property {object} [social]              Talking: {languages[], mindless, gullible?, resolve?, pitches, resist}
+ * @property {object} [social]              Talking: {languages[], anyLanguage?, mindless, gullible?, resolve?, pitches,
+ *                                          resist} (anyLanguage: it understands and speaks every language)
  *   pitches: {persuade|intimidate|deceive: {skill: display name, mod}}   what this creature can try on others
  *   resist:  {persuade|intimidate|deceive: {dc, label}}                  the DC others face, and what it's called
  *   resolve: how much more strong-willed than typical for its level (0 typical; -5 or less: very gullible)
