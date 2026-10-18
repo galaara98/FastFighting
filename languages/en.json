@@ -1269,6 +1269,8 @@
         "reactAllyTargeted": "React Ally Targeted",
         "reactWouldDrop": "React Would Drop",
         "reactSlain": "React Slain",
+        "reactOwnHit": "React Own Hit",
+        "reactFoeCasts": "React Foe Casts",
         "counterTakes": "Counter Takes",
         "counterFails": "Counter Fails",
         "summonOne": "Summon One",
@@ -1698,6 +1700,7 @@
       "TriggerMissed": "missed",
       "TriggerDamaged": "damaged",
       "TriggerSpell": "a spell",
+      "TriggerOwnHit": "its own hit",
       "Summon": "{actor}: {action} · {names} join",
       "Vanish": "{actor} is gone ({reason})",
       "VanishExpired": "its time is up",
@@ -2234,7 +2237,8 @@
         "foeMovesInReach": "{by} moves within reach.",
         "allyTargeted": "{by} attacks {ally}.",
         "wouldDrop": "This blow would drop them.",
-        "slain": "They are going down."
+        "slain": "They are going down.",
+        "ownHit": "Their blow lands on {by}."
       },
       "NotHere": "That battle isn't being played in this browser."
     },

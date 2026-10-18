@@ -9,6 +9,9 @@
  *                                      reach, and "foeMovesInReach", standing up there or walking a square or
  *                                      more into a reach weapon's reach: simulator.js throughReach)
  *   rules.reactions(u)                 reactions a round (default 1), regained at the start of the creature's turn
+ *   spec.reactions                     a creature's own reaction on foeLeavesReach or foeMovesInReach with `strike`
+ *                                      (the strike it names, or its best): struck as an opportunity strike is, at
+ *                                      those moments, whatever the system's own (ownMoveStrike); its uses spent
  *   rules.disengage(u)                 how to leave safely, {cost, label, check?} (5e Disengage, PF2e Step; check:
  *                                      {mod, dc, dcMany}, a roll it has to make, harder against several foes: XCC's
  *                                      acrobatics)
@@ -22,6 +25,7 @@ import { areEnemies, isStanding, liveTier, edgeDistance, heldOff, behaviorOf } f
 import { meanPart } from "../dice.js";
 import { mind } from "./desire.js";
 import { cutOff } from "./troubles.js";
+import { answersTo } from "../../story/master.js";
 
 /** Reactions u has each round: none in a system without opportunity attacks. */
 export function reactionsPerRound(rules, u) {
@@ -29,21 +33,61 @@ export function reactionsPerRound(rules, u) {
   return rules.reactions ? rules.reactions(u) : 1;
 }
 
+/** The moments a creature's own reaction may strike a foe at, as an opportunity strike is (spec.reactions with strike). */
+const MOVE_STRIKES = Object.freeze(["foeLeavesReach", "foeMovesInReach"]);
+
 /**
  * Foes beside u that would strike as it walks away (all but `keep`, the one it's walking toward), or at another
- * moment the system's opportunity strikes answer (`trigger`), each with the strike it would make.
+ * moment the system's opportunity strikes answer (`trigger`), each with the strike it would make. A foe's own reaction
+ * that strikes at a foe leaving its reach or moving in it (spec.reactions on foeLeavesReach or foeMovesInReach, with
+ * `strike`: PF2e's tail that lashes at whoever moves in its reach) counts too, where the system's opportunity strike
+ * doesn't: {e, strike, reaction}.
  */
 export function threats(run, u, keep = null, trigger = "foeLeavesReach") {
   const rules = run.prep.rules;
-  if ( !rules.opportunity || !run.prep.options.positioning ) return [];
-  if ( !(rules.opportunityOn ?? ["foeLeavesReach"]).includes(trigger) ) return [];
+  if ( !run.prep.options.positioning ) return [];
+  const system = !!rules.opportunity && (rules.opportunityOn ?? ["foeLeavesReach"]).includes(trigger);
+  const own = MOVE_STRIKES.includes(trigger) && hasMoveStrikers(run);
+  if ( !system && !own ) return [];
   const out = [];
   for ( const { e, d } of nearbyFoes(run, u) ) {
     if ( e === keep || !e.active || !isStanding(e) || (e.reactionsLeft ?? 0) <= 0 || e.conds.incapacitated ) continue;
-    const strike = rules.opportunity(e, u);
-    if ( strike && d <= (strike.reach ?? 5) + 0.5 ) out.push({ e, strike });
+    const strike = system ? rules.opportunity(e, u) : null;
+    const mine = !strike && own ? ownMoveStrike(e, trigger) : null;
+    const swing = strike ?? mine?.strike;
+    if ( swing && d <= (swing.reach ?? 5) + 0.5 ) out.push({ e, strike: swing, ...(mine ? { reaction: mine.reaction } : {}) });
   }
   return out;
+}
+
+/** Has anyone in the fight a reaction of its own that strikes a foe moving in or out of its reach? (Once a fight.) */
+export function hasMoveStrikers(run) {
+  run.moveStrikers ??= run.units.some(o => (o.spec.reactions ?? []).some(r => r.strike && MOVE_STRIKES.some(t => answersTo(r, t))));
+  return run.moveStrikers;
+}
+
+/**
+ * A reaction of u's own that strikes a foe at this moment (on foeLeavesReach or foeMovesInReach, with `strike`), ready
+ * (its uses or its resource), and the strike: the one it names (an action id, or the best of a list), else its best
+ * everyday melee strike. {reaction, strike} or null.
+ */
+export function ownMoveStrike(u, trigger) {
+  for ( const r of u.spec.reactions ?? [] ) {
+    if ( !r.strike || !answersTo(r, trigger) ) continue;
+    if ( r.resource ? (u.resources[r.resource] ?? 0) < (r.amount ?? 1) : Number.isFinite(r.uses) && (u.reactionUses?.[r.id] ?? r.uses) <= 0 ) continue;
+    const named = typeof r.strike === "string" ? [r.strike] : Array.isArray(r.strike) ? r.strike : null;
+    const strike = named ? (u.prep?.offense ?? []).filter(a => a.kind === "strike" && a.melee && named.includes(a.id))
+      .sort((a, b) => (b.damage ?? []).reduce((s, p) => s + meanPart(p), 0) - (a.damage ?? []).reduce((s, p) => s + meanPart(p), 0))[0] ?? null : bestReactionStrike(u);
+    if ( strike ) return { reaction: r, strike };
+  }
+  return null;
+}
+
+/** What striking with its own reaction (ownMoveStrike's) spends beside the reaction itself: its uses, its resource. */
+export function spendOwnStrike(u, reaction) {
+  if ( !reaction ) return;
+  if ( reaction.resource ) u.resources[reaction.resource] -= (reaction.amount ?? 1);
+  else if ( Number.isFinite(reaction.uses) ) (u.reactionUses ??= {})[reaction.id] = (u.reactionUses[reaction.id] ?? reaction.uses) - 1;
 }
 
 /**

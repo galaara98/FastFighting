@@ -594,7 +594,7 @@ function narrate(e, roll, rel, fill) {
       if ( e.maneuver && hasTable(roll, `maneuver.${e.maneuver}`) ) return roll(`maneuver.${e.maneuver}`, fill);
       return roll({
         hit: "event.reactHit", attacked: "event.reactAttacked", missed: "event.reactMissed", damaged: "event.reactDamaged", allyTargeted: "event.reactAllyTargeted",
-        wouldDrop: "event.reactWouldDrop", slain: "event.reactSlain"
+        wouldDrop: "event.reactWouldDrop", slain: "event.reactSlain", ownHit: "event.reactOwnHit", spell: "event.reactFoeCasts", foeCasts: "event.reactFoeCasts"
       }[e.trigger] ?? "event.reactHit", fill);
     }
     case "counter": return roll(e.countered ? "event.counterTakes" : "event.counterFails", { ...f, weapon: e.reaction ?? "", spell: e.action ?? "", target: e.target ?? "" });

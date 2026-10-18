@@ -6,7 +6,7 @@ This is a working master list of reactions for the FastFighting engine and its h
 
 **Reading the tables.**
 - Sources: PF2e = Pathfinder 2e (the system's packs plus Battlezoo). 5e = SRD 5.1 and 5.2 and the dnd5e packs. DCC includes XCC. DH = Daggerheart. Ironsworn (with Delve) and Starforged (with Sundered Isles) are written out in full. Genre tags come after the semicolon. A genre tag means games of that genre use the trigger; it does not name a ruleset. SF2e was not scanned, because no packs were installed; its few known reactions sit under "space".
-- "engine moment" is where the engine would check the trigger. A hook name in bold means the engine already checks it there today (`responses.js`: attacked, hit, missed, damaged, allyHit, spell; `reactions.js`: leaveReach, for opportunity attacks).
+- "engine moment" is where the engine would check the trigger. A hook name in bold means the engine already checks it there today (`responses.js`: attacked, hit, missed, damaged, allyHit, spell, ownHit; `reactions.js`: leaveReach, for opportunity attacks).
 - Filters are not triggers. The engine already knows them at that moment: melee or ranged, a critical hit or failure, the damage type, a damage threshold, range or reach, whether it can see the source, a raised shield, ally or any creature. They go on the reaction (as `melee`, `ranged`, `physical`, `range` and `needsShield` do today). The JSON lists the useful filters for each trigger.
 - Names and descriptions are working labels, not module strings. Under the Foundry AI policy, any English the module shows has to be written by a person.
 - The ids are in `scripts/story/master.js` (`REACTION_TRIGGERS`, by group, and `REACTION_EFFECTS`). A reaction's `on` names one trigger, or a list of them; the engine's older names still work (`spell` is `foeCasts`, `leaveReach` is `foeLeavesReach`).
@@ -181,7 +181,7 @@ A trap's or haunt's own triggers. A creature caught by a hazard uses `inBlastAre
 | `ownRollFails` | Its roll fails | Its own save or check fails (or fails badly), with a chance to overturn it. | PF2e, 5e, DCC, DH | after its own save or check fails |
 | `ownRollSucceeds` | Its roll succeeds | Its own save or check succeeds, opening a follow-up. | PF2e | after its own save or check succeeds |
 | `specialRoll` | Dice show something | Its dice show a special result: a natural 1 or 20, a matched pair, Hope or Fear. | 5e, DCC, DH, Ironsworn, Starforged | when its roll shows a special face |
-| `ownHit` | Its blow lands | Its own attack hits, crits or deals damage, and it can add something. | PF2e, 5e, DCC, DH, Ironsworn, Starforged | after its own attack hits |
+| `ownHit` | Its blow lands | Its own attack hits, crits or deals damage, and it can add something. | PF2e, 5e, DCC, DH, Ironsworn, Starforged | after its own attack hits · **ownHit** |
 | `ownMiss` | Its attack misses | Its own attack or spell misses, with a chance to salvage something. | PF2e, 5e, DH | after its own attack misses |
 | `dropsFoe` | Drops a foe | It kills or downs an enemy, or takes out a minion. | PF2e, 5e, DCC, DH, Ironsworn, Starforged; superhero, western, martial arts | after it drops a foe |
 | `ownAction` | Uses a certain action | It uses (or lands) a particular action of its own: a grab, a reload, a leap, a spell. | PF2e | after it uses a named action |
@@ -210,7 +210,7 @@ These came up once or twice in the scans, or only outside a fight. They get no e
 
 ## Effects
 
-One entry for each thing a reaction does, whatever set it off. A reaction can carry several: PF2e Reactive Strike is `strike` plus `disrupt` on a critical hit, and Retributive Strike is `reduce` plus `strike`. "engine" names the effect key the engine already has (`responses.js`): ac, halve, reduce, redirect (it takes the blow itself), strike (its best melee strike), counter, and damage plus a save.
+One entry for each thing a reaction does, whatever set it off. A reaction can carry several: PF2e Reactive Strike is `strike` plus `disrupt` on a critical hit, and Retributive Strike is `reduce` plus `strike`. "engine" names the effect key the engine already has. Those in `reaction-effects.js` answer any moment the engine checks (harm, afflict, boost, heal, recharge, strike, step, areaBurst); the rest belong to one moment (`responses.js`: ac, halve, reduce, redirect, counter, stayUp).
 
 | id | name | what it does | sources | engine |
 |---|---|---|---|---|
@@ -220,8 +220,8 @@ One entry for each thing a reaction does, whatever set it off. A reaction can ca
 | `halve` | Halve the damage | Cuts the damage of the blow in half. | 5e | **halve** |
 | `reduce` | Soak some | Takes a die, a flat amount or a damage tier off the blow: a shield block, a parry, armour taking the brunt, bracing for it. | PF2e, 5e, DCC, DH; space, mecha, superhero, martial arts, military | **reduce** |
 | `shrugOff` | Pay to shrug it off | Rolls, or spends Stress, Hope, momentum, a hero point or a benny, to soften or cancel harm instead of taking it. | DH, Ironsworn, Starforged; space, cyberpunk, superhero, western, heist |  |
-| `heal` | Heal | Regains hit points or gains temporary ones, or heals an ally, sometimes rushing to its side first. | PF2e; space, horror, superhero, military |  |
-| `stayUp` | Cling to life | Stays up at 1 hit point, heals on the spot, or survives a brush with death. | PF2e, 5e, DH, Ironsworn, Starforged |  |
+| `heal` | Heal | Regains hit points or gains temporary ones, or heals an ally, sometimes rushing to its side first. | PF2e; space, horror, superhero, military | **heal** (itself) |
+| `stayUp` | Cling to life | Stays up at 1 hit point, heals on the spot, or survives a brush with death. | PF2e, 5e, DH, Ironsworn, Starforged | **stayUp** |
 | `resist` | Resist | A bonus or advantage on the save, or ignores or ends the effect outright: steady nerves, a spell held together, a spooked mount kept in hand, feet planted against a shove. | PF2e, 5e, DCC, DH; horror, western, military |  |
 | `bolsterRoll` | Better its roll | Adds to, rerolls or improves its own roll before it stands, up to turning a failure into a success. | PF2e, 5e, DCC, DH, Ironsworn |  |
 | **Help a friend** | | | | |
@@ -232,12 +232,12 @@ One entry for each thing a reaction does, whatever set it off. A reaction can ca
 | `rescue` | Pull them clear | Drags an ally or bystander out of the line of fire or a hazard, catches them as they fall, holds on as they are dragged off, or holds up what is falling on them. | space, horror, superhero, military |  |
 | **Hit back** | | | | |
 | `strike` | Strike back | Makes an attack out of turn at the foe that set it off (or the next one along): a riposte, an opportunity swing, an overwatch shot, return fire. | PF2e, 5e, DCC, DH; space, cyberpunk, mecha, superhero, western, martial arts, military, heist | **strike** |
-| `harmSource` | Punish the source | Deals damage to whoever set it off, often allowing a save: hellfire, thorns, a shock through the fist. | PF2e, 5e, DCC, DH; horror, superhero, martial arts | **damage+save** |
-| `areaBurst` | Burst | Lets loose an effect in a burst, cone, line or aura around it, including a last blast as it dies. | PF2e, 5e, DH |  |
+| `harmSource` | Punish the source | Deals damage to whoever set it off, often allowing a save: hellfire, thorns, a shock through the fist. | PF2e, 5e, DCC, DH; horror, superhero, martial arts | **harm** (damage, save, move) |
+| `areaBurst` | Burst | Lets loose an effect in a burst, cone, line or aura around it, including a last blast as it dies. | PF2e, 5e, DH | **areaBurst** (around itself) |
 | `redirectAttack` | Turn it elsewhere | Sends the attack or spell to another target: back at the attacker, onto a bystander pulled into the way, or wherever it likes. | PF2e, 5e, DH; space, cyberpunk, superhero, western, martial arts, heist |  |
 | `rider` | Add a rider | Adds damage, a condition or a push to its own hit that has just landed. | 5e, DCC, DH, Ironsworn |  |
 | **Hamper the foe** | | | | |
-| `afflict` | Afflict the foe | Leaves the foe frightened, off-guard, slowed, poisoned, cursed, marked with Stress, or the like. | PF2e, 5e, DH |  |
+| `afflict` | Afflict the foe | Leaves the foe frightened, off-guard, slowed, poisoned, cursed, marked with Stress, or the like. | PF2e, 5e, DH | **afflict** (an outcome, by its save's degree) |
 | `spoilRoll` | Spoil a foe's roll | Worsens a foe's roll or defense: a penalty, a forced reroll, disadvantage, a flipped die. | PF2e, 5e, DH |  |
 | `trip` | Trip it | Knocks the foe prone, or uses its own rush to throw it down. | PF2e; superhero, martial arts |  |
 | `moveFoe` | Move the foe | Pushes, pulls or repositions the foe, or makes it spend its own move running. | PF2e, 5e, DCC, DH |  |
@@ -248,7 +248,7 @@ One entry for each thing a reaction does, whatever set it off. A reaction can ca
 | `taunt` | Draw them in | Makes the foe come after it, or makes others poor targets. | DCC, DH |  |
 | `bluff` | Talk its way out | A quick lie, a cover story or a hard word to stop someone acting or raising the alarm. | cyberpunk, western, heist |  |
 | **Move and position** | | | | |
-| `move` | Move | Moves outside its turn: steps away, flies off, swaps places, teleports, or breaks into a run. | PF2e, 5e, DH; cyberpunk, horror, western, heist |  |
+| `move` | Move | Moves outside its turn: steps away, flies off, swaps places, teleports, or breaks into a run. | PF2e, 5e, DH; cyberpunk, horror, western, heist | **step** |
 | `takeCover` | Hit the dirt | Drops flat or dives behind cover against fire or a blast, and may stay down, pinned, until it lifts. | PF2e; space, cyberpunk, horror, western, military | **ac** |
 | `standUp` | Spring up | Gets back on its feet at once. | PF2e; superhero, martial arts |  |
 | `fallSafely` | Land safely | Slows a fall, softens the landing, or catches a handhold so it isn't thrown or sucked away. | PF2e, 5e, DCC; space, horror, superhero |  |
@@ -256,8 +256,8 @@ One entry for each thing a reaction does, whatever set it off. A reaction can ca
 | `hide` | Hide | Goes hidden, concealed or invisible, or freezes still so it isn't seen and doesn't set anything off. | PF2e, 5e, DH; cyberpunk, horror, military, heist |  |
 | **Tempo and resources** | | | | |
 | `actNow` | Act now | Takes an action (or a whole turn) out of order, draws first, or seizes the initiative. | PF2e, 5e, DCC, DH, Ironsworn, Starforged; space, cyberpunk, superhero, western, martial arts, heist |  |
-| `gainPoint` | Gain a point | Gains or gets back a point or a resource: Hope, Fear, Luck, momentum, a spell slot, a recharge, ammunition. | PF2e, DCC, DH, Ironsworn |  |
-| `boost` | Surge | Gains a bonus to its attacks, damage, checks or speed for a while: a rage, an adrenaline rush, a protective fury. | PF2e, DH; horror, superhero, western, military |  |
+| `gainPoint` | Gain a point | Gains or gets back a point or a resource: Hope, Fear, Luck, momentum, a spell slot, a recharge, ammunition. | PF2e, DCC, DH, Ironsworn | **recharge** (an action ready again) |
+| `boost` | Surge | Gains a bonus to its attacks, damage, checks or speed for a while: a rage, an adrenaline rush, a protective fury. | PF2e, DH; horror, superhero, western, military | **boost** (an outcome on itself) |
 | **Magic and powers** | | | | |
 | `useAbility` | Cast or unleash | Casts a spell, reshapes one in flight, or lets loose a signature ability (a breath, a gaze, a spray); what happens is the spell's or the ability's own. | PF2e, 5e |  |
 | `create` | Make something | Creates a barrier, a cloud, difficult ground, light, a decoy or a summoned ally, or splits into more of itself. | PF2e, 5e, DH; space, horror, heist |  |
@@ -285,32 +285,38 @@ One entry for each thing a reaction does, whatever set it off. A reaction can ca
 
 ## The engine today, and what to add next
 
-| engine moment | master trigger | what the reaction says (`responses.js` keys) |
+Every moment below takes the effects that answer any moment (`behavior/reaction-effects.js`): `harm` (damage at the one who set it off, a save for less, a push; the older `damage`, `save` and `move`), `afflict` (an outcome on it, with its values, by its save's degree), `boost` (a buff on itself), `heal` (itself), `recharge` (one of its own actions ready again), `strike` (its best strike, or one it names, at the one who set it off), `step` and `areaBurst`. The third column lists what belongs to that moment alone.
+
+| engine moment | master trigger | what belongs to the moment (`responses.js` keys) |
 |---|---|---|
-| before an attack roll at it | `attacked` | ac |
-| before an attack roll at a friend near it | `allyTargeted` | ac (a bonus to the friend's defense against that attack: `guardAlly`) |
-| an attack hits it, before damage | `hit`, and `wouldTakeDamage` when an attack deals the damage | ac, halve, reduce |
-| a melee attack misses it | `missed` | strike |
-| a foe's blow hurt it | `damaged` | damage and save |
-| an attack hits a friend near it (and, with `byRange`, the foe that near too) | `allyHit` | reduce (with `applies`, the system's own), strike (`strikeBack`: in reach, `strikeStep`, `strikeRanged`), redirect |
+| before an attack roll at it | `attacked` | ac; its other effects come first, and an attacker they fell never makes the attack |
+| before an attack roll at a friend near it | `allyTargeted` | ac (a bonus to the friend's defense against that attack: `guardAlly`); its other effects come first |
+| an attack hits it, before damage | `hit`, and `wouldTakeDamage` when an attack deals the damage | ac, halve, reduce; a boost at once (a resistance counts against that blow), its other effects once the blow is done |
+| an attack at it misses | `missed` (crit: a critical failure) | (its effects: a strike back) |
+| a foe's blow hurt it | `damaged` | (its effects: harm, afflict) |
+| an attack hits a friend near it (and, with `byRange`, the foe that near too) | `allyHit` | reduce (with `applies`, the system's own), redirect; its effects (a strike: `strikeBack`, in reach, `strikeStep`, `strikeRanged`) once the blow is done |
 | a blow would drop it | `wouldDrop` | stayUp {hp, wounded} (`stayUp`) |
-| it drops or dies | `slain` | areaBurst {damage, save, range} (`areaBurst`), answered on its way down |
-| a foe casts a spell it can see | `foeCasts` (`spell`) | counter |
-| a foe walks out of its reach (`reactions.js`) | `foeLeavesReach` | its opportunity strike |
+| it drops or dies | `slain` | (its effects, answered on its way down: areaBurst, a last strike or harm at the one who felled it) |
+| a foe casts a spell it can see | `foeCasts` (`spell`) | counter; or its effects at the caster, who casts nothing if they fell it |
+| its own attack (a Strike or a spell attack) hits | `ownHit` | (its effects, at the one it hit; `crit`, `melee`, `ranged`, `actions` say which blows) |
+| a foe walks out of its reach (`reactions.js`) | `foeLeavesReach` | its opportunity strike; or its own reaction's `strike` (the strike it names, or its best), struck the same way |
 | a ranged attack, or a manipulate action, in its reach | `foeOpening` | its opportunity strike, where `rules.opportunityOn` names it (PF2e) |
 | standing up in its reach | `foeMovesInReach` | its opportunity strike, where `rules.opportunityOn` names it (PF2e) |
-| a move that ends in its reach after a square or more inside it (a reach weapon walked into: `throughReach`) | `foeMovesInReach` | its opportunity strike, where `rules.opportunityOn` names it (PF2e) |
-| a friend ends a move beside it (`answerMove`) | `allyMoves` | step (feet: a move of its own to the best spot it finds), kin |
-| a foe comes into its reach (`answerMove`) | `foeApproaches` | strike, step, kin |
+| a move that ends in its reach after a square or more inside it (a reach weapon walked into: `throughReach`) | `foeMovesInReach` | its opportunity strike, where `rules.opportunityOn` names it (PF2e); or its own reaction's `strike` |
+| a friend ends a move beside it (`answerMove`) | `allyMoves` | kin (its effects: step) |
+| a foe comes into its reach (`answerMove`) | `foeApproaches` | kin (its effects: strike, step) |
 
-A reaction marked `free` costs no reaction (a creature's nature: a death burst). One marked `passive` is always on (an XCC brawler's Toughness): never asked about in a live battle, and not listed on the character's tab.
+A reaction marked `free` costs no reaction (a creature's nature: a death burst; PF2e's triggered free actions). One marked `passive` is always on (an XCC brawler's Toughness): never asked about in a live battle, and not listed on the character's tab. Filters on any of them: `range`, `melee`, `ranged`, `physical`, `damageTypes`, `crit`, `actions` (by id), `needsShield`, `kin`, `byRange`.
 
-The PF2e scan gives a rough order for what to add next. These are the busiest triggers with no moment yet, by the approximate number of distinct PF2e reactions behind each: `ownRollFails` (94), `ownHit` (89), `spellTargets` (84), `magicNearby` (54), `mustSave` (53). (`foeApproaches`, 48, has one now.) Across the other systems, `mustSave`, `ownRoll` and `ownHit` turn up in every one scanned, so they are the safest to add next. Hazards would need `entersArea` (251), `touchesObject` (219) and `approachesHazard` (141) first, if the engine ever runs traps.
+In a live battle, a harm's damage is the system's (the reaction's card, its damage roll and its application, through the helper), saves are the system's, strikes are the system's, and what a reaction lays or buffs reaches the sheet with the turn's changes (an effect it laid names the reaction as its source). A heal's amount is the engine's dice, as every heal's is, and a recharge is the engine's to keep.
+
+The PF2e scan gives a rough order for what to add next. These are the busiest triggers with no moment yet, by the approximate number of distinct PF2e reactions behind each: `ownRollFails` (94), `spellTargets` (84), `magicNearby` (54), `mustSave` (53). (`foeApproaches`, 48, and `ownHit`, 89, have one now.) Across the other systems, `mustSave` and `ownRoll` turn up in every one scanned, so they are the safest to add next. Hazards would need `entersArea` (251), `touchesObject` (219) and `approachesHazard` (141) first, if the engine ever runs traps.
 
 Still open:
 - **Damage that isn't an attack.** `wouldTakeDamage` is checked at `hit`, on expected damage, which works for blows. A spell, an area or a hazard has no moment before its damage lands, so Shield Block against a spell, a Daggerheart Armor Slot against a blast, or Ironsworn Endure Harm against a fall all go unchecked.
 - **A critical Reactive Strike disrupting the manipulate action it answered** (PF2e) is not played yet: the strike lands, the action goes on.
-- **In a live battle,** the watcher during a player's turn sees moves (`foeLeavesReach`) and, where the helper reads them (`liveOpening`: PF2e), cards that lower the character's guard in an NPC's reach (`foeOpening`). Standing up at the table (`foeMovesInReach`) is not watched yet.
+- **In a live battle,** the watcher during a player's turn sees moves (`foeLeavesReach`, `foeApproaches`, `allyMoves`) and, where the helper reads them (`liveOpening`: PF2e), cards that lower the character's guard in an NPC's reach (`foeOpening`). Standing up at the table (`foeMovesInReach`) is not watched yet, nor are a creature's answers to a player's own attack in the player's turn (`attacked`, `hit`, `missed`, `damaged`, `slain`): they're played only in turns FastFighting plays.
+- **Conditional and compound answers** (a strike only if the attack misses, a Stride and then a Strike, a choice left to the target) aren't played: a helper builds a reaction from what it can map, and leaves out what it can't.
 
 ## Helper notes: how each system maps
 

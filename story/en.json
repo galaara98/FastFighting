@@ -3234,6 +3234,20 @@
     "{actor}'s end comes with {weapon}.",
     "{actor} falls, and {weapon} erupts around them."
   ],
+  "event.reactOwnHit": [
+    "{actor} follows the blow at once: {weapon}.",
+    "{actor} presses the hit home with {weapon}.",
+    "The blow lands, and {actor} makes the most of it: {weapon}.",
+    "{actor} isn't done with {target} yet: {weapon}.",
+    "{weapon}: {actor} turns the hit into more."
+  ],
+  "event.reactFoeCasts": [
+    "{target} starts a spell, and {actor} answers with {weapon}.",
+    "{actor} catches {target} mid-spell: {weapon}.",
+    "As {target} casts, {actor} lashes out with {weapon}.",
+    "{actor} punishes {target}'s casting with {weapon}.",
+    "{weapon}: {actor} won't let {target} cast in peace."
+  ],
   "event.counterTakes": [
     "{actor}'s {weapon} unravels {target}'s {spell}.",
     "{target}'s {spell} dies on the air: {actor}'s {weapon}.",
