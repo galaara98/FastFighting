@@ -155,7 +155,7 @@ The rules object is pure and is called thousands of times.
 - Conditions (`engine/conditions.js`): many of the core's own do something where the system says nothing of them (`PROFILES`: penalties, losing actions, harm each turn, holds, remedies, countdowns, spreading, out of reach). A system that gives one its own meaning claims it (`rules.ownConditions`, or `rules.conditionMods` for it); `rules.conditionHarm(key, value, unit, by)` puts a condition's harm in the system's terms; `rules.toughSave` is the save against what spreads (default the best of Fortitude, Constitution or Strength); flat penalties are in d20 points, scaled by `rules.rollPoint`. `CONDITION_SYNONYMS` and `coreKeyFor(word)` map a system's own names onto the core's keys.
 - **Fear** is the system's to say: `rules.conditionWishes(run, unit, {key, value, by})` returns what a condition makes a creature want while it lasts (`[{kind, targetId, level}]`, `[]` for nothing, or null for the core's reading: keeping away from whoever frightened it), and `rules.fearConditions` names the system's own fears beyond frightened, fleeing and turned. A system whose fear has steps of its own (PF2e's frightened 2) says `rules.fearValued`, and the core goes by them; otherwise a fear that's only there or not builds, hidden: each fear that lands (or is laid again) a step more, each that lapses a step less, none once none is left. A condition's wishes never send a creature running or out of the fight. Only its own fear does: its nerve (morale), or its fear made worse and worse past what its nerve bears (three steps, two for the timid, four for the brave), and that goes when the system lowers the fear or lets it lapse.
 - Damage parts with `direct: true` (all of a hit's) reach `rules.applyIwr(iwr, byType, target, {direct})` as direct (Daggerheart: no Armor Slot). A reaction to being hurt may carry a `move` (the one who hurt it knocked back, on a failed save where it has one).
-- An outcome's `resources` (`{hope: -1}`) are gained or lost wherever it lands (a blow's rider, a maneuver's degree, a deed, a buff), and an action's `resources` with its heal, through `rules.gainResource`; `rules.outcomeWorth(run, by, target, outcome)` adds the system's own worth of an outcome (DCC's rally). An action may have `uses` beside a resource cost (a Fear, once a scene). An environment's summons are called on its turn, whatever its tactics.
+- An outcome's `resources` (`{hope: -1}`) are gained or lost wherever it lands (a blow's rider, a maneuver's degree, a deed, a buff), and an action's `resources` with its heal, through `rules.gainResource`; `rules.outcomeWorth(run, by, target, outcome)` adds the system's own worth of an outcome, for what in it only the system can value. An action may have `uses` beside a resource cost (a Fear, once a scene). An environment's summons are called on its turn, whatever its tactics.
 - Afflictions (`behavior/afflictions.js`): a stage's `duration` (a save at its end), `virulent`, `stacks` (a fresh exposure worsens it: by default not for a disease or a curse), `tally: {cure, keep}` (5e's three successes or failures), no `save` (it simply takes hold); `simpleAffliction({key, most, every, save, ...})` builds one whose stage is a condition's value.
 - Healing over time an effect lends: `outcome.fastHealing` (hit points each turn) and `outcome.regen` (`{amount, stoppedBy, needsHp}`); the `unhealable` condition stops all healing.
 - Summons appear in the nearest free space to where they'd want to be, within `action.range` (feet, or `{max}`; default 30) and the summoner's sight.
@@ -382,7 +382,7 @@ Helpers import from `scripts/core-api.js`, never the core's internal layout: `Sy
 ## Other API and hooks
 
 `game.modules.get("fast-fighting").api`, also passed to `fastFighting.init`:
-- `version` ("19.0"), `major` and `bug` (see **Versions**), `SystemAdapter`, `registerAdapter(systemId, AdapterClass, {priority, source})`, `getAdapter(systemId)`, `listAdapters()`;
+- `version` ("20.0"), `major` and `bug` (see **Versions**), `SystemAdapter`, `registerAdapter(systemId, AdapterClass, {priority, source})`, `getAdapter(systemId)`, `listAdapters()`;
 - `registerModifier({id, label, apply(spec, context)})` (changes the BattleSpec just before a simulation) and `registerTraitRule({id, test(actor, spec), apply(traits, spec)})` (adjusts derived personality for matching actors);
 - `engine` (the simulator: `runBatch`, `runBatchSync`, `replay` and the rest), `dice` and `constants`;
 - `adviseTranslation` and `keepEnglish` (see **Words** above);
@@ -391,7 +391,8 @@ Helpers import from `scripts/core-api.js`, never the core's internal layout: `Sy
 Hooks:
 - `fastFighting.init(api)`;
 - `fastFighting.preSimulate(battleSpec, context)` (change the spec before a batch runs) and `fastFighting.postSimulate(results, context)` (read or annotate the results);
-- `fastFighting.liveBattleStarted(battle)`, and `fastFighting.liveBattle(battle)` whenever something in a live battle changes (`null` once it's over).
+- `fastFighting.liveBattleStarted(battle)`, and `fastFighting.liveBattle(battle)` whenever something in a live battle changes (`null` once it's over);
+- `fastFighting.damageWaits(battle)`: a player's damage card waits in the Battle Vantage for a GM (**Players' damage** above).
 
 ## Engine behavior in detail
 

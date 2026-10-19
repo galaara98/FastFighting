@@ -964,8 +964,8 @@ function backlash(run, u, target, action, degree, logging) {
 }
 
 /**
- * A save that turns the tables (rules.retort: an Ironsworn Clash, where doing well means striking the foe): the
- * saver's own blow at whoever made it save, if the system says so for this degree.
+ * A save that turns the tables (rules.retort: a system whose save can strike back, doing well meaning a blow at the
+ * foe): the saver's own blow at whoever made it save, if the system says so for this degree.
  */
 function retort(run, saver, by, action, degree, logging) {
   const back = run.prep.rules.retort?.(run, saver, by, action, degree);

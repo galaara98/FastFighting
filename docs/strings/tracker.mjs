@@ -1,5 +1,5 @@
 /**
- * The record of the author writing FastFighting's English (docs/english-strings-handoff.md): every string in the five
+ * The record of the author writing FastFighting's English (docs/english-strings-handoff.md): every string in the six
  * repos, its status (todo, written, approved, skipped), when, and the commit that entered it. Approved: the author
  * reviewed the draft and accepted it as it stands; for Foundry's AI policy it's still a draft, not the author's writing. The entries come from the files
  * the words live in, so nothing is missed:
@@ -17,7 +17,8 @@
  *   node docs/strings/tracker.mjs mark <written|written-same|approved|skipped> <commit> <id> ...   record a batch (text hashes
  *                                                  refreshed); written-same: written, the same as the draft it replaced
  *
- * The repos sit side by side: this one (FastFighting) and FastFighting-PF2e, -DnD5e, -DCC, -Ironsworn next to it.
+ * The repos sit side by side: this one (FastFighting) and FastFighting-PF2e, -DnD5e, -DCC, -Ironsworn, -Daggerheart next
+ * to it.
  */
 import { readFileSync, writeFileSync, readdirSync, statSync, existsSync } from "fs";
 import { createHash } from "crypto";

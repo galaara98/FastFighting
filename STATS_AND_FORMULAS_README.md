@@ -2771,9 +2771,9 @@ All 1 action. The Athletics ones are attacks: a free hand, a target at most one 
 | Demoralize | Will DC | — | frightened 1 | frightened 2 |
 | Bon Mot (with the feat, within 30 ft) | Will DC | you take −2 to Will saves and Perception | −2 to Will saves and Perception (and the Will and Perception DCs), 10 rounds | −3 |
 
-- A creature's Knockdown or Trip on a hit: prone; Grab: grabbed; Push or Pull: moved as far as its slug or English name lists ("Push 10 feet"), else 5 feet, with no Shove roll.
+- A creature's attack effects, as the remaster has them: after a hit with the Strike that lists one, Grab tries a Grapple, Knockdown a Trip, Push a Shove and Pull a Reposition toward it (Push or Pull: either), each its Athletics against the maneuver's DC above, with no hand and no multiple attack penalty. Push and Pull go as far as the slug or the English name lists ("push-10-feet", "Push 10 feet"), else 5 feet. The plain ones cost 1 action straight after the hit; the Improved ones are free, at once. Grab on a creature it already holds keeps that hold to the end of its next turn. A Trip a Strike lists is PF2e's Trip action, an attack that takes and adds to the multiple attack penalty.
 
-Code: `maneuvers.js` `skillManeuvers`, `strikeMove`; `adapter.js` `attackEffects`, `#skillActions`.
+Code: `maneuvers.js` `skillManeuvers`, `attackEffectOf`, `effectManeuver`, `attackEffects`, `effectFollowUps`, `keepHold`; `adapter.js` `#skillActions`.
 
 ### Aid
 
