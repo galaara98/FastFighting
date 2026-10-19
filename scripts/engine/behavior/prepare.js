@@ -31,7 +31,7 @@ import { costOf, costUnits, mainPool, normalizeCost } from "../turn.js";
 import { expectedDamage, threatOf, hasUses, unitsPerTurn } from "./evaluate.js";
 import { mind, levelOf, protective } from "./desire.js";
 import { threats } from "./reactions.js";
-import { edgeAt, inTheWay, wallsKnown, lineBlocked, blockedPoints, crossed } from "./space.js";
+import { edgeAt, inTheWay, wallsKnown, lineBlocked, blockedPoints, crossesAny, takesRoom } from "./space.js";
 import { meanPart } from "../dice.js";
 
 /**
@@ -205,35 +205,39 @@ const DIRECTIONS = Array.from({ length: 16 }, (_, i) => [Math.cos(i * Math.PI / 
 /** Its speed on foot (or the fastest it has), with what it's lent or lost. */
 export const speedOf = u => Math.max(5, (Math.max(...Object.values(u.spec.speeds ?? { walk: 25 }).map(Number).filter(Number.isFinite), 0) || 25) + (u.mods?.speed ?? 0));
 
-/** A spot on u's grid (its middle, a square at a time). */
-function onGrid(u, x, y) {
-  const ox = ((u.pos.x % SQUARE) + SQUARE) % SQUARE;
-  const oy = ((u.pos.y % SQUARE) + SQUARE) % SQUARE;
-  return { x: Math.round((x - ox) / SQUARE) * SQUARE + ox, y: Math.round((y - oy) / SQUARE) * SQUARE + oy };
-}
-
 /** Inside the map's edges (spec.bounds), where it knows them. */
 function onMap(run, p) {
   const b = run.prep.spec.bounds;
   return !b || (p.x >= b.x0 && p.x <= b.x1 && p.y >= b.y0 && p.y <= b.y1);
 }
 
-/** Free spots it could end a move of `feet` on: rings round it, a square's width apart, none past a wall, none taken. */
+/**
+ * Free spots it could end a move of `feet` on: rings round it, a square's width apart, none past a wall, none taken.
+ * Each on u's grid (its middle, a square at a time), found by its squares across and down, so one met again from
+ * another direction (the rings overlap) is passed over by those two numbers.
+ */
 function spotsWithin(run, u, feet) {
   const seen = new Set();
   const out = [];
   const rings = [...new Set([SQUARE, 10, Math.round(feet / 2 / SQUARE) * SQUARE, Math.floor(feet / SQUARE) * SQUARE].filter(r => r >= SQUARE && r <= feet))];
   const walls = wallsKnown(run);
+  const ox = ((u.pos.x % SQUARE) + SQUARE) % SQUARE;
+  const oy = ((u.pos.y % SQUARE) + SQUARE) % SQUARE;
+  // (Foes on their feet, the room they take: a straight move doesn't go through one, the way round it is no straight
+  // move. Found once: nobody moves while it looks.)
+  const foes = run.units.filter(o => o !== u && takesRoom(o) && isStanding(o) && areEnemies(run, u, o));
   for ( const r of rings ) {
     for ( const [dx, dy] of DIRECTIONS ) {
-      const p = onGrid(u, u.pos.x + dx * r, u.pos.y + dy * r);
-      const key = `${p.x},${p.y}`;
+      const i = Math.round((u.pos.x + dx * r - ox) / SQUARE);
+      const j = Math.round((u.pos.y + dy * r - oy) / SQUARE);
+      const p = { x: i * SQUARE + ox, y: j * SQUARE + oy };
+      // (Its squares as one number: rows far beyond any scene's.)
+      const key = i * 1048576 + j;
       if ( seen.has(key) || (p.x === u.pos.x && p.y === u.pos.y) ) continue;
       seen.add(key);
       if ( Math.hypot(p.x - u.pos.x, p.y - u.pos.y) > feet + 0.5 || !onMap(run, p) || inTheWay(run, u, p) ) continue;
       if ( walls && lineBlocked(run, u.pos, p) ) continue;
-      // (Not through a foe on its feet: the way round it is no straight move.)
-      if ( crossed(run, u, u.pos, p).some(({ o }) => isStanding(o) && areEnemies(run, u, o)) ) continue;
+      if ( crossesAny(u, u.pos, p, foes) ) continue;
       out.push(p);
     }
   }

@@ -8,7 +8,7 @@
 import { describe, expect, test } from "vitest";
 import { beginRun, beginRound, takeTurn, prepareBattle } from "../scripts/engine/simulator.js";
 import { movesNeeded, moveToward, edgeDistance, currentAc, saveRoll, COVER_POINTS, reachShape } from "../scripts/engine/battle-state.js";
-import { inTheWay, spotWithin, spotToShoot, lineOfSight, sightBlocked, lineBlocked, blockedPoints, coverFrom, crossed, pastCost } from "../scripts/engine/behavior/space.js";
+import { inTheWay, spotWithin, spotToShoot, lineOfSight, sightBlocked, lineBlocked, blockedPoints, coverFrom, crossed, crossesAny, pastCost } from "../scripts/engine/behavior/space.js";
 import { areEnemies } from "../scripts/engine/battle-state.js";
 import { snapshotRun } from "../scripts/engine/live.js";
 import { STATUS } from "../scripts/constants.js";
@@ -71,6 +71,24 @@ describe("room", () => {
     const fivee = fight([who("hero", "friendly", 0), who("ally", "friendly", 10), who("target", "hostile", 40)], { rules: { ...pf2eRules, passThrough: (r, u, o) => (areEnemies(r, u, o) ? "around" : "difficult") } });
     const [h2, , t2] = get(fivee, "hero", "ally", "target");
     expect(pastCost(fivee, h2, crossed(fivee, h2, h2.pos, { x: 35, y: 0 }, t2), areEnemies).extra).toBe(5);
+  });
+
+  test("whether a line crosses any of some creatures: as crossed finds them, for lines every which way", () => {
+    let seed = 3;
+    const rnd = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648;
+    const spot = () => 5 * Math.round((-40 + 80 * rnd()) / 5);
+    const run = fight(Array.from({ length: 8 }, (_, i) => who(`c${i}`, i % 2 ? "hostile" : "friendly", spot(), spot())));
+    const [h] = get(run, "c0");
+    const foes = run.units.filter(o => o.side === "hostile");
+    let crossing = 0;
+    for ( let i = 0; i < 400; i++ ) {
+      const q = { x: spot(), y: spot() };
+      const want = crossed(run, h, h.pos, q).some(({ o }) => foes.includes(o));
+      expect(crossesAny(h, h.pos, q, foes)).toBe(want);
+      if ( want ) crossing += 1;
+    }
+    expect(crossing).toBeGreaterThan(20);
+    expect(crossing).toBeLessThan(380);
   });
 
   test("tumbling past: failed, its move stops short of that one", () => {

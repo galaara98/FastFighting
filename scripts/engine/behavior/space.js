@@ -77,6 +77,16 @@ export function crossed(run, u, p, q, t = null) {
   return out.sort((a, b) => a.k - b.k);
 }
 
+/** Does the line from p to q cross the space of any of `list` (as crossed would find it, without making the list)? */
+export function crossesAny(u, p, q, list) {
+  const dx = q.x - p.x;
+  const dy = q.y - p.y;
+  const len2 = dx * dx + dy * dy;
+  if ( !len2 ) return false;
+  for ( const o of list ) if ( passesAt(u, p, dx, dy, len2, o, null) !== null ) return true;
+  return false;
+}
+
 /** How far along the line from p (by dx, dy) u would pass through o's space (0 to 1), or null if it doesn't. */
 function passesAt(u, p, dx, dy, len2, o, t) {
   if ( o === u || o === t || !takesRoom(o) ) return null;
