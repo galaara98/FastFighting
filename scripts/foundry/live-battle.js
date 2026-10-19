@@ -1893,12 +1893,7 @@ async function playerDamage(pc, message) {
   const adapter = getAdapter();
   if ( systemApplies(adapter) ) return;
   const run = battle.run;
-  let card = null;
-  try {
-    card = adapter.damageCard(message, { ids: Object.fromEntries(run.units.map(u => [tokenIdOf(u), u.id])) }) ?? null;
-  } catch ( err ) {
-    console.error(`${MODULE_ID} | reading a damage card`, err);
-  }
+  const card = readDamageCard(message);
   if ( !card || !(card.amount > 0) ) return;
   // (Each card's damage once: a card the system updates again, its damage rerolled, isn't applied twice.)
   if ( pc.dealt?.includes(message.id) ) return;
@@ -1923,6 +1918,23 @@ async function playerDamage(pc, message) {
   ui.notifications.info(fmt("FASTFIGHTING.Live.DamageWaits", { name: by }));
   Hooks.callAll("fastFighting.damageWaits", battle);
 }
+
+/** A damage card as the helper reads it (its damageCard): {amount, kind, targets, save}, or null. */
+function readDamageCard(message) {
+  if ( !message ) return null;
+  try {
+    return getAdapter().damageCard(message, { ids: Object.fromEntries(battle.run.units.map(u => [tokenIdOf(u), u.id])) }) ?? null;
+  } catch ( err ) {
+    console.error(`${MODULE_ID} | reading a damage card`, err);
+    return null;
+  }
+}
+
+/**
+ * Is players' damage waiting on a GM still what the GM is shown? Its card's total as it was put before them
+ * (`line.amount`), and as it reads now (`card`, readDamageCard's): a player may change their own card meanwhile.
+ */
+export const damageStill = (line, card) => !!card && Number.isFinite(card.amount) && card.amount === line?.amount && card.kind === (line.healing ? "healing" : "damage");
 
 /** A creature's hit points on its sheet now (null where it can't be read). */
 async function hpOf(u) {
@@ -2003,7 +2015,20 @@ export function answerDamage(key, { multiplier = 1, targetId = null, dismiss = f
     if ( !line ) return false;
     pc.damage = pc.damage.filter(d => d !== line);
     const u = battle.run.byId.get(targetId ?? line.targetId);
-    if ( !dismiss && u ) await applyDamage(pc, game.messages.get(line.messageId), u, multiplier);
+    const message = game.messages.get(line.messageId);
+    if ( !dismiss && u && message ) {
+      // (Only what the GM was shown: a card changed since, its total or its kind, goes back before them as it is now.)
+      const card = readDamageCard(message);
+      if ( !damageStill(line, card) ) {
+        const healing = card?.kind === "healing";
+        if ( card?.amount > 0 ) pc.damage = [...pc.damage, { ...line, key: foundry.utils.randomID(), amount: card.amount, healing, hpAt: line.targetId ? await hpOf(u) : null }];
+        ui.notifications.warn(fmt("FASTFIGHTING.Live.DamageChanged", { name: line.by, was: line.amount, now: card?.amount ?? 0 }));
+        await keep();
+        changed();
+        return false;
+      }
+      await applyDamage(pc, message, u, multiplier);
+    }
     changed();
     return true;
   });
