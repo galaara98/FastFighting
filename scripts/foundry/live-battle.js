@@ -205,7 +205,7 @@ function forget(combatId, battleId) {
  * Encounter takes the start back too, as it does one FastFighting made. `combatId`: the plan's encounter (a scene can
  * hold several; else the one the tracker shows).
  */
-export async function startLiveBattle(spec, { style = setting("storyStyle"), odds = null, players = [], begin = true, began = false, combatId = null, applyDamage = setting("applyPlayerDamage") } = {}) {
+export async function startLiveBattle(spec, { style = setting("storyStyle"), odds = null, players = [], playersRun = true, begin = true, began = false, combatId = null, applyDamage = setting("applyPlayerDamage") } = {}) {
   if ( !game.user.isGM ) return null;
   const scene = canvas.scene;
   // (The plan's own encounter, by its id; else the scene's as the planner has it: the tracker's, linked to this scene or
@@ -235,6 +235,8 @@ export async function startLiveBattle(spec, { style = setting("storyStyle"), odd
     data: {
       id: foundry.utils.randomID(), user: game.user.id, sceneId: scene.id, spec: packSpec(live), seed, style, odds, players, told: 0, turns: [],
       ended: false, played: null, opening: [], rolled: [], rollCards: [], joined: [], startedCombat: false, spotlight, spots: 0, prepared: true, applyDamage: !!applyDamage,
+      // (Players run their characters, as the planner said: off, FastFighting plays everyone, players coming or going.)
+      playersRun: playersRun !== false,
       startedBefore: combat.started && !began, openingRolls
     }
   };
@@ -3088,8 +3090,12 @@ function letGo() {
   joins.clear();
 }
 
-/** A battle going on, played here, its encounter begun: what players coming and going change. */
-const awayMatters = () => !!battle && playsHere() && !battle.data.ended && !battle.data.prepared;
+/**
+ * A battle going on, played here, its encounter begun, its players running their characters: what players coming and
+ * going change. (The planner's Players run their characters off: FastFighting plays everyone, whoever comes or goes.)
+ */
+const playersRunHere = () => battle?.data.playersRun !== false;
+const awayMatters = () => !!battle && playsHere() && !battle.data.ended && !battle.data.prepared && playersRunHere();
 
 /**
  * A player left (userConnected): with the autoPlayAbsent setting on, each character of theirs the players run, none of
@@ -3111,7 +3117,7 @@ async function playerLeft(userId) {
  * BACK_AFTER_MS, the characters of theirs FastFighting plays are handed back (handBackTo).
  */
 async function playerJoined(userId) {
-  if ( !battle || !playsHere() || battle.data.ended ) return;
+  if ( !battle || !playsHere() || battle.data.ended || !playersRunHere() ) return;
   joins.joined(userId);
   if ( !battle.data.awayTimers?.length ) return;
   if ( !setTimers(stillAway({ units: ownedUnits(), connected: connectedPlayers(), timers: timersNow() })) ) return;
@@ -3125,7 +3131,7 @@ async function playerJoined(userId) {
  */
 async function handBackTo(userId) {
   const user = game.users.get(userId);
-  if ( !battle || !playsHere() || battle.data.ended || !user?.active || user.isGM ) return;
+  if ( !battle || !playsHere() || battle.data.ended || !playersRunHere() || !user?.active || user.isGM ) return;
   const units = ownedUnits();
   const ids = handBack({ units, players: new Set(battle.data.players ?? []), user: userId });
   const stopped = setTimers(stillAway({ units, connected: connectedPlayers(), timers: timersNow() }));
@@ -3144,7 +3150,7 @@ async function handBackTo(userId) {
  */
 async function timeUp() {
   if ( !battle || !playsHere() || battle.data.ended ) return;
-  if ( !setting("autoPlayAbsent") ) {
+  if ( !setting("autoPlayAbsent") || !playersRunHere() ) {
     if ( setTimers({}) ) await keep();
     return;
   }
@@ -3163,6 +3169,7 @@ async function timeUp() {
  * now, as if they had left as it began (the setting on).
  */
 function timersAtStart(from) {
+  if ( !playersRunHere() ) return;
   setTimers(awayTimers({ units: ownedUnits({ standing: true }), connected: connectedPlayers(), players: new Set(battle.data.players ?? []), from, ms: awayMs(), on: !!setting("autoPlayAbsent") }));
 }
 

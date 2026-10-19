@@ -1268,7 +1268,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
         : this.spec.combatants.filter(c => isPlayerControlled(c, canvas.scene.tokens.get(c.tokenId ?? c.id)?.actor)).map(c => c.id);
       // (On this plan's own encounter, by its id.)
       const combatId = this.holder?.documentName === "Combat" ? this.holder.id : null;
-      playing = startLiveBattle(this.spec, { style: this.storyStyle, odds, players, begin, began, combatId, applyDamage: this.setup.options.applyPlayerDamage === true });
+      playing = startLiveBattle(this.spec, { style: this.storyStyle, odds, players, playersRun: this.setup.options.playersRunPCs !== false, begin, began, combatId, applyDamage: this.setup.options.applyPlayerDamage === true });
     } catch ( err ) {
       return reportError(err);
     }
