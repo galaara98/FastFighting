@@ -1099,7 +1099,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     this.abort = new AbortController();
     await this.render();
     try {
-      // The tokens again, so HP and positions are current (each character read again where it changed since: sheet-watch.js).
+      // The tokens again, so HP and positions are current (a character read again where it changed: sheet-watch.js).
       this.roster = await gatherRoster(this.setup);
       let lastPaint = 0;
       const { spec, results, approach } = await simulate(this.roster, this.setup, {
