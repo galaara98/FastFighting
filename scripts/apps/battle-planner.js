@@ -402,6 +402,8 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       // (Its helper can play a battle live, a turn at a time: the toggle for who runs the characters. One that can't
       // is too old to do it for real at all.)
       live: !!adapter?.supportsLive,
+      // (Do it For Real Now beside Run, once there's a sample fight to make so.)
+      canMakeItSo: !!adapter?.supportsLive && !!this.sample,
       options: setup.options,
       // (So many creatures that few fights fit the prediction's time.)
       runsNote: this.#runsNote(resolved),

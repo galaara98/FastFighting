@@ -71,6 +71,8 @@
 .ff-run { font-weight: 700; background: var(--ff-accent); color: #fff; border-color: transparent; }
 .ff-run:disabled { opacity: 0.6; }
 .ff-make-it-so { font-weight: 700; border-color: var(--ff-accent); }
+/* (Beside Run: its room kept, unseen, until there is a sample fight to make so.) */
+.ff-real-beside.is-held { visibility: hidden; }
 .ff-progress { position: absolute; left: 0; right: 0; bottom: -1px; height: 3px; background: transparent; }
 .ff-progress > span { display: block; height: 100%; background: var(--ff-accent); transition: width 0.1s linear; }
 .ff-progress:not(.is-running) > span { opacity: 0; }

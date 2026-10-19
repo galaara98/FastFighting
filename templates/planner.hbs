@@ -23,6 +23,8 @@
       <button type="button" class="ff-btn ff-run" data-action="run" {{#if running}}disabled{{/if}} {{#unless hasAdapter}}disabled{{/unless}}>
         <i class="fa-solid {{#if running}}fa-spinner fa-spin{{else}}fa-dice-d20{{/if}}"></i> {{localize "FASTFIGHTING.Planner.Run"}}
       </button>
+      {{!-- Do it For Real Now beside Run: there once the sample fight is ready, its room kept till then so the row stays put. --}}
+      <button type="button" class="ff-btn ff-make-it-so ff-real-beside{{#unless canMakeItSo}} is-held{{/unless}}" data-action="makeItSo" {{#unless canMakeItSo}}disabled tabindex="-1" aria-hidden="true"{{/unless}} {{#if canMakeItSo}}data-tooltip="{{localize "FASTFIGHTING.MakeItSo.Hint"}}"{{/if}}><i class="fa-solid fa-gavel"></i> {{localize "FASTFIGHTING.MakeItSo.Button"}}</button>
     </div>
     {{#if runsNote}}<span class="ff-runs-note"><i class="fa-solid fa-gauge-high"></i> {{runsNote.text}}<span class="ff-battle-size">{{runsNote.size}}</span></span>{{/if}}
     {{!-- How the fight plays out --}}
