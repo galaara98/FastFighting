@@ -556,6 +556,18 @@ release it goes with, so it's never forgotten:
   stored answers, its auto setup's picks, a helper's hints, a keyword file), and the one-time migration of stored
   playstyles on the active GM's ready (`foundry/migrate-playstyles.js`, called in `main.js`). Its tests:
   `tests/temporary/speedrunner-to-dps.test.js`. Remove all three together.
+- **The old single store of live battles** (remove at 0.7.0): 0.3.0 and 0.4.0 kept every live battle in one journal,
+  which the hidden `liveStore` setting named (`settings.js`). The active GM's next login moves each battle on it into
+  a transcript and deletes it (`foundry/live-journals.js` `oldStore`, `moveOldStore`; `foundry/live-store.js`
+  `moveOut`, and `kindOf`'s `store` and `leftover` kinds with what reads them); until then a battle is read from it
+  (`foundry/live-battle.js` `kept`), and Live battle data lists it (`apps/live-data.js` `whyOf`). Its tests:
+  `tests/temporary/live-single-store.test.js` (its header lists everything to remove), and the old store's cases in
+  `tests/live-store.test.js`.
+- **Surprise as it was said before** (remove at 0.7.0): a 0.3.0 live battle's spec says `options.surpriseSide` and
+  `options.stealthSides` with no `options.surprise`, and a battle kept then has no `run.surprise`
+  (`engine/behavior/surprise.js` `resolveSurprise`'s `!mode` branch, `engine/behavior/standoff.js` `opensWithTalk`,
+  `engine/simulator.js` `rollInitiative`); a 0.1 to 0.2 plan says its Initiative choice (`foundry/battle.js`
+  `OLD_SURPRISE`). Its tests: `tests/temporary/old-surprise.test.js`, and the old cases in `tests/surprise.test.js`.
 
 ## Development
 

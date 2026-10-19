@@ -55,7 +55,8 @@ export const transcriptOf = (combatId, battleId = null) => trusted("liveBattle",
 
 /**
  * The old single store, from before transcripts: the one the liveStore setting named, or one from before the setting
- * (the oldest a GM made), while trusted; else null.
+ * (the oldest a GM made), while trusted; else null. (Temporary: remove at 0.7.0 with
+ * tests/temporary/live-single-store.test.js.)
  */
 export function oldStore() {
   const ok = j => !!j?.getFlag(MODULE_ID, "liveStore") && !distrustOf(j);
@@ -169,7 +170,8 @@ export async function dropTranscripts(moment, combatId, battleId = null) {
 /**
  * The old single store moved out: each battle on it into a transcript of its own (unless it has one already, newer),
  * and once every one is, the store deleted and the setting that named it cleared. (Cut short, the store stays as it
- * was, and the next login goes on from there.)
+ * was, and the next login goes on from there.) (Temporary: remove at 0.7.0 with
+ * tests/temporary/live-single-store.test.js.)
  */
 export async function moveOldStore() {
   const store = oldStore();

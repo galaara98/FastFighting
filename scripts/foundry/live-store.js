@@ -9,6 +9,7 @@
  *   plan        the planner's last run (flags.planRun), kept only while troubleshooting
  *   store       the old single store (flags.liveStore), from before transcripts: its battles move out on login
  *   leftover    any other journal flagged liveStore (a store no longer trusted, made again elsewhere)
+ *               (store and leftover: temporary, remove at 0.7.0 with tests/temporary/live-single-store.test.js)
  */
 import { KEPT_PARTS } from "./live-keeping.js";
 
@@ -42,6 +43,7 @@ export function transcriptName(n, taken = new Set()) {
 export function kindOf(flags, { oldStore = false } = {}) {
   if ( flags?.liveBattle ) return "transcript";
   if ( flags?.planRun ) return "plan";
+  // (Temporary: remove at 0.7.0 with tests/temporary/live-single-store.test.js.)
   if ( flags?.liveStore ) return oldStore ? "store" : "leftover";
   return null;
 }
@@ -132,7 +134,8 @@ export const sizeOf = value => new TextEncoder().encode(JSON.stringify(value ?? 
 
 /**
  * One battle off the old store, as its transcript's flags: each part of it kept there (live-keeping.js), and `keptAt`
- * (the store's last change: when that battle was last kept is unknown, and no later).
+ * (the store's last change: when that battle was last kept is unknown, and no later). (Temporary: remove at 0.7.0
+ * with tests/temporary/live-single-store.test.js.)
  */
 export function moveOut(storeFlags, id, { keptAt = null } = {}) {
   const out = { keptAt };

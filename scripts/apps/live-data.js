@@ -110,7 +110,10 @@ function stateOf(j) {
   return loc(`FASTFIGHTING.LiveData.State.${j.flags.battles?.[j.flags.liveBattle]?.ended ? "ended" : "inPlay"}`);
 }
 
-/** Why a journal is among the others: the old store, not trusted (and why), or a store no longer used. */
+/**
+ * Why a journal is among the others: the old store, not trusted (and why), or a store no longer used. (The store and
+ * the leftover: temporary, remove at 0.7.0 with tests/temporary/live-single-store.test.js.)
+ */
 function whyOf(j) {
   if ( j.distrust ) return j.distrust;
   return j.kind === "store" ? "store" : "leftover";

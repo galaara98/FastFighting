@@ -14,7 +14,8 @@
  *                 unnoticed, its first blow finding its target off-guard).
  * A system's rule returns any of these; the rest are none. A system with no rounds to speak of (rules.surpriseRound
  * false: Ironsworn) has the plan's own choices give surprise without a round of its own (its rule reads `by`). (A plan
- * from before: surpriseSide, a side's surprise round; stealthSides as they were.)
+ * from before: surpriseSide, a side's surprise round; stealthSides as they were. Temporary: remove at 0.7.0 with
+ * tests/temporary/old-surprise.test.js.)
  * Pure: no Foundry globals.
  */
 import { SIDES } from "../../constants.js";
@@ -53,7 +54,8 @@ export function resolveSurprise(run) {
       out.hidden = ids(said.hidden);
     }
   } else if ( !mode ) {
-    // (A plan from before: one side's surprise round, sides rolling Stealth.)
+    // (A plan from before: one side's surprise round, sides rolling Stealth. Temporary: remove at 0.7.0 with
+    // tests/temporary/old-surprise.test.js.)
     if ( options.surpriseSide ) {
       out.by = [options.surpriseSide];
       out.round = true;

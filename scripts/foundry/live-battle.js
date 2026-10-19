@@ -177,6 +177,7 @@ async function keepNow(b) {
  * on this combat, by its id), else (not yet moved out, live-journals.js moveOldStore) the old single store; or null.
  */
 function kept(combatId, battleId) {
+  // (The old store: temporary, remove at 0.7.0 with tests/temporary/live-single-store.test.js.)
   const doc = transcriptOf(combatId, battleId) ?? oldStore();
   const data = doc ? keptBattle(path => doc.getFlag(MODULE_ID, path), combatId) : null;
   return data ? { data, doc } : null;
