@@ -305,12 +305,17 @@ export function threatOf(run, u, versus) {
   const cached = row.get(versus);
   if ( cached !== undefined ) return cached;
   run.threatDepth = (run.threatDepth ?? 0) + 1;
+  // (Nothing changes while it's worked out: what each outcome u's control actions lay on `versus` is worth, kept for
+  // this estimate alone, the one around it's put back after. control.js controlValue.)
+  const outer = run.worthCache;
+  run.worthCache = { u, t: versus, map: new Map() };
   try {
     const best = threatNow(run, u, versus);
     row.set(versus, best);
     return best;
   } finally {
     run.threatDepth -= 1;
+    run.worthCache = outer;
   }
 }
 

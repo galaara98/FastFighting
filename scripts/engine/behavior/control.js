@@ -169,10 +169,18 @@ export function controlValue(run, u, action, t, attacksMade = 0) {
   const fresh = tier >= TACTICAL.INSTINCTIVE && hasFresh(t, action, u.id);
   let value = 0;
   if ( !fresh && !inner ) {
+    // (Inside a threat estimate of u's against t nothing changes, so each outcome is weighed once, however many uses of
+    // however many actions lay it: evaluate.js threatOf's worthCache.)
+    const kept = run.worthCache?.u === u && run.worthCache.t === t ? run.worthCache.map : null;
     dist.forEach((p, d) => {
       const o = controlOutcome(action, d);
       if ( !o || !p ) return;
-      value += o.self ? p * outcomeWorth(run, u, u, o) : -p * outcomeWorth(run, u, t, o, { versus: u });
+      let worth = kept?.get(o);
+      if ( worth === undefined ) {
+        worth = o.self ? outcomeWorth(run, u, u, o) : outcomeWorth(run, u, t, o, { versus: u });
+        kept?.set(o, worth);
+      }
+      value += o.self ? p * worth : -p * worth;
     });
   }
   if ( action.damage?.length ) {
