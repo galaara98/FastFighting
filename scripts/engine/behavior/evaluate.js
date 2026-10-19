@@ -333,9 +333,13 @@ function threatNow(run, u, versus) {
     const each = Math.max(1e-9, cost[main] ?? 1) + reloadPerUse(action);
     let total = 0;
     let made = 0;
+    const attacks = attacksIn(action);
+    let ev = null;
     for ( let spent = 0; spent + each <= perTurn + 1e-9; spent += each ) {
-      total += expectedDamage(run, u, action, versus, made);
-      made += attacksIn(action);
+      // (One that makes no attack roll, a Demoralize, is the same each time: worked out once.)
+      if ( attacks || ev === null ) ev = expectedDamage(run, u, action, versus, made);
+      total += ev;
+      made += attacks;
       if ( Number.isFinite(action.uses) || action.resource || (action.reload && !canReload(action, perTurn)) ) break;
     }
     // A spell or item it can only use so often counts in a round's threat only as far as what's left could last a
