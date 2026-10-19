@@ -16923,6 +16923,86 @@
    "commit": null,
    "hash": "2d358053cf07"
   },
+  "core:FASTFIGHTING.Settings.Group.after": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Settings.Group.after",
+   "area": "core/Settings",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "3016321de3cc"
+  },
+  "core:FASTFIGHTING.Settings.Group.behavior": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Settings.Group.behavior",
+   "area": "core/Settings",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "c39d6fc02981"
+  },
+  "core:FASTFIGHTING.Settings.Group.generic": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Settings.Group.generic",
+   "area": "core/Settings",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "ae55263f970a"
+  },
+  "core:FASTFIGHTING.Settings.Group.live": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Settings.Group.live",
+   "area": "core/Settings",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "cd056ea6e790"
+  },
+  "core:FASTFIGHTING.Settings.Group.luck": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Settings.Group.luck",
+   "area": "core/Settings",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "e3cdf35abc4b"
+  },
+  "core:FASTFIGHTING.Settings.Group.planner": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Settings.Group.planner",
+   "area": "core/Settings",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "4bed242f74cd"
+  },
+  "core:FASTFIGHTING.Settings.Group.story": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Settings.Group.story",
+   "area": "core/Settings",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "bcdba9db8402"
+  },
+  "core:FASTFIGHTING.Settings.Group.troubleshooting": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Settings.Group.troubleshooting",
+   "area": "core/Settings",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "38e797dc3f3d"
+  },
   "core:FASTFIGHTING.Settings.hardware.Hint": {
    "repo": "core",
    "file": "languages/en.json",

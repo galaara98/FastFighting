@@ -395,6 +395,10 @@
 .ff-helper-notice.ff-helper-generic { border-color: #5bb6db; background: color-mix(in srgb, #5bb6db 12%, transparent); }
 .form-group.ff-disabled { opacity: 0.45; }
 
+/* ---------- The settings' groups (settings.js groupSettings) ---------- */
+/* A group with nothing left to show (a search, the loot settings a helper doesn't use) goes, heading and all. */
+.ff-settings-group:not(:has(.form-group:not([hidden]))) { display: none; }
+
 /* ---------- The performance survey, at the foot of the settings ---------- */
 .ff-survey { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: baseline; margin: 12px 0 4px; padding-top: 8px;
   border-top: 1px solid color-mix(in srgb, currentColor 20%, transparent); font-size: 12px; }

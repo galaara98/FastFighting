@@ -1,5 +1,10 @@
 /**
  * World settings. Every setting is a default: the Battle Planner can override any of them per battle.
+ *
+ * The settings window shows them in groups (SETTING_GROUPS, in that order), each under its heading: every setting in
+ * SETTINGS and every menu in MENUS names its `group`, and shows there in its table's order, the group's settings before
+ * its menus (groupSettings). A stored value is found by its key alone, so a setting can move to another group, or along
+ * its own, and keep its value.
  */
 import { PREDICTION_SECONDS } from "./engine/run-budget.js";
 import { MODULE_ID, ALLEGIANCE, DOWNED_MODELS, HEAL_AGGRO, ALLY_DYING, AFTERMATH, OPENING, CONCEDE_LUCK, THEFT_LUCK, EXECUTE_LUCK, SWITCH_LUCK, TRAITOR_LUCK, TRAP_LUCK, IGNORE_TROUBLES, TAUNT_LUCK, STAND_GROUND, AVOID_KILLING, LEAVE_RESOLVE, ROLEPLAY_FORGETS, ADHD, NEUTRAL_REACH, MAX_ROUNDS } from "./constants.js";
@@ -13,71 +18,118 @@ export const DEFAULT_SIDE_TRAITS = {
   secret: { tactical: 60, brave: 50, selfish: 50, loyal: 50 }
 };
 
+/** The settings window's groups, in the order it shows them. Headings: FASTFIGHTING.Settings.Group.<id>. */
+export const SETTING_GROUPS = Object.freeze(["live", "story", "planner", "behavior", "luck", "after", "troubleshooting", "generic"]);
+
 const SETTINGS = {
-  genericFallback: { type: Boolean, default: false, requiresReload: false, onChange: () => ui.combat?.render() },
-  // How long a prediction runs (seconds): fight after fight until it's up (engine/run-budget.js).
-  predictionTime: { type: Number, default: PREDICTION_SECONDS.default, range: { min: PREDICTION_SECONDS.min, max: PREDICTION_SECONDS.max, step: 1 } },
-  maxRounds: { type: Number, default: MAX_ROUNDS.default, range: { min: MAX_ROUNDS.min, max: MAX_ROUNDS.max, step: 1 } },
-  includeHidden: { type: Boolean, default: true },
-  includeOtherLevels: { type: Boolean, default: false },
-  neutralDefault: { type: String, default: ALLEGIANCE.NEUTRAL, choices: choices(Object.values(ALLEGIANCE), "Lean") },
-  // (Read when the planner opens, to propose friend groups for neutrals: a world setting, not per plan.)
-  neutralReach: { type: Number, default: NEUTRAL_REACH, range: { min: 1, max: 20, step: 1 } },
-  downedModel: { type: String, default: DOWNED_MODELS.SIMULATE, choices: choices(Object.values(DOWNED_MODELS), "Downed") },
-  aftermath: { type: String, default: AFTERMATH.TELL, choices: choices(Object.values(AFTERMATH), "Aftermath") },
-  // (A party's own default, or "auto": let each character decide.)
-  pcHealAggro: { type: String, default: "auto", choices: choices(["auto", ...HEAL_AGGRO], "HealAggro") },
-  pcAllyDying: { type: String, default: "auto", choices: choices(["auto", ...ALLY_DYING], "AllyDying") },
-  leadership: { type: Boolean, default: true },
-  // How readily followers take their commander's lead (0-100; 50 the usual), and how much more readily a boss's.
-  leaderInfluence: { type: Number, default: 50, range: { min: 0, max: 100, step: 5 } },
-  bossInfluence: { type: Number, default: 2, range: { min: 1.25, max: 3, step: 0.05 } },
-  // How much the player party's wishes (its players' votes in the survey's Party tab) sway the friendly side (%).
-  partySway: { type: Number, default: 3, range: { min: 1, max: 20, step: 1 } },
-  morale: { type: Boolean, default: true },
-  talking: { type: Boolean, default: true },
-  ignoreLanguages: { type: Boolean, default: false },
-  opening: { type: String, default: OPENING.AUTO, choices: choices(Object.values(OPENING), "Opening") },
-  concedeLuck: { type: Number, default: CONCEDE_LUCK, range: { min: 0, max: 100, step: 1 } },
-  theftLuck: { type: Number, default: THEFT_LUCK, range: { min: 0, max: 100, step: 1 } },
-  executeLuck: { type: Number, default: EXECUTE_LUCK, range: { min: 0, max: 100, step: 1 } },
-  switchLuck: { type: Number, default: SWITCH_LUCK, range: { min: 0, max: 100, step: 1 } },
-  traitorLuck: { type: Number, default: TRAITOR_LUCK, range: { min: 0, max: 100, step: 1 } },
-  trapLuck: { type: Number, default: TRAP_LUCK, range: { min: 0, max: 100, step: 1 } },
-  // How readily the selfless bear what holds or hurts them, rather than trying to be rid of it.
-  ignoreTroubles: { type: Number, default: IGNORE_TROUBLES, range: { min: 0, max: 100, step: 1 } },
-  // How readily a playstyle's taunt takes hold (only the playstyles': a game system's taunts go by their own rules).
-  tauntLuck: { type: Number, default: TAUNT_LUCK, range: { min: 0, max: 100, step: 1 } },
-  standGround: { type: Number, default: STAND_GROUND, range: { min: 50, max: 90, step: 1 } },
-  avoidKilling: { type: Number, default: AVOID_KILLING, range: { min: 50, max: 90, step: 1 } },
-  // How often a creature set on leaving the fight keeps going when struck or spoken to (behavior/leaving.js).
-  leaveResolve: { type: Number, default: LEAVE_RESOLVE, range: { min: 0, max: 100, step: 1 } },
-  roleplayForgets: { type: Number, default: ROLEPLAY_FORGETS, range: { min: 0, max: 100, step: 1 } },
-  // How often a creature's mind jumps from what it's doing to the strongest thing it wants (behavior/desire.js).
-  adhd: { type: Number, default: ADHD, range: { min: 0, max: 100, step: 1 } },
-  bystanders: { type: Boolean, default: true },
-  positioning: { type: Boolean, default: true },
-  surpriseDefault: { type: String, default: "system", choices: choices(["system", "none", "friendlySurprised", "friendlySurprise"], "Surprise") },
-  storyStyle: { type: String, default: "roleplay", choices: choices(["roleplay", "standard", "statistician"], "Story.Style") },
-  storyMode: { type: String, default: "public", choices: choices(["public", "whisper"], "Story.Mode") },
-  storyOdds: { type: Boolean, default: false },
-  lootMode: { type: String, default: "corpse", choices: choices(["corpse", "pile", "none"], "Loot") },
-  corpseMode: { type: String, default: "keep", choices: choices(["keep", "remove"], "Corpse") },
-  fledMode: { type: String, default: "hide", choices: choices(["hide", "leave"], "Fled") },
-  playOnMap: { type: Boolean, default: true },
+  playOnMap: { group: "live", type: Boolean, default: true },
   // Do it For Real Now, live: the players run their own characters (FastFighting plays everyone else).
-  playersRunPCs: { type: Boolean, default: true },
+  playersRunPCs: { group: "live", type: Boolean, default: true },
   // Live: a player who leaves gives each character of theirs with none of its players left a countdown of this many
   // seconds (shown in the Battle Vantage); when it runs out, FastFighting plays it (foundry/away.js, live-battle.js).
   // Off: no countdowns, and those running stop.
-  autoPlayAbsent: { type: Boolean, default: true },
-  autoPlayAbsentSeconds: { type: Number, default: 120, range: { min: 30, max: 600, step: 30 } },
+  autoPlayAbsent: { group: "live", type: Boolean, default: true },
+  autoPlayAbsentSeconds: { group: "live", type: Number, default: 120, range: { min: 30, max: 600, step: 30 } },
   // Live: a player's damage card against a creature FastFighting runs, applied at once (off: a GM is asked).
-  applyPlayerDamage: { type: Boolean, default: false },
+  applyPlayerDamage: { group: "live", type: Boolean, default: false },
+
+  storyStyle: { group: "story", type: String, default: "roleplay", choices: choices(["roleplay", "standard", "statistician"], "Story.Style") },
+  storyMode: { group: "story", type: String, default: "public", choices: choices(["public", "whisper"], "Story.Mode") },
+  storyOdds: { group: "story", type: Boolean, default: false },
+
+  // How long a prediction runs (seconds): fight after fight until it's up (engine/run-budget.js).
+  predictionTime: { group: "planner", type: Number, default: PREDICTION_SECONDS.default, range: { min: PREDICTION_SECONDS.min, max: PREDICTION_SECONDS.max, step: 1 } },
+  maxRounds: { group: "planner", type: Number, default: MAX_ROUNDS.default, range: { min: MAX_ROUNDS.min, max: MAX_ROUNDS.max, step: 1 } },
+  includeHidden: { group: "planner", type: Boolean, default: true },
+  includeOtherLevels: { group: "planner", type: Boolean, default: false },
+  neutralDefault: { group: "planner", type: String, default: ALLEGIANCE.NEUTRAL, choices: choices(Object.values(ALLEGIANCE), "Lean") },
+  // (Read when the planner opens, to propose friend groups for neutrals: a world setting, not per plan.)
+  neutralReach: { group: "planner", type: Number, default: NEUTRAL_REACH, range: { min: 1, max: 20, step: 1 } },
+  downedModel: { group: "planner", type: String, default: DOWNED_MODELS.SIMULATE, choices: choices(Object.values(DOWNED_MODELS), "Downed") },
+  opening: { group: "planner", type: String, default: OPENING.AUTO, choices: choices(Object.values(OPENING), "Opening") },
+  bystanders: { group: "planner", type: Boolean, default: true },
+  positioning: { group: "planner", type: Boolean, default: true },
+  surpriseDefault: { group: "planner", type: String, default: "system", choices: choices(["system", "none", "friendlySurprised", "friendlySurprise"], "Surprise") },
+
+  // (A party's own default, or "auto": let each character decide.)
+  pcHealAggro: { group: "behavior", type: String, default: "auto", choices: choices(["auto", ...HEAL_AGGRO], "HealAggro") },
+  pcAllyDying: { group: "behavior", type: String, default: "auto", choices: choices(["auto", ...ALLY_DYING], "AllyDying") },
+  leadership: { group: "behavior", type: Boolean, default: true },
+  // How readily followers take their commander's lead (0-100; 50 the usual), and how much more readily a boss's.
+  leaderInfluence: { group: "behavior", type: Number, default: 50, range: { min: 0, max: 100, step: 5 } },
+  bossInfluence: { group: "behavior", type: Number, default: 2, range: { min: 1.25, max: 3, step: 0.05 } },
+  // How much the player party's wishes (its players' votes in the survey's Party tab) sway the friendly side (%).
+  partySway: { group: "behavior", type: Number, default: 3, range: { min: 1, max: 20, step: 1 } },
+  morale: { group: "behavior", type: Boolean, default: true },
+  talking: { group: "behavior", type: Boolean, default: true },
+  ignoreLanguages: { group: "behavior", type: Boolean, default: false },
+
+  concedeLuck: { group: "luck", type: Number, default: CONCEDE_LUCK, range: { min: 0, max: 100, step: 1 } },
+  theftLuck: { group: "luck", type: Number, default: THEFT_LUCK, range: { min: 0, max: 100, step: 1 } },
+  executeLuck: { group: "luck", type: Number, default: EXECUTE_LUCK, range: { min: 0, max: 100, step: 1 } },
+  switchLuck: { group: "luck", type: Number, default: SWITCH_LUCK, range: { min: 0, max: 100, step: 1 } },
+  traitorLuck: { group: "luck", type: Number, default: TRAITOR_LUCK, range: { min: 0, max: 100, step: 1 } },
+  trapLuck: { group: "luck", type: Number, default: TRAP_LUCK, range: { min: 0, max: 100, step: 1 } },
+  // How readily the selfless bear what holds or hurts them, rather than trying to be rid of it.
+  ignoreTroubles: { group: "luck", type: Number, default: IGNORE_TROUBLES, range: { min: 0, max: 100, step: 1 } },
+  // How readily a playstyle's taunt takes hold (only the playstyles': a game system's taunts go by their own rules).
+  tauntLuck: { group: "luck", type: Number, default: TAUNT_LUCK, range: { min: 0, max: 100, step: 1 } },
+  standGround: { group: "luck", type: Number, default: STAND_GROUND, range: { min: 50, max: 90, step: 1 } },
+  avoidKilling: { group: "luck", type: Number, default: AVOID_KILLING, range: { min: 50, max: 90, step: 1 } },
+  // How often a creature set on leaving the fight keeps going when struck or spoken to (behavior/leaving.js).
+  leaveResolve: { group: "luck", type: Number, default: LEAVE_RESOLVE, range: { min: 0, max: 100, step: 1 } },
+  roleplayForgets: { group: "luck", type: Number, default: ROLEPLAY_FORGETS, range: { min: 0, max: 100, step: 1 } },
+  // How often a creature's mind jumps from what it's doing to the strongest thing it wants (behavior/desire.js).
+  adhd: { group: "luck", type: Number, default: ADHD, range: { min: 0, max: 100, step: 1 } },
+
+  aftermath: { group: "after", type: String, default: AFTERMATH.TELL, choices: choices(Object.values(AFTERMATH), "Aftermath") },
+  lootMode: { group: "after", type: String, default: "corpse", choices: choices(["corpse", "pile", "none"], "Loot") },
+  corpseMode: { group: "after", type: String, default: "keep", choices: choices(["keep", "remove"], "Corpse") },
+  fledMode: { group: "after", type: String, default: "hide", choices: choices(["hide", "leave"], "Fled") },
+
   // Troubleshooting: live battles' transcripts kept for 30 days, and the planner's last run with them (off: a transcript
   // goes with its combat; foundry/live-journals.js). A world setting: only a GM changes it.
-  troubleshooting: { type: Boolean, default: false }
+  troubleshooting: { group: "troubleshooting", type: Boolean, default: false },
+
+  genericFallback: { group: "generic", type: Boolean, default: false, requiresReload: false, onChange: () => ui.combat?.render() }
 };
+
+/** The settings window's menus, each a window of its own (scripts/apps/), GMs only unless it says `restricted: false`. */
+const MENUS = {
+  storyTablesMenu: { group: "story", name: "FASTFIGHTING.Story.TablesMenuName", label: "FASTFIGHTING.Story.TablesMenuLabel", hint: "FASTFIGHTING.Story.TablesMenuHint", icon: "fa-solid fa-table-list" },
+  sideDefaultsMenu: { group: "luck", name: "FASTFIGHTING.Settings.sideDefaults.Name", label: "FASTFIGHTING.Settings.sideDefaults.Label", hint: "FASTFIGHTING.Settings.sideDefaults.Hint", icon: "fa-solid fa-people-group" },
+  // Live battles' transcripts: what's kept, exported for a bug report, and cleaned up (GMs only).
+  liveDataMenu: { group: "troubleshooting", name: "FASTFIGHTING.LiveData.MenuName", label: "FASTFIGHTING.LiveData.MenuLabel", hint: "FASTFIGHTING.LiveData.MenuHint", icon: "fa-solid fa-box-archive" },
+  genericPathsMenu: { group: "generic", name: "FASTFIGHTING.Generic.MenuName", label: "FASTFIGHTING.Generic.MenuLabel", hint: "FASTFIGHTING.Generic.MenuHint", icon: "fa-solid fa-route" }
+};
+
+/**
+ * What the settings window shows in each group, in order: [{group, keys}], keys as Foundry names a setting or a menu
+ * (`fast-fighting.<key>`), its settings in SETTINGS' order, then its menus in MENUS'.
+ */
+export function settingsLayout() {
+  const rows = [...Object.entries(SETTINGS), ...Object.entries(MENUS)];
+  return SETTING_GROUPS.map(group => ({ group, keys: rows.filter(([, data]) => data.group === group).map(([key]) => `${MODULE_ID}.${key}`) }));
+}
+
+/**
+ * FastFighting's tab of the settings window in its groups (main.js, renderSettingsConfig): each group a fieldset under
+ * its heading, in settingsLayout's order. One this user isn't shown is skipped, and a group with none shown left out.
+ */
+export function groupSettings(section) {
+  if ( section.querySelector(".ff-settings-group") ) return;
+  for ( const { group, keys } of settingsLayout() ) {
+    const rows = keys.map(id => section.querySelector(`[name="${id}"], [data-key="${id}"]`)?.closest(".form-group")).filter(Boolean);
+    if ( !rows.length ) continue;
+    const fieldset = document.createElement("fieldset");
+    fieldset.className = "ff-settings-group";
+    fieldset.dataset.group = group;
+    const legend = document.createElement("legend");
+    legend.textContent = game.i18n.localize(`FASTFIGHTING.Settings.Group.${group}`);
+    fieldset.append(legend, ...rows);
+    section.append(fieldset);
+  }
+}
 
 /** Who else in this browser follows a setting as it changes, by key (followSetting). */
 const following = {};
@@ -88,14 +140,6 @@ export function followSetting(key, then) {
 }
 
 export function registerSettings(DefaultsConfig, GenericPathsConfig, StoryTablesConfig, LiveDataConfig) {
-  game.settings.registerMenu(MODULE_ID, "storyTablesMenu", {
-    name: "FASTFIGHTING.Story.TablesMenuName",
-    label: "FASTFIGHTING.Story.TablesMenuLabel",
-    hint: "FASTFIGHTING.Story.TablesMenuHint",
-    icon: "fa-solid fa-table-list",
-    type: StoryTablesConfig,
-    restricted: true
-  });
   game.settings.register(MODULE_ID, "genericPaths", { scope: "world", config: false, type: Object, default: {} });
   // The party's roles the GM gave in earlier fights, by actor: {actorId: "leader" | "lt1" | "lt2"}.
   game.settings.register(MODULE_ID, "partyCommand", { scope: "world", config: false, type: Object, default: {} });
@@ -105,15 +149,13 @@ export function registerSettings(DefaultsConfig, GenericPathsConfig, StoryTables
   game.settings.register(MODULE_ID, "liveStore", { scope: "world", config: false, type: String, default: "" });
   // This computer's pace, from its last prediction (engine/run-budget.js paceOf): the planner's estimate goes by it.
   game.settings.register(MODULE_ID, "runPace", { scope: "client", config: false, type: Number, default: 1 });
-  game.settings.registerMenu(MODULE_ID, "genericPathsMenu", {
-    name: "FASTFIGHTING.Generic.MenuName",
-    label: "FASTFIGHTING.Generic.MenuLabel",
-    hint: "FASTFIGHTING.Generic.MenuHint",
-    icon: "fa-solid fa-route",
-    type: GenericPathsConfig,
-    restricted: true
+  game.settings.register(MODULE_ID, "sideDefaults", {
+    scope: "world",
+    config: false,
+    type: Object,
+    default: DEFAULT_SIDE_TRAITS
   });
-  for ( const [key, data] of Object.entries(SETTINGS) ) {
+  for ( const [key, { group, ...data }] of Object.entries(SETTINGS) ) {
     game.settings.register(MODULE_ID, key, {
       name: `FASTFIGHTING.Settings.${key}.Name`,
       hint: `FASTFIGHTING.Settings.${key}.Hint`,
@@ -126,29 +168,10 @@ export function registerSettings(DefaultsConfig, GenericPathsConfig, StoryTables
       }
     });
   }
-  game.settings.register(MODULE_ID, "sideDefaults", {
-    scope: "world",
-    config: false,
-    type: Object,
-    default: DEFAULT_SIDE_TRAITS
-  });
-  game.settings.registerMenu(MODULE_ID, "sideDefaultsMenu", {
-    name: "FASTFIGHTING.Settings.sideDefaults.Name",
-    label: "FASTFIGHTING.Settings.sideDefaults.Label",
-    hint: "FASTFIGHTING.Settings.sideDefaults.Hint",
-    icon: "fa-solid fa-people-group",
-    type: DefaultsConfig,
-    restricted: true
-  });
-  // Live battles' transcripts: what's kept, exported for a bug report, and cleaned up (GMs only).
-  game.settings.registerMenu(MODULE_ID, "liveDataMenu", {
-    name: "FASTFIGHTING.LiveData.MenuName",
-    label: "FASTFIGHTING.LiveData.MenuLabel",
-    hint: "FASTFIGHTING.LiveData.MenuHint",
-    icon: "fa-solid fa-box-archive",
-    type: LiveDataConfig,
-    restricted: true
-  });
+  const windows = { storyTablesMenu: StoryTablesConfig, sideDefaultsMenu: DefaultsConfig, liveDataMenu: LiveDataConfig, genericPathsMenu: GenericPathsConfig };
+  for ( const [key, { group, ...data }] of Object.entries(MENUS) ) {
+    game.settings.registerMenu(MODULE_ID, key, { restricted: true, ...data, type: windows[key] });
+  }
 }
 
 export function setting(key) {

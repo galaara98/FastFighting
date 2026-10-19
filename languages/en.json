@@ -49,6 +49,16 @@
       "Intimidation": "Intimidation"
     },
     "Settings": {
+      "Group": {
+        "live": "Live battles",
+        "story": "Story & chat",
+        "planner": "Planner defaults",
+        "behavior": "How creatures decide",
+        "luck": "Personality & luck",
+        "after": "After the battle",
+        "troubleshooting": "Troubleshooting & data",
+        "generic": "Systems without a helper"
+      },
       "predictionTime": {
         "Name": "Prediction time (seconds)",
         "Hint": "How long the planner simulates fights. More time, more fights and surer odds; a bigger battle fits fewer fights. Changeable per battle."

@@ -2,7 +2,7 @@
  * FastFighting: estimate the outcome of a battle from the tokens on the scene.
  */
 import { MODULE_ID } from "./constants.js";
-import { registerSettings } from "./settings.js";
+import { registerSettings, groupSettings } from "./settings.js";
 import { buildApi, registerAdapter, getAdapter } from "./api.js";
 import { BattlePlanner } from "./apps/battle-planner.js";
 import { DefaultsConfig } from "./apps/defaults-config.js";
@@ -335,6 +335,8 @@ Hooks.on("renderSettingsConfig", (app, element) => {
   const section = root?.querySelector(`section[data-category="${MODULE_ID}"]`);
   if ( !section ) return;
   section.querySelector(".ff-helper-notice")?.remove();
+  // (Its settings and menus in their groups, each under its heading: settings.js.)
+  groupSettings(section);
   // (At its foot, the optional performance survey.)
   section.querySelector(".ff-survey")?.remove();
   section.insertAdjacentHTML("beforeend", surveyHtml());

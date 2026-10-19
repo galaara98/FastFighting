@@ -43,6 +43,14 @@ FastFighting is split into a pure simulation engine, system **helpers**, and the
   `kind` is transcript, plan, store (the old single store) or leftover (a store no longer trusted); `flags` is the module's flags on it, whole; `modules` lists every active FastFighting module, the core and its helpers.
 - **The old single store** (the hidden `liveStore` setting named it): the active GM's next login moves each battle on it into a transcript (`keptAt` the store's last change, the most conservative), then deletes it and clears the setting. Until then, a battle with no transcript is read from it.
 
+### Settings
+
+`scripts/settings.js` registers them. The settings window shows FastFighting's in groups, in `SETTING_GROUPS`' order (`live`, `story`, `planner`, `behavior`, `luck`, `after`, `troubleshooting`, `generic`), each a fieldset under its heading, `FASTFIGHTING.Settings.Group.<id>` (`groupSettings`, from main.js's `renderSettingsConfig`). Foundry has no groups of its own and lists a module's menus before its settings; the grouping puts each where it belongs.
+- **A new setting** is a row of `SETTINGS` naming its `group`, placed in that group's block where it should show: a group shows its settings in the table's order, then its menus. Its words are `FASTFIGHTING.Settings.<key>.Name` and `.Hint`, and README's settings table gives it a row under its group. A new menu is a row of `MENUS` the same way, its window passed to `registerSettings`. A hidden setting (`config: false`) is registered on its own and needs no group.
+- **A new group** goes in `SETTING_GROUPS` where it should show, with its heading in `languages/en.json` and its own table in README.
+- **Keys never change:** a stored value is found by its key alone, so a setting can move to another group, or along one, and keep its value.
+- `tests/settings-groups.test.js` checks that every setting and menu the window shows is in exactly one group, the groups' order, and their headings.
+
 ## Writing a system helper
 
 ```js

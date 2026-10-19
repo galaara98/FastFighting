@@ -301,21 +301,47 @@ The words read in biographies are in [keywords/](keywords/README.md), one file p
 
 ## Settings
 
-World settings, under **Configure Settings → FastFighting**. The planner overrides some for one battle: Seconds, Max rounds, Downed, After the fight, Opening, Surprise, the toolbar toggles, and the side settings (the Neutral lean, healing). The luck settings and those marked (%) are chances out of 100. [STATS_AND_FORMULAS_README.md](STATS_AND_FORMULAS_README.md) gives each number's range and what it changes.
+World settings, under **Configure Settings → FastFighting**, in groups. The planner overrides some for one battle: Seconds, Max rounds, Downed, After the fight, Opening, Surprise, the toolbar toggles, and the side settings (the Neutral lean, healing). The luck settings and those marked (%) are chances out of 100. [STATS_AND_FORMULAS_README.md](STATS_AND_FORMULAS_README.md) gives each number's range and what it changes.
+
+### Live battles
 
 | Setting | Default | What it controls |
 | --- | --- | --- |
-| Use the experimental generic adapter | off | A generic d20 adapter for a system with no helper (see **Generic system data paths**). |
+| Do it For Real Now: play the fight on the map | on | Tokens walk their turns; off, they jump to where each turn leaves them. |
+| Players run their characters | on | Players take their own characters' turns; off, FastFighting plays every turn. |
+| Automatically enable FastFighting during an encounter if a player disconnects for more than: | on | A character left with none of its players connected gets a countdown in the Battle Vantage, and FastFighting plays it when that runs out; off, its turns wait. |
+| …for more than (seconds) | 120 | The countdown (30 to 600). |
+| Apply players' damage | off | A player's damage card against a creature FastFighting runs is applied at once; off, the Battle Vantage asks a GM. Per battle in the planner and the Battle Vantage; greyed out where the system applies players' damage itself. |
+
+### Story & chat
+
+| Setting | Default | What it controls |
+| --- | --- | --- |
+| Story style | Roleplay | How the story is told. |
+| Story delivery | Public | Who sees the story. |
+| Show the odds in the posted story | off | Each side's odds at the story's end. |
+| Story tables (menu) | — | Installs the Roleplay sentences as editable RollTables. |
+
+### Planner defaults
+
+| Setting | Default | What it controls |
+| --- | --- | --- |
 | Prediction time (seconds) | 10 | How long the planner simulates (6 to 60). |
 | Max rounds | 12 | Rounds before a battle is a stalemate. |
 | Include hidden tokens | on | Hidden tokens take part. |
 | Include other scene levels | off | Tokens on the scene's other levels take part. |
-| Bystanders can join | on | Tokens outside the encounter may join. |
-| Positioning and terrain | on | Distances, movement, terrain, walls and elevation. |
 | Neutral tokens | Takes no side (until crossed) | The Neutral side's lean. |
 | Neutral friend groups: reach (squares) | 3 | How near neutrals must be for the planner to group them. |
 | Downed characters | Simulate dying and healing | What 0 HP means. |
-| After the fight | Tend the fallen and tell it | Tending the dying, and telling it. |
+| How encounters open | Talk if they'd rather | Whether a fight opens as a standoff. |
+| Bystanders can join | on | Tokens outside the encounter may join. |
+| Positioning and terrain | on | Distances, movement, terrain, walls and elevation. |
+| Surprise | Follow System | Who is surprised as a fight starts; No one where the system has no surprise rules. |
+
+### How creatures decide
+
+| Setting | Default | What it controls |
+| --- | --- | --- |
 | Default PC healing | Let each character decide | How freely PCs heal. |
 | Default PC response to a dying ally | Let each character decide | What PCs put first when an ally is dying. |
 | Leadership | on | Leaders, bosses and lieutenants. |
@@ -325,37 +351,50 @@ World settings, under **Configure Settings → FastFighting**. The planner overr
 | Morale and routing | on | Wavering and running away. |
 | Talking | on | Talking foes out of the fight. |
 | Ignore languages | off | Anyone who speaks understands everyone who speaks. |
-| How encounters open | Talk if they'd rather | Whether a fight opens as a standoff. |
-| Surprise | Follow System | Who is surprised as a fight starts; No one where the system has no surprise rules. |
+
+### Personality & luck
+
+| Setting | Default | What it controls |
+| --- | --- | --- |
 | PC luck: handing over an item | 39 | A PC losing an item it was talked out of. |
 | PC luck: being robbed | 29 | A thief taking something from a PC. |
 | PC luck: being finished off | 39 | A creature finishing off a PC at 0 HP. |
 | Luck: an enemy changing sides | 69 | An enemy talked into changing sides going through with it. |
 | Luck check: a player character turning traitor | 9 | A PC talked into changing sides going through with it. |
 | Trap avoiders: spotting a trap (%) | 59 | A trap avoider spotting a hazard. |
-| Playstyle taunts: taking hold (%) | 42 | A playstyle's taunt taking hold (a system's taunts follow its rules). |
 | Selfless creatures bear what holds or hurts them (%) | 29 | A selfless creature carrying on regardless. |
+| Playstyle taunts: taking hold (%) | 42 | A playstyle's taunt taking hold (a system's taunts follow its rules). |
 | Doesn't like to flee: how often it stays (%) | 90 | A Fight to the end character resisting its urge to run. |
 | Avoids killing: how often it holds back (%) | 90 | A character that avoids killing holding back from a kill. |
 | Committed to leaving: how often it keeps going (%) | 79 | A leaving creature keeping on when struck or spoken to. |
 | Roleplayers forget opportunity attacks (%) | 33 | A character played for the story forgetting to play safe around opportunity attacks. |
 | ADHD: how often a creature's mind jumps (%) | 20 | A creature dropping what it's doing for its strongest desire. |
-| Story style | Roleplay | How the story is told. |
-| Story delivery | Public | Who sees the story. |
-| Show the odds in the posted story | off | Each side's odds at the story's end. |
+| Side personality defaults (menu) | — | Each side's Tactical, Brave, Selfish and Loyal. |
+
+### After the battle
+
+| Setting | Default | What it controls |
+| --- | --- | --- |
+| After the fight | Tend the fallen and tell it | Tending the dying, and telling it. |
 | Do it For Real Now: loot | Leave on corpse (lootable) | A slain creature's gear (only with a helper that handles loot). |
 | Do it For Real Now: corpses | Keep, marked dead | Slain tokens (only with a helper that handles loot). |
 | Do it For Real Now: fled combatants | Hide token | Tokens that fled. |
-| Do it For Real Now: play the fight on the map | on | Tokens walk their turns; off, they jump to where each turn leaves them. |
-| Players run their characters | on | Players take their own characters' turns; off, FastFighting plays every turn. |
-| Automatically enable FastFighting during an encounter if a player disconnects for more than: | on | A character left with none of its players connected gets a countdown in the Battle Vantage, and FastFighting plays it when that runs out; off, its turns wait. |
-| …for more than (seconds) | 120 | The countdown (30 to 600). |
-| Apply players' damage | off | A player's damage card against a creature FastFighting runs is applied at once; off, the Battle Vantage asks a GM. Per battle in the planner and the Battle Vantage; greyed out where the system applies players' damage itself. |
-| Troubleshooting | off | Keeps each live battle's transcript, and the planner's last run, for 30 days. Off, a transcript goes with its encounter. On, the last run's odds are in the world, where a player who digs could read them. |
 
-Menus: **Story tables** (Manage), **Side personality defaults** (each side's Tactical, Brave, Selfish and Loyal), **Generic system data paths**, and **Live battle data** (each live battle's journal: export one or all, or clean up those over a month old).
+### Troubleshooting & data
+
+| Setting | Default | What it controls |
+| --- | --- | --- |
+| Troubleshooting | off | Keeps each live battle's transcript, and the planner's last run, for 30 days. Off, a transcript goes with its encounter. On, the last run's odds are in the world, where a player who digs could read them. |
+| Live battle data (menu) | — | Each live battle's journal: export one or all, or clean up those over a month old. |
 
 **Reporting a bug?** Turn on **Troubleshooting** first, play or plan the fight again, then export from **Live battle data** and attach the file.
+
+### Systems without a helper
+
+| Setting | Default | What it controls |
+| --- | --- | --- |
+| Use the experimental generic adapter | off | A generic d20 adapter for a system with no helper. |
+| Generic system data paths (menu) | — | Where the generic adapter reads an actor's HP, AC, attack bonus and damage. |
 
 ## Performance survey
 
