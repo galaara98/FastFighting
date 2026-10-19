@@ -2344,6 +2344,7 @@
       "Rewound": "Rewound to {name}'s turn.",
       "SheetUnread": "Couldn't read {name}'s sheet; FastFighting keeps what it last knew. The console says why.",
       "TrackerRefused": "{name} moved the live battle's turn order; FastFighting put it back. Only a GM may, though players can end their own turns.",
+      "SpotlightRefused": "{name} gave the spotlight to a character that isn't theirs; FastFighting put it back. Players can only take it for their own characters.",
       "TooFarBack": "FastFighting doesn't keep turns that far back, so it put the tracker back where it was. Rewind This Encounter can still undo the whole battle.",
       "Play": "Play it",
       "Over": "The battle is over.",

@@ -304,11 +304,13 @@ function queue(work) {
 function onTurnChange(combat, prior, current) {
   // (Prepared, not yet begun: the encounter's start is beginEncounter's.)
   if ( battle?.combat !== combat || battle.data.ended || battle.data.prepared || !playsHere() ) return;
-  // (Moved by a player some other way than ending their own character's turn: put back, and the GM told.)
-  if ( !battle.data.spotlight && !movedRightly(combat, prior, current) ) {
+  // (Moved by a player some other way than ending their own character's turn, or a spotlight given to a creature not
+  // theirs: put back, and the GM told.)
+  if ( !(battle.data.spotlight ? spotlightRightly(combat, prior, current) : movedRightly(combat, prior, current)) ) {
+    const refused = battle.data.spotlight ? "FASTFIGHTING.Live.SpotlightRefused" : "FASTFIGHTING.Live.TrackerRefused";
     queue(async () => {
       await combat.update({ round: prior.round, turn: prior.turn }, { turnEvents: false });
-      ui.notifications.warn(fmt("FASTFIGHTING.Live.TrackerRefused", { name: game.users.get(combat._stats?.lastModifiedBy)?.name ?? "" }));
+      ui.notifications.warn(fmt(refused, { name: game.users.get(combat._stats?.lastModifiedBy)?.name ?? "" }));
       changed();
     });
     return;
@@ -342,6 +344,27 @@ function movedRightly(combat, prior, current) {
   const forward = current.round > prior.round || (current.round === prior.round && (current.turn ?? -1) > (prior.turn ?? -1));
   const was = combat.combatants.get(prior.combatantId);
   return forward && current.round - prior.round <= 1 && !!was?.actor?.testUserPermission(by, "OWNER");
+}
+
+/**
+ * Was a spotlight system's spotlight moved as it may be (spotlightGiven)? Foundry lets anyone set a combat's turn: a
+ * player handing it to a creature FastFighting plays would have the GM's client play that creature's turn.
+ */
+function spotlightRightly(combat, prior, current) {
+  const by = game.users.get(combat._stats?.lastModifiedBy);
+  if ( !by ) return true;
+  return spotlightGiven({ byGM: by.isGM, prior, current, owns: id => !!combat.combatants.get(id)?.actor?.testUserPermission(by, "OWNER") });
+}
+
+/**
+ * The rule for a spotlight (Daggerheart's): a GM gives it to anyone; a player only to a character of their own, as the
+ * system lets them take it, or hands it back from one (to nobody: the GM's to give). Pure: `owns(combatantId)`, does
+ * the one who moved it own that combatant.
+ */
+export function spotlightGiven({ byGM, prior, current, owns }) {
+  if ( byGM ) return true;
+  if ( current?.combatantId ) return !!owns(current.combatantId);
+  return !prior?.combatantId || !!owns(prior.combatantId);
 }
 
 /**

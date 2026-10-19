@@ -1,9 +1,9 @@
 /**
  * What a live battle takes from the players' side only as far as it's theirs (live-battle.js): a damage card applied
- * as the GM saw it; the chat a turn takes (and its Rewind deletes) only its own.
+ * as the GM saw it; the chat a turn takes (and its Rewind deletes) only its own; a spotlight a player gives only to their own.
  */
 import { describe, expect, test } from "vitest";
-import { damageStill, turnCard, strayCards } from "../scripts/foundry/live-battle.js";
+import { damageStill, turnCard, strayCards, spotlightGiven } from "../scripts/foundry/live-battle.js";
 
 describe("players' damage a GM approves", () => {
   const line = { amount: 7, healing: false };
@@ -50,5 +50,25 @@ describe("the chat a roll in a turn takes with it", () => {
     const rightful = m => m.author.isGM || owners[m.speaker.token] === m.author.id;
     const gone = strayCards(messages, { since: 1000, tokens: new Set(["valeros", "goblin"]), rightful });
     expect(gone.map(m => m.id)).toEqual(["gm", "own"]);
+  });
+});
+
+describe("a spotlight system's spotlight", () => {
+  const mine = new Set(["valeros"]);
+  const owns = id => mine.has(id);
+  const at = combatantId => ({ round: 3, turn: combatantId ? 1 : null, combatantId });
+
+  test("a GM gives to anyone", () => {
+    expect(spotlightGiven({ byGM: true, prior: at("valeros"), current: at("dragon"), owns: () => false })).toBe(true);
+  });
+
+  test("a player only to a character of their own, or back from one", () => {
+    expect(spotlightGiven({ byGM: false, prior: at(null), current: at("valeros"), owns })).toBe(true);
+    expect(spotlightGiven({ byGM: false, prior: at("kyra"), current: at("valeros"), owns })).toBe(true);
+    expect(spotlightGiven({ byGM: false, prior: at("valeros"), current: at(null), owns })).toBe(true);
+    // (To a creature FastFighting plays, or another's character; or taken from one that isn't theirs.)
+    expect(spotlightGiven({ byGM: false, prior: at("valeros"), current: at("dragon"), owns })).toBe(false);
+    expect(spotlightGiven({ byGM: false, prior: at(null), current: at("kyra"), owns })).toBe(false);
+    expect(spotlightGiven({ byGM: false, prior: at("dragon"), current: at(null), owns })).toBe(false);
   });
 });
