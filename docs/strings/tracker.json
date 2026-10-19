@@ -48865,6 +48865,16 @@
    "hash": "251affabb07d",
    "changed": true
   },
+  "pf2e:code:scripts/commit.js:tellGiven#1": {
+   "repo": "pf2e",
+   "file": "scripts/commit.js",
+   "key": "scripts/commit.js:tellGiven#1",
+   "area": "pf2e/code",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "d82763d9f5cf"
+  },
   "pf2e:code:scripts/effects.js:fail#1": {
    "repo": "pf2e",
    "file": "scripts/effects.js",
@@ -49107,6 +49117,16 @@
    "commit": null,
    "hash": "bcb89559b759"
   },
+  "pf2e:FFPF2E.CardTarget": {
+   "repo": "pf2e",
+   "file": "languages/en.json",
+   "key": "FFPF2E.CardTarget",
+   "area": "pf2e/General",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "c12fa1f89b6a"
+  },
   "pf2e:FFPF2E.CoreTooOld": {
    "repo": "pf2e",
    "file": "languages/en.json",
@@ -49319,6 +49339,26 @@
    "date": null,
    "commit": null,
    "hash": "0f1415d5db67"
+  },
+  "pf2e:FFPF2E.Given": {
+   "repo": "pf2e",
+   "file": "languages/en.json",
+   "key": "FFPF2E.Given",
+   "area": "pf2e/General",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "1f60bb77d227"
+  },
+  "pf2e:FFPF2E.GivenWaits": {
+   "repo": "pf2e",
+   "file": "languages/en.json",
+   "key": "FFPF2E.GivenWaits",
+   "area": "pf2e/General",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "cb1225024b20"
   },
   "pf2e:FFPF2E.Gullet.Cut": {
    "repo": "pf2e",
