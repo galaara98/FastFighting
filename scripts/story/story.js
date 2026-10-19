@@ -499,7 +499,8 @@ function narrate(e, roll, rel, fill) {
     case "lazy": return roll("condition.lazy", f);
     // (One called, or several: the sentences differ by more than the names.)
     case "callToArms": return roll((e.targets ?? []).length === 1 && hasTable(roll, "maneuver.callToArmsOne") ? "maneuver.callToArmsOne" : "maneuver.callToArms", { ...f, targets: listJoin(e.targets ?? []) });
-    case "notice": return roll({ sight: "maneuver.noticeSight", sound: "maneuver.noticeSound", smell: "maneuver.noticeSmell", feel: "maneuver.noticeFeel", radar: "maneuver.noticeRadar", fledInto: "event.noticeFled", help: "event.noticeHelp", attacked: "event.noticeAttacked", standoff: "event.noticeStandoff" }[e.cause] ?? "event.noticeSound", f);
+    // (The GM's say, "gm", names no sense: told as a sighting, as any cause not listed here is.)
+    case "notice": return roll({ sight: "maneuver.noticeSight", sound: "maneuver.noticeSound", smell: "maneuver.noticeSmell", feel: "maneuver.noticeFeel", radar: "maneuver.noticeRadar", fledInto: "event.noticeFled", help: "event.noticeHelp", attacked: "event.noticeAttacked", standoff: "event.noticeStandoff" }[e.cause] ?? "maneuver.noticeSight", f);
     case "join": return roll(e.why === "forced" ? "event.joinForced" : "event.join", f);
     case "watch": return roll(e.neutral ? "event.watchNeutral" : "event.watch", f);
     case "neutral": {

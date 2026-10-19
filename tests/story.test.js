@@ -87,4 +87,12 @@ describe("story writer", () => {
     const result = replay(spec, pf2eRules, 3);
     expect(buildStory(result, spec, "roleplay", { tables, seed: 3 }).text).toBe(buildStory(result, spec, "roleplay", { tables, seed: 3 }).text);
   });
+
+  test("a bystander the GM says has noticed the fight is told so (engine/live.js's \"gm\" notice)", () => {
+    const spec = { combatants: [{ id: "guard", name: "Guard", hp: { max: 10 } }] };
+    for ( const cause of ["gm", "sight"] ) {
+      const result = { log: [{ type: "notice", cause, actor: "Guard", actorId: "guard", round: 1, turn: 1 }] };
+      expect(buildStory(result, spec, "roleplay", { tables, seed: 1 }).text).toContain("Guard");
+    }
+  });
 });
