@@ -434,12 +434,16 @@ export function spotToShoot(run, u, t, range, most, edgeDistance) {
     cache.map.set(key, null);
     return null;
   }
-  // (Nearest first: the first that will do is the one.)
+  // (Nearest first: the first that will do is the one. Each spot as onGrid has it, its grid found once; one out of
+  // range, nothing more asked of it.)
   let best = null;
+  const ox = ((u.pos.x % STEP) + STEP) % STEP;
+  const oy = ((u.pos.y % STEP) + STEP) % STEP;
   for ( const o of ringOf(most) ) {
-    const p = onGrid(u, u.pos.x + o.dx, u.pos.y + o.dy);
+    const p = { x: Math.round((u.pos.x + o.dx - ox) / STEP) * STEP + ox, y: Math.round((u.pos.y + o.dy - oy) / STEP) * STEP + oy };
+    if ( !(edgeAt(u, p, t) <= range + 0.5) ) continue;
     p.feet = Math.hypot(p.x - u.pos.x, p.y - u.pos.y);
-    if ( edgeDistance({ pos: p, spec: u.spec }, t) <= range + 0.5 && !(p.feet > 0 && inTheWay(run, u, p)) && lineOfSight(run, u, t, p) ) {
+    if ( !(p.feet > 0 && inTheWay(run, u, p)) && lineOfSight(run, u, t, p) ) {
       best = p;
       break;
     }
