@@ -53,13 +53,20 @@ function outcomesOf(action) {
   return [...(action.onSave ?? []), ...(action.onHit ?? []), action.outcome].filter(o => o && typeof o === "object");
 }
 
-/** Is the target immune to this action (its tags or the conditions it imposes)? The system decides. */
+/**
+ * Is the target immune to this action (its tags or the conditions it imposes)? The system decides. Kept for the batch
+ * by the action, the target, and what the target is immune to just now (its iwrKey, which an effect changes).
+ */
 export function isImmune(run, target, action) {
   if ( !action.id ) return immuneNow(run, target, action);
   const cache = run.prep.immuneCache ??= new Map();
-  const key = `${action.id}|${target.id}|${target.iwrKey ?? ""}`;
-  let v = cache.get(key);
-  if ( v === undefined ) cache.set(key, v = immuneNow(run, target, action));
+  let byTarget = cache.get(action.id);
+  if ( !byTarget ) cache.set(action.id, byTarget = new Map());
+  let byIwr = byTarget.get(target.id);
+  if ( !byIwr ) byTarget.set(target.id, byIwr = new Map());
+  const iwrKey = target.iwrKey ?? "";
+  let v = byIwr.get(iwrKey);
+  if ( v === undefined ) byIwr.set(iwrKey, v = immuneNow(run, target, action));
   return v;
 }
 
@@ -149,6 +156,10 @@ export function controlValue(run, u, action, t, attacksMade = 0) {
   if ( action.oncePerTarget && u.triedOn?.has(`${action.id}|${t.id}`) ) return 0;
   // A mark or a hold it's keeping on a foe still standing stays where it is.
   if ( heldElsewhere(run, u, action, t) ) return 0;
+  // (Deep inside another estimate of how dangerous someone is: its damage only. See threatOf. With none, it's worth
+  // nothing there, and nothing more need be worked out: none of it is kept, nor rolls dice.)
+  const inner = (run.threatDepth ?? 0) >= 2;
+  if ( inner && !action.damage?.length ) return 0;
   const rules = run.prep.rules;
   const tier = liveTier(run, u);
   const knows = tier >= TACTICAL.COMPETENT ? 1 : tier === TACTICAL.INSTINCTIVE ? 0.5 : 0;
@@ -156,8 +167,6 @@ export function controlValue(run, u, action, t, attacksMade = 0) {
   const dist = controlDistribution(run, u, t, action, attacksMade);
   // Already under it, from u, with time to run: casting it again gains nothing.
   const fresh = tier >= TACTICAL.INSTINCTIVE && hasFresh(t, action, u.id);
-  // (Deep inside another estimate of how dangerous someone is: its damage only. See threatOf.)
-  const inner = (run.threatDepth ?? 0) >= 2;
   let value = 0;
   if ( !fresh && !inner ) {
     dist.forEach((p, d) => {
