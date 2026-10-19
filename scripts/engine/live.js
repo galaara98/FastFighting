@@ -1497,15 +1497,30 @@ function encode(v, units) {
   return out;
 }
 
+/**
+ * What encode made, as it was (a creature by its id, here `byId`'s). Plain data: an object with no key that begins with
+ * "$" is copied as it goes, field by field (no list of its entries made first: a live battle's turn is restored for
+ * every pass of it); one with such a key is looked at again as encode's mark (marked).
+ */
 function decode(v, byId) {
   if ( v === null || typeof v !== "object" ) return v;
   if ( Array.isArray(v) ) return v.map(x => decode(x, byId));
+  const out = {};
+  for ( const k in v ) {
+    if ( k.charCodeAt(0) === 36 ) return marked(v, byId); // ("$")
+    out[k] = decode(v[k], byId);
+  }
+  return out;
+}
+
+/** An object with a key that begins with "$": encode's mark for a creature, a number JSON can't hold, a Map or a Set. */
+function marked(v, byId) {
   if ( "$unit" in v ) return byId.get(v.$unit) ?? null;
   if ( "$num" in v ) return Number(v.$num);
   if ( "$map" in v ) return new Map(v.$map.map(([k, x]) => [decode(k, byId), decode(x, byId)]));
   if ( "$set" in v ) return new Set(v.$set.map(x => decode(x, byId)));
   const out = {};
-  for ( const [k, x] of Object.entries(v) ) out[k] = decode(x, byId);
+  for ( const k in v ) out[k] = decode(v[k], byId);
   return out;
 }
 
@@ -1565,7 +1580,7 @@ export function restoreRun(spec, rules, snap, { log = null } = {}) {
   for ( const [id, data] of Object.entries(snap.units ?? {}) ) {
     const u = run.byId.get(id);
     if ( !u ) continue;
-    for ( const [k, v] of Object.entries(data) ) u[k] = decode(v, run.byId);
+    for ( const k in data ) u[k] = decode(data[k], run.byId);
   }
   for ( const [k, v] of Object.entries(snap.run ?? {}) ) run[k] = decode(v, run.byId);
   // (What the GM changed of the fight itself, again: hostile groups it gained, chains of command.)
