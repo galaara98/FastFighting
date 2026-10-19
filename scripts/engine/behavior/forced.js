@@ -50,7 +50,8 @@ export function groundOf(run) {
 const cellOf = (map, p) => {
   const i = Math.floor(p.x / map.size);
   const j = Math.floor(p.y / map.size);
-  return { i, j, cell: map.cells.get(`${i},${j}`) ?? null };
+  // (Open level ground everywhere, a map without its ground: no key to look up.)
+  return { i, j, cell: map.cells.size ? map.cells.get(`${i},${j}`) ?? null : null };
 };
 const heightAt = (map, p) => Number(cellOf(map, p).cell?.g) || 0;
 

@@ -495,7 +495,9 @@ export function conditionWeight(rules, conditions = {}) {
 function typicalFoe(run, t) {
   const current = t.targetId ? run.byId.get(t.targetId) : null;
   if ( current && isStanding(current) && areEnemies(run, t, current) ) return current;
-  return enemiesOf(run, t).find(isStanding) ?? null;
+  // (enemiesOf's first standing one, without making the list: asked for every outcome weighed.)
+  for ( const o of run.units ) if ( o !== t && isStanding(o) && !(run.untargetable && o.spec.untargetable) && areEnemies(run, t, o) ) return o;
+  return null;
 }
 
 /** Damage t deals in a round (against `versus`, or a typical foe). */
@@ -566,7 +568,8 @@ function exposedBonus(u) {
 /** Conditions in `conditions` worse than what t already has (the rest change nothing). */
 function freshConditions(t, conditions) {
   const out = {};
-  for ( const [k, raw] of Object.entries(conditions ?? {}) ) {
+  for ( const k in conditions ?? {} ) {
+    const raw = conditions[k];
     const v = raw === true ? 1 : Number(raw) || 0;
     if ( k === "prone" ? !t.prone : v > (t.conds?.[k] ?? 0) ) out[k] = v;
   }
@@ -627,10 +630,13 @@ export function outcomeWorth(run, by, t, outcome, { versus = null } = {}) {
   const grabs = outcome.grab && !(by && t.grabbedBy === by.id);
   // (Its holds there kept up, renew: what they lay, as if fresh, where they'd otherwise end sooner.)
   const kept = outcome.renew && by && by !== t ? keptConditions(run, by, t, outcome) : null;
-  const fresh = { ...freshConditions(t, grabs ? { ...(outcome.conditions ?? {}), grabbed: 1, immobilized: 1 } : outcome.conditions), ...kept };
-  const weighed = {};
+  const laid = freshConditions(t, grabs ? { ...(outcome.conditions ?? {}), grabbed: 1, immobilized: 1 } : outcome.conditions);
+  const fresh = kept ? { ...laid, ...kept } : laid;
+  // (Those weighed by how much of its fighting they take away, in the order they come: made only where there are any.)
+  let weighed = null;
   let held = false;
-  for ( const [k, v] of Object.entries(fresh) ) {
+  for ( const k in fresh ) {
+    const v = fresh[k];
     // Turned against its own side: what it would have done to them, and what it now does for the other.
     if ( k === "controlled" ) {
       perRound -= 2 * out * (outcome.endsOnDamage || outcome.endsOnHarm ? 0.6 : 1);
@@ -638,9 +644,10 @@ export function outcomeWorth(run, by, t, outcome, { versus = null } = {}) {
     }
     // (The core's own conditions, where the system says nothing of them: their bonuses and penalties, and what more
     // they take away; the harm they do each turn, in the system's terms; held inside `by`.)
-    const own = rules.conditionMods?.(k, v) ? null : profileOf(t, k);
-    const asMods = rules.conditionMods?.(k, v) ?? profileMods(own, v, t.coreConds?.scale ?? 1);
-    if ( own && (own.weight || own.act === false) ) weighed[k] = v;
+    const system = rules.conditionMods?.(k, v);
+    const own = system ? null : profileOf(t, k);
+    const asMods = system ?? profileMods(own, v, t.coreConds?.scale ?? 1);
+    if ( own && (own.weight || own.act === false) ) (weighed ??= {})[k] = v;
     if ( own?.harm ) perRound -= harmMean(run, t, k, v, own, by);
     if ( own?.inside && by && by !== t ) held = true;
     if ( outcome.onlyVs && by && by !== t ) {
@@ -650,9 +657,9 @@ export function outcomeWorth(run, by, t, outcome, { versus = null } = {}) {
       perRound += modsPerRound(run, t, { ac: asMods?.ac ?? -2 }, 0, damageOut(run, by, t), { guard: blows });
       if ( !t.conds?.offGuard && !t.prone ) perRound -= exposedBonus(by) * 0.6;
     } else if ( asMods && typeof asMods === "object" ) perRound += modsPerRound(run, t, asMods, out, inc) * (k === "prone" ? PRONE_SHARE : 1);
-    else weighed[k] = v;
+    else (weighed ??= {})[k] = v;
   }
-  if ( Object.keys(weighed).length ) perRound -= conditionWeight(rules, weighed) * out * (outcome.endsOnDamage ? 0.6 : 1);
+  if ( weighed ) perRound -= conditionWeight(rules, weighed) * out * (outcome.endsOnDamage ? 0.6 : 1);
   // Held inside `by` (swallowed, engulfed): it can fight none but `by`, so the blows it would have struck whoever else
   // it's set on are spared them, `by` taking them instead.
   if ( held ) {
@@ -674,8 +681,8 @@ export function outcomeWorth(run, by, t, outcome, { versus = null } = {}) {
     if ( outcome.defy ) perRound += lands * (1 - holds) * modsPerRound(run, t, outcome.defy, out, 0);
   }
   // Resistances it lends: the share of what comes at it that they cover, and how much of each blow they stop.
-  const resist = Object.entries(outcome.iwr?.resist ?? {}).filter(([k, v]) => v > (t.spec.iwr?.resist?.[k] ?? 0));
-  if ( resist.length ) {
+  const resist = outcome.iwr?.resist ? Object.entries(outcome.iwr.resist).filter(([k, v]) => v > (t.spec.iwr?.resist?.[k] ?? 0)) : null;
+  if ( resist?.length ) {
     const physical = resist.filter(([k]) => ["bludgeoning", "piercing", "slashing", "physical"].includes(k)).length;
     const share = Math.min(0.9, (physical ? 0.7 * Math.min(1, physical / 3) * (resist.some(([k]) => k === "physical") ? 3 : 1) : 0) + 0.15 * (resist.length - physical));
     const strength = Math.max(...resist.map(([, v]) => rules.resistShare?.(v) ?? 0.5));
@@ -687,11 +694,12 @@ export function outcomeWorth(run, by, t, outcome, { versus = null } = {}) {
   if ( now > 0 && by === t ) worth += now * out / Math.max(1, unitsPerTurn(rules, t));
   const temp = Number(outcome.tempHp) || 0;
   if ( temp > (t.temp ?? 0) ) worth += Math.min(temp - (t.temp ?? 0), inc * rounds);
-  // Healing over time: what it would mend each turn (beyond what it has already), as far as it's hurt or will be.
-  const mends = Math.max(0, Math.max(Number(outcome.fastHealing) || 0, Number(outcome.regen?.amount) || 0) - Math.max(t.fxHealing ?? 0, t.spec.fastHealing ?? 0, regenOf(t)?.amount ?? 0));
+  // Healing over time: what it would mend each turn (beyond what it has already), as far as it's hurt or will be. (None
+  // to lend, nothing to work out.)
+  const mends = !outcome.fastHealing && !outcome.regen ? 0 : Math.max(0, Math.max(Number(outcome.fastHealing) || 0, Number(outcome.regen?.amount) || 0) - Math.max(t.fxHealing ?? 0, t.spec.fastHealing ?? 0, regenOf(t)?.amount ?? 0));
   if ( mends > 0 && canHeal(t) ) worth += Math.min(mends * rounds, Math.max(0, (t.maxHp ?? 0) - (t.hp ?? 0)) + inc * rounds);
   // Resources it gains (Ironsworn momentum): what the system says they're worth.
-  for ( const [k, v] of Object.entries(outcome.resources ?? {}) ) worth += Number(rules.resourceWorth?.(run, t, k, Number(v) || 0)) || 0;
+  if ( outcome.resources ) for ( const [k, v] of Object.entries(outcome.resources) ) worth += Number(rules.resourceWorth?.(run, t, k, Number(v) || 0)) || 0;
   // Moved (shoved, dragged, put somewhere): what it would do to it there (behavior/forced.js).
   if ( outcome.move && by && by !== t ) worth -= forcedWorth(run, by, t, outcome.move);
   // Its own damage at that degree (PF2e Trip, critically): as dealt.
