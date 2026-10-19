@@ -5659,9 +5659,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Health.annoyed",
    "area": "core/Health",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "written",
+   "date": "2026-10-19",
+   "commit": "8e48d69",
    "hash": "524b1a31d455"
   },
   "core:FASTFIGHTING.Health.bloodied": {
@@ -5669,9 +5669,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Health.bloodied",
    "area": "core/Health",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "written",
+   "date": "2026-10-19",
+   "commit": "8e48d69",
    "hash": "c39958aaab58"
   },
   "core:FASTFIGHTING.Health.nearlyDead": {
@@ -5679,9 +5679,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Health.nearlyDead",
    "area": "core/Health",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "written",
+   "date": "2026-10-19",
+   "commit": "8e48d69",
    "hash": "23e53da178ab"
   },
   "core:FASTFIGHTING.Health.wounded": {
@@ -5689,9 +5689,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Health.wounded",
    "area": "core/Health",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "written",
+   "date": "2026-10-19",
+   "commit": "8e48d69",
    "hash": "cb7d16c1f9d5"
   },
   "core:FASTFIGHTING.Helper.disabled": {
