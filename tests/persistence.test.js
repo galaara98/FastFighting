@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
-import { planHolder, getSetup, saveSetup, clearSetup, sceneEncounter } from "../scripts/foundry/persistence.js";
+import { planHolder, getSetup, saveSetup, clearSetup, sceneEncounter, planDistrust } from "../scripts/foundry/persistence.js";
 import { groupOf, resolveAllegiances, resolveLeans, commandGroup, commandChains, seedCommand, secretTeam, SECRET_TEAMS } from "../scripts/foundry/battle.js";
 
 /** A document that keeps flags, as a Foundry Scene or Combat does. */
@@ -199,5 +199,51 @@ describe("who commands: picked once, when the plan is new or just cleared", () =
     alone.tokens.a = { include: true };
     seedCommand([token("a", 9)], alone, adapter);
     expect(roles(alone)).toEqual({});
+  });
+});
+
+describe("a plan kept on a scene a player owns", () => {
+  test("is read unless a player owns the scene and changed it last", () => {
+    expect(planDistrust({ playerOwned: false, lastByGM: true })).toBe(null);
+    expect(planDistrust({ playerOwned: true, lastByGM: true })).toBe(null);
+    expect(planDistrust({ playerOwned: false, lastByGM: false })).toBe(null);
+    expect(planDistrust({ playerOwned: true, lastByGM: false })).toBe("player");
+  });
+
+  test("written by its player-owner, isn't read: the defaults, and an encounter there starts from them", async () => {
+    const users = [{ id: "gm", isGM: true }, { id: "pat", isGM: false }];
+    game.users = { some: fn => users.some(fn), get: id => users.find(u => u.id === id) };
+    const owners = new Set(["pat"]);
+    Object.assign(scene, { documentName: "Scene", name: "Ambush", _stats: { lastModifiedBy: "gm" }, testUserPermission: u => owners.has(u.id) });
+    const plan = getSetup();
+    plan.options.applyPlayerDamage = true;
+    plan.tokens.goblin = { include: true, fudge: { hp: 50 } };
+    await saveSetup(plan);
+    // (The GM wrote it last: the GM's own plan, on a scene the player owns.)
+    expect(getSetup().tokens.goblin.fudge.hp).toBe(50);
+    // (The player changed the scene since: anything in it may be theirs.)
+    scene._stats.lastModifiedBy = "pat";
+    const warn = console.warn;
+    console.warn = () => {};
+    try {
+      expect(getSetup().tokens).toEqual({});
+      expect(getSetup().options.applyPlayerDamage).not.toBe(true);
+      const encounter = doc("Combat.new", { scene });
+      combats.push(encounter);
+      ui.combat.viewed = encounter;
+      expect(getSetup().tokens).toEqual({});
+      // (An encounter's own plan is the GM's alone.)
+      const own = getSetup();
+      own.tokens.goblin = { include: false };
+      await saveSetup(own);
+      expect(getSetup().tokens.goblin).toEqual({ include: false });
+    } finally {
+      console.warn = warn;
+    }
+    // (No player owns it now: read again.)
+    owners.clear();
+    ui.combat.viewed = null;
+    combats.length = 0;
+    expect(getSetup().tokens.goblin.fudge.hp).toBe(50);
   });
 });

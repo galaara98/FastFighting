@@ -4,7 +4,6 @@
  *    flag on the encounter the planner is tied to (the Combat on the viewed scene), so each encounter has a plan of its
  *    own, kept until the encounter ends (it goes with the Combat). With no encounter on the scene, on the scene.
  *  - Actor flag `fast-fighting.tactics`: a character's tactics answers, carried between battles (foundry/tactics.js).
- *  - Scene flag `fast-fighting.undo`: the last Make it So undo records.
  */
 import { MODULE_ID, SIDES, TRAITS, MAX_ROUNDS, clamp } from "../constants.js";
 import { setting } from "../settings.js";
@@ -71,12 +70,37 @@ export function encounterNumber(combat) {
 export const planHolder = (scene = canvas.scene) => sceneEncounter(scene) ?? scene ?? null;
 
 /**
+ * Is a plan kept on a scene not to be read? A scene's flags are any of its owners' to write, and a plan sets the
+ * battle's options (players' damage applied at once, fudges): one on a scene a player owns, last changed by a player,
+ * is theirs, not the GM's. "player", or null (it's read). (An encounter's plan is a GM's alone: a player may change only
+ * a combat's turn.) Pure: the scene's facts (sceneFacts).
+ * @param {{playerOwned: boolean, lastByGM: boolean}} facts
+ */
+export const planDistrust = ({ playerOwned, lastByGM } = {}) => (playerOwned && !lastByGM ? "player" : null);
+
+/** What planDistrust asks of a scene: does a player own it, and was it last changed by a GM? */
+function sceneFacts(scene) {
+  return {
+    playerOwned: !!game.users?.some?.(u => !u.isGM && !!scene.testUserPermission?.(u, "OWNER")),
+    lastByGM: !!game.users?.get?.(scene._stats?.lastModifiedBy)?.isGM
+  };
+}
+
+/** The plan a document keeps: an encounter's, or a scene's while it's to be read (planDistrust); else null. */
+function keptPlan(doc) {
+  const plan = doc?.getFlag?.(MODULE_ID, "setup") ?? null;
+  if ( !plan || doc.documentName !== "Scene" || !planDistrust(sceneFacts(doc)) ) return plan;
+  console.warn(`${MODULE_ID} | ${doc.name}: its plan was last changed by a player who owns the scene, and isn't read`);
+  return null;
+}
+
+/**
  * The plan, as saved. An encounter with no plan of its own yet starts from its scene's (what the GM set up on the map
  * before the encounter began), else from the defaults: hostile tokens in one group, the GM splitting them.
  * @param {Document} [holder]   the encounter or the scene (planHolder)
  */
 export function getSetup(holder = planHolder()) {
-  const stored = holder?.getFlag(MODULE_ID, "setup") ?? holder?.scene?.getFlag?.(MODULE_ID, "setup") ?? {};
+  const stored = keptPlan(holder) ?? keptPlan(holder?.scene) ?? {};
   const setup = foundry.utils.mergeObject(defaultSetup(), stored, { inplace: false });
   // (A plan saved before the most rounds went to 4 to 12 is held to them.)
   setup.options.maxRounds = clamp(Math.round(Number(setup.options.maxRounds) || MAX_ROUNDS.default), MAX_ROUNDS.min, MAX_ROUNDS.max);
