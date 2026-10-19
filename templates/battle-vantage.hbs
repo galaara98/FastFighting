@@ -108,7 +108,10 @@
             <div>
               <h3>{{focus.name}}{{#if focus.player}} <i class="fa-solid fa-user" data-tooltip="{{localize "FASTFIGHTING.Battle.PlayerRuns"}}"></i>{{/if}}</h3>
               <span class="ff-battle-meta">{{focus.side}} · {{focus.status}} · {{focus.hp}}{{#if focus.waiting}} · {{localize "FASTFIGHTING.Battle.NotInFight"}}{{/if}}</span>
-              <button type="button" class="ff-btn ff-battle-add" data-action="addLine" data-tooltip="{{localize "FASTFIGHTING.Battle.Net.NodeHint"}}"><i class="fa-solid fa-plus"></i> {{localize "FASTFIGHTING.Battle.Net.AddButton"}}</button>
+              <div class="ff-battle-add-row">
+                <button type="button" class="ff-btn ff-battle-add" data-action="addLine" data-tooltip="{{localize "FASTFIGHTING.Battle.Net.NodeHint"}}"><i class="fa-solid fa-plus"></i> {{localize "FASTFIGHTING.Battle.Net.AddButton"}}</button>
+                {{#if focus.away}}<span class="ff-away-timer" data-deadline="{{focus.away.deadline}}" data-tooltip="{{localize "FASTFIGHTING.Battle.AwayTimer"}}"><i class="fa-solid fa-clock"></i> <span class="ff-away-left">{{focus.away.left}}</span></span>{{/if}}
+              </div>
               {{#if focus.playable}}<label class="ff-battle-automate" data-tooltip="{{localize "FASTFIGHTING.Battle.AutomateHint"}}"><input type="checkbox" data-action="automate" {{checked focus.automated}}> {{localize "FASTFIGHTING.Battle.Automate"}}</label>{{/if}}
             </div>
           </div>

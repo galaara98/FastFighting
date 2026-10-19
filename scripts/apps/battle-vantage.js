@@ -6,8 +6,9 @@
  * intensity to raise or lower (0 takes it away). Beside it, the creature in focus (clicked there, or its token
  * selected on the map): what it wants and what's on it, its conditions to put on (engine/conditions.js), and what came
  * of the table's own rolls, put in as the simulation would have it ("Kyra's Diplomacy at it: a success"). A player's
- * character FastFighting isn't playing shows no desires: its player decides. A token on the map not in the battle can
- * be brought into it.
+ * character FastFighting isn't playing shows no desires: its player decides; one with none of its players connected
+ * shows the countdown until FastFighting plays it (foundry/away.js), ticking down beside Add. A token on the map not in
+ * the battle can be brought into it.
  */
 import { NEUTRAL_PARTY, MODULE_ID, SIDES, HOSTILE_GROUPS, GROUPS, SIDE_SETTLE_MS } from "../constants.js";
 
@@ -25,6 +26,7 @@ import { feetOnScene } from "../foundry/terrain.js";
 import { mountNetwork } from "./battle-network.js";
 import { blink, keepTyping } from "./blink.js";
 import { sceneEncounter, encounterNumber } from "../foundry/persistence.js";
+import { clockText } from "../foundry/away.js";
 import {
   liveBattle, continueBattle, rewind, rewindEncounter, beginEncounter, endEncounter, playCurrent, answerDamage, setApplyDamage, systemAppliesText, waitingReaction, endReaction, sheetNow, liveFact, dropHeldFact, setNpcReactions, setPlayThrough, finishReview,
   waitingOnGm, suggestedSpotlight, spotlightNext, settleBattle, setAutomated, liveCondition, liveMind, bringIntoFight, tokenIdOf
@@ -237,6 +239,8 @@ export class BattleVantage extends HandlebarsApplicationMixin(ApplicationV2) {
   #graph = null;
   /** Is the pointer over the window? The map's keys work only then (Delete elsewhere is the canvas's). */
   #hovering = false;
+  /** The away countdown beside Add, ticking (#tick). */
+  #ticking = null;
 
   /** Is the pointer over it (its keys are for it then)? */
   get hovering() {
@@ -324,6 +328,7 @@ export class BattleVantage extends HandlebarsApplicationMixin(ApplicationV2) {
     if ( this.window?.title && this.window.title.textContent !== this.title ) this.window.title.textContent = this.title;
     this.#network?.destroy();
     this.#network = null;
+    this.#tick();
     const root = this.element.querySelector(".ff-net");
     const b = BattleVantage.shown();
     this.#restoreDraft(b);
@@ -345,7 +350,34 @@ export class BattleVantage extends HandlebarsApplicationMixin(ApplicationV2) {
     });
   }
 
+  /**
+   * The away countdown beside Add (the creature in focus has one), ticking down each second: only its own time is
+   * written, not the window. At zero it's gone; the checkbox shows ticked once FastFighting plays the character.
+   */
+  #tick() {
+    clearInterval(this.#ticking);
+    this.#ticking = null;
+    const clock = this.element?.querySelector(".ff-away-timer[data-deadline]");
+    if ( !clock ) return;
+    const deadline = Number(clock.dataset.deadline);
+    const show = () => {
+      const left = deadline - Date.now();
+      if ( left > 0 && clock.isConnected ) {
+        const time = clock.querySelector(".ff-away-left");
+        if ( time ) time.textContent = clockText(left);
+        return;
+      }
+      clock.remove();
+      clearInterval(this.#ticking);
+      this.#ticking = null;
+    };
+    show();
+    if ( clock.isConnected ) this.#ticking = setInterval(show, 1000);
+  }
+
   _onClose(options) {
+    clearInterval(this.#ticking);
+    this.#ticking = null;
     this.#network?.destroy();
     this.#network = null;
     settleSide();
@@ -929,9 +961,12 @@ function panelOf(b, net, nodes, edges, focus, { name, docOf, sideLabel }) {
     ? SLOTS.filter(s => s !== "boss" || u.side !== SIDES.FRIENDLY).map(s => ({ key: s, short: loc(`FASTFIGHTING.Planner.Role.${s}.Short`), label: loc(`FASTFIGHTING.Planner.Role.${s}.Name`), active: place === s }))
     : null;
   const controller = u.controlledBy ? run.byId.get(u.controlledBy) : null;
+  // (None of its players connected: the time left until FastFighting plays it.)
+  const deadline = Object.fromEntries(b.data.awayTimers ?? [])[focus];
+  const away = Number.isFinite(deadline) && deadline > Date.now() && players.has(focus) ? { deadline, left: clockText(deadline - Date.now()) } : null;
   return {
     creature: true, id: focus, name: u.spec.name, img: node.img, side: sideLabel(u.side), status: loc(`FASTFIGHTING.Status.${shownStatus(u)}`), hp: `${shownHp(u)}/${u.maxHp}`,
-    player: players.has(focus), playable, automated: playable && !players.has(focus), decides, waiting: !u.active && u.status === "standing",
+    player: players.has(focus), playable, automated: playable && !players.has(focus), away, decides, waiting: !u.active && u.status === "standing",
     wants: decides ? [] : [...edges.filter(mine), ...symbols.filter(m => ["is-desire", "is-goal", "is-relation"].some(c => m.cls.includes(c)))].map(e => row(e)),
     on: [...edges.filter(onIt), ...symbols.filter(m => m.cls.includes("is-condition") || m.cls.includes("is-status"))].map(e => row(e)),
     wantedBy: edges.filter(wantsMe).map(e => row(e, false)),

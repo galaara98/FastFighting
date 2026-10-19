@@ -67,15 +67,25 @@ const SETTINGS = {
   playOnMap: { type: Boolean, default: true },
   // Do it For Real Now, live: the players run their own characters (FastFighting plays everyone else).
   playersRunPCs: { type: Boolean, default: true },
-  // Live: a character the players run, none of its players connected as its turn begins: FastFighting plays it until one
-  // is back (live-battle.js awayOrBack). Off: its turn waits, as any player's does.
-  absentPlayers: { type: Boolean, default: true },
+  // Live: a player who leaves gives each character of theirs with none of its players left a countdown of this many
+  // seconds (shown in the Battle Vantage); when it runs out, FastFighting plays it (foundry/away.js, live-battle.js).
+  // Off: no countdowns, and those running stop.
+  autoPlayAbsent: { type: Boolean, default: true },
+  autoPlayAbsentSeconds: { type: Number, default: 120, range: { min: 30, max: 600, step: 30 } },
   // Live: a player's damage card against a creature FastFighting runs, applied at once (off: a GM is asked).
   applyPlayerDamage: { type: Boolean, default: false },
   // Troubleshooting: live battles' transcripts kept for 30 days, and the planner's last run with them (off: a transcript
   // goes with its combat; foundry/live-journals.js). A world setting: only a GM changes it.
   troubleshooting: { type: Boolean, default: false }
 };
+
+/** Who else in this browser follows a setting as it changes, by key (followSetting). */
+const following = {};
+
+/** `then(value)` each time the setting changes, in this browser (live-battle.js: the away countdowns). */
+export function followSetting(key, then) {
+  (following[key] ??= []).push(then);
+}
 
 export function registerSettings(DefaultsConfig, GenericPathsConfig, StoryTablesConfig, LiveDataConfig) {
   game.settings.registerMenu(MODULE_ID, "storyTablesMenu", {
@@ -109,7 +119,11 @@ export function registerSettings(DefaultsConfig, GenericPathsConfig, StoryTables
       hint: `FASTFIGHTING.Settings.${key}.Hint`,
       scope: "world",
       config: true,
-      ...data
+      ...data,
+      onChange: value => {
+        data.onChange?.(value);
+        for ( const then of following[key] ?? [] ) then(value);
+      }
     });
   }
   game.settings.register(MODULE_ID, "sideDefaults", {

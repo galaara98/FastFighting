@@ -634,6 +634,8 @@ label.is-disabled, .form-group.is-disabled { opacity: 0.5; }
 .ff-battle-list .is-stub { opacity: 0.7; }
 .ff-battle-who { display: flex; align-items: center; gap: 0.5rem; }
 .ff-battle-add { margin-top: 0.2rem; padding: 0 0.5rem; font-size: 0.85em; width: auto; }
+.ff-battle-add-row { display: flex; align-items: center; gap: 0.5rem; }
+.ff-away-timer { display: inline-flex; align-items: center; gap: 0.25em; margin-top: 0.2rem; font-size: 0.85em; font-variant-numeric: tabular-nums; color: var(--ff-text-dim); }
 .ff-add-line .hint { margin: 0 0 0.4rem; }
 .ff-battle-who img { width: 40px; height: 40px; border: none; object-fit: contain; }
 .ff-battle-meta { display: block; font-size: 0.85em; opacity: 0.8; }

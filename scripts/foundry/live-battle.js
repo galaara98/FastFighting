@@ -13,14 +13,16 @@
  *     for the GMs.
  *   - Rewind Turn puts the last turn back (last first): what it wrote, its cards, its moves, and the run as it was.
  *     Rewind This Encounter puts every turn back.
+ *   - A player who leaves: each character of theirs with none of its players left gets a countdown, and FastFighting
+ *     plays it once that runs out; back for BACK_AFTER_MS, their characters are theirs again (away.js).
  * The run lives in the GM's browser while the battle goes; after every turn it's kept (snapshot, turns) on its
  * transcript, a journal entry only GMs can see (live-journals.js), the combat holding only that a battle is live. A
  * reload picks it up again.
  */
 import { MODULE_ID, STATUS, SIDES, DISPOSITION_SIDES, NEUTRAL_PARTY, HOSTILE_GROUPS } from "../constants.js";
-import { escapeHtml as escape, inertHtml } from "../i18n.js";
+import { escapeHtml as escape, inertHtml, listJoin } from "../i18n.js";
 import { getAdapter, characterSpec } from "../api.js";
-import { setting } from "../settings.js";
+import { setting, followSetting } from "../settings.js";
 import { positionOf, squareFeet } from "./terrain.js";
 import { approachFor, sceneNow } from "./battle.js";
 import { currentPathGrid, pathGridFor, sceneWallGrid } from "./pathing.js";
@@ -37,7 +39,7 @@ import { healthLookup } from "./health-estimate.js";
 import {
   beginLive, liveRound, liveOrder, liveDrop, liveTurn, pcTurnBegin, pcTurnEnd, syncFromSheets, setApproach, setScene, captureAll, snapshotRun, restoreRun, endLive, packLog, followCommand,
   NeedsDecision, rollsKind, applyFact, gmMoment, leavingReach, openingFor, reactNow, movedBeside, nextSpotlight, liveAftermath,
-  setCondition, setRelation, clearRelation, setAffliction, setGoal, setAttitude, setSide, setRole, playerRuns, takeRolls, handOver
+  setCondition, setRelation, clearRelation, setAffliction, setGoal, setAttitude, setSide, setRole, playerRuns, takeRolls
 } from "../engine/live.js";
 import { postRolls, postTally, tallyOf, audiencesFor } from "./table-rolls.js";
 import { chatMessageClass, gmIds } from "./chat.js";
@@ -45,6 +47,7 @@ import { diffAll, sideAfter } from "../engine/changes.js";
 import { undoRecord } from "./sheet-tools.js";
 import { keepUpdate, keptBattle } from "./live-keeping.js";
 import { notedBy } from "./applied-cards.js";
+import { BACK_AFTER_MS, awayTimers, stillAway, dueTimers, handBack, deadlineClocks, joinWaits } from "./away.js";
 import { transcriptOf, newTranscript, oldStore, dropTranscripts, tidyOnLogin } from "./live-journals.js";
 import { randomSeed } from "../engine/rng.js";
 import { holderOf } from "../engine/behavior/troubles.js";
@@ -225,7 +228,8 @@ export async function startLiveBattle(spec, { style = setting("storyStyle"), odd
   const run = beginLive(live, adapter.rules, { seed, players, owns: adapter.liveOwnership?.() ?? {}, npcReactions: "calculated", systemRolls: systemRollKinds(adapter), readsRolls: offers(adapter, "readTurn") });
   // (What the system rolled as the fight was set up, its surprise: shown with the opening.)
   const openingRolls = takeRolls(run);
-  // (Prepared until the encounter begins: no turn played, nothing told.)
+  // (Prepared until the encounter begins: no turn played, nothing told. Another battle held here before it: let go.)
+  letGo();
   battle = {
     combat, scene, spec: live, rules: adapter.rules, run, pc: null,
     data: {
@@ -273,6 +277,8 @@ export function beginEncounter() {
     battle.data.spec = packSpec(battle.spec);
     liveRound(battle.run, combat.round || 1);
     Object.assign(battle.data, { prepared: false, rolled: unrolled, rollCards, startedCombat: started, beganAt: rolledFrom });
+    // (Players not here as it begins: gone since it began.)
+    timersAtStart(rolledFrom);
     const shown = await showRolls(battle.data.openingRolls ?? [], null);
     battle.data.openingRolls = [];
     battle.data.opening = [...shown, ...await tellNew()];
@@ -688,8 +694,6 @@ async function turnBegins(combatant) {
     await moveOn();
     return;
   }
-  // (Its players away: FastFighting plays it, while none of them is here; one back, it's theirs again.)
-  await awayOrBack(u);
   if ( playerRuns(battle.run, u) ) {
     await beginPlayerTurn(u, combatant);
     // (The players' turn: the game goes on, so they can move and roll.)
@@ -699,39 +703,6 @@ async function turnBegins(combatant) {
   // (FastFighting's: paused while it decides, plays it, and waits on the GM's Next Turn.)
   pauseFor(u, false);
   await playTurn(u, combatant, key);
-}
-
-/** Is one of the players who own this creature (or the one controlling it) connected now? */
-function playerHere(u) {
-  const actor = docOf(u.id)?.actor;
-  return !!actor && game.users.some(p => !p.isGM && p.active && actor.testUserPermission(p, "OWNER"));
-}
-
-/**
- * A character the players run, as its turn begins (engine/live.js handOver): none of its players here (the
- * absentPlayers setting on), FastFighting takes it over (battle.data.away) and plays its turns; one of them back, it's
- * theirs again. The GMs are told either way. A GM's own say (setAutomated) settles it instead.
- */
-async function awayOrBack(u) {
-  const players = new Set(battle.data.players ?? []);
-  const away = new Set(battle.data.away ?? []);
-  const owner = battle.run.byId.get(players.has(u.id) || away.has(u.id) ? u.id : u.controlledBy) ?? u;
-  const step = handOver({ id: u.id, controlledBy: u.controlledBy ?? null, players, away, here: playerHere(owner), absentPlayers: setting("absentPlayers") });
-  if ( !step ) return;
-  if ( step.result === "away" ) {
-    players.delete(step.id);
-    away.add(step.id);
-  } else {
-    away.delete(step.id);
-    players.add(step.id);
-  }
-  battle.data.players = [...players];
-  battle.data.away = [...away];
-  playersNow();
-  await keep();
-  changed();
-  const name = battle.run.byId.get(step.id)?.spec.name ?? "";
-  ui.notifications?.info(fmt(step.result === "away" ? "FASTFIGHTING.Live.PlayerAway" : "FASTFIGHTING.Live.PlayerBack", { name }));
 }
 
 /** What a player says of a character's reactions and rerolls (its tactics), for its spec. */
@@ -2740,6 +2711,8 @@ async function finish() {
   const shown = await showRolls(takeRolls(battle.run), last ?? null);
   const messages = [...shown, ...await tellNew()];
   battle.data.ended = true;
+  // (Nothing left to play: no countdowns.)
+  setTimers({});
   const ChatMessage = chatMessageClass();
   const card = await ChatMessage.create({
     content: inertHtml(`<div class="fast-fighting-live"><p>${escape(loc("FASTFIGHTING.Live.Over"))}</p>
@@ -2891,7 +2864,7 @@ export function rewindEncounter() {
     if ( data.startedCombat ) await combat.update({ round: 0, turn: null });
     await combat.unsetFlag(MODULE_ID, "live");
     await forget(combat.id, data.id);
-    battle = null;
+    letGo();
     changed();
     return true;
   });
@@ -3001,34 +2974,47 @@ export function dropHeldFact(index) {
 }
 
 /**
- * A player's character played by FastFighting from now on (`on`), or handed back to its player. In the middle of its
- * own turn: one not acted in yet, FastFighting plays at once; one the player has acted in is theirs to finish, and
- * FastFighting takes over from the next.
+ * A player's character played by FastFighting from now on (`on`), or handed back to its player: the Battle Vantage's
+ * FastFighting plays their turns. The GM's say: its away countdown, if it had one, goes.
  */
 export function setAutomated(id, on) {
   return queue(async () => {
     if ( !battle || !battle.run.byId.has(id) ) return false;
-    const players = new Set(battle.data.players ?? []);
+    const timers = timersNow();
+    if ( id in timers ) {
+      delete timers[id];
+      setTimers(timers);
+    }
+    return automate([id], on);
+  });
+}
+
+/**
+ * Characters played by FastFighting from now on (`on`), or handed back to their players (in the queue). In the middle
+ * of one's own turn: one not acted in yet, FastFighting plays at once; one the player has acted in is theirs to finish,
+ * and FastFighting takes over from the next.
+ */
+async function automate(ids, on) {
+  const players = new Set(battle.data.players ?? []);
+  for ( const id of ids ) {
     if ( on ) players.delete(id);
     else players.add(id);
-    battle.data.players = [...players];
-    // (The GM's say: no longer one taken over for its players being away.)
-    battle.data.away = (battle.data.away ?? []).filter(x => x !== id);
-    playersNow();
-    const pc = battle.pc;
-    if ( on && pc?.id === id && pc.snapshot && !pc.messages.length && !pc.records?.length && !pc.facts?.length ) {
-      battle.run = playersNow(restoreRun(battle.spec, battle.rules, pc.snapshot, { log: battle.run.log }));
-      battle.pc = null;
-      battle.data.played = null;
-      await keep();
-      changed();
-      await turnBegins(battle.combat.combatant);
-      return true;
-    }
+  }
+  battle.data.players = [...players];
+  playersNow();
+  const pc = battle.pc;
+  if ( on && pc && ids.includes(pc.id) && pc.snapshot && !pc.messages.length && !pc.records?.length && !pc.facts?.length ) {
+    battle.run = playersNow(restoreRun(battle.spec, battle.rules, pc.snapshot, { log: battle.run.log }));
+    battle.pc = null;
+    battle.data.played = null;
     await keep();
     changed();
+    await turnBegins(battle.combat.combatant);
     return true;
-  });
+  }
+  await keep();
+  changed();
+  return true;
 }
 
 /** NPC reactions: as FastFighting calculates them ("calculated"), or asked each time ("ask"). */
@@ -3044,6 +3030,146 @@ export async function setPlayThrough(on) {
   battle.data.auto = !!on;
   await keep();
   if ( on && battle.combat.combatant && battle.data.played === turnKey(battle.combat.combatant) ) continueBattle();
+}
+
+/* -------------------------------------------- */
+/*  Players away                                */
+/* -------------------------------------------- */
+
+/**
+ * The players (not GMs) who own each creature in the battle, a summons' own and its summoner's: away.js's characters,
+ * `{id, owners}`. `standing`: only those still in the fight.
+ */
+function ownedUnits({ standing = false } = {}) {
+  const run = battle.run;
+  const ownersOf = (u, seen = new Set()) => {
+    if ( !u || seen.has(u.id) ) return [];
+    seen.add(u.id);
+    const actor = docOf(u.id)?.actor;
+    const own = actor ? game.users.filter(p => !p.isGM && actor.testUserPermission(p, "OWNER")).map(p => p.id) : [];
+    return [...new Set([...own, ...(u.summoner ? ownersOf(run.byId.get(u.summoner), seen) : [])])];
+  };
+  return run.units.filter(u => !standing || !GONE.has(u.status)).map(u => ({ id: u.id, owners: ownersOf(u) }));
+}
+
+/** The players (not GMs) connected now, by id. */
+const connectedPlayers = () => new Set(game.users.filter(p => !p.isGM && p.active).map(p => p.id));
+
+/** The away countdowns, `{id: deadline}` (kept as battle.data.awayTimers, `[[id, deadline]]`: ids as they are). */
+const timersNow = () => Object.fromEntries(battle?.data.awayTimers ?? []);
+
+/** The countdowns from now on: kept with the battle, and run here. True if they changed. */
+function setTimers(timers) {
+  const before = JSON.stringify(battle.data.awayTimers ?? []);
+  battle.data.awayTimers = Object.entries(timers);
+  armClocks();
+  return JSON.stringify(battle.data.awayTimers) !== before;
+}
+
+/** How long a countdown lasts (ms), as the autoPlayAbsentSeconds setting says. */
+const awayMs = () => (Number(setting("autoPlayAbsentSeconds")) || 120) * 1000;
+
+/** One timeout for each countdown, in the browser that plays the battle (timeUp as each runs out). */
+const clocks = deadlineClocks({ due: () => queue(timeUp) });
+
+/** Players joining, handed their characters back once they've stayed BACK_AFTER_MS (handBackTo). */
+const joins = joinWaits({ ms: BACK_AFTER_MS, settled: user => queue(() => handBackTo(user)) });
+
+/** The countdowns run here while this browser plays the battle and it goes on; nowhere else. */
+function armClocks() {
+  if ( battle && playsHere() && !battle.data.ended ) clocks.arm(timersNow());
+  else clocks.clear();
+}
+
+/** This browser holds no battle now: its countdowns and waits stop (the browser that picks it up runs them). */
+function letGo() {
+  battle = null;
+  clocks.clear();
+  joins.clear();
+}
+
+/** A battle going on, played here, its encounter begun: what players coming and going change. */
+const awayMatters = () => !!battle && playsHere() && !battle.data.ended && !battle.data.prepared;
+
+/**
+ * A player left (userConnected): with the autoPlayAbsent setting on, each character of theirs the players run, none of
+ * its players left, gets a countdown (away.js awayTimers). Their characters handed back if they stay: not now.
+ */
+async function playerLeft(userId) {
+  joins.left(userId);
+  if ( !awayMatters() ) return;
+  const timers = awayTimers({
+    units: ownedUnits({ standing: true }), connected: connectedPlayers(), players: new Set(battle.data.players ?? []), timers: timersNow(),
+    user: userId, from: Date.now(), ms: awayMs(), on: !!setting("autoPlayAbsent")
+  });
+  if ( !setTimers(timers) ) return;
+  await keep();
+}
+
+/**
+ * A player joined (userConnected): their characters' countdowns stop at once (away.js stillAway); once they've stayed
+ * BACK_AFTER_MS, the characters of theirs FastFighting plays are handed back (handBackTo).
+ */
+async function playerJoined(userId) {
+  if ( !battle || !playsHere() || battle.data.ended ) return;
+  joins.joined(userId);
+  if ( !battle.data.awayTimers?.length ) return;
+  if ( !setTimers(stillAway({ units: ownedUnits(), connected: connectedPlayers(), timers: timersNow() })) ) return;
+  await keep();
+}
+
+/**
+ * A player who joined BACK_AFTER_MS ago and is still here: every character they own that FastFighting plays (their
+ * summons too) is theirs again, as if a GM had cleared FastFighting plays their turns, however it came to be ticked
+ * (away.js handBack); its countdown, if any, goes. The GMs are told once, by name.
+ */
+async function handBackTo(userId) {
+  const user = game.users.get(userId);
+  if ( !battle || !playsHere() || battle.data.ended || !user?.active || user.isGM ) return;
+  const units = ownedUnits();
+  const ids = handBack({ units, players: new Set(battle.data.players ?? []), user: userId });
+  const stopped = setTimers(stillAway({ units, connected: connectedPlayers(), timers: timersNow() }));
+  if ( !ids.length ) {
+    if ( stopped ) await keep();
+    return;
+  }
+  ui.notifications?.info(fmt("FASTFIGHTING.Live.HandedBack", { player: user.name, names: listJoin(ids.map(id => battle.run.byId.get(id)?.spec.name ?? "")) }));
+  await automate(ids, false);
+}
+
+/**
+ * A countdown ran out (away.js dueTimers): a character still with none of its players connected is FastFighting's to
+ * play from now, as if a GM had ticked FastFighting plays their turns (an untouched open turn of its own, played at
+ * once). The GMs are told once, by name. The setting off since: no countdowns.
+ */
+async function timeUp() {
+  if ( !battle || !playsHere() || battle.data.ended ) return;
+  if ( !setting("autoPlayAbsent") ) {
+    if ( setTimers({}) ) await keep();
+    return;
+  }
+  const { automate: ids, timers } = dueTimers({ units: ownedUnits(), connected: connectedPlayers(), players: new Set(battle.data.players ?? []), timers: timersNow(), now: Date.now() });
+  const stopped = setTimers(timers);
+  if ( !ids.length ) {
+    if ( stopped ) await keep();
+    return;
+  }
+  ui.notifications?.info(fmt("FASTFIGHTING.Live.AwayPlayed", { names: listJoin(ids.map(id => battle.run.byId.get(id)?.spec.name ?? "")) }));
+  await automate(ids, true);
+}
+
+/**
+ * The encounter begins: each character the players run with none of its players connected gets its countdown from
+ * now, as if they had left as it began (the setting on).
+ */
+function timersAtStart(from) {
+  setTimers(awayTimers({ units: ownedUnits({ standing: true }), connected: connectedPlayers(), players: new Set(battle.data.players ?? []), from, ms: awayMs(), on: !!setting("autoPlayAbsent") }));
+}
+
+/** The autoPlayAbsent setting turned off: the countdowns stop. */
+function awaySetting(on) {
+  if ( on || !battle || !playsHere() || !battle.data.awayTimers?.length ) return;
+  if ( setTimers({}) ) keep();
 }
 
 /* -------------------------------------------- */
@@ -3099,6 +3225,9 @@ async function pickUp() {
         syncFromSheets(battle.run, { [data.pc.id]: { position: { x: p.x, y: p.y } } });
       }
     }
+    // (Its countdowns run here now, as they were kept: none with the setting off, nor for one whose player is back.)
+    const timers = setting("autoPlayAbsent") ? stillAway({ units: ownedUnits(), connected: connectedPlayers(), timers: timersNow() }) : {};
+    if ( setTimers(timers) ) keep();
     ui.notifications.info(loc("FASTFIGHTING.Live.PickedUp"));
     return;
   }
@@ -3148,10 +3277,16 @@ export function registerLiveBattles() {
     }
     pickUp();
   });
-  // (Its GM left: the active GM picks it up.)
-  Hooks.on("userConnected", () => {
+  // (Its GM left: the active GM picks it up. A player left or joined: their characters' countdowns start or stop, and
+  // once they've stayed, their characters are theirs again.)
+  Hooks.on("userConnected", (user, connected) => {
     if ( !battle ) pickUp();
+    if ( !user || user.isGM || !game.user.isGM ) return;
+    // (Not in the queue: a countdown starts as they go, even while a turn waits on someone.)
+    if ( connected ) playerJoined(user.id);
+    else playerLeft(user.id);
   });
+  followSetting("autoPlayAbsent", awaySetting);
   // (Another GM rewound it, began another, or picked it up while this one was away: this browser lets go of the one it
   // held, and takes up one that's its own now.)
   // (Foundry's own Begin Encounter, a battle prepared on it: the battle begins with it.)
@@ -3161,14 +3296,14 @@ export function registerLiveBattles() {
   Hooks.on("updateCombat", (combat, changes) => {
     if ( !foundry.utils.hasProperty(changes, `flags.${MODULE_ID}`) ) return;
     if ( battle?.combat === combat && !stillHere() ) {
-      battle = null;
+      letGo();
       changed();
     }
     if ( !battle ) pickUp();
   });
   Hooks.on("deleteCombat", combat => {
     if ( battle?.combat === combat ) {
-      battle = null;
+      letGo();
       changed();
     }
     // (Its transcript goes with it, unless the GM is troubleshooting: live-journals.js.)

@@ -1948,6 +1948,16 @@
    "commit": null,
    "hash": "af129c2f2b1d"
   },
+  "core:FASTFIGHTING.Battle.AwayTimer": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.AwayTimer",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "7f0239cb8e0e"
+  },
   "core:FASTFIGHTING.Battle.BringIn": {
    "repo": "core",
    "file": "languages/en.json",
@@ -6109,6 +6119,16 @@
    "commit": null,
    "hash": "df9d52c79fb5"
   },
+  "core:FASTFIGHTING.Live.AwayPlayed": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Live.AwayPlayed",
+   "area": "core/Live",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "925ae9165e29"
+  },
   "core:FASTFIGHTING.Live.Continue": {
    "repo": "core",
    "file": "languages/en.json",
@@ -6159,6 +6179,16 @@
    "date": null,
    "commit": null,
    "hash": "e70393b74a6a"
+  },
+  "core:FASTFIGHTING.Live.HandedBack": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Live.HandedBack",
+   "area": "core/Live",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "4818c5db72e1"
   },
   "core:FASTFIGHTING.Live.MoveStopped": {
    "repo": "core",
@@ -6248,7 +6278,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "15a3079779f1"
+   "hash": "15a3079779f1",
+   "gone": "2026-10-19"
   },
   "core:FASTFIGHTING.Live.PlayerBack": {
    "repo": "core",
@@ -6258,7 +6289,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "ceb7a3acc0b0"
+   "hash": "ceb7a3acc0b0",
+   "gone": "2026-10-19"
   },
   "core:FASTFIGHTING.Live.ReactionDone": {
    "repo": "core",
@@ -16555,7 +16587,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "0137cd769e50"
+   "hash": "0137cd769e50",
+   "gone": "2026-10-19"
   },
   "core:FASTFIGHTING.Settings.absentPlayers.Name": {
    "repo": "core",
@@ -16565,7 +16598,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "4a52690f47da"
+   "hash": "4a52690f47da",
+   "gone": "2026-10-19"
   },
   "core:FASTFIGHTING.Settings.adhd.Hint": {
    "repo": "core",
@@ -16628,6 +16662,46 @@
    "date": null,
    "commit": null,
    "hash": "3d392fa31fb9"
+  },
+  "core:FASTFIGHTING.Settings.autoPlayAbsent.Hint": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Settings.autoPlayAbsent.Hint",
+   "area": "core/Settings",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "51c987a8c8bf"
+  },
+  "core:FASTFIGHTING.Settings.autoPlayAbsent.Name": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Settings.autoPlayAbsent.Name",
+   "area": "core/Settings",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "94336b6ac990"
+  },
+  "core:FASTFIGHTING.Settings.autoPlayAbsentSeconds.Hint": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Settings.autoPlayAbsentSeconds.Hint",
+   "area": "core/Settings",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "ec9f8ed68135"
+  },
+  "core:FASTFIGHTING.Settings.autoPlayAbsentSeconds.Name": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Settings.autoPlayAbsentSeconds.Name",
+   "area": "core/Settings",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "9517cba7623e"
   },
   "core:FASTFIGHTING.Settings.avoidKilling.Hint": {
    "repo": "core",

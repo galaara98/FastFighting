@@ -226,9 +226,13 @@
         "Name": "Players run their characters",
         "Hint": "In Do it For Real Now, players take their own characters' turns; FastFighting plays everyone else. Off: FastFighting plays every turn. Changeable per battle."
       },
-      "absentPlayers": {
-        "Name": "FastFighting plays absent players' characters",
-        "Hint": "In a live battle, a character whose players aren't connected when its turn comes is played by FastFighting, until one of them is back. Off: its turn waits for someone to play it."
+      "autoPlayAbsent": {
+        "Name": "Automatically enable FastFighting during an encounter if a player disconnects for more than:",
+        "Hint": "In a live battle, a character left with none of its players connected gets a countdown, shown in the Battle Vantage. When it runs out, FastFighting plays their turns. A player who rejoins gets their characters back after 12 seconds."
+      },
+      "autoPlayAbsentSeconds": {
+        "Name": "…for more than (seconds)",
+        "Hint": "How many seconds the countdown lasts (30 to 600; default 120)."
       },
       "ignoreTroubles": {
         "Name": "Selfless creatures bear what holds or hurts them (%)",
@@ -2380,8 +2384,8 @@
       "NoCombat": "There is no combat on this scene to play the battle on.",
       "Failed": "The live battle hit a problem: {error}",
       "Told": "{name}'s Turn is complete.",
-      "PlayerAway": "{name}'s player isn't here: FastFighting plays their turns until they're back.",
-      "PlayerBack": "{name}'s player is back: their turns are theirs again.",
+      "AwayPlayed": "{names}: no player came back in time, so FastFighting plays their turns now.",
+      "HandedBack": "{player} is back and plays {names} again.",
       "NextTurn": "Next Turn",
       "Rewind": "Rewind",
       "Rewound": "Rewound to {name}'s turn.",
@@ -2481,6 +2485,7 @@
       "Spotlight": "Spotlight {name}",
       "Automate": "FastFighting plays their turns",
       "AutomateHint": "FastFighting plays the rest of this character's turns. Clear it to hand them back to their player.",
+      "AwayTimer": "None of this character's players is connected. When this runs out, FastFighting plays their turns.",
       "SpotlightHint": "Give the spotlight to whoever FastFighting would pick next.",
       "ApplyDamage": "Apply players' damage",
       "ApplyDamageHint": "A player's damage card against a creature FastFighting runs is applied at once. Off: it waits here for a GM.",
