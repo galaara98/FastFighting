@@ -487,13 +487,39 @@ export function goingBack(turns, now, key, place) {
  * Rewind This Encounter's last sweep: the chat's roll cards made since the battle began (`since`, ms) by a creature in
  * it (its token, or its actor, by id), that no turn took: a player's roll between turns, a card from before a turn was
  * kept. Only cards: one with a roll, the system's own card (`system`: its flags' key, with a context), or one with a
- * flavor (the heading an action's card has: PF2e's Interact to draw a weapon); words alone stay.
+ * flavor (the heading an action's card has: PF2e's Interact to draw a weapon); words alone stay. And only one its
+ * author may speak for it with (`rightful(m)`: a GM, or one who owns it): anyone can name any speaker on a card.
  */
-export function strayCards(messages, { since, tokens = new Set(), actors = new Set(), system = null } = {}) {
+export function strayCards(messages, { since, tokens = new Set(), actors = new Set(), system = null, rightful = () => true } = {}) {
   if ( !Number.isFinite(since) ) return [];
   return messages.filter(m => (m.timestamp ?? 0) >= since
     && (tokens.has(m.speaker?.token) || actors.has(m.speaker?.actor))
-    && ((m.rolls?.length ?? 0) > 0 || (system && !!m.flags?.[system]?.context) || !!String(m.flavor ?? "").trim()));
+    && ((m.rolls?.length ?? 0) > 0 || (system && !!m.flags?.[system]?.context) || !!String(m.flavor ?? "").trim())
+    && rightful(m));
+}
+
+/**
+ * Is a chat card one a roll in a turn made, to be taken with the turn (and deleted by its Rewind)? One this browser's
+ * user made (`me`: the GM's, rolling it here), or one by a user it was asked of (`players`: a player's character's
+ * owners) speaking for that character (`token` or `actor`, by id). Anything else posted meanwhile, another player's
+ * chat or another GM's, isn't the turn's. Pure: the message's author and speaker.
+ */
+export function turnCard(m, { me, players = new Set(), token = null, actor = null } = {}) {
+  const by = m?.author?.id;
+  if ( !by ) return false;
+  if ( by === me ) return true;
+  const speaks = (!!token && m.speaker?.token === token) || (!!actor && m.speaker?.actor === actor);
+  return players.has(by) && speaks;
+}
+
+/**
+ * The cards a roll for `doc` made, of those posted since `seen` (ids): this browser's own, and its players' speaking
+ * for it (turnCard). `asked`: whether its players could have been asked to roll it (a player's character's).
+ */
+function cardsSince(seen, doc = null, { asked = false } = {}) {
+  const players = asked && doc?.actor ? new Set(game.users.filter(u => !u.isGM && doc.actor.testUserPermission(u, "OWNER")).map(u => u.id)) : new Set();
+  const who = { me: game.user.id, players, token: doc?.id ?? null, actor: doc?.actor?.id ?? null };
+  return game.messages.filter(m => !seen.has(m.id) && turnCard(m, who));
 }
 
 /**
@@ -607,8 +633,8 @@ const chatMessages = () => foundry.documents.ChatMessage ?? globalThis.ChatMessa
 /** How a turn is written onto the sheets, as the world's settings say. */
 const writeOptions = () => ({ live: true, lootMode: setting("lootMode"), corpseMode: setting("corpseMode"), fledMode: setting("fledMode") });
 
-/** The initiative cards rolled since `from` (taken back with the encounter). */
-const initiativeCards = from => game.messages.filter(m => m.timestamp >= from && m.getFlag("core", "initiativeRoll")).map(m => m.id);
+/** The initiative cards rolled here since `from` (taken back with the encounter): this browser's own, never another's. */
+const initiativeCards = from => game.messages.filter(m => m.timestamp >= from && m.getFlag("core", "initiativeRoll") && m.author?.id === game.user.id).map(m => m.id);
 
 /** A creature's token id: its spec's, or (summoned mid-fight) the one made for it. */
 export const tokenIdOf = u => u.tokenId ?? u.spec.tokenId ?? u.id;
@@ -1050,7 +1076,7 @@ async function playGear(events, into) {
     } catch ( err ) {
       console.error(`${MODULE_ID} | getting ${doc.name} ready on its sheet`, err);
     }
-    into.messages.push(...game.messages.filter(m => !seen.has(m.id)).map(m => m.id));
+    into.messages.push(...cardsSince(seen).map(m => m.id));
   }
 }
 
@@ -1062,6 +1088,9 @@ async function playGear(events, into) {
  */
 async function turnRoll(request, events, stage) {
   const seen = new Set(game.messages.keys());
+  // (A save or a check of a player's character may be rolled on its player's screen: theirs, for it, are the turn's too.)
+  const roller = docOf(request.unitId);
+  const asked = (request.roll === "save" || request.roll === "check") && battle.run.live.players.has(request.unitId);
   let out = null;
   await holdingPause(async () => {
     try {
@@ -1080,7 +1109,7 @@ async function turnRoll(request, events, stage) {
       out = null;
     }
   });
-  stage.messages.push(...game.messages.filter(m => !seen.has(m.id)).map(m => m.id));
+  stage.messages.push(...cardsSince(seen, roller, { asked }).map(m => m.id));
   return out;
 }
 
@@ -1103,7 +1132,7 @@ async function rollTurnStrike({ unitId, targetId, action, attackNumber }, stage 
   // engine's sum), else the first damage card it made.)
   if ( raw && Object.hasOwn(raw, "card") ) return { ...out, card: typeof raw.card === "string" && game.messages.get(raw.card) ? raw.card : null };
   const ids = Object.fromEntries(battle.run.units.map(x => [tokenIdOf(x), x.id]));
-  const card = game.messages.contents.filter(m => !seen.has(m.id)).find(m => {
+  const card = cardsSince(seen).find(m => {
     try {
       return adapter.damageCard?.(m, { ids })?.kind === "damage";
     } catch ( err ) {
@@ -1840,12 +1869,18 @@ function answerAsk(data, { user } = {}) {
 /* -------------------------------------------- */
 
 /**
- * Whether a card counts as a player's character's: made by a GM or by one who owns it (anyone can name any speaker on
- * a card, so another player's card at its turn isn't its doing).
+ * Whether a card counts as a player's character's turn's: made in this browser (where the battle plays: a foe's
+ * reaction in it, rolled here), or by a GM or one who owns it, speaking for it (its token or actor). Anyone can name any
+ * speaker on a card, so another player's card at its turn isn't its doing; and nobody else's chat, nor its player's
+ * own words as themselves, is the turn's (Rewind would delete it).
  */
 function madeFor(message, pcId) {
   const author = message.author;
-  return !!author && (author.isGM || !!docOf(pcId)?.actor?.testUserPermission(author, "OWNER"));
+  if ( !author ) return false;
+  if ( author.id === game.user.id ) return true;
+  const doc = docOf(pcId);
+  const speaks = (!!doc && message.speaker?.token === doc.id) || (!!doc?.actor && message.speaker?.actor === doc.actor.id);
+  return speaks && (author.isGM || !!doc.actor?.testUserPermission(author, "OWNER"));
 }
 
 /** What a player's turn left in the chat, as it's made (not FastFighting's own cards). */
@@ -2731,11 +2766,12 @@ export function rewindEncounter() {
     // (Its opening cards, and the combat as it was: not started, the initiative it rolled taken back, and those who
     // joined it on the way gone from it.)
     for ( const id of [...(battle.data.opening ?? []), ...(battle.data.rollCards ?? [])] ) await game.messages.get(id)?.delete();
-    for ( const m of game.messages.filter(x => x.getFlag(MODULE_ID, "live")?.battle === battle.data.id) ) await m.delete();
+    for ( const m of game.messages.filter(x => x.getFlag(MODULE_ID, "live")?.battle === battle.data.id && x.author?.isGM) ) await m.delete();
     // (And whatever else a creature in it rolled since it began, that no turn took.)
     const tokens = new Set(battle.run.units.map(u => tokenIdOf(u)));
     const actors = new Set(battle.run.units.map(u => docOf(u.id)?.actor?.id).filter(Boolean));
-    for ( const m of strayCards(game.messages.contents, { since: battle.data.beganAt, tokens, actors, system: game.system?.id }) ) await m.delete();
+    const rightful = m => !!m.author && (m.author.isGM || !!(battle.scene.tokens.get(m.speaker?.token)?.actor ?? game.actors.get(m.speaker?.actor))?.testUserPermission(m.author, "OWNER"));
+    for ( const m of strayCards(game.messages.contents, { since: battle.data.beganAt, tokens, actors, system: game.system?.id, rightful }) ) await m.delete();
     for ( const uuid of battle.data.joined ?? [] ) {
       try {
         await (await fromUuid(uuid))?.delete();
