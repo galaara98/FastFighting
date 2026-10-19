@@ -96,23 +96,9 @@ function passesAt(u, p, dx, dy, len2, o, t) {
 }
 
 /**
- * What getting past those on the way costs: extra feet (around one, or through one as difficult ground: about its
- * width), and those it would have to tumble past.
- */
-export function pastCost(run, u, list, areEnemies) {
-  let extra = 0;
-  const tumble = [];
-  for ( const { o } of list ) {
-    const how = passOf(run, u, o, areEnemies);
-    if ( how === "around" || how === "difficult" ) extra += sizeOf(o);
-    else if ( how === "tumble" ) tumble.push(o);
-  }
-  return { extra, tumble };
-}
-
-/**
- * The extra feet of getting past those on the line from p to q (pastCost's, of crossed's), without making the list:
- * reckoning a way to every foe, a move's cost is all that's wanted.
+ * The extra feet of getting past those on the line from p to q (those crossed finds), without making the list: around
+ * one, or through one as difficult ground, about its width. Reckoning a way to every foe, a move's cost is all that's
+ * wanted.
  */
 export function crossedExtra(run, u, p, q, t, areEnemies) {
   const dx = q.x - p.x;

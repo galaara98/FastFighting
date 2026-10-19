@@ -819,9 +819,3 @@ export function healAhead(run, u, turn) {
 
 /** Told: the why of a step for later the simulator takes itself (a move toward a friend to heal). */
 export const tellStep = (u, step, say) => tellPrepare(u, step, say);
-
-/** What a spot's worth, part by part, for the planner's reasoning and the tests: u's look ahead, and each part at p. */
-export function spotParts(run, u, p, ctx = lookAhead(run, u)) {
-  const harm = harmAt(run, u, p, ctx);
-  return { offense: offenseAt(run, u, p, ctx), heal: healAt(run, u, p, ctx), guard: guardAt(run, u, p, ctx), hide: hideAt(run, u, p, ctx, harm), harm, worth: spotWorth(run, u, p, ctx) };
-}

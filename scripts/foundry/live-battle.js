@@ -5,7 +5,7 @@
  *     written onto the sheets (adapter.commitChanges), its card is told; then FastFighting waits for the GM's Continue.
  *   - A character a player runs: the player plays the turn. When the tracker moves on, what happened is read (the
  *     system's roll cards, through the helper's readTurn; and the sheets) and told as that turn's card, and the
- *     creatures FastFighting plays feel it as they would have (engine/live.js pcTurn).
+ *     creatures FastFighting plays feel it as they would have (engine/live.js pcTurnBegin and pcTurnEnd).
  *   - A reaction someone must decide (a player's "ask me", or an NPC's when the GM wants to be asked): the turn stops,
  *     the question is put, and the turn is played again from where it began, with the same dice and the answer.
  *   - The dice the engine rolls itself for what the table would roll (damage, a save, a recharge ...) are shown as real

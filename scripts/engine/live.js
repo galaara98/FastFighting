@@ -4,7 +4,8 @@
  * snapshot, so a lost connection loses nothing):
  *   beginLive      the fight set up from the battle as it stands, with who the players run
  *   liveTurn       a simulated turn (an NPC's, or a character the GM lets FastFighting play)
- *   pcTurn         a player's turn, as it went: what was read of it (`observe`) and the sheets as they now are
+ *   pcTurnBegin / pcTurnEnd
+ *                  a player's turn, as it went: what was read of it (`observe`) and the sheets as they now are
  *   syncFromSheets the sheets are the truth for hit points, conditions, resources and where everyone stands
  *   applyFact      what the GM says came of the table's own rolls: a fear, a grudge, a talk, a surrender
  *   mindOf         what a creature wants and feels, for the GM
@@ -168,20 +169,6 @@ export function liveTurn(run, id, { answers = null, salt = 0, nonce = 0, before 
 /** The table rolls the engine's dice made since they were last taken (engine/table-rolls.js), taken: for the live side. */
 export { takeRolls };
 
-/**
- * A player's turn, played at the table: what was read of it (events in the engine's own log shapes: attack, save,
- * auto, heal, talk, move, control, ...), then the sheets as they now are (`states`, as syncFromSheets takes them). A
- * creature the sheets show fallen fell to whoever harmed it this turn. `facts`: what the GM said came of it meanwhile
- * (applyFact's), told with it. Returns {events, ended, changes}. (Begun and ended apart, pcTurnBegin and pcTurnEnd,
- * when something happens in the middle of it: a foe's reaction.)
- */
-export function pcTurn(run, id, events = [], states = null, facts = []) {
-  const from = run.log.length;
-  pcTurnBegin(run, id);
-  const out = pcTurnEnd(run, id, events, states, facts);
-  return { ...out, events: run.log.slice(from) };
-}
-
 /** A player's turn begins: its own dice, and what comes back to it (its reaction; being hurt now, if it was since). */
 export function pcTurnBegin(run, id, { nonce = 0 } = {}) {
   const u = run.byId.get(id);
@@ -197,9 +184,12 @@ export function pcTurnBegin(run, id, { nonce = 0 } = {}) {
 }
 
 /**
- * A player's turn ends: what was read of it, the sheets, the GM's facts (pcTurn's), and what comes after a turn.
- * Returns {events, ended, changes, synced}: `synced` everyone as the sheets had them, before what the engine made of
- * the turn (a death burst, a fact's consequences), for the sheets to be told.
+ * A player's turn, played at the table, ends: what was read of it (`events`, in the engine's own log shapes: attack,
+ * save, auto, heal, talk, move, control, ...), then the sheets as they now are (`states`, as syncFromSheets takes
+ * them; a creature the sheets show fallen fell to whoever harmed it this turn), the GM's facts (what the GM said came of
+ * it meanwhile, applyFact's, told with it), and what comes after a turn. Returns {events, ended, changes, synced}:
+ * `synced` everyone as the sheets had them, before what the engine made of the turn (a death burst, a fact's
+ * consequences), for the sheets to be told.
  */
 export function pcTurnEnd(run, id, events = [], states = null, facts = []) {
   const u = run.byId.get(id);

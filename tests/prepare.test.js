@@ -5,10 +5,10 @@
 import { describe, expect, test } from "vitest";
 import { replay, beginRun, prepareBattle } from "../scripts/engine/simulator.js";
 import { costOf } from "../scripts/engine/turn.js";
-import { gearOf, needsDraw, isLoaded, roundsLoaded, startLoaded, readyUnits, reloadPerUse, initGear, draw, load, fire, used, gearState, syncGear, usable } from "../scripts/engine/gear.js";
+import { gearOf, needsDraw, isLoaded, roundsLoaded, startLoaded, readyUnits, reloadPerUse, initGear, draw, load, fire, used, syncGear, usable } from "../scripts/engine/gear.js";
 import { hasUses } from "../scripts/engine/behavior/evaluate.js";
 import { coverOf, enemiesOf } from "../scripts/engine/battle-state.js";
-import { beginLive, syncFromSheets } from "../scripts/engine/live.js";
+import { beginLive, syncFromSheets, snapshotRun, restoreRun } from "../scripts/engine/live.js";
 import { gearOfSpec } from "../scripts/adapters/adapter-base.js";
 import { combinePlaystyles } from "../scripts/engine/playstyles.js";
 import { parseFormula } from "../scripts/engine/dice.js";
@@ -48,7 +48,6 @@ describe("gear: in hand and loaded (engine/gear.js)", () => {
     expect(costOf(pf2eRules, xbow, u)).toEqual({ actions: 1 });
     fire(u, xbow);
     expect(roundsLoaded(u, xbow)).toBe(0);
-    expect(gearState(u)).toEqual({ inHand: ["xbow"], loaded: { xbow: 0 } });
     syncGear(u, { out: ["xbow"], loaded: { xbow: 1 } });
     expect(needsDraw(u, xbow)).toBe(true);
     expect(isLoaded(u, xbow)).toBe(true);
@@ -82,6 +81,19 @@ describe("gear: in hand and loaded (engine/gear.js)", () => {
     expect(isLoaded(u, xbow)).toBe(true);
     syncFromSheets(run, { harsk: { gear: { out: ["w1"] } } });
     expect(needsDraw(u, xbow)).toBe(true);
+  });
+
+  test("a live battle: what's in hand and loaded survives a snapshot, as every pass of a turn restores one", () => {
+    const xbow = heavyCrossbow({ drawCost: 1, loaded: false });
+    const spec = battle([creature({ id: "harsk", actions: [xbow, fist()] }), post("foe", 60)], { positioning: true });
+    const run = beginLive(spec, pf2eRules, { seed: 1 });
+    const u = run.byId.get("harsk");
+    draw(u, xbow);
+    load(u, xbow);
+    const again = restoreRun(spec, pf2eRules, JSON.parse(JSON.stringify(snapshotRun(run)))).byId.get("harsk");
+    expect([needsDraw(again, xbow), roundsLoaded(again, xbow)]).toEqual([false, 1]);
+    fire(u, xbow);
+    expect(roundsLoaded(restoreRun(spec, pf2eRules, JSON.parse(JSON.stringify(snapshotRun(run)))).byId.get("harsk"), xbow)).toBe(0);
   });
 
   test("used: a potion drunk (drawEach) is gone from the hand", () => {

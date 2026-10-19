@@ -8,7 +8,7 @@
 import { describe, expect, test } from "vitest";
 import { beginRun, beginRound, takeTurn, prepareBattle } from "../scripts/engine/simulator.js";
 import { movesNeeded, moveToward, edgeDistance, currentAc, saveRoll, COVER_POINTS, reachShape } from "../scripts/engine/battle-state.js";
-import { inTheWay, spotWithin, spotToShoot, lineOfSight, sightBlocked, lineBlocked, blockedPoints, coverFrom, crossed, crossesAny, pastCost } from "../scripts/engine/behavior/space.js";
+import { inTheWay, spotWithin, spotToShoot, lineOfSight, sightBlocked, lineBlocked, blockedPoints, coverFrom, crossed, crossesAny, crossedExtra } from "../scripts/engine/behavior/space.js";
 import { areEnemies } from "../scripts/engine/battle-state.js";
 import { snapshotRun } from "../scripts/engine/live.js";
 import { STATUS } from "../scripts/constants.js";
@@ -67,10 +67,10 @@ describe("room", () => {
     const [h, , , t] = get(run, "hero", "ally", "orc", "target");
     const list = crossed(run, h, h.pos, { x: 35, y: 0 }, t);
     expect(list.map(x => x.o.id)).toEqual(["ally", "orc"]);
-    expect(pastCost(run, h, list, areEnemies).extra).toBe(5);
+    expect(crossedExtra(run, h, h.pos, { x: 35, y: 0 }, t, areEnemies)).toBe(5);
     const fivee = fight([who("hero", "friendly", 0), who("ally", "friendly", 10), who("target", "hostile", 40)], { rules: { ...pf2eRules, passThrough: (r, u, o) => (areEnemies(r, u, o) ? "around" : "difficult") } });
     const [h2, , t2] = get(fivee, "hero", "ally", "target");
-    expect(pastCost(fivee, h2, crossed(fivee, h2, h2.pos, { x: 35, y: 0 }, t2), areEnemies).extra).toBe(5);
+    expect(crossedExtra(fivee, h2, h2.pos, { x: 35, y: 0 }, t2, areEnemies)).toBe(5);
   });
 
   test("whether a line crosses any of some creatures: as crossed finds them, for lines every which way", () => {

@@ -1,4 +1,5 @@
 import { parseFormula } from "../scripts/engine/dice.js";
+import { pcTurnBegin, pcTurnEnd } from "../scripts/engine/live.js";
 
 let counter = 0;
 
@@ -66,4 +67,15 @@ export function social({ diplomacy, intimidation, deception, willDC = 17, percep
     resist: { persuade: { dc: willDC, label: "will" }, intimidate: { dc: willDC, label: "will" }, deceive: { dc: perceptionDC, label: "perception" } },
     languages, mindless, ...rest
   };
+}
+
+/**
+ * A player's turn in a live battle, played at once (engine/live.js pcTurnBegin, then pcTurnEnd): what was read of it,
+ * the sheets as they now are, the GM's facts. Returns pcTurnEnd's, its `events` all the turn logged.
+ */
+export function pcTurn(run, id, events = [], states = null, facts = []) {
+  const from = run.log.length;
+  pcTurnBegin(run, id);
+  const out = pcTurnEnd(run, id, events, states, facts);
+  return { ...out, events: run.log.slice(from) };
 }

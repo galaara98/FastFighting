@@ -30,9 +30,6 @@ import { expectedDamage, hasUses, attacksIn } from "./evaluate.js";
 import { controlDistribution, controlOutcome } from "./control.js";
 import { withManeuver } from "../maneuvers.js";
 
-/** The vocabulary, for anyone checking a spec (and the docs). */
-export const REQUIRES = Object.freeze(["holding", "target", "lastHit", "hits", "self", "shieldRaised"]);
-
 /** How much of what a follow-up would do counts toward the option that sets it up: the rest pays for its own action. */
 export const SETUP_SHARE = 0.5;
 

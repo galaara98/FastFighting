@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 import {
-  beginLive, liveRound, liveTurn, pcTurn, pcTurnBegin, pcTurnEnd, leavingReach, reactNow, syncFromSheets, applyFact, mindOf, snapshotRun, restoreRun,
+  beginLive, liveRound, liveTurn, pcTurnBegin, pcTurnEnd, leavingReach, reactNow, syncFromSheets, applyFact, mindOf, snapshotRun, restoreRun,
   NeedsDecision, bandLevel, captureAll, packLog
 } from "../scripts/engine/live.js";
 import { STATUS, SWAY } from "../scripts/constants.js";
@@ -10,7 +10,7 @@ import { moraleStress } from "../scripts/engine/behavior/morale.js";
 import { pf2eRules } from "./fixtures/three-action-rules.js";
 import { genericRules } from "../scripts/adapters/generic/rules.js";
 import { parseFormula, part } from "../scripts/engine/dice.js";
-import { creature, strike, battle, social as talkData } from "./helpers.js";
+import { creature, strike, battle, social as talkData, pcTurn } from "./helpers.js";
 import { goldenOf } from "./golden/battles.js";
 
 const at = (x, y = 0) => ({ x, y, size: 5 });

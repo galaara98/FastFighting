@@ -99,11 +99,6 @@ export function used(u, action) {
   if ( action?.drawEach ) u?.drawn?.delete(gearOf(action));
 }
 
-/** Its gear as the sheet would show it (simulator.js captureUnit): {inHand: [keys], loaded: {key: rounds}}. */
-export function gearState(u) {
-  return { inHand: [...(u.drawn ?? [])].sort(), loaded: Object.fromEntries([...(u.loaded ?? new Map())].sort(([a], [b]) => String(a).localeCompare(String(b)))) };
-}
-
 /**
  * The sheet's word on its gear (a live battle's readLiveState: `gear`), over what the engine had: {inHand: [keys],
  * out: [keys], loaded: {key: rounds}}. Keys it doesn't name stay as they were.
