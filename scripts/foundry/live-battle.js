@@ -130,6 +130,23 @@ function keep() {
   return inTurn(() => keepNow(b));
 }
 
+/**
+ * The world settings the helper's undo records name (Daggerheart's Fear), noted as they come from it in this browser,
+ * "namespace.key": the only ones a Rewind puts back (make-it-so.js revertRecord). Returns the records.
+ */
+function noteSettings(records) {
+  for ( const r of records ?? [] ) {
+    const s = r?.setting;
+    if ( !s || typeof s.namespace !== "string" || typeof s.key !== "string" ) continue;
+    const key = `${s.namespace}.${s.key}`;
+    if ( !(battle.data.settingKeys ??= []).includes(key) ) battle.data.settingKeys.push(key);
+  }
+  return records;
+}
+
+/** What a Rewind of this battle may put back beyond the sheets (revertEntry's options): the settings it noted. */
+const rewinding = () => ({ settings: new Set(battle?.data.settingKeys ?? []) });
+
 async function keepNow(b) {
   if ( !b ) return;
   changed();
@@ -513,7 +530,7 @@ async function followBack(prior) {
     return false;
   }
   await revertOpenTurn();
-  for ( const turn of undoEntries(undo, reopen).reverse() ) await holdingPause(() => revertEntry(battle.scene, turn));
+  for ( const turn of undoEntries(undo, reopen).reverse() ) await holdingPause(() => revertEntry(battle.scene, turn, rewinding()));
   await untally(undo);
   const snapshot = undo[0]?.snapshot ?? battle.pc?.snapshot;
   if ( snapshot ) battle.run = playersNow(restoreRun(battle.spec, battle.rules, snapshot, { log: battle.run.log }));
@@ -919,7 +936,7 @@ async function playTurn(u, combatant, key) {
     await sendOff(result.events, turn);
     // (What the turn did to what the encounter keeps: Daggerheart's Fear.)
     try {
-      turn.records.push(...((await adapter.commitTurn(before, after, { ...writeOptions(), spec: battle.spec, events: result.events })) ?? []));
+      turn.records.push(...noteSettings((await adapter.commitTurn(before, after, { ...writeOptions(), spec: battle.spec, events: result.events })) ?? []));
     } catch ( err ) {
       console.error(`${MODULE_ID} | writing the turn's encounter changes`, err);
     }
@@ -1126,7 +1143,7 @@ async function applyStrike({ targetId, card, applies, multiplier = 1, amount = n
   }
   // (And what the engine makes of it, after the target's resistances: for a system whose own application has none.)
   const options = { multiplier: times, ...(Number.isFinite(amount) ? { amount } : {}), ...reactions };
-  const records = (await getAdapter().applyDamageCard(message, doc, options)) ?? [];
+  const records = noteSettings((await getAdapter().applyDamageCard(message, doc, options)) ?? []);
   stage.records.push(...records);
   const now = await standing(u);
   return was !== null && now !== null ? { lost: Math.max(0, was - now) } : null;
@@ -1235,7 +1252,7 @@ async function revertOpenTurn() {
   const messages = [...(pc.messages ?? []), ...(pc.rollCards ?? [])];
   pc.messages = [];
   pc.rollCards = [];
-  if ( records.length || messages.length ) await holdingPause(() => revertEntry(battle.scene, { records, messages }));
+  if ( records.length || messages.length ) await holdingPause(() => revertEntry(battle.scene, { records, messages }, rewinding()));
 }
 
 /** Each player's turn's sheets as it began (captureSheets), in this browser. */
@@ -1946,7 +1963,7 @@ async function applyDamage(pc, message, u, multiplier = 1) {
   let records;
   applying++;
   try {
-    records = (await getAdapter().applyDamageCard(message, doc, { multiplier })) ?? [];
+    records = noteSettings((await getAdapter().applyDamageCard(message, doc, { multiplier })) ?? []);
     pc.records.push(...records);
     await markFallen(pc, u);
   } catch ( err ) {
@@ -2280,7 +2297,7 @@ async function placeSummons(records) {
       console.error(`${MODULE_ID} | placing what ${doc.name} summoned`, err);
       continue;
     }
-    records.push(...(placed?.records ?? []));
+    records.push(...noteSettings(placed?.records ?? []));
     const tokens = placed?.tokens ?? [];
     tokens.forEach((t, i) => { if ( list[i] ) list[i].tokenId = t.id; });
     if ( !tokens.length ) continue;
@@ -2313,7 +2330,7 @@ async function writeChanges(before, after, records) {
       const record = await adapter.commitChanges(doc, spec, ch, after[id], {
         ...writeOptions(), before: before[id], effectSource
       });
-      if ( record ) records.push(record);
+      if ( record ) records.push(...noteSettings([record]));
       // (Won over, talked out of the fight, turned on the party: its token shows it, whatever its system wrote.)
       const side = ch.side ? sideAfter(after[id]) : null;
       const disposition = side ? CONST.TOKEN_DISPOSITIONS[{ friendly: "FRIENDLY", hostile: "HOSTILE", neutral: "NEUTRAL" }[side]] : undefined;
@@ -2324,7 +2341,7 @@ async function writeChanges(before, after, records) {
       // (Tied up this turn: marked on the sheet, the system's way.)
       if ( ch.bound !== undefined ) {
         const marked = await adapter.commitBound(doc, ch.bound);
-        if ( marked ) records.push(marked);
+        if ( marked ) records.push(...noteSettings([marked]));
       }
       for ( const c of ch.concessions ?? [] ) {
         if ( c.kept || !adapter.commitConcession ) continue;
@@ -2332,7 +2349,7 @@ async function writeChanges(before, after, records) {
         // (The giver's side, for what it shares: Ironsworn's Supply.)
         const giver = battle.run.byId.get(id);
         const allies = battle.run.units.filter(u => u !== giver && u.side === giver.side).map(u => docOf(u.id)).filter(Boolean);
-        records.push(...((await adapter.commitConcession(doc, to ?? null, c, { giver: spec, receiver: to ? battle.run.byId.get(c.to)?.spec : null, allies })) ?? []));
+        records.push(...noteSettings((await adapter.commitConcession(doc, to ?? null, c, { giver: spec, receiver: to ? battle.run.byId.get(c.to)?.spec : null, allies })) ?? []));
       }
     } catch ( err ) {
       console.error(`${MODULE_ID} | writing ${doc.name}'s changes`, err);
@@ -2630,7 +2647,7 @@ export function rewindTurn() {
     if ( !turn?.snapshot ) return false;
     // (A player's turn under way after it: what a foe's reaction wrote in it comes off first.)
     await revertOpenTurn();
-    await holdingPause(() => revertEntry(battle.scene, turn));
+    await holdingPause(() => revertEntry(battle.scene, turn, rewinding()));
     await untally([turn]);
     battle.run = playersNow(restoreRun(battle.spec, battle.rules, turn.snapshot, { log: battle.run.log }));
     battle.data.turns = battle.data.turns.slice(0, -1);
@@ -2682,9 +2699,9 @@ export function rewindEncounter() {
     if ( !battle ) return false;
     // (A player's turn still open: what it changed, by hand and by FastFighting, first.)
     await revertOpenTurn();
-    for ( const turn of undoEntries(battle.data.turns).reverse() ) await holdingPause(() => revertEntry(battle.scene, turn));
+    for ( const turn of undoEntries(battle.data.turns).reverse() ) await holdingPause(() => revertEntry(battle.scene, turn, rewinding()));
     // (What the GM changed before the first turn.)
-    if ( battle.data.gmRecords?.length ) await holdingPause(() => revertEntry(battle.scene, { records: battle.data.gmRecords }));
+    if ( battle.data.gmRecords?.length ) await holdingPause(() => revertEntry(battle.scene, { records: battle.data.gmRecords }, rewinding()));
     const combat = battle.combat;
     // (Its opening cards, and the combat as it was: not started, the initiative it rolled taken back, and those who
     // joined it on the way gone from it.)

@@ -385,11 +385,6 @@
 .fast-fighting-beat header { font-weight: 400; font-size: var(--font-size-11, 11px); color: var(--color-text-secondary, inherit); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 2px; }
 .fast-fighting-beat p:last-child, .fast-fighting-beat ul:last-child { margin-bottom: 0; }
 
-/* ---------- A fight still playing, or cut short ---------- */
-.ff-playback { display: flex; gap: 8px; align-items: center; padding: 6px 10px; margin: 0 0 6px; border-radius: 6px; font-size: 12px;
-  border: 1px solid var(--ff-down); background: color-mix(in srgb, var(--ff-down) 15%, transparent); }
-.ff-playback > i { color: var(--ff-down); }
-
 /* ---------- Missing helper ---------- */
 .ff-helper-notice { display: flex; gap: 10px; align-items: flex-start; padding: 8px 10px; margin: 0 0 8px; border-radius: 6px;
   border: 1px solid #c98a1c; background: color-mix(in srgb, #c98a1c 15%, transparent); font-size: 12px; }

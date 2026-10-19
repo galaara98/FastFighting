@@ -3,9 +3,8 @@
  * story cards (postBeat, postStory), undo records (revertRecord, revertEntry), and
  * the Sample tab's list of what a fight changes (planMakeItSo).
  *
- * And what's left of the whole-fight playback FastFighting played before live battles: the fights it played can still
- * be rewound (each scene keeps its last few, newest first: from their summary cards, or the planner), and one a crash
- * cut short, though no longer continued.
+ * (The whole-fight playback of 0.1 to 0.2.5 kept its undo records on the scene, flags `undo` and `playback`, and on its
+ * summary cards. Nothing reads them now: a scene's flags are any of its owners' to write.)
  */
 import { statusesOf, statusEntry } from "./sheet-tools.js";
 import { MODULE_ID } from "../constants.js";
@@ -16,34 +15,6 @@ import { pixelsFor, sceneDistance, squareFeet } from "./terrain.js";
 import { concessionText } from "../story/story.js";
 
 const loc = key => game.i18n.localize(key);
-const UNDO_DEPTH = 5;
-/** The most chat messages after a played fight's summary for its Rewind to still work: further back, it's history. */
-export const UNDO_REACH = 10;
-
-/**
- * Undo entries for a scene, newest first (older worlds stored a single entry). Only a scene a GM last wrote: one a
- * player owns, and wrote, could hold records a GM's Undo would run.
- */
-function undoStack(scene) {
-  const stored = scene?.getFlag(MODULE_ID, "undo");
-  if ( !stored ) return [];
-  if ( scene._stats?.lastModifiedBy && !game.users.get(scene._stats.lastModifiedBy)?.isGM ) {
-    console.warn(`${MODULE_ID} | ${scene.name}: its undo records were last written by a player, and aren't trusted`);
-    return [];
-  }
-  if ( Array.isArray(stored.stack) ) return stored.stack;
-  return (stored.records || stored.moves || stored.messages || stored.doors) ? [stored] : [];
-}
-
-async function writeStack(scene, stack) {
-  if ( stack.length ) await scene.update({ [`flags.${MODULE_ID}.==undo`]: { stack: stack.slice(0, UNDO_DEPTH) } });
-  else await scene.unsetFlag(MODULE_ID, "undo");
-}
-
-/** A fight the old playback left unfinished on a scene (a crash, a lost connection): what it had done. */
-export function unfinishedPlayback(scene = canvas.scene) {
-  return scene?.getFlag(MODULE_ID, "playback") ?? null;
-}
 
 /** Feet between the token's current center and the engine's final position. */
 function feetMoved(spec, final) {
@@ -359,57 +330,20 @@ export async function revealStory(message) {
   return true;
 }
 
-/** Is there a played fight to rewind here (and none cut short: that has its own Rewind)? */
-export function hasUndo(scene = canvas.scene) {
-  return undoStack(scene).length > 0 && !unfinishedPlayback(scene);
-}
-
 /**
- * Can this summary card's fight be rewound: "ok" (the latest on its scene, and recent in the chat); "later" (not
- * the latest: a later one on the same scene stands on it); "buried" (more than UNDO_REACH messages since, in the
- * chat); "gone" (no longer kept: undone already, or too many since). Only "ok" undoes anything.
+ * Put one undo record back: created documents removed, deleted ones restored, changed values reset.
+ * An undo record is data, and Rewind runs it with a GM's rights, so it does only what FastFighting's own records do:
+ * each thing it names only of the kind they name, and on the battle's scene (`scene`, where given); an actor it would
+ * delete only one FastFighting brought in for a summoning (a GM's copy of a compendium's, no player's); a world setting
+ * only one of the system's that FastFighting recorded itself (`settings`); a token restored owned as its actor is; and
+ * of a player, only flags, FastFighting's or the system's (DCC's Fleeting Luck).
+ * @param {object} r
+ * @param {object} [options]
+ * @param {Scene} [options.scene]          the scene it was recorded on
+ * @param {Set<string>} [options.settings] "namespace.key" of each world setting FastFighting recorded
  */
-export function cardUndoState(message) {
-  const data = message?.getFlag(MODULE_ID, "undoFight");
-  const scene = game.scenes.get(data?.sceneId);
-  const stack = undoStack(scene);
-  const at = stack.findIndex(e => e.id && e.id === data?.id);
-  if ( at < 0 ) return "gone";
-  // (One cut short on the scene stands on it too.)
-  if ( at > 0 || unfinishedPlayback(scene) ) return "later";
-  const since = (game.messages?.contents ?? []).filter(m => m.timestamp > message.timestamp).length;
-  return since > UNDO_REACH ? "buried" : "ok";
-}
-
-/** Each played fight's summary in the chat drawn again (its Rewind works, or not, as things stand now). */
-export function refreshUndoCards() {
-  if ( !game.user.isGM ) return;
-  for ( const m of game.messages?.contents ?? [] ) if ( m.getFlag(MODULE_ID, "undoFight") ) ui.chat?.updateMessage?.(m);
-}
-
-/** Rewind from a summary card in the chat: the fight it reports, on its own scene, once the GM confirms. */
-export async function undoFromCard(message) {
-  if ( !game.user.isGM || !ownCard(message) ) return false;
-  // (Not the latest on its scene, or too far back in the chat: nothing happens.)
-  if ( cardUndoState(message) !== "ok" ) return false;
-  const scene = game.scenes.get(message.getFlag(MODULE_ID, "undoFight").sceneId);
-  const ok = await foundry.applications.api.DialogV2.confirm({
-    window: { title: loc("FASTFIGHTING.MakeItSo.UndoTitle") },
-    content: `<p>${foundry.utils.escapeHTML(game.i18n.format("FASTFIGHTING.MakeItSo.UndoConfirmScene", { scene: scene.name }))}</p>`
-  });
-  if ( !ok || cardUndoState(message) !== "ok" ) return false;
-  await undoMakeItSo(scene);
-  ui.notifications.info(loc("FASTFIGHTING.MakeItSo.Undone"));
-  return true;
-}
-
-/**
- * The statuses on an actor, read from its effects too: a system that applies effects its own way (dcc) may leave
- * actor.statuses empty.
- */
-
-/** Put one undo record back: created documents removed, deleted ones restored, changed values reset. */
-export async function revertRecord(r) {
+export async function revertRecord(r, { scene = null, settings = null } = {}) {
+  if ( !r || typeof r !== "object" ) return;
   // Each step on its own: one that fails (a status the server has already dropped, say) mustn't stop the rest.
   const step = async (what, fn) => {
     try {
@@ -418,13 +352,18 @@ export async function revertRecord(r) {
       console.error(`${MODULE_ID} | undo: ${what} failed`, r, err);
     }
   };
-  // (An undo record is data: each thing it names only of the kind FastFighting's own records name, and an actor it
-  // would delete only one FastFighting brought in for a summoning: a GM's copy of a compendium's, no player's.)
   const of = async (uuid, type) => (typeof uuid === "string" && foundry.utils.parseUuid(uuid)?.type === type ? fromUuid(uuid) : null);
+  // (On the scene: a token or a region its own; a combatant one of a combat there, or of none.)
+  const here = doc => !!doc && (!scene || doc.parent?.id === scene.id);
+  const inCombat = combat => !!combat && (!scene || !combat.scene || combat.scene.id === scene.id);
+  const ofHere = async (uuid, type) => {
+    const doc = await of(uuid, type);
+    return (type === "Combatant" ? inCombat(doc?.parent) : here(doc)) ? doc : null;
+  };
   const summoned = a => !!a && !a.hasPlayerOwner && !!a._stats?.compendiumSource && !!game.users.get(a._stats?.createdBy)?.isGM;
-  for ( const uuid of r.createdCombatants ?? [] ) await step("removing a combatant", async () => (await of(uuid, "Combatant"))?.delete());
-  for ( const uuid of r.createdRegions ?? [] ) await step("removing an area", async () => (await of(uuid, "Region"))?.delete());
-  for ( const uuid of r.createdTokens ?? [] ) await step("removing a token", async () => (await of(uuid, "Token"))?.delete());
+  for ( const uuid of r.createdCombatants ?? [] ) await step("removing a combatant", async () => (await ofHere(uuid, "Combatant"))?.delete());
+  for ( const uuid of r.createdRegions ?? [] ) await step("removing an area", async () => (await ofHere(uuid, "Region"))?.delete());
+  for ( const uuid of r.createdTokens ?? [] ) await step("removing a token", async () => (await ofHere(uuid, "Token"))?.delete());
   for ( const uuid of r.createdActors ?? [] ) {
     await step("removing an actor", async () => {
       const a = await of(uuid, "Actor");
@@ -432,16 +371,24 @@ export async function revertRecord(r) {
     });
   }
   for ( const t of r.deletedTokens ?? [] ) {
-    await step("restoring a token", async () => (await of(t.parentUuid, "Scene"))?.createEmbeddedDocuments("Token", [tokenData(t.data)], { keepId: true }));
+    await step("restoring a token", async () => {
+      const at = await of(t?.parentUuid, "Scene");
+      if ( at && (!scene || at.id === scene.id) ) await at.createEmbeddedDocuments("Token", [tokenData(t.data)], { keepId: true });
+    });
   }
   // (One the fight took off the tracker, gone off the map: back on it, as it was.)
   for ( const c of r.deletedCombatants ?? [] ) {
-    await step("restoring a combatant", async () => (await of(c.parentUuid, "Combat"))?.createEmbeddedDocuments("Combatant", [c.data], { keepId: true, turnEvents: false }));
+    await step("restoring a combatant", async () => {
+      const combat = await of(c?.parentUuid, "Combat");
+      if ( inCombat(combat) ) await combat.createEmbeddedDocuments("Combatant", [c.data], { keepId: true, turnEvents: false });
+    });
   }
-  // (A world setting the system keeps a pool in: Daggerheart's Fear, the GM's.)
-  // (Only the system's own: an undo record is data, and never a way to change the core's or another module's settings.)
-  if ( r.setting && r.setting.namespace === game.system.id ) await step("restoring a setting", () => game.settings.set(r.setting.namespace, r.setting.key, r.setting.value));
-  const tokenDoc = r.tokenUuid ? await of(r.tokenUuid, "Token") : null;
+  // (A world setting the system keeps a pool in: Daggerheart's Fear, the GM's. Only the system's own, and only one
+  // FastFighting recorded itself: never a way to change the core's, another module's, or the system's configuration.)
+  if ( settingRestored(r.setting, settings, game.system.id) ) {
+    await step("restoring a setting", () => game.settings.set(r.setting.namespace, r.setting.key, r.setting.value));
+  }
+  const tokenDoc = r.tokenUuid ? await ofHere(r.tokenUuid, "Token") : null;
   const actor = tokenDoc?.actor ?? (r.actorUuid ? await of(r.actorUuid, "Actor") : null);
   if ( !actor ) return;
   if ( r.createdItems?.length ) {
@@ -455,7 +402,7 @@ export async function revertRecord(r) {
   }
   // (One a turn took off, such as a spell's effect that ended: put back as it was.)
   if ( r.deletedEffects?.length ) await step("restoring effects", () => actor.createEmbeddedDocuments("ActiveEffect", r.deletedEffects, { keepId: true }));
-  for ( const { id, update } of r.itemUpdates ?? [] ) await step("restoring an item", () => actor.items.get(id)?.update(update));
+  for ( const { id, update } of r.itemUpdates ?? [] ) await step("restoring an item", () => actor.items.get(id)?.update(withoutOwnership(update)));
   for ( const s of r.statuses ?? [] ) {
     if ( statusesOf(actor).has(s.id) === s.active ) continue; // already as it was
     await step(`status ${s.id}`, () => actor.toggleStatusEffect(s.id, { active: s.active, overlay: s.overlay }));
@@ -472,11 +419,27 @@ export async function revertRecord(r) {
   }
   const tokenUpdate = tokenFields(r.tokenUpdate);
   if ( tokenUpdate && tokenDoc ) await step("restoring the token", () => tokenDoc.update(tokenUpdate));
-  // (A player's own, such as DCC's Fleeting Luck.)
-  // (A player's flags, such as DCC's Fleeting Luck: nothing else of a user's, their role least of all.)
-  const flagsOnly = Object.fromEntries(Object.entries(foundry.utils.flattenObject(r.userUpdate ?? {})).filter(([k]) => k.startsWith("flags.")));
-  if ( r.userId && Object.keys(flagsOnly).length ) await step("restoring a player's", () => game.users.get(r.userId)?.update(flagsOnly));
-  if ( r.combatant ) await step("the combat tracker", async () => (await of(r.combatant.uuid, "Combatant"))?.update({ defeated: !!r.combatant.defeated }));
+  // (A player's flags, such as DCC's Fleeting Luck: FastFighting's and the system's, nothing else of a user's, their
+  // role least of all; and a player's, never a GM's.)
+  const user = typeof r.userId === "string" ? game.users.get(r.userId) : null;
+  const flags = userFlags(r.userUpdate, game.system.id);
+  if ( user && !user.isGM && Object.keys(flags).length ) await step("restoring a player's", () => user.update(flags));
+  if ( r.combatant ) await step("the combat tracker", async () => (await ofHere(r.combatant.uuid, "Combatant"))?.update({ defeated: !!r.combatant.defeated }));
+}
+
+/**
+ * Does an undo record's world setting go back? Only the system's own (`system`, its id), and only one FastFighting
+ * recorded itself (`recorded`: a Set of "namespace.key"; none given, none).
+ */
+export function settingRestored(setting, recorded, system) {
+  if ( !setting || typeof setting !== "object" || typeof setting.key !== "string" || !system || setting.namespace !== system ) return false;
+  return !!recorded?.has?.(`${setting.namespace}.${setting.key}`);
+}
+
+/** What of a player an undo record puts back: flags in FastFighting's namespace or the system's (`system`), flattened. */
+export function userFlags(update, system) {
+  const ok = k => k.startsWith(`flags.${MODULE_ID}.`) || (!!system && k.startsWith(`flags.${system}.`));
+  return Object.fromEntries(Object.entries(foundry.utils.flattenObject(update ?? {})).filter(([k]) => ok(k)));
 }
 
 /** What of an actor an undo record puts back: its system's data, and FastFighting's and the system's flags; nothing else. */
@@ -494,70 +457,40 @@ function tokenFields(update) {
   return Object.keys(out).length ? out : null;
 }
 
-/** A token an undo record puts back: as it was, but no one's ownership changed by it (that's its actor's). */
-function tokenData(data) {
-  const { ownership, ...rest } = data ?? {};
+/**
+ * A token an undo record puts back: as it was, but no one's ownership changed by it (that's its actor's): neither its
+ * own nor its unlinked actor's (`delta`).
+ */
+export function tokenData(data) {
+  const rest = withoutOwnership(data ?? {});
+  if ( rest.delta && typeof rest.delta === "object" ) rest.delta = withoutOwnership(rest.delta);
   return rest;
 }
 
-/* -------------------------------------------- */
-/*  A PC's loss: its card's own undo            */
-/* -------------------------------------------- */
-
-/** Undo just one hand-over from its card (a played fight's), and take it out of the fight's own so it isn't undone twice. */
-export async function undoConcession(message) {
-  if ( !game.user.isGM || !ownCard(message) ) return false;
-  const data = message.getFlag(MODULE_ID, "concession");
-  if ( !data || data.undone ) return false;
-  for ( const r of [...(data.records ?? [])].reverse() ) await revertRecord(r);
-  const scene = game.scenes.get(data.sceneId);
-  if ( scene ) {
-    const stack = undoStack(scene).map(entry => ({ ...entry, records: (entry.records ?? []).filter(r => r.eventId !== data.eventId) }));
-    await scene.update({ [`flags.${MODULE_ID}.==undo`]: { stack } });
-  }
-  const content = message.content.replace(/<button[^>]*data-ff-undo-concession[^>]*>[\s\S]*?<\/button>/, `<p class="hint"><i class="fa-solid fa-check"></i> ${loc("FASTFIGHTING.Concession.Undone")}</p>`);
-  await message.update({ content, [`flags.${MODULE_ID}.concession.undone`]: true });
-  return true;
+/** An update, or a document's data, without `ownership`: nobody's rights change on Rewind. */
+function withoutOwnership(data) {
+  if ( !data || typeof data !== "object" ) return data;
+  const { ownership, ...rest } = data;
+  return rest;
 }
 
-/** Rewind the most recent fight on this scene: outcomes, positions, doors and every chat card it posted. */
-export async function undoMakeItSo(scene = canvas.scene) {
-  if ( !game.user.isGM || unfinishedPlayback(scene) ) return false;
-  return holdingPause(() => undoFight(scene));
-}
-
-/** Rewind a playback that was cut short: everything it did so far, every chat card it posted included. */
-export function rewindPlayback(scene = canvas.scene) {
-  const state = unfinishedPlayback(scene);
-  if ( !game.user.isGM || !state ) return Promise.resolve(false);
-  return holdingPause(async () => {
-    await revertEntry(scene, state);
-    // (Cut short as it closed: it may be on the list to rewind already.)
-    const stack = undoStack(scene);
-    if ( stack.some(e => e.id === state.id) ) await writeStack(scene, stack.filter(e => e.id !== state.id));
-    await scene.unsetFlag(MODULE_ID, "playback");
-    refreshUndoCards();
-    return true;
-  }, { resume: state.resume });
-}
-
-async function undoFight(scene) {
-  const [undo, ...rest] = undoStack(scene);
-  if ( !undo ) return false;
-  await revertEntry(scene, undo);
-  await writeStack(scene, rest);
-  refreshUndoCards();
-  return true;
-}
-
-/** Put back what one fight did: its chat cards, outcomes, doors and positions. */
-export async function revertEntry(scene, undo) {
+/**
+ * Put back what one fight did: its chat cards, outcomes, doors and positions. Each record as revertRecord takes it,
+ * on `scene` (`settings`: the world settings FastFighting recorded); each door a wall there, each move a token there.
+ */
+export async function revertEntry(scene, undo, { settings = null } = {}) {
   for ( const id of undo.messages ?? [] ) await game.messages.get(id)?.delete();
-  for ( const r of [...(undo.records ?? [])].reverse() ) await revertRecord(r);
+  for ( const r of [...(undo.records ?? [])].reverse() ) await revertRecord(r, { scene, settings });
+  const onScene = async (uuid, type) => {
+    if ( typeof uuid !== "string" || foundry.utils.parseUuid(uuid)?.type !== type ) return null;
+    const doc = await fromUuid(uuid);
+    return doc && doc.parent?.id === scene?.id ? doc : null;
+  };
   // Doors as they were (closed, or locked).
+  const states = new Set(Object.values(CONST.WALL_DOOR_STATES));
   for ( const d of undo.doors ?? [] ) {
     try {
-      await (await fromUuid(d.uuid))?.update({ ds: d.ds });
+      if ( states.has(d?.ds) ) await (await onScene(d.uuid, "Wall"))?.update({ ds: d.ds });
     } catch ( err ) {
       console.warn(`${MODULE_ID} | couldn't restore a door`, err);
     }
@@ -566,7 +499,8 @@ export async function revertEntry(scene, undo) {
   // Straight back where they stood, without walking the map again.
   const back = [];
   for ( const m of undo.moves ?? [] ) {
-    const doc = await fromUuid(m.uuid);
+    if ( !Number.isFinite(m?.x) || !Number.isFinite(m?.y) ) continue;
+    const doc = await onScene(m.uuid, "Token");
     if ( doc && (doc._source.x !== m.x || doc._source.y !== m.y) ) back.push([doc.id, { destination: { x: m.x, y: m.y, action: "displace" } }]);
   }
   // (Moves, not plain updates: Foundry quietly refuses a position update that would cross a wall.)

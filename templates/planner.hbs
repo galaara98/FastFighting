@@ -1,11 +1,4 @@
 <div class="ff-root">
-  {{#if playback}}
-  <div class="ff-playback">
-    <i class="fa-solid fa-triangle-exclamation"></i> <span>{{playback.note}}</span>
-    <span class="ff-grow"></span>
-    <button type="button" class="ff-btn" data-action="rewindPlayback"><i class="fa-solid fa-backward"></i> {{localize "FASTFIGHTING.MakeItSo.Undo"}}</button>
-  </div>
-  {{/if}}
   {{!-- ============ Toolbar ============ --}}
   <header class="ff-toolbar">
     <div class="ff-scene">
@@ -21,7 +14,6 @@
       <input type="text" name="options.seed" value="{{options.seed}}" placeholder="{{localize "FASTFIGHTING.Planner.Random"}}" size="9">
     </label>
     <div class="ff-run-group">
-      {{#if canUndo}}<button type="button" class="ff-btn" data-action="undo" data-tooltip="{{localize "FASTFIGHTING.MakeItSo.UndoConfirm"}}"><i class="fa-solid fa-backward"></i> {{localize "FASTFIGHTING.MakeItSo.Undo"}}</button>{{/if}}
       <button type="button" class="ff-btn" data-action="clearPlan" data-tooltip="{{localize "FASTFIGHTING.Planner.ClearHint"}}" {{#if running}}disabled{{/if}}><i class="fa-solid fa-eraser"></i></button>
       <button type="button" class="ff-btn" data-action="refresh" data-tooltip="{{localize "FASTFIGHTING.Planner.RefreshHint"}}"><i class="fa-solid fa-arrows-rotate"></i></button>
       {{#if running}}
@@ -304,7 +296,7 @@
               </label>
               <label class="ff-check" data-tooltip="{{localize "FASTFIGHTING.Story.ShowOddsHint"}}"><input type="checkbox" name="storyOdds" {{checked storyOdds}}> {{localize "FASTFIGHTING.Story.ShowOdds"}}</label>
               <span class="ff-grow"></span>
-              <button type="button" class="ff-btn ff-make-it-so" data-action="makeItSo" {{#unless results.sample}}disabled{{/unless}} {{#if playback}}disabled{{/if}} {{#unless live}}disabled{{/unless}} data-tooltip="{{#if live}}{{localize "FASTFIGHTING.MakeItSo.Hint"}}{{else}}{{localize "FASTFIGHTING.MakeItSo.NeedsUpdate"}}{{/if}}"><i class="fa-solid fa-gavel"></i> {{localize "FASTFIGHTING.MakeItSo.Button"}}</button>
+              <button type="button" class="ff-btn ff-make-it-so" data-action="makeItSo" {{#unless results.sample}}disabled{{/unless}} {{#unless live}}disabled{{/unless}} data-tooltip="{{#if live}}{{localize "FASTFIGHTING.MakeItSo.Hint"}}{{else}}{{localize "FASTFIGHTING.MakeItSo.NeedsUpdate"}}{{/if}}"><i class="fa-solid fa-gavel"></i> {{localize "FASTFIGHTING.MakeItSo.Button"}}</button>
             </div>
             {{#with results.sample}}
             <div class="ff-sample-head"><span class="ff-chip" data-tooltip="{{localize "FASTFIGHTING.Sample.TypicalHint"}}"><i class="fa-solid fa-eye"></i> {{localize "FASTFIGHTING.Sample.Typical"}}</span> {{localize "FASTFIGHTING.Sample.Result"}}: <strong>{{outcome}}</strong> · {{totalRounds}} · {{localize "FASTFIGHTING.Planner.Seed"}} {{seed}}</div>

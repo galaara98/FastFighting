@@ -651,8 +651,6 @@
       "Button": "Do it For Real Now",
       "Undo": "Rewind This Encounter",
       "UndoTitle": "Rewind This Encounter",
-      "UndoConfirm": "Put this scene's last encounter back: tokens, outcomes and its chat cards?",
-      "Undone": "The encounter was rewound.",
       "Moves": "Moves {distance}",
       "NeedsUpdate": "Update this system's FastFighting helper to play fights for real.",
       "Hint": "Plays this fight on the Combat Tracker, turn by turn: FastFighting plays its creatures, the players their characters (if they run them). Rewind This Encounter undoes it.",
@@ -688,10 +686,7 @@
         "Persistent": "Persistent {formula} {type}",
         "Affliction": "{name} (stage {stage})",
         "AfflictionOnset": "{name} (takes hold in {n} rounds, stage {stage})"
-      },
-      "UndoConfirmScene": "Put the encounter on {scene} back: tokens, outcomes and its chat cards?",
-      "UndoLaterFirst": "Not a recent simulation",
-      "UndoBuried": "Chat has more than {n} cards after simulation"
+      }
     },
     "Tactics": {
       "Auto": "Let this character decide",
@@ -1620,9 +1615,6 @@
       "fight": "Straight to battle",
       "argument": "Only an argument: no fighting"
     },
-    "Concession": {
-      "Undone": "Undone: it's back with its owner."
-    },
     "Desire": {
       "Label": "Desires",
       "Hint": "What it wants, at whom, how badly. The strongest leads; thwarted desires fade.",
@@ -2233,10 +2225,6 @@
         "losing": "When it turns against us",
         "hurt": "When we're badly hurt"
       }
-    },
-    "Playback": {
-      "Unfinished": "The last Do it For Real Now on this scene didn't finish.",
-      "RewindConfirm": "Undo everything this unfinished encounter did: tokens, outcomes and chat cards?"
     },
     "StoryWords": {
       "plasma": "plasma",

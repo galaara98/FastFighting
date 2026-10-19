@@ -16,7 +16,7 @@ import { registerTokenTactics, syncTokenTactics } from "./apps/token-tactics.js"
 import { QUERIES, SURVEY_STATUS, hasCharactersFor, preparePlayers } from "./foundry/tactics.js";
 import { helperStatus, helperMessage, helperNoticeHtml, surveyHtml } from "./helpers.js";
 import { invalidateApproach, systemSurprise } from "./foundry/battle.js";
-import { undoConcession, revealStory, ownCard, cardUndoState, undoFromCard, refreshUndoCards, UNDO_REACH } from "./foundry/make-it-so.js";
+import { revealStory, ownCard } from "./foundry/make-it-so.js";
 import { sceneUnit, registerGroundField } from "./foundry/terrain.js";
 import { planHolder, sceneEncounter } from "./foundry/persistence.js";
 import { hasRun } from "./foundry/run-memory.js";
@@ -321,51 +321,6 @@ Hooks.on("renderChatMessageHTML", (message, html) => {
     event.preventDefault();
     button.disabled = true;
     await revealStory(message);
-  });
-});
-
-// The GM's summary of a Make it So: its Undo reverses that fight (GMs only), while it's the latest on its scene and
-// no more than ten messages back in the chat; otherwise it's greyed out, and says why.
-const UNDO_WHY = { later: "FASTFIGHTING.MakeItSo.UndoLaterFirst", buried: "FASTFIGHTING.MakeItSo.UndoBuried" };
-Hooks.on("renderChatMessageHTML", (message, html) => {
-  const button = html.querySelector?.("[data-ff-undo-fight]");
-  if ( !button ) return;
-  const state = game.user.isGM && ownCard(message) ? cardUndoState(message) : "gone";
-  if ( state === "gone" ) {
-    button.remove();
-    return;
-  }
-  if ( state !== "ok" ) {
-    button.disabled = true;
-    button.dataset.tooltipText = game.i18n.format(UNDO_WHY[state], { n: UNDO_REACH });
-    return;
-  }
-  button.addEventListener("click", async event => {
-    event.preventDefault();
-    button.disabled = true;
-    try {
-      if ( !(await undoFromCard(message)) ) button.disabled = false;
-    } finally {
-      foundry.applications.instances.get("fast-fighting-planner")?.render();
-    }
-  });
-});
-
-// (Another message in the chat: a summary further back may be out of reach now.)
-Hooks.on("createChatMessage", () => refreshUndoCards());
-
-// A PC's loss card: its Undo puts back just that hand-over (GMs only).
-Hooks.on("renderChatMessageHTML", (message, html) => {
-  const button = html.querySelector?.("[data-ff-undo-concession]");
-  if ( !button ) return;
-  if ( !game.user.isGM || !ownCard(message) || message.getFlag(MODULE_ID, "concession")?.undone ) {
-    button.remove();
-    return;
-  }
-  button.addEventListener("click", async event => {
-    event.preventDefault();
-    button.disabled = true;
-    await undoConcession(message);
   });
 });
 

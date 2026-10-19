@@ -24,9 +24,7 @@ import { SURPRISE } from "../engine/behavior/surprise.js";
 import { buildStory, STORY_STYLES } from "../story/story.js";
 import { loadStoryTables } from "../story/tables.js";
 import { sceneDistance } from "../foundry/terrain.js";
-import {
-  planMakeItSo, undoMakeItSo, hasUndo, makingItSo, unfinishedPlayback, rewindPlayback
-} from "../foundry/make-it-so.js";
+import { planMakeItSo, makingItSo } from "../foundry/make-it-so.js";
 import { ensureAutoConfig } from "../foundry/auto-config.js";
 import { PlayerSurvey } from "./player-survey.js";
 import { rememberRun, recallRun } from "../foundry/run-memory.js";
@@ -95,8 +93,6 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       panToken: BattlePlanner.#onPanToken,
       swing: BattlePlanner.#onSwing,
       makeItSo: BattlePlanner.#onMakeItSo,
-      undo: BattlePlanner.#onUndo,
-      rewindPlayback: BattlePlanner.#onRewindPlayback,
       preparePlayers: BattlePlanner.#onPreparePlayers,
       togglePlaystyle: BattlePlanner.#onTogglePlaystyle,
       setMotive: BattlePlanner.#onSetMotive,
@@ -430,8 +426,6 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       resultTabs: RESULT_TABS.map(id => ({ id, label: loc(`FASTFIGHTING.Results.Tab.${id}`), active: this.resultTab === id })),
       resultTab: this.resultTab,
       hasResults: !!this.results,
-      canUndo: hasUndo(),
-      playback: this.#playbackContext(),
       players: this.#playersContext()
     };
     if ( this.results ) Object.assign(context, this.#resultsContext());
@@ -657,14 +651,6 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       totalRounds: roundsText(result.rounds ?? 0),
       finals: rows.map(r => ({ name: r.spec.name, side: r.spec.side, status: loc(`FASTFIGHTING.Status.${statusOf(r.final)}`), statusClass: statusOf(r.final), lines: r.lines.join("; ") || loc("FASTFIGHTING.Sample.Unchanged") }))
     };
-  }
-
-  /**
-   * A fight the old whole-fight playback left unfinished on this scene (a crash, a lost connection, before live
-   * battles): it's rewound before anything else is done for real here.
-   */
-  #playbackContext() {
-    return unfinishedPlayback(canvas.scene) ? { note: loc("FASTFIGHTING.Playback.Unfinished") } : null;
   }
 
   #playersContext() {
@@ -1206,7 +1192,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
    */
   readyForVantage(combat = null) {
     return !!(this.results && this.spec && this.sample && !this.running && !this.abort) && canvas.scene?.id === this.sceneId
-      && (!combat || combat.uuid === this.holderUuid) && !unfinishedPlayback(canvas.scene) && !!getAdapter()?.supportsLive && !liveBattle();
+      && (!combat || combat.uuid === this.holderUuid) && !!getAdapter()?.supportsLive && !liveBattle();
   }
 
   /** This plan's encounter by the tracker's number for it, when the scene has more than one: {n, hint}, or null. */
@@ -1265,7 +1251,6 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     await this.settleSides();
     if ( !this.results || !this.spec ) return;
     if ( canvas.scene?.id !== this.sceneId ) return ui.notifications.warn(loc("FASTFIGHTING.Planner.SceneChanged"));
-    if ( unfinishedPlayback(canvas.scene) ) return;
     // (A battle on already, begun or waiting for Begin Encounter: its Battle Vantage, where it goes on.)
     if ( liveBattle() ) return BattleVantage.open();
     // The sample is only a sample: what's done for real is one more fight, that nobody has seen, so a 70% win is a
@@ -1292,39 +1277,6 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     } catch ( err ) {
       reportError(err);
     }
-  }
-
-  /** Rewind a fight cut short: everything it did so far, chat cards included. */
-  static async #onRewindPlayback() {
-    const ok = await foundry.applications.api.DialogV2.confirm({
-      window: { title: loc("FASTFIGHTING.MakeItSo.UndoTitle") },
-      content: `<p>${loc("FASTFIGHTING.Playback.RewindConfirm")}</p>`
-    });
-    if ( !ok ) return;
-    try {
-      await rewindPlayback(canvas.scene);
-      ui.notifications.info(loc("FASTFIGHTING.MakeItSo.Undone"));
-    } catch ( err ) {
-      reportError(err);
-    }
-    this.roster = null;
-    this.render();
-  }
-
-  static async #onUndo() {
-    const ok = await foundry.applications.api.DialogV2.confirm({
-      window: { title: loc("FASTFIGHTING.MakeItSo.UndoTitle") },
-      content: `<p>${loc("FASTFIGHTING.MakeItSo.UndoConfirm")}</p>`
-    });
-    if ( !ok ) return;
-    try {
-      await undoMakeItSo();
-      ui.notifications.info(loc("FASTFIGHTING.MakeItSo.Undone"));
-    } catch ( err ) {
-      reportError(err);
-    }
-    this.roster = null;
-    this.render();
   }
 
 }

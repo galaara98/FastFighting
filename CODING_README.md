@@ -21,7 +21,7 @@ FastFighting is split into a pure simulation engine, system **helpers**, and the
 - **Party votes:** on each player's User (`flags.fast-fighting.party`, `foundry/party.js`); survey status in the User flag `fast-fighting.survey`. The party's roles from earlier fights: the hidden world setting `partyCommand`, by actor.
 - **The planner's last runs:** in the GM's own browser, never in the world where players could read the odds (but the very last one while troubleshooting: **Live battles' journals** below); the newest 5 plans (`foundry/run-memory.js`). Each plan is its encounter's, by its uuid; `hasRun` says whether the planner has run an encounter, which the tracker's Vantage button needs.
 - **Live battles:** a journal entry for each battle, only GMs see it, written a turn at a time (`foundry/live-keeping.js`); the last 12 turns keep the run as it was before them, for Rewind (`REWIND_DEPTH` in `foundry/live-battle.js`). See **Live battles' journals** below.
-- **Older one-shot fights:** the scene flag `fast-fighting.undo` holds their undo records.
+- **The whole-fight playback of 0.1 to 0.2.5** kept undo records on the scene (flags `fast-fighting.undo` and `playback`) and its summary cards (`undoFight`, `concession`). They're no longer read: an old world may still hold them, harmlessly.
 
 ### Live battles' journals
 
