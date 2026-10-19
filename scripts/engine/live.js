@@ -139,15 +139,17 @@ function nextDice(run, salt = 0, nonce = 0) {
  * Returns {events, ended, rolls}: `rolls` the table rolls the engine's own dice made in it (engine/table-rolls.js), to
  * show. Throws NeedsDecision when someone must be asked first (restore the snapshot taken before it, ask, and play it
  * again with the answer: that pass, and what it recorded, thrown away). `salt`: played again after a rewind, with
- * fresh dice.
+ * fresh dice. `before`: the pass of this same turn played before it, stopped at a question (its run), whose reckonings
+ * this pass takes up (carryReckonings): the same turn, played the same, only sooner.
  */
-export function liveTurn(run, id, { answers = null, salt = 0, nonce = 0 } = {}) {
+export function liveTurn(run, id, { answers = null, salt = 0, nonce = 0, before = null } = {}) {
   const u = run.byId.get(id);
   if ( !u ) throw new Error(`No creature ${id} in this battle`);
   freshCaches(run);
   nextDice(run, salt, nonce);
   spotlit(run, u);
   run.live.answers = new Map(answers ?? []);
+  beginPass(run, { kind: "turn", id, salt, nonce }, answers, before);
   const from = run.log.length;
   // (Where the turn's own events begin, for the live side to play what came before a roll; and the turn's rolls the
   // system's to make, while it's played: systemRoll.)
@@ -483,15 +485,16 @@ export function reactNow(run, reactorId, targetId, strike, trigger = null) {
  * beside answer it now (simulator.js answerMove: a foe whose reach it came into strikes, a friend it stopped beside
  * steps; a foe's aura it came into goes off, behavior/auras.js). Played as a turn FastFighting plays is: one who must
  * be asked first, or a roll the system makes (a strike, its damage applied, a save), stops it (NeedsDecision; `answers`
- * as liveTurn's): restore the snapshot taken before it, ask or roll, and play it again with the answer, the same
- * `nonce`. Returns the events it made.
+ * and `before` as liveTurn's): restore the snapshot taken before it, ask or roll, and play it again with the answer, the
+ * same `nonce`. Returns the events it made.
  */
-export function movedBeside(run, id, from, { answers = null, nonce = 0 } = {}) {
+export function movedBeside(run, id, from, { answers = null, nonce = 0, before = null } = {}) {
   const u = run.byId.get(id);
   if ( !u?.pos || !from || (!run.movers && !run.reachers && !run.foeAuras) ) return [];
   freshCaches(run);
   nextDice(run, 0, nonce);
   run.live.answers = new Map(answers ?? []);
+  beginPass(run, { kind: "move", id, x: from.x, y: from.y, nonce }, answers, before);
   const start = run.log.length;
   run.live.turnFrom = start;
   run.live.playing = true;
@@ -1403,6 +1406,78 @@ const UNIT_CACHES = Object.freeze(["turn", "nearby", "nearbyKey"]);
 function freshCaches(run) {
   for ( const k of Object.keys(run) ) if ( CACHE.test(k) && !RUN_SKIP.has(k) ) delete run[k];
   for ( const u of run.units ) for ( const k of UNIT_CACHES ) delete u[k];
+}
+
+/**
+ * The fight's reckonings of a round: each worked out at its first look and kept for the round (or, who perceives whom,
+ * while nobody moves), so what each comes to hangs on when it was first asked. How dangerous each creature is to each
+ * (evaluate.js threatOf, and its inner estimates), what comes at each (effects.js incoming), how long each side's
+ * fight goes on (fightLeft), what walking into an aura costs (auras.js), who perceives whom (senses.js).
+ */
+const RECKONINGS = Object.freeze(["threatRound", "threatCache", "threatCacheInner", "incomingRound", "incomingCache", "leftRound", "leftCache", "auraCostCache", "senseGeo", "senseRound", "senseCache"]);
+
+/**
+ * A pass of a turn begins (liveTurn's, movedBeside's): which it is, kept for the pass after it (run.passCache: named
+ * for a cache, so no snapshot keeps it), and the reckonings of `before`, the pass of the same turn played before it,
+ * taken up (carryReckonings).
+ */
+function beginPass(run, pass, answers, before) {
+  run.passCache = { ...pass, seq: run.live.seq, round: run.round, answers: (answers ?? []).map(([k, a]) => [k, JSON.stringify(a ?? null)]) };
+  if ( before ) carryReckonings(run, before);
+}
+
+/**
+ * The reckonings a pass of this same turn worked out before it stopped at a question, taken up by this pass, onto its
+ * own creatures (by id). Each was worked out before that question, from the fight exactly as this pass has it at the
+ * same moment (the same snapshot, the same dice, the same answers so far), and nothing asks one before the moment it
+ * was first asked: so each comes to what this pass would make of it, only without the work. Only from the same turn
+ * (its creature, its place in the battle, its dice, its round) whose answers were the start of this one's; any other
+ * pass, nothing is taken. Everything else (the map's spots, sight) is worked out again.
+ */
+function carryReckonings(run, before) {
+  const was = before?.passCache;
+  const now = run.passCache;
+  if ( !was || !now || was === now ) return;
+  for ( const k of ["kind", "id", "x", "y", "seq", "salt", "nonce", "round"] ) if ( was[k] !== now[k] ) return;
+  if ( was.answers.length > now.answers.length || was.answers.some(([k, a], i) => now.answers[i][0] !== k || now.answers[i][1] !== a) ) return;
+  const theirs = new Set(before.units);
+  for ( const k of RECKONINGS ) {
+    if ( before[k] === undefined ) continue;
+    const v = ontoThis(before[k], theirs, run.byId);
+    if ( v !== MISSING ) run[k] = v;
+  }
+}
+
+/** One of the pass before's creatures that this pass hasn't got (yet: summoned later in the turn). */
+const MISSING = Symbol("missing");
+
+/**
+ * A copy of `v` with each of another pass's creatures (`theirs`) this pass's of the same id. A Map's entry, an object's
+ * field or a list's item that needs one this pass hasn't got is left out (its reckoning is made again when it's asked).
+ */
+function ontoThis(v, theirs, byId) {
+  if ( v === null || typeof v !== "object" ) return v;
+  if ( theirs.has(v) ) return byId.get(v.id) ?? MISSING;
+  if ( v instanceof Map ) {
+    const out = new Map();
+    for ( const [k, x] of v ) {
+      const key = ontoThis(k, theirs, byId);
+      const value = ontoThis(x, theirs, byId);
+      if ( key !== MISSING && value !== MISSING ) out.set(key, value);
+    }
+    return out;
+  }
+  if ( Array.isArray(v) ) {
+    const out = v.map(x => ontoThis(x, theirs, byId));
+    return out.includes(MISSING) ? MISSING : out;
+  }
+  const out = {};
+  for ( const [k, x] of Object.entries(v) ) {
+    const value = ontoThis(x, theirs, byId);
+    if ( value === MISSING ) return MISSING;
+    out[k] = value;
+  }
+  return out;
 }
 
 function encode(v, units) {

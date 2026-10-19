@@ -83,6 +83,87 @@ describe("live battles: the engine a turn at a time", () => {
     }
   });
 
+  /**
+   * A turn played as the live side plays it, stopped at every roll the system makes: each pass from the snapshot `kept`,
+   * taking up the pass before it (`carry`) or fresh. A pass's reckonings may be changed before the next takes them up
+   * (`meddle`). Returns {pass (the one that finished), out, passes}.
+   */
+  function passes(spec, kept, log, id, nonce, { carry = true, meddle = null, otherNonce = false } = {}) {
+    const answers = [];
+    let before = null;
+    for ( let n = 1; n < 60; n++ ) {
+      const pass = restoreRun(spec, pf2eRules, kept, { log });
+      try {
+        const out = liveTurn(pass, id, { answers, nonce, before: carry ? before : null });
+        return { pass, out, passes: n, before };
+      } catch ( err ) {
+        if ( !(err instanceof NeedsDecision) ) throw err;
+        answers.push([err.request.key, err.request.roll === "card" ? { card: `card${n}` } : null]);
+        meddle?.(pass);
+        // (Another turn's pass: the same fight, other dice.)
+        if ( otherNonce ) pass.passCache.nonce += 1;
+        before = pass;
+      }
+    }
+    throw new Error("a turn that never stops asking");
+  }
+  const SYSTEM_ROLLS = ["strike", "save", "check", "use", "damage", "card", "apply"];
+
+  test("each pass of a turn taking up what the pass before it worked out: the turn goes exactly as played fresh each pass", () => {
+    let again = 0;
+    for ( const seed of [1, 2, 3, 4] ) {
+      const spec = skirmish({ orc: { flags: { fearless: true } }, goblin: { flags: { fearless: true } }, kyra: { actions: [strike({ id: "kyra.bow", name: "Shortbow", melee: false, reach: undefined, range: { increment: 60, max: 360 } })] } });
+      let run = beginLive(spec, pf2eRules, { seed, players: [], systemRolls: SYSTEM_ROLLS });
+      for ( let round = 1; round <= 3; round++ ) {
+        liveRound(run, round);
+        for ( const { id } of [...run.order] ) {
+          if ( !run.byId.get(id)?.active ) continue;
+          const kept = snapshotRun(run, { log: false });
+          const fresh = passes(spec, kept, run.log, id, 7 + round, { carry: false });
+          const carried = passes(spec, kept, run.log, id, 7 + round);
+          expect(JSON.stringify(carried.out.events)).toBe(JSON.stringify(fresh.out.events));
+          expect(JSON.stringify(carried.out.rolls)).toBe(JSON.stringify(fresh.out.rolls));
+          expect(captureAll(carried.pass)).toEqual(captureAll(fresh.pass));
+          expect(carried.passes).toBe(fresh.passes);
+          again += carried.passes - 1;
+          // (On with the fight from the pass that finished, as the live side goes on.)
+          run = carried.pass;
+          if ( carried.out.ended ) break;
+        }
+      }
+    }
+    // (Plenty of turns played again for the system's rolls.)
+    expect(again).toBeGreaterThan(20);
+  });
+
+  test("only a pass of the same turn is taken up: what it worked out is kept as it stands, another turn's never", () => {
+    // (Every threat the pass before worked out made far larger: taken up, each is what the next pass has, as it was
+    // left; not taken up, none is.)
+    const inflate = pass => {
+      for ( const row of pass.threatCache?.values() ?? [] ) for ( const [k, v] of row ) if ( v < 1e6 ) row.set(k, v + 1e6);
+    };
+    const threats = pass => [...(pass.threatCache ?? new Map())].flatMap(([u, row]) => [...row].map(([v, n]) => [`${u.id}>${v.id}`, n]));
+    let taken = 0;
+    for ( const seed of [1, 2, 3, 4, 5] ) {
+      const spec = skirmish({ kyra: { actions: [strike({ id: "kyra.bow", name: "Shortbow", melee: false, reach: undefined, range: { increment: 60, max: 360 } })] } });
+      const run = beginLive(spec, pf2eRules, { seed, players: [], systemRolls: SYSTEM_ROLLS });
+      liveRound(run, 1);
+      for ( const { id } of [...run.order] ) {
+        const kept = snapshotRun(run, { log: false });
+        const carried = passes(spec, kept, run.log, id, 3, { meddle: inflate });
+        const before = new Map(threats(carried.before ?? {}));
+        const after = new Map(threats(carried.pass));
+        for ( const [pair, n] of before ) {
+          expect(after.get(pair)).toBe(n);
+          taken += 1;
+        }
+        const other = passes(spec, kept, run.log, id, 3, { meddle: inflate, otherNonce: true });
+        expect(threats(other.pass).every(([, n]) => n < 1e6)).toBe(true);
+      }
+    }
+    expect(taken).toBeGreaterThan(10);
+  });
+
   test("the same seed plays the same fight, turn by turn", () => {
     const a = beginLive(skirmish(), pf2eRules, { seed: 11, players: ["valeros", "kyra"] });
     const b = beginLive(skirmish(), pf2eRules, { seed: 11, players: ["valeros", "kyra"] });

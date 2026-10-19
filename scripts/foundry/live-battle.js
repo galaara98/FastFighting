@@ -871,11 +871,13 @@ async function playTurn(u, combatant, key) {
   areaShapes.clear();
   areaTests.clear();
   let result;
+  // (The pass before, stopped at a question: what it had worked out, the next pass takes up. engine/live.js liveTurn.)
+  let lastPass = null;
   for ( let tries = 0; ; tries++ ) {
     try {
       battle.run.live.exitOf = exitOf; // (the way off the scene, for one leaving the fight)
       battle.run.live.inArea = areaTest; // (who an area catches, as the system's own shape has it on the map)
-      result = liveTurn(battle.run, u.id, { answers, salt: battle.data.salt ?? 0, nonce });
+      result = liveTurn(battle.run, u.id, { answers, salt: battle.data.salt ?? 0, nonce, before: lastPass });
       break;
     } catch ( err ) {
       if ( !(err instanceof NeedsDecision) || tries > 200 ) throw err;
@@ -883,6 +885,7 @@ async function playTurn(u, combatant, key) {
       // (A roll the system makes: what the turn did before it played on the map first. A question: asked.)
       const answer = request.roll ? await turnRoll(request, battle.run.log.slice(battle.run.live.turnFrom ?? battle.run.log.length), stage) : await answerFor(request, stage);
       answers.push([request.key, answer]);
+      lastPass = battle.run;
       battle.run = restoreRun(battle.spec, battle.rules, snapshot, { log: battle.run.log });
     }
   }
@@ -2223,15 +2226,17 @@ async function answerArrival(pc, from) {
   const stage = turnStage();
   const answers = [];
   let events = [];
+  let lastPass = null; // (the pass before, stopped at a question: playTurn's)
   for ( let tries = 0; ; tries++ ) {
     try {
-      events = movedBeside(battle.run, pc.id, from, { answers, nonce });
+      events = movedBeside(battle.run, pc.id, from, { answers, nonce, before: lastPass });
       break;
     } catch ( err ) {
       if ( !(err instanceof NeedsDecision) || tries > 50 ) throw err;
       const request = err.request;
       const answer = request.roll ? await turnRoll(request, battle.run.log.slice(battle.run.live.turnFrom ?? battle.run.log.length), stage) : await answerFor(request, stage);
       answers.push([request.key, answer]);
+      lastPass = battle.run;
       battle.run = restoreRun(battle.spec, battle.rules, snapshot, { log: battle.run.log });
     }
   }
