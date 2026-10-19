@@ -45,17 +45,19 @@ export const changesTo = actor => `${epoch}.${counts.get(actor?.uuid) ?? 0}`;
 
 /**
  * A character read as characterSpec reads it, or its read before when nothing about it has changed since (changesTo). A
- * copy each time: whoever asks may change it.
+ * copy each time: whoever asks may change it. `fresh`: read again whatever, and kept (the planner's Refresh).
  * @param {SystemAdapter} adapter
  * @param {TokenDocument} tokenDoc   its token (or its prototype's, not on a scene)
+ * @param {object} [options]
+ * @param {boolean} [options.fresh]
  */
-export async function cachedCharacterSpec(adapter, tokenDoc) {
+export async function cachedCharacterSpec(adapter, tokenDoc, { fresh = false } = {}) {
   const actor = tokenDoc?.actor ?? null;
   if ( !actor ) return characterSpec(adapter, tokenDoc);
   const key = `${tokenDoc.parent ? tokenDoc.uuid : "prototype"}|${actor.uuid}`;
   const at = changesTo(actor);
   const kept = specs.get(key);
-  if ( kept?.at === at && kept.adapter === adapter ) {
+  if ( !fresh && kept?.at === at && kept.adapter === adapter ) {
     // (Read last: kept longest.)
     specs.delete(key);
     specs.set(key, kept);

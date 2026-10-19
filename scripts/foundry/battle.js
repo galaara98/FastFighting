@@ -7,7 +7,8 @@ import { budgetMs, swingShareMs, MAX_RUNS, SWING_RUNS } from "../engine/run-budg
 
 /** How long a battle's prediction runs (seconds): its plan's, else the world's Prediction time. */
 export const predictionSeconds = setup => setup?.options?.seconds ?? setting("predictionTime");
-import { characterSpec, getAdapter, getModifiers } from "../api.js";
+import { getAdapter, getModifiers } from "../api.js";
+import { cachedCharacterSpec } from "./sheet-watch.js";
 import { computeApproach, computeAwareness, computeGround, computeWalls, environmentAt, forgetGround, positionOf, squareFeet } from "./terrain.js";
 import { proposeGroups } from "../engine/groups.js";
 import { TACTIC_KEYS, TACTIC_WISHES } from "../engine/tactics.js";
@@ -86,10 +87,12 @@ export function encounterTokenIds(scene = canvas.scene) {
 export const rosterOrder = (a, b) => String(a.document?.name ?? a.name ?? "").localeCompare(String(b.document?.name ?? b.name ?? "")) || String(a.id).localeCompare(String(b.id));
 
 /**
- * Read every eligible token on the viewed scene, in rosterOrder.
+ * Read every eligible token on the viewed scene, in rosterOrder. Each character as it was read last, unless something
+ * about it has changed since (sheet-watch.js cachedCharacterSpec: its sheet, its token, its items and effects, a world
+ * setting); with `fresh`, every one read again (the planner's Refresh).
  * @returns {Promise<{token: Token, spec: object, baseSide: string}[]>}
  */
-export async function gatherRoster(setup, adapter = getAdapter()) {
+export async function gatherRoster(setup, adapter = getAdapter(), { fresh = false } = {}) {
   if ( !canvas.ready || !adapter ) return [];
   const levelId = canvas.level?.id ?? null;
   const encounter = encounterTokenIds();
@@ -107,7 +110,7 @@ export async function gatherRoster(setup, adapter = getAdapter()) {
   const out = [];
   for ( const token of tokens ) {
     try {
-      const spec = await characterSpec(adapter, token.document);
+      const spec = await cachedCharacterSpec(adapter, token.document, { fresh });
       if ( !spec ) continue;
       spec.environment = environmentAt(token);
       spec.hidden = token.document.hidden;

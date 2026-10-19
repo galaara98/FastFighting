@@ -51,6 +51,17 @@ describe("a character read again only when it changed", () => {
     await watch.cachedCharacterSpec(adapter, token);
     expect(reads.n).toBe(4);
   });
+
+  test("fresh (the planner's Refresh): read again whatever, and that read kept for the next", async () => {
+    await watch.cachedCharacterSpec(adapter, token);
+    const before = reads.n;
+    actor.reactions = ["shield", "riposte"]; // (changed where no hook tells it)
+    expect((await watch.cachedCharacterSpec(adapter, token)).reactions).toHaveLength(1);
+    expect((await watch.cachedCharacterSpec(adapter, token, { fresh: true })).reactions).toHaveLength(2);
+    expect((await watch.cachedCharacterSpec(adapter, token)).reactions).toHaveLength(2);
+    expect(reads.n).toBe(before + 1);
+    actor.reactions = ["shield"];
+  });
 });
 
 describe("the reactions a window shows, checked again", () => {

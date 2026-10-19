@@ -262,7 +262,10 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     this.holder = planHolder();
     this.holderUuid = this.holder?.uuid ?? null;
     this.setup = getSetup(this.holder);
-    this.roster = await gatherRoster(this.setup);
+    // (Each character as last read unless it has changed since; after Refresh, every one read again.)
+    const fresh = this.freshRead;
+    this.freshRead = false;
+    this.roster = await gatherRoster(this.setup, getAdapter(), { fresh });
     // Anyone FastFighting hasn't seen before is set up by itself now (its playstyles, its calculated answers), and anyone
     // whose calculated answers are missing, broken or out of date has them worked out again.
     // (All at once; the planner draws itself once they're done, not once for each.)
@@ -1050,6 +1053,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   static async #onRefresh() {
+    this.freshRead = true;
     this.rereadRoster();
   }
 
@@ -1095,7 +1099,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     this.abort = new AbortController();
     await this.render();
     try {
-      // Re-read tokens so HP and positions are current.
+      // The tokens again, so HP and positions are current (each character read again where it changed since: sheet-watch.js).
       this.roster = await gatherRoster(this.setup);
       let lastPaint = 0;
       const { spec, results, approach } = await simulate(this.roster, this.setup, {
