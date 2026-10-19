@@ -46,7 +46,7 @@ FastFighting is split into a pure simulation engine, system **helpers**, and the
 ## Writing a system helper
 
 ```js
-const KNOWN_API = [18]; // the core API majors this helper knows it works with
+const KNOWN_API = [20]; // the core API majors this helper knows it works with
 
 Hooks.once("fastFighting.init", api => {
   const major = Number(api.major) || 0;
