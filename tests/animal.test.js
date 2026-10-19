@@ -8,6 +8,9 @@ import { beginRun, prepareBattle, replay } from "../scripts/engine/simulator.js"
 import { liveTier } from "../scripts/engine/battle-state.js";
 import { isAnimalistic, animalTactics, bystanderUrge, BYSTANDER_URGE } from "../scripts/engine/behavior/animal.js";
 import { seemsFoe } from "../scripts/engine/behavior/neutral.js";
+import { think, rankedDesires } from "../scripts/engine/behavior/desire.js";
+import { tacticFits } from "../scripts/engine/tactics.js";
+import { combinePlaystyles } from "../scripts/engine/playstyles.js";
 import { scoreTargets } from "../scripts/engine/behavior/targeting.js";
 import { moraleStress } from "../scripts/engine/behavior/morale.js";
 import { doorPlan } from "../scripts/engine/behavior/doors.js";
@@ -110,5 +113,40 @@ describe("a pack, and the wild", () => {
       if ( r.log.some(e => e.type === "attack" && /^h\d/.test(e.actorId ?? "") && e.targetId === "farmer") ) bitten += 1;
     }
     expect(bitten).toBeGreaterThan(4);
+  });
+
+  test("a bystander not in the encounter yet, that it takes for prey or was set on, is something it can act on", () => {
+    const run = begin([
+      hyena("h1", { position: at(0) }),
+      creature({ id: "hero", position: at(400), traits: minded(50) }),
+      creature({ id: "farmer", side: "neutralParty", position: at(20), inEncounter: false })
+    ]);
+    const h = run.byId.get("h1");
+    const farmer = run.byId.get("farmer");
+    expect(farmer.active).toBe(false);
+    // (The GM's say: go for the farmer. Not in the fight yet, it's still something the hyena can act on.)
+    think(h, "hurt", "farmer", 70);
+    expect(seemsFoe(run, h, farmer)).toBe(true);
+    expect(rankedDesires(run, h).some(d => d.kind === "hurt" && d.targetId === "farmer")).toBe(true);
+    // (A competent guard with no such nature, the farmer no foe of its, doesn't count it.)
+    const calm = begin([
+      creature({ id: "guard", position: at(0), traits: minded(50) }),
+      creature({ id: "hero", position: at(400) }),
+      creature({ id: "farmer", side: "neutralParty", position: at(20), inEncounter: false })
+    ]);
+    expect(rankedDesires(calm, calm.byId.get("guard")).some(d => d.targetId === "farmer")).toBe(false);
+  });
+});
+
+describe("a playstyle's fighting style, only where it fits", () => {
+  test("a Chicken with nothing to shoot isn't told to fight at range; one with a bow is", () => {
+    const jaws = { actions: [{ id: "jaws", kind: "strike", melee: true, damage: [{}] }, { id: "demoralize", kind: "control", range: { increment: 30 } }] };
+    const archer = { actions: [{ id: "bow", kind: "strike", range: { increment: 60 }, damage: [{}] }] };
+    expect(tacticFits("style", "ranged", jaws)).toBe(false);
+    expect(tacticFits("style", "ranged", archer)).toBe(true);
+    expect(combinePlaystyles(["chicken"], { fits: (k, v) => tacticFits(k, v, jaws) }).suggest.style).toBeUndefined();
+    expect(combinePlaystyles(["chicken"], { fits: (k, v) => tacticFits(k, v, archer) }).suggest.style).toBe("ranged");
+    // (Not a style question: anyone fits.)
+    expect(tacticFits("retreat", "hurt", jaws)).toBe(true);
   });
 });

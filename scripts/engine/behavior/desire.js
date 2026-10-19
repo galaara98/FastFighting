@@ -44,7 +44,7 @@
  */
 import { STATUS, TACTICAL, ADHD, clamp } from "../../constants.js";
 import { areEnemies, isStanding, liveTrait, liveTier, enemiesOf, alliesOf, sizedUp, command, commandOf, refusesToHelp, movesNeeded, edgeDistance, canMove, hpFraction, dangerScore } from "../battle-state.js";
-import { perceives, apparentHealth } from "./senses.js";
+import { perceives, apparentHealth, knowsOf } from "./senses.js";
 import { seemsFoe } from "./neutral.js";
 import { robbable } from "./theft.js";
 import { ownHolds, isBound, freeable, known, remediesOf, bears } from "./holds.js";
@@ -314,7 +314,10 @@ export function allDesires(u) {
 
 /** Is a desire still something the unit can act on? (Healing itself counts: a potion when it's hurt.) */
 function relevant(run, u, kind, t) {
-  if ( !t || !t.active || (t === u && !SELF_KINDS.has(kind)) ) return false;
+  if ( !t || (t === u && !SELF_KINDS.has(kind)) ) return false;
+  // (One not in the fight yet is out of it, unless u means to hurt it and takes it for fair game: prey to an animal or a
+  // feral mind, or one the GM set it on (neutral.js seemsFoe). Set upon, it's in the fight at once: simulator.js notice.)
+  if ( !t.active && !(kind === "hurt" && t !== u && seemsFoe(run, u, t) && knowsOf(run, u, t)) ) return false;
   if ( [STATUS.DEAD, STATUS.FLED, STATUS.BEATEN].includes(t.status) ) return false;
   // (A prisoner, tied up and awake, is out of it: there's only what it carries, its getting loose, and its friends'.)
   if ( t.status === STATUS.BOUND && kind !== "rob" && kind !== "breakFree" && kind !== "free" && kind !== "rid" ) return false;

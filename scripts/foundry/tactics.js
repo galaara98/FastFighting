@@ -12,7 +12,7 @@
  *  - User flag `fast-fighting.survey`: {status, sceneId, requestId, updated} for the GM's status indicators.
  */
 import { MODULE_ID, TRAITS, clamp, fudged, traitBand, isPlain } from "../constants.js";
-import { TACTIC_CHOICES, TACTIC_KEYS, suggestTactics, resolveTactics } from "../engine/tactics.js";
+import { TACTIC_CHOICES, TACTIC_KEYS, suggestTactics, resolveTactics, tacticFits } from "../engine/tactics.js";
 import { isSpecial } from "../engine/behavior/specialty.js";
 import { PLAYSTYLES, PLAYSTYLE_IDS, MAX_PLAYSTYLES, combinePlaystyles, isPlaystyle, answerChances, currentPlaystyles } from "../engine/playstyles.js";
 import { getAdapter } from "../api.js";
@@ -238,7 +238,7 @@ export function worldTacticDefaults() {
  */
 export function tacticsFor(actor, spec) {
   const stored = getStoredTactics(actor);
-  const playstyles = combinePlaystyles(stored.playstyles ?? [], { stayTrue: !!stored.stayTrue, roleplay: !!stored.roleplay });
+  const playstyles = combinePlaystyles(stored.playstyles ?? [], { stayTrue: !!stored.stayTrue, roleplay: !!stored.roleplay, fits: (k, v) => tacticFits(k, v, spec) });
   const record = autoRecord(actor);
   const calc = { ...suggestTactics(spec, worldTacticDefaults(), getAdapter()?.rules ?? null), ...suggestMotives(spec) };
   for ( const [k, v] of Object.entries(record?.lets ?? {}) ) {

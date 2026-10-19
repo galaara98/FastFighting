@@ -125,7 +125,7 @@ import { withManeuver } from "./maneuvers.js";
 import { STATUS, NEUTRAL_PARTY, AVOID_KILLING, TACTICAL, clamp, fudged, tacticalTier, TRAITS } from "../constants.js";
 import { isAnimalistic } from "./behavior/animal.js";
 import { meanPart } from "./dice.js";
-import { typicalValue } from "./tactics.js";
+import { typicalValue, tacticFits } from "./tactics.js";
 import { talkAffinity } from "./behavior/talk.js";
 import { goadAction } from "./behavior/goad.js";
 import { Turn } from "./turn.js";
@@ -559,7 +559,7 @@ export function dropAmbition(u) {
   u.scheming = null;
   if ( u.ambitionGone || !ids.includes("leader") ) return;
   u.ambitionGone = true;
-  const rest = combinePlaystyles(ids.filter(id => id !== "leader"), { stayTrue: !!u.spec.stayTrue, roleplay: !!u.spec.roleplay });
+  const rest = combinePlaystyles(ids.filter(id => id !== "leader"), { stayTrue: !!u.spec.stayTrue, roleplay: !!u.spec.roleplay, fits: (k, v) => tacticFits(k, v, u.spec) });
   u.ownBehavior = rest.behavior;
   u.ownDesireStyle = rest.desire;
 }

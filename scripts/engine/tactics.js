@@ -94,6 +94,19 @@ export function typicalValue(action, level, rules = null) {
  * @param {object} [rules]    The system's rules (for what counts as typical at this level)
  * @returns {Record<string, string>} an answer, one of its own choices, for every question
  */
+/**
+ * Can a character answer a tactics question this way at all (a playstyle's suggestion is only taken where it can)? A
+ * "ranged" style needs an attack that harms at range (a Strike or a damaging spell or ability, not a control or a buff);
+ * a "caster" one, something that forces a save or makes a spell attack. Any other answer fits anyone.
+ */
+export function tacticFits(key, value, spec) {
+  if ( key !== "style" ) return true;
+  const actions = spec?.actions ?? [];
+  if ( value === "ranged" ) return actions.some(a => !!a.range && !a.melee && (a.kind === "strike" || (a.damage?.length ?? 0) > 0));
+  if ( value === "caster" ) return actions.some(a => ["save", "spell-attack", "auto"].includes(a.kind));
+  return true;
+}
+
 export function suggestTactics(spec, defaults = {}, rules = null) {
   const offense = (spec.actions ?? []).filter(isOffense);
   const free = offense.filter(a => !limited(a));

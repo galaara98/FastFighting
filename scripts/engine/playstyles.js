@@ -227,7 +227,7 @@ export function intensity({ roleplay = false } = {}) {
  *   suggest: the most likely answer to each tactics question; mix: every pill's vote for it, by weight, so each
  *   simulated fight can draw one (the first pick most often, the later ones now and then)
  */
-export function combinePlaystyles(ids = [], { stayTrue = false, roleplay = false } = {}) {
+export function combinePlaystyles(ids = [], { stayTrue = false, roleplay = false, fits = null } = {}) {
   const chosen = ids.filter(isPlaystyle).slice(0, MAX_PLAYSTYLES);
   const k = intensity({ roleplay });
   const traits = {};
@@ -238,6 +238,8 @@ export function combinePlaystyles(ids = [], { stayTrue = false, roleplay = false
     const w = ORDER_WEIGHTS[i]; // the first pick counts most
     for ( const [t, v] of Object.entries(p.traits) ) traits[t] = (traits[t] ?? 0) + v * w * (roleplay ? 2 : 1);
     for ( const [key, v] of Object.entries(p.suggest) ) {
+      // (Only an answer the character can follow: a Chicken with nothing to shoot doesn't keep its distance to shoot.)
+      if ( fits && !fits(key, v) ) continue;
       const votes = mix[key] ??= [];
       const vote = votes.find(x => x.value === v);
       if ( vote ) vote.weight += w;
