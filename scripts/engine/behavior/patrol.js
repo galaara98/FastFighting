@@ -20,7 +20,7 @@
  * nearby" (beyond "hunt") makes a watcher a patroller.
  *
  * The cues (cueOf), strongest first: a foe's scent it can follow (scent: within PATROL.trail times its smell, along the
- * way there, walls and all), the din of a fight it hears (noise: a quiet Perception check, the Statistics Engine's,
+ * way there, round walls), the din of a fight it hears (noise: a quiet Perception check, the Statistics Engine's,
  * against the notice system's DC, senses.js hearDC, once a turn, to the easiest fight to hear), a foe its teammates have
  * in view (seen), and, for a pack animal, where a packmate's cue leads (pack). Each is a creature to head for, the
  * engine's way (its approach, the way round walls; a door on the way opened as any is).
@@ -41,7 +41,7 @@
  * foe in its senses, known), it goes back to fighting: at once, with what's left of its turn.
  * Fidgeting (fidget): a turn spent doing nothing at all, now and then it fidgets, as the world's ADHD setting and its own
  * say: a step aside, or a look elsewhere (where its next Seek looks). Never in place of anything else.
- * Logged: `patrol` (how, cue, toward), `seek` (its roll, the DC, who it found), `fidget` (how), and its moves (`move`,
+ * Logged: `patrol` (how, mode, toward), `seek` (its roll, the DC, who it found), `fidget` (how), and its moves (`move`,
  * purpose "patrol" or "fidget", `patrol: true`: told by those events).
  * Pure: no Foundry globals.
  */
