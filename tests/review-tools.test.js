@@ -5,7 +5,7 @@
 import { describe, expect, test } from "vitest";
 import {
   normalize, maskNumbers, withoutKeys, fingerprint, setPrint, printsPrint, namesIn, whereNamed, codeLink, linesJSON, compareVersions, stamp,
-  compareSpecial, compareGeneric, compareNamed, newerThan, buildReport, issueBody, issueTitle
+  compareSpecial, compareGeneric, compareNamed, newerThan, buildReport, issueBody, issueTitle, code, plain
 } from "../tools/review/index.mjs";
 
 describe("fingerprints", () => {
@@ -138,5 +138,22 @@ describe("the report", () => {
     expect(body).toContain("cut short");
     expect(body.trim().endsWith("end")).toBe(true);
     expect(issueBody("short\n", { footer: "f" })).toBe("short\n\nf\n");
+  });
+
+  test("pack text can't break out of its code span, mention anyone or link anywhere", () => {
+    const J = "\u2060";
+    expect(code("rend`](https://x.example) @team\n| x")).toBe("`rend](https://x.example) @team| x`");
+    expect(plain("see [this](https://x.example) <https://y.example> www.z.example @team")).toBe(
+      `see \\[this\\]\\(https${J}://x.example\\) \\<https${J}://y.example\\> www${J}.z.example @${J}team`);
+    expect(issueTitle("PF2e", "8.7.0 @team\n[x](y)")).toBe("PF2e 8.7.0teamxy: what changed for FastFighting");
+    const r = buildReport({
+      system: "PF2e", version: "9.0.0",
+      added: [{ slug: "evil`@team", kind: "spell @team", count: 1, level: "<b>", why: ["[x](https://x.example)"] }],
+      extra: [{ title: "Extra", head: ["name"], rows: [[code("@team")]] }]
+    });
+    const body = issueBody(r.text);
+    expect(body).not.toMatch(/@(?!\u2060)/);
+    expect(body).not.toContain("](https://");
+    expect(body).toContain(`| \`evil@${J}team\` |`);
   });
 });

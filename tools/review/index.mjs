@@ -16,7 +16,7 @@
  *   names.mjs        namesIn (the names a script quotes or uses as keys), sourceFiles, whereNamed, codeLink
  *   ledger.mjs       readJSON, writeJSON and linesJSON (one entry per line), stamp, compareVersions, today
  *   compare.mjs      compareSpecial, compareGeneric, compareNamed, newerThan
- *   report.mjs       buildReport, issueBody, issueTitle
+ *   report.mjs       buildReport, issueBody, issueTitle; code, plain, bare and noMentions (pack text made safe for the issue)
  */
 export * from "./fingerprint.mjs";
 export * from "./names.mjs";
