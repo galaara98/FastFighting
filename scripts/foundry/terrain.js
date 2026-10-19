@@ -173,10 +173,14 @@ export function registerGroundField() {
     if ( !anchor ) return;
     const group = document.createElement("div");
     group.className = "form-group ff-region-ground";
-    const value = region.getFlag(MODULE_ID, "ground");
+    // (The flag as a number only, set through the DOM: a region's flags are anyone's who can make one, never HTML.)
+    const raw = region.getFlag(MODULE_ID, "ground");
+    const stored = raw === null || raw === undefined || raw === "" ? NaN : Number(raw);
     group.innerHTML = `<label>${foundry.utils.escapeHTML(game.i18n.localize("FASTFIGHTING.Region.Ground"))}</label>
-      <div class="form-fields"><input type="number" step="any" name="flags.${MODULE_ID}.ground" value="${value ?? ""}"></div>
+      <div class="form-fields"><input type="number" step="any" name="flags.${MODULE_ID}.ground"></div>
       <p class="hint">${foundry.utils.escapeHTML(game.i18n.localize("FASTFIGHTING.Region.GroundHint"))}</p>`;
+    const input = group.querySelector("input");
+    if ( input ) input.value = Number.isFinite(stored) ? String(stored) : "";
     anchor.after(group);
   });
 }
