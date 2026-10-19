@@ -34,7 +34,7 @@ export { SURPRISE, hiddenSides } from "./engine/behavior/surprise.js";
 export { goadLuck } from "./engine/behavior/goad.js";
 export { bestReactionStrike } from "./engine/behavior/reactions.js";
 export { combineMods, describeMods, diceMean } from "./engine/mods.js";
-export { localize, hasWords, fillIn, listJoin, listItems, language, outcomeLine, commonOutcome, sideChangeLine, stillLine, englishWords, listWords, wordList, saysWord } from "./i18n.js";
+export { localize, hasWords, fillIn, listJoin, listItems, language, outcomeLine, commonOutcome, sideChangeLine, stillLine, englishWords, listWords, wordList, saysWord, escapeHtml, inertHtml } from "./i18n.js";
 export { sideAfter } from "./engine/changes.js";
 export {
   statusesOf, statusEntry, toggleStatus, undoRecord, payFrom, handOverItem, englishName, englishDescription, DESCRIPTION_MOST, plainText,
