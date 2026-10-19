@@ -1,7 +1,8 @@
 /**
  * FastFighting on a character sheet's title bar, for a player who owns the character but can't open its Token or
  * Prototype Token (where a GM finds FastFighting's tab: token-tactics.js): it opens that character's own tactics, the
- * players' survey on its tab (as "My tactics" does). Only where the sheet has no token button of its own, and only for
+ * players' survey on its tab, in its sheet mode (PlayerSurvey.open `sheet`: no desires, no Party tab, Close, nothing
+ * told of being ready; already open, only brought to the front). Only where the sheet has no token button of its own, and only for
  * a character the game system's helper reads.
  */
 import { MODULE_ID } from "../constants.js";
@@ -25,7 +26,7 @@ export function surveyTabFor(characters, { tokenId = null, actorId = null } = {}
 async function openFor(actor, token = null) {
   const { PlayerSurvey } = await import("../apps/player-survey.js");
   const tab = surveyTabFor(charactersForUser(canvas.scene, game.user), { tokenId: token?.id ?? null, actorId: actor?.id ?? null });
-  return PlayerSurvey.open({ sceneId: canvas.scene?.id, ...(tab ? { start: tab.key } : {}) });
+  return PlayerSurvey.open({ sceneId: canvas.scene?.id, sheet: true, ...(tab ? { start: tab.key } : {}) });
 }
 
 const handles = actor => {

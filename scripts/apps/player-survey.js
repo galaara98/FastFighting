@@ -66,10 +66,18 @@ export class PlayerSurvey extends HandlebarsApplicationMixin(ApplicationV2) {
    * @param {string} [options.only]           that character alone (a GM's survey for it)
    * @param {string[]} [options.keys]         those characters alone (a GM's survey of those away)
    * @param {string[]} [options.proxies]      players away: a Party tab each, for a GM to vote in for them
+   * @param {boolean} [options.sheet]         opened from a character sheet's FastFighting button: that character's
+   *                                          tactics alone, no desires, no Party tab, a Close button, and nothing told
+   *                                          of being ready. Already open (asked by the GM, say): only brought to the front.
    */
-  static async open({ sceneId, requestId, start, only, keys, proxies } = {}) {
+  static async open({ sceneId, requestId, start, only, keys, proxies, sheet = false } = {}) {
     let app = foundry.applications.instances.get("fast-fighting-survey");
+    if ( sheet && app?.rendered ) {
+      app.bringToFront?.();
+      return app;
+    }
     if ( !app ) app = new PlayerSurvey();
+    app.sheetMode = !!sheet;
     app.sceneId = sceneId ?? app.sceneId ?? canvas.scene?.id;
     // (Opened by the player itself while the GM's request is still open: that request, as the GM asked it.)
     const pending = !game.user.isGM && !requestId ? game.user.getFlag(MODULE_ID, "survey") : null;
@@ -84,7 +92,7 @@ export class PlayerSurvey extends HandlebarsApplicationMixin(ApplicationV2) {
     app.specs.clear(); // re-read characters each time the survey opens
     await app.render({ force: true });
     app.bringToFront?.();
-    if ( !game.user.isGM ) await setOwnSurveyStatus(SURVEY_STATUS.ENTERING, app.sceneId, app.requestId);
+    if ( !game.user.isGM && !app.sheetMode ) await setOwnSurveyStatus(SURVEY_STATUS.ENTERING, app.sceneId, app.requestId);
     return app;
   }
 
@@ -98,6 +106,7 @@ export class PlayerSurvey extends HandlebarsApplicationMixin(ApplicationV2) {
     this.proxies = null;
     this.sawParty = false;
     this.finished = false;
+    this.sheetMode = false;
     this.specs = new Map();
   }
 
@@ -138,14 +147,15 @@ export class PlayerSurvey extends HandlebarsApplicationMixin(ApplicationV2) {
         level: spec.level,
         sharedWith: others.map(u => u.name).join(", "),
         sharedOnline: others.some(u => u.active),
-        tactics: questionsContext(spec, e.actor, e.key, { targets })
+        // (From a sheet's button: no desires, which name others in the fight.)
+        tactics: questionsContext(spec, e.actor, e.key, { targets: this.sheetMode ? [] : targets })
       });
     }
     // The last tab: the party's wishes, every player's vote on them (one vote per player, not per character). Not in a
     // GM's survey for one character.
     // (A GM's survey of those away: a Party tab for each player away instead, named for them, to vote in for them.)
     const away = this.keys || this.proxies;
-    const partyTab = this.only || away ? null : { id: PARTY_TAB, name: loc("FASTFIGHTING.Party.Tab"), icon: "fa-solid fa-people-group", party: true };
+    const partyTab = this.only || away || this.sheetMode ? null : { id: PARTY_TAB, name: loc("FASTFIGHTING.Party.Tab"), icon: "fa-solid fa-people-group", party: true };
     const proxyTabs = away ? (this.proxies ?? []).map(u => {
       const locked = partyState(u).locked;
       return { id: `${PARTY_TAB}:${u.id}`, name: localize("FASTFIGHTING.Party.TabFor", { name: u.name }), icon: "fa-solid fa-user-clock", party: true, user: u,
@@ -171,6 +181,8 @@ export class PlayerSurvey extends HandlebarsApplicationMixin(ApplicationV2) {
       party: onParty ? partyContext(onTab.user ?? game.user) : null,
       empty: !sheets.length,
       gm: game.user.isGM,
+      // (A Close button, not "I'm ready": a GM's, or one opened from a sheet's button.)
+      justClose: game.user.isGM || this.sheetMode,
       intro: game.i18n.localize("FASTFIGHTING.Survey.Intro")
     };
   }
@@ -301,6 +313,6 @@ export class PlayerSurvey extends HandlebarsApplicationMixin(ApplicationV2) {
   async _onClose(options) {
     this.unwatch?.();
     await super._onClose?.(options);
-    if ( !game.user.isGM && !this.finished ) await setOwnSurveyStatus(SURVEY_STATUS.CLOSED, this.sceneId, this.requestId, { partyOpen: false });
+    if ( !game.user.isGM && !this.finished && !this.sheetMode ) await setOwnSurveyStatus(SURVEY_STATUS.CLOSED, this.sceneId, this.requestId, { partyOpen: false });
   }
 }
