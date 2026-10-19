@@ -165,7 +165,6 @@ export class PlayerSurvey extends HandlebarsApplicationMixin(ApplicationV2) {
     const onParty = !!onTab;
     if ( onParty ) this.sawParty = true;
     return {
-      sceneName: scene?.name,
       sheets: tabs,
       active: onParty ? null : sheets.find(s => s.active) ?? null,
       onParty,

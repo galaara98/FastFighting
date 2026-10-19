@@ -312,7 +312,6 @@ function prepareCombatant(c, side) {
     isHealer: own.some(a => a.kind === "heal"),
     // (Or one the system says has powers of that kind: Ironsworn's horrors and the Firstborn.)
     isCaster: own.some(a => a.kind === "save" || a.kind === "spell-attack") || !!c.caster,
-    hasRanged: own.some(a => a.range && !["heal", "buff", "summon"].includes(a.kind)),
     flies: (c.speeds?.fly ?? 0) > 0,
     healActions: own.filter(a => a.kind === "heal").sort((x, y) => meanHeal(y) / y.cost - meanHeal(x) / x.cost),
     buffActions: own.filter(a => a.kind === "buff" && (a.outcome || Array.isArray(a.onDegree))),

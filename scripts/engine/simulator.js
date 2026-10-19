@@ -4311,12 +4311,10 @@ function summarize(run, ended, capture, winners) {
   const units = {};
   for ( const u of run.units ) {
     if ( u.summoner ) continue; // summoned for this fight alone: not the table's
-    const lost = ended && !winners.includes(u.side);
     units[u.id] = {
       // (Tied up and alive, awake or not: a prisoner.)
       status: isBound(u) && u.status === STATUS.DOWN ? STATUS.BOUND : u.status,
       involved: u.active,
-      atMercy: u.status === STATUS.DOWN && lost,
       wasDowned: u.wasDowned,
       hpFrac: u.maxHp > 0 ? u.hp / u.maxHp : 0,
       damage: u.damageDealt,

@@ -437,7 +437,6 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     const ts = setup.tokens[e.token.id] ?? tokenSetup({ tokens: {} }, e.token.id); // rendering never edits the setup
     const s = e.spec;
     const fudge = ts.fudge ?? {};
-    const isPc = s.kind === "pc";
     const playerControlled = isPlayerControlled(s, e.token.actor);
     const { playstyles } = tacticsFor(e.token.actor, s);
     const shifts = playstyles.traits;
@@ -515,7 +514,6 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       environment: [...(s.environment?.types ?? []), s.environment?.difficult ? loc("FASTFIGHTING.Planner.DifficultHere") : null, s.environment?.hazardous ? loc("FASTFIGHTING.Planner.HazardHere") : null].filter(Boolean).join(", "),
       ignoreTerrain: !!ts.ignoreTerrain,
       diesAtZero: ts.diesAtZero ?? s.diesAtZero,
-      isPc,
       playerControlled,
       controllers,
       tactics: this.expanded.has(e.token.id) ? questionsContext(s, e.token.actor, `gm-${e.token.id}`, { questions: true, targets: this.roster.map(r => ({ id: r.token.id, name: r.spec.name })) }) : null,

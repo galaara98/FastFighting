@@ -27,7 +27,7 @@ export function createAggregator(prep) {
   const units = {};
   for ( const c of prep.combatants ) {
     units[c.spec.id] = {
-      standing: 0, down: 0, dead: 0, fled: 0, surrendered: 0, stoodDown: 0, beaten: 0, bound: 0, conceded: 0, switched: 0, neutral: 0, talkedDown: 0, atMercy: 0, downed: 0, involved: 0,
+      standing: 0, down: 0, dead: 0, fled: 0, surrendered: 0, stoodDown: 0, beaten: 0, bound: 0, conceded: 0, switched: 0, neutral: 0, talkedDown: 0, downed: 0, involved: 0,
       hpFrac: 0, damage: 0, healing: 0, firstToFall: 0, resources: {}
     };
   }
@@ -75,7 +75,6 @@ export function createAggregator(prep) {
           if ( r.swayed === "neutral" ) u.neutral += 1;
           anySwayed = true;
         }
-        if ( r.atMercy ) u.atMercy += 1;
         if ( r.wasDowned ) u.downed += 1;
         u.hpFrac += r.hpFrac;
         u.damage += r.damage;
@@ -138,7 +137,6 @@ export function createAggregator(prep) {
           pTalkedDown: u.talkedDown / n,
           pInvolved: u.involved / n,
           bystander: c.spec.inEncounter === false,
-          pAtMercy: u.atMercy / n,
           pDowned: u.downed / n,
           meanHpFrac: u.hpFrac / n,
           meanDamage: u.damage / n,
