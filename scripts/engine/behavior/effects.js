@@ -52,17 +52,10 @@ import { STATUS, clamp } from "../../constants.js";
 import { combineMods, diceMean } from "../mods.js";
 import { isStanding, areEnemies, enemiesOf, alliesOf, boostReaches, wish, behaviorOf, regenOf, canHeal } from "../battle-state.js";
 import { threatOf, unitsPerTurn, attacksIn } from "./evaluate.js";
-import { meanPart } from "../dice.js";
+import { meanPart, meanByType } from "../dice.js";
 import { forcedWorth } from "./forced.js";
 import { PROFILES, profileOf, profiled, profileMods, hasTrait } from "../conditions.js";
 import { harmParts } from "./troubles.js";
-
-/** Mean damage of some parts, by type. */
-function meanByType(parts) {
-  const out = {};
-  for ( const p of parts ?? [] ) out[p.type] = (out[p.type] ?? 0) + Math.max(0, meanPart(p));
-  return out;
-}
 
 /**
  * What one of the core's conditions harms t with each turn, on the whole, at that value, laid by `by`: as the system

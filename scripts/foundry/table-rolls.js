@@ -17,6 +17,7 @@
 import { MODULE_ID } from "../constants.js";
 import { localize, hasWords, escapeHtml as escape, inertHtml, numberText } from "../i18n.js";
 import { groupValue } from "../engine/table-rolls.js";
+import { chatMessageClass, gmIds } from "./chat.js";
 
 /** What a roll was for, in words: "Greataxe: damage", "Recovery check", "Longsword: attack (DC 18)". */
 export function rollFlavor(roll, { dc = true, part = 0 } = {}) {
@@ -163,9 +164,6 @@ export function tallyHtml(entries, names = {}) {
 /*  Posting (Foundry)                           */
 /* -------------------------------------------- */
 
-const ChatMessageClass = () => foundry.documents.ChatMessage ?? globalThis.ChatMessage;
-const gmIds = () => game.users.filter(u => u.isGM).map(u => u.id);
-
 /** The GM's own roll mode, on this client (core messageMode, Foundry 14's). */
 function gmMode() {
   try {
@@ -237,7 +235,7 @@ export async function postRolls(rolls, { scene, docOf, unitOf, flags = {}, speak
 
 /** Plain rolls posted, a message for each of `messages` ({by, audience, rolls}: rollMessages'). Returns their ids. */
 async function postPlain(messages, { scene, docOf, flags, speakerless = null }) {
-  const ChatMessage = ChatMessageClass();
+  const ChatMessage = chatMessageClass();
   const Roll = foundry.dice?.Roll ?? globalThis.Roll;
   const ids = [];
   for ( const m of messages ) {
@@ -265,7 +263,7 @@ async function postPlain(messages, { scene, docOf, flags, speakerless = null }) 
  * or null when nothing's left to show (the card deleted).
  */
 export async function postTally(id, entries, { names = {}, flags = {} } = {}) {
-  const ChatMessage = ChatMessageClass();
+  const ChatMessage = chatMessageClass();
   const old = id ? game.messages.get(id) : null;
   const shown = (entries ?? []).filter(e => e.rolls?.length);
   try {

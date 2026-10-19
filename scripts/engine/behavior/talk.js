@@ -32,7 +32,7 @@
  * Pure: no Foundry globals.
  */
 import { STATUS, SWAY, CONCEDE_LUCK, SWITCH_LUCK, TRAITOR_LUCK, TACTICAL, OPENING, clamp } from "../../constants.js";
-import { alliesOf, enemiesOf, isStanding, behaviorOf, typical, checkRoll, liveTier, liveTrait, studyBonus, boostBonus, chainOf, commandOf, groupKeyOf, wish, wishWins, edgeDistance, areEnemies, systemRolled } from "../battle-state.js";
+import { alliesOf, enemiesOf, isStanding, behaviorOf, typical, checkRoll, liveTier, liveTrait, studyBonus, boostBonus, chainOf, commandOf, groupKeyOf, wish, wishWins, edgeDistance, areEnemies, systemRolled, hpFraction, dangerScore } from "../battle-state.js";
 import { spendEdges, spendBoost } from "./effects.js";
 import { degreeDistribution, rollCheck } from "../probability.js";
 import { isNeutral, standsAside, appeal, offend, turnOn, standAside, joinSide, calm, settleTruce, seemsFoe, leanSide, fighting, dislikesViolence } from "./neutral.js";
@@ -331,13 +331,11 @@ const PURSUED = 1.25;
 function pursued(run, talker, targets) {
   const aim = talker.tac?.target;
   if ( !aim || !targets.length ) return null;
-  const frac = t => (t.maxHp > 0 ? t.hp / t.maxHp : 1);
-  const danger = t => (Number(t.spec.level) || 0) * 2 + (t.damageDealt ?? 0) / 5;
   const pick = (score, low = false) => [targets.reduce((a, b) => ((low ? score(b) < score(a) : score(b) > score(a)) ? b : a))];
   switch ( aim ) {
     case "nearest": return run.prep.options.positioning ? new Set(pick(t => edgeDistance(talker, t), true)) : null;
-    case "weakest": return new Set(pick(frac, true));
-    case "dangerous": return new Set(pick(danger));
+    case "weakest": return new Set(pick(hpFraction, true));
+    case "dangerous": return new Set(pick(dangerScore));
     case "casters": return new Set(targets.filter(t => t.prep?.isCaster || t.prep?.isHealer));
     case "protect": return new Set(targets.filter(t => { const at = run.byId.get(t.targetId); return at && at !== talker && at.side === talker.side && areEnemies(run, at, t); }));
     default: return null;

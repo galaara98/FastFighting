@@ -26,6 +26,7 @@ import { meanPart } from "../dice.js";
 import { mind } from "./desire.js";
 import { cutOff } from "./troubles.js";
 import { answersTo } from "../../story/master.js";
+import { addCosts } from "../turn.js";
 
 /** Reactions u has each round: none in a system without opportunity attacks. */
 export function reactionsPerRound(rules, u) {
@@ -123,13 +124,6 @@ export function isWary(run, u) {
   u.waryRound = run.round;
   u.wary = p >= 1 || (p > 0 && run.rng.chance(p));
   return u.wary;
-}
-
-/** Two costs together ({action: 1} + {bonus: 1} -> {action: 1, bonus: 1}). */
-export function addCosts(a = {}, b = {}) {
-  const out = { ...a };
-  for ( const [k, v] of Object.entries(b ?? {}) ) out[k] = (out[k] ?? 0) + v;
-  return out;
 }
 
 /**

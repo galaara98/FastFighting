@@ -61,6 +61,7 @@ import { perceives } from "./senses.js";
 import { edgeAt } from "./space.js";
 import { answersTo, triggerOf } from "../../story/master.js";
 import { effectsWorth, riposteStrike, strikeBack, bestStep } from "./reaction-effects.js";
+import { priceOf } from "./riders.js";
 
 /** (Where they were before: what a strike back is and where a step goes, reaction-effects.js.) */
 export { riposteStrike, strikeBack, bestStep };
@@ -72,16 +73,6 @@ const SELF = new Set(["wouldDrop", "slain"]);
 const MOVES = new Set(["allyMoves", "foeApproaches"]);
 /** Moments whose other one needn't be seen: an attack at it (it's felt), its own blow (it just landed). */
 const UNSEEN = new Set(["hit", "attacked", "ownHit"]);
-
-/** What a reaction's price is worth to u now, in damage terms (a spell slot is dear when few are left). */
-function priceOf(u, r, scale) {
-  if ( !r.resource && !Number.isFinite(r.uses) ) return 0;
-  const start = r.resource ? (u.resourcesStart[r.resource] ?? 1) : r.uses;
-  const left = r.resource ? (u.resources[r.resource] ?? 0) : (u.reactionUses?.[r.id] ?? r.uses);
-  const frac = start > 0 ? left / start : 0;
-  const style = { conserve: 1.6, balanced: 1, nova: 0.55 }[u.tac?.resourceUse] ?? 1;
-  return style * (0.6 + 1.4 * (1 - frac)) * Math.max(1, scale);
-}
 
 function ready(u, r, trigger) {
   // (Slain: it answers on its way down. Free: it costs no reaction.)
@@ -147,7 +138,7 @@ export function respond(run, u, trigger, ctx) {
     }
     const worth = worthOf(run, u, r, trigger, ctx);
     // (A counterspell burns a slot of its level: the dearer the slot, the more the spell has to be worth stopping.)
-    const price = priceOf(u, r, trigger === "spell" ? 6 * Math.max(1, Number(r.counter?.level ?? r.level) || 3) : (ctx.damage ?? 5));
+    const price = priceOf(u, r, Math.max(1, trigger === "spell" ? 6 * Math.max(1, Number(r.counter?.level ?? r.level) || 3) : (ctx.damage ?? 5)), u.reactionUses);
     const would = worth > 0 && (careless || worth >= price);
     // In a live battle the player (or the GM) may say otherwise: always, never, or asked (engine/live.js).
     if ( !(run.live ? run.live.decide(run, u, { reaction: r, trigger, by: other, ally: ctx.ally ?? null, would }) : would) ) continue;

@@ -197,12 +197,13 @@ export function wordList(key) {
   return wordLists.get(key);
 }
 
-const escaped = w => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+/** A text as a regular expression's own words: every character that means something there taken as itself. */
+export const escapeRegExp = w => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 /** Does a text hold one of these words, whole (not inside a longer one), in any case? */
 export function saysWord(words, text) {
   if ( !words?.length || !text ) return false;
-  return new RegExp(`(?<![\\p{L}\\p{N}])(?:${words.map(escaped).join("|")})(?![\\p{L}\\p{N}])`, "iu").test(String(text));
+  return new RegExp(`(?<![\\p{L}\\p{N}])(?:${words.map(escapeRegExp).join("|")})(?![\\p{L}\\p{N}])`, "iu").test(String(text));
 }
 
 /** "Still frightened (2 more rounds)". */

@@ -21,7 +21,7 @@
 import { THEFT_LUCK, clamp } from "../../constants.js";
 import { isStanding, isUp, areEnemies, edgeDistance, checkRoll, typical, liveTrait, alliesOf, enemiesOf, behaviorOf, attackRoll, currentAc, movesNeeded, heldOff, systemRolled } from "../battle-state.js";
 import { rollCheck } from "../probability.js";
-import { costOf, normalizeCost } from "../turn.js";
+import { costOf, normalizeCost, addCosts } from "../turn.js";
 import { remaining, concession } from "./talk.js";
 import { isNeutral, offend } from "./neutral.js";
 
@@ -106,13 +106,6 @@ function feintWeapon(run, u, t) {
   return preferred ?? u.prep.offense.filter(reaches).sort((a, b) => (b.bonus ?? 0) - (a.bonus ?? 0))[0] ?? null;
 }
 
-/** Add costs over the same pools. */
-function addCosts(rules, a, b) {
-  const out = { ...normalizeCost(rules, a) };
-  for ( const [k, v] of Object.entries(normalizeCost(rules, b)) ) out[k] = (out[k] ?? 0) + v;
-  return out;
-}
-
 /**
  * How u would go about robbing t: openly (a feint first, so it needs a weapon in reach) or unseen, and what it all
  * costs. Null when it can't be done.
@@ -124,7 +117,7 @@ export function theftPlan(run, u, t) {
   if ( !open ) return { open, weapon: null, cost: steal };
   const weapon = feintWeapon(run, u, t);
   if ( !weapon ) return null;
-  return { open, weapon, cost: addCosts(rules, steal, rules.feintCost ?? costOf(rules, weapon, u)) };
+  return { open, weapon, cost: addCosts(steal, normalizeCost(rules, rules.feintCost ?? costOf(rules, weapon, u))) };
 }
 
 /**

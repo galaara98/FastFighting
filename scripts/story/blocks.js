@@ -42,7 +42,7 @@ export const DAMAGE_TYPES = [
 ];
 export { TALK_KINDS } from "../engine/behavior/talk.js";
 export const RELATIONSHIPS = ["none", "enemyLeader", "talkingNemesis", "grudge", "avenger", "protector", "finishing", "rival"];
-export const MOVE_MODES = ["walk", "fly", "swim", "climb", "burrow"];
+export { MOVE_MODES } from "../constants.js";
 export const MOVE_SITUATIONS = ["approach", "terrain", "flee", "hunt", "help"];
 
 /** A table's name for a key, e.g. "Melee · Slashing · Minor Success" (in the reader's language). */

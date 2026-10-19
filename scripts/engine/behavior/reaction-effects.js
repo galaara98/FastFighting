@@ -31,7 +31,7 @@
  */
 import { STATUS } from "../../constants.js";
 import { isUp, isStanding, areEnemies, edgeDistance, heldOff, saveRoll, movesNeeded, canMove, canHeal } from "../battle-state.js";
-import { meanPart, samplePart } from "../dice.js";
+import { meanPart, meanTotal, samplePart } from "../dice.js";
 import { diceAt, tableRoll } from "../table-rolls.js";
 import { meanDamageVs, threatOf, expectedDamage, saveMultiplier, hasAmmo } from "./evaluate.js";
 import { degreeDistribution } from "../probability.js";
@@ -44,7 +44,6 @@ import { needsDraw, isLoaded } from "../gear.js";
 /** The effects this file plays, in the order a reaction plays them. */
 export const GENERAL_EFFECTS = Object.freeze(["step", "strike", "harm", "afflict", "areaBurst", "boost", "heal", "recharge"]);
 
-const sumMean = parts => (parts ?? []).reduce((s, p) => s + Math.max(0, meanPart(p)), 0);
 
 /** A reaction's harm: its own `harm`, or its damage, save and move at its top level (the older way). */
 export function harmOf(r) {
@@ -238,7 +237,7 @@ function afflictWorth(run, u, t, r) {
 function healWorth(run, u, r, trigger, ctx) {
   if ( !canHeal(u) || u.status === STATUS.DEAD ) return 0;
   const coming = ["hit", "attacked"].includes(triggerOf(trigger)) ? Math.max(0, ctx.damage ?? 0) : 0;
-  return Math.min(sumMean(r.heal), Math.max(0, (u.maxHp ?? 0) - (u.hp ?? 0) + coming));
+  return Math.min(meanTotal(r.heal), Math.max(0, (u.maxHp ?? 0) - (u.hp ?? 0) + coming));
 }
 
 /** Its own actions a recharge names, with uses (true: each one that recharges). */
@@ -268,10 +267,10 @@ export function effectsWorth(run, u, r, trigger, ctx = {}) {
   const aim = setterOf(trigger, ctx);
   let w = 0;
   const harm = harmOf(r);
-  if ( harm ) w += sumMean(harm.damage) * (harm.save ? 0.65 : 1) + (aim ? threatOf(run, aim, u) * 0.1 : 0);
+  if ( harm ) w += meanTotal(harm.damage) * (harm.save ? 0.65 : 1) + (aim ? threatOf(run, aim, u) * 0.1 : 0);
   if ( r.strike && aim ) w += strikeWorth(run, u, aim, r);
   if ( r.step ) w += bestStep(run, u, r.step)?.worth ?? 0;
-  if ( r.areaBurst?.damage?.length ) w += sumMean(r.areaBurst.damage) * (r.areaBurst.save ? 0.65 : 1);
+  if ( r.areaBurst?.damage?.length ) w += meanTotal(r.areaBurst.damage) * (r.areaBurst.save ? 0.65 : 1);
   if ( r.afflict && aim && aim !== u && isUp(aim) ) w += afflictWorth(run, u, aim, r);
   if ( r.boost && isUp(u) ) w += Math.max(0, outcomeWorth(run, u, u, r.boost));
   if ( r.heal?.length ) w += healWorth(run, u, r, trigger, ctx);

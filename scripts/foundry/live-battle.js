@@ -27,7 +27,7 @@ import { currentPathGrid, pathGridFor, sceneWallGrid } from "./pathing.js";
 import { getSetup, sceneEncounter } from "./persistence.js";
 import { QUERIES, isPlayerControlled, getStoredTactics, reactionPrefsFor } from "./tactics.js";
 import {
-  holdingPause, playMoves, postBeat, postStory, revertEntry, gmIds, chronicle, storyTitle, packSpec, unpackSpec, placeOf, spotsFor
+  holdingPause, playMoves, postBeat, postStory, revertEntry, chronicle, storyTitle, packSpec, unpackSpec, placeOf, spotsFor
 } from "./make-it-so.js";
 import { storyBeats } from "../story/story.js";
 import { logLine } from "../story/log-lines.js";
@@ -38,6 +38,7 @@ import {
   setCondition, setRelation, clearRelation, setAffliction, setGoal, setAttitude, setSide, setRole, playerRuns, takeRolls, handOver
 } from "../engine/live.js";
 import { postRolls, postTally, tallyOf, audiencesFor } from "./table-rolls.js";
+import { chatMessageClass, gmIds } from "./chat.js";
 import { diffAll, sideAfter } from "../engine/changes.js";
 import { undoRecord } from "./sheet-tools.js";
 import { keepUpdate, keptBattle } from "./live-keeping.js";
@@ -653,9 +654,6 @@ const lastTurn = log => {
   return last;
 };
 
-/** Foundry's ChatMessage class. */
-const chatMessages = () => foundry.documents.ChatMessage ?? globalThis.ChatMessage;
-
 /** How a turn is written onto the sheets, as the world's settings say. */
 const writeOptions = () => ({ live: true, lootMode: setting("lootMode"), corpseMode: setting("corpseMode"), fledMode: setting("fledMode") });
 
@@ -1040,7 +1038,7 @@ async function settleTurn(turn, ended) {
 async function waitCard(turn) {
   if ( turn.kind !== "npc" ) return null;
   const name = battle.run.byId.get(battle.combat.combatants.get(turn.combatantId)?.tokenId)?.spec.name ?? "";
-  const ChatMessage = chatMessages();
+  const ChatMessage = chatMessageClass();
   return ChatMessage.create({
     content: inertHtml(`<div class="fast-fighting-live"><p>${escape(fmt("FASTFIGHTING.Live.Told", { name }))}</p>
       <button type="button" data-ff-live="rewind"><i class="fa-solid fa-arrow-left"></i> ${loc("FASTFIGHTING.Live.Rewind")}</button>
@@ -1593,7 +1591,7 @@ async function playerRolls(request, into = null) {
   const name = run.byId.get(request.unitId)?.spec.name ?? "";
   const target = request.byId ? run.byId.get(request.byId)?.spec.name ?? "" : "";
   const from = Date.now();
-  const ChatMessage = chatMessages();
+  const ChatMessage = chatMessageClass();
   const card = await ChatMessage.create({
     content: inertHtml(`<div class="fast-fighting-live"><p>${escape(fmt("FASTFIGHTING.Live.YourReaction", { name, reaction: request.strike?.name ?? request.reaction, target }))}</p>
       <button type="button" data-ff-live="reactionDone"><i class="fa-solid fa-check"></i> ${loc("FASTFIGHTING.Live.ReactionDone")}</button></div>`),
@@ -2189,7 +2187,7 @@ async function rollFirst(run, reactorId, targetId, strike, pc = null) {
 async function tellStop(pcId, text) {
   const actor = docOf(pcId)?.actor;
   const whisper = [...new Set([...gmIds(), ...game.users.filter(u => !u.isGM && actor?.testUserPermission(u, "OWNER")).map(u => u.id)])];
-  const ChatMessage = chatMessages();
+  const ChatMessage = chatMessageClass();
   const card = await ChatMessage.create({
     content: inertHtml(`<div class="fast-fighting-live"><p>${escape(text)}</p></div>`), speaker: chronicle(), whisper,
     flags: { [MODULE_ID]: { live: { battle: battle.data.id } } }
@@ -2716,7 +2714,7 @@ async function finish() {
   const shown = await showRolls(takeRolls(battle.run), last ?? null);
   const messages = [...shown, ...await tellNew()];
   battle.data.ended = true;
-  const ChatMessage = chatMessages();
+  const ChatMessage = chatMessageClass();
   const card = await ChatMessage.create({
     content: inertHtml(`<div class="fast-fighting-live"><p>${escape(loc("FASTFIGHTING.Live.Over"))}</p>
       <button type="button" data-ff-live="aftermath" data-tooltip="${escape(loc("FASTFIGHTING.Live.AftermathHint"))}"><i class="fa-solid fa-hand-holding-medical"></i> ${loc("FASTFIGHTING.Live.Aftermath")}</button>
@@ -2826,7 +2824,7 @@ export function rewindTurn() {
 
 /** The GMs' card after a rewind to a turn FastFighting plays: Play it (again, with fresh dice). */
 async function rewoundCard(u) {
-  const ChatMessage = chatMessages();
+  const ChatMessage = chatMessageClass();
   return ChatMessage.create({
     content: inertHtml(`<div class="fast-fighting-live"><p>${escape(fmt("FASTFIGHTING.Live.Rewound", { name: u.spec.name }))}</p>
       <button type="button" data-ff-live="play"><i class="fa-solid fa-play"></i> ${loc("FASTFIGHTING.Live.Play")}</button></div>`),

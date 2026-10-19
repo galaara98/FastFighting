@@ -473,6 +473,12 @@ export const isStanding = u => u.status === STATUS.STANDING && u.active !== fals
 /** On its feet, whether or not it has joined the fight. */
 export const isUp = u => u.status === STATUS.STANDING;
 
+/** How much of its hit points u has left, 0 to 1 (1 for one with none to lose). */
+export const hpFraction = u => (u.maxHp > 0 ? u.hp / u.maxHp : 1);
+
+/** How dangerous a creature seems, by its level and the harm it has done (who's "the most dangerous"). */
+export const dangerScore = u => (Number(u.spec.level) || 0) * 2 + (u.damageDealt ?? 0) / 5;
+
 /**
  * Its regeneration right now: its own (spec.regen), or one an effect lends it (a Regenerate spell: effects.js), the
  * stronger. {amount, stoppedBy, needsHp} or null.

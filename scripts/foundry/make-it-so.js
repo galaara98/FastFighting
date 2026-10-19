@@ -7,6 +7,7 @@
  * summary cards. Nothing reads them now: a scene's flags are any of its owners' to write.)
  */
 import { statusesOf, statusEntry } from "./sheet-tools.js";
+import { chatMessageClass, gmIds } from "./chat.js";
 import { MODULE_ID } from "../constants.js";
 import { escapeHtml as escape, inertHtml } from "../i18n.js";
 import { getAdapter } from "../api.js";
@@ -273,10 +274,8 @@ export const packSpec = spec => JSON.stringify(spec, (key, v) => (typeof v === "
 
 export const unpackSpec = text => JSON.parse(text, (key, v) => (v && typeof v === "object" && Object.keys(v).length === 1 && NUMBER in v ? Number(v[NUMBER]) : v));
 
-export const gmIds = () => game.users.filter(u => u.isGM).map(u => u.id);
 export const chronicle = () => ({ alias: loc("FASTFIGHTING.Story.Speaker") });
 export const storyTitle = scene => game.i18n.format("FASTFIGHTING.Story.Title", { scene: scene?.name ?? "" });
-const ChatMessageClass = () => foundry.documents.ChatMessage ?? globalThis.ChatMessage;
 
 /**
  * One turn's cards, told as a story (never as a creature's own words): what everyone may know, and what only the GMs
@@ -284,7 +283,7 @@ const ChatMessageClass = () => foundry.documents.ChatMessage ?? globalThis.ChatM
  * the messages made.
  */
 export async function postBeat(scene, beat, docs, state) {
-  const ChatMessage = ChatMessageClass();
+  const ChatMessage = chatMessageClass();
   const doc = beat.actorId ? (docs.get(beat.actorId) ?? null) : null;
   const whisper = setting("storyMode") === "whisper" ? gmIds() : [];
   const flags = { [MODULE_ID]: { story: true, beat: true } };
@@ -308,7 +307,7 @@ export async function postStory(story, odds, { gmOnly = false } = {}) {
   if ( !story?.html ) return null;
   const oddsHtml = odds ? `<p class="ff-odds"><em>${escape(odds)}</em></p>` : "";
   const reveal = gmOnly ? `<button type="button" data-ff-reveal><i class="fa-solid fa-eye"></i> ${loc("FASTFIGHTING.Story.Reveal")}</button>` : "";
-  return ChatMessageClass().create({
+  return chatMessageClass().create({
     content: inertHtml(`<div class="fast-fighting-story"><header><i class="fa-solid fa-book-open"></i> ${escape(story.title)}</header>${story.html}${oddsHtml}${reveal}</div>`),
     speaker: chronicle(),
     whisper: gmOnly || setting("storyMode") === "whisper" ? gmIds() : [],

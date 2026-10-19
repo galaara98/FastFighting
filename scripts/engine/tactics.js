@@ -12,6 +12,7 @@ import { typical } from "./battle-state.js";
 import { costOf, costUnits } from "./turn.js";
 import { reloadPerUse } from "./gear.js";
 import { isSpecial } from "./behavior/specialty.js";
+import { limited } from "./behavior/evaluate.js";
 
 export const TACTIC_CHOICES = Object.freeze({
   style: ["frontline", "skirmisher", "ranged", "caster", "protector"],
@@ -51,7 +52,6 @@ export const TACTIC_WISHES = Object.freeze({
 export const TACTIC_KEYS = Object.freeze(["preferredAction", "style", "target", "fallen", "resourceUse", "specialty", "consumables", "talk", "healAggro", "potionThreshold", "allyDying", "selfRevived", "retreat", "shield", "beyond"]);
 
 const isOffense = a => a.kind !== "heal" && a.kind !== "buff";
-const usesResource = a => !!a.resource || Number.isFinite(a.uses);
 
 /** Rough expected damage per action of `action` against a same-level foe (the system says what's typical). */
 export function typicalValue(action, level, rules = null) {
@@ -96,7 +96,7 @@ export function typicalValue(action, level, rules = null) {
  */
 export function suggestTactics(spec, defaults = {}, rules = null) {
   const offense = (spec.actions ?? []).filter(isOffense);
-  const free = offense.filter(a => !usesResource(a));
+  const free = offense.filter(a => !limited(a));
   const pool = free.length ? free : offense;
   let best = null;
   for ( const a of pool ) {

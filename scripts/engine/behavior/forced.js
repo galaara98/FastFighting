@@ -19,7 +19,7 @@
  */
 import { TACTICAL } from "../../constants.js";
 import { edgeDistance, centerDistance, isStanding, liveTier, behaviorOf } from "../battle-state.js";
-import { meanPart, parseFormula } from "../dice.js";
+import { meanPart, meanTotal, parseFormula } from "../dice.js";
 import { dangerOf } from "./traps.js";
 import { iwrOf } from "./effects.js";
 import { sharesSpace } from "./space.js";
@@ -148,17 +148,16 @@ export function fallDamage(run, feet, t) {
   return dice > 0 ? [parseFormula(`${dice}d6`, "bludgeoning")] : [];
 }
 
-const mean = parts => (parts ?? []).reduce((s, p) => s + Math.max(0, meanPart(p)), 0);
 
 /** What being left there would do to t: the fall, the hazards that go off, the ground's harm, slower ground. */
 function harmThere(run, t, path) {
   let harm = 0;
-  if ( path.fall > 0 ) harm += mean(fallDamage(run, path.fall, t)) + 2;
+  if ( path.fall > 0 ) harm += meanTotal(fallDamage(run, path.fall, t)) + 2;
   for ( const h of path.hazards ?? [] ) {
-    const blow = Math.max(0, ...h.prep.offense.map(a => mean(a.damage)));
+    const blow = Math.max(0, ...h.prep.offense.map(a => meanTotal(a.damage)));
     harm += blow * HAZARD_HITS;
   }
-  if ( path.cell?.harm?.length ) harm += mean(path.cell.harm);
+  if ( path.cell?.harm?.length ) harm += meanTotal(path.cell.harm);
   else if ( path.cell?.h ) harm += HAZARDOUS;
   if ( path.cell?.d ) harm += DIFFICULT;
   return harm;
@@ -187,7 +186,7 @@ function damageScale(run, by, t) {
   let best = null;
   let raw = 0;
   for ( const a of by.prep?.offense ?? [] ) {
-    const n = mean(a.damage);
+    const n = meanTotal(a.damage);
     if ( n > raw ) {
       raw = n;
       best = a.damage;

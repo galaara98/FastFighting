@@ -118,19 +118,21 @@ export function deedTier(deed, roll) {
 /* -------------------------------------------- */
 
 /**
- * What spending the rider's price is worth to u right now, in damage terms: the more of the pool is gone, the more a
- * use has to do (conservers want more, those going all out less). Free riders cost nothing.
+ * What spending the price of `r` (a rider, a reaction) is worth to u right now, in damage terms, `scale` the damage it's
+ * weighed against: the more of its pool (r.resource) or its uses (r.uses; `usesLeft`, by its id, those left) is gone,
+ * the more a use has to do (conservers want more, those going all out less). Free ones cost nothing.
  */
-function priceOf(u, r, baseHit) {
+export function priceOf(u, r, scale, usesLeft) {
   if ( !r.resource && !Number.isFinite(r.uses) ) return 0;
-  // A spell slot is dear by its level (r.dear); anything else by what the blow itself does.
-  const scale = r.dear ? 4 * r.dear : Math.max(1, baseHit);
   const start = r.resource ? (u.resourcesStart[r.resource] ?? 1) : r.uses;
-  const left = r.resource ? (u.resources[r.resource] ?? 0) : (u.riderUses?.[r.id] ?? r.uses);
+  const left = r.resource ? (u.resources[r.resource] ?? 0) : (usesLeft?.[r.id] ?? r.uses);
   const frac = start > 0 ? left / start : 0;
   const style = { conserve: 1.6, balanced: 1, nova: 0.55 }[u.tac?.resourceUse] ?? 1;
   return style * (0.6 + 1.4 * (1 - frac)) * scale;
 }
+
+/** A rider's price (priceOf): a spell slot dear by its level (r.dear); anything else by what the blow itself does. */
+const riderPrice = (u, r, baseHit) => priceOf(u, r, r.dear ? 4 * r.dear : Math.max(1, baseHit), u.riderUses);
 
 /** Expected worth of a rider on this hit (crit: double dice where the rider says so). */
 function riderWorth(run, u, r, t, { crit, baseHit }) {
@@ -159,7 +161,7 @@ export function chooseHitRiders(run, u, action, t, { crit = false } = {}) {
   for ( const r of u.spec.riders ?? [] ) {
     if ( (r.when ?? "hit") !== "hit" || !fits(r, action, t) || !affordable(run, u, r) ) continue;
     const worth = riderWorth(run, u, r, t, { crit, baseHit });
-    const price = priceOf(u, r, baseHit);
+    const price = riderPrice(u, r, baseHit);
     if ( worth <= 0 || (!careless && worth < price) ) continue;
     options.push({ r, rate: price > 0 ? worth / price : Infinity, worth });
   }
@@ -185,7 +187,7 @@ export function rescueMiss(run, u, action, t, short) {
     if ( short > r.attackDie ) continue;
     const chance = atLeast(r.attackDie, short);
     const baseHit = meanDamageVs(run, action, t).normal;
-    if ( chance * baseHit < priceOf(u, r, baseHit) * 0.6 ) continue;
+    if ( chance * baseHit < riderPrice(u, r, baseHit) * 0.6 ) continue;
     pay(u, r);
     const at = diceAt(run);
     const roll = run.rng.die(r.attackDie);

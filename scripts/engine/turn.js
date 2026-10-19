@@ -21,6 +21,13 @@ export function normalizeCost(rules, cost) {
   return cost;
 }
 
+/** Two costs together ({action: 1} + {bonus: 1} -> {action: 1, bonus: 1}). */
+export function addCosts(a = {}, b = {}) {
+  const out = { ...a };
+  for ( const [k, v] of Object.entries(b ?? {}) ) out[k] = (out[k] ?? 0) + v;
+  return out;
+}
+
 /**
  * What an action costs: the rules decide (PF2e: its action count; 5e: an action or a bonus action). For a creature
  * (`u`), what its gear needs first too (engine/gear.js): drawing it (PF2e's Interact), and a Reload where it's empty.

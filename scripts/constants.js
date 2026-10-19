@@ -44,6 +44,8 @@ export const NEUTRAL_PARTY = "neutralParty";
 export const HOSTILE_GROUPS = Object.freeze([SIDES.HOSTILE, "hostile2", "hostile3"]);
 /** Friend groups, for hostile and neutral tokens alike. */
 export const GROUPS = Object.freeze([1, 2, 3]);
+/** The ways a creature moves (spec.speeds' keys): the scene's approach (terrain.js) and the story's move tables. */
+export const MOVE_MODES = ["walk", "fly", "swim", "climb", "burrow"];
 /** How near (in squares) a neutral must be to a friend group, for the planner to put it in that group. */
 export const NEUTRAL_REACH = 3;
 

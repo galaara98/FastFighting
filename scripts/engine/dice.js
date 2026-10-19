@@ -166,6 +166,19 @@ export function addTo(byCategory, category, type, amount) {
   row[type] = (row[type] ?? 0) + amount;
 }
 
+/** Mean damage of some parts, by type, none below 0; persistent damage too unless `persistent` is false. */
+export function meanByType(parts, { persistent = true } = {}) {
+  const out = {};
+  for ( const p of parts ?? [] ) {
+    if ( p.persistent && !persistent ) continue;
+    out[p.type] = (out[p.type] ?? 0) + Math.max(0, meanPart(p));
+  }
+  return out;
+}
+
+/** Mean damage of some parts together, none below 0 (persistent damage too). */
+export const meanTotal = parts => (parts ?? []).reduce((s, p) => s + Math.max(0, meanPart(p)), 0);
+
 export function meanDamage(parts, multiplier = 1) {
   return parts.reduce((s, p) => s + (p.persistent ? meanPart(p) * 2 : Math.max(0, meanPart(p) * multiplier)), 0);
 }

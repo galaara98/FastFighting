@@ -43,7 +43,7 @@
  * an obsessed character (OBSESSED+) stops worrying about its own safety.
  */
 import { STATUS, TACTICAL, ADHD, clamp } from "../../constants.js";
-import { areEnemies, isStanding, liveTrait, liveTier, enemiesOf, alliesOf, sizedUp, command, commandOf, refusesToHelp, movesNeeded, edgeDistance, canMove } from "../battle-state.js";
+import { areEnemies, isStanding, liveTrait, liveTier, enemiesOf, alliesOf, sizedUp, command, commandOf, refusesToHelp, movesNeeded, edgeDistance, canMove, hpFraction, dangerScore } from "../battle-state.js";
 import { perceives, apparentHealth } from "./senses.js";
 import { seemsFoe } from "./neutral.js";
 import { robbable } from "./theft.js";
@@ -684,15 +684,13 @@ export function styleWants(run, u, scored, { canHeal = false, canTalk = false, t
     const k = keyOf(kind, id);
     u.desire.style.set(k, (u.desire.style.get(k) ?? 0) + points);
   };
-  const frac = t => (t.maxHp > 0 ? t.hp / t.maxHp : 1);
   // How hurt they look: friends in trouble are noticed by any sense; a foe's weakness only when it can really tell.
-  const looks = t => (areEnemies(run, u, t) ? apparentHealth(run, u, t) : perceives(run, u, t, { crisis: true }) ? frac(t) : 1);
-  const danger = t => (Number(t.spec.level) || 0) * 2 + (t.damageDealt ?? 0) / 5;
+  const looks = t => (areEnemies(run, u, t) ? apparentHealth(run, u, t) : perceives(run, u, t, { crisis: true }) ? hpFraction(t) : 1);
   const h = s.hurt ?? {};
   const foes = scored.map(x => x.t);
   const min = scored.length ? Math.min(...scored.map(x => x.moves)) : 0;
   const weakest = foes.length ? foes.reduce((a, b) => (looks(b) < looks(a) ? b : a)) : null;
-  const dangerous = foes.length ? foes.reduce((a, b) => (danger(b) > danger(a) ? b : a)) : null;
+  const dangerous = foes.length ? foes.reduce((a, b) => (dangerScore(b) > dangerScore(a) ? b : a)) : null;
   const mine = new Set((u.prep.offense ?? []).flatMap(a => (a.damage ?? []).map(p => p.type)));
   // (The foe its blows would hurt most: its weaknesses, a soft defense, off guard, all in what it would do to each.)
   const softest = h.softest && foes.length ? foes.reduce((a, b) => (threatOf(run, u, b) > threatOf(run, u, a) ? b : a)) : null;
@@ -720,9 +718,9 @@ export function styleWants(run, u, scored, { canHeal = false, canTalk = false, t
   if ( s.rob ) for ( const t of enemiesOf(run, u) ) if ( relevant(run, u, "rob", t) && perceives(run, u, t) ) add("rob", t.id, s.rob);
   // Friends: one to mend, one to guard.
   const friends = run.units.filter(a => a !== u && a.side === u.side && a.active && ![STATUS.DEAD, STATUS.FLED].includes(a.status));
-  if ( canHeal && s.heal ) for ( const a of friends ) if ( perceives(run, u, a, { crisis: true }) && (a.status === STATUS.DOWN || frac(a) < 0.75) ) add("heal", a.id, s.heal);
+  if ( canHeal && s.heal ) for ( const a of friends ) if ( perceives(run, u, a, { crisis: true }) && (a.status === STATUS.DOWN || hpFraction(a) < 0.75) ) add("heal", a.id, s.heal);
   // Itself, once hurt (the Fragile).
-  if ( canHeal && s.mend && frac(u) < 0.75 ) add("heal", u.id, s.mend);
+  if ( canHeal && s.mend && hpFraction(u) < 0.75 ) add("heal", u.id, s.mend);
   if ( s.protect ) add("protect", friends.filter(isStanding).sort((a, b) => looks(a) - looks(b))[0]?.id, s.protect);
   // Bolstering: the friend doing the most fighting (its leader, for those who look to one).
   if ( canAid && s.aid ) {
@@ -736,7 +734,7 @@ export function styleWants(run, u, scored, { canHeal = false, canTalk = false, t
   // Fear: of the most dangerous foe, of whoever is hurting it once it's hurt, of whatever comes close.
   const avoid = s.avoid ?? {};
   if ( avoid.dangerous ) add("avoid", dangerous?.id, avoid.dangerous);
-  if ( avoid.attacker && frac(u) < 0.6 ) add("avoid", u.lastAttackerId, avoid.attacker);
+  if ( avoid.attacker && hpFraction(u) < 0.6 ) add("avoid", u.lastAttackerId, avoid.attacker);
   if ( avoid.nearest ) add("avoid", scored.find(x => x.moves === min)?.t.id, avoid.nearest);
   // A whim: some foe catches its eye.
   if ( s.whim && foes.length && run.rng.chance(0.3) ) add("hurt", run.rng.pick(foes).id, s.whim);
@@ -1021,16 +1019,14 @@ export function partyWants(run, u, scored, { canHeal = false } = {}) {
     const k = keyOf(kind, id);
     u.desire.social.set(k, (u.desire.social.get(k) ?? 0) + n);
   };
-  const frac = t => (t.maxHp > 0 ? t.hp / t.maxHp : 1);
-  const looks = t => (areEnemies(run, u, t) ? apparentHealth(run, u, t) : frac(t));
+  const looks = t => (areEnemies(run, u, t) ? apparentHealth(run, u, t) : hpFraction(t));
   const foes = scored.map(x => x.t);
   if ( foes.length && party.target ) {
     const min = Math.min(...scored.map(x => x.moves));
-    const danger = t => (Number(t.spec.level) || 0) * 2 + (t.damageDealt ?? 0) / 5;
     const pick = {
       nearest: () => scored.filter(x => x.moves === min).map(x => x.t),
       weakest: () => [foes.reduce((a, b) => (looks(b) < looks(a) ? b : a))],
-      dangerous: () => [foes.reduce((a, b) => (danger(b) > danger(a) ? b : a))],
+      dangerous: () => [foes.reduce((a, b) => (dangerScore(b) > dangerScore(a) ? b : a))],
       casters: () => foes.filter(t => t.prep?.isCaster || t.prep?.isHealer),
       leader: () => foes.filter(t => commandOf(run, t)?.unit === t)
     }[party.target];
@@ -1047,7 +1043,7 @@ export function partyWants(run, u, scored, { canHeal = false } = {}) {
     for ( const a of friends ) if ( freeable(run, a) && perceives(run, u, a) ) add("free", a.id, points / 2);
   }
   if ( party.care === "heal" && canHeal ) {
-    for ( const a of friends ) if ( perceives(run, u, a, { crisis: true }) && (a.status === STATUS.DOWN || frac(a) < 0.75) ) add("heal", a.id, points);
+    for ( const a of friends ) if ( perceives(run, u, a, { crisis: true }) && (a.status === STATUS.DOWN || hpFraction(a) < 0.75) ) add("heal", a.id, points);
   } else if ( party.care === "guard" ) {
     add("protect", friends.filter(isStanding).sort((a, b) => looks(a) - looks(b))[0]?.id, points);
   } else if ( party.care === "self" ) {

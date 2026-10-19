@@ -10,6 +10,7 @@
  * Pure: the word lists come in (foundry/story-words.js reads them).
  */
 import { DAMAGE_TYPES } from "./blocks.js";
+import { saysWord } from "../i18n.js";
 
 /** Which kind of harm shows when there are several (lower first; anything not listed is magic or energy: 0). */
 const SHOWS = { explosive: 1, ballistic: 2, bludgeoning: 3, piercing: 3, slashing: 3, bleed: 4, untyped: 5 };
@@ -45,8 +46,6 @@ export function refines(named, damage) {
   return (damage === "fire" || damage === "electricity") && BEAMS.has(named);
 }
 
-const escaped = w => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-
 /**
  * The family a name tells: the first of NAMED_FAMILIES with one of its words in it, whole, in any case. Null if none.
  * @param {string} name
@@ -58,7 +57,7 @@ export function nameFamily(name, lists) {
   for ( const family of NAMED_FAMILIES ) {
     const words = lists?.[family];
     if ( !words?.length ) continue;
-    if ( new RegExp(`(?<![\\p{L}\\p{N}])(?:${words.map(escaped).join("|")})(?![\\p{L}\\p{N}])`, "iu").test(text) ) return family;
+    if ( saysWord(words, text) ) return family;
   }
   return null;
 }

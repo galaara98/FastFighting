@@ -8,11 +8,11 @@
  * Pure apart from the tables object passed in ({get(key) -> string[]}), so it can be unit-tested.
  */
 import { createRng } from "../engine/rng.js";
-import { DAMAGE_TYPES } from "./blocks.js";
+import { DAMAGE_TYPES, MOVE_MODES } from "./blocks.js";
 import { damageFamily } from "./families.js";
 import { conditionOf } from "./master.js";
 import { desireBand, DESIRE_BAND_KEYS } from "../engine/behavior/desire.js";
-import { listJoin, listItems, localize, hasWords, distanceText, escapeHtml as esc } from "../i18n.js";
+import { listJoin, listItems, localize, hasWords, distanceText, escapeHtml as esc, escapeRegExp } from "../i18n.js";
 import { logLine, endLine, logTerm, concessionText } from "./log-lines.js";
 
 export { concessionText };
@@ -188,7 +188,7 @@ function makeRoller(tables, seed) {
 /** "jaws skewers" -> "jaws skewer": plural natural weapons take a plural verb. */
 function agreeWithWeapon(text, weapon) {
   if ( !weapon || !/[^s]s$/i.test(weapon.trim()) ) return text;
-  const escaped = weapon.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const escaped = escapeRegExp(weapon.trim());
   return text.replace(new RegExp(`(${escaped}) (still )?([a-z]+)`, "gi"), (m, w, still = "", verb) => {
     let v = verb;
     if ( /ies$/.test(v) ) v = v.replace(/ies$/, "y");
@@ -424,7 +424,7 @@ function narrate(e, roll, rel, fill) {
     case "move": {
       if ( e.purpose === "tend" ) return roll("event.moveTend", { ...f, target: e.toward });
       if ( e.purpose === "door" ) return roll("event.moveDoor", f);
-      const mode = ["walk", "fly", "swim", "climb", "burrow"].includes(e.mode) ? e.mode : "walk";
+      const mode = MOVE_MODES.includes(e.mode) ? e.mode : "walk";
       const situation = e.purpose === "leave" ? "flee" : e.purpose === "help" ? "help" : e.purpose === "hunt" ? "hunt" : (e.regions?.length && (e.mult > 1.05 || mode === "fly" || mode === "burrow" || mode === "climb")) ? "terrain" : "approach";
       return roll(`move.${mode}.${situation}`, { ...f, target: e.toward, region: e.regions?.[0] ?? "" });
     }
@@ -1061,7 +1061,7 @@ function nameBolder(result, spec) {
     if ( e.targetId && e.target ) names.add(e.target);
   }
   const list = [...names].filter(Boolean).map(n => esc(n)).sort((a, b) => b.length - a.length)
-    .map(n => n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+    .map(n => escapeRegExp(n));
   if ( !list.length ) return html => html;
   // (A whole name, not part of a word, and never inside an escaped character such as &#39;.)
   const pattern = new RegExp(`(?<![\\p{L}\\p{N}&#])(?:${list.join("|")})(?![\\p{L}\\p{N}])`, "gu");

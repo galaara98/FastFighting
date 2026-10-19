@@ -8,12 +8,11 @@
  *  - cover: tokens standing beside walls can duck behind them (used by the story writer).
  */
 import { getAdapter } from "../api.js";
-import { MODULE_ID } from "../constants.js";
+import { MODULE_ID, MOVE_MODES } from "../constants.js";
 import { distanceText } from "../i18n.js";
 import { pathGridFor, THROUGH_WALL } from "./pathing.js";
 import { senseReach, sightReach, DARK } from "../engine/behavior/senses.js";
 
-const MODES = ["walk", "fly", "swim", "climb", "burrow"];
 
 /**
  * What a region behavior means for a fight: core behaviors here, system ones (PF2e environments and
@@ -340,7 +339,7 @@ export function computeApproach(tokens, specs, { ignoreTerrainFor = new Set(), p
       // (The way round, once for the pair: the same whichever way it moves.)
       let round;
       const wayRound = () => (round === undefined ? (round = grid?.stepsBetween(a, b)) : round);
-      for ( const mode of MODES ) {
+      for ( const mode of MOVE_MODES ) {
         const speed = speeds[mode];
         if ( !(speed > 0) ) continue;
         let mult = ignores ? 1 : terrainMultiplier(a, b, mode);

@@ -1,7 +1,7 @@
 /**
  * Expected-value helpers used by behavior decisions. The simulation itself always rolls real dice.
  */
-import { meanPart, doubled, addTo } from "../dice.js";
+import { meanPart, doubled, addTo, meanByType } from "../dice.js";
 import { degreeDistribution } from "../probability.js";
 import { attackRoll, attackOptions, currentAc, saveRoll, bonusDamageParts, enemiesOf, isStanding, isMagical, upgradesSave, boostBonus, liveTier, inArea } from "../battle-state.js";
 import { TACTICAL } from "../../constants.js";
@@ -15,16 +15,7 @@ import { stepOf } from "./afflictions.js";
 import { hasTrait } from "../conditions.js";
 import { withManeuver } from "../maneuvers.js";
 
-function meanByType(parts) {
-  const out = {};
-  for ( const p of parts ?? [] ) {
-    if ( p.persistent ) continue;
-    out[p.type] = (out[p.type] ?? 0) + Math.max(0, meanPart(p));
-  }
-  return out;
-}
-
-/** As meanByType, how much of each type each category's parts are (precision, splash): sampleDamage's byCategory. */
+/** As meanByType without persistent damage, how much of each type each category's parts are (precision, splash): sampleDamage's byCategory. */
 function meanByCategory(parts) {
   const out = {};
   for ( const p of parts ?? [] ) if ( !p.persistent && p.category ) addTo(out, p.category, p.type, Math.max(0, meanPart(p)));
@@ -176,7 +167,7 @@ function meanDamageNow(run, action, target, extra = []) {
   // Rolled several times (magic missiles), and a crit table's extra on a crit.
   const times = action.repeat ? Math.max(1, meanPart(action.repeat)) : 1;
   // (Against the target's resistances, what deals it with them, as rollHit has it: iwrContext.)
-  const vs = (parts, isCrit) => rules.applyIwr(iwr, meanByType(parts), target, iwrContext(action, { crit: isCrit, byCategory: meanByCategory(parts) })) + persistentMean(parts);
+  const vs = (parts, isCrit) => rules.applyIwr(iwr, meanByType(parts, { persistent: false }), target, iwrContext(action, { crit: isCrit, byCategory: meanByCategory(parts) })) + persistentMean(parts);
   const critMean = vs(crit, true);
   return {
     normal: times * vs(base, false) + rider,

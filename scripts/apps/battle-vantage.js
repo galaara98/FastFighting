@@ -34,6 +34,8 @@ const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 const loc = key => game.i18n.localize(key);
 const fmt = (key, data) => game.i18n.format(key, data);
 const has = key => game.i18n.has(key);
+/** An engine condition in words: the system's own (its helper's conditionLabel), else the core's, else its key. */
+const conditionWords = (adapter, key) => adapter?.conditionLabel?.(key) || (has(`FASTFIGHTING.Condition.${key}`) ? loc(`FASTFIGHTING.Condition.${key}`) : key);
 
 /** What the GM can say came of the table's rolls, each as engine/live.js applyFact takes it. */
 const FACTS = Object.freeze({
@@ -395,10 +397,9 @@ export class BattleVantage extends HandlebarsApplicationMixin(ApplicationV2) {
     const opt = (value, label, data = {}) => `<option value="${foundry.utils.escapeHTML(value)}" ${Object.entries(data).map(([k, v]) => `data-${k}="${foundry.utils.escapeHTML(String(v))}"`).join(" ")}>${foundry.utils.escapeHTML(label)}</option>`;
     // (What each choice asks: whom (required, or not), and in what words; how badly, how well, how much, how long.)
     const whomFor = what => fmt("FASTFIGHTING.Battle.Net.WhomFor", { what });
-    const label = key => adapter?.conditionLabel?.(key) || (has(`FASTFIGHTING.Condition.${key}`) ? loc(`FASTFIGHTING.Condition.${key}`) : key);
     const seen = new Set();
     const conditions = (adapter?.conditionChoices?.() ?? []).filter(c => c?.key && !seen.has(c.key) && seen.add(c.key))
-      .map(c => ({ value: `cond:${c.key}`, label: `${label(c.key)} · ${loc(adapter?.sheetCarries?.(c.key, doc?.actor) ? "FASTFIGHTING.Battle.OnSheet" : "FASTFIGHTING.Battle.CoreOnly")}`,
+      .map(c => ({ value: `cond:${c.key}`, label: `${conditionWords(adapter, c.key)} · ${loc(adapter?.sheetCarries?.(c.key, doc?.actor) ? "FASTFIGHTING.Battle.OnSheet" : "FASTFIGHTING.Battle.CoreOnly")}`,
         data: { whom: loc("FASTFIGHTING.Battle.Net.WhomCause"), fields: c.valued || (conditionMost(c.key) ?? 2) > 1 ? "who value rounds" : "who rounds" } }))
       .sort((a, c) => a.label.localeCompare(c.label, game.i18n.lang));
     const players = b.run.live.players.has(id);
@@ -635,7 +636,7 @@ export function battleContext(b, focusId = null) {
   const state = !started ? "unstarted" : b.data.ended ? "ended" : b.pc ? "player" : played ? "waiting" : b.data.spotlight && !current ? "spotlight" : "ready";
   // (A spotlight system: whom FastFighting would give it to next.)
   const next = state === "waiting" || state === "spotlight" ? suggestedSpotlight() : null;
-  const view = networkView(b, current, focusId);
+  const view = networkView(b, current, focusId, name);
   // A player's turn waiting on the GM: what was read of it, to keep or drop (and a talk set right).
   const review = b.review ? {
     title: fmt("FASTFIGHTING.Battle.ReviewTitle", { name: name(b.review.id) }),
@@ -682,16 +683,15 @@ export function battleContext(b, focusId = null) {
 
 /**
  * The map of minds in words (engine/live.js networkOf): its nodes, lines and symbols, each line and symbol with the
- * steps its intensity has; and the panel for the one in focus.
+ * steps its intensity has; and the panel for the one in focus. `name`: a creature's name, by its id (battleContext's).
  */
-function networkView(b, current, focusId) {
+function networkView(b, current, focusId, name) {
   const run = b.run;
   const net = networkOf(run);
   const adapter = getAdapter();
-  const name = id => run.byId.get(id)?.spec.name ?? "";
   const sideLabel = side => b.spec.sides?.[side]?.label ?? (has(`FASTFIGHTING.Side.${side}`) ? loc(`FASTFIGHTING.Side.${side}`) : side);
   const docOf = id => b.scene.tokens.get(tokenOf(b, id));
-  const condLabel = key => adapter?.conditionLabel?.(key) || (has(`FASTFIGHTING.Condition.${key}`) ? loc(`FASTFIGHTING.Condition.${key}`) : key);
+  const condLabel = key => conditionWords(adapter, key);
   const choices = new Map();
   for ( const c of adapter?.conditionChoices?.() ?? [] ) if ( c?.key && !choices.has(c.key) ) choices.set(c.key, c);
   const valuedHere = new Set([...choices.values()].filter(c => c.valued).map(c => c.key));
