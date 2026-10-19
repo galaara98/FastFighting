@@ -80,10 +80,13 @@ describe("paying and handing over", () => {
     expect(potion.system.quantity).toBe(1);
     expect(made[0]).toEqual({ name: "Potion", system: { quantity: 1, equipped: false } });
     expect(records.map(r => [r.actorUuid, r.itemUpdates, r.createdItems])).toEqual([["Actor.g", [{ id: "p", update: { "system.quantity": 2 } }], []], ["Actor.r", [], ["new"]]]);
-    const last = await handOverItem({ uuid: "Token.g", actor: giver }, null, "p");
+    expect(records.every(r => Array.isArray(r.statusesBefore))).toBe(true);
+    // (A system whose conditions are items keeps no statuses from before: PF2e's.)
+    const last = await handOverItem({ uuid: "Token.g", actor: giver }, null, "p", { statusesBefore: false });
     expect(items.has("p")).toBe(false);
     expect(last).toHaveLength(1);
     expect(last[0].deletedItems[0].name).toBe("Potion");
+    expect("statusesBefore" in last[0]).toBe(false);
   });
 });
 

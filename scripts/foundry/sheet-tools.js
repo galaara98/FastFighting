@@ -84,9 +84,11 @@ export function payFrom(purse, amount, coins) {
 /**
  * One of an item handed from one creature to another (talked out of it, or stolen): one fewer on the giver (gone, if it
  * was the last), one more on the receiver (none, if there's no one to have it). `prepare(data, item)`: what the
- * system resets on the copy (dnd5e: not equipped, out of its container). Returns undo records.
+ * system resets on the copy (dnd5e: not equipped, out of its container). `statusesBefore`: whether the undo records
+ * keep the statuses as they were (undoRecord's; false for a system whose conditions are items, PF2e). Returns undo
+ * records.
  */
-export async function handOverItem(giverDoc, receiverDoc, itemId, { prepare = null } = {}) {
+export async function handOverItem(giverDoc, receiverDoc, itemId, { prepare = null, statusesBefore = true } = {}) {
   const giver = giverDoc?.actor;
   const item = giver?.items.get(itemId);
   if ( !item ) return [];
@@ -95,7 +97,7 @@ export async function handOverItem(giverDoc, receiverDoc, itemId, { prepare = nu
   if ( data.system && "quantity" in data.system ) data.system.quantity = 1;
   prepare?.(data, item);
   const records = [];
-  const giverUndo = undoRecord(giverDoc, giver);
+  const giverUndo = undoRecord(giverDoc, giver, { statusesBefore });
   const quantity = Number(item.system?.quantity ?? 1) || 1;
   if ( quantity > 1 ) {
     giverUndo.itemUpdates.push({ id: item.id, update: { "system.quantity": quantity } });
@@ -107,7 +109,7 @@ export async function handOverItem(giverDoc, receiverDoc, itemId, { prepare = nu
   records.push(giverUndo);
   const receiver = receiverDoc?.actor;
   if ( receiver ) {
-    const receiverUndo = undoRecord(receiverDoc, receiver);
+    const receiverUndo = undoRecord(receiverDoc, receiver, { statusesBefore });
     const [created] = await receiver.createEmbeddedDocuments("Item", [data]);
     if ( created ) receiverUndo.createdItems.push(created.id);
     records.push(receiverUndo);

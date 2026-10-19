@@ -272,7 +272,7 @@ Whenever FastFighting rolls dice itself for something a person would roll at the
 
 #### Shared Foundry pieces (API 18)
 
-What the helpers had each written for themselves is in the core, exported from `core-api.js`: from `foundry/sheet-tools.js`, `statusesOf`, `statusEntry` (the token palette as a list or a map), `toggleStatus` (with its undo), `undoRecord`, `payFrom`, `handOverItem`, `englishName`, `englishDescription` (up to `DESCRIPTION_MOST`), `plainText`, `numberSetting`, `idFromUuid` and `tokenIdIn`; from `i18n.js`, `englishWords`, `listWords`, `wordList` and `saysWord`; `partsOf` (trait-parts) and `sideAfter` (changes). In a live battle the core sets the token disposition of a creature that changes sides (undone with the turn), whatever the helper writes.
+What the helpers had each written for themselves is in the core, exported from `core-api.js`: from `foundry/sheet-tools.js`, `statusesOf`, `statusEntry` (the token palette as a list or a map), `toggleStatus` (with its undo), `undoRecord`, `payFrom`, `handOverItem` (with `statusesBefore: false`, API 20: its undo records keep no statuses from before, for a system whose conditions are items), `englishName`, `englishDescription` (up to `DESCRIPTION_MOST`), `plainText`, `numberSetting`, `idFromUuid` and `tokenIdIn`; from `i18n.js`, `englishWords`, `listWords`, `wordList` and `saysWord`; `partsOf` (trait-parts) and `sideAfter` (changes). In a live battle the core sets the token disposition of a creature that changes sides (undone with the turn), whatever the helper writes.
 
 ### Senses, fate and what's already on a creature
 
