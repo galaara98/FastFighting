@@ -81,7 +81,7 @@ const ICONS = Object.freeze({
   },
   thing: { door: "door-closed", item: "gem", place: "location-dot", object: "gears" },
   affliction: { poison: "skull-crossbones", disease: "virus", curse: "book-skull", radiation: "radiation", parasite: "bug", other: "biohazard" },
-  status: { unaware: "person-circle-question" }
+  status: { unaware: "person-circle-question", patrolling: "binoculars", searching: "magnifying-glass" }
 });
 const icon = (group, key) => `fa-solid fa-${ICONS[group]?.[key] ?? "circle-exclamation"}`;
 /** An affliction's sign: by what it is (a poison, a disease, a curse ...), else the condition a simple one stands for. */
@@ -802,6 +802,9 @@ function networkView(b, current, focusId, name) {
         adjust: { t: "affliction", id: m.on, afflictionId: m.afflictionId, intensity: m.stage },
         ...stepsOf(m.stage, m.most)
       });
+    } else if ( m.type === "status" && m.key !== "unaware" ) {
+      // (What it's at with no foe it knows of: behavior/patrol.js. Only shown.)
+      markOn(m.on, { id: `s:${m.key}`, cls: "is-status", icon: icon("status", m.key), text: "", tip: loc(m.key === "patrolling" ? "FASTFIGHTING.Battle.Net.Patrolling" : "FASTFIGHTING.Battle.Net.Searching") });
     } else if ( m.type === "status" ) {
       markOn(m.on, { id: `s:${m.key}`, cls: "is-status", icon: icon("status", m.key), text: "", tip: loc("FASTFIGHTING.Battle.Net.Unaware"), adjust: { t: "notice", id: m.on, intensity: 1 }, lower: loc("FASTFIGHTING.Battle.Net.Notices"), raise: null });
     } else if ( m.type === "goal" ) {

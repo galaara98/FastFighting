@@ -3817,6 +3817,76 @@
     "Strike made, {actor} is already slipping away from {target}.",
     "{actor} hits and runs, leaving {target} swinging at air."
   ],
+  "patrol.scent": [
+    "{actor} catches a scent and follows it toward {target}.",
+    "Nose low, {actor} picks up {target}'s trail.",
+    "{actor} sniffs the air and sets off after {target}."
+  ],
+  "patrol.noise": [
+    "{actor} hears fighting somewhere off and heads toward it.",
+    "Drawn by the clash of weapons, {actor} goes toward the noise.",
+    "{actor} turns toward the distant shouts and goes to find them."
+  ],
+  "patrol.seen": [
+    "{actor} goes where the others are looking.",
+    "{actor} follows their friends' gaze toward the enemy.",
+    "{actor} hurries to where their allies have spotted a foe."
+  ],
+  "patrol.pack": [
+    "{actor} lopes after the pack.",
+    "{actor} keeps with the pack as it moves.",
+    "{actor} falls in behind its packmates."
+  ],
+  "patrol.wander": [
+    "{actor} prowls, hunting for something to fight.",
+    "{actor} roams, nose to the ground.",
+    "{actor} paces about, searching for prey."
+  ],
+  "patrol.spread": [
+    "{actor} fans out from the others to cover more ground.",
+    "{actor} moves away from their friends, checking every corner.",
+    "{actor} spreads out to search."
+  ],
+  "patrol.near": [
+    "{actor} stays close to their friends, eyes open.",
+    "{actor} keeps near the others, watching.",
+    "{actor} sticks with the group and looks around."
+  ],
+  "patrol.watch": [
+    "{actor} scans the area for enemies.",
+    "{actor} looks around for a foe.",
+    "{actor} stands watch."
+  ],
+  "patrol.hold": [
+    "{actor} holds their ground and watches.",
+    "{actor} stays put, peering about.",
+    "{actor} waits where they are, watching."
+  ],
+  "patrol.hide": [
+    "{actor} keeps low and out of sight.",
+    "{actor} stays tucked away, hoping not to be seen.",
+    "{actor} shrinks into hiding."
+  ],
+  "seek.found": [
+    "{actor} spots {targets}!",
+    "{actor}'s search turns up {targets}.",
+    "{actor} picks out {targets}."
+  ],
+  "seek.nothing": [
+    "{actor} searches but finds nothing.",
+    "{actor} looks carefully: nothing there.",
+    "{actor} sees no one."
+  ],
+  "fidget.step": [
+    "{actor} can't keep still and shuffles a step over.",
+    "{actor} shifts their weight and steps aside.",
+    "Restless, {actor} paces a step."
+  ],
+  "fidget.look": [
+    "{actor} glances about, restless.",
+    "{actor} fidgets and looks somewhere else.",
+    "{actor} drums their fingers, eyes wandering."
+  ],
   "event.auraTakes": [
     "{target} comes too close to {actor}, and {actor}'s {weapon} takes hold.",
     "{actor}'s {weapon} reaches {target}.",

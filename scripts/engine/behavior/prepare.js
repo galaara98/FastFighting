@@ -32,6 +32,7 @@ import { expectedDamage, threatOf, hasUses, unitsPerTurn } from "./evaluate.js";
 import { mind, levelOf, protective } from "./desire.js";
 import { threats } from "./reactions.js";
 import { edgeAt, inTheWay, wallsKnown, lineBlocked, blockedPoints, crossesAny, takesRoom } from "./space.js";
+import { knowsOf } from "./senses.js";
 import { meanPart } from "../dice.js";
 
 /**
@@ -214,9 +215,9 @@ function onMap(run, p) {
 /**
  * Free spots it could end a move of `feet` on: rings round it, a square's width apart, none past a wall, none taken.
  * Each on u's grid (its middle, a square at a time), found by its squares across and down, so one met again from
- * another direction (the rings overlap) is passed over by those two numbers.
+ * another direction (the rings overlap) is passed over by those two numbers. (A patrol's too: behavior/patrol.js.)
  */
-function spotsWithin(run, u, feet) {
+export function spotsWithin(run, u, feet) {
   const seen = new Set();
   const out = [];
   const rings = [...new Set([SQUARE, 10, Math.round(feet / 2 / SQUARE) * SQUARE, Math.floor(feet / SQUARE) * SQUARE].filter(r => r >= SQUARE && r <= feet))];
@@ -592,6 +593,22 @@ function moveRisk(u, p, near) {
 function moveThreats(run, u) {
   if ( u.disengaged ) return [];
   return threats(run, u).map(({ e, strike }) => ({ e, reach: strike.reach ?? 5, harm: expectedDamage(run, e, strike, u, 0) }));
+}
+
+/**
+ * What ending a patrol's move at p would cost u (behavior/patrol.js), as a spot for later is weighed: the harm the foes
+ * it knows of could do it there in the coming round, as much as it minds being hit (spotWorth's), and the blows of those
+ * whose reach it leaves on the way (moveRisk). A function of p: nothing, with no foe it knows of near.
+ */
+export function walkRisk(run, u) {
+  const near = moveThreats(run, u);
+  const known = foesOf(run, u).filter(foe => knowsOf(run, u, foe.f));
+  if ( !known.length && !near.length ) return () => 0;
+  const friends = alliesOf(run, u).filter(a => a !== u && isStanding(a) && a.pos);
+  for ( const foe of known ) foe.friendsAt = friends.map(a => edgeAt(a, a.pos, foe.f));
+  const ctx = { foes: known };
+  const w = harmWeight(run, u);
+  return p => PREP.harm * w * harmAt(run, u, p, ctx) + moveRisk(u, p, near);
 }
 
 /**

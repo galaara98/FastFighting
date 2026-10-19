@@ -236,6 +236,8 @@ export function applyOutcome(target, outcome, sourceId = null, action = null) {
   const regen = Number(outcome.regen?.amount) > 0
     ? { amount: Math.round(Number(outcome.regen.amount)), stoppedBy: [...(outcome.regen.stoppedBy ?? [])], needsHp: !!outcome.regen.needsHp } : null;
   if ( !Object.keys(conditions).length && !mods && !mark && !iwr && !boost && !taunt && !fastHealing && !regen ) return null;
+  // (Hiding again: whoever had found it with a Seek has to find it again: senses.js hiddenFrom.)
+  if ( Number(conditions.hidden) > 0 ) target.foundBy = null;
   const key = action?.id ?? outcome.label ?? null;
   if ( key !== null ) target.effects = (target.effects ?? []).filter(e => !(e.key === key && e.sourceId === sourceId));
   // Effects run out at the end of the bearer's turns; one it lays on itself during its own turn would lose a round

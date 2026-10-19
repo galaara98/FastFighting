@@ -11,7 +11,7 @@ import { getAdapter } from "../api.js";
 import { MODULE_ID, MOVE_MODES } from "../constants.js";
 import { distanceText } from "../i18n.js";
 import { pathGridFor, THROUGH_WALL } from "./pathing.js";
-import { senseReach, sightReach, DARK } from "../engine/behavior/senses.js";
+import { senseReach, sightReach, DARK, HEAR } from "../engine/behavior/senses.js";
 
 
 /**
@@ -153,7 +153,7 @@ export function computeWalls(tokens) {
     const door = w.door && w.door !== CONST.WALL_DOOR_TYPES.NONE;
     out.push({
       a: [toFeet(x1), toFeet(y1)], b: [toFeet(x2), toFeet(y2)], s, d: Number(w.dir) || 0,
-      door: door ? w.id : null, open: !!door && w.ds === CONST.WALL_DOOR_STATES.OPEN
+      door: door ? w.id : null, open: !!door && w.ds === CONST.WALL_DOOR_STATES.OPEN, snd: Number(w.sound) || 0
     });
   }
   return out;
@@ -184,8 +184,6 @@ export function registerGroundField() {
   });
 }
 
-/** Hearing combat in the open: easy nearby, harder with distance, much harder through each wall. */
-const HEAR = { baseDC: 8, perFeet: 15, perWall: 6, maxFeet: 300 };
 const VISION_FEET = 240;
 const COVER_FEET = 7.5;
 

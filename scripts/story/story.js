@@ -497,6 +497,10 @@ function narrate(e, roll, rel, fill) {
     case "parley": return roll("event.parley", f);
     case "callHelp": return roll("maneuver.callForHelp", { ...f, target: e.toward });
     case "lazy": return roll("condition.lazy", f);
+    // (Looking for a foe it knows of none: behavior/patrol.js. Its moves are told by this, not again on their own.)
+    case "patrol": return roll(`patrol.${e.how}`, { ...f, target: e.toward ?? "" }) || roll("patrol.watch", f);
+    case "seek": return e.found?.length ? roll("seek.found", { ...f, targets: listJoin(e.found) }) : roll("seek.nothing", f);
+    case "fidget": return roll(`fidget.${e.how}`, f);
     // (One called, or several: the sentences differ by more than the names.)
     case "callToArms": return roll((e.targets ?? []).length === 1 && hasTable(roll, "maneuver.callToArmsOne") ? "maneuver.callToArmsOne" : "maneuver.callToArms", { ...f, targets: listJoin(e.targets ?? []) });
     // (The GM's say, "gm", names no sense: told as a sighting, as any cause not listed here is.)
@@ -789,6 +793,7 @@ function roleplayParagraphs(result, spec, tables, seed, mapType, mapCondition = 
   const moment = createRng((seed + 7919) >>> 0); // when someone pauses to think
   const lastThought = new Map();
   const lastShield = new Map();
+  const lastPatrol = new Map(); // actor -> {round, how}: its patrol, told (behavior/patrol.js)
   const reach = createRng((seed + 104729) >>> 0); // when a first attack says how far it was
   const struck = new Set(); // "actor|turn": its first attack this turn told
   const closed = new Set(); // "actor|turn": it moved this turn (closing in is told already)
@@ -806,8 +811,8 @@ function roleplayParagraphs(result, spec, tables, seed, mapType, mapCondition = 
   for ( const e of result.log ) if ( e.type === "move" ) closed.add(`${e.actorId}|${e.turn}`);
   for ( const logged of tellingOrder(result.log) ) {
     if ( logged.type === "initiative" || !mentions(logged) || averted.has(logged) ) continue;
-    // (A step taken for next turn is told by its `prepare` event, once.)
-    if ( logged.prepared ) continue;
+    // (A step taken for next turn is told by its `prepare` event, once; a patrol's or a fidget's move, by its own.)
+    if ( logged.prepared || logged.patrol ) continue;
     if ( logged.type === "recovery" && logged.aftermath && !logged.stable && !logged.dead && !logged.revived && lastBreath.get(logged.actorId) !== logged ) continue;
     // (Taking hold and its first harm are one moment: told once.)
     const onset = `${logged.actorId}|${logged.name}|${logged.turn}`;
@@ -836,6 +841,19 @@ function roleplayParagraphs(result, spec, tables, seed, mapType, mapCondition = 
       if ( key === lastMoveKey ) continue;
       lastMoveKey = key;
     } else lastMoveKey = null;
+    // (Patrolling the same way round after round: told once, and again when it goes about it differently or after a
+    // round without it; a search that finds nothing, once, and only with a patrol told.)
+    if ( e.type === "patrol" ) {
+      const last = lastPatrol.get(e.actorId);
+      const quiet = last && last.how === e.how && last.round >= e.round - 1;
+      lastPatrol.set(e.actorId, { round: e.round, how: e.how, told: quiet ? last.told : e.turn, empty: false });
+      if ( quiet ) continue;
+    }
+    if ( e.type === "seek" && !e.found?.length ) {
+      const patrol = lastPatrol.get(e.actorId);
+      if ( patrol?.told !== e.turn || patrol.empty ) continue;
+      patrol.empty = true;
+    }
     // (Raising a shield every round: told once, and again only after a round without it.)
     if ( e.type === "shield" ) {
       const last = lastShield.get(e.actorId);

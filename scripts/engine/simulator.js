@@ -59,6 +59,8 @@ import { maneuverOf, answersTo } from "../story/master.js";
 import { meets, noteBlow, freshTurn, setupUsed } from "./behavior/requires.js";
 import { withManeuver } from "./maneuvers.js";
 import { readyNow, gearStep, takeGearStep, spareBest, spareTurn, healAhead, tellStep, bestSpot, PREP } from "./behavior/prepare.js";
+import { mayPatrol, patrolTurn, fidget } from "./behavior/patrol.js";
+import { inTheWay, wallsKnown, lineBlocked } from "./behavior/space.js";
 import { used } from "./gear.js";
 
 const MAX_STEPS_PER_TURN = 8;
@@ -1212,6 +1214,9 @@ function executeOffense(run, u, action, t, attacksMade) {
   }
   u.revealed = true;
   run.blood = true; // a blow has been struck: whatever happens now, it wasn't settled with words
+  // (The din of it, for whoever hears it: behavior/patrol.js.)
+  u.dinRound = run.round;
+  if ( t ) t.dinRound = run.round;
   // (A live battle's: the system's own card for a spell, a breath, a blast, as its user shows it, and for a control
   // action that says it has one of its own (`card`: an ability whose roll is a maneuver's, PF2e's Grab); and the damage
   // of one that isn't an attack, rolled the system's way once for everyone it catches: liveDamage.)
@@ -2349,6 +2354,85 @@ function walkTo(run, u, turn, spot, toward, purpose) {
 }
 
 /**
+ * A patrol's move toward the creature it heads for (behavior/patrol.js: the din of a fight, a scent, a foe its friends
+ * see): one move the engine's way (its approach, the way round walls), a closed door on the way worked first (walked to,
+ * opened, or got through as any is). Not one it's beside already, nor one there's no way to. Told by its `patrol` event.
+ * Returns whether it got anywhere.
+ */
+function patrolToward(run, u, turn, t) {
+  if ( !t?.pos || !u.pos || !canMove(run, u) || (edgeDistance(u, t) ?? 0) <= 5.5 ) return false;
+  const ap = approach(run, u, t);
+  if ( !Number.isFinite(ap.mult) || !(ap.speed > 0) ) return false;
+  const door = doorAhead(run, u, t);
+  if ( door ) {
+    const done = workTheDoor(run, u, turn, door, t);
+    return done === "moved" || done === "worked";
+  }
+  if ( !leaveReach(run, u, turn, null) ) return false;
+  const budget = turn.payForMove(ap.speed);
+  if ( !budget ) return false;
+  const move = onLattice(run, u, moveToward(run, u, t, 5, budget));
+  turn.usedMove(move.cost);
+  return moveLog(run, u, move, t, "patrol", { patrol: true }) && move.feet > 0;
+}
+
+/**
+ * A move that stopped short, wherever its feet ran out, put on the squares it started the fight on (its first place's
+ * grid), where that's free and in the open: so it can still find a spot beside whoever it finds there (space.js
+ * spotWithin looks on its own grid). The move as it now ends.
+ */
+function onLattice(run, u, move) {
+  const base = u.spec.position;
+  if ( !base || !u.pos || !(move.feet > 0) || move.reached ) return move;
+  const at = (v, o) => Math.round((v - (((o % 5) + 5) % 5)) / 5) * 5 + (((o % 5) + 5) % 5);
+  const p = { x: at(u.pos.x, base.x), y: at(u.pos.y, base.y) };
+  if ( (p.x === u.pos.x && p.y === u.pos.y) || inTheWay(run, u, p) || (wallsKnown(run) && lineBlocked(run, u.pos, p)) ) return move;
+  u.pos.x = p.x;
+  u.pos.y = p.y;
+  run.geo = (run.geo ?? 0) + 1;
+  const feet = move.from ? Math.round(Math.hypot(p.x - move.from.x, p.y - move.from.y)) : move.feet;
+  return { ...move, feet, to: move.to ? { x: p.x, y: p.y } : move.to };
+}
+
+/**
+ * A patrol's move to a spot (behavior/patrol.js patrolSpot: out from its friends, back to them, on to new ground), or a
+ * fidget's step aside: paid for as any move (a Stride; movement), its reactions answered. Told by its `patrol` or
+ * `fidget` event. Returns whether it got anywhere, still standing.
+ */
+function patrolWalk(run, u, turn, spot, purpose = "patrol") {
+  if ( !u.pos || !canMove(run, u) || !leaveReach(run, u, turn, null) ) return false;
+  if ( !turn.payForMove(Math.max(spot.feet, 5)) ) return false;
+  const move = moveTowardPoint(run, u, spot.to, spot.feet + 0.5, 0);
+  turn.usedMove(move.cost);
+  resettle(run, u);
+  if ( run.log && move.feet > 0 ) {
+    log(run, u, {
+      type: "move", mode: "walk", feet: move.feet, mult: 1, regions: [], toward: "", towardId: null, from: move.from, to: move.to,
+      reached: true, purpose, patrol: true, tactical: liveTier(run, u)
+    });
+  }
+  answerMove(run, u, move, null);
+  return move.feet > 0 && isStanding(u);
+}
+
+/**
+ * Hiding where it patrols by keeping out of sight (behavior/patrol.js "hide"): its Hide (a buff that hides itself), where
+ * it has one the system lets it use now and it isn't hidden already. True if it did.
+ */
+function hideNow(run, u, turn) {
+  if ( Number(u.conds?.hidden) > 0 ) return false;
+  const rules = run.prep.rules;
+  const hide = (u.prep.buffActions ?? []).find(a => a.targets === "self" && [a.outcome, ...(a.onDegree ?? [])].some(o => Number(o?.conditions?.hidden) > 0));
+  if ( !hide || !hasUses(u, hide) || (rules.usable && rules.usable(run, u, hide, u) === false) ) return false;
+  const cost = costOf(rules, hide, u);
+  if ( !turn.canAfford(cost) ) return false;
+  turn.spend(cost);
+  executeBuff(run, u, hide, [u], 0, turn);
+  u.actsThisTurn += 1;
+  return true;
+}
+
+/**
  * Healing it can't give this turn, on its way (behavior/prepare.js healAhead): a potion got out, or a move toward the
  * friend, only as far as the heal needs. Returns whether it did anything.
  */
@@ -3475,6 +3559,8 @@ function playFromHere(run, u) {
 
   // The turn's budget comes from the system (PF2e: three actions; 5e: an action, a bonus action and movement).
   const turn = turnFor(run, u);
+  // (Its movement as the turn begins: a turn that spends nothing of it, nor anything else, was idle: fidget.)
+  const moveAtStart = turn.pools.move ?? 0;
   // Whose turn it is, and what's left of it (a rider that takes a bonus action can only be had on one's own).
   run.acting = u;
   u.turn = turn;
@@ -3564,6 +3650,13 @@ function playFromHere(run, u) {
     },
     walk: (x, t, spot, toward, step) => walkTo(run, x, t, spot, toward ?? nearestFoeOf(run, x) ?? x, step)
   };
+  // What patrolling and fidgeting take of the simulator's own (behavior/patrol.js).
+  const patrolKit = {
+    say: logger(run),
+    toward: t => patrolToward(run, u, turn, t),
+    walk: (spot, purpose) => patrolWalk(run, u, turn, spot, purpose),
+    hide: () => hideNow(run, u, turn)
+  };
   // (Prone: up, unless it bears it this turn, a selfless one fighting on from the ground.)
   if ( u.prone && !(run.prep.options.ignoreTroubles > 0 && bears(run, u)) ) {
     const stand = rules.standCost ? rules.standCost(u) : basic;
@@ -3647,241 +3740,260 @@ function playFromHere(run, u) {
   // (Each step, until it does something, it decides with one look at the map: battle-state.js movesNeeded. The look
   // goes the moment anything happens.)
   const happens = () => { run.movesCache = null; };
+  // (No foe it knows of to go for, as the loop found: it may patrol, behavior/patrol.js.)
+  let lacked = false;
   // (Struck down mid-turn, by a reaction to a move: answerMove. Its turn is over.)
-  for ( let step = 0; turn.any && step < MAX_STEPS_PER_TURN && !battleOver(run) && isStanding(u); step++ ) {
-    run.movesCache = new Map();
-    let heal = waits("heal") ? null : decideHeal(run, u, turn);
-    // (An enabler bolsters its friends first, and heals one only when it has nothing to give: never one that's down.)
-    if ( heal && (Number(behavior.enable) || 0) > 0 && heal.target.status !== STATUS.DOWN && decideBuff(run, u, turn) ) heal = null;
-    // (Healing it means to give and can't this turn: on its way to the friend, or the potion got out, for the next:
-    // behavior/prepare.js.)
-    if ( !heal && leadGroup === "heal" ) {
-      const ahead = healAhead(run, u, turn);
-      if ( ahead && tendAhead(run, u, turn, ahead) ) {
+  const fightOn = () => {
+    for ( let step = 0; turn.any && step < MAX_STEPS_PER_TURN && !battleOver(run) && isStanding(u); step++ ) {
+      run.movesCache = new Map();
+      let heal = waits("heal") ? null : decideHeal(run, u, turn);
+      // (An enabler bolsters its friends first, and heals one only when it has nothing to give: never one that's down.)
+      if ( heal && (Number(behavior.enable) || 0) > 0 && heal.target.status !== STATUS.DOWN && decideBuff(run, u, turn) ) heal = null;
+      // (Healing it means to give and can't this turn: on its way to the friend, or the potion got out, for the next:
+      // behavior/prepare.js.)
+      if ( !heal && leadGroup === "heal" ) {
+        const ahead = healAhead(run, u, turn);
+        if ( ahead && tendAhead(run, u, turn, ahead) ) {
+          acted("heal");
+          happens();
+          continue;
+        }
+      }
+      if ( !heal && leadGroup === "heal" && openUp() ) continue;
+      if ( heal ) {
         acted("heal");
         happens();
+      }
+      if ( heal?.moves > 0 ) {
+        // Go to them first (a touch spell, or out of range).
+        if ( !leaveReach(run, u, turn, heal.target, costOf(rules, heal.action)) ) break;
+        const budget = turn.payForMove(approach(run, u, heal.target).speed);
+        if ( !budget ) break;
+        const move = moveToward(run, u, heal.target, heal.action.range ? null : (heal.action.reach ?? 5), budget, heal.action.range ? { range: heal.action.range.max ?? heal.action.range.increment * 3 } : {});
+        turn.usedMove(move.cost);
+        moveLog(run, u, move, heal.target, "tend");
         continue;
       }
-    }
-    if ( !heal && leadGroup === "heal" && openUp() ) continue;
-    if ( heal ) {
-      acted("heal");
-      happens();
-    }
-    if ( heal?.moves > 0 ) {
-      // Go to them first (a touch spell, or out of range).
-      if ( !leaveReach(run, u, turn, heal.target, costOf(rules, heal.action)) ) break;
-      const budget = turn.payForMove(approach(run, u, heal.target).speed);
-      if ( !budget ) break;
-      const move = moveToward(run, u, heal.target, heal.action.range ? null : (heal.action.reach ?? 5), budget, heal.action.range ? { range: heal.action.range.max ?? heal.action.range.increment * 3 } : {});
-      turn.usedMove(move.cost);
-      moveLog(run, u, move, heal.target, "tend");
-      continue;
-    }
-    if ( heal ) {
-      // (A potion it gets out first: its cost said so. Engine/gear.js.)
-      const cost = costOf(rules, heal.action, u);
-      readyNow(u, heal.action, logger(run));
-      executeHeal(run, u, heal.action, heal.target);
-      used(u, heal.action);
-      turn.spend(cost);
-      u.actsThisTurn += 1;
-      continue;
-    }
-    // Call creatures to fight beside it, when they'd do more over the fight than its own blows.
-    const summon = waits("fight") ? null : decideSummon(run, u, turn);
-    if ( summon ) {
-      happens();
-      turn.spend(costOf(rules, summon, u));
-      executeSummon(run, u, summon);
-      spendUse(u, summon);
-      u.actsThisTurn += 1;
-      continue;
-    }
-    // Bolster a friend (or itself) when that does more than attacking would.
-    const buff = waits("aid") ? null : decideBuff(run, u, turn);
-    if ( !buff && leadGroup === "aid" && openUp() ) continue;
-    if ( buff ) {
-      happens();
-      acted("aid");
-      turn.spend(costOf(rules, buff.action, u));
-      executeBuff(run, u, buff.action, buff.targets, buff.worth, turn);
-      u.actsThisTurn += 1;
-      continue;
-    }
-    // Tie up (or rob) a fallen foe, when that's what it most wants and it can get to it this turn.
-    const fallen = waits("fallen") ? null : decideFallen(run, u, turn);
-    if ( !fallen && leadGroup === "fallen" && openUp() ) continue;
-    if ( fallen ) {
-      acted("fallen");
-      happens();
-    }
-    if ( fallen?.moves > 0 ) {
-      if ( !leaveReach(run, u, turn, fallen.target, fallen.cost) ) break;
-      const budget = turn.payForMove(approach(run, u, fallen.target).speed);
-      if ( !budget ) break;
-      const move = moveToward(run, u, fallen.target, 5, budget);
-      turn.usedMove(move.cost);
-      moveLog(run, u, move, fallen.target);
-      continue;
-    }
-    if ( fallen ) {
-      turn.spend(fallen.cost);
-      if ( fallen.kind === "free" ) freeFriend(run, u, fallen.target, fallen.hold, logger(run));
-      else (fallen.kind === "bind" ? bind : rob)(run, u, fallen.target, logger(run));
-      u.actsThisTurn += 1;
-      continue;
-    }
-
-    let target = executionCheck(run, u, chooseTarget(run, u));
-    // Hunters go after bystanders once there's no one else to fight.
-    if ( !target && isHunter(u) ) {
-      const prey = huntable(run, u)
-        .map(t => ({ t, moves: Math.min(...u.prep.offense.map(a => movesNeeded(run, u, t, a))) }))
-        .filter(x => Number.isFinite(x.moves))
-        .sort((a, b) => a.moves - b.moves)[0];
-      target = prey?.t ?? null;
-    }
-    if ( !target ) {
-      if ( openUp() ) continue;
-      break;
-    }
-    // A thief may rob someone within reach instead of hitting them (once a turn).
-    if ( !u.stoleThisTurn ) {
-      u.stoleThisTurn = true;
-      const mark = theftTarget(run, u);
-      const chance = mark ? stealChance(run, u, mark) : 0;
-      const plan = chance > 0 ? theftPlan(run, u, mark) : null;
-      if ( plan && turn.canAfford(plan.cost) && run.rng.chance(chance) ) {
+      if ( heal ) {
+        // (A potion it gets out first: its cost said so. Engine/gear.js.)
+        const cost = costOf(rules, heal.action, u);
+        readyNow(u, heal.action, logger(run));
+        executeHeal(run, u, heal.action, heal.target);
+        used(u, heal.action);
+        turn.spend(cost);
+        u.actsThisTurn += 1;
+        continue;
+      }
+      // Call creatures to fight beside it, when they'd do more over the fight than its own blows.
+      const summon = waits("fight") ? null : decideSummon(run, u, turn);
+      if ( summon ) {
         happens();
-        turn.spend(plan.cost);
-        const result = attemptTheft(run, u, mark, logger(run), { plan, attacksMade });
-        attacksMade += result.attacks ?? 0;
+        turn.spend(costOf(rules, summon, u));
+        executeSummon(run, u, summon);
+        spendUse(u, summon);
+        u.actsThisTurn += 1;
         continue;
       }
-    }
-    u.targetId = target.id;
-    const option = bestOptionVs(run, u, target, attacksMade, turn);
-    if ( !option ) {
-      if ( openUp() ) continue;
-      break;
-    }
-    acted("fight");
-    happens();
-    // A Lore-Collector sizes up a new foe before it attacks it: where a turn has several actions, when that leaves one
-    // to fight with; where it has one, the whole turn (its payoff next turn makes up for it).
-    if ( sizesUp(run, u, target, turn, several ? turn.howMany(basic) >= 2 : true, { wholeTurn: !several }) ) continue;
+      // Bolster a friend (or itself) when that does more than attacking would.
+      const buff = waits("aid") ? null : decideBuff(run, u, turn);
+      if ( !buff && leadGroup === "aid" && openUp() ) continue;
+      if ( buff ) {
+        happens();
+        acted("aid");
+        turn.spend(costOf(rules, buff.action, u));
+        executeBuff(run, u, buff.action, buff.targets, buff.worth, turn);
+        u.actsThisTurn += 1;
+        continue;
+      }
+      // Tie up (or rob) a fallen foe, when that's what it most wants and it can get to it this turn.
+      const fallen = waits("fallen") ? null : decideFallen(run, u, turn);
+      if ( !fallen && leadGroup === "fallen" && openUp() ) continue;
+      if ( fallen ) {
+        acted("fallen");
+        happens();
+      }
+      if ( fallen?.moves > 0 ) {
+        if ( !leaveReach(run, u, turn, fallen.target, fallen.cost) ) break;
+        const budget = turn.payForMove(approach(run, u, fallen.target).speed);
+        if ( !budget ) break;
+        const move = moveToward(run, u, fallen.target, 5, budget);
+        turn.usedMove(move.cost);
+        moveLog(run, u, move, fallen.target);
+        continue;
+      }
+      if ( fallen ) {
+        turn.spend(fallen.cost);
+        if ( fallen.kind === "free" ) freeFriend(run, u, fallen.target, fallen.hold, logger(run));
+        else (fallen.kind === "bind" ? bind : rob)(run, u, fallen.target, logger(run));
+        u.actsThisTurn += 1;
+        continue;
+      }
 
-    if ( option.moves > 0 ) {
-      if ( !canMove(run, u) ) break;
-      // A closed door in the way: get to it, then through it (or give up on what's behind it).
-      const door = doorAhead(run, u, target);
-      if ( door ) {
-        const done = workTheDoor(run, u, turn, door, target);
-        if ( done === "stuck" ) break;
-        continue;
+      let target = executionCheck(run, u, chooseTarget(run, u));
+      // Hunters go after bystanders once there's no one else to fight.
+      if ( !target && isHunter(u) ) {
+        const prey = huntable(run, u)
+          .map(t => ({ t, moves: Math.min(...u.prep.offense.map(a => movesNeeded(run, u, t, a))) }))
+          .filter(x => Number.isFinite(x.moves))
+          .sort((a, b) => a.moves - b.moves)[0];
+        target = prey?.t ?? null;
       }
-      if ( !leaveReach(run, u, turn, target, normalizeCost(rules, option.cost)) ) break;
-      // PF2e: a Stride per action. 5e: the rest of the movement, then a Dash.
-      const budget = turn.payForMove(approach(run, u, target).speed);
-      if ( !budget ) break;
-      const move = moveToward(run, u, target, option.action.range ? null : (option.action.reach ?? 5), budget, option.action.range ? { range: option.action.range.max ?? option.action.range.increment * 3 } : {});
-      turn.usedMove(move.cost);
-      moveLog(run, u, move, target, target.active ? "approach" : "hunt");
-      continue;
-    }
+      if ( !target ) {
+        if ( openUp() ) continue;
+        lacked = true;
+        break;
+      }
+      // A thief may rob someone within reach instead of hitting them (once a turn).
+      if ( !u.stoleThisTurn ) {
+        u.stoleThisTurn = true;
+        const mark = theftTarget(run, u);
+        const chance = mark ? stealChance(run, u, mark) : 0;
+        const plan = chance > 0 ? theftPlan(run, u, mark) : null;
+        if ( plan && turn.canAfford(plan.cost) && run.rng.chance(chance) ) {
+          happens();
+          turn.spend(plan.cost);
+          const result = attemptTheft(run, u, mark, logger(run), { plan, attacksMade });
+          attacksMade += result.attacks ?? 0;
+          continue;
+        }
+      }
+      u.targetId = target.id;
+      const option = bestOptionVs(run, u, target, attacksMade, turn);
+      if ( !option ) {
+        if ( openUp() ) continue;
+        break;
+      }
+      acted("fight");
+      happens();
+      // A Lore-Collector sizes up a new foe before it attacks it: where a turn has several actions, when that leaves one
+      // to fight with; where it has one, the whole turn (its payoff next turn makes up for it).
+      if ( sizesUp(run, u, target, turn, several ? turn.howMany(basic) >= 2 : true, { wholeTurn: !several }) ) continue;
 
-    const tier = liveTier(run, u);
-    const tactics = u.tac;
-    const rushing = behavior.rush && run.rng.chance(behavior.rush);
-    const shieldCost = rules.shieldCost ?? basic;
-    const canShield = u.spec.shield && !u.shieldRaised && tactics?.shield !== "never" && !rushing && turn.canAfford(shieldCost);
-    const raiseShield = () => {
-      u.shieldRaised = true;
-      turn.spend(shieldCost);
-      log(run, u, { type: "shield" });
-    };
-    // "Always" keeps the shield up: the last action of the turn goes to it.
-    if ( canShield && tactics?.shield === "always" && turn.howMany(shieldCost) === 1 ) { raiseShield(); continue; }
-    // Skirmishers hit twice and keep moving instead of taking a hopeless third swing.
-    if ( tactics?.style === "skirmisher" && attacksMade >= 2 && option.action.melee && turn.canAfford(basic) ) {
-      if ( canShield ) raiseShield();
-      else {
-        turn.spend(basic);
-        log(run, u, { type: "step" });
-      }
-      continue;
-    }
-    if ( !turn.canAfford(option.cost) ) {
-      // Not this turn: what its gear still needs (drawn, loaded) done now, for the next (behavior/prepare.js), unless a
-      // raised shield is worth more.
-      const ready = gearStep(run, u, turn, option.action, target);
-      if ( ready && ready.worth >= PREP.least && !(canShield && tier >= TACTICAL.INSTINCTIVE && shieldWorth(run, u) > ready.worth) ) {
-        takeGearStep(run, u, turn, ready, logger(run));
+      if ( option.moves > 0 ) {
+        if ( !canMove(run, u) ) break;
+        // A closed door in the way: get to it, then through it (or give up on what's behind it).
+        const door = doorAhead(run, u, target);
+        if ( door ) {
+          const done = workTheDoor(run, u, turn, door, target);
+          if ( done === "stuck" ) break;
+          continue;
+        }
+        if ( !leaveReach(run, u, turn, target, normalizeCost(rules, option.cost)) ) break;
+        // PF2e: a Stride per action. 5e: the rest of the movement, then a Dash.
+        const budget = turn.payForMove(approach(run, u, target).speed);
+        if ( !budget ) break;
+        const move = moveToward(run, u, target, option.action.range ? null : (option.action.reach ?? 5), budget, option.action.range ? { range: option.action.range.max ?? option.action.range.increment * 3 } : {});
+        turn.usedMove(move.cost);
+        moveLog(run, u, move, target, target.active ? "approach" : "hunt");
         continue;
       }
-      if ( canShield && tier >= TACTICAL.INSTINCTIVE ) { raiseShield(); continue; }
-      if ( openUp() ) continue;
-      break;
-    }
-    // The last action: the shield up, when what it guards against is worth more than what the action would do.
-    if ( canShield && tier >= TACTICAL.COMPETENT && turn.howMany(shieldCost) === 1 && shieldWorth(run, u) > option.ev ) { raiseShield(); continue; }
-    // A thinking combatant with a shield prefers defense over a hopeless third attack; sooner still when a raised
-    // shield can also block (PF2e Shield Block).
-    if ( canShield && tier >= TACTICAL.COMPETENT && attacksMade >= 2 ) {
-      const first = expectedDamage(run, u, option.action, target, 0);
-      const blocks = u.spec.reactions?.some(r => r.needsShield) && (u.reactionsLeft ?? 0) > 0;
-      if ( option.ev < first * (blocks ? 0.65 : 0.3) ) { raiseShield(); continue; }
-    }
 
-    // Its last action, after two blows (a kiter's, after one): a better spot for the round to come, or what else it would
-    // get ready, where that's worth more than one more blow at its worst (behavior/prepare.js: the spare turn after the
-    // loop takes it). A kiter in a foe's reach falls back first, and shoots with what's left.
-    if ( (attacksMade >= 2 || (kiting && attacksMade >= 1)) && turn.howMany(basic) <= 1 && option.moves === 0 ) {
-      const spare = spareBest(run, u, turn, prepKit);
-      if ( spare && spare.worth > option.ev ) break;
-    }
-    if ( kiting && !u.fellBack && option.moves === 0 && threats(run, u).length ) {
-      const back = bestSpot(run, u, turn);
-      if ( back && (back.step === "fallBack" || back.step === "hitAndRun") && back.gain > expectedDamage(run, u, option.action, target, attacksMade + Math.max(0, turn.howMany(option.cost) - 1)) ) {
-        u.fellBack = true;
-        const from = nearestFoeOf(run, u);
-        tellStep(u, { step: "fallBack", desire: "avoid", target: from }, logger(run));
-        if ( !walkTo(run, u, turn, back, from ?? u, "fallBack") ) break;
+      const tier = liveTier(run, u);
+      const tactics = u.tac;
+      const rushing = behavior.rush && run.rng.chance(behavior.rush);
+      const shieldCost = rules.shieldCost ?? basic;
+      const canShield = u.spec.shield && !u.shieldRaised && tactics?.shield !== "never" && !rushing && turn.canAfford(shieldCost);
+      const raiseShield = () => {
+        u.shieldRaised = true;
+        turn.spend(shieldCost);
+        log(run, u, { type: "shield" });
+      };
+      // "Always" keeps the shield up: the last action of the turn goes to it.
+      if ( canShield && tactics?.shield === "always" && turn.howMany(shieldCost) === 1 ) { raiseShield(); continue; }
+      // Skirmishers hit twice and keep moving instead of taking a hopeless third swing.
+      if ( tactics?.style === "skirmisher" && attacksMade >= 2 && option.action.melee && turn.canAfford(basic) ) {
+        if ( canShield ) raiseShield();
+        else {
+          turn.spend(basic);
+          log(run, u, { type: "step" });
+        }
         continue;
       }
+      if ( !turn.canAfford(option.cost) ) {
+        // Not this turn: what its gear still needs (drawn, loaded) done now, for the next (behavior/prepare.js), unless a
+        // raised shield is worth more.
+        const ready = gearStep(run, u, turn, option.action, target);
+        if ( ready && ready.worth >= PREP.least && !(canShield && tier >= TACTICAL.INSTINCTIVE && shieldWorth(run, u) > ready.worth) ) {
+          takeGearStep(run, u, turn, ready, logger(run));
+          continue;
+        }
+        if ( canShield && tier >= TACTICAL.INSTINCTIVE ) { raiseShield(); continue; }
+        if ( openUp() ) continue;
+        break;
+      }
+      // The last action: the shield up, when what it guards against is worth more than what the action would do.
+      if ( canShield && tier >= TACTICAL.COMPETENT && turn.howMany(shieldCost) === 1 && shieldWorth(run, u) > option.ev ) { raiseShield(); continue; }
+      // A thinking combatant with a shield prefers defense over a hopeless third attack; sooner still when a raised
+      // shield can also block (PF2e Shield Block).
+      if ( canShield && tier >= TACTICAL.COMPETENT && attacksMade >= 2 ) {
+        const first = expectedDamage(run, u, option.action, target, 0);
+        const blocks = u.spec.reactions?.some(r => r.needsShield) && (u.reactionsLeft ?? 0) > 0;
+        if ( option.ev < first * (blocks ? 0.65 : 0.3) ) { raiseShield(); continue; }
+      }
+
+      // Its last action, after two blows (a kiter's, after one): a better spot for the round to come, or what else it would
+      // get ready, where that's worth more than one more blow at its worst (behavior/prepare.js: the spare turn after the
+      // loop takes it). A kiter in a foe's reach falls back first, and shoots with what's left.
+      if ( (attacksMade >= 2 || (kiting && attacksMade >= 1)) && turn.howMany(basic) <= 1 && option.moves === 0 ) {
+        const spare = spareBest(run, u, turn, prepKit);
+        if ( spare && spare.worth > option.ev ) break;
+      }
+      if ( kiting && !u.fellBack && option.moves === 0 && threats(run, u).length ) {
+        const back = bestSpot(run, u, turn);
+        if ( back && (back.step === "fallBack" || back.step === "hitAndRun") && back.gain > expectedDamage(run, u, option.action, target, attacksMade + Math.max(0, turn.howMany(option.cost) - 1)) ) {
+          u.fellBack = true;
+          const from = nearestFoeOf(run, u);
+          tellStep(u, { step: "fallBack", desire: "avoid", target: from }, logger(run));
+          if ( !walkTo(run, u, turn, back, from ?? u, "fallBack") ) break;
+          continue;
+        }
+      }
+      // (Its gear made ready first, where it isn't: drawn, loaded. Its cost said so: engine/gear.js.)
+      readyNow(u, option.action, logger(run));
+      // Moving a mark to a new foe (Hunter's Mark) while still holding it costs no new slot.
+      const holding = option.action.concentration && u.concentration?.actionId === option.action.id && holdsAnything(run, u);
+      // An action that moves first (Sudden Charge): up to the foe, as part of it.
+      if ( option.action.charge && option.action.melee && !u.adjacent.has(target.id) && canMove(run, u) ) {
+        const move = moveToward(run, u, target, option.action.reach ?? 5, approach(run, u, target).speed * option.action.charge);
+        if ( !moveLog(run, u, move, target, "approach") ) break;
+      }
+      if ( option.action.oncePerTurn ) (u.usedThisTurn ??= new Set()).add(option.action.id);
+      // (A damage-dealer holding nothing back: the first slot, focus or bomb it spends on a blow this turn, told.)
+      if ( (Number(behavior.dps) || 0) > 0 && !u.allOut && (option.action.resource || Number.isFinite(option.action.uses)) ) {
+        u.allOut = true;
+        log(run, u, { type: "allOut", action: option.action.name ?? "" });
+      }
+      executeOffense(run, u, option.action, target, attacksMade);
+      used(u, option.action); // (a shot fired: loaded no more; a bomb thrown: gone from the hand)
+      setupUsed(u, option.action); // (what set it up, used up: Rend wants two fresh hits)
+      settleSides(run);
+      if ( option.action.concentration && u.concentration?.actionId === option.action.id ) noteConcentration(u, option.ev);
+      if ( !holding || !option.action.freeWhileHeld ) spendUse(u, option.action);
+      turn.spend(option.cost);
+      attacksMade += attacksIn(option.action);
+      u.turnAttacks = attacksMade;
+      u.actsThisTurn += 1;
+      if ( battleOver(run) ) break;
     }
-    // (Its gear made ready first, where it isn't: drawn, loaded. Its cost said so: engine/gear.js.)
-    readyNow(u, option.action, logger(run));
-    // Moving a mark to a new foe (Hunter's Mark) while still holding it costs no new slot.
-    const holding = option.action.concentration && u.concentration?.actionId === option.action.id && holdsAnything(run, u);
-    // An action that moves first (Sudden Charge): up to the foe, as part of it.
-    if ( option.action.charge && option.action.melee && !u.adjacent.has(target.id) && canMove(run, u) ) {
-      const move = moveToward(run, u, target, option.action.reach ?? 5, approach(run, u, target).speed * option.action.charge);
-      if ( !moveLog(run, u, move, target, "approach") ) break;
-    }
-    if ( option.action.oncePerTurn ) (u.usedThisTurn ??= new Set()).add(option.action.id);
-    // (A damage-dealer holding nothing back: the first slot, focus or bomb it spends on a blow this turn, told.)
-    if ( (Number(behavior.dps) || 0) > 0 && !u.allOut && (option.action.resource || Number.isFinite(option.action.uses)) ) {
-      u.allOut = true;
-      log(run, u, { type: "allOut", action: option.action.name ?? "" });
-    }
-    executeOffense(run, u, option.action, target, attacksMade);
-    used(u, option.action); // (a shot fired: loaded no more; a bomb thrown: gone from the hand)
-    setupUsed(u, option.action); // (what set it up, used up: Rend wants two fresh hits)
-    settleSides(run);
-    if ( option.action.concentration && u.concentration?.actionId === option.action.id ) noteConcentration(u, option.ev);
-    if ( !holding || !option.action.freeWhileHeld ) spendUse(u, option.action);
-    turn.spend(option.cost);
-    attacksMade += attacksIn(option.action);
-    u.turnAttacks = attacksMade;
-    u.actsThisTurn += 1;
-    if ( battleOver(run) ) break;
-  }
+  };
+  fightOn();
   happens();
   // What's left of the turn, for the next (behavior/prepare.js): its gear made ready, a potion got out, a better spot to
   // end on, a shield up; what it found nothing better to do with.
   if ( isStanding(u) && !battleOver(run) ) spareTurn(run, u, turn, prepKit);
+  happens();
+  // Nothing better to do, and no foe it knows of: it looks for one (behavior/patrol.js). Found, it fights at once with
+  // what's left of its turn.
+  if ( lacked && turn.any && !battleOver(run) && ableToAct(run, u) && mayPatrol(run, u) && patrolTurn(run, u, turn, patrolKit) ) {
+    happens();
+    lacked = false;
+    if ( turn.any && isStanding(u) && !battleOver(run) ) fightOn();
+    happens();
+    if ( isStanding(u) && !battleOver(run) ) spareTurn(run, u, turn, prepKit);
+  }
+  happens();
+  // Its turn spent on nothing at all: now and then it fidgets (behavior/patrol.js).
+  if ( turn.acts === 0 && (turn.pools.move ?? 0) >= moveAtStart && inFight(u) && ableToAct(run, u) && !battleOver(run) ) fidget(run, u, turn, patrolKit);
   happens();
 
   u.turnsTaken += 1;

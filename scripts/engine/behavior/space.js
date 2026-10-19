@@ -14,7 +14,8 @@
  * it taken can't be reached, but from farther off (a reach weapon).
  *
  * Sight: the scene's walls that block it (spec.walls: [{a: [x, y], b: [x, y], s: its sight (Foundry's sense type:
- * 10 limited, 20 and up: it blocks), d: one-way (Foundry's edge direction), door: its id, open}], in feet), as Foundry
+ * 10 limited, 20 and up: it blocks), d: one-way (Foundry's edge direction), door: its id, open, snd: its sound (0: sound
+ * passes; unsaid, it stops it: wallsBetween, for hearing a fight)}], in feet), as Foundry
  * has them: a one-way wall seen from the side it faces lets sight through; two limited walls stop it, one doesn't; a
  * door stops it while it's shut (the fight's door states: behavior/doors.js). A creature sees another if a line from
  * its middle reaches the other's middle or a corner (lineOfSight); how many don't is its cover. Without walls given
@@ -235,8 +236,10 @@ const bucketKey = (gx, gy) => gx * 1048576 + gy;
 /** The walls that block sight, read once (and their index, for a map with many). */
 function wallsOf(run) {
   if ( run.prep.sightWalls ) return run.prep.sightWalls;
+  // (Sound: whether it stops sound too, where the scene says (snd, Foundry's sense type: 0 lets it through); unsaid, it does.)
   const walls = (run.prep.spec.walls ?? []).filter(w => (Number(w.s) || 0) > 0).map(w => ({
-    ax: w.a[0], ay: w.a[1], bx: w.b[0], by: w.b[1], limited: Number(w.s) < 20, dir: Number(w.d) || 0, door: w.door ?? null, open: !!w.open
+    ax: w.a[0], ay: w.a[1], bx: w.b[0], by: w.b[1], limited: Number(w.s) < 20, dir: Number(w.d) || 0, door: w.door ?? null, open: !!w.open,
+    sound: w.snd === undefined || w.snd === null || Number(w.snd) > 0
   }));
   run.prep.sightWalls = walls;
   run.prep.sightIndex = null;
@@ -322,6 +325,19 @@ export function sightBlocked(run, p, q) {
     return true;
   }
   return false;
+}
+
+/**
+ * How many walls that stop sound the line from p to q crosses (an open door none): what muffles the din of a fight
+ * (senses.js hearDC), as Foundry's sound walls do for a bystander.
+ */
+export function wallsBetween(run, p, q) {
+  let n = 0;
+  for ( const w of wallsNear(run, p, q) ) {
+    if ( !w.sound || (w.door && (w.open || run.doors?.get(w.door)?.open)) ) continue;
+    if ( crosses(p, q, w) ) n += 1;
+  }
+  return n;
 }
 
 /** The points of t a line of sight may reach: its middle, and its corners (just inside them). */

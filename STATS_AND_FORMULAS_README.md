@@ -9,7 +9,7 @@ that change them, and `Code:` (where it lives, to check it). The settings menu s
 
 - **[Minds](#minds)**: [Personality traits](#personality-traits), [Tactical tiers](#tactical-tiers), [Animals](#animals), [Desires and their level](#desires-and-their-level), [How desires are raised each turn](#how-desires-are-raised-each-turn), [What the fight stirs, and how it cools](#what-the-fight-stirs-and-how-it-cools), [Frustration](#frustration), [Pulls from others: style, social, lean](#pulls-from-others-style-social-lean), [What comes to mind](#what-comes-to-mind), [The agenda](#the-agenda), [Desires it can't work on](#desires-it-cant-work-on), [ADHD](#adhd), [Fear](#fear), [Morale stress](#morale-stress), [Morale check: hold, waver, rout](#morale-check-hold-waver-rout), [Wavering](#wavering), [Running away](#running-away), [Standing its ground](#standing-its-ground), [Calling a retreat](#calling-a-retreat), [Rallying](#rallying), [Leaving the fight](#leaving-the-fight), [Being stopped on the way out](#being-stopped-on-the-way-out), [Standing down](#standing-down), [Chain of command](#chain-of-command), [What a leader lends](#what-a-leader-lends), [Following the leader](#following-the-leader), [Scheming](#scheming), [Party's sway](#partys-sway), [Playstyles: how pills combine](#playstyles-how-pills-combine), [Playstyle numbers](#playstyle-numbers), [Tactics answers: wishes and "Let this character decide"](#tactics-answers-wishes-and-let-this-character-decide)
 - **[Words and sides](#words-and-sides)**: [Luck rolls at a glance](#luck-rolls-at-a-glance), [Who talks, and how often](#who-talks-and-how-often), [Choosing a pitch](#choosing-a-pitch), [Pitch DC](#pitch-dc), [The persuasion track](#the-persuasion-track), [What a convinced foe does](#what-a-convinced-foe-does), [Switch luck: changing sides](#switch-luck-changing-sides), [Traitor luck: a PC turning traitor](#traitor-luck-a-pc-turning-traitor), [Giving something up](#giving-something-up), [How an encounter opens](#how-an-encounter-opens), [Impatience: what breaks a standoff](#impatience-what-breaks-a-standoff), [Only an argument](#only-an-argument), [Bargaining: offers and expectations](#bargaining-offers-and-expectations), [Haggling and pressing](#haggling-and-pressing), [Paying off a boss](#paying-off-a-boss), [Taking no side: neutral tokens and leans](#taking-no-side-neutral-tokens-and-leans), [Crossed: grievance, truce and turning on a side](#crossed-grievance-truce-and-turning-on-a-side), [Winning over, calming and sending away](#winning-over-calming-and-sending-away), [Meddling: neutrals getting involved](#meddling-neutrals-getting-involved), [Taken for a foe, caught in the blast, spared in a truce](#taken-for-a-foe-caught-in-the-blast-spared-in-a-truce), [Neutral friend groups (reach)](#neutral-friend-groups-reach), [Taunts (goading)](#taunts-goading), [Theft mid-fight](#theft-mid-fight), [Trap avoiders](#trap-avoiders), [Reluctance: consumables and costly spells](#reluctance-consumables-and-costly-spells), [Avoiding killing (mercy)](#avoiding-killing-mercy), [The fallen: tying up and robbing](#the-fallen-tying-up-and-robbing), [Execute luck: finishing off a PC](#execute-luck-finishing-off-a-pc), [Bearing a hold or hurt (ignore troubles)](#bearing-a-hold-or-hurt-ignore-troubles), [The party's vote](#the-partys-vote)
-- **[Fighting and the simulation](#fighting-and-the-simulation)**: [The prediction: how many fights it runs](#the-prediction-how-many-fights-it-runs), [Rounds, stalemates and the max-rounds cap](#rounds-stalemates-and-the-max-rounds-cap), [Odds and outcomes](#odds-and-outcomes), [The most typical fight (Sample fight)](#the-most-typical-fight-sample-fight), [Swing factors](#swing-factors), [Initiative and turn order](#initiative-and-turn-order), [Dice, degrees of success and advantage](#dice-degrees-of-success-and-advantage), [Expected damage: what an attack is worth](#expected-damage-what-an-attack-is-worth), [Threat: how dangerous a creature looks](#threat-how-dangerous-a-creature-looks), [Choosing whom to attack](#choosing-whom-to-attack), [Choosing an action](#choosing-an-action), [Reluctance: potions, scrolls and costly spells](#reluctance-potions-scrolls-and-costly-spells), [Shields and defensive turns](#shields-and-defensive-turns), [Getting ready: draws, reloads and a turn for the next](#getting-ready-draws-reloads-and-a-turn-for-the-next), [Healing decisions](#healing-decisions), [Buffs and support](#buffs-and-support), [What a condition, bonus or penalty is worth](#what-a-condition-bonus-or-penalty-is-worth), [Control and debuffs](#control-and-debuffs), [Situational saves and auras](#situational-saves-and-auras), [Concentration](#concentration), [Movement, reach and getting there](#movement-reach-and-getting-there), [Crowds: getting past creatures and where a move ends](#crowds-getting-past-creatures-and-where-a-move-ends), [Line of sight and cover](#line-of-sight-and-cover), [Senses: what a creature can tell](#senses-what-a-creature-can-tell), [Noticing the fight: bystanders](#noticing-the-fight-bystanders), [Opportunity attacks and getting clear](#opportunity-attacks-and-getting-clear), [Forced movement, falls and dangerous ground](#forced-movement-falls-and-dangerous-ground), [Holds and escapes](#holds-and-escapes), [Harm each turn: conditions, persistent damage, spreading](#harm-each-turn-conditions-persistent-damage-spreading), [Afflictions: poisons, diseases, curses](#afflictions-poisons-diseases-curses), [Summons](#summons), [Luck pools: spending after the roll](#luck-pools-spending-after-the-roll), [Fate: rerolls that keep someone alive](#fate-rerolls-that-keep-someone-alive), [Last-ditch saves and refusing to drop](#last-ditch-saves-and-refusing-to-drop), [Damage, 0 HP and the downed models](#damage-0-hp-and-the-downed-models), [Finishing off a downed PC](#finishing-off-a-downed-pc), [The aftermath](#the-aftermath), [Recharges, cooldowns, legendary actions and counterspells](#recharges-cooldowns-legendary-actions-and-counterspells), [Strain: words that wear a creature down](#strain-words-that-wear-a-creature-down)
+- **[Fighting and the simulation](#fighting-and-the-simulation)**: [The prediction: how many fights it runs](#the-prediction-how-many-fights-it-runs), [Rounds, stalemates and the max-rounds cap](#rounds-stalemates-and-the-max-rounds-cap), [Odds and outcomes](#odds-and-outcomes), [The most typical fight (Sample fight)](#the-most-typical-fight-sample-fight), [Swing factors](#swing-factors), [Initiative and turn order](#initiative-and-turn-order), [Dice, degrees of success and advantage](#dice-degrees-of-success-and-advantage), [Expected damage: what an attack is worth](#expected-damage-what-an-attack-is-worth), [Threat: how dangerous a creature looks](#threat-how-dangerous-a-creature-looks), [Choosing whom to attack](#choosing-whom-to-attack), [Choosing an action](#choosing-an-action), [Reluctance: potions, scrolls and costly spells](#reluctance-potions-scrolls-and-costly-spells), [Shields and defensive turns](#shields-and-defensive-turns), [Getting ready: draws, reloads and a turn for the next](#getting-ready-draws-reloads-and-a-turn-for-the-next), [Healing decisions](#healing-decisions), [Buffs and support](#buffs-and-support), [What a condition, bonus or penalty is worth](#what-a-condition-bonus-or-penalty-is-worth), [Control and debuffs](#control-and-debuffs), [Situational saves and auras](#situational-saves-and-auras), [Concentration](#concentration), [Movement, reach and getting there](#movement-reach-and-getting-there), [Crowds: getting past creatures and where a move ends](#crowds-getting-past-creatures-and-where-a-move-ends), [Line of sight and cover](#line-of-sight-and-cover), [Senses: what a creature can tell](#senses-what-a-creature-can-tell), [Noticing the fight: bystanders](#noticing-the-fight-bystanders), [Patrolling: cues and Seek](#patrolling-cues-and-seek), [Opportunity attacks and getting clear](#opportunity-attacks-and-getting-clear), [Forced movement, falls and dangerous ground](#forced-movement-falls-and-dangerous-ground), [Holds and escapes](#holds-and-escapes), [Harm each turn: conditions, persistent damage, spreading](#harm-each-turn-conditions-persistent-damage-spreading), [Afflictions: poisons, diseases, curses](#afflictions-poisons-diseases-curses), [Summons](#summons), [Luck pools: spending after the roll](#luck-pools-spending-after-the-roll), [Fate: rerolls that keep someone alive](#fate-rerolls-that-keep-someone-alive), [Last-ditch saves and refusing to drop](#last-ditch-saves-and-refusing-to-drop), [Damage, 0 HP and the downed models](#damage-0-hp-and-the-downed-models), [Finishing off a downed PC](#finishing-off-a-downed-pc), [The aftermath](#the-aftermath), [Recharges, cooldowns, legendary actions and counterspells](#recharges-cooldowns-legendary-actions-and-counterspells), [Strain: words that wear a creature down](#strain-words-that-wear-a-creature-down)
 - **[Pathfinder 2e](#pathfinder-2e)**: [Checks and degrees of success](#checks-and-degrees-of-success), [Actions, the multiple attack penalty and Strikes](#actions-the-multiple-attack-penalty-and-strikes), [Lore-Collector advantage (Recall Knowledge)](#lore-collector-advantage-recall-knowledge), [Conditions and their penalties](#conditions-and-their-penalties), [Flat checks: hidden, concealed, dazzled](#flat-checks-hidden-concealed-dazzled), [Cover, Hide and Take Cover](#cover-hide-and-take-cover), [Holds and Escape](#holds-and-escape), [Swallow Whole and Engulf](#swallow-whole-and-engulf), [Maneuvers (skill actions)](#maneuvers-skill-actions), [Aid](#aid), [Dying, wounded, doomed and recovery](#dying-wounded-doomed-and-recovery), [Hero Points](#hero-points), [Ferocity](#ferocity), [Persistent damage, bleeding and retching](#persistent-damage-bleeding-and-retching), [Afflictions](#afflictions), [Incapacitation and immunity](#incapacitation-and-immunity), [Auras and situational saves](#auras-and-situational-saves), [Weakness, resistance and immunity](#weakness-resistance-and-immunity), [Healing, Battle Medicine and class features](#healing-battle-medicine-and-class-features), [Reactions](#reactions), [Summons](#summons-1), [Doors, falls and moving past others](#doors-falls-and-moving-past-others), [Talking, theft and leadership](#talking-theft-and-leadership), [Personality from the sheet](#personality-from-the-sheet), [Typical numbers and areas](#typical-numbers-and-areas)
 - **[D&D 5e](#dd-5e)**: [Rolls, advantage and critical hits](#rolls-advantage-and-critical-hits), [Lore-Collector advantage (Study)](#lore-collector-advantage-study), [Conditions](#conditions), [Cover, Hide, Dodge, Help and Insight](#cover-hide-dodge-help-and-insight), [Grapples, webs, nets and bonds](#grapples-webs-nets-and-bonds), [Swallowed and engulfed](#swallowed-and-engulfed), [Shove and Grapple](#shove-and-grapple), [Pushes, falls and moving past others](#pushes-falls-and-moving-past-others), [Dying and death saves](#dying-and-death-saves), [Inspiration (fate)](#inspiration-fate), [Concentration](#concentration-1), [Undead Fortitude, Relentless Endurance and Regeneration](#undead-fortitude-relentless-endurance-and-regeneration), [Burning and lingering acid](#burning-and-lingering-acid), [Riders on a hit](#riders-on-a-hit), [Reactions](#reactions-1), [Turn, attacks and resources](#turn-attacks-and-resources), [Doors, talking, theft and leadership](#doors-talking-theft-and-leadership), [Personality from the sheet](#personality-from-the-sheet-1), [Typical numbers by challenge rating](#typical-numbers-by-challenge-rating)
 - **[DCC](#dcc)**: [Action dice, crits and fumbles](#action-dice-crits-and-fumbles), [Lore-Collector advantage](#lore-collector-advantage), [Conditions and situational modifiers](#conditions-and-situational-modifiers), [Mighty Deeds](#mighty-deeds), [Grapples and holds](#grapples-and-holds), [Tied up stops spells](#tied-up-stops-spells), [Luck, spellburn, Fleeting Luck and Mojo](#luck-spellburn-fleeting-luck-and-mojo), [Spells, Lay on Hands and Turn Unholy](#spells-lay-on-hands-and-turn-unholy), [Spell duels](#spell-duels), [Morale](#morale), [Dying: bleeding out, binding wounds and the body](#dying-bleeding-out-binding-wounds-and-the-body), [Regeneration](#regeneration), [Help, Hide, theft and doors](#help-hide-theft-and-doors), [XCC classes](#xcc-classes), [Talking and leadership](#talking-and-leadership), [Personality from the sheet](#personality-from-the-sheet-2), [Typical numbers by level](#typical-numbers-by-level)
@@ -338,6 +338,9 @@ within one move; for anything else, the desire isn't sunk.
 
 Example: an Instinctive goblin on its foe at 45 sees one at 55 it could hit now: 20% × 3 = 60% it switches. A PC with
 Tactical 64 and ADHD 50% has 54: Competent, so its mind now jumps 40% of the time for something doable now.
+
+**Fidgeting:** a turn it spent nothing of, the two together: ADHD% ÷ 100 × (0.5 + its own ADHD% ÷ 100) (Patrolling:
+cues and Seek).
 
 Code: `engine/behavior/desire.js` `orderAgenda`, `doableNow`; `engine/battle-state.js` `prepareCombatant`
 (`ADHD_TACTICAL` 0.3); `constants.js` `ADHD`.
@@ -764,7 +767,8 @@ of 1 changes nothing.
 Behaviors in this area: **flighty** (a fleeing commander panics its group × (1 + flighty) and takes more along; a boss
 runs × (1 + 3 × flighty)); **rally** (Rallying); **ambition** (Scheming); **contrarian** (Following the leader);
 **helps** (+0.25 willingness); **followFocus** (a chance to go for the foe most of its side is on); **slacks** (with no
-foe within 5 ft and HP at half or more, a chance each turn to do nothing). Others: **lowProfile** (an attacker picks
+foe within 5 ft and HP at half or more, a chance each turn to do nothing). Each pill's **patrol** (how it looks for a
+foe when it knows of none) is in Patrolling: cues and Seek. Others: **lowProfile** (an attacker picks
 someone else nearby; Stealth for initiative where the system rolls it), **drawAggro** (draws attacks aimed near it),
 **rush** (skips setting up, raising a shield or getting clear safely), **medic** (a friend healed at under 75% of its HP
 (0.6 + 0.15 × medic), its heals first on its agenda, offense from a pool its heals use × (1 − 0.9 × medic), a buff's
@@ -2322,7 +2326,74 @@ Decides when a token on the map but not in the encounter notices the fight.
   calls a friend once within 30 ft.
 
 Code: `engine/simulator.js` `lookAround`, `cueFrom`, `notice`, `NOTICE_DC`, `KIN_BONUS`, `KIN_DC`;
-`foundry/terrain.js` `computeAwareness` (`HEAR`).
+`foundry/terrain.js` `computeAwareness`; `engine/behavior/senses.js` `HEAR`.
+
+### Patrolling: cues and Seek
+
+Search: patrol, patrolling, searching, idle, nothing to do, knows of no foe, Seek, search, scent, trail, the sound of fighting, din, hear the fight, wander, roam, hungry, pack, spread out, fan out, guard, fidget, fidgeting, restless
+
+Decides what a creature in the fight does with a turn when it knows of no foe on its feet: it looks for one.
+
+- **When:** its turn found no foe to go for, and it knows of none (none in its senses, seen before, or come to blows
+  with); in the fight, no standoff holding, standing and able to act, not leaving or held, not a hazard or summoned. It
+  patrols with whatever's left of its turn after any step for later. A Lazy one may still slack first (Playstyle
+  numbers).
+- **How**, by its pills' `patrol`, each a vote of its place's weight (1, 0.75, 0.55, 0.4), the heaviest winning (a tie,
+  the earlier pick's); else an animal **roams** and anyone else **watches**. Tactics "Hunt down enemies nearby" makes a
+  watcher **spread**; "Stay with the fight" makes anything but a hider **hold**. An animal with spread or watch roams.
+
+| Mode | Playstyles | Moves | Searches |
+|---|---|---|---|
+| roam | (an animal) | toward a cue; else wanders out to r = min(120, 20 + 15 × turns patrolled) feet from where it began; a pack within 30 ft of its nearest packmate | yes |
+| spread | Wants to Lead, Tank, Brawler, Impatient, Instigator, Lore-Collector, Puzzle-Maniac, Vengeful, Relentless, Cruel, Redeem-Seeker, Wildcard | toward a cue; else to 20 to 30 ft from its nearest teammate | yes |
+| near | Medic, Enabler, Martyr, Moralist, People-Pleaser, Peacekeeper | to within 15 ft of its teammates (alone: as watch) | yes |
+| watch | (anyone else) | toward a cue only | yes |
+| hold | Fragile, Lazy, Diplomat | never | yes |
+| hide | Chicken, Wallflower | never | hides (its Hide, where the system lets it), else searches; hidden, does nothing more |
+
+**Cues**, worked out once a turn, the first that holds (a creature to head for):
+
+| Cue | Holds when |
+|---|---|
+| Scent | a foe within 2 × its smell, measured the way it would walk (its approach's feet × the way round) |
+| Noise | anyone in a blow this round or last, more than 15 ft from it; the easiest to hear: DC = round(8 + feet ÷ 15 + 6 per wall that stops sound between them, a shut door one), within 300 ft, not deafened; its Perception (+ the system's check modifiers) against that DC succeeds (the Statistics Engine's own check: never shown) |
+| Seen | a foe one of its teammates perceives: the one nearest it |
+| Pack | (roam) a packmate followed a cue this round: that cue |
+
+- **Spots** with no cue (roam, spread, near): those within one move (rings round it, none past a wall, none taken),
+  scored and the best taken if it beats staying by 0.5: 0.05 × (feet to the nearest spot it searched lately, to 30);
+  spread − 0.2 × the feet outside 20 to 30 from its nearest teammate; roam (or spread with no teammates) − 0.05 × |its
+  distance from where it began − r|; near: − (feet past 10 from its nearest teammate); a pack − 0.1 × feet past 30 from
+  its nearest packmate; − the risk there (as Getting ready weighs a spot: 0.85 × harm weight × the harm the foes it
+  knows of could do it there, + the strikes of those whose reach it leaves). Ties fall by the engine's own die.
+- **The turn:** a step at a time, while the turn has anything and it knows of no foe: toward a cue, a move (a Seek
+  instead with its last action, where it hasn't searched); with none, a Seek where it hasn't searched (none within 15
+  ft this round or last), else a move to the next spot. Three actions: Seek, Stride, Seek from a fresh spot; Stride,
+  Seek, Stride from one searched already; toward a cue, Stride, Stride, Seek. Found a foe: the rest of the turn is a
+  fighting turn.
+
+**Seek** (`rules.seek`: the system's; else these):
+
+- Cost: the basic action. Area: toward where it looks (a cue, else where it last moved or glanced), a 30-ft cone (a
+  quarter turn); with nowhere, round itself 15 ft. Walls block it as they block sight (total cover: not in it).
+- In it: each foe (or bystander it takes for prey) hidden from it, or out of its senses.
+- DC for each: 10 + its Stealth (`spec.initiative.stealth`, else the typical skill for its level) + its bonuses to
+  checks (and to Stealth). The roll: d20 + its Perception (+ the system's check modifiers) against the highest of them
+  (nobody there: the typical DC for its level); each one's degree from the same roll against its own DC.
+- Success or better: known to it (as if seen), and not hidden from it any more (the system's flat check for hidden
+  goes, for it alone) until it hides again; invisible, still hidden from it.
+- In a live battle the system rolls it (PF2e: its Seek action, secret); else it's a table roll.
+
+**Fidgeting:** a turn it spent nothing of, able to act and in the fight: chance = ADHD% ÷ 100 × (0.5 + its own ADHD% ÷
+100) (default 20%: 10% for a creature with none of its own, 30% with 100%). Half the time a step to a free spot beside
+it (paid for as a move), where it can take one and knows of no foe; else a look elsewhere (its next Seek's cone).
+
+Example: a hyena (Perception +7, smell 30 ft) 110 ft from a fight through one wall: DC = 8 + 7 + 6 = 21; it hears it on
+a 14 or more (35%) each turn; then Stride, Stride toward it, and a Seek. Its packmates follow its cue that round.
+
+Code: `engine/behavior/patrol.js` `patrolMode`, `mayPatrol`, `cueOf`, `patrolSpot`, `seek`, `stealthDC`, `patrolTurn`,
+`fidget`, `PATROL`, `SEEK`, `FIDGET`; `engine/playstyles.js` `patrolStyle`; `engine/behavior/senses.js` `hearDC`,
+`hiddenFrom`; `engine/simulator.js` `playFromHere`, `patrolToward`, `patrolWalk`.
 
 ### Opportunity attacks and getting clear
 
@@ -2701,8 +2772,10 @@ What it decides: whether an attack that would hit actually affects its target.
 - Once an attack would hit, a d20 flat check: DC 11 against a hidden target, DC 5 against a concealed one, DC 5 for a dazzled attacker without a precise sense besides sight. A failure turns the hit into a miss.
 - A targeted spell's save against such a creature: the caster makes the same flat check; on a failure the spell passes it by (as a critical success). Area effects take no flat check.
 - A hidden attacker's target is off-guard to it; the attacker is seen once its attack is done.
+- One that found the hidden one with a Seek since it hid: no flat check, and not off-guard to it (the core's
+  `hiddenFrom`).
 
-Code: `rules.js` `flatCheck`, `adjustRoll`, `afterAttack`.
+Code: `rules.js` `flatCheck`, `adjustRoll`, `afterAttack`, `modifiers.exposed`.
 
 ### Cover, Hide and Take Cover
 
@@ -2714,8 +2787,12 @@ What it decides: what walls and the hiding actions add to defense.
 - Take Cover (1 action, with standard cover from a foe, or prone): standard becomes greater; prone, greater against ranged attacks. It ends when the creature moves from its space, attacks or falls unconscious.
 - Hide (1 action, concealed or with cover from every foe that sees it): Stealth against the foes' best Perception DC (10 + Perception). Hidden, attacks at it need the DC 11 flat check; any check of its own ends it (not a save), and an attack ends it once done.
 - A low-profile creature rolls Stealth for initiative when that's better (Avoid Notice).
+- Seek (a patrol's: Patrolling: cues and Seek): 1 action, the remaster's area "30 feet or less in any dimension" as a
+  30-ft cone toward where it looks, or round itself 15 ft; PF2e's own Seek action in a live battle (secret), against
+  the highest Stealth DC there (10 + Stealth); the Perception check takes the mind's status penalties.
 
-Code: `rules.js` `coverBonus`, `coverTaken`, `takingCover`, `usable`, `afterRoll`; `adapter.js` `coverActions`.
+Code: `rules.js` `coverBonus`, `coverTaken`, `takingCover`, `usable`, `afterRoll`, `seek`; `adapter.js` `coverActions`;
+`check-roll.js` (Seek).
 
 ### Holds and Escape
 

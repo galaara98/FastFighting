@@ -32,6 +32,7 @@ export { holderOf, cutOff } from "./engine/behavior/troubles.js";
 export { CORE_CONDITIONS, CONDITION_SYNONYMS, coreKeyFor } from "./engine/conditions.js";
 export { edgeDistance, behaviorOf, isStanding, coverOf, COVER_POINTS, areEnemies, systemRolled } from "./engine/battle-state.js";
 export { SURPRISE, hiddenSides } from "./engine/behavior/surprise.js";
+export { hiddenFrom } from "./engine/behavior/senses.js";
 export { goadLuck } from "./engine/behavior/goad.js";
 export { bestReactionStrike } from "./engine/behavior/reactions.js";
 export { combineMods, describeMods, diceMean } from "./engine/mods.js";

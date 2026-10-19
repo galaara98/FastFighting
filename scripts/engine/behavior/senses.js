@@ -17,10 +17,15 @@
  * In a crisis perception bends (helping a friend, keeping someone from dying, avenging a fallen friend): any sense
  * that could plausibly reach them will do, at twice its range, with no need for a line of sight or light (a smell
  * still doesn't pass a wall).
+ * The din of a fight carries farther than hearing tells how someone is doing: HEAR, the DC to make it out (hearDC), as
+ * bystanders notice a fight (foundry/terrain.js computeAwareness) and as a patrol hears one (behavior/patrol.js).
+ * Hidden (the hidden condition) is the system's to make something of (PF2e: a flat check to strike it, off-guard to it);
+ * one that found it with a Seek no longer has it hidden from it (hiddenFrom, behavior/patrol.js seek), until it hides
+ * again.
  * Without positions everyone perceives everyone. Pure: no Foundry globals.
  */
-import { edgeDistance, separation, approach } from "../battle-state.js";
-import { wallsKnown, lineOfSight } from "./space.js";
+import { edgeDistance, separation, approach, centerDistance } from "../battle-state.js";
+import { wallsKnown, lineOfSight, wallsBetween } from "./space.js";
 
 /** Darkness from this level up (0 to 1, the scene's) needs seeing in the dark to see far. */
 export const DARK = 0.7;
@@ -58,9 +63,33 @@ export function senseReach(spec, hearingFeet = HEARING) {
 /** How far it sees, in the light or the dark (seeing in the dark needs eyes: no sight, none). */
 export const sightReach = (r, dark) => dark ? Math.min(r.sight, Math.max(SIGHT_IN_DARK, r.lowlight)) : r.sight;
 
-function sensesOf(run, u) {
+export function sensesOf(run, u) {
   return u.prep.senses ??= senseReach(u.spec, run.prep.rules.hearingFeet ?? HEARING);
 }
+
+/**
+ * How hard the din of a fight is to make out (a DC): baseDC, a point for every perFeet feet between them, perWall for
+ * every wall in the way; beyond maxFeet, not at all.
+ */
+export const HEAR = Object.freeze({ baseDC: 8, perFeet: 15, perWall: 6, maxFeet: 300 });
+
+/**
+ * The DC for u to hear c fighting, from where both stand now (walls that stop sound between them, a shut door among
+ * them: space.js wallsBetween), or null where it can't (deafened, no hearing, too far, no positions).
+ */
+export function hearDC(run, u, c) {
+  if ( !u.pos || !c.pos || (u.conds?.deafened ?? 0) > 0 || !(sensesOf(run, u).hearing > 0) ) return null;
+  const feet = centerDistance(u, c);
+  if ( feet === null || feet > HEAR.maxFeet ) return null;
+  const walls = wallsKnown(run) ? wallsBetween(run, u.pos, c.pos) : 0;
+  return Math.round(HEAR.baseDC + feet / HEAR.perFeet + HEAR.perWall * walls);
+}
+
+/**
+ * Is t hidden from u (the hidden condition, and u hasn't found it with a Seek since it last hid)? For the system's
+ * rules (PF2e: the flat check to strike it, off-guard to it), through core-api.
+ */
+export const hiddenFrom = (u, t) => Number(t?.conds?.hidden) > 0 && !t.foundBy?.has(u?.id);
 
 /** Can u tell how t is doing (hurt, dying, nearly done for)? */
 export function perceives(run, u, t, { crisis = false } = {}) {

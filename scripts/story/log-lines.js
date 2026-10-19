@@ -73,6 +73,8 @@ export function concessionText(c) {
 const MODE = { walk: "ModeWalk", fly: "ModeFly", swim: "ModeSwim", climb: "ModeClimb", burrow: "ModeBurrow" };
 const DESIRE = { hurt: "DesireHurt", heal: "DesireHeal", protect: "DesireProtect", aid: "DesireAid", talk: "DesireTalk", avoid: "DesireAvoid", bind: "DesireBind", rob: "DesireRob", breakFree: "DesireBreakFree", free: "DesireFree", rid: "DesireRid" };
 const WHY = { hurt: "WhyHurt", harmed: "WhyHarmed", helped: "WhyHelped", robbed: "WhyRobbed", insulted: "WhyInsulted", impatient: "WhyImpatient", kin: "WhyKin" };
+/** How a patrol goes about it (behavior/patrol.js), each with its words under PatrolHow. */
+const PATROL_HOW = new Set(["scent", "noise", "seen", "pack", "wander", "spread", "near", "watch", "hold", "hide"]);
 const NOTICE = { sight: "NoticeSight", sound: "NoticeSound", smell: "NoticeSmell", feel: "NoticeFeel", radar: "NoticeRadar", standoff: "NoticeStandoff", fledInto: "NoticeFled", help: "NoticeHelp", attacked: "NoticeAttacked", gm: "NoticeGm" };
 const BREAKS = { insulted: "BreakInsulted", beast: "BreakBeast", annoyed: "BreakAnnoyed", blood: "BreakBlood", impatient: "BreakImpatient", unmet: "BreakUnmet" };
 /** Only an argument: why the talks collapsed (nobody fights). */
@@ -144,10 +146,17 @@ function baseLine(e) {
     case "strain": return t(e.empty ? "StrainEmpty" : "Strain", { actor: e.actor, target: e.target, lost: e.lost, pool: e.label ?? e.pool, left: e.left });
     case "talk": return t("Talk", { ...a, skill: e.skill, roll: dice(e.natural, e.mod, e.total, e.dc, t("DcOf", { stat: e.dcStat })), degree: degree(e.degree), margin: signed(e.margin ?? 0), boost: e.boost ? ` · ${t("SizedUp", { n: e.boost })}` : "", progress: e.progress, steps: e.steps });
     case "heal": return t("Heal", { actor: e.actor, target: e.self ? t("Self") : e.target, action: e.action, check: e.check ? ` · ${t(e.check.skill ? "HealCheck" : "Medicine", { skill: e.check.skill ?? "", roll: dice(e.check.natural, e.check.mod, e.check.total, e.check.dc, t("DC")), degree: degree(e.check.degree) })}` : "", amount: e.amount, revived: e.revived ? t("Revived") : "" });
-    case "move": return t(e.away ? "MoveAway" : "Move", {
+    case "move": return t(e.away ? "MoveAway" : e.patrol && !e.toward ? (e.purpose === "fidget" ? "MoveStep" : "MoveSearch") : "Move", {
       actor: e.actor, mode: t(MODE[e.mode] ?? "ModeMove"), distance: distanceText(e.feet), toward: e.purpose === "door" ? t("TheDoor") : e.purpose === "leave" ? t("TheEdge") : e.toward,
       terrain: e.mult > 1.05 ? t("Terrain", { mult: Number(e.mult).toFixed(2), regions: e.regions?.length ? t("TerrainRegions", { regions: listItems(e.regions) }) : "" }) : ""
     });
+    // (Looking for a foe it knows of none: behavior/patrol.js.)
+    case "patrol": return t("Patrol", { actor: e.actor, how: t(`PatrolHow.${PATROL_HOW.has(e.how) ? e.how : "watch"}`, { toward: e.toward ?? "" }) });
+    case "seek": return t("Seek", {
+      actor: e.actor, roll: dice(e.natural, e.mod, e.total, e.dc, t("DC")), degree: degree(e.degree),
+      found: e.found?.length ? t("SeekFound", { names: listJoin(e.found) }) : t("SeekNothing")
+    });
+    case "fidget": return t("Fidget", { actor: e.actor, how: t(e.how === "step" ? "FidgetStep" : "FidgetLook") });
     case "afflictionSave":
       if ( e.tally ) return t("AfflictionTally", { actor: e.actor, name: e.name, saveType: e.saveType, roll: dice(e.natural, e.mod, e.total, e.dc, t("DC")), degree: degree(e.degree), cured: e.tally.cured, kept: e.tally.kept });
       return t("AfflictionSave", { actor: e.actor, name: e.name, saveType: e.saveType, roll: dice(e.natural, e.mod, e.total, e.dc, t("DC")), degree: degree(e.degree) });

@@ -43,6 +43,7 @@ import { isBound, release } from "./behavior/holds.js";
 import { afflictionFor } from "./behavior/afflictions.js";
 import { syncGear } from "./gear.js";
 import { joinSide, standAside, turnOn } from "./behavior/neutral.js";
+import { patrolNow } from "./behavior/patrol.js";
 
 /** A question the turn can't go on without: whether {unitId} uses {reactionId} because of {trigger} (by {byId}). */
 export class NeedsDecision extends Error {
@@ -1187,7 +1188,8 @@ const AS_RELATION = new Set(["grabbed", "controlled"]);
  *     {type: "relation", kind, from, to, intensity: 1, most: 1, rounds, gm}   grabbed/goaded/controlled/exposedTo/
  *       marked: from the one who did it to the one it's on; shuns (won't listen to): from the one who won't to the other
  *     {type: "goal", kind, from, to (a thing's id, or a hazard's), level, intensity, most, played, gm, via}
- *   marks      what a creature has on its own: {type: "condition"|"status"|"goal"|"desire", on, key|kind, ...}
+ *   marks      what a creature has on its own: {type: "condition"|"status"|"goal"|"desire", on, key|kind, ...} (a status:
+ *              "unaware", a bystander yet to notice the fight; "patrolling" or "searching", one that knows of no foe)
  *   things     what goals are about, while they're wanted: [{id, type, x, y, name, locked}]
  *   setAside   what the GM set aside (held at 0), to hand back: [{type: "desire"|"goal", id, kind, targetId|thingId}]
  * A player's character FastFighting isn't playing shows no desires or goals (the player decides what it wants), only
@@ -1267,8 +1269,10 @@ export function networkOf(run) {
     for ( const id of u.offendedBy ?? [] ) {
       if ( run.byId.has(id) ) links.push({ type: "relation", kind: "shuns", from: u.id, to: id, intensity: 1, most: 1, rounds: null, gm: false });
     }
-    // Not in the fight yet: it hasn't noticed it.
+    // Not in the fight yet: it hasn't noticed it. In it, knowing of no foe: patrolling or searching (behavior/patrol.js).
     if ( !u.active && !u.aware && u.status === STATUS.STANDING && !u.spec.hazard ) marks.push({ type: "status", on: u.id, key: "unaware", intensity: 1, most: 1 });
+    const patrol = minded ? patrolNow(run, u) : null;
+    if ( patrol ) marks.push({ type: "status", on: u.id, key: patrol, intensity: 1, most: 1 });
   }
   return { creatures, links, marks, things: [...things.values()], setAside };
 }

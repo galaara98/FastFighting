@@ -169,7 +169,7 @@ The rules object is pure and is called thousands of times.
 - Swallowed and engulfed, in every system (a profile's `inside`): the one held is where its holder is and goes where it goes, its holder's grab on it ends, it reaches its holder from inside, and nothing outside reaches it, nor it anything outside (total cover; others inside with it, yes). core-api exports `holderOf(run, u)` and `cutOff(run, a, b)`. `rules.letGo(run, u, key, holder)`, as a holder falls: what comes of being let go (5e: out Prone), or `false` to keep hold (PF2e: a Swallow Whole corpse, to be cut open first).
 - The Statistics Engine weighs a condition's harm in the system's terms (`rules.conditionHarm`, not the core's dice), that a foe held inside fights none but its holder, an affliction's stages' conditions as well as their damage, and an option only one foe allows (`rules.usable` says no to the rest): clearly better, it goes for that foe (2014's behir swallows the one it's grappling).
 - Holds: an effect whose escape condition is gone is no hold, so what it laid with it clears as it's broken. `rules.breakFree` may return `harm: {byType}`, what the try does to whoever holds it (damage as rolled, against its resistances: cutting free of a gullet).
-- What a roll is for: `modifiers.check` hears `{unit, target, purpose, skill, action}` (purpose: talk, goad, theft, firstAid, sizeUp, notice, heal, aid or control; the skill a spec names); `modifiers.save`, and `adjustRoll` and `afterRoll` on a save, hear the `action` it's against and `from` whom.
+- What a roll is for: `modifiers.check` hears `{unit, target, purpose, skill, action}` (purpose: talk, goad, theft, firstAid, sizeUp, notice, seek, heal, aid or control; the skill a spec names); `modifiers.save`, and `adjustRoll` and `afterRoll` on a save, hear the `action` it's against and `from` whom.
 - `rules.disrupted(run, u, action)`: a spell (a magical action) that comes to nothing as it's cast, lost and told (`{natural, dc, said: {text}}`: PF2e's stupefied flat check).
 - `rules.afterHarm(run, u, amount, rng, {by, types, byType, action, crit, lingering})`: who did it, and with what. `rules.afterAttack(run, u, target, {action, degree, dealt, control})`: once an attack's damage, and everything it laid, is done (PF2e: a hidden attacker seen only now).
 
@@ -183,7 +183,7 @@ A player's damage card in a live battle, at a creature FastFighting runs, is app
 - `rollStrike(token, {action, target, attackNumber, secret})`: a strike rolled with the system's own roller, its cards in the chat: `{attack: {degree, natural, total, dice}, damage: {byType} | null}` (damage as rolled, before resistances), or null (the engine rolls it). `dice` (optional, numbers): the system's own dice as they fell, for `rules.asRolled` (Daggerheart's `{hope, fear}`). `attackNumber` is the attacks made before it this turn (for a multiple attack penalty; 0 for a reaction); `secret` rolls it for the GMs only (the GM keeps its name secret). `records` (API 20): undo records for what the roll changed on the striker's own sheet beyond its cards (PF2e's ammunition, loaded and spent), kept with the turn for Rewind, even where the result says no degree (`{records}`); only the striker's own token and actor, and only their data and items, are kept (`live-battle.js` `rollRecords`).
 - `useAction(token, {action, targets, secret})`: an action's own card as its user shows it (a spell's, a breath's), nothing rolled or spent: `{card}` or null. `rollDamage(token, {action, card, secret, target})`: the damage of an action that isn't an attack, rolled once for all it catches: `{damage: {byType}, card}` or null. `target`: the token it's aimed at first; `action.strikeOf`: the Strike whose damage it deals with no roll of its own, where the helper's action names one (PF2e Rend), to roll with that Strike's own damage roller. In a turn FastFighting plays, a spell, a save or auto action, a buff or heal with no check of its own, and a control action that says `card` (API 20) ask for their card first (`use`; the helper says null where there's none to show); a save's or an auto's damage is rolled by the system (`damage`), each target's share (its save's multiplier, rounded down) applied with `applyDamageCard` (`apply`, with `multiplier`), and the target takes what its sheet lost.
 - `adjustRolled(token, {card, adjust, secret})`: a change the helper's rules made to a roll the system made, carried out on its card the system's way (Ironsworn's momentum burned). The rules ask it from `adjustRoll` when `ctx.rolled` (`run.live.roll(run, {kind: "adjust", unitId, card: roll.card, adjust})`; the roll's `card` is what its rollSave or rollCheck named) and keep the roll as it fell where it comes back `{done: false}`.
-- `rollSave(token, {save, dc, action, from, secret})` and `rollCheck(token, {purpose, skill, against, attackNumber, standoff, dc, action, target, secret})`: a save or a check rolled with the system's own roller, its card in the chat: `{degree, natural, total, dice}`; `{gm: true}` where it needs a GM's judgment the helper's code can't make (a GM picks how it went, or lets FastFighting roll it); or null (the engine rolls it). A player's character's is rolled on its player's screen while they're here. `purpose` is `control`, `talk`, `aid`, `heal`, `firstAid`, `escape`, `theft`, `disengage` or `cast` from the core, and whatever a helper's own rules ask through `systemRolled` (PF2e: `flat` for a flat check, `tumble` for Tumble Through); `attackNumber`, for a check with the attack trait (`check.attack`), is the attacks made before it this turn, as the engine counted them for its own penalty. `standoff` (API 20) is true while a standoff holds, no blows struck yet, for a system whose words differ then (PF2e's talk: Make an Impression, not Request).
+- `rollSave(token, {save, dc, action, from, secret})` and `rollCheck(token, {purpose, skill, against, attackNumber, standoff, dc, action, target, secret})`: a save or a check rolled with the system's own roller, its card in the chat: `{degree, natural, total, dice}`; `{gm: true}` where it needs a GM's judgment the helper's code can't make (a GM picks how it went, or lets FastFighting roll it); or null (the engine rolls it). A player's character's is rolled on its player's screen while they're here. `purpose` is `control`, `talk`, `aid`, `heal`, `firstAid`, `escape`, `theft`, `disengage`, `cast` or `seek` from the core, and whatever a helper's own rules ask through `systemRolled` (PF2e: `flat` for a flat check, `tumble` for Tumble Through); `attackNumber`, for a check with the attack trait (`check.attack`), is the attacks made before it this turn, as the engine counted them for its own penalty. `standoff` (API 20) is true while a standoff holds, no blows struck yet, for a system whose words differ then (PF2e's talk: Make an Impression, not Request).
 - **The system's rolls in a turn FastFighting plays:** `run.live.systemRolls` lists the kinds the helper makes (`strike` with `rollStrike`; `save` with `rollSave`; `check` with `rollCheck`; `use` with `useAction`; `damage` with `rollDamage`; `adjust` with `adjustRolled`; `card` with `showTableRoll` and `applyDamageCard`, API 20: **Table rolls** below; `apply` with `applyDamageCard` and a strike, damage or card roller). Saves and checks are asked for where the engine would roll them (`battle-state.js` `systemRolled`, then `rollCheck`'s `rolled`): no Luck, momentum or rescue after a roll the system made. A helper's own rules that roll a check themselves (`rules.breakFree`) ask the same way: `systemRolled` and `rollCheck` (with its `rolled`, so `rules.asRolled` makes the roll theirs) are in core-api. While `liveTurn` plays (`run.live.playing`), each strike asks for its roll (engine/live.js `systemRoll`: `NeedsDecision` with `roll: "strike"`, keyed so a replay finds its answer); the live side plays the turn's moves so far on the map (so the system measures range and flanking from where they stand), rolls it, and plays the turn again with the answer (handing each pass the one before it, `liveTurn`'s and `movedBeside`'s `before`: it takes up the round's reckonings that pass had worked out, so a turn played again goes the same, sooner). A hit's damage card is then applied the system's way (`roll: "apply"`), and the target takes what its sheet lost; one a reaction lessened (other than one the system applies itself) takes the engine's sum. Every card and undo record is the turn's, for Rewind. Outside `liveTurn` (a foe's reaction in a player's turn, planning, a sample fight) nothing is asked. A live battle's area test reads where the engine has everyone, not the tokens, so a turn played again tests the same.
 - A character the players run whose players aren't connected as its turn begins (the `absentPlayers` setting, on by default) is played by FastFighting until one of them is back (`live-battle.js` `awayOrBack`, the rule in `engine/live.js` `handOver`; `battle.data.away` holds those taken over). A GM's **FastFighting plays their turns** settles it instead.
 - A player's reaction, while a player who owns its character is here, is theirs to roll: a card to them and the GMs (I've done my reaction, a query to the GM's browser), the battle waiting (`waitingReaction`, `endReaction`: the Battle Vantage's They've rolled it and Go on without it), and their cards read with `readTurn` (`run.live.readsRolls`). One whose players are gone is rolled with `rollStrike` on the GM's browser. A GM says how much of a player's reaction's damage lands when Apply players' damage is off. The engine plays the strike with that roll (`run.live.forced`, taken once by `strikeTarget`); such a reaction asks to be rolled (`NeedsDecision` with `decided` and `strike`). A creature's reaction strike in a turn FastFighting plays is rolled as any strike there is; in a player's turn, with `rollStrike` before the engine plays it.
@@ -240,6 +240,20 @@ Spec fields a helper may now rely on, each documented where it belongs below or 
 - An outcome's `onlyVs: "melee"`: its conditions hold against its source's melee attacks alone (PF2e's Feint); with `uses`, conditions against the source alone are spent by its attacks (melee ones for "melee"), as a mark on its defense is (`spendEdges(u, "defend", attackerId, {melee})`).
 - Mods to one save or one check alone: `bySave: {key: n}` (the system's save key) and `byCheck: {key: n}` (a skill's key, or `perception`), of a kind with `saves` and `checks` (the best bonus and the worst penalty count across both: `combineMods`). A save of that key, a check of that skill (`checkRoll`'s `skill`), and a defense DC of it (`defenseDc`) count them; the Perception DC now moves with its checks (`checks` and `byCheck.perception`). PF2e's Bon Mot: Will saves and Perception.
 - A heal `rules.usable` says can't mend a friend (PF2e's vitality healing on one with void healing) makes nobody want to heal that friend with it (`healScores`), nor rescue it with it after the fight (`rescueOption`).
+- Patrolling and Seek (`behavior/patrol.js`, **Patrolling** below):
+  - `rules.seek`: the system's Seek, `{cost, area, around, dc(run, seeker, hider)}`, each optional (by default the basic
+    action; a 30-foot cone toward where it looks; round itself, 15 feet; 10 + the hider's Stealth), or `false` (no Seek:
+    a patrol moves and watches). A Seek's check is the system's to roll in a turn FastFighting plays (`systemRolled`,
+    `purpose: "seek"`, `skill: "perception"`): a helper's `rollCheck` hears it (PF2e's Seek action).
+  - `spec.initiative.stealth`: its Stealth, for the DC a Seek must beat (10 + it; else the typical skill for its level).
+  - `spec.walls[].snd`: whether a wall stops sound (Foundry's sound type, 0 letting it through; unsaid, it does), for the
+    din of a fight a patrol hears (`senses.js` `hearDC`, the notice system's `HEAR`).
+  - core-api's `hiddenFrom(u, t)`: t is hidden from u (the hidden condition, and u hasn't found it with a Seek since it
+    hid: `t.foundBy`), for the system's own rules on the hidden (PF2e's flat check, and off-guard to a hidden attacker).
+  - A playstyle's `patrol` (`engine/playstyles.js`): `spread`, `near`, `hold` or `hide`.
+  - The log: `patrol` (`how`, `mode`, `toward`, `towardId`), `seek` (`natural`, `mod`, `total`, `dc`, `degree`, `rolled`,
+    `found`, `foundIds`, `shape`, `feet`), `fidget` (`how`: `step` or `look`), and a move's `patrol: true` (purpose
+    `patrol` or `fidget`; `toward` empty and `towardId` null for a move to a spot).
 
 #### Table rolls: the engine's own dice, shown
 
@@ -266,7 +280,8 @@ Whenever FastFighting rolls dice itself for something a person would roll at the
 | Crit and fumble tables, a deed die, a rider's die, a Luck die, a reaction's reduction, repeats | yes | recorded |
 | Surprise: a sneak's Stealth as the fight is set up (PF2e) | yes | recorded at `beginLive`, posted with the opening |
 | Initiative | Foundry's | `rollFor`: the system's own initiative cards; the engine's initiative dice only order simulations |
-| A bystander noticing the fight | no | `quiet` |
+| A Seek (a patrol's, `behavior/patrol.js`) | yes | the system's (PF2e's Seek action, secret) where its helper rolls checks; else the engine's `rollCheck`, recorded (`what` "seek") |
+| A bystander noticing the fight; a patrol hearing one | no | `quiet` |
 | Execution, taunt, talk, theft, bargain and trap luck; loot shares; leaving; an unknown grab's even chance; a remedy's chance | no | never: the Statistics Engine's |
 | Choices: targets, desires, morale, playstyles, patience, fate, reconsidering (`rethink`) | no | never |
 
@@ -513,7 +528,7 @@ Hooks:
 ### Buffs, senses and doors
 
 - **Buffs:** one friend, several, or everyone in an aura. A save at the end of each turn can shake some off (Hold Person); damage ends some (sleep). With concentration, one spell at a time, and a hard knock or being taken out ends it. A buff's worth counts the rounds it will matter; late in a won fight, nobody bothers. A charm or domination ends when it runs out, on a save, when the holder loses concentration or falls, or when the holder's side harms a charmed one; its friends are reluctant to cut it down, and the story still counts it as one of its own. Edges: PF2e Aid is a check against DC 15 for +1 to a friend's next roll, more on a critical success, -1 on a critical failure; Friends gives advantage on words to one creature; Sure Strike; Ironsworn's Aid Your Ally gives +1 on the next move, or momentum. Laid on a friend, an edge counts against whoever that friend is set on (the foe it wants to hurt or talk round, or the friend it wants to tend), and it's spent by the roll it helps; bonuses to checks count for talkers and healers, so a talker is worth guiding before it speaks. The story: *"Akra lifts Bless over the group: Akra, Zanna and Randal, emboldened."* Dodge, Reckless Attack and Action Surge get lines of their own.
-- **Senses** (`behavior/senses.js`): a foe it can't perceive looks unhurt, and it doesn't go after the fallen it can't make out. In a crisis, twice the range, no line of sight or light needed (a smell still doesn't pass a wall). The din of a fight carries farther than 60 feet, harder to make out with distance and walls; bystanders notice it seen, picked up on radar, felt, smelled or heard.
+- **Senses** (`behavior/senses.js`): a foe it can't perceive looks unhurt, and it doesn't go after the fallen it can't make out. In a crisis, twice the range, no line of sight or light needed (a smell still doesn't pass a wall). The din of a fight carries farther than 60 feet, harder to make out with distance and walls (`HEAR`, `hearDC`, shared by the Foundry side's `computeAwareness`); bystanders notice it seen, picked up on radar, felt, smelled or heard, and a patrol hears it (**Patrolling**). One it found with a Seek isn't hidden from it (`hiddenFrom`), until it hides again.
 - **Doors** (`behavior/doors.js`): more patience with a locked door when there's nobody else to fight; giving up turns the desire to something else. The system's door has its defense, hit points, DCs and its own damage rules (PF2e hardness, a 5e damage threshold).
 
 ### Getting ready
@@ -531,7 +546,66 @@ Hooks:
 - **How it's weighed:** what it enables next turn, discounted, as likely as it is to matter; a spot also by the harm it
   spares, as much as the creature minds being hit (the selfish, the timid, the badly hurt, shooters and kiters more,
   protectors less), less the reactions moving there provokes. The same reckoning as `followUpWorth`'s.
-- **Lazy creatures still slack** now and then; being unable to act directly is no reason to idle any more.
+- **Lazy creatures still slack** now and then; being unable to act directly is no reason to idle any more. One that
+  knows of no foe patrols (**Patrolling**).
+
+### Patrolling
+
+`behavior/patrol.js`; the numbers in [STATS_AND_FORMULAS_README](STATS_AND_FORMULAS_README.md#patrolling-cues-and-seek).
+- **When:** its turn's main loop found no foe to go for (`simulator.js` `playFromHere`: `lacked`), and with what's left
+  after any step for later (`spareTurn`), it patrols if it's in the fight (no standoff holding), standing and able to
+  act, not leaving or held (a grab, its bonds, a hold it would break), not a hazard or summoned, and knows of no foe on
+  its feet (`knowsAFoe`: none in its senses, seen before or come to blows with, a standoff holding them off or not). It
+  replaces the idle turn ("lazy" with no `chose`). A Lazy one may still slack first (`slacksOff`). Whatever it finds,
+  it goes back to fighting at once with what's left of its turn (`fightOn` again).
+- **How** (`patrolMode`): its pills' `patrol` (each a vote as heavy as its place: `playstyles.js` `patrolStyle`), else
+  an animal roams and anyone else watches; tactics' "Hunt down enemies nearby" makes a watcher a patroller, "Stay with
+  the fight" holds it where it stands (a hider still hides). An animal with a patroller's or a watcher's pills roams.
+
+| Playstyle | patrol | Why |
+|---|---|---|
+| Wants to Lead | spread | Leads the sweep, covering ground for its people. |
+| Tank | spread | A guard: takes the ground in front of its friends. |
+| Brawler, Impatient, Instigator | spread | Looking for a fight, and won't wait for one. |
+| Lore-Collector, Puzzle-Maniac | spread | Curious: goes to see. |
+| Vengeful, Relentless, Cruel, Redeem-Seeker | spread | Hunting its foe, or out to prove itself. |
+| Wildcard | spread | Restless: it wanders off. |
+| Medic, Enabler, Martyr, Moralist, People-Pleaser, Peacekeeper | near | Stays by the friends it heals, bolsters, shields or follows. |
+| Fragile, Lazy, Diplomat | hold | Holds back: won't walk into trouble (Fragile), can't be bothered (Lazy), would rather wait to talk (Diplomat). |
+| Chicken, Wallflower | hide | Keeps out of sight: stays put, or hides. |
+| DPS, Kiter, Skeptic, Mercenary, Thief, Un-Mundane | (none) | Nothing in it says either way: its nature decides (an animal roams, anyone else watches). |
+
+  - `roam` (an animal, taken to be hungry): toward the strongest cue, else it wanders, out from where it began by 20
+    feet and 15 more each turn it finds nothing (to 120); a pack keeps within 30 feet of each other, and goes where a
+    packmate's cue leads.
+  - `spread` (a patroller): toward a cue, else out to 20 to 30 feet from its teammates (its own side or friend group:
+    `alliesOf`, not every friendly creature), where it hasn't searched.
+  - `near`: stays within 15 feet of its teammates, searching from there, going where they go (alone, as a watcher).
+  - `watch`: toward a cue (the din of a fight it hears), else it searches from where it stands.
+  - `hold`: searches from where it stands, going nowhere. `hide`: hides where it can (its Hide, a buff that hides it,
+    where the system lets it use it) and keeps hidden; else it stays put and searches.
+- **Cues** (`cueOf`, once a turn), the strongest first, each a creature it heads for the engine's way (its approach,
+  the way round walls, a door worked as any is; a move that stops short put back on the squares it began on): a foe's
+  scent it can follow (within twice its smell, along the way there); the din of a fight it hears (anyone in a blow this
+  round or last, the easiest to hear by `hearDC`, its Perception against that DC: the Statistics Engine's own check,
+  never shown); a foe its teammates have in view; for a pack animal, a packmate's cue.
+- **Seek** (`seek`): what `rules.seek` says (above), else the core's: the basic action, its Perception against the
+  Stealth DC of each foe in the area that's hidden from it or out of its senses, walls blocking as they block sight
+  (`inArea`). One roll against the hardest of their DCs (nobody there: the typical DC for its level), each found by its
+  own degree: known to it (`seenFoes`), and no longer hidden from it (`foundBy`; an invisible one stays hidden). The
+  roll is the system's in a live battle (`systemRolled`, purpose `seek`), else a table roll. A spot searched this round
+  or last (within 15 feet) isn't searched again: three actions are Seek, Stride, Seek from a fresh spot, and Stride,
+  Seek, Stride from one searched already; toward a cue, Strides, and a Seek with its last action. `rules.afterRoll`
+  hears it (PF2e: a hidden seeker gives itself away).
+- **Its moves** count the harm the foes it knows of could do it, as a spot for later is weighed (`prepare.js`
+  `walkRisk`).
+- **Fidgeting** (`fidget`): a turn it spent nothing of at all (`turn.acts` none, its movement untouched), able to act
+  and in the fight: chance = the ADHD setting's share × (0.5 + its own ADHD's share). A step aside to a free spot
+  beside it (no foe it knows of near, paid for as any move), or a look elsewhere (where its next Seek's cone looks).
+- **Told:** `patrol` once a turn (the story tells it once, and again when it goes about it differently or after a round
+  without it), its moves by it (`patrol: true`), a Seek that finds someone always and one that finds nothing once with a
+  told patrol, and `fidget`; the Statistician's lines `Patrol`, `Seek`, `Fidget`, `MoveSearch` and `MoveStep`. The Battle Vantage
+  marks one that patrolled on its last turn "patrolling" (it moved) or "searching" (`patrolNow`, a `status` mark).
 
 ### Combat details
 
