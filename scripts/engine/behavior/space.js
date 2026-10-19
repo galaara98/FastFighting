@@ -140,7 +140,7 @@ export function stepSpots(run, u, feet) {
     for ( let dy = -most; dy <= most; dy += STEP ) {
       if ( !dx && !dy ) continue;
       const p = onGrid(u, u.pos.x + dx, u.pos.y + dy);
-      if ( inTheWay(run, u, p) || (wallsKnown(run) && sightBlocked(run, u.pos, p)) ) continue;
+      if ( inTheWay(run, u, p) || (wallsKnown(run) && lineBlocked(run, u.pos, p)) ) continue;
       out.push(p);
     }
   }
@@ -335,16 +335,70 @@ function pointsOf(t) {
   return [{ x, y }, { x: x - h, y: y - h }, { x: x + h, y: y - h }, { x: x - h, y: y + h }, { x: x + h, y: y + h }];
 }
 
+/** The most lines of sight kept for one state of the doors before they're let go and found again (memory). */
+const LINES_MOST = 100000;
+
+/** Lines of sight kept, by the battle's list of walls (spec.walls), then by the doors open: sightKept. */
+const SIGHT = new WeakMap();
+
+/**
+ * Lines of sight kept by where they run from and to. What they come to hangs on the walls and the doors alone, never on
+ * who stands where, so they outlast everyone's moves; and every fight of a batch, every pass of a live battle's turn,
+ * shares them: one store for each list of walls (a list is never changed in place: live.js setScene gives a new one)
+ * and each set of open doors. Which doors are open is looked at again whenever run.geo moves on, as a door opening or
+ * shutting moves it (simulator.js openDoor, live.js setScene).
+ * {lines: sightBlocked's answers, points: blockedPoints' by t's size}, each by from's x and y, then to's x and y.
+ */
+function sightKept(run) {
+  const walls = run.prep.spec.walls;
+  const kept = run.sightCache;
+  if ( kept && kept.geo === run.geo && kept.walls === walls ) return kept.store;
+  let open = "";
+  for ( const [id, d] of run.doors ?? [] ) if ( d?.open ) open += `${id}\u0000`;
+  let byDoors = SIGHT.get(walls);
+  if ( !byDoors ) SIGHT.set(walls, byDoors = new Map());
+  let store = byDoors.get(open);
+  if ( !store || store.size > LINES_MOST ) byDoors.set(open, store = { lines: new Map(), points: new Map(), size: 0 });
+  run.sightCache = { geo: run.geo, walls, store };
+  return store;
+}
+
+/** What's kept for the line from p to q in a map of maps (by p.x, p.y, q.x, q.y), or undefined. */
+const keptAt = (map, p, q) => map.get(p.x)?.get(p.y)?.get(q.x)?.get(q.y);
+
+/** Keep v for the line from p to q. */
+function keepAt(store, map, p, q, v) {
+  let a = map.get(p.x);
+  if ( !a ) map.set(p.x, a = new Map());
+  let b = a.get(p.y);
+  if ( !b ) a.set(p.y, b = new Map());
+  let c = b.get(q.x);
+  if ( !c ) b.set(q.x, c = new Map());
+  c.set(q.y, v);
+  store.size += 1;
+  return v;
+}
+
+/** sightBlocked, kept (sightKept): the same answer, worked out once for each line while the doors stay as they are. */
+export function lineBlocked(run, p, q) {
+  const store = sightKept(run);
+  const v = keptAt(store.lines, p, q);
+  return v !== undefined ? v : keepAt(store, store.lines, p, q, sightBlocked(run, p, q));
+}
+
 /** How many of t's points u can't see from `from` (0: in the open; all 5: wholly hidden). */
 export function blockedPoints(run, u, t, from = u.pos) {
   if ( !from || !t.pos || !wallsKnown(run) ) return 0;
-  // (A door opening changes run.geo too: simulator.js openDoor.)
-  const key = `${run.geo ?? 0}|${from.x},${from.y}|${t.id}`;
-  const cache = run.sightCache && run.sightCache.geo === run.geo ? run.sightCache : (run.sightCache = { geo: run.geo, map: new Map() });
-  if ( cache.map.has(key) ) return cache.map.get(key);
-  const n = pointsOf(t).filter(q => sightBlocked(run, from, q)).length;
-  cache.map.set(key, n);
-  return n;
+  // (Kept by where the two are and how big t is: sightKept.)
+  const store = sightKept(run);
+  const size = sizeOf(t);
+  let bySize = store.points.get(size);
+  if ( !bySize ) store.points.set(size, bySize = new Map());
+  const v = keptAt(bySize, from, t.pos);
+  if ( v !== undefined ) return v;
+  let n = 0;
+  for ( const q of pointsOf(t) ) if ( sightBlocked(run, from, q) ) n += 1;
+  return keepAt(store, bySize, from, t.pos, n);
 }
 
 /** Can u see t from where it stands (or from `from`): a clear line to its middle or a corner? */

@@ -31,7 +31,7 @@ import { costOf, costUnits, mainPool, normalizeCost } from "../turn.js";
 import { expectedDamage, threatOf, hasUses, unitsPerTurn } from "./evaluate.js";
 import { mind, levelOf, protective } from "./desire.js";
 import { threats } from "./reactions.js";
-import { edgeAt, inTheWay, wallsKnown, sightBlocked, blockedPoints, crossed } from "./space.js";
+import { edgeAt, inTheWay, wallsKnown, lineBlocked, blockedPoints, crossed } from "./space.js";
 import { meanPart } from "../dice.js";
 
 /**
@@ -231,7 +231,7 @@ function spotsWithin(run, u, feet) {
       if ( seen.has(key) || (p.x === u.pos.x && p.y === u.pos.y) ) continue;
       seen.add(key);
       if ( Math.hypot(p.x - u.pos.x, p.y - u.pos.y) > feet + 0.5 || !onMap(run, p) || inTheWay(run, u, p) ) continue;
-      if ( walls && sightBlocked(run, u.pos, p) ) continue;
+      if ( walls && lineBlocked(run, u.pos, p) ) continue;
       // (Not through a foe on its feet: the way round it is no straight move.)
       if ( crossed(run, u, u.pos, p).some(({ o }) => isStanding(o) && areEnemies(run, u, o)) ) continue;
       out.push(p);
@@ -441,7 +441,7 @@ function cornered(run, u, p, ctx) {
     const c = Math.cos(turn);
     const s = Math.sin(turn);
     const q = { x: p.x + ((dx * c - dy * s) / len) * 10, y: p.y + ((dx * s + dy * c) / len) * 10 };
-    if ( onMap(run, q) && !(walls && sightBlocked(run, p, q)) && !inTheWay(run, u, q) ) return false;
+    if ( onMap(run, q) && !(walls && lineBlocked(run, p, q)) && !inTheWay(run, u, q) ) return false;
   }
   return true;
 }

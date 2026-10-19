@@ -8,7 +8,7 @@
 import { describe, expect, test } from "vitest";
 import { beginRun, beginRound, takeTurn, prepareBattle } from "../scripts/engine/simulator.js";
 import { movesNeeded, moveToward, edgeDistance, currentAc, saveRoll, COVER_POINTS, reachShape } from "../scripts/engine/battle-state.js";
-import { inTheWay, spotWithin, spotToShoot, lineOfSight, sightBlocked, coverFrom, crossed, pastCost } from "../scripts/engine/behavior/space.js";
+import { inTheWay, spotWithin, spotToShoot, lineOfSight, sightBlocked, lineBlocked, blockedPoints, coverFrom, crossed, pastCost } from "../scripts/engine/behavior/space.js";
 import { areEnemies } from "../scripts/engine/battle-state.js";
 import { snapshotRun } from "../scripts/engine/live.js";
 import { STATUS } from "../scripts/constants.js";
@@ -279,5 +279,59 @@ describe("one look at the map while it decides", () => {
     // (Both kinds: spots found, and none, near and far.)
     expect(found).toBeGreaterThan(100);
     expect(none).toBeGreaterThan(100);
+  });
+
+  test("lines of sight kept by where they run: as worked out afresh, through everyone's moves, a door opened and shut, another fight on the same walls", () => {
+    let seed = 5;
+    const rnd = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648;
+    const walls = Array.from({ length: 30 }, (_, i) => {
+      const x = -60 + 120 * rnd();
+      const y = -60 + 120 * rnd();
+      return wall(x, y, x + 30 * (rnd() - 0.5), y + 30 * (rnd() - 0.5), { s: rnd() < 0.3 ? 10 : 20, door: i % 6 === 0 ? `d${i}` : null });
+    });
+    const run = fight([who("a", "friendly", 0), who("b", "hostile", 40)], { walls });
+    const [a, b] = get(run, "a", "b");
+    const grid = () => 5 * Math.round((-70 + 140 * rnd()) / 5);
+    // (Every point of b, each looked at alone: what blockedPoints and lineBlocked must come to.)
+    const afresh = (p, q) => sightBlocked(run, p, q);
+    const pointsAfresh = () => {
+      const h = 2;
+      return [[0, 0], [-h, -h], [h, -h], [-h, h], [h, h]].filter(([dx, dy]) => afresh(a.pos, { x: b.pos.x + dx, y: b.pos.y + dy })).length;
+    };
+    const check = () => {
+      let hidden = 0;
+      for ( let i = 0; i < 60; i++ ) {
+        a.pos = { x: grid(), y: grid() };
+        b.pos = { x: grid(), y: grid() };
+        run.geo = (run.geo ?? 0) + 1; // (someone moved)
+        expect(blockedPoints(run, a, b)).toBe(pointsAfresh());
+        expect(lineBlocked(run, a.pos, b.pos)).toBe(afresh(a.pos, b.pos));
+        if ( afresh(a.pos, b.pos) ) hidden += 1;
+      }
+      return hidden;
+    };
+    // (Lines both ways: some hidden, some clear.)
+    const hidden = check();
+    expect(hidden).toBeGreaterThan(5);
+    expect(hidden).toBeLessThan(55);
+    const kept = run.sightCache.store;
+    // (Moves keep what's kept: the same lines, the same store.)
+    run.geo += 1;
+    blockedPoints(run, a, b);
+    expect(run.sightCache.store).toBe(kept);
+    // (A door opened: another store, the right answers; shut again, the first one back.)
+    run.doors.set("d0", { open: true });
+    run.geo += 1;
+    check();
+    expect(run.sightCache.store).not.toBe(kept);
+    run.doors.set("d0", { open: false });
+    run.geo += 1;
+    check();
+    expect(run.sightCache.store).toBe(kept);
+    // (Another fight on the same walls shares them; the store isn't kept with a live battle's snapshot.)
+    const other = fight([who("a", "friendly", 0), who("b", "hostile", 40)], { walls });
+    blockedPoints(other, ...get(other, "a", "b"));
+    expect(other.sightCache.store).toBe(kept);
+    expect(Object.keys(snapshotRun(run).run)).not.toContain("sightCache");
   });
 });
