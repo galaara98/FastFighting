@@ -31,7 +31,9 @@ import {
 } from "./make-it-so.js";
 import { storyBeats } from "../story/story.js";
 import { logLine } from "../story/log-lines.js";
+import { healthCallout, healthLine } from "../story/health.js";
 import { loadStoryTables } from "../story/tables.js";
+import { healthLookup } from "./health-estimate.js";
 import {
   beginLive, liveRound, liveOrder, liveDrop, liveTurn, pcTurnBegin, pcTurnEnd, syncFromSheets, setApproach, setScene, captureAll, snapshotRun, restoreRun, endLive, packLog, followCommand,
   NeedsDecision, rollsKind, applyFact, gmMoment, leavingReach, openingFor, reactNow, movedBeside, nextSpotlight, liveAftermath,
@@ -2523,13 +2525,30 @@ function nameplatesDecide() {
   }
 }
 
+/** The players' characters in the battle. */
+const partyOf = run => new Set(run.units.filter(p => p.spec.kind === "pc" || run.live.players.has(p.id) || docOf(p.id)?.actor?.hasPlayerOwner));
+
+/**
+ * May the players tell how hurt a creature is, for its health callout told openly without Health Estimate
+ * (health-estimate.js)? One of theirs; else one that a player's character still standing can make out where it is
+ * (senses.js perceives, as apparentHealth reads it), unless it's hidden and not yet given away.
+ */
+function playersCanTell(run, id) {
+  const u = run.byId.get(id);
+  if ( !u ) return false;
+  const party = partyOf(run);
+  if ( party.has(u) ) return true;
+  if ( u.spec.hidden && !u.revealed ) return false;
+  return [...party].some(p => isStanding(p) && perceives(run, p, u));
+}
+
 /**
  * Each creature a player's character has seen this fight, marked (`partySaw`): one in its sight (not hidden), or one
  * it came to blows or words with. Named in the story from then on (nameHidden). Kept on the creature, so a Rewind takes
  * it back with the turn.
  */
 function noteSeen(run) {
-  const party = new Set(run.units.filter(p => p.spec.kind === "pc" || run.live.players.has(p.id) || docOf(p.id)?.actor?.hasPlayerOwner));
+  const party = partyOf(run);
   if ( !party.size ) return;
   const met = new Set();
   for ( const e of run.log ) {
@@ -2603,8 +2622,14 @@ async function tellNew() {
   const told = battle.data.told ?? 0;
   const out = [];
   const style = battle.data.style;
+  // (How hurt a harm left the one it hurt, where it looks worse: story/health.js, in Health Estimate's words where it's
+  // on. Worked out from each harm's own hit points, before and after it, so the whole log told again says the same.)
+  const healthState = healthLookup({ tokenOf: id => docOf(id) ?? null, playersKnow: id => playersCanTell(run, id) });
   if ( style === "statistician" ) {
-    const lines = run.log.filter(e => (e.turn ?? 0) > told).map(e => logLine(e)).filter(Boolean);
+    const lines = run.log.filter(e => (e.turn ?? 0) > told).flatMap(e => {
+      const c = healthCallout(e, healthState);
+      return [logLine(e), c ? healthLine(c) : ""];
+    }).filter(Boolean);
     if ( lines.length ) {
       const html = `<ul>${lines.map(l => `<li>${escape(l)}</li>`).join("")}</ul>`;
       const message = await postStory({ title: storyTitle(battle.scene), html }, null, { gmOnly: true });
@@ -2615,7 +2640,7 @@ async function tellNew() {
     const open = setting("storyMode") !== "whisper";
     const options = {
       tables: await loadStoryTables(), seed: battle.data.seed, damageType: adapter?.rules?.storyDamageType?.bind(adapter.rules) ?? null,
-      conditionType: adapter?.rules?.storyCondition?.bind(adapter.rules) ?? null, open
+      conditionType: adapter?.rules?.storyCondition?.bind(adapter.rules) ?? null, healthState, open
     };
     const beats = storyBeats(result, battle.spec, style, options);
     const docs = new Map(run.units.map(u => [u.id, docOf(u.id)]).filter(([, d]) => d));

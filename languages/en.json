@@ -452,6 +452,12 @@
       "neutral": "Stood aside",
       "noSide": "Took no side"
     },
+    "Health": {
+      "annoyed": "Annoyed",
+      "wounded": "Wounded",
+      "bloodied": "Bloodied",
+      "nearlyDead": "Nearly dead"
+    },
     "Fudge": {
       "Up": "Fudge up",
       "Down": "Fudge down",
@@ -1087,7 +1093,8 @@
         "Moved": "moved {distance}",
         "StayedOut": "stayed out of it",
         "Nothing": "did nothing of note",
-        "Status": "{status}, {hp}"
+        "Status": "{status}, {hp}",
+        "Health": "{target}: {state}"
       },
       "TablesFolder": "FastFighting Story",
       "TablesMenuName": "Story tables",
@@ -1587,7 +1594,8 @@
         "cover": "Cover",
         "hitAndRun": "Hit and Run",
         "potionGiven": "A Potion Given",
-        "allOut": "All Out"
+        "allOut": "All Out",
+        "healthState": "How Hurt They Look"
       },
       "APrice": "a price",
       "Desire": "{intensity} {verb}",
@@ -1969,6 +1977,7 @@
       "SlainOutrightBy": "{actor} is slain outright by {by}",
       "Finished": "{actor} is finished off",
       "StruckDown": "{actor} is struck while down (dying {n})",
+      "HealthState": "{target}: {state} ({n}% {HP})",
       "RegenStopped": "{actor} dies, its regeneration stopped",
       "Draw": "{actor} draws {item}",
       "Retrieve": "{actor} gets out {item}",

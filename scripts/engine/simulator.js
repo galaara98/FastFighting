@@ -76,13 +76,16 @@ const HIT_URGE = [40, 25, 10, 5, 3];
 /**
  * Note an event in the run's log: its type and data, from which the log and the stories are told in the reader's
  * language (story/log-lines.js). A game system's own report carries its words as data.text, shown as they come.
+ * Returns the entry (null while nothing's logged), for what's known of it only later (noteHp).
  */
 export function log(run, u, data = {}) {
-  if ( !run.log ) return;
-  run.log.push({
+  if ( !run.log ) return null;
+  const entry = {
     round: run.round, turn: run.turn ?? 0, turnOf: run.turnOf ?? null, actor: u?.spec.name ?? "", actorId: u?.id ?? null, side: u?.side ?? null,
     type: data.type ?? "note", ...data
-  });
+  };
+  run.log.push(entry);
+  return entry;
 }
 
 /**
@@ -491,13 +494,28 @@ export function noteFall(run, target, source, action = null) {
   deathThroes(run, target, source, action);
 }
 
-function dealDamage(run, source, target, amount, { crit = false, types = null, byType = null, action = null, lingering = false } = {}) {
+/**
+ * A harm event's hit points, for the story's health callouts (story/health.js): the one harmed's before the harm and
+ * after it, and its most (hpBefore, hpAfter, maxHp), on its log entry. Only where the harm left it lower and still up:
+ * a fall is told by its own event. Harm in several parts (a maneuver's own damage, then its action's) keeps the first
+ * part's before.
+ */
+export function noteHp(entry, t, before) {
+  if ( !entry || !t || t.status !== STATUS.STANDING || !(t.hp > 0) || !(t.hp < before) ) return;
+  entry.hpBefore ??= before;
+  entry.hpAfter = t.hp;
+  entry.maxHp = t.maxHp;
+}
+
+/** `entry`: the harm's log entry, told the hit points it left (noteHp). */
+function dealDamage(run, source, target, amount, { crit = false, types = null, byType = null, action = null, lingering = false, entry = null } = {}) {
   if ( amount <= 0 || target.status === STATUS.DEAD || target.status === STATUS.FLED ) return;
   // (Out of reach of all harm: in stasis, banished.)
   if ( hasTrait(target, "untouchable") ) return;
   breakOnHarm(run, source, target, types);
   const rules = run.prep.rules;
   const model = run.prep.options.downedModel;
+  const before = target.hp;
   if ( target.status === STATUS.STANDING ) {
     // Temporary hit points go first, then stamina, then hit points.
     const absorbed = Math.min(target.temp, amount);
@@ -542,6 +560,7 @@ function dealDamage(run, source, target, amount, { crit = false, types = null, b
     }
     // Someone taking no side who was hurt, or who saw someone it wants safe hurt, takes note.
     if ( run.neutral && source ) crossed(run, source, target, "harm", 0.5 + Math.min(1.5, 3 * (dealt + absorbed) / Math.max(1, target.maxHp)) + (target.hp <= 0 ? 1 : 0), logger(run));
+    noteHp(entry, target, before);
   } else if ( target.status === STATUS.DOWN ) {
     if ( model === DOWNED_MODELS.OUT ) return;
     if ( run.neutral && source ) crossed(run, source, target, "harm", 1.5, logger(run));
@@ -771,10 +790,10 @@ function applyAfflictionStage(run, target, affliction) {
   const rolled = sampleDamage(stage.damage, run.rng);
   const shown = at >= 0 ? tableRoll(run, at, { by: target, target, kind: "damage", label: affliction.spec.name ?? "", what: "affliction", parts: stage.damage }) : null;
   const amount = landsRolled(run, null, target, shown, run.prep.rules.applyIwr(iwrOf(target), rolled.byType, target));
-  log(run, target, {
+  const entry = log(run, target, {
     type: "afflictionStage", name: affliction.spec.name, stage: affliction.stage, amount, damageType: stage.damage[0]?.type ?? "poison"
   });
-  dealDamage(run, run.byId.get(affliction.sourceId), target, amount, { lingering: true });
+  dealDamage(run, run.byId.get(affliction.sourceId), target, amount, { lingering: true, entry });
 }
 
 /**
@@ -871,11 +890,11 @@ function saveRider(run, u, action, target, effect) {
   const mult = effect.damage?.length ? saveMultiplier(rules, roll.degree, effect.save) : 0;
   const hit = mult > 0 ? rollHit(run, u, action, target, effect.damage, mult, false) : null;
   const dealt = hit ? appliedLive(run, u, target, hit, hit.total, mult) : 0;
-  log(run, target, {
+  const entry = log(run, target, {
     type: "riderSave", name: effect.label || action.name, by: u.spec.name, saveType: effect.save.type, natural: roll.natural, mod, total: roll.total,
     dc: effect.save.dc, degree: roll.degree, damage: dealt, controls: !!effect.conditions
   });
-  hit?.apply(dealt);
+  hit?.apply(dealt, entry);
   // (Failed: what it lays, and a push or a grab it carries: Thunderwave's.)
   if ( roll.degree > 1 || !(effect.conditions || effect.move || effect.grab) || !isUp(target) || tooBig(target, effect) ) return;
   if ( effect.conditions && isImmune(run, target, { traits: action.traits, onSave: [effect] }) ) return;
@@ -959,10 +978,10 @@ function backlash(run, u, target, action, degree, logging) {
   if ( !cost?.damage?.length || !isUp(who) || target.status === STATUS.DEAD ) return;
   const hit = rollHit(run, target, { name: cost.label ?? "", damage: cost.damage }, who, cost.damage, 1, false);
   const dealt = appliedLive(run, target, who, hit, hit.total, 1);
-  if ( logging ) log(run, who, {
+  const entry = logging ? log(run, who, {
     type: "backlash", label: cost.label ?? "", by: target.spec.name, byId: target.id, damage: dealt, damageType: cost.damage[0]?.type ?? "untyped"
-  });
-  hit.apply(dealt);
+  }) : null;
+  hit.apply(dealt, entry);
 }
 
 /**
@@ -974,10 +993,10 @@ function retort(run, saver, by, action, degree, logging) {
   if ( !back?.damage?.length || !isUp(saver) || !isUp(by) ) return;
   const hit = rollHit(run, saver, { name: back.label ?? "", damage: back.damage }, by, back.damage, 1, degree === 3);
   const dealt = appliedLive(run, saver, by, hit, hit.total, 1);
-  if ( logging ) log(run, saver, {
+  const entry = logging ? log(run, saver, {
     type: "attack", action: back.label ?? "", target: by.spec.name, targetId: by.id, damage: dealt, degree, retort: true, damageType: back.damage[0]?.type ?? "untyped"
-  });
-  hit.apply(dealt);
+  }) : null;
+  hit.apply(dealt, entry);
 }
 
 /**
@@ -1048,7 +1067,10 @@ function shownDamage(run, at, u, t, action, parts, multiplier, crit) {
   return tableRoll(run, at, { by: u, target: t, kind, label: action.name ?? "", action: typeof action.id === "string" ? action.id : null, source, parts, multiplier, crit });
 }
 
-/** Roll damage for a hit; returns the total and a function that applies it (so the log reads in order). */
+/**
+ * Roll damage for a hit; returns the total and a function that applies it (so the log reads in order), told the harm's
+ * log entry where there is one (dealDamage's `entry`).
+ */
 function rollHit(run, u, action, t, parts, multiplier, crit, minimum = 0, forced = null) {
   const rules = run.prep.rules;
   // (The system's own damage roll, where it rolled it: its dice by type, before anyone's resistances.)
@@ -1091,11 +1113,11 @@ function rollHit(run, u, action, t, parts, multiplier, crit, minimum = 0, forced
     ctx, // (what else applyIwr heard, for another who takes the blow instead)
     types: Object.keys(rolled.byType),
     card, // (its damage card in a live battle, the system's or the engine's dice shown as one: appliedLive applies it)
-    apply: (amount = total) => {
+    apply: (amount = total, entry = null) => {
       for ( const p of rolled.persistent ) {
         if ( !t.spec.iwr?.immune?.includes(p.type) ) t.persistent.push({ part: p, sourceId: u.id });
       }
-      dealDamage(run, u, t, amount, { crit, types: Object.keys(rolled.byType), byType: rolled.byType, action });
+      dealDamage(run, u, t, amount, { crit, types: Object.keys(rolled.byType), byType: rolled.byType, action, entry });
       return amount;
     }
   };
@@ -1302,8 +1324,8 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
       const sys = liveDamageOf(run, action);
       const hit = rollHit(run, u, action, target, (action.damage ?? []).concat(extra), 1, false, 0, sys);
       const amount = appliedLive(run, u, target, hit, hit.total, 1);
-      if ( logging ) log(run, u, { type: "auto", ...common, damage: amount });
-      answerHarm(run, target, u, action, hit.apply(amount));
+      const entry = logging ? log(run, u, { type: "auto", ...common, damage: amount }) : null;
+      answerHarm(run, target, u, action, hit.apply(amount, entry));
       return;
     }
 
@@ -1323,8 +1345,8 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
         const sys = liveDamageOf(run, action, mult);
         const hit = rollHit(run, u, action, target, (action.damage ?? []).concat(extra), mult, roll.degree === 0, 0, sys);
         const amount = appliedLive(run, u, target, hit, hit.total, mult);
-        if ( logging ) log(run, u, { ...data, damage: amount });
-        const dealt = hit.apply(amount);
+        const entry = logging ? log(run, u, { ...data, damage: amount }) : null;
+        const dealt = hit.apply(amount, entry);
         if ( roll.degree <= 1 ) applyEffects(run, u, action, target, 3 - roll.degree, { saveDegree: roll.degree, dealt });
         answerHarm(run, target, u, action, dealt);
       } else if ( logging ) log(run, u, { ...data, damage: 0 });
@@ -1509,12 +1531,12 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
           else if ( guard ) guard.took = Math.max(0, guard.took + was - amount);
         }
       }
-      if ( logging ) log(run, u, {
+      const entry = logging ? log(run, u, {
         ...data, damage: amount, crit, sneak: extra.length > 0, precision: [...base, ...more].some(isPrecision) || undefined, advantage, riders: riders.map(x => x.label), critRoll: table?.total ?? null, critRowText: table?.row?.text ?? null,
         lessened, interceptedBy: intercepted !== null ? guard.g.spec.name : null, intercepted
-      });
+      }) : null;
       tellAnswers();
-      const dealt = intercepted !== null ? 0 : hit.apply(amount);
+      const dealt = intercepted !== null ? 0 : hit.apply(amount, entry);
       struck = dealt;
       if ( intercepted > 0 ) dealDamage(run, u, guard.g, intercepted, { crit, types: hit.types });
       applyEffects(run, u, action, target, roll.degree, { dealt });
@@ -1578,8 +1600,8 @@ function strayShot(run, u, action, friend, logging) {
   }
   const hit = rollHit(run, u, action, friend, action.damage ?? [], 1, false, rules.minimumDamage ?? 0);
   const dealt = appliedLive(run, u, friend, hit, hit.total, 1);
-  if ( logging ) log(run, u, { type: "stray", action: action.name, target: friend.spec.name, targetId: friend.id, natural: roll.natural, total: roll.total, dc: ac, hit: true, damage: dealt });
-  hit.apply(dealt);
+  const entry = logging ? log(run, u, { type: "stray", action: action.name, target: friend.spec.name, targetId: friend.id, natural: roll.natural, total: roll.total, dc: ac, hit: true, damage: dealt }) : null;
+  hit.apply(dealt, entry);
 }
 
 /**
@@ -1733,6 +1755,7 @@ function applyFumble(run, u) {
   const table = rollFumble(run, u);
   if ( !table?.row ) return;
   const { row, total } = table;
+  const before = u.hp;
   if ( row.damage?.length ) {
     const at = diceAt(run);
     const rolled = sampleDamage(row.damage, run.rng);
@@ -1741,7 +1764,7 @@ function applyFumble(run, u) {
     if ( amount > 0 ) dealDamage(run, null, u, amount);
   }
   if ( row.outcome && isUp(u) ) applyOutcome(u, row.outcome, u.id, { id: `fumble:${u.id}`, name: row.outcome.label ?? localize("FASTFIGHTING.Effect.fumble") });
-  log(run, u, { type: "fumble", roll: total, effect: row.outcome?.label ?? "", rowText: row.text ?? null });
+  noteHp(log(run, u, { type: "fumble", roll: total, effect: row.outcome?.label ?? "", rowText: row.text ?? null }), u, before);
 }
 
 /** An on-hit rider's lasting part: a save against it, or simply what it does. */
@@ -1935,8 +1958,9 @@ function fateful(run, victim, actor, attempt) {
  * or a botch's on the one who tried it), a grab (unless the target can't be grabbed: the system's immunities; it lasts
  * as long as what the grab laid with it, where it laid anything), a move (the target moved; a botch, the one who tried
  * it, moved by the target), and its own damage at that degree (PF2e Trip, critically: 1d6). Returns the damage.
+ * `entry`: what its damage's hit points are noted on (dealDamage's).
  */
-function landOutcome(run, u, target, outcome, action, { damage: harms = true } = {}) {
+function landOutcome(run, u, target, outcome, action, { damage: harms = true, entry = null } = {}) {
   const self = !!outcome.self;
   const on = self ? u : target;
   // (Its holds on the one it holds, kept up: PF2e's Grab on a creature it has grabbed.)
@@ -1959,7 +1983,7 @@ function landOutcome(run, u, target, outcome, action, { damage: harms = true } =
   if ( effect && holderOf(run, on) ) carryInside(run);
   if ( !harms || !outcome.damage?.length || !isUp(on) ) return 0;
   const hit = rollHit(run, u, action ?? { id: "outcome", damage: outcome.damage }, on, outcome.damage, 1, false);
-  return hit.apply(appliedLive(run, u, on, hit, hit.total, 1));
+  return hit.apply(appliedLive(run, u, on, hit, hit.total, 1), entry);
 }
 
 /**
@@ -2010,8 +2034,8 @@ function forceMove(run, u, t, move) {
     const rolled = sampleDamage(fall, run.rng, 1);
     const shown = at >= 0 ? tableRoll(run, at, { by: t, target: t, kind: "damage", what: "fall", parts: fall }) : null;
     const amount = landsRolled(run, u, t, shown, rules.applyIwr(iwrOf(t), rolled.byType, t, { direct: rolled.direct }));
-    log(run, t, { type: "fall", feet: path.fall, amount });
-    dealDamage(run, u, t, amount, { types: Object.keys(rolled.byType) });
+    const entry = log(run, t, { type: "fall", feet: path.fall, amount });
+    dealDamage(run, u, t, amount, { types: Object.keys(rolled.byType), entry });
     const prone = typeof rules.fallProne === "function" ? rules.fallProne(t, amount) : rules.fallProne !== false;
     if ( isUp(t) && prone ) t.prone = true;
   }
@@ -2023,8 +2047,8 @@ function forceMove(run, u, t, move) {
       const rolled = sampleDamage(parts, run.rng, 1);
       const shown = at >= 0 ? tableRoll(run, at, { by: t, target: t, kind: "damage", what: "collision", parts }) : null;
       const amount = landsRolled(run, u, t, shown, rules.applyIwr(iwrOf(t), rolled.byType, t, { direct: rolled.direct }));
-      log(run, t, { type: "collision", amount, into: path.into?.spec?.name ?? null });
-      dealDamage(run, u, t, amount, { types: Object.keys(rolled.byType) });
+      const entry = log(run, t, { type: "collision", amount, into: path.into?.spec?.name ?? null });
+      dealDamage(run, u, t, amount, { types: Object.keys(rolled.byType), entry });
     }
   }
   if ( path.cell?.harm?.length && isUp(t) ) {
@@ -2032,8 +2056,8 @@ function forceMove(run, u, t, move) {
     const rolled = sampleDamage(path.cell.harm, run.rng, 1);
     const shown = at >= 0 ? tableRoll(run, at, { by: t, target: t, kind: "damage", what: "ground", parts: path.cell.harm }) : null;
     const amount = landsRolled(run, u, t, shown, rules.applyIwr(iwrOf(t), rolled.byType, t));
-    log(run, t, { type: "groundHarm", amount, damageTypes: Object.keys(rolled.byType) });
-    dealDamage(run, u, t, amount, { types: Object.keys(rolled.byType), lingering: true });
+    const entry = log(run, t, { type: "groundHarm", amount, damageTypes: Object.keys(rolled.byType) });
+    dealDamage(run, u, t, amount, { types: Object.keys(rolled.byType), lingering: true, entry });
   }
   for ( const h of path.hazards ?? [] ) {
     if ( !isUp(t) || h.spent ) continue;
@@ -2097,12 +2121,14 @@ function executeControl(run, u, action, target, attacksMade, common) {
   if ( shrugged ) outcome = withoutTaunt(outcome);
   // Most outcomes land on the target; a botched Trip lands on the one who tried it.
   const lands = outcome?.self ? u : target;
+  // (The target's hit points before its harm, as dealDamage notes them: for the log, which comes after: noteHp.)
+  const harmed = logging ? {} : null;
   let damage = 0;
   if ( outcome && isUp(lands) ) {
     if ( !outcome.self ) moveHeld(run, u, action, lands);
     if ( !outcome.self && run.standoff && heldOff(run, u, lands) && areEnemies(run, u, lands) ) endStandoff(run, u, "blood");
     // (What it lays, a grab, a move, its own damage at that degree: landOutcome.)
-    damage += landOutcome(run, u, target, outcome, action);
+    damage += landOutcome(run, u, target, outcome, action, { entry: outcome.self ? null : harmed });
     testConcentration(run, lands);
     if ( run.neutral && !outcome.self ) crossed(run, u, lands, "harm", 1, logger(run));
   }
@@ -2114,11 +2140,11 @@ function executeControl(run, u, action, target, attacksMade, common) {
       const hit = rollHit(run, u, action, target, action.damage, mult, crit);
       const dealt = appliedLive(run, u, target, hit, hit.total, mult);
       damage += dealt;
-      hit.apply(dealt);
+      hit.apply(dealt, harmed);
     }
   }
   if ( logging ) {
-    log(run, u, {
+    noteHp(log(run, u, {
       controls: !!outcome?.conditions?.controlled,
       maneuver: maneuverOf(action), conditions: Object.keys(outcome?.conditions ?? {}).filter(k => outcome.conditions[k]),
       type: "control", ...common, roll: r.kind, saveType: action.save?.type ?? null, against: action.check?.against ?? null,
@@ -2126,7 +2152,7 @@ function executeControl(run, u, action, target, attacksMade, common) {
       effect: outcome?.label ?? "", took: !!outcome, backfired: !!outcome?.self, damage, shifted: shift, taunt: !!outcome?.taunt, note: roll.note ?? null, faces: roll.faces ?? null,
       goad: !!action.goad, skill: r.pitch?.skill ?? null, dcStat: r.pitch?.dcLabel ?? null, luck: luck?.roll ?? null, needed: luck?.needed ?? null, shrugged,
       debuff: !!(outcome?.mods || outcome?.mark), tempHp: Number(outcome?.tempHp) || 0
-    });
+    }), target, harmed?.hpBefore);
   }
   // (A Demoralize is words as well as fear: an intimidation at its target, at the same degree and against the same DC,
   // with no roll of its own, as a player's Demoralize card counts in a live battle (talk.js resolveTalk): a success
@@ -4070,8 +4096,8 @@ function conditionHarm(run, u, key, v, p) {
   const shown = at >= 0 ? tableRoll(run, at, { by: u, target: u, kind: "damage", what: "persistent", parts }) : null;
   const amount = landsRolled(run, by, u, shown, rules.applyIwr(iwrOf(u), rolled.byType, u));
   const types = Object.keys(rolled.byType);
-  if ( run.log ) log(run, u, { type: "persistent", damageType: types[0] ?? p.harm[1], amount, condition: key });
-  dealDamage(run, by, u, amount, { types, lingering: true });
+  const entry = log(run, u, { type: "persistent", damageType: types[0] ?? p.harm[1], amount, condition: key });
+  dealDamage(run, by, u, amount, { types, lingering: true, entry });
 }
 
 /**
@@ -4122,8 +4148,8 @@ export function endOfTurn(run, u) {
       const own = rules.applyIwr(iwrOf(u), { [entry.part.type]: Math.max(0, samplePart(entry.part, run.rng)) });
       const shown = at >= 0 ? tableRoll(run, at, { by: u, target: u, kind: "damage", what: "persistent", parts: [{ ...entry.part, persistent: false }] }) : null;
       const amount = landsRolled(run, run.byId.get(entry.sourceId) ?? u, u, shown, own);
-      if ( run.log ) log(run, u, { type: "persistent", damageType: entry.part.type, amount });
-      dealDamage(run, run.byId.get(entry.sourceId), u, amount, { types: [entry.part.type], lingering: true });
+      const told = log(run, u, { type: "persistent", damageType: entry.part.type, amount });
+      dealDamage(run, run.byId.get(entry.sourceId), u, amount, { types: [entry.part.type], lingering: true, entry: told });
       if ( !persistentEnds(run, u, entry.part.type) ) remaining.push(entry);
     }
     u.persistent = remaining;

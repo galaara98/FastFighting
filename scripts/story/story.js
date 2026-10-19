@@ -14,6 +14,7 @@ import { conditionOf } from "./master.js";
 import { desireBand, DESIRE_BAND_KEYS } from "../engine/behavior/desire.js";
 import { listJoin, listItems, localize, hasWords, distanceText, escapeHtml as esc, escapeRegExp } from "../i18n.js";
 import { logLine, endLine, logTerm, concessionText } from "./log-lines.js";
+import { healthCallouts, healthLine } from "./health.js";
 
 export { concessionText };
 
@@ -730,8 +731,8 @@ function thinkAloud(e, roll, mentions) {
   return second ? roll("event.thoughtTwo", { actor: e.actor, first, second }) : roll("event.thoughtOne", { actor: e.actor, first });
 }
 
-function roleplay(result, spec, tables, seed, title, mapType, mapCondition) {
-  const paragraphs = roleplayParagraphs(result, spec, tables, seed, mapType, mapCondition).map(p => p.text ?? p.sentences.map(x => x.text).join(" ")).filter(Boolean);
+function roleplay(result, spec, tables, seed, title, mapType, mapCondition, healthState) {
+  const paragraphs = roleplayParagraphs(result, spec, tables, seed, mapType, mapCondition, healthState).map(p => p.text ?? p.sentences.map(x => x.text).join(" ")).filter(Boolean);
   return { title, html: paragraphs.map(p => `<p>${esc(p)}</p>`).join(""), text: paragraphs.join("\n\n") };
 }
 
@@ -776,10 +777,15 @@ function storyNames(spec) {
 
 /**
  * The Roleplay telling, as paragraphs: the opening line ({text}), a round's sentences ({round, sentences: [{e,
- * text}]}, each with the event it tells), and the ending ({e, text}).
+ * text}]}, each with the event it tells; a health callout's with it, `health`: story/health.js), and the ending ({e,
+ * text}).
  */
-function roleplayParagraphs(result, spec, tables, seed, mapType, mapCondition = null) {
+function roleplayParagraphs(result, spec, tables, seed, mapType, mapCondition = null, healthState = null) {
   const roll = makeRoller(tables, seed);
+  // (How hurt a creature now looks, after the harm that made it look worse: its own lines, drawn apart, so the rest of
+  // the telling reads as it would without them.)
+  const health = healthCallouts(result.log ?? [], healthState);
+  const healthRoll = makeRoller(tables, (seed + 15485863) >>> 0);
   const averted = avertedDeaths(result.log ?? []);
   const fells = fellingBlows(result.log ?? []);
   // (After the fight, the dying's every breath reads like a list: only where each ended up.)
@@ -805,6 +811,21 @@ function roleplayParagraphs(result, spec, tables, seed, mapType, mapCondition = 
   if ( opening ) paragraphs.push({ text: opening });
   let current = null;
   let lastMoveKey = null;
+  /** The paragraph of this event's round: the one being told, or a new one. */
+  const paragraphOf = e => {
+    if ( !current || current.round !== e.round ) {
+      current = { round: e.round, sentences: [] };
+      paragraphs.push(current);
+      lastMoveKey = null;
+    }
+    return current;
+  };
+  /** How hurt the one this harm hurt now looks, where it looks worse for it (story/health.js). */
+  const tellHealth = logged => {
+    const c = health.get(logged);
+    const line = c ? healthRoll("event.healthState", { target: call(c.name), state: c.label }).trim() : "";
+    if ( line ) paragraphOf(logged).sentences.push({ e: logged, health: c, text: capitalSentences(line) });
+  };
   const done = new Map();
   let doneTurn = null;
   // (Whoever moves in a turn, before its blow or after: closing in, or falling back, is told already.)
@@ -817,7 +838,10 @@ function roleplayParagraphs(result, spec, tables, seed, mapType, mapCondition = 
     // (Taking hold and its first harm are one moment: told once.)
     const onset = `${logged.actorId}|${logged.name}|${logged.turn}`;
     if ( (logged.type === "afflictionSave" && logged.degree <= 1 && !logged.tally) || logged.type === "afflicted" ) onsets.add(onset);
-    if ( logged.type === "afflictionStage" && onsets.has(onset) ) continue;
+    if ( logged.type === "afflictionStage" && onsets.has(onset) ) {
+      tellHealth(logged);
+      continue;
+    }
     // (Told with each creature called as the story calls it; the sentence keeps the event it tells.)
     const e = named(logged);
     if ( e.turn !== doneTurn ) {
@@ -830,11 +854,7 @@ function roleplayParagraphs(result, spec, tables, seed, mapType, mapCondition = 
       current = null;
       continue;
     }
-    if ( !current || current.round !== e.round ) {
-      current = { round: e.round, sentences: [] };
-      paragraphs.push(current);
-      lastMoveKey = null;
-    }
+    paragraphOf(e);
     // Several moves in a row by the same character read as one.
     if ( e.type === "move" ) {
       const key = `${e.actorId}|${e.towardId}|${e.purpose}`;
@@ -895,6 +915,7 @@ function roleplayParagraphs(result, spec, tables, seed, mapType, mapCondition = 
     const sentence = lead && told ? `${capital(lead)} ${capital(told.trim())}` : told;
     rel.record(e);
     if ( sentence ) current.sentences.push({ e: logged, text: capitalSentences(sentence.trim()) });
+    tellHealth(logged);
   }
   return paragraphs;
 }
@@ -1027,14 +1048,17 @@ function standard(result, spec, title, { open = false } = {}) {
 /*  Statistician                                */
 /* -------------------------------------------- */
 
-function statistician(result, spec, title) {
+function statistician(result, spec, title, healthState = null) {
   const { out, mentions } = storyCast(result, spec);
+  const health = healthCallouts(result.log, healthState);
   const rounds = new Map();
   for ( const e of tellingOrder(result.log) ) {
     if ( !mentions(e) || e.type === "aftermath" ) continue;
     const key = e.aftermath ? "after" : e.round;
     if ( !rounds.has(key) ) rounds.set(key, []);
     rounds.get(key).push(logLine(e));
+    // (How hurt the harm left the one it hurt, where it looks worse for it: story/health.js.)
+    if ( health.has(e) ) rounds.get(key).push(healthLine(health.get(e)));
   }
   const parts = [];
   for ( const [round, lines] of rounds ) {
@@ -1056,12 +1080,13 @@ function statistician(result, spec, title) {
  * @param {object} result   runOne(..., {log: true, capture: true}) output
  * @param {object} spec     BattleSpec it came from
  * @param {string} style    roleplay | standard | statistician
- * @param {object} options  {tables, seed, title, damageType: (systemType) => imagery family}
+ * @param {object} options  {tables, seed, title, damageType: (systemType) => imagery family, conditionType,
+ *                          healthState: (unitId, fraction) => how hurt it looks (story/health.js)}
  */
-export function buildStory(result, spec, style, { tables, seed = 1, title = "", damageType = null, conditionType = null } = {}) {
-  if ( style === "statistician" ) return statistician(result, spec, title);
+export function buildStory(result, spec, style, { tables, seed = 1, title = "", damageType = null, conditionType = null, healthState = null } = {}) {
+  if ( style === "statistician" ) return statistician(result, spec, title, healthState);
   if ( style === "standard" ) return standard(result, spec, title);
-  return roleplay(result, spec, tables, seed, title, damageType, conditionType);
+  return roleplay(result, spec, tables, seed, title, damageType, conditionType, healthState);
 }
 
 /** The words of a piece of the story as plain text: its HTML read back, tags gone and characters as they are. */
@@ -1120,13 +1145,14 @@ function unseenEvents(log, spec) {
  * and a closing one (how it ended, and the aftermath). Each beat is {turns, round, actorId, html, text, gmHtml,
  * closing}: `turns` are the log's turns it tells, whose moves play on the map with it (a beat with nothing to say,
  * html "", still has its moves); `gmHtml`, what of the turn only the GMs are told (SECRET). Roleplay and Standard only
- * (the Statistician's account is one card, the GMs' already).
+ * (the Statistician's account is one card, the GMs' already). A harm's health callout (story/health.js) follows it,
+ * where it goes; told openly (`open`: not whispered to the GMs), one the players may not learn (`hidden`) is the GMs'.
  * @param {object} result   runOne(..., {log: true, capture: true}) output
  * @param {object} spec     BattleSpec it came from
  * @param {string} style    roleplay | standard
- * @param {object} options  {tables, seed, damageType} as for buildStory
+ * @param {object} options  {tables, seed, damageType, conditionType, healthState} as for buildStory; `open`
  */
-export function storyBeats(result, spec, style, { tables, seed = 1, damageType = null, conditionType = null, open = false } = {}) {
+export function storyBeats(result, spec, style, { tables, seed = 1, damageType = null, conditionType = null, healthState = null, open = false } = {}) {
   const log = tellingOrder(result.log);
   const end = log.find(e => e.type === "end");
   const endTurn = end ? (end.turn ?? 0) : Infinity;
@@ -1150,6 +1176,9 @@ export function storyBeats(result, spec, style, { tables, seed = 1, damageType =
   // (The GMs' alone: what the players shouldn't learn, and what a hidden creature not yet given away does.)
   const hush = unseenEvents(log, spec);
   const secretEvent = e => SECRET.has(e?.type) || hush.has(e);
+  // (How hurt a harm left the one it hurt, where it looks worse for it; the GMs' alone where the players may not learn it.)
+  const health = style === "standard" ? healthCallouts(log, healthState) : null;
+  const secretHealth = (e, c) => secretEvent(e) || (open && !!c?.hidden);
   if ( style === "standard" ) {
     const { mentions } = storyCast(result, spec);
     for ( const beat of beats ) {
@@ -1161,10 +1190,18 @@ export function storyBeats(result, spec, style, { tables, seed = 1, damageType =
         const notes = s.notes.length ? ` <small>(${bold(esc(s.notes.join("; ")))})</small>` : "";
         rows.push(`<li><strong>${esc(s.name)}</strong>: ${bold(esc(bits.join("; ")))}${notes}</li>`);
       }
-      for ( const e of beat.events ) if ( FALLS.has(e.type) && mentions(e) && !secretEvent(e) ) rows.push(`<li>${bold(esc(logLine(e)))}</li>`);
+      for ( const e of beat.events ) {
+        if ( !mentions(e) ) continue;
+        if ( FALLS.has(e.type) && !secretEvent(e) ) rows.push(`<li>${bold(esc(logLine(e)))}</li>`);
+        const c = health.get(e);
+        if ( c && !secretHealth(e, c) ) rows.push(`<li>${bold(esc(labelWord("Health", { target: c.name, state: c.label })))}</li>`);
+      }
       if ( rows.length ) beat.parts.push(`<ul>${rows.join("")}</ul>`);
       // (What only the GMs are told, as the log has it.)
-      const hidden = beat.events.filter(secretEvent).map(e => logLine(e)).filter(Boolean);
+      const hidden = beat.events.flatMap(e => [
+        secretEvent(e) ? logLine(e) : "",
+        health.has(e) && secretHealth(e, health.get(e)) ? healthLine(health.get(e)) : ""
+      ]).filter(Boolean);
       if ( hidden.length ) beat.secret.push(`<ul>${hidden.map(l => `<li>${bold(esc(l))}</li>`).join("")}</ul>`);
     }
     // The close: the whole fight's tally, and where everyone ended up.
@@ -1172,10 +1209,10 @@ export function storyBeats(result, spec, style, { tables, seed = 1, damageType =
     if ( close ) close.parts.push(standard(result, spec, "", { open }).html);
   } else {
     let opening = null;
-    for ( const p of roleplayParagraphs(result, spec, tables, seed, damageType, conditionType) ) {
+    for ( const p of roleplayParagraphs(result, spec, tables, seed, damageType, conditionType, healthState) ) {
       // (What only the GMs are told goes apart.)
-      const into = e => { const b = byTurn.get(keyOf(e)); return b ? (secretEvent(e) ? b.secret : b.parts) : null; };
-      if ( p.sentences ) for ( const x of p.sentences ) into(x.e)?.push(x.text);
+      const into = (e, c = null) => { const b = byTurn.get(keyOf(e)); return b ? (secretEvent(e) || (c && secretHealth(e, c)) ? b.secret : b.parts) : null; };
+      if ( p.sentences ) for ( const x of p.sentences ) into(x.e, x.health)?.push(x.text);
       else if ( p.e ) into(p.e)?.push(p.text);
       else opening = p.text;
     }

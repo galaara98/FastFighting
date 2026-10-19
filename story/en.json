@@ -2492,6 +2492,12 @@
     "Another blow lands on {actor}, already fallen.",
     "{actor} groans as the blow lands."
   ],
+  "event.healthState": [
+    "{target} is {state}.",
+    "{target} looks {state} now.",
+    "{target} is left {state}.",
+    "Now {target} is {state}."
+  ],
   "event.recoveryGood": [
     "{actor} fights for every breath and holds on.",
     "{actor} clings to life.",

@@ -5654,6 +5654,46 @@
    "commit": null,
    "hash": "75e1783e4e51"
   },
+  "core:FASTFIGHTING.Health.annoyed": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Health.annoyed",
+   "area": "core/Health",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "524b1a31d455"
+  },
+  "core:FASTFIGHTING.Health.bloodied": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Health.bloodied",
+   "area": "core/Health",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "c39958aaab58"
+  },
+  "core:FASTFIGHTING.Health.nearlyDead": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Health.nearlyDead",
+   "area": "core/Health",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "23e53da178ab"
+  },
+  "core:FASTFIGHTING.Health.wounded": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Health.wounded",
+   "area": "core/Health",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "cb7d16c1f9d5"
+  },
   "core:FASTFIGHTING.Helper.disabled": {
    "repo": "core",
    "file": "languages/en.json",
@@ -8793,6 +8833,16 @@
    "date": null,
    "commit": null,
    "hash": "d766afe937f8"
+  },
+  "core:FASTFIGHTING.Log.HealthState": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.HealthState",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "a73bf4efeeba"
   },
   "core:FASTFIGHTING.Log.HoldGround": {
    "repo": "core",
@@ -18096,6 +18146,16 @@
    "commit": null,
    "hash": "792e6e90a61b"
   },
+  "core:FASTFIGHTING.Story.Labels.Health": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Story.Labels.Health",
+   "area": "core/Story",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "c65923b2322f"
+  },
   "core:FASTFIGHTING.Story.Labels.Hits": {
    "repo": "core",
    "file": "languages/en.json",
@@ -20378,6 +20438,16 @@
    "date": null,
    "commit": null,
    "hash": "5bf0ffb065aa"
+  },
+  "core:FASTFIGHTING.Story.Part.healthState": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Story.Part.healthState",
+   "area": "core/Story",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "918ae67c72f1"
   },
   "core:FASTFIGHTING.Story.Part.help": {
    "repo": "core",
@@ -37161,6 +37231,16 @@
    "commit": null,
    "hash": "018ab580123b"
   },
+  "core:story:event.healthState": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "event.healthState",
+   "area": "core/story.event",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "a29ec37f45d7"
+  },
   "core:story:event.holdGround": {
    "repo": "core",
    "file": "story/en.json",
@@ -49579,6 +49659,26 @@
    "date": null,
    "commit": null,
    "hash": "b7c4bdb5425d"
+  },
+  "pf2e:FFPF2E.ReloadSpent": {
+   "repo": "pf2e",
+   "file": "languages/en.json",
+   "key": "FFPF2E.ReloadSpent",
+   "area": "pf2e/General",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "46e498958222"
+  },
+  "pf2e:FFPF2E.ReloadSpentMany": {
+   "repo": "pf2e",
+   "file": "languages/en.json",
+   "key": "FFPF2E.ReloadSpentMany",
+   "area": "pf2e/General",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "14e300d498c2"
   },
   "pf2e:FFPF2E.Remains": {
    "repo": "pf2e",

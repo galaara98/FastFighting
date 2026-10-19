@@ -10,7 +10,7 @@ FastFighting is split into a pure simulation engine, system **helpers**, and the
 - `scripts/adapters/`: `adapter-base.js`, the SystemAdapter contract, and the experimental generic adapter.
 - `scripts/foundry/`: the Foundry side. `battle.js` turns the scene and the GM's plan into a BattleSpec; `live-battle.js` plays a live battle on the tracker (`startLiveBattle` with `begin: false` prepares it, and `beginEncounter` begins it with the encounter, Foundry's Begin Encounter included); `auto-config.js` sets characters up; `pathing.js` and `terrain.js` read walls, regions and senses from the scene.
 - `scripts/apps/`: the Battle Planner, the Battle Vantage (`battle-network.js` is its map of minds), the player survey, the token's FastFighting tab, and the settings menus.
-- `scripts/story/`: the story in three styles, its tables, damage families and log lines.
+- `scripts/story/`: the story in three styles, its tables, damage families, log lines and health callouts (**Health callouts** below).
 - `scripts/core-api.js`: the stable surface helpers import. `scripts/api.js`: the runtime API.
 - Words: `languages/en.json` and `story/en.json`; biography keywords in `keywords/`.
 
@@ -622,6 +622,15 @@ Hooks:
 - **Healing:** a heal that leaves the main action free (a bonus action) is preferred. Anyone down is back up with any heal, so for them the cheapest way wins.
 - **Opportunity attacks:** walking out of a foe's reach gives it one melee attack, its reaction for the round. Tactical and Mastermind characters keep fighting the foe beside them, and when they must leave (to heal, to flee) get clear safely first if the turn still allows what they're leaving for. A character whose player ticked "Roleplaying is very important to me" forgets as often as **Roleplayers forget opportunity attacks (%)** says (default 33). A way out that doesn't cost the main action (5e Nimble Escape, Cunning Action) is second nature to anything that isn't feral.
 - **Walls:** the shortest way round comes from a quick grid search over the fighters' part of the map (`foundry/pathing.js`). With no way round, crossing a wall counts as four times difficult terrain for that square, and a creature that can't manage that in one move gives up on going that way.
+
+### Health callouts
+
+`story/health.js`: after harm that leaves a creature up and looking worse than before, the story says how it looks, in the same beat (Roleplay: an `event.healthState` line; Standard: a row, `Story.Labels.Health`; the Statistician: `Log.HealthState`).
+- **Data:** a harm event carries `hpBefore`, `hpAfter` and `maxHp` where the harm left the one it hurt lower and above 0 (`simulator.js` `noteHp`, through `dealDamage`'s `entry`; in a player's turn, its last blow at each creature, from the sheets: `live.js` `harmedAsShown`). Its subject is `targetId`, else `actorId`.
+- **When:** how it looks after the harm differs from how it looked before. So a state is told once, and again once it's healed out of it and falls back in; never at 0 (the fall is told). Each callout comes from its own event, so a live battle's log told again says the same, and a Rewind takes its callouts with its turns.
+- **The core's bands** (`FASTFIGHTING.Health`): below 50% annoyed, 25% wounded, 10% bloodied, 2.5% nearly dead.
+- **The options hook:** `buildStory`'s and `storyBeats`' `healthState(unitId, fraction)` returns a label, `{label, hidden}`, or null (nothing to say); left out, or failing, the core's bands. `foundry/health-estimate.js` `healthLookup({tokenOf, playersKnow})` builds it for the live battle and the planner. With the Health Estimate module on (`healthEstimate`, its API `game.healthEstimate`), its `getStage(token, fraction).estimate.label` from 43.7% down (`HE_THRESHOLD`), hidden where `hideEstimate(token)` says so or the token is hidden; else the core's bands, hidden where the players can't tell how it is (`live-battle.js` `playersCanTell`: one of theirs, or one a player's character perceives, unless it's hidden and not yet given away). Any failure falls back to the core's bands.
+- **Hidden:** told openly (`storyBeats`' `open`), a hidden callout goes to the GMs' part (`gmHtml`); whispered, it's told with the rest.
 
 ## Temporary migrations
 

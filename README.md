@@ -272,6 +272,8 @@ The numbers are under [Fighting and the simulation](STATS_AND_FORMULAS_README.md
 
 The fight is told in one of three styles (**Story style**): **Roleplay** (prose, with cover, terrain, climbing, flying, burrowing, and relationships such as an enemy leader, a grudge, vengeance, a protector or a rival), **Standard** (what each character did and how it ended) or **Statistician** (every roll). Creatures that never joined the fight aren't listed, and hidden ones are never named. In a live battle, what the players shouldn't learn (who takes command, what a creature thinks or schemes, what sizing up a foe told it, its nerve failing) goes on a card for the GMs only. The narrator tells the story, never a creature in its own voice. Every Roleplay sentence comes from a roll table; **Settings → FastFighting → Story tables** installs them as editable RollTables.
 
+With Health Estimate installed, the story uses its words for how hurt a creature looks.
+
 ## Languages
 
 FastFighting ships in **English** and is built to be translated. Each person sees it in the language they picked in Foundry (Configure Settings → Language); anything a translation leaves out reads in English.

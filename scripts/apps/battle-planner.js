@@ -23,6 +23,7 @@ import {
 import { SURPRISE } from "../engine/behavior/surprise.js";
 import { buildStory, STORY_STYLES } from "../story/story.js";
 import { loadStoryTables } from "../story/tables.js";
+import { healthLookup } from "../foundry/health-estimate.js";
 import { sceneDistance } from "../foundry/terrain.js";
 import { planMakeItSo, makingItSo } from "../foundry/make-it-so.js";
 import { ensureAutoConfig } from "../foundry/auto-config.js";
@@ -619,7 +620,9 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
         seed: fight.seed,
         title: game.i18n.format("FASTFIGHTING.Story.Title", { scene: canvas.scene?.name ?? "" }),
         damageType: getAdapter()?.rules?.storyDamageType?.bind(getAdapter().rules) ?? null,
-        conditionType: getAdapter()?.rules?.storyCondition?.bind(getAdapter().rules) ?? null
+        conditionType: getAdapter()?.rules?.storyCondition?.bind(getAdapter().rules) ?? null,
+        // (How hurt a creature looks after a harm, by its token on the scene: in Health Estimate's words where it's on.)
+        healthState: healthLookup({ tokenOf: id => canvas.scene?.tokens.get(this.spec.combatants.find(c => c.id === id)?.tokenId ?? id) ?? null })
       }));
     }
     return this.storyCache.get(key);

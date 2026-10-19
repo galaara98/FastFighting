@@ -219,12 +219,12 @@ function expose(run, b, aura, t, cause, play) {
   // (A live battle's: the engine's dice shown as the system's damage card and applied its way, where it can.)
   const dealt = hit ? play.appliedLive(run, b, t, hit, hit.total, mult) : 0;
   const conditions = outcome ? Object.keys(outcome.conditions ?? {}).filter(k => outcome.conditions[k]) : [];
-  play.log(run, b, {
+  const entry = play.log(run, b, {
     type: "aura", ...common, natural: roll.natural, mod: mod + (roll.die ?? 0), total: roll.total, degree, margin: roll.total - aura.save.dc,
     damage: dealt, damageType: aura.damage?.[0]?.type ?? null, conditions, effect: outcome?.label ?? "", took: !!outcome || dealt > 0,
     note: roll.note ?? null, faces: roll.faces ?? null
   });
-  hit?.apply(dealt);
+  hit?.apply(dealt, entry);
   if ( outcome && isUp(t) ) {
     play.landOutcome(run, b, t, outcome, aura.action, { damage: false });
     play.testConcentration(run, t);

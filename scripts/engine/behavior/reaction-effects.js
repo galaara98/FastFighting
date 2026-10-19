@@ -377,8 +377,8 @@ function playHarm(run, u, r, aim, kit, play) {
     const hit = kit.rollHit(run, u, { id: `reaction:${r.id}`, name: r.label ?? "", damage: harm.damage }, aim, harm.damage, mult, false, 0, sys);
     // (The system's damage card, or the engine's dice shown as one: applied the system's way.)
     const amount = kit.appliedLive(run, u, aim, hit, hit.total, mult);
-    if ( run.log ) kit.log(run, u, { type: "auto", action: r.label, actionKind: "auto", damageType: harm.damage[0]?.type ?? "untyped", target: aim.spec.name, targetId: aim.id, damage: amount, reaction: true });
-    hit.apply(amount);
+    const entry = run.log ? kit.log(run, u, { type: "auto", action: r.label, actionKind: "auto", damageType: harm.damage[0]?.type ?? "untyped", target: aim.spec.name, targetId: aim.id, damage: amount, reaction: true }) : null;
+    hit.apply(amount, entry);
   }
   // (And moved: knocked back, on a failed save where it has one: Vengeful Fate.)
   if ( harm.move && isUp(aim) && (!roll || roll.degree < 2) ) kit.forceMove(run, u, aim, harm.move);
@@ -406,8 +406,8 @@ function playAfflict(run, u, r, aim, kit, play) {
   if ( outcome.damage?.length ) {
     const hit = kit.rollHit(run, u, { id: `reaction:${r.id}`, name: r.label ?? "", damage: outcome.damage }, aim, outcome.damage, 1, false);
     const dealt = kit.appliedLive(run, u, aim, hit, hit.total, 1);
-    if ( run.log ) kit.log(run, u, { type: "auto", action: r.label, actionKind: "auto", damageType: outcome.damage[0]?.type ?? "untyped", target: aim.spec.name, targetId: aim.id, damage: dealt, reaction: true });
-    hit.apply(dealt);
+    const entry = run.log ? kit.log(run, u, { type: "auto", action: r.label, actionKind: "auto", damageType: outcome.damage[0]?.type ?? "untyped", target: aim.spec.name, targetId: aim.id, damage: dealt, reaction: true }) : null;
+    hit.apply(dealt, entry);
     if ( !isUp(aim) ) return;
   }
   const { damage: _d, ...rest } = outcome;
@@ -433,8 +433,8 @@ function playBurst(run, u, r, ctx, kit) {
     if ( mult <= 0 ) continue;
     const hit = kit.rollHit(run, u, { id: `reaction:${r.id}`, name: r.label ?? "", damage: burst.damage }, t, burst.damage, mult, false);
     const dealt = kit.appliedLive(run, u, t, hit, hit.total, mult);
-    if ( run.log ) kit.log(run, u, { type: "auto", action: r.label, actionKind: "auto", damageType: burst.damage[0]?.type ?? "untyped", target: t.spec.name, targetId: t.id, damage: dealt, reaction: true });
-    hit.apply(dealt);
+    const entry = run.log ? kit.log(run, u, { type: "auto", action: r.label, actionKind: "auto", damageType: burst.damage[0]?.type ?? "untyped", target: t.spec.name, targetId: t.id, damage: dealt, reaction: true }) : null;
+    hit.apply(dealt, entry);
   }
 }
 

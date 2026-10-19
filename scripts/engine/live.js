@@ -25,7 +25,7 @@
 import { STATUS, SWAY, NEUTRAL_PARTY, HOSTILE_GROUPS, GROUPS, clamp } from "../constants.js";
 import {
   prepareBattle, beginRun, beginRound, playTurn, afterTurn, endRun, startTurn, noteCommand, log, notice, settleSides, tickEffects,
-  breakOnHarm, noteHarm, noteFall, noteHeal, captureUnit, strikeOutOfTurn, settleAftermath, rethink, answerMove
+  breakOnHarm, noteHarm, noteFall, noteHeal, noteHp, captureUnit, strikeOutOfTurn, settleAftermath, rethink, answerMove
 } from "./simulator.js";
 import { createRun, createUnit, isStanding, areEnemies, edgeDistance, groupKeyOf, leadershipOf, SLOTS, headsUp } from "./battle-state.js";
 import { threats } from "./behavior/reactions.js";
@@ -200,7 +200,9 @@ export function pcTurnEnd(run, id, events = [], states = null, facts = []) {
   for ( const e of events ) observe(run, u, e, harmers);
   // (A spotlight system's hand-off, as the roll read says: Daggerheart's roll with Fear, or one that failed.)
   if ( events.some(e => e.handoff) ) u.handoff = true;
+  const was = new Map(run.units.map(x => [x.id, x.hp]));
   const changes = states ? syncFromSheets(run, states) : [];
+  harmedAsShown(run, run.log.slice(from), was);
   // (Everyone as the sheets now have them: what the engine makes of the turn from here, a death burst, is its own.)
   const synced = captureAll(run);
   for ( const f of facts ) applyFact(run, f);
@@ -213,6 +215,20 @@ export function pcTurnEnd(run, id, events = [], states = null, facts = []) {
   const ended = afterTurn(run, u);
   followCommand(run);
   return { events: run.log.slice(from), ended, changes, synced };
+}
+
+/** What a player's blow is logged as. */
+const BLOWS = new Set(["attack", "save", "auto"]);
+
+/**
+ * A player's turn's harm as the sheets show it, for the story's health callouts (story/health.js): each creature its
+ * blows hurt, its hit points before the turn and after, on the last blow at it (simulator.js noteHp). `was`: everyone's
+ * hit points before the sheets were read.
+ */
+function harmedAsShown(run, told, was) {
+  const last = new Map();
+  for ( const e of told ) if ( BLOWS.has(e.type) && e.targetId && e.damage > 0 ) last.set(e.targetId, e);
+  for ( const [id, e] of last ) noteHp(e, run.byId.get(id), was.get(id));
 }
 
 /** Whose turn it was last, and when each had one (a spotlight system's next turn goes by it). */
