@@ -48,11 +48,11 @@ const termText = t => (t.class === "Die" ? `${t.number}d${t.faces}${t.modifiers.
 /**
  * One of a table roll's rolls (`part`: which, for one shown as several) as a Foundry Roll's data (Roll.fromData): its
  * dice as Die terms holding the results the engine rolled, its modifier, and the engine's own total. Null for a part
- * with no dice.
+ * with no dice, but a heal of so many hit points (engine/table-rolls.js: its number alone).
  */
 export function rollJson(roll, { flavor = null, part = 0 } = {}) {
   const groups = (roll.groups ?? []).filter(g => (g.roll ?? 0) === part);
-  if ( !groups.some(g => g.faces) ) return null;
+  if ( !groups.some(g => g.faces) && !(roll.kind === "healing" && groups.some(g => Number(g.flat) > 0)) ) return null;
   const own = roll.rolls?.[part] ?? { mod: part === 0 ? roll.mod : 0, total: part === 0 ? roll.total : null };
   const terms = [];
   const signed = sign => {

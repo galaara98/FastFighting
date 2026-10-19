@@ -46,7 +46,7 @@ FastFighting is split into a pure simulation engine, system **helpers**, and the
 ## Writing a system helper
 
 ```js
-const KNOWN_API = [20]; // the core API majors this helper knows it works with
+const KNOWN_API = [21]; // the core API majors this helper knows it works with
 
 Hooks.once("fastFighting.init", api => {
   const major = Number(api.major) || 0;
@@ -93,13 +93,14 @@ Hooks.once("fastFighting.init", api => {
     async placeSummons(scene, summonerDoc, action, creatures, places) { ... } // summoned creatures as tokens; {tokens, records}
     async showTableRoll(roll, { token, target, audience, flavor, flags }) { ... } // the engine's own roll as the system's card (API 20)
     async readyGear(tokenDoc, { step, actionId, gear, item, hands, secret }) { ... } // a step it took to get ready, on its sheet the system's way (API 20)
+    async leaveToTable(message) { ... }              // a card of its own FastFighting won't apply after all: the system's Apply back on it (API 21)
   }
   api.registerAdapter("my-system", MySystemAdapter, { priority: 10 });
 });
 ```
 
 - **Declare your system** in `module.json` (`relationships.systems`) so Foundry only offers the helper in worlds of that system. The core also ignores adapters registered for another system. Among adapters for one system, the highest `priority` wins.
-- **Versions.** The helper-facing API version is `major.bug`: `CORE_API = { major: 20, bug: 0 }` and `CORE_API_VERSION = "20.0"` in `core-api.js`; the `fastFighting.init` api object carries `api.version` ("20.0"), `api.major` and `api.bug`. The major goes up when what a helper can use changes (something added that a helper may rely on, or something changed); the bug number goes up for a fix that changes nothing a helper uses.
+- **Versions.** The helper-facing API version is `major.bug`: `CORE_API = { major: 21, bug: 0 }` and `CORE_API_VERSION = "21.0"` in `core-api.js`; the `fastFighting.init` api object carries `api.version` ("21.0"), `api.major` and `api.bug`. The major goes up when what a helper can use changes (something added that a helper may rely on, or something changed); the bug number goes up for a fix that changes nothing a helper uses.
 - **Compatibility is the helper's call.** The core never refuses a helper for its version and keeps no list of which helpers fit it; `KNOWN_HELPERS` in `scripts/helpers.js` exists only to recommend a helper for a system. Each helper lists the majors it knows it works with (`KNOWN_API` in its `main.js`). Below the oldest, it doesn't register and tells the GM the core is too old; on any other major it isn't known to work with, it registers and warns the GM it hasn't been tried with that core yet. The minimum in its `module.json` `relationships.requires` is Foundry's install-time check, also the helper's to set.
 - **Ask for a hook when nothing fits.** When a helper builds something new that the core can't handle well enough with what it already offers, ask for a new core hook rather than forcing a poor fit or working around the core. A new hook raises the API's major, which the helper then adds to `KNOWN_API`; that is how the hooks marked "API n" below arrived.
 - **Recognise things by slug, read them by what they do.** To find a particular feature, action or spell, look for its slug or identifier (PF2e `slug`, dnd5e `system.identifier`), never its name: slugs are the same in every book, every edition of the free rules and every language, while names change with translations, reprints and homebrew copies (the name is only a fallback). Better still, read what an item does (its activities, effects, rule elements, and as a last resort its words), so paid books and homebrew nobody has seen yet still work. The helpers work from the free rules (the SRD, the PF2e remaster, each system's open content) alone; anything more is read the same way.
@@ -255,6 +256,46 @@ Spec fields a helper may now rely on, each documented where it belongs below or 
     `found`, `foundIds`, `shape`, `feet`), `fidget` (`how`: `step` or `look`), and a move's `patrol: true` (purpose
     `patrol` or `fidget`; `toward` empty and `towardId` null for a move to a spot).
 
+#### Heals and buffs named, and what the table settles (API 21)
+
+Every heal and buff FastFighting applies shows whom it went to; and what one player's character does to another, the
+table may settle itself (`tests/api-21.test.js`).
+- **An outcome for another alone:** `outcome.notSelf` never lands on whoever laid it, and is worth nothing to it
+  (`effects.js` `applyOutcome`, `outcomeWorth`; a heal's in `simulator.js` `executeHeal`): PF2e Lay on Hands' +2 AC, on
+  any friend it heals but the champion.
+- **A heal of so many hit points** (no dice: PF2e Lay on Hands' 6) is a table roll all the same, its `parts`' numbers
+  (`engine/table-rolls.js` `flatHeal`), so its card says whom it heals and how much; the plain roll shows its number.
+  A heal's table roll carries its action's id (`action`).
+- **A heal in a turn FastFighting plays** is the system's healing card (`card`, the rolls waiting before it shown first:
+  `engineCard`), applied the system's way (`apply` with `healing: true`, its `multiplier` a heal check's), and the one
+  healed gains what its sheet gained (`{gained}`; `simulator.js` `healedLive`). Null (no card, or the table settles it):
+  the engine's own heal, written with the turn's changes. The helper's `applyDamageCard` applies a healing card as
+  healing (PF2e's posts its own "is healed for N" card).
+- **What an effect laid, and whose:** `captureUnit`'s `laid` (effects that lay conditions alone: `{key, sourceId, label,
+  conditions}`, only where there are any) and the change set's `laid` (those new this turn), beside `effects.added`
+  (bonuses, resistances, a mark), so a helper can name who got what.
+- **The cards a helper posts as it writes a turn** (`commitChanges`) are the turn's: `live-battle.js` `writeChanges` keeps
+  the ids it made (`messages`: a turn's, or a player's turn's `rollCards`, `cardsOf`), so Rewind deletes them.
+  `commitChanges` hears `options.tokenOf(id)` (a creature's token, by its id in the run: an effect's `sourceId`) and
+  `options.audience(id)` (`"public"` or `"gm"`: `table-rolls.js` `audienceFor`, the GMs alone for one hidden from the
+  players), for a card it posts.
+- **Player to player:** `live-battle.js` `tableSettles({applyDamage, playersRun, by, target})` (pure): a player's
+  character's heal, damage, buff or debuff at another player's character (`spec.kind` "pc", or one a player owns; never
+  one at itself), FastFighting playing it for an absent player or not, while the battle's Apply players' damage is off
+  (`battle.data.applyDamage`) and its players run their characters (`battle.data.playersRun`), is the table's to settle:
+  - its cards are still posted (the action's own, the healing or damage card naming the target and the amount), but
+    `apply` isn't carried out (`settleCard`, its Foundry parts given apart, `liveIo`): the card comes off the turn's
+    `applied`, the helper puts the system's own Apply back on it (`leaveToTable`), and it waits in the Battle Vantage
+    (`battle.data.waiting`, beside a player's turn's `pc.damage`: Apply, Half, Double, Dismiss through `answerDamage`,
+    applied into the turn that left it, `waitedIn`); the engine's own heal or sum stands for the rest of the turn;
+  - the turn's writing (`tableLeaves`, `engine/changes.js` `leaveToTable`) writes none of that character's hit points
+    (nor the falls and statuses they made: `final` has its sheet's) and lays none of the effects the other laid on it,
+    nor their conditions: they go to the change set's `left` (`{hp, effects, laid}`), for the helper to name, not write;
+  - the next sync reads back whatever the table applied (`syncFromSheets`: its hit points and status, the sheet's);
+  - a waiting line goes when its turn is taken back (`waitingAfter`), or when its creature is healed or hurt some other
+    way (`dropApplied`: a GM's or a player's own Apply on the card; FastFighting's own writing never counts, `applying`).
+  With Apply players' damage on, or a creature on either side, FastFighting applies it, as ever.
+
 #### Table rolls: the engine's own dice, shown
 
 Whenever FastFighting rolls dice itself for something a person would roll at the table, a live battle shows the roll in the chat as a real Foundry Roll. The Statistics Engine's own randoms (its choices, its model of morale and luck, a fight it imagines) stay hidden. A roll the system makes itself (`run.live.roll`: strike, save, check, use, damage, adjust, apply; `systemRolled`) is the system's card already and is never posted again.
@@ -264,14 +305,14 @@ Whenever FastFighting rolls dice itself for something a person would roll at the
 - **When it records:** only a live battle's passes. `beginLive` (its surprise rolls: `takeRolls` after it) and every `nextDice` (each pass of `liveTurn` and `movedBeside`, `pcTurnBegin`, `reactNow` and `gmMoment` with no dice yet) start a fresh tray. A pass thrown away for a question goes with its run, and `liveTurn` returns its final pass's rolls (`rolls`). After any other step, `takeRolls(run)` hands them over. Simulations, plans, the Battle Vantage's odds, lookahead (`rethink` rolls on a throwaway rng) and restored copies (`restoreRun` keeps no rng) record nothing. A fate reroll's first try is kept, marked `rerolled`.
 - **The system's own cards (API 20).** A helper may show a table roll as its system's card (`showTableRoll`): the core asks it for each roll, one card a roll in the order rolled, with the roller's and target's tokens, who sees it (`audience`, below), the core's words without the DC (`flavor`) and FastFighting's own flags for the message (so it's never read as a player's card, and Rewind deletes it). It returns its messages' ids, or null for the plain roll, which then gets a message of its own between them. Styling only: the dice are the engine's, exactly, and the engine's result stands whatever the system does with the card. PF2e shows attacks, saves, checks and flat checks as its check cards and damage and healing as its damage cards.
   - **Damage the engine rolled itself in a turn FastFighting plays** (a strike the system refused to roll, a save's or an auto's damage it didn't roll, riders, backlash and retorts, stray shots, reactions' harm and `areaBurst`, auras, maneuvers' damage, falls, collisions and hazardous ground, persistent and condition harm and afflictions the engine ticks, a fumble's): with `card` in `run.live.systemRolls`, the turn stops for it (`simulator.js` `engineCard`: `NeedsDecision` with `roll: "card"` and `table`, the rolls still waiting with the damage last) and the live side shows them all at once (`showTurnCard`), so the chat reads in order (the attack's card, then its damage's); every roll in `table` is marked `shown` and the damage's card kept as `card`. That card is then applied the system's way (`apply`, with a save's `multiplier`; a strike's with the `applies` of the reactions the system's application does), and the target takes what its sheet lost, as with the system's own rolls; one a reaction lessened otherwise takes the engine's sum. The card's dice are the ones the engine rolled in the pass that asked, and every pass after rolls the same, so the dice, replays and golden logs are unchanged. With **Play to the end** the live side answers null: the engine's sum, its rolls on the GMs' card. Without the hook (an older helper, another system), as before: a plain roll, the engine's sum.
-  - A roll marked `shown` is never posted again, nor put on the GMs' card. Healing isn't applied through the system: the engine's dice heal, and the system's card shows them.
+  - A roll marked `shown` is never posted again, nor put on the GMs' card. A heal in a turn FastFighting plays is shown and applied the same way (API 21: **Heals and buffs named** above); anywhere else the engine's dice heal, and the system's card shows them.
 - **Shown** (`foundry/table-rolls.js`): after a turn is written to the sheets, its rolls are posted, one message for each creature and audience, its token the speaker (with `showTableRoll`, one card a roll, the helper's where it shows it). Each roll becomes Die terms holding the engine's results (kept and discarded for advantage), the modifier, and the engine's total, so the tooltip and Dice So Nice show the real dice. Flavor comes from `FASTFIGHTING.Rolls`; the DC appears only on the GMs' messages. Who sees them (`rollAudience`): a player's character, everyone; a hidden token, an unseen or invisible creature, or one whose name is secret, the GMs; anyone else, the GM's own `core.messageMode` (gm, blind and self all go to every GM). The messages join the turn's own (`turn.messages`; a player's turn's reaction rolls `pc.rollCards`), so Rewind deletes them. With **Play to the end**, and for the aftermath, rolls gather instead on one GM-only card per battle (`battle.data.tally`): grouped by round and creature, folded in `<details>`, each roll an inline result. A rewound turn's rolls come off it (`untally`); Rewind This Encounter deletes it with the battle's cards.
 
 | Roll | Table roll? | Shown by |
 |---|---|---|
 | Attacks, saves and checks: strikes, a spell's save, control, talk, theft, escape and freeing, first aid, a heal or buff check, sizing up, doors, disengaging, counterspells, repeat saves, concentration, afflictions, spreading conditions | yes | the system's roller where its helper has one; else the engine's `rollCheck`, recorded |
 | Damage: strikes, saves, autos (PF2e Rend), riders, backlash and retorts, reactions' harm, auras, maneuvers' damage, stray shots, fumble rows | yes | the system's (`rollStrike`, `rollDamage`; PF2e Rend by its Strike's damage roller); else `rollHit`, recorded, and in a turn FastFighting plays the system's damage card (`card`) applied its way |
-| Healing: heal actions and hit dice, a reaction's heal | yes | recorded |
+| Healing: heal actions and hit dice, a reaction's heal; a heal of so many hit points, no dice (API 21) | yes | recorded; in a turn FastFighting plays, a heal action's is the system's healing card (`card`) applied its way |
 | Persistent damage, a condition's harm, an affliction's stage damage | yes | the system's where it owns it (`liveOwnership`: PF2e); else recorded |
 | A recovery check or death save; persistent damage's flat check | yes | system-owned (PF2e) or recorded: the helper's own record, else the core's |
 | Flat checks: concealed, hidden, dazzled, stupefied (PF2e) | yes | PF2e's flat check card in a turn FastFighting plays; else recorded (`flatRoll`) |

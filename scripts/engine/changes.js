@@ -17,6 +17,11 @@
  *   uses: {actionId: {from, to}}
  *   side: true                          its side changed (won over, taking no side, turned on someone)
  *   effects: {added: [...], ended: [...]}  buffs and debuffs (captureUnit's: bonuses, resistances, a mark) laid, ended
+ *   laid: [{key, sourceId, label, conditions}]  effects that lay conditions alone, laid this turn, with whose they are
+ *                                       (API 21: for a card naming who got what; the conditions are in `conditions` too)
+ *   left: {hp, effects: [...], laid: [...]}  what a player's character did to another that the table settles itself
+ *                                       (Apply players' damage off: foundry/live-battle.js leaveToTable): its hit points
+ *                                       not written (hp true), its effects and conditions not laid, only named
  *   concessions: [...]                  given up this turn (or taken off it: robbed while down)
  *   bound: true | false                 tied up this turn (a prisoner: behavior/fallen.js), or no longer
  *   moved: {from, to}                   where it went (the core moves the token)
@@ -78,12 +83,67 @@ export function diffOutcome(before, after) {
   const laid = [...hasFx].filter(([k]) => !hadFx.has(k)).map(([, e]) => e);
   const lifted = [...hadFx].filter(([k]) => !hasFx.has(k)).map(([, e]) => e);
   if ( laid.length || lifted.length ) out.effects = { added: laid, ended: lifted };
+  const hadLaid = new Set((before.laid ?? []).map(tag));
+  const freshLaid = (after.laid ?? []).filter(e => !hadLaid.has(tag(e)));
+  if ( freshLaid.length ) out.laid = freshLaid;
   if ( !before.bound !== !after.bound ) out.bound = !!after.bound;
   const gave = (after.concessions ?? []).slice((before.concessions ?? []).length);
   if ( gave.length ) out.concessions = gave;
   if ( before.position && after.position && (before.position.x !== after.position.x || before.position.y !== after.position.y) ) {
     out.moved = { from: before.position, to: after.position };
   }
+  return Object.keys(out).length ? out : null;
+}
+
+/** The hit point keys of a change set, and the falls and returns that come of them. */
+const HP_KEYS = ["hp", "temp", "stamina", "dying", "wounded", "stable", "fell", "died", "revived"];
+/** The statuses hit points alone move a creature between. */
+const BY_HP = new Set([STATUS.STANDING, STATUS.DOWN, STATUS.DEAD]);
+
+/**
+ * A change set with what the table settles itself taken out of it (API 21): a player's character's heal, damage, buff
+ * or debuff at another player's character, while Apply players' damage is off (foundry/live-battle.js tableSettles).
+ * Moved to `left`, so a helper can name it, not write it:
+ *  - `hp`: the turn's hit points on it aren't written (its sheet keeps its own, and the next sync reads them back), with
+ *    the falls, deaths, returns and statuses they made; `left.hp` says there were some.
+ *  - `from`: the creatures (ids) whose effects on it wait: each it laid (`effects.added`, `laid`) moves to `left`, and
+ *    the conditions those lay aren't set (their own, or `conditionsOf(e)`: the engine's effect's).
+ * Pure. Null when nothing's left to write.
+ */
+export function leaveToTable(changes, { hp = false, from = [], conditionsOf = () => null } = {}) {
+  if ( !changes ) return changes ?? null;
+  const out = { ...changes };
+  const left = { hp: false, effects: [], laid: [] };
+  if ( hp ) {
+    left.hp = HP_KEYS.some(k => out[k] !== undefined && out[k] !== false);
+    for ( const k of HP_KEYS ) delete out[k];
+    if ( out.status && BY_HP.has(out.status.from) && BY_HP.has(out.status.to) ) {
+      left.hp = true;
+      delete out.status;
+    }
+  }
+  const waits = new Set(from ?? []);
+  if ( waits.size ) {
+    if ( out.effects ) {
+      left.effects = (out.effects.added ?? []).filter(e => waits.has(e.sourceId));
+      const added = (out.effects.added ?? []).filter(e => !waits.has(e.sourceId));
+      if ( added.length || out.effects.ended?.length ) out.effects = { ...out.effects, added };
+      else delete out.effects;
+    }
+    if ( out.laid ) {
+      left.laid = out.laid.filter(e => waits.has(e.sourceId));
+      const rest = out.laid.filter(e => !waits.has(e.sourceId));
+      if ( rest.length ) out.laid = rest;
+      else delete out.laid;
+    }
+    const keys = new Set([...left.effects, ...left.laid].flatMap(e => Object.keys(e.conditions ?? conditionsOf(e) ?? {})));
+    if ( out.conditions && keys.size ) {
+      const set = Object.fromEntries(Object.entries(out.conditions.set ?? {}).filter(([k]) => !keys.has(k)));
+      if ( Object.keys(set).length || out.conditions.cleared?.length ) out.conditions = { ...out.conditions, set };
+      else delete out.conditions;
+    }
+  }
+  if ( left.hp || left.effects.length || left.laid.length ) out.left = left;
   return Object.keys(out).length ? out : null;
 }
 

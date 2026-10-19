@@ -13,7 +13,9 @@
  *   ... the dice ...
  *   if ( at >= 0 ) tableRoll(run, at, {by, kind, label, mod, total, dc});
  * A die is claimed once: a roll inside another's claims its own dice first, the outer one only what's left. Dice no
- * table roll claims (the engine's own d100s, a d20 that only orders a simulation) are never shown.
+ * table roll claims (the engine's own d100s, a d20 that only orders a simulation) are never shown. A roll with no dice
+ * is none, but for a heal of so many hit points (API 21: its `parts`' numbers, PF2e Lay on Hands' 6): the table sees it
+ * as it sees any heal, who got how much.
  *
  * A helper's rules hear only the rng (rules.recoveryCheck(unit, rng)): `rng.mark?.()` and `rng.record?.(at, roll)` do
  * the same, and nothing where nothing records (an older core, a simulation).
@@ -94,6 +96,10 @@ export function markRerolled(run, from) {
 /** A creature (or its id), as its id. */
 const idOf = u => (u && typeof u === "object" ? u.id ?? null : u ?? null);
 
+/** A heal of so many hit points, no dice (PF2e Lay on Hands' 6): its parts' flat numbers, more than none. */
+const flatHeal = roll => roll?.kind === "healing" && Array.isArray(roll.parts)
+  && roll.parts.some(p => p && !p.persistent && (Number(p.flat) || 0) > 0) && (finite(roll.total) ?? 0) > 0;
+
 const finite = v => (Number.isFinite(Number(v)) && v !== null && v !== "" ? Number(v) : null);
 
 function claim(tray, at, roll = {}) {
@@ -105,8 +111,9 @@ function claim(tray, at, roll = {}) {
     d.claimed = true;
     dice.push({ faces: d.faces, result: d.result });
   }
-  // (Nothing rolled: nothing to show. A total with no dice is the rules' arithmetic, not a roll.)
-  if ( !dice.length ) return null;
+  // (Nothing rolled: nothing to show. A total with no dice is the rules' arithmetic, not a roll; but a heal of so many
+  // hit points is shown all the same, as the system shows a heal, so the table sees who got how much: API 21.)
+  if ( !dice.length && !flatHeal(roll) ) return null;
   const kind = ROLL_KINDS.includes(roll.kind) ? roll.kind : "other";
   const out = {
     by: idOf(roll.by), target: idOf(roll.target), kind, label: typeof roll.label === "string" ? roll.label : "", what: roll.what ?? null,

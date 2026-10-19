@@ -2371,6 +2371,7 @@
     "Live": {
       "SystemApplies": "{name} applies players' damage itself, so this does nothing while that's on.",
       "DamageWaits": "{name}'s damage waits in the Battle Vantage for a GM to apply.",
+      "HealingWaits": "{name}'s healing waits in the Battle Vantage for a GM to apply.",
       "DamageChanged": "{name}'s damage card changed after it was put before you ({was}, now {now}), so nothing was applied. Look at it again in the Battle Vantage.",
       "MoveStopped": "{name} {why} and stops here.",
       "Stopped": {
@@ -2494,6 +2495,7 @@
       "ReactionRolled": "They've rolled it",
       "ReactionSkip": "Go on without it",
       "DamageLine": "{by} → {target}: {amount}",
+      "HealingLine": "{by} → {target}: {amount} healing",
       "DamageSave": "after its save",
       "DamageNoTarget": "no target",
       "DamageApply": "Apply",

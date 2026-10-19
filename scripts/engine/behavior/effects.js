@@ -15,6 +15,8 @@
  *     onlyVs       its conditions hold only against the source (off-guard to it); "melee": only against the source's
  *                  melee attacks (PF2e Feint: off-guard to the feinter's melee attacks)
  *     self         it lands on the one who acted, not the target (PF2e Trip, critically failed: you fall)
+ *     notSelf      it never lands on the one who laid it, and is worth nothing to it (API 21: a heal's outcome for
+ *                  another alone, PF2e Lay on Hands' +2 AC, not on the champion who casts it)
  *     endsOnHarm   it ends when its source or the source's side harms the bearer (5e Charm Person)
  *     iwr          {resist: {type: value}, immune: [types], weak: {type: value}} for as long as it lasts (Rage, Stoneskin)
  *     actionsNow   main-pool units it gains at once, this turn only (5e Action Surge)
@@ -217,6 +219,8 @@ export function settleAllegiance(run) {
  */
 export function applyOutcome(target, outcome, sourceId = null, action = null) {
   if ( !target || !outcome || typeof outcome !== "object" ) return null;
+  // (Never on the one who laid it: notSelf.)
+  if ( outcome.notSelf && sourceId !== null && target.id === sourceId ) return null;
   const conditions = { ...(outcome.conditions ?? {}) };
   if ( conditions.prone ) {
     target.prone = true;
@@ -607,6 +611,8 @@ function modsPerRound(run, t, mods, out, inc, { words = 0, own = 1, guard = 1 } 
  */
 export function outcomeWorth(run, by, t, outcome, { versus = null } = {}) {
   if ( !outcome || !t ) return 0;
+  // (One that never lands on whoever laid it is nothing to it: notSelf.)
+  if ( outcome.notSelf && by && by === t ) return 0;
   const rules = run.prep.rules;
   // Against whoever it's set on only: its blows at a foe it would hurt; its words, or its first aid, for one it would
   // talk to or tend. Set on no one, it does nothing.

@@ -702,9 +702,10 @@ export function battleContext(b, focusId = null) {
     })(),
     // (Players' damage: applied at once, or waiting here; greyed out while the system applies it itself.)
     applyDamage: !!b.data.applyDamage, systemApplies: systemAppliesText(),
-    damage: (b.pc?.damage ?? []).map(d => ({
+    // (A player's turn's own, and those the table settles: a player's character's at another, Apply players' damage off.)
+    damage: [...(b.pc?.damage ?? []), ...(b.data.waiting ?? [])].map(d => ({
       key: d.key, save: d.save, needsTarget: !d.targetId,
-      text: fmt("FASTFIGHTING.Battle.DamageLine", { by: d.by, target: d.targetId ? name(d.targetId) : loc("FASTFIGHTING.Battle.DamageNoTarget"), amount: d.amount }),
+      text: fmt(d.healing ? "FASTFIGHTING.Battle.HealingLine" : "FASTFIGHTING.Battle.DamageLine", { by: d.by, target: d.targetId ? name(d.targetId) : loc("FASTFIGHTING.Battle.DamageNoTarget"), amount: d.amount }),
       targets: d.targetId ? [] : run.units.filter(u => !run.live.players.has(u.id)).map(u => ({ value: u.id, label: u.spec.name }))
     })),
     held: (b.pc?.facts ?? []).map((f, i) => ({ i, text: factText(f, name) })),

@@ -405,6 +405,16 @@
    "commit": null,
    "hash": "23fa5ce9e367"
   },
+  "core:code:scripts/foundry/live-battle.js:liveIo#1": {
+   "repo": "core",
+   "file": "scripts/foundry/live-battle.js",
+   "key": "scripts/foundry/live-battle.js:liveIo#1",
+   "area": "core/code",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "94ab055eb15b"
+  },
   "core:code:scripts/foundry/live-battle.js:pickUp#1": {
    "repo": "core",
    "file": "scripts/foundry/live-battle.js",
@@ -2373,6 +2383,16 @@
    "commit": null,
    "hash": "e35d04cc05f1",
    "gone": "2026-10-16"
+  },
+  "core:FASTFIGHTING.Battle.HealingLine": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.HealingLine",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "4c8edd87c503"
   },
   "core:FASTFIGHTING.Battle.Held": {
    "repo": "core",
@@ -6189,6 +6209,16 @@
    "date": null,
    "commit": null,
    "hash": "4818c5db72e1"
+  },
+  "core:FASTFIGHTING.Live.HealingWaits": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Live.HealingWaits",
+   "area": "core/Live",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "b362499b79ff"
   },
   "core:FASTFIGHTING.Live.MoveStopped": {
    "repo": "core",

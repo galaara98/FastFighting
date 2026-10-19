@@ -618,9 +618,12 @@ export const rollsKind = (live, kind) => Array.isArray(live?.systemRolls) && liv
  * it, found by its key (the same each time the turn is played: once per time it comes up). Null: the engine's dice.
  *   strike {unitId, targetId, action: {id, name}, attackNumber}  -> {attack: {degree, natural, total}, damage: {byType} | null, card}
  *   apply  {unitId, targetId, card, amount}  -> {lost}: a strike's damage card (`card`) applied the system's way, and
- *          what the target lost by it (its hit points and temporary hit points)
+ *          what the target lost by it (its hit points and temporary hit points); with `healing` (API 21), a heal's
+ *          healing card, -> {gained}: what the target's sheet gained by it. Null: the engine's own sum or heal stands
+ *          (nothing applied, or the table settles it: a player's character's at another, Apply players' damage off)
  *   card   {unitId, targetId, action: {id, name}, table: [rolls]}  -> {card}: damage the engine rolled itself, shown as
- *          the system's own damage card (API 20: the helper's showTableRoll), the last of `table`, the table rolls still
+ *          the system's own damage card (API 20: the helper's showTableRoll; a heal as its healing card, API 21), the
+ *          last of `table`, the table rolls still
  *          waiting before it shown first; `card` its message id (null: none), then applied as `apply`. Answered at
  *          all, every roll in `table` is marked shown (simulator.js engineCard)
  *   use    {unitId, targetId, action: {id, name}}  -> {card}: the action's own card, as its user shows it (a spell's)

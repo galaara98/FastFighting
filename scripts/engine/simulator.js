@@ -1030,13 +1030,14 @@ function appliedLive(run, u, target, sys, amount, mult) {
 
 /**
  * Damage the engine rolled itself in a turn a live battle plays (its table roll, `record`), shown as the system's own
- * damage card where its helper shows table rolls (engine/live.js systemRoll "card", API 20): the rolls waiting before it
+ * damage card where its helper shows table rolls (engine/live.js systemRoll "card", API 20; a heal, its healing card:
+ * API 21, healedLive): the rolls waiting before it
  * shown first, so the chat reads in order, all of them marked shown (never posted again). The card's message id, for
  * the system to apply it its own way ("apply"); null for none (the engine's sum, written with the turn's changes).
  * The dice are the engine's either way: nothing here rolls.
  */
 function engineCard(run, record) {
-  if ( !record || record.kind !== "damage" || !run.live?.playing ) return null;
+  if ( !record || (record.kind !== "damage" && record.kind !== "healing") || !run.live?.playing ) return null;
   const table = pendingRolls(run);
   const answer = run.live.roll?.(run, {
     kind: "card", unitId: record.by, targetId: record.target, action: { id: record.action ?? "", name: record.label ?? "" }, table
@@ -1046,6 +1047,20 @@ function engineCard(run, record) {
   const card = typeof answer.card === "string" && answer.card ? answer.card : null;
   if ( card ) record.card = card;
   return card;
+}
+
+/**
+ * A heal the engine rolled (its table roll, `record`) in a turn a live battle plays (API 21): the system's healing card
+ * of it (engineCard: the target and the amount, a flat heal's too), applied the system's way to t (engine/live.js
+ * systemRoll "apply" with `healing`, times `mult`: a heal check's), and what t's sheet gained by it; else `amount`, the
+ * engine's own (no card, nothing applied, or the table settles it: a player's character's heal of another, with Apply
+ * players' damage off).
+ */
+function healedLive(run, u, t, record, amount, mult) {
+  const card = engineCard(run, record);
+  if ( !card ) return amount;
+  const applied = run.live?.roll?.(run, { kind: "apply", unitId: u.id, targetId: t.id, card, amount, multiplier: mult, applies: null, healing: true });
+  return Number.isFinite(applied?.gained) ? Math.max(0, applied.gained) : amount;
 }
 
 /**
@@ -2279,12 +2294,18 @@ function executeHeal(run, u, action, target) {
   const healAt = diceAt(run);
   let rolled = (action.heal ?? []).reduce((s, p) => s + samplePart(p, run.rng), 0);
   for ( let n = 0; n < (action.healDice ?? 0); n++ ) rolled += run.rng.die(target.spec.hitDie ?? 6);
+  let record = null;
   if ( healAt >= 0 ) {
     const hitDice = action.healDice ? [part([{ n: action.healDice, faces: target.spec.hitDie ?? 6 }], 0, "healing")] : [];
-    tableRoll(run, healAt, { by: u, target, kind: "healing", label: action.name ?? "", parts: [...(action.heal ?? []), ...hitDice], total: rolled, multiplier });
+    record = tableRoll(run, healAt, {
+      by: u, target, kind: "healing", label: action.name ?? "", action: typeof action.id === "string" ? action.id : null,
+      parts: [...(action.heal ?? []), ...hitDice], total: rolled, multiplier
+    });
   }
-  // (Wounds that won't close take none of it.)
-  const amount = canHeal(target) ? Math.max(0, Math.floor(rolled * multiplier)) : 0;
+  // (Wounds that won't close take none of it. In a turn a live battle plays, the system's healing card, applied its
+  // way: what the sheet gained.)
+  let amount = canHeal(target) ? Math.max(0, Math.floor(rolled * multiplier)) : 0;
+  if ( record && amount > 0 ) amount = healedLive(run, u, target, record, amount, multiplier);
   const wasDown = target.status === STATUS.DOWN;
   const before = target.hp;
   if ( amount > 0 ) rules.onHealed(target, amount);
@@ -2292,7 +2313,8 @@ function executeHeal(run, u, action, target) {
   // on the one healed, as any outcome lands: Regenerate's hit point a turn, 5e's fast healing, PF2e's regeneration.)
   if ( multiplier > 0 ) {
     gainResources(run, target, action);
-    if ( action.outcome && target.status !== STATUS.DEAD ) {
+    // (Not one for another alone, on itself: notSelf, PF2e Lay on Hands' +2 AC.)
+    if ( action.outcome && target.status !== STATUS.DEAD && !(action.outcome.notSelf && target === u) ) {
       applyOutcome(target, action.outcome, u.id, action);
       gainResources(run, target, action.outcome);
       rules.onOutcome?.(run, u, target, action.outcome);
@@ -4410,6 +4432,14 @@ export function battleOver(run) {
 }
 
 /** Everything "Make it So" needs to commit one unit's end state (plus whatever the system keeps: rules.capture). */
+/** The effects on u that lay conditions alone, with whose they are ({laid}), or nothing (captureUnit). */
+function laidBy(u) {
+  if ( [STATUS.DEAD, STATUS.FLED].includes(u.status) ) return {};
+  const laid = (u.effects ?? []).filter(e => !(e.mods || e.iwr || e.mark) && Object.keys(e.conditions ?? {}).length)
+    .map(e => ({ key: e.key, sourceId: e.sourceId, label: e.label, conditions: { ...e.conditions } }));
+  return laid.length ? { laid } : {};
+}
+
 export function captureUnit(u, rules) {
   return {
     system: rules?.capture?.(u) ?? null,
@@ -4429,6 +4459,9 @@ export function captureUnit(u, rules) {
     // Buffs and debuffs still running (Make it So leaves them on, for the rounds they have left).
     effects: [STATUS.DEAD, STATUS.FLED].includes(u.status) ? [] : (u.effects ?? []).filter(e => e.mods || e.iwr || e.mark)
       .map(e => ({ key: e.key, sourceId: e.sourceId, rounds: e.rounds, label: e.label })),
+    // (And those that lay conditions alone, with whose they are, where there are any: the system's card names who got
+    // what. API 21.)
+    ...laidBy(u),
     swayed: u.swayOutcome,
     // Under someone else's control when it ended: it still belongs to its own side.
     controlledBy: u.controlledBy ?? null,

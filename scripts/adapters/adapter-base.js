@@ -267,7 +267,11 @@ export class SystemAdapter {
    */
   // (options.before: the creature as the turn found it, captureUnit's shape, for what the change set leaves out;
   // options.effectSource(key): the action (or reaction) that laid a buff or debuff, and whose spec, for a helper to put its
-  // effect on.)
+  // effect on. API 21: options.tokenOf(id), a creature's token by its id in the run (an effect's `sourceId`), and
+  // options.audience(id), who sees that creature's cards ("public" or "gm": table-rolls.js audienceFor), for a card it
+  // posts naming who got what (PF2e's); every card it posts as it writes is the turn's, taken back with it. The change
+  // set's `laid` (conditions an effect laid, whose) and `left` (what the table settles itself: name it, don't write it):
+  // engine/changes.js.)
   async commitChanges(tokenDoc, spec, changes, final, options) {
     throw new Error(`${this.constructor.name} does not support live battles`);
   }
@@ -454,13 +458,23 @@ export class SystemAdapter {
    * application does (a reaction's `applies` in its spec, true here: PF2e's `shieldBlock`, 5e's `halve`), and `amount`
    * is the engine's own sum, after the target's resistances and its share (for a system whose application has no
    * resistances of its own: DCC's stat lines). Returns undo records (sheet-tools undoRecord, the values as they were) for
-   * Rewind.
+   * Rewind. API 21: with "card", a heal's healing card too (showTableRoll's), applied as healing.
    * @param {ChatMessage} message
    * @param {TokenDocument} token
    * @returns {Promise<object[]>}
    */
   async applyDamageCard(message, token, { multiplier = 1, amount = null } = {}) {
     return [];
+  }
+
+  /**
+   * API 21. A damage or healing card of FastFighting's own (rollStrike's, rollDamage's, showTableRoll's) that it won't
+   * apply after all: the table settles it itself (a player's character's at another, Apply players' damage off). Put
+   * the system's own Apply back on it, where a helper took it off (PF2e: its mark, cards.js). Optional.
+   * @param {ChatMessage} message
+   */
+  async leaveToTable(message) {
+    return null;
   }
 
   /**
@@ -558,7 +572,8 @@ export class SystemAdapter {
    * player's card, and Rewind finds it); `scene`. A damage card made here may be applied with applyDamageCard (in a turn
    * FastFighting plays, damage the engine rolled: the "card" roll then "apply"), so mark it as one the system's own
    * buttons mustn't apply again. Returns its messages' ids, a damage roll's damage card first; or null, for the core's
-   * plain roll. Optional: without it, every table roll is a plain Foundry Roll.
+   * plain roll. Optional: without it, every table roll is a plain Foundry Roll. API 21: a heal is a table roll even with
+   * no dice (so many hit points: its parts' numbers), and its card names whom it heals (`target`) and how much.
    */
   showTableRoll(roll, { token = null, target = null, audience = "public", flavor = "", flags = {}, scene = null } = {}) {
     return null;
