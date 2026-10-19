@@ -71,14 +71,14 @@ export const ESCAPE_CHANCE = Object.freeze({ grabbed: 0.5, bound: 0.35, other: 0
 /** How much harder improvised bonds are than the system's typical DC for the creature's level. */
 const BONDS_HARDER = 2;
 
+/** Can't it do this tied up: it needs hands, or the system says tied up rules it out (rules.tiedBars)? */
+export const tiedOut = (rules, action) => needsHands(rules, action) || !!rules?.tiedBars?.(action);
+
 /**
  * Does this action need free hands? What the helper says (action.hands); a helper that says it of every action
  * (rules.handsKnown): none it didn't mark. Otherwise a spell as the helper's setting says (rules.tiedStopsSpells, by
  * default it does), a natural attack (a bite, a claw) none, and anything else (a weapon, a manipulation) hands.
  */
-/** Can't it do this tied up: it needs hands, or the system says tied up rules it out (rules.tiedBars)? */
-export const tiedOut = (rules, action) => needsHands(rules, action) || !!rules?.tiedBars?.(action);
-
 export function needsHands(rules, action) {
   if ( Number.isFinite(action?.hands) ) return action.hands > 0;
   if ( rules?.handsKnown ) return false;

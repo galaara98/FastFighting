@@ -96,10 +96,10 @@ export function netAdvantage(...values) {
   return adv === dis ? 0 : adv ? 1 : -1;
 }
 
-/** A word for how bonuses and penalties leave whoever has them, for the story ("{target} is weakened"). */
 /** One of describeMods' words, in the reader's language. */
 const word = key => localize(`FASTFIGHTING.Effect.${key}`);
 
+/** A word for how bonuses and penalties leave whoever has them, for the story ("{target} is weakened"). */
 export function describeMods(mods = {}, { tempHp = 0 } = {}) {
   // (One save's or check's, bySave and byCheck: by the sum of them.)
   const value = v => (Array.isArray(v) ? v[0] : v && typeof v === "object" ? Object.values(v).reduce((s, n) => s + (Number(n) || 0), 0) : Number(v) || 0);

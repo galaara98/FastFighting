@@ -651,7 +651,6 @@ export async function setOwnSurveyStatus(status, sceneId, requestId, extra = {})
   await game.user.setFlag(MODULE_ID, "survey", { ...current, ...extra, status, sceneId: sceneId ?? current.sceneId, requestId: requestId ?? current.requestId, updated: Date.now() });
 }
 
-/** GM: ask some (or all) players on the scene to fill in their survey. */
 /**
  * GM: ask players (never a GM) to fill in their survey.
  * @param {object} [options]

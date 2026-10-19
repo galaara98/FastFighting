@@ -83,11 +83,11 @@ export const TAUNT = 65;
 /*  Applying                                    */
 /* -------------------------------------------- */
 
-/** Work out a unit's conditions, bonuses and marks from what's on it (base, timed effects, afflictions). */
 /** Does an effect still do anything (a condition, a bonus, a mark, resistance, a boost, a taunt, uses, healing)? */
 export const stillDoes = e => Object.keys(e.conditions ?? {}).length > 0
   || !!(e.mods || e.mark?.length || e.iwr || e.boost || e.taunt || e.uses || e.fastHealing || e.regen);
 
+/** Work out a unit's conditions, bonuses and marks from what's on it (base, timed effects, afflictions). */
 export function recompute(u) {
   const conds = { ...u.baseConds };
   const vs = new Map();

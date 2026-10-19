@@ -976,7 +976,6 @@ function retort(run, saver, by, action, degree, logging) {
   hit.apply(dealt);
 }
 
-/** Roll damage for a hit; returns the total and a function that applies it (so the log reads in order). */
 /**
  * A live battle's card for an action, as its user shows it (a spell's, a breath's: the helper's useAction), asked of
  * the system in a turn FastFighting plays (engine/live.js systemRoll "use"): {card}, or null. Nothing rolled or spent.
@@ -1045,6 +1044,7 @@ function shownDamage(run, at, u, t, action, parts, multiplier, crit) {
   return tableRoll(run, at, { by: u, target: t, kind, label: action.name ?? "", action: typeof action.id === "string" ? action.id : null, source, parts, multiplier, crit });
 }
 
+/** Roll damage for a hit; returns the total and a function that applies it (so the log reads in order). */
 function rollHit(run, u, action, t, parts, multiplier, crit, minimum = 0, forced = null) {
   const rules = run.prep.rules;
   // (The system's own damage roll, where it rolled it: its dice by type, before anyone's resistances.)
@@ -1251,7 +1251,6 @@ function executeOffense(run, u, action, t, attacksMade) {
 /** (Who an area catches: battle-state.js inArea, kept here for those that ask the simulator.) */
 export { inArea };
 
-/** What one use of an action does to one target: the attack or save, the damage, the riders. */
 /**
  * The roll the system made for u's strike at target, a live battle's reaction rolled with the system's own roller
  * (engine/live.js decide: run.live.forced), taken once: {attack: {degree, natural, total}, damage: {byType} | null}.
@@ -1275,6 +1274,7 @@ function logCommon(u, action, target, ranged) {
   };
 }
 
+/** What one use of an action does to one target: the attack or save, the damage, the riders. */
 function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
   const rules = run.prep.rules;
   // Whoever a hazard goes for, hit or miss, knows it's there from now on (behavior/traps.js).
@@ -1973,7 +1973,6 @@ function cantBeGrabbed(run, t, action) {
   return isImmune(run, t, { traits: action?.traits ?? [], onSave: [{ grab: true }] });
 }
 
-/** A crowd-control action on one target: immunity, the roll, the outcome for that degree, any damage. */
 /**
  * t moved by u (shoved, dragged, put somewhere: behavior/forced.js): where it ends up, and what it finds there. Over a
  * drop, it falls (the system's fall damage, else 1d6 for each 10 feet) and lands prone; harm where it lands (a fire,
@@ -2043,6 +2042,7 @@ function forceMove(run, u, t, move) {
   if ( run.foeAuras && path.feet > 0 && isUp(t) ) auraMoved(run, t, AURA_PLAY); // (moved into an aura: behavior/auras.js)
 }
 
+/** A crowd-control action on one target: immunity, the roll, the outcome for that degree, any damage. */
 function executeControl(run, u, action, target, attacksMade, common) {
   const rules = run.prep.rules;
   const logging = !!run.log;
@@ -2289,11 +2289,6 @@ export function noteHeal(run, u, target, healed, revived, { action = "", potion 
 /*  Turns                                       */
 /* -------------------------------------------- */
 
-/**
- * u is about to walk away from foes beside it (all but `keep`, the one it's heading for). Each that can react
- * strikes as it goes, unless u, mindful of it, first gets clear safely (5e Disengage, PF2e Step) when what's left
- * of the turn allows. Afterwards it's no longer beside them. Returns false if u didn't survive leaving.
- */
 /** The reaction every creature with an opportunity strike has (PF2e Reactive Strike, 5e Opportunity Attack), by its id. */
 export const OPPORTUNITY = "opportunity";
 
@@ -2371,6 +2366,11 @@ function tendAhead(run, u, turn, ahead) {
   return true;
 }
 
+/**
+ * u is about to walk away from foes beside it (all but `keep`, the one it's heading for). Each that can react
+ * strikes as it goes, unless u, mindful of it, first gets clear safely (5e Disengage, PF2e Step) when what's left
+ * of the turn allows. Afterwards it's no longer beside them. Returns false if u didn't survive leaving.
+ */
 function leaveReach(run, u, turn, keep = null, need = null) {
   const list = u.disengaged ? [] : threats(run, u, keep);
   if ( list.length ) {
@@ -2513,7 +2513,6 @@ function leavingTurn(run, u, turn, { whole = true } = {}) {
   if ( gone() ) offMap(run, u, { far: true });
 }
 
-/** u is off the map, leaving the fight (or, with no way off, gone unseen: blinked): fled. */
 /** How urgent healing `ally` is, 0 to 90: down, 90; under half its hit points, the more the lower; else nothing. */
 function healUrgency(ally) {
   if ( ally.status === STATUS.DOWN ) return 90;
@@ -2527,6 +2526,7 @@ const AGENDA_GROUPS = Object.freeze({ heal: "heal", aid: "aid", bolstered: "aid"
 /** Whole turns in a row given to going that see a creature leaving the fight gone, at the edge or not. */
 const LEAVING_TURNS = 2;
 
+/** u is off the map, leaving the fight (or, with no way off, gone unseen: blinked): fled. */
 function offMap(run, u, extra = {}) {
   goneFrom(run, u);
   u.leaving = null;
@@ -2917,10 +2917,6 @@ export function noteCommand(run, quietly = false) {
 }
 
 /**
- * What u wants this turn: its tactics' reasoning (whom it would fight, and the runners-up; whom it would mend; whom it
- * would talk to; whom it fears), on top of what it was told to want and what the fight has stirred.
- */
-/**
  * What u wants now, worked out again outside its turn (its side changed: the GM's word, a spell), as its next turn
  * would have it: its tactics' reasoning, its leader's and its party's pull. Nothing told, none of the fight's dice (a
  * throwaway roll of its own), nothing done. For a creature standing and in the fight.
@@ -2957,6 +2953,10 @@ function deliberate(run, u) {
   }
 }
 
+/**
+ * What u wants this turn: its tactics' reasoning (whom it would fight, and the runners-up; whom it would mend; whom it
+ * would talk to; whom it fears), on top of what it was told to want and what the fight has stirred.
+ */
 function thinkOver(run, u) {
   newTurn(u);
   // Taunted: it wants the taunter (as long as the taunt lasts and the taunter stands).
@@ -4474,11 +4474,6 @@ export function afterTurn(run, u) {
 }
 
 /**
- * The fight over (or out of rounds, `ended` false): who won, told; then the aftermath settles the fallen and goods
- * go back (unless `settle` is false: a live battle's GM decides that); and what came of it, summed up (each
- * creature's end state too, with `capture`).
- */
-/**
  * The aftermath on its own, after a fight already ended (a live battle's, when the GM says): the fallen settled (the
  * dying bleed out or hold on, the beaten dealt with), goods taken back by their owners. Told as a moment of its own.
  */
@@ -4488,6 +4483,11 @@ export function settleAftermath(run) {
   reclaimGoods(run);
 }
 
+/**
+ * The fight over (or out of rounds, `ended` false): who won, told; then the aftermath settles the fallen and goods
+ * go back (unless `settle` is false: a live battle's GM decides that); and what came of it, summed up (each
+ * creature's end state too, with `capture`).
+ */
 export function endRun(run, ended, { capture = false, settle = true } = {}) {
   const prep = run.prep;
   // Who won is decided when the last blow lands (or the deal is struck); the aftermath only settles the fallen.

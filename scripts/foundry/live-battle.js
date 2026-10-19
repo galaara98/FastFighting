@@ -733,12 +733,6 @@ async function awayOrBack(u) {
   ui.notifications?.info(fmt(step.result === "away" ? "FASTFIGHTING.Live.PlayerAway" : "FASTFIGHTING.Live.PlayerBack", { name }));
 }
 
-/**
- * A creature added to the battle's combat mid-fight that the battle doesn't know (a player's summons, one the GM brings
- * in): it joins, read like any other. Friendly, and come in a player's character's turn, it's that character's (its
- * side, the player's to run); otherwise its token's disposition says its side (one already in the fight, or it stays
- * out). Made part of the battle itself, so a turn kept before it came still has it when restored. Returns its unit.
- */
 /** What a player says of a character's reactions and rerolls (its tactics), for its spec. */
 function playersSay(spec, actor) {
   const stored = getStoredTactics(actor);
@@ -768,6 +762,12 @@ export function followPlayersSay(actor) {
   });
 }
 
+/**
+ * A creature added to the battle's combat mid-fight that the battle doesn't know (a player's summons, one the GM brings
+ * in): it joins, read like any other. Friendly, and come in a player's character's turn, it's that character's (its
+ * side, the player's to run); otherwise its token's disposition says its side (one already in the fight, or it stays
+ * out). Made part of the battle itself, so a turn kept before it came still has it when restored. Returns its unit.
+ */
 async function joinFight(combatant) {
   if ( !battle || battle.data.ended || battle.combat !== combatant.parent ) return null;
   const known = unitOf(combatant);

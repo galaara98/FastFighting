@@ -662,13 +662,13 @@ export const groupKeyOf = u => (u.side === NEUTRAL_PARTY ? (u.friendGroup ? `${N
 /** Conditions that keep a commander from directing anyone. */
 const CANT_COMMAND = new Set(["incapacitated", "controlled", "unconscious", "paralyzed", "stunned", "confused", "fleeing", "blinded", "deafened", "silenced", "petrified"]);
 
-/** Can u direct its group right now: up and in the fight, its own master, and able to see, hear and speak? */
 /**
  * Is u in the fight? Not one who has yet to notice it, nor one who takes no side and hasn't turned on anyone (standing
  * clear, watching): such a one can't lead its group in it. Its group looks to the next who can.
  */
 const inTheFight = u => u.active !== false && (u.side !== NEUTRAL_PARTY || u.against?.size > 0);
 
+/** Can u direct its group right now: up and in the fight, its own master, and able to see, hear and speak? */
 export function canCommand(u) {
   if ( !u || !isStanding(u) || u.controlledBy ) return false;
   for ( const k in u.conds ?? {} ) if ( u.conds[k] > 0 && CANT_COMMAND.has(k) ) return false;
@@ -905,7 +905,6 @@ export function typical(rules, what, level = 0) {
   return { ac: 10 + level, save: Math.ceil(level / 2) + 2, skill: Math.ceil(level / 2) + 2, dc: 10 + level }[what] ?? 0;
 }
 
-/** A saving throw: the modifier, any advantage (+1) or disadvantage (-1), and dice that ride along (Bless). */
 /** Spells and the like (an action with a spell rank, a spell check, or marked magical). */
 export const isMagical = action => !!action && (!!action.magical || action.rank !== undefined || !!action.casting || !!action.spellId);
 

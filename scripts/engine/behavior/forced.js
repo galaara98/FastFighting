@@ -58,8 +58,6 @@ const heightAt = (map, p) => Number(cellOf(map, p).cell?.g) || 0;
 /** Does it fly (so a drop is no fall)? */
 const flies = t => (t.spec.speeds?.fly ?? 0) > 0 && !t.prone && !t.conds?.immobilized;
 
-/** Would t at that spot overlap one of them (sizes, center to center)? */
-
 /** Is that spot taken by someone else standing there (the doer counts: no shoving it into its own space)? */
 function taken(run, t, p) {
   return run.units.some(o => o !== t && o.pos && isStanding(o) && !o.spec.hazard && sharesSpace(t, p, o));

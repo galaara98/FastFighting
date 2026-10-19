@@ -373,7 +373,6 @@ function applyCharacterTactics(spec, entry) {
   }
 }
 
-/** The player party's wishes for this fight (party.js): its players' votes, majority rules, at the world's Party's sway. */
 /**
  * Could a character know of that token: it's in the fight (the encounter's), or within the character's sight (no wall
  * that blocks sight between them)?
@@ -424,7 +423,6 @@ function applyPartyWishes(spec, entry, party) {
   if ( party.fallen === "spare" ) spec.avoidKilling = Math.max(Number(spec.avoidKilling) || 0, party.sway);
 }
 
-/** Leader playstyles put a character forward as their side's leader. */
 /** The roles a token can hold in its group's chain of command (the planner's pills): boss or leader, then two lieutenants. */
 export const ROLES = Object.freeze(["boss", "leader", "lt1", "lt2"]);
 /** What a leader the system didn't rank (the GM's own pick) lends its group. */

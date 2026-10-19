@@ -165,10 +165,6 @@ export function swayable(t) {
 const outsider = (talker, t) => { const g = groupKeyOf(talker); return g === null || g !== groupKeyOf(t); };
 
 /**
- * Successful pitches needed to convince t (2-6, or 1 if very gullible). With `run`, the situation counts:
- * a badly hurt or outnumbered enemy is one step easier to talk down.
- */
-/**
  * The foes standing against t that it knows of, for whether it's outnumbered: those in its senses, and any it has come
  * to blows with. (A third side it can't see, busy with others, doesn't press on it.)
  */
@@ -180,6 +176,10 @@ export const foesKnown = (run, t) => enemiesOf(run, t).filter(o => isStanding(o)
  */
 export const movedThisTurn = (t, talker) => t.swayTurn?.get(talker.id) === talker.turnsTaken;
 
+/**
+ * Successful pitches needed to convince t (2-6, or 1 if very gullible). With `run`, the situation counts:
+ * a badly hurt or outnumbered enemy is one step easier to talk down.
+ */
 export function stepsToConvince(t, run = null, talker = null) {
   const s = t.spec.social ?? {};
   // (A system's own number: Ironsworn's, by the encounter's rank, as the fight has left it.)
@@ -524,7 +524,6 @@ function bribe(run, payer) {
   return v.stowed.length ? { kind: "item", item: run.rng.pick(v.stowed), bribe: true } : null;
 }
 
-/** In a standoff, giving something up or running settles the whole thing: everyone walks away. */
 /**
  * In a standoff, an enemy talked into paying up or running settles the whole thing, for the talker's side (a neutral
  * talking for the side it leans toward: for that side).

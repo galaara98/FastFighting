@@ -226,11 +226,6 @@ function relationshipClause(e, tier, rel, roll, fill) {
 /** A blow that takes this much of its target's most hit points, or more, is a big one: it gets its emphasis too. */
 const BIG_SHARE = 1 / 3;
 
-/**
- * One more sentence after a big moment: a critical hit or win, or a blow that takes a big bite out of its target
- * (emphasis.<kind>: how bad the harm is, how well the words landed); or after a critical failure, how little came of it
- * (letdown.<kind>). `kind` is the damage type, or the way of talking. "" when there's none.
- */
 /** Did this hit take a big bite out of its target (BIG_SHARE of its most hit points or more)? */
 function bigHit(e, maxHp) {
   if ( !(e.damage > 0) || !e.targetId ) return false;
@@ -238,6 +233,11 @@ function bigHit(e, maxHp) {
   return max > 0 && e.damage >= max * BIG_SHARE;
 }
 
+/**
+ * One more sentence after a big moment: a critical hit or win, or a blow that takes a big bite out of its target
+ * (emphasis.<kind>: how bad the harm is, how well the words landed); or after a critical failure, how little came of it
+ * (letdown.<kind>). `kind` is the damage type, or the way of talking. "" when there's none.
+ */
 function followUp(e, tier, roll, f, kind, maxHp, { fells = false, said = "" } = {}) {
   let key = null;
   if ( tier === "criticalFailure" ) key = `letdown.${kind}`;
@@ -732,10 +732,6 @@ function roleplay(result, spec, tables, seed, title, mapType, mapCondition) {
 }
 
 /**
- * The Roleplay telling, as paragraphs: the opening line ({text}), a round's sentences ({round, sentences: [{e,
- * text}]}, each with the event it tells), and the ending ({e, text}).
- */
-/**
  * Deaths that didn't stand: a character's own fate turned them back at once (PF2e Heroic Recovery), so only that's
  * told. (Any other fate rolls the blow again, and its death isn't in the log.)
  */
@@ -774,6 +770,10 @@ function storyNames(spec) {
   return { call, named };
 }
 
+/**
+ * The Roleplay telling, as paragraphs: the opening line ({text}), a round's sentences ({round, sentences: [{e,
+ * text}]}, each with the event it tells), and the ending ({e, text}).
+ */
 function roleplayParagraphs(result, spec, tables, seed, mapType, mapCondition = null) {
   const roll = makeRoller(tables, seed);
   const averted = avertedDeaths(result.log ?? []);

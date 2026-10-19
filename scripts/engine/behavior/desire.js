@@ -817,10 +817,6 @@ const FEARS = new Set(["frightened", "fleeing", "turned"]);
 /** Its own wish to get away, once frightened often enough: enough to run from one close at hand (simulator.js). */
 const RUN_FROM = 75;
 /**
- * How afraid a set of conditions makes it, in steps: frightened by its value; sent fleeing or turned (a critical fright),
- * two; another of the system's fears (rules.fearConditions), its value.
- */
-/**
  * How afraid u is now, as its conditions stand (the system lowering them, or letting them lapse: less, or none): as the
  * system counts it (rules.fearValued: PF2e's frightened 2), or, where a fear is only there or not, as it has built.
  */
@@ -857,6 +853,10 @@ function fearBuilt(run, u, fears) {
   u.fearKnown = now;
 }
 
+/**
+ * How afraid a set of conditions makes it, in steps: frightened by its value; sent fleeing or turned (a critical fright),
+ * two; another of the system's fears (rules.fearConditions), its value.
+ */
 function fearOn(c, fears) {
   let most = 0;
   for ( const key of fears ) {

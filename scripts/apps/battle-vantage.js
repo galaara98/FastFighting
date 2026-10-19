@@ -867,7 +867,6 @@ function networkView(b, current, focusId) {
   return { graph: { nodes, edges, focus }, panel: panelOf(b, net, nodes, edges, focus, { name, docOf, sideLabel }) };
 }
 
-/** The one in focus, beside the map: who it is, what it wants, what's on it, and what the GM can put on it. */
 /** The side picked in the Battle Vantage, worked out now (its time is up, or the window closes). */
 async function settleSide() {
   const p = pendingSide;
@@ -877,6 +876,7 @@ async function settleSide() {
   await liveMind({ op: "side", id: p.id, side: p.side, group: p.group });
 }
 
+/** The one in focus, beside the map: who it is, what it wants, what's on it, and what the GM can put on it. */
 function panelOf(b, net, nodes, edges, focus, { name, docOf, sideLabel }) {
   if ( !focus ) return { none: true };
   const node = nodes.find(n => n.id === focus);

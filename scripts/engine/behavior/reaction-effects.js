@@ -109,6 +109,9 @@ export function riposteStrike(u) {
   return best?.a ?? null;
 }
 
+/** Ready to strike with as a reaction: its ammunition, in hand, loaded. */
+const ready = (u, a) => hasAmmo(u, a) && !needsDraw(u, a) && isLoaded(u, a);
+
 /**
  * The strike u's reaction makes back at `foe`, as the reaction allows: {strike, step} or null. The strike it names (the
  * best of those it names that reach the foe), else its best everyday melee strike, the foe in reach; else, where it may
@@ -117,9 +120,6 @@ export function riposteStrike(u) {
  * in range and in sight. A shot only with the ammunition for it (action.ammo), in hand and loaded (engine/gear.js: no
  * time to draw or reload in a reaction).
  */
-/** Ready to strike with as a reaction: its ammunition, in hand, loaded. */
-const ready = (u, a) => hasAmmo(u, a) && !needsDraw(u, a) && isLoaded(u, a);
-
 export function strikeBack(run, u, foe, r) {
   if ( !foe || !r ) return null;
   const named = namedStrikes(r);

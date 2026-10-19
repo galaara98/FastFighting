@@ -860,10 +860,6 @@ export function setRelation(run, id, { kind, byId, rounds = null, level = 2 } = 
 }
 
 /**
- * Is it the players' to run? A player's character (run.live.players), or one under a player's character's control (a
- * charm, domination): the player decides for it as long as the control lasts.
- */
-/**
  * A character the players run, as its turn begins, by whether one of its players is here (`here`): taken over
  * ("away": FastFighting plays it while none is, the absentPlayers setting on), handed back ("back": one is here again,
  * and FastFighting had taken it over for being away), or left as it is (null). `away`: the ids taken over so; `players`:
@@ -877,6 +873,10 @@ export function handOver({ id, controlledBy = null, players, away, here, absentP
   return { result: "away", id: owner };
 }
 
+/**
+ * Is it the players' to run? A player's character (run.live.players), or one under a player's character's control (a
+ * charm, domination): the player decides for it as long as the control lasts.
+ */
 export function playerRuns(run, u) {
   const players = run.live?.players;
   if ( !players || !u ) return false;

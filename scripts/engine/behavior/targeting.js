@@ -404,7 +404,6 @@ function canStop(u, f) {
   return u.prep.offense.some(a => (a.damage ?? []).some(p => stoppers.includes(p.type)));
 }
 
-/** Higher is better: fewer turns to drop the target including travel. */
 /** Damage per round of an option, and how many moves fit in a round, by the system's turn. */
 function pace(run, u, option) {
   const rules = run.prep.rules;
@@ -416,6 +415,7 @@ function pace(run, u, option) {
   return { dpr, movesPerTurn };
 }
 
+/** Higher is better: fewer turns to drop the target including travel. */
 function quickestKill(run, u, { t, moves }) {
   if ( t.status === STATUS.DOWN ) return -moves; // finishing blow is trivial if worthwhile
   const { dpr, movesPerTurn } = pace(run, u, bestOptionVs(run, u, t));

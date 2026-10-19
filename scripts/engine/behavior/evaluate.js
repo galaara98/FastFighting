@@ -280,6 +280,9 @@ export function unitsPerTurn(rules, u) {
   return budget[mainPool(rules)] ?? 1;
 }
 
+/** Rounds a fight typically lasts, for spreading a creature's limited spells and items over it. */
+const TYPICAL_ROUNDS = 3;
+
 /**
  * A unit's typical damage per round against a foe: its best action used as often as a turn allows (plus its best
  * bonus-action attack, where the system has them). Targeting and morale ask this constantly, so it is worked out
@@ -289,9 +292,6 @@ export function unitsPerTurn(rules, u) {
  * out inside another such estimate, a creature's control counts for its damage only, so the two never chase each
  * other round and round.
  */
-/** Rounds a fight typically lasts, for spreading a creature's limited spells and items over it. */
-const TYPICAL_ROUNDS = 3;
-
 export function threatOf(run, u, versus) {
   if ( run.threatRound !== run.round ) {
     run.threatRound = run.round;

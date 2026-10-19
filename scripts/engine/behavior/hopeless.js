@@ -12,7 +12,6 @@ import { perceives } from "./senses.js";
 import { canTalk, shareLanguage } from "./standoff.js";
 import { keyOf } from "./desire.js";
 
-/** The layers a desire given up comes out of (all but the GM's, and its controller's). */
 /** Where an abandoned desire is let go of: everywhere but the GM's holds and a controller's wishes (theirs to keep). */
 const LAYERS = ["stated", "memory", "frustration", "logic", "social", "style", "lean", "taunt", "cond"];
 

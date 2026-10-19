@@ -265,12 +265,6 @@ export function combinePlaystyles(ids = [], { stayTrue = false, roleplay = false
 }
 
 /**
- * Per-fight tactics for one combatant. Answers that differ from the calculated strategy apply with
- * probability 1, or only 10% of the time when the character stays true to their calculated tactics.
- * @param {object} spec   CombatantSpec with tactics / tacticsCalc / stayTrue
- * @param {object} rng
- */
-/**
  * How often each answer to a question left to the character comes up in a fight, as sampleRunTactics draws them: its
  * pills' votes by their place (or its one suggestion, or its calculated answer); and, staying true to the calculated
  * answer, any other only that much of the time (STAY_TRUE_CAP).
@@ -296,6 +290,12 @@ export function answerChances(key, calc, combined, stayTrue = false) {
   return [...out].sort((a, b) => b[1] - a[1]);
 }
 
+/**
+ * Per-fight tactics for one combatant. Answers that differ from the calculated strategy apply with
+ * probability 1, or only 10% of the time when the character stays true to their calculated tactics.
+ * @param {object} spec   CombatantSpec with tactics / tacticsCalc / stayTrue
+ * @param {object} rng
+ */
 export function sampleRunTactics(spec, rng) {
   if ( !spec.tactics ) return null;
   let tactics = spec.tactics;
