@@ -1,9 +1,11 @@
 /**
  * What a live battle takes from the players' side only as far as it's theirs (live-battle.js): a damage card applied
- * as the GM saw it; the chat a turn takes (and its Rewind deletes) only its own; a spotlight a player gives only to their own.
+ * as the GM saw it; the chat a turn takes (and its Rewind deletes) only its own; a spotlight a player gives only to their own;
+ * the cards it applied itself known by the ids it noted, never by a flag.
  */
 import { describe, expect, test } from "vitest";
-import { damageStill, turnCard, strayCards, spotlightGiven } from "../scripts/foundry/live-battle.js";
+import { damageStill, turnCard, strayCards, spotlightGiven, appliedIn } from "../scripts/foundry/live-battle.js";
+import { damageApplied, notedBy } from "../scripts/foundry/applied-cards.js";
 
 describe("players' damage a GM approves", () => {
   const line = { amount: 7, healing: false };
@@ -50,6 +52,44 @@ describe("the chat a roll in a turn takes with it", () => {
     const rightful = m => m.author.isGM || owners[m.speaker.token] === m.author.id;
     const gone = strayCards(messages, { since: 1000, tokens: new Set(["valeros", "goblin"]), rightful });
     expect(gone.map(m => m.id)).toEqual(["gm", "own"]);
+  });
+});
+
+describe("damage cards FastFighting applied itself", () => {
+  // (Kept turns, one a player's reaction rolled on their screen applied in; the player's turn going, their own card.)
+  const data = { turns: [{ key: "1.a", messages: ["attack"] }, { key: "1.b", applied: ["reaction"] }] };
+  const pc = { id: "valeros", applied: ["own"] };
+
+  test("are the ids the battle noted with the turn that applied them, or the player's turn going", () => {
+    expect(appliedIn(data, pc, "reaction")).toBe(true);
+    expect(appliedIn(data, pc, "own")).toBe(true);
+    // (A turn's other cards, any other card, or nothing to go by.)
+    expect(appliedIn(data, pc, "attack")).toBe(false);
+    expect(appliedIn(data, pc, "other")).toBe(false);
+    expect(appliedIn(data, null, "own")).toBe(false);
+    expect(appliedIn(data, pc, null)).toBe(false);
+    expect(appliedIn(null, null, "reaction")).toBe(false);
+  });
+
+  test("a helper asks by the message (or its id), never by a flag on it", () => {
+    try {
+      notedBy(id => appliedIn(data, pc, id));
+      expect(damageApplied({ id: "reaction" })).toBe(true);
+      expect(damageApplied("own")).toBe(true);
+      // (A player's card flagged as if it were FastFighting's own counts for nothing.)
+      expect(damageApplied({ id: "forged", flags: { "fast-fighting": { applied: true }, "fast-fighting-pf2e": { rolled: { times: 1 } } } })).toBe(false);
+      expect(damageApplied(null)).toBe(false);
+      // (No battle in this browser: none.)
+      notedBy(null);
+      expect(damageApplied("reaction")).toBe(false);
+      // (A test that throws: none.)
+      notedBy(() => {
+        throw new Error("no battle");
+      });
+      expect(damageApplied("reaction")).toBe(false);
+    } finally {
+      notedBy(null);
+    }
   });
 });
 

@@ -41,6 +41,7 @@ import { postRolls, postTally, tallyOf, audiencesFor } from "./table-rolls.js";
 import { diffAll, sideAfter } from "../engine/changes.js";
 import { undoRecord } from "./sheet-tools.js";
 import { keepUpdate, keptBattle } from "./live-keeping.js";
+import { notedBy } from "./applied-cards.js";
 import { transcriptOf, newTranscript, oldStore, dropTranscripts, tidyOnLogin } from "./live-journals.js";
 import { randomSeed } from "../engine/rng.js";
 import { holderOf } from "../engine/behavior/troubles.js";
@@ -153,7 +154,7 @@ async function keepNow(b) {
   b.data.snapshot = snapshotRun(b.run, { log: false });
   // (A player's turn under way: who, since when, what the GM said and what reactions wrote. Its cards are found again by time.)
   const pc = b.pc;
-  b.data.pc = pc ? { combatantId: pc.combatantId, id: pc.id, round: pc.round, facts: pc.facts, records: pc.records, snapshot: pc.snapshot, from: pc.from, damage: pc.damage ?? [], dealt: pc.dealt ?? [], lastAt: pc.lastAt ?? null, rollCards: pc.rollCards ?? [] } : null;
+  b.data.pc = pc ? { combatantId: pc.combatantId, id: pc.id, round: pc.round, facts: pc.facts, records: pc.records, snapshot: pc.snapshot, from: pc.from, damage: pc.damage ?? [], dealt: pc.dealt ?? [], applied: pc.applied ?? [], lastAt: pc.lastAt ?? null, rollCards: pc.rollCards ?? [] } : null;
   const doc = transcriptOf(b.combat.id, b.data.id) ?? await newTranscript(b.combat.id);
   if ( !doc ) return;
   // (The battle's own key replaced whole, the journal's other keys left as they are. Its spec, the biggest part, only
@@ -584,6 +585,8 @@ async function followBack(prior) {
   const snapshot = undo[0]?.snapshot ?? battle.pc?.snapshot;
   if ( snapshot ) battle.run = playersNow(restoreRun(battle.spec, battle.rules, snapshot, { log: battle.run.log }));
   battle.data.turns = turns.slice(0, turns.length - undo.length);
+  // (Cards still in the chat whose damage those turns applied, its Apply back: their damage was taken back.)
+  redraw(undo.flatMap(t => t.applied ?? []));
   battle.data.played = null;
   battle.data.offMap = [];
   battle.data.salt = (battle.data.salt ?? 0) + 1;
@@ -957,6 +960,7 @@ async function playTurn(u, combatant, key) {
   }
   const after = captureAll(battle.run);
   const turn = { key, combatantId: combatant.id, round: battle.combat.round, at: battle.combat.turn, kind: "npc", records: [...stage.records], messages: [...stage.messages], moves: [], doors: [], snapshot };
+  if ( stage.applied.length ) turn.applied = [...stage.applied];
   await holdingPause(async () => {
     // Where everyone stood (for Rewind), then the moves and doors as the turn made them (those after its last roll:
     // the rest are on the map already).
@@ -1009,6 +1013,7 @@ function keepTurn(turn) {
   const turns = [...battle.data.turns, turn];
   for ( const t of turns.slice(0, -REWIND_DEPTH) ) delete t.snapshot;
   battle.data.turns = turns;
+  redraw(turn.applied);
 }
 
 /** A turn done: kept for Rewind, the battle kept, and either the end or the GM's Continue. */
@@ -1055,7 +1060,7 @@ const MOVING = new Set(["move", "flee", "leave", "forced", "step"]);
  * What a turn FastFighting plays has done on the map and in the chat before its rolls: how many of its events are
  * played (`played`), the doors they opened, the undo records and cards of the rolls (for Rewind).
  */
-const turnStage = () => ({ played: 0, records: [], messages: [], doorsOpened: new Map(), docs: null, grid: null });
+const turnStage = () => ({ played: 0, records: [], messages: [], applied: [], doorsOpened: new Map(), docs: null, grid: null });
 
 /** The battle's tokens by creature, for a turn's moves. */
 const stageDocs = stage => (stage.docs ??= new Map(battle.run.units.map(x => [x.id, docOf(x.id)]).filter(([, d]) => d)));
@@ -1126,6 +1131,8 @@ async function turnRoll(request, events, stage) {
         else if ( request.roll === "adjust" ) out = await adjustTurnRoll(request);
         else if ( request.roll === "damage" ) out = await rollTurnDamage(request);
         else if ( request.roll === "card" ) out = await showTurnCard(request);
+        // (A damage card the engine now applies or settles by its own sum.)
+        if ( SETTLED.has(request.roll) && typeof out?.card === "string" ) noteApplied(stage.applied, [out.card]);
       }
     } catch ( err ) {
       console.error(`${MODULE_ID} | the system's roll`, err);
@@ -1154,15 +1161,52 @@ async function rollTurnStrike({ unitId, targetId, action, attackNumber }, stage 
   // (Its damage card, for the system to apply as its own: the one the helper names (null: none holds it all, the
   // engine's sum), else the first damage card it made.)
   if ( raw && Object.hasOwn(raw, "card") ) return { ...out, card: typeof raw.card === "string" && game.messages.get(raw.card) ? raw.card : null };
+  return { ...out, card: damageCards(cardsSince(seen))[0] ?? null };
+}
+
+/** The ids of the damage cards among `messages`, as the helper reads them (its damageCard). */
+function damageCards(messages) {
+  const adapter = getAdapter();
   const ids = Object.fromEntries(battle.run.units.map(x => [tokenIdOf(x), x.id]));
-  const card = cardsSince(seen).find(m => {
+  return messages.filter(m => {
     try {
       return adapter.damageCard?.(m, { ids })?.kind === "damage";
     } catch ( err ) {
       return false;
     }
-  });
-  return { ...out, card: card?.id ?? null };
+  }).map(m => m.id);
+}
+
+/** The system's rolls whose damage card the engine applies, or settles by its own sum. */
+const SETTLED = new Set(["strike", "damage", "card"]);
+
+/**
+ * Damage cards FastFighting applied itself, or settled by its own sum, noted by id into `into`: a turn's (its stage's,
+ * then the turn's `applied`) or a player's turn's (`pc.applied`). Whoever made the card, the GM's browser takes the
+ * system's Apply off it (applied-cards.js damageApplied), so it isn't applied twice. Ids this browser picked from the
+ * chat as it applied them, never a flag on a card: anyone can flag their own. Returns those new to it.
+ */
+function noteApplied(into, ids) {
+  const fresh = [...new Set(ids ?? [])].filter(id => typeof id === "string" && id && !into.includes(id));
+  into.push(...fresh);
+  return fresh;
+}
+
+/** Cards drawn again in this browser's chat, so a helper's own way with them shows at once (their Apply gone). */
+function redraw(ids) {
+  for ( const id of ids ?? [] ) {
+    const message = game.messages.get(id);
+    if ( message ) Promise.resolve(ui.chat?.updateMessage?.(message)).catch(() => null);
+  }
+}
+
+/**
+ * Has the battle noted this card as one whose damage FastFighting applied itself (noteApplied): a turn's kept
+ * (`applied`), or the player's turn's going (`pc.applied`)? Pure.
+ */
+export function appliedIn(data, pc, id) {
+  if ( typeof id !== "string" || !id ) return false;
+  return !!pc?.applied?.includes(id) || (data?.turns ?? []).some(t => !!t?.applied?.includes(id));
 }
 
 /** What a creature has to lose, as its sheet has it now: hit points, temporary hit points and stamina. Null unread. */
@@ -1197,6 +1241,7 @@ async function applyStrike({ targetId, card, applies, multiplier = 1, amount = n
   const options = { multiplier: times, ...(Number.isFinite(amount) ? { amount } : {}), ...reactions };
   const records = noteSettings((await getAdapter().applyDamageCard(message, doc, options)) ?? []);
   stage.records.push(...records);
+  noteApplied(stage.applied, [message.id]);
   const now = await standing(u);
   return was !== null && now !== null ? { lost: Math.max(0, was - now) } : null;
 }
@@ -1281,9 +1326,9 @@ async function answerFor(request, stage = null) {
   const use = request.decided ? true : await ask(request);
   if ( !use || !request.strike ) return use;
   // (A player's, theirs to roll while they're here; a creature's, or one whose players are gone, the system's.)
-  const theirs = await playerRolls(request);
+  const theirs = await playerRolls(request, stage);
   if ( theirs ) return theirs;
-  const roll = await systemRoll(request, stage?.records);
+  const roll = await systemRoll(request, stage);
   return roll ? { use: true, roll } : true;
 }
 
@@ -1535,9 +1580,10 @@ export const waitingReaction = () => (waiting ? { key: waiting.key, name: waitin
  * A player's reaction, theirs to roll as they would on their turn: a card to them and the GMs (roll it, then I've done
  * my reaction), and the battle waits, the Battle Vantage saying so (They've rolled it, Go on without it). What they
  * rolled since is read off their cards (the helper's readTurn) and played as the strike's roll; its damage, as players'
- * damage goes. Null when none of its players is here, or the helper can't read their cards.
+ * damage goes, its damage cards noted as applied into `into` (a turn's stage: noteApplied). Null when none of its
+ * players is here, or the helper can't read their cards.
  */
-async function playerRolls(request) {
+async function playerRolls(request, into = null) {
   const run = battle.run;
   const adapter = getAdapter();
   const doc = docOf(request.unitId);
@@ -1585,6 +1631,7 @@ async function playerRolls(request) {
     let multiplier = 1;
     if ( t && !run.live.players.has(t.id) && !battle.data.applyDamage && !systemApplies(adapter) ) multiplier = await askDamage(name, t.spec.name, amount);
     roll.damage = { total: Math.floor(amount * multiplier) };
+    if ( into ) noteApplied(into.applied, damageCards(messages));
   }
   return { use: true, roll };
 }
@@ -1682,16 +1729,18 @@ const secretRoll = doc => !!doc?.actor?.getFlag?.(MODULE_ID, "secretName");
  * A reaction's strike rolled with the system's own roller, its cards in the chat: on its player's screen where a player
  * runs it and is here (else on this one). Its damage, a player's at a creature FastFighting runs, goes as players'
  * damage does: as rolled with Apply players' damage on (or where the system applies it); else a GM says how much.
- * What the roll changed on the striker's sheet goes into `records` (its undo records, the turn's), where given.
- * Returns {attack: {degree, natural, total}, damage: {byType} | null}, or null (the engine rolls it).
+ * Where given, what the roll changed on the striker's sheet goes into `into.records` (its undo records, the turn's or
+ * the player's turn's), and its damage cards, settled by the engine, into `into.applied` (noteApplied). Returns
+ * {attack: {degree, natural, total}, damage: {byType} | null}, or null (the engine rolls it).
  */
-async function systemRoll({ unitId, byId, strike }, records = null) {
+async function systemRoll({ unitId, byId, strike }, into = null) {
   const adapter = getAdapter();
   const doc = docOf(unitId);
   const target = byId ? docOf(byId) : null;
   if ( !offers(adapter, "rollStrike") || !doc || !strike ) return null;
   const run = battle.run;
   const player = run.live.players.has(unitId);
+  const seen = new Set(game.messages.keys());
   let roll = null;
   if ( player ) {
     for ( const user of game.users.filter(u => !u.isGM && u.active && doc.actor?.testUserPermission(u, "OWNER")) ) {
@@ -1711,7 +1760,7 @@ async function systemRoll({ unitId, byId, strike }, records = null) {
       roll = null;
     }
   }
-  records?.push(...rollRecords(roll, doc));
+  into?.records.push(...rollRecords(roll, doc));
   const out = strikeRolled(roll);
   if ( !out?.damage ) return out;
   const byType = out.damage.byType;
@@ -1723,6 +1772,8 @@ async function systemRoll({ unitId, byId, strike }, records = null) {
     multiplier = await askDamage(run.byId.get(unitId)?.spec.name ?? "", t.spec.name, amount);
   }
   out.damage = { byType: Object.fromEntries(Object.entries(byType).map(([k, v]) => [k, Math.floor(v * multiplier)])) };
+  // (Its damage cards, this browser's or its players' for it: never the card a player's screen names.)
+  if ( into ) noteApplied(into.applied ??= [], damageCards(cardsSince(seen, doc, { asked: player })));
   return out;
 }
 
@@ -2035,6 +2086,7 @@ async function applyDamage(pc, message, u, multiplier = 1) {
   try {
     records = noteSettings((await getAdapter().applyDamageCard(message, doc, { multiplier })) ?? []);
     pc.records.push(...records);
+    redraw(noteApplied(pc.applied ??= [], [message.id]));
     await markFallen(pc, u);
   } catch ( err ) {
     console.error(`${MODULE_ID} | applying a damage card`, err);
@@ -2109,7 +2161,7 @@ async function openingTaken(pc, message = null) {
       : true;
     if ( !use ) continue;
     const before = captureAll(run);
-    await rollFirst(run, reactorId, pc.id, strike, pc.records);
+    await rollFirst(run, reactorId, pc.id, strike, pc);
     const events = reactNow(run, reactorId, pc.id, strike, "foeOpening");
     await writeChanges(before, captureAll(run), pc.records);
     await showPcRolls(pc);
@@ -2122,12 +2174,15 @@ async function openingTaken(pc, message = null) {
 
 /**
  * A foe's strike at a player's character in its turn, rolled with the system's own roller first, where it can; what the
- * roll changed on the foe's sheet into `records` (the player's turn's).
+ * roll changed on the foe's sheet, and its damage cards the engine settles, the player's turn's (`pc`: systemRoll's
+ * `into`), its cards drawn again.
  */
-async function rollFirst(run, reactorId, targetId, strike, records = null) {
+async function rollFirst(run, reactorId, targetId, strike, pc = null) {
   if ( !rollsKind(run.live, "strike") ) return;
-  const roll = await systemRoll({ unitId: reactorId, byId: targetId, strike: { id: strike.id, name: strike.name } }, records);
+  const was = pc?.applied?.length ?? 0;
+  const roll = await systemRoll({ unitId: reactorId, byId: targetId, strike: { id: strike.id, name: strike.name } }, pc);
   if ( roll ) run.live.forced = { unitId: reactorId, targetId, ...roll };
+  redraw(pc?.applied?.slice(was));
 }
 
 /** A word to a player's character's players and the GMs: its move stopped, or its action disrupted. */
@@ -2188,6 +2243,7 @@ async function closePlayerTurn() {
     key: `${pc.round}.${pc.combatantId}`, combatantId: pc.combatantId, round: pc.round, at: battle.combat.turns.findIndex(c => c.id === pc.combatantId), kind: "pc", records, messages: [], moves: [], doors: [], snapshot: pc.snapshot,
     from: pc.from, cards: pc.messages, facts: pc.facts ?? []
   };
+  if ( pc.applied?.length ) turn.applied = [...pc.applied];
   turn.messages.push(...(pc.rollCards ?? []), ...await showRolls(endRolls, turn, { audiences }));
   turn.messages.push(...await tellNew());
   await settleTurn(turn, result.ended);
@@ -2285,7 +2341,7 @@ async function playerMoved(doc) {
       : true;
     if ( !use ) continue;
     const before = captureAll(run);
-    await rollFirst(run, reactorId, pc.id, strike, pc.records);
+    await rollFirst(run, reactorId, pc.id, strike, pc);
     reactNow(run, reactorId, pc.id, strike);
     await writeChanges(before, captureAll(run), pc.records);
     await showPcRolls(pc);
@@ -2343,6 +2399,7 @@ async function answerArrival(pc, from) {
   // (What the system's own rolls applied, its undo records, the player's turn's; and the engine's rolls shown as the
   // system's cards meanwhile, FastFighting's own (its flags: no player's), taken back with the turn.)
   pc.records.push(...stage.records);
+  redraw(noteApplied(pc.applied ??= [], stage.applied));
   const shownHere = stage.messages.filter(id => game.messages.get(id)?.getFlag(MODULE_ID, "live"));
   if ( shownHere.length ) pc.rollCards = [...(pc.rollCards ?? []), ...shownHere];
   if ( !events.length ) return stage.records.length > 0;
@@ -2734,6 +2791,7 @@ export function rewindTurn() {
     await untally([turn]);
     battle.run = playersNow(restoreRun(battle.spec, battle.rules, turn.snapshot, { log: battle.run.log }));
     battle.data.turns = battle.data.turns.slice(0, -1);
+    redraw(turn.applied);
     battle.data.played = null;
     battle.data.offMap = [];
     battle.data.ended = false;
@@ -3023,6 +3081,8 @@ async function pickUp() {
 }
 
 export function registerLiveBattles() {
+  // (The damage cards this GM's battle applied itself: a helper takes its system's Apply off them.)
+  notedBy(id => !!battle && !!game.user?.isGM && appliedIn(battle.data, battle.pc, id));
   CONFIG.queries[QUERIES.liveAsk] = answerAsk;
   CONFIG.queries[QUERIES.liveRoll] = answerRoll;
   CONFIG.queries[QUERIES.liveReactionDone] = answerReactionDone;
