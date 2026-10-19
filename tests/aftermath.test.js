@@ -186,21 +186,15 @@ describe("answers players store", () => {
     expect(clean.notes).toBeUndefined();
     expect(sanitizeTactics("not an object")).toEqual({});
     expect(sanitizeTactics({ playstyles: "cruel" }).playstyles).toBeUndefined();
-    // A renamed playstyle saved under its old id still counts; an object's own keys aren't playstyles.
-    expect(sanitizeTactics({ playstyles: ["scaredyCat", "constructor", "toString", "chicken", "cruel"] }).playstyles).toEqual(["chicken", "cruel"]);
-    // The tick-boxes that became answers read as those answers, while their question is unanswered.
-    // ("I avoid killing", a tick-box, then an answer to who it went for, spares the fallen now.)
-    expect(sanitizeTactics({ neverKill: true }).fallen).toBe("spare");
-    expect(sanitizeTactics({ avoidKilling: true }).fallen).toBe("spare");
+    // An object's own keys aren't playstyles.
+    expect(sanitizeTactics({ playstyles: ["constructor", "toString", "chicken", "cruel"] }).playstyles).toEqual(["chicken", "cruel"]);
+    // "I avoid killing", once an answer to who it went for (v0.1.0's), reads as sparing the fallen while that's unanswered.
     expect(sanitizeTactics({ target: "avoidKilling" })).toMatchObject({ fallen: "spare" });
     expect(sanitizeTactics({ target: "avoidKilling" }).target).toBeUndefined();
     expect(sanitizeTactics({ target: "avoidKilling", fallen: "tie" }).fallen).toBe("tie");
-    expect(sanitizeTactics({ alwaysTalk: true }).talk).toBe("always");
-    expect(sanitizeTactics({ avoidFleeing: true }).retreat).toBe("never");
-    expect(sanitizeTactics({ avoidFleeing: true, retreat: "hurt" }).retreat).toBe("hurt");
-    expect(sanitizeTactics({ alwaysTalk: true, talk: "opportune" }).talk).toBe("opportune");
-    expect(sanitizeTactics({ alwaysTalk: false }).talk).toBeUndefined();
-    expect(sanitizeTactics({ alwaysTalk: true }).alwaysTalk).toBeUndefined(); // (no tick-box of its own any more)
+    // (An older sheet's consumables tick-box, the same: avoid them, unless the question is answered.)
+    expect(sanitizeTactics({ avoidConsumables: true }).consumables).toBe("avoid");
+    expect(sanitizeTactics({ avoidConsumables: true, consumables: "freely" }).consumables).toBe("freely");
   });
 
   test("desires: only what the survey would offer the character, at one of its levels", () => {

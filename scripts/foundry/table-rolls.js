@@ -166,17 +166,12 @@ export function tallyHtml(entries, names = {}) {
 const ChatMessageClass = () => foundry.documents.ChatMessage ?? globalThis.ChatMessage;
 const gmIds = () => game.users.filter(u => u.isGM).map(u => u.id);
 
-/** The GM's own roll mode, on this client (v14's messageMode; an older core's rollMode, as v14 maps it). */
+/** The GM's own roll mode, on this client (core messageMode, Foundry 14's). */
 function gmMode() {
   try {
     return game.settings.get("core", "messageMode");
   } catch ( err ) {
-    try {
-      const legacy = game.settings.get("core", "rollMode");
-      return { publicroll: "public", gmroll: "gm", blindroll: "blind", selfroll: "self" }[legacy] ?? "public";
-    } catch ( err2 ) {
-      return "public";
-    }
+    return "public";
   }
 }
 

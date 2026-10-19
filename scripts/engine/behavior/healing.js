@@ -3,7 +3,7 @@
  * PCs follow their GM-entered disposition; monsters scale with Tactical, but always consider healing they have.
  */
 import { STATUS, TACTICAL, clamp } from "../../constants.js";
-import { alliesOf, liveTier, liveTrait, dispositionOf, movesNeeded, canMove, refusesToHelp, behaviorOf } from "../battle-state.js";
+import { alliesOf, liveTier, liveTrait, movesNeeded, canMove, refusesToHelp, behaviorOf } from "../battle-state.js";
 import { hasUses, costOf, costUnits } from "./evaluate.js";
 import { mainPool } from "../turn.js";
 import { threats, isWary, addCosts } from "./reactions.js";
@@ -27,9 +27,9 @@ function given(a) {
 }
 
 export function healAggroOf(run, u) {
-  const disposition = dispositionOf(u);
-  if ( u.spec.kind === "pc" || disposition.healAggro ) {
-    return disposition.healAggro ?? run.prep.sides[u.side].healAggro ?? "balanced";
+  const healAggro = u.tac?.healAggro;
+  if ( u.spec.kind === "pc" || healAggro ) {
+    return healAggro ?? run.prep.sides[u.side].healAggro ?? "balanced";
   }
   const tier = liveTier(run, u);
   if ( tier <= TACTICAL.FERAL ) return "conservative";
@@ -76,7 +76,7 @@ export function healScores(run, u, heals = u.prep.healActions) {
   const other = (1 - 0.5 * (Number(lean.enable) || 0)) * (1 - 0.6 * (Number(lean.dps) || 0));
   const selfish = liveTrait(run, u, "selfish");
   const tier = liveTier(run, u);
-  const allyDying = dispositionOf(u).allyDying ?? (selfish >= 70 ? "protectSelf" : "rescue");
+  const allyDying = u.tac?.allyDying ?? (selfish >= 70 ? "protectSelf" : "rescue");
   const out = [];
   for ( const ally of alliesOf(run, u) ) {
     if ( [STATUS.DEAD, STATUS.FLED, STATUS.SURRENDERED, STATUS.STOOD_DOWN, STATUS.BEATEN].includes(ally.status) ) continue;
@@ -101,7 +101,7 @@ export function healScores(run, u, heals = u.prep.healActions) {
     if ( isSelf && potionAt && potionAt !== "never" && frac < Number(potionAt) / 100 && heals.some(a => a.selfOnly) ) {
       score = Math.max(score, 1 - frac);
     }
-    if ( isSelf && u.wasDowned && dispositionOf(u).selfRevived === "healSelf" && frac < 0.75 ) score += 1;
+    if ( isSelf && u.wasDowned && u.tac?.selfRevived === "healSelf" && frac < 0.75 ) score += 1;
     if ( score <= 0 ) continue;
     score *= isSelf ? (1 + selfish / 50) : clamp(1 - selfish / 200, 0.2, 1);
     out.push({ ally, score });

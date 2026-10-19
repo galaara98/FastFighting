@@ -12,7 +12,7 @@ import { rollCheck, regrade } from "./probability.js";
 import { costOf, mainPool } from "./turn.js";
 import {
   prepareBattle, createRun, isStanding, isUp, enemiesOf, alliesOf, areEnemies, liveTier, liveTrait, currentAc,
-  attackRoll, attackOptions, saveRoll, checkRoll, turnFor, moveToward, moveAway, bonusDamageParts, dispositionOf,
+  attackRoll, attackOptions, saveRoll, checkRoll, turnFor, moveToward, moveAway, bonusDamageParts,
   behaviorOf, edgeDistance, coverOf, inArea, movesNeeded, approach, canMove, moveTowardPoint, isMagical, upgradesSave, boostBonus, typical, sortOf, sizedUp, passedOver,
   command, commandOf, heldOff, holdsBack, wish, groupKeyOf, chainOf, canCommand, regenOf, canHeal, systemRolled
 } from "./battle-state.js";
@@ -3520,9 +3520,8 @@ function playFromHere(run, u) {
     if ( dread && (d === null || d <= 30) && runs(run, u, turn, { why: "dread", dread: dread.spec.name }) ) return;
   }
 
-  const disposition = dispositionOf(u);
-  if ( u.prone && u.wasDowned && disposition.selfRevived === "retreat" && runs(run, u, turn, { why: "revived" }) ) return;
-  if ( disposition.allyDying === "retreat" && run.units.some(a => a.side === u.side && a !== u && a.status === STATUS.DOWN && a.active)
+  if ( u.prone && u.wasDowned && u.tac?.selfRevived === "retreat" && runs(run, u, turn, { why: "revived" }) ) return;
+  if ( u.tac?.allyDying === "retreat" && run.units.some(a => a.side === u.side && a !== u && a.status === STATUS.DOWN && a.active)
     && runs(run, u, turn, { why: "allyFalls" }) ) return;
 
   u.usedThisTurn = null; // once-per-turn riders such as sneak attack

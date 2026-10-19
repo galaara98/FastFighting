@@ -191,7 +191,6 @@ export const PLAYSTYLE_IDS = Object.freeze(Object.keys(PLAYSTYLES));
 export const isPlaystyle = id => typeof id === "string" && Object.hasOwn(PLAYSTYLES, id);
 /** Playstyles renamed since, by their old ids: answers saved under an old id still count. */
 export const RENAMED_PLAYSTYLES = Object.freeze({
-  scaredyCat: "chicken",
   // (temporary: remove at 0.7.0 with tests/temporary/speedrunner-to-dps.test.js)
   speedRunner: "dps"
 });

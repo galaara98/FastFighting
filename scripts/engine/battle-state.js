@@ -540,11 +540,6 @@ export function holdsBackThisRound(run, u) {
   return u.holdingBack;
 }
 
-/** Healing/dying answers for this fight: its tactics. */
-export function dispositionOf(u) {
-  return u.tac ?? {};
-}
-
 /** Playstyle-driven behavior chances (see engine/playstyles.js): its own, leaning toward its leader's on a turn it follows. */
 export function behaviorOf(u) {
   return u.turnBehavior ?? u.ownBehavior ?? u.spec.behavior ?? {};

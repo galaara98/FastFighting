@@ -485,10 +485,7 @@ export function commandChains(entries, setup, resolved, adapter = getAdapter(), 
     const ranked = adapter?.detectLeaders(members.map(m => m.spec)) ?? [];
     const roleOf = e => setup.tokens[e.token.id]?.role ?? null;
     const picked = slot => members.find(e => roleOf(e) === slot) ?? null;
-    // (A leader picked the old way, by the tab's leader setting.)
-    const legacy = s.leaderId && s.leaderId !== "auto" ? members.find(e => e.token.id === s.leaderId && !roleOf(e)) ?? null : null;
     const used = new Set(members.filter(e => roleOf(e)).map(e => e.token.id));
-    if ( legacy ) used.add(legacy.token.id);
     const lf = s.leadershipFudge ?? {};
     const entry = (id, slot, auto, why = null) => {
       const r = ranked.find(x => x.id === id);
@@ -505,7 +502,7 @@ export function commandChains(entries, setup, resolved, adapter = getAdapter(), 
     const outranks = id => members.length > 1 && members.every(m => m.token.id === id || level(id) >= (Number(m.spec.level) || 0) + 2);
     const chain = [];
     const boss = party ? null : picked("boss");
-    const leader = picked("leader") ?? (party ? picked("boss") : null) ?? legacy;
+    const leader = picked("leader") ?? (party ? picked("boss") : null);
     const free = members.filter(e => !used.has(e.token.id));
     if ( party ) {
       // The roles from earlier fights, or the one member who wants to lead.

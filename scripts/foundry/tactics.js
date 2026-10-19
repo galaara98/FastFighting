@@ -6,9 +6,8 @@
  *  - Actor flag `fast-fighting.tactics.<key>`: one field per answer, written individually so two players
  *    sharing a token can edit different questions at the same time without overwriting each other.
  *    Also `playstyles` (up to four ids), `stayTrue`, `roleplay` and `avoidCostlySpells` (booleans). (An older sheet's
- *    `avoidConsumables` box is its answer to Consumables: avoid.)
- *    Older tick-boxes read as answers while their question is unanswered: `alwaysTalk` (talk "always"), `avoidKilling` or
- *    `neverKill` (target "avoidKilling"), `avoidFleeing` (retreat "never"); answering the question sets them aside.
+ *    `avoidConsumables` box is its answer to Consumables: avoid, while that's unanswered; answering it sets the box
+ *    aside. Its `target` "avoidKilling" is its answer to the fallen: spare them.)
  *    And `offer` and `expect`: what it brings to a standoff, and what it wants out of it (foundry/motives.js).
  *  - User flag `fast-fighting.survey`: {status, sceneId, requestId, updated} for the GM's status indicators.
  */
@@ -87,7 +86,7 @@ function cleanDesire(raw) {
 }
 const MAX_ACTION_ID = 2000;
 /** The tick-boxes that became answers, by the question that took each over. */
-const LEGACY = Object.freeze({ talk: ["alwaysTalk"], fallen: ["avoidKilling", "neverKill"], retreat: ["avoidFleeing"], consumables: ["avoidConsumables"] });
+const LEGACY = Object.freeze({ consumables: ["avoidConsumables"] });
 
 /**
  * Keep only answers the survey could have produced. Players own these flags and can write anything to them
@@ -104,13 +103,10 @@ export function sanitizeTactics(raw) {
   // (A renamed playstyle as it is now, each once: engine/playstyles.js currentPlaystyles.)
   if ( Array.isArray(raw.playstyles) ) out.playstyles = currentPlaystyles(raw.playstyles).slice(0, MAX_PLAYSTYLES);
   for ( const key of META_KEYS ) if ( key in raw ) out[key] = raw[key] === true;
-  // The tick-boxes that became answers: "always prefers talking" talks always (unless hurt); "I avoid killing" (once
-  // "I never kill", then an answer to who it went for) spares the fallen; "I don't like to flee", where it hadn't said
-  // when to retreat, never retreats.
+  // What became answers: "I avoid killing", once an answer to who it went for, spares the fallen; the consumables
+  // tick-box avoids them.
   const unanswered = key => [undefined, "auto", ""].includes(out[key]);
-  if ( raw.alwaysTalk === true && unanswered("talk") ) out.talk = "always";
-  if ( (raw.avoidKilling === true || raw.neverKill === true || raw.target === "avoidKilling") && unanswered("fallen") ) out.fallen = "spare";
-  if ( raw.avoidFleeing === true && unanswered("retreat") ) out.retreat = "never";
+  if ( raw.target === "avoidKilling" && unanswered("fallen") ) out.fallen = "spare";
   if ( raw.avoidConsumables === true && unanswered("consumables") ) out.consumables = "avoid";
   // What it brings to a standoff, and what it wants out of it (checked against what it has when a battle is built).
   for ( const which of ["offer", "expect"] ) {
@@ -166,12 +162,11 @@ export function statedDesires(stored, spec = null) {
     .map(d => ({ kind: d.kind, targetId: d.target, level: bandLevel(Number(d.level ?? DESIRE_LEVELS.determined)) }));
 }
 
-/** Stored answers, migrating the older `disposition` flag. */
+/** Stored answers. */
 export function getStoredTactics(actor) {
   if ( !actor ) return {};
-  const old = actor.getFlag(MODULE_ID, "disposition");
   const current = actor.getFlag(MODULE_ID, "tactics");
-  return sanitizeTactics({ ...(isPlain(old) ? old : {}), ...(isPlain(current) ? current : {}) });
+  return sanitizeTactics(isPlain(current) ? current : {});
 }
 
 export async function setTactic(actor, key, value) {
