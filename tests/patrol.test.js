@@ -11,7 +11,7 @@ import { applyOutcome } from "../scripts/engine/behavior/effects.js";
 import { hiddenFrom, hearDC, HEAR } from "../scripts/engine/behavior/senses.js";
 import { patrolMode, knowsAFoe, seek, stealthDC, fidgetChance } from "../scripts/engine/behavior/patrol.js";
 import { patrolStyle, PLAYSTYLES, PATROL_STYLES, combinePlaystyles } from "../scripts/engine/playstyles.js";
-import { beginLive, liveRound, liveTurn, NeedsDecision } from "../scripts/engine/live.js";
+import { beginLive, liveRound, liveTurn, NeedsDecision, networkOf } from "../scripts/engine/live.js";
 import { logLine } from "../scripts/story/log-lines.js";
 import { buildStory } from "../scripts/story/story.js";
 import { storyTables, text as words } from "./foundry-i18n.js";
@@ -314,5 +314,16 @@ describe("in a live battle", () => {
     }
     expect(asked).toMatchObject({ roll: "check", kind: "check", unitId: "guard", purpose: "seek", skill: "perception" });
     expect(Number.isFinite(asked.dc)).toBe(true);
+  });
+});
+
+describe("the Battle Vantage", () => {
+  test("one that patrolled on its last turn, still knowing of no foe: patrolling (it walked) or searching (it stood)", () => {
+    const run = play(guarded({ playstyles: ["tank"] }, { tactics: { beyond: "stay" } }), 1, 1);
+    const marks = networkOf(run).marks.filter(m => m.type === "status");
+    expect(marks.find(m => m.on === "guard")?.key).toBe("patrolling");
+    expect(marks.find(m => m.on === "mate")?.key).toBe("searching");
+    run.byId.get("guard").seenFoes = new Set(["foe"]);
+    expect(networkOf(run).marks.some(m => m.on === "guard" && m.type === "status")).toBe(false);
   });
 });

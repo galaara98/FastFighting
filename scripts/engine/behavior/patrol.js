@@ -36,8 +36,9 @@
  * three actions is Seek, Stride, Seek from a fresh spot, Stride, Seek, Stride from one searched already; toward a cue,
  * Strides, and a Seek with its last action.
  *
- * Its moves count the harm foes it knows of could do it, as a spot for later is weighed (prepare.js walkRisk). Whatever
- * it finds (a foe in its senses, known), it goes back to fighting: at once, with what's left of its turn.
+ * Its moves to a spot count the harm foes it knows of could do it there, as a spot for later is weighed (prepare.js
+ * walkRisk); toward a cue there's none to count, as it goes for one only while it knows of no foe. Whatever it finds (a
+ * foe in its senses, known), it goes back to fighting: at once, with what's left of its turn.
  * Fidgeting (fidget): a turn spent doing nothing at all, now and then it fidgets, as the world's ADHD setting and its own
  * say: a step aside, or a look elsewhere (where its next Seek looks). Never in place of anything else.
  * Logged: `patrol` (how, cue, toward), `seek` (its roll, the DC, who it found), `fidget` (how), and its moves (`move`,
@@ -431,9 +432,12 @@ export function fidget(run, u, turn, kit) {
   return true;
 }
 
-/** What it's at, for the GM (the Battle Vantage): "patrolling" (it walked), "searching" (it stood and looked), or null. */
+/**
+ * What it's at, for the GM (the Battle Vantage): on its last turn, "patrolling" (it walked) or "searching" (it stood and
+ * looked), while it still knows of no foe; else null.
+ */
 export function patrolNow(run, u) {
   const p = u.patrol;
-  if ( !p || !(p.round >= run.round - 1) || !u.active || !isStanding(u) ) return null;
+  if ( !p || !(p.round >= run.round - 1) || !u.active || !isStanding(u) || knowsAFoe(run, u) ) return null;
   return p.moved ? "patrolling" : "searching";
 }

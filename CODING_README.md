@@ -597,8 +597,9 @@ Hooks:
   or last (within 15 feet) isn't searched again: three actions are Seek, Stride, Seek from a fresh spot, and Stride,
   Seek, Stride from one searched already; toward a cue, Strides, and a Seek with its last action. `rules.afterRoll`
   hears it (PF2e: a hidden seeker gives itself away).
-- **Its moves** count the harm the foes it knows of could do it, as a spot for later is weighed (`prepare.js`
-  `walkRisk`).
+- **Its moves** to a spot count the harm the foes it knows of could do it there, and the blows of those whose reach it
+  leaves, as a spot for later is weighed (`prepare.js` `walkRisk`). Toward a cue there's nothing to count: it heads
+  for one only while it knows of no foe.
 - **Fidgeting** (`fidget`): a turn it spent nothing of at all (`turn.acts` none, its movement untouched), able to act
   and in the fight: chance = the ADHD setting's share × (0.5 + its own ADHD's share). A step aside to a free spot
   beside it (no foe it knows of near, paid for as any move), or a look elsewhere (where its next Seek's cone looks).
