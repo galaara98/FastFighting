@@ -236,7 +236,7 @@
       },
       "troubleshooting": {
         "Name": "Troubleshooting",
-        "Hint": "Keeps each live battle's transcript for 30 days, even after its encounter is deleted, and the planner's last run beside them. Turn it on before reporting a bug, then export them from Live battle data. Off: a transcript goes with its encounter."
+        "Hint": "Keeps each live battle's transcript for 30 days, even after its encounter is deleted, and the planner's last run beside them. Turn it on before reporting a bug, then export them from Live battle data. Off: a transcript goes with its encounter. On: the last run's odds are in the world, where a player who digs could read them."
       },
       "Survey": {
         "Link": "Optional performance survey",

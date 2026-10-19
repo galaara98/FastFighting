@@ -52,7 +52,7 @@ The window needs at least 1000×600 and uses any extra space.
 - **Resources:** spell slots, focus points and consumables spent.
 - **Sample fight:** the story of the most typical fight (the most common outcome, of the usual length). It's a sample, not the ruling: Do it For Real Now plays a new fight with rolls nobody has seen, so a 70% win is a loss three times in ten.
 
-A big battle gets fewer fights in the time given, and the planner warns when they're too few for sure odds. Reopened on a battle that hasn't changed, the planner shows its last run again; runs are kept in the GM's browser, never in the world, where players could read the odds.
+A big battle gets fewer fights in the time given, and the planner warns when they're too few for sure odds. Reopened on a battle that hasn't changed, the planner shows its last run again; runs are kept in the GM's browser, not in the world, where players could read the odds (only the last one is, while **Troubleshooting** is on).
 
 ## Who takes part
 
@@ -346,7 +346,7 @@ World settings, under **Configure Settings → FastFighting**. The planner overr
 | Players run their characters | on | Players take their own characters' turns; off, FastFighting plays every turn. |
 | FastFighting plays absent players' characters | on | A character whose players aren't connected when its turn comes is played by FastFighting until one is back; off, its turn waits. |
 | Apply players' damage | off | A player's damage card against a creature FastFighting runs is applied at once; off, the Battle Vantage asks a GM. Per battle in the planner and the Battle Vantage; greyed out where the system applies players' damage itself. |
-| Troubleshooting | off | Keeps each live battle's transcript, and the planner's last run, for 30 days. Off, a transcript goes with its encounter. |
+| Troubleshooting | off | Keeps each live battle's transcript, and the planner's last run, for 30 days. Off, a transcript goes with its encounter. On, the last run's odds are in the world, where a player who digs could read them. |
 
 Menus: **Story tables** (Manage), **Side personality defaults** (each side's Tactical, Brave, Selfish and Loyal), **Generic system data paths**, and **Live battle data** (each live battle's journal: export one or all, or clean up those over a month old).
 
