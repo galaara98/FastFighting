@@ -132,7 +132,7 @@ import { Turn } from "./turn.js";
 import { initGear } from "./gear.js";
 import { combineMods, netAdvantage } from "./mods.js";
 import { conditionSetup, barred, profiled } from "./conditions.js";
-import { inTheWay, crossed, crossedExtra, passOf, spotWithin, wallsKnown, lineOfSight, spotToShoot, coverFrom } from "./behavior/space.js";
+import { inTheWay, crossed, crossedExtra, passOf, spotWithin, wallsKnown, lineOfSight, spotToShoot, coverFrom, crowdCost } from "./behavior/space.js";
 import { degreeDistribution } from "./probability.js";
 import { combinePlaystyles } from "./playstyles.js";
 import { answersTo } from "../story/master.js";
@@ -653,6 +653,21 @@ export function alliesOf(run, u) {
   if ( u.side === NEUTRAL_PARTY ) return u.friendGroup ? run.units.filter(o => o.side === NEUTRAL_PARTY && o.friendGroup === u.friendGroup) : [u];
   return run.units.filter(o => o.side === u.side);
 }
+
+/**
+ * Its teammates on the map and on their feet (behavior/together.js): kept until someone moves (run.geo) or the round
+ * turns, the spot searches ask it so often.
+ */
+export function teamOf(run, u) {
+  const kept = u.teamKept;
+  if ( kept && kept.geo === run.geo && kept.round === run.round && kept.side === u.side ) return kept.list;
+  const list = alliesOf(run, u).filter(a => a !== u && isStanding(a) && a.pos && !a.spec.hazard);
+  u.teamKept = { geo: run.geo, round: run.round, side: u.side, list };
+  return list;
+}
+
+/** For one keeping together this turn (u.together: behavior/together.js), what a spot costs it bunched up (space.js crowdCost), or null. */
+const crowdOf = (run, u, t) => (u.together ? crowdCost(u, teamOf(run, u), t) : null);
 
 /* Chains of command ------------------------------------------------------
  * Every group (a side; for those who take no side, each friend group) may have a boss (never the party) or a leader,
@@ -1241,8 +1256,10 @@ export function moveToward(run, a, t, reach = null, budget = null, { range = nul
     feet = Math.max(0, Math.min(progress, edgeDistance(a, t) - (reach ?? 5)));
     if ( d > 0 && feet > 0 ) {
       let to = { x: a.pos.x + ((t.pos.x - a.pos.x) / d) * feet, y: a.pos.y + ((t.pos.y - a.pos.y) / d) * feet };
-      // (Someone already there: the nearest free spot within reach instead, as far as it gets toward it.)
+      // (Someone already there: the nearest free spot within reach instead, as far as it gets toward it. One keeping
+      // together, ending in reach bunched up beside a teammate: a spot in reach that isn't, if this move gets there too.)
       if ( reach !== null && inTheWay(run, a, to) ) to = freeEnd(run, a, t, reach, progress) ?? to;
+      else if ( reach !== null && edgeDistance(a, t) - reach <= progress + 0.5 ) to = spread(run, a, t, reach, progress, to);
       // (Those in the way: round them, through them, or tumbling past, as the system says: behavior/space.js.)
       const past = passing(run, a, to, t);
       extra = past.extra;
@@ -1285,6 +1302,19 @@ function freeEnd(run, a, t, reach, progress) {
   if ( spot.feet <= progress + 0.5 ) return { x: spot.x, y: spot.y };
   const k = progress / spot.feet;
   return { x: a.pos.x + (spot.x - a.pos.x) * k, y: a.pos.y + (spot.y - a.pos.y) * k };
+}
+
+/**
+ * For one keeping together (behavior/together.js), a move that would end at `to`, in reach of t, bunched up beside a
+ * teammate: the spot in reach it would rather (space.js crowdCost), if this move gets there as well; else `to`. Never
+ * at the cost of the blow.
+ */
+function spread(run, a, t, reach, progress, to) {
+  const crowd = crowdOf(run, a, t);
+  const here = crowd?.(to) ?? 0;
+  if ( !(here > 0) ) return to;
+  const spot = spotWithin(run, a, t, reach, a.pos, crowd);
+  return spot && spot.feet <= progress + 0.5 && crowd(spot) < here ? { x: spot.x, y: spot.y } : to;
 }
 
 /** Back along the way it came, 5 feet at a time, until it's in no one's space (as far back as where it started). */
@@ -1333,7 +1363,13 @@ function passing(run, a, to, t) {
 function moveToShoot(run, a, t, ap, progress, range) {
   run.geo = (run.geo ?? 0) + 1;
   const from = run.log || run.movers || run.reachers ? { x: a.pos.x, y: a.pos.y } : null;
-  const spot = spotToShoot(run, a, t, range, progress * 2, edgeDistance);
+  let spot = spotToShoot(run, a, t, range, progress * 2, edgeDistance);
+  // (One keeping together: a spot to shoot from that isn't bunched up beside a teammate, if this move gets there.)
+  const crowd = spot ? crowdOf(run, a, t) : null;
+  if ( crowd && crowd(spot) > 0 ) {
+    const apart = spotToShoot(run, a, t, range, progress, edgeDistance, crowd);
+    if ( apart && crowd(apart) < crowd(spot) ) spot = apart;
+  }
   let to;
   if ( spot ) {
     const k = spot.feet > progress ? progress / spot.feet : 1;

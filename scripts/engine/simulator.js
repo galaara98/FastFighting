@@ -31,6 +31,8 @@ import { respond, riposteStrike, bestStep, strikeBack } from "./behavior/respons
 import { playEffects, hasEffects, wouldPlay } from "./behavior/reaction-effects.js";
 import { decideSummon, callSummons, sustainSummons, summonState, dismiss } from "./behavior/summons.js";
 import { sinkHopeless } from "./behavior/hopeless.js";
+import { focusWants, focusAgenda } from "./behavior/focus.js";
+import { keepTogether } from "./behavior/together.js";
 import { mayLeave, startLeaving, isLeaving, wayOff, goAlong, confronted, dealsWithIt, backOnItsWay } from "./behavior/leaving.js";
 import { createAggregator } from "./aggregate.js";
 import { spotTraps, stepOut, learnTrap } from "./behavior/traps.js";
@@ -1876,6 +1878,8 @@ function moveDesires(u, from, to) {
       if ( toKey ) map.set(toKey, (map === d.stated || map === d.logic) ? Math.max(map.get(toKey) ?? 0, v) : (map.get(toKey) ?? 0) + v);
     }
     d.frustration.delete(fromKey);
+    d.focus?.delete(fromKey);
+    d.apart?.delete(fromKey);
   }
   if ( u.targetId === from.id ) u.targetId = to?.id ?? null;
 }
@@ -3119,10 +3123,14 @@ function thinkOver(run, u) {
   // Its playstyle's leanings (the weakest, the fallen, a friend to guard, something to fear ...).
   styleWants(run, u, scored, { canHeal: !!u.prep.healActions?.length, canTalk: !!talkTarget, talkTarget, canAid: !!u.prep.buffActions?.length });
   partyWants(run, u, scored, { canHeal: !!u.prep.healActions?.length });
+  // Focus fire: the foes its team has already hit, the more for the tactical (behavior/focus.js).
+  focusWants(run, u, scored);
   // What its leader and its friends want pulls on it too (for most, the leader more than the crowd).
   listen(run, u, { canHeal: !!u.prep.healActions?.length, canTalk: (u.prep.talkAffinity ?? 0) > 0, canAid: !!u.prep.buffActions?.length });
   // Friends asking it for a buff, who can make themselves understood: a willing one wants to oblige.
   heed(run, u, { canAid: !!u.prep.buffActions?.length, understands: (a, b) => !a.spec.social?.mindless && !b.spec.social?.mindless && shareLanguage(a, b, run) });
+  // A smart one keeps near its team: less of what would take it well away (behavior/together.js).
+  keepTogether(run, u);
   remember(run, u);
   // Under someone's control: what its controller wants, and nothing of its own.
   puppetWishes(run, u);
@@ -3130,6 +3138,7 @@ function thinkOver(run, u) {
   sinkHopeless(run, u, rankedDesires(run, u));
   // What it means to do, in order: its top what it works on now.
   orderAgenda(run, u);
+  focusAgenda(run, u);
   if ( run.log ) {
     const top = thoughtsOf(run, u);
     if ( top.length || u.following ) {

@@ -350,6 +350,21 @@ fight and more fights fit the time (`engine/batch-pool.js`, `engine/batch-worker
   done `GRACE_MS`, 20 s, past the time), the batch runs on the main thread (`runBatch`, in the time left), and so do the
   session's later ones; the console says why.
 
+#### Aptitudes (API 23)
+
+`spec.aptitudes`: a hidden, quick judgment of what a creature is like, for the Statistics Engine alone (never shown,
+never fudged): `{smart, strong, fast, wise, charismatic}`, each 0 to 4, fractions allowed (0 very low, 1 low, 2 average,
+3 high, 4 exceptional). The helper works it out however its game ranges such things; a system with nothing to read
+one from leaves it out. `fast` is agility and quickness, not how far it moves (`spec.speeds`).
+- **Reading it:** `engine/aptitudes.js` `aptitude(u, key)`: the helper's number, held to 0 to 4; unsaid, smart 0 for a
+  mindless (`social.mindless`, `flags.mindless`) or animalistic creature, else 2; the rest 2. The engine draws its
+  lines halfway (`APTITUDE_AT`: dumb under 0.5, average or better from 1.5, high from 2.5), so whole bands and
+  anything between read the same way.
+- **What weighs it so far:** smart, in focus fire (`behavior/focus.js`: not dumb) and keeping together
+  (`behavior/together.js`). The other four ride along for the desires to come.
+- From core-api: `APTITUDES` (the five keys, in order), `APTITUDE_MOST` (4), `APTITUDE_AVERAGE` (2).
+- PF2e reads them from its attribute modifiers (`FastFighting-PF2e/scripts/traits.js` `aptitudesOf`).
+
 #### Table rolls: the engine's own dice, shown
 
 Whenever FastFighting rolls dice itself for something a person would roll at the table, a live battle shows the roll in the chat as a real Foundry Roll. The Statistics Engine's own randoms (its choices, its model of morale and luck, a fight it imagines) stay hidden. A roll the system makes itself (`run.live.roll`: strike, save, check, use, damage, adjust, apply; `systemRolled`) is the system's card already and is never posted again.
@@ -547,6 +562,20 @@ Hooks:
   - The party: the vote's wishes add Party's sway to what each friendly creature wants (on the 0 to 100 scale), and in that share of fights each uses the party's answer to talking, spending and pulling out where it left its own to "Let this character decide". Other groups have no party wishes.
   - A friend asking for a buff: a character that wants to **be bolstered by** a friend asks, with no roll, if the two can understand each other (a language in common, and minds that follow it) and the friend is willing (the loyal gladly, the selfish grudgingly, helpers more than most, a contrarian never for the leader it defies). A friend with a buff to give then wants to bolster the asker as much as the asking times its willingness, and a single-target buff goes to the one it most wants to bolster. The story tells the call and the answer.
   - Its playstyles: each pill guides how it picks up desires, added up across up to four.
+  - Focus fire (`behavior/focus.js`, the `focus` layer, worked out after the party's wishes and before its commander's
+    pull): once its side has hit a foe (`alreadyHit`: the foe's `harmedBy` has one of its team, itself too), each foe
+    already hit gets more of its wish to hurt it, by its strength (`focusFire`: Tactical ÷ 100 from 40 if not dumb; 1
+    for a pack hunter; plus its playstyles' `focus`; the world's Non Player Focus Fire Dampener, `focusDampener`, takes
+    up to half from those not on the friendly side), the most hurt the most. Capped at its strongest wish to hurt + 10,
+    and below anything it's taunted into, told to want or held to by the GM. Below Tactical tier, `focusAgenda` (after
+    `orderAgenda`) switches its top from a foe not hit to a stronger wish at one that is, with chance = strength. A
+    commander that focuses fire sways its followers more for a foe already hit (`listen`, `leaderFocus`).
+  - Keeping together (`behavior/together.js`, the `apart` layer, after `heed` and before `remember`): one smart and
+    tactical enough (`keepsTogether`, `u.together` for the turn) wants less (`apartShare`) what it must move for that
+    would leave it more than a Stride from every teammate and farther than it is now. It would rather not end a move
+    bunched up beside a teammate unless the two flank their foe (`space.js` `crowdCost`): `battle-state.js` `spread`
+    and `moveToShoot` take a spot in reach that isn't, if the same move gets there; `movesNow` counts moves as ever, so
+    it costs nothing in the hot path. `prepare.js` `spotWorth` weighs both for a spot for later.
 - **Thwarted desires fade:** a locked door that won't give, a target it can't reach, getting hurt on the way, being badly hurt with the target far off. It moves on when something gets too hard or too dangerous.
 - **The agenda** (`orderAgenda`): each creature keeps its desires in an order, its top what it's working on, kept from turn to turn.
   - New desires go in at the bottom, unless something puts them higher. At the top: setting out to leave, whatever stops it on the way, a taunt, the GM's say, a fear past what its nerve bears. Second: leaving again once that's dealt with.

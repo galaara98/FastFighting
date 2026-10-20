@@ -49,6 +49,8 @@ export const STAY_TRUE_CAP = 0.1;
  *   bind, rob points toward tying up a fallen foe (a prisoner: behavior/fallen.js), and robbing one
  *   avoid     fear: of the most dangerous foe, of whoever is hurting it once it's hurt (attacker), of the nearest
  *   whim      a random foe now and then catches its eye
+ *   focus     focus fire (behavior/focus.js): how much more it goes for the foes its team has already hit, added to what
+ *             its Tactical gives it (0 to 1 in all), whatever its Tactical or its wits
  *   ×1 multipliers: retaliate (hitting back), avenge (a fallen friend's killer), cool (how fast the fight's grudges
  *             fade), frustration (how fast obstacles wear desires down), leader (how much it listens to its leader),
  *             doorPatience (how long it keeps at a locked door); contrarian: the chance it goes against its leader
@@ -59,13 +61,13 @@ export const PLAYSTYLES = Object.freeze({
     desire: { avoid: { dangerous: 35 }, frustration: 1.5, retaliate: 0.5, rid: 15 } },
   // Picks on the weak and the fallen.
   cruel: { icon: "fa-skull-crossbones", traits: { selfish: 20, loyal: -5 }, suggest: { target: "weakest", beyond: "hunt", fallen: "finish" }, behavior: { finishDowned: 0.4, hinders: 0.25, shoves: 0.4 }, patrol: "spread",
-    desire: { hurt: { weakest: 15, downed: 25 }, rob: 10, retaliate: 1.3 } },
+    desire: { hurt: { weakest: 15, downed: 25 }, rob: 10, retaliate: 1.3, focus: 0.6 } },
   // Never the fallen; the weakest friend comes first.
   moralist: { icon: "fa-scale-balanced", traits: { selfish: -15, loyal: 10 }, suggest: { allyDying: "rescue", fallen: "spare" }, behavior: { spareDowned: 1, helps: 1 }, patrol: "near",
     desire: { hurt: { downed: -100 }, heal: 10, protect: 10, aid: 5, bind: 15, rob: -30, free: 15 } },
   // Does what the others want: its leader's wishes pull hard.
   peoplePleaser: { icon: "fa-face-smile", traits: { selfish: -20, loyal: 15 }, suggest: { healAggro: "aggressive", target: "protect", talk: "opportune" }, behavior: { followFocus: 0.5, helps: 1 }, patrol: "near",
-    desire: { talk: 10, aid: 10, leader: 2 } },
+    desire: { talk: 10, aid: 10, leader: 2, focus: 0.4 } },
   // Fine until hurt; then it wants to mend itself (mend: healing itself, once hurt) and get away from whoever is
   // hurting it. (Not a coward: that's the Chicken. It doesn't shift bravery.)
   fragile: { icon: "fa-heart-crack", traits: {}, suggest: { retreat: "hurt", potionThreshold: "75", selfRevived: "healSelf" }, behavior: { lowProfile: 0.2, flighty: 0.6 }, patrol: "hold",
@@ -85,7 +87,7 @@ export const PLAYSTYLES = Object.freeze({
   // Not chosen, it may brood (ambition: a turn's chance, by the pill's place); with a treacherous streak (Cruel, Wildcard,
   // Mercenary, Instigator), it schemes against whoever leads instead (desire.js scheme).
   leader: { icon: "fa-flag", traits: { brave: 10, loyal: 10, tactical: 5 }, suggest: { target: "dangerous" }, behavior: { hinders: 0.15, ambition: 0.25, rally: 0.25 }, patrol: "spread",
-    desire: { hurt: { dangerous: 10 }, protect: 10, aid: 10, talk: 5, bind: 10, free: 15, leader: 0.4 } },
+    desire: { hurt: { dangerous: 10 }, protect: 10, aid: 10, talk: 5, bind: 10, free: 15, leader: 0.4, focus: 0.3 } },
   // Starts trouble and spoils everyone else's plans: locks foes down, harasses and debuffs them (more than anyone),
   // goes for the most dangerous foe and their leader, and may defy its own leader.
   instigator: { icon: "fa-fire", traits: { brave: 10, selfish: 5 }, suggest: { style: "frontline", target: "dangerous" }, behavior: { drawAggro: 0.35, initiative: 2, hinders: 1, taunt: 0.75, shoves: 0.3 }, patrol: "spread",
@@ -117,12 +119,12 @@ export const PLAYSTYLES = Object.freeze({
     desire: { protect: 20, hurt: { dangerous: 10 }, avoid: { dangerous: -40, attacker: -40 }, free: 10, retaliate: 0.7, frustration: 0.7, rid: -15 } },
   // In it for itself: easy pickings, little loyalty, gives up when it gets hard.
   mercenary: { icon: "fa-coins", traits: { selfish: 30, loyal: -20 }, suggest: { retreat: "losing", resourceUse: "conserve", allyDying: "fight", fallen: "rob" }, behavior: { flighty: 0.6 },
-    desire: { hurt: { weakest: 10 }, aid: -10, bind: 10, rob: 20, avenge: 0.3, frustration: 1.3 } },
+    desire: { hurt: { weakest: 10 }, aid: -10, bind: 10, rob: 20, avenge: 0.3, frustration: 1.3, focus: 0.4 } },
   // Makes its friends better, in this order: bolsters them (its buffs before anything: enable), then gives them an edge
   // over their foes (Aid, a foe knocked down, grabbed, made off guard or shaken; a flank for a friend), then heals,
   // and hurts last. A dying friend still comes first, and with nothing to give it fights.
   enabler: { icon: "fa-hands-holding", traits: { selfish: -15, loyal: 10 }, suggest: { target: "protect" }, behavior: { followFocus: 0.3, helps: 1, enable: 1 }, patrol: "near",
-    desire: { aid: 30, protect: 10, heal: 5, free: 15, leader: 1.3 } },
+    desire: { aid: 30, protect: 10, heal: 5, free: 15, leader: 1.3, focus: 0.3 } },
   // Heals first, and earlier than most (a friend at three quarters is reason enough: medic), the downed and dying
   // before anyone; keeps its healing for healing (no slot, focus or potion its heals use spent on a blow); bolsters its
   // friends when nobody needs mending; gives a friend its own potion; keeps close to its friends. It still fights
@@ -194,13 +196,13 @@ const DESIRE_MULTIPLIERS = ["retaliate", "avenge", "cool", "frustration", "leade
 /** The combined desire guide of a character's pills (roleplay leans on it harder; staying true halves it). */
 function combineDesires(chosen, { stayTrue, roleplay }) {
   const base = roleplay ? 1.5 : stayTrue ? 0.5 : 1;
-  const out = { hurt: {}, avoid: {}, heal: 0, mend: 0, protect: 0, aid: 0, talk: 0, bind: 0, rob: 0, free: 0, rid: 0, whim: 0, contrarian: 0 };
+  const out = { hurt: {}, avoid: {}, heal: 0, mend: 0, protect: 0, aid: 0, talk: 0, bind: 0, rob: 0, free: 0, rid: 0, whim: 0, focus: 0, contrarian: 0 };
   for ( const m of DESIRE_MULTIPLIERS ) out[m] = 1;
   for ( const [i, id] of chosen.entries() ) {
     const scale = base * ORDER_WEIGHTS[i];
     const d = PLAYSTYLES[id].desire ?? {};
     for ( const group of ["hurt", "avoid"] ) for ( const [k, v] of Object.entries(d[group] ?? {}) ) out[group][k] = (out[group][k] ?? 0) + v * scale;
-    for ( const k of ["heal", "mend", "protect", "aid", "talk", "bind", "rob", "free", "rid", "whim"] ) out[k] += (d[k] ?? 0) * scale;
+    for ( const k of ["heal", "mend", "protect", "aid", "talk", "bind", "rob", "free", "rid", "whim", "focus"] ) out[k] += (d[k] ?? 0) * scale;
     for ( const m of DESIRE_MULTIPLIERS ) if ( d[m] !== undefined ) out[m] *= 1 + (d[m] - 1) * scale;
     if ( d.contrarian ) out.contrarian = Math.min(1, Math.max(out.contrarian, d.contrarian * scale));
   }

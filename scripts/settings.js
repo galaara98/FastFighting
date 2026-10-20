@@ -60,6 +60,8 @@ const SETTINGS = {
   bossInfluence: { group: "behavior", type: Number, default: 2, range: { min: 1.25, max: 3, step: 0.05 } },
   // How much the player party's wishes (its players' votes in the survey's Party tab) sway the friendly side (%).
   partySway: { group: "behavior", type: Number, default: 3, range: { min: 1, max: 20, step: 1 } },
+  // How much less those not on the friendly side focus fire (0-100: at 100, half as much; behavior/focus.js).
+  focusDampener: { group: "behavior", type: Number, default: 0, range: { min: 0, max: 100, step: 1 } },
   morale: { group: "behavior", type: Boolean, default: true },
   talking: { group: "behavior", type: Boolean, default: true },
   ignoreLanguages: { group: "behavior", type: Boolean, default: false },

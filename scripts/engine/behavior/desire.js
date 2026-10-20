@@ -31,8 +31,13 @@
  *               rest would make of it (0: set aside), until the GM hands it back. It counts like a stated desire.
  *   puppet      under someone's control (a charm, domination: u.controlledBy), what its controller wants, worked out
  *               each turn (puppetWishes): those and nothing of its own, while the control lasts.
+ *   focus       focus fire (behavior/focus.js): more of a wish to hurt the foes its team has already hit, worked out
+ *               each turn.
+ *   apart       keeping together (behavior/together.js): less of a wish that would take it well away from its team,
+ *               worked out each turn (below 0).
  *
- * A desire's level is max(logic, stated, taunt) + lean + memory + social - frustration, 0 to 100 (or the GM's hold):
+ * A desire's level is max(logic, stated, taunt) + lean + memory + social + focus + apart - frustration, 0 to 100 (or
+ * the GM's hold):
  *   {kind: "hurt" | "heal" | "protect" | "aid" | "talk" | "avoid" | "bind" | "rob" | "bolstered" | "breakFree" | "free", targetId, level}
  *   (aid: bolster with a buff; bind: tie up a fallen foe, a prisoner; rob: take what a fallen foe carries
  *   (behavior/fallen.js); bolstered: to be bolstered by that friend. A request, not something it acts on itself: the
@@ -50,9 +55,10 @@ import { robbable } from "./theft.js";
 import { ownHolds, isBound, freeable, known, remediesOf, bears } from "./holds.js";
 import { hasTrait, profiled } from "../conditions.js";
 import { hasUses, threatOf } from "./evaluate.js";
+import { leaderFocus } from "./focus.js";
 
 /** A character's playstyle guide for desires (from its pills), or the neutral one. */
-const NEUTRAL_STYLE = Object.freeze({ hurt: {}, avoid: {}, heal: 0, protect: 0, aid: 0, talk: 0, bind: 0, rob: 0, free: 0, rid: 0, whim: 0, contrarian: 0, retaliate: 1, avenge: 1, cool: 1, frustration: 1, leader: 1, doorPatience: 1 });
+const NEUTRAL_STYLE = Object.freeze({ hurt: {}, avoid: {}, heal: 0, protect: 0, aid: 0, talk: 0, bind: 0, rob: 0, free: 0, rid: 0, whim: 0, focus: 0, contrarian: 0, retaliate: 1, avenge: 1, cool: 1, frustration: 1, leader: 1, doorPatience: 1 });
 export const styleOf = u => u.turnStyle ?? u.spec?.desireStyle ?? NEUTRAL_STYLE;
 /** Its own pills' guide, whoever it follows this turn (worked out again without a pill it lost: dropAmbition). */
 const ownStyle = u => u.ownDesireStyle ?? u.spec?.desireStyle ?? NEUTRAL_STYLE;
@@ -105,6 +111,7 @@ function desireKeys(d) {
   add(d.gm);
   add(d.puppet);
   add(d.cond);
+  add(d.focus);
   return keys;
 }
 
@@ -117,7 +124,7 @@ export function desireBand(level) {
 
 /** A unit's desires at the start of the fight: what it was told to want. */
 export function initDesires(u) {
-  u.desire = { stated: new Map(), memory: new Map(), frustration: new Map(), logic: new Map(), social: new Map(), style: new Map(), lean: new Map(), taunt: new Map(), gm: new Map(), cond: new Map() };
+  u.desire = { stated: new Map(), memory: new Map(), frustration: new Map(), logic: new Map(), social: new Map(), style: new Map(), lean: new Map(), taunt: new Map(), gm: new Map(), cond: new Map(), focus: new Map(), apart: new Map() };
   for ( const d of u.spec.desires ?? [] ) {
     if ( !DESIRE_KINDS.includes(d.kind) || !d.targetId || d.targetId === u.id ) continue;
     u.desire.stated.set(keyOf(d.kind, d.targetId), toLevel(Number(d.level) || 0));
@@ -132,6 +139,8 @@ export function newTurn(u) {
   u.desire.style.clear();
   u.desire.cond?.clear();
   u.desire.puppet?.clear();
+  u.desire.focus?.clear();
+  u.desire.apart?.clear();
   const cool = 2 * styleOf(u).cool; // (a vengeful character's grudges never cool)
   for ( const [k, v] of u.desire.memory ) {
     if ( v <= cool ) u.desire.memory.delete(k);
@@ -193,7 +202,7 @@ function levelOfKey(d, k, conditions = true) {
     if ( held !== undefined ) return held;
   }
   if ( d.puppet?.size ) return d.puppet.get(k) ?? 0;
-  return toLevel(Math.max(d.logic.get(k) ?? 0, d.stated.get(k) ?? 0, d.taunt.get(k) ?? 0, conditions ? d.cond?.get(k) ?? 0 : 0) + (d.lean.get(k) ?? 0) + (d.style.get(k) ?? 0) + (d.memory.get(k) ?? 0) + (d.social.get(k) ?? 0) - (d.frustration.get(k) ?? 0));
+  return toLevel(Math.max(d.logic.get(k) ?? 0, d.stated.get(k) ?? 0, d.taunt.get(k) ?? 0, conditions ? d.cond?.get(k) ?? 0 : 0) + (d.lean.get(k) ?? 0) + (d.style.get(k) ?? 0) + (d.memory.get(k) ?? 0) + (d.social.get(k) ?? 0) + (d.focus?.get(k) ?? 0) + (d.apart?.get(k) ?? 0) - (d.frustration.get(k) ?? 0));
 }
 
 /**
@@ -241,7 +250,7 @@ export function forgetSides(run, u) {
  * The layers a quarrel is in, and what a change of heart prunes: everything but the GM's holds and its conditions'
  * wishes (which come and go with the GM and the conditions).
  */
-export const QUARREL_LAYERS = Object.freeze(["stated", "memory", "frustration", "logic", "social", "style", "lean", "taunt", "puppet"]);
+export const QUARREL_LAYERS = Object.freeze(["stated", "memory", "frustration", "logic", "social", "style", "lean", "taunt", "puppet", "focus", "apart"]);
 
 /** u's desires that drop(kind, targetId) says to, taken out of these layers. */
 export function pruneDesires(u, drop, layers = QUARREL_LAYERS) {
@@ -658,7 +667,7 @@ function blendStyle(own, lead, share) {
   for ( const group of ["hurt", "avoid"] ) {
     for ( const k of new Set([...Object.keys(own[group] ?? {}), ...Object.keys(lead[group] ?? {})]) ) out[group][k] = mix(own[group]?.[k], lead[group]?.[k]);
   }
-  for ( const k of ["heal", "mend", "protect", "aid", "talk", "bind", "rob", "free", "rid", "whim"] ) out[k] = mix(own[k], lead[k]);
+  for ( const k of ["heal", "mend", "protect", "aid", "talk", "bind", "rob", "free", "rid", "whim", "focus"] ) out[k] = mix(own[k], lead[k]);
   for ( const k of ["retaliate", "avenge", "cool", "frustration", "doorPatience"] ) out[k] = (own[k] ?? 1) * (1 - share) + (lead[k] ?? 1) * share;
   return out;
 }
@@ -759,7 +768,8 @@ function cantFollow(run, u, t) {
  * Let its commander's desires pull on u (the topmost thing its commander wants that it can actually do: a wish to heal
  * someone means nothing to a creature that can't heal, so the next one counts): always a little (LEADER_SWAY), and on
  * a turn it follows, in proportion to how strongly the commander wants it and how readily u follows. A contrarian leans
- * away from its commander's top wish.
+ * away from its commander's top wish. A commander who focuses fire (behavior/focus.js), its top wish a foe their team
+ * has already hit: half as much again (leaderFocus), a boss's multiplier on top.
  */
 export function listen(run, u, { canHeal = false, canTalk = false, canAid = false } = {}) {
   if ( !u.desire ) return;
@@ -789,11 +799,12 @@ export function listen(run, u, { canHeal = false, canTalk = false, canAid = fals
       // Always a little: whatever the world's leader influence, a leader counts.
       const loyal = Math.max(0, Math.min(1.6, liveTrait(run, u, "loyal") / 60));
       const boss = cmd.boss ? Number(run.prep.options?.bossInfluence) || 2 : 1;
-      pull(top.kind, top.targetId, LEADER_SWAY * loyal * (ownStyle(u).leader ?? 1) * boss * top.level);
+      const focus = leaderFocus(run, leaderUnit, top);
+      pull(top.kind, top.targetId, LEADER_SWAY * loyal * (ownStyle(u).leader ?? 1) * boss * focus * top.level);
       // Following it this turn: it takes the wish up in proportion, at least that share of the leader's strength (most
       // of it as a typical follower, all of it under a boss), so a mild wish can lose to a strong one of its own.
       if ( u.following ) {
-        const adopt = Math.min(1, FOLLOW.adopt + (1 - FOLLOW.adopt) * u.following.raw);
+        const adopt = Math.min(1, focus * (FOLLOW.adopt + (1 - FOLLOW.adopt) * u.following.raw));
         const short = adopt * top.level - levelOf(u, top.kind, top.targetId);
         if ( short > 0 ) pull(top.kind, top.targetId, short);
       }

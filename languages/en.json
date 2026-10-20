@@ -213,6 +213,10 @@
         "Name": "Boss's influence",
         "Hint": "How much more readily followers take a boss's lead than a leader's: 1.25 to 3 times (default 2)."
       },
+      "focusDampener": {
+        "Name": "Non Player Focus Fire Dampener",
+        "Hint": "How much less creatures not on the Friendly side focus fire on a foe their side has already hit: 0 to 100 (at 100, half as much; default 0)."
+      },
       "traitorLuck": {
         "Name": "Luck check: a player character turning traitor",
         "Hint": "A PC talked into changing sides does so only on a d100 at or under this (default 9; 0: never)."

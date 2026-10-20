@@ -206,7 +206,7 @@ Four hidden [traits](STATS_AND_FORMULAS_README.md#personality-traits), **Tactica
 
 ### Desires
 
-Each creature keeps a list of [desires](STATS_AND_FORMULAS_README.md#desires-and-their-level), from Passing to Obsessed: to hurt, heal, protect, bolster, talk to, keep away from, break free, leave the fight, and more. They come from its tactics, the fight (a grudge, a fallen friend), its commander, the party's vote, its playstyles, and up to three desires stated in its survey or the planner. [The strongest leads](STATS_AND_FORMULAS_README.md#what-comes-to-mind) and [thwarted ones fade](STATS_AND_FORMULAS_README.md#frustration). A less thoughtful creature's mind sometimes [jumps](STATS_AND_FORMULAS_README.md#adhd) to its strongest desire (**ADHD: how often a creature's mind jumps (%)**); a creature's own **ADHD**, on its token's FastFighting tab or in the planner, makes it less thoughtful. The story now and then voices a creature's two strongest desires.
+Each creature keeps a list of [desires](STATS_AND_FORMULAS_README.md#desires-and-their-level), from Passing to Obsessed: to hurt, heal, protect, bolster, talk to, keep away from, break free, leave the fight, and more. They come from its tactics, the fight (a grudge, a fallen friend), its commander, the party's vote, its playstyles, and up to three desires stated in its survey or the planner. [The strongest leads](STATS_AND_FORMULAS_README.md#what-comes-to-mind) and [thwarted ones fade](STATS_AND_FORMULAS_README.md#frustration). Tactical creatures [focus fire](STATS_AND_FORMULAS_README.md#focus-fire) on foes their side has already hit (pack hunters always, the Cruel most of all), and the smart ones [keep together](STATS_AND_FORMULAS_README.md#keeping-together) without bunching up. A less thoughtful creature's mind sometimes [jumps](STATS_AND_FORMULAS_README.md#adhd) to its strongest desire (**ADHD: how often a creature's mind jumps (%)**); a creature's own **ADHD**, on its token's FastFighting tab or in the planner, makes it less thoughtful. The story now and then voices a creature's two strongest desires.
 
 ### Talking
 
@@ -349,6 +349,7 @@ World settings, under **Configure Settings → FastFighting**, in groups. The pl
 | Leader's influence | 50 | How readily followers take their commander's lead (0: nobody follows; 100: twice as readily). |
 | Boss's influence | 2× | How much more readily a boss is followed than a leader. |
 | Party's sway (%) | 3 | How much the Party tab's vote sways the friendly side. |
+| Non Player Focus Fire Dampener | 0 | How much less creatures not on the Friendly side focus fire (100: half as much). |
 | Morale and routing | on | Wavering and running away. |
 | Talking | on | Talking foes out of the fight. |
 | Ignore languages | off | Anyone who speaks understands everyone who speaks. |

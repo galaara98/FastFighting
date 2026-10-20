@@ -7,7 +7,7 @@ that change them, and `Code:` (where it lives, to check it). The settings menu s
 
 ## Contents
 
-- **[Minds](#minds)**: [Personality traits](#personality-traits), [Tactical tiers](#tactical-tiers), [Animals](#animals), [Desires and their level](#desires-and-their-level), [How desires are raised each turn](#how-desires-are-raised-each-turn), [What the fight stirs, and how it cools](#what-the-fight-stirs-and-how-it-cools), [Frustration](#frustration), [Pulls from others: style, social, lean](#pulls-from-others-style-social-lean), [What comes to mind](#what-comes-to-mind), [The agenda](#the-agenda), [Desires it can't work on](#desires-it-cant-work-on), [ADHD](#adhd), [Fear](#fear), [Morale stress](#morale-stress), [Morale check: hold, waver, rout](#morale-check-hold-waver-rout), [Wavering](#wavering), [Running away](#running-away), [Standing its ground](#standing-its-ground), [Calling a retreat](#calling-a-retreat), [Rallying](#rallying), [Leaving the fight](#leaving-the-fight), [Being stopped on the way out](#being-stopped-on-the-way-out), [Standing down](#standing-down), [Chain of command](#chain-of-command), [What a leader lends](#what-a-leader-lends), [Following the leader](#following-the-leader), [Scheming](#scheming), [Party's sway](#partys-sway), [Playstyles: how pills combine](#playstyles-how-pills-combine), [Playstyle numbers](#playstyle-numbers), [Tactics answers: wishes and "Let this character decide"](#tactics-answers-wishes-and-let-this-character-decide)
+- **[Minds](#minds)**: [Personality traits](#personality-traits), [Tactical tiers](#tactical-tiers), [Animals](#animals), [Aptitudes](#aptitudes), [Desires and their level](#desires-and-their-level), [How desires are raised each turn](#how-desires-are-raised-each-turn), [What the fight stirs, and how it cools](#what-the-fight-stirs-and-how-it-cools), [Frustration](#frustration), [Pulls from others: style, social, lean](#pulls-from-others-style-social-lean), [Focus fire](#focus-fire), [Keeping together](#keeping-together), [What comes to mind](#what-comes-to-mind), [The agenda](#the-agenda), [Desires it can't work on](#desires-it-cant-work-on), [ADHD](#adhd), [Fear](#fear), [Morale stress](#morale-stress), [Morale check: hold, waver, rout](#morale-check-hold-waver-rout), [Wavering](#wavering), [Running away](#running-away), [Standing its ground](#standing-its-ground), [Calling a retreat](#calling-a-retreat), [Rallying](#rallying), [Leaving the fight](#leaving-the-fight), [Being stopped on the way out](#being-stopped-on-the-way-out), [Standing down](#standing-down), [Chain of command](#chain-of-command), [What a leader lends](#what-a-leader-lends), [Following the leader](#following-the-leader), [Scheming](#scheming), [Party's sway](#partys-sway), [Playstyles: how pills combine](#playstyles-how-pills-combine), [Playstyle numbers](#playstyle-numbers), [Tactics answers: wishes and "Let this character decide"](#tactics-answers-wishes-and-let-this-character-decide)
 - **[Words and sides](#words-and-sides)**: [Luck rolls at a glance](#luck-rolls-at-a-glance), [Who talks, and how often](#who-talks-and-how-often), [Choosing a pitch](#choosing-a-pitch), [Pitch DC](#pitch-dc), [The persuasion track](#the-persuasion-track), [What a convinced foe does](#what-a-convinced-foe-does), [Switch luck: changing sides](#switch-luck-changing-sides), [Traitor luck: a PC turning traitor](#traitor-luck-a-pc-turning-traitor), [Giving something up](#giving-something-up), [How an encounter opens](#how-an-encounter-opens), [Impatience: what breaks a standoff](#impatience-what-breaks-a-standoff), [Only an argument](#only-an-argument), [Bargaining: offers and expectations](#bargaining-offers-and-expectations), [Haggling and pressing](#haggling-and-pressing), [Paying off a boss](#paying-off-a-boss), [Taking no side: neutral tokens and leans](#taking-no-side-neutral-tokens-and-leans), [Crossed: grievance, truce and turning on a side](#crossed-grievance-truce-and-turning-on-a-side), [Winning over, calming and sending away](#winning-over-calming-and-sending-away), [Meddling: neutrals getting involved](#meddling-neutrals-getting-involved), [Taken for a foe, caught in the blast, spared in a truce](#taken-for-a-foe-caught-in-the-blast-spared-in-a-truce), [Neutral friend groups (reach)](#neutral-friend-groups-reach), [Taunts (goading)](#taunts-goading), [Theft mid-fight](#theft-mid-fight), [Trap avoiders](#trap-avoiders), [Reluctance: consumables and costly spells](#reluctance-consumables-and-costly-spells), [Avoiding killing (mercy)](#avoiding-killing-mercy), [The fallen: tying up and robbing](#the-fallen-tying-up-and-robbing), [Execute luck: finishing off a PC](#execute-luck-finishing-off-a-pc), [Bearing a hold or hurt (ignore troubles)](#bearing-a-hold-or-hurt-ignore-troubles), [The party's vote](#the-partys-vote)
 - **[Fighting and the simulation](#fighting-and-the-simulation)**: [The prediction: how many fights it runs](#the-prediction-how-many-fights-it-runs), [Rounds, stalemates and the max-rounds cap](#rounds-stalemates-and-the-max-rounds-cap), [Odds and outcomes](#odds-and-outcomes), [The most typical fight (Sample fight)](#the-most-typical-fight-sample-fight), [Swing factors](#swing-factors), [Initiative and turn order](#initiative-and-turn-order), [Dice, degrees of success and advantage](#dice-degrees-of-success-and-advantage), [Expected damage: what an attack is worth](#expected-damage-what-an-attack-is-worth), [Threat: how dangerous a creature looks](#threat-how-dangerous-a-creature-looks), [Choosing whom to attack](#choosing-whom-to-attack), [Choosing an action](#choosing-an-action), [Reluctance: potions, scrolls and costly spells](#reluctance-potions-scrolls-and-costly-spells), [Shields and defensive turns](#shields-and-defensive-turns), [Getting ready: draws, reloads and a turn for the next](#getting-ready-draws-reloads-and-a-turn-for-the-next), [Healing decisions](#healing-decisions), [Buffs and support](#buffs-and-support), [What a condition, bonus or penalty is worth](#what-a-condition-bonus-or-penalty-is-worth), [Control and debuffs](#control-and-debuffs), [Situational saves and auras](#situational-saves-and-auras), [Concentration](#concentration), [Movement, reach and getting there](#movement-reach-and-getting-there), [Crowds: getting past creatures and where a move ends](#crowds-getting-past-creatures-and-where-a-move-ends), [Line of sight and cover](#line-of-sight-and-cover), [Senses: what a creature can tell](#senses-what-a-creature-can-tell), [Noticing the fight: bystanders](#noticing-the-fight-bystanders), [Patrolling: cues and Seek](#patrolling-cues-and-seek), [Opportunity attacks and getting clear](#opportunity-attacks-and-getting-clear), [Forced movement, falls and dangerous ground](#forced-movement-falls-and-dangerous-ground), [Holds and escapes](#holds-and-escapes), [Harm each turn: conditions, persistent damage, spreading](#harm-each-turn-conditions-persistent-damage-spreading), [Afflictions: poisons, diseases, curses](#afflictions-poisons-diseases-curses), [Summons](#summons), [Luck pools: spending after the roll](#luck-pools-spending-after-the-roll), [Fate: rerolls that keep someone alive](#fate-rerolls-that-keep-someone-alive), [Last-ditch saves and refusing to drop](#last-ditch-saves-and-refusing-to-drop), [Damage, 0 HP and the downed models](#damage-0-hp-and-the-downed-models), [Finishing off a downed PC](#finishing-off-a-downed-pc), [The aftermath](#the-aftermath), [Recharges, cooldowns, legendary actions and counterspells](#recharges-cooldowns-legendary-actions-and-counterspells), [Strain: words that wear a creature down](#strain-words-that-wear-a-creature-down)
 - **[Pathfinder 2e](#pathfinder-2e)**: [Checks and degrees of success](#checks-and-degrees-of-success), [Actions, the multiple attack penalty and Strikes](#actions-the-multiple-attack-penalty-and-strikes), [Lore-Collector advantage (Recall Knowledge)](#lore-collector-advantage-recall-knowledge), [Conditions and their penalties](#conditions-and-their-penalties), [Flat checks: hidden, concealed, dazzled](#flat-checks-hidden-concealed-dazzled), [Cover, Hide and Take Cover](#cover-hide-and-take-cover), [Holds and Escape](#holds-and-escape), [Swallow Whole and Engulf](#swallow-whole-and-engulf), [Maneuvers (skill actions)](#maneuvers-skill-actions), [Aid](#aid), [Dying, wounded, doomed and recovery](#dying-wounded-doomed-and-recovery), [Hero Points](#hero-points), [Ferocity](#ferocity), [Persistent damage, bleeding and retching](#persistent-damage-bleeding-and-retching), [Afflictions](#afflictions), [Incapacitation and immunity](#incapacitation-and-immunity), [Auras and situational saves](#auras-and-situational-saves), [Weakness, resistance and immunity](#weakness-resistance-and-immunity), [Healing, Battle Medicine and class features](#healing-battle-medicine-and-class-features), [Reactions](#reactions), [Summons](#summons-1), [Doors, falls and moving past others](#doors-falls-and-moving-past-others), [Talking, theft and leadership](#talking-theft-and-leadership), [Personality from the sheet](#personality-from-the-sheet), [Typical numbers and areas](#typical-numbers-and-areas)
@@ -110,13 +110,36 @@ Code: `engine/behavior/animal.js`; `engine/battle-state.js` `liveTier`; `engine/
 `engine/behavior/neutral.js` `seemsFoe`; `engine/behavior/morale.js` `moraleStress`; `engine/simulator.js`
 `workTheDoor`; `engine/behavior/doors.js` `doorPlan`.
 
+### Aptitudes
+
+Search: aptitudes, smart, intelligence, dumb, wits, strong, fast, wise, charismatic, intellect
+
+A hidden, quick judgment of what a creature is like, for the Statistics Engine alone: never shown, never fudged. Each
+system's helper works it out from its own numbers, as its game ranges them.
+
+| Aptitude | Means |
+|---|---|
+| smart | reasoning, cunning |
+| strong | might |
+| fast | agility, quickness (not how far it moves) |
+| wise | awareness, good sense |
+| charismatic | force of personality |
+
+Each 0 to 4: 0 very low, 1 low, 2 average, 3 high, 4 exceptional (fractions allowed). The engine draws its lines
+halfway: dumb under 0.5, average or better from 1.5, high from 2.5. Where a helper says nothing, smart is 0 for a
+mindless or animalistic creature and 2 for anyone else; the rest are 2. Smart is the only one weighed so far (Focus
+fire, Keeping together). PF2e's are under Personality from the sheet.
+
+Code: `engine/aptitudes.js` (`aptitude`, `APTITUDE_AT`).
+
 ### Desires and their level
 
 Search: desire, desires, wants, how badly, Hurt, Heal, Protect, Bolster, Talk to, Keep away from, Tie up, Rob, Be bolstered by, Break free, Free, Be rid of it, Leave the fight, desire layers, Passing, Wants, Determined, Driven, Obsessed
 
 Each desire is a kind and a target ("Hurt the ogre") with a level from 0 to 100. The strongest leads.
 
-level = max(logic, stated, taunt, condition) + lean + style + memory + social − frustration, held to 0–100.
+level = max(logic, stated, taunt, condition) + lean + style + memory + social + focus + apart − frustration, held to
+0–100.
 
 | Layer | Holds | Lasts |
 |---|---|---|
@@ -128,6 +151,8 @@ level = max(logic, stated, taunt, condition) + lean + style + memory + social �
 | style | its playstyles' points | each turn |
 | memory | what the fight stirred | cools each turn |
 | social | its commander's pull, the party's wishes, friends' requests | each turn |
+| focus | more for the foes its side has already hit (Focus fire) | each turn |
+| apart | less for what would take it well away from its team (Keeping together; below 0) | each turn |
 | frustration | what thwarted it (subtracted) | doesn't cool |
 
 Two overrides. In a live battle, a level the GM holds a desire at (Battle Vantage) is its level, whatever the layers say
@@ -242,6 +267,54 @@ Search: playstyle points, social, requests, buff request, Be bolstered by, willi
 
 Code: `engine/behavior/desire.js` `styleWants`, `listen`, `heed`, `willingness` (`UNWILLING` 0.2), `LEADERLESS`;
 `engine/behavior/neutral.js` `LEAN`, `LEAN_PULL`, `FELLOW`.
+
+### Focus fire
+
+Search: focus fire, gang up, already hit, pack, Cruel, Non Player Focus Fire Dampener, focusDampener
+
+Nothing until its side has hit a foe (the foe's harm taken from anyone on its side, itself too). Then, each turn:
+
+strength = min(1, own + playstyles) × kept, where
+- own = Tactical ÷ 100 with live Tactical 40 or more (a leader's tactical floor counts) and smart 0.5 or more; else 0.
+  A pack hunter (pack attack, pack tactics) has 1 and no more.
+- playstyles: their **focus** points, whatever its Tactical or its wits (Cruel 0.6, Mercenary 0.4, People-Pleaser 0.4,
+  Wants to Lead 0.3, Enabler 0.3, at first place).
+- kept = 1 on the friendly side; elsewhere 1 − 0.5 × **Non Player Focus Fire Dampener** ÷ 100 (default 0: 1; at 100: 0.5).
+
+Each foe already hit, standing, that it could go for: focus = strength × 50 × (0.5 + 0.5 × how hurt it looks ÷ how
+hurt the most hurt of them looks). Capped so its wish to hurt that foe reaches at most its strongest wish to hurt
+anyone + 10, and never past a wish to hurt another that it's taunted into, told to want (survey, planner) or held to
+by the GM (that level − 1). So it changes whom it hurts, not whether it hurts rather than heals or talks.
+
+- Tactical tier and up order the agenda by strength, so that settles it.
+- Below Tactical, working on hurting a foe its side hasn't hit while a foe it has is wanted more: it switches with
+  chance = strength (The agenda).
+- A commander that focuses fire, its top wish a foe their side has hit: its pull on followers (Following the leader)
+  × (1 + 0.5 × kept), a boss's multiplier on top.
+
+Code: `engine/behavior/focus.js` (`FOCUS`, `focusFire`, `focusWants`, `focusAgenda`, `leaderFocus`).
+
+### Keeping together
+
+Search: keep together, stay near the team, bunched up, spread out, area effects, crowding, apart
+
+Who: live Tactical 60+ with smart 1.5+, or Tactical 40+ with smart 2.5+; on the map, on a side; never animalistic,
+mindless or a hazard.
+
+- **Near the team:** each wish to hurt, tie up or rob someone it must move for (talking takes no move). Where acting on
+  it leaves it: at its reach (or its best shot's range) from them, on the line toward it. If that spot is more than
+  its Stride (its fastest speed) from every teammate on its feet, and farther from them than it is now:
+  apart = −level × min(0.45, 0.25 + 0.1 × (⌈distance ÷ Stride⌉ − 2)). Dampened, never dropped.
+- **Not bunched up:** a spot beside a teammate (a square away, diagonals too) costs 7.5 ft more per teammate, two at
+  most, unless the two flank its foe (a line between them crosses the foe's space). A move that would end in reach (or
+  where it can shoot) bunched up goes to the spot in reach that isn't, if this move gets there just the same. The moves
+  a blow takes are counted as ever.
+- **Getting ready** (spot for later): its worth × (1 − the same share) at a spot well away from the team; and
+  − 0.25 × teammates beside it × 0.85 × the harm it could take there.
+
+Code: `engine/behavior/together.js` (`TOGETHER`, `keepsTogether`, `keepTogether`, `apartShare`);
+`engine/behavior/space.js` `crowdCost` (`CROWD`); `engine/battle-state.js` `spread`, `moveToShoot`;
+`engine/behavior/prepare.js` `spotWorth` (`PREP.bunched`).
 
 ### What comes to mind
 
@@ -734,20 +807,20 @@ Code: `engine/playstyles.js` `combinePlaystyles`, `combineDesires`, `answerChanc
 
 Search: Chicken, Cruel, Moralist, People-Pleaser, Fragile, Impatient, Brawler, Skeptic, Wants to Lead, Instigator, Peacekeeper, Diplomat, Kiter, Wallflower, Martyr, Tank, Mercenary, Enabler, Redeem-Seeker, Lore-Collector, Puzzle-Maniac, Wildcard, Thief, Vengeful, Relentless, Lazy, Un-Mundane
 
-Each pill at first place. Desire points are added to the matching desires each turn (Pulls from others); a multiplier
-of 1 changes nothing.
+Each pill at first place. Desire points are added to the matching desires each turn (Pulls from others); focus adds to
+its focus fire strength (Focus fire); a multiplier of 1 changes nothing.
 
 | Playstyle | Traits | Desire points | Multipliers | Behaviors (base chance) |
 |---|---|---|---|---|
 | Chicken | Brave −30, Selfish +10 | avoid dangerous +35, rid +15 | retaliate 0.5, frustration 1.5 | lowProfile 0.3, flighty 1, trapWary 0.5, tauntProof 0.35 |
-| Cruel | Selfish +20, Loyal −5 | hurt weakest +15, hurt downed +25, rob +10 | retaliate 1.3 | finishDowned 0.4, hinders 0.25, shoves 0.4 |
+| Cruel | Selfish +20, Loyal −5 | hurt weakest +15, hurt downed +25, rob +10, focus +0.6 | retaliate 1.3 | finishDowned 0.4, hinders 0.25, shoves 0.4 |
 | Moralist | Selfish −15, Loyal +10 | hurt downed −100, heal +10, protect +10, aid +5, bind +15, rob −30, free +15 | | spareDowned 1, helps 1 |
-| People-Pleaser | Selfish −20, Loyal +15 | aid +10, talk +10 | leader 2 | followFocus 0.5, helps 1 |
+| People-Pleaser | Selfish −20, Loyal +15 | aid +10, talk +10, focus +0.4 | leader 2 | followFocus 0.5, helps 1 |
 | Fragile | | avoid attacker +30, mend +25, rid +15 | frustration 1.3 | lowProfile 0.2, flighty 0.6 |
 | Impatient | Tactical −10 | hurt nearest +15, bind −15, rob −10, rid +10 | frustration 2, doorPatience 0.5 | rush 0.5 |
 | Brawler | Brave +15, Tactical −5 | hurt nearest +20, aid −10, talk −40, bind −10, rid −10 | retaliate 1.5 | meleeBias 0.3, taunt 0.4, shoves 0.5 |
 | Skeptic | Tactical +10 | talk −15 | frustration 0.8, leader 0.5 | wary 1, trapWary 0.75, tauntProof 0.6 |
-| Wants to Lead | Brave +10, Loyal +10, Tactical +5 | hurt dangerous +10, protect +10, aid +10, talk +5, bind +10, free +15 | leader 0.4 | hinders 0.15, ambition 0.25, rally 0.25 |
+| Wants to Lead | Brave +10, Loyal +10, Tactical +5 | hurt dangerous +10, protect +10, aid +10, talk +5, bind +10, free +15, focus +0.3 | leader 0.4 | hinders 0.15, ambition 0.25, rally 0.25 |
 | Instigator | Brave +10, Selfish +5 | hurt dangerous +15, hurt leader +15 | retaliate 1.2; contrarian 0.5 | drawAggro 0.35, initiative +2, hinders 1, taunt 0.75, shoves 0.3 |
 | Peacekeeper | Selfish −10, Brave +5 | hurt downed −100, protect +10, talk +20, bind +20, rob −20, free +10 | | peacekeeping 1, spareDowned 1, tauntProof 0.5 |
 | Diplomat | Selfish −10 | hurt downed −50, talk +30, bind +15 | | parleyFirst 0.6, spareDowned 0.5, tauntProof 0.35 |
@@ -755,8 +828,8 @@ of 1 changes nothing.
 | Wallflower | Brave −10 | hurt nearest −10, avoid nearest +15 | | lowProfile 0.45, hinders 0.25, flighty 0.3, trapWary 0.35, tauntProof 0.3 |
 | Martyr | Brave +20, Selfish −30, Loyal +20 | avoid dangerous −50, avoid attacker −50, heal +15, protect +25, aid +5, rob −10, free +25, rid −25 | avenge 2 | drawAggro 0.3, helps 1, rally 0.2, taunt 0.55 |
 | Tank | Brave +20, Selfish −20, Loyal +10 | hurt dangerous +10, avoid dangerous −40, avoid attacker −40, protect +20, free +10, rid −15 | retaliate 0.7, frustration 0.7 | taunt 1, drawAggro 0.35, helps 1 |
-| Mercenary | Selfish +30, Loyal −20 | hurt weakest +10, aid −10, bind +10, rob +20 | avenge 0.3, frustration 1.3 | flighty 0.6 |
-| Enabler | Selfish −15, Loyal +10 | aid +30, protect +10, heal +5, free +15 | leader 1.3 | followFocus 0.3, helps 1, enable 1 |
+| Mercenary | Selfish +30, Loyal −20 | hurt weakest +10, aid −10, bind +10, rob +20, focus +0.4 | avenge 0.3, frustration 1.3 | flighty 0.6 |
+| Enabler | Selfish −15, Loyal +10 | aid +30, protect +10, heal +5, free +15, focus +0.3 | leader 1.3 | followFocus 0.3, helps 1, enable 1 |
 | Medic | Selfish −15, Loyal +10 | heal +30, aid +10, protect +5, free +10, hurt downed −20 | | medic 1, helps 1 |
 | DPS | Brave +5 | hurt weakness +15, hurt softest +15, aid −10, bind −15, rob −10, talk −10 | frustration 1.2 | dps 1 |
 | Redeem-Seeker | Brave +15, Selfish −20 | hurt dangerous +20, protect +10, bind +10, rob −15, free +10 | frustration 0.6 | drawAggro 0.15, helps 1, taunt 0.3 |
@@ -3062,14 +3135,16 @@ Code: `adapter.js` `#social`; `rules.js` `modifiers.steal`; `leadership.js` `ran
 
 ### Personality from the sheet
 
-Search: personality, traits, Tactical, Brave, Selfish, Loyal, mindless, animal, undead, construct, Will
+Search: personality, traits, Tactical, Brave, Selfish, Loyal, mindless, animal, undead, construct, Will, aptitudes, smart
 
-What it decides: the four hidden traits FastFighting starts a PF2e creature with.
+What it decides: the four hidden traits FastFighting starts a PF2e creature with, and its aptitudes.
 
 - A creature: Tactical 38 + 8 × Int + 2 × Wis (10 to 95); an animal or beast 18 + 3 × Wis + 2 × max(0, Int + 4) (5 to 45); mindless 5. Brave 55 + 5 × (Will − round(1.15 × level + 5)), −15 for an animal (10 to 90); mindless or construct 100, undead 90, a minion at least 70. Selfish 40, or the highest its traits give (demon 85, daemon 80, fiend 70, dragon 70 ... construct 5; a minion 10). Loyal 50; a minion or familiar 85, summoned 90, mindless 80; kin traits move it (devil +12, demon −15).
 - A player character starts at the usual hero (Tactical 65, Brave 75, Selfish 25, Loyal 80) and moves: Tactical (Int − 1) × 4, (Wis − 1) × 2, (level − 5) × 0.5, expert Perception or better (rank − 1) × 2; Brave (Will − (level + 5)) × 3, (Con − 1) × 1.5; class, ancestry, background, holy or unholy, feats' rules and skills by their tables; not in a party, Loyal −10. Kept within 5 to 95.
 
-Code: `traits.js` `derivePf2eTraits`, `pcParts`, `CLASS_LEANS`, `BACKGROUND_LEANS`, `SELFISH_BY_TRAIT`, `LOYAL_BY_TRAIT`, `ruleLeans`.
+- Aptitudes (Aptitudes): smart from Int, strong from Str, fast from Dex, wise from Wis, charismatic from Cha, by the modifier as it is (not for the level): −3 or lower 0, −2 to −1 1, +0 to +2 2, +3 to +4 3, +5 or higher 4. Mindless: smart 0.
+
+Code: `traits.js` `derivePf2eTraits`, `pcParts`, `CLASS_LEANS`, `BACKGROUND_LEANS`, `SELFISH_BY_TRAIT`, `LOYAL_BY_TRAIT`, `ruleLeans`, `aptitudesOf`.
 
 ### Typical numbers and areas
 

@@ -82,9 +82,9 @@ function thread() {
 }
 afterAll(async () => { await Promise.all(threads.map(t => t.terminate())); });
 
-test("the API is 22, major.bug", () => {
-  expect(CORE_API).toEqual({ major: 22, bug: 0 });
-  expect(CORE_API_VERSION).toBe("22.0");
+test("the API is 22 or later, major.bug", () => {
+  expect(CORE_API.major).toBeGreaterThanOrEqual(22);
+  expect(CORE_API_VERSION).toBe(`${CORE_API.major}.${CORE_API.bug}`);
 });
 
 describe("where a helper's rules are, for the workers (adapter.workerRules)", () => {

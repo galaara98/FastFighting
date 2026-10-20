@@ -694,6 +694,8 @@ export function buildBattleSpec(roster, setup, { approach = null } = {}) {
       // How readily followers take their lead, and how much more readily a boss's (world settings, as sliders).
       leaderInfluence: setting("leaderInfluence"),
       bossInfluence: setting("bossInfluence"),
+      // How much less those not on the friendly side focus fire (a world setting, as a slider).
+      focusDampener: setting("focusDampener"),
       talking: options.talking !== false,
       ignoreLanguages: options.ignoreLanguages === true,
       opening: options.opening ?? "auto",

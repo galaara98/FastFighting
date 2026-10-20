@@ -25,22 +25,25 @@
  * Pure: no Foundry globals.
  */
 import { STATUS, TACTICAL, clamp } from "../../constants.js";
-import { isStanding, enemiesOf, alliesOf, liveTier, liveTrait, behaviorOf, canMove, heldOff, areEnemies, approach } from "../battle-state.js";
+import { isStanding, enemiesOf, alliesOf, liveTier, liveTrait, behaviorOf, canMove, heldOff, areEnemies, approach, teamOf } from "../battle-state.js";
 import { needsDraw, isLoaded, canReload, draw, load, gearOf, reloadPerUse } from "../gear.js";
 import { costOf, costUnits, mainPool, normalizeCost } from "../turn.js";
 import { expectedDamage, threatOf, hasUses, unitsPerTurn } from "./evaluate.js";
 import { mind, levelOf, protective } from "./desire.js";
 import { threats } from "./reactions.js";
-import { edgeAt, inTheWay, wallsKnown, lineBlocked, blockedPoints, crossesAny, takesRoom, gridOf } from "./space.js";
+import { edgeAt, inTheWay, wallsKnown, lineBlocked, blockedPoints, crossesAny, takesRoom, gridOf, crowdCost, CROWD } from "./space.js";
+import { apartShare, fromTeam, strideOf } from "./together.js";
 import { knowsOf } from "./senses.js";
 import { meanPart } from "../dice.js";
 
 /**
  * NEXT: what next turn's use is worth now. HARM: harm next round, as it counts now. LEAST: the least a step must be
  * worth (in damage) to bother. KITE: how much more a kiter minds ending its turn in reach. FLANK: a melee blow's worth
- * with a friend on its target too. PRONE: the share of a round's give and take being on the ground costs.
+ * with a friend on its target too. PRONE: the share of a round's give and take being on the ground costs. BUNCHED: for
+ * one keeping together, the share of the harm it could take at a spot that each teammate beside it there costs it
+ * (one blast for both).
  */
-export const PREP = Object.freeze({ next: 0.75, harm: 0.85, least: 0.5, kite: 2.5, flank: 1.15, prone: 0.12 });
+export const PREP = Object.freeze({ next: 0.75, harm: 0.85, least: 0.5, kite: 2.5, flank: 1.15, prone: 0.12, bunched: 0.25 });
 
 /* -------------------------------------------- */
 /*  What its gear needs                         */
@@ -550,8 +553,21 @@ function lookAhead(run, u) {
     hider: hiderOf(run, u),
     kiter: kiter ? Number(behavior.kite) : 0,
     perTurn: unitsPerTurn(rules, u),
-    speed: speedOf(u)
+    speed: speedOf(u),
+    together: togetherOf(run, u, foe)
   };
+}
+
+/**
+ * For one keeping together this turn (u.together: behavior/together.js), what a spot is weighed against: its team on the
+ * map, its Stride, how far it is from them now, and what standing beside them costs (space.js crowdCost; none flanking
+ * `foe`, the one it's after). Null otherwise.
+ */
+function togetherOf(run, u, foe) {
+  if ( !u.together ) return null;
+  const team = teamOf(run, u);
+  if ( !team.length ) return null;
+  return { team, stride: strideOf(u), here: fromTeam(u, u.pos, team), crowd: crowdCost(u, team, foe?.pos ? foe : null) };
 }
 
 /** What ending the turn at p is worth, as u sees the coming round. */
@@ -559,6 +575,13 @@ function spotWorth(run, u, p, ctx) {
   const harm = harmAt(run, u, p, ctx);
   // (A damage-dealer sets up its blows the more: a flank, cover to hide in, range.)
   let v = PREP.next * (offenseAt(run, u, p, ctx) * (1 + 0.5 * ctx.dps) + healAt(run, u, p, ctx) + guardAt(run, u, p, ctx) + hideAt(run, u, p, ctx, harm) + flankFor(run, u, p, ctx));
+  // (Keeping together: what it would do from a spot well away from its team, dampened as its wishes are; and bunched up
+  // beside a teammate, the harm it could take there counts the more.)
+  const team = ctx.together;
+  if ( team ) {
+    v *= 1 - apartShare(fromTeam(u, p, team.team), team.here, team.stride);
+    if ( team.crowd ) v -= PREP.bunched * (team.crowd(p) / CROWD.feet) * PREP.harm * harm;
+  }
   v -= PREP.harm * ctx.harmW * harm;
   // (A medic keeps close to its friends, to be there when they need it.)
   if ( ctx.medic && ctx.friends.length ) {

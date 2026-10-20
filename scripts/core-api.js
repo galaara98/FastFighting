@@ -12,11 +12,12 @@
  * Whether a helper works with a core is the helper's to say: it keeps the majors it knows it works with (its main.js),
  * and the core never refuses one, nor keeps a list of which fit it (helpers.js knows which exist, to recommend them).
  */
-export const CORE_API = Object.freeze({ major: 22, bug: 0 });
+export const CORE_API = Object.freeze({ major: 23, bug: 0 });
 export const CORE_API_VERSION = `${CORE_API.major}.${CORE_API.bug}`;
 
 export { SystemAdapter } from "./adapters/adapter-base.js";
 export { MODULE_ID, STATUS, SWAY, DOWNED_MODELS, TRAITS, TACTICAL, PC_BASELINE, clamp, fudged, tacticalTier } from "./constants.js";
+export { APTITUDES, APTITUDE_MOST, APTITUDE_AVERAGE } from "./engine/aptitudes.js";
 export { traitsFromParts, partsOf, signedNumber } from "./engine/trait-parts.js";
 export { part, parseFormula, parseTypedFormula, samplePart, meanPart, maxPart, doubled, sampleDamage, meanDamage } from "./engine/dice.js";
 export { formulaNumber, plainDice } from "./engine/arithmetic.js";

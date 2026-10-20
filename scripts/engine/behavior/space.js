@@ -13,7 +13,8 @@
  * A melee move ends on the nearest free spot within reach of what it's after (spotWithin); one with every spot round
  * it taken can't be reached, but from farther off (a reach weapon). Every spot looked for (within reach, to shoot from,
  * a step, a spot for later: prepare.js spotsWithin) is one of the map's squares, the grid the creature began the fight
- * on (gridOf), wherever a move left it: a move ends where its feet run out, between squares as often as not.
+ * on (gridOf), wherever a move left it: a move ends where its feet run out, between squares as often as not. One that
+ * keeps together (behavior/together.js) would rather not end bunched up beside its teammates (crowdCost).
  *
  * Sight: the scene's walls that block it (spec.walls: [{a: [x, y], b: [x, y], s: its sight (Foundry's sense type:
  * 10 limited, 20 and up: it blocks), d: one-way (Foundry's edge direction), door: its id, open, snd: its sound (0: sound
@@ -190,38 +191,79 @@ function spotsKept(run, name) {
  * Where u can stand to have t within reach: the free spot nearest `from` (where u is), on the map's squares (gridOf),
  * wherever a move left u. With t between squares, and none of those in reach and free, the squares as they lie round t
  * (the map's, moved as far as t is off its own): its middle a square's width from theirs, as on the map. Null when every
- * one is taken. Kept until someone moves, or someone takes up room or stops (spotsKept).
+ * one is taken. Kept until someone moves, or someone takes up room or stops (spotsKept). `crowd` (crowdCost's): the feet
+ * a spot costs besides its distance, for one that would rather not stand bunched up.
  */
-export function spotWithin(run, u, t, reach, from = u.pos) {
+export function spotWithin(run, u, t, reach, from = u.pos, crowd = null) {
   if ( !u.pos || !t.pos ) return null;
-  const key = `${u.id}|${t.id}|${reach}|${from.x},${from.y}`;
+  const key = `${u.id}|${t.id}|${reach}|${from.x},${from.y}${crowd ? "|c" : ""}`;
   const cache = spotsKept(run, "spotCache");
   if ( cache.map.has(key) ) return cache.map.get(key);
   const g = gridOf(u);
-  let best = nearestWithin(run, u, t, reach, from, g);
+  let best = nearestWithin(run, u, t, reach, from, g, crowd);
   if ( !best ) {
     const own = snapTo(gridOf(t), t.pos.x, t.pos.y);
     const dx = t.pos.x - own.x;
     const dy = t.pos.y - own.y;
-    if ( dx || dy ) best = nearestWithin(run, u, t, reach, from, { ox: g.ox + dx, oy: g.oy + dy });
+    if ( dx || dy ) best = nearestWithin(run, u, t, reach, from, { ox: g.ox + dx, oy: g.oy + dy }, crowd);
   }
   cache.map.set(key, best);
   return best;
 }
 
-/** The free spot of grid g (gridOf's) nearest `from` where u would have t within reach: {x, y, feet}, or null. */
-function nearestWithin(run, u, t, reach, from, g) {
+/**
+ * The free spot of grid g (gridOf's) nearest `from` where u would have t within reach (with `crowd`, its distance and what
+ * it costs bunched up): {x, y, feet}, or null.
+ */
+function nearestWithin(run, u, t, reach, from, g, crowd = null) {
   const far = reach + (sizeOf(u) + sizeOf(t)) / 2;
   let best = null;
+  let bestCost = Infinity;
   for ( let dx = -far; dx <= far; dx += STEP ) {
     for ( let dy = -far; dy <= far; dy += STEP ) {
       const p = snapTo(g, t.pos.x + dx, t.pos.y + dy);
       if ( sharesSpace(u, p, t) || edgeAt(u, p, t) > reach + 0.5 || inTheWay(run, u, p) ) continue;
       const d = Math.hypot(p.x - from.x, p.y - from.y);
-      if ( !best || d < best.feet ) best = { x: p.x, y: p.y, feet: d };
+      if ( d >= bestCost ) continue;
+      const cost = crowd ? d + crowd(p) : d;
+      if ( cost < bestCost ) {
+        best = { x: p.x, y: p.y, feet: d };
+        bestCost = cost;
+      }
     }
   }
   return best;
+}
+
+/**
+ * What standing beside a teammate costs one that keeps together: so many feet for each, at most so many teammates.
+ * Beside: a square away, diagonals too (edge to edge, within `beside` feet).
+ */
+export const CROWD = Object.freeze({ feet: 7.5, most: 2, beside: STEP * Math.SQRT2 + 0.5 });
+
+/**
+ * What standing at p costs u in feet, bunched up beside its teammates (`team`: those on the map and on their feet):
+ * CROWD.feet for each it would stand beside (CROWD.beside), at most CROWD.most of them; none for one the two
+ * would flank t with (a line between them crosses its space). A function of p, or null with no one to stand beside.
+ */
+export function crowdCost(u, team, t = null) {
+  if ( !u?.pos || !team?.length ) return null;
+  return p => {
+    let n = 0;
+    for ( const a of team ) if ( edgeAt(u, p, a) <= CROWD.beside && !flanks(u, p, a, t) && ++n >= CROWD.most ) break;
+    return n * CROWD.feet;
+  };
+}
+
+/** Would u at p and a flank t: both beside it, a line between them crossing its space? */
+function flanks(u, p, a, t) {
+  if ( !t?.pos || edgeAt(a, a.pos, t) > CROWD.beside || edgeAt(u, p, t) > CROWD.beside ) return false;
+  const dx = a.pos.x - p.x;
+  const dy = a.pos.y - p.y;
+  const len2 = dx * dx + dy * dy;
+  if ( !len2 ) return false;
+  const k = ((t.pos.x - p.x) * dx + (t.pos.y - p.y) * dy) / len2;
+  return k > 0 && k < 1 && within(p.x + k * dx - t.pos.x, p.y + k * dy - t.pos.y, sizeOf(t) / 2);
 }
 
 /**
@@ -452,9 +494,9 @@ export function coverFrom(run, u, t) {
  * The nearest spot (from u's) within `most` feet where u would see t with t within `range`, on the map's squares and
  * free: {x, y, feet}, or null. Kept until someone moves, or someone takes up room or stops (spotsKept).
  */
-export function spotToShoot(run, u, t, range, most, edgeDistance) {
+export function spotToShoot(run, u, t, range, most, edgeDistance, crowd = null) {
   if ( !u.pos || !t.pos ) return null;
-  const key = `${u.id}|${t.id}|${range}|${most}`;
+  const key = `${u.id}|${t.id}|${range}|${most}${crowd ? "|c" : ""}`;
   const cache = spotsKept(run, "shootCache");
   if ( cache.map.has(key) ) return cache.map.get(key);
   // (Farther off than any spot within `most` could bring into range: none.)
@@ -464,17 +506,24 @@ export function spotToShoot(run, u, t, range, most, edgeDistance) {
   }
   // (The map's squares round its own (gridOf), nearest first: the first that will do is the one. Standing between
   // squares, each is as much nearer or farther as its own square is off: none can be nearer than the one found once the
-  // ring is that far past it. One out of range, nothing more asked of it.)
+  // ring is that far past it. One out of range, nothing more asked of it. With `crowd`, crowdCost's: a spot costs its
+  // distance and what it costs bunched up.)
   let best = null;
+  let bestCost = Infinity;
   const c = snapTo(gridOf(u), u.pos.x, u.pos.y);
   const off = Math.hypot(c.x - u.pos.x, c.y - u.pos.y);
   for ( const o of ringOf(off > 0 ? most + STEP : most) ) {
-    if ( best && o.feet - off > best.feet ) break;
+    if ( best && o.feet - off > bestCost ) break;
     const p = { x: c.x + o.dx, y: c.y + o.dy };
     if ( !(edgeAt(u, p, t) <= range + 0.5) ) continue;
     p.feet = Math.hypot(p.x - u.pos.x, p.y - u.pos.y);
-    if ( p.feet > most + 0.5 || (best && p.feet >= best.feet) ) continue;
-    if ( !(p.feet > 0 && inTheWay(run, u, p)) && lineOfSight(run, u, t, p) ) best = p;
+    if ( p.feet > most + 0.5 || p.feet >= bestCost ) continue;
+    const cost = crowd ? p.feet + crowd(p) : p.feet;
+    if ( cost >= bestCost ) continue;
+    if ( !(p.feet > 0 && inTheWay(run, u, p)) && lineOfSight(run, u, t, p) ) {
+      best = p;
+      bestCost = cost;
+    }
   }
   cache.map.set(key, best);
   return best;
