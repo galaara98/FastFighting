@@ -214,6 +214,36 @@
    "commit": null,
    "hash": "baba957f81aa"
   },
+  "core:code:scripts/engine/batch-pool.js:fail#1": {
+   "repo": "core",
+   "file": "scripts/engine/batch-pool.js",
+   "key": "scripts/engine/batch-pool.js:fail#1",
+   "area": "core/code",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "a9b46a0da2af"
+  },
+  "core:code:scripts/engine/batch-pool.js:openPool#1": {
+   "repo": "core",
+   "file": "scripts/engine/batch-pool.js",
+   "key": "scripts/engine/batch-pool.js:openPool#1",
+   "area": "core/code",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "9ffe22b1c843"
+  },
+  "core:code:scripts/engine/batch-worker.js:loadRules#1": {
+   "repo": "core",
+   "file": "scripts/engine/batch-worker.js",
+   "key": "scripts/engine/batch-worker.js:loadRules#1",
+   "area": "core/code",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "eab7166a3f2a"
+  },
   "core:code:scripts/engine/live.js:liveTurn#1": {
    "repo": "core",
    "file": "scripts/engine/live.js",
@@ -304,6 +334,16 @@
    "date": null,
    "commit": null,
    "hash": "fa9a1a4288bd"
+  },
+  "core:code:scripts/foundry/battle.js:workerRulesOf#1": {
+   "repo": "core",
+   "file": "scripts/foundry/battle.js",
+   "key": "scripts/foundry/battle.js:workerRulesOf#1",
+   "area": "core/code",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "e2b4e4a1a7c8"
   },
   "core:code:scripts/foundry/keywords.js:loadKeywords#1": {
    "repo": "core",
@@ -13990,6 +14030,26 @@
    "commit": null,
    "hash": "e57dbb8c56a9"
   },
+  "core:FASTFIGHTING.Planner.TraitBudget": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Planner.TraitBudget",
+   "area": "core/Planner",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "e503ce6a1195"
+  },
+  "core:FASTFIGHTING.Planner.TraitBudgetHint": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Planner.TraitBudgetHint",
+   "area": "core/Planner",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "121943c1d0fe"
+  },
   "core:FASTFIGHTING.Planner.TraitWhy": {
    "repo": "core",
    "file": "languages/en.json",
@@ -16993,6 +17053,26 @@
    "commit": null,
    "hash": "cfa8ec4f0650",
    "changed": true
+  },
+  "core:FASTFIGHTING.Settings.focusDampener.Hint": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Settings.focusDampener.Hint",
+   "area": "core/Settings",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "abd7f9ff5370"
+  },
+  "core:FASTFIGHTING.Settings.focusDampener.Name": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Settings.focusDampener.Name",
+   "area": "core/Settings",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "e39cf4d6c329"
   },
   "core:FASTFIGHTING.Settings.genericFallback.Hint": {
    "repo": "core",
@@ -26075,6 +26155,16 @@
    "date": null,
    "commit": null,
    "hash": "0cd3ea77c14c"
+  },
+  "core:FASTFIGHTING.Words.Budget": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Words.Budget",
+   "area": "core/Words",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "dc52539f8645"
   },
   "core:FASTFIGHTING.Words.Fate": {
    "repo": "core",
