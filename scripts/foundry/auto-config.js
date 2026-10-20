@@ -20,7 +20,7 @@
  * The calculated answers are worked out again whenever they're missing or broken, the core API has moved on, or the
  * character has changed (a level, its traits, a new spell, the world's defaults). Answers someone gave stay as they are.
  * A character whose sheet reads over the trait budget (api.js keepTraitBudget: spec.overBudget) is set up again once,
- * from the traits it has within it: its answers, and its playstyles unless someone changed the ones picked for it.
+ * from the traits it has within it: its answers only. Its playstyles stay as they are.
  */
 import { MODULE_ID } from "../constants.js";
 import { getAdapter } from "../api.js";
@@ -101,19 +101,11 @@ export function specSignature(spec, defaults = {}) {
  * @returns {{pick: boolean, lets: boolean}}
  */
 export function autoPlan(stored, record, { api, sig, spec, force = false }) {
-  // (Its sheet read over the trait budget, and not set up again under it yet: once, its playstyles too if nobody
-  // changed the ones picked for it.)
+  // (Its sheet read over the trait budget, and not set up again under it yet: its answers, once. Never its playstyles.)
   const rebudget = !!spec?.overBudget && record?.budget !== TRAIT_BUDGET;
-  const pick = force || (!record && !(stored?.playstyles?.length)) || (rebudget && pickedUntouched(stored, record));
+  const pick = force || (!record && !(stored?.playstyles?.length));
   const lets = force || rebudget || !record || record.api !== api || record.sig !== sig || !validLets(record.lets, spec);
   return { pick, lets };
-}
-
-/** Are its playstyles still the ones picked for it (or none at all)? */
-function pickedUntouched(stored, record) {
-  const now = stored?.playstyles ?? [];
-  const picked = record?.picked ?? [];
-  return !now.length || (now.length === picked.length && now.every((p, i) => p === picked[i]));
 }
 
 /** Something a system helper says, or nothing if it fails. */

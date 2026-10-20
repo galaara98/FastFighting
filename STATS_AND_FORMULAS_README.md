@@ -32,7 +32,7 @@ Each trait is built in five steps:
 1. **Base**: what the system helper reads from the sheet. A player character starts at the PC baseline and its sheet
    moves it, held to 5–95. With nothing to read: 50. Rounded to whole points, the four bases sum to 250 at most (the
    trait budget): over it, the excess comes off the highest, a point at a time (ties come down together), and the
-   character is set up by itself again once.
+   character's calculated answers are worked out again once (its playstyles stay as they are).
 2. **Own** = base + fudge, held to 0–100. The fudge is the planner's +/− (steps of 5) plus the playstyles' trait shifts.
    Base + the planner's fudge keeps to the budget too: raising one past it takes the excess off the highest of the
    other three, a point at a time. The playstyles' shifts come after, outside it. A side's group personality (step 3)

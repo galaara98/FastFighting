@@ -69,13 +69,10 @@ describe("a character read over it is set up by itself again, once", () => {
   const record = { api: "12.0", sig, lets, picked: ["tank"], budget: 0 };
   const over = { ...spec, overBudget: true };
 
-  test("its answers and its playstyles again, where nobody changed those picked for it", () => {
-    expect(autoPlan({ playstyles: ["tank"] }, record, { api: "12.0", sig, spec: over })).toEqual({ pick: true, lets: true });
-    expect(autoPlan({}, record, { api: "12.0", sig, spec: over })).toEqual({ pick: true, lets: true });
-  });
-
-  test("playstyles someone changed stay theirs; its answers are still worked out again", () => {
+  test("its answers again; its playstyles never, picked for it or changed since", () => {
+    expect(autoPlan({ playstyles: ["tank"] }, record, { api: "12.0", sig, spec: over })).toEqual({ pick: false, lets: true });
     expect(autoPlan({ playstyles: ["thief"] }, record, { api: "12.0", sig, spec: over })).toEqual({ pick: false, lets: true });
+    expect(autoPlan({}, record, { api: "12.0", sig, spec: over })).toEqual({ pick: false, lets: true });
   });
 
   test("set up again under the budget already: nothing more", () => {
