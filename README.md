@@ -387,6 +387,7 @@ World settings, under **Configure Settings → FastFighting**, in groups. The pl
 | Setting | Default | What it controls |
 | --- | --- | --- |
 | Troubleshooting | off | Keeps each live battle's transcript, and the planner's last run, for 30 days. Off, a transcript goes with its encounter. On, the last run's odds are in the world, where a player who digs could read them. |
+| Planner: background workers | on | Runs the planner's fights on background threads. Off: on the main thread. Workers that fail switch off by themselves. |
 | Live battle data (menu) | — | Each live battle's journal: export one or all, or clean up those over a month old. |
 
 **Reporting a bug?** Turn on **Troubleshooting** first, play or plan the fight again, then export from **Live battle data** and attach the file.

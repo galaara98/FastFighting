@@ -345,10 +345,12 @@ fight and more fights fit the time (`engine/batch-pool.js`, `engine/batch-worker
   when the batch is sent, the workers' start included. **Stop** ends the workers at once, keeping the fights in order so
   far (fight 0 at least, run on the main thread if none came back). The planner's estimate of how many fights fit
   counts the threads (`run-budget.js` `expectedRuns`, `paceOf`: the pace is each thread's).
-- **No workers:** without Web Workers, without `workerRules`, or once workers have failed with those rules this
-  session (a module that won't load in a worker, a rules error there, a worker that can't be made, workers that aren't
-  done `GRACE_MS`, 20 s, past the time), the batch runs on the main thread (`runBatch`, in the time left), and so do the
-  session's later ones; the console says why.
+- **No workers:** the batch runs on the main thread (`runBatch`, in the time left) with the world's **Planner:
+  background workers** off (`plannerWorkers`, Troubleshooting & data; `foundry/battle.js` `fightRules`), without Web
+  Workers, or without `workerRules`. So does it once workers have failed with those rules this session: a module that
+  won't load in a worker, a rules error there, a worker that can't be made, or workers that aren't done `GRACE_MS`
+  (20 s) past the time. Every later batch that session runs there too, the swing factors after a prediction's workers
+  failed included; the console says why, and nothing tells the GM.
 
 #### Aptitudes (API 23)
 

@@ -257,6 +257,10 @@
         "Name": "Troubleshooting",
         "Hint": "Keeps each live battle's transcript for 30 days, even after its encounter is deleted, and the planner's last run beside them. Turn it on before reporting a bug, then export them from Live battle data. Off: a transcript goes with its encounter. On: the last run's odds are in the world, where a player who digs could read them."
       },
+      "plannerWorkers": {
+        "Name": "Planner: background workers",
+        "Hint": "Runs the planner's fights on background threads, so the screen stays free and more fights fit the time. Off: on the main thread. Workers that fail switch off by themselves and say so in the console."
+      },
       "Survey": {
         "Link": "Optional performance survey",
         "Hint": "Your setup, your battle and how many fights the planner ran: it helps make FastFighting faster."

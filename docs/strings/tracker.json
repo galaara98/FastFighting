@@ -17528,6 +17528,26 @@
    "commit": null,
    "hash": "570d833be8b2"
   },
+  "core:FASTFIGHTING.Settings.plannerWorkers.Hint": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Settings.plannerWorkers.Hint",
+   "area": "core/Settings",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "781f0f323791"
+  },
+  "core:FASTFIGHTING.Settings.plannerWorkers.Name": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Settings.plannerWorkers.Name",
+   "area": "core/Settings",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "3ddd60f5f171"
+  },
   "core:FASTFIGHTING.Settings.playersRunPCs.Hint": {
    "repo": "core",
    "file": "languages/en.json",

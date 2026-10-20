@@ -20,6 +20,7 @@ import { expectedRuns, paceOf, fightMs, budgetMs } from "../scripts/engine/run-b
 import { goldenBattles } from "./golden/battles.js";
 import { pf2eRules } from "./fixtures/three-action-rules.js";
 import { genericRules } from "../scripts/adapters/generic/rules.js";
+import { fightThreads } from "../scripts/foundry/battle.js";
 
 const FIXTURE = { url: new URL("./fixtures/three-action-rules.js", import.meta.url).href, exportName: "pf2eRules" };
 const GENERIC = new GenericAdapter().workerRules();
@@ -85,6 +86,22 @@ afterAll(async () => { await Promise.all(threads.map(t => t.terminate())); });
 test("the API is 22 or later, major.bug", () => {
   expect(CORE_API.major).toBeGreaterThanOrEqual(22);
   expect(CORE_API_VERSION).toBe(`${CORE_API.major}.${CORE_API.bug}`);
+});
+
+describe("the world's Planner: background workers setting", () => {
+  test("on (the default): the planner's fights on the workers; off: on this thread", () => {
+    const had = { Worker: globalThis.Worker, settings: game.settings };
+    globalThis.Worker = function Worker() {};
+    try {
+      for ( const [on, threads] of [[true, poolSize()], [false, 1]] ) {
+        game.settings = { get: (module, key) => (key === "plannerWorkers" ? on : undefined) };
+        expect(fightThreads(new GenericAdapter())).toBe(threads);
+      }
+    } finally {
+      globalThis.Worker = had.Worker;
+      game.settings = had.settings;
+    }
+  });
 });
 
 describe("where a helper's rules are, for the workers (adapter.workerRules)", () => {

@@ -92,6 +92,10 @@ const SETTINGS = {
   // Troubleshooting: live battles' transcripts kept for 30 days, and the planner's last run with them (off: a transcript
   // goes with its combat; foundry/live-journals.js). A world setting: only a GM changes it.
   troubleshooting: { group: "troubleshooting", type: Boolean, default: false },
+  // The planner's fights on background workers (engine/batch-pool.js), where the browser and the system's helper allow.
+  // Off: on the main thread, as before. Workers that fail fall back by themselves, for the session: this is for tracking
+  // a problem down.
+  plannerWorkers: { group: "troubleshooting", type: Boolean, default: true },
 
   genericFallback: { group: "generic", type: Boolean, default: false, requiresReload: false, onChange: () => ui.combat?.render() }
 };
