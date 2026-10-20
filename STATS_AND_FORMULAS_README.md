@@ -2259,10 +2259,14 @@ Decides how creatures get past one another.
 - Nobody's move ends in another's space, unless the system allows it.
 - Passing a friend or anyone down: free. A standing foe: around it, its width in feet more. The system may say
   difficult (its width more) or a tumble (a roll; failed, the move stops short).
-- A melee move ends straight in, or, if that spot is taken, on the nearest free spot within reach (on its 5-ft grid).
-  A foe with every spot round it taken can't be reached, except from farther off (a reach weapon).
+- A melee move ends straight in, or, if that spot is taken, on the nearest free spot within reach: a square of the map
+  (the 5-ft grid it began the fight on), wherever its last move left it. A foe standing between squares with none of
+  them in reach and free: the squares as they lie round that foe. A foe with every spot round it taken can't be
+  reached, except from farther off (a reach weapon).
+- Every spot a creature looks for is on the map's squares the same way: to shoot from, to end its turn on, a patrol's,
+  a step aside.
 
-Code: `engine/behavior/space.js` `inTheWay`, `passOf`, `spotWithin`; `engine/battle-state.js` `passing`.
+Code: `engine/behavior/space.js` `inTheWay`, `passOf`, `gridOf`, `spotWithin`; `engine/battle-state.js` `passing`.
 
 ### Line of sight and cover
 

@@ -1,6 +1,7 @@
 /**
  * Space on the map (behavior/space.js): nobody's move ends in another's space; a melee move takes the nearest free
- * spot within reach, and one with every spot round it taken can't be reached; past a foe the long way round, past a
+ * spot within reach (the map's squares, wherever its last move left it; round a foe between squares, the squares as they
+ * lie round it), and one with every spot round it taken can't be reached; past a foe the long way round, past a
  * friend freely, as the system says otherwise (passThrough, tumbleThrough, endIn). And sight past the scene's walls: a
  * ranged attacker with no clear line moves to a spot it has one from, a one-way wall and limited walls as Foundry has
  * them, a door shut or open, the cover a target has.
@@ -8,7 +9,8 @@
 import { describe, expect, test } from "vitest";
 import { beginRun, beginRound, takeTurn, prepareBattle } from "../scripts/engine/simulator.js";
 import { movesNeeded, moveToward, edgeDistance, currentAc, saveRoll, COVER_POINTS, reachShape } from "../scripts/engine/battle-state.js";
-import { inTheWay, spotWithin, spotToShoot, lineOfSight, sightBlocked, lineBlocked, blockedPoints, coverFrom, crossed, crossesAny, crossedExtra } from "../scripts/engine/behavior/space.js";
+import { inTheWay, spotWithin, spotToShoot, stepSpots, lineOfSight, sightBlocked, lineBlocked, blockedPoints, coverFrom, crossed, crossesAny, crossedExtra } from "../scripts/engine/behavior/space.js";
+import { spotsWithin } from "../scripts/engine/behavior/prepare.js";
 import { areEnemies } from "../scripts/engine/battle-state.js";
 import { snapshotRun } from "../scripts/engine/live.js";
 import { STATUS } from "../scripts/constants.js";
@@ -60,6 +62,54 @@ describe("room", () => {
     expect(spotWithin(run, h, o, 5)).toBeNull();
     expect(movesNeeded(run, h, o, strike())).toBe(Infinity);
     expect(Number.isFinite(movesNeeded(run, h, o, strike({ reach: 10 })))).toBe(true);
+  });
+
+  test("its last move left it between squares: it still finds a free square beside a crowded foe, and ends its move there", () => {
+    // (The orc's square-mates on the hero's side of it, the way straight in taken; the hero half a square off the
+    // squares it began on, where none of the spots a square's width from it lie beside the orc.)
+    const run = fight([who("hero", "friendly", 0), who("orc", "hostile", 50), who("g1", "friendly", 45), who("g2", "friendly", 50, -5)]);
+    const [h, o] = get(run, "hero", "orc");
+    h.pos = { x: 27.5, y: 2.5 };
+    const spot = spotWithin(run, h, o, 5);
+    expect(spot).toMatchObject({ x: 50, y: 5 });
+    expect(spot.feet).toBeCloseTo(Math.hypot(22.5, 2.5), 6);
+    expect(movesNeeded(run, h, o, strike())).toBe(1);
+    const move = moveToward(run, h, o, 5, 25);
+    expect(move.reached).toBe(true);
+    expect(h.pos).toEqual({ x: 50, y: 5 });
+    expect(move.cost).toBeCloseTo(Math.hypot(22.5, 2.5), 6);
+    expect(inTheWay(run, h, h.pos)).toBeNull();
+  });
+
+  test("a crowded foe standing between squares: where none of the map's squares round it is in reach and free, the squares as they lie round it", () => {
+    // (The orc a foot and a half off its square: of the map's squares, only one is beside it, and a goblin has it.)
+    const run = fight([who("hero", "friendly", 0), who("orc", "hostile", 50), who("g1", "friendly", 55, 5)]);
+    const [h, o] = get(run, "hero", "orc");
+    o.pos = { x: 51.5, y: 1.5 };
+    const spot = spotWithin(run, h, o, 5);
+    expect(spot).toMatchObject({ x: 46.5, y: 1.5 });
+    expect(Math.hypot(spot.x - o.pos.x, spot.y - o.pos.y)).toBeCloseTo(5, 6);
+    expect(inTheWay(run, h, spot)).toBeNull();
+    expect(Number.isFinite(movesNeeded(run, h, o, strike()))).toBe(true);
+  });
+
+  test("every spot a creature between squares looks for is on the squares it began on: to shoot from, to step to, for later", () => {
+    const run = fight([who("hero", "friendly", 0, 0, { actions: [bow] }), who("orc", "hostile", 100), who("g1", "friendly", 30)],
+      { walls: [wall(60, -40, 60, 40)] });
+    const [h, o] = get(run, "hero", "orc");
+    h.pos = { x: 21.5, y: -3 };
+    const square = p => Number.isInteger(p.x / 5) && Number.isInteger(p.y / 5);
+    const shoot = spotToShoot(run, h, o, 60, 50, edgeDistance);
+    expect(shoot && square(shoot)).toBe(true);
+    expect(shoot.feet).toBeCloseTo(Math.hypot(shoot.x - h.pos.x, shoot.y - h.pos.y), 6);
+    expect(shoot.feet).toBeLessThanOrEqual(50.5);
+    const steps = stepSpots(run, h, 5);
+    expect(steps.length).toBeGreaterThan(0);
+    expect(steps.every(square)).toBe(true);
+    expect(steps.every(p => Math.hypot(p.x - h.pos.x, p.y - h.pos.y) <= 5 * Math.SQRT2 + 0.5)).toBe(true);
+    const later = spotsWithin(run, h, 25);
+    expect(later.length).toBeGreaterThan(0);
+    expect(later.every(square)).toBe(true);
   });
 
   test("past a foe on its feet: the long way round; past a friend: freely; as the system says otherwise", () => {

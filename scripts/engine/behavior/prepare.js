@@ -31,7 +31,7 @@ import { costOf, costUnits, mainPool, normalizeCost } from "../turn.js";
 import { expectedDamage, threatOf, hasUses, unitsPerTurn } from "./evaluate.js";
 import { mind, levelOf, protective } from "./desire.js";
 import { threats } from "./reactions.js";
-import { edgeAt, inTheWay, wallsKnown, lineBlocked, blockedPoints, crossesAny, takesRoom } from "./space.js";
+import { edgeAt, inTheWay, wallsKnown, lineBlocked, blockedPoints, crossesAny, takesRoom, gridOf } from "./space.js";
 import { knowsOf } from "./senses.js";
 import { meanPart } from "../dice.js";
 
@@ -214,16 +214,16 @@ function onMap(run, p) {
 
 /**
  * Free spots it could end a move of `feet` on: rings round it, a square's width apart, none past a wall, none taken.
- * Each on u's grid (its middle, a square at a time), found by its squares across and down, so one met again from
- * another direction (the rings overlap) is passed over by those two numbers. (A patrol's too: behavior/patrol.js.)
+ * Each on the map's squares (space.js gridOf: where a move left it between squares, the squares those round it stand
+ * on), found by its squares across and down, so one met again from another direction (the rings overlap) is passed over
+ * by those two numbers. (A patrol's too: behavior/patrol.js.)
  */
 export function spotsWithin(run, u, feet) {
   const seen = new Set();
   const out = [];
   const rings = [...new Set([SQUARE, 10, Math.round(feet / 2 / SQUARE) * SQUARE, Math.floor(feet / SQUARE) * SQUARE].filter(r => r >= SQUARE && r <= feet))];
   const walls = wallsKnown(run);
-  const ox = ((u.pos.x % SQUARE) + SQUARE) % SQUARE;
-  const oy = ((u.pos.y % SQUARE) + SQUARE) % SQUARE;
+  const { ox, oy } = gridOf(u);
   // (Foes on their feet, the room they take: a straight move doesn't go through one, the way round it is no straight
   // move. Found once: nobody moves while it looks.)
   const foes = run.units.filter(o => o !== u && takesRoom(o) && isStanding(o) && areEnemies(run, u, o));

@@ -60,7 +60,6 @@ import { meets, noteBlow, freshTurn, setupUsed } from "./behavior/requires.js";
 import { withManeuver } from "./maneuvers.js";
 import { readyNow, gearStep, takeGearStep, spareBest, spareTurn, healAhead, tellStep, bestSpot, PREP } from "./behavior/prepare.js";
 import { mayPatrol, patrolTurn, fidget } from "./behavior/patrol.js";
-import { inTheWay, wallsKnown, lineBlocked } from "./behavior/space.js";
 import { used } from "./gear.js";
 
 const MAX_STEPS_PER_TURN = 8;
@@ -2419,27 +2418,9 @@ function patrolToward(run, u, turn, t) {
   if ( !leaveReach(run, u, turn, null) ) return false;
   const budget = turn.payForMove(ap.speed);
   if ( !budget ) return false;
-  const move = onLattice(run, u, moveToward(run, u, t, 5, budget));
+  const move = moveToward(run, u, t, 5, budget);
   turn.usedMove(move.cost);
   return moveLog(run, u, move, t, "patrol", { patrol: true }) && move.feet > 0;
-}
-
-/**
- * A move that stopped short, wherever its feet ran out, put on the squares it started the fight on (its first place's
- * grid), where that's free and in the open: so it can still find a spot beside whoever it finds there (space.js
- * spotWithin looks on its own grid). The move as it now ends.
- */
-function onLattice(run, u, move) {
-  const base = u.spec.position;
-  if ( !base || !u.pos || !(move.feet > 0) || move.reached ) return move;
-  const at = (v, o) => Math.round((v - (((o % 5) + 5) % 5)) / 5) * 5 + (((o % 5) + 5) % 5);
-  const p = { x: at(u.pos.x, base.x), y: at(u.pos.y, base.y) };
-  if ( (p.x === u.pos.x && p.y === u.pos.y) || inTheWay(run, u, p) || (wallsKnown(run) && lineBlocked(run, u.pos, p)) ) return move;
-  u.pos.x = p.x;
-  u.pos.y = p.y;
-  run.geo = (run.geo ?? 0) + 1;
-  const feet = move.from ? Math.round(Math.hypot(p.x - move.from.x, p.y - move.from.y)) : move.feet;
-  return { ...move, feet, to: move.to ? { x: p.x, y: p.y } : move.to };
 }
 
 /**

@@ -11,7 +11,9 @@
  *   "tumble"     through it if a roll says so (rules.tumbleThrough(run, u, o): {success, difficult, ...}; PF2e Tumble
  *                Through: as through difficult ground, unless difficult is false); otherwise its move ends before it
  * A melee move ends on the nearest free spot within reach of what it's after (spotWithin); one with every spot round
- * it taken can't be reached, but from farther off (a reach weapon).
+ * it taken can't be reached, but from farther off (a reach weapon). Every spot looked for (within reach, to shoot from,
+ * a step, a spot for later: prepare.js spotsWithin) is one of the map's squares, the grid the creature began the fight
+ * on (gridOf), wherever a move left it: a move ends where its feet run out, between squares as often as not.
  *
  * Sight: the scene's walls that block it (spec.walls: [{a: [x, y], b: [x, y], s: its sight (Foundry's sense type:
  * 10 limited, 20 and up: it blocks), d: one-way (Foundry's edge direction), door: its id, open, snd: its sound (0: sound
@@ -115,28 +117,38 @@ export function crossedExtra(run, u, p, q, t, areEnemies) {
   return extra;
 }
 
-/** A point on u's own grid (its middle where it stands now, a square's width at a time). */
-function onGrid(u, x, y) {
-  const ox = (((u.pos?.x ?? 0) % STEP) + STEP) % STEP;
-  const oy = (((u.pos?.y ?? 0) % STEP) + STEP) % STEP;
-  return { x: Math.round((x - ox) / STEP) * STEP + ox, y: Math.round((y - oy) / STEP) * STEP + oy };
+/**
+ * The scene's grid for u's middle, as how far past the 5-foot lines it falls ({ox, oy}): where it began the fight
+ * (spec.position, a token on the map's squares), so wherever a move left it (between squares: a move ends where its
+ * feet run out), the spots it looks at are the map's squares, the ones those round it stand on. One with no place of its
+ * own (a creature called up), where it stands.
+ */
+export function gridOf(u) {
+  const base = Number.isFinite(u.spec?.position?.x) && Number.isFinite(u.spec?.position?.y) ? u.spec.position : u.pos;
+  return { ox: (((base?.x ?? 0) % STEP) + STEP) % STEP, oy: (((base?.y ?? 0) % STEP) + STEP) % STEP };
 }
+
+/** The point of grid g (gridOf's) nearest (x, y). */
+const snapTo = (g, x, y) => ({ x: Math.round((x - g.ox) / STEP) * STEP + g.ox, y: Math.round((y - g.oy) / STEP) * STEP + g.oy });
 
 /** The feet between creatures' edges with u at p (as battle-state.js edgeDistance has it). */
 export const edgeAt = (u, p, t) => Math.max(STEP, Math.hypot(p.x - t.pos.x, p.y - t.pos.y) - ((sizeOf(u) + sizeOf(t)) / 2 - STEP));
 
 /**
  * Where u could step to, a move of its own outside its turn of `feet` at most (a reaction's: PF2e's Step): the free
- * spots on its grid that far or nearer, a square's width a step (diagonals too), none past a wall. Not where it is.
+ * squares that far or nearer from its own (gridOf), a square's width a step (diagonals too), none past a wall. Not where
+ * it is; standing between squares, its own square too, and none farther off than such a step goes from a square.
  */
 export function stepSpots(run, u, feet) {
   if ( !u.pos ) return [];
   const most = Math.max(STEP, Math.floor(feet / STEP) * STEP);
+  const c = snapTo(gridOf(u), u.pos.x, u.pos.y);
+  const far = most * Math.SQRT2 + 0.5;
   const out = [];
   for ( let dx = -most; dx <= most; dx += STEP ) {
     for ( let dy = -most; dy <= most; dy += STEP ) {
-      if ( !dx && !dy ) continue;
-      const p = onGrid(u, u.pos.x + dx, u.pos.y + dy);
+      const p = { x: c.x + dx, y: c.y + dy };
+      if ( (p.x === u.pos.x && p.y === u.pos.y) || Math.hypot(p.x - u.pos.x, p.y - u.pos.y) > far ) continue;
       if ( inTheWay(run, u, p) || (wallsKnown(run) && lineBlocked(run, u.pos, p)) ) continue;
       out.push(p);
     }
@@ -175,7 +187,9 @@ function spotsKept(run, name) {
 }
 
 /**
- * Where u can stand to have t within reach: the free spot nearest `from` (where u is), on u's grid; null when every
+ * Where u can stand to have t within reach: the free spot nearest `from` (where u is), on the map's squares (gridOf),
+ * wherever a move left u. With t between squares, and none of those in reach and free, the squares as they lie round t
+ * (the map's, moved as far as t is off its own): its middle a square's width from theirs, as on the map. Null when every
  * one is taken. Kept until someone moves, or someone takes up room or stops (spotsKept).
  */
 export function spotWithin(run, u, t, reach, from = u.pos) {
@@ -183,32 +197,44 @@ export function spotWithin(run, u, t, reach, from = u.pos) {
   const key = `${u.id}|${t.id}|${reach}|${from.x},${from.y}`;
   const cache = spotsKept(run, "spotCache");
   if ( cache.map.has(key) ) return cache.map.get(key);
-  const far = reach + (sizeOf(u) + sizeOf(t)) / 2;
-  let best = null;
-  for ( let dx = -far; dx <= far; dx += STEP ) {
-    for ( let dy = -far; dy <= far; dy += STEP ) {
-      const p = onGrid(u, t.pos.x + dx, t.pos.y + dy);
-      if ( sharesSpace(u, p, t) || edgeAt(u, p, t) > reach + 0.5 || inTheWay(run, u, p) ) continue;
-      const d = Math.hypot(p.x - from.x, p.y - from.y);
-      if ( !best || d < best.feet ) best = { x: p.x, y: p.y, feet: d };
-    }
+  const g = gridOf(u);
+  let best = nearestWithin(run, u, t, reach, from, g);
+  if ( !best ) {
+    const own = snapTo(gridOf(t), t.pos.x, t.pos.y);
+    const dx = t.pos.x - own.x;
+    const dy = t.pos.y - own.y;
+    if ( dx || dy ) best = nearestWithin(run, u, t, reach, from, { ox: g.ox + dx, oy: g.oy + dy });
   }
   cache.map.set(key, best);
   return best;
 }
 
+/** The free spot of grid g (gridOf's) nearest `from` where u would have t within reach: {x, y, feet}, or null. */
+function nearestWithin(run, u, t, reach, from, g) {
+  const far = reach + (sizeOf(u) + sizeOf(t)) / 2;
+  let best = null;
+  for ( let dx = -far; dx <= far; dx += STEP ) {
+    for ( let dy = -far; dy <= far; dy += STEP ) {
+      const p = snapTo(g, t.pos.x + dx, t.pos.y + dy);
+      if ( sharesSpace(u, p, t) || edgeAt(u, p, t) > reach + 0.5 || inTheWay(run, u, p) ) continue;
+      const d = Math.hypot(p.x - from.x, p.y - from.y);
+      if ( !best || d < best.feet ) best = { x: p.x, y: p.y, feet: d };
+    }
+  }
+  return best;
+}
+
 /**
- * The free spot nearest `point` for u to stand on (one where its move may end: inTheWay), on the grid of `lattice` (a
- * creature already there), a ring of squares at a time out to `most` feet; only those `accept` takes (in range, in
- * sight). {x, y} or null.
+ * The free spot nearest `point` for u to stand on (one where its move may end: inTheWay), on the squares `lattice` (a
+ * creature already there) stands on (gridOf), a ring of squares at a time out to `most` feet; only those `accept` takes
+ * (in range, in sight). {x, y} or null.
  */
 export function freeSpotNear(run, u, point, { lattice = null, most = 30, accept = () => true } = {}) {
-  const grid = lattice?.pos ? lattice : { pos: point };
-  const at = p => onGrid(grid, p.x, p.y);
+  const g = gridOf(lattice?.pos ? lattice : { pos: point });
   const spots = [];
   for ( let dx = -most; dx <= most; dx += STEP ) {
     for ( let dy = -most; dy <= most; dy += STEP ) {
-      const p = at({ x: point.x + dx, y: point.y + dy });
+      const p = snapTo(g, point.x + dx, point.y + dy);
       spots.push({ ...p, d: Math.hypot(p.x - point.x, p.y - point.y) });
     }
   }
@@ -423,8 +449,8 @@ export function coverFrom(run, u, t) {
 }
 
 /**
- * The nearest spot (from u's) within `most` feet where u would see t with t within `range`, on u's grid and free:
- * {x, y, feet}, or null. Kept until someone moves, or someone takes up room or stops (spotsKept).
+ * The nearest spot (from u's) within `most` feet where u would see t with t within `range`, on the map's squares and
+ * free: {x, y, feet}, or null. Kept until someone moves, or someone takes up room or stops (spotsKept).
  */
 export function spotToShoot(run, u, t, range, most, edgeDistance) {
   if ( !u.pos || !t.pos ) return null;
@@ -436,25 +462,25 @@ export function spotToShoot(run, u, t, range, most, edgeDistance) {
     cache.map.set(key, null);
     return null;
   }
-  // (Nearest first: the first that will do is the one. Each spot as onGrid has it, its grid found once; one out of
-  // range, nothing more asked of it.)
+  // (The map's squares round its own (gridOf), nearest first: the first that will do is the one. Standing between
+  // squares, each is as much nearer or farther as its own square is off: none can be nearer than the one found once the
+  // ring is that far past it. One out of range, nothing more asked of it.)
   let best = null;
-  const ox = ((u.pos.x % STEP) + STEP) % STEP;
-  const oy = ((u.pos.y % STEP) + STEP) % STEP;
-  for ( const o of ringOf(most) ) {
-    const p = { x: Math.round((u.pos.x + o.dx - ox) / STEP) * STEP + ox, y: Math.round((u.pos.y + o.dy - oy) / STEP) * STEP + oy };
+  const c = snapTo(gridOf(u), u.pos.x, u.pos.y);
+  const off = Math.hypot(c.x - u.pos.x, c.y - u.pos.y);
+  for ( const o of ringOf(off > 0 ? most + STEP : most) ) {
+    if ( best && o.feet - off > best.feet ) break;
+    const p = { x: c.x + o.dx, y: c.y + o.dy };
     if ( !(edgeAt(u, p, t) <= range + 0.5) ) continue;
     p.feet = Math.hypot(p.x - u.pos.x, p.y - u.pos.y);
-    if ( !(p.feet > 0 && inTheWay(run, u, p)) && lineOfSight(run, u, t, p) ) {
-      best = p;
-      break;
-    }
+    if ( p.feet > most + 0.5 || (best && p.feet >= best.feet) ) continue;
+    if ( !(p.feet > 0 && inTheWay(run, u, p)) && lineOfSight(run, u, t, p) ) best = p;
   }
   cache.map.set(key, best);
   return best;
 }
 
-/** The squares round a creature's out to `most` feet, nearest first: the same for everyone (each has its own grid). */
+/** The squares round a creature's out to `most` feet, nearest first: the same for everyone (from its own square). */
 const RINGS = new Map();
 
 /** [{dx, dy, feet}] for `most` (worked out once, then kept). */
