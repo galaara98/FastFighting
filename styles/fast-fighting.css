@@ -498,6 +498,9 @@
 /* (Rewind This Encounter: well away from the rest, so it isn't clicked by mistake.) */
 .ff-battle-buttons .ff-far-right { margin-left: auto; }
 .ff-encounter-buttons { display: flex; gap: 0.35rem; }
+/* (Fast Fight, beside Next Turn; its Stop while it runs.) */
+.ff-btn.ff-fast { font-weight: 700; }
+.ff-btn.ff-fast.is-running { border-color: var(--ff-accent); color: var(--ff-accent); }
 /* (A toggle the system's own setting takes over: greyed out.) */
 label.is-disabled, .form-group.is-disabled { opacity: 0.5; }
 /* (Players' damage waiting on a GM, in the Battle Vantage.) */

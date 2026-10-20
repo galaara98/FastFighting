@@ -123,7 +123,8 @@ export async function holdingPause(work, { resume = false } = {}) {
  * Move a token quickly along waypoints (walls are already accounted for), and give the animation about as long as
  * it should take. (A browser tab in the background doesn't animate at all, so never wait on it for longer.)
  */
-async function quickMove(doc, waypoints, speed = PLAYBACK_SPEED) {
+async function quickMove(doc, waypoints, speed) {
+  speed = Number(speed) > 0 ? Number(speed) : PLAYBACK_SPEED;
   const size = canvas.dimensions.size;
   let squares = 0;
   let from = placeOf(doc);
@@ -151,9 +152,10 @@ async function quickMove(doc, waypoints, speed = PLAYBACK_SPEED) {
 /**
  * Walk tokens through a turn as the story tells it: each move in order, around walls (or straight through where the
  * fight went through), and each door opened as it's opened. A move a token has made already is simply where it is.
- * `instant`: no walking, each straight to where it ended.
+ * `instant`: no walking, each straight to where it ended. `speed`: how fast they walk, in grid squares a second (a Fast
+ * Fight's quicker; none, PLAYBACK_SPEED).
  */
-export async function playMoves(events, docs, grid, doorsOpened, scene, { instant = false } = {}) {
+export async function playMoves(events, docs, grid, doorsOpened, scene, { instant = false, speed = PLAYBACK_SPEED } = {}) {
   // (Not played: each token straight to where the turn left it, unanimated, once its doors are open.)
   const last = instant ? new Map() : null;
   for ( const e of events ) {
@@ -172,7 +174,7 @@ export async function playMoves(events, docs, grid, doorsOpened, scene, { instan
       continue;
     }
     if ( dest.x === doc._source.x && dest.y === doc._source.y ) continue;
-    await quickMove(doc, grid ? grid.route(doc, dest, { doors: true }) : [dest]);
+    await quickMove(doc, grid ? grid.route(doc, dest, { doors: true }) : [dest], speed);
   }
   for ( const [doc, dest] of last ?? [] ) {
     if ( dest.x !== doc._source.x || dest.y !== doc._source.y ) await doc.update({ x: dest.x, y: dest.y }, { animate: false });

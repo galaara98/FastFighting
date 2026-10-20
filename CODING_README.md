@@ -51,6 +51,18 @@ FastFighting is split into a pure simulation engine, system **helpers**, and the
 - **Keys never change:** a stored value is found by its key alone, so a setting can move to another group, or along one, and keep its value.
 - `tests/settings-groups.test.js` checks that every setting and menu the window shows is in exactly one group, the groups' order, and their headings.
 
+### Fast Fight
+
+The Battle Vantage's **>> Fast Fight >>** (`foundry/fast-fight.js`, pure but for Dice So Nice, tested in `tests/fast-fight.test.js`; played by `live-battle.js` `fastFight`):
+- **Offered** (`fastFightOffered`) in a battle begun and not over where the planner's Players run their characters is off or `battle.data.players` is empty; while it runs, as its Stop.
+- **State:** `battle.fast` (`{from, had, pending}`: the round it began, the players' characters then, the place its own move on left), in the playing browser's memory only, never on the transcript: a reload or another GM picking the battle up has none.
+- **Turns:** `settleTurn` asks `afterTurn`: a turn FastFighting played goes `"on"` (no `waitCard`, `moveOn` at once, as Play to the end), kept with `keptTurns` like any other, so Rewind works turn by turn. `goFast` starts it where the battle is (a played turn moves on, an unplayed one is played), unless a move of its own (`pending`) or a turn change (`turnsWaiting`) is already on its way.
+- **The tracker:** `moveOn` notes where it moves on from; `onTurnChange` asks `fastTurnChange`: its own move (`"ours"`), the order changing in the same round as a combatant joins or leaves (`"same"`: the same combatant at another place, or another at the same place), or anyone else's use of the tracker (`"theirs"`), which stops it.
+- **Stops** (`checkFast` → `fastFightStop`): Stop, Next Turn, Rewind, Rewind This Encounter or Play to the end pressed; `failed` (the queue's errors, and `moveOn`'s); `finish`; a player's character's turn (`turnBegins`) or one more in `battle.data.players` (`addPlayer`, `automate`); a GM wanted (`gmSettles`, `ask`, `askDamage`, `playerRolls`, `review`, a spotlight with no one to give it to); a turn change not its own; the spec's `maxRounds` rounds played since it began. A turn under way finishes and gets its card. The GMs are told why for `FAST_STOP_NOTES`.
+- **Play to the end** is off while it runs: pressing Fast Fight clears `battle.data.auto`, the toggle is disabled, and `setPlayThrough(true)` stops it. So its rolls stay in the chat (`showRolls` without `settle`, `showTurnCard` the system's cards), never on the GMs' tally card.
+- **Moves:** `playMoves(..., {speed})`, `FAST_MOVE_SPEED` grid squares a second (`TokenDocument#move`'s `animation.movementSpeed`; 10 otherwise). Every move still animates; displacements (`sendOff`, `carryInside`) are unanimated as in any turn.
+- **Dice So Nice** (`hushDice`, `unhushDice`, `registerQuietDice`): while it runs, this browser's `game.dice3d.messageHookDisabled` is true (the value before kept and put back by `endFast`, from every stop, `failed` and `letGo` included), and each chat message this browser creates gets `flags.dice-so-nice.skip` in `preCreateChatMessage`, so no client throws its dice. A roll message so made fires `diceSoNiceRollComplete` here once created, since nothing else would (PF2e's critical hit and fumble cards wait on it). No setting is written, so there is nothing to restore after a reload.
+
 ## Writing a system helper
 
 ```js

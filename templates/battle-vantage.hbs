@@ -32,6 +32,7 @@
       <div class="ff-battle-buttons">
         <button type="button" class="ff-btn" data-action="rewind" {{#unless canRewind}}disabled{{/unless}}><i class="fa-solid fa-arrow-left"></i> {{localize "FASTFIGHTING.Live.Rewind"}}</button>
         {{#if canContinue}}<button type="button" class="ff-btn" data-action="continue"><i class="fa-solid fa-arrow-right"></i> {{localize "FASTFIGHTING.Live.NextTurn"}}</button>{{/if}}
+        {{#if fastFight}}{{#if fastRunning}}<button type="button" class="ff-btn ff-fast is-running" data-action="fastFight" data-tooltip="{{localize "FASTFIGHTING.Battle.FastFightStopHint"}}"><i class="fa-solid fa-stop"></i> {{localize "FASTFIGHTING.Battle.FastFightStop"}}</button>{{else}}<button type="button" class="ff-btn ff-fast" data-action="fastFight" data-tooltip="{{localize "FASTFIGHTING.Battle.FastFightHint"}}">{{localize "FASTFIGHTING.Battle.FastFight"}}</button>{{/if}}{{/if}}
         {{#if spotlight}}<button type="button" class="ff-btn" data-action="spotlight" data-tooltip="{{localize "FASTFIGHTING.Battle.SpotlightHint"}}"><i class="fa-solid fa-lightbulb"></i> {{spotlight}}</button>{{/if}}
         {{#if canSettle}}<button type="button" class="ff-btn" data-action="aftermath" data-tooltip="{{localize "FASTFIGHTING.Live.AftermathHint"}}"><i class="fa-solid fa-hand-holding-medical"></i> {{localize "FASTFIGHTING.Live.Aftermath"}}</button>{{/if}}
         {{#if canPlay}}<button type="button" class="ff-btn" data-action="play"><i class="fa-solid fa-play"></i> {{localize "FASTFIGHTING.Live.Play"}}</button>{{/if}}
@@ -42,7 +43,7 @@
         </span>
       </div>
       <div class="ff-toggles">
-        <label data-tooltip="{{localize "FASTFIGHTING.Battle.PlayThroughHint"}}"><input type="checkbox" data-action="playThrough" {{checked playThrough}}> {{localize "FASTFIGHTING.Battle.PlayThrough"}}</label>
+        <label class="{{#if fastRunning}}is-disabled{{/if}}" data-tooltip="{{localize "FASTFIGHTING.Battle.PlayThroughHint"}}"><input type="checkbox" data-action="playThrough" {{checked playThrough}} {{#if fastRunning}}disabled{{/if}}> {{localize "FASTFIGHTING.Battle.PlayThrough"}}</label>
         <label data-tooltip="{{localize "FASTFIGHTING.Battle.NpcAskHint"}}"><input type="checkbox" data-action="npcReactions" {{checked npcAsk}}> {{localize "FASTFIGHTING.Battle.NpcAsk"}}</label>
         <label class="{{#if systemApplies}}is-disabled{{/if}}" data-tooltip="{{#if systemApplies}}{{systemApplies}}{{else}}{{localize "FASTFIGHTING.Battle.ApplyDamageHint"}}{{/if}}"><input type="checkbox" data-action="applyDamage" {{checked applyDamage}} {{#if systemApplies}}disabled{{/if}}> {{localize "FASTFIGHTING.Battle.ApplyDamage"}}</label>
       </div>

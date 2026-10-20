@@ -29,7 +29,7 @@ import { sceneEncounter, encounterNumber } from "../foundry/persistence.js";
 import { clockText } from "../foundry/away.js";
 import {
   liveBattle, continueBattle, rewind, rewindEncounter, beginEncounter, endEncounter, playCurrent, answerDamage, setApplyDamage, systemAppliesText, waitingReaction, endReaction, sheetNow, liveFact, dropHeldFact, setNpcReactions, setPlayThrough, finishReview,
-  waitingOnGm, suggestedSpotlight, spotlightNext, settleBattle, setAutomated, liveCondition, liveMind, bringIntoFight, tokenIdOf
+  waitingOnGm, suggestedSpotlight, spotlightNext, settleBattle, setAutomated, liveCondition, liveMind, bringIntoFight, tokenIdOf, fastFight, fastOffered, fastRunning
 } from "../foundry/live-battle.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -133,6 +133,7 @@ export class BattleVantage extends HandlebarsApplicationMixin(ApplicationV2) {
       npcReactions: BattleVantage.#onNpcReactions,
       tellIt: BattleVantage.#onTellIt,
       playThrough: BattleVantage.#onPlayThrough,
+      fastFight: BattleVantage.#onFastFight,
       applyDamage: BattleVantage.#onApplyDamage,
       damage: BattleVantage.#onDamage,
       reaction: BattleVantage.#onReaction,
@@ -634,6 +635,11 @@ export class BattleVantage extends HandlebarsApplicationMixin(ApplicationV2) {
     await setPlayThrough(target.checked);
   }
 
+  /** >> Fast Fight >>: the rest of the fight played at once; pressed again (Stop), it stops after the turn under way. */
+  static async #onFastFight() {
+    await fastFight();
+  }
+
   /** A player's reaction waiting: they've rolled it (read off their cards), or the battle goes on without it. */
   static #onReaction(event, target) {
     endReaction(target.dataset.key, target.dataset.how === "skip" ? "skip" : "done");
@@ -665,6 +671,7 @@ export function battleContext(b, focusId = null) {
   const played = !!current && waitingOnGm();
   const player = !!current && run.live.players.has(current.id);
   const started = !!b.combat.started;
+  const fast = b === liveBattle() && fastRunning();
   const state = !started ? "unstarted" : b.data.ended ? "ended" : b.pc ? "player" : played ? "waiting" : b.data.spotlight && !current ? "spotlight" : "ready";
   // (A spotlight system: whom FastFighting would give it to next.)
   const next = state === "waiting" || state === "spotlight" ? suggestedSpotlight() : null;
@@ -690,8 +697,10 @@ export function battleContext(b, focusId = null) {
     turn: current ? turnText(b, current, player) : "",
     state, stateText: fmt(`FASTFIGHTING.Battle.State.${state}`, { name: current?.spec.name ?? "" }),
     // (Next Turn whenever the encounter is going, as the tracker's own: a player's turn, it ends it.)
-    canContinue: started && state !== "ended", canPlay: state === "ready" && !player, canRewind: !!b.data.turns.at(-1)?.snapshot,
+    canContinue: started && state !== "ended", canPlay: state === "ready" && !player && !fast, canRewind: !!b.data.turns.at(-1)?.snapshot,
     canSettle: state === "ended" && !b.data.settled,
+    // (Fast Fight, beside Next Turn, where FastFighting plays every token; its Stop while it runs.)
+    fastFight: fastOffered(b), fastRunning: fast,
     // (Foundry's encounter: Begin Encounter until it has, glowing while it waits; then End Encounter.)
     canBegin: !started, canEnd: started,
     npcAsk: run.live.npcReactions === "ask", playThrough: !!b.data.auto,

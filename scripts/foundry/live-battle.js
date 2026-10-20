@@ -15,6 +15,8 @@
  *     Rewind This Encounter puts every turn back.
  *   - A player who leaves: each character of theirs with none of its players left gets a countdown, and FastFighting
  *     plays it once that runs out; back for BACK_AFTER_MS, their characters are theirs again (away.js).
+ *   - Fast Fight, where FastFighting plays every token: the turns go on one after another, no card and no wait between
+ *     them, each kept for Rewind as ever, until something needs the GM or a player (fast-fight.js).
  * The run lives in the GM's browser while the battle goes; after every turn it's kept (snapshot, turns) on its
  * transcript, a journal entry only GMs can see (live-journals.js), the combat holding only that a battle is live. A
  * reload picks it up again.
@@ -53,6 +55,7 @@ import { randomSeed } from "../engine/rng.js";
 import { holderOf } from "../engine/behavior/troubles.js";
 import { perceives } from "../engine/behavior/senses.js";
 import { SystemAdapter } from "../adapters/adapter-base.js";
+import { FAST_MOVE_SPEED, FAST_STOP_NOTES, fastFightOffered, fastFightStop, fastTurnChange, hushDice, unhushDice, registerQuietDice } from "./fast-fight.js";
 
 /** Does the helper do this itself (its own, not the base adapter's do-nothing)? */
 const offers = (adapter, name) => typeof adapter?.[name] === "function" && adapter[name] !== SystemAdapter.prototype[name];
@@ -303,12 +306,19 @@ let line = Promise.resolve();
 /** One thing at a time: a turn played, a turn closed, a rewind. */
 function queue(work) {
   const next = line.then(work, work);
-  line = next.catch(err => {
-    console.error(`${MODULE_ID} | live battle`, err);
-    ui.notifications.error(fmt("FASTFIGHTING.Live.Failed", { error: err.message }));
-  });
+  line = next.catch(failed);
   return next;
 }
+
+/** Something in the battle went wrong: the GM told, and a Fast Fight stopped. */
+function failed(err) {
+  console.error(`${MODULE_ID} | live battle`, err);
+  ui.notifications.error(fmt("FASTFIGHTING.Live.Failed", { error: err.message }));
+  checkFast({ failed: true });
+}
+
+/** Turn changes whose turn hasn't begun yet (onTurnChange's, still in the queue). */
+let turnsWaiting = 0;
 
 /**
  * The tracker moved on: the turn that ended is closed (a player's, read and told), and the next begins (one FastFighting
@@ -317,6 +327,12 @@ function queue(work) {
 function onTurnChange(combat, prior, current) {
   // (Prepared, not yet begun: the encounter's start is beginEncounter's.)
   if ( battle?.combat !== combat || battle.data.ended || battle.data.prepared || !playsHere() ) return;
+  // (A Fast Fight: its own move on, noted; the tracker used by anyone else stops it.)
+  if ( battle.fast ) {
+    const change = fastTurnChange(battle.fast.pending, prior, current);
+    if ( change === "ours" ) battle.fast.pending = current?.combatantId ? null : { ...current };
+    else checkFast({ change });
+  }
   // (Moved by a player some other way than ending their own character's turn, or a spotlight given to a creature not
   // theirs: put back, and the GM told.)
   if ( !(battle.data.spotlight ? spotlightRightly(combat, prior, current) : movedRightly(combat, prior, current)) ) {
@@ -335,7 +351,9 @@ function onTurnChange(combat, prior, current) {
     queue(() => followBack(prior));
     return;
   }
+  turnsWaiting++;
   queue(async () => {
+    turnsWaiting--;
     pauseFor(unitOf(combat.combatant));
     await clearAreas();
     if ( battle.pc && battle.pc.combatantId !== combat.combatant?.id ) await closePlayerTurn();
@@ -407,12 +425,17 @@ const turnKey = combatant => `${battle.data.spotlight ? `s${battle.data.spots ??
 
 /**
  * On to the next turn: the tracker's next; a spotlight system's spotlight handed back for the GM to give (or, with
- * Play to the end and FastFighting playing everyone, given where FastFighting would give it).
+ * Play to the end or a Fast Fight and FastFighting playing everyone, given where FastFighting would give it). In a Fast
+ * Fight, where it moves on from is noted first, so its turn change is known for its own (onTurnChange).
  */
 async function moveOn() {
+  if ( battle.fast ) battle.fast.pending = { ...battle.combat.current };
   if ( !battle.data.spotlight ) await battle.combat.nextTurn();
-  else if ( battle.data.auto && !battle.run.live.players.size ) await spotlightNext();
-  else await getAdapter().giveSpotlight(battle.combat, null);
+  else if ( (battle.data.auto || battle.fast) && !battle.run.live.players.size ) {
+    // (No one for FastFighting to give it to: the GM gives it.)
+    if ( battle.fast && !nextSpotlight(battle.run) ) checkFast({ asks: "spotlight" });
+    else await spotlightNext();
+  } else await getAdapter().giveSpotlight(battle.combat, null);
   await takeOffTracker();
 }
 
@@ -655,10 +678,11 @@ function playersNow(run = battle.run) {
   return run;
 }
 
-/** One more the players run (a player's summons): the battle's list and the run's. */
+/** One more the players run (a player's summons): the battle's list and the run's. A Fast Fight stops. */
 function addPlayer(id) {
   battle.data.players = [...new Set([...(battle.data.players ?? []), id])];
   battle.run.live.players.add(id);
+  checkFast();
 }
 
 /** The latest turn in a log (0 for none). */
@@ -698,6 +722,10 @@ async function turnBegins(combatant) {
     battle.data.played = key;
     await moveOn();
     return;
+  }
+  // (A Fast Fight goes on, unless this turn is its player's, or it has played the battle's Max rounds.)
+  if ( battle.fast ) {
+    checkFast({ playerTurn: playerRuns(battle.run, u), rounds: (battle.run.round ?? 0) - battle.fast.from, most: Number(battle.spec.options?.maxRounds) || Infinity });
   }
   if ( playerRuns(battle.run, u) ) {
     await beginPlayerTurn(u, combatant);
@@ -945,7 +973,7 @@ async function playTurn(u, combatant, key) {
     const docs = stageDocs(stage);
     const doorsOpened = stage.doorsOpened;
     const rest = result.events.slice(stage.played);
-    if ( setting("playOnMap") ) await playMoves(rest, docs, stageGrid(stage), doorsOpened, battle.scene);
+    if ( setting("playOnMap") ) await playMoves(rest, docs, stageGrid(stage), doorsOpened, battle.scene, { speed: moveSpeed() });
     else await playMoves(rest, docs, null, doorsOpened, battle.scene, { instant: true });
     // (What it did to get ready since: drawn, loaded, up off the ground, as the system does it.)
     await playGear(rest, turn);
@@ -984,26 +1012,45 @@ async function playTurn(u, combatant, key) {
 }
 
 /**
- * A turn kept: all of them, for Rewind This Encounter (what each wrote, told and moved); the last REWIND_DEPTH with the
- * fight as it was before them too (a snapshot, the big part), for Rewind Turn.
+ * The battle's turns with one more kept: all of them, for Rewind This Encounter (what each wrote, told and moved); the
+ * last `depth` with the fight as it was before them too (a snapshot, the big part), for Rewind Turn. Pure (the older
+ * turns' snapshots dropped).
  */
+export function keptTurns(turns, turn, depth = REWIND_DEPTH) {
+  const out = [...(turns ?? []), turn];
+  for ( const t of out.slice(0, -depth) ) delete t.snapshot;
+  return out;
+}
+
+/** A turn kept (keptTurns), its cards whose damage it applied drawn again. */
 function keepTurn(turn) {
-  const turns = [...battle.data.turns, turn];
-  for ( const t of turns.slice(0, -REWIND_DEPTH) ) delete t.snapshot;
-  battle.data.turns = turns;
+  battle.data.turns = keptTurns(battle.data.turns, turn);
   redraw(turn.applied);
 }
 
-/** A turn done: kept for Rewind, the battle kept, and either the end or the GM's Continue. */
+/**
+ * What comes after a turn is kept (settleTurn), pure: "end", the battle is over; "on", the next turn at once, with no
+ * GMs' card (a turn FastFighting played, with Play to the end or in a Fast Fight); "card", the GMs' card (Rewind, Next
+ * Turn) and the wait for it; "wait", a player's turn, the tracker waits as it is. Kept for Rewind whichever it is.
+ */
+export function afterTurn({ kind, ended = false, auto = false, fast = false } = {}) {
+  if ( ended ) return "end";
+  if ( kind !== "npc" ) return "wait";
+  return auto || fast ? "on" : "card";
+}
+
+/** A turn done: kept for Rewind, the battle kept, and the end, the next turn at once, or the GM's Next Turn. */
 async function settleTurn(turn, ended) {
   keepTurn(turn);
-  if ( ended ) {
+  const next = afterTurn({ kind: turn.kind, ended, auto: !!battle.data.auto, fast: !!battle.fast });
+  if ( next === "end" ) {
     await finish();
     return;
   }
-  if ( battle.data.auto && turn.kind === "npc" ) {
+  if ( next === "on" ) {
     await keep();
-    moveOn();
+    // (Not waited on: the tracker's turn change plays the next turn, after this one.)
+    moveOn().catch(failed);
     return;
   }
   const card = await waitCard(turn);
@@ -1052,7 +1099,7 @@ async function playSoFar(events, stage) {
   const fresh = events.slice(stage.played);
   stage.played = Math.max(stage.played, events.length);
   if ( fresh.some(e => MOVING.has(e.type)) ) {
-    if ( setting("playOnMap") ) await playMoves(fresh, stageDocs(stage), stageGrid(stage), stage.doorsOpened, battle.scene);
+    if ( setting("playOnMap") ) await playMoves(fresh, stageDocs(stage), stageGrid(stage), stage.doorsOpened, battle.scene, { speed: moveSpeed() });
     else await playMoves(fresh, stageDocs(stage), null, stage.doorsOpened, battle.scene, { instant: true });
   }
   await playGear(fresh, stage);
@@ -1665,6 +1712,7 @@ async function playerRolls(request, into = null) {
   if ( !run.live.players.has(request.unitId) || !offers(adapter, "readTurn") || !doc?.actor ) return null;
   const owners = game.users.filter(u => !u.isGM && u.active && doc.actor.testUserPermission(u, "OWNER"));
   if ( !owners.length ) return null;
+  checkFast({ asks: "player" });
   const name = run.byId.get(request.unitId)?.spec.name ?? "";
   const target = request.byId ? run.byId.get(request.byId)?.spec.name ?? "" : "";
   const from = Date.now();
@@ -1854,6 +1902,7 @@ async function systemRoll({ unitId, byId, strike }, into = null) {
 
 /** A GM's say on a player's reaction's damage: Apply (1), Half (0.5), Double (2) or Dismiss (0). */
 async function askDamage(by, target, amount) {
+  checkFast({ asks: "damage" });
   const choice = await foundry.applications.api.DialogV2.wait({
     window: { title: loc("FASTFIGHTING.Battle.DamageWaiting") },
     content: `<p>${escape(fmt("FASTFIGHTING.Battle.DamageLine", { by, target, amount }))}</p>`,
@@ -1945,6 +1994,7 @@ function checkRolled(roll) {
  * success to a critical failure, or the engine rolls it. {degree} or null.
  */
 async function gmSettles(request) {
+  checkFast({ asks: "roll" });
   const who = battle.run.byId.get(request.unitId)?.spec.name ?? "";
   const what = request.action?.name || request.skill || request.purpose || "";
   const line = request.roll === "save"
@@ -1968,6 +2018,7 @@ async function gmSettles(request) {
  * no answer in time, of the GM. An NPC's (when the GM wants to be asked), of the GM. True to use it.
  */
 async function ask(request) {
+  checkFast({ asks: "question" });
   const run = battle.run;
   const name = id => (id ? run.byId.get(id)?.spec.name ?? "" : "");
   const words = {
@@ -2410,6 +2461,7 @@ export function reconcile(run, pcId, events, states) {
  * well it went, set right). Resolves with the events to tell.
  */
 function review(pc, events) {
+  checkFast({ asks: "review" });
   return new Promise(resolve => {
     battle.review = { id: pc.id, combatantId: pc.combatantId, events, resolve: chosen => {
       battle.review = null;
@@ -2856,6 +2908,7 @@ async function untally(turns) {
 
 /** The battle over: who won, told; the GMs told it's over. (The combat stays for the GM to end.) */
 async function finish() {
+  checkFast({ ended: true });
   const before = captureAll(battle.run);
   const told = battle.run.log.length;
   endLive(battle.run, { ended: true, settle: false });
@@ -2919,9 +2972,10 @@ export function settleBattle() {
   });
 }
 
-/** Next Turn: the tracker moves on to the next turn. */
+/** Next Turn: the tracker moves on to the next turn (a Fast Fight stopped: the GM's say). */
 export function continueBattle() {
   if ( !battle || battle.data.ended ) return null;
+  checkFast({ pressed: true });
   return moveOn();
 }
 
@@ -2931,6 +2985,7 @@ export function continueBattle() {
  */
 export function rewind() {
   if ( !battle ) return null;
+  checkFast({ pressed: true });
   const combat = battle.combat;
   if ( battle.data.ended || battle.data.spotlight || (combat.round <= 1 && !combat.turn) ) return rewindTurn();
   return combat.previousTurn();
@@ -2938,6 +2993,7 @@ export function rewind() {
 
 /** Put the last turn back: what it wrote, its cards and moves, and the run as it was before it; the tracker on it again. */
 export function rewindTurn() {
+  checkFast({ pressed: true });
   return queue(async () => {
     const turn = battle?.data.turns.at(-1);
     // (So far back, only the whole encounter can be rewound.)
@@ -2996,6 +3052,7 @@ async function rewoundCard(u) {
 
 /** Put the whole battle back: every turn, last first, and the run as it began. */
 export function rewindEncounter() {
+  checkFast({ pressed: true });
   return queue(async () => {
     if ( !battle ) return false;
     // (A player's turn still open: what it changed, by hand and by FastFighting, first.)
@@ -3167,6 +3224,8 @@ async function automate(ids, on) {
   }
   battle.data.players = [...players];
   playersNow();
+  // (One handed back to its player: a Fast Fight stops.)
+  checkFast();
   const pc = battle.pc;
   if ( on && pc && ids.includes(pc.id) && pc.snapshot && !pc.messages.length && !pc.records?.length && !pc.facts?.length ) {
     battle.run = playersNow(restoreRun(battle.spec, battle.rules, pc.snapshot, { log: battle.run.log }));
@@ -3189,12 +3248,99 @@ export async function setNpcReactions(mode) {
   await keep();
 }
 
-/** Play to the end: the turns FastFighting plays go on without waiting for the GM's Continue. */
+/**
+ * Play to the end: the turns FastFighting plays go on without waiting for the GM's Continue. Never with a Fast Fight
+ * (whose rolls stay in the chat, not on the GMs' one card): on, it stops one; a Fast Fight turns it off.
+ */
 export async function setPlayThrough(on) {
   if ( !battle ) return;
+  if ( on ) checkFast({ pressed: true });
   battle.data.auto = !!on;
   await keep();
   if ( on && battle.combat.combatant && battle.data.played === turnKey(battle.combat.combatant) ) continueBattle();
+}
+
+/* -------------------------------------------- */
+/*  Fast Fight                                  */
+/* -------------------------------------------- */
+
+/** Is a Fast Fight running on the battle this browser plays? */
+export const fastRunning = () => !!battle?.fast;
+
+/** Does the Battle Vantage offer Fast Fight on this battle (fast-fight.js fastFightOffered)? */
+export function fastOffered(b = battle) {
+  if ( !b || b !== battle ) return false;
+  return fastFightOffered({
+    running: !!b.fast, started: !!b.combat?.started, ended: !!b.data.ended, prepared: !!b.data.prepared, playersRun: b.data.playersRun, players: b.data.players ?? []
+  });
+}
+
+/** How fast tokens walk a turn's moves: a Fast Fight's speed, else the usual (make-it-so.js). */
+const moveSpeed = () => (battle?.fast ? FAST_MOVE_SPEED : undefined);
+
+/**
+ * ">> Fast Fight >>" (the Battle Vantage's), and its Stop. Pressed, the rest of the fight is played turn after turn:
+ * no GMs' card after each turn and no wait for Next Turn (settleTurn: afterTurn), each turn kept for Rewind as ever;
+ * the moves on the map quick (FAST_MOVE_SPEED), Dice So Nice's 3D dice off (fast-fight.js hushDice), Play to the end
+ * off. It goes from where the battle is: a turn played and waiting, on to the next; one not played yet, played. It
+ * stops as fastFightStop says (checkFast): pressed again, the battle over, a player's character to act, a GM wanted,
+ * the tracker used, something gone wrong, or the battle's Max rounds played.
+ */
+export function fastFight() {
+  if ( !battle || !playsHere() ) return null;
+  if ( battle.fast ) {
+    checkFast({ pressed: true });
+    return null;
+  }
+  if ( !fastOffered() ) return null;
+  const auto = !!battle.data.auto;
+  battle.data.auto = false;
+  battle.fast = { from: battle.run.round ?? 1, had: [...(battle.data.players ?? [])], pending: null };
+  hushDice();
+  changed();
+  return queue(() => goFast(auto));
+}
+
+/**
+ * A Fast Fight begins where the battle is (in the queue, after whatever was under way): on its way already (a turn
+ * just played moved on by itself, or a turn change waits to begin its turn), nothing more; a turn played and waiting
+ * on the GM, or no one in the spotlight, on to the next; one not played yet, played (as Play it); a player's, it stops.
+ */
+async function goFast(auto = false) {
+  if ( !battle?.fast || battle.data.ended ) return;
+  if ( auto ) await keep();
+  if ( battle.fast.pending || turnsWaiting > 0 ) return;
+  const combatant = battle.combat.combatant;
+  const u = combatant ? unitOf(combatant) : null;
+  if ( battle.pc || (u && playerRuns(battle.run, u) && !GONE.has(u.status)) ) {
+    checkFast({ playerTurn: true });
+    return;
+  }
+  if ( !combatant || battle.data.played === turnKey(combatant) ) {
+    moveOn().catch(failed);
+    return;
+  }
+  await turnBegins(combatant);
+}
+
+/**
+ * Does a Fast Fight stop here (fast-fight.js fastFightStop, with what's known now: `state`)? It stops: the GMs told
+ * why, where it wasn't their own doing. Returns why, or null.
+ */
+function checkFast(state = {}) {
+  if ( !battle?.fast ) return null;
+  const why = fastFightStop({ players: battle.data.players ?? [], had: battle.fast.had, ...state });
+  if ( !why ) return null;
+  endFast();
+  if ( FAST_STOP_NOTES.includes(why) ) ui.notifications?.info(fmt(`FASTFIGHTING.Live.FastStopped.${why}`, { n: Number(battle.spec.options?.maxRounds) || 0 }));
+  changed();
+  return why;
+}
+
+/** A Fast Fight over, however it ended: Dice So Nice as it was. */
+function endFast() {
+  if ( battle ) battle.fast = null;
+  unhushDice();
 }
 
 /* -------------------------------------------- */
@@ -3246,8 +3392,12 @@ function armClocks() {
   else clocks.clear();
 }
 
-/** This browser holds no battle now: its countdowns and waits stop (the browser that picks it up runs them). */
+/**
+ * This browser holds no battle now: its countdowns and waits stop (the browser that picks it up runs them), and a Fast
+ * Fight with them.
+ */
 function letGo() {
+  if ( battle?.fast ) endFast();
   battle = null;
   clocks.clear();
   joins.clear();
@@ -3409,6 +3559,8 @@ export function registerLiveBattles() {
   CONFIG.queries[QUERIES.liveAsk] = answerAsk;
   CONFIG.queries[QUERIES.liveRoll] = answerRoll;
   CONFIG.queries[QUERIES.liveReactionDone] = answerReactionDone;
+  // (A Fast Fight's chat cards: no 3D dice, nothing left waiting on them.)
+  registerQuietDice();
   Hooks.on("combatTurnChange", onTurnChange);
   Hooks.on("updateToken", (doc, changes) => {
     if ( !battle?.pc || doc.id !== battle.pc.id || !("x" in changes || "y" in changes) || !playsHere() ) return;

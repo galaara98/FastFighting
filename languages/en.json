@@ -2394,6 +2394,12 @@
       "ReactionDone": "I've done my reaction",
       "NoCombat": "There is no combat on this scene to play the battle on.",
       "Failed": "The live battle hit a problem: {error}",
+      "FastStopped": {
+        "tracker": "Fast Fight stopped: the tracker was moved.",
+        "player": "Fast Fight stopped: a player's character is theirs to play.",
+        "gm": "Fast Fight stopped: a GM's answer is needed.",
+        "rounds": "Fast Fight stopped after {n} rounds, the battle's Max rounds. Press it again to go on."
+      },
       "Told": "{name}'s Turn is complete.",
       "AwayPlayed": "{names}: no player came back in time, so FastFighting plays their turns now.",
       "HandedBack": "{player} is back and plays {names} again.",
@@ -2520,6 +2526,10 @@
       },
       "PlayThrough": "Play to the end",
       "PlayThroughHint": "FastFighting's turns run back to back, without waiting for Next Turn.",
+      "FastFight": ">> Fast Fight >>",
+      "FastFightHint": "Plays the rest of the fight now: no Next Turn, no turn cards, quick moves and no 3D dice. Each turn can still be rewound. Stops for a player's turn, anything a GM must answer, the tracker, or the end.",
+      "FastFightStop": "Stop",
+      "FastFightStopHint": "Stops the Fast Fight once the turn under way is done. Then it waits for Next Turn as usual.",
       "NpcAsk": "Ask me about NPC reactions",
       "NpcAskHint": "On: FastFighting asks before an NPC uses a reaction. Off: its tactics decide.",
       "Held": "Told with this player's turn when it ends:",
