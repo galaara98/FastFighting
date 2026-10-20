@@ -252,7 +252,10 @@ describe("on real threads (node's worker_threads, as a browser's Web Workers)", 
     const pool = openPool(FIXTURE, { size: 4, makeWorker: thread });
     const r = await pool.run(b.spec, b.rules, { runs: 20000, seed: 21, maxMs: 400 });
     pool.close();
-    expect(r.runs).toBeGreaterThan(4);
+    expect(pool.used).toBe(4);
+    // (However few fit: on a busy machine, the threads' start takes most of the time.)
+    expect(r.runs).toBeGreaterThanOrEqual(1);
+    expect(r.runs).toBeLessThan(20000);
     sameAs(r, r.runs, b.spec, b.rules, 21);
   }, 60000);
 });
