@@ -385,6 +385,16 @@
    "commit": null,
    "hash": "6bcada869a57"
   },
+  "core:code:scripts/foundry/live-battle.js:failed#1": {
+   "repo": "core",
+   "file": "scripts/foundry/live-battle.js",
+   "key": "scripts/foundry/live-battle.js:failed#1",
+   "area": "core/code",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "1c4f5726f8f8"
+  },
   "core:code:scripts/foundry/live-battle.js:joinFight#1": {
    "repo": "core",
    "file": "scripts/foundry/live-battle.js",
@@ -517,7 +527,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "1c4f5726f8f8"
+   "hash": "1c4f5726f8f8",
+   "gone": "2026-10-20"
   },
   "core:code:scripts/foundry/live-battle.js:readDamageCard#1": {
    "repo": "core",
@@ -2311,6 +2322,46 @@
    "date": null,
    "commit": null,
    "hash": "7df3878fb17f"
+  },
+  "core:FASTFIGHTING.Battle.FastFight": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.FastFight",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "44816818927f"
+  },
+  "core:FASTFIGHTING.Battle.FastFightHint": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.FastFightHint",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "6989eb3d1809"
+  },
+  "core:FASTFIGHTING.Battle.FastFightStop": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.FastFightStop",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "cae7d57bc067"
+  },
+  "core:FASTFIGHTING.Battle.FastFightStopHint": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.FastFightStopHint",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "0e37b6b1c120"
   },
   "core:FASTFIGHTING.Battle.Forget": {
    "repo": "core",
@@ -6199,6 +6250,46 @@
    "date": null,
    "commit": null,
    "hash": "e70393b74a6a"
+  },
+  "core:FASTFIGHTING.Live.FastStopped.gm": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Live.FastStopped.gm",
+   "area": "core/Live",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "6455a7d2d10e"
+  },
+  "core:FASTFIGHTING.Live.FastStopped.player": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Live.FastStopped.player",
+   "area": "core/Live",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "6a0f8c070f49"
+  },
+  "core:FASTFIGHTING.Live.FastStopped.rounds": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Live.FastStopped.rounds",
+   "area": "core/Live",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "b7b108973141"
+  },
+  "core:FASTFIGHTING.Live.FastStopped.tracker": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Live.FastStopped.tracker",
+   "area": "core/Live",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "aa457436acf8"
   },
   "core:FASTFIGHTING.Live.HandedBack": {
    "repo": "core",
