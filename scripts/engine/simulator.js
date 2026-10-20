@@ -353,6 +353,21 @@ export function noteIdle(run, u) {
   log(run, u, { type: "lazy" });
 }
 
+/**
+ * After a turn in a live battle: one on its feet that isn't part of the fight (it hasn't noticed it, has only just,
+ * or takes no side and has turned on no one) and did nothing in it keeps out of it, told, so the table sees its turn
+ * went by. Only in a live battle, where the tracker gives it a turn: a simulated fight tells no turn it doesn't take.
+ */
+export function noteAside(run, u) {
+  if ( !run.live || !run.log || u.status !== STATUS.STANDING || u.spec.hazard || inFight(u) ) return;
+  for ( let i = run.log.length - 1; i >= 0; i-- ) {
+    const e = run.log[i];
+    if ( e.turn < run.turn ) break;
+    if ( e.turn === run.turn && e.actorId === u.id && e.type !== "thought" ) return;
+  }
+  log(run, u, { type: "aside" });
+}
+
 /** b takes part from now on (someone who takes no side watches, weighing what it wants). */
 function join(run, b, why) {
   b.active = true;
@@ -4618,6 +4633,7 @@ export function playTurn(run, u) {
   startTurn(run, u);
   takeTurn(run, u);
   noteIdle(run, u);
+  noteAside(run, u);
   return afterTurn(run, u);
 }
 

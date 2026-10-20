@@ -3508,6 +3508,13 @@
     "{actor} stays clear, watching closely.",
     "{actor} takes no side, but misses nothing."
   ],
+  "event.aside": [
+    "{actor} wants no part of this, and keeps well back.",
+    "{actor} stays put, letting the fight go on without them.",
+    "{actor} holds back from the fighting.",
+    "{actor} keeps their head down and stays out of it.",
+    "{actor} stands by, unwilling to get involved."
+  ],
   "event.offended": [
     "{actor} has seen enough and turns on {by} and their friends.",
     "{actor} won't stand for it, and goes after {by}'s side.",

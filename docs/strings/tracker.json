@@ -7271,6 +7271,16 @@
    "commit": null,
    "hash": "6d217ba625ae"
   },
+  "core:FASTFIGHTING.Log.Aside": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.Aside",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "a16b5e74b3cf"
+  },
   "core:FASTFIGHTING.Log.AskedBy": {
    "repo": "core",
    "file": "languages/en.json",
@@ -18930,6 +18940,16 @@
    "date": null,
    "commit": null,
    "hash": "b6b243caef1e"
+  },
+  "core:FASTFIGHTING.Story.Part.aside": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Story.Part.aside",
+   "area": "core/Story",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "a3cd5f89da98"
   },
   "core:FASTFIGHTING.Story.Part.assess": {
    "repo": "core",
@@ -36664,6 +36684,16 @@
    "date": null,
    "commit": null,
    "hash": "48d9e6e3b0e6"
+  },
+  "core:story:event.aside": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "event.aside",
+   "area": "core/story.event",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "60dd405ec4cc"
   },
   "core:story:event.auraHarms": {
    "repo": "core",

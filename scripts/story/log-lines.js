@@ -341,6 +341,12 @@ function baseLine(e) {
     case "initiative": return t("Initiative", { order: listItems(e.order ?? []) });
     case "join": return e.why === "forced" ? t("JoinForced", a) : t("Join", a);
     case "watch": return t("Watch", a);
+    case "aside": return t("Aside", a);
+    // (A recovery check the system worded itself: its words, below. One read from a player's sheet, with none: what it
+    // came to.)
+    case "recovery":
+      if ( e.text ) return `${e.actor ? `${e.actor}: ` : ""}${e.text}`;
+      return `${e.actor ? `${e.actor}: ` : ""}${e.dead ? t("Dies") : e.stable ? t("Stabilized") : t("DyingN", { n: e.dying ?? 0 })}${e.revived ? t("Revived") : ""}`;
     case "lastWord": return t("LastWord", a);
     case "legendary": return t("Legendary", { ...a, action: e.action });
     case "mercy": return t("Mercy", a);

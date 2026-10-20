@@ -201,7 +201,11 @@ export function pcTurnEnd(run, id, events = [], states = null, facts = []) {
   // (A spotlight system's hand-off, as the roll read says: Daggerheart's roll with Fear, or one that failed.)
   if ( events.some(e => e.handoff) ) u.handoff = true;
   const was = new Map(run.units.map(x => [x.id, x.hp]));
+  // (Dying as its turn ends, before the sheets are read: a recovery check its player rolled shows only there, or in
+  // what its helper read of its card.)
+  const before = u.status === STATUS.DOWN && !u.stable ? { dying: Number(u.dying) || 0, status: u.status, stable: false } : null;
   const changes = states ? syncFromSheets(run, states) : [];
+  if ( before && !events.some(e => e.targetId === u.id && e.type !== "recovery") ) noteRecovery(run, u, before, events.find(e => e.type === "recovery") ?? null);
   harmedAsShown(run, run.log.slice(from), was);
   // (Everyone as the sheets now have them: what the engine makes of the turn from here, a death burst, is its own.)
   const synced = captureAll(run);
@@ -215,6 +219,31 @@ export function pcTurnEnd(run, id, events = [], states = null, facts = []) {
   const ended = afterTurn(run, u);
   followCommand(run);
   return { events: run.log.slice(from), ended, changes, synced };
+}
+
+/**
+ * A player's character dying as its turn began, its recovery check (a death save: one roll that settles it, or one of
+ * several) rolled at the table, logged as the engine's own check is (simulator.js), for the story to tell: better,
+ * worse, stable, up again, or dead. What it came to is the system's to say, by the first that does:
+ *  - `read`: a recovery event its helper read of the card ({type: "recovery", better, dead, stable, revived, text}:
+ *    readTurn), told as it says;
+ *  - rules.recoveryRead(u, {before, now}) ({dying, status, stable} each, before the sheet was read and after): what it
+ *    came to ({better, dead, stable, revived, text}), null for nothing to tell, undefined for the core's reading;
+ *  - the core's reading of the sheet: dead, stable or up again as it says, else a lower dying value better and a
+ *    higher one worse. Nothing changed (no check rolled), nothing told.
+ */
+function noteRecovery(run, u, before, read = null) {
+  const now = { dying: Number(u.dying) || 0, status: u.status, stable: !!u.stable };
+  const seen = { before: before.dying, dying: now.dying, dead: now.status === STATUS.DEAD, stable: now.stable, ...(now.status === STATUS.STANDING ? { revived: true } : {}) };
+  const said = read ?? run.prep.rules.recoveryRead?.(u, { before, now });
+  if ( said === null ) return;
+  if ( said && typeof said === "object" ) {
+    const { type, actorId, targetId, ...what } = said;
+    log(run, u, { ...seen, better: !seen.dead && (!!seen.revived || seen.stable || seen.dying < seen.before), ...what, type: "recovery" });
+    return;
+  }
+  if ( !seen.dead && !seen.revived && !seen.stable && seen.dying === seen.before ) return;
+  log(run, u, { ...seen, better: !seen.dead && (!!seen.revived || seen.stable || seen.dying < seen.before), type: "recovery" });
 }
 
 /** What a player's blow is logged as. */
@@ -309,6 +338,8 @@ export function observe(run, u, e, harmers = new Map()) {
     }
     case "handoff":
       return; // (only the spotlight's hand-off: pcTurnEnd marks it)
+    case "recovery":
+      return; // (its own recovery check, read from its card: pcTurnEnd tells it once the sheet is read)
     default:
       // (Anything else in the engine's own shape, told as it is: a move, a raised shield, a maneuver, a buff.)
       log(run, u, { ...e, ...named });

@@ -508,6 +508,7 @@ function narrate(e, roll, rel, fill) {
     case "notice": return roll({ sight: "maneuver.noticeSight", sound: "maneuver.noticeSound", smell: "maneuver.noticeSmell", feel: "maneuver.noticeFeel", radar: "maneuver.noticeRadar", fledInto: "event.noticeFled", help: "event.noticeHelp", attacked: "event.noticeAttacked", standoff: "event.noticeStandoff" }[e.cause] ?? "maneuver.noticeSight", f);
     case "join": return roll(e.why === "forced" ? "event.joinForced" : "event.join", f);
     case "watch": return roll(e.neutral ? "event.watchNeutral" : "event.watch", f);
+    case "aside": return roll("event.aside", f);
     case "neutral": {
       const g = { ...f, side: e.sideLabel ?? "", victim: e.victim ?? "" };
       switch ( e.what ) {

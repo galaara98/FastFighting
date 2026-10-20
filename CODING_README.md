@@ -367,6 +367,24 @@ one from leaves it out. `fast` is agility and quickness, not how far it moves (`
 - From core-api: `APTITUDES` (the five keys, in order), `APTITUDE_MOST` (4), `APTITUDE_AVERAGE` (2).
 - PF2e reads them from its attribute modifiers (`FastFighting-PF2e/scripts/traits.js` `aptitudesOf`).
 
+**Recovery checks rolled at the table (API 23).** A player's character dying as its turn began, its recovery check (a
+death save) rolled by its player: told as the engine's own check is, a `recovery` event (`before`, `dying`, `better`,
+`dead`, `stable`, `revived`, `text`) that the story tells from its recovery lines (`engine/live.js` `pcTurnEnd`,
+`noteRecovery`). Systems count it their own way (one roll that settles it; several, as PF2e's dying steps and 5e's
+three successes or failures), so what it came to is the system's to say, by the first that does:
+- `readTurn` may give a `{type: "recovery", better, dead, stable, revived, text}` event read off the card: told as it
+  says, the core's dying numbers beside it;
+- `rules.recoveryRead(unit, {before, now})` (`{dying, status, stable}` each, the engine's before the sheet was read and
+  after): `{better, dead, stable, revived, text}`, `null` for nothing to tell, `undefined` for the core's reading;
+- the core's reading: dead, stable or up again as the sheet says, else a lower dying value better and a higher one
+  worse; the sheet as it was, nothing told. PF2e's dying steps need nothing more.
+The GMs' log gives the system's `text`, else what it came to (dying n, stabilized, dies).
+
+**A turn by one not in the fight (live battles).** One on its feet that isn't part of the fight (it hasn't noticed it,
+has only just, or takes no side and has turned on no one) and does nothing in its turn logs `aside` (`simulator.js`
+`noteAside`, after `noteIdle`), told from the story's `event.aside`, so the table sees its turn went by. Only with
+`run.live`: a simulated fight tells no turn it doesn't take.
+
 #### Table rolls: the engine's own dice, shown
 
 Whenever FastFighting rolls dice itself for something a person would roll at the table, a live battle shows the roll in the chat as a real Foundry Roll. The Statistics Engine's own randoms (its choices, its model of morale and luck, a fight it imagines) stay hidden. A roll the system makes itself (`run.live.roll`: strike, save, check, use, damage, adjust, apply; `systemRolled`) is the system's card already and is never posted again.
