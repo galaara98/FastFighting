@@ -32,9 +32,9 @@ const layOnHands = {
   traits: ["healing", "vitality"], outcome: { mods: { ac: 2 }, rounds: 1, label: "+2 AC", notSelf: true }
 };
 
-test("the API is 21, major.bug", () => {
-  expect(CORE_API).toEqual({ major: 21, bug: 0 });
-  expect(CORE_API_VERSION).toBe("21.0");
+test("the API is 21 or later, major.bug", () => {
+  expect(CORE_API.major).toBeGreaterThanOrEqual(21);
+  expect(CORE_API_VERSION).toBe(`${CORE_API.major}.${CORE_API.bug}`);
 });
 
 describe("an outcome for another alone (notSelf)", () => {

@@ -16,7 +16,7 @@ import {
 } from "../foundry/tactics.js";
 import { cachedCharacterSpec, showsReactions } from "../foundry/sheet-watch.js";
 import {
-  gatherRoster, chosenSide, groupOf, proposeNeutralGroups, resolveAllegiances, simulate, swingFactors, typicalFight,
+  gatherRoster, chosenSide, groupOf, proposeNeutralGroups, resolveAllegiances, simulate, swingFactors, typicalFight, fightThreads,
   approachFor, commandChains, commandGroup, seedCommand, clearRole, ROLES, sideName, hostileGroupsIn, secretTeam, SECRET_TEAMS, LEANS, predictionSeconds,
   battleFor, surpriseMode, systemSurprise
 } from "../foundry/battle.js";
@@ -756,14 +756,15 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
   /**
    * Too few fights for the prediction's time (fewer than ROUGH_RUNS: the odds will be rough), with what makes a battle
    * slow to simulate: its creatures, their actions, the map's tiles and walls; or nothing. How many fights did, once it
-   * has run (this computer's speed); before, about how many will, at the pace its last prediction ran (runPace).
+   * has run (this computer's speed); before, about how many will, at the pace its last prediction ran on each thread
+   * (runPace), on the threads it will run on (its background workers: fightThreads).
    * {text, size}.
    */
   #runsNote(resolved) {
     const taking = this.roster.filter(e => resolved[e.token.id] && this.setup.tokens[e.token.id]?.include !== false);
     const creatures = taking.length;
     const seconds = predictionSeconds(this.setup);
-    const runs = this.results && !this.stale ? this.results.runs : expectedRuns(creatures, seconds, setting("runPace"));
+    const runs = this.results && !this.stale ? this.results.runs : expectedRuns(creatures, seconds, setting("runPace"), fightThreads());
     if ( runs >= ROUGH_RUNS ) return null;
     const actions = taking.reduce((n, e) => n + (e.spec.actions?.length ?? 0), 0);
     const { sceneRect, size } = canvas.dimensions ?? {};
@@ -1091,7 +1092,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       // The tokens again, so HP and positions are current (a character read again where it changed: sheet-watch.js).
       this.roster = await gatherRoster(this.setup);
       let lastPaint = 0;
-      const { spec, results, approach } = await simulate(this.roster, this.setup, {
+      const { spec, results, approach, threads } = await simulate(this.roster, this.setup, {
         signal: this.abort.signal,
         onProgress: (p, done = 0) => {
           this.progress = p;
@@ -1123,7 +1124,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
         // (Kept, to show again if the planner opens on this same battle: a run cut short isn't. And this computer's
         // pace, for the next estimate.)
         rememberRun(this.holderUuid, spec, results);
-        const pace = paceOf(spec.combatants.length, predictionSeconds(this.setup), results.runs);
+        const pace = paceOf(spec.combatants.length, predictionSeconds(this.setup), results.runs, threads);
         if ( pace ) Promise.resolve().then(() => game.settings.set(MODULE_ID, "runPace", pace)).catch(err => console.warn(`${MODULE_ID} | keeping the pace`, err));
       }
     } catch ( err ) {

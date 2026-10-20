@@ -49,6 +49,19 @@ export class SystemAdapter {
     throw new Error(`${this.constructor.name} must provide rules`);
   }
 
+  /**
+   * Where the same rules can be imported on a background thread, so the planner's fights run on workers (API 22,
+   * engine/batch-pool.js): the module's url (from the helper's own: `new URL("./rules.js", import.meta.url).href`), the
+   * export that is the rules (or a function making them from `data`), and `data`, the settings those rules read, as
+   * plain data (anything a structured clone copies). The module and everything it imports must load without Foundry's
+   * globals, and the rules mustn't need them as they play (labels: a worker's game.i18n gives back each key). Null, as
+   * here: the fights run on the main thread, as before.
+   * @returns {{url: string, exportName?: string, data?: *}|null}
+   */
+  workerRules() {
+    return null;
+  }
+
   /** Whether this adapter can build a combatant from the token's actor. */
   canHandle(actor) {
     return !!actor;

@@ -1613,7 +1613,7 @@ Tactical 60–79, Mastermind 80–100 (live value, so a leader's tactical floor 
 
 ### The prediction: how many fights it runs
 
-Search: prediction time, Prediction time (seconds), predictionTime, Seconds, how many fights, runs, simulations, rough odds, slow, big battle, MAX_RUNS, FIGHT_MS_PER_PAIR, pace, runPace, seed, random
+Search: prediction time, Prediction time (seconds), predictionTime, Seconds, how many fights, runs, simulations, rough odds, slow, big battle, MAX_RUNS, FIGHT_MS_PER_PAIR, pace, runPace, seed, random, workers, threads, cores, MOST_WORKERS
 
 Decides how many simulated fights the planner runs before it shows the odds.
 
@@ -1621,20 +1621,26 @@ Decides how many simulated fights the planner runs before it shows the odds.
   at most 20 000 (`MAX_RUNS`).
 - Time: **Prediction time (seconds)** (`predictionTime`), default 10, range 6–60. The planner's **Seconds** slider
   overrides it for one battle.
-- Every 25 ms it lets the browser redraw; each pause counts against the time only up to 20 ms, so a background tab
-  doesn't eat the budget.
+- Threads: where the system's helper allows it, the fights run on background workers, min(4, cores − 1) of them and
+  at least 1 (`MOST_WORKERS`, `poolSize`), several at once; worker w of n runs fights w, w + n, w + 2n ... The time
+  counts from when they're sent the battle. Each starts no fight once it's up and finishes the one under way; fights
+  done past the first one missing are left out, so the result is always fights 0 to N − 1, the same as on one thread.
+- Otherwise on the main thread: every 25 ms it lets the browser redraw; each pause counts against the time only up to
+  20 ms, so a background tab doesn't eat the budget.
 - Estimated time per fight with n creatures: (0.5 + 0.031 × n²) × pace ms (`FIGHT_MS_PER_PAIR` = 0.031, measured on
   simple creatures with an action or two, in fights of five or six rounds). Estimated fights = min(20 000,
-  floor(seconds × 1000 ÷ that)).
-- Pace: how many times longer this computer's last full prediction took per fight than that formula says (seconds ×
-  1000 ÷ fights run ÷ formula), kept in this browser (`runPace`, 1 until a prediction has run). Real battles run slower
+  floor(threads × seconds × 1000 ÷ that)).
+- Pace: how many times longer this computer's last full prediction took per fight on each thread than that formula
+  says (seconds × 1000 ÷ (fights run ÷ threads) ÷ formula), kept in this browser (`runPace`, 1 until a prediction has
+  run). Real battles run slower
   than the formula: creatures with a dozen actions each (PF2e's maneuvers), walls to see past and around, three sides.
   A 15-creature PF2e battle on a walled map, about 14 on a desktop. A prediction cut short, or one that ran all 20 000,
   sets none.
 - Fewer than 100 fights (`ROUGH_RUNS`): the planner warns that the odds will be rough (about ±5% or worse). Before a
   run it uses the estimate, after a run the real count.
 
-Estimated fights at pace 1 (a fast machine fits more; a battle of many actions and walls, fewer):
+Estimated fights at pace 1 on one thread (a fast machine fits more; a battle of many actions and walls, fewer; on
+workers, about that many times as many):
 
 | Creatures | 6 s | 10 s | 30 s | 60 s |
 |---|---|---|---|---|
@@ -1649,7 +1655,8 @@ Estimated fights at pace 1 (a fast machine fits more; a battle of many actions a
   so any fight replays exactly.
 
 Code: `engine/run-budget.js` `budgetMs`, `fightMs`, `expectedRuns`, `paceOf`; `engine/simulator.js` `runBatch`;
-`apps/battle-planner.js` `#runsNote`, `onRun`; `foundry/battle.js` `simulate`.
+`engine/batch-pool.js` `openPool`, `poolSize`; `engine/batch-worker.js`; `apps/battle-planner.js` `#runsNote`, `onRun`;
+`foundry/battle.js` `simulate`, `fightPool`, `fightThreads`.
 
 ### Rounds, stalemates and the max-rounds cap
 
@@ -1715,7 +1722,8 @@ Shows how much each combatant and each option moves the party's win chance.
 
 - Tests: the battle without each of up to 12 combatants (highest level first, then highest max HP), and with
   Leadership, Morale, and Terrain & positioning each turned off (only those that are on).
-- Each test runs up to 300 fights (`SWING_RUNS`) in 3 × prediction time ÷ number of tests, seed 99.
+- Each test runs up to 300 fights (`SWING_RUNS`) in 3 × prediction time ÷ number of tests, seed 99 (on the
+  background workers where the prediction runs on them).
 - Each shows the party's win chance in the test minus the main run's, largest change first.
 
 Example: 6 seconds and 10 tests give each test 1.8 seconds.

@@ -37,6 +37,11 @@ export class GenericAdapter extends SystemAdapter {
     return genericRules;
   }
 
+  /** The same rules for the planner's background workers (API 22): pure, reading no setting. */
+  workerRules() {
+    return { url: new URL("./rules.js", import.meta.url).href, exportName: "genericRules" };
+  }
+
   get paths() {
     return { ...GENERIC_PATHS, ...(game.settings.get(MODULE_ID, "genericPaths") ?? {}) };
   }

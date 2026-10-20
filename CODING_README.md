@@ -6,7 +6,7 @@ For anyone writing a system helper, another module that works with FastFighting,
 
 FastFighting is split into a pure simulation engine, system **helpers**, and the Foundry UI. The core owns only its own ideas: personality, morale, leadership, positioning, standoffs, the story, and how creatures leave a fight. Every game rule comes from the helper. FastFighting PF2e, FastFighting D&D 5e and FastFighting DCC are reference implementations of three very different systems.
 
-- `scripts/engine/`: the simulation, pure (no Foundry globals). `simulator.js` runs a BattleSpec against a rules object; `battle-state.js` defines the CombatantSpec and per-run state; `live.js` keeps a run going a turn at a time for a live battle, `changes.js` turns one turn into a change set a helper writes onto the sheet, and `table-rolls.js` records the dice a live battle shows (see **Table rolls**). `behavior/` has one file per behavior (talk, standoff, bargain, neutral, morale, leaving, goad, traps, theft, doors, holds, troubles, summons, responses and the rest).
+- `scripts/engine/`: the simulation, pure (no Foundry globals). `simulator.js` runs a BattleSpec against a rules object, and `batch-pool.js` runs the planner's batches on background workers (`batch-worker.js`: **The planner's fights on background workers** below); `battle-state.js` defines the CombatantSpec and per-run state; `live.js` keeps a run going a turn at a time for a live battle, `changes.js` turns one turn into a change set a helper writes onto the sheet, and `table-rolls.js` records the dice a live battle shows (see **Table rolls**). `behavior/` has one file per behavior (talk, standoff, bargain, neutral, morale, leaving, goad, traps, theft, doors, holds, troubles, summons, responses and the rest).
 - `scripts/adapters/`: `adapter-base.js`, the SystemAdapter contract, and the experimental generic adapter.
 - `scripts/foundry/`: the Foundry side. `battle.js` turns the scene and the GM's plan into a BattleSpec; `live-battle.js` plays a live battle on the tracker (`startLiveBattle` with `begin: false` prepares it, and `beginEncounter` begins it with the encounter, Foundry's Begin Encounter included); `auto-config.js` sets characters up; `pathing.js` and `terrain.js` read walls, regions and senses from the scene.
 - `scripts/apps/`: the Battle Planner, the Battle Vantage (`battle-network.js` is its map of minds), the player survey, the token's FastFighting tab, and the settings menus.
@@ -66,7 +66,7 @@ The Battle Vantage's **>> Fast Fight >>** (`foundry/fast-fight.js`, pure but for
 ## Writing a system helper
 
 ```js
-const KNOWN_API = [21]; // the core API majors this helper knows it works with
+const KNOWN_API = [22]; // the core API majors this helper knows it works with
 
 Hooks.once("fastFighting.init", api => {
   const major = Number(api.major) || 0;
@@ -75,6 +75,7 @@ Hooks.once("fastFighting.init", api => {
   class MySystemAdapter extends api.SystemAdapter {
     get label() { return "My System"; }
     get rules() { return myRules; }                  // pure: see "The rules object"
+    workerRules() { ... }                            // the same rules for the planner's background workers: {url, exportName, data} (API 22)
     canHandle(actor) { ... }
     async toCombatantSpec(tokenDoc) { ... }          // see CombatantSpec in scripts/engine/battle-state.js
     deriveTraits(actor) { ... }                      // {traits, flags, reasons}: core-api's traitsFromParts builds traits and reasons from parts
@@ -120,7 +121,7 @@ Hooks.once("fastFighting.init", api => {
 ```
 
 - **Declare your system** in `module.json` (`relationships.systems`) so Foundry only offers the helper in worlds of that system. The core also ignores adapters registered for another system. Among adapters for one system, the highest `priority` wins.
-- **Versions.** The helper-facing API version is `major.bug`: `CORE_API = { major: 21, bug: 0 }` and `CORE_API_VERSION = "21.0"` in `core-api.js`; the `fastFighting.init` api object carries `api.version` ("21.0"), `api.major` and `api.bug`. The major goes up when what a helper can use changes (something added that a helper may rely on, or something changed); the bug number goes up for a fix that changes nothing a helper uses.
+- **Versions.** The helper-facing API version is `major.bug`: `CORE_API = { major: 22, bug: 0 }` and `CORE_API_VERSION = "22.0"` in `core-api.js`; the `fastFighting.init` api object carries `api.version` ("22.0"), `api.major` and `api.bug`. The major goes up when what a helper can use changes (something added that a helper may rely on, or something changed); the bug number goes up for a fix that changes nothing a helper uses.
 - **Compatibility is the helper's call.** The core never refuses a helper for its version and keeps no list of which helpers fit it; `KNOWN_HELPERS` in `scripts/helpers.js` exists only to recommend a helper for a system. Each helper lists the majors it knows it works with (`KNOWN_API` in its `main.js`). Below the oldest, it doesn't register and tells the GM the core is too old; on any other major it isn't known to work with, it registers and warns the GM it hasn't been tried with that core yet. The minimum in its `module.json` `relationships.requires` is Foundry's install-time check, also the helper's to set.
 - **Ask for a hook when nothing fits.** When a helper builds something new that the core can't handle well enough with what it already offers, ask for a new core hook rather than forcing a poor fit or working around the core. A new hook raises the API's major, which the helper then adds to `KNOWN_API`; that is how the hooks marked "API n" below arrived.
 - **Recognise things by slug, read them by what they do.** To find a particular feature, action or spell, look for its slug or identifier (PF2e `slug`, dnd5e `system.identifier`), never its name: slugs are the same in every book, every edition of the free rules and every language, while names change with translations, reprints and homebrew copies (the name is only a fallback). Better still, read what an item does (its activities, effects, rule elements, and as a last resort its words), so paid books and homebrew nobody has seen yet still work. The helpers work from the free rules (the SRD, the PF2e remaster, each system's open content) alone; anything more is read the same way.
@@ -316,6 +317,39 @@ table may settle itself (`tests/api-21.test.js`).
     way (`dropApplied`: a GM's or a player's own Apply on the card; FastFighting's own writing never counts, `applying`).
   With Apply players' damage on, or a creature on either side, FastFighting applies it, as ever.
 
+#### The planner's fights on background workers (API 22)
+
+The planner's prediction and its swing factors run on a pool of module Web Workers, so the screen never freezes for a
+fight and more fights fit the time (`engine/batch-pool.js`, `engine/batch-worker.js`; `foundry/battle.js` `simulate`,
+`swingFactors`, `fightPool`; `tests/api-22.test.js`).
+- **The hook:** `adapter.workerRules()` returns where the workers import the system's rules from: `{url, exportName,
+  data}`. `url` is the rules module's, from the helper's own (`new URL("./rules.js", import.meta.url).href`: Foundry
+  serves it under `/modules/<id>/`, whatever its route prefix; a relative one is read from the page's); `exportName` the
+  export that is the rules object, or a function the worker calls with `data` to make them; `data` the settings those
+  rules read, as plain data (anything a structured clone copies). Null (the default; an older helper): the main
+  thread's `runBatch`, as before. The core's generic adapter gives `scripts/adapters/generic/rules.js`.
+- **What the rules may touch:** nothing of Foundry's, at import or as they play. The module, and everything it imports
+  (core-api.js is fine), must load in a worker: no `game`, `CONFIG`, `canvas`, `ui`, `foundry`, `Hooks` or `document`.
+  A setting the rules read comes in `data`, or (better) on the spec, read when the spec is built. Labels for the log are
+  the one exception: a fight's summary holds no words, so in a worker `game.i18n` is a stand-in that gives each key back
+  (`has` false, `localize` and `format` the key), as the core's `localize` does without Foundry.
+- **The spec** goes to each worker as a structured clone: plain data, no functions (`Infinity`, `undefined`, Sets and
+  Maps are fine). One that can't be sent runs on the main thread.
+- **The pool:** up to `MOST_WORKERS` (4), one fewer than `navigator.hardwareConcurrency` (one left for the screen), one
+  at least (`poolSize`). Each worker builds its own `prepareBattle` and runs an interleaved share of the fight indices,
+  fight i with `deriveSeed(seed, i)`; it posts the fights it has done every `FLUSH_MS` (25 ms). The main thread feeds the
+  aggregator in index order, so N fights give exactly what `runBatch` and `runBatchSync` give for N fights with that
+  seed. `preSimulate`, the modifiers and `postSimulate` stay on the main thread, before and after.
+- **The time:** each worker starts no fight once the prediction's time is up (but fight 0), and finishes the one under
+  way; fights done past the first one missing are left out, so the batch is fights 0 to N - 1. Its time counts from
+  when the batch is sent, the workers' start included. **Stop** ends the workers at once, keeping the fights in order so
+  far (fight 0 at least, run on the main thread if none came back). The planner's estimate of how many fights fit
+  counts the threads (`run-budget.js` `expectedRuns`, `paceOf`: the pace is each thread's).
+- **No workers:** without Web Workers, without `workerRules`, or once workers have failed with those rules this
+  session (a module that won't load in a worker, a rules error there, a worker that can't be made, workers that aren't
+  done `GRACE_MS`, 20 s, past the time), the batch runs on the main thread (`runBatch`, in the time left), and so do the
+  session's later ones; the console says why.
+
 #### Table rolls: the engine's own dice, shown
 
 Whenever FastFighting rolls dice itself for something a person would roll at the table, a live battle shows the roll in the chat as a real Foundry Roll. The Statistics Engine's own randoms (its choices, its model of morale and luck, a fight it imagines) stay hidden. A roll the system makes itself (`run.live.roll`: strike, save, check, use, damage, adjust, apply; `systemRolled`) is the system's card already and is never posted again.
@@ -458,7 +492,7 @@ Helpers import from `scripts/core-api.js`, never the core's internal layout: `Sy
 ## Other API and hooks
 
 `game.modules.get("fast-fighting").api`, also passed to `fastFighting.init`:
-- `version` ("20.0"), `major` and `bug` (see **Versions**), `SystemAdapter`, `registerAdapter(systemId, AdapterClass, {priority, source})`, `getAdapter(systemId)`, `listAdapters()`;
+- `version` ("22.0"), `major` and `bug` (see **Versions**), `SystemAdapter`, `registerAdapter(systemId, AdapterClass, {priority, source})`, `getAdapter(systemId)`, `listAdapters()`;
 - `registerModifier({id, label, apply(spec, context)})` (changes the BattleSpec just before a simulation) and `registerTraitRule({id, test(actor, spec), apply(traits, spec)})` (adjusts derived personality for matching actors);
 - `engine` (the simulator: `runBatch`, `runBatchSync`, `replay` and the rest), `dice` and `constants`;
 - `adviseTranslation` and `keepEnglish` (see **Words** above);
@@ -478,7 +512,7 @@ Hooks:
 
 - A Secret token's team pills: a number no one else has is a team of its own. Who paused or un-paused the game while the planner was open has the last word; the planner closes for Do it For Real Now, and the game goes on once the fight is written.
 - **Bystanders** check, on their own turn, whether they notice the fight now; once aware, they take their turns from the next round, as if they'd been in the encounter all along. An attack makes one aware at once.
-- **The prediction** runs fight after fight until its time is up (`engine/run-budget.js`); a fight under way is always finished.
+- **The prediction** runs fight after fight until its time is up (`engine/run-budget.js`); a fight under way is always finished. Where the system's helper opens its rules to them, on background workers, several fights at once (**The planner's fights on background workers**); the swing factors' tests too.
 
 ### Personality and playstyles
 

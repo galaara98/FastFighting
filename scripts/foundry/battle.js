@@ -2,8 +2,9 @@
  * Turns the tokens on the viewed scene plus the GM's setup into a BattleSpec, runs it, and digs into the results.
  */
 import { MODULE_ID, SIDES, ALLEGIANCE, DISPOSITION_SIDES, NEUTRAL_PARTY, HOSTILE_GROUPS, GROUPS, TRAITS, MAX_ROUNDS, clamp } from "../constants.js";
-import { runBatch, replay } from "../engine/simulator.js";
+import { replay } from "../engine/simulator.js";
 import { budgetMs, swingShareMs, MAX_RUNS, SWING_RUNS } from "../engine/run-budget.js";
+import { openPool, poolThreads } from "../engine/batch-pool.js";
 
 /** How long a battle's prediction runs (seconds): its plan's, else the world's Prediction time. */
 export const predictionSeconds = setup => setup?.options?.seconds ?? setting("predictionTime");
@@ -835,7 +836,36 @@ function groundFor(roster) {
   return groundCache.value;
 }
 
-/** Full pipeline used by the Battle Planner. */
+/**
+ * Where the system's helper says its rules can be imported on a background thread (adapter.workerRules, API 22:
+ * {url, exportName, data}), a relative url read from the page's; or null: none (an older helper, or one that doesn't
+ * open its rules to workers), or an answer that isn't one.
+ */
+export function workerRulesOf(adapter = getAdapter()) {
+  try {
+    const ref = adapter?.workerRules?.();
+    if ( !ref?.url ) return null;
+    const url = new URL(String(ref.url), globalThis.document?.baseURI).href;
+    return { url, exportName: typeof ref.exportName === "string" && ref.exportName ? ref.exportName : "default", data: ref.data ?? null };
+  } catch ( err ) {
+    console.warn(`${MODULE_ID} | the helper's workerRules`, err);
+    return null;
+  }
+}
+
+/**
+ * A pool for the planner's fights (engine/batch-pool.js): background workers where the helper opens its rules to them
+ * and the browser has Web Workers, else this thread. Close it when the run is over.
+ */
+export const fightPool = (adapter = getAdapter()) => openPool(workerRulesOf(adapter), { lang: game.i18n.lang });
+
+/** The threads the planner's next prediction runs on (for its estimate of how many fights fit: run-budget.js). */
+export const fightThreads = (adapter = getAdapter()) => poolThreads(workerRulesOf(adapter));
+
+/**
+ * Full pipeline used by the Battle Planner. The fights run on background workers where they can (fightPool): the hooks
+ * and modifiers stay here, before and after. `threads`: how many they ran on.
+ */
 export async function simulate(roster, setup, { onProgress, signal } = {}) {
   const adapter = getAdapter();
   // (Each character's calculated answers as they are now, whatever was written to its flags since the roster was read.)
@@ -845,9 +875,15 @@ export async function simulate(roster, setup, { onProgress, signal } = {}) {
   Hooks.callAll("fastFighting.preSimulate", spec, { setup, roster });
   const seed = setup.options.seed ?? undefined;
   // (Fight after fight until the prediction's time is up: engine/run-budget.js.)
-  const results = await runBatch(spec, adapter.rules, { runs: MAX_RUNS, seed, onProgress, signal, maxMs: budgetMs(predictionSeconds(setup)) });
+  const pool = fightPool(adapter);
+  let results;
+  try {
+    results = await pool.run(spec, adapter.rules, { runs: MAX_RUNS, seed, onProgress, signal, maxMs: budgetMs(predictionSeconds(setup)) });
+  } finally {
+    pool.close();
+  }
   Hooks.callAll("fastFighting.postSimulate", results, { setup, roster, spec });
-  return { spec, results, approach };
+  return { spec, results, approach, threads: pool.used };
 }
 
 /** The most combatants the swing factors leave out one at a time (in a bigger battle, the ones likeliest to matter). */
@@ -860,7 +896,8 @@ const SWING_COMBATANTS = 12;
  * @returns {Promise<{label: string, delta: number}[]>} sorted by impact
  */
 export async function swingFactors(spec, baseline, { seconds = null, onProgress } = {}) {
-  const rules = getAdapter().rules;
+  const adapter = getAdapter();
+  const rules = adapter.rules;
   const friendlyWin = r => r.sides.friendly?.pWin ?? 0;
   const base = friendlyWin(baseline);
   const tests = [];
@@ -879,13 +916,18 @@ export async function swingFactors(spec, baseline, { seconds = null, onProgress 
     if ( spec.options[key] ) tests.push({ label: game.i18n.localize(label), make: s => ({ ...s, options: { ...s.options, [key]: false } }) });
   }
   const out = [];
-  // (Each test: its share of three predictions' time, SWING_RUNS fights at most.)
+  // (Each test: its share of three predictions' time, SWING_RUNS fights at most; one pool of workers for them all.)
   const share = swingShareMs(tests.length, seconds ?? setting("predictionTime"));
-  for ( const [i, t] of tests.entries() ) {
-    const r = await runBatch(t.make(spec), rules, { runs: SWING_RUNS, seed: 99, maxMs: share });
-    out.push({ label: t.label, side: t.side ?? null, id: t.id ?? null, delta: friendlyWin(r) - base });
-    onProgress?.((i + 1) / tests.length);
-    await new Promise(resolve => setTimeout(resolve, 0));
+  const pool = fightPool(adapter);
+  try {
+    for ( const [i, t] of tests.entries() ) {
+      const r = await pool.run(t.make(spec), rules, { runs: SWING_RUNS, seed: 99, maxMs: share });
+      out.push({ label: t.label, side: t.side ?? null, id: t.id ?? null, delta: friendlyWin(r) - base });
+      onProgress?.((i + 1) / tests.length);
+      await new Promise(resolve => setTimeout(resolve, 0));
+    }
+  } finally {
+    pool.close();
   }
   return out.sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta));
 }
