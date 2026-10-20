@@ -23,15 +23,20 @@ under `scripts/`. A d100 "at or under X" succeeds on 1 to X.
 
 ### Personality traits
 
-Search: traits, personality, hidden scores, Tactical, Brave, Selfish, Loyal, Side personality defaults, sideDefaults, side weight, PC baseline, trait fudge, trait bands
+Search: traits, personality, hidden scores, Tactical, Brave, Selfish, Loyal, Side personality defaults, sideDefaults, side weight, PC baseline, trait fudge, trait bands, trait budget, 250
 
 Four hidden scores, 0 to 100, behind every choice a creature makes.
 
 Each trait is built in five steps:
 
 1. **Base**: what the system helper reads from the sheet. A player character starts at the PC baseline and its sheet
-   moves it, held to 5–95. With nothing to read: 50.
+   moves it, held to 5–95. With nothing to read: 50. Rounded to whole points, the four bases sum to 250 at most (the
+   trait budget): over it, the excess comes off the highest, a point at a time (ties come down together), and the
+   character is set up by itself again once.
 2. **Own** = base + fudge, held to 0–100. The fudge is the planner's +/− (steps of 5) plus the playstyles' trait shifts.
+   Base + the planner's fudge keeps to the budget too: raising one past it takes the excess off the highest of the
+   other three, a point at a time. The playstyles' shifts come after, outside it. A side's group personality (step 3)
+   keeps to it the same way.
 3. **Side blend** = round(own × 0.7 + side trait × 0.3). The side trait is the world's Side personality defaults
    (`sideDefaults`) plus the planner's fudge for that side.
 4. **ADHD**: the creature's own ADHD lowers Tactical (see ADHD).

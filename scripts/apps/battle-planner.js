@@ -35,6 +35,7 @@ import { BattleVantage } from "./battle-vantage.js";
 import { blink, keepTyping } from "./blink.js";
 import { expectedRuns, paceOf, ROUGH_RUNS, PREDICTION_SECONDS } from "../engine/run-budget.js";
 import { signedNumber } from "../engine/trait-parts.js";
+import { budgetFudges, traitTotal, TRAIT_BUDGET } from "../engine/trait-budget.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 const TEMPLATE = `modules/${MODULE_ID}/templates/planner.hbs`;
@@ -74,6 +75,9 @@ function kindChip(spec) {
 
 /** How many fights a run has done, in the reader's numbers ("1,240 fights"). */
 const fightCount = n => game.i18n.format("FASTFIGHTING.Planner.FightsRun", { n: (Number(n) || 0).toLocaleString(game.i18n.lang) });
+
+/** A creature's traits as its sheet reads them (its sliders' starting points). */
+const baseTraits = spec => Object.fromEntries(TRAITS.map(k => [k, spec?.traits?.[k]?.base ?? 50]));
 
 export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
   static DEFAULT_OPTIONS = {
@@ -305,6 +309,22 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
+   * The four traits' sliders (`bases` and the GM's nudges), kept within the trait budget (engine/trait-budget.js) as a
+   * fight would have them; `shifts`, its playstyles', come on top.
+   */
+  #traitViews(bases, fudges, pathOf, reasons = null, shifts = {}) {
+    const kept = budgetFudges(bases, fudges ?? {});
+    return TRAITS.map(k => this.#traitView(k, bases[k] ?? 50, kept[k], pathOf(k), reasons?.[k], shifts?.[k] ?? 0));
+  }
+
+  /** How much of the trait budget the sliders use: "{total}/{budget}", and what the budget is. */
+  #budgetView(bases, fudges) {
+    const kept = budgetFudges(bases, fudges ?? {});
+    const total = Math.round(traitTotal(Object.fromEntries(TRAITS.map(k => [k, clamp((bases[k] ?? 50) + kept[k], 0, 100)]))));
+    return { text: game.i18n.format("FASTFIGHTING.Planner.TraitBudget", { total, budget: TRAIT_BUDGET }), hint: game.i18n.format("FASTFIGHTING.Planner.TraitBudgetHint", { budget: TRAIT_BUDGET }) };
+  }
+
+  /**
    * A creature's own ADHD, 0 to 100%: a nudge to its Tactical (engine/battle-state.js prepareCombatant). Kept with the
    * creature (its actor's flag), as its token's FastFighting tab has it.
    */
@@ -372,7 +392,8 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
         // Neutrals only lean (they take no side until something crosses them). (A Secret token is on the team its row says.)
         lean: id === SIDES.NEUTRAL ? s.allegiance : null,
         leanChoices: id === SIDES.NEUTRAL ? Object.fromEntries(Object.values(ALLEGIANCE).map(k => [k, `FASTFIGHTING.Lean.${k}`])) : null,
-        traits: TRAITS.map(k => this.#traitView(k, defaults[k] ?? 50, s.traitFudge?.[k] ?? 0, `sides.${id}.traitFudge.${k}`)),
+        traits: this.#traitViews(defaults, s.traitFudge, k => `sides.${id}.traitFudge.${k}`),
+        budget: this.#budgetView(defaults, s.traitFudge),
         healAggro: s.healAggro,
         healChoices: Object.fromEntries(HEAL_AGGRO.map(k => [k, `FASTFIGHTING.HealAggro.${k}`])),
         morale: s.morale !== false,
@@ -501,8 +522,9 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       }) : null,
       roleHint: game.i18n.format("FASTFIGHTING.Planner.RoleHint", { boss: setting("bossInfluence") }),
       groupHint: loc(chosen === SIDES.NEUTRAL ? "FASTFIGHTING.Planner.NeutralGroupHint" : "FASTFIGHTING.Planner.HostileGroupHint"),
-      traits: [...TRAITS.map(k => this.#traitView(k, s.traits[k]?.base ?? 50, fudge[k] ?? 0, `tokens.${e.token.id}.fudge.${k}`, s.traitReasons?.[k], shifts[k] ?? 0)),
+      traits: [...this.#traitViews(baseTraits(s), fudge, k => `tokens.${e.token.id}.fudge.${k}`, s.traitReasons, shifts),
         this.#adhdView(e.token.actor?.getFlag(MODULE_ID, "adhd") ?? 0, `tokens.${e.token.id}.fudge.adhd`)],
+      budget: this.#budgetView(baseTraits(s), fudge),
       expanded: this.expanded.has(e.token.id),
       stats: STAT_FUDGES.filter(([k]) => hasStat(k)).map(([k, step]) => {
         const base = k === "ac" ? s.defenses.ac : k === "hp" ? s.hp.max : 0;
@@ -893,9 +915,36 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     }
     const next = Number(dir) === 0 ? 0 : current + Number(dir) * Number(step || 1);
     foundry.utils.setProperty(this.setup, path, next);
+    // (A trait raised past the trait budget: the highest of the others comes down.)
+    if ( next > current ) this.#keepBudget(path);
     await saveSetup(this.setup, this.holder);
     this.stale = true;
     this.render();
+  }
+
+  /**
+   * After a trait was raised (its slider's path): the sliders kept within the trait budget, the excess off the highest
+   * of the other traits (engine/trait-budget.js), their nudges lowered.
+   */
+  #keepBudget(path) {
+    const token = /^tokens\.([^.]+)\.fudge\.(\w+)$/.exec(path);
+    const side = /^sides\.([^.]+)\.traitFudge\.(\w+)$/.exec(path);
+    const raised = (token ?? side)?.[2];
+    if ( !TRAITS.includes(raised) ) return;
+    let bases;
+    let fudges;
+    if ( token ) {
+      const e = this.roster?.find(x => x.token.id === token[1]);
+      if ( !e ) return;
+      bases = baseTraits(e.spec);
+      fudges = tokenSetup(this.setup, token[1]).fudge;
+    } else {
+      const defaults = setting("sideDefaults");
+      bases = defaults[side[1]] ?? defaults.hostile;
+      fudges = (this.setup.sides[side[1]].traitFudge ??= {});
+    }
+    const kept = budgetFudges(bases, fudges, { raised });
+    for ( const k of TRAITS ) if ( k !== raised && kept[k] !== (fudges[k] ?? 0) ) fudges[k] = kept[k];
   }
 
   /**

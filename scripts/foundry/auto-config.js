@@ -12,16 +12,20 @@
  *            core's reading of its hidden scores
  *   why      a system's reason for an answer, where it gave one ({key: reason}: shown to the GM)
  *   picked   the playstyles picked for it, best first (once: see below); scores, the best few and their scores
+ *   budget   the trait budget it was set up again under, its sheet read over it (see below)
  *
  * Playstyles are picked once: for a character that has never been set up and has none (up to four, best first:
  * engine/auto-playstyles.js), and never again, unless someone resets its FastFighting settings (then at once). Picks
  * someone has changed stay theirs.
  * The calculated answers are worked out again whenever they're missing or broken, the core API has moved on, or the
  * character has changed (a level, its traits, a new spell, the world's defaults). Answers someone gave stay as they are.
+ * A character whose sheet reads over the trait budget (api.js keepTraitBudget: spec.overBudget) is set up again once,
+ * from the traits it has within it: its answers, and its playstyles unless someone changed the ones picked for it.
  */
 import { MODULE_ID } from "../constants.js";
 import { getAdapter } from "../api.js";
 import { CORE_API_VERSION } from "../core-api.js";
+import { TRAIT_BUDGET } from "../engine/trait-budget.js";
 import { TRAITS, fudged, isPlain } from "../constants.js";
 import { TACTIC_CHOICES, TACTIC_KEYS, suggestTactics } from "../engine/tactics.js";
 import { scorePlaystyles, pickPlaystyles } from "../engine/auto-playstyles.js";
@@ -56,6 +60,7 @@ export const autoRecord = actor => {
     why,
     picked: Array.isArray(r.picked) ? currentPlaystyles(r.picked).slice(0, 8) : [],
     scores,
+    budget: Number(r.budget) || 0,
     at: Number(r.at) || 0
   };
 };
@@ -96,9 +101,19 @@ export function specSignature(spec, defaults = {}) {
  * @returns {{pick: boolean, lets: boolean}}
  */
 export function autoPlan(stored, record, { api, sig, spec, force = false }) {
-  const pick = force || (!record && !(stored?.playstyles?.length));
-  const lets = force || !record || record.api !== api || record.sig !== sig || !validLets(record.lets, spec);
+  // (Its sheet read over the trait budget, and not set up again under it yet: once, its playstyles too if nobody
+  // changed the ones picked for it.)
+  const rebudget = !!spec?.overBudget && record?.budget !== TRAIT_BUDGET;
+  const pick = force || (!record && !(stored?.playstyles?.length)) || (rebudget && pickedUntouched(stored, record));
+  const lets = force || rebudget || !record || record.api !== api || record.sig !== sig || !validLets(record.lets, spec);
   return { pick, lets };
+}
+
+/** Are its playstyles still the ones picked for it (or none at all)? */
+function pickedUntouched(stored, record) {
+  const now = stored?.playstyles ?? [];
+  const picked = record?.picked ?? [];
+  return !now.length || (now.length === picked.length && now.every((p, i) => p === picked[i]));
 }
 
 /** Something a system helper says, or nothing if it fails. */
@@ -208,6 +223,7 @@ export async function ensureAutoConfig(actor, spec, { force = false } = {}) {
     if ( record && !plan.lets && !sameAnswers(record, fresh) ) plan.lets = true;
     if ( !plan.pick && !plan.lets ) return false;
     const next = { ...(record ?? {}), api: CORE_API_VERSION, sig, at: Date.now() };
+    if ( spec.overBudget ) next.budget = TRAIT_BUDGET;
     if ( plan.lets ) Object.assign(next, fresh);
     // (One write for both: each write redraws whatever shows the actor.)
     const changes = { [`flags.${MODULE_ID}.auto`]: next };

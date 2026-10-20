@@ -2,7 +2,7 @@
   <p class="hint">{{localize "FASTFIGHTING.Defaults.Hint"}}</p>
   {{#each sides}}
   <div class="ff-side-block">
-    <h4><span class="ff-dot {{id}}"></span>{{label}}</h4>
+    <h4><span class="ff-dot {{id}}"></span>{{label}} <span class="ff-trait-budget" data-tooltip-text="{{budget.hint}}">{{budget.text}}</span></h4>
     <div class="ff-trait-grid">
       {{#each traits}}{{> "modules/fast-fighting/templates/partials/fudge.hbs" this}}{{/each}}
     </div>

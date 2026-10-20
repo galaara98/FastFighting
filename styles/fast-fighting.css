@@ -115,6 +115,7 @@
 
 /* ---------- Fudge control ---------- */
 .ff-trait-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px 8px; }
+.ff-trait-budget { font-size: var(--font-size-11); font-weight: normal; opacity: 0.75; align-self: center; white-space: nowrap; }
 .ff-fudge {
   display: grid;
   grid-template-columns: auto 1fr auto auto;

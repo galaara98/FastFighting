@@ -3,6 +3,7 @@
  */
 import { MODULE_ID, SIDES, ALLEGIANCE, DISPOSITION_SIDES, NEUTRAL_PARTY, HOSTILE_GROUPS, GROUPS, TRAITS, MAX_ROUNDS, clamp } from "../constants.js";
 import { replay } from "../engine/simulator.js";
+import { budgetFudges } from "../engine/trait-budget.js";
 import { budgetMs, swingShareMs, MAX_RUNS, SWING_RUNS } from "../engine/run-budget.js";
 import { openPool, poolThreads } from "../engine/batch-pool.js";
 
@@ -298,10 +299,22 @@ export function resolveLeans(roster, setup) {
   return leans;
 }
 
+/**
+ * Its traits as its sliders have them (its sheet's reading and the GM's nudges), kept within the trait budget
+ * (engine/trait-budget.js: a plan saved before there was one, over it, the excess off the highest). Its playstyles'
+ * shifts come after, outside it (applyCharacterTactics).
+ */
 function fudgedTraits(spec, fudge) {
-  const out = {};
-  for ( const k of TRAITS ) out[k] = { base: spec.traits[k]?.base ?? 50, fudge: (spec.traits[k]?.fudge ?? 0) + (fudge?.[k] ?? 0) };
-  return out;
+  const bases = Object.fromEntries(TRAITS.map(k => [k, spec.traits[k]?.base ?? 50]));
+  const kept = budgetFudges(bases, Object.fromEntries(TRAITS.map(k => [k, (spec.traits[k]?.fudge ?? 0) + (fudge?.[k] ?? 0)])));
+  return Object.fromEntries(TRAITS.map(k => [k, { base: bases[k], fudge: kept[k] }]));
+}
+
+/** A side's group personality: its defaults and the planner's nudges, kept within the trait budget the same way. */
+export function sideTraits(defaults, traitFudge) {
+  const bases = Object.fromEntries(TRAITS.map(k => [k, defaults?.[k] ?? 50]));
+  const kept = budgetFudges(bases, traitFudge ?? {});
+  return Object.fromEntries(TRAITS.map(k => [k, { base: bases[k], fudge: kept[k] }]));
 }
 
 /** Apply stat fudges (AC, HP, attack, damage) to a copy of the spec. */
@@ -642,7 +655,7 @@ export function buildBattleSpec(roster, setup, { approach = null } = {}) {
     sides[side] = {
       label: sideName(side, hostileGroups),
       enemies,
-      traits: Object.fromEntries(TRAITS.map(k => [k, { base: defaults[k] ?? 50, fudge: s.traitFudge?.[k] ?? 0 }])),
+      traits: sideTraits(defaults, s.traitFudge),
       leaderId: head?.id ?? null,
       leadership: head?.leadership ?? {},
       healAggro: s.healAggro ?? "balanced",

@@ -112,7 +112,7 @@
           </label>
           <label class="ff-check"><input type="checkbox" name="sides.{{id}}.morale" {{checked morale}}> {{localize "FASTFIGHTING.Planner.SideMorale"}}</label>
         </div>
-        <div class="ff-strip-title">{{localize "FASTFIGHTING.Planner.GroupTraits"}}</div>
+        <div class="ff-strip-title">{{localize "FASTFIGHTING.Planner.GroupTraits"}} <span class="ff-trait-budget" data-tooltip-text="{{budget.hint}}">{{budget.text}}</span></div>
         <div class="ff-trait-grid">
           {{#each traits}}{{> "modules/fast-fighting/templates/partials/fudge.hbs" this}}{{/each}}
         </div>
@@ -165,6 +165,7 @@
             {{#if playstyleNames}}<div class="ff-row-playstyles"><i class="fa-solid fa-masks-theater"></i> {{playstyleNames}}</div>{{/if}}
             <div class="ff-trait-grid ff-compact">
               {{#each traits}}{{> "modules/fast-fighting/templates/partials/fudge.hbs" this}}{{/each}}
+              <span class="ff-trait-budget" data-tooltip-text="{{budget.hint}}">{{budget.text}}</span>
             </div>
             <div class="ff-trait-grid ff-compact">
               {{#each stats}}{{> "modules/fast-fighting/templates/partials/fudge.hbs" this}}{{/each}}

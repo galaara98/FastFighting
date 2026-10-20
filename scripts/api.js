@@ -20,8 +20,11 @@ import { SystemAdapter } from "./adapters/adapter-base.js";
 import * as engine from "./engine/simulator.js";
 import * as dice from "./engine/dice.js";
 import * as constants from "./constants.js";
-import { MODULE_ID } from "./constants.js";
 import { keywords, applyBiography } from "./foundry/keywords.js";
+import { withinBudget, traitTotal, TRAIT_BUDGET } from "./engine/trait-budget.js";
+import { MODULE_ID, TRAITS } from "./constants.js";
+import { localize, listItems } from "./i18n.js";
+import { signedNumber } from "./engine/trait-parts.js";
 import { CORE_API, CORE_API_VERSION } from "./core-api.js";
 import { adviseTranslation } from "./foundry/translation-advice.js";
 import { keepEnglish } from "./foundry/keep-english.js";
@@ -97,8 +100,36 @@ export function applyTraitRules(actor, spec) {
 }
 
 /**
+ * Its sheet's reading of its traits, in whole points, kept within the trait budget (engine/trait-budget.js): over it,
+ * the excess off the highest, said so in that trait's reason, and the spec marked `overBudget`.
+ */
+export function keepTraitBudget(spec) {
+  if ( !spec?.traits ) return spec;
+  const bases = {};
+  for ( const k of TRAITS ) {
+    if ( !spec.traits[k] ) continue;
+    spec.traits[k].base = Math.round(Number(spec.traits[k].base ?? 50) || 0);
+    bases[k] = spec.traits[k].base;
+  }
+  if ( traitTotal(bases) <= TRAIT_BUDGET ) return spec;
+  // (Read over it: its auto setup is worked out again once, from the traits it has now: foundry/auto-config.js.)
+  spec.overBudget = true;
+  const kept = withinBudget(bases);
+  for ( const k of TRAITS ) {
+    const n = kept[k] - (bases[k] ?? 0);
+    if ( !spec.traits[k] || !n ) continue;
+    spec.traits[k].base = kept[k];
+    const why = localize("FASTFIGHTING.Words.Budget", { budget: TRAIT_BUDGET });
+    spec.traitReasons ??= {};
+    spec.traitReasons[k] = listItems([spec.traitReasons[k], localize("FASTFIGHTING.Words.Part", { why, n: signedNumber(n) })].filter(Boolean));
+  }
+  return spec;
+}
+
+/**
  * A character as FastFighting reads it, the same wherever it's read (the planner, its token's tab, a player's survey):
- * its system helper's spec, what its biography's words say of its traits, then the trait rules other modules add.
+ * its system helper's spec, what its biography's words say of its traits, then the trait rules other modules add, all
+ * kept within the trait budget.
  * @returns {Promise<object|null>} the CombatantSpec
  */
 export async function characterSpec(adapter, tokenDoc) {
@@ -112,6 +143,7 @@ export async function characterSpec(adapter, tokenDoc) {
     console.warn(`${MODULE_ID} | reading ${actor?.name ?? "a character"}'s biography failed`, err);
   }
   applyTraitRules(actor, spec);
+  keepTraitBudget(spec);
   try {
     const lists = storyWordLists();
     const mapType = adapter.rules?.storyDamageType?.bind(adapter.rules) ?? null;

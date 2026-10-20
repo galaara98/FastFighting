@@ -3,6 +3,7 @@
  */
 import { MODULE_ID, SIDES, TRAITS, traitBand, clamp, FUDGE_STEP } from "../constants.js";
 import { DEFAULT_SIDE_TRAITS } from "../settings.js";
+import { withinBudget, traitTotal, TRAIT_BUDGET } from "../engine/trait-budget.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
@@ -29,9 +30,13 @@ export class DefaultsConfig extends HandlebarsApplicationMixin(ApplicationV2) {
     const sides = Object.values(SIDES).map(id => ({
       id,
       label: game.i18n.localize(`FASTFIGHTING.Side.${id}`),
+      budget: {
+        text: game.i18n.format("FASTFIGHTING.Planner.TraitBudget", { total: Math.round(traitTotal(this.#kept(id))), budget: TRAIT_BUDGET }),
+        hint: game.i18n.format("FASTFIGHTING.Planner.TraitBudgetHint", { budget: TRAIT_BUDGET })
+      },
       traits: TRAITS.map(k => {
         const base = DEFAULT_SIDE_TRAITS[id][k];
-        const value = clamp(this.#values[id]?.[k] ?? base, 0, 100);
+        const value = this.#kept(id)[k];
         const fudge = value - base;
         return {
           label: game.i18n.localize(`FASTFIGHTING.Trait.${k}`), value, base, fudge, path: `${id}.${k}`, step: FUDGE_STEP.trait,
@@ -50,13 +55,19 @@ export class DefaultsConfig extends HandlebarsApplicationMixin(ApplicationV2) {
     };
   }
 
+  /** A side's four traits as set, within the trait budget (engine/trait-budget.js). */
+  #kept(side) {
+    return withinBudget(Object.fromEntries(TRAITS.map(k => [k, clamp(this.#values[side]?.[k] ?? DEFAULT_SIDE_TRAITS[side][k], 0, 100)])));
+  }
+
   static #onFudge(event, target) {
     const { path, step, dir } = target.dataset;
     const [side, trait] = path.split(".");
     const base = DEFAULT_SIDE_TRAITS[side][trait];
-    const current = this.#values[side]?.[trait] ?? base;
-    this.#values[side] ??= {};
-    this.#values[side][trait] = Number(dir) === 0 ? base : clamp(current + Number(dir) * Number(step), 0, 100);
+    const was = this.#kept(side);
+    const next = Number(dir) === 0 ? base : clamp(was[trait] + Number(dir) * Number(step), 0, 100);
+    // (Raised past the trait budget: the highest of the others comes down.)
+    this.#values[side] = withinBudget({ ...was, [trait]: next }, { raised: next > was[trait] ? trait : null });
     this.render();
   }
 
@@ -66,6 +77,6 @@ export class DefaultsConfig extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   static async #onSubmit() {
-    await game.settings.set(MODULE_ID, "sideDefaults", this.#values);
+    await game.settings.set(MODULE_ID, "sideDefaults", Object.fromEntries(Object.values(SIDES).map(id => [id, this.#kept(id)])));
   }
 }
