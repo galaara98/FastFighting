@@ -362,7 +362,9 @@ export async function revertRecord(r, { scene = null, settings = null } = {}) {
     return (type === "Combatant" ? inCombat(doc?.parent) : here(doc)) ? doc : null;
   };
   const summoned = a => !!a && !a.hasPlayerOwner && !!a._stats?.compendiumSource && !!game.users.get(a._stats?.createdBy)?.isGM;
-  for ( const uuid of r.createdCombatants ?? [] ) await step("removing a combatant", async () => (await ofHere(uuid, "Combatant"))?.delete());
+  // (The tracker's own turn events stay quiet: taking a turn back is no turn starting or ending, for the system or for a
+  // live battle: live-battle.js onTurnChange.)
+  for ( const uuid of r.createdCombatants ?? [] ) await step("removing a combatant", async () => (await ofHere(uuid, "Combatant"))?.delete({ turnEvents: false }));
   for ( const uuid of r.createdRegions ?? [] ) await step("removing an area", async () => (await ofHere(uuid, "Region"))?.delete());
   for ( const uuid of r.createdTokens ?? [] ) await step("removing a token", async () => (await ofHere(uuid, "Token"))?.delete());
   for ( const uuid of r.createdActors ?? [] ) {
@@ -425,7 +427,7 @@ export async function revertRecord(r, { scene = null, settings = null } = {}) {
   const user = typeof r.userId === "string" ? game.users.get(r.userId) : null;
   const flags = userFlags(r.userUpdate, game.system.id);
   if ( user && !user.isGM && Object.keys(flags).length ) await step("restoring a player's", () => user.update(flags));
-  if ( r.combatant ) await step("the combat tracker", async () => (await ofHere(r.combatant.uuid, "Combatant"))?.update({ defeated: !!r.combatant.defeated }));
+  if ( r.combatant ) await step("the combat tracker", async () => (await ofHere(r.combatant.uuid, "Combatant"))?.update({ defeated: !!r.combatant.defeated }, { turnEvents: false }));
 }
 
 /**

@@ -310,6 +310,15 @@ function queue(work) {
   return next;
 }
 
+/**
+ * Work for the battle this browser holds now, queued: by the time its turn comes, a rewind (or the battle ending, or
+ * another browser picking it up) may have let it go, so it's done only if that battle is still the one held.
+ */
+function queueFor(work) {
+  const held = battle;
+  return queue(() => (held && battle === held ? work() : undefined));
+}
+
 /** Something in the battle went wrong: the GM told, and a Fast Fight stopped. */
 function failed(err) {
   console.error(`${MODULE_ID} | live battle`, err);
@@ -337,7 +346,7 @@ function onTurnChange(combat, prior, current) {
   // theirs: put back, and the GM told.)
   if ( !(battle.data.spotlight ? spotlightRightly(combat, prior, current) : movedRightly(combat, prior, current)) ) {
     const refused = battle.data.spotlight ? "FASTFIGHTING.Live.SpotlightRefused" : "FASTFIGHTING.Live.TrackerRefused";
-    queue(async () => {
+    queueFor(async () => {
       await combat.update({ round: prior.round, turn: prior.turn }, { turnEvents: false });
       ui.notifications.warn(fmt(refused, { name: game.users.get(combat._stats?.lastModifiedBy)?.name ?? "" }));
       changed();
@@ -348,12 +357,15 @@ function onTurnChange(combat, prior, current) {
   const back = !battle.data.spotlight && !!prior && current?.round > 0 && prior.combatantId !== current.combatantId
     && (current.round < prior.round || (current.round === prior.round && (current.turn ?? -1) < (prior.turn ?? -1)));
   if ( back ) {
-    queue(() => followBack(prior));
+    queueFor(() => followBack(prior));
     return;
   }
   turnsWaiting++;
+  const held = battle;
   queue(async () => {
     turnsWaiting--;
+    // (Let go of since: a rewind of the whole encounter, the battle over, another browser playing it.)
+    if ( battle !== held ) return;
     pauseFor(unitOf(combat.combatant));
     await clearAreas();
     if ( battle.pc && battle.pc.combatantId !== combat.combatant?.id ) await closePlayerTurn();
@@ -760,7 +772,7 @@ export function followPlayersSay(actor) {
     ids.add(u.spec.id);
   }
   if ( !ids.size ) return;
-  queue(async () => {
+  queueFor(async () => {
     battle.spec = { ...battle.spec, combatants: battle.spec.combatants.map(c => (ids.has(c.id) ? { ...c, ...playersSay(c, actor) } : c)) };
     battle.data.spec = packSpec(battle.spec);
     await keep();
@@ -3070,9 +3082,11 @@ export function rewindEncounter() {
     const actors = new Set(battle.run.units.map(u => docOf(u.id)?.actor?.id).filter(Boolean));
     const rightful = m => !!m.author && (m.author.isGM || !!(battle.scene.tokens.get(m.speaker?.token)?.actor ?? game.actors.get(m.speaker?.actor))?.testUserPermission(m.author, "OWNER"));
     for ( const m of strayCards(game.messages.contents, { since: battle.data.beganAt, tokens, actors, system: game.system?.id, rightful }) ) await m.delete();
+    // (None of the tracker's own turn events, as the combat is put back: no turn starting or ending, for the system or
+    // for this battle: onTurnChange.)
     for ( const uuid of battle.data.joined ?? [] ) {
       try {
-        await (await fromUuid(uuid))?.delete();
+        await (await fromUuid(uuid))?.delete({ turnEvents: false });
       } catch ( err ) {
         console.error(`${MODULE_ID} | taking back one who joined`, err);
       }
@@ -3080,8 +3094,8 @@ export function rewindEncounter() {
     // (The battle's own data kept apart: taking the combat's flag off lets this browser go of the battle (the
     // updateCombat hook), so `battle` may be gone by the end.)
     const data = battle.data;
-    if ( data.rolled?.length ) await combat.updateEmbeddedDocuments("Combatant", data.rolled.filter(id => combat.combatants.has(id)).map(id => ({ _id: id, initiative: null })));
-    if ( data.startedCombat ) await combat.update({ round: 0, turn: null });
+    if ( data.rolled?.length ) await combat.updateEmbeddedDocuments("Combatant", data.rolled.filter(id => combat.combatants.has(id)).map(id => ({ _id: id, initiative: null })), { turnEvents: false });
+    if ( data.startedCombat ) await combat.update({ round: 0, turn: null }, { turnEvents: false });
     await combat.unsetFlag(MODULE_ID, "live");
     await forget(combat.id, data.id);
     letGo();
