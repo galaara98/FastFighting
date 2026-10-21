@@ -2,11 +2,12 @@
  * API 24: the engine's advantage reaches the system's roller in a live battle. A save, a check or a strike the system
  * rolls itself (systemRolled; engine/live.js systemRoll) carries the engine's net advantage on it (1, -1 or 0), and
  * the live side hands it to the helper's rollSave, rollCheck and rollStrike. A recovery check its helper read as stable
- * leaves the creature stable.
+ * leaves the creature stable. The rules take up what only they keep from the sheets as a live battle reads them
+ * (rules.syncUnit).
  */
 import { describe, expect, test } from "vitest";
 import { CORE_API, CORE_API_VERSION } from "../scripts/core-api.js";
-import { beginLive, liveRound, liveTurn, pcTurnBegin, pcTurnEnd, NeedsDecision } from "../scripts/engine/live.js";
+import { beginLive, liveRound, liveTurn, pcTurnBegin, pcTurnEnd, NeedsDecision, syncFromSheets } from "../scripts/engine/live.js";
 import { parseFormula } from "../scripts/engine/dice.js";
 import { pf2eRules } from "./fixtures/three-action-rules.js";
 import { creature, strike, battle } from "./helpers.js";
@@ -63,5 +64,21 @@ describe("a recovery check its helper read as stable", () => {
     const told = pcTurnEnd(run, "hero", [{ type: "recovery", better: true, stable: true }], { hero: { status: "down", dying: 0 } }).events;
     expect(told.find(e => e.type === "recovery")).toMatchObject({ stable: true, better: true });
     expect(run.byId.get("hero").stable).toBe(true);
+  });
+});
+
+describe("the sheets' own state, for the system's rules", () => {
+  test("rules.syncUnit hears each creature's state as read, after the core's own fields; rules without it, nothing", () => {
+    const spec = battle([
+      creature({ id: "hero", name: "Hero", kind: "pc", diesAtZero: false, ...at(0), hp: { value: 0, max: 40 } }),
+      creature({ id: "orc", name: "Orc", side: "hostile", ...at(5), actions: [strike({ bonus: -50 })] })
+    ], { positioning: true, maxRounds: 3, aftermath: "none", talking: false, morale: false });
+    const heard = [];
+    const rules = { ...pf2eRules, syncUnit(u, state) { heard.push([u.id, u.hp, state.deathSaves]); u.tally = state.deathSaves; } };
+    const run = beginLive(spec, rules, { seed: 1, players: ["hero"] });
+    syncFromSheets(run, { hero: { hp: 0, deathSaves: { success: 2, failure: 1 } }, orc: { hp: 30 } });
+    expect(heard).toEqual([["hero", 0, { success: 2, failure: 1 }], ["orc", 30, undefined]]);
+    expect(run.byId.get("hero").tally).toEqual({ success: 2, failure: 1 });
+    expect(() => syncFromSheets(beginLive(spec, pf2eRules, { seed: 1 }), { hero: { hp: 0, deathSaves: {} } })).not.toThrow();
   });
 });

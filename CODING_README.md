@@ -390,6 +390,11 @@ came out straight. A system without advantage (PF2e) ignores it. And a recovery 
 stable (`readTurn`'s `{type: "recovery", stable: true}`) leaves the engine's creature stable, where the sheet has no
 such mark of its own (5e: three successes reset the tally).
 
+The sheet's own state, for the system's rules (API 24): `rules.syncUnit(unit, state)`, where it's given, hears each
+`readLiveState` a live battle reads (`engine/live.js` `syncFromSheets`, after the core's own fields), so the rules can
+take up what only they keep (5e's death save successes and failures, which a player may roll at the table between
+FastFighting's turns). Anything a helper's `readLiveState` returns beyond the core's fields reaches it there.
+
 **A turn by one not in the fight (live battles).** One on its feet that isn't part of the fight (it hasn't noticed it,
 has only just, or takes no side and has turned on no one) and does nothing in its turn logs `aside` (`simulator.js`
 `noteAside`, after `noteIdle`), told from the story's `event.aside`, so the table sees its turn went by. Only with

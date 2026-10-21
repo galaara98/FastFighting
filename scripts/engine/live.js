@@ -363,7 +363,8 @@ const sheetOwned = e => Object.keys(e.conditions ?? {}).length > 0 && !e.conditi
  * The sheets as they now are, by creature id: {hp, temp, stamina, maxHp, dying, wounded, doomed, stable, status
  * ("standing" | "down" | "dead"), conditions {key: value}, persistent [DamagePart], resources {key: n}, position
  * {x, y} (feet), shieldRaised, gear: {inHand: [gear keys], out: [gear keys], loaded: {key: rounds}} (engine/gear.js)}; anything
- * left out stays as the engine has it. Returns what changed that the engine
+ * left out stays as the engine has it. The system's own (anything else its helper's readLiveState says) its rules take
+ * up themselves (API 24: rules.syncUnit(unit, state): 5e's death save tallies). Returns what changed that the engine
  * didn't do: [{id, fell, died, revived, bound, hp (the change), moved}].
  */
 export function syncFromSheets(run, states) {
@@ -443,6 +444,8 @@ export function syncFromSheets(run, states) {
     // (Its weapons in hand or not, and what's loaded in them, as the sheet has them: engine/gear.js.)
     if ( s.gear ) syncGear(u, s.gear);
     if ( typeof s.shieldRaised === "boolean" ) u.shieldRaised = s.shieldRaised;
+    // (What only the system's rules keep, as its sheet now has it.)
+    run.prep?.rules?.syncUnit?.(u, s);
     if ( s.position && Number.isFinite(s.position.x) && Number.isFinite(s.position.y) && (!u.pos || u.pos.x !== s.position.x || u.pos.y !== s.position.y) ) {
       u.pos = { x: s.position.x, y: s.position.y };
       c.moved = true;
