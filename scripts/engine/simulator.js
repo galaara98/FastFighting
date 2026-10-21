@@ -141,7 +141,7 @@ function rollSave(run, target, type, dc, { stakes = 0.3, label = "", magical = f
   const s = saveRoll(run, target, type, { magical, from, action });
   // (A live battle's, the system's own roll where it makes saves: systemRolled. Its card says how it went; no Luck or
   // momentum after it.)
-  const rolled = systemRolled(run, target, "save", { dc, from, save: type, action, label });
+  const rolled = systemRolled(run, target, "save", { dc, from, save: type, action, label, advantage: s.advantage });
   let roll = rollCheck(rules, run.rng, s.mod, dc, {
     advantage: s.advantage, dice: s.dice, kind: "save", roller: target, rolled, label: label || action?.name || "", target: from,
     actionId: action?.id ?? null, stat: typeof type === "string" ? type : null
@@ -784,7 +784,7 @@ function testConcentration(run, u, amount = 0) {
   if ( !broken && amount > 0 ) {
     dc = c.dc ? c.dc(amount) : Math.max(10, Math.floor(amount / 2));
     const s = saveRoll(run, u, c.save ?? "con");
-    const rolled = systemRolled(run, u, "save", { dc, save: c.save ?? "con", action: { id: u.concentration.actionId, name: u.concentration.name } });
+    const rolled = systemRolled(run, u, "save", { dc, save: c.save ?? "con", action: { id: u.concentration.actionId, name: u.concentration.name }, advantage: s.advantage });
     roll = { ...rollCheck(run.prep.rules, run.rng, s.mod, dc, { advantage: s.advantage, dice: s.dice, kind: "save", roller: u, rolled, label: u.concentration.name ?? "", what: "concentration" }), mod: s.mod };
     broken = roll.degree < 2;
   }
@@ -830,7 +830,7 @@ export function exposeToAffliction(run, source, target, spec, { degree = null } 
     if ( increase > 0 ) log(run, target, { type: "afflicted", name: spec.name, by: source?.spec.name ?? null, byId: source?.id ?? null });
   } else if ( spec.save ) {
     const { mod, advantage, dice } = saveRoll(run, target, spec.save.type, { action: spec });
-    const rolled = systemRolled(run, target, "save", { dc: spec.save.dc, from: source, save: spec.save.type, action: spec });
+    const rolled = systemRolled(run, target, "save", { dc: spec.save.dc, from: source, save: spec.save.type, action: spec, advantage });
     const roll = rollCheck(rules, run.rng, mod, spec.save.dc, { advantage, dice, kind: "save", roller: target, rolled, label: spec.name ?? "", what: "affliction", target: source });
     increase = stepOf(rules, roll.degree, "exposure");
     log(run, target, {
@@ -2238,7 +2238,7 @@ function executeBuff(run, u, action, targets, worth = 0, turn = null) {
     const rules = run.prep.rules;
     const dc = checkDc(run, u, action.check);
     const c = checkRoll(run, u, Number(action.check.mod), null, { purpose: "aid", action });
-    const rolled = systemRolled(run, u, "check", { dc, target: Array.isArray(targets) ? targets[0] ?? null : null, purpose: "aid", skill: action.check.skill ?? null, action });
+    const rolled = systemRolled(run, u, "check", { dc, target: Array.isArray(targets) ? targets[0] ?? null : null, purpose: "aid", skill: action.check.skill ?? null, action, advantage: c.advantage });
     const roll = rollCheck(rules, run.rng, c.mod, dc, { advantage: c.advantage, dice: c.dice, kind: "check", roller: u, faces: action.check.faces, rolled, label: action.check.label || action.name });
     spendEdges(u, "check");
     check = { skill: action.check.label ?? "", natural: roll.natural, mod: c.mod, total: roll.total, dc, degree: roll.degree, challenge: roll.challenge ?? null };
@@ -2292,7 +2292,7 @@ function executeHeal(run, u, action, target) {
   let roll = null;
   if ( action.healCheck ) {
     const check = checkRoll(run, u, action.healCheck.mod, target, { purpose: "heal", skill: action.healCheck.skill ?? null, action });
-    const rolled = systemRolled(run, u, "check", { dc: action.healCheck.dc, target, purpose: "heal", skill: action.healCheck.skill ?? null, action });
+    const rolled = systemRolled(run, u, "check", { dc: action.healCheck.dc, target, purpose: "heal", skill: action.healCheck.skill ?? null, action, advantage: check.advantage });
     roll = rollCheck(rules, run.rng, check.mod, action.healCheck.dc, { advantage: check.advantage, dice: check.dice, kind: "check", roller: u, rolled, label: action.healCheck.label || action.name, target });
     spendEdges(u, "check", target.id);
     multiplier = rules.healCheckMultiplier ? rules.healCheckMultiplier(roll.degree) : [0, 0, 1, 2][roll.degree];
@@ -2303,7 +2303,7 @@ function executeHeal(run, u, action, target) {
       u.resources.fate -= 1;
       run.fateInPlay = run.units.some(o => fateOf(o) > 0);
       log(run, u, { type: "fate", target: target.spec.name, targetId: target.id, label: u.spec.fateLabel ?? localize("FASTFIGHTING.Words.Fate"), spent: 1 });
-      const again = systemRolled(run, u, "check", { dc: action.healCheck.dc, target, purpose: "heal", skill: action.healCheck.skill ?? null, action });
+      const again = systemRolled(run, u, "check", { dc: action.healCheck.dc, target, purpose: "heal", skill: action.healCheck.skill ?? null, action, advantage: check.advantage });
       roll = rollCheck(rules, run.rng, check.mod, action.healCheck.dc, { advantage: check.advantage, dice: check.dice, kind: "check", roller: u, rolled: again, label: action.healCheck.label || action.name, target });
       multiplier = rules.healCheckMultiplier ? rules.healCheckMultiplier(roll.degree) : [0, 0, 1, 2][roll.degree];
     }

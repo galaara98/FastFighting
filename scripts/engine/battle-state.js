@@ -935,16 +935,18 @@ export const isMagical = action => !!action && (!!action.magical || action.rank 
  * save: u's, against what `from` did (`save`: its key, as the rules name it). A check: u's, at `target` (`purpose`, as
  * modifiers.check hears it; `skill`, where the spec names one; `against`, the defense it's rolled against;
  * `attackNumber`, the attacks it made this turn before it, for one with the attack trait: a multiple attack penalty;
- * `standoff`, true while a standoff holds, no blows struck yet: a system's words may differ then).
+ * `standoff`, true while a standoff holds, no blows struck yet: a system's words may differ then). `advantage`: the
+ * engine's net advantage on it (above 0, advantage; below, disadvantage: API 24), for a system whose roller has it.
  */
-export function systemRolled(run, u, kind, { dc, from = null, target = null, save = null, skill = null, purpose = null, against = null, attackNumber = null, action = null, label = "" } = {}) {
+export function systemRolled(run, u, kind, { dc, from = null, target = null, save = null, skill = null, purpose = null, against = null, attackNumber = null, action = null, label = "", advantage = 0 } = {}) {
   if ( !run.live?.playing || !u || !Number.isFinite(Number(dc)) ) return null;
   const what = { id: typeof action?.id === "string" ? action.id : null, name: action?.name ?? label ?? "" };
+  const edge = Math.sign(Number(advantage) || 0);
   const request = kind === "save"
-    ? { kind, unitId: u.id, targetId: from?.id ?? null, save: save ?? null, dc: Number(dc), action: what }
+    ? { kind, unitId: u.id, targetId: from?.id ?? null, save: save ?? null, dc: Number(dc), action: what, advantage: edge }
     : {
       kind, unitId: u.id, targetId: target?.id ?? null, purpose: purpose ?? null, skill: skill ?? null, against: against ?? null, ...(Number.isInteger(attackNumber) ? { attackNumber } : {}),
-      ...(run.standoff ? { standoff: true } : {}), dc: Number(dc), action: what
+      ...(run.standoff ? { standoff: true } : {}), dc: Number(dc), action: what, advantage: edge
     };
   return run.live.roll?.(run, request) ?? null;
 }

@@ -239,6 +239,8 @@ function noteRecovery(run, u, before, read = null) {
   if ( said === null ) return;
   if ( said && typeof said === "object" ) {
     const { type, actorId, targetId, ...what } = said;
+    // (Stable, as the system says, where its sheet keeps no such mark of its own: 5e's third success resets the tally.)
+    if ( what.stable === true && u.status === STATUS.DOWN ) u.stable = true;
     log(run, u, { ...seen, better: !seen.dead && (!!seen.revived || seen.stable || seen.dying < seen.before), ...what, type: "recovery" });
     return;
   }

@@ -1186,13 +1186,13 @@ async function turnRoll(request, events, stage) {
  * card and, on a hit, its damage card. {attack, damage: {byType} | null, card: the damage card's id}, or null. What the
  * roll changed on the striker's sheet (PF2e's ammunition, loaded and spent) is undone with the turn (`stage`).
  */
-async function rollTurnStrike({ unitId, targetId, action, attackNumber }, stage = null) {
+async function rollTurnStrike({ unitId, targetId, action, attackNumber, advantage = 0 }, stage = null) {
   const adapter = getAdapter();
   const doc = docOf(unitId);
   const target = docOf(targetId);
   if ( !doc || !target ) return null;
   const seen = new Set(game.messages.keys());
-  const raw = await adapter.rollStrike(doc, { action, target, attackNumber: Math.max(0, Number(attackNumber) || 0), secret: secretRoll(doc) });
+  const raw = await adapter.rollStrike(doc, { action, target, attackNumber: Math.max(0, Number(attackNumber) || 0), advantage: Math.sign(Number(advantage) || 0), secret: secretRoll(doc) });
   stage?.records.push(...rollRecords(raw, doc));
   const out = strikeRolled(raw);
   if ( !out?.damage ) return out;
@@ -1948,14 +1948,18 @@ async function answerRoll(data, { user } = {}) {
   return (await adapter?.rollStrike?.(doc, { action: data.strike, target, attackNumber: 0 })) ?? null;
 }
 
-/** What the helper's rollSave or rollCheck hears of a request: the save's or the check's own, the other token. */
+/**
+ * What the helper's rollSave or rollCheck hears of a request: the save's or the check's own, the other token, and the
+ * engine's net advantage on it (API 24: above 0 advantage, below disadvantage).
+ */
 function checkOptions(kind, request, other) {
   const action = { id: request.action?.id ?? null, name: request.action?.name ?? "" };
+  const advantage = Math.sign(Number(request.advantage) || 0);
   return kind === "save"
-    ? { save: request.save ?? null, dc: request.dc, action, from: other ?? null }
+    ? { save: request.save ?? null, dc: request.dc, action, from: other ?? null, advantage }
     : {
       purpose: request.purpose ?? null, skill: request.skill ?? null, against: request.against ?? null, attackNumber: Number.isInteger(request.attackNumber) ? request.attackNumber : null,
-      standoff: request.standoff === true, dc: request.dc, action, target: other ?? null
+      standoff: request.standoff === true, dc: request.dc, action, target: other ?? null, advantage
     };
 }
 
