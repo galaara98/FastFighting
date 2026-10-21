@@ -25,6 +25,8 @@
  *   concessions: [...]                  given up this turn (or taken off it: robbed while down)
  *   bound: true | false                 tied up this turn (a prisoner: behavior/fallen.js), or no longer
  *   moved: {from, to}                   where it went (the core moves the token)
+ *   system: {from, to}                  what only the system's rules keep (rules.capture), when it changed (API 24: 5e's
+ *                                       death save tallies, a success changing nothing else)
  * }
  * Pure.
  */
@@ -92,6 +94,7 @@ export function diffOutcome(before, after) {
   if ( before.position && after.position && (before.position.x !== after.position.x || before.position.y !== after.position.y) ) {
     out.moved = { from: before.position, to: after.position };
   }
+  if ( !sameJson(before.system ?? null, after.system ?? null) ) out.system = { from: before.system ?? null, to: after.system ?? null };
   return Object.keys(out).length ? out : null;
 }
 

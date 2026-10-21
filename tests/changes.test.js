@@ -44,6 +44,13 @@ describe("what a turn changed, for the sheets", () => {
     expect(diffOutcome(state({ effects: [bless] }), state({ effects: [{ ...bless, rounds: 9 }] }))).toBeNull();
   });
 
+  test("what only the system's rules keep (rules.capture), when it changed: a death save's success alone is a change", () => {
+    const tallies = (success, failure) => state({ hp: 0, status: STATUS.DOWN, dying: failure, system: { deathSuccesses: success, deathFailures: failure } });
+    expect(diffOutcome(tallies(0, 1), tallies(1, 1))).toEqual({ system: { from: { deathSuccesses: 0, deathFailures: 1 }, to: { deathSuccesses: 1, deathFailures: 1 } } });
+    expect(diffOutcome(tallies(1, 1), tallies(1, 1))).toBeNull();
+    expect(diffOutcome(state({ system: null }), state())).toBeNull();
+  });
+
   test("died, ran, won over: each said", () => {
     expect(diffOutcome(state({ status: STATUS.DOWN, hp: 0 }), state({ status: STATUS.DEAD, hp: 0 }))).toMatchObject({ died: true });
     expect(diffOutcome(state(), state({ status: STATUS.FLED }))).toMatchObject({ status: { to: STATUS.FLED } });
