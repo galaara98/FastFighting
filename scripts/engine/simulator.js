@@ -46,6 +46,7 @@ import { isAnimalistic, animalTactics } from "./behavior/animal.js";
 import { stealChance, theftTarget, theftPlan, attemptTheft, robbable } from "./behavior/theft.js";
 import { fallenWishes, decideFallen, bind, rob, stayBound, takesPrisoners, robsTheFallen, freeFriend, rollOf } from "./behavior/fallen.js";
 import { dealWishes, decideDeal, offerDeal, pickUp, dishonor, dealsWanted, talkRange, dealCost, shunsFight, seesFight, reactionBribe } from "./behavior/deals.js";
+import { leavesOfItsOwn } from "./behavior/flight.js";
 import { holdsOf, ownHolds, known, tryHold, release, escapeCost, isBound, remediesOf, bears } from "./behavior/holds.js";
 import { forcedPath, fallDamage, resettle } from "./behavior/forced.js";
 import { stepOf, stacks, stageRounds, stageMove } from "./behavior/afflictions.js";
@@ -3728,6 +3729,14 @@ function playFromHere(run, u) {
   if ( morale !== MORALE.HOLD && !u.wavering ) {
     u.wavering = true; // (shaken, even when it won't run)
     if ( morale === MORALE.WAVER ) log(run, u, { type: "waver" });
+  }
+  // Of its own accord: its life worth more than the spoils, or off with what it took (behavior/flight.js). Its own
+  // choice: it goes alone.
+  const own = leavesOfItsOwn(run, u);
+  if ( own && !standsGround(run, u) ) {
+    flee(run, u, turn, { why: own });
+    if ( isLeaving(u) ) leavingTurn(run, u, turn, { whole: false });
+    return;
   }
   // Friends running or wavering: it may spend an action holding the rest together.
   if ( turn.canAfford(rules.basicAction ?? 1) ) {

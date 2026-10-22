@@ -2017,6 +2017,8 @@
       "FleeBreaks": "{actor} breaks and flees",
       "FleeRevived": "{actor} retreats after being revived",
       "FleeAllyFalls": "{actor} retreats as an ally falls",
+      "FleeLife": "{actor} values its life over the spoils, and leaves",
+      "FleePrize": "{actor} makes off with what it took",
       "Fumble": "{actor}: fumble table {n}{effect}{row}",
       "Grabbed": "{actor} is grabbed by {by}",
       "HoldGround": "{actor} wants to run, but stands its ground",

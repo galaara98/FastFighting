@@ -9106,6 +9106,26 @@
    "commit": null,
    "hash": "3877063b402d"
   },
+  "core:FASTFIGHTING.Log.FleeLife": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.FleeLife",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "5a4757f0262c"
+  },
+  "core:FASTFIGHTING.Log.FleePrize": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.FleePrize",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "7a0df07054d9"
+  },
   "core:FASTFIGHTING.Log.FleeRevived": {
    "repo": "core",
    "file": "languages/en.json",

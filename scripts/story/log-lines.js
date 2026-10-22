@@ -323,7 +323,7 @@ function baseLine(e) {
       return e.self ? t("FateSelf", { actor: e.actor, label: e.label }) : t("FateFor", { ...a, label: e.label });
     case "flee":
       if ( e.retreat ) return e.leads ? t("FleeLeads", a) : t("FleeWith", { actor: e.actor, name: e.with ?? "" });
-      return t({ dread: "FleeDread", breaks: "FleeBreaks", revived: "FleeRevived", allyFalls: "FleeAllyFalls" }[e.why] ?? "Flee", { actor: e.actor, name: e.dread ?? "" });
+      return t({ dread: "FleeDread", breaks: "FleeBreaks", revived: "FleeRevived", allyFalls: "FleeAllyFalls", life: "FleeLife", prize: "FleePrize" }[e.why] ?? "Flee", { actor: e.actor, name: e.dread ?? "" });
     case "grabbed": return t("Grabbed", a);
     case "holdGround": return e.ordered ? t("HoldOrdered", { actor: e.actor, by: e.by ? t("ByName", { name: e.by }) : "" }) : t("HoldGround", a);
     case "holdOn": return t("HoldOn", { actor: e.actor, label: e.label || t("HoldsOn") });

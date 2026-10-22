@@ -688,6 +688,7 @@ Hooks:
   - Committed to leaving: one whose answers and playstyles lean to going (retreating once hurt, a Chicken) gets all of the setting's share; one who'd rather stay (Fight to the end, the brave, Vengeful or Relentless when struck, a Diplomat when spoken to) gets less, never under 70% of it.
   - Stopped, what stopped it becomes its strongest desire, leaving its second, and it needs two whole turns again. Each blow and each word is a new check. Every stop weakens its wish to leave, more for one who'd rather stay, and a creature stopped often enough forgets leaving and is back in the fight. The GM sees each check on the GM-only card.
   - A creature still on its way when the fight ends has gone. Without a map (no positions), it's gone at once.
+- **Of its own accord** (`behavior/flight.js`, after the morale check): life over loot (a hostile NPC leaderless or led by one who'd rather run) and off with the prize (an NPC holding something taken this fight). Alone (`flee`, no retreat called); never with morale off or for one standing its ground.
 - **"Fight to the end"** applies when running would be its own choice (its nerve breaks, a terror is close by, a retreat it planned), and less for answers that lean less that way. Talked out of the fight, it mostly gives up where it stands instead of running.
 
 ### The fallen, holds and troubles
