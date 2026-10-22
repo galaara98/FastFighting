@@ -8,7 +8,6 @@
  *    Also `playstyles` (up to four ids), `stayTrue`, `roleplay` and `avoidCostlySpells` (booleans). (An older sheet's
  *    `avoidConsumables` box is its answer to Consumables: avoid, while that's unanswered; answering it sets the box
  *    aside. Its `target` "avoidKilling" is its answer to the fallen: spare them.)
- *    And `offer` and `expect`: what it brings to a standoff, and what it wants out of it (foundry/motives.js).
  *  - User flag `fast-fighting.survey`: {status, sceneId, requestId, updated} for the GM's status indicators.
  */
 import { MODULE_ID, TRAITS, clamp, fudged, traitBand, isPlain } from "../constants.js";
@@ -20,8 +19,7 @@ import { DESIRE_KINDS, DESIRE_BAND_KEYS } from "../engine/behavior/desire.js";
 import { setting } from "../settings.js";
 import { distanceText, localize, listItems, language, brief } from "../i18n.js";
 import { signedNumber } from "../engine/trait-parts.js";
-import { cleanMotive, cleanMotiveField, MOTIVE_KEY, motivesContext, NO_CATALOG, suggestMotives } from "./motives.js";
-import { autoRecord, validLet, validMotive } from "./auto-config.js";
+import { autoRecord, validLet } from "./auto-config.js";
 
 /** The questions a GM's client puts to another's (CONFIG.queries: answered in main.js and live-battle.js). */
 export const QUERIES = Object.freeze({
@@ -108,11 +106,6 @@ export function sanitizeTactics(raw) {
   const unanswered = key => [undefined, "auto", ""].includes(out[key]);
   if ( raw.target === "avoidKilling" && unanswered("fallen") ) out.fallen = "spare";
   if ( raw.avoidConsumables === true && unanswered("consumables") ) out.consumables = "avoid";
-  // What it brings to a standoff, and what it wants out of it (checked against what it has when a battle is built).
-  for ( const which of ["offer", "expect"] ) {
-    const m = cleanMotive(which, raw[which]);
-    if ( m && Object.keys(m).length ) out[which] = m;
-  }
   if ( isPlain(raw.reactions) ) {
     const r = Object.fromEntries(Object.entries(raw.reactions).filter(([k, v]) => /^[\w-]+$/.test(k) && REACTION_CHOICES.includes(v)));
     if ( Object.keys(r).length ) out.reactions = r;
@@ -170,14 +163,6 @@ export function getStoredTactics(actor) {
 }
 
 export async function setTactic(actor, key, value) {
-  const motive = MOTIVE_KEY.exec(key ?? "");
-  if ( actor && motive ) {
-    const [, which, field] = motive;
-    const clean = cleanMotiveField(which, field, value);
-    if ( clean === null ) return;
-    await actor.update({ [`flags.${MODULE_ID}.tactics.${which}.${field}`]: clean });
-    return;
-  }
   const reaction = REACTION_KEY.exec(key ?? "");
   if ( actor && reaction ) {
     if ( !REACTION_CHOICES.includes(value) ) return;
@@ -230,8 +215,7 @@ export function worldTacticDefaults() {
 /**
  * Effective tactics for a spec + actor.
  *   calc       what "Let this character decide" stands for before its playstyles: its calculated answers as its auto
- *              setup stored them (its system's, where its helper had one: foundry/auto-config.js), else worked out now;
- *              with what it offers and expects (calc.offer, calc.expect)
+ *              setup stored them (its system's, where its helper had one: foundry/auto-config.js), else worked out now
  *   why        a system's reason for a calculated answer ({key: reason})
  *   suggested  calc adjusted by playstyles: what "Let this character decide" means for this character
  *   resolved   stored answers over suggested
@@ -240,9 +224,9 @@ export function tacticsFor(actor, spec) {
   const stored = getStoredTactics(actor);
   const playstyles = combinePlaystyles(stored.playstyles ?? [], { stayTrue: !!stored.stayTrue, roleplay: !!stored.roleplay, fits: (k, v) => tacticFits(k, v, spec) });
   const record = autoRecord(actor);
-  const calc = { ...suggestTactics(spec, worldTacticDefaults(), getAdapter()?.rules ?? null), ...suggestMotives(spec) };
+  const calc = suggestTactics(spec, worldTacticDefaults(), getAdapter()?.rules ?? null);
   for ( const [k, v] of Object.entries(record?.lets ?? {}) ) {
-    if ( TACTIC_KEYS.includes(k) ? validLet(k, v, spec) : ["offer", "expect"].includes(k) && validMotive(k, v) ) calc[k] = v;
+    if ( TACTIC_KEYS.includes(k) && validLet(k, v, spec) ) calc[k] = v;
   }
   const why = record?.why ?? {};
   const suggested = { ...calc, ...playstyles.suggest };
@@ -344,22 +328,14 @@ export function isPlayerControlled(spec, actor) {
   return spec.kind === "pc" || !!actor?.hasPlayerOwner;
 }
 
-/**
- * Compact fingerprint of what changes the sheet's shape: "Let this character decide" (playstyles and the checkboxes), and the
- * kind of offer and expectation (each shows fields of its own).
- */
+/** Compact fingerprint of what changes the sheet's shape: "Let this character decide" (playstyles and the checkboxes). */
 export function playstyleSignature(actor) {
   const t = getStoredTactics(actor);
-  return JSON.stringify([t.playstyles ?? [], !!t.stayTrue, !!t.roleplay, !!t.avoidCostlySpells, t.offer?.kind ?? "", t.expect?.kind ?? ""]);
+  return JSON.stringify([t.playstyles ?? [], !!t.stayTrue, !!t.roleplay, !!t.avoidCostlySpells]);
 }
 
-/**
- * A stored answer by its survey key: a question, a desire's field, or a motive's field (undefined: never set, so the
- * sheet keeps showing its default, such as the coin an amount is counted in).
- */
+/** A stored answer by its survey key: a question, a desire's field, a reaction's or a reroll's. */
 function storedValue(stored, key) {
-  const motive = MOTIVE_KEY.exec(key);
-  if ( motive ) return stored[motive[1]]?.[motive[2]];
   const desire = DESIRE_KEY.exec(key);
   if ( desire ) return stored.desires?.[desire[1]]?.[desire[2]] ?? (desire[2] === "level" ? DESIRE_LEVELS.determined : "");
   // (A reaction's choice, "ask" until one's made; a reroll's.)
@@ -545,10 +521,6 @@ export function questionsContext(spec, actor, uid, { questions: withQuestions = 
     playstyleCount: game.i18n.format("FASTFIGHTING.Playstyle.Count", { n: picked.length, max: MAX_PLAYSTYLES }),
     // (What they do together, for a GM or assistant GM.)
     playstyleEffects: gm && picked.length ? playstyleEffectsText(playstyles) || null : null,
-    // What it brings to a standoff, and what it wants out of it.
-    motives: withQuestions ? motivesContext(spec, stored, getAdapter()?.itemCatalog?.() ?? NO_CATALOG, uid, actor.uuid, {
-      auto: { offer: suggested.offer, expect: suggested.expect }, why, gm
-    }) : null,
     ...reactionsContext(spec, actor, stored, uid),
     stayTrue: { name: `tactic-${uid}-stayTrue`, checked: !!stored.stayTrue },
     roleplay: { name: `tactic-${uid}-roleplay`, checked: !!stored.roleplay },
@@ -615,16 +587,9 @@ export function syncTacticsDom(root, actor) {
     const on = !!storedValue(stored, cb.dataset.tactic);
     if ( cb.checked !== on && cb !== document.activeElement ) cb.checked = on;
   }
-  // (An amount someone else typed.)
-  for ( const el of root.querySelectorAll(`input[type=number][data-tactic][data-actor-uuid="${actor.uuid}"]`) ) {
-    const value = storedValue(stored, el.dataset.tactic);
-    if ( value !== undefined && el !== document.activeElement && el.value !== String(value) ) el.value = String(value);
-  }
   for ( const el of root.querySelectorAll(`select[data-tactic][data-actor-uuid="${actor.uuid}"]`) ) {
     const key = el.dataset.tactic;
-    const stated = storedValue(stored, key);
-    if ( stated === undefined && MOTIVE_KEY.test(key) ) continue;
-    const value = stated ?? "auto";
+    const value = storedValue(stored, key) ?? "auto";
     if ( el === document.activeElement || el.value === String(value) ) continue;
     el.value = value;
     const q = el.closest(".ff-q");

@@ -89,7 +89,7 @@ describe("talk in the simulation", () => {
       for ( let i = 0; i < r.log.length; i++ ) {
         const e = r.log[i];
         // Talked into surrendering, switching sides or leaving: the pitch before it was a success.
-        if ( e.type === "sway" && !e.recruit && !e.lie && !e.paidOff && !e.concession && ["surrendered", "switched", "fled"].includes(e.outcome) ) {
+        if ( e.type === "sway" && !e.recruit && ["surrendered", "switched", "fled"].includes(e.outcome) ) {
           const pitch = [...r.log.slice(0, i)].reverse().find(x => x.type === "talk");
           expect(pitch.degree).toBeGreaterThanOrEqual(2);
         }

@@ -4,13 +4,8 @@ import { createRun } from "../scripts/engine/battle-state.js";
 import { opensWithTalk } from "../scripts/engine/behavior/standoff.js";
 import { talkAffinity } from "../scripts/engine/behavior/talk.js";
 import { pf2eRules } from "./fixtures/three-action-rules.js";
-import { buildStory } from "../scripts/story/story.js";
-import { formatMoney } from "../scripts/story/log-lines.js";
-import { storyTables } from "./foundry-i18n.js";
 import { creature, battle, social } from "./helpers.js";
 
-const english = storyTables();
-const tables = { get: k => english[k] };
 const COINS = [{ label: "gp", value: 100 }, { label: "sp", value: 10 }, { label: "cp", value: 1 }];
 const traits = (brave, selfish = 40) => ({ tactical: { base: 50, fudge: 0 }, brave: { base: brave, fudge: 0 }, selfish: { base: selfish, fudge: 0 }, loyal: { base: 50, fudge: 0 } });
 
@@ -32,50 +27,12 @@ function toll({ money = 5000, stowed = [], talk = "opportune", chiefAlways = fal
 
 const fights = (spec, n = 120) => [...Array(n).keys()].map(s => replay(spec, pf2eRules, s + 1));
 
-describe("giving something up", () => {
-  test("a PC can be talked into paying 1-10% of their money, and that settles the standoff", () => {
-    const paid = fights(toll()).filter(r => r.units.pc.final.concessions[0]?.kind === "money");
-    expect(paid.length).toBeGreaterThan(5);
-    for ( const r of paid ) {
-      const c = r.units.pc.final.concessions[0];
-      expect(c.amount).toBeGreaterThanOrEqual(50);
-      expect(c.amount).toBeLessThanOrEqual(500);
-      expect(c.to).toBe("chief");
-      // Paid during the standoff: that settles it. (Paying after it broke into a fight is possible too.)
-      const paidAt = r.log.findIndex(e => e.type === "sway" && e.concession);
-      const brokeAt = r.log.findIndex(e => e.type === "breakStandoff");
-      if ( brokeAt < 0 || brokeAt > paidAt ) {
-        expect(r.peaceful).toBe(true);
-        expect(r.log.find(e => e.type === "end").resolved).toBe("conceded");
-      }
-    }
-    expect(paid.some(r => r.peaceful)).toBe(true);
-    const story = buildStory(paid[0], toll(), "roleplay", { tables, seed: 3 }).text;
-    expect(story).toContain(formatMoney(paid[0].units.pc.final.concessions[0].amount, COINS));
-  });
-
-  test("a PC without money gives up a stowed item only on a luck roll under 40", () => {
-    const spec = toll({ money: 0, stowed: [{ id: "rope", name: "Silk Rope", value: 10 }] });
-    const items = fights(spec, 200).map(r => r.units.pc.final.concessions[0]).filter(c => c?.kind === "item");
-    expect(items.length).toBeGreaterThan(5);
-    for ( const c of items ) {
-      expect(c.item.name).toBe("Silk Rope");
-      expect(c.kept).toBe(c.luck >= 40);
-    }
-    expect(items.some(c => !c.kept) || items.some(c => c.kept)).toBe(true);
-  });
-
+describe("a PC who won't listen", () => {
   test("a PC who lets weapons do the talking won't be talked into anything", () => {
-    for ( const r of fights(toll({ talk: "never" }), 60) ) expect(r.units.pc.final.concessions).toEqual([]);
-  });
-
-  test("an NPC with nothing to give lies and runs", () => {
-    const pc = creature({ id: "pc", kind: "pc", diesAtZero: false, tactics: { talk: "first" }, social: social({ diplomacy: 20, intimidation: 20, deception: 20 }) });
-    const thug = creature({ id: "thug", side: "hostile", traits: traits(20, 40), social: social({ diplomacy: 0, willDC: 10, perceptionDC: 10 }) });
-    const spec = battle([pc, thug], { maxRounds: 10, opening: "talk" });
-    const lies = fights(spec, 300).filter(r => r.log.some(e => e.type === "sway" && e.lie));
-    expect(lies.length).toBeGreaterThan(0);
-    for ( const r of lies ) expect(r.units.thug.final.status).toBe("fled");
+    for ( const r of fights(toll({ talk: "never" }), 60) ) {
+      expect(r.log.some(e => e.type === "talk" && e.targetId === "pc")).toBe(false);
+      expect(r.log.some(e => e.type === "sway" && e.actorId === "pc")).toBe(false);
+    }
   });
 });
 
@@ -117,23 +74,7 @@ describe("a charismatic leader's last word", () => {
   });
 });
 
-describe("giving something up mid-fight", () => {
-  const fightSpec = () => {
-    const spec = toll();
-    spec.options.opening = "fight";
-    return spec;
-  };
-
-  test("the giver stays in the fight and won't listen to the taker again", () => {
-    const mid = fights(fightSpec(), 300).filter(r => r.log.some(e => e.type === "sway" && e.concession && !e.concession.kept));
-    expect(mid.length).toBeGreaterThan(0);
-    for ( const r of mid ) {
-      const at = r.log.findIndex(e => e.type === "sway" && e.concession);
-      // Nobody walks away: the fight goes on after the payment unless it was already over.
-      expect(r.log.slice(at + 1).some(e => e.type === "talk" && e.actorId === "chief" && e.targetId === "pc")).toBe(false);
-    }
-  });
-
+describe("a grudge against whoever took from it", () => {
   test("they fear the taker until the taker attacks them, then want only the taker", async () => {
     const { chooseTarget } = await import("../scripts/engine/behavior/targeting.js");
     const giver = creature({ id: "g", kind: "pc", diesAtZero: false });
@@ -146,16 +87,5 @@ describe("giving something up mid-fight", () => {
     for ( let i = 0; i < 5; i++ ) expect(chooseTarget(run, g)?.id).toBe("o");
     g.grudges.get("t").provoked = true;
     expect(chooseTarget(run, g)?.id).toBe("t");
-  });
-
-  test("what was taken comes back if the taker is beaten, not if they get away", () => {
-    const all = fights(fightSpec(), 300).filter(r => (r.units.pc.final.concessions ?? []).some(c => !c.kept));
-    expect(all.length).toBeGreaterThan(0);
-    for ( const r of all ) {
-      const chief = r.units.chief.final.status;
-      for ( const c of r.units.pc.final.concessions.filter(x => !x.kept) ) {
-        expect(!!c.returned).toBe(["dead", "down", "surrendered", "stoodDown"].includes(chief));
-      }
-    }
   });
 });

@@ -2,7 +2,7 @@ import { describe, expect, test } from "vitest";
 import { prepareBattle, replay } from "../scripts/engine/simulator.js";
 import { createRun } from "../scripts/engine/battle-state.js";
 import { moraleStress, callRetreat, rallies, running, standsGround, checkMorale, MORALE } from "../scripts/engine/behavior/morale.js";
-import { attemptTalk, choosePitch, willingToPay } from "../scripts/engine/behavior/talk.js";
+import { attemptTalk, choosePitch } from "../scripts/engine/behavior/talk.js";
 import { createRng } from "../scripts/engine/rng.js";
 import { combinePlaystyles } from "../scripts/engine/playstyles.js";
 import { initDesires } from "../scripts/engine/behavior/desire.js";
@@ -211,28 +211,16 @@ describe("bosses", () => {
     expect(shaken({ hostile: bossChain("boss") }, { bossInfluence: 3 })).toBeLessThan(shaken({ hostile: bossChain("boss") }, { bossInfluence: 1.25 }));
   });
 
-  test("in a standoff, talking a boss round means paying it to go: it leaves with its whole group, and that settles it", () => {
+  test("in a standoff, a boss is talked round like anyone else: reasoned with, it stands down, and its group with it", () => {
     const { run, by, say } = gang();
     run.standoff = true;
-    run.rng = always;
+    run.rng = { ...always, chance: p => p >= 0.5 };
     const pitch = choosePitch(run, by("pc"), { only: o => o.id === "boss" });
     expect(pitch?.target.id).toBe("boss");
     for ( let i = 0; i < 6 && by("boss").status === STATUS.STANDING; i++, by("pc").turnsTaken++ ) attemptTalk(run, by("pc"), { target: by("boss"), kind: "persuade", aim: "down", mod: 40, dc: 10 }, say);
     expect(by("boss").status).toBe(STATUS.STOOD_DOWN);
     expect(by("w1").status).toBe(STATUS.STOOD_DOWN);
-    expect(by("pc").concessions?.[0]).toMatchObject({ kind: "money", to: "boss", bribe: true });
-    expect(by("pc").concessions[0].percent).toBeGreaterThan(10);
-    expect(run.resolved?.side).toBe("friendly");
-    expect(run.log.some(e => e.outcome === "bribed")).toBe(true);
-    // Nobody willing to pay (a bribe isn't a shakedown: a Brawler would sooner fight), or nothing to pay with: it can't
-    // be won there at all.
-    const proud = gang({}, [], { playstyles: ["brawler", "diplomat"] });
-    proud.run.standoff = true;
-    expect(willingToPay(proud.run, proud.by("pc"))).toBe(false);
-    expect(choosePitch(proud.run, proud.by("pc"), { only: o => o.id === "boss" })).toBeNull();
-    const poor = runOf([goblin("boss"), goblin("w1"), creature({ id: "pc", kind: "pc", diesAtZero: false, social: social({ diplomacy: 30 }) })], { hostile: bossChain("boss") });
-    poor.run.standoff = true;
-    expect(choosePitch(poor.run, poor.by("pc"), { only: o => o.id === "boss" })).toBeNull();
+    expect(by("pc").concessions ?? []).toEqual([]);
   });
 
   test("a leader prone to running takes more of its group along", () => {

@@ -26,7 +26,7 @@
  *   pitches: {persuade|intimidate|deceive: {skill: display name, mod}}   what this creature can try on others
  *   resist:  {persuade|intimidate|deceive: {dc, label}}                  the DC others face, and what it's called
  *   resolve: how much more strong-willed than typical for its level (0 typical; -5 or less: very gullible)
- * @property {object} [valuables]           What it could be talked into giving up:
+ * @property {object} [valuables]           What it has that could change hands (stolen, looted, given up):
  *   {money: total in the smallest coin, denominations: [{label, value}] largest first,
  *    stowed: [{id, name, value, category?, material?, rarity?}] carried but not wielded or worn, wielded: (the same),
  *    pooled: true where its side shares the money (Ironsworn's Supply: one pays, all have that much less),

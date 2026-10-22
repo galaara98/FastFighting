@@ -181,8 +181,7 @@ function listen(app, panel) {
     const actor = actorOf(app);
     if ( button.dataset.ffAction === "togglePlaystyle" ) {
       if ( !await togglePlaystyle(actor, button.dataset.playstyle) ) ui.notifications.warn(localize("FASTFIGHTING.Playstyle.Max"));
-    } else if ( button.dataset.ffAction === "setMotive" ) await setTactic(actor, `${button.dataset.motive}.kind`, button.dataset.kind);
-    else if ( button.dataset.ffAction === "resetAll" ) await resetAndAutoConfig(actor, specs.get(app));
+    } else if ( button.dataset.ffAction === "resetAll" ) await resetAndAutoConfig(actor, specs.get(app));
     fill(app, panel);
   });
 }
@@ -201,7 +200,7 @@ export async function setAdhd(actor, value) {
 export function syncTokenTactics(actor) {
   for ( const [app, panel] of openTabs() ) {
     if ( actorOf(app)?.uuid !== actor.uuid ) continue;
-    // (A change to what shows, such as the kind of offer: drawn again; anything else, patched in place.)
+    // (A change to what shows, such as a playstyle: drawn again; anything else, patched in place.)
     if ( panel.dataset.ffSignature !== playstyleSignature(actor) ) fill(app, panel);
     else syncTacticsDom(panel, actor);
   }

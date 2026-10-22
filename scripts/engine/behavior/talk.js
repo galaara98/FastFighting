@@ -8,18 +8,16 @@
  *   intimidate  threaten (works better on the outnumbered; the brave resist it)
  *   deceive     bluff (backfires harder when it fails) Each success moves that enemy along a persuasion track; it takes several steps to
  * convince someone (2-6), unless they are very gullible (1). When the track fills, the enemy surrenders, flees,
- * gives something up (money or an item, then backs off), or (rarely, unless they were neutral) changes sides. An
- * enemy changing sides only stands aside (it takes no side now), and only on a d100 at or under the switch luck; otherwise
- * it's talked into one of the others.
+ * stands down, or (rarely, unless they were neutral) changes sides. An enemy changing sides only stands aside (it
+ * takes no side now), and only on a d100 at or under the switch luck; otherwise it's talked into one of the others.
  *
  * Those who take no side (behavior/neutral.js) are talked to as well: won over to join the talker's side (no luck
  * check; easier when joining gives them what they want, harder when it betrays it, and never by a side they've seen
  * cross them), talked round when they're confronting the talker's side, or, when they're the ones confronting
  * someone, talking that someone into making amends.
- * Player characters decide their own fate, so words can only make a PC give something up or back off and run; a
- * PC who would rather let weapons do the talking won't listen at all. In a standoff, giving something up or
- * running ends the whole conflict: the deal is struck and everyone walks away. Convincing a leader can make the rest of
- * their side stand down.
+ * Player characters decide their own fate, so words can only scare a PC into backing off and running; a PC who would
+ * rather let weapons do the talking won't listen at all. In a standoff, one talked into running ends the whole
+ * conflict, and everyone walks away. Convincing a leader can make the rest of their side stand down.
  *
  * Grudges matter: anyone the talker has hurt, or has failed to convince before, is much harder to sway,
  * and a critical failure means that enemy will not listen to that talker again.
@@ -32,23 +30,19 @@
  * Pure: no Foundry globals.
  */
 import { STATUS, SWAY, CONCEDE_LUCK, SWITCH_LUCK, TRAITOR_LUCK, TACTICAL, OPENING, clamp } from "../../constants.js";
-import { alliesOf, enemiesOf, isStanding, behaviorOf, typical, checkRoll, liveTier, liveTrait, studyBonus, boostBonus, chainOf, commandOf, groupKeyOf, wish, wishWins, edgeDistance, areEnemies, systemRolled, hpFraction, dangerScore } from "../battle-state.js";
+import { alliesOf, enemiesOf, isStanding, behaviorOf, typical, checkRoll, liveTier, studyBonus, boostBonus, chainOf, commandOf, groupKeyOf, wish, wishWins, edgeDistance, areEnemies, systemRolled, hpFraction, dangerScore } from "../battle-state.js";
 import { spendEdges, spendBoost } from "./effects.js";
 import { degreeDistribution, rollCheck } from "../probability.js";
-import { isNeutral, standsAside, appeal, offend, turnOn, standAside, joinSide, calm, settleTruce, seemsFoe, leanSide, fighting, dislikesViolence } from "./neutral.js";
-import { prefersTalk, shareLanguage, talksFirstAnswer } from "./standoff.js";
+import { isNeutral, standsAside, appeal, offend, turnOn, standAside, joinSide, calm, settleTruce, seemsFoe, leanSide, fighting } from "./neutral.js";
+import { shareLanguage, talksFirstAnswer } from "./standoff.js";
 import { levelOf, allDesires } from "./desire.js";
 import { perceives } from "./senses.js";
 import { standsGround, callRetreat } from "./morale.js";
-import { bargainAim, holdsOut, calmsDown, irritated, haggled, pressed, expectOf, owed } from "./bargain.js";
 import { talkDamping } from "./specialty.js";
 import { strain } from "./strain.js";
 import { mayLeave, startLeaving, confronted } from "./leaving.js";
 
-/**
- * Only an argument: nobody runs, and nobody pays and goes. Talked round, a creature backs down (where it would run or
- * yield); made to pay, it pays to end the argument and stays where it is (a deal).
- */
+/** Only an argument: nobody runs. Talked round, a creature backs down (where it would run or yield). */
 const arguing = run => run.prep.options.opening === OPENING.ARGUMENT;
 
 /** The three kinds of pitch. Systems map their own skills onto these (CombatantSpec.social.pitches). */
@@ -58,25 +52,21 @@ export const TALK_KINDS = Object.freeze(["persuade", "intimidate", "deceive"]);
  * What talking to t is for: "down" (an enemy: talk it out of the fight), "recruit" (someone taking no side: win it
  * over), "dismiss" (someone taking no side: talk it into leaving, for those who don't like killing and would rather
  * see it gone: behavior/neutral.js peaceDesires), "calm" (someone taking no side who's confronting the talker's
- * side: talk it round), "settle" (the talker takes no side and is confronting t's side: have it make amends), or
- * "extort" (the talker takes no side, and is squeezing the side it likes least for money: behavior/neutral.js
- * meddling). One calming a fight (talker.calming) talks the fighters into letting it be ("pacify": someone taking no
- * side, out of its quarrel; anyone in a standoff, into leaving the quarrel alone) or, once it's a fight, into leaving.
- * In a standoff, with `run`: "haggle" (t asked for something nothing has met: talk it down) or "press" (the talker
- * expects something t could hand over: talk t into it) (behavior/bargain.js).
+ * side: talk it round), or "settle" (the talker takes no side and is confronting t's side: have it make amends). One
+ * calming a fight (talker.calming) talks the fighters into letting it be ("pacify": someone taking no side, out of its
+ * quarrel; anyone in a standoff, into leaving the quarrel alone) or, once it's a fight, into leaving.
  */
-export function aimOf(talker, t, run = null) {
+export function aimOf(talker, t) {
   if ( talker.calming ) {
     if ( isNeutral(t) && t.against.size ) return "pacify";
     if ( !isNeutral(t) ) return talker.calming;
   }
   if ( isNeutral(talker) && talker.truce?.side === t.side && !talker.against.has(t.side) ) return "settle";
-  if ( isNeutral(talker) && talker.meddling?.how === "extort" && talker.meddling.against.includes(t.side) && !talker.against.has(t.side) && hasValuables(t) ) return "extort";
   if ( isNeutral(t) && !t.against.has(talker.side) ) {
     if ( t.truce?.side === talker.side ) return "calm";
     return talker.peace?.targetId === t.id && talker.peace.aim === "dismiss" ? "dismiss" : "recruit";
   }
-  return bargainAim(run, talker, t) ?? "down";
+  return "down";
 }
 
 /** Who a talker might talk to: its enemies, and those who take no side that it could win over or talk round. */
@@ -149,8 +139,8 @@ export function hasValuables(t) {
 }
 
 /**
- * Can this unit be talked out of the fight at all? PCs decide their own fate: words can only talk a PC into
- * giving something up or backing off, and only if they're willing to listen.
+ * Can this unit be talked out of the fight at all? PCs decide their own fate: words can only scare a PC into
+ * backing off, and only if they're willing to listen.
  */
 export function swayable(t) {
   if ( !isStanding(t) ) return false;
@@ -204,9 +194,8 @@ export function stepsToConvince(t, run = null, talker = null) {
   // Wary of outsiders' words (a Skeptic): a step more for anyone not of its own group.
   if ( talker && (behaviorOf(t).wary ?? 0) >= 0.5 && outsider(talker, t) ) steps += 1;
   // Letting a quarrel be is a smaller thing to ask than giving up the fight.
-  const aim = talker ? aimOf(talker, t, run) : null;
-  // (Haggling over the price is a smaller thing too.)
-  if ( aim === "pacify" || aim === "haggle" ) steps -= 1;
+  const aim = talker ? aimOf(talker, t) : null;
+  if ( aim === "pacify" ) steps -= 1;
   // Winning someone over: a step quicker if joining gives it something it wants, slower if it betrays it.
   if ( run && aim === "recruit" ) {
     const { fulfils, betrays } = appeal(run, t, talker.side);
@@ -268,12 +257,7 @@ function talkDCShared(run, talker, t) {
   // Wary of outsiders' words (a Skeptic): up to 4 harder, by how much of a Skeptic it is.
   const wary = behaviorOf(t).wary ?? 0;
   if ( wary > 0 && outsider(talker, t) ) dc += Math.round(4 * wary);
-  const aim = aimOf(talker, t, run);
-  // Bargaining: the greedy hold out for their due and hold on to what they have; the peaceable come round. Pressed for
-  // a promise to let them pass, or to leave: the bolder, the harder.
-  if ( aim === "haggle" || aim === "press" ) dc += holdsOut(run, t);
-  const asked = aim === "press" ? expectOf(talker) : null;
-  if ( asked?.kind === "promise" && asked.promise !== "noHarm" ) dc += Math.round((t.prep.traits.brave - 50) / 20);
+  const aim = aimOf(talker, t);
   // Winning someone over: what joining would mean to it, by what it wants.
   if ( aim === "recruit" ) {
     const { fulfils, betrays } = appeal(run, t, talker.side);
@@ -292,9 +276,9 @@ export function bestPitch(run, talker, t) {
   const rules = run.prep.rules;
   const s = talker.spec.social ?? {};
   let best = null;
-  // A PC with nothing to hand over can only be scared off; reasoning or bluffing gets nowhere.
-  const scareOnly = t.spec.kind === "pc" && !hasValuables(t);
-  const aim = aimOf(talker, t, run);
+  // A PC can only be scared off; reasoning or bluffing gets nowhere.
+  const scareOnly = t.spec.kind === "pc";
+  const aim = aimOf(talker, t);
   // (What doesn't depend on the kind of pitch, worked out once.)
   let shared = null;
   let study = null;
@@ -320,6 +304,9 @@ export function bestPitch(run, talker, t) {
   }
   return best;
 }
+
+/** A boss in a fight is talked out of it only under this share of its hit points (it surrenders). */
+const BOSS_GIVES_UP = 0.25;
 
 /** How much more one its answer to "Who to pursue first" picks is worth talking round. */
 const PURSUED = 1.25;
@@ -358,15 +345,15 @@ export function choosePitch(run, talker, { only = null } = {}) {
     if ( only && !only(t) ) continue;
     const pitch = bestPitch(run, talker, t);
     if ( !pitch || pitch.pSuccess <= 0.05 - 0.04 * wish(talker.spec.alwaysTalk) ) continue;
-    // A boss can't be talked into leaving; in a standoff, only paid to (by a side with something to pay it).
-    if ( t.isBoss && (pitch.aim === "leave" || (pitch.aim === "down" && run.standoff && !bribeFrom(run, talker))) ) continue;
+    // A boss can't be talked into leaving, nor, in a fight, out of it until it's badly hurt.
+    if ( t.isBoss && (pitch.aim === "leave" || (pitch.aim === "down" && !run.standoff && hpFraction(t) >= BOSS_GIVES_UP)) ) continue;
     const remaining = Math.max(1, stepsToConvince(t, run, talker) - (t.sway.get(talker.side) ?? 0));
     const cmd = commandOf(run, t);
     const commands = cmd?.unit === t ? (cmd.boss ? 2.5 : 1.5) : 0;
     const health = 1 + t.hp / Math.max(1, t.maxHp);
     // An enemy out of the fight (its commander, its side with it; or a fighter off the field); a new friend (a weak one
-    // counts for less); a new enemy prevented; a quarrel settled or let be; money.
-    const value = { down: (1 + commands) * health, leave: (1 + commands) * health, recruit: 0.8 * health * (t.prep.lowBattleWorth ? 0.5 : 1), dismiss: 0.9 * health, calm: 1.2 * health, pacify: 1.3 * health, settle: 1.5, extort: 1.2, haggle: 1.6 + commands, press: 2 + commands }[pitch.aim];
+    // counts for less); a new enemy prevented; a quarrel settled or let be.
+    const value = { down: (1 + commands) * health, leave: (1 + commands) * health, recruit: 0.8 * health * (t.prep.lowBattleWorth ? 0.5 : 1), dismiss: 0.9 * health, calm: 1.2 * health, pacify: 1.3 * health, settle: 1.5 }[pitch.aim];
     const score = pitch.pSuccess * value / remaining * (favored?.has(t) ? PURSUED : 1);
     if ( !best || score > best.score ) best = { target: t, ...pitch, remaining, score };
   }
@@ -414,43 +401,30 @@ export function talkActionsThisTurn(run, u, actions) {
  */
 function outcomeFor(run, t, kind, aim = "down", { noSwitch = false, peace = false } = {}) {
   const rng = run.rng;
-  // Talked round by a Peacekeeper: a truce, it stands down (a player character still only pays up or backs off).
+  // Talked round by a Peacekeeper: a truce, it stands down (a player character still only backs off).
   if ( peace && aim === "down" && !t.isBoss && t.spec.kind !== "pc" ) return SWAY.STAND_DOWN;
-  // A boss isn't talked out of anything: in a standoff it can be paid to go (and takes its group); in a fight, only
-  // badly hurt does it give up, or else it buys its way out of the argument (and fights on). It never stands aside.
-  if ( t.isBoss && aim === "down" ) {
-    if ( run.standoff ) return "bribed";
-    return t.maxHp > 0 && t.hp / t.maxHp < 0.25 ? SWAY.SURRENDER : SWAY.CONCEDE;
-  }
+  // A boss isn't talked out of anything lightly: in a standoff it's talked round (and takes its group); in a fight,
+  // only badly hurt does it give up (choosePitch doesn't try sooner). It never stands aside.
+  if ( t.isBoss && aim === "down" ) return run.standoff ? SWAY.STAND_DOWN : SWAY.SURRENDER;
   if ( aim === "recruit" ) return SWAY.SWITCH;
   if ( aim === "dismiss" ) return SWAY.FLEE;
   if ( aim === "calm" ) return "calm";
   if ( aim === "pacify" ) return "pacified";
-  if ( aim === "extort" ) return "paid";
   if ( aim === "leave" ) return SWAY.FLEE;
-  if ( aim === "haggle" ) return "haggled";
-  if ( aim === "press" ) return "pressed";
-  // Satisfaction for a quarrel: something handed over, or an apology.
-  if ( aim === "settle" ) return hasValuables(t) ? SWAY.CONCEDE : "amends";
+  // Satisfaction for a quarrel: an apology.
+  if ( aim === "settle" ) return "amends";
   // A player character scheming against the leader it wasn't chosen to be may turn (only on the traitor luck: below).
   if ( t.spec.kind === "pc" && t.scheming && aim === "down" && !noSwitch ) return SWAY.NEUTRAL;
-  // Words can only make a PC pay up or back off: threats may send them running (the only way, if they have nothing).
-  if ( t.spec.kind === "pc" ) {
-    if ( !hasValuables(t) ) return SWAY.FLEE;
-    if ( kind === "intimidate" && rng.chance(clamp(0.5 - (t.prep.traits.brave - 50) / 100, 0.1, 0.8)) && !standsGround(run, t) ) return SWAY.FLEE;
-    return SWAY.CONCEDE;
-  }
+  // Words can only make a PC back off: threats send it running.
+  if ( t.spec.kind === "pc" ) return SWAY.FLEE;
   const selfish = t.prep.traits.selfish;
   const loyal = t.prep.traits.loyal;
   // Changing sides: an enemy can only be talked into standing aside (taking no side), from where it can be won over.
   // (Scheming against its own leaders: far likelier.)
   const switchChance = noSwitch ? 0 : standsAside(t) ? 0.6 : clamp(0.03 + (selfish - 50) / 500 + (50 - loyal) / 500 + (t.scheming ? 0.5 : 0), 0, t.scheming ? 0.7 : 0.12);
   if ( rng.chance(switchChance) ) return SWAY.NEUTRAL;
-  // Paying them off: rarer than backing down, likelier under threat or when badly hurt; the greedy hate it.
-  const hurt = t.maxHp > 0 && t.hp / t.maxHp < 0.5;
-  const concedeChance = clamp(0.12 + (kind === "intimidate" ? 0.15 : 0) + (hurt ? 0.1 : 0) - (selfish - 50) / 400, 0.03, 0.45);
-  if ( rng.chance(concedeChance) ) return SWAY.CONCEDE;
   if ( run.standoff && kind !== "intimidate" ) return SWAY.STAND_DOWN;
+  const hurt = t.maxHp > 0 && t.hp / t.maxHp < 0.5;
   // (One who doesn't like to flee mostly gives up where it stands instead.)
   if ( !hurt && selfish >= 55 && !standsGround(run, t) ) return SWAY.FLEE;
   if ( hurt && t.prep.traits.brave < 40 && rng.chance(0.5) && !standsGround(run, t) ) return SWAY.FLEE;
@@ -458,9 +432,9 @@ function outcomeFor(run, t, kind, aim = "down", { noSwitch = false, peace = fals
 }
 
 /**
- * What a creature hands over when it gives something up: 1-10% of its money; failing that an item it carries but
- * isn't wielding or wearing (a PC keeps it unless a d100 luck check comes up under 40); failing that, an NPC gives
- * up something it's wielding. Returns null when there's nothing at all (an NPC then lies and runs).
+ * What a creature hands over when it gives something up (or has it lifted: behavior/theft.js): 1-10% of its money;
+ * failing that an item it carries but isn't wielding or wearing (a PC keeps it unless a d100 luck check comes up under
+ * 40, with `itemLuck`); failing that, an NPC gives up something it's wielding. Returns null when there's nothing at all.
  */
 export function concession(run, t, { itemLuck = true } = {}) {
   const v = remaining(t);
@@ -484,156 +458,23 @@ export function concession(run, t, { itemLuck = true } = {}) {
   return null;
 }
 
-/** Playstyles that would pay to be spared the trouble (more talk, a fight), and those that never would. */
-const PAYS = new Set(["peacekeeper", "diplomat", "peoplePleaser", "moralist", "enabler", "chicken", "lazy", "fragile", "wallflower"]);
-const WONT_PAY = new Set(["brawler", "instigator", "cruel", "vengeful", "relentless", "mercenary", "thief", "redeemSeeker"]);
-
 /**
- * Would u pay to be spared the trouble of more talk, or a fight? A bribe isn't a shakedown: its first pill that has a
- * say decides (a Diplomat or a Chicken would; a Brawler or a Mercenary never); without one, one who can't abide
- * violence would, and so would an unselfish one who'd rather talk or isn't very bold.
- */
-export function willingToPay(run, u) {
-  for ( const p of u.spec.playstyles ?? [] ) {
-    if ( PAYS.has(p) ) return true;
-    if ( WONT_PAY.has(p) ) return false;
-  }
-  if ( dislikesViolence(u) ) return true;
-  return liveTrait(run, u, "selfish") < 50 && (prefersTalk(u) || liveTrait(run, u, "brave") < 60);
-}
-
-/**
- * Who would pay a boss off for the talker's side: of those willing to (willingToPay), whoever has the most money, else
- * something to give.
- */
-function bribeFrom(run, talker) {
-  const side = isNeutral(talker) ? leanSide(run, talker) : talker.side;
-  const payers = run.units.filter(o => (o === talker || (o.side === side && !isNeutral(o))) && isStanding(o) && hasValuables(o) && willingToPay(run, o));
-  return payers.sort((a, b) => remaining(b).money - remaining(a).money)[0] ?? null;
-}
-
-/** What it takes to pay a boss off: 11-30% of the payer's money, or else something it carries. */
-function bribe(run, payer) {
-  const v = remaining(payer);
-  if ( v.money > 0 ) {
-    const percent = 10 + run.rng.die(20);
-    return { kind: "money", amount: Math.max(1, Math.round(v.money * percent / 100)), percent, denominations: v.denominations ?? null, bribe: true };
-  }
-  return v.stowed.length ? { kind: "item", item: run.rng.pick(v.stowed), bribe: true } : null;
-}
-
-/**
- * In a standoff, an enemy talked into paying up or running settles the whole thing, for the talker's side (a neutral
- * talking for the side it leans toward: for that side).
+ * In a standoff, an enemy talked into running settles the whole thing, for the talker's side (a neutral talking for
+ * the side it leans toward: for that side).
  */
 function settle(run, talker, outcome) {
   const side = isNeutral(talker) ? leanSide(run, talker) : talker.side;
-  if ( !side || !run.standoff || run.resolved || ![SWAY.CONCEDE, SWAY.FLEE].includes(outcome) ) return;
+  if ( !side || !run.standoff || run.resolved || outcome !== SWAY.FLEE ) return;
   // (Only an argument: backing down, where it would have run.)
-  run.resolved = { side, outcome: arguing(run) && outcome === SWAY.FLEE ? SWAY.STAND_DOWN : outcome };
-}
-
-/**
- * Giving something up. In a standoff it settles everything and the giver backs off; what it hands over is what the
- * talker's side expects, if it has it, else what it offered, else the usual (behavior/bargain.js owed). In the thick
- * of a fight it's personal: the giver stays in, won't listen to the taker again, and fears them, until the taker
- * attacks them, when the taker becomes the one they most want to hit.
- */
-function concede(run, talker, t, log) {
-  const due = run.standoff ? owed(run, t, talker) : null;
-  const given = due?.given ?? concession(run, t);
-  const taker = due?.taker ?? talker;
-  if ( due && !due.given.kept ) t.dealt = taker.dealt = true;
-  if ( !given && t.spec.kind !== "pc" && arguing(run) ) {
-    // Only an argument: nothing to give, it backs down.
-    t.swayOutcome = SWAY.STAND_DOWN;
-    t.status = STATUS.STOOD_DOWN;
-    t.fellRound ??= run.round;
-    log(t, { type: "sway", outcome: SWAY.STAND_DOWN, by: talker.spec.name, byId: talker.id });
-    return;
-  }
-  if ( !given && t.spec.kind !== "pc" ) {
-    // Nothing to give: they swear they have nothing and run.
-    t.swayOutcome = SWAY.FLEE;
-    runOff(run, t, talker);
-    log(t, { type: "sway", outcome: SWAY.FLEE, lie: true, by: talker.spec.name, byId: talker.id });
-    return;
-  }
-  const record = given ? { ...given, to: taker.id, toName: taker.spec.name, round: run.round } : null;
-  if ( record ) (t.concessions ??= []).push(record);
-  const data = { type: "sway", outcome: SWAY.CONCEDE, by: talker.spec.name, byId: talker.id, concession: record };
-  // Only an argument: it pays to end the argument, and stays where it is.
-  if ( run.standoff && arguing(run) ) {
-    t.swayOutcome = SWAY.CONCEDE;
-    log(t, data);
-    return;
-  }
-  if ( run.standoff ) {
-    for ( const id of t.adjacent ) run.byId.get(id)?.adjacent.delete(t.id);
-    t.adjacent.clear();
-    t.swayOutcome = SWAY.CONCEDE;
-    t.status = STATUS.STOOD_DOWN; // paid up, and the matter is settled
-    t.fellRound ??= run.round;
-    log(t, data);
-    return;
-  }
-  // Mid-fight: still in it, but bitter and wary of whoever made them pay.
-  t.conceded = true;
-  t.offendedBy.add(talker.id);
-  t.sway.set(talker.side, 0);
-  (t.grudges ??= new Map()).set(talker.id, { provoked: false });
-  log(t, data);
+  run.resolved = { side, outcome: arguing(run) ? SWAY.STAND_DOWN : outcome };
 }
 
 function applyOutcome(run, talker, t, outcome, log, aim = "down", luck = null) {
   const by = { by: talker.spec.name, byId: talker.id };
-  // Bargaining (behavior/bargain.js): talked down from what it expects, or talked into handing over what the talker does.
-  if ( outcome === "haggled" ) return haggled(run, talker, t, log);
-  if ( outcome === "pressed" ) return pressed(run, talker, t, log);
-  // A quarrel settled with words (the talker takes no side): an apology, or something handed over.
+  // A quarrel settled with words (the talker takes no side): an apology.
   if ( outcome === "amends" ) {
     settleTruce(talker, t.side);
     log(t, { type: "neutral", what: "amends", ...by });
-    return;
-  }
-  // A boss paid to go: the talker's side pays (whoever has the most), and the boss leaves with its whole group. That
-  // settles the standoff for the talker's side.
-  if ( outcome === "bribed" ) {
-    const payer = bribeFrom(run, talker);
-    // (What the boss, or its side, expects, if the payer has it; else what the payer offered; else the usual.)
-    const due = payer ? owed(run, payer, t) : null;
-    const given = due && !due.given.kept ? due.given : payer ? bribe(run, payer) : null;
-    const record = given ? { ...given, to: t.id, toName: t.spec.name, round: run.round } : null;
-    if ( record ) (payer.concessions ??= []).push(record);
-    // Only an argument: the boss is paid to drop it (a deal), and everyone stays where they are.
-    if ( arguing(run) ) {
-      settle(run, talker, SWAY.CONCEDE);
-      if ( record ) log(payer, { type: "deal", target: t.spec.name, targetId: t.id, concession: record, promise: null });
-      else log(t, { type: "sway", outcome: SWAY.STAND_DOWN, ...by });
-      return;
-    }
-    const group = groupKeyOf(t);
-    for ( const f of run.units ) {
-      if ( (f !== t && groupKeyOf(f) !== group) || !isStanding(f) || f.spec.kind === "pc" ) continue;
-      for ( const id of f.adjacent ) run.byId.get(id)?.adjacent.delete(f.id);
-      f.adjacent.clear();
-      f.swayOutcome = SWAY.STAND_DOWN;
-      f.status = STATUS.STOOD_DOWN;
-      f.fellRound ??= run.round;
-    }
-    settle(run, talker, SWAY.CONCEDE);
-    log(t, { type: "sway", outcome: "bribed", concession: record, payer: payer?.spec.name ?? null, payerId: payer?.id ?? null, ...by });
-    return;
-  }
-  // Paid off: someone taking no side squeezes the side it likes least, which pays it to keep out of it (and it does).
-  if ( outcome === "paid" ) {
-    // (What it expects, if they have it; else what they offered; else the usual.)
-    const due = owed(run, t, talker);
-    const given = due?.given ?? concession(run, t);
-    const record = given ? { ...given, to: talker.id, toName: talker.spec.name, round: run.round } : null;
-    if ( record ) (t.concessions ??= []).push(record);
-    if ( talker.meddling ) talker.meddling.how = null;
-    log(t, { type: "sway", outcome: SWAY.CONCEDE, paidOff: true, concession: record, ...by });
     return;
   }
   // Talked into letting a quarrel be: someone taking no side lets the sides it was fighting be; anyone else holds back
@@ -656,14 +497,9 @@ function applyOutcome(run, talker, t, outcome, log, aim = "down", luck = null) {
     log(t, { type: "neutral", what: "calmed", ...by });
     return;
   }
-  if ( aim === "down" ) settle(run, talker, outcome === SWAY.CONCEDE && !hasValuables(t) && t.spec.kind !== "pc" ? SWAY.FLEE : outcome);
+  if ( aim === "down" ) settle(run, talker, outcome);
   // Only an argument: nobody runs or yields; talked round, it backs down.
   if ( arguing(run) && (outcome === SWAY.FLEE || outcome === SWAY.SURRENDER) ) outcome = SWAY.STAND_DOWN;
-  if ( outcome === SWAY.CONCEDE ) {
-    concede(run, talker, t, log);
-    if ( aim === "settle" ) settleTruce(talker, t.side);
-    return;
-  }
   // Won over: it joins the talker's side.
   if ( outcome === SWAY.SWITCH ) {
     joinSide(run, t, talker.side, log);
@@ -739,7 +575,7 @@ export function resolveTalk(run, talker, pitch, roll, log) {
   spendEdges(talker, "check", t.id);
   spendBoost(talker, t);
   const steps = stepsToConvince(t, run, talker);
-  const aim = pitch.aim ?? aimOf(talker, t, run);
+  const aim = pitch.aim ?? aimOf(talker, t);
   let progress = t.sway.get(talker.side) ?? 0;
   // (One step a turn from each talker: a second success this turn wins nothing more, movedThisTurn.)
   const moved = roll.degree >= 2 && movedThisTurn(t, talker);
@@ -766,10 +602,6 @@ export function resolveTalk(run, talker, pitch, roll, log) {
     progress: Math.min(progress, steps), steps, offended: roll.degree === 0,
     aim, appeal: pull ? { kind: pull.kind, target: pullName, targetId: pull.targetId } : null
   });
-  // Bargaining: a haggle that gets somewhere calms whoever expects (it keeps talking), one that doesn't irritates it; a
-  // press that gets nowhere irritates the one pressing.
-  if ( aim === "haggle" ) (roll.degree >= 2 ? calmsDown : irritated)(t);
-  if ( aim === "press" && roll.degree < 2 ) irritated(talker);
   // Words that wear a creature down (behavior/strain.js): whoever lost the exchange pays.
   if ( roll.degree >= 2 ) strain(run, t, talker, roll.degree === 3, log);
   else strain(run, talker, t, roll.degree === 0, log);
@@ -819,7 +651,7 @@ export function resolveTalk(run, talker, pitch, roll, log) {
     for ( const f of run.units ) {
       if ( f === t || groupKeyOf(f) !== group || f.spec.kind === "pc" || !swayable(f) ) continue;
       const p = 0.4 + (100 - f.prep.traits.brave) / 250 + (f.sway.get(talker.side) ?? 0) * 0.1;
-      const follows = [SWAY.STAND_DOWN, SWAY.CONCEDE, SWAY.NEUTRAL].includes(outcome) ? SWAY.STAND_DOWN : SWAY.SURRENDER;
+      const follows = [SWAY.STAND_DOWN, SWAY.NEUTRAL].includes(outcome) ? SWAY.STAND_DOWN : SWAY.SURRENDER;
       if ( run.rng.chance(clamp(p, 0, 0.9)) ) applyOutcome(run, talker, f, follows, log);
     }
   }

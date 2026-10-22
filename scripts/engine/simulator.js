@@ -36,7 +36,6 @@ import { keepTogether } from "./behavior/together.js";
 import { mayLeave, startLeaving, isLeaving, wayOff, goAlong, confronted, dealsWithIt, backOnItsWay } from "./behavior/leaving.js";
 import { createAggregator } from "./aggregate.js";
 import { spotTraps, stepOut, learnTrap } from "./behavior/traps.js";
-import { bargain } from "./behavior/bargain.js";
 import { talkActionsThisTurn, choosePitch, attemptTalk, shareLanguage, resolveTalk, aimOf } from "./behavior/talk.js";
 import { opensWithTalk, breaksStandoff, standoffPitches, charismaticLeader, canTalk, prefersTalk } from "./behavior/standoff.js";
 import { controlOutcome, controlRoll, isImmune, degreeShift } from "./behavior/control.js";
@@ -2189,7 +2188,7 @@ function executeControl(run, u, action, target, attacksMade, common) {
   // with no roll of its own, as a player's Demoralize card counts in a live battle (talk.js resolveTalk): a success
   // wears its will to fight, a critical failure offends it.)
   if ( maneuverOf(action) === "demoralize" && target !== u && isUp(target) && roll.total !== null ) {
-    const pitch = { target, kind: "intimidate", aim: aimOf(u, target, run), skill: r.pitch?.skill ?? action.check?.skill ?? "intimidate", mod: roll.mod ?? 0, dc, dcLabel: r.pitch?.dcLabel ?? "DC" };
+    const pitch = { target, kind: "intimidate", aim: aimOf(u, target), skill: r.pitch?.skill ?? action.check?.skill ?? "intimidate", mod: roll.mod ?? 0, dc, dcLabel: r.pitch?.dcLabel ?? "DC" };
     resolveTalk(run, u, pitch, { degree, natural: roll.natural, total: roll.total }, logger(run));
   }
   // (An attack roll that hit, a spell attack's: what it does on its own hit, reaction-effects.js.)
@@ -3278,7 +3277,7 @@ function neutralTurn(run, u) {
   if ( kinsQuarrel(run, u, say) ) return true;
   // One who can't abide violence, seeing a fight, tries to stop it. Otherwise, leaning toward a side, it may get
   // involved (mostly not, unless that side is one it likes and looks like winning: neutral.js meddling): talking the
-  // side it likes least out of the fight, or squeezing it for money.
+  // side it likes least out of the fight.
   if ( !u.truce && run.prep.options.talking && canTalk(u) && u.tac?.talk !== "never" ) {
     const rules = run.prep.rules;
     const actions = turnFor(run, u).howMany(rules.talkCost ?? rules.basicAction ?? 1);
@@ -3318,11 +3317,6 @@ function standoffTurn(run, u) {
   const rules = run.prep.rules;
   const turn = turnFor(run, u);
   tellLore(run, u, turn); // (what it learned last turn, if it means to tell its friends)
-  // What it offers, or expects, comes first (behavior/bargain.js); a deal ends it.
-  if ( u.spec.motives && bargain(run, u, logger(run)) ) {
-    u.turnsTaken += 1;
-    return endOfTurn(run, u);
-  }
   const actions = turn.howMany(rules.talkCost ?? rules.basicAction ?? 1);
   if ( !keepsPeace(run, u, actions) && !observes(run, u, turn) ) standoffPitching(run, u, standoffPitches(run, u, actions));
   u.turnsTaken += 1;
@@ -3330,8 +3324,8 @@ function standoffTurn(run, u) {
 }
 
 /**
- * Before a standoff breaks, a charismatic NPC leader may take one more turn to press the player characters to pay
- * up or back off (once per side). Returns true if that settled it.
+ * Before a standoff breaks, a charismatic NPC leader may take one more turn to press the player characters to back
+ * off (once per side). Returns true if that settled it.
  */
 function lastWord(run) {
   const rules = run.prep.rules;
@@ -4413,7 +4407,7 @@ function activeSides(run) {
 }
 
 export function battleOver(run) {
-  if ( run.resolved ) return true; // a standoff settled by a payment or a retreat
+  if ( run.resolved ) return true; // a standoff settled by a retreat (or talks that collapsed)
   // (Checked after every action: stops at the first two sides still at each other's throats.)
   const active = [];
   for ( const u of run.units ) {
@@ -4667,7 +4661,7 @@ export function settleAftermath(run) {
  */
 export function endRun(run, ended, { capture = false, settle = true } = {}) {
   const prep = run.prep;
-  // Who won is decided when the last blow lands (or the deal is struck); the aftermath only settles the fallen.
+  // Who won is decided when the last blow lands (or one side backs off); the aftermath only settles the fallen.
   // (Talks that collapsed: nobody's.)
   const winners = !ended ? [] : run.resolved ? [run.resolved.side].filter(Boolean) : activeSides(run);
   // (Those still on their way off the map have gone.)

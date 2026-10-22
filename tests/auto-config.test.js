@@ -6,7 +6,6 @@
 import { describe, expect, test } from "vitest";
 import { scorePlaystyles, pickPlaystyles, readSpec, CLASHES } from "../scripts/engine/auto-playstyles.js";
 import { autoPlan, validLets, specSignature, withHints, withWorldDefaults, sameAnswers } from "../scripts/foundry/auto-config.js";
-import { suggestMotives } from "../scripts/foundry/motives.js";
 import { readKeywordFile, keywordEffects } from "../scripts/engine/keywords.js";
 import { suggestTactics, TACTIC_KEYS } from "../scripts/engine/tactics.js";
 import { tacticsFor } from "../scripts/foundry/tactics.js";
@@ -82,7 +81,7 @@ describe("the playstyles that fit", () => {
 
 describe("when to set a character up", () => {
   const spec = creature({ actions: [strike({ id: "sword" })] });
-  const lets = { ...suggestTactics(spec), ...suggestMotives(spec) };
+  const lets = suggestTactics(spec);
   const sig = specSignature(spec);
   const record = { api: "12.0", sig, lets, picked: ["tank"] };
 
@@ -106,22 +105,23 @@ describe("when to set a character up", () => {
     expect(autoPlan({}, { ...record, lets: missing }, { api: "12.0", sig, spec })).toEqual({ pick: false, lets: true });
     expect(autoPlan({}, { ...record, lets: { ...lets, retreat: "sometimes" } }, { api: "12.0", sig, spec })).toEqual({ pick: false, lets: true });
     expect(autoPlan({}, { ...record, lets: { ...lets, preferredAction: "gone" } }, { api: "12.0", sig, spec })).toEqual({ pick: false, lets: true });
-    // (Stored before a character's offer and expectation were worked out: worked out again.)
-    const { offer, ...noOffer } = lets;
-    expect(autoPlan({}, { ...record, lets: noOffer }, { api: "12.0", sig, spec })).toEqual({ pick: false, lets: true });
+    // (Stored with an offer and expectation, from before they were taken out: still whole.)
+    expect(autoPlan({}, { ...record, lets: { ...lets, offer: { kind: "leave" }, expect: { kind: "" } } }, { api: "12.0", sig, spec })).toEqual({ pick: false, lets: false });
   });
 
   test("a reset: both, at once", () => {
     expect(autoPlan({}, null, { api: "12.0", sig, spec, force: true })).toEqual({ pick: true, lets: true });
   });
 
-  test("a system's answers over the core's, each fair one with its reason; an unfair one ignored", () => {
+  test("a system's answers over the core's, each fair one with its reason; an unfair one ignored, and anything else left out", () => {
     const { lets: got, why } = withHints(lets, {
       target: { value: "protect", why: "Champion" }, retreat: "never", style: "sideways", consumables: { value: "freely", why: "Alchemist" },
-      expect: { value: { kind: "leave" }, why: "Territorial" }, offer: { value: { kind: "bribe" } }
+      expect: { value: { kind: "leave" }, why: "Territorial" }, offer: { value: { kind: "money", amount: 5 } }
     }, spec);
-    expect(got).toMatchObject({ target: "protect", retreat: "never", style: lets.style, consumables: "freely", expect: { kind: "leave" }, offer: lets.offer });
-    expect(why).toEqual({ target: "Champion", consumables: "Alchemist", expect: "Territorial" });
+    expect(got).toMatchObject({ target: "protect", retreat: "never", style: lets.style, consumables: "freely" });
+    expect(got).not.toHaveProperty("expect");
+    expect(got).not.toHaveProperty("offer");
+    expect(why).toEqual({ target: "Champion", consumables: "Alchemist" });
     expect(validLets(got, spec)).toBe(true);
   });
 

@@ -519,7 +519,7 @@ function narrate(e, roll, rel, fill) {
         case "calmed": return roll("event.calmed", g);
         case "holds": return roll("event.holdsBack", g);
         case "feud": return roll("event.feud", { ...g, target: e.target ?? "" });
-        case "meddle": return roll(e.how === "extort" ? "event.meddleExtort" : "event.meddle", { ...g, side: e.how === "extort" ? e.against ?? "" : e.sideLabel ?? "" });
+        case "meddle": return roll("event.meddle", g);
         case "aloof": return roll("event.aloof", g);
         default: return roll("event.lapse", g);
       }
@@ -531,17 +531,6 @@ function narrate(e, roll, rel, fill) {
     case "disrupted": return roll("event.spellFizzles", { ...f, weapon: e.action ?? "" });
     case "leaveStopped": return logLine(e);
     case "sway": {
-      if ( e.lie ) return roll("event.lieAndRun", f);
-      if ( e.outcome === "bribed" ) return roll("event.bribed", { ...f, amount: concessionText(e.concession) || localize("FASTFIGHTING.Story.APrice"), target: e.payer ?? e.by ?? "" });
-      if ( e.paidOff ) {
-        const c = e.concession;
-        return roll(!c ? "event.paidNothing" : c.kept ? "event.paidKept" : "event.paidOff", { ...f, amount: concessionText(c), item: c?.item?.name ?? "" });
-      }
-      if ( e.outcome === "conceded" ) {
-        const c = e.concession;
-        const key = !c ? "event.standDown" : c.kept ? "event.concedeKept" : { money: "event.concedeMoney", progress: "event.concedeProgress" }[c.kind] ?? "event.concedeItem";
-        return roll(key, { ...f, amount: concessionText(c), item: c?.item?.name ?? "" });
-      }
       if ( e.outcome === "switched" && e.recruit ) return roll("event.recruit", f);
       if ( e.outcome === "neutral" ) return roll(e.again ? "event.standAsideAgain" : "event.standAside", f);
       return roll({ surrendered: "event.surrender", fled: "event.swayFlee", switched: "event.switch", stoodDown: "event.standDown" }[e.outcome] ?? "event.surrender", f);
@@ -637,18 +626,8 @@ function narrate(e, roll, rel, fill) {
     case "surprised": return roll("condition.surprised", f);
     case "aftermath": return roll(e.tended ? "event.aftermath" : "event.aftermathAlone", f);
     case "standoff": return roll("event.standoff", f);
-    case "breakStandoff": return roll({ insulted: "event.breakInsulted", beast: "event.breakBeast", annoyed: "event.breakAnnoyed", blood: "event.breakBlood", unmet: "event.breakUnmet" }[e.cause] ?? "event.breakStandoff", f);
+    case "breakStandoff": return roll({ insulted: "event.breakInsulted", beast: "event.breakBeast", annoyed: "event.breakAnnoyed", blood: "event.breakBlood" }[e.cause] ?? "event.breakStandoff", f);
     case "collapse": return roll("event.collapse", f); // (only an argument: it would have come to blows)
-    case "deal": {
-      // A bargain: goods handed over, or a promise given, to end it.
-      const c = e.concession;
-      if ( e.promise ) return roll({ noHarm: "event.promiseNoHarm", passage: "event.promisePassage", leave: "event.promiseLeave" }[e.promise] ?? "event.promiseNoHarm", { ...f, by: e.target ?? "" });
-      return roll({ money: "event.concedeMoney", progress: "event.concedeProgress" }[c?.kind] ?? "event.concedeItem", { ...f, by: e.target ?? "", amount: concessionText(c), item: c?.item?.name ?? "" });
-    }
-    case "haggle":
-      // Talked down from what it expects (or out of it); a player character pressed for one of its things, keeping it.
-      if ( e.what === "keeps" ) return roll("event.concedeKept", { ...f, item: e.item?.name ?? "", by: e.by ?? "" });
-      return roll(e.what === "drops" ? "event.haggleDrop" : "event.haggleLower", { ...f, by: e.by ?? "" });
     // A spell answered with a spell: undone, or not.
     case "duel": return roll(e.outcome === "wins" || e.outcome === "both" ? "event.duelWin" : "event.duelLose", { ...f, target: e.target ?? "", spell: e.action ?? "" });
     // A shot into a melee that missed, straying toward the shooter's own friend.
@@ -929,11 +908,6 @@ function ending(result, spec, end, roll, call = name => name) {
     : standing.length ? listJoin(standing) : listJoin(end.winnerLabels ?? []);
   // A lone survivor takes a singular verb ("Lini prevails").
   if ( end.resolved === "collapsed" ) return roll("event.talksCollapse", { winners });
-  // Only an argument, agreed on a promise: no harm (a truce), safe passage, or one side leaving.
-  if ( end.resolved === "truce" ) return roll("event.agreedNoHarm", { winners });
-  if ( end.resolved === "passage" ) return roll("event.agreedPassage", { winners });
-  if ( end.resolved === "leave" ) return roll("event.agreedLeave", { winners });
-  if ( end.resolved === "conceded" ) return roll("event.dealStruck", { winners });
   if ( end.resolved === "fled" ) return roll("event.backedOff", { winners });
   if ( end.peaceful ) return roll("event.peace", { winners });
   if ( end.outcome === "stalemate" && end.standoff ) return roll("event.talksStall", { winners });
@@ -992,10 +966,7 @@ function tally(events, mentions) {
       s.aid += 1;
       if ( e.stable ) s.stabilized += 1;
     } else if ( e.type === "move" ) s.feet += e.feet ?? 0;
-    else if ( e.type === "sway" && e.concession ) {
-      const c = e.concession;
-      s.notes.push(c.kept ? logTerm("NoteKept", { what: concessionText(c), luck: c.luck }) : logTerm("NoteGave", { what: concessionText(c), name: c.toName }));
-    } else if ( e.type === "reclaim" ) s.notes.push(logTerm("NoteGotBack", { what: concessionText(e.concession), by: e.by }));
+    else if ( e.type === "reclaim" ) s.notes.push(logTerm("NoteGotBack", { what: concessionText(e.concession), by: e.by }));
     else if ( ["join", "leave", "sway", "flee", "callHelp", "callToArms", "lazy"].includes(e.type) ) s.notes.push(logLine(e));
   }
   return by;

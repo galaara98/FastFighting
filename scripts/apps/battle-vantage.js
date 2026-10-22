@@ -21,7 +21,6 @@ import { PICKED_BONUS } from "../foundry/battle.js";
 import { GM_RELATIONS, conditionMost } from "../engine/conditions.js";
 import { getAdapter } from "../api.js";
 import { roundsText, listJoin } from "../i18n.js";
-import { expectText } from "../story/log-lines.js";
 import { feetOnScene } from "../foundry/terrain.js";
 import { mountNetwork } from "./battle-network.js";
 import { blink, keepTyping } from "./blink.js";
@@ -75,7 +74,7 @@ const ICONS = Object.freeze({
   relation: { grabbed: "hand-back-fist", goaded: "bullhorn", controlled: "hat-wizard", bound: "link", exposedTo: "crosshairs", marked: "bullseye", shuns: "comment-slash" },
   attitude: {
     wary: "ear-deaf", grudge: "face-angry", schemes: "user-ninja", follows: "flag", truce: "handshake", serves: "paw", summoned: "wand-sparkles",
-    leans: "scale-unbalanced", against: "fire", swayed: "comments", holdsBack: "hand", contrarian: "arrows-turn-to-dots", meddles: "hand-sparkles", demands: "coins"
+    leans: "scale-unbalanced", against: "fire", swayed: "comments", holdsBack: "hand", contrarian: "arrows-turn-to-dots", meddles: "hand-sparkles"
   },
   goal: {
     openDoor: "door-open", avoidTrap: "triangle-exclamation", runAway: "person-running", closeDoor: "door-closed", lockDoor: "lock", pickUp: "hand-holding",
@@ -867,9 +866,8 @@ function networkView(b, current, focusId, name) {
         ...stepsOf(m.intensity, m.most, { remove: "FASTFIGHTING.Battle.Net.SetAside" })
       });
     } else if ( m.type === "attitude" ) {
-      const words = m.kind === "demands" ? fmt("FASTFIGHTING.Battle.Attitude.demands", { what: expectText(m.expect) })
-        : m.kind === "swayed" ? fmt("FASTFIGHTING.Battle.Persuaded", { side: sideLabel(m.side), n: m.intensity, steps: m.steps })
-          : fmt(`FASTFIGHTING.Battle.Attitude.${m.kind}`, { side: sideLabel(m.side), how: m.how ? loc(`FASTFIGHTING.Battle.Attitude.how.${m.how}`) : "" });
+      const words = m.kind === "swayed" ? fmt("FASTFIGHTING.Battle.Persuaded", { side: sideLabel(m.side), n: m.intensity, steps: m.steps })
+        : fmt(`FASTFIGHTING.Battle.Attitude.${m.kind}`, { side: sideLabel(m.side), how: m.how ? loc(`FASTFIGHTING.Battle.Attitude.how.${m.how}`) : "" });
       markOn(m.on, {
         id: `a:${m.kind}:${m.side ?? ""}`, cls: `is-relation r-${m.kind}`, icon: icon("attitude", m.kind), text: m.most === 1 ? "" : String(m.intensity),
         tip: m.kind === "leans" ? `${words} (${band(m.level)})` : words,

@@ -195,6 +195,9 @@ describe("answers players store", () => {
     // (An older sheet's consumables tick-box, the same: avoid them, unless the question is answered.)
     expect(sanitizeTactics({ avoidConsumables: true }).consumables).toBe("avoid");
     expect(sanitizeTactics({ avoidConsumables: true, consumables: "freely" }).consumables).toBe("freely");
+    // (An older sheet's offer and expectation to end an argument: no longer asked, dropped.)
+    const old = sanitizeTactics({ talk: "first", offer: { kind: "money", amount: 5 }, expect: { kind: "leave" } });
+    expect(old).toEqual({ talk: "first" });
   });
 
   test("desires: only what the survey would offer the character, at one of its levels", () => {

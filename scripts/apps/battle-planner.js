@@ -100,7 +100,6 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       makeItSo: BattlePlanner.#onMakeItSo,
       preparePlayers: BattlePlanner.#onPreparePlayers,
       togglePlaystyle: BattlePlanner.#onTogglePlaystyle,
-      setMotive: BattlePlanner.#onSetMotive,
       setSystem: BattlePlanner.#onSetSystem,
       setGroup: BattlePlanner.#onSetGroup,
       setTeam: BattlePlanner.#onSetTeam,
@@ -657,7 +656,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
   #collapseNote(r) {
     const top = r.collapseCause;
     if ( !((r.pCollapsed ?? 0) > COLLAPSE_NOTE) || !top ) return null;
-    const why = ["beast", "impatient", "insulted", "annoyed", "blood", "fray", "unmet"].includes(top.cause) ? top.cause : "impatient";
+    const why = ["beast", "impatient", "insulted", "annoyed", "blood", "fray"].includes(top.cause) ? top.cause : "impatient";
     const names = (top.by ?? []).map(id => r.combatants?.[id]?.name).filter(Boolean);
     const reason = localize(`FASTFIGHTING.Results.CollapseWhy.${why}`, { names: names.length ? listJoin(names) : localize("FASTFIGHTING.Results.CollapseSomeone") });
     return localize("FASTFIGHTING.Results.CollapseTop", { pct: pct(r.pCollapsed, 0), why: reason, share: pct(top.share, 0) });
@@ -751,14 +750,6 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     if ( !key ) return;
     (this.setup.system ??= {})[key] = value;
     await saveSetup(this.setup, this.holder);
-    this.stale = true;
-    this.render();
-  }
-
-  /** What it offers, or expects: the kind (each shows fields of its own). */
-  static async #onSetMotive(event, target) {
-    const actor = await fromUuid(target.dataset.actorUuid);
-    await setTactic(actor, `${target.dataset.motive}.kind`, target.dataset.kind);
     this.stale = true;
     this.render();
   }

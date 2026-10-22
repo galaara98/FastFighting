@@ -7,7 +7,6 @@ import { describe, expect, test } from "vitest";
 import { withinBudget, budgetFudges, traitTotal, TRAIT_BUDGET } from "../scripts/engine/trait-budget.js";
 import { autoPlan, specSignature } from "../scripts/foundry/auto-config.js";
 import { suggestTactics } from "../scripts/engine/tactics.js";
-import { suggestMotives } from "../scripts/foundry/motives.js";
 import { PC_BASELINE } from "../scripts/constants.js";
 import { DEFAULT_SIDE_TRAITS } from "../scripts/settings.js";
 import { creature, strike } from "./helpers.js";
@@ -64,7 +63,7 @@ describe("the GM's nudges kept within it", () => {
 
 describe("a character read over it is set up by itself again, once", () => {
   const spec = creature({ actions: [strike({ id: "sword" })] });
-  const lets = { ...suggestTactics(spec), ...suggestMotives(spec) };
+  const lets = suggestTactics(spec);
   const sig = specSignature(spec);
   const record = { api: "12.0", sig, lets, picked: ["tank"], budget: 0 };
   const over = { ...spec, overBudget: true };

@@ -1871,7 +1871,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "1b6a57e30ca4"
+   "hash": "1b6a57e30ca4",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Battle.Attitude.follows": {
    "repo": "core",
@@ -1931,7 +1932,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "5158f46ec729"
+   "hash": "5158f46ec729",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Battle.Attitude.leans": {
    "repo": "core",
@@ -7535,7 +7537,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "d8a7e87c30bd"
+   "hash": "d8a7e87c30bd",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Log.Bribed": {
    "repo": "core",
@@ -7545,7 +7548,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "0987d20753d7"
+   "hash": "0987d20753d7",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Log.Buff": {
    "repo": "core",
@@ -7765,7 +7769,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "a55610d2758f"
+   "hash": "a55610d2758f",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Log.Collision": {
    "repo": "core",
@@ -7955,7 +7960,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "8739b2b38f3f"
+   "hash": "8739b2b38f3f",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Log.DeedLine": {
    "repo": "core",
@@ -8458,7 +8464,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "ee0874170b7f"
+   "hash": "ee0874170b7f",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Log.ExpectMaterial": {
    "repo": "core",
@@ -8468,7 +8475,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "02cd215e6a21"
+   "hash": "02cd215e6a21",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Log.ExpectRarity": {
    "repo": "core",
@@ -8478,7 +8486,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "1f6ff4442f98"
+   "hash": "1f6ff4442f98",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Log.ExpectThing": {
    "repo": "core",
@@ -8488,7 +8497,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "2a36c5e589d7"
+   "hash": "2a36c5e589d7",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Log.ExpectUnvalued": {
    "repo": "core",
@@ -8498,7 +8508,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "7d7d262c6c05"
+   "hash": "7d7d262c6c05",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Log.ExpectWorth": {
    "repo": "core",
@@ -8508,7 +8519,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "9bec98c2b333"
+   "hash": "9bec98c2b333",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Log.Fails": {
    "repo": "core",
@@ -8931,7 +8943,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "fa0f799122e7"
+   "hash": "fa0f799122e7",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Log.GivesLuck": {
    "repo": "core",
@@ -8941,7 +8954,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "2c2c923fb2b4"
+   "hash": "2c2c923fb2b4",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Log.Goad": {
    "repo": "core",
@@ -9021,7 +9035,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "33b893d4a308"
+   "hash": "33b893d4a308",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Log.HaggleLowers": {
    "repo": "core",
@@ -9031,7 +9046,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "ce3264de1ae7"
+   "hash": "ce3264de1ae7",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Log.Heal": {
    "repo": "core",
@@ -9201,7 +9217,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "1e3d33731f2d"
+   "hash": "1e3d33731f2d",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Log.KnockedOut": {
    "repo": "core",
@@ -9311,7 +9328,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "6d0635093fd5"
+   "hash": "6d0635093fd5",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Log.LosesConcentration": {
    "repo": "core",
@@ -9532,7 +9550,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "a2617a55e42c"
+   "hash": "a2617a55e42c",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Log.NeutralFeud": {
    "repo": "core",
@@ -9673,7 +9692,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "2ee6423a813f"
+   "hash": "2ee6423a813f",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Log.NoteGotBack": {
    "repo": "core",
@@ -9693,7 +9713,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "0f7e31f55d4a"
+   "hash": "0f7e31f55d4a",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Log.NoteStole": {
    "repo": "core",
@@ -9713,7 +9734,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "1785cfc3bc6a"
+   "hash": "1785cfc3bc6a",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Log.NothingComesOfIt": {
    "repo": "core",
@@ -10053,7 +10075,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "9a7a91b8b022"
+   "hash": "9a7a91b8b022",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Log.PaysOff": {
    "repo": "core",
@@ -10063,7 +10086,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "516238b048be"
+   "hash": "516238b048be",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Log.Peacekeep": {
    "repo": "core",
@@ -10313,7 +10337,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "7db2d1dafa16"
+   "hash": "7db2d1dafa16",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Log.PromiseNoHarm": {
    "repo": "core",
@@ -10323,7 +10348,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "15802fd08262"
+   "hash": "15802fd08262",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Log.PromisePassage": {
    "repo": "core",
@@ -10333,7 +10359,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "83022f00d86a"
+   "hash": "83022f00d86a",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Log.Prone": {
    "repo": "core",
@@ -12199,7 +12226,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "49e96d7cdf58"
+   "hash": "49e96d7cdf58",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Motive.AnyCategory": {
    "repo": "core",
@@ -12209,7 +12237,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "bcb32f115ce6"
+   "hash": "bcb32f115ce6",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Motive.AnyMaterial": {
    "repo": "core",
@@ -12219,7 +12248,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "83ab30004f0c"
+   "hash": "83ab30004f0c",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Motive.AnyRarity": {
    "repo": "core",
@@ -12229,7 +12259,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "19fb81d76338"
+   "hash": "19fb81d76338",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Motive.Category": {
    "repo": "core",
@@ -12239,7 +12270,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "f5387f9bb6ed"
+   "hash": "f5387f9bb6ed",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Motive.Coin": {
    "repo": "core",
@@ -12249,7 +12281,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "0241ccff2d40"
+   "hash": "0241ccff2d40",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Motive.Expect.auto": {
    "repo": "core",
@@ -12259,7 +12292,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "5eadfdd282aa"
+   "hash": "5eadfdd282aa",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Motive.Expect.Hint": {
    "repo": "core",
@@ -12270,7 +12304,8 @@
    "date": null,
    "commit": null,
    "hash": "fe00589c7147",
-   "changed": true
+   "changed": true,
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Motive.Expect.Label": {
    "repo": "core",
@@ -12280,7 +12315,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "66c7a6dce98a"
+   "hash": "66c7a6dce98a",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Motive.Expect.leave": {
    "repo": "core",
@@ -12290,7 +12326,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "cb3f39a6d055"
+   "hash": "cb3f39a6d055",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Motive.Expect.money": {
    "repo": "core",
@@ -12300,7 +12337,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "76662e1c5da0"
+   "hash": "76662e1c5da0",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Motive.Expect.noHarm": {
    "repo": "core",
@@ -12310,7 +12348,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "142963bf7b71"
+   "hash": "142963bf7b71",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Motive.Expect.none": {
    "repo": "core",
@@ -12320,7 +12359,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "67e1bca0889b"
+   "hash": "67e1bca0889b",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Motive.Expect.passage": {
    "repo": "core",
@@ -12330,7 +12370,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "1f71235ddaac"
+   "hash": "1f71235ddaac",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Motive.Expect.thing": {
    "repo": "core",
@@ -12340,7 +12381,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "edcd3ea8b130"
+   "hash": "edcd3ea8b130",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Motive.Item": {
    "repo": "core",
@@ -12350,7 +12392,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "e411410f14dc"
+   "hash": "e411410f14dc",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Motive.Material": {
    "repo": "core",
@@ -12360,7 +12403,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "616cb218a65b"
+   "hash": "616cb218a65b",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Motive.MinValue": {
    "repo": "core",
@@ -12370,7 +12414,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "a94d6ebb5c70"
+   "hash": "a94d6ebb5c70",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Motive.Offer.auto": {
    "repo": "core",
@@ -12380,7 +12425,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "5eadfdd282aa"
+   "hash": "5eadfdd282aa",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Motive.Offer.Hint": {
    "repo": "core",
@@ -12391,7 +12437,8 @@
    "date": null,
    "commit": null,
    "hash": "406dd439cf2c",
-   "changed": true
+   "changed": true,
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Motive.Offer.item": {
    "repo": "core",
@@ -12401,7 +12448,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "2b7f4dc99355"
+   "hash": "2b7f4dc99355",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Motive.Offer.Label": {
    "repo": "core",
@@ -12411,7 +12459,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "34ab9b2ed67b"
+   "hash": "34ab9b2ed67b",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Motive.Offer.leave": {
    "repo": "core",
@@ -12421,7 +12470,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "22dddb8ac948"
+   "hash": "22dddb8ac948",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Motive.Offer.money": {
    "repo": "core",
@@ -12431,7 +12481,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "76662e1c5da0"
+   "hash": "76662e1c5da0",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Motive.Offer.noHarm": {
    "repo": "core",
@@ -12441,7 +12492,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "c1f307610d3e"
+   "hash": "c1f307610d3e",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Motive.Offer.none": {
    "repo": "core",
@@ -12451,7 +12503,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "67e1bca0889b"
+   "hash": "67e1bca0889b",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Motive.Offer.passage": {
    "repo": "core",
@@ -12461,7 +12514,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "0d2f672b27d1"
+   "hash": "0d2f672b27d1",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Motive.PickItem": {
    "repo": "core",
@@ -12471,7 +12525,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "2edd70b5ea97"
+   "hash": "2edd70b5ea97",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Motive.Rarity": {
    "repo": "core",
@@ -12481,7 +12536,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "feddcf308625"
+   "hash": "feddcf308625",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Motive.Unvalued": {
    "repo": "core",
@@ -12491,7 +12547,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "01ef1da7883c"
+   "hash": "01ef1da7883c",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Motive.UnvaluedHint": {
    "repo": "core",
@@ -12501,7 +12558,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "c825d4002008"
+   "hash": "c825d4002008",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Motive.YouHave": {
    "repo": "core",
@@ -12511,7 +12569,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "8167fe5cac7e"
+   "hash": "8167fe5cac7e",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Opening.argument": {
    "repo": "core",
@@ -15476,7 +15535,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "9b516f611e01"
+   "hash": "9b516f611e01",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Results.Combatant": {
    "repo": "core",
@@ -18435,7 +18495,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "b2fb212e3fae"
+   "hash": "b2fb212e3fae",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Story.Attack": {
    "repo": "core",
@@ -18835,7 +18896,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "72e0ba4e8668"
+   "hash": "72e0ba4e8668",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Story.Part.agreedNoHarm": {
    "repo": "core",
@@ -18845,7 +18907,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "591f87fb91e5"
+   "hash": "591f87fb91e5",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Story.Part.agreedPassage": {
    "repo": "core",
@@ -18855,7 +18918,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "9e1e0da8ba8e"
+   "hash": "9e1e0da8ba8e",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Story.Part.aid": {
    "repo": "core",
@@ -19295,7 +19359,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "7c3cc7b010a5"
+   "hash": "7c3cc7b010a5",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Story.Part.bribed": {
    "repo": "core",
@@ -19305,7 +19370,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "7dea188ff016"
+   "hash": "7dea188ff016",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Story.Part.buffMany": {
    "repo": "core",
@@ -19586,7 +19652,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "71d9d48443e5"
+   "hash": "71d9d48443e5",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Story.Part.concedeKept": {
    "repo": "core",
@@ -19596,7 +19663,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "af468df4f206"
+   "hash": "af468df4f206",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Story.Part.concedeMoney": {
    "repo": "core",
@@ -19606,7 +19674,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "6132a8d129b6"
+   "hash": "6132a8d129b6",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Story.Part.concedeProgress": {
    "repo": "core",
@@ -19616,7 +19685,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "143f7de317af"
+   "hash": "143f7de317af",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Story.Part.concentrationLost": {
    "repo": "core",
@@ -19876,7 +19946,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "971b4bee3688"
+   "hash": "971b4bee3688",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Story.Part.death": {
    "repo": "core",
@@ -20808,7 +20879,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "b221903c740b"
+   "hash": "b221903c740b",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Story.Part.haggleLower": {
    "repo": "core",
@@ -20818,7 +20890,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "c15d6b2e7529"
+   "hash": "c15d6b2e7529",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Story.Part.hastened": {
    "repo": "core",
@@ -21208,7 +21281,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "0c640a1daaa5"
+   "hash": "0c640a1daaa5",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Story.Part.lingeringHarm": {
    "repo": "core",
@@ -21308,7 +21382,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "390f32910993"
+   "hash": "390f32910993",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Story.Part.melee": {
    "repo": "core",
@@ -21739,7 +21814,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "097dc9c5902d"
+   "hash": "097dc9c5902d",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Story.Part.paidNothing": {
    "repo": "core",
@@ -21749,7 +21825,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "d1a9f8d2deb5"
+   "hash": "d1a9f8d2deb5",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Story.Part.paidOff": {
    "repo": "core",
@@ -21759,7 +21836,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "60052fd7349a"
+   "hash": "60052fd7349a",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Story.Part.paralyzed": {
    "repo": "core",
@@ -21969,7 +22047,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "7f07bea07b8d"
+   "hash": "7f07bea07b8d",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Story.Part.promiseNoHarm": {
    "repo": "core",
@@ -21979,7 +22058,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "1a7883ce5b9f"
+   "hash": "1a7883ce5b9f",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Story.Part.promisePassage": {
    "repo": "core",
@@ -21989,7 +22069,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "3675beeddd53"
+   "hash": "3675beeddd53",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.Story.Part.prone": {
    "repo": "core",
@@ -36619,7 +36700,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "688fc381876c"
+   "hash": "688fc381876c",
+   "gone": "2026-10-22"
   },
   "core:story:event.agreedNoHarm": {
    "repo": "core",
@@ -36629,7 +36711,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "c7b664d6dc33"
+   "hash": "c7b664d6dc33",
+   "gone": "2026-10-22"
   },
   "core:story:event.agreedPassage": {
    "repo": "core",
@@ -36639,7 +36722,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "f90eb62ee2af"
+   "hash": "f90eb62ee2af",
+   "gone": "2026-10-22"
   },
   "core:story:event.allegianceBack": {
    "repo": "core",
@@ -36889,7 +36973,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "8c333dfd1323"
+   "hash": "8c333dfd1323",
+   "gone": "2026-10-22"
   },
   "core:story:event.bribed": {
    "repo": "core",
@@ -36899,7 +36984,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "c12720275fba"
+   "hash": "c12720275fba",
+   "gone": "2026-10-22"
   },
   "core:story:event.buffMany": {
    "repo": "core",
@@ -37053,7 +37139,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "8e66d8b3de95"
+   "hash": "8e66d8b3de95",
+   "gone": "2026-10-22"
   },
   "core:story:event.concedeKept": {
    "repo": "core",
@@ -37063,7 +37150,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "5ffdbeb12f32"
+   "hash": "5ffdbeb12f32",
+   "gone": "2026-10-22"
   },
   "core:story:event.concedeMoney": {
    "repo": "core",
@@ -37073,7 +37161,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "a4d72f20c3a5"
+   "hash": "a4d72f20c3a5",
+   "gone": "2026-10-22"
   },
   "core:story:event.concedeProgress": {
    "repo": "core",
@@ -37083,7 +37172,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "996a60a3dc5f"
+   "hash": "996a60a3dc5f",
+   "gone": "2026-10-22"
   },
   "core:story:event.concentrationLost": {
    "repo": "core",
@@ -37215,7 +37305,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "f0c7ca3a2f7f"
+   "hash": "f0c7ca3a2f7f",
+   "gone": "2026-10-22"
   },
   "core:story:event.death": {
    "repo": "core",
@@ -37629,7 +37720,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "10772f9b0750"
+   "hash": "10772f9b0750",
+   "gone": "2026-10-22"
   },
   "core:story:event.haggleLower": {
    "repo": "core",
@@ -37640,7 +37732,8 @@
    "date": null,
    "commit": null,
    "hash": "e9af78a315d6",
-   "changed": true
+   "changed": true,
+   "gone": "2026-10-22"
   },
   "core:story:event.heal": {
    "repo": "core",
@@ -37821,7 +37914,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "ce6d206e2f34"
+   "hash": "ce6d206e2f34",
+   "gone": "2026-10-22"
   },
   "core:story:event.meddle": {
    "repo": "core",
@@ -37841,7 +37935,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "556873c9d7de"
+   "hash": "556873c9d7de",
+   "gone": "2026-10-22"
   },
   "core:story:event.mercy": {
    "repo": "core",
@@ -38077,7 +38172,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "2a7bc6629886"
+   "hash": "2a7bc6629886",
+   "gone": "2026-10-22"
   },
   "core:story:event.paidNothing": {
    "repo": "core",
@@ -38087,7 +38183,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "6781841fae83"
+   "hash": "6781841fae83",
+   "gone": "2026-10-22"
   },
   "core:story:event.paidOff": {
    "repo": "core",
@@ -38097,7 +38194,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "b118d0a3950b"
+   "hash": "b118d0a3950b",
+   "gone": "2026-10-22"
   },
   "core:story:event.parley": {
    "repo": "core",
@@ -38167,7 +38265,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "03fb111ad272"
+   "hash": "03fb111ad272",
+   "gone": "2026-10-22"
   },
   "core:story:event.promiseNoHarm": {
    "repo": "core",
@@ -38178,7 +38277,8 @@
    "date": null,
    "commit": null,
    "hash": "0c2ebfebc7ac",
-   "changed": true
+   "changed": true,
+   "gone": "2026-10-22"
   },
   "core:story:event.promisePassage": {
    "repo": "core",
@@ -38188,7 +38288,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "8f5f328a7c79"
+   "hash": "8f5f328a7c79",
+   "gone": "2026-10-22"
   },
   "core:story:event.prone": {
    "repo": "core",

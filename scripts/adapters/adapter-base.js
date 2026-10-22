@@ -142,9 +142,9 @@ export class SystemAdapter {
   }
 
   /**
-   * The kinds of thing a character can ask for in a standoff (never a particular item): the system's own item
-   * categories, materials and rarities, each [{key, label}] in the system's words. A CombatantSpec's valuables name
-   * each item's category, material and rarity by these keys. Empty lists: the system has none of them.
+   * The system's own kinds of item: its item categories, materials and rarities, each [{key, label}] in the system's
+   * words. A CombatantSpec's valuables name each item's category, material and rarity by these keys. Empty lists: the
+   * system has none of them. (Nothing in the core asks for it at present.)
    * @returns {{categories: {key: string, label: string}[], materials: {key: string, label: string}[], rarities: {key: string, label: string}[]}}
    */
   itemCatalog() {
@@ -186,8 +186,7 @@ export class SystemAdapter {
    * scores. What "Let this character decide" stands for, kept with the character and shown to the GM with its reason.
    * {question: answer} or {question: {value, why}} (why: the reason the GM sees, in the reader's language: a class's or
    * feature's own name), any of TACTIC_KEYS, each one of the question's choices (preferredAction: one of its actions'
-   * ids); and `offer` and `expect` (API 14: what it puts on the table to end an argument and what it wants, as the
-   * survey stores them: {kind: "" | "money" | "noHarm" | "passage" | "leave", amount, coin}). Optional.
+   * ids). Anything else is left out (API 14's `offer` and `expect` among them). Optional.
    * @param {Actor} actor
    * @param {object} spec   its CombatantSpec
    * @param {object} calc   the core's answers, to build on

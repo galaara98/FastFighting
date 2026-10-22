@@ -3,7 +3,7 @@ import { prepareBattle } from "../scripts/engine/simulator.js";
 import { createRun, behaviorOf } from "../scripts/engine/battle-state.js";
 import { combinePlaystyles } from "../scripts/engine/playstyles.js";
 import { impatience } from "../scripts/engine/behavior/standoff.js";
-import { talkDC, bestPitch, attemptTalk, willingToPay } from "../scripts/engine/behavior/talk.js";
+import { talkDC, bestPitch, attemptTalk } from "../scripts/engine/behavior/talk.js";
 import { dislikesViolence } from "../scripts/engine/behavior/neutral.js";
 import { initDesires, styleWants, levelOf } from "../scripts/engine/behavior/desire.js";
 import { STATUS } from "../scripts/constants.js";
@@ -46,10 +46,9 @@ describe("the Peacekeeper", () => {
     expect(by("orc").status).toBe(STATUS.STOOD_DOWN);
   });
 
-  test("can't abide violence, and would pay a boss to go", () => {
-    const { run, by } = runOf([creature({ id: "keeper", social: social(), ...pills(["peacekeeper"]) }), creature({ id: "orc", side: "hostile" })]);
+  test("can't abide violence, and spares the fallen", () => {
+    const { by } = runOf([creature({ id: "keeper", social: social(), ...pills(["peacekeeper"]) }), creature({ id: "orc", side: "hostile" })]);
     expect(dislikesViolence(by("keeper"))).toBe(true);
-    expect(willingToPay(run, by("keeper"))).toBe(true);
     expect(behaviorOf(by("keeper")).spareDowned).toBe(1);
   });
 });

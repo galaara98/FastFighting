@@ -15,7 +15,7 @@
  *    on that side alone, and fights it.
  *  - Words first: a talker who can make itself understood confronts the offender instead, a truce between the two
  *    in the middle of the fight. The offender's side can talk it round; it can talk the offender into making amends
- *    (paying up, or an apology). It turns on them when it loses patience, or if that side crosses it again.
+ *    (an apology). It turns on them when it loses patience, or if that side crosses it again.
  *  - Won over: any side's talkers can talk it into joining them, against its lean too, so long as it hasn't seen
  *    that side cross it. Talkers weigh what joining would mean to it (appeal): a pitch that gives it what it wants
  *    (one leaning their way already wants in) is easier, one that asks it to betray what it wants is harder. Only a
@@ -28,9 +28,9 @@
  *    and up) don't hurt it or anyone it wants safe, unless the talk is going against them anyway (sparedForTruce).
  *  - Getting involved: in a standoff (and once it's a fight), most keep out of it. One leaning toward a side that it
  *    likes well enough and that looks like winning may speak up (meddling): it talks the side it likes least out of
- *    the fight, or (the greedy) squeezes it for money. A botched word may start a quarrel between it and that side:
- *    the two fight it out, and the standoff between the sides holds (heldOff), unless someone loses patience (blood
- *    nearby wears on everyone) or blames the side it seems to be with (annoyed).
+ *    the fight. A botched word may start a quarrel between it and that side: the two fight it out, and the standoff
+ *    between the sides holds (heldOff), unless someone loses patience (blood nearby wears on everyone) or blames the
+ *    side it seems to be with (annoyed).
  *  - Can't abide violence (peacekeepers, diplomats, moralists, people-pleasers, those who never kill, those who always talk): seeing
  *    a fight, it puts its words into stopping it, on either side: in a standoff, talking a quarrel's fighters into
  *    letting it be; once it's a fight, talking the fighters into leaving.
@@ -168,10 +168,9 @@ const MEDDLE = { base: 0.08, keen: 0.6, max: 0.85 };
 /**
  * Does n, taking no side, get involved (in this standoff, or in the fight once it's on)? Decided once (again if its lean
  * changes): mostly not, unless the side it leans toward is one it likes well enough and looks like winning (its
- * standing members' hit points against its enemies'). The bold, the greedy and the talkers get involved more readily.
- * Involved, it goes after the side it likes least: talking it out of the fight ("down"), or, the greedier it is, the
- * likelier squeezing it for money ("extort").
- * @returns {{how: "down"|"extort", side: string, against: string[], chance: number, odds: number}|null}
+ * standing members' hit points against its enemies'). The bold and the talkers get involved more readily. Involved,
+ * it goes after the side it likes least, talking it out of the fight ("down").
+ * @returns {{how: "down", side: string, against: string[], chance: number, odds: number}|null}
  */
 export function meddling(run, n, say = () => {}) {
   const favored = isNeutral(n) && (n.leanLevel ?? LEAN) > 0 ? leanSide(run, n) : null;
@@ -187,16 +186,13 @@ export function meddling(run, n, say = () => {}) {
   const winning = clamp((odds - 0.35) / 0.4, 0, 1); // (nothing at a third of the strength; all at three quarters)
   let p = MEDDLE.base + MEDDLE.keen * fond * winning;
   p *= 1 + (liveTrait(run, n, "brave") - 50) / 100;
-  p *= 1 + (liveTrait(run, n, "selfish") - 50) / 200; // (a chance at money)
   if ( prefersTalk(n) ) p *= 1.3;
   p = clamp(p, 0.02, MEDDLE.max);
-  const greed = clamp(0.1 + (liveTrait(run, n, "selfish") - 50) / 50, 0.05, 0.85);
-  const how = !run.rng.chance(p) ? null : run.rng.chance(greed) ? "extort" : "down";
+  const how = run.rng.chance(p) ? "down" : null;
   n.meddling = { key, how, side: favored, against: [...enemies], chance: p, odds };
   const sideLabel = run.prep.sides[favored]?.label ?? favored;
-  const theirLabel = n.meddling.against.map(s => run.prep.sides[s]?.label ?? s).join(", ");
   if ( !how ) say(n, { type: "neutral", what: "aloof", chance: p, side: favored, sideLabel });
-  else say(n, { type: "neutral", what: "meddle", how, chance: p, side: favored, sideLabel, against: theirLabel });
+  else say(n, { type: "neutral", what: "meddle", how, chance: p, side: favored, sideLabel });
   return how ? n.meddling : null;
 }
 

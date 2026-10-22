@@ -7,9 +7,9 @@
  *   api      the core API it was worked out under
  *   sig      what it was worked out from (its level, its traits, what it can do, the world's defaults): a change
  *            means working the answers out again
- *   lets     the calculated answer to every tactics question, and what it offers and expects (what "Let this character
- *            decide" stands for, before its playstyles' say): its system's answer where its helper has one, else the
- *            core's reading of its hidden scores
+ *   lets     the calculated answer to every tactics question (what "Let this character decide" stands for, before
+ *            its playstyles' say): its system's answer where its helper has one, else the core's reading of its hidden
+ *            scores
  *   why      a system's reason for an answer, where it gave one ({key: reason}: shown to the GM)
  *   picked   the playstyles picked for it, best first (once: see below); scores, the best few and their scores
  *   budget   the trait budget it was set up again under, its sheet read over it (see below)
@@ -34,7 +34,6 @@ import { localize } from "../i18n.js";
 import { biographyEffects } from "../engine/keywords.js";
 import { keywords, currentKeywords } from "./keywords.js";
 import { getStoredTactics, worldTacticDefaults } from "./tactics.js";
-import { cleanMotive, suggestMotives, AUTO } from "./motives.js";
 
 /** The longest reason a calculated answer may carry (a system's word or two of why). */
 const WHY_LENGTH = 120;
@@ -71,16 +70,10 @@ export function validLet(key, value, spec) {
   return (TACTIC_CHOICES[key] ?? []).includes(value);
 }
 
-/** Is this a fair calculated offer or expectation (a kind the survey has, not "Let this character decide")? */
-export function validMotive(which, m) {
-  const clean = cleanMotive(which, m);
-  return !!clean && clean.kind !== undefined && clean.kind !== AUTO;
-}
-
-/** Calculated answers that are whole and sound: one for every question, each a fair one, and an offer and expectation. */
+/** Calculated answers that are whole and sound: one for every question, each a fair one. */
 export function validLets(lets, spec) {
   if ( !lets || typeof lets !== "object" ) return false;
-  return TACTIC_KEYS.every(k => k in lets && validLet(k, lets[k], spec)) && validMotive("offer", lets.offer) && validMotive("expect", lets.expect);
+  return TACTIC_KEYS.every(k => k in lets && validLet(k, lets[k], spec));
 }
 
 /**
@@ -131,15 +124,14 @@ export function autoScores(actor, spec, words = currentKeywords()) {
 }
 
 /**
- * The calculated answer to every question, and what it offers and expects: the core's reading (its hidden scores and
- * what it can do), then its system's, which is the truer source wherever its helper has an answer. A helper answers
- * `{key: answer}` or `{key: {value, why}}` (why: its reason, shown to the GM), and an offer or expectation as the
- * survey stores one.
+ * The calculated answer to every question: the core's reading (its hidden scores and what it can do), then its
+ * system's, which is the truer source wherever its helper has an answer. A helper answers `{key: answer}` or
+ * `{key: {value, why}}` (why: its reason, shown to the GM).
  * @returns {{lets: object, why: Record<string, string>}}
  */
 export function autoLets(actor, spec) {
   const adapter = getAdapter();
-  const lets = { ...suggestTactics(spec, worldTacticDefaults(), adapter?.rules ?? null), ...suggestMotives(spec) };
+  const lets = suggestTactics(spec, worldTacticDefaults(), adapter?.rules ?? null);
   const own = ask("tacticHints", () => adapter?.tacticHints?.(actor, spec, { ...lets }), {});
   return withWorldDefaults(withHints(lets, own, spec), spec, worldTacticDefaults());
 }
@@ -165,8 +157,8 @@ export function withWorldDefaults({ lets, why }, spec, defaults = {}) {
 }
 
 /**
- * The core's answers with a system's over them: each fair one taken (`answer` or `{value, why}`; an offer or
- * expectation as the survey stores one), with its reason.
+ * The core's answers with a system's over them: each fair one taken (`answer` or `{value, why}`), with its reason.
+ * (Anything else a helper says, such as an older helper's offer or expectation, is left out.)
  * @returns {{lets: object, why: Record<string, string>}}
  */
 export function withHints(lets, hints, spec) {
@@ -178,9 +170,8 @@ export function withHints(lets, hints, spec) {
     const old = hint === "target" && given.value === "avoidKilling";
     const k = old ? "fallen" : hint;
     const said = old ? { ...given, value: "spare" } : given;
-    const motive = ["offer", "expect"].includes(k);
-    if ( !(motive ? validMotive(k, said.value) : TACTIC_KEYS.includes(k) && validLet(k, said.value, spec)) ) continue;
-    out[k] = motive ? cleanMotive(k, said.value) : said.value;
+    if ( !TACTIC_KEYS.includes(k) || !validLet(k, said.value, spec) ) continue;
+    out[k] = said.value;
     if ( typeof said.why === "string" && said.why ) why[k] = said.why.slice(0, 120);
   }
   return { lets: out, why };

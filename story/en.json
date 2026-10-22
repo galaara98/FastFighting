@@ -2764,13 +2764,6 @@
     "With a growl, {actor} attacks.",
     "{actor} bristles, then pounces."
   ],
-  "event.bribed": [
-    "{actor} takes {amount} from {target}, and leads their people away.",
-    "{target} pays {actor} {amount}; {actor} pockets it and leaves, with everyone.",
-    "{amount} buys {actor} off: they go, and their people with them.",
-    "{actor} weighs {target}'s {amount}, smiles, and calls their people off.",
-    "Paid {amount} by {target}, {actor} leaves, and takes the rest along."
-  ],
   "event.retreatCall": [
     "{actor} calls the retreat!",
     "\"Fall back!\" {actor} shouts.",
@@ -2841,12 +2834,6 @@
     "That was one word too many for {actor}.",
     "Insulted, {actor} strikes."
   ],
-  "event.breakUnmet": [
-    "{actor} is done waiting for what it was promised, and goes for a weapon.",
-    "Nobody has given {actor} what it asked for; it means to take it.",
-    "{actor} stops asking, and starts fighting.",
-    "Tired of waiting, {actor} attacks."
-  ],
   "event.standDown": [
     "{actor} lowers their weapon and steps back.",
     "{actor} agrees to stand down.",
@@ -2886,60 +2873,6 @@
     "{actor} sees the confrontation brewing.",
     "{actor} hears an argument nearby.",
     "{actor} watches the standoff with interest."
-  ],
-  "event.paidOff": [
-    "{actor} pays {by} {amount} to stay out of it.",
-    "{actor} buys {by} off with {amount}.",
-    "{amount} changes hands: {by} keeps out of it now.",
-    "{actor} counts out {amount} for {by}, who pockets it.",
-    "{by} takes {actor}'s {amount}, and looks away."
-  ],
-  "event.paidKept": [
-    "{actor} promises {by} {item}, and somehow keeps it.",
-    "{actor} haggles {by} down to nothing.",
-    "{actor} offers {item}; {by} waves it off.",
-    "{by} lets {actor} keep {item}, for now.",
-    "Luck is with {actor}: {by} takes nothing."
-  ],
-  "event.paidNothing": [
-    "{actor} has nothing to give {by}.",
-    "{actor} shows {by} empty pockets.",
-    "{actor} shrugs at {by}: nothing to give.",
-    "{by} gets nothing from {actor}.",
-    "{actor} turns out their purse: empty."
-  ],
-  "event.concedeMoney": [
-    "{actor} hands over {amount} to {by}.",
-    "{actor} grudgingly counts out {amount} for {by}.",
-    "{actor} pays {by} {amount} to end it.",
-    "{amount} changes hands, from {actor} to {by}.",
-    "{actor} tosses {by} a purse: {amount}."
-  ],
-  "event.concedeItem": [
-    "{actor} gives up {item} to {by}.",
-    "{actor} hands {item} to {by}.",
-    "{actor} surrenders {item} to {by}.",
-    "{by} walks away with {actor}'s {item}.",
-    "{actor} lets {by} take {item}."
-  ],
-  "event.concedeKept": [
-    "{actor} agrees to give up {item}, but somehow keeps hold of it.",
-    "{actor} reaches for {item}, and fortune smiles: {by} waves it off.",
-    "{actor} promises {item} to {by}, and the moment passes.",
-    "{actor} offers {item}; {by} doesn't take it after all.",
-    "Luck is with {actor}: {item} stays put."
-  ],
-  "event.concedeProgress": [
-    "{actor} gives ground to {by}.",
-    "{actor} yields the point to {by}.",
-    "{by} wins this round of words with {actor}."
-  ],
-  "event.lieAndRun": [
-    "{actor} swears they have nothing and bolts.",
-    "\"I've nothing!\" {actor} cries, and runs.",
-    "{actor} empties their hands, protests, and flees.",
-    "{actor} lies through their teeth and runs.",
-    "{actor} insists they're penniless, then takes off."
   ],
   "event.lastWord": [
     "{actor} raises a hand: one more chance to settle this.",
@@ -3378,13 +3311,6 @@
     "With {by} beaten, {amount} returns to {actor}.",
     "{actor} pries {amount} back from {by}."
   ],
-  "event.dealStruck": [
-    "A price is paid, and everyone goes their own way.",
-    "The deal is struck; no blood is spilled.",
-    "Coin and goods change hands, and the standoff is over.",
-    "It ends with a bargain, not a battle.",
-    "Something is given up, and the matter is settled."
-  ],
   "event.strayHit": [
     "{actor}'s shot goes wide into the melee and strikes {target}!",
     "The shot misses its mark and finds {target} instead.",
@@ -3404,46 +3330,6 @@
     "{actor} tries to answer {target}'s {spell}, and fails.",
     "{target}'s {spell} breaks through {actor}'s counter.",
     "{actor}'s answer comes too weak: {target}'s {spell} goes on."
-  ],
-  "event.promiseNoHarm": [
-    "{actor} gives {by} their word: no harm will come to them.",
-    "{actor} promises {by} that nobody will be hurt.",
-    "\"No harm will come to you,\" {actor} tells {by}."
-  ],
-  "event.promisePassage": [
-    "{actor} agrees to let {by} pass.",
-    "{actor} steps aside and promises {by} safe passage.",
-    "\"Go on through,\" {actor} tells {by}."
-  ],
-  "event.promiseLeave": [
-    "{actor} agrees to leave, as {by} asked.",
-    "{actor} promises {by} it will go.",
-    "\"We'll go,\" {actor} tells {by}."
-  ],
-  "event.haggleLower": [
-    "{by} talks {actor} into asking for less.",
-    "{actor} comes down on their price, at {by}'s urging.",
-    "{by} haggles, and {actor} gives a little ground."
-  ],
-  "event.haggleDrop": [
-    "{by} talks {actor} out of it altogether.",
-    "{actor} lets the matter drop, at {by}'s urging.",
-    "In the end, {actor} asks for nothing more."
-  ],
-  "event.agreedNoHarm": [
-    "Both sides agree that nobody will be harmed, and the matter is settled.",
-    "A truce is agreed, and everyone goes their own way unharmed.",
-    "They agree to leave each other be."
-  ],
-  "event.agreedPassage": [
-    "{winners} are promised safe passage, and go on their way.",
-    "The way is opened for {winners}, and nobody stands in it.",
-    "It ends with {winners} allowed to pass."
-  ],
-  "event.agreedLeave": [
-    "The others agree to leave, and {winners} have the place to themselves.",
-    "It ends with a promise to leave, given to {winners}.",
-    "{winners} watch the others go, as agreed."
   ],
   "event.backedOff": [
     "One side backs away, and it's over without a blow.",
@@ -3591,13 +3477,6 @@
     "{actor} can't keep quiet: they side with {side}, in words at least.",
     "{actor} steps in, for {side}.",
     "{actor} has something to say, and says it for {side}."
-  ],
-  "event.meddleExtort": [
-    "{actor} sees a chance to squeeze {side}.",
-    "{actor} smells money in this, from {side}.",
-    "{actor} wants to be paid to stay out of it, by {side}.",
-    "{actor} names a price to {side}.",
-    "{actor} eyes {side}'s purses."
   ],
   "event.aloof": [
     "{actor} keeps well out of it.",

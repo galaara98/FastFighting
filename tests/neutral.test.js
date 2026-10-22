@@ -322,7 +322,7 @@ describe("a neutral talking for the side it leans toward", () => {
       const broke = r.log.findIndex(e => e.type === "breakStandoff");
       const words = r.log.filter((e, i) => e.actor === "elder" && e.type === "talk" && (broke < 0 || i < broke));
       for ( const e of words ) expect([e.target, e.aim]).toEqual(["bandit", "down"]);
-      if ( r.log.some(e => e.type === "sway" && e.byId === "elder" && ["fled", "conceded", "stoodDown"].includes(e.outcome)) ) settled += 1;
+      if ( r.log.some(e => e.type === "sway" && e.byId === "elder" && ["fled", "stoodDown"].includes(e.outcome)) ) settled += 1;
     }
     expect(settled).toBeGreaterThan(3);
   });
@@ -335,7 +335,7 @@ describe("a neutral talking for the side it leans toward", () => {
     expect(late.log.some(e => e.actor === "elder" && e.type === "talk")).toBe(false);
   });
 
-  test("leaning toward the party's enemies, it talks the party down instead (a player character can only pay up or back off)", () => {
+  test("leaning toward the party's enemies, it talks the party down instead (a player character can only back off)", () => {
     const r = replay(battle([pc({ valuables: { money: 50 } }), bandit(), elder({ lean: "hostile", initiative: { mod: 50 } })], { maxRounds: 3, opening: "talk" }), pf2eRules, 4);
     for ( const e of r.log.filter(x => x.actor === "elder" && x.type === "talk") ) expect(e.target).toBe("fighter");
   });
@@ -365,19 +365,12 @@ describe("getting involved, or keeping out of it", () => {
     for ( let i = 0; i < 5; i++ ) expect(meddling(run, units.guard)?.how ?? null).toBe(first);
   });
 
-  test("the greedy squeeze the side they like least: it pays them off, keeps its place in the standoff, and they keep out of it", () => {
-    const { run, say, units } = scene({ guardOver: { traits: { tactical: { base: 50, fudge: 0 }, brave: { base: 60, fudge: 0 }, selfish: { base: 95, fudge: 0 }, loyal: { base: 40, fudge: 0 } } } });
+  test("even the greedy only talk the side they like least out of the fight", () => {
+    const { run, units } = scene({ guardOver: { traits: { tactical: { base: 50, fudge: 0 }, brave: { base: 60, fudge: 0 }, selfish: { base: 95, fudge: 0 }, loyal: { base: 40, fudge: 0 } } } });
     const g = units.guard;
     run.rng = { ...run.rng, chance: () => true };
-    expect(meddling(run, g)).toMatchObject({ how: "extort", against: ["hostile"] });
-    expect(aimOf(g, units.brute)).toBe("extort");
-    expect(aimOf(g, units.fighter)).not.toBe("extort"); // (only the side it likes least)
-    // (A pitch a turn: one step a turn from each talker.)
-    for ( let i = 0; i < 4 && !units.brute.concessions; i++, g.turnsTaken++ ) attemptTalk(run, g, { target: units.brute, kind: "persuade", aim: "extort", mod: 40, dc: 10 }, say);
-    expect(units.brute.concessions?.[0]).toMatchObject({ kind: "money", to: "guard" });
-    expect(units.brute.status).toBe("standing");
-    expect(run.resolved ?? null).toBeNull(); // (the standoff isn't settled by it)
-    expect(meddling(run, g)).toBeNull();     // paid off: it keeps out of it now
+    expect(meddling(run, g)).toMatchObject({ how: "down", against: ["hostile"] });
+    expect(aimOf(g, units.brute)).toBe("down");
   });
 });
 

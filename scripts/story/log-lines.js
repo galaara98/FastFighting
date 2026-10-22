@@ -44,25 +44,6 @@ export function formatMoney(amount, denominations) {
   return parts.length ? listItems(parts) : t("Money", { n: 0, coin: denominations.at(-1).label });
 }
 
-/**
- * What a creature expects, in words: money; a promise; or something of a kind (the system's own words for its
- * category, material and rarity, as the survey stored them), worth at least so much, or unvalued.
- */
-export function expectText(e) {
-  if ( !e ) return "";
-  if ( e.kind === "money" ) return formatMoney(e.amount, e.denominations);
-  if ( e.kind === "promise" ) return t(PROMISE[e.promise] ?? "PromiseNoHarm");
-  const labels = e.labels ?? {};
-  const details = [
-    labels.material ? t("ExpectMaterial", { material: labels.material }) : "",
-    labels.rarity ? t("ExpectRarity", { rarity: labels.rarity }) : "",
-    e.minValue > 0 ? t("ExpectWorth", { value: formatMoney(e.minValue, e.denominations) }) : "",
-    e.unvalued ? t("ExpectUnvalued") : ""
-  ].filter(Boolean);
-  const what = labels.category || t("ExpectAnything");
-  return details.length ? t("ExpectThing", { what, details: listItems(details) }) : what;
-}
-
 /** What a creature handed over, in words. */
 export function concessionText(c) {
   if ( !c ) return "";
@@ -76,10 +57,9 @@ const WHY = { hurt: "WhyHurt", harmed: "WhyHarmed", helped: "WhyHelped", robbed:
 /** How a patrol goes about it (behavior/patrol.js), each with its words under PatrolHow. */
 const PATROL_HOW = new Set(["scent", "noise", "seen", "pack", "wander", "spread", "near", "watch", "hold", "hide"]);
 const NOTICE = { sight: "NoticeSight", sound: "NoticeSound", smell: "NoticeSmell", feel: "NoticeFeel", radar: "NoticeRadar", standoff: "NoticeStandoff", fledInto: "NoticeFled", help: "NoticeHelp", attacked: "NoticeAttacked", gm: "NoticeGm" };
-const BREAKS = { insulted: "BreakInsulted", beast: "BreakBeast", annoyed: "BreakAnnoyed", blood: "BreakBlood", impatient: "BreakImpatient", unmet: "BreakUnmet" };
+const BREAKS = { insulted: "BreakInsulted", beast: "BreakBeast", annoyed: "BreakAnnoyed", blood: "BreakBlood", impatient: "BreakImpatient" };
 /** Only an argument: why the talks collapsed (nobody fights). */
-const COLLAPSES = { insulted: "CollapseInsulted", beast: "CollapseBeast", annoyed: "CollapseAnnoyed", blood: "CollapseBlood", impatient: "CollapseImpatient", fray: "CollapseFray", unmet: "CollapseUnmet" };
-const PROMISE = { noHarm: "PromiseNoHarm", passage: "PromisePassage", leave: "PromiseLeave" };
+const COLLAPSES = { insulted: "CollapseInsulted", beast: "CollapseBeast", annoyed: "CollapseAnnoyed", blood: "CollapseBlood", impatient: "CollapseImpatient", fray: "CollapseFray" };
 const TRIGGER = { hit: "TriggerHit", attacked: "TriggerAttacked", missed: "TriggerMissed", damaged: "TriggerDamaged", spell: "TriggerSpell", foeCasts: "TriggerSpell", ownHit: "TriggerOwnHit" };
 const VANISH = { expired: "VanishExpired", released: "VanishReleased", unsustained: "VanishUnsustained", idle: "VanishIdle" };
 const role = r => (r === "boss" ? t("RoleBoss") : r === "leader" ? t("RoleLeader") : String(r ?? "").startsWith("lieutenant") ? t("RoleLieutenant", { n: String(r).split(" ")[1] ?? "" }) : r ?? "");
@@ -240,7 +220,7 @@ function baseLine(e) {
         case "offended": return t("NeutralOffended", { actor: e.actor, side: e.sideLabel ?? "", why, victim: e.victim ? `: ${e.victim}` : "", by: e.by ?? "" });
         case "truce": return t("NeutralTruce", { actor: e.actor, by: e.by ?? "", over: e.victim ? t("Over", { name: e.victim }) : "", why });
         case "aloof": return t("NeutralAloof", { actor: e.actor, n: Math.round((e.chance ?? 0) * 100) });
-        case "meddle": return e.how === "extort" ? t("NeutralExtort", { actor: e.actor, against: e.against ?? "", n: Math.round((e.chance ?? 0) * 100) }) : t("NeutralMeddle", { actor: e.actor, side: e.sideLabel ?? "", n: Math.round((e.chance ?? 0) * 100) });
+        case "meddle": return t("NeutralMeddle", { actor: e.actor, side: e.sideLabel ?? "", n: Math.round((e.chance ?? 0) * 100) });
         case "feud": return t("NeutralFeud", a);
         case "holds": return t("NeutralHolds", a);
         case "calmed": return t("NeutralCalmed", a);
@@ -256,20 +236,9 @@ function baseLine(e) {
     }
     case "reclaim": return t("Reclaim", { actor: e.actor, what: concessionText(e.concession), by: e.by ?? "" });
     case "sway": {
-      const c = e.concession;
-      if ( e.outcome === "bribed" ) return t("Bribed", { actor: e.actor, what: c ? concessionText(c) : t("Nothing"), payer: e.payer ?? e.by ?? "" });
-      if ( e.lie ) return t("LieAndRun", a);
-      if ( e.paidOff ) {
-        if ( !c ) return t("PaysNothing", a);
-        return c.kept ? t("KeepsIt", { actor: e.actor, what: concessionText(c), luck: c.luck, needed: c.needed ?? 39 }) : t("PaysOff", { ...a, what: concessionText(c) });
-      }
       if ( e.outcome === "neutral" ) {
         if ( e.luck ) return t("StandsAsideLuck", { actor: e.actor, luck: e.luck, needed: e.needed });
         return e.again ? t("StandAsideAgain", a) : t("StandAside", a);
-      }
-      if ( c ) {
-        return c.kept ? t("KeepsIt", { actor: e.actor, what: concessionText(c), luck: c.luck, needed: c.needed ?? 39 })
-          : t("Gives", { actor: e.actor, what: concessionText(c), to: c.toName ?? "", luck: c.luck ? t("GivesLuck", { luck: c.luck }) : "" });
       }
       if ( e.recruit ) return t("Recruit", { actor: e.actor, side: e.sideLabel ?? "" });
       return t({ fled: "SwayFled", stoodDown: "SwayStoodDown", switched: "SwaySwitched" }[e.outcome] ?? "SwaySurrendered", a);
@@ -277,13 +246,8 @@ function baseLine(e) {
     case "backlash": return t("Backlash", { actor: e.actor, label: e.label || t("PaysForIt"), damage: damage(e.damage, e.damageType) });
     case "breakStandoff": return t("BreakStandoff", { actor: e.actor, how: t(BREAKS[e.cause] ?? "BreakImpatient") });
     case "collapse": return t("Collapse", { actor: e.actor, how: t(COLLAPSES[e.cause] ?? "CollapseImpatient") });
-    // Only an argument: what was handed over, or promised, to end it.
     case "duel": return t("Duel", { actor: e.actor, target: e.target ?? "", action: e.action ?? "", counter: e.counter ?? "", total: e.total, against: e.against, result: t({ wins: "DuelWins", both: "DuelBoth", loses: "DuelLoses", fails: "DuelFails" }[e.outcome] ?? "DuelFails") });
     case "stray": return t("Stray", { actor: e.actor, target: e.target ?? "", result: e.hit ? t("StrayHit", { n: e.damage }) : t("StrayMiss") });
-    case "deal": return t("Deal", { actor: e.actor, target: e.target ?? "", what: e.promise ? t(PROMISE[e.promise] ?? "PromiseNoHarm") : concessionText(e.concession) });
-    case "haggle":
-      if ( e.what === "keeps" ) return t("KeepsIt", { actor: e.actor, what: e.item?.name ?? "", luck: e.luck, needed: e.needed ?? 39 });
-      return e.what === "drops" ? t("HaggleDrops", { actor: e.actor, by: e.by ?? "" }) : t("HaggleLowers", { actor: e.actor, by: e.by ?? "", what: expectText(e.expect) });
     case "callHelp": return t("CallHelp", { actor: e.actor, target: e.toward ?? "" });
     case "lazy": return t("Lazy", { actor: e.actor });
     case "callToArms": return t("CallToArms", { actor: e.actor, targets: listJoin(e.targets ?? []) });

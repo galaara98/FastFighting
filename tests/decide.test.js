@@ -1,6 +1,5 @@
 import { describe, test, expect } from "vitest";
 import { suggestTactics, TACTIC_CHOICES, TACTIC_KEYS } from "../scripts/engine/tactics.js";
-import { suggestMotives, effectiveMotives, cleanMotive, validMotives } from "../scripts/foundry/motives.js";
 import { willingness, CONSUMABLE_WILL } from "../scripts/engine/behavior/reluctance.js";
 import { parseFormula } from "../scripts/engine/dice.js";
 import { creature, strike } from "./helpers.js";
@@ -63,32 +62,6 @@ describe("consumables, from \"I don't like to\" to \"they're here to get used\""
     expect(w("freely")).toBeGreaterThan(1);
     // (An older sheet's "I don't like to use consumables" box.)
     expect(willingness(run, { ...unit(undefined), tac: { consumables: "avoid" }, spec: {} }, potion())).toBe(CONSUMABLE_WILL.avoid);
-  });
-});
-
-describe("what it offers and expects, when it's left to it", () => {
-  const wealthy = { money: 10000, denominations: [{ value: 1, label: "cp" }, { value: 10, label: "sp" }, { value: 100, label: "gp" }], stowed: [], wielded: [] };
-  const m = (t, extra = {}) => suggestMotives(creature({ traits: traits(...t), social: talker, valuables: wealthy, level: 3, ...extra }));
-  test("the timid offer to leave and ask not to be harmed; the selfless offer not to harm; the self-serving want money", () => {
-    expect(m([50, 25, 50, 50])).toEqual({ offer: { kind: "leave" }, expect: { kind: "noHarm" } });
-    expect(m([50, 60, 20, 80]).offer).toEqual({ kind: "noHarm" });
-    expect(m([50, 60, 80, 40]).expect).toEqual({ kind: "money", amount: 30, coin: 100 });
-    // (A clever, wealthy, not very selfish one buys its way out: a tenth of its money.)
-    expect(m([70, 60, 40, 50]).offer).toEqual({ kind: "money", amount: 10, coin: 100 });
-    expect(m([50, 50, 50, 50])).toEqual({ offer: { kind: "" }, expect: { kind: "" } });
-  });
-
-  test("the mindless, and those with no words, offer and expect nothing", () => {
-    expect(m([50, 20, 90, 50], { social: { mindless: true, languages: [] } })).toEqual({ offer: { kind: "" }, expect: { kind: "" } });
-    expect(m([50, 20, 90, 50], { social: { languages: [] } })).toEqual({ offer: { kind: "" }, expect: { kind: "" } });
-  });
-
-  test("left to the character: its calculated answer, checked like any other; said: what it said", () => {
-    const auto = m([50, 60, 80, 40]);
-    expect(effectiveMotives({}, auto)).toEqual(auto);
-    expect(effectiveMotives({ offer: { kind: "auto" }, expect: { kind: "" } }, auto)).toEqual({ offer: auto.offer, expect: { kind: "" } });
-    expect(cleanMotive("offer", { kind: "auto" })).toEqual({ kind: "auto" });
-    expect(validMotives(effectiveMotives({}, auto), wealthy).expect).toMatchObject({ kind: "money", amount: 3000 });
   });
 });
 

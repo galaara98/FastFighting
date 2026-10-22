@@ -75,7 +75,6 @@ Personality decides the rest: a coward may still run, a talker may try words fir
 - when to retreat, shield or defending, and talking instead of fighting;
 - others nearby: stay with the fight, run for help when it goes badly, or hunt down enemies nearby;
 - up to three desires (see [Desires](#desires));
-- what it offers and expects to end an argument (see [Talking](#talking));
 - for live battles, its reactions and rerolls.
 
 **Magic and specialties** appears only for a character with something special: magic, anything with uses or a resource of its own (not gear), or whatever its helper marks as a class's or creature's own. It sets how often the character reaches for these over what anyone could do (a plain blow, the everyday moves, talking): No preference, A little more often, Much more often or Whenever it can. Its fighting style still decides where it stands.
@@ -210,9 +209,9 @@ Each creature keeps a list of [desires](STATS_AND_FORMULAS_README.md#desires-and
 
 ### Talking
 
-Talkers [persuade, intimidate or deceive](STATS_AND_FORMULAS_README.md#who-talks-and-how-often) with the system's skills until they [win enough successes](STATS_AND_FORMULAS_README.md#the-persuasion-track). Harm and failed pitches make a listener harder to sway, and after an insult (a critical failure) it won't listen again. Talker and listener need a shared language unless **Ignore languages** is on. A creature talked round [surrenders, flees, stands down, gives something up or changes sides](STATS_AND_FORMULAS_README.md#what-a-convinced-foe-does); an enemy changing sides only stands aside, and only on **Luck: an enemy changing sides**. Words can only make a PC pay up or run, and one whose answer is "Let my weapons do the talking" won't listen at all.
+Talkers [persuade, intimidate or deceive](STATS_AND_FORMULAS_README.md#who-talks-and-how-often) with the system's skills until they [win enough successes](STATS_AND_FORMULAS_README.md#the-persuasion-track). Harm and failed pitches make a listener harder to sway, and after an insult (a critical failure) it won't listen again. Talker and listener need a shared language unless **Ignore languages** is on. A creature talked round [surrenders, flees, stands down or changes sides](STATS_AND_FORMULAS_README.md#what-a-convinced-foe-does); an enemy changing sides only stands aside, and only on **Luck: an enemy changing sides**. Only threats work on a PC, and only to make it run; one whose answer is "Let my weapons do the talking" won't listen at all.
 
-An encounter [opens as a standoff](STATS_AND_FORMULAS_README.md#how-an-encounter-opens) when the sides would rather talk, or as **Opening** says; nobody attacks until someone [loses patience](STATS_AND_FORMULAS_README.md#impatience-what-breaks-a-standoff) or a blow lands. [**Only an argument: no fighting**](STATS_AND_FORMULAS_README.md#only-an-argument) never comes to blows: what would start a fight collapses the talks instead, and the results show how often. The [bargaining](STATS_AND_FORMULAS_README.md#bargaining-offers-and-expectations) questions (**Do you offer something to end this argument?**, **Do you expect something to end this argument?**) offer or demand money, an item or a promise, and a deal ends the encounter for the side that got what it wanted. [Goods given up](STATS_AND_FORMULAS_README.md#giving-something-up) go back if the taker ends the fight beaten; a PC hands over an item only on **PC luck: handing over an item**. A neutral may [quarrel](STATS_AND_FORMULAS_README.md#crossed-grievance-truce-and-turning-on-a-side) with one side after a botched pitch, and only those two fight.
+An encounter [opens as a standoff](STATS_AND_FORMULAS_README.md#how-an-encounter-opens) when the sides would rather talk, or as **Opening** says; nobody attacks until someone [loses patience](STATS_AND_FORMULAS_README.md#impatience-what-breaks-a-standoff) or a blow lands. [**Only an argument: no fighting**](STATS_AND_FORMULAS_README.md#only-an-argument) never comes to blows: what would start a fight collapses the talks instead, and the results show how often. A neutral may [quarrel](STATS_AND_FORMULAS_README.md#crossed-grievance-truce-and-turning-on-a-side) with one side after a botched pitch, and only those two fight.
 
 ### Groups
 
@@ -226,7 +225,7 @@ Neutral tokens, and enemies talked out of the fight, [take no side](STATS_AND_FO
 
 Each group (the party, each hostile group, each neutral friend group) has a **boss** (never the party) or a **leader**, and up to two **lieutenants**: the **B L 1 2** pills. Click a pill to give the role, click again to keep a token out of command, right-click to clear it. FastFighting [fills them](STATS_AND_FORMULAS_README.md#chain-of-command) once, when the plan is new or just cleared (shown faded); after that only the GM changes them. Outside the party the best leader heads the group, as a boss when it outranks every other member by 2 levels or more. The party keeps the roles you gave its members before, or gets a leader only when exactly one member wants to lead.
 
-The commander [lends its group a bonus](STATS_AND_FORMULAS_README.md#what-a-leader-lends), [pulls its followers](STATS_AND_FORMULAS_README.md#following-the-leader) toward its wishes (**Leader's influence**, **Boss's influence**), and talking it down can take its group with it. When it falls or can't make itself seen and heard, a lieutenant steps up. Bosses almost never run; in a standoff a boss can only be [paid to go](STATS_AND_FORMULAS_README.md#paying-off-a-boss), and it takes its group along. A Wants to Lead character out of command may [scheme](STATS_AND_FORMULAS_README.md#scheming); a PC turns traitor only on **Luck check: a player character turning traitor**.
+The commander [lends its group a bonus](STATS_AND_FORMULAS_README.md#what-a-leader-lends), [pulls its followers](STATS_AND_FORMULAS_README.md#following-the-leader) toward its wishes (**Leader's influence**, **Boss's influence**), and talking it down can take its group with it. When it falls or can't make itself seen and heard, a lieutenant steps up. Bosses almost never run. A Wants to Lead character out of command may [scheme](STATS_AND_FORMULAS_README.md#scheming); a PC turns traitor only on **Luck check: a player character turning traitor**.
 
 ### Morale and leaving
 
@@ -358,7 +357,7 @@ World settings, under **Configure Settings → FastFighting**, in groups. The pl
 
 | Setting | Default | What it controls |
 | --- | --- | --- |
-| PC luck: handing over an item | 39 | A PC losing an item it was talked out of. |
+| PC luck: handing over an item | 39 | A PC losing an item it hands over. Unused at present: talk makes nobody pay. |
 | PC luck: being robbed | 29 | A thief taking something from a PC. |
 | PC luck: being finished off | 39 | A creature finishing off a PC at 0 HP. |
 | Luck: an enemy changing sides | 69 | An enemy talked into changing sides going through with it. |

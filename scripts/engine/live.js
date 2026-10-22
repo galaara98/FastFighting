@@ -35,7 +35,6 @@ import { prepareDoors } from "./behavior/doors.js";
 import { recompute, applyOutcome, stillDoes } from "./behavior/effects.js";
 import { reactionsPerRound } from "./behavior/reactions.js";
 import { resolveTalk, applySway, aimOf, talkDC, stepsToConvince, bestPitch } from "./behavior/talk.js";
-import { expectOf } from "./behavior/bargain.js";
 import { rankedDesires, desireBand, want, levelOf, holdDesire, releaseDesire, forgetSides, styleOf, keyOf, parseKey } from "./behavior/desire.js";
 import { validConditionKey, CORE_CONDITIONS, conditionMost } from "./conditions.js";
 import { GOALS, holdGoal, goalsOf } from "./behavior/goals.js";
@@ -348,7 +347,7 @@ export function observe(run, u, e, harmers = new Map()) {
       if ( !t || !["persuade", "intimidate", "deceive"].includes(e.kind) ) return;
       const s = u.spec.social?.pitches?.[e.kind];
       const pitch = {
-        target: t, kind: e.kind, aim: aimOf(u, t, run), skill: e.skill ?? s?.skill ?? e.kind, mod: e.mod ?? s?.mod ?? 0,
+        target: t, kind: e.kind, aim: aimOf(u, t), skill: e.skill ?? s?.skill ?? e.kind, mod: e.mod ?? s?.mod ?? 0,
         dc: e.dc ?? talkDC(run, u, t, e.kind), dcLabel: e.dcStat ?? t.spec.social?.resist?.[e.kind]?.label ?? "DC"
       };
       resolveTalk(run, u, pitch, { degree: clamp(Math.round(Number(e.degree) || 0), 0, 3), natural: e.natural ?? null, total: e.total ?? null }, say(run));
@@ -758,7 +757,8 @@ export function applyFact(run, fact) {
       break;
     }
     case "sway":
-      if ( !by || !Object.values(SWAY).includes(fact.outcome) ) return false;
+      // (Talk makes nobody pay: never "conceded".)
+      if ( !by || !Object.values(SWAY).includes(fact.outcome) || fact.outcome === SWAY.CONCEDE ) return false;
       applySway(run, by, u, fact.outcome, tell, "down");
       break;
     case "taunt":
@@ -1339,8 +1339,8 @@ export function networkOf(run) {
  * hearing (rebuffed, each time harder), whom it bears a grudge (afraid of them until they go for it, then out for
  * them), whom it schemes against and whom it follows (this turn), a truce it keeps; whose companion it is and who
  * summoned it; which side a neutral leans to and which it has turned on, how far it's been talked round, a quarrel it
- * agreed to let be, going against its commander, getting involved, and what it wants of the other side to end a
- * standoff. Those it can be talked out of (or the GM can) have an intensity; the rest (`fixed`) only show.
+ * agreed to let be, going against its commander, and getting involved. Those it can be talked out of (or the GM can)
+ * have an intensity; the rest (`fixed`) only show.
  */
 function attitudesOf(run, u, links, marks) {
   const has = id => id && id !== u.id && run.byId.has(id);
@@ -1361,16 +1361,14 @@ function attitudesOf(run, u, links, marks) {
   if ( u.holdsBack ) mark("holdsBack");
   if ( u.contrarian ) mark("contrarian");
   if ( u.meddling?.how ) mark("meddles", { how: u.meddling.how, side: u.meddling.side ?? null, fixed: true });
-  const expect = run.standoff && !u.dealt && u.status === STATUS.STANDING ? expectOf(u) : null;
-  if ( expect ) mark("demands", { expect: { ...expect } });
 }
 
 /**
  * The GM's word on what a creature keeps toward others (attitudesOf): {kind, byId | side, level}. 0 takes it away:
  * hears byId out as before (wary), the grudge let go, the scheme dropped, the truce over, back on that side's good
- * terms (against), no longer swayed toward that side, the quarrel no longer let be, no longer contrary, the demand let
- * go. Wary of hearing byId, and swayed toward a side, take a count (up to one short of being talked round); a lean,
- * how strongly (its band).
+ * terms (against), no longer swayed toward that side, the quarrel no longer let be, no longer contrary. Wary of hearing
+ * byId, and swayed toward a side, take a count (up to one short of being talked round); a lean, how strongly (its
+ * band).
  */
 export function setAttitude(run, id, { kind, byId = null, side = null, level = 0 } = {}) {
   const u = run.byId.get(id);
@@ -1413,10 +1411,6 @@ export function setAttitude(run, id, { kind, byId = null, side = null, level = 0
       break;
     case "contrarian":
       u.contrarian = n > 0;
-      break;
-    case "demands":
-      if ( n ) return false;
-      u.expect = null;
       break;
     default:
       return false;

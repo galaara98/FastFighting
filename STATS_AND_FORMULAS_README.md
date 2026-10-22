@@ -8,7 +8,7 @@ that change them, and `Code:` (where it lives, to check it). The settings menu s
 ## Contents
 
 - **[Minds](#minds)**: [Personality traits](#personality-traits), [Tactical tiers](#tactical-tiers), [Animals](#animals), [Aptitudes](#aptitudes), [Desires and their level](#desires-and-their-level), [How desires are raised each turn](#how-desires-are-raised-each-turn), [What the fight stirs, and how it cools](#what-the-fight-stirs-and-how-it-cools), [Frustration](#frustration), [Pulls from others: style, social, lean](#pulls-from-others-style-social-lean), [Focus fire](#focus-fire), [Keeping together](#keeping-together), [What comes to mind](#what-comes-to-mind), [The agenda](#the-agenda), [Desires it can't work on](#desires-it-cant-work-on), [ADHD](#adhd), [Fear](#fear), [Morale stress](#morale-stress), [Morale check: hold, waver, rout](#morale-check-hold-waver-rout), [Wavering](#wavering), [Running away](#running-away), [Standing its ground](#standing-its-ground), [Calling a retreat](#calling-a-retreat), [Rallying](#rallying), [Leaving the fight](#leaving-the-fight), [Being stopped on the way out](#being-stopped-on-the-way-out), [Standing down](#standing-down), [Chain of command](#chain-of-command), [What a leader lends](#what-a-leader-lends), [Following the leader](#following-the-leader), [Scheming](#scheming), [Party's sway](#partys-sway), [Playstyles: how pills combine](#playstyles-how-pills-combine), [Playstyle numbers](#playstyle-numbers), [Tactics answers: wishes and "Let this character decide"](#tactics-answers-wishes-and-let-this-character-decide)
-- **[Words and sides](#words-and-sides)**: [Luck rolls at a glance](#luck-rolls-at-a-glance), [Who talks, and how often](#who-talks-and-how-often), [Choosing a pitch](#choosing-a-pitch), [Pitch DC](#pitch-dc), [The persuasion track](#the-persuasion-track), [What a convinced foe does](#what-a-convinced-foe-does), [Switch luck: changing sides](#switch-luck-changing-sides), [Traitor luck: a PC turning traitor](#traitor-luck-a-pc-turning-traitor), [Giving something up](#giving-something-up), [How an encounter opens](#how-an-encounter-opens), [Impatience: what breaks a standoff](#impatience-what-breaks-a-standoff), [Only an argument](#only-an-argument), [Bargaining: offers and expectations](#bargaining-offers-and-expectations), [Haggling and pressing](#haggling-and-pressing), [Paying off a boss](#paying-off-a-boss), [Taking no side: neutral tokens and leans](#taking-no-side-neutral-tokens-and-leans), [Crossed: grievance, truce and turning on a side](#crossed-grievance-truce-and-turning-on-a-side), [Winning over, calming and sending away](#winning-over-calming-and-sending-away), [Meddling: neutrals getting involved](#meddling-neutrals-getting-involved), [Taken for a foe, caught in the blast, spared in a truce](#taken-for-a-foe-caught-in-the-blast-spared-in-a-truce), [Neutral friend groups (reach)](#neutral-friend-groups-reach), [Taunts (goading)](#taunts-goading), [Theft mid-fight](#theft-mid-fight), [Trap avoiders](#trap-avoiders), [Reluctance: consumables and costly spells](#reluctance-consumables-and-costly-spells), [Avoiding killing (mercy)](#avoiding-killing-mercy), [The fallen: tying up and robbing](#the-fallen-tying-up-and-robbing), [Execute luck: finishing off a PC](#execute-luck-finishing-off-a-pc), [Bearing a hold or hurt (ignore troubles)](#bearing-a-hold-or-hurt-ignore-troubles), [The party's vote](#the-partys-vote)
+- **[Words and sides](#words-and-sides)**: [Luck rolls at a glance](#luck-rolls-at-a-glance), [Who talks, and how often](#who-talks-and-how-often), [Choosing a pitch](#choosing-a-pitch), [Pitch DC](#pitch-dc), [The persuasion track](#the-persuasion-track), [What a convinced foe does](#what-a-convinced-foe-does), [Switch luck: changing sides](#switch-luck-changing-sides), [Traitor luck: a PC turning traitor](#traitor-luck-a-pc-turning-traitor), [How an encounter opens](#how-an-encounter-opens), [Impatience: what breaks a standoff](#impatience-what-breaks-a-standoff), [Only an argument](#only-an-argument), [Taking no side: neutral tokens and leans](#taking-no-side-neutral-tokens-and-leans), [Crossed: grievance, truce and turning on a side](#crossed-grievance-truce-and-turning-on-a-side), [Winning over, calming and sending away](#winning-over-calming-and-sending-away), [Meddling: neutrals getting involved](#meddling-neutrals-getting-involved), [Taken for a foe, caught in the blast, spared in a truce](#taken-for-a-foe-caught-in-the-blast-spared-in-a-truce), [Neutral friend groups (reach)](#neutral-friend-groups-reach), [Taunts (goading)](#taunts-goading), [Theft mid-fight](#theft-mid-fight), [Trap avoiders](#trap-avoiders), [Reluctance: consumables and costly spells](#reluctance-consumables-and-costly-spells), [Avoiding killing (mercy)](#avoiding-killing-mercy), [The fallen: tying up and robbing](#the-fallen-tying-up-and-robbing), [Execute luck: finishing off a PC](#execute-luck-finishing-off-a-pc), [Bearing a hold or hurt (ignore troubles)](#bearing-a-hold-or-hurt-ignore-troubles), [The party's vote](#the-partys-vote)
 - **[Fighting and the simulation](#fighting-and-the-simulation)**: [The prediction: how many fights it runs](#the-prediction-how-many-fights-it-runs), [Rounds, stalemates and the max-rounds cap](#rounds-stalemates-and-the-max-rounds-cap), [Odds and outcomes](#odds-and-outcomes), [The most typical fight (Sample fight)](#the-most-typical-fight-sample-fight), [Swing factors](#swing-factors), [Initiative and turn order](#initiative-and-turn-order), [Dice, degrees of success and advantage](#dice-degrees-of-success-and-advantage), [Expected damage: what an attack is worth](#expected-damage-what-an-attack-is-worth), [Threat: how dangerous a creature looks](#threat-how-dangerous-a-creature-looks), [Choosing whom to attack](#choosing-whom-to-attack), [Choosing an action](#choosing-an-action), [Reluctance: potions, scrolls and costly spells](#reluctance-potions-scrolls-and-costly-spells), [Shields and defensive turns](#shields-and-defensive-turns), [Getting ready: draws, reloads and a turn for the next](#getting-ready-draws-reloads-and-a-turn-for-the-next), [Healing decisions](#healing-decisions), [Buffs and support](#buffs-and-support), [What a condition, bonus or penalty is worth](#what-a-condition-bonus-or-penalty-is-worth), [Control and debuffs](#control-and-debuffs), [Situational saves and auras](#situational-saves-and-auras), [Concentration](#concentration), [Movement, reach and getting there](#movement-reach-and-getting-there), [Crowds: getting past creatures and where a move ends](#crowds-getting-past-creatures-and-where-a-move-ends), [Line of sight and cover](#line-of-sight-and-cover), [Senses: what a creature can tell](#senses-what-a-creature-can-tell), [Noticing the fight: bystanders](#noticing-the-fight-bystanders), [Patrolling: cues and Seek](#patrolling-cues-and-seek), [Opportunity attacks and getting clear](#opportunity-attacks-and-getting-clear), [Forced movement, falls and dangerous ground](#forced-movement-falls-and-dangerous-ground), [Holds and escapes](#holds-and-escapes), [Harm each turn: conditions, persistent damage, spreading](#harm-each-turn-conditions-persistent-damage-spreading), [Afflictions: poisons, diseases, curses](#afflictions-poisons-diseases-curses), [Summons](#summons), [Luck pools: spending after the roll](#luck-pools-spending-after-the-roll), [Fate: rerolls that keep someone alive](#fate-rerolls-that-keep-someone-alive), [Last-ditch saves and refusing to drop](#last-ditch-saves-and-refusing-to-drop), [Damage, 0 HP and the downed models](#damage-0-hp-and-the-downed-models), [Finishing off a downed PC](#finishing-off-a-downed-pc), [The aftermath](#the-aftermath), [Recharges, cooldowns, legendary actions and counterspells](#recharges-cooldowns-legendary-actions-and-counterspells), [Strain: words that wear a creature down](#strain-words-that-wear-a-creature-down)
 - **[Pathfinder 2e](#pathfinder-2e)**: [Checks and degrees of success](#checks-and-degrees-of-success), [Actions, the multiple attack penalty and Strikes](#actions-the-multiple-attack-penalty-and-strikes), [Lore-Collector advantage (Recall Knowledge)](#lore-collector-advantage-recall-knowledge), [Conditions and their penalties](#conditions-and-their-penalties), [Flat checks: hidden, concealed, dazzled](#flat-checks-hidden-concealed-dazzled), [Cover, Hide and Take Cover](#cover-hide-and-take-cover), [Holds and Escape](#holds-and-escape), [Swallow Whole and Engulf](#swallow-whole-and-engulf), [Maneuvers (skill actions)](#maneuvers-skill-actions), [Aid](#aid), [Dying, wounded, doomed and recovery](#dying-wounded-doomed-and-recovery), [Hero Points](#hero-points), [Ferocity](#ferocity), [Persistent damage, bleeding and retching](#persistent-damage-bleeding-and-retching), [Afflictions](#afflictions), [Incapacitation and immunity](#incapacitation-and-immunity), [Auras and situational saves](#auras-and-situational-saves), [Weakness, resistance and immunity](#weakness-resistance-and-immunity), [Healing, Battle Medicine and class features](#healing-battle-medicine-and-class-features), [Reactions](#reactions), [Summons](#summons-1), [Doors, falls and moving past others](#doors-falls-and-moving-past-others), [Talking, theft and leadership](#talking-theft-and-leadership), [Personality from the sheet](#personality-from-the-sheet), [Typical numbers and areas](#typical-numbers-and-areas)
 - **[D&D 5e](#dd-5e)**: [Rolls, advantage and critical hits](#rolls-advantage-and-critical-hits), [Lore-Collector advantage (Study)](#lore-collector-advantage-study), [Conditions](#conditions), [Cover, Hide, Dodge, Help and Insight](#cover-hide-dodge-help-and-insight), [Grapples, webs, nets and bonds](#grapples-webs-nets-and-bonds), [Swallowed and engulfed](#swallowed-and-engulfed), [Shove and Grapple](#shove-and-grapple), [Pushes, falls and moving past others](#pushes-falls-and-moving-past-others), [Dying and death saves](#dying-and-death-saves), [Inspiration (fate)](#inspiration-fate), [Concentration](#concentration-1), [Undead Fortitude, Relentless Endurance and Regeneration](#undead-fortitude-relentless-endurance-and-regeneration), [Burning and lingering acid](#burning-and-lingering-acid), [Riders on a hit](#riders-on-a-hit), [Reactions](#reactions-1), [Turn, attacks and resources](#turn-attacks-and-resources), [Doors, talking, theft and leadership](#doors-talking-theft-and-leadership), [Personality from the sheet](#personality-from-the-sheet-1), [Typical numbers by challenge rating](#typical-numbers-by-challenge-rating)
@@ -637,31 +637,27 @@ Code: `engine/behavior/leaving.js` `commitment`, `confronted`, `backOnItsWay` (`
 
 ### Standing down
 
-Search: stand down, stands down, stood down, truce, surrender, talked out of the fight, pays up, concede
+Search: stand down, stands down, stood down, truce, surrender, talked out of the fight
 
 How a foe talked out of the fight leaves it. Standing down: out of the conflict, nobody's prisoner.
 
 For an NPC talked down, the first that applies:
 
-1. Talked round by a Peacekeeper (at its peacekeeping chance), and not a boss: stands down.
-2. A boss: in a standoff, paid to go (its group with it); in a fight, surrenders under 25% HP, else pays up and fights
-   on.
-3. Changes sides: 60% for one that started neutral; else clamp(0.03 + (Selfish − 50) ÷ 500 + (50 − Loyal) ÷ 500, 0,
+1. Talked round by a Peacekeeper (at its peacekeeping chance): stands down.
+2. Changes sides: 60% for one that started neutral; else clamp(0.03 + (Selfish − 50) ÷ 500 + (50 − Loyal) ÷ 500, 0,
    12%), +0.5 when scheming (at most 70%). It goes through only on a d100 under Luck: an enemy changing sides
    (`switchLuck`, +20 when scheming); else it's talked into something below.
-4. Pays up: clamp(0.12 + 0.15 if threatened + 0.1 under half HP − (Selfish − 50) ÷ 400, 3%, 45%).
-5. In a standoff, unless threatened: stands down.
-6. Flees: unhurt with Selfish 55+, or half the time when under half HP with Brave under 40; either unless it stands its
+3. In a standoff, unless threatened: stands down.
+4. Flees: unhurt with Selfish 55+, or half the time when under half HP with Brave under 40; either unless it stands its
    ground.
-7. Surrenders.
+5. Surrenders.
 
-When the encounter is only an argument (How encounters open), fleeing and surrendering become standing down. A PC
-only pays up, or flees when it has nothing to give; threatened, it flees with chance clamp(0.5 − (Brave − 50) ÷ 100,
-10%, 80%) unless it stands its ground.
+A boss is talked down like anyone else. When the encounter is only an argument (How encounters open), fleeing and
+surrendering become standing down. A PC only flees (only threats work on it).
 
 A commander talked down takes its group: each mate other than a PC follows with chance clamp(0.4 + (100 − Brave) ÷
-250 + 0.1 × the talkers' progress on it, 0, 90%). It stands down if the commander stood down, paid up or changed
-sides, else surrenders.
+250 + 0.1 × the talkers' progress on it, 0, 90%). It stands down if the commander stood down or changed sides, else
+surrenders.
 
 Code: `engine/behavior/talk.js` `outcomeFor`, `resolveTalk`.
 
@@ -908,7 +904,7 @@ Code: `engine/tactics.js` `TACTIC_WISHES`, `suggestTactics`, `suggestTalk`; `eng
 
 ## Words and sides
 
-Talking, standoffs, bargains, those who take no side, taunts, theft, traps, reluctance, mercy and the fallen. Every
+Talking, standoffs, those who take no side, taunts, theft, traps, reluctance, mercy and the fallen. Every
 setting named here is a world default (Configure Settings) that the Battle Planner can override per battle, except
 Neutral friend groups: reach. Traits (Tactical, Brave, Selfish, Loyal) are 0 to 100. A pill's share of a playstyle
 behavior is its value × its place (1, 0.75, 0.55, 0.4 for the first to fourth pick), × 1.8 with "roleplaying is very
@@ -924,7 +920,7 @@ Each is a d100 (1 to 100), and passes at or under its number.
 |---|---|---|---|---|---|
 | An enemy changes sides | Luck: an enemy changing sides (`switchLuck`) | 69 | 0–100 | at or under it (+20 if scheming, max 100); 100: always | 69% |
 | A PC turns traitor | Luck check: a player character turning traitor (`traitorLuck`) | 9 | 0–100 | at or under it | 9% |
-| A PC loses an item it was talked out of | PC luck: handing over an item (`concedeLuck`) | 39 | 0–100 | at or under it | 39% |
+| A PC loses an item it hands over (unused at present: talk makes nobody pay) | PC luck: handing over an item (`concedeLuck`) | 39 | 0–100 | at or under it | 39% |
 | A thief takes from a PC | PC luck: being robbed (`theftLuck`) | 29 | 0–100 | at or under it | 29% |
 | A creature finishes off a PC at 0 HP | PC luck: being finished off (`executeLuck`) | 39 | 0–100 | at or under it | 39% |
 | A trap avoider spots a hazard | Trap avoiders: spotting a trap (%) (`trapLuck`) | 59 | 0–100 | at or under it × watchfulness | Thief 59% |
@@ -932,7 +928,7 @@ Each is a d100 (1 to 100), and passes at or under its number.
 | A selfless creature bears a hold or hurt | Selfless creatures bear what holds or hurts them (%) (`ignoreTroubles`) | 29 | 0–100 | at or under it × (100 − Selfish)% × (100 − Tactical)% | 29% at Selfish 0, Tactical 0 |
 
 Code: `constants.js` (CONCEDE_LUCK, THEFT_LUCK, EXECUTE_LUCK, TRAP_LUCK, IGNORE_TROUBLES, TAUNT_LUCK, SWITCH_LUCK,
-TRAITOR_LUCK); each roll is under its own topic below.
+TRAITOR_LUCK); each roll in use is under its own topic below.
 
 ### Who talks, and how often
 
@@ -997,7 +993,7 @@ Without a resistance, the DC is the system's typical DC for the level (core fall
 
 **Which pitch**: the one with the highest P = P(success) + P(critical success), less half its P(critical failure) for
 a bluff. The modifier is the skill + the system's check modifiers + 1 once a Lore-Collector has sized the target up
-(or its boost, while that holds). Only threats work on a PC with nothing to hand over. No threats when winning
+(or its boost, while that holds). Only threats work on a PC. No threats when winning
 someone over or asking a fighter to let a quarrel be, and none from a Peacekeeper (share ≥ 0.5).
 
 **Who can be talked to**: standing, seen (not an unrevealed ambusher), not mindless, with a language it shares with
@@ -1016,12 +1012,8 @@ wins. c = 2.5 for a boss commanding its group, 1.5 for a commanding leader, else
 | Calm someone confronting the talker's side | 1.2 × h |
 | Talk a fighter into letting a quarrel be | 1.3 × h |
 | Have the talker's quarrel made good (amends) | 1.5 |
-| Squeeze for money | 1.2 |
-| Haggle | 1.6 + c |
-| Press for what it expects | 2 + c |
 
-A boss is never talked into leaving; in a standoff, it is talked down only when someone on the talker's side would pay
-it.
+A boss is never talked into leaving.
 
 Code: `engine/behavior/talk.js` `bestPitch`, `choosePitch`, `swayable`, `aimOf`, `pursued`;
 `engine/behavior/standoff.js` `shareLanguage`.
@@ -1044,8 +1036,6 @@ The DC is the base above plus every line that applies.
 | Scheming against its own leaders | −4 |
 | The talker is a Peacekeeper | − round(2 × its share) |
 | It's a Skeptic and the talker isn't of its group | + round(4 × its share) |
-| Haggling or pressing | + holding out (see Haggling and pressing) |
-| Pressed for safe passage, or to leave | + round((Brave − 50) ÷ 20) |
 | Being won over | + round(betrayed wish ÷ 10) − round(fulfilled wish ÷ 10) |
 | Being sent away | + round(strongest care for someone still standing ÷ 10) + round((Brave − 50) ÷ 20) |
 | Outnumbered (more foes standing that it knows of than friends standing) | −3 for threats, −2 otherwise |
@@ -1090,7 +1080,7 @@ or its resolve is −5 or less (resolve: its will against a typical creature of 
 | Player character | +2 |
 | Scheming against its leaders | −2 |
 | Skeptic (share ≥ 0.5) and the talker isn't of its group | +1 |
-| Asked to let a quarrel be, or haggled with | −1 |
+| Asked to let a quarrel be | −1 |
 | Won over: joining fulfils a wish ≥ 40 / betrays one ≥ 40 / ≥ 70 | −1 / +1 / +2 |
 | Below half HP, else outnumbered | −1 |
 
@@ -1104,47 +1094,36 @@ Code: `engine/behavior/talk.js` `stepsToConvince`, `resolveTalk`, `foesKnown`, `
 
 ### What a convinced foe does
 
-Search: sway outcome, talked down, surrender, surrendered, flee, fled, stand down, stood down, gave something up, conceded, back off, yields, switched sides, stood aside
+Search: sway outcome, talked down, surrender, surrendered, flee, fled, stand down, stood down, back off, yields, switched sides, stood aside
 
 Decides how an enemy talked out of the fight leaves it. Checked in order:
 
-1. **Peacekeeper talker**: with chance = its peacekeeping share, a truce: it stands down (not a boss or a PC).
-2. **Boss**: in a standoff it is paid to go (see Paying off a boss); in a fight it surrenders below 25% HP, else gives
-   something up and fights on.
-3. **Player character**: scheming against its leader, it changes sides (traitor luck). With nothing to hand over it
-   runs. Threatened, it runs with chance clamp(0.5 − (Brave − 50) ÷ 100, 0.1, 0.8), unless it stands its ground.
-   Otherwise it gives something up.
-4. **Anyone else**:
+1. **Peacekeeper talker**: with chance = its peacekeeping share, a truce: it stands down (not a PC).
+2. **Player character**: scheming against its leader, it changes sides (traitor luck). Otherwise it runs.
+3. **Anyone else** (a boss too):
    - changes sides with chance 0.6 if it stands aside, else clamp(0.03 + (Selfish − 50) ÷ 500 + (50 − Loyal) ÷ 500,
      0, 0.12); scheming, +0.5 and up to 0.7. Then the switch luck.
-   - gives something up with chance clamp(0.12 + 0.15 if threatened + 0.10 if below half HP − (Selfish − 50) ÷ 400,
-     0.03, 0.45);
    - in a standoff, persuaded or bluffed: stands down;
    - above half HP and Selfish ≥ 55: runs;
    - below half HP and Brave < 40: runs half the time;
    - otherwise surrenders.
 
-One that stands its ground (Doesn't like to flee, `standGround`: see Morale) doesn't run: it surrenders instead (a PC
-gives something up).
+Anyone else that stands its ground (Doesn't like to flee, `standGround`: see Morale) doesn't run: it surrenders
+instead.
 
-Example: a typical hostile (Selfish 50, Loyal 50, unhurt) threatened mid-fight: changes sides 3% × 69% ≈ 2%; else gives
-something up 27%; else surrenders.
+Example: a typical hostile (Selfish 50, Loyal 50, unhurt) threatened mid-fight: changes sides 3% × 69% ≈ 2%; else
+surrenders.
 
 Other aims: won over, it joins the talker's side for good; sent away or talked into leaving, it leaves; calmed, the
-quarrel is over; asked to let a quarrel be, it does (until hurt again); squeezed, it pays; made to make amends, it
-hands something over if it can, else apologizes.
+quarrel is over; asked to let a quarrel be, it does (until hurt again); made to make amends, it apologizes.
 
-- **In a standoff**, a foe that gives something up or runs settles the whole encounter for the talker's side:
-  everyone walks away.
-- **Mid-fight, giving something up**: it stays in, its track resets, it won't listen to that talker again, and it
-  wants to keep away from the taker (desire 50 + (50 − Brave) × 0.3) until the taker attacks it; then it wants to hit
-  the taker (60 × its retaliation).
+- **In a standoff**, a foe that runs settles the whole encounter for the talker's side: everyone walks away.
 - **Running mid-fight**, it tries to take its group with it (Morale: retreats).
 - **A convinced commander**: each follower in its group (not PCs) follows with chance clamp(0.4 + (100 − Brave) ÷ 250
-  + 0.1 × the talker's side's progress on that follower, 0, 0.9). It stands down if the commander stood down, gave
-  something up or stood aside; else it surrenders.
+  + 0.1 × the talker's side's progress on that follower, 0, 0.9). It stands down if the commander stood down or
+  stood aside; else it surrenders.
 
-Code: `engine/behavior/talk.js` `outcomeFor`, `applyOutcome`, `concede`, `resolveTalk`.
+Code: `engine/behavior/talk.js` `outcomeFor`, `applyOutcome`, `resolveTalk`.
 
 ### Switch luck: changing sides
 
@@ -1174,29 +1153,9 @@ Decides whether a scheming PC talked down changes sides.
   group. Each turn it schemes with chance its ambition (0.25 as a first pick, × place, × 1.8 with roleplay).
 - Talked down while scheming, it always tries to change sides: d100 at or under traitorLuck (default 9, range 0–100): 9%. 0:
   never.
-- Failed, it does what any PC does (runs, or gives something up).
+- Failed, it does what any PC does: it runs.
 
 Code: `engine/behavior/talk.js` `outcomeFor`, `resolveTalk`; `engine/behavior/desire.js` `scheme`.
-
-### Giving something up
-
-Search: concede, concession, give something up, hand over, pay up, money, item, concede luck, concedeLuck, PC luck: handing over an item, lies and runs, reclaim, goods back
-
-Decides what a creature hands over.
-
-1. What the receiving side expects, if it has it; else what it offered (standoffs only; see Bargaining).
-2. Else money: d10% of what it has left (at least 1).
-3. Else a random item it carries but doesn't wield or wear. A PC loses it only on a d100 at or under concedeLuck
-   (default 39, range 0–100); above, it keeps it.
-4. Else (not a PC) something it wields.
-5. Else ground on its own track (Ironsworn foes).
-6. Else nothing: a creature (not a PC) swears it has nothing and runs (only an argument: it stands down).
-
-Whatever a winner took goes back at the end if the taker ended the fight dead, down, surrendered, stood down, beaten or
-tied up, or held by the owner's side. Ground given stays given.
-
-Code: `engine/behavior/talk.js` `concession`, `concede`; `engine/behavior/bargain.js` `owed`, `luckFor`;
-`engine/simulator.js` `reclaimGoods`.
 
 ### How an encounter opens
 
@@ -1216,17 +1175,16 @@ Decides whether a fight starts as a standoff: nobody attacks or advances; talker
 - **Would rather talk**: can talk; answer Always or Talk first; or none of Let my weapons do the talking, and affinity ≥
   0.6 or a Diplomat.
 
-On a standoff turn, a creature first states what it offers or expects (Bargaining); one who can't abide violence tries
-to calm any quarrel; a Lore-Collector may watch. Otherwise it pitches: the whole turn with chance w (not staying
-true); 2 if it would rather talk; 1 if its affinity is above 0; else none. Hazards wait out a standoff, and legendary
-actions wait too.
+On a standoff turn, one who can't abide violence tries to calm any quarrel; a Lore-Collector may watch. Otherwise it
+pitches: the whole turn with chance w (not staying true); 2 if it would rather talk; 1 if its affinity is above 0; else
+none. Hazards wait out a standoff, and legendary actions wait too.
 
 Code: `engine/behavior/standoff.js` `opensWithTalk`, `prefersTalk`, `standoffPitches`; `engine/simulator.js`
 `standoffTurn`.
 
 ### Impatience: what breaks a standoff
 
-Search: impatience, impatient, standoff breaks, break the standoff, insulted, annoyed, unmet, beast, last word, charismatic leader, blood, patience
+Search: impatience, impatient, standoff breaks, break the standoff, insulted, annoyed, beast, last word, charismatic leader, blood, patience
 
 Decides when someone in a standoff loses patience and attacks. Checked at the start of each turn of anyone on a side:
 
@@ -1248,7 +1206,6 @@ do). Then:
 | Feral (Tactical under 20) | × 2 |
 | Each pill, regardless of place | Impatient × 2.5, Cruel × 2, Instigator × 2, Brawler × 1.8, DPS × 1.5, Moralist × 0.6, Chicken × 0.5, People-Pleaser × 0.5, Diplomat × 0.3, Peacekeeper × 0.3 |
 | A Peacekeeper present (strongest share s) | × (1 − 0.5 × s) |
-| Waiting on what it expects | × (1 + 0.25 × min(4, turns unmet)) |
 | Each round of talk after the first (a truce: after the round it began) | + 0.03 |
 | Rebuffs it has suffered | + 0.04 each |
 | Blows in a quarrel beside the standoff | + 0.04 each, at most + 0.2 |
@@ -1258,7 +1215,7 @@ do). Then:
 | A companion whose master would rather talk | × 0.3 |
 
 Capped at 0.85. A side is losing the talk when the other sides' progress on its members exceeds its own on theirs by
-more than 1. Breaking it after waiting on an expectation reads "unmet"; a creature that can't follow the talk, "beast".
+more than 1. Breaking it when it can't follow the talk reads "beast".
 
 Example: a default hostile (Brave 55, Selfish 50, Tactical 45) in round 3 of talk begun in round 1, rebuffed once,
 its leader keen to talk: 0.05 × 1.05 = 0.0525, + 0.06 + 0.04 = 0.1525, × 0.4 ≈ 6%.
@@ -1277,87 +1234,12 @@ Search: argument, Only an argument: no fighting, talks collapsed, collapse, no f
 Decides what talk does when the GM rules out blows (How encounters open, `argument`).
 
 - Always a standoff. Nobody runs or yields: talked round, a creature backs down (stands down) instead.
-- Made to pay, it pays to end the argument and stays where it is (a deal); a boss paid off drops it.
 - What would break a standoff (insults, impatience, blame) collapses the talks 75% of the time; a quarrel's insult
   starts one 0.7 × 0.75 ≈ 53% of the time. A blow, or a quarrel coming to blows, collapses them. Everyone goes their
-  own way; deals already struck stand.
+  own way.
 
 Code: `engine/behavior/standoff.js` `breaksStandoff` (ARGUMENT_BREAKS 0.75); `engine/simulator.js` `collapse`;
 `engine/behavior/talk.js` `arguing`.
-
-### Bargaining: offers and expectations
-
-Search: bargain, offer, expect, Do you offer something to end this argument?, Do you expect something to end this argument?, promise, no harm, passage, leave, deal, money, motives
-
-Decides deals struck without a roll in a standoff or argument. A deal ends the encounter.
-
-- **Offer**: money, one of its items, or a promise (we won't harm you, we let you pass, we leave).
-- **Expect**: at least so much money; something of a kind (category, material, rarity, minimum value; an unvalued item
-  only if it says so); or a promise (don't harm us, let us pass, leave).
-
-Left to "Let this character decide":
-
-| | Rule |
-|---|---|
-| Offer | Brave < 40: to leave. Else Selfish ≤ 30 and Loyal ≥ 60: no harm. Else with money, Selfish ≤ 45 and Tactical ≥ 60: a tenth of its money (in its main coin). |
-| Expect | Selfish ≥ 65 with money: 10 × level of its main coin (where that coin is worth 100+ of the smallest), else max(1, ⌈level ÷ 2⌉). Else Brave < 40: no harm. |
-
-On its standoff turn, before talking:
-
-1. **Asking**: anyone across who would meet it hands it over: its offer if that meets it; a promise if willing (no
-   harm: Brave < 85 or willing to pay; passage: Brave < 60 or willing to pay; leaving: Brave < 40, or Selfish ≥ 60 and
-   Brave < 60); money or the cheapest matching item, if willing to pay. A PC hands over goods only if it offered them.
-2. **Offering**: someone across who expects what it offers takes it. If nobody there expects anything, their voice
-   (commander, else the first) takes it with chance clamp(p, 0.03, 0.6): a promise 0.15 + (60 − Brave) ÷ 200 + 0.1
-   for no harm; goods 0.15 + (Selfish − 50) ÷ 150 + 0.05 for money.
-3. Unmet, it is irritated (+1 turn unmet), which feeds impatience.
-
-**Willing to pay**: its first pill with a say decides: yes for Peacekeeper, Diplomat, People-Pleaser, Moralist,
-Enabler, Chicken, Lazy, Fragile, Wallflower; no for Brawler, Instigator, Cruel, Vengeful, Relentless, Mercenary,
-Thief, Redeem-Seeker. Without one: yes if it can't abide violence, else if Selfish < 50 and (it would rather talk, or
-Brave < 60).
-
-A no-harm promise ends it as a truce (nobody wins); any other deal is a win for the side that got what it wanted.
-
-Code: `engine/behavior/bargain.js` `bargain`, `meets`, `answerFrom`, `takesUnasked`, `strike`;
-`engine/behavior/talk.js` `willingToPay`; `foundry/motives.js` `suggestMotives`.
-
-### Haggling and pressing
-
-Search: haggle, haggled, press, pressed, come down, holds out, talked down the price
-
-Decides what talk does about an unmet expectation. These are pitches like any other, with the DC + holding out.
-
-- **Haggle** (it asked and nothing met it): one step fewer. A success that doesn't yet convince calms it (−1 turn
-  unmet); a failure irritates it (+1). Convinced, it comes down: money halves (dropped below 2); a thing first drops
-  material and rarity, then halves its minimum value, then accepts an unvalued thing, then is dropped; leave becomes
-  passage, passage becomes no harm, no harm is dropped. Then the talker, or anyone on its side who would, meets the new
-  price and the deal is struck.
-- **Press** (the talker expects something the target could hand over): convinced, the target hands it over. A failure
-  irritates the talker.
-- A PC made to hand over one of its things it didn't offer keeps it unless the concede luck goes against it.
-
-**Holding out** = round((Selfish − 50) ÷ 12.5 + the sum of pill weights × place): Mercenary +3, Thief +2, Cruel,
-Vengeful, Relentless, Impatient +1 each; Peacekeeper −3, Diplomat −2, People-Pleaser −2, Moralist, Lazy, Chicken,
-Enabler −1 each.
-
-Example: a first-pick Mercenary with Selfish 70: round(1.6 + 3) = +5 to the DC.
-
-Code: `engine/behavior/bargain.js` `holdsOut`, `comeDown`, `haggled`, `pressed`, `bargainAim`.
-
-### Paying off a boss
-
-Search: bribe, bribed, pay off the boss, boss leaves
-
-Decides how a boss is talked down in a standoff.
-
-- Who pays: whoever on the talker's side is willing to pay and has the most money.
-- What: what the boss's side expects, if the payer has it; else what the payer offered; else 11–30% of its money (10 +
-  d20 percent); else a carried item.
-- The boss and its whole group (not PCs) stand down; the standoff is settled for the talker's side. In an argument,
-  it's a deal and everyone stays.
-
-Code: `engine/behavior/talk.js` `bribeFrom`, `bribe`, `applyOutcome`.
 
 ### Taking no side: neutral tokens and leans
 
@@ -1437,21 +1319,19 @@ Code: `engine/behavior/talk.js` `pitchTargets`, `aimOf`; `engine/behavior/neutra
 
 ### Meddling: neutrals getting involved
 
-Search: meddle, meddling, get involved, extort, squeeze, shakedown, aloof, keeps out of it
+Search: meddle, meddling, get involved, aloof, keeps out of it
 
 Decides whether someone leaning toward a side speaks up against that side's enemies. Decided once (again if its lean,
 or standoff and fight, changes).
 
 - odds = the leaned-to side's standing HP ÷ (its HP + its enemies'), counting temporary HP and stamina.
 - fond = clamp(lean ÷ 50, 0, 1.5); winning = clamp((odds − 0.35) ÷ 0.4, 0, 1).
-- p = (0.08 + 0.6 × fond × winning) × (1 + (Brave − 50) ÷ 100) × (1 + (Selfish − 50) ÷ 200), × 1.3 if it would rather
-  talk; clamped 0.02–0.85.
-- Involved, it squeezes them for money with chance clamp(0.1 + (Selfish − 50) ÷ 50, 0.05, 0.85); else it talks them
-  out of the fight. Squeezed and convinced, they pay (as giving something up) and it keeps out of it.
+- p = (0.08 + 0.6 × fond × winning) × (1 + (Brave − 50) ÷ 100), × 1.3 if it would rather talk; clamped 0.02–0.85.
+- Involved, it talks them out of the fight.
 
-Example: lean 50, odds 0.6, Brave 40, Selfish 60: (0.08 + 0.6 × 0.625) × 0.9 × 1.05 ≈ 43%; extort 30%.
+Example: lean 50, odds 0.6, Brave 40: (0.08 + 0.6 × 0.625) × 0.9 ≈ 41%.
 
-Code: `engine/behavior/neutral.js` `meddling`; `engine/behavior/talk.js` `applyOutcome` ("paid").
+Code: `engine/behavior/neutral.js` `meddling`.
 
 ### Taken for a foe, caught in the blast, spared in a truce
 
@@ -1763,7 +1643,7 @@ Each figure is the share of simulated fights in which it happened.
 
 | Figure | A fight counts when |
 |---|---|
-| A side wins | it is among the sides still in the fight at the end (a standoff settled by a deal: the side it was settled for) |
+| A side wins | it is among the sides still in the fight at the end (a standoff settled by talking a foe into backing off: the side it was settled for) |
 | Stalemate | it reached max rounds |
 | No one left | it ended with no side left (an argument whose talks collapsed counts here too) |
 | A PC dies | any player character ends it dead |
@@ -2744,8 +2624,8 @@ Decides what happens between the last blow and Do it For Real Now writing the fi
 - Then, for up to 100 rounds (about ten minutes) while anyone is dying: each victor in initiative order tends a dying
   friend (the most dying first; a spared foe only with free help), free healing first, then first aid, then spells and
   potions; then everyone dying makes its recovery check (fate applies).
-- What a creature was talked into giving up comes back if the taker ended dead, down, surrendered, stood down, beaten,
-  tied up, or under the owner's side's control.
+- What was taken from a creature (stolen or looted) comes back if the taker ended dead, down, surrendered, stood down,
+  beaten, tied up, or under the owner's side's control. Ground given stays given.
 
 Code: `engine/simulator.js` `aftermath`, `dealWithTheFallen`, `mercyOf`, `reclaimGoods`
 (`AFTERMATH_ROUNDS` 100); `engine/behavior/healing.js` `rescueOption`.

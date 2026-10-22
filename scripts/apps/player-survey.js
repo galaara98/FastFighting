@@ -48,7 +48,7 @@ export class PlayerSurvey extends HandlebarsApplicationMixin(ApplicationV2) {
     window: { title: "FASTFIGHTING.Survey.Title", icon: "fa-solid fa-clipboard-question", resizable: true },
     position: { width: 640, height: 640 },
     form: { handler: PlayerSurvey.#onChange, submitOnChange: true, closeOnSubmit: false },
-    actions: { sheetTab: PlayerSurvey.#onTab, ready: PlayerSurvey.#onReady, resetAll: PlayerSurvey.#onResetAll, togglePlaystyle: PlayerSurvey.#onTogglePlaystyle, setMotive: PlayerSurvey.#onSetMotive, partyVote: PlayerSurvey.#onPartyVote }
+    actions: { sheetTab: PlayerSurvey.#onTab, ready: PlayerSurvey.#onReady, resetAll: PlayerSurvey.#onResetAll, togglePlaystyle: PlayerSurvey.#onTogglePlaystyle, partyVote: PlayerSurvey.#onPartyVote }
   };
 
   static PARTS = {
@@ -256,13 +256,6 @@ export class PlayerSurvey extends HandlebarsApplicationMixin(ApplicationV2) {
     const actor = await fromUuid(target.dataset.actorUuid);
     const ok = await togglePlaystyle(actor, target.dataset.playstyle);
     if ( !ok ) ui.notifications.warn(loc("FASTFIGHTING.Playstyle.Max"));
-    this.render();
-  }
-
-  /** What it offers, or expects: the kind (each shows fields of its own). */
-  static async #onSetMotive(event, target) {
-    const actor = await fromUuid(target.dataset.actorUuid);
-    await setTactic(actor, `${target.dataset.motive}.kind`, target.dataset.kind);
     this.render();
   }
 

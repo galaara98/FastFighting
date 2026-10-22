@@ -20,7 +20,6 @@ import { SURPRISE } from "../engine/behavior/surprise.js";
 import { tacticsFor, isPlayerControlled, statedDesires, getStoredTactics, reactionPrefsFor } from "./tactics.js";
 import { ensureAutoConfig } from "./auto-config.js";
 import { partyWishes, voters, PARTY_TACTICS } from "./party.js";
-import { validMotives, NO_CATALOG, effectiveMotives } from "./motives.js";
 import { rankForCommand, autoLieutenants, partyRoles } from "./command-pick.js";
 import { setting } from "../settings.js";
 
@@ -355,10 +354,6 @@ function applyCharacterTactics(spec, entry) {
     spec.reactionPrefs = reactionPrefsFor(spec, stored);
     spec.rerolls = { self: !!stored.rerolls?.self, team: !!stored.rerolls?.team };
   }
-  // What it brings to a standoff, and what it wants out of it: only what it really has, and the system's own kinds of thing.
-  // (Left to the character: what "Let this character decide" stands for.)
-  const motives = validMotives(effectiveMotives(stored, { offer: calc.offer, expect: calc.expect }), spec.valuables, getAdapter()?.itemCatalog?.() ?? NO_CATALOG);
-  if ( motives ) spec.motives = motives;
   for ( const [k, v] of Object.entries(playstyles.traits) ) {
     if ( spec.traits[k] ) spec.traits[k] = { ...spec.traits[k], fudge: (spec.traits[k].fudge ?? 0) + v };
   }
