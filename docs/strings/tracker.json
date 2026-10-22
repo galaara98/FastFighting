@@ -45808,6 +45808,36 @@
    "commit": null,
    "hash": "0eb2ddee6f02"
   },
+  "dcc:FFDCC.Rolls.Morale": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.Rolls.Morale",
+   "area": "dcc/Rolls",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "18bb9492c49f"
+  },
+  "dcc:FFDCC.Rolls.Regeneration": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.Rolls.Regeneration",
+   "area": "dcc/Rolls",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "35de2da49504"
+  },
+  "dcc:FFDCC.Rolls.Stray": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.Rolls.Stray",
+   "area": "dcc/Rolls",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "07a807b42b47"
+  },
   "dcc:FFDCC.Saves": {
    "repo": "dcc",
    "file": "languages/en.json",
@@ -46160,6 +46190,16 @@
    "commit": null,
    "hash": "6cef4ccc1019"
   },
+  "dcc:FFDCC.Words.AnyLanguage": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.Words.AnyLanguage",
+   "area": "dcc/Words",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "b37fc5edb642"
+  },
   "dcc:FFDCC.Words.Beast": {
    "repo": "dcc",
    "file": "languages/en.json",
@@ -46364,6 +46404,16 @@
    "hash": "baba957f81aa",
    "gone": "2026-10-17"
   },
+  "dnd5e:code:scripts/commit.js:tellGiven#1": {
+   "repo": "dnd5e",
+   "file": "scripts/commit.js",
+   "key": "scripts/commit.js:tellGiven#1",
+   "area": "dnd5e/code",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "c012b13d478a"
+  },
   "dnd5e:code:scripts/main.js:(top)#1": {
    "repo": "dnd5e",
    "file": "scripts/main.js",
@@ -46383,6 +46433,16 @@
    "date": null,
    "commit": null,
    "hash": "14479c866183"
+  },
+  "dnd5e:code:scripts/reading.js:loadReading#1": {
+   "repo": "dnd5e",
+   "file": "scripts/reading.js",
+   "key": "scripts/reading.js:loadReading#1",
+   "area": "dnd5e/code",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "3f72954299a4"
   },
   "dnd5e:FFDND5E.Bolstered": {
    "repo": "dnd5e",
@@ -46596,6 +46656,16 @@
    "commit": null,
    "hash": "540690163794"
   },
+  "dnd5e:FFDND5E.DamageHandled": {
+   "repo": "dnd5e",
+   "file": "languages/en.json",
+   "key": "FFDND5E.DamageHandled",
+   "area": "dnd5e/General",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "dbb830c60036"
+  },
   "dnd5e:FFDND5E.Death.Dies": {
    "repo": "dnd5e",
    "file": "languages/en.json",
@@ -46750,6 +46820,26 @@
    "date": null,
    "commit": null,
    "hash": "4ba7e45ce4fd"
+  },
+  "dnd5e:FFDND5E.Given": {
+   "repo": "dnd5e",
+   "file": "languages/en.json",
+   "key": "FFDND5E.Given",
+   "area": "dnd5e/General",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "1f60bb77d227"
+  },
+  "dnd5e:FFDND5E.GivenWaits": {
+   "repo": "dnd5e",
+   "file": "languages/en.json",
+   "key": "FFDND5E.GivenWaits",
+   "area": "dnd5e/General",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "f583d82063a4"
   },
   "dnd5e:FFDND5E.Grapple": {
    "repo": "dnd5e",
@@ -48787,6 +48877,26 @@
    "date": null,
    "commit": null,
    "hash": "b78b5c7aa25d"
+  },
+  "ironsworn:FFIRONSWORN.Rolls.HarmTable": {
+   "repo": "ironsworn",
+   "file": "languages/en.json",
+   "key": "FFIRONSWORN.Rolls.HarmTable",
+   "area": "ironsworn/Rolls",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "cfff325381cf"
+  },
+  "ironsworn:FFIRONSWORN.Rolls.StressTable": {
+   "repo": "ironsworn",
+   "file": "languages/en.json",
+   "key": "FFIRONSWORN.Rolls.StressTable",
+   "area": "ironsworn/Rolls",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "531bd15d7cb0"
   },
   "ironsworn:FFIRONSWORN.SecureAnAdvantage": {
    "repo": "ironsworn",
