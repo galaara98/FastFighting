@@ -639,6 +639,16 @@ Hooks:
 - **Supply** (Ironsworn): what one loses (stolen, looted), the whole side has that much less of; Do it For Real Now lowers every friendly character's Supply, and every character the system shares it with. A foe's ground given is a mark of progress on its own track, the winners' reward.
 - **A quarrel beside the standoff:** hurt or insulted by a neutral that seems to be with the other side, a creature may blame that side and break the standoff (a tactical mind mostly sees through it). Peacemakers on either side (those who can't abide violence) calm the quarrel at once: talking the neutral into letting it go, or the side's fighters into leaving the neutral be, until it hurts them again.
 
+### Deals: bribes, extortion and scaring off
+
+- **`engine/behavior/deals.js`.** Three desire kinds (`bribe`, `extort`, `scare`), made each turn by `dealWishes` in `thinkOver`, acted on in the turn's "deal" step (`decideDeal`, then `offerDeal`), and in a standoff by `standoffDeal`. A scare is an extortion that asks for nothing.
+- **The check** goes through `systemRolled(run, u, "check", {purpose: "bribe" | "extort" | "scare", skill, deal})`, so a helper's `rollCheck` can make the system's own roll. `deal` is `{kind, ask, money, items: [{id, count}], wordless}`.
+- **Rules:** `talkRange` (feet, 30 by default), `dealCost` (else `talkCost`, else the basic action), `wordlessIntimidation` (the check's penalty for a threat without words; unset, none without words), `languages: false` (the system doesn't track languages: the GM approves the conversation first).
+- **Live hooks:** `run.live.dealAsk(run, request)` answers `{ask: "talkOk"}` (true/false) and `{ask: "answer"}` for a player's character ("accept"/"refuse"; null lets the engine decide).
+- **Options:** `dropGoods: false` when the table can't show goods on the ground (no Item Piles, no system loot): goods then move at once.
+- **Goods** are the giver's concessions (`how: "bribe" | "extort"`, `count`, `drop: {id, x, y}` when dropped, `picked` once picked up). The taker's `fetch` is the drop it walks to.
+- **Log types:** `deal` (`answer`: accept, refuse, offended, unpaid, unheard), `quit`, `quitCall`, `dropGoods`, `pickUp`, `dishonor`, and `offMap` with `walkedAway`.
+
 ### Groups and taking no side
 
 - A hostile group's leader is the one you pick, if it's in that group; otherwise the group's best. A neutral's kind: 5e its type and subtype; PF2e its ancestry, else its creature types; Ironsworn what the foe is. Different friend groups are nothing to each other.
@@ -659,7 +669,7 @@ Hooks:
 
 - **Leadership** ranks by the best social or warfare skill, plus commanding features (the system's `detectLeaders`).
 - **Chains of command** (`foundry/command-pick.js`): outside the party, the system's ranking of who leads (social and warfare skills, a commander's class, rallying abilities) counts double, and how bossy each member is sways it (its playstyles, Wants to Lead above all, then Instigator and Cruel, while People-Pleaser, Wallflower and Chicken hold back; its Brave and Tactical). A group of one has nobody to command. Tokens joining the fight or moving between groups reshuffle nothing. A lieutenant leads as a leader, never as a boss. Nobody able to lead: the group is leaderless.
-- **Bosses:** talked down like anyone else, but never into leaving.
+- **Bosses:** in a standoff, talked round like anyone (their group stands down with them); in a fight, only badly hurt (under a quarter of their hit points), when they surrender. Never into leaving.
 - **Scheming:** a Wants to Lead character not in command broods on a quarter of its turns as its first pick, less further down (×0.75, ×0.55, ×0.4), more with roleplay, at most a tenth staying true. With a treacherous streak, it wonders how to be rid of its commander (the story says so), refuses its leaders any help that turn (no healing, bolstering, guarding, following, or answering their requests), and is far easier to talk into changing sides (2 steps fewer, the DC 4 lower, the switch far likelier, the switch luck 20 higher).
 - **Morale** (`behavior/morale.js`): losses, wounds, a fallen leader or master, bad odds, and friends seen running, all against Brave.
 - **Fear:** being afraid wears on its nerve, more so for the less brave; a fear made worse past what its nerve bears gives it a wish of its own to get away. Both follow the fear as the system has it: lowered or lapsed, less or none.

@@ -5,13 +5,16 @@
  * at one walking away by the side that dealt with it, told to the GM.
  */
 import { describe, expect, test } from "vitest";
-import { beginRun, beginRound, prepareBattle } from "../scripts/engine/simulator.js";
+import { beginRun, beginRound, prepareBattle, takeTurn, runBatchSync } from "../scripts/engine/simulator.js";
 import { dealable, dealWishes, dealTerms, dealDC, offerDeal, quitFight, freeGroup, pickUp, dishonor, means, termsWorth } from "../scripts/engine/behavior/deals.js";
 import { levelOf } from "../scripts/engine/behavior/desire.js";
 import { remaining } from "../scripts/engine/behavior/talk.js";
 import { pf2eRules } from "./fixtures/three-action-rules.js";
 import { creature, strike, battle, social } from "./helpers.js";
 import { STATUS, NEUTRAL_PARTY } from "../scripts/constants.js";
+import { logLine } from "../scripts/story/log-lines.js";
+import { buildStory } from "../scripts/story/story.js";
+import { storyTables } from "./foundry-i18n.js";
 
 const traits = (t = {}) => Object.fromEntries(["tactical", "brave", "selfish", "loyal"].map(k => [k, { base: t[k] ?? 50, fudge: 0 }]));
 const at = (x, y = 0) => ({ position: { x, y, size: 5 } });
@@ -23,7 +26,7 @@ const goblin = (id = "goblin", extra = {}) => creature({ id, name: id, side: "ho
   social: talker(), valuables: purse(), ...at(20), ...extra });
 
 function fight(list, { bounds = { x0: -200, y0: -100, x1: 200, y1: 100 }, rules = pf2eRules, options = {}, command = null, seed = 3 } = {}) {
-  const spec = battle(list, { maxRounds: 6, positioning: true, aftermath: "none", ...options });
+  const spec = battle(list, { maxRounds: 6, positioning: true, aftermath: "none", opening: "fight", ...options });
   if ( bounds ) spec.bounds = bounds;
   if ( command ) spec.command = command;
   const run = beginRun(prepareBattle(spec, rules), seed, { log: true });
@@ -223,6 +226,10 @@ describe("striking the deal", () => {
     expect(h.spares.has("goblin")).toBe(true);
     expect(h.leaving ?? null).toBe(null);
     expect(dealable(run, g, h, "scare")).toBe(false);
+    // (Neither goes for the other now.)
+    takeTurn(run, g);
+    takeTurn(run, h);
+    expect(run.log.some(e => e.type === "attack" && ((e.actorId === "goblin" && e.targetId === "hero") || (e.actorId === "hero" && e.targetId === "goblin")))).toBe(false);
   });
 
   test("a threat that got through, refused all the same, frightens; again, more", () => {
@@ -314,5 +321,127 @@ describe("quitting the fight", () => {
     expect(dishonor(run, g, squire, say(run))).toBe(false);
     expect(dishonor(run, g, other, say(run))).toBe(false);
     expect(run.log.filter(e => e.type === "dishonor")).toEqual([expect.objectContaining({ actorId: "squire", targetId: "goblin", dealById: "hero" })]);
+  });
+});
+
+describe("in the turn", () => {
+  test("a hurt, timid creature goes within talking range of the one it fears and pays it to go; it walks off with the money", () => {
+    const run = fight([hero({ ...at(0) }), goblin("coward", { traits: traits({ brave: 5, selfish: 20, loyal: 20 }), social: talker(4), ...at(120) })]);
+    const [h, c] = [unit(run, "hero"), unit(run, "coward")];
+    c.hp = 4;
+    h.desire.stated.set("hurt|coward", 30);
+    // (The hero, a sure thing to take it: no saying no.)
+    h.prep.traits.loyal = 0;
+    takeTurn(run, c);
+    const deal = run.log.find(e => e.type === "deal");
+    // (120 ft off: it closes in this turn, and makes its offer on the next.)
+    expect(deal).toBeUndefined();
+    expect(run.log.some(e => e.type === "move" && e.actorId === "coward")).toBe(true);
+    takeTurn(run, c);
+    const offer = run.log.find(e => e.type === "deal");
+    expect(offer).toMatchObject({ actorId: "coward", kind: "bribe", targetId: "hero" });
+    expect(Math.hypot(c.pos.x - h.pos.x, c.pos.y - h.pos.y)).toBeLessThanOrEqual(36);
+    if ( offer.answer !== "accept" ) return;
+    expect(h.leaving?.why).toBe("deal");
+    // (A player's character: the money goes at once.)
+    expect(c.concessions[0]).toMatchObject({ how: "bribe", to: "hero" });
+    for ( let i = 0; i < 4 && h.status === STATUS.STANDING; i++ ) takeTurn(run, h);
+    expect(h.status).toBe(STATUS.FLED);
+    expect(h.walkedAway).toBe(true);
+    expect(run.log.some(e => e.type === "offMap" && e.actorId === "hero" && e.walkedAway)).toBe(true);
+  });
+
+  test("one paid apart, by a creature, picks the goods up on its way off", () => {
+    const run = fight([creature({ id: "squire", traits: traits(), social: talker(), valuables: purse(), ...at(0) }), goblin("goblin", { ...at(25) })]);
+    const [sq, g] = [unit(run, "squire"), unit(run, "goblin")];
+    g.prep.traits.loyal = 0;
+    const answer = offerDeal(run, sq, g, "bribe", say(run), { terms: { kind: "bribe", ask: "leave", money: 50, items: [] } });
+    expect(answer).toBe("accept");
+    expect(g.fetch).toBeTruthy();
+    takeTurn(run, g);
+    expect(run.log.some(e => e.type === "pickUp" && e.actorId === "goblin")).toBe(true);
+    expect(g.fetch).toBe(null);
+    expect(sq.concessions[0].picked).toBe(true);
+  });
+
+  test("one that quit into a friend group of those taking no side walks off, rather than standing watching", () => {
+    const run = fight([hero(), goblin("goblin", { ...at(40) }), goblin("other", { ...at(60) })]);
+    const g = unit(run, "goblin");
+    quitFight(run, g, { by: unit(run, "hero"), say: say(run) });
+    expect(g.side).toBe(NEUTRAL_PARTY);
+    const from = { ...g.pos };
+    takeTurn(run, g);
+    expect(Math.hypot(g.pos.x - from.x, g.pos.y - from.y)).toBeGreaterThan(50);
+    expect(run.log.filter(e => e.type === "move" && e.actorId === "goblin").every(e => e.purpose === "leave")).toBe(true);
+  });
+
+  test("struck by the side that paid it off: a dishonorable blow, in the log", () => {
+    const run = fight([hero({ actions: [strike({ bonus: 50 })], ...at(0) }), goblin("goblin", { ...at(5) }), goblin("other", { ...at(80) })]);
+    const [h, g] = [unit(run, "hero"), unit(run, "goblin")];
+    h.adjacent.add(g.id);
+    g.adjacent.add(h.id);
+    quitFight(run, g, { by: h, say: say(run) });
+    // (The goblin stays on its side, as it would with no group free, so the hero still takes it for a foe.)
+    g.side = "hostile";
+    g.homeSide = "hostile";
+    g.friendGroup = null;
+    takeTurn(run, h);
+    expect(run.log.some(e => e.type === "dishonor" && e.actorId === "hero" && e.targetId === "goblin")).toBe(true);
+  });
+
+  test("in a standoff, before any blow: a deal with one in talking range", () => {
+    let dealt = 0;
+    for ( let seed = 1; seed <= 20; seed++ ) {
+      const run = fight([hero({ ...at(0) }), goblin("bully", { traits: traits({ brave: 95, selfish: 95 }), level: 8, ...at(20) })], { options: { opening: "standoff" }, seed });
+      run.standoff ??= { by: null };
+      takeTurn(run, unit(run, "bully"));
+      if ( run.log.some(e => e.type === "deal" && e.actorId === "bully") ) dealt += 1;
+    }
+    expect(dealt).toBeGreaterThan(0);
+  });
+
+  test("whole fights with deals in them play out, and a batch of them counts the same as fight by fight", () => {
+    const spec = battle([hero({ ...at(0) }), goblin("coward", { traits: traits({ brave: 5, selfish: 20 }), ...at(40) }), goblin("bully", { traits: traits({ brave: 95, selfish: 95 }), level: 6, ...at(50) })],
+      { maxRounds: 6, positioning: true, aftermath: "none" });
+    spec.bounds = { x0: -200, y0: -100, x1: 200, y1: 100 };
+    const res = runBatchSync(spec, pf2eRules, { runs: 40 });
+    expect(res.runs ?? 40).toBe(40);
+  });
+});
+
+describe("told", () => {
+  const english = storyTables();
+  const tables = { get: k => english[k] };
+  const events = [
+    { type: "deal", actor: "Hero", target: "Goblin", kind: "bribe", terms: { kind: "bribe", ask: "leave", money: 40, items: [{ name: "Ring", count: 2 }] }, skill: "diplomacy", natural: 12, mod: 5, total: 17, dc: 15, dcStat: "will", degree: 2, answer: "accept", by: "check" },
+    { type: "deal", actor: "Hero", target: "Goblin", kind: "extort", terms: { kind: "extort", ask: "spare", money: 40, items: [] }, skill: "intimidation", natural: 3, mod: 5, total: 8, dc: 15, dcStat: "will", degree: 1, answer: "refuse", by: "player", wordless: true },
+    { type: "deal", actor: "Hero", target: "Goblin", kind: "scare", terms: { kind: "scare", ask: "leave", money: 0, items: [] }, skill: "intimidation", natural: 15, mod: 5, total: 20, dc: 15, dcStat: "will", degree: 2, answer: "refuse", by: "check", frightened: 2 },
+    { type: "deal", actor: "Hero", target: "Goblin", kind: "bribe", terms: { kind: "bribe", ask: "avoid", money: 400, items: [] }, skill: "diplomacy", degree: 3, natural: 20, mod: 5, total: 25, dc: 15, dcStat: "will", answer: "unpaid" },
+    { type: "deal", actor: "Hero", target: "Goblin", kind: "bribe", terms: { kind: "bribe", ask: "leave", money: 4, items: [] }, skill: "diplomacy", degree: 0, natural: 1, mod: 5, total: 6, dc: 15, dcStat: "will", answer: "offended" },
+    { type: "deal", actor: "Hero", target: "Goblin", kind: "bribe", terms: { kind: "bribe", ask: "leave", money: 4, items: [] }, answer: "unheard" },
+    { type: "quit", actor: "Goblin", by: "Hero", group: 2 },
+    { type: "quit", actor: "Grunt", by: "Hero", following: "Goblin" },
+    { type: "quitCall", actor: "Grunt", by: "Goblin", follows: true },
+    { type: "dropGoods", actor: "Squire", for: "Goblin", goods: [{ kind: "money", amount: 40 }, { kind: "item", item: { name: "Ring" }, count: 2 }] },
+    { type: "pickUp", actor: "Goblin", from: "Squire", goods: [{ kind: "money", amount: 40 }] },
+    { type: "offMap", actor: "Goblin", walkedAway: true },
+    { type: "dishonor", actor: "Squire", target: "Goblin", dealBy: "Hero" }
+  ];
+
+  test("every deal event has a log line with nothing left unfilled", () => {
+    for ( const e of events ) {
+      const line = logLine(e);
+      expect(line, e.type).toBeTruthy();
+      expect(line, line).not.toMatch(/[{}]|FASTFIGHTING\./);
+    }
+    expect(logLine(events[0])).toContain("Ring");
+    expect(logLine(events[2])).toContain("2");
+  });
+
+  test("and a story line, the same", () => {
+    const run = fight([hero(), goblin()]);
+    const result = { log: events.map((e, i) => ({ round: 1, turn: i, actorId: "hero", ...e })), units: {}, rounds: 1, winner: null };
+    const prose = buildStory(result, run.prep.spec ?? { combatants: [] }, "roleplay", { tables, seed: 3 }).text;
+    expect(prose).not.toMatch(/\{[a-z]+\}|event\./);
   });
 });

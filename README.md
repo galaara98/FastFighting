@@ -113,7 +113,7 @@ Up to four pills per character, PC or NPC, in order of importance: the first cou
 | Lore-Collector | sizes up a new foe before acting against it, then rolls much better against every foe of that sort (by each helper's **Lore-Collector advantage** setting); may share what it learned; trap avoider |
 | Medic | heals first and early (a friend at three quarters is reason enough), the dying above all; keeps its healing for healing; bolsters when nobody's hurt; gives a friend its own potion; stays close |
 | Martyr | guards the weakest friend; fears nothing; avenges the fallen fiercely; rallies; taunts foes off its friends |
-| Mercenary | easy pickings; barely avenges anyone; gives up when it gets hard; its flight takes others along; never pays a boss off |
+| Mercenary | easy pickings; barely avenges anyone; gives up when it gets hard; its flight takes others along; extorts, and takes a bribe readily |
 | Moralist | never strikes the fallen and pulls killing blows where the system allows; heals friends, guards the weakest; can't abide violence |
 | Peacekeeper | hard to taunt; a standoff with it lasts longer; calms quarrels; foes it talks round stand down; its words are trusted, and it never threatens; spares the fallen; can't abide violence |
 | People-Pleaser | wants what its leader wants; likes to talk and to bolster friends; can't abide violence |
@@ -210,6 +210,8 @@ Each creature keeps a list of [desires](STATS_AND_FORMULAS_README.md#desires-and
 ### Talking
 
 Talkers [persuade, intimidate or deceive](STATS_AND_FORMULAS_README.md#who-talks-and-how-often) with the system's skills until they [win enough successes](STATS_AND_FORMULAS_README.md#the-persuasion-track). Harm and failed pitches make a listener harder to sway, and after an insult (a critical failure) it won't listen again. Talker and listener need a shared language unless **Ignore languages** is on. A creature talked round [surrenders, flees, stands down or changes sides](STATS_AND_FORMULAS_README.md#what-a-convinced-foe-does); an enemy changing sides only stands aside, and only on **Luck: an enemy changing sides**. Only threats work on a PC, and only to make it run; one whose answer is "Let my weapons do the talking" won't listen at all.
+
+Creatures FastFighting plays also [strike deals](STATS_AND_FORMULAS_README.md#deals-bribes-extortion-and-scaring-off): the losing and timid pay a foe to leave, the greedy and bold extort money, the bold threaten the weaker into going, and a neutral sends off whoever comes too close. A bribe is easier than a threat, and a threat that asks for money hardest. The payer must still have the goods when they change hands. Paid apart, the goods are dropped for the taker to pick up. One who agrees to go joins a free neutral group if there is one (its leader urging the team to come too) and walks off the map; attacking it on its way is dishonorable, and the GM is told.
 
 An encounter [opens as a standoff](STATS_AND_FORMULAS_README.md#how-an-encounter-opens) when the sides would rather talk, or as **Opening** says; nobody attacks until someone [loses patience](STATS_AND_FORMULAS_README.md#impatience-what-breaks-a-standoff) or a blow lands. [**Only an argument: no fighting**](STATS_AND_FORMULAS_README.md#only-an-argument) never comes to blows: what would start a fight collapses the talks instead, and the results show how often. A neutral may [quarrel](STATS_AND_FORMULAS_README.md#crossed-grievance-truce-and-turning-on-a-side) with one side after a botched pitch, and only those two fight.
 

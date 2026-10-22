@@ -144,11 +144,12 @@ function upperHand(run, u, t) {
 }
 
 /**
- * What u wants of deals this turn (the logic layer): a bribe, an extortion or a threat at each one it could try it on,
- * as strongly as its nature and the fight say (its pills, styleOf: bribe, extort, scare; its force of personality).
+ * The deals u would want now: a bribe, an extortion or a threat at each one it could try it on, as strongly as its
+ * nature and the fight say (its pills, styleOf: bribe, extort, scare; its force of personality). [{kind, target, level}]
  */
-export function dealWishes(run, u) {
-  if ( !u.desire || !mayDeal(run, u) ) return;
+export function dealsWanted(run, u) {
+  if ( !u.desire || !mayDeal(run, u) ) return [];
+  const out = [];
   const brave = liveTrait(run, u, "brave");
   const selfish = liveTrait(run, u, "selfish");
   const style = styleOf(u);
@@ -168,17 +169,24 @@ export function dealWishes(run, u) {
           : 45 * nerve * Math.max(edge, close) * (1 - greed / 2);
       if ( level <= 0 ) continue;
       level += (style[kind] ?? 0) + flair;
-      if ( level >= LEAST && dealable(run, u, t, kind) ) think(u, kind, t.id, Math.min(MOST, level));
+      if ( level >= LEAST && dealable(run, u, t, kind) ) out.push({ kind, target: t, level: Math.min(MOST, level) });
     }
   }
+  return out;
+}
+
+/** What u wants of deals this turn: dealsWanted, in its logic layer. */
+export function dealWishes(run, u) {
+  for ( const w of dealsWanted(run, u) ) think(u, w.kind, w.target.id, w.level);
 }
 
 /** What a deal costs from a turn: the system's talking (rules.talkCost), else its basic action. */
 export const dealCost = rules => normalizeCost(rules, rules.dealCost ?? rules.talkCost ?? rules.basicAction ?? 1);
 
 /**
- * Whether u strikes a deal now, the next step of its turn: when that's what it most wants, at one it can get within
- * talking range of this turn. {kind, target, moves, cost}, or null.
+ * Whether u works on a deal now, the next step of its turn, when that's what it most wants: struck now (in talking
+ * range), or after getting there this turn; farther, a move toward it (it keeps at it). {kind, target, moves, cost},
+ * or null.
  */
 export function decideDeal(run, u, turn) {
   if ( !wantsKind(u, DEAL_KINDS) ) return null;
@@ -190,10 +198,12 @@ export function decideDeal(run, u, turn) {
   const cost = dealCost(rules);
   const moves = movesNeeded(run, u, t, { range: { max: talkRange(run) } });
   if ( !moves ) return turn.canAfford(cost) ? { kind: lead.kind, target: t, moves: 0, cost } : null;
-  if ( !Number.isFinite(moves) || moves > 1 || !canMove(run, u) ) return null;
+  if ( !Number.isFinite(moves) || !canMove(run, u) ) return null;
   const pool = mainPool(rules);
-  const units = turn.unitsForMoves(moves, run.prep.approachOf(u.id, t.id).speed);
-  return turn.canAfford({ ...cost, [pool]: (cost[pool] ?? 0) + units }) ? { kind: lead.kind, target: t, moves, cost } : null;
+  const speed = run.prep.approachOf(u.id, t.id).speed;
+  // (Too far to strike it this turn: closer, as far as the turn goes.)
+  if ( moves > 1 ) return turn.canAfford({ [pool]: turn.unitsForMoves(1, speed) }) ? { kind: lead.kind, target: t, moves, cost } : null;
+  return turn.canAfford({ ...cost, [pool]: (cost[pool] ?? 0) + turn.unitsForMoves(moves, speed) }) ? { kind: lead.kind, target: t, moves, cost } : null;
 }
 
 /**

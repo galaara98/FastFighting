@@ -4915,6 +4915,26 @@
    "commit": null,
    "hash": "e2f992c9203e"
   },
+  "core:FASTFIGHTING.Desire.Kind.bribe": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Desire.Kind.bribe",
+   "area": "core/Desire",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "4fc7dd96d2ec"
+  },
+  "core:FASTFIGHTING.Desire.Kind.extort": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Desire.Kind.extort",
+   "area": "core/Desire",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "f601d51ebf02"
+  },
   "core:FASTFIGHTING.Desire.Kind.free": {
    "repo": "core",
    "file": "languages/en.json",
@@ -4994,6 +5014,16 @@
    "date": null,
    "commit": null,
    "hash": "9b059f912cb5"
+  },
+  "core:FASTFIGHTING.Desire.Kind.scare": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Desire.Kind.scare",
+   "area": "core/Desire",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "6b1b59a9348c"
   },
   "core:FASTFIGHTING.Desire.Kind.talk": {
    "repo": "core",
@@ -7862,6 +7892,16 @@
    "commit": null,
    "hash": "d81888426348"
   },
+  "core:FASTFIGHTING.Log.Count": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.Count",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "dba88c2b3051"
+  },
   "core:FASTFIGHTING.Log.Counter": {
    "repo": "core",
    "file": "languages/en.json",
@@ -7961,7 +8001,158 @@
    "date": null,
    "commit": null,
    "hash": "8739b2b38f3f",
-   "gone": "2026-10-22"
+   "gone": "2026-10-22",
+   "changed": true
+  },
+  "core:FASTFIGHTING.Log.DealAccept": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.DealAccept",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "070c160a6299"
+  },
+  "core:FASTFIGHTING.Log.DealAcceptPlayer": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.DealAcceptPlayer",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "d08565bc53b9"
+  },
+  "core:FASTFIGHTING.Log.DealAskAvoid": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.DealAskAvoid",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "a20766340ec3"
+  },
+  "core:FASTFIGHTING.Log.DealAskLeave": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.DealAskLeave",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "af193190b8d3"
+  },
+  "core:FASTFIGHTING.Log.DealAskSpare": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.DealAskSpare",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "14b91646baf7"
+  },
+  "core:FASTFIGHTING.Log.DealBribe": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.DealBribe",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "fa411ec2decb"
+  },
+  "core:FASTFIGHTING.Log.DealExtort": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.DealExtort",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "a224f7a437d8"
+  },
+  "core:FASTFIGHTING.Log.DealFrightened": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.DealFrightened",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "d974e774a75d"
+  },
+  "core:FASTFIGHTING.Log.DealOffended": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.DealOffended",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "5021d3393afb"
+  },
+  "core:FASTFIGHTING.Log.DealRefuse": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.DealRefuse",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "83c874d33e8b"
+  },
+  "core:FASTFIGHTING.Log.DealRefusePlayer": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.DealRefusePlayer",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "b253abee5004"
+  },
+  "core:FASTFIGHTING.Log.DealScare": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.DealScare",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "270c1bd89662"
+  },
+  "core:FASTFIGHTING.Log.DealUnheard": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.DealUnheard",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "baa26d6b3655"
+  },
+  "core:FASTFIGHTING.Log.DealUnpaid": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.DealUnpaid",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "84b6e2c0679a"
+  },
+  "core:FASTFIGHTING.Log.DealWordless": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.DealWordless",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "0de4dd0e06ff"
   },
   "core:FASTFIGHTING.Log.DeedLine": {
    "repo": "core",
@@ -8073,6 +8264,26 @@
    "commit": null,
    "hash": "7acc4ad35816"
   },
+  "core:FASTFIGHTING.Log.DesireBribe": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.DesireBribe",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "fce07324e0e7"
+  },
+  "core:FASTFIGHTING.Log.DesireExtort": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.DesireExtort",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "afe6e3be5bb2"
+  },
   "core:FASTFIGHTING.Log.DesireFree": {
    "repo": "core",
    "file": "languages/en.json",
@@ -8133,6 +8344,16 @@
    "commit": null,
    "hash": "84313ef39b0a"
   },
+  "core:FASTFIGHTING.Log.DesireScare": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.DesireScare",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "c19837f9896d"
+  },
   "core:FASTFIGHTING.Log.DesireTalk": {
    "repo": "core",
    "file": "languages/en.json",
@@ -8192,6 +8413,16 @@
    "date": null,
    "commit": null,
    "hash": "53831a236a18"
+  },
+  "core:FASTFIGHTING.Log.Dishonor": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.Dishonor",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "7c0544e91e80"
   },
   "core:FASTFIGHTING.Log.Door": {
    "repo": "core",
@@ -8312,6 +8543,16 @@
    "date": null,
    "commit": null,
    "hash": "508a49991ce4"
+  },
+  "core:FASTFIGHTING.Log.DropGoods": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.DropGoods",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "b842b3079c8c"
   },
   "core:FASTFIGHTING.Log.Duel": {
    "repo": "core",
@@ -9907,6 +10148,16 @@
    "commit": null,
    "hash": "97f6d6a388dd"
   },
+  "core:FASTFIGHTING.Log.OffMapWalked": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.OffMapWalked",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "c87ed585e707"
+  },
   "core:FASTFIGHTING.Log.OnSelf": {
    "repo": "core",
    "file": "languages/en.json",
@@ -10118,6 +10369,16 @@
    "date": null,
    "commit": null,
    "hash": "16c88e6970b2"
+  },
+  "core:FASTFIGHTING.Log.PickUp": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.PickUp",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "6df1efb9cb68"
   },
   "core:FASTFIGHTING.Log.Prepare": {
    "repo": "core",
@@ -10371,6 +10632,66 @@
    "date": null,
    "commit": null,
    "hash": "96feb8c3bb34"
+  },
+  "core:FASTFIGHTING.Log.Quit": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.Quit",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "6b51cc8ec360"
+  },
+  "core:FASTFIGHTING.Log.QuitCall": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.QuitCall",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "583ce5a1fa83"
+  },
+  "core:FASTFIGHTING.Log.QuitCallGoes": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.QuitCallGoes",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "f1537d8de0bb"
+  },
+  "core:FASTFIGHTING.Log.QuitCallStays": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.QuitCallStays",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "ab90b11836e7"
+  },
+  "core:FASTFIGHTING.Log.QuitFollow": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.QuitFollow",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "defab75ba5b6"
+  },
+  "core:FASTFIGHTING.Log.QuitGroup": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.QuitGroup",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "597301360507"
   },
   "core:FASTFIGHTING.Log.Rally": {
    "repo": "core",
@@ -19938,6 +20259,76 @@
    "commit": null,
    "hash": "38f36f42e39e"
   },
+  "core:FASTFIGHTING.Story.Part.dealBribe": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Story.Part.dealBribe",
+   "area": "core/Story",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "621a664380a1"
+  },
+  "core:FASTFIGHTING.Story.Part.dealBribeRefused": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Story.Part.dealBribeRefused",
+   "area": "core/Story",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "c895481e4340"
+  },
+  "core:FASTFIGHTING.Story.Part.dealExtort": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Story.Part.dealExtort",
+   "area": "core/Story",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "455d222ee597"
+  },
+  "core:FASTFIGHTING.Story.Part.dealExtortRefused": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Story.Part.dealExtortRefused",
+   "area": "core/Story",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "54469656ebf5"
+  },
+  "core:FASTFIGHTING.Story.Part.dealOffended": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Story.Part.dealOffended",
+   "area": "core/Story",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "649bab492e1e"
+  },
+  "core:FASTFIGHTING.Story.Part.dealScare": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Story.Part.dealScare",
+   "area": "core/Story",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "b5997e39e378"
+  },
+  "core:FASTFIGHTING.Story.Part.dealScareRefused": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Story.Part.dealScareRefused",
+   "area": "core/Story",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "88cde18f8f7b"
+  },
   "core:FASTFIGHTING.Story.Part.dealStruck": {
    "repo": "core",
    "file": "languages/en.json",
@@ -19948,6 +20339,26 @@
    "commit": null,
    "hash": "971b4bee3688",
    "gone": "2026-10-22"
+  },
+  "core:FASTFIGHTING.Story.Part.dealUnheard": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Story.Part.dealUnheard",
+   "area": "core/Story",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "bc14d0a20309"
+  },
+  "core:FASTFIGHTING.Story.Part.dealUnpaid": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Story.Part.dealUnpaid",
+   "area": "core/Story",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "8853f4cc9e5c"
   },
   "core:FASTFIGHTING.Story.Part.death": {
    "repo": "core",
@@ -20069,6 +20480,16 @@
    "commit": null,
    "hash": "8f5776cce47e",
    "gone": "2026-10-14"
+  },
+  "core:FASTFIGHTING.Story.Part.dishonor": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Story.Part.dishonor",
+   "area": "core/Story",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "305828b5e9ee"
   },
   "core:FASTFIGHTING.Story.Part.distance": {
    "repo": "core",
@@ -20270,6 +20691,16 @@
    "date": null,
    "commit": null,
    "hash": "0036bde2a9b9"
+  },
+  "core:FASTFIGHTING.Story.Part.dropGoods": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Story.Part.dropGoods",
+   "area": "core/Story",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "2bc7df5802d1"
   },
   "core:FASTFIGHTING.Story.Part.dropProne": {
    "repo": "core",
@@ -21929,6 +22360,16 @@
    "commit": null,
    "hash": "91eb2681ef61"
   },
+  "core:FASTFIGHTING.Story.Part.pickUp": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Story.Part.pickUp",
+   "area": "core/Story",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "67e616f71fbc"
+  },
   "core:FASTFIGHTING.Story.Part.piercing": {
    "repo": "core",
    "file": "languages/en.json",
@@ -22101,6 +22542,26 @@
    "date": null,
    "commit": null,
    "hash": "84edb6a53736"
+  },
+  "core:FASTFIGHTING.Story.Part.quit": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Story.Part.quit",
+   "area": "core/Story",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "f6b05b11614b"
+  },
+  "core:FASTFIGHTING.Story.Part.quitFollow": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Story.Part.quitFollow",
+   "area": "core/Story",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "722604ed76fc"
   },
   "core:FASTFIGHTING.Story.Part.radiant": {
    "repo": "core",
@@ -23566,6 +24027,16 @@
    "date": null,
    "commit": null,
    "hash": "08ee52ae125a"
+  },
+  "core:FASTFIGHTING.Story.Part.walkedAway": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Story.Part.walkedAway",
+   "area": "core/Story",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "87957422b87b"
   },
   "core:FASTFIGHTING.Story.Part.wander": {
    "repo": "core",
@@ -37297,6 +37768,76 @@
    "commit": null,
    "hash": "376f7c7ac200"
   },
+  "core:story:event.dealBribe": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "event.dealBribe",
+   "area": "core/story.event",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "c81854a3d346"
+  },
+  "core:story:event.dealBribeRefused": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "event.dealBribeRefused",
+   "area": "core/story.event",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "7461f4acba12"
+  },
+  "core:story:event.dealExtort": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "event.dealExtort",
+   "area": "core/story.event",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "779112fab4e7"
+  },
+  "core:story:event.dealExtortRefused": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "event.dealExtortRefused",
+   "area": "core/story.event",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "9418f1e7e346"
+  },
+  "core:story:event.dealOffended": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "event.dealOffended",
+   "area": "core/story.event",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "285a8fcb90c4"
+  },
+  "core:story:event.dealScare": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "event.dealScare",
+   "area": "core/story.event",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "d29324ca5b62"
+  },
+  "core:story:event.dealScareRefused": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "event.dealScareRefused",
+   "area": "core/story.event",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "f3e175d712e6"
+  },
   "core:story:event.dealStruck": {
    "repo": "core",
    "file": "story/en.json",
@@ -37307,6 +37848,26 @@
    "commit": null,
    "hash": "f0c7ca3a2f7f",
    "gone": "2026-10-22"
+  },
+  "core:story:event.dealUnheard": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "event.dealUnheard",
+   "area": "core/story.event",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "b8ebd6054383"
+  },
+  "core:story:event.dealUnpaid": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "event.dealUnpaid",
+   "area": "core/story.event",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "57b98ef0263a"
   },
   "core:story:event.death": {
    "repo": "core",
@@ -37349,6 +37910,16 @@
    "commit": null,
    "hash": "0a632875f782",
    "gone": "2026-10-14"
+  },
+  "core:story:event.dishonor": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "event.dishonor",
+   "area": "core/story.event",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "65def323690b"
   },
   "core:story:event.dodge": {
    "repo": "core",
@@ -37472,6 +38043,16 @@
    "hash": "102f44f8f78d",
    "changed": true,
    "gone": "2026-10-14"
+  },
+  "core:story:event.dropGoods": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "event.dropGoods",
+   "area": "core/story.event",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "c6176065a36c"
   },
   "core:story:event.duelLose": {
    "repo": "core",
@@ -38237,6 +38818,16 @@
    "commit": null,
    "hash": "7c0a154765fb"
   },
+  "core:story:event.pickUp": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "event.pickUp",
+   "area": "core/story.event",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "758e9c351566"
+  },
   "core:story:event.potion": {
    "repo": "core",
    "file": "story/en.json",
@@ -38301,6 +38892,26 @@
    "commit": null,
    "hash": "752b8f5c2e1a",
    "gone": "2026-10-14"
+  },
+  "core:story:event.quit": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "event.quit",
+   "area": "core/story.event",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "5b42a12e5900"
+  },
+  "core:story:event.quitFollow": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "event.quitFollow",
+   "area": "core/story.event",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "114ddcee06c2"
   },
   "core:story:event.rally": {
    "repo": "core",
@@ -39111,6 +39722,16 @@
    "date": null,
    "commit": null,
    "hash": "bf23cb53a48e"
+  },
+  "core:story:event.walkedAway": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "event.walkedAway",
+   "area": "core/story.event",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "bb5a134e9fb4"
   },
   "core:story:event.watch": {
    "repo": "core",

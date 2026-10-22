@@ -3311,6 +3311,81 @@
     "With {by} beaten, {amount} returns to {actor}.",
     "{actor} pries {amount} back from {by}."
   ],
+  "event.dealBribe": [
+    "{actor} offers {target} {amount} to {ask}, and {target} takes it.",
+    "{actor} holds out {amount}; {target} pockets it and agrees to {ask}.",
+    "{amount} changes hands: {target} agrees to {ask}."
+  ],
+  "event.dealBribeRefused": [
+    "{actor} offers {target} {amount} to {ask}. {target} isn't interested.",
+    "{target} turns down {actor}'s {amount}.",
+    "{actor} tries to buy {target} off with {amount}, and fails."
+  ],
+  "event.dealExtort": [
+    "{actor} demands {amount} from {target}, and {target} pays.",
+    "{target} hands over {amount} to {actor}'s threats.",
+    "{actor} squeezes {amount} out of {target}."
+  ],
+  "event.dealExtortRefused": [
+    "{actor} demands {amount} from {target}, who refuses.",
+    "{target} won't pay {actor} a thing.",
+    "{actor}'s threats get nothing out of {target}."
+  ],
+  "event.dealScare": [
+    "{actor} tells {target} to clear off, and {target} goes.",
+    "{actor} stares {target} down until {target} turns to leave.",
+    "One look from {actor}, and {target} wants no more of this."
+  ],
+  "event.dealScareRefused": [
+    "{actor} tells {target} to clear off. {target} stands firm.",
+    "{target} won't be scared off by {actor}.",
+    "{actor}'s threats don't move {target}."
+  ],
+  "event.dealOffended": [
+    "{target} takes {actor}'s offer as an insult.",
+    "{actor}'s proposal only makes {target} angrier.",
+    "{target} is offended, and lets {actor} know it."
+  ],
+  "event.dealUnpaid": [
+    "The deal falls through: {payer} can't come up with {amount}.",
+    "{payer} hasn't got {amount}, and the deal is off.",
+    "No deal: {payer} comes up short."
+  ],
+  "event.dealUnheard": [
+    "{actor} tries to make a deal with {target}, but they can't understand each other.",
+    "{actor} and {target} can't make themselves understood.",
+    "Whatever {actor} offers, {target} doesn't understand it."
+  ],
+  "event.quit": [
+    "{actor} wants no more of this fight and heads off.",
+    "{actor} has had enough and leaves the fight.",
+    "{actor} turns away from the fight."
+  ],
+  "event.quitFollow": [
+    "{actor} goes with {by}.",
+    "{actor} follows {by} out of the fight.",
+    "{actor} isn't staying without {by}."
+  ],
+  "event.dropGoods": [
+    "{actor} drops {amount} on the ground for {target}.",
+    "{actor} tosses {amount} to the ground for {target} to collect.",
+    "{actor} leaves {amount} on the ground for {target}."
+  ],
+  "event.pickUp": [
+    "{actor} picks up what {from} left.",
+    "{actor} collects {amount} from the ground.",
+    "{actor} scoops up {amount}."
+  ],
+  "event.walkedAway": [
+    "{actor} walks away from the fight.",
+    "{actor} is gone, as agreed.",
+    "{actor} leaves, and doesn't look back."
+  ],
+  "event.dishonor": [
+    "{actor} strikes at {target}, who was walking away.",
+    "{actor} attacks {target} even as {target} leaves as agreed.",
+    "{target} was leaving; {actor} attacks anyway."
+  ],
   "event.strayHit": [
     "{actor}'s shot goes wide into the melee and strikes {target}!",
     "The shot misses its mark and finds {target} instead.",

@@ -13,7 +13,7 @@ import { damageFamily } from "./families.js";
 import { conditionOf } from "./master.js";
 import { desireBand, DESIRE_BAND_KEYS } from "../engine/behavior/desire.js";
 import { listJoin, listItems, localize, hasWords, distanceText, escapeHtml as esc, escapeRegExp } from "../i18n.js";
-import { logLine, endLine, logTerm, concessionText } from "./log-lines.js";
+import { logLine, endLine, logTerm, concessionText, goodsText, askText } from "./log-lines.js";
 import { healthCallouts, healthLine } from "./health.js";
 
 export { concessionText };
@@ -526,7 +526,7 @@ function narrate(e, roll, rel, fill) {
     }
     case "leave": return roll("event.leave", f);
     // (Off the map, leaving the fight: as one who slips away. Stopped on its way: the GMs' to know, as the log has it.)
-    case "offMap": return roll("event.leave", f);
+    case "offMap": return roll(e.walkedAway ? "event.walkedAway" : "event.leave", f);
     // (A spell lost as it's cast: PF2e's stupefied.)
     case "disrupted": return roll("event.spellFizzles", { ...f, weapon: e.action ?? "" });
     case "leaveStopped": return logLine(e);
@@ -606,6 +606,20 @@ function narrate(e, roll, rel, fill) {
       if ( e.stolen ) return roll(e.feint ? "event.theftFeint" : "event.theftSuccess", { ...f, amount: concessionText(e.stolen), weapon: e.feint?.weapon ?? "" });
       return roll(e.noticed ? "event.theftCaught" : "event.theftEmpty", f);
     case "reclaim": return roll("event.reclaim", { ...f, amount: concessionText(e.concession) });
+    case "deal": {
+      const g = { ...f, amount: goodsText(e.terms), ask: askText(e.terms?.ask), payer: e.kind === "bribe" ? e.actor : e.target ?? "" };
+      if ( e.answer === "unheard" ) return roll("event.dealUnheard", g);
+      if ( e.answer === "offended" ) return roll("event.dealOffended", g);
+      if ( e.answer === "unpaid" ) return roll("event.dealUnpaid", g);
+      const kind = { bribe: "Bribe", extort: "Extort", scare: "Scare" }[e.kind] ?? "Scare";
+      return roll(`event.deal${kind}${e.answer === "accept" ? "" : "Refused"}`, g);
+    }
+    // (Quitting is told with the deal; following a commander out of it, here.)
+    case "quit": return e.following ? roll("event.quitFollow", { ...f, by: e.following }) : roll("event.quit", f);
+    case "quitCall": return "";
+    case "dropGoods": return roll("event.dropGoods", { ...f, amount: goodsText(e.goods), target: e.for ?? "" });
+    case "pickUp": return roll("event.pickUp", { ...f, amount: goodsText(e.goods), from: e.from ?? "" });
+    case "dishonor": return roll("event.dishonor", f);
     case "persistent": return roll("event.persistent", f);
     case "afflictionSave":
       // (A counted save that doesn't settle it yet: told when it's over.)

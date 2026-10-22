@@ -45,6 +45,7 @@ import { perceives } from "./behavior/senses.js";
 import { isAnimalistic, animalTactics } from "./behavior/animal.js";
 import { stealChance, theftTarget, theftPlan, attemptTheft, robbable } from "./behavior/theft.js";
 import { fallenWishes, decideFallen, bind, rob, stayBound, takesPrisoners, robsTheFallen, freeFriend, rollOf } from "./behavior/fallen.js";
+import { dealWishes, decideDeal, offerDeal, pickUp, dishonor, dealsWanted, talkRange, dealCost } from "./behavior/deals.js";
 import { holdsOf, ownHolds, known, tryHold, release, escapeCost, isBound, remediesOf, bears } from "./behavior/holds.js";
 import { forcedPath, fallDamage, resettle } from "./behavior/forced.js";
 import { stepOf, stacks, stageRounds, stageMove } from "./behavior/afflictions.js";
@@ -1241,8 +1242,12 @@ function executeOffense(run, u, action, t, attacksMade) {
     run.blood = true;
     return;
   }
-  // (Struck at on its way off the map: it may turn to face it: behavior/leaving.js.)
-  if ( t?.leaving ) confronted(run, t, u, "attack", logger(run));
+  // (Struck at on its way off the map: it may turn to face it: behavior/leaving.js. Going by a deal with the striker's
+  // side: a dishonorable blow, told: behavior/deals.js.)
+  if ( t?.leaving ) {
+    dishonor(run, t, u, logger(run));
+    confronted(run, t, u, "attack", logger(run));
+  }
   if ( action.casting ) {
     const tier = castFor(run, u, action, t);
     run.blood = true;
@@ -2613,6 +2618,11 @@ function leavingTurn(run, u, turn, { whole = true } = {}) {
     turn.spend(cost);
     if ( !attemptEscape(run, u, hold).success ) break;
   }
+  // (What was dropped for it, first: a bribe's taker picks it up on its way.)
+  if ( u.fetch ) {
+    fetchGoods(run, u, turn);
+    way = wayOff(run, u);
+  }
   if ( !way ) {
     // (No way off: it looks for one; its turns given to going, it's gone all the same.)
     endOfTurn(run, u);
@@ -2652,16 +2662,50 @@ function healUrgency(ally) {
 }
 
 /** Which part of a turn works on each kind of desire (the top of its agenda first: playFromHere). */
-const AGENDA_GROUPS = Object.freeze({ heal: "heal", aid: "aid", bolstered: "aid", bind: "fallen", rob: "fallen", free: "fallen", hurt: "fight", protect: "fight" });
+const AGENDA_GROUPS = Object.freeze({ heal: "heal", aid: "aid", bolstered: "aid", bind: "fallen", rob: "fallen", free: "fallen", bribe: "deal", extort: "deal", scare: "deal", hurt: "fight", protect: "fight" });
 
 /** Whole turns in a row given to going that see a creature leaving the fight gone, at the edge or not. */
 const LEAVING_TURNS = 2;
 
-/** u is off the map, leaving the fight (or, with no way off, gone unseen: blinked): fled. */
+/**
+ * u is off the map, leaving the fight (or, with no way off, gone unseen: blinked): fled. Leaving by a deal, it walked
+ * away (behavior/deals.js): what it was given goes with it.
+ */
 function offMap(run, u, extra = {}) {
+  const walked = u.leaving?.why === "deal";
   goneFrom(run, u);
   u.leaving = null;
-  log(run, u, { type: "offMap", ...extra });
+  if ( walked ) u.walkedAway = true;
+  log(run, u, { type: "offMap", ...extra, ...(walked ? { walkedAway: true } : {}) });
+}
+
+/**
+ * u goes for what was dropped for it (behavior/deals.js give), if it's free to: no foe beside it, able to move. It
+ * walks there and, there with the turn to spare, picks it up (rules.lootCost; the basic action). True if it did anything.
+ */
+function fetchGoods(run, u, turn) {
+  const f = u.fetch;
+  if ( !f || !u.pos || !canMove(run, u) || enemiesOf(run, u).some(o => isStanding(o) && u.adjacent.has(o.id)) ) return false;
+  const rules = run.prep.rules;
+  const cost = normalizeCost(rules, rules.lootCost ?? rules.basicAction ?? 1);
+  let did = false;
+  for ( let step = 0; step < MAX_STEPS_PER_TURN && Math.hypot(f.x - u.pos.x, f.y - u.pos.y) > 5.5; step++ ) {
+    const budget = turn.payForMove(Math.max(...Object.values(u.spec.speeds ?? { walk: 25 })) || 25);
+    if ( !budget ) break;
+    const move = moveTowardPoint(run, u, f, budget, 5);
+    turn.usedMove(move.cost);
+    did = true;
+    if ( run.log && move.feet > 0 ) {
+      log(run, u, { type: "move", mode: move.mode, feet: move.feet, mult: 1, regions: [], toward: null, towardId: null, from: move.from, to: move.to, reached: move.reached, purpose: "fetch", tactical: liveTier(run, u), cover: false });
+    }
+    if ( move.feet <= 0 ) break;
+  }
+  if ( Math.hypot(f.x - u.pos.x, f.y - u.pos.y) <= 5.5 && turn.canAfford(cost) ) {
+    turn.spend(cost);
+    pickUp(run, u, logger(run));
+    did = true;
+  }
+  return did;
 }
 
 /** u is out of the fight, run off: its concentration and its holds on others go, and nobody's beside it any more. */
@@ -3121,6 +3165,8 @@ function thinkOver(run, u) {
   if ( wish(u.spec.avoidKilling) && run.neutral && run.prep.options.talking && canTalk(u) && u.tac?.talk !== "never" ) {
     u.peace = peaceDesires(run, u, Math.max(40, ...[...u.desire.logic.values()]) * wish(u.spec.avoidKilling));
   }
+  // Deals: someone to pay to go, to make pay, to scare off (behavior/deals.js).
+  dealWishes(run, u);
   if ( u.tac?.target === "protect" ) {
     const ward = run.units.find(a => a !== u && a.side === u.side && isStanding(a) && run.units.some(e => e.targetId === a.id && isStanding(e) && areEnemies(run, a, e)));
     if ( ward ) think(u, "protect", ward.id, WARD.base + (liveTrait(run, u, "loyal") - 50) * WARD.loyal);
@@ -3317,10 +3363,38 @@ function standoffTurn(run, u) {
   const rules = run.prep.rules;
   const turn = turnFor(run, u);
   tellLore(run, u, turn); // (what it learned last turn, if it means to tell its friends)
+  standoffDeal(run, u, turn);
   const actions = turn.howMany(rules.talkCost ?? rules.basicAction ?? 1);
   if ( !keepsPeace(run, u, actions) && !observes(run, u, turn) ) standoffPitching(run, u, standoffPitches(run, u, actions));
   u.turnsTaken += 1;
   endOfTurn(run, u);
+}
+
+/**
+ * In a standoff: the deal it wants most (behavior/deals.js), as often as it wants it (its level, of 100), with one in
+ * talking range or a move from it (it steps that close first). True if it made one.
+ */
+function standoffDeal(run, u, turn) {
+  const rules = run.prep.rules;
+  const cost = dealCost(rules);
+  if ( !turn.canAfford(cost) ) return false;
+  const reach = { range: { max: talkRange(run) } };
+  const moves = w => movesNeeded(run, u, w.target, reach);
+  const best = dealsWanted(run, u).filter(w => moves(w) === 0 || (moves(w) === 1 && canMove(run, u))).sort((a, b) => b.level - a.level)[0];
+  if ( !best || !run.rng.chance(best.level / 100) ) return false;
+  if ( moves(best) > 0 ) {
+    const pool = mainPool(rules);
+    const speed = approach(run, u, best.target).speed;
+    if ( !turn.canAfford({ ...cost, [pool]: (cost[pool] ?? 0) + turn.unitsForMoves(1, speed) }) ) return false;
+    const budget = turn.payForMove(speed);
+    if ( !budget ) return false;
+    const move = moveToward(run, u, best.target, talkRange(run), budget);
+    turn.usedMove(move.cost);
+    if ( !moveLog(run, u, move, best.target) || movesNeeded(run, u, best.target, reach) !== 0 ) return false;
+  }
+  turn.spend(cost);
+  offerDeal(run, u, best.target, best.kind, logger(run));
+  return true;
 }
 
 /**
@@ -3583,12 +3657,13 @@ function playFromHere(run, u) {
   }
 
   // Taking no side: it watches, or has words with whoever crossed it; once it has turned on a side, it fights.
-  if ( isNeutral(u) && !enemiesOf(run, u).some(isStanding) && !neutralTurn(run, u) ) return;
+  // (One leaving, by a deal into a friend group of those taking no side: it's on its way, not watching.)
+  if ( isNeutral(u) && !isLeaving(u) && !enemiesOf(run, u).some(isStanding) && !neutralTurn(run, u) ) return;
 
   // While a standoff holds, its sides don't fight; it lasts until someone gets upset. (A quarrel between someone taking
   // no side and one of the sides is fought out meanwhile, by those two alone: the standoff holds.)
   let brokeStandoff = false;
-  if ( run.standoff ) {
+  if ( run.standoff && !isLeaving(u) ) {
     const cause = isNeutral(u) ? null : breaksStandoff(run, u, logger(run));
     if ( !cause && !inFray(run, u) ) return standoffTurn(run, u);
     // Only an argument: a quarrel coming to blows ends it too.
@@ -3873,6 +3948,31 @@ function playFromHere(run, u) {
         u.actsThisTurn += 1;
         continue;
       }
+      // Strike a deal (a bribe, an extortion, a threat to go), when that's what it most wants and it can get within
+      // talking range this turn (behavior/deals.js).
+      const deal = waits("deal") ? null : decideDeal(run, u, turn);
+      if ( !deal && leadGroup === "deal" && openUp() ) continue;
+      if ( deal ) {
+        acted("deal");
+        happens();
+      }
+      if ( deal?.moves > 0 ) {
+        if ( !leaveReach(run, u, turn, deal.target, deal.cost) ) break;
+        const budget = turn.payForMove(approach(run, u, deal.target).speed);
+        if ( !budget ) break;
+        const move = moveToward(run, u, deal.target, talkRange(run), budget);
+        turn.usedMove(move.cost);
+        if ( !moveLog(run, u, move, deal.target) ) break;
+        if ( move.feet <= 0 ) break;
+        continue;
+      }
+      if ( deal ) {
+        turn.spend(deal.cost);
+        offerDeal(run, u, deal.target, deal.kind, logger(run));
+        u.actsThisTurn += 1;
+        if ( battleOver(run) ) break;
+        continue;
+      }
 
       let target = executionCheck(run, u, chooseTarget(run, u));
       // Hunters go after bystanders once there's no one else to fight.
@@ -4021,6 +4121,8 @@ function playFromHere(run, u) {
       if ( battleOver(run) ) break;
     }
   };
+  // What was dropped for it (an extortion paid apart), first, when it's free to.
+  if ( u.fetch && fetchGoods(run, u, turn) ) happens();
   fightOn();
   happens();
   // What's left of the turn, for the next (behavior/prepare.js): its gear made ready, a potion got out, a better spot to

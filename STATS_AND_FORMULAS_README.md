@@ -8,7 +8,7 @@ that change them, and `Code:` (where it lives, to check it). The settings menu s
 ## Contents
 
 - **[Minds](#minds)**: [Personality traits](#personality-traits), [Tactical tiers](#tactical-tiers), [Animals](#animals), [Aptitudes](#aptitudes), [Desires and their level](#desires-and-their-level), [How desires are raised each turn](#how-desires-are-raised-each-turn), [What the fight stirs, and how it cools](#what-the-fight-stirs-and-how-it-cools), [Frustration](#frustration), [Pulls from others: style, social, lean](#pulls-from-others-style-social-lean), [Focus fire](#focus-fire), [Keeping together](#keeping-together), [What comes to mind](#what-comes-to-mind), [The agenda](#the-agenda), [Desires it can't work on](#desires-it-cant-work-on), [ADHD](#adhd), [Fear](#fear), [Morale stress](#morale-stress), [Morale check: hold, waver, rout](#morale-check-hold-waver-rout), [Wavering](#wavering), [Running away](#running-away), [Standing its ground](#standing-its-ground), [Calling a retreat](#calling-a-retreat), [Rallying](#rallying), [Leaving the fight](#leaving-the-fight), [Being stopped on the way out](#being-stopped-on-the-way-out), [Standing down](#standing-down), [Chain of command](#chain-of-command), [What a leader lends](#what-a-leader-lends), [Following the leader](#following-the-leader), [Scheming](#scheming), [Party's sway](#partys-sway), [Playstyles: how pills combine](#playstyles-how-pills-combine), [Playstyle numbers](#playstyle-numbers), [Tactics answers: wishes and "Let this character decide"](#tactics-answers-wishes-and-let-this-character-decide)
-- **[Words and sides](#words-and-sides)**: [Luck rolls at a glance](#luck-rolls-at-a-glance), [Who talks, and how often](#who-talks-and-how-often), [Choosing a pitch](#choosing-a-pitch), [Pitch DC](#pitch-dc), [The persuasion track](#the-persuasion-track), [What a convinced foe does](#what-a-convinced-foe-does), [Switch luck: changing sides](#switch-luck-changing-sides), [Traitor luck: a PC turning traitor](#traitor-luck-a-pc-turning-traitor), [How an encounter opens](#how-an-encounter-opens), [Impatience: what breaks a standoff](#impatience-what-breaks-a-standoff), [Only an argument](#only-an-argument), [Taking no side: neutral tokens and leans](#taking-no-side-neutral-tokens-and-leans), [Crossed: grievance, truce and turning on a side](#crossed-grievance-truce-and-turning-on-a-side), [Winning over, calming and sending away](#winning-over-calming-and-sending-away), [Meddling: neutrals getting involved](#meddling-neutrals-getting-involved), [Taken for a foe, caught in the blast, spared in a truce](#taken-for-a-foe-caught-in-the-blast-spared-in-a-truce), [Neutral friend groups (reach)](#neutral-friend-groups-reach), [Taunts (goading)](#taunts-goading), [Theft mid-fight](#theft-mid-fight), [Trap avoiders](#trap-avoiders), [Reluctance: consumables and costly spells](#reluctance-consumables-and-costly-spells), [Avoiding killing (mercy)](#avoiding-killing-mercy), [The fallen: tying up and robbing](#the-fallen-tying-up-and-robbing), [Execute luck: finishing off a PC](#execute-luck-finishing-off-a-pc), [Bearing a hold or hurt (ignore troubles)](#bearing-a-hold-or-hurt-ignore-troubles), [The party's vote](#the-partys-vote)
+- **[Words and sides](#words-and-sides)**: [Luck rolls at a glance](#luck-rolls-at-a-glance), [Who talks, and how often](#who-talks-and-how-often), [Choosing a pitch](#choosing-a-pitch), [Pitch DC](#pitch-dc), [The persuasion track](#the-persuasion-track), [What a convinced foe does](#what-a-convinced-foe-does), [Switch luck: changing sides](#switch-luck-changing-sides), [Traitor luck: a PC turning traitor](#traitor-luck-a-pc-turning-traitor), [How an encounter opens](#how-an-encounter-opens), [Impatience: what breaks a standoff](#impatience-what-breaks-a-standoff), [Only an argument](#only-an-argument), [Taking no side: neutral tokens and leans](#taking-no-side-neutral-tokens-and-leans), [Crossed: grievance, truce and turning on a side](#crossed-grievance-truce-and-turning-on-a-side), [Winning over, calming and sending away](#winning-over-calming-and-sending-away), [Meddling: neutrals getting involved](#meddling-neutrals-getting-involved), [Taken for a foe, caught in the blast, spared in a truce](#taken-for-a-foe-caught-in-the-blast-spared-in-a-truce), [Neutral friend groups (reach)](#neutral-friend-groups-reach), [Taunts (goading)](#taunts-goading), [Theft mid-fight](#theft-mid-fight), [Deals: bribes, extortion and scaring off](#deals-bribes-extortion-and-scaring-off), [Trap avoiders](#trap-avoiders), [Reluctance: consumables and costly spells](#reluctance-consumables-and-costly-spells), [Avoiding killing (mercy)](#avoiding-killing-mercy), [The fallen: tying up and robbing](#the-fallen-tying-up-and-robbing), [Execute luck: finishing off a PC](#execute-luck-finishing-off-a-pc), [Bearing a hold or hurt (ignore troubles)](#bearing-a-hold-or-hurt-ignore-troubles), [The party's vote](#the-partys-vote)
 - **[Fighting and the simulation](#fighting-and-the-simulation)**: [The prediction: how many fights it runs](#the-prediction-how-many-fights-it-runs), [Rounds, stalemates and the max-rounds cap](#rounds-stalemates-and-the-max-rounds-cap), [Odds and outcomes](#odds-and-outcomes), [The most typical fight (Sample fight)](#the-most-typical-fight-sample-fight), [Swing factors](#swing-factors), [Initiative and turn order](#initiative-and-turn-order), [Dice, degrees of success and advantage](#dice-degrees-of-success-and-advantage), [Expected damage: what an attack is worth](#expected-damage-what-an-attack-is-worth), [Threat: how dangerous a creature looks](#threat-how-dangerous-a-creature-looks), [Choosing whom to attack](#choosing-whom-to-attack), [Choosing an action](#choosing-an-action), [Reluctance: potions, scrolls and costly spells](#reluctance-potions-scrolls-and-costly-spells), [Shields and defensive turns](#shields-and-defensive-turns), [Getting ready: draws, reloads and a turn for the next](#getting-ready-draws-reloads-and-a-turn-for-the-next), [Healing decisions](#healing-decisions), [Buffs and support](#buffs-and-support), [What a condition, bonus or penalty is worth](#what-a-condition-bonus-or-penalty-is-worth), [Control and debuffs](#control-and-debuffs), [Situational saves and auras](#situational-saves-and-auras), [Concentration](#concentration), [Movement, reach and getting there](#movement-reach-and-getting-there), [Crowds: getting past creatures and where a move ends](#crowds-getting-past-creatures-and-where-a-move-ends), [Line of sight and cover](#line-of-sight-and-cover), [Senses: what a creature can tell](#senses-what-a-creature-can-tell), [Noticing the fight: bystanders](#noticing-the-fight-bystanders), [Patrolling: cues and Seek](#patrolling-cues-and-seek), [Opportunity attacks and getting clear](#opportunity-attacks-and-getting-clear), [Forced movement, falls and dangerous ground](#forced-movement-falls-and-dangerous-ground), [Holds and escapes](#holds-and-escapes), [Harm each turn: conditions, persistent damage, spreading](#harm-each-turn-conditions-persistent-damage-spreading), [Afflictions: poisons, diseases, curses](#afflictions-poisons-diseases-curses), [Summons](#summons), [Luck pools: spending after the roll](#luck-pools-spending-after-the-roll), [Fate: rerolls that keep someone alive](#fate-rerolls-that-keep-someone-alive), [Last-ditch saves and refusing to drop](#last-ditch-saves-and-refusing-to-drop), [Damage, 0 HP and the downed models](#damage-0-hp-and-the-downed-models), [Finishing off a downed PC](#finishing-off-a-downed-pc), [The aftermath](#the-aftermath), [Recharges, cooldowns, legendary actions and counterspells](#recharges-cooldowns-legendary-actions-and-counterspells), [Strain: words that wear a creature down](#strain-words-that-wear-a-creature-down)
 - **[Pathfinder 2e](#pathfinder-2e)**: [Checks and degrees of success](#checks-and-degrees-of-success), [Actions, the multiple attack penalty and Strikes](#actions-the-multiple-attack-penalty-and-strikes), [Lore-Collector advantage (Recall Knowledge)](#lore-collector-advantage-recall-knowledge), [Conditions and their penalties](#conditions-and-their-penalties), [Flat checks: hidden, concealed, dazzled](#flat-checks-hidden-concealed-dazzled), [Cover, Hide and Take Cover](#cover-hide-and-take-cover), [Holds and Escape](#holds-and-escape), [Swallow Whole and Engulf](#swallow-whole-and-engulf), [Maneuvers (skill actions)](#maneuvers-skill-actions), [Aid](#aid), [Dying, wounded, doomed and recovery](#dying-wounded-doomed-and-recovery), [Hero Points](#hero-points), [Ferocity](#ferocity), [Persistent damage, bleeding and retching](#persistent-damage-bleeding-and-retching), [Afflictions](#afflictions), [Incapacitation and immunity](#incapacitation-and-immunity), [Auras and situational saves](#auras-and-situational-saves), [Weakness, resistance and immunity](#weakness-resistance-and-immunity), [Healing, Battle Medicine and class features](#healing-battle-medicine-and-class-features), [Reactions](#reactions), [Summons](#summons-1), [Doors, falls and moving past others](#doors-falls-and-moving-past-others), [Talking, theft and leadership](#talking-theft-and-leadership), [Personality from the sheet](#personality-from-the-sheet), [Typical numbers and areas](#typical-numbers-and-areas)
 - **[D&D 5e](#dd-5e)**: [Rolls, advantage and critical hits](#rolls-advantage-and-critical-hits), [Lore-Collector advantage (Study)](#lore-collector-advantage-study), [Conditions](#conditions), [Cover, Hide, Dodge, Help and Insight](#cover-hide-dodge-help-and-insight), [Grapples, webs, nets and bonds](#grapples-webs-nets-and-bonds), [Swallowed and engulfed](#swallowed-and-engulfed), [Shove and Grapple](#shove-and-grapple), [Pushes, falls and moving past others](#pushes-falls-and-moving-past-others), [Dying and death saves](#dying-and-death-saves), [Inspiration (fate)](#inspiration-fate), [Concentration](#concentration-1), [Undead Fortitude, Relentless Endurance and Regeneration](#undead-fortitude-relentless-endurance-and-regeneration), [Burning and lingering acid](#burning-and-lingering-acid), [Riders on a hit](#riders-on-a-hit), [Reactions](#reactions-1), [Turn, attacks and resources](#turn-attacks-and-resources), [Doors, talking, theft and leadership](#doors-talking-theft-and-leadership), [Personality from the sheet](#personality-from-the-sheet-1), [Typical numbers by challenge rating](#typical-numbers-by-challenge-rating)
@@ -1098,9 +1098,11 @@ Search: sway outcome, talked down, surrender, surrendered, flee, fled, stand dow
 
 Decides how an enemy talked out of the fight leaves it. Checked in order:
 
-1. **Peacekeeper talker**: with chance = its peacekeeping share, a truce: it stands down (not a PC).
-2. **Player character**: scheming against its leader, it changes sides (traitor luck). Otherwise it runs.
-3. **Anyone else** (a boss too):
+1. **Peacekeeper talker**: with chance = its peacekeeping share, a truce: it stands down (not a PC, not a boss).
+2. **Boss**: in a standoff, it stands down (its group with it); in a fight, it surrenders. Mid-fight it's only pitched
+   at under 25% HP.
+3. **Player character**: scheming against its leader, it changes sides (traitor luck). Otherwise it runs.
+4. **Anyone else**:
    - changes sides with chance 0.6 if it stands aside, else clamp(0.03 + (Selfish − 50) ÷ 500 + (50 − Loyal) ÷ 500,
      0, 0.12); scheming, +0.5 and up to 0.7. Then the switch luck.
    - in a standoff, persuaded or bluffed: stands down;
@@ -1422,6 +1424,64 @@ Decides when a creature robs someone instead of hitting them.
 Example: a Thief (edge 0, Selfish 60) on a winning side: 0.08 + 0.25 + 0.025 ≈ 36% a turn.
 
 Code: `engine/behavior/theft.js` `stealChance`, `theftTarget`, `theftPlan`, `attemptTheft`.
+
+### Deals: bribes, extortion and scaring off
+
+Search: deal, bribe, bribery, extort, extortion, scare, threaten, pay off, walked away, walk away, quit, dishonor,
+dishonorable, pick up, dropped goods, unpaid
+
+Decides when a creature FastFighting plays pays someone to go, makes it pay, or threatens it into going, and what
+comes of it.
+
+- **Who can:** talking is on, it isn't leaving, its talk answer isn't "never", it has a mind (not mindless, not an
+  animal's wits). The target is a foe (for one taking no side: anyone not taking a side within 15 ft of it or its
+  friend group), in sight, not leaving, with a mind, not tried before by it, not offended by it. A bribe needs
+  something to give; an extortion, a target with money. A Peacekeeper never threatens.
+- **Understanding:** a language in common ("Ignore languages": any language on both). Without one, only a threat, and
+  only where the system allows one without words (its penalty to the check: PF2e −4). A system that doesn't track
+  languages asks the GM first, in a live battle.
+- **Wish levels** (logic layer), with pressed = max(clamp((0.6 − HP fraction) ÷ 0.5, 0, 1), outnumbered share),
+  menace = clamp(2 × its danger ÷ (both dangers) + 0.3 if it's on u, 0, 1), upper hand = 0.4 each for: target under
+  half HP, target outnumbered, u more than 1.25 × as dangerous; close = 1 beside, falling to 0.3 at 15 ft (neutrals
+  only); greed = clamp((Selfish − 35) ÷ 50, 0, 1); nerve = clamp((Brave − 25) ÷ 60, 0, 1):
+  - bribe: 60 × max(pressed × menace, close) × (1.3 − Brave ÷ 100) × (1.2 − Selfish ÷ 125);
+  - extort: 55 × greed × nerve × max(upper hand, close ÷ 2);
+  - scare: 45 × nerve × max(upper hand, close) × (1 − greed ÷ 2);
+  - then + its pills' bribe, extort, scare + (charismatic − 2) × 4. Under 10, none; at most 75.
+- **Acting:** when a deal leads its agenda, it closes to talking range (30 ft, or the system's) and makes it for the
+  system's talk cost. In a standoff, as often as its level of 100, with one in range or a move away.
+- **Terms:** a bribe is clamp(0.15 + 0.35 × pressed − (Selfish − 50) ÷ 250, 0.05, 0.6) of its money (else its most
+  valuable carried thing); a commander asks the target to keep away from its team, anyone else to leave. An extortion
+  is clamp(0.2 + 0.6 × clamp((Selfish − 30) ÷ 70, 0, 1), 0.2, 1) of the target's money: pay and go (a PC: pay and be
+  left alone). An extortion asking for nothing is a scare.
+- **DC:** threat = the intimidation pitch DC (Pitch DC) + its pills (Chicken −3, Wallflower −2, Fragile −2, Lazy −1,
+  People-Pleaser −1, Brawler +2, Relentless +3, Vengeful +2, Tank +2, Martyr +2, Leader +1, each by its place)
+  + clamp(round((its strongest wish to hurt − 40) ÷ 20), −2, 3) + round((Loyal − 50) ÷ 25) when asked to go.
+  - scare: threat;
+  - extort with money: threat + 2 + round(3 × asked ÷ its money);
+  - bribe: the persuasion pitch DC − 2 − round(5 × offer's share of u's goods × (0.5 + Selfish ÷ 100)) + 1 if it
+    carries over 10 × the offer + its pills (Mercenary −3, Thief −2, Lazy −1, Wildcard −1, Moralist +3, Relentless
+    +2, Vengeful +2, Martyr +2) + the same wish and loyalty terms; never more than the threat − 1.
+- **Answer:** critical failure, offended (it goes for the one asking; one taking no side turns on its side); failure,
+  no; success, yes unless it says no with chance clamp((Loyal − 60) ÷ 150 + (threats: (Brave − 60) ÷ 150) + 0.15
+  for a PC, 0, 0.5), halved on a critical success. A player's character answers for itself in a live battle.
+- **Paying:** whoever pays (the briber; the one made to pay) must have it at the last moment, else no deal ("unpaid").
+  Side by side, a player's character giving or taking, or no piles at the table: the goods move at once. Apart:
+  dropped where the giver stands; the taker walks over and picks them up (an action) when no foe is beside it.
+- **Refusing a threat that got through:** frightened, one step more.
+- **Going:** a commander first urges its team (each goes with chance clamp(0.35 + (Loyal − 50) ÷ 100 + (50 − Brave) ÷
+  200, 0.15, 0.9)). Each joins a neutral friend group nobody has yet (1 to 3), with no lean back, else stays on its
+  side, and leaves the map (Leaving the fight): walked away after two whole turns of it or at the edge, or at once with
+  no map. What it was given goes with it; killed on the map, it still carries it.
+- **Paid to be left alone:** the two never target each other again.
+- **Dishonor:** one of the side it dealt with striking it on its way off: logged once for each who does, and told to
+  the GM.
+
+Example: a goblin at a quarter of its HP (pressed 0.7), Brave 30, Selfish 40, facing a hero twice as dangerous
+(menace 1): bribe wish 60 × 0.7 × 1.0 × 0.88 ≈ 37.
+
+Code: `engine/behavior/deals.js` `dealsWanted`, `decideDeal`, `dealTerms`, `dealDC`, `dealAnswer`, `offerDeal`,
+`give`, `quitFight`, `dishonor`.
 
 ### Trap avoiders
 

@@ -56,7 +56,7 @@ const FACTS = Object.freeze({
 
 /** Each line's and symbol's sign (Font Awesome): desires, conditions, relations, ways toward others, goals, things. */
 const ICONS = Object.freeze({
-  desire: { hurt: "hand-fist", heal: "heart-pulse", protect: "shield", aid: "hand-holding-heart", talk: "comments", avoid: "person-walking-arrow-loop-left", bind: "link", rob: "sack-dollar", bolstered: "hands-praying", breakFree: "unlock", free: "link-slash", rid: "fire-extinguisher" },
+  desire: { hurt: "hand-fist", heal: "heart-pulse", protect: "shield", aid: "hand-holding-heart", talk: "comments", avoid: "person-walking-arrow-loop-left", bind: "link", rob: "sack-dollar", bolstered: "hands-praying", breakFree: "unlock", free: "link-slash", rid: "fire-extinguisher", bribe: "coins", extort: "hand-holding-dollar", scare: "bullhorn" },
   condition: {
     prone: "person-falling", offGuard: "shield-halved", frightened: "face-surprise", sickened: "face-dizzy", slowed: "hourglass-half", stunned: "star",
     clumsy: "shoe-prints", enfeebled: "weight-hanging", exhaustion: "battery-quarter", blinded: "eye-slash", deafened: "ear-deaf", silenced: "comment-slash",

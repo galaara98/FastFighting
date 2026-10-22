@@ -190,8 +190,8 @@ function foesOf(run, u) {
   // (A system may say who can be pressed right now: Ironsworn, not a foe who has the initiative over it.)
   const can = run.prep.rules.canTarget;
   // (Walled off: behind a locked door it decided wasn't worth the trouble. Unknown: out of its senses, never seen and
-  // never come to blows with: senses.js knowsOf.)
-  return foes.filter(f => !feared(u, f) && !avoids(run, u, f) && !charmedBy(u, f) && !hasTrait(f, "untouchable") && !u.walledOff?.has(f.id) && !spared?.has(f.id) && !heldOff(run, u, f) && (!can || can(run, u, f)) && knowsOf(run, u, f));
+  // never come to blows with: senses.js knowsOf. Paid to leave it be, or paid it to: behavior/deals.js.)
+  return foes.filter(f => !feared(u, f) && !avoids(run, u, f) && !charmedBy(u, f) && !hasTrait(f, "untouchable") && !u.walledOff?.has(f.id) && !spared?.has(f.id) && !u.spares?.has(f.id) && !heldOff(run, u, f) && (!can || can(run, u, f)) && knowsOf(run, u, f));
 }
 
 /**

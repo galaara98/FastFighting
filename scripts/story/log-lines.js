@@ -48,11 +48,23 @@ export function formatMoney(amount, denominations) {
 export function concessionText(c) {
   if ( !c ) return "";
   if ( c.kind === "progress" ) return t("GroundGiven", { n: c.amount });
-  return c.kind === "money" ? formatMoney(c.amount, c.denominations) : (c.item?.name ?? "");
+  const what = c.kind === "money" ? formatMoney(c.amount, c.denominations) : (c.item?.name ?? "");
+  return (c.count ?? 1) > 1 ? t("Count", { n: c.count, what }) : what;
 }
 
+/** What a deal offers or asks (behavior/deals.js terms), or the goods it moved (concessions): one list. */
+export function goodsText(goods) {
+  if ( Array.isArray(goods) ) return listJoin(goods.map(concessionText).filter(Boolean));
+  const parts = goods?.money > 0 ? [formatMoney(goods.money, goods.denominations)] : [];
+  for ( const i of goods?.items ?? [] ) parts.push((i.count ?? 1) > 1 ? t("Count", { n: i.count, what: i.name ?? "" }) : (i.name ?? ""));
+  return listJoin(parts.filter(Boolean));
+}
+
+/** What a deal asked of its target (behavior/deals.js: "leave", "avoid", "spare"), in words. */
+export const askText = ask => t({ avoid: "DealAskAvoid", spare: "DealAskSpare" }[ask] ?? "DealAskLeave");
+
 const MODE = { walk: "ModeWalk", fly: "ModeFly", swim: "ModeSwim", climb: "ModeClimb", burrow: "ModeBurrow" };
-const DESIRE = { hurt: "DesireHurt", heal: "DesireHeal", protect: "DesireProtect", aid: "DesireAid", talk: "DesireTalk", avoid: "DesireAvoid", bind: "DesireBind", rob: "DesireRob", breakFree: "DesireBreakFree", free: "DesireFree", rid: "DesireRid" };
+const DESIRE = { hurt: "DesireHurt", heal: "DesireHeal", protect: "DesireProtect", aid: "DesireAid", talk: "DesireTalk", avoid: "DesireAvoid", bind: "DesireBind", rob: "DesireRob", breakFree: "DesireBreakFree", free: "DesireFree", rid: "DesireRid", bribe: "DesireBribe", extort: "DesireExtort", scare: "DesireScare" };
 const WHY = { hurt: "WhyHurt", harmed: "WhyHarmed", helped: "WhyHelped", robbed: "WhyRobbed", insulted: "WhyInsulted", impatient: "WhyImpatient", kin: "WhyKin" };
 /** How a patrol goes about it (behavior/patrol.js), each with its words under PatrolHow. */
 const PATROL_HOW = new Set(["scent", "noise", "seen", "pack", "wander", "spread", "near", "watch", "hold", "hide"]);
@@ -235,6 +247,19 @@ function baseLine(e) {
       return t("Theft", { ...a, feint: feint ? `${feint} · ` : "", skill: e.skill ?? "", roll: dice(e.natural, e.mod, e.total, e.dc, t("DcOf", { stat: e.dcStat })), degree: degree(e.degree), result: e.stolen ? t("Steals", { what: concessionText(e.stolen) }) : e.noticed ? t("Caught") : t("NothingTaken") });
     }
     case "reclaim": return t("Reclaim", { actor: e.actor, what: concessionText(e.concession), by: e.by ?? "" });
+    case "deal": {
+      if ( e.answer === "unheard" ) return t("DealUnheard", a);
+      const what = e.kind === "scare" ? t("DealScare") : t(e.kind === "bribe" ? "DealBribe" : "DealExtort", { what: goodsText(e.terms), ask: askText(e.terms?.ask) });
+      const payer = e.kind === "bribe" ? e.actor : e.target;
+      let answer = { accept: t(e.by === "player" ? "DealAcceptPlayer" : "DealAccept"), refuse: t(e.by === "player" ? "DealRefusePlayer" : "DealRefuse"), offended: t("DealOffended"), unpaid: t("DealUnpaid", { payer }) }[e.answer] ?? "";
+      if ( e.frightened ) answer = t("DealFrightened", { answer, n: e.frightened });
+      return t("Deal", { ...a, what, wordless: e.wordless ? t("DealWordless") : "", skill: e.skill ?? "", roll: dice(e.natural, e.mod, e.total, e.dc, t("DcOf", { stat: e.dcStat })), degree: degree(e.degree), answer });
+    }
+    case "quit": return e.following ? t("QuitFollow", { actor: e.actor, by: e.following }) : e.group ? t("QuitGroup", { actor: e.actor, group: e.group }) : t("Quit", a);
+    case "quitCall": return t("QuitCall", { actor: e.actor, by: e.by ?? "", result: t(e.follows ? "QuitCallGoes" : "QuitCallStays") });
+    case "dropGoods": return t("DropGoods", { actor: e.actor, what: goodsText(e.goods), target: e.for ?? "" });
+    case "pickUp": return t("PickUp", { actor: e.actor, what: goodsText(e.goods), from: e.from ?? "" });
+    case "dishonor": return t("Dishonor", { ...a, dealBy: e.dealBy ?? "" });
     case "sway": {
       if ( e.outcome === "neutral" ) {
         if ( e.luck ) return t("StandsAsideLuck", { actor: e.actor, luck: e.luck, needed: e.needed });
@@ -346,7 +371,7 @@ function baseLine(e) {
     case "stand": return t("Stand", a);
     case "shield": return t("Shield", a);
     case "leave": return t("Leave", a);
-    case "offMap": return t(e.blinked ? "OffMapUnseen" : "OffMap", a);
+    case "offMap": return t(e.blinked ? "OffMapUnseen" : e.walkedAway ? "OffMapWalked" : "OffMap", a);
     case "disrupted": return t("Fizzles", { actor: e.actor, action: e.action ?? "", why: e.text ? ` · ${e.text}` : "" });
     case "leaveStopped": return t(e.forgot ? "LeaveForgot" : "LeaveStopped", { actor: e.actor, by: e.by ?? "", roll: e.roll, needed: e.needed });
     // (A system's own report: recovery checks, enduring harm, its start-of-turn rules. The system words these itself.)
