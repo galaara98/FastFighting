@@ -45,6 +45,7 @@ import {
 } from "../engine/live.js";
 import { postRolls, postTally, tallyOf, audiencesFor, audienceFor } from "./table-rolls.js";
 import { chatMessageClass, gmIds } from "./chat.js";
+import { registerSideLines, writingFor, takingBack } from "./side-lines.js";
 import { diffAll, sideAfter, leaveToTable } from "../engine/changes.js";
 import { undoRecord } from "./sheet-tools.js";
 import { keepUpdate, keptBattle } from "./live-keeping.js";
@@ -629,7 +630,7 @@ async function followBack(prior) {
   // (Cards left to the table by the turns taken back, and by a player's turn still open: gone with their cards.)
   const takenBack = new Set([...undo.map(t => t.key), ...(battle.pc ? [`${battle.pc.round}.${battle.pc.combatantId}`] : [])]);
   await revertOpenTurn();
-  for ( const turn of undoEntries(undo, reopen).reverse() ) await holdingPause(() => revertEntry(battle.scene, turn, rewinding()));
+  for ( const turn of undoEntries(undo, reopen).reverse() ) await holdingPause(() => takingBack(battleActors(), () => revertEntry(battle.scene, turn, rewinding())));
   await untally(undo);
   const snapshot = undo[0]?.snapshot ?? battle.pc?.snapshot;
   if ( snapshot ) battle.run = playersNow(restoreRun(battle.spec, battle.rules, snapshot, { log: battle.run.log }));
@@ -1002,7 +1003,8 @@ async function playTurn(u, combatant, key) {
     await sendOff(result.events, turn);
     // (What the turn did to what the encounter keeps: Daggerheart's Fear.)
     try {
-      turn.records.push(...noteSettings((await adapter.commitTurn(before, after, { ...writeOptions(), spec: battle.spec, events: result.events })) ?? []));
+      const wrote = await writingFor(battle.data.id, battleActors(), turn.messages, () => adapter.commitTurn(before, after, { ...writeOptions(), spec: battle.spec, events: result.events }));
+      turn.records.push(...noteSettings(wrote ?? []));
     } catch ( err ) {
       console.error(`${MODULE_ID} | writing the turn's encounter changes`, err);
     }
@@ -1478,7 +1480,7 @@ async function revertOpenTurn() {
   const messages = [...(pc.messages ?? []), ...(pc.rollCards ?? [])];
   pc.messages = [];
   pc.rollCards = [];
-  if ( records.length || messages.length ) await holdingPause(() => revertEntry(battle.scene, { records, messages }, rewinding()));
+  if ( records.length || messages.length ) await holdingPause(() => takingBack(battleActors(), () => revertEntry(battle.scene, { records, messages }, rewinding())));
 }
 
 /** Each player's turn's sheets as it began (captureSheets), in this browser. */
@@ -2623,9 +2625,20 @@ async function placeSummons(records) {
  * (tableLeaves: engine/changes.js leaveToTable's options), taken out of its change set and handed over as its `left`,
  * for the helper to name, not write; its `final` with the hit points and status its sheet has.
  * The helper hears too: `tokenOf(id)` (a creature's token, by its id in the run: an effect's source) and `audience(id)`
- * (who sees that creature's cards, table-rolls.js audienceFor: "public" or "gm").
+ * (who sees that creature's cards, table-rolls.js audienceFor: "public" or "gm"). The lines the system posts by itself
+ * about these writes (Ironsworn's change log) are the battle's, and go into `messages` too (side-lines.js).
  */
-async function writeChanges(before, after, records, { messages = null, leave = null } = {}) {
+function writeChanges(before, after, records, { messages = null, leave = null } = {}) {
+  return writingFor(battle.data.id, battleActors(), messages, () => writeEach(before, after, records, { messages, leave }));
+}
+
+/** The actors of the battle's creatures (their tokens'), by id: whose lines the system posts are side lines. */
+const battleActors = () => new Set(battle.run.units.map(u => docOf(u.id)?.actor?.id).filter(Boolean));
+
+/**
+ * writeChanges' work: each creature's change set onto its sheet, by the helper's commitChanges.
+ */
+async function writeEach(before, after, records, { messages = null, leave = null } = {}) {
   const adapter = getAdapter();
   const seen = new Set(game.messages.keys());
   const tokenOf = id => (typeof id === "string" && id ? docOf(id) ?? null : null);
@@ -3013,7 +3026,7 @@ export function rewindTurn() {
     // table go with their cards.)
     const takenBack = new Set([turn.key, ...(battle.pc ? [`${battle.pc.round}.${battle.pc.combatantId}`] : [])]);
     await revertOpenTurn();
-    await holdingPause(() => revertEntry(battle.scene, turn, rewinding()));
+    await holdingPause(() => takingBack(battleActors(), () => revertEntry(battle.scene, turn, rewinding())));
     battle.data.waiting = waitingAfter(battle.data.waiting, takenBack);
     await untally([turn]);
     battle.run = playersNow(restoreRun(battle.spec, battle.rules, turn.snapshot, { log: battle.run.log }));
@@ -3068,9 +3081,9 @@ export function rewindEncounter() {
     if ( !battle ) return false;
     // (A player's turn still open: what it changed, by hand and by FastFighting, first.)
     await revertOpenTurn();
-    for ( const turn of undoEntries(battle.data.turns).reverse() ) await holdingPause(() => revertEntry(battle.scene, turn, rewinding()));
+    for ( const turn of undoEntries(battle.data.turns).reverse() ) await holdingPause(() => takingBack(battleActors(), () => revertEntry(battle.scene, turn, rewinding())));
     // (What the GM changed before the first turn.)
-    if ( battle.data.gmRecords?.length ) await holdingPause(() => revertEntry(battle.scene, { records: battle.data.gmRecords }, rewinding()));
+    if ( battle.data.gmRecords?.length ) await holdingPause(() => takingBack(battleActors(), () => revertEntry(battle.scene, { records: battle.data.gmRecords }, rewinding())));
     const combat = battle.combat;
     // (Its opening cards, and the combat as it was: not started, the initiative it rolled taken back, and those who
     // joined it on the way gone from it.)
@@ -3580,6 +3593,8 @@ export function registerLiveBattles() {
     queue(() => playerMoved(doc));
   });
   Hooks.on("createChatMessage", onMessage);
+  // (The system's own lines about FastFighting's writes: the battle's, and none as a Rewind takes them back.)
+  registerSideLines();
   // (Players' damage waiting on a GM, applied some other way: its line goes.)
   Hooks.on("updateActor", actor => {
     const pc = battle?.pc;
