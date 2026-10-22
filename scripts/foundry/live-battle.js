@@ -39,7 +39,7 @@ import { healthCallout, healthLine } from "../story/health.js";
 import { loadStoryTables } from "../story/tables.js";
 import { healthLookup } from "./health-estimate.js";
 import {
-  beginLive, liveRound, liveOrder, liveDrop, liveTurn, pcTurnBegin, pcTurnEnd, syncFromSheets, setApproach, setScene, captureAll, snapshotRun, restoreRun, endLive, packLog, followCommand,
+  beginLive, liveRound, liveLookAround, liveOrder, liveDrop, liveTurn, pcTurnBegin, pcTurnEnd, syncFromSheets, setApproach, setScene, captureAll, snapshotRun, restoreRun, endLive, packLog, followCommand,
   NeedsDecision, rollsKind, applyFact, gmMoment, leavingReach, openingFor, reactNow, movedBeside, nextSpotlight, liveAftermath,
   setCondition, setRelation, clearRelation, setAffliction, setGoal, setAttitude, setSide, setRole, playerRuns, takeRolls
 } from "../engine/live.js";
@@ -848,24 +848,19 @@ function beginPlayerTurn(u, combatant) {
 /** A new round: those not yet in the fight look around, and one that notices joins the tracker. */
 async function newRound(round) {
   liveRound(battle.run, round);
-  for ( const u of [...battle.run.order] ) {
-    if ( u.active || u.status !== STATUS.STANDING || u.spec.hazard ) continue;
-    // (Whether it notices: FastFighting's own reckoning, nothing rolled the table would see.)
-    liveTurn(battle.run, u.id);
-    if ( u.active || u.joinsRound ) {
-      const doc = battle.scene.tokens.get(tokenIdOf(u));
-      if ( doc && !battle.combat.combatants.some(c => c.tokenId === doc.id) ) {
-        const [c] = await battle.combat.createEmbeddedDocuments("Combatant", [{ tokenId: doc.id, sceneId: battle.scene.id, actorId: doc.actorId }]);
-        if ( c ) {
-          battle.data.joined = [...(battle.data.joined ?? []), c.uuid];
-          await keep(); // (kept at once: Rewind This Encounter takes it back even if this is all that happens)
-        }
-        if ( c && !battle.data.spotlight ) {
-          const from = Date.now();
-          await rollFor(battle.combat, [c.id]);
-          battle.data.rollCards = [...(battle.data.rollCards ?? []), ...initiativeCards(from)];
-        }
-      }
+  // (Whether they notice: FastFighting's own reckoning, nothing rolled the table would see. One that has, on the tracker.)
+  for ( const u of liveLookAround(battle.run) ) {
+    const doc = battle.scene.tokens.get(tokenIdOf(u));
+    if ( !doc || battle.combat.combatants.some(c => c.tokenId === doc.id) ) continue;
+    const [c] = await battle.combat.createEmbeddedDocuments("Combatant", [{ tokenId: doc.id, sceneId: battle.scene.id, actorId: doc.actorId }]);
+    if ( c ) {
+      battle.data.joined = [...(battle.data.joined ?? []), c.uuid];
+      await keep(); // (kept at once: Rewind This Encounter takes it back even if this is all that happens)
+    }
+    if ( c && !battle.data.spotlight ) {
+      const from = Date.now();
+      await rollFor(battle.combat, [c.id]);
+      battle.data.rollCards = [...(battle.data.rollCards ?? []), ...initiativeCards(from)];
     }
   }
   // (Told with the turn before it: rewound with it, and with the encounter.)

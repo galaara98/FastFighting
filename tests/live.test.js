@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 import {
-  beginLive, liveRound, liveTurn, pcTurnBegin, pcTurnEnd, leavingReach, reactNow, syncFromSheets, applyFact, mindOf, snapshotRun, restoreRun,
+  beginLive, liveRound, liveLookAround, liveTurn, pcTurnBegin, pcTurnEnd, leavingReach, reactNow, syncFromSheets, applyFact, mindOf, snapshotRun, restoreRun,
   NeedsDecision, bandLevel, captureAll, packLog
 } from "../scripts/engine/live.js";
 import { STATUS, SWAY } from "../scripts/constants.js";
@@ -577,5 +577,29 @@ describe("live battles: the engine a turn at a time", () => {
     again.order.push(joined);
     liveRound(again, 2);
     expect(liveTurn(again, "wolfToken").events.some(e => e.actorId === "wolfToken")).toBe(true);
+  });
+});
+
+describe("those not yet in the fight, as a round begins", () => {
+  test("one that noticed isn't played as the others look around: it comes in on its own turn on the tracker", () => {
+    const spec = battle([
+      creature({ id: "pc", kind: "pc", diesAtZero: false, position: at(0), hp: { value: 60, max: 60 } }),
+      creature({ id: "foe", side: "hostile", position: at(10) }),
+      creature({ id: "guard", side: "hostile", inEncounter: false, perception: 40, position: at(5, 5) })
+    ], { positioning: true, maxRounds: 5, talking: false });
+    spec.awareness = { guard: { pc: { see: true }, foe: { see: true } } };
+    const run = beginLive(spec, pf2eRules, { seed: 3, players: ["pc"], systemRolls: ["strike"] });
+    const guard = run.byId.get("guard");
+    liveRound(run, 1);
+    expect(liveLookAround(run)).toEqual([guard]);
+    expect(guard.joinsRound).toBe(2);
+    liveRound(run, 2);
+    const from = run.log.length;
+    // (Played here, it would join and strike, a roll the system makes: asked of the table off the tracker.)
+    expect(liveLookAround(run)).toEqual([guard]);
+    expect(guard.active).toBe(false);
+    expect(run.log.slice(from)).toEqual([]);
+    expect(() => liveTurn(run, "guard")).toThrow(NeedsDecision);
+    expect(guard.active).toBe(true);
   });
 });

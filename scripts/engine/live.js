@@ -104,6 +104,22 @@ export function liveRound(run, round) {
 }
 
 /**
+ * As a round begins, those on the map but not yet in the fight look around, each in a turn of its own (FastFighting's
+ * own reckoning: nothing the table would see). One that noticed the fight already isn't played here: it comes in on
+ * its own turn on the tracker (played here, it would fight off the tracker, then again on it). Returns those coming:
+ * whoever noticed or joined, for the tracker.
+ */
+export function liveLookAround(run) {
+  const coming = [];
+  for ( const u of [...run.order] ) {
+    if ( u.active || u.status !== STATUS.STANDING || u.spec.hazard ) continue;
+    if ( u.joinsRound === null || u.joinsRound === undefined ) liveTurn(run, u.id);
+    if ( u.active || (u.joinsRound !== null && u.joinsRound !== undefined) ) coming.push(u);
+  }
+  return coming;
+}
+
+/**
  * A creature its sheet has at 0 hit points that the system left standing (a player's blow, applied mid-turn): down or
  * dead by the battle's rules, as such a blow leaves it. True if it fell.
  */
