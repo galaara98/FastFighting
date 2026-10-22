@@ -1,0 +1,18 @@
+<section class="ff-deal-review-body">
+  <h3>{{heading}}</h3>
+  <p>{{what}}</p>
+  <dl class="ff-deal-rows">
+    {{#each rows}}<dt>{{label}}</dt><dd>{{value}}</dd>{{/each}}
+  </dl>
+  {{#if insight.length}}
+    <h4>{{localize "FASTFIGHTING.Deal.Insight"}}</h4>
+    <dl class="ff-deal-rows">
+      {{#each insight}}<dt>{{label}}</dt><dd>{{value}}</dd>{{/each}}
+    </dl>
+  {{/if}}
+  <p class="hint">{{localize "FASTFIGHTING.Deal.ReviewHint"}}</p>
+  <footer class="ff-deal-buttons">
+    <button type="button" class="ff-btn" data-action="approve"><i class="fa-solid fa-check"></i> {{localize "FASTFIGHTING.Deal.Approve"}}</button>
+    <button type="button" class="ff-btn" data-action="deny"><i class="fa-solid fa-xmark"></i> {{localize "FASTFIGHTING.Deal.Deny"}}</button>
+  </footer>
+</section>

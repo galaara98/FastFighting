@@ -2197,6 +2197,16 @@
    "commit": null,
    "hash": "e80be0eb7cda"
   },
+  "core:FASTFIGHTING.Battle.DealsWaiting": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.DealsWaiting",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "091a5b511054"
+  },
   "core:FASTFIGHTING.Battle.Degree.0": {
    "repo": "core",
    "file": "languages/en.json",
@@ -4864,6 +4874,266 @@
    "commit": null,
    "hash": "9b58e68145a7"
   },
+  "core:FASTFIGHTING.Deal.Accept": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Deal.Accept",
+   "area": "core/Deal",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "89713b9c9c1b"
+  },
+  "core:FASTFIGHTING.Deal.Accepted": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Deal.Accepted",
+   "area": "core/Deal",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "681fc410f4be"
+  },
+  "core:FASTFIGHTING.Deal.Approve": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Deal.Approve",
+   "area": "core/Deal",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "6007acbe30b2"
+  },
+  "core:FASTFIGHTING.Deal.Denied": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Deal.Denied",
+   "area": "core/Deal",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "cb7b2e43dd02"
+  },
+  "core:FASTFIGHTING.Deal.Deny": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Deal.Deny",
+   "area": "core/Deal",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "05a2d7332eb9"
+  },
+  "core:FASTFIGHTING.Deal.Greed": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Deal.Greed",
+   "area": "core/Deal",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "1a20c7804fa9"
+  },
+  "core:FASTFIGHTING.Deal.Insight": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Deal.Insight",
+   "area": "core/Deal",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "aecbfe223f1f"
+  },
+  "core:FASTFIGHTING.Deal.Loyalty": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Deal.Loyalty",
+   "area": "core/Deal",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "cfa3d938c034"
+  },
+  "core:FASTFIGHTING.Deal.Nerve": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Deal.Nerve",
+   "area": "core/Deal",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "b68bc9f8c321"
+  },
+  "core:FASTFIGHTING.Deal.NoAnswer": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Deal.NoAnswer",
+   "area": "core/Deal",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "e95c9c9f7291"
+  },
+  "core:FASTFIGHTING.Deal.NoneYet": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Deal.NoneYet",
+   "area": "core/Deal",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "53c8107d6ffc"
+  },
+  "core:FASTFIGHTING.Deal.OfferBribe": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Deal.OfferBribe",
+   "area": "core/Deal",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "f82bf6a1e6fb"
+  },
+  "core:FASTFIGHTING.Deal.OfferExtort": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Deal.OfferExtort",
+   "area": "core/Deal",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "bf99557a9444"
+  },
+  "core:FASTFIGHTING.Deal.OfferScare": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Deal.OfferScare",
+   "area": "core/Deal",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "5f9016b6badf"
+  },
+  "core:FASTFIGHTING.Deal.PlayerSaid": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Deal.PlayerSaid",
+   "area": "core/Deal",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "5237882a782e"
+  },
+  "core:FASTFIGHTING.Deal.Refuse": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Deal.Refuse",
+   "area": "core/Deal",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "2631349bff4d"
+  },
+  "core:FASTFIGHTING.Deal.RefuseChance": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Deal.RefuseChance",
+   "area": "core/Deal",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "91a79d8491b4"
+  },
+  "core:FASTFIGHTING.Deal.Refused": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Deal.Refused",
+   "area": "core/Deal",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "28b6d139bbab"
+  },
+  "core:FASTFIGHTING.Deal.Review": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Deal.Review",
+   "area": "core/Deal",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "aff0766a5290"
+  },
+  "core:FASTFIGHTING.Deal.ReviewCard": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Deal.ReviewCard",
+   "area": "core/Deal",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "87445f628593"
+  },
+  "core:FASTFIGHTING.Deal.ReviewHint": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Deal.ReviewHint",
+   "area": "core/Deal",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "ee6034d81a45"
+  },
+  "core:FASTFIGHTING.Deal.Reviewing": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Deal.Reviewing",
+   "area": "core/Deal",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "539961be3563"
+  },
+  "core:FASTFIGHTING.Deal.ReviewTitle": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Deal.ReviewTitle",
+   "area": "core/Deal",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "602fc1dbde23"
+  },
+  "core:FASTFIGHTING.Deal.Roll": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Deal.Roll",
+   "area": "core/Deal",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "4464105f259b"
+  },
+  "core:FASTFIGHTING.Deal.RollLine": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Deal.RollLine",
+   "area": "core/Deal",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "bf11e2883b4b"
+  },
+  "core:FASTFIGHTING.Deal.Settled": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Deal.Settled",
+   "area": "core/Deal",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "fcc7e4a69dc9"
+  },
   "core:FASTFIGHTING.Deal.TalkOk": {
    "repo": "core",
    "file": "languages/en.json",
@@ -4883,6 +5153,56 @@
    "date": null,
    "commit": null,
    "hash": "72a332c65f59"
+  },
+  "core:FASTFIGHTING.Deal.TurnChance": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Deal.TurnChance",
+   "area": "core/Deal",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "156c8d995a2a"
+  },
+  "core:FASTFIGHTING.Deal.Wordless": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Deal.Wordless",
+   "area": "core/Deal",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "aa79cb554424"
+  },
+  "core:FASTFIGHTING.Deal.WordlessYes": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Deal.WordlessYes",
+   "area": "core/Deal",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "df90d49b8828"
+  },
+  "core:FASTFIGHTING.Deal.Worth": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Deal.Worth",
+   "area": "core/Deal",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "13aaa6096703"
+  },
+  "core:FASTFIGHTING.Deal.WorthLine": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Deal.WorthLine",
+   "area": "core/Deal",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "86cd3c7ef8aa"
   },
   "core:FASTFIGHTING.Defaults.Hint": {
    "repo": "core",
@@ -8174,6 +8494,16 @@
    "date": null,
    "commit": null,
    "hash": "83c874d33e8b"
+  },
+  "core:FASTFIGHTING.Log.DealRefuseGm": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.DealRefuseGm",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "1665d3437be9"
   },
   "core:FASTFIGHTING.Log.DealRefusePlayer": {
    "repo": "core",

@@ -43,6 +43,7 @@ import { afflictionFor } from "./behavior/afflictions.js";
 import { syncGear } from "./gear.js";
 import { joinSide, standAside, turnOn } from "./behavior/neutral.js";
 import { patrolNow } from "./behavior/patrol.js";
+import { dishonor } from "./behavior/deals.js";
 
 /** A question the turn can't go on without: whether {unitId} uses {reactionId} because of {trigger} (by {byId}). */
 export class NeedsDecision extends Error {
@@ -329,6 +330,8 @@ export function observe(run, u, e, harmers = new Map()) {
       u.revealed = true;
       run.blood = true;
       log(run, u, { ...e, ...named });
+      // (At one walking away after a deal with its side: a dishonorable blow, told: behavior/deals.js.)
+      if ( t.leaving ) dishonor(run, t, u, say(run));
       if ( e.melee ) {
         u.adjacent.add(t.id);
         t.adjacent.add(u.id);
@@ -665,7 +668,8 @@ function decide(run, u, { reaction, trigger, by = null, ally = null, would, stri
  * A deal's question in a live battle (behavior/deals.js offerDeal), asked as the turn plays (NeedsDecision, `deal`):
  *   talkOk  {unitId, targetId, kind}: can the two talk at all? Asked only where the system doesn't track languages
  *           (rules.languages false): the GM's say. -> true/false
- *   answer  {unitId, targetId, kind, terms, degree, dc}: a player's character's answer to a deal ("accept"/"refuse";
+ *   answer  {unitId, targetId, kind, terms, degree, dc, dcStat, skill, natural, total, wordless, insight}: a player's
+ *           character's answer to a deal, then the GM's final say ("accept"/"refuse", or {answer, by: "player" | "gm"};
  *           null: the engine decides). Asked only of a player's character.
  * Null where there's nothing to ask: the engine goes on as it would.
  */
@@ -681,7 +685,10 @@ function dealAsk(run, request) {
   const key = `${base}#${n}`;
   if ( live.answers.has(key) ) return live.answers.get(key) ?? null;
   const terms = request.terms ? { kind: request.terms.kind, ask: request.terms.ask, money: request.terms.money ?? 0, items: (request.terms.items ?? []).map(i => ({ id: i.id, name: i.name ?? "", count: i.count ?? 1 })), denominations: request.terms.denominations ?? null } : null;
-  throw new NeedsDecision({ key, deal: request.ask, unitId: request.unitId, targetId: request.targetId, kind: request.kind, terms, degree: request.degree ?? null, dc: request.dc ?? null });
+  const roll = request.ask === "answer"
+    ? { degree: request.degree ?? null, dc: request.dc ?? null, dcStat: request.dcStat ?? null, skill: request.skill ?? null, natural: request.natural ?? null, total: request.total ?? null, wordless: !!request.wordless, insight: request.insight ?? null }
+    : {};
+  throw new NeedsDecision({ key, deal: request.ask, unitId: request.unitId, targetId: request.targetId, kind: request.kind, terms, ...roll });
 }
 
 /** Does the system make this kind of roll itself, in this live battle (its helper's say: live.systemRolls)? */

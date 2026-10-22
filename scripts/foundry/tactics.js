@@ -27,7 +27,8 @@ export const QUERIES = Object.freeze({
   openGmSurvey: `${MODULE_ID}.openGmSurvey`,
   liveAsk: `${MODULE_ID}.liveAsk`,
   liveRoll: `${MODULE_ID}.liveRoll`,
-  liveReactionDone: `${MODULE_ID}.liveReactionDone`
+  liveReactionDone: `${MODULE_ID}.liveReactionDone`,
+  liveDealAnswer: `${MODULE_ID}.liveDealAnswer`
 });
 
 /** Put a query to everyone of `users` who's here, not waiting on any answer (one who isn't here finds it on login). */

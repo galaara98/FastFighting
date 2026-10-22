@@ -278,12 +278,30 @@ export function dealDC(run, u, t, terms) {
  * unless it's loyal enough, or against a threat brave enough, to say no all the same; a player's character more
  * readily; half as readily against a critical success).
  */
-export function dealAnswer(run, t, kind, degree) {
+export function dealAnswer(run, t, kind, degree, rng = run.rng) {
   if ( degree <= 0 ) return "offended";
   if ( degree === 1 ) return "refuse";
-  let no = (liveTrait(run, t, "loyal") - 60) / 150 + (kind === "bribe" ? 0 : (liveTrait(run, t, "brave") - 60) / 150) + (t.spec.kind === "pc" ? 0.15 : 0);
-  no = clamp(no, 0, 0.5) / (degree >= 3 ? 2 : 1);
-  return no > 0 && run.rng.chance(no) ? "refuse" : "accept";
+  const no = refuseChance(run, t, kind, degree);
+  return no > 0 && rng.chance(no) ? "refuse" : "accept";
+}
+
+/** How likely t says no to a deal that got through (dealAnswer). */
+export function refuseChance(run, t, kind, degree) {
+  const no = (liveTrait(run, t, "loyal") - 60) / 150 + (kind === "bribe" ? 0 : (liveTrait(run, t, "brave") - 60) / 150) + (t.spec.kind === "pc" ? 0.15 : 0);
+  return degree < 2 ? 1 : clamp(no, 0, 0.5) / (degree >= 3 ? 2 : 1);
+}
+
+/**
+ * What FastFighting makes of a deal, for the GM to weigh it (a live battle's review): t's greed, nerve and loyalty, what
+ * the deal is worth against what t has, how likely it says no to a deal that gets through, and how likely a bribe it
+ * takes buys it over.
+ */
+export function dealInsight(run, u, t, terms, degree = 2) {
+  return {
+    greed: Math.round(liveTrait(run, t, "selfish")), nerve: Math.round(liveTrait(run, t, "brave")), loyalty: Math.round(liveTrait(run, t, "loyal")),
+    worth: termsWorth(terms), purse: remaining(t).money, refuse: Math.round(100 * refuseChance(run, t, terms.kind, Math.max(2, degree))),
+    turn: Math.round(100 * turnChance(run, u, t, terms, degree))
+  };
 }
 
 /**
@@ -318,19 +336,34 @@ export function offerDeal(run, u, t, kind, say, { terms = null, reaction = false
   const deal = { kind, ask: terms.ask, money: terms.money, items: terms.items.map(i => ({ id: i.id, count: i.count ?? 1 })), wordless: how === "wordless" };
   const rolled = systemRolled(run, u, "check", { dc, target: t, purpose: kind, skill, label: kind, deal });
   const roll = rollCheck(rules, run.rng, check.mod, dc, { advantage: check.advantage ?? 0, dice: check.dice ?? null, kind: "check", roller: u, rolled, what: kind, target: t });
-  // (A player's character answers for itself, in a live battle.)
-  const said = run.live?.dealAsk?.(run, { ask: "answer", unitId: u.id, targetId: t.id, kind, terms, degree: roll.degree, dc }) ?? null;
-  const agreed = said === "accept" || said === "refuse" ? said : dealAnswer(run, t, kind, roll.degree);
+  const dcStat = t.spec.social?.resist?.[pitchOf(kind)]?.label ?? "DC";
+  // (A player's character answers for itself, in a live battle, and the GM has the final say: what they're shown.)
+  const said = run.live?.dealAsk?.(run, {
+    ask: "answer", unitId: u.id, targetId: t.id, kind, terms, degree: roll.degree, dc, dcStat, skill, natural: roll.natural, total: roll.total, wordless: how === "wordless",
+    insight: dealInsight(run, u, t, terms, roll.degree)
+  }) ?? null;
+  return closeDeal(run, u, t, { kind, terms, skill, wordless: how === "wordless", mod: check.mod, dc, dcStat, roll, said, reaction }, say);
+}
+
+/**
+ * A deal's roll made: t's answer (its own, by its nature: dealAnswer; or one given, `said`: "accept"/"refuse", or
+ * {answer, by: "player" | "gm"}), the last-moment check that whoever pays has it, the log, and what comes of it. Returns
+ * the answer. (A player's own deal comes here too, its roll theirs: engine/live.js applyFact.)
+ */
+export function closeDeal(run, u, t, { kind, terms, skill = null, wordless = false, mod = null, dc, dcStat = "DC", roll, said = null, reaction = false }, say) {
+  const told = typeof said === "string" ? { answer: said, by: "player" } : said;
+  const given = told?.answer === "accept" || told?.answer === "refuse" ? told.answer : null;
+  const agreed = given ?? dealAnswer(run, t, kind, roll.degree);
   // (Agreed, but whoever pays hasn't got it now, at the last moment: no deal.)
   const payer = kind === "bribe" ? u : kind === "extort" ? t : null;
   const answer = agreed === "accept" && payer && !canPay(payer, terms) ? "unpaid" : agreed;
-  u.dealt.set(t.id, answer);
+  (u.dealt ??= new Map()).set(t.id, answer);
   // (Saying no to a threat that got through: shaken all the same.)
   const frightened = answer === "refuse" && kind !== "bribe" && roll.degree >= 2 ? frighten(run, t, u) : null;
   say(u, {
-    type: "deal", kind, target: t.spec.name, targetId: t.id, terms, skill, wordless: how === "wordless", ...(reaction ? { reaction: true } : {}),
-    natural: roll.natural, mod: check.mod, total: roll.total, note: roll.note ?? null, faces: roll.faces ?? null, dc, dcStat: t.spec.social?.resist?.[pitchOf(kind)]?.label ?? "DC",
-    degree: roll.degree, margin: roll.total - dc, answer, by: said ? "player" : "check", frightened
+    type: "deal", kind, target: t.spec.name, targetId: t.id, terms, skill, wordless, ...(reaction ? { reaction: true } : {}),
+    natural: roll.natural, mod, total: roll.total, note: roll.note ?? null, faces: roll.faces ?? null, dc, dcStat,
+    degree: roll.degree, margin: roll.total - dc, answer, by: given ? told.by ?? "player" : "check", frightened
   });
   if ( answer === "offended" ) {
     t.offendedBy.add(u.id);

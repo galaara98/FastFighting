@@ -667,3 +667,13 @@ label.is-disabled, .form-group.is-disabled { opacity: 0.5; }
 .ff-live-data .ff-live-data-body h3 { margin: 0.6rem 0 0.2rem; }
 .ff-live-data .ff-live-size { white-space: nowrap; text-align: right; }
 .ff-live-data .ff-live-export { width: auto; height: auto; min-height: 0; margin: 0; padding: 1px 6px; line-height: 1.5; }
+
+/* A deal's review (apps/deal-review.js) and its cards. */
+.ff-deal-review-body { padding: 0.5rem; display: flex; flex-direction: column; gap: 0.4rem; }
+.ff-deal-review-body h3 { margin: 0; }
+.ff-deal-review-body h4 { margin: 0.4rem 0 0; }
+.ff-deal-rows { display: grid; grid-template-columns: max-content 1fr; gap: 0.15rem 0.75rem; margin: 0; }
+.ff-deal-rows dt { font-weight: 600; }
+.ff-deal-rows dd { margin: 0; }
+.ff-deal-buttons { display: flex; gap: 0.5rem; justify-content: flex-end; }
+.fast-fighting-live .ff-deal-buttons { justify-content: flex-start; }

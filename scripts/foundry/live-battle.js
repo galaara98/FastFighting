@@ -35,7 +35,7 @@ import {
   holdingPause, playMoves, postBeat, postStory, revertEntry, chronicle, storyTitle, packSpec, unpackSpec, placeOf, spotsFor
 } from "./make-it-so.js";
 import { storyBeats } from "../story/story.js";
-import { logLine } from "../story/log-lines.js";
+import { logLine, goodsText, askText } from "../story/log-lines.js";
 import { healthCallout, healthLine } from "../story/health.js";
 import { loadStoryTables } from "../story/tables.js";
 import { healthLookup } from "./health-estimate.js";
@@ -1456,7 +1456,7 @@ const ASK_MS = 60000;
  */
 async function answerFor(request, stage = null) {
   // (A deal's question: behavior/deals.js.)
-  if ( request.deal ) return answerDeal(request);
+  if ( request.deal ) return answerDeal(request, stage);
   const use = request.decided ? true : await ask(request);
   if ( !use || !request.strike ) return use;
   // (A player's, theirs to roll while they're here; a creature's, or one whose players are gone, the system's.)
@@ -2064,9 +2064,11 @@ async function ask(request) {
 
 /**
  * A deal's question (engine/live.js dealAsk). "talkOk", where the system doesn't track languages: the GM says whether
- * the two can talk at all. "answer": a player's character's answer to a deal, its player's (null: the engine decides).
+ * the two can talk at all. "answer": a player's character's answer to a deal, its player's (a card to them and the GMs;
+ * no answer in time, or no player here, and its nature decides), then the GM's final say (the review): approved, the
+ * answer stands; denied, no deal ({answer: "refuse", by: "gm"}). Its cards go with the turn (`stage`), for Rewind.
  */
-async function answerDeal(request) {
+async function answerDeal(request, stage = null) {
   const run = battle.run;
   const name = id => (id ? run.byId.get(id)?.spec.name ?? "" : "");
   if ( request.deal === "talkOk" ) {
@@ -2075,7 +2077,151 @@ async function answerDeal(request) {
       content: `<p>${escape(fmt("FASTFIGHTING.Deal.TalkOk", { actor: name(request.unitId), target: name(request.targetId) }))}</p>`
     }));
   }
-  return null;
+  if ( request.deal !== "answer" ) return null;
+  const asked = await askPlayerDeal(request);
+  if ( asked.card ) stage?.messages.push(asked.card.id);
+  const verdict = await reviewDeal(request, { said: asked.said, player: true, stage });
+  const out = verdict === "deny" ? { answer: "refuse", by: "gm" } : asked.said ? { answer: asked.said, by: "player" } : null;
+  await asked.card?.update({ content: dealCard(dealText(request), verdict === "deny" ? loc("FASTFIGHTING.Deal.Denied") : loc("FASTFIGHTING.Deal.Settled")) });
+  return out;
+}
+
+/* -------------------------------------------- */
+/*  Deals                                       */
+/* -------------------------------------------- */
+
+/**
+ * Deals waiting in this GM's browser, by their key: a player's answer ({resolve, pcToken}), or the GM's review ({review,
+ * text, resolve}).
+ */
+const dealsWaiting = new Map();
+
+/** The deals waiting on the GM's review, for the Battle Vantage: [{key, text}]. */
+export const waitingDeals = () => [...dealsWaiting.entries()].filter(([, d]) => d.review).map(([key, d]) => ({ key, text: d.text }));
+
+/** A roll's degree of success in words, by its number (0 critical failure ... 3 critical success). */
+const DEGREES = ["FASTFIGHTING.Log.Degree0", "FASTFIGHTING.Log.Degree1", "FASTFIGHTING.Log.Degree2", "FASTFIGHTING.Log.Degree3"];
+
+/** A deal in words: who offers (or asks, or tells) what of whom. `request`: a deal's question (engine/live.js dealAsk). */
+function dealText(request) {
+  const run = battle.run;
+  const name = id => (id ? run.byId.get(id)?.spec.name ?? "" : "");
+  const data = { actor: name(request.unitId), target: name(request.targetId), goods: goodsText(request.terms), ask: askText(request.terms?.ask) };
+  return fmt({ bribe: "FASTFIGHTING.Deal.OfferBribe", extort: "FASTFIGHTING.Deal.OfferExtort" }[request.kind] ?? "FASTFIGHTING.Deal.OfferScare", data);
+}
+
+/** A deal's card: what it is, and a line under it (its state), with its buttons. */
+const dealCard = (text, state = "", buttons = "") => inertHtml(`<div class="fast-fighting-live"><p>${escape(text)}</p>${state ? `<p class="hint">${escape(state)}</p>` : ""}${buttons}</div>`);
+
+/**
+ * A player's character offered a deal: a card to its owners who are here and the GMs (Accept, Refuse), and the battle
+ * waits on it, as on a player's reaction. {said: "accept" | "refuse" | null (no answer in time, or nobody here to ask),
+ * card}: its card says the GM is reviewing it.
+ */
+async function askPlayerDeal(request) {
+  const doc = docOf(request.targetId);
+  const owners = doc?.actor ? game.users.filter(u => !u.isGM && u.active && doc.actor.testUserPermission(u, "OWNER")) : [];
+  if ( !owners.length ) return { said: null, card: null };
+  checkFast({ asks: "player" });
+  const ChatMessage = chatMessageClass();
+  const text = dealText(request);
+  const buttons = `<div class="ff-deal-buttons"><button type="button" data-ff-live="dealAccept"><i class="fa-solid fa-check"></i> ${escape(loc("FASTFIGHTING.Deal.Accept"))}</button>
+    <button type="button" data-ff-live="dealRefuse"><i class="fa-solid fa-xmark"></i> ${escape(loc("FASTFIGHTING.Deal.Refuse"))}</button></div>`;
+  const card = await ChatMessage.create({
+    content: dealCard(text, "", buttons), speaker: chronicle(), whisper: [...new Set([...gmIds(), ...owners.map(u => u.id)])],
+    flags: { [MODULE_ID]: { live: { battle: battle.data.id, deal: request.key, pcToken: doc.uuid } } }
+  });
+  const said = await new Promise(resolve => {
+    const late = setTimeout(() => resolve(null), ASK_MS);
+    dealsWaiting.set(request.key, { pcToken: doc.uuid, resolve: answer => {
+      clearTimeout(late);
+      resolve(answer);
+    } });
+    changed();
+  });
+  dealsWaiting.delete(request.key);
+  const who = doc.actor.name;
+  const state = said ? fmt(said === "accept" ? "FASTFIGHTING.Deal.Accepted" : "FASTFIGHTING.Deal.Refused", { name: who }) : fmt("FASTFIGHTING.Deal.NoAnswer", { name: who });
+  await card?.update({ content: dealCard(text, `${state} ${loc("FASTFIGHTING.Deal.Reviewing")}`) });
+  changed();
+  return { said, card };
+}
+
+/** A player's answer to a deal, from their browser (Foundry says who asks: one who owns the character, or a GM). */
+function answerDealQuery(data, { user } = {}) {
+  const waiting = dealsWaiting.get(data?.key);
+  if ( !waiting?.pcToken || (data.answer !== "accept" && data.answer !== "refuse") ) return false;
+  const actor = fromUuidSync(waiting.pcToken)?.actor;
+  if ( !user?.isGM && !actor?.testUserPermission(user, "OWNER") ) return false;
+  waiting.resolve(data.answer);
+  return true;
+}
+
+/**
+ * The GM's final say on a deal: a card for the GMs only (Review) and the Battle Vantage's deals waiting, and the review
+ * window at once. Resolves with "approve" or "deny". `said`: a player's answer to it, where its target is theirs.
+ */
+async function reviewDeal(request, { said = null, player = false, stage = null } = {}) {
+  const text = dealText(request);
+  const context = reviewContext(request, { said, player });
+  const ChatMessage = chatMessageClass();
+  const card = await ChatMessage.create({
+    content: dealCard(fmt("FASTFIGHTING.Deal.ReviewCard", { what: text }), "", `<button type="button" data-ff-live="dealReview"><i class="fa-solid fa-scale-balanced"></i> ${escape(loc("FASTFIGHTING.Deal.Review"))}</button>`),
+    speaker: chronicle(), whisper: gmIds(), flags: { [MODULE_ID]: { live: { battle: battle.data.id, dealReview: request.key } } }
+  });
+  if ( card ) stage?.messages.push(card.id);
+  const verdict = await new Promise(resolve => {
+    dealsWaiting.set(request.key, { review: true, text, context, resolve });
+    openDealReview(request.key);
+    changed();
+  });
+  dealsWaiting.delete(request.key);
+  await card?.update({ content: dealCard(text, loc(verdict === "deny" ? "FASTFIGHTING.Deal.Denied" : "FASTFIGHTING.Deal.Settled")) });
+  changed();
+  return verdict;
+}
+
+/** The review window of a deal waiting (the card's Review, the Battle Vantage's): one for each deal. */
+export function openDealReview(key) {
+  const waiting = dealsWaiting.get(key);
+  if ( !waiting?.review ) return false;
+  const id = String(key).replace(/[^A-Za-z0-9_-]/g, "_");
+  const open = foundry.applications.instances.get(`ff-deal-review-${id}`);
+  if ( open ) {
+    open.bringToFront?.();
+    return true;
+  }
+  // (The window's class, once one is wanted: it's Foundry's to build on.)
+  import("../apps/deal-review.js").then(({ DealReview }) => new DealReview({ id, context: waiting.context, decide: verdict => waiting.resolve(verdict) }).render({ force: true }));
+  return true;
+}
+
+/**
+ * What the review window shows: the deal, the roll against its DC, the player's answer, and what FastFighting makes of
+ * it (engine/behavior/deals.js dealInsight).
+ */
+function reviewContext(request, { said = null, player = false } = {}) {
+  const run = battle.run;
+  const name = id => (id ? run.byId.get(id)?.spec.name ?? "" : "");
+  const rows = [];
+  if ( Number.isFinite(request.total) ) {
+    rows.push({
+      label: loc("FASTFIGHTING.Deal.Roll"),
+      value: fmt("FASTFIGHTING.Deal.RollLine", { skill: request.skill ?? "", total: request.total, natural: request.natural ?? "", stat: request.dcStat ?? "DC", dc: request.dc ?? "", degree: loc(DEGREES[request.degree ?? 1] ?? DEGREES[1]) })
+    });
+  }
+  if ( request.wordless ) rows.push({ label: loc("FASTFIGHTING.Deal.Wordless"), value: loc("FASTFIGHTING.Deal.WordlessYes") });
+  if ( player ) rows.push({ label: loc("FASTFIGHTING.Deal.PlayerSaid"), value: said ? loc(said === "accept" ? "FASTFIGHTING.Deal.Accept" : "FASTFIGHTING.Deal.Refuse") : loc("FASTFIGHTING.Deal.NoneYet") });
+  const i = request.insight;
+  const insight = i ? [
+    { label: loc("FASTFIGHTING.Deal.Greed"), value: i.greed },
+    { label: loc("FASTFIGHTING.Deal.Nerve"), value: i.nerve },
+    { label: loc("FASTFIGHTING.Deal.Loyalty"), value: i.loyalty },
+    { label: loc("FASTFIGHTING.Deal.Worth"), value: fmt("FASTFIGHTING.Deal.WorthLine", { worth: goodsText({ money: i.worth, denominations: request.terms?.denominations ?? null }) || "0", purse: goodsText({ money: i.purse, denominations: request.terms?.denominations ?? null }) || "0" }) },
+    { label: loc("FASTFIGHTING.Deal.RefuseChance"), value: `${i.refuse}%` },
+    ...(request.kind === "bribe" ? [{ label: loc("FASTFIGHTING.Deal.TurnChance"), value: `${i.turn}%` }] : [])
+  ] : [];
+  return { heading: `${name(request.unitId)} → ${name(request.targetId)}`, what: dealText(request), rows, insight };
 }
 
 /** The question, in this client's language, and its answer (true: use it). */
@@ -2934,6 +3080,16 @@ async function tellNew() {
     }
     battle.data.toldBeats = [...done];
   }
+  // (A blow at one walking away after a deal with the striker's side: the GMs are told, whatever the style.)
+  for ( const e of run.log ) {
+    if ( e.type !== "dishonor" || (e.turn ?? 0) <= told ) continue;
+    const ChatMessage = chatMessageClass();
+    const message = await ChatMessage.create({
+      content: inertHtml(`<div class="fast-fighting-live"><p><i class="fa-solid fa-scale-unbalanced"></i> ${escape(logLine(e))}</p></div>`),
+      speaker: chronicle(), whisper: gmIds(), flags: { [MODULE_ID]: { live: { battle: battle.data.id, dishonor: true } } }
+    });
+    if ( message ) out.push(message.id);
+  }
   battle.data.told = Math.max(told, lastTurn(run.log));
   return out;
 }
@@ -3646,6 +3802,7 @@ export function registerLiveBattles() {
   CONFIG.queries[QUERIES.liveAsk] = answerAsk;
   CONFIG.queries[QUERIES.liveRoll] = answerRoll;
   CONFIG.queries[QUERIES.liveReactionDone] = answerReactionDone;
+  CONFIG.queries[QUERIES.liveDealAnswer] = answerDealQuery;
   // (A Fast Fight's chat cards: no 3D dice, nothing left waiting on them.)
   registerQuietDice();
   Hooks.on("combatTurnChange", onTurnChange);
@@ -3740,8 +3897,34 @@ export function registerLiveBattles() {
         });
         continue;
       }
+      // (A player's deal card: its buttons theirs too, the GM playing the battle told by a query.)
+      if ( (button.dataset.ffLive === "dealAccept" || button.dataset.ffLive === "dealRefuse") && live?.deal && message.author?.isGM ) {
+        const actor = typeof live.pcToken === "string" ? fromUuidSync(live.pcToken)?.actor ?? null : null;
+        if ( !game.user.isGM && !actor?.testUserPermission(game.user, "OWNER") ) {
+          button.remove();
+          continue;
+        }
+        button.addEventListener("click", async event => {
+          event.preventDefault();
+          for ( const b of html.querySelectorAll("[data-ff-live^='deal']") ) b.disabled = true;
+          const answer = button.dataset.ffLive === "dealAccept" ? "accept" : "refuse";
+          const here = dealsWaiting.get(live.deal);
+          if ( here?.pcToken ) return here.resolve(answer);
+          const gm = game.users.get(message.author.id)?.active ? game.users.get(message.author.id) : game.users.activeGM;
+          await gm?.query(QUERIES.liveDealAnswer, { key: live.deal, answer }).catch(() => null);
+        });
+        continue;
+      }
       if ( !game.user.isGM || !message.author?.isGM || !live ) {
         button.remove();
+        continue;
+      }
+      // (A deal waiting on the GM's review: its window again.)
+      if ( button.dataset.ffLive === "dealReview" ) {
+        button.addEventListener("click", event => {
+          event.preventDefault();
+          if ( !openDealReview(live.dealReview) ) ui.notifications.warn(loc("FASTFIGHTING.Live.NotHere"));
+        });
         continue;
       }
       button.addEventListener("click", async event => {

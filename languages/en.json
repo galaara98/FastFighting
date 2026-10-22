@@ -1914,6 +1914,7 @@
       "DealAcceptPlayer": "accepted by its player",
       "DealRefuse": "refused",
       "DealRefusePlayer": "refused by its player",
+      "DealRefuseGm": "turned down by the GM",
       "DealFrightened": "{answer}, frightened {n}",
       "DealOffended": "offended",
       "DealUnpaid": "agreed, but {payer} hasn't got it",
@@ -2422,7 +2423,38 @@
     },
     "Deal": {
       "TalkOkTitle": "A deal",
-      "TalkOk": "{actor} wants to make a deal with {target}. Can they understand each other?"
+      "TalkOk": "{actor} wants to make a deal with {target}. Can they understand each other?",
+      "OfferBribe": "{actor} offers {target} {goods} to {ask}.",
+      "OfferExtort": "{actor} demands {goods} from {target} to {ask}.",
+      "OfferScare": "{actor} tells {target} to leave the fight.",
+      "Accept": "Accept",
+      "Refuse": "Refuse",
+      "Accepted": "{name} accepts.",
+      "Refused": "{name} refuses.",
+      "NoAnswer": "No answer in time: {name}'s nature decides.",
+      "Reviewing": "The GM is reviewing it.",
+      "Settled": "The GM let it stand.",
+      "Denied": "The GM said no: no deal.",
+      "ReviewTitle": "Deal review",
+      "ReviewCard": "A deal waits for your review: {what}",
+      "Review": "Review",
+      "Roll": "Roll",
+      "RollLine": "{skill} {total} (d20 {natural}) against {stat} {dc}: {degree}",
+      "Wordless": "Without words",
+      "WordlessYes": "yes: a threat it can only show",
+      "PlayerSaid": "Player's answer",
+      "NoneYet": "none in time",
+      "Insight": "What FastFighting makes of it",
+      "Greed": "Greed (Selfish)",
+      "Nerve": "Nerve (Brave)",
+      "Loyalty": "Loyalty",
+      "Worth": "The deal against its purse",
+      "WorthLine": "{worth} against {purse}",
+      "RefuseChance": "Says no though it got through",
+      "TurnChance": "Bought over instead of leaving",
+      "Approve": "Approve",
+      "Deny": "Deny",
+      "ReviewHint": "Approve lets the deal stand as it is; Deny means there's no deal."
     },
     "LiveData": {
       "MenuName": "Live battle data",
@@ -2664,7 +2696,8 @@
         "persuade": "Persuade",
         "intimidate": "Intimidate",
         "deceive": "Deceive"
-      }
+      },
+      "DealsWaiting": "Deals waiting for your review"
     },
     "Goal": {
       "openDoor": "Through {thing}, to reach {name}",

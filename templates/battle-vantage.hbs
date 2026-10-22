@@ -54,6 +54,15 @@
           <button type="button" class="ff-btn" data-action="reaction" data-key="{{reaction.key}}" data-how="skip"><i class="fa-solid fa-forward"></i> {{localize "FASTFIGHTING.Battle.ReactionSkip"}}</button>
         </div>
       {{/if}}
+      {{#if deals.length}}
+        <div class="ff-battle-damage">
+          <p class="hint">{{localize "FASTFIGHTING.Battle.DealsWaiting"}}</p>
+          <ul>{{#each deals}}<li data-key="{{key}}">
+            <span>{{text}}</span>
+            <button type="button" class="ff-btn" data-action="dealReview" data-key="{{key}}"><i class="fa-solid fa-scale-balanced"></i> {{localize "FASTFIGHTING.Deal.Review"}}</button>
+          </li>{{/each}}</ul>
+        </div>
+      {{/if}}
       {{#if damage.length}}
         <div class="ff-battle-damage">
           <p class="hint">{{localize "FASTFIGHTING.Battle.DamageWaiting"}}</p>

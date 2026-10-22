@@ -28,6 +28,7 @@ import { sceneEncounter, encounterNumber } from "../foundry/persistence.js";
 import { clockText } from "../foundry/away.js";
 import {
   liveBattle, continueBattle, rewind, rewindEncounter, beginEncounter, endEncounter, playCurrent, answerDamage, setApplyDamage, systemAppliesText, waitingReaction, endReaction, sheetNow, liveFact, dropHeldFact, setNpcReactions, setPlayThrough, finishReview,
+  waitingDeals, openDealReview,
   waitingOnGm, suggestedSpotlight, spotlightNext, settleBattle, setAutomated, liveCondition, liveMind, bringIntoFight, tokenIdOf, fastFight, fastOffered, fastRunning
 } from "../foundry/live-battle.js";
 
@@ -136,6 +137,7 @@ export class BattleVantage extends HandlebarsApplicationMixin(ApplicationV2) {
       applyDamage: BattleVantage.#onApplyDamage,
       damage: BattleVantage.#onDamage,
       reaction: BattleVantage.#onReaction,
+      dealReview: BattleVantage.#onDealReview,
       spotlight: BattleVantage.#onSpotlight,
       aftermath: BattleVantage.#onAftermath,
       automate: BattleVantage.#onAutomate,
@@ -639,6 +641,11 @@ export class BattleVantage extends HandlebarsApplicationMixin(ApplicationV2) {
     await fastFight();
   }
 
+  /** A deal waiting on the GM's review: its window. */
+  static #onDealReview(event, target) {
+    openDealReview(target.dataset.key);
+  }
+
   /** A player's reaction waiting: they've rolled it (read off their cards), or the battle goes on without it. */
   static #onReaction(event, target) {
     endReaction(target.dataset.key, target.dataset.how === "skip" ? "skip" : "done");
@@ -708,6 +715,8 @@ export function battleContext(b, focusId = null) {
       const w = waitingReaction();
       return w ? { key: w.key, text: fmt("FASTFIGHTING.Battle.WaitingReaction", { name: w.name }) } : null;
     })(),
+    // (Deals waiting on the GM's review: engine/behavior/deals.js.)
+    deals: waitingDeals(),
     // (Players' damage: applied at once, or waiting here; greyed out while the system applies it itself.)
     applyDamage: !!b.data.applyDamage, systemApplies: systemAppliesText(),
     // (A player's turn's own, and those the table settles: a player's character's at another, Apply players' damage off.)
