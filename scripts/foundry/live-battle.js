@@ -2085,9 +2085,12 @@ async function answerDeal(request, stage = null) {
   if ( request.deal !== "answer" ) return null;
   const asked = await askPlayerDeal(request);
   if ( asked.card ) stage?.messages.push(asked.card.id);
-  const verdict = await reviewDeal(request, { said: asked.said, player: true, stage });
-  const out = verdict === "deny" ? { answer: "refuse", by: "gm" } : asked.said ? { answer: asked.said, by: "player" } : null;
-  await asked.card?.update({ content: dealCard(dealText(request), verdict === "deny" ? loc("FASTFIGHTING.Deal.Denied") : loc("FASTFIGHTING.Deal.Settled")) });
+  // (No answer from its player: its nature's, worked out now, so the GM reviews what it comes to.)
+  const t = run.byId.get(request.targetId);
+  const said = asked.said ?? (t ? dealAnswer(run, t, request.kind, request.degree ?? 1, { chance: q => Math.random() < q }) : null);
+  const verdict = await reviewDeal(request, { said, player: true, nature: !asked.said, stage });
+  const out = verdict === "deny" ? { answer: "refuse", by: "gm" } : said ? { answer: said, by: asked.said ? "player" : "check" } : null;
+  await asked.card?.update({ content: dealCard(dealText(request), verdictText(request, verdict, said)) });
   return out;
 }
 
@@ -2281,7 +2284,7 @@ async function rolledDeal(data, user) {
   const verdict = await reviewDeal(request, { said: would, player, nature: !asked.said });
   const answer = verdict === "deny" ? "refuse" : would;
   const by = verdict === "deny" ? "gm" : asked.said ? "player" : "check";
-  await asked.card?.update({ content: dealCard(dealText(request), loc(verdict === "deny" ? "FASTFIGHTING.Deal.Denied" : "FASTFIGHTING.Deal.Settled")) });
+  await asked.card?.update({ content: dealCard(dealText(request), verdictText(request, verdict, would)) });
   await liveFact({ kind: "deal", id: t.id, byId: u.id, deal: { terms: p.terms, skill: p.skill, wordless: p.wordless, dc: p.dc, dcStat: p.dcStat, roll, said: { answer, by } } });
   // (Told at once, to its player and the GMs: the turn tells the rest as it ends.)
   const owners = game.users.filter(x => x.id === p.user || x.isGM).map(x => x.id);
@@ -2327,9 +2330,17 @@ async function reviewDeal(request, { said = null, player = false, nature = false
     changed();
   });
   dealsWaiting.delete(request.key);
-  await card?.update({ content: dealCard(text, loc(verdict === "deny" ? "FASTFIGHTING.Deal.Denied" : "FASTFIGHTING.Deal.Settled")) });
+  await card?.update({ content: dealCard(text, verdictText(request, verdict, said)) });
   changed();
   return verdict;
+}
+
+/** What the GM's say on a deal came to, in words: turned down; or let stand, and its answer where it's known. */
+function verdictText(request, verdict, said) {
+  if ( verdict === "deny" ) return loc("FASTFIGHTING.Deal.Denied");
+  const name = battle.run.byId.get(request.targetId)?.spec.name ?? "";
+  const answer = DEAL_ANSWERS[said];
+  return answer ? `${loc("FASTFIGHTING.Deal.Settled")} ${fmt(answer, { name })}` : loc("FASTFIGHTING.Deal.Settled");
 }
 
 /** The review window of a deal waiting (the card's Review, the Battle Vantage's): one for each deal. */
