@@ -603,3 +603,15 @@ describe("those not yet in the fight, as a round begins", () => {
     expect(guard.active).toBe(true);
   });
 });
+
+describe("a fight restored from what was kept", () => {
+  test("its trap avoiders still tell what they do (run.trapLog), given the battle's log entries apart", () => {
+    const run = beginLive(skirmish(), pf2eRules, { seed: 3, players: ["valeros", "kyra"] });
+    liveRound(run, 1);
+    const back = restoreRun(skirmish(), pf2eRules, snapshotRun(run, { log: false }), { log: run.log });
+    const orc = back.byId.get("orc");
+    const from = back.log.length;
+    expect(() => back.trapLog(orc, { type: "trap", what: "holds" })).not.toThrow();
+    expect(back.log.slice(from)).toEqual([expect.objectContaining({ type: "trap", what: "holds" })]);
+  });
+});

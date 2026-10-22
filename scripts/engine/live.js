@@ -1614,7 +1614,7 @@ export function packLog(run, from = 0, to = run.log?.length ?? 0) {
  * kept without its log takes `log` (the battle's, cut back to where it was). Creatures summoned mid-fight are made
  * again from their summoning (summonOf), then given what was kept of them.
  */
-export function restoreRun(spec, rules, snap, { log = null } = {}) {
+export function restoreRun(spec, rules, snap, { log: kept = null } = {}) {
   const run = createRun(prepareBattle(spec, rules));
   // (The scene's doors, as a fight begun has them: their states are kept with the run.)
   run.prep.doors ??= prepareDoors(run.prep.spec, run.prep.rules);
@@ -1640,7 +1640,8 @@ export function restoreRun(spec, rules, snap, { log = null } = {}) {
     u.sharedPools = run.sharedPools;
     recompute(u);
   }
-  run.log = snap.log ? decode(snap.log, run.byId) : [...(log ?? [])].slice(0, snap.logLength ?? Infinity);
+  run.log = snap.log ? decode(snap.log, run.byId) : [...(kept ?? [])].slice(0, snap.logLength ?? Infinity);
+  // (The engine's own log, for what a trap avoider does: the option above is the battle's entries.)
   run.trapLog = (unit, data) => log(run, unit, data);
   return attach(run, decode(snap.live ?? {}, run.byId));
 }
