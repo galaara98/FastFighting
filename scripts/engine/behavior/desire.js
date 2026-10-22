@@ -38,11 +38,12 @@
  *
  * A desire's level is max(logic, stated, taunt) + lean + memory + social + focus + apart - frustration, 0 to 100 (or
  * the GM's hold):
- *   {kind: "hurt" | "heal" | "protect" | "aid" | "talk" | "avoid" | "bind" | "rob" | "bolstered" | "breakFree" | "free", targetId, level}
+ *   {kind: "hurt" | "heal" | "protect" | "aid" | "talk" | "avoid" | "bind" | "rob" | "bolstered" | "breakFree" | "free" | "bribe" | "extort" | "scare", targetId, level}
  *   (aid: bolster with a buff; bind: tie up a fallen foe, a prisoner; rob: take what a fallen foe carries
  *   (behavior/fallen.js); bolstered: to be bolstered by that friend. A request, not something it acts on itself: the
  *   friend hears it and, if willing, wants to aid it. breakFree: get loose of what holds it (itself: tied up, grabbed,
- *   a hold the system says an action breaks); free: get a friend loose (behavior/holds.js).)
+ *   a hold the system says an action breaks); free: get a friend loose (behavior/holds.js); bribe, extort, scare: pay
+ *   someone to go, make it pay, threaten it into going (behavior/deals.js).)
  *
  * The strongest desire leads. Much weaker ones (BLIND_GAP or more below it) don't cross the character's mind, and
  * an obsessed character (OBSESSED+) stops worrying about its own safety.
@@ -58,12 +59,12 @@ import { hasUses, threatOf } from "./evaluate.js";
 import { leaderFocus } from "./focus.js";
 
 /** A character's playstyle guide for desires (from its pills), or the neutral one. */
-const NEUTRAL_STYLE = Object.freeze({ hurt: {}, avoid: {}, heal: 0, protect: 0, aid: 0, talk: 0, bind: 0, rob: 0, free: 0, rid: 0, whim: 0, focus: 0, contrarian: 0, retaliate: 1, avenge: 1, cool: 1, frustration: 1, leader: 1, doorPatience: 1 });
+const NEUTRAL_STYLE = Object.freeze({ hurt: {}, avoid: {}, heal: 0, protect: 0, aid: 0, talk: 0, bind: 0, rob: 0, free: 0, rid: 0, bribe: 0, extort: 0, scare: 0, whim: 0, focus: 0, contrarian: 0, retaliate: 1, avenge: 1, cool: 1, frustration: 1, leader: 1, doorPatience: 1 });
 export const styleOf = u => u.turnStyle ?? u.spec?.desireStyle ?? NEUTRAL_STYLE;
 /** Its own pills' guide, whoever it follows this turn (worked out again without a pill it lost: dropAmbition). */
 const ownStyle = u => u.ownDesireStyle ?? u.spec?.desireStyle ?? NEUTRAL_STYLE;
 
-export const DESIRE_KINDS = Object.freeze(["hurt", "heal", "protect", "aid", "talk", "avoid", "bind", "rob", "bolstered", "breakFree", "free", "rid", "leave"]);
+export const DESIRE_KINDS = Object.freeze(["hurt", "heal", "protect", "aid", "talk", "avoid", "bind", "rob", "bolstered", "breakFree", "free", "rid", "leave", "bribe", "extort", "scare"]);
 /**
  * Desires a creature may have about itself: mending itself, bolstering itself, getting loose, being rid of a burn,
  * leaving the fight (behavior/leaving.js).
@@ -333,7 +334,7 @@ function relevant(run, u, kind, t) {
   const foe = () => !t.spec.untargetable && !t.spec.hazard && (areEnemies(run, u, t) || seemsFoe(run, u, t));
   switch ( kind ) {
     // (Nobody can attack what's untargetable: a hazard, a Spiritual Weapon.)
-    case "hurt": return !t.spec.untargetable && !hasTrait(t, "untouchable") && (areEnemies(run, u, t) || seemsFoe(run, u, t)) && t.status !== STATUS.SURRENDERED && t.status !== STATUS.STOOD_DOWN;
+    case "hurt": return !t.spec.untargetable && !hasTrait(t, "untouchable") && (areEnemies(run, u, t) || seemsFoe(run, u, t)) && t.status !== STATUS.SURRENDERED && t.status !== STATUS.STOOD_DOWN && !u.spares?.has(t.id);
     case "avoid": return areEnemies(run, u, t) && isStanding(t);
     case "talk": return t.status === STATUS.STANDING;
     case "heal": return !areEnemies(run, u, t) && (t.status === STATUS.DOWN || t.hp < t.maxHp) && !refusesToHelp(run, u, t);
@@ -348,6 +349,8 @@ function relevant(run, u, kind, t) {
     case "leave": return t === u && t.status === STATUS.STANDING && !!u.leaving;
     case "free": return t !== u && !areEnemies(run, u, t) && !refusesToHelp(run, u, t) && !!freeable(run, t);
     case "rob": return (t.status === STATUS.DOWN || t.status === STATUS.BOUND) && foe() && robbable(t) && !u.robbedFrom?.has(t.id);
+    // A deal: with one on its feet and still here, tried once each (behavior/deals.js dealable says the rest).
+    case "bribe": case "extort": case "scare": return t !== u && t.status === STATUS.STANDING && !t.leaving && !u.dealt?.has(t.id);
     // (Wanting a friend's buff is for the friend to act on: see heed.)
     default: return false;
   }
