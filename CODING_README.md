@@ -655,7 +655,15 @@ Hooks:
 - **Goods** are the giver's concessions (`how: "bribe" | "extort"`, `count`, `drop: {id, x, y}` when dropped, `picked` once picked up). The taker's `fetch` is the drop it walks to.
 - **Wanting no part of it** (`shunsFight`, `seesFight`, `reactionBribe`): a timid NPC taking no side leaves when it sees a fight (`neutralTurn`); attacked, it spends a reaction (where `reactionsPerRound` gives it one) on a bribe to be spared, made in `executeOffense` before the blow (`deal` logged with `reaction: true`).
 - **Bought over** (`turnChance`, `turnOver`): a bribe taken may turn its target with talking's outcomes (`applySway`: an enemy stands aside, one taking no side joins), logged as a `sway`.
-- **Log types:** `deal` (`answer`: accept, refuse, offended, unpaid, unheard), `quit`, `quitCall`, `dropGoods`, `pickUp`, `dishonor`, and `offMap` with `walkedAway`.
+- **Log types:** `deal` (`answer`: accept, refuse, offended, unpaid, unheard; `by`: check, player, gm), `quit`, `quitCall`, `dropGoods`, `pickUp`, `dishonor`, and `offMap` with `walkedAway`.
+- **Live** (`foundry/live-battle.js`, its Deals section):
+  - `answerDeal`: a creature's deal with a player's character (`dealAsk` "answer") asks its owners on a card (`askPlayerDeal`, `QUERIES.liveDealAnswer`), then the GM's review (`reviewDeal`).
+  - `dealTurnCard`: a player's turn brings the deal card (`dealOpen`), removed by the next card.
+  - `apps/deal-dialog.js`: the player's dialog. It asks the GM's browser (`QUERIES.liveDeal`, `answerDealRequest`): "prepare" checks the turn, the goods and the language (`gibberish`), and gives the DC; "rolled" gets the answer, the review, and holds a `deal` fact with the turn (`engine/live.js applyFact` → `closeDeal`).
+  - `apps/deal-review.js`: the review window, reopened by its GM card and the Battle Vantage (`waitingDeals`, `openDealReview`).
+  - `shortOnSheet`: goods the payer no longer has on its sheet don't move.
+  - A `dishonor` event is a GM-only card (`tellNew`).
+  - Helper hooks for it: `skillsOf`, `giveables` (API 26), and `rollCheck` with a deal's purpose and the player's `skill`.
 
 ### Groups and taking no side
 

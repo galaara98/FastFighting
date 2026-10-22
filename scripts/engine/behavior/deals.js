@@ -352,14 +352,14 @@ export function offerDeal(run, u, t, kind, say, { terms = null, reaction = false
  */
 export function closeDeal(run, u, t, { kind, terms, skill = null, wordless = false, mod = null, dc, dcStat = "DC", roll, said = null, reaction = false }, say) {
   const told = typeof said === "string" ? { answer: said, by: "player" } : said;
-  const given = told?.answer === "accept" || told?.answer === "refuse" ? told.answer : null;
+  const given = ["accept", "refuse", "offended"].includes(told?.answer) ? told.answer : null;
   const agreed = given ?? dealAnswer(run, t, kind, roll.degree);
   // (Agreed, but whoever pays hasn't got it now, at the last moment: no deal.)
   const payer = kind === "bribe" ? u : kind === "extort" ? t : null;
   const answer = agreed === "accept" && payer && !canPay(payer, terms) ? "unpaid" : agreed;
   (u.dealt ??= new Map()).set(t.id, answer);
-  // (Saying no to a threat that got through: shaken all the same.)
-  const frightened = answer === "refuse" && kind !== "bribe" && roll.degree >= 2 ? frighten(run, t, u) : null;
+  // (Saying no to a threat that got through: shaken all the same. Not so where the GM turned it down.)
+  const frightened = answer === "refuse" && kind !== "bribe" && roll.degree >= 2 && told?.by !== "gm" ? frighten(run, t, u) : null;
   say(u, {
     type: "deal", kind, target: t.spec.name, targetId: t.id, terms, skill, wordless, ...(reaction ? { reaction: true } : {}),
     natural: roll.natural, mod, total: roll.total, note: roll.note ?? null, faces: roll.faces ?? null, dc, dcStat,

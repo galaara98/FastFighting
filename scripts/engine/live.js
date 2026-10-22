@@ -43,7 +43,7 @@ import { afflictionFor } from "./behavior/afflictions.js";
 import { syncGear } from "./gear.js";
 import { joinSide, standAside, turnOn } from "./behavior/neutral.js";
 import { patrolNow } from "./behavior/patrol.js";
-import { dishonor } from "./behavior/deals.js";
+import { dishonor, closeDeal } from "./behavior/deals.js";
 
 /** A question the turn can't go on without: whether {unitId} uses {reactionId} because of {trigger} (by {byId}). */
 export class NeedsDecision extends Error {
@@ -800,6 +800,13 @@ export function applyFact(run, fact) {
       if ( !by ) return false;
       u.offendedBy.add(by.id);
       break;
+    // (A player's own deal, its roll theirs, its answer settled in the GM's review: behavior/deals.js closeDeal.)
+    case "deal": {
+      const d = fact.deal;
+      if ( !by || !d?.terms || !d.roll || !["bribe", "extort", "scare"].includes(d.terms.kind) ) return false;
+      closeDeal(run, by, u, { kind: d.terms.kind, terms: d.terms, skill: d.skill ?? null, wordless: !!d.wordless, dc: d.dc, dcStat: d.dcStat ?? "DC", roll: d.roll, said: d.said ?? null }, tell);
+      break;
+    }
     case "waver":
       u.wavering = !!fact.on;
       break;

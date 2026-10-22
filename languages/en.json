@@ -2454,7 +2454,41 @@
       "TurnChance": "Bought over instead of leaving",
       "Approve": "Approve",
       "Deny": "Deny",
-      "ReviewHint": "Approve lets the deal stand as it is; Deny means there's no deal."
+      "ReviewHint": "Approve lets the deal stand as it is; Deny means there's no deal.",
+      "Offended": "{name} takes it as an insult.",
+      "Insulted": "Insulted",
+      "ItsAnswer": "Its answer, by its nature",
+      "TurnCard": "{name} could make a deal: a bribe, or a demand.",
+      "OpenDeal": "I want to bribe or extort",
+      "Gibberish": "abcdefghijklmnopqrstuvwxyz",
+      "DialogTitle": "A deal",
+      "With": "With",
+      "What": "What",
+      "Skill": "Made with",
+      "Money": "Money offered",
+      "Demand": "Money demanded",
+      "DemandHint": "Demand nothing, and you just tell them to go.",
+      "Offer": "Your offer: drag things here",
+      "Things": "What you carry",
+      "TakeBack": "Take it back",
+      "Give": "Offer it",
+      "Make": "Make the deal",
+      "NoneInRange": "Nobody is within talking range.",
+      "NoGm": "No GM is here to settle a deal.",
+      "Kind": {
+        "bribeLeave": "Pay them to leave",
+        "bribeAvoid": "Pay them to keep away from us",
+        "extort": "Make them pay, or just tell them to go"
+      },
+      "Why": {
+        "language": "They don't understand a word you say.",
+        "unheard": "The GM says they can't make themselves understood.",
+        "notYourTurn": "Only on your own turn.",
+        "nothing": "Offer something first.",
+        "short": "You haven't got that much.",
+        "none": "That deal can't be made now."
+      },
+      "ShortOnSheet": "The deal falls through: {name} hasn't got it on their sheet any more, so nothing changes hands."
     },
     "LiveData": {
       "MenuName": "Live battle data",

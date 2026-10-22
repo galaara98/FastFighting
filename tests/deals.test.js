@@ -11,7 +11,7 @@ import { dealable, dealWishes, dealTerms, dealDC, offerDeal, quitFight, freeGrou
 import { levelOf } from "../scripts/engine/behavior/desire.js";
 import { remaining } from "../scripts/engine/behavior/talk.js";
 import { pf2eRules } from "./fixtures/three-action-rules.js";
-import { creature, strike, battle, social } from "./helpers.js";
+import { creature, strike, battle, social, pcTurn } from "./helpers.js";
 import { STATUS, NEUTRAL_PARTY } from "../scripts/constants.js";
 import { logLine } from "../scripts/story/log-lines.js";
 import { buildStory } from "../scripts/story/story.js";
@@ -627,5 +627,33 @@ describe("wanting no part of it", () => {
       if ( run.log.some(e => e.type === "deal" && e.actorId === "hermit") ) dealt += 1;
     }
     expect(dealt).toBeGreaterThan(0);
+  });
+});
+
+describe("a player's own deal", () => {
+  test("held with their turn, its roll theirs and its answer the GM's review's: the goods move, the one paid quits", () => {
+    const spec = battle([hero({ ...at(0) }), goblin("goblin", { ...at(20) }), goblin("other", { ...at(60) })], { maxRounds: 6, positioning: true, aftermath: "none", opening: "fight" });
+    spec.bounds = { x0: -200, y0: -100, x1: 200, y1: 100 };
+    const run = beginLive(spec, pf2eRules, { seed: 5, players: ["hero"] });
+    for ( const u of run.units ) u.active = true;
+    const terms = { kind: "bribe", ask: "leave", money: 40, items: [], denominations: null };
+    const fact = { kind: "deal", id: "goblin", byId: "hero", deal: { terms, skill: "Diplomacy", wordless: false, dc: 15, dcStat: "will", roll: { degree: 2, natural: 14, total: 19 }, said: { answer: "accept", by: "check" } } };
+    const { events } = pcTurn(run, "hero", [], null, [fact]);
+    expect(events.find(e => e.type === "deal")).toMatchObject({ actorId: "hero", targetId: "goblin", kind: "bribe", answer: "accept", total: 19, dc: 15 });
+    expect(run.byId.get("hero").concessions?.[0]).toMatchObject({ kind: "money", amount: 40, how: "bribe", to: "goblin" });
+    expect(run.byId.get("goblin").leaving?.why === "deal" || run.byId.get("goblin").side === NEUTRAL_PARTY).toBe(true);
+  });
+
+  test("turned down in the review: no deal, told as the GM's", () => {
+    const spec = battle([hero({ ...at(0) }), goblin("goblin", { ...at(20) })], { maxRounds: 6, positioning: true, aftermath: "none", opening: "fight" });
+    spec.bounds = { x0: -200, y0: -100, x1: 200, y1: 100 };
+    const run = beginLive(spec, pf2eRules, { seed: 5, players: ["hero"] });
+    for ( const u of run.units ) u.active = true;
+    const fact = { kind: "deal", id: "goblin", byId: "hero", deal: { terms: { kind: "extort", ask: "leave", money: 10, items: [] }, dc: 15, roll: { degree: 3, natural: 20, total: 30 }, said: { answer: "refuse", by: "gm" } } };
+    const { events } = pcTurn(run, "hero", [], null, [fact]);
+    expect(events.find(e => e.type === "deal")).toMatchObject({ answer: "refuse", by: "gm" });
+    expect(logLine(events.find(e => e.type === "deal"))).toContain("GM");
+    expect(run.byId.get("goblin").concessions ?? []).toEqual([]);
+    expect(run.byId.get("goblin").conds.frightened ?? 0).toBe(0);
   });
 });

@@ -28,7 +28,8 @@ export const QUERIES = Object.freeze({
   liveAsk: `${MODULE_ID}.liveAsk`,
   liveRoll: `${MODULE_ID}.liveRoll`,
   liveReactionDone: `${MODULE_ID}.liveReactionDone`,
-  liveDealAnswer: `${MODULE_ID}.liveDealAnswer`
+  liveDealAnswer: `${MODULE_ID}.liveDealAnswer`,
+  liveDeal: `${MODULE_ID}.liveDeal`
 });
 
 /** Put a query to everyone of `users` who's here, not waiting on any answer (one who isn't here finds it on login). */

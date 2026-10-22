@@ -1,0 +1,50 @@
+<section class="ff-deal-dialog-body">
+  <div class="ff-deal-row">
+    <label>{{localize "FASTFIGHTING.Deal.With"}}
+      <select name="target">
+        {{#each targets}}<option value="{{id}}" {{#if selected}}selected{{/if}}>{{name}}</option>{{/each}}
+      </select>
+    </label>
+    {{#unless targets.length}}<p class="hint">{{localize "FASTFIGHTING.Deal.NoneInRange"}}</p>{{/unless}}
+  </div>
+  <div class="ff-deal-row">
+    <label>{{localize "FASTFIGHTING.Deal.What"}}
+      <select name="kind">
+        {{#each kinds}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}
+      </select>
+    </label>
+  </div>
+  <div class="ff-deal-row">
+    <label>{{localize "FASTFIGHTING.Deal.Skill"}}
+      <select name="skill">
+        {{#each skills}}<option value="{{key}}" {{#if selected}}selected{{/if}}>{{#if talking}}★ {{/if}}{{label}} ({{mod}})</option>{{/each}}
+      </select>
+    </label>
+  </div>
+  <div class="ff-deal-row ff-deal-money">
+    <span>{{#if bribe}}{{localize "FASTFIGHTING.Deal.Money"}}{{else}}{{localize "FASTFIGHTING.Deal.Demand"}}{{/if}}</span>
+    {{#each denominations}}<label>{{label}} <input type="number" min="0" step="1" name="money.{{key}}" value="{{value}}"></label>{{/each}}
+    {{#unless bribe}}<p class="hint">{{localize "FASTFIGHTING.Deal.DemandHint"}}</p>{{/unless}}
+  </div>
+  {{#if bribe}}
+    <div class="ff-deal-goods">
+      <div class="ff-deal-offer">
+        <p class="hint">{{localize "FASTFIGHTING.Deal.Offer"}}</p>
+        <ul>{{#each offered}}<li>
+          <img src="{{img}}" alt="" width="24" height="24"> <span>{{name}}</span>
+          <input type="number" min="1" max="{{quantity}}" step="1" name="count.{{id}}" value="{{count}}" aria-label="{{name}}">
+          <span class="hint">/ {{quantity}}</span>
+          <button type="button" class="ff-btn" data-action="remove" data-id="{{id}}" aria-label="{{localize "FASTFIGHTING.Deal.TakeBack"}}"><i class="fa-solid fa-xmark"></i></button>
+        </li>{{/each}}</ul>
+      </div>
+      <p class="hint">{{localize "FASTFIGHTING.Deal.Things"}}</p>
+      <ul class="ff-deal-items">{{#each items}}<li draggable="true" data-item="{{id}}">
+        <img src="{{img}}" alt="" width="24" height="24"> <span>{{name}}</span>{{#if (gt quantity 1)}} <span class="hint">× {{quantity}}</span>{{/if}}
+        <button type="button" class="ff-btn" data-action="add" data-id="{{id}}" aria-label="{{localize "FASTFIGHTING.Deal.Give"}}"><i class="fa-solid fa-plus"></i></button>
+      </li>{{/each}}</ul>
+    </div>
+  {{/if}}
+  <footer class="ff-deal-buttons">
+    <button type="button" class="ff-btn" data-action="offer" {{#unless canOffer}}disabled{{/unless}}><i class="fa-solid fa-comments-dollar"></i> {{localize "FASTFIGHTING.Deal.Make"}}</button>
+  </footer>
+</section>
