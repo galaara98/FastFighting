@@ -611,7 +611,7 @@ function narrate(e, roll, rel, fill) {
       if ( e.answer === "unheard" ) return roll("event.dealUnheard", g);
       if ( e.answer === "offended" ) return roll("event.dealOffended", g);
       if ( e.answer === "unpaid" ) return roll("event.dealUnpaid", g);
-      const kind = { bribe: "Bribe", extort: "Extort", scare: "Scare" }[e.kind] ?? "Scare";
+      const kind = { bribe: "Bribe", extort: "Extort", scare: "Scare", toll: "Toll" }[e.kind] ?? "Scare";
       return roll(`event.deal${kind}${e.answer === "accept" ? "" : "Refused"}`, g);
     }
     // (Quitting is told with the deal; following a commander out of it, here.)

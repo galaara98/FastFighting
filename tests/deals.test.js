@@ -7,7 +7,7 @@
 import { describe, expect, test } from "vitest";
 import { beginRun, beginRound, prepareBattle, takeTurn, runBatchSync } from "../scripts/engine/simulator.js";
 import { beginLive, liveTurn, NeedsDecision } from "../scripts/engine/live.js";
-import { dealable, dealWishes, dealTerms, dealDC, offerDeal, quitFight, freeGroup, pickUp, dishonor, means, termsWorth, turnChance, settle, shunsFight, reactionBribe } from "../scripts/engine/behavior/deals.js";
+import { dealable, dealWishes, dealTerms, dealDC, offerDeal, quitFight, freeGroup, pickUp, dishonor, means, termsWorth, turnChance, settle, shunsFight, reactionBribe, mayToll, tollPrice, teamWealth, TEAM_TOLL } from "../scripts/engine/behavior/deals.js";
 import { levelOf } from "../scripts/engine/behavior/desire.js";
 import { remaining } from "../scripts/engine/behavior/talk.js";
 import { pf2eRules } from "./fixtures/three-action-rules.js";
@@ -681,5 +681,74 @@ describe("a team's purse", () => {
     expect(remaining(a).own).toBe(0);
     expect(remaining(unit(run, "hero")).purse).toBe(0);
     expect(remaining(unit(run, "n")).purse).toBe(50);
+  });
+});
+
+describe("a toll: pay me and I'll go", () => {
+  const rich = (id, money, extra = {}) => creature({ id, name: id, kind: "pc", traits: traits({ brave: 30, loyal: 40 }), hp: { value: 50, max: 50 }, actions: [strike({ bonus: -50 })], social: talker(), valuables: { money, stowed: [], wielded: [] }, ...extra });
+  const bandit = (id, extra = {}) => goblin(id, { traits: traits({ selfish: 90, brave: 40 }), valuables: { money: 0, stowed: [], wielded: [] }, initiative: { mod: 50 }, ...extra });
+  const command = { hostile: [{ id: "chief", role: "leader", leadership: { brave: 0, tacticalFloor: 40, attack: 0, ac: 0 } }] };
+
+  test("who may ask: one that acts before every creature not of its team, or that surprised them; not one acting after a foe", () => {
+    const run = fight([rich("a", 100, { initiative: { mod: -50 }, ...at(0) }), bandit("first", { ...at(20) }), bandit("late", { initiative: { mod: -99 }, ...at(25) })]);
+    run.order = [unit(run, "first"), unit(run, "a"), unit(run, "late")];
+    expect(mayToll(run, unit(run, "first"))).toBe(true);
+    expect(mayToll(run, unit(run, "late"))).toBe(false);
+    const ambush = fight([rich("a", 100, { ...at(0) }), bandit("lurker", { ...at(20) })]);
+    ambush.order = [unit(ambush, "a"), unit(ambush, "lurker")];
+    ambush.surprise = { by: ["hostile"], hidden: [] };
+    expect(mayToll(ambush, unit(ambush, "lurker"))).toBe(true);
+  });
+
+  test("its price: its share of what the paying team has, a share each; a leader, TEAM_TOLL of that for each of its own", () => {
+    const run = fight([rich("a", 300, { ...at(0) }), rich("b", 100, { ...at(5) }), bandit("chief", { ...at(20) }), bandit("x", { ...at(25) }), bandit("y", { ...at(30) })], { options: { leadership: true }, command, purses: { friendly: 0 } });
+    const [a, chief, x] = [unit(run, "a"), unit(run, "chief"), unit(run, "x")];
+    expect(teamWealth(run, a)).toBe(400);
+    const own = tollPrice(run, x, a);
+    // (A share of the 400, 0.2 to 0.8 by its greed, for each of the two who'd pay.)
+    expect(own).toBeGreaterThanOrEqual(40);
+    expect(own).toBeLessThanOrEqual(160);
+    expect(tollPrice(run, chief, a)).toBe(Math.round(TEAM_TOLL * own * 3));
+    expect(dealTerms(run, x, a, "toll")).toMatchObject({ kind: "toll", ask: "leave", money: own });
+  });
+
+  test("paid: the asked one first, then the richest of its team; the asker walks off with it", () => {
+    const run = fight([rich("a", 50, { ...at(0) }), rich("b", 300, { ...at(5) }), bandit("x", { ...at(20) }), goblin("other", { ...at(80) })]);
+    const [a, b, x] = [unit(run, "a"), unit(run, "b"), unit(run, "x")];
+    run.order = [x, a, b, unit(run, "other")];
+    settle(run, x, a, { kind: "toll", ask: "leave", money: 120, items: [] }, say(run));
+    expect(a.concessions).toEqual([expect.objectContaining({ amount: 50, how: "toll", to: "x" })]);
+    expect(b.concessions).toEqual([expect.objectContaining({ amount: 70, how: "toll", to: "x" })]);
+    expect(x.leaving?.why).toBe("deal");
+    expect(x.leaving.deal).toMatchObject({ side: "friendly", byId: "a" });
+  });
+
+  test("a leader paid: its whole team goes with it, but one that doesn't listen to leaders", () => {
+    const deaf = { leader: 0.2 };
+    const run = fight([rich("a", 500, { ...at(0) }), bandit("chief", { ...at(20) }), bandit("x", { ...at(25) }), bandit("rogue", { ...at(30), desireStyle: { ...deaf } })], { options: { leadership: true }, command });
+    const [a, chief] = [unit(run, "a"), unit(run, "chief")];
+    settle(run, chief, a, { kind: "toll", ask: "leave", money: 100, items: [] }, say(run));
+    expect(chief.leaving?.why).toBe("deal");
+    expect(unit(run, "x").leaving?.why).toBe("deal");
+    expect(unit(run, "rogue").leaving ?? null).toBe(null);
+  });
+
+  test("a player's character paid a toll is gone at once, walked away", () => {
+    const run = fight([rich("a", 0, { ...at(0) }), goblin("g", { valuables: { money: 200, stowed: [], wielded: [] }, ...at(20) })]);
+    const [a, g] = [unit(run, "a"), unit(run, "g")];
+    settle(run, a, g, { kind: "toll", ask: "leave", money: 80, items: [] }, say(run));
+    expect(g.concessions[0]).toMatchObject({ amount: 80, how: "toll", to: "a" });
+    expect(a.status).toBe(STATUS.FLED);
+    expect(a.walkedAway).toBe(true);
+    expect(run.log.at(-1)).toMatchObject({ type: "offMap", actorId: "a", walkedAway: true });
+  });
+
+  test("more than they have: no deal", () => {
+    const run = fight([rich("a", 30, { ...at(0) }), bandit("x", { ...at(20) })]);
+    const [a, x] = [unit(run, "a"), unit(run, "x")];
+    run.order = [x, a];
+    a.prep.traits.loyal = 0;
+    expect(offerDeal(run, x, a, "toll", say(run), { terms: { kind: "toll", ask: "leave", money: 31, items: [] } })).toBe("unpaid");
+    expect(x.leaving ?? null).toBe(null);
   });
 });

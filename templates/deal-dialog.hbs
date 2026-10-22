@@ -24,7 +24,7 @@
   <div class="ff-deal-row ff-deal-money">
     <span>{{#if bribe}}{{localize "FASTFIGHTING.Deal.Money"}}{{else}}{{localize "FASTFIGHTING.Deal.Demand"}}{{/if}}</span>
     {{#each denominations}}<label>{{label}} <input type="number" min="0" step="1" name="money.{{key}}" value="{{value}}"></label>{{/each}}
-    {{#unless bribe}}<p class="hint">{{localize "FASTFIGHTING.Deal.DemandHint"}}</p>{{/unless}}
+    {{#if toll}}<p class="hint">{{localize "FASTFIGHTING.Deal.TollHint"}}</p>{{else}}{{#unless bribe}}<p class="hint">{{localize "FASTFIGHTING.Deal.DemandHint"}}</p>{{/unless}}{{/if}}
   </div>
   {{#if bribe}}
     <div class="ff-deal-goods">

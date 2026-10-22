@@ -64,7 +64,7 @@ export function goodsText(goods) {
 export const askText = ask => t({ avoid: "DealAskAvoid", spare: "DealAskSpare" }[ask] ?? "DealAskLeave");
 
 const MODE = { walk: "ModeWalk", fly: "ModeFly", swim: "ModeSwim", climb: "ModeClimb", burrow: "ModeBurrow" };
-const DESIRE = { hurt: "DesireHurt", heal: "DesireHeal", protect: "DesireProtect", aid: "DesireAid", talk: "DesireTalk", avoid: "DesireAvoid", bind: "DesireBind", rob: "DesireRob", breakFree: "DesireBreakFree", free: "DesireFree", rid: "DesireRid", bribe: "DesireBribe", extort: "DesireExtort", scare: "DesireScare" };
+const DESIRE = { hurt: "DesireHurt", heal: "DesireHeal", protect: "DesireProtect", aid: "DesireAid", talk: "DesireTalk", avoid: "DesireAvoid", bind: "DesireBind", rob: "DesireRob", breakFree: "DesireBreakFree", free: "DesireFree", rid: "DesireRid", bribe: "DesireBribe", extort: "DesireExtort", scare: "DesireScare", toll: "DesireToll" };
 const WHY = { hurt: "WhyHurt", harmed: "WhyHarmed", helped: "WhyHelped", robbed: "WhyRobbed", insulted: "WhyInsulted", impatient: "WhyImpatient", kin: "WhyKin" };
 /** How a patrol goes about it (behavior/patrol.js), each with its words under PatrolHow. */
 const PATROL_HOW = new Set(["scent", "noise", "seen", "pack", "wander", "spread", "near", "watch", "hold", "hide"]);
@@ -249,8 +249,9 @@ function baseLine(e) {
     case "reclaim": return t("Reclaim", { actor: e.actor, what: concessionText(e.concession), by: e.by ?? "" });
     case "deal": {
       if ( e.answer === "unheard" ) return t("DealUnheard", a);
-      const what = e.kind === "scare" ? t("DealScare") : t(e.kind === "bribe" ? "DealBribe" : "DealExtort", { what: goodsText(e.terms), ask: askText(e.terms?.ask) });
+      const what = e.kind === "scare" ? t("DealScare") : t({ bribe: "DealBribe", toll: "DealToll" }[e.kind] ?? "DealExtort", { what: goodsText(e.terms), ask: askText(e.terms?.ask) });
       const payer = e.kind === "bribe" ? e.actor : e.target;
+      // (A toll: paid by the target's team.)
       let answer = { accept: t(e.by === "player" ? "DealAcceptPlayer" : "DealAccept"), refuse: t(e.by === "player" ? "DealRefusePlayer" : e.by === "gm" ? "DealRefuseGm" : "DealRefuse"), offended: t("DealOffended"), unpaid: t("DealUnpaid", { payer }) }[e.answer] ?? "";
       if ( e.frightened ) answer = t("DealFrightened", { answer, n: e.frightened });
       return t("Deal", { ...a, what, wordless: `${e.wordless ? t("DealWordless") : ""}${e.reaction ? t("DealReaction") : ""}`, skill: e.skill ?? "", roll: dice(e.natural, e.mod, e.total, e.dc, t("DcOf", { stat: e.dcStat })), degree: degree(e.degree), answer });

@@ -1,7 +1,8 @@
 /**
  * A player's deal, on their own turn in a live battle (engine/behavior/deals.js): opened from the card their turn brings
  * ("I want to bribe or extort"), in their browser. They pick whom (in talking range; whoever they target, first), what
- * (pay them to leave, pay them to keep away from us, or make them pay: an amount, nothing at all just to see them go),
+ * (pay them to leave, pay them to keep away from us, or make them pay: an amount, nothing at all just to see them go;
+ * and, for one that acted before all its foes or surprised them, ask them to pay for its going: a toll),
  * the skill they make it with (every one their character has: the talking ones first, then the rest by name), and what
  * they give: their things, dragged into the offer (as many as they say, of a stack), and their money, coin by coin.
  *
@@ -21,7 +22,9 @@ const loc = key => localize(key);
 const KINDS = Object.freeze([
   { value: "bribeLeave", kind: "bribe", ask: "leave" },
   { value: "bribeAvoid", kind: "bribe", ask: "avoid" },
-  { value: "extort", kind: "extort", ask: "leave" }
+  { value: "extort", kind: "extort", ask: "leave" },
+  // (Only for one that acted before all its foes, or surprised them: its turn's card says.)
+  { value: "toll", kind: "toll", ask: "leave", toll: true }
 ]);
 /** The talking skills first, in this order: persuading, deceiving, threatening. */
 const TALK_ORDER = Object.freeze(["persuade", "deceive", "intimidate"]);
@@ -43,10 +46,14 @@ export class DealDialog extends HandlebarsApplicationMixin(ApplicationV2) {
     main: { template: `modules/${MODULE_ID}/templates/deal-dialog.hbs`, scrollable: [".ff-deal-goods"] }
   };
 
-  /** @param {TokenDocument} token  the player's character's token */
-  constructor(token, options = {}) {
+  /**
+   * @param {TokenDocument} token  the player's character's token
+   * @param {object} [options]     {toll: it may ask a toll}, and the application's own
+   */
+  constructor(token, { toll = false, ...options } = {}) {
     super(options);
     this.token = token;
+    this.kinds = KINDS.filter(k => !k.toll || toll);
     this.adapter = getAdapter();
     const targeted = [...(game.user.targets ?? [])].map(t => t.document).find(t => t && t !== token);
     this.state = { target: targeted?.id ?? null, kind: "bribeLeave", skill: null, money: {}, offer: new Map(), busy: false };
@@ -74,7 +81,7 @@ export class DealDialog extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   async _prepareContext() {
-    const kind = KINDS.find(k => k.value === this.state.kind) ?? KINDS[0];
+    const kind = this.kinds.find(k => k.value === this.state.kind) ?? this.kinds[0];
     const goods = this.adapter?.giveables?.(this.token.actor) ?? { money: 0, denominations: [], items: [] };
     const skills = this.skills;
     // (The skill it'd make it with, unless they pick another: persuading for a bribe, threatening for a demand.)
@@ -89,8 +96,9 @@ export class DealDialog extends HandlebarsApplicationMixin(ApplicationV2) {
     return {
       name: this.token.name,
       targets: targets.map(t => ({ ...t, selected: t.id === this.state.target })),
-      kinds: KINDS.map(k => ({ value: k.value, label: loc(`FASTFIGHTING.Deal.Kind.${k.value}`), selected: k.value === kind.value })),
+      kinds: this.kinds.map(k => ({ value: k.value, label: loc(`FASTFIGHTING.Deal.Kind.${k.value}`), selected: k.value === kind.value })),
       bribe: kind.kind === "bribe",
+      toll: kind.kind === "toll",
       skills: skills.map(s => ({ ...s, mod: s.mod >= 0 ? `+${s.mod}` : `${s.mod}`, selected: s.key === this.state.skill, talking: !!s.talk })),
       denominations: (goods.denominations ?? []).map(d => ({ ...d, value: Number(this.state.money[d.key]) || 0 })),
       items: goods.items.filter(i => !this.state.offer.has(i.id)),
@@ -146,7 +154,7 @@ export class DealDialog extends HandlebarsApplicationMixin(ApplicationV2) {
   /** The deal made: asked of the GM, rolled the system's way, the roll sent back. */
   static async #onOffer() {
     const gm = game.users.activeGM;
-    const kind = KINDS.find(k => k.value === this.state.kind) ?? KINDS[0];
+    const kind = this.kinds.find(k => k.value === this.state.kind) ?? this.kinds[0];
     const goods = this.adapter?.giveables?.(this.token.actor) ?? { denominations: [] };
     const money = (goods.denominations ?? []).reduce((s, d) => s + (Number(this.state.money[d.key]) || 0) * d.value, 0);
     const items = kind.kind === "bribe" ? [...this.state.offer.entries()].map(([id, count]) => ({ id, count })) : [];

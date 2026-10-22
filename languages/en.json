@@ -1359,6 +1359,8 @@
         "dealExtortRefused": "Extortion Refused",
         "dealScare": "Scared Off",
         "dealScareRefused": "Not Scared Off",
+        "dealToll": "Toll Paid",
+        "dealTollRefused": "Toll Refused",
         "dealOffended": "Deal Offends",
         "dealUnpaid": "Deal Unpaid",
         "dealUnheard": "Deal Not Understood",
@@ -1693,7 +1695,8 @@
         "leave": "Leave the fight",
         "bribe": "Bribe",
         "extort": "Extort",
-        "scare": "Scare off"
+        "scare": "Scare off",
+        "toll": "Ask a toll"
       },
       "Level": {
         "passing": "Passing",
@@ -1817,6 +1820,7 @@
       "DesireBribe": "bribe",
       "DesireExtort": "extort",
       "DesireScare": "scare off",
+      "DesireToll": "ask a toll of",
       "RiderSave": "{actor} vs {name} · {saveType} {roll} · {degree}{damage}",
       "Aura": "{target} {how} {actor}'s {action} · {saveType} {roll} · {degree} ({margin}){effect}{damage}",
       "AuraImmune": "{target} {how} {actor}'s {action} · unaffected",
@@ -1917,6 +1921,7 @@
       "DealBribe": "offers {what} to {ask}",
       "DealExtort": "demands {what} to {ask}",
       "DealScare": "tells it to leave",
+      "DealToll": "asks {what} to go away",
       "DealAskLeave": "leave",
       "DealAskAvoid": "keep away",
       "DealAskSpare": "be left alone",
@@ -2490,7 +2495,8 @@
       "Kind": {
         "bribeLeave": "Pay them to leave",
         "bribeAvoid": "Pay them to keep away from us",
-        "extort": "Make them pay, or just tell them to go"
+        "extort": "Make them pay, or just tell them to go",
+        "toll": "Ask a toll: pay me and I'll go"
       },
       "Why": {
         "language": "They don't understand a word you say.",
@@ -2498,9 +2504,12 @@
         "notYourTurn": "Only on your own turn.",
         "nothing": "Offer something first.",
         "short": "You haven't got that much.",
-        "none": "That deal can't be made now."
+        "none": "That deal can't be made now.",
+        "noToll": "Only one who acted before all their foes, or surprised them, can ask a toll."
       },
-      "ShortOnSheet": "The deal falls through: {name} hasn't got it on their sheet any more, so nothing changes hands."
+      "ShortOnSheet": "The deal falls through: {name} hasn't got it on their sheet any more, so nothing changes hands.",
+      "OfferToll": "{actor} offers to go away if {target}'s side pays {goods}.",
+      "TollHint": "Paid, your character leaves the fight at once."
     },
     "LiveData": {
       "MenuName": "Live battle data",

@@ -47,7 +47,8 @@ export const STAY_TRUE_CAP = 0.1;
  *   heal, protect, aid, talk   points toward healing hurt friends, guarding the weakest friend, bolstering a friend
  *             with a buff (its leader, for those who look to one; else whoever is doing the most fighting), talking
  *   bind, rob points toward tying up a fallen foe (a prisoner: behavior/fallen.js), and robbing one
- *   bribe, extort, scare   points toward paying a foe to go, making it pay, threatening it into going (behavior/deals.js),
+ *   bribe, extort, scare, toll   points toward paying a foe to go, making it pay, threatening it into going, asking it
+ *             to pay for one's going (behavior/deals.js),
  *             where it has a reason to at all
  *   avoid     fear: of the most dangerous foe, of whoever is hurting it once it's hurt (attacker), of the nearest
  *   whim      a random foe now and then catches its eye
@@ -121,7 +122,7 @@ export const PLAYSTYLES = Object.freeze({
     desire: { protect: 20, hurt: { dangerous: 10 }, avoid: { dangerous: -40, attacker: -40 }, free: 10, retaliate: 0.7, frustration: 0.7, rid: -15 } },
   // In it for itself: easy pickings, little loyalty, gives up when it gets hard.
   mercenary: { icon: "fa-coins", traits: { selfish: 30, loyal: -20 }, suggest: { retreat: "losing", resourceUse: "conserve", allyDying: "fight", fallen: "rob" }, behavior: { flighty: 0.6 },
-    desire: { bribe: 5, extort: 20, hurt: { weakest: 10 }, aid: -10, bind: 10, rob: 20, avenge: 0.3, frustration: 1.3, focus: 0.4 } },
+    desire: { bribe: 5, extort: 20, toll: 15, hurt: { weakest: 10 }, aid: -10, bind: 10, rob: 20, avenge: 0.3, frustration: 1.3, focus: 0.4 } },
   // Makes its friends better, in this order: bolsters them (its buffs before anything: enable), then gives them an edge
   // over their foes (Aid, a foe knocked down, grabbed, made off guard or shaken; a flank for a friend), then heals,
   // and hurts last. A dying friend still comes first, and with nothing to give it fights.
@@ -154,7 +155,7 @@ export const PLAYSTYLES = Object.freeze({
     desire: { whim: 25, leader: 0.3, contrarian: 0.5 } },
   // Light fingers: a lock is an invitation.
   thief: { icon: "fa-mask", traits: { selfish: 10 }, suggest: { fallen: "rob" }, behavior: { steal: 1, trapWary: 1 },
-    desire: { extort: 10, hurt: { weakest: 5 }, rob: 30, doorPatience: 1.5 } },
+    desire: { extort: 10, toll: 15, hurt: { weakest: 5 }, rob: 30, doorPatience: 1.5 } },
   // Never forgets: hits back twice as hard, avenges the fallen, and its grudges never cool.
   vengeful: { icon: "fa-bolt", traits: { brave: 5, selfish: 5 }, suggest: {}, behavior: {}, patrol: "spread",
     desire: { bribe: -15, retaliate: 2, avenge: 2.5, cool: 0, rid: -5 } },
@@ -165,7 +166,7 @@ export const PLAYSTYLES = Object.freeze({
   // As little as it can get away with: whatever's nearest, no long walks, not much help for anyone, gives up fast,
   // and can't be bothered to hold a grudge; and now and then, with nobody on top of it, it just doesn't (slacks).
   lazy: { icon: "fa-couch", traits: { tactical: -5, brave: -5 }, suggest: { resourceUse: "conserve" }, behavior: { flighty: 0.4, tauntProof: 0.25, slacks: 0.15 }, patrol: "hold",
-    desire: { bribe: 10, scare: 10, hurt: { nearest: 15, far: -20 }, heal: -10, protect: -10, aid: -10, bind: -15, free: -10, frustration: 1.6, doorPatience: 0.4, cool: 1.5, rid: -10 } },
+    desire: { bribe: 10, scare: 10, toll: 10, hurt: { nearest: 15, far: -20 }, heal: -10, protect: -10, aid: -10, bind: -15, free: -10, frustration: 1.6, doorPatience: 0.4, cool: 1.5, rid: -10 } },
 
   // Un-Mundane: would rather use what sets it apart (its magic, its class's and kind's own abilities, a monster's
   // powers) than fight or talk as anyone would; spends what that takes freely; goes for the foes its powers find a weak
@@ -198,13 +199,13 @@ const DESIRE_MULTIPLIERS = ["retaliate", "avenge", "cool", "frustration", "leade
 /** The combined desire guide of a character's pills (roleplay leans on it harder; staying true halves it). */
 function combineDesires(chosen, { stayTrue, roleplay }) {
   const base = roleplay ? 1.5 : stayTrue ? 0.5 : 1;
-  const out = { hurt: {}, avoid: {}, heal: 0, mend: 0, protect: 0, aid: 0, talk: 0, bind: 0, rob: 0, free: 0, rid: 0, bribe: 0, extort: 0, scare: 0, whim: 0, focus: 0, contrarian: 0 };
+  const out = { hurt: {}, avoid: {}, heal: 0, mend: 0, protect: 0, aid: 0, talk: 0, bind: 0, rob: 0, free: 0, rid: 0, bribe: 0, extort: 0, scare: 0, toll: 0, whim: 0, focus: 0, contrarian: 0 };
   for ( const m of DESIRE_MULTIPLIERS ) out[m] = 1;
   for ( const [i, id] of chosen.entries() ) {
     const scale = base * ORDER_WEIGHTS[i];
     const d = PLAYSTYLES[id].desire ?? {};
     for ( const group of ["hurt", "avoid"] ) for ( const [k, v] of Object.entries(d[group] ?? {}) ) out[group][k] = (out[group][k] ?? 0) + v * scale;
-    for ( const k of ["heal", "mend", "protect", "aid", "talk", "bind", "rob", "free", "rid", "bribe", "extort", "scare", "whim", "focus"] ) out[k] += (d[k] ?? 0) * scale;
+    for ( const k of ["heal", "mend", "protect", "aid", "talk", "bind", "rob", "free", "rid", "bribe", "extort", "scare", "toll", "whim", "focus"] ) out[k] += (d[k] ?? 0) * scale;
     for ( const m of DESIRE_MULTIPLIERS ) if ( d[m] !== undefined ) out[m] *= 1 + (d[m] - 1) * scale;
     if ( d.contrarian ) out.contrarian = Math.min(1, Math.max(out.contrarian, d.contrarian * scale));
   }

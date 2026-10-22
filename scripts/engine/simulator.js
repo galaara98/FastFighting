@@ -2665,7 +2665,7 @@ function healUrgency(ally) {
 }
 
 /** Which part of a turn works on each kind of desire (the top of its agenda first: playFromHere). */
-const AGENDA_GROUPS = Object.freeze({ heal: "heal", aid: "aid", bolstered: "aid", bind: "fallen", rob: "fallen", free: "fallen", bribe: "deal", extort: "deal", scare: "deal", hurt: "fight", protect: "fight" });
+const AGENDA_GROUPS = Object.freeze({ heal: "heal", aid: "aid", bolstered: "aid", bind: "fallen", rob: "fallen", free: "fallen", bribe: "deal", extort: "deal", scare: "deal", toll: "deal", hurt: "fight", protect: "fight" });
 
 /** Whole turns in a row given to going that see a creature leaving the fight gone, at the edge or not. */
 const LEAVING_TURNS = 2;

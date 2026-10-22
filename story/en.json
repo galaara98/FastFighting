@@ -3341,6 +3341,16 @@
     "{target} won't be scared off by {actor}.",
     "{actor}'s threats don't move {target}."
   ],
+  "event.dealToll": [
+    "{actor} offers to go away for {amount}, and {target} pays.",
+    "{target} pays {actor} {amount} to be gone.",
+    "{actor} takes {amount} from {target} and goes."
+  ],
+  "event.dealTollRefused": [
+    "{actor} asks {target} for {amount} to go away. {target} won't pay.",
+    "{target} refuses {actor}'s toll of {amount}.",
+    "{actor} names a price of {amount}; {target} isn't paying."
+  ],
   "event.dealOffended": [
     "{target} takes {actor}'s offer as an insult.",
     "{actor}'s proposal only makes {target} angrier.",

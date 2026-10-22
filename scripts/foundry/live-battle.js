@@ -81,7 +81,7 @@ function systemRollKinds(adapter) {
   return out;
 }
 import { isStanding, canMove } from "../engine/battle-state.js";
-import { means, dealDC, pitchOf, dealInsight, dealAnswer } from "../engine/behavior/deals.js";
+import { means, dealDC, pitchOf, dealInsight, dealAnswer, mayToll } from "../engine/behavior/deals.js";
 
 const loc = key => game.i18n.localize(key);
 const fmt = (key, data) => game.i18n.format(key, data);
@@ -2112,7 +2112,7 @@ function dealText(request) {
   const run = battle.run;
   const name = id => (id ? run.byId.get(id)?.spec.name ?? "" : "");
   const data = { actor: name(request.unitId), target: name(request.targetId), goods: goodsText(request.terms), ask: askText(request.terms?.ask) };
-  return fmt({ bribe: "FASTFIGHTING.Deal.OfferBribe", extort: "FASTFIGHTING.Deal.OfferExtort" }[request.kind] ?? "FASTFIGHTING.Deal.OfferScare", data);
+  return fmt({ bribe: "FASTFIGHTING.Deal.OfferBribe", extort: "FASTFIGHTING.Deal.OfferExtort", toll: "FASTFIGHTING.Deal.OfferToll" }[request.kind] ?? "FASTFIGHTING.Deal.OfferScare", data);
 }
 
 /** A deal's card: what it is, and a line under it (its state), with its buttons. */
@@ -2164,7 +2164,8 @@ async function dealTurnCard(u) {
   const card = await ChatMessage.create({
     content: dealCard(fmt("FASTFIGHTING.Deal.TurnCard", { name: doc.name }), "", `<div class="ff-deal-buttons"><button type="button" data-ff-live="dealOpen"><i class="fa-solid fa-comments-dollar"></i> ${escape(loc("FASTFIGHTING.Deal.OpenDeal"))}</button></div>`),
     speaker: chronicle(), whisper: [...new Set([...gmIds(), ...owners.map(x => x.id)])],
-    flags: { [MODULE_ID]: { live: { battle: battle.data.id, dealOpen: true, pcToken: doc.uuid } } }
+    // (May it ask a toll: it acted first, or surprised them.)
+    flags: { [MODULE_ID]: { live: { battle: battle.data.id, dealOpen: true, pcToken: doc.uuid, toll: mayToll(battle.run, u) } } }
   });
   if ( !card ) return;
   battle.pc.dealCard = card.id;
@@ -2221,8 +2222,9 @@ async function prepareDeal(deal, user) {
   if ( battle.pc?.id !== u.id ) return { ok: false, reason: "notYourTurn" };
   const adapter = getAdapter();
   const goods = adapter.giveables?.(doc.actor) ?? { money: 0, items: [] };
-  const kind = deal.kind === "extort" ? (Number(deal.money) > 0 ? "extort" : "scare") : deal.kind === "bribe" ? "bribe" : null;
+  const kind = deal.kind === "extort" ? (Number(deal.money) > 0 ? "extort" : "scare") : deal.kind === "bribe" ? "bribe" : deal.kind === "toll" && Number(deal.money) > 0 ? "toll" : null;
   if ( !kind ) return { ok: false, reason: "none" };
+  if ( kind === "toll" && !mayToll(run, u) ) return { ok: false, reason: "noToll" };
   // (What they give: what's on their sheet, no more; what they ask: an amount of money, or nothing but going.)
   const items = kind === "bribe" ? (Array.isArray(deal.items) ? deal.items : []).map(i => {
     const item = goods.items.find(x => x.id === i?.id);
@@ -3050,7 +3052,7 @@ async function writeEach(before, after, records, { messages = null, leave = null
  * don't move, the GMs told. Where the helper can't say what a sheet holds (no giveables), none.
  */
 async function shortOnSheet(doc, concessions = []) {
-  const deals = concessions.filter(c => !c.kept && (c.how === "bribe" || c.how === "extort"));
+  const deals = concessions.filter(c => !c.kept && (c.how === "bribe" || c.how === "extort" || c.how === "toll"));
   const held = deals.length ? getAdapter().giveables?.(doc.actor) : null;
   if ( !held ) return [];
   const money = deals.filter(c => c.kind === "money").reduce((n, c) => n + (Number(ownShare(c)?.amount) || 0), 0);
@@ -4101,7 +4103,7 @@ export function registerLiveBattles() {
         button.addEventListener("click", async event => {
           event.preventDefault();
           const { DealDialog } = await import("../apps/deal-dialog.js");
-          new DealDialog(token).render({ force: true });
+          new DealDialog(token, { toll: live.toll === true }).render({ force: true });
         });
         continue;
       }

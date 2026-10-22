@@ -1488,6 +1488,14 @@ comes of it.
 - **Answer:** critical failure, offended (it goes for the one asking; one taking no side turns on its side); failure,
   no; success, yes unless it says no with chance clamp((Loyal − 60) ÷ 150 + (threats: (Brave − 60) ÷ 150) + 0.15
   for a PC, 0, 0.5), halved on a critical success. A player's character answers for itself in a live battle.
+- **A toll** ("pay me and I'll go"): asked only by one that acted before every creature not of its team as the fight
+  began, or whose side surprised its foes, or that started hidden. Wish: 55 × greed × clamp(1.25 − Brave ÷ 100, 0.25,
+  1), × 0.6 once blows have been struck. Price: what the paying team has (its members' own money and its purse) ×
+  clamp(0.2 + 0.6 × clamp((Selfish − 30) ÷ 70, 0, 1), 0.2, 0.8) ÷ the number who'd pay; a leader asks 0.66 × that × the
+  number standing on its own team. DC: the threat's + round(2 × the price's share of what they have). Paid by the
+  asked one first, then its richest teammates, then the purse, at once. Then a creature quits and walks off (a leader's
+  whole team with it, but those who don't listen to leaders: its pills hear a leader at under half, a contrarian, a
+  schemer); a player's character is gone at once.
 - **Team cash:** a team's purse (the planner's, set by the GM) is shared by its members on top of their own money; a
   payment takes the payer's own money first, the rest from the purse. A thief or a robber takes only what's on a
   creature.

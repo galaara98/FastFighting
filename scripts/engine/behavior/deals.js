@@ -35,6 +35,12 @@
  * What it was given goes with it; killed on the way, it still has it on it. Anyone of the side that dealt with it who
  * strikes it on its way is told off to the GM: a dishonorable blow (dishonor).
  *
+ * A toll ("pay me and I'll leave"): asked by one that acted before every creature not of its team, or that surprised
+ * its foes (mayToll, as the fight begins), of a foe's team, paid out of that team's money (its members', the asked one
+ * first; its purse). Its price: its share of what that team has, a share for each of them; a leader asks TEAM_TOLL of
+ * that for each of its own team, and paid, its team goes with it (but those who don't listen to leaders). Paid, a
+ * creature quits and walks off as one paid to go does; a player's character is gone at once.
+ *
  * One that wants no part of a fight (shunsFight: taking no side, quarrelling with nobody, with no nerve for it) leaves
  * as soon as it sees one start (simulator.js neutralTurn). Attacked, it spends its reaction, where the system has them,
  * on a bribe to be left alone (reactionBribe): taken, the blow is never struck. No other deal is a reaction.
@@ -48,7 +54,7 @@ import { ORDER_WEIGHTS } from "../playstyles.js";
 import { aptitude, notDumb } from "../aptitudes.js";
 import { conditionMost } from "../conditions.js";
 import { mind, think, want, styleOf, wantsKind, setLean, allDesires } from "./desire.js";
-import { remaining, talkDC, foesKnown, applySway } from "./talk.js";
+import { remaining, purseLeft, talkDC, foesKnown, applySway } from "./talk.js";
 import { canTalk, shareLanguage } from "./standoff.js";
 import { perceives } from "./senses.js";
 import { isNeutral, standAside, offend, fighting } from "./neutral.js";
@@ -58,7 +64,9 @@ import { isAnimalistic } from "./animal.js";
 import { applyOutcome } from "./effects.js";
 
 /** The kinds of deal (and of the desires for them). */
-export const DEAL_KINDS = Object.freeze(["bribe", "extort", "scare"]);
+export const DEAL_KINDS = Object.freeze(["bribe", "extort", "scare", "toll"]);
+/** A leader asking a toll for its whole team asks this share of its own price, for each of them. */
+export const TEAM_TOLL = 0.66;
 /** How far a creature makes itself heard to strike a deal (feet), where the rules don't say. */
 export const TALK_RANGE = 30;
 /** Someone not of its group this near (feet) is too close, for one taking no side. */
@@ -81,6 +89,33 @@ export const talkRange = run => (Number(run.prep.rules.talkRange) > 0 ? Number(r
 export function wordlessPenalty(run) {
   const p = run.prep.rules.wordlessIntimidation;
   return Number.isFinite(Number(p)) && p !== null && p !== false ? Number(p) : null;
+}
+
+/**
+ * May u ask a toll in this fight: it acted before every creature not of its team (the initiative order as the fight
+ * began), or its side surprised its foes, or it started hidden from them (behavior/surprise.js)? Worked out once.
+ */
+export function mayToll(run, u) {
+  if ( u.mayToll !== undefined ) return u.mayToll;
+  const surprise = run.surprise ?? {};
+  const surprised = (surprise.by ?? []).includes(u.side) || (surprise.hidden ?? []).includes(u.id);
+  const order = run.order ?? [];
+  const at = order.indexOf(u);
+  const key = groupKeyOf(u);
+  const first = at >= 0 && order.every((o, i) => i >= at || groupKeyOf(o) === key || o.spec.hazard);
+  return (u.mayToll = surprised || first);
+}
+
+/** The team that would pay a toll asked of t: its group's members on their feet and not leaving, t first. */
+export function payers(run, t) {
+  const key = groupKeyOf(t);
+  const team = key ? run.units.filter(o => o !== t && groupKeyOf(o) === key && isStanding(o) && !o.leaving) : [];
+  return [t, ...team.sort((a, b) => remaining(b).own - remaining(a).own)];
+}
+
+/** What t's team has to pay a toll with: its members' own money, and its purse (once). */
+export function teamWealth(run, t) {
+  return payers(run, t).reduce((n, o) => n + remaining(o).own, 0) + purseLeft(t);
 }
 
 /** Is u one to strike a deal at all: on its feet, with its wits, not leaving, and talking in this world? */
@@ -123,6 +158,7 @@ export function dealable(run, u, t, kind) {
   if ( !areEnemies(run, u, t) && !(isNeutral(u) && !isNeutral(t) && closeness(run, u, t) > 0) ) return false;
   if ( kind === "bribe" && !hasGoods(u) ) return false;
   if ( kind === "extort" && !(remaining(t).money > 0) ) return false;
+  if ( kind === "toll" && (!mayToll(run, u) || !(teamWealth(run, t) > 0)) ) return false;
   // (A Peacekeeper never threatens.)
   if ( kind !== "bribe" && (behaviorOf(u).peacekeeping ?? 0) >= 0.5 ) return false;
   return !!means(run, u, t, kind) && perceives(run, u, t);
@@ -171,9 +207,11 @@ export function dealsWanted(run, u) {
     if ( !close && !areEnemies(run, u, t) ) continue;
     const edge = upperHand(run, u, t);
     for ( const kind of DEAL_KINDS ) {
+      // (A toll: the greedy who'd rather not fight for it, the more before any blow is struck.)
       let level = kind === "bribe" ? 60 * Math.max(pressed * menace(u, t), close) * (1.3 - brave / 100) * (1.2 - selfish / 125)
         : kind === "extort" ? 55 * greed * nerve * Math.max(edge, close / 2)
-          : 45 * nerve * Math.max(edge, close) * (1 - greed / 2);
+          : kind === "toll" ? 55 * greed * clamp(1.25 - brave / 100, 0.25, 1) * (run.blood ? 0.6 : 1)
+            : 45 * nerve * Math.max(edge, close) * (1 - greed / 2);
       if ( level <= 0 ) continue;
       level += (style[kind] ?? 0) + flair;
       if ( level >= LEAST && dealable(run, u, t, kind) ) out.push({ kind, target: t, level: Math.min(MOST, level) });
@@ -236,7 +274,20 @@ export function dealTerms(run, u, t, kind) {
     const share = clamp(0.2 + 0.6 * clamp((selfish - 30) / 70, 0, 1), 0.2, 1);
     return { kind, ask: t.spec.kind === "pc" ? "spare" : "leave", money: Math.max(1, Math.round(v.money * share)), items: [], denominations: v.denominations ?? null };
   }
+  if ( kind === "toll" ) return { kind, ask: "leave", money: tollPrice(run, u, t), items: [], denominations: remaining(t).denominations ?? null };
   return { kind, ask: "leave", money: 0, items: [], denominations: null };
+}
+
+/**
+ * What u asks of t's team to leave: its share of what that team has (the greedier, the more), a share for each of them;
+ * a leader, for its whole team, TEAM_TOLL of that for each of its own team standing.
+ */
+export function tollPrice(run, u, t) {
+  const share = clamp(0.2 + 0.6 * clamp((liveTrait(run, u, "selfish") - 30) / 70, 0, 1), 0.2, 0.8);
+  const own = Math.max(1, Math.round(teamWealth(run, t) * share / payers(run, t).length));
+  if ( commandOf(run, u)?.unit !== u ) return own;
+  const team = run.units.filter(o => groupKeyOf(o) === groupKeyOf(u) && isStanding(o) && !o.leaving).length;
+  return Math.max(1, Math.round(TEAM_TOLL * own * team));
 }
 
 /** What the goods are worth, in the smallest coin. */
@@ -263,6 +314,8 @@ export function dealDC(run, u, t, terms) {
   const stays = clamp(Math.round((fight - 40) / 20), -2, 3) + (terms.ask === "leave" || terms.ask === "avoid" ? Math.round((liveTrait(run, t, "loyal") - 50) / 25) : 0);
   const threat = talkDC(run, u, t, "intimidate") + lean(COWED) + stays;
   if ( terms.kind === "scare" ) return threat;
+  // (A toll: going for a price, easier than being made to pay and go; the more of what they have, the harder.)
+  if ( terms.kind === "toll" ) return threat + Math.round(2 * clamp(terms.money / Math.max(1, teamWealth(run, t)), 0, 1));
   if ( terms.kind === "extort" ) return threat + (terms.money > 0 ? PAY_HARDER + Math.round(3 * clamp(terms.money / Math.max(1, remaining(t).money), 0, 1)) : 0);
   const worth = termsWorth(terms);
   const purse = remaining(u);
@@ -356,7 +409,8 @@ export function closeDeal(run, u, t, { kind, terms, skill = null, wordless = fal
   const agreed = given ?? dealAnswer(run, t, kind, roll.degree);
   // (Agreed, but whoever pays hasn't got it now, at the last moment: no deal.)
   const payer = kind === "bribe" ? u : kind === "extort" ? t : null;
-  const answer = agreed === "accept" && payer && !canPay(payer, terms) ? "unpaid" : agreed;
+  const short = kind === "toll" ? teamWealth(run, t) < (terms.money ?? 0) : payer && !canPay(payer, terms);
+  const answer = agreed === "accept" && short ? "unpaid" : agreed;
   (u.dealt ??= new Map()).set(t.id, answer);
   // (Saying no to a threat that got through: shaken all the same. Not so where the GM turned it down.)
   const frightened = answer === "refuse" && kind !== "bribe" && roll.degree >= 2 && told?.by !== "gm" ? frighten(run, t, u) : null;
@@ -376,6 +430,13 @@ export function closeDeal(run, u, t, { kind, terms, skill = null, wordless = fal
 
 /** A deal t agreed to: the goods change hands; asked to go, t quits the fight; paid to be left alone, the two let each other be. */
 export function settle(run, u, t, terms, say, { degree = 2 } = {}) {
+  // (A toll: t's team pays, and u goes; a player's character at once, a leader with its team.)
+  if ( terms.kind === "toll" ) {
+    payToll(run, t, u, terms.money, say);
+    if ( u.spec.kind === "pc" ) goneAtOnce(run, u, say);
+    else quitFight(run, u, { by: t, say, whole: commandOf(run, u)?.unit === u });
+    return;
+  }
   if ( terms.kind === "bribe" ) give(run, u, t, terms, "bribe", say);
   if ( terms.kind === "extort" ) give(run, t, u, terms, "extort", say);
   // (Bought over: it stays, on the briber's side's side of things.)
@@ -423,6 +484,39 @@ export function turnOver(run, u, t, say) {
   return "neutral";
 }
 
+/**
+ * t's team pays a toll to u: the asked one's own money first, then the richest of its team's, then its team's purse;
+ * handed over at once (a purse thrown, coin counted out: no goods left on the ground). Returns the records.
+ */
+export function payToll(run, t, u, money, say = null) {
+  let owed = Math.max(0, Math.round(Number(money) || 0));
+  const records = [];
+  for ( const o of payers(run, t) ) {
+    if ( owed <= 0 ) break;
+    const own = Math.min(owed, remaining(o).own);
+    if ( own <= 0 ) continue;
+    records.push(...give(run, o, u, { money: own, items: [] }, "toll", say, { atOnce: true }));
+    owed -= own;
+  }
+  // (The rest out of the team's purse, as the asked one's.)
+  if ( owed > 0 && purseLeft(t) >= owed ) records.push(...give(run, t, u, { money: owed, items: [] }, "toll", say, { atOnce: true }));
+  return records;
+}
+
+/**
+ * u is gone from the fight at once, as one walked away (a player's character paid a toll; one with no map to walk
+ * off): its token, in a live battle, out of sight in the corner and off the tracker; FastFighting done with it.
+ */
+export function goneAtOnce(run, u, say = null) {
+  for ( const id of u.adjacent ) run.byId.get(id)?.adjacent.delete(u.id);
+  u.adjacent.clear();
+  u.status = STATUS.FLED;
+  u.fellRound ??= run.round;
+  u.ranRound = run.round;
+  u.walkedAway = true;
+  say?.(u, { type: "offMap", walkedAway: true });
+}
+
 /** Has the payer got what the deal asks of it, now: the money, and each thing, as many as asked? */
 export function canPay(payer, terms) {
   const v = remaining(payer);
@@ -439,10 +533,10 @@ export function canPay(payer, terms) {
  * "extort"). Side by side, or where a player's character gives or takes, or the table can't show goods on the ground:
  * at once. Apart: dropped where the giver stands (`drop`), for `to` to pick up (`to.fetch`). Returns the records.
  */
-export function give(run, from, to, terms, how, say = null) {
+export function give(run, from, to, terms, how, say = null, { atOnce: now = false } = {}) {
   const v = remaining(from);
   const beside = from.adjacent.has(to.id) || (edgeDistance(from, to) ?? 0) <= 5;
-  const atOnce = beside || !from.pos || !to.pos || run.prep.options.dropGoods === false || from.spec.kind === "pc" || to.spec.kind === "pc";
+  const atOnce = now || beside || !from.pos || !to.pos || run.prep.options.dropGoods === false || from.spec.kind === "pc" || to.spec.kind === "pc";
   const drop = atOnce ? null : { id: (run.drops = (run.drops ?? 0) + 1), x: from.pos.x, y: from.pos.y };
   const records = [];
   const money = Math.min(terms.money ?? 0, v.money);
@@ -500,19 +594,23 @@ export function freeGroup(run) {
  * (never back to their old side by themselves), else stay with theirs, and set off: off the map, or gone at once with
  * no map.
  */
-export function quitFight(run, t, { by = null, say = null } = {}) {
+export function quitFight(run, t, { by = null, say = null, whole = false } = {}) {
   const key = groupKeyOf(t);
   const leads = commandOf(run, t)?.unit === t;
   const team = leads ? run.units.filter(f => f !== t && groupKeyOf(f) === key && isStanding(f) && !f.leaving && f.spec.kind !== "pc" && !f.controlledBy) : [];
   const group = isNeutral(t) && t.friendGroup ? null : freeGroup(run);
   walkOff(run, t, { by, group, say });
   for ( const f of team ) {
+    // (Its team paid for, as a leader's toll is: all go, but those who don't listen to leaders.)
     const p = clamp(0.35 + (liveTrait(run, f, "loyal") - 50) / 100 + (50 - liveTrait(run, f, "brave")) / 200, 0.15, 0.9);
-    const follows = run.rng.chance(p);
+    const follows = whole ? !ignoresLeader(f) : run.rng.chance(p);
     say?.(f, { type: "quitCall", by: t.spec.name, byId: t.id, follows });
     if ( follows ) walkOff(run, f, { by, group, following: t, say });
   }
 }
+
+/** One who doesn't listen to leaders: its pills hardly hear them, it goes against them, or it schemes against them. */
+const ignoresLeader = f => (styleOf(f).leader ?? 1) < 0.5 || (styleOf(f).contrarian ?? 0) >= 0.5 || !!f.scheming;
 
 /** One quitting: into the free group (or its side), and away. */
 function walkOff(run, t, { by, group, following = null, say }) {
@@ -533,13 +631,7 @@ function walkOff(run, t, { by, group, following = null, say }) {
     return;
   }
   // (No map to walk off: gone at once.)
-  for ( const id of t.adjacent ) run.byId.get(id)?.adjacent.delete(t.id);
-  t.adjacent.clear();
-  t.status = STATUS.FLED;
-  t.fellRound ??= run.round;
-  t.ranRound = run.round;
-  t.walkedAway = true;
-  say?.(t, { type: "offMap", walkedAway: true });
+  goneAtOnce(run, t, say);
 }
 
 /**

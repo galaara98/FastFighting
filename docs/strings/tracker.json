@@ -5054,6 +5054,16 @@
    "commit": null,
    "hash": "34404e055af0"
   },
+  "core:FASTFIGHTING.Deal.Kind.toll": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Deal.Kind.toll",
+   "area": "core/Deal",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "eb08918b651a"
+  },
   "core:FASTFIGHTING.Deal.Loyalty": {
    "repo": "core",
    "file": "languages/en.json",
@@ -5183,6 +5193,16 @@
    "date": null,
    "commit": null,
    "hash": "5f9016b6badf"
+  },
+  "core:FASTFIGHTING.Deal.OfferToll": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Deal.OfferToll",
+   "area": "core/Deal",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "5ae683865d3e"
   },
   "core:FASTFIGHTING.Deal.OpenDeal": {
    "repo": "core",
@@ -5374,6 +5394,16 @@
    "commit": null,
    "hash": "2ce21adec86e"
   },
+  "core:FASTFIGHTING.Deal.TollHint": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Deal.TollHint",
+   "area": "core/Deal",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "a2bd8900d3fe"
+  },
   "core:FASTFIGHTING.Deal.TurnCard": {
    "repo": "core",
    "file": "languages/en.json",
@@ -5433,6 +5463,16 @@
    "date": null,
    "commit": null,
    "hash": "2f02d6753b20"
+  },
+  "core:FASTFIGHTING.Deal.Why.noToll": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Deal.Why.noToll",
+   "area": "core/Deal",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "0c36c9cb89fa"
   },
   "core:FASTFIGHTING.Deal.Why.notYourTurn": {
    "repo": "core",
@@ -5725,6 +5765,16 @@
    "date": null,
    "commit": null,
    "hash": "69972e7229c1"
+  },
+  "core:FASTFIGHTING.Desire.Kind.toll": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Desire.Kind.toll",
+   "area": "core/Desire",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "38fddce70d7a"
   },
   "core:FASTFIGHTING.Desire.Label": {
    "repo": "core",
@@ -8835,6 +8885,16 @@
    "commit": null,
    "hash": "270c1bd89662"
   },
+  "core:FASTFIGHTING.Log.DealToll": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.DealToll",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "3bca2a2bc113"
+  },
   "core:FASTFIGHTING.Log.DealUnheard": {
    "repo": "core",
    "file": "languages/en.json",
@@ -9074,6 +9134,16 @@
    "date": null,
    "commit": null,
    "hash": "c5f3b116e4c5"
+  },
+  "core:FASTFIGHTING.Log.DesireToll": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.DesireToll",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "2bad792f769d"
   },
   "core:FASTFIGHTING.Log.Dies": {
    "repo": "core",
@@ -21200,6 +21270,26 @@
    "commit": null,
    "hash": "971b4bee3688",
    "gone": "2026-10-22"
+  },
+  "core:FASTFIGHTING.Story.Part.dealToll": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Story.Part.dealToll",
+   "area": "core/Story",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "4fbbfe998668"
+  },
+  "core:FASTFIGHTING.Story.Part.dealTollRefused": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Story.Part.dealTollRefused",
+   "area": "core/Story",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "11fb690654a2"
   },
   "core:FASTFIGHTING.Story.Part.dealUnheard": {
    "repo": "core",
@@ -38710,6 +38800,26 @@
    "commit": null,
    "hash": "f0c7ca3a2f7f",
    "gone": "2026-10-22"
+  },
+  "core:story:event.dealToll": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "event.dealToll",
+   "area": "core/story.event",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "f188dca76624"
+  },
+  "core:story:event.dealTollRefused": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "event.dealTollRefused",
+   "area": "core/story.event",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "0c47822951f8"
   },
   "core:story:event.dealUnheard": {
    "repo": "core",
