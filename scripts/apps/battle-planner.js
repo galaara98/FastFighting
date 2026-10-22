@@ -18,8 +18,7 @@ import { cachedCharacterSpec, showsReactions } from "../foundry/sheet-watch.js";
 import {
   gatherRoster, chosenSide, groupOf, proposeNeutralGroups, resolveAllegiances, simulate, swingFactors, typicalFight, fightThreads,
   approachFor, commandChains, commandGroup, seedCommand, clearRole, ROLES, sideName, hostileGroupsIn, secretTeam, SECRET_TEAMS, LEANS, predictionSeconds,
-  battleFor, surpriseMode, systemSurprise
-} from "../foundry/battle.js";
+  battleFor, surpriseMode, systemSurprise, mainCoin, PURSE_TEAMS } from "../foundry/battle.js";
 import { SURPRISE } from "../engine/behavior/surprise.js";
 import { buildStory, STORY_STYLES } from "../story/story.js";
 import { loadStoryTables } from "../story/tables.js";
@@ -416,6 +415,8 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     const context = {
       // The game system's own settings for this encounter (its helper's: Ironsworn's track and its rank).
       systemSection: this.#systemSection(adapter, resolved, chains),
+      // (The teams' purses: the party's money to see, the others' the GM's to set.)
+      purses: this.#pursesView(adapter),
       adapterLabel: adapter?.label ?? loc("FASTFIGHTING.Planner.NoAdapter"),
       // (The system, or a module, applies players' damage itself: FastFighting's own toggle greyed out, saying so.)
       systemApplies: systemAppliesText(adapter),
@@ -723,6 +724,26 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
    * The system's section: what its helper asks of this encounter (adapter.plannerSettings), each field as pills or a
    * list, its answers kept with the plan (setup.system).
    */
+  /**
+   * The teams' purses (engine battle-state.js: spec.purses): the party's, its characters' own money, to see; each other
+   * team's (a hostile group, a neutral friend group), the GM's to set, in the system's main coin, shared by the team for
+   * deals (bribes, tolls, extortion).
+   */
+  #pursesView(adapter) {
+    const coin = mainCoin(adapter, this.roster);
+    const party = this.roster.filter(e => e.spec.kind === "pc" && chosenSide(e, this.setup) === SIDES.FRIENDLY && this.setup.tokens[e.token.id]?.include !== false)
+      .reduce((n, e) => n + (Number(e.spec.valuables?.money) || 0), 0);
+    const saved = this.setup.options.purses ?? {};
+    const labels = ["H1", "H2", "H3", "N1", "N2", "N3"];
+    return {
+      coin: coin.label,
+      teams: [
+        { key: SIDES.FRIENDLY, label: loc("FASTFIGHTING.Planner.Team.F"), party: true, total: Math.floor(party / coin.value) },
+        ...PURSE_TEAMS.map((key, i) => ({ key, label: loc(`FASTFIGHTING.Planner.Team.${labels[i]}`), value: Number(saved[key]) || 0 }))
+      ]
+    };
+  }
+
   #systemSection(adapter, resolved, chains) {
     let section = null;
     try {

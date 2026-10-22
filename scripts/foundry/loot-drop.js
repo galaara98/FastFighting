@@ -3,7 +3,8 @@
  * apart). Where they lie: an Item Piles pile when that module is on (the GM put it there); else the system's own loot
  * pile (the helper's dropValuables: PF2e's loot actor); else nowhere, and the engine hands them over at once
  * (options.dropGoods, canDropGoods). Taking goods off a sheet and putting them on one are the helper's (API 26:
- * takeGoods, putGoods, goodsOf). Each step leaves undo records, for Rewind.
+ * takeGoods, putGoods, goodsOf; goods {items, coins, money}: money, in the smallest coin, coins of the helper's
+ * choosing, out of a team's purse). Each step leaves undo records, for Rewind.
  * And, at the bottom of FastFighting's settings: Item Piles recommended, where the system has no loot pile of its own.
  */
 import { MODULE_ID } from "../constants.js";
@@ -28,7 +29,7 @@ const movesGoods = adapter => typeof adapter?.takeGoods === "function" && typeof
 export const canDropGoods = (adapter = getAdapter()) => movesGoods(adapter) && (itemPilesOn() || systemPiles(adapter));
 
 /** Nothing in it. */
-const emptyGoods = goods => !goods?.items?.length && !goods?.coins;
+const emptyGoods = goods => !goods?.items?.length && !goods?.coins && !(goods?.money > 0);
 
 /** The square under a point (canvas pixels): its top-left corner. */
 function squareAt(scene, point) {
@@ -42,11 +43,13 @@ function squareAt(scene, point) {
  * pixels): an Item Piles pile, else the system's own. {records, pile: the pile token's uuid}; with no pile made, the
  * goods taken go to `receiverDoc` instead (handed over), and `pile` is null.
  */
-export async function dropGoods({ scene, point, giverDoc, receiverDoc = null, goods, name = "" }) {
+export async function dropGoods({ scene, point, giverDoc, receiverDoc = null, goods, minted = 0, name = "" }) {
   const adapter = getAdapter();
   if ( !movesGoods(adapter) || !giverDoc ) return { records: [], pile: null };
   const taken = await adapter.takeGoods(giverDoc, goods);
   const records = [...(taken?.records ?? [])];
+  // (Money out of its team's purse, on no sheet: dropped with the rest, `minted`, in the smallest coin.)
+  if ( minted > 0 ) taken.goods = { items: taken.goods?.items ?? [], coins: taken.goods?.coins ?? null, money: minted };
   if ( emptyGoods(taken?.goods) ) return { records, pile: null };
   const at = squareAt(scene, point);
   if ( itemPilesOn() ) {
@@ -55,7 +58,7 @@ export async function dropGoods({ scene, point, giverDoc, receiverDoc = null, go
       const token = made?.tokenUuid ? await fromUuid(made.tokenUuid) : null;
       if ( token ) {
         records.push({ createdTokens: [token.uuid] });
-        if ( taken.goods.coins ) records.push(...((await adapter.putGoods(token, { items: [], coins: taken.goods.coins })) ?? []));
+        if ( taken.goods.coins || taken.goods.money ) records.push(...((await adapter.putGoods(token, { items: [], coins: taken.goods.coins, money: taken.goods.money ?? 0 })) ?? []));
         return { records, pile: token.uuid };
       }
     } catch ( err ) {

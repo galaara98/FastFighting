@@ -3004,7 +3004,10 @@ async function writeEach(before, after, records, { messages = null, leave = null
       for ( const [drop, goods] of dropsIn(ch.concessions) ) {
         const at = pointOf(battle.run.byId.get(id), goods[0].drop);
         const receiverDoc = goods[0].to ? docOf(goods[0].to) : null;
-        const made = at ? await dropGoods({ scene: battle.scene, point: at, giverDoc: doc, receiverDoc, goods }) : { records: [], pile: null };
+        // (Its own share off its sheet; its team's purse's, money on no sheet, dropped with it.)
+        const own = goods.map(ownShare).filter(Boolean);
+        const minted = goods.reduce((n, c) => n + (c.purseKey ? Number(c.purse) || 0 : 0), 0);
+        const made = at ? await dropGoods({ scene: battle.scene, point: at, giverDoc: doc, receiverDoc, goods: own, minted }) : { records: [], pile: null };
         records.push(...noteSettings(made.records));
         if ( made.pile ) battle.data.piles = { ...(battle.data.piles ?? {}), [drop]: made.pile };
       }
@@ -3014,7 +3017,11 @@ async function writeEach(before, after, records, { messages = null, leave = null
         // (The giver's side, for what it shares: Ironsworn's Supply.)
         const giver = battle.run.byId.get(id);
         const allies = battle.run.units.filter(u => u !== giver && u.side === giver.side).map(u => docOf(u.id)).filter(Boolean);
-        records.push(...noteSettings((await adapter.commitConcession(doc, to ?? null, c, { giver: spec, receiver: to ? battle.run.byId.get(c.to)?.spec : null, allies })) ?? []));
+        const own = ownShare(c);
+        if ( own ) records.push(...noteSettings((await adapter.commitConcession(doc, to ?? null, own, { giver: spec, receiver: to ? battle.run.byId.get(c.to)?.spec : null, allies })) ?? []));
+        // (Out of its team's purse, on no sheet: onto the receiver's, as the system's coin.)
+        const minted = c.purseKey ? Number(c.purse) || 0 : 0;
+        if ( minted > 0 && to && adapter.putGoods ) records.push(...noteSettings((await adapter.putGoods(to, { items: [], money: minted })) ?? []));
       }
     } catch ( err ) {
       console.error(`${MODULE_ID} | writing ${doc.name}'s changes`, err);
@@ -3046,7 +3053,7 @@ async function shortOnSheet(doc, concessions = []) {
   const deals = concessions.filter(c => !c.kept && (c.how === "bribe" || c.how === "extort"));
   const held = deals.length ? getAdapter().giveables?.(doc.actor) : null;
   if ( !held ) return [];
-  const money = deals.filter(c => c.kind === "money").reduce((n, c) => n + (Number(c.amount) || 0), 0);
+  const money = deals.filter(c => c.kind === "money").reduce((n, c) => n + (Number(ownShare(c)?.amount) || 0), 0);
   const items = new Map();
   for ( const c of deals ) if ( c.kind === "item" ) items.set(c.item?.id, (items.get(c.item?.id) ?? 0) + (c.count ?? 1));
   const enough = money <= (held.money ?? 0) && [...items].every(([id, n]) => (held.items ?? []).some(i => i.id === id && i.quantity >= n));
@@ -3054,6 +3061,13 @@ async function shortOnSheet(doc, concessions = []) {
   const ChatMessage = chatMessageClass();
   await ChatMessage.create({ content: dealCard(fmt("FASTFIGHTING.Deal.ShortOnSheet", { name: doc.name })), speaker: chronicle(), whisper: gmIds() });
   return deals;
+}
+
+/** What of a payment comes off the giver's own sheet: all of it, but money drawn from its team's purse (null: none). */
+function ownShare(c) {
+  if ( c.kind !== "money" || !c.purseKey ) return c;
+  const amount = (Number(c.amount) || 0) - (Number(c.purse) || 0);
+  return amount > 0 ? { ...c, amount } : null;
 }
 
 /** A turn's dropped goods (behavior/deals.js give), by their drop: [[drop id, concessions]]. */

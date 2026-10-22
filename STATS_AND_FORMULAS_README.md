@@ -1488,6 +1488,9 @@ comes of it.
 - **Answer:** critical failure, offended (it goes for the one asking; one taking no side turns on its side); failure,
   no; success, yes unless it says no with chance clamp((Loyal − 60) ÷ 150 + (threats: (Brave − 60) ÷ 150) + 0.15
   for a PC, 0, 0.5), halved on a critical success. A player's character answers for itself in a live battle.
+- **Team cash:** a team's purse (the planner's, set by the GM) is shared by its members on top of their own money; a
+  payment takes the payer's own money first, the rest from the purse. A thief or a robber takes only what's on a
+  creature.
 - **Paying:** whoever pays (the briber; the one made to pay) must have it at the last moment, else no deal ("unpaid").
   Side by side, a player's character giving or taking, or no piles at the table: the goods move at once. Apart:
   dropped where the giver stands; the taker walks over and picks them up (an action) when no foe is beside it.

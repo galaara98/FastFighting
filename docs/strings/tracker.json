@@ -14769,6 +14769,16 @@
    "commit": null,
    "hash": "d7038c2c763f"
   },
+  "core:FASTFIGHTING.Planner.PartyPurseHint": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Planner.PartyPurseHint",
+   "area": "core/Planner",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "45bdfecf69cc"
+  },
   "core:FASTFIGHTING.Planner.PlayersRun": {
    "repo": "core",
    "file": "languages/en.json",
@@ -14810,6 +14820,26 @@
    "commit": null,
    "hash": "eb8738e68176",
    "changed": true
+  },
+  "core:FASTFIGHTING.Planner.Purses": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Planner.Purses",
+   "area": "core/Planner",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "58f340758f2a"
+  },
+  "core:FASTFIGHTING.Planner.PursesHint": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Planner.PursesHint",
+   "area": "core/Planner",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "28e14dc161a5"
   },
   "core:FASTFIGHTING.Planner.Random": {
    "repo": "core",
@@ -15146,6 +15176,76 @@
    "commit": null,
    "hash": "3e112c00c379",
    "changed": true
+  },
+  "core:FASTFIGHTING.Planner.Team.F": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Planner.Team.F",
+   "area": "core/Planner",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "f67ab10ad4e4"
+  },
+  "core:FASTFIGHTING.Planner.Team.H1": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Planner.Team.H1",
+   "area": "core/Planner",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "8bf797aa02bd"
+  },
+  "core:FASTFIGHTING.Planner.Team.H2": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Planner.Team.H2",
+   "area": "core/Planner",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "ae1a64d34d1c"
+  },
+  "core:FASTFIGHTING.Planner.Team.H3": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Planner.Team.H3",
+   "area": "core/Planner",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "b14c45d35f50"
+  },
+  "core:FASTFIGHTING.Planner.Team.N1": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Planner.Team.N1",
+   "area": "core/Planner",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "b79f477f6d43"
+  },
+  "core:FASTFIGHTING.Planner.Team.N2": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Planner.Team.N2",
+   "area": "core/Planner",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "2a5f06422d35"
+  },
+  "core:FASTFIGHTING.Planner.Team.N3": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Planner.Team.N3",
+   "area": "core/Planner",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "2da09e1fac71"
   },
   "core:FASTFIGHTING.Planner.Terrain": {
    "repo": "core",

@@ -583,6 +583,35 @@ export function clearRole(ts) {
  * @param {object} setup         Scene setup
  * @param {object} [extra]       {approach}
  */
+/**
+ * The system's main coin, the one prices are said in (a team's purse in the planner): its helper's own (mainCoin:
+ * {label, value} in the smallest coin), else the second largest of the coins a creature here carries (gold, of
+ * platinum, gold, silver, copper), else the largest; none known, the smallest coin itself.
+ */
+export function mainCoin(adapter = getAdapter(), roster = []) {
+  const own = adapter?.mainCoin?.();
+  if ( own && Number(own.value) > 0 ) return { label: own.label ?? "", value: Number(own.value) };
+  const coins = roster.map(e => e.spec?.valuables?.denominations).find(d => d?.length) ?? [];
+  const pick = coins.length > 1 ? coins[1] : coins[0];
+  return pick ? { label: pick.label ?? "", value: Number(pick.value) || 1 } : { label: "", value: 1 };
+}
+
+/** The teams the GM may give a purse (all but the party): their group keys (engine battle-state.js groupKeyOf). */
+export const PURSE_TEAMS = Object.freeze([
+  SIDES.HOSTILE, "hostile2", "hostile3", `${NEUTRAL_PARTY}#1`, `${NEUTRAL_PARTY}#2`, `${NEUTRAL_PARTY}#3`
+]);
+
+/** The teams' purses for the engine (spec.purses): the GM's amounts, in the main coin, as the smallest coin. */
+function pursesFor(roster, setup, adapter) {
+  const coin = mainCoin(adapter, roster);
+  const out = {};
+  for ( const key of PURSE_TEAMS ) {
+    const amount = Number(setup.options?.purses?.[key]);
+    if ( amount > 0 ) out[key] = Math.round(amount * coin.value);
+  }
+  return out;
+}
+
 export function buildBattleSpec(roster, setup, { approach = null } = {}) {
   const adapter = getAdapter();
   const sideDefaults = setting("sideDefaults");
@@ -728,6 +757,9 @@ export function buildBattleSpec(roster, setup, { approach = null } = {}) {
   } catch ( err ) {
     console.error(`${MODULE_ID} | the system's settings for this encounter failed`, err);
   }
+  // (The teams' purses, the GM's: shared money for deals.)
+  const purses = pursesFor(roster, setup, adapter);
+  if ( Object.keys(purses).length ) spec.purses = purses;
   return spec;
 }
 

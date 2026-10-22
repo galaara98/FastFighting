@@ -122,7 +122,8 @@ export function remaining(t) {
   const v = t.spec.valuables ?? {};
   const given = (t.concessions ?? []).filter(c => !c.kept);
   const paid = (t.pool ?? [t]).flatMap(o => o.concessions ?? []).filter(c => !c.kept && c.kind === "money");
-  const spent = paid.reduce((s, c) => s + c.amount, 0);
+  // (What came out of its team's purse, not its own: concession.purse.)
+  const spent = paid.reduce((s, c) => s + c.amount - (c.purseKey ? Number(c.purse) || 0 : 0), 0);
   // (Of a stack, as many as went: count, one if it doesn't say. The rest are still there.)
   const gone = new Map();
   for ( const c of given ) if ( c.kind === "item" ) gone.set(c.item.id, (gone.get(c.item.id) ?? 0) + (c.count ?? 1));
@@ -130,12 +131,25 @@ export function remaining(t) {
     const n = (i.quantity ?? 1) - (gone.get(i.id) ?? 0);
     return n <= 0 ? [] : [i.quantity === undefined || n === i.quantity ? i : { ...i, quantity: n }];
   });
+  const own = Math.max(0, (v.money ?? 0) - spent);
+  const purse = purseLeft(t);
   return {
-    money: Math.max(0, (v.money ?? 0) - spent),
+    money: own + purse,
+    own,
+    purse,
     denominations: v.denominations ?? null,
     stowed: left(v.stowed),
     wielded: left(v.wielded)
   };
+}
+
+/** What's left of t's team's purse (the GM's, shared: battle-state.js createRun): its money, less all its members drew. */
+export function purseLeft(t) {
+  const p = t.purse;
+  if ( !p ) return 0;
+  let drawn = 0;
+  for ( const o of p.members ) for ( const c of o.concessions ?? [] ) if ( !c.kept && c.purseKey === p.key ) drawn += Number(c.purse) || 0;
+  return Math.max(0, p.money - drawn);
 }
 
 /** Something to hand over: money, an item carried but not wielded or worn, or ground to give (progress on its track). */
@@ -445,9 +459,9 @@ function outcomeFor(run, t, kind, aim = "down", { noSwitch = false, peace = fals
 export function concession(run, t, { itemLuck = true } = {}) {
   const v = remaining(t);
   const rng = run.rng;
-  if ( v.money > 0 ) {
+  if ( v.own > 0 ) {
     const percent = rng.die(10);
-    return { kind: "money", amount: Math.max(1, Math.round(v.money * percent / 100)), percent, denominations: v.denominations ?? null };
+    return { kind: "money", amount: Math.max(1, Math.round(v.own * percent / 100)), percent, denominations: v.denominations ?? null };
   }
   if ( v.stowed.length ) {
     const item = rng.pick(v.stowed);

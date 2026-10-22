@@ -603,7 +603,19 @@
       "PlayersRun": "Players run their characters",
       "PlayersRunHint": "On: players take their own turns; FastFighting plays the rest. Off: FastFighting plays every turn.",
       "ApplyDamage": "Apply players' damage",
-      "ApplyDamageHint": "A player's damage card against a creature FastFighting runs is applied at once. Off: the Battle Vantage asks a GM."
+      "ApplyDamageHint": "A player's damage card against a creature FastFighting runs is applied at once. Off: the Battle Vantage asks a GM.",
+      "Purses": "Team cash",
+      "PursesHint": "What each team has besides what's on its sheets, in the system's coin, shared by the team for deals: bribes, tolls, extortion.",
+      "PartyPurseHint": "The party's own money, from its characters' sheets.",
+      "Team": {
+        "F": "F",
+        "H1": "H1",
+        "H2": "H2",
+        "H3": "H3",
+        "N1": "N1",
+        "N2": "N2",
+        "N3": "N3"
+      }
     },
     "Results": {
       "Tab": {

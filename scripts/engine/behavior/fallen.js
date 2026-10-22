@@ -117,10 +117,11 @@ export function bind(run, u, t, say, { aftermath = false } = {}) {
 /** What comes off a fallen foe: its purse (a share, where its side pools it), else something it carries, else (a creature's) what it held. */
 function loot(run, t) {
   const v = remaining(t);
-  if ( v.money > 0 ) {
+  // (What's on it: its team's purse isn't.)
+  if ( v.own > 0 ) {
     const pooled = (t.pool?.length ?? 1) > 1;
     const percent = pooled ? run.rng.die(10) : 100;
-    return { kind: "money", amount: pooled ? Math.max(1, Math.round(v.money * percent / 100)) : v.money, percent, denominations: v.denominations ?? null };
+    return { kind: "money", amount: pooled ? Math.max(1, Math.round(v.own * percent / 100)) : v.own, percent, denominations: v.denominations ?? null };
   }
   if ( v.stowed.length ) return { kind: "item", item: run.rng.pick(v.stowed) };
   if ( t.spec.kind !== "pc" && v.wielded.length ) return { kind: "item", item: run.rng.pick(v.wielded), wielded: true };

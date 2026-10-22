@@ -26,7 +26,8 @@
  *   pitches: {persuade|intimidate|deceive: {skill: display name, mod}}   what this creature can try on others
  *   resist:  {persuade|intimidate|deceive: {dc, label}}                  the DC others face, and what it's called
  *   resolve: how much more strong-willed than typical for its level (0 typical; -5 or less: very gullible)
- * @property {object} [valuables]           What it has that could change hands (stolen, looted, given up):
+ * @property {object} [valuables]           What it has that could change hands (stolen, looted, given up; its team's
+ *                                          purse, the GM's, besides: spec.purses, by group key, behavior/talk.js remaining):
  *   {money: total in the smallest coin, denominations: [{label, value}] largest first,
  *    stowed: [{id, name, value, quantity?, category?, material?, rarity?}] carried but not wielded or worn (value: each;
  *    quantity: how many, one if it doesn't say), wielded: (the same),
@@ -328,6 +329,15 @@ export function createRun(prep) {
   // Money its side pools (Ironsworn's Supply): what one pays, all of them have that much less of.
   for ( const u of units ) {
     if ( u.spec.valuables?.pooled ) u.pool = units.filter(o => o.side === u.side && o.spec.valuables?.pooled);
+  }
+  // A team's purse, the GM's (spec.purses, by group key, in the smallest coin): its members share it (behavior/talk.js
+  // remaining). What's drawn from it is in their payments (a concession's `purse`), so it needs no keeping of its own.
+  for ( const [key, money] of Object.entries(prep.spec?.purses ?? {}) ) {
+    const amount = Math.max(0, Math.round(Number(money) || 0));
+    const members = units.filter(u => groupKeyOf(u) === key);
+    if ( !amount || !members.length ) continue;
+    const purse = { key, money: amount, members };
+    for ( const u of members ) u.purse = purse;
   }
   // Boost pools several share (DCC's Fleeting Luck: a player's, for all its characters): one stock for the fight.
   const sharedPools = {};

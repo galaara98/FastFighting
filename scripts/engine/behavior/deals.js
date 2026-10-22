@@ -446,7 +446,9 @@ export function give(run, from, to, terms, how, say = null) {
   const drop = atOnce ? null : { id: (run.drops = (run.drops ?? 0) + 1), x: from.pos.x, y: from.pos.y };
   const records = [];
   const money = Math.min(terms.money ?? 0, v.money);
-  if ( money > 0 ) records.push({ kind: "money", amount: money, denominations: v.denominations ?? null });
+  // (Its own money first; the rest out of its team's purse.)
+  const purse = Math.max(0, money - v.own);
+  if ( money > 0 ) records.push({ kind: "money", amount: money, denominations: v.denominations ?? null, ...(purse > 0 && from.purse ? { purse, purseKey: from.purse.key } : {}) });
   for ( const i of terms.items ?? [] ) {
     const item = v.stowed.find(s => s.id === i.id) ?? v.wielded.find(s => s.id === i.id);
     if ( item ) records.push({ kind: "item", item, count: Math.max(1, Math.min(i.count ?? 1, item.quantity ?? 1)) });

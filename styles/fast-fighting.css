@@ -677,3 +677,8 @@ label.is-disabled, .form-group.is-disabled { opacity: 0.5; }
 .ff-deal-rows dd { margin: 0; }
 .ff-deal-buttons { display: flex; gap: 0.5rem; justify-content: flex-end; }
 .fast-fighting-live .ff-deal-buttons { justify-content: flex-start; }
+
+/* The teams' purses in the planner. */
+.ff-purses { align-items: center; gap: 0.5rem; }
+.ff-purse input { width: 5rem; }
+.ff-purse-total { display: inline-block; min-width: 3rem; text-align: right; font-weight: 600; }

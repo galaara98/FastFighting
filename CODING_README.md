@@ -98,6 +98,7 @@ Hooks.once("fastFighting.init", api => {
     async dropValuables(scene, { x, y }, goods, { name }) { ... } // deals (API 26): the system's own loot pile, a token at x, y: {tokenUuid, records}
     skillsOf(actor) { ... }                          // deals (API 26): its skills [{key, label, mod, talk}], talking ones (persuade, deceive, intimidate) marked
     giveables(actor) { ... }                         // deals (API 26): what it could hand over: {money, denominations, items: [{id, name, img, quantity, value}]}
+    mainCoin() { ... }                               // the coin prices are said in, {key, label, value} (API 26: the planner's team cash; else the second largest coin)
 
     // Live battles (Do it For Real Now): see scripts/adapters/adapter-base.js for each one's contract.
     get supportsLive() { return true; }
@@ -652,6 +653,7 @@ Hooks:
 - **Rules:** `talkRange` (feet, 30 by default), `dealCost` (else `talkCost`, else the basic action), `wordlessIntimidation` (the check's penalty for a threat without words; unset, none without words), `languages: false` (the system doesn't track languages: the GM approves the conversation first).
 - **Live hooks:** `run.live.dealAsk(run, request)` answers `{ask: "talkOk"}` (true/false) and `{ask: "answer"}` for a player's character ("accept"/"refuse"; null lets the engine decide).
 - **Options:** `dropGoods: false` when the table can't show goods on the ground (no Item Piles, no system loot): goods then move at once.
+- **Team cash:** `spec.purses` (by group key, in the smallest coin; the planner's `options.purses`, in the system's main coin: a helper's `mainCoin()`, API 26). Members share `unit.purse`; `remaining()` gives `own`, `purse` and `money` (both). A payment's `purse` part (with `purseKey`) comes off no sheet: a live battle puts it on the receiver through `putGoods({money})`.
 - **Goods** are the giver's concessions (`how: "bribe" | "extort"`, `count`, `drop: {id, x, y}` when dropped, `picked` once picked up). The taker's `fetch` is the drop it walks to.
 - **Wanting no part of it** (`shunsFight`, `seesFight`, `reactionBribe`): a timid NPC taking no side leaves when it sees a fight (`neutralTurn`); attacked, it spends a reaction (where `reactionsPerRound` gives it one) on a bribe to be spared, made in `executeOffense` before the blow (`deal` logged with `reaction: true`).
 - **Bought over** (`turnChance`, `turnOver`): a bribe taken may turn its target with talking's outcomes (`applySway`: an enemy stands aside, one taking no side joins), logged as a `sway`.

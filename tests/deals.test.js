@@ -26,10 +26,11 @@ const hero = (extra = {}) => creature({ id: "hero", name: "Hero", kind: "pc", tr
 const goblin = (id = "goblin", extra = {}) => creature({ id, name: id, side: "hostile", traits: traits(), hp: { value: 30, max: 30 }, actions: [strike({ bonus: -50 })],
   social: talker(), valuables: purse(), ...at(20), ...extra });
 
-function fight(list, { bounds = { x0: -200, y0: -100, x1: 200, y1: 100 }, rules = pf2eRules, options = {}, command = null, seed = 3 } = {}) {
+function fight(list, { bounds = { x0: -200, y0: -100, x1: 200, y1: 100 }, rules = pf2eRules, options = {}, command = null, seed = 3, purses = null } = {}) {
   const spec = battle(list, { maxRounds: 6, positioning: true, aftermath: "none", opening: "fight", ...options });
   if ( bounds ) spec.bounds = bounds;
   if ( command ) spec.command = command;
+  if ( purses ) spec.purses = purses;
   const run = beginRun(prepareBattle(spec, rules), seed, { log: true });
   beginRound(run, 1);
   for ( const u of run.units ) u.active = true;
@@ -655,5 +656,30 @@ describe("a player's own deal", () => {
     expect(logLine(events.find(e => e.type === "deal"))).toContain("GM");
     expect(run.byId.get("goblin").concessions ?? []).toEqual([]);
     expect(run.byId.get("goblin").conds.frightened ?? 0).toBe(0);
+  });
+});
+
+describe("a team's purse", () => {
+  test("its members share it: each has its own money and what's left of the purse; a payment takes its own first", () => {
+    const run = fight([hero({ ...at(15) }), goblin("a", { valuables: { money: 10, stowed: [], wielded: [] } }), goblin("b", { valuables: { money: 0, stowed: [], wielded: [] } })], { purses: { hostile: 100 } });
+    const [h, a, b] = ["hero", "a", "b"].map(id => unit(run, id));
+    expect(remaining(a)).toMatchObject({ money: 110, own: 10, purse: 100 });
+    expect(remaining(b).money).toBe(100);
+    a.adjacent.add(h.id);
+    h.prep.traits.loyal = 0;
+    expect(offerDeal(run, a, h, "bribe", say(run), { terms: { kind: "bribe", ask: "leave", money: 70, items: [] } })).toBe("accept");
+    expect(a.concessions[0]).toMatchObject({ amount: 70, purse: 60, purseKey: "hostile" });
+    expect(remaining(a)).toMatchObject({ own: 0, purse: 40 });
+    expect(remaining(b)).toMatchObject({ own: 0, purse: 40, money: 40 });
+    // (No more than the team has.)
+    expect(offerDeal(run, b, h, "bribe", say(run), { terms: { kind: "bribe", ask: "leave", money: 41, items: [] } })).toBe("unpaid");
+  });
+
+  test("a thief or a robber takes what's on it, never its team's purse; another team's purse is none of its business", () => {
+    const run = fight([hero(), goblin("a", { valuables: { money: 0, stowed: [], wielded: [] } }), creature({ id: "n", side: NEUTRAL_PARTY, originSide: "neutral", group: 1, ...at(80) })], { purses: { hostile: 100, "neutralParty#1": 50 } });
+    const a = unit(run, "a");
+    expect(remaining(a).own).toBe(0);
+    expect(remaining(unit(run, "hero")).purse).toBe(0);
+    expect(remaining(unit(run, "n")).purse).toBe(50);
   });
 });

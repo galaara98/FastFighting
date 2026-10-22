@@ -53,6 +53,16 @@
         <label class="{{#if systemApplies}}is-disabled{{/if}}" data-tooltip="{{#if systemApplies}}{{systemApplies}}{{else}}{{localize "FASTFIGHTING.Planner.ApplyDamageHint"}}{{/if}}"><input type="checkbox" name="options.applyPlayerDamage" {{checked options.applyPlayerDamage}} {{#if systemApplies}}disabled{{/if}}> {{localize "FASTFIGHTING.Planner.ApplyDamage"}}</label>{{/if}}
       </div>
     </div>
+    {{!-- The teams' purses: shared money for deals --}}
+    <div class="ff-toolbar-row ff-purses">
+      <span class="ff-field-label">{{localize "FASTFIGHTING.Planner.Purses"}} <i class="fa-solid fa-circle-question" data-tooltip="{{localize "FASTFIGHTING.Planner.PursesHint"}}"></i></span>
+      {{#each purses.teams}}
+      <label class="ff-field ff-purse">{{label}}
+        {{#if party}}<span class="ff-purse-total" data-tooltip="{{localize "FASTFIGHTING.Planner.PartyPurseHint"}}">{{total}}</span>{{else}}<input type="number" min="0" step="1" name="options.purses.{{key}}" value="{{value}}" data-dtype="Number">{{/if}}
+        <span class="hint">{{../purses.coin}}</span>
+      </label>
+      {{/each}}
+    </div>
     {{!-- The game system's own settings for this encounter --}}
     {{#if systemSection}}
     <div class="ff-toolbar-row ff-system-row">

@@ -42,7 +42,9 @@ export function defaultSetup() {
       includeHidden: setting("includeHidden"),
       includeOtherLevels: setting("includeOtherLevels"),
       playersRunPCs: setting("playersRunPCs"),
-      applyPlayerDamage: setting("applyPlayerDamage")
+      applyPlayerDamage: setting("applyPlayerDamage"),
+      // (The teams' purses, the GM's, in the system's main coin, by group key: foundry/battle.js PURSE_TEAMS.)
+      purses: {}
     },
     sides: Object.fromEntries(Object.values(SIDES).map(s => [s, defaultSideSetup(s)])),
     tokens: {}
