@@ -146,7 +146,7 @@ The rules object is pure and is called thousands of times.
   - `minimumDamage`.
 - **Situations:** `modifiers.attack`, `defense`, `save`, `check`, `steal`, `exposed` and `actionsLost`. The engine passes the facts (prone, grabbed, flanked, distance, allies adjacent, engaged, conditions); the rules return bonuses and advantage.
 - **Damage and dying:**
-  - `applyIwr(iwr, byType, target, ctx)` (ctx: what deals the damage, API 20 below) and `critImmune(target, action)` (true: a critical hit on it deals a normal hit's damage, still a critical hit for everything else: PF2e's immunity to critical hits);
+  - `applyIwr(iwr, byType, target, ctx)` (ctx: what deals the damage, API 20 below; `ctx.estimate` for the Statistics Engine's estimate, API 25: change nothing) and `critImmune(target, action)` (true: a critical hit on it deals a normal hit's damage, still a critical hit for everything else: PF2e's immunity to critical hits);
   - `onDropped(unit, {crit, model, amount, overflow})` (it may leave the unit `beaten`: out of the fight, alive, however the table decides; one who would kill it, the Cruel or a creature that isn't a player character unless it holds back, kills it instead, and the story says so), `onHealed(unit, amount)` and `recoveryCheck(unit, rng)`;
   - `firstAidDC(unit)`, `firstAid(unit, degree)` and `persistentFlatCheck(rng, {run, unit, type})` (the run and whose it is, for a live battle's flat check the system rolls: `systemRolled`).
 - **Crowd control, buffs and debuffs:**
@@ -395,6 +395,15 @@ The sheet's own state, for the system's rules (API 24): `rules.syncUnit(unit, st
 `readLiveState` a live battle reads (`engine/live.js` `syncFromSheets`, after the core's own fields), so the rules can
 take up what only they keep (5e's death save successes and failures, which a player may roll at the table between
 FastFighting's turns). Anything a helper's `readLiveState` returns beyond the core's fields reaches it there.
+
+#### Estimates say so (API 25)
+
+`rules.applyIwr(iwr, byType, target, ctx)` serves a blow that lands and the Statistics Engine's estimate of one alike:
+what an action would deal a foe (`evaluate.js` `meanDamageVs`, kept for the batch in `prep.meanCache`), what a
+condition's harm or an outcome's own damage is worth (`effects.js`). An estimate's `ctx` says `estimate: true` (a blow's
+has no such field), so a system whose damage spends something of the target's (Daggerheart: an Armor Slot marked, Stress
+marked) spends nothing for an estimate, and works the estimate out from what doesn't change in a fight, so the estimate
+the batch keeps is the same whichever fight worked it out first. A system whose `applyIwr` changes nothing ignores it.
 
 **A turn by one not in the fight (live battles).** One on its feet that isn't part of the fight (it hasn't noticed it,
 has only just, or takes no side and has turned on no one) and does nothing in its turn logs `aside` (`simulator.js`

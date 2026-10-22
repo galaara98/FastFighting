@@ -28,10 +28,12 @@ function meanByCategory(parts) {
  * silver), whether it's `magical` and an `area`'s; a critical hit (`crit`: an attack's, not a save's); how much of each
  * type is of a category (`byCategory`: precision, splash); `direct` (Daggerheart's).
  */
-export function iwrContext(action, { crit = false, byCategory = null, direct = false } = {}) {
+export function iwrContext(action, { crit = false, byCategory = null, direct = false, estimate = false } = {}) {
   return {
     direct: !!direct, traits: action?.traits ?? [], materials: action?.materials ?? [], magical: isMagical(action), area: !!action?.area,
-    crit: !!crit && action?.kind !== "save" && action?.kind !== "auto", byCategory: byCategory ?? {}, action: action ?? null
+    crit: !!crit && action?.kind !== "save" && action?.kind !== "auto", byCategory: byCategory ?? {}, action: action ?? null,
+    // (The Statistics Engine's estimate, no blow: the rules change nothing for it. API 25.)
+    ...(estimate ? { estimate: true } : {})
   };
 }
 
@@ -167,7 +169,7 @@ function meanDamageNow(run, action, target, extra = []) {
   // Rolled several times (magic missiles), and a crit table's extra on a crit.
   const times = action.repeat ? Math.max(1, meanPart(action.repeat)) : 1;
   // (Against the target's resistances, what deals it with them, as rollHit has it: iwrContext.)
-  const vs = (parts, isCrit) => rules.applyIwr(iwr, meanByType(parts, { persistent: false }), target, iwrContext(action, { crit: isCrit, byCategory: meanByCategory(parts) })) + persistentMean(parts);
+  const vs = (parts, isCrit) => rules.applyIwr(iwr, meanByType(parts, { persistent: false }), target, iwrContext(action, { crit: isCrit, byCategory: meanByCategory(parts), estimate: true })) + persistentMean(parts);
   const critMean = vs(crit, true);
   return {
     normal: times * vs(base, false) + rider,

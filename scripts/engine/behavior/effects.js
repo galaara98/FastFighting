@@ -68,7 +68,7 @@ function harmMean(run, t, key, v, p, by) {
   const parts = harmParts(run, t, key, v, p, by ?? null);
   if ( !parts.length ) return 0;
   const rules = run.prep.rules;
-  return rules.applyIwr ? rules.applyIwr(iwrOf(t), meanByType(parts), t) : parts.reduce((s, x) => s + Math.max(0, meanPart(x)), 0);
+  return rules.applyIwr ? rules.applyIwr(iwrOf(t), meanByType(parts), t, { estimate: true }) : parts.reduce((s, x) => s + Math.max(0, meanPart(x)), 0);
 }
 
 /** How badly a taunt makes its bearer want to go for the taunter, unless it says: "driven", above a clear choice. */
@@ -704,7 +704,7 @@ export function outcomeWorth(run, by, t, outcome, { versus = null } = {}) {
   // Moved (shoved, dragged, put somewhere): what it would do to it there (behavior/forced.js).
   if ( outcome.move && by && by !== t ) worth -= forcedWorth(run, by, t, outcome.move);
   // Its own damage at that degree (PF2e Trip, critically): as dealt.
-  if ( outcome.damage?.length && by && by !== t ) worth -= rules.applyIwr ? rules.applyIwr(iwrOf(t), meanByType(outcome.damage), t) : outcome.damage.reduce((s, p) => s + Math.max(0, meanPart(p)), 0);
+  if ( outcome.damage?.length && by && by !== t ) worth -= rules.applyIwr ? rules.applyIwr(iwrOf(t), meanByType(outcome.damage), t, { estimate: true }) : outcome.damage.reduce((s, p) => s + Math.max(0, meanPart(p)), 0);
   // (What else it's worth to t, as the system reckons it: DCC's rally, its morale.)
   if ( rules.outcomeWorth ) worth += Number(rules.outcomeWorth(run, by, t, outcome)) || 0;
   return worth;
