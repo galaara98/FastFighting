@@ -305,7 +305,8 @@
       "pile": "Drop a loot pile",
       "none": "Do nothing",
       "ItemPilesMissing": "This system has no loot pile of its own. Install the Item Piles module, and goods dropped in a deal lie on the ground until picked up; without it, they change hands at once.",
-      "ItemPilesDisabled": "This system has no loot pile of its own. Enable the Item Piles module, and goods dropped in a deal lie on the ground until picked up; without it, they change hands at once."
+      "ItemPilesDisabled": "This system has no loot pile of its own. Enable the Item Piles module, and goods dropped in a deal lie on the ground until picked up; without it, they change hands at once.",
+      "ItemPilesUnset": "This system has no loot pile of its own, and Item Piles doesn't know this system yet. Set up Item Piles in its own settings (the actor a pile is), and goods dropped in a deal lie on the ground until picked up; until then, they change hands at once."
     },
     "Corpse": {
       "keep": "Keep, marked dead",
@@ -1908,6 +1909,7 @@
       "DealAskAvoid": "keep away",
       "DealAskSpare": "be left alone",
       "DealWordless": " (without words)",
+      "DealReaction": " (as a reaction)",
       "DealAccept": "accepted",
       "DealAcceptPlayer": "accepted by its player",
       "DealRefuse": "refused",

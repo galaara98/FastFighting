@@ -45,7 +45,7 @@ import { perceives } from "./behavior/senses.js";
 import { isAnimalistic, animalTactics } from "./behavior/animal.js";
 import { stealChance, theftTarget, theftPlan, attemptTheft, robbable } from "./behavior/theft.js";
 import { fallenWishes, decideFallen, bind, rob, stayBound, takesPrisoners, robsTheFallen, freeFriend, rollOf } from "./behavior/fallen.js";
-import { dealWishes, decideDeal, offerDeal, pickUp, dishonor, dealsWanted, talkRange, dealCost } from "./behavior/deals.js";
+import { dealWishes, decideDeal, offerDeal, pickUp, dishonor, dealsWanted, talkRange, dealCost, shunsFight, seesFight, reactionBribe } from "./behavior/deals.js";
 import { holdsOf, ownHolds, known, tryHold, release, escapeCost, isBound, remediesOf, bears } from "./behavior/holds.js";
 import { forcedPath, fallDamage, resettle } from "./behavior/forced.js";
 import { stepOf, stacks, stageRounds, stageMove } from "./behavior/afflictions.js";
@@ -1242,6 +1242,8 @@ function executeOffense(run, u, action, t, attacksMade) {
     run.blood = true;
     return;
   }
+  // (One that wants no part of the fight: it may buy its way out of the blow, as a reaction: behavior/deals.js.)
+  if ( t && t !== u && reactionBribe(run, t, u, logger(run)) ) return;
   // (Struck at on its way off the map: it may turn to face it: behavior/leaving.js. Going by a deal with the striker's
   // side: a dishonorable blow, told: behavior/deals.js.)
   if ( t?.leaving ) {
@@ -3321,6 +3323,23 @@ function keepsPeace(run, u, actions) {
 function neutralTurn(run, u) {
   const say = logger(run);
   if ( kinsQuarrel(run, u, say) ) return true;
+  // Wanting no part of a fight it sees: it leaves (its turn goes on, on its way: behavior/deals.js shunsFight).
+  if ( shunsFight(run, u) && seesFight(run, u) ) {
+    log(run, u, { type: "leave", shuns: true });
+    if ( mayLeave(run, u) || (u.pos && run.prep.spec?.bounds) ) {
+      startLeaving(run, u, { why: "shuns" });
+      return true;
+    }
+    goneFrom(run, u);
+    log(run, u, { type: "offMap" });
+    return false;
+  }
+  // Someone too close: paid off, or told to go (behavior/deals.js). That's its turn.
+  if ( dealNow(run, u, turnFor(run, u)) ) {
+    u.turnsTaken += 1;
+    endOfTurn(run, u);
+    return false;
+  }
   // One who can't abide violence, seeing a fight, tries to stop it. Otherwise, leaning toward a side, it may get
   // involved (mostly not, unless that side is one it likes and looks like winning: neutral.js meddling): talking the
   // side it likes least out of the fight.
@@ -3363,7 +3382,7 @@ function standoffTurn(run, u) {
   const rules = run.prep.rules;
   const turn = turnFor(run, u);
   tellLore(run, u, turn); // (what it learned last turn, if it means to tell its friends)
-  standoffDeal(run, u, turn);
+  dealNow(run, u, turn);
   const actions = turn.howMany(rules.talkCost ?? rules.basicAction ?? 1);
   if ( !keepsPeace(run, u, actions) && !observes(run, u, turn) ) standoffPitching(run, u, standoffPitches(run, u, actions));
   u.turnsTaken += 1;
@@ -3371,10 +3390,11 @@ function standoffTurn(run, u) {
 }
 
 /**
- * In a standoff: the deal it wants most (behavior/deals.js), as often as it wants it (its level, of 100), with one in
- * talking range or a move from it (it steps that close first). True if it made one.
+ * Outside the turn's own steps (a standoff, one taking no side): the deal it wants most (behavior/deals.js), as often as
+ * it wants it (its level, of 100), with one in talking range or a move from it (it steps that close first). True if it
+ * made one.
  */
-function standoffDeal(run, u, turn) {
+function dealNow(run, u, turn) {
   const rules = run.prep.rules;
   const cost = dealCost(rules);
   if ( !turn.canAfford(cost) ) return false;

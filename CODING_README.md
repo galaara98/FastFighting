@@ -647,12 +647,13 @@ Hooks:
 
 ### Deals: bribes, extortion and scaring off
 
-- **`engine/behavior/deals.js`.** Three desire kinds (`bribe`, `extort`, `scare`), made each turn by `dealWishes` in `thinkOver`, acted on in the turn's "deal" step (`decideDeal`, then `offerDeal`), and in a standoff by `standoffDeal`. A scare is an extortion that asks for nothing.
+- **`engine/behavior/deals.js`.** Three desire kinds (`bribe`, `extort`, `scare`), made each turn by `dealWishes` in `thinkOver`, acted on in the turn's "deal" step (`decideDeal`, then `offerDeal`), and in a standoff by `dealNow`. A scare is an extortion that asks for nothing.
 - **The check** goes through `systemRolled(run, u, "check", {purpose: "bribe" | "extort" | "scare", skill, deal})`, so a helper's `rollCheck` can make the system's own roll. `deal` is `{kind, ask, money, items: [{id, count}], wordless}`.
 - **Rules:** `talkRange` (feet, 30 by default), `dealCost` (else `talkCost`, else the basic action), `wordlessIntimidation` (the check's penalty for a threat without words; unset, none without words), `languages: false` (the system doesn't track languages: the GM approves the conversation first).
 - **Live hooks:** `run.live.dealAsk(run, request)` answers `{ask: "talkOk"}` (true/false) and `{ask: "answer"}` for a player's character ("accept"/"refuse"; null lets the engine decide).
 - **Options:** `dropGoods: false` when the table can't show goods on the ground (no Item Piles, no system loot): goods then move at once.
 - **Goods** are the giver's concessions (`how: "bribe" | "extort"`, `count`, `drop: {id, x, y}` when dropped, `picked` once picked up). The taker's `fetch` is the drop it walks to.
+- **Wanting no part of it** (`shunsFight`, `seesFight`, `reactionBribe`): a timid NPC taking no side leaves when it sees a fight (`neutralTurn`); attacked, it spends a reaction (where `reactionsPerRound` gives it one) on a bribe to be spared, made in `executeOffense` before the blow (`deal` logged with `reaction: true`).
 - **Bought over** (`turnChance`, `turnOver`): a bribe taken may turn its target with talking's outcomes (`applySway`: an enemy stands aside, one taking no side joins), logged as a `sway`.
 - **Log types:** `deal` (`answer`: accept, refuse, offended, unpaid, unheard), `quit`, `quitCall`, `dropGoods`, `pickUp`, `dishonor`, and `offMap` with `walkedAway`.
 

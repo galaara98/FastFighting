@@ -8155,6 +8155,16 @@
    "commit": null,
    "hash": "5021d3393afb"
   },
+  "core:FASTFIGHTING.Log.DealReaction": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.DealReaction",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "fbb3adb2d52d"
+  },
   "core:FASTFIGHTING.Log.DealRefuse": {
    "repo": "core",
    "file": "languages/en.json",
@@ -12026,6 +12036,16 @@
    "date": null,
    "commit": null,
    "hash": "c826dba3c636"
+  },
+  "core:FASTFIGHTING.Loot.ItemPilesUnset": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Loot.ItemPilesUnset",
+   "area": "core/Loot",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "4128d00c2a43"
   },
   "core:FASTFIGHTING.Loot.none": {
    "repo": "core",

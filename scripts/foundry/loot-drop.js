@@ -12,8 +12,11 @@ import { getAdapter } from "../api.js";
 
 export const ITEM_PILES = "item-piles";
 
-/** Item Piles, on in this world. */
-export const itemPilesOn = () => !!game.modules.get(ITEM_PILES)?.active && typeof game.itempiles?.API?.createItemPile === "function";
+/**
+ * Item Piles, on in this world and able to make a pile here: it knows this system, or the GM has told it what kind of
+ * actor a pile is (its "actor class type" setting; without one, as for a system it doesn't know, it can't make one).
+ */
+export const itemPilesOn = () => !!game.modules.get(ITEM_PILES)?.active && typeof game.itempiles?.API?.createItemPile === "function" && !!game.itempiles.API.ACTOR_CLASS_TYPE;
 
 /** The system's own loot pile, through its helper. */
 export const systemPiles = adapter => typeof adapter?.dropValuables === "function";
@@ -102,6 +105,8 @@ export async function pickUpGoods({ pileUuid, receiverDoc }) {
 export function lootAdvice(adapter = getAdapter()) {
   if ( !adapter || systemPiles(adapter) || itemPilesOn() ) return null;
   const installed = game.modules.get(ITEM_PILES);
+  // (On, but it doesn't know this system: its own settings say what a pile is.)
+  if ( installed?.active ) return localize("FASTFIGHTING.Loot.ItemPilesUnset");
   return localize(installed ? "FASTFIGHTING.Loot.ItemPilesDisabled" : "FASTFIGHTING.Loot.ItemPilesMissing");
 }
 

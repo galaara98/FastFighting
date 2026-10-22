@@ -253,7 +253,7 @@ function baseLine(e) {
       const payer = e.kind === "bribe" ? e.actor : e.target;
       let answer = { accept: t(e.by === "player" ? "DealAcceptPlayer" : "DealAccept"), refuse: t(e.by === "player" ? "DealRefusePlayer" : "DealRefuse"), offended: t("DealOffended"), unpaid: t("DealUnpaid", { payer }) }[e.answer] ?? "";
       if ( e.frightened ) answer = t("DealFrightened", { answer, n: e.frightened });
-      return t("Deal", { ...a, what, wordless: e.wordless ? t("DealWordless") : "", skill: e.skill ?? "", roll: dice(e.natural, e.mod, e.total, e.dc, t("DcOf", { stat: e.dcStat })), degree: degree(e.degree), answer });
+      return t("Deal", { ...a, what, wordless: `${e.wordless ? t("DealWordless") : ""}${e.reaction ? t("DealReaction") : ""}`, skill: e.skill ?? "", roll: dice(e.natural, e.mod, e.total, e.dc, t("DcOf", { stat: e.dcStat })), degree: degree(e.degree), answer });
     }
     case "quit": return e.following ? t("QuitFollow", { actor: e.actor, by: e.following }) : e.group ? t("QuitGroup", { actor: e.actor, group: e.group }) : t("Quit", a);
     case "quitCall": return t("QuitCall", { actor: e.actor, by: e.by ?? "", result: t(e.follows ? "QuitCallGoes" : "QuitCallStays") });

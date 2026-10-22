@@ -1481,6 +1481,11 @@ comes of it.
 - **Paid to be left alone:** the two never target each other again.
 - **Dishonor:** one of the side it dealt with striking it on its way off: logged once for each who does, and told to
   the GM.
+- **Wanting no part of it:** an NPC taking no side, quarrelling with nobody, with Brave under 35 (or a Chicken or a
+  Wallflower first among its pills), leaves the map as soon as it sees blows struck (not while a standoff holds).
+  Attacked, it spends its reaction (where the system has reactions) on a bribe to be left alone, as large as any of its
+  bribes: taken, the blow isn't struck and the two let each other be. This is the only deal made as a reaction.
+- **One taking no side** makes its deal on its own turn too (someone too close), in a fight as in a standoff.
 
 Example: a goblin at a quarter of its HP (pressed 0.7), Brave 30, Selfish 40, facing a hero twice as dangerous
 (menace 1): bribe wish 60 × 0.7 × 1.0 × 0.88 ≈ 37.

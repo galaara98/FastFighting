@@ -34,6 +34,10 @@
  * with its side; and it walks off the map (behavior/leaving.js), walked away after two whole turns of it or at the edge.
  * What it was given goes with it; killed on the way, it still has it on it. Anyone of the side that dealt with it who
  * strikes it on its way is told off to the GM: a dishonorable blow (dishonor).
+ *
+ * One that wants no part of a fight (shunsFight: taking no side, quarrelling with nobody, with no nerve for it) leaves
+ * as soon as it sees one start (simulator.js neutralTurn). Attacked, it spends its reaction, where the system has them,
+ * on a bribe to be left alone (reactionBribe): taken, the blow is never struck. No other deal is a reaction.
  * Pure: no Foundry globals.
  */
 import { STATUS, SWAY, GROUPS, clamp } from "../../constants.js";
@@ -47,8 +51,9 @@ import { mind, think, want, styleOf, wantsKind, setLean, allDesires } from "./de
 import { remaining, talkDC, foesKnown, applySway } from "./talk.js";
 import { canTalk, shareLanguage } from "./standoff.js";
 import { perceives } from "./senses.js";
-import { isNeutral, standAside, offend } from "./neutral.js";
+import { isNeutral, standAside, offend, fighting } from "./neutral.js";
 import { startLeaving } from "./leaving.js";
+import { reactionsPerRound } from "./reactions.js";
 import { isAnimalistic } from "./animal.js";
 import { applyOutcome } from "./effects.js";
 
@@ -288,7 +293,7 @@ export function dealAnswer(run, t, kind, degree) {
  * @param {object} [options]
  * @param {object} [options.terms]  What's offered or asked (dealTerms', by default)
  */
-export function offerDeal(run, u, t, kind, say, { terms = null } = {}) {
+export function offerDeal(run, u, t, kind, say, { terms = null, reaction = false } = {}) {
   const rules = run.prep.rules;
   (u.dealt ??= new Map()).set(t.id, null);
   terms ??= dealTerms(run, u, t, kind);
@@ -323,7 +328,7 @@ export function offerDeal(run, u, t, kind, say, { terms = null } = {}) {
   // (Saying no to a threat that got through: shaken all the same.)
   const frightened = answer === "refuse" && kind !== "bribe" && roll.degree >= 2 ? frighten(run, t, u) : null;
   say(u, {
-    type: "deal", kind, target: t.spec.name, targetId: t.id, terms, skill, wordless: how === "wordless",
+    type: "deal", kind, target: t.spec.name, targetId: t.id, terms, skill, wordless: how === "wordless", ...(reaction ? { reaction: true } : {}),
     natural: roll.natural, mod: check.mod, total: roll.total, note: roll.note ?? null, faces: roll.faces ?? null, dc, dcStat: t.spec.social?.resist?.[pitchOf(kind)]?.label ?? "DC",
     degree: roll.degree, margin: roll.total - dc, answer, by: said ? "player" : "check", frightened
   });
@@ -514,6 +519,37 @@ export function dishonor(run, u, by, say) {
   told.add(by.id);
   say?.(by, { type: "dishonor", target: u.spec.name, targetId: u.id, dealBy: run.byId.get(deal.byId)?.spec.name ?? "", dealById: deal.byId });
   return true;
+}
+
+/** Under this Brave, one taking no side wants no part of a fight. */
+export const SHUN_BRAVE = 35;
+/** Pills that, first among its own, keep one taking no side out of any fight. */
+const SHUNNING = new Set(["chicken", "wallflower"]);
+
+/**
+ * Does u want no part of a fight: an NPC taking no side and quarrelling with nobody, with no nerve for it (Brave under
+ * SHUN_BRAVE, or a Chicken or a Wallflower first among its pills)? (One who can't abide violence stays, to stop it.)
+ */
+export function shunsFight(run, u) {
+  if ( u.spec.kind === "pc" || u.spec.hazard || !isNeutral(u) || u.against.size || u.truce ) return false;
+  return liveTrait(run, u, "brave") < SHUN_BRAVE || SHUNNING.has((u.spec.playstyles ?? [])[0]);
+}
+
+/** Has u seen blows struck: someone fighting, in its senses, with no standoff holding? */
+export const seesFight = (run, u) => !run.standoff && run.units.some(o => o !== u && fighting(run, o) && perceives(run, u, o));
+
+/**
+ * u, attacked by `by`, would rather pay than be hurt: one that wants no part of the fight, with a reaction to spend
+ * (where the system has reactions) and something to give, and `by` able to understand it. It offers `by` a bribe to
+ * leave it be, as a reaction. Taken: the two let each other be, and the blow isn't struck (true).
+ */
+export function reactionBribe(run, u, by, say) {
+  if ( !by || by === u || !isStanding(u) || !shunsFight(run, u) || !run.prep.options.talking ) return false;
+  if ( reactionsPerRound(run.prep.rules, u) <= 0 || (u.reactionsLeft ?? 0) <= 0 || u.conds.incapacitated ) return false;
+  if ( !hasGoods(u) || u.dealt?.has(by.id) || means(run, u, by, "bribe") !== "words" ) return false;
+  u.reactionsLeft -= 1;
+  const terms = { ...dealTerms(run, u, by, "bribe"), ask: "spare" };
+  return offerDeal(run, u, by, "bribe", say, { terms, reaction: true }) === "accept";
 }
 
 /** Is `side` the one u made its deal with (the deal it's leaving by)? */

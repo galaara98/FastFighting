@@ -7,7 +7,7 @@
 import { describe, expect, test } from "vitest";
 import { beginRun, beginRound, prepareBattle, takeTurn, runBatchSync } from "../scripts/engine/simulator.js";
 import { beginLive, liveTurn, NeedsDecision } from "../scripts/engine/live.js";
-import { dealable, dealWishes, dealTerms, dealDC, offerDeal, quitFight, freeGroup, pickUp, dishonor, means, termsWorth, turnChance, settle } from "../scripts/engine/behavior/deals.js";
+import { dealable, dealWishes, dealTerms, dealDC, offerDeal, quitFight, freeGroup, pickUp, dishonor, means, termsWorth, turnChance, settle, shunsFight, reactionBribe } from "../scripts/engine/behavior/deals.js";
 import { levelOf } from "../scripts/engine/behavior/desire.js";
 import { remaining } from "../scripts/engine/behavior/talk.js";
 import { pf2eRules } from "./fixtures/three-action-rules.js";
@@ -556,5 +556,76 @@ describe("bought over", () => {
       if ( n.side === "friendly" ) joined += 1;
     }
     expect(joined).toBeGreaterThan(10);
+  });
+});
+
+describe("wanting no part of it", () => {
+  const timid = (extra = {}) => creature({ id: "merchant", name: "Merchant", side: NEUTRAL_PARTY, originSide: "neutral", traits: traits({ brave: 20, selfish: 50 }), social: talker(), valuables: purse(), hp: { value: 20, max: 20 }, ...at(30, 30), ...extra });
+
+  test("who: an NPC taking no side, quarrelling with nobody, with no nerve (or a Chicken first); not a player's character, nor one who's quarrelling", () => {
+    const run = fight([hero(), goblin(), timid(), creature({ id: "guard", side: NEUTRAL_PARTY, originSide: "neutral", traits: traits({ brave: 70 }), ...at(60, 60) }), creature({ id: "coward", side: NEUTRAL_PARTY, originSide: "neutral", traits: traits({ brave: 70 }), playstyles: ["chicken"], ...at(70, 70) })]);
+    expect(shunsFight(run, unit(run, "merchant"))).toBe(true);
+    expect(shunsFight(run, unit(run, "guard"))).toBe(false);
+    expect(shunsFight(run, unit(run, "coward"))).toBe(true);
+    expect(shunsFight(run, unit(run, "goblin"))).toBe(false);
+    unit(run, "merchant").against.add("hostile");
+    expect(shunsFight(run, unit(run, "merchant"))).toBe(false);
+  });
+
+  test("seeing blows struck, it leaves the map on its own; in a standoff, not yet", () => {
+    const run = fight([hero({ ...at(0) }), goblin("goblin", { ...at(5) }), timid()]);
+    const m = unit(run, "merchant");
+    takeTurn(run, m);
+    // (On its way, or already off the map: the edge was in reach.)
+    expect(m.leaving?.why === "shuns" || m.status === STATUS.FLED).toBe(true);
+    expect(run.log.some(e => e.type === "leave" && e.actorId === "merchant" && e.shuns)).toBe(true);
+    expect(run.log.some(e => e.type === "move" && e.actorId === "merchant" && e.purpose === "leave")).toBe(true);
+    const calm = fight([hero({ ...at(0) }), goblin("goblin", { ...at(5) }), timid()], { options: { opening: "talk" } });
+    calm.standoff ??= { by: null };
+    takeTurn(calm, unit(calm, "merchant"));
+    expect(unit(calm, "merchant").leaving ?? null).toBe(null);
+  });
+
+  test("attacked, it spends its reaction on a bribe to be left alone: taken, the blow isn't struck", () => {
+    let spared = 0;
+    for ( let seed = 1; seed <= 20; seed++ ) {
+      const run = fight([hero({ ...at(25, 30), actions: [strike({ bonus: 20 })] }), goblin(), timid()], { seed });
+      const [h, m] = [unit(run, "hero"), unit(run, "merchant")];
+      h.prep.traits.loyal = 0;
+      m.reactionsLeft = 1;
+      const hp = m.hp;
+      const took = reactionBribe(run, m, h, say(run));
+      expect(m.reactionsLeft).toBe(0);
+      expect(run.log.find(e => e.type === "deal")).toMatchObject({ actorId: "merchant", kind: "bribe", reaction: true, terms: expect.objectContaining({ ask: "spare" }) });
+      if ( !took ) continue;
+      spared += 1;
+      expect(h.spares.has("merchant")).toBe(true);
+      expect(m.hp).toBe(hp);
+    }
+    expect(spared).toBeGreaterThan(10);
+  });
+
+  test("no reaction to spend, none in the system, or nothing to give: no bribe", () => {
+    const run = fight([hero({ ...at(25, 30) }), goblin(), timid()]);
+    const [h, m] = [unit(run, "hero"), unit(run, "merchant")];
+    m.reactionsLeft = 0;
+    expect(reactionBribe(run, m, h, say(run))).toBe(false);
+    const none = fight([hero({ ...at(25, 30) }), goblin(), timid()], { rules: { ...pf2eRules, opportunity: null, reactions: null } });
+    unit(none, "merchant").reactionsLeft = 1;
+    expect(reactionBribe(none, unit(none, "merchant"), unit(none, "hero"), say(none))).toBe(false);
+    const poor = fight([hero({ ...at(25, 30) }), goblin(), timid({ valuables: { money: 0, stowed: [], wielded: [] } })]);
+    unit(poor, "merchant").reactionsLeft = 1;
+    expect(reactionBribe(poor, unit(poor, "merchant"), unit(poor, "hero"), say(poor))).toBe(false);
+    expect(none.log.concat(run.log, poor.log).some(e => e.type === "deal")).toBe(false);
+  });
+
+  test("one taking no side makes its deal in a fight too: someone too close, paid off or told to go", () => {
+    let dealt = 0;
+    for ( let seed = 1; seed <= 20; seed++ ) {
+      const run = fight([hero({ ...at(0) }), goblin("goblin", { ...at(60) }), creature({ id: "hermit", side: NEUTRAL_PARTY, originSide: "neutral", traits: traits({ brave: 90, selfish: 20 }), social: talker(), valuables: purse(), ...at(10) })], { seed });
+      takeTurn(run, unit(run, "hermit"));
+      if ( run.log.some(e => e.type === "deal" && e.actorId === "hermit") ) dealt += 1;
+    }
+    expect(dealt).toBeGreaterThan(0);
   });
 });
