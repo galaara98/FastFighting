@@ -1,7 +1,6 @@
 /**
  * How a live battle is kept on its transcript, a journal of its own (live-battle.js keep), so each turn writes what it
- * changed and not the whole fight again. Under the journal's flags (`root`), by the battle's combat's id (the old
- * single store kept every battle so, side by side):
+ * changed and not the whole fight again. Under the journal's flags (`root`), by the battle's combat's id:
  *   battles.<id>    the battle as it stands, without its turns: the run as it is now (without its log), whose turn,
  *                   what's been told (`layout`: KEPT_LAYOUT)
  *   specs.<id>      its spec (packed), when it's changed
@@ -14,9 +13,6 @@
  */
 
 export const KEPT_LAYOUT = 2;
-
-/** The parts a battle is kept in, each by its combat's id. */
-export const KEPT_PARTS = Object.freeze(["battles", "specs", "turns", "snaps", "logs"]);
 
 /** A turn as it's kept (turns.<id>.<n>): all of it but the run as it was before it (snaps.<id>.<n>). */
 const turnKept = ({ snapshot: _s, ...turn }) => turn;
@@ -117,6 +113,3 @@ export function keptBattle(get, id) {
   const log = slotsOf(get(`logs.${id}`)).flatMap(([, piece]) => piece?.entries ?? []);
   return { ...data, spec, turns, log };
 }
-
-/** The update that forgets a battle kept: every part of it. */
-export const forgetUpdate = (id, root) => Object.fromEntries(KEPT_PARTS.map(k => [`${root}.${k}.-=${id}`, null]));

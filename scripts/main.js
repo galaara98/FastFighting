@@ -25,7 +25,6 @@ import { loadKeywords } from "./foundry/keywords.js";
 import { registerLiveBattles, liveBattle, followPlayersSay, systemAppliesText } from "./foundry/live-battle.js";
 import { registerSheetWatch } from "./foundry/sheet-watch.js";
 import { registerSheetButton } from "./foundry/sheet-button.js";
-import { migratePlaystyles } from "./foundry/migrate-playstyles.js";
 import { BattleVantage, registerBattleVantage } from "./apps/battle-vantage.js";
 
 Hooks.once("init", () => {
@@ -186,9 +185,6 @@ for ( const hook of ["createToken", "deleteToken", "canvasReady", "createActor",
 Hooks.once("ready", () => {
   // (The keywords read in characters' biographies: English, and the reader's language's on top.)
   loadKeywords();
-  // (Playstyles stored under an id that's gone, brought up to date once: temporary, remove at 0.7.0 with
-  // tests/temporary/speedrunner-to-dps.test.js.)
-  migratePlaystyles();
   // Tell the GM once if this system has no helper module yet.
   const status = helperStatus();
   if ( game.user.isGM && !status.specific ) ui.notifications[status.ready ? "info" : "warn"](helperMessage(status), { permanent: !status.ready });

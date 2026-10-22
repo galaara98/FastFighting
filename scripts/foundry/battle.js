@@ -174,16 +174,9 @@ function neutralTeamOf(entry, setup) {
 /** Does the system have surprise rules of its own (its helper's rules.surprise), for Follow System? */
 export const systemSurprise = (adapter = getAdapter()) => typeof adapter?.rules?.surprise === "function";
 
-/**
- * The choices a plan's Surprise had before (when it was Initiative), as the ones that took their place. (Temporary:
- * remove at 0.7.0 with tests/temporary/old-surprise.test.js.)
- */
-const OLD_SURPRISE = Object.freeze({ tracker: SURPRISE.SYSTEM, stealth: SURPRISE.SYSTEM, friendly: SURPRISE.PARTY_SURPRISES, hostile: SURPRISE.PARTY_SURPRISED });
-
-/** What a plan's Surprise comes to: its choice (an old one as the new); Follow System where the system has no rules, no one. */
+/** What a plan's Surprise comes to: its choice; Follow System where the system has no rules, no one. */
 export function surpriseMode(value, adapter = getAdapter()) {
-  const v = OLD_SURPRISE[value] ?? value;
-  const mode = Object.values(SURPRISE).includes(v) ? v : SURPRISE.SYSTEM;
+  const mode = Object.values(SURPRISE).includes(value) ? value : SURPRISE.SYSTEM;
   return mode === SURPRISE.SYSTEM && !systemSurprise(adapter) ? SURPRISE.NONE : mode;
 }
 

@@ -72,25 +72,14 @@ describe("the system's own rule (Follow System)", () => {
     expect(run.byId.get("bandit").conds.hidden).toBeGreaterThan(0);
     expect(run.byId.get("hero").conds.hidden ?? 0).toBe(0);
   });
-
-  test("a plan from before: one side's surprise round still", () => {
-    const spec = fight(undefined);
-    spec.options.surpriseSide = "hostile";
-    const r = replay(spec, pf2eRules, 3);
-    expect(r.log.filter(e => e.type === "surprise").map(e => e.sideLabel)).toEqual(["Bandits"]);
-  });
 });
 
 describe("the planner's Surprise", () => {
   const helper = surprise => ({ rules: surprise ? { surprise: () => null } : {} });
-  test("Follow System where the system has rules; no one where it hasn't; the old choices as the new", () => {
+  test("Follow System where the system has rules; no one where it hasn't", () => {
     expect(surpriseMode("system", helper(true))).toBe("system");
     expect(surpriseMode("system", helper(false))).toBe("none");
     expect(surpriseMode(undefined, helper(true))).toBe("system");
-    expect(surpriseMode("tracker", helper(true))).toBe("system");
-    expect(surpriseMode("stealth", helper(false))).toBe("none");
-    expect(surpriseMode("friendly", helper(false))).toBe("friendlySurprise");
-    expect(surpriseMode("hostile", helper(false))).toBe("friendlySurprised");
     expect(surpriseMode("none", helper(true))).toBe("none");
   });
 });

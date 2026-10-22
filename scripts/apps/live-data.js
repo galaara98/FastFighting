@@ -1,7 +1,7 @@
 /**
  * Settings submenu (GMs only): the journals live battles are kept in (foundry/live-journals.js), each battle's
- * transcript, the planner's last run while troubleshooting, and any older store; exported to a file for a bug report,
- * and cleaned up once they're more than a month old (foundry/live-store.js whatGoes).
+ * transcript and the planner's last run while troubleshooting; exported to a file for a bug report, and cleaned up
+ * once they're more than a month old (foundry/live-store.js whatGoes).
  */
 import { MODULE_ID } from "../constants.js";
 import { localize, listJoin, escapeHtml as escape } from "../i18n.js";
@@ -44,7 +44,7 @@ export class LiveDataConfig extends HandlebarsApplicationMixin(ApplicationV2) {
       })),
       others: rows.filter(r => !shown(r)).map(({ j, size }) => ({
         id: j.id, name: j.name, owner: game.users.get(j.createdBy)?.name ?? j.createdBy ?? "—", created: when(j.createdTime),
-        modified: when(j.modifiedTime), why: loc(`FASTFIGHTING.LiveData.Why.${whyOf(j)}`), size: bytes(size)
+        modified: when(j.modifiedTime), why: loc(`FASTFIGHTING.LiveData.Why.${j.distrust}`), size: bytes(size)
       })),
       buttons: [
         { type: "button", action: "cleanUp", icon: "fa-solid fa-broom", label: "FASTFIGHTING.LiveData.CleanUp" },
@@ -108,15 +108,6 @@ function combatOf(j, here) {
 function stateOf(j) {
   if ( j.kind === "plan" ) return loc("FASTFIGHTING.LiveData.State.plan");
   return loc(`FASTFIGHTING.LiveData.State.${j.flags.battles?.[j.flags.liveBattle]?.ended ? "ended" : "inPlay"}`);
-}
-
-/**
- * Why a journal is among the others: the old store, not trusted (and why), or a store no longer used. (The store and
- * the leftover: temporary, remove at 0.7.0 with tests/temporary/live-single-store.test.js.)
- */
-function whyOf(j) {
-  if ( j.distrust ) return j.distrust;
-  return j.kind === "store" ? "store" : "leftover";
 }
 
 /** The export: one file of these journals, with the world's context (live-store.js exportData). Nothing is changed. */

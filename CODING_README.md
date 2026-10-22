@@ -40,8 +40,7 @@ FastFighting is split into a pure simulation engine, system **helpers**, and the
              combats: {<combat id>: still there?}},
    journals: [{id, name, kind, trusted, distrust, createdTime, modifiedTime, createdBy, lastModifiedBy, lastKept, size, flags}]}
   ```
-  `kind` is transcript, plan, store (the old single store) or leftover (a store no longer trusted); `flags` is the module's flags on it, whole; `modules` lists every active FastFighting module, the core and its helpers.
-- **The old single store** (the hidden `liveStore` setting named it): the active GM's next login moves each battle on it into a transcript (`keptAt` the store's last change, the most conservative), then deletes it and clears the setting. Until then, a battle with no transcript is read from it.
+  `kind` is transcript or plan; `flags` is the module's flags on it, whole; `modules` lists every active FastFighting module, the core and its helpers.
 
 ### Settings
 
@@ -804,25 +803,10 @@ Hooks:
 
 ## Temporary migrations
 
-Code that keeps old data working for a few releases, each with a test that fails once the core's version reaches the
-release it goes with, so it's never forgotten:
-- **Speed Runner became DPS** (remove at 0.7.0): the alias `speedRunner` → `dps` wherever playstyles are read
-  (`engine/playstyles.js` `RENAMED_PLAYSTYLES`, through `currentPlaystyles` and `currentPlaystyleMap`: a character's
-  stored answers, its auto setup's picks, a helper's hints, a keyword file), and the one-time migration of stored
-  playstyles on the active GM's ready (`foundry/migrate-playstyles.js`, called in `main.js`). Its tests:
-  `tests/temporary/speedrunner-to-dps.test.js`. Remove all three together.
-- **The old single store of live battles** (remove at 0.7.0): 0.3.0 and 0.4.0 kept every live battle in one journal,
-  which the hidden `liveStore` setting named (`settings.js`). The active GM's next login moves each battle on it into
-  a transcript and deletes it (`foundry/live-journals.js` `oldStore`, `moveOldStore`; `foundry/live-store.js`
-  `moveOut`, and `kindOf`'s `store` and `leftover` kinds with what reads them); until then a battle is read from it
-  (`foundry/live-battle.js` `kept`), and Live battle data lists it (`apps/live-data.js` `whyOf`). Its tests:
-  `tests/temporary/live-single-store.test.js` (its header lists everything to remove), and the old store's cases in
-  `tests/live-store.test.js`.
-- **Surprise as it was said before** (remove at 0.7.0): a 0.3.0 live battle's spec says `options.surpriseSide` and
-  `options.stealthSides` with no `options.surprise`, and a battle kept then has no `run.surprise`
-  (`engine/behavior/surprise.js` `resolveSurprise`'s `!mode` branch, `engine/behavior/standoff.js` `opensWithTalk`,
-  `engine/simulator.js` `rollInitiative`); a 0.1 to 0.2 plan says its Initiative choice (`foundry/battle.js`
-  `OLD_SURPRISE`). Its tests: `tests/temporary/old-surprise.test.js`, and the old cases in `tests/surprise.test.js`.
+Code that keeps old data working for a few releases has a test in `tests/temporary/` that fails once the core's
+version reaches the release it goes with (its `REMOVE_AT`), the test's header listing everything to remove, so it's
+never forgotten. None at the moment: 0.7.0 removed the last (Speed Runner as DPS, the old single store of live battles,
+and surprise as plans said it before 0.4.0).
 
 ## Development
 

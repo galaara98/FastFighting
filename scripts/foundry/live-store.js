@@ -1,17 +1,13 @@
 /**
  * The journals FastFighting keeps live battles in, as plain data: what each one is, how old and how big, what goes and
- * when (the troubleshooting setting's effect, and the one-month cleanup), the export file, and the move from the old
- * single store. Pure: no Foundry globals. Each journal comes in as its facts (foundry/live-journals.js journalFacts):
+ * when (the troubleshooting setting's effect, and the one-month cleanup), and the export file. Pure: no Foundry
+ * globals. Each journal comes in as its facts (foundry/live-journals.js journalFacts):
  *   {id, name, kind, trusted, distrust, flags (the module's own), createdTime, modifiedTime, createdBy, lastModifiedBy}
  * Its kind:
  *   transcript  one battle's, a journal of its own (flags.liveBattle: its combat's id; flags.encounter: its number; the
  *               battle as kept, flags.battles.<combat id>, says which battle: its `id`)
  *   plan        the planner's last run (flags.planRun), kept only while troubleshooting
- *   store       the old single store (flags.liveStore), from before transcripts: its battles move out on login
- *   leftover    any other journal flagged liveStore (a store no longer trusted, made again elsewhere)
- *               (store and leftover: temporary, remove at 0.7.0 with tests/temporary/live-single-store.test.js)
  */
-import { KEPT_PARTS } from "./live-keeping.js";
 
 /** A transcript's name: this, then the encounter's number (an identifier, like a file name: never translated). */
 export const TRANSCRIPT_PREFIX = "FF_FF_LiveBattle_Transcript_";
@@ -39,29 +35,25 @@ export function transcriptName(n, taken = new Set()) {
   for ( let i = 2; ; i++ ) if ( !taken.has(`${base}_${i}`) ) return `${base}_${i}`;
 }
 
-/** A flagged journal's kind (see the header), or null for one that isn't FastFighting's. `oldStore`: it's the old store. */
-export function kindOf(flags, { oldStore = false } = {}) {
+/** A flagged journal's kind (see the header), or null for one that isn't FastFighting's. */
+export function kindOf(flags) {
   if ( flags?.liveBattle ) return "transcript";
   if ( flags?.planRun ) return "plan";
-  // (Temporary: remove at 0.7.0 with tests/temporary/live-single-store.test.js.)
-  if ( flags?.liveStore ) return oldStore ? "store" : "leftover";
   return null;
 }
 
 /**
- * When a journal was last kept: its own `keptAt`, written with every keep; else (the old store, and a journal kept
- * before keptAt was) when it was last changed, the most conservative guess (no keep in it is later than that).
+ * When a journal was last kept: its own `keptAt`, written with every keep; else (a journal without one) when it was
+ * last changed, the most conservative guess (no keep in it is later than that).
  */
 export const lastKept = j => Number(j?.flags?.keptAt) || Number(j?.modifiedTime) || 0;
 
 /** Is it older than `days` (last kept that long ago)? */
 export const isOld = (j, now, days = KEEP_DAYS) => now - lastKept(j) > days * DAY;
 
-/** The combat ids a journal holds battles for: a transcript's own, and every battle on a store. */
+/** The combat ids a journal holds battles for: a transcript's own. */
 export function combatIdsOf(j) {
-  const ids = new Set(Object.keys(j?.flags?.battles ?? {}));
-  if ( j?.flags?.liveBattle ) ids.add(j.flags.liveBattle);
-  return [...ids];
+  return j?.flags?.liveBattle ? [j.flags.liveBattle] : [];
 }
 
 /** Is it this battle's transcript (on this combat; and, given a battle's id, that battle's)? */
@@ -92,9 +84,9 @@ export function inPlayOn(j, combatIds, liveOn = null) {
  *                  its combat no longer names (rewound, or another begun on it), whatever its age. On: transcripts and
  *                  the planner's last run older than KEEP_DAYS.
  *   cleanup        the GM's Clean up: every one of FastFighting's journals older than KEEP_DAYS, whatever it is.
- * Only trusted transcripts and runs go by themselves; a store, a leftover or an untrusted journal only by the GM's
- * Clean up, which shows them first. Never a battle still in play on a combat that's still there, however old (but a
- * rewound one, which is undone): held back, with why.
+ * Only trusted transcripts and runs go by themselves; untrusted ones only by the GM's Clean up, which shows them first.
+ * Never a battle still in play on a combat that's still there, however old (but a rewound one, which is undone): held
+ * back, with why.
  * @param {"combatDeleted"|"rewound"|"login"|"cleanup"} moment
  * @param {object[]} journals   Their facts (the header)
  * @param {object} options
@@ -131,17 +123,6 @@ export function whatGoes(moment, journals, { troubleshooting = false, now = 0, c
 
 /** How big a value is kept (its JSON, in bytes). */
 export const sizeOf = value => new TextEncoder().encode(JSON.stringify(value ?? null)).length;
-
-/**
- * One battle off the old store, as its transcript's flags: each part of it kept there (live-keeping.js), and `keptAt`
- * (the store's last change: when that battle was last kept is unknown, and no later). (Temporary: remove at 0.7.0
- * with tests/temporary/live-single-store.test.js.)
- */
-export function moveOut(storeFlags, id, { keptAt = null } = {}) {
-  const out = { keptAt };
-  for ( const part of KEPT_PARTS ) if ( storeFlags?.[part]?.[id] !== undefined ) out[part] = { [id]: storeFlags[part][id] };
-  return out;
-}
 
 /**
  * A value as plain data for a journal's flags or a file: Maps as `{$map: [[key, value]]}`, Sets as arrays, numbers that

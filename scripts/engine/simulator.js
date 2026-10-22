@@ -180,10 +180,8 @@ function standFirm(run, target, roll, dc, stakes, label) {
 
 function rollInitiative(run) {
   const { options } = run.prep;
-  // (Surprise: sides sneaking up roll Stealth; the surprised, in some systems, roll at a disadvantage: behavior/surprise.js.
-  // options.stealthSides: a 0.3.0 battle's, kept with no run.surprise; temporary: remove at 0.7.0 with
-  // tests/temporary/old-surprise.test.js.)
-  const stealthSides = new Set(run.surprise?.stealthSides ?? options.stealthSides ?? []);
+  // (Surprise: sides sneaking up roll Stealth; the surprised, in some systems, roll at a disadvantage: behavior/surprise.js.)
+  const stealthSides = new Set(run.surprise?.stealthSides ?? []);
   const disadvantage = new Set(run.surprise?.disadvantage ?? []);
   const fixed = options.initiativeOrder ?? null;
   const rolled = new Map();

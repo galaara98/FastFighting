@@ -689,7 +689,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "18a1c846c55b"
+   "hash": "18a1c846c55b",
+   "gone": "2026-10-22"
   },
   "core:code:scripts/foundry/live-journals.js:transcriptFolder#1": {
    "repo": "core",
@@ -1078,7 +1079,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "2ae425fb47af"
+   "hash": "2ae425fb47af",
+   "gone": "2026-10-22"
   },
   "core:code:scripts/foundry/migrate-playstyles.js:migratePlaystyles#2": {
    "repo": "core",
@@ -1088,7 +1090,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "c33ec850a20c"
+   "hash": "c33ec850a20c",
+   "gone": "2026-10-22"
   },
   "core:code:scripts/foundry/persistence.js:keptPlan#1": {
    "repo": "core",
@@ -7108,7 +7111,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "cab89bec5a53"
+   "hash": "cab89bec5a53",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.LiveData.Why.player": {
    "repo": "core",
@@ -7128,7 +7132,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "43da45026ede"
+   "hash": "43da45026ede",
+   "gone": "2026-10-22"
   },
   "core:FASTFIGHTING.LiveData.WillRemove": {
    "repo": "core",

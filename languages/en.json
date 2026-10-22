@@ -2479,8 +2479,6 @@
         "plan": "Planner's last run"
       },
       "Why": {
-        "store": "The old single store: its battles move to transcripts of their own when the active GM next logs in.",
-        "leftover": "An older store, no longer used.",
         "player": "Not trusted: a player can see it.",
         "editor": "Not trusted: last changed by someone who isn't a GM.",
         "inPlay": "still in play on its encounter"

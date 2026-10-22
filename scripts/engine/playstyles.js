@@ -214,10 +214,7 @@ export const PLAYSTYLE_IDS = Object.freeze(Object.keys(PLAYSTYLES));
 /** Whether an id is a playstyle (its own key: never "constructor" and the like). */
 export const isPlaystyle = id => typeof id === "string" && Object.hasOwn(PLAYSTYLES, id);
 /** Playstyles renamed since, by their old ids: answers saved under an old id still count. */
-export const RENAMED_PLAYSTYLES = Object.freeze({
-  // (temporary: remove at 0.7.0 with tests/temporary/speedrunner-to-dps.test.js)
-  speedRunner: "dps"
-});
+export const RENAMED_PLAYSTYLES = Object.freeze({});
 
 /** A playstyle id as it is now: a renamed one's new id (RENAMED_PLAYSTYLES), anything else as it was. */
 export const currentPlaystyle = id => (typeof id === "string" && Object.hasOwn(RENAMED_PLAYSTYLES, id) ? RENAMED_PLAYSTYLES[id] : id);

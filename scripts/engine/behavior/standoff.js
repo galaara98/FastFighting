@@ -96,9 +96,8 @@ export function opensWithTalk(run) {
   if ( o.opening === OPENING.ARGUMENT ) return true; // (only an argument: talk, whatever else)
   if ( !o.talking || o.opening === OPENING.FIGHT ) return false;
   if ( o.opening === OPENING.TALK ) return true;
-  // (An ambush is not a conversation. o.surpriseSide: a 0.3.0 battle's, kept with no run.surprise; temporary: remove
-  // at 0.7.0 with tests/temporary/old-surprise.test.js.)
-  if ( run.surprise?.by?.length || o.surpriseSide ) return false;
+  // (An ambush is not a conversation.)
+  if ( run.surprise?.by?.length ) return false;
   const here = run.units.filter(party);
   const sides = [...new Set(here.map(u => u.side))];
   if ( sides.length < 2 ) return false;

@@ -51,7 +51,7 @@ import { undoRecord } from "./sheet-tools.js";
 import { keepUpdate, keptBattle } from "./live-keeping.js";
 import { notedBy } from "./applied-cards.js";
 import { BACK_AFTER_MS, awayTimers, stillAway, dueTimers, handBack, deadlineClocks, joinWaits } from "./away.js";
-import { transcriptOf, newTranscript, oldStore, dropTranscripts, tidyOnLogin } from "./live-journals.js";
+import { transcriptOf, newTranscript, dropTranscripts, tidyOnLogin } from "./live-journals.js";
 import { randomSeed } from "../engine/rng.js";
 import { holderOf } from "../engine/behavior/troubles.js";
 import { perceives } from "../engine/behavior/senses.js";
@@ -183,11 +183,10 @@ async function keepNow(b) {
 
 /**
  * A battle as it was kept (live-keeping.js keptBattle), and the journal it was read from: its transcript (the battle's
- * on this combat, by its id), else (not yet moved out, live-journals.js moveOldStore) the old single store; or null.
+ * on this combat, by its id); or null.
  */
 function kept(combatId, battleId) {
-  // (The old store: temporary, remove at 0.7.0 with tests/temporary/live-single-store.test.js.)
-  const doc = transcriptOf(combatId, battleId) ?? oldStore();
+  const doc = transcriptOf(combatId, battleId);
   const data = doc ? keptBattle(path => doc.getFlag(MODULE_ID, path), combatId) : null;
   return data ? { data, doc } : null;
 }
@@ -3618,7 +3617,7 @@ export function registerLiveBattles() {
     }
     queue(() => joinFight(combatant));
   });
-  // (The active GM: the old store moved out and the transcripts tidied first, as the troubleshooting setting says.)
+  // (The active GM: the transcripts tidied first, as the troubleshooting setting says.)
   Hooks.once("ready", async () => {
     try {
       await tidyOnLogin();

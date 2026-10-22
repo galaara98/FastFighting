@@ -149,10 +149,6 @@ export function registerSettings(DefaultsConfig, GenericPathsConfig, StoryTables
   game.settings.register(MODULE_ID, "genericPaths", { scope: "world", config: false, type: Object, default: {} });
   // The party's roles the GM gave in earlier fights, by actor: {actorId: "leader" | "lt1" | "lt2"}.
   game.settings.register(MODULE_ID, "partyCommand", { scope: "world", config: false, type: Object, default: {} });
-  // The old single journal entry that kept every live battle, before each had a transcript of its own: read only to
-  // move its battles out (foundry/live-journals.js moveOldStore), then cleared. Only a GM can write a world setting.
-  // (Temporary: remove at 0.7.0 with tests/temporary/live-single-store.test.js.)
-  game.settings.register(MODULE_ID, "liveStore", { scope: "world", config: false, type: String, default: "" });
   // This computer's pace, from its last prediction (engine/run-budget.js paceOf): the planner's estimate goes by it.
   game.settings.register(MODULE_ID, "runPace", { scope: "client", config: false, type: Number, default: 1 });
   game.settings.register(MODULE_ID, "sideDefaults", {

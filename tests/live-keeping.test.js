@@ -4,7 +4,7 @@
  * the battle as it is, and each keep writes only what's changed: never the whole fight again.
  */
 import { describe, expect, test } from "vitest";
-import { keepUpdate, keptBattle, forgetUpdate, KEPT_LAYOUT } from "../scripts/foundry/live-keeping.js";
+import { keepUpdate, keptBattle, KEPT_LAYOUT } from "../scripts/foundry/live-keeping.js";
 
 const ROOT = "flags.ff";
 const clone = v => JSON.parse(JSON.stringify(v));
@@ -120,17 +120,5 @@ describe("a live battle kept a part at a time", () => {
     expect(back.snapshot.log).toEqual([{ turn: 1 }]);
     expect(back.log).toBeUndefined();
     expect(back.spec).toBe("{}");
-  });
-
-  test("forgotten: every part of it gone, other battles' left", () => {
-    const doc = { flags: {} };
-    const b = battle();
-    b.turn(1);
-    b.keep(doc);
-    doc.flags.ff.battles.c2 = { id: "other" };
-    apply(doc, forgetUpdate("c1", ROOT));
-    expect(keptBattle(getter(doc), "c1")).toBeNull();
-    for ( const k of ["specs", "turns", "snaps", "logs"] ) expect(doc.flags.ff[k]?.c1).toBeUndefined();
-    expect(doc.flags.ff.battles.c2).toEqual({ id: "other" });
   });
 });

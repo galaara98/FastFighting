@@ -1828,8 +1828,6 @@ Decides who acts when.
   - No one is surprised.
   - Friendlies are surprised: every side against the party takes turns in a round 0 before round 1.
   - Friendlies surprise others: the party takes that round 0. (Ironsworn has no rounds: surprise without one.)
-  - A plan saved with the old Initiative choices: Combat tracker and Stealth for hidden as Follow System, Party
-    surprises and Enemy surprises as the two above, Roll normally as No one.
 - Where the system says so (PF2e Avoid Notice), a low-profile creature uses its Stealth if that's higher.
 - A live battle keeps the tracker's order and plays no round 0; a creature FastFighting plays that the system's rule
   leaves surprised (5e's 2014 rules) loses its first turn.
