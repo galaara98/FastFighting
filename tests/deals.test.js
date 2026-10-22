@@ -7,7 +7,7 @@
 import { describe, expect, test } from "vitest";
 import { beginRun, beginRound, prepareBattle, takeTurn, runBatchSync } from "../scripts/engine/simulator.js";
 import { beginLive, liveTurn, NeedsDecision } from "../scripts/engine/live.js";
-import { dealable, dealWishes, dealTerms, dealDC, offerDeal, quitFight, freeGroup, pickUp, dishonor, means, termsWorth } from "../scripts/engine/behavior/deals.js";
+import { dealable, dealWishes, dealTerms, dealDC, offerDeal, quitFight, freeGroup, pickUp, dishonor, means, termsWorth, turnChance, settle } from "../scripts/engine/behavior/deals.js";
 import { levelOf } from "../scripts/engine/behavior/desire.js";
 import { remaining } from "../scripts/engine/behavior/talk.js";
 import { pf2eRules } from "./fixtures/three-action-rules.js";
@@ -508,5 +508,53 @@ describe("stacks", () => {
     const run2 = fight([creature({ id: "squire", traits: traits(), social: talker(), valuables: { money: 0, stowed: [{ id: "arrows", name: "Arrows", value: 1, quantity: 2 }], wielded: [] }, ...at(0) }), goblin("goblin", { ...at(5) })]);
     unit(run2, "goblin").prep.traits.loyal = 0;
     expect(offerDeal(run2, unit(run2, "squire"), unit(run2, "goblin"), "bribe", say(run2), { terms: { kind: "bribe", ask: "leave", money: 0, items: [{ id: "arrows", count: 3 }] } })).toBe("unpaid");
+  });
+});
+
+describe("bought over", () => {
+  const bribe = money => ({ kind: "bribe", ask: "leave", money, items: [] });
+
+  test("the more lavish the offer to it, and a critical success, the likelier; never a player's character, a boss, or by one taking no side", () => {
+    const run = fight([hero(), goblin("goblin", { traits: traits({ selfish: 80, loyal: 20 }) }), goblin("boss", { isBoss: true }), creature({ id: "hermit", side: NEUTRAL_PARTY, originSide: "neutral", social: talker(), valuables: purse(), ...at(50, 50) })]);
+    const [h, g] = [unit(run, "hero"), unit(run, "goblin")];
+    expect(turnChance(run, h, g, bribe(5), 2)).toBeLessThan(turnChance(run, h, g, bribe(400), 2));
+    expect(turnChance(run, h, g, bribe(5), 3)).toBeGreaterThan(turnChance(run, h, g, bribe(5), 2) + 0.3);
+    expect(turnChance(run, h, g, bribe(400), 3)).toBeLessThanOrEqual(0.75);
+    unit(run, "boss").isBoss = true;
+    expect(turnChance(run, h, unit(run, "boss"), bribe(400), 3)).toBe(0);
+    expect(turnChance(run, g, h, bribe(100), 3)).toBe(0);
+    expect(turnChance(run, unit(run, "hermit"), g, bribe(100), 3)).toBe(0);
+    expect(turnChance(run, h, g, { kind: "scare", ask: "leave", money: 0, items: [] }, 3)).toBe(0);
+  });
+
+  test("an enemy bought over stands aside, leaning toward the briber's side, and stays; one taking no side joins it", () => {
+    let aside = 0;
+    for ( let seed = 1; seed <= 30; seed++ ) {
+      const run = fight([hero({ ...at(15) }), goblin("goblin", { traits: traits({ selfish: 100, loyal: 0 }) })], { seed });
+      const [h, g] = [unit(run, "hero"), unit(run, "goblin")];
+      h.adjacent.add(g.id);
+      settle(run, h, g, bribe(400), say(run), { degree: 3 });
+      // (Not bought over: it quits, into a free friend group of those taking no side, and leaves.)
+      if ( g.leaving ) {
+        expect(g.leaving.why).toBe("deal");
+        continue;
+      }
+      expect(g.side).toBe(NEUTRAL_PARTY);
+      aside += 1;
+      expect(g.lean).toBe("friendly");
+      expect(g.leaving ?? null).toBe(null);
+      expect(run.log.find(e => e.type === "sway")).toMatchObject({ actorId: "goblin", outcome: "neutral", byId: "hero" });
+      expect(h.concessions[0]).toMatchObject({ how: "bribe", to: "goblin" });
+    }
+    expect(aside).toBeGreaterThan(10);
+    let joined = 0;
+    for ( let seed = 1; seed <= 30; seed++ ) {
+      const run = fight([hero({ ...at(15) }), goblin(), creature({ id: "hermit", side: NEUTRAL_PARTY, originSide: "neutral", traits: traits({ selfish: 100, loyal: 0 }), social: talker(), ...at(25) })], { seed });
+      const n = unit(run, "hermit");
+      n.against.add("friendly");
+      settle(run, unit(run, "hero"), n, bribe(400), say(run), { degree: 3 });
+      if ( n.side === "friendly" ) joined += 1;
+    }
+    expect(joined).toBeGreaterThan(10);
   });
 });

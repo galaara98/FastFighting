@@ -24,6 +24,8 @@
  * system's fear: frightened, one step more). Yes, but whoever pays (the briber; the one made to pay) hasn't got it at
  * the last moment: no deal ("unpaid").
  *
+ * A bribe may buy t over instead (turnChance: a critical success, a lavish offer): an enemy then stands aside, leaning
+ * toward the briber's side (hostiles always go through taking no side first), and one taking no side joins it.
  * Yes: the goods change hands (the giver's concessions, as anything given up: `how` "bribe" or "extort"). Side by side,
  * at once; apart, the giver drops them where it stands and the taker goes to pick them up (`drop`, `fetch`), unless a
  * player's character is giving or taking, or the table can't show goods on the ground (options.dropGoods false): then
@@ -34,7 +36,7 @@
  * strikes it on its way is told off to the GM: a dishonorable blow (dishonor).
  * Pure: no Foundry globals.
  */
-import { STATUS, GROUPS, clamp } from "../../constants.js";
+import { STATUS, SWAY, GROUPS, clamp } from "../../constants.js";
 import { isStanding, areEnemies, liveTrait, edgeDistance, movesNeeded, canMove, checkRoll, systemRolled, typical, commandOf, groupKeyOf, alliesOf, hpFraction, dangerScore, behaviorOf } from "../battle-state.js";
 import { rollCheck } from "../probability.js";
 import { mainPool, normalizeCost } from "../turn.js";
@@ -42,7 +44,7 @@ import { ORDER_WEIGHTS } from "../playstyles.js";
 import { aptitude, notDumb } from "../aptitudes.js";
 import { conditionMost } from "../conditions.js";
 import { mind, think, want, styleOf, wantsKind, setLean, allDesires } from "./desire.js";
-import { remaining, talkDC, foesKnown } from "./talk.js";
+import { remaining, talkDC, foesKnown, applySway } from "./talk.js";
 import { canTalk, shareLanguage } from "./standoff.js";
 import { perceives } from "./senses.js";
 import { isNeutral, standAside, offend } from "./neutral.js";
@@ -330,20 +332,57 @@ export function offerDeal(run, u, t, kind, say, { terms = null } = {}) {
     if ( isNeutral(t) ) offend(run, t, u, "insulted", say);
     else want(t, "hurt", u.id, 25);
   }
-  if ( answer === "accept" ) settle(run, u, t, terms, say);
+  if ( answer === "accept" ) settle(run, u, t, terms, say, { degree: roll.degree });
   return answer;
 }
 
 /** A deal t agreed to: the goods change hands; asked to go, t quits the fight; paid to be left alone, the two let each other be. */
-export function settle(run, u, t, terms, say) {
+export function settle(run, u, t, terms, say, { degree = 2 } = {}) {
   if ( terms.kind === "bribe" ) give(run, u, t, terms, "bribe", say);
   if ( terms.kind === "extort" ) give(run, t, u, terms, "extort", say);
+  // (Bought over: it stays, on the briber's side's side of things.)
+  if ( terms.kind === "bribe" && run.rng.chance(turnChance(run, u, t, terms, degree)) ) {
+    turnOver(run, u, t, say);
+    return;
+  }
   if ( terms.ask === "spare" ) {
     (u.spares ??= new Set()).add(t.id);
     (t.spares ??= new Set()).add(u.id);
     return;
   }
   quitFight(run, t, { by: u, say });
+}
+
+/**
+ * How likely a bribe t took turns it instead of sending it off: a critical success's 0.35, and up to 0.35 more for how
+ * lavish the offer is to it (against its own purse, or half the briber's where that's more: 7 times as much, all of
+ * it), as selfish and disloyal as it is, at most 0.75. Never a player's character, nor a boss, nor for one taking no side
+ * itself (it has no side to bring anyone over to).
+ */
+export function turnChance(run, u, t, terms, degree) {
+  if ( terms.kind !== "bribe" || t.spec.kind === "pc" || t.isBoss || isNeutral(u) ) return 0;
+  const purse = remaining(u);
+  const scale = Math.max(1, remaining(t).money, (purse.money + purse.stowed.reduce((s, i) => s + (Number(i.value) || 0) * (i.quantity ?? 1), 0) + termsWorth(terms)) / 2);
+  const lavish = clamp(Math.log2(1 + termsWorth(terms) / scale) / 3, 0, 1);
+  const nature = (0.5 + liveTrait(run, t, "selfish") / 100) * (1.5 - liveTrait(run, t, "loyal") / 100);
+  return clamp(((degree >= 3 ? 0.35 : 0) + 0.35 * lavish) * nature, 0, 0.75);
+}
+
+/**
+ * t, bought over by u: an enemy only stands aside (taking no side, leaning toward u's), as talking one round does; one
+ * already taking no side joins u's side (talk.js applySway: the same outcomes, logged the same way).
+ */
+export function turnOver(run, u, t, say) {
+  if ( isNeutral(t) ) {
+    applySway(run, u, t, SWAY.SWITCH, say, "bribe");
+    return "switched";
+  }
+  applySway(run, u, t, SWAY.NEUTRAL, say, "bribe");
+  // (Leaning toward whoever paid it, not its old side.)
+  t.lean = u.side;
+  t.leanLevel = Math.max(t.leanLevel ?? 0, 30);
+  t.leaning = null;
+  return "neutral";
 }
 
 /** Has the payer got what the deal asks of it, now: the money, and each thing, as many as asked? */

@@ -3314,7 +3314,7 @@
   "event.dealBribe": [
     "{actor} offers {target} {amount} to {ask}, and {target} takes it.",
     "{actor} holds out {amount}; {target} pockets it and agrees to {ask}.",
-    "{amount} changes hands: {target} agrees to {ask}."
+    "{target} accepts {actor}'s {amount} and agrees to {ask}."
   ],
   "event.dealBribeRefused": [
     "{actor} offers {target} {amount} to {ask}. {target} isn't interested.",

@@ -1468,6 +1468,11 @@ comes of it.
 - **Paying:** whoever pays (the briber; the one made to pay) must have it at the last moment, else no deal ("unpaid").
   Side by side, a player's character giving or taking, or no piles at the table: the goods move at once. Apart:
   dropped where the giver stands; the taker walks over and picks them up (an action) when no foe is beside it.
+- **Bought over:** a bribe taken may turn the target instead of sending it off, with chance clamp((0.35 on a critical
+  success + 0.35 × lavish) × (0.5 + Selfish ÷ 100) × (1.5 − Loyal ÷ 100), 0, 0.75), where lavish = clamp(log2(1 + the
+  offer ÷ max(1, its money, half of the briber's goods with the offer)) ÷ 3, 0, 1). An enemy stands aside, leaning
+  toward the briber's side (lean at least 30); one taking no side joins the briber's side. Never a player's character,
+  a boss, or a bribe from one taking no side.
 - **Refusing a threat that got through:** frightened, one step more.
 - **Going:** a commander first urges its team (each goes with chance clamp(0.35 + (Loyal − 50) ÷ 100 + (50 − Brave) ÷
   200, 0.15, 0.9)). Each joins a neutral friend group nobody has yet (1 to 3), with no lean back, else stays on its
@@ -1481,7 +1486,7 @@ Example: a goblin at a quarter of its HP (pressed 0.7), Brave 30, Selfish 40, fa
 (menace 1): bribe wish 60 × 0.7 × 1.0 × 0.88 ≈ 37.
 
 Code: `engine/behavior/deals.js` `dealsWanted`, `decideDeal`, `dealTerms`, `dealDC`, `dealAnswer`, `offerDeal`,
-`give`, `quitFight`, `dishonor`.
+`give`, `turnChance`, `turnOver`, `quitFight`, `dishonor`.
 
 ### Trap avoiders
 

@@ -3657,8 +3657,9 @@ function playFromHere(run, u) {
   }
 
   // Taking no side: it watches, or has words with whoever crossed it; once it has turned on a side, it fights.
-  // (One leaving, by a deal into a friend group of those taking no side: it's on its way, not watching.)
-  if ( isNeutral(u) && !isLeaving(u) && !enemiesOf(run, u).some(isStanding) && !neutralTurn(run, u) ) return;
+  // (One leaving, by a deal into a friend group of those taking no side: it's on its way, not watching. One with goods
+  // dropped for it: it goes for them first.)
+  if ( isNeutral(u) && !isLeaving(u) && !u.fetch && !enemiesOf(run, u).some(isStanding) && !neutralTurn(run, u) ) return;
 
   // While a standoff holds, its sides don't fight; it lasts until someone gets upset. (A quarrel between someone taking
   // no side and one of the sides is fought out meanwhile, by those two alone: the standoff holds.)

@@ -653,6 +653,7 @@ Hooks:
 - **Live hooks:** `run.live.dealAsk(run, request)` answers `{ask: "talkOk"}` (true/false) and `{ask: "answer"}` for a player's character ("accept"/"refuse"; null lets the engine decide).
 - **Options:** `dropGoods: false` when the table can't show goods on the ground (no Item Piles, no system loot): goods then move at once.
 - **Goods** are the giver's concessions (`how: "bribe" | "extort"`, `count`, `drop: {id, x, y}` when dropped, `picked` once picked up). The taker's `fetch` is the drop it walks to.
+- **Bought over** (`turnChance`, `turnOver`): a bribe taken may turn its target with talking's outcomes (`applySway`: an enemy stands aside, one taking no side joins), logged as a `sway`.
 - **Log types:** `deal` (`answer`: accept, refuse, offended, unpaid, unheard), `quit`, `quitCall`, `dropGoods`, `pickUp`, `dishonor`, and `offMap` with `walkedAway`.
 
 ### Groups and taking no side

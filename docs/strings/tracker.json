@@ -37857,7 +37857,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "c81854a3d346"
+   "hash": "c81854a3d346",
+   "changed": true
   },
   "core:story:event.dealBribeRefused": {
    "repo": "core",
