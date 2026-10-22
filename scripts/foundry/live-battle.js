@@ -24,6 +24,7 @@
 import { MODULE_ID, STATUS, SIDES, DISPOSITION_SIDES, NEUTRAL_PARTY, HOSTILE_GROUPS } from "../constants.js";
 import { escapeHtml as escape, inertHtml, listJoin } from "../i18n.js";
 import { getAdapter, characterSpec } from "../api.js";
+import { dropGoods, pickUpGoods } from "./loot-drop.js";
 import { setting, followSetting } from "../settings.js";
 import { positionOf, squareFeet } from "./terrain.js";
 import { approachFor, sceneNow } from "./battle.js";
@@ -477,8 +478,9 @@ function exitOf(u) {
  * What it did goes in `turn`'s records and moves, for Rewind.
  */
 async function sendOff(events, turn) {
-  if ( setting("fledMode") === "leave" ) return;
-  const gone = events.filter(e => e.type === "offMap").map(e => docOf(e.actorId)).filter(Boolean);
+  // (Walked away by a deal: always out of sight in the corner, whatever the setting says of the fled.)
+  const leave = setting("fledMode") === "leave";
+  const gone = events.filter(e => e.type === "offMap" && (!leave || e.walkedAway)).map(e => docOf(e.actorId)).filter(Boolean);
   if ( !gone.length ) return;
   const { sceneX = 0, sceneY = 0 } = canvas.dimensions;
   const moves = {};
@@ -1453,6 +1455,8 @@ const ASK_MS = 60000;
  * with the turn (`stage`).
  */
 async function answerFor(request, stage = null) {
+  // (A deal's question: behavior/deals.js.)
+  if ( request.deal ) return answerDeal(request);
   const use = request.decided ? true : await ask(request);
   if ( !use || !request.strike ) return use;
   // (A player's, theirs to roll while they're here; a creature's, or one whose players are gone, the system's.)
@@ -1955,7 +1959,9 @@ function checkOptions(kind, request, other) {
     ? { save: request.save ?? null, dc: request.dc, action, from: other ?? null, advantage }
     : {
       purpose: request.purpose ?? null, skill: request.skill ?? null, against: request.against ?? null, attackNumber: Number.isInteger(request.attackNumber) ? request.attackNumber : null,
-      standoff: request.standoff === true, dc: request.dc, action, target: other ?? null, advantage
+      standoff: request.standoff === true, dc: request.dc, action, target: other ?? null, advantage,
+      // (A deal's, API 26: its kind, what it asks, and whether it's made without words.)
+      ...(request.deal ? { deal: { kind: String(request.deal.kind ?? ""), ask: request.deal.ask ?? null, wordless: request.deal.wordless === true } } : {})
     };
 }
 
@@ -2054,6 +2060,22 @@ async function ask(request) {
     }
   }
   return askHere(words);
+}
+
+/**
+ * A deal's question (engine/live.js dealAsk). "talkOk", where the system doesn't track languages: the GM says whether
+ * the two can talk at all. "answer": a player's character's answer to a deal, its player's (null: the engine decides).
+ */
+async function answerDeal(request) {
+  const run = battle.run;
+  const name = id => (id ? run.byId.get(id)?.spec.name ?? "" : "");
+  if ( request.deal === "talkOk" ) {
+    return !!(await foundry.applications.api.DialogV2.confirm({
+      window: { title: loc("FASTFIGHTING.Deal.TalkOkTitle") },
+      content: `<p>${escape(fmt("FASTFIGHTING.Deal.TalkOk", { actor: name(request.unitId), target: name(request.targetId) }))}</p>`
+    }));
+  }
+  return null;
 }
 
 /** The question, in this client's language, and its answer (true: use it). */
@@ -2678,8 +2700,16 @@ async function writeEach(before, after, records, { messages = null, leave = null
         const marked = await adapter.commitBound(doc, ch.bound);
         if ( marked ) records.push(...noteSettings([marked]));
       }
+      // (Goods dropped on the ground, a deal struck apart: one pile for each drop. foundry/loot-drop.js.)
+      for ( const [drop, goods] of dropsIn(ch.concessions) ) {
+        const at = pointOf(battle.run.byId.get(id), goods[0].drop);
+        const receiverDoc = goods[0].to ? docOf(goods[0].to) : null;
+        const made = at ? await dropGoods({ scene: battle.scene, point: at, giverDoc: doc, receiverDoc, goods }) : { records: [], pile: null };
+        records.push(...noteSettings(made.records));
+        if ( made.pile ) battle.data.piles = { ...(battle.data.piles ?? {}), [drop]: made.pile };
+      }
       for ( const c of ch.concessions ?? [] ) {
-        if ( c.kept || !adapter.commitConcession ) continue;
+        if ( c.kept || c.drop || !adapter.commitConcession ) continue;
         const to = c.to ? docOf(c.to) : null;
         // (The giver's side, for what it shares: Ironsworn's Supply.)
         const giver = battle.run.byId.get(id);
@@ -2692,7 +2722,39 @@ async function writeEach(before, after, records, { messages = null, leave = null
       applying--;
     }
   }
+  // (Picked up this turn: what was dropped for it, off the ground and onto its sheet.)
+  for ( const { pile, to } of pickUpsIn(before, after) ) {
+    const receiverDoc = docOf(to);
+    if ( !receiverDoc || !battle.data.piles?.[pile] ) continue;
+    applying++;
+    try {
+      records.push(...noteSettings(await pickUpGoods({ pileUuid: battle.data.piles[pile], receiverDoc })));
+    } catch ( err ) {
+      console.error(`${MODULE_ID} | picking up a pile`, err);
+    } finally {
+      applying--;
+    }
+  }
   messages?.push(...cardsSince(seen).map(m => m.id));
+}
+
+/** A turn's dropped goods (behavior/deals.js give), by their drop: [[drop id, concessions]]. */
+function dropsIn(concessions = []) {
+  const out = new Map();
+  for ( const c of concessions ) if ( c.drop && !c.kept ) out.set(c.drop.id, [...(out.get(c.drop.id) ?? []), c]);
+  return [...out];
+}
+
+/** The drops picked up between two captures: {pile: its drop id, to: who picked it up}. */
+function pickUpsIn(before, after) {
+  const out = new Map();
+  for ( const [id, a] of Object.entries(after) ) {
+    const was = before[id]?.concessions ?? [];
+    (a.concessions ?? []).forEach((c, i) => {
+      if ( c.drop && c.picked && !was[i]?.picked ) out.set(c.drop.id, { pile: c.drop.id, to: c.to });
+    });
+  }
+  return [...out.values()];
 }
 
 /** A creature's hit points and the status they give it, as a capture has them (writeChanges: those the table settles). */

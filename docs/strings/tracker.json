@@ -671,6 +671,16 @@
    "commit": null,
    "hash": "e636ef347dd7"
   },
+  "core:code:scripts/foundry/live-battle.js:writeEach#2": {
+   "repo": "core",
+   "file": "scripts/foundry/live-battle.js",
+   "key": "scripts/foundry/live-battle.js:writeEach#2",
+   "area": "core/code",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "41464d3aa450"
+  },
   "core:code:scripts/foundry/live-journals.js:savePlanRun#1": {
    "repo": "core",
    "file": "scripts/foundry/live-journals.js",
@@ -701,6 +711,26 @@
    "date": null,
    "commit": null,
    "hash": "694e5e632c05"
+  },
+  "core:code:scripts/foundry/loot-drop.js:dropGoods#1": {
+   "repo": "core",
+   "file": "scripts/foundry/loot-drop.js",
+   "key": "scripts/foundry/loot-drop.js:dropGoods#1",
+   "area": "core/code",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "bb13c68b0246"
+  },
+  "core:code:scripts/foundry/loot-drop.js:dropGoods#2": {
+   "repo": "core",
+   "file": "scripts/foundry/loot-drop.js",
+   "key": "scripts/foundry/loot-drop.js:dropGoods#2",
+   "area": "core/code",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "32016fbe46a5"
   },
   "core:code:scripts/foundry/make-it-so.js:commitFight#1": {
    "repo": "core",
@@ -889,6 +919,17 @@
    "repo": "core",
    "file": "scripts/foundry/make-it-so.js",
    "key": "scripts/foundry/make-it-so.js:revertRecord#18",
+   "area": "core/code",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "f72e346158ec",
+   "changed": true
+  },
+  "core:code:scripts/foundry/make-it-so.js:revertRecord#19": {
+   "repo": "core",
+   "file": "scripts/foundry/make-it-so.js",
+   "key": "scripts/foundry/make-it-so.js:revertRecord#19",
    "area": "core/code",
    "status": "todo",
    "date": null,
@@ -4822,6 +4863,26 @@
    "date": null,
    "commit": null,
    "hash": "9b58e68145a7"
+  },
+  "core:FASTFIGHTING.Deal.TalkOk": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Deal.TalkOk",
+   "area": "core/Deal",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "6f68f85020c2"
+  },
+  "core:FASTFIGHTING.Deal.TalkOkTitle": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Deal.TalkOkTitle",
+   "area": "core/Deal",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "72a332c65f59"
   },
   "core:FASTFIGHTING.Defaults.Hint": {
    "repo": "core",
@@ -11945,6 +12006,26 @@
    "date": null,
    "commit": null,
    "hash": "08a076ce261f"
+  },
+  "core:FASTFIGHTING.Loot.ItemPilesDisabled": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Loot.ItemPilesDisabled",
+   "area": "core/Loot",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "b8ccc23b8684"
+  },
+  "core:FASTFIGHTING.Loot.ItemPilesMissing": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Loot.ItemPilesMissing",
+   "area": "core/Loot",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "c826dba3c636"
   },
   "core:FASTFIGHTING.Loot.none": {
    "repo": "core",
@@ -50356,6 +50437,16 @@
    "date": null,
    "commit": null,
    "hash": "6ef9405cc4b3"
+  },
+  "pf2e:FFPF2E.DroppedGoods": {
+   "repo": "pf2e",
+   "file": "languages/en.json",
+   "key": "FFPF2E.DroppedGoods",
+   "area": "pf2e/General",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "7229d6cd196a"
   },
   "pf2e:FFPF2E.EffectManeuver": {
    "repo": "pf2e",

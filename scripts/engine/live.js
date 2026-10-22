@@ -63,6 +63,7 @@ function attach(run, live) {
   run.live = live;
   live.decide = decide;
   live.roll = systemRoll;
+  live.dealAsk = dealAsk;
   live.mayReroll = mayReroll;
   live.systemOwns = (u, what) => live.players.has(u.id) || !!live.owns[what];
   return run;
@@ -658,6 +659,29 @@ function decide(run, u, { reaction, trigger, by = null, ally = null, would, stri
     // (Already decided, only to be rolled; and the strike, for the system to roll.)
     decided: use === true, strike: rolls ? { id: strike.id, name: strike.name } : null
   });
+}
+
+/**
+ * A deal's question in a live battle (behavior/deals.js offerDeal), asked as the turn plays (NeedsDecision, `deal`):
+ *   talkOk  {unitId, targetId, kind}: can the two talk at all? Asked only where the system doesn't track languages
+ *           (rules.languages false): the GM's say. -> true/false
+ *   answer  {unitId, targetId, kind, terms, degree, dc}: a player's character's answer to a deal ("accept"/"refuse";
+ *           null: the engine decides). Asked only of a player's character.
+ * Null where there's nothing to ask: the engine goes on as it would.
+ */
+function dealAsk(run, request) {
+  const live = run.live;
+  if ( !live?.playing ) return null;
+  if ( request.ask === "talkOk" && run.prep.rules.languages !== false ) return null;
+  if ( request.ask === "answer" && !live.players.has(request.targetId) ) return null;
+  if ( request.ask !== "talkOk" && request.ask !== "answer" ) return null;
+  const base = ["deal", request.ask, request.unitId ?? "", request.targetId ?? "", request.kind ?? ""].join("|");
+  const n = (live.asked.get(base) ?? 0) + 1;
+  live.asked.set(base, n);
+  const key = `${base}#${n}`;
+  if ( live.answers.has(key) ) return live.answers.get(key) ?? null;
+  const terms = request.terms ? { kind: request.terms.kind, ask: request.terms.ask, money: request.terms.money ?? 0, items: (request.terms.items ?? []).map(i => ({ id: i.id, name: i.name ?? "", count: i.count ?? 1 })), denominations: request.terms.denominations ?? null } : null;
+  throw new NeedsDecision({ key, deal: request.ask, unitId: request.unitId, targetId: request.targetId, kind: request.kind, terms, degree: request.degree ?? null, dc: request.dc ?? null });
 }
 
 /** Does the system make this kind of roll itself, in this live battle (its helper's say: live.systemRolls)? */

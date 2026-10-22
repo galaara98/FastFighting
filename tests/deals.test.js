@@ -6,6 +6,7 @@
  */
 import { describe, expect, test } from "vitest";
 import { beginRun, beginRound, prepareBattle, takeTurn, runBatchSync } from "../scripts/engine/simulator.js";
+import { beginLive, liveTurn, NeedsDecision } from "../scripts/engine/live.js";
 import { dealable, dealWishes, dealTerms, dealDC, offerDeal, quitFight, freeGroup, pickUp, dishonor, means, termsWorth } from "../scripts/engine/behavior/deals.js";
 import { levelOf } from "../scripts/engine/behavior/desire.js";
 import { remaining } from "../scripts/engine/behavior/talk.js";
@@ -443,5 +444,69 @@ describe("told", () => {
     const result = { log: events.map((e, i) => ({ round: 1, turn: i, actorId: "hero", ...e })), units: {}, rounds: 1, winner: null };
     const prose = buildStory(result, run.prep.spec ?? { combatants: [] }, "roleplay", { tables, seed: 3 }).text;
     expect(prose).not.toMatch(/\{[a-z]+\}|event\./);
+  });
+});
+
+describe("live", () => {
+  /** A goblin that wants nothing but to pay the hero to go, in a live battle the hero's player plays. */
+  function setUp(rules = pf2eRules) {
+    const spec = battle([hero({ ...at(0) }), goblin("coward", { traits: traits({ brave: 5, selfish: 20 }), social: talker(30), ...at(20) })],
+      { maxRounds: 6, positioning: true, aftermath: "none", opening: "fight" });
+    spec.bounds = { x0: -200, y0: -100, x1: 200, y1: 100 };
+    const run = beginLive(spec, rules, { seed: 5, players: ["hero"] });
+    for ( const u of run.units ) u.active = true;
+    run.byId.get("coward").hp = 3;
+    run.byId.get("coward").desire.stated.set("bribe|hero", 95);
+    return run;
+  }
+  function playThrough(make, id, answer) {
+    const answers = [];
+    const requests = [];
+    for ( let tries = 0; tries < 40; tries++ ) {
+      const run = make();
+      try {
+        const { events } = liveTurn(run, id, { answers });
+        return { run, events, requests };
+      } catch ( err ) {
+        if ( !(err instanceof NeedsDecision) ) throw err;
+        requests.push(err.request);
+        answers.push([err.request.key, answer(err.request)]);
+      }
+    }
+    throw new Error("never stops asking");
+  }
+
+  test("a deal with a player's character waits for its player's answer, and goes as they say", () => {
+    const yes = playThrough(setUp, "coward", r => (r.deal === "answer" ? "accept" : null));
+    const asked = yes.requests.find(r => r.deal === "answer");
+    expect(asked).toMatchObject({ unitId: "coward", targetId: "hero", kind: "bribe", terms: expect.objectContaining({ kind: "bribe" }) });
+    expect(yes.events.find(e => e.type === "deal")).toMatchObject({ answer: "accept", by: "player" });
+    expect(yes.run.byId.get("hero").leaving?.why).toBe("deal");
+    const no = playThrough(setUp, "coward", r => (r.deal === "answer" ? "refuse" : null));
+    expect(no.events.find(e => e.type === "deal")).toMatchObject({ answer: "refuse", by: "player" });
+    expect(no.run.byId.get("hero").leaving ?? null).toBe(null);
+  });
+
+  test("where the system doesn't track languages, the GM is asked first; no, and nothing comes of it", () => {
+    const rules = { ...pf2eRules, languages: false };
+    const out = playThrough(() => setUp(rules), "coward", r => (r.deal === "talkOk" ? false : null));
+    expect(out.requests.map(r => r.deal)).toEqual(["talkOk"]);
+    expect(out.events.find(e => e.type === "deal")).toMatchObject({ answer: "unheard" });
+  });
+});
+
+describe("stacks", () => {
+  test("of a stack, only as many as went are gone", () => {
+    const run = fight([creature({ id: "squire", traits: traits(), social: talker(), valuables: { money: 0, stowed: [{ id: "arrows", name: "Arrows", value: 1, quantity: 20 }], wielded: [] }, ...at(0) }), goblin("goblin", { ...at(5) })]);
+    const [sq, g] = [unit(run, "squire"), unit(run, "goblin")];
+    sq.adjacent.add(g.id);
+    g.prep.traits.loyal = 0;
+    expect(offerDeal(run, sq, g, "bribe", say(run), { terms: { kind: "bribe", ask: "leave", money: 0, items: [{ id: "arrows", name: "Arrows", count: 15 }] } })).toBe("accept");
+    expect(sq.concessions[0]).toMatchObject({ kind: "item", count: 15 });
+    expect(remaining(sq).stowed).toEqual([expect.objectContaining({ id: "arrows", quantity: 5 })]);
+    // (More than are left: no.)
+    const run2 = fight([creature({ id: "squire", traits: traits(), social: talker(), valuables: { money: 0, stowed: [{ id: "arrows", name: "Arrows", value: 1, quantity: 2 }], wielded: [] }, ...at(0) }), goblin("goblin", { ...at(5) })]);
+    unit(run2, "goblin").prep.traits.loyal = 0;
+    expect(offerDeal(run2, unit(run2, "squire"), unit(run2, "goblin"), "bribe", say(run2), { terms: { kind: "bribe", ask: "leave", money: 0, items: [{ id: "arrows", count: 3 }] } })).toBe("unpaid");
   });
 });

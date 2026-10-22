@@ -303,7 +303,9 @@
     "Loot": {
       "corpse": "Leave on corpse (lootable)",
       "pile": "Drop a loot pile",
-      "none": "Do nothing"
+      "none": "Do nothing",
+      "ItemPilesMissing": "This system has no loot pile of its own. Install the Item Piles module, and goods dropped in a deal lie on the ground until picked up; without it, they change hands at once.",
+      "ItemPilesDisabled": "This system has no loot pile of its own. Enable the Item Piles module, and goods dropped in a deal lie on the ground until picked up; without it, they change hands at once."
     },
     "Corpse": {
       "keep": "Keep, marked dead",
@@ -2413,6 +2415,10 @@
         "ownHit": "Their blow lands on {by}."
       },
       "NotHere": "That battle isn't being played in this browser."
+    },
+    "Deal": {
+      "TalkOkTitle": "A deal",
+      "TalkOk": "{actor} wants to make a deal with {target}. Can they understand each other?"
     },
     "LiveData": {
       "MenuName": "Live battle data",

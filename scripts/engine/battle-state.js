@@ -28,7 +28,8 @@
  *   resolve: how much more strong-willed than typical for its level (0 typical; -5 or less: very gullible)
  * @property {object} [valuables]           What it has that could change hands (stolen, looted, given up):
  *   {money: total in the smallest coin, denominations: [{label, value}] largest first,
- *    stowed: [{id, name, value, category?, material?, rarity?}] carried but not wielded or worn, wielded: (the same),
+ *    stowed: [{id, name, value, quantity?, category?, material?, rarity?}] carried but not wielded or worn (value: each;
+ *    quantity: how many, one if it doesn't say), wielded: (the same),
  *    pooled: true where its side shares the money (Ironsworn's Supply: one pays, all have that much less),
  *    progress: n where giving ground marks n progress on its own track instead (an Ironsworn foe: the winner's reward)}
  * @property {number} [wounded]
@@ -938,7 +939,7 @@ export const isMagical = action => !!action && (!!action.magical || action.rank 
  * `standoff`, true while a standoff holds, no blows struck yet: a system's words may differ then). `advantage`: the
  * engine's net advantage on it (above 0, advantage; below, disadvantage: API 24), for a system whose roller has it.
  */
-export function systemRolled(run, u, kind, { dc, from = null, target = null, save = null, skill = null, purpose = null, against = null, attackNumber = null, action = null, label = "", advantage = 0 } = {}) {
+export function systemRolled(run, u, kind, { dc, from = null, target = null, save = null, skill = null, purpose = null, against = null, attackNumber = null, action = null, label = "", advantage = 0, deal = null } = {}) {
   if ( !run.live?.playing || !u || !Number.isFinite(Number(dc)) ) return null;
   const what = { id: typeof action?.id === "string" ? action.id : null, name: action?.name ?? label ?? "" };
   const edge = Math.sign(Number(advantage) || 0);
@@ -946,7 +947,9 @@ export function systemRolled(run, u, kind, { dc, from = null, target = null, sav
     ? { kind, unitId: u.id, targetId: from?.id ?? null, save: save ?? null, dc: Number(dc), action: what, advantage: edge }
     : {
       kind, unitId: u.id, targetId: target?.id ?? null, purpose: purpose ?? null, skill: skill ?? null, against: against ?? null, ...(Number.isInteger(attackNumber) ? { attackNumber } : {}),
-      ...(run.standoff ? { standoff: true } : {}), dc: Number(dc), action: what, advantage: edge
+      ...(run.standoff ? { standoff: true } : {}), dc: Number(dc), action: what, advantage: edge,
+      // (A deal's check, API 26: what's offered or asked, and whether it's made without words: behavior/deals.js.)
+      ...(deal ? { deal: { kind: deal.kind, ask: deal.ask ?? null, wordless: !!deal.wordless } } : {})
     };
   return run.live.roll?.(run, request) ?? null;
 }

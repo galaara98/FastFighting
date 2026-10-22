@@ -123,12 +123,18 @@ export function remaining(t) {
   const given = (t.concessions ?? []).filter(c => !c.kept);
   const paid = (t.pool ?? [t]).flatMap(o => o.concessions ?? []).filter(c => !c.kept && c.kind === "money");
   const spent = paid.reduce((s, c) => s + c.amount, 0);
-  const gone = new Set(given.filter(c => c.kind === "item").map(c => c.item.id));
+  // (Of a stack, as many as went: count, one if it doesn't say. The rest are still there.)
+  const gone = new Map();
+  for ( const c of given ) if ( c.kind === "item" ) gone.set(c.item.id, (gone.get(c.item.id) ?? 0) + (c.count ?? 1));
+  const left = list => (list ?? []).flatMap(i => {
+    const n = (i.quantity ?? 1) - (gone.get(i.id) ?? 0);
+    return n <= 0 ? [] : [i.quantity === undefined || n === i.quantity ? i : { ...i, quantity: n }];
+  });
   return {
     money: Math.max(0, (v.money ?? 0) - spent),
     denominations: v.denominations ?? null,
-    stowed: (v.stowed ?? []).filter(i => !gone.has(i.id)),
-    wielded: (v.wielded ?? []).filter(i => !gone.has(i.id))
+    stowed: left(v.stowed),
+    wielded: left(v.wielded)
   };
 }
 

@@ -361,7 +361,8 @@ export async function revertRecord(r, { scene = null, settings = null } = {}) {
     const doc = await of(uuid, type);
     return (type === "Combatant" ? inCombat(doc?.parent) : here(doc)) ? doc : null;
   };
-  const summoned = a => !!a && !a.hasPlayerOwner && !!a._stats?.compendiumSource && !!game.users.get(a._stats?.createdBy)?.isGM;
+  // (Or a pile of goods FastFighting made: foundry/loot-drop.js.)
+  const summoned = a => !!a && !a.hasPlayerOwner && ((!!a._stats?.compendiumSource && !!game.users.get(a._stats?.createdBy)?.isGM) || !!a.getFlag?.(MODULE_ID, "pile"));
   // (The tracker's own turn events stay quiet: taking a turn back is no turn starting or ending, for the system or for a
   // live battle: live-battle.js onTurnChange.)
   for ( const uuid of r.createdCombatants ?? [] ) await step("removing a combatant", async () => (await ofHere(uuid, "Combatant"))?.delete({ turnEvents: false }));
@@ -371,6 +372,12 @@ export async function revertRecord(r, { scene = null, settings = null } = {}) {
     await step("removing an actor", async () => {
       const a = await of(uuid, "Actor");
       if ( summoned(a) ) await a.delete();
+    });
+  }
+  // (A pile's own actor, picked up: back, before its token.)
+  for ( const a of r.deletedActors ?? [] ) {
+    await step("restoring an actor", async () => {
+      if ( a?._id && !game.actors.has(a._id) && a.flags?.[MODULE_ID]?.pile ) await Actor.create(a, { keepId: true });
     });
   }
   for ( const t of r.deletedTokens ?? [] ) {

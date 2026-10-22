@@ -91,7 +91,13 @@ Hooks.once("fastFighting.init", api => {
     playstyleHints(actor, spec) { ... }              // {playstyleId: -1 to 1} (API 12)
     tacticHints(actor, spec, calc) { ... }           // the system's own answers to the tactics questions (API 12, 14)
     biography(actor) { ... }                         // its biography as plain text, or {about, story, against}
-    async commitConcession(giverDoc, receiverDoc, concession, { allies }) { ... } // returns undo records (allies: the giver's side, for pooled money)
+    async commitConcession(giverDoc, receiverDoc, concession, { allies }) { ... } // returns undo records (allies: the giver's side, for pooled money); an item's `count`, how many (API 26)
+    async takeGoods(tokenDoc, goods) { ... }         // deals (API 26): money and items (concessions, with counts) off its sheet: {goods: {items: [item data], coins}, records}
+    async putGoods(tokenDoc, goods) { ... }          // deals (API 26): takeGoods' goods onto a sheet (a creature's, a pile's); undo records
+    async goodsOf(tokenDoc) { ... }                  // deals (API 26): everything a pile holds, as takeGoods' goods
+    async dropValuables(scene, { x, y }, goods, { name }) { ... } // deals (API 26): the system's own loot pile, a token at x, y: {tokenUuid, records}
+    skillsOf(actor) { ... }                          // deals (API 26): its skills [{key, label, mod, talk}], talking ones (persuade, deceive, intimidate) marked
+    giveables(actor) { ... }                         // deals (API 26): what it could hand over: {money, denominations, items: [{id, name, img, quantity, value}]}
 
     // Live battles (Do it For Real Now): see scripts/adapters/adapter-base.js for each one's contract.
     get supportsLive() { return true; }

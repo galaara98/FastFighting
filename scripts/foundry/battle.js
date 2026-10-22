@@ -10,6 +10,7 @@ import { openPool, poolThreads } from "../engine/batch-pool.js";
 /** How long a battle's prediction runs (seconds): its plan's, else the world's Prediction time. */
 export const predictionSeconds = setup => setup?.options?.seconds ?? setting("predictionTime");
 import { getAdapter, getModifiers } from "../api.js";
+import { canDropGoods } from "./loot-drop.js";
 import { cachedCharacterSpec } from "./sheet-watch.js";
 import { computeApproach, computeAwareness, computeGround, computeWalls, environmentAt, forgetGround, positionOf, squareFeet } from "./terrain.js";
 import { proposeGroups } from "../engine/groups.js";
@@ -686,6 +687,9 @@ export function buildBattleSpec(roster, setup, { approach = null } = {}) {
       focusDampener: setting("focusDampener"),
       talking: options.talking !== false,
       ignoreLanguages: options.ignoreLanguages === true,
+      // Whether goods can lie on the ground here (Item Piles, or the system's own loot pile): a deal struck apart drops
+      // them for the taker to pick up; else they change hands at once (foundry/loot-drop.js).
+      dropGoods: canDropGoods(),
       opening: options.opening ?? "auto",
       // The luck checks that protect player characters (world settings, as sliders).
       concedeLuck: setting("concedeLuck"),

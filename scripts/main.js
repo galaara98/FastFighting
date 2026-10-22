@@ -2,6 +2,7 @@
  * FastFighting: estimate the outcome of a battle from the tokens on the scene.
  */
 import { MODULE_ID } from "./constants.js";
+import { registerLootAdvice } from "./foundry/loot-drop.js";
 import { registerSettings, groupSettings } from "./settings.js";
 import { buildApi, registerAdapter, getAdapter } from "./api.js";
 import { BattlePlanner } from "./apps/battle-planner.js";
@@ -32,6 +33,8 @@ Hooks.once("init", () => {
   registerLiveBattles();
   registerBattleVantage();
   registerGroundField();
+  // (Item Piles, recommended at the bottom of the settings where the system has no loot pile: foundry/loot-drop.js.)
+  registerLootAdvice();
   // The GM's "Prepare Players" request opens the survey on the chosen players' screens (a player's survey never on a
   // GM's); one character's for the GMs on theirs. Foundry says who asks: only a GM may.
   CONFIG.queries[QUERIES.openSurvey] = (data, { user }) => {
