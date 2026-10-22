@@ -658,6 +658,17 @@
    "status": "todo",
    "date": null,
    "commit": null,
+   "hash": "e636ef347dd7",
+   "gone": "2026-10-22"
+  },
+  "core:code:scripts/foundry/live-battle.js:writeEach#1": {
+   "repo": "core",
+   "file": "scripts/foundry/live-battle.js",
+   "key": "scripts/foundry/live-battle.js:writeEach#1",
+   "area": "core/code",
+   "status": "todo",
+   "date": null,
+   "commit": null,
    "hash": "e636ef347dd7"
   },
   "core:code:scripts/foundry/live-journals.js:savePlanRun#1": {
@@ -43098,6 +43109,16 @@
    "hash": "aa8dfc8d92cb",
    "gone": "2026-10-13"
   },
+  "daggerheart:code:scripts/commit.js:answeringArmor#1": {
+   "repo": "daggerheart",
+   "file": "scripts/commit.js",
+   "key": "scripts/commit.js:answeringArmor#1",
+   "area": "daggerheart/code",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "a6a4aadfcf7b"
+  },
   "daggerheart:code:scripts/main.js:(top)#1": {
    "repo": "daggerheart",
    "file": "scripts/main.js",
@@ -44210,6 +44231,26 @@
    "date": null,
    "commit": null,
    "hash": "2319cd90fbab"
+  },
+  "daggerheart:FFDAGGERHEART.Rolls.Sprint": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Rolls.Sprint",
+   "area": "daggerheart/Rolls",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "fd04788626e5"
+  },
+  "daggerheart:FFDAGGERHEART.Rolls.StruckDown": {
+   "repo": "daggerheart",
+   "file": "languages/en.json",
+   "key": "FFDAGGERHEART.Rolls.StruckDown",
+   "area": "daggerheart/Rolls",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "a51daf71cfef"
   },
   "daggerheart:FFDAGGERHEART.Scars": {
    "repo": "daggerheart",
