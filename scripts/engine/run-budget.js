@@ -51,5 +51,11 @@ export function paceOf(n, seconds, runs, threads = 1) {
   return budgetMs(seconds) / (runs / (threads >= 1 ? Math.floor(threads) : 1)) / fightMs(n);
 }
 
-/** Each of the swing factors' tests' share of three predictions' time (ms). */
-export const swingShareMs = (tests, seconds) => 3 * budgetMs(seconds) / Math.max(1, tests);
+/** The most tests a swing study runs: twelve creatures left out, three rules turned off. */
+export const SWING_FULL = 15;
+
+/**
+ * Each of the swing factors' tests' time (ms): a full study's share of three predictions' time, so a study of fewer
+ * tests (the planner's pills) finishes sooner, each test as sure as in a full one.
+ */
+export const swingShareMs = (tests, seconds) => 3 * budgetMs(seconds) / Math.max(SWING_FULL, tests);

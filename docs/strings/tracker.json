@@ -18688,6 +18688,26 @@
    "commit": null,
    "hash": "44bc3799892c"
   },
+  "core:FASTFIGHTING.Results.HingesOn": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Results.HingesOn",
+   "area": "core/Results",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "1cc6c72e2fd2"
+  },
+  "core:FASTFIGHTING.Results.HingesOnHint": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Results.HingesOnHint",
+   "area": "core/Results",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "71b76a7bee4e"
+  },
   "core:FASTFIGHTING.Results.HpLeft": {
    "repo": "core",
    "file": "languages/en.json",
@@ -18718,6 +18738,46 @@
    "commit": null,
    "hash": "a4782991f9e1"
   },
+  "core:FASTFIGHTING.Results.KeyTarget": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Results.KeyTarget",
+   "area": "core/Results",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "b69e97526c6e"
+  },
+  "core:FASTFIGHTING.Results.KeyTargetHint": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Results.KeyTargetHint",
+   "area": "core/Results",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "5a48701e2ec8"
+  },
+  "core:FASTFIGHTING.Results.Linchpin": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Results.Linchpin",
+   "area": "core/Results",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "1aa8d85fdca5"
+  },
+  "core:FASTFIGHTING.Results.LinchpinHint": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Results.LinchpinHint",
+   "area": "core/Results",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "793e92cfcc0a"
+  },
   "core:FASTFIGHTING.Results.Losses": {
    "repo": "core",
    "file": "languages/en.json",
@@ -18737,6 +18797,26 @@
    "date": null,
    "commit": null,
    "hash": "6f8f2471ff23"
+  },
+  "core:FASTFIGHTING.Results.Margin": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Results.Margin",
+   "area": "core/Results",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "e3c20b8b7780"
+  },
+  "core:FASTFIGHTING.Results.MarginHint": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Results.MarginHint",
+   "area": "core/Results",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "e45e7d2b778c"
   },
   "core:FASTFIGHTING.Results.MedianRounds": {
    "repo": "core",
@@ -18977,6 +19057,36 @@
    "date": null,
    "commit": null,
    "hash": "cd9558acfc38"
+  },
+  "core:FASTFIGHTING.Results.Rule.leadership": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Results.Rule.leadership",
+   "area": "core/Results",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "9e720e538855"
+  },
+  "core:FASTFIGHTING.Results.Rule.morale": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Results.Rule.morale",
+   "area": "core/Results",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "acaaa8c374ca"
+  },
+  "core:FASTFIGHTING.Results.Rule.positioning": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Results.Rule.positioning",
+   "area": "core/Results",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "84088805e145"
   },
   "core:FASTFIGHTING.Results.Section.fight": {
    "repo": "core",
@@ -28477,6 +28587,16 @@
    "hash": "e6b2848b2cf0",
    "changed": true
   },
+  "core:FASTFIGHTING.Swing.Noise": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Swing.Noise",
+   "area": "core/Swing",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "4575dcf199eb"
+  },
   "core:FASTFIGHTING.Swing.NoLeadership": {
    "repo": "core",
    "file": "languages/en.json",
@@ -28506,6 +28626,66 @@
    "date": null,
    "commit": null,
    "hash": "b7cfc8b1a6ae"
+  },
+  "core:FASTFIGHTING.Swing.Scope.foes": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Swing.Scope.foes",
+   "area": "core/Swing",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "5fef5168c410"
+  },
+  "core:FASTFIGHTING.Swing.Scope.friendly": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Swing.Scope.friendly",
+   "area": "core/Swing",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "0d0d3b14c732"
+  },
+  "core:FASTFIGHTING.Swing.Scope.neutrals": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Swing.Scope.neutrals",
+   "area": "core/Swing",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "0f7affe973d2"
+  },
+  "core:FASTFIGHTING.Swing.Scope.rules": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Swing.Scope.rules",
+   "area": "core/Swing",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "4228aeb07c41"
+  },
+  "core:FASTFIGHTING.Swing.ScopeLabel": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Swing.ScopeLabel",
+   "area": "core/Swing",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "72e11fadaff7"
+  },
+  "core:FASTFIGHTING.Swing.Tests": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Swing.Tests",
+   "area": "core/Swing",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "6154f0bc7334"
   },
   "core:FASTFIGHTING.Swing.Without": {
    "repo": "core",

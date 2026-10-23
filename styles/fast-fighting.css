@@ -202,6 +202,10 @@
 .ff-swing-value { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; }
 .ff-swing-value.pos { color: var(--ff-friendly); }
 .ff-swing-value.neg { color: var(--ff-hostile); }
+.ff-swing-run { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 8px; }
+.ff-swing-run .ff-filters { flex: 1; padding: 0; }
+.ff-swing-count { color: var(--ff-text-dim); font-size: var(--ff-text-sm); }
+.ff-swing li.is-noise { opacity: 0.45; }
 
 .ff-sample { display: flex; flex-direction: column; gap: 8px; }
 .ff-sample .ff-split { grid-template-columns: 1.4fr 1fr; align-items: start; }

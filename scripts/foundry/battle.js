@@ -982,40 +982,67 @@ export async function simulate(roster, setup, { onProgress, signal } = {}) {
 /** The most combatants the swing factors leave out one at a time (in a bigger battle, the ones likeliest to matter). */
 const SWING_COMBATANTS = 12;
 
+/** What a swing study can test, by pill: the party's side, its foes, those who take no side, the rules. */
+export const SWING_SCOPES = Object.freeze(["friendly", "foes", "neutrals", "rules"]);
+
+/** The rules a swing study turns off, one at a time, and what each test is called. */
+const SWING_RULES = [["leadership", "FASTFIGHTING.Swing.NoLeadership"], ["morale", "FASTFIGHTING.Swing.NoMorale"], ["positioning", "FASTFIGHTING.Swing.NoPositioning"]];
+
+/** Which pill a creature comes under (SWING_SCOPES), by its side. */
+const swingScopeOf = c => (c.side === SIDES.FRIENDLY ? "friendly" : HOSTILE_GROUPS.includes(c.side) ? "foes" : "neutrals");
+
 /**
- * Swing factors: how much does the party's win chance move without each combatant, or with each modifier toggled? In a
- * big battle, only the SWING_COMBATANTS that weigh most (the highest level, then the toughest), each with as many fights
- * as fit its share of the time (engine/run-budget.js).
- * @returns {Promise<{label: string, delta: number}[]>} sorted by impact
+ * The tests a swing study runs, for the pills chosen (scope: {friendly, foes, neutrals, rules}, each on unless false):
+ * each creature left out, and each rule turned off. Creatures: the SWING_COMBATANTS that did most in the run (damage
+ * and healing, then level), never one that took no part in nine fights in ten (leaving it out changes nothing).
+ * @returns {{tests: {scope, label, id?, key?, make}[], counts: {[scope]: number}}}  counts: what each pill would test
  */
-export async function swingFactors(spec, baseline, { seconds = null, onProgress } = {}) {
+export function swingTests(spec, baseline, scope = {}) {
+  const did = c => (baseline?.combatants?.[c.id]?.meanDamage ?? 0) + (baseline?.combatants?.[c.id]?.meanHealing ?? 0);
+  const candidates = spec.combatants.filter(c => (baseline?.combatants?.[c.id]?.pInvolved ?? 1) >= 0.1);
+  const counts = Object.fromEntries(SWING_SCOPES.map(k => [k, 0]));
+  for ( const c of candidates ) counts[swingScopeOf(c)] += 1;
+  const rules = SWING_RULES.filter(([key]) => spec.options[key]);
+  counts.rules = rules.length;
+  const chosen = candidates.filter(c => scope[swingScopeOf(c)] !== false)
+    .sort((a, b) => did(b) - did(a) || (Number(b.level) || 0) - (Number(a.level) || 0) || (Number(b.hp?.max) || 0) - (Number(a.hp?.max) || 0))
+    .slice(0, SWING_COMBATANTS);
+  const tests = spec.combatants.filter(c => chosen.includes(c)).map(c => ({
+    scope: swingScopeOf(c), label: game.i18n.format("FASTFIGHTING.Swing.Without", { name: c.name }), id: c.id, side: c.side,
+    make: s => ({ ...s, combatants: s.combatants.filter(x => x.id !== c.id) })
+  }));
+  if ( scope.rules !== false ) {
+    for ( const [key, label] of rules ) tests.push({ scope: "rules", label: game.i18n.localize(label), key, make: s => ({ ...s, options: { ...s.options, [key]: false } }) });
+  }
+  return { tests, counts };
+}
+
+/**
+ * Swing factors: how much the party's odds of winning move without each creature, or with each rule turned off (the
+ * pills chosen: swingTests). Each test gets a full study's share of three predictions' time (swingShareMs), SWING_RUNS
+ * fights at most, so fewer tests finish sooner. Each keeps its fights' odds, the party's losses and how sure it is:
+ * `se`, the standard error of its change against the run's own (`noise`: within twice that, or under 2 points).
+ * @returns {Promise<object[]>} sorted by impact
+ */
+export async function swingFactors(spec, baseline, { seconds = null, onProgress, scope = {} } = {}) {
   const adapter = getAdapter();
   const rules = adapter.rules;
   const friendlyWin = r => r.sides.friendly?.pWin ?? 0;
   const base = friendlyWin(baseline);
-  const tests = [];
-  const weightiest = [...spec.combatants]
-    .sort((a, b) => (Number(b.level) || 0) - (Number(a.level) || 0) || (Number(b.hp?.max) || 0) - (Number(a.hp?.max) || 0))
-    .slice(0, SWING_COMBATANTS);
-  for ( const c of spec.combatants.filter(x => weightiest.includes(x)) ) {
-    tests.push({ label: game.i18n.format("FASTFIGHTING.Swing.Without", { name: c.name }), id: c.id, side: c.side, make: s => ({ ...s, combatants: s.combatants.filter(x => x.id !== c.id) }) });
-  }
-  const toggles = [
-    ["leadership", "FASTFIGHTING.Swing.NoLeadership"],
-    ["morale", "FASTFIGHTING.Swing.NoMorale"],
-    ["positioning", "FASTFIGHTING.Swing.NoPositioning"]
-  ];
-  for ( const [key, label] of toggles ) {
-    if ( spec.options[key] ) tests.push({ label: game.i18n.localize(label), make: s => ({ ...s, options: { ...s.options, [key]: false } }) });
-  }
+  const { tests } = swingTests(spec, baseline, scope);
   const out = [];
-  // (Each test: its share of three predictions' time, SWING_RUNS fights at most; one pool of workers for them all.)
   const share = swingShareMs(tests.length, seconds ?? setting("predictionTime"));
   const pool = fightPool(adapter);
   try {
     for ( const [i, t] of tests.entries() ) {
       const r = await pool.run(t.make(spec), rules, { runs: SWING_RUNS, seed: 99, maxMs: share });
-      out.push({ label: t.label, side: t.side ?? null, id: t.id ?? null, delta: friendlyWin(r) - base });
+      const p = friendlyWin(r);
+      const se = Math.sqrt((p * (1 - p)) / Math.max(1, r.runs) + (base * (1 - base)) / Math.max(1, baseline.runs));
+      const delta = p - base;
+      out.push({
+        label: t.label, scope: t.scope, side: t.side ?? null, id: t.id ?? null, key: t.key ?? null, delta, se,
+        noise: Math.abs(delta) < Math.max(0.02, 2 * se), runs: r.runs, pWin: p, pAnyPcDead: r.pAnyPcDead, pAnyPcDowned: r.pAnyPcDowned
+      });
       onProgress?.((i + 1) / tests.length);
       await new Promise(resolve => setTimeout(resolve, 0));
     }

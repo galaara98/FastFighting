@@ -1878,19 +1878,27 @@ Code: `engine/aggregate.js` `finish`; `foundry/battle.js` `typicalFight`; `engin
 
 ### Swing factors
 
-Search: swing factors, Compute swing factors, what moves the odds, Without, impact, SWING_RUNS
+Search: swing factors, Compute swing factors, what moves the odds, Without, impact, SWING_RUNS, linchpin, key target, hinges on, noise, What to test
 
 Shows how much each combatant and each option moves the party's win chance.
 
-- Tests: the battle without each of up to 12 combatants (highest level first, then highest max HP), and with
+- What to test: a pill each for the party's side, its foes, those who take no side, and the rules; the GM's choice
+  is kept in their browser for every battle.
+- Tests: the battle without each of up to 12 creatures from the pills chosen (those that did most in the main run
+  first: damage plus healing, then level, then max HP; never one that took part in under 1 fight in 10), and with
   Leadership, Morale, and Terrain & positioning each turned off (only those that are on).
-- Each test runs up to 300 fights (`SWING_RUNS`) in 3 × prediction time ÷ number of tests, seed 99 (on the
-  background workers where the prediction runs on them).
+- Each test runs up to 300 fights (`SWING_RUNS`) in 3 × prediction time ÷ 15 (`SWING_FULL`, the most tests a study
+  has), seed 99 (on the background workers where the prediction runs on them). A study of fewer tests finishes sooner.
 - Each shows the party's win chance in the test minus the main run's, largest change first.
+- Noise: a change under 2 points, or under twice its standard error (√(p(1−p)/n) of the test and of the main run,
+  combined), may be chance. It's shown faint and never makes an Overview tile.
+- Overview tiles, once it has run: the **Linchpin** (the ally whose absence lowers the party's odds most), the
+  **Key target** (the foe whose absence raises them most), and what the fight **Hinges on** (a rule moving them 10
+  points or more).
 
-Example: 6 seconds and 10 tests give each test 1.8 seconds.
+Example: 6 seconds give each test 1.2 seconds, so 10 tests take 12 seconds at most.
 
-Code: `foundry/battle.js` `swingFactors`; `engine/run-budget.js` `swingShareMs`.
+Code: `foundry/battle.js` `swingTests`, `swingFactors`; `engine/run-budget.js` `swingShareMs`.
 
 ### Initiative and turn order
 

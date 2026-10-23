@@ -20,7 +20,7 @@ import {
 } from "../foundry/tactics.js";
 import { cachedCharacterSpec, showsReactions } from "../foundry/sheet-watch.js";
 import {
-  gatherRoster, chosenSide, groupOf, proposeNeutralGroups, resolveAllegiances, simulate, swingFactors, typicalFight, fightThreads,
+  gatherRoster, chosenSide, groupOf, proposeNeutralGroups, resolveAllegiances, simulate, swingFactors, swingTests, SWING_SCOPES, typicalFight, fightThreads,
   approachFor, commandChains, commandGroup, seedCommand, clearRole, ROLES, sideName, hostileGroupsIn, secretTeam, SECRET_TEAMS, LEANS, predictionSeconds,
   battleFor, surpriseMode, systemSurprise, mainCoin, PURSE_TEAMS, readReinforcements } from "../foundry/battle.js";
 import { SURPRISE } from "../engine/behavior/surprise.js";
@@ -132,6 +132,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       resultTab: BattlePlanner.#onResultTab,
       panToken: BattlePlanner.#onPanToken,
       swing: BattlePlanner.#onSwing,
+      swingScope: BattlePlanner.#onSwingScope,
       makeItSo: BattlePlanner.#onMakeItSo,
       preparePlayers: BattlePlanner.#onPreparePlayers,
       togglePlaystyle: BattlePlanner.#onTogglePlaystyle,
@@ -890,6 +891,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     const ifAny = (p, make) => (p > 0 ? [make()] : []);
     const pt = r.party;
     const spent = this.#partySpent(r);
+    const swung = this.#swungTiles();
     const party = [
       kpi("PartyWins", r.sides.friendly?.pWin ?? 0, prev?.sides?.friendly?.pWin ?? 0, true),
       kpi("PcDeath", r.pAnyPcDead, prev?.pAnyPcDead, false, "danger"),
@@ -904,10 +906,12 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     // What a strategist weighs before committing: what winning costs, the ally whose fall costs most, the bad tail.
     const stakes = [
       ...(Number.isFinite(pt?.pCostlyWin) ? [kpi("CostlyWins", pt.pCostlyWin, prev?.party?.pCostlyWin, false, "warn", true)] : []),
-      ...this.#linchpin(r).map(l => ({
+      // (Measured, once Swing factors has run: the ally the party can least do without. Until then, the one whose going
+      // down goes with losing most.)
+      ...(swung.linchpin ? [swung.linchpin] : this.#linchpin(r).map(l => ({
         label: localize("FASTFIGHTING.Results.IfDown", { name: l.name }), value: pct(l.down, 1), cls: "danger",
         hint: localize("FASTFIGHTING.Results.IfDownHint", { name: l.name, up: pct(l.up, 1) }), delta: null
-      })),
+      }))),
       ...(Number.isFinite(pt?.worstDowned) ? [{
         label: loc("FASTFIGHTING.Results.WorstTenth"), value: localize("FASTFIGHTING.Results.OfN", { n: pt.worstDowned, m: pt.pcs }), cls: "warn",
         hint: loc("FASTFIGHTING.Results.WorstTenthHint"), delta: null
@@ -930,6 +934,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     const fe = r.foesEnd;
     const foesEnd = fe ? FOE_ENDS.filter(k => fe[k] >= 0.005).map(k => ({ cls: k, w: (fe[k] * 100).toFixed(1), label: loc(`FASTFIGHTING.Results.FoeEnd.${k}`), pct: pct(fe[k]) })) : [];
     const foes = [
+      ...(swung.target ? [swung.target] : []),
       ...ifAny(r.pFoeHeadFalls, () => kpi("FoeHeadFalls", r.pFoeHeadFalls, prev?.pFoeHeadFalls, true, "", true)),
       ...ifAny(r.pAnySwayed, () => kpi("Swayed", r.pAnySwayed, prev?.pAnySwayed, true, "talk")),
       ...ifAny(r.pPeaceful, () => kpi("Peaceful", r.pPeaceful, prev?.pPeaceful, true, "talk")),
@@ -939,11 +944,41 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     const fight = [
       ...ifAny(first?.pFirstToFall, () => ({ label: localize("FASTFIGHTING.Results.FallsFirst", { name: first.name }), value: pct(first.pFirstToFall, 1), cls: "", hint: null, delta: null })),
       ...ifAny(r.pBystandersJoin, () => kpi("BystandersJoin", r.pBystandersJoin, prev?.pBystandersJoin, false, "", true)),
-      ...ifAny(r.pReinforced, () => kpi("Reinforced", r.pReinforced, prev?.pReinforced, false, "", true))
+      ...ifAny(r.pReinforced, () => kpi("Reinforced", r.pReinforced, prev?.pReinforced, false, "", true)),
+      ...(swung.hinge ? [swung.hinge] : []),
+      // (How sure the party's odds are: 95% of the time within this many points, from the fights run.)
+      {
+        label: loc("FASTFIGHTING.Results.Margin"), cls: "", delta: null,
+        value: `±${(1.96 * Math.sqrt(((r.sides.friendly?.pWin ?? 0) * (1 - (r.sides.friendly?.pWin ?? 0))) / Math.max(1, r.runs)) * 100).toFixed(1)}`,
+        hint: localize("FASTFIGHTING.Results.MarginHint", { n: r.runs })
+      }
     ];
     return {
       party, stakes, money, foes, fight, foesEnd,
       foesEndLabel: `${loc("FASTFIGHTING.Results.FoesEnd")}: ${foesEnd.map(f => `${f.label} ${f.pct}`).join(", ")}`
+    };
+  }
+
+  /**
+   * What Swing factors measured, as Overview tiles (none until it has run, and none for a change within its noise): the
+   * linchpin (the ally whose absence costs the party most), the key target (the foe whose absence helps it most), and
+   * the rule the fight hinges on (10 points or more either way).
+   */
+  #swungTiles() {
+    const found = (this.swing ?? []).filter(s => !s.noise);
+    const nameOf = s => this.spec?.combatants?.find(c => c.id === s.id)?.name ?? s.label;
+    const points = d => `${d > 0 ? "+" : "−"}${Math.abs(Math.round(d * 100))}`;
+    const tile = (key, s, data, cls) => ({
+      label: localize(`FASTFIGHTING.Results.${key}`, data), value: points(s.delta), cls, delta: null,
+      hint: localize(`FASTFIGHTING.Results.${key}Hint`, { ...data, pct: pct(s.pWin, 1) })
+    });
+    const ally = found.filter(s => s.scope === "friendly" && s.delta < 0).sort((a, b) => a.delta - b.delta)[0];
+    const foe = found.filter(s => s.scope === "foes" && s.delta > 0).sort((a, b) => b.delta - a.delta)[0];
+    const rule = found.filter(s => s.scope === "rules" && Math.abs(s.delta) >= 0.1).sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta))[0];
+    return {
+      linchpin: ally ? tile("Linchpin", ally, { name: nameOf(ally) }, "danger") : null,
+      target: foe ? tile("KeyTarget", foe, { name: nameOf(foe) }, "") : null,
+      hinge: rule ? tile("HingesOn", rule, { rule: loc(`FASTFIGHTING.Results.Rule.${rule.key}`) }, "") : null
     };
   }
 
@@ -1034,8 +1069,16 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     const swing = this.swing?.map(s => ({
-      ...s, deltaLabel: `${s.delta >= 0 ? "+" : ""}${(s.delta * 100).toFixed(1)}%`, width: Math.min(50, Math.abs(s.delta) * 100).toFixed(1), positive: s.delta >= 0
+      ...s, deltaLabel: `${s.delta >= 0 ? "+" : ""}${(s.delta * 100).toFixed(1)}%`, width: Math.min(50, Math.abs(s.delta) * 100).toFixed(1), positive: s.delta >= 0,
+      noiseHint: s.noise ? localize("FASTFIGHTING.Swing.Noise", { n: s.runs }) : null
     })) ?? null;
+    // What the swing study can test, a pill each (a creature's side, the rules), and how many tests that comes to.
+    const scope = this.#swingScope();
+    const { tests, counts } = swingTests(spec, r, scope);
+    const swingPills = SWING_SCOPES.filter(k => counts[k] > 0).map(k => ({
+      id: k, label: loc(`FASTFIGHTING.Swing.Scope.${k}`), count: counts[k], active: scope[k] !== false
+    }));
+    const swingTestCount = localize("FASTFIGHTING.Swing.Tests", { n: tests.length });
 
     const sample = this.sample ? this.#sampleContext() : null;
 
@@ -1062,7 +1105,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
         collapseNote: this.#collapseNote(r),
         rounds: r.rounds,
         histogram,
-        foes, atRisk, combatants, resources, swing, sample
+        foes, atRisk, combatants, resources, swing, swingPills, swingTestCount, swingNone: !tests.length, sample
       },
       storyStyles: Object.fromEntries(STORY_STYLES.map(k => [k, `FASTFIGHTING.Story.Style.${k}`])),
       storyStyle: this.storyStyle,
@@ -1773,6 +1816,21 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     this.abort?.abort();
   }
 
+  /** The swing study's pills this GM chose (a client setting, kept for every battle): {friendly, foes, neutrals, rules}. */
+  #swingScope() {
+    return { ...(setting("swingScope") ?? {}) };
+  }
+
+  /** A swing study pill pressed: that part tested, or not, from now on. */
+  static async #onSwingScope(event, target) {
+    const key = target.dataset.scope;
+    if ( !SWING_SCOPES.includes(key) ) return;
+    const scope = this.#swingScope();
+    scope[key] = scope[key] === false;
+    await game.settings.set(MODULE_ID, "swingScope", scope);
+    this.render({ parts: ["right"] });
+  }
+
   static async #onSwing(event, target) {
     if ( !this.results || this.running ) return;
     this.running = true;
@@ -1781,6 +1839,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     try {
       this.swing = await swingFactors(this.spec, this.results, {
         seconds: predictionSeconds(this.setup),
+        scope: this.#swingScope(),
         onProgress: p => {
           const bar = this.element?.querySelector(".ff-progress > span");
           if ( bar ) bar.style.width = `${Math.round(p * 100)}%`;

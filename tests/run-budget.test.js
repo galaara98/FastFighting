@@ -23,6 +23,8 @@ describe("the prediction's time", () => {
     expect(expectedRuns(30, 20)).toBeGreaterThan(expectedRuns(30, 6));
     expect(expectedRuns(1, 20)).toBe(MAX_RUNS);
     expect(swingShareMs(15, 10)).toBe(2000);
+    // (Fewer tests: each the same time, so the study finishes sooner.)
+    expect(swingShareMs(5, 10)).toBe(2000);
   });
 
   test("this computer's pace, from a prediction that ran out of time, and the next estimate at it", () => {

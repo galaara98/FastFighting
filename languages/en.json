@@ -812,15 +812,37 @@
       "Losses": "Losses, on average",
       "LossesHint": "Coin and goods the party's side gives up in a fight: paid out, stolen, or taken off its fallen.",
       "DealStruck": "A deal is struck",
-      "DealStruckHint": "A bribe, toll or extortion changes hands, on either side."
+      "DealStruckHint": "A bribe, toll or extortion changes hands, on either side.",
+      "Linchpin": "Linchpin: {name}",
+      "LinchpinHint": "Without {name}, the party wins {pct}: the ally it can least do without (Swing factors).",
+      "KeyTarget": "Key target: {name}",
+      "KeyTargetHint": "Without {name}, the party wins {pct}: the foe it most wants gone (Swing factors).",
+      "HingesOn": "Hinges on {rule}",
+      "HingesOnHint": "With {rule} off, the party wins {pct}: the rule this fight depends on most (Swing factors).",
+      "Rule": {
+        "leadership": "leadership",
+        "morale": "morale",
+        "positioning": "terrain"
+      },
+      "Margin": "Win odds margin",
+      "MarginHint": "The party's odds of winning are sure to within this many points, 19 times in 20, from {n} fights."
     },
     "Swing": {
       "Without": "Without {name}",
       "NoLeadership": "Without leadership",
       "NoMorale": "Without morale",
       "NoPositioning": "Without terrain & positioning",
-      "Hint": "Re-runs without each combatant and option to show what moves the odds most.",
-      "Compute": "Compute swing factors"
+      "Hint": "Re-runs the fight without each creature, and with each rule off, to show what moves the party's odds most. Fewer tests finish sooner.",
+      "Compute": "Compute swing factors",
+      "Scope": {
+        "friendly": "Party's side",
+        "foes": "Foes",
+        "neutrals": "Neutrals",
+        "rules": "Rules"
+      },
+      "ScopeLabel": "What to test",
+      "Tests": "{n} tests",
+      "Noise": "Within the noise of {n} fights: this may be chance."
     },
     "Sample": {
       "Outcome": {

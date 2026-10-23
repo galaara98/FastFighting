@@ -102,11 +102,17 @@
     {{#if (eq resultTab "swing")}}
     <div class="ff-panel">
       <p class="ff-hint">{{localize "FASTFIGHTING.Swing.Hint"}}</p>
-      <button type="button" class="ff-btn" data-action="swing" {{#if running}}disabled{{/if}}><i class="fa-solid fa-scale-unbalanced" aria-hidden="true"></i> {{localize "FASTFIGHTING.Swing.Compute"}}</button>
+      <div class="ff-swing-run">
+        <div class="ff-filters" role="group" aria-label="{{localize "FASTFIGHTING.Swing.ScopeLabel"}}">
+          {{#each results.swingPills}}<button type="button" class="ff-filter {{#if active}}active{{/if}}" data-action="swingScope" data-scope="{{id}}" aria-pressed="{{#if active}}true{{else}}false{{/if}}" {{#if @root.running}}disabled{{/if}}>{{label}} <span class="ff-count">{{count}}</span></button>{{/each}}
+        </div>
+        <span class="ff-swing-count">{{results.swingTestCount}}</span>
+        <button type="button" class="ff-btn" data-action="swing" {{#if running}}disabled{{/if}}{{#if results.swingNone}}disabled{{/if}}><i class="fa-solid fa-scale-unbalanced" aria-hidden="true"></i> {{localize "FASTFIGHTING.Swing.Compute"}}</button>
+      </div>
       {{#if results.swing}}
       <ul class="ff-swing">
         {{#each results.swing}}
-        <li>
+        <li class="{{#if noise}}is-noise{{/if}}" {{#if noiseHint}}data-tooltip="{{noiseHint}}"{{/if}}>
           <span class="ff-swing-label">{{label}}</span>
           <span class="ff-swing-bar"><span class="{{#if positive}}pos{{else}}neg{{/if}}" style="width: {{width}}%"></span></span>
           <span class="ff-swing-value {{#if positive}}pos{{else}}neg{{/if}}">{{deltaLabel}}</span>

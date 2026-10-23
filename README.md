@@ -50,9 +50,9 @@ The window needs at least 1000×600 and uses any extra space.
   - **The stakes:** costly wins (of the party's wins, those where a PC dies or half the PCs go down); the ally whose going down costs the party most, with the party's odds when it does; and how many PCs go down in the worst fight in ten.
   - **Money**, in the system's main coin (gold, in most): the spoils on average (coin and goods handed or taken to the party's side, and, when it wins, what's on the foes it beat), the losses on average (paid out, stolen, or taken off its fallen), a deal struck (a bribe, toll or extortion, on either side), and a PC robbed or paying out.
   - **The foes:** how they end (slain, down, captured, fled, gave up, talked over, still standing); a foe's leader falling; foes talked down, fights settled with words, and talks that collapsed; the most dangerous foes.
-  - **The fight:** how long it lasts, who most often falls first, bystanders joining, and reinforcements arriving.
+  - **The fight:** how long it lasts, who most often falls first, bystanders joining, reinforcements arriving, and the win odds' margin (how sure they are, from the fights run).
 - **Combatants:** each token's odds of standing, down, dead, fled, surrendered, stood down and switched sides; HP left, damage, healing, and its chance to fall first. A name shows it in Details.
-- **Swing factors:** runs the fight again without each combatant and option, to show what moves the party's odds most.
+- **Swing factors:** runs the fight again without each creature and with each rule off, to show what moves the party's odds most. Pills choose what to test (the party's side, its foes, neutrals, the rules); fewer tests finish sooner. A change that may be chance shows faint. Once it has run, the Overview adds the **Linchpin**, the **Key target** and what the fight **Hinges on**.
 - **Resources:** spell slots, focus points and consumables spent.
 - **Sample fight:** the story of the most typical fight (the most common outcome, of the usual length). It's a sample, not the ruling: Go Live plays a new fight with rolls nobody has seen, so a 70% win is a loss three times in ten.
 

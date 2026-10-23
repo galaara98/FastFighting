@@ -159,6 +159,8 @@ export function registerSettings(DefaultsConfig, GenericPathsConfig, StoryTables
   game.settings.register(MODULE_ID, "partyCommand", { scope: "world", config: false, type: Object, default: {} });
   // This computer's pace, from its last prediction (engine/run-budget.js paceOf): the planner's estimate goes by it.
   game.settings.register(MODULE_ID, "runPace", { scope: "client", config: false, type: Number, default: 1 });
+  // What this GM's swing studies test (the planner's pills): each part on unless false.
+  game.settings.register(MODULE_ID, "swingScope", { scope: "client", config: false, type: Object, default: {} });
   game.settings.register(MODULE_ID, "sideDefaults", {
     scope: "world",
     config: false,
