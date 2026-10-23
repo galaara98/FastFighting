@@ -765,7 +765,40 @@
         "annoyed": "{names} blamed the other side",
         "blood": "{names} landed a blow",
         "fray": "{names} got pulled into a quarrel"
-      }
+      },
+      "Section": {
+        "party": "The party",
+        "foes": "The foes",
+        "fight": "The fight"
+      },
+      "PartyWiped": "Party wiped",
+      "PartyWipedHint": "Every PC down, dead or captured at the end.",
+      "PcsDowned": "PCs down, on average",
+      "PcsDownedHint": "How many PCs drop to 0 HP in a fight, at least once.",
+      "OfN": "{n} of {m}",
+      "PartyHp": "Party HP left",
+      "PartyHpHint": "The PCs' HP at the end, as a share of their most.",
+      "PartySpent": "Resources spent",
+      "PartySpentHint": "How much of the PCs' limited resources a fight uses: slots, focus, uses and consumables.",
+      "PcLosesGoods": "A PC loses goods",
+      "PcLosesGoodsHint": "Robbed, or paid out in a deal.",
+      "FoesEnd": "How the foes end",
+      "FoeEnd": {
+        "slain": "Slain",
+        "down": "Down",
+        "captured": "Captured",
+        "fled": "Fled",
+        "gaveUp": "Gave up",
+        "talked": "Talked over",
+        "standing": "Still standing"
+      },
+      "FoeHeadFalls": "A foe's leader falls",
+      "FoeHeadFallsHint": "A boss or leader of the foes is slain, downed, captured, flees, gives up or is talked over.",
+      "FallsFirst": "{name} falls first",
+      "BystandersJoin": "Bystanders join",
+      "BystandersJoinHint": "Someone outside the encounter joins in.",
+      "Reinforced": "Reinforcements arrive",
+      "ReinforcedHint": "A team's reinforcements are called and arrive."
     },
     "Swing": {
       "Without": "Without {name}",

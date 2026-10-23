@@ -747,9 +747,22 @@ button.ff-team-pick:hover { border-color: var(--ff-line); }
 .ff-summary .ff-winbar { height: 24px; }
 .ff-legend { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 6px; color: var(--ff-text-dim); font-size: var(--ff-text-sm); }
 .ff-legend > span { display: inline-flex; align-items: center; gap: 6px; }
-.ff-summary .ff-kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: 8px; }
-.ff-summary .ff-kpi { padding: 6px 8px; }
-.ff-summary .ff-kpi-value { font-size: 20px; }
+/* The Overview: the party, the foes, the fight, each a card of numbers. */
+.ff-ov-section { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; border: 1px solid var(--ff-line); border-radius: 8px; background: var(--ff-surface); }
+.ff-ov-section h4 { margin: 0; border: none; font-size: var(--ff-text-lg); }
+.ff-ov-section h5 { margin: 2px 0 0; border: none; color: var(--ff-text-dim); font-size: var(--ff-text-xs); font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; }
+.ff-ov-section .ff-kpi { background: var(--ff-surface-2); }
+.ff-ov-section .ff-list { margin: 0; }
+.ff-ov-section .ff-legend { margin-top: 0; }
+.ff-kpis--stack { grid-template-columns: 1fr; align-content: start; }
+.ff-foes-end { height: 14px; }
+.ff-end-slain { background: var(--ff-dead); }
+.ff-end-down { background: var(--ff-down); }
+.ff-end-captured { background: light-dark(#8a6a2f, #d2a85a); }
+.ff-end-fled { background: var(--ff-fled); }
+.ff-end-gaveUp { background: light-dark(#2b7fa3, #5bb6db); }
+.ff-end-talked { background: light-dark(#3f8f6b, #74d1a4); }
+.ff-end-standing { background: var(--ff-muted); }
 .ff-delta { margin-left: 4px; color: var(--ff-text-dim); font-size: var(--ff-text-xs); font-weight: 700; vertical-align: middle; }
 .ff-delta.is-better { color: var(--ff-friendly); }
 .ff-delta.is-worse { color: var(--ff-hostile); }

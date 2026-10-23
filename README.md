@@ -41,11 +41,14 @@ The window needs at least 1000×600 and uses any extra space.
 - **Encounter:** **Downed**, **After the fight** (see [After the fight](#after-the-fight)), **Opening** (see [Talking](#talking)) and **Surprise** (Follow System is greyed out where the system has no surprise rules; the turn order is always the Combat Tracker's once initiative is rolled); the rules (Terrain & positioning, Morale, Leadership, Talking, Ignore languages); who takes part (Bystanders, Hidden tokens); live battles (Players run their characters, Apply players' damage); the prediction (**Seconds**, **Max rounds**, **Seed**); a helper's own encounter settings (FastFighting Ironsworn: how the encounter is tracked, its rank, and whose sheet keeps the track); and **Loot on the map** (see [Aftermath](#aftermath)). A closed section says what it's set to.
 - **Players:** **Prepare Players**, each player's survey and characters, and the characters whose players are away.
 
-**Right: Details and the results.** Once it has run, the win odds, a PC's death and fall, and the length stay at the top, with the change since the run before.
+**Right: Details and the results.** Once it has run, each side's odds of winning stay at the top.
 - **Details:** the team or creature last clicked (the party at first).
   - A team: its **Team cash** (the party's is its characters' money; the others' is what the team has besides its sheets, in the system's coin, shared for deals: bribes, tolls, extortion), its **Reinforcements** (see [Leaders and bosses](#leaders-and-bosses)), its creatures, and its side's settings: group personality, leaders and the leadership bonus, healing aggressiveness, **Can rout**, and a neutral's lean (see [Taking no side](#taking-no-side)). These are kept by side, so a side's teams share them.
   - A creature: HP, AC, how it reaches the nearest enemy (mode, distance, terrain), its odds, its personality traits, its stat fudges, **Ignores terrain**, **Dies at 0 HP**, and its playstyles and answers.
-- **Overview:** how long it lasts, the most dangerous foes and the allies most at risk; foes talked down and fights settled with words.
+- **Overview:** each number with its change since the run before.
+  - **The party:** its odds of winning, a PC dying, a PC going down, and the party wiped (every PC down, dead or captured); PCs down and HP left on average; how much of the PCs' limited resources a fight uses; a PC robbed or paying out; and the allies most at risk.
+  - **The foes:** how they end (slain, down, captured, fled, gave up, talked over, still standing); a foe's leader falling; foes talked down, fights settled with words, and talks that collapsed; the most dangerous foes.
+  - **The fight:** how long it lasts, who most often falls first, bystanders joining, and reinforcements arriving.
 - **Combatants:** each token's odds of standing, down, dead, fled, surrendered, stood down and switched sides; HP left, damage, healing, and its chance to fall first. A name shows it in Details.
 - **Swing factors:** runs the fight again without each combatant and option, to show what moves the party's odds most.
 - **Resources:** spell slots, focus points and consumables spent.

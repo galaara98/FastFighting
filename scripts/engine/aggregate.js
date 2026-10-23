@@ -1,7 +1,26 @@
 /**
  * Accumulates per-run summaries into batch statistics.
  */
-import { STATUS, NEUTRAL_PARTY } from "../constants.js";
+import { STATUS, NEUTRAL_PARTY, HOSTILE_GROUPS } from "../constants.js";
+
+/** How a foe of the party ends a fight, for the planner's Overview (the first that fits, in this order). */
+export const FOE_ENDS = Object.freeze(["slain", "down", "captured", "fled", "gaveUp", "talked", "standing"]);
+
+/** A PC out of it at the end: the party is wiped when every PC is. (Fled or talked out of it isn't.) */
+const PC_OUT = new Set([STATUS.DEAD, STATUS.DOWN, STATUS.BOUND, STATUS.SURRENDERED, STATUS.BEATEN]);
+
+/** How a foe ended (FOE_ENDS): talked over, else by its status. */
+export function foeEnd(r) {
+  if ( r.swayed ) return "talked";
+  switch ( r.status ) {
+    case STATUS.DEAD: return "slain";
+    case STATUS.DOWN: return "down";
+    case STATUS.BOUND: return "captured";
+    case STATUS.FLED: return "fled";
+    case STATUS.SURRENDERED: case STATUS.BEATEN: case STATUS.STOOD_DOWN: return "gaveUp";
+    default: return "standing";
+  }
+}
 
 function percentile(sorted, p) {
   if ( !sorted.length ) return 0;
@@ -43,6 +62,17 @@ export function createAggregator(prep) {
   let collapsedRuns = 0; // (only an argument: the talks collapsed)
   const collapses = new Map(); // (why they collapsed: cause -> {n, by: id -> n})
   const pcIds = prep.combatants.filter(c => c.spec.kind === "pc").map(c => c.spec.id);
+  // (For the Overview: the party's lot, how the party's foes end, who joins from outside the encounter, reinforcements
+  // arriving, and a foe's head falling.)
+  const party = { wiped: 0, downed: 0, dead: 0, hp: 0, lostGoods: 0 };
+  const foeIds = new Set(prep.combatants.filter(c => HOSTILE_GROUPS.includes(c.spec.side)).map(c => c.spec.id));
+  const foeEnds = Object.fromEntries(FOE_ENDS.map(k => [k, 0]));
+  let foesSeen = 0;
+  const bystanderIds = new Set(prep.combatants.filter(c => c.spec.inEncounter === false && !c.spec.hazard).map(c => c.spec.id));
+  let joinedRuns = 0;
+  let reinforcedRuns = 0;
+  const foeHeads = HOSTILE_GROUPS.map(key => prep.command?.[key]?.[0]?.id).filter(id => id && units[id]);
+  let headFellRuns = 0;
 
   return {
     add(result, seed) {
@@ -56,9 +86,19 @@ export function createAggregator(prep) {
       let pcDead = false;
       let anySwayed = false;
       let pcDowned = false;
+      let pcsOut = 0;
+      let lostGoods = false;
+      let joined = false;
+      let reinforced = false;
       for ( const [id, r] of Object.entries(result.units) ) {
+        if ( id.startsWith("reinforce~") ) reinforced = true;
         const u = units[id];
         if ( !u ) continue;
+        if ( foeIds.has(id) && r.involved !== false ) {
+          foeEnds[foeEnd(r)] += 1;
+          foesSeen += 1;
+        }
+        if ( bystanderIds.has(id) && r.involved !== false ) joined = true;
         if ( r.involved !== false ) u.involved += 1;
         if ( r.status === STATUS.STANDING ) u.standing += 1;
         else if ( r.status === STATUS.DOWN ) u.down += 1;
@@ -81,8 +121,17 @@ export function createAggregator(prep) {
         u.healing += r.healing;
         for ( const [k, v] of Object.entries(r.resourcesUsed) ) u.resources[k] = (u.resources[k] ?? 0) + v;
         if ( pcIds.includes(id) ) {
-          if ( r.status === STATUS.DEAD ) pcDead = true;
-          if ( r.wasDowned ) pcDowned = true;
+          if ( r.status === STATUS.DEAD ) {
+            pcDead = true;
+            party.dead += 1;
+          }
+          if ( r.wasDowned ) {
+            pcDowned = true;
+            party.downed += 1;
+          }
+          if ( PC_OUT.has(r.status) ) pcsOut += 1;
+          if ( r.conceded ) lostGoods = true;
+          party.hp += Math.min(1, Math.max(0, r.hpFrac));
         }
       }
       if ( result.firstFallen && units[result.firstFallen] ) units[result.firstFallen].firstToFall += 1;
@@ -99,6 +148,11 @@ export function createAggregator(prep) {
         if ( who ) c.by.set(who, (c.by.get(who) ?? 0) + 1);
       }
       if ( pcDowned ) anyPcDowned += 1;
+      if ( pcIds.length && pcsOut === pcIds.length ) party.wiped += 1;
+      if ( lostGoods ) party.lostGoods += 1;
+      if ( joined ) joinedRuns += 1;
+      if ( reinforced ) reinforcedRuns += 1;
+      if ( foeHeads.some(id => result.units[id] && foeEnd(result.units[id]) !== "standing") ) headFellRuns += 1;
     },
 
     finish() {
@@ -156,6 +210,19 @@ export function createAggregator(prep) {
         pPeaceful: peacefulRuns / n,
         pCollapsed: collapsedRuns / n,
         collapseCause: topCollapse(collapses, collapsedRuns),
+        // The party's lot (null with no PC): wiped (every PC down, dead or taken), PCs down and dead on average, the HP
+        // they're left with (a share of their most), and a PC robbed or paying up.
+        party: pcIds.length ? {
+          pcs: pcIds.length, pWiped: party.wiped / n, meanDowned: party.downed / n, meanDead: party.dead / n,
+          meanHp: party.hp / (n * pcIds.length), pLostGoods: party.lostGoods / n
+        } : null,
+        // How the party's foes end (shares of every foe in every fight it took part in, FOE_ENDS), null with none.
+        foesEnd: foesSeen ? Object.fromEntries(FOE_ENDS.map(k => [k, foeEnds[k] / foesSeen])) : null,
+        // Someone from outside the encounter joining in; reinforcements arriving; a foe's boss or leader falling (or
+        // fleeing, giving up, talked over). Each null where there's none to.
+        pBystandersJoin: bystanderIds.size ? joinedRuns / n : null,
+        pReinforced: prep.reinforcements?.size ? reinforcedRuns / n : null,
+        pFoeHeadFalls: foeHeads.length ? headFellRuns / n : null,
         rounds: {
           mean: rounds.reduce((s, r) => s + r, 0) / n,
           median: percentile(sorted, 0.5),

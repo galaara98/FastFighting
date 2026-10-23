@@ -36,6 +36,7 @@ import { startLiveBattle, liveBattle, systemAppliesText } from "../foundry/live-
 import { savePlanRun } from "../foundry/live-journals.js";
 import { BattleVantage } from "./battle-vantage.js";
 import { listenMenus } from "./menus.js";
+import { FOE_ENDS } from "../engine/aggregate.js";
 import { blink, keepTyping } from "./blink.js";
 import { expectedRuns, paceOf, ROUGH_RUNS, PREDICTION_SECONDS } from "../engine/run-budget.js";
 import { signedNumber } from "../engine/trait-parts.js";
@@ -873,6 +874,67 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     };
   }
 
+  /**
+   * The Overview's numbers, from a run's results (and the run before, for each one's change): the party's lot, how its
+   * foes end, and the fight's shape. A number a run before this one didn't keep has no change shown.
+   */
+  #overview(r, prev, combatants) {
+    const delta = (now, then, goodUp) => {
+      if ( !prev || !Number.isFinite(then) ) return null;
+      const d = Math.round((now - then) * 100);
+      return { text: d ? `${d > 0 ? "+" : "−"}${Math.abs(d)}` : "±0", cls: !d ? "" : (d > 0) === goodUp ? "is-better" : "is-worse" };
+    };
+    const kpi = (key, p, then, goodUp, cls = "", hint = false) => ({
+      label: loc(`FASTFIGHTING.Results.${key}`), value: pct(p, 1), cls, hint: hint ? loc(`FASTFIGHTING.Results.${key}Hint`) : null, delta: delta(p, then, goodUp)
+    });
+    const ifAny = (p, make) => (p > 0 ? [make()] : []);
+    const pt = r.party;
+    const spent = this.#partySpent(r);
+    const party = [
+      kpi("PartyWins", r.sides.friendly?.pWin ?? 0, prev?.sides?.friendly?.pWin ?? 0, true),
+      kpi("PcDeath", r.pAnyPcDead, prev?.pAnyPcDead, false, "danger"),
+      kpi("PcDowned", r.pAnyPcDowned, prev?.pAnyPcDowned, false, "warn"),
+      ...(pt ? [
+        kpi("PartyWiped", pt.pWiped, prev?.party?.pWiped, false, "danger", true),
+        { label: loc("FASTFIGHTING.Results.PcsDowned"), value: localize("FASTFIGHTING.Results.OfN", { n: pt.meanDowned.toFixed(1), m: pt.pcs }), cls: "warn", hint: loc("FASTFIGHTING.Results.PcsDownedHint"), delta: null },
+        kpi("PartyHp", pt.meanHp, prev?.party?.meanHp, true, "", true)
+      ] : []),
+      ...(spent === null ? [] : [kpi("PartySpent", spent, prev ? this.#partySpent(prev) ?? NaN : NaN, false, "", true)]),
+      ...ifAny(pt?.pLostGoods, () => kpi("PcLosesGoods", pt.pLostGoods, prev?.party?.pLostGoods, false, "warn", true))
+    ];
+    const fe = r.foesEnd;
+    const foesEnd = fe ? FOE_ENDS.filter(k => fe[k] >= 0.005).map(k => ({ cls: k, w: (fe[k] * 100).toFixed(1), label: loc(`FASTFIGHTING.Results.FoeEnd.${k}`), pct: pct(fe[k]) })) : [];
+    const foes = [
+      ...ifAny(r.pFoeHeadFalls, () => kpi("FoeHeadFalls", r.pFoeHeadFalls, prev?.pFoeHeadFalls, true, "", true)),
+      ...ifAny(r.pAnySwayed, () => kpi("Swayed", r.pAnySwayed, prev?.pAnySwayed, true, "talk")),
+      ...ifAny(r.pPeaceful, () => kpi("Peaceful", r.pPeaceful, prev?.pPeaceful, true, "talk")),
+      ...((r.pCollapsed ?? 0) > 0 || this.setup.options.opening === OPENING.ARGUMENT ? [kpi("Collapsed", r.pCollapsed ?? 0, prev?.pCollapsed, false, "warn")] : [])
+    ];
+    const first = [...combatants].sort((a, b) => b.pFirstToFall - a.pFirstToFall)[0];
+    const fight = [
+      ...ifAny(first?.pFirstToFall, () => ({ label: localize("FASTFIGHTING.Results.FallsFirst", { name: first.name }), value: pct(first.pFirstToFall, 1), cls: "", hint: null, delta: null })),
+      ...ifAny(r.pBystandersJoin, () => kpi("BystandersJoin", r.pBystandersJoin, prev?.pBystandersJoin, false, "", true)),
+      ...ifAny(r.pReinforced, () => kpi("Reinforced", r.pReinforced, prev?.pReinforced, false, "", true))
+    ];
+    return {
+      party, foes, fight, foesEnd,
+      foesEndLabel: `${loc("FASTFIGHTING.Results.FoesEnd")}: ${foesEnd.map(f => `${f.label} ${f.pct}`).join(", ")}`
+    };
+  }
+
+  /** How much of the PCs' limited resources a fight spends, on average: each pool's share spent, averaged (null: none). */
+  #partySpent(r) {
+    const shares = [];
+    for ( const cs of this.spec?.combatants ?? [] ) {
+      if ( cs.kind !== "pc" ) continue;
+      for ( const [key, start] of Object.entries(cs.resources ?? {}) ) {
+        if ( !(start > 0) ) continue;
+        shares.push(Math.min(1, (r.combatants?.[cs.id]?.resources?.[key] ?? 0) / start));
+      }
+    }
+    return shares.length ? shares.reduce((a, b) => a + b, 0) / shares.length : null;
+  }
+
   #resultsContext() {
     const r = this.results;
     const spec = this.spec;
@@ -931,34 +993,14 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
 
     const sample = this.sample ? this.#sampleContext() : null;
 
-    // The summary over the tabs: the party's odds, a PC's death and fall, how long; each with its change since the run
-    // before (in points).
-    const prev = this.previousResults;
-    const delta = (now, then, goodUp) => {
-      if ( !Number.isFinite(then) ) return null;
-      const d = Math.round((now - then) * 100);
-      return { text: d ? `${d > 0 ? "+" : "−"}${Math.abs(d)}` : "±0", cls: !d ? "" : (d > 0) === goodUp ? "is-better" : "is-worse" };
-    };
-    const kpi = (label, p, then, goodUp, cls = "") => ({ label: loc(label), value: pct(p, 1), cls, delta: prev ? delta(p, then, goodUp) : null });
-    const summary = {
-      label: segments.map(s => `${s.label} ${s.pct}`).join(", "),
-      kpis: [
-        kpi("FASTFIGHTING.Results.PartyWins", r.sides.friendly?.pWin ?? 0, prev?.sides?.friendly?.pWin ?? 0, true),
-        kpi("FASTFIGHTING.Results.PcDeath", r.pAnyPcDead, prev?.pAnyPcDead, false, "danger"),
-        kpi("FASTFIGHTING.Results.PcDowned", r.pAnyPcDowned, prev?.pAnyPcDowned, false, "warn"),
-        { label: loc("FASTFIGHTING.Results.MedianRounds"), value: String(r.rounds.median), cls: "", delta: null }
-      ]
-    };
-    const talkKpis = [
-      ...((r.pAnySwayed ?? 0) > 0 ? [{ label: loc("FASTFIGHTING.Results.Swayed"), value: pct(r.pAnySwayed, 1), cls: "talk" }] : []),
-      ...((r.pPeaceful ?? 0) > 0 ? [{ label: loc("FASTFIGHTING.Results.Peaceful"), value: pct(r.pPeaceful, 1), cls: "talk" }] : []),
-      ...((r.pCollapsed ?? 0) > 0 || this.setup.options.opening === OPENING.ARGUMENT ? [{ label: loc("FASTFIGHTING.Results.Collapsed"), value: pct(r.pCollapsed ?? 0, 1), cls: "warn" }] : [])
-    ];
+    // The win bar stays over the tabs; the Overview has the rest, each with its change since the run before (in points).
+    const summary = { label: segments.map(s => `${s.label} ${s.pct}`).join(", ") };
+    const overview = this.#overview(r, this.previousResults, combatants);
 
     return {
       summary,
+      overview,
       results: {
-        talkKpis,
         runs: r.runs,
         seed: r.seed,
         segments,

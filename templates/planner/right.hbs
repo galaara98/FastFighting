@@ -1,4 +1,4 @@
-{{!-- The planner's right pane: the last run's odds, pinned; the details of a team or a creature; the results. --}}
+{{!-- The planner's right pane: the last run's win bar, pinned; the details of a team or a creature; the results. --}}
 <section class="ff-right">
   {{#if hasResults}}
   <div class="ff-summary">
@@ -6,9 +6,6 @@
       {{#each results.segments}}<span style="width: {{width}}%; background: {{color}}">{{#if (gt width 12)}}{{label}} {{pct}}{{/if}}</span>{{/each}}
     </div>
     <div class="ff-legend" aria-hidden="true">{{#each results.segments}}<span><span class="ff-swatch" style="background: {{color}}"></span>{{label}} {{pct}}</span>{{/each}}</div>
-    <div class="ff-kpis">
-      {{#each summary.kpis}}<div class="ff-kpi {{cls}}"><span class="ff-kpi-value">{{value}}{{#with delta}} <span class="ff-delta {{cls}}" data-tooltip="{{localize "FASTFIGHTING.Planner.SinceLastRun"}}">{{text}}</span>{{/with}}</span><span class="ff-kpi-label">{{label}}</span></div>{{/each}}
-    </div>
   </div>
   {{/if}}
   <nav class="ff-tabs" role="tablist" aria-label="{{localize "FASTFIGHTING.Planner.ResultsTabs"}}">
@@ -25,24 +22,37 @@
     {{#if (eq resultTab "overview")}}
       {{#if hasResults}}
       <div class="ff-overview">
-        {{#if results.talkKpis.length}}
-        <div class="ff-kpis">{{#each results.talkKpis}}<div class="ff-kpi {{cls}}"><span class="ff-kpi-value">{{value}}</span><span class="ff-kpi-label">{{label}}</span></div>{{/each}}</div>
-        {{/if}}
-        <div class="ff-split">
-          <div class="ff-panel">
-            <h4>{{localize "FASTFIGHTING.Results.Duration"}}</h4>
-            <div class="ff-histogram">
-              {{#each results.histogram}}<div class="ff-hbar" data-tooltip="{{localize "FASTFIGHTING.Results.RoundN"}} {{round}}: {{p}}"><span style="height: {{height}}%"></span><small>{{round}}</small></div>{{/each}}
+        {{#*inline "ffKpi"}}<div class="ff-kpi {{cls}}" {{#if hint}}data-tooltip="{{hint}}"{{/if}}><span class="ff-kpi-value">{{value}}{{#with delta}} <span class="ff-delta {{cls}}" data-tooltip="{{localize "FASTFIGHTING.Planner.SinceLastRun"}}">{{text}}</span>{{/with}}</span><span class="ff-kpi-label">{{label}}</span></div>{{/inline}}
+        <section class="ff-ov-section">
+          <h4>{{localize "FASTFIGHTING.Results.Section.party"}}</h4>
+          <div class="ff-kpis">{{#each overview.party}}{{> ffKpi}}{{/each}}</div>
+          <h5>{{localize "FASTFIGHTING.Results.AtRisk"}}</h5>
+          <ul class="ff-list">{{#each results.atRisk}}<li><span class="ff-dot {{sideClass}}"></span>{{name}} <em>{{localize "FASTFIGHTING.Results.Downed"}} {{downed}} · {{localize "FASTFIGHTING.Results.Dead"}} {{dead}}</em></li>{{/each}}</ul>
+        </section>
+        <section class="ff-ov-section">
+          <h4>{{localize "FASTFIGHTING.Results.Section.foes"}}</h4>
+          {{#if overview.foesEnd.length}}
+          <h5>{{localize "FASTFIGHTING.Results.FoesEnd"}}</h5>
+          <div class="ff-fate ff-foes-end" role="img" aria-label="{{overview.foesEndLabel}}">{{#each overview.foesEnd}}<span class="ff-end-{{cls}}" style="width: {{w}}%" data-tooltip-text="{{label}} {{pct}}"></span>{{/each}}</div>
+          <div class="ff-legend" aria-hidden="true">{{#each overview.foesEnd}}<span><span class="ff-swatch ff-end-{{cls}}"></span>{{label}} {{pct}}</span>{{/each}}</div>
+          {{/if}}
+          {{#if overview.foes.length}}<div class="ff-kpis">{{#each overview.foes}}{{> ffKpi}}{{/each}}</div>{{/if}}
+          <h5>{{localize "FASTFIGHTING.Results.Dangerous"}}</h5>
+          <ul class="ff-list">{{#each results.foes}}<li><span class="ff-dot {{sideClass}}"></span>{{name}} <em>{{damage}} {{localize "FASTFIGHTING.Results.DmgAbbr"}}</em></li>{{/each}}</ul>
+        </section>
+        <section class="ff-ov-section">
+          <h4>{{localize "FASTFIGHTING.Results.Section.fight"}}</h4>
+          <div class="ff-split">
+            <div>
+              <h5>{{localize "FASTFIGHTING.Results.Duration"}}</h5>
+              <div class="ff-histogram">
+                {{#each results.histogram}}<div class="ff-hbar" data-tooltip="{{localize "FASTFIGHTING.Results.RoundN"}} {{round}}: {{p}}"><span style="height: {{height}}%"></span><small>{{round}}</small></div>{{/each}}
+              </div>
+              <p class="ff-footnote">{{localize "FASTFIGHTING.Results.MedianRounds"}} {{results.rounds.median}} ({{results.rounds.p10}}–{{results.rounds.p90}})</p>
             </div>
-            <p class="ff-footnote">{{localize "FASTFIGHTING.Results.MedianRounds"}} {{results.rounds.median}} ({{results.rounds.p10}}–{{results.rounds.p90}})</p>
+            {{#if overview.fight.length}}<div class="ff-kpis ff-kpis--stack">{{#each overview.fight}}{{> ffKpi}}{{/each}}</div>{{/if}}
           </div>
-          <div class="ff-panel">
-            <h4>{{localize "FASTFIGHTING.Results.Dangerous"}}</h4>
-            <ul class="ff-list">{{#each results.foes}}<li><span class="ff-dot {{sideClass}}"></span>{{name}} <em>{{damage}} {{localize "FASTFIGHTING.Results.DmgAbbr"}}</em></li>{{/each}}</ul>
-            <h4>{{localize "FASTFIGHTING.Results.AtRisk"}}</h4>
-            <ul class="ff-list">{{#each results.atRisk}}<li><span class="ff-dot {{sideClass}}"></span>{{name}} <em>{{localize "FASTFIGHTING.Results.Downed"}} {{downed}} · {{localize "FASTFIGHTING.Results.Dead"}} {{dead}}</em></li>{{/each}}</ul>
-          </div>
-        </div>
+        </section>
         <p class="ff-footnote">{{localize "FASTFIGHTING.Results.Footnote"}} {{results.runs}} · {{localize "FASTFIGHTING.Planner.Seed"}} {{results.seed}}</p>
         {{#if results.collapseNote}}<p class="ff-footnote ff-collapse-note">{{results.collapseNote}}</p>{{/if}}
       </div>
