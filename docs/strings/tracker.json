@@ -20963,11 +20963,10 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Settings.maxRounds.Hint",
    "area": "core/Settings",
-   "status": "todo",
-   "date": null,
-   "commit": null,
-   "hash": "57c7970f71c5",
-   "changed": true
+   "status": "written",
+   "date": "2026-10-23",
+   "commit": "688b1bc",
+   "hash": "166402a42e12"
   },
   "core:FASTFIGHTING.Settings.maxRounds.Name": {
    "repo": "core",
