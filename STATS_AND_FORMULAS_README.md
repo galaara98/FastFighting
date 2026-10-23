@@ -1830,7 +1830,7 @@ Decides when a fight stops.
   standing and in the fight, noticed and joining next round, or down but regenerating and not tied up. Not in it:
   anything untargetable (Spiritual Weapon), anyone taking no side, anyone leaving the map. A hunter with prey left, or
   a neutral who turned on a side still standing, keeps it going.
-- **Max rounds** (`maxRounds`): its range and default are the system's (its helper's `stalemateRounds()`: PF2e 6–16,
+- **Max rounds** (`maxRounds`): its range and default are the system's (its helper's `settingDefaults()`: PF2e 6–16,
   default 16; else 4–12, default 12), also a planner slider. Still going after that: a stalemate, with no winner.
   Plans saved with other values are held to the range.
 - Surprise (Friendlies are surprised, or Friendlies surprise others; a system's surprise round): that side takes turns in a round 0 before round 1.
@@ -2910,7 +2910,7 @@ What it decides: how much a successful Recall Knowledge improves a Lore-Collecto
 
 - The check: its best of Arcana, Crafting, Medicine, Nature, Occultism, Religion, Society or any Lore, against the foe's level + 15. Mindless creatures don't try. Stupefied, frightened, sickened and fascinated count against it.
 - On a success, for the rest of this turn, each of its rolls against a foe of that sort (the same stat block) gets the smallest bonus, 1 to 30, that makes it succeed at least min(boost × its chance, 95%, its chance at +30).
-- **Lore-Collector advantage** (`fast-fighting-pf2e.loreBoost`): 1.25× to 3× in steps of 0.05, default 2×.
+- **Lore-Collector advantage** (the core's `loreBoost`, PF2e's default and words through `settingDefaults`): 1.25× to 3× in steps of 0.05, default 2× in PF2e (2.5× where a system says nothing).
 - Why 2×: Recall Knowledge costs one action of three, and the payoff covers the rest of that same turn, so it needs less than the one-action systems' boosts.
 - Example: a Strike at +7 against AC 22 succeeds 30% of the time; at 2× it aims for 60% and gets +6.
 

@@ -116,7 +116,7 @@ Up to four pills per character, PC or NPC, in order of importance: the first cou
 | Kiter | keeps its distance: a shot from out of reach, or in, a blow and out again; falls back as foes close, toward its friends; picks on foes that can't follow; cornered, it fights |
 | Instigator | locks foes down, harasses and debuffs them more than anyone; the most dangerous foe and the enemy leader; may defy its own leader; taunts |
 | Lazy | the nearest foe, no long walks; sometimes ignores a taunt; little help to anyone; gives up fast; holds no grudge; its flight takes others along |
-| Lore-Collector | sizes up a new foe before acting against it, then rolls much better against every foe of that sort (by each helper's **Lore-Collector advantage** setting); may share what it learned; trap avoider |
+| Lore-Collector | sizes up a new foe before acting against it, then rolls much better against every foe of that sort (by the **Lore-Collector advantage** setting); may share what it learned; trap avoider |
 | Medic | heals first and early (a friend at three quarters is reason enough), the dying above all; keeps its healing for healing; bolsters when nobody's hurt; gives a friend its own potion; stays close |
 | Martyr | guards the weakest friend; fears nothing; avenges the fallen fiercely; rallies; taunts foes off its friends |
 | Mercenary | easy pickings; barely avenges anyone; gives up when it gets hard; its flight takes others along; extorts, and takes a bribe readily |
@@ -331,7 +331,7 @@ The words read in biographies are in [keywords/](keywords/README.md), one file p
 
 ## Settings
 
-World settings, under **Configure Settings → FastFighting**, in groups. The planner overrides some for one battle: Seconds, Max rounds, Downed, After the fight, Opening, Surprise, the Encounter view's toggles, and the side settings (the Neutral lean, healing). Settings marked (%) are hidden d100 chances. [STATS_AND_FORMULAS_README.md](STATS_AND_FORMULAS_README.md) gives each number's range and what it changes.
+World settings, under **Configure Settings → FastFighting**, in groups. The planner overrides some for one battle: Seconds, Max rounds, Downed, After the fight, Opening, Surprise, the Encounter view's toggles, and the side settings (the Neutral lean, healing). Settings marked (%) are hidden d100 chances. Some are the game system's: its helper sets their range and default, and may word them for its rules (Max rounds, Lore-Collector advantage). A helper's own settings show at the bottom, under its name; **Systems without a helper** shows only when this system has none. [STATS_AND_FORMULAS_README.md](STATS_AND_FORMULAS_README.md) gives each number's range and what it changes.
 
 ### Live battles
 
@@ -383,6 +383,7 @@ World settings, under **Configure Settings → FastFighting**, in groups. The pl
 | PCs when an ally is dying | Let each character decide | What PCs put first when an ally is dying. |
 | Friendly vote's sway (%) | 3 | How much the Friendly Team tab's vote sways the friendly side. |
 | Dampen non-friendly focus fire | 0 | How much less creatures not on the Friendly side focus fire (100: half as much). |
+| Lore-Collector advantage (×) | The system's (PF2e: 2×); else 2.5× | How much likelier a Lore-Collector's rolls are after it sizes up a foe, against foes of that sort; the helper names its system's skill for it (PF2e: Recall Knowledge). |
 
 ### Personality & luck
 

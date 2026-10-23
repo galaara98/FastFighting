@@ -7,7 +7,7 @@
  * its own, and keep its value.
  */
 import { PREDICTION_SECONDS } from "./engine/run-budget.js";
-import { MODULE_ID, ALLEGIANCE, DOWNED_MODELS, HEAL_AGGRO, ALLY_DYING, AFTERMATH, OPENING, CONCEDE_LUCK, THEFT_LUCK, EXECUTE_LUCK, SWITCH_LUCK, TRAITOR_LUCK, TRAP_LUCK, IGNORE_TROUBLES, TAUNT_LUCK, STAND_GROUND, AVOID_KILLING, LEAVE_RESOLVE, ROLEPLAY_FORGETS, ADHD, NEUTRAL_REACH, MAX_ROUNDS } from "./constants.js";
+import { MODULE_ID, ALLEGIANCE, DOWNED_MODELS, HEAL_AGGRO, ALLY_DYING, AFTERMATH, OPENING, CONCEDE_LUCK, THEFT_LUCK, EXECUTE_LUCK, SWITCH_LUCK, TRAITOR_LUCK, TRAP_LUCK, IGNORE_TROUBLES, TAUNT_LUCK, STAND_GROUND, AVOID_KILLING, LEAVE_RESOLVE, ROLEPLAY_FORGETS, ADHD, NEUTRAL_REACH, MAX_ROUNDS, LORE_BOOST } from "./constants.js";
 
 const choices = (keys, prefix) => Object.fromEntries(keys.map(k => [k, `FASTFIGHTING.${prefix}.${k}`]));
 
@@ -68,6 +68,9 @@ const SETTINGS = {
   partySway: { group: "behavior", type: Number, default: 3, range: { min: 1, max: 20, step: 1 } },
   // How much less those not on the friendly side focus fire (0-100: at 100, half as much; behavior/focus.js).
   focusDampener: { group: "behavior", type: Number, default: 0, range: { min: 0, max: 100, step: 1 } },
+  // A Lore-Collector's payoff for sizing a foe up (engine/simulator.js sizeUp): the system's, by its helper
+  // (settingDefaults: its default, and its own name and hint, naming the system's skill for it).
+  loreBoost: { group: "behavior", type: Number, default: LORE_BOOST.default, range: { min: LORE_BOOST.min, max: LORE_BOOST.max, step: LORE_BOOST.step } },
 
   // (Not shown: nothing rolls it at present, since no deal or theft lets a PC keep an item it gives up. Kept for when one
   // does: behavior/talk.js concession.)
@@ -145,30 +148,78 @@ export function groupSettings(section) {
   }
 }
 
-/** The most a helper may make Max rounds. */
-const ROUNDS_CEILING = 60;
+/**
+ * The core settings a system's helper may make its own (settingDefaults, API 28), and the bounds it may give them:
+ * Max rounds, when a fight in its system counts as a stalemate; the Lore-Collector's advantage, by its system's skill.
+ */
+const SYSTEM_SETTINGS = Object.freeze({
+  maxRounds: { floor: 1, ceiling: 60, fallback: MAX_ROUNDS },
+  loreBoost: { floor: 1.05, ceiling: 5, fallback: LORE_BOOST }
+});
 
 /**
- * The settings that are the game system's, once its helper is known (main.js, ready): Max rounds' range and default,
- * when a fight in that system counts as a stalemate (the helper's stalemateRounds(), API 28: {min, max, default}, the
- * default its max where it doesn't say; else MAX_ROUNDS). A world's own value, where a GM set one, stands, held to the
- * range (roundsRange).
+ * The settings that are the game system's, once its helper is known (main.js, ready): for each in SYSTEM_SETTINGS
+ * the helper's settingDefaults() gives, its default, by the setting's kind (a checkbox's true or false; a list's one of
+ * its choices; a number's, held to its range, which the helper may set too, min and max within the bounds), and its own
+ * name and hint (its own words, naming its system's skill or rule). A world's own value, where a GM set one, stands
+ * (a number's held to the range: rangeOf).
  */
-export function systemDefaults(adapter) {
-  const r = adapter?.stalemateRounds?.();
-  const min = Math.round(Number(r?.min));
-  const max = Math.round(Number(r?.max));
-  const config = game.settings.settings.get(`${MODULE_ID}.maxRounds`);
-  if ( !config || !(min >= 1 && max >= min && max <= ROUNDS_CEILING) ) return;
-  const wanted = Math.round(Number(r.default ?? max));
-  config.range = { min, max, step: 1 };
-  config.default = Number.isFinite(wanted) ? Math.min(max, Math.max(min, wanted)) : max;
+export function systemDefaults(adapter, settings = SYSTEM_SETTINGS) {
+  const given = adapter?.settingDefaults?.() ?? {};
+  for ( const [key, { floor, ceiling } = {}] of Object.entries(settings) ) {
+    const g = given[key];
+    const config = game.settings.settings.get(`${MODULE_ID}.${key}`);
+    if ( !g || !config ) continue;
+    if ( config.type === Boolean ) {
+      if ( typeof g.default === "boolean" ) config.default = g.default;
+    } else if ( config.choices ) {
+      if ( Object.hasOwn(config.choices, g.default) ) config.default = g.default;
+    } else if ( config.range ) {
+      const min = Number(g.min);
+      const max = Number(g.max);
+      if ( min >= floor && max <= ceiling && max >= min ) config.range = { ...config.range, min, max };
+      const wanted = Number(g.default);
+      const keep = Number.isFinite(wanted) ? wanted : Number(config.default);
+      config.default = Math.min(config.range.max, Math.max(config.range.min, keep));
+    }
+    if ( typeof g.name === "string" && g.name ) config.name = g.name;
+    if ( typeof g.hint === "string" && g.hint ) config.hint = g.hint;
+  }
 }
 
-/** Max rounds' range and default: the system's, once its helper is known (systemDefaults), else MAX_ROUNDS. */
-export function roundsRange() {
-  const config = game.settings?.settings?.get?.(`${MODULE_ID}.maxRounds`);
-  return { min: config?.range?.min ?? MAX_ROUNDS.min, max: config?.range?.max ?? MAX_ROUNDS.max, default: config?.default ?? MAX_ROUNDS.default };
+/** A system setting's range and default (SYSTEM_SETTINGS): the system's, once its helper is known, else the core's. */
+export function rangeOf(key) {
+  const config = game.settings?.settings?.get?.(`${MODULE_ID}.${key}`);
+  const fallback = SYSTEM_SETTINGS[key]?.fallback ?? {};
+  return { min: config?.range?.min ?? fallback.min, max: config?.range?.max ?? fallback.max, default: config?.default ?? fallback.default };
+}
+
+/** Max rounds' range and default (rangeOf). */
+export const roundsRange = () => rangeOf("maxRounds");
+
+/**
+ * The system's helper's own settings (and menus), at the foot of FastFighting's tab under the helper's name: every one
+ * it shows in the settings window, moved out of its own tab, whose button then goes. Nothing when the helper has none.
+ * @param {object} app           the settings window (SettingsConfig)
+ * @param {HTMLElement} root     its element
+ * @param {HTMLElement} section  FastFighting's tab
+ * @param {string|null} helperId the helper's module (api.js helperModule)
+ */
+export function helperGroup(app, root, section, helperId) {
+  if ( !helperId || helperId === MODULE_ID || section.querySelector('.ff-settings-group[data-group="helper"]') ) return;
+  const theirs = root.querySelector(`section[data-category="${helperId}"]`);
+  const rows = [...(theirs?.querySelectorAll(".form-group") ?? [])];
+  if ( !rows.length ) return;
+  const fieldset = document.createElement("fieldset");
+  fieldset.className = "ff-settings-group";
+  fieldset.dataset.group = "helper";
+  const legend = document.createElement("legend");
+  legend.textContent = game.modules.get(helperId)?.title ?? helperId;
+  fieldset.append(legend, ...rows);
+  section.append(fieldset);
+  root.querySelector(`nav [data-group="categories"][data-tab="${helperId}"]`)?.setAttribute("hidden", "");
+  // (Its tab open when the window drew: FastFighting's instead, where its settings now are.)
+  if ( theirs.classList.contains("active") ) app?.changeTab?.(MODULE_ID, "categories");
 }
 
 /** Who else in this browser follows a setting as it changes, by key (followSetting). */

@@ -65,6 +65,12 @@ export function getAdapter(systemId = game.system.id) {
   return instances.get(best.cls);
 }
 
+/** The module the system's helper comes from (its registerAdapter source), where it's an active module; else null. */
+export function helperModule(systemId = game.system.id) {
+  const source = adapters.get(systemId)?.[0]?.source;
+  return source && game.modules.get(source)?.active ? source : null;
+}
+
 export function listAdapters() {
   return [...adapters.entries()].map(([id, list]) => ({ systemId: id, adapters: list.map(l => ({ name: l.cls.name, priority: l.priority, source: l.source })) }));
 }

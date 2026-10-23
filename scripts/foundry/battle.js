@@ -23,7 +23,7 @@ import { tacticsFor, isPlayerControlled, statedDesires, getStoredTactics, reacti
 import { ensureAutoConfig } from "./auto-config.js";
 import { partyWishes, voters, PARTY_TACTICS } from "./party.js";
 import { rankForCommand, autoLieutenants, partyRoles } from "./command-pick.js";
-import { setting, roundsRange } from "../settings.js";
+import { setting, roundsRange, rangeOf } from "../settings.js";
 
 const SIDE_LABELS = {
   [SIDES.FRIENDLY]: "FASTFIGHTING.Side.friendly",
@@ -721,6 +721,8 @@ export function buildBattleSpec(roster, setup, { approach = null } = {}) {
     options: {
       // (Held to the system's range: roundsRange.)
       maxRounds: clamp(Math.round(Number(options.maxRounds) || roundsRange().default), roundsRange().min, roundsRange().max),
+      // (The Lore-Collector's advantage: the world's, held to the system's range.)
+      loreBoost: clamp(Number(setting("loreBoost")) || rangeOf("loreBoost").default, rangeOf("loreBoost").min, rangeOf("loreBoost").max),
       downedModel: options.downedModel,
       aftermath: options.aftermath,
       positioning: options.positioning && !!approach,

@@ -20927,6 +20927,26 @@
    "hash": "eca34ba4f71e",
    "changed": true
   },
+  "core:FASTFIGHTING.Settings.loreBoost.Hint": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Settings.loreBoost.Hint",
+   "area": "core/Settings",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "bde6bca9a8f4"
+  },
+  "core:FASTFIGHTING.Settings.loreBoost.Name": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Settings.loreBoost.Name",
+   "area": "core/Settings",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "1991ee05516f"
+  },
   "core:FASTFIGHTING.Settings.maxRounds.Hint": {
    "repo": "core",
    "file": "languages/en.json",
@@ -54997,7 +55017,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "fa1c27ebc5dc"
+   "hash": "fa1c27ebc5dc",
+   "changed": true
   },
   "pf2e:FFPF2E.SlotRank": {
    "repo": "pf2e",

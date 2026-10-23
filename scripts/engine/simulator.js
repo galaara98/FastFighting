@@ -2987,9 +2987,11 @@ function sizesUp(run, u, t, turn, room, { decided = false, wholeTurn = false } =
     check = { skill: how.label ?? "", natural: roll.natural, mod: c.mod, total: roll.total, dc, degree: roll.degree, challenge: roll.challenge ?? null };
   }
   const worked = !check || check.degree >= 2;
-  // What it pays off with: by default its rolls against t about 2.5 times as likely to succeed; the system may say
-  // otherwise (Ironsworn: its next attack or words, at anyone, 25% likelier).
-  const factor = Number(how?.boost) > 1 ? Number(how.boost) : LORE_BOOST;
+  // What it pays off with: its rolls against t as many times as likely to succeed as the world's Lore-Collector
+  // advantage says (options.loreBoost), about 2.5 times without it; a helper's own boost still goes first (one that
+  // keeps the setting itself, or plays it otherwise: Ironsworn's next attack or words, at anyone, 25% likelier).
+  const fromWorld = Number(run.prep.options?.loreBoost);
+  const factor = Number(how?.boost) > 1 ? Number(how.boost) : fromWorld > 1 ? fromWorld : LORE_BOOST;
   const uses = Number(how?.uses) > 0 ? Number(how.uses) : undefined;
   // Others of its sort here: what it learns (or doesn't) holds for them too.
   const kin = run.units.filter(o => o !== t && isStanding(o) && sortOf(o) === sort).length;

@@ -277,6 +277,10 @@
         "Never": "Never",
         "Seconds": "{n} s",
         "Unlimited": "Unlimited"
+      },
+      "loreBoost": {
+        "Name": "Lore-Collector advantage (×)",
+        "Hint": "How many times likelier a Lore-Collector's rolls are to succeed after it sizes up a foe, against foes of that sort."
       }
     },
     "Lean": {

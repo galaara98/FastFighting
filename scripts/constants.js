@@ -183,6 +183,12 @@ export function tacticalTier(value) {
 
 /**
  * The most rounds a planned battle is simulated for, before it counts as a stalemate: the setting's bounds and default
- * where the system's helper doesn't give its own (stalemateRounds, API 28: settings.js roundsRange).
+ * where the system's helper doesn't give its own (settingDefaults, API 28: settings.js rangeOf).
  */
 export const MAX_ROUNDS = Object.freeze({ default: 12, min: 4, max: 12 });
+
+/**
+ * A Lore-Collector's payoff for sizing a foe up: how many times as likely its rolls against foes of that sort are to
+ * succeed. The setting's bounds and default where the system's helper doesn't give its own (settingDefaults, API 28).
+ */
+export const LORE_BOOST = Object.freeze({ default: 2.5, min: 1.25, max: 3, step: 0.05 });

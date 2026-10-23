@@ -3,8 +3,8 @@
  */
 import { MODULE_ID } from "./constants.js";
 import { registerLootAdvice } from "./foundry/loot-drop.js";
-import { registerSettings, groupSettings, systemDefaults } from "./settings.js";
-import { buildApi, registerAdapter, getAdapter } from "./api.js";
+import { registerSettings, groupSettings, helperGroup, systemDefaults } from "./settings.js";
+import { buildApi, registerAdapter, getAdapter, helperModule } from "./api.js";
 import { BattlePlanner } from "./apps/battle-planner.js";
 import { DefaultsConfig } from "./apps/defaults-config.js";
 import { GenericAdapter } from "./adapters/generic/index.js";
@@ -351,8 +351,9 @@ Hooks.on("renderSettingsConfig", (app, element) => {
   if ( !section ) return;
   holdWords(section);
   section.querySelector(".ff-helper-notice")?.remove();
-  // (Its settings and menus in their groups, each under its heading: settings.js.)
+  // (Its settings and menus in their groups, each under its heading: settings.js; then the system's helper's own.)
   groupSettings(section);
+  helperGroup(app, root, section, helperModule());
   // (At its foot, the optional performance survey.)
   section.querySelector(".ff-perf-survey")?.remove();
   section.insertAdjacentHTML("beforeend", surveyHtml());
@@ -370,7 +371,11 @@ Hooks.on("renderSettingsConfig", (app, element) => {
   // (Meat from the dead: only where the helper knows its system's meat, API 27.)
   if ( typeof getAdapter()?.meatFor !== "function" ) section.querySelector(`[name="${MODULE_ID}.pcMeat"]`)?.closest(".form-group")?.remove();
   const status = helperStatus();
-  if ( status.specific ) return;
+  // (With the system's own helper, the generic adapter's settings are no use.)
+  if ( status.specific ) {
+    section.querySelector('.ff-settings-group[data-group="generic"]')?.remove();
+    return;
+  }
   section.insertAdjacentHTML("afterbegin", helperNoticeHtml(status));
   if ( status.generic ) return; // the GM opted into the generic adapter: everything stays usable
   for ( const el of section.querySelectorAll("input, select, textarea, button, file-picker, range-picker") ) {

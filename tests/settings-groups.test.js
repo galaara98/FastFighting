@@ -3,7 +3,7 @@
  * in a fixed order, each has its heading in languages/en.json, and FastFighting's tab is laid out in them.
  */
 import { afterEach, describe, expect, test } from "vitest";
-import { SETTING_GROUPS, settingsLayout, groupSettings, registerSettings } from "../scripts/settings.js";
+import { SETTING_GROUPS, settingsLayout, groupSettings, helperGroup, registerSettings } from "../scripts/settings.js";
 import { MODULE_ID } from "../scripts/constants.js";
 import { en, text } from "./foundry-i18n.js";
 
@@ -111,5 +111,35 @@ describe("the settings window", () => {
     expect(section.children[0].children.slice(1).map(r => r.id)).toEqual(live.slice(1));
     groupSettings(section);
     expect(section.children.length).toBe(2);
+  });
+
+  /** The settings window as helperGroup reads it: the helper's own tab (its rows) and its button. */
+  function window(rows) {
+    const theirs = { classList: { contains: () => false }, querySelectorAll: () => rows };
+    const button = { attrs: {}, setAttribute(k, v) { this.attrs[k] = v; } };
+    const root = { querySelector: selector => (selector.startsWith("section") ? theirs : selector.startsWith("nav") ? button : null) };
+    const section = { children: [], querySelector: () => null, append(...els) { this.children.push(...els); } };
+    return { root, section, button };
+  }
+
+  test("the system's helper's own settings at the foot, under its name; its own tab's button hidden", () => {
+    fakeDocument();
+    globalThis.game.modules = new Map([["ff-helper", { title: "FastFighting Helper", active: true }]]);
+    const { root, section, button } = window([{ id: "loreBoost" }, { id: "tiedStopsSpells" }]);
+    helperGroup(null, root, section, "ff-helper");
+    const [fieldset] = section.children;
+    expect([fieldset.tag, fieldset.dataset.group]).toEqual(["fieldset", "helper"]);
+    expect(fieldset.children.map(c => c.id ?? c.textContent)).toEqual(["FastFighting Helper", "loreBoost", "tiedStopsSpells"]);
+    expect(button.attrs.hidden).toBe("");
+  });
+
+  test("no helper, or one with no settings of its own: nothing", () => {
+    fakeDocument();
+    for ( const [helper, rows] of [[null, [{ id: "x" }]], ["ff-helper", []]] ) {
+      const { root, section, button } = window(rows);
+      helperGroup(null, root, section, helper);
+      expect(section.children).toEqual([]);
+      expect(button.attrs.hidden).toBeUndefined();
+    }
   });
 });
