@@ -5377,6 +5377,56 @@
    "commit": null,
    "hash": "bf11e2883b4b"
   },
+  "core:FASTFIGHTING.Deal.Sayings.1": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Deal.Sayings.1",
+   "area": "core/Deal",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "f497131cd00a"
+  },
+  "core:FASTFIGHTING.Deal.Sayings.2": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Deal.Sayings.2",
+   "area": "core/Deal",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "b7eb50f44723"
+  },
+  "core:FASTFIGHTING.Deal.Sayings.3": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Deal.Sayings.3",
+   "area": "core/Deal",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "78a5922a416b"
+  },
+  "core:FASTFIGHTING.Deal.Sayings.4": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Deal.Sayings.4",
+   "area": "core/Deal",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "8a5db84d1ee0"
+  },
+  "core:FASTFIGHTING.Deal.Sayings.5": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Deal.Sayings.5",
+   "area": "core/Deal",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "35634911a515"
+  },
   "core:FASTFIGHTING.Deal.Settled": {
    "repo": "core",
    "file": "languages/en.json",

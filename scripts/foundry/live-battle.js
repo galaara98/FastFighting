@@ -2180,8 +2180,8 @@ async function dealTurnCard(u) {
 }
 
 /**
- * No word understood: the creature answers in its own tongue, as anyone at the table would hear it: its speech on the
- * map, letters of the language's own alphabet (FASTFIGHTING.Deal.Gibberish) strung into nothing. Kept with the turn.
+ * No word understood: the creature answers in its own tongue, as anyone at the table would hear it (speak), letters of
+ * the language's own alphabet (FASTFIGHTING.Deal.Gibberish) strung into nothing.
  */
 async function gibberish(doc) {
   const letters = [...loc("FASTFIGHTING.Deal.Gibberish")];
@@ -2189,7 +2189,29 @@ async function gibberish(doc) {
   const pick = () => letters[Math.floor(Math.random() * letters.length)];
   const words = Array.from({ length: 3 + Math.floor(Math.random() * 4) }, () => Array.from({ length: 2 + Math.floor(Math.random() * 6) }, pick).join(""));
   const text = words.join(" ");
-  const said = `${text.charAt(0).toLocaleUpperCase(game.i18n.lang)}${text.slice(1)}${["!", "?", "…"][Math.floor(Math.random() * 3)]}`;
+  return speak(doc, `${text.charAt(0).toLocaleUpperCase(game.i18n.lang)}${text.slice(1)}${["!", "?", "…"][Math.floor(Math.random() * 3)]}`);
+}
+
+/** Understood: the creature mulls it over aloud (speak), one of its sayings at random. */
+async function mullOver(doc) {
+  const said = sayings();
+  return said.length ? speak(doc, said[Math.floor(Math.random() * said.length)]) : null;
+}
+
+/**
+ * What a creature says to a deal it understands, in the reader's language: every one FASTFIGHTING.Deal.Sayings lists
+ * (as many as a language has), else English's.
+ */
+function sayings() {
+  const key = "FASTFIGHTING.Deal.Sayings";
+  const list = o => (o && typeof o === "object" ? Object.values(o).filter(s => typeof s === "string" && s.trim()) : []);
+  const here = list(foundry.utils.getProperty(game.i18n.translations, key));
+  return here.length ? here : list(foundry.utils.getProperty(game.i18n._fallback ?? {}, key));
+}
+
+/** A creature speaks, as anyone at the table hears it: its words on the map and in the chat. Kept with the turn. */
+async function speak(doc, said) {
+  if ( !doc ) return null;
   const ChatMessage = chatMessageClass();
   // (Under the name the players know it by: someone, numbered, where they haven't learned its own.)
   const u = battle.run.units.find(x => tokenIdOf(x) === doc.id);
@@ -2287,8 +2309,13 @@ async function prepareDeal(deal, user) {
       window: { title: loc("FASTFIGHTING.Deal.TalkOkTitle") },
       content: `<p>${escape(fmt("FASTFIGHTING.Deal.TalkOk", { actor: name(u), target: name(t) }))}</p>`
     });
-    if ( !ok ) return { ok: false, reason: "unheard" };
+    if ( !ok ) {
+      await gibberish(docOf(t.id));
+      return { ok: false, reason: "unheard" };
+    }
   }
+  // (The attempt begins: the one approached answers aloud, in its own tongue where it can't follow the words.)
+  await (how === "wordless" ? gibberish : mullOver)(docOf(t.id));
   const key = foundry.utils.randomID();
   const dc = dealDC(run, u, t, terms);
   const skill = (adapter.skillsOf?.(doc.actor) ?? []).find(s => s.key === deal.skill);

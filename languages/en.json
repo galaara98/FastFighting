@@ -2479,6 +2479,13 @@
       "TurnCard": "{name} could make a deal: a bribe, or a demand.",
       "OpenDeal": "I want to bribe or extort",
       "Gibberish": "abcdefghijklmnopqrstuvwxyz",
+      "Sayings": {
+        "1": "Interesting offer.",
+        "2": "Hmmmmmmmmmmmmmm.....",
+        "3": "Is that so?",
+        "4": "Let me think about that.",
+        "5": "Go on…"
+      },
       "DialogTitle": "A deal",
       "With": "With",
       "What": "What",
