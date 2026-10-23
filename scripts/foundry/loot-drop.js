@@ -70,7 +70,9 @@ async function makePile(scene, at, goods, { name = "", over = {}, type = null } 
   const adapter = getAdapter();
   if ( itemPilesOn() ) {
     try {
-      const made = await game.itempiles.API.createItemPile({ position: at, sceneId: scene.id, items: goods.items ?? [], tokenOverrides: { ...over, ...(name ? { name } : {}), flags: { [MODULE_ID]: { pile: true } } } });
+      // (Each thing with an id of its own: Item Piles sorts what it's given by id, and things with none would be one.)
+      const items = (goods.items ?? []).map(i => ({ ...i, _id: i._id || foundry.utils.randomID() }));
+      const made = await game.itempiles.API.createItemPile({ position: at, sceneId: scene.id, items, tokenOverrides: { ...over, ...(name ? { name } : {}), flags: { [MODULE_ID]: { pile: true } } } });
       const token = made?.tokenUuid ? await fromUuid(made.tokenUuid) : null;
       if ( token ) {
         const records = [{ createdTokens: [token.uuid] }];

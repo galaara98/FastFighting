@@ -10,10 +10,11 @@ vi.mock("../scripts/api.js", () => ({ getAdapter: () => state.adapter }));
 
 const { isPile, lootOnFall, revertItemPile } = await import("../scripts/foundry/loot-drop.js");
 
-const was = { game: globalThis.game, Actor: globalThis.Actor, CONST: globalThis.CONST, fromUuid: globalThis.fromUuid };
+const was = { game: globalThis.game, Actor: globalThis.Actor, CONST: globalThis.CONST, fromUuid: globalThis.fromUuid, foundry: globalThis.foundry };
 afterAll(() => Object.assign(globalThis, was));
 
 let calls;
+let ids = 0;
 const flagged = (flags, scope, key) => flags[scope]?.[key];
 
 /** Item Piles, as far as these calls go: a pile is a token whose flags say so. */
@@ -60,6 +61,7 @@ beforeEach(() => {
     i18n: { has: () => true, localize: k => (k === "FASTFIGHTING.Loot.Belongings" ? "{name}'s belongings" : k) }
   };
   globalThis.fromUuid = async uuid => ({ uuid });
+  globalThis.foundry = { utils: { randomID: () => `id${++ids}` } };
   globalThis.CONST = { DOCUMENT_OWNERSHIP_LEVELS: { OBSERVER: 2 }, TOKEN_DISPOSITIONS: { NEUTRAL: 0 } };
   globalThis.Actor = { create: async data => (calls.push(["actor", data]), { ...data, uuid: "Actor.core", getTokenDocument: async o => ({ toObject: () => ({ ...o }) }) }) };
 });
@@ -110,7 +112,9 @@ describe("a player's character that dies", () => {
     const out = await lootOnFall(doc, pc, { died: true, fell: true }, "corpse");
     expect(out.remains).toBe("Scene.s.Token.pile");
     const [, made] = calls.find(c => c[0] === "create");
-    expect(made).toMatchObject({ position: { x: 100, y: 200 }, sceneId: "s", items: [{ name: "Longsword" }], tokenOverrides: { name: "kyra's belongings", sort: 4, flags: { "fast-fighting": { pile: true } } } });
+    // (Each thing with an id of its own, or Item Piles would keep only the last.)
+    expect(made.items).toEqual([{ name: "Longsword", _id: expect.stringMatching(/^id\d+$/) }]);
+    expect(made).toMatchObject({ position: { x: 100, y: 200 }, sceneId: "s", tokenOverrides: { name: "kyra's belongings", sort: 4, flags: { "fast-fighting": { pile: true } } } });
     expect(calls.find(c => c[0] === "put")).toEqual(["put", "Scene.s.Token.pile", { items: [], coins: { gp: 5 }, money: 0 }]);
     expect(out.records[0]).toEqual({ createdTokens: ["Scene.s.Token.pile"] });
     // (Only on dying; and not with the loot setting at "Do nothing".)
