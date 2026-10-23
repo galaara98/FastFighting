@@ -3452,6 +3452,27 @@
     "{actor} digs through {target}, pocketing what they find.",
     "{actor} loots {target} while the fight goes on."
   ],
+  "event.reinforceCall": [
+    "{actor} calls for help.",
+    "{actor} signals for reinforcements.",
+    "{actor} sends word back: more are needed.",
+    "{actor} raises a cry, calling their own to the fight.",
+    "{actor} whistles, and somewhere off the map, help stirs."
+  ],
+  "event.reinforceGm": [
+    "Somewhere nearby, help is on its way.",
+    "More are coming.",
+    "Distant footsteps: someone is coming.",
+    "Reinforcements are on their way.",
+    "The fight is about to get bigger."
+  ],
+  "event.arrive": [
+    "Reinforcements arrive: {who}.",
+    "{who} come in from the edge of the fight.",
+    "More arrive to join the fight: {who}.",
+    "{who} rush in to join the fray.",
+    "Fresh fighters arrive: {who}."
+  ],
   "event.quit": [
     "{actor} wants no more of this fight and heads off.",
     "{actor} has had enough and leaves the fight.",

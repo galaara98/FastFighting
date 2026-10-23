@@ -47,6 +47,7 @@ import { stealChance, theftTarget, theftPlan, attemptTheft, robbable, lootable, 
 import { fallenWishes, decideFallen, bind, rob, stayBound, takesPrisoners, robsTheFallen, freeFriend, rollOf } from "./behavior/fallen.js";
 import { decideStances, stanceOf, stanceWishes, STANCE } from "./behavior/stance.js";
 import { initForage, forageWishes, decideForage, forageNow } from "./behavior/forage.js";
+import { initReinforcements, reinforcementsWanted, callReinforcements, arriveReinforcements } from "./behavior/reinforce.js";
 import { dealWishes, decideDeal, offerDeal, pickUp, dishonor, dealsWanted, talkRange, dealCost, shunsFight, seesFight, reactionBribe } from "./behavior/deals.js";
 import { leavesOfItsOwn } from "./behavior/flight.js";
 import { holdsOf, ownHolds, known, tryHold, release, escapeCost, isBound, remediesOf, bears } from "./behavior/holds.js";
@@ -3768,6 +3769,12 @@ function playFromHere(run, u) {
     return;
   }
   if ( stance?.kind === STANCE.WAIT && !u.harmedBy.size && !enemiesOf(run, u).some(e => isStanding(e) && u.adjacent?.has(e.id)) ) return;
+  // Its team's head calls for help as the fight turns against it (behavior/reinforce.js): an action; it comes next round.
+  const help = reinforcementsWanted(run, u);
+  if ( help && turn.canAfford(rules.basicAction ?? 1) ) {
+    turn.spend(rules.basicAction ?? 1);
+    callReinforcements(run, groupKeyOf(u), help, { by: u, say: logger(run) });
+  }
   // Slacking (the Lazy playstyle): with no foe beside it and its wounds not pressing, now and then it just doesn't.
   if ( slacksOff(run, u) ) {
     log(run, u, { type: "lazy", chose: true });
@@ -4770,8 +4777,10 @@ export function beginRun(prep, seed, { log: withLog = false, record = false } = 
     if ( isAnimalistic(u) ) u.tac = { ...animalTactics(u.spec), ...(u.tac ?? {}) };
     u.hunts = u.tac?.beyond === "hunt";
   }
-  // What lies on the map to go for, and who comes to the fight hungry (behavior/forage.js).
+  // What lies on the map to go for, and who comes to the fight hungry (behavior/forage.js); each team's reinforcements
+  // (behavior/reinforce.js).
   initForage(run);
+  initReinforcements(run);
   // The system's own state for the fight (Daggerheart: the GM's Fear).
   prep.rules.initRun?.(run);
   if ( withLog ) run.log = [];
@@ -4809,6 +4818,7 @@ export function beginRun(prep, seed, { log: withLog = false, record = false } = 
  */
 export function beginRound(run, round) {
   run.round = round;
+  arriveReinforcements(run, logger(run)); // (those called last round come in: behavior/reinforce.js)
   refreshLeans(run);
   decideStances(run, logger(run));
 }

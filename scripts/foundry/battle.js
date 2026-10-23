@@ -9,7 +9,7 @@ import { openPool, poolThreads } from "../engine/batch-pool.js";
 
 /** How long a battle's prediction runs (seconds): its plan's, else the world's Prediction time. */
 export const predictionSeconds = setup => setup?.options?.seconds ?? setting("predictionTime");
-import { getAdapter, getModifiers } from "../api.js";
+import { getAdapter, getModifiers, characterSpec } from "../api.js";
 import { canDropGoods, isPile, leavesRemains, pilesOn } from "./loot-drop.js";
 import { appetiteOf } from "./food.js";
 import { cachedCharacterSpec } from "./sheet-watch.js";
@@ -137,6 +137,8 @@ export async function gatherRoster(setup, adapter = getAdapter(), { fresh = fals
       console.error(`${MODULE_ID} | failed to read ${token.name}`, err);
     }
   }
+  // (Each team's reinforcement creature, read with the roster: battleFor.)
+  out.reinforcementSpecs = await readReinforcements(setup, adapter);
   return out;
 }
 
@@ -851,10 +853,46 @@ export function awarenessFor(roster) {
   return computeAwareness(bystanders, roster.map(e => e.token), { senses, hearingFeet: getAdapter()?.rules?.hearingFeet });
 }
 
+/**
+ * Each team's reinforcement creature (the planner's, dropped from a compendium or the Actors directory), read once:
+ * {uuid: its CombatantSpec (sourceUuid: where it came from, for a live battle to place it), or null}. `known`: those
+ * already read.
+ */
+export async function readReinforcements(setup, adapter = getAdapter(), known = {}) {
+  const out = { ...known };
+  for ( const r of Object.values(setup.options.reinforcements ?? {}) ) {
+    const uuid = r?.uuid;
+    if ( typeof uuid !== "string" || uuid in out ) continue;
+    try {
+      const actor = await fromUuid(uuid);
+      const spec = actor?.documentName === "Actor" ? await characterSpec(adapter, await actor.getTokenDocument()) : null;
+      if ( spec ) spec.sourceUuid = uuid;
+      out[uuid] = spec ?? null;
+    } catch ( err ) {
+      console.warn(`${MODULE_ID} | reading the reinforcements ${uuid}`, err);
+      out[uuid] = null;
+    }
+  }
+  return out;
+}
+
+/** The battle's reinforcements, as the plan has them now: {teamKey: {spec, count}} (engine/behavior/reinforce.js). */
+function reinforcementsOf(setup, specs = {}) {
+  const out = {};
+  for ( const [key, r] of Object.entries(setup.options.reinforcements ?? {}) ) {
+    const spec = specs?.[r?.uuid];
+    const count = Math.max(0, Math.round(Number(r?.count) || 0));
+    if ( spec && count ) out[key] = { spec, count };
+  }
+  return out;
+}
+
 /** The battle the planner simulates, as the map and the plan stand: its spec, and how each side comes at the other. */
 export function battleFor(roster, setup) {
   const approach = setup.options.positioning ? approachFor(roster, setup) : null;
   const spec = buildBattleSpec(roster, setup, { approach });
+  // (Each team's reinforcements: its creature, read with the roster, and how many, as the plan says now.)
+  spec.reinforcements = reinforcementsOf(setup, roster.reinforcementSpecs);
   spec.awareness = awarenessFor(roster);
   // (The ground around them, for forced movement: ledges, walls, bad ground. Reused until a token, a wall or a region
   // changes.)

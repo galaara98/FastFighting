@@ -44,6 +44,8 @@ import { syncGear } from "./gear.js";
 import { joinSide, standAside, turnOn } from "./behavior/neutral.js";
 import { patrolNow } from "./behavior/patrol.js";
 import { dishonor, closeDeal } from "./behavior/deals.js";
+import { callReinforcements } from "./behavior/reinforce.js";
+
 
 /** A question the turn can't go on without: whether {unitId} uses {reactionId} because of {trigger} (by {byId}). */
 export class NeedsDecision extends Error {
@@ -102,6 +104,16 @@ export function gmMoment(run, id = null) {
 /** A new round on the tracker. */
 export function liveRound(run, round) {
   beginRound(run, round);
+}
+
+/**
+ * The GM calls a team's reinforcements (the Battle Vantage): as many as asked, no more than are left; they come the
+ * next round (behavior/reinforce.js). How many are coming.
+ */
+export function gmReinforce(run, team, n) {
+  const count = callReinforcements(run, team, n, { by: null, say: say(run) });
+  if ( count ) run.live?.facts.push({ kind: "reinforce", team, n: count, round: run.round });
+  return count;
 }
 
 /**
@@ -1652,8 +1664,11 @@ export function restoreRun(spec, rules, snap, { log: kept = null } = {}) {
   run.prep.doors ??= prepareDoors(run.prep.spec, run.prep.rules);
   const called = [...(run.prep.summons?.values() ?? [])].flat();
   for ( const [id, data] of Object.entries(snap.units ?? {}) ) {
-    if ( run.byId.has(id) || typeof data.summonOf !== "string" ) continue;
-    const p = called.find(c => c.spec.id === data.summonOf);
+    if ( run.byId.has(id) ) continue;
+    // (A team's reinforcements, come mid-fight: made again from the team's, behavior/reinforce.js.)
+    const reinforced = typeof data.reinforcementOf === "string" ? run.prep.reinforcements?.get(data.reinforcementOf)?.p : null;
+    if ( typeof data.summonOf !== "string" && !reinforced ) continue;
+    const p = reinforced ?? called.find(c => c.spec.id === data.summonOf);
     if ( !p ) continue;
     const s = createUnit(run.prep, p);
     s.id = id;

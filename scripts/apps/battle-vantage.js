@@ -29,7 +29,7 @@ import { sceneEncounter, encounterNumber } from "../foundry/persistence.js";
 import { clockText } from "../foundry/away.js";
 import {
   liveBattle, continueBattle, rewind, rewindEncounter, beginEncounter, endEncounter, playCurrent, answerDamage, setApplyDamage, systemAppliesText, waitingReaction, endReaction, sheetNow, liveFact, dropHeldFact, setNpcReactions, setPlayThrough, finishReview,
-  waitingDeals, openDealReview,
+  waitingDeals, openDealReview, liveReinforce, reinforcementsLeft,
   waitingOnGm, suggestedSpotlight, spotlightNext, settleBattle, setAutomated, liveCondition, liveMind, bringIntoFight, tokenIdOf, fastFight, fastOffered, fastRunning
 } from "../foundry/live-battle.js";
 
@@ -117,6 +117,12 @@ const shownStatus = u => {
 /** What happens to a creature's status on the map of minds: standing as it is, down greyed, out of it faded. */
 const statusClass = status => (status === "standing" ? "" : status === "down" ? "is-down" : "is-out");
 
+/** A team's short name, as the planner shows its teams (F, H1, ..., N3). */
+function teamLabel(key) {
+  const short = { friendly: "F", hostile: "H1", hostile2: "H2", hostile3: "H3", [`${NEUTRAL_PARTY}#1`]: "N1", [`${NEUTRAL_PARTY}#2`]: "N2", [`${NEUTRAL_PARTY}#3`]: "N3" }[key];
+  return short ? loc(`FASTFIGHTING.Planner.Team.${short}`) : key;
+}
+
 export class BattleVantage extends HandlebarsApplicationMixin(ApplicationV2) {
   static DEFAULT_OPTIONS = {
     id: "fast-fighting-battle",
@@ -139,6 +145,7 @@ export class BattleVantage extends HandlebarsApplicationMixin(ApplicationV2) {
       damage: BattleVantage.#onDamage,
       reaction: BattleVantage.#onReaction,
       dealReview: BattleVantage.#onDealReview,
+      reinforce: BattleVantage.#onReinforce,
       spotlight: BattleVantage.#onSpotlight,
       aftermath: BattleVantage.#onAftermath,
       automate: BattleVantage.#onAutomate,
@@ -643,6 +650,14 @@ export class BattleVantage extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /** A deal waiting on the GM's review: its window. */
+  /** The GM calls a team's reinforcements: as many as its box says (one, unless changed). */
+  static async #onReinforce(event, target) {
+    const team = target.dataset.team;
+    const n = Number(target.closest("li")?.querySelector("input")?.value) || 1;
+    await liveReinforce(team, n);
+    this.render();
+  }
+
   static #onDealReview(event, target) {
     openDealReview(target.dataset.key);
   }
@@ -718,6 +733,11 @@ export function battleContext(b, focusId = null) {
     })(),
     // (Deals waiting on the GM's review: engine/behavior/deals.js.)
     deals: waitingDeals(),
+    // (Each team's reinforcements: those left to call, the GM's to call too; those on their way. behavior/reinforce.js.)
+    reinforcements: reinforcementsLeft().filter(r => r.left || r.coming).map(r => ({
+      ...r, label: teamLabel(r.team), text: fmt("FASTFIGHTING.Battle.ReinforcementsLeft", { name: r.name, n: r.left }),
+      coming: r.coming ? fmt("FASTFIGHTING.Battle.ReinforcementsComing", { n: r.coming }) : ""
+    })),
     // (Players' damage: applied at once, or waiting here; greyed out while the system applies it itself.)
     applyDamage: !!b.data.applyDamage, systemApplies: systemAppliesText(),
     // (A player's turn's own, and those the table settles: a player's character's at another, Apply players' damage off.)

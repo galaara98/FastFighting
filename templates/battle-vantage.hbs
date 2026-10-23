@@ -54,6 +54,16 @@
           <button type="button" class="ff-btn" data-action="reaction" data-key="{{reaction.key}}" data-how="skip"><i class="fa-solid fa-forward"></i> {{localize "FASTFIGHTING.Battle.ReactionSkip"}}</button>
         </div>
       {{/if}}
+      {{#if reinforcements.length}}
+        <div class="ff-battle-damage ff-battle-reinforce">
+          <p class="hint">{{localize "FASTFIGHTING.Battle.Reinforcements"}}</p>
+          <ul>{{#each reinforcements}}<li data-team="{{team}}">
+            <span><b>{{label}}</b> {{text}}{{#if coming}} · {{coming}}{{/if}}</span>
+            {{#if left}}<input type="number" min="1" max="{{left}}" step="1" value="1" aria-label="{{localize "FASTFIGHTING.Battle.ReinforcementsHowMany"}}">
+            <button type="button" class="ff-btn" data-action="reinforce" data-team="{{team}}"><i class="fa-solid fa-flag"></i> {{localize "FASTFIGHTING.Battle.ReinforcementsCall"}}</button>{{/if}}
+          </li>{{/each}}</ul>
+        </div>
+      {{/if}}
       {{#if deals.length}}
         <div class="ff-battle-damage">
           <p class="hint">{{localize "FASTFIGHTING.Battle.DealsWaiting"}}</p>

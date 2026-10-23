@@ -345,6 +345,16 @@
    "commit": null,
    "hash": "fa9a1a4288bd"
   },
+  "core:code:scripts/foundry/battle.js:readReinforcements#1": {
+   "repo": "core",
+   "file": "scripts/foundry/battle.js",
+   "key": "scripts/foundry/battle.js:readReinforcements#1",
+   "area": "core/code",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "89ed5cfc3c6d"
+  },
   "core:code:scripts/foundry/battle.js:workerRulesOf#1": {
    "repo": "core",
    "file": "scripts/foundry/battle.js",
@@ -514,6 +524,16 @@
    "date": null,
    "commit": null,
    "hash": "9ecbbbf9944a"
+  },
+  "core:code:scripts/foundry/live-battle.js:placeReinforcements#1": {
+   "repo": "core",
+   "file": "scripts/foundry/live-battle.js",
+   "key": "scripts/foundry/live-battle.js:placeReinforcements#1",
+   "area": "core/code",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "ff8cf2e66ce1"
   },
   "core:code:scripts/foundry/live-battle.js:placeSummons#1": {
    "repo": "core",
@@ -3504,6 +3524,56 @@
    "date": null,
    "commit": null,
    "hash": "0150359f0599"
+  },
+  "core:FASTFIGHTING.Battle.Reinforcements": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.Reinforcements",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "66c6d3c2c45d"
+  },
+  "core:FASTFIGHTING.Battle.ReinforcementsCall": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.ReinforcementsCall",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "d6e645b7d2b2"
+  },
+  "core:FASTFIGHTING.Battle.ReinforcementsComing": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.ReinforcementsComing",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "fb90880578f3"
+  },
+  "core:FASTFIGHTING.Battle.ReinforcementsHowMany": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.ReinforcementsHowMany",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "e2a6ff2c78fd"
+  },
+  "core:FASTFIGHTING.Battle.ReinforcementsLeft": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.ReinforcementsLeft",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "9d9ca8125b29"
   },
   "core:FASTFIGHTING.Battle.Relation.afraid": {
    "repo": "core",
@@ -8283,6 +8353,16 @@
    "commit": null,
    "hash": "6d217ba625ae"
   },
+  "core:FASTFIGHTING.Log.Arrive": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.Arrive",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "a4a3fa2c077e"
+  },
   "core:FASTFIGHTING.Log.Aside": {
    "repo": "core",
    "file": "languages/en.json",
@@ -11847,6 +11927,26 @@
    "commit": null,
    "hash": "99129338bc12"
   },
+  "core:FASTFIGHTING.Log.ReinforceCall": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.ReinforceCall",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "071cb5d42253"
+  },
+  "core:FASTFIGHTING.Log.ReinforceGm": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.ReinforceGm",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "b9d83891e9d8"
+  },
   "core:FASTFIGHTING.Log.Reload": {
    "repo": "core",
    "file": "languages/en.json",
@@ -15353,6 +15453,56 @@
    "date": null,
    "commit": null,
    "hash": "65315bbc0d37"
+  },
+  "core:FASTFIGHTING.Planner.Reinforcements": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Planner.Reinforcements",
+   "area": "core/Planner",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "66c6d3c2c45d"
+  },
+  "core:FASTFIGHTING.Planner.ReinforcementsActorOnly": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Planner.ReinforcementsActorOnly",
+   "area": "core/Planner",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "6eaaf3fa4f9d"
+  },
+  "core:FASTFIGHTING.Planner.ReinforcementsClear": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Planner.ReinforcementsClear",
+   "area": "core/Planner",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "97b87f66f7a8"
+  },
+  "core:FASTFIGHTING.Planner.ReinforcementsDrop": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Planner.ReinforcementsDrop",
+   "area": "core/Planner",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "16788cf57989"
+  },
+  "core:FASTFIGHTING.Planner.ReinforcementsHint": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Planner.ReinforcementsHint",
+   "area": "core/Planner",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "2834502bff15"
   },
   "core:FASTFIGHTING.Planner.Role.boss.Name": {
    "repo": "core",
@@ -20716,6 +20866,16 @@
    "commit": null,
    "hash": "b6b243caef1e"
   },
+  "core:FASTFIGHTING.Story.Part.arrive": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Story.Part.arrive",
+   "area": "core/Story",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "99724362bb96"
+  },
   "core:FASTFIGHTING.Story.Part.aside": {
    "repo": "core",
    "file": "languages/en.json",
@@ -24237,6 +24397,26 @@
    "date": null,
    "commit": null,
    "hash": "aa1c09f43940"
+  },
+  "core:FASTFIGHTING.Story.Part.reinforceCall": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Story.Part.reinforceCall",
+   "area": "core/Story",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "2356d4ff5c19"
+  },
+  "core:FASTFIGHTING.Story.Part.reinforceGm": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Story.Part.reinforceGm",
+   "area": "core/Story",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "247df7545f29"
   },
   "core:FASTFIGHTING.Story.Part.relationship": {
    "repo": "core",
@@ -38810,6 +38990,16 @@
    "commit": null,
    "hash": "48d9e6e3b0e6"
   },
+  "core:story:event.arrive": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "event.arrive",
+   "area": "core/story.event",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "9e1007d919de"
+  },
   "core:story:event.aside": {
    "repo": "core",
    "file": "story/en.json",
@@ -40709,6 +40899,26 @@
    "date": null,
    "commit": null,
    "hash": "a7843e496c0b"
+  },
+  "core:story:event.reinforceCall": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "event.reinforceCall",
+   "area": "core/story.event",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "10e9c11d1be6"
+  },
+  "core:story:event.reinforceGm": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "event.reinforceGm",
+   "area": "core/story.event",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "8e35c2f8038e"
   },
   "core:story:event.retreatCall": {
    "repo": "core",

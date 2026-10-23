@@ -63,6 +63,20 @@
       </label>
       {{/each}}
     </div>
+    {{!-- Each team's reinforcements: one creature, dragged in, and how many can come --}}
+    <div class="ff-toolbar-row ff-reinforce">
+      <span class="ff-field-label">{{localize "FASTFIGHTING.Planner.Reinforcements"}} <i class="fa-solid fa-circle-question" data-tooltip="{{localize "FASTFIGHTING.Planner.ReinforcementsHint"}}"></i></span>
+      {{#each reinforcements}}
+      <div class="ff-reinforce-team">
+        <span class="ff-reinforce-label">{{label}}</span>
+        <div class="ff-reinforce-slot {{#if unreadable}}is-unreadable{{/if}}" data-reinforce-drop="{{key}}" data-tooltip-text="{{#if name}}{{name}}{{else}}{{localize "FASTFIGHTING.Planner.ReinforcementsDrop"}}{{/if}}" aria-label="{{#if name}}{{name}}{{else}}{{localize "FASTFIGHTING.Planner.ReinforcementsDrop"}}{{/if}}">
+          {{#if img}}<img src="{{img}}" alt="">{{else}}<i class="fa-solid fa-plus" aria-hidden="true"></i>{{/if}}
+        </div>
+        {{#if name}}<input type="number" min="0" max="99" step="1" name="options.reinforcements.{{key}}.count" value="{{count}}" data-dtype="Number" aria-label="{{name}}">
+        <button type="button" class="ff-icon-btn" data-action="clearReinforcement" data-team="{{key}}" aria-label="{{localize "FASTFIGHTING.Planner.ReinforcementsClear"}}"><i class="fa-solid fa-xmark"></i></button>{{/if}}
+      </div>
+      {{/each}}
+    </div>
     {{!-- Loot on the map: a chest or a bag for the GM to fill, a lure for thieves, scavengers and the hungry --}}
     <div class="ff-toolbar-row ff-loot">
       <span class="ff-field-label">{{localize "FASTFIGHTING.Planner.Loot"}} <i class="fa-solid fa-circle-question" data-tooltip="{{localize "FASTFIGHTING.Planner.LootHint"}}"></i></span>

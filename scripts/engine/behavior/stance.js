@@ -65,7 +65,7 @@ const up = members => members.filter(o => isStanding(o) && !isLeaving(o));
  * Its head now: its chain's head if it can lead (one taking no side still watching counts: command() wouldn't see it),
  * else whoever commands it. Null for a leaderless team.
  */
-function headOf(run, key) {
+export function headOf(run, key) {
   const first = chainOf(run, key)?.[0];
   const u = first ? run.byId.get(first.id) : null;
   if ( u && groupKeyOf(u) === key && u.status === STATUS.STANDING && u.active !== false && canCommand(u) ) return u;
@@ -73,7 +73,7 @@ function headOf(run, key) {
 }
 
 /** May this team take a stance: a head of its own, the party only when FastFighting plays all of it? */
-function free(run, key, head) {
+export function free(run, key, head) {
   if ( !head || head.controlledBy ) return false;
   if ( key === SIDES.FRIENDLY || head.spec.kind === "pc" ) return playsParty(run);
   return true;
@@ -151,7 +151,7 @@ function blows(run, all) {
  * Those a team would be up against: the teams it's at blows with; not at blows yet, the strongest of its foes in the
  * fight (it would face one at a time); one taking no side, at blows with no one, the strongest team fighting near it.
  */
-function dangerTo(run, members, engaged) {
+export function dangerTo(run, members, engaged) {
   if ( isNeutral(members[0]) && !members.some(m => m.against.size) ) {
     // (Not the side it leans to: its friends are no danger to it.)
     const friends = leanSide(run, members[0]);
@@ -166,15 +166,25 @@ function dangerTo(run, members, engaged) {
 /** (a) Does its head take it out of the fight? {kind: leave, odds} or null. */
 function weighLeaving(run, head, members, engaged, tier) {
   if ( tier < TACTICAL.COMPETENT ) return null;
+  // (Help on its way, or still to call: it holds on, and calls (behavior/reinforce.js).)
+  const help = run.reinforce?.[groupKeyOf(head)];
+  if ( help?.coming.length || help?.left > 0 ) return null;
   const { foes, bystander } = dangerTo(run, members, engaged);
   if ( !foes.length ) return null;
   const odds = teamOdds(run, members, foes, tier);
-  // (Its own wishes as well as its nature: one bent on a foe (vengeance for a fallen head, say) holds on longer.)
-  const bent = Math.max(0, ...(head.lastDesires ?? []).filter(d => d.kind === "hurt").map(d => d.level));
-  const need = clamp(LEAVE_AT.base + (liveTrait(run, head, "selfish") - 50) * LEAVE_AT.selfish - (liveTrait(run, head, "brave") - 50) * LEAVE_AT.brave
-    + (bystander ? LEAVE_AT.bystander : 0) - clamp((bent - 40) * LEAVE_AT.hurt, 0, LEAVE_AT.wish), LEAVE_AT.least, LEAVE_AT.most);
+  const need = leaveNeed(run, head, bystander);
   // (A boss almost never gives up: morale.js standsGround, asked only when it would.)
   return odds < need && !standsGround(run, head) ? { kind: STANCE.LEAVE, target: null, odds } : null;
+}
+
+/**
+ * The odds under which a team's head takes it out of the fight: its nature (selfish, brave), and its own wishes (one
+ * bent on a foe, vengeance for a fallen head say, holds on longer); a bystander group's the more readily.
+ */
+export function leaveNeed(run, head, bystander = false) {
+  const bent = Math.max(0, ...(head.lastDesires ?? []).filter(d => d.kind === "hurt").map(d => d.level));
+  return clamp(LEAVE_AT.base + (liveTrait(run, head, "selfish") - 50) * LEAVE_AT.selfish - (liveTrait(run, head, "brave") - 50) * LEAVE_AT.brave
+    + (bystander ? LEAVE_AT.bystander : 0) - clamp((bent - 40) * LEAVE_AT.hurt, 0, LEAVE_AT.wish), LEAVE_AT.least, LEAVE_AT.most);
 }
 
 /** The members of the strongest team among these (by standing hit points). */

@@ -19,7 +19,7 @@ import { cachedCharacterSpec, showsReactions } from "../foundry/sheet-watch.js";
 import {
   gatherRoster, chosenSide, groupOf, proposeNeutralGroups, resolveAllegiances, simulate, swingFactors, typicalFight, fightThreads,
   approachFor, commandChains, commandGroup, seedCommand, clearRole, ROLES, sideName, hostileGroupsIn, secretTeam, SECRET_TEAMS, LEANS, predictionSeconds,
-  battleFor, surpriseMode, systemSurprise, mainCoin, PURSE_TEAMS } from "../foundry/battle.js";
+  battleFor, surpriseMode, systemSurprise, mainCoin, PURSE_TEAMS, readReinforcements } from "../foundry/battle.js";
 import { SURPRISE } from "../engine/behavior/surprise.js";
 import { buildStory, STORY_STYLES } from "../story/story.js";
 import { loadStoryTables } from "../story/tables.js";
@@ -129,6 +129,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       surveyCharacter: BattlePlanner.#onSurveyCharacter,
       surveyCharacterGm: BattlePlanner.#onSurveyCharacterGm,
       placeLoot: BattlePlanner.#onPlaceLoot,
+      clearReinforcement: BattlePlanner.#onClearReinforcement,
       cancel: BattlePlanner.#onCancel
     }
   };
@@ -440,6 +441,8 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       systemSection: this.#systemSection(adapter, resolved, chains),
       // (The teams' purses: the party's money to see, the others' the GM's to set.)
       purses: this.#pursesView(adapter),
+      // (Each team's reinforcements: one creature, dragged in, and how many can come.)
+      reinforcements: this.#reinforcementsView(),
       adapterLabel: adapter?.label ?? loc("FASTFIGHTING.Planner.NoAdapter"),
       // (The system, or a module, applies players' damage itself: FastFighting's own toggle greyed out, saying so.)
       systemApplies: systemAppliesText(adapter),
@@ -784,6 +787,45 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     await openPile(made);
   }
 
+  /**
+   * Each team's reinforcements (engine/behavior/reinforce.js): one creature for each, dropped from a compendium or the
+   * Actors directory, and how many of it can come. The party's too (they come only when FastFighting plays it, or the
+   * GM calls them in the Battle Vantage).
+   */
+  #reinforcementsView() {
+    const saved = this.setup.options.reinforcements ?? {};
+    const labels = ["F", "H1", "H2", "H3", "N1", "N2", "N3"];
+    return [SIDES.FRIENDLY, ...PURSE_TEAMS].map((key, i) => {
+      const r = saved[key] ?? null;
+      const known = r?.uuid ? this.roster?.reinforcementSpecs?.[r.uuid] : undefined;
+      return { key, label: loc(`FASTFIGHTING.Planner.Team.${labels[i]}`), name: r?.name ?? "", img: r?.img ?? "", count: Number(r?.count) || 0, unreadable: !!r?.uuid && known === null };
+    });
+  }
+
+  /** A creature dropped on a team's reinforcements: it, and one of it to start with (or as many as before). */
+  async #dropReinforcement(key, event) {
+    const data = foundry.applications.ux.TextEditor.implementation.getDragEventData(event);
+    if ( data?.type !== "Actor" || typeof data.uuid !== "string" ) return ui.notifications.warn(loc("FASTFIGHTING.Planner.ReinforcementsActorOnly"));
+    const actor = await fromUuid(data.uuid);
+    if ( actor?.documentName !== "Actor" ) return;
+    const was = this.setup.options.reinforcements?.[key];
+    this.setup.options.reinforcements = { ...(this.setup.options.reinforcements ?? {}), [key]: { uuid: actor.uuid, name: actor.name, img: actor.img, count: Number(was?.count) || 1 } };
+    await saveSetup(this.setup, this.holder);
+    if ( this.roster ) this.roster.reinforcementSpecs = await readReinforcements(this.setup, getAdapter(), this.roster.reinforcementSpecs ?? {});
+    this.stale = true;
+    this.render();
+  }
+
+  static async #onClearReinforcement(event, target) {
+    const key = target.dataset.team;
+    const rest = { ...(this.setup.options.reinforcements ?? {}) };
+    delete rest[key];
+    this.setup.options.reinforcements = rest;
+    await saveSetup(this.setup, this.holder);
+    this.stale = true;
+    this.render();
+  }
+
   #systemSection(adapter, resolved, chains) {
     let section = null;
     try {
@@ -886,6 +928,14 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     const el = this.element;
     el.style.minWidth = "1000px";
     el.style.minHeight = "600px";
+    // A team's reinforcements: a creature dropped from a compendium or the Actors directory.
+    for ( const slot of el.querySelectorAll("[data-reinforce-drop]") ) {
+      slot.addEventListener("dragover", event => event.preventDefault());
+      slot.addEventListener("drop", event => {
+        event.preventDefault();
+        this.#dropReinforcement(slot.dataset.reinforceDrop, event);
+      });
+    }
     // A slider (the prediction time, the most rounds) shows its value as it moves (it's saved when let go).
     for ( const slider of el.querySelectorAll('.ff-slider input[type="range"]') ) {
       slider.addEventListener("input", () => {

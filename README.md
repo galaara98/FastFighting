@@ -239,6 +239,8 @@ Each group (the party, each hostile group, each neutral friend group) has a **bo
 
 The commander [lends its group a bonus](STATS_AND_FORMULAS_README.md#what-a-leader-lends), [pulls its followers](STATS_AND_FORMULAS_README.md#following-the-leader) toward its wishes (**Leader's influence**, **Boss's influence**), and talking it down can take its group with it. When it falls or can't make itself seen and heard, a lieutenant steps up. Bosses almost never run. A Wants to Lead character out of command may [scheme](STATS_AND_FORMULAS_README.md#scheming); a PC turns traitor only on **Luck check: a player character turning traitor**.
 
+**Reinforcements.** The planner's **Reinforcements** row takes one creature for each team (drag it from a compendium or the Actors directory) and how many can come. A team's leader [calls them](STATS_AND_FORMULAS_README.md#reinforcements) when the fight turns against it (an action; the party's only when FastFighting plays all of it), and they come the next round from the map's far edge. In a live battle the Battle Vantage lists each team's and lets the GM call them.
+
 **Teams act as teams.** Each round, a group's head [sizes up the fight](STATS_AND_FORMULAS_README.md#team-stances), the smarter the more carefully:
 - **Leaving:** a competent head takes its team out of a fight whose odds look too long.
 - **Jumping in:** a neutral friend group jumps in to save the side it leans to, or against a side it holds a grudge against.

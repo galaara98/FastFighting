@@ -41,7 +41,7 @@ import { healthCallout, healthLine } from "../story/health.js";
 import { loadStoryTables } from "../story/tables.js";
 import { healthLookup } from "./health-estimate.js";
 import {
-  beginLive, liveRound, liveLookAround, liveOrder, liveDrop, liveTurn, pcTurnBegin, pcTurnEnd, syncFromSheets, setApproach, setScene, captureAll, snapshotRun, restoreRun, endLive, packLog, followCommand,
+  beginLive, liveRound, gmReinforce, liveLookAround, liveOrder, liveDrop, liveTurn, pcTurnBegin, pcTurnEnd, syncFromSheets, setApproach, setScene, captureAll, snapshotRun, restoreRun, endLive, packLog, followCommand,
   NeedsDecision, rollsKind, applyFact, gmMoment, leavingReach, openingFor, reactNow, movedBeside, nextSpotlight, liveAftermath,
   setCondition, setRelation, clearRelation, setAffliction, setGoal, setAttitude, setSide, setRole, playerRuns, takeRolls
 } from "../engine/live.js";
@@ -81,7 +81,7 @@ function systemRollKinds(adapter) {
   if ( (out.includes("strike") || out.includes("damage") || out.includes("card")) && offers(adapter, "applyDamageCard") ) out.push("apply");
   return out;
 }
-import { isStanding, canMove } from "../engine/battle-state.js";
+import { isStanding, canMove, groupKeyOf } from "../engine/battle-state.js";
 import { means, dealDC, pitchOf, dealInsight, dealAnswer, mayToll, talkRange } from "../engine/behavior/deals.js";
 
 const loc = key => game.i18n.localize(key);
@@ -853,9 +853,13 @@ async function beginPlayerTurn(u, combatant) {
   return keep();
 }
 
-/** A new round: those not yet in the fight look around, and one that notices joins the tracker. */
+/**
+ * A new round: a team's reinforcements called last round come in (onto the map and the tracker, kept with the turn
+ * before, so a Rewind takes them back), those not yet in the fight look around, and one that notices joins the tracker.
+ */
 async function newRound(round) {
   liveRound(battle.run, round);
+  await placeReinforcements(battle.data.turns.at(-1)?.records ?? []);
   // (Whether they notice: FastFighting's own reckoning, nothing rolled the table would see. One that has, on the tracker.)
   for ( const u of liveLookAround(battle.run) ) {
     const doc = battle.scene.tokens.get(tokenIdOf(u));
@@ -995,8 +999,9 @@ async function playTurn(u, combatant, key) {
     turn.doors = [...doorsOpened.values()];
     // (Its areas, laid on the map as the system lays them: who they caught was tested against them.)
     await layAreas(result.events, turn.records);
-    // What it summoned, onto the scene and the tracker.
+    // What it summoned, onto the scene and the tracker; and any team's reinforcements come in.
     await placeSummons(turn.records);
+    await placeReinforcements(turn.records);
     // (Those inside another, swallowed or engulfed: where their holder went.)
     await carryInside();
     // (Who sees the engine's rolls, as the tokens are before the turn's writing hides one that fled.)
@@ -3018,6 +3023,67 @@ async function placeSummons(records) {
     records.push({ createdCombatants: created.map(c => c.uuid) });
     if ( run.live.players.has(summoner.id) ) for ( const s of list ) addPlayer(s.id);
   }
+}
+
+/**
+ * A team's reinforcements come since (the engine's, with no token yet: behavior/reinforce.js): placed where the engine
+ * says they come in, by the helper's placeSummons (as a summoning's, one of the team standing in for the summoner),
+ * and on the tracker after everyone. Undo records added to `records`.
+ */
+async function placeReinforcements(records) {
+  const run = battle.run;
+  const fresh = run.units.filter(s => s.reinforcementOf && !s.tokenId && s.status === STATUS.STANDING);
+  if ( !fresh.length ) return;
+  const adapter = getAdapter();
+  const teams = new Map();
+  for ( const s of fresh ) (teams.get(s.reinforcementOf) ?? teams.set(s.reinforcementOf, []).get(s.reinforcementOf)).push(s);
+  for ( const [key, list] of teams ) {
+    // (One of the team on the map to stand in for the summoner: its side shows on theirs. None left: the map's middle.)
+    const mate = run.units.map(o => (groupKeyOf(o) === key && !o.reinforcementOf ? docOf(o.id) : null)).find(Boolean) ?? null;
+    const side = list[0].side;
+    const disposition = CONST.TOKEN_DISPOSITIONS[side === SIDES.FRIENDLY ? "FRIENDLY" : side === NEUTRAL_PARTY ? "NEUTRAL" : "HOSTILE"];
+    const standIn = mate ?? { x: battle.scene.width / 2, y: battle.scene.height / 2, width: 1, height: 1, elevation: 0, disposition, parent: battle.scene };
+    let placed;
+    try {
+      placed = await adapter.placeSummons(battle.scene, standIn, { id: `reinforce~${key}`, kind: "summon" }, list.map(s => s.spec), spotsFor(standIn, list, battle.scene));
+    } catch ( err ) {
+      console.error(`${MODULE_ID} | placing ${key}'s reinforcements`, err);
+      continue;
+    }
+    records.push(...noteSettings(placed?.records ?? []));
+    const tokens = placed?.tokens ?? [];
+    tokens.forEach((t, i) => { if ( list[i] ) list[i].tokenId = t.id; });
+    if ( !tokens.length ) continue;
+    // (After everyone on the tracker; a spotlight system's, when the GM gives it the spotlight.)
+    const last = Math.min(...battle.combat.combatants.map(c => c.initiative).filter(Number.isFinite));
+    const created = await battle.combat.createEmbeddedDocuments("Combatant", tokens.map((t, i) => ({
+      tokenId: t.id, sceneId: battle.scene.id, actorId: t.actorId, initiative: battle.data.spotlight || !Number.isFinite(last) ? null : last - 1 - 0.01 * i
+    })));
+    records.push({ createdCombatants: created.map(c => c.uuid) });
+  }
+  await keep();
+}
+
+/**
+ * The GM calls a team's reinforcements (the Battle Vantage): `n` of them come next round. How many are coming.
+ */
+export function liveReinforce(team, n) {
+  return queue(async () => {
+    if ( !playsHere() || !battle.run.reinforce?.[team] ) return 0;
+    const count = gmReinforce(battle.run, team, n);
+    if ( count ) await keep();
+    changed();
+    return count;
+  });
+}
+
+/** Each team's reinforcements in this battle: [{team, name, left, coming}] (the Battle Vantage's list). */
+export function reinforcementsLeft() {
+  const run = battle?.run;
+  if ( !run?.reinforce ) return [];
+  return Object.entries(run.reinforce).map(([team, r]) => ({
+    team, name: run.prep.reinforcements?.get(team)?.p.spec.name ?? "", left: r.left, coming: r.coming.reduce((s, c) => s + c.n, 0)
+  }));
 }
 
 /**

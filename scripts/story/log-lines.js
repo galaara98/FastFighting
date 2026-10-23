@@ -258,6 +258,8 @@ function baseLine(e) {
     }
     case "eat": return t("Eat", { actor: e.actor, target: e.target ?? "", full: e.sated ? t("EatFull") : "" });
     case "scavenge": return t("Scavenge", { actor: e.actor, target: e.target ?? "", what: e.money ? t("ScavengeMoney") : e.item ?? "" });
+    case "reinforce": return e.actor ? t("ReinforceCall", { actor: e.actor, n: e.count, left: e.left }) : t("ReinforceGm", { team: e.teamName ?? e.team, n: e.count, left: e.left });
+    case "arrive": return t("Arrive", { n: e.count, team: e.teamName ?? e.team, who: listJoin(e.names ?? []) });
     case "stance": return t({ leave: "StanceLeave", stay: "StanceStay", save: "StanceSave", harm: "StanceHarm", wait: "StanceWait", prey: "StancePrey" }[e.kind] ?? "StanceWait",
       { actor: e.actor, target: e.targetName ?? "", odds: Number.isFinite(e.odds) ? Math.round(e.odds * 100) : "?" });
     case "quit": return e.following ? t("QuitFollow", { actor: e.actor, by: e.following }) : e.group ? t("QuitGroup", { actor: e.actor, group: e.group }) : t("Quit", a);

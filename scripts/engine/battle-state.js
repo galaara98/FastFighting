@@ -259,7 +259,19 @@ export function prepareBattle(spec, rules) {
     }
   }
 
-  return { spec, rules, options, sides, command, combatants, byId, approachOf, summons, meanCache: new Map() };
+  // Each team's reinforcements (the planner's: one creature, and how many can come), ready to join it when called
+  // (behavior/reinforce.js): on its side, a friend group's in that group.
+  const reinforcements = new Map();
+  for ( const [key, r] of Object.entries(spec.reinforcements ?? {}) ) {
+    if ( !r?.spec || !(Number(r.count) > 0) ) continue;
+    const [sideKey, group] = key.startsWith(`${NEUTRAL_PARTY}#`) ? [NEUTRAL_PARTY, Number(key.split("#")[1]) || null] : [key, null];
+    if ( !sides[sideKey] ) continue;
+    const s = { ...r.spec, id: `reinforce~${key}`, side: sideKey, kind: r.spec.kind === "pc" ? "npc" : (r.spec.kind ?? "npc"), position: null, inEncounter: true,
+      ...(group ? { originSide: "neutral", group } : {}), hp: { ...(r.spec.hp ?? { value: 1, max: 1 }) }, actions: r.spec.actions ?? [] };
+    reinforcements.set(key, { p: prepareCombatant(s, sides[sideKey]), count: Math.round(Number(r.count)) });
+  }
+
+  return { spec, rules, options, sides, command, combatants, byId, approachOf, summons, reinforcements, meanCache: new Map() };
 }
 
 /** What heading a group lends a creature's words (prepareBattle; live.js when the GM changes who heads it). */
