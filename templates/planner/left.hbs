@@ -130,7 +130,7 @@
       <summary><i class="fa-solid fa-chevron-right ff-chevron" aria-hidden="true"></i><span class="ff-section-title">{{localize "FASTFIGHTING.Planner.Section.prediction"}}</span><span class="ff-section-sum">{{sums.prediction}}</span></summary>
       <div class="ff-section-body ff-grid2">
         <label class="ff-field ff-slider"><span class="ff-field-label">{{localize "FASTFIGHTING.Planner.MaxRounds"}} <button type="button" class="ff-help" data-tooltip="{{localize "FASTFIGHTING.Settings.maxRounds.Hint"}}" aria-label="{{localize "FASTFIGHTING.Settings.maxRounds.Hint"}}"><i class="fa-solid fa-question"></i></button></span>
-          <span class="ff-slider-control"><input type="range" name="options.maxRounds" value="{{options.maxRounds}}" min="4" max="12" step="1" data-dtype="Number"> <output class="ff-slider-value">{{options.maxRounds}}</output></span>
+          <span class="ff-slider-control"><input type="range" name="options.maxRounds" value="{{options.maxRounds}}" min="{{roundsRange.min}}" max="{{roundsRange.max}}" step="1" data-dtype="Number"> <output class="ff-slider-value">{{options.maxRounds}}</output></span>
         </label>
         <label class="ff-field"><span class="ff-field-label">{{localize "FASTFIGHTING.Planner.Seed"}}</span>
           <input type="text" name="options.seed" value="{{options.seed}}" placeholder="{{localize "FASTFIGHTING.Planner.Random"}}" size="9">

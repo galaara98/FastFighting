@@ -47,6 +47,7 @@ FastFighting is split into a pure simulation engine, system **helpers**, and the
 `scripts/settings.js` registers them. The settings window shows FastFighting's in groups, in `SETTING_GROUPS`' order (`live`, `story`, `planner`, `behavior`, `luck`, `after`, `troubleshooting`, `generic`), each a fieldset under its heading, `FASTFIGHTING.Settings.Group.<id>` (`groupSettings`, from main.js's `renderSettingsConfig`). Foundry has no groups of its own and lists a module's menus before its settings; the grouping puts each where it belongs.
 - **A new setting** is a row of `SETTINGS` naming its `group`, placed in that group's block where it should show: a group shows its settings in the table's order, then its menus. Its words are `FASTFIGHTING.Settings.<key>.Name` and `.Hint`, and README's settings table gives it a row under its group. A new menu is a row of `MENUS` the same way, its window passed to `registerSettings`. A hidden setting (`config: false`) is registered on its own and needs no group.
 - **A new group** goes in `SETTING_GROUPS` where it should show, with its heading in `languages/en.json` and its own table in README.
+- **The system's own:** `systemDefaults` (main.js, ready) gives Max rounds the helper's `stalemateRounds()` range and default; `roundsRange()` reads them back for plans, the fight and the planner's slider. A value the GM set stands, held to the range.
 - **Keys never change:** a stored value is found by its key alone, so a setting can move to another group, or along one, and keep its value.
 - `tests/settings-groups.test.js` checks that every setting and menu the window shows is in exactly one group, the groups' order, and their headings.
 
@@ -125,6 +126,7 @@ Hooks.once("fastFighting.init", api => {
     skillsOf(actor) { ... }                          // deals (API 26): its skills [{key, label, mod, talk}], talking ones (persuade, deceive, intimidate) marked
     giveables(actor) { ... }                         // deals (API 26): what it could hand over: {money, denominations, items: [{id, name, img, quantity, value}]}; only what it carries put away, never what it wields or wears (takeGoods the same, but for a fallen foe robbed: `how: "loot"`)
     mainCoin() { ... }                               // the coin prices are said in, {key, label, value} (API 26: the planner's team cash; else the second largest coin)
+    stalemateRounds() { ... }                        // when a fight counts as a stalemate in your system (API 28): Max rounds' {min, max, default} (default: max; else 4, 12, 12)
     appetite(actor, spec) { ... }                    // food (API 27): {diet: "meat"|"any"|"plants"|null, hunger: 0..1, cannibal}, by your system's own idea of nature; leave it out where your system keeps no food (no one hungers)
     meatFor(actor, spec) { ... }                     // food (API 27): what its body leaves on death, {item: item data with its quantity set, quantity: portions}, or null (no flesh)
     isFood(item) { ... }                             // food (API 27): {portions, meat} for a thing that can be eaten, else null

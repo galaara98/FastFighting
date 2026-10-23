@@ -9,7 +9,7 @@ import {
   traitBand, clamp, FUDGE_STEP, SIDE_SETTLE_MS, TEAM_SHORT
 } from "../constants.js";
 import { getAdapter } from "../api.js";
-import { setting } from "../settings.js";
+import { setting, roundsRange } from "../settings.js";
 import { listJoin, listItems, localize, term, hasStat, brief, roundsText } from "../i18n.js";
 import { placeLoot, openPile } from "../foundry/loot-drop.js";
 import { setAdhd } from "./token-tactics.js";
@@ -534,6 +534,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       sums: this.#sectionSums(),
       systemSection: this.#systemSection(adapter, resolved, chains),
       secondsRange: PREDICTION_SECONDS,
+      roundsRange: roundsRange(),
       secondsValue: game.i18n.format("FASTFIGHTING.Planner.SecondsValue", { n: this.setup.options.seconds }),
       downedChoices: Object.fromEntries(Object.values(DOWNED_MODELS).map(k => [k, `FASTFIGHTING.Downed.${k}`])),
       aftermathChoices: Object.fromEntries(Object.values(AFTERMATH).map(k => [k, `FASTFIGHTING.Aftermath.${k}`])),

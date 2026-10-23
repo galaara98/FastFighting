@@ -145,6 +145,32 @@ export function groupSettings(section) {
   }
 }
 
+/** The most a helper may make Max rounds. */
+const ROUNDS_CEILING = 60;
+
+/**
+ * The settings that are the game system's, once its helper is known (main.js, ready): Max rounds' range and default,
+ * when a fight in that system counts as a stalemate (the helper's stalemateRounds(), API 28: {min, max, default}, the
+ * default its max where it doesn't say; else MAX_ROUNDS). A world's own value, where a GM set one, stands, held to the
+ * range (roundsRange).
+ */
+export function systemDefaults(adapter) {
+  const r = adapter?.stalemateRounds?.();
+  const min = Math.round(Number(r?.min));
+  const max = Math.round(Number(r?.max));
+  const config = game.settings.settings.get(`${MODULE_ID}.maxRounds`);
+  if ( !config || !(min >= 1 && max >= min && max <= ROUNDS_CEILING) ) return;
+  const wanted = Math.round(Number(r.default ?? max));
+  config.range = { min, max, step: 1 };
+  config.default = Number.isFinite(wanted) ? Math.min(max, Math.max(min, wanted)) : max;
+}
+
+/** Max rounds' range and default: the system's, once its helper is known (systemDefaults), else MAX_ROUNDS. */
+export function roundsRange() {
+  const config = game.settings?.settings?.get?.(`${MODULE_ID}.maxRounds`);
+  return { min: config?.range?.min ?? MAX_ROUNDS.min, max: config?.range?.max ?? MAX_ROUNDS.max, default: config?.default ?? MAX_ROUNDS.default };
+}
+
 /** Who else in this browser follows a setting as it changes, by key (followSetting). */
 const following = {};
 

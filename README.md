@@ -358,7 +358,7 @@ World settings, under **Configure Settings → FastFighting**, in groups. The pl
 | Setting | Default | What it controls |
 | --- | --- | --- |
 | Prediction time (seconds) | 10 | How long the planner simulates. |
-| Max rounds | 12 | Rounds before a fight is a stalemate; Fast Fight stops there too. |
+| Max rounds | The system's (PF2e: 16, from 6 to 16); else 12 | Rounds before a fight is a stalemate; Fast Fight stops there too. |
 | Include hidden tokens | on | Hidden tokens outside the encounter take part. |
 | Include other scene levels | off | Tokens outside the encounter on the scene's other levels take part. |
 | Bystanders can join | on | Tokens outside the encounter may join. |

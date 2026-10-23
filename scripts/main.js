@@ -3,7 +3,7 @@
  */
 import { MODULE_ID } from "./constants.js";
 import { registerLootAdvice } from "./foundry/loot-drop.js";
-import { registerSettings, groupSettings } from "./settings.js";
+import { registerSettings, groupSettings, systemDefaults } from "./settings.js";
 import { buildApi, registerAdapter, getAdapter } from "./api.js";
 import { BattlePlanner } from "./apps/battle-planner.js";
 import { DefaultsConfig } from "./apps/defaults-config.js";
@@ -200,6 +200,8 @@ const refreshMyTactics = foundry.utils.debounce(() => { if ( !game.user.isGM ) u
 for ( const hook of ["createToken", "deleteToken", "canvasReady", "createActor", "deleteActor"] ) Hooks.on(hook, () => refreshMyTactics());
 
 Hooks.once("ready", () => {
+  // (Settings whose default is the system's: Max rounds, a very long fight there.)
+  systemDefaults(getAdapter());
   // (The keywords read in characters' biographies: English, and the reader's language's on top.)
   loadKeywords();
   // Tell the GM once if this system has no helper module yet.

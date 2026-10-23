@@ -5,8 +5,8 @@
  *    own, kept until the encounter ends (it goes with the Combat). With no encounter on the scene, on the scene.
  *  - Actor flag `fast-fighting.tactics`: a character's tactics answers, carried between battles (foundry/tactics.js).
  */
-import { MODULE_ID, SIDES, TRAITS, MAX_ROUNDS, clamp } from "../constants.js";
-import { setting } from "../settings.js";
+import { MODULE_ID, SIDES, TRAITS, clamp } from "../constants.js";
+import { setting, roundsRange } from "../settings.js";
 import { PREDICTION_SECONDS } from "../engine/run-budget.js";
 import { rememberRole } from "./command-pick.js";
 
@@ -104,8 +104,9 @@ function keptPlan(doc) {
 export function getSetup(holder = planHolder()) {
   const stored = keptPlan(holder) ?? keptPlan(holder?.scene) ?? {};
   const setup = foundry.utils.mergeObject(defaultSetup(), stored, { inplace: false });
-  // (A plan saved before the most rounds went to 4 to 12 is held to them.)
-  setup.options.maxRounds = clamp(Math.round(Number(setup.options.maxRounds) || MAX_ROUNDS.default), MAX_ROUNDS.min, MAX_ROUNDS.max);
+  // (A plan's most rounds held to the system's range: roundsRange.)
+  const rounds = roundsRange();
+  setup.options.maxRounds = clamp(Math.round(Number(setup.options.maxRounds) || rounds.default), rounds.min, rounds.max);
   // (And one saved before the prediction's time went to 6 to 60 seconds, to them.)
   setup.options.seconds = clamp(Math.round(Number(setup.options.seconds) || setting("predictionTime")), PREDICTION_SECONDS.min, PREDICTION_SECONDS.max);
   return setup;

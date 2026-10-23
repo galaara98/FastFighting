@@ -1830,8 +1830,9 @@ Decides when a fight stops.
   standing and in the fight, noticed and joining next round, or down but regenerating and not tied up. Not in it:
   anything untargetable (Spiritual Weapon), anyone taking no side, anyone leaving the map. A hunter with prey left, or
   a neutral who turned on a side still standing, keeps it going.
-- **Max rounds** (`maxRounds`), default 12, range 4–12 (also a planner slider). Still going after that: a
-  stalemate, with no winner. Plans saved with other values are clamped to 4–12.
+- **Max rounds** (`maxRounds`): its range and default are the system's (its helper's `stalemateRounds()`: PF2e 6–16,
+  default 16; else 4–12, default 12), also a planner slider. Still going after that: a stalemate, with no winner.
+  Plans saved with other values are held to the range.
 - Surprise (Friendlies are surprised, or Friendlies surprise others; a system's surprise round): that side takes turns in a round 0 before round 1.
 - A fight's length is the round it ended in (a stalemate: max rounds). The planner shows the median and the 10th–90th
   percentile (entry round(p × (n − 1)) of the sorted lengths) and a bar per round.

@@ -1,7 +1,7 @@
 /**
  * Turns the tokens on the viewed scene plus the GM's setup into a BattleSpec, runs it, and digs into the results.
  */
-import { MODULE_ID, SIDES, ALLEGIANCE, DISPOSITION_SIDES, NEUTRAL_PARTY, HOSTILE_GROUPS, GROUPS, TRAITS, MAX_ROUNDS, clamp } from "../constants.js";
+import { MODULE_ID, SIDES, ALLEGIANCE, DISPOSITION_SIDES, NEUTRAL_PARTY, HOSTILE_GROUPS, GROUPS, TRAITS, clamp } from "../constants.js";
 import { replay } from "../engine/simulator.js";
 import { budgetFudges } from "../engine/trait-budget.js";
 import { budgetMs, swingShareMs, MAX_RUNS, SWING_RUNS } from "../engine/run-budget.js";
@@ -23,7 +23,7 @@ import { tacticsFor, isPlayerControlled, statedDesires, getStoredTactics, reacti
 import { ensureAutoConfig } from "./auto-config.js";
 import { partyWishes, voters, PARTY_TACTICS } from "./party.js";
 import { rankForCommand, autoLieutenants, partyRoles } from "./command-pick.js";
-import { setting } from "../settings.js";
+import { setting, roundsRange } from "../settings.js";
 
 const SIDE_LABELS = {
   [SIDES.FRIENDLY]: "FASTFIGHTING.Side.friendly",
@@ -719,8 +719,8 @@ export function buildBattleSpec(roster, setup, { approach = null } = {}) {
     // (The piles on the map, what they hold: a thief's, a scavenger's, a hungry creature's to go for. behavior/forage.js.)
     piles: options.positioning ? pilesOn() : [],
     options: {
-      // (A plan saved before the most rounds went to 4 to 12 is held to them.)
-      maxRounds: clamp(Math.round(Number(options.maxRounds) || MAX_ROUNDS.default), MAX_ROUNDS.min, MAX_ROUNDS.max),
+      // (Held to the system's range: roundsRange.)
+      maxRounds: clamp(Math.round(Number(options.maxRounds) || roundsRange().default), roundsRange().min, roundsRange().max),
       downedModel: options.downedModel,
       aftermath: options.aftermath,
       positioning: options.positioning && !!approach,
