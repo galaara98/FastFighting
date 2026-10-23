@@ -355,6 +355,26 @@
    "commit": null,
    "hash": "e2b4e4a1a7c8"
   },
+  "core:code:scripts/foundry/food.js:appetiteOf#1": {
+   "repo": "core",
+   "file": "scripts/foundry/food.js",
+   "key": "scripts/foundry/food.js:appetiteOf#1",
+   "area": "core/code",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "1d4aca6a7aff"
+  },
+  "core:code:scripts/foundry/food.js:meatGoods#1": {
+   "repo": "core",
+   "file": "scripts/foundry/food.js",
+   "key": "scripts/foundry/food.js:meatGoods#1",
+   "area": "core/code",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "d80d08323371"
+  },
   "core:code:scripts/foundry/keywords.js:loadKeywords#1": {
    "repo": "core",
    "file": "scripts/foundry/keywords.js",
@@ -19129,6 +19149,26 @@
    "commit": null,
    "hash": "570d833be8b2"
   },
+  "core:FASTFIGHTING.Settings.pcMeat.Hint": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Settings.pcMeat.Hint",
+   "area": "core/Settings",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "ea80e5d8cabf"
+  },
+  "core:FASTFIGHTING.Settings.pcMeat.Name": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Settings.pcMeat.Name",
+   "area": "core/Settings",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "874ef6372857"
+  },
   "core:FASTFIGHTING.Settings.plannerWorkers.Hint": {
    "repo": "core",
    "file": "languages/en.json",
@@ -27751,6 +27791,66 @@
    "date": "2026-10-11",
    "commit": "1793693",
    "hash": "cb6aecae5a53"
+  },
+  "core:FASTFIGHTING.TokenTactics.Hunger": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.TokenTactics.Hunger",
+   "area": "core/TokenTactics",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "37cf5259e3c6"
+  },
+  "core:FASTFIGHTING.TokenTactics.HungerHint": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.TokenTactics.HungerHint",
+   "area": "core/TokenTactics",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "55d5539a12bf"
+  },
+  "core:FASTFIGHTING.TokenTactics.HungerMark.auto": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.TokenTactics.HungerMark.auto",
+   "area": "core/TokenTactics",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "8b9c38509810"
+  },
+  "core:FASTFIGHTING.TokenTactics.HungerMark.famished": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.TokenTactics.HungerMark.famished",
+   "area": "core/TokenTactics",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "a95d3942e9aa"
+  },
+  "core:FASTFIGHTING.TokenTactics.HungerMark.hungry": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.TokenTactics.HungerMark.hungry",
+   "area": "core/TokenTactics",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "4f82f7041ae6"
+  },
+  "core:FASTFIGHTING.TokenTactics.HungerMark.sated": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.TokenTactics.HungerMark.sated",
+   "area": "core/TokenTactics",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "80cf45833eb1"
   },
   "core:FASTFIGHTING.TokenTactics.PrototypeHint": {
    "repo": "core",
@@ -52064,6 +52164,26 @@
    "date": null,
    "commit": null,
    "hash": "021e9641bd23"
+  },
+  "pf2e:FFPF2E.Meat": {
+   "repo": "pf2e",
+   "file": "languages/en.json",
+   "key": "FFPF2E.Meat",
+   "area": "pf2e/General",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "b356e2a04b2d"
+  },
+  "pf2e:FFPF2E.MeatHint": {
+   "repo": "pf2e",
+   "file": "languages/en.json",
+   "key": "FFPF2E.MeatHint",
+   "area": "pf2e/General",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "3e4e8c2a46bf"
   },
   "pf2e:FFPF2E.NeedsCore": {
    "repo": "pf2e",

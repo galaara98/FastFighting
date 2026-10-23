@@ -25,6 +25,7 @@ import { MODULE_ID, STATUS, SIDES, DISPOSITION_SIDES, NEUTRAL_PARTY, HOSTILE_GRO
 import { escapeHtml as escape, inertHtml, listJoin } from "../i18n.js";
 import { getAdapter, characterSpec } from "../api.js";
 import { dropGoods, pickUpGoods, lootOnFall } from "./loot-drop.js";
+import { meatGoods } from "./food.js";
 import { setting, followSetting } from "../settings.js";
 import { positionOf, squareFeet } from "./terrain.js";
 import { approachFor, sceneNow } from "./battle.js";
@@ -3064,6 +3065,13 @@ async function writeEach(before, after, records, { messages = null, leave = null
     applying++;
     try {
       const spec = { ...battle.run.byId.get(id).spec, resources: before[id].resources };
+      // (Dead, a creature's body leaves meat: on it before the system's own loot takes its things, so it goes where they
+      // go. Not a player's character's, nor a hazard's or a summoned one's: foundry/food.js.)
+      const unit = battle.run.byId.get(id);
+      if ( ch.died && unit.spec.kind !== "pc" && !unit.spec.hazard && !unit.summoner && typeof adapter.putGoods === "function" ) {
+        const meat = meatGoods(doc.actor, unit.spec, adapter);
+        if ( meat ) records.push(...noteSettings((await adapter.putGoods(doc, meat)) ?? []));
+      }
       const record = await adapter.commitChanges(doc, spec, ch, final, {
         ...writeOptions(), before: before[id], effectSource, tokenOf, audience
       });

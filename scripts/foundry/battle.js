@@ -11,6 +11,7 @@ import { openPool, poolThreads } from "../engine/batch-pool.js";
 export const predictionSeconds = setup => setup?.options?.seconds ?? setting("predictionTime");
 import { getAdapter, getModifiers } from "../api.js";
 import { canDropGoods, isPile, leavesRemains } from "./loot-drop.js";
+import { appetiteOf } from "./food.js";
 import { cachedCharacterSpec } from "./sheet-watch.js";
 import { computeApproach, computeAwareness, computeGround, computeWalls, environmentAt, forgetGround, positionOf, squareFeet } from "./terrain.js";
 import { proposeGroups } from "../engine/groups.js";
@@ -117,6 +118,9 @@ export async function gatherRoster(setup, adapter = getAdapter(), { fresh = fals
       if ( !spec ) continue;
       spec.environment = environmentAt(token);
       spec.hidden = token.document.hidden;
+      // (What it eats, how hungry it tends to be, the GM's word on it, and the meat its body would leave: the helper's
+      // say, API 27; nothing where its system keeps no food. foundry/food.js.)
+      Object.assign(spec, appetiteOf(token.actor, spec, adapter));
       // Known by what it is ("Goblin Warrior": the story says "the Goblin Warrior"), not by a name of its own: not a
       // player's character, its token not linked to one actor, and not unique (a helper's rarity). A helper may say.
       spec.generic ??= spec.kind !== "pc" && !token.document.actorLink && (spec.rarity ?? 0) < 3;

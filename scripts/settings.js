@@ -87,6 +87,8 @@ const SETTINGS = {
   aftermath: { group: "after", type: String, default: AFTERMATH.TELL, choices: choices(Object.values(AFTERMATH), "Aftermath") },
   lootMode: { group: "after", type: String, default: "corpse", choices: choices(["corpse", "pile", "none"], "Loot") },
   corpseMode: { group: "after", type: String, default: "keep", choices: choices(["keep", "remove"], "Corpse") },
+  // Whether a dead player character's loot token gets its meat too (foundry/food.js, loot-drop.js remainsOf).
+  pcMeat: { group: "after", type: Boolean, default: false },
   fledMode: { group: "after", type: String, default: "hide", choices: choices(["hide", "leave"], "Fled") },
 
   // Troubleshooting: live battles' transcripts kept for 30 days, and the planner's last run with them (off: a transcript

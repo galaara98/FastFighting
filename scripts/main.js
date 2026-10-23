@@ -350,6 +350,8 @@ Hooks.on("renderSettingsConfig", (app, element) => {
   if ( !getAdapter()?.supportsLoot ) {
     for ( const key of ["lootMode", "corpseMode"] ) section.querySelector(`[name="${MODULE_ID}.${key}"]`)?.closest(".form-group")?.remove();
   }
+  // (Meat from the dead: only where the helper knows its system's meat, API 27.)
+  if ( typeof getAdapter()?.meatFor !== "function" ) section.querySelector(`[name="${MODULE_ID}.pcMeat"]`)?.closest(".form-group")?.remove();
   const status = helperStatus();
   if ( status.specific ) return;
   section.insertAdjacentHTML("afterbegin", helperNoticeHtml(status));

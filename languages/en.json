@@ -112,6 +112,10 @@
         "Name": "Do it For Real Now: loot",
         "Hint": "What happens to a slain creature's gear."
       },
+      "pcMeat": {
+        "Name": "Dead player characters leave meat",
+        "Hint": "A dead player character's loot token also holds the meat its body would leave, as a creature's corpse does. Its sheet is never touched."
+      },
       "corpseMode": {
         "Name": "Do it For Real Now: corpses",
         "Hint": "Keep slain tokens, marked dead, or remove them (only when a loot pile is dropped)."
@@ -919,6 +923,14 @@
       "Hint": "FastFighting's playstyles and desires for this token.",
       "Hazard": "Hazard",
       "HazardHint": "Traps and dangerous features: they don't move or talk, and can't be attacked.",
+      "Hunger": "Hunger",
+      "HungerHint": "How hungry it comes to the fight. Hungry, it may break off to eat: food in a pile, or the meat of the fallen.",
+      "HungerMark": {
+        "auto": "Let FastFighting decide",
+        "famished": "Famished",
+        "hungry": "Hungry",
+        "sated": "Not hungry"
+      },
       "SecretName": "Keep its name secret",
       "SecretNameHint": "A live battle's story calls it someone, however long the players have seen it. Off: it's named once a player's character has seen it, or from the start if its nameplate shows to everyone.",
       "HazardMark": {

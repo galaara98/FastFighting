@@ -22,6 +22,14 @@
   </label>
   <p class="ff-hint">{{localize "FASTFIGHTING.TokenTactics.HazardHint"}}</p>
 </div>
+{{#if hungerMarks}}
+<div class="ff-token-hunger">
+  <label class="ff-q-label">{{localize "FASTFIGHTING.TokenTactics.Hunger"}}
+    <select data-ff-setting="hunger">{{selectOptions hungerMarks selected=hunger}}</select>
+  </label>
+  <p class="ff-hint">{{localize "FASTFIGHTING.TokenTactics.HungerHint"}}</p>
+</div>
+{{/if}}
 <div class="ff-token-secret">
   <label class="ff-check" data-tooltip="{{localize "FASTFIGHTING.TokenTactics.SecretNameHint"}}"><input type="checkbox" data-ff-setting="secretName" {{checked secretName}}> {{localize "FASTFIGHTING.TokenTactics.SecretName"}}</label>
 </div>

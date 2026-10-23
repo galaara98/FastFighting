@@ -11,6 +11,7 @@ import { localize } from "../i18n.js";
 import { questionsContext, setTactic, togglePlaystyle, syncTacticsDom, playstyleSignature, reactionsSignature } from "../foundry/tactics.js";
 import { HAZARD_MARKS, applyHazard } from "../foundry/battle.js";
 import { ensureAutoConfig, resetAndAutoConfig } from "../foundry/auto-config.js";
+import { HUNGER_MARKS, knowsFood } from "../foundry/food.js";
 
 const TAB = "fastFighting";
 const TEMPLATE = `modules/${MODULE_ID}/templates/token-tactics.hbs`;
@@ -119,6 +120,9 @@ async function fill(app, panel) {
     hazardChoices: Object.fromEntries(HAZARD_MARKS.map(k => [k, localize(`FASTFIGHTING.TokenTactics.HazardMark.${k || "system"}`)])),
     // (Its name kept from the players in a live battle's story, however long they've seen it.)
     secretName: markable && !!actor.getFlag(MODULE_ID, "secretName"),
+    // (Its hunger, the GM's word over FastFighting's roll: only where the system keeps food. foundry/food.js.)
+    hungerMarks: markable && !isHazard && knowsFood(adapter) ? Object.fromEntries(HUNGER_MARKS.map(k => [k, localize(`FASTFIGHTING.TokenTactics.HungerMark.${k || "auto"}`)])) : null,
+    hunger: markable ? actor.getFlag(MODULE_ID, "hunger") ?? "" : "",
     isHazard,
     // (No desires here: a desire names a creature someone can perceive on the battle map, which a token window can't tell.)
     tactics: isHazard ? null : questionsContext(spec, actor, `token-${app.id}`, { targets: null })
@@ -154,6 +158,14 @@ function listen(app, panel) {
       const actor = actorOf(app);
       if ( el.checked ) await actor.setFlag(MODULE_ID, "secretName", true);
       else await actor.unsetFlag(MODULE_ID, "secretName");
+      return;
+    }
+    // Its hunger: kept with its tactics.
+    if ( el?.dataset?.ffSetting === "hunger" ) {
+      event.stopPropagation();
+      const actor = actorOf(app);
+      if ( HUNGER_MARKS.includes(el.value) && el.value ) await actor.setFlag(MODULE_ID, "hunger", el.value);
+      else await actor.unsetFlag(MODULE_ID, "hunger");
       return;
     }
     // Whether it's a hazard: kept with its tactics.

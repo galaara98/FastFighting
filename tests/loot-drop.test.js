@@ -15,6 +15,7 @@ afterAll(() => Object.assign(globalThis, was));
 
 let calls;
 let ids = 0;
+let pcMeat = false;
 const flagged = (flags, scope, key) => flags[scope]?.[key];
 
 /** Item Piles, as far as these calls go: a pile is a token whose flags say so. */
@@ -53,15 +54,18 @@ beforeEach(() => {
   state.adapter = {
     goodsOf: async () => ({ items: [{ name: "Longsword" }], coins: { gp: 5 } }),
     putGoods: async (doc, goods) => (calls.push(["put", doc.uuid, goods]), [{ put: doc.uuid }]),
-    takeGoods: async () => { throw new Error("nothing comes off a sheet"); }
+    takeGoods: async () => { throw new Error("nothing comes off a sheet"); },
+    meatFor: () => ({ item: { name: "Uncooked meat", system: { quantity: 4 } }, quantity: 4 })
   };
+  pcMeat = false;
   globalThis.game = {
+    settings: { get: (m, k) => (k === "pcMeat" ? pcMeat : undefined) },
     modules: new Map([["item-piles", { active: true }]]),
     itempiles: { API: api },
     i18n: { has: () => true, localize: k => (k === "FASTFIGHTING.Loot.Belongings" ? "{name}'s belongings" : k) }
   };
   globalThis.fromUuid = async uuid => ({ uuid });
-  globalThis.foundry = { utils: { randomID: () => `id${++ids}` } };
+  globalThis.foundry = { utils: { randomID: () => `id${++ids}`, deepClone: v => structuredClone(v) } };
   globalThis.CONST = { DOCUMENT_OWNERSHIP_LEVELS: { OBSERVER: 2 }, TOKEN_DISPOSITIONS: { NEUTRAL: 0 } };
   globalThis.Actor = { create: async data => (calls.push(["actor", data]), { ...data, uuid: "Actor.core", getTokenDocument: async o => ({ toObject: () => ({ ...o }) }) }) };
 });
@@ -120,6 +124,13 @@ describe("a player's character that dies", () => {
     // (Only on dying; and not with the loot setting at "Do nothing".)
     expect((await lootOnFall(doc, pc, { fell: true }, "corpse")).remains).toBeNull();
     expect((await lootOnFall(doc, pc, { died: true }, "none")).remains).toBeNull();
+  });
+
+  test("its meat too, only where the GM's setting says so", async () => {
+    pcMeat = true;
+    await lootOnFall(token("kyra", { type: "character" }), pc, { died: true }, "corpse");
+    const [, made] = calls.find(c => c[0] === "create");
+    expect(made.items.map(i => i.name)).toEqual(["Longsword", "Uncooked meat"]);
   });
 
   test("no Item Piles, no pile of the system's: the core's own, an actor of its kind everyone can look in", async () => {

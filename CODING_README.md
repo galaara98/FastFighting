@@ -99,6 +99,9 @@ Hooks.once("fastFighting.init", api => {
     skillsOf(actor) { ... }                          // deals (API 26): its skills [{key, label, mod, talk}], talking ones (persuade, deceive, intimidate) marked
     giveables(actor) { ... }                         // deals (API 26): what it could hand over: {money, denominations, items: [{id, name, img, quantity, value}]}; only what it carries put away, never what it wields or wears (takeGoods the same, but for a fallen foe robbed: `how: "loot"`)
     mainCoin() { ... }                               // the coin prices are said in, {key, label, value} (API 26: the planner's team cash; else the second largest coin)
+    appetite(actor, spec) { ... }                    // food (API 27): {diet: "meat"|"any"|"plants"|null, hunger: 0..1, cannibal}, by your system's own idea of nature; leave it out where your system keeps no food (no one hungers)
+    meatFor(actor, spec) { ... }                     // food (API 27): what its body leaves on death, {item: item data with its quantity set, quantity: portions}, or null (no flesh)
+    isFood(item) { ... }                             // food (API 27): {portions, meat} for a thing that can be eaten, else null
 
     // Live battles (Do it For Real Now): see scripts/adapters/adapter-base.js for each one's contract.
     get supportsLive() { return true; }

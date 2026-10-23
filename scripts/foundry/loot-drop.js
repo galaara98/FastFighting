@@ -13,6 +13,7 @@
 import { MODULE_ID } from "../constants.js";
 import { localize } from "../i18n.js";
 import { getAdapter } from "../api.js";
+import { meatGoods } from "./food.js";
 
 export const ITEM_PILES = "item-piles";
 
@@ -178,9 +179,14 @@ export async function lootOnFall(doc, unit, ch, mode) {
   return none;
 }
 
-/** A player's character dead: a loot token on top of it, a copy of all it has. {records, remains}. */
+/**
+ * A player's character dead: a loot token on top of it, a copy of all it has; and its meat, where the GM's setting
+ * says so (Dead player characters leave meat). {records, remains}.
+ */
 async function remainsOf(doc) {
   const goods = await getAdapter().goodsOf(doc);
+  const meat = game.settings.get(MODULE_ID, "pcMeat") ? meatGoods(doc.actor, null) : null;
+  if ( meat ) goods.items = [...(goods?.items ?? []), ...meat.items];
   if ( !doc.parent || emptyGoods(goods) ) return { records: [], remains: null };
   const over = { elevation: doc.elevation, sort: (doc.sort ?? 0) + 1 };
   const name = localize("FASTFIGHTING.Loot.Belongings", { name: doc.name });
