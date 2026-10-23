@@ -37,7 +37,7 @@ export class DealDialog extends HandlebarsApplicationMixin(ApplicationV2) {
     tag: "form",
     classes: ["fast-fighting", "ff-deal-dialog"],
     window: { title: "FASTFIGHTING.Deal.DialogTitle", icon: "fa-solid fa-coins", resizable: true },
-    position: { width: 520, height: "auto" },
+    position: { width: 480, height: "auto" },
     form: { handler: DealDialog.#onChange, submitOnChange: true, closeOnSubmit: false },
     actions: { offer: DealDialog.#onOffer, add: DealDialog.#onAdd, remove: DealDialog.#onRemove }
   };
@@ -56,16 +56,19 @@ export class DealDialog extends HandlebarsApplicationMixin(ApplicationV2) {
     this.kinds = KINDS.filter(k => !k.toll || toll);
     this.adapter = getAdapter();
     const targeted = [...(game.user.targets ?? [])].map(t => t.document).find(t => t && t !== token);
-    this.state = { target: targeted?.id ?? null, kind: "bribeLeave", skill: null, money: {}, offer: new Map(), busy: false };
+    this.pick = { target: targeted?.id ?? null, kind: "bribeLeave", skill: null, money: {}, offer: new Map(), busy: false };
   }
 
-  /** Those it could make a deal with: on the map, seen, not itself, in talking range (by the grid's own measure). */
+  /** Those it could make a deal with: on the map, seen, not of its side, in talking range (by the grid's own measure). */
   get targets() {
     const from = this.token.object?.center;
     const range = Number(this.adapter?.rules?.talkRange) > 0 ? Number(this.adapter.rules.talkRange) : TALK_RANGE;
     const shown = [CONST.TOKEN_DISPLAY_MODES.ALWAYS, CONST.TOKEN_DISPLAY_MODES.HOVER];
     let unknown = 0;
-    return (this.token.parent?.tokens ?? []).filter(t => t !== this.token && t.actor && !t.hidden && t.object?.isVisible).map(t => {
+    // (Not its own side's: a neutral, or a foe.)
+    const own = this.token.disposition;
+    const NEUTRAL = CONST.TOKEN_DISPOSITIONS.NEUTRAL;
+    return (this.token.parent?.tokens ?? []).filter(t => t !== this.token && t.actor && !t.hidden && t.object?.isVisible && (t.disposition !== own || own === NEUTRAL)).map(t => {
       const to = t.object?.center;
       const feet = from && to ? canvas.grid.measurePath([from, to]).distance : Infinity;
       return { id: t.id, feet, name: t.isOwner || shown.includes(t.displayName) ? t.name : localize("FASTFIGHTING.Desire.Unknown", { n: ++unknown }) };
@@ -81,30 +84,30 @@ export class DealDialog extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   async _prepareContext() {
-    const kind = this.kinds.find(k => k.value === this.state.kind) ?? this.kinds[0];
+    const kind = this.kinds.find(k => k.value === this.pick.kind) ?? this.kinds[0];
     const goods = this.adapter?.giveables?.(this.token.actor) ?? { money: 0, denominations: [], items: [] };
     const skills = this.skills;
     // (The skill it'd make it with, unless they pick another: persuading for a bribe, threatening for a demand.)
     const fit = skills.find(s => s.talk === (kind.kind === "bribe" ? "persuade" : "intimidate"));
-    this.state.skill ??= fit?.key ?? skills[0]?.key ?? null;
+    this.pick.skill ??= fit?.key ?? skills[0]?.key ?? null;
     const targets = this.targets;
-    if ( !targets.some(t => t.id === this.state.target) ) this.state.target = targets[0]?.id ?? null;
-    const offered = [...this.state.offer.entries()].map(([id, count]) => {
+    if ( !targets.some(t => t.id === this.pick.target) ) this.pick.target = targets[0]?.id ?? null;
+    const offered = [...this.pick.offer.entries()].map(([id, count]) => {
       const item = goods.items.find(i => i.id === id);
       return item ? { ...item, count: Math.min(count, item.quantity) } : null;
     }).filter(Boolean);
     return {
       name: this.token.name,
-      targets: targets.map(t => ({ ...t, selected: t.id === this.state.target })),
+      targets: targets.map(t => ({ ...t, selected: t.id === this.pick.target })),
       kinds: this.kinds.map(k => ({ value: k.value, label: loc(`FASTFIGHTING.Deal.Kind.${k.value}`), selected: k.value === kind.value })),
       bribe: kind.kind === "bribe",
       toll: kind.kind === "toll",
-      skills: skills.map(s => ({ ...s, mod: s.mod >= 0 ? `+${s.mod}` : `${s.mod}`, selected: s.key === this.state.skill, talking: !!s.talk })),
-      denominations: (goods.denominations ?? []).map(d => ({ ...d, value: Number(this.state.money[d.key]) || 0 })),
-      items: goods.items.filter(i => !this.state.offer.has(i.id)),
+      skills: skills.map(s => ({ ...s, mod: s.mod >= 0 ? `+${s.mod}` : `${s.mod}`, selected: s.key === this.pick.skill, talking: !!s.talk })),
+      denominations: (goods.denominations ?? []).map(d => ({ ...d, value: Number(this.pick.money[d.key]) || 0 })),
+      items: goods.items.filter(i => !this.pick.offer.has(i.id)),
       offered,
       purse: goods.money,
-      canOffer: !!this.state.target && !!this.state.skill && !this.state.busy
+      canOffer: !!this.pick.target && !!this.pick.skill && !this.pick.busy
     };
   }
 
@@ -126,7 +129,7 @@ export class DealDialog extends HandlebarsApplicationMixin(ApplicationV2) {
   #put(id, count) {
     const item = (this.adapter?.giveables?.(this.token.actor)?.items ?? []).find(i => i.id === id);
     if ( !item ) return;
-    this.state.offer.set(id, Math.max(1, Math.min(item.quantity, Math.round(Number(count) || 1))));
+    this.pick.offer.set(id, Math.max(1, Math.min(item.quantity, Math.round(Number(count) || 1))));
     this.render();
   }
 
@@ -135,43 +138,43 @@ export class DealDialog extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   static #onRemove(event, target) {
-    this.state.offer.delete(target.dataset.id);
+    this.pick.offer.delete(target.dataset.id);
     this.render();
   }
 
   static async #onChange(event, form, formData) {
     const data = foundry.utils.expandObject(formData.object);
-    if ( data.target ) this.state.target = data.target;
-    if ( data.kind && data.kind !== this.state.kind ) {
-      this.state.kind = data.kind;
-      this.state.skill = null;
-    } else if ( data.skill ) this.state.skill = data.skill;
-    for ( const [k, v] of Object.entries(data.money ?? {}) ) this.state.money[k] = Math.max(0, Math.round(Number(v) || 0));
-    for ( const [id, v] of Object.entries(data.count ?? {}) ) if ( this.state.offer.has(id) ) this.#put(id, v);
+    if ( data.target ) this.pick.target = data.target;
+    if ( data.kind && data.kind !== this.pick.kind ) {
+      this.pick.kind = data.kind;
+      this.pick.skill = null;
+    } else if ( data.skill ) this.pick.skill = data.skill;
+    for ( const [k, v] of Object.entries(data.money ?? {}) ) this.pick.money[k] = Math.max(0, Math.round(Number(v) || 0));
+    for ( const [id, v] of Object.entries(data.count ?? {}) ) if ( this.pick.offer.has(id) ) this.#put(id, v);
     this.render();
   }
 
   /** The deal made: asked of the GM, rolled the system's way, the roll sent back. */
   static async #onOffer() {
     const gm = game.users.activeGM;
-    const kind = this.kinds.find(k => k.value === this.state.kind) ?? this.kinds[0];
+    const kind = this.kinds.find(k => k.value === this.pick.kind) ?? this.kinds[0];
     const goods = this.adapter?.giveables?.(this.token.actor) ?? { denominations: [] };
-    const money = (goods.denominations ?? []).reduce((s, d) => s + (Number(this.state.money[d.key]) || 0) * d.value, 0);
-    const items = kind.kind === "bribe" ? [...this.state.offer.entries()].map(([id, count]) => ({ id, count })) : [];
-    const target = this.token.parent?.tokens.get(this.state.target);
+    const money = (goods.denominations ?? []).reduce((s, d) => s + (Number(this.pick.money[d.key]) || 0) * d.value, 0);
+    const items = kind.kind === "bribe" ? [...this.pick.offer.entries()].map(([id, count]) => ({ id, count })) : [];
+    const target = this.token.parent?.tokens.get(this.pick.target);
     if ( !gm || !target ) return ui.notifications.warn(loc("FASTFIGHTING.Deal.NoGm"));
-    this.state.busy = true;
+    this.pick.busy = true;
     this.render();
     try {
-      const deal = { pcToken: this.token.uuid, targetToken: target.uuid, kind: kind.kind, ask: kind.ask, money, items: kind.kind === "bribe" ? items : [], skill: this.state.skill };
+      const deal = { pcToken: this.token.uuid, targetToken: target.uuid, kind: kind.kind, ask: kind.ask, money, items: kind.kind === "bribe" ? items : [], skill: this.pick.skill };
       const prep = await gm.query(QUERIES.liveDeal, { stage: "prepare", deal }, { timeout: 60000 });
       if ( !prep?.ok ) {
         if ( prep?.reason ) ui.notifications.info(loc(`FASTFIGHTING.Deal.Why.${prep.reason}`));
         return this.close();
       }
-      const skill = this.skills.find(s => s.key === this.state.skill);
+      const skill = this.skills.find(s => s.key === this.pick.skill);
       let roll = await this.adapter?.rollCheck?.(this.token, {
-        purpose: prep.purpose, skill: this.state.skill, dc: prep.dc, action: { id: null, name: prep.purpose }, target, deal: { kind: prep.purpose, ask: kind.ask, wordless: prep.wordless }
+        purpose: prep.purpose, skill: this.pick.skill, dc: prep.dc, action: { id: null, name: prep.purpose }, target, deal: { kind: prep.purpose, ask: kind.ask, wordless: prep.wordless }
       }).catch(() => null);
       // (No roller of the system's: the core's own d20, its card in the chat.)
       if ( !roll ) {
@@ -183,7 +186,7 @@ export class DealDialog extends HandlebarsApplicationMixin(ApplicationV2) {
       this.close();
     } catch ( err ) {
       console.warn(`${MODULE_ID} | a deal`, err);
-      this.state.busy = false;
+      this.pick.busy = false;
       this.render();
     }
   }

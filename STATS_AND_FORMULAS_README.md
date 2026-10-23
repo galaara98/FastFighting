@@ -1442,7 +1442,8 @@ Decides when a creature robs someone instead of hitting them.
   best of Reflex, Int; Daggerheart: 12 + max(0, Instinct), adversaries Difficulty; else typical).
 - Failed: noticed. The victim wants the thief; the thief is revealed; someone taking no side is offended.
 - Against a PC, a success also needs a d100 at or under theftLuck (default 29, range 0–100).
-- Takes: d10% of the money, else a random carried item. It comes back if the thief ends the fight beaten.
+- Takes: d10% of the money on it, else a random item it carries put away (never what it wields or wears, where the
+  system can tell). It comes back if the thief ends the fight beaten.
 
 Example: a Thief (edge 0, Selfish 60) on a winning side: 0.08 + 0.25 + 0.025 ≈ 36% a turn.
 
@@ -1474,9 +1475,9 @@ comes of it.
 - **Acting:** when a deal leads its agenda, it closes to talking range (30 ft, or the system's) and makes it for the
   system's talk cost. In a standoff, as often as its level of 100, with one in range or a move away.
 - **Terms:** a bribe is clamp(0.15 + 0.35 × pressed − (Selfish − 50) ÷ 250, 0.05, 0.6) of its money (else its most
-  valuable carried thing); a commander asks the target to keep away from its team, anyone else to leave. An extortion
-  is clamp(0.2 + 0.6 × clamp((Selfish − 30) ÷ 70, 0, 1), 0.2, 1) of the target's money: pay and go (a PC: pay and be
-  left alone). An extortion asking for nothing is a scare.
+  valuable thing carried put away); a commander asks the target to keep away from its team, anyone else to leave. An
+  extortion is clamp(0.2 + 0.6 × clamp((Selfish − 30) ÷ 70, 0, 1), 0.2, 1) of the target's money: pay and go (a PC:
+  pay and be left alone). An extortion asking for nothing is a scare.
 - **DC:** threat = the intimidation pitch DC (Pitch DC) + its pills (Chicken −3, Wallflower −2, Fragile −2, Lazy −1,
   People-Pleaser −1, Brawler +2, Relentless +3, Vengeful +2, Tank +2, Martyr +2, Leader +1, each by its place)
   + clamp(round((its strongest wish to hurt − 40) ÷ 20), −2, 3) + round((Loyal − 50) ÷ 25) when asked to go.
@@ -1500,6 +1501,8 @@ comes of it.
   payment takes the payer's own money first, the rest from the purse. A thief or a robber takes only what's on a
   creature.
 - **Paying:** whoever pays (the briber; the one made to pay) must have it at the last moment, else no deal ("unpaid").
+  Only money and things carried put away change hands: never what it wields or wears, where the system can tell (only
+  robbing a fallen foe takes those).
   Side by side, a player's character giving or taking, or no piles at the table: the goods move at once. Apart:
   dropped where the giver stands; the taker walks over and picks them up (an action) when no foe is beside it.
 - **Bought over:** a bribe taken may turn the target instead of sending it off, with chance clamp((0.35 on a critical
@@ -1614,7 +1617,7 @@ Decides who ties up or robs a downed foe, mid-fight and after.
 - **Tied up**: out of the fight for good. Coming to, it is a prisoner (Tied up), not a fighter; its dying goes on. A
   captor tends it after the fight.
 - **Robbed**, once per robber: the whole purse (d10% where its side pools money), else a random carried item, else (not
-  a PC) what it wields. A PC's things go only on a d100 at or under theftLuck (default 29).
+  a PC) what it wields or wears. A PC's things go only on a d100 at or under theftLuck (default 29).
 - After the fight: for each fallen foe, finishers act (unless someone spares it; a PC only on the execute luck); then a
   captor ties it up (and it counts as spared); then a robber robs it.
 

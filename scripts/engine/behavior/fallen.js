@@ -8,7 +8,7 @@
  *    prisoner (STATUS.BOUND), not a fighter. Its dying goes on as before; one who takes prisoners tends it after the
  *    fight, as one who spares the fallen does.
  *  - Robbing: a fallen foe's purse comes off it (whole; a share, where its side pools what it has), else something it
- *    carries, else (a creature's, not a player character's) what it was wielding. An action beside it
+ *    carries, else (a creature's, not a player character's) what it was wielding or wearing. An action beside it
  *    (rules.lootCost; by default the basic action), once for each who robs it. A player character's things go only on
  *    the luck check a thief needs against one (theftLuck): the GM's secret, never told. Like anything taken, it comes
  *    back if the robber ends the fight beaten.
@@ -114,7 +114,7 @@ export function bind(run, u, t, say, { aftermath = false } = {}) {
   say(u, { type: "bind", target: t.spec.name, targetId: t.id, aftermath });
 }
 
-/** What comes off a fallen foe: its purse (a share, where its side pools it), else something it carries, else (a creature's) what it held. */
+/** What comes off a fallen foe: its purse (a share, where its side pools it), else something it carries, else (a creature's) what it held or wore. */
 function loot(run, t) {
   const v = remaining(t);
   // (What's on it: its team's purse isn't.)
@@ -124,7 +124,9 @@ function loot(run, t) {
     return { kind: "money", amount: pooled ? Math.max(1, Math.round(v.own * percent / 100)) : v.own, percent, denominations: v.denominations ?? null };
   }
   if ( v.stowed.length ) return { kind: "item", item: run.rng.pick(v.stowed) };
-  if ( t.spec.kind !== "pc" && v.wielded.length ) return { kind: "item", item: run.rng.pick(v.wielded), wielded: true };
+  // (Fallen, a creature's weapon or armor is there for the taking: the only time what it wields or wears changes hands.)
+  const gear = [...v.wielded, ...v.worn];
+  if ( t.spec.kind !== "pc" && gear.length ) return { kind: "item", item: run.rng.pick(gear) };
   return null;
 }
 

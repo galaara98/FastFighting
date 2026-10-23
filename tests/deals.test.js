@@ -209,7 +209,8 @@ describe("striking the deal", () => {
     const run = fight([hero({ ...at(15) }), goblin()]);
     const [h, g] = [unit(run, "hero"), unit(run, "goblin")];
     expect(offerDeal(run, h, g, "bribe", say(run), { terms: { kind: "bribe", ask: "leave", money: 9999, items: [] } })).toBe("unpaid");
-    expect(offerDeal(run, unit(run, "goblin"), h, "bribe", say(run), { terms: { kind: "bribe", ask: "leave", money: 0, items: [{ id: "nothing", count: 1 }] } })).toBe("unpaid");
+    // (More of a thing than it carries.)
+    expect(offerDeal(run, unit(run, "goblin"), h, "bribe", say(run), { terms: { kind: "bribe", ask: "leave", money: 0, items: [{ id: "ring", count: 2 }] } })).toBe("unpaid");
     h.dealt.clear();
     expect(offerDeal(run, h, g, "extort", say(run), { terms: { kind: "extort", ask: "leave", money: 101, items: [] } })).toBe("unpaid");
     expect(h.concessions ?? []).toEqual([]);
@@ -643,6 +644,18 @@ describe("a player's own deal", () => {
     expect(events.find(e => e.type === "deal")).toMatchObject({ actorId: "hero", targetId: "goblin", kind: "bribe", answer: "accept", total: 19, dc: 15 });
     expect(run.byId.get("hero").concessions?.[0]).toMatchObject({ kind: "money", amount: 40, how: "bribe", to: "goblin" });
     expect(run.byId.get("goblin").leaving?.why === "deal" || run.byId.get("goblin").side === NEUTRAL_PARTY).toBe(true);
+  });
+
+  test("a thing it wears or wields, or one the engine was never told of (worn, say): it doesn't change hands", () => {
+    const spec = battle([hero({ ...at(0) }), goblin("goblin", { ...at(20) })], { maxRounds: 6, positioning: true, aftermath: "none", opening: "fight" });
+    spec.bounds = { x0: -200, y0: -100, x1: 200, y1: 100 };
+    const run = beginLive(spec, pf2eRules, { seed: 5, players: ["hero"] });
+    for ( const u of run.units ) u.active = true;
+    const terms = { kind: "bribe", ask: "leave", money: 0, items: [{ id: "javelin", name: "Javelin", value: 10, count: 2 }] };
+    const fact = { kind: "deal", id: "goblin", byId: "hero", deal: { terms, dc: 15, roll: { degree: 2, natural: 14, total: 19 }, said: { answer: "accept", by: "check" } } };
+    const { events } = pcTurn(run, "hero", [], null, [fact]);
+    expect(events.find(e => e.type === "deal")).toMatchObject({ answer: "unpaid" });
+    expect(run.byId.get("hero").concessions ?? []).toEqual([]);
   });
 
   test("turned down in the review: no deal, told as the GM's", () => {

@@ -28,16 +28,16 @@ import { isNeutral, offend } from "./neutral.js";
 /** Skill this far above typical for the level makes someone a thief, playstyle or not. */
 const SKILLED = 3;
 
-/** Has t anything a thief could lift (money, or gear that isn't held or worn)? */
+/** Has t anything a thief could lift (money on it, not its team's purse; gear that isn't held or worn)? */
 function worthRobbing(t) {
   const v = remaining(t);
-  return v.money > 0 || v.stowed.length > 0;
+  return v.own > 0 || v.stowed.length > 0;
 }
 
-/** Has a fallen t anything to take: money, gear it carries, or (a creature's, not a PC's) what it was wielding? */
+/** Has a fallen t anything to take: money on it, gear it carries, or (a creature's, not a PC's) what it was wielding or wearing? */
 export function robbable(t) {
   const v = remaining(t);
-  return v.money > 0 || v.stowed.length > 0 || (t.spec.kind !== "pc" && v.wielded.length > 0);
+  return v.own > 0 || v.stowed.length > 0 || (t.spec.kind !== "pc" && v.wielded.length + v.worn.length > 0);
 }
 
 /** Is u's side clearly winning: more of them standing, or the other side has lost noticeably more? */

@@ -97,7 +97,7 @@ Hooks.once("fastFighting.init", api => {
     async goodsOf(tokenDoc) { ... }                  // deals (API 26): everything a pile holds, as takeGoods' goods
     async dropValuables(scene, { x, y }, goods, { name }) { ... } // deals (API 26): the system's own loot pile, a token at x, y: {tokenUuid, records}
     skillsOf(actor) { ... }                          // deals (API 26): its skills [{key, label, mod, talk}], talking ones (persuade, deceive, intimidate) marked
-    giveables(actor) { ... }                         // deals (API 26): what it could hand over: {money, denominations, items: [{id, name, img, quantity, value}]}
+    giveables(actor) { ... }                         // deals (API 26): what it could hand over: {money, denominations, items: [{id, name, img, quantity, value}]}; only what it carries put away, never what it wields or wears (takeGoods the same, but for a fallen foe robbed: `how: "loot"`)
     mainCoin() { ... }                               // the coin prices are said in, {key, label, value} (API 26: the planner's team cash; else the second largest coin)
 
     // Live battles (Do it For Real Now): see scripts/adapters/adapter-base.js for each one's contract.

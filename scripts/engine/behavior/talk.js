@@ -139,7 +139,8 @@ export function remaining(t) {
     purse,
     denominations: v.denominations ?? null,
     stowed: left(v.stowed),
-    wielded: left(v.wielded)
+    wielded: left(v.wielded),
+    worn: left(v.worn)
   };
 }
 
@@ -454,7 +455,8 @@ function outcomeFor(run, t, kind, aim = "down", { noSwitch = false, peace = fals
 /**
  * What a creature hands over when it gives something up (or has it lifted: behavior/theft.js): 1-10% of its money;
  * failing that an item it carries but isn't wielding or wearing (a PC keeps it unless a d100 luck check comes up under
- * 40, with `itemLuck`); failing that, an NPC gives up something it's wielding. Returns null when there's nothing at all.
+ * 40, with `itemLuck`). Never what it wields or wears (only a fallen foe's: behavior/fallen.js). Returns null when there's
+ * nothing at all.
  */
 export function concession(run, t, { itemLuck = true } = {}) {
   const v = remaining(t);
@@ -472,7 +474,6 @@ export function concession(run, t, { itemLuck = true } = {}) {
     }
     return { kind: "item", item };
   }
-  if ( t.spec.kind !== "pc" && v.wielded.length ) return { kind: "item", item: rng.pick(v.wielded), wielded: true };
   // (Nothing to hand over, but ground to give: progress marked on its own track, the winner's reward.)
   if ( t.spec.valuables?.progress > 0 ) return { kind: "progress", amount: t.spec.valuables.progress };
   return null;

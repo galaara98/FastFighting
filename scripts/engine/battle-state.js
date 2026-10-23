@@ -30,7 +30,8 @@
  *                                          purse, the GM's, besides: spec.purses, by group key, behavior/talk.js remaining):
  *   {money: total in the smallest coin, denominations: [{label, value}] largest first,
  *    stowed: [{id, name, value, quantity?, category?, material?, rarity?}] carried but not wielded or worn (value: each;
- *    quantity: how many, one if it doesn't say), wielded: (the same),
+ *    quantity: how many, one if it doesn't say), wielded: (the same) in its hands, worn: (the same) on it: those two
+ *    only ever robbed off a fallen creature (behavior/fallen.js), never stolen, given or taken in a deal,
  *    pooled: true where its side shares the money (Ironsworn's Supply: one pays, all have that much less),
  *    progress: n where giving ground marks n progress on its own track instead (an Ironsworn foe: the winner's reward)}
  * @property {number} [wounded]

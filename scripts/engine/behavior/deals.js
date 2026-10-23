@@ -521,8 +521,9 @@ export function goneAtOnce(run, u, say = null) {
 export function canPay(payer, terms) {
   const v = remaining(payer);
   if ( (terms.money ?? 0) > v.money ) return false;
+  // (Only what it carries put away: nothing it wields or wears changes hands.)
   for ( const i of terms.items ?? [] ) {
-    const item = v.stowed.find(s => s.id === i.id) ?? v.wielded.find(s => s.id === i.id);
+    const item = v.stowed.find(s => s.id === i.id);
     if ( !item || (i.count ?? 1) > (item.quantity ?? 1) ) return false;
   }
   return true;
@@ -544,7 +545,8 @@ export function give(run, from, to, terms, how, say = null, { atOnce: now = fals
   const purse = Math.max(0, money - v.own);
   if ( money > 0 ) records.push({ kind: "money", amount: money, denominations: v.denominations ?? null, ...(purse > 0 && from.purse ? { purse, purseKey: from.purse.key } : {}) });
   for ( const i of terms.items ?? [] ) {
-    const item = v.stowed.find(s => s.id === i.id) ?? v.wielded.find(s => s.id === i.id);
+    // (Only what it carries put away: nothing it wields or wears.)
+    const item = v.stowed.find(s => s.id === i.id);
     if ( item ) records.push({ kind: "item", item, count: Math.max(1, Math.min(i.count ?? 1, item.quantity ?? 1)) });
   }
   for ( const r of records ) {

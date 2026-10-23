@@ -7,6 +7,8 @@ import { diffOutcome } from "../scripts/engine/changes.js";
 import { pf2eRules } from "./fixtures/three-action-rules.js";
 import { parseFormula } from "../scripts/engine/dice.js";
 import { creature, strike, battle } from "./helpers.js";
+import { robbable } from "../scripts/engine/behavior/theft.js";
+import { concession } from "../scripts/engine/behavior/talk.js";
 
 const traits = (tactical = 60) => ({ tactical: { base: tactical, fudge: 0 }, brave: { base: 95, fudge: 0 }, selfish: { base: 30, fudge: 0 }, loyal: { base: 60, fudge: 0 } });
 const hero = (extra = {}) => creature({ id: "hero", kind: "pc", diesAtZero: false, hp: { value: 300, max: 300 }, traits: traits(),
@@ -101,6 +103,16 @@ describe("robbing them", () => {
     // (Once: it doesn't go back for more.)
     takeTurn(run, me);
     expect(down.concessions).toHaveLength(1);
+  });
+
+  test("with nothing else on it, what it wields or wears: fallen, the only time those change hands", () => {
+    const { run, me, down } = oneDown({ tactics: { fallen: "rob" } });
+    down.spec.valuables = { money: 0, denominations: null, stowed: [], wielded: [], worn: [{ id: "mail", name: "Chain Mail", value: 5 }] };
+    // (Standing, a thief would find nothing to lift.)
+    expect(concession(run, down, { itemLuck: false })).toBeNull();
+    expect(robbable(down)).toBe(true);
+    takeTurn(run, me);
+    expect(down.concessions).toEqual([expect.objectContaining({ how: "loot", kind: "item", item: expect.objectContaining({ id: "mail" }) })]);
   });
 
   test("a player character's things go only on a thief's luck check against one", () => {

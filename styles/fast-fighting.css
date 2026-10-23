@@ -683,3 +683,23 @@ label.is-disabled, .form-group.is-disabled { opacity: 0.5; }
 .ff-purses .ff-purse { flex-direction: row; align-items: center; gap: 0.25rem; }
 .ff-purse input { width: 4.5rem; }
 .ff-purse-total { display: inline-block; min-width: 3rem; text-align: right; font-weight: 600; }
+
+/* A player's deal dialog (apps/deal-dialog.js). */
+.ff-deal-dialog-body { padding: 0.5rem; display: flex; flex-direction: column; gap: 0.5rem; }
+.ff-deal-dialog .ff-deal-row label { display: flex; align-items: center; gap: 0.5rem; }
+.ff-deal-dialog .ff-deal-row label > span:first-child, .ff-deal-dialog .ff-deal-row > label { white-space: nowrap; }
+.ff-deal-dialog .ff-deal-row select { flex: 1; }
+.ff-deal-money { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
+.ff-deal-money label { display: flex; align-items: center; gap: 0.25rem; }
+.ff-deal-money input { width: 4rem; }
+.ff-deal-money .hint { flex-basis: 100%; margin: 0; }
+.ff-deal-goods { max-height: 320px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.35rem; }
+.ff-deal-goods .hint { margin: 0; }
+.ff-deal-items, .ff-deal-offer ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.ff-deal-items li, .ff-deal-offer li { display: flex; align-items: center; gap: 0.4rem; }
+.ff-deal-items li { cursor: grab; }
+.ff-deal-items li img, .ff-deal-offer li img { flex: 0 0 24px; border: none; }
+.ff-deal-items li > span:first-of-type, .ff-deal-offer li > span:first-of-type { flex: 1; }
+.ff-deal-offer { border: 1px dashed var(--color-border-light-tertiary, #888); border-radius: 4px; padding: 0.4rem; min-height: 2.5rem; }
+.ff-deal-offer input { width: 4rem; }
+.ff-deal-goods > * { flex-shrink: 0; }
