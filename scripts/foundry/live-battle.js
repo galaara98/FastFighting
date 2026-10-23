@@ -81,7 +81,7 @@ function systemRollKinds(adapter) {
   return out;
 }
 import { isStanding, canMove } from "../engine/battle-state.js";
-import { means, dealDC, pitchOf, dealInsight, dealAnswer, mayToll } from "../engine/behavior/deals.js";
+import { means, dealDC, pitchOf, dealInsight, dealAnswer, mayToll, talkRange } from "../engine/behavior/deals.js";
 
 const loc = key => game.i18n.localize(key);
 const fmt = (key, data) => game.i18n.format(key, data);
@@ -2090,7 +2090,7 @@ async function answerDeal(request, stage = null) {
   const said = asked.said ?? (t ? dealAnswer(run, t, request.kind, request.degree ?? 1, { chance: q => Math.random() < q }) : null);
   const verdict = await reviewDeal(request, { said, player: true, nature: !asked.said, stage });
   const out = verdict === "deny" ? { answer: "refuse", by: "gm" } : said ? { answer: said, by: asked.said ? "player" : "check" } : null;
-  await asked.card?.update({ content: dealCard(dealText(request), verdictText(request, verdict, said)) });
+  await asked.card?.update({ content: dealCard(dealText(request, { open: true }), verdictText(request, verdict, said)) });
   return out;
 }
 
@@ -2110,10 +2110,13 @@ export const waitingDeals = () => [...dealsWaiting.entries()].filter(([, d]) => 
 /** A roll's degree of success in words, by its number (0 critical failure ... 3 critical success). */
 const DEGREES = ["FASTFIGHTING.Log.Degree0", "FASTFIGHTING.Log.Degree1", "FASTFIGHTING.Log.Degree2", "FASTFIGHTING.Log.Degree3"];
 
-/** A deal in words: who offers (or asks, or tells) what of whom. `request`: a deal's question (engine/live.js dealAsk). */
-function dealText(request) {
+/**
+ * A deal in words: who offers (or asks, or tells) what of whom. `request`: a deal's question (engine/live.js dealAsk).
+ * `open`: for the players' eyes, a creature whose name they haven't learned called as someone (openName).
+ */
+function dealText(request, { open = false } = {}) {
   const run = battle.run;
-  const name = id => (id ? run.byId.get(id)?.spec.name ?? "" : "");
+  const name = id => (id ? (open ? openName(id) : run.byId.get(id)?.spec.name ?? "") : "");
   const data = { actor: name(request.unitId), target: name(request.targetId), goods: goodsText(request.terms), ask: askText(request.terms?.ask) };
   return fmt({ bribe: "FASTFIGHTING.Deal.OfferBribe", extort: "FASTFIGHTING.Deal.OfferExtort", toll: "FASTFIGHTING.Deal.OfferToll" }[request.kind] ?? "FASTFIGHTING.Deal.OfferScare", data);
 }
@@ -2132,7 +2135,7 @@ async function askPlayerDeal(request) {
   if ( !owners.length ) return { said: null, card: null };
   checkFast({ asks: "player" });
   const ChatMessage = chatMessageClass();
-  const text = dealText(request);
+  const text = dealText(request, { open: true });
   const buttons = `<div class="ff-deal-buttons"><button type="button" data-ff-live="dealAccept"><i class="fa-solid fa-check"></i> ${escape(loc("FASTFIGHTING.Deal.Accept"))}</button>
     <button type="button" data-ff-live="dealRefuse"><i class="fa-solid fa-xmark"></i> ${escape(loc("FASTFIGHTING.Deal.Refuse"))}</button></div>`;
   const card = await ChatMessage.create({
@@ -2167,8 +2170,9 @@ async function dealTurnCard(u) {
   const card = await ChatMessage.create({
     content: dealCard(fmt("FASTFIGHTING.Deal.TurnCard", { name: doc.name }), "", `<div class="ff-deal-buttons"><button type="button" data-ff-live="dealOpen"><i class="fa-solid fa-comments-dollar"></i> ${escape(loc("FASTFIGHTING.Deal.OpenDeal"))}</button></div>`),
     speaker: chronicle(), whisper: [...new Set([...gmIds(), ...owners.map(x => x.id)])],
-    // (May it ask a toll: it acted first, or surprised them.)
-    flags: { [MODULE_ID]: { live: { battle: battle.data.id, dealOpen: true, pcToken: doc.uuid, toll: mayToll(battle.run, u) } } }
+    // (May it ask a toll: it acted first, or surprised them. What the story calls those whose names the players haven't
+    // learned, by token: so the dialog does too.)
+    flags: { [MODULE_ID]: { live: { battle: battle.data.id, dealOpen: true, pcToken: doc.uuid, toll: mayToll(battle.run, u), names: openNames() } } }
   });
   if ( !card ) return;
   battle.pc.dealCard = card.id;
@@ -2187,7 +2191,11 @@ async function gibberish(doc) {
   const text = words.join(" ");
   const said = `${text.charAt(0).toLocaleUpperCase(game.i18n.lang)}${text.slice(1)}${["!", "?", "…"][Math.floor(Math.random() * 3)]}`;
   const ChatMessage = chatMessageClass();
-  const message = await ChatMessage.create({ content: escape(said), speaker: ChatMessage.getSpeaker({ token: doc }), style: CONST.CHAT_MESSAGE_STYLES.IC }, { chatBubble: true });
+  // (Under the name the players know it by: someone, numbered, where they haven't learned its own.)
+  const u = battle.run.units.find(x => tokenIdOf(x) === doc.id);
+  const alias = u ? someoneNow().get(u.id) : null;
+  const speaker = { ...ChatMessage.getSpeaker({ token: doc }), ...(alias ? { alias } : {}) };
+  const message = await ChatMessage.create({ content: escape(said), speaker, style: CONST.CHAT_MESSAGE_STYLES.IC }, { chatBubble: true });
   if ( message && battle.pc ) battle.pc.rollCards.push(message.id);
   return message;
 }
@@ -2210,9 +2218,33 @@ const unitOnToken = async uuid => {
  */
 async function answerDealRequest(data, { user } = {}) {
   if ( !battle || !playsHere() ) return { ok: false, reason: "none" };
+  if ( data?.stage === "targets" ) return dealTargets(data, user);
   if ( data?.stage === "prepare" ) return prepareDeal(data.deal ?? {}, user);
   if ( data?.stage === "rolled" ) return rolledDeal(data, user);
   return { ok: false, reason: "none" };
+}
+
+/**
+ * Does u perceive t (seen, heard, or found by its other senses: behavior/senses.js), from where its token stands now,
+ * moved this turn? Not one hidden from the start and not yet given away.
+ */
+function perceivesNow(run, u, t, doc) {
+  if ( t.spec.hidden && !t.revealed ) return false;
+  const p = doc?.object ? positionOf(doc.object) : null;
+  return perceives(run, p ? { ...u, pos: { x: p.x, y: p.y }, adjacent: null } : u, t);
+}
+
+/**
+ * Whom a player's character could make a deal with now (apps/deal-dialog.js): every creature standing that it
+ * perceives, by token id, and what the players call those whose names they haven't learned. {ok, ids, names}.
+ */
+async function dealTargets(data, user) {
+  const u = await unitOnToken(data?.pcToken);
+  const doc = u ? docOf(u.id) : null;
+  if ( !u || !doc?.actor || (!user?.isGM && !doc.actor.testUserPermission(user, "OWNER")) ) return { ok: false, ids: [] };
+  const run = battle.run;
+  const ids = run.units.filter(t => t !== u && isStanding(t) && perceivesNow(run, u, t, doc)).map(t => docOf(t.id)?.id).filter(Boolean);
+  return { ok: true, ids, names: openNames() };
 }
 
 async function prepareDeal(deal, user) {
@@ -2223,6 +2255,12 @@ async function prepareDeal(deal, user) {
   if ( !u || !t || !doc?.actor || t === u || !isStanding(t) ) return { ok: false, reason: "none" };
   if ( !user?.isGM && !doc.actor.testUserPermission(user, "OWNER") ) return { ok: false, reason: "none" };
   if ( battle.pc?.id !== u.id ) return { ok: false, reason: "notYourTurn" };
+  // (Only with one it perceives: none it hasn't seen, heard or otherwise found.)
+  if ( !perceivesNow(run, u, t, doc) ) return { ok: false, reason: "unseen" };
+  // (Within talking range, by the grid's own measure, as the dialog lists them.)
+  const there = docOf(t.id)?.object;
+  const feet = doc.object && there ? canvas.grid.measurePath([doc.object.center, there.center]).distance : null;
+  if ( feet !== null && feet > talkRange(run) ) return { ok: false, reason: "tooFar" };
   const adapter = getAdapter();
   const goods = adapter.giveables?.(doc.actor) ?? { money: 0, items: [] };
   const kind = deal.kind === "extort" ? (Number(deal.money) > 0 ? "extort" : "scare") : deal.kind === "bribe" ? "bribe" : deal.kind === "toll" && Number(deal.money) > 0 ? "toll" : null;
@@ -2284,13 +2322,13 @@ async function rolledDeal(data, user) {
   const verdict = await reviewDeal(request, { said: would, player, nature: !asked.said });
   const answer = verdict === "deny" ? "refuse" : would;
   const by = verdict === "deny" ? "gm" : asked.said ? "player" : "check";
-  await asked.card?.update({ content: dealCard(dealText(request), verdictText(request, verdict, would)) });
+  await asked.card?.update({ content: dealCard(dealText(request, { open: true }), verdictText(request, verdict, would)) });
   await liveFact({ kind: "deal", id: t.id, byId: u.id, deal: { terms: p.terms, skill: p.skill, wordless: p.wordless, dc: p.dc, dcStat: p.dcStat, roll, said: { answer, by } } });
   // (Told at once, to its player and the GMs: the turn tells the rest as it ends.)
   const owners = game.users.filter(x => x.id === p.user || x.isGM).map(x => x.id);
   const ChatMessage = chatMessageClass();
   const card = await ChatMessage.create({
-    content: dealCard(dealText(request), fmt(DEAL_ANSWERS[answer] ?? DEAL_ANSWERS.refuse, { name: t.spec.name })), speaker: chronicle(), whisper: owners,
+    content: dealCard(dealText(request, { open: true }), fmt(DEAL_ANSWERS[answer] ?? DEAL_ANSWERS.refuse, { name: openName(t.id) })), speaker: chronicle(), whisper: owners,
     flags: { [MODULE_ID]: { live: { battle: battle.data.id, dealDone: true } } }
   });
   if ( card ) battle.pc?.rollCards.push(card.id);
@@ -2338,7 +2376,7 @@ async function reviewDeal(request, { said = null, player = false, nature = false
 /** What the GM's say on a deal came to, in words: turned down; or let stand, and its answer where it's known. */
 function verdictText(request, verdict, said) {
   if ( verdict === "deny" ) return loc("FASTFIGHTING.Deal.Denied");
-  const name = battle.run.byId.get(request.targetId)?.spec.name ?? "";
+  const name = openName(request.targetId);
   const answer = DEAL_ANSWERS[said];
   return answer ? `${loc("FASTFIGHTING.Deal.Settled")} ${fmt(answer, { name })}` : loc("FASTFIGHTING.Deal.Settled");
 }
@@ -3225,6 +3263,28 @@ function unnamed(run, docs) {
     if ( known.has(u.spec.name) ) continue;
     numbers[u.id] ??= Object.keys(numbers).length + 1;
     out.set(u.id, game.i18n.format("FASTFIGHTING.Desire.Unknown", { n: numbers[u.id] }));
+  }
+  return out;
+}
+
+/** Those whose names the players haven't learned, now (unnamed): unit id -> what the open story calls each. */
+function someoneNow() {
+  const run = battle.run;
+  noteSeen(run);
+  return unnamed(run, new Map(run.units.map(u => [u.id, docOf(u.id)]).filter(([, d]) => d)));
+}
+
+/** A creature's name as the players know it: its own, or someone, numbered (someoneNow). */
+function openName(id) {
+  return someoneNow().get(id) ?? battle.run.byId.get(id)?.spec.name ?? "";
+}
+
+/** someoneNow, by token id: for a player's browser (apps/deal-dialog.js), which knows tokens, not the engine's ids. */
+function openNames() {
+  const out = {};
+  for ( const [id, name] of someoneNow() ) {
+    const doc = docOf(id);
+    if ( doc ) out[doc.id] = name;
   }
   return out;
 }
@@ -4127,7 +4187,7 @@ export function registerLiveBattles() {
         button.addEventListener("click", async event => {
           event.preventDefault();
           const { DealDialog } = await import("../apps/deal-dialog.js");
-          new DealDialog(token, { toll: live.toll === true }).render({ force: true });
+          new DealDialog(token, { toll: live.toll === true, names: live.names }).render({ force: true });
         });
         continue;
       }

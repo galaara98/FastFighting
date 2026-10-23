@@ -2506,7 +2506,9 @@
         "nothing": "Offer something first.",
         "short": "You haven't got that much.",
         "none": "That deal can't be made now.",
-        "noToll": "Only one who acted before all their foes, or surprised them, can ask a toll."
+        "noToll": "Only one who acted before all their foes, or surprised them, can ask a toll.",
+        "unseen": "You don't perceive them from where you stand.",
+        "tooFar": "They're too far away to talk to."
       },
       "ShortOnSheet": "The deal falls through: {name} hasn't got it on their sheet any more, so nothing changes hands.",
       "OfferToll": "{actor} offers to go away if {target}'s side pays {goods}.",

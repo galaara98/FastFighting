@@ -5547,6 +5547,16 @@
    "commit": null,
    "hash": "5a07d3764696"
   },
+  "core:FASTFIGHTING.Deal.Why.tooFar": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Deal.Why.tooFar",
+   "area": "core/Deal",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "c78323e4e095"
+  },
   "core:FASTFIGHTING.Deal.Why.unheard": {
    "repo": "core",
    "file": "languages/en.json",
@@ -5556,6 +5566,16 @@
    "date": null,
    "commit": null,
    "hash": "cca88d467ac1"
+  },
+  "core:FASTFIGHTING.Deal.Why.unseen": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Deal.Why.unseen",
+   "area": "core/Deal",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "36d3046f13f2"
   },
   "core:FASTFIGHTING.Deal.With": {
    "repo": "core",

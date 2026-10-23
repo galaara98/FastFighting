@@ -6,6 +6,8 @@
  * the skill they make it with (every one their character has: the talking ones first, then the rest by name), and what
  * they give: their things, dragged into the offer (as many as they say, of a stack), and their money, coin by coin.
  *
+ * Whom: only those it perceives (seen, heard, or otherwise found), from where it stands, as the GM's browser tells it
+ * (foundry/live-battle.js answerDealRequest: "targets").
  * Making it: the GM's browser, where the battle plays, says whether the two understand each other and what it takes
  * (foundry/live-battle.js answerDealRequest: "prepare"); the character rolls the skill the system's way (its helper's
  * rollCheck), and the roll goes back to the GM (`rolled`), whose review settles it.
@@ -48,18 +50,26 @@ export class DealDialog extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /**
    * @param {TokenDocument} token  the player's character's token
-   * @param {object} [options]     {toll: it may ask a toll}, and the application's own
+   * @param {object} [options]     {toll: it may ask a toll; names: what the story calls those whose names the players
+   *                               haven't learned, by token id}, and the application's own
    */
-  constructor(token, { toll = false, ...options } = {}) {
+  constructor(token, { toll = false, names = null, ...options } = {}) {
     super(options);
     this.token = token;
+    this.names = names && typeof names === "object" ? names : null;
+    // (Those it perceives, by token id, once the GM's browser has said: null till then, or with no answer.)
+    this.perceived = null;
+    this.asked = false;
     this.kinds = KINDS.filter(k => !k.toll || toll);
     this.adapter = getAdapter();
     const targeted = [...(game.user.targets ?? [])].map(t => t.document).find(t => t && t !== token);
     this.pick = { target: targeted?.id ?? null, kind: "bribeLeave", skill: null, money: {}, offer: new Map(), busy: false };
   }
 
-  /** Those it could make a deal with: on the map, seen, not of its side, in talking range (by the grid's own measure). */
+  /**
+   * Those it could make a deal with: on the map, shown, perceived (as the GM's browser says, where it answered), not of
+   * its side, in talking range (by the grid's own measure).
+   */
   get targets() {
     const from = this.token.object?.center;
     const range = Number(this.adapter?.rules?.talkRange) > 0 ? Number(this.adapter.rules.talkRange) : TALK_RANGE;
@@ -68,10 +78,15 @@ export class DealDialog extends HandlebarsApplicationMixin(ApplicationV2) {
     // (Not its own side's: a neutral, or a foe.)
     const own = this.token.disposition;
     const NEUTRAL = CONST.TOKEN_DISPOSITIONS.NEUTRAL;
-    return (this.token.parent?.tokens ?? []).filter(t => t !== this.token && t.actor && !t.hidden && t.object?.isVisible && (t.disposition !== own || own === NEUTRAL)).map(t => {
+    const perceived = t => !this.perceived || this.perceived.has(t.id);
+    return (this.token.parent?.tokens ?? []).filter(t => t !== this.token && t.actor && !t.hidden && t.object?.isVisible && perceived(t) && (t.disposition !== own || own === NEUTRAL)).map(t => {
       const to = t.object?.center;
       const feet = from && to ? canvas.grid.measurePath([from, to]).distance : Infinity;
-      return { id: t.id, feet, name: t.isOwner || shown.includes(t.displayName) ? t.name : localize("FASTFIGHTING.Desire.Unknown", { n: ++unknown }) };
+      // (As the story calls it, where the card says: someone, numbered, till the party learns its name. Else by its
+      // nameplate, numbered here.)
+      const told = this.names ? (typeof this.names[t.id] === "string" ? this.names[t.id] : t.name) : null;
+      const name = t.isOwner || shown.includes(t.displayName) ? t.name : told ?? localize("FASTFIGHTING.Desire.Unknown", { n: ++unknown });
+      return { id: t.id, feet, name };
     }).filter(t => t.feet <= range).sort((a, b) => a.feet - b.feet);
   }
 
@@ -84,6 +99,15 @@ export class DealDialog extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   async _prepareContext() {
+    // (Whom it perceives from where it stands, and what the story calls them: the GM's browser's say, asked once.)
+    if ( !this.asked ) {
+      this.asked = true;
+      const said = await game.users.activeGM?.query(QUERIES.liveDeal, { stage: "targets", pcToken: this.token.uuid }, { timeout: 10000 }).catch(() => null);
+      if ( said?.ok && Array.isArray(said.ids) ) {
+        this.perceived = new Set(said.ids);
+        if ( said.names && typeof said.names === "object" ) this.names = said.names;
+      }
+    }
     const kind = this.kinds.find(k => k.value === this.pick.kind) ?? this.kinds[0];
     const goods = this.adapter?.giveables?.(this.token.actor) ?? { money: 0, denominations: [], items: [] };
     const skills = this.skills;
