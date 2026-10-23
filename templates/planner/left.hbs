@@ -64,8 +64,8 @@
               {{#each sideItems}}<button type="button" class="ff-menu-item {{#if active}}active{{/if}}" role="menuitemradio" aria-checked="{{#if active}}true{{else}}false{{/if}}" data-action="setSide" data-side="{{id}}"><span class="ff-swatch ff-t-{{swatch}}" aria-hidden="true"></span> {{label}}</button>{{/each}}
               <hr>
               {{#with survey}}
-              {{#if players}}<button type="button" class="ff-menu-item" role="menuitem" data-action="surveyCharacter" data-tooltip-text="{{playersHint}}"><i class="fa-solid fa-feather-pointed" aria-hidden="true"></i> {{localize "FASTFIGHTING.Planner.AskPlayersShort"}}</button>{{/if}}
-              <button type="button" class="ff-menu-item" role="menuitem" data-action="surveyCharacterGm" data-tooltip="{{localize "FASTFIGHTING.Survey.AskGms"}}"><i class="fa-solid fa-feather-pointed" aria-hidden="true"></i> {{localize "FASTFIGHTING.Planner.AnswerAsGm"}}</button>
+              {{#if players}}<button type="button" class="ff-menu-item" role="menuitem" data-action="surveyCharacter" data-tooltip-direction="LEFT" data-tooltip-text="{{playersHint}}"><i class="fa-solid fa-feather-pointed" aria-hidden="true"></i> {{localize "FASTFIGHTING.Planner.AskPlayersShort"}}</button>{{/if}}
+              <button type="button" class="ff-menu-item" role="menuitem" data-action="surveyCharacterGm" data-tooltip-direction="LEFT" data-tooltip="{{localize "FASTFIGHTING.Survey.AskGms"}}"><i class="fa-solid fa-feather-pointed" aria-hidden="true"></i> {{localize "FASTFIGHTING.Planner.AnswerAsGm"}}</button>
               {{/with}}
               <button type="button" class="ff-menu-item" role="menuitem" data-action="panToken"><i class="fa-solid fa-crosshairs" aria-hidden="true"></i> {{localize "FASTFIGHTING.Planner.PanTo"}}</button>
             </div>

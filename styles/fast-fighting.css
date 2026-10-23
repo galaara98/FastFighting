@@ -219,7 +219,7 @@
 
 
 .ff-empty-state { text-align: center; padding: 60px 30px; color: var(--ff-text-dim); }
-.ff-empty-state i { font-size: 42px; opacity: 0.4; }
+.ff-empty-state > i { font-size: 42px; opacity: 0.4; }
 .ff-empty-state h3 { border: none; margin: 10px 0 4px; }
 
 /* ---------- Chat cards and dialogs ---------- */
