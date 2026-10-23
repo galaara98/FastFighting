@@ -45,6 +45,7 @@ import { perceives } from "./behavior/senses.js";
 import { isAnimalistic, animalTactics } from "./behavior/animal.js";
 import { stealChance, theftTarget, theftPlan, attemptTheft, robbable, lootable, leftRemains } from "./behavior/theft.js";
 import { fallenWishes, decideFallen, bind, rob, stayBound, takesPrisoners, robsTheFallen, freeFriend, rollOf } from "./behavior/fallen.js";
+import { decideStances, stanceOf, stanceWishes, STANCE } from "./behavior/stance.js";
 import { dealWishes, decideDeal, offerDeal, pickUp, dishonor, dealsWanted, talkRange, dealCost, shunsFight, seesFight, reactionBribe } from "./behavior/deals.js";
 import { leavesOfItsOwn } from "./behavior/flight.js";
 import { holdsOf, ownHolds, known, tryHold, release, escapeCost, isBound, remediesOf, bears } from "./behavior/holds.js";
@@ -3176,6 +3177,7 @@ function thinkOver(run, u) {
   }
   // Foes who fall, as it answered (or its party did): finish them off, tie them up, rob them (behavior/fallen.js).
   fallenWishes(run, u);
+  stanceWishes(run, u); // (its team preying on a spent one: behavior/stance.js)
   // What its conditions make it want: away from whoever frightened it, at whoever holds it.
   conditionWishes(run, u);
   holdWishes(run, u);
@@ -3323,12 +3325,14 @@ function keepsPeace(run, u, actions) {
  */
 function neutralTurn(run, u) {
   const say = logger(run);
-  if ( kinsQuarrel(run, u, say) ) return true;
+  // Its friend group's head takes it away from a fight too dangerous to be near (behavior/stance.js).
+  const away = stanceOf(run, u)?.kind === STANCE.LEAVE;
+  if ( !away && kinsQuarrel(run, u, say) ) return true;
   // Wanting no part of a fight it sees: it leaves (its turn goes on, on its way: behavior/deals.js shunsFight).
-  if ( shunsFight(run, u) && seesFight(run, u) ) {
-    log(run, u, { type: "leave", shuns: true });
+  if ( away || (shunsFight(run, u) && seesFight(run, u)) ) {
+    if ( !away ) log(run, u, { type: "leave", shuns: true });
     if ( mayLeave(run, u) || (u.pos && run.prep.spec?.bounds) ) {
-      startLeaving(run, u, { why: "shuns" });
+      startLeaving(run, u, { why: away ? "odds" : "shuns" });
       return true;
     }
     goneFrom(run, u);
@@ -3719,6 +3723,15 @@ function playFromHere(run, u) {
   // (behavior/leaving.js).
   dealsWithIt(u);
   if ( isLeaving(u) ) return leavingTurn(run, u, turn);
+  // Its team's head has called it off (the odds too long), or holds it back while two others fight it out (unless set
+  // upon itself): behavior/stance.js.
+  const stance = stanceOf(run, u);
+  if ( stance?.kind === STANCE.LEAVE && !standsGround(run, u) ) {
+    flee(run, u, turn, { why: "odds" });
+    if ( isLeaving(u) ) leavingTurn(run, u, turn, { whole: false });
+    return;
+  }
+  if ( stance?.kind === STANCE.WAIT && !u.harmedBy.size && !enemiesOf(run, u).some(e => isStanding(e) && u.adjacent?.has(e.id)) ) return;
   // Slacking (the Lazy playstyle): with no foe beside it and its wounds not pressing, now and then it just doesn't.
   if ( slacksOff(run, u) ) {
     log(run, u, { type: "lazy", chose: true });
@@ -4748,10 +4761,14 @@ export function beginRun(prep, seed, { log: withLog = false, record = false } = 
   return run;
 }
 
-/** A new round: its number, and which way those who take no side lean now (the underdog changes as the fight goes). */
+/**
+ * A new round: its number, which way those who take no side lean now (the underdog changes as the fight goes), and
+ * each team's view of the fight, through its head (behavior/stance.js).
+ */
 export function beginRound(run, round) {
   run.round = round;
   refreshLeans(run);
+  decideStances(run, logger(run));
 }
 
 /**

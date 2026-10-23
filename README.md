@@ -239,6 +239,13 @@ Each group (the party, each hostile group, each neutral friend group) has a **bo
 
 The commander [lends its group a bonus](STATS_AND_FORMULAS_README.md#what-a-leader-lends), [pulls its followers](STATS_AND_FORMULAS_README.md#following-the-leader) toward its wishes (**Leader's influence**, **Boss's influence**), and talking it down can take its group with it. When it falls or can't make itself seen and heard, a lieutenant steps up. Bosses almost never run. A Wants to Lead character out of command may [scheme](STATS_AND_FORMULAS_README.md#scheming); a PC turns traitor only on **Luck check: a player character turning traitor**.
 
+**Teams act as teams.** Each round, a group's head [sizes up the fight](STATS_AND_FORMULAS_README.md#team-stances), the smarter the more carefully:
+- **Leaving:** a competent head takes its team out of a fight whose odds look too long.
+- **Jumping in:** a neutral friend group jumps in to save the side it leans to, or against a side it holds a grudge against.
+- **Waiting, then preying:** a tactical head hangs back while two others fight, then goes after whichever is spent, to rob, extort or finish them.
+- **A new head:** one taking over decides again, by its own nature, and may call its team back.
+- **The party:** takes part only when FastFighting plays all of it.
+
 ### Morale and leaving
 
 Losses, wounds, a fallen leader, bad odds and friends seen running [weigh against Brave](STATS_AND_FORMULAS_README.md#morale-stress) until a creature [wavers or routs](STATS_AND_FORMULAS_README.md#morale-check-hold-waver-rout). One that runs [tries to take its group along](STATS_AND_FORMULAS_README.md#calling-a-retreat), and a commander, or a brave and loyal friend, may [rally](STATS_AND_FORMULAS_README.md#rallying) them. [Fear conditions](STATS_AND_FORMULAS_README.md#fear) do what the system says, and fear past what a creature's nerve can bear gives it a reason to run. [Of its own accord](STATS_AND_FORMULAS_README.md#leaving-of-its-own-accord), a hostile with nobody to lead it, or led by one who'd rather run, may decide its life is worth more than the spoils; and one that has stolen, looted or picked up something may make off with it.

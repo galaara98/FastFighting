@@ -513,7 +513,8 @@ function narrate(e, roll, rel, fill) {
       const g = { ...f, side: e.sideLabel ?? "", victim: e.victim ?? "" };
       switch ( e.what ) {
         case "truce": return roll(e.victim ? "event.truceVictim" : "event.truce", g);
-        case "offended": return roll(e.why === "kin" ? "event.offendedKin" : e.why === "hurt" ? "event.offendedHurt" : e.why === "robbed" ? "event.offendedRobbed" : e.why === "insulted" ? "event.offendedInsulted" : e.victim ? "event.offendedVictim" : "event.offended", g);
+        // (Thrown in with a side, or against one, by its team's head: told with its stance, behavior/stance.js.)
+        case "offended": return e.why === "stance" ? "" : roll(e.why === "kin" ? "event.offendedKin" : e.why === "hurt" ? "event.offendedHurt" : e.why === "robbed" ? "event.offendedRobbed" : e.why === "insulted" ? "event.offendedInsulted" : e.victim ? "event.offendedVictim" : "event.offended", g);
         case "luck": return roll("event.nearlyTurns", g);
         case "amends": return roll("event.amends", g);
         case "calmed": return roll("event.calmed", g);
@@ -615,6 +616,8 @@ function narrate(e, roll, rel, fill) {
       return roll(`event.deal${kind}${e.answer === "accept" ? "" : "Refused"}`, g);
     }
     // (Quitting is told with the deal; following a commander out of it, here.)
+    // (A team's head's view of the fight: behavior/stance.js.)
+    case "stance": return roll({ leave: "event.stanceLeave", stay: "event.stanceStay", save: "event.stanceSave", harm: "event.stanceHarm", wait: "event.stanceWait", prey: "event.stancePrey" }[e.kind] ?? "event.stanceWait", { ...f, target: e.targetName ?? "" });
     case "quit": return e.following ? roll("event.quitFollow", { ...f, by: e.following }) : roll("event.quit", f);
     case "quitCall": return "";
     case "dropGoods": return roll("event.dropGoods", { ...f, amount: goodsText(e.goods), target: e.for ?? "" });

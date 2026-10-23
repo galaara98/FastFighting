@@ -721,6 +721,9 @@ export function buildBattleSpec(roster, setup, { approach = null } = {}) {
       // them for the taker to pick up; else they change hands at once (foundry/loot-drop.js).
       dropGoods: canDropGoods(),
       remains: leavesRemains(setting("lootMode")),
+      // Whether the players run their characters (the planner's toggle): off, FastFighting plays the party, and its
+      // head takes the party's view of the fight as any team's does (engine/behavior/stance.js).
+      playersRun: options.playersRunPCs !== false,
       opening: options.opening ?? "auto",
       // The luck checks that protect player characters (world settings, as sliders).
       concedeLuck: setting("concedeLuck"),

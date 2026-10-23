@@ -3382,6 +3382,48 @@
     "{actor} and {target} can't make themselves understood.",
     "Whatever {actor} offers, {target} doesn't understand it."
   ],
+  "event.stanceLeave": [
+    "{actor} takes one look at how the fight is going and calls their side off.",
+    "{actor} has seen enough; they and theirs start pulling back.",
+    "Judging the odds too long, {actor} signals their people to get out.",
+    "{actor} waves their group away from a fight they can't win.",
+    "{actor} decides this isn't a fight worth dying in, and leads their side away."
+  ],
+  "event.stanceStay": [
+    "{actor} takes charge and calls their people back into the fight.",
+    "With {actor} in command now, their side turns around and comes back.",
+    "{actor} won't hear of retreat, and rallies their people to stay.",
+    "{actor} stops the retreat in its tracks.",
+    "Under {actor}, their side holds its ground after all."
+  ],
+  "event.stanceSave": [
+    "{actor} and their people rush in to help {target}.",
+    "Seeing {target} beset, {actor} leads their group into the fray.",
+    "{actor} won't stand by while {target} is set upon, and brings their friends in.",
+    "{actor}'s group throws in its lot with {target}.",
+    "At a sign from {actor}, their group comes to {target}'s aid."
+  ],
+  "event.stanceHarm": [
+    "{actor} and their people turn on {target}.",
+    "{actor} leads their group against {target}.",
+    "Old grudges win out: {actor}'s group goes after {target}.",
+    "{actor} sees a chance to settle scores with {target}, and takes it.",
+    "{actor}'s group joins the fight against {target}."
+  ],
+  "event.stanceWait": [
+    "{actor} holds their side back, content to watch the others bleed.",
+    "{actor} keeps their people out of it for now, waiting.",
+    "{actor}'s side hangs back, watching how the fight goes.",
+    "{actor} waits, letting the others wear each other down.",
+    "{actor} signals their group to stay put and watch."
+  ],
+  "event.stancePrey": [
+    "{actor} sees {target} spent, and sends their people in.",
+    "Now that {target} is worn down, {actor}'s side moves in.",
+    "{actor} judges the moment right and leads their group against {target}.",
+    "{actor}'s people close in on {target}, looking for easy pickings.",
+    "With {target} weakened, {actor} makes their move."
+  ],
   "event.quit": [
     "{actor} wants no more of this fight and heads off.",
     "{actor} has had enough and leaves the fight.",

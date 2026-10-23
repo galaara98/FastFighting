@@ -612,7 +612,7 @@ export function quitFight(run, t, { by = null, say = null, whole = false } = {})
 }
 
 /** One who doesn't listen to leaders: its pills hardly hear them, it goes against them, or it schemes against them. */
-const ignoresLeader = f => (styleOf(f).leader ?? 1) < 0.5 || (styleOf(f).contrarian ?? 0) >= 0.5 || !!f.scheming;
+export const ignoresLeader = f => (styleOf(f).leader ?? 1) < 0.5 || (styleOf(f).contrarian ?? 0) >= 0.5 || !!f.scheming;
 
 /** One quitting: into the free group (or its side), and away. */
 function walkOff(run, t, { by, group, following = null, say }) {

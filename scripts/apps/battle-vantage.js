@@ -17,6 +17,7 @@ let pendingSide = null;
 import { DESIRE_BAND_KEYS, DESIRE_KINDS, desireBand } from "../engine/behavior/desire.js";
 import { mindOf, bandLevel, networkOf, playerRuns } from "../engine/live.js";
 import { commandOf, groupKeyOf, SLOTS } from "../engine/battle-state.js";
+import { stanceOf } from "../engine/behavior/stance.js";
 import { PICKED_BONUS } from "../foundry/battle.js";
 import { GM_RELATIONS, conditionMost } from "../engine/conditions.js";
 import { getAdapter } from "../api.js";
@@ -978,6 +979,9 @@ function panelOf(b, net, nodes, edges, focus, { name, docOf, sideLabel }) {
     ? SLOTS.filter(s => s !== "boss" || u.side !== SIDES.FRIENDLY).map(s => ({ key: s, short: loc(`FASTFIGHTING.Planner.Role.${s}.Short`), label: loc(`FASTFIGHTING.Planner.Role.${s}.Name`), active: place === s }))
     : null;
   const controller = u.controlledBy ? run.byId.get(u.controlledBy) : null;
+  // (Its team's view of the fight, through its head: behavior/stance.js. Whether it goes along with it.)
+  const team = key ? run.stance?.[key] : null;
+  const stance = team ? `${fmt(`FASTFIGHTING.Battle.Net.Stance.${team.kind}`, { target: run.prep.sides[team.target]?.label ?? sideLabel(team.target ?? "") })}${stanceOf(run, u) ? "" : ` ${loc("FASTFIGHTING.Battle.Net.Stance.notWith")}`}` : "";
   // (None of its players connected: the time left until FastFighting plays it.)
   const deadline = Object.fromEntries(b.data.awayTimers ?? [])[focus];
   const away = Number.isFinite(deadline) && deadline > Date.now() && players.has(focus) ? { deadline, left: clockText(deadline - Date.now()) } : null;
@@ -988,7 +992,7 @@ function panelOf(b, net, nodes, edges, focus, { name, docOf, sideLabel }) {
     on: [...edges.filter(onIt), ...symbols.filter(m => m.cls.includes("is-condition") || m.cls.includes("is-status"))].map(e => row(e)),
     wantedBy: edges.filter(wantsMe).map(e => row(e, false)),
     setAside: decides ? [] : setAside, held: decides ? [] : held,
-    teams, roles, controlled: controller ? fmt("FASTFIGHTING.Battle.Net.Controlled", { name: controller.spec.name }) : ""
+    teams, roles, stance, controlled: controller ? fmt("FASTFIGHTING.Battle.Net.Controlled", { name: controller.spec.name }) : ""
   };
 }
 

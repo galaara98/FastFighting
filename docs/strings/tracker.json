@@ -2992,6 +2992,66 @@
    "commit": null,
    "hash": "c9a09909a026"
   },
+  "core:FASTFIGHTING.Battle.Net.Stance.harm": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.Net.Stance.harm",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "6bdf32aee22f"
+  },
+  "core:FASTFIGHTING.Battle.Net.Stance.leave": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.Net.Stance.leave",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "37c60b00c309"
+  },
+  "core:FASTFIGHTING.Battle.Net.Stance.notWith": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.Net.Stance.notWith",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "41865cc61efb"
+  },
+  "core:FASTFIGHTING.Battle.Net.Stance.prey": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.Net.Stance.prey",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "4647391ed6bc"
+  },
+  "core:FASTFIGHTING.Battle.Net.Stance.save": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.Net.Stance.save",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "0c381db4a16c"
+  },
+  "core:FASTFIGHTING.Battle.Net.Stance.wait": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.Net.Stance.wait",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "95081050b279"
+  },
   "core:FASTFIGHTING.Battle.Net.Steady": {
    "repo": "core",
    "file": "languages/en.json",
@@ -9949,6 +10009,16 @@
    "commit": null,
    "hash": "5a4757f0262c"
   },
+  "core:FASTFIGHTING.Log.FleeOdds": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.FleeOdds",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "b3377abd0caf"
+  },
   "core:FASTFIGHTING.Log.FleePrize": {
    "repo": "core",
    "file": "languages/en.json",
@@ -12127,6 +12197,66 @@
    "date": null,
    "commit": null,
    "hash": "59c7f9a594d1"
+  },
+  "core:FASTFIGHTING.Log.StanceHarm": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.StanceHarm",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "156ca2fb3e89"
+  },
+  "core:FASTFIGHTING.Log.StanceLeave": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.StanceLeave",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "b58c6d3a9324"
+  },
+  "core:FASTFIGHTING.Log.StancePrey": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.StancePrey",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "7a5e4a93f286"
+  },
+  "core:FASTFIGHTING.Log.StanceSave": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.StanceSave",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "33984123f34b"
+  },
+  "core:FASTFIGHTING.Log.StanceStay": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.StanceStay",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "cf7ecb1c108f"
+  },
+  "core:FASTFIGHTING.Log.StanceWait": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.StanceWait",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "df336939b053"
   },
   "core:FASTFIGHTING.Log.Stand": {
    "repo": "core",
@@ -24359,6 +24489,66 @@
    "date": null,
    "commit": null,
    "hash": "c6d643787706"
+  },
+  "core:FASTFIGHTING.Story.Part.stanceHarm": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Story.Part.stanceHarm",
+   "area": "core/Story",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "29e6233fea9a"
+  },
+  "core:FASTFIGHTING.Story.Part.stanceLeave": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Story.Part.stanceLeave",
+   "area": "core/Story",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "8ade263c1dfc"
+  },
+  "core:FASTFIGHTING.Story.Part.stancePrey": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Story.Part.stancePrey",
+   "area": "core/Story",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "644a4f0d0626"
+  },
+  "core:FASTFIGHTING.Story.Part.stanceSave": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Story.Part.stanceSave",
+   "area": "core/Story",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "41137950eeb6"
+  },
+  "core:FASTFIGHTING.Story.Part.stanceStay": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Story.Part.stanceStay",
+   "area": "core/Story",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "aeff71254dd1"
+  },
+  "core:FASTFIGHTING.Story.Part.stanceWait": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Story.Part.stanceWait",
+   "area": "core/Story",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "4694b5b8345b"
   },
   "core:FASTFIGHTING.Story.Part.stand": {
    "repo": "core",
@@ -40421,6 +40611,66 @@
    "date": null,
    "commit": null,
    "hash": "bb6be22796c1"
+  },
+  "core:story:event.stanceHarm": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "event.stanceHarm",
+   "area": "core/story.event",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "8879dcf64d2a"
+  },
+  "core:story:event.stanceLeave": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "event.stanceLeave",
+   "area": "core/story.event",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "ffaba000f7fe"
+  },
+  "core:story:event.stancePrey": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "event.stancePrey",
+   "area": "core/story.event",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "d6894b2e1ef0"
+  },
+  "core:story:event.stanceSave": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "event.stanceSave",
+   "area": "core/story.event",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "0e8c7d71cf78"
+  },
+  "core:story:event.stanceStay": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "event.stanceStay",
+   "area": "core/story.event",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "1589b475dd6e"
+  },
+  "core:story:event.stanceWait": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "event.stanceWait",
+   "area": "core/story.event",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "6ac32d918875"
   },
   "core:story:event.stand": {
    "repo": "core",

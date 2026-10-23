@@ -256,6 +256,8 @@ function baseLine(e) {
       if ( e.frightened ) answer = t("DealFrightened", { answer, n: e.frightened });
       return t("Deal", { ...a, what, wordless: `${e.wordless ? t("DealWordless") : ""}${e.reaction ? t("DealReaction") : ""}`, skill: e.skill ?? "", roll: dice(e.natural, e.mod, e.total, e.dc, t("DcOf", { stat: e.dcStat })), degree: degree(e.degree), answer });
     }
+    case "stance": return t({ leave: "StanceLeave", stay: "StanceStay", save: "StanceSave", harm: "StanceHarm", wait: "StanceWait", prey: "StancePrey" }[e.kind] ?? "StanceWait",
+      { actor: e.actor, target: e.targetName ?? "", odds: Number.isFinite(e.odds) ? Math.round(e.odds * 100) : "?" });
     case "quit": return e.following ? t("QuitFollow", { actor: e.actor, by: e.following }) : e.group ? t("QuitGroup", { actor: e.actor, group: e.group }) : t("Quit", a);
     case "quitCall": return t("QuitCall", { actor: e.actor, by: e.by ?? "", result: t(e.follows ? "QuitCallGoes" : "QuitCallStays") });
     case "dropGoods": return t("DropGoods", { actor: e.actor, what: goodsText(e.goods), target: e.for ?? "" });
@@ -324,7 +326,7 @@ function baseLine(e) {
       return e.self ? t("FateSelf", { actor: e.actor, label: e.label }) : t("FateFor", { ...a, label: e.label });
     case "flee":
       if ( e.retreat ) return e.leads ? t("FleeLeads", a) : t("FleeWith", { actor: e.actor, name: e.with ?? "" });
-      return t({ dread: "FleeDread", breaks: "FleeBreaks", revived: "FleeRevived", allyFalls: "FleeAllyFalls", life: "FleeLife", prize: "FleePrize" }[e.why] ?? "Flee", { actor: e.actor, name: e.dread ?? "" });
+      return t({ dread: "FleeDread", breaks: "FleeBreaks", revived: "FleeRevived", allyFalls: "FleeAllyFalls", life: "FleeLife", prize: "FleePrize", odds: "FleeOdds" }[e.why] ?? "Flee", { actor: e.actor, name: e.dread ?? "" });
     case "grabbed": return t("Grabbed", a);
     case "holdGround": return e.ordered ? t("HoldOrdered", { actor: e.actor, by: e.by ? t("ByName", { name: e.by }) : "" }) : t("HoldGround", a);
     case "holdOn": return t("HoldOn", { actor: e.actor, label: e.label || t("HoldsOn") });

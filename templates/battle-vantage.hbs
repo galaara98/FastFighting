@@ -133,6 +133,7 @@
               {{#if focus.roles}}<span class="ff-roles" role="group" aria-label="{{localize "FASTFIGHTING.Planner.Command"}}" data-tooltip="{{localize "FASTFIGHTING.Battle.Net.RoleHint"}}">{{#each focus.roles}}<button type="button" class="ff-role-pill {{#if active}}active{{/if}}" data-action="setRole" data-role="{{key}}" aria-pressed="{{#if active}}true{{else}}false{{/if}}" aria-label="{{label}}">{{short}}</button>{{/each}}</span>{{/if}}
             </div>
             {{#if focus.controlled}}<p class="hint">{{focus.controlled}}</p>{{/if}}
+            {{#if focus.stance}}<p class="hint"><i class="fa-solid fa-flag" aria-hidden="true"></i> {{focus.stance}}</p>{{/if}}
           </section>
 
           <section>
