@@ -167,7 +167,7 @@ async function keepNow(b) {
   b.data.snapshot = snapshotRun(b.run, { log: false });
   // (A player's turn under way: who, since when, what the GM said and what reactions wrote. Its cards are found again by time.)
   const pc = b.pc;
-  b.data.pc = pc ? { combatantId: pc.combatantId, id: pc.id, round: pc.round, facts: pc.facts, records: pc.records, snapshot: pc.snapshot, from: pc.from, damage: pc.damage ?? [], dealt: pc.dealt ?? [], applied: pc.applied ?? [], lastAt: pc.lastAt ?? null, rollCards: pc.rollCards ?? [], dealRolls: pc.dealRolls ?? [] } : null;
+  b.data.pc = pc ? { combatantId: pc.combatantId, id: pc.id, round: pc.round, facts: pc.facts, records: pc.records, snapshot: pc.snapshot, from: pc.from, damage: pc.damage ?? [], dealt: pc.dealt ?? [], applied: pc.applied ?? [], lastAt: pc.lastAt ?? null, startAt: pc.startAt ?? null, rollCards: pc.rollCards ?? [], dealRolls: pc.dealRolls ?? [] } : null;
   const doc = transcriptOf(b.combat.id, b.data.id) ?? await newTranscript(b.combat.id);
   if ( !doc ) return;
   // (The battle's own key replaced whole, the journal's other keys left as they are. Its spec, the biggest part, only
@@ -846,7 +846,9 @@ async function beginPlayerTurn(u, combatant) {
   const snapshot = snapshotRun(battle.run, { log: false });
   pcTurnBegin(battle.run, u.id, { nonce: freshNonce() });
   const doc = docOf(u.id);
-  battle.pc = { combatantId: combatant.id, id: u.id, round: battle.combat.round, messages: [], facts: [], records: [], snapshot, from: Date.now(), lastAt: doc ? { x: doc.x, y: doc.y } : null, rollCards: [] };
+  // (Where it stood as its turn began: a Rewind puts its token back there, as an NPC's turn's moves do.)
+  battle.pc = { combatantId: combatant.id, id: u.id, round: battle.combat.round, messages: [], facts: [], records: [], snapshot, from: Date.now(), lastAt: doc ? { x: doc.x, y: doc.y } : null,
+    startAt: doc ? { uuid: doc.uuid, ...placeOf(doc) } : null, rollCards: [] };
   // (Every sheet and token as the turn begins, for Rewind to put back whatever the turn changed by hand.)
   sheetsAt.set(battle.pc, captureSheets());
   await dealTurnCard(u);
@@ -2813,7 +2815,7 @@ async function closePlayerTurn() {
   await writeChanges(result.synced, captureAll(run), records, { messages: made });
   // (With what it was read from, the player's own cards: the tracker taken back to it, it's theirs again.)
   const turn = {
-    key: `${pc.round}.${pc.combatantId}`, combatantId: pc.combatantId, round: pc.round, at: battle.combat.turns.findIndex(c => c.id === pc.combatantId), kind: "pc", records, messages: [], moves: [], doors: [], snapshot: pc.snapshot,
+    key: `${pc.round}.${pc.combatantId}`, combatantId: pc.combatantId, round: pc.round, at: battle.combat.turns.findIndex(c => c.id === pc.combatantId), kind: "pc", records, messages: [], moves: pc.startAt ? [pc.startAt] : [], doors: [], snapshot: pc.snapshot,
     from: pc.from, cards: pc.messages, facts: pc.facts ?? [], dealRolls: pc.dealRolls ?? []
   };
   if ( pc.applied?.length ) turn.applied = [...pc.applied];

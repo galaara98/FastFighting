@@ -712,3 +712,8 @@ label.is-disabled, .form-group.is-disabled { opacity: 0.5; }
 .fast-fighting.ff-planner .ff-reinforce-slot img { width: 100%; height: 100%; object-fit: cover; border: none; border-radius: 3px; }
 .fast-fighting.ff-planner .ff-reinforce-slot.is-unreadable { border-color: var(--color-level-error, #c00); }
 .fast-fighting.ff-planner .ff-reinforce-team input[type="number"] { width: 3.5em; }
+
+/* The Battle Vantage: each team's reinforcements, a line each */
+.fast-fighting .ff-battle-reinforce li { display: flex; align-items: center; gap: 0.5rem; }
+.fast-fighting .ff-battle-reinforce li > span { flex: 1; }
+.fast-fighting .ff-battle-reinforce li input[type="number"] { width: 3.5em; flex: 0 0 auto; }

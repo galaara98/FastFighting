@@ -64,7 +64,7 @@ beforeEach(() => {
     itempiles: { API: api },
     i18n: { has: () => true, localize: k => (k === "FASTFIGHTING.Loot.Belongings" ? "{name}'s belongings" : k) }
   };
-  globalThis.fromUuid = async uuid => ({ uuid });
+  globalThis.fromUuid = async uuid => ({ uuid, flags: {}, getFlag(s, k) { return this.flags[s]?.[k]; }, async setFlag(s, k, v) { calls.push(["flag", uuid, k, v]); (this.flags[s] ??= {})[k] = v; } });
   globalThis.foundry = { utils: { randomID: () => `id${++ids}`, deepClone: v => structuredClone(v) } };
   globalThis.CONST = { DOCUMENT_OWNERSHIP_LEVELS: { OBSERVER: 2 }, TOKEN_DISPOSITIONS: { NEUTRAL: 0 } };
   globalThis.Actor = { create: async data => (calls.push(["actor", data]), { ...data, uuid: "Actor.core", getTokenDocument: async o => ({ toObject: () => ({ ...o }) }) }) };
@@ -121,6 +121,8 @@ describe("a player's character that dies", () => {
     expect(made).toMatchObject({ position: { x: 100, y: 200 }, sceneId: "s", tokenOverrides: { name: "kyra's belongings", sort: 4, flags: { "fast-fighting": { pile: true } } } });
     expect(calls.find(c => c[0] === "put")).toEqual(["put", "Scene.s.Token.pile", { items: [], coins: { gp: 5 }, money: 0 }]);
     expect(out.records[0]).toEqual({ createdTokens: ["Scene.s.Token.pile"] });
+    // (Our mark on it, which Item Piles doesn't keep from what it's given.)
+    expect(calls).toContainEqual(["flag", "Scene.s.Token.pile", "pile", true]);
     // (Only on dying; and not with the loot setting at "Do nothing".)
     expect((await lootOnFall(doc, pc, { fell: true }, "corpse")).remains).toBeNull();
     expect((await lootOnFall(doc, pc, { died: true }, "none")).remains).toBeNull();

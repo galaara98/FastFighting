@@ -79,6 +79,8 @@ async function makePile(scene, at, goods, { name = "", over = {}, type = null, i
       const made = await game.itempiles.API.createItemPile({ position: at, sceneId: scene.id, items, tokenOverrides, ...(pileFlags ? { itemPileFlags: pileFlags } : {}) });
       const token = made?.tokenUuid ? await fromUuid(made.tokenUuid) : null;
       if ( token ) {
+        // (Our mark, which Item Piles doesn't keep from what it's given: set after.)
+        if ( !token.getFlag(MODULE_ID, "pile") ) await token.setFlag(MODULE_ID, "pile", true);
         const records = [{ createdTokens: [token.uuid] }];
         if ( goods.coins || goods.money ) records.push(...((await adapter.putGoods(token, { items: [], coins: goods.coins, money: goods.money ?? 0 })) ?? []));
         return { records, pile: token.uuid };
