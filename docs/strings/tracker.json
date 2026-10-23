@@ -18603,11 +18603,10 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Results.EmptyTitle",
    "area": "core/Results",
-   "status": "todo",
-   "date": null,
-   "commit": null,
-   "hash": "17b972911a0e",
-   "changed": true
+   "status": "written",
+   "date": "2026-10-23",
+   "commit": "8289d22",
+   "hash": "f76ce78c9ae8"
   },
   "core:FASTFIGHTING.Results.FallsFirst": {
    "repo": "core",
