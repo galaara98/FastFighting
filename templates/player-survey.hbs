@@ -1,7 +1,15 @@
+{{!-- The survey: its tabs on top (the party's vote first), each saying where it stands; a character's card and questionnaire; I'm ready. --}}
 <div class="ff-survey-root">
-  <header class="ff-survey-head">
-    <p>{{intro}}</p>
-  </header>
+  {{#if sheets.length}}
+  <nav class="ff-survey-tabs" role="tablist" aria-label="{{localize "FASTFIGHTING.Survey.Title"}}">
+    {{#each sheets}}
+    <button type="button" class="ff-survey-tab {{#if active}}active{{/if}} {{lock}}" data-action="sheetTab" data-tab="{{id}}" role="tab" aria-selected="{{#if active}}true{{else}}false{{/if}}" {{#if tooltip}}data-tooltip="{{tooltip}}"{{/if}}>
+      {{#if icon}}<i class="{{icon}}" aria-hidden="true"></i>{{else}}<img src="{{img}}" alt="">{{/if}}
+      <span class="ff-survey-tab-text"><span class="ff-survey-tab-name">{{name}}</span>{{#if state}}<span class="ff-survey-tab-state {{stateCls}}">{{state}}</span>{{/if}}</span>
+    </button>
+    {{/each}}
+  </nav>
+  {{/if}}
 
   <div class="ff-survey-sheet">
     {{#if onParty}}
@@ -10,30 +18,35 @@
       <p class="ff-empty">{{localize "FASTFIGHTING.Survey.NoTokens"}}</p>
     {{else}}
       {{#with active}}
-      <div class="ff-survey-token">
+      <header class="ff-survey-card">
         <img src="{{img}}" alt="">
-        <div>
+        <div class="ff-survey-card-text">
           <h3>{{name}}</h3>
-          <div class="ff-row-meta"><span>{{localize "FASTFIGHTING.Survey.Level"}} {{level}}</span><span><i class="fa-solid fa-heart"></i> {{hp}}</span>{{#if showAc}}<span><i class="fa-solid fa-shield"></i> {{ac}}</span>{{/if}}</div>
-          {{#if sharedWith}}<div class="ff-shared {{#if sharedOnline}}is-online{{/if}}"><i class="fa-solid fa-user-group"></i> {{localize "FASTFIGHTING.Survey.SharedWith"}} {{sharedWith}}</div>{{/if}}
+          <div class="ff-row-meta"><span>{{localize "FASTFIGHTING.Survey.Level"}} {{level}}</span><span><i class="fa-solid fa-heart" aria-hidden="true"></i> {{hp}}</span>{{#if showAc}}<span><i class="fa-solid fa-shield" aria-hidden="true"></i> {{ac}}</span>{{/if}}</div>
+          {{#if sharedWith}}<div class="ff-shared {{#if sharedOnline}}is-online{{/if}}"><i class="fa-solid fa-user-group" aria-hidden="true"></i> {{localize "FASTFIGHTING.Survey.SharedWith"}} {{sharedWith}}</div>{{/if}}
         </div>
-        <button type="button" class="ff-btn ff-survey-reset" data-action="resetAll" data-token-id="{{id}}" data-tooltip="{{localize "FASTFIGHTING.Survey.ResetHint"}}"><i class="fa-solid fa-rotate-left"></i> {{localize "FASTFIGHTING.Survey.Reset"}}</button>
-      </div>
+        <button type="button" class="ff-btn ff-btn--quiet ff-btn--icon" popovertarget="ff-pop-survey" aria-haspopup="menu" aria-label="{{localize "FASTFIGHTING.Survey.More"}}" data-tooltip="{{localize "FASTFIGHTING.Survey.More"}}"><i class="fa-solid fa-ellipsis"></i></button>
+        <div class="ff-menu" id="ff-pop-survey" popover role="menu">
+          <button type="button" class="ff-menu-item ff-menu-item--danger" role="menuitem" data-action="resetAll" data-token-id="{{id}}"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i> {{localize "FASTFIGHTING.Survey.ResetMenu"}}</button>
+        </div>
+      </header>
       {{> "modules/fast-fighting/templates/partials/tactics.hbs" tactics}}
       {{/with}}
     {{/if}}
   </div>
 
-  <footer class="ff-survey-foot">
-    <nav class="ff-sheet-tabs" role="tablist">
-      {{#each sheets}}
-      <button type="button" class="ff-sheet-tab {{#if active}}active{{/if}} {{#if party}}ff-party-tab {{lock}}{{/if}}" data-action="sheetTab" data-tab="{{id}}" role="tab" aria-selected="{{#if active}}true{{else}}false{{/if}}" {{#if tooltip}}data-tooltip="{{tooltip}}"{{/if}}>{{#if icon}}<i class="{{icon}}"></i>{{else}}<img src="{{img}}" alt="">{{/if}} {{name}}</button>
-      {{/each}}
-    </nav>
-    {{#if justClose}}
-    <button type="button" class="ff-btn" data-action="close"><i class="fa-solid fa-xmark"></i> {{localize "Close"}}</button>
+  <footer class="ff-survey-foot" aria-live="polite">
+    {{#if readyArmed}}
+    <span class="ff-survey-note"><b>{{localize "FASTFIGHTING.Survey.ReadyArmedNote"}}</b></span>
+    <button type="button" class="ff-btn ff-btn--quiet" data-action="readyCancel">{{localize "Cancel"}}</button>
+    <button type="button" class="ff-btn ff-btn--attention" data-action="ready"><i class="fa-solid fa-lock" aria-hidden="true"></i> {{localize "FASTFIGHTING.Survey.ReadyArmed"}}</button>
     {{else}}
-    <button type="button" class="ff-btn ff-run" data-action="ready" {{#if empty}}{{#unless onParty}}disabled{{/unless}}{{/if}}><i class="fa-solid fa-check"></i> {{localize "FASTFIGHTING.Survey.Ready"}}</button>
+    <span class="ff-survey-note">{{intro}}{{#if readyLocks}} {{localize "FASTFIGHTING.Survey.ReadyLocks"}}{{/if}}</span>
+    {{#if justClose}}
+    <button type="button" class="ff-btn" data-action="close"><i class="fa-solid fa-xmark" aria-hidden="true"></i> {{localize "Close"}}</button>
+    {{else}}
+    <button type="button" class="ff-btn ff-btn--primary" data-action="ready" {{#if empty}}{{#unless onParty}}disabled{{/unless}}{{/if}}><i class="fa-solid fa-check" aria-hidden="true"></i> {{localize "FASTFIGHTING.Survey.Ready"}}</button>
+    {{/if}}
     {{/if}}
   </footer>
 </div>

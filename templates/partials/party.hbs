@@ -1,30 +1,33 @@
+{{!-- The survey's Party tab: a vote on how the party acts, one per player; locked in with two presses. --}}
 <div class="ff-party">
   <p class="ff-hint ff-party-intro">{{localize "FASTFIGHTING.Party.Intro"}}</p>
   {{#each questions}}
-  <div class="ff-party-q">
-    <div class="ff-q-label">{{label}} <i class="fa-solid fa-circle-question" data-tooltip="{{hint}}"></i></div>
+  <div class="ff-party-q" role="group" aria-label="{{label}}">
+    <div class="ff-q-label">{{label}} <button type="button" class="ff-help" data-tooltip="{{hint}}" aria-label="{{hint}}"><i class="fa-solid fa-question"></i></button></div>
     <div class="ff-pills">
       {{#each options}}
       <button type="button" class="ff-pill {{#if mine}}active{{/if}} {{#if winning}}is-winning{{/if}}" data-action="partyVote" data-question="{{../key}}" data-answer="{{value}}" aria-pressed="{{#if mine}}true{{else}}false{{/if}}" {{#unless @root.party.canVote}}disabled{{/unless}}>
         {{label}}{{#each voters}}<span class="ff-voter {{#if locked}}is-locked{{/if}}" style="background: {{color}}" data-tooltip-text="{{name}}">{{initial}}</span>{{/each}}
+        {{#if winning}}<span class="ff-top-mark" data-tooltip="{{localize "FASTFIGHTING.Party.Top"}}" aria-label="{{localize "FASTFIGHTING.Party.Top"}}"><i class="fa-solid fa-star"></i></span>{{/if}}
       </button>
       {{/each}}
     </div>
   </div>
   {{/each}}
   {{#if proxy}}
-  <p class="ff-hint"><i class="fa-solid fa-user-clock"></i> {{proxy}}</p>
+  <p class="ff-hint"><i class="fa-solid fa-user-clock" aria-hidden="true"></i> {{proxy}}</p>
   {{/if}}
   {{#if canVote}}
-  <div class="ff-lockin">
-    <input type="range" class="ff-swipe" data-swipe="lockIn" min="0" max="100" value="0" aria-label="{{localize "FASTFIGHTING.Party.LockIn"}}">
-    <span class="ff-swipe-label" aria-hidden="true">{{localize "FASTFIGHTING.Party.LockIn"}} <i class="fa-solid fa-angles-right"></i></span>
+  <div class="ff-lockin {{#if armed}}is-armed{{/if}}" aria-live="polite">
+    <span class="ff-lockin-text">{{#if armed}}{{localize "FASTFIGHTING.Party.LockInWarn"}}{{else}}{{localize "FASTFIGHTING.Party.LockInPrompt"}}{{/if}}</span>
+    {{#if armed}}<button type="button" class="ff-btn ff-btn--quiet" data-action="lockCancel">{{localize "Cancel"}}</button>{{/if}}
+    <button type="button" class="ff-btn {{#if armed}}ff-btn--attention{{/if}}" data-action="lockIn"><i class="fa-solid fa-lock" aria-hidden="true"></i> {{#if armed}}{{localize "FASTFIGHTING.Party.LockInConfirm"}}{{else}}{{localize "FASTFIGHTING.Party.LockIn"}}{{/if}}</button>
   </div>
   {{else if locked}}
-  <p class="ff-locked"><i class="fa-solid fa-lock"></i> {{localize "FASTFIGHTING.Party.LockedIn"}}</p>
+  <p class="ff-locked"><i class="fa-solid fa-lock" aria-hidden="true"></i> {{localize "FASTFIGHTING.Party.LockedIn"}}</p>
   {{else if readOnly}}
-  <p class="ff-hint"><i class="fa-solid fa-eye"></i> {{localize "FASTFIGHTING.Party.ReadOnly"}}</p>
+  <p class="ff-hint"><i class="fa-solid fa-eye" aria-hidden="true"></i> {{localize "FASTFIGHTING.Party.ReadOnly"}}</p>
   {{else}}
-  <p class="ff-hint"><i class="fa-solid fa-eye"></i> {{localize "FASTFIGHTING.Party.GmView"}}</p>
+  <p class="ff-hint"><i class="fa-solid fa-eye" aria-hidden="true"></i> {{localize "FASTFIGHTING.Party.GmView"}}</p>
   {{/if}}
 </div>

@@ -210,6 +210,46 @@ export async function togglePlaystyle(actor, id) {
   return true;
 }
 
+/** A picked playstyle one place earlier (`dir` -1) or later (1): the first counts most. False if it can't move. */
+export async function movePlaystyle(actor, id, dir) {
+  if ( !actor || !isPlaystyle(id) ) return false;
+  const current = [...(getStoredTactics(actor).playstyles ?? [])];
+  const i = current.indexOf(id);
+  const j = i + Math.sign(Number(dir) || 0);
+  if ( i < 0 || j < 0 || j >= current.length || j === i ) return false;
+  [current[i], current[j]] = [current[j], current[i]];
+  await actor.update({ [`flags.${MODULE_ID}.tactics.playstyles`]: current });
+  return true;
+}
+
+/**
+ * The questions, in the groups the questionnaire shows them in (in this order within each): what it fights for and
+ * how, what it spends, how it looks after others, and talking and leaving.
+ */
+export const QUESTION_GROUPS = Object.freeze({
+  fighting: ["target", "fallen", "preferredAction", "style", "shield"],
+  spending: ["resourceUse", "specialty", "consumables", "potionThreshold"],
+  others: ["healAggro", "allyDying", "selfRevived", "beyond"],
+  talking: ["talk", "retreat"]
+});
+
+/**
+ * The questionnaire's sections opened or closed by hand, by actor and section ("<actor uuid>|<section>"), while the
+ * client runs: drawn again, each stays as it was left (else: open where any answer is set).
+ */
+const openSections = new Map();
+
+/** The questionnaire's sections, remembered as they're opened and closed in `root` (a window's own element, kept). */
+export function listenTacticsSections(root) {
+  root.addEventListener("toggle", event => {
+    const t = event.target;
+    if ( t.matches?.("details[data-tactics-section]") ) openSections.set(`${t.dataset.actorUuid}|${t.dataset.tacticsSection}`, t.open);
+  }, true);
+}
+
+/** Is this section of an actor's questionnaire open: as it was left, else `byDefault`. */
+const isOpen = (actor, id, byDefault) => openSections.get(`${actor.uuid}|${id}`) ?? byDefault;
+
 export function worldTacticDefaults() {
   return { healAggro: setting("pcHealAggro"), allyDying: setting("pcAllyDying") };
 }
@@ -475,6 +515,18 @@ export function questionsContext(spec, actor, uid, { questions: withQuestions = 
   add("beyond", TACTIC_CHOICES.beyond);
 
   const picked = playstyles.ids;
+  // The questions in their groups, each saying how many are set (closed, where none is, unless opened by hand).
+  const groups = withQuestions ? Object.entries(QUESTION_GROUPS).map(([id, keys]) => {
+    const list = questions.filter(q => keys.includes(q.key)).sort((a, b) => keys.indexOf(a.key) - keys.indexOf(b.key));
+    const costly = id === "spending" && spec.actions.some(a => ((a.rank ?? 0) > 0 || a.spellId) && (a.resource || Number.isFinite(a.uses)));
+    if ( !list.length && !costly ) return null;
+    const set = list.filter(q => !q.isAuto).length + (costly && stored.avoidCostlySpells ? 1 : 0);
+    return {
+      id, label: loc(`FASTFIGHTING.Tactics.Group.${id}`), questions: list, costly, set,
+      summary: set ? game.i18n.format("FASTFIGHTING.Survey.Answered", { n: set }) : loc("FASTFIGHTING.Survey.NoneSet"),
+      open: isOpen(actor, id, set > 0)
+    };
+  }).filter(Boolean) : [];
   // What the character wants, at whom, how badly (any character, PC or NPC). Three goblins read "Goblin 1, 2, 3".
   const counts = new Map();
   for ( const t of targets ) counts.set(t.name, (counts.get(t.name) ?? 0) + 1);
@@ -503,13 +555,30 @@ export function questionsContext(spec, actor, uid, { questions: withQuestions = 
     const value = clamp(Math.round(fudged(spec.traits?.[k] ?? 50) + (playstyles.traits?.[k] ?? 0)), 0, 100);
     return { key: k, label: loc(`FASTFIGHTING.Trait.${k}`), value, band: loc(`FASTFIGHTING.Band.${traitBand(k, value)}`), reason: brief(spec.traitReasons?.[k] ?? "") };
   }) : null;
+  const reactions = reactionsContext(spec, actor, stored, uid);
+  const desiresSet = desires?.filter(d => !d.empty).length ?? 0;
   return {
     uid,
     actorUuid: actor.uuid,
     withQuestions,
     hidden,
+    hiddenOpen: isOpen(actor, "hidden", false),
     questions,
+    groups,
     desires,
+    desiresSum: desiresSet ? game.i18n.format("FASTFIGHTING.Survey.Answered", { n: desiresSet }) : loc("FASTFIGHTING.Survey.NoneSet"),
+    desiresOpen: isOpen(actor, "desires", desiresSet > 0),
+    // (The playstyles first, open: for a player the most expressive choice.)
+    playstylesOpen: isOpen(actor, "playstyles", true),
+    // (The picked ones in order, to move earlier or later: the first counts most.)
+    chosen: picked.map((id, i) => {
+      const label = loc(`FASTFIGHTING.Playstyle.${id}.Name`);
+      return {
+        id, label, n: i + 1, first: i === 0, last: i === picked.length - 1,
+        earlier: game.i18n.format("FASTFIGHTING.Playstyle.Earlier", { name: label }), later: game.i18n.format("FASTFIGHTING.Playstyle.Later", { name: label }),
+        unpick: game.i18n.format("FASTFIGHTING.Playstyle.Unpick", { name: label })
+      };
+    }),
     // (In alphabetical order, as the player reads them.)
     playstyles: PLAYSTYLE_IDS.map(id => ({
       id,
@@ -523,7 +592,9 @@ export function questionsContext(spec, actor, uid, { questions: withQuestions = 
     playstyleCount: game.i18n.format("FASTFIGHTING.Playstyle.Count", { n: picked.length, max: MAX_PLAYSTYLES }),
     // (What they do together, for a GM or assistant GM.)
     playstyleEffects: gm && picked.length ? playstyleEffectsText(playstyles) || null : null,
-    ...reactionsContext(spec, actor, stored, uid),
+    ...reactions,
+    reactionsAny: !!(reactions.reactions || reactions.rerolls),
+    reactionsOpen: isOpen(actor, "reactions", false),
     stayTrue: { name: `tactic-${uid}-stayTrue`, checked: !!stored.stayTrue },
     roleplay: { name: `tactic-${uid}-roleplay`, checked: !!stored.roleplay },
     avoidCostlySpells: { name: `tactic-${uid}-avoidCostlySpells`, checked: !!stored.avoidCostlySpells, show: spec.actions.some(a => ((a.rank ?? 0) > 0 || a.spellId) && (a.resource || Number.isFinite(a.uses))) },

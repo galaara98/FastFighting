@@ -1,36 +1,49 @@
+{{!-- FastFighting's tab in a token's window (GM): this creature first (a hazard? hungry? ADHD, its name kept secret), then its questionnaire. --}}
 <div class="ff-token-tactics-head">
   <p class="hint">{{hint}}</p>
-  <button type="button" class="ff-btn" data-action="resetAll" data-tooltip="{{localize "FASTFIGHTING.Survey.ResetHint"}}"><i class="fa-solid fa-rotate-left"></i> {{localize "FASTFIGHTING.Survey.Reset"}}</button>
+  {{#if tactics}}
+  <button type="button" class="ff-btn ff-btn--quiet ff-btn--icon" popovertarget="ff-pop-token-{{appId}}" aria-haspopup="menu" aria-label="{{localize "FASTFIGHTING.Survey.More"}}" data-tooltip="{{localize "FASTFIGHTING.Survey.More"}}"><i class="fa-solid fa-ellipsis"></i></button>
+  <div class="ff-menu" id="ff-pop-token-{{appId}}" popover role="menu">
+    <button type="button" class="ff-menu-item ff-menu-item--danger" role="menuitem" data-action="resetAll"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i> {{localize "FASTFIGHTING.Survey.ResetMenu"}}</button>
+  </div>
+  {{/if}}
 </div>
+{{#if markable}}
+<section class="ff-section ff-token-self">
+  <div class="ff-section-head"><span class="ff-section-title">{{localize "FASTFIGHTING.TokenTactics.Creature"}}</span><span class="ff-gm-mark">{{localize "FASTFIGHTING.Planner.FudgedShort"}}</span></div>
+  <div class="ff-section-body ff-grid2">
+    <label class="ff-field"><span class="ff-field-label">{{localize "FASTFIGHTING.TokenTactics.Hazard"}} <button type="button" class="ff-help" data-tooltip="{{localize "FASTFIGHTING.TokenTactics.HazardHint"}}" aria-label="{{localize "FASTFIGHTING.TokenTactics.HazardHint"}}"><i class="fa-solid fa-question"></i></button></span>
+      <select data-ff-setting="hazard">{{selectOptions hazardChoices selected=hazard}}</select>
+    </label>
+    {{#if hungerMarks}}
+    <label class="ff-field"><span class="ff-field-label">{{localize "FASTFIGHTING.TokenTactics.Hunger"}} <button type="button" class="ff-help" data-tooltip="{{localize "FASTFIGHTING.TokenTactics.HungerHint"}}" aria-label="{{localize "FASTFIGHTING.TokenTactics.HungerHint"}}"><i class="fa-solid fa-question"></i></button></span>
+      <select data-ff-setting="hunger">{{selectOptions hungerMarks selected=hunger}}</select>
+    </label>
+    {{/if}}
+    {{#unless isHazard}}
+    <div class="ff-field"><span class="ff-field-label">{{localize "FASTFIGHTING.Trait.adhd"}} <button type="button" class="ff-help" data-tooltip="{{localize "FASTFIGHTING.TraitTip.adhd"}}" aria-label="{{localize "FASTFIGHTING.TraitTip.adhd"}}"><i class="fa-solid fa-question"></i></button></span>
+      <span class="ff-stepper">
+        <button type="button" class="ff-icon-btn" data-action="adhd" data-dir="-1" aria-label="{{localize "FASTFIGHTING.Fudge.Down"}}"><i class="fa-solid fa-minus"></i></button>
+        <span class="ff-stepper-value" data-ff-adhd-value>{{adhd}}%</span>
+        <button type="button" class="ff-icon-btn" data-action="adhd" data-dir="1" aria-label="{{localize "FASTFIGHTING.Fudge.Up"}}"><i class="fa-solid fa-plus"></i></button>
+      </span>
+    </div>
+    {{/unless}}
+    <label class="ff-check" data-tooltip="{{localize "FASTFIGHTING.TokenTactics.SecretNameHint"}}"><input type="checkbox" data-ff-setting="secretName" {{checked secretName}}> {{localize "FASTFIGHTING.TokenTactics.SecretName"}}</label>
+  </div>
+</section>
+{{/if}}
 {{#if tactics}}
 {{> "modules/fast-fighting/templates/partials/tactics.hbs" tactics}}
 {{else}}
 <p class="ff-hint">{{localize "FASTFIGHTING.TokenTactics.HazardNoTactics"}}</p>
 {{/if}}
-{{#unless isHazard}}
-<div class="ff-token-adhd">
-  <label class="ff-q-label">{{localize "FASTFIGHTING.Trait.adhd"}} <span data-ff-adhd-value>{{adhd}}%</span>
-    <input type="range" min="0" max="100" step="10" value="{{adhd}}" data-ff-setting="adhd">
-  </label>
-  <p class="ff-hint">{{localize "FASTFIGHTING.TraitTip.adhd"}}</p>
+{{#unless markable}}{{#unless isHazard}}
+<div class="ff-field ff-token-adhd"><span class="ff-field-label">{{localize "FASTFIGHTING.Trait.adhd"}}</span>
+  <span class="ff-stepper">
+    <button type="button" class="ff-icon-btn" data-action="adhd" data-dir="-1" aria-label="{{localize "FASTFIGHTING.Fudge.Down"}}"><i class="fa-solid fa-minus"></i></button>
+    <span class="ff-stepper-value" data-ff-adhd-value>{{adhd}}%</span>
+    <button type="button" class="ff-icon-btn" data-action="adhd" data-dir="1" aria-label="{{localize "FASTFIGHTING.Fudge.Up"}}"><i class="fa-solid fa-plus"></i></button>
+  </span>
 </div>
-{{/unless}}
-{{#if markable}}
-<div class="ff-token-hazard">
-  <label class="ff-q-label">{{localize "FASTFIGHTING.TokenTactics.Hazard"}}
-    <select data-ff-setting="hazard">{{selectOptions hazardChoices selected=hazard}}</select>
-  </label>
-  <p class="ff-hint">{{localize "FASTFIGHTING.TokenTactics.HazardHint"}}</p>
-</div>
-{{#if hungerMarks}}
-<div class="ff-token-hunger">
-  <label class="ff-q-label">{{localize "FASTFIGHTING.TokenTactics.Hunger"}}
-    <select data-ff-setting="hunger">{{selectOptions hungerMarks selected=hunger}}</select>
-  </label>
-  <p class="ff-hint">{{localize "FASTFIGHTING.TokenTactics.HungerHint"}}</p>
-</div>
-{{/if}}
-<div class="ff-token-secret">
-  <label class="ff-check" data-tooltip="{{localize "FASTFIGHTING.TokenTactics.SecretNameHint"}}"><input type="checkbox" data-ff-setting="secretName" {{checked secretName}}> {{localize "FASTFIGHTING.TokenTactics.SecretName"}}</label>
-</div>
-{{/if}}
+{{/unless}}{{/unless}}

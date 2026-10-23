@@ -971,7 +971,14 @@
         "Hint": "In a live battle, whether FastFighting may spend these to reroll a roll that would kill.",
         "Self": "Save my life with them",
         "Team": "Save a teammate's life with them"
-      }
+      },
+      "Group": {
+        "fighting": "Fighting",
+        "spending": "Spending",
+        "others": "Looking after others",
+        "talking": "Talking and leaving"
+      },
+      "ReactionsRerolls": "Reactions and rerolls"
     },
     "Survey": {
       "Title": "Prepare for Battle",
@@ -1006,7 +1013,21 @@
       "AskGms": "Open this character's survey for every GM logged in, to answer for an away player.",
       "AskedPlayers": "Asked {names} about {name}.",
       "AskedGms": "{name}'s survey is open for every GM logged in.",
-      "ForAway": "Some players are away: every GM logged in has a survey to answer for them."
+      "ForAway": "Some players are away: every GM logged in has a survey to answer for them.",
+      "Answered": "{n} set",
+      "NoneSet": "All left to the character",
+      "TabState": {
+        "locked": "Locked in",
+        "open": "Vote open",
+        "view": "To look at"
+      },
+      "More": "More",
+      "ResetMenu": "Reset answers…",
+      "ResetTitle": "Reset {name}'s answers?",
+      "ResetConfirm": "Every answer goes back to “Let this character decide”, and the playstyles are picked again.",
+      "ReadyLocks": "I'm ready also locks in the party's vote.",
+      "ReadyArmed": "Press again: lock in and finish",
+      "ReadyArmedNote": "The party's vote isn't locked in yet. Press again to lock it in and finish."
     },
     "TokenTactics": {
       "Tab": "FastFighting",
@@ -1031,7 +1052,8 @@
       },
       "HazardNoTactics": "A hazard has no tactics to set.",
       "Hidden": "Hidden scores",
-      "HiddenHint": "GM only: the hidden scores \"Let this character decide\" works from."
+      "HiddenHint": "GM only: the hidden scores \"Let this character decide\" works from.",
+      "Creature": "This creature"
     },
     "Playstyle": {
       "Label": "Playstyles",
@@ -1196,7 +1218,11 @@
         "medic": "Heals first and early",
         "dps": "Damage first",
         "enable": "Bolsters friends first"
-      }
+      },
+      "FirstCounts": "The first counts most.",
+      "Earlier": "Move {name} earlier",
+      "Later": "Move {name} later",
+      "Unpick": "Unpick {name}"
     },
     "Tracker": {
       "OpenHint": "Estimate how this encounter will go",
@@ -2359,7 +2385,7 @@
       "Tab": "Party",
       "TabFor": "Party: {name}",
       "ForThem": "You're voting for {name}, who's away.",
-      "Intro": "One vote per question; the top answer sways your side a little. Vote again to undo; swipe Lock-in when done.",
+      "Intro": "One vote per question; the top answer sways your side a little. Vote again to undo; press Lock-in when done.",
       "GmView": "Only players vote. You see every vote; the outlined answer is the party's.",
       "ReadOnly": "View only: you can vote again when your GM sends everyone the survey.",
       "LockIn": "Lock-in",
@@ -2410,7 +2436,11 @@
         "never": "Fight to the end",
         "losing": "When it turns against us",
         "hurt": "When we're badly hurt"
-      }
+      },
+      "LockInPrompt": "Happy with the party's choices? Lock them in.",
+      "LockInWarn": "Once locked in, your votes stay until your GM asks everyone again.",
+      "LockInConfirm": "Press again to lock in",
+      "Top": "The party's choice so far"
     },
     "StoryWords": {
       "plasma": "plasma",

@@ -249,32 +249,12 @@
 /* ---------- Player survey window ---------- */
 .ff-survey .window-content { padding: 0; overflow: hidden; }
 .ff-survey-root { display: flex; flex-direction: column; height: 100%; min-height: 0; }
-.ff-survey-head { padding: 8px 12px 0; font-size: 12px; color: var(--ff-text-dim); }
-.ff-survey-head p { margin: 0; }
-.ff-survey-sheet { flex: 1; overflow-y: auto; padding: 8px 12px 12px; }
-.ff-survey-token { display: flex; gap: 10px; align-items: center; margin-bottom: 6px; }
+.ff-survey-sheet { flex: 1; overflow-y: auto; padding: 12px 14px; }
 /* FastFighting's tab in the token windows */
 .ff-token-tactics-head { display: flex; gap: 10px; align-items: flex-start; justify-content: space-between; margin-bottom: 8px; }
 .ff-token-tactics-head .hint { margin: 0; flex: 1; }
-.ff-token-tactics .ff-tactics { margin-top: 6px; }
-.ff-token-hazard { margin: 12px 0 6px; padding-top: 8px; border-top: 1px solid var(--ff-line); }
-.ff-token-hazard label { display: flex; gap: 8px; align-items: center; }
-.ff-token-hazard select { flex: 1; }
-.ff-survey-token img { width: 56px; height: 56px; border: none; border-radius: 6px; object-fit: cover; }
-.ff-survey-token h3 { margin: 0; border: none; }
-.ff-survey-token > div { flex: 1; }
-.ff-shared { font-size: 11px; color: var(--ff-text-dim); }
+.ff-shared { font-size: var(--ff-text-xs); color: var(--ff-text-dim); }
 .ff-shared.is-online { color: var(--ff-accent); }
-.ff-survey-foot { display: flex; align-items: stretch; border-top: 1px solid var(--ff-line); background: var(--ff-surface); }
-.ff-sheet-tabs { flex: 1; display: flex; overflow-x: auto; }
-.ff-sheet-tab {
-  flex: none; width: auto; display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 12px;
-  border: none; border-right: 1px solid var(--ff-line); border-radius: 0; background: none; box-shadow: none;
-  border-top: 3px solid transparent; font-size: 12px; color: var(--ff-text-dim);
-}
-.ff-sheet-tab img { width: 22px; height: 22px; border: none; border-radius: 3px; object-fit: cover; }
-.ff-sheet-tab.active { border-top-color: var(--ff-accent); color: var(--color-text-primary, inherit); font-weight: 700; background: var(--ff-surface-2); }
-.ff-survey-foot .ff-run { margin: 4px 8px; height: auto; }
 
 /* ---------- Playstyle pills ---------- */
 .ff-playstyles { display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; }
@@ -390,33 +370,12 @@
 }
 .ff-voter.is-locked { box-shadow: 0 0 0 2px var(--ff-friendly); }
 .ff-pill.is-winning { box-shadow: 0 0 0 2px var(--ff-accent); }
-.ff-sheet-tab.ff-party-tab i { margin-right: 4px; }
-/* The party's vote: green once locked in; orange when left open without locking in. */
-.ff-sheet-tab.ff-party-tab.is-locked { box-shadow: inset 0 0 0 2px var(--ff-friendly); }
-.ff-sheet-tab.ff-party-tab.is-unlocked { box-shadow: inset 0 0 0 2px var(--ff-accent); }
-/* Lock-in: a swipe (a range across its track; all the way locks the choices in). */
-/* (A short track, about a seventh of the survey's width; the knob 28px in its 32px inside, 2px clear all round.) */
-.ff-lockin {
-  position: relative; box-sizing: border-box; width: calc(100% / 7); min-width: 140px; height: 34px; margin: 14px 0 6px;
-  border-radius: 17px; background: var(--ff-surface); border: 1px solid var(--ff-line); overflow: hidden;
-}
-.ff-swipe {
-  -webkit-appearance: none; appearance: none; position: absolute; top: 0; left: 2px; z-index: 1; width: calc(100% - 4px); height: 100%;
-  margin: 0; padding: 0; background: transparent; cursor: grab;
-}
-.ff-swipe:active { cursor: grabbing; }
-.ff-swipe::-webkit-slider-runnable-track { height: 100%; background: transparent; border: none; }
-.ff-swipe::-moz-range-track { height: 100%; background: transparent; border: none; }
-.ff-swipe::-webkit-slider-thumb {
-  -webkit-appearance: none; box-sizing: border-box; width: 28px; height: 28px; margin-top: 2px; border-radius: 50%;
-  background: var(--ff-friendly); border: 2px solid var(--color-light-1, #fff); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
-}
-.ff-swipe::-moz-range-thumb { box-sizing: border-box; width: 28px; height: 28px; border-radius: 50%; background: var(--ff-friendly); border: 2px solid #fff; }
-.ff-swipe-label {
-  position: absolute; inset: 0 0 0 30px; display: flex; align-items: center; justify-content: center; gap: 6px;
-  pointer-events: none; color: var(--ff-text-dim); font-weight: 700; letter-spacing: 0.04em; white-space: nowrap;
-}
+/* Lock-in: two presses (the first arms it, saying what a second does). */
+.ff-lockin { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 14px 0 6px; padding: 10px 12px; border: 1px dashed var(--ff-line); border-radius: 8px; }
+.ff-lockin.is-armed { border-style: solid; border-color: var(--ff-attention); }
+.ff-lockin-text { flex: 1; min-width: 160px; color: var(--ff-text-dim); font-size: var(--ff-text-sm); }
 .ff-locked { margin: 14px 0 6px; color: var(--ff-friendly); font-weight: 700; }
+.ff-top-mark { margin-left: 4px; font-size: 10px; }
 
 
 /* ---------- Battle Vantage ---------- */
@@ -906,3 +865,51 @@ button.ff-team-pick:hover { border-color: var(--ff-line); }
 .ff-reinforce-row input[type="number"] { width: 3.5em; }
 /* The Next Turn hold's slider, in the settings: its value in words. */
 .ff-hold-words { margin-left: 8px; font-weight: 700; white-space: nowrap; }
+
+/* ==========================================================================
+   The survey (and the token's FastFighting tab): its tabs on top, a character's card, its questionnaire in sections.
+   ========================================================================== */
+.ff-survey-tabs { display: flex; flex: none; gap: 2px; padding: 6px 10px 0; overflow-x: auto; border-bottom: 1px solid var(--ff-line); }
+.ff-survey-tab {
+  display: inline-flex; align-items: center; gap: 8px; flex: none; width: auto; height: auto; min-height: 0; margin: 0; padding: 6px 12px 8px;
+  border: none; border-bottom: 3px solid transparent; border-radius: 0; background: none; box-shadow: none; color: var(--ff-text-dim); text-align: left;
+}
+.ff-survey-tab.active { border-bottom-color: var(--ff-accent); color: var(--color-text-primary, inherit); }
+.ff-survey-tab.active:not(:focus-visible) { outline: none; }
+.ff-survey-tab.is-unlocked:not(.active) { border-bottom-color: var(--ff-attention); }
+.ff-survey-tab img { width: 26px; height: 26px; border: none; border-radius: 50%; object-fit: cover; }
+.ff-survey-tab > i { font-size: 18px; }
+.ff-survey-tab-text { display: flex; flex-direction: column; line-height: 1.25; }
+.ff-survey-tab-name { font-weight: 700; }
+.ff-survey-tab-state { color: var(--ff-text-dim); font-size: var(--ff-text-xs); }
+.ff-survey-tab-state.is-set { color: var(--ff-accent); }
+.ff-survey-tab-state.is-done { color: var(--ff-friendly); }
+.ff-survey-tab-state.is-open { color: var(--ff-attention); }
+.ff-survey-card { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; padding: 10px 12px; border: 1px solid var(--ff-line); border-radius: 10px; background: var(--ff-surface); }
+.ff-survey-card img { flex: none; width: 52px; height: 52px; border: none; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 3px var(--ff-t-F); }
+.ff-survey-card-text { flex: 1; min-width: 0; }
+.ff-survey-card h3 { margin: 0 0 2px; border: none; }
+.ff-survey-foot { display: flex; flex: none; align-items: center; gap: 10px; padding: 8px 12px; border-top: 1px solid var(--ff-line); background: var(--ff-surface); }
+.ff-survey-foot .ff-btn { height: 32px; }
+.ff-survey-note { flex: 1; color: var(--ff-text-dim); font-size: var(--ff-text-sm); }
+.ff-survey-note b { color: var(--ff-attention); }
+.fast-fighting .ff-btn--attention { border-color: var(--ff-attention); background: var(--ff-attention); color: #15141a; font-weight: 700; }
+.fast-fighting .ff-btn--attention:hover { background: var(--ff-attention); filter: brightness(1.07); }
+.ff-questionnaire { display: flex; flex-direction: column; }
+.ff-questionnaire .ff-section-body { gap: 8px; }
+.ff-chosen { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.ff-chosen-pill {
+  display: inline-flex; align-items: center; gap: 1px; height: 28px; padding: 0 2px 0 6px; border-radius: 999px;
+  background: var(--ff-accent); color: light-dark(#fff, #1c1b22); font-size: var(--ff-text-sm); font-weight: 700;
+}
+.ff-chosen-pill .ff-pill-order { margin-right: 4px; }
+.ff-chosen-pill .ff-icon-btn { border: none; background: none; box-shadow: none; color: inherit; }
+.ff-chosen-pill .ff-icon-btn:disabled { opacity: 0.35; }
+.ff-section-sum.is-set { color: var(--ff-accent); font-weight: 600; }
+.ff-desire-head { color: var(--ff-text-dim); font-size: var(--ff-text-xs); text-transform: uppercase; letter-spacing: 0.05em; }
+.ff-q-label { display: inline-flex; align-items: center; gap: 4px; }
+.ff-token-self .ff-section-head { display: flex; align-items: center; gap: 8px; padding: 8px 10px 4px; font-weight: 700; }
+.ff-gm-mark { padding: 0 5px; border: 1px solid var(--ff-accent); border-radius: 4px; color: var(--ff-accent); font-size: var(--ff-text-xs); }
+.ff-stepper { display: inline-flex; align-items: center; gap: 2px; padding: 2px; border-radius: 6px; background: var(--ff-surface-2); }
+.ff-stepper-value { min-width: 44px; font-weight: 700; text-align: center; }
+.ff-token-adhd { margin-top: 10px; }

@@ -8,7 +8,8 @@ import { MODULE_ID } from "../constants.js";
 import { getAdapter } from "../api.js";
 import { cachedCharacterSpec, showsReactions } from "../foundry/sheet-watch.js";
 import { localize } from "../i18n.js";
-import { questionsContext, setTactic, togglePlaystyle, syncTacticsDom, playstyleSignature, reactionsSignature } from "../foundry/tactics.js";
+import { questionsContext, setTactic, togglePlaystyle, movePlaystyle, syncTacticsDom, playstyleSignature, reactionsSignature, listenTacticsSections } from "../foundry/tactics.js";
+import { listenMenus } from "./menus.js";
 import { HAZARD_MARKS, applyHazard } from "../foundry/battle.js";
 import { ensureAutoConfig, resetAndAutoConfig } from "../foundry/auto-config.js";
 import { HUNGER_MARKS, knowsFood } from "../foundry/food.js";
@@ -113,6 +114,7 @@ async function fill(app, panel) {
   // (Never set up, or its calculated answers out of date: set up by itself first.)
   if ( !isHazard ) await ensureAutoConfig(actor, spec);
   const html = await foundry.applications.handlebars.renderTemplate(TEMPLATE, {
+    appId: app.id,
     hint: localize("FASTFIGHTING.TokenTactics.Hint"),
     adhd: Math.round(Number(actor.getFlag(MODULE_ID, "adhd")) || 0),
     hazard,
@@ -139,19 +141,10 @@ async function fill(app, panel) {
 
 /** Answers save as they change. */
 function listen(app, panel) {
-  // (The ADHD slider's number follows it as it's dragged.)
-  panel.addEventListener("input", event => {
-    if ( event.target?.dataset?.ffSetting !== "adhd" ) return;
-    const shown = panel.querySelector("[data-ff-adhd-value]");
-    if ( shown ) shown.textContent = `${event.target.value}%`;
-  });
+  listenMenus(panel);
+  listenTacticsSections(panel);
   panel.addEventListener("change", async event => {
     const el = event.target;
-    // Its own ADHD: kept with its tactics.
-    if ( el?.dataset?.ffSetting === "adhd" ) {
-      event.stopPropagation();
-      return setAdhd(actorOf(app), Number(el.value));
-    }
     // Its name kept secret in the story: kept with its tactics.
     if ( el?.dataset?.ffSetting === "secretName" ) {
       event.stopPropagation();
@@ -191,9 +184,21 @@ function listen(app, panel) {
     event.preventDefault();
     event.stopPropagation();
     const actor = actorOf(app);
-    if ( button.dataset.ffAction === "togglePlaystyle" ) {
+    const act = button.dataset.ffAction;
+    if ( act === "togglePlaystyle" ) {
       if ( !await togglePlaystyle(actor, button.dataset.playstyle) ) ui.notifications.warn(localize("FASTFIGHTING.Playstyle.Max"));
-    } else if ( button.dataset.ffAction === "resetAll" ) await resetAndAutoConfig(actor, specs.get(app));
+    } else if ( act === "movePlaystyle" ) await movePlaystyle(actor, button.dataset.playstyle, Number(button.dataset.dir));
+    // Its own ADHD, ten points at a time: kept with its tactics.
+    else if ( act === "adhd" ) await setAdhd(actor, (Number(actor.getFlag(MODULE_ID, "adhd")) || 0) + 10 * Math.sign(Number(button.dataset.dir) || 0));
+    else if ( act === "resetAll" ) {
+      // (After asking: every answer back to "Let this character decide", the playstyles picked again.)
+      const ok = await foundry.applications.api.DialogV2.confirm({
+        window: { title: game.i18n.format("FASTFIGHTING.Survey.ResetTitle", { name: actor.name }) },
+        content: `<p>${foundry.utils.escapeHTML(localize("FASTFIGHTING.Survey.ResetConfirm"))}</p>`
+      });
+      if ( !ok ) return;
+      await resetAndAutoConfig(actor, specs.get(app));
+    } else return;
     fill(app, panel);
   });
 }

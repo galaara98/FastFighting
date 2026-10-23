@@ -67,6 +67,14 @@ FastFighting is split into a pure simulation engine, system **helpers**, and the
 - **The review's picks** are kept as they're made (`#keepDraft`, by battle, creature and events) and put back after each drawing, so a tab or encounter change loses nothing.
 - **The map of minds' layout** (`#layoutFor`) is kept only while the window is open: closed and opened again, it's laid out from the map. Its **Reset** (`ff-net-reset`) is enabled once a node is dragged.
 
+### The survey and the token's tab
+
+`apps/player-survey.js` (`templates/player-survey.hbs`) and the token's FastFighting tab (`apps/token-tactics.js`, `templates/token-tactics.hbs`) share the questionnaire, `templates/partials/tactics.hbs`, drawn from `questionsContext` (`foundry/tactics.js`); the planner's Details shows it too.
+- **Sections:** `QUESTION_GROUPS` sorts the questions into Fighting, Spending, Looking after others, and Talking and leaving. These windows draw again on every answer, so each section's `details[data-tactics-section]` remembers being open, by actor, until the page reloads (`listenTacticsSections`).
+- **Playstyles' order:** `movePlaystyle(actor, id, dir)`.
+- **Two presses:** Lock-in (`lockIn`, then again) and, while the player's vote is open, I'm ready (`readyArmed`). Either disarms after 6 s or on Cancel.
+- **The token's tab** sits in Foundry's form, so it strips its controls' `name`s, moves their `data-action`s to `data-ff-action` and handles them itself (`movePlaystyle`, `adhd`, `resetAll`).
+
 ### Fast Fight
 
 The Battle Vantage's **>> Fast Fight >>** (`foundry/fast-fight.js`, pure but for Dice So Nice, tested in `tests/fast-fight.test.js`; played by `live-battle.js` `fastFight`):

@@ -1,69 +1,106 @@
-<div class="ff-playstyles">
-  <div class="ff-q-label">{{localize "FASTFIGHTING.Playstyle.Label"}} <span class="ff-pill-count">{{playstyleCount}}</span>
-    <i class="fa-solid fa-circle-question" data-tooltip="{{localize "FASTFIGHTING.Playstyle.Hint"}}"></i></div>
-  <div class="ff-pills" data-actor-uuid="{{actorUuid}}">
-    {{#each playstyles}}<button type="button" class="ff-pill {{#if active}}active{{/if}}" data-action="togglePlaystyle" data-playstyle="{{id}}" data-actor-uuid="{{../actorUuid}}" aria-pressed="{{#if active}}true{{else}}false{{/if}}" {{#if disabled}}disabled{{/if}} data-tooltip="{{hint}}"><i class="fa-solid {{icon}}"></i> {{label}}<span class="ff-pill-order">{{#if active}}{{order}}{{/if}}</span></button>{{/each}}
+{{!-- A character's questionnaire (the survey, the token's FastFighting tab, the planner's Details): its playstyles first, then its answers in sections, each saying how many are set. --}}
+<div class="ff-questionnaire">
+<details class="ff-section" data-tactics-section="playstyles" data-actor-uuid="{{actorUuid}}" {{#if playstylesOpen}}open{{/if}}>
+  <summary><i class="fa-solid fa-chevron-right ff-chevron" aria-hidden="true"></i><span class="ff-section-title">{{localize "FASTFIGHTING.Playstyle.Label"}}</span>
+    <button type="button" class="ff-help" data-tooltip="{{localize "FASTFIGHTING.Playstyle.Hint"}}" aria-label="{{localize "FASTFIGHTING.Playstyle.Hint"}}"><i class="fa-solid fa-question"></i></button>
+    <span class="ff-section-sum ff-pill-count">{{playstyleCount}}</span></summary>
+  <div class="ff-section-body ff-playstyles">
+    {{#if chosen.length}}
+    <div class="ff-chosen">
+      {{#each chosen}}<span class="ff-chosen-pill"><span class="ff-pill-order">{{n}}</span> {{label}}
+        <button type="button" class="ff-icon-btn" data-action="movePlaystyle" data-playstyle="{{id}}" data-dir="-1" data-actor-uuid="{{../actorUuid}}" aria-label="{{earlier}}" data-tooltip-text="{{earlier}}" {{#if first}}disabled{{/if}}><i class="fa-solid fa-chevron-left"></i></button>
+        <button type="button" class="ff-icon-btn" data-action="movePlaystyle" data-playstyle="{{id}}" data-dir="1" data-actor-uuid="{{../actorUuid}}" aria-label="{{later}}" data-tooltip-text="{{later}}" {{#if last}}disabled{{/if}}><i class="fa-solid fa-chevron-right"></i></button>
+        <button type="button" class="ff-icon-btn" data-action="togglePlaystyle" data-playstyle="{{id}}" data-actor-uuid="{{../actorUuid}}" aria-label="{{unpick}}" data-tooltip-text="{{unpick}}"><i class="fa-solid fa-xmark"></i></button></span>{{/each}}
+      <span class="ff-hint">{{localize "FASTFIGHTING.Playstyle.FirstCounts"}}</span>
+    </div>
+    {{/if}}
+    <div class="ff-pills" data-actor-uuid="{{actorUuid}}">
+      {{#each playstyles}}<button type="button" class="ff-pill {{#if active}}active{{/if}}" data-action="togglePlaystyle" data-playstyle="{{id}}" data-actor-uuid="{{../actorUuid}}" aria-pressed="{{#if active}}true{{else}}false{{/if}}" {{#if disabled}}disabled{{/if}} data-tooltip="{{hint}}"><i class="fa-solid {{icon}}" aria-hidden="true"></i> {{label}}<span class="ff-pill-order">{{#if active}}{{order}}{{/if}}</span></button>{{/each}}
+    </div>
+    {{#if playstyleEffects}}<div class="ff-auto-value ff-pill-effects" data-tooltip="{{localize "FASTFIGHTING.Playstyle.EffectsHint"}}"><i class="fa-solid fa-eye" aria-hidden="true"></i> {{playstyleEffects}}</div>{{/if}}
+    <div class="ff-pill-flags">
+      <label class="ff-check"><input type="checkbox" name="{{stayTrue.name}}" data-tactic="stayTrue" data-actor-uuid="{{actorUuid}}" {{checked stayTrue.checked}}> {{localize "FASTFIGHTING.Playstyle.StayTrue"}}
+        <button type="button" class="ff-help" data-tooltip="{{localize "FASTFIGHTING.Playstyle.StayTrueHint"}}" aria-label="{{localize "FASTFIGHTING.Playstyle.StayTrueHint"}}"><i class="fa-solid fa-question"></i></button></label>
+      <label class="ff-check"><input type="checkbox" name="{{roleplay.name}}" data-tactic="roleplay" data-actor-uuid="{{actorUuid}}" {{checked roleplay.checked}}> {{localize "FASTFIGHTING.Playstyle.Roleplay"}}
+        <button type="button" class="ff-help" data-tooltip="{{localize "FASTFIGHTING.Playstyle.RoleplayHint"}}" aria-label="{{localize "FASTFIGHTING.Playstyle.RoleplayHint"}}"><i class="fa-solid fa-question"></i></button></label>
+    </div>
+    {{#if conflict}}<p class="ff-hint"><i class="fa-solid fa-circle-info" aria-hidden="true"></i> {{localize "FASTFIGHTING.Playstyle.Both"}}</p>{{/if}}
   </div>
-  {{#if playstyleEffects}}<div class="ff-auto-value ff-pill-effects" data-tooltip="{{localize "FASTFIGHTING.Playstyle.EffectsHint"}}"><i class="fa-solid fa-eye"></i> {{playstyleEffects}}</div>{{/if}}
-  <div class="ff-pill-flags">
-    <label class="ff-check"><input type="checkbox" name="{{stayTrue.name}}" data-tactic="stayTrue" data-actor-uuid="{{actorUuid}}" {{checked stayTrue.checked}}> {{localize "FASTFIGHTING.Playstyle.StayTrue"}}
-      <i class="fa-solid fa-circle-question" data-tooltip="{{localize "FASTFIGHTING.Playstyle.StayTrueHint"}}"></i></label>
-    <label class="ff-check"><input type="checkbox" name="{{roleplay.name}}" data-tactic="roleplay" data-actor-uuid="{{actorUuid}}" {{checked roleplay.checked}}> {{localize "FASTFIGHTING.Playstyle.Roleplay"}}
-      <i class="fa-solid fa-circle-question" data-tooltip="{{localize "FASTFIGHTING.Playstyle.RoleplayHint"}}"></i></label>
-    {{#if avoidCostlySpells.show}}
-    <label class="ff-check"><input type="checkbox" name="{{avoidCostlySpells.name}}" data-tactic="avoidCostlySpells" data-actor-uuid="{{actorUuid}}" {{checked avoidCostlySpells.checked}}> {{localize "FASTFIGHTING.Playstyle.AvoidCostlySpells"}}
-      <i class="fa-solid fa-circle-question" data-tooltip="{{localize "FASTFIGHTING.Playstyle.AvoidCostlySpellsHint"}}"></i></label>
+</details>
+
+{{#each groups}}
+<details class="ff-section" data-tactics-section="{{id}}" data-actor-uuid="{{../actorUuid}}" {{#if open}}open{{/if}}>
+  <summary><i class="fa-solid fa-chevron-right ff-chevron" aria-hidden="true"></i><span class="ff-section-title">{{label}}</span><span class="ff-section-sum {{#if set}}is-set{{/if}}">{{summary}}</span></summary>
+  <div class="ff-section-body">
+    <div class="ff-tactics">
+      {{#each questions}}
+      <div class="ff-q {{#if isAuto}}is-auto{{/if}}">
+        <span class="ff-q-label"><label for="{{name}}">{{label}}</label> <button type="button" class="ff-help" data-tooltip="{{hint}}" aria-label="{{hint}}"><i class="fa-solid fa-question"></i></button></span>
+        <select id="{{name}}" name="{{name}}" data-tactic="{{key}}" data-actor-uuid="{{../../actorUuid}}">
+          {{#each choices}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}
+        </select>
+        {{#if autoValue}}<div class="ff-auto-value" data-tooltip="{{localize "FASTFIGHTING.Tactics.AutoHint"}}"><i class="fa-solid fa-eye" aria-hidden="true"></i> {{autoValue}}</div>{{/if}}
+      </div>
+      {{/each}}
+    </div>
+    {{#if costly}}
+    <label class="ff-check"><input type="checkbox" name="{{../avoidCostlySpells.name}}" data-tactic="avoidCostlySpells" data-actor-uuid="{{../actorUuid}}" {{checked ../avoidCostlySpells.checked}}> {{localize "FASTFIGHTING.Playstyle.AvoidCostlySpells"}}
+      <button type="button" class="ff-help" data-tooltip="{{localize "FASTFIGHTING.Playstyle.AvoidCostlySpellsHint"}}" aria-label="{{localize "FASTFIGHTING.Playstyle.AvoidCostlySpellsHint"}}"><i class="fa-solid fa-question"></i></button></label>
     {{/if}}
   </div>
-  {{#if conflict}}<p class="ff-hint"><i class="fa-solid fa-circle-info"></i> {{localize "FASTFIGHTING.Playstyle.Both"}}</p>{{/if}}
-</div>
+</details>
+{{/each}}
+
 {{#if desires}}
-<div class="ff-desires">
-  <div class="ff-q-label">{{localize "FASTFIGHTING.Desire.Label"}} <i class="fa-solid fa-circle-question" data-tooltip="{{localize "FASTFIGHTING.Desire.Hint"}}"></i></div>
-  {{#each desires}}
-  <div class="ff-desire {{#if empty}}is-empty{{/if}}">
-    <select name="{{kind.name}}" data-tactic="{{kind.key}}" data-actor-uuid="{{../actorUuid}}" aria-label="{{localize "FASTFIGHTING.Desire.What"}}">{{#each kind.choices}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select>
-    <select name="{{target.name}}" data-tactic="{{target.key}}" data-actor-uuid="{{../actorUuid}}" aria-label="{{localize "FASTFIGHTING.Desire.Who"}}">{{#each target.choices}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select>
-    <select name="{{level.name}}" data-tactic="{{level.key}}" data-actor-uuid="{{../actorUuid}}" aria-label="{{localize "FASTFIGHTING.Desire.HowMuch"}}">{{#each level.choices}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select>
+<details class="ff-section" data-tactics-section="desires" data-actor-uuid="{{actorUuid}}" {{#if desiresOpen}}open{{/if}}>
+  <summary><i class="fa-solid fa-chevron-right ff-chevron" aria-hidden="true"></i><span class="ff-section-title">{{localize "FASTFIGHTING.Desire.Label"}}</span>
+    <button type="button" class="ff-help" data-tooltip="{{localize "FASTFIGHTING.Desire.Hint"}}" aria-label="{{localize "FASTFIGHTING.Desire.Hint"}}"><i class="fa-solid fa-question"></i></button>
+    <span class="ff-section-sum">{{desiresSum}}</span></summary>
+  <div class="ff-section-body ff-desires">
+    <div class="ff-desire ff-desire-head" aria-hidden="true"><span>{{localize "FASTFIGHTING.Desire.What"}}</span><span>{{localize "FASTFIGHTING.Desire.Who"}}</span><span>{{localize "FASTFIGHTING.Desire.HowMuch"}}</span></div>
+    {{#each desires}}
+    <div class="ff-desire {{#if empty}}is-empty{{/if}}">
+      <select name="{{kind.name}}" data-tactic="{{kind.key}}" data-actor-uuid="{{../actorUuid}}" aria-label="{{localize "FASTFIGHTING.Desire.What"}}">{{#each kind.choices}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select>
+      <select name="{{target.name}}" data-tactic="{{target.key}}" data-actor-uuid="{{../actorUuid}}" aria-label="{{localize "FASTFIGHTING.Desire.Who"}}">{{#each target.choices}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select>
+      <select name="{{level.name}}" data-tactic="{{level.key}}" data-actor-uuid="{{../actorUuid}}" aria-label="{{localize "FASTFIGHTING.Desire.HowMuch"}}">{{#each level.choices}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select>
+    </div>
+    {{/each}}
   </div>
-  {{/each}}
-</div>
+</details>
 {{/if}}
-{{#if reactions}}
-<div class="ff-reactions">
-  <div class="ff-q-label">{{localize "FASTFIGHTING.Tactics.Reactions.Label"}} <i class="fa-solid fa-circle-question" data-tooltip="{{localize "FASTFIGHTING.Tactics.Reactions.Hint"}}"></i></div>
-  {{#each reactions}}
-  <label class="ff-reaction">{{label}}
-    <select name="{{name}}" data-tactic="{{key}}" data-actor-uuid="{{../actorUuid}}">{{#each choices}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select>
-  </label>
-  {{/each}}
-</div>
+
+{{#if reactionsAny}}
+<details class="ff-section" data-tactics-section="reactions" data-actor-uuid="{{actorUuid}}" {{#if reactionsOpen}}open{{/if}}>
+  <summary><i class="fa-solid fa-chevron-right ff-chevron" aria-hidden="true"></i><span class="ff-section-title">{{localize "FASTFIGHTING.Tactics.ReactionsRerolls"}}</span></summary>
+  <div class="ff-section-body">
+    {{#if reactions}}
+    <div class="ff-reactions">
+      <span class="ff-q-label">{{localize "FASTFIGHTING.Tactics.Reactions.Label"}} <button type="button" class="ff-help" data-tooltip="{{localize "FASTFIGHTING.Tactics.Reactions.Hint"}}" aria-label="{{localize "FASTFIGHTING.Tactics.Reactions.Hint"}}"><i class="fa-solid fa-question"></i></button></span>
+      {{#each reactions}}
+      <label class="ff-reaction">{{label}}
+        <select name="{{name}}" data-tactic="{{key}}" data-actor-uuid="{{../actorUuid}}">{{#each choices}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select>
+      </label>
+      {{/each}}
+    </div>
+    {{/if}}
+    {{#if rerolls}}
+    <div class="ff-rerolls">
+      <span class="ff-q-label">{{localize "FASTFIGHTING.Tactics.Rerolls.Label" resource=rerolls.resource}} <button type="button" class="ff-help" data-tooltip="{{localize "FASTFIGHTING.Tactics.Rerolls.Hint"}}" aria-label="{{localize "FASTFIGHTING.Tactics.Rerolls.Hint"}}"><i class="fa-solid fa-question"></i></button></span>
+      <label class="ff-check"><input type="checkbox" name="{{rerolls.self.name}}" data-tactic="{{rerolls.self.key}}" data-actor-uuid="{{actorUuid}}" {{checked rerolls.self.checked}}> {{localize "FASTFIGHTING.Tactics.Rerolls.Self"}}</label>
+      <label class="ff-check"><input type="checkbox" name="{{rerolls.team.name}}" data-tactic="{{rerolls.team.key}}" data-actor-uuid="{{actorUuid}}" {{checked rerolls.team.checked}}> {{localize "FASTFIGHTING.Tactics.Rerolls.Team"}}</label>
+    </div>
+    {{/if}}
+  </div>
+</details>
 {{/if}}
-{{#if rerolls}}
-<div class="ff-rerolls">
-  <div class="ff-q-label">{{localize "FASTFIGHTING.Tactics.Rerolls.Label" resource=rerolls.resource}} <i class="fa-solid fa-circle-question" data-tooltip="{{localize "FASTFIGHTING.Tactics.Rerolls.Hint"}}"></i></div>
-  <label class="ff-check"><input type="checkbox" name="{{rerolls.self.name}}" data-tactic="{{rerolls.self.key}}" data-actor-uuid="{{actorUuid}}" {{checked rerolls.self.checked}}> {{localize "FASTFIGHTING.Tactics.Rerolls.Self"}}</label>
-  <label class="ff-check"><input type="checkbox" name="{{rerolls.team.name}}" data-tactic="{{rerolls.team.key}}" data-actor-uuid="{{actorUuid}}" {{checked rerolls.team.checked}}> {{localize "FASTFIGHTING.Tactics.Rerolls.Team"}}</label>
-</div>
-{{/if}}
+
 {{#if hidden}}
-<div class="ff-hidden-scores">
-  <div class="ff-q-label">{{localize "FASTFIGHTING.TokenTactics.Hidden"}} <i class="fa-solid fa-eye" data-tooltip="{{localize "FASTFIGHTING.TokenTactics.HiddenHint"}}"></i></div>
-  <div class="ff-hidden-row">
+<details class="ff-section" data-tactics-section="hidden" data-actor-uuid="{{actorUuid}}" {{#if hiddenOpen}}open{{/if}}>
+  <summary><i class="fa-solid fa-chevron-right ff-chevron" aria-hidden="true"></i><span class="ff-section-title">{{localize "FASTFIGHTING.TokenTactics.Hidden"}}</span>
+    <button type="button" class="ff-help" data-tooltip="{{localize "FASTFIGHTING.TokenTactics.HiddenHint"}}" aria-label="{{localize "FASTFIGHTING.TokenTactics.HiddenHint"}}"><i class="fa-solid fa-question"></i></button></summary>
+  <div class="ff-section-body ff-hidden-row">
     {{#each hidden}}<span class="ff-hidden-score" data-tooltip-text="{{reason}}"><span class="ff-hidden-label">{{label}}</span> <strong>{{value}}</strong> <span class="ff-hidden-band">{{band}}</span></span>{{/each}}
   </div>
-</div>
+</details>
 {{/if}}
-{{#if withQuestions}}
-<div class="ff-tactics">
-  {{#each questions}}
-  <div class="ff-q {{#if isAuto}}is-auto{{/if}}">
-    <label class="ff-q-label" for="{{name}}">{{label}} <i class="fa-solid fa-circle-question" data-tooltip="{{hint}}"></i></label>
-    <select id="{{name}}" name="{{name}}" data-tactic="{{key}}" data-actor-uuid="{{../actorUuid}}">
-      {{#each choices}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}
-    </select>
-    {{#if autoValue}}<div class="ff-auto-value" data-tooltip="{{localize "FASTFIGHTING.Tactics.AutoHint"}}"><i class="fa-solid fa-eye"></i> {{autoValue}}</div>{{/if}}
-  </div>
-  {{/each}}
 </div>
-{{/if}}

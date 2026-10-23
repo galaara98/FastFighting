@@ -15,7 +15,7 @@ import { placeLoot, openPile } from "../foundry/loot-drop.js";
 import { setAdhd } from "./token-tactics.js";
 import { getSetup, saveSetup, clearSetup, tokenSetup, planHolder, rememberPartyRole, sceneEncounter, encounterNumber } from "../foundry/persistence.js";
 import {
-  questionsContext, setTactic, togglePlaystyle, syncTacticsDom, isPlayerControlled, playersOnScene, tokensForUser, surveyStatus,
+  questionsContext, setTactic, togglePlaystyle, movePlaystyle, listenTacticsSections, syncTacticsDom, isPlayerControlled, playersOnScene, tokensForUser, surveyStatus,
   requestSurveys, requestCharacterSurvey, requestGmSurvey, SURVEY_STATUS, playstyleSignature, tacticsFor, reactionsSignature, preparePlayers
 } from "../foundry/tactics.js";
 import { cachedCharacterSpec, showsReactions } from "../foundry/sheet-watch.js";
@@ -134,6 +134,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       makeItSo: BattlePlanner.#onMakeItSo,
       preparePlayers: BattlePlanner.#onPreparePlayers,
       togglePlaystyle: BattlePlanner.#onTogglePlaystyle,
+      movePlaystyle: BattlePlanner.#onMovePlaystyle,
       setSystem: BattlePlanner.#onSetSystem,
       setSide: BattlePlanner.#onSetSide,
       setTeam: BattlePlanner.#onSetTeam,
@@ -262,6 +263,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       else this.openSections.delete(t.dataset.section);
     }, true);
     listenMenus(el);
+    listenTacticsSections(el);
   }
 
   /** The roster as filtered by name: the creatures that match, in their cards (opened while filtering), the rest hidden. */
@@ -1069,6 +1071,14 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     const actor = await fromUuid(target.dataset.actorUuid);
     const ok = await togglePlaystyle(actor, target.dataset.playstyle);
     if ( !ok ) ui.notifications.warn(loc("FASTFIGHTING.Playstyle.Max"));
+    this.stale = true;
+    this.render();
+  }
+
+  /** A picked playstyle one place earlier or later (the first counts most). */
+  static async #onMovePlaystyle(event, target) {
+    const actor = await fromUuid(target.dataset.actorUuid);
+    if ( !await movePlaystyle(actor, target.dataset.playstyle, Number(target.dataset.dir)) ) return;
     this.stale = true;
     this.render();
   }

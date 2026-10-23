@@ -28,7 +28,7 @@ export function listenMenus(root) {
     if ( t.matches?.("[popover]") && event.newState === "open" ) placePopover(t, root);
   }, true);
   root.addEventListener("click", event => {
-    const item = event.target.closest?.("[data-action]");
+    const item = event.target.closest?.("[data-action], [data-ff-action]");
     const pop = item?.closest("[popover]");
     if ( pop && !item.dataset.keepOpen ) pop.hidePopover?.();
   });
