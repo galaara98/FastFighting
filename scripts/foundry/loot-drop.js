@@ -66,15 +66,17 @@ export async function dropGoods({ scene, point, giverDoc, receiverDoc = null, go
 /**
  * Goods ({items, coins, money}) lying on the ground at `at` (a square's top-left): an Item Piles pile, else the system's
  * own, else (given an actor `type`) the core's own. {records, pile: its token's uuid}, or null where none could be made.
- * `over`: the token's own data besides (to lie on top of another).
+ * `over`: the token's own data besides (to lie on top of another); `img`, its look; `pileFlags`, Item Piles' own (a
+ * container, kept when emptied).
  */
-async function makePile(scene, at, goods, { name = "", over = {}, type = null } = {}) {
+async function makePile(scene, at, goods, { name = "", over = {}, type = null, img = null, pileFlags = null } = {}) {
   const adapter = getAdapter();
   if ( itemPilesOn() ) {
     try {
       // (Each thing with an id of its own: Item Piles sorts what it's given by id, and things with none would be one.)
       const items = (goods.items ?? []).map(i => ({ ...i, _id: i._id || foundry.utils.randomID() }));
-      const made = await game.itempiles.API.createItemPile({ position: at, sceneId: scene.id, items, tokenOverrides: { ...over, ...(name ? { name } : {}), flags: { [MODULE_ID]: { pile: true } } } });
+      const tokenOverrides = { ...over, ...(name ? { name } : {}), ...(img ? { texture: { src: img } } : {}), flags: { [MODULE_ID]: { pile: true } } };
+      const made = await game.itempiles.API.createItemPile({ position: at, sceneId: scene.id, items, tokenOverrides, ...(pileFlags ? { itemPileFlags: pileFlags } : {}) });
       const token = made?.tokenUuid ? await fromUuid(made.tokenUuid) : null;
       if ( token ) {
         const records = [{ createdTokens: [token.uuid] }];
@@ -87,7 +89,7 @@ async function makePile(scene, at, goods, { name = "", over = {}, type = null } 
   }
   if ( systemPiles(adapter) ) {
     try {
-      const made = await adapter.dropValuables(scene, at, goods, { name });
+      const made = await adapter.dropValuables(scene, at, goods, { name, ...(img ? { img } : {}) });
       if ( made?.tokenUuid ) return { records: made.records ?? [], pile: made.tokenUuid };
     } catch ( err ) {
       console.warn(`${MODULE_ID} | the system couldn't make a pile`, err);
@@ -95,7 +97,7 @@ async function makePile(scene, at, goods, { name = "", over = {}, type = null } 
   }
   if ( type && typeof adapter?.putGoods === "function" ) {
     try {
-      return await corePile(scene, at, goods, { name, over, type });
+      return await corePile(scene, at, goods, { name, over, type, img });
     } catch ( err ) {
       console.warn(`${MODULE_ID} | couldn't make a pile`, err);
     }
@@ -108,9 +110,9 @@ async function makePile(scene, at, goods, { name = "", over = {}, type = null } 
  * copied from's own, so its things fit), FastFighting's (kept out of battles: isPile; taken away by Rewind), everyone
  * able to look in, and its token at `at`.
  */
-async function corePile(scene, at, goods, { name, over, type }) {
+async function corePile(scene, at, goods, { name, over, type, img = null }) {
   const actor = await Actor.create({
-    name, type, img: "icons/containers/bags/sack-leather-brown.webp",
+    name, type, img: img ?? LOOT_KINDS.bag.img,
     ownership: { default: CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER },
     flags: { [MODULE_ID]: { pile: true } }
   });
@@ -122,6 +124,40 @@ async function corePile(scene, at, goods, { name, over, type }) {
   const records = [{ createdActors: [actor.uuid], createdTokens: [token.uuid] }];
   records.push(...((await getAdapter().putGoods(token, goods)) ?? []));
   return { records, pile: token.uuid };
+}
+
+/**
+ * The GM's own loot on the map, from the Planner: a chest or a bag, empty, for the GM to fill in its own window (Item
+ * Piles', else the system's sheet). Something a thief, a scavenger or the hungry may want more than a fight
+ * (engine/behavior/forage.js). Its look, its name, and Item Piles' kind of pile (a chest a container, kept when emptied).
+ */
+export const LOOT_KINDS = Object.freeze({
+  chest: Object.freeze({ img: "icons/containers/chest/chest-oak-steel-brown.webp", name: "FASTFIGHTING.Loot.Chest", pileFlags: Object.freeze({ type: "container", deleteWhenEmpty: false }) }),
+  bag: Object.freeze({ img: "icons/containers/bags/sack-leather-brown.webp", name: "FASTFIGHTING.Loot.Bag", pileFlags: Object.freeze({ type: "pile", deleteWhenEmpty: false }) })
+});
+
+/** An actor type for the core's own pile, where nothing else can make one: the system's first that isn't a base. */
+const pileActorType = () => Object.keys(game.system?.documentTypes?.Actor ?? {}).find(k => k !== "base") ?? null;
+
+/** The GM places loot at `point` (canvas pixels): a chest or a bag, empty. Its token's uuid, or null. */
+export async function placeLoot(scene, point, kind = "chest") {
+  const look = LOOT_KINDS[kind] ?? LOOT_KINDS.chest;
+  const made = await makePile(scene, squareAt(scene, point), { items: [], coins: null, money: 0 }, { name: localize(look.name), img: look.img, pileFlags: { ...look.pileFlags }, type: pileActorType() });
+  return made?.pile ?? null;
+}
+
+/**
+ * A pile's own window, to fill it: Item Piles' for its piles, else the actor's sheet. Opened, not waited on (Item Piles'
+ * answers only once its window closes).
+ */
+export async function openPile(uuid) {
+  const token = typeof uuid === "string" ? await fromUuid(uuid) : null;
+  if ( !token?.actor ) return;
+  if ( itemPilesOn() && game.itempiles.API.isValidItemPile?.(token) && typeof game.itempiles.API.renderItemPileInterface === "function" ) {
+    game.itempiles.API.renderItemPileInterface(token);
+    return;
+  }
+  token.actor.sheet?.render(true);
 }
 
 /**

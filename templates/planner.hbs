@@ -63,6 +63,12 @@
       </label>
       {{/each}}
     </div>
+    {{!-- Loot on the map: a chest or a bag for the GM to fill, a lure for thieves, scavengers and the hungry --}}
+    <div class="ff-toolbar-row ff-loot">
+      <span class="ff-field-label">{{localize "FASTFIGHTING.Planner.Loot"}} <i class="fa-solid fa-circle-question" data-tooltip="{{localize "FASTFIGHTING.Planner.LootHint"}}"></i></span>
+      <button type="button" class="ff-btn" data-action="placeLoot" data-kind="chest"><i class="fa-solid fa-box-open"></i> {{localize "FASTFIGHTING.Planner.PlaceChest"}}</button>
+      <button type="button" class="ff-btn" data-action="placeLoot" data-kind="bag"><i class="fa-solid fa-sack-dollar"></i> {{localize "FASTFIGHTING.Planner.PlaceBag"}}</button>
+    </div>
     {{!-- The game system's own settings for this encounter --}}
     {{#if systemSection}}
     <div class="ff-toolbar-row ff-system-row">

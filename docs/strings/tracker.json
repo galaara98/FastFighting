@@ -13070,6 +13070,16 @@
    "commit": null,
    "hash": "90fff4390f7a"
   },
+  "core:FASTFIGHTING.Loot.Bag": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Loot.Bag",
+   "area": "core/Loot",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "b053c961f2ac"
+  },
   "core:FASTFIGHTING.Loot.Belongings": {
    "repo": "core",
    "file": "languages/en.json",
@@ -13079,6 +13089,16 @@
    "date": null,
    "commit": null,
    "hash": "15754f1d72f8"
+  },
+  "core:FASTFIGHTING.Loot.Chest": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Loot.Chest",
+   "area": "core/Loot",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "378d83808237"
   },
   "core:FASTFIGHTING.Loot.corpse": {
    "repo": "core",
@@ -15048,6 +15068,26 @@
    "commit": null,
    "hash": "de26750a7277"
   },
+  "core:FASTFIGHTING.Planner.Loot": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Planner.Loot",
+   "area": "core/Planner",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "faf82593de8f"
+  },
+  "core:FASTFIGHTING.Planner.LootHint": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Planner.LootHint",
+   "area": "core/Planner",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "60a5e384a8cd"
+  },
   "core:FASTFIGHTING.Planner.ManyCreatures": {
    "repo": "core",
    "file": "languages/en.json",
@@ -15191,6 +15231,46 @@
    "date": null,
    "commit": null,
    "hash": "45bdfecf69cc"
+  },
+  "core:FASTFIGHTING.Planner.PlaceBag": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Planner.PlaceBag",
+   "area": "core/Planner",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "aae49cda0680"
+  },
+  "core:FASTFIGHTING.Planner.PlaceChest": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Planner.PlaceChest",
+   "area": "core/Planner",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "9f57ad4d9da6"
+  },
+  "core:FASTFIGHTING.Planner.PlaceLootClick": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Planner.PlaceLootClick",
+   "area": "core/Planner",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "24ed819bea27"
+  },
+  "core:FASTFIGHTING.Planner.PlaceLootFailed": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Planner.PlaceLootFailed",
+   "area": "core/Planner",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "675f4939dde9"
   },
   "core:FASTFIGHTING.Planner.PlayersRun": {
    "repo": "core",

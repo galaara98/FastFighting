@@ -8,6 +8,7 @@ import {
 import { getAdapter } from "../api.js";
 import { setting } from "../settings.js";
 import { listJoin, listItems, localize, term, hasStat, brief, roundsText } from "../i18n.js";
+import { placeLoot, openPile } from "../foundry/loot-drop.js";
 import { setAdhd } from "./token-tactics.js";
 import { getSetup, saveSetup, clearSetup, tokenSetup, planHolder, rememberPartyRole, sceneEncounter, encounterNumber } from "../foundry/persistence.js";
 import {
@@ -78,6 +79,27 @@ const fightCount = n => game.i18n.format("FASTFIGHTING.Planner.FightsRun", { n: 
 /** A creature's traits as its sheet reads them (its sliders' starting points). */
 const baseTraits = spec => Object.fromEntries(TRAITS.map(k => [k, spec?.traits?.[k]?.base ?? 50]));
 
+/** The next point the GM clicks on the map (canvas pixels), or null (Escape, or a right-click). */
+function pickPoint() {
+  return new Promise(resolve => {
+    const done = point => {
+      canvas.stage.off("pointerdown", onDown);
+      document.removeEventListener("keydown", onKey, true);
+      resolve(point);
+    };
+    const onDown = event => {
+      if ( event.button === 2 ) return done(null);
+      const p = event.getLocalPosition(canvas.stage);
+      done({ x: p.x, y: p.y });
+    };
+    const onKey = event => {
+      if ( event.key === "Escape" ) done(null);
+    };
+    canvas.stage.on("pointerdown", onDown);
+    document.addEventListener("keydown", onKey, true);
+  });
+}
+
 export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
   static DEFAULT_OPTIONS = {
     id: "fast-fighting-planner",
@@ -106,6 +128,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       openSurvey: BattlePlanner.#onOpenSurvey,
       surveyCharacter: BattlePlanner.#onSurveyCharacter,
       surveyCharacterGm: BattlePlanner.#onSurveyCharacterGm,
+      placeLoot: BattlePlanner.#onPlaceLoot,
       cancel: BattlePlanner.#onCancel
     }
   };
@@ -742,6 +765,23 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
         ...PURSE_TEAMS.map((key, i) => ({ key, label: loc(`FASTFIGHTING.Planner.Team.${labels[i]}`), value: Number(saved[key]) || 0 }))
       ]
     };
+  }
+
+  /**
+   * The GM puts loot on the map: a chest or a bag (loot-drop.js placeLoot), where they click next (Escape, or a click
+   * outside the map, leaves it), then its own window opens to fill it.
+   */
+  static async #onPlaceLoot(event, target) {
+    const kind = target.dataset.kind === "bag" ? "bag" : "chest";
+    if ( !canvas?.ready || !canvas.scene ) return;
+    ui.notifications.info(loc("FASTFIGHTING.Planner.PlaceLootClick"));
+    await this.minimize?.();
+    const point = await pickPoint();
+    await this.maximize?.();
+    if ( !point ) return;
+    const made = await placeLoot(canvas.scene, point, kind);
+    if ( !made ) return ui.notifications.warn(loc("FASTFIGHTING.Planner.PlaceLootFailed"));
+    await openPile(made);
   }
 
   #systemSection(adapter, resolved, chains) {
