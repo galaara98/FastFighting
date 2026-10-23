@@ -1,5 +1,5 @@
 /**
- * Do it For Real Now, live: the battle played on the scene's own combat tracker, a turn at a time.
+ * Go Live: the battle played on the scene's own combat tracker, a turn at a time.
  *   - A creature FastFighting plays (an NPC, or a character the GM lets it play): when the tracker reaches it, its
  *     turn is played (engine/live.js liveTurn) against the sheets as they stand, its tokens move, what it changed is
  *     written onto the sheets (adapter.commitChanges), its card is told; then FastFighting waits for the GM's Continue.
@@ -258,7 +258,7 @@ let beginning = null;
 
 /**
  * The encounter begins, a battle prepared on it: the Battle Vantage's Begin Encounter, Foundry's own (the tracker's,
- * noticed: registerLiveBattles), or Do it For Real Now. Those yet to roll initiative roll it, straight away (no
+ * noticed: registerLiveBattles), or Go Live. Those yet to roll initiative roll it, straight away (no
  * system's roll dialog for each one; Rewind This Encounter takes them back; a spotlight system rolls none: whoever the
  * GM spotlights acts). The combat starts, if it hasn't, the tracker's order is the fight's, and its first turn begins:
  * played, if FastFighting plays it.

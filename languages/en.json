@@ -35,7 +35,7 @@
       "Attack": "Attack",
       "MenuName": "Generic system data paths",
       "MenuLabel": "Configure",
-      "MenuHint": "For systems without a FastFighting helper module: where actors keep HP, AC, attack bonus and damage.",
+      "MenuHint": "Where actors keep HP, AC, attack bonus and damage, for the generic adapter.",
       "Hint": "Property paths on the actor, e.g. system.attributes.hp.value. Leave attack or damage empty to estimate them from level.",
       "Path": {
         "hp": "Current HP",
@@ -58,73 +58,73 @@
         "planner": "Planner defaults",
         "behavior": "How creatures decide",
         "luck": "Personality & luck",
-        "after": "After the battle",
+        "after": "Aftermath",
         "troubleshooting": "Troubleshooting & data",
         "generic": "Systems without a helper"
       },
       "predictionTime": {
         "Name": "Prediction time (seconds)",
-        "Hint": "How long the planner simulates fights. More time, more fights and surer odds; a bigger battle fits fewer fights. Changeable per battle."
+        "Hint": "How long the planner simulates fights. More time, more fights and surer odds."
       },
       "maxRounds": {
         "Name": "Max rounds",
-        "Hint": "A simulated battle still going after this many rounds counts as a stalemate."
+        "Hint": "A fight still going after this many rounds is a stalemate. Fast Fight stops there too."
       },
       "includeHidden": {
         "Name": "Include hidden tokens",
-        "Hint": "Hidden tokens (ambushers, reinforcements) take part in estimates by default."
+        "Hint": "Hidden tokens outside the encounter, such as ambushers and reinforcements, can take part."
       },
       "includeOtherLevels": {
         "Name": "Include other scene levels",
-        "Hint": "Include tokens on scene Levels other than the one being viewed."
+        "Hint": "Tokens outside the encounter on the scene's other levels can take part."
       },
       "neutralDefault": {
         "Name": "Neutral tokens",
-        "Hint": "How Neutral-disposition tokens take part by default. Changeable per battle and per token."
+        "Hint": "How tokens with Neutral disposition take part, unless set per token."
       },
       "downedModel": {
         "Name": "Downed characters",
-        "Hint": "What 0 HP means. 'Simulate dying and healing' follows the system's rules for dying, recovery and revival."
+        "Hint": "What 0 HP means. Simulate dying and healing follows the system's rules for dying, recovery and revival."
       },
       "pcHealAggro": {
-        "Name": "Default PC healing",
-        "Hint": "How freely PCs spend spells, potions and actions on healing, unless set per character. \"Let each character decide\" goes by class, features and nature."
+        "Name": "PC healing",
+        "Hint": "How freely PCs spend spells, potions and actions on healing, unless set per character."
       },
       "pcAllyDying": {
-        "Name": "Default PC response to a dying ally",
-        "Hint": "What PCs put first when an ally is dying, unless set per character. \"Let each character decide\" goes by class, features and nature."
+        "Name": "PCs when an ally is dying",
+        "Hint": "What PCs put first when an ally is dying, unless set per character."
       },
       "leadership": {
         "Name": "Leadership",
-        "Hint": "Leaders (best social or warfare skill, Commanders, rallying abilities) raise their side's bravery and coordination while standing."
+        "Hint": "Leaders and bosses raise their side's bravery and coordination while they stand."
       },
       "morale": {
         "Name": "Morale and routing",
-        "Hint": "Combatants may waver or flee based on bravery, wounds, losses and a fallen leader or master."
+        "Hint": "Creatures may waver or flee from fear, wounds, losses or a fallen leader or master."
       },
       "positioning": {
         "Name": "Positioning and terrain",
-        "Hint": "Use token distances, movement types, terrain costs, walls and elevation. Turn off for theater-of-the-mind scenes."
+        "Hint": "Uses distances, movement, terrain costs, walls and elevation. Turn off for theater of the mind."
       },
       "surpriseDefault": {
         "Name": "Surprise",
-        "Hint": "Who is surprised as a fight starts: as the system's rules have it, no one, or one side. Follow System is greyed out where the system has no surprise rules."
+        "Hint": "Who is surprised as a fight starts. Follow System is unavailable where the system has no surprise rules."
       },
       "lootMode": {
-        "Name": "Do it For Real Now: loot",
-        "Hint": "What happens to a slain creature's gear."
+        "Name": "Slain creatures' gear",
+        "Hint": "What a live battle does with a slain creature's gear."
       },
       "pcMeat": {
         "Name": "Dead player characters leave meat",
-        "Hint": "A dead player character's loot token also holds the meat its body would leave, as a creature's corpse does. Its sheet is never touched."
+        "Hint": "A dead PC's loot token also holds the meat its body would leave. Its sheet is never touched."
       },
       "corpseMode": {
-        "Name": "Do it For Real Now: corpses",
-        "Hint": "Keep slain tokens, marked dead, or remove them (only when a loot pile is dropped)."
+        "Name": "Slain tokens",
+        "Hint": "Keep slain tokens, marked dead, or remove them. Removing applies only where a loot pile is dropped."
       },
       "fledMode": {
-        "Name": "Do it For Real Now: fled combatants",
-        "Hint": "What happens to tokens that fled the battle."
+        "Name": "Tokens that fled",
+        "Hint": "Hide a token that fled the battle and take it off the tracker, or leave it in place."
       },
       "sideDefaults": {
         "Name": "Side personality defaults",
@@ -137,143 +137,143 @@
       },
       "ignoreLanguages": {
         "Name": "Ignore languages",
-        "Hint": "Anyone who speaks a language understands everyone who does. Creatures with no language (beasts, the mindless) still can't be talked to. Changeable per battle."
+        "Hint": "Anyone who speaks a language understands everyone who does. Creatures with no language still can't be talked to."
       },
       "storyStyle": {
         "Name": "Story style",
-        "Hint": "How the Sample fight tab and Do it For Real Now's chat cards tell a fight: Roleplay (prose), Standard (what everyone did) or Statistician (every roll, GMs only)."
+        "Hint": "How the planner's Sample fight and live battles' chat cards tell a fight. Statistician lists every roll, for GMs only."
       },
       "storyMode": {
         "Name": "Story delivery",
-        "Hint": "Post the story publicly, or whisper it to GMs only."
+        "Hint": "Who sees the story in chat."
       },
       "bystanders": {
         "Name": "Bystanders can join",
-        "Hint": "Tokens outside the encounter may notice the fight (by sight, or by sound muffled by walls), be called for help, hunted, or run into by someone fleeing, then decide whether to join."
+        "Hint": "Tokens outside the encounter may notice the fight, be called for help, be hunted or be run into, then decide whether to join."
       },
       "genericFallback": {
         "Name": "Use the experimental generic adapter",
-        "Hint": "Only for systems without a FastFighting helper module: guess HP, AC, attacks and damage from configured data paths. Expect rough results."
+        "Hint": "Guesses HP, AC, attacks and damage from the data paths below. Expect rough results."
       },
       "aftermath": {
         "Name": "After the fight",
-        "Hint": "Whether survivors tend the dying after the fight, and whether the story tells it."
+        "Hint": "Whether survivors tend the dying once the fighting stops, and whether the story tells it."
       },
       "opening": {
         "Name": "How encounters open",
-        "Hint": "Whether a fight opens with talk. \"Talk if they'd rather\": a standoff when the leaders would rather talk."
+        "Hint": "Whether a fight opens with talk. Talk if they'd rather: a standoff when the leaders would rather talk."
       },
       "concedeLuck": {
         "Name": "PC luck: handing over an item",
         "Hint": "A PC talked into giving up an item loses it only on a hidden d100 at or under this."
       },
       "theftLuck": {
-        "Name": "PC luck: being robbed",
-        "Hint": "A thief who beats a PC's defenses still needs a hidden d100 at or under this to take anything."
+        "Name": "Thief robs a PC (%)",
+        "Hint": "Chance a thief who gets past a PC's guard, or robs a fallen PC, takes anything."
       },
       "playOnMap": {
-        "Name": "Do it For Real Now: play the fight on the map",
-        "Hint": "Tokens move as each turn's card is posted. Off: they jump to where the fight leaves them."
+        "Name": "Play the fight on the map",
+        "Hint": "Tokens walk their turns. Off: they jump to where each turn leaves them."
       },
       "storyOdds": {
-        "Name": "Show the odds in the posted story",
-        "Hint": "Ends the story with each side's odds of winning, as simulated. The planner has the same switch."
+        "Name": "Show the odds in the story",
+        "Hint": "Ends the posted story with each side's simulated odds of winning."
       },
       "standGround": {
-        "Name": "Doesn't like to flee: how often it stays (%)",
-        "Hint": "How often a character that fights to the end resists its own urge to run (default 90)."
+        "Name": "Fighter to the end stands firm (%)",
+        "Hint": "Chance a character that fights to the end resists its own urge to run."
       },
       "adhd": {
-        "Name": "ADHD: how often a creature's mind jumps (%)",
-        "Hint": "How often a creature drops what it's doing for the strongest thing it wants (default 20)."
+        "Name": "ADHD: mind jumps (%)",
+        "Hint": "Chance a creature drops what it's doing for the strongest thing it wants."
       },
       "leaveResolve": {
-        "Name": "Committed to leaving: how often it keeps going (%)",
-        "Hint": "How often a creature leaving the fight keeps going when struck or spoken to (default 79)."
+        "Name": "Leaving creature keeps going (%)",
+        "Hint": "Chance a creature leaving the fight keeps going when struck or spoken to."
       },
       "roleplayForgets": {
-        "Name": "Roleplayers forget opportunity attacks (%)",
-        "Hint": "How often a character whose player ticked \"Roleplaying is very important to me\" forgets to play safe around opportunity attacks (default 33)."
+        "Name": "Roleplayer forgets opportunity attacks (%)",
+        "Hint": "Chance a character whose player ticked \"Roleplaying is very important to me\" forgets to play safe around opportunity attacks."
       },
       "avoidKilling": {
-        "Name": "Avoids killing: how often it holds back (%)",
-        "Hint": "How often a character that avoids killing holds back from a kill (default 90)."
+        "Name": "Killing-averse creature holds back (%)",
+        "Hint": "Chance a character that avoids killing holds back from a kill."
       },
       "neutralReach": {
         "Name": "Neutral friend groups: reach (squares)",
-        "Hint": "How near (in squares) a neutral must be to a friend group for the planner to propose it joins (default 3)."
+        "Hint": "How near a neutral must be to a friend group for the planner to put it in."
       },
       "switchLuck": {
-        "Name": "Luck: an enemy changing sides",
-        "Hint": "An enemy talked into changing sides stands aside only on a hidden d100 at or under this (default 69; 100: always)."
+        "Name": "Enemy changes sides (%)",
+        "Hint": "Chance an enemy talked into changing sides goes through with it; more for one scheming against its leaders. At 100, always."
       },
       "executeLuck": {
-        "Name": "PC luck: being finished off",
-        "Hint": "A creature finishes off a PC at 0 HP only on a hidden d100 at or under this (default 39)."
+        "Name": "Downed PC finished off (%)",
+        "Hint": "Chance a creature that means to finish off a PC at 0 HP does."
       },
       "leaderInfluence": {
         "Name": "Leader's influence",
-        "Hint": "How readily followers take their commander's lead: 0 to 100, 50 usual (not a percentage)."
+        "Hint": "How readily followers take their commander's lead. 0: nobody follows; 100: twice as readily as usual."
       },
       "bossInfluence": {
-        "Name": "Boss's influence",
-        "Hint": "How much more readily followers take a boss's lead than a leader's: 1.25 to 3 times (default 2)."
+        "Name": "Boss's influence (×)",
+        "Hint": "How many times more readily followers take a boss's lead than a leader's."
       },
       "focusDampener": {
-        "Name": "Non Player Focus Fire Dampener",
-        "Hint": "How much less creatures not on the Friendly side focus fire on a foe their side has already hit: 0 to 100 (at 100, half as much; default 0)."
+        "Name": "Dampen non-friendly focus fire",
+        "Hint": "How much less creatures not on the Friendly side gang up on a foe their side has already hit. At 100, half as much."
       },
       "traitorLuck": {
-        "Name": "Luck check: a player character turning traitor",
-        "Hint": "A PC talked into changing sides does so only on a d100 at or under this (default 9; 0: never)."
+        "Name": "PC turns traitor (%)",
+        "Hint": "Chance a PC talked into changing sides goes through with it. At 0, never."
       },
       "trapLuck": {
-        "Name": "Trap avoiders: spotting a trap (%)",
-        "Hint": "Trap avoiders (a Thief most) spot each hazard on a hidden d100 at or under this (default 59). 0: never."
+        "Name": "Trap avoider spots a trap (%)",
+        "Hint": "Chance a trap avoider (a Thief most of all) spots each hazard."
       },
       "tauntLuck": {
-        "Name": "Playstyle taunts: taking hold (%)",
-        "Hint": "A playstyle's landed taunt takes hold on a hidden d100 at or under this (default 42; less for lesser taunters)."
+        "Name": "Playstyle taunt takes hold (%)",
+        "Hint": "Chance a playstyle's landed taunt takes hold; less for lesser taunters. A system's own taunts follow its rules."
       },
       "partySway": {
         "Name": "Party's sway (%)",
-        "Hint": "How much the party's votes sway the characters on the friendly side (default 3)."
+        "Hint": "How much the party's vote sways the characters on the friendly side."
       },
       "applyPlayerDamage": {
         "Name": "Apply players' damage",
-        "Hint": "In a live battle, a player's damage card against a creature FastFighting runs is applied at once. Off: the Battle Vantage asks a GM to apply each one. Changeable per battle."
+        "Hint": "A player's damage card against a creature FastFighting runs is applied at once. Off: the Battle Vantage asks a GM first."
       },
       "playersRunPCs": {
         "Name": "Players run their characters",
-        "Hint": "In Do it For Real Now, players take their own characters' turns; FastFighting plays everyone else. Off: FastFighting plays every turn. Changeable per battle."
+        "Hint": "Players take their characters' turns; FastFighting plays everyone else. Off: FastFighting plays every turn."
       },
       "autoPlayAbsent": {
-        "Name": "Automatically enable FastFighting during an encounter if a player disconnects for more than:",
-        "Hint": "In a live battle, a character left with none of its players connected gets a countdown, shown in the Battle Vantage. When it runs out, FastFighting plays their turns. A player who rejoins gets their characters back after 12 seconds."
+        "Name": "Play for disconnected players",
+        "Hint": "When all of a character's players have disconnected, FastFighting plays its turns after a countdown shown in the Battle Vantage. A player who returns takes over again after 12 seconds."
       },
       "autoPlayAbsentSeconds": {
-        "Name": "…for more than (seconds)",
-        "Hint": "How many seconds the countdown lasts (30 to 600; default 120)."
+        "Name": "Disconnected player countdown (seconds)",
+        "Hint": "How long FastFighting waits before playing for a disconnected player."
       },
       "ignoreTroubles": {
-        "Name": "Selfless creatures bear what holds or hurts them (%)",
-        "Hint": "How often a selfless creature ignores what holds or hurts it and carries on (default 29; 0: never)."
+        "Name": "Selfless creature shrugs off troubles (%)",
+        "Hint": "Chance a selfless creature ignores what holds or hurts it and carries on; less the more selfish or calculating it is."
       },
       "troubleshooting": {
         "Name": "Troubleshooting",
-        "Hint": "Keeps each live battle's transcript for 30 days, even after its encounter is deleted, and the planner's last run beside them. Turn it on before reporting a bug, then export them from Live battle data. Off: a transcript goes with its encounter. On: the last run's odds are in the world, where a player who digs could read them."
+        "Hint": "Keeps each live battle's transcript for 30 days, even after its encounter is deleted, with the planner's last run. Turn it on before reporting a bug, then export from Live battle data. While on, a player who digs could read the last run's odds."
       },
       "plannerWorkers": {
-        "Name": "Planner: background workers",
-        "Hint": "Runs the planner's fights on background threads, so the screen stays free and more fights fit the time. Off: on the main thread. Workers that fail switch off by themselves and say so in the console."
+        "Name": "Background workers",
+        "Hint": "Runs the planner's fights on background threads, so the screen stays responsive and more fights fit the time. Workers that fail switch off and say so in the console."
       },
       "Survey": {
         "Link": "Optional performance survey",
         "Hint": "Your setup, your battle and how many fights the planner ran: it helps make FastFighting faster."
       },
       "waitHold": {
-        "Name": "Hold Next Turn while a player is waited on (seconds)",
-        "Hint": "While a player's turn waits for review, or a player's reaction is being rolled, the Battle Vantage's Next Turn stays locked this long. 0: never. The last stop: until nothing waits.",
+        "Name": "Hold Next Turn for players",
+        "Hint": "While a player's turn waits for review, or their reaction is being rolled, the Battle Vantage's Next Turn stays locked this long.",
         "Never": "Never",
         "Seconds": "{n} s",
         "Unlimited": "Unlimited"
@@ -309,7 +309,7 @@
     },
     "Surprise": {
       "system": "Follow System",
-      "none": "- No one is surprised -",
+      "none": "No one is surprised",
       "friendlySurprised": "Friendlies are surprised",
       "friendlySurprise": "Friendlies surprise others"
     },
@@ -784,15 +784,15 @@
       "Result": "Outcome",
       "Unchanged": "No change",
       "Typical": "Most typical fight",
-      "TypicalHint": "One fight with the most common outcome. Do it For Real Now plays a new one."
+      "TypicalHint": "One fight with the most common outcome. Go Live plays a new one."
     },
     "MakeItSo": {
-      "Button": "Do it For Real Now",
+      "Button": "Go Live",
       "Undo": "Rewind This Encounter",
       "UndoTitle": "Rewind This Encounter",
       "Moves": "Moves {distance}",
-      "RunAgain": "The plan has changed since it was run. Run it again first, so the fight played for real is the one you planned.",
-      "NeedsUpdate": "Update this system's FastFighting helper to play fights for real.",
+      "RunAgain": "The plan has changed since it was run. Run it again first, so the live battle is the one you planned.",
+      "NeedsUpdate": "Update this system's FastFighting helper to go live.",
       "Hint": "Plays this fight on the Combat Tracker, turn by turn: FastFighting plays its creatures, the players their characters (if they run them). Rewind This Encounter undoes it.",
       "Gives": "Gives up {what} to {name}",
       "Receives": "Receives {what} from {name}",

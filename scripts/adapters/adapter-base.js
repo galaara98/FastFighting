@@ -219,7 +219,7 @@ export class SystemAdapter {
 
   /**
    * Can it play a live battle (the players run their characters, FastFighting the rest, a turn at a time)? Only a
-   * helper whose commitChanges writes one turn's changes safely, mid-fight; without, Do it For Real Now can't be done
+   * helper whose commitChanges writes one turn's changes safely, mid-fight; without, Go Live can't be done
    * (the planner says the helper needs updating).
    */
   get supportsLive() {

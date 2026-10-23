@@ -56,7 +56,7 @@ FastFighting is split into a pure simulation engine, system **helpers**, and the
 - **Its own state** (not the plan's): `leftView` (teams, encounter, players), `sideFilter`, `rosterFilter` (filtered in the DOM as typed, `#filterRoster`, no drawing), `expandedTeams`, `detail` (`{kind: "team", key}` or `{kind: "creature", id}`; the party at first), `resultTab` ("details" or a result's; "overview" at first), `openSections` (each `details[data-section]`, its `toggle` caught on the way down) and `previousResults` (the summary's change since the last run).
 - **Teams:** by group key (`commandGroup`'s, `PURSE_TEAMS`' and `options.reinforcements`'), shown as `TEAM_SHORT` (constants.js: F, H1 to H3, N1 to N3, Secret's S) in its color (`--ff-t-*`). A token's card is its chosen side's group (`#teamKey`); a Secret token's is the Secret card, its team the one picked (`#fightsFor`). Side settings stay by side, so a side's teams share them (Details says so).
 - **Menus** (role, team, a creature's ⋯, the top bar's ⋯) are `popover` elements opened by their button's `popovertarget`, placed beside it and closed after an action (`apps/menus.js`). Escape is the `closeMenu` keybinding (PRIORITY, main.js), since Foundry's own Escape closes the window; Foundry's tooltip is a popover too, so it shows over them.
-- **The top bar's buttons** come from `#actions`: Run, Stop, Do it For Real Now, and the one beside it held back (`aria-disabled`, saying why) while the plan has changed since its run or the helper can't play live.
+- **The top bar's buttons** come from `#actions`: Run, Stop, Go Live, and the one beside it held back (`aria-disabled`, saying why) while the plan has changed since its run or the helper can't play live.
 - Controls that aren't the plan's (the filter, the views) have no `name`: the form submits every named one on change.
 
 ### The Battle Vantage's window
@@ -129,7 +129,7 @@ Hooks.once("fastFighting.init", api => {
     isFood(item) { ... }                             // food (API 27): {portions, meat} for a thing that can be eaten, else null
     pileContents(tokenDoc) { ... }                   // piles (API 27): what a pile holds, for the engine: {money (smallest coin), items: [{id, name, value (each), quantity}]}, everything however carried
 
-    // Live battles (Do it For Real Now): see scripts/adapters/adapter-base.js for each one's contract.
+    // Live battles (Go Live): see scripts/adapters/adapter-base.js for each one's contract.
     get supportsLive() { return true; }
     async readLiveState(tokenDoc, { spec, unit }) { ... }            // the sheet as it stands, mid-fight (by default, from toCombatantSpec)
     async commitChanges(tokenDoc, spec, changes, final, options) { ... } // one turn's change set (scripts/engine/changes.js); returns an undo record
@@ -605,7 +605,7 @@ Hooks:
 
 ### The planner and the plan
 
-- A Secret token's team pills: a number no one else has is a team of its own. Who paused or un-paused the game while the planner was open has the last word; the planner closes for Do it For Real Now, and the game goes on once the fight is written.
+- A Secret token's team pills: a number no one else has is a team of its own. Who paused or un-paused the game while the planner was open has the last word; the planner closes for Go Live, and the game goes on once the fight is written.
 - **Bystanders** check, on their own turn, whether they notice the fight now; once aware, they take their turns from the next round, as if they'd been in the encounter all along. An attack makes one aware at once.
 - **The prediction** runs fight after fight until its time is up (`engine/run-budget.js`); a fight under way is always finished. Where the system's helper opens its rules to them, on background workers, several fights at once (**The planner's fights on background workers**); the swing factors' tests too.
 
@@ -645,7 +645,7 @@ Hooks:
   - Focus fire (`behavior/focus.js`, the `focus` layer, worked out after the party's wishes and before its commander's
     pull): once its side has hit a foe (`alreadyHit`: the foe's `harmedBy` has one of its team, itself too), each foe
     already hit gets more of its wish to hurt it, by its strength (`focusFire`: Tactical ÷ 100 from 40 if not dumb; 1
-    for a pack hunter; plus its playstyles' `focus`; the world's Non Player Focus Fire Dampener, `focusDampener`, takes
+    for a pack hunter; plus its playstyles' `focus`; the world's Dampen non-friendly focus fire, `focusDampener`, takes
     up to half from those not on the friendly side), the most hurt the most. Capped at its strongest wish to hurt + 10,
     and below anything it's taunted into, told to want or held to by the GM. Below Tactical tier, `focusAgenda` (after
     `orderAgenda`) switches its top from a foe not hit to a stronger wish at one that is, with chance = strength. A
@@ -672,7 +672,7 @@ Hooks:
 - **Changing sides:** failing the switch luck roll, an enemy is talked into one of the other outcomes instead. Spells and abilities made for it (charm, dominate) turn a creature straight over until they end.
 - **Standoffs:** before one breaks, a charismatic NPC leader may take one last turn to press the party.
 - **Only an argument:** the results count a collapse apart from "settled with words". The story tells who walked out and why.
-- **Supply** (Ironsworn): what one loses (stolen, looted), the whole side has that much less of; Do it For Real Now lowers every friendly character's Supply, and every character the system shares it with. A foe's ground given is a mark of progress on its own track, the winners' reward.
+- **Supply** (Ironsworn): what one loses (stolen, looted), the whole side has that much less of; Go Live lowers every friendly character's Supply, and every character the system shares it with. A foe's ground given is a mark of progress on its own track, the winners' reward.
 - **A quarrel beside the standoff:** hurt or insulted by a neutral that seems to be with the other side, a creature may blame that side and break the standoff (a tactical mind mostly sees through it). Peacemakers on either side (those who can't abide violence) calm the quarrel at once: talking the neutral into letting it go, or the side's fighters into leaving the neutral be, until it hurts them again.
 
 ### Deals: bribes, extortion and scaring off
@@ -708,7 +708,7 @@ Hooks:
 - **The lean** (`behavior/neutral.js`) nudges what neutrals want as a leader's word does: the favored side's members safer and less to hurt, their foes a little more, by a share of the lean's strength and as loyal as each is (less for the selfish), on top of everything else. Leaning isn't guarding. What they feel for that side is the lean in full: watching them hurt, they take it personally, they spare them while they talk, and joining them appeals. The underdog's members change as the fight goes. A friend group pulls toward keeping its own safe the same way. An enemy who stands aside still leans a little toward its old friends, more the more loyal it is. The lean wears down, or ends, either way round.
 - **Crossed:** seeing someone hurt or hinder a creature it wants safe, or heal or bolster one it badly wants hurt, builds a grievance against the doer's side, faster the more it cares and the worse the harm; enough of it offends.
 - **Words first:** the offender's side can talk it round, or it can talk the offender into making amends (an apology).
-- **Won over:** against its lean too. Talkers weigh what joining would mean to it: a pitch that gives it what it wants (keeping someone safe, a chance at someone it wants hurt) is easier and quicker, so one already leaning their way doesn't take much; one that betrays what it wants is harder and slower. Do it For Real Now changes a creature that stood aside to Neutral.
+- **Won over:** against its lean too. Talkers weigh what joining would mean to it: a pitch that gives it what it wants (keeping someone safe, a chance at someone it wants hurt) is easier and quicker, so one already leaning their way doesn't take much; one that betrays what it wants is harder and slower. Go Live changes a creature that stood aside to Neutral.
 - **Who knows:** only a tactical talker knows a neutral could be won over. A feral creature's attack on one offends it and ends any lean toward the attacker's side. One who always tries words first (a Diplomat, "Talk first", "Always talk") talks to a neutral it takes for a foe, and may win it over by accident; a desire to talk to it (stated, or its leader's) does the same.
 - **Getting involved:** the odds rise with how well it likes the side (the strength of its lean) and how much that side looks like winning (its standing members' hit points against its enemies'); the bold and the talkers get involved more readily. Involved:
   - talking the side it likes least into running or standing down; in a standoff that settles it for the side it leans toward, as if that side had done the talking. Leaning toward the party's enemies, it talks the party down instead (a player character can only back off);
@@ -730,7 +730,7 @@ Hooks:
 - **Calling a retreat:** whenever one decides to run, it first tries to take its group with it. Its commander decides: one who commands calls it itself (a pack runs with its leader); anyone else has to talk its commander into it, which works the more shaken the commander is and the better the case (a lieutenant's word, a way with words). Refusing, the commander orders it to hold, and it does as readily as it would take its commander's lead. Called, the group falls back together, each member as readily as it would take its commander's lead, more when shaken, much more under a leader prone to running. With nobody to lead it, a group runs together more readily still. Never the fearless, nor a player character. The story tells who calls the retreat and who goes.
 - **Rallying:** seeing friends run or waver, its commander (or one brave and loyal enough with the voice for it; Wants to Lead and Martyrs more readily) may spend an action holding the rest together: those within 60 feet are steadier this round and the next (less stress, slower to answer a call to retreat) and may shake off wavering. A commander's rally carries more, by Leader's influence; a boss's by Boss's influence too.
 - **Leaving the field** (`behavior/leaving.js`): a creature that runs, is talked into leaving, or falls back with its group drops its quarrel with whoever talked it into leaving (with all its foes, when its own nerve sent it), wants nothing so much as to be gone, goes as fast as it can, and breaks free of a grab first. Two whole turns given to leaving count as gone even if the walls shut it in. In a live battle its token is hidden and put in the scene's first square, and it comes off the tracker when the tracker moves on; with fled tokens left in place, it stays where it went.
-  - Committed to leaving: one whose answers and playstyles lean to going (retreating once hurt, a Chicken) gets all of the setting's share; one who'd rather stay (Fight to the end, the brave, Vengeful or Relentless when struck, a Diplomat when spoken to) gets less, never under 70% of it.
+  - Leaving creature keeps going: one whose answers and playstyles lean to going (retreating once hurt, a Chicken) gets all of the setting's share; one who'd rather stay (Fight to the end, the brave, Vengeful or Relentless when struck, a Diplomat when spoken to) gets less, never under 70% of it.
   - Stopped, what stopped it becomes its strongest desire, leaving its second, and it needs two whole turns again. Each blow and each word is a new check. Every stop weakens its wish to leave, more for one who'd rather stay, and a creature stopped often enough forgets leaving and is back in the fight. The GM sees each check on the GM-only card.
   - A creature still on its way when the fight ends has gone. Without a map (no positions), it's gone at once.
 - **Of its own accord** (`behavior/flight.js`, after the morale check): life over loot (a hostile NPC leaderless or led by one who'd rather run) and off with the prize (an NPC holding something taken this fight). Alone (`flee`, no retreat called); never with morale off or for one standing its ground.

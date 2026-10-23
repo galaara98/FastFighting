@@ -270,7 +270,7 @@ Code: `engine/behavior/desire.js` `styleWants`, `listen`, `heed`, `willingness` 
 
 ### Focus fire
 
-Search: focus fire, gang up, already hit, pack, Cruel, Non Player Focus Fire Dampener, focusDampener
+Search: focus fire, gang up, already hit, pack, Cruel, Dampen non-friendly focus fire, focusDampener
 
 Nothing until its side has hit a foe (the foe's harm taken from anyone on its side, itself too). Then, each turn:
 
@@ -279,7 +279,7 @@ strength = min(1, own + playstyles) × kept, where
   A pack hunter (pack attack, pack tactics) has 1 and no more.
 - playstyles: their **focus** points, whatever its Tactical or its wits (Cruel 0.6, Mercenary 0.4, People-Pleaser 0.4,
   Wants to Lead 0.3, Enabler 0.3, at first place).
-- kept = 1 on the friendly side; elsewhere 1 − 0.5 × **Non Player Focus Fire Dampener** ÷ 100 (default 0: 1; at 100: 0.5).
+- kept = 1 on the friendly side; elsewhere 1 − 0.5 × **Dampen non-friendly focus fire** ÷ 100 (default 0: 1; at 100: 0.5).
 
 Each foe already hit, standing, that it could go for: focus = strength × 50 × (0.5 + 0.5 × how hurt it looks ÷ how
 hurt the most hurt of them looks). Capped so its wish to hurt that foe reaches at most its strongest wish to hurt
@@ -401,11 +401,11 @@ Code: `engine/behavior/hopeless.js` `canWorkOn`, `sinkHopeless`.
 
 ### ADHD
 
-Search: ADHD, mind jumps, impulse, impulsive, distracted, adhd, ADHD: how often a creature's mind jumps (%), creature ADHD
+Search: ADHD, mind jumps, impulse, impulsive, distracted, adhd, ADHD: mind jumps (%), creature ADHD
 
 How often a creature drops what it's doing for the strongest thing it wants, and each creature's own nudge.
 
-**World chance**: ADHD: how often a creature's mind jumps (%) (`adhd`, 0 to 100, default 20). Each turn, for a creature
+**World chance**: ADHD: mind jumps (%) (`adhd`, 0 to 100, default 20). Each turn, for a creature
 below Tactical tier whose strongest other workable desire is stronger than the top of its agenda:
 chance = ADHD% × 2 if it could do that this turn (× 3 at Instinctive or Feral), × 1 if not; at most 100%. If it
 jumps, that desire takes the top. "Could do this turn": for Hurt, it perceives the foe and has an attack with uses
@@ -532,12 +532,12 @@ Code: `engine/simulator.js` `runs`, `flee`.
 
 ### Standing its ground
 
-Search: stand ground, holds its ground, doesn't like to flee, Fight to the end, standGround, Doesn't like to flee: how often it stays (%), boss runs
+Search: stand ground, holds its ground, doesn't like to flee, Fight to the end, standGround, Fighter to the end stands firm (%), boss runs
 
 Whether a creature that would run stays anyway.
 
 - **A boss** runs only 5% of the time × (1 + 3 × flighty), at most 50%. A first-pick Chicken boss: 20%.
-- **Anyone else** stays with chance Doesn't like to flee (%) (`standGround`, 50 to 90, default 90) × its wish: Fight to
+- **Anyone else** stays with chance Fighter to the end stands firm (%) (`standGround`, 50 to 90, default 90) × its wish: Fight to
   the end 1, When the battle turns against us 0.5, When I'm badly hurt 0. Only an answer given carries a wish; "Let this
   character decide" carries none, except that a calculated or playstyle Fight to the end counts as 1.
 - The same roll makes one talked into fleeing surrender where it stands instead.
@@ -630,11 +630,11 @@ Code: `engine/behavior/flight.js` `lifeOverLoot`, `prizeFlight`, `prizeOf`, `lea
 
 ### Being stopped on the way out
 
-Search: committed to leaving, leaveResolve, Committed to leaving: how often it keeps going (%), stopped, interrupted, commitment, turns to face
+Search: committed to leaving, leaveResolve, Leaving creature keeps going (%), stopped, interrupted, commitment, turns to face
 
 Every attack at a leaving creature, and every word to it, may stop it.
 
-It keeps going on a d100 at or under round(Committed to leaving (%) (`leaveResolve`, 0 to 100, default 79) ×
+It keeps going on a d100 at or under round(Leaving creature keeps going (%) (`leaveResolve`, 0 to 100, default 79) ×
 commitment), where commitment = 1 − min(0.3, pull):
 
 | Pull | Amount |
@@ -668,7 +668,7 @@ For an NPC talked down, the first that applies:
 
 1. Talked round by a Peacekeeper (at its peacekeeping chance): stands down.
 2. Changes sides: 60% for one that started neutral; else clamp(0.03 + (Selfish − 50) ÷ 500 + (50 − Loyal) ÷ 500, 0,
-   12%), +0.5 when scheming (at most 70%). It goes through only on a d100 under Luck: an enemy changing sides
+   12%), +0.5 when scheming (at most 70%). It goes through only on a d100 under Enemy changes sides (%)
    (`switchLuck`, +20 when scheming); else it's talked into something below.
 3. In a standoff, unless threatened: stands down.
 4. Flees: unhurt with Selfish 55+, or half the time when under half HP with Brave under 40; either unless it stands its
@@ -835,7 +835,7 @@ One with Wants to Lead who doesn't command its group may scheme against whoever 
   treacherous pill (Cruel, Wildcard, Mercenary, Instigator); otherwise it lets the thought go.
 - Scheming, this turn: it won't heal, bolster, guard, free, follow or answer anyone in its chain of command. Talking it
   round is 4 easier; its chance to change sides gets +0.5 (at most 70%) and the switch luck +20. A PC changes sides only
-  on a d100 under Luck check: a player character turning traitor (`traitorLuck`, default 9).
+  on a d100 under PC turns traitor (%) (`traitorLuck`, default 9).
 - Changing sides drops Wants to Lead for the rest of the fight.
 
 Code: `engine/behavior/desire.js` `scheme` (`TREACHEROUS`); `engine/battle-state.js` `refusesToHelp`, `dropAmbition`;
@@ -947,14 +947,14 @@ Code: `engine/playstyles.js` `PLAYSTYLES`.
 
 ### Tactics answers: wishes and "Let this character decide"
 
-Search: tactics answers, survey, wishes, Let this character decide, Always talk unless I am currently being hurt, Spare them: I avoid killing, Fight to the end, avoidKilling, Avoids killing: how often it holds back (%), calculated tactics, suggested answers
+Search: tactics answers, survey, wishes, Let this character decide, Always talk unless I am currently being hurt, Spare them: I avoid killing, Fight to the end, avoidKilling, Killing-averse creature holds back (%), calculated tactics, suggested answers
 
 Three answers carry a wish, 0 to 1, only when actually given ("Let this character decide" carries none):
 
 | Question | Wish by answer | What it does |
 |---|---|---|
 | Talking instead of fighting | Always talk 1, Talk first 0.66, Talk when it could work 0.33, weapons 0 | that chance each turn to give the whole turn to talking (not while being hurt, nor staying true) |
-| Foes who fall | Spare them 1, Tie them up 0.66, Leave them be 0.33, Rob them 0.33, Finish them 0 | holds back from a kill (knocks out instead, leaves the fallen be, spares them after) with chance Avoids killing (%) (`avoidKilling`, 50 to 90, default 90) × max(wish, this fight's answer: Spare 1, Tie 0.66); decided once a round |
+| Foes who fall | Spare them 1, Tie them up 0.66, Leave them be 0.33, Rob them 0.33, Finish them 0 | holds back from a kill (knocks out instead, leaves the fallen be, spares them after) with chance Killing-averse creature holds back (%) (`avoidKilling`, 50 to 90, default 90) × max(wish, this fight's answer: Spare 1, Tie 0.66); decided once a round |
 | When to retreat | Fight to the end 1, When the battle turns against us 0.5, When I'm badly hurt 0 | Standing its ground |
 
 Example, at the defaults: Spare them holds back 90% of the time, Tie them up 59%, Leave them be or Rob them 30%.
@@ -979,7 +979,7 @@ replace these; the playstyles' suggestions override both. First match wins:
 | Shield or defending (with a shield) | B under 45, or a protector with L 75+ and T 60+: every turn. B 80+ and T under 50: don't bother. Else with spare actions |
 | Others nearby | B 70+ and (S 55+ or T under 45): hunt them down. T 60+, L 60+, B under 70: run for help. Else stay |
 
-For player characters, the world's Default PC healing (`pcHealAggro`) and Default PC response to a dying ally
+For player characters, the world's PC healing (`pcHealAggro`) and PCs when an ally is dying
 (`pcAllyDying`) replace the calculated answer unless set to let each character decide.
 
 Code: `engine/tactics.js` `TACTIC_WISHES`, `suggestTactics`, `suggestTalk`; `engine/battle-state.js` `holdsBack`
@@ -1001,14 +1001,14 @@ Each is a d100 (1 to 100), and passes at or under its number.
 
 | Roll | Setting (menu name, key) | Default | Range | Goes through on | At the default |
 |---|---|---|---|---|---|
-| An enemy changes sides | Luck: an enemy changing sides (`switchLuck`) | 69 | 0–100 | at or under it (+20 if scheming, max 100); 100: always | 69% |
-| A PC turns traitor | Luck check: a player character turning traitor (`traitorLuck`) | 9 | 0–100 | at or under it | 9% |
-| A PC loses an item it hands over (unused at present: talk makes nobody pay) | PC luck: handing over an item (`concedeLuck`) | 39 | 0–100 | at or under it | 39% |
-| A thief takes from a PC | PC luck: being robbed (`theftLuck`) | 29 | 0–100 | at or under it | 29% |
-| A creature finishes off a PC at 0 HP | PC luck: being finished off (`executeLuck`) | 39 | 0–100 | at or under it | 39% |
-| A trap avoider spots a hazard | Trap avoiders: spotting a trap (%) (`trapLuck`) | 59 | 0–100 | at or under it × watchfulness | Thief 59% |
-| A playstyle's taunt takes hold | Playstyle taunts: taking hold (%) (`tauntLuck`) | 42 | 0–100 | at or under it × taunt share | Tank 42% |
-| A selfless creature bears a hold or hurt | Selfless creatures bear what holds or hurts them (%) (`ignoreTroubles`) | 29 | 0–100 | at or under it × (100 − Selfish)% × (100 − Tactical)% | 29% at Selfish 0, Tactical 0 |
+| An enemy changes sides | Enemy changes sides (%) (`switchLuck`) | 69 | 0–100 | at or under it (+20 if scheming, max 100); 100: always | 69% |
+| A PC turns traitor | PC turns traitor (%) (`traitorLuck`) | 9 | 0–100 | at or under it | 9% |
+| A PC loses an item it hands over (unused at present: talk makes nobody pay) | hidden from the settings window (`concedeLuck`) | 39 | 0–100 | at or under it | 39% |
+| A thief takes from a PC | Thief robs a PC (%) (`theftLuck`) | 29 | 0–100 | at or under it | 29% |
+| A creature finishes off a PC at 0 HP | Downed PC finished off (%) (`executeLuck`) | 39 | 0–100 | at or under it | 39% |
+| A trap avoider spots a hazard | Trap avoider spots a trap (%) (`trapLuck`) | 59 | 0–100 | at or under it × watchfulness | Thief 59% |
+| A playstyle's taunt takes hold | Playstyle taunt takes hold (%) (`tauntLuck`) | 42 | 0–100 | at or under it × taunt share | Tank 42% |
+| A selfless creature bears a hold or hurt | Selfless creature shrugs off troubles (%) (`ignoreTroubles`) | 29 | 0–100 | at or under it × (100 − Selfish)% × (100 − Tactical)% | 29% at Selfish 0, Tactical 0 |
 
 Code: `constants.js` (CONCEDE_LUCK, THEFT_LUCK, EXECUTE_LUCK, TRAP_LUCK, IGNORE_TROUBLES, TAUNT_LUCK, SWITCH_LUCK,
 TRAITOR_LUCK); each roll in use is under its own topic below.
@@ -1193,7 +1193,7 @@ Decides how an enemy talked out of the fight leaves it. Checked in order:
    - below half HP and Brave < 40: runs half the time;
    - otherwise surrenders.
 
-Anyone else that stands its ground (Doesn't like to flee, `standGround`: see Morale) doesn't run: it surrenders
+Anyone else that stands its ground (Fighter to the end stands firm, `standGround`: see Morale) doesn't run: it surrenders
 instead.
 
 Example: a typical hostile (Selfish 50, Loyal 50, unhurt) threatened mid-fight: changes sides 3% × 69% ≈ 2%; else
@@ -1212,7 +1212,7 @@ Code: `engine/behavior/talk.js` `outcomeFor`, `applyOutcome`, `resolveTalk`.
 
 ### Switch luck: changing sides
 
-Search: switch luck, switchLuck, Luck: an enemy changing sides, changing sides, turncoat, defect, stands aside, stood aside
+Search: switch luck, switchLuck, Enemy changes sides (%), changing sides, turncoat, defect, stands aside, stood aside
 
 Decides whether an enemy talked into changing sides goes through with it.
 
@@ -1230,7 +1230,7 @@ Code: `engine/behavior/talk.js` `resolveTalk`, `outcomeFor`; `engine/behavior/ne
 
 ### Traitor luck: a PC turning traitor
 
-Search: traitor luck, traitorLuck, Luck check: a player character turning traitor, scheming, treacherous, Wants to Lead, betrayal
+Search: traitor luck, traitorLuck, PC turns traitor (%), scheming, treacherous, Wants to Lead, betrayal
 
 Decides whether a scheming PC talked down changes sides.
 
@@ -1454,7 +1454,7 @@ Code: `engine/groups.js` `proposeGroups`, `squaresApart`; `foundry/battle.js`.
 
 ### Taunts (goading)
 
-Search: taunt, goad, taunt luck, tauntLuck, Playstyle taunts: taking hold (%), Tank, mockery, taunt-proof, shrugs off
+Search: taunt, goad, taunt luck, tauntLuck, Playstyle taunt takes hold (%), Tank, mockery, taunt-proof, shrugs off
 
 Decides when a taunting playstyle draws a foe onto itself.
 
@@ -1485,7 +1485,7 @@ Code: `engine/behavior/goad.js` `goadAction`, `goadPitch`, `goadLuck`; `engine/s
 
 ### Theft mid-fight
 
-Search: theft, steal, thief, Thief, pickpocket, rob, robbed, theft luck, theftLuck, PC luck: being robbed, feint
+Search: theft, steal, thief, Thief, pickpocket, rob, robbed, theft luck, theftLuck, Thief robs a PC (%), feint
 
 Decides when a creature robs someone instead of hitting them.
 
@@ -1592,7 +1592,7 @@ Code: `engine/behavior/deals.js` `dealsWanted`, `decideDeal`, `dealTerms`, `deal
 
 ### Trap avoiders
 
-Search: trap, hazard, trap luck, trapLuck, Trap avoiders: spotting a trap (%), spot a trap, watchful, go around, keep clear
+Search: trap, hazard, trap luck, trapLuck, Trap avoider spots a trap (%), spot a trap, watchful, go around, keep clear
 
 Decides who spots hazards and keeps clear of them. Only with Positioning and terrain on.
 
@@ -1643,7 +1643,7 @@ Code: `engine/behavior/reluctance.js` `willingness`, `bringsItself`, CONSUMABLE_
 
 ### Avoiding killing (mercy)
 
-Search: mercy, avoid killing, avoidKilling, Avoids killing: how often it holds back (%), Spare them: I avoid killing, knock out, nonlethal, spare the fallen, pull a blow
+Search: mercy, avoid killing, avoidKilling, Killing-averse creature holds back (%), Spare them: I avoid killing, knock out, nonlethal, spare the fallen, pull a blow
 
 Decides when a killing blow knocks out instead, and who is spared after the fight.
 
@@ -1723,7 +1723,7 @@ Code: `engine/behavior/fallen.js` `fallenWishes`, `decideFallen`, `bind`, `rob`,
 
 ### Execute luck: finishing off a PC
 
-Search: execute luck, executeLuck, PC luck: being finished off, coup de grace, finish off, killing blow on a downed PC
+Search: execute luck, executeLuck, Downed PC finished off (%), coup de grace, finish off, killing blow on a downed PC
 
 Decides whether a creature (not a PC) that wants to kill a PC down at 0 HP goes ahead.
 
@@ -1735,7 +1735,7 @@ Code: `engine/simulator.js` `executionCheck`, `moveDesires`.
 
 ### Bearing a hold or hurt (ignore troubles)
 
-Search: ignore troubles, ignoreTroubles, Selfless creatures bear what holds or hurts them (%), bear it, carry on, prone, grabbed, burning, bleeding, break free
+Search: ignore troubles, ignoreTroubles, Selfless creature shrugs off troubles (%), bear it, carry on, prone, grabbed, burning, bleeding, break free
 
 Decides whether a selfless creature skips trying to be rid of what holds or hurts it this turn.
 
@@ -1872,7 +1872,7 @@ Decides which fight the Sample fight tab tells.
 
 - Fights are grouped by outcome (which sides won, or stalemate, no one left, talks collapsed). In the most common
   group, sorted by length, the middle one (entry floor(count ÷ 2)) is replayed from its seed with the full log.
-- Do it For Real Now plays a new fight, not this one.
+- Go Live plays a new fight, not this one.
 
 Code: `engine/aggregate.js` `finish`; `foundry/battle.js` `typicalFight`; `engine/simulator.js` `replay`.
 
@@ -2228,12 +2228,12 @@ Code: `engine/behavior/prepare.js` `gearStep`, `gearWorth`, `nextOption`, `usesI
 
 ### Healing decisions
 
-Search: healing, heal, healer, Default PC healing, pcHealAggro, Healing (planner), Conservative, Balanced, Aggressive, At all costs, Default PC response to a dying ally, pcAllyDying, Rescue them, Keep fighting, Protect self, Drinking my own potions, potion threshold, heal urgency, first aid
+Search: healing, heal, healer, PC healing, pcHealAggro, Healing (planner), Conservative, Balanced, Aggressive, At all costs, PCs when an ally is dying, pcAllyDying, Rescue them, Keep fighting, Protect self, Drinking my own potions, potion threshold, heal urgency, first aid
 
 Decides whom a creature heals, when, and with what.
 
 How freely it heals: a PC (or anyone given an answer) by its healing answer, else its side's planner setting.
-"Let this character decide" goes by class, features and nature, unless **Default PC healing** (`pcHealAggro`, default
+"Let this character decide" goes by class, features and nature, unless **PC healing** (`pcHealAggro`, default
 "Let each character decide") names one, which then stands in for it. Other creatures by band: Feral and Instinctive
 Conservative, Competent Balanced, Tactical and up Aggressive.
 
@@ -2251,7 +2251,7 @@ Score for each friend (or itself):
 - Itself, below its **Drinking my own potions** answer (25, 50 or 75% HP): at least 1 − share of HP left.
 - Itself, revived, answer "heal myself": +1 below 75% HP.
 - × (1 + Selfish ÷ 50) for itself; × (1 − Selfish ÷ 200), at least 0.2, for others.
-- It heals nobody else when its answer to a dying ally (**Default PC response to a dying ally**, `pcAllyDying`) is
+- It heals nobody else when its answer to a dying ally (**PCs when an ally is dying**, `pcAllyDying`) is
   Protect self or Retreat (unanswered: Protect self at Selfish 70+, else Rescue them), nor a friend it can't tell is
   hurt. Feral healers heal only themselves.
 
@@ -2577,7 +2577,7 @@ Decides who strikes as a creature walks away, and when it plays safe.
   strikes, if it has a reaction left; reactions come back at the start of its turn (1 a round by default). PF2e's also
   answer a shot or a manipulate action in reach, and standing up.
 - Wary of them: Tactical and up always, Competent half the time (decided once a round), the rest never; an obsessed
-  creature never; the "roleplaying is very important" box takes Roleplayers forget opportunity attacks (%)
+  creature never; the "roleplaying is very important" box takes Roleplayer forgets opportunity attacks (%)
   (`roleplayForgets`, 0 to 100, default 33) off it: × (1 − 0.33).
 - A wary creature takes the safe way out (Disengage, Step) if it can afford it and still do what it's moving for. A
   safe way that costs no main action is used by anything Instinctive and up (played for the story, it forgets it at
@@ -2614,7 +2614,7 @@ Code: `engine/behavior/forced.js` `forcedPath`, `fallDamage`, `forcedWorth` (`FA
 
 ### Holds and escapes
 
-Search: grab, grapple, grabbed, restrained, held, escape, escape DC, break free, tied up, bound, bonds, prisoner, free a friend, untie, swallowed, engulfed, web, net, Selfless creatures bear what holds or hurts them, ignoreTroubles, bear it
+Search: grab, grapple, grabbed, restrained, held, escape, escape DC, break free, tied up, bound, bonds, prisoner, free a friend, untie, swallowed, engulfed, web, net, Selfless creature shrugs off troubles (%), ignoreTroubles, bear it
 
 Decides how a held creature gets loose, and when it doesn't try.
 
@@ -2631,7 +2631,7 @@ Decides how a held creature gets loose, and when it doesn't try.
   Retreat −5, Protect self −15; +10 with no foe beside it) × 0.5 if the friend is down. Untying needs no roll.
 - Frozen solid: an escape try at the end of each turn. A holder that falls lets go.
 
-**Selfless creatures bear what holds or hurts them** (`ignoreTroubles`), default 29, range 0–100. Each turn, on a d100
+**Selfless creature shrugs off troubles (%)** (`ignoreTroubles`), default 29, range 0–100. Each turn, on a d100
 of its own: at or under setting × (100 − Selfish)% × (100 − Tactical)%, it bears it: this turn it doesn't stand up
 from prone or try to be rid of a hold or a burn. Never when its persistent damage would drop it this round. 0: nobody
 bears anything.
@@ -2789,8 +2789,8 @@ Decides what damage does and what 0 HP means.
 | Down = dead | as the system says for that (generic: dead) |
 
 - Dies at 0 HP: non-player creatures by default; the planner's token row sets it.
-- A creature that avoids killing (its answer to "Foes who fall") holds back on a killing blow as often as the Avoids
-  killing setting says: knocked out (down, stable) instead. One that spares the fallen pulls the blow where the system
+- A creature that avoids killing (its answer to "Foes who fall") holds back on a killing blow as often as the Killing-averse
+  creature holds back setting says: knocked out (down, stable) instead. One that spares the fallen pulls the blow where the system
   allows.
 - Regeneration and fast healing at the start of its turn. Regeneration stops for a turn after damage of its stopping
   types; while it works the creature can't die and still keeps its side in the fight.
@@ -2800,11 +2800,11 @@ Code: `engine/simulator.js` `dealDamage`, `regenerate`, `knockOut`, `playFromHer
 
 ### Finishing off a downed PC
 
-Search: execute, finish off, coup de grace, kill a downed PC, PC luck: being finished off, executeLuck, mercy
+Search: execute, finish off, coup de grace, kill a downed PC, Downed PC finished off (%), executeLuck, mercy
 
 Decides whether a creature kills a player character lying at 0 HP.
 
-- **PC luck: being finished off** (`executeLuck`), default 39, range 0–100. Each time a creature that isn't a PC goes
+- **Downed PC finished off (%)** (`executeLuck`), default 39, range 0–100. Each time a creature that isn't a PC goes
   for a PC who's down: a hidden d100 at or under it, it goes ahead; otherwise its desire to hurt that PC moves to its
   next choice. Once a round for each creature and PC. The same check guards the aftermath.
 
@@ -2814,7 +2814,7 @@ Code: `engine/simulator.js` `executionCheck`, `moveDesires`.
 
 Search: aftermath, After the fight, Tend the fallen and tell it, Tend the fallen quietly, Stop at the last blow, after the battle, bleeding out, first aid after, prisoners, spare or finish, mercy, goods returned
 
-Decides what happens between the last blow and Do it For Real Now writing the fight to the sheets.
+Decides what happens between the last blow and Go Live writing the fight to the sheets.
 
 - **After the fight** (`aftermath`): Tend the fallen and tell it (default); Tend the fallen quietly (the same, but the
   story ends at the last blow); Stop at the last blow (nothing happens). It works only with Simulate dying and healing.
@@ -2822,7 +2822,7 @@ Decides what happens between the last blow and Do it For Real Now writing the fi
 - The fallen foes: if any victor spares them, they're spared. Else a victor who finishes the fallen (its answer
   "Finish them", or Cruel with no answer) kills, with up to 4 of its everyday blows (no slots, uses or potions); a PC
   only past the execution luck check.
-- Sparing: unless its answer is "Finish them": its answer "Spare them", holding back (Avoids killing), or a playstyle
+- Sparing: unless its answer is "Finish them": its answer "Spare them", holding back (Killing-averse creature holds back), or a playstyle
   that spares the fallen at 0.5 or more (Moralist, Peacekeeper, Diplomat).
 - Those still alive are tied up by a victor who takes prisoners (and spared), and robbed by one who robs.
 - Then, for up to 100 rounds (about ten minutes) while anyone is dying: each victor in initiative order tends a dying

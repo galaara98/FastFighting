@@ -1,6 +1,6 @@
 /**
- * The GM's Battle Planner. A top bar: where the plan stands, and the one thing to press now (Run, Stop, Do it For Real
- * Now). On the left, three views: the teams, each a card with its creatures; the encounter's options; the players and
+ * The GM's Battle Planner. A top bar: where the plan stands, and the one thing to press now (Run, Stop, Go Live). On
+ * the left, three views: the teams, each a card with its creatures; the encounter's options; the players and
  * their surveys. On the right, the last run's odds pinned over the tabs: a team's or a creature's Details, and the
  * results.
  */
@@ -553,8 +553,8 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /**
    * The top bar's buttons, as the plan stands: the one to press now (primary) and the one beside it. Running: Stop.
-   * Results to go on, and a helper that plays live: Do it For Real Now, with Run beside it. The plan changed since:
-   * Run, and Do it For Real Now held back, saying why. Nothing run yet: Run.
+   * Results to go on, and a helper that plays live: Go Live, with Run beside it. The plan changed since:
+   * Run, and Go Live held back, saying why. Nothing run yet: Run.
    */
   #actions(adapter) {
     const run = { action: "run", icon: "fa-dice-d20", label: loc("FASTFIGHTING.Planner.Run") };
@@ -1458,7 +1458,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * The sides and teams picked meanwhile, worked out (at once, before a run or Do it For Real Now, or as the planner
+   * The sides and teams picked meanwhile, worked out (at once, before a run or Go Live, or as the planner
    * closes). A token picked back where it was: nothing. Moved to another side, it starts in that side's first group (a
    * neutral, in the one proposed for it). In another group, its role there is given up, and remembered
    * (ts.formerRoles, by group); back in a group it had one in, it takes it again (whoever has it now gives it up).
@@ -1633,7 +1633,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       this.approach = approach;
       this.stale = false;
       this.storyCache.clear();
-      // The sample shown: the most typical fight. (Do it For Real Now plays a new one.)
+      // The sample shown: the most typical fight. (Go Live plays a new one.)
       this.sample = typicalFight(spec, results);
         this.restoredAt = null;
       // (Troubleshooting: this run kept in the world, in place of the last; not waited for.)
@@ -1761,14 +1761,14 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     }
   }
 
-  /** The tracker's Vantage button: the battle prepared as Do it For Real Now would, waiting for the encounter to begin. */
+  /** The tracker's Vantage button: the battle prepared as Go Live would, waiting for the encounter to begin. */
   async openVantage() {
     await this.#goLive({ begin: false });
     if ( liveBattle() ) BattleVantage.open();
   }
 
   /**
-   * The plan played for real (Do it For Real Now), or prepared for the Battle Vantage to begin (`begin` false: it waits
+   * The plan played for real (Go Live), or prepared for the Battle Vantage to begin (`begin` false: it waits
    * for Begin Encounter, the Vantage's or Foundry's own).
    */
   async #goLive({ begin, began = false }) {

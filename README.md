@@ -4,7 +4,7 @@
 > - **Programming:** I am a skilled programmer by profession, but AI was used heavily as a co-pilot.
 > - **Strings:** ALL initial strings were proposed by a LLM to get the concepts out, ALL strings were  tracked to make sure they were re-written (for simple or ttrpg/game specific phrases, approved by) a native speaker.
 
-A [Foundry VTT](https://foundryvtt.com) module that resolves a battle, or a tense standoff, from the encounter on the scene, so the table can move on. It simulates the encounter thousands of times, round by round, with real dice math, and shows the odds. It tells the story of the most typical fight, and **Do it For Real Now** plays the fight for real on the Combat Tracker, a turn at a time: FastFighting runs the creatures, the players run their characters.
+A [Foundry VTT](https://foundryvtt.com) module that resolves a battle, or a tense standoff, from the encounter on the scene, so the table can move on. It simulates the encounter thousands of times, round by round, with real dice math, and shows the odds. It tells the story of the most typical fight, and **Go Live** plays the fight for real on the Combat Tracker, a turn at a time: FastFighting runs the creatures, the players run their characters.
 
 ## Requirements and installation
 
@@ -25,7 +25,7 @@ https://github.com/galaara98/FastFighting/releases/latest/download/module.json
 
 ## The Battle Planner
 
-GMs get buttons at the top of the Combat Tracker: **Planner**, **Survey** (see [Prepare Players](#prepare-players)) and, once the planner has run that encounter, **Vantage** (see [Live battles](#do-it-for-real-now-live-battles)); it goes when the encounter ends. The planner needs at least two tokens in the encounter; <kbd>Shift</kbd>+<kbd>B</kbd> opens it too. It picks up an encounter already under way from whoever's turn it is, keeping wounds, dying and conditions.
+GMs get buttons at the top of the Combat Tracker: **Planner**, **Survey** (see [Prepare Players](#prepare-players)) and, once the planner has run that encounter, **Vantage** (see [Live battles](#go-live-live-battles)); it goes when the encounter ends. The planner needs at least two tokens in the encounter; <kbd>Shift</kbd>+<kbd>B</kbd> opens it too. It picks up an encounter already under way from whoever's turn it is, keeping wounds, dying and conditions.
 
 **One plan per encounter.** The planner follows the encounter the tracker shows and keeps your choices (sides, groups, roles, fudges, options) with that encounter until it ends. Combatants who join and tokens that come or go are taken in, and your choices stand. A new encounter starts from what you set up on the scene before it began; a fresh one puts every hostile token in one group. **Clear this plan** (in the top bar's ⋯ menu) resets the plan to the defaults, after asking. With no encounter, the plan belongs to the scene.
 
@@ -33,12 +33,12 @@ GMs get buttons at the top of the Combat Tracker: **Planner**, **Survey** (see [
 
 The window needs at least 1000×600 and uses any extra space.
 
-**Top bar:** where the plan stands (its creatures and teams, the fights run, how many players are ready, the game paused) and the one button to press now: **Run**; **Stop** while it runs; **Do it For Real Now** once it has run, with Run beside it. Change the plan after a run and it says so: Run again before Do it For Real Now works. Refresh re-reads the tokens.
+**Top bar:** where the plan stands (its creatures and teams, the fights run, how many players are ready, the game paused) and the one button to press now: **Run**; **Stop** while it runs; **Go Live** once it has run, with Run beside it. Change the plan after a run and it says so: Run again before Go Live works. Refresh re-reads the tokens.
 
 **Left: three views.**
 - **Teams:** a card per team, by side (Friendly, Hostile, Neutral, Secret): the party **F**, the hostile groups **H1** to **H3**, the neutral friend groups **N1** to **N3**. Each card shows its leader and what it has; open it for its creatures. Filter by side or by name.
 - Each creature: a click shows it in Details; its command role (**B L 1 2**, a menu: see [Leaders and bosses](#leaders-and-bosses)); its team (a menu, for hostile, neutral and Secret tokens); whether it takes part; and a ⋯ menu for its side, its survey (see [Prepare Players](#prepare-players)) and its token.
-- **Encounter:** **Downed**, **After the fight** (see [After the fight](#after-the-fight)), **Opening** (see [Talking](#talking)) and **Surprise** (Follow System is greyed out where the system has no surprise rules; the turn order is always the Combat Tracker's once initiative is rolled); the rules (Terrain & positioning, Morale, Leadership, Talking, Ignore languages); who takes part (Bystanders, Hidden tokens); live battles (Players run their characters, Apply players' damage); the prediction (**Seconds**, **Max rounds**, **Seed**); a helper's own encounter settings (FastFighting Ironsworn: how the encounter is tracked, its rank, and whose sheet keeps the track); and **Loot on the map** (see [After the battle](#after-the-battle)). A closed section says what it's set to.
+- **Encounter:** **Downed**, **After the fight** (see [After the fight](#after-the-fight)), **Opening** (see [Talking](#talking)) and **Surprise** (Follow System is greyed out where the system has no surprise rules; the turn order is always the Combat Tracker's once initiative is rolled); the rules (Terrain & positioning, Morale, Leadership, Talking, Ignore languages); who takes part (Bystanders, Hidden tokens); live battles (Players run their characters, Apply players' damage); the prediction (**Seconds**, **Max rounds**, **Seed**); a helper's own encounter settings (FastFighting Ironsworn: how the encounter is tracked, its rank, and whose sheet keeps the track); and **Loot on the map** (see [Aftermath](#aftermath)). A closed section says what it's set to.
 - **Players:** **Prepare Players**, each player's survey and characters, and the characters whose players are away.
 
 **Right: Details and the results.** Once it has run, the win odds, a PC's death and fall, and the length stay at the top, with the change since the run before.
@@ -49,7 +49,7 @@ The window needs at least 1000×600 and uses any extra space.
 - **Combatants:** each token's odds of standing, down, dead, fled, surrendered, stood down and switched sides; HP left, damage, healing, and its chance to fall first. A name shows it in Details.
 - **Swing factors:** runs the fight again without each combatant and option, to show what moves the party's odds most.
 - **Resources:** spell slots, focus points and consumables spent.
-- **Sample fight:** the story of the most typical fight (the most common outcome, of the usual length). It's a sample, not the ruling: Do it For Real Now plays a new fight with rolls nobody has seen, so a 70% win is a loss three times in ten.
+- **Sample fight:** the story of the most typical fight (the most common outcome, of the usual length). It's a sample, not the ruling: Go Live plays a new fight with rolls nobody has seen, so a 70% win is a loss three times in ten.
 
 A big battle gets fewer fights in the time given, and the planner warns when they're too few for sure odds. Reopened on a battle that hasn't changed, the planner shows its last run again; runs are kept in the GM's browser, not in the world, where players could read the odds (only the last one is, while **Troubleshooting** is on).
 
@@ -143,9 +143,9 @@ Three answers carry a wish, as strongly as the answer leans that way ([wishes](S
 | Foes who fall | avoids killing (see [After the fight](#after-the-fight)) | Spare them: I avoid killing; Tie them up; Leave them be or Rob them; Finish them |
 | When to retreat | doesn't like to flee (see [Morale and leaving](#morale-and-leaving)) | Fight to the end; When the battle turns against us; When I'm badly hurt |
 
-## Do it For Real Now: live battles
+## Go Live: live battles
 
-**Do it For Real Now** closes the planner and plays the fight on the Combat Tracker, a turn at a time. It needs a helper that plays live battles; with an older helper the button is greyed out and says to update it.
+**Go Live** closes the planner and plays the fight on the Combat Tracker, a turn at a time. It needs a helper that plays live battles; with an older helper the button is greyed out and says to update it.
 
 The tracker's **Vantage** does the same from the planner's last run of that encounter, but waits: the Battle Vantage opens with **Begin Encounter** glowing until the encounter begins. Foundry's own Begin Encounter works too, and so does pressing it with the planner open on a ready Sample fight. Each plan and battle belongs to its encounter (a scene can have several; the title bars show the scene, and the encounter's number when there's more than one): view another scene or encounter and the planner and the Battle Vantage keep what you were typing, blink orange twice, and show that one's.
 
@@ -169,7 +169,7 @@ The tracker's **Vantage** does the same from the planner's last run of that enco
 - **Players' damage:** a player can't apply damage to a creature FastFighting runs. With **Apply players' damage** on, FastFighting applies the player's damage card at once, through the system, and marks a creature it drops; otherwise, and for a card with a save first, several targets or none, the Battle Vantage lists it for a GM to **Apply**, **Half**, **Double** or **Dismiss**. Where the system or a module applies players' damage itself, the toggles are greyed out.
 - **One player's character to another:** with **Apply players' damage** off, a heal, damage or effect one player's character gives another, even when FastFighting plays it for an absent player, is posted but not applied: its card keeps the system's Apply, and the Battle Vantage lists it. Where the players don't run their characters, FastFighting applies it all.
 - **Players run their characters** (a planner toggle, on by default). Off, FastFighting plays every turn. In the Battle Vantage, **FastFighting plays their turns** takes over one character for a player who has to leave; clear it to hand the character back.
-- **Players who drop out** (**Automatically enable FastFighting during an encounter if a player disconnects for more than:**, on, 2 minutes): when a player disconnects, each of their characters with no other player connected gets a countdown, shown beside **Add** in the Battle Vantage; when it runs out, FastFighting plays their turns. A player not connected as the encounter begins counts as gone from the start. A player who comes back stops the countdown, and after 12 seconds connected gets every character they own back, even ones a GM handed to FastFighting. None of this happens in a battle where **Players run their characters** is off: FastFighting plays everyone, whoever comes or goes.
+- **Players who drop out** (**Play for disconnected players**, on, 2 minutes): when a player disconnects, each of their characters with no other player connected gets a countdown, shown beside **Add** in the Battle Vantage; when it runs out, FastFighting plays their turns. A player not connected as the encounter begins counts as gone from the start. A player who comes back stops the countdown, and after 12 seconds connected gets every character they own back, even ones a GM handed to FastFighting. None of this happens in a battle where **Players run their characters** is off: FastFighting plays everyone, whoever comes or goes.
 - **Reactions:** each character's FastFighting tab lists its reactions with **Always use it**, **Ask me** or **Never use it**. Asked, the player answers on their screen (the GM answers when they're away or don't answer in time). An NPC's reactions follow its tactics, unless **Ask me about NPC reactions** is on in the Battle Vantage; then the GM allows each.
 - **Rerolls:** where the system has a reroll to spend (PF2e Hero Points, 5e Inspiration), each character says whether FastFighting may spend it to save its own life or a teammate's.
 - **Bystanders** who notice the fight join the tracker and take their turns. **Summons** appear as tokens beside their summoner.
@@ -201,13 +201,13 @@ The GMs' window for a live battle. It follows the turn the tracker shows, Foundr
 When the last foe falls, the survivors tend their dying before the dying make their next roll: free help first (first aid, medicine feats), then spells and potions. Anyone left untended lives or dies by the system's rules for dying. **After the fight** picks how much of this happens: **Tend the fallen and tell it**, **Tend the fallen quietly** (the story ends at the last blow), or **Stop at the last blow** (you play the rest out).
 
 **Fallen foes** are dealt with by each victor's answer to **Foes who fall** (its own, or its party's), then its playstyles:
-- **Spare them: I avoid killing** (also Moralists, and Diplomats most of the time): it stops others from finishing them and gives free first aid if it can. Its killing blows knock out instead, and it never strikes the fallen. **Avoids killing: how often it holds back (%)** sets how often, less for answers that lean less that way ([mercy](STATS_AND_FORMULAS_README.md#avoiding-killing-mercy)).
+- **Spare them: I avoid killing** (also Moralists, and Diplomats most of the time): it stops others from finishing them and gives free first aid if it can. Its killing blows knock out instead, and it never strikes the fallen. **Killing-averse creature holds back (%)** sets how often, less for answers that lean less that way ([mercy](STATS_AND_FORMULAS_README.md#avoiding-killing-mercy)).
 - **Finish them** (also the Cruel, with no other answer): it finishes them off.
 - **Tie them up:** it pulls killing blows most of the time and ties up the fallen with whatever's to hand. Prisoners are out of the fight even if healed, and tended after it. Mid-fight it ties someone up when no foe stands within its reach (without a map, after the fight). A prisoner struggles against its bonds, and friends may untie it. In a live battle the sheet shows it with the system's restrained status; the results show how often each creature ends up **Tied up**.
 - **Rob them:** it takes a fallen foe's purse, else something it carries, else (not a player character's) what it held or wore, during the fight or after; a player character's things only on its luck check. The robber gives it back if it ends the fight beaten.
 - **Leave them be:** left to the dice.
 
-**Fallen PCs.** A creature that wants to finish off a player character at 0 HP goes ahead only on a hidden roll ([**PC luck: being finished off**](STATS_AND_FORMULAS_README.md#execute-luck-finishing-off-a-pc)); otherwise it turns to the next foe. A character with **fate** to spend (PF2e Hero Points, 5e Heroic Inspiration) uses it when someone would die: the killing blow, save or recovery check is rolled again, or, for its own death where the system has a sure way out, that (PF2e Heroic Recovery). It always spends for itself; for a friend, the more selfish it is, the less likely ([fate](STATS_AND_FORMULAS_README.md#fate-rerolls-that-keep-someone-alive)).
+**Fallen PCs.** A creature that wants to finish off a player character at 0 HP goes ahead only on a hidden roll ([**Downed PC finished off (%)**](STATS_AND_FORMULAS_README.md#execute-luck-finishing-off-a-pc)); otherwise it turns to the next foe. A character with **fate** to spend (PF2e Hero Points, 5e Heroic Inspiration) uses it when someone would die: the killing blow, save or recovery check is rolled again, or, for its own death where the system has a sure way out, that (PF2e Heroic Recovery). It always spends for itself; for a friend, the more selfish it is, the less likely ([fate](STATS_AND_FORMULAS_README.md#fate-rerolls-that-keep-someone-alive)).
 
 ## How creatures decide
 
@@ -219,11 +219,11 @@ Four hidden [traits](STATS_AND_FORMULAS_README.md#personality-traits), **Tactica
 
 ### Desires
 
-Each creature keeps a list of [desires](STATS_AND_FORMULAS_README.md#desires-and-their-level), from Passing to Obsessed: to hurt, heal, protect, bolster, talk to, keep away from, break free, leave the fight, and more. They come from its tactics, the fight (a grudge, a fallen friend), its commander, the party's vote, its playstyles, and up to three desires stated in its survey or the planner. [The strongest leads](STATS_AND_FORMULAS_README.md#what-comes-to-mind) and [thwarted ones fade](STATS_AND_FORMULAS_README.md#frustration). Tactical creatures [focus fire](STATS_AND_FORMULAS_README.md#focus-fire) on foes their side has already hit (pack hunters always, the Cruel most of all), and the smart ones [keep together](STATS_AND_FORMULAS_README.md#keeping-together) without bunching up. A less thoughtful creature's mind sometimes [jumps](STATS_AND_FORMULAS_README.md#adhd) to its strongest desire (**ADHD: how often a creature's mind jumps (%)**); a creature's own **ADHD**, on its token's FastFighting tab or in the planner, makes it less thoughtful. The story now and then voices a creature's two strongest desires.
+Each creature keeps a list of [desires](STATS_AND_FORMULAS_README.md#desires-and-their-level), from Passing to Obsessed: to hurt, heal, protect, bolster, talk to, keep away from, break free, leave the fight, and more. They come from its tactics, the fight (a grudge, a fallen friend), its commander, the party's vote, its playstyles, and up to three desires stated in its survey or the planner. [The strongest leads](STATS_AND_FORMULAS_README.md#what-comes-to-mind) and [thwarted ones fade](STATS_AND_FORMULAS_README.md#frustration). Tactical creatures [focus fire](STATS_AND_FORMULAS_README.md#focus-fire) on foes their side has already hit (pack hunters always, the Cruel most of all), and the smart ones [keep together](STATS_AND_FORMULAS_README.md#keeping-together) without bunching up. A less thoughtful creature's mind sometimes [jumps](STATS_AND_FORMULAS_README.md#adhd) to its strongest desire (**ADHD: mind jumps (%)**); a creature's own **ADHD**, on its token's FastFighting tab or in the planner, makes it less thoughtful. The story now and then voices a creature's two strongest desires.
 
 ### Talking
 
-Talkers [persuade, intimidate or deceive](STATS_AND_FORMULAS_README.md#who-talks-and-how-often) with the system's skills until they [win enough successes](STATS_AND_FORMULAS_README.md#the-persuasion-track). Harm and failed pitches make a listener harder to sway, and after an insult (a critical failure) it won't listen again. Talker and listener need a shared language unless **Ignore languages** is on. A creature talked round [surrenders, flees, stands down or changes sides](STATS_AND_FORMULAS_README.md#what-a-convinced-foe-does); an enemy changing sides only stands aside, and only on **Luck: an enemy changing sides**. Only threats work on a PC, and only to make it run; one whose answer is "Let my weapons do the talking" won't listen at all.
+Talkers [persuade, intimidate or deceive](STATS_AND_FORMULAS_README.md#who-talks-and-how-often) with the system's skills until they [win enough successes](STATS_AND_FORMULAS_README.md#the-persuasion-track). Harm and failed pitches make a listener harder to sway, and after an insult (a critical failure) it won't listen again. Talker and listener need a shared language unless **Ignore languages** is on. A creature talked round [surrenders, flees, stands down or changes sides](STATS_AND_FORMULAS_README.md#what-a-convinced-foe-does); an enemy changing sides only stands aside, and only on **Enemy changes sides (%)**. Only threats work on a PC, and only to make it run; one whose answer is "Let my weapons do the talking" won't listen at all.
 
 Creatures FastFighting plays also [strike deals](STATS_AND_FORMULAS_README.md#deals-bribes-extortion-and-scaring-off): the losing and timid pay a foe to leave, the greedy and bold extort money, the bold threaten the weaker into going, and a neutral sends off whoever comes too close; a timid neutral just leaves when blows are struck, and if attacked tries to buy its way out with its reaction. A bribe is easier than a threat, and a threat that asks for money hardest. The payer must still have the goods when they change hands. Paid apart, the goods are dropped for the taker to pick up. One that acts before all its foes, or surprises them, may ask a toll instead: pay me and I'll go (a leader for its whole team, at two thirds of a share each); paid, it leaves, a player's character at once. A lavish bribe or a superb roll may buy a foe over instead: an enemy only stands aside, leaning your way, and one taking no side joins you. One who agrees to go joins a free neutral group if there is one (its leader urging the team to come too) and walks off the map; attacking it on its way is dishonorable, and the GM is told.
 
@@ -235,13 +235,13 @@ Hostile tokens start in group 1 (**H1**); a creature's team menu moves it to **H
 
 ### Taking no side
 
-Neutral tokens, and enemies talked out of the fight, [take no side](STATS_AND_FORMULAS_README.md#taking-no-side-neutral-tokens-and-leans): nobody fights them, and they never win or lose. The Neutral tab's lean only nudges what they want. Hurt, rob or insult a neutral and it [turns on the offender's side](STATS_AND_FORMULAS_README.md#crossed-grievance-truce-and-turning-on-a-side) (Do it For Real Now makes one that turns on the party Hostile); either side's talkers can [win it over](STATS_AND_FORMULAS_README.md#winning-over-calming-and-sending-away). Only a Tactical mind or better [knows a neutral for what it is](STATS_AND_FORMULAS_README.md#taken-for-a-foe-caught-in-the-blast-spared-in-a-truce). A neutral with a lean [sometimes speaks up](STATS_AND_FORMULAS_README.md#meddling-neutrals-getting-involved) against the side it likes least. The peaceable (Diplomats, Moralists, Peacekeepers, People-Pleasers, and those who answer "Spare them: I avoid killing" or "Always talk unless I am currently being hurt") spend their turns talking the fighters into leaving.
+Neutral tokens, and enemies talked out of the fight, [take no side](STATS_AND_FORMULAS_README.md#taking-no-side-neutral-tokens-and-leans): nobody fights them, and they never win or lose. The Neutral tab's lean only nudges what they want. Hurt, rob or insult a neutral and it [turns on the offender's side](STATS_AND_FORMULAS_README.md#crossed-grievance-truce-and-turning-on-a-side) (Go Live makes one that turns on the party Hostile); either side's talkers can [win it over](STATS_AND_FORMULAS_README.md#winning-over-calming-and-sending-away). Only a Tactical mind or better [knows a neutral for what it is](STATS_AND_FORMULAS_README.md#taken-for-a-foe-caught-in-the-blast-spared-in-a-truce). A neutral with a lean [sometimes speaks up](STATS_AND_FORMULAS_README.md#meddling-neutrals-getting-involved) against the side it likes least. The peaceable (Diplomats, Moralists, Peacekeepers, People-Pleasers, and those who answer "Spare them: I avoid killing" or "Always talk unless I am currently being hurt") spend their turns talking the fighters into leaving.
 
 ### Leaders and bosses
 
 Each group (the party, each hostile group, each neutral friend group) has a **boss** (never the party) or a **leader**, and up to two **lieutenants**: **B L 1 2**, from a creature's role menu, which also has **Out of command** and **Automatic**. FastFighting [fills them](STATS_AND_FORMULAS_README.md#chain-of-command) once, when the plan is new or just cleared (shown dashed); after that only the GM changes them. Outside the party the best leader heads the group, as a boss when it outranks every other member by 2 levels or more. The party keeps the roles you gave its members before, or gets a leader only when exactly one member wants to lead.
 
-The commander [lends its group a bonus](STATS_AND_FORMULAS_README.md#what-a-leader-lends), [pulls its followers](STATS_AND_FORMULAS_README.md#following-the-leader) toward its wishes (**Leader's influence**, **Boss's influence**), and talking it down can take its group with it. When it falls or can't make itself seen and heard, a lieutenant steps up. Bosses almost never run. A Wants to Lead character out of command may [scheme](STATS_AND_FORMULAS_README.md#scheming); a PC turns traitor only on **Luck check: a player character turning traitor**.
+The commander [lends its group a bonus](STATS_AND_FORMULAS_README.md#what-a-leader-lends), [pulls its followers](STATS_AND_FORMULAS_README.md#following-the-leader) toward its wishes (**Leader's influence**, **Boss's influence**), and talking it down can take its group with it. When it falls or can't make itself seen and heard, a lieutenant steps up. Bosses almost never run. A Wants to Lead character out of command may [scheme](STATS_AND_FORMULAS_README.md#scheming); a PC turns traitor only on **PC turns traitor (%)**.
 
 **Reinforcements.** A team's Details take one creature (drag it from a compendium or the Actors directory, or **Choose…** from the world's actors) and how many can come. A team's leader [calls them](STATS_AND_FORMULAS_README.md#reinforcements) when the fight turns against it (an action; the party's only when FastFighting plays all of it), and they come the next round from the map's far edge. In a live battle the Battle Vantage lists each team's and lets the GM call them.
 
@@ -256,15 +256,15 @@ The commander [lends its group a bonus](STATS_AND_FORMULAS_README.md#what-a-lead
 
 Losses, wounds, a fallen leader, bad odds and friends seen running [weigh against Brave](STATS_AND_FORMULAS_README.md#morale-stress) until a creature [wavers or routs](STATS_AND_FORMULAS_README.md#morale-check-hold-waver-rout). One that runs [tries to take its group along](STATS_AND_FORMULAS_README.md#calling-a-retreat), and a commander, or a brave and loyal friend, may [rally](STATS_AND_FORMULAS_README.md#rallying) them. [Fear conditions](STATS_AND_FORMULAS_README.md#fear) do what the system says, and fear past what a creature's nerve can bear gives it a reason to run. [Of its own accord](STATS_AND_FORMULAS_README.md#leaving-of-its-own-accord), a hostile with nobody to lead it, or led by one who'd rather run, may decide its life is worth more than the spoils; and one that has stolen, looted or picked up something may make off with it.
 
-On a map, a runner [heads for the nearest way off](STATS_AND_FORMULAS_README.md#leaving-the-fight) and is gone at the edge, or after two whole turns in a row given to leaving. Struck or spoken to, it [may stop](STATS_AND_FORMULAS_README.md#being-stopped-on-the-way-out) (**Committed to leaving: how often it keeps going (%)**). Once it's gone, a live battle hides its token and takes it off the tracker, or leaves it in place (**Do it For Real Now: fled combatants**). A side whose only creatures left are leaving has lost. A character that answers **Fight to the end** to When to retreat usually [stands its ground](STATS_AND_FORMULAS_README.md#standing-its-ground) (**Doesn't like to flee: how often it stays (%)**), though fear from a spell or the rules still works.
+On a map, a runner [heads for the nearest way off](STATS_AND_FORMULAS_README.md#leaving-the-fight) and is gone at the edge, or after two whole turns in a row given to leaving. Struck or spoken to, it [may stop](STATS_AND_FORMULAS_README.md#being-stopped-on-the-way-out) (**Leaving creature keeps going (%)**). Once it's gone, a live battle hides its token and takes it off the tracker, or leaves it in place (**Tokens that fled**). A side whose only creatures left are leaving has lost. A character that answers **Fight to the end** to When to retreat usually [stands its ground](STATS_AND_FORMULAS_README.md#standing-its-ground) (**Fighter to the end stands firm (%)**), though fear from a spell or the rules still works.
 
 ### Held, hurt or controlled
 
-A [held](STATS_AND_FORMULAS_README.md#holds-and-escapes) creature (grabbed, tied up, caught in a web or a net) wants to break free, and friends free a tied-up ally. It weighs what hurts it (burning, bleeding, prone) against what else it wants; a selfless one may [bear it](STATS_AND_FORMULAS_README.md#bearing-a-hold-or-hurt-ignore-troubles) (**Selfless creatures bear what holds or hurts them (%)**). Tied up, it can't use what needs hands (the system says which, or its helper's **Tied up stops spells** setting). A charmed or dominated creature wants what its controller wants; under a player's character, it's that player's to run.
+A [held](STATS_AND_FORMULAS_README.md#holds-and-escapes) creature (grabbed, tied up, caught in a web or a net) wants to break free, and friends free a tied-up ally. It weighs what hurts it (burning, bleeding, prone) against what else it wants; a selfless one may [bear it](STATS_AND_FORMULAS_README.md#bearing-a-hold-or-hurt-ignore-troubles) (**Selfless creature shrugs off troubles (%)**). Tied up, it can't use what needs hands (the system says which, or its helper's **Tied up stops spells** setting). A charmed or dominated creature wants what its controller wants; under a player's character, it's that player's to run.
 
 ### Taunts, traps and theft
 
-A [taunt](STATS_AND_FORMULAS_README.md#taunts-goading) makes a foe want to go for the taunter: a strong desire, not a command. Systems taunt with their own skills and spells; Tanks, Instigators, Martyrs, Brawlers and Redeem-Seekers taunt too (**Playstyle taunts: taking hold (%)**). [Trap avoiders](STATS_AND_FORMULAS_README.md#trap-avoiders), Thieves most, may spot each hazard at the start of a fight (**Trap avoiders: spotting a trap (%)**) and keep out of it; a GM marks a token as a hazard in its FastFighting tab. [Theft](STATS_AND_FORMULAS_README.md#theft-mid-fight) mid-fight is rare: only a Thief or an unusually skilled pickpocket steals, only when it's safe, and from a PC only on **PC luck: being robbed**, which the story never mentions. Stolen goods return if the thief is beaten.
+A [taunt](STATS_AND_FORMULAS_README.md#taunts-goading) makes a foe want to go for the taunter: a strong desire, not a command. Systems taunt with their own skills and spells; Tanks, Instigators, Martyrs, Brawlers and Redeem-Seekers taunt too (**Playstyle taunt takes hold (%)**). [Trap avoiders](STATS_AND_FORMULAS_README.md#trap-avoiders), Thieves most, may spot each hazard at the start of a fight (**Trap avoider spots a trap (%)**) and keep out of it; a GM marks a token as a hazard in its FastFighting tab. [Theft](STATS_AND_FORMULAS_README.md#theft-mid-fight) mid-fight is rare: only a Thief or an unusually skilled pickpocket steals, only when it's safe, and from a PC only on **Thief robs a PC (%)**, which the story never mentions. Stolen goods return if the thief is beaten.
 
 ### Buffs, debuffs and control
 
@@ -326,87 +326,86 @@ The words read in biographies are in [keywords/](keywords/README.md), one file p
 
 ## Settings
 
-World settings, under **Configure Settings → FastFighting**, in groups. The planner overrides some for one battle: Seconds, Max rounds, Downed, After the fight, Opening, Surprise, the Encounter view's toggles, and the side settings (the Neutral lean, healing). The luck settings and those marked (%) are chances out of 100. [STATS_AND_FORMULAS_README.md](STATS_AND_FORMULAS_README.md) gives each number's range and what it changes.
+World settings, under **Configure Settings → FastFighting**, in groups. The planner overrides some for one battle: Seconds, Max rounds, Downed, After the fight, Opening, Surprise, the Encounter view's toggles, and the side settings (the Neutral lean, healing). Settings marked (%) are hidden d100 chances. [STATS_AND_FORMULAS_README.md](STATS_AND_FORMULAS_README.md) gives each number's range and what it changes.
 
 ### Live battles
 
 | Setting | Default | What it controls |
 | --- | --- | --- |
-| Do it For Real Now: play the fight on the map | on | Tokens walk their turns; off, they jump to where each turn leaves them. |
+| Play the fight on the map | on | Tokens walk their turns; off, they jump to where each turn leaves them. |
 | Players run their characters | on | Players take their own characters' turns; off, FastFighting plays every turn. |
-| Automatically enable FastFighting during an encounter if a player disconnects for more than: | on | A character left with none of its players connected gets a countdown in the Battle Vantage, and FastFighting plays it when that runs out; off, its turns wait. |
-| …for more than (seconds) | 120 | The countdown (30 to 600). |
+| Play for disconnected players | on | A character whose players have all disconnected gets a countdown in the Battle Vantage, and FastFighting plays it when that runs out; off, its turns wait. |
+| Disconnected player countdown (seconds) | 120 | How long that countdown lasts. |
 | Apply players' damage | off | A player's damage card against a creature FastFighting runs is applied at once; off, the Battle Vantage asks a GM. Per battle in the planner and the Battle Vantage; greyed out where the system applies players' damage itself. |
-| Hold Next Turn while a player is waited on (seconds) | 10 | While a player's turn waits for review, or a player's reaction is being rolled, the Battle Vantage's Next Turn stays locked this long. 0: never; the last stop: until nothing waits. |
+| Hold Next Turn for players | 10 s | While a player's turn waits for review, or their reaction is being rolled, the Battle Vantage's Next Turn stays locked this long: never at 0, until nothing waits at Unlimited. |
 
 ### Story & chat
 
 | Setting | Default | What it controls |
 | --- | --- | --- |
-| Story style | Roleplay | How the story is told. |
+| Story style | Roleplay | How the story is told; Statistician lists every roll, for GMs only. |
 | Story delivery | Public | Who sees the story. |
-| Show the odds in the posted story | off | Each side's odds at the story's end. |
+| Show the odds in the story | off | Each side's odds at the story's end. |
 | Story tables (menu) | — | Installs the Roleplay sentences as editable RollTables. |
 
 ### Planner defaults
 
 | Setting | Default | What it controls |
 | --- | --- | --- |
-| Prediction time (seconds) | 10 | How long the planner simulates (6 to 60). |
-| Max rounds | 12 | Rounds before a battle is a stalemate. |
-| Include hidden tokens | on | Hidden tokens take part. |
-| Include other scene levels | off | Tokens on the scene's other levels take part. |
+| Prediction time (seconds) | 10 | How long the planner simulates. |
+| Max rounds | 12 | Rounds before a fight is a stalemate; Fast Fight stops there too. |
+| Include hidden tokens | on | Hidden tokens outside the encounter take part. |
+| Include other scene levels | off | Tokens outside the encounter on the scene's other levels take part. |
+| Bystanders can join | on | Tokens outside the encounter may join. |
 | Neutral tokens | Takes no side (until crossed) | The Neutral side's lean. |
 | Neutral friend groups: reach (squares) | 3 | How near neutrals must be for the planner to group them. |
-| Downed characters | Simulate dying and healing | What 0 HP means. |
-| How encounters open | Talk if they'd rather | Whether a fight opens as a standoff. |
-| Bystanders can join | on | Tokens outside the encounter may join. |
-| Positioning and terrain | on | Distances, movement, terrain, walls and elevation. |
 | Surprise | Follow System | Who is surprised as a fight starts; No one where the system has no surprise rules. |
+| How encounters open | Talk if they'd rather | Whether a fight opens as a standoff. |
+| Positioning and terrain | on | Distances, movement, terrain, walls and elevation. |
+| Downed characters | Simulate dying and healing | What 0 HP means. |
 
 ### How creatures decide
 
 | Setting | Default | What it controls |
 | --- | --- | --- |
-| Default PC healing | Let each character decide | How freely PCs heal. |
-| Default PC response to a dying ally | Let each character decide | What PCs put first when an ally is dying. |
 | Leadership | on | Leaders, bosses and lieutenants. |
 | Leader's influence | 50 | How readily followers take their commander's lead (0: nobody follows; 100: twice as readily). |
-| Boss's influence | 2× | How much more readily a boss is followed than a leader. |
-| Party's sway (%) | 3 | How much the Party tab's vote sways the friendly side. |
-| Non Player Focus Fire Dampener | 0 | How much less creatures not on the Friendly side focus fire (100: half as much). |
+| Boss's influence (×) | 2 | How much more readily a boss is followed than a leader. |
 | Morale and routing | on | Wavering and running away. |
 | Talking | on | Talking foes out of the fight. |
 | Ignore languages | off | Anyone who speaks understands everyone who speaks. |
+| PC healing | Let each character decide | How freely PCs heal. |
+| PCs when an ally is dying | Let each character decide | What PCs put first when an ally is dying. |
+| Party's sway (%) | 3 | How much the Party tab's vote sways the friendly side. |
+| Dampen non-friendly focus fire | 0 | How much less creatures not on the Friendly side focus fire (100: half as much). |
 
 ### Personality & luck
 
 | Setting | Default | What it controls |
 | --- | --- | --- |
-| PC luck: handing over an item | 39 | A PC losing an item it hands over. Unused at present: talk makes nobody pay. |
-| PC luck: being robbed | 29 | A thief taking something from a PC. |
-| PC luck: being finished off | 39 | A creature finishing off a PC at 0 HP. |
-| Luck: an enemy changing sides | 69 | An enemy talked into changing sides going through with it. |
-| Luck check: a player character turning traitor | 9 | A PC talked into changing sides going through with it. |
-| Trap avoiders: spotting a trap (%) | 59 | A trap avoider spotting a hazard. |
-| Selfless creatures bear what holds or hurts them (%) | 29 | A selfless creature carrying on regardless. |
-| Playstyle taunts: taking hold (%) | 42 | A playstyle's taunt taking hold (a system's taunts follow its rules). |
-| Doesn't like to flee: how often it stays (%) | 90 | A Fight to the end character resisting its urge to run. |
-| Avoids killing: how often it holds back (%) | 90 | A character that avoids killing holding back from a kill. |
-| Committed to leaving: how often it keeps going (%) | 79 | A leaving creature keeping on when struck or spoken to. |
-| Roleplayers forget opportunity attacks (%) | 33 | A character played for the story forgetting to play safe around opportunity attacks. |
-| ADHD: how often a creature's mind jumps (%) | 20 | A creature dropping what it's doing for its strongest desire. |
+| Thief robs a PC (%) | 29 | A thief taking something from a PC, standing or fallen. |
+| Downed PC finished off (%) | 39 | A creature finishing off a PC at 0 HP. |
+| PC turns traitor (%) | 9 | A PC talked into changing sides going through with it. |
+| Enemy changes sides (%) | 69 | An enemy talked into changing sides going through with it. |
+| Trap avoider spots a trap (%) | 59 | A trap avoider spotting a hazard. |
+| Playstyle taunt takes hold (%) | 42 | A playstyle's taunt taking hold (a system's taunts follow its rules). |
+| Selfless creature shrugs off troubles (%) | 29 | A selfless creature carrying on regardless. |
+| Fighter to the end stands firm (%) | 90 | A Fight to the end character resisting its urge to run. |
+| Killing-averse creature holds back (%) | 90 | A character that avoids killing holding back from a kill. |
+| Leaving creature keeps going (%) | 79 | A leaving creature keeping on when struck or spoken to. |
+| Roleplayer forgets opportunity attacks (%) | 33 | A character played for the story forgetting to play safe around opportunity attacks. |
+| ADHD: mind jumps (%) | 20 | A creature dropping what it's doing for its strongest desire. |
 | Side personality defaults (menu) | — | Each side's Tactical, Brave, Selfish and Loyal. |
 
-### After the battle
+### Aftermath
 
 | Setting | Default | What it controls |
 | --- | --- | --- |
 | After the fight | Tend the fallen and tell it | Tending the dying, and telling it. |
-| Do it For Real Now: loot | Leave on corpse (lootable) | A slain creature's gear (only with a helper that handles loot). |
-| Do it For Real Now: corpses | Keep, marked dead | Slain tokens (only with a helper that handles loot). |
-| Do it For Real Now: fled combatants | Hide token | Tokens that fled. |
+| Slain creatures' gear | Leave on corpse (lootable) | A slain creature's gear in a live battle (only with a helper that handles loot). |
+| Slain tokens | Keep, marked dead | Slain tokens (only with a helper that handles loot). |
 | Dead player characters leave meat | off | A dead player character's loot token also holds its meat (only where the helper knows its system's meat). |
+| Tokens that fled | Hide token | Tokens that fled a live battle. |
 
 - **Loot on the map:** the Planner's **Place a chest** and **Place a bag** (its Encounter view) put an empty pile where you click next: an Item Piles pile when Item Piles is set up, else the system's loot pile, else one of FastFighting's own. Its own window then opens for you to fill. It's a lure: a thief, a greedy creature or a hungry one may want what's in it more than a fight.
 - **Piles and hunger:** where the system's helper knows its food, [what lies on the map](STATS_AND_FORMULAS_README.md#piles-meat-and-hunger) is worth going for. A thief or a greedy creature goes for a rich pile when it's safe. A hungry creature eats: a pile's food, or the meat of the dead (a teammate's only for a cannibal or a feral mind). A wise one barely minds hunger mid-fight, but any creature that eats may come famished.
@@ -418,7 +417,7 @@ World settings, under **Configure Settings → FastFighting**, in groups. The pl
 | Setting | Default | What it controls |
 | --- | --- | --- |
 | Troubleshooting | off | Keeps each live battle's transcript, and the planner's last run, for 30 days. Off, a transcript goes with its encounter. On, the last run's odds are in the world, where a player who digs could read them. |
-| Planner: background workers | on | Runs the planner's fights on background threads. Off: on the main thread. Workers that fail switch off by themselves. |
+| Background workers | on | Runs the planner's fights on background threads. Off: on the main thread. Workers that fail switch off by themselves. |
 | Live battle data (menu) | — | Each live battle's journal: export one or all, or clean up those over a month old. |
 
 **Reporting a bug?** Turn on **Troubleshooting** first, play or plan the fight again, then export from **Live battle data** and attach the file.
@@ -437,7 +436,7 @@ Optional: the [FastFighting Performance Survey](https://tally.so/r/vXjzAv) asks 
 ## What it doesn't do
 
 - It holds no game rules of its own: without a helper for your system, or the experimental generic adapter, it does nothing.
-- The Sample fight isn't the ruling: Do it For Real Now rolls a new fight.
+- The Sample fight isn't the ruling: Go Live rolls a new fight.
 - While **Players run their characters** is on, it doesn't play a player's turn unless you hand it that character, and it shows no desires for a character its player runs.
 - In a live battle it spends no player resource except the rerolls each character allows.
 - It doesn't end the encounter: the GM does.

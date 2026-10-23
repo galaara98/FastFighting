@@ -23,7 +23,7 @@ export const SETTING_GROUPS = Object.freeze(["live", "story", "planner", "behavi
 
 const SETTINGS = {
   playOnMap: { group: "live", type: Boolean, default: true },
-  // Do it For Real Now, live: the players run their own characters (FastFighting plays everyone else).
+  // Live: the players run their own characters (FastFighting plays everyone else).
   playersRunPCs: { group: "live", type: Boolean, default: true },
   // Live: a player who leaves gives each character of theirs with none of its players left a countdown of this many
   // seconds (shown in the Battle Vantage); when it runs out, FastFighting plays it (foundry/away.js, live-battle.js).
@@ -45,40 +45,42 @@ const SETTINGS = {
   maxRounds: { group: "planner", type: Number, default: MAX_ROUNDS.default, range: { min: MAX_ROUNDS.min, max: MAX_ROUNDS.max, step: 1 } },
   includeHidden: { group: "planner", type: Boolean, default: true },
   includeOtherLevels: { group: "planner", type: Boolean, default: false },
+  bystanders: { group: "planner", type: Boolean, default: true },
   neutralDefault: { group: "planner", type: String, default: ALLEGIANCE.NEUTRAL, choices: choices(Object.values(ALLEGIANCE), "Lean") },
   // (Read when the planner opens, to propose friend groups for neutrals: a world setting, not per plan.)
   neutralReach: { group: "planner", type: Number, default: NEUTRAL_REACH, range: { min: 1, max: 20, step: 1 } },
-  downedModel: { group: "planner", type: String, default: DOWNED_MODELS.SIMULATE, choices: choices(Object.values(DOWNED_MODELS), "Downed") },
-  opening: { group: "planner", type: String, default: OPENING.AUTO, choices: choices(Object.values(OPENING), "Opening") },
-  bystanders: { group: "planner", type: Boolean, default: true },
-  positioning: { group: "planner", type: Boolean, default: true },
   surpriseDefault: { group: "planner", type: String, default: "system", choices: choices(["system", "none", "friendlySurprised", "friendlySurprise"], "Surprise") },
+  opening: { group: "planner", type: String, default: OPENING.AUTO, choices: choices(Object.values(OPENING), "Opening") },
+  positioning: { group: "planner", type: Boolean, default: true },
+  downedModel: { group: "planner", type: String, default: DOWNED_MODELS.SIMULATE, choices: choices(Object.values(DOWNED_MODELS), "Downed") },
 
-  // (A party's own default, or "auto": let each character decide.)
-  pcHealAggro: { group: "behavior", type: String, default: "auto", choices: choices(["auto", ...HEAL_AGGRO], "HealAggro") },
-  pcAllyDying: { group: "behavior", type: String, default: "auto", choices: choices(["auto", ...ALLY_DYING], "AllyDying") },
   leadership: { group: "behavior", type: Boolean, default: true },
   // How readily followers take their commander's lead (0-100; 50 the usual), and how much more readily a boss's.
   leaderInfluence: { group: "behavior", type: Number, default: 50, range: { min: 0, max: 100, step: 5 } },
   bossInfluence: { group: "behavior", type: Number, default: 2, range: { min: 1.25, max: 3, step: 0.05 } },
+  morale: { group: "behavior", type: Boolean, default: true },
+  talking: { group: "behavior", type: Boolean, default: true },
+  ignoreLanguages: { group: "behavior", type: Boolean, default: false },
+  // (A party's own default, or "auto": let each character decide.)
+  pcHealAggro: { group: "behavior", type: String, default: "auto", choices: choices(["auto", ...HEAL_AGGRO], "HealAggro") },
+  pcAllyDying: { group: "behavior", type: String, default: "auto", choices: choices(["auto", ...ALLY_DYING], "AllyDying") },
   // How much the player party's wishes (its players' votes in the survey's Party tab) sway the friendly side (%).
   partySway: { group: "behavior", type: Number, default: 3, range: { min: 1, max: 20, step: 1 } },
   // How much less those not on the friendly side focus fire (0-100: at 100, half as much; behavior/focus.js).
   focusDampener: { group: "behavior", type: Number, default: 0, range: { min: 0, max: 100, step: 1 } },
-  morale: { group: "behavior", type: Boolean, default: true },
-  talking: { group: "behavior", type: Boolean, default: true },
-  ignoreLanguages: { group: "behavior", type: Boolean, default: false },
 
-  concedeLuck: { group: "luck", type: Number, default: CONCEDE_LUCK, range: { min: 0, max: 100, step: 1 } },
+  // (Not shown: nothing rolls it at present, since no deal or theft lets a PC keep an item it gives up. Kept for when one
+  // does: behavior/talk.js concession.)
+  concedeLuck: { group: "luck", type: Number, default: CONCEDE_LUCK, range: { min: 0, max: 100, step: 1 }, config: false },
   theftLuck: { group: "luck", type: Number, default: THEFT_LUCK, range: { min: 0, max: 100, step: 1 } },
   executeLuck: { group: "luck", type: Number, default: EXECUTE_LUCK, range: { min: 0, max: 100, step: 1 } },
-  switchLuck: { group: "luck", type: Number, default: SWITCH_LUCK, range: { min: 0, max: 100, step: 1 } },
   traitorLuck: { group: "luck", type: Number, default: TRAITOR_LUCK, range: { min: 0, max: 100, step: 1 } },
+  switchLuck: { group: "luck", type: Number, default: SWITCH_LUCK, range: { min: 0, max: 100, step: 1 } },
   trapLuck: { group: "luck", type: Number, default: TRAP_LUCK, range: { min: 0, max: 100, step: 1 } },
-  // How readily the selfless bear what holds or hurts them, rather than trying to be rid of it.
-  ignoreTroubles: { group: "luck", type: Number, default: IGNORE_TROUBLES, range: { min: 0, max: 100, step: 1 } },
   // How readily a playstyle's taunt takes hold (only the playstyles': a game system's taunts go by their own rules).
   tauntLuck: { group: "luck", type: Number, default: TAUNT_LUCK, range: { min: 0, max: 100, step: 1 } },
+  // How readily the selfless bear what holds or hurts them, rather than trying to be rid of it.
+  ignoreTroubles: { group: "luck", type: Number, default: IGNORE_TROUBLES, range: { min: 0, max: 100, step: 1 } },
   standGround: { group: "luck", type: Number, default: STAND_GROUND, range: { min: 50, max: 90, step: 1 } },
   avoidKilling: { group: "luck", type: Number, default: AVOID_KILLING, range: { min: 50, max: 90, step: 1 } },
   // How often a creature set on leaving the fight keeps going when struck or spoken to (behavior/leaving.js).
@@ -116,11 +118,12 @@ const MENUS = {
 
 /**
  * What the settings window shows in each group, in order: [{group, keys}], keys as Foundry names a setting or a menu
- * (`fast-fighting.<key>`), its settings in SETTINGS' order, then its menus in MENUS'.
+ * (`fast-fighting.<key>`), its settings in SETTINGS' order (but those `config: false`), then its menus in MENUS'.
  */
 export function settingsLayout() {
   const rows = [...Object.entries(SETTINGS), ...Object.entries(MENUS)];
-  return SETTING_GROUPS.map(group => ({ group, keys: rows.filter(([, data]) => data.group === group).map(([key]) => `${MODULE_ID}.${key}`) }));
+  const shown = rows.filter(([, data]) => data.config !== false);
+  return SETTING_GROUPS.map(group => ({ group, keys: shown.filter(([, data]) => data.group === group).map(([key]) => `${MODULE_ID}.${key}`) }));
 }
 
 /**
