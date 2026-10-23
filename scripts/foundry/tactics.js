@@ -402,7 +402,7 @@ function actionLabel(a) {
  * @param {{id: string, name: string}[]|null} [options.targets]  Who a desire can be about (tokens on the scene); null or
  *   none: nobody can be named, and there are no desires to state
  */
-export function questionsContext(spec, actor, uid, { questions: withQuestions = true, targets: named = [] } = {}) {
+export function questionsContext(spec, actor, uid, { questions: withQuestions = true, targets: named = [], hidden: showHidden = true } = {}) {
   const targets = named ?? [];
   const { calc, suggested, stored, playstyles, why } = tacticsFor(actor, spec);
   // (What "Let this character decide" stands for, and the hidden scores: for a GM or assistant GM only.)
@@ -499,7 +499,7 @@ export function questionsContext(spec, actor, uid, { questions: withQuestions = 
     };
   });
   // Its hidden scores, as a fight would have them (its sheet, its biography, its playstyles), for the GM.
-  const hidden = gm && withQuestions ? TRAITS.map(k => {
+  const hidden = gm && withQuestions && showHidden ? TRAITS.map(k => {
     const value = clamp(Math.round(fudged(spec.traits?.[k] ?? 50) + (playstyles.traits?.[k] ?? 0)), 0, 100);
     return { key: k, label: loc(`FASTFIGHTING.Trait.${k}`), value, band: loc(`FASTFIGHTING.Band.${traitBand(k, value)}`), reason: brief(spec.traitReasons?.[k] ?? "") };
   }) : null;

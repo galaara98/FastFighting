@@ -106,8 +106,8 @@ function head(end, angle) {
 function steps(item) {
   if ( !item.adjust ) return "";
   const data = escape(JSON.stringify(item.adjust));
-  const less = item.lower ? `<a class="ff-net-step" data-adjust="${data}" data-step="-1" data-tooltip-text="${escape(item.lower)}"><i class="fa-solid fa-minus"></i></a>` : "";
-  const more = item.raise ? `<a class="ff-net-step" data-adjust="${data}" data-step="1" data-tooltip-text="${escape(item.raise)}"><i class="fa-solid fa-plus"></i></a>` : "";
+  const less = item.lower ? `<button type="button" class="ff-net-step" data-adjust="${data}" data-step="-1" data-tooltip-text="${escape(item.lower)}" aria-label="${escape(item.lower)}"><i class="fa-solid fa-minus"></i></button>` : "";
+  const more = item.raise ? `<button type="button" class="ff-net-step" data-adjust="${data}" data-step="1" data-tooltip-text="${escape(item.raise)}" aria-label="${escape(item.raise)}"><i class="fa-solid fa-plus"></i></button>` : "";
   return less || more ? `<span class="ff-net-steps">${less}${more}</span>` : "";
 }
 
@@ -165,10 +165,10 @@ export function mountNetwork(root, graph, { state, focus = null, onFocus = () =>
       }).join("")}
     </div>
     <div class="ff-net-tools">
-      <button type="button" data-net="in" data-tooltip-text="${escape(words.zoomIn)}"><i class="fa-solid fa-magnifying-glass-plus"></i></button>
-      <button type="button" data-net="out" data-tooltip-text="${escape(words.zoomOut)}"><i class="fa-solid fa-magnifying-glass-minus"></i></button>
-      <button type="button" data-net="fit" data-tooltip-text="${escape(words.fit)}"><i class="fa-solid fa-expand"></i></button>
-      <button type="button" data-net="reset" data-tooltip-text="${escape(words.reset)}"><i class="fa-solid fa-map-location-dot"></i></button>
+      <button type="button" data-net="in" data-tooltip-text="${escape(words.zoomIn)}" aria-label="${escape(words.zoomIn)}"><i class="fa-solid fa-magnifying-glass-plus"></i></button>
+      <button type="button" data-net="out" data-tooltip-text="${escape(words.zoomOut)}" aria-label="${escape(words.zoomOut)}"><i class="fa-solid fa-magnifying-glass-minus"></i></button>
+      <button type="button" data-net="fit" data-tooltip-text="${escape(words.fit)}" aria-label="${escape(words.fit)}"><i class="fa-solid fa-expand"></i></button>
+      <button type="button" data-net="reset" data-tooltip-text="${escape(words.reset)}" aria-label="${escape(words.reset)}"><i class="fa-solid fa-map-location-dot"></i></button>
     </div>`;
 
   const world = root.querySelector(".ff-net-world");
@@ -419,7 +419,7 @@ export function mountNetwork(root, graph, { state, focus = null, onFocus = () =>
     const a = itemAt(event.target);
     if ( a && (a.kind !== armed?.kind || a.id !== armed?.id) ) arm(a, "hover");
   };
-  // (Tab and Shift+Tab: the next of the focused creature's lines and symbols; with nobody in focus, the next creature.)
+  // (] and [: the next of the focused creature's lines and symbols; with nobody in focus, the next creature.)
   const cycle = dir => {
     const creatures = graph.nodes.filter(n => n.type === "creature").map(n => n.id);
     const items = focus ? [

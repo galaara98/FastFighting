@@ -1060,8 +1060,8 @@ export function registerBattleVantage() {
   const KEYS = {
     networkLower: { action: "lower", editable: [{ key: "NumpadSubtract" }] },
     networkRaise: { action: "raise", editable: [{ key: "NumpadAdd" }] },
-    networkNext: { action: "next", editable: [{ key: "Tab" }] },
-    networkPrevious: { action: "previous", editable: [{ key: "Tab", modifiers: ["Shift"] }] }
+    networkNext: { action: "next", editable: [{ key: "BracketRight" }] },
+    networkPrevious: { action: "previous", editable: [{ key: "BracketLeft" }] }
   };
   for ( const [name, { action, editable }] of Object.entries(KEYS) ) {
     game.keybindings.register(MODULE_ID, name, {

@@ -1,5 +1,5 @@
 <div class="ff-fudge {{#if fudge}}is-fudged{{/if}}" data-tooltip-text="{{tooltip}}">
-  <span class="ff-fudge-label">{{#if band}}{{band}}{{else}}{{label}}{{/if}}</span>
+  <span class="ff-fudge-label"><b>{{label}}</b>{{#if band}}<span class="ff-fudge-band">{{band}}</span>{{/if}}</span>
   <button type="button" class="ff-icon-btn ff-minus" data-action="fudge" data-path="{{path}}" data-step="{{step}}" data-dir="-1" aria-label="{{localize "FASTFIGHTING.Fudge.Down"}}"><i class="fa-solid fa-minus"></i></button>
   <span class="ff-fudge-value">{{value}}{{#if fudgeLabel}}<sup>{{fudgeLabel}}</sup>{{/if}}</span>
   <button type="button" class="ff-icon-btn ff-plus" data-action="fudge" data-path="{{path}}" data-step="{{step}}" data-dir="1" aria-label="{{localize "FASTFIGHTING.Fudge.Up"}}"><i class="fa-solid fa-plus"></i></button>

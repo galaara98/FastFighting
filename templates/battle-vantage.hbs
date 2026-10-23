@@ -89,7 +89,7 @@
       {{#if held.length}}
         <div class="ff-battle-held">
           <p class="hint">{{localize "FASTFIGHTING.Battle.Held"}}</p>
-          <ul>{{#each held}}<li>{{text}} <a data-action="dropHeld" data-index="{{i}}" data-tooltip="{{localize "FASTFIGHTING.Battle.Drop"}}"><i class="fa-solid fa-xmark"></i></a></li>{{/each}}</ul>
+          <ul>{{#each held}}<li>{{text}} <button type="button" class="ff-drop-held" data-action="dropHeld" data-index="{{i}}" data-tooltip="{{localize "FASTFIGHTING.Battle.Drop"}}" aria-label="{{localize "FASTFIGHTING.Battle.Drop"}}"><i class="fa-solid fa-xmark"></i></button></li>{{/each}}</ul>
         </div>
       {{/if}}
     </header>
@@ -114,7 +114,7 @@
             <ul class="ff-battle-list">
               {{#each focus.rows}}
               <li class="{{cls}}"><i class="{{icon}}"></i> <span>{{text}}</span>
-                {{#if steps.length}}<span class="ff-net-steps">{{#each steps}}<a class="ff-net-step" data-action="adjust" data-adjust="{{adjust}}" data-step="{{dir}}" data-tooltip="{{tip}}"><i class="fa-solid {{icon}}"></i></a>{{/each}}</span>{{/if}}
+                {{#if steps.length}}<span class="ff-net-steps">{{#each steps}}<button type="button" class="ff-net-step" data-action="adjust" data-adjust="{{adjust}}" data-step="{{dir}}" data-tooltip="{{tip}}" aria-label="{{tip}}"><i class="fa-solid {{icon}}"></i></button>{{/each}}</span>{{/if}}
               </li>
               {{/each}}
             </ul>
@@ -154,7 +154,7 @@
               <ul class="ff-battle-list">
                 {{#each focus.wants}}
                 <li class="{{cls}}"><i class="{{icon}}"></i> <span>{{text}}</span>
-                  {{#if steps.length}}<span class="ff-net-steps">{{#each steps}}<a class="ff-net-step" data-action="adjust" data-adjust="{{adjust}}" data-step="{{dir}}" data-tooltip="{{tip}}"><i class="fa-solid {{icon}}"></i></a>{{/each}}</span>{{/if}}
+                  {{#if steps.length}}<span class="ff-net-steps">{{#each steps}}<button type="button" class="ff-net-step" data-action="adjust" data-adjust="{{adjust}}" data-step="{{dir}}" data-tooltip="{{tip}}" aria-label="{{tip}}"><i class="fa-solid {{icon}}"></i></button>{{/each}}</span>{{/if}}
                 </li>
                 {{else}}
                 <li class="hint">{{localize "FASTFIGHTING.Battle.Net.Nothing"}}</li>
@@ -167,7 +167,7 @@
           <section>
             <p>{{localize "FASTFIGHTING.Battle.Net.HeldList"}}</p>
             <ul class="ff-battle-list">
-              {{#each focus.held}}<li class="is-gm"><i class="{{icon}}"></i> <span>{{text}}</span><span class="ff-net-steps"><a class="ff-net-step" data-action="adjust" data-adjust="{{adjust}}" data-step="0" data-tooltip="{{localize "FASTFIGHTING.Battle.Net.HandBack"}}"><i class="fa-solid fa-rotate-left"></i></a></span></li>{{/each}}
+              {{#each focus.held}}<li class="is-gm"><i class="{{icon}}"></i> <span>{{text}}</span><span class="ff-net-steps"><button type="button" class="ff-net-step" data-action="adjust" data-adjust="{{adjust}}" data-step="0" data-tooltip="{{localize "FASTFIGHTING.Battle.Net.HandBack"}}" aria-label="{{localize "FASTFIGHTING.Battle.Net.HandBack"}}"><i class="fa-solid fa-rotate-left"></i></button></span></li>{{/each}}
             </ul>
           </section>
           {{/if}}
@@ -176,7 +176,7 @@
           <section>
             <p>{{localize "FASTFIGHTING.Battle.Net.SetAsideList"}}</p>
             <ul class="ff-battle-list">
-              {{#each focus.setAside}}<li class="is-gm"><i class="{{icon}}"></i> <span>{{text}}</span><span class="ff-net-steps"><a class="ff-net-step" data-action="adjust" data-adjust="{{adjust}}" data-step="0" data-tooltip="{{localize "FASTFIGHTING.Battle.Net.HandBack"}}"><i class="fa-solid fa-rotate-left"></i></a></span></li>{{/each}}
+              {{#each focus.setAside}}<li class="is-gm"><i class="{{icon}}"></i> <span>{{text}}</span><span class="ff-net-steps"><button type="button" class="ff-net-step" data-action="adjust" data-adjust="{{adjust}}" data-step="0" data-tooltip="{{localize "FASTFIGHTING.Battle.Net.HandBack"}}" aria-label="{{localize "FASTFIGHTING.Battle.Net.HandBack"}}"><i class="fa-solid fa-rotate-left"></i></button></span></li>{{/each}}
             </ul>
           </section>
           {{/if}}
@@ -186,7 +186,7 @@
             <ul class="ff-battle-list">
               {{#each focus.on}}
               <li class="{{cls}}"><i class="{{icon}}"></i> <span>{{text}}</span>
-                {{#if steps.length}}<span class="ff-net-steps">{{#each steps}}<a class="ff-net-step" data-action="adjust" data-adjust="{{adjust}}" data-step="{{dir}}" data-tooltip="{{tip}}"><i class="fa-solid {{icon}}"></i></a>{{/each}}</span>{{/if}}
+                {{#if steps.length}}<span class="ff-net-steps">{{#each steps}}<button type="button" class="ff-net-step" data-action="adjust" data-adjust="{{adjust}}" data-step="{{dir}}" data-tooltip="{{tip}}" aria-label="{{tip}}"><i class="fa-solid {{icon}}"></i></button>{{/each}}</span>{{/if}}
               </li>
               {{else}}
               <li class="hint">{{localize "FASTFIGHTING.Battle.Net.Nothing"}}</li>
@@ -200,7 +200,7 @@
             <ul class="ff-battle-list">
               {{#each focus.wantedBy}}
               <li class="{{cls}}"><i class="{{icon}}"></i> <span>{{text}}</span>
-                {{#if steps.length}}<span class="ff-net-steps">{{#each steps}}<a class="ff-net-step" data-action="adjust" data-adjust="{{adjust}}" data-step="{{dir}}" data-tooltip="{{tip}}"><i class="fa-solid {{icon}}"></i></a>{{/each}}</span>{{/if}}
+                {{#if steps.length}}<span class="ff-net-steps">{{#each steps}}<button type="button" class="ff-net-step" data-action="adjust" data-adjust="{{adjust}}" data-step="{{dir}}" data-tooltip="{{tip}}" aria-label="{{tip}}"><i class="fa-solid {{icon}}"></i></button>{{/each}}</span>{{/if}}
               </li>
               {{/each}}
             </ul>

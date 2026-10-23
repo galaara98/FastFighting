@@ -38,7 +38,7 @@ The window needs at least 1000×600 and uses any extra space.
 - **Downed**, **After the fight** (see [After the fight](#after-the-fight)), **Opening** (see [Talking](#talking)) and **Surprise**: Follow System (the system's own surprise rules; greyed out where it has none), No one is surprised, Friendlies are surprised, or Friendlies surprise others. The turn order is always the Combat Tracker's once initiative is rolled.
 - Toggles: Terrain & positioning, Morale, Leadership, Talking, Ignore languages, Bystanders, Hidden tokens, and, with a helper that plays live battles, Players run their characters.
 - **Team cash:** F shows the party's own money; for H1 to H3 and N1 to N3, set what the team has besides its sheets, in the system's coin. A team shares it for deals (bribes, tolls, extortion), after each member's own money; thieves and looters can't take it.
-- **Run** (**Stop** while it runs), Refresh, Clear and **Rewind This Encounter**.
+- **Run** (**Stop** while it runs), Refresh and Clear.
 - A helper may add a row for its system's encounter settings (FastFighting Ironsworn: how the encounter is tracked, its rank, and whose sheet keeps the track). The plan keeps them.
 
 **Left: the sides**, a tab each for Friendly, Hostile, Neutral and Secret.

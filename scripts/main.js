@@ -337,7 +337,7 @@ Hooks.on("renderSettingsConfig", (app, element) => {
   // (Its settings and menus in their groups, each under its heading: settings.js.)
   groupSettings(section);
   // (At its foot, the optional performance survey.)
-  section.querySelector(".ff-survey")?.remove();
+  section.querySelector(".ff-perf-survey")?.remove();
   section.insertAdjacentHTML("beforeend", surveyHtml());
   // (Follow System, greyed out where the system has no surprise rules: no one surprised, then.)
   const surprise = section.querySelector(`[name="${MODULE_ID}.surpriseDefault"]`);

@@ -14,7 +14,7 @@ export const SURVEY_URL = "https://tally.so/r/vXjzAv";
 
 /** The survey's link, for the foot of FastFighting's settings. */
 export function surveyHtml() {
-  return `<p class="ff-survey"><i class="fa-solid fa-gauge-high"></i>
+  return `<p class="ff-perf-survey"><i class="fa-solid fa-gauge-high"></i>
     <a href="${SURVEY_URL}" target="_blank" rel="noopener">${esc(game.i18n.localize("FASTFIGHTING.Settings.Survey.Link"))}</a>
     <span class="hint">${esc(game.i18n.localize("FASTFIGHTING.Settings.Survey.Hint"))}</span></p>`;
 }

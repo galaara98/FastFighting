@@ -14,8 +14,8 @@
       <input type="text" name="options.seed" value="{{options.seed}}" placeholder="{{localize "FASTFIGHTING.Planner.Random"}}" size="9">
     </label>
     <div class="ff-run-group">
-      <button type="button" class="ff-btn" data-action="clearPlan" data-tooltip="{{localize "FASTFIGHTING.Planner.ClearHint"}}" {{#if running}}disabled{{/if}}><i class="fa-solid fa-eraser"></i></button>
-      <button type="button" class="ff-btn" data-action="refresh" data-tooltip="{{localize "FASTFIGHTING.Planner.RefreshHint"}}"><i class="fa-solid fa-arrows-rotate"></i></button>
+      <button type="button" class="ff-btn" data-action="clearPlan" data-tooltip="{{localize "FASTFIGHTING.Planner.ClearHint"}}" aria-label="{{localize "FASTFIGHTING.Planner.ClearHint"}}" {{#if running}}disabled{{/if}}><i class="fa-solid fa-eraser"></i></button>
+      <button type="button" class="ff-btn" data-action="refresh" data-tooltip="{{localize "FASTFIGHTING.Planner.RefreshHint"}}" aria-label="{{localize "FASTFIGHTING.Planner.RefreshHint"}}"><i class="fa-solid fa-arrows-rotate"></i></button>
       {{#if running}}
       <button type="button" class="ff-btn" data-action="cancel"><i class="fa-solid fa-stop"></i> {{localize "FASTFIGHTING.Planner.Cancel"}}</button>
       {{/if}}
@@ -121,9 +121,9 @@
   <div class="ff-body">
     {{!-- ============ Left: sides and roster ============ --}}
     <section class="ff-left">
-      <nav class="ff-side-tabs">
+      <nav class="ff-side-tabs" role="tablist">
         {{#each sides}}
-        <button type="button" class="ff-side-tab {{id}} {{#if active}}active{{/if}}" data-action="sideTab" data-side="{{id}}">
+        <button type="button" class="ff-side-tab {{id}} {{#if active}}active{{/if}}" data-action="sideTab" data-side="{{id}}" role="tab" aria-selected="{{#if active}}true{{else}}false{{/if}}">
           <i class="fa-solid {{icon}}"></i> {{label}} <span class="ff-count">{{count}}</span>
         </button>
         {{/each}}
@@ -163,7 +163,7 @@
         {{#each members}}
         <article class="ff-row {{#unless include}}is-excluded{{/unless}} {{#if expanded}}is-expanded{{/if}}" data-token-id="{{id}}">
           <div class="ff-row-head">
-            <img src="{{img}}" alt="" data-action="panToken" data-tooltip="{{localize "FASTFIGHTING.Planner.PanTo"}}">
+            <button type="button" class="ff-pan" data-action="panToken" data-tooltip="{{localize "FASTFIGHTING.Planner.PanTo"}}" aria-label="{{localize "FASTFIGHTING.Planner.PanTo"}}"><img src="{{img}}" alt=""></button>
             <button type="button" class="ff-icon-btn ff-row-toggle" data-action="toggleRow" aria-label="{{localize "FASTFIGHTING.Planner.Details"}}"><i class="fa-solid {{#if expanded}}fa-chevron-up{{else}}fa-chevron-down{{/if}}"></i></button>
             <div class="ff-row-id">
               <div class="ff-row-name" data-tooltip-text="{{name}}">
@@ -227,9 +227,9 @@
 
     {{!-- ============ Right: results ============ --}}
     <section class="ff-right">
-      <nav class="ff-result-tabs">
+      <nav class="ff-result-tabs" role="tablist">
         {{#each resultTabs}}
-        <button type="button" class="{{#if active}}active{{/if}}" data-action="resultTab" data-tab="{{id}}" {{#unless @root.hasResults}}disabled{{/unless}}>{{label}}</button>
+        <button type="button" class="{{#if active}}active{{/if}}" data-action="resultTab" data-tab="{{id}}" role="tab" aria-selected="{{#if active}}true{{else}}false{{/if}}" {{#unless @root.hasResults}}disabled{{/unless}}>{{label}}</button>
         {{/each}}
       </nav>
       <div class="ff-results-body">

@@ -25,9 +25,9 @@
   </div>
 
   <footer class="ff-survey-foot">
-    <nav class="ff-sheet-tabs">
+    <nav class="ff-sheet-tabs" role="tablist">
       {{#each sheets}}
-      <button type="button" class="ff-sheet-tab {{#if active}}active{{/if}} {{#if party}}ff-party-tab {{lock}}{{/if}}" data-action="sheetTab" data-tab="{{id}}" {{#if tooltip}}data-tooltip="{{tooltip}}"{{/if}}>{{#if icon}}<i class="{{icon}}"></i>{{else}}<img src="{{img}}" alt="">{{/if}} {{name}}</button>
+      <button type="button" class="ff-sheet-tab {{#if active}}active{{/if}} {{#if party}}ff-party-tab {{lock}}{{/if}}" data-action="sheetTab" data-tab="{{id}}" role="tab" aria-selected="{{#if active}}true{{else}}false{{/if}}" {{#if tooltip}}data-tooltip="{{tooltip}}"{{/if}}>{{#if icon}}<i class="{{icon}}"></i>{{else}}<img src="{{img}}" alt="">{{/if}} {{name}}</button>
       {{/each}}
     </nav>
     {{#if justClose}}

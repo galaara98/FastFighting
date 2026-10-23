@@ -7,9 +7,9 @@
       "networkRaise": "Battle Vantage: one more",
       "networkRaiseHint": "Raises the hovered or Tab-picked line or symbol of the creature in focus; on the creature itself, adds a line from it.",
       "networkNext": "Battle Vantage: next",
-      "networkNextHint": "Steps to the focused creature's next line or symbol (with no one in focus, the next creature).",
+      "networkNextHint": "Steps to the focused creature's next line or symbol (with no one in focus, the next creature), while the pointer is over the Battle Vantage.",
       "networkPrevious": "Battle Vantage: previous",
-      "networkPreviousHint": "Steps back to the focused creature's previous line or symbol (with no one in focus, the previous creature)."
+      "networkPreviousHint": "Steps back to the focused creature's previous line or symbol (with no one in focus, the previous creature), while the pointer is over the Battle Vantage."
     },
     "Units": {
       "Feet": "ft",
@@ -934,7 +934,7 @@
     },
     "TokenTactics": {
       "Tab": "FastFighting",
-      "Hint": "FastFighting's playstyles and desires for this token.",
+      "Hint": "FastFighting's playstyles and answers for this token.",
       "Hazard": "Hazard",
       "HazardHint": "Traps and dangerous features: they don't move or talk, and can't be attacked.",
       "Hunger": "Hunger",

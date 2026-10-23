@@ -1,7 +1,8 @@
 /* FastFighting — Battle Planner
-   Colors use light-dark() so they follow Foundry's light/dark application theme (color-scheme). */
+   Colors use light-dark() so they follow Foundry's light/dark application theme (color-scheme).
+   (On :root too: the Combat Tracker's buttons are outside FastFighting's windows.) */
 
-.fast-fighting {
+:root, .fast-fighting {
   --ff-friendly: light-dark(#2f7d4f, #4fbf7f);
   --ff-hostile: light-dark(#b53a2e, #e0645a);
   --ff-hostile2: light-dark(#a8326e, #e06aa6);
@@ -27,6 +28,35 @@
   --ff-team-neutral-text: var(--ff-disposition-neutral-text, #222);
   --ff-team-friendly: var(--ff-disposition-friendly, #2f9e44);
   --ff-team-friendly-text: var(--ff-disposition-friendly-text, #fff);
+  /* What waits on the GM, or holds something up (not the accent: that's for what to press). */
+  --ff-attention: light-dark(#7a5400, #f2c14e);
+  --ff-attention-bg: light-dark(rgba(133, 92, 0, 0.12), rgba(242, 193, 78, 0.13));
+  --ff-focus: light-dark(#1f6fd1, #7cc4ff);
+  /* Each team its own color, F H1 H2 H3 N1 N2 N3 (and a Secret token's "?"), with the text on it. */
+  --ff-t-F: light-dark(#2f7d4f, #4fbf7f);
+  --ff-t-H1: light-dark(#b53a2e, #e0645a);
+  --ff-t-H2: light-dark(#a8326e, #e06aa6);
+  --ff-t-H3: light-dark(#9a5414, #eb9a4f);
+  --ff-t-N1: light-dark(#7d6219, #d4b04a);
+  --ff-t-N2: light-dark(#1f6f80, #5fb8c9);
+  --ff-t-N3: light-dark(#4a58a8, #9aa8e8);
+  --ff-t-S: light-dark(#6b4fa3, #a68be0);
+  --ff-on-team: light-dark(#fff, #15141a);
+  /* Sizes: no text under 11px; nothing to click under 24px. */
+  --ff-text-xs: 11px;
+  --ff-text-sm: 12px;
+  --ff-text-md: 13px;
+  --ff-text-lg: 15px;
+  --ff-target: 24px;
+}
+
+/* Where the keyboard is: a ring on whatever has focus. */
+.fast-fighting :is(button, a, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--ff-focus);
+  outline-offset: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .fast-fighting .ff-blink, .fast-fighting .ff-synced { animation: none; }
 }
 
 .ff-planner .window-content {
@@ -78,7 +108,7 @@
 .ff-progress:not(.is-running) > span { opacity: 0; }
 
 .ff-chip {
-  display: inline-block; padding: 0 6px; border-radius: 8px; font-size: 10px; line-height: 16px;
+  display: inline-block; padding: 0 6px; border-radius: 8px; font-size: var(--ff-text-xs); line-height: 16px;
   background: var(--ff-surface-2); color: var(--ff-text-dim); white-space: nowrap;
 }
 .ff-hint { color: var(--ff-text-dim); font-size: 11px; }
@@ -107,11 +137,11 @@
 .ff-side-tab.neutral.active { border-bottom-color: var(--ff-neutral); }
 .ff-side-tab.secret.active { border-bottom-color: var(--ff-secret); }
 .ff-result-tabs button.active { border-bottom-color: var(--ff-accent); }
-.ff-count { display: inline-block; min-width: 18px; padding: 0 4px; border-radius: 9px; background: var(--ff-surface-2); font-size: 10px; }
+.ff-count { display: inline-block; min-width: 18px; padding: 0 4px; border-radius: 9px; background: var(--ff-surface-2); font-size: var(--ff-text-xs); }
 
 .ff-side-strip { padding: 8px 10px; background: var(--ff-surface); border-bottom: 1px solid var(--ff-line); display: flex; flex-direction: column; gap: 6px; }
 .ff-strip-row { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px; }
-.ff-strip-title { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ff-text-dim); }
+.ff-strip-title { font-size: var(--ff-text-xs); text-transform: uppercase; letter-spacing: 0.06em; color: var(--ff-text-dim); }
 
 /* ---------- Fudge control ---------- */
 .ff-trait-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px 8px; }
@@ -129,14 +159,16 @@
   min-width: 0;
 }
 .ff-fudge.is-fudged { border-color: var(--ff-accent); background: color-mix(in srgb, var(--ff-accent) 8%, transparent); }
-.ff-fudge-label { grid-area: label; font-size: 10px; color: var(--ff-text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ff-fudge-label { grid-area: label; display: flex; justify-content: space-between; gap: 4px; font-size: var(--ff-text-xs); color: var(--ff-text-dim); overflow: hidden; white-space: nowrap; }
+.ff-fudge-label b { color: var(--color-text-primary, inherit); overflow: hidden; text-overflow: ellipsis; }
+.ff-fudge-band { overflow: hidden; text-overflow: ellipsis; }
 .ff-fudge .ff-minus { grid-area: minus; }
 .ff-fudge .ff-plus { grid-area: plus; }
 .ff-fudge .ff-reset { grid-area: reset; }
 .ff-fudge-value { grid-area: value; font-weight: 700; min-width: 30px; text-align: center; font-variant-numeric: tabular-nums; }
-.ff-fudge-value sup { color: var(--ff-accent); font-size: 9px; margin-left: 1px; }
+.ff-fudge-value sup { color: var(--ff-accent); font-size: var(--ff-text-xs); margin-left: 1px; }
 .ff-icon-btn {
-  width: 20px; height: 20px; min-height: 0; padding: 0; line-height: 18px; font-size: 9px; flex: none;
+  width: var(--ff-target); height: var(--ff-target); min-height: 0; padding: 0; line-height: 22px; font-size: var(--ff-text-xs); flex: none;
   display: inline-flex; align-items: center; justify-content: center;
 }
 .ff-icon-btn:disabled { opacity: 0.3; }
@@ -153,7 +185,7 @@
 /* Groups 1 2 3: small touching pills, one click to move a token. */
 .ff-groups { display: inline-flex; }
 .ff-group-pill {
-  flex: none; width: 20px; height: 20px; min-height: 0; margin: 0; padding: 0; line-height: 18px;
+  flex: none; width: var(--ff-target); height: var(--ff-target); min-height: 0; margin: 0; padding: 0; line-height: 22px;
   font-size: 11px; font-weight: 600; border: 1px solid var(--ff-line); border-radius: 0; background: var(--ff-surface); color: var(--ff-text-dim); cursor: pointer;
 }
 .ff-group-pill + .ff-group-pill { border-left: none; }
@@ -171,7 +203,7 @@
 /* Command roles B L 1 2: the same touching pills, in the leaders' own color. */
 .ff-roles { display: inline-flex; }
 .ff-role-pill {
-  flex: none; width: 20px; height: 20px; min-height: 0; margin: 0; padding: 0; line-height: 18px;
+  flex: none; width: var(--ff-target); height: var(--ff-target); min-height: 0; margin: 0; padding: 0; line-height: 22px;
   font-size: 11px; font-weight: 600; border: 1px solid var(--ff-line); border-radius: 0; background: var(--ff-surface); color: var(--ff-text-dim); cursor: pointer;
 }
 .ff-role-pill + .ff-role-pill { border-left: none; }
@@ -181,7 +213,8 @@
 .ff-role-pill.active { background: var(--ff-command); border-color: var(--ff-command); color: #fff; }
 .ff-role-pill.active.is-auto { background: color-mix(in srgb, var(--ff-command) 55%, transparent); }
 .ff-row-head img { width: 30px; height: 30px; border: none; border-radius: 4px; object-fit: cover; cursor: pointer; }
-.ff-row-head .ff-row-toggle { width: 22px; height: 22px; min-width: 0; padding: 0; font-size: 11px; }
+.ff-row-head .ff-row-toggle { width: var(--ff-target); height: var(--ff-target); min-width: 0; padding: 0; font-size: var(--ff-text-xs); }
+.ff-row-head .ff-pan { width: 30px; height: 30px; min-height: 0; padding: 0; border: none; background: none; }
 .ff-row-id { min-width: 0; }
 .ff-row-name { font-weight: 700; display: flex; align-items: center; gap: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ff-row-meta { display: flex; flex-wrap: wrap; gap: 2px 10px; font-size: 11px; color: var(--ff-text-dim); }
@@ -213,7 +246,7 @@
 .ff-histogram { display: flex; align-items: flex-end; gap: 3px; height: 120px; padding-top: 4px; }
 .ff-hbar { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; height: 100%; }
 .ff-hbar span { display: block; width: 100%; background: var(--ff-accent); border-radius: 3px 3px 0 0; min-height: 1px; }
-.ff-hbar small { font-size: 9px; color: var(--ff-text-dim); }
+.ff-hbar small { font-size: var(--ff-text-xs); color: var(--ff-text-dim); }
 .ff-list { list-style: none; margin: 0 0 8px; padding: 0; display: flex; flex-direction: column; gap: 3px; }
 .ff-list em { color: var(--ff-text-dim); font-style: normal; font-size: 11px; margin-left: 4px; }
 .ff-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; background: var(--ff-muted); }
@@ -221,12 +254,12 @@
 .ff-dot.hostile { background: var(--ff-hostile); }
 .ff-dot.neutral { background: var(--ff-neutral); }
 .ff-dot.secret { background: var(--ff-secret); }
-.ff-footnote { font-size: 10px; color: var(--ff-text-dim); margin: 0; }
+.ff-footnote { font-size: var(--ff-text-xs); color: var(--ff-text-dim); margin: 0; }
 
 .ff-table { width: 100%; border-collapse: collapse; font-size: 12px; }
 .ff-table th { text-align: left; font-size: 11px; color: var(--ff-text-dim); border-bottom: 1px solid var(--ff-line); padding: 4px; }
 .ff-table td { padding: 4px; border-bottom: 1px solid var(--ff-line); vertical-align: middle; }
-.ff-table td small { color: var(--ff-text-dim); font-size: 10px; }
+.ff-table td small { color: var(--ff-text-dim); font-size: var(--ff-text-xs); }
 .ff-fate { display: flex; height: 10px; width: 100%; min-width: 120px; border-radius: 3px; overflow: hidden; background: var(--ff-surface-2); }
 .ff-fate .standing { background: var(--ff-standing); }
 .ff-fate .down { background: var(--ff-down); }
@@ -250,7 +283,7 @@
 .ff-sample-head { font-size: 12px; }
 .ff-finals { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; font-size: 12px; }
 .ff-finals small { color: var(--ff-text-dim); }
-.ff-status { font-size: 10px; padding: 0 5px; border-radius: 6px; background: var(--ff-surface-2); }
+.ff-status { font-size: var(--ff-text-xs); padding: 0 5px; border-radius: 6px; background: var(--ff-surface-2); }
 .ff-status.dead { background: var(--ff-dead); color: #fff; }
 .ff-status.down { background: var(--ff-down); color: #111; }
 .ff-status.fled { background: var(--ff-fled); color: #fff; }
@@ -342,7 +375,7 @@
 .ff-pill-order:empty { display: none; }
 .ff-pill-order {
   display: inline-flex; align-items: center; justify-content: center; width: 14px; height: 14px;
-  border-radius: 50%; background: rgba(255, 255, 255, 0.85); color: #222; font-size: 9px;
+  border-radius: 50%; background: rgba(255, 255, 255, 0.85); color: #222; font-size: var(--ff-text-xs);
 }
 .ff-pills.ff-synced { animation: ff-flash 1.2s ease-out; }
 .ff-pill-flags { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 12px; }
@@ -368,7 +401,7 @@
   display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%;
   margin: 0 0 6px; height: 30px; font-weight: 700;
 }
-.ff-tracker-open:not(:disabled) { border-color: #f0a35b; }
+.ff-tracker-open:not(:disabled) { border-color: var(--ff-accent); }
 /* (One row: the planner, the Battle Vantage, the survey; each as wide as there's room for.) */
 .ff-tracker-row { display: flex; gap: 4px; margin: 0 0 6px; }
 .ff-tracker-row .ff-tracker-open { flex: 1 1 0; min-width: 0; margin: 0; padding: 0 4px; gap: 4px; font-size: 12px; }
@@ -401,9 +434,9 @@
 .ff-settings-group:not(:has(.form-group:not([hidden]))) { display: none; }
 
 /* ---------- The performance survey, at the foot of the settings ---------- */
-.ff-survey { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: baseline; margin: 12px 0 4px; padding-top: 8px;
+.ff-perf-survey { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: baseline; margin: 12px 0 4px; padding-top: 8px;
   border-top: 1px solid color-mix(in srgb, currentColor 20%, transparent); font-size: 12px; }
-.ff-survey .hint { flex-basis: 100%; margin: 0; }
+.ff-perf-survey .hint { flex-basis: 100%; margin: 0; }
 
 /* Desires (Tactics): what, at whom, how badly */
 .ff-desires { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; }
@@ -445,7 +478,7 @@
 .ff-voter {
   display: inline-flex; align-items: center; justify-content: center;
   width: 16px; height: 16px; margin-left: 4px; border-radius: 50%;
-  font-size: 10px; font-weight: 700; line-height: 1; color: #fff;
+  font-size: var(--ff-text-xs); font-weight: 700; line-height: 1; color: #fff;
   text-shadow: 0 0 2px rgba(0, 0, 0, 0.8); box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
 }
 .ff-voter.is-locked { box-shadow: 0 0 0 2px var(--ff-friendly); }
@@ -486,7 +519,7 @@
 .ff-battle-turn { padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--ff-line, #8884); display: flex; flex-direction: column; gap: 0.4rem; }
 .ff-battle-now { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
 .ff-battle-state { margin-left: auto; font-size: 0.85em; opacity: 0.8; }
-.ff-battle-state.waiting, .ff-battle-state.unstarted { color: #f0a35b; opacity: 1; }
+.ff-battle-state.waiting, .ff-battle-state.unstarted { color: var(--ff-attention); opacity: 1; }
 .ff-battle-buttons { display: flex; gap: 0.35rem; flex-wrap: wrap; }
 /* (Rewind This Encounter: well away from the rest, so it isn't clicked by mistake.) */
 .ff-battle-buttons .ff-far-right { margin-left: auto; }
@@ -502,10 +535,10 @@ label.is-disabled, .form-group.is-disabled { opacity: 0.5; }
 .ff-battle-damage li .ff-btn { padding: 0 6px; }
 /* (The planner or the Battle Vantage about to show another scene's or encounter's: two quick orange blinks.) */
 .ff-blink { animation: ff-blink 0.25s ease-in-out 2; }
-@keyframes ff-blink { 50% { outline: 3px solid #f0a35b; box-shadow: 0 0 14px 4px #f0a35b; } }
+@keyframes ff-blink { 50% { outline: 3px solid var(--ff-accent); box-shadow: 0 0 14px 4px var(--ff-accent); } }
 /* (Begin Encounter, while the encounter waits on it.) */
-.ff-btn.ff-glow { border-color: #f0a35b; box-shadow: 0 0 6px 1px #f0a35b; animation: ff-glow 1.6s ease-in-out infinite; }
-@keyframes ff-glow { 50% { box-shadow: 0 0 12px 3px #f0a35b; } }
+.ff-btn.ff-glow { border-color: var(--ff-accent); box-shadow: 0 0 6px 1px var(--ff-accent); animation: ff-glow 1.6s ease-in-out infinite; }
+@keyframes ff-glow { 50% { box-shadow: 0 0 12px 3px var(--ff-accent); } }
 @media (prefers-reduced-motion: reduce) { .ff-btn.ff-glow { animation: none; } }
 /* (The planner's toggles grow to fill a row; here, in a column, they'd take its height.) */
 .ff-battle-turn .ff-toggles { flex: none; display: flex; flex-wrap: wrap; gap: 0.25rem 1rem; }
@@ -586,7 +619,11 @@ label.is-disabled, .form-group.is-disabled { opacity: 0.5; }
 .ff-net-steps { display: none; gap: 1px; margin-left: 2px; }
 .ff-net-label:hover .ff-net-steps, .ff-net-mark:hover .ff-net-steps { display: inline-flex; }
 .ff-net-label:hover, .ff-net-mark:hover { z-index: 5; }
-.ff-net-step { padding: 0 2px; opacity: 0.7; cursor: pointer; }
+.ff-net-step, .ff-drop-held {
+  flex: none; width: auto; height: auto; min-height: 0; margin: 0; padding: 0 3px; line-height: inherit;
+  border: none; border-radius: 3px; background: none; box-shadow: none; color: inherit; font-size: inherit; opacity: 0.7; cursor: pointer;
+}
+.ff-net-step:hover, .ff-net-step:focus-visible, .ff-drop-held:hover, .ff-drop-held:focus-visible { opacity: 1; }
 .ff-net-step:hover { opacity: 1; }
 .ff-net-node { position: absolute; left: 0; top: 0; width: 0; height: 0; --side: var(--ff-muted); }
 .ff-net-node.friendly { --side: var(--ff-friendly); }
@@ -619,7 +656,7 @@ label.is-disabled, .form-group.is-disabled { opacity: 0.5; }
 .ff-net-name, .ff-net-status { position: absolute; left: 0; transform: translateX(-50%); white-space: nowrap; pointer-events: none; text-shadow: 0 0 3px var(--ff-net-bg), 0 0 3px var(--ff-net-bg); }
 .ff-net-name { top: 33px; font-size: 12px; font-weight: 600; }
 .ff-net-node.is-thing .ff-net-name { top: 22px; font-size: 11px; }
-.ff-net-status { top: 49px; font-size: 10px; color: var(--ff-text-dim); }
+.ff-net-status { top: 49px; font-size: var(--ff-text-xs); color: var(--ff-text-dim); }
 .ff-net-tools { position: absolute; right: 6px; top: 6px; display: flex; flex-direction: column; gap: 4px; z-index: 10; }
 .ff-net-tools button { width: 28px; height: 28px; padding: 0; line-height: 1; }
 .ff-battle-side { overflow-y: auto; padding: 0.5rem 0.75rem; border-left: 1px solid var(--ff-line); display: flex; flex-direction: column; gap: 0.45rem; }
@@ -646,7 +683,7 @@ label.is-disabled, .form-group.is-disabled { opacity: 0.5; }
 .ff-reactions, .ff-rerolls { margin: 0.4rem 0; }
 .ff-reaction { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; margin: 0.2rem 0; }
 .ff-reaction select { max-width: 50%; }
-.ff-battle-review { padding: 0.5rem 0.75rem; border-bottom: 2px solid #f0a35b; background: color-mix(in srgb, #f0a35b 10%, transparent); }
+.ff-battle-review { padding: 0.5rem 0.75rem; border-bottom: 2px solid var(--ff-attention); background: var(--ff-attention-bg); }
 .ff-battle-review ul { list-style: none; margin: 0.3rem 0; padding: 0; }
 .ff-battle-review li { display: flex; gap: 0.3rem; align-items: center; flex-wrap: wrap; margin: 0.2rem 0; }
 .ff-battle-review li.is-unsure label { font-style: italic; }
