@@ -24,7 +24,7 @@
 import { MODULE_ID, STATUS, SIDES, DISPOSITION_SIDES, NEUTRAL_PARTY, HOSTILE_GROUPS, clamp } from "../constants.js";
 import { escapeHtml as escape, inertHtml, listJoin } from "../i18n.js";
 import { getAdapter, characterSpec } from "../api.js";
-import { dropGoods, pickUpGoods } from "./loot-drop.js";
+import { dropGoods, pickUpGoods, lootOnFall } from "./loot-drop.js";
 import { setting, followSetting } from "../settings.js";
 import { positionOf, squareFeet } from "./terrain.js";
 import { approachFor, sceneNow } from "./battle.js";
@@ -3005,6 +3005,10 @@ async function writeEach(before, after, records, { messages = null, leave = null
         records.push({ ...undoRecord(doc, doc.actor, { statusesBefore: false }), tokenUpdate: { disposition: doc.disposition } });
         await doc.update({ disposition });
       }
+      // (Fallen, a pile to loot; up again, itself; a player's character dead, its things' copy on top of it.)
+      const fall = await lootOnFall(doc, battle.run.byId.get(id), ch, setting("lootMode"));
+      records.push(...noteSettings(fall.records));
+      if ( fall.remains ) battle.data.remains = { ...(battle.data.remains ?? {}), [id]: fall.remains };
       // (Tied up this turn: marked on the sheet, the system's way.)
       if ( ch.bound !== undefined ) {
         const marked = await adapter.commitBound(doc, ch.bound);
@@ -3026,12 +3030,15 @@ async function writeEach(before, after, records, { messages = null, leave = null
       }
       for ( const c of ch.concessions ?? [] ) {
         if ( c.kept || c.drop || !adapter.commitConcession ) continue;
+        // (Off a dead player's character's loot token, not its sheet: gone, nothing to take.)
+        const from = c.from === "remains" ? await remainsDoc(id) : doc;
+        if ( !from ) continue;
         const to = c.to ? docOf(c.to) : null;
         // (The giver's side, for what it shares: Ironsworn's Supply.)
         const giver = battle.run.byId.get(id);
         const allies = battle.run.units.filter(u => u !== giver && u.side === giver.side).map(u => docOf(u.id)).filter(Boolean);
         const own = ownShare(c);
-        if ( own ) records.push(...noteSettings((await adapter.commitConcession(doc, to ?? null, own, { giver: spec, receiver: to ? battle.run.byId.get(c.to)?.spec : null, allies })) ?? []));
+        if ( own ) records.push(...noteSettings((await adapter.commitConcession(from, to ?? null, own, { giver: spec, receiver: to ? battle.run.byId.get(c.to)?.spec : null, allies })) ?? []));
         // (Out of its team's purse, on no sheet: onto the receiver's, as the system's coin.)
         const minted = c.purseKey ? Number(c.purse) || 0 : 0;
         if ( minted > 0 && to && adapter.putGoods ) records.push(...noteSettings((await adapter.putGoods(to, { items: [], money: minted })) ?? []));
@@ -3056,6 +3063,12 @@ async function writeEach(before, after, records, { messages = null, leave = null
     }
   }
   messages?.push(...cardsSince(seen).map(m => m.id));
+}
+
+/** A dead player's character's loot token (loot-drop.js lootOnFall), while it's there. */
+async function remainsDoc(id) {
+  const uuid = battle.data.remains?.[id];
+  return typeof uuid === "string" ? fromUuid(uuid).catch(() => null) : null;
 }
 
 /**

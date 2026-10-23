@@ -43,7 +43,7 @@ import { recompute as recomputeConditions, applyOutcome, renewHolds, beginConcen
 import { decideBuff, aidScores, checkDc } from "./behavior/support.js";
 import { perceives } from "./behavior/senses.js";
 import { isAnimalistic, animalTactics } from "./behavior/animal.js";
-import { stealChance, theftTarget, theftPlan, attemptTheft, robbable } from "./behavior/theft.js";
+import { stealChance, theftTarget, theftPlan, attemptTheft, robbable, lootable, leftRemains } from "./behavior/theft.js";
 import { fallenWishes, decideFallen, bind, rob, stayBound, takesPrisoners, robsTheFallen, freeFriend, rollOf } from "./behavior/fallen.js";
 import { dealWishes, decideDeal, offerDeal, pickUp, dishonor, dealsWanted, talkRange, dealCost, shunsFight, seesFight, reactionBribe } from "./behavior/deals.js";
 import { leavesOfItsOwn } from "./behavior/flight.js";
@@ -4396,7 +4396,9 @@ function aftermath(run, order) {
   // (A hazard still set wins nothing: it settles nobody's fate, and makes nobody's friend a fallen foe.)
   const victors = run.units.filter(u => isStanding(u) && !u.spec.hazard);
   const fallen = run.units.filter(u => u.status === STATUS.DOWN && victors.some(v => areEnemies(run, v, u)));
-  const decided = simulated && fallen.length > 0 && victors.some(v => mercyOf(run, v) !== "leave" || takesPrisoners(v) || robsTheFallen(v));
+  // (A dead player's character's loot token: robbed as the fallen are.)
+  const remains = run.units.filter(u => leftRemains(run, u) && victors.some(v => areEnemies(run, v, u)));
+  const decided = simulated && (fallen.length > 0 || remains.length > 0) && victors.some(v => mercyOf(run, v) !== "leave" || takesPrisoners(v) || robsTheFallen(v));
   // The system may give a fallen player character one last chance once friends reach the body (DCC: roll the body).
   const bodies = simulated && rules.recoverBody ? run.units.filter(u => u.status === STATUS.DEAD && u.spec.kind === "pc" && victors.some(v => v.side === u.side)) : [];
   if ( !(simulated && run.units.some(isDying)) && !decided && !bodies.length ) return;
@@ -4405,7 +4407,7 @@ function aftermath(run, order) {
   startTurn(run);
   log(run, null, { type: "aftermath", aftermath: true });
   const marker = run.log?.at(-1);
-  if ( decided ) dealWithTheFallen(run, victors, fallen);
+  if ( decided ) dealWithTheFallen(run, victors, fallen, remains);
   let tended = false;
   let i = 0;
   for ( ; i < AFTERMATH_ROUNDS && run.units.some(isDying); i++ ) {
@@ -4470,7 +4472,7 @@ export function mercyOf(run, u) {
  * The victors settle the fallen: anyone sparing them stops the rest; otherwise the cruel finish them off. Those still
  * alive are then tied up by whoever takes prisoners (and tended like the spared), and robbed by whoever robs them.
  */
-function dealWithTheFallen(run, victors, fallen) {
+function dealWithTheFallen(run, victors, fallen, remains = []) {
   for ( const f of fallen ) {
     // (Only its own foes: nobody finishes, or spares, a friend.)
     const sparer = victors.find(v => areEnemies(run, v, f) && mercyOf(run, v) === "spare");
@@ -4495,6 +4497,10 @@ function dealWithTheFallen(run, victors, fallen) {
     }
     const robber = victors.find(v => areEnemies(run, v, f) && robsTheFallen(v) && !v.robbedFrom?.has(f.id));
     if ( robber && robbable(f) ) rob(run, robber, f, logger(run), { aftermath: true });
+  }
+  for ( const f of remains ) {
+    const robber = victors.find(v => areEnemies(run, v, f) && robsTheFallen(v) && !v.robbedFrom?.has(f.id));
+    if ( robber && lootable(run, f) ) rob(run, robber, f, logger(run), { aftermath: true });
   }
 }
 

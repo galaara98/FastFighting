@@ -9,6 +9,7 @@
 import { statusesOf, statusEntry } from "./sheet-tools.js";
 import { chatMessageClass, gmIds } from "./chat.js";
 import { MODULE_ID } from "../constants.js";
+import { revertItemPile } from "./loot-drop.js";
 import { escapeHtml as escape, inertHtml } from "../i18n.js";
 import { getAdapter } from "../api.js";
 import { setting } from "../settings.js";
@@ -429,6 +430,8 @@ export async function revertRecord(r, { scene = null, settings = null } = {}) {
   }
   const tokenUpdate = tokenFields(r.tokenUpdate);
   if ( tokenUpdate && tokenDoc ) await step("restoring the token", () => tokenDoc.update(tokenUpdate));
+  // (A fallen creature's token made an Item Piles pile, or back from one: loot-drop.js lootOnFall.)
+  if ( r.itemPile && tokenDoc ) await step("the fallen's pile", () => revertItemPile(r.itemPile, tokenDoc));
   // (A player's flags, such as DCC's Fleeting Luck: FastFighting's and the system's, nothing else of a user's, their
   // role least of all; and a player's, never a GM's.)
   const user = typeof r.userId === "string" ? game.users.get(r.userId) : null;

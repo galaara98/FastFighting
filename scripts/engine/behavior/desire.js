@@ -52,7 +52,7 @@ import { STATUS, TACTICAL, ADHD, clamp } from "../../constants.js";
 import { areEnemies, isStanding, liveTrait, liveTier, enemiesOf, alliesOf, sizedUp, command, commandOf, refusesToHelp, movesNeeded, edgeDistance, canMove, hpFraction, dangerScore } from "../battle-state.js";
 import { perceives, apparentHealth, knowsOf } from "./senses.js";
 import { seemsFoe } from "./neutral.js";
-import { robbable } from "./theft.js";
+import { lootable, leftRemains } from "./theft.js";
 import { ownHolds, isBound, freeable, known, remediesOf, bears } from "./holds.js";
 import { hasTrait, profiled } from "../conditions.js";
 import { hasUses, threatOf } from "./evaluate.js";
@@ -328,7 +328,8 @@ function relevant(run, u, kind, t) {
   // (One not in the fight yet is out of it, unless u means to hurt it and takes it for fair game: prey to an animal or a
   // feral mind, or one the GM set it on (neutral.js seemsFoe). Set upon, it's in the fight at once: simulator.js notice.)
   if ( !t.active && !(kind === "hurt" && t !== u && seemsFoe(run, u, t) && knowsOf(run, u, t)) ) return false;
-  if ( [STATUS.DEAD, STATUS.FLED, STATUS.BEATEN].includes(t.status) ) return false;
+  // (Dead: only a player character's loot token, to rob: theft.js leftRemains.)
+  if ( [STATUS.DEAD, STATUS.FLED, STATUS.BEATEN].includes(t.status) && !(kind === "rob" && leftRemains(run, t)) ) return false;
   // (A prisoner, tied up and awake, is out of it: there's only what it carries, its getting loose, and its friends'.)
   if ( t.status === STATUS.BOUND && kind !== "rob" && kind !== "breakFree" && kind !== "free" && kind !== "rid" ) return false;
   const foe = () => !t.spec.untargetable && !t.spec.hazard && (areEnemies(run, u, t) || seemsFoe(run, u, t));
@@ -348,7 +349,7 @@ function relevant(run, u, kind, t) {
     // (Off the map: while it means to go.)
     case "leave": return t === u && t.status === STATUS.STANDING && !!u.leaving;
     case "free": return t !== u && !areEnemies(run, u, t) && !refusesToHelp(run, u, t) && !!freeable(run, t);
-    case "rob": return (t.status === STATUS.DOWN || t.status === STATUS.BOUND) && foe() && robbable(t) && !u.robbedFrom?.has(t.id);
+    case "rob": return foe() && lootable(run, t) && !u.robbedFrom?.has(t.id);
     // A deal: with one on its feet and still here, tried once each (behavior/deals.js dealable says the rest).
     case "bribe": case "extort": case "scare": case "toll": return t !== u && t.status === STATUS.STANDING && !t.leaving && !u.dealt?.has(t.id);
     // (Wanting a friend's buff is for the friend to act on: see heed.)

@@ -5,6 +5,9 @@
  * (options.dropGoods, canDropGoods). Taking goods off a sheet and putting them on one are the helper's (API 26:
  * takeGoods, putGoods, goodsOf; goods {items, coins, money}: money, in the smallest coin, coins of the helper's
  * choosing, out of a team's purse). Each step leaves undo records, for Rewind.
+ * The fallen, as the loot setting leaves them ("corpse", unless "none"): a creature's token, fallen, an Item Piles pile
+ * itself (up again, itself again); a player's character dead, a loot token on top of it with a copy of all it has (an
+ * Item Piles pile, else the system's, else the core's own). A pile is never in a battle (isPile).
  * And, at the bottom of FastFighting's settings: Item Piles recommended, where the system has no loot pile of its own.
  */
 import { MODULE_ID } from "../constants.js";
@@ -51,14 +54,27 @@ export async function dropGoods({ scene, point, giverDoc, receiverDoc = null, go
   // (Money out of its team's purse, on no sheet: dropped with the rest, `minted`, in the smallest coin.)
   if ( minted > 0 ) taken.goods = { items: taken.goods?.items ?? [], coins: taken.goods?.coins ?? null, money: minted };
   if ( emptyGoods(taken?.goods) ) return { records, pile: null };
-  const at = squareAt(scene, point);
+  const made = await makePile(scene, squareAt(scene, point), taken.goods, { name });
+  if ( made ) return { records: [...records, ...made.records], pile: made.pile };
+  // (Nowhere to put them: handed over, as if they'd met.)
+  if ( receiverDoc ) records.push(...((await adapter.putGoods(receiverDoc, taken.goods)) ?? []));
+  return { records, pile: null };
+}
+
+/**
+ * Goods ({items, coins, money}) lying on the ground at `at` (a square's top-left): an Item Piles pile, else the system's
+ * own, else (given an actor `type`) the core's own. {records, pile: its token's uuid}, or null where none could be made.
+ * `over`: the token's own data besides (to lie on top of another).
+ */
+async function makePile(scene, at, goods, { name = "", over = {}, type = null } = {}) {
+  const adapter = getAdapter();
   if ( itemPilesOn() ) {
     try {
-      const made = await game.itempiles.API.createItemPile({ position: at, sceneId: scene.id, items: taken.goods.items ?? [], tokenOverrides: { flags: { [MODULE_ID]: { pile: true } } } });
+      const made = await game.itempiles.API.createItemPile({ position: at, sceneId: scene.id, items: goods.items ?? [], tokenOverrides: { ...over, ...(name ? { name } : {}), flags: { [MODULE_ID]: { pile: true } } } });
       const token = made?.tokenUuid ? await fromUuid(made.tokenUuid) : null;
       if ( token ) {
-        records.push({ createdTokens: [token.uuid] });
-        if ( taken.goods.coins || taken.goods.money ) records.push(...((await adapter.putGoods(token, { items: [], coins: taken.goods.coins, money: taken.goods.money ?? 0 })) ?? []));
+        const records = [{ createdTokens: [token.uuid] }];
+        if ( goods.coins || goods.money ) records.push(...((await adapter.putGoods(token, { items: [], coins: goods.coins, money: goods.money ?? 0 })) ?? []));
         return { records, pile: token.uuid };
       }
     } catch ( err ) {
@@ -67,15 +83,41 @@ export async function dropGoods({ scene, point, giverDoc, receiverDoc = null, go
   }
   if ( systemPiles(adapter) ) {
     try {
-      const made = await adapter.dropValuables(scene, at, taken.goods, { name });
-      if ( made?.tokenUuid ) return { records: [...records, ...(made.records ?? [])], pile: made.tokenUuid };
+      const made = await adapter.dropValuables(scene, at, goods, { name });
+      if ( made?.tokenUuid ) return { records: made.records ?? [], pile: made.tokenUuid };
     } catch ( err ) {
       console.warn(`${MODULE_ID} | the system couldn't make a pile`, err);
     }
   }
-  // (Nowhere to put them: handed over, as if they'd met.)
-  if ( receiverDoc ) records.push(...((await adapter.putGoods(receiverDoc, taken.goods)) ?? []));
-  return { records, pile: null };
+  if ( type && typeof adapter?.putGoods === "function" ) {
+    try {
+      return await corePile(scene, at, goods, { name, over, type });
+    } catch ( err ) {
+      console.warn(`${MODULE_ID} | couldn't make a pile`, err);
+    }
+  }
+  return null;
+}
+
+/**
+ * The core's own pile, where the system has none and Item Piles can't make one: an actor of `type` (the one it's
+ * copied from's own, so its things fit), FastFighting's (kept out of battles: isPile; taken away by Rewind), everyone
+ * able to look in, and its token at `at`.
+ */
+async function corePile(scene, at, goods, { name, over, type }) {
+  const actor = await Actor.create({
+    name, type, img: "icons/containers/bags/sack-leather-brown.webp",
+    ownership: { default: CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER },
+    flags: { [MODULE_ID]: { pile: true } }
+  });
+  const [token] = await scene.createEmbeddedDocuments("Token", [{
+    ...(await actor.getTokenDocument({ x: at.x, y: at.y, ...over })).toObject(),
+    actorLink: true,
+    disposition: CONST.TOKEN_DISPOSITIONS.NEUTRAL
+  }]);
+  const records = [{ createdActors: [actor.uuid], createdTokens: [token.uuid] }];
+  records.push(...((await getAdapter().putGoods(token, goods)) ?? []));
+  return { records, pile: token.uuid };
 }
 
 /**
@@ -95,6 +137,92 @@ export async function pickUpGoods({ pileUuid, receiverDoc }) {
   await token.delete();
   if ( own ) await own.delete();
   return records;
+}
+
+/* -------------------------------------------- */
+/*  The fallen                                  */
+/* -------------------------------------------- */
+
+/** The token flag of one FastFighting made a pile as it fell: how its token was, to put back. */
+const FALLEN = "fallenPile";
+
+/**
+ * A pile of goods, not a creature, never in a battle: FastFighting's own (or the system's, that it made), or Item
+ * Piles' (but a creature it made one of as it fell).
+ */
+export function isPile(doc) {
+  if ( !doc ) return false;
+  if ( doc.getFlag?.(MODULE_ID, "pile") || doc.actor?.getFlag?.(MODULE_ID, "pile") ) return true;
+  if ( doc.getFlag?.(MODULE_ID, FALLEN) ) return false;
+  return !!game.modules.get(ITEM_PILES)?.active && !!game.itempiles?.API?.isValidItemPile?.(doc);
+}
+
+/** Can a dead player's character leave its things' copy on the ground (lootOnFall), as the loot setting says? */
+export const leavesRemains = (mode, adapter = getAdapter()) => mode !== "none" && typeof adapter?.goodsOf === "function" && typeof adapter?.putGoods === "function";
+
+/**
+ * What the loot setting (`mode`) makes of a creature's fall, this turn's change set `ch` (engine/changes.js): a
+ * creature's token (not a player character's, a hazard's or a summoned one's), fallen, an Item Piles pile itself, as
+ * "corpse" asks; up again, itself again. A player's character dead: a loot token on top of it with a copy of all it
+ * has (its sheet is its player's: nothing comes off it). "none": neither. {records, remains: the loot token's uuid}.
+ */
+export async function lootOnFall(doc, unit, ch, mode) {
+  const none = { records: [], remains: null };
+  if ( !doc || !unit || !ch || mode === "none" ) return none;
+  if ( unit.spec.kind === "pc" ) return ch.died && leavesRemains(mode) ? remainsOf(doc) : none;
+  if ( mode !== "corpse" || unit.spec.hazard || unit.summoner ) return none;
+  if ( ch.fell || ch.died ) return { records: await fallenPile(doc), remains: null };
+  if ( ch.revived ) return { records: await risenFromPile(doc), remains: null };
+  return none;
+}
+
+/** A player's character dead: a loot token on top of it, a copy of all it has. {records, remains}. */
+async function remainsOf(doc) {
+  const goods = await getAdapter().goodsOf(doc);
+  if ( !doc.parent || emptyGoods(goods) ) return { records: [], remains: null };
+  const over = { elevation: doc.elevation, sort: (doc.sort ?? 0) + 1 };
+  const name = localize("FASTFIGHTING.Loot.Belongings", { name: doc.name });
+  const made = await makePile(doc.parent, { x: doc.x, y: doc.y }, goods, { name, over, type: doc.actor?.type ?? null });
+  return { records: made?.records ?? [], remains: made?.pile ?? null };
+}
+
+/** A fallen creature's token, an Item Piles pile (never emptied away). Undo records. */
+async function fallenPile(doc) {
+  const api = game.itempiles?.API;
+  if ( !itemPilesOn() || doc.getFlag(MODULE_ID, FALLEN) || api.isValidItemPile?.(doc) ) return [];
+  const was = { name: doc.name, texture: { src: doc.texture.src, scaleX: doc.texture.scaleX, scaleY: doc.texture.scaleY } };
+  try {
+    const done = await api.turnTokensIntoItemPiles([doc], { pileSettings: { deleteWhenEmpty: false }, tokenSettings: { flags: { [MODULE_ID]: { [FALLEN]: was } } } });
+    return done ? [{ tokenUuid: doc.uuid, itemPile: { made: true } }] : [];
+  } catch ( err ) {
+    console.warn(`${MODULE_ID} | Item Piles couldn't make ${doc.name} a pile`, err);
+    return [];
+  }
+}
+
+/** Up again: the pile FastFighting made of it, its token again, as it was. Undo records. */
+async function risenFromPile(doc) {
+  const was = doc.getFlag(MODULE_ID, FALLEN);
+  if ( !was || !itemPilesOn() ) return [];
+  await unPile(doc, was);
+  return [{ tokenUuid: doc.uuid, itemPile: { made: false, was } }];
+}
+
+const unPile = (doc, was) => game.itempiles.API.revertTokensFromItemPiles([doc], { tokenSettings: { name: was.name, texture: was.texture, flags: { [MODULE_ID]: { [FALLEN]: null } } } });
+
+/**
+ * Rewind of an `itemPile` record (make-it-so.js revertRecord), on `doc`, its token on the battle's scene: one made a pile
+ * as it fell, itself again (only one FastFighting made so); one that rose, a pile again.
+ */
+export async function revertItemPile(r, doc) {
+  if ( !doc || !r || !itemPilesOn() ) return;
+  if ( r.made ) {
+    const was = doc.getFlag(MODULE_ID, FALLEN);
+    if ( was ) await unPile(doc, was);
+  } else if ( r.was && typeof r.was === "object" && !doc.getFlag(MODULE_ID, FALLEN) ) {
+    const was = { name: String(r.was.name ?? doc.name), texture: { src: r.was.texture?.src ?? doc.texture.src, scaleX: Number(r.was.texture?.scaleX) || 1, scaleY: Number(r.was.texture?.scaleY) || 1 } };
+    await game.itempiles.API.turnTokensIntoItemPiles([doc], { pileSettings: { deleteWhenEmpty: false }, tokenSettings: { flags: { [MODULE_ID]: { [FALLEN]: was } } } });
+  }
 }
 
 /* -------------------------------------------- */

@@ -1618,6 +1618,8 @@ Decides who ties up or robs a downed foe, mid-fight and after.
   captor tends it after the fight.
 - **Robbed**, once per robber: the whole purse (d10% where its side pools money), else a random carried item, else (not
   a PC) what it wields or wears. A PC's things go only on a d100 at or under theftLuck (default 29).
+- **A dead PC** whose table leaves a loot token (loot setting not "Do nothing"): robbed as the fallen are, out of the
+  loot token (a copy of its things: anything, wielded or worn too), with no luck check.
 - After the fight: for each fallen foe, finishers act (unless someone spares it; a PC only on the execute luck); then a
   captor ties it up (and it counts as spared); then a robber robs it.
 

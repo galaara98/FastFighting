@@ -730,7 +730,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "bb13c68b0246"
+   "hash": "bb13c68b0246",
+   "gone": "2026-10-23"
   },
   "core:code:scripts/foundry/loot-drop.js:dropGoods#2": {
    "repo": "core",
@@ -740,7 +741,48 @@
    "status": "todo",
    "date": null,
    "commit": null,
+   "hash": "32016fbe46a5",
+   "gone": "2026-10-23"
+  },
+  "core:code:scripts/foundry/loot-drop.js:fallenPile#1": {
+   "repo": "core",
+   "file": "scripts/foundry/loot-drop.js",
+   "key": "scripts/foundry/loot-drop.js:fallenPile#1",
+   "area": "core/code",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "8aa3178834a0"
+  },
+  "core:code:scripts/foundry/loot-drop.js:makePile#1": {
+   "repo": "core",
+   "file": "scripts/foundry/loot-drop.js",
+   "key": "scripts/foundry/loot-drop.js:makePile#1",
+   "area": "core/code",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "bb13c68b0246"
+  },
+  "core:code:scripts/foundry/loot-drop.js:makePile#2": {
+   "repo": "core",
+   "file": "scripts/foundry/loot-drop.js",
+   "key": "scripts/foundry/loot-drop.js:makePile#2",
+   "area": "core/code",
+   "status": "todo",
+   "date": null,
+   "commit": null,
    "hash": "32016fbe46a5"
+  },
+  "core:code:scripts/foundry/loot-drop.js:makePile#3": {
+   "repo": "core",
+   "file": "scripts/foundry/loot-drop.js",
+   "key": "scripts/foundry/loot-drop.js:makePile#3",
+   "area": "core/code",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "21e37be0ff5d"
   },
   "core:code:scripts/foundry/make-it-so.js:commitFight#1": {
    "repo": "core",
@@ -944,7 +986,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "f72e346158ec"
+   "hash": "f72e346158ec",
+   "changed": true
   },
   "core:code:scripts/foundry/make-it-so.js:revertRecord#2": {
    "repo": "core",
@@ -956,6 +999,16 @@
    "commit": null,
    "hash": "ffe750104da6",
    "changed": true
+  },
+  "core:code:scripts/foundry/make-it-so.js:revertRecord#20": {
+   "repo": "core",
+   "file": "scripts/foundry/make-it-so.js",
+   "key": "scripts/foundry/make-it-so.js:revertRecord#20",
+   "area": "core/code",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "f72e346158ec"
   },
   "core:code:scripts/foundry/make-it-so.js:revertRecord#3": {
    "repo": "core",
@@ -12736,6 +12789,16 @@
    "date": null,
    "commit": null,
    "hash": "90fff4390f7a"
+  },
+  "core:FASTFIGHTING.Loot.Belongings": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Loot.Belongings",
+   "area": "core/Loot",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "15754f1d72f8"
   },
   "core:FASTFIGHTING.Loot.corpse": {
    "repo": "core",

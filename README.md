@@ -392,6 +392,8 @@ World settings, under **Configure Settings → FastFighting**, in groups. The pl
 | Do it For Real Now: corpses | Keep, marked dead | Slain tokens (only with a helper that handles loot). |
 | Do it For Real Now: fled combatants | Hide token | Tokens that fled. |
 
+- **The fallen's loot, live:** with Item Piles and **Leave on corpse**, a creature's token becomes an Item Piles pile when it falls, and turns back if it gets up. A player's character that dies leaves a loot token on top of it with a copy of its things; its sheet is untouched. The loot token is an Item Piles pile, else the system's loot pile, else one FastFighting makes. Creatures that rob the fallen take from it. **Do nothing** turns both off. A pile never joins a battle.
+
 ### Troubleshooting & data
 
 | Setting | Default | What it controls |

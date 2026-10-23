@@ -133,6 +133,23 @@ describe("robbing them", () => {
     expect(kept).toBeGreaterThan(20);
   });
 
+  test("a dead player character: robbed out of the loot token left on top of it, anything in it, no luck needed", () => {
+    const rob = remains => {
+      const spec = battle([hero({ valuables: { ...purse, money: 0, stowed: [] }, ...at(5) }), bandit("brute", { tactics: { fallen: "rob" }, ...at(0) }), creature({ id: "ally", kind: "pc", ...at(90) })], { maxRounds: 6, positioning: true, remains });
+      const run = beginRun(prepareBattle(spec, pf2eRules), 1, { log: true });
+      beginRound(run, 1);
+      const pc = run.byId.get("hero");
+      Object.assign(pc, { status: "dead", hp: 0 });
+      takeTurn(run, run.byId.get("brute"));
+      return pc.concessions ?? [];
+    };
+    // (Its club, held: in the pile as anything else is; out of the pile, not off its sheet.)
+    expect(rob(true)).toEqual([expect.objectContaining({ how: "loot", from: "remains", item: expect.objectContaining({ id: "club" }) })]);
+    expect(rob(true)[0]).not.toHaveProperty("luck");
+    // (No loot token at this table: the dead are left be.)
+    expect(rob(false)).toEqual([]);
+  });
+
   test("after the fight: a Thief goes through the fallen's pockets", () => {
     let robbed = 0;
     for ( let s = 1; s <= 20; s++ ) {

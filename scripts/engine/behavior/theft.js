@@ -18,7 +18,7 @@
  *  - Whatever is taken comes back at the end if the thief is beaten (like anything given up).
  * Pure: no Foundry globals.
  */
-import { THEFT_LUCK, clamp } from "../../constants.js";
+import { THEFT_LUCK, STATUS, clamp } from "../../constants.js";
 import { isStanding, isUp, areEnemies, edgeDistance, checkRoll, typical, liveTrait, alliesOf, enemiesOf, behaviorOf, attackRoll, currentAc, movesNeeded, heldOff, systemRolled } from "../battle-state.js";
 import { rollCheck } from "../probability.js";
 import { costOf, normalizeCost, addCosts } from "../turn.js";
@@ -34,10 +34,25 @@ function worthRobbing(t) {
   return v.own > 0 || v.stowed.length > 0;
 }
 
-/** Has a fallen t anything to take: money on it, gear it carries, or (a creature's, not a PC's) what it was wielding or wearing? */
-export function robbable(t) {
+/**
+ * Has a fallen t anything to take: money on it, gear it carries, or (a creature's, not a PC's; or in a dead PC's loot
+ * token, `remains`) what it was wielding or wearing?
+ */
+export function robbable(t, { remains = false } = {}) {
   const v = remaining(t);
-  return v.own > 0 || v.stowed.length > 0 || (t.spec.kind !== "pc" && v.wielded.length + v.worn.length > 0);
+  return v.own > 0 || v.stowed.length > 0 || ((remains || t.spec.kind !== "pc") && v.wielded.length + v.worn.length > 0);
+}
+
+/**
+ * A dead player's character's things, copied into a loot token on top of it (options.remains: the table leaves one,
+ * foundry/loot-drop.js lootOnFall): robbed off that, not its sheet.
+ */
+export const leftRemains = (run, t) => t.status === STATUS.DEAD && t.spec.kind === "pc" && !!run.prep.options.remains;
+
+/** A fallen foe to rob: down or tied up (or a dead player's character's loot token), with something on it to take. */
+export function lootable(run, t) {
+  const remains = leftRemains(run, t);
+  return (t.status === STATUS.DOWN || t.status === STATUS.BOUND || remains) && robbable(t, { remains });
 }
 
 /** Is u's side clearly winning: more of them standing, or the other side has lost noticeably more? */

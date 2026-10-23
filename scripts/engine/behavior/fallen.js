@@ -8,7 +8,9 @@
  *    prisoner (STATUS.BOUND), not a fighter. Its dying goes on as before; one who takes prisoners tends it after the
  *    fight, as one who spares the fallen does.
  *  - Robbing: a fallen foe's purse comes off it (whole; a share, where its side pools what it has), else something it
- *    carries, else (a creature's, not a player character's) what it was wielding or wearing. An action beside it
+ *    carries, else (a creature's, not a player character's) what it was wielding or wearing. A dead player's character
+ *    is robbed of anything in the loot token left on top of it (theft.js leftRemains), with no luck check: its sheet
+ *    keeps all it had. An action beside it
  *    (rules.lootCost; by default the basic action), once for each who robs it. A player character's things go only on
  *    the luck check a thief needs against one (theftLuck): the GM's secret, never told. Like anything taken, it comes
  *    back if the robber ends the fight beaten.
@@ -26,7 +28,7 @@ import { STATUS, THEFT_LUCK } from "../../constants.js";
 import { isStanding, enemiesOf, movesNeeded, canMove } from "../battle-state.js";
 import { mind, think, styleOf, wantsKind } from "./desire.js";
 import { remaining } from "./talk.js";
-import { robbable } from "./theft.js";
+import { lootable, leftRemains } from "./theft.js";
 import { perceives } from "./senses.js";
 import { mainPool, normalizeCost } from "../turn.js";
 import { isBound, freeable, untieCost, tryHold, release } from "./holds.js";
@@ -73,7 +75,7 @@ export function fallenWishes(run, u) {
     if ( !t.active || !perceives(run, u, t) ) continue;
     const fits = kind === "hurt" ? t.status === STATUS.DOWN && !t.stable
       : kind === "bind" ? t.status === STATUS.DOWN && !isBound(t)
-        : (t.status === STATUS.DOWN || t.status === STATUS.BOUND) && robbable(t) && !u.robbedFrom?.has(t.id);
+        : lootable(run, t) && !u.robbedFrom?.has(t.id);
     if ( fits ) think(u, kind, t.id, level);
   }
 }
@@ -114,7 +116,10 @@ export function bind(run, u, t, say, { aftermath = false } = {}) {
   say(u, { type: "bind", target: t.spec.name, targetId: t.id, aftermath });
 }
 
-/** What comes off a fallen foe: its purse (a share, where its side pools it), else something it carries, else (a creature's) what it held or wore. */
+/**
+ * What comes off a fallen foe: its purse (a share, where its side pools it), else something it carries, else (a
+ * creature's, or a dead player's character's loot token's) what it held or wore.
+ */
 function loot(run, t) {
   const v = remaining(t);
   // (What's on it: its team's purse isn't.)
@@ -126,7 +131,7 @@ function loot(run, t) {
   if ( v.stowed.length ) return { kind: "item", item: run.rng.pick(v.stowed) };
   // (Fallen, a creature's weapon or armor is there for the taking: the only time what it wields or wears changes hands.)
   const gear = [...v.wielded, ...v.worn];
-  if ( t.spec.kind !== "pc" && gear.length ) return { kind: "item", item: run.rng.pick(gear) };
+  if ( (t.spec.kind !== "pc" || leftRemains(run, t)) && gear.length ) return { kind: "item", item: run.rng.pick(gear) };
   return null;
 }
 
@@ -136,8 +141,10 @@ export function rob(run, u, t, say, { aftermath = false } = {}) {
   const taken = loot(run, t);
   if ( !taken ) return say(u, { type: "rob", target: t.spec.name, targetId: t.id, stolen: null, aftermath });
   const record = { ...taken, how: "loot", to: u.id, toName: u.spec.name, round: run.round };
+  // (A dead player's character's: out of its loot token, a copy of its things on the ground; no luck needed.)
+  if ( leftRemains(run, t) ) record.from = "remains";
   // (A player character's things: only on a thief's luck check against one, the GM's secret.)
-  if ( t.spec.kind === "pc" ) {
+  else if ( t.spec.kind === "pc" ) {
     record.luck = run.rng.die(100);
     record.needed = run.prep.options.theftLuck ?? THEFT_LUCK;
     record.kept = record.luck > record.needed;
