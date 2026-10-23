@@ -451,7 +451,10 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       // is too old to do it for real at all.)
       live: !!adapter?.supportsLive,
       // (Do it For Real Now beside Run, once there's a sample fight to make so.)
-      canMakeItSo: !!adapter?.supportsLive && !!this.sample,
+      // (Only the plan that was run: changed since, it's run again first, or the fight played for real isn't the one
+      // planned. Held in sight, saying so, until then.)
+      canMakeItSo: !!adapter?.supportsLive && !!this.sample && !this.stale,
+      makeItSoStale: !!adapter?.supportsLive && !!this.sample && !!this.stale,
       options: setup.options,
       // (So many creatures that few fights fit the prediction's time.)
       runsNote: this.#runsNote(resolved),
@@ -1405,6 +1408,8 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
   async #goLive({ begin, began = false }) {
     await this.settleSides();
     if ( !this.results || !this.spec ) return;
+    // (The plan changed since it was run: the battle it would play is the old one. Run it again first.)
+    if ( this.stale ) return ui.notifications.warn(loc("FASTFIGHTING.MakeItSo.RunAgain"));
     if ( canvas.scene?.id !== this.sceneId ) return ui.notifications.warn(loc("FASTFIGHTING.Planner.SceneChanged"));
     // (A battle on already, begun or waiting for Begin Encounter: its Battle Vantage, where it goes on.)
     if ( liveBattle() ) return BattleVantage.open();

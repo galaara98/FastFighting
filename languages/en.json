@@ -715,6 +715,7 @@
       "Undo": "Rewind This Encounter",
       "UndoTitle": "Rewind This Encounter",
       "Moves": "Moves {distance}",
+      "RunAgain": "The plan has changed since it was run. Run it again first, so the fight played for real is the one you planned.",
       "NeedsUpdate": "Update this system's FastFighting helper to play fights for real.",
       "Hint": "Plays this fight on the Combat Tracker, turn by turn: FastFighting plays its creatures, the players their characters (if they run them). Rewind This Encounter undoes it.",
       "Gives": "Gives up {what} to {name}",

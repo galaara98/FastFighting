@@ -13660,6 +13660,16 @@
    "commit": null,
    "hash": "ff20914f8f89"
   },
+  "core:FASTFIGHTING.MakeItSo.RunAgain": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.MakeItSo.RunAgain",
+   "area": "core/MakeItSo",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "aea81a8cf5d7"
+  },
   "core:FASTFIGHTING.MakeItSo.Steals": {
    "repo": "core",
    "file": "languages/en.json",
