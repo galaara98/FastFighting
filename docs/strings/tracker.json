@@ -5382,9 +5382,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Deal.Sayings.1",
    "area": "core/Deal",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "written",
+   "date": "2026-10-23",
+   "commit": "04d82c8",
    "hash": "f497131cd00a"
   },
   "core:FASTFIGHTING.Deal.Sayings.2": {
@@ -5392,9 +5392,9 @@
    "file": "languages/en.json",
    "key": "FASTFIGHTING.Deal.Sayings.2",
    "area": "core/Deal",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "written",
+   "date": "2026-10-23",
+   "commit": "04d82c8",
    "hash": "b7eb50f44723"
   },
   "core:FASTFIGHTING.Deal.Sayings.3": {
