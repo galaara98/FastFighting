@@ -7691,7 +7691,18 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "b7b108973141"
+   "hash": "b7b108973141",
+   "gone": "2026-10-23"
+  },
+  "core:FASTFIGHTING.Live.FastStopped.still": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Live.FastStopped.still",
+   "area": "core/Live",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "5e746747fb70"
   },
   "core:FASTFIGHTING.Live.FastStopped.tracker": {
    "repo": "core",

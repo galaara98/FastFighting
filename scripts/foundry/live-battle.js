@@ -58,7 +58,7 @@ import { randomSeed } from "../engine/rng.js";
 import { holderOf } from "../engine/behavior/troubles.js";
 import { perceives } from "../engine/behavior/senses.js";
 import { SystemAdapter } from "../adapters/adapter-base.js";
-import { FAST_MOVE_SPEED, FAST_STOP_NOTES, fastFightOffered, fastFightStop, fastTurnChange, hushDice, unhushDice, registerQuietDice } from "./fast-fight.js";
+import { FAST_MOVE_SPEED, FAST_STOP_NOTES, fastFightOffered, fastFightStop, fastTurnChange, fightMoment, stillSince, hushDice, unhushDice, registerQuietDice } from "./fast-fight.js";
 
 /** Does the helper do this itself (its own, not the base adapter's do-nothing)? */
 const offers = (adapter, name) => typeof adapter?.[name] === "function" && adapter[name] !== SystemAdapter.prototype[name];
@@ -739,9 +739,12 @@ async function turnBegins(combatant) {
     await moveOn();
     return;
   }
-  // (A Fast Fight goes on, unless this turn is its player's, or it has played the battle's Max rounds.)
+  // (A Fast Fight goes on, unless this turn is its player's, or a whole round has gone by with nothing changing.)
   if ( battle.fast ) {
-    checkFast({ playerTurn: playerRuns(battle.run, u), rounds: (battle.run.round ?? 0) - battle.fast.from, most: Number(battle.spec.options?.maxRounds) || Infinity });
+    const round = battle.run.round ?? 0;
+    const moment = fightMoment(battle.run.units);
+    if ( moment !== battle.fast.moment || !battle.fast.since ) Object.assign(battle.fast, { moment, since: { round, id: u.id } });
+    checkFast({ playerTurn: playerRuns(battle.run, u), still: stillSince(battle.fast.since, round, u.id) });
   }
   if ( playerRuns(battle.run, u) ) {
     await beginPlayerTurn(u, combatant);
@@ -3923,7 +3926,7 @@ export function fastFight() {
   if ( !fastOffered() ) return null;
   const auto = !!battle.data.auto;
   battle.data.auto = false;
-  battle.fast = { from: battle.run.round ?? 1, had: [...(battle.data.players ?? [])], pending: null };
+  battle.fast = { had: [...(battle.data.players ?? [])], pending: null, moment: fightMoment(battle.run.units), since: null };
   hushDice();
   changed();
   return queue(() => goFast(auto));
@@ -3960,7 +3963,7 @@ function checkFast(state = {}) {
   const why = fastFightStop({ players: battle.data.players ?? [], had: battle.fast.had, ...state });
   if ( !why ) return null;
   endFast();
-  if ( FAST_STOP_NOTES.includes(why) ) ui.notifications?.info(fmt(`FASTFIGHTING.Live.FastStopped.${why}`, { n: Number(battle.spec.options?.maxRounds) || 0 }));
+  if ( FAST_STOP_NOTES.includes(why) ) ui.notifications?.info(fmt(`FASTFIGHTING.Live.FastStopped.${why}`));
   changed();
   return why;
 }

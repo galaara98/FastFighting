@@ -193,7 +193,7 @@ The GMs' window for a live battle. It follows the turn the tracker shows, Foundr
 - **What happened at the table:** what FastFighting couldn't see (talked round by a Diplomacy roll, wanting to hurt someone, shaken, fleeing, surrendering), applied as the simulation would have.
 - **Conditions:** each with its value, its source, its duration, and whether the sheet shows it or FastFighting keeps it. The GM can put on any condition the core or the system knows, change a value, or take one off, including those toward someone (afraid of, grabbed by, goaded by, controlled by, tied up by, off guard to, and a power's mark). What the sheets can show goes on the sheet; the rest FastFighting keeps with the battle. Rewind takes a GM's change back with the turn it came after. Conditions drive behavior, not only numbers: a frightened creature keeps away from whoever frightened it, a grabbed one is set on whoever holds it, and a charmed one never attacks its charmer.
 - **Moving a creature** to another team works out again what it wants, and everyone's wishes toward it. A token on the map that isn't in the battle can be brought in.
-- **>> Fast Fight >>**, beside the turn bar's button when FastFighting plays every token (no character a player runs, or **Players run their characters** off): plays the rest of the fight at once. No turn card and no wait between turns, moves walked quickly, and Dice So Nice's 3D dice off until it stops. The rest is as usual: the system's cards, rolls and story in the chat, and each turn can be rewound afterwards. Unlike Play to the end, rolls stay in the chat; it turns Play to the end off. It stops when the battle ends, a player's character must act, something needs a GM (a roll to settle, a reaction to allow), you use the tracker, Next Turn or Rewind, or after the battle's Max rounds. **Stop** ends it after the turn under way.
+- **>> Fast Fight >>**, beside the turn bar's button when FastFighting plays every token (no character a player runs, or **Players run their characters** off): plays the rest of the fight at once. No turn card and no wait between turns, moves walked quickly, and Dice So Nice's 3D dice off until it stops. The rest is as usual: the system's cards, rolls and story in the chat, and each turn can be rewound afterwards. Unlike Play to the end, rolls stay in the chat; it turns Play to the end off. It stops when the battle ends, a player's character must act, something needs a GM (a roll to settle, a reaction to allow), you use the tracker, Next Turn or Rewind, or a whole round goes by with nothing changing (no one hurt, healed, fallen, fled, given up or talked over). **Stop** ends it after the turn under way.
 
 ### Rewind
 
@@ -358,7 +358,7 @@ World settings, under **Configure Settings → FastFighting**, in groups. The pl
 | Setting | Default | What it controls |
 | --- | --- | --- |
 | Prediction time (seconds) | 10 | How long the planner simulates. |
-| Max rounds | The system's (PF2e: 16, from 6 to 16); else 12 | Rounds before a fight is a stalemate; Fast Fight stops there too. |
+| Max rounds | The system's (PF2e: 16, from 6 to 16); else 12 | Rounds before a simulated fight is a stalemate. A live battle never ends as one. |
 | Include hidden tokens | on | Hidden tokens outside the encounter take part. |
 | Include other scene levels | off | Tokens outside the encounter on the scene's other levels take part. |
 | Bystanders can join | on | Tokens outside the encounter may join. |

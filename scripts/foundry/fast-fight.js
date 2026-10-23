@@ -32,23 +32,37 @@ export function fastFightOffered({ running = false, started = false, ended = fal
  *   - asks: a GM is wanted ("roll", a save or check the helper leaves to them; "question", a reaction to allow;
  *     "damage", a player's reaction's damage to say; "player", a player's reaction to wait on; "review", a player's
  *     turn to look over; "spotlight", the spotlight to give);
- *   - rounds and most: the rounds played since it began, and how many it may play (the battle's Max rounds), so a
- *     fight that won't end isn't played on and on.
- * The first that holds is why: "pressed", "error", "ended", "tracker", "player", "gm" or "rounds".
+ *   - still: a whole round has gone by with nothing changing (stillSince), so a fight going nowhere isn't played on
+ *     and on. A live battle never ends as a stalemate: Max rounds is the simulation's alone.
+ * The first that holds is why: "pressed", "error", "ended", "tracker", "player", "gm" or "still".
  */
-export function fastFightStop({ pressed = false, failed = false, ended = false, change = null, playerTurn = false, players = [], had = [], asks = null, rounds = 0, most = Infinity } = {}) {
+export function fastFightStop({ pressed = false, failed = false, ended = false, change = null, playerTurn = false, players = [], had = [], asks = null, still = false } = {}) {
   if ( pressed ) return "pressed";
   if ( failed ) return "error";
   if ( ended ) return "ended";
   if ( change === "theirs" ) return "tracker";
   if ( playerTurn || (players ?? []).some(id => !(had ?? []).includes(id)) ) return "player";
   if ( asks ) return "gm";
-  if ( Number.isFinite(most) && most > 0 && rounds >= most ) return "rounds";
+  if ( still ) return "still";
   return null;
 }
 
+/** Where a fight stands, as one string: each creature's HP, its state, and whether it was talked over. */
+export function fightMoment(units = []) {
+  return units.map(u => `${u.id}:${Math.round(Number(u.hp) || 0)}:${u.status ?? ""}:${u.swayOutcome ?? ""}`).join("|");
+}
+
+/**
+ * A whole round gone by with nothing changing: `since`, the round and the creature whose turn it was when the fight
+ * last changed (fightMoment); `round` and `id`, the turn beginning now. That creature's turn has come round again, or
+ * two rounds have begun since (its turns may have stopped coming).
+ */
+export function stillSince(since, round, id) {
+  return !!since && (round - since.round >= 2 || (round > since.round && id === since.id));
+}
+
 /** Why it stopped, said to the GMs (what they didn't do themselves): FASTFIGHTING.Live.FastStopped.<why>. */
-export const FAST_STOP_NOTES = Object.freeze(["tracker", "player", "gm", "rounds"]);
+export const FAST_STOP_NOTES = Object.freeze(["tracker", "player", "gm", "still"]);
 
 /**
  * A turn change on the tracker while a Fast Fight runs (Foundry's combatTurnChange: `prior` and `current`, each
