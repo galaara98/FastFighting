@@ -18595,7 +18595,8 @@
    "date": null,
    "commit": null,
    "hash": "eb57768a975a",
-   "changed": true
+   "changed": true,
+   "gone": "2026-10-23"
   },
   "core:FASTFIGHTING.Results.EmptyTitle": {
    "repo": "core",
@@ -18605,7 +18606,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "17b972911a0e"
+   "hash": "17b972911a0e",
+   "changed": true
   },
   "core:FASTFIGHTING.Results.FallsFirst": {
    "repo": "core",
