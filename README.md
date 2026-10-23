@@ -340,7 +340,7 @@ World settings, under **Configure Settings → FastFighting**, in groups. The pl
 | Play the fight on the map | on | Tokens walk their turns; off, they jump to where each turn leaves them. |
 | Players run their characters | on | Players take their own characters' turns; off, FastFighting plays every turn. |
 | Play for disconnected players | on | A character whose players have all disconnected gets a countdown in the Battle Vantage, and FastFighting plays it when that runs out; off, its turns wait. |
-| Disconnected player countdown (seconds) | 120 | How long that countdown lasts. |
+| Disconnected player countdown | 120 | How many seconds that countdown lasts. |
 | Apply players' damage | off | A player's damage card against a creature FastFighting runs is applied at once; off, the Battle Vantage asks a GM. Per battle in the planner and the Battle Vantage; greyed out where the system applies players' damage itself. |
 | Hold Next Turn for players | 10 s | While a player's turn waits for review, or their reaction is being rolled, the Battle Vantage's Next Turn stays locked this long: never at 0, until nothing waits at Unlimited. |
 

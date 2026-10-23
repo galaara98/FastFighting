@@ -252,8 +252,8 @@
         "Hint": "When all of a character's players have disconnected, FastFighting plays its turns after a countdown shown in the Battle Vantage. A player who returns takes over again after 12 seconds."
       },
       "autoPlayAbsentSeconds": {
-        "Name": "Disconnected player countdown (seconds)",
-        "Hint": "How long FastFighting waits before playing for a disconnected player."
+        "Name": "Disconnected player countdown",
+        "Hint": "How many seconds FastFighting waits before playing for a disconnected player."
       },
       "ignoreTroubles": {
         "Name": "Selfless creature shrugs off troubles",
