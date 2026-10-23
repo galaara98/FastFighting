@@ -1,0 +1,35 @@
+{{!-- The Battle Vantage's turn bar: whose turn, what it's waiting for, the one thing to press now (primary, by state); the turn order under it. --}}
+<header class="ff-turnbar">
+  {{#if none}}
+  <p class="ff-battle-none">{{localize "FASTFIGHTING.Battle.None"}}</p>
+  {{else}}
+  <div class="ff-turnbar-row">
+    {{#if started}}<span class="ff-round">{{localize "FASTFIGHTING.Battle.Round" n=round}}</span>{{/if}}
+    {{#with current}}<button type="button" class="ff-current ff-t-{{team.short}}" data-action="focusCreature" data-creature="{{id}}" data-tooltip-text="{{turn}}"><img src="{{img}}" alt=""><b>{{name}}</b>{{#if team}}<span class="ff-team ff-t-{{team.short}}">{{team.label}}</span>{{/if}}{{#if hp}}<span class="ff-current-hp">{{hp}}</span>{{/if}}</button>{{/with}}
+    <span class="ff-state ff-state--{{stateTone}}" role="status">{{stateText}}</span>
+    {{#if waitingCount}}<button type="button" class="ff-chip ff-chip--attention" data-action="sideTab" data-tab="waiting"><i class="fa-solid fa-bell" aria-hidden="true"></i> {{waitingText}}</button>{{/if}}
+    {{#each flags}}<span class="ff-chip">{{this}}</span>{{/each}}
+    <span class="ff-grow"></span>
+    {{#if started}}<button type="button" class="ff-btn ff-btn--quiet {{#unless canRewind}}is-disabled{{/unless}}" data-action="rewind" {{#unless canRewind}}aria-disabled="true"{{/unless}} data-tooltip="{{rewindTip}}"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> {{localize "FASTFIGHTING.Live.Rewind"}}</button>{{/if}}
+    {{#with secondary}}<button type="button" class="ff-btn {{cls}}" data-action="{{action}}" {{#if tooltip}}data-tooltip="{{tooltip}}"{{/if}}><i class="fa-solid {{icon}}" aria-hidden="true"></i> {{label}}</button>{{/with}}
+    {{#with primary}}
+    <button type="button" class="ff-btn ff-btn--primary {{cls}} {{#if held}}is-disabled{{/if}}" data-action="{{action}}" {{#if held}}aria-disabled="true"{{/if}} {{#if holdUntil}}data-hold-until="{{holdUntil}}"{{/if}} {{#if tooltip}}data-tooltip="{{tooltip}}"{{/if}}>
+      <i class="fa-solid {{icon}}" aria-hidden="true"></i> <span class="ff-primary-label">{{label}}</span>{{#if count}} <span class="ff-count ff-count--attention" aria-label="{{countLabel}}">{{count}}</span>{{/if}}
+    </button>
+    {{/with}}
+    {{#if fastFight}}{{#unless fastRunning}}<button type="button" class="ff-btn ff-btn--bold" data-action="fastFight" data-tooltip="{{localize "FASTFIGHTING.Battle.FastFightHint"}}">{{localize "FASTFIGHTING.Battle.FastFight"}}</button>{{/unless}}{{/if}}
+    <button type="button" class="ff-btn ff-btn--quiet ff-btn--icon" popovertarget="ff-pop-battle" aria-haspopup="menu" aria-label="{{localize "FASTFIGHTING.Battle.Menu"}}" data-tooltip="{{localize "FASTFIGHTING.Battle.Menu"}}"><i class="fa-solid fa-ellipsis"></i></button>
+    <div class="ff-menu" id="ff-pop-battle" popover role="menu">
+      {{#each toggles}}<button type="button" class="ff-menu-item {{#if disabled}}is-disabled{{/if}}" role="menuitemcheckbox" aria-checked="{{#if on}}true{{else}}false{{/if}}" data-action="{{action}}" {{#if disabled}}aria-disabled="true"{{/if}}><i class="fa-regular {{#if on}}fa-square-check{{else}}fa-square{{/if}}" aria-hidden="true"></i> {{label}}</button>{{/each}}
+      {{#if canEnd}}<hr><button type="button" class="ff-menu-item" role="menuitem" data-action="endEncounter"><i class="fa-solid fa-flag-checkered" aria-hidden="true"></i> {{localize "COMBAT.End"}}</button>{{/if}}
+      <hr>
+      <button type="button" class="ff-menu-item ff-menu-item--danger" role="menuitem" data-action="rewindAll" data-keep-open="true" data-armed-label="{{localize "FASTFIGHTING.Battle.UndoArmed"}}"><i class="fa-solid fa-backward" aria-hidden="true"></i> <span>{{localize "FASTFIGHTING.MakeItSo.Undo"}}</span></button>
+    </div>
+  </div>
+  {{#if order.length}}
+  <div class="ff-order" role="toolbar" aria-label="{{localize "FASTFIGHTING.Battle.Order"}}">
+    {{#each order}}<button type="button" class="ff-order-chip ff-t-{{team.short}} {{cls}}" data-action="focusCreature" data-creature="{{id}}" tabindex="{{tab}}" {{#if current}}aria-current="true"{{/if}} aria-label="{{label}}"><img src="{{img}}" alt=""><span class="ff-order-name">{{name}}</span><span class="ff-order-hp">{{hp}}</span>{{#if queued}}<span class="ff-count ff-count--attention">{{queued}}</span>{{/if}}</button>{{/each}}
+  </div>
+  {{/if}}
+  {{/if}}
+</header>

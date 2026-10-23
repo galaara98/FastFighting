@@ -27,6 +27,7 @@ import { registerLiveBattles, liveBattle, followPlayersSay, systemAppliesText } 
 import { registerSheetWatch } from "./foundry/sheet-watch.js";
 import { registerSheetButton } from "./foundry/sheet-button.js";
 import { BattleVantage, registerBattleVantage } from "./apps/battle-vantage.js";
+import { HOLD_UNLIMITED } from "./apps/hold.js";
 
 Hooks.once("init", () => {
   registerSettings(DefaultsConfig, GenericPathsConfig, StoryTablesConfig, LiveDataConfig);
@@ -346,6 +347,7 @@ Hooks.on("renderSettingsConfig", (app, element) => {
   const root = element;
   const section = root?.querySelector(`section[data-category="${MODULE_ID}"]`);
   if ( !section ) return;
+  holdWords(section);
   section.querySelector(".ff-helper-notice")?.remove();
   // (Its settings and menus in their groups, each under its heading: settings.js.)
   groupSettings(section);
@@ -376,3 +378,24 @@ Hooks.on("renderSettingsConfig", (app, element) => {
     el.closest(".form-group")?.classList.add("ff-disabled");
   }
 });
+
+/**
+ * The Next Turn hold's slider (settings.js waitHold), its value in words beside it as it moves: Never (0), so many
+ * seconds, Unlimited (the last stop).
+ */
+function holdWords(section) {
+  const picker = section.querySelector(`[name="${MODULE_ID}.waitHold"]`);
+  if ( !picker ) return;
+  const shown = document.createElement("span");
+  shown.className = "ff-hold-words";
+  const say = () => {
+    const n = Number(picker.value ?? picker.querySelector("input")?.value) || 0;
+    shown.textContent = n <= 0 ? game.i18n.localize("FASTFIGHTING.Settings.waitHold.Never")
+      : n >= HOLD_UNLIMITED ? game.i18n.localize("FASTFIGHTING.Settings.waitHold.Unlimited")
+        : game.i18n.format("FASTFIGHTING.Settings.waitHold.Seconds", { n });
+  };
+  picker.after(shown);
+  picker.addEventListener("input", say);
+  picker.addEventListener("change", say);
+  say();
+}

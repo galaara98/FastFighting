@@ -1720,8 +1720,8 @@ async function clearAreas() {
 
 /** A reaction a player rolls themselves, waiting: {key, unitId, name, card, resolve}, or null. */
 let waiting = null;
-/** The reaction a player is rolling, for the Battle Vantage (its name and key), or null. */
-export const waitingReaction = () => (waiting ? { key: waiting.key, name: waiting.name } : null);
+/** The reaction a player is rolling, for the Battle Vantage (its name and key, and whose it is), or null. */
+export const waitingReaction = () => (waiting ? { key: waiting.key, name: waiting.name, unitId: waiting.unitId } : null);
 
 /**
  * A player's reaction, theirs to roll as they would on their turn: a card to them and the GMs (roll it, then I've done

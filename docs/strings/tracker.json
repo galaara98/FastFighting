@@ -1967,6 +1967,16 @@
    "commit": null,
    "hash": "e18ab74b8d39"
   },
+  "core:FASTFIGHTING.Battle.ActingNow": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.ActingNow",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "1de5d8357fa3"
+  },
   "core:FASTFIGHTING.Battle.Apply": {
    "repo": "core",
    "file": "languages/en.json",
@@ -2188,6 +2198,16 @@
    "date": null,
    "commit": null,
    "hash": "7f0239cb8e0e"
+  },
+  "core:FASTFIGHTING.Battle.Blocking": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.Blocking",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "c82ea69271ec"
   },
   "core:FASTFIGHTING.Battle.BringIn": {
    "repo": "core",
@@ -2675,6 +2695,36 @@
    "commit": null,
    "hash": "3b11544b5b94"
   },
+  "core:FASTFIGHTING.Battle.HoldCount": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.HoldCount",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "4b85cb6f1e28"
+  },
+  "core:FASTFIGHTING.Battle.HoldHint": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.HoldHint",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "50152ca62f27"
+  },
+  "core:FASTFIGHTING.Battle.HoldLockedHint": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.HoldLockedHint",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "ee52c19a2909"
+  },
   "core:FASTFIGHTING.Battle.HowWell": {
    "repo": "core",
    "file": "languages/en.json",
@@ -2716,6 +2766,16 @@
    "date": null,
    "commit": null,
    "hash": "0b5bf8ad6382"
+  },
+  "core:FASTFIGHTING.Battle.Menu": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.Menu",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "8251adedf638"
   },
   "core:FASTFIGHTING.Battle.More": {
    "repo": "core",
@@ -2949,6 +3009,16 @@
    "date": null,
    "commit": null,
    "hash": "6def91aa8d6f"
+  },
+  "core:FASTFIGHTING.Battle.Net.ResetShort": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.Net.ResetShort",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "daee7606b339"
   },
   "core:FASTFIGHTING.Battle.Net.RoleHint": {
    "repo": "core",
@@ -3293,6 +3363,16 @@
    "commit": null,
    "hash": "0739323eca57"
   },
+  "core:FASTFIGHTING.Battle.NothingWaiting": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.NothingWaiting",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "d61ed3c5af68"
+  },
   "core:FASTFIGHTING.Battle.NotInFight": {
    "repo": "core",
    "file": "languages/en.json",
@@ -3333,6 +3413,26 @@
    "date": null,
    "commit": null,
    "hash": "7e2d54a59d6c"
+  },
+  "core:FASTFIGHTING.Battle.Order": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.Order",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "5ea9ed5049ee"
+  },
+  "core:FASTFIGHTING.Battle.Panels": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.Panels",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "7d1ae4c26233"
   },
   "core:FASTFIGHTING.Battle.Persuaded": {
    "repo": "core",
@@ -3728,6 +3828,26 @@
    "commit": null,
    "hash": "e15f2a9cd315"
   },
+  "core:FASTFIGHTING.Battle.ReviewKind": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.ReviewKind",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "7470bd3bc2ab"
+  },
+  "core:FASTFIGHTING.Battle.ReviewTarget": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.ReviewTarget",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "231ecb65c34b"
+  },
   "core:FASTFIGHTING.Battle.ReviewTitle": {
    "repo": "core",
    "file": "languages/en.json",
@@ -3737,6 +3857,26 @@
    "date": null,
    "commit": null,
    "hash": "14f2f5f74e4b"
+  },
+  "core:FASTFIGHTING.Battle.RewindHint": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.RewindHint",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "f5b62b55cd58"
+  },
+  "core:FASTFIGHTING.Battle.RewindNone": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.RewindNone",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "c6347e8b1299"
   },
   "core:FASTFIGHTING.Battle.Round": {
    "repo": "core",
@@ -3757,6 +3897,26 @@
    "date": null,
    "commit": null,
    "hash": "8c6e1331a38e"
+  },
+  "core:FASTFIGHTING.Battle.SkipTurn": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.SkipTurn",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "16c516e22a12"
+  },
+  "core:FASTFIGHTING.Battle.SkipTurnHint": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.SkipTurnHint",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "7ad7acbac058"
   },
   "core:FASTFIGHTING.Battle.Spotlight": {
    "repo": "core",
@@ -3808,6 +3968,16 @@
    "commit": null,
    "hash": "6dbc080db4ab"
   },
+  "core:FASTFIGHTING.Battle.State.review": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.State.review",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "9fb3a1203c7d"
+  },
   "core:FASTFIGHTING.Battle.State.spotlight": {
    "repo": "core",
    "file": "languages/en.json",
@@ -3836,7 +4006,38 @@
    "status": "written",
    "date": "2026-10-17",
    "commit": "3f939e5",
-   "hash": "d9e4ada73885"
+   "hash": "d9e4ada73885",
+   "changed": true
+  },
+  "core:FASTFIGHTING.Battle.Tab.creature": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.Tab.creature",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "fc1599a5b766"
+  },
+  "core:FASTFIGHTING.Battle.Tab.teams": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.Tab.teams",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "1e1a1c078af2"
+  },
+  "core:FASTFIGHTING.Battle.Tab.waiting": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.Tab.waiting",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "6e293a8c009e"
   },
   "core:FASTFIGHTING.Battle.Talk.deceive": {
    "repo": "core",
@@ -3867,6 +4068,56 @@
    "date": null,
    "commit": null,
    "hash": "1e6995ac6431"
+  },
+  "core:FASTFIGHTING.Battle.TeamStance.harm": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.TeamStance.harm",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "54ba6f7ea5a2"
+  },
+  "core:FASTFIGHTING.Battle.TeamStance.leave": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.TeamStance.leave",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "0fcd04e3e207"
+  },
+  "core:FASTFIGHTING.Battle.TeamStance.prey": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.TeamStance.prey",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "33a73e75f18c"
+  },
+  "core:FASTFIGHTING.Battle.TeamStance.save": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.TeamStance.save",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "c7bfc30363c1"
+  },
+  "core:FASTFIGHTING.Battle.TeamStance.wait": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.TeamStance.wait",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "19cd60c36f94"
   },
   "core:FASTFIGHTING.Battle.TellIt": {
    "repo": "core",
@@ -3929,6 +4180,16 @@
    "commit": null,
    "hash": "44841358d9d2"
   },
+  "core:FASTFIGHTING.Battle.UndoArmed": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.UndoArmed",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "e06217a828e5"
+  },
   "core:FASTFIGHTING.Battle.Until": {
    "repo": "core",
    "file": "languages/en.json",
@@ -3948,6 +4209,16 @@
    "date": null,
    "commit": null,
    "hash": "82fa6da4cd41"
+  },
+  "core:FASTFIGHTING.Battle.WaitingCount": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.WaitingCount",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "46e45dfdbd01"
   },
   "core:FASTFIGHTING.Battle.WaitingReaction": {
    "repo": "core",
@@ -20568,6 +20839,56 @@
    "date": null,
    "commit": null,
    "hash": "c3af076f92c5"
+  },
+  "core:FASTFIGHTING.Settings.waitHold.Hint": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Settings.waitHold.Hint",
+   "area": "core/Settings",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "d341e8e70cbd"
+  },
+  "core:FASTFIGHTING.Settings.waitHold.Name": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Settings.waitHold.Name",
+   "area": "core/Settings",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "382e15a16ae1"
+  },
+  "core:FASTFIGHTING.Settings.waitHold.Never": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Settings.waitHold.Never",
+   "area": "core/Settings",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "6300ef800bb8"
+  },
+  "core:FASTFIGHTING.Settings.waitHold.Seconds": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Settings.waitHold.Seconds",
+   "area": "core/Settings",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "8e6df4a0a820"
+  },
+  "core:FASTFIGHTING.Settings.waitHold.Unlimited": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Settings.waitHold.Unlimited",
+   "area": "core/Settings",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "11dde17d6c3e"
   },
   "core:FASTFIGHTING.Side.friendly": {
    "repo": "core",

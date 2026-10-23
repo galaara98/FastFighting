@@ -270,6 +270,13 @@
       "Survey": {
         "Link": "Optional performance survey",
         "Hint": "Your setup, your battle and how many fights the planner ran: it helps make FastFighting faster."
+      },
+      "waitHold": {
+        "Name": "Hold Next Turn while a player is waited on (seconds)",
+        "Hint": "While a player's turn waits for review, or a player's reaction is being rolled, the Battle Vantage's Next Turn stays locked this long. 0: never. The last stop: until nothing waits.",
+        "Never": "Never",
+        "Seconds": "{n} s",
+        "Unlimited": "Unlimited"
       }
     },
     "Lean": {
@@ -2697,10 +2704,11 @@
       "State": {
         "ready": "Ready to play",
         "unstarted": "The encounter hasn't begun",
-        "waiting": "{name}'s turn finished, update Vantage as needed and then press Next Turn",
+        "waiting": "Played: check it, then Next Turn",
         "player": "The player is acting",
         "ended": "The battle is over",
-        "spotlight": "No one has the spotlight"
+        "spotlight": "No one has the spotlight",
+        "review": "{name}'s turn is in: check it"
       },
       "Spotlight": "Spotlight {name}",
       "Automate": "FastFighting plays their turns",
@@ -2867,7 +2875,8 @@
           "standDown": "Stands down before whom"
         },
         "FriendlyShort": "F",
-        "RoleHint": "Its place in the group's chain of command: whoever held it steps down, and desires are worked out again. Click again to take it out."
+        "RoleHint": "Its place in the group's chain of command: whoever held it steps down, and desires are worked out again. Click again to take it out.",
+        "ResetShort": "Reset"
       },
       "Attitude": {
         "wary": "Less willing to hear {name} out (×{n})",
@@ -2897,7 +2906,36 @@
       "ReinforcementsComing": "{n} coming next round",
       "ReinforcementsCall": "Call",
       "ReinforcementsHowMany": "How many",
-      "DealsWaiting": "Deals waiting for your review"
+      "DealsWaiting": "Deals waiting for your review",
+      "Panels": "Beside the map of minds",
+      "Tab": {
+        "waiting": "Waiting",
+        "creature": "Creature",
+        "teams": "Teams"
+      },
+      "WaitingCount": "{n} waiting",
+      "Blocking": "Holds up the battle",
+      "NothingWaiting": "Nothing needs you right now.",
+      "Menu": "Battle menu",
+      "Order": "Turn order",
+      "ActingNow": "acting now",
+      "SkipTurn": "Skip to Next Turn",
+      "SkipTurnHint": "Moves on without playing this turn.",
+      "HoldCount": "Next Turn · {n}s",
+      "HoldHint": "Something waits on you: Next Turn is held a moment (the Hold Next Turn setting).",
+      "HoldLockedHint": "Something waits on you: Next Turn is held until it's done (the Hold Next Turn setting).",
+      "RewindHint": "Undo the last turn.",
+      "RewindNone": "Nothing to rewind yet.",
+      "UndoArmed": "Press again: rewind the whole encounter",
+      "ReviewTarget": "At whom",
+      "ReviewKind": "How",
+      "TeamStance": {
+        "leave": "Leaving: the odds look too long.",
+        "save": "In the fight to save {target}.",
+        "harm": "In the fight against {target}.",
+        "wait": "Holding back while others fight.",
+        "prey": "Going after {target}."
+      }
     },
     "Goal": {
       "openDoor": "Through {thing}, to reach {name}",

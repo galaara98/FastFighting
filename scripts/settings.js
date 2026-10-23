@@ -32,6 +32,9 @@ const SETTINGS = {
   autoPlayAbsentSeconds: { group: "live", type: Number, default: 120, range: { min: 30, max: 600, step: 30 } },
   // Live: a player's damage card against a creature FastFighting runs, applied at once (off: a GM is asked).
   applyPlayerDamage: { group: "live", type: Boolean, default: false },
+  // Live: the Battle Vantage's Next Turn held this many seconds while a player's turn or reaction waits on the GM (0:
+  // never; the last stop, 61: until nothing waits). apps/battle-vantage.js holdOf.
+  waitHold: { group: "live", type: Number, default: 10, range: { min: 0, max: 61, step: 1 } },
 
   storyStyle: { group: "story", type: String, default: "roleplay", choices: choices(["roleplay", "standard", "statistician"], "Story.Style") },
   storyMode: { group: "story", type: String, default: "public", choices: choices(["public", "whisper"], "Story.Mode") },

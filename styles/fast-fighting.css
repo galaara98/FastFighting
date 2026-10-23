@@ -420,26 +420,8 @@
 
 
 /* ---------- Battle Vantage ---------- */
-.fast-fighting.ff-battle .window-content { padding: 0; overflow: hidden; }
-.ff-battle-body { display: flex; flex-direction: column; height: 100%; }
-.ff-battle-none { padding: 1rem; }
-.ff-battle-turn { padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--ff-line, #8884); display: flex; flex-direction: column; gap: 0.4rem; }
-.ff-battle-now { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
-.ff-battle-state { margin-left: auto; font-size: 0.85em; opacity: 0.8; }
-.ff-battle-state.waiting, .ff-battle-state.unstarted { color: var(--ff-attention); opacity: 1; }
-.ff-battle-buttons { display: flex; gap: 0.35rem; flex-wrap: wrap; }
-/* (Rewind This Encounter: well away from the rest, so it isn't clicked by mistake.) */
-.ff-battle-buttons .ff-far-right { margin-left: auto; }
-.ff-encounter-buttons { display: flex; gap: 0.35rem; }
-/* (Fast Fight, beside Next Turn; its Stop while it runs.) */
-.ff-btn.ff-fast { font-weight: 700; }
-.ff-btn.ff-fast.is-running { border-color: var(--ff-accent); color: var(--ff-accent); }
 /* (A toggle the system's own setting takes over: greyed out.) */
 label.is-disabled, .form-group.is-disabled { opacity: 0.5; }
-/* (Players' damage waiting on a GM, in the Battle Vantage.) */
-.ff-battle-damage ul { margin: 0; padding-left: 1.2rem; }
-.ff-battle-damage li { display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap; }
-.ff-battle-damage li .ff-btn { padding: 0 6px; }
 /* (The planner or the Battle Vantage about to show another scene's or encounter's: two quick orange blinks.) */
 .ff-blink { animation: ff-blink 0.25s ease-in-out 2; }
 @keyframes ff-blink { 50% { outline: 3px solid var(--ff-accent); box-shadow: 0 0 14px 4px var(--ff-accent); } }
@@ -447,16 +429,7 @@ label.is-disabled, .form-group.is-disabled { opacity: 0.5; }
 .ff-btn.ff-glow { border-color: var(--ff-accent); box-shadow: 0 0 6px 1px var(--ff-accent); animation: ff-glow 1.6s ease-in-out infinite; }
 @keyframes ff-glow { 50% { box-shadow: 0 0 12px 3px var(--ff-accent); } }
 @media (prefers-reduced-motion: reduce) { .ff-btn.ff-glow { animation: none; } }
-/* (The planner's toggles grow to fill a row; here, in a column, they'd take its height.) */
-.ff-battle-turn .ff-toggles { flex: none; display: flex; flex-wrap: wrap; gap: 0.25rem 1rem; }
-.ff-battle-held ul { margin: 0; padding-left: 1.2rem; }
-/* The map of minds (battle-network.js), and the focused creature beside it. */
-.ff-battle-body { container-type: inline-size; }
-.ff-battle-main { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) minmax(230px, 300px); }
-@container (max-width: 640px) {
-  .ff-battle-main { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) minmax(160px, 42%); }
-  .ff-battle-side { border-left: none; border-top: 1px solid var(--ff-line); }
-}
+/* The map of minds (battle-network.js). */
 .ff-net {
   --ff-net-bg: light-dark(#f4f1ea, #232120);
   --ff-net-protect: light-dark(#2f6db5, #6aa8f0);
@@ -554,34 +527,27 @@ label.is-disabled, .form-group.is-disabled { opacity: 0.5; }
 .ff-net-menu { position: absolute; z-index: 20; margin: 0; padding: 4px; list-style: none; min-width: 10rem; border-radius: 6px; border: 1px solid var(--ff-line); background: var(--ff-net-bg); box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35); }
 .ff-net-menu button { width: 100%; text-align: left; border: none; background: none; padding: 4px 8px; display: flex; gap: 6px; align-items: center; }
 .ff-net-menu button:hover { background: var(--ff-surface-2); }
-.ff-battle-teams div { display: flex; flex-wrap: wrap; gap: 4px; }
-.ff-battle-teams .ff-team-pills { align-items: center; gap: 6px; }
-.ff-battle-teams .ff-roles { margin-left: 4px; }
-.ff-battle-teams .ff-btn { width: auto; padding: 0 0.5rem; font-size: 0.85em; }
-.ff-battle-teams .ff-btn.is-current { border-color: var(--ff-accent); color: var(--ff-accent); opacity: 1; }
 .ff-net-node.is-dim { opacity: 0.4; }
 .ff-net-name, .ff-net-status { position: absolute; left: 0; transform: translateX(-50%); white-space: nowrap; pointer-events: none; text-shadow: 0 0 3px var(--ff-net-bg), 0 0 3px var(--ff-net-bg); }
 .ff-net-name { top: 33px; font-size: 12px; font-weight: 600; }
 .ff-net-node.is-thing .ff-net-name { top: 22px; font-size: 11px; }
 .ff-net-status { top: 49px; font-size: var(--ff-text-xs); color: var(--ff-text-dim); }
-.ff-net-tools { position: absolute; right: 6px; top: 6px; display: flex; flex-direction: column; gap: 4px; z-index: 10; }
-.ff-net-tools button { width: 28px; height: 28px; padding: 0; line-height: 1; }
-.ff-battle-side { overflow-y: auto; padding: 0.5rem 0.75rem; border-left: 1px solid var(--ff-line); display: flex; flex-direction: column; gap: 0.45rem; }
-.ff-battle-side h3 { margin: 0; font-size: 1.05em; border: none; }
-.ff-battle-side .hint { margin: 0; }
-.ff-battle-side section > p { margin: 0 0 0.2rem; font-size: 0.8em; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ff-text-dim); }
+.ff-net-tools { position: absolute; right: 6px; top: 6px; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; z-index: 10; }
+.ff-net-tools button { width: 28px; height: 28px; min-height: 0; padding: 0; line-height: 1; }
+.ff-net-tools .ff-net-reset { display: inline-flex; align-items: center; gap: 4px; width: auto; padding: 0 8px; font-size: var(--ff-text-xs); }
+.ff-net-tools .ff-net-reset:disabled { opacity: 0.45; }
 .ff-battle-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.15rem; font-size: 0.9em; }
 .ff-battle-list li { display: flex; align-items: center; gap: 0.35rem; }
 .ff-battle-list li > i { width: 1.1em; text-align: center; opacity: 0.8; }
 .ff-battle-list .ff-net-steps { display: inline-flex; margin-left: auto; }
 .ff-battle-list .is-gm { font-style: italic; }
 .ff-battle-list .is-stub { opacity: 0.7; }
-.ff-battle-who { display: flex; align-items: center; gap: 0.5rem; }
-.ff-battle-add { margin-top: 0.2rem; padding: 0 0.5rem; font-size: 0.85em; width: auto; }
-.ff-battle-add-row { display: flex; align-items: center; gap: 0.5rem; }
+.ff-battle-who { display: flex; align-items: center; gap: 10px; }
+.ff-battle-who h3 { margin: 0; border: none; font-size: var(--ff-text-lg); }
+.ff-battle-add-row { display: flex; align-items: center; gap: 0.5rem; margin-top: 4px; }
 .ff-away-timer { display: inline-flex; align-items: center; gap: 0.25em; margin-top: 0.2rem; font-size: 0.85em; font-variant-numeric: tabular-nums; color: var(--ff-text-dim); }
 .ff-add-line .hint { margin: 0 0 0.4rem; }
-.ff-battle-who img { width: 40px; height: 40px; border: none; object-fit: contain; }
+.ff-battle-who img { width: 44px; height: 44px; border: none; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 3px var(--ff-tc, var(--ff-muted)); }
 .ff-battle-meta { display: block; font-size: 0.85em; opacity: 0.8; }
 .ff-battle-automate { display: flex; align-items: center; gap: 0.3em; font-size: 0.85em; }
 
@@ -590,9 +556,9 @@ label.is-disabled, .form-group.is-disabled { opacity: 0.5; }
 .ff-reactions, .ff-rerolls { margin: 0.4rem 0; }
 .ff-reaction { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; margin: 0.2rem 0; }
 .ff-reaction select { max-width: 50%; }
-.ff-battle-review { padding: 0.5rem 0.75rem; border-bottom: 2px solid var(--ff-attention); background: var(--ff-attention-bg); }
-.ff-battle-review ul { list-style: none; margin: 0.3rem 0; padding: 0; }
-.ff-battle-review li { display: flex; gap: 0.3rem; align-items: center; flex-wrap: wrap; margin: 0.2rem 0; }
+.ff-battle-review { display: flex; flex-direction: column; gap: 8px; }
+.ff-battle-review ul { display: flex; flex-direction: column; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.ff-battle-review li { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 6px 8px; border-radius: 6px; background: var(--ff-surface-2); }
 .ff-battle-review li.is-unsure label { font-style: italic; }
 /* A turn's card for the GMs only: what the players shouldn't learn. */
 .fast-fighting-story.ff-gm-only { border-left: 3px dashed var(--color-border-highlight, #ff6400); padding-left: 6px; }
@@ -641,11 +607,6 @@ label.is-disabled, .form-group.is-disabled { opacity: 0.5; }
 .ff-deal-offer { border: 1px dashed var(--color-border-light-tertiary, #888); border-radius: 4px; padding: 0.4rem; min-height: 2.5rem; }
 .ff-deal-offer input { width: 4rem; }
 .ff-deal-goods > * { flex-shrink: 0; }
-
-/* The Battle Vantage: each team's reinforcements, a line each */
-.fast-fighting .ff-battle-reinforce li { display: flex; align-items: center; gap: 0.5rem; }
-.fast-fighting .ff-battle-reinforce li > span { flex: 1; }
-.fast-fighting .ff-battle-reinforce li input[type="number"] { width: 3.5em; flex: 0 0 auto; }
 
 /* ==========================================================================
    Shared parts (the planner first; the Battle Vantage and the surveys too): a team's badge and color, a command role,
@@ -709,6 +670,7 @@ button.ff-chip:hover { border-color: var(--ff-line); color: var(--color-text-pri
 .ff-menu-item:hover { background: var(--ff-surface-2); }
 .ff-menu-item.active { background: var(--ff-surface-2); font-weight: 700; }
 .ff-menu-item--danger { color: var(--ff-hostile); }
+.ff-menu-item--danger.is-armed { background: color-mix(in srgb, var(--ff-hostile) 16%, transparent); font-weight: 700; }
 .ff-menu-head { margin: 0; padding: 4px 8px 2px; color: var(--ff-text-dim); font-size: var(--ff-text-xs); text-transform: uppercase; letter-spacing: 0.06em; }
 .ff-menu hr { margin: 4px 2px; border: none; border-top: 1px solid var(--ff-line); }
 /* A section: its title, what it's set to when closed, opened and closed by a click. */
@@ -866,3 +828,81 @@ button.ff-team-pick:hover { border-color: var(--ff-line); }
 .ff-pick-actor ul { max-height: 320px; margin: 6px 0; padding: 0; overflow-y: auto; list-style: none; }
 .ff-pick-actor li button { display: flex; align-items: center; justify-content: flex-start; gap: 8px; width: 100%; height: auto; min-height: 30px; margin: 1px 0; }
 .ff-pick-actor li img { width: 24px; height: 24px; border: none; border-radius: 50%; object-fit: cover; }
+
+/* ==========================================================================
+   The Battle Vantage: a turn bar (the turn order under it) over the map of minds and the tabs beside it.
+   ========================================================================== */
+.fast-fighting.ff-battle { container-type: inline-size; }
+.fast-fighting.ff-battle .window-content {
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 380px); grid-template-rows: auto minmax(0, 1fr);
+  padding: 0; overflow: hidden;
+}
+@container (max-width: 760px) {
+  .fast-fighting.ff-battle .window-content { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) minmax(200px, 45%); }
+  .ff-vside { border-top: 1px solid var(--ff-line); border-left: none; }
+}
+.ff-turnbar { grid-column: 1 / -1; border-bottom: 1px solid var(--ff-line); }
+.ff-battle-none { margin: 0; padding: 1rem; }
+.ff-turnbar-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; padding: 8px 12px; }
+.ff-turnbar .ff-btn { height: 32px; }
+.ff-round { font-size: var(--ff-text-lg); font-weight: 700; white-space: nowrap; }
+.ff-current {
+  display: inline-flex; align-items: center; gap: 8px; width: auto; height: auto; min-height: 0; margin: 0; padding: 3px 10px 3px 3px;
+  border: none; border-radius: 999px; background: var(--ff-surface-2); box-shadow: none; color: inherit;
+}
+.ff-current img { width: 28px; height: 28px; border: none; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 2px var(--ff-tc, var(--ff-muted)); }
+.ff-current-hp { color: var(--ff-text-dim); font-size: var(--ff-text-sm); }
+.ff-state { display: inline-flex; align-items: center; height: 24px; padding: 0 10px; border-radius: 999px; font-size: var(--ff-text-sm); font-weight: 600; white-space: nowrap; }
+.ff-state--info { background: var(--ff-surface-2); color: var(--ff-text-dim); }
+.ff-state--attention { background: var(--ff-attention-bg); color: var(--ff-attention); }
+.ff-state--ok { background: color-mix(in srgb, var(--ff-friendly) 16%, transparent); color: var(--ff-friendly); }
+.fast-fighting .ff-btn--bold { border-color: var(--ff-accent); background: none; color: var(--ff-accent); font-weight: 700; }
+.ff-count--attention { background: var(--ff-attention); color: #15141a; font-weight: 700; }
+.ff-order { display: flex; gap: 6px; padding: 0 12px 8px; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: thin; }
+.ff-order-chip {
+  position: relative; display: inline-flex; align-items: center; gap: 6px; flex: none; width: auto; height: 34px; min-height: 0; margin: 6px 0 0;
+  padding: 0 10px 0 3px; border: 1px solid var(--ff-line); border-radius: 999px; background: var(--ff-surface); box-shadow: none; color: inherit;
+  font-size: var(--ff-text-sm); white-space: nowrap;
+}
+.ff-order-chip img { width: 26px; height: 26px; border: none; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 2px var(--ff-tc, var(--ff-muted)); }
+.ff-order-hp { color: var(--ff-text-dim); font-size: var(--ff-text-xs); }
+.ff-order-chip.is-current { border: 2px solid var(--ff-accent); background: var(--ff-surface-2); font-weight: 700; }
+.ff-order-chip.is-focus { box-shadow: 0 0 0 2px var(--ff-focus); }
+.ff-order-chip.is-down, .ff-order-chip.is-out { opacity: 0.55; }
+.ff-order-chip.is-out .ff-order-name { text-decoration: line-through; }
+.ff-order-chip .ff-count { position: absolute; top: -6px; right: -6px; }
+.ff-battle-net { position: relative; display: flex; min-width: 0; min-height: 0; }
+.ff-battle-net .ff-net { flex: 1; }
+.ff-vside { display: flex; flex-direction: column; min-width: 0; min-height: 0; border-left: 1px solid var(--ff-line); }
+.ff-vside-body { display: flex; flex: 1; flex-direction: column; gap: 8px; min-height: 0; padding: 10px 12px; overflow-y: auto; }
+.ff-vside-hint { margin: 0; }
+.ff-vside-label { margin: 0 0 4px; color: var(--ff-text-dim); font-size: var(--ff-text-xs); text-transform: uppercase; letter-spacing: 0.06em; }
+.ff-vside .hint { margin: 0; }
+.ff-battle-focus { display: flex; flex-direction: column; gap: 12px; }
+.ff-battle-focus section { display: flex; flex-direction: column; gap: 4px; }
+.ff-queue { display: flex; flex-direction: column; gap: 8px; }
+.ff-qitem { display: flex; flex-direction: column; gap: 8px; padding: 8px 10px; border: 1px solid var(--ff-line); border-left: 4px solid var(--ff-line); border-radius: 8px; background: var(--ff-surface); }
+.ff-qitem.is-blocking { border-left-color: var(--ff-attention); }
+.ff-qitem-head { display: flex; align-items: center; gap: 8px; font-weight: 700; }
+.ff-qitem-head > i { color: var(--ff-text-dim); }
+.ff-qitem-block { margin-left: auto; color: var(--ff-attention); font-size: var(--ff-text-xs); font-weight: 700; white-space: nowrap; }
+.ff-qitem-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+.ff-qitem-list { display: flex; flex-direction: column; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.ff-qitem-list li { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.ff-qitem-text { flex: 1; min-width: 140px; }
+.ff-team-picker, .ff-role-picker { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.ff-team-choice {
+  flex: none; width: auto; min-width: 34px; height: var(--ff-target); min-height: 0; margin: 0; padding: 0 6px; border: 1px solid var(--ff-line);
+  border-radius: 999px; background: none; box-shadow: none; color: var(--ff-text-dim); font-size: var(--ff-text-xs); font-weight: 700;
+}
+.ff-team-choice:hover { border-color: var(--ff-tc, var(--ff-line)); }
+.ff-team-choice.active { border-color: var(--ff-tc); background: var(--ff-tc); color: var(--ff-on-team); }
+.ff-role-picker .ff-role.active { border-style: solid; background: var(--ff-command); color: light-dark(#fff, #15141a); }
+.ff-tcard { display: flex; flex-direction: column; gap: 6px; padding: 8px 10px; border: 1px solid var(--ff-line); border-left: 4px solid var(--ff-tc, var(--ff-muted)); border-radius: 8px; background: var(--ff-surface); }
+.ff-tcard-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.ff-stance { margin: 0; padding: 4px 8px; border-radius: 6px; background: var(--ff-surface-2); font-size: var(--ff-text-sm); }
+.ff-reinforce-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; color: var(--ff-text-dim); font-size: var(--ff-text-sm); }
+.ff-reinforce-text { flex: 1; min-width: 140px; }
+.ff-reinforce-row input[type="number"] { width: 3.5em; }
+/* The Next Turn hold's slider, in the settings: its value in words. */
+.ff-hold-words { margin-left: 8px; font-weight: 700; white-space: nowrap; }

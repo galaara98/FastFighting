@@ -168,7 +168,7 @@ export function mountNetwork(root, graph, { state, focus = null, onFocus = () =>
       <button type="button" data-net="in" data-tooltip-text="${escape(words.zoomIn)}" aria-label="${escape(words.zoomIn)}"><i class="fa-solid fa-magnifying-glass-plus"></i></button>
       <button type="button" data-net="out" data-tooltip-text="${escape(words.zoomOut)}" aria-label="${escape(words.zoomOut)}"><i class="fa-solid fa-magnifying-glass-minus"></i></button>
       <button type="button" data-net="fit" data-tooltip-text="${escape(words.fit)}" aria-label="${escape(words.fit)}"><i class="fa-solid fa-expand"></i></button>
-      <button type="button" data-net="reset" data-tooltip-text="${escape(words.reset)}" aria-label="${escape(words.reset)}"><i class="fa-solid fa-map-location-dot"></i></button>
+      <button type="button" class="ff-net-reset" data-net="reset" data-tooltip-text="${escape(words.reset)}" ${state.pinned.size ? "" : "disabled"}><i class="fa-solid fa-map-location-dot" aria-hidden="true"></i> ${escape(words.resetShort ?? "")}</button>
     </div>`;
 
   const world = root.querySelector(".ff-net-world");
@@ -288,6 +288,8 @@ export function mountNetwork(root, graph, { state, focus = null, onFocus = () =>
       const p = at.get(g);
       state.pinned.set(g, { x: p.x, y: p.y });
     }
+    // (Something moved: Reset lays them out as on the map again.)
+    root.querySelector('[data-net="reset"]')?.removeAttribute("disabled");
     onLayout();
   };
   /** The selection, as it is now (drawn on the nodes at once). */

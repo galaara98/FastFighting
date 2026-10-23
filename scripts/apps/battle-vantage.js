@@ -1,7 +1,10 @@
 /**
- * The Battle Vantage: the GM's window on a live battle (foundry/live-battle.js). Whose turn it is and what
- * FastFighting is waiting for (Continue, Rewind Turn, Play it, Rewind This Encounter, Play to the end, how NPCs'
- * reactions are decided); and a map of minds (battle-network.js): every creature on the map, every desire, condition,
+ * The Battle Vantage: the GM's window on a live battle (foundry/live-battle.js). A turn bar: whose turn it is, what
+ * FastFighting is waiting for, and the one thing to press now (Begin Encounter, Play it, Next Turn, Settle the
+ * aftermath), with Rewind beside it and the rest in its menu (Play to the end, how NPCs' reactions are decided, Rewind
+ * This Encounter); the turn order under it. Next Turn is held a moment (the waitHold setting) while a player's turn or
+ * reaction waits on the GM. Beside the map, three tabs: what waits on the GM, the creature in focus, the teams. And a
+ * map of minds (battle-network.js): every creature on the map, every desire, condition,
  * goal and way toward others as a line between two (a symbol on the creature, for what's its own), each with its
  * intensity to raise or lower (0 takes it away). Beside it, the creature in focus (clicked there, or its token
  * selected on the map): what it wants and what's on it, its conditions to put on (engine/conditions.js), and what came
@@ -10,7 +13,7 @@
  * shows the countdown until FastFighting plays it (foundry/away.js), ticking down beside Add. A token on the map not in
  * the battle can be brought into it.
  */
-import { NEUTRAL_PARTY, MODULE_ID, SIDES, HOSTILE_GROUPS, GROUPS, SIDE_SETTLE_MS } from "../constants.js";
+import { NEUTRAL_PARTY, MODULE_ID, SIDES, HOSTILE_GROUPS, GROUPS, SIDE_SETTLE_MS, TEAM_SHORT } from "../constants.js";
 
 /** A side picked for a creature, not yet worked out (SIDE_SETTLE_MS): {id, side, group, timer}, or null. */
 let pendingSide = null;
@@ -24,6 +27,9 @@ import { getAdapter } from "../api.js";
 import { roundsText, listJoin } from "../i18n.js";
 import { feetOnScene } from "../foundry/terrain.js";
 import { mountNetwork } from "./battle-network.js";
+import { listenMenus } from "./menus.js";
+import { holdOf } from "./hold.js";
+import { setting } from "../settings.js";
 import { blink, keepTyping } from "./blink.js";
 import { sceneEncounter, encounterNumber } from "../foundry/persistence.js";
 import { clockText } from "../foundry/away.js";
@@ -117,19 +123,22 @@ const shownStatus = u => {
 /** What happens to a creature's status on the map of minds: standing as it is, down greyed, out of it faded. */
 const statusClass = status => (status === "standing" ? "" : status === "down" ? "is-down" : "is-out");
 
-/** A team's short name, as the planner shows its teams (F, H1, ..., N3). */
-function teamLabel(key) {
-  const short = { friendly: "F", hostile: "H1", hostile2: "H2", hostile3: "H3", [`${NEUTRAL_PARTY}#1`]: "N1", [`${NEUTRAL_PARTY}#2`]: "N2", [`${NEUTRAL_PARTY}#3`]: "N3" }[key];
-  return short ? loc(`FASTFIGHTING.Planner.Team.${short}`) : key;
+/** A team's badge, as the planner shows its teams: its short name (F, H1, ..., N3) and its color. */
+function teamBadge(key) {
+  const short = TEAM_SHORT[key];
+  return short ? { short, label: loc(`FASTFIGHTING.Planner.Team.${short}`) } : { short: "none", label: key ?? "" };
 }
+
 
 export class BattleVantage extends HandlebarsApplicationMixin(ApplicationV2) {
   static DEFAULT_OPTIONS = {
     id: "fast-fighting-battle",
     classes: ["fast-fighting", "ff-battle"],
     window: { title: "FASTFIGHTING.Battle.Title", icon: "fa-solid fa-chess-knight", resizable: true },
-    position: { width: 980, height: 720 },
+    position: { width: 1100, height: 740 },
     actions: {
+      sideTab: BattleVantage.#onSideTab,
+      focusCreature: BattleVantage.#onFocusCreature,
       continue: BattleVantage.#onContinue,
       rewind: BattleVantage.#onRewind,
       play: BattleVantage.#onPlay,
@@ -158,7 +167,9 @@ export class BattleVantage extends HandlebarsApplicationMixin(ApplicationV2) {
   };
 
   static PARTS = {
-    main: { template: "modules/fast-fighting/templates/battle-vantage.hbs", scrollable: [".ff-battle-side"] }
+    turnbar: { template: "modules/fast-fighting/templates/battle/turnbar.hbs", scrollable: [".ff-order"] },
+    net: { template: "modules/fast-fighting/templates/battle/net.hbs" },
+    side: { template: "modules/fast-fighting/templates/battle/side.hbs", scrollable: [".ff-vside-body"] }
   };
 
   /** Open it (GMs only), or bring it to the front. */
@@ -172,18 +183,25 @@ export class BattleVantage extends HandlebarsApplicationMixin(ApplicationV2) {
     return new BattleVantage().render({ force: true });
   }
 
-  /** Drawn again, if it's open. */
+  /** Drawn again, if it's open: its turn bar and tabs (the map of minds again only if what it shows has changed). */
   static refresh() {
-    foundry.applications.instances.get("fast-fighting-battle")?.render();
+    foundry.applications.instances.get("fast-fighting-battle")?.render({ parts: ["turnbar", "side"] });
   }
 
   /** The creature (or token, or thing) in focus: its node's id. */
   #focus = null;
   /** The encounter it shows (by id): the scene's on screen, as the tracker views it. */
   #shownId = undefined;
-  /** What the GM had picked in a player's turn under review, by battle, kept while another encounter is shown. */
+  /** What the GM has picked in a player's turn under review, kept across drawings (and while another encounter is shown). */
   #drafts = new Map();
   #following = false;
+  /** The tab beside the map: waiting, creature, teams. */
+  #tab = "waiting";
+  /** When each thing that holds the battle up first came (by its queue id): Next Turn's hold counts from the newest. */
+  #seen = new Map();
+  /** The hold's countdown on Next Turn, ticking (#holdTick); the map of minds' signature, drawn as it is (#mount). */
+  #holdTicker = null;
+  #graphSig = null;
 
   /** In the title bar: the scene, and which of its encounters, when it has more than one (the tracker's number). */
   get title() {
@@ -218,21 +236,27 @@ export class BattleVantage extends HandlebarsApplicationMixin(ApplicationV2) {
     }
   }
 
-  /** A player's turn under review: what the GM had ticked and picked, kept for when its battle is shown again. */
+  /** Which review a draft is for: its battle, its player's creature, its events. */
+  #draftKey(b) {
+    return b?.review ? `${b.data.id}|${b.review.id}|${b.review.events.length}` : null;
+  }
+
+  /** A player's turn under review: what the GM has ticked and picked, kept for when it's drawn again. */
   #keepDraft() {
     const b = liveBattle();
     const review = this.element?.querySelector(".ff-battle-review");
-    if ( !b || !review ) return;
-    this.#drafts.set(b.data.id, [...review.querySelectorAll("[data-event]")].map(li => ({
+    const key = this.#draftKey(b);
+    if ( !key || !review ) return;
+    this.#drafts.set(key, [...review.querySelectorAll("[data-event]")].map(li => ({
       i: li.dataset.event, values: [...li.querySelectorAll("input, select")].map(f => (f.type === "checkbox" ? f.checked : f.value))
     })));
   }
 
   #restoreDraft(b) {
-    const draft = b ? this.#drafts.get(b.data.id) : null;
+    const key = this.#draftKey(b);
+    const draft = key ? this.#drafts.get(key) : null;
     const review = this.element?.querySelector(".ff-battle-review");
     if ( !draft || !review ) return;
-    this.#drafts.delete(b.data.id);
     for ( const { i, values } of draft ) {
       const fields = [...(review.querySelector(`[data-event="${i}"]`)?.querySelectorAll("input, select") ?? [])];
       fields.forEach((f, k) => {
@@ -261,27 +285,13 @@ export class BattleVantage extends HandlebarsApplicationMixin(ApplicationV2) {
     return game.user.isGM;
   }
 
-  /** Where the GM put the nodes and how far it's zoomed, for this battle (kept in this browser). */
+  /**
+   * Where the GM put the nodes and how far it's zoomed, for this battle: kept only while the window is open (opened
+   * again, everyone is laid out as their tokens stand on the map).
+   */
   #layoutFor(battleId) {
-    if ( this.#layout?.battleId === battleId ) return this.#layout;
-    let kept = null;
-    try {
-      kept = JSON.parse(localStorage.getItem(`fast-fighting.network.${battleId}`) ?? "null");
-    } catch ( err ) {
-      kept = null;
-    }
-    this.#layout = { battleId, pinned: new Map(Array.isArray(kept?.pinned) ? kept.pinned : []), view: kept?.view ?? null };
+    if ( this.#layout?.battleId !== battleId ) this.#layout = { battleId, pinned: new Map(), view: null };
     return this.#layout;
-  }
-
-  #keepLayout() {
-    const l = this.#layout;
-    if ( !l ) return;
-    try {
-      localStorage.setItem(`fast-fighting.network.${l.battleId}`, JSON.stringify({ pinned: [...l.pinned], view: l.view }));
-    } catch ( err ) {
-      // (Nowhere to keep it: it's laid out from the map again next time.)
-    }
   }
 
   /** A token selected on the map: its creature in focus here (if it's on the battle's map). */
@@ -295,13 +305,14 @@ export class BattleVantage extends HandlebarsApplicationMixin(ApplicationV2) {
     this.render();
   }
 
-  /** In focus here, and its token selected on the map. */
+  /** In focus here (the Creature tab), and its token selected on the map. */
   #focusOn(id) {
     this.#focus = id;
+    if ( id ) this.#tab = "creature";
     const tokenId = this.#tokenOf(id);
     const token = tokenId ? canvas.tokens?.get(tokenId) : null;
     if ( token && !token.controlled && canvas.scene?.id === liveBattle()?.scene.id ) token.control({ releaseOthers: true });
-    this.render();
+    this.render({ parts: ["turnbar", "side"] });
   }
 
   #tokenOf(id) {
@@ -314,13 +325,63 @@ export class BattleVantage extends HandlebarsApplicationMixin(ApplicationV2) {
     const { context, graph, focus } = battleContext(b, this.#focus);
     this.#graph = graph;
     this.#focus = focus;
+    if ( context.none ) return context;
+    // (What holds the battle up: when each came. One just come brings the Waiting tab to the front.)
+    const now = Date.now();
+    const blocking = context.queue.filter(q => q.blocking);
+    const fresh = blocking.filter(q => !this.#seen.has(q.id));
+    for ( const q of fresh ) this.#seen.set(q.id, now);
+    for ( const id of [...this.#seen.keys()] ) if ( !blocking.some(q => q.id === id) ) this.#seen.delete(id);
+    if ( fresh.length ) this.#tab = "waiting";
+    // (Next Turn held a moment while something waits on the GM: the waitHold setting.)
+    const p = context.primary;
+    if ( p?.action === "continue" && blocking.length ) {
+      const hold = holdOf(blocking.map(q => this.#seen.get(q.id)), now, Number(setting("waitHold")) || 0);
+      Object.assign(p, { count: blocking.length, countLabel: context.waitingText });
+      if ( hold.held ) {
+        Object.assign(p, {
+          held: true, holdUntil: hold.until ?? "", icon: hold.until ? "fa-hourglass-half" : "fa-lock",
+          label: hold.until ? fmt("FASTFIGHTING.Battle.HoldCount", { n: hold.left }) : loc("FASTFIGHTING.Live.NextTurn"),
+          tooltip: loc(hold.until ? "FASTFIGHTING.Battle.HoldHint" : "FASTFIGHTING.Battle.HoldLockedHint")
+        });
+      }
+    }
+    context.tab = this.#tab;
+    context.tabs = ["waiting", "creature", "teams"].map(id => ({
+      id, label: loc(`FASTFIGHTING.Battle.Tab.${id}`), active: this.#tab === id,
+      count: id === "waiting" ? context.queue.length : id === "teams" ? context.teamsComing : 0, attention: id === "waiting" ? blocking.length > 0 : id === "teams"
+    }));
     return context;
   }
 
   _onFirstRender(context, options) {
     super._onFirstRender?.(context, options);
-    this.element.addEventListener("pointerenter", () => { this.#hovering = true; });
-    this.element.addEventListener("pointerleave", () => { this.#hovering = false; });
+    const el = this.element;
+    el.addEventListener("pointerenter", () => { this.#hovering = true; });
+    el.addEventListener("pointerleave", () => { this.#hovering = false; });
+    listenMenus(el);
+    // (The review's picks kept as they're made.)
+    el.addEventListener("change", event => {
+      if ( event.target.closest?.(".ff-battle-review") ) this.#keepDraft();
+    });
+    // The turn order: the mouse wheel scrolls it sideways; the arrow keys go from one to the next.
+    el.addEventListener("wheel", event => {
+      const strip = event.target.closest?.(".ff-order");
+      if ( !strip || Math.abs(event.deltaY) <= Math.abs(event.deltaX) ) return;
+      strip.scrollLeft += event.deltaY;
+      event.preventDefault();
+    }, { passive: false });
+    el.addEventListener("keydown", event => {
+      const chip = event.target.closest?.(".ff-order-chip");
+      if ( !chip || !["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key) ) return;
+      const chips = [...chip.parentElement.querySelectorAll(".ff-order-chip")];
+      const i = chips.indexOf(chip);
+      const j = event.key === "Home" ? 0 : event.key === "End" ? chips.length - 1 : (i + (event.key === "ArrowRight" ? 1 : -1) + chips.length) % chips.length;
+      chips[i].tabIndex = -1;
+      chips[j].tabIndex = 0;
+      chips[j].focus();
+      event.preventDefault();
+    });
   }
 
   /**
@@ -336,13 +397,30 @@ export class BattleVantage extends HandlebarsApplicationMixin(ApplicationV2) {
     super._onRender?.(context, options);
     // (The title bar as the encounter shown now is.)
     if ( this.window?.title && this.window.title.textContent !== this.title ) this.window.title.textContent = this.title;
-    this.#network?.destroy();
-    this.#network = null;
     this.#tick();
-    const root = this.element.querySelector(".ff-net");
+    this.#holdTick();
     const b = BattleVantage.shown();
     this.#restoreDraft(b);
-    if ( !root || !b || !this.#graph ) return;
+    this.#mount(b, options?.parts?.includes("net") ?? true);
+  }
+
+  /**
+   * The map of minds drawn: again when its part was (the window opened), or when what it shows has changed (its
+   * nodes, lines, symbols or focus); else left as it is, where the GM has it.
+   */
+  #mount(b, drawn) {
+    const root = this.element.querySelector(".ff-net");
+    if ( !root || !b || !this.#graph ) {
+      this.#network?.destroy();
+      this.#network = null;
+      this.#graphSig = null;
+      return;
+    }
+    const sig = JSON.stringify([this.#graph.focus, this.#graph.nodes.map(n => [n.id, n.cls, n.status, n.name, (n.marks ?? []).map(m => [m.id, m.text, m.cls])]),
+      this.#graph.edges.map(e => [e.id, e.cls, e.text, e.from, e.to])]);
+    if ( !drawn && this.#network && sig === this.#graphSig ) return;
+    this.#network?.destroy();
+    this.#graphSig = sig;
     const state = this.#layoutFor(b.data.id);
     this.#network = mountNetwork(root, this.#graph, {
       state, focus: this.#graph.focus,
@@ -350,14 +428,38 @@ export class BattleVantage extends HandlebarsApplicationMixin(ApplicationV2) {
       onAdjust: (adjust, step) => this.#adjust(adjust, step),
       onAdd: id => this.#addLine(id),
       onLayout: ({ redraw = false } = {}) => {
-        this.#keepLayout();
-        if ( redraw ) this.render();
+        if ( redraw ) this.#mount(BattleVantage.shown(), true);
       },
       words: {
-        zoomIn: loc("FASTFIGHTING.Battle.Net.ZoomIn"), zoomOut: loc("FASTFIGHTING.Battle.Net.ZoomOut"), fit: loc("FASTFIGHTING.Battle.Net.Fit"), reset: loc("FASTFIGHTING.Battle.Net.Reset"),
+        zoomIn: loc("FASTFIGHTING.Battle.Net.ZoomIn"), zoomOut: loc("FASTFIGHTING.Battle.Net.ZoomOut"), fit: loc("FASTFIGHTING.Battle.Net.Fit"),
+        reset: loc("FASTFIGHTING.Battle.Net.Reset"), resetShort: loc("FASTFIGHTING.Battle.Net.ResetShort"),
         select: loc("FASTFIGHTING.Battle.Net.Select"), unselect: loc("FASTFIGHTING.Battle.Net.Unselect"), selectTeam: loc("FASTFIGHTING.Battle.Net.SelectTeam"), selectLeader: loc("FASTFIGHTING.Battle.Net.SelectLeader")
       }
     });
+  }
+
+  /**
+   * Next Turn's hold counting down on the button, each second, without drawing the window again; the turn bar drawn
+   * again once it's up.
+   */
+  #holdTick() {
+    clearInterval(this.#holdTicker);
+    this.#holdTicker = null;
+    const button = this.element?.querySelector("[data-hold-until]");
+    const until = Number(button?.dataset.holdUntil);
+    if ( !button || !until ) return;
+    const show = () => {
+      const left = until - Date.now();
+      if ( left > 0 && button.isConnected ) {
+        const label = button.querySelector(".ff-primary-label");
+        if ( label ) label.textContent = fmt("FASTFIGHTING.Battle.HoldCount", { n: Math.ceil(left / 1000) });
+        return;
+      }
+      clearInterval(this.#holdTicker);
+      this.#holdTicker = null;
+      if ( this.rendered ) this.render({ parts: ["turnbar"] });
+    };
+    this.#holdTicker = setInterval(show, 250);
   }
 
   /**
@@ -388,8 +490,13 @@ export class BattleVantage extends HandlebarsApplicationMixin(ApplicationV2) {
   _onClose(options) {
     clearInterval(this.#ticking);
     this.#ticking = null;
+    clearInterval(this.#holdTicker);
+    this.#holdTicker = null;
     this.#network?.destroy();
     this.#network = null;
+    // (Opened again, the map of minds is laid out from the battle map.)
+    this.#layout = null;
+    this.#graphSig = null;
     settleSide();
     super._onClose?.(options);
   }
@@ -545,6 +652,19 @@ export class BattleVantage extends HandlebarsApplicationMixin(ApplicationV2) {
     await liveMind({ op: "role", id, slot, leadership: lends });
   }
 
+  /** The tab beside the map. */
+  static #onSideTab(event, target) {
+    if ( !["waiting", "creature", "teams"].includes(target.dataset.tab) ) return;
+    this.#tab = target.dataset.tab;
+    this.render({ parts: ["side"] });
+  }
+
+  /** A creature from the turn order, the turn bar or a team: in focus. */
+  static #onFocusCreature(event, target) {
+    const id = target.dataset.creature;
+    if ( id ) this.#focusOn(id);
+  }
+
   static async #onAddLine(event, target) {
     await this.#addLine(target.closest("[data-creature]")?.dataset.creature);
   }
@@ -595,11 +715,25 @@ export class BattleVantage extends HandlebarsApplicationMixin(ApplicationV2) {
     await endEncounter();
   }
 
-  static async #onRewindAll() {
-    const ok = await foundry.applications.api.DialogV2.confirm({
-      window: { title: loc("FASTFIGHTING.MakeItSo.UndoTitle") }, content: `<p>${foundry.utils.escapeHTML(loc("FASTFIGHTING.Live.RewindAllConfirm"))}</p>`
-    });
-    if ( ok ) await rewindEncounter();
+  /**
+   * Rewind This Encounter, in the battle's menu: a first press arms it (it says what a second press does), a second
+   * rewinds the whole encounter. Left armed a few seconds, it's disarmed.
+   */
+  static async #onRewindAll(event, target) {
+    if ( !target.classList.contains("is-armed") ) {
+      const label = target.querySelector("span");
+      target.classList.add("is-armed");
+      target.dataset.label = label?.textContent ?? "";
+      if ( label ) label.textContent = target.dataset.armedLabel ?? "";
+      setTimeout(() => {
+        if ( !target.isConnected || !target.classList.contains("is-armed") ) return;
+        target.classList.remove("is-armed");
+        if ( label ) label.textContent = target.dataset.label;
+      }, 5000);
+      return;
+    }
+    target.closest("[popover]")?.hidePopover?.();
+    await rewindEncounter();
   }
 
   /** A token on the map brought into the fight. */
@@ -615,6 +749,7 @@ export class BattleVantage extends HandlebarsApplicationMixin(ApplicationV2) {
   static #onTellIt(event, target) {
     const b = liveBattle();
     if ( !b?.review ) return;
+    this.#drafts.delete(this.#draftKey(b));
     const root = target.closest(".ff-battle-review");
     const events = [];
     b.review.events.forEach((e, i) => {
@@ -636,12 +771,18 @@ export class BattleVantage extends HandlebarsApplicationMixin(ApplicationV2) {
     finishReview(events);
   }
 
-  static async #onNpcReactions(event, target) {
-    await setNpcReactions(target.checked ? "ask" : "calculated");
+  /** Ask me about NPC reactions, on or off (the battle's menu). */
+  static async #onNpcReactions() {
+    const b = liveBattle();
+    if ( !b ) return;
+    await setNpcReactions(b.run.live.npcReactions === "ask" ? "calculated" : "ask");
   }
 
+  /** Play to the end, on or off (the battle's menu; not while a Fast Fight runs). */
   static async #onPlayThrough(event, target) {
-    await setPlayThrough(target.checked);
+    const b = liveBattle();
+    if ( !b || target.getAttribute("aria-disabled") === "true" ) return;
+    await setPlayThrough(!b.data.auto);
   }
 
   /** >> Fast Fight >>: the rest of the fight played at once; pressed again (Stop), it stops after the turn under way. */
@@ -653,7 +794,7 @@ export class BattleVantage extends HandlebarsApplicationMixin(ApplicationV2) {
   /** The GM calls a team's reinforcements: as many as its box says (one, unless changed). */
   static async #onReinforce(event, target) {
     const team = target.dataset.team;
-    const n = Number(target.closest("li")?.querySelector("input")?.value) || 1;
+    const n = Number(target.closest("[data-team]")?.querySelector("input")?.value) || 1;
     await liveReinforce(team, n);
     this.render();
   }
@@ -667,9 +808,11 @@ export class BattleVantage extends HandlebarsApplicationMixin(ApplicationV2) {
     endReaction(target.dataset.key, target.dataset.how === "skip" ? "skip" : "done");
   }
 
-  /** Apply players' damage, for this battle, from now on. */
+  /** Apply players' damage, for this battle, from now on, on or off (the battle's menu; greyed out where the system applies it). */
   static async #onApplyDamage(event, target) {
-    await setApplyDamage(target.checked);
+    const b = liveBattle();
+    if ( !b || target.getAttribute("aria-disabled") === "true" ) return;
+    await setApplyDamage(!b.data.applyDamage);
   }
 
   /** A player's damage waiting on a GM: applied (whole, half or double; to the creature picked, where it had none) or dismissed. */
@@ -712,41 +855,104 @@ export function battleContext(b, focusId = null) {
       degrees: [3, 2, 1, 0].map(d => ({ value: d, label: loc(`FASTFIGHTING.Battle.Degree.${d}`), selected: (e.degree ?? 2) === d }))
     }))
   } : null;
+  // What waits on the GM, in one queue: what holds the battle up first (a player's reaction being rolled, a player's
+  // turn to review), then the notes told with a player's turn, players' damage to apply, and deals to review.
+  const reaction = waitingReaction();
+  const damage = [...(b.pc?.damage ?? []), ...(b.data.waiting ?? [])].map(d => ({
+    key: d.key, save: d.save, needsTarget: !d.targetId,
+    text: fmt(d.healing ? "FASTFIGHTING.Battle.HealingLine" : "FASTFIGHTING.Battle.DamageLine", { by: d.by, target: d.targetId ? name(d.targetId) : loc("FASTFIGHTING.Battle.DamageNoTarget"), amount: d.amount }),
+    targets: d.targetId ? [] : run.units.filter(u => !run.live.players.has(u.id)).map(u => ({ value: u.id, label: u.spec.name }))
+  }));
+  const held = (b.pc?.facts ?? []).map((f, i) => ({ i, text: factText(f, name) }));
+  const deals = waitingDeals();
+  const queue = [
+    reaction ? { id: `reaction:${reaction.key}`, isReaction: true, blocking: true, key: reaction.key, unit: reaction.unitId, icon: "fa-bolt", title: fmt("FASTFIGHTING.Battle.WaitingReaction", { name: reaction.name }) } : null,
+    review ? { id: `review:${b.review.id}:${b.review.events.length}`, isReview: true, blocking: true, unit: b.review.id, icon: "fa-eye", title: review.title, events: review.events } : null,
+    held.length ? { id: "held", isHeld: true, icon: "fa-note-sticky", title: loc("FASTFIGHTING.Battle.Held"), held } : null,
+    damage.length ? { id: "damage", isDamage: true, icon: "fa-heart-crack", title: loc("FASTFIGHTING.Battle.DamageWaiting"), damage } : null,
+    deals.length ? { id: "deals", isDeals: true, icon: "fa-scale-balanced", title: loc("FASTFIGHTING.Battle.DealsWaiting"), deals } : null
+  ].filter(Boolean);
+  const blocking = queue.some(q => q.blocking);
+
+  // The turn bar: the one thing to press now, by state, and the one beside it.
+  const nextTurn = { action: "continue", icon: "fa-arrow-right", label: loc("FASTFIGHTING.Live.NextTurn") };
+  const canPlay = state === "ready" && !player && !fast;
+  let primary = nextTurn;
+  let secondary = null;
+  if ( fast ) primary = { action: "fastFight", icon: "fa-stop", label: loc("FASTFIGHTING.Battle.FastFightStop"), tooltip: loc("FASTFIGHTING.Battle.FastFightStopHint") };
+  else if ( !started ) primary = { action: "beginEncounter", icon: "fa-swords", label: loc("COMBAT.Begin"), cls: "ff-glow" };
+  else if ( state === "ended" ) {
+    primary = b.data.settled ? { action: "endEncounter", icon: "fa-flag-checkered", label: loc("COMBAT.End") }
+      : { action: "aftermath", icon: "fa-hand-holding-medical", label: loc("FASTFIGHTING.Live.Aftermath"), tooltip: loc("FASTFIGHTING.Live.AftermathHint") };
+    if ( !b.data.settled ) secondary = { action: "endEncounter", icon: "fa-flag-checkered", label: loc("COMBAT.End"), cls: "ff-btn--quiet" };
+  } else if ( canPlay ) {
+    primary = { action: "play", icon: "fa-play", label: loc("FASTFIGHTING.Live.Play") };
+    secondary = { ...nextTurn, label: loc("FASTFIGHTING.Battle.SkipTurn"), tooltip: loc("FASTFIGHTING.Battle.SkipTurnHint"), cls: "ff-btn--quiet" };
+  } else if ( next ) {
+    primary = { action: "spotlight", icon: "fa-lightbulb", label: fmt("FASTFIGHTING.Battle.Spotlight", { name: next.spec.name }), tooltip: loc("FASTFIGHTING.Battle.SpotlightHint") };
+    secondary = { ...nextTurn, cls: "ff-btn--quiet" };
+  }
+  const tone = { unstarted: "info", ready: "ok", waiting: "attention", player: blocking ? "attention" : "info", ended: "ok", spotlight: "info" }[state] ?? "info";
+  const stateText = state === "player" && b.review ? fmt("FASTFIGHTING.Battle.State.review", { name: current?.spec.name ?? "" })
+    : fmt(`FASTFIGHTING.Battle.State.${state}`, { name: current?.spec.name ?? "" });
+  const npcAsk = run.live.npcReactions === "ask";
+  const systemApplies = systemAppliesText();
+  const hpOf = u => (shownStatus(u) === "standing" ? `${shownHp(u)}/${u.maxHp}` : loc(`FASTFIGHTING.Status.${shownStatus(u)}`));
+  const imgOf = u => b.scene.tokens.get(tokenIdOf(u))?.texture?.src ?? u.spec.img ?? "icons/svg/mystery-man.svg";
+
+  // The turn order: the tracker's, each creature a chip (the one acting now ringed; down and out greyed; what waits on
+  // the GM about it, counted).
+  const queued = id => queue.filter(q => q.unit === id).length;
+  const units = (b.combat.turns ?? []).map(c => run.units.find(u => tokenIdOf(u) === c.tokenId)).filter((u, i, all) => u && all.indexOf(u) === i);
+  const order = units.map((u, i) => {
+    const status = shownStatus(u);
+    return {
+      id: u.id, name: u.spec.name, img: imgOf(u), team: teamBadge(groupKeyOf(u)), hp: hpOf(u), current: current?.id === u.id,
+      tab: current ? (current.id === u.id ? 0 : -1) : (i === 0 ? 0 : -1),
+      cls: [current?.id === u.id ? "is-current" : "", status === "down" ? "is-down" : status !== "standing" ? "is-out" : "", focusId === u.id ? "is-focus" : ""].join(" "),
+      label: `${u.spec.name}, ${hpOf(u)}${current?.id === u.id ? `, ${loc("FASTFIGHTING.Battle.ActingNow")}` : ""}`, queued: queued(u.id)
+    };
+  });
+
+  // The teams: each with its head, its view of the fight (behavior/stance.js), its creatures and its reinforcements.
+  const reinforcing = reinforcementsLeft();
+  const teamOrder = Object.keys(TEAM_SHORT);
+  const keys = [...new Set([...run.units.map(u => groupKeyOf(u)), ...reinforcing.map(r => r.team)].filter(Boolean))]
+    .sort((a, c) => (teamOrder.indexOf(a) + 1 || 99) - (teamOrder.indexOf(c) + 1 || 99));
+  const teamName = key => (key.startsWith(NEUTRAL_PARTY) ? fmt("FASTFIGHTING.Side.neutralGroup", { n: key.split("#")[1] }) : b.spec.sides?.[key]?.label ?? (has(`FASTFIGHTING.Side.${key}`) ? loc(`FASTFIGHTING.Side.${key}`) : key));
+  const teams = keys.map(key => {
+    const command = run.prep.command?.[key] ?? [];
+    const headEntry = command.find(c => c.slot === "boss") ?? command.find(c => c.slot === "leader");
+    const head = headEntry ? run.byId.get(headEntry.id) : null;
+    const stance = run.stance?.[key];
+    const r = reinforcing.find(x => x.team === key);
+    return {
+      key, ...teamBadge(key), name: teamName(key),
+      head: head ? { text: game.i18n.format("FASTFIGHTING.Planner.LedBy", { name: head.spec.name }), short: loc(`FASTFIGHTING.Planner.Role.${headEntry.slot}.Short`) } : null,
+      stance: stance ? fmt(`FASTFIGHTING.Battle.TeamStance.${stance.kind}`, { target: run.prep.sides[stance.target]?.label ?? teamName(stance.target ?? "") }) : "",
+      members: run.units.filter(u => groupKeyOf(u) === key).map(u => ({ id: u.id, name: u.spec.name, img: imgOf(u), hp: hpOf(u), cls: shownStatus(u) === "standing" ? "" : "is-excluded" })),
+      reinforce: r && (r.left || r.coming) ? { team: key, left: r.left, text: fmt("FASTFIGHTING.Battle.ReinforcementsLeft", { name: r.name, n: r.left }), coming: r.coming ? fmt("FASTFIGHTING.Battle.ReinforcementsComing", { n: r.coming }) : "" } : null
+    };
+  });
+
   const context = {
-    review,
     round: b.data.spotlight ? run.round : b.combat.round, started,
-    spotlight: next ? fmt("FASTFIGHTING.Battle.Spotlight", { name: next.spec.name }) : "",
-    turn: current ? turnText(b, current, player) : "",
-    state, stateText: fmt(`FASTFIGHTING.Battle.State.${state}`, { name: current?.spec.name ?? "" }),
-    // (Next Turn whenever the encounter is going, as the tracker's own: a player's turn, it ends it.)
-    canContinue: started && state !== "ended", canPlay: state === "ready" && !player && !fast, canRewind: !!b.data.turns.at(-1)?.snapshot,
-    canSettle: state === "ended" && !b.data.settled,
-    // (Fast Fight, beside Next Turn, where FastFighting plays every token; its Stop while it runs.)
+    current: current ? { id: current.id, name: current.spec.name, img: imgOf(current), team: teamBadge(groupKeyOf(current)), hp: hpOf(current), turn: turnText(b, current, player) } : null,
+    state, stateText, stateTone: tone,
+    primary, secondary,
+    canRewind: !!b.data.turns.at(-1)?.snapshot,
+    rewindTip: loc(b.data.turns.at(-1)?.snapshot ? "FASTFIGHTING.Battle.RewindHint" : "FASTFIGHTING.Battle.RewindNone"),
+    // (Fast Fight, beside the one to press, where FastFighting plays every token; its Stop, the one to press, while it runs.)
     fastFight: fastOffered(b), fastRunning: fast,
-    // (Foundry's encounter: Begin Encounter until it has, glowing while it waits; then End Encounter.)
-    canBegin: !started, canEnd: started,
-    npcAsk: run.live.npcReactions === "ask", playThrough: !!b.data.auto,
-    // (A player rolling a reaction: the battle waits on them.)
-    reaction: (() => {
-      const w = waitingReaction();
-      return w ? { key: w.key, text: fmt("FASTFIGHTING.Battle.WaitingReaction", { name: w.name }) } : null;
-    })(),
-    // (Deals waiting on the GM's review: engine/behavior/deals.js.)
-    deals: waitingDeals(),
-    // (Each team's reinforcements: those left to call, the GM's to call too; those on their way. behavior/reinforce.js.)
-    reinforcements: reinforcementsLeft().filter(r => r.left || r.coming).map(r => ({
-      ...r, label: teamLabel(r.team), text: fmt("FASTFIGHTING.Battle.ReinforcementsLeft", { name: r.name, n: r.left }),
-      coming: r.coming ? fmt("FASTFIGHTING.Battle.ReinforcementsComing", { n: r.coming }) : ""
-    })),
-    // (Players' damage: applied at once, or waiting here; greyed out while the system applies it itself.)
-    applyDamage: !!b.data.applyDamage, systemApplies: systemAppliesText(),
-    // (A player's turn's own, and those the table settles: a player's character's at another, Apply players' damage off.)
-    damage: [...(b.pc?.damage ?? []), ...(b.data.waiting ?? [])].map(d => ({
-      key: d.key, save: d.save, needsTarget: !d.targetId,
-      text: fmt(d.healing ? "FASTFIGHTING.Battle.HealingLine" : "FASTFIGHTING.Battle.DamageLine", { by: d.by, target: d.targetId ? name(d.targetId) : loc("FASTFIGHTING.Battle.DamageNoTarget"), amount: d.amount }),
-      targets: d.targetId ? [] : run.units.filter(u => !run.live.players.has(u.id)).map(u => ({ value: u.id, label: u.spec.name }))
-    })),
-    held: (b.pc?.facts ?? []).map((f, i) => ({ i, text: factText(f, name) })),
+    canEnd: started && !(state === "ended"),
+    flags: [b.data.auto ? loc("FASTFIGHTING.Battle.PlayThrough") : null, npcAsk ? loc("FASTFIGHTING.Battle.NpcAsk") : null].filter(Boolean),
+    toggles: [
+      { action: "playThrough", label: loc("FASTFIGHTING.Battle.PlayThrough"), on: !!b.data.auto, disabled: fast },
+      { action: "npcReactions", label: loc("FASTFIGHTING.Battle.NpcAsk"), on: npcAsk },
+      { action: "applyDamage", label: loc("FASTFIGHTING.Battle.ApplyDamage"), on: !!b.data.applyDamage, disabled: !!systemApplies }
+    ],
+    queue, waitingCount: queue.length, waitingText: fmt("FASTFIGHTING.Battle.WaitingCount", { n: queue.length }),
+    order, teams, teamsComing: reinforcing.reduce((n, r) => n + (r.coming || 0), 0),
     focus: view.panel
   };
   return { context, graph: view.graph, focus: view.graph.focus };
@@ -985,13 +1191,14 @@ function panelOf(b, net, nodes, edges, focus, { name, docOf, sideLabel }) {
   // Its team: a neutral friend group (1 2 3), a hostile group (1 2 3), or the party (F); and its place in its group's
   // chain of command (B L 1 2; the party, no boss), as the planner has them.
   const picked = pendingSide?.id === focus ? pendingSide : null;
-  const pill = (side, group, label, name, active) => ({
-    side, group, label, name, active: picked ? picked.side === side && (side !== NEUTRAL_PARTY || picked.group === group) : active
+  const pick = (side, group, key, name) => ({
+    side, group, name, ...teamBadge(key),
+    active: picked ? picked.side === side && (side !== NEUTRAL_PARTY || picked.group === group) : u.side === side && (side !== NEUTRAL_PARTY || u.friendGroup === group)
   });
   const teams = [
-    { kind: "neutral", label: loc("FASTFIGHTING.Side.neutral"), pills: GROUPS.map(n => pill(NEUTRAL_PARTY, n, n, fmt("FASTFIGHTING.Side.neutralGroup", { n }), u.side === NEUTRAL_PARTY && u.friendGroup === n)) },
-    { kind: "hostile", label: loc("FASTFIGHTING.Side.hostile"), pills: HOSTILE_GROUPS.map((side, i) => pill(side, null, i + 1, fmt("FASTFIGHTING.Side.hostileGroup", { n: i + 1 }), u.side === side)) },
-    { kind: "friendly", label: loc("FASTFIGHTING.Side.friendly"), pills: [pill(SIDES.FRIENDLY, null, loc("FASTFIGHTING.Battle.Net.FriendlyShort"), loc("FASTFIGHTING.Side.friendly"), u.side === SIDES.FRIENDLY)] }
+    pick(SIDES.FRIENDLY, null, SIDES.FRIENDLY, loc("FASTFIGHTING.Side.friendly")),
+    ...HOSTILE_GROUPS.map((side, i) => pick(side, null, side, fmt("FASTFIGHTING.Side.hostileGroup", { n: i + 1 }))),
+    ...GROUPS.map(n => pick(NEUTRAL_PARTY, n, `${NEUTRAL_PARTY}#${n}`, fmt("FASTFIGHTING.Side.neutralGroup", { n })))
   ];
   const key = groupKeyOf(u);
   const place = key ? (run.prep.command?.[key] ?? []).find(c => c.id === u.id)?.slot ?? null : null;
@@ -999,9 +1206,10 @@ function panelOf(b, net, nodes, edges, focus, { name, docOf, sideLabel }) {
     ? SLOTS.filter(s => s !== "boss" || u.side !== SIDES.FRIENDLY).map(s => ({ key: s, short: loc(`FASTFIGHTING.Planner.Role.${s}.Short`), label: loc(`FASTFIGHTING.Planner.Role.${s}.Name`), active: place === s }))
     : null;
   const controller = u.controlledBy ? run.byId.get(u.controlledBy) : null;
-  // (Its team's view of the fight, through its head: behavior/stance.js. Whether it goes along with it.)
+  // (Its team's view of the fight, through its head: behavior/stance.js, shown on the Teams tab. Here, only where it
+  // isn't going along.)
   const team = key ? run.stance?.[key] : null;
-  const stance = team ? `${fmt(`FASTFIGHTING.Battle.Net.Stance.${team.kind}`, { target: run.prep.sides[team.target]?.label ?? sideLabel(team.target ?? "") })}${stanceOf(run, u) ? "" : ` ${loc("FASTFIGHTING.Battle.Net.Stance.notWith")}`}` : "";
+  const notWith = team && !stanceOf(run, u) ? `${fmt(`FASTFIGHTING.Battle.Net.Stance.${team.kind}`, { target: run.prep.sides[team.target]?.label ?? sideLabel(team.target ?? "") })} ${loc("FASTFIGHTING.Battle.Net.Stance.notWith")}` : "";
   // (None of its players connected: the time left until FastFighting plays it.)
   const deadline = Object.fromEntries(b.data.awayTimers ?? [])[focus];
   const away = Number.isFinite(deadline) && deadline > Date.now() && players.has(focus) ? { deadline, left: clockText(deadline - Date.now()) } : null;
@@ -1012,7 +1220,7 @@ function panelOf(b, net, nodes, edges, focus, { name, docOf, sideLabel }) {
     on: [...edges.filter(onIt), ...symbols.filter(m => m.cls.includes("is-condition") || m.cls.includes("is-status"))].map(e => row(e)),
     wantedBy: edges.filter(wantsMe).map(e => row(e, false)),
     setAside: decides ? [] : setAside, held: decides ? [] : held,
-    teams, roles, stance, controlled: controller ? fmt("FASTFIGHTING.Battle.Net.Controlled", { name: controller.spec.name }) : ""
+    team: teamBadge(key), teams, roles, notWith, controlled: controller ? fmt("FASTFIGHTING.Battle.Net.Controlled", { name: controller.spec.name }) : ""
   };
 }
 

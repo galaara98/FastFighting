@@ -1,0 +1,201 @@
+{{!-- Beside the map of minds: what waits on the GM (what holds the battle up first), the creature in focus, the teams. --}}
+<aside class="ff-vside">
+  {{#unless none}}
+  <nav class="ff-tabs" role="tablist" aria-label="{{localize "FASTFIGHTING.Battle.Panels"}}">
+    {{#each tabs}}<button type="button" role="tab" aria-selected="{{#if active}}true{{else}}false{{/if}}" class="{{#if active}}active{{/if}}" data-action="sideTab" data-tab="{{id}}">{{label}}{{#if count}} <span class="ff-count {{#if attention}}ff-count--attention{{/if}}">{{count}}</span>{{/if}}</button>{{/each}}
+  </nav>
+  <div class="ff-vside-body">
+
+    {{#if (eq tab "waiting")}}
+    <div class="ff-queue" aria-live="polite">
+      {{#each queue}}
+      <section class="ff-qitem {{#if blocking}}is-blocking{{/if}}">
+        <header class="ff-qitem-head"><i class="fa-solid {{icon}}" aria-hidden="true"></i><span>{{title}}</span>{{#if blocking}}<span class="ff-qitem-block"><i class="fa-solid fa-hourglass-half" aria-hidden="true"></i> {{localize "FASTFIGHTING.Battle.Blocking"}}</span>{{/if}}</header>
+
+        {{#if isReaction}}
+        <div class="ff-qitem-actions">
+          <button type="button" class="ff-btn ff-btn--quiet" data-action="reaction" data-key="{{key}}" data-how="skip"><i class="fa-solid fa-forward" aria-hidden="true"></i> {{localize "FASTFIGHTING.Battle.ReactionSkip"}}</button>
+          <button type="button" class="ff-btn ff-btn--primary" data-action="reaction" data-key="{{key}}" data-how="done"><i class="fa-solid fa-check" aria-hidden="true"></i> {{localize "FASTFIGHTING.Battle.ReactionRolled"}}</button>
+        </div>
+        {{/if}}
+
+        {{#if isReview}}
+        <div class="ff-battle-review">
+          <ul>
+            {{#each events}}
+            <li data-event="{{i}}" class="{{#if unsure}}is-unsure{{/if}}">
+              <label><input type="checkbox" name="keep" checked> {{text}}</label>
+              {{#if pick}}
+              <select name="target" aria-label="{{localize "FASTFIGHTING.Battle.ReviewTarget"}}">{{#each targets}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select>
+              {{/if}}
+              {{#if talk}}
+              <select name="target" aria-label="{{localize "FASTFIGHTING.Battle.ReviewTarget"}}">{{#each targets}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select>
+              <select name="kind" aria-label="{{localize "FASTFIGHTING.Battle.ReviewKind"}}">{{#each kinds}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select>
+              <select name="degree" aria-label="{{localize "FASTFIGHTING.Battle.HowWell"}}">{{#each degrees}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select>
+              {{/if}}
+            </li>
+            {{/each}}
+          </ul>
+          <div class="ff-qitem-actions"><button type="button" class="ff-btn ff-btn--primary" data-action="tellIt"><i class="fa-solid fa-feather" aria-hidden="true"></i> {{localize "FASTFIGHTING.Battle.TellIt"}}</button></div>
+        </div>
+        {{/if}}
+
+        {{#if isHeld}}
+        <ul class="ff-qitem-list">{{#each held}}<li><span>{{text}}</span> <button type="button" class="ff-drop-held" data-action="dropHeld" data-index="{{i}}" data-tooltip="{{localize "FASTFIGHTING.Battle.Drop"}}" aria-label="{{localize "FASTFIGHTING.Battle.Drop"}}"><i class="fa-solid fa-xmark"></i></button></li>{{/each}}</ul>
+        {{/if}}
+
+        {{#if isDamage}}
+        <ul class="ff-qitem-list">{{#each damage}}<li data-key="{{key}}">
+          <span class="ff-qitem-text">{{text}}{{#if save}} <span class="ff-chip">{{localize "FASTFIGHTING.Battle.DamageSave"}}</span>{{/if}}</span>
+          {{#if needsTarget}}<select name="damageTarget" aria-label="{{localize "FASTFIGHTING.Battle.ReviewTarget"}}">{{#each targets}}<option value="{{value}}">{{label}}</option>{{/each}}</select>{{/if}}
+          <span class="ff-qitem-actions">
+            <button type="button" class="ff-btn ff-btn--quiet ff-btn--small" data-action="damage" data-key="{{key}}" data-dismiss="true">{{localize "FASTFIGHTING.Battle.DamageDismiss"}}</button>
+            <button type="button" class="ff-btn ff-btn--small" data-action="damage" data-key="{{key}}" data-multiplier="0.5">{{localize "FASTFIGHTING.Battle.DamageHalf"}}</button>
+            <button type="button" class="ff-btn ff-btn--small" data-action="damage" data-key="{{key}}" data-multiplier="2">{{localize "FASTFIGHTING.Battle.DamageDouble"}}</button>
+            <button type="button" class="ff-btn ff-btn--primary ff-btn--small" data-action="damage" data-key="{{key}}" data-multiplier="1">{{localize "FASTFIGHTING.Battle.DamageApply"}}</button>
+          </span>
+        </li>{{/each}}</ul>
+        {{/if}}
+
+        {{#if isDeals}}
+        <ul class="ff-qitem-list">{{#each deals}}<li data-key="{{key}}"><span class="ff-qitem-text">{{text}}</span> <button type="button" class="ff-btn ff-btn--small" data-action="dealReview" data-key="{{key}}"><i class="fa-solid fa-scale-balanced" aria-hidden="true"></i> {{localize "FASTFIGHTING.Deal.Review"}}</button></li>{{/each}}</ul>
+        {{/if}}
+      </section>
+      {{else}}
+      <p class="ff-empty">{{localize "FASTFIGHTING.Battle.NothingWaiting"}}</p>
+      {{/each}}
+    </div>
+    {{/if}}
+
+    {{#if (eq tab "creature")}}
+    {{#if focus.none}}<p class="ff-hint ff-vside-hint">{{localize "FASTFIGHTING.Battle.Net.FocusHint"}}</p>{{/if}}
+
+    {{#if focus.elsewhere}}
+    <div class="ff-battle-who"><img src="{{focus.img}}" alt=""><div><h3>{{focus.name}}</h3><span class="ff-battle-meta">{{localize "FASTFIGHTING.Battle.Net.NotInBattle"}}</span></div></div>
+    <button type="button" class="ff-btn" data-action="bringIn" data-token="{{focus.tokenId}}"><i class="fa-solid fa-right-to-bracket" aria-hidden="true"></i> {{localize "FASTFIGHTING.Battle.BringIn"}}</button>
+    {{/if}}
+
+    {{#if focus.thing}}
+    <h3><i class="{{focus.icon}}" aria-hidden="true"></i> {{focus.name}}</h3>
+    <section>
+      <p class="ff-vside-label">{{localize "FASTFIGHTING.Battle.Net.WantedBy"}}</p>
+      <ul class="ff-battle-list">
+        {{#each focus.rows}}
+        <li class="{{cls}}"><i class="{{icon}}" aria-hidden="true"></i> <span>{{text}}</span>
+          {{#if steps.length}}<span class="ff-net-steps">{{#each steps}}<button type="button" class="ff-net-step" data-action="adjust" data-adjust="{{adjust}}" data-step="{{dir}}" data-tooltip="{{tip}}" aria-label="{{tip}}"><i class="fa-solid {{icon}}"></i></button>{{/each}}</span>{{/if}}
+        </li>
+        {{/each}}
+      </ul>
+    </section>
+    {{/if}}
+
+    {{#if focus.creature}}
+    <div data-creature="{{focus.id}}" class="ff-battle-focus">
+      <div class="ff-battle-who ff-t-{{focus.team.short}}">
+        <img src="{{focus.img}}" alt="">
+        <div>
+          <h3>{{focus.name}}{{#if focus.player}} <i class="fa-solid fa-user" data-tooltip="{{localize "FASTFIGHTING.Battle.PlayerRuns"}}" aria-label="{{localize "FASTFIGHTING.Battle.PlayerRuns"}}"></i>{{/if}}</h3>
+          <span class="ff-battle-meta">{{focus.side}} · {{focus.status}} · {{focus.hp}}{{#if focus.waiting}} · {{localize "FASTFIGHTING.Battle.NotInFight"}}{{/if}}</span>
+          <div class="ff-battle-add-row">
+            <button type="button" class="ff-btn ff-btn--small" data-action="addLine" data-tooltip="{{localize "FASTFIGHTING.Battle.Net.NodeHint"}}"><i class="fa-solid fa-plus" aria-hidden="true"></i> {{localize "FASTFIGHTING.Battle.Net.AddButton"}}</button>
+            {{#if focus.away}}<span class="ff-away-timer" data-deadline="{{focus.away.deadline}}" data-tooltip="{{localize "FASTFIGHTING.Battle.AwayTimer"}}"><i class="fa-solid fa-clock" aria-hidden="true"></i> <span class="ff-away-left">{{focus.away.left}}</span></span>{{/if}}
+          </div>
+          {{#if focus.playable}}<label class="ff-battle-automate" data-tooltip="{{localize "FASTFIGHTING.Battle.AutomateHint"}}"><input type="checkbox" data-action="automate" {{checked focus.automated}}> {{localize "FASTFIGHTING.Battle.Automate"}}</label>{{/if}}
+        </div>
+      </div>
+
+      <section class="ff-battle-teams">
+        <p class="ff-vside-label">{{localize "FASTFIGHTING.Battle.Net.Team"}}</p>
+        <div class="ff-team-picker" role="group" aria-label="{{localize "FASTFIGHTING.Battle.Net.Team"}}" data-tooltip="{{localize "FASTFIGHTING.Battle.Net.TeamHint"}}">
+          {{#each focus.teams}}<button type="button" class="ff-team-choice ff-t-{{short}} {{#if active}}active{{/if}}" data-action="setSide" data-side="{{side}}" {{#if group}}data-group="{{group}}"{{/if}} aria-pressed="{{#if active}}true{{else}}false{{/if}}" aria-label="{{name}}" data-tooltip-text="{{name}}">{{label}}</button>{{/each}}
+        </div>
+        {{#if focus.roles}}<div class="ff-role-picker" role="group" aria-label="{{localize "FASTFIGHTING.Planner.Command"}}" data-tooltip="{{localize "FASTFIGHTING.Battle.Net.RoleHint"}}">{{#each focus.roles}}<button type="button" class="ff-role {{#if active}}active{{/if}}" data-action="setRole" data-role="{{key}}" aria-pressed="{{#if active}}true{{else}}false{{/if}}" aria-label="{{label}}" data-tooltip-text="{{label}}">{{short}}</button>{{/each}}</div>{{/if}}
+        {{#if focus.controlled}}<p class="ff-hint">{{focus.controlled}}</p>{{/if}}
+        {{#if focus.notWith}}<p class="ff-hint"><i class="fa-solid fa-flag" aria-hidden="true"></i> {{focus.notWith}}</p>{{/if}}
+      </section>
+
+      <section>
+        <p class="ff-vside-label">{{localize "FASTFIGHTING.Battle.Net.Wants"}}</p>
+        {{#if focus.decides}}
+          <p class="ff-hint">{{localize "FASTFIGHTING.Battle.Net.PlayerDecides"}}</p>
+        {{else}}
+          <ul class="ff-battle-list">
+            {{#each focus.wants}}
+            <li class="{{cls}}"><i class="{{icon}}" aria-hidden="true"></i> <span>{{text}}</span>
+              {{#if steps.length}}<span class="ff-net-steps">{{#each steps}}<button type="button" class="ff-net-step" data-action="adjust" data-adjust="{{adjust}}" data-step="{{dir}}" data-tooltip="{{tip}}" aria-label="{{tip}}"><i class="fa-solid {{icon}}"></i></button>{{/each}}</span>{{/if}}
+            </li>
+            {{else}}
+            <li class="ff-hint">{{localize "FASTFIGHTING.Battle.Net.Nothing"}}</li>
+            {{/each}}
+          </ul>
+        {{/if}}
+      </section>
+
+      {{#if focus.held.length}}
+      <section>
+        <p class="ff-vside-label">{{localize "FASTFIGHTING.Battle.Net.HeldList"}}</p>
+        <ul class="ff-battle-list">
+          {{#each focus.held}}<li class="is-gm"><i class="{{icon}}" aria-hidden="true"></i> <span>{{text}}</span><span class="ff-net-steps"><button type="button" class="ff-net-step" data-action="adjust" data-adjust="{{adjust}}" data-step="0" data-tooltip="{{localize "FASTFIGHTING.Battle.Net.HandBack"}}" aria-label="{{localize "FASTFIGHTING.Battle.Net.HandBack"}}"><i class="fa-solid fa-rotate-left"></i></button></span></li>{{/each}}
+        </ul>
+      </section>
+      {{/if}}
+
+      {{#if focus.setAside.length}}
+      <section>
+        <p class="ff-vside-label">{{localize "FASTFIGHTING.Battle.Net.SetAsideList"}}</p>
+        <ul class="ff-battle-list">
+          {{#each focus.setAside}}<li class="is-gm"><i class="{{icon}}" aria-hidden="true"></i> <span>{{text}}</span><span class="ff-net-steps"><button type="button" class="ff-net-step" data-action="adjust" data-adjust="{{adjust}}" data-step="0" data-tooltip="{{localize "FASTFIGHTING.Battle.Net.HandBack"}}" aria-label="{{localize "FASTFIGHTING.Battle.Net.HandBack"}}"><i class="fa-solid fa-rotate-left"></i></button></span></li>{{/each}}
+        </ul>
+      </section>
+      {{/if}}
+
+      <section>
+        <p class="ff-vside-label">{{localize "FASTFIGHTING.Battle.Conditions"}}</p>
+        <ul class="ff-battle-list">
+          {{#each focus.on}}
+          <li class="{{cls}}"><i class="{{icon}}" aria-hidden="true"></i> <span>{{text}}</span>
+            {{#if steps.length}}<span class="ff-net-steps">{{#each steps}}<button type="button" class="ff-net-step" data-action="adjust" data-adjust="{{adjust}}" data-step="{{dir}}" data-tooltip="{{tip}}" aria-label="{{tip}}"><i class="fa-solid {{icon}}"></i></button>{{/each}}</span>{{/if}}
+          </li>
+          {{else}}
+          <li class="ff-hint">{{localize "FASTFIGHTING.Battle.Net.Nothing"}}</li>
+          {{/each}}
+        </ul>
+      </section>
+
+      {{#if focus.wantedBy.length}}
+      <section>
+        <p class="ff-vside-label">{{localize "FASTFIGHTING.Battle.Net.WantedBy"}}</p>
+        <ul class="ff-battle-list">
+          {{#each focus.wantedBy}}
+          <li class="{{cls}}"><i class="{{icon}}" aria-hidden="true"></i> <span>{{text}}</span>
+            {{#if steps.length}}<span class="ff-net-steps">{{#each steps}}<button type="button" class="ff-net-step" data-action="adjust" data-adjust="{{adjust}}" data-step="{{dir}}" data-tooltip="{{tip}}" aria-label="{{tip}}"><i class="fa-solid {{icon}}"></i></button>{{/each}}</span>{{/if}}
+          </li>
+          {{/each}}
+        </ul>
+      </section>
+      {{/if}}
+    </div>
+    {{/if}}
+    {{/if}}
+
+    {{#if (eq tab "teams")}}
+    {{#each teams}}
+    <section class="ff-tcard ff-t-{{short}}">
+      <header class="ff-tcard-head"><span class="ff-team ff-t-{{short}}">{{label}}</span><b>{{name}}</b>{{#with head}} <span class="ff-hint">{{text}}</span> <span class="ff-role">{{short}}</span>{{/with}}</header>
+      {{#if stance}}<p class="ff-stance"><i class="fa-solid fa-flag" aria-hidden="true"></i> {{stance}}</p>{{/if}}
+      <div class="ff-chips">{{#each members}}<button type="button" class="ff-mini {{cls}}" data-action="focusCreature" data-creature="{{id}}"><img src="{{img}}" alt=""> {{name}} <span class="ff-hint">{{hp}}</span></button>{{/each}}</div>
+      {{#with reinforce}}
+      <div class="ff-reinforce-row" data-team="{{team}}">
+        <span class="ff-reinforce-text"><i class="fa-solid fa-user-plus" aria-hidden="true"></i> {{text}}{{#if coming}} · <b>{{coming}}</b>{{/if}}</span>
+        {{#if left}}<input type="number" min="1" max="{{left}}" step="1" value="1" aria-label="{{localize "FASTFIGHTING.Battle.ReinforcementsHowMany"}}">
+        <button type="button" class="ff-btn ff-btn--small" data-action="reinforce" data-team="{{team}}"><i class="fa-solid fa-flag" aria-hidden="true"></i> {{localize "FASTFIGHTING.Battle.ReinforcementsCall"}}</button>{{/if}}
+      </div>
+      {{/with}}
+    </section>
+    {{else}}
+    <p class="ff-empty">{{localize "FASTFIGHTING.Battle.Net.Nothing"}}</p>
+    {{/each}}
+    {{/if}}
+  </div>
+  {{/unless}}
+</aside>

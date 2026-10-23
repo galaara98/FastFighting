@@ -35,6 +35,7 @@ import { rememberRun, recallRun } from "../foundry/run-memory.js";
 import { startLiveBattle, liveBattle, systemAppliesText } from "../foundry/live-battle.js";
 import { savePlanRun } from "../foundry/live-journals.js";
 import { BattleVantage } from "./battle-vantage.js";
+import { listenMenus } from "./menus.js";
 import { blink, keepTyping } from "./blink.js";
 import { expectedRuns, paceOf, ROUGH_RUNS, PREDICTION_SECONDS } from "../engine/run-budget.js";
 import { signedNumber } from "../engine/trait-parts.js";
@@ -87,20 +88,6 @@ const fightCount = n => game.i18n.format("FASTFIGHTING.Planner.FightsRun", { n: 
 
 /** A creature's traits as its sheet reads them (its sliders' starting points). */
 const baseTraits = spec => Object.fromEntries(TRAITS.map(k => [k, spec?.traits?.[k]?.base ?? 50]));
-
-/** A menu (a popover) just opened: under what opened it, right-aligned to it, kept on the screen. */
-function placePopover(pop, root) {
-  const opener = root.querySelector(`[popovertarget="${pop.id}"]`);
-  if ( !opener ) return;
-  const r = opener.getBoundingClientRect();
-  const w = pop.offsetWidth;
-  const h = pop.offsetHeight;
-  const left = clamp(r.right - w, 8, window.innerWidth - w - 8);
-  const below = r.bottom + 4;
-  const top = below + h > window.innerHeight - 8 ? Math.max(8, r.top - h - 4) : below;
-  pop.style.left = `${Math.round(left)}px`;
-  pop.style.top = `${Math.round(top)}px`;
-}
 
 /** The next point the GM clicks on the map (canvas pixels), or null (Escape, or a right-click). */
 function pickPoint() {
@@ -244,8 +231,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /**
    * What the window listens for, once (its parts drawn again keep it): a creature dropped on a team's reinforcements;
-   * a slider's value as it moves; the roster's filter as it's typed; a section opened or closed; a menu opened (placed
-   * by its button) or used (closed).
+   * a slider's value as it moves; the roster's filter as it's typed; a section opened or closed; its menus (menus.js).
    */
   #listen() {
     const el = this.element;
@@ -268,18 +254,14 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
         this.#filterRoster();
       }
     });
-    // (A section's open state and a menu's opening don't bubble: caught on the way down.)
+    // (A section's open state doesn't bubble: caught on the way down.)
     el.addEventListener("toggle", event => {
       const t = event.target;
-      if ( t.matches?.("details[data-section]") ) {
-        if ( t.open ) this.openSections.add(t.dataset.section);
-        else this.openSections.delete(t.dataset.section);
-      } else if ( t.matches?.("[popover]") && event.newState === "open" ) placePopover(t, el);
+      if ( !t.matches?.("details[data-section]") ) return;
+      if ( t.open ) this.openSections.add(t.dataset.section);
+      else this.openSections.delete(t.dataset.section);
     }, true);
-    el.addEventListener("click", event => {
-      const pop = event.target.closest?.("[popover]");
-      if ( pop && event.target.closest("[data-action]") ) pop.hidePopover?.();
-    });
+    listenMenus(el);
   }
 
   /** The roster as filtered by name: the creatures that match, in their cards (opened while filtering), the rest hidden. */
