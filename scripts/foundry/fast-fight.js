@@ -54,6 +54,9 @@ export function fightMoment(units = []) {
 /** How many whole rounds a Fast Fight goes with nothing changing before the GM is asked whether it goes on. */
 export const STILL_ROUNDS = 2;
 
+/** The GM said to go on: at least this many more rounds before they're asked again. */
+export const STILL_AGAIN = 4;
+
 /**
  * STILL_ROUNDS whole rounds gone by with nothing changing: `since`, the round and the creature whose turn it was when
  * the fight last changed (fightMoment), or when the GM said to go on; `round` and `id`, the turn beginning now. That

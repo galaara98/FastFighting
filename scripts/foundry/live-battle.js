@@ -58,7 +58,7 @@ import { randomSeed } from "../engine/rng.js";
 import { holderOf } from "../engine/behavior/troubles.js";
 import { perceives } from "../engine/behavior/senses.js";
 import { SystemAdapter } from "../adapters/adapter-base.js";
-import { FAST_MOVE_SPEED, FAST_STOP_NOTES, fastFightOffered, fastFightStop, fastTurnChange, fightMoment, stillSince, hushDice, unhushDice, registerQuietDice } from "./fast-fight.js";
+import { FAST_MOVE_SPEED, FAST_STOP_NOTES, fastFightOffered, fastFightStop, fastTurnChange, fightMoment, stillSince, STILL_AGAIN, hushDice, unhushDice, registerQuietDice } from "./fast-fight.js";
 
 /** Does the helper do this itself (its own, not the base adapter's do-nothing)? */
 const offers = (adapter, name) => typeof adapter?.[name] === "function" && adapter[name] !== SystemAdapter.prototype[name];
@@ -740,12 +740,13 @@ async function turnBegins(combatant) {
     return;
   }
   // (A Fast Fight goes on, unless this turn is its player's; gone two whole rounds with nothing changing, once the
-  // fight has lasted the system's fewest Max rounds, the GM is asked whether it goes on.)
+  // fight has lasted the system's fewest Max rounds (or, after the GM said to go on, four more), the GM is asked
+  // whether it goes on.)
   if ( battle.fast ) {
     const round = battle.run.round ?? 0;
     const moment = fightMoment(battle.run.units);
     if ( moment !== battle.fast.moment || !battle.fast.since ) Object.assign(battle.fast, { moment, since: { round, id: u.id } });
-    if ( !checkFast({ playerTurn: playerRuns(battle.run, u) }) && stillSince(battle.fast.since, round, u.id, rangeOf("maxRounds").min) ) await askStill(round, u);
+    if ( !checkFast({ playerTurn: playerRuns(battle.run, u) }) && stillSince(battle.fast.since, round, u.id, battle.fast.least) ) await askStill(round, u);
   }
   if ( playerRuns(battle.run, u) ) {
     await beginPlayerTurn(u, combatant);
@@ -3927,7 +3928,7 @@ export function fastFight() {
   if ( !fastOffered() ) return null;
   const auto = !!battle.data.auto;
   battle.data.auto = false;
-  battle.fast = { had: [...(battle.data.players ?? [])], pending: null, moment: fightMoment(battle.run.units), since: null };
+  battle.fast = { had: [...(battle.data.players ?? [])], pending: null, moment: fightMoment(battle.run.units), since: null, least: rangeOf("maxRounds").min };
   hushDice();
   changed();
   return queue(() => goFast(auto));
@@ -3971,7 +3972,8 @@ function checkFast(state = {}) {
 
 /**
  * A Fast Fight gone two whole rounds with nothing changing (stillSince): the GM asked whether it goes on. On, it counts
- * afresh from this turn; not, it stops here, and the turn waits for the GM as any other.
+ * afresh from this turn, and isn't asked again for STILL_AGAIN more rounds; not, it stops here, and the turn waits for
+ * the GM as any other.
  */
 async function askStill(round, u) {
   const on = await foundry.applications.api.DialogV2.confirm({
@@ -3979,7 +3981,7 @@ async function askStill(round, u) {
     content: `<p>${escape(loc("FASTFIGHTING.Live.FastStill.Ask"))}</p>`
   });
   if ( !battle?.fast ) return;
-  if ( on ) battle.fast.since = { round, id: u.id };
+  if ( on ) Object.assign(battle.fast, { since: { round, id: u.id }, least: round - 1 + STILL_AGAIN });
   else {
     endFast();
     changed();

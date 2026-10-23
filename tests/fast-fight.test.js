@@ -6,7 +6,7 @@
  */
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import {
-  FAST_MOVE_SPEED, FAST_STOP_NOTES, QUIET_FLAGS, fastFightOffered, fastFightStop, fastTurnChange, fightMoment, stillSince, STILL_ROUNDS, hushDice, unhushDice, diceHushed, registerQuietDice
+  FAST_MOVE_SPEED, FAST_STOP_NOTES, QUIET_FLAGS, fastFightOffered, fastFightStop, fastTurnChange, fightMoment, stillSince, STILL_ROUNDS, STILL_AGAIN, hushDice, unhushDice, diceHushed, registerQuietDice
 } from "../scripts/foundry/fast-fight.js";
 import { afterTurn, keptTurns, goingBack } from "../scripts/foundry/live-battle.js";
 
@@ -80,6 +80,13 @@ describe("when it stops", () => {
     // (Never before the fight has played the system's fewest Max rounds, 6 in PF2e; past them, at once.)
     expect(stillSince(since, 6, "kyra", 6)).toBe(false);
     expect(stillSince(since, 7, "kyra", 6)).toBe(true);
+    // (The GM said to go on, on the wolf's turn in round 7: not asked again for four more rounds.)
+    expect(STILL_AGAIN).toBe(4);
+    const after = { round: 7, id: "wolf" };
+    const least = 7 - 1 + STILL_AGAIN;
+    expect(stillSince(after, 9, "wolf", least)).toBe(false);
+    expect(stillSince(after, 10, "kyra", least)).toBe(false);
+    expect(stillSince(after, 11, "wolf", least)).toBe(true);
   });
 
   test("the first that holds is why; the GMs are told only what they didn't do themselves", () => {
