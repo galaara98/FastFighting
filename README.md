@@ -33,7 +33,7 @@ GMs get buttons at the top of the Combat Tracker: **Planner**, **Survey** (see [
 
 The window needs at least 1000×600 and uses any extra space.
 
-**Top bar:** where the plan stands (its creatures and teams, the fights run, how many players are ready, the game paused) and the one button to press now: **Run**; **Stop** while it runs; **Go Live** once it has run, with Run beside it. Change the plan after a run and it says so: Run again before Go Live works. Refresh re-reads the tokens.
+**Top bar:** where the plan stands (its creatures and teams, the fights run, how many players are ready, the game paused) and the one button to press now: **Run**; **Stop** while it runs; **Go Live** once it has run, with Run beside it. Change the plan after a run and it says so: Run again before Go Live works. Refresh re-reads the tokens. The ⋯ menu has **Re-pick automatic roles** (the leaders, bosses and lieutenants you didn't choose; yours stay), **Re-pick all roles** (yours too, on a second press), and **Clear this plan…**; the re-picks leave the teams alone.
 
 **Left: three views.**
 - **Teams:** a card per team, by side (Friendly, Hostile, Neutral, Secret): the Friendly Team **F**, the hostile groups **H1** to **H3**, the neutral friend groups **N1** to **N3**. Each card shows its leader and what it has; open it for its creatures. Filter by side or by name.
@@ -244,7 +244,7 @@ Neutral tokens, and enemies talked out of the fight, [take no side](STATS_AND_FO
 
 ### Leaders and bosses
 
-Each group (the Friendly Team, each hostile group, each neutral friend group) has a **boss** (never the Friendly Team) or a **leader**, and up to two **lieutenants**: **B L 1 2**, from a creature's role menu, which also has **Out of command** and **Automatic**. FastFighting [fills them](STATS_AND_FORMULAS_README.md#chain-of-command) once, when the plan is new or just cleared (shown dashed); after that only the GM changes them. Outside the Friendly Team the best leader heads the group, as a boss when it outranks every other member by 2 levels or more. The Friendly Team keeps the roles you gave its members before, or gets a leader only when exactly one member wants to lead.
+Each group (the Friendly Team, each hostile group, each neutral friend group) has a **boss** (never the Friendly Team) or a **leader**, and up to two **lieutenants**: **B L 1 2**, from a creature's role menu, which also has **Out of command** and **Automatic**. FastFighting [fills them](STATS_AND_FORMULAS_README.md#chain-of-command) once, when the plan is new or just cleared (shown dashed); after that only the GM changes them, or the planner's ⋯ menu re-picks them. Outside the Friendly Team the best leader heads the group, as a boss when it outranks every other member by 2 levels or more. The Friendly Team keeps the roles you gave its members before, or gets a leader only when exactly one member wants to lead.
 
 The commander [lends its group a bonus](STATS_AND_FORMULAS_README.md#what-a-leader-lends), [pulls its followers](STATS_AND_FORMULAS_README.md#following-the-leader) toward its wishes (**Leader's influence**, **Boss's influence**), and talking it down can take its group with it. When it falls or can't make itself seen and heard, a lieutenant steps up. Bosses almost never run. A Wants to Lead character out of command may [scheme](STATS_AND_FORMULAS_README.md#scheming); a PC turns traitor only on **PC turns traitor (%)**.
 

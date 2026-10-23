@@ -16183,6 +16183,76 @@
    "commit": null,
    "hash": "836901c12a85"
   },
+  "core:FASTFIGHTING.Planner.Repick": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Planner.Repick",
+   "area": "core/Planner",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "09a0f6254425"
+  },
+  "core:FASTFIGHTING.Planner.RepickAll": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Planner.RepickAll",
+   "area": "core/Planner",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "9a4e046ff9fe"
+  },
+  "core:FASTFIGHTING.Planner.RepickAllArmed": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Planner.RepickAllArmed",
+   "area": "core/Planner",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "9b2e5d072adc"
+  },
+  "core:FASTFIGHTING.Planner.RepickAllHint": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Planner.RepickAllHint",
+   "area": "core/Planner",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "5775f9556fc1"
+  },
+  "core:FASTFIGHTING.Planner.Repicked": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Planner.Repicked",
+   "area": "core/Planner",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "cdad4af21c06"
+  },
+  "core:FASTFIGHTING.Planner.RepickedAll": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Planner.RepickedAll",
+   "area": "core/Planner",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "9c9f167b9783"
+  },
+  "core:FASTFIGHTING.Planner.RepickHint": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Planner.RepickHint",
+   "area": "core/Planner",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "55c7e1bbba97"
+  },
   "core:FASTFIGHTING.Planner.RestoredChip": {
    "repo": "core",
    "file": "languages/en.json",

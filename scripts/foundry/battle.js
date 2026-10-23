@@ -576,6 +576,16 @@ export function seedCommand(roster, setup, adapter = getAdapter()) {
   setup.commandSeeded = true;
 }
 
+/**
+ * Roles picked again (the planner's ⋯ menu), the teams untouched: the automatic ones, or (`all`) the GM's too; then
+ * every group's empty seats filled as for a new plan (seedCommand). The Friendly Team gets back the roles it held in
+ * earlier fights (the partyCommand setting), else the one member who wants to lead.
+ */
+export function repickCommand(roster, setup, { all = false } = {}, adapter = getAdapter()) {
+  for ( const ts of Object.values(setup.tokens ?? {}) ) if ( ts.role && (all || ts.roleAuto) ) clearRole(ts);
+  seedCommand(roster, setup, adapter);
+}
+
 /** A token's role in the plan, gone (with whether the automatic pick gave it, and why). */
 export function clearRole(ts) {
   if ( !ts ) return;

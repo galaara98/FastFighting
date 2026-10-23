@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { planHolder, getSetup, saveSetup, clearSetup, sceneEncounter, planDistrust } from "../scripts/foundry/persistence.js";
-import { groupOf, resolveAllegiances, resolveLeans, commandGroup, commandChains, seedCommand, secretTeam, SECRET_TEAMS } from "../scripts/foundry/battle.js";
+import { groupOf, resolveAllegiances, resolveLeans, commandGroup, commandChains, seedCommand, repickCommand, secretTeam, SECRET_TEAMS } from "../scripts/foundry/battle.js";
 
 /** A document that keeps flags, as a Foundry Scene or Combat does. */
 function doc(uuid, extra = {}) {
@@ -199,6 +199,24 @@ describe("who commands: picked once, when the plan is new or just cleared", () =
     alone.tokens.a = { include: true };
     seedCommand([token("a", 9)], alone, adapter);
     expect(roles(alone)).toEqual({});
+  });
+
+  test("re-picked: the automatic roles, or every one, the teams untouched", () => {
+    const setup = getSetup();
+    const roster = ["a", "b", "c", "d"].map(id => token(id, id === "b" ? 3 : 0));
+    for ( const e of roster ) setup.tokens[e.token.id] = { include: true, group: 2 };
+    setup.tokens.d.role = "leader";
+    seedCommand(roster, setup, adapter);
+    expect(roles(setup)).toEqual({ d: "leader" });
+    // A better leader joins: the automatic re-pick keeps the GM's leader.
+    roster.push(token("e", 9));
+    setup.tokens.e = { include: true, group: 2 };
+    repickCommand(roster, setup, {}, adapter);
+    expect(roles(setup)).toEqual({ d: "leader", e: "lt1" });
+    // Every role: the GM's goes too, and the best takes the lead.
+    repickCommand(roster, setup, { all: true }, adapter);
+    expect(roles(setup)).toEqual({ e: "leader", b: "lt1" });
+    expect(Object.values(setup.tokens).map(t => t.group)).toEqual([2, 2, 2, 2, 2]);
   });
 });
 

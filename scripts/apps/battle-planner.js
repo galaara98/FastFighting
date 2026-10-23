@@ -21,7 +21,7 @@ import {
 import { cachedCharacterSpec, showsReactions } from "../foundry/sheet-watch.js";
 import {
   gatherRoster, chosenSide, groupOf, proposeNeutralGroups, resolveAllegiances, simulate, swingFactors, swingTests, SWING_SCOPES, typicalFight, fightThreads,
-  approachFor, commandChains, commandGroup, seedCommand, clearRole, ROLES, sideName, hostileGroupsIn, secretTeam, SECRET_TEAMS, LEANS, predictionSeconds,
+  approachFor, commandChains, commandGroup, seedCommand, repickCommand, clearRole, ROLES, sideName, hostileGroupsIn, secretTeam, SECRET_TEAMS, LEANS, predictionSeconds,
   battleFor, surpriseMode, systemSurprise, mainCoin, PURSE_TEAMS, readReinforcements } from "../foundry/battle.js";
 import { SURPRISE } from "../engine/behavior/surprise.js";
 import { buildStory, STORY_STYLES } from "../story/story.js";
@@ -123,6 +123,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       run: BattlePlanner.#onRun,
       refresh: BattlePlanner.#onRefresh,
       clearPlan: BattlePlanner.#onClearPlan,
+      repickRoles: BattlePlanner.#onRepickRoles,
       fudge: BattlePlanner.#onFudge,
       leftView: BattlePlanner.#onLeftView,
       sideFilter: BattlePlanner.#onSideFilter,
@@ -1711,6 +1712,33 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /** Clear the plan, after asking: every choice made here goes back to the defaults. */
+  /**
+   * Roles picked again, the teams untouched: the automatic ones (the GM's stay), or every one (`data-all`: two presses,
+   * the first saying what the second does).
+   */
+  static async #onRepickRoles(event, target) {
+    const all = target.dataset.all === "true";
+    if ( all && !target.classList.contains("is-armed") ) {
+      const label = target.querySelector("span");
+      target.classList.add("is-armed");
+      target.dataset.label = label?.textContent ?? "";
+      if ( label ) label.textContent = target.dataset.armedLabel ?? "";
+      setTimeout(() => {
+        if ( !target.isConnected || !target.classList.contains("is-armed") ) return;
+        target.classList.remove("is-armed");
+        if ( label ) label.textContent = target.dataset.label;
+      }, 5000);
+      return;
+    }
+    target.closest("[popover]")?.hidePopover?.();
+    if ( !this.roster?.length || !game.user.isGM ) return;
+    repickCommand(this.roster, this.setup, { all });
+    await saveSetup(this.setup, this.holder);
+    this.stale = true;
+    this.render();
+    ui.notifications.info(loc(all ? "FASTFIGHTING.Planner.RepickedAll" : "FASTFIGHTING.Planner.Repicked"));
+  }
+
   static async #onClearPlan() {
     const ok = await foundry.applications.api.DialogV2.confirm({
       window: { title: loc("FASTFIGHTING.Planner.ClearTitle") },

@@ -709,7 +709,14 @@
       "FromCompendium": "From a compendium? Drag it onto the slot instead.",
       "SinceLastRun": "Change since the last run, in points",
       "ResultsTabs": "Details and results",
-      "LeadershipBonus": "Leadership bonus"
+      "LeadershipBonus": "Leadership bonus",
+      "Repick": "Re-pick automatic roles",
+      "RepickHint": "Picks every leader, boss and lieutenant you didn't choose again, and fills empty roles. Teams and your own picks stay.",
+      "Repicked": "Automatic roles picked again.",
+      "RepickAll": "Re-pick all roles",
+      "RepickAllHint": "Picks every leader, boss and lieutenant again, yours too. Teams stay; the Friendly Team gets back the roles it held before.",
+      "RepickAllArmed": "Press again: re-pick all roles",
+      "RepickedAll": "Every role picked again."
     },
     "Results": {
       "Tab": {
