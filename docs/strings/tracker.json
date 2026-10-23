@@ -16081,7 +16081,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "d6277f75cc01"
+   "hash": "d6277f75cc01",
+   "changed": true
   },
   "core:FASTFIGHTING.Planner.Purses": {
    "repo": "core",
@@ -16516,6 +16517,16 @@
    "commit": null,
    "hash": "928f0876618e",
    "changed": true
+  },
+  "core:FASTFIGHTING.Planner.SecondsValue": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Planner.SecondsValue",
+   "area": "core/Planner",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "8e6df4a0a820"
   },
   "core:FASTFIGHTING.Planner.SecretCard": {
    "repo": "core",

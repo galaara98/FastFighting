@@ -252,7 +252,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       const t = event.target;
       if ( t.matches?.('.ff-slider input[type="range"]') ) {
         const shown = t.parentElement?.querySelector(".ff-slider-value");
-        if ( shown ) shown.textContent = t.value;
+        if ( shown ) shown.textContent = shown.dataset.format ? game.i18n.format(shown.dataset.format, { n: t.value }) : t.value;
       } else if ( t.matches?.(".ff-roster-filter") ) {
         this.rosterFilter = t.value;
         this.#filterRoster();
@@ -534,6 +534,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       sums: this.#sectionSums(),
       systemSection: this.#systemSection(adapter, resolved, chains),
       secondsRange: PREDICTION_SECONDS,
+      secondsValue: game.i18n.format("FASTFIGHTING.Planner.SecondsValue", { n: this.setup.options.seconds }),
       downedChoices: Object.fromEntries(Object.values(DOWNED_MODELS).map(k => [k, `FASTFIGHTING.Downed.${k}`])),
       aftermathChoices: Object.fromEntries(Object.values(AFTERMATH).map(k => [k, `FASTFIGHTING.Aftermath.${k}`])),
       openingChoices: Object.fromEntries(Object.values(OPENING).map(k => [k, `FASTFIGHTING.Opening.${k}`])),
@@ -582,7 +583,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       rules: on(["positioning", "morale", "leadership", "talking", "ignoreLanguages"]),
       participants: on(["bystanders", "includeHidden"]),
       live: on(["playersRunPCs", "applyPlayerDamage"]),
-      prediction: game.i18n.format("FASTFIGHTING.Planner.PredictionSum", { seconds: o.seconds, rounds: o.maxRounds, seed: o.seed ?? loc("FASTFIGHTING.Planner.Random") })
+      prediction: game.i18n.format("FASTFIGHTING.Planner.PredictionSum", { rounds: o.maxRounds, seed: o.seed ?? loc("FASTFIGHTING.Planner.Random") })
     };
   }
 
@@ -1441,7 +1442,8 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       if ( side ) return;
       if ( name === "options.seed" ) this.setup.options.seed = Number.isFinite(Number.parseInt(value, 10)) ? Number.parseInt(value, 10) >>> 0 : null;
       await saveSetup(this.setup, this.holder);
-      this.stale = true;
+      // (How long the prediction runs changes nothing about the battle: the last run still stands.)
+      if ( name !== "options.seconds" ) this.stale = true;
     }
     this.render();
   }

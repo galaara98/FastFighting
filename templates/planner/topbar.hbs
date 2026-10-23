@@ -9,6 +9,12 @@
   {{#if playersChip}}<button type="button" class="ff-chip ff-chip--button" data-action="leftView" data-view="players"><i class="fa-solid fa-users" aria-hidden="true"></i> {{playersChip}}</button>{{/if}}
   {{#if paused}}<span class="ff-chip" data-tooltip="{{localize "FASTFIGHTING.Planner.PausedHint"}}"><i class="fa-solid fa-pause" aria-hidden="true"></i> {{localize "FASTFIGHTING.Planner.Paused"}}</span>{{/if}}
   <span class="ff-grow"></span>
+  {{!-- How long the prediction runs: the one setting touched before most runs. --}}
+  <label class="ff-slider ff-topbar-time" data-tooltip="{{localize "FASTFIGHTING.Planner.SecondsHint"}}">
+    <i class="fa-solid fa-stopwatch" aria-hidden="true"></i>
+    <input type="range" name="options.seconds" value="{{options.seconds}}" min="{{secondsRange.min}}" max="{{secondsRange.max}}" step="1" data-dtype="Number" aria-label="{{localize "FASTFIGHTING.Planner.Seconds"}}" {{#if running}}disabled{{/if}}>
+    <output class="ff-slider-value" data-format="FASTFIGHTING.Planner.SecondsValue">{{secondsValue}}</output>
+  </label>
   <button type="button" class="ff-btn ff-btn--quiet ff-btn--icon" data-action="refresh" data-tooltip="{{localize "FASTFIGHTING.Planner.RefreshHint"}}" aria-label="{{localize "FASTFIGHTING.Planner.RefreshHint"}}"><i class="fa-solid fa-arrows-rotate"></i></button>
   <button type="button" class="ff-btn ff-btn--quiet ff-btn--icon" popovertarget="ff-pop-plan" aria-haspopup="menu" data-tooltip="{{localize "FASTFIGHTING.Planner.More"}}" aria-label="{{localize "FASTFIGHTING.Planner.More"}}"><i class="fa-solid fa-ellipsis"></i></button>
   <div class="ff-menu" id="ff-pop-plan" popover role="menu">

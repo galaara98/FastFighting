@@ -689,7 +689,7 @@
         "prediction": "Prediction"
       },
       "OnCount": "{n} of {m} on",
-      "PredictionSum": "{seconds} s · {rounds} rounds at most · seed {seed}",
+      "PredictionSum": "{rounds} rounds at most · seed {seed}",
       "AwayChars": "Characters whose players are away",
       "Detail": {
         "resources": "Resources",
@@ -716,7 +716,8 @@
       "RepickAll": "Re-pick all roles",
       "RepickAllHint": "Picks every leader, boss and lieutenant again, yours too. Teams stay; the Friendly Team gets back the roles it held before.",
       "RepickAllArmed": "Press again: re-pick all roles",
-      "RepickedAll": "Every role picked again."
+      "RepickedAll": "Every role picked again.",
+      "SecondsValue": "{n} s"
     },
     "Results": {
       "Tab": {

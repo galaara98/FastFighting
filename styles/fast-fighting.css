@@ -633,6 +633,9 @@ button.ff-chip:hover { border-color: var(--ff-line); color: var(--color-text-pri
 .ff-menu-item:hover { background: var(--ff-surface-2); }
 .ff-menu-item.active { background: var(--ff-surface-2); font-weight: 700; }
 .ff-menu-item--danger { color: var(--ff-hostile); }
+.ff-topbar-time { display: inline-flex; align-items: center; gap: 6px; margin: 0 4px; color: var(--ff-text-dim); font-size: var(--ff-text-sm); }
+.ff-topbar-time input[type="range"] { width: 96px; margin: 0; }
+.ff-topbar-time .ff-slider-value { min-width: 3.2em; font-variant-numeric: tabular-nums; }
 .ff-menu-item.is-armed { background: color-mix(in srgb, var(--ff-attention) 18%, transparent); font-weight: 700; }
 .ff-menu-item--danger.is-armed { background: color-mix(in srgb, var(--ff-hostile) 16%, transparent); font-weight: 700; }
 .ff-menu-head { margin: 0; padding: 4px 8px 2px; color: var(--ff-text-dim); font-size: var(--ff-text-xs); text-transform: uppercase; letter-spacing: 0.06em; }
