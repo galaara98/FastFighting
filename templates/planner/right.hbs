@@ -29,6 +29,18 @@
           <h5>{{localize "FASTFIGHTING.Results.AtRisk"}}</h5>
           <ul class="ff-list">{{#each results.atRisk}}<li><span class="ff-dot {{sideClass}}"></span>{{name}} <em>{{localize "FASTFIGHTING.Results.Downed"}} {{downed}} · {{localize "FASTFIGHTING.Results.Dead"}} {{dead}}</em></li>{{/each}}</ul>
         </section>
+        {{#if overview.stakes.length}}
+        <section class="ff-ov-section">
+          <h4>{{localize "FASTFIGHTING.Results.Section.stakes"}}</h4>
+          <div class="ff-kpis">{{#each overview.stakes}}{{> ffKpi}}{{/each}}</div>
+        </section>
+        {{/if}}
+        {{#if overview.money.length}}
+        <section class="ff-ov-section">
+          <h4>{{localize "FASTFIGHTING.Results.Section.money"}}</h4>
+          <div class="ff-kpis">{{#each overview.money}}{{> ffKpi}}{{/each}}</div>
+        </section>
+        {{/if}}
         <section class="ff-ov-section">
           <h4>{{localize "FASTFIGHTING.Results.Section.foes"}}</h4>
           {{#if overview.foesEnd.length}}

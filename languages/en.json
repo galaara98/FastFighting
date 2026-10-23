@@ -769,7 +769,9 @@
       "Section": {
         "party": "The party",
         "foes": "The foes",
-        "fight": "The fight"
+        "fight": "The fight",
+        "stakes": "The stakes",
+        "money": "Money"
       },
       "PartyWiped": "Party wiped",
       "PartyWipedHint": "Every PC down, dead or captured at the end.",
@@ -798,7 +800,19 @@
       "BystandersJoin": "Bystanders join",
       "BystandersJoinHint": "Someone outside the encounter joins in.",
       "Reinforced": "Reinforcements arrive",
-      "ReinforcedHint": "A team's reinforcements are called and arrive."
+      "ReinforcedHint": "A team's reinforcements are called and arrive.",
+      "CostlyWins": "Costly wins",
+      "CostlyWinsHint": "Of the party's wins, those where a PC dies or half the PCs go down.",
+      "IfDown": "Party wins if {name} goes down",
+      "IfDownHint": "Against {up} when {name} stays up: the ally whose fall costs the party most.",
+      "WorstTenth": "PCs down, worst 1 fight in 10",
+      "WorstTenthHint": "In the worst tenth of fights, this many PCs or more go down.",
+      "Spoils": "Spoils, on average",
+      "SpoilsHint": "Coin and goods the party's side gains in a fight: handed over, taken, or on the foes it beats.",
+      "Losses": "Losses, on average",
+      "LossesHint": "Coin and goods the party's side gives up in a fight: paid out, stolen, or taken off its fallen.",
+      "DealStruck": "A deal is struck",
+      "DealStruckHint": "A bribe, toll or extortion changes hands, on either side."
     },
     "Swing": {
       "Without": "Without {name}",

@@ -899,9 +899,34 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
         { label: loc("FASTFIGHTING.Results.PcsDowned"), value: localize("FASTFIGHTING.Results.OfN", { n: pt.meanDowned.toFixed(1), m: pt.pcs }), cls: "warn", hint: loc("FASTFIGHTING.Results.PcsDownedHint"), delta: null },
         kpi("PartyHp", pt.meanHp, prev?.party?.meanHp, true, "", true)
       ] : []),
-      ...(spent === null ? [] : [kpi("PartySpent", spent, prev ? this.#partySpent(prev) ?? NaN : NaN, false, "", true)]),
-      ...ifAny(pt?.pLostGoods, () => kpi("PcLosesGoods", pt.pLostGoods, prev?.party?.pLostGoods, false, "warn", true))
+      ...(spent === null ? [] : [kpi("PartySpent", spent, prev ? this.#partySpent(prev) ?? NaN : NaN, false, "", true)])
     ];
+    // What a strategist weighs before committing: what winning costs, the ally whose fall costs most, the bad tail.
+    const stakes = [
+      ...(Number.isFinite(pt?.pCostlyWin) ? [kpi("CostlyWins", pt.pCostlyWin, prev?.party?.pCostlyWin, false, "warn", true)] : []),
+      ...this.#linchpin(r).map(l => ({
+        label: localize("FASTFIGHTING.Results.IfDown", { name: l.name }), value: pct(l.down, 1), cls: "danger",
+        hint: localize("FASTFIGHTING.Results.IfDownHint", { name: l.name, up: pct(l.up, 1) }), delta: null
+      })),
+      ...(Number.isFinite(pt?.worstDowned) ? [{
+        label: loc("FASTFIGHTING.Results.WorstTenth"), value: localize("FASTFIGHTING.Results.OfN", { n: pt.worstDowned, m: pt.pcs }), cls: "warn",
+        hint: loc("FASTFIGHTING.Results.WorstTenthHint"), delta: null
+      }] : [])
+    ];
+    // Money, in the system's main coin: what the party's side gains and loses on average, a deal struck, a PC robbed
+    // or paying up. (Only where anything changes hands.)
+    const m = r.money;
+    const coins = (key, now, then, goodUp) => ({
+      label: loc(`FASTFIGHTING.Results.${key}`), value: this.#coinText(now), cls: "", hint: loc(`FASTFIGHTING.Results.${key}Hint`),
+      delta: prev && Number.isFinite(then) && Math.round(now / this.coin.value) !== Math.round(then / this.coin.value)
+        ? { text: `${now > then ? "+" : "−"}${this.#coinText(Math.abs(now - then))}`, cls: (now > then) === goodUp ? "is-better" : "is-worse" } : null
+    });
+    const money = m && (m.gained > 0 || m.lost > 0 || m.pDeal > 0 || pt?.pLostGoods > 0) ? [
+      ...ifAny(m.gained, () => coins("Spoils", m.gained, prev?.money?.gained, true)),
+      ...ifAny(m.lost, () => coins("Losses", m.lost, prev?.money?.lost, false)),
+      ...ifAny(m.pDeal, () => kpi("DealStruck", m.pDeal, prev?.money?.pDeal, true, "talk", true)),
+      ...ifAny(pt?.pLostGoods, () => kpi("PcLosesGoods", pt.pLostGoods, prev?.party?.pLostGoods, false, "warn", true))
+    ] : [];
     const fe = r.foesEnd;
     const foesEnd = fe ? FOE_ENDS.filter(k => fe[k] >= 0.005).map(k => ({ cls: k, w: (fe[k] * 100).toFixed(1), label: loc(`FASTFIGHTING.Results.FoeEnd.${k}`), pct: pct(fe[k]) })) : [];
     const foes = [
@@ -917,9 +942,30 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       ...ifAny(r.pReinforced, () => kpi("Reinforced", r.pReinforced, prev?.pReinforced, false, "", true))
     ];
     return {
-      party, foes, fight, foesEnd,
+      party, stakes, money, foes, fight, foesEnd,
       foesEndLabel: `${loc("FASTFIGHTING.Results.FoesEnd")}: ${foesEnd.map(f => `${f.label} ${f.pct}`).join(", ")}`
     };
+  }
+
+  /**
+   * The linchpin: the creature on the party's side whose going down costs the party most, by its odds of winning in
+   * the fights where it went down against those where it didn't; [] where none went down (or stayed up) in enough of
+   * them to tell, or none costs anything.
+   */
+  #linchpin(r) {
+    const enough = Math.max(10, 0.05 * r.runs);
+    const best = Object.values(r.combatants)
+      .filter(c => Number.isFinite(c.pWinIfDowned) && Number.isFinite(c.pWinIfUp) && c.pDowned * r.runs >= enough && (1 - c.pDowned) * r.runs >= enough)
+      .map(c => ({ name: c.name, down: c.pWinIfDowned, up: c.pWinIfUp, cost: c.pWinIfUp - c.pWinIfDowned }))
+      .sort((a, b) => b.cost - a.cost)[0];
+    return best && best.cost >= 0.005 ? [best] : [];
+  }
+
+  /** An amount in the smallest coin, in the system's main coin ("23 gp"; a tenth below 10). */
+  #coinText(amount) {
+    const n = amount / this.coin.value;
+    const shown = n.toLocaleString(game.i18n.lang, { maximumFractionDigits: n < 10 ? 1 : 0 });
+    return this.coin.label ? localize("FASTFIGHTING.Log.Money", { n: shown, coin: this.coin.label }) : shown;
   }
 
   /** How much of the PCs' limited resources a fight spends, on average: each pool's share spent, averaged (null: none). */

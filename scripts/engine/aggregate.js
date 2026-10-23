@@ -1,10 +1,16 @@
 /**
  * Accumulates per-run summaries into batch statistics.
  */
-import { STATUS, NEUTRAL_PARTY, HOSTILE_GROUPS } from "../constants.js";
+import { STATUS, SIDES, NEUTRAL_PARTY, HOSTILE_GROUPS } from "../constants.js";
 
 /** How a foe of the party ends a fight, for the planner's Overview (the first that fits, in this order). */
 export const FOE_ENDS = Object.freeze(["slain", "down", "captured", "fled", "gaveUp", "talked", "standing"]);
+
+/** A foe the party can loot once it has won: there, and out of it. */
+const LOOTABLE = new Set([STATUS.DEAD, STATUS.DOWN, STATUS.BOUND, STATUS.SURRENDERED, STATUS.BEATEN]);
+
+/** Goods changing hands in a deal. */
+const DEALS = new Set(["bribe", "extort"]);
 
 /** A PC out of it at the end: the party is wiped when every PC is. (Fled or talked out of it isn't.) */
 const PC_OUT = new Set([STATUS.DEAD, STATUS.DOWN, STATUS.BOUND, STATUS.SURRENDERED, STATUS.BEATEN]);
@@ -47,7 +53,7 @@ export function createAggregator(prep) {
   for ( const c of prep.combatants ) {
     units[c.spec.id] = {
       standing: 0, down: 0, dead: 0, fled: 0, surrendered: 0, stoodDown: 0, beaten: 0, bound: 0, conceded: 0, switched: 0, neutral: 0, talkedDown: 0, downed: 0, involved: 0,
-      hpFrac: 0, damage: 0, healing: 0, firstToFall: 0, resources: {}
+      hpFrac: 0, damage: 0, healing: 0, firstToFall: 0, downedWins: 0, resources: {}
     };
   }
   const rounds = [];
@@ -64,7 +70,11 @@ export function createAggregator(prep) {
   const pcIds = prep.combatants.filter(c => c.spec.kind === "pc").map(c => c.spec.id);
   // (For the Overview: the party's lot, how the party's foes end, who joins from outside the encounter, reinforcements
   // arriving, and a foe's head falling.)
-  const party = { wiped: 0, downed: 0, dead: 0, hp: 0, lostGoods: 0 };
+  const party = { wiped: 0, downed: 0, dead: 0, hp: 0, lostGoods: 0, costlyWins: 0 };
+  const losses = []; // (each fight's PCs down, for the worst tenth)
+  // (Money, in the smallest coin: what the party's side gains, and loses; fights with a deal struck.)
+  const friendIds = new Set(prep.combatants.filter(c => c.spec.side === SIDES.FRIENDLY).map(c => c.spec.id));
+  const money = { gained: 0, lost: 0, deals: 0 };
   const foeIds = new Set(prep.combatants.filter(c => HOSTILE_GROUPS.includes(c.spec.side)).map(c => c.spec.id));
   const foeEnds = Object.fromEntries(FOE_ENDS.map(k => [k, 0]));
   let foesSeen = 0;
@@ -87,10 +97,21 @@ export function createAggregator(prep) {
       let anySwayed = false;
       let pcDowned = false;
       let pcsOut = 0;
+      let pcsDowned = 0;
+      let pcsDead = 0;
       let lostGoods = false;
+      const partyWon = result.outcome === "victory" && result.winners.includes(SIDES.FRIENDLY);
       let joined = false;
       let reinforced = false;
+      let dealt = false;
       for ( const [id, r] of Object.entries(result.units) ) {
+        for ( const g of r.gave ?? [] ) {
+          if ( DEALS.has(g.how) ) dealt = true;
+          const fromFriend = friendIds.has(id);
+          if ( fromFriend && !friendIds.has(g.to) ) money.lost += g.value;
+          else if ( !fromFriend && friendIds.has(g.to) && g.got ) money.gained += g.value;
+        }
+        if ( partyWon && foeIds.has(id) && LOOTABLE.has(r.status) ) money.gained += r.worth ?? 0;
         if ( id.startsWith("reinforce~") ) reinforced = true;
         const u = units[id];
         if ( !u ) continue;
@@ -116,6 +137,7 @@ export function createAggregator(prep) {
           anySwayed = true;
         }
         if ( r.wasDowned ) u.downed += 1;
+        if ( r.wasDowned && partyWon ) u.downedWins += 1;
         u.hpFrac += r.hpFrac;
         u.damage += r.damage;
         u.healing += r.healing;
@@ -123,11 +145,11 @@ export function createAggregator(prep) {
         if ( pcIds.includes(id) ) {
           if ( r.status === STATUS.DEAD ) {
             pcDead = true;
-            party.dead += 1;
+            pcsDead += 1;
           }
           if ( r.wasDowned ) {
             pcDowned = true;
-            party.downed += 1;
+            pcsDowned += 1;
           }
           if ( PC_OUT.has(r.status) ) pcsOut += 1;
           if ( r.conceded ) lostGoods = true;
@@ -149,6 +171,12 @@ export function createAggregator(prep) {
       }
       if ( pcDowned ) anyPcDowned += 1;
       if ( pcIds.length && pcsOut === pcIds.length ) party.wiped += 1;
+      party.downed += pcsDowned;
+      party.dead += pcsDead;
+      losses.push(pcsDowned);
+      if ( dealt ) money.deals += 1;
+      // (A costly win: a PC dead, or half the PCs or more gone down.)
+      if ( partyWon && pcIds.length && (pcsDead > 0 || pcsDowned * 2 >= pcIds.length) ) party.costlyWins += 1;
       if ( lostGoods ) party.lostGoods += 1;
       if ( joined ) joinedRuns += 1;
       if ( reinforced ) reinforcedRuns += 1;
@@ -196,6 +224,12 @@ export function createAggregator(prep) {
           meanDamage: u.damage / n,
           meanHealing: u.healing / n,
           pFirstToFall: u.firstToFall / n,
+          // (On the party's side: its odds of winning in the fights where this one went down, and where it didn't; null
+          // where it never did, or always did.)
+          ...(c.spec.side === SIDES.FRIENDLY ? {
+            pWinIfDowned: u.downed ? u.downedWins / u.downed : null,
+            pWinIfUp: runs - u.downed ? ((wins[SIDES.FRIENDLY] ?? 0) - u.downedWins) / (runs - u.downed) : null
+          } : {}),
           resources: Object.fromEntries(Object.entries(u.resources).map(([k, v]) => [k, v / n]))
         };
       }
@@ -211,11 +245,17 @@ export function createAggregator(prep) {
         pCollapsed: collapsedRuns / n,
         collapseCause: topCollapse(collapses, collapsedRuns),
         // The party's lot (null with no PC): wiped (every PC down, dead or taken), PCs down and dead on average, the HP
-        // they're left with (a share of their most), and a PC robbed or paying up.
+        // they're left with (a share of their most), a PC robbed or paying up.
         party: pcIds.length ? {
           pcs: pcIds.length, pWiped: party.wiped / n, meanDowned: party.downed / n, meanDead: party.dead / n,
-          meanHp: party.hp / (n * pcIds.length), pLostGoods: party.lostGoods / n
+          meanHp: party.hp / (n * pcIds.length), pLostGoods: party.lostGoods / n,
+          // Of the party's wins, the costly ones (null: no wins); and the PCs down in the worst tenth of fights.
+          pCostlyWin: wins[SIDES.FRIENDLY] ? party.costlyWins / wins[SIDES.FRIENDLY] : null,
+          worstDowned: percentile([...losses].sort((a, b) => a - b), 0.9)
         } : null,
+        // Money, in the smallest coin, on average: what the party's side gains (handed or taken to it, and, when it
+        // wins, what's on the foes it has beaten), and loses (handed or taken from it); a deal struck (bribe, extortion).
+        money: { gained: money.gained / n, lost: money.lost / n, pDeal: money.deals / n },
         // How the party's foes end (shares of every foe in every fight it took part in, FOE_ENDS), null with none.
         foesEnd: foesSeen ? Object.fromEntries(FOE_ENDS.map(k => [k, foeEnds[k] / foesSeen])) : null,
         // Someone from outside the encounter joining in; reinforcements arriving; a foe's boss or leader falling (or

@@ -18396,6 +18396,26 @@
    "hash": "84c33b218d16",
    "changed": true
   },
+  "core:FASTFIGHTING.Results.CostlyWins": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Results.CostlyWins",
+   "area": "core/Results",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "f1d43000525e"
+  },
+  "core:FASTFIGHTING.Results.CostlyWinsHint": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Results.CostlyWinsHint",
+   "area": "core/Results",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "3d10a3d50d03"
+  },
   "core:FASTFIGHTING.Results.Damage": {
    "repo": "core",
    "file": "languages/en.json",
@@ -18425,6 +18445,26 @@
    "date": null,
    "commit": null,
    "hash": "ec9b10a4a79c"
+  },
+  "core:FASTFIGHTING.Results.DealStruck": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Results.DealStruck",
+   "area": "core/Results",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "8d5f6e9b2c3c"
+  },
+  "core:FASTFIGHTING.Results.DealStruckHint": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Results.DealStruckHint",
+   "area": "core/Results",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "f924d6d93dc9"
   },
   "core:FASTFIGHTING.Results.DmgAbbr": {
    "repo": "core",
@@ -18657,6 +18697,46 @@
    "date": "2026-10-11",
    "commit": "9faf4c4",
    "hash": "9f7be83dabe0"
+  },
+  "core:FASTFIGHTING.Results.IfDown": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Results.IfDown",
+   "area": "core/Results",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "63422230b111"
+  },
+  "core:FASTFIGHTING.Results.IfDownHint": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Results.IfDownHint",
+   "area": "core/Results",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "a4782991f9e1"
+  },
+  "core:FASTFIGHTING.Results.Losses": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Results.Losses",
+   "area": "core/Results",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "62d47bf2ee9d"
+  },
+  "core:FASTFIGHTING.Results.LossesHint": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Results.LossesHint",
+   "area": "core/Results",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "6f8f2471ff23"
   },
   "core:FASTFIGHTING.Results.MedianRounds": {
    "repo": "core",
@@ -18918,6 +18998,16 @@
    "commit": null,
    "hash": "1a0d817ac0b6"
   },
+  "core:FASTFIGHTING.Results.Section.money": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Results.Section.money",
+   "area": "core/Results",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "5ccc2e8715d7"
+  },
   "core:FASTFIGHTING.Results.Section.party": {
    "repo": "core",
    "file": "languages/en.json",
@@ -18927,6 +19017,16 @@
    "date": null,
    "commit": null,
    "hash": "40ad1064d0f9"
+  },
+  "core:FASTFIGHTING.Results.Section.stakes": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Results.Section.stakes",
+   "area": "core/Results",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "5ece01d8df53"
   },
   "core:FASTFIGHTING.Results.Simulated": {
    "repo": "core",
@@ -18938,6 +19038,26 @@
    "commit": null,
    "hash": "1edb4eef8e9d",
    "gone": "2026-10-17"
+  },
+  "core:FASTFIGHTING.Results.Spoils": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Results.Spoils",
+   "area": "core/Results",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "8f9df351ee4c"
+  },
+  "core:FASTFIGHTING.Results.SpoilsHint": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Results.SpoilsHint",
+   "area": "core/Results",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "d9ea8539e17c"
   },
   "core:FASTFIGHTING.Results.Stale": {
    "repo": "core",
@@ -19070,6 +19190,27 @@
    "date": null,
    "commit": null,
    "hash": "27ab4faac73e",
+   "changed": true
+  },
+  "core:FASTFIGHTING.Results.WorstTenth": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Results.WorstTenth",
+   "area": "core/Results",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "760b4e0f7ce2"
+  },
+  "core:FASTFIGHTING.Results.WorstTenthHint": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Results.WorstTenthHint",
+   "area": "core/Results",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "9216971c2405",
    "changed": true
   },
   "core:FASTFIGHTING.Results.Xp": {

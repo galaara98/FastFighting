@@ -36,7 +36,7 @@ import { keepTogether } from "./behavior/together.js";
 import { mayLeave, startLeaving, isLeaving, wayOff, goAlong, confronted, dealsWithIt, backOnItsWay } from "./behavior/leaving.js";
 import { createAggregator } from "./aggregate.js";
 import { spotTraps, stepOut, learnTrap } from "./behavior/traps.js";
-import { talkActionsThisTurn, choosePitch, attemptTalk, shareLanguage, resolveTalk, aimOf } from "./behavior/talk.js";
+import { talkActionsThisTurn, choosePitch, attemptTalk, shareLanguage, resolveTalk, aimOf, remaining as goodsLeft } from "./behavior/talk.js";
 import { opensWithTalk, breaksStandoff, standoffPitches, charismaticLeader, canTalk, prefersTalk } from "./behavior/standoff.js";
 import { controlOutcome, controlRoll, isImmune, degreeShift } from "./behavior/control.js";
 import { recompute as recomputeConditions, applyOutcome, renewHolds, beginConcentration, endConcentration, holdsAnything, noteConcentration, moveHeld, settleAllegiance, iwrOf, incoming, spendEdges, spendBoost, focusOf, tauntProof, withoutTaunt } from "./behavior/effects.js";
@@ -4674,6 +4674,24 @@ export function captureUnit(u, rules) {
   };
 }
 
+/**
+ * What u handed over this fight (not kept back, not got back), as `{gave: [{to, how, value, got}]}`, or nothing: to
+ * whom, how ("bribe", "extort", "theft", "loot"), its worth in the smallest coin, and whether the taker has it (not
+ * left on the ground).
+ */
+function gaveOf(u) {
+  const gave = (u.concessions ?? []).filter(c => !c.kept && !c.returned && (c.kind === "money" || c.kind === "item")).map(c => ({
+    to: c.to ?? null, how: c.how ?? null, value: c.kind === "money" ? c.amount : (Number(c.item?.value) || 0) * (c.count ?? 1), got: !c.drop || !!c.picked
+  }));
+  return gave.length ? { gave } : {};
+}
+
+/** What u has on it at the end, in the smallest coin: its own coin, and everything it carries, wields or wears. */
+function worthOf(u) {
+  const v = goodsLeft(u);
+  return v.own + [...v.stowed, ...v.wielded, ...v.worn].reduce((sum, i) => sum + (Number(i.value) || 0) * (i.quantity ?? 1), 0);
+}
+
 function summarize(run, ended, capture, winners) {
   const outcome = !ended ? "stalemate" : (winners.length ? "victory" : "none");
   const units = {};
@@ -4690,6 +4708,9 @@ function summarize(run, ended, capture, winners) {
       fellRound: u.fellRound,
       swayed: u.swayOutcome,
       conceded: (u.concessions?.length ?? 0) > 0,
+      // (For the planner's money: what it handed over, and what it's worth at the end.)
+      ...gaveOf(u),
+      worth: worthOf(u),
       resourcesUsed: Object.fromEntries(Object.entries(u.resourcesStart).map(([k, v]) => [k, v - (u.resources[k] ?? 0)])),
       final: capture ? captureUnit(u, run.prep.rules) : undefined
     };
