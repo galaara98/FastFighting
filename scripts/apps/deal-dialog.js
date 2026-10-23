@@ -197,6 +197,7 @@ export class DealDialog extends HandlebarsApplicationMixin(ApplicationV2) {
         return this.close();
       }
       const skill = this.skills.find(s => s.key === this.pick.skill);
+      const before = new Set(game.messages.keys());
       let roll = await this.adapter?.rollCheck?.(this.token, {
         purpose: prep.purpose, skill: this.pick.skill, dc: prep.dc, action: { id: null, name: prep.purpose }, target, deal: { kind: prep.purpose, ask: kind.ask, wordless: prep.wordless }
       }).catch(() => null);
@@ -206,7 +207,9 @@ export class DealDialog extends HandlebarsApplicationMixin(ApplicationV2) {
         await r.toMessage({ speaker: ChatMessage.getSpeaker({ token: this.token }), flavor: skill?.label ?? "" });
         roll = { natural: r.dice[0]?.total ?? null, total: r.total };
       }
-      await gm.query(QUERIES.liveDeal, { stage: "rolled", key: prep.key, roll: { degree: roll.degree ?? null, natural: roll.natural ?? null, total: roll.total ?? null } }, { timeout: 600000 });
+      // (Its roll's cards: the GM's browser reads them for this deal only, not as the turn's.)
+      const cards = game.messages.contents.filter(m => !before.has(m.id) && m.author?.id === game.user.id).map(m => m.id);
+      await gm.query(QUERIES.liveDeal, { stage: "rolled", key: prep.key, roll: { degree: roll.degree ?? null, natural: roll.natural ?? null, total: roll.total ?? null }, cards }, { timeout: 600000 });
       this.close();
     } catch ( err ) {
       console.warn(`${MODULE_ID} | a deal`, err);

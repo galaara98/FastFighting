@@ -166,7 +166,7 @@ async function keepNow(b) {
   b.data.snapshot = snapshotRun(b.run, { log: false });
   // (A player's turn under way: who, since when, what the GM said and what reactions wrote. Its cards are found again by time.)
   const pc = b.pc;
-  b.data.pc = pc ? { combatantId: pc.combatantId, id: pc.id, round: pc.round, facts: pc.facts, records: pc.records, snapshot: pc.snapshot, from: pc.from, damage: pc.damage ?? [], dealt: pc.dealt ?? [], applied: pc.applied ?? [], lastAt: pc.lastAt ?? null, rollCards: pc.rollCards ?? [] } : null;
+  b.data.pc = pc ? { combatantId: pc.combatantId, id: pc.id, round: pc.round, facts: pc.facts, records: pc.records, snapshot: pc.snapshot, from: pc.from, damage: pc.damage ?? [], dealt: pc.dealt ?? [], applied: pc.applied ?? [], lastAt: pc.lastAt ?? null, rollCards: pc.rollCards ?? [], dealRolls: pc.dealRolls ?? [] } : null;
   const doc = transcriptOf(b.combat.id, b.data.id) ?? await newTranscript(b.combat.id);
   if ( !doc ) return;
   // (The battle's own key replaced whole, the journal's other keys left as they are. Its spec, the biggest part, only
@@ -651,7 +651,7 @@ async function followBack(prior) {
   const u = unitOf(combatant);
   if ( reopen && u ) {
     pcTurnBegin(battle.run, u.id, { nonce: freshNonce() });
-    battle.pc = { combatantId: combatant.id, id: u.id, round: reopen.round, messages: reopen.cards ?? [], facts: reopen.facts ?? [], records: [], snapshot: reopen.snapshot, from: reopen.from, rollCards: [] };
+    battle.pc = { combatantId: combatant.id, id: u.id, round: reopen.round, messages: reopen.cards ?? [], facts: reopen.facts ?? [], records: [], snapshot: reopen.snapshot, from: reopen.from, rollCards: [], dealRolls: reopen.dealRolls ?? [] };
   } else if ( own || (u && GONE.has(u.status)) ) battle.data.played = key;
   else if ( u && playerRuns(battle.run, u) ) await beginPlayerTurn(u, combatant);
   else if ( u ) await rewoundCard(u);
@@ -2304,6 +2304,9 @@ async function rolledDeal(data, user) {
   const u = run.byId.get(p.u);
   const t = run.byId.get(p.t);
   if ( !u || !t || battle.pc?.id !== u.id ) return { ok: false, reason: "notYourTurn" };
+  // (Its roll's cards, its player's: kept out of what the turn's cards are read for, at its end.)
+  const cards = (Array.isArray(data.cards) ? data.cards : []).filter(id => typeof id === "string" && game.messages.get(id)?.author?.id === user?.id);
+  if ( cards.length ) battle.pc.dealRolls = [...(battle.pc.dealRolls ?? []), ...cards];
   const natural = Number.isFinite(Number(data.roll?.natural)) ? Number(data.roll.natural) : null;
   const total = Number.isFinite(Number(data.roll?.total)) ? Number(data.roll.total) : null;
   let degree = Number.isInteger(data.roll?.degree) ? clamp(data.roll.degree, 0, 3) : null;
@@ -2740,7 +2743,9 @@ async function closePlayerTurn() {
   battle.pc = null;
   const run = battle.run;
   const adapter = getAdapter();
-  const messages = pc.messages.map(id => game.messages.get(id)).filter(Boolean);
+  // (Not a deal's roll: the deal is told, and holds, on its own: rolledDeal.)
+  const deals = new Set(pc.dealRolls ?? []);
+  const messages = pc.messages.filter(id => !deals.has(id)).map(id => game.messages.get(id)).filter(Boolean);
   const ids = Object.fromEntries(run.units.map(u => [tokenIdOf(u), u.id]));
   // (By actor too, for a card that names only the actor: the first of its tokens.)
   const actors = {};
@@ -2776,7 +2781,7 @@ async function closePlayerTurn() {
   // (With what it was read from, the player's own cards: the tracker taken back to it, it's theirs again.)
   const turn = {
     key: `${pc.round}.${pc.combatantId}`, combatantId: pc.combatantId, round: pc.round, at: battle.combat.turns.findIndex(c => c.id === pc.combatantId), kind: "pc", records, messages: [], moves: [], doors: [], snapshot: pc.snapshot,
-    from: pc.from, cards: pc.messages, facts: pc.facts ?? []
+    from: pc.from, cards: pc.messages, facts: pc.facts ?? [], dealRolls: pc.dealRolls ?? []
   };
   if ( pc.applied?.length ) turn.applied = [...pc.applied];
   turn.messages.push(...(pc.rollCards ?? []), ...made, ...await showRolls(endRolls, turn, { audiences }));
