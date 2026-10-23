@@ -58,9 +58,11 @@ export const STILL_ROUNDS = 2;
  * STILL_ROUNDS whole rounds gone by with nothing changing: `since`, the round and the creature whose turn it was when
  * the fight last changed (fightMoment), or when the GM said to go on; `round` and `id`, the turn beginning now. That
  * creature's turn has come round that many times, or one round more has begun (its turns may have stopped coming).
+ * Never before `least` whole rounds of the fight are played (the system's fewest Max rounds: a fight that short isn't
+ * yet one that might never end); past them, the still rounds count wherever they began.
  */
-export function stillSince(since, round, id) {
-  if ( !since ) return false;
+export function stillSince(since, round, id, least = 0) {
+  if ( !since || round - 1 < least ) return false;
   const gone = round - since.round;
   return gone > STILL_ROUNDS || (gone === STILL_ROUNDS && id === since.id);
 }

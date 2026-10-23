@@ -77,6 +77,9 @@ describe("when it stops", () => {
     expect(stillSince(since, 5, "wolf")).toBe(true);
     expect(stillSince(since, 6, "kyra")).toBe(true);
     expect(stillSince(null, 9, "wolf")).toBe(false);
+    // (Never before the fight has played the system's fewest Max rounds, 6 in PF2e; past them, at once.)
+    expect(stillSince(since, 6, "kyra", 6)).toBe(false);
+    expect(stillSince(since, 7, "kyra", 6)).toBe(true);
   });
 
   test("the first that holds is why; the GMs are told only what they didn't do themselves", () => {

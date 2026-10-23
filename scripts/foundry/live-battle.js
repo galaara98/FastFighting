@@ -26,7 +26,7 @@ import { escapeHtml as escape, inertHtml, listJoin } from "../i18n.js";
 import { getAdapter, characterSpec } from "../api.js";
 import { dropGoods, pickUpGoods, lootOnFall, writeForaged } from "./loot-drop.js";
 import { meatGoods } from "./food.js";
-import { setting, followSetting } from "../settings.js";
+import { setting, followSetting, rangeOf } from "../settings.js";
 import { positionOf, squareFeet } from "./terrain.js";
 import { approachFor, sceneNow } from "./battle.js";
 import { currentPathGrid, pathGridFor, sceneWallGrid } from "./pathing.js";
@@ -739,13 +739,13 @@ async function turnBegins(combatant) {
     await moveOn();
     return;
   }
-  // (A Fast Fight goes on, unless this turn is its player's; gone two whole rounds with nothing changing, the GM is
-  // asked whether it goes on.)
+  // (A Fast Fight goes on, unless this turn is its player's; gone two whole rounds with nothing changing, once the
+  // fight has lasted the system's fewest Max rounds, the GM is asked whether it goes on.)
   if ( battle.fast ) {
     const round = battle.run.round ?? 0;
     const moment = fightMoment(battle.run.units);
     if ( moment !== battle.fast.moment || !battle.fast.since ) Object.assign(battle.fast, { moment, since: { round, id: u.id } });
-    if ( !checkFast({ playerTurn: playerRuns(battle.run, u) }) && stillSince(battle.fast.since, round, u.id) ) await askStill(round, u);
+    if ( !checkFast({ playerTurn: playerRuns(battle.run, u) }) && stillSince(battle.fast.since, round, u.id, rangeOf("maxRounds").min) ) await askStill(round, u);
   }
   if ( playerRuns(battle.run, u) ) {
     await beginPlayerTurn(u, combatant);
