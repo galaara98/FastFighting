@@ -7663,6 +7663,26 @@
    "commit": null,
    "hash": "e70393b74a6a"
   },
+  "core:FASTFIGHTING.Live.FastStill.Ask": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Live.FastStill.Ask",
+   "area": "core/Live",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "bdfc093574a1"
+  },
+  "core:FASTFIGHTING.Live.FastStill.Title": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Live.FastStill.Title",
+   "area": "core/Live",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "148c6e5dfc30"
+  },
   "core:FASTFIGHTING.Live.FastStopped.gm": {
    "repo": "core",
    "file": "languages/en.json",
@@ -7702,7 +7722,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "5e746747fb70"
+   "hash": "5e746747fb70",
+   "gone": "2026-10-23"
   },
   "core:FASTFIGHTING.Live.FastStopped.tracker": {
    "repo": "core",

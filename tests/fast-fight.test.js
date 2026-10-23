@@ -6,7 +6,7 @@
  */
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import {
-  FAST_MOVE_SPEED, FAST_STOP_NOTES, QUIET_FLAGS, fastFightOffered, fastFightStop, fastTurnChange, fightMoment, stillSince, hushDice, unhushDice, diceHushed, registerQuietDice
+  FAST_MOVE_SPEED, FAST_STOP_NOTES, QUIET_FLAGS, fastFightOffered, fastFightStop, fastTurnChange, fightMoment, stillSince, STILL_ROUNDS, hushDice, unhushDice, diceHushed, registerQuietDice
 } from "../scripts/foundry/fast-fight.js";
 import { afterTurn, keptTurns, goingBack } from "../scripts/foundry/live-battle.js";
 
@@ -38,7 +38,7 @@ describe("when the Battle Vantage offers it", () => {
 describe("when it stops", () => {
   test("goes on while nothing says otherwise", () => {
     expect(fastFightStop({})).toBeNull();
-    expect(fastFightStop({ players: ["wolf"], had: ["wolf"], still: false, change: "ours" })).toBeNull();
+    expect(fastFightStop({ players: ["wolf"], had: ["wolf"], change: "ours" })).toBeNull();
     expect(fastFightStop({ change: "same" })).toBeNull();
   });
 
@@ -63,19 +63,19 @@ describe("when it stops", () => {
     expect(fastFightStop({ failed: true })).toBe("error");
   });
 
-  test("a whole round with nothing changing: a fight going nowhere isn't played on and on", () => {
-    expect(fastFightStop({ still: true })).toBe("still");
+  test("two whole rounds with nothing changing: the GM asked whether it goes on (not a stop of its own)", () => {
+    expect(STILL_ROUNDS).toBe(2);
     const wolf = { id: "wolf", hp: 12, status: "standing" };
     const at = fightMoment([wolf, { id: "kyra", hp: 20, status: "standing" }]);
     expect(fightMoment([{ ...wolf, hp: 11.6 }, { id: "kyra", hp: 20, status: "standing" }])).toBe(at);
     expect(fightMoment([{ ...wolf, hp: 9 }, { id: "kyra", hp: 20, status: "standing" }])).not.toBe(at);
     expect(fightMoment([wolf, { id: "kyra", hp: 20, status: "standing", swayOutcome: "neutral" }])).not.toBe(at);
-    // (Last changed on the wolf's turn in round 3: still when the wolf's turn comes again, or two rounds on.)
+    // (Last changed on the wolf's turn in round 3: still when the wolf's turn comes twice more, or three rounds on.)
     const since = { round: 3, id: "wolf" };
-    expect(stillSince(since, 3, "kyra")).toBe(false);
-    expect(stillSince(since, 4, "kyra")).toBe(false);
-    expect(stillSince(since, 4, "wolf")).toBe(true);
-    expect(stillSince(since, 5, "kyra")).toBe(true);
+    expect(stillSince(since, 4, "wolf")).toBe(false);
+    expect(stillSince(since, 5, "kyra")).toBe(false);
+    expect(stillSince(since, 5, "wolf")).toBe(true);
+    expect(stillSince(since, 6, "kyra")).toBe(true);
     expect(stillSince(null, 9, "wolf")).toBe(false);
   });
 
@@ -83,7 +83,7 @@ describe("when it stops", () => {
     expect(fastFightStop({ pressed: true, ended: true, asks: "roll" })).toBe("pressed");
     expect(fastFightStop({ ended: true, playerTurn: true })).toBe("ended");
     expect(fastFightStop({ playerTurn: true, asks: "question" })).toBe("player");
-    expect(FAST_STOP_NOTES).toEqual(expect.arrayContaining(["tracker", "player", "gm", "still"]));
+    expect(FAST_STOP_NOTES).toEqual(["tracker", "player", "gm"]);
     expect(FAST_STOP_NOTES).not.toContain("pressed");
     expect(FAST_STOP_NOTES).not.toContain("ended");
   });

@@ -2637,8 +2637,7 @@
       "FastStopped": {
         "tracker": "Fast Fight stopped: the tracker was moved.",
         "player": "Fast Fight stopped: a player's character is theirs to play.",
-        "gm": "Fast Fight stopped: a GM's answer is needed.",
-        "still": "Fast Fight stopped: a whole round went by with nothing changing. Press it again to go on."
+        "gm": "Fast Fight stopped: a GM's answer is needed."
       },
       "Told": "{name}'s Turn is complete.",
       "AwayPlayed": "{names}: no player came back in time, so FastFighting plays their turns now.",
@@ -2676,7 +2675,11 @@
         "slain": "They are going down.",
         "ownHit": "Their blow lands on {by}."
       },
-      "NotHere": "That battle isn't being played in this browser."
+      "NotHere": "That battle isn't being played in this browser.",
+      "FastStill": {
+        "Title": "Keep fighting?",
+        "Ask": "Two whole rounds have gone by with nothing changing: no one hurt, healed, fallen, fled, given up or talked over. Keep the Fast Fight going?"
+      }
     },
     "Deal": {
       "TalkOkTitle": "A deal",

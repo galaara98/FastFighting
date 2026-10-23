@@ -739,12 +739,13 @@ async function turnBegins(combatant) {
     await moveOn();
     return;
   }
-  // (A Fast Fight goes on, unless this turn is its player's, or a whole round has gone by with nothing changing.)
+  // (A Fast Fight goes on, unless this turn is its player's; gone two whole rounds with nothing changing, the GM is
+  // asked whether it goes on.)
   if ( battle.fast ) {
     const round = battle.run.round ?? 0;
     const moment = fightMoment(battle.run.units);
     if ( moment !== battle.fast.moment || !battle.fast.since ) Object.assign(battle.fast, { moment, since: { round, id: u.id } });
-    checkFast({ playerTurn: playerRuns(battle.run, u), still: stillSince(battle.fast.since, round, u.id) });
+    if ( !checkFast({ playerTurn: playerRuns(battle.run, u) }) && stillSince(battle.fast.since, round, u.id) ) await askStill(round, u);
   }
   if ( playerRuns(battle.run, u) ) {
     await beginPlayerTurn(u, combatant);
@@ -3966,6 +3967,23 @@ function checkFast(state = {}) {
   if ( FAST_STOP_NOTES.includes(why) ) ui.notifications?.info(fmt(`FASTFIGHTING.Live.FastStopped.${why}`));
   changed();
   return why;
+}
+
+/**
+ * A Fast Fight gone two whole rounds with nothing changing (stillSince): the GM asked whether it goes on. On, it counts
+ * afresh from this turn; not, it stops here, and the turn waits for the GM as any other.
+ */
+async function askStill(round, u) {
+  const on = await foundry.applications.api.DialogV2.confirm({
+    window: { title: loc("FASTFIGHTING.Live.FastStill.Title") },
+    content: `<p>${escape(loc("FASTFIGHTING.Live.FastStill.Ask"))}</p>`
+  });
+  if ( !battle?.fast ) return;
+  if ( on ) battle.fast.since = { round, id: u.id };
+  else {
+    endFast();
+    changed();
+  }
 }
 
 /** A Fast Fight over, however it ended: Dice So Nice as it was. */
