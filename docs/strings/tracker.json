@@ -38979,7 +38979,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "57b98ef0263a"
+   "hash": "57b98ef0263a",
+   "changed": true
   },
   "core:story:event.death": {
    "repo": "core",
@@ -39164,7 +39165,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "c6176065a36c"
+   "hash": "c6176065a36c",
+   "changed": true
   },
   "core:story:event.duelLose": {
    "repo": "core",
@@ -39938,7 +39940,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "758e9c351566"
+   "hash": "758e9c351566",
+   "changed": true
   },
   "core:story:event.potion": {
    "repo": "core",

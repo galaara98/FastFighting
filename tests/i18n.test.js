@@ -83,6 +83,12 @@ describe("the language files", () => {
     }
   });
 
+  test("a deal is told as what anyone could see: nothing named that would have to be overheard (what or how much, what for)", () => {
+    const told = Object.entries(read("story/en.json")).filter(([k]) => /^event\.(deal|dropGoods|pickUp)/.test(k));
+    expect(told.length).toBeGreaterThan(10);
+    for ( const [k, entries] of told ) for ( const e of entries ) expect([k, e, /\{(amount|ask)\}/.test(e)]).toEqual([k, e, false]);
+  });
+
   test("the code holds no English: nothing beside a key for when it has no words", () => {
     // localize("KEY", "English"), t("KEY", "English") and the like: the English belongs in languages/en.json.
     const call = /\b(localize|outcomeLine|logTerm|t|w|word)\(\s*(`[^`]*`|"[^"]*"|'[^']*'|[\w.$]+)\s*,\s*["'`]/g;
