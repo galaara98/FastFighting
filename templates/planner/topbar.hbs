@@ -1,0 +1,27 @@
+{{!-- The planner's top bar: where the plan stands, and the one thing to press now (primary, by state). --}}
+<header class="ff-topbar">
+  <span class="ff-chip">{{adapterLabel}}</span>
+  {{#if counts}}<span class="ff-chip">{{counts}}</span>{{/if}}
+  {{#if stale}}<span class="ff-chip ff-chip--attention" role="status"><span class="ff-dot-attention" aria-hidden="true"></span> {{localize "FASTFIGHTING.Planner.PlanChanged"}}</span>{{/if}}
+  {{#if restored}}<span class="ff-chip" data-tooltip-text="{{restored}}"><i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i> {{localize "FASTFIGHTING.Planner.RestoredChip"}}</span>{{/if}}
+  {{#if fightCount}}<span class="ff-chip ff-fight-count" role="status" data-tooltip="{{localize "FASTFIGHTING.Planner.FightsRunHint"}}">{{fightCount}}</span>{{/if}}
+  {{#if runsNote}}<span class="ff-chip ff-chip--attention" data-tooltip-text="{{runsNote.text}} {{runsNote.size}}"><i class="fa-solid fa-gauge-high" aria-hidden="true"></i> {{localize "FASTFIGHTING.Planner.RoughOdds"}}</span>{{/if}}
+  {{#if playersChip}}<button type="button" class="ff-chip ff-chip--button" data-action="leftView" data-view="players"><i class="fa-solid fa-users" aria-hidden="true"></i> {{playersChip}}</button>{{/if}}
+  {{#if paused}}<span class="ff-chip" data-tooltip="{{localize "FASTFIGHTING.Planner.PausedHint"}}"><i class="fa-solid fa-pause" aria-hidden="true"></i> {{localize "FASTFIGHTING.Planner.Paused"}}</span>{{/if}}
+  <span class="ff-grow"></span>
+  <button type="button" class="ff-btn ff-btn--quiet ff-btn--icon" data-action="refresh" data-tooltip="{{localize "FASTFIGHTING.Planner.RefreshHint"}}" aria-label="{{localize "FASTFIGHTING.Planner.RefreshHint"}}"><i class="fa-solid fa-arrows-rotate"></i></button>
+  <button type="button" class="ff-btn ff-btn--quiet ff-btn--icon" popovertarget="ff-pop-plan" aria-haspopup="menu" data-tooltip="{{localize "FASTFIGHTING.Planner.More"}}" aria-label="{{localize "FASTFIGHTING.Planner.More"}}"><i class="fa-solid fa-ellipsis"></i></button>
+  <div class="ff-menu" id="ff-pop-plan" popover role="menu">
+    <button type="button" class="ff-menu-item ff-menu-item--danger" role="menuitem" data-action="clearPlan" {{#if running}}disabled{{/if}}><i class="fa-solid fa-eraser" aria-hidden="true"></i> {{localize "FASTFIGHTING.Planner.ClearMenu"}}</button>
+  </div>
+  {{#with secondary}}
+  <button type="button" class="ff-btn {{#if disabled}}is-disabled{{/if}}" data-action="{{action}}" {{#if disabled}}aria-disabled="true"{{/if}} {{#if tooltip}}data-tooltip="{{tooltip}}"{{/if}}><i class="fa-solid {{icon}}" aria-hidden="true"></i> {{label}}</button>
+  {{/with}}
+  {{#with primary}}
+  <button type="button" class="ff-btn ff-btn--primary {{#if disabled}}is-disabled{{/if}}" data-action="{{action}}" {{#if disabled}}aria-disabled="true"{{/if}} {{#if tooltip}}data-tooltip="{{tooltip}}"{{/if}}>
+    {{#if @root.running}}<span class="ff-btn-fill" style="width: {{@root.progress}}%"></span>{{/if}}
+    <i class="fa-solid {{icon}}" aria-hidden="true"></i> <span>{{label}}</span>{{#if attention}} <span class="ff-dot-attention" aria-hidden="true"></span>{{/if}}
+  </button>
+  {{/with}}
+  <div class="ff-progress {{#if running}}is-running{{/if}}" aria-hidden="true"><span style="width: {{progress}}%"></span></div>
+</header>

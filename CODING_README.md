@@ -50,6 +50,15 @@ FastFighting is split into a pure simulation engine, system **helpers**, and the
 - **Keys never change:** a stored value is found by its key alone, so a setting can move to another group, or along one, and keep its value.
 - `tests/settings-groups.test.js` checks that every setting and menu the window shows is in exactly one group, the groups' order, and their headings.
 
+### The Battle Planner's window
+
+`apps/battle-planner.js`, three parts (`templates/planner/`): `topbar`, `left` and `right` (`details.hbs` is the right's Details tab). A view or tab change draws only its part (`render({ parts })`); anything that changes the plan draws all three.
+- **Its own state** (not the plan's): `leftView` (teams, encounter, players), `sideFilter`, `rosterFilter` (filtered in the DOM as typed, `#filterRoster`, no drawing), `expandedTeams`, `detail` (`{kind: "team", key}` or `{kind: "creature", id}`; the party at first), `resultTab` ("details" or a result's; "overview" at first), `openSections` (each `details[data-section]`, its `toggle` caught on the way down) and `previousResults` (the summary's change since the last run).
+- **Teams:** by group key (`commandGroup`'s, `PURSE_TEAMS`' and `options.reinforcements`'), shown as `TEAM_SHORT` (constants.js: F, H1 to H3, N1 to N3, Secret's S) in its color (`--ff-t-*`). A token's card is its chosen side's group (`#teamKey`); a Secret token's is the Secret card, its team the one picked (`#fightsFor`). Side settings stay by side, so a side's teams share them (Details says so).
+- **Menus** (role, team, a creature's ⋯, the top bar's ⋯) are `popover` elements opened by their button's `popovertarget`, placed beside it on their `toggle` (`placePopover`), closed after an action. Escape is the `closeMenu` keybinding (PRIORITY, main.js), since Foundry's own Escape closes the window; Foundry's tooltip is a popover too, so it shows over them.
+- **The top bar's buttons** come from `#actions`: Run, Stop, Do it For Real Now, and the one beside it held back (`aria-disabled`, saying why) while the plan has changed since its run or the helper can't play live.
+- Controls that aren't the plan's (the filter, the views) have no `name`: the form submits every named one on change.
+
 ### Fast Fight
 
 The Battle Vantage's **>> Fast Fight >>** (`foundry/fast-fight.js`, pure but for Dice So Nice, tested in `tests/fast-fight.test.js`; played by `live-battle.js` `fastFight`):
@@ -83,7 +92,7 @@ Hooks.once("fastFighting.init", api => {
     term(key) { ... }                                // the system's word for "ac" / "hp" / "sp" / "money" / "level"; null: FastFighting's generic one; false: none
     itemCatalog() { ... }                            // {categories, materials, rarities}: [{key, label}], the system's kinds of item (unused at present)
     get supportsLoot() { ... }                       // does its real fight leave loot and take corpses away? (shows the loot and corpse settings)
-    plannerSettings({ roster, setup, resolved, chains }) { ... } // the planner's row for this system: {title, hint, fields: [{key, label, hint, type: "pills"|"select", value, choices}]}
+    plannerSettings({ roster, setup, resolved, chains }) { ... } // the planner's section for this system: {title, hint, fields: [{key, label, hint, type: "pills"|"select", value, choices}]}
     applyPlannerSettings(spec, settings, context) { ... }        // setup.system's answers, onto the battle (spec.options.system)
     describeEncounter(spec, replay) { ... }          // the encounter's own record, for the planner's summary: {title, lines}
     resourceLabel(key, spec) { ... }

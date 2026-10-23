@@ -27,28 +27,26 @@ https://github.com/galaara98/FastFighting/releases/latest/download/module.json
 
 GMs get buttons at the top of the Combat Tracker: **Planner**, **Survey** (see [Prepare Players](#prepare-players)) and, once the planner has run that encounter, **Vantage** (see [Live battles](#do-it-for-real-now-live-battles)); it goes when the encounter ends. The planner needs at least two tokens in the encounter; <kbd>Shift</kbd>+<kbd>B</kbd> opens it too. It picks up an encounter already under way from whoever's turn it is, keeping wounds, dying and conditions.
 
-**One plan per encounter.** The planner follows the encounter the tracker shows and keeps your choices (sides, groups, roles, fudges, options) with that encounter until it ends. Combatants who join and tokens that come or go are taken in, and your choices stand. A new encounter starts from what you set up on the scene before it began; a fresh one puts every hostile token in one group. **Clear** (the eraser beside Refresh) resets the plan to the defaults, after asking. With no encounter, the plan belongs to the scene.
+**One plan per encounter.** The planner follows the encounter the tracker shows and keeps your choices (sides, groups, roles, fudges, options) with that encounter until it ends. Combatants who join and tokens that come or go are taken in, and your choices stand. A new encounter starts from what you set up on the scene before it began; a fresh one puts every hostile token in one group. **Clear this plan** (in the top bar's ⋯ menu) resets the plan to the defaults, after asking. With no encounter, the plan belongs to the scene.
 
 **Pausing.** The fight is read off the map, so opening the planner pauses the game. Closing it un-pauses, unless the game was paused before or you un-paused it meanwhile. In a live battle the game is paused while the fight is FastFighting's (playing a turn, reading a player's, waiting for **Next Turn**) and goes on for a player's turn; pause or un-pause it yourself and that holds until the next turn. Rewind This Encounter keeps it paused while it writes to the map. A pause stops only players: the GM's changes and token movement go on.
 
 The window needs at least 1000×600 and uses any extra space.
 
-**Toolbar**
-- **Seconds** (how long the prediction runs), **Max rounds** and **Seed**. Under 100 fights, the odds are rough: the planner says so, with what makes the battle slow to simulate (its creatures, their actions, the map's tiles and walls). Its estimate before a Run goes by how fast this computer ran the last one.
-- **Downed**, **After the fight** (see [After the fight](#after-the-fight)), **Opening** (see [Talking](#talking)) and **Surprise**: Follow System (the system's own surprise rules; greyed out where it has none), No one is surprised, Friendlies are surprised, or Friendlies surprise others. The turn order is always the Combat Tracker's once initiative is rolled.
-- Toggles: Terrain & positioning, Morale, Leadership, Talking, Ignore languages, Bystanders, Hidden tokens, and, with a helper that plays live battles, Players run their characters.
-- **Team cash:** F shows the party's own money; for H1 to H3 and N1 to N3, set what the team has besides its sheets, in the system's coin. A team shares it for deals (bribes, tolls, extortion), after each member's own money; thieves and looters can't take it.
-- **Run** (**Stop** while it runs), Refresh and Clear.
-- A helper may add a row for its system's encounter settings (FastFighting Ironsworn: how the encounter is tracked, its rank, and whose sheet keeps the track). The plan keeps them.
+**Top bar:** where the plan stands (its creatures and teams, the fights run, how many players are ready, the game paused) and the one button to press now: **Run**; **Stop** while it runs; **Do it For Real Now** once it has run, with Run beside it. Change the plan after a run and it says so: Run again before Do it For Real Now works. Refresh re-reads the tokens.
 
-**Left: the sides**, a tab each for Friendly, Hostile, Neutral and Secret.
-- Side settings: group personality, healing aggressiveness, **Can rout**, leaders (Auto or No leaders) and the leadership bonus. Neutral adds a lean (see [Taking no side](#taking-no-side)).
-- Each token row: a side override and an include toggle; group pills **1 2 3** for Hostile and Neutral tokens; for a Secret token, pills for hostile groups **1 2 3** and neutral teams **1 2 3**; and command pills **B L 1 2** (see [Leaders and bosses](#leaders-and-bosses)).
-- Expanding a row shows HP, AC, personality traits and how it reaches the nearest enemy (mode, distance, terrain); stat fudges (**Fudge up**, **Fudge down** and **Remove fudge** on every derived number), **Ignores terrain**, **Dies at 0 HP**, and the character's tactics and playstyles.
+**Left: three views.**
+- **Teams:** a card per team, by side (Friendly, Hostile, Neutral, Secret): the party **F**, the hostile groups **H1** to **H3**, the neutral friend groups **N1** to **N3**. Each card shows its leader and what it has; open it for its creatures. Filter by side or by name.
+- Each creature: a click shows it in Details; its command role (**B L 1 2**, a menu: see [Leaders and bosses](#leaders-and-bosses)); its team (a menu, for hostile, neutral and Secret tokens); whether it takes part; and a ⋯ menu for its side, its survey (see [Prepare Players](#prepare-players)) and its token.
+- **Encounter:** **Downed**, **After the fight** (see [After the fight](#after-the-fight)), **Opening** (see [Talking](#talking)) and **Surprise** (Follow System is greyed out where the system has no surprise rules; the turn order is always the Combat Tracker's once initiative is rolled); the rules (Terrain & positioning, Morale, Leadership, Talking, Ignore languages); who takes part (Bystanders, Hidden tokens); live battles (Players run their characters, Apply players' damage); the prediction (**Seconds**, **Max rounds**, **Seed**); a helper's own encounter settings (FastFighting Ironsworn: how the encounter is tracked, its rank, and whose sheet keeps the track); and **Loot on the map** (see [After the battle](#after-the-battle)). A closed section says what it's set to.
+- **Players:** **Prepare Players**, each player's survey and characters, and the characters whose players are away.
 
-**Right: the results**
-- **Overview:** win odds, PC death and downed odds, foes talked down, fights settled with words, length, the most dangerous foes and the allies most at risk.
-- **Combatants:** each token's odds of standing, down, dead, fled, surrendered, stood down and switched sides; HP left, damage, healing, and its chance to fall first.
+**Right: Details and the results.** Once it has run, the win odds, a PC's death and fall, and the length stay at the top, with the change since the run before.
+- **Details:** the team or creature last clicked (the party at first).
+  - A team: its **Team cash** (the party's is its characters' money; the others' is what the team has besides its sheets, in the system's coin, shared for deals: bribes, tolls, extortion), its **Reinforcements** (see [Leaders and bosses](#leaders-and-bosses)), its creatures, and its side's settings: group personality, leaders and the leadership bonus, healing aggressiveness, **Can rout**, and a neutral's lean (see [Taking no side](#taking-no-side)). These are kept by side, so a side's teams share them.
+  - A creature: HP, AC, how it reaches the nearest enemy (mode, distance, terrain), its odds, its personality traits, its stat fudges, **Ignores terrain**, **Dies at 0 HP**, and its playstyles and answers.
+- **Overview:** how long it lasts, the most dangerous foes and the allies most at risk; foes talked down and fights settled with words.
+- **Combatants:** each token's odds of standing, down, dead, fled, surrendered, stood down and switched sides; HP left, damage, healing, and its chance to fall first. A name shows it in Details.
 - **Swing factors:** runs the fight again without each combatant and option, to show what moves the party's odds most.
 - **Resources:** spell slots, focus points and consumables spent.
 - **Sample fight:** the story of the most typical fight (the most common outcome, of the usual length). It's a sample, not the ruling: Do it For Real Now plays a new fight with rolls nobody has seen, so a 70% win is a loss three times in ten.
@@ -84,7 +82,7 @@ Answers save as they're made, and two players sharing a token see each other's c
 
 **The Party tab** (the survey's last) asks six questions for the whole friendly side: who to go after first, whether to talk first, what to do with foes who fall, how to look after each other, how freely to spend spells, focus and potions, and when to pull out. Each player has one vote, shown to everyone as a dot in the player's color with their initial. A player votes until they swipe **Lock-in** (the tab turns green; orange if they move to another tab without it) or close the survey; the tab then stays read-only until the GM sends a new survey, which starts a new vote. Only logged-in players with a character in the fight count. The most-voted answer is the party's; the party leader's player breaks a tie, and a tie the leader doesn't settle counts as no answer. The party's answers nudge what each friendly creature wants, and in some fights stand in for its "Let this character decide" on talking, spending, foes who fall and pulling out; [**Party's sway**](STATS_AND_FORMULAS_README.md#partys-sway) sets how much.
 
-**Asking about one character.** Each friendly row in the planner has a quill. The green one asks that character's players: their survey opens on it, with the Party tab to look at, not vote on. The orange one opens that character's survey for every GM logged in, to answer for a player who's away.
+**Asking about one character.** A friendly creature's ⋯ menu in the planner has **Ask its players**: their survey opens on it, with the Party tab to look at, not vote on. **Answer as GM** opens that character's survey for every GM logged in, to answer for a player who's away.
 
 **My tactics.** A player who controls a token on the map, or owns a character, gets a **My tactics** button in the Encounters tab that opens the same survey at any time. It has a tab for each of their tokens on the map and for each of their characters with no token there. A linked token shares its actor's answers; an unlinked token keeps its own and stands in for its actor while on the map. A player who owns a character but can't open its Token or Prototype Token also gets a **FastFighting** button on its sheet's title bar: it opens that character's tactics alone, with no desires and no party vote, and a plain Close that tells the GM nothing. If the survey is already open (the GM asked for it), the button only brings it to the front.
 
@@ -227,7 +225,7 @@ An encounter [opens as a standoff](STATS_AND_FORMULAS_README.md#how-an-encounter
 
 ### Groups
 
-Hostile tokens start in group 1; the pills move them to group 2 or 3, each a side of its own with its own leader. When it opens, the planner proposes up to three [friend groups](STATS_AND_FORMULAS_README.md#neutral-friend-groups-reach) among the neutrals, by kind and nearness. Friends look after each other, and hurting one angers the rest.
+Hostile tokens start in group 1 (**H1**); a creature's team menu moves it to **H2** or **H3**, each a side of its own with its own leader. When it opens, the planner proposes up to three [friend groups](STATS_AND_FORMULAS_README.md#neutral-friend-groups-reach) among the neutrals, by kind and nearness. Friends look after each other, and hurting one angers the rest.
 
 ### Taking no side
 
@@ -235,11 +233,11 @@ Neutral tokens, and enemies talked out of the fight, [take no side](STATS_AND_FO
 
 ### Leaders and bosses
 
-Each group (the party, each hostile group, each neutral friend group) has a **boss** (never the party) or a **leader**, and up to two **lieutenants**: the **B L 1 2** pills. Click a pill to give the role, click again to keep a token out of command, right-click to clear it. FastFighting [fills them](STATS_AND_FORMULAS_README.md#chain-of-command) once, when the plan is new or just cleared (shown faded); after that only the GM changes them. Outside the party the best leader heads the group, as a boss when it outranks every other member by 2 levels or more. The party keeps the roles you gave its members before, or gets a leader only when exactly one member wants to lead.
+Each group (the party, each hostile group, each neutral friend group) has a **boss** (never the party) or a **leader**, and up to two **lieutenants**: **B L 1 2**, from a creature's role menu, which also has **Out of command** and **Automatic**. FastFighting [fills them](STATS_AND_FORMULAS_README.md#chain-of-command) once, when the plan is new or just cleared (shown dashed); after that only the GM changes them. Outside the party the best leader heads the group, as a boss when it outranks every other member by 2 levels or more. The party keeps the roles you gave its members before, or gets a leader only when exactly one member wants to lead.
 
 The commander [lends its group a bonus](STATS_AND_FORMULAS_README.md#what-a-leader-lends), [pulls its followers](STATS_AND_FORMULAS_README.md#following-the-leader) toward its wishes (**Leader's influence**, **Boss's influence**), and talking it down can take its group with it. When it falls or can't make itself seen and heard, a lieutenant steps up. Bosses almost never run. A Wants to Lead character out of command may [scheme](STATS_AND_FORMULAS_README.md#scheming); a PC turns traitor only on **Luck check: a player character turning traitor**.
 
-**Reinforcements.** The planner's **Reinforcements** row takes one creature for each team (drag it from a compendium or the Actors directory) and how many can come. A team's leader [calls them](STATS_AND_FORMULAS_README.md#reinforcements) when the fight turns against it (an action; the party's only when FastFighting plays all of it), and they come the next round from the map's far edge. In a live battle the Battle Vantage lists each team's and lets the GM call them.
+**Reinforcements.** A team's Details take one creature (drag it from a compendium or the Actors directory, or **Choose…** from the world's actors) and how many can come. A team's leader [calls them](STATS_AND_FORMULAS_README.md#reinforcements) when the fight turns against it (an action; the party's only when FastFighting plays all of it), and they come the next round from the map's far edge. In a live battle the Battle Vantage lists each team's and lets the GM call them.
 
 **Teams act as teams.** Each round, a group's head [sizes up the fight](STATS_AND_FORMULAS_README.md#team-stances), the smarter the more carefully:
 - **Leaving:** a competent head takes its team out of a fight whose odds look too long.
@@ -322,7 +320,7 @@ The words read in biographies are in [keywords/](keywords/README.md), one file p
 
 ## Settings
 
-World settings, under **Configure Settings → FastFighting**, in groups. The planner overrides some for one battle: Seconds, Max rounds, Downed, After the fight, Opening, Surprise, the toolbar toggles, and the side settings (the Neutral lean, healing). The luck settings and those marked (%) are chances out of 100. [STATS_AND_FORMULAS_README.md](STATS_AND_FORMULAS_README.md) gives each number's range and what it changes.
+World settings, under **Configure Settings → FastFighting**, in groups. The planner overrides some for one battle: Seconds, Max rounds, Downed, After the fight, Opening, Surprise, the Encounter view's toggles, and the side settings (the Neutral lean, healing). The luck settings and those marked (%) are chances out of 100. [STATS_AND_FORMULAS_README.md](STATS_AND_FORMULAS_README.md) gives each number's range and what it changes.
 
 ### Live battles
 
@@ -403,7 +401,7 @@ World settings, under **Configure Settings → FastFighting**, in groups. The pl
 | Do it For Real Now: fled combatants | Hide token | Tokens that fled. |
 | Dead player characters leave meat | off | A dead player character's loot token also holds its meat (only where the helper knows its system's meat). |
 
-- **Loot on the map:** the Planner's **Place a chest** and **Place a bag** put an empty pile where you click next: an Item Piles pile when Item Piles is set up, else the system's loot pile, else one of FastFighting's own. Its own window then opens for you to fill. It's a lure: a thief, a greedy creature or a hungry one may want what's in it more than a fight.
+- **Loot on the map:** the Planner's **Place a chest** and **Place a bag** (its Encounter view) put an empty pile where you click next: an Item Piles pile when Item Piles is set up, else the system's loot pile, else one of FastFighting's own. Its own window then opens for you to fill. It's a lure: a thief, a greedy creature or a hungry one may want what's in it more than a fight.
 - **Piles and hunger:** where the system's helper knows its food, [what lies on the map](STATS_AND_FORMULAS_README.md#piles-meat-and-hunger) is worth going for. A thief or a greedy creature goes for a rich pile when it's safe. A hungry creature eats: a pile's food, or the meat of the dead (a teammate's only for a cannibal or a feral mind). A wise one barely minds hunger mid-fight, but any creature that eats may come famished.
 - **Meat:** where the system's helper knows its meat, a creature's body leaves uncooked meat when it dies, with the rest of its gear. Nothing comes from a body of no flesh.
 - **The fallen's loot, live:** with Item Piles and **Leave on corpse**, a creature's token becomes an Item Piles pile when it falls, and turns back if it gets up. A player's character that dies leaves a loot token on top of it with a copy of its things; its sheet is untouched. The loot token is an Item Piles pile, else the system's loot pile, else one FastFighting makes. Creatures that rob the fallen take from it. **Do nothing** turns both off. A pile never joins a battle.

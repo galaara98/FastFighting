@@ -65,6 +65,19 @@ Hooks.once("init", () => {
   game.modules.get(MODULE_ID).api = api;
   Hooks.callAll("fastFighting.init", api);
 
+  // (Escape with one of FastFighting's menus open closes the menu, ahead of Foundry's own Escape, which closes the window.)
+  game.keybindings.register(MODULE_ID, "closeMenu", {
+    name: "FASTFIGHTING.Keybinding.closeMenu",
+    hint: "FASTFIGHTING.Keybinding.closeMenuHint",
+    editable: [{ key: "Escape" }],
+    precedence: CONST.KEYBINDING_PRECEDENCE.PRIORITY,
+    onDown: () => {
+      const open = document.querySelector(".fast-fighting [popover]:popover-open");
+      if ( !open ) return false;
+      open.hidePopover();
+      return true;
+    }
+  });
   game.keybindings.register(MODULE_ID, "openPlanner", {
     name: "FASTFIGHTING.Keybinding.Open",
     editable: [{ key: "KeyB", modifiers: ["Shift"] }],

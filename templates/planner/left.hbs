@@ -1,0 +1,205 @@
+{{!-- The planner's left pane: the teams and their creatures, the encounter's options, the players. --}}
+<section class="ff-left">
+  <nav class="ff-segment" role="tablist" aria-label="{{localize "FASTFIGHTING.Planner.Views"}}">
+    {{#each views}}<button type="button" role="tab" aria-selected="{{#if active}}true{{else}}false{{/if}}" class="{{#if active}}active{{/if}}" data-action="leftView" data-view="{{id}}">{{label}}{{#if badge}} <span class="ff-count">{{badge}}</span>{{/if}}</button>{{/each}}
+  </nav>
+
+  {{#if (eq leftView "teams")}}
+  <div class="ff-filters">
+    {{#each filters}}<button type="button" class="ff-filter {{#if active}}active{{/if}}" data-action="sideFilter" data-side="{{id}}" aria-pressed="{{#if active}}true{{else}}false{{/if}}">{{#if swatch}}<span class="ff-swatch ff-t-{{swatch}}" aria-hidden="true"></span>{{/if}}{{label}} <span class="ff-count">{{count}}</span></button>{{/each}}
+    <label class="ff-search"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i><input type="search" class="ff-roster-filter" value="{{rosterFilter}}" placeholder="{{localize "FASTFIGHTING.Planner.Filter"}}" aria-label="{{localize "FASTFIGHTING.Planner.Filter"}}"></label>
+  </div>
+  <div class="ff-roster">
+    {{#each sides}}
+    <section class="ff-side" aria-label="{{label}}">
+      <h3 class="ff-side-title"><span class="ff-swatch ff-t-{{swatch}}" aria-hidden="true"></span>{{label}} <span class="ff-count">{{count}}</span></h3>
+      {{#each teams}}
+      <article class="ff-card ff-t-{{short}} {{#if selected}}is-selected{{/if}} {{#if expanded}}is-open{{/if}}" data-team="{{key}}">
+        <div class="ff-card-head">
+          <button type="button" class="ff-card-select" data-action="showTeam" data-team="{{key}}" aria-pressed="{{#if selected}}true{{else}}false{{/if}}" data-tooltip="{{localize "FASTFIGHTING.Planner.ShowTeam"}}">
+            <span class="ff-team ff-t-{{short}}">{{label}}</span>
+            <span class="ff-card-text">
+              <span class="ff-card-name">{{name}}{{#with head}} <span class="ff-led">{{text}}</span> <span class="ff-role {{#if auto}}is-auto{{/if}}" data-tooltip-text="{{roleName}}">{{short}}</span>{{/with}}</span>
+              <span class="ff-card-sum">{{summary}}</span>
+            </span>
+          </button>
+          <button type="button" class="ff-btn ff-btn--quiet ff-btn--icon" data-action="toggleTeam" data-team="{{key}}" aria-expanded="{{#if expanded}}true{{else}}false{{/if}}" aria-label="{{toggleLabel}}" data-tooltip-text="{{toggleLabel}}"><i class="fa-solid fa-chevron-right ff-chevron" aria-hidden="true"></i></button>
+        </div>
+        <div class="ff-card-rows">
+          {{#each members}}
+          <div class="ff-member ff-t-{{team.short}} {{#unless include}}is-excluded{{/unless}} {{#if selected}}is-selected{{/if}}" data-token-id="{{id}}" data-name="{{findName}}">
+            <button type="button" class="ff-member-who" data-action="showCreature" aria-pressed="{{#if selected}}true{{else}}false{{/if}}">
+              <img src="{{img}}" alt="">
+              <span class="ff-member-text"><span class="ff-member-name">{{name}}</span>{{#if sub}}<span class="ff-member-sub">{{sub}}</span>{{/if}}</span>
+            </button>
+            <span class="ff-marks">
+              {{#if fudged}}<span class="ff-mark ff-mark--gm" data-tooltip="{{localize "FASTFIGHTING.Planner.Fudged"}}">{{localize "FASTFIGHTING.Planner.FudgedShort"}}</span>{{/if}}
+              {{#if hidden}}<span class="ff-mark" data-tooltip="{{localize "FASTFIGHTING.Planner.HiddenToken"}}" aria-label="{{localize "FASTFIGHTING.Planner.HiddenToken"}}"><i class="fa-solid fa-eye-slash"></i></span>{{/if}}
+              {{#if bystander}}<span class="ff-mark" data-tooltip="{{localize "FASTFIGHTING.Planner.BystandersHint"}}" aria-label="{{localize "FASTFIGHTING.Planner.Bystanders"}}"><i class="fa-solid fa-eye"></i></span>{{/if}}
+              {{#if controllers}}<span class="ff-mark" data-tooltip="{{localize "FASTFIGHTING.Planner.ControlledBy"}}"><i class="fa-solid fa-user" aria-hidden="true"></i> {{controllers}}</span>{{/if}}
+              {{#if note}}<span class="ff-mark ff-mark--note" data-tooltip-text="{{note}}" aria-label="{{note}}"><i class="fa-solid fa-circle-info"></i></span>{{/if}}
+            </span>
+            {{#with role}}
+            <button type="button" class="ff-role {{cls}}" popovertarget="ff-pop-role-{{../id}}" aria-haspopup="menu" aria-label="{{aria}}" data-tooltip-text="{{label}}">{{short}}</button>
+            <div class="ff-menu" id="ff-pop-role-{{../id}}" popover role="menu">
+              {{#each items}}<button type="button" class="ff-menu-item {{#if active}}active{{/if}}" role="menuitemradio" aria-checked="{{#if active}}true{{else}}false{{/if}}" data-action="{{action}}" data-role="{{key}}">{{#if icon}}<span class="ff-role is-auto" aria-hidden="true"><i class="fa-solid {{icon}}"></i></span>{{else}}<span class="ff-role {{cls}}" aria-hidden="true">{{short}}</span>{{/if}} {{label}}</button>{{/each}}
+            </div>
+            {{else}}
+            <span class="ff-role-space" aria-hidden="true"></span>
+            {{/with}}
+            {{#with team}}
+            {{#if items}}
+            <button type="button" class="ff-team-pick" popovertarget="ff-pop-team-{{../id}}" aria-haspopup="menu" aria-label="{{aria}}" data-tooltip-text="{{name}}"><span class="ff-team ff-t-{{short}}">{{label}}</span><i class="fa-solid fa-caret-down" aria-hidden="true"></i></button>
+            <div class="ff-menu" id="ff-pop-team-{{../id}}" popover role="menu">
+              {{#each items}}<button type="button" class="ff-menu-item {{#if active}}active{{/if}}" role="menuitemradio" aria-checked="{{#if active}}true{{else}}false{{/if}}" data-action="setTeam" data-team="{{value}}"><span class="ff-team ff-t-{{short}}">{{label}}</span> {{name}}</button>{{/each}}
+            </div>
+            {{else}}
+            <span class="ff-team-pick is-fixed"><span class="ff-team ff-t-{{short}}" data-tooltip-text="{{name}}">{{label}}</span></span>
+            {{/if}}
+            {{/with}}
+            <label class="ff-switch" data-tooltip="{{localize "FASTFIGHTING.Planner.IncludeHint"}}"><input type="checkbox" name="tokens.{{id}}.include" {{checked include}} aria-label="{{includeLabel}}"><span aria-hidden="true"></span></label>
+            <button type="button" class="ff-btn ff-btn--quiet ff-btn--icon" popovertarget="ff-pop-row-{{id}}" aria-haspopup="menu" aria-label="{{moreLabel}}" data-tooltip-text="{{moreLabel}}"><i class="fa-solid fa-ellipsis"></i></button>
+            <div class="ff-menu" id="ff-pop-row-{{id}}" popover role="menu">
+              <p class="ff-menu-head">{{localize "FASTFIGHTING.Planner.SideMenu"}}</p>
+              {{#each sideItems}}<button type="button" class="ff-menu-item {{#if active}}active{{/if}}" role="menuitemradio" aria-checked="{{#if active}}true{{else}}false{{/if}}" data-action="setSide" data-side="{{id}}"><span class="ff-swatch ff-t-{{swatch}}" aria-hidden="true"></span> {{label}}</button>{{/each}}
+              <hr>
+              {{#with survey}}
+              {{#if players}}<button type="button" class="ff-menu-item" role="menuitem" data-action="surveyCharacter" data-tooltip-text="{{playersHint}}"><i class="fa-solid fa-feather-pointed" aria-hidden="true"></i> {{localize "FASTFIGHTING.Planner.AskPlayersShort"}}</button>{{/if}}
+              <button type="button" class="ff-menu-item" role="menuitem" data-action="surveyCharacterGm" data-tooltip="{{localize "FASTFIGHTING.Survey.AskGms"}}"><i class="fa-solid fa-feather-pointed" aria-hidden="true"></i> {{localize "FASTFIGHTING.Planner.AnswerAsGm"}}</button>
+              {{/with}}
+              <button type="button" class="ff-menu-item" role="menuitem" data-action="panToken"><i class="fa-solid fa-crosshairs" aria-hidden="true"></i> {{localize "FASTFIGHTING.Planner.PanTo"}}</button>
+            </div>
+          </div>
+          {{/each}}
+        </div>
+      </article>
+      {{/each}}
+    </section>
+    {{else}}
+    <p class="ff-empty">{{localize "FASTFIGHTING.Planner.NoMembers"}}</p>
+    {{/each}}
+  </div>
+  {{/if}}
+
+  {{#if (eq leftView "encounter")}}
+  <div class="ff-left-scroll">
+    <details class="ff-section" data-section="howItPlays" {{#if open.howItPlays}}open{{/if}}>
+      <summary><i class="fa-solid fa-chevron-right ff-chevron" aria-hidden="true"></i><span class="ff-section-title">{{localize "FASTFIGHTING.Planner.Section.howItPlays"}}</span><span class="ff-section-sum">{{sums.howItPlays}}</span></summary>
+      <div class="ff-section-body ff-grid2">
+        <label class="ff-field"><span class="ff-field-label">{{localize "FASTFIGHTING.Planner.Downed"}}</span>
+          <select name="options.downedModel">{{selectOptions downedChoices selected=options.downedModel localize=true}}</select>
+        </label>
+        <label class="ff-field"><span class="ff-field-label">{{localize "FASTFIGHTING.Planner.Aftermath"}} <button type="button" class="ff-help" data-tooltip="{{localize "FASTFIGHTING.Settings.aftermath.Hint"}}" aria-label="{{localize "FASTFIGHTING.Settings.aftermath.Hint"}}"><i class="fa-solid fa-question"></i></button></span>
+          <select name="options.aftermath">{{selectOptions aftermathChoices selected=options.aftermath localize=true}}</select>
+        </label>
+        <label class="ff-field"><span class="ff-field-label">{{localize "FASTFIGHTING.Planner.Opening"}} <button type="button" class="ff-help" data-tooltip="{{localize "FASTFIGHTING.Settings.opening.Hint"}}" aria-label="{{localize "FASTFIGHTING.Settings.opening.Hint"}}"><i class="fa-solid fa-question"></i></button></span>
+          <select name="options.opening">{{selectOptions openingChoices selected=options.opening localize=true}}</select>
+        </label>
+        <label class="ff-field"><span class="ff-field-label">{{localize "FASTFIGHTING.Planner.Surprise"}}</span>
+          <select name="options.surprise">{{#each surpriseChoices}}<option value="{{value}}" {{#if selected}}selected{{/if}} {{#if disabled}}disabled{{/if}}>{{label}}</option>{{/each}}</select>
+        </label>
+      </div>
+    </details>
+    <details class="ff-section" data-section="rules" {{#if open.rules}}open{{/if}}>
+      <summary><i class="fa-solid fa-chevron-right ff-chevron" aria-hidden="true"></i><span class="ff-section-title">{{localize "FASTFIGHTING.Planner.Section.rules"}}</span><span class="ff-section-sum">{{sums.rules}}</span></summary>
+      <div class="ff-section-body ff-checks">
+        <label class="ff-check" data-tooltip="{{localize "FASTFIGHTING.Planner.PositioningHint"}}"><input type="checkbox" name="options.positioning" {{checked options.positioning}}> {{localize "FASTFIGHTING.Planner.Positioning"}}</label>
+        <label class="ff-check"><input type="checkbox" name="options.morale" {{checked options.morale}}> {{localize "FASTFIGHTING.Planner.Morale"}}</label>
+        <label class="ff-check"><input type="checkbox" name="options.leadership" {{checked options.leadership}}> {{localize "FASTFIGHTING.Planner.Leadership"}}</label>
+        <label class="ff-check" data-tooltip="{{localize "FASTFIGHTING.Planner.TalkingHint"}}"><input type="checkbox" name="options.talking" {{checked options.talking}}> {{localize "FASTFIGHTING.Planner.Talking"}}</label>
+        <label class="ff-check" data-tooltip="{{localize "FASTFIGHTING.Planner.IgnoreLanguagesHint"}}"><input type="checkbox" name="options.ignoreLanguages" {{checked options.ignoreLanguages}}> {{localize "FASTFIGHTING.Planner.IgnoreLanguages"}}</label>
+      </div>
+    </details>
+    <details class="ff-section" data-section="participants" {{#if open.participants}}open{{/if}}>
+      <summary><i class="fa-solid fa-chevron-right ff-chevron" aria-hidden="true"></i><span class="ff-section-title">{{localize "FASTFIGHTING.Planner.Section.participants"}}</span><span class="ff-section-sum">{{sums.participants}}</span></summary>
+      <div class="ff-section-body ff-checks">
+        <label class="ff-check" data-tooltip="{{localize "FASTFIGHTING.Planner.BystandersHint"}}"><input type="checkbox" name="options.bystanders" {{checked options.bystanders}}> {{localize "FASTFIGHTING.Planner.Bystanders"}}</label>
+        <label class="ff-check"><input type="checkbox" name="options.includeHidden" {{checked options.includeHidden}}> {{localize "FASTFIGHTING.Planner.Hidden"}}</label>
+      </div>
+    </details>
+    {{#if live}}
+    <details class="ff-section" data-section="live" {{#if open.live}}open{{/if}}>
+      <summary><i class="fa-solid fa-chevron-right ff-chevron" aria-hidden="true"></i><span class="ff-section-title">{{localize "FASTFIGHTING.Planner.Section.live"}}</span><span class="ff-section-sum">{{sums.live}}</span></summary>
+      <div class="ff-section-body ff-checks">
+        <label class="ff-check" data-tooltip="{{localize "FASTFIGHTING.Planner.PlayersRunHint"}}"><input type="checkbox" name="options.playersRunPCs" {{checked options.playersRunPCs}}> {{localize "FASTFIGHTING.Planner.PlayersRun"}}</label>
+        <label class="ff-check {{#if systemApplies}}is-disabled{{/if}}" data-tooltip="{{#if systemApplies}}{{systemApplies}}{{else}}{{localize "FASTFIGHTING.Planner.ApplyDamageHint"}}{{/if}}"><input type="checkbox" name="options.applyPlayerDamage" {{checked options.applyPlayerDamage}} {{#if systemApplies}}disabled{{/if}}> {{localize "FASTFIGHTING.Planner.ApplyDamage"}}</label>
+      </div>
+    </details>
+    {{/if}}
+    <details class="ff-section" data-section="prediction" {{#if open.prediction}}open{{/if}}>
+      <summary><i class="fa-solid fa-chevron-right ff-chevron" aria-hidden="true"></i><span class="ff-section-title">{{localize "FASTFIGHTING.Planner.Section.prediction"}}</span><span class="ff-section-sum">{{sums.prediction}}</span></summary>
+      <div class="ff-section-body ff-grid2">
+        <label class="ff-field ff-slider"><span class="ff-field-label">{{localize "FASTFIGHTING.Planner.Seconds"}} <button type="button" class="ff-help" data-tooltip="{{localize "FASTFIGHTING.Planner.SecondsHint"}}" aria-label="{{localize "FASTFIGHTING.Planner.SecondsHint"}}"><i class="fa-solid fa-question"></i></button></span>
+          <span class="ff-slider-control"><input type="range" name="options.seconds" value="{{options.seconds}}" min="{{secondsRange.min}}" max="{{secondsRange.max}}" step="1" data-dtype="Number"> <output class="ff-slider-value">{{options.seconds}}</output></span>
+        </label>
+        <label class="ff-field ff-slider"><span class="ff-field-label">{{localize "FASTFIGHTING.Planner.MaxRounds"}} <button type="button" class="ff-help" data-tooltip="{{localize "FASTFIGHTING.Settings.maxRounds.Hint"}}" aria-label="{{localize "FASTFIGHTING.Settings.maxRounds.Hint"}}"><i class="fa-solid fa-question"></i></button></span>
+          <span class="ff-slider-control"><input type="range" name="options.maxRounds" value="{{options.maxRounds}}" min="4" max="12" step="1" data-dtype="Number"> <output class="ff-slider-value">{{options.maxRounds}}</output></span>
+        </label>
+        <label class="ff-field"><span class="ff-field-label">{{localize "FASTFIGHTING.Planner.Seed"}}</span>
+          <input type="text" name="options.seed" value="{{options.seed}}" placeholder="{{localize "FASTFIGHTING.Planner.Random"}}" size="9">
+        </label>
+      </div>
+    </details>
+    {{#with systemSection}}
+    <details class="ff-section" data-section="system" {{#if @root.open.system}}open{{/if}}>
+      <summary><i class="fa-solid fa-chevron-right ff-chevron" aria-hidden="true"></i><span class="ff-section-title">{{title}}</span><span class="ff-section-sum">{{summary}}</span></summary>
+      <div class="ff-section-body">
+        {{#if hint}}<p class="ff-hint">{{hint}}</p>{{/if}}
+        <div class="ff-grid2">
+          {{#each fields}}
+          <div class="ff-field ff-system-field"><span class="ff-field-label">{{label}}{{#if hint}} <button type="button" class="ff-help" data-tooltip="{{hint}}" aria-label="{{hint}}"><i class="fa-solid fa-question"></i></button>{{/if}}</span>
+            {{#if isPills}}
+            <span class="ff-pills">{{#each choices}}<button type="button" class="ff-pill {{#if active}}active{{/if}}" data-action="setSystem" data-key="{{../key}}" data-value="{{value}}" aria-pressed="{{#if active}}true{{else}}false{{/if}}" {{#if hint}}data-tooltip="{{hint}}"{{/if}}>{{label}}</button>{{/each}}</span>
+            {{else}}
+            <select name="{{name}}" aria-label="{{label}}">{{#each choices}}<option value="{{value}}" {{#if active}}selected{{/if}}>{{label}}</option>{{/each}}</select>
+            {{/if}}
+          </div>
+          {{/each}}
+        </div>
+      </div>
+    </details>
+    {{/with}}
+    <details class="ff-section" data-section="loot" {{#if open.loot}}open{{/if}}>
+      <summary><i class="fa-solid fa-chevron-right ff-chevron" aria-hidden="true"></i><span class="ff-section-title">{{localize "FASTFIGHTING.Planner.Loot"}}</span></summary>
+      <div class="ff-section-body">
+        <p class="ff-hint">{{localize "FASTFIGHTING.Planner.LootHint"}}</p>
+        <div class="ff-actions">
+          <button type="button" class="ff-btn" data-action="placeLoot" data-kind="chest"><i class="fa-solid fa-box-open" aria-hidden="true"></i> {{localize "FASTFIGHTING.Planner.PlaceChest"}}</button>
+          <button type="button" class="ff-btn" data-action="placeLoot" data-kind="bag"><i class="fa-solid fa-sack-dollar" aria-hidden="true"></i> {{localize "FASTFIGHTING.Planner.PlaceBag"}}</button>
+        </div>
+      </div>
+    </details>
+  </div>
+  {{/if}}
+
+  {{#if (eq leftView "players")}}
+  <div class="ff-left-scroll">
+    <div class="ff-actions">
+      <button type="button" class="ff-btn" data-action="preparePlayers" {{#unless players.length}}disabled{{/unless}}><i class="fa-solid fa-clipboard-question" aria-hidden="true"></i> {{localize "FASTFIGHTING.Survey.Prepare"}}</button>
+      <span class="ff-hint">{{localize "FASTFIGHTING.Survey.PrepareHint"}}</span>
+    </div>
+    <ul class="ff-player-list">
+      {{#each players}}
+      <li class="ff-player-row ff-status-{{status}}">
+        <span class="ff-player-dot {{#if active}}is-online{{/if}}" style="--player-color: {{color}}" aria-hidden="true"></span>
+        <span class="ff-player-name">{{name}}</span>
+        <span class="ff-player-status">{{#if entering}}<i class="fa-solid fa-pen-nib fa-beat-fade" aria-hidden="true"></i> {{/if}}{{statusLabel}}</span>
+        <span class="ff-player-chars">{{#each chars}}<span class="ff-mini"><img src="{{img}}" alt=""> {{name}}</span>{{/each}}</span>
+        <button type="button" class="ff-btn ff-btn--small" data-action="openSurvey" data-user-id="{{id}}" data-tooltip="{{openLabel}}" aria-label="{{openLabel}}"><i class="fa-solid fa-clipboard-list"></i></button>
+      </li>
+      {{else}}
+      <li class="ff-hint">{{localize "FASTFIGHTING.Survey.NoPlayersHere"}}</li>
+      {{/each}}
+    </ul>
+    {{#if away.length}}
+    <section class="ff-box">
+      <h4>{{localize "FASTFIGHTING.Planner.AwayChars"}}</h4>
+      {{#each away}}
+      <div class="ff-away-row" data-token-id="{{id}}"><span class="ff-mini"><img src="{{img}}" alt=""> {{name}}</span><span class="ff-hint">{{owners}}</span>
+        <button type="button" class="ff-btn ff-btn--small" data-action="surveyCharacterGm" data-tooltip="{{localize "FASTFIGHTING.Survey.AskGms"}}"><i class="fa-solid fa-feather-pointed" aria-hidden="true"></i> {{localize "FASTFIGHTING.Planner.AnswerAsGm"}}</button></div>
+      {{/each}}
+    </section>
+    {{/if}}
+  </div>
+  {{/if}}
+</section>

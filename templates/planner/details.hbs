@@ -1,0 +1,144 @@
+{{!-- The Details tab: a team (its resources, its members, its side's settings) or a creature (all of it, for this battle). --}}
+<div class="ff-details">
+  {{#with team}}
+  <div class="ff-detail-head ff-t-{{short}}">
+    <span class="ff-team ff-team--large ff-t-{{short}}">{{label}}</span>
+    <div class="ff-detail-title">
+      <h3>{{name}}</h3>
+      <span class="ff-detail-meta">{{sideLabel}} · {{countText}}</span>
+      {{#with head}}<span class="ff-detail-meta"><img src="{{img}}" alt=""> {{text}} <span class="ff-role {{#if auto}}is-auto{{/if}}" data-tooltip-text="{{roleName}}">{{short}}</span>{{#if reason}} <span class="ff-hint">{{reason}}</span>{{/if}}</span>{{/with}}
+    </div>
+    {{#if win}}<div class="ff-kpi ff-kpi--side"><span class="ff-kpi-value">{{win}}</span><span class="ff-kpi-label">{{winLabel}}</span></div>{{/if}}
+  </div>
+
+  {{#if resources}}
+  <details class="ff-section" data-section="dResources" {{#if @root.open.dResources}}open{{/if}}>
+    <summary><i class="fa-solid fa-chevron-right ff-chevron" aria-hidden="true"></i><span class="ff-section-title">{{localize "FASTFIGHTING.Planner.Detail.resources"}}</span><span class="ff-section-sum">{{resources.sum}}</span></summary>
+    <div class="ff-section-body">
+      <div class="ff-res-row">
+        <span class="ff-res-label"><i class="fa-solid fa-coins" aria-hidden="true"></i> {{localize "FASTFIGHTING.Planner.Purses"}} <button type="button" class="ff-help" data-tooltip="{{localize "FASTFIGHTING.Planner.PursesHint"}}" aria-label="{{localize "FASTFIGHTING.Planner.PursesHint"}}"><i class="fa-solid fa-question"></i></button></span>
+        {{#if resources.party}}
+        <span class="ff-res-value">{{resources.partyCash}} {{resources.coin}}</span><span class="ff-hint">{{localize "FASTFIGHTING.Planner.PartyPurseHint"}}</span>
+        {{else}}
+        <input type="number" min="0" step="1" name="{{resources.purse.name}}" value="{{resources.purse.value}}" data-dtype="Number" aria-label="{{localize "FASTFIGHTING.Planner.Purses"}}"> <span class="ff-hint">{{resources.coin}}</span>
+        {{/if}}
+      </div>
+      <div class="ff-res-row">
+        <span class="ff-res-label"><i class="fa-solid fa-user-plus" aria-hidden="true"></i> {{localize "FASTFIGHTING.Planner.Reinforcements"}} <button type="button" class="ff-help" data-tooltip="{{localize "FASTFIGHTING.Planner.ReinforcementsHint"}}" aria-label="{{localize "FASTFIGHTING.Planner.ReinforcementsHint"}}"><i class="fa-solid fa-question"></i></button></span>
+        {{#with resources.reinforcement}}
+        {{#if name}}
+        <span class="ff-mini {{#if unreadable}}is-unreadable{{/if}}" data-reinforce-drop="{{key}}"><img src="{{img}}" alt=""> {{name}}</span>
+        <input type="number" min="0" max="99" step="1" name="{{countName}}" value="{{count}}" data-dtype="Number" aria-label="{{localize "FASTFIGHTING.Battle.ReinforcementsHowMany"}}">
+        <button type="button" class="ff-btn ff-btn--quiet ff-btn--icon" data-action="clearReinforcement" data-team="{{key}}" data-tooltip="{{localize "FASTFIGHTING.Planner.ReinforcementsClear"}}" aria-label="{{localize "FASTFIGHTING.Planner.ReinforcementsClear"}}"><i class="fa-solid fa-xmark"></i></button>
+        {{else}}
+        <span class="ff-drop" data-reinforce-drop="{{key}}">{{localize "FASTFIGHTING.Planner.ReinforcementsDrop"}}</span>
+        {{/if}}
+        <button type="button" class="ff-btn ff-btn--small" data-action="chooseReinforcement" data-team="{{key}}">{{localize "FASTFIGHTING.Planner.ChooseButton"}}</button>
+        {{/with}}
+      </div>
+    </div>
+  </details>
+  {{/if}}
+
+  <details class="ff-section" data-section="dMembers" {{#if @root.open.dMembers}}open{{/if}}>
+    <summary><i class="fa-solid fa-chevron-right ff-chevron" aria-hidden="true"></i><span class="ff-section-title">{{localize "FASTFIGHTING.Planner.Detail.members"}}</span><span class="ff-section-sum">{{countText}}</span></summary>
+    <div class="ff-section-body">
+      <div class="ff-chips">{{#each members}}<button type="button" class="ff-mini ff-mini--button {{#unless include}}is-excluded{{/unless}}" data-action="showCreature" data-token-id="{{id}}"><img src="{{img}}" alt=""> {{name}}{{#if team}} <span class="ff-team ff-t-{{team.short}}">{{team.label}}</span>{{/if}}</button>{{/each}}</div>
+      {{#if secretNote}}<p class="ff-hint">{{secretNote}}</p>{{/if}}
+      {{#if secret}}<p class="ff-hint">{{localize "FASTFIGHTING.Planner.SecretCard"}}</p>{{/if}}
+    </div>
+  </details>
+
+  {{#with side}}
+  {{#if ../shared}}<p class="ff-shared-note"><i class="fa-solid fa-circle-info" aria-hidden="true"></i> {{../shared}}</p>{{/if}}
+  <details class="ff-section" data-section="dPersonality" {{#if @root.open.dPersonality}}open{{/if}}>
+    <summary><i class="fa-solid fa-chevron-right ff-chevron" aria-hidden="true"></i><span class="ff-section-title">{{localize "FASTFIGHTING.Planner.GroupTraits"}}</span><span class="ff-section-sum" data-tooltip-text="{{budget.hint}}">{{budget.text}}</span></summary>
+    <div class="ff-section-body"><div class="ff-trait-grid">{{#each traits}}{{> "modules/fast-fighting/templates/partials/fudge.hbs" this}}{{/each}}</div></div>
+  </details>
+  <details class="ff-section" data-section="dLeader" {{#if @root.open.dLeader}}open{{/if}}>
+    <summary><i class="fa-solid fa-chevron-right ff-chevron" aria-hidden="true"></i><span class="ff-section-title">{{localize "FASTFIGHTING.Planner.Leader"}}</span><span class="ff-section-sum">{{leaderSum}}</span></summary>
+    <div class="ff-section-body">
+      <label class="ff-field">{{localize "FASTFIGHTING.Planner.Leader"}}
+        <select name="sides.{{id}}.leaderId">{{selectOptions leaderChoices selected=leaderId}}</select>
+      </label>
+      {{#if leadership.length}}
+      <span class="ff-field-label">{{localize "FASTFIGHTING.Planner.LeadershipBonus"}}{{#if leaderNames}} · {{leaderNames}}{{/if}}</span>
+      <div class="ff-trait-grid">{{#each leadership}}{{> "modules/fast-fighting/templates/partials/fudge.hbs" this}}{{/each}}</div>
+      {{/if}}
+    </div>
+  </details>
+  <details class="ff-section" data-section="dFights" {{#if @root.open.dFights}}open{{/if}}>
+    <summary><i class="fa-solid fa-chevron-right ff-chevron" aria-hidden="true"></i><span class="ff-section-title">{{localize "FASTFIGHTING.Planner.Detail.howItFights"}}</span><span class="ff-section-sum">{{fightsSum}}</span></summary>
+    <div class="ff-section-body ff-actions">
+      {{#if leanChoices}}
+      <label class="ff-field">{{localize "FASTFIGHTING.Planner.Lean"}}
+        <select name="sides.{{id}}.allegiance">{{selectOptions leanChoices selected=lean localize=true}}</select>
+      </label>
+      {{/if}}
+      <label class="ff-field">{{localize "FASTFIGHTING.Planner.Healing"}}
+        <select name="sides.{{id}}.healAggro">{{selectOptions healChoices selected=healAggro localize=true}}</select>
+      </label>
+      <label class="ff-check"><input type="checkbox" name="sides.{{id}}.morale" {{checked morale}}> {{localize "FASTFIGHTING.Planner.SideMorale"}}</label>
+    </div>
+  </details>
+  {{/with}}
+  {{/with}}
+
+  {{#with creature}}
+  <div class="ff-detail-head ff-t-{{teamChip.short}}" data-token-id="{{id}}">
+    <button type="button" class="ff-detail-portrait" data-action="panToken" data-tooltip="{{localize "FASTFIGHTING.Planner.PanTo"}}" aria-label="{{localize "FASTFIGHTING.Planner.PanTo"}}"><img src="{{img}}" alt=""></button>
+    <div class="ff-detail-title">
+      <h3>{{name}}{{#with role}} <span class="ff-role {{cls}}" data-tooltip-text="{{label}}">{{short}}</span>{{/with}}{{#if hidden}} <i class="fa-solid fa-eye-slash" data-tooltip="{{localize "FASTFIGHTING.Planner.HiddenToken"}}" aria-label="{{localize "FASTFIGHTING.Planner.HiddenToken"}}"></i>{{/if}}</h3>
+      <span class="ff-detail-meta">
+        {{#if sub}}<span>{{sub}}</span>{{/if}}
+        <span data-tooltip="{{hpName}}"><i class="fa-solid fa-heart" aria-hidden="true"></i> {{hp}}</span>
+        {{#if stamina}}<span data-tooltip="{{staminaName}}"><i class="fa-solid fa-bolt" aria-hidden="true"></i> {{stamina}}</span>{{/if}}
+        {{#if showAc}}<span data-tooltip="{{acName}}"><i class="fa-solid fa-shield" aria-hidden="true"></i> {{ac}}</span>{{/if}}
+        {{#if controllers}}<span data-tooltip="{{localize "FASTFIGHTING.Planner.ControlledBy"}}"><i class="fa-solid fa-user" aria-hidden="true"></i> {{controllers}}</span>{{/if}}
+      </span>
+      {{#if approach}}<span class="ff-detail-meta"><i class="fa-solid fa-route" aria-hidden="true"></i> {{approach}}</span>{{/if}}
+      {{#if resolvedLabel}}<span class="ff-detail-meta ff-row-note">{{resolvedLabel}}</span>{{/if}}
+    </div>
+    {{#with teamChip}}<button type="button" class="ff-mini ff-mini--button" data-action="showTeam" data-team="{{key}}" data-tooltip="{{localize "FASTFIGHTING.Planner.ShowTeam"}}"><span class="ff-team ff-t-{{short}}">{{label}}</span> {{name}}</button>{{/with}}
+  </div>
+  {{#with fate}}
+  <div class="ff-fatebox">
+    <div class="ff-fate">{{#each bars}}<span class="{{cls}}" style="width: {{w}}%" data-tooltip-text="{{label}}"></span>{{/each}}</div>
+    <small>{{localize "FASTFIGHTING.Results.Standing"}} {{standing}} · {{localize "FASTFIGHTING.Results.Down"}} {{downed}} · {{localize "FASTFIGHTING.Results.Dead"}} {{dead}} · {{localize "FASTFIGHTING.Results.Fled"}} {{fled}}</small>
+  </div>
+  {{/with}}
+  <details class="ff-section" data-section="dTraits" {{#if @root.open.dTraits}}open{{/if}}>
+    <summary><i class="fa-solid fa-chevron-right ff-chevron" aria-hidden="true"></i><span class="ff-section-title">{{localize "FASTFIGHTING.Planner.Detail.personality"}}</span><span class="ff-section-sum" data-tooltip-text="{{budget.hint}}">{{budget.text}}</span></summary>
+    <div class="ff-section-body">
+      <div class="ff-trait-grid">{{#each traits}}{{> "modules/fast-fighting/templates/partials/fudge.hbs" this}}{{/each}}</div>
+      {{#if playstyleNames}}<p class="ff-hint"><i class="fa-solid fa-masks-theater" aria-hidden="true"></i> {{playstyleNames}}</p>{{/if}}
+    </div>
+  </details>
+  <details class="ff-section" data-section="dStats" {{#if @root.open.dStats}}open{{/if}}>
+    <summary><i class="fa-solid fa-chevron-right ff-chevron" aria-hidden="true"></i><span class="ff-section-title">{{localize "FASTFIGHTING.Planner.Detail.stats"}}</span><span class="ff-section-sum">{{statsSum}}</span></summary>
+    <div class="ff-section-body">
+      <div class="ff-trait-grid">{{#each stats}}{{> "modules/fast-fighting/templates/partials/fudge.hbs" this}}{{/each}}</div>
+      <div class="ff-checks">
+        <label class="ff-check"><input type="checkbox" name="tokens.{{id}}.ignoreTerrain" {{checked ignoreTerrain}}> {{localize "FASTFIGHTING.Planner.IgnoreTerrain"}}</label>
+        <label class="ff-check"><input type="checkbox" name="tokens.{{id}}.diesAtZero" {{checked diesAtZero}}> {{ffLocalize "FASTFIGHTING.Planner.DiesAtZero"}}</label>
+      </div>
+    </div>
+  </details>
+  {{#if tactics}}
+  <details class="ff-section" data-section="dTactics" {{#if @root.open.dTactics}}open{{/if}}>
+    <summary><i class="fa-solid fa-chevron-right ff-chevron" aria-hidden="true"></i><span class="ff-section-title">{{#if playerControlled}}{{localize "FASTFIGHTING.Planner.Disposition"}}{{else}}{{localize "FASTFIGHTING.Playstyle.NpcTitle"}}{{/if}}</span><span class="ff-section-sum">{{tactics.playstyleCount}}</span></summary>
+    <div class="ff-section-body">{{> "modules/fast-fighting/templates/partials/tactics.hbs" tactics}}</div>
+  </details>
+  {{/if}}
+  <details class="ff-section" data-section="dFacts" {{#if @root.open.dFacts}}open{{/if}}>
+    <summary><i class="fa-solid fa-chevron-right ff-chevron" aria-hidden="true"></i><span class="ff-section-title">{{localize "FASTFIGHTING.Planner.Detail.facts"}}</span></summary>
+    <div class="ff-section-body">
+      <dl class="ff-facts">
+        <dt>{{localize "FASTFIGHTING.Planner.Movement"}}</dt><dd>{{speeds}}</dd>
+        {{#if environment}}<dt>{{localize "FASTFIGHTING.Planner.Environment"}}</dt><dd>{{environment}}</dd>{{/if}}
+        <dt>{{localize "FASTFIGHTING.Planner.Options"}}</dt><dd>{{actions}}</dd>
+      </dl>
+    </div>
+  </details>
+  {{/with}}
+</div>

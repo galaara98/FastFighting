@@ -44,6 +44,15 @@ export const NEUTRAL_PARTY = "neutralParty";
 export const HOSTILE_GROUPS = Object.freeze([SIDES.HOSTILE, "hostile2", "hostile3"]);
 /** Friend groups, for hostile and neutral tokens alike. */
 export const GROUPS = Object.freeze([1, 2, 3]);
+/**
+ * Each team's short name (FASTFIGHTING.Planner.Team.*) and color (--ff-t-*), by its group key (engine battle-state.js
+ * groupKeyOf), as the planner and the Battle Vantage show it: the party F, the hostile groups H1 to H3, the neutral
+ * friend groups N1 to N3; and the planner's Secret tokens, S.
+ */
+export const TEAM_SHORT = Object.freeze({
+  [SIDES.FRIENDLY]: "F", [SIDES.HOSTILE]: "H1", hostile2: "H2", hostile3: "H3",
+  [`${NEUTRAL_PARTY}#1`]: "N1", [`${NEUTRAL_PARTY}#2`]: "N2", [`${NEUTRAL_PARTY}#3`]: "N3", [SIDES.SECRET]: "S"
+});
 /** The ways a creature moves (spec.speeds' keys): the scene's approach (terrain.js) and the story's move tables. */
 export const MOVE_MODES = ["walk", "fly", "swim", "climb", "burrow"];
 /** How near (in squares) a neutral must be to a friend group, for the planner to put it in that group. */

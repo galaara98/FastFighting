@@ -1,9 +1,12 @@
 /**
- * The GM's Battle Planner: roster and per-side settings on the left, results on the right.
+ * The GM's Battle Planner. A top bar: where the plan stands, and the one thing to press now (Run, Stop, Do it For Real
+ * Now). On the left, three views: the teams, each a card with its creatures; the encounter's options; the players and
+ * their surveys. On the right, the last run's odds pinned over the tabs: a team's or a creature's Details, and the
+ * results.
  */
 import {
   MODULE_ID, SIDES, TRAITS, ALLEGIANCE, HEAL_AGGRO, DOWNED_MODELS, AFTERMATH, OPENING, NEUTRAL_PARTY, HOSTILE_GROUPS, GROUPS,
-  traitBand, clamp, FUDGE_STEP, SIDE_SETTLE_MS
+  traitBand, clamp, FUDGE_STEP, SIDE_SETTLE_MS, TEAM_SHORT
 } from "../constants.js";
 import { getAdapter } from "../api.js";
 import { setting } from "../settings.js";
@@ -38,14 +41,20 @@ import { signedNumber } from "../engine/trait-parts.js";
 import { budgetFudges, traitTotal, TRAIT_BUDGET } from "../engine/trait-budget.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
-const TEMPLATE = `modules/${MODULE_ID}/templates/planner.hbs`;
+const TEMPLATES = `modules/${MODULE_ID}/templates/planner`;
 const FUDGE_PARTIAL = `modules/${MODULE_ID}/templates/partials/fudge.hbs`;
 const TACTICS_PARTIAL = `modules/${MODULE_ID}/templates/partials/tactics.hbs`;
 
 const SIDE_ORDER = [SIDES.FRIENDLY, SIDES.HOSTILE, SIDES.NEUTRAL, SIDES.SECRET];
-const SIDE_ICONS = { friendly: "fa-shield-heart", hostile: "fa-skull", neutral: "fa-scale-balanced", secret: "fa-user-secret" };
+/** Each side's color, for its swatch (the color of its first team). */
+const SIDE_SWATCH = { friendly: "F", hostile: "H1", neutral: "N1", secret: "S" };
+const LEFT_VIEWS = ["teams", "encounter", "players"];
 const RESULT_TABS = ["overview", "combatants", "swing", "resources", "sample"];
 const STAT_FUDGES = [["ac", 1], ["hp", 5], ["attack", 1], ["damage", 1]];
+/** The sections open at first (the GM's opening and closing them is kept while the planner is open). */
+const OPEN_SECTIONS = ["howItPlays", "rules", "loot", "dResources", "dMembers", "dPersonality", "dLeader", "dTraits", "dTactics"];
+/** A team's side: whose settings it has (hostile groups share the Hostile side's, neutral friend groups the Neutral's). */
+const sideOfTeam = key => (key === SIDES.FRIENDLY || key === SIDES.SECRET ? key : key.startsWith(NEUTRAL_PARTY) ? SIDES.NEUTRAL : SIDES.HOSTILE);
 
 const loc = key => localize(key);
 /** A stat's name: the game's word for armor class and hit points (its helper's, or FastFighting's generic one). */
@@ -78,6 +87,20 @@ const fightCount = n => game.i18n.format("FASTFIGHTING.Planner.FightsRun", { n: 
 
 /** A creature's traits as its sheet reads them (its sliders' starting points). */
 const baseTraits = spec => Object.fromEntries(TRAITS.map(k => [k, spec?.traits?.[k]?.base ?? 50]));
+
+/** A menu (a popover) just opened: under what opened it, right-aligned to it, kept on the screen. */
+function placePopover(pop, root) {
+  const opener = root.querySelector(`[popovertarget="${pop.id}"]`);
+  if ( !opener ) return;
+  const r = opener.getBoundingClientRect();
+  const w = pop.offsetWidth;
+  const h = pop.offsetHeight;
+  const left = clamp(r.right - w, 8, window.innerWidth - w - 8);
+  const below = r.bottom + 4;
+  const top = below + h > window.innerHeight - 8 ? Math.max(8, r.top - h - 4) : below;
+  pop.style.left = `${Math.round(left)}px`;
+  pop.style.top = `${Math.round(top)}px`;
+}
 
 /** The next point the GM clicks on the map (canvas pixels), or null (Escape, or a right-click). */
 function pickPoint() {
@@ -113,29 +136,36 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       refresh: BattlePlanner.#onRefresh,
       clearPlan: BattlePlanner.#onClearPlan,
       fudge: BattlePlanner.#onFudge,
-      sideTab: BattlePlanner.#onSideTab,
+      leftView: BattlePlanner.#onLeftView,
+      sideFilter: BattlePlanner.#onSideFilter,
+      showTeam: BattlePlanner.#onShowTeam,
+      showCreature: BattlePlanner.#onShowCreature,
+      toggleTeam: BattlePlanner.#onToggleTeam,
       resultTab: BattlePlanner.#onResultTab,
-      toggleRow: BattlePlanner.#onToggleRow,
       panToken: BattlePlanner.#onPanToken,
       swing: BattlePlanner.#onSwing,
       makeItSo: BattlePlanner.#onMakeItSo,
       preparePlayers: BattlePlanner.#onPreparePlayers,
       togglePlaystyle: BattlePlanner.#onTogglePlaystyle,
       setSystem: BattlePlanner.#onSetSystem,
-      setGroup: BattlePlanner.#onSetGroup,
+      setSide: BattlePlanner.#onSetSide,
       setTeam: BattlePlanner.#onSetTeam,
       setRole: BattlePlanner.#onSetRole,
+      autoRole: BattlePlanner.#onAutoRole,
       openSurvey: BattlePlanner.#onOpenSurvey,
       surveyCharacter: BattlePlanner.#onSurveyCharacter,
       surveyCharacterGm: BattlePlanner.#onSurveyCharacterGm,
       placeLoot: BattlePlanner.#onPlaceLoot,
+      chooseReinforcement: BattlePlanner.#onChooseReinforcement,
       clearReinforcement: BattlePlanner.#onClearReinforcement,
       cancel: BattlePlanner.#onCancel
     }
   };
 
   static PARTS = {
-    main: { template: TEMPLATE, templates: [FUDGE_PARTIAL, TACTICS_PARTIAL], scrollable: [".ff-roster-list", ".ff-results-body"] }
+    topbar: { template: `${TEMPLATES}/topbar.hbs` },
+    left: { template: `${TEMPLATES}/left.hbs`, scrollable: [".ff-roster", ".ff-left-scroll"] },
+    right: { template: `${TEMPLATES}/right.hbs`, templates: [`${TEMPLATES}/details.hbs`, FUDGE_PARTIAL, TACTICS_PARTIAL], scrollable: [".ff-results-body"] }
   };
 
   /** Singleton access. */
@@ -151,9 +181,15 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
 
   constructor(options) {
     super(options);
-    this.sideTab = SIDES.FRIENDLY;
+    this.leftView = "teams";
+    this.sideFilter = "all";
+    this.rosterFilter = "";
     this.resultTab = "overview";
-    this.expanded = new Set();
+    // (The team cards opened to show their creatures; Details shows a team, the party at first, or a creature.)
+    this.expandedTeams = new Set();
+    this.detail = { kind: "team", key: SIDES.FRIENDLY };
+    this.openSections = new Set(OPEN_SECTIONS);
+    this.previousResults = null;
     this.setup = null;
     this.roster = null;
     this.results = null;
@@ -190,20 +226,79 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     this.combatHook = Hooks.on("updateCombat", (combat, changes, options, userId) => {
       if ( combat.started && "round" in changes && this.readyForVantage(combat) ) this.#goLive({ begin: true, began: true });
     });
-    // (Told when a character's reactions may have changed: sheet-watch.js. Only an open row shows them.)
+    // (Told when a character's reactions may have changed: sheet-watch.js. Only the creature in Details shows them.)
     this.unwatchReactions = showsReactions({
-      shows: actor => this.rendered && !!this.roster?.some(e => e.token.actor?.uuid === actor.uuid && this.expanded.has(e.token.id)),
+      shows: actor => this.rendered && !!this.roster?.some(e => e.token.actor?.uuid === actor.uuid && this.#isShown(e.token.id)),
       recheck: actor => this.recheckReactions(actor)
     });
+    // (Kept at least this big, while it can grow.)
+    this.element.style.minWidth = "1000px";
+    this.element.style.minHeight = "600px";
+    this.#listen();
+  }
+
+  /** Is this token's creature the one in Details? */
+  #isShown(id) {
+    return this.detail?.kind === "creature" && this.detail.id === id;
   }
 
   /**
-   * A character's items or effects changed while its row is open: the planner reads the tokens again if the reactions it
-   * shows aren't the same (as its Refresh button does).
+   * What the window listens for, once (its parts drawn again keep it): a creature dropped on a team's reinforcements;
+   * a slider's value as it moves; the roster's filter as it's typed; a section opened or closed; a menu opened (placed
+   * by its button) or used (closed).
+   */
+  #listen() {
+    const el = this.element;
+    el.addEventListener("dragover", event => {
+      if ( event.target.closest?.("[data-reinforce-drop]") ) event.preventDefault();
+    });
+    el.addEventListener("drop", event => {
+      const slot = event.target.closest?.("[data-reinforce-drop]");
+      if ( !slot ) return;
+      event.preventDefault();
+      this.#dropReinforcement(slot.dataset.reinforceDrop, event);
+    });
+    el.addEventListener("input", event => {
+      const t = event.target;
+      if ( t.matches?.('.ff-slider input[type="range"]') ) {
+        const shown = t.parentElement?.querySelector(".ff-slider-value");
+        if ( shown ) shown.textContent = t.value;
+      } else if ( t.matches?.(".ff-roster-filter") ) {
+        this.rosterFilter = t.value;
+        this.#filterRoster();
+      }
+    });
+    // (A section's open state and a menu's opening don't bubble: caught on the way down.)
+    el.addEventListener("toggle", event => {
+      const t = event.target;
+      if ( t.matches?.("details[data-section]") ) {
+        if ( t.open ) this.openSections.add(t.dataset.section);
+        else this.openSections.delete(t.dataset.section);
+      } else if ( t.matches?.("[popover]") && event.newState === "open" ) placePopover(t, el);
+    }, true);
+    el.addEventListener("click", event => {
+      const pop = event.target.closest?.("[popover]");
+      if ( pop && event.target.closest("[data-action]") ) pop.hidePopover?.();
+    });
+  }
+
+  /** The roster as filtered by name: the creatures that match, in their cards (opened while filtering), the rest hidden. */
+  #filterRoster() {
+    const list = this.element?.querySelector(".ff-roster");
+    if ( !list ) return;
+    const q = (this.rosterFilter ?? "").trim().toLocaleLowerCase(game.i18n.lang);
+    list.classList.toggle("is-filtering", !!q);
+    for ( const row of list.querySelectorAll(".ff-member") ) row.hidden = !!q && !row.dataset.name?.includes(q);
+    for ( const card of list.querySelectorAll(".ff-card") ) card.hidden = !!q && !card.querySelector(".ff-member:not([hidden])");
+  }
+
+  /**
+   * A character's items or effects changed while it's shown in Details: the planner reads the tokens again if the
+   * reactions it shows aren't the same (as its Refresh button does).
    */
   async recheckReactions(actor) {
     for ( const e of this.roster ?? [] ) {
-      if ( e.token.actor?.uuid !== actor.uuid || !this.expanded.has(e.token.id) ) continue;
+      if ( e.token.actor?.uuid !== actor.uuid || !this.#isShown(e.token.id) ) continue;
       const now = await cachedCharacterSpec(getAdapter(), e.token.document ?? e.token);
       if ( now && reactionsSignature(e.spec, actor) !== reactionsSignature(now, actor) ) return this.rereadRoster();
     }
@@ -242,6 +337,9 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     this.sample = null;
     this.stale = false;
     this.restoredAt = null;
+    this.previousResults = null;
+    this.detail = { kind: "team", key: SIDES.FRIENDLY };
+    this.expandedTeams.clear();
     this.storyCache.clear();
   }
 
@@ -386,78 +484,68 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     const setup = this.setup;
     const adapter = getAdapter();
     const resolved = resolveAllegiances(this.roster, setup);
+    const included = e => setup.tokens[e.token.id]?.include !== false;
     // (How many hostile groups fight, for their names: "Hostile" alone, or numbered.)
-    this.hostileGroups = hostileGroupsIn(this.roster.filter(e => setup.tokens[e.token.id]?.include !== false).map(e => resolved[e.token.id]));
-    const sideDefaults = setting("sideDefaults");
+    this.hostileGroups = hostileGroupsIn(this.roster.filter(included).map(e => resolved[e.token.id]));
+    this.coin = mainCoin(adapter, this.roster);
+    this.partyCash = Math.floor(this.roster.filter(e => e.spec.kind === "pc" && chosenSide(e, setup) === SIDES.FRIENDLY && included(e))
+      .reduce((n, e) => n + (Number(e.spec.valuables?.money) || 0), 0) / this.coin.value);
 
     // Chains of command, by group: who holds which role (the GM's pick, or the automatic one).
-    const chains = setup.options.leadership !== false ? commandChains(this.roster.filter(e => resolved[e.token.id] && setup.tokens[e.token.id]?.include !== false), setup, resolved, adapter) : {};
+    const chains = setup.options.leadership !== false ? commandChains(this.roster.filter(e => resolved[e.token.id] && included(e)), setup, resolved, adapter) : {};
     this.roles = new Map();
     for ( const [key, chain] of Object.entries(chains) ) for ( const c of chain ) this.roles.set(c.id, { ...c, key });
 
-    const sides = SIDE_ORDER.map(id => {
-      const s = setup.sides[id];
-      const members = this.roster.filter(e => chosenSide(e, setup) === id);
-      const defaults = sideDefaults[id] ?? sideDefaults.hostile;
-      // Who heads this tab's groups (the first of them, for its leadership numbers).
-      const heads = members.map(m => this.roles.get(m.token.id)).filter(r => r && (r.slot === "boss" || r.slot === "leader"));
-      const head = heads[0] ?? null;
-      const headName = id => this.roster.find(e => e.token.id === id)?.spec.name ?? "";
-      const leader = head ? { id: head.id, bonus: Object.fromEntries(Object.entries(head.leadership).map(([k, v]) => [k, v.base])), reason: head.reason || loc("FASTFIGHTING.Planner.ChosenLeader") } : null;
-      const lf = s.leadershipFudge ?? {};
-      return {
-        id,
-        label: loc(`FASTFIGHTING.Side.${id}`),
-        icon: SIDE_ICONS[id],
-        active: this.sideTab === id,
-        count: members.filter(m => setup.tokens[m.token.id]?.include !== false).length,
-        // Neutrals only lean (they take no side until something crosses them). (A Secret token is on the team its row says.)
-        lean: id === SIDES.NEUTRAL ? s.allegiance : null,
-        leanChoices: id === SIDES.NEUTRAL ? Object.fromEntries(Object.values(ALLEGIANCE).map(k => [k, `FASTFIGHTING.Lean.${k}`])) : null,
-        traits: this.#traitViews(defaults, s.traitFudge, k => `sides.${id}.traitFudge.${k}`),
-        budget: this.#budgetView(defaults, s.traitFudge),
-        healAggro: s.healAggro,
-        healChoices: Object.fromEntries(HEAL_AGGRO.map(k => [k, `FASTFIGHTING.HealAggro.${k}`])),
-        morale: s.morale !== false,
-        leaderChoices: {
-          auto: heads.length ? game.i18n.format("FASTFIGHTING.Planner.AutoLeaders", { names: heads.map(h => `${headName(h.id)} (${loc(`FASTFIGHTING.Planner.Role.${h.slot}.Name`)})`).join(", ") }) : loc("FASTFIGHTING.Planner.AutoLeaderNone"),
-          none: loc("FASTFIGHTING.Planner.NoLeader")
-        },
-        leaderId: s.leaderId === "none" ? "none" : "auto",
-        leaderReason: brief(leader?.reason ?? ""),
-        leadership: leader ? [
-          this.#statView("leadBrave", leader.bonus.brave, lf.brave ?? 0, `sides.${id}.leadershipFudge.brave`, 5),
-          this.#statView("leadTactical", leader.bonus.tacticalFloor, lf.tacticalFloor ?? 0, `sides.${id}.leadershipFudge.tacticalFloor`, 5),
-          this.#statView("leadAttack", leader.bonus.attack, lf.attack ?? 0, `sides.${id}.leadershipFudge.attack`, 1),
-          // (A system with no armor class has no armor class bonus.)
-          ...(hasStat("ac") ? [this.#statView("leadAc", leader.bonus.ac, lf.ac ?? 0, `sides.${id}.leadershipFudge.ac`, 1)] : [])
-        ] : [],
-        members: members.map(e => this.#rowContext(e, resolved))
-      };
-    });
+    // (What Details shows: still on the map, else the party.)
+    if ( this.detail.kind === "creature" && !this.roster.some(e => e.token.id === this.detail.id) ) this.detail = { kind: "team", key: SIDES.FRIENDLY };
+    if ( this.detail.kind === "team" && this.detail.key !== SIDES.FRIENDLY && !this.roster.some(e => this.#teamKey(e) === this.detail.key) ) this.detail = { kind: "team", key: SIDES.FRIENDLY };
 
+    const bySide = id => this.roster.filter(e => chosenSide(e, setup) === id);
+    const sides = SIDE_ORDER.filter(id => this.sideFilter === "all" || this.sideFilter === id).map(id => {
+      const members = bySide(id);
+      if ( !members.length ) return null;
+      const keys = id === SIDES.FRIENDLY || id === SIDES.SECRET ? [id] : id === SIDES.HOSTILE ? HOSTILE_GROUPS : GROUPS.map(n => `${NEUTRAL_PARTY}#${n}`);
+      const teams = keys.map(key => this.#teamCard(key, members.filter(e => this.#teamKey(e) === key), resolved)).filter(Boolean);
+      return { id, label: loc(`FASTFIGHTING.Side.${id}`), swatch: SIDE_SWATCH[id], count: members.filter(included).length, teams };
+    }).filter(Boolean);
+
+    const live = !!adapter?.supportsLive;
+    const players = this.#playersContext();
+    const ready = players.filter(p => p.status === SURVEY_STATUS.DONE).length;
+    const teamCount = new Set(this.roster.filter(included).map(e => this.#fightsFor(e))).size;
     const context = {
-      // The game system's own settings for this encounter (its helper's: Ironsworn's track and its rank).
-      systemSection: this.#systemSection(adapter, resolved, chains),
-      // (The teams' purses: the party's money to see, the others' the GM's to set.)
-      purses: this.#pursesView(adapter),
-      // (Each team's reinforcements: one creature, dragged in, and how many can come.)
-      reinforcements: this.#reinforcementsView(),
+      // (The top bar.)
       adapterLabel: adapter?.label ?? loc("FASTFIGHTING.Planner.NoAdapter"),
-      // (The system, or a module, applies players' damage itself: FastFighting's own toggle greyed out, saying so.)
-      systemApplies: systemAppliesText(adapter),
       hasAdapter: !!adapter,
-      // (Its helper can play a battle live, a turn at a time: the toggle for who runs the characters. One that can't
-      // is too old to do it for real at all.)
-      live: !!adapter?.supportsLive,
-      // (Do it For Real Now beside Run, once there's a sample fight to make so.)
-      // (Only the plan that was run: changed since, it's run again first, or the fight played for real isn't the one
-      // planned. Held in sight, saying so, until then.)
-      canMakeItSo: !!adapter?.supportsLive && !!this.sample && !this.stale,
-      makeItSoStale: !!adapter?.supportsLive && !!this.sample && !!this.stale,
-      options: setup.options,
+      counts: this.roster.length ? game.i18n.format("FASTFIGHTING.Planner.Counts", { creatures: this.roster.filter(included).length, teams: teamCount }) : "",
+      running: this.running,
+      progress: Math.round(this.progress * 100),
+      // (The fights run: by tens while a run goes, then how many there were.)
+      fightCount: this.abort && Number.isFinite(this.counted) ? fightCount(this.counted) : (this.results && !this.stale ? fightCount(this.results.runs) : null),
+      stale: this.stale && !!this.results,
+      // (Shown again from the last run: when it ran.)
+      restored: this.restoredAt && this.results && !this.stale ? game.i18n.format("FASTFIGHTING.Results.Restored", { when: new Date(this.restoredAt).toLocaleString(game.i18n.lang) }) : null,
       // (So many creatures that few fights fit the prediction's time.)
       runsNote: this.#runsNote(resolved),
+      playersChip: players.length ? game.i18n.format("FASTFIGHTING.Planner.PlayersReady", { n: ready, m: players.length }) : "",
+      paused: !!this.pausedGame && game.paused,
+      ...this.#actions(adapter),
+      // (The left pane.)
+      leftView: this.leftView,
+      views: LEFT_VIEWS.map(id => ({ id, label: loc(`FASTFIGHTING.Planner.View.${id}`), active: this.leftView === id, badge: id === "players" && players.length ? `${ready}/${players.length}` : "" })),
+      filters: ["all", ...SIDE_ORDER].map(id => ({
+        id, label: id === "all" ? loc("FASTFIGHTING.Planner.AllSides") : loc(`FASTFIGHTING.Side.${id}`), swatch: SIDE_SWATCH[id] ?? "",
+        count: (id === "all" ? this.roster : bySide(id)).filter(included).length, active: this.sideFilter === id
+      })),
+      rosterFilter: this.rosterFilter,
+      sides,
+      // (The encounter's options: by section, each saying what it's set to when it's closed.)
+      options: setup.options,
+      live,
+      systemApplies: systemAppliesText(adapter),
+      open: Object.fromEntries([...this.openSections].map(k => [k, true])),
+      sums: this.#sectionSums(),
+      systemSection: this.#systemSection(adapter, resolved, chains),
       secondsRange: PREDICTION_SECONDS,
       downedChoices: Object.fromEntries(Object.values(DOWNED_MODELS).map(k => [k, `FASTFIGHTING.Downed.${k}`])),
       aftermathChoices: Object.fromEntries(Object.values(AFTERMATH).map(k => [k, `FASTFIGHTING.Aftermath.${k}`])),
@@ -467,52 +555,305 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
         value, label: loc(`FASTFIGHTING.Surprise.${value}`), selected: value === surpriseMode(setup.options.surprise),
         disabled: value === SURPRISE.SYSTEM && !systemSurprise()
       })),
-      sides,
-      activeSide: sides.find(s => s.active),
-      running: this.running,
-      progress: Math.round(this.progress * 100),
-      // (The fights run: by tens while a run goes, then how many there were.)
-      fightCount: this.abort && Number.isFinite(this.counted) ? fightCount(this.counted) : (this.results && !this.stale ? fightCount(this.results.runs) : null),
-      stale: this.stale && !!this.results,
-      // (Shown again from the last run: when it ran.)
-      restored: this.restoredAt && this.results && !this.stale ? game.i18n.format("FASTFIGHTING.Results.Restored", { when: new Date(this.restoredAt).toLocaleString(game.i18n.lang) }) : null,
-      resultTabs: RESULT_TABS.map(id => ({ id, label: loc(`FASTFIGHTING.Results.Tab.${id}`), active: this.resultTab === id })),
+      players,
+      away: this.#awayCharacters(),
+      // (The right pane.)
+      detail: this.detail.kind === "creature" ? { creature: this.#creatureDetail(this.roster.find(e => e.token.id === this.detail.id), resolved) } : { team: this.#teamDetail(this.detail.key, resolved, chains) },
       resultTab: this.resultTab,
-      hasResults: !!this.results,
-      players: this.#playersContext()
+      resultTabs: RESULT_TABS.map(id => ({ id, label: loc(`FASTFIGHTING.Results.Tab.${id}`), active: this.resultTab === id, disabled: !this.results && id !== "overview" })),
+      hasResults: !!this.results
     };
     if ( this.results ) Object.assign(context, this.#resultsContext());
     return context;
   }
 
+  /**
+   * The top bar's buttons, as the plan stands: the one to press now (primary) and the one beside it. Running: Stop.
+   * Results to go on, and a helper that plays live: Do it For Real Now, with Run beside it. The plan changed since:
+   * Run, and Do it For Real Now held back, saying why. Nothing run yet: Run.
+   */
+  #actions(adapter) {
+    const run = { action: "run", icon: "fa-dice-d20", label: loc("FASTFIGHTING.Planner.Run") };
+    const live = { action: "makeItSo", icon: "fa-gavel", label: loc("FASTFIGHTING.MakeItSo.Button") };
+    if ( this.running ) {
+      return this.abort ? { primary: { action: "cancel", icon: "fa-stop", label: loc("FASTFIGHTING.Planner.Cancel") }, secondary: null }
+        : { primary: { ...run, icon: "fa-spinner fa-spin", disabled: true }, secondary: null };
+    }
+    if ( !adapter ) return { primary: { ...run, disabled: true, tooltip: loc("FASTFIGHTING.Planner.NoAdapter") }, secondary: null };
+    if ( !this.results || !this.sample ) return { primary: run, secondary: null };
+    if ( this.stale ) return { primary: { ...run, attention: true }, secondary: { ...live, disabled: true, tooltip: loc("FASTFIGHTING.MakeItSo.RunAgain") } };
+    if ( !adapter.supportsLive ) return { primary: run, secondary: { ...live, disabled: true, tooltip: loc("FASTFIGHTING.MakeItSo.NeedsUpdate") } };
+    return { primary: { ...live, tooltip: loc("FASTFIGHTING.MakeItSo.Hint") }, secondary: run };
+  }
+
+  /** What each of the encounter's sections is set to, for when it's closed. */
+  #sectionSums() {
+    const o = this.setup.options;
+    const on = keys => game.i18n.format("FASTFIGHTING.Planner.OnCount", { n: keys.filter(k => !!o[k]).length, m: keys.length });
+    return {
+      howItPlays: [loc(`FASTFIGHTING.Downed.${o.downedModel}`), loc(`FASTFIGHTING.Opening.${o.opening}`)].filter(t => !t.startsWith("FASTFIGHTING.")).join(" · "),
+      rules: on(["positioning", "morale", "leadership", "talking", "ignoreLanguages"]),
+      participants: on(["bystanders", "includeHidden"]),
+      live: on(["playersRunPCs", "applyPlayerDamage"]),
+      prediction: game.i18n.format("FASTFIGHTING.Planner.PredictionSum", { seconds: o.seconds, rounds: o.maxRounds, seed: o.seed ?? loc("FASTFIGHTING.Planner.Random") })
+    };
+  }
+
+  /** The card a token sits on, as the plan stands: the party; a hostile group; a neutral friend group; or Secret. */
+  #teamKey(e) {
+    const side = chosenSide(e, this.setup);
+    if ( side === SIDES.FRIENDLY || side === SIDES.SECRET ) return side;
+    const g = groupOf(e, this.setup);
+    return side === SIDES.HOSTILE ? HOSTILE_GROUPS[g - 1] : `${NEUTRAL_PARTY}#${g}`;
+  }
+
+  /** The team a token fights for: its card's; a Secret token, the one picked in its row. */
+  #fightsFor(e) {
+    const team = secretTeam(e, this.setup);
+    if ( !team ) return this.#teamKey(e);
+    return team.side === "hostile" ? HOSTILE_GROUPS[team.group - 1] : `${NEUTRAL_PARTY}#${team.group}`;
+  }
+
+  /** A team's name: the party; Hostile (or Hostile 1, 2, 3, with more than one group); Neutral 1, 2, 3; Secret. */
+  #teamName(key) {
+    if ( key === SIDES.FRIENDLY ) return loc("FASTFIGHTING.Party.Tab");
+    if ( key === SIDES.SECRET ) return loc("FASTFIGHTING.Side.secret");
+    if ( key.startsWith(NEUTRAL_PARTY) ) return game.i18n.format("FASTFIGHTING.Side.neutralGroup", { n: key.split("#")[1] });
+    return sideName(key, this.hostileGroups);
+  }
+
+  /** A team's badge: its short name (F, H1 ... N3; Secret's "?") and its color. */
+  #badge(key) {
+    const short = TEAM_SHORT[key] ?? "S";
+    return { short, label: loc(`FASTFIGHTING.Planner.Team.${short}`), name: this.#teamName(key) };
+  }
+
+  /** "1 creature", "5 creatures". */
+  #countText(n) {
+    return n === 1 ? loc("FASTFIGHTING.Planner.MembersOne") : game.i18n.format("FASTFIGHTING.Planner.MembersMany", { n });
+  }
+
+  /** Who heads a team (its boss, else its leader): {name, img, short, roleName, auto, text, reason}, or null. */
+  #headOf(key) {
+    const role = [...(this.roles?.values() ?? [])].find(r => r.key === key && (r.slot === "boss" || r.slot === "leader"));
+    if ( !role ) return null;
+    const e = this.roster.find(x => x.token.id === role.id);
+    const name = e?.spec.name ?? "";
+    return {
+      id: role.id, name, img: e?.spec.img, auto: !!role.auto, reason: brief(role.reason ?? ""),
+      short: loc(`FASTFIGHTING.Planner.Role.${role.slot}.Short`), roleName: loc(`FASTFIGHTING.Planner.Role.${role.slot}.Name`),
+      text: game.i18n.format("FASTFIGHTING.Planner.LedBy", { name })
+    };
+  }
+
+  /** The Secret tokens fighting for a team. */
+  #secretOn(key) {
+    return key === SIDES.FRIENDLY || key === SIDES.SECRET ? [] : this.roster.filter(e => chosenSide(e, this.setup) === SIDES.SECRET && this.#fightsFor(e) === key);
+  }
+
+  /** A team's card on the left: its badge, name and head, and a line of what it has; its creatures, when opened. */
+  #teamCard(key, members, resolved) {
+    if ( !members.length ) return null;
+    const badge = this.#badge(key);
+    const parts = [this.#countText(members.length)];
+    const secret = this.#secretOn(key).length;
+    if ( secret ) parts.push(game.i18n.format("FASTFIGHTING.Planner.SecretMembers", { n: secret }));
+    const cash = key === SIDES.FRIENDLY ? this.partyCash : Number(this.setup.options.purses?.[key]) || 0;
+    if ( cash && key !== SIDES.SECRET ) parts.push(`${cash} ${this.coin.label}`.trim());
+    const r = this.setup.options.reinforcements?.[key];
+    if ( r?.name && key !== SIDES.SECRET ) parts.push(game.i18n.format("FASTFIGHTING.Planner.ReinforcementsShort", { name: r.name, n: Number(r.count) || 0 }));
+    return {
+      key, ...badge, head: key === SIDES.SECRET ? null : this.#headOf(key), summary: parts.join(" · "),
+      selected: this.detail.kind === "team" && this.detail.key === key,
+      expanded: this.expandedTeams.has(key),
+      toggleLabel: game.i18n.format("FASTFIGHTING.Planner.ShowMembers", { team: badge.name }),
+      members: members.map(e => this.#rowContext(e, resolved))
+    };
+  }
+
+  /**
+   * A team in Details: its badge, side and head (and its odds, once run); its cash and reinforcements; its creatures;
+   * and its side's settings (personality, leaders, healing, routing; a neutral's lean), shared with its side's other
+   * teams (they're kept by side).
+   */
+  #teamDetail(key, resolved, chains) {
+    const setup = this.setup;
+    const side = sideOfTeam(key);
+    const badge = this.#badge(key);
+    const members = this.roster.filter(e => this.#teamKey(e) === key);
+    const secret = this.#secretOn(key);
+    const r = setup.options.reinforcements?.[key] ?? null;
+    const known = r?.uuid ? this.roster?.reinforcementSpecs?.[r.uuid] : undefined;
+    const cash = key === SIDES.FRIENDLY ? this.partyCash : Number(setup.options.purses?.[key]) || 0;
+    const win = this.results && !this.stale ? this.results.sides?.[key]?.pWin : null;
+    // (The side's other teams on the map, sharing its settings.)
+    const order = Object.keys(TEAM_SHORT);
+    const sharing = side === SIDES.HOSTILE || side === SIDES.NEUTRAL
+      ? [...new Set(this.roster.filter(e => chosenSide(e, setup) === side).map(e => this.#teamKey(e)))].sort((a, b) => order.indexOf(a) - order.indexOf(b)).map(k => this.#teamName(k)) : [];
+    return {
+      key, ...badge, sideLabel: loc(`FASTFIGHTING.Side.${side}`), countText: this.#countText(members.length),
+      head: key === SIDES.SECRET ? null : this.#headOf(key),
+      win: Number.isFinite(win) ? pct(win, 1) : "", winLabel: game.i18n.format("FASTFIGHTING.Planner.TeamWins", { team: badge.name }),
+      resources: key === SIDES.SECRET ? null : {
+        party: key === SIDES.FRIENDLY, partyCash: this.partyCash, coin: this.coin.label,
+        purse: { name: `options.purses.${key}`, value: Number(setup.options.purses?.[key]) || 0 },
+        reinforcement: { key, name: r?.name ?? "", img: r?.img ?? "", count: Number(r?.count) || 0, countName: `options.reinforcements.${key}.count`, unreadable: !!r?.uuid && known === null },
+        sum: [cash ? `${cash} ${this.coin.label}`.trim() : null, r?.name ? game.i18n.format("FASTFIGHTING.Planner.ReinforcementsShort", { name: r.name, n: Number(r.count) || 0 }) : loc("FASTFIGHTING.Planner.ReinforcementsClear")].filter(Boolean).join(" · ")
+      },
+      members: members.map(e => ({
+        id: e.token.id, name: e.spec.name, img: e.spec.img, include: setup.tokens[e.token.id]?.include !== false,
+        team: key === SIDES.SECRET ? this.#badge(this.#fightsFor(e)) : null
+      })),
+      secretNote: secret.length ? game.i18n.format("FASTFIGHTING.Planner.SecretOnTeam", { names: listJoin(secret.map(e => e.spec.name)) }) : "",
+      secret: key === SIDES.SECRET,
+      shared: sharing.length > 1 ? game.i18n.format("FASTFIGHTING.Planner.Shared", { side: loc(`FASTFIGHTING.Side.${side}`), teams: listJoin(sharing) }) : "",
+      side: this.#sideSettings(side, key)
+    };
+  }
+
+  /**
+   * A side's settings (the planner keeps them by side: a team shows its side's): its personality and how far it's
+   * from the trait budget, its healing and routing, its leaders (and the leadership bonus of `key`'s head, else the
+   * side's first), a neutral's lean.
+   */
+  #sideSettings(id, key) {
+    const setup = this.setup;
+    const s = setup.sides[id];
+    if ( !s ) return null;
+    const defaults = setting("sideDefaults")[id] ?? setting("sideDefaults").hostile;
+    const members = this.roster.filter(e => chosenSide(e, setup) === id);
+    const heads = members.map(m => this.roles.get(m.token.id)).filter(r => r && (r.slot === "boss" || r.slot === "leader"));
+    const head = heads.find(h => h.key === key) ?? heads[0] ?? null;
+    const headName = hid => this.roster.find(e => e.token.id === hid)?.spec.name ?? "";
+    const bonus = head ? Object.fromEntries(Object.entries(head.leadership).map(([k, v]) => [k, v.base])) : null;
+    const lf = s.leadershipFudge ?? {};
+    const auto = heads.length ? game.i18n.format("FASTFIGHTING.Planner.AutoLeaders", { names: heads.map(h => `${headName(h.id)} (${loc(`FASTFIGHTING.Planner.Role.${h.slot}.Name`)})`).join(", ") }) : loc("FASTFIGHTING.Planner.AutoLeaderNone");
+    return {
+      id,
+      // Neutrals only lean (they take no side until something crosses them).
+      lean: id === SIDES.NEUTRAL ? s.allegiance : null,
+      leanChoices: id === SIDES.NEUTRAL ? Object.fromEntries(Object.values(ALLEGIANCE).map(k => [k, `FASTFIGHTING.Lean.${k}`])) : null,
+      traits: this.#traitViews(defaults, s.traitFudge, k => `sides.${id}.traitFudge.${k}`),
+      budget: this.#budgetView(defaults, s.traitFudge),
+      healAggro: s.healAggro,
+      healChoices: Object.fromEntries(HEAL_AGGRO.map(k => [k, `FASTFIGHTING.HealAggro.${k}`])),
+      morale: s.morale !== false,
+      fightsSum: [loc(`FASTFIGHTING.HealAggro.${s.healAggro ?? "auto"}`), s.morale !== false ? loc("FASTFIGHTING.Planner.SideMorale") : null].filter(t => t && !t.startsWith("FASTFIGHTING.")).join(" · "),
+      leaderChoices: { auto, none: loc("FASTFIGHTING.Planner.NoLeader") },
+      leaderId: s.leaderId === "none" ? "none" : "auto",
+      leaderSum: s.leaderId === "none" ? loc("FASTFIGHTING.Planner.NoLeader") : listJoin(heads.map(h => headName(h.id))) || loc("FASTFIGHTING.Planner.AutoLeaderNone"),
+      leaderNames: listJoin(heads.map(h => headName(h.id))),
+      leadership: bonus ? [
+        this.#statView("leadBrave", bonus.brave, lf.brave ?? 0, `sides.${id}.leadershipFudge.brave`, 5),
+        this.#statView("leadTactical", bonus.tacticalFloor, lf.tacticalFloor ?? 0, `sides.${id}.leadershipFudge.tacticalFloor`, 5),
+        this.#statView("leadAttack", bonus.attack, lf.attack ?? 0, `sides.${id}.leadershipFudge.attack`, 1),
+        // (A system with no armor class has no armor class bonus.)
+        ...(hasStat("ac") ? [this.#statView("leadAc", bonus.ac, lf.ac ?? 0, `sides.${id}.leadershipFudge.ac`, 1)] : [])
+      ] : []
+    };
+  }
+
+  /** Friendly characters whose players are all away: a GM can answer their surveys for them. */
+  #awayCharacters() {
+    return this.roster.filter(e => chosenSide(e, this.setup) === SIDES.FRIENDLY && e.spec.kind === "pc").map(e => {
+      const owners = game.users.filter(u => !u.isGM && e.token.actor?.testUserPermission(u, "OWNER"));
+      if ( !owners.length || owners.some(u => u.active) ) return null;
+      return { id: e.token.id, name: e.spec.name, img: e.spec.img, owners: listJoin(owners.map(u => u.name)) };
+    }).filter(Boolean);
+  }
+
+  /**
+   * A creature's row in its team's card: who it is (a click shows it in Details), its marks, its role (a menu), its
+   * team (a menu, where it can change), whether it takes part, and a menu of the rest (its side, its survey, its token).
+   */
   #rowContext(e, resolved) {
+    const setup = this.setup;
+    const id = e.token.id;
+    const ts = setup.tokens[id] ?? tokenSetup({ tokens: {} }, id); // rendering never edits the setup
+    const s = e.spec;
+    const chosen = chosenSide(e, setup);
+    const resolvedSide = resolved[id];
+    const owners = game.users.filter(u => !u.isGM && e.token.actor?.testUserPermission(u, "OWNER"));
+    const moved = resolvedSide && resolvedSide !== chosen && !(chosen === SIDES.HOSTILE && HOSTILE_GROUPS.includes(resolvedSide));
+    const lean = setup.sides[SIDES.NEUTRAL]?.allegiance;
+    // Its role in its group's chain of command: boss (never in the party), leader, 1st or 2nd lieutenant; out of
+    // command; or left to the automatic pick.
+    const held = this.roles?.get(id);
+    const canLead = setup.options.leadership !== false && setup.sides[chosen]?.leaderId !== "none" && !!resolvedSide && !s.hazard;
+    const roleLabel = held ? (held.auto ? game.i18n.format("FASTFIGHTING.Planner.RoleAutoPicked", { role: loc(`FASTFIGHTING.Planner.Role.${held.slot}.Name`) }) : loc(`FASTFIGHTING.Planner.Role.${held.slot}.Name`))
+      : loc(ts.role === "none" ? "FASTFIGHTING.Planner.RoleNone" : "FASTFIGHTING.Planner.NoRole");
+    const role = canLead ? {
+      short: held ? loc(`FASTFIGHTING.Planner.Role.${held.slot}.Short`) : "–", label: roleLabel, cls: held ? (held.auto ? "is-auto" : "") : "is-none",
+      aria: game.i18n.format("FASTFIGHTING.Planner.RoleMenu", { role: roleLabel }),
+      items: [
+        ...ROLES.filter(r => r !== "boss" || chosen !== SIDES.FRIENDLY).map(r => ({
+          action: "setRole", key: r, short: loc(`FASTFIGHTING.Planner.Role.${r}.Short`), label: loc(`FASTFIGHTING.Planner.Role.${r}.Name`), cls: "", active: ts.role === r && !ts.roleAuto
+        })),
+        { action: "setRole", key: "none", short: "–", label: loc("FASTFIGHTING.Planner.RoleNone"), cls: "is-none", active: ts.role === "none" },
+        { action: "autoRole", key: "auto", icon: "fa-rotate-left", label: loc("FASTFIGHTING.Planner.RoleAuto"), active: !ts.role || !!ts.roleAuto }
+      ]
+    } : null;
+    // Its team: a hostile group or a neutral friend group (a Secret token, either); the party has one.
+    const fights = this.#fightsFor(e);
+    const badge = this.#badge(fights);
+    const item = (value, key) => ({ value, ...this.#badge(key), active: key === fights });
+    const items = chosen === SIDES.HOSTILE ? GROUPS.map(n => item(`hostile${n}`, HOSTILE_GROUPS[n - 1]))
+      : chosen === SIDES.NEUTRAL ? GROUPS.map(n => item(`neutral${n}`, `${NEUTRAL_PARTY}#${n}`))
+        : chosen === SIDES.SECRET ? [...GROUPS.map(n => item(`hostile${n}`, HOSTILE_GROUPS[n - 1])), ...GROUPS.map(n => item(`neutral${n}`, `${NEUTRAL_PARTY}#${n}`))] : null;
+    return {
+      id,
+      name: s.name,
+      findName: s.name.toLocaleLowerCase(game.i18n.lang),
+      img: s.img,
+      sub: kindChip(s),
+      hidden: s.hidden,
+      bystander: s.inEncounter === false,
+      include: ts.include !== false,
+      includeLabel: game.i18n.format("FASTFIGHTING.Planner.IncludeName", { name: s.name }),
+      moreLabel: game.i18n.format("FASTFIGHTING.Planner.RowMenu", { name: s.name }),
+      selected: this.#isShown(id),
+      fudged: Object.values(ts.fudge ?? {}).some(v => Number(v)),
+      controllers: owners.map(u => u.name).join(", "),
+      // (Neutrals, and Secret tokens on a neutral team, lean as the Neutral side says: nowhere, when it leaves them out.)
+      note: resolvedSide === NEUTRAL_PARTY ? loc(`FASTFIGHTING.Planner.TakesNoSide.${LEANS.has(lean) ? lean : ALLEGIANCE.NEUTRAL}`)
+        : moved ? game.i18n.format("FASTFIGHTING.Planner.FightsWith", { side: sideName(resolvedSide, this.hostileGroups) }) : (resolvedSide === null && ts.include !== false ? loc("FASTFIGHTING.Planner.SitsOut") : ""),
+      role,
+      team: { ...badge, aria: game.i18n.format("FASTFIGHTING.Planner.TeamPick", { team: badge.name }), items },
+      sideItems: SIDE_ORDER.map(k => ({ id: k, label: loc(`FASTFIGHTING.Side.${k}`), swatch: SIDE_SWATCH[k], active: chosen === k })),
+      // (A friendly character's survey: its players asked about it; or every GM, to answer for a player who's away.)
+      survey: chosen === SIDES.FRIENDLY && !s.hazard ? {
+        players: owners.length > 0,
+        playersHint: brief(game.i18n.format("FASTFIGHTING.Survey.AskPlayers", { names: listJoin(owners.map(u => u.name)) }))
+      } : null
+    };
+  }
+
+  /** A creature in Details: everything about it for this battle, its odds once run, and its team (a click shows it). */
+  #creatureDetail(e, resolved) {
+    if ( !e ) return null;
     const setup = this.setup;
     const ts = setup.tokens[e.token.id] ?? tokenSetup({ tokens: {} }, e.token.id); // rendering never edits the setup
     const s = e.spec;
     const fudge = ts.fudge ?? {};
     const playerControlled = isPlayerControlled(s, e.token.actor);
     const { playstyles } = tacticsFor(e.token.actor, s);
-    const shifts = playstyles.traits;
     const owners = game.users.filter(u => !u.isGM && e.token.actor?.testUserPermission(u, "OWNER"));
-    const controllers = owners.map(u => u.name).join(", ");
     const approach = this.#nearestEnemyApproach(e, resolved);
-    const resolvedSide = resolved[e.token.id];
-    const chosen = chosenSide(e, setup);
-    // (A hostile token in another group fights as that group: the pills say so.)
-    const moved = resolvedSide && resolvedSide !== chosen && !(chosen === SIDES.HOSTILE && HOSTILE_GROUPS.includes(resolvedSide));
-    const grouped = chosen === SIDES.HOSTILE || chosen === SIDES.NEUTRAL;
-    const team = secretTeam(e, setup);
-    const lean = setup.sides[SIDES.NEUTRAL]?.allegiance;
-    const group = grouped ? groupOf(e, setup) : null;
+    const row = this.#rowContext(e, resolved);
+    const fights = this.#fightsFor(e);
+    const c = this.results && !this.stale ? Object.values(this.results.combatants ?? {}).find(x => (x.tokenId ?? x.id) === e.token.id) : null;
+    const stats = STAT_FUDGES.filter(([k]) => hasStat(k)).map(([k, step]) => {
+      const base = k === "ac" ? s.defenses.ac : k === "hp" ? s.hp.max : 0;
+      return this.#statView(k, base, fudge[k] ?? 0, `tokens.${e.token.id}.fudge.${k}`, step);
+    });
     return {
       id: e.token.id,
-      actorId: e.token.actor?.id,
       name: s.name,
       img: s.img,
-      kind: s.kind,
-      kindLabel: kindChip(s),
-      bystander: s.inEncounter === false,
-      level: s.level,
+      sub: kindChip(s),
+      hidden: s.hidden,
+      role: row.role,
+      teamChip: { key: chosenSide(e, setup) === SIDES.SECRET ? SIDES.SECRET : fights, ...this.#badge(fights) },
       hp: `${s.hp.value + (fudge.hp ?? 0)}/${s.hp.max + (fudge.hp ?? 0)}`,
       hpName: term("hp"),
       // Stamina, where the system has it: spent before hit points.
@@ -521,57 +862,30 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       ac: s.defenses.ac + (fudge.ac ?? 0),
       showAc: hasStat("ac"),
       acName: term("ac"),
-      hidden: s.hidden,
-      // (A friendly character's survey: its players asked about it; or every GM, to answer for a player who's away.)
-      survey: chosen === SIDES.FRIENDLY && !s.hazard ? {
-        players: owners.length > 0,
-        playersHint: brief(game.i18n.format("FASTFIGHTING.Survey.AskPlayers", { names: listJoin(owners.map(u => u.name)) }))
-      } : null,
-      include: ts.include !== false,
-      side: ts.side ?? e.baseSide,
-      sideChoices: Object.fromEntries(SIDE_ORDER.map(k => [k, `FASTFIGHTING.Side.${k}`])),
-      // A Secret token's team, as pills: any hostile group or neutral team (an unused number: one of its own). It's always
-      // on one: hostile group 1 until the GM picks another.
-      teams: team ? ["hostile", "neutral"].map(kind => ({
-        kind,
-        label: loc(`FASTFIGHTING.Side.${kind}`),
-        pills: GROUPS.map(n => ({ n, team: `${kind}${n}`, name: game.i18n.format(`FASTFIGHTING.Side.${kind}Group`, { n }), active: team.side === kind && team.group === n }))
-      })) : null,
-      groupKind: chosen === SIDES.NEUTRAL ? "neutral" : "hostile",
-      // (Neutrals, and Secret tokens on a neutral team, lean as the Neutral tab says: nowhere, when it leaves them out.)
-      resolvedLabel: resolvedSide === NEUTRAL_PARTY ? loc(`FASTFIGHTING.Planner.TakesNoSide.${LEANS.has(lean) ? lean : ALLEGIANCE.NEUTRAL}`)
-        : moved ? game.i18n.format("FASTFIGHTING.Planner.FightsWith", { side: sideName(resolvedSide, this.hostileGroups) }) : (resolvedSide === null && ts.include !== false ? loc("FASTFIGHTING.Planner.SitsOut") : ""),
-      // Which group (1 2 3): hostile groups fight each other too; a neutral's friend group was proposed when the planner opened.
-      groups: grouped ? GROUPS.map(n => ({ n, active: n === group, auto: chosen === SIDES.NEUTRAL && ts.group == null })) : null,
-      // Its role in its group's chain of command: boss (never in the party), leader, 1st or 2nd lieutenant.
-      roles: setup.options.leadership !== false && setup.sides[chosen]?.leaderId !== "none" && resolvedSide && !s.hazard ? ROLES.filter(r => r !== "boss" || chosen !== SIDES.FRIENDLY).map(r => {
-        const held = this.roles?.get(e.token.id);
-        const active = held?.slot === r;
-        return { key: r, short: loc(`FASTFIGHTING.Planner.Role.${r}.Short`), label: loc(`FASTFIGHTING.Planner.Role.${r}.Name`), active, auto: active && held.auto };
-      }) : null,
-      roleHint: game.i18n.format("FASTFIGHTING.Planner.RoleHint", { boss: setting("bossInfluence") }),
-      groupHint: loc(chosen === SIDES.NEUTRAL ? "FASTFIGHTING.Planner.NeutralGroupHint" : "FASTFIGHTING.Planner.HostileGroupHint"),
-      traits: [...this.#traitViews(baseTraits(s), fudge, k => `tokens.${e.token.id}.fudge.${k}`, s.traitReasons, shifts),
-        this.#adhdView(e.token.actor?.getFlag(MODULE_ID, "adhd") ?? 0, `tokens.${e.token.id}.fudge.adhd`)],
-      budget: this.#budgetView(baseTraits(s), fudge),
-      expanded: this.expanded.has(e.token.id),
-      stats: STAT_FUDGES.filter(([k]) => hasStat(k)).map(([k, step]) => {
-        const base = k === "ac" ? s.defenses.ac : k === "hp" ? s.hp.max : 0;
-        return this.#statView(k, base, fudge[k] ?? 0, `tokens.${e.token.id}.fudge.${k}`, step);
-      }),
-      actions: s.actions.map(a => a.name).filter((n, i, arr) => arr.indexOf(n) === i).join(", "),
-      speeds: Object.entries(s.speeds ?? {}).map(([k, v]) => `${loc(`FASTFIGHTING.Mode.${k}`)} ${v}`).join(", "),
+      controllers: owners.map(u => u.name).join(", "),
+      resolvedLabel: row.note,
       approach: approach ? game.i18n.format("FASTFIGHTING.Planner.Approach", {
         mode: loc(`FASTFIGHTING.Mode.${approach.mode ?? "walk"}`), name: approach.name,
         distance: Number.isFinite(approach.moves) ? approachDistance(approach) : "∞"
-      }) +(approach.mult > 1.05 ? ` · ${loc(approach.throughWall ? "FASTFIGHTING.Planner.ThroughWall" : approach.blocked ? "FASTFIGHTING.Planner.AroundWalls" : "FASTFIGHTING.Planner.Terrain")} ×${approach.mult.toFixed(2)}` : "") + (approach.meleeOk ? "" : ` · ${loc("FASTFIGHTING.Planner.OutOfReach")}`) : "",
-      environment: [...(s.environment?.types ?? []), s.environment?.difficult ? loc("FASTFIGHTING.Planner.DifficultHere") : null, s.environment?.hazardous ? loc("FASTFIGHTING.Planner.HazardHere") : null].filter(Boolean).join(", "),
+      }) + (approach.mult > 1.05 ? ` · ${loc(approach.throughWall ? "FASTFIGHTING.Planner.ThroughWall" : approach.blocked ? "FASTFIGHTING.Planner.AroundWalls" : "FASTFIGHTING.Planner.Terrain")} ×${approach.mult.toFixed(2)}` : "") + (approach.meleeOk ? "" : ` · ${loc("FASTFIGHTING.Planner.OutOfReach")}`) : "",
+      fate: c ? {
+        bars: [["standing", c.pStanding], ["down", c.pDown], ["dead", c.pDead], ["fled", c.pFled]].map(([cls, p]) => ({ cls, w: (p * 100).toFixed(1), label: `${loc(`FASTFIGHTING.Results.${cls === "standing" ? "Standing" : cls === "down" ? "Down" : cls === "dead" ? "Dead" : "Fled"}`)} ${pct(p)}` })),
+        standing: pct(c.pStanding), downed: pct(c.pDowned), dead: pct(c.pDead), fled: pct(c.pFled)
+      } : null,
+      traits: [...this.#traitViews(baseTraits(s), fudge, k => `tokens.${e.token.id}.fudge.${k}`, s.traitReasons, playstyles.traits),
+        this.#adhdView(e.token.actor?.getFlag(MODULE_ID, "adhd") ?? 0, `tokens.${e.token.id}.fudge.adhd`)],
+      budget: this.#budgetView(baseTraits(s), fudge),
+      playstyleNames: playstyles.ids.map(id => loc(`FASTFIGHTING.Playstyle.${id}.Name`)).join(", "),
+      stats,
+      statsSum: stats.map(v => `${v.label} ${v.value}`).join(" · "),
       ignoreTerrain: !!ts.ignoreTerrain,
       diesAtZero: ts.diesAtZero ?? s.diesAtZero,
       playerControlled,
-      controllers,
-      tactics: this.expanded.has(e.token.id) ? questionsContext(s, e.token.actor, `gm-${e.token.id}`, { questions: true, hidden: false, targets: this.roster.map(r => ({ id: r.token.id, name: r.spec.name })) }) : null,
-      playstyleNames: playstyles.ids.map(id => loc(`FASTFIGHTING.Playstyle.${id}.Name`)).join(", ")
+      // (Its playstyles and answers; the hidden scores aren't shown again: its steppers show them, with the GM's nudges.)
+      tactics: questionsContext(s, e.token.actor, `gm-${e.token.id}`, { questions: true, hidden: false, targets: this.roster.map(r => ({ id: r.token.id, name: r.spec.name })) }),
+      actions: s.actions.map(a => a.name).filter((n, i, arr) => arr.indexOf(n) === i).join(", "),
+      speeds: Object.entries(s.speeds ?? {}).map(([k, v]) => `${loc(`FASTFIGHTING.Mode.${k}`)} ${v}`).join(", "),
+      environment: [...(s.environment?.types ?? []), s.environment?.difficult ? loc("FASTFIGHTING.Planner.DifficultHere") : null, s.environment?.hazardous ? loc("FASTFIGHTING.Planner.HazardHere") : null].filter(Boolean).join(", ")
     };
   }
 
@@ -589,6 +903,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     const histogram = r.rounds.histogram.map((p, round) => ({ round, p: pct(p), height: Math.round((p / maxHist) * 100) })).filter(h => h.round > 0);
     const combatants = Object.values(r.combatants).map(c => ({
       ...c,
+      tokenId: spec?.combatants?.find(x => x.id === c.id)?.tokenId ?? (this.roster?.some(e => e.token.id === c.id) ? c.id : null),
       sideLabel: this.spec?.sides?.[c.side]?.label ?? sideName(c.side, this.hostileGroups),
       sideClass: c.side,
       bars: [
@@ -632,8 +947,34 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
 
     const sample = this.sample ? this.#sampleContext() : null;
 
+    // The summary over the tabs: the party's odds, a PC's death and fall, how long; each with its change since the run
+    // before (in points).
+    const prev = this.previousResults;
+    const delta = (now, then, goodUp) => {
+      if ( !Number.isFinite(then) ) return null;
+      const d = Math.round((now - then) * 100);
+      return { text: d ? `${d > 0 ? "+" : "−"}${Math.abs(d)}` : "±0", cls: !d ? "" : (d > 0) === goodUp ? "is-better" : "is-worse" };
+    };
+    const kpi = (label, p, then, goodUp, cls = "") => ({ label: loc(label), value: pct(p, 1), cls, delta: prev ? delta(p, then, goodUp) : null });
+    const summary = {
+      label: segments.map(s => `${s.label} ${s.pct}`).join(", "),
+      kpis: [
+        kpi("FASTFIGHTING.Results.PartyWins", r.sides.friendly?.pWin ?? 0, prev?.sides?.friendly?.pWin ?? 0, true),
+        kpi("FASTFIGHTING.Results.PcDeath", r.pAnyPcDead, prev?.pAnyPcDead, false, "danger"),
+        kpi("FASTFIGHTING.Results.PcDowned", r.pAnyPcDowned, prev?.pAnyPcDowned, false, "warn"),
+        { label: loc("FASTFIGHTING.Results.MedianRounds"), value: String(r.rounds.median), cls: "", delta: null }
+      ]
+    };
+    const talkKpis = [
+      ...((r.pAnySwayed ?? 0) > 0 ? [{ label: loc("FASTFIGHTING.Results.Swayed"), value: pct(r.pAnySwayed, 1), cls: "talk" }] : []),
+      ...((r.pPeaceful ?? 0) > 0 ? [{ label: loc("FASTFIGHTING.Results.Peaceful"), value: pct(r.pPeaceful, 1), cls: "talk" }] : []),
+      ...((r.pCollapsed ?? 0) > 0 || this.setup.options.opening === OPENING.ARGUMENT ? [{ label: loc("FASTFIGHTING.Results.Collapsed"), value: pct(r.pCollapsed ?? 0, 1), cls: "warn" }] : [])
+    ];
+
     return {
+      summary,
       results: {
+        talkKpis,
         runs: r.runs,
         seed: r.seed,
         segments,
@@ -723,6 +1064,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
         statusLabel: loc(`FASTFIGHTING.Survey.Status.${status}`),
         entering: status === SURVEY_STATUS.ENTERING,
         tokens: brief(listItems(tokensForUser(scene, u).map(t => t.name))),
+        chars: tokensForUser(scene, u).map(t => ({ name: t.name, img: t.texture?.src ?? t.actor?.img })),
         openLabel: loc(status === SURVEY_STATUS.NONE ? "FASTFIGHTING.Survey.OpenFirst" : "FASTFIGHTING.Survey.Reopen")
       };
     });
@@ -750,30 +1092,6 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * The system's section: what its helper asks of this encounter (adapter.plannerSettings), each field as pills or a
-   * list, its answers kept with the plan (setup.system).
-   */
-  /**
-   * The teams' purses (engine battle-state.js: spec.purses): the party's, its characters' own money, to see; each other
-   * team's (a hostile group, a neutral friend group), the GM's to set, in the system's main coin, shared by the team for
-   * deals (bribes, tolls, extortion).
-   */
-  #pursesView(adapter) {
-    const coin = mainCoin(adapter, this.roster);
-    const party = this.roster.filter(e => e.spec.kind === "pc" && chosenSide(e, this.setup) === SIDES.FRIENDLY && this.setup.tokens[e.token.id]?.include !== false)
-      .reduce((n, e) => n + (Number(e.spec.valuables?.money) || 0), 0);
-    const saved = this.setup.options.purses ?? {};
-    const labels = ["H1", "H2", "H3", "N1", "N2", "N3"];
-    return {
-      coin: coin.label,
-      teams: [
-        { key: SIDES.FRIENDLY, label: loc("FASTFIGHTING.Planner.Team.F"), party: true, total: Math.floor(party / coin.value) },
-        ...PURSE_TEAMS.map((key, i) => ({ key, label: loc(`FASTFIGHTING.Planner.Team.${labels[i]}`), value: Number(saved[key]) || 0 }))
-      ]
-    };
-  }
-
-  /**
    * The GM puts loot on the map: a chest or a bag (loot-drop.js placeLoot), where they click next (Escape, or a click
    * outside the map, leaves it), then its own window opens to fill it.
    */
@@ -791,25 +1109,11 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Each team's reinforcements (engine/behavior/reinforce.js): one creature for each, dropped from a compendium or the
-   * Actors directory, and how many of it can come. The party's too (they come only when FastFighting plays it, or the
-   * GM calls them in the Battle Vantage).
+   * A team's reinforcements (engine/behavior/reinforce.js): one creature, dropped from a compendium or the Actors
+   * directory (or chosen: #onChooseReinforcement), and how many of it can come; one to start with, or as many as before.
+   * The party's too (they come only when FastFighting plays it, or the GM calls them in the Battle Vantage).
    */
-  #reinforcementsView() {
-    const saved = this.setup.options.reinforcements ?? {};
-    const labels = ["F", "H1", "H2", "H3", "N1", "N2", "N3"];
-    return [SIDES.FRIENDLY, ...PURSE_TEAMS].map((key, i) => {
-      const r = saved[key] ?? null;
-      const known = r?.uuid ? this.roster?.reinforcementSpecs?.[r.uuid] : undefined;
-      return { key, label: loc(`FASTFIGHTING.Planner.Team.${labels[i]}`), name: r?.name ?? "", img: r?.img ?? "", count: Number(r?.count) || 0, unreadable: !!r?.uuid && known === null };
-    });
-  }
-
-  /** A creature dropped on a team's reinforcements: it, and one of it to start with (or as many as before). */
-  async #dropReinforcement(key, event) {
-    const data = foundry.applications.ux.TextEditor.implementation.getDragEventData(event);
-    if ( data?.type !== "Actor" || typeof data.uuid !== "string" ) return ui.notifications.warn(loc("FASTFIGHTING.Planner.ReinforcementsActorOnly"));
-    const actor = await fromUuid(data.uuid);
+  async #setReinforcement(key, actor) {
     if ( actor?.documentName !== "Actor" ) return;
     const was = this.setup.options.reinforcements?.[key];
     this.setup.options.reinforcements = { ...(this.setup.options.reinforcements ?? {}), [key]: { uuid: actor.uuid, name: actor.name, img: actor.img, count: Number(was?.count) || 1 } };
@@ -817,6 +1121,45 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     if ( this.roster ) this.roster.reinforcementSpecs = await readReinforcements(this.setup, getAdapter(), this.roster.reinforcementSpecs ?? {});
     this.stale = true;
     this.render();
+  }
+
+  /** A creature dropped on a team's reinforcements. */
+  async #dropReinforcement(key, event) {
+    const data = foundry.applications.ux.TextEditor.implementation.getDragEventData(event);
+    if ( data?.type !== "Actor" || typeof data.uuid !== "string" ) return ui.notifications.warn(loc("FASTFIGHTING.Planner.ReinforcementsActorOnly"));
+    await this.#setReinforcement(key, await fromUuid(data.uuid));
+  }
+
+  /** A team's reinforcements chosen from the world's actors, without dragging: a list to filter, a click to pick. */
+  static async #onChooseReinforcement(event, target) {
+    const key = target.dataset.team;
+    const esc = foundry.utils.escapeHTML;
+    const actors = game.actors.contents.filter(a => a.isOwner).sort((a, b) => a.name.localeCompare(b.name, game.i18n.lang));
+    const content = `<div class="ff-pick-actor">
+      <input type="search" placeholder="${esc(loc("FASTFIGHTING.Planner.FindCreature"))}" aria-label="${esc(loc("FASTFIGHTING.Planner.FindCreature"))}">
+      <ul>${actors.map(a => `<li data-name="${esc(a.name.toLocaleLowerCase(game.i18n.lang))}"><button type="button" data-uuid="${esc(a.uuid)}"><img src="${esc(a.img)}" alt=""> ${esc(a.name)}</button></li>`).join("")}</ul>
+      <p class="hint">${esc(loc("FASTFIGHTING.Planner.FromCompendium"))}</p></div>`;
+    let picked = null;
+    await foundry.applications.api.DialogV2.wait({
+      window: { title: loc("FASTFIGHTING.Planner.ChooseReinforcement") }, classes: ["fast-fighting", "ff-pick-dialog"], content, rejectClose: false,
+      buttons: [{ action: "cancel", label: loc("Cancel"), default: true }],
+      render: (ev, dialog) => {
+        const root = dialog.element;
+        const find = root.querySelector('input[type="search"]');
+        find?.addEventListener("input", () => {
+          const q = find.value.trim().toLocaleLowerCase(game.i18n.lang);
+          for ( const li of root.querySelectorAll("li[data-name]") ) li.hidden = !!q && !li.dataset.name.includes(q);
+        });
+        root.addEventListener("click", e => {
+          const b = e.target.closest("[data-uuid]");
+          if ( !b ) return;
+          picked = b.dataset.uuid;
+          dialog.close();
+        });
+        find?.focus();
+      }
+    });
+    if ( picked ) await this.#setReinforcement(key, await fromUuid(picked));
   }
 
   static async #onClearReinforcement(event, target) {
@@ -829,6 +1172,10 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     this.render();
   }
 
+  /**
+   * The system's section: what its helper asks of this encounter (adapter.plannerSettings), each field as pills or a
+   * list, its answers kept with the plan (setup.system); and what they're set to, for when it's closed.
+   */
   #systemSection(adapter, resolved, chains) {
     let section = null;
     try {
@@ -838,9 +1185,11 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       console.error(`${MODULE_ID} | the system's settings for this encounter failed`, err);
     }
     if ( !section?.fields?.length ) return null;
+    const choiceOf = f => (f.choices ?? []).find(c => String(c.value) === String(f.value))?.label ?? "";
     return {
       title: section.title ?? adapter.label,
       hint: section.hint ?? "",
+      summary: section.fields.map(choiceOf).filter(Boolean).join(" · "),
       fields: section.fields.map(f => ({
         ...f,
         name: `system.${f.key}`,
@@ -927,40 +1276,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       this.offeredVantage = ready;
       ui.combat?.render();
     }
-    // Keep the window at least 1000x600 while letting it grow.
-    const el = this.element;
-    el.style.minWidth = "1000px";
-    el.style.minHeight = "600px";
-    // A team's reinforcements: a creature dropped from a compendium or the Actors directory.
-    for ( const slot of el.querySelectorAll("[data-reinforce-drop]") ) {
-      slot.addEventListener("dragover", event => event.preventDefault());
-      slot.addEventListener("drop", event => {
-        event.preventDefault();
-        this.#dropReinforcement(slot.dataset.reinforceDrop, event);
-      });
-    }
-    // A slider (the prediction time, the most rounds) shows its value as it moves (it's saved when let go).
-    for ( const slider of el.querySelectorAll('.ff-slider input[type="range"]') ) {
-      slider.addEventListener("input", () => {
-        const shown = slider.parentElement.querySelector(".ff-slider-value");
-        if ( shown ) shown.textContent = slider.value;
-      });
-    }
-    // Right-click on a role pill: back to the automatic pick.
-    for ( const pills of el.querySelectorAll(".ff-roles") ) {
-      pills.addEventListener("contextmenu", async event => {
-        event.preventDefault();
-        const id = pills.closest("[data-token-id]")?.dataset.tokenId;
-        if ( !id || !this.setup.tokens[id] ) return;
-        clearRole(this.setup.tokens[id]);
-        // (A party member's role from earlier fights is forgotten too.)
-        const me = this.roster.find(e => e.token.id === id);
-        if ( me && commandGroup(me, this.setup, resolveAllegiances(this.roster, this.setup)) === SIDES.FRIENDLY ) await rememberPartyRole(me.token.actor?.id, null);
-        await saveSetup(this.setup, this.holder);
-        this.stale = true;
-        this.render();
-      });
-    }
+    this.#filterRoster();
   }
 
   /* -------------------------------------------- */
@@ -1053,13 +1369,13 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * A role pill: give this token that role in its group (taking it from whoever had it; a boss and a leader are the one
-   * place at the head), or, clicked again, keep it out of command. Right-click leaves it to the automatic pick.
+   * A role from a creature's role menu: that role in its group (taken from whoever had it; a boss and a leader are the
+   * one place at the head), or out of command ("none").
    */
   static async #onSetRole(event, target) {
     const id = target.closest("[data-token-id]")?.dataset.tokenId;
     const role = target.dataset.role;
-    if ( !id || !ROLES.includes(role) ) return;
+    if ( !id || !(ROLES.includes(role) || role === "none") ) return;
     const ts = tokenSetup(this.setup, id);
     const resolved = resolveAllegiances(this.roster, this.setup);
     const me = this.roster.find(e => e.token.id === id);
@@ -1067,16 +1383,15 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     // (The GM's pick now, not the automatic one.)
     delete ts.roleAuto;
     delete ts.roleWhy;
-    if ( target.classList.contains("active") ) ts.role = "none";
-    else {
+    if ( role !== "none" ) {
       const head = role === "boss" || role === "leader" ? ["boss", "leader"] : [role];
       for ( const e of this.roster ) {
         const other = this.setup.tokens[e.token.id];
         if ( e.token.id === id || !other || !head.includes(other.role) ) continue;
         if ( commandGroup(e, this.setup, resolved) === key ) clearRole(other);
       }
-      ts.role = role;
     }
+    ts.role = role;
     // (The party's roles carry over to its next fights.)
     if ( key === SIDES.FRIENDLY ) await rememberPartyRole(me.token.actor?.id, ts.role);
     await saveSetup(this.setup, this.holder);
@@ -1084,25 +1399,49 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     this.render();
   }
 
-  static async #onSetGroup(event, target) {
+  /** Back to the automatic pick (a party member's role from earlier fights forgotten too). */
+  static async #onAutoRole(event, target) {
     const id = target.closest("[data-token-id]")?.dataset.tokenId;
-    const group = Number(target.dataset.group);
-    if ( !id || !GROUPS.includes(group) ) return;
-    tokenSetup(this.setup, id).group = group;
+    if ( !id || !this.setup.tokens[id] ) return;
+    clearRole(this.setup.tokens[id]);
+    const me = this.roster.find(e => e.token.id === id);
+    if ( me && commandGroup(me, this.setup, resolveAllegiances(this.roster, this.setup)) === SIDES.FRIENDLY ) await rememberPartyRole(me.token.actor?.id, null);
     await saveSetup(this.setup, this.holder);
     this.stale = true;
     this.render();
   }
 
-  /** A Secret token onto another team (it's always on one). */
-  static async #onSetTeam(event, target) {
+  /** Another side for a creature (worked out once it has stood a moment, settleSides, in case it was a slip). */
+  static #onSetSide(event, target) {
+    const id = target.closest("[data-token-id]")?.dataset.tokenId;
+    const side = target.dataset.side;
+    if ( !id || !SIDE_ORDER.includes(side) ) return;
+    const ts = tokenSetup(this.setup, id);
+    if ( (ts.side ?? this.roster.find(e => e.token.id === id)?.baseSide) === side ) return;
+    this.#holdSide(id);
+    ts.side = side;
+    this.stale = true;
+    this.render();
+  }
+
+  /**
+   * Another team for a creature: a hostile group or a neutral friend group (its side's), or, for a Secret token, any of
+   * them (worked out once it has stood a moment, settleSides).
+   */
+  static #onSetTeam(event, target) {
     const id = target.closest("[data-token-id]")?.dataset.tokenId;
     const team = target.dataset.team;
-    if ( !id || !SECRET_TEAMS.includes(team) || target.classList.contains("active") ) return;
-    // (Worked out once it has stood a moment, settleSides, in case it was a slip.)
+    const me = this.roster?.find(e => e.token.id === id);
+    if ( !me || !SECRET_TEAMS.includes(team) ) return;
+    const chosen = chosenSide(me, this.setup);
+    const n = Number(team.slice(-1));
     this.#holdSide(id);
-    tokenSetup(this.setup, id).team = team;
-    for ( const b of target.parentElement?.querySelectorAll("[data-team]") ?? [] ) b.classList.toggle("active", b === target);
+    const ts = tokenSetup(this.setup, id);
+    if ( chosen === SIDES.SECRET ) ts.team = team;
+    else if ( (chosen === SIDES.HOSTILE && team.startsWith("hostile")) || (chosen === SIDES.NEUTRAL && team.startsWith("neutral")) ) ts.group = n;
+    else return;
+    this.stale = true;
+    this.render();
   }
 
   /** Each token whose side or team was picked meanwhile: where it was before (its side, team and group). */
@@ -1170,22 +1509,53 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     if ( this.rendered ) this.render();
   }
 
-  static #onSideTab(event, target) {
-    this.sideTab = target.dataset.side;
-    this.render();
+  /** The left pane's view: the teams, the encounter's options, or the players. */
+  static #onLeftView(event, target) {
+    if ( !LEFT_VIEWS.includes(target.dataset.view) ) return;
+    this.leftView = target.dataset.view;
+    this.render({ parts: ["left"] });
+  }
+
+  /** The teams of one side only (or all). */
+  static #onSideFilter(event, target) {
+    this.sideFilter = target.dataset.side ?? "all";
+    this.render({ parts: ["left"] });
+  }
+
+  /** A team in Details. */
+  static #onShowTeam(event, target) {
+    const key = target.dataset.team;
+    if ( !key ) return;
+    this.detail = { kind: "team", key };
+    this.resultTab = "details";
+    this.render({ parts: ["left", "right"] });
+  }
+
+  /** A creature in Details (its team's card opened, to show where it is). */
+  static #onShowCreature(event, target) {
+    const id = target.dataset.tokenId ?? target.closest("[data-token-id]")?.dataset.tokenId;
+    const e = this.roster?.find(x => x.token.id === id);
+    if ( !e ) return;
+    this.detail = { kind: "creature", id };
+    this.expandedTeams.add(this.#teamKey(e));
+    this.resultTab = "details";
+    this.render({ parts: ["left", "right"] });
+  }
+
+  /** A team's card opened or closed (its creatures shown or not): at once, with nothing drawn again. */
+  static #onToggleTeam(event, target) {
+    const key = target.dataset.team;
+    if ( !key ) return;
+    const open = !this.expandedTeams.has(key);
+    if ( open ) this.expandedTeams.add(key);
+    else this.expandedTeams.delete(key);
+    target.closest(".ff-card")?.classList.toggle("is-open", open);
+    target.setAttribute("aria-expanded", String(open));
   }
 
   static #onResultTab(event, target) {
     this.resultTab = target.dataset.tab;
-    this.render();
-  }
-
-  static #onToggleRow(event, target) {
-    const id = target.closest("[data-token-id]")?.dataset.tokenId;
-    if ( !id ) return;
-    if ( this.expanded.has(id) ) this.expanded.delete(id);
-    else this.expanded.add(id);
-    this.render();
+    this.render({ parts: ["right"] });
   }
 
   static #onPanToken(event, target) {
@@ -1239,6 +1609,8 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     this.progress = 0;
     this.counted = 0;
     this.swing = null;
+    // (The last run's results, for the change since: none from a plan of another battle.)
+    if ( this.results ) this.previousResults = this.results;
     this.sample = null;
     this.abort = new AbortController();
     await this.render();
@@ -1253,10 +1625,12 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
           // (The fights run so far, by tens: the true number once the time's up.)
           this.counted = Math.floor(done / 10) * 10;
           const bar = this.element?.querySelector(".ff-progress > span");
+          const fill = this.element?.querySelector(".ff-btn-fill");
           const count = this.element?.querySelector(".ff-fight-count");
           const now = performance.now();
           if ( now - lastPaint > 50 ) {
             if ( bar ) bar.style.width = `${Math.round(p * 100)}%`;
+            if ( fill ) fill.style.width = `${Math.round(p * 100)}%`;
             if ( count ) count.textContent = fightCount(this.counted);
             lastPaint = now;
           }
