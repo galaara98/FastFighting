@@ -38871,7 +38871,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "7461f4acba12"
+   "hash": "7461f4acba12",
+   "changed": true
   },
   "core:story:event.dealExtort": {
    "repo": "core",
@@ -38881,7 +38882,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "779112fab4e7"
+   "hash": "779112fab4e7",
+   "changed": true
   },
   "core:story:event.dealExtortRefused": {
    "repo": "core",
@@ -38891,7 +38893,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "9418f1e7e346"
+   "hash": "9418f1e7e346",
+   "changed": true
   },
   "core:story:event.dealOffended": {
    "repo": "core",
@@ -38911,7 +38914,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "d29324ca5b62"
+   "hash": "d29324ca5b62",
+   "changed": true
   },
   "core:story:event.dealScareRefused": {
    "repo": "core",
@@ -38921,7 +38925,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "f3e175d712e6"
+   "hash": "f3e175d712e6",
+   "changed": true
   },
   "core:story:event.dealStruck": {
    "repo": "core",
@@ -38942,7 +38947,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "f188dca76624"
+   "hash": "f188dca76624",
+   "changed": true
   },
   "core:story:event.dealTollRefused": {
    "repo": "core",
@@ -38952,7 +38958,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "0c47822951f8"
+   "hash": "0c47822951f8",
+   "changed": true
   },
   "core:story:event.dealUnheard": {
    "repo": "core",

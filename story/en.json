@@ -3314,42 +3314,58 @@
   "event.dealBribe": [
     "{actor} offers {target} {amount} to {ask}, and {target} takes it.",
     "{actor} holds out {amount}; {target} pockets it and agrees to {ask}.",
-    "{target} accepts {actor}'s {amount} and agrees to {ask}."
+    "{target} accepts {actor}'s {amount} and agrees to {ask}.",
+    "{actor} presses {amount} into {target}'s hand, and {target} agrees to {ask}.",
+    "A quiet word and {amount} from {actor}, and {target} agrees to {ask}."
   ],
   "event.dealBribeRefused": [
     "{actor} offers {target} {amount} to {ask}. {target} isn't interested.",
     "{target} turns down {actor}'s {amount}.",
-    "{actor} tries to buy {target} off with {amount}, and fails."
+    "{actor} tries to buy {target} off with {amount}, and fails.",
+    "{target} eyes {actor}'s {amount} and shakes their head.",
+    "{actor} offers {amount}, but {target} waves it away."
   ],
   "event.dealExtort": [
     "{actor} demands {amount} from {target}, and {target} pays.",
     "{target} hands over {amount} to {actor}'s threats.",
-    "{actor} squeezes {amount} out of {target}."
+    "{actor} squeezes {amount} out of {target}.",
+    "Under {actor}'s threats, {target} gives up {amount}.",
+    "{target} pays {actor} {amount} rather than find out what happens otherwise."
   ],
   "event.dealExtortRefused": [
     "{actor} demands {amount} from {target}, who refuses.",
     "{target} won't pay {actor} a thing.",
-    "{actor}'s threats get nothing out of {target}."
+    "{actor}'s threats get nothing out of {target}.",
+    "{actor} leans on {target} for {amount}, but {target} doesn't give an inch.",
+    "{target} meets {actor}'s demand for {amount} with a flat refusal."
   ],
   "event.dealScare": [
     "{actor} tells {target} to clear off, and {target} goes.",
     "{actor} stares {target} down until {target} turns to leave.",
-    "One look from {actor}, and {target} wants no more of this."
+    "One look from {actor}, and {target} wants no more of this.",
+    "{actor} looms over {target}, and {target} backs out of the fight.",
+    "{actor} makes it plain that {target} should go, and {target} goes."
   ],
   "event.dealScareRefused": [
     "{actor} tells {target} to clear off. {target} stands firm.",
     "{target} won't be scared off by {actor}.",
-    "{actor}'s threats don't move {target}."
+    "{actor}'s threats don't move {target}.",
+    "{actor} tries to frighten {target} off, but {target} holds their ground.",
+    "{target} shrugs off {actor}'s menace and stays put."
   ],
   "event.dealToll": [
     "{actor} offers to go away for {amount}, and {target} pays.",
     "{target} pays {actor} {amount} to be gone.",
-    "{actor} takes {amount} from {target} and goes."
+    "{actor} takes {amount} from {target} and goes.",
+    "{target} buys {actor}'s departure for {amount}.",
+    "For {amount} from {target}, {actor} agrees to be on their way."
   ],
   "event.dealTollRefused": [
     "{actor} asks {target} for {amount} to go away. {target} won't pay.",
     "{target} refuses {actor}'s toll of {amount}.",
-    "{actor} names a price of {amount}; {target} isn't paying."
+    "{actor} names a price of {amount}; {target} isn't paying.",
+    "{actor} wants {amount} to leave {target} in peace, and gets nothing.",
+    "{target} won't pay {actor} {amount} to be rid of them."
   ],
   "event.dealOffended": [
     "{target} takes {actor}'s offer as an insult.",
