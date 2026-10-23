@@ -236,8 +236,8 @@
         "Hint": "Chance a playstyle's landed taunt takes hold; less for lesser taunters. A system's own taunts follow its rules."
       },
       "partySway": {
-        "Name": "Party's sway (%)",
-        "Hint": "How much the party's vote sways the characters on the friendly side."
+        "Name": "Friendly vote's sway (%)",
+        "Hint": "How much the Friendly Team's vote sways the characters on the friendly side."
       },
       "applyPlayerDamage": {
         "Name": "Apply players' damage",
@@ -282,7 +282,7 @@
     "Lean": {
       "exclude": "Left out of it",
       "neutral": "Takes no side (until crossed)",
-      "friendly": "Leans toward the party",
+      "friendly": "Leans toward the Friendlies",
       "hostile": "Leans toward the enemy",
       "closest": "Leans toward the nearest side",
       "underdog": "Leans toward the underdog",
@@ -564,12 +564,12 @@
       "RunFailed": "Simulation failed: {error}",
       "FightsWith": "Fights as {side}",
       "Group": "Group",
-      "HostileGroupHint": "Hostile group: fights the party and the other groups.",
+      "HostileGroupHint": "Hostile group: fights the Friendlies and the other groups.",
       "NeutralGroupHint": "Friend group: they look out for each other. Click to move.",
       "SitsOut": "Sits this one out",
       "TakesNoSide": {
         "neutral": "Takes no side (until crossed)",
-        "friendly": "Takes no side, leaning toward the party",
+        "friendly": "Takes no side, leaning toward the Friendlies",
         "hostile": "Takes no side, leaning toward the enemy",
         "closest": "Takes no side, leaning toward the nearest side",
         "underdog": "Takes no side, leaning toward the underdog"
@@ -633,7 +633,7 @@
       "PlaceLootFailed": "Nothing could make a pile here: no Item Piles, and the system has no loot pile of its own.",
       "Purses": "Team cash",
       "PursesHint": "What each team has besides what's on its sheets, in the system's coin, shared by the team for deals: bribes, tolls, extortion.",
-      "PartyPurseHint": "The party's own money, from its characters' sheets.",
+      "PartyPurseHint": "The Friendly Team's own money, from its characters' sheets.",
       "Team": {
         "F": "F",
         "H1": "H1",
@@ -723,7 +723,7 @@
       "Restored": "From the last run ({when}): nothing about this battle has changed since.",
       "Stalemate": "Stalemate",
       "NoOne": "No one left",
-      "PartyWins": "Party wins",
+      "PartyWins": "Friendlies win",
       "PcDeath": "A PC dies",
       "PcDowned": "A PC goes down",
       "MedianRounds": "Rounds",
@@ -767,18 +767,18 @@
         "fray": "{names} got pulled into a quarrel"
       },
       "Section": {
-        "party": "The party",
+        "party": "The Friendlies",
         "foes": "The foes",
         "fight": "The fight",
         "stakes": "The stakes",
         "money": "Money"
       },
-      "PartyWiped": "Party wiped",
+      "PartyWiped": "Friendlies wiped",
       "PartyWipedHint": "Every PC down, dead or captured at the end.",
       "PcsDowned": "PCs down, on average",
       "PcsDownedHint": "How many PCs drop to 0 HP in a fight, at least once.",
       "OfN": "{n} of {m}",
-      "PartyHp": "Party HP left",
+      "PartyHp": "Friendly HP left",
       "PartyHpHint": "The PCs' HP at the end, as a share of their most.",
       "PartySpent": "Resources spent",
       "PartySpentHint": "How much of the PCs' limited resources a fight uses: slots, focus, uses and consumables.",
@@ -802,40 +802,40 @@
       "Reinforced": "Reinforcements arrive",
       "ReinforcedHint": "A team's reinforcements are called and arrive.",
       "CostlyWins": "Costly wins",
-      "CostlyWinsHint": "Of the party's wins, those where a PC dies or half the PCs go down.",
-      "IfDown": "Party wins if {name} goes down",
-      "IfDownHint": "Against {up} when {name} stays up: the ally whose fall costs the party most.",
+      "CostlyWinsHint": "Of the Friendlies' wins, those where a PC dies or half the PCs go down.",
+      "IfDown": "Friendlies win if {name} goes down",
+      "IfDownHint": "Against {up} when {name} stays up: the ally whose fall costs the Friendlies most.",
       "WorstTenth": "PCs down, worst 1 fight in 10",
       "WorstTenthHint": "In the worst tenth of fights, this many PCs or more go down.",
       "Spoils": "Spoils, on average",
-      "SpoilsHint": "Coin and goods the party's side gains in a fight: handed over, taken, or on the foes it beats.",
+      "SpoilsHint": "Coin and goods the Friendlies gain in a fight: handed over, taken, or on the foes they beat.",
       "Losses": "Losses, on average",
-      "LossesHint": "Coin and goods the party's side gives up in a fight: paid out, stolen, or taken off its fallen.",
+      "LossesHint": "Coin and goods the Friendlies give up in a fight: paid out, stolen, or taken off their fallen.",
       "DealStruck": "A deal is struck",
       "DealStruckHint": "A bribe, toll or extortion changes hands, on either side.",
       "Linchpin": "Linchpin: {name}",
-      "LinchpinHint": "Without {name}, the party wins {pct}: the ally it can least do without (Swing factors).",
+      "LinchpinHint": "Without {name}, the Friendlies win {pct}: the ally they can least do without (Swing factors).",
       "KeyTarget": "Key target: {name}",
-      "KeyTargetHint": "Without {name}, the party wins {pct}: the foe it most wants gone (Swing factors).",
+      "KeyTargetHint": "Without {name}, the Friendlies win {pct}: the foe they most want gone (Swing factors).",
       "HingesOn": "Hinges on {rule}",
-      "HingesOnHint": "With {rule} off, the party wins {pct}: the rule this fight depends on most (Swing factors).",
+      "HingesOnHint": "With {rule} off, the Friendlies win {pct}: the rule this fight depends on most (Swing factors).",
       "Rule": {
         "leadership": "leadership",
         "morale": "morale",
         "positioning": "terrain"
       },
       "Margin": "Win odds margin",
-      "MarginHint": "The party's odds of winning are sure to within this many points, 19 times in 20, from {n} fights."
+      "MarginHint": "The Friendlies' odds of winning are sure to within this many points, 19 times in 20, from {n} fights."
     },
     "Swing": {
       "Without": "Without {name}",
       "NoLeadership": "Without leadership",
       "NoMorale": "Without morale",
       "NoPositioning": "Without terrain & positioning",
-      "Hint": "Re-runs the fight without each creature, and with each rule off, to show what moves the party's odds most. Fewer tests finish sooner.",
+      "Hint": "Re-runs the fight without each creature, and with each rule off, to show what moves the Friendlies' odds most. Fewer tests finish sooner.",
       "Compute": "Compute swing factors",
       "Scope": {
-        "friendly": "Party's side",
+        "friendly": "Friendlies",
         "foes": "Foes",
         "neutrals": "Neutrals",
         "rules": "Rules"
@@ -886,7 +886,7 @@
         "TiedUp": "Tied up (a prisoner)",
         "SwitchesFriendly": "Switches sides (now friendly)",
         "SwitchesHostile": "Switches sides (now hostile)",
-        "TurnedOn": "Turned on the party (now hostile)",
+        "TurnedOn": "Turned on the Friendlies (now hostile)",
         "StandsAside": "Stands aside (now neutral)",
         "Uses": "Uses {n}× {what}",
         "StillOne": "Still {effect} (1 more round)",
@@ -1078,7 +1078,7 @@
       "MyTactics": "My tactics",
       "MyTacticsHint": "Your characters' tactics, playstyles and desires; change them any time.",
       "SheetButton": "FastFighting",
-      "AskPlayers": "Ask {names} to answer this character's survey (the Party tab view-only).",
+      "AskPlayers": "Ask {names} to answer this character's survey (the Friendly Team tab view-only).",
       "AskGms": "Open this character's survey for every GM logged in, to answer for an away player.",
       "AskedPlayers": "Asked {names} about {name}.",
       "AskedGms": "{name}'s survey is open for every GM logged in.",
@@ -1094,9 +1094,9 @@
       "ResetMenu": "Reset answers…",
       "ResetTitle": "Reset {name}'s answers?",
       "ResetConfirm": "Every answer goes back to “Let this character decide”, and the playstyles are picked again.",
-      "ReadyLocks": "I'm ready also locks in the party's vote.",
+      "ReadyLocks": "I'm ready also locks in the Friendly Team's vote.",
       "ReadyArmed": "Press again: lock in and finish",
-      "ReadyArmedNote": "The party's vote isn't locked in yet. Press again to lock it in and finish."
+      "ReadyArmedNote": "The Friendly Team's vote isn't locked in yet. Press again to lock it in and finish."
     },
     "TokenTactics": {
       "Tab": "FastFighting",
@@ -2451,11 +2451,11 @@
       "fumble": "a fumble"
     },
     "Party": {
-      "Tab": "Party",
-      "TabFor": "Party: {name}",
+      "Tab": "Friendly Team",
+      "TabFor": "Friendly Team: {name}",
       "ForThem": "You're voting for {name}, who's away.",
       "Intro": "One vote per question; the top answer sways your side a little. Vote again to undo; press Lock-in when done.",
-      "GmView": "Only players vote. You see every vote; the outlined answer is the party's.",
+      "GmView": "Only players vote. You see every vote; the outlined answer is the Friendly Team's.",
       "ReadOnly": "View only: you can vote again when your GM sends everyone the survey.",
       "LockIn": "Lock-in",
       "LockedIn": "Choices locked in",
@@ -2506,10 +2506,10 @@
         "losing": "When it turns against us",
         "hurt": "When we're badly hurt"
       },
-      "LockInPrompt": "Happy with the party's choices? Lock them in.",
+      "LockInPrompt": "Happy with the Friendly Team's choices? Lock them in.",
       "LockInWarn": "Once locked in, your votes stay until your GM asks everyone again.",
       "LockInConfirm": "Press again to lock in",
-      "Top": "The party's choice so far"
+      "Top": "The Friendly Team's choice so far"
     },
     "StoryWords": {
       "plasma": "plasma",

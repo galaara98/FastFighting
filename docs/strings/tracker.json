@@ -7518,7 +7518,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "fef330c364b7"
+   "hash": "fef330c364b7",
+   "changed": true
   },
   "core:FASTFIGHTING.Lean.hostile": {
    "repo": "core",
@@ -13899,7 +13900,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "d02b1234a4e2"
+   "hash": "d02b1234a4e2",
+   "changed": true
   },
   "core:FASTFIGHTING.MakeItSo.Outcome.Unconscious": {
    "repo": "core",
@@ -14722,7 +14724,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "4a9317278265"
+   "hash": "4a9317278265",
+   "changed": true
   },
   "core:FASTFIGHTING.Party.LockInWarn": {
    "repo": "core",
@@ -14865,7 +14868,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "dfa82f21b3f3"
+   "hash": "dfa82f21b3f3",
+   "changed": true
   },
   "core:FASTFIGHTING.Party.TabFor": {
    "repo": "core",
@@ -14875,7 +14879,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "3a52f162b79b"
+   "hash": "3a52f162b79b",
+   "changed": true
   },
   "core:FASTFIGHTING.Party.talk.first": {
    "repo": "core",
@@ -15007,7 +15012,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "8f94f6e07870"
+   "hash": "8f94f6e07870",
+   "changed": true
   },
   "core:FASTFIGHTING.Planner.ActionFailed": {
    "repo": "core",
@@ -15942,7 +15948,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "45bdfecf69cc"
+   "hash": "45bdfecf69cc",
+   "changed": true
   },
   "core:FASTFIGHTING.Planner.Paused": {
    "repo": "core",
@@ -16649,7 +16656,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "1aa67d587b30"
+   "hash": "1aa67d587b30",
+   "changed": true
   },
   "core:FASTFIGHTING.Planner.TakesNoSide.hostile": {
    "repo": "core",
@@ -18414,7 +18422,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "3d10a3d50d03"
+   "hash": "3d10a3d50d03",
+   "changed": true
   },
   "core:FASTFIGHTING.Results.Damage": {
    "repo": "core",
@@ -18706,7 +18715,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "71b76a7bee4e"
+   "hash": "71b76a7bee4e",
+   "changed": true
   },
   "core:FASTFIGHTING.Results.HpLeft": {
    "repo": "core",
@@ -18726,7 +18736,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "63422230b111"
+   "hash": "63422230b111",
+   "changed": true
   },
   "core:FASTFIGHTING.Results.IfDownHint": {
    "repo": "core",
@@ -18736,7 +18747,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "a4782991f9e1"
+   "hash": "a4782991f9e1",
+   "changed": true
   },
   "core:FASTFIGHTING.Results.KeyTarget": {
    "repo": "core",
@@ -18756,7 +18768,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "5a48701e2ec8"
+   "hash": "5a48701e2ec8",
+   "changed": true
   },
   "core:FASTFIGHTING.Results.Linchpin": {
    "repo": "core",
@@ -18776,7 +18789,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "793e92cfcc0a"
+   "hash": "793e92cfcc0a",
+   "changed": true
   },
   "core:FASTFIGHTING.Results.Losses": {
    "repo": "core",
@@ -18796,7 +18810,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "6f8f2471ff23"
+   "hash": "6f8f2471ff23",
+   "changed": true
   },
   "core:FASTFIGHTING.Results.Margin": {
    "repo": "core",
@@ -18816,7 +18831,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "e45e7d2b778c"
+   "hash": "e45e7d2b778c",
+   "changed": true
   },
   "core:FASTFIGHTING.Results.MedianRounds": {
    "repo": "core",
@@ -18876,7 +18892,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "92e0b5857df4"
+   "hash": "92e0b5857df4",
+   "changed": true
   },
   "core:FASTFIGHTING.Results.PartyHpHint": {
    "repo": "core",
@@ -18916,7 +18933,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "634040a3d597"
+   "hash": "634040a3d597",
+   "changed": true
   },
   "core:FASTFIGHTING.Results.PartyWiped": {
    "repo": "core",
@@ -18926,7 +18944,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "84eb88839ac7"
+   "hash": "84eb88839ac7",
+   "changed": true
   },
   "core:FASTFIGHTING.Results.PartyWipedHint": {
    "repo": "core",
@@ -19126,7 +19145,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "40ad1064d0f9"
+   "hash": "40ad1064d0f9",
+   "changed": true
   },
   "core:FASTFIGHTING.Results.Section.stakes": {
    "repo": "core",
@@ -19167,7 +19187,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "d9ea8539e17c"
+   "hash": "d9ea8539e17c",
+   "changed": true
   },
   "core:FASTFIGHTING.Results.Stale": {
    "repo": "core",
@@ -20948,7 +20969,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "bdb157f68415"
+   "hash": "bdb157f68415",
+   "changed": true
   },
   "core:FASTFIGHTING.Settings.pcAllyDying.Hint": {
    "repo": "core",
@@ -28321,7 +28343,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "3d41dbe22a6f"
+   "hash": "3d41dbe22a6f",
+   "changed": true
   },
   "core:FASTFIGHTING.Survey.ReadyLocks": {
    "repo": "core",
@@ -28331,7 +28354,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "4ddb93cf7456"
+   "hash": "4ddb93cf7456",
+   "changed": true
   },
   "core:FASTFIGHTING.Survey.Reopen": {
    "repo": "core",
@@ -28645,7 +28669,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "0d0d3b14c732"
+   "hash": "0d0d3b14c732",
+   "changed": true
   },
   "core:FASTFIGHTING.Swing.Scope.neutrals": {
    "repo": "core",

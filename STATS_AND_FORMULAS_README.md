@@ -7,8 +7,8 @@ that change them, and `Code:` (where it lives, to check it). The settings menu s
 
 ## Contents
 
-- **[Minds](#minds)**: [Personality traits](#personality-traits), [Tactical tiers](#tactical-tiers), [Animals](#animals), [Aptitudes](#aptitudes), [Desires and their level](#desires-and-their-level), [How desires are raised each turn](#how-desires-are-raised-each-turn), [What the fight stirs, and how it cools](#what-the-fight-stirs-and-how-it-cools), [Frustration](#frustration), [Pulls from others: style, social, lean](#pulls-from-others-style-social-lean), [Focus fire](#focus-fire), [Keeping together](#keeping-together), [What comes to mind](#what-comes-to-mind), [The agenda](#the-agenda), [Desires it can't work on](#desires-it-cant-work-on), [ADHD](#adhd), [Fear](#fear), [Morale stress](#morale-stress), [Morale check: hold, waver, rout](#morale-check-hold-waver-rout), [Wavering](#wavering), [Running away](#running-away), [Standing its ground](#standing-its-ground), [Calling a retreat](#calling-a-retreat), [Rallying](#rallying), [Leaving the fight](#leaving-the-fight), [Leaving of its own accord](#leaving-of-its-own-accord), [Being stopped on the way out](#being-stopped-on-the-way-out), [Standing down](#standing-down), [Team stances](#team-stances), [Reinforcements](#reinforcements), [Chain of command](#chain-of-command), [What a leader lends](#what-a-leader-lends), [Following the leader](#following-the-leader), [Scheming](#scheming), [Party's sway](#partys-sway), [Playstyles: how pills combine](#playstyles-how-pills-combine), [Playstyle numbers](#playstyle-numbers), [Tactics answers: wishes and "Let this character decide"](#tactics-answers-wishes-and-let-this-character-decide)
-- **[Words and sides](#words-and-sides)**: [Luck rolls at a glance](#luck-rolls-at-a-glance), [Who talks, and how often](#who-talks-and-how-often), [Choosing a pitch](#choosing-a-pitch), [Pitch DC](#pitch-dc), [The persuasion track](#the-persuasion-track), [What a convinced foe does](#what-a-convinced-foe-does), [Switch luck: changing sides](#switch-luck-changing-sides), [Traitor luck: a PC turning traitor](#traitor-luck-a-pc-turning-traitor), [How an encounter opens](#how-an-encounter-opens), [Impatience: what breaks a standoff](#impatience-what-breaks-a-standoff), [Only an argument](#only-an-argument), [Taking no side: neutral tokens and leans](#taking-no-side-neutral-tokens-and-leans), [Crossed: grievance, truce and turning on a side](#crossed-grievance-truce-and-turning-on-a-side), [Winning over, calming and sending away](#winning-over-calming-and-sending-away), [Meddling: neutrals getting involved](#meddling-neutrals-getting-involved), [Taken for a foe, caught in the blast, spared in a truce](#taken-for-a-foe-caught-in-the-blast-spared-in-a-truce), [Neutral friend groups (reach)](#neutral-friend-groups-reach), [Taunts (goading)](#taunts-goading), [Theft mid-fight](#theft-mid-fight), [Deals: bribes, extortion and scaring off](#deals-bribes-extortion-and-scaring-off), [Trap avoiders](#trap-avoiders), [Reluctance: consumables and costly spells](#reluctance-consumables-and-costly-spells), [Avoiding killing (mercy)](#avoiding-killing-mercy), [The fallen: tying up and robbing](#the-fallen-tying-up-and-robbing), [Piles, meat and hunger](#piles-meat-and-hunger), [Execute luck: finishing off a PC](#execute-luck-finishing-off-a-pc), [Bearing a hold or hurt (ignore troubles)](#bearing-a-hold-or-hurt-ignore-troubles), [The party's vote](#the-partys-vote)
+- **[Minds](#minds)**: [Personality traits](#personality-traits), [Tactical tiers](#tactical-tiers), [Animals](#animals), [Aptitudes](#aptitudes), [Desires and their level](#desires-and-their-level), [How desires are raised each turn](#how-desires-are-raised-each-turn), [What the fight stirs, and how it cools](#what-the-fight-stirs-and-how-it-cools), [Frustration](#frustration), [Pulls from others: style, social, lean](#pulls-from-others-style-social-lean), [Focus fire](#focus-fire), [Keeping together](#keeping-together), [What comes to mind](#what-comes-to-mind), [The agenda](#the-agenda), [Desires it can't work on](#desires-it-cant-work-on), [ADHD](#adhd), [Fear](#fear), [Morale stress](#morale-stress), [Morale check: hold, waver, rout](#morale-check-hold-waver-rout), [Wavering](#wavering), [Running away](#running-away), [Standing its ground](#standing-its-ground), [Calling a retreat](#calling-a-retreat), [Rallying](#rallying), [Leaving the fight](#leaving-the-fight), [Leaving of its own accord](#leaving-of-its-own-accord), [Being stopped on the way out](#being-stopped-on-the-way-out), [Standing down](#standing-down), [Team stances](#team-stances), [Reinforcements](#reinforcements), [Chain of command](#chain-of-command), [What a leader lends](#what-a-leader-lends), [Following the leader](#following-the-leader), [Scheming](#scheming), [Friendly vote's sway](#friendly-votes-sway), [Playstyles: how pills combine](#playstyles-how-pills-combine), [Playstyle numbers](#playstyle-numbers), [Tactics answers: wishes and "Let this character decide"](#tactics-answers-wishes-and-let-this-character-decide)
+- **[Words and sides](#words-and-sides)**: [Luck rolls at a glance](#luck-rolls-at-a-glance), [Who talks, and how often](#who-talks-and-how-often), [Choosing a pitch](#choosing-a-pitch), [Pitch DC](#pitch-dc), [The persuasion track](#the-persuasion-track), [What a convinced foe does](#what-a-convinced-foe-does), [Switch luck: changing sides](#switch-luck-changing-sides), [Traitor luck: a PC turning traitor](#traitor-luck-a-pc-turning-traitor), [How an encounter opens](#how-an-encounter-opens), [Impatience: what breaks a standoff](#impatience-what-breaks-a-standoff), [Only an argument](#only-an-argument), [Taking no side: neutral tokens and leans](#taking-no-side-neutral-tokens-and-leans), [Crossed: grievance, truce and turning on a side](#crossed-grievance-truce-and-turning-on-a-side), [Winning over, calming and sending away](#winning-over-calming-and-sending-away), [Meddling: neutrals getting involved](#meddling-neutrals-getting-involved), [Taken for a foe, caught in the blast, spared in a truce](#taken-for-a-foe-caught-in-the-blast-spared-in-a-truce), [Neutral friend groups (reach)](#neutral-friend-groups-reach), [Taunts (goading)](#taunts-goading), [Theft mid-fight](#theft-mid-fight), [Deals: bribes, extortion and scaring off](#deals-bribes-extortion-and-scaring-off), [Trap avoiders](#trap-avoiders), [Reluctance: consumables and costly spells](#reluctance-consumables-and-costly-spells), [Avoiding killing (mercy)](#avoiding-killing-mercy), [The fallen: tying up and robbing](#the-fallen-tying-up-and-robbing), [Piles, meat and hunger](#piles-meat-and-hunger), [Execute luck: finishing off a PC](#execute-luck-finishing-off-a-pc), [Bearing a hold or hurt (ignore troubles)](#bearing-a-hold-or-hurt-ignore-troubles), [The Friendly Team's vote](#the-friendly-teams-vote)
 - **[Fighting and the simulation](#fighting-and-the-simulation)**: [The prediction: how many fights it runs](#the-prediction-how-many-fights-it-runs), [Rounds, stalemates and the max-rounds cap](#rounds-stalemates-and-the-max-rounds-cap), [Odds and outcomes](#odds-and-outcomes), [The most typical fight (Sample fight)](#the-most-typical-fight-sample-fight), [Swing factors](#swing-factors), [Initiative and turn order](#initiative-and-turn-order), [Dice, degrees of success and advantage](#dice-degrees-of-success-and-advantage), [Expected damage: what an attack is worth](#expected-damage-what-an-attack-is-worth), [Threat: how dangerous a creature looks](#threat-how-dangerous-a-creature-looks), [Choosing whom to attack](#choosing-whom-to-attack), [Choosing an action](#choosing-an-action), [Reluctance: potions, scrolls and costly spells](#reluctance-potions-scrolls-and-costly-spells), [Shields and defensive turns](#shields-and-defensive-turns), [Getting ready: draws, reloads and a turn for the next](#getting-ready-draws-reloads-and-a-turn-for-the-next), [Healing decisions](#healing-decisions), [Buffs and support](#buffs-and-support), [What a condition, bonus or penalty is worth](#what-a-condition-bonus-or-penalty-is-worth), [Control and debuffs](#control-and-debuffs), [Situational saves and auras](#situational-saves-and-auras), [Concentration](#concentration), [Movement, reach and getting there](#movement-reach-and-getting-there), [Crowds: getting past creatures and where a move ends](#crowds-getting-past-creatures-and-where-a-move-ends), [Line of sight and cover](#line-of-sight-and-cover), [Senses: what a creature can tell](#senses-what-a-creature-can-tell), [Noticing the fight: bystanders](#noticing-the-fight-bystanders), [Patrolling: cues and Seek](#patrolling-cues-and-seek), [Opportunity attacks and getting clear](#opportunity-attacks-and-getting-clear), [Forced movement, falls and dangerous ground](#forced-movement-falls-and-dangerous-ground), [Holds and escapes](#holds-and-escapes), [Harm each turn: conditions, persistent damage, spreading](#harm-each-turn-conditions-persistent-damage-spreading), [Afflictions: poisons, diseases, curses](#afflictions-poisons-diseases-curses), [Summons](#summons), [Luck pools: spending after the roll](#luck-pools-spending-after-the-roll), [Fate: rerolls that keep someone alive](#fate-rerolls-that-keep-someone-alive), [Last-ditch saves and refusing to drop](#last-ditch-saves-and-refusing-to-drop), [Damage, 0 HP and the downed models](#damage-0-hp-and-the-downed-models), [Finishing off a downed PC](#finishing-off-a-downed-pc), [The aftermath](#the-aftermath), [Recharges, cooldowns, legendary actions and counterspells](#recharges-cooldowns-legendary-actions-and-counterspells), [Strain: words that wear a creature down](#strain-words-that-wear-a-creature-down)
 - **[Pathfinder 2e](#pathfinder-2e)**: [Checks and degrees of success](#checks-and-degrees-of-success), [Actions, the multiple attack penalty and Strikes](#actions-the-multiple-attack-penalty-and-strikes), [Lore-Collector advantage (Recall Knowledge)](#lore-collector-advantage-recall-knowledge), [Conditions and their penalties](#conditions-and-their-penalties), [Flat checks: hidden, concealed, dazzled](#flat-checks-hidden-concealed-dazzled), [Cover, Hide and Take Cover](#cover-hide-and-take-cover), [Holds and Escape](#holds-and-escape), [Swallow Whole and Engulf](#swallow-whole-and-engulf), [Maneuvers (skill actions)](#maneuvers-skill-actions), [Aid](#aid), [Dying, wounded, doomed and recovery](#dying-wounded-doomed-and-recovery), [Hero Points](#hero-points), [Ferocity](#ferocity), [Persistent damage, bleeding and retching](#persistent-damage-bleeding-and-retching), [Afflictions](#afflictions), [Incapacitation and immunity](#incapacitation-and-immunity), [Auras and situational saves](#auras-and-situational-saves), [Weakness, resistance and immunity](#weakness-resistance-and-immunity), [Healing, Battle Medicine and class features](#healing-battle-medicine-and-class-features), [Reactions](#reactions), [Summons](#summons-1), [Doors, falls and moving past others](#doors-falls-and-moving-past-others), [Talking, theft and leadership](#talking-theft-and-leadership), [Personality from the sheet](#personality-from-the-sheet), [Typical numbers and areas](#typical-numbers-and-areas)
 - **[D&D 5e](#dd-5e)**: [Rolls, advantage and critical hits](#rolls-advantage-and-critical-hits), [Lore-Collector advantage (Study)](#lore-collector-advantage-study), [Conditions](#conditions), [Cover, Hide, Dodge, Help and Insight](#cover-hide-dodge-help-and-insight), [Grapples, webs, nets and bonds](#grapples-webs-nets-and-bonds), [Swallowed and engulfed](#swallowed-and-engulfed), [Shove and Grapple](#shove-and-grapple), [Pushes, falls and moving past others](#pushes-falls-and-moving-past-others), [Dying and death saves](#dying-and-death-saves), [Inspiration (fate)](#inspiration-fate), [Concentration](#concentration-1), [Undead Fortitude, Relentless Endurance and Regeneration](#undead-fortitude-relentless-endurance-and-regeneration), [Burning and lingering acid](#burning-and-lingering-acid), [Riders on a hit](#riders-on-a-hit), [Reactions](#reactions-1), [Turn, attacks and resources](#turn-attacks-and-resources), [Doors, talking, theft and leadership](#doors-talking-theft-and-leadership), [Personality from the sheet](#personality-from-the-sheet-1), [Typical numbers by challenge rating](#typical-numbers-by-challenge-rating)
@@ -150,7 +150,7 @@ level = max(logic, stated, taunt, condition) + lean + style + memory + social + 
 | lean | a neutral's lean toward a side | until the lean changes |
 | style | its playstyles' points | each turn |
 | memory | what the fight stirred | cools each turn |
-| social | its commander's pull, the party's wishes, friends' requests | each turn |
+| social | its commander's pull, the Friendly Team's wishes, friends' requests | each turn |
 | focus | more for the foes its side has already hit (Focus fire) | each turn |
 | apart | less for what would take it well away from its team (Keeping together; below 0) | each turn |
 | frustration | what thwarted it (subtracted) | doesn't cool |
@@ -256,7 +256,7 @@ Search: playstyle points, social, requests, buff request, Be bolstered by, willi
   weakest-looking friend. Aid: the friend dealing the most damage (its commander, for one whose leader multiplier is
   over 1). Talk: its chosen listener. Avoid: the most dangerous foe; its last attacker once it's under 60% HP; the
   nearest foe. Whim: a 30% chance each turn that a random foe gets the points.
-- **Social**: its commander's pull (Following the leader) and the party's wishes (Party's sway). A friend's "Be
+- **Social**: its commander's pull (Following the leader) and the Friendly Team's wishes (Friendly vote's sway). A friend's "Be
   bolstered by" desire naming it becomes a wish to bolster that friend at the request's level × willingness, if they
   share a language and neither is mindless. Willingness = 0.5 + (Loyal − 50) ÷ 100 − (Selfish − 50) ÷ 100, +0.25 for a
   helping playstyle (Moralist, People-Pleaser, Martyr, Tank, Enabler, Redeem-Seeker), 0 to 1; under 0.2 it ignores
@@ -624,7 +624,7 @@ with morale off (the world's or its side's), nor for one that stands its ground.
   under half its hit points, 0, 0.5) a turn.
 
 Example: a leaderless kobold (Brave 25, Selfish 40) at a quarter of its HP, its side holding a third of the hit points,
-the party carrying coin: life 0.75 × 0.9 = 0.68, loot 0.4 × 0.33 = 0.13; chance min(0.3, 0.21) = 21% a turn.
+the Friendly Team carrying coin: life 0.75 × 0.9 = 0.68, loot 0.4 × 0.33 = 0.13; chance min(0.3, 0.21) = 21% a turn.
 
 Code: `engine/behavior/flight.js` `lifeOverLoot`, `prizeFlight`, `prizeOf`, `leavesOfItsOwn`.
 
@@ -689,10 +689,10 @@ Code: `engine/behavior/talk.js` `outcomeFor`, `resolveTalk`.
 Search: team stance, team leaves, odds too long, call off, jump in, save a side, turn on a side, grudge, wait, hang
 back, prey, opportunist, spent, new leader, called back
 
-A team (the party, each hostile group, each neutral friend group) takes a view of the whole fight through its head,
+A team (the Friendly Team, each hostile group, each neutral friend group) takes a view of the whole fight through its head,
 as each round begins. Its members act on it, except those who don't listen to leaders (their pills hear a leader at
 under half, a contrarian, a schemer). The head is the first of its chain of command who can lead, then whoever
-commands. A leaderless team takes no stance. The party takes one only when FastFighting plays all of it: in a live
+commands. A leaderless team takes no stance. The Friendly Team takes one only when FastFighting plays all of it: in a live
 battle, no player runs any of it; in the planner, **Players run their characters** is off.
 
 - **The odds** (teamOdds), 0 to 1:
@@ -731,7 +731,7 @@ Search: reinforcements, call for help, calls for reinforcements, help arrives, m
 Each team's own, from the planner: one creature, and how many of it can come. Its head calls them on its own turn
 (an action); the GM can call any team's in the Battle Vantage. Called, they come the next round, at the map's edge
 farthest from the team's foes (no map: anywhere), after everyone else in the order, and join the team (its side, its
-friend group, under its head). One call at a time: none while some are on their way. The party's only when
+friend group, under its head). One call at a time: none while some are on their way. The Friendly Team's only when
 FastFighting plays all of it.
 
 - **Competent head or better:** calls when its odds (Team stances) fall under its leaving mark + 0.15; as many as would
@@ -754,13 +754,13 @@ Each group (a side, or a neutral friend group) may have a boss or a leader, then
   (not incapacitated, unconscious, paralyzed, stunned, confused, fleeing, blinded, deafened, silenced or petrified). A
   lieutenant who steps up leads as a leader, never a boss. Nobody able: leaderless.
 - **The automatic pick** (made once, when the plan is new; the planner's role pills override it):
-  - Outside the party: the highest score = 2 × the system's leader ranking (−10 if unranked) + bossiness + rarity (0,
+  - Outside the Friendly Team: the highest score = 2 × the system's leader ranking (−10 if unranked) + bossiness + rarity (0,
     0.5, 1, 1.5 from common to unique). A boss if 2+ levels above every other member. One lieutenant in a group of 5+.
     A group of one has nobody.
   - Bossiness = Σ pill × place weight (1.5, 1, 0.8, 0.6) + (Brave − 50) ÷ 25 + (Tactical − 50) ÷ 50. Pills: Wants to
     Lead 4, Instigator 1.5, Cruel 1, Brawler, Relentless, Skeptic, Vengeful, Redeem-Seeker 0.5; Wildcard, Fragile −0.5;
     Mercenary −1; Enabler, Lazy −1.5; People-Pleaser, Wallflower, Chicken −2.
-  - The party: the roles the GM gave its members in earlier fights; else a leader only if exactly one member Wants to
+  - The Friendly Team: the roles the GM gave its members in earlier fights; else a leader only if exactly one member Wants to
     Lead. Never a boss.
 - **Off**: world setting Leadership (`leadership`, per battle in the planner), or a tab set to No leaders.
 - Heading a group adds 0.15 to its talk affinity (at most 1), if it talks at all.
@@ -841,14 +841,14 @@ One with Wants to Lead who doesn't command its group may scheme against whoever 
 Code: `engine/behavior/desire.js` `scheme` (`TREACHEROUS`); `engine/battle-state.js` `refusesToHelp`, `dropAmbition`;
 `engine/behavior/talk.js` `outcomeFor`, `resolveTalk`.
 
-### Party's sway
+### Friendly vote's sway
 
-Search: party, party votes, Party tab, majority, Party's sway (%), partySway
+Search: Friendly Team, party, friendly votes, Friendly Team tab, majority, Friendly vote's sway (%), partySway
 
-The party's votes (the survey's Party tab, majority rules) sway every character on the friendly side. Party's sway (%)
+The Friendly Team's votes (the survey's Friendly Team tab, majority rules) sway every character on the friendly side. Friendly vote's sway (%)
 (`partySway`, 1 to 20, default 3):
 
-- **Answers**: in that share of fights, a question a character left on "Let this character decide" takes the party's
+- **Answers**: in that share of fights, a question a character left on "Let this character decide" takes the Friendly Team's
   answer (talking, resources, when to retreat, foes who fall).
 - **Desires**: each wish adds that many points each turn. Who to pursue: hurt the nearest, weakest, most dangerous,
   casters and healers, or their leader. Foes who fall: hurt each unstable downed foe (finish), or tie up, or rob. Care:
@@ -1328,14 +1328,14 @@ Code: `engine/behavior/standoff.js` `breaksStandoff` (ARGUMENT_BREAKS 0.75); `en
 
 ### Taking no side: neutral tokens and leans
 
-Search: neutral, Neutral tokens (`neutralDefault`), takes no side, lean, leans toward the party, leans toward the enemy, nearest side, underdog, Left out of it, Fights everyone, bystander, third party
+Search: neutral, Neutral tokens (`neutralDefault`), takes no side, lean, leans toward the Friendlies, leans toward the enemy, nearest side, underdog, Left out of it, Fights everyone, bystander, third party
 
 Decides how Neutral-disposition tokens take part.
 
 | Neutral tokens (`neutralDefault`) | Effect |
 |---|---|
 | Takes no side (until crossed) (default) | On the field, nobody's foe, leaning nowhere |
-| Leans toward the party / the enemy | Takes no side, wants that side safe |
+| Leans toward the Friendlies / the enemy | Takes no side, wants that side safe |
 | Leans toward the nearest side | The side nearest it at the start |
 | Leans toward the underdog | Whichever side has the smallest share of its HP left, each round |
 | Left out of it | Not in the fight |
@@ -1379,7 +1379,7 @@ Code: `engine/behavior/neutral.js` `crossed`, `offend`, `turnOn`, `truceWith`, `
 
 ### Winning over, calming and sending away
 
-Search: recruit, win over, join, joins the party, calm, talked round, dismiss, send away, appeal, peace, can't abide violence, Peacekeeper, keep the peace
+Search: recruit, win over, join, joins the Friendly Team, calm, talked round, dismiss, send away, appeal, peace, can't abide violence, Peacekeeper, keep the peace
 
 Decides how talkers deal with those who take no side.
 
@@ -1425,7 +1425,7 @@ Search: seems foe, mistaken for an enemy, caught in area, careless, area spell, 
 - **Taken for a foe**: yes if it wants to hurt it at 20+, or, for a feral creature, if it's within 10 ft. Below Tactical
   60, yes if the neutral leans (25+) toward its enemies. And any neutral it can make out, in a round it's so inclined
   (decided once a round): an animal 0.9, a feral creature 0.9, an Instinctive one 0.3, and at any tier Cruel 0.5,
-  Wildcard 0.35, Instigator 0.25, several each its own chance (1 − the product of each one's 1 − chance). The party's
+  Wildcard 0.35, Instigator 0.25, several each its own chance (1 − the product of each one's 1 − chance). The Friendly Team's
   own creatures, and any with a master (a companion), count only their playstyles.
 - **Caught in an area**: each neutral adjacent to or within 10 ft of an area's targets is caught with chance clamp(0.8 −
   Tactical ÷ 100, 0.05, 0.75).
@@ -1648,7 +1648,7 @@ Search: mercy, avoid killing, avoidKilling, Killing-averse creature holds back (
 Decides when a killing blow knocks out instead, and who is spared after the fight.
 
 - Strength s, from the answer given to Foes who fall: Spare them 1, Tie them up 0.66, Leave them be 0.33, Rob them
-  0.33, Finish them 0. A pill's suggested Spare or Tie counts as 1 or 0.66; the party's vote to spare raises s to at
+  0.33, Finish them 0. A pill's suggested Spare or Tie counts as 1 or 0.66; the Friendly Team's vote to spare raises s to at
   least its sway.
 - Holds back with chance avoidKilling ÷ 100 × s (default 90, range 50–90): 90% for Spare them, ≈59% for Tie them up,
   ≈30% for Leave or Rob.
@@ -1748,19 +1748,19 @@ Example: Selfish 30, Tactical 60: 29 × 0.7 × 0.4 ≈ 8. A PC at the usual trai
 
 Code: `engine/behavior/holds.js` `bears`; `engine/behavior/desire.js` `holdWishes`; `engine/simulator.js` (standing up).
 
-### The party's vote
+### The Friendly Team's vote
 
-Search: party survey, Party tab, vote, majority, Lock-in, party's leader breaks ties, Party's sway (`partySway`)
+Search: party, Friendly Team survey, Friendly Team tab, vote, majority, Lock-in, the leader breaks ties, Friendly vote's sway (`partySway`)
 
-Decides the party's answers, which sway the friendly side.
+Decides the Friendly Team's answers, which sway the friendly side.
 
 - Each player logged in, with a character in the fight, gets one vote per question; GMs don't vote.
-- The most-voted answer wins. A tie goes to the answer the party leader's player voted for, if it is one of the tied;
+- The most-voted answer wins. A tie goes to the answer the Friendly Team leader's player voted for, if it is one of the tied;
   else there is no answer.
 - Questions: who to go after first, talk first, foes who fall, looking after each other, spells and potions, when to
   pull out.
-- Party's sway (`partySway`, default 3, range 1–20): each fight, for each question a character left to "Let this
-  character decide", it uses the party's answer with that percent chance. The party's targets, fallen and care add
+- Friendly vote's sway (`partySway`, default 3, range 1–20): each fight, for each question a character left to "Let this
+  character decide", it uses the Friendly Team's answer with that percent chance. The Friendly Team's targets, fallen and care add
   sway × 100 (3 by default) to each member's matching wishes; Each for themselves takes as much off heal, guard and
   bolster wishes. A vote to spare sets the avoid-killing wish to at least 0.03.
 
@@ -1841,7 +1841,7 @@ Code: `engine/simulator.js` `runOne`, `battleOver`, `keepsSideIn`; `engine/aggre
 
 ### Odds and outcomes
 
-Search: odds, win chance, Party wins, A PC dies, A PC goes down, Stalemate, No one left, Most dangerous, Most at risk, First to fall, HP left
+Search: odds, win chance, Friendlies win, A PC dies, A PC goes down, Stalemate, No one left, Most dangerous, Most at risk, First to fall, HP left
 
 Each figure is the share of simulated fights in which it happened.
 
@@ -1859,8 +1859,8 @@ Per combatant: share of fights it ends standing, down, dead, fled, surrendered a
 HP left (as a fraction); mean damage dealt and healing done; share it fell first; mean resources spent. Summoned
 creatures are left out.
 
-- **Most dangerous**: the 3 non-party combatants with the highest mean damage dealt.
-- **Most at risk**: the 3 party members most often downed.
+- **Most dangerous**: the 3 non-friendly combatants with the highest mean damage dealt.
+- **Most at risk**: the 3 Friendly Team members most often downed.
 
 Code: `engine/aggregate.js` `createAggregator`; `apps/battle-planner.js` `#resultsContext`.
 
@@ -1880,19 +1880,19 @@ Code: `engine/aggregate.js` `finish`; `foundry/battle.js` `typicalFight`; `engin
 
 Search: swing factors, Compute swing factors, what moves the odds, Without, impact, SWING_RUNS, linchpin, key target, hinges on, noise, What to test
 
-Shows how much each combatant and each option moves the party's win chance.
+Shows how much each combatant and each option moves the Friendly Team's win chance.
 
-- What to test: a pill each for the party's side, its foes, those who take no side, and the rules; the GM's choice
+- What to test: a pill each for the Friendly Team's side, its foes, those who take no side, and the rules; the GM's choice
   is kept in their browser for every battle.
 - Tests: the battle without each of up to 12 creatures from the pills chosen (those that did most in the main run
   first: damage plus healing, then level, then max HP; never one that took part in under 1 fight in 10), and with
   Leadership, Morale, and Terrain & positioning each turned off (only those that are on).
 - Each test runs up to 300 fights (`SWING_RUNS`) in 3 × prediction time ÷ 15 (`SWING_FULL`, the most tests a study
   has), seed 99 (on the background workers where the prediction runs on them). A study of fewer tests finishes sooner.
-- Each shows the party's win chance in the test minus the main run's, largest change first.
+- Each shows the Friendly Team's win chance in the test minus the main run's, largest change first.
 - Noise: a change under 2 points, or under twice its standard error (√(p(1−p)/n) of the test and of the main run,
   combined), may be chance. It's shown faint and never makes an Overview tile.
-- Overview tiles, once it has run: the **Linchpin** (the ally whose absence lowers the party's odds most), the
+- Overview tiles, once it has run: the **Linchpin** (the ally whose absence lowers the Friendly Team's odds most), the
   **Key target** (the foe whose absence raises them most), and what the fight **Hinges on** (a rule moving them 10
   points or more).
 
@@ -1918,8 +1918,8 @@ Decides who acts when.
     of two dice). DCC: a side with hidden tokens gets a surprise round. Ironsworn: a side with hidden tokens ambushes
     (Enter the Fray: +shadow for it, +wits for the rest). Daggerheart: none.
   - No one is surprised.
-  - Friendlies are surprised: every side against the party takes turns in a round 0 before round 1.
-  - Friendlies surprise others: the party takes that round 0. (Ironsworn has no rounds: surprise without one.)
+  - Friendlies are surprised: every side against the Friendlies takes turns in a round 0 before round 1.
+  - Friendlies surprise others: the Friendlies take that round 0. (Ironsworn has no rounds: surprise without one.)
 - Where the system says so (PF2e Avoid Notice), a low-profile creature uses its Stealth if that's higher.
 - A live battle keeps the tracker's order and plays no round 0; a creature FastFighting plays that the system's rule
   leaves surprised (5e's 2014 rules) loses its first turn.
@@ -3678,7 +3678,7 @@ Search: morale, morale check, DC 11, Will, flee, rout, retainer, Personality, ra
 What it decides: when a group of creatures breaks.
 
 - Player characters make no DCC morale check (the core's own rules for them stand). A group checks when its first falls and when half of it is down; a creature alone, at half its hit points.
-- Whichever of the group acts next rolls for all: d20 + Will (+ the employer's Personality modifier for a retainer: the party leader's, else the best character's) + a rally's morale bonus, against DC 11. Under: the whole group flees.
+- Whichever of the group acts next rolls for all: d20 + Will (+ the employer's Personality modifier for a retainer: the Friendly Team leader's, else the best character's) + a rally's morale bonus, against DC 11. Under: the whole group flees.
 - A rally's second check lets one whose group broke stay. The mindless and the fearless never break.
 
 Code: `rules.js` `morale`, `moraleCheck`, `MORALE_DC`, `employerOf`, `rallyOf`.
@@ -3825,7 +3825,7 @@ Search: Fear, GM's Fear, spotlight, GM turn, Spending Fear, Sparing, Steady, Fre
 
 What it decides: who acts, and how freely the GM spends Fear.
 
-- No initiative: each character takes the spotlight in turn. After one whose roll failed or went with Fear, a GM turn: the adversary that has waited longest acts, and each Fear spent brings one more. The party's other friends act at the end of the round.
+- No initiative: each character takes the spotlight in turn. After one whose roll failed or went with Fear, a GM turn: the adversary that has waited longest acts, and each Fear spent brings one more. The Friendly Team's other friends act at the end of the round.
 - The planner's Daggerheart row: **Fear** (0 to 12; it starts at the world's Fear, else one for each character) and **Spending Fear**:
 
 | Spending | One more adversary for a Fear |
@@ -4218,19 +4218,19 @@ What it decides: how the planner's **Conflict** row tracks the fight.
 
 - **Track**: One for the encounter (default when any character plays Starforged or Sundered Isles) or Each foe's own (default otherwise).
 - **Rank** (one track): by default the most dangerous foe's. It sets the ticks each mark fills (as the table above) and the Compel successes that talk a foe round: 2, 3, 6, 12, 24 for ranks 1 to 5.
-- **Kept on**: the character whose sheet keeps the track, by default the party's leader.
+- **Kept on**: the character whose sheet keeps the track, by default the Friendly Team's leader.
 - Every Strike and Clash marks it at the encounter's rank, and so does each success in words (a strong hit twice).
 
 Code: `conflict.js` `STEPS`, `TRACK_MODES`, `defaultMode`, `defaultRank`, `joinEncounter`; `adapter.js` `#conflict`, `plannerSettings`.
 
 ### Taking a side mid-fight
 
-Search: allegiance, side change, won over, turns on the party, joins
+Search: allegiance, side change, won over, turns on the Friendlies, joins
 
 What it decides: what a side change means in a conflict, once each way.
 
-- Joining the party, the first to: a mark of progress on the encounter's track (never the last), or with each foe's own track +1 momentum for each character.
-- Turning on the party: it joins the encounter's track. The first time, a whole neutral team (two or more) or a leader among them raises the encounter's rank a step (never to Epic); anyone else, or no step left, costs each character 1 stress.
+- Joining the Friendly Team, the first to: a mark of progress on the encounter's track (never the last), or with each foe's own track +1 momentum for each character.
+- Turning on the Friendlies: it joins the encounter's track. The first time, a whole neutral team (two or more) or a leader among them raises the encounter's rank a step (never to Epic); anyone else, or no step left, costs each character 1 stress.
 
 Code: `rules.js` `onAllegiance`, `settleJoins`.
 
