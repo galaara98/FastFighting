@@ -10,7 +10,7 @@ import { openPool, poolThreads } from "../engine/batch-pool.js";
 /** How long a battle's prediction runs (seconds): its plan's, else the world's Prediction time. */
 export const predictionSeconds = setup => setup?.options?.seconds ?? setting("predictionTime");
 import { getAdapter, getModifiers } from "../api.js";
-import { canDropGoods, isPile, leavesRemains } from "./loot-drop.js";
+import { canDropGoods, isPile, leavesRemains, pilesOn } from "./loot-drop.js";
 import { appetiteOf } from "./food.js";
 import { cachedCharacterSpec } from "./sheet-watch.js";
 import { computeApproach, computeAwareness, computeGround, computeWalls, environmentAt, forgetGround, positionOf, squareFeet } from "./terrain.js";
@@ -704,6 +704,8 @@ export function buildBattleSpec(roster, setup, { approach = null } = {}) {
     command: Object.fromEntries(Object.entries(chains).map(([k, chain]) => [k, chain.map(c => ({ id: c.id, role: c.role, leadership: c.leadership }))])),
     approach: options.positioning ? approach : null,
     doors: options.positioning ? sceneDoors() : {},
+    // (The piles on the map, what they hold: a thief's, a scavenger's, a hungry creature's to go for. behavior/forage.js.)
+    piles: options.positioning ? pilesOn() : [],
     options: {
       // (A plan saved before the most rounds went to 4 to 12 is held to them.)
       maxRounds: clamp(Math.round(Number(options.maxRounds) || MAX_ROUNDS.default), MAX_ROUNDS.min, MAX_ROUNDS.max),
@@ -725,6 +727,8 @@ export function buildBattleSpec(roster, setup, { approach = null } = {}) {
       // them for the taker to pick up; else they change hands at once (foundry/loot-drop.js).
       dropGoods: canDropGoods(),
       remains: leavesRemains(setting("lootMode")),
+      // (A dead player character's meat, for the hungry: as the GM's setting says. behavior/forage.js.)
+      pcMeat: setting("pcMeat") === true,
       // Whether the players run their characters (the planner's toggle): off, FastFighting plays the party, and its
       // head takes the party's view of the fight as any team's does (engine/behavior/stance.js).
       playersRun: options.playersRunPCs !== false,

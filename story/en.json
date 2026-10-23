@@ -3424,6 +3424,34 @@
     "{actor}'s people close in on {target}, looking for easy pickings.",
     "With {target} weakened, {actor} makes their move."
   ],
+  "event.eatBody": [
+    "{actor} tears into what's left of {target}.",
+    "{actor} falls on {target}'s body and starts to feed.",
+    "Heedless of the fight, {actor} gnaws at {target}.",
+    "{actor} drags at {target}'s remains, eating.",
+    "{actor} stops to feed on {target}."
+  ],
+  "event.eatPile": [
+    "{actor} roots through {target} for something to eat.",
+    "{actor} tears into the food in {target}.",
+    "{actor} wolfs down food from {target}.",
+    "{actor} stops to eat from {target}.",
+    "{actor} snatches food from {target} and eats."
+  ],
+  "event.eatFull": [
+    "{actor} has eaten their fill.",
+    "{actor} finishes eating, sated.",
+    "{actor} looks up, finally full.",
+    "Fed, {actor} turns back to the fight.",
+    "{actor} has had enough to eat."
+  ],
+  "event.scavenge": [
+    "{actor} rummages through {target} and comes away with something.",
+    "{actor} helps themselves to something from {target}.",
+    "{actor} snatches something from {target}.",
+    "{actor} digs through {target}, pocketing what they find.",
+    "{actor} loots {target} while the fight goes on."
+  ],
   "event.quit": [
     "{actor} wants no more of this fight and heads off.",
     "{actor} has had enough and leaves the fight.",

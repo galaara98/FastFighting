@@ -10,7 +10,8 @@
  *   avoidTrap  out of the reach of a hazard it spotted, or that went for it (traps.js)                      played
  *   runAway    out of the fight: shaken (morale.js), it's thinking of running; 2, it runs                     played
  *   closeDoor, lockDoor  a door shut (behind it, against what's coming)                                     not yet
- *   pickUp     an item: a dropped weapon, a potion, the treasure                                            not yet
+ *   pickUp     what lies in a pile: the treasure, a dropped purse (behavior/forage.js)                        played
+ *   eat        food: a pile's, or the meat of the dead (behavior/forage.js), when hungry                      played
  *   reach      a place: a square on the map, the altar, high ground                                         not yet
  *   swim, fly, climb   somewhere by water, by air, up a wall                                                 not yet
  *   hide       out of sight                                                                                  not yet
@@ -32,7 +33,8 @@ export const GOALS = Object.freeze({
   runAway: Object.freeze({ about: "self", played: true, scale: "count", most: 2 }),
   closeDoor: Object.freeze({ about: "door", scale: "band" }),
   lockDoor: Object.freeze({ about: "door", scale: "band" }),
-  pickUp: Object.freeze({ about: "item", scale: "band" }),
+  pickUp: Object.freeze({ about: "item", played: true, scale: "band" }),
+  eat: Object.freeze({ about: "food", played: true, scale: "band" }),
   reach: Object.freeze({ about: "place", scale: "band" }),
   swim: Object.freeze({ about: "place", scale: "band" }),
   fly: Object.freeze({ about: "place", scale: "band" }),
@@ -101,6 +103,8 @@ export function goalsOf(run, u) {
     // Thinking of running.
     if ( u.wavering ) add("runAway", 1);
   }
+  // What it wants of what lies about (behavior/forage.js): a pile's valuables, food (a pile's, or a body's meat).
+  for ( const f of u.forage ?? [] ) add(f.kind, f.level, { thing: { type: run.byId.has(f.sourceId) ? "body" : "pile", id: f.sourceId, x: f.x, y: f.y, name: f.name } });
   // The battle's own (and the GM's word on them).
   for ( const s of u.spec.goals ?? [] ) {
     if ( !GOALS[s?.kind] || !standing ) continue;

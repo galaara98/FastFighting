@@ -256,6 +256,8 @@ function baseLine(e) {
       if ( e.frightened ) answer = t("DealFrightened", { answer, n: e.frightened });
       return t("Deal", { ...a, what, wordless: `${e.wordless ? t("DealWordless") : ""}${e.reaction ? t("DealReaction") : ""}`, skill: e.skill ?? "", roll: dice(e.natural, e.mod, e.total, e.dc, t("DcOf", { stat: e.dcStat })), degree: degree(e.degree), answer });
     }
+    case "eat": return t("Eat", { actor: e.actor, target: e.target ?? "", full: e.sated ? t("EatFull") : "" });
+    case "scavenge": return t("Scavenge", { actor: e.actor, target: e.target ?? "", what: e.money ? t("ScavengeMoney") : e.item ?? "" });
     case "stance": return t({ leave: "StanceLeave", stay: "StanceStay", save: "StanceSave", harm: "StanceHarm", wait: "StanceWait", prey: "StancePrey" }[e.kind] ?? "StanceWait",
       { actor: e.actor, target: e.targetName ?? "", odds: Number.isFinite(e.odds) ? Math.round(e.odds * 100) : "?" });
     case "quit": return e.following ? t("QuitFollow", { actor: e.actor, by: e.following }) : e.group ? t("QuitGroup", { actor: e.actor, group: e.group }) : t("Quit", a);

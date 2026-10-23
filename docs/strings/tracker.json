@@ -804,6 +804,16 @@
    "commit": null,
    "hash": "21e37be0ff5d"
   },
+  "core:code:scripts/foundry/loot-drop.js:pilesOn#1": {
+   "repo": "core",
+   "file": "scripts/foundry/loot-drop.js",
+   "key": "scripts/foundry/loot-drop.js:pilesOn#1",
+   "area": "core/code",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "08f721f4b812"
+  },
   "core:code:scripts/foundry/make-it-so.js:commitFight#1": {
    "repo": "core",
    "file": "scripts/foundry/make-it-so.js",
@@ -6595,6 +6605,16 @@
    "commit": null,
    "hash": "1c45c262fc46"
   },
+  "core:FASTFIGHTING.Goal.eat": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Goal.eat",
+   "area": "core/Goal",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "1b8aedc3d824"
+  },
   "core:FASTFIGHTING.Goal.escape": {
    "repo": "core",
    "file": "languages/en.json",
@@ -9598,6 +9618,26 @@
    "commit": null,
    "hash": "675676fe0102"
   },
+  "core:FASTFIGHTING.Log.Eat": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.Eat",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "762121b76b29"
+  },
+  "core:FASTFIGHTING.Log.EatFull": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.EatFull",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "4eb58febcdd4"
+  },
   "core:FASTFIGHTING.Log.End": {
    "repo": "core",
    "file": "languages/en.json",
@@ -12016,6 +12056,26 @@
    "date": null,
    "commit": null,
    "hash": "53df428019a3"
+  },
+  "core:FASTFIGHTING.Log.Scavenge": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.Scavenge",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "f0979a0656e3"
+  },
+  "core:FASTFIGHTING.Log.ScavengeMoney": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Log.ScavengeMoney",
+   "area": "core/Log",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "7ab4179f872e"
   },
   "core:FASTFIGHTING.Log.Scheme": {
    "repo": "core",
@@ -21996,6 +22056,36 @@
    "commit": null,
    "hash": "b7c9b5ccd3e3"
   },
+  "core:FASTFIGHTING.Story.Part.eatBody": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Story.Part.eatBody",
+   "area": "core/Story",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "0e3033b5e694"
+  },
+  "core:FASTFIGHTING.Story.Part.eatFull": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Story.Part.eatFull",
+   "area": "core/Story",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "7c046bd65ad3"
+  },
+  "core:FASTFIGHTING.Story.Part.eatPile": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Story.Part.eatPile",
+   "area": "core/Story",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "b863b975a759"
+  },
   "core:FASTFIGHTING.Story.Part.edgeFails": {
    "repo": "core",
    "file": "languages/en.json",
@@ -24227,6 +24317,16 @@
    "date": null,
    "commit": null,
    "hash": "e683ca92f557"
+  },
+  "core:FASTFIGHTING.Story.Part.scavenge": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Story.Part.scavenge",
+   "area": "core/Story",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "69e15a1aa60f"
   },
   "core:FASTFIGHTING.Story.Part.scent": {
    "repo": "core",
@@ -39479,6 +39579,36 @@
    "hash": "c8715fea1ebd",
    "changed": true
   },
+  "core:story:event.eatBody": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "event.eatBody",
+   "area": "core/story.event",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "46b6b9d88bc4"
+  },
+  "core:story:event.eatFull": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "event.eatFull",
+   "area": "core/story.event",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "979abe934967"
+  },
+  "core:story:event.eatPile": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "event.eatPile",
+   "area": "core/story.event",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "eb9caf4a46b5"
+  },
   "core:story:event.edgeFails": {
    "repo": "core",
    "file": "story/en.json",
@@ -40579,6 +40709,16 @@
    "date": null,
    "commit": null,
    "hash": "d5e1634e5dc5"
+  },
+  "core:story:event.scavenge": {
+   "repo": "core",
+   "file": "story/en.json",
+   "key": "event.scavenge",
+   "area": "core/story.event",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "b22756de64ce"
   },
   "core:story:event.scheme": {
    "repo": "core",

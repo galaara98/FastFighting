@@ -13,7 +13,8 @@
 import { MODULE_ID } from "../constants.js";
 import { localize } from "../i18n.js";
 import { getAdapter } from "../api.js";
-import { meatGoods } from "./food.js";
+import { meatGoods, foodOf } from "./food.js";
+import { positionOf } from "./terrain.js";
 
 export const ITEM_PILES = "item-piles";
 
@@ -142,6 +143,28 @@ export async function pickUpGoods({ pileUuid, receiverDoc }) {
   return records;
 }
 
+/**
+ * What a creature took from a pile, or ate, in a live battle (behavior/forage.js `foraged`): off the pile (or, meat
+ * eaten off a body, off the dead creature's sheet), and onto the taker's (eaten: gone). Undo records.
+ */
+export async function writeForaged(scene, takerDoc, f, sourceDoc) {
+  const adapter = getAdapter();
+  if ( !movesGoods(adapter) || !sourceDoc?.actor || !takerDoc ) return [];
+  let goods;
+  if ( f.money > 0 ) goods = [{ kind: "money", amount: f.money }];
+  else if ( f.item?.id ) goods = [{ kind: "item", item: { id: f.item.id }, count: f.count ?? 1, how: "loot" }];
+  else {
+    // (Meat off a body: a portion of what its sheet holds that's meat.)
+    const meat = sourceDoc.actor.items.find(i => foodOf(i, adapter)?.meat);
+    if ( !meat ) return [];
+    goods = [{ kind: "item", item: { id: meat.id }, count: f.count ?? 1, how: "loot" }];
+  }
+  const taken = await adapter.takeGoods(sourceDoc, goods);
+  const records = [...(taken?.records ?? [])];
+  if ( !f.eaten && !emptyGoods(taken?.goods) ) records.push(...((await adapter.putGoods(takerDoc, taken.goods)) ?? []));
+  return records;
+}
+
 /* -------------------------------------------- */
 /*  The fallen                                  */
 /* -------------------------------------------- */
@@ -158,6 +181,34 @@ export function isPile(doc) {
   if ( doc.getFlag?.(MODULE_ID, "pile") || doc.actor?.getFlag?.(MODULE_ID, "pile") ) return true;
   if ( doc.getFlag?.(MODULE_ID, FALLEN) ) return false;
   return !!game.modules.get(ITEM_PILES)?.active && !!game.itempiles?.API?.isValidItemPile?.(doc);
+}
+
+/**
+ * The piles on the scene, as the engine sees them (behavior/forage.js, spec.piles): each pile token's place (feet),
+ * name, money and things (value each, how many, food: foundry/food.js), through the helper's pileContents (API 27).
+ * None where the helper can't say what a pile holds. Only those on the canvas's scene.
+ */
+export function pilesOn(adapter = getAdapter()) {
+  if ( typeof adapter?.pileContents !== "function" || !canvas?.scene ) return [];
+  const out = [];
+  for ( const token of canvas.tokens?.placeables ?? [] ) {
+    const doc = token.document;
+    if ( !isPile(doc) || doc.hidden || !doc.actor ) continue;
+    try {
+      const held = adapter.pileContents(doc);
+      if ( !held ) continue;
+      const items = (held.items ?? []).filter(i => i?.id && Number(i.quantity) > 0).map(i => ({
+        id: i.id, name: i.name ?? "", value: Math.max(0, Number(i.value) || 0), quantity: Number(i.quantity), food: foodOf(doc.actor.items.get(i.id), adapter)
+      }));
+      const money = Math.max(0, Number(held.money) || 0);
+      if ( !items.length && !money ) continue;
+      const at = positionOf(token);
+      out.push({ id: doc.id, name: doc.name, x: at.x, y: at.y, size: at.size, money, items });
+    } catch ( err ) {
+      console.warn(`${MODULE_ID} | reading the pile ${doc.name}`, err);
+    }
+  }
+  return out;
 }
 
 /** Can a dead player's character leave its things' copy on the ground (lootOnFall), as the loot setting says? */

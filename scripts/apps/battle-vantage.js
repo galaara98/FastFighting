@@ -79,7 +79,7 @@ const ICONS = Object.freeze({
     leans: "scale-unbalanced", against: "fire", swayed: "comments", holdsBack: "hand", contrarian: "arrows-turn-to-dots", meddles: "hand-sparkles"
   },
   goal: {
-    openDoor: "door-open", avoidTrap: "triangle-exclamation", runAway: "person-running", closeDoor: "door-closed", lockDoor: "lock", pickUp: "hand-holding",
+    openDoor: "door-open", avoidTrap: "triangle-exclamation", runAway: "person-running", closeDoor: "door-closed", lockDoor: "lock", pickUp: "hand-holding", eat: "drumstick-bite",
     reach: "location-dot", swim: "person-swimming", fly: "feather", climb: "mountain", hide: "user-secret", takeCover: "tree", escape: "person-walking-arrow-right", useObject: "gears"
   },
   thing: { door: "door-closed", item: "gem", place: "location-dot", object: "gears" },

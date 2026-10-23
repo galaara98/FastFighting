@@ -56,12 +56,12 @@ describe("the GM holds a desire", () => {
 });
 
 describe("goals", () => {
-  test("every kind says what it's about and how it's counted; the engine plays a door, a trap, running", () => {
+  test("every kind says what it's about and how it's counted; the engine plays a door, a trap, running, a pile, food", () => {
     for ( const kind of GOAL_KINDS ) {
-      expect(["door", "hazard", "item", "place", "object", "self"]).toContain(GOALS[kind].about);
+      expect(["door", "hazard", "item", "food", "place", "object", "self"]).toContain(GOALS[kind].about);
       expect(["band", "count"]).toContain(GOALS[kind].scale);
     }
-    expect(GOAL_KINDS.filter(k => GOALS[k].played)).toEqual(["openDoor", "avoidTrap", "runAway"]);
+    expect(GOAL_KINDS.filter(k => GOALS[k].played)).toEqual(["openDoor", "avoidTrap", "runAway", "pickUp", "eat"]);
   });
 
   test("a door between it and what it's after: through it, as badly as it wants what's behind; given up at the GM's word", () => {
@@ -111,14 +111,14 @@ describe("goals", () => {
   });
 
   test("one the engine doesn't play yet is kept and shown, held as the GM says, and changes nothing it does", () => {
-    const idol = [{ kind: "pickUp", thing: { type: "item", id: "idol", x: 10, y: 5, name: "the idol" }, level: 50 }];
+    const idol = [{ kind: "reach", thing: { type: "place", id: "altar", x: 10, y: 5, name: "the altar" }, level: 50 }];
     const run = live(behindDoor({ goals: idol }));
     const hero = run.byId.get("hero");
-    expect(goalsOf(run, hero).find(g => g.kind === "pickUp")).toMatchObject({ thing: { type: "item", id: "idol", name: "the idol" }, level: 50, played: false, gm: false });
-    setGoal(run, "hero", { kind: "pickUp", thingId: "idol", level: 90 });
-    expect(goalsOf(run, hero).find(g => g.kind === "pickUp")).toMatchObject({ level: 90, gm: true });
-    setGoal(run, "hero", { kind: "pickUp", thingId: "idol", level: null });
-    expect(goalsOf(run, hero).find(g => g.kind === "pickUp")).toMatchObject({ level: 50, gm: false });
+    expect(goalsOf(run, hero).find(g => g.kind === "reach")).toMatchObject({ thing: { type: "place", id: "altar", name: "the altar" }, level: 50, played: false, gm: false });
+    setGoal(run, "hero", { kind: "reach", thingId: "altar", level: 90 });
+    expect(goalsOf(run, hero).find(g => g.kind === "reach")).toMatchObject({ level: 90, gm: true });
+    setGoal(run, "hero", { kind: "reach", thingId: "altar", level: null });
+    expect(goalsOf(run, hero).find(g => g.kind === "reach")).toMatchObject({ level: 50, gm: false });
     for ( const seed of [1, 2, 3] ) expect(replay(behindDoor({ goals: idol }), pf2eRules, seed).log).toEqual(replay(behindDoor(), pf2eRules, seed).log);
   });
 });

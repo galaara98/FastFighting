@@ -24,7 +24,7 @@
 import { MODULE_ID, STATUS, SIDES, DISPOSITION_SIDES, NEUTRAL_PARTY, HOSTILE_GROUPS, clamp } from "../constants.js";
 import { escapeHtml as escape, inertHtml, listJoin } from "../i18n.js";
 import { getAdapter, characterSpec } from "../api.js";
-import { dropGoods, pickUpGoods, lootOnFall } from "./loot-drop.js";
+import { dropGoods, pickUpGoods, lootOnFall, writeForaged } from "./loot-drop.js";
 import { meatGoods } from "./food.js";
 import { setting, followSetting } from "../settings.js";
 import { positionOf, squareFeet } from "./terrain.js";
@@ -3082,6 +3082,11 @@ async function writeEach(before, after, records, { messages = null, leave = null
       if ( disposition !== undefined && doc.disposition !== disposition ) {
         records.push({ ...undoRecord(doc, doc.actor, { statusesBefore: false }), tokenUpdate: { disposition: doc.disposition } });
         await doc.update({ disposition });
+      }
+      // (What it took from a pile, or ate: off the pile or the body, onto it or gone. behavior/forage.js.)
+      for ( const f of ch.foraged ?? [] ) {
+        const from = f.pile ? battle.scene.tokens.get(f.source) ?? null : docOf(f.source);
+        records.push(...noteSettings(await writeForaged(battle.scene, doc, f, from)));
       }
       // (Fallen, a pile to loot; up again, itself; a player's character dead, its things' copy on top of it.)
       const fall = await lootOnFall(doc, battle.run.byId.get(id), ch, setting("lootMode"));

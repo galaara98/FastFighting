@@ -616,6 +616,9 @@ function narrate(e, roll, rel, fill) {
       return roll(`event.deal${kind}${e.answer === "accept" ? "" : "Refused"}`, g);
     }
     // (Quitting is told with the deal; following a commander out of it, here.)
+    // (What lies about: a pile's goods taken, food eaten, behavior/forage.js. As seen: nothing named that was taken.)
+    case "eat": return roll(e.sated ? "event.eatFull" : e.pile ? "event.eatPile" : "event.eatBody", { ...f, target: e.target ?? "" });
+    case "scavenge": return roll("event.scavenge", { ...f, target: e.target ?? "" });
     // (A team's head's view of the fight: behavior/stance.js.)
     case "stance": return roll({ leave: "event.stanceLeave", stay: "event.stanceStay", save: "event.stanceSave", harm: "event.stanceHarm", wait: "event.stanceWait", prey: "event.stancePrey" }[e.kind] ?? "event.stanceWait", { ...f, target: e.targetName ?? "" });
     case "quit": return e.following ? roll("event.quitFollow", { ...f, by: e.following }) : roll("event.quit", f);

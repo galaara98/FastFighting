@@ -23,6 +23,7 @@
  *                                       (Apply players' damage off: foundry/live-battle.js leaveToTable): its hit points
  *                                       not written (hp true), its effects and conditions not laid, only named
  *   concessions: [...]                  given up this turn (or taken off it: robbed while down)
+ *   foraged: [...]                      taken from a pile this turn, or eaten (behavior/forage.js)
  *   bound: true | false                 tied up this turn (a prisoner: behavior/fallen.js), or no longer
  *   moved: {from, to}                   where it went (the core moves the token)
  *   system: {from, to}                  what only the system's rules keep (rules.capture), when it changed (API 24: 5e's
@@ -91,6 +92,8 @@ export function diffOutcome(before, after) {
   if ( !before.bound !== !after.bound ) out.bound = !!after.bound;
   const gave = (after.concessions ?? []).slice((before.concessions ?? []).length);
   if ( gave.length ) out.concessions = gave;
+  const foraged = (after.foraged ?? []).slice((before.foraged ?? []).length);
+  if ( foraged.length ) out.foraged = foraged;
   if ( before.position && after.position && (before.position.x !== after.position.x || before.position.y !== after.position.y) ) {
     out.moved = { from: before.position, to: after.position };
   }

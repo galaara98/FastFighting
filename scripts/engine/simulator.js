@@ -46,6 +46,7 @@ import { isAnimalistic, animalTactics } from "./behavior/animal.js";
 import { stealChance, theftTarget, theftPlan, attemptTheft, robbable, lootable, leftRemains } from "./behavior/theft.js";
 import { fallenWishes, decideFallen, bind, rob, stayBound, takesPrisoners, robsTheFallen, freeFriend, rollOf } from "./behavior/fallen.js";
 import { decideStances, stanceOf, stanceWishes, STANCE } from "./behavior/stance.js";
+import { initForage, forageWishes, decideForage, forageNow } from "./behavior/forage.js";
 import { dealWishes, decideDeal, offerDeal, pickUp, dishonor, dealsWanted, talkRange, dealCost, shunsFight, seesFight, reactionBribe } from "./behavior/deals.js";
 import { leavesOfItsOwn } from "./behavior/flight.js";
 import { holdsOf, ownHolds, known, tryHold, release, escapeCost, isBound, remediesOf, bears } from "./behavior/holds.js";
@@ -2712,6 +2713,40 @@ function fetchGoods(run, u, turn) {
   return did;
 }
 
+/**
+ * u goes for what it wants on the ground (behavior/forage.js), when that beats what it most wants of the fight: it walks
+ * there and, with the turn to spare, takes (the loot cost, a thing each time) or eats (the basic action, a portion each,
+ * until it has had its fill). True if it did anything.
+ */
+function forageTurn(run, u, turn) {
+  const plan = decideForage(run, u, mind(run, u).lead?.level ?? 0);
+  if ( !plan || !u.pos && plan.feet > 0 ) return false;
+  const { want } = plan;
+  const rules = run.prep.rules;
+  const cost = normalizeCost(rules, (want.kind === "eat" ? rules.basicAction : rules.lootCost ?? rules.basicAction) ?? 1);
+  const there = () => !u.pos || Math.hypot(want.x - u.pos.x, want.y - u.pos.y) <= 5.5 + (u.spec.position?.size ?? 5) / 2;
+  let did = false;
+  for ( let step = 0; step < MAX_STEPS_PER_TURN && !there(); step++ ) {
+    const budget = turn.payForMove(Math.max(...Object.values(u.spec.speeds ?? { walk: 25 })) || 25);
+    if ( !budget ) break;
+    const move = moveTowardPoint(run, u, want, budget, 5);
+    turn.usedMove(move.cost);
+    did = true;
+    if ( run.log && move.feet > 0 ) {
+      log(run, u, { type: "move", mode: move.mode, feet: move.feet, mult: 1, regions: [], toward: want.name, towardId: null, from: move.from, to: move.to, reached: move.reached, purpose: "forage", tactical: liveTier(run, u) });
+    }
+    if ( move.feet <= 0 ) break;
+  }
+  // (There: a thing at a time, or a portion at a time, while the turn lasts and it still wants it.)
+  for ( let n = 0; n < 10 && there() && turn.canAfford(cost); n++ ) {
+    if ( !forageNow(run, u, want, logger(run)) ) break;
+    turn.spend(cost);
+    did = true;
+    if ( want.kind === "eat" && !u.hunger ) break;
+  }
+  return did;
+}
+
 /** u is out of the fight, run off: its concentration and its holds on others go, and nobody's beside it any more. */
 function goneFrom(run, u) {
   u.status = STATUS.FLED;
@@ -3178,6 +3213,7 @@ function thinkOver(run, u) {
   // Foes who fall, as it answered (or its party did): finish them off, tie them up, rob them (behavior/fallen.js).
   fallenWishes(run, u);
   stanceWishes(run, u); // (its team preying on a spent one: behavior/stance.js)
+  forageWishes(run, u); // (what lies about: a pile, the meat of the dead: behavior/forage.js)
   // What its conditions make it want: away from whoever frightened it, at whoever holds it.
   conditionWishes(run, u);
   holdWishes(run, u);
@@ -4166,6 +4202,8 @@ function playFromHere(run, u) {
   };
   // What was dropped for it (an extortion paid apart), first, when it's free to.
   if ( u.fetch && fetchGoods(run, u, turn) ) happens();
+  // What it wants on the ground (a pile, the meat of the dead), when that beats what it wants of the fight.
+  if ( forageTurn(run, u, turn) ) happens();
   fightOn();
   happens();
   // What's left of the turn, for the next (behavior/prepare.js): its gear made ready, a potion got out, a better spot to
@@ -4615,6 +4653,8 @@ export function captureUnit(u, rules) {
     controlledBy: u.controlledBy ?? null,
     against: [...(u.against ?? [])], // (someone who took no side: the sides it turned on)
     concessions: (u.concessions ?? []).map(c => ({ ...c })), // what they gave up when talked into it (Make it So hands it over)
+    // (What it took from a pile, or ate: behavior/forage.js. Only where there's any.)
+    ...(u.foraged?.length ? { foraged: u.foraged.map(c => ({ ...c, item: c.item ? { ...c.item } : null })) } : {}),
     side: u.homeSide ?? u.side,
     ambitionDropped: !!u.ambitionGone, // (it changed sides: wanting to lead goes, on the character too)
     resources: { ...u.resources },
@@ -4730,6 +4770,8 @@ export function beginRun(prep, seed, { log: withLog = false, record = false } = 
     if ( isAnimalistic(u) ) u.tac = { ...animalTactics(u.spec), ...(u.tac ?? {}) };
     u.hunts = u.tac?.beyond === "hunt";
   }
+  // What lies on the map to go for, and who comes to the fight hungry (behavior/forage.js).
+  initForage(run);
   // The system's own state for the fight (Daggerheart: the GM's Fear).
   prep.rules.initRun?.(run);
   if ( withLog ) run.log = [];
