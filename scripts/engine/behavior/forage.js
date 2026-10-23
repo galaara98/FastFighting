@@ -2,8 +2,9 @@
  * What lies on the ground, as something to go for instead of a foe:
  *  - a pile of goods (a chest, a bag, what someone dropped: the battle's spec.piles), its valuables for a thief, a
  *    greedy one, or one whose team is preying (behavior/stance.js); its food for the hungry;
- *  - the dead, their meat (spec.meat, portions: the helper's say), for the hungry that eat meat: a foe's, or (a cannibal,
- *    or a feral mind) a teammate's; a player character's only where the GM's setting says so (options.pcMeat).
+ *  - the dead, their meat (spec.meat, portions: the helper's say), for a hungry beast or feral mind that eats meat (anyone
+ *    else eats only prepared food: no body, no raw meat): a foe's, or (a cannibal, or a feral mind) a teammate's; a
+ *    player character's only where the GM's setting says so (options.pcMeat).
  * Hunger: only a creature that eats (spec.diet, the helper's), rolled as the fight begins: famished (FAMISHED, any
  * wisdom, wanting it badly), else hungry (spec.hunger, the helper's chance), wanting it the less the wiser it is; the
  * GM's mark (spec.hungry) over the roll. It eats a portion an action until it has had its fill (by size).
@@ -17,6 +18,7 @@ import { isAnimalistic } from "./animal.js";
 import { heldGoal } from "./goals.js";
 import { stanceOf, STANCE } from "./stance.js";
 import { remaining } from "./talk.js";
+import { ORDER_WEIGHTS } from "../playstyles.js";
 
 /** The chance any creature that eats comes to the fight famished, whatever its wisdom; and how badly it wants food then. */
 export const FAMISHED = Object.freeze({ chance: 0.03, level: 75 });
@@ -26,8 +28,11 @@ export const HUNGRY = Object.freeze({ level: 60, feral: 10 });
 export const FILL = Object.freeze([1, 1, 2, 4, 8, 16]);
 /** How far off a pile is noticed (feet). Off a map, every pile is. */
 export const SPOTS = 60;
-/** Wanting valuables: how much greed, a Thief, a Mercenary, and what the pile is worth add. */
-export const GREED = Object.freeze({ base: 30, greed: 30, worth: 15, thief: 0.5, mercenary: 0.25, most: 75 });
+/**
+ * Wanting valuables: greed (from Selfish past `from`, a full point at `full`; a Thief's and a Mercenary's nature on top),
+ * times how much it wants a pile at all (base) and what the pile's worth to it adds (worth); never more than most.
+ */
+export const GREED = Object.freeze({ from: 60, full: 90, thief: 0.8, mercenary: 0.4, base: 35, worth: 35, most: 75 });
 
 /** Its things as the fight begins: each pile on the map (a copy, taken from as it goes), and each one's hunger. */
 export function initForage(run) {
@@ -81,9 +86,16 @@ function safe(run, u) {
 
 /** How much it wants valuables lying about: greed, a Thief's or a Mercenary's nature; 0 for none. */
 function greedOf(run, u) {
-  const styles = new Set(u.spec.playstyles ?? []);
-  return clamp((liveTrait(run, u, "selfish") - 40) / 40, 0, 1) + (styles.has("thief") ? GREED.thief : 0) + (styles.has("mercenary") ? GREED.mercenary : 0);
+  // (A Thief's or a Mercenary's nature, as much as its place among its pills: the first counts fully, the rest less.)
+  const pill = id => {
+    const i = (u.spec.playstyles ?? []).indexOf(id);
+    return i < 0 ? 0 : ORDER_WEIGHTS[i] ?? 0;
+  };
+  return clamp((liveTrait(run, u, "selfish") - GREED.from) / (GREED.full - GREED.from), 0, 1) + GREED.thief * pill("thief") + GREED.mercenary * pill("mercenary");
 }
+
+/** Does it eat what it kills, or finds dead: a beast, or a feral mind (anyone else eats only prepared food)? */
+const wild = (run, u) => isAnimalistic(u) || liveTier(run, u) === TACTICAL.FERAL;
 
 /** A pile's worth: its money, and each thing's value times how many. */
 const worthOf = p => p.money + p.items.reduce((s, i) => s + (Number(i.value) || 0) * (Number(i.quantity) || 1), 0);
@@ -106,14 +118,16 @@ export function forageWishes(run, u) {
   if ( h && free(run, u, h.famished) ) {
     const diet = u.spec.diet;
     const cannibal = !!u.spec.cannibal || liveTier(run, u) === TACTICAL.FERAL;
+    // (Raw meat, a body's or a pile's: only a beast's or a feral mind's.)
+    const raw = wild(run, u);
     for ( const t of run.units ) {
-      if ( t === u || !meatLeft(t) || !suits(diet, true) || !t.pos ) continue;
+      if ( t === u || !raw || !meatLeft(t) || !suits(diet, true) || !t.pos ) continue;
       if ( t.spec.kind === "pc" && !run.prep.options.pcMeat ) continue;
       if ( !areEnemies(run, u, t) && !cannibal ) continue;
       add("eat", t.id, t.pos.x, t.pos.y, t.spec.name, h.level - (u.pos ? feetTo(u, t.pos.x, t.pos.y) / 10 : 0));
     }
     for ( const p of run.piles?.values() ?? [] ) {
-      if ( !near(p.x, p.y) || !p.items.some(i => i.food && i.quantity > 0 && suits(diet, i.food.meat)) ) continue;
+      if ( !near(p.x, p.y) || !p.items.some(i => i.food && i.quantity > 0 && suits(diet, i.food.meat) && (raw || !i.food.meat)) ) continue;
       add("eat", p.id, p.x, p.y, p.name, h.level - (u.pos ? feetTo(u, p.x, p.y) / 10 : 0));
     }
   }
@@ -126,7 +140,7 @@ export function forageWishes(run, u) {
       // (Worth, against what it has itself: a fortune to a pauper, pocket change to the rich.)
       const own = Math.max(1, remaining(u).own || 100);
       const w = clamp(Math.log10(1 + worth / own) / 2, 0, 1);
-      add("pickUp", p.id, p.x, p.y, p.name, Math.min(GREED.most, GREED.base * Math.min(1, greed) + GREED.greed * Math.max(0, greed - 0.5) + GREED.worth * w * 2));
+      add("pickUp", p.id, p.x, p.y, p.name, Math.min(GREED.most, Math.min(1.5, greed) * (GREED.base + GREED.worth * w)));
     }
   }
   u.forage.sort((a, b) => b.level - a.level);
@@ -153,7 +167,7 @@ export function forageNow(run, u, want, say) {
       meat = true;
     } else {
       const p = run.piles?.get(want.sourceId);
-      const food = p?.items.find(i => i.food && i.quantity > 0 && suits(u.spec.diet, i.food.meat));
+      const food = p?.items.find(i => i.food && i.quantity > 0 && suits(u.spec.diet, i.food.meat) && (wild(run, u) || !i.food.meat));
       if ( !food ) return false;
       food.quantity -= 1;
       meat = !!food.food.meat;

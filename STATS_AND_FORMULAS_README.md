@@ -1681,15 +1681,16 @@ eats and holds (API 27); otherwise nothing is food and no one hungers.
     other living creatures 10%); wants food at 60 × (1 − wise ÷ 5) + 10 for a feral mind (wise: the 0–4 aptitude), so a
     wise one (4) barely minds it mid-fight (12) and a dull or feral one may well break off to eat (60–70);
   - the GM's **Hunger** mark on the token's FastFighting tab (Famished, Hungry, Not hungry) over the roll.
-- **Eating:** what suits its diet: a pile's food, or the meat of the dead (a foe's; a teammate's too for a cannibal or
-  a feral mind; a player character's only with the setting). Want: its hunger's level − 1 per 10 ft away. Not with a foe
+- **Eating:** what suits its diet. A beast or a feral mind: a pile's food, or the meat of the dead (a foe's; a
+  teammate's too for a cannibal or a feral mind; a player character's only with the setting). Anyone else: prepared
+  food alone (no body, no raw meat). Want: its hunger's level − 1 per 10 ft away. Not with a foe
   beside it, unless famished. An action a portion; its fill by size (tiny 1, small 1, medium 2, large 4, huge 8,
   gargantuan 16), then it's no longer hungry.
-- **Valuables:** a pile's, for one with greed: clamp((Selfish − 40) ÷ 40, 0, 1) + 0.5 for a Thief + 0.25 for a
-  Mercenary (+ 0.5 while its team preys: Team stances). Never an animal. Only when safe: its team preying, no foe
-  standing, its side outnumbering its foes, or no foe within 30 ft; and no foe beside it. Want: min(75, 30 × min(1,
-  greed) + 30 × max(0, greed − 0.5) + 30 × w), w = clamp(log10(1 + the pile's worth ÷ its own money) ÷ 2, 0, 1). It
-  takes the best of it each time (its money, or its most valuable thing), for the loot cost.
+- **Valuables:** a pile's, for one with greed: clamp((Selfish − 60) ÷ 30, 0, 1) + 0.8 for a Thief + 0.4 for a
+  Mercenary, each by its pill's place (×1, 0.75, 0.55, 0.4), + 0.5 while its team preys (Team stances). Never an
+  animal. Only when safe: its team preying, no foe standing, its side outnumbering its foes, or no foe within 30 ft; and
+  no foe beside it. Want: min(75, min(1.5, greed) × (35 + 35 × w)), w = clamp(log10(1 + the pile's worth ÷ its own
+  money) ÷ 2, 0, 1). It takes the best of it each time (its money, or its most valuable thing), for the loot cost.
 - **Going for it:** each turn these are its goals (pick up, eat; the GM can hold them); the strongest goes ahead of
   the fight when it outweighs what it most wants there. It walks there and takes or eats while its turn lasts.
 

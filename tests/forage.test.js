@@ -69,6 +69,18 @@ describe("the meat of the dead", () => {
     expect(diffOutcome(before, captureUnit(by("hyena"), pf2eRules)).foraged).toEqual(expect.arrayContaining([expect.objectContaining({ source: "kobold", eaten: true, pile: false })]));
   });
 
+  test("only a beast or a feral mind eats a body, or raw meat: anyone else, prepared food alone", () => {
+    const larder = { id: "larder", name: "Larder", x: 10, y: 0, size: 5, money: 0, items: [
+      { id: "steak", name: "Uncooked meat", value: 0, quantity: 2, food: { portions: 2, meat: true } },
+      { id: "bread", name: "Bread", value: 1, quantity: 1, food: { portions: 1, meat: false } }] };
+    const { run, by } = fight([creature({ id: "cook", side: "hostile", diet: "any", hungry: "famished", traits: mind(50), ...at(0) }), kobold("kobold"), hero()], { piles: [larder] });
+    Object.assign(by("kobold"), { status: STATUS.DEAD, hp: 0 });
+    forageWishes(run, by("cook"));
+    expect(by("cook").forage.map(f => f.sourceId)).toEqual(["larder"]);
+    takeTurn(run, by("cook"));
+    expect(by("cook").foraged.every(f => f.item?.id === "bread")).toBe(true);
+  });
+
   test("a teammate's body only for a cannibal or a feral mind", () => {
     const wants = extra => {
       const { run, by } = fight([hyena("hyena", { hungry: "famished", ...extra }), hyena("mate", { ...at(5), meat: 4 }), hero()]);
