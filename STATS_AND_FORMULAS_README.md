@@ -401,11 +401,11 @@ Code: `engine/behavior/hopeless.js` `canWorkOn`, `sinkHopeless`.
 
 ### ADHD
 
-Search: ADHD, mind jumps, impulse, impulsive, distracted, adhd, ADHD: mind jumps (%), creature ADHD
+Search: ADHD, mind jumps, impulse, impulsive, distracted, adhd, ADHD: mind jumps, creature ADHD
 
 How often a creature drops what it's doing for the strongest thing it wants, and each creature's own nudge.
 
-**World chance**: ADHD: mind jumps (%) (`adhd`, 0 to 100, default 20). Each turn, for a creature
+**World chance**: ADHD: mind jumps (`adhd`, 0 to 100, default 20). Each turn, for a creature
 below Tactical tier whose strongest other workable desire is stronger than the top of its agenda:
 chance = ADHD% × 2 if it could do that this turn (× 3 at Instinctive or Feral), × 1 if not; at most 100%. If it
 jumps, that desire takes the top. "Could do this turn": for Hurt, it perceives the foe and has an attack with uses
@@ -630,11 +630,11 @@ Code: `engine/behavior/flight.js` `lifeOverLoot`, `prizeFlight`, `prizeOf`, `lea
 
 ### Being stopped on the way out
 
-Search: committed to leaving, leaveResolve, Leaving creature keeps going (%), stopped, interrupted, commitment, turns to face
+Search: committed to leaving, leaveResolve, Leaving creature keeps going, stopped, interrupted, commitment, turns to face
 
 Every attack at a leaving creature, and every word to it, may stop it.
 
-It keeps going on a d100 at or under round(Leaving creature keeps going (%) (`leaveResolve`, 0 to 100, default 79) ×
+It keeps going on a d100 at or under round(Leaving creature keeps going (`leaveResolve`, 0 to 100, default 79) ×
 commitment), where commitment = 1 − min(0.3, pull):
 
 | Pull | Amount |
@@ -668,7 +668,7 @@ For an NPC talked down, the first that applies:
 
 1. Talked round by a Peacekeeper (at its peacekeeping chance): stands down.
 2. Changes sides: 60% for one that started neutral; else clamp(0.03 + (Selfish − 50) ÷ 500 + (50 − Loyal) ÷ 500, 0,
-   12%), +0.5 when scheming (at most 70%). It goes through only on a d100 under Enemy changes sides (%)
+   12%), +0.5 when scheming (at most 70%). It goes through only on a d100 under Enemy changes sides
    (`switchLuck`, +20 when scheming); else it's talked into something below.
 3. In a standoff, unless threatened: stands down.
 4. Flees: unhurt with Selfish 55+, or half the time when under half HP with Brave under 40; either unless it stands its
@@ -835,7 +835,7 @@ One with Wants to Lead who doesn't command its group may scheme against whoever 
   treacherous pill (Cruel, Wildcard, Mercenary, Instigator); otherwise it lets the thought go.
 - Scheming, this turn: it won't heal, bolster, guard, free, follow or answer anyone in its chain of command. Talking it
   round is 4 easier; its chance to change sides gets +0.5 (at most 70%) and the switch luck +20. A PC changes sides only
-  on a d100 under PC turns traitor (%) (`traitorLuck`, default 9).
+  on a d100 under PC turns traitor (`traitorLuck`, default 9).
 - Changing sides drops Wants to Lead for the rest of the fight.
 
 Code: `engine/behavior/desire.js` `scheme` (`TREACHEROUS`); `engine/battle-state.js` `refusesToHelp`, `dropAmbition`;
@@ -1001,14 +1001,14 @@ Each is a d100 (1 to 100), and passes at or under its number.
 
 | Roll | Setting (menu name, key) | Default | Range | Goes through on | At the default |
 |---|---|---|---|---|---|
-| An enemy changes sides | Enemy changes sides (%) (`switchLuck`) | 69 | 0–100 | at or under it (+20 if scheming, max 100); 100: always | 69% |
-| A PC turns traitor | PC turns traitor (%) (`traitorLuck`) | 9 | 0–100 | at or under it | 9% |
+| An enemy changes sides | Enemy changes sides (`switchLuck`) | 69 | 0–100 | at or under it (+20 if scheming, max 100); 100: always | 69% |
+| A PC turns traitor | PC turns traitor (`traitorLuck`) | 9 | 0–100 | at or under it | 9% |
 | A PC loses an item it hands over (unused at present: talk makes nobody pay) | hidden from the settings window (`concedeLuck`) | 39 | 0–100 | at or under it | 39% |
-| A thief takes from a PC | Thief robs a PC (%) (`theftLuck`) | 29 | 0–100 | at or under it | 29% |
-| A creature finishes off a PC at 0 HP | Downed PC finished off (%) (`executeLuck`) | 39 | 0–100 | at or under it | 39% |
-| A trap avoider spots a hazard | Trap avoider spots a trap (%) (`trapLuck`) | 59 | 0–100 | at or under it × watchfulness | Thief 59% |
-| A playstyle's taunt takes hold | Playstyle taunt takes hold (%) (`tauntLuck`) | 42 | 0–100 | at or under it × taunt share | Tank 42% |
-| A selfless creature bears a hold or hurt | Selfless creature shrugs off troubles (%) (`ignoreTroubles`) | 29 | 0–100 | at or under it × (100 − Selfish)% × (100 − Tactical)% | 29% at Selfish 0, Tactical 0 |
+| A thief takes from a PC | Thief robs a PC (`theftLuck`) | 29 | 0–100 | at or under it | 29% |
+| A creature finishes off a PC at 0 HP | Downed PC finished off (`executeLuck`) | 39 | 0–100 | at or under it | 39% |
+| A trap avoider spots a hazard | Trap avoider spots a trap (`trapLuck`) | 59 | 0–100 | at or under it × watchfulness | Thief 59% |
+| A playstyle's taunt takes hold | Playstyle taunt takes hold (`tauntLuck`) | 42 | 0–100 | at or under it × taunt share | Tank 42% |
+| A selfless creature bears a hold or hurt | Selfless creature shrugs off troubles (`ignoreTroubles`) | 29 | 0–100 | at or under it × (100 − Selfish)% × (100 − Tactical)% | 29% at Selfish 0, Tactical 0 |
 
 Code: `constants.js` (CONCEDE_LUCK, THEFT_LUCK, EXECUTE_LUCK, TRAP_LUCK, IGNORE_TROUBLES, TAUNT_LUCK, SWITCH_LUCK,
 TRAITOR_LUCK); each roll in use is under its own topic below.
@@ -1212,7 +1212,7 @@ Code: `engine/behavior/talk.js` `outcomeFor`, `applyOutcome`, `resolveTalk`.
 
 ### Switch luck: changing sides
 
-Search: switch luck, switchLuck, Enemy changes sides (%), changing sides, turncoat, defect, stands aside, stood aside
+Search: switch luck, switchLuck, Enemy changes sides, changing sides, turncoat, defect, stands aside, stood aside
 
 Decides whether an enemy talked into changing sides goes through with it.
 
@@ -1230,7 +1230,7 @@ Code: `engine/behavior/talk.js` `resolveTalk`, `outcomeFor`; `engine/behavior/ne
 
 ### Traitor luck: a PC turning traitor
 
-Search: traitor luck, traitorLuck, PC turns traitor (%), scheming, treacherous, Wants to Lead, betrayal
+Search: traitor luck, traitorLuck, PC turns traitor, scheming, treacherous, Wants to Lead, betrayal
 
 Decides whether a scheming PC talked down changes sides.
 
@@ -1454,7 +1454,7 @@ Code: `engine/groups.js` `proposeGroups`, `squaresApart`; `foundry/battle.js`.
 
 ### Taunts (goading)
 
-Search: taunt, goad, taunt luck, tauntLuck, Playstyle taunt takes hold (%), Tank, mockery, taunt-proof, shrugs off
+Search: taunt, goad, taunt luck, tauntLuck, Playstyle taunt takes hold, Tank, mockery, taunt-proof, shrugs off
 
 Decides when a taunting playstyle draws a foe onto itself.
 
@@ -1485,7 +1485,7 @@ Code: `engine/behavior/goad.js` `goadAction`, `goadPitch`, `goadLuck`; `engine/s
 
 ### Theft mid-fight
 
-Search: theft, steal, thief, Thief, pickpocket, rob, robbed, theft luck, theftLuck, Thief robs a PC (%), feint
+Search: theft, steal, thief, Thief, pickpocket, rob, robbed, theft luck, theftLuck, Thief robs a PC, feint
 
 Decides when a creature robs someone instead of hitting them.
 
@@ -1592,7 +1592,7 @@ Code: `engine/behavior/deals.js` `dealsWanted`, `decideDeal`, `dealTerms`, `deal
 
 ### Trap avoiders
 
-Search: trap, hazard, trap luck, trapLuck, Trap avoider spots a trap (%), spot a trap, watchful, go around, keep clear
+Search: trap, hazard, trap luck, trapLuck, Trap avoider spots a trap, spot a trap, watchful, go around, keep clear
 
 Decides who spots hazards and keeps clear of them. Only with Positioning and terrain on.
 
@@ -1723,7 +1723,7 @@ Code: `engine/behavior/fallen.js` `fallenWishes`, `decideFallen`, `bind`, `rob`,
 
 ### Execute luck: finishing off a PC
 
-Search: execute luck, executeLuck, Downed PC finished off (%), coup de grace, finish off, killing blow on a downed PC
+Search: execute luck, executeLuck, Downed PC finished off, coup de grace, finish off, killing blow on a downed PC
 
 Decides whether a creature (not a PC) that wants to kill a PC down at 0 HP goes ahead.
 
@@ -1735,7 +1735,7 @@ Code: `engine/simulator.js` `executionCheck`, `moveDesires`.
 
 ### Bearing a hold or hurt (ignore troubles)
 
-Search: ignore troubles, ignoreTroubles, Selfless creature shrugs off troubles (%), bear it, carry on, prone, grabbed, burning, bleeding, break free
+Search: ignore troubles, ignoreTroubles, Selfless creature shrugs off troubles, bear it, carry on, prone, grabbed, burning, bleeding, break free
 
 Decides whether a selfless creature skips trying to be rid of what holds or hurts it this turn.
 
@@ -2586,7 +2586,7 @@ Decides who strikes as a creature walks away, and when it plays safe.
   strikes, if it has a reaction left; reactions come back at the start of its turn (1 a round by default). PF2e's also
   answer a shot or a manipulate action in reach, and standing up.
 - Wary of them: Tactical and up always, Competent half the time (decided once a round), the rest never; an obsessed
-  creature never; the "roleplaying is very important" box takes Roleplayer forgets opportunity attacks (%)
+  creature never; the "roleplaying is very important" box takes Roleplayer forgets opportunity attacks
   (`roleplayForgets`, 0 to 100, default 33) off it: × (1 − 0.33).
 - A wary creature takes the safe way out (Disengage, Step) if it can afford it and still do what it's moving for. A
   safe way that costs no main action is used by anything Instinctive and up (played for the story, it forgets it at
@@ -2623,7 +2623,7 @@ Code: `engine/behavior/forced.js` `forcedPath`, `fallDamage`, `forcedWorth` (`FA
 
 ### Holds and escapes
 
-Search: grab, grapple, grabbed, restrained, held, escape, escape DC, break free, tied up, bound, bonds, prisoner, free a friend, untie, swallowed, engulfed, web, net, Selfless creature shrugs off troubles (%), ignoreTroubles, bear it
+Search: grab, grapple, grabbed, restrained, held, escape, escape DC, break free, tied up, bound, bonds, prisoner, free a friend, untie, swallowed, engulfed, web, net, Selfless creature shrugs off troubles, ignoreTroubles, bear it
 
 Decides how a held creature gets loose, and when it doesn't try.
 
@@ -2640,7 +2640,7 @@ Decides how a held creature gets loose, and when it doesn't try.
   Retreat −5, Protect self −15; +10 with no foe beside it) × 0.5 if the friend is down. Untying needs no roll.
 - Frozen solid: an escape try at the end of each turn. A holder that falls lets go.
 
-**Selfless creature shrugs off troubles (%)** (`ignoreTroubles`), default 29, range 0–100. Each turn, on a d100
+**Selfless creature shrugs off troubles** (`ignoreTroubles`), default 29, range 0–100. Each turn, on a d100
 of its own: at or under setting × (100 − Selfish)% × (100 − Tactical)%, it bears it: this turn it doesn't stand up
 from prone or try to be rid of a hold or a burn. Never when its persistent damage would drop it this round. 0: nobody
 bears anything.
@@ -2809,11 +2809,11 @@ Code: `engine/simulator.js` `dealDamage`, `regenerate`, `knockOut`, `playFromHer
 
 ### Finishing off a downed PC
 
-Search: execute, finish off, coup de grace, kill a downed PC, Downed PC finished off (%), executeLuck, mercy
+Search: execute, finish off, coup de grace, kill a downed PC, Downed PC finished off, executeLuck, mercy
 
 Decides whether a creature kills a player character lying at 0 HP.
 
-- **Downed PC finished off (%)** (`executeLuck`), default 39, range 0–100. Each time a creature that isn't a PC goes
+- **Downed PC finished off** (`executeLuck`), default 39, range 0–100. Each time a creature that isn't a PC goes
   for a PC who's down: a hidden d100 at or under it, it goes ahead; otherwise its desire to hurt that PC moves to its
   next choice. Once a round for each creature and PC. The same check guards the aftermath.
 

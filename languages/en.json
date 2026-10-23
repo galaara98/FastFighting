@@ -168,7 +168,7 @@
         "Hint": "A PC talked into giving up an item loses it only on a hidden d100 at or under this."
       },
       "theftLuck": {
-        "Name": "Thief robs a PC (%)",
+        "Name": "Thief robs a PC",
         "Hint": "Chance a thief who gets past a PC's guard, or robs a fallen PC, takes anything."
       },
       "playOnMap": {
@@ -184,15 +184,15 @@
         "Hint": "Chance a character that fights to the end resists its own urge to run."
       },
       "adhd": {
-        "Name": "ADHD: mind jumps (%)",
+        "Name": "ADHD: mind jumps",
         "Hint": "Chance a creature drops what it's doing for the strongest thing it wants."
       },
       "leaveResolve": {
-        "Name": "Leaving creature keeps going (%)",
+        "Name": "Leaving creature keeps going",
         "Hint": "Chance a creature leaving the fight keeps going when struck or spoken to."
       },
       "roleplayForgets": {
-        "Name": "Roleplayer forgets opportunity attacks (%)",
+        "Name": "Roleplayer forgets opportunity attacks",
         "Hint": "Chance a character whose player ticked \"Roleplaying is very important to me\" forgets to play safe around opportunity attacks."
       },
       "avoidKilling": {
@@ -204,11 +204,11 @@
         "Hint": "How near a neutral must be to a friend group for the planner to put it in."
       },
       "switchLuck": {
-        "Name": "Enemy changes sides (%)",
+        "Name": "Enemy changes sides",
         "Hint": "Chance an enemy talked into changing sides goes through with it; more for one scheming against its leaders. At 100, always."
       },
       "executeLuck": {
-        "Name": "Downed PC finished off (%)",
+        "Name": "Downed PC finished off",
         "Hint": "Chance a creature that means to finish off a PC at 0 HP does."
       },
       "leaderInfluence": {
@@ -224,15 +224,15 @@
         "Hint": "How much less creatures not on the Friendly side gang up on a foe their side has already hit. At 100, half as much."
       },
       "traitorLuck": {
-        "Name": "PC turns traitor (%)",
+        "Name": "PC turns traitor",
         "Hint": "Chance a PC talked into changing sides goes through with it. At 0, never."
       },
       "trapLuck": {
-        "Name": "Trap avoider spots a trap (%)",
+        "Name": "Trap avoider spots a trap",
         "Hint": "Chance a trap avoider (a Thief most of all) spots each hazard."
       },
       "tauntLuck": {
-        "Name": "Playstyle taunt takes hold (%)",
+        "Name": "Playstyle taunt takes hold",
         "Hint": "Chance a playstyle's landed taunt takes hold; less for lesser taunters. A system's own taunts follow its rules."
       },
       "partySway": {
@@ -256,7 +256,7 @@
         "Hint": "How long FastFighting waits before playing for a disconnected player."
       },
       "ignoreTroubles": {
-        "Name": "Selfless creature shrugs off troubles (%)",
+        "Name": "Selfless creature shrugs off troubles",
         "Hint": "Chance a selfless creature ignores what holds or hurts it and carries on; less the more selfish or calculating it is."
       },
       "troubleshooting": {
