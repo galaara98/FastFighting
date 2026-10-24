@@ -10,6 +10,7 @@
  */
 import { MODULE_ID } from "../constants.js";
 import { listenMenus } from "./menus.js";
+import { wheelSideways } from "./sideways.js";
 import { getAdapter } from "../api.js";
 import { cachedCharacterSpec, showsReactions } from "../foundry/sheet-watch.js";
 import { localize, hasStat } from "../i18n.js";
@@ -214,6 +215,8 @@ export class PlayerSurvey extends HandlebarsApplicationMixin(ApplicationV2) {
     super._onFirstRender?.(context, options);
     listenMenus(this.element);
     listenTacticsSections(this.element);
+    // (Its tabs along the top, more than fit: the mouse wheel scrolls them sideways.)
+    wheelSideways(this.element, ".ff-survey-tabs");
     this.unwatch = showsReactions({
       shows: actor => this.rendered && [...(this.entries?.values() ?? [])].some(e => e.actor?.uuid === actor.uuid),
       recheck: actor => this.recheckReactions(actor)

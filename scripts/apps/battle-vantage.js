@@ -28,6 +28,7 @@ import { roundsText, listJoin } from "../i18n.js";
 import { feetOnScene } from "../foundry/terrain.js";
 import { mountNetwork } from "./battle-network.js";
 import { listenMenus } from "./menus.js";
+import { wheelSideways } from "./sideways.js";
 import { holdOf } from "./hold.js";
 import { setting } from "../settings.js";
 import { blink, keepTyping } from "./blink.js";
@@ -365,12 +366,7 @@ export class BattleVantage extends HandlebarsApplicationMixin(ApplicationV2) {
       if ( event.target.closest?.(".ff-battle-review") ) this.#keepDraft();
     });
     // The turn order: the mouse wheel scrolls it sideways; the arrow keys go from one to the next.
-    el.addEventListener("wheel", event => {
-      const strip = event.target.closest?.(".ff-order");
-      if ( !strip || Math.abs(event.deltaY) <= Math.abs(event.deltaX) ) return;
-      strip.scrollLeft += event.deltaY;
-      event.preventDefault();
-    }, { passive: false });
+    wheelSideways(el, ".ff-order");
     el.addEventListener("keydown", event => {
       const chip = event.target.closest?.(".ff-order-chip");
       if ( !chip || !["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key) ) return;
