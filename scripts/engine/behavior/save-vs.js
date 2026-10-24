@@ -77,7 +77,9 @@ export function saveVsApplies(entry, type, tags, from = null) {
   if ( !list(entry.all).every(t => tags.has(t)) ) return false;
   if ( list(entry.not).some(t => tags.has(t)) ) return false;
   const kin = list(entry.from);
-  if ( kin.length && !(from?.spec?.creatureTraits ?? []).some(t => kin.includes(String(t).toLowerCase())) ) return false;
+  // (A hazard is a trap whatever its traits: one the GM marked in the token's tab too. API 29.)
+  const theirs = [...(from?.spec?.creatureTraits ?? []), ...(from?.spec?.hazard ? ["hazard", "trap"] : [])];
+  if ( kin.length && !theirs.some(t => kin.includes(String(t).toLowerCase())) ) return false;
   return true;
 }
 

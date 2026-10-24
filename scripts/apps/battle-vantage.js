@@ -413,6 +413,8 @@ export class BattleVantage extends HandlebarsApplicationMixin(ApplicationV2) {
       this.#network?.destroy();
       this.#network = null;
       this.#graphSig = null;
+      // (No battle any more, rewound or ended away: nothing of the last one's minds left drawn.)
+      root?.replaceChildren();
       return;
     }
     const sig = JSON.stringify([this.#graph.focus, this.#graph.nodes.map(n => [n.id, n.cls, n.status, n.name, (n.marks ?? []).map(m => [m.id, m.text, m.cls])]),
