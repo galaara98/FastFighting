@@ -17,7 +17,7 @@ import {
   command, commandOf, heldOff, holdsBack, wish, groupKeyOf, chainOf, canCommand, regenOf, canHeal, systemRolled
 } from "./battle-state.js";
 import { sampleRunTactics } from "./playstyles.js";
-import { chooseTarget, bestOptionVs, scoreTargets } from "./behavior/targeting.js";
+import { chooseTarget, bestOptionVs, scoreTargets, plainBlow, rathersMagic } from "./behavior/targeting.js";
 import { decideHeal, rescueOption, healScores } from "./behavior/healing.js";
 import { initDesires, newTurn, goaded, think, want, thwart, relieve, levelOf, mind, rankedDesires, orderAgenda, thoughts as thoughtsOf, levelsFromScores, listen, heed, remember, styleWants, styleOf, follow, conditionWishes, holdWishes, puppetWishes, actsHeld, scheme, partyWants, CHOICE_LEVEL } from "./behavior/desire.js";
 import { prepareDoors, doorStates, doorAhead, atDoor, doorPlan, patienceFor, doorDamage } from "./behavior/doors.js";
@@ -4128,6 +4128,9 @@ function playFromHere(run, u) {
 
       if ( option.moves > 0 ) {
         if ( !canMove(run, u) ) break;
+        // (One that would rather its magic doesn't walk up to a foe for a plain blow: what's left of its turn goes to a
+        // better spot, or getting ready, as a spare turn's does. Beside it already, it may still swing: behavior/targeting.js.)
+        if ( plainBlow(option.action) && rathersMagic(u) ) break;
         // A closed door in the way: get to it, then through it (or give up on what's behind it).
         const door = doorAhead(run, u, target);
         if ( door ) {
@@ -4179,7 +4182,6 @@ function playFromHere(run, u) {
         break;
       }
       // The last action: the shield up, when what it guards against is worth more than what the action would do.
-      if ( canShield && tier >= TACTICAL.COMPETENT && turn.howMany(shieldCost) === 1 && shieldWorth(run, u) > option.ev ) { raiseShield(); continue; }
       // A thinking combatant with a shield prefers defense over a hopeless third attack; sooner still when a raised
       // shield can also block (PF2e Shield Block).
       if ( canShield && tier >= TACTICAL.COMPETENT && attacksMade >= 2 ) {

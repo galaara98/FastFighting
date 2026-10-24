@@ -920,7 +920,7 @@ its focus fire strength (Focus fire); a multiplier of 1 changes nothing.
 | Vengeful | Brave +5, Selfish +5 | rid −5 | retaliate 2, avenge 2.5, cool 0 | |
 | Relentless | Brave +10 | hurt current +15, rid −15 | frustration 0.4, doorPatience 1.5 | wary 0.5, tauntProof 0.75 |
 | Lazy | Tactical −5, Brave −5 | hurt nearest +15, hurt far −20, heal −10, protect −10, aid −10, bind −15, free −10, rid −10 | cool 1.5, frustration 1.6, doorPatience 0.4 | flighty 0.4, tauntProof 0.25, slacks 0.15 |
-| Un-Mundane | | hurt weakness +10 | | |
+| Un-Mundane | | hurt weakness +10 | | plain blows × 0.5, never walked up to (Targeting) |
 
 Behaviors in this area: **flighty** (a fleeing commander panics its group × (1 + flighty) and takes more along; a boss
 runs × (1 + 3 × flighty)); **rally** (Rallying); **ambition** (Scheming); **contrarian** (Following the leader);
@@ -2074,6 +2074,10 @@ Adjustments:
   friend who can tell adds 15 × Loyal ÷ 60 for the one who did it, times its playstyle's vengeance.
 - An option only some foes allow (a behir swallows only the one it holds): that foe instead, if it's worth 1.25 × its
   best against its pick.
+- One that would rather its magic (fighting style Caster, or the Un-Mundane playstyle), with a spell or power it can
+  still use: a plain blow (a weapon or a fist, nothing counted spent) × 0.5; and it never walks up to a foe for one. When
+  its spell won't fit the turn, what's left goes to a better spot or getting ready (into range for the next). Beside a
+  foe already, it may still swing.
 
 Code: `engine/behavior/targeting.js` `pickTarget`, `scoreTargets`, `valueOfKill`, `quickestKill`,
 `redirectForAttention`, `opening`; `engine/behavior/desire.js` `levelsFromScores`; `engine/simulator.js` `noteHarm`,

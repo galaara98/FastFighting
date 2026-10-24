@@ -37,6 +37,21 @@ function invited(run, u) {
   return threats(run, u, null, "provoked").reduce((s, { e, strike }) => s + expectedDamage(run, e, strike, u, 0), 0);
 }
 
+/** What a plain blow is worth to one that would rather its magic (rathersMagic), against what it would be. */
+const PLAIN_BLOW = 0.5;
+
+/** A plain blow: a weapon or a fist, costing nothing it keeps count of (not a spell, not a power with uses). */
+export const plainBlow = action => action?.kind === "strike" && !action.resource && !Number.isFinite(action.uses);
+
+/**
+ * Would u rather use its magic than a plain blow: a caster by its tactics, or Un-Mundane by its playstyles, with a
+ * spell (or a power) it can still use?
+ */
+export function rathersMagic(u) {
+  if ( u.tac?.style !== "caster" && !(u.spec.playstyles ?? []).includes("unmundane") ) return false;
+  return (u.prep.offense ?? []).some(a => ["save", "spell-attack", "auto"].includes(a.kind) && hasUses(u, a));
+}
+
 /**
  * Best way for u to get an offensive action onto t this turn: moves needed, the action, and its value.
  * With a `turn`, options that fit in what's left of it win over ones that don't (so a character whose favorite
@@ -49,6 +64,7 @@ export function bestOptionVs(run, u, t, attacksMade = 0, turn = null) {
   const tactics = u.tac;
   const behavior = behaviorOf(u);
   let wary = null; // worked out only if some option means walking
+  let magicFirst = null; // worked out only if some option is a plain blow
   const options = [];
   for ( const action of u.prep.offense ) {
     if ( !hasUses(u, action) ) continue;
@@ -70,6 +86,8 @@ export function bestOptionVs(run, u, t, attacksMade = 0, turn = null) {
     const perAction = ev / Math.max(0.1, amortized + moveUnits);
     // (Reluctant to spend a potion or a spell slot? Far less likely, unless the moment demands it.)
     let weighted = perAction * styleWeight(tactics, action) * willingness(run, u, action);
+    // (One that would rather its magic: a plain blow is worth half to it, so its spells win where both fit.)
+    if ( plainBlow(action) && (magicFirst ??= rathersMagic(u)) ) weighted *= PLAIN_BLOW;
     // Walking off from another foe invites a free swing: the wary would rather use what reaches from here.
     if ( moves > 0 && (wary ??= !!run.prep.rules.opportunity && isWary(run, u) && threats(run, u, t).length > 0) ) weighted *= 0.3;
     // Walking into a foe's aura to get there: what the aura would cost it, weighed against the blow (auras.js).
