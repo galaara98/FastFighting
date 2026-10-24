@@ -3528,6 +3528,9 @@ async function tellNew() {
     }
     const done = new Set(battle.data.toldBeats ?? []);
     for ( const beat of beats ) {
+      // (Whose turn it tells of, in its header: as the story calls it, someone where the players don't know it.)
+      const actor = beat.actorId ? run.byId.get(beat.actorId) : null;
+      if ( actor ) beat.actorName = someone?.get(actor.id) ?? docs.get(actor.id)?.name ?? actor.spec.name;
       const key = beatKey(beat);
       if ( done.has(key) ) continue;
       done.add(key);

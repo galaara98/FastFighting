@@ -296,7 +296,9 @@ export async function postBeat(scene, beat, docs, state) {
   // (A hidden creature not yet given away: the narrator's card, not its own.)
   const speaker = doc && !beat.anonymous ? ChatMessage.getSpeaker({ scene, token: doc }) : chronicle();
   const head = beat.closing ? `<header><i class="fa-solid fa-book-open"></i> ${escape(storyTitle(scene))}</header>`
-    : beat.round >= 1 ? `<header>${escape(game.i18n.format("FASTFIGHTING.Story.TurnRound", { n: beat.round }))}</header>` : "";
+    : beat.round >= 1 ? `<header>${escape(beat.actorName
+      ? game.i18n.format("FASTFIGHTING.Story.TurnRoundOf", { n: beat.round, name: beat.actorName })
+      : game.i18n.format("FASTFIGHTING.Story.TurnRound", { n: beat.round }))}</header>` : "";
   const odds = beat.closing && state.odds ? `<p class="ff-odds"><em>${escape(state.odds)}</em></p>` : "";
   const kind = beat.closing ? "fast-fighting-story" : "fast-fighting-story fast-fighting-beat";
   const out = [];

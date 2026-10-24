@@ -1852,6 +1852,7 @@
       },
       "Desire": "{intensity} {verb}",
       "TurnRound": "Round {n}",
+      "TurnRoundOf": "Round {n} - {name}",
       "TheName": "the {name}",
       "Shot": "{weapon} shot",
       "Attack": "attack"

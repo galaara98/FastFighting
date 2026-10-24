@@ -27919,6 +27919,16 @@
    "commit": null,
    "hash": "af2dff6dd952"
   },
+  "core:FASTFIGHTING.Story.TurnRoundOf": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Story.TurnRoundOf",
+   "area": "core/Story",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "2a6a5c73515c"
+  },
   "core:FASTFIGHTING.Story.WhoIs": {
    "repo": "core",
    "file": "languages/en.json",
