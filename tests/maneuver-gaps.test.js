@@ -117,6 +117,18 @@ describe("a degree's own damage, a botch that moves, a blow that pushes", () => 
     expect(told).toContain(true);
   });
 
+  test("a rider's failed save that kills outright (a death poison); one immune to the rider's kind spared it, save and all", () => {
+    const venom = [{ kind: "save", save: { type: "fortitude", dc: 99 }, slay: true, traits: ["poison"], label: "Poison" }];
+    const deadly = fight([hero([strike({ bonus: 60, damage: [parseFormula("1", "piercing")], effects: venom })]), orc()]);
+    takeTurn(deadly, deadly.byId.get("hero"));
+    expect(deadly.byId.get("orc").status).toBe("dead");
+    expect(deadly.log.some(e => e.type === "riderSave" && e.degree <= 1)).toBe(true);
+    const golem = fight([hero([strike({ bonus: 60, damage: [parseFormula("1", "piercing")], effects: venom })]), orc({ iwr: { immune: ["poison"], resist: {}, weak: {} } })]);
+    takeTurn(golem, golem.byId.get("hero"));
+    expect(golem.byId.get("orc").status).not.toBe("dead");
+    expect(golem.log.some(e => e.type === "riderSave")).toBe(false);
+  });
+
   test("a blow's rider pushes; a failed save's push too", () => {
     const smite = fight([hero([strike({ bonus: 60, damage: [parseFormula("1", "thunder")], effects: [{ kind: "move", move: { kind: "push", feet: 10 } }] })]), orc()]);
     takeTurn(smite, smite.byId.get("hero"));

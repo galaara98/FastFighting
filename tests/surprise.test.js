@@ -36,12 +36,35 @@ describe("surprise as the plan has it", () => {
   });
 });
 
+describe("one never caught unready (spec.alert)", () => {
+  test("acts in the surprise round whatever its side, and isn't surprised or slow on initiative", () => {
+    const watchful = fighter("hero", "friendly", { alert: true });
+    const spec = battle([watchful, fighter("bandit", "hostile"), fighter("wolf", "hostile2")], { maxRounds: 2, talking: false, surprise: SURPRISE.PARTY_SURPRISED }, sides);
+    expect(firstMoves(replay(spec, pf2eRules, 3).log)).toContain("hero");
+    const rules = rulesWith(() => ({ by: ["hostile"], surprised: ["hero", "wolf"], disadvantage: ["hero"] }));
+    const run = beginRun(prepareBattle(battle([watchful, fighter("bandit", "hostile"), fighter("wolf", "hostile2")], { maxRounds: 2, talking: false, surprise: SURPRISE.SYSTEM }, sides), rules), 1);
+    expect(run.surprise.surprised).toEqual(["wolf"]);
+    expect(run.surprise.disadvantage).toEqual([]);
+  });
+});
+
+describe("surprise as a debuff (caught, outcome)", () => {
+  test("the caught keep their turn but pay the system's price through it; the alert pay nothing", () => {
+    const rules = rulesWith(() => ({ caught: ["hero", "wolf"], outcome: { mods: { ac: -2 }, label: "Flat-footed" } }));
+    const spec = battle([fighter("hero", "friendly", { alert: true }), fighter("bandit", "hostile"), fighter("wolf", "hostile2")], { maxRounds: 2, talking: false, surprise: SURPRISE.SYSTEM }, sides);
+    const run = beginRun(prepareBattle(spec, rules), 1);
+    expect(run.surprise.caught).toEqual(["wolf"]);
+    expect(run.byId.get("wolf").effects.some(e => e.key === "surprise:caught" && e.mods?.ac === -2)).toBe(true);
+    expect(run.byId.get("hero").effects.some(e => e.key === "surprise:caught")).toBe(false);
+  });
+});
+
 describe("the system's own rule (Follow System)", () => {
   test("none where the system has no rule; whatever it says where it has one, odd data left out", () => {
     const plain = beginRun(prepareBattle(fight(SURPRISE.SYSTEM), pf2eRules), 1);
-    expect(plain.surprise).toEqual({ by: [], round: false, stealthSides: [], surprised: [], disadvantage: [], hidden: [] });
+    expect(plain.surprise).toEqual({ by: [], round: false, stealthSides: [], surprised: [], disadvantage: [], hidden: [], caught: [], outcome: null });
     const said = beginRun(prepareBattle(fight(SURPRISE.SYSTEM), rulesWith(() => ({ by: ["hostile"], round: true, stealthSides: ["hostile"], surprised: ["hero", 7], hidden: ["bandit"] }))), 1);
-    expect(said.surprise).toEqual({ by: ["hostile"], round: true, stealthSides: ["hostile"], surprised: ["hero"], disadvantage: [], hidden: ["bandit"] });
+    expect(said.surprise).toEqual({ by: ["hostile"], round: true, stealthSides: ["hostile"], surprised: ["hero"], disadvantage: [], hidden: ["bandit"], caught: [], outcome: null });
     // (A round of their own only for those it names.)
     expect(resolveSurprise({ ...said, prep: { ...said.prep, rules: rulesWith(() => ({ round: true })) } }).round).toBe(false);
   });

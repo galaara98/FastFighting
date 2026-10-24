@@ -903,6 +903,8 @@ function applyEffects(run, u, action, target, degree, { saveDegree = null, dealt
  */
 function saveRider(run, u, action, target, effect) {
   const rules = run.prep.rules;
+  // (Its own kinds, a poison's, a disease's (API 29): one immune to any of them is spared it, the save and all.)
+  if ( effect.traits?.length && isImmune(run, target, { traits: effect.traits }) ) return;
   const harmful = (effect.damage ?? []).reduce((s, p) => s + Math.max(0, meanPart(p)), 0);
   const { roll, mod } = rollSave(run, target, effect.save.type, effect.save.dc, { stakes: saveStakes(target, harmful, !!effect.conditions), label: effect.label || action.name, magical: isMagical(action), from: u, action });
   const mult = effect.damage?.length ? saveMultiplier(rules, roll.degree, effect.save) : 0;
@@ -913,6 +915,8 @@ function saveRider(run, u, action, target, effect) {
     dc: effect.save.dc, degree: roll.degree, damage: dealt, controls: !!effect.conditions
   });
   hit?.apply(dealt, entry);
+  // (Failed, and it kills outright (API 29): a poison's "or death", as a crit row that slays.)
+  if ( effect.slay && roll.degree <= 1 && target.status !== STATUS.DEAD ) slayOutright(run, u, target);
   // (Failed: what it lays, and a push or a grab it carries: Thunderwave's.)
   if ( roll.degree > 1 || !(effect.conditions || effect.move || effect.grab) || !isUp(target) || tooBig(target, effect) ) return;
   if ( effect.conditions && isImmune(run, target, { traits: action.traits, onSave: [effect] }) ) return;
@@ -1770,16 +1774,19 @@ function disrupted(run, u, action) {
   return true;
 }
 
+/** Killed outright by u (a crit row that slays, a failed save against a death poison): down, then dead. */
+function slayOutright(run, u, target, { crit = false } = {}) {
+  if ( target.status === STATUS.STANDING ) dealDamage(run, u, target, target.hp + target.temp + (target.stamina ?? 0), { crit });
+  if ( target.status === STATUS.DOWN ) {
+    target.status = STATUS.DEAD;
+    target.killerId = u.id;
+    log(run, target, { type: "death", by: u.spec.name, byId: u.id, crit });
+  }
+}
+
 /** A crit table's row: its lasting effect on the foe (and on the attacker, rarely); some simply kill. */
 function applyCritRow(run, u, target, { row, total }) {
-  if ( row.slay && target.status !== STATUS.DEAD ) {
-    if ( target.status === STATUS.STANDING ) dealDamage(run, u, target, target.hp + target.temp + (target.stamina ?? 0), { crit: true });
-    if ( target.status === STATUS.DOWN ) {
-      target.status = STATUS.DEAD;
-      target.killerId = u.id;
-      log(run, target, { type: "death", by: u.spec.name, byId: u.id, crit: true });
-    }
-  }
+  if ( row.slay && target.status !== STATUS.DEAD ) slayOutright(run, u, target, { crit: true });
   if ( row.outcome && isUp(target) && !isImmune(run, target, { id: `crit:${u.id}:${row.lo}`, onSave: [row.outcome] }) ) {
     // (What it lays, a grab, a knockback: as any maneuver's result lands.)
     landOutcome(run, u, target, row.outcome, { id: `crit:${u.id}`, name: row.outcome.label ?? localize("FASTFIGHTING.Effect.cripplingBlow"), traits: [] }, { damage: false });
@@ -4759,7 +4766,8 @@ export function runOne(prep, seed, { log: withLog = false, capture = false } = {
     run.round = 0;
     for ( const side of surprise.by ) log(run, null, { type: "surprise", sideLabel: prep.sides[side]?.label ?? side });
     for ( const u of order ) {
-      if ( !surprise.by.includes(u.side) ) continue;
+      // (Those with surprise, and anyone who is never caught unready (spec.alert, API 29), whatever its side.)
+      if ( !surprise.by.includes(u.side) && !u.spec.alert ) continue;
       startTurn(run, u);
       takeTurn(run, u);
       noteIdle(run, u);
@@ -4814,6 +4822,13 @@ export function beginRun(prep, seed, { log: withLog = false, record = false } = 
   for ( const id of run.surprise.surprised ) {
     const u = run.byId.get(id);
     if ( u ) u.reactionsLeft = 0;
+  }
+  // (What being caught unready costs, as the system says: on the caught and the surprised, through their first turn.)
+  if ( run.surprise.outcome ) {
+    for ( const id of new Set([...run.surprise.surprised, ...run.surprise.caught]) ) {
+      const u = run.byId.get(id);
+      if ( u ) applyOutcome(u, { ...run.surprise.outcome, rounds: 1 }, null, { id: "surprise:caught", name: run.surprise.outcome.label ?? "" });
+    }
   }
   for ( const id of run.surprise.hidden ) {
     const u = run.byId.get(id);

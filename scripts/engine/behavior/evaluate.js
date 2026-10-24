@@ -51,6 +51,9 @@ function persistentMean(parts) {
   return (parts ?? []).filter(p => p.persistent).reduce((s, p) => s + Math.max(0, meanPart(p)) * 2.5, 0);
 }
 
+/** What a save rider that kills outright on a failure (a death poison) is worth, on the whole: a few blows' worth. */
+const SLAY_WORTH = 6;
+
 /** Rough expected value of riders such as afflictions (their stage damage over a few rounds). */
 function effectMean(action) {
   let total = 0;
@@ -60,7 +63,7 @@ function effectMean(action) {
     // (Moved, by the blow or a failed save: about as much, more where it would hurt, which the planner can't see.)
     if ( e.kind === "move" || e.move ) total += 1.5;
     // A save on a hit: about half the time it bites (the damage), and the condition is worth a little.
-    if ( e.kind === "save" ) total += 0.6 * (e.damage ?? []).reduce((s, p) => s + Math.max(0, meanPart(p)), 0) + (e.conditions ? 0.75 : 0);
+    if ( e.kind === "save" ) total += 0.6 * (e.damage ?? []).reduce((s, p) => s + Math.max(0, meanPart(p)), 0) + (e.conditions ? 0.75 : 0) + (e.slay ? SLAY_WORTH : 0);
   }
   return total;
 }
