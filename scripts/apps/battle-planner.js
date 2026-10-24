@@ -716,7 +716,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     const headName = hid => this.roster.find(e => e.token.id === hid)?.spec.name ?? "";
     const bonus = head ? Object.fromEntries(Object.entries(head.leadership).map(([k, v]) => [k, v.base])) : null;
     const lf = s.leadershipFudge ?? {};
-    const auto = heads.length ? game.i18n.format("FASTFIGHTING.Planner.AutoLeaders", { names: heads.map(h => `${headName(h.id)} (${loc(`FASTFIGHTING.Planner.Role.${h.slot}.Name`)})`).join(", ") }) : loc("FASTFIGHTING.Planner.AutoLeaderNone");
+    const auto = heads.length ? game.i18n.format("FASTFIGHTING.Planner.AutoLeaders", { names: listItems(heads.map(h => localize("FASTFIGHTING.Words.NameRole", { name: headName(h.id), role: loc(`FASTFIGHTING.Planner.Role.${h.slot}.Name`) }))) }) : loc("FASTFIGHTING.Planner.AutoLeaderNone");
     return {
       id,
       // Neutrals only lean (they take no side until something crosses them).
@@ -873,7 +873,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       // (Its playstyles and answers; the hidden scores aren't shown again: its steppers show them, with the GM's nudges.)
       tactics: questionsContext(s, e.token.actor, `gm-${e.token.id}`, { questions: true, hidden: false, targets: this.roster.map(r => ({ id: r.token.id, name: r.spec.name })) }),
       actions: s.actions.map(a => a.name).filter((n, i, arr) => arr.indexOf(n) === i).join(", "),
-      speeds: Object.entries(s.speeds ?? {}).map(([k, v]) => `${loc(`FASTFIGHTING.Mode.${k}`)} ${v}`).join(", "),
+      speeds: listItems(Object.entries(s.speeds ?? {}).map(([k, v]) => localize("FASTFIGHTING.Words.Value", { label: loc(`FASTFIGHTING.Mode.${k}`), value: v }))),
       environment: [...(s.environment?.types ?? []), s.environment?.difficult ? loc("FASTFIGHTING.Planner.DifficultHere") : null, s.environment?.hazardous ? loc("FASTFIGHTING.Planner.HazardHere") : null].filter(Boolean).join(", ")
     };
   }
@@ -958,7 +958,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     ];
     return {
       party, stakes, money, foes, fight, foesEnd,
-      foesEndLabel: `${loc("FASTFIGHTING.Results.FoesEnd")}: ${foesEnd.map(f => `${f.label} ${f.pct}`).join(", ")}`
+      foesEndLabel: localize("FASTFIGHTING.Words.Part", { why: loc("FASTFIGHTING.Results.FoesEnd"), n: listItems(foesEnd.map(f => localize("FASTFIGHTING.Words.Value", { label: f.label, value: f.pct }))) })
     };
   }
 
@@ -1086,7 +1086,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     const sample = this.sample ? this.#sampleContext() : null;
 
     // The win bar stays over the tabs; the Overview has the rest, each with its change since the run before (in points).
-    const summary = { label: segments.map(s => `${s.label} ${s.pct}`).join(", ") };
+    const summary = { label: listItems(segments.map(s => localize("FASTFIGHTING.Words.Value", { label: s.label, value: s.pct }))) };
     const overview = this.#overview(r, this.previousResults, combatants);
 
     return {
@@ -1994,7 +1994,7 @@ function reportError(err) {
 function oddsText(results) {
   if ( !results ) return null;
   const parts = Object.values(results.sides ?? {}).filter(s => s.pWin > 0).sort((a, b) => b.pWin - a.pWin)
-    .map(s => `${s.label} ${Math.round(s.pWin * 100)}%`);
-  if ( (results.pStalemate ?? 0) >= 0.005 ) parts.push(`${loc("FASTFIGHTING.Sample.Outcome.stalemate")} ${Math.round(results.pStalemate * 100)}%`);
+    .map(s => localize("FASTFIGHTING.Words.Value", { label: s.label, value: `${Math.round(s.pWin * 100)}%` }));
+  if ( (results.pStalemate ?? 0) >= 0.005 ) parts.push(localize("FASTFIGHTING.Words.Value", { label: loc("FASTFIGHTING.Sample.Outcome.stalemate"), value: `${Math.round(results.pStalemate * 100)}%` }));
   return parts.length ? game.i18n.format("FASTFIGHTING.Story.Odds", { odds: parts.join(" · ") }) : null;
 }

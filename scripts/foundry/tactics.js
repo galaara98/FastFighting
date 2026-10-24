@@ -323,7 +323,7 @@ export async function preparePlayers(scene = canvas.scene, open = null) {
     return false;
   }
   await requestSurveys(players, scene, { party: "open" });
-  ui.notifications.info("FASTFIGHTING.Survey.Sent", { format: { n: players.length } });
+  ui.notifications.info(players.length === 1 ? "FASTFIGHTING.Survey.SentOne" : "FASTFIGHTING.Survey.SentMany", { format: { n: players.length } });
   const away = absentOnScene(scene);
   if ( away.tokens.length || away.players.length ) {
     await requestAbsentSurvey(scene, away, open);

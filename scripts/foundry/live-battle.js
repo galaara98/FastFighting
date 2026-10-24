@@ -3964,7 +3964,7 @@ const moveSpeed = () => (battle?.fast ? FAST_MOVE_SPEED : undefined);
  * the moves on the map quick (FAST_MOVE_SPEED), Dice So Nice's 3D dice off (fast-fight.js hushDice), Play to the end
  * off. It goes from where the battle is: a turn played and waiting, on to the next; one not played yet, played. It
  * stops as fastFightStop says (checkFast): pressed again, the battle over, a player's character to act, a GM wanted,
- * the tracker used, something gone wrong, or the battle's Max rounds played.
+ * the tracker used, or something gone wrong; two still rounds ask the GM whether it goes on (askStill).
  */
 export function fastFight() {
   if ( !battle || !playsHere() ) return null;

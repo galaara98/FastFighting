@@ -334,7 +334,7 @@ export class BattleVantage extends HandlebarsApplicationMixin(ApplicationV2) {
     this.#seen = new Set(blocking.map(q => q.id));
     // (Next Turn says how many things wait, and asks before moving on past them: #onContinue.)
     const p = context.primary;
-    if ( p?.action === "continue" && blocking.length ) Object.assign(p, { count: blocking.length, countLabel: context.waitingText });
+    if ( p?.action === "continue" && blocking.length ) Object.assign(p, { count: blocking.length, countLabel: fmt("FASTFIGHTING.Battle.WaitingCount", { n: blocking.length }) });
     context.tab = this.#tab;
     context.tabs = ["waiting", "creature", "teams"].map(id => ({
       id, label: loc(`FASTFIGHTING.Battle.Tab.${id}`), active: this.#tab === id,

@@ -28,7 +28,9 @@
       "Reversed": "against {word}",
       "Budget": "trait budget of {budget}",
       "RoundOne": "{n} round",
-      "RoundMany": "{n} rounds"
+      "RoundMany": "{n} rounds",
+      "Value": "{label} {value}",
+      "NameRole": "{name} ({role})"
     },
     "Generic": {
       "Label": "Generic d20 (configured paths)",
@@ -72,7 +74,7 @@
       },
       "includeHidden": {
         "Name": "Include hidden tokens",
-        "Hint": "Hidden tokens outside the encounter, such as ambushers and reinforcements, can take part."
+        "Hint": "Hidden tokens outside the encounter, such as ambushers, can take part."
       },
       "includeOtherLevels": {
         "Name": "Include other scene levels",
@@ -80,7 +82,7 @@
       },
       "neutralDefault": {
         "Name": "Neutral tokens",
-        "Hint": "How tokens with Neutral disposition take part, unless set per token."
+        "Hint": "How Neutral tokens take part."
       },
       "downedModel": {
         "Name": "Downed characters",
@@ -149,7 +151,7 @@
       },
       "bystanders": {
         "Name": "Bystanders can join",
-        "Hint": "Tokens outside the encounter may notice the fight, be called for help, be hunted or be run into, then decide whether to join."
+        "Hint": "Tokens outside the encounter may notice the fight and join it."
       },
       "genericFallback": {
         "Name": "Use the experimental generic adapter",
@@ -161,7 +163,7 @@
       },
       "opening": {
         "Name": "How encounters open",
-        "Hint": "Whether a fight opens with talk. Talk if they'd rather: a standoff when the leaders would rather talk."
+        "Hint": "Whether a fight opens as a standoff. Talk if they'd rather: when every side would rather talk."
       },
       "concedeLuck": {
         "Name": "PC luck: handing over an item",
@@ -205,7 +207,7 @@
       },
       "switchLuck": {
         "Name": "Enemy changes sides",
-        "Hint": "Chance an enemy talked into changing sides goes through with it; more for one scheming against its leaders. At 100, always."
+        "Hint": "Chance an enemy talked into changing sides goes through with it; more for one scheming against its leaders."
       },
       "executeLuck": {
         "Name": "Downed PC finished off",
@@ -225,7 +227,7 @@
       },
       "traitorLuck": {
         "Name": "PC turns traitor",
-        "Hint": "Chance a PC talked into changing sides goes through with it. At 0, never."
+        "Hint": "Chance a PC talked into changing sides goes through with it."
       },
       "trapLuck": {
         "Name": "Trap avoider spots a trap",
@@ -261,7 +263,7 @@
       },
       "troubleshooting": {
         "Name": "Troubleshooting",
-        "Hint": "Keeps each live battle's transcript for 30 days, even after its encounter is deleted, with the planner's last run. Turn it on before reporting a bug, then export from Live battle data. While on, a player who digs could read the last run's odds."
+        "Hint": "Keeps each live battle's transcript, and the planner's last run, for 30 days, even after the encounter is deleted. Turn on before reporting a bug. While on, a player who digs could read the last run's odds."
       },
       "plannerWorkers": {
         "Name": "Background workers",
@@ -273,7 +275,7 @@
       },
       "loreBoost": {
         "Name": "Lore-Collector advantage (×)",
-        "Hint": "How many times likelier a Lore-Collector's rolls are to succeed after it sizes up a foe, against foes of that sort."
+        "Hint": "How many times likelier a Lore-Collector's rolls against foes of that sort are to succeed, for the rest of the turn it sizes one up."
       }
     },
     "Lean": {
@@ -515,7 +517,7 @@
       "Level": "Lv {level}",
       "TraitWhy": "{what} Why: {why}.",
       "SecondsHint": "How long the prediction runs: fight after fight until the time is up.",
-      "FewFights": "For the most accurate results, you want at least {least} fights.",
+      "FewFights": "Too few fights for sure odds: aim for at least {least}.",
       "BattleSize": "Creatures {creatures} · Actions {actions} · Tiles {tiles} · Walls {walls}",
       "MaxRounds": "Max rounds",
       "Seed": "Seed",
@@ -527,10 +529,9 @@
       "Morale": "Morale",
       "Leadership": "Leadership",
       "Hidden": "Hidden tokens",
-      "RefreshHint": "Re-read the tokens on the scene",
-      "ClearHint": "Clear this plan",
+      "RefreshHint": "Re-read the tokens on the scene.",
       "ClearTitle": "Clear the plan?",
-      "ClearConfirm": "Every planner choice for this encounter (sides, groups, roles, fudges and options) returns to the defaults. This can't be undone.",
+      "ClearConfirm": "Every planner choice for this plan (sides, groups, roles, fudges and options) returns to the defaults. This can't be undone.",
       "Run": "Run",
       "FightsRun": "{n} fights",
       "FightsRunHint": "Fights simulated: in tens while running, then the exact count.",
@@ -548,7 +549,7 @@
       "ChosenLeader": "Chosen by the GM",
       "PanTo": "Select and pan to token",
       "HiddenToken": "Hidden token",
-      "IncludeHint": "Take part in the battle",
+      "IncludeHint": "Take part in the battle.",
       "Details": "Details",
       "Disposition": "Tactics (ask your player, or use Prepare Players)",
       "IgnoreTerrain": "Ignores terrain",
@@ -580,7 +581,7 @@
       "Talking": "Talking",
       "TalkingHint": "Characters may talk foes down: persuade, threaten or bluff.",
       "IgnoreLanguages": "Ignore languages",
-      "IgnoreLanguagesHint": "Anyone who speaks understands everyone who speaks.",
+      "IgnoreLanguagesHint": "Anyone who speaks a language understands everyone who does.",
       "Bystanders": "Bystanders",
       "BystandersHint": "Tokens not in the encounter may notice it and join from the next round.",
       "Stopped": "Stopped after {n} simulated fights.",
@@ -612,7 +613,6 @@
           "Short": "2"
         }
       },
-      "RoleHint": "L: Leader, B: Boss ({boss}× as compelling), 1/2: Lieutenants (lead once the commander is gone)",
       "PlayersRun": "Players run their characters",
       "PlayersRunHint": "On: players take their own turns; FastFighting plays the rest. Off: FastFighting plays every turn.",
       "ApplyDamage": "Apply players' damage",
@@ -724,7 +724,6 @@
         "resources": "Resources",
         "sample": "Sample fight"
       },
-      "Stale": "Settings changed since this run. Run again to update.",
       "Restored": "From the last run ({when}): nothing about this battle has changed since.",
       "Stalemate": "Stalemate",
       "NoOne": "No one left",
@@ -826,7 +825,7 @@
       "Rule": {
         "leadership": "leadership",
         "morale": "morale",
-        "positioning": "terrain"
+        "positioning": "terrain & positioning"
       },
       "Margin": "Win odds margin",
       "MarginHint": "The Friendlies' odds of winning are sure to within this many points, 19 times in 20, from {n} fights."
@@ -1066,8 +1065,7 @@
       "Prepare": "Prepare Players",
       "PrepareHint": "Open the survey for every player with tokens on this map.",
       "NoPlayers": "No players control tokens on this scene.",
-      "NoPlayersHere": "No players control tokens on this scene. Set tactics in each PC's row.",
-      "Sent": "Survey sent to {n} player(s).",
+      "NoPlayersHere": "No players control tokens on this scene. Set a character's tactics from its ⋯ menu.",
       "WillOpen": "{name} is offline; their survey will open when they log in.",
       "OpenFirst": "Open this player's survey",
       "Reopen": "Re-open this player's survey",
@@ -1082,7 +1080,7 @@
       "MyTactics": "My tactics",
       "MyTacticsHint": "Your characters' tactics, playstyles and desires; change them any time.",
       "SheetButton": "FastFighting",
-      "AskPlayers": "Ask {names} to answer this character's survey (the Friendly Team tab view-only).",
+      "AskPlayers": "Ask {names} to answer this character's survey. Its Friendly Team tab is view-only.",
       "AskGms": "Open this character's survey for every GM logged in, to answer for an away player.",
       "AskedPlayers": "Asked {names} about {name}.",
       "AskedGms": "{name}'s survey is open for every GM logged in.",
@@ -1097,10 +1095,12 @@
       "More": "More",
       "ResetMenu": "Reset answers…",
       "ResetTitle": "Reset {name}'s answers?",
-      "ResetConfirm": "Every answer goes back to “Let this character decide”, and the playstyles are picked again.",
+      "ResetConfirm": "Every answer goes back to \"Let this character decide\", and the playstyles are picked again.",
       "ReadyLocks": "I'm ready also locks in the Friendly Team's vote.",
       "ReadyArmed": "Press again: lock in and finish",
-      "ReadyArmedNote": "The Friendly Team's vote isn't locked in yet. Press again to lock it in and finish."
+      "ReadyArmedNote": "The Friendly Team's vote isn't locked in yet. Press again to lock it in and finish.",
+      "SentOne": "Survey sent to 1 player.",
+      "SentMany": "Survey sent to {n} players."
     },
     "TokenTactics": {
       "Tab": "FastFighting",
@@ -1225,7 +1225,7 @@
       },
       "loreCollector": {
         "Name": "Lore-Collector",
-        "Hint": "Sizes up new foes first, then rolls much better against their kind; may share what it learns."
+        "Hint": "Sizes up new foes first, then rolls much better against their kind that turn, and a little better after; may share what it learns."
       },
       "puzzleManiac": {
         "Name": "Puzzle-Maniac",
@@ -1297,7 +1297,7 @@
       "Later": "Move {name} later"
     },
     "Tracker": {
-      "OpenHint": "Estimate how this encounter will go",
+      "OpenHint": "Estimate how this encounter will go.",
       "NeedTwo": "Add at least two tokens to the encounter to plan the battle.",
       "Survey": "Survey",
       "SurveyHint": "Survey every player with a character on this scene (Prepare Players), encounter or not.",
@@ -2631,7 +2631,7 @@
         "player": "Fast Fight stopped: a player's character is theirs to play.",
         "gm": "Fast Fight stopped: a GM's answer is needed."
       },
-      "Told": "{name}'s Turn is complete.",
+      "Told": "{name}'s turn is complete.",
       "AwayPlayed": "{names}: no player came back in time, so FastFighting plays their turns now.",
       "HandedBack": "{player} is back and plays {names} again.",
       "NextTurn": "Next Turn",
@@ -2670,7 +2670,7 @@
       "NotHere": "That battle isn't being played in this browser.",
       "FastStill": {
         "Title": "Keep fighting?",
-        "Ask": "Two whole rounds have gone by with nothing changing: no one hurt, healed, fallen, fled, given up or talked over. Keep the Fast Fight going?"
+        "Ask": "Two rounds with no one hurt, healed, fallen, fled, given up or talked over. Keep the Fast Fight going?"
       }
     },
     "Deal": {
@@ -2949,7 +2949,7 @@
         "AddTitle": "Add to {name}",
         "AddHint": "What {name} wants of someone, has on them (and from whom), or what came of a roll at the table.",
         "AddWhat": "What",
-        "NodeHint": "+ adds a line from it",
+        "NodeHint": "+ adds a line from it.",
         "Select": "Select",
         "Unselect": "Unselect",
         "SelectTeam": "Select its team",

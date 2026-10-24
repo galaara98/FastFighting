@@ -116,7 +116,7 @@ Up to four pills per character, PC or NPC, in order of importance: the first cou
 | Kiter | keeps its distance: a shot from out of reach, or in, a blow and out again; falls back as foes close, toward its friends; picks on foes that can't follow; cornered, it fights |
 | Instigator | locks foes down, harasses and debuffs them more than anyone; the most dangerous foe and the enemy leader; may defy its own leader; taunts |
 | Lazy | the nearest foe, no long walks; sometimes ignores a taunt; little help to anyone; gives up fast; holds no grudge; its flight takes others along |
-| Lore-Collector | sizes up a new foe before acting against it, then rolls much better against every foe of that sort (by the **Lore-Collector advantage** setting); may share what it learned; trap avoider |
+| Lore-Collector | sizes up a new foe before acting against it, then is much likelier to succeed against that sort for the rest of the turn (**Lore-Collector advantage**), and a little after; may share what it learned; trap avoider |
 | Medic | heals first and early (a friend at three quarters is reason enough), the dying above all; keeps its healing for healing; bolsters when nobody's hurt; gives a friend its own potion; stays close |
 | Martyr | guards the weakest friend; fears nothing; avenges the fallen fiercely; rallies; taunts foes off its friends |
 | Mercenary | easy pickings; barely avenges anyone; gives up when it gets hard; its flight takes others along; extorts, and takes a bribe readily |
@@ -176,7 +176,7 @@ The tracker's **Vantage** does the same from the planner's last run of that enco
 - **Players run their characters** (a planner toggle, on by default). Off, FastFighting plays every turn. In the Battle Vantage, **FastFighting plays their turns** takes over one character for a player who has to leave; clear it to hand the character back.
 - **Players who drop out** (**Play for disconnected players**, on, 2 minutes): when a player disconnects, each of their characters with no other player connected gets a countdown, shown beside **Add** in the Battle Vantage; when it runs out, FastFighting plays their turns. A player not connected as the encounter begins counts as gone from the start. A player who comes back stops the countdown, and after 12 seconds connected gets every character they own back, even ones a GM handed to FastFighting. None of this happens in a battle where **Players run their characters** is off: FastFighting plays everyone, whoever comes or goes.
 - **Reactions:** each character's FastFighting tab lists its reactions with **Always use it**, **Ask me** or **Never use it**. Asked, the player answers on their screen (the GM answers when they're away or don't answer in time). An NPC's reactions follow its tactics, unless **Ask me about NPC reactions** is on in the Battle Vantage; then the GM allows each.
-- **Rerolls:** where the system has a reroll to spend (PF2e Hero Points, 5e Inspiration), each character says whether FastFighting may spend it to save its own life or a teammate's.
+- **Rerolls:** where the system has a reroll to spend (PF2e Hero Points, 5e Heroic Inspiration), each character says whether FastFighting may spend it to save its own life or a teammate's.
 - **Bystanders** who notice the fight join the tracker and take their turns. **Summons** appear as tokens beside their summoner.
 - **Spotlight systems** (Daggerheart, Ironsworn) have no initiative: the Battle Vantage gives the spotlight to whoever FastFighting would pick next, or to whoever the GM picks.
 - **The end:** the chat says which side won. **Settle the aftermath** has FastFighting deal with what's left (the dying bleed out or hold on, the beaten are dealt with, goods go back to their owners). The encounter stays open until a GM ends it (Foundry's End Encounter, or the Battle Vantage's).
@@ -382,7 +382,7 @@ World settings, under **Configure Settings → FastFighting**, in groups that op
 | PCs when an ally is dying | Let each character decide | What PCs put first when an ally is dying. |
 | Friendly vote's sway (%) | 3 | How much the Friendly Team tab's vote sways the friendly side. |
 | Dampen non-friendly focus fire | 0 | How much less creatures not on the Friendly side focus fire (100: half as much). |
-| Lore-Collector advantage (×) | The system's (PF2e: 2×); else 2.5× | How much likelier a Lore-Collector's rolls are after it sizes up a foe, against foes of that sort; the helper names its system's skill for it (PF2e: Recall Knowledge). |
+| Lore-Collector advantage (×) | The system's (PF2e: 2×); else 2.5× | How much likelier a Lore-Collector's rolls are against foes of that sort, for the rest of the turn it sizes one up; the helper names its system's skill for it (PF2e: Recall Knowledge). |
 
 ### Personality & luck
 
@@ -443,11 +443,11 @@ Optional: the [FastFighting Performance Survey](https://tally.so/r/vXjzAv) asks 
 - It holds no game rules of its own: without a helper for your system, or the experimental generic adapter, it does nothing.
 - The Sample fight isn't the ruling: Go Live rolls a new fight.
 - While **Players run their characters** is on, it doesn't play a player's turn unless you hand it that character, and it shows no desires for a character its player runs.
-- In a live battle it spends no player resource except the rerolls each character allows.
+- For a character its player runs, it spends nothing but the rerolls that character allows.
 - It doesn't end the encounter: the GM does.
 - Some goals show in the Battle Vantage, marked as such, but don't change what a creature does yet: closing or locking a door, picking up an item, getting to a place, swimming, flying or climbing somewhere, hiding, taking cover, escaping by a way out, and using an object (a lever, a winch, a ritual circle).
 - The planner's results leave out summoned creatures.
-- Surveys never go to GMs or assistant GMs.
+- Surveys go to GMs only to answer for players who are away.
 
 ---
 

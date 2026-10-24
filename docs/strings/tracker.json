@@ -2961,7 +2961,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "5969b8e57805"
+   "hash": "5969b8e57805",
+   "changed": true
   },
   "core:FASTFIGHTING.Battle.Net.Nothing": {
    "repo": "core",
@@ -7694,7 +7695,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "bdfc093574a1"
+   "hash": "bdfc093574a1",
+   "changed": true
   },
   "core:FASTFIGHTING.Live.FastStill.Title": {
    "repo": "core",
@@ -8012,7 +8014,8 @@
    "status": "written",
    "date": "2026-10-17",
    "commit": "3f939e5",
-   "hash": "c6c9264cd921"
+   "hash": "c6c9264cd921",
+   "changed": true
   },
   "core:FASTFIGHTING.Live.TooFarBack": {
    "repo": "core",
@@ -15313,7 +15316,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "3cc4e46473a8"
+   "hash": "3cc4e46473a8",
+   "gone": "2026-10-24"
   },
   "core:FASTFIGHTING.Planner.ClearMenu": {
    "repo": "core",
@@ -15698,7 +15702,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "3c2c5aa651f6"
+   "hash": "3c2c5aa651f6",
+   "changed": true
   },
   "core:FASTFIGHTING.Planner.IncludeName": {
    "repo": "core",
@@ -16177,7 +16182,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "65315bbc0d37"
+   "hash": "65315bbc0d37",
+   "changed": true
   },
   "core:FASTFIGHTING.Planner.Reinforcements": {
    "repo": "core",
@@ -16438,7 +16444,8 @@
    "date": "2026-10-11",
    "commit": "3a70a39",
    "hash": "9e9a7a967b0f",
-   "changed": true
+   "changed": true,
+   "gone": "2026-10-24"
   },
   "core:FASTFIGHTING.Planner.RoleMenu": {
    "repo": "core",
@@ -19243,7 +19250,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "84088805e145"
+   "hash": "84088805e145",
+   "changed": true
   },
   "core:FASTFIGHTING.Results.Section.fight": {
    "repo": "core",
@@ -19336,7 +19344,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "d172d4ef4bc7"
+   "hash": "d172d4ef4bc7",
+   "gone": "2026-10-24"
   },
   "core:FASTFIGHTING.Results.Stalemate": {
    "repo": "core",
@@ -20991,7 +21000,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "bde6bca9a8f4"
+   "hash": "bde6bca9a8f4",
+   "changed": true
   },
   "core:FASTFIGHTING.Settings.loreBoost.Name": {
    "repo": "core",
@@ -28547,7 +28557,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "729e8083febd"
+   "hash": "729e8083febd",
+   "changed": true
   },
   "core:FASTFIGHTING.Survey.ResetHint": {
    "repo": "core",
@@ -28599,7 +28610,28 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "ff0ec35ccc26"
+   "hash": "ff0ec35ccc26",
+   "gone": "2026-10-24"
+  },
+  "core:FASTFIGHTING.Survey.SentMany": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Survey.SentMany",
+   "area": "core/Survey",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "69a7086e4173"
+  },
+  "core:FASTFIGHTING.Survey.SentOne": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Survey.SentOne",
+   "area": "core/Survey",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "3822c2426c15"
   },
   "core:FASTFIGHTING.Survey.SharedWith": {
    "repo": "core",
@@ -30353,7 +30385,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "96617a582df6"
+   "hash": "96617a582df6",
+   "changed": true
   },
   "core:FASTFIGHTING.Tracker.Planner": {
    "repo": "core",
@@ -30608,6 +30641,16 @@
    "commit": null,
    "hash": "a7a45ea923c6"
   },
+  "core:FASTFIGHTING.Words.NameRole": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Words.NameRole",
+   "area": "core/Words",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "7f0526e40e7e"
+  },
   "core:FASTFIGHTING.Words.Part": {
    "repo": "core",
    "file": "languages/en.json",
@@ -30658,6 +30701,16 @@
    "date": null,
    "commit": null,
    "hash": "d69d13c09429"
+  },
+  "core:FASTFIGHTING.Words.Value": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Words.Value",
+   "area": "core/Words",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "2a009adb7040"
   },
   "core:module.json:description": {
    "repo": "core",
