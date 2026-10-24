@@ -39,7 +39,7 @@ import { spotTraps, stepOut, learnTrap } from "./behavior/traps.js";
 import { talkActionsThisTurn, choosePitch, attemptTalk, shareLanguage, resolveTalk, aimOf, remaining as goodsLeft } from "./behavior/talk.js";
 import { opensWithTalk, breaksStandoff, standoffPitches, charismaticLeader, canTalk, prefersTalk } from "./behavior/standoff.js";
 import { controlOutcome, controlRoll, isImmune, degreeShift } from "./behavior/control.js";
-import { recompute as recomputeConditions, applyOutcome, renewHolds, beginConcentration, endConcentration, holdsAnything, noteConcentration, moveHeld, settleAllegiance, iwrOf, incoming, spendEdges, spendBoost, focusOf, tauntProof, withoutTaunt } from "./behavior/effects.js";
+import { recompute as recomputeConditions, applyOutcome, renewHolds, beginConcentration, endConcentration, holdsAnything, noteConcentration, moveHeld, settleAllegiance, iwrOf, incoming, spendEdges, spendBoost, focusOf, tauntProof, withoutTaunt, armEffects } from "./behavior/effects.js";
 import { decideBuff, aidScores, checkDc } from "./behavior/support.js";
 import { perceives } from "./behavior/senses.js";
 import { isAnimalistic, animalTactics } from "./behavior/animal.js";
@@ -1626,6 +1626,9 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
     }
     // (A Strike on its own turn, for what needs one first: its last action a hit, two hits in a row: requires.js. And a
     // critical hit with one brings back what a crit recharges: PF2e Draconic Momentum.)
+    // (A blow that crits, or kills: what waits on it starts to work. API 29, armedBy.)
+    if ( roll.degree === 3 ) armEffects(run, u, "crit");
+    if ( target.status === STATUS.DEAD && target.killerId === u.id ) armEffects(run, u, "kill");
     if ( action.kind === "strike" ) {
       noteBlow(run, u, action, target, roll.degree);
       if ( roll.degree === 3 ) rechargeOnCrit(run, u);

@@ -43,6 +43,9 @@
  *                  stronger reasons of its own (an obsession, a grudge, a cruel streak) can still win out, and a
  *                  taunter it can't reach wears it down. The want ends early when the taunter falls (its `defy`
  *                  runs its rounds).
+ *     armedBy      "kill" | "crit" (API 29): it does nothing until its bearer kills a foe, or scores a critical hit, with
+ *                  a blow, and then all it says for as long as it lasts (DCC's rally that waits on a kill); with
+ *     armedFrom    "source": until the one who laid it does (DCC's "if the warrior slays its foe, allies gain +1")
  *     defy         with a taunt: what ignoring it costs, bonuses and penalties (as mods) on the bearer's rolls against
  *                  anyone but the taunter (5e Compelled Duel: {adv: -1}; PF2e Taunt: {attack: -1})
  * Everything is optional: an outcome with nothing the engine understands does nothing. Effects from the same action
@@ -102,6 +105,8 @@ export function recompute(u) {
   const against = new Map(); // bonuses that count against one creature only: id -> [mods]
   const defied = new Map(); // a taunt's price, paid against everyone but the taunter: id -> [mods]
   for ( const e of u.effects ?? [] ) {
+    // (Waiting on a kill or a crit: nothing yet.)
+    if ( e.armedBy && !e.armed ) continue;
     if ( e.onlyVs && e.sourceId ) {
       const map = e.onlyVs === "melee" ? vsMelee : vs;
       const row = map.get(e.sourceId) ?? {};
@@ -269,11 +274,32 @@ export function applyOutcome(target, outcome, sourceId = null, action = null) {
     taunt: taunt || null,
     defy,
     fastHealing,
-    regen
+    regen,
+    ...(["kill", "crit"].includes(outcome.armedBy) ? { armedBy: outcome.armedBy, armed: false, armedFrom: outcome.armedFrom === "source" ? "source" : "bearer" } : {})
   };
   (target.effects ??= []).push(effect);
   recompute(target);
   return effect;
+}
+
+/**
+ * u has killed a foe ("kill") or scored a critical hit ("crit") with a blow: the effects waiting on that (armedBy) start
+ * to work, its own, and those it laid on others that wait on it (armedFrom "source"). Returns whether any did.
+ */
+export function armEffects(run, u, what) {
+  let armed = false;
+  for ( const o of run?.units ?? [u] ) {
+    let here = false;
+    for ( const e of o?.effects ?? [] ) {
+      if ( e.armedBy !== what || e.armed ) continue;
+      if ( e.armedFrom === "source" ? e.sourceId === u.id : o === u ) here = e.armed = true;
+    }
+    if ( here ) {
+      recompute(o);
+      armed = true;
+    }
+  }
+  return armed;
 }
 
 /**

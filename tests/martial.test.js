@@ -112,3 +112,19 @@ describe("a sequence that fumbles only when every attack does (fumble: \"all\")"
     expect(all.tries).toBeGreaterThan(0);
   });
 });
+
+describe("a bonus that waits on a kill or a crit (armedBy)", () => {
+  test("nothing until its bearer crits; then all it says", async () => {
+    const { applyOutcome } = await import("../scripts/engine/behavior/effects.js");
+    const run = beginRun(prepareBattle(battle([creature({ id: "fighter", actions: [strike({ bonus: 500, damage: [parseFormula("1", "slashing")] })] }), dummy()], { maxRounds: 1 }), pf2eRules), 3);
+    const f = run.byId.get("fighter");
+    applyOutcome(f, { mods: { attack: 3 }, rounds: 5, armedBy: "crit", label: "Heartened" }, null, { id: "rally" });
+    const effect = f.effects.find(e => e.key === "rally");
+    expect(effect.armed).toBe(false);
+    const { takeTurn, beginRound } = await import("../scripts/engine/simulator.js");
+    beginRound(run, 1);
+    for ( const u of run.units ) u.active = true;
+    takeTurn(run, f);
+    expect(effect.armed).toBe(true);
+  });
+});
