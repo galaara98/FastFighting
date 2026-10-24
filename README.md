@@ -72,7 +72,7 @@ Personality decides the rest: a coward may still run, a talker may try words fir
 
 ## Prepare Players
 
-**Prepare Players** (the tracker's **Survey** button) opens a survey on each player's screen, on its Friendly Team tab. Its tabs, along the top (the mouse wheel scrolls them sideways when there are more than fit), are the Friendly Team's and one per token they control, each saying where it stands: the vote open or locked in, or how many answers are set. A character's questions come in sections (Fighting, Spending, Looking after others, Talking and leaving), each closed one listing what's set. Every question starts on *"Let this character decide"*: what the character would probably do. The questions:
+**Prepare Players** (the tracker's **Survey** button) opens a survey on each player's screen, on its Friendly Team tab. Its tabs, along the top (the mouse wheel scrolls them sideways when there are more than fit), are the Friendly Team's and one per token they control, the Friendly Team's saying whether its vote is open or locked in. A character's questions come in sections (Fighting, Spending, Looking after others, Talking and leaving), each closed one listing what's set. Every question starts on *"Let this character decide"*: what the character would probably do. The questions:
 - favorite weapon or attack, fighting style, who to pursue first, and foes who fall;
 - spell slots, focus and limited abilities; magic and specialties; consumables; healing others; drinking its own potions;
 - when an ally is dying, and after being revived;

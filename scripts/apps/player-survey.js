@@ -149,13 +149,10 @@ export class PlayerSurvey extends HandlebarsApplicationMixin(ApplicationV2) {
       await ensureAutoConfig(e.actor, spec);
       const others = game.users.filter(u => u !== game.user && !u.isGM && e.actor.testUserPermission(u, "OWNER"));
       const tactics = questionsContext(spec, e.actor, e.key, { targets: this.sheetMode ? [] : targets });
-      const set = tactics.groups.reduce((n, g) => n + g.set, 0);
+      // (Its tab, its name alone: how far it's answered is in its sections' headings.)
       sheets.push({
         id: e.key,
         name: e.name,
-        // (How far it's answered, on its tab.)
-        state: set ? game.i18n.format("FASTFIGHTING.Survey.Answered", { n: set }) : loc("FASTFIGHTING.Survey.NoneSet"),
-        stateCls: set ? "is-set" : "",
         img: spec.img,
         hp: `${spec.hp.value}/${spec.hp.max}`,
         ac: spec.defenses.ac,
