@@ -3,7 +3,7 @@
  * in a fixed order, each has its heading in languages/en.json, and FastFighting's tab is laid out in them.
  */
 import { afterEach, describe, expect, test } from "vitest";
-import { SETTING_GROUPS, settingsLayout, groupSettings, helperGroup, registerSettings } from "../scripts/settings.js";
+import { SETTING_GROUPS, settingsLayout, groupSettings, helperGroup, openForSearch, registerSettings } from "../scripts/settings.js";
 import { MODULE_ID } from "../scripts/constants.js";
 import { en, text } from "./foundry-i18n.js";
 
@@ -73,7 +73,7 @@ function tab(ids) {
   return {
     children,
     querySelector(selector) {
-      if ( selector === ".ff-settings-group" ) return children.find(c => c.className === "ff-settings-group") ?? null;
+      if ( selector === ".ff-settings-group" ) return children.find(c => c.className.split(" ").includes("ff-settings-group")) ?? null;
       const [, name, key] = selector.match(/^\[name="([^"]+)"\], \[data-key="([^"]+)"\]$/) ?? [];
       return name === key ? rows.get(name) ?? null : null;
     },
@@ -89,16 +89,23 @@ describe("the settings window", () => {
     };
   };
 
-  test("FastFighting's tab in its groups, in order, each a fieldset under its heading", () => {
+  /** A group as groupSection builds it: its heading's name and count, and its rows. */
+  const read = details => {
+    const [summary, body] = details.children;
+    const [chevron, name, count] = summary.children;
+    return { tag: details.tag, chevron: chevron.className, name: name.textContent, count: count.textContent, rows: body.children.map(r => r.id), open: details.open };
+  };
+
+  test("FastFighting's tab in its groups, in order, each a section under its heading, closed at first", () => {
     fakeDocument();
     const section = tab(placed());
     groupSettings(section);
-    expect(section.children.map(f => [f.tag, f.className, f.dataset.group])).toEqual(SETTING_GROUPS.map(g => ["fieldset", "ff-settings-group", g]));
+    expect(section.children.map(f => [f.tag, f.className, f.dataset.group])).toEqual(SETTING_GROUPS.map(g => ["details", "ff-section ff-settings-group", g]));
     for ( const [i, { group, keys }] of settingsLayout().entries() ) {
-      const [legend, ...rows] = section.children[i].children;
-      expect(legend.tag).toBe("legend");
-      expect(legend.textContent).toBe(text(`FASTFIGHTING.Settings.Group.${group}`));
-      expect(rows.map(r => r.id)).toEqual(keys);
+      const g = read(section.children[i]);
+      expect(g.chevron).toContain("ff-chevron");
+      expect([g.name, g.count, g.open]).toEqual([text(`FASTFIGHTING.Settings.Group.${group}`), String(keys.length), false]);
+      expect(g.rows).toEqual(keys);
     }
   });
 
@@ -108,7 +115,7 @@ describe("the settings window", () => {
     const section = tab([`${MODULE_ID}.troubleshooting`, ...live.slice(1)]);
     groupSettings(section);
     expect(section.children.map(f => f.dataset.group)).toEqual(["live", "troubleshooting"]);
-    expect(section.children[0].children.slice(1).map(r => r.id)).toEqual(live.slice(1));
+    expect(read(section.children[0]).rows).toEqual(live.slice(1));
     groupSettings(section);
     expect(section.children.length).toBe(2);
   });
@@ -127,10 +134,22 @@ describe("the settings window", () => {
     globalThis.game.modules = new Map([["ff-helper", { title: "FastFighting Helper", active: true }]]);
     const { root, section, button } = window([{ id: "loreBoost" }, { id: "tiedStopsSpells" }]);
     helperGroup(null, root, section, "ff-helper");
-    const [fieldset] = section.children;
-    expect([fieldset.tag, fieldset.dataset.group]).toEqual(["fieldset", "helper"]);
-    expect(fieldset.children.map(c => c.id ?? c.textContent)).toEqual(["FastFighting Helper", "loreBoost", "tiedStopsSpells"]);
+    const [details] = section.children;
+    expect(details.dataset.group).toBe("helper");
+    // (Open at first: the system's helper's settings show by themselves.)
+    expect(read(details)).toMatchObject({ tag: "details", name: "FastFighting Helper", count: "2", rows: ["loreBoost", "tiedStopsSpells"], open: true });
     expect(button.attrs.hidden).toBe("");
+  });
+
+  test("a search opens every group; cleared, each is as it was", () => {
+    const groups = [{ open: false, dataset: {} }, { open: true, dataset: {} }];
+    const section = { querySelectorAll: () => groups };
+    openForSearch(section, "luck");
+    expect(groups.map(g => g.open)).toEqual([true, true]);
+    openForSearch(section, "lucky");
+    openForSearch(section, "");
+    expect(groups.map(g => g.open)).toEqual([false, true]);
+    expect(groups.map(g => g.dataset.searching)).toEqual([undefined, undefined]);
   });
 
   test("no helper, or one with no settings of its own: nothing", () => {

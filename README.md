@@ -331,7 +331,7 @@ The words read in biographies are in [keywords/](keywords/README.md), one file p
 
 ## Settings
 
-World settings, under **Configure Settings → FastFighting**, in groups. The planner overrides some for one battle: Seconds, Max rounds, Downed, After the fight, Opening, Surprise, the Encounter view's toggles, and the side settings (the Neutral lean, healing). The chances (Personality & luck, mostly) are hidden d100 rolls. Some are the game system's: its helper sets their range and default, and may word them for its rules (Max rounds, Lore-Collector advantage). A helper's own settings show at the bottom, under its name; **Systems without a helper** shows only when this system has none. [STATS_AND_FORMULAS_README.md](STATS_AND_FORMULAS_README.md) gives each number's range and what it changes.
+World settings, under **Configure Settings → FastFighting**, in groups that open and close (a search opens them all). The planner overrides some for one battle: Seconds, Max rounds, Downed, After the fight, Opening, Surprise, the Encounter view's toggles, and the side settings (the Neutral lean, healing). The chances (Personality & luck, mostly) are hidden d100 rolls. Some are the game system's: its helper sets their range and default, and may word them for its rules (Max rounds, Lore-Collector advantage). A helper's own settings show at the bottom, under its name; **Systems without a helper** shows only when this system has none. [STATS_AND_FORMULAS_README.md](STATS_AND_FORMULAS_README.md) gives each number's range and what it changes.
 
 ### Live battles
 

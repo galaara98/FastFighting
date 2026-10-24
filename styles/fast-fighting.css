@@ -328,9 +328,19 @@
 .ff-helper-notice.ff-helper-generic { border-color: #5bb6db; background: color-mix(in srgb, #5bb6db 12%, transparent); }
 .form-group.ff-disabled { opacity: 0.45; }
 
-/* ---------- The settings' groups (settings.js groupSettings) ---------- */
+/* ---------- The settings' groups (settings.js groupSettings): FastFighting's sections, as in the planner ---------- */
 /* A group with nothing left to show (a search, the loot settings a helper doesn't use) goes, heading and all. */
 .ff-settings-group:not(:has(.form-group:not([hidden]))) { display: none; }
+.ff-settings-group { margin: 0 0 8px; }
+.ff-settings-group > summary { font-size: var(--ff-text-lg); }
+.ff-settings-group > summary .ff-count { margin-left: auto; padding: 0 7px; border-radius: 999px; background: var(--ff-surface-2); color: var(--ff-text-dim); font-size: var(--ff-text-xs); font-weight: 700; }
+.ff-settings-group:not([open]) > summary:hover { background: var(--ff-surface-2); border-radius: 8px; }
+.ff-settings-rows { gap: 0; padding: 0 12px 4px; }
+.ff-settings-rows > .form-group { margin: 0; padding: 10px 0; border-top: 1px solid var(--ff-line); }
+.ff-settings-rows > .form-group:first-child { border-top: none; padding-top: 4px; }
+.ff-settings-rows > .form-group > label { font-weight: 700; }
+.ff-settings-rows .hint { margin-top: 4px; color: var(--ff-text-dim); font-size: var(--ff-text-sm); line-height: 1.35; }
+.ff-settings-rows input[type="checkbox"], .ff-settings-rows input[type="range"] { accent-color: var(--ff-accent); }
 
 /* ---------- The performance survey, at the foot of the settings ---------- */
 .ff-perf-survey { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: baseline; margin: 12px 0 4px; padding-top: 8px;

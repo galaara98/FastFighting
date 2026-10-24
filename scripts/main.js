@@ -3,7 +3,7 @@
  */
 import { MODULE_ID } from "./constants.js";
 import { registerLootAdvice } from "./foundry/loot-drop.js";
-import { registerSettings, groupSettings, helperGroup, systemDefaults } from "./settings.js";
+import { registerSettings, groupSettings, helperGroup, openForSearch, systemDefaults } from "./settings.js";
 import { buildApi, registerAdapter, getAdapter, helperModule } from "./api.js";
 import { BattlePlanner } from "./apps/battle-planner.js";
 import { DefaultsConfig } from "./apps/defaults-config.js";
@@ -354,6 +354,13 @@ Hooks.on("renderSettingsConfig", (app, element) => {
   // (Its settings and menus in their groups, each under its heading: settings.js; then the system's helper's own.)
   groupSettings(section);
   helperGroup(app, root, section, helperModule());
+  // (The window's search opens every group while it has something typed: settings.js openForSearch.)
+  const search = root.querySelector('input[type="search"]');
+  if ( search && !search.dataset.ffSearch ) {
+    search.dataset.ffSearch = "1";
+    search.addEventListener("input", () => openForSearch(root.querySelector(`section[data-category="${MODULE_ID}"]`) ?? section, search.value.trim()));
+  }
+  if ( search?.value.trim() ) openForSearch(section, search.value.trim());
   // (At its foot, the optional performance survey.)
   section.querySelector(".ff-perf-survey")?.remove();
   section.insertAdjacentHTML("beforeend", surveyHtml());

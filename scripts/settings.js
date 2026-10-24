@@ -138,13 +138,75 @@ export function groupSettings(section) {
   for ( const { group, keys } of settingsLayout() ) {
     const rows = keys.map(id => section.querySelector(`[name="${id}"], [data-key="${id}"]`)?.closest(".form-group")).filter(Boolean);
     if ( !rows.length ) continue;
-    const fieldset = document.createElement("fieldset");
-    fieldset.className = "ff-settings-group";
-    fieldset.dataset.group = group;
-    const legend = document.createElement("legend");
-    legend.textContent = game.i18n.localize(`FASTFIGHTING.Settings.Group.${group}`);
-    fieldset.append(legend, ...rows);
-    section.append(fieldset);
+    section.append(groupSection(group, game.i18n.localize(`FASTFIGHTING.Settings.Group.${group}`), rows));
+  }
+}
+
+/** Which groups this browser keeps open (a convenience, nothing more: none kept, the defaults). */
+const OPEN_KEY = `${MODULE_ID}.settingsOpen`;
+
+/** The groups open: as left last time, else none but the system's helper's. */
+function openGroups() {
+  try {
+    const kept = JSON.parse(globalThis.localStorage?.getItem(OPEN_KEY) ?? "null");
+    if ( Array.isArray(kept) ) return new Set(kept);
+  } catch ( err ) { /* nothing kept */ }
+  return new Set(["helper"]);
+}
+
+/** A group opened or closed: kept for next time. */
+function keepOpen(group, open) {
+  const groups = openGroups();
+  if ( open ) groups.add(group);
+  else groups.delete(group);
+  try {
+    globalThis.localStorage?.setItem(OPEN_KEY, JSON.stringify([...groups]));
+  } catch ( err ) { /* not kept */ }
+}
+
+/**
+ * A group of FastFighting's tab as one of its sections (as the planner's): a heading, its name with how many settings
+ * it holds, that opens and closes (kept for next time), and its rows.
+ */
+function groupSection(group, title, rows) {
+  const details = document.createElement("details");
+  details.className = "ff-section ff-settings-group";
+  details.dataset.group = group;
+  details.open = openGroups().has(group);
+  const summary = document.createElement("summary");
+  const chevron = document.createElement("i");
+  chevron.className = "fa-solid fa-chevron-right ff-chevron";
+  chevron.ariaHidden = "true";
+  const name = document.createElement("span");
+  name.className = "ff-section-title";
+  name.textContent = title;
+  const count = document.createElement("span");
+  count.className = "ff-count";
+  count.textContent = String(rows.length);
+  summary.append(chevron, name, count);
+  const body = document.createElement("div");
+  body.className = "ff-section-body ff-settings-rows";
+  body.append(...rows);
+  details.append(summary, body);
+  details.addEventListener?.("toggle", () => {
+    if ( !details.dataset.searching ) keepOpen(group, details.open);
+  });
+  return details;
+}
+
+/**
+ * A search in the settings window (its filter) opens every group, so no match hides in a closed one; cleared, each is
+ * as it was.
+ */
+export function openForSearch(section, query) {
+  for ( const details of section.querySelectorAll(".ff-settings-group") ) {
+    if ( query ) {
+      if ( !details.dataset.searching ) details.dataset.searching = details.open ? "open" : "closed";
+      details.open = true;
+    } else if ( details.dataset.searching ) {
+      details.open = details.dataset.searching === "open";
+      delete details.dataset.searching;
+    }
   }
 }
 
@@ -210,13 +272,7 @@ export function helperGroup(app, root, section, helperId) {
   const theirs = root.querySelector(`section[data-category="${helperId}"]`);
   const rows = [...(theirs?.querySelectorAll(".form-group") ?? [])];
   if ( !rows.length ) return;
-  const fieldset = document.createElement("fieldset");
-  fieldset.className = "ff-settings-group";
-  fieldset.dataset.group = "helper";
-  const legend = document.createElement("legend");
-  legend.textContent = game.modules.get(helperId)?.title ?? helperId;
-  fieldset.append(legend, ...rows);
-  section.append(fieldset);
+  section.append(groupSection("helper", game.modules.get(helperId)?.title ?? helperId, rows));
   root.querySelector(`nav [data-group="categories"][data-tab="${helperId}"]`)?.setAttribute("hidden", "");
   // (Its tab open when the window drew: FastFighting's instead, where its settings now are.)
   if ( theirs.classList.contains("active") ) app?.changeTab?.(MODULE_ID, "categories");

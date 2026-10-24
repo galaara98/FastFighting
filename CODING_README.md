@@ -49,6 +49,7 @@ FastFighting is split into a pure simulation engine, system **helpers**, and the
 - **A new group** goes in `SETTING_GROUPS` where it should show, with its heading in `languages/en.json` and its own table in README.
 - **The system's own:** `SYSTEM_SETTINGS` lists the core settings a helper may make its system's (Max rounds, Lore-Collector advantage). `systemDefaults` (main.js, ready) applies the helper's `settingDefaults()`: a number's range (within the bounds) and default, a checkbox's or a list's default, and its own name and hint. `rangeOf(key)` reads a number's back for plans, the fight and the planner's slider. A value the GM set stands, held to the range.
 - **A helper's own settings** (registered under its module id) show at the foot of FastFighting's tab under the helper's name (`helperGroup`, its tab's button hidden). **Systems without a helper** goes when the system has one.
+- **The groups' look:** each is a `details` section, as in the planner (`groupSection`: its name and how many settings it holds); which are open is kept in the browser (`localStorage` `fast-fighting.settingsOpen`; at first only the helper's). The window's search opens them all while it has text (`openForSearch`).
 - **Keys never change:** a stored value is found by its key alone, so a setting can move to another group, or along one, and keep its value.
 - `tests/settings-groups.test.js` checks that every setting and menu the window shows is in exactly one group, the groups' order, and their headings.
 
