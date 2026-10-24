@@ -14,8 +14,7 @@ import {
   prepareBattle, createRun, isStanding, isUp, enemiesOf, alliesOf, areEnemies, liveTier, liveTrait, currentAc,
   attackRoll, attackOptions, saveRoll, checkRoll, turnFor, moveToward, moveAway, bonusDamageParts,
   behaviorOf, edgeDistance, coverOf, inArea, movesNeeded, approach, canMove, moveTowardPoint, isMagical, upgradesSave, boostBonus, typical, sortOf, sizedUp, passedOver,
-  command, commandOf, heldOff, holdsBack, wish, groupKeyOf, chainOf, canCommand, regenOf, canHeal, systemRolled
-} from "./battle-state.js";
+  command, commandOf, heldOff, holdsBack, wish, groupKeyOf, chainOf, canCommand, regenOf, canHeal, systemRolled, holdsBackThisRound } from "./battle-state.js";
 import { sampleRunTactics } from "./playstyles.js";
 import { chooseTarget, bestOptionVs, scoreTargets, plainBlow, rathersMagic } from "./behavior/targeting.js";
 import { decideHeal, rescueOption, healScores } from "./behavior/healing.js";
@@ -550,7 +549,7 @@ function dealDamage(run, source, target, amount, { crit = false, types = null, b
       target.hp = 0;
       target.wasDowned = true;
       rules.onDropped(target, { crit, model, amount: rest, overflow: Math.max(0, rest - dealt), rng: run.rng });
-      if ( target.status === STATUS.DEAD && (holdsBack(run, source) || pullsBlow(run, source, action)) ) knockOut(run, target);
+      if ( target.status === STATUS.DEAD && sparesWith(run, source, action) ) knockOut(run, target);
       killsBeaten(run, source, target);
       regenerating(target);
     }
@@ -583,7 +582,7 @@ function dealDamage(run, source, target, amount, { crit = false, types = null, b
     if ( model === DOWNED_MODELS.OUT ) return;
     if ( run.neutral && source ) crossed(run, source, target, "harm", 1.5, logger(run));
     rules.onDropped(target, { crit, model, amount, overflow: amount, rng: run.rng });
-    if ( target.status === STATUS.DEAD && (holdsBack(run, source) || pullsBlow(run, source, action)) ) knockOut(run, target);
+    if ( target.status === STATUS.DEAD && sparesWith(run, source, action) ) knockOut(run, target);
     regenerating(target);
     const dead = target.status === STATUS.DEAD;
     if ( dead ) target.killerId = source?.id ?? target.killerId ?? null;
@@ -727,6 +726,19 @@ function pullsBlow(run, u, action) {
   if ( !u || !action || !run.prep.rules.pullsBlow?.(u, action) ) return false;
   const spare = Number(behaviorOf(u).spareDowned) || 0;
   return spare >= 1 || (spare > 0 && run.rng.chance(spare));
+}
+
+/**
+ * Does `source` knock its foe out with this blow instead of killing it: holding back (its answer to avoiding killing),
+ * or sparing the fallen (pullsBlow)? Where its system says which blows can be pulled (rules.pullsBlow: DCC a blunt or
+ * subduing melee blow, PF2e any Strike), only those, and holding back as decided for the round (the blow was struck to
+ * knock out, at what that costs: battle-state.js pullsThisRound); a spell that kills in DCC kills. Where the system
+ * doesn't say, any blow, as often as holding back says.
+ */
+function sparesWith(run, source, action) {
+  if ( !run.prep.rules.pullsBlow ) return holdsBack(run, source);
+  if ( !run.prep.rules.pullsBlow(source, action) ) return false;
+  return holdsBackThisRound(run, source) || pullsBlow(run, source, action);
 }
 
 /** Knocked out, not killed: down at 0 hit points, unconscious and stable (the system may say more: rules.knockOut). */

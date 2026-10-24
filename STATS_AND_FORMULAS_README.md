@@ -1654,15 +1654,20 @@ Decides when a killing blow knocks out instead, and who is spared after the figh
   least its sway.
 - Holds back with chance avoidKilling ÷ 100 × s (default 90, range 50–90): 90% for Spare them, ≈59% for Tie them up,
   ≈30% for Leave or Rob.
-- Each blow that would kill: if it holds back, the foe is knocked out (down at 0, stable). A pill that spares the downed
-  (Moralist 1, Peacekeeper 1, Diplomat 0.5) also pulls a killing blow where the system allows (5e melee, PF2e
-  nonlethal, DCC subdual), with chance its share.
+- Each blow that would kill: if it holds back, the foe is knocked out (down at 0, stable). Where the system says which
+  blows can be pulled (PF2e any Strike, DCC a blunt or subduing melee blow, 5e melee), only those: holding back is
+  decided once a round, and a blow it can't pull (a DCC spell) kills. A pill that spares the downed (Moralist 1,
+  Peacekeeper 1, Diplomat 0.5) also pulls a killing blow the system allows, with chance its share.
+- Pulling its blows this round (holding back, or a Moralist's sparing every time): a blow it can pull × 1.5 and one it
+  can't × 0.5 when it picks how to strike, so it reaches for its fists, a sap, a club; and each pulled blow at what the
+  system says it costs (PF2e −2 with a weapon without the nonlethal trait, nothing for fists or a nonlethal weapon).
 - Choosing whom to strike, decided once a round: holding back, it skips finishing the downed.
 - After the fight, decided once: it spares the fallen if it holds back, answered Spare them, or has a spare pill share ≥
   0.5. It finishes them if it answered Finish them, or has Cruel's finishing streak without a sparing one or an answer.
   Else it leaves them to fate. One sparer saves a fallen foe from every finisher.
 
-Code: `engine/battle-state.js` `holdsBack`, `holdsBackThisRound`; `engine/simulator.js` `pullsBlow`, `mercyOf`,
+Code: `engine/battle-state.js` `holdsBack`, `holdsBackThisRound`, `pullsThisRound`, `attackRoll`; `engine/behavior/targeting.js`
+`PULLED`; `engine/simulator.js` `pullsBlow`, `sparesWith`, `mercyOf`,
 `dealWithTheFallen`; `engine/tactics.js` TACTIC_WISHES.
 
 ### Piles, meat and hunger

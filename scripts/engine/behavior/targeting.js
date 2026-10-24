@@ -8,7 +8,7 @@
  *   Mastermind   side-wide focus target; ruthless ones finish off the downed
  */
 import { STATUS, TACTICAL, NEUTRAL_PARTY } from "../../constants.js";
-import { enemiesOf, isStanding, liveTier, liveTrait, movesNeeded, behaviorOf, heldOff, holdsBackThisRound, regenOf, edgeDistance, isExposed } from "../battle-state.js";
+import { enemiesOf, isStanding, liveTier, liveTrait, movesNeeded, behaviorOf, heldOff, holdsBackThisRound, pullsThisRound, regenOf, edgeDistance, isExposed } from "../battle-state.js";
 import { meanPart } from "../dice.js";
 import { isAnimalistic } from "./animal.js";
 import { hasTrait } from "../conditions.js";
@@ -39,6 +39,11 @@ function invited(run, u) {
 
 /** What a plain blow is worth to one that would rather its magic (rathersMagic), against what it would be. */
 const PLAIN_BLOW = 0.5;
+/**
+ * Holding back from killing (its answer to avoiding killing, this round): what a blow its system lets it pull is worth
+ * against what it would be (blunt, subduing, nonlethal: rules.pullsBlow), and one it can't pull.
+ */
+const PULLED = Object.freeze({ can: 1.5, cannot: 0.5 });
 
 /** A plain blow: a weapon or a fist, costing nothing it keeps count of (not a spell, not a power with uses). */
 export const plainBlow = action => action?.kind === "strike" && !action.resource && !Number.isFinite(action.uses);
@@ -82,6 +87,8 @@ export function bestOptionVs(run, u, t, attacksMade = 0, turn = null) {
   let wary = null; // worked out only if some option means walking
   let magicFirst = null; // worked out only if some option is a plain blow
   let fistsLast = null; // worked out only if some option is unarmed
+  // (Pulling its blows, where its system says which it may pull: those it reaches for first.)
+  const pulling = pullsThisRound(run, u);
   const options = [];
   for ( const action of u.prep.offense ) {
     if ( !hasUses(u, action) ) continue;
@@ -107,6 +114,7 @@ export function bestOptionVs(run, u, t, attacksMade = 0, turn = null) {
     let weighted = perAction * styleWeight(tactics, action) * willingness(run, u, action);
     // (One that would rather its magic: a plain blow is worth half to it, so its spells win where both fit.)
     if ( plainBlow(action) && (magicFirst ??= rathersMagic(u)) ) weighted *= PLAIN_BLOW;
+    if ( pulling ) weighted *= rules.pullsBlow(u, action) ? PULLED.can : PULLED.cannot;
     // Walking off from another foe invites a free swing: the wary would rather use what reaches from here.
     if ( moves > 0 && (wary ??= !!run.prep.rules.opportunity && isWary(run, u) && threats(run, u, t).length > 0) ) weighted *= 0.3;
     // Walking into a foe's aura to get there: what the aura would cost it, weighed against the blow (auras.js).

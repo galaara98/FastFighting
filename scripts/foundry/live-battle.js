@@ -82,7 +82,7 @@ function systemRollKinds(adapter) {
   if ( (out.includes("strike") || out.includes("damage") || out.includes("card")) && offers(adapter, "applyDamageCard") ) out.push("apply");
   return out;
 }
-import { isStanding, canMove, groupKeyOf } from "../engine/battle-state.js";
+import { isStanding, canMove, groupKeyOf, pullsThisRound } from "../engine/battle-state.js";
 import { means, dealDC, pitchOf, dealInsight, dealAnswer, mayToll, talkRange } from "../engine/behavior/deals.js";
 
 const loc = key => game.i18n.localize(key);
@@ -1283,7 +1283,10 @@ async function rollTurnStrike({ unitId, targetId, action, attackNumber, advantag
   const target = docOf(targetId);
   if ( !doc || !target ) return null;
   const seen = new Set(game.messages.keys());
-  const raw = await adapter.rollStrike(doc, { action, target, attackNumber: Math.max(0, Number(attackNumber) || 0), advantage: Math.sign(Number(advantage) || 0), secret: secretRoll(doc) });
+  // (A blow pulled to knock out: the system's roll says so, at what it costs there: battle-state.js pullsThisRound.)
+  const u = battle.run.byId.get(unitId);
+  const pulled = !!u && pullsThisRound(battle.run, u) && !!battle.rules.pullsBlow?.(u, action);
+  const raw = await adapter.rollStrike(doc, { action, target, attackNumber: Math.max(0, Number(attackNumber) || 0), advantage: Math.sign(Number(advantage) || 0), secret: secretRoll(doc), pulled });
   stage?.records.push(...rollRecords(raw, doc));
   const out = strikeRolled(raw);
   if ( !out?.damage ) return out;

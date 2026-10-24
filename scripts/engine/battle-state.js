@@ -582,6 +582,16 @@ export function holdsBackThisRound(run, u) {
   return u.holdingBack;
 }
 
+/**
+ * Does u pull its blows this round, striking to knock out rather than kill: holding back (holdsBackThisRound), or one
+ * that spares the fallen every time (a Moralist)? Only where its system says which blows can be pulled (rules.pullsBlow);
+ * those it strikes with then cost what the system says (rules.pullPenalty: PF2e's -2 for a lethal weapon).
+ */
+export function pullsThisRound(run, u) {
+  if ( !run.prep.rules.pullsBlow || !u ) return false;
+  return holdsBackThisRound(run, u) || (Number(behaviorOf(u).spareDowned) || 0) >= 1;
+}
+
 /** Playstyle-driven behavior chances (see engine/playstyles.js): its own, leaning toward its leader's on a turn it follows. */
 export function behaviorOf(u) {
   return u.turnBehavior ?? u.ownBehavior ?? u.spec.behavior ?? {};
@@ -1079,6 +1089,8 @@ export function attackRoll(run, u, target, action, attacksMade = 0) {
   const rules = run.prep.rules;
   let bonus = (action.bonus ?? 0) + rules.attackPenalty(action, attacksMade);
   if ( u.wavering ) bonus -= 1;
+  // (A blow pulled to knock out, what its system says that costs: PF2e's -2 with a lethal weapon.)
+  if ( rules.pullPenalty && pullsThisRound(run, u) && rules.pullsBlow(u, action) ) bonus += Number(rules.pullPenalty(u, action)) || 0;
   const cmd = commandOf(run, u);
   if ( cmd && cmd.unit !== u ) bonus += cmd.leadership.attack;
   bonus += studyBonus(u, target);
