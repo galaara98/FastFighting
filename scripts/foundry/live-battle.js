@@ -1198,7 +1198,8 @@ const stageGrid = stage => (stage.grid ??= currentPathGrid() ?? pathGridFor([...
 async function playSoFar(events, stage) {
   const fresh = events.slice(stage.played);
   stage.played = Math.max(stage.played, events.length);
-  if ( fresh.some(e => MOVING.has(e.type)) ) {
+  // (A door opened where it stood, with no move: opened on the map all the same, or the scene, read again, shuts it.)
+  if ( fresh.some(e => MOVING.has(e.type) || (e.type === "door" && e.success)) ) {
     if ( setting("playOnMap") ) await playMoves(fresh, stageDocs(stage), stageGrid(stage), stage.doorsOpened, battle.scene, { speed: moveSpeed() });
     else await playMoves(fresh, stageDocs(stage), null, stage.doorsOpened, battle.scene, { instant: true });
   }
@@ -3366,13 +3367,16 @@ const cardsOf = into => (into && into === battle?.pc ? (into.rollCards ??= []) :
 /* -------------------------------------------- */
 
 /**
- * Is a creature's name kept from the players in the story? Not a player's own; not one whose nameplate shows to
+ * Is a creature's name kept from the players in the story? Not a player's own, nor a player character the GM runs (the
+ * party's: Kingmaker's companions); not one whose nameplate shows to
  * everyone (Always, Hover). One the GM marked "Keep its name secret" (its FastFighting tab) always is. Where the system
  * lets nameplates decide (namesFollowNameplates: PF2e's own setting), any other is, as the system's cards have it;
  * elsewhere, until a player's character has seen it this fight (`u.partySaw`: senses.js noteSeen).
  */
 function nameHidden(doc, u = null, byNameplate = nameplatesDecide()) {
   if ( !doc || doc.actor?.hasPlayerOwner ) return false;
+  u ??= battle?.run.units.find(x => tokenIdOf(x) === doc.id) ?? null;
+  if ( u?.spec.kind === "pc" ) return false;
   if ( doc.actor?.getFlag(MODULE_ID, "secretName") ) return true;
   const modes = CONST.TOKEN_DISPLAY_MODES;
   if ( [modes.ALWAYS, modes.HOVER].includes(doc.displayName) ) return false;
