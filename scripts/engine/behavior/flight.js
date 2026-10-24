@@ -8,7 +8,8 @@
  *    (more than twice), it may go, the likelier the heavier (lifeOverLoot). Only where leadership counts in the fight,
  *    and a creature alone is nobody's follower.
  *  - Off with the prize: an NPC that has taken something this fight (stolen, robbed off the fallen, picked up off the
- *    ground, paid to it) wants away to keep it: the greedier, a Thief, or hurt, the likelier (prizeFlight).
+ *    ground, paid to it) wants away to keep it: the bigger the haul against what it had of its own, the greedier, a
+ *    Thief, or hurt, the likelier (prizeFlight). A scrap hardly tempts it; a dead boss's share of the team's cash does.
  * Pure: no Foundry globals.
  */
 import { STATUS, HOSTILE_GROUPS, TACTICAL, clamp } from "../../constants.js";
@@ -22,8 +23,8 @@ const MOST = Object.freeze({ life: 0.3, prize: 0.5 });
 const MUCH_MORE = 2;
 /** What its life weighs unhurt and not outnumbered, before its timidity (the rest is the danger it's in). */
 const LIFE_FLOOR = 0.2;
-/** Off with the prize: the chance's parts. */
-const PRIZE = Object.freeze({ base: 0.1, selfish: 1 / 150, thief: 0.15, hurt: 0.15 });
+/** Off with the prize: the chance's parts (haul: at most, for a haul far beyond what it had; half that, for as much). */
+const PRIZE = Object.freeze({ base: 0.04, haul: 0.24, selfish: 1 / 150, thief: 0.15, hurt: 0.15 });
 
 /** An NPC that thinks for itself, on its feet and in the fight, not on its way already. */
 const ownMind = u => u.spec.kind !== "pc" && !u.spec.hazard && !u.summoner && isStanding(u) && !u.leaving && !u.controlledBy && notDumb(u);
@@ -84,9 +85,13 @@ export function prizeOf(run, u) {
 
 /** Off with the prize: the chance this turn that an NPC with something taken this fight leaves to keep it. */
 export function prizeFlight(run, u) {
-  if ( !ownMind(u) || !(prizeOf(run, u) > 0) ) return 0;
+  const prize = ownMind(u) ? prizeOf(run, u) : 0;
+  if ( !(prize > 0) ) return 0;
   const thief = (Number(behaviorOf(u).steal) || 0) > 0;
-  const chance = PRIZE.base + (liveTrait(run, u, "selfish") - 50) * PRIZE.selfish + (thief ? PRIZE.thief : 0) + (hpFraction(u) < 0.5 ? PRIZE.hurt : 0);
+  // (How big a haul it is to u: against what it had of its own.)
+  const haul = prize / (prize + Math.max(1, remaining(u).own));
+  const chance = PRIZE.base + PRIZE.haul * haul + (liveTrait(run, u, "selfish") - 50) * PRIZE.selfish + (thief ? PRIZE.thief : 0)
+    + (hpFraction(u) < 0.5 ? PRIZE.hurt : 0);
   return clamp(chance, 0, MOST.prize);
 }
 

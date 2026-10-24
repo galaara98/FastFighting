@@ -620,8 +620,9 @@ with morale off (the world's or its side's), nor for one that stands its ground.
   - loot = Selfish ÷ 100 × its side's share of the standing hit points × (1 if a foe carries anything, else 0.5);
   - life over twice the loot: it goes with chance min(0.3, (life − 2 × loot) ÷ 2) a turn.
 - **Off with the prize:** an NPC that has something taken this fight and still has it (stolen, robbed off the fallen,
-  picked up off the ground, paid to it) goes with chance clamp(0.1 + (Selfish − 50) ÷ 150 + 0.15 for a Thief + 0.15
-  under half its hit points, 0, 0.5) a turn.
+  picked up off the ground, paid to it) goes with chance clamp(0.04 + 0.24 × haul + (Selfish − 50) ÷ 150 + 0.15 for a
+  Thief + 0.15 under half its hit points, 0, 0.5) a turn; haul = taken ÷ (taken + its own money), so a scrap adds
+  next to nothing, as much as it had adds 0.12, a fortune nearly 0.24.
 
 Example: a leaderless kobold (Brave 25, Selfish 40) at a quarter of its HP, its side holding a third of the hit points,
 the Friendly Team carrying coin: life 0.75 × 0.9 = 0.68, loot 0.4 × 0.33 = 0.13; chance min(0.3, 0.21) = 21% a turn.
@@ -1702,10 +1703,11 @@ Code: `engine/behavior/forage.js` `initForage`, `forageWishes`, `decideForage`, 
 
 Search: tie up, tied up, bound, prisoner, Tie them up, rob the fallen, Rob them, loot, Foes who fall, free a friend, untie
 
-Decides who ties up or robs a downed foe, mid-fight and after.
+Decides who ties up or robs a downed foe, or a dead creature's body, mid-fight and after.
 
 - Wish per fallen foe it can tell is there (answer Finish, Tie or Rob): 30; 62 when no standing foe is beside it (5
-  ft). With no map every foe counts as beside it, so it waits for the fight to end. Pills keen on it (10+) do it after
+  ft). Robbing, + 20 × worth ÷ (worth + its own money), worth the body's coin and gear (half the 20 when the body holds
+  as much as it has). One that robs also robs its own team's dead of the team's cash they fell with, at the same wish. With no map every foe counts as beside it, so it waits for the fight to end. Pills keen on it (10+) do it after
   a fight with no answer of their own.
 - Mid-fight it acts only when that wish leads, at a foe it can reach within one move this turn. Each costs the
   system's bind or loot cost, else one basic action, beside the foe.
@@ -1713,9 +1715,10 @@ Decides who ties up or robs a downed foe, mid-fight and after.
   captor tends it after the fight.
 - **Robbed**, once per robber: the whole purse (d10% where its side pools money), else a random carried item, else (not
   a PC) what it wields or wears. A PC's things go only on a d100 at or under theftLuck (default 29).
+- **A dead creature** (not a PC): its body is robbed as the fallen are, the share of its team's cash it fell with on it.
 - **A dead PC** whose table leaves a loot token (loot setting not "Do nothing"): robbed as the fallen are, out of the
   loot token (a copy of its things: anything, wielded or worn too), with no luck check.
-- After the fight: for each fallen foe, finishers act (unless someone spares it; a PC only on the execute luck); then a
+- After the fight (a dead creature's body left to the table: the planner's Loot): for each fallen foe, finishers act (unless someone spares it; a PC only on the execute luck); then a
   captor ties it up (and it counts as spared); then a robber robs it.
 
 Code: `engine/behavior/fallen.js` `fallenWishes`, `decideFallen`, `bind`, `rob`, `stayBound`; `engine/simulator.js`

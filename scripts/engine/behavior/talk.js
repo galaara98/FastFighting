@@ -131,7 +131,8 @@ export function remaining(t) {
     const n = (i.quantity ?? 1) - (gone.get(i.id) ?? 0);
     return n <= 0 ? [] : [i.quantity === undefined || n === i.quantity ? i : { ...i, quantity: n }];
   });
-  const own = Math.max(0, (v.money ?? 0) - spent);
+  // (Dead, its share of its team's purse is on it too: dropShare.)
+  const own = Math.max(0, (v.money ?? 0) + (t.purseDrop ?? 0) - spent);
   const purse = purseLeft(t);
   return {
     money: own + purse,

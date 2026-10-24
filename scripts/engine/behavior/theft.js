@@ -49,11 +49,22 @@ export function robbable(t, { remains = false } = {}) {
  */
 export const leftRemains = (run, t) => t.status === STATUS.DEAD && t.spec.kind === "pc" && !!run.prep.options.remains;
 
-/** A fallen foe to rob: down or tied up (or a dead player's character's loot token), with something on it to take. */
+/**
+ * A fallen one to rob: down or tied up, or dead (a creature's body; a player's character's, only its loot token), with
+ * something on it to take.
+ */
 export function lootable(run, t) {
   const remains = leftRemains(run, t);
-  return (t.status === STATUS.DOWN || t.status === STATUS.BOUND || remains) && robbable(t, { remains });
+  const body = t.status === STATUS.DEAD && t.spec.kind !== "pc";
+  return (t.status === STATUS.DOWN || t.status === STATUS.BOUND || remains || body) && robbable(t, { remains });
 }
+
+/**
+ * Is t one of u's own team, dead, with its share of their team's purse still on it (talk.js dropShare)? One who robs
+ * the fallen takes it as readily as a foe's.
+ */
+export const teamCash = (u, t) => t !== u && t.status === STATUS.DEAD && !!t.purse && t.purse === u.purse
+  && (t.purseDrop ?? 0) > 0 && remaining(t).own > 0;
 
 /** Is u's side clearly winning: more of them standing, or the other side has lost noticeably more? */
 function winning(run, u) {

@@ -196,3 +196,33 @@ describe("the desires", () => {
     expect(t(65, 25, 80)).toBe("leave");
   });
 });
+
+describe("the dead's bodies", () => {
+  test("a dead creature's body is there to rob, the share of its team's cash it fell with on it; a dead PC's only by its loot token", async () => {
+    const { lootable } = await import("../scripts/engine/behavior/theft.js");
+    const { remaining } = await import("../scripts/engine/behavior/talk.js");
+    const { run, me, down } = oneDown();
+    Object.assign(down, { status: "dead", purseDrop: 300 });
+    expect(lootable(run, down)).toBe(true);
+    expect(remaining(down).own).toBe(40 + 300);
+    me.status = "dead";
+    expect(lootable(run, me)).toBe(false);
+  });
+
+  test("one who robs the fallen wants a rich body more, and its own team's dead for the cash they fell with", async () => {
+    const { teamCash } = await import("../scripts/engine/behavior/theft.js");
+    const { richness } = await import("../scripts/engine/behavior/fallen.js");
+    const { run, down } = oneDown();
+    const lurker = run.byId.get("lurker");
+    const poor = { ...down, purseDrop: 0, concessions: [], spec: { ...down.spec, valuables: { money: 0 } } };
+    expect(richness(lurker, down)).toBeGreaterThan(richness(lurker, poor));
+    expect(richness(lurker, down)).toBeLessThanOrEqual(20);
+    // (Its teammate dead with the team's cash on it: its to take. Without the cash, or alive, not.)
+    const purse = { key: "hostile", money: 1000, members: [down, lurker], shares: { bandit: 1, lurker: 1 }, totalShares: 2 };
+    Object.assign(down, { status: "dead", purse, purseDrop: 500 });
+    lurker.purse = purse;
+    expect(teamCash(lurker, down)).toBe(true);
+    down.purseDrop = 0;
+    expect(teamCash(lurker, down)).toBe(false);
+  });
+});

@@ -52,7 +52,7 @@ import { STATUS, TACTICAL, ADHD, clamp } from "../../constants.js";
 import { areEnemies, isStanding, liveTrait, liveTier, enemiesOf, alliesOf, sizedUp, command, commandOf, refusesToHelp, movesNeeded, edgeDistance, canMove, hpFraction, dangerScore } from "../battle-state.js";
 import { perceives, apparentHealth, knowsOf } from "./senses.js";
 import { seemsFoe } from "./neutral.js";
-import { lootable, leftRemains } from "./theft.js";
+import { lootable, leftRemains, teamCash } from "./theft.js";
 import { ownHolds, isBound, freeable, known, remediesOf, bears } from "./holds.js";
 import { hasTrait, profiled } from "../conditions.js";
 import { hasUses, threatOf } from "./evaluate.js";
@@ -349,7 +349,8 @@ function relevant(run, u, kind, t) {
     // (Off the map: while it means to go.)
     case "leave": return t === u && t.status === STATUS.STANDING && !!u.leaving;
     case "free": return t !== u && !areEnemies(run, u, t) && !refusesToHelp(run, u, t) && !!freeable(run, t);
-    case "rob": return foe() && lootable(run, t) && !u.robbedFrom?.has(t.id);
+    // (Its own team's dead too, for the cash they fell with: theft.js teamCash.)
+    case "rob": return (foe() || teamCash(u, t)) && lootable(run, t) && !u.robbedFrom?.has(t.id);
     // A deal: with one on its feet and still here, tried once each (behavior/deals.js dealable says the rest).
     case "bribe": case "extort": case "scare": case "toll": return t !== u && t.status === STATUS.STANDING && !t.leaving && !u.dealt?.has(t.id);
     // (Wanting a friend's buff is for the friend to act on: see heed.)

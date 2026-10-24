@@ -28,7 +28,7 @@ import { STATUS, THEFT_LUCK } from "../../constants.js";
 import { isStanding, enemiesOf, movesNeeded, canMove } from "../battle-state.js";
 import { mind, think, styleOf, wantsKind } from "./desire.js";
 import { remaining } from "./talk.js";
-import { lootable, leftRemains } from "./theft.js";
+import { lootable, leftRemains, teamCash } from "./theft.js";
 import { perceives } from "./senses.js";
 import { mainPool, normalizeCost } from "../turn.js";
 import { isBound, freeable, untieCost, tryHold, release } from "./holds.js";
@@ -42,6 +42,8 @@ const FALLEN_FREE = 32;
 const KEEN = 10;
 /** Right beside it. */
 const BESIDE = Object.freeze({ reach: 5 });
+/** The most what's on a body adds to the wish to rob it (richness). */
+const RICH_MOST = 20;
 
 /** Its answer to "Foes who fall" in this fight (its own, or its party's: playstyles.js sampleRunTactics), or null. */
 const answerOf = u => u.tac?.fallen ?? null;
@@ -62,8 +64,21 @@ export function robsTheFallen(u) {
 }
 
 /**
+ * How much more u wants to rob t for what's on it: its coin and what it carries (a creature's gear too), against what u
+ * has itself. Up to RICH_MOST; half that when the two are even. A body that fell with its team's cash tempts the poor.
+ */
+export function richness(u, t) {
+  const v = remaining(t);
+  const gear = t.spec.kind !== "pc" ? [...v.wielded, ...v.worn] : [];
+  const worth = v.own + [...v.stowed, ...gear].reduce((sum, i) => sum + (Number(i.value) || 0) * (i.quantity ?? 1), 0);
+  if ( worth <= 0 ) return 0;
+  return RICH_MOST * worth / (worth + Math.max(1, remaining(u).own));
+}
+
+/**
  * Its answer's wishes this turn (deliberate): to finish off, tie up or rob each fallen foe it can tell is there, as
- * strongly as it's free to.
+ * strongly as it's free to (robbing, the more for what's on it: richness). One who robs the fallen robs its own team's
+ * dead of the cash they fell with too (theft.js teamCash).
  */
 export function fallenWishes(run, u) {
   const kind = { finish: "hurt", tie: "bind", rob: "rob" }[answerOf(u)];
@@ -76,7 +91,11 @@ export function fallenWishes(run, u) {
     const fits = kind === "hurt" ? t.status === STATUS.DOWN && !t.stable
       : kind === "bind" ? t.status === STATUS.DOWN && !isBound(t)
         : lootable(run, t) && !u.robbedFrom?.has(t.id);
-    if ( fits ) think(u, kind, t.id, level);
+    if ( fits ) think(u, kind, t.id, level + (kind === "rob" ? richness(u, t) : 0));
+  }
+  if ( kind !== "rob" ) return;
+  for ( const t of run.units ) {
+    if ( teamCash(u, t) && !u.robbedFrom?.has(t.id) && perceives(run, u, t) ) think(u, "rob", t.id, level + richness(u, t));
   }
 }
 

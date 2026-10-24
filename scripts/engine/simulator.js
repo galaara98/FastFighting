@@ -4728,12 +4728,12 @@ function gaveOf(u) {
 }
 
 /**
- * What u has on it at the end, in the smallest coin: its own coin, everything it carries, wields or wears, and the share
- * of its team's purse it fell with (talk.js dropShare).
+ * What u has on it at the end, in the smallest coin: its own coin (the share of its team's purse it fell with too:
+ * talk.js remaining), and everything it carries, wields or wears.
  */
 function worthOf(u) {
   const v = goodsLeft(u);
-  return v.own + (u.purseDrop ?? 0) + [...v.stowed, ...v.wielded, ...v.worn].reduce((sum, i) => sum + (Number(i.value) || 0) * (i.quantity ?? 1), 0);
+  return v.own + [...v.stowed, ...v.wielded, ...v.worn].reduce((sum, i) => sum + (Number(i.value) || 0) * (i.quantity ?? 1), 0);
 }
 
 /** The players' characters, for whom they've seen (senses.js noteSeen). */

@@ -87,6 +87,16 @@ describe("off with the prize", () => {
     expect(prizeOf(run, a)).toBe(0);
   });
 
+  test("the bigger the haul against what it had of its own, the likelier it goes", () => {
+    const even = { traits: traits({ selfish: 50 }), valuables: { money: 100 } };
+    const run = fight([hero(), goblin("a", even), goblin("b", even)]);
+    const [h, a, b] = [run.byId.get("hero"), run.byId.get("a"), run.byId.get("b")];
+    h.concessions = [{ kind: "money", amount: 2, how: "loot", to: "a" }, { kind: "money", amount: 8000, how: "loot", to: "b" }];
+    // (A scrap barely tempts it; a fortune nearly the most the haul adds.)
+    expect(prizeFlight(run, b) - prizeFlight(run, a)).toBeGreaterThan(0.2);
+    expect(prizeFlight(run, a)).toBeLessThan(0.1);
+  });
+
   test("in its turn: it makes off, alone; one that stands its ground stays", () => {
     const run = fight([hero(), goblin("a", { traits: traits({ selfish: 95 }) }), goblin("b", { ...at(40) })]);
     run.byId.get("hero").concessions = [{ kind: "money", amount: 40, how: "theft", to: "a" }];
