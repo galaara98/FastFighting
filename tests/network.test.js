@@ -72,6 +72,19 @@ describe("the map of minds", () => {
     expect(net.setAside).toEqual([{ type: "desire", id: "hero", kind: "hurt", targetId: "foe" }]);
   });
 
+  test("what the GM set that it can't act on yet: there from the moment it's set, waiting; a bystander's too", () => {
+    const run = scene();
+    // (Healing an unhurt foe: nothing to act on. The guard hasn't joined the fight.)
+    applyFact(run, { kind: "want", id: "hero", desire: "heal", targetId: "foe", level: 40 });
+    applyFact(run, { kind: "want", id: "guard", desire: "hurt", targetId: "hero", level: 70 });
+    const net = networkOf(run);
+    expect(linksOf(net, "desire", "hero").find(l => l.kind === "heal")).toMatchObject({ to: "foe", gm: true, waiting: true, level: 40 });
+    expect(linksOf(net, "desire", "guard")).toEqual([expect.objectContaining({ kind: "hurt", to: "hero", gm: true, waiting: true })]);
+    // (One it can act on: as ever, no waiting.)
+    applyFact(run, { kind: "want", id: "hero", desire: "hurt", targetId: "foe", level: 80 });
+    expect(linksOf(networkOf(run), "desire", "hero").find(l => l.kind === "hurt").waiting).toBeUndefined();
+  });
+
   test("a talk says how it would put it: its best pitch", () => {
     const run = scene();
     const hero = run.byId.get("hero");

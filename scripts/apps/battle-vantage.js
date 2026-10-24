@@ -33,7 +33,7 @@ import { blink, keepTyping } from "./blink.js";
 import { sceneEncounter, encounterNumber } from "../foundry/persistence.js";
 import { clockText } from "../foundry/away.js";
 import {
-  liveBattle, continueBattle, rewind, rewindEncounter, beginEncounter, endEncounter, playCurrent, answerDamage, setApplyDamage, systemAppliesText, waitingReaction, endReaction, sheetNow, liveFact, dropHeldFact, setNpcReactions, setPlayThrough, finishReview,
+  liveBattle, playedElsewhere, continueBattle, rewind, rewindEncounter, beginEncounter, endEncounter, playCurrent, answerDamage, setApplyDamage, systemAppliesText, waitingReaction, endReaction, sheetNow, liveFact, dropHeldFact, setNpcReactions, setPlayThrough, finishReview,
   waitingDeals, openDealReview, liveReinforce, reinforcementsLeft,
   waitingOnGm, suggestedSpotlight, spotlightNext, settleBattle, setAutomated, liveCondition, liveMind, bringIntoFight, tokenIdOf, fastFight, fastOffered, fastRunning,
   markInUse
@@ -334,6 +334,9 @@ export class BattleVantage extends HandlebarsApplicationMixin(ApplicationV2) {
     const { context, graph, focus } = battleContext(b, this.#focus);
     this.#graph = graph;
     this.#focus = focus;
+    // (Another GM's browser plays it: this window changes nothing, and says whose it is.)
+    const other = playedElsewhere(sceneEncounter(canvas.scene));
+    context.elsewhere = other ? fmt("FASTFIGHTING.Battle.PlayedElsewhere", { name: other.name }) : null;
     if ( context.none ) return context;
     // (What holds the battle up. One just come brings the Waiting tab to the front.)
     const blocking = context.queue.filter(q => q.blocking);
@@ -974,7 +977,7 @@ function networkView(b, current, focusId, name) {
     return t ? (t.name || loc(`FASTFIGHTING.Thing.${has(`FASTFIGHTING.Thing.${t.type}`) ? t.type : "object"}`)) : name(id);
   };
   const nodeId = (l, end) => (l.type === "goal" && things.has(l[end]) ? `thing:${l[end]}` : l[end]);
-  const held = gm => (gm ? ` · ${loc("FASTFIGHTING.Battle.Net.Held")}` : "");
+  const held = (gm, waiting = false) => `${gm ? ` · ${loc("FASTFIGHTING.Battle.Net.Held")}` : ""}${waiting ? ` · ${loc("FASTFIGHTING.Battle.Net.NotYet")}` : ""}`;
   const lasts = rounds => (rounds ? ` · ${roundsText(rounds)}` : "");
   // (Where a condition is kept: on the sheet, if its system's sheet shows it; else by FastFighting.)
   const kept = (key, id) => loc(adapter?.sheetCarries?.(key, docOf(id)?.actor) ? "FASTFIGHTING.Battle.OnSheet" : "FASTFIGHTING.Battle.CoreOnly");
@@ -1001,8 +1004,8 @@ function networkView(b, current, focusId, name) {
     if ( l.type === "desire" ) {
       const what = l.kind === "talk" && has(`FASTFIGHTING.Battle.Pitch.${l.pitch}`) ? loc(`FASTFIGHTING.Battle.Pitch.${l.pitch}`) : loc(`FASTFIGHTING.Desire.Kind.${l.kind}`);
       push(l, {
-        cls: `is-desire d-${l.kind} w-${l.intensity}`, icon: icon("desire", l.kind), text: shown(l),
-        tip: `${name(l.from)}: ${fmt("FASTFIGHTING.Battle.Desire", { what, who: name(l.to), how: band(l.level) })}${held(l.gm)}`,
+        cls: `is-desire d-${l.kind} w-${l.intensity}${l.waiting ? " is-waiting" : ""}`, icon: icon("desire", l.kind), text: shown(l),
+        tip: `${name(l.from)}: ${fmt("FASTFIGHTING.Battle.Desire", { what, who: name(l.to), how: band(l.level) })}${held(l.gm, l.waiting)}`,
         adjust: { t: "desire", id: l.from, kind: l.kind, targetId: l.to, intensity: l.intensity },
         ...stepsOf(l.intensity, l.most, { remove: "FASTFIGHTING.Battle.Net.SetAside" })
       });
@@ -1083,8 +1086,8 @@ function networkView(b, current, focusId, name) {
       });
     } else if ( m.type === "desire" ) {
       markOn(m.on, {
-        id: `d:${m.kind}`, cls: `is-desire d-${m.kind}`, icon: icon("desire", m.kind), text: String(m.intensity),
-        tip: `${fmt("FASTFIGHTING.Battle.Desire", { what: loc(`FASTFIGHTING.Desire.Kind.${m.kind}`), who: loc("FASTFIGHTING.Battle.Net.Itself"), how: band(m.level) })}${held(m.gm)}`,
+        id: `d:${m.kind}`, cls: `is-desire d-${m.kind}${m.waiting ? " is-waiting" : ""}`, icon: icon("desire", m.kind), text: String(m.intensity),
+        tip: `${fmt("FASTFIGHTING.Battle.Desire", { what: loc(`FASTFIGHTING.Desire.Kind.${m.kind}`), who: loc("FASTFIGHTING.Battle.Net.Itself"), how: band(m.level) })}${held(m.gm, m.waiting)}`,
         adjust: { t: "desire", id: m.on, kind: m.kind, targetId: m.on, intensity: m.intensity },
         ...stepsOf(m.intensity, m.most, { remove: "FASTFIGHTING.Battle.Net.SetAside" })
       });
@@ -1229,6 +1232,26 @@ function factText(f, name) {
 }
 
 /**
+ * The Battle Vantage on the encounter's battle (the tracker's Vantage button, and after Rewind This Encounter): the one
+ * live, else the plan's made ready from the planner's last run (the planner opened for it, if it isn't; it closes once
+ * the battle is ready). False where there's no run to make it ready from: the GM is told to run the planner first.
+ */
+export async function prepareVantage(combat = ui.combat?.viewed) {
+  if ( liveBattle() ) {
+    BattleVantage.open();
+    return true;
+  }
+  const { BattlePlanner } = await import("./battle-planner.js");
+  const plan = foundry.applications.instances.get("fast-fighting-planner") ?? await BattlePlanner.open();
+  if ( plan?.readyForVantage?.(combat) ) {
+    await plan.openVantage();
+    return true;
+  }
+  ui.notifications.info(loc("FASTFIGHTING.Tracker.RunFirst"));
+  return false;
+}
+
+/**
  * Drawn again whenever the battle changes, and when hit points or the tracker do; a single token the GM selects on
  * the map, in focus.
  */
@@ -1248,6 +1271,12 @@ export function registerBattleVantage() {
     soon = setTimeout(() => BattleVantage.refresh(), 250);
   };
   for ( const hook of ["updateCombat", "updateActor", "updateToken"] ) Hooks.on(hook, later);
+  // (A GM come or gone: whose browser plays the battle may have changed, playedElsewhere.)
+  Hooks.on("userConnected", later);
+  // (Rewound to before it began, with the window open: made ready again, as the planner left it.)
+  Hooks.on("fastFighting.encounterRewound", combat => {
+    if ( foundry.applications.instances.get("fast-fighting-battle") ) prepareVantage(combat);
+  });
   // The map of minds' keys: on what the GM points at (or stepped to), with the pointer over the Battle Vantage;
   // anywhere else, the keys are the canvas's. + and - are the characters typed, wherever a keyboard has them (Foundry's
   // bindings go by a key's place: the key right of 0 is + on some keyboards, - or ö on others); the bindings in

@@ -398,6 +398,9 @@ label.is-disabled, .form-group.is-disabled { opacity: 0.5; }
 .ff-net-edge.w-5 .ff-net-line { stroke-width: 4.5; }
 .ff-net-edge.is-condition .ff-net-line, .ff-net-edge.is-relation .ff-net-line { stroke-dasharray: 7 4; }
 .ff-net-edge.is-goal .ff-net-line { stroke-dasharray: 2 5; }
+/* A desire the GM set that it can't act on yet: there, faded. */
+.ff-net-edge.is-waiting { opacity: 0.55; }
+.ff-net-edge.is-waiting .ff-net-line { stroke-dasharray: 4 4; }
 .ff-net-edge.is-dim, .ff-net-label.is-dim { opacity: 0.16; }
 /* (What each line is: a desire by its kind; a condition, a relation, a goal.) */
 .ff-net .d-hurt { color: var(--ff-hostile); }
@@ -587,6 +590,8 @@ button.ff-role { width: var(--ff-target); height: var(--ff-target); cursor: poin
 .ff-btn-fill { position: absolute; inset: 0 auto 0 0; background: rgba(255, 255, 255, 0.25); pointer-events: none; }
 .ff-dot-attention { display: inline-block; flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--ff-attention); }
 .ff-chip--attention { background: var(--ff-attention-bg); color: var(--ff-attention); }
+/* Another GM's browser plays this battle: said in this window, in the attention colour. */
+.ff-vantage-elsewhere { margin: 0 0 6px; color: var(--ff-attention); font-size: 1.15rem; font-weight: 600; }
 button.ff-chip { width: auto; height: auto; min-height: 0; margin: 0; border: 1px solid transparent; box-shadow: none; cursor: pointer; }
 button.ff-chip:hover { border-color: var(--ff-line); color: var(--color-text-primary, inherit); }
 .ff-chip i { margin-right: 2px; }

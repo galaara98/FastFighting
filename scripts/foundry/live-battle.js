@@ -116,6 +116,17 @@ function stillHere() {
 /** This browser plays the battle it holds now. */
 const playsHere = () => !!battle && runsHere(battle.data) && stillHere();
 
+/**
+ * The GM whose browser plays the battle on this encounter, where it isn't this one's (another GM began it, or picked it
+ * up while this one was away): that user, else null. The combat's flag says, as every browser reads it.
+ */
+export function playedElsewhere(combat) {
+  const flag = combat?.getFlag?.(MODULE_ID, "live");
+  if ( !flag?.active || (battle?.combat === combat && playsHere()) ) return null;
+  const user = flag.user ? game.users.get(flag.user) : null;
+  return user && !user.isSelf ? user : null;
+}
+
 /** The combat's flag for the battle: which it is, whether it's still going, and whose browser plays it. */
 /**
  * The combat's flag for its battle, as every browser reads it: which, whether it's on, whose browser plays it, and
@@ -3769,6 +3780,8 @@ export function rewindEncounter() {
     await forget(combat.id, data.id);
     letGo();
     changed();
+    // (Back where it was before it began: the Battle Vantage makes it ready again, as the planner left it.)
+    Hooks.callAll("fastFighting.encounterRewound", combat);
     return true;
   });
 }

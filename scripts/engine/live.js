@@ -1314,9 +1314,10 @@ export function networkOf(run) {
     // (A bystander's wants, its lean toward a side among them, show once it joins the fight: until then it hasn't. A
     // hazard has no mind: it goes off at whoever's in its reach.)
     const minded = !player && !!u.active && !u.spec.hazard;
+    const ranked = minded ? rankedDesires(run, u) : [];
     // What it wants of others (and of itself).
     if ( minded ) {
-      for ( const d of rankedDesires(run, u) ) {
+      for ( const d of ranked ) {
         const at = { kind: d.kind, level: d.level, intensity: bandIntensity(d.level), most: 5, gm: u.desire?.gm?.has(`${d.kind}|${d.targetId}`) ?? false };
         if ( d.targetId === u.id ) marks.push({ type: "desire", on: u.id, ...at });
         else {
@@ -1335,6 +1336,22 @@ export function networkOf(run) {
         const [kind, targetId] = k.split("|");
         setAside.push({ type: "desire", id: u.id, kind, targetId });
       }
+    }
+    // (What the GM holds it to that it can't act on yet, a bystander's too: there all the same, `waiting`, from the
+    // moment it's set. Not at one gone from the fight, but a body to rob.)
+    if ( !player && !u.spec.hazard ) {
+      const shown = new Set(ranked.map(d => keyOf(d.kind, d.targetId)));
+      for ( const [k, v] of u.desire?.gm ?? [] ) {
+        if ( !(v > 0) || shown.has(k) ) continue;
+        const [kind, targetId] = parseKey(k);
+        const t = run.byId.get(targetId);
+        if ( !t || ([STATUS.DEAD, STATUS.FLED].includes(t.status) && kind !== "rob") ) continue;
+        const at = { kind, level: v, intensity: bandIntensity(v), most: 5, gm: true, waiting: true };
+        if ( targetId === u.id ) marks.push({ type: "desire", on: u.id, ...at });
+        else links.push({ type: "desire", from: u.id, to: targetId, ...at });
+      }
+    }
+    if ( minded ) {
       for ( const g of goalsOf(run, u) ) {
         const at = { kind: g.kind, level: g.level, intensity: g.scale === "band" ? bandIntensity(g.level) : g.level, most: g.scale === "band" ? 5 : (g.most ?? 1), played: g.played, gm: g.gm, via: g.via };
         if ( g.thing ) {

@@ -1,5 +1,6 @@
 {{!-- The Battle Vantage's turn bar: whose turn, what it's waiting for, the one thing to press now (primary, by state); the turn order under it. --}}
 <header class="ff-turnbar">
+  {{#if elsewhere}}<p class="ff-vantage-elsewhere" role="status"><i class="fa-solid fa-user-lock" aria-hidden="true"></i> {{elsewhere}}</p>{{/if}}
   {{#if none}}
   <p class="ff-battle-none">{{localize "FASTFIGHTING.Battle.None"}}</p>
   {{else}}

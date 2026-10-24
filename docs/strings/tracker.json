@@ -3006,6 +3006,16 @@
    "commit": null,
    "hash": "15e6c735d125"
   },
+  "core:FASTFIGHTING.Battle.Net.NotYet": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.Net.NotYet",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "acb2f903f78b"
+  },
   "core:FASTFIGHTING.Battle.Net.Onset": {
    "repo": "core",
    "file": "languages/en.json",
@@ -3519,6 +3529,16 @@
    "date": null,
    "commit": null,
    "hash": "6303bb818642"
+  },
+  "core:FASTFIGHTING.Battle.PlayedElsewhere": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.PlayedElsewhere",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "acdc84fad6d2"
   },
   "core:FASTFIGHTING.Battle.PlayerRuns": {
    "repo": "core",

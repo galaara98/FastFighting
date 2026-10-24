@@ -26,7 +26,7 @@ import { loadKeywords } from "./foundry/keywords.js";
 import { registerLiveBattles, liveBattle, followPlayersSay, systemAppliesText } from "./foundry/live-battle.js";
 import { registerSheetWatch } from "./foundry/sheet-watch.js";
 import { registerSheetButton } from "./foundry/sheet-button.js";
-import { BattleVantage, registerBattleVantage } from "./apps/battle-vantage.js";
+import { BattleVantage, registerBattleVantage, prepareVantage } from "./apps/battle-vantage.js";
 import { registerTwinSessions } from "./foundry/twin-sessions.js";
 
 Hooks.once("init", () => {
@@ -149,11 +149,8 @@ Hooks.on("renderCombatTracker", (app, element) => {
     open.innerHTML = `<i class="fa-solid fa-chess-knight"></i><span>${game.i18n.localize("FASTFIGHTING.Tracker.Vantage")}</span>`;
     open.addEventListener("click", async event => {
       event.preventDefault();
-      if ( liveBattle() ) return BattleVantage.open();
-      // (From the plan's last run, as the planner recalls it: opened for it, if it isn't open.)
-      const plan = foundry.applications.instances.get("fast-fighting-planner") ?? await BattlePlanner.open();
-      if ( plan?.readyForVantage?.(ui.combat.viewed) ) return plan.openVantage();
-      ui.notifications.info(game.i18n.localize("FASTFIGHTING.Tracker.RunFirst"));
+      // (The battle live, else made ready from the plan's last run.)
+      await prepareVantage(ui.combat.viewed);
     });
     row.append(open);
   }
