@@ -49345,6 +49345,16 @@
    "commit": null,
    "hash": "1ff62f96d985"
   },
+  "dcc:code:scripts/commit.js:tellGiven#1": {
+   "repo": "dcc",
+   "file": "scripts/commit.js",
+   "key": "scripts/commit.js:tellGiven#1",
+   "area": "dcc/code",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "d82763d9f5cf"
+  },
   "dcc:code:scripts/main.js:(top)#1": {
    "repo": "dcc",
    "file": "scripts/main.js",
@@ -49404,6 +49414,16 @@
    "date": null,
    "commit": null,
    "hash": "63ee3a1b965a"
+  },
+  "dcc:FFDCC.AbilityLogSource": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.AbilityLogSource",
+   "area": "dcc/General",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "9af9e8099c35"
   },
   "dcc:FFDCC.Ac": {
    "repo": "dcc",
@@ -49546,6 +49566,16 @@
    "commit": null,
    "hash": "e44b4bd707c5"
   },
+  "dcc:FFDCC.Coin.ep": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.Coin.ep",
+   "area": "dcc/Coin",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "0e26f370b562"
+  },
   "dcc:FFDCC.Coin.gp": {
    "repo": "dcc",
    "file": "languages/en.json",
@@ -49555,6 +49585,16 @@
    "date": null,
    "commit": null,
    "hash": "ce552f91e9dc"
+  },
+  "dcc:FFDCC.Coin.pp": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.Coin.pp",
+   "area": "dcc/Coin",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "d53315bea08c"
   },
   "dcc:FFDCC.Coin.sp": {
    "repo": "dcc",
@@ -49907,6 +49947,16 @@
    "commit": null,
    "hash": "56edd2a832a7"
   },
+  "dcc:FFDCC.DroppedGoods": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.DroppedGoods",
+   "area": "dcc/General",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "7229d6cd196a"
+  },
   "dcc:FFDCC.FleetingGain": {
    "repo": "dcc",
    "file": "languages/en.json",
@@ -49926,6 +49976,36 @@
    "date": null,
    "commit": null,
    "hash": "ed2754347c81"
+  },
+  "dcc:FFDCC.FreeAttack": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.FreeAttack",
+   "area": "dcc/General",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "4e83c8684665"
+  },
+  "dcc:FFDCC.Given": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.Given",
+   "area": "dcc/General",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "1f60bb77d227"
+  },
+  "dcc:FFDCC.GivenWaits": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.GivenWaits",
+   "area": "dcc/General",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "4f269173a1d4"
   },
   "dcc:FFDCC.Grapple": {
    "repo": "dcc",
@@ -50087,6 +50167,26 @@
    "date": null,
    "commit": null,
    "hash": "382e766581df"
+  },
+  "dcc:FFDCC.Meat": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.Meat",
+   "area": "dcc/General",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "b356e2a04b2d"
+  },
+  "dcc:FFDCC.MeatHint": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.MeatHint",
+   "area": "dcc/General",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "3e4e8c2a46bf"
   },
   "dcc:FFDCC.Mods.ac": {
    "repo": "dcc",
@@ -50991,6 +51091,16 @@
    "commit": null,
    "hash": "e0c897025045"
   },
+  "dcc:FFDCC.Words.Bite": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.Words.Bite",
+   "area": "dcc/Words",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "20c238371107"
+  },
   "dcc:FFDCC.Words.Clever": {
    "repo": "dcc",
    "file": "languages/en.json",
@@ -51061,6 +51171,26 @@
    "commit": null,
    "hash": "6d0a1b5359c0",
    "changed": true
+  },
+  "dcc:FFDCC.Words.NoFlesh": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.Words.NoFlesh",
+   "area": "dcc/Words",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "715481a3988c"
+  },
+  "dcc:FFDCC.Words.Rations": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.Words.Rations",
+   "area": "dcc/Words",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "4b9810dbcb53"
   },
   "dcc:FFDCC.Words.SpeaksCommon": {
    "repo": "dcc",

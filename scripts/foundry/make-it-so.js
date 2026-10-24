@@ -419,7 +419,12 @@ export async function revertRecord(r, { scene = null, settings = null } = {}) {
     await step(`status ${s.id}`, () => actor.toggleStatusEffect(s.id, { active: s.active, overlay: s.overlay }));
   }
   const actorUpdate = actorData(r.actorUpdate);
-  if ( Object.keys(actorUpdate).length ) await step("restoring the actor", () => actor.update(actorUpdate));
+  // (The system's own options for it, under its id, where the record has them (API 29): DCC's mark that its ability log
+  // is already right, so its own hook doesn't log the restore as a change made by hand.)
+  const sys = game.system?.id;
+  const own = sys && r.systemOptions && typeof r.systemOptions === "object" ? r.systemOptions[sys] : null;
+  const options = own && typeof own === "object" ? { [sys]: foundry.utils.deepClone(own) } : {};
+  if ( Object.keys(actorUpdate).length ) await step("restoring the actor", () => actor.update(actorUpdate, options));
   // Anything the system added along the way (dnd5e lays the unconscious down Prone) comes off too.
   if ( r.statusesBefore ) {
     const before = new Set(r.statusesBefore);

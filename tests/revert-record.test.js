@@ -11,7 +11,7 @@ function docOf(uuid, parent = null, extra = {}) {
   return {
     uuid, id: uuid.split(".").at(-1), parent, done, ...extra,
     delete: async () => done.push(["delete"]),
-    update: async data => done.push(["update", data]),
+    update: async (data, options) => done.push(options && Object.keys(options).length ? ["update", data, options] : ["update", data]),
     createEmbeddedDocuments: async (type, list, options) => done.push(["create", type, list, options])
   };
 }
@@ -128,5 +128,17 @@ describe("a player's", () => {
     await revertRecord({ actorUuid: world.actor.uuid, userId: "gm", userUpdate: update });
     expect(world.player.done).toEqual([["update", { "flags.daggerheart.luck": 2 }]]);
     expect(world.gm.done).toEqual([]);
+  });
+});
+
+describe("the system's own options for an actor's restore", () => {
+  test("passed under the system's id only; anything else the record says is ignored", async () => {
+    globalThis.foundry.utils.deepClone = structuredClone;
+    game.system.id = "dcc";
+    await revertRecord({ actorUuid: "Actor.a1", actorUpdate: { "system.abilities.lck.value": 9 }, systemOptions: { dcc: { abilityLogged: true }, diff: false, core: { x: 1 } } });
+    expect(world.actor.done.find(d => d[0] === "update")).toEqual(["update", { "system.abilities.lck.value": 9 }, { dcc: { abilityLogged: true } }]);
+    world.actor.done.length = 0;
+    await revertRecord({ actorUuid: "Actor.a1", actorUpdate: { "system.abilities.lck.value": 9 }, systemOptions: { pf2e: { x: 1 } } });
+    expect(world.actor.done.find(d => d[0] === "update")).toEqual(["update", { "system.abilities.lck.value": 9 }]);
   });
 });
