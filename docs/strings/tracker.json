@@ -49686,6 +49686,16 @@
    "commit": null,
    "hash": "30bc67a73501"
   },
+  "dcc:FFDCC.Constrict": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.Constrict",
+   "area": "dcc/General",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "5a911549e0d8"
+  },
   "dcc:FFDCC.CoreTooOld": {
    "repo": "dcc",
    "file": "languages/en.json",
@@ -50689,6 +50699,16 @@
    "commit": null,
    "hash": "0eb2ddee6f02"
   },
+  "dcc:FFDCC.Rend": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.Rend",
+   "area": "dcc/General",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "1970f0b8296f"
+  },
   "dcc:FFDCC.Rolls.Morale": {
    "repo": "dcc",
    "file": "languages/en.json",
@@ -51141,6 +51161,16 @@
    "commit": null,
    "hash": "641a1d52f667"
   },
+  "dcc:FFDCC.Words.Magic": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.Words.Magic",
+   "area": "dcc/Words",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "9673ae224a99"
+  },
   "dcc:FFDCC.Words.Mindless": {
    "repo": "dcc",
    "file": "languages/en.json",
@@ -51191,6 +51221,16 @@
    "date": null,
    "commit": null,
    "hash": "4b9810dbcb53"
+  },
+  "dcc:FFDCC.Words.Silver": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.Words.Silver",
+   "area": "dcc/Words",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "5481ca22b35a"
   },
   "dcc:FFDCC.Words.SpeaksCommon": {
    "repo": "dcc",
