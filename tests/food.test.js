@@ -59,3 +59,21 @@ describe("as the helper says", () => {
     expect(foodOf({}, broken)).toBeNull();
   });
 });
+
+describe("corpses (API 30)", () => {
+  test("a fresh corpse's portions left; nothing for anything else", async () => {
+    const { corpsePortions } = await import("../scripts/foundry/food.js");
+    expect(corpsePortions({ flags: { "fast-fighting": { corpse: "fresh", portions: 4 } } })).toBe(4);
+    expect(corpsePortions({ flags: { "fast-fighting": { corpse: "fresh", portions: 0 } } })).toBe(0);
+    expect(corpsePortions({ getFlag: (s, k) => (k === "portions" ? 2 : undefined) })).toBe(2);
+    expect(corpsePortions({ flags: { "fast-fighting": { corpse: "rotten" } } })).toBeNull();
+    expect(corpsePortions({ name: "Rations" })).toBeNull();
+  });
+
+  test("a rotten or scrap corpse goes on the body, though no one eats it", () => {
+    const rotten = { name: "Rotten Corpse", flags: { "fast-fighting": { corpse: "rotten" } } };
+    const adapter = { appetite: () => null, meatFor: () => ({ item: rotten, quantity: 0 }) };
+    expect(meatGoods(actor(), {}, adapter)).toEqual({ items: [rotten], coins: null });
+    expect(appetiteOf(actor(), {}, adapter).meat).toBeUndefined();
+  });
+});

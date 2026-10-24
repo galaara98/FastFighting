@@ -409,12 +409,12 @@ World settings, under **Configure Settings → FastFighting**, in groups that op
 | After the fight | Tend the fallen and tell it | Tending the dying, and telling it. |
 | Slain creatures' gear | Leave on corpse (lootable) | A slain creature's gear in a live battle (only with a helper that handles loot). |
 | Slain tokens | Keep, marked dead | Slain tokens (only with a helper that handles loot). |
-| Dead player characters leave meat | off | A dead player character's loot token also holds its meat (only where the helper knows its system's meat). |
+| Dead player characters leave a corpse | off | A dead player character's loot token also holds its corpse (only where the helper knows its system's corpses). |
 | Tokens that fled | Hide token | Tokens that fled a live battle. |
 
 - **Loot on the map:** the Planner's **Place a chest** and **Place a bag** (its Encounter view) put an empty pile where you click next: an Item Piles pile when Item Piles is set up, else the system's loot pile, else one of FastFighting's own. Its own window then opens for you to fill. It's a lure: a thief, a greedy creature or a hungry one may want what's in it more than a fight.
 - **Piles and hunger:** where the system's helper knows its food, [what lies on the map](STATS_AND_FORMULAS_README.md#piles-meat-and-hunger) is worth going for. A thief or a greedy creature goes for a rich pile when it's safe. A hungry creature eats: a pile's food, or the meat of the dead (a teammate's only for a cannibal or a feral mind). A wise one barely minds hunger mid-fight, but any creature that eats may come famished.
-- **Meat:** where the system's helper knows its meat, a creature's body leaves uncooked meat when it dies, with the rest of its gear. Nothing comes from a body of no flesh.
+- **Corpses:** where the system's helper knows them, a creature's body leaves a corpse when it dies, with the rest of its gear: a **Fresh Corpse** (food for the hungry, eaten a portion at a time), a **Rotten Corpse** for the undead, or a **Scrap Corpse** for one made of metal or a machine (neither is food). A body of no flesh otherwise leaves none.
 - **The fallen's loot, live:** with Item Piles and **Leave on corpse**, a creature's token becomes an Item Piles pile when it falls, and turns back if it gets up. A player's character that dies leaves a loot token on top of it with a copy of its things; its sheet is untouched. The loot token is an Item Piles pile, else the system's loot pile, else one FastFighting makes. Creatures that rob the fallen take from it. **Do nothing** turns both off. A pile never joins a battle.
 
 ### Troubleshooting & data

@@ -117,8 +117,8 @@
         "Hint": "What a live battle does with a slain creature's gear."
       },
       "pcMeat": {
-        "Name": "Dead player characters leave meat",
-        "Hint": "A dead PC's loot token also holds the meat its body would leave. Its sheet is never touched."
+        "Name": "Dead player characters leave a corpse",
+        "Hint": "A dead PC's loot token also holds the corpse its body would leave. Its sheet is never touched."
       },
       "corpseMode": {
         "Name": "Slain tokens",
@@ -1107,7 +1107,7 @@
       "Hazard": "Hazard",
       "HazardHint": "Traps and dangerous features: they don't move or talk, and can't be attacked.",
       "Hunger": "Hunger",
-      "HungerHint": "How hungry it comes to the fight. Hungry, it may break off to eat: food in a pile, or the meat of the fallen.",
+      "HungerHint": "How hungry it comes to the fight. Hungry, it may break off to eat: food in a pile, or the fresh corpse of the fallen.",
       "HungerMark": {
         "auto": "Let FastFighting decide",
         "famished": "Famished",

@@ -21258,7 +21258,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "874ef6372857"
+   "hash": "874ef6372857",
+   "changed": true
   },
   "core:FASTFIGHTING.Settings.plannerWorkers.Hint": {
    "repo": "core",
@@ -30318,7 +30319,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "55d5539a12bf"
+   "hash": "55d5539a12bf",
+   "changed": true
   },
   "core:FASTFIGHTING.TokenTactics.HungerMark.auto": {
    "repo": "core",

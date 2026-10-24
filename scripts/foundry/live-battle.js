@@ -3204,8 +3204,8 @@ async function writeEach(before, after, records, { messages = null, leave = null
     applying++;
     try {
       const spec = { ...battle.run.byId.get(id).spec, resources: before[id].resources };
-      // (Dead, a creature's body leaves meat: on it before the system's own loot takes its things, so it goes where they
-      // go. Not a player's character's, nor a hazard's or a summoned one's: foundry/food.js.)
+      // (Dead, a creature's body leaves its corpse, fresh, rotten or scrap: on it before the system's own loot takes its
+      // things, so it goes where they go. Not a player's character's, nor a hazard's or a summoned one's: foundry/food.js.)
       const unit = battle.run.byId.get(id);
       if ( ch.died && unit.spec.kind !== "pc" && !unit.spec.hazard && !unit.summoner && typeof adapter.putGoods === "function" ) {
         const meat = meatGoods(doc.actor, unit.spec, adapter);

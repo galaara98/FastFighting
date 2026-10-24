@@ -133,8 +133,8 @@ Hooks.once("fastFighting.init", api => {
     partyMembers() { ... }                           // the system's own party, its actors' ids (API 29): on the Friendly Team unless their token is Hostile
     settingDefaults() { ... }                        // the core's settings as your system has them (API 28): {maxRounds: {min, max, default}, loreBoost: {default, name, hint}}; name and hint, your own words
     appetite(actor, spec) { ... }                    // food (API 27): {diet: "meat"|"any"|"plants"|null, hunger: 0..1, cannibal}, by your system's own idea of nature; leave it out where your system keeps no food (no one hungers)
-    meatFor(actor, spec) { ... }                     // food (API 27): what its body leaves on death, {item: item data with its quantity set, quantity: portions}, or null (no flesh)
-    isFood(item) { ... }                             // food (API 27): {portions, meat} for a thing that can be eaten, else null
+    meatFor(actor, spec) { ... }                     // food (API 27; corpses API 30): the corpse its body leaves on death, {item, quantity: portions}, or null. API 30: one item, flags.fast-fighting.corpse "fresh" (food: your food type, else your miscellaneous; flags.fast-fighting.portions) | "rotten" (undead) | "scrap" (metal, mechanical), the last two your miscellaneous type, quantity 0
+    isFood(item) { ... }                             // food (API 27): {portions, meat} for a thing that can be eaten, else null (a fresh corpse: its portions flag, foundry/food.js corpsePortions)
     pileContents(tokenDoc) { ... }                   // piles (API 27): what a pile holds, for the engine: {money (smallest coin), items: [{id, name, value (each), quantity}]}, everything however carried
 
     // Live battles (Go Live): see scripts/adapters/adapter-base.js for each one's contract.

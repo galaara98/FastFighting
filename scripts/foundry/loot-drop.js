@@ -13,7 +13,7 @@
 import { MODULE_ID } from "../constants.js";
 import { localize } from "../i18n.js";
 import { getAdapter } from "../api.js";
-import { meatGoods, foodOf } from "./food.js";
+import { meatGoods, foodOf, corpsePortions } from "./food.js";
 import { positionOf } from "./terrain.js";
 
 export const ITEM_PILES = "item-piles";
@@ -190,17 +190,31 @@ export async function writeForaged(scene, takerDoc, f, sourceDoc) {
   if ( !movesGoods(adapter) || !sourceDoc?.actor || !takerDoc ) return [];
   let goods;
   if ( f.money > 0 ) goods = [{ kind: "money", amount: f.money }];
-  else if ( f.item?.id ) goods = [{ kind: "item", item: { id: f.item.id }, count: f.count ?? 1, how: "loot" }];
   else {
-    // (Meat off a body: a portion of what its sheet holds that's meat.)
-    const meat = sourceDoc.actor.items.find(i => foodOf(i, adapter)?.meat);
-    if ( !meat ) return [];
-    goods = [{ kind: "item", item: { id: meat.id }, count: f.count ?? 1, how: "loot" }];
+    // (A thing out of a pile; else meat off a body: what its sheet holds that's meat, its corpse.)
+    const item = f.item?.id ? sourceDoc.actor.items.get(f.item.id) : sourceDoc.actor.items.find(i => foodOf(i, adapter)?.meat);
+    if ( !item ) return [];
+    // (A fresh corpse eaten: a portion at a time, gone with its last.)
+    if ( f.eaten && corpsePortions(item) !== null ) return eatCorpse(sourceDoc, item, f.count ?? 1);
+    goods = [{ kind: "item", item: { id: item.id }, count: f.count ?? 1, how: "loot" }];
   }
   const taken = await adapter.takeGoods(sourceDoc, goods);
   const records = [...(taken?.records ?? [])];
   if ( !f.eaten && !emptyGoods(taken?.goods) ) records.push(...((await adapter.putGoods(takerDoc, taken.goods)) ?? []));
   return records;
+}
+
+/** `count` portions of a fresh corpse eaten: fewer left on it, or, the last, the corpse gone. Undo records. */
+async function eatCorpse(doc, item, count) {
+  const left = corpsePortions(item);
+  const key = `flags.${MODULE_ID}.portions`;
+  if ( left > count ) {
+    await item.update({ [key]: left - count });
+    return [{ tokenUuid: doc.uuid, itemUpdates: [{ id: item.id, update: { [key]: left } }] }];
+  }
+  const data = item.toObject();
+  await item.delete();
+  return [{ tokenUuid: doc.uuid, deletedItems: [data] }];
 }
 
 /* -------------------------------------------- */
@@ -235,9 +249,12 @@ export function pilesOn(adapter = getAdapter()) {
     try {
       const held = adapter.pileContents(doc);
       if ( !held ) continue;
-      const items = (held.items ?? []).filter(i => i?.id && Number(i.quantity) > 0).map(i => ({
-        id: i.id, name: i.name ?? "", value: Math.max(0, Number(i.value) || 0), quantity: Number(i.quantity), food: foodOf(doc.actor.items.get(i.id), adapter)
-      }));
+      const items = (held.items ?? []).filter(i => i?.id && Number(i.quantity) > 0).map(i => {
+        const item = doc.actor.items.get(i.id);
+        // (A fresh corpse: as many as its portions left, eaten a portion at a time.)
+        const portions = corpsePortions(item);
+        return { id: i.id, name: i.name ?? "", value: Math.max(0, Number(i.value) || 0), quantity: portions ?? Number(i.quantity), food: foodOf(item, adapter) };
+      }).filter(i => i.quantity > 0);
       const money = Math.max(0, Number(held.money) || 0);
       if ( !items.length && !money ) continue;
       const at = positionOf(token);
@@ -269,8 +286,8 @@ export async function lootOnFall(doc, unit, ch, mode) {
 }
 
 /**
- * A player's character dead: a loot token on top of it, a copy of all it has; and its meat, where the GM's setting
- * says so (Dead player characters leave meat). {records, remains}.
+ * A player's character dead: a loot token on top of it, a copy of all it has; and its corpse, where the GM's setting
+ * says so (Dead player characters leave a corpse). {records, remains}.
  */
 async function remainsOf(doc) {
   const goods = await getAdapter().goodsOf(doc);

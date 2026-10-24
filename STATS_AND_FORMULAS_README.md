@@ -1667,15 +1667,17 @@ Code: `engine/battle-state.js` `holdsBack`, `holdsBackThisRound`; `engine/simula
 ### Piles, meat and hunger
 
 Search: pile, chest, bag, loot on the ground, scavenge, takes from a pile, hunger, hungry, famished, eat, meat,
-uncooked meat, cannibal, food, diet
+fresh corpse, rotten corpse, scrap corpse, cannibal, food, diet
 
 What lies on the ground, as something to go for instead of a foe. Only where the system's helper says what its system
 eats and holds (API 27); otherwise nothing is food and no one hungers.
 
 - **Piles:** each pile token on the map when the fight is set up (an Item Piles pile, the system's loot pile, the
   core's own), with its money and things (each one's worth; food, by the helper). Noticed within 60 ft.
-- **Meat:** a creature's body leaves meat when it dies (the helper's portions by size: PF2e tiny 1 to gargantuan 32;
-  none from a body of no flesh). A dead player character's only with **Dead player characters leave meat**.
+- **Corpses:** a creature's body leaves a corpse when it dies: a Fresh Corpse, its meat (the helper's portions by
+  size: PF2e tiny 1 to gargantuan 32), eaten a portion at a time; a Rotten Corpse (the undead) or a Scrap Corpse
+  (made of metal, a machine), never food; none from another body of no flesh. A dead player character's only with
+  **Dead player characters leave a corpse**.
 - **Hunger,** rolled as the fight begins, for a creature that eats (the helper's diet: meat, any, plants):
   - famished: 3% for any of them, whatever its wisdom; wants food at 75;
   - otherwise hungry with the helper's chance (PF2e: a biting animal or beast 40%, other animals and beasts 30%,
