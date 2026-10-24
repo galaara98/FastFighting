@@ -293,6 +293,8 @@ export async function postBeat(scene, beat, docs, state) {
   // (Someone in it whose name the players haven't learned: which token each is, for the GMs' who's who (whoIsWho). No
   // name in the card: every browser is sent it.)
   if ( beat.someone?.length ) flags[MODULE_ID].someone = { scene: scene?.id ?? null, who: beat.someone };
+  // (Those it names, and their tokens: their names shown on the map with a click, panLinks.)
+  if ( beat.links && Object.keys(beat.links).length ) flags[MODULE_ID].links = { scene: scene?.id ?? null, names: beat.links };
   // (A hidden creature not yet given away: the narrator's card, not its own.)
   const speaker = doc && !beat.anonymous ? ChatMessage.getSpeaker({ scene, token: doc }) : chronicle();
   const head = beat.closing ? `<header><i class="fa-solid fa-book-open"></i> ${escape(storyTitle(scene))}</header>`
@@ -335,6 +337,45 @@ export function whoIsWho(message, html, nameOf = null) {
   icon.setAttribute("aria-hidden", "true");
   line.append(icon, " ", game.i18n.format("FASTFIGHTING.Story.WhoIsWho", { list: listJoin(each) }));
   story.prepend(line);
+}
+
+/**
+ * A story card's names (flags.fast-fighting.links: {scene, names: {name: tokenId}}), in anyone's browser: each one's
+ * bold name a link that shows it on the map (pans there; a GM's, or its owner's, selects it). Not one whose token is
+ * hidden from this user, nor one gone from the scene.
+ */
+export function panLinks(message, html) {
+  const links = message.getFlag(MODULE_ID, "links");
+  if ( !ownCard(message) || !links?.names ) return;
+  const scene = game.scenes.get(links.scene);
+  for ( const bold of html.querySelectorAll?.(".fast-fighting-story strong") ?? [] ) {
+    const id = links.names[bold.textContent];
+    const token = id ? scene?.tokens.get(id) : null;
+    if ( !token || (token.hidden && !game.user.isGM) || bold.classList.contains("ff-pan") ) continue;
+    bold.classList.add("ff-pan");
+    bold.tabIndex = 0;
+    bold.setAttribute("role", "button");
+    bold.dataset.tooltip = game.i18n.localize("FASTFIGHTING.Story.PanTo");
+    const go = event => {
+      if ( event.type === "keydown" && event.key !== "Enter" && event.key !== " " ) return;
+      event.preventDefault();
+      panTo(scene, token);
+    };
+    bold.addEventListener("click", go);
+    bold.addEventListener("keydown", go);
+  }
+}
+
+/** Show a token on the map: pan to it; a GM's, or its owner's, select it. On another scene, say so. */
+function panTo(scene, token) {
+  if ( canvas.scene?.id !== scene?.id ) {
+    ui.notifications.info(game.i18n.format("FASTFIGHTING.Story.OtherScene", { scene: scene?.name ?? "" }));
+    return;
+  }
+  const t = token.object;
+  if ( !t ) return;
+  canvas.animatePan({ x: t.center.x, y: t.center.y, duration: 250 });
+  if ( token.isOwner ) t.control({ releaseOthers: true });
 }
 
 /** A whole story in one card (the Statistician's: the GMs', with a button to show it to everyone). */

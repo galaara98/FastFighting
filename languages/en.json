@@ -1310,6 +1310,8 @@
       "Speaker": "The Chronicle",
       "GmOnly": "For the GM only",
       "WhoIsWho": "GM: {list}",
+      "PanTo": "Show on the map",
+      "OtherScene": "That creature is on another scene ({scene}).",
       "WhoIs": "{someone} is {name}",
       "WhoIsWhoHint": "Only GMs see this line. The players see the story without it.",
       "StyleLabel": "Story",

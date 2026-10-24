@@ -22486,6 +22486,26 @@
    "commit": null,
    "hash": "821cbe98fd9c"
   },
+  "core:FASTFIGHTING.Story.OtherScene": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Story.OtherScene",
+   "area": "core/Story",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "f628aad54780"
+  },
+  "core:FASTFIGHTING.Story.PanTo": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Story.PanTo",
+   "area": "core/Story",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "a2cb714a9287"
+  },
   "core:FASTFIGHTING.Story.Part.acid": {
    "repo": "core",
    "file": "languages/en.json",

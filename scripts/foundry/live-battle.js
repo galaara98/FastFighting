@@ -3530,6 +3530,10 @@ async function tellNew() {
     }
     const done = new Set(battle.data.toldBeats ?? []);
     for ( const beat of beats ) {
+      // (Each creature it names by its own name, and its token: a click on the name shows it on the map, make-it-so.js
+      // panLinks. Not someone: that one's isn't the players' to find.)
+      beat.links = Object.fromEntries(run.units.filter(u => !someone?.has(u.id) && beat.html?.includes(`<strong>${escape(u.spec.name)}</strong>`))
+        .map(u => [u.spec.name, tokenIdOf(u)]));
       // (Whose turn it tells of, in its header: as the story calls it, someone where the players don't know it.)
       const actor = beat.actorId ? run.byId.get(beat.actorId) : null;
       if ( actor ) beat.actorName = someone?.get(actor.id) ?? docs.get(actor.id)?.name ?? actor.spec.name;

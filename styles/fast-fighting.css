@@ -504,6 +504,9 @@ label.is-disabled, .form-group.is-disabled { opacity: 0.5; }
 .ff-battle-review li.is-unsure label { font-style: italic; }
 /* A turn's card for the GMs only: what the players shouldn't learn. */
 .fast-fighting-story.ff-gm-only { border-left: 3px dashed var(--color-border-highlight, #ff6400); padding-left: 6px; }
+/* A name in the story that shows its creature on the map (make-it-so.js panLinks). */
+.fast-fighting-story strong.ff-pan { cursor: pointer; text-decoration: underline dotted; text-underline-offset: 2px; }
+.fast-fighting-story strong.ff-pan:hover, .fast-fighting-story strong.ff-pan:focus-visible { text-decoration-style: solid; }
 /* Who each someone is, above the story, in a GM's browser only (make-it-so.js whoIsWho). */
 .fast-fighting-story .ff-who-is-who { margin: 0 0 4px; padding: 2px 6px; font-size: 11px; line-height: 1.3; border-left: 3px dashed var(--color-border-highlight, #ff6400); background: var(--ff-attention-bg, rgba(242, 193, 78, 0.13)); }
 /* The engine's rolls of a fight played through, for the GMs: by round and creature, folded away. */

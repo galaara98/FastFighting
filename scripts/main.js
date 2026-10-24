@@ -17,7 +17,7 @@ import { registerTokenTactics, syncTokenTactics } from "./apps/token-tactics.js"
 import { QUERIES, SURVEY_STATUS, hasCharactersFor, preparePlayers } from "./foundry/tactics.js";
 import { helperStatus, helperMessage, helperNoticeHtml, surveyHtml } from "./helpers.js";
 import { invalidateApproach, systemSurprise } from "./foundry/battle.js";
-import { revealStory, ownCard, whoIsWho } from "./foundry/make-it-so.js";
+import { revealStory, ownCard, whoIsWho, panLinks } from "./foundry/make-it-so.js";
 import { sceneUnit, registerGroundField } from "./foundry/terrain.js";
 import { planHolder, sceneEncounter } from "./foundry/persistence.js";
 import { hasRun } from "./foundry/run-memory.js";
@@ -328,6 +328,9 @@ Hooks.on("renderChatMessageHTML", (message, html) => whoIsWho(message, html, (sc
   const b = liveBattle();
   return b?.scene === scene ? b.run.units.find(u => tokenIdOf(u) === tokenId)?.spec.name ?? null : null;
 }));
+
+// A story card's names: each shows its creature on the map.
+Hooks.on("renderChatMessageHTML", panLinks);
 
 // A GM-only story: the GM can show it to everyone.
 Hooks.on("renderChatMessageHTML", (message, html) => {
