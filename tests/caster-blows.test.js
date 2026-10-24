@@ -72,3 +72,11 @@ describe("one Un-Mundane and its fists", () => {
     expect(used).toContain("Unarmed Attack");
   });
 });
+
+describe("a spell its helper marks so", () => {
+  test("a caster whose only spell hinders (DCC's Sleep: `spell`, a control) still won't walk up for a plain blow", () => {
+    const sleep = { id: "sleep", name: "Sleep", kind: "control", spell: true, cost: 3, range: { increment: 30, max: 30 }, save: { type: "will", dc: 15 }, onSave: [{ conditions: { unconscious: 1 }, rounds: 2 }, null, null, null] };
+    const did = fight({ tactics: { style: "caster" }, actions: [strike({ id: "fist", name: "Unarmed Attack", bonus: 5, damage: [parseFormula("1d4", "bludgeoning")] }), sleep] });
+    expect(did.some(e => e.type === "attack" && e.action === "Unarmed Attack")).toBe(false);
+  });
+});

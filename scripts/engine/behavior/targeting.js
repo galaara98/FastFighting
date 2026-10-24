@@ -55,13 +55,17 @@ export function armedElse(u) {
   return (u.prep.offense ?? []).some(a => !unarmedBlow(a) && hasUses(u, a));
 }
 
+/** A spell (or a power) to hurt or hinder with: one that forces a save, makes a spell attack or just lands, or one its
+ * helper marks a spell (`spell`: DCC's, whatever it does). */
+const magicKind = a => a.spell === true || ["save", "spell-attack", "auto"].includes(a.kind);
+
 /**
  * Would u rather use its magic than a plain blow: a caster by its tactics, or Un-Mundane by its playstyles, with a
  * spell (or a power) it can still use?
  */
 export function rathersMagic(u) {
   if ( u.tac?.style !== "caster" && !(u.spec.playstyles ?? []).includes("unmundane") ) return false;
-  return (u.prep.offense ?? []).some(a => ["save", "spell-attack", "auto"].includes(a.kind) && hasUses(u, a));
+  return (u.prep.offense ?? []).some(a => magicKind(a) && hasUses(u, a));
 }
 
 /**
