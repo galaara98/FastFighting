@@ -52,7 +52,7 @@ import { STATUS, TACTICAL, ADHD, clamp } from "../../constants.js";
 import { areEnemies, isStanding, liveTrait, liveTier, enemiesOf, alliesOf, sizedUp, command, commandOf, refusesToHelp, movesNeeded, edgeDistance, canMove, hpFraction, dangerScore } from "../battle-state.js";
 import { perceives, apparentHealth, knowsOf } from "./senses.js";
 import { seemsFoe } from "./neutral.js";
-import { lootable, leftRemains, teamCash } from "./theft.js";
+import { lootable, teamCash } from "./theft.js";
 import { ownHolds, isBound, freeable, known, remediesOf, bears } from "./holds.js";
 import { hasTrait, profiled } from "../conditions.js";
 import { hasUses, threatOf } from "./evaluate.js";
@@ -328,8 +328,8 @@ function relevant(run, u, kind, t) {
   // (One not in the fight yet is out of it, unless u means to hurt it and takes it for fair game: prey to an animal or a
   // feral mind, or one the GM set it on (neutral.js seemsFoe). Set upon, it's in the fight at once: simulator.js notice.)
   if ( !t.active && !(kind === "hurt" && t !== u && seemsFoe(run, u, t) && knowsOf(run, u, t)) ) return false;
-  // (Dead: only a player character's loot token, to rob: theft.js leftRemains.)
-  if ( [STATUS.DEAD, STATUS.FLED, STATUS.BEATEN].includes(t.status) && !(kind === "rob" && leftRemains(run, t)) ) return false;
+  // (Dead: only its body to rob, a player character's only by its loot token: theft.js lootable.)
+  if ( [STATUS.DEAD, STATUS.FLED, STATUS.BEATEN].includes(t.status) && !(kind === "rob" && t.status === STATUS.DEAD) ) return false;
   // (A prisoner, tied up and awake, is out of it: there's only what it carries, its getting loose, and its friends'.)
   if ( t.status === STATUS.BOUND && kind !== "rob" && kind !== "breakFree" && kind !== "free" && kind !== "rid" ) return false;
   const foe = () => !t.spec.untargetable && !t.spec.hazard && (areEnemies(run, u, t) || seemsFoe(run, u, t));
@@ -502,6 +502,7 @@ export function orderAgenda(run, u) {
   let list = (u.agenda ?? []).filter(k => byKey.has(k));
   const fits = (d.fits ??= new Map());
   const places = new Map(d.place ?? []);
+  const fitted = [];
   for ( const x of ranked ) {
     const k = keyOf(x.kind, x.targetId);
     const fit = agendaFit(run, u, x);
@@ -511,8 +512,10 @@ export function orderAgenda(run, u) {
       if ( !list.includes(k) && !places.has(k) ) list.push(k);
       continue;
     }
-    places.set(k, fit === 2 ? "top" : "second");
+    fitted.push([k, fit === 2 ? "top" : "second"]);
   }
+  // (Each placed goes in ahead of those placed before it: the weakest of them first, so the strongest leads.)
+  for ( const [k, where] of fitted.reverse() ) places.set(k, where);
   for ( const k of [...fits.keys()] ) if ( !byKey.has(k) ) fits.delete(k);
   // (Where they were placed: the first places, then the second.)
   for ( const where of ["top", "second"] ) {
