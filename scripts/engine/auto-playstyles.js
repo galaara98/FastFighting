@@ -7,7 +7,7 @@
  *  - what its system's helper reads in it (hints: its class, ancestry, kind of creature, alignment, gear), -1 to 1 each;
  *  - words in its biography and description (keywords/en.json, and a translation's: engine/keywords.js), for and against.
  * The picks: those that score at least AUTO_FLOOR, best first, never two that pull against each other (a Chicken and a
- * Martyr), at most four. Pure: no Foundry globals.
+ * Martyr), at most four; and never fewer than AUTO_LEAST: short of them, the best of the rest. Pure: no Foundry globals.
  */
 import { PLAYSTYLES, MAX_PLAYSTYLES } from "./playstyles.js";
 import { fudged, PC_BASELINE } from "../constants.js";
@@ -16,8 +16,10 @@ import { isSpecial } from "./behavior/specialty.js";
 import { typicalValue } from "./tactics.js";
 import { PLAYSTYLE_WORD_CAP } from "./keywords.js";
 
-/** The least score a playstyle needs to be picked. */
+/** The least score a playstyle needs to be picked (past the first AUTO_LEAST). */
 export const AUTO_FLOOR = 30;
+/** The fewest playstyles picked: however little anything fits, the best ones that don't clash. */
+export const AUTO_LEAST = 2;
 /**
  * What the numbers alone can make of a playstyle, at most (so its system's "nothing like it" can still rule it out);
  * what a helper's hint of 1 is worth; what one keyword's worth in the biography is (the words found count for at most
@@ -171,13 +173,20 @@ export function scorePlaystyles(spec, { rules = null, hints = {}, words = {} } =
   }).sort((a, b) => b.score - a.score);
 }
 
-/** The picks: best first, at least AUTO_FLOOR, none pulling against one already picked, at most four. */
-export function pickPlaystyles(scored, { max = MAX_PLAYSTYLES, floor = AUTO_FLOOR } = {}) {
-  const out = [];
+/**
+ * The picks: best first, at least AUTO_FLOOR, none pulling against one already picked, at most four; short of `least`,
+ * the best of the rest that don't clash. `keep`: ones someone chose, kept first.
+ */
+export function pickPlaystyles(scored, { max = MAX_PLAYSTYLES, floor = AUTO_FLOOR, least = AUTO_LEAST, keep = [] } = {}) {
+  const out = [...keep].slice(0, max);
+  const fits = s => !out.includes(s.id) && !out.some(id => clashes(id, s.id));
   for ( const s of scored ) {
     if ( out.length >= max || s.score < floor ) break;
-    if ( out.some(id => clashes(id, s.id)) ) continue;
-    out.push(s.id);
+    if ( fits(s) ) out.push(s.id);
+  }
+  for ( const s of scored ) {
+    if ( out.length >= Math.min(least, max) ) break;
+    if ( fits(s) ) out.push(s.id);
   }
   return out;
 }

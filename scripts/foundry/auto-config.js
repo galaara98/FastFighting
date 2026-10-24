@@ -230,6 +230,32 @@ export async function ensureAutoConfig(actor, spec, { force = false } = {}) {
   }
 }
 
+/** The same playstyles, in the same order? */
+const samePicks = (a, b) => (a ?? []).length === (b ?? []).length && (a ?? []).every((id, i) => id === b[i]);
+
+/**
+ * Its playstyles worked out again (the planner's Re-autocalculate playstyles): where they're still the ones picked for
+ * it by itself, or it has none, picked afresh; where it has just one someone chose, that one kept first and the best
+ * others after it; never fewer than two (engine/auto-playstyles.js AUTO_LEAST). Two or more someone chose stay theirs.
+ * Only one who may write the actor's flags does. @returns {Promise<boolean>} whether they changed
+ */
+export async function recalcPlaystyles(actor, spec) {
+  if ( !actor || !spec || !actor.isOwner || spec.hazard ) return false;
+  const stored = getStoredTactics(actor).playstyles ?? [];
+  const record = autoRecord(actor);
+  const automatic = !stored.length || samePicks(stored, record?.picked);
+  if ( !automatic && stored.length >= 2 ) return false;
+  const scored = autoScores(actor, spec, await keywords());
+  const picked = pickPlaystyles(scored, { keep: automatic ? [] : stored });
+  if ( !picked.length || samePicks(picked, stored) ) return false;
+  await actor.update({
+    [`flags.${MODULE_ID}.tactics.playstyles`]: picked,
+    [`flags.${MODULE_ID}.auto.picked`]: picked,
+    [`flags.${MODULE_ID}.auto.scores`]: Object.fromEntries(scored.slice(0, 8).map(s => [s.id, s.score]))
+  });
+  return true;
+}
+
 /** Someone reset a character's FastFighting settings: they're cleared, and it's set up by itself again at once. */
 export async function resetAndAutoConfig(actor, spec) {
   if ( !actor ) return;

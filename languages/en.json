@@ -712,6 +712,9 @@
       "RepickAllHint": "Picks every leader, boss and lieutenant again, yours too. Teams stay; the Friendly Team gets back the roles it held before.",
       "RepickAllArmed": "Press again: re-pick all roles",
       "RepickedAll": "Every role picked again.",
+      "RecalcPlaystyles": "Re-autocalculate playstyles",
+      "RecalcPlaystylesHint": "Works out again the playstyles FastFighting picked by itself, and gives any creature with fewer than two its best ones (keeping one someone chose). Two or more chosen by someone stay as they are.",
+      "RecalcedPlaystyles": "Playstyles worked out again for {n} creatures.",
       "SecondsValue": "{n} s"
     },
     "Results": {

@@ -16230,6 +16230,36 @@
    "commit": null,
    "hash": "a441b15fe9a3"
   },
+  "core:FASTFIGHTING.Planner.RecalcedPlaystyles": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Planner.RecalcedPlaystyles",
+   "area": "core/Planner",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "e03223ec2f0e"
+  },
+  "core:FASTFIGHTING.Planner.RecalcPlaystyles": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Planner.RecalcPlaystyles",
+   "area": "core/Planner",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "0dd914033336"
+  },
+  "core:FASTFIGHTING.Planner.RecalcPlaystylesHint": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Planner.RecalcPlaystylesHint",
+   "area": "core/Planner",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "9844dd2c99b5"
+  },
   "core:FASTFIGHTING.Planner.RefreshHint": {
    "repo": "core",
    "file": "languages/en.json",

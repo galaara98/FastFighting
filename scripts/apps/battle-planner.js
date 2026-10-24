@@ -29,7 +29,7 @@ import { loadStoryTables } from "../story/tables.js";
 import { healthLookup } from "../foundry/health-estimate.js";
 import { sceneDistance } from "../foundry/terrain.js";
 import { planMakeItSo, makingItSo } from "../foundry/make-it-so.js";
-import { ensureAutoConfig } from "../foundry/auto-config.js";
+import { ensureAutoConfig, recalcPlaystyles } from "../foundry/auto-config.js";
 import { PlayerSurvey } from "./player-survey.js";
 import { rememberRun, recallRun } from "../foundry/run-memory.js";
 import { startLiveBattle, liveBattle, systemAppliesText } from "../foundry/live-battle.js";
@@ -124,6 +124,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       refresh: BattlePlanner.#onRefresh,
       clearPlan: BattlePlanner.#onClearPlan,
       repickRoles: BattlePlanner.#onRepickRoles,
+      recalcPlaystyles: BattlePlanner.#onRecalcPlaystyles,
       fudge: BattlePlanner.#onFudge,
       leftView: BattlePlanner.#onLeftView,
       sideFilter: BattlePlanner.#onSideFilter,
@@ -1742,6 +1743,30 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     this.stale = true;
     this.render();
     ui.notifications.info(loc(all ? "FASTFIGHTING.Planner.RepickedAll" : "FASTFIGHTING.Planner.Repicked"));
+  }
+
+  /**
+   * Playstyles worked out again for everyone in the plan (auto-config.js recalcPlaystyles): those still as they were
+   * picked by themselves, and any with fewer than two. Read again, and run again from there.
+   */
+  static async #onRecalcPlaystyles(event, target) {
+    target.closest("[popover]")?.hidePopover?.();
+    if ( !this.roster?.length || !game.user.isGM ) return;
+    // (One actor, one write: a creature many tokens share once.)
+    const seen = new Set();
+    let n = 0;
+    for ( const e of this.roster ) {
+      const actor = e.token.actor;
+      if ( !actor || seen.has(actor.uuid) ) continue;
+      seen.add(actor.uuid);
+      if ( await recalcPlaystyles(actor, e.spec) ) n++;
+    }
+    // (Every character read again, with its new playstyles.)
+    this.freshRead = true;
+    await this.#loadRoster();
+    this.stale = true;
+    this.render();
+    ui.notifications.info(game.i18n.format("FASTFIGHTING.Planner.RecalcedPlaystyles", { n }));
   }
 
   static async #onClearPlan() {

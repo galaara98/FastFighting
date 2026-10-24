@@ -16,6 +16,8 @@ const traits = (tactical, brave, selfish, loyal) => ({ tactical: { base: tactica
 const bow = () => strike({ id: "bow", name: "Bow", melee: false, reach: undefined, range: { increment: 60, max: 240 } });
 const spell = id => ({ id, name: id, kind: "spell-attack", cost: 2, rank: 1, bonus: 8, range: { increment: 60 }, damage: [parseFormula("2d6", "fire")] });
 const picks = (spec, options) => pickPlaystyles(scorePlaystyles(spec, options));
+/** Only those that clear the floor (no topping up to AUTO_LEAST). */
+const floored = (spec, options) => pickPlaystyles(scorePlaystyles(spec, options), { least: 0 });
 
 describe("the playstyles that fit", () => {
   test("a brave, loyal, selfless fighter with a shield and good armor: a Tank, first", () => {
@@ -40,26 +42,38 @@ describe("the playstyles that fit", () => {
 
   test("the system's hints weigh in, for and against; the biography's words too, two at most", () => {
     const plain = creature({ traits: traits(50, 50, 50, 50), defenses: { ac: 11 } });
-    expect(picks(plain)).toEqual([]);
-    expect(picks(plain, { hints: { enabler: 1 } })).toEqual(["enabler"]);
+    expect(floored(plain)).toEqual([]);
+    expect(floored(plain, { hints: { enabler: 1 } })).toEqual(["enabler"]);
     const tank = creature({ traits: traits(55, 85, 20, 80), shield: { ac: 2 }, defenses: { ac: 22 } });
-    expect(picks(tank, { hints: { tank: -1 } })).not.toContain("tank");
+    expect(floored(tank, { hints: { tank: -1 } })).not.toContain("tank");
     const words = readKeywordFile({ words: { greed: { playstyles: { mercenary: 1 } }, sellsword: { playstyles: { mercenary: 1 }, traits: { loyal: -2 } }, thief: { playstyles: { thief: 1 } } } });
     expect(keywordEffects("A greedy sellsword who loves Gold.", words).playstyles).toEqual({ mercenary: 2 });
     // (Two keywords' worth at most count, so a long list of them is no stronger than two; and words can count against.)
-    expect(picks(creature({ traits: traits(50, 50, 50, 50), defenses: { ac: 11 } }), { words: { enabler: 9 } })).toEqual(["enabler"]);
-    expect(picks(creature({ traits: traits(50, 50, 50, 50), defenses: { ac: 11 } }), { hints: { enabler: 1 }, words: { enabler: -2 } })).toEqual([]);
+    expect(floored(creature({ traits: traits(50, 50, 50, 50), defenses: { ac: 11 } }), { words: { enabler: 9 } })).toEqual(["enabler"]);
+    expect(floored(creature({ traits: traits(50, 50, 50, 50), defenses: { ac: 11 } }), { hints: { enabler: 1 }, words: { enabler: -2 } })).toEqual([]);
+  });
+
+  test("never fewer than two: however little fits, the best that don't clash; one someone chose kept first", () => {
+    const plain = creature({ traits: traits(50, 50, 50, 50), defenses: { ac: 11 } });
+    const two = picks(plain);
+    expect(two).toHaveLength(2);
+    expect(CLASHES.some(([a, b]) => two.includes(a) && two.includes(b))).toBe(false);
+    expect(picks(plain, { hints: { enabler: 1 } })[0]).toBe("enabler");
+    const kept = pickPlaystyles(scorePlaystyles(plain), { keep: ["lazy"] });
+    expect(kept[0]).toBe("lazy");
+    expect(kept.length).toBeGreaterThanOrEqual(2);
+    expect(kept).not.toContain("dps"); // (Lazy and DPS pull against each other)
   });
 
   test("a player character's traits count only where it's unlike the usual one (bold, loyal, unselfish by default)", () => {
     const pc = extra => creature({ kind: "pc", traits: traits(65, 75, 25, 80), defenses: { ac: 11 }, ...extra });
-    expect(picks(pc())).toEqual([]);
+    expect(floored(pc())).toEqual([]);
     // (The same numbers on a creature that isn't a player character say a lot.)
-    expect(picks(creature({ traits: traits(65, 75, 25, 80), defenses: { ac: 11 } }))).toContain("moralist");
+    expect(floored(creature({ traits: traits(65, 75, 25, 80), defenses: { ac: 11 } }))).toContain("moralist");
     // A timid player character, for one of them, is a Chicken.
-    expect(picks(pc({ traits: traits(65, 30, 25, 80) }))).toContain("chicken");
+    expect(floored(pc({ traits: traits(65, 30, 25, 80) }))).toContain("chicken");
     // A plain one (a funnel peasant: less bold and loyal than a hero) isn't a villain for it.
-    const plain = picks(pc({ traits: traits(50, 50, 50, 45) }));
+    const plain = floored(pc({ traits: traits(50, 50, 50, 45) }));
     expect(plain).not.toContain("cruel");
     expect(plain).not.toContain("mercenary");
   });
