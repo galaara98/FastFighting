@@ -1268,13 +1268,22 @@ function executeOffense(run, u, action, t, attacksMade) {
   if ( action.sequence?.length ) {
     let made = attacksMade;
     let target = t;
-    for ( const strike of action.sequence ) {
-      if ( !target || !isStanding(target) ) target = nextTargetInReach(run, u, strike);
-      if ( !target ) break;
-      executeOffense(run, u, strike, target, made);
-      if ( !action.sameMap ) made += attacksIn(strike); // (PF2e Double Slice: both at the same penalty)
-      if ( battleOver(run) ) break;
+    // (A fumble only when every attack of it fumbles (API 29, `fumble: "all"`: DCC's halfling fighting with two
+    // weapons): each one's fumble held back, and the table rolled once, at the end, if all of them did.)
+    const held = action.fumble === "all" && u.spec.fumble ? (u.heldFumbles = { made: 0, fumbled: 0 }) : null;
+    try {
+      for ( const strike of action.sequence ) {
+        if ( !target || !isStanding(target) ) target = nextTargetInReach(run, u, strike);
+        if ( !target ) break;
+        if ( held ) held.made++;
+        executeOffense(run, u, strike, target, made);
+        if ( !action.sameMap ) made += attacksIn(strike); // (PF2e Double Slice: both at the same penalty)
+        if ( battleOver(run) ) break;
+      }
+    } finally {
+      if ( held ) delete u.heldFumbles;
     }
+    if ( held && held.made > 0 && held.fumbled === held.made && isUp(u) ) applyFumble(run, u);
     return;
   }
   u.revealed = true;
@@ -1610,7 +1619,10 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
         const friend = rules.strayShot(run, u, target, action);
         if ( friend && isUp(friend) ) strayShot(run, u, action, friend, logging);
       }
-      if ( roll.degree === 0 && u.spec.fumble ) applyFumble(run, u);
+      if ( roll.degree === 0 && u.spec.fumble ) {
+        if ( u.heldFumbles ) u.heldFumbles.fumbled++;
+        else applyFumble(run, u);
+      }
     }
     // (A Strike on its own turn, for what needs one first: its last action a hit, two hits in a row: requires.js. And a
     // critical hit with one brings back what a crit recharges: PF2e Draconic Momentum.)

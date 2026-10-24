@@ -17,7 +17,8 @@
  * "emotion", "arcane" ...), and four of the engine's own: "magical" (a spell or anything magical: battle-state.js
  * isMagical), "spell" (a spell: one with a rank, a spell id or a spell check), "area" (an area or an aura) and
  * "damaging" (it deals damage), with "inflicts:<condition>" for each condition it may lay (the engine's keys:
- * "inflicts:frightened"). A helper puts the system's own tags on its actions as traits (PF2e: the spellcasting
+ * "inflicts:frightened"). An effect a hazard sets off (its user's spec.hazard: a trap, a haunt) carries "hazard" and
+ * "trap" too (API 29: DCC's Guardian Angel augur, PF2e's Trap Finder, 5e's Dungeon Delver). A helper puts the system's own tags on its actions as traits (PF2e: the spellcasting
  * entry's tradition on a spell, as PF2e's own roll options have it).
  * Bonuses already on the creature from effects (outcome.mods.saves) add to these as they always have: the engine
  * doesn't know their kind.
@@ -87,7 +88,8 @@ export function saveVsApplies(entry, type, tags, from = null) {
 export function saveVsBonus(t, type, { action = null, from = null, magical = false } = {}) {
   const list = t?.spec?.saveVs;
   if ( !Array.isArray(list) || !list.length ) return { bonus: 0, advantage: 0 };
-  const tags = effectTags(action, { magical });
+  const own = effectTags(action, { magical });
+  const tags = from?.spec?.hazard ? new Set([...own, "hazard", "trap"]) : own;
   const best = {};
   const worst = {};
   let untyped = 0;

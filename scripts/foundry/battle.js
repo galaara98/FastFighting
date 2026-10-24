@@ -112,6 +112,15 @@ export async function gatherRoster(setup, adapter = getAdapter(), { fresh = fals
     return true;
   }).sort(rosterOrder);
   const out = [];
+  // (The system's own party, where it keeps one (API 29, partyMembers: its actors' ids): on the Friendly Team unless the
+  // GM has made the token Hostile.)
+  let party = null;
+  try {
+    const ids = adapter.partyMembers?.();
+    party = ids ? new Set(ids) : null;
+  } catch ( err ) {
+    console.warn(`${MODULE_ID} | the system's party`, err);
+  }
   for ( const token of tokens ) {
     try {
       const spec = await cachedCharacterSpec(adapter, token.document, { fresh });
@@ -130,9 +139,7 @@ export async function gatherRoster(setup, adapter = getAdapter(), { fresh = fals
       // (The GM's mark, in the token's FastFighting tab. Players can write their own actors' flags, and nobody attacks a
       // hazard: on an actor a player owns, the mark doesn't count.)
       applyHazard(spec, token.actor?.hasPlayerOwner ? null : token.actor?.getFlag(MODULE_ID, "hazard"));
-      // (A hazard on the Neutral side, as PF2e leaves one with no alliance, is set against the party.)
-      const side = DISPOSITION_SIDES[token.document.disposition] ?? SIDES.HOSTILE;
-      out.push({ token, spec, baseSide: spec.hazard && side === SIDES.NEUTRAL ? SIDES.HOSTILE : side });
+      out.push({ token, spec, baseSide: startingSide(token.document.disposition, { hazard: !!spec.hazard, inParty: !!party?.has(token.actor?.id) }) });
     } catch ( err ) {
       console.error(`${MODULE_ID} | failed to read ${token.name}`, err);
     }
@@ -140,6 +147,17 @@ export async function gatherRoster(setup, adapter = getAdapter(), { fresh = fals
   // (Each team's reinforcement creature, read with the roster: battleFor.)
   out.reinforcementSpecs = await readReinforcements(setup, adapter);
   return out;
+}
+
+/**
+ * The side a token starts on, before the GM's choices: its disposition's; one in the system's own party (partyMembers,
+ * API 29) the Friendly Team, unless its token is Hostile; a hazard left Neutral (as PF2e leaves one with no alliance)
+ * set against the Friendlies.
+ */
+export function startingSide(disposition, { hazard = false, inParty = false } = {}) {
+  const marked = DISPOSITION_SIDES[disposition] ?? SIDES.HOSTILE;
+  const side = inParty && marked !== SIDES.HOSTILE ? SIDES.FRIENDLY : marked;
+  return hazard && side === SIDES.NEUTRAL ? SIDES.HOSTILE : side;
 }
 
 /** The side a roster entry fights on for this run, before allegiance resolution. */

@@ -95,3 +95,20 @@ describe("martial actions in a fight", () => {
     expect(taken).toBeGreaterThan(0);
   });
 });
+
+describe("a sequence that fumbles only when every attack does (fumble: \"all\")", () => {
+  test("one fumbled attack of two rolls no fumble table; both do, one roll; without it, each fumble its own", () => {
+    const fumble = { die: parseFormula("1"), mod: 0, rows: [{ lo: -99, hi: 99, text: "slips" }] };
+    const sure = { ...strike({ id: "sure", name: "Sure", bonus: -500, damage: [parseFormula("1", "slashing")] }) };
+    const pair = all => ({ ...sure, id: "pair", name: "Pair", cost: 1, sequence: [sure, { ...sure, id: "sure2" }], ...(all ? { fumble: "all" } : {}) });
+    const fumbles = all => {
+      const r = replay(battle([creature({ id: "halfling", fumble, actions: [pair(all)] }), dummy()], { maxRounds: 1 }), pf2eRules, 7);
+      return { tries: r.log.filter(e => e.actor === "halfling" && e.type === "attack" && e.degree === 0).length, rolled: r.log.filter(e => e.type === "fumble").length };
+    };
+    const each = fumbles(false);
+    const all = fumbles(true);
+    expect(each.rolled).toBe(each.tries);
+    expect(all.rolled).toBeLessThanOrEqual(Math.floor(all.tries / 2));
+    expect(all.tries).toBeGreaterThan(0);
+  });
+});

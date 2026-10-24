@@ -104,3 +104,12 @@ describe("a fight where a save bonus against magic changes a save", () => {
     expect(changed.withIt.total).toBe(changed.without.total + 1);
   });
 });
+
+describe("against a trap", () => {
+  test("an effect a hazard sets off carries hazard and trap; anyone else's doesn't", async () => {
+    const { saveVsBonus } = await import("../scripts/engine/behavior/save-vs.js");
+    const angel = { spec: { saveVs: [{ bonus: 2, vs: ["trap"] }] } };
+    expect(saveVsBonus(angel, "ref", { action: { traits: [] }, from: { spec: { hazard: { once: true } } } }).bonus).toBe(2);
+    expect(saveVsBonus(angel, "ref", { action: { traits: [] }, from: { spec: {} } }).bonus).toBe(0);
+  });
+});
