@@ -54905,6 +54905,26 @@
    "commit": null,
    "hash": "0f1415d5db67"
   },
+  "pf2e:FFPF2E.FreshCorpse": {
+   "repo": "pf2e",
+   "file": "languages/en.json",
+   "key": "FFPF2E.FreshCorpse",
+   "area": "pf2e/General",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "77f4cdec5a39"
+  },
+  "pf2e:FFPF2E.FreshCorpseHint": {
+   "repo": "pf2e",
+   "file": "languages/en.json",
+   "key": "FFPF2E.FreshCorpseHint",
+   "area": "pf2e/General",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "84f22182619b"
+  },
   "pf2e:FFPF2E.Given": {
    "repo": "pf2e",
    "file": "languages/en.json",
@@ -55074,7 +55094,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "b356e2a04b2d"
+   "hash": "b356e2a04b2d",
+   "gone": "2026-10-24"
   },
   "pf2e:FFPF2E.MeatHint": {
    "repo": "pf2e",
@@ -55084,7 +55105,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "3e4e8c2a46bf"
+   "hash": "3e4e8c2a46bf",
+   "gone": "2026-10-24"
   },
   "pf2e:FFPF2E.NeedsCore": {
    "repo": "pf2e",
@@ -55468,6 +55490,46 @@
    "date": null,
    "commit": null,
    "hash": "5edd1832df25"
+  },
+  "pf2e:FFPF2E.RottenCorpse": {
+   "repo": "pf2e",
+   "file": "languages/en.json",
+   "key": "FFPF2E.RottenCorpse",
+   "area": "pf2e/General",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "eca283d139a3"
+  },
+  "pf2e:FFPF2E.RottenCorpseHint": {
+   "repo": "pf2e",
+   "file": "languages/en.json",
+   "key": "FFPF2E.RottenCorpseHint",
+   "area": "pf2e/General",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "0be9d975a6b7"
+  },
+  "pf2e:FFPF2E.ScrapCorpse": {
+   "repo": "pf2e",
+   "file": "languages/en.json",
+   "key": "FFPF2E.ScrapCorpse",
+   "area": "pf2e/General",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "a3bd05a206e6"
+  },
+  "pf2e:FFPF2E.ScrapCorpseHint": {
+   "repo": "pf2e",
+   "file": "languages/en.json",
+   "key": "FFPF2E.ScrapCorpseHint",
+   "area": "pf2e/General",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "d2184e2c3b93"
   },
   "pf2e:FFPF2E.Settings.loreBoost.Hint": {
    "repo": "pf2e",
