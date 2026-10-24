@@ -24,7 +24,7 @@
  * again.
  * Without positions everyone perceives everyone. Pure: no Foundry globals.
  */
-import { edgeDistance, separation, approach, centerDistance } from "../battle-state.js";
+import { edgeDistance, separation, approach, centerDistance, isStanding } from "../battle-state.js";
 import { wallsKnown, lineOfSight, wallsBetween } from "./space.js";
 
 /** Darkness from this level up (0 to 1, the scene's) needs seeing in the dark to see far. */
@@ -121,6 +121,32 @@ export function perceives(run, u, t, { crisis = false } = {}) {
   const found = (!deaf && feet <= r.hearing * k) || feet <= Math.max(r.feel, r.radar) * k || smells() || sees();
   pair[slot] = found;
   return found;
+}
+
+/**
+ * Each creature the party (its players' characters) has seen this fight, marked (`partySaw`): one in a standing
+ * character's senses (not hidden), or one it came to blows or words with. The open story names it from then on
+ * (foundry/live-battle.js nameHidden), and after a win its body is the party's to search (aggregate.js). Kept on the
+ * creature, so a Rewind takes it back with the turn. Words are read from the log where the fight keeps one, from where
+ * it was read to last time (`run.seenLogAt`); blows, from who has harmed whom.
+ * @param {Set<object>} party
+ */
+export function noteSeen(run, party) {
+  if ( !party.size ) return;
+  const met = new Set();
+  const log = run.log ?? [];
+  for ( let i = Math.min(run.seenLogAt ?? 0, log.length); i < log.length; i++ ) {
+    const a = run.byId.get(log[i].actorId);
+    const t = run.byId.get(log[i].targetId);
+    if ( a && t && (party.has(a) || party.has(t)) ) met.add(a.id).add(t.id);
+  }
+  run.seenLogAt = log.length;
+  for ( const u of run.units ) {
+    if ( u.partySaw || party.has(u) ) continue;
+    const hidden = u.spec.hidden && !u.revealed;
+    if ( met.has(u.id) || [...party].some(p => u.harmedBy?.has(p.id) || p.harmedBy?.has(u.id))
+      || (!hidden && [...party].some(p => isStanding(p) && perceives(run, p, u))) ) u.partySaw = true;
+  }
 }
 
 /**

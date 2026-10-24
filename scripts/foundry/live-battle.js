@@ -57,7 +57,7 @@ import { BACK_AFTER_MS, awayTimers, stillAway, dueTimers, handBack, deadlineCloc
 import { transcriptOf, newTranscript, dropTranscripts, tidyOnLogin } from "./live-journals.js";
 import { randomSeed } from "../engine/rng.js";
 import { holderOf } from "../engine/behavior/troubles.js";
-import { perceives } from "../engine/behavior/senses.js";
+import { perceives, noteSeen } from "../engine/behavior/senses.js";
 import { SystemAdapter } from "../adapters/adapter-base.js";
 import { FAST_MOVE_SPEED, FAST_STOP_NOTES, fastFightOffered, fastFightStop, fastTurnChange, fightMoment, stillSince, STILL_AGAIN, hushDice, unhushDice, registerQuietDice } from "./fast-fight.js";
 
@@ -3358,7 +3358,7 @@ const cardsOf = into => (into && into === battle?.pc ? (into.rollCards ??= []) :
  * Is a creature's name kept from the players in the story? Not a player's own; not one whose nameplate shows to
  * everyone (Always, Hover). One the GM marked "Keep its name secret" (its FastFighting tab) always is. Where the system
  * lets nameplates decide (namesFollowNameplates: PF2e's own setting), any other is, as the system's cards have it;
- * elsewhere, until a player's character has seen it this fight (`u.partySaw`: noteSeen).
+ * elsewhere, until a player's character has seen it this fight (`u.partySaw`: senses.js noteSeen).
  */
 function nameHidden(doc, u = null, byNameplate = nameplatesDecide()) {
   if ( !doc || doc.actor?.hasPlayerOwner ) return false;
@@ -3392,27 +3392,6 @@ function playersCanTell(run, id) {
   if ( party.has(u) ) return true;
   if ( u.spec.hidden && !u.revealed ) return false;
   return [...party].some(p => isStanding(p) && perceives(run, p, u));
-}
-
-/**
- * Each creature a player's character has seen this fight, marked (`partySaw`): one in its sight (not hidden), or one
- * it came to blows or words with. Named in the story from then on (nameHidden). Kept on the creature, so a Rewind takes
- * it back with the turn.
- */
-function noteSeen(run) {
-  const party = partyOf(run);
-  if ( !party.size ) return;
-  const met = new Set();
-  for ( const e of run.log ) {
-    const a = run.byId.get(e.actorId);
-    const t = run.byId.get(e.targetId);
-    if ( a && t && (party.has(a) || party.has(t)) ) met.add(a.id).add(t.id);
-  }
-  for ( const u of run.units ) {
-    if ( u.partySaw || party.has(u) ) continue;
-    const hidden = u.spec.hidden && !u.revealed;
-    if ( met.has(u.id) || (!hidden && [...party].some(p => isStanding(p) && perceives(run, p, u))) ) u.partySaw = true;
-  }
 }
 
 /**
@@ -3458,7 +3437,8 @@ function unnamed(run, docs) {
 /** Those whose names the players haven't learned, now (unnamed): unit id -> what the open story calls each. */
 function someoneNow() {
   const run = battle.run;
-  noteSeen(run);
+  // (Each creature a player's character has seen this fight: named from then on, senses.js noteSeen.)
+  noteSeen(run, partyOf(run));
   return unnamed(run, new Map(run.units.map(u => [u.id, docOf(u.id)]).filter(([, d]) => d)));
 }
 

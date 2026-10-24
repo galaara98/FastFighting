@@ -6,8 +6,18 @@ import { STATUS, SIDES, NEUTRAL_PARTY, HOSTILE_GROUPS } from "../constants.js";
 /** How a foe of the party ends a fight, for the planner's Overview (the first that fits, in this order). */
 export const FOE_ENDS = Object.freeze(["slain", "down", "captured", "fled", "gaveUp", "talked", "standing"]);
 
-/** A foe the party can loot once it has won: there, and out of it. */
+/** A foe the party can loot once it has won: there, and out of it. (Anyone else's, only its body.) */
 const LOOTABLE = new Set([STATUS.DEAD, STATUS.DOWN, STATUS.BOUND, STATUS.SURRENDERED, STATUS.BEATEN]);
+
+/**
+ * What the party finds on one it searches after a win (`partyWon`): a foe out of it, or anyone else's body, that a
+ * player's character saw in the fight (`seen`: simulator.js summarize); its coin, its gear and the share of its team's
+ * purse it fell with (`worth`). A fight in a room no one of the party ever looked into leaves its bodies unsearched.
+ */
+export function lootFound(r, { partyWon, foe, friend }) {
+  if ( !partyWon || friend || r.seen === false ) return 0;
+  return (r.status === STATUS.DEAD || (foe && LOOTABLE.has(r.status))) ? (r.worth ?? 0) : 0;
+}
 
 /** Goods changing hands in a deal. */
 const DEALS = new Set(["bribe", "extort"]);
@@ -74,7 +84,7 @@ export function createAggregator(prep) {
   const losses = []; // (each fight's PCs down, for the worst tenth)
   // (Money, in the smallest coin: what the party's side gains, and loses; fights with a deal struck.)
   const friendIds = new Set(prep.combatants.filter(c => c.spec.side === SIDES.FRIENDLY).map(c => c.spec.id));
-  const money = { gained: 0, lost: 0, deals: 0 };
+  const money = { gained: 0, lost: 0, deals: 0, looted: 0 };
   const foeIds = new Set(prep.combatants.filter(c => HOSTILE_GROUPS.includes(c.spec.side)).map(c => c.spec.id));
   const foeEnds = Object.fromEntries(FOE_ENDS.map(k => [k, 0]));
   let foesSeen = 0;
@@ -111,7 +121,7 @@ export function createAggregator(prep) {
           if ( fromFriend && !friendIds.has(g.to) ) money.lost += g.value;
           else if ( !fromFriend && friendIds.has(g.to) && g.got ) money.gained += g.value;
         }
-        if ( partyWon && foeIds.has(id) && LOOTABLE.has(r.status) ) money.gained += r.worth ?? 0;
+        money.looted += lootFound(r, { partyWon, foe: foeIds.has(id), friend: friendIds.has(id) });
         if ( id.startsWith("reinforce~") ) reinforced = true;
         const u = units[id];
         if ( !u ) continue;
@@ -255,7 +265,7 @@ export function createAggregator(prep) {
         } : null,
         // Money, in the smallest coin, on average: what the party's side gains (handed or taken to it, and, when it
         // wins, what's on the foes it has beaten), and loses (handed or taken from it); a deal struck (bribe, extortion).
-        money: { gained: money.gained / n, lost: money.lost / n, pDeal: money.deals / n },
+        money: { gained: money.gained / n, lost: money.lost / n, looted: money.looted / n, pDeal: money.deals / n },
         // How the party's foes end (shares of every foe in every fight it took part in, FOE_ENDS), null with none.
         foesEnd: foesSeen ? Object.fromEntries(FOE_ENDS.map(k => [k, foeEnds[k] / foesSeen])) : null,
         // Someone from outside the encounter joining in; reinforcements arriving; a foe's boss or leader falling (or

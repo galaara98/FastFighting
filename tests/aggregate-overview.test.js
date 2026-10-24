@@ -3,7 +3,7 @@
  * reinforcements arriving and a foe's leader falling, from fights' summaries.
  */
 import { describe, expect, test } from "vitest";
-import { createAggregator, foeEnd, FOE_ENDS } from "../scripts/engine/aggregate.js";
+import { createAggregator, foeEnd, FOE_ENDS, lootFound } from "../scripts/engine/aggregate.js";
 
 const prep = {
   sides: { friendly: { label: "Party" }, hostile: { label: "Hostile" } },
@@ -86,7 +86,7 @@ describe("the stakes", () => {
 });
 
 describe("money", () => {
-  test("gained: handed or taken to the party's side, and, when it wins, what's on the foes it beat; lost: what it gave up; a deal struck", () => {
+  test("gained: handed or taken to the party's side; looted: when it wins, what's on the foes it beat; lost: what it gave up; a deal struck", () => {
     const agg = createAggregator(prep);
     // The party wins: the orc bribed Kyra 50 (she has it), the boss is slain with 300 on it, the fled hermit's 80 isn't loot.
     agg.add({ outcome: "victory", winners: ["friendly"], rounds: 5, units: {
@@ -101,9 +101,27 @@ describe("money", () => {
       orc: unit("standing", { worth: 30 }), boss: unit("standing", { worth: 340 })
     } }, 2);
     const { money } = agg.finish();
-    expect(money.gained).toBe((50 + 300) / 2);
+    expect(money.gained).toBe(50 / 2);
+    expect(money.looted).toBe(300 / 2);
     expect(money.lost).toBe((10 + 40) / 2);
     expect(money.pDeal).toBe(1);
+  });
+
+  test("looted: only bodies a player's character saw; anyone's body, a foe out of it, never one that fled", () => {
+    const agg = createAggregator(prep);
+    agg.add({ outcome: "victory", winners: ["friendly"], rounds: 5, units: {
+      kyra: unit("standing"), valeros: unit("dead", { worth: 500 }),
+      orc: unit("bound", { worth: 20, seen: true }), boss: unit("dead", { worth: 300, seen: false }), hermit: unit("dead", { worth: 80, seen: true })
+    } }, 1);
+    // (The boss died in a room no one of the party looked into; Valeros is the party's own.)
+    expect(agg.finish().money.looted).toBe(20 + 80);
+  });
+
+  test("lootFound: nothing unless the party won", () => {
+    expect(lootFound({ status: "dead", worth: 9 }, { partyWon: false, foe: true, friend: false })).toBe(0);
+    expect(lootFound({ status: "dead", worth: 9 }, { partyWon: true, foe: false, friend: false })).toBe(9);
+    expect(lootFound({ status: "down", worth: 9 }, { partyWon: true, foe: false, friend: false })).toBe(0);
+    expect(lootFound({ status: "fled", worth: 9 }, { partyWon: true, foe: true, friend: false })).toBe(0);
   });
 
   test("goods left on the ground aren't gained", () => {

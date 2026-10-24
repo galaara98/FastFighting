@@ -41,7 +41,7 @@ import { opensWithTalk, breaksStandoff, standoffPitches, charismaticLeader, canT
 import { controlOutcome, controlRoll, isImmune, degreeShift } from "./behavior/control.js";
 import { recompute as recomputeConditions, applyOutcome, renewHolds, beginConcentration, endConcentration, holdsAnything, noteConcentration, moveHeld, settleAllegiance, iwrOf, incoming, spendEdges, spendBoost, focusOf, tauntProof, withoutTaunt, armEffects } from "./behavior/effects.js";
 import { decideBuff, aidScores, checkDc } from "./behavior/support.js";
-import { perceives } from "./behavior/senses.js";
+import { perceives, noteSeen } from "./behavior/senses.js";
 import { isAnimalistic, animalTactics } from "./behavior/animal.js";
 import { stealChance, theftTarget, theftPlan, attemptTheft, robbable, lootable, leftRemains } from "./behavior/theft.js";
 import { fallenWishes, decideFallen, bind, rob, stayBound, takesPrisoners, robsTheFallen, freeFriend, rollOf } from "./behavior/fallen.js";
@@ -4367,6 +4367,8 @@ export function endOfTurn(run, u) {
   const rules = run.prep.rules;
   // (Whoever died this turn, the turn's own creature or another: its share of its team's purse falls with it.)
   dropShares(run);
+  // (Whom the players' characters have seen so far: senses.js noteSeen.)
+  noteSeen(run, partyOf(run));
   backOnItsWay(run, u); // (stopped on its way off the map, and this turn given to that: going again)
   conditionUpkeep(run, u);
   // A save at the end of each of its turns may shake an effect off (5e Hold Person).
@@ -4725,14 +4727,21 @@ function gaveOf(u) {
   return gave.length ? { gave } : {};
 }
 
-/** What u has on it at the end, in the smallest coin: its own coin, and everything it carries, wields or wears. */
+/**
+ * What u has on it at the end, in the smallest coin: its own coin, everything it carries, wields or wears, and the share
+ * of its team's purse it fell with (talk.js dropShare).
+ */
 function worthOf(u) {
   const v = goodsLeft(u);
-  return v.own + [...v.stowed, ...v.wielded, ...v.worn].reduce((sum, i) => sum + (Number(i.value) || 0) * (i.quantity ?? 1), 0);
+  return v.own + (u.purseDrop ?? 0) + [...v.stowed, ...v.wielded, ...v.worn].reduce((sum, i) => sum + (Number(i.value) || 0) * (i.quantity ?? 1), 0);
 }
+
+/** The players' characters, for whom they've seen (senses.js noteSeen). */
+const partyOf = run => new Set(run.units.filter(u => u.spec.kind === "pc"));
 
 function summarize(run, ended, capture, winners) {
   const outcome = !ended ? "stalemate" : (winners.length ? "victory" : "none");
+  const party = partyOf(run);
   const units = {};
   for ( const u of run.units ) {
     if ( u.summoner ) continue; // summoned for this fight alone: not the table's
@@ -4750,6 +4759,8 @@ function summarize(run, ended, capture, winners) {
       // (For the planner's money: what it handed over, and what it's worth at the end.)
       ...gaveOf(u),
       worth: worthOf(u),
+      // (Seen by a player's character this fight, or no character there to see: its body is searched after a win.)
+      seen: !party.size || !!u.partySaw,
       resourcesUsed: Object.fromEntries(Object.entries(u.resourcesStart).map(([k, v]) => [k, v - (u.resources[k] ?? 0)])),
       final: capture ? captureUnit(u, run.prep.rules) : undefined
     };
@@ -4937,6 +4948,7 @@ export function settleAftermath(run) {
 export function endRun(run, ended, { capture = false, settle = true } = {}) {
   const prep = run.prep;
   dropShares(run);
+  noteSeen(run, partyOf(run));
   // Who won is decided when the last blow lands (or one side backs off); the aftermath only settles the fallen.
   // (Talks that collapsed: nobody's.)
   const winners = !ended ? [] : run.resolved ? [run.resolved.side].filter(Boolean) : activeSides(run);

@@ -928,7 +928,8 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       delta: prev && Number.isFinite(then) && Math.round(now / this.coin.value) !== Math.round(then / this.coin.value)
         ? { text: `${now > then ? "+" : "−"}${this.#coinText(Math.abs(now - then))}`, cls: (now > then) === goodUp ? "is-better" : "is-worse" } : null
     });
-    const money = m && (m.gained > 0 || m.lost > 0 || m.pDeal > 0 || pt?.pLostGoods > 0) ? [
+    const money = m && (m.gained > 0 || m.looted > 0 || m.lost > 0 || m.pDeal > 0 || pt?.pLostGoods > 0) ? [
+      ...ifAny(m.looted, () => coins("Loot", m.looted, prev?.money?.looted, true)),
       ...ifAny(m.gained, () => coins("Spoils", m.gained, prev?.money?.gained, true)),
       ...ifAny(m.lost, () => coins("Losses", m.lost, prev?.money?.lost, false)),
       ...ifAny(m.pDeal, () => kpi("DealStruck", m.pDeal, prev?.money?.pDeal, true, "talk", true)),

@@ -18973,6 +18973,26 @@
    "hash": "793e92cfcc0a",
    "changed": true
   },
+  "core:FASTFIGHTING.Results.Loot": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Results.Loot",
+   "area": "core/Results",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "4ae091c54b39"
+  },
+  "core:FASTFIGHTING.Results.LootHint": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Results.LootHint",
+   "area": "core/Results",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "ea06d20dc21e"
+  },
   "core:FASTFIGHTING.Results.Losses": {
    "repo": "core",
    "file": "languages/en.json",
