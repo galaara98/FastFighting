@@ -36,7 +36,7 @@ import { keepTogether } from "./behavior/together.js";
 import { mayLeave, startLeaving, isLeaving, wayOff, goAlong, confronted, dealsWithIt, backOnItsWay } from "./behavior/leaving.js";
 import { createAggregator } from "./aggregate.js";
 import { spotTraps, stepOut, learnTrap } from "./behavior/traps.js";
-import { talkActionsThisTurn, choosePitch, attemptTalk, shareLanguage, resolveTalk, aimOf, remaining as goodsLeft } from "./behavior/talk.js";
+import { talkActionsThisTurn, choosePitch, attemptTalk, shareLanguage, resolveTalk, aimOf, remaining as goodsLeft, dropShare } from "./behavior/talk.js";
 import { opensWithTalk, breaksStandoff, standoffPitches, charismaticLeader, canTalk, prefersTalk } from "./behavior/standoff.js";
 import { controlOutcome, controlRoll, isImmune, degreeShift } from "./behavior/control.js";
 import { recompute as recomputeConditions, applyOutcome, renewHolds, beginConcentration, endConcentration, holdsAnything, noteConcentration, moveHeld, settleAllegiance, iwrOf, incoming, spendEdges, spendBoost, focusOf, tauntProof, withoutTaunt, armEffects } from "./behavior/effects.js";
@@ -4354,8 +4354,19 @@ function startHarm(run, u) {
  */
 const systemOwns = (run, u, what) => !!run.live?.systemOwns?.(u, what);
 
+/** The dead's shares of their teams' purses, on their bodies (talk.js dropShare): once each, logged. */
+function dropShares(run) {
+  for ( const o of run.units ) {
+    if ( o.status !== STATUS.DEAD || !o.purse || o.purseDrop !== undefined ) continue;
+    const amount = dropShare(o);
+    if ( amount > 0 ) log(run, o, { type: "purseDrop", amount, team: o.purse.key });
+  }
+}
+
 export function endOfTurn(run, u) {
   const rules = run.prep.rules;
+  // (Whoever died this turn, the turn's own creature or another: its share of its team's purse falls with it.)
+  dropShares(run);
   backOnItsWay(run, u); // (stopped on its way off the map, and this turn given to that: going again)
   conditionUpkeep(run, u);
   // A save at the end of each of its turns may shake an effect off (5e Hold Person).
@@ -4668,6 +4679,8 @@ export function captureUnit(u, rules) {
     status: u.status,
     active: u.active,
     joinedRound: u.joinedRound,
+    // (Its share of its team's purse, on its body once dead: talk.js dropShare.)
+    ...(u.purseDrop !== undefined ? { purseDrop: u.purseDrop } : {}),
     dying: u.dying,
     wounded: u.wounded,
     stable: u.stable,
@@ -4923,6 +4936,7 @@ export function settleAftermath(run) {
  */
 export function endRun(run, ended, { capture = false, settle = true } = {}) {
   const prep = run.prep;
+  dropShares(run);
   // Who won is decided when the last blow lands (or one side backs off); the aftermath only settles the fallen.
   // (Talks that collapsed: nobody's.)
   const winners = !ended ? [] : run.resolved ? [run.resolved.side].filter(Boolean) : activeSides(run);

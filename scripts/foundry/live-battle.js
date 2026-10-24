@@ -3210,6 +3210,10 @@ async function writeEach(before, after, records, { messages = null, leave = null
         const meat = meatGoods(doc.actor, unit.spec, adapter);
         if ( meat ) records.push(...noteSettings((await adapter.putGoods(doc, meat)) ?? []));
       }
+      // (Dead, its share of its team's purse lies on it, out of the purse: coins on its sheet, there for its pile.)
+      if ( ch.purseDrop > 0 && typeof adapter.putGoods === "function" ) {
+        records.push(...noteSettings((await adapter.putGoods(doc, { items: [], coins: null, money: ch.purseDrop })) ?? []));
+      }
       const record = await adapter.commitChanges(doc, spec, ch, final, {
         ...writeOptions(), before: before[id], effectSource, tokenOf, audience
       });

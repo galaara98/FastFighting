@@ -149,8 +149,29 @@ export function purseLeft(t) {
   const p = t.purse;
   if ( !p ) return 0;
   let drawn = 0;
-  for ( const o of p.members ) for ( const c of o.concessions ?? [] ) if ( !c.kept && c.purseKey === p.key ) drawn += Number(c.purse) || 0;
+  for ( const o of p.members ) {
+    for ( const c of o.concessions ?? [] ) if ( !c.kept && c.purseKey === p.key ) drawn += Number(c.purse) || 0;
+    // (What the dead left on their bodies: dropShare.)
+    drawn += Number(o.purseDrop) || 0;
+  }
   return Math.max(0, p.money - drawn);
+}
+
+/**
+ * A member of a team with a purse has died: its share of what's still in the purse (its shares of the team's, as the
+ * fight began pictured it: battle-state.js purseShares) comes out of the purse and lies on its body, rounded down for
+ * one with a single share, up for a lieutenant, a leader or a boss. Once a creature; its amount (smallest coin, 0 for
+ * nothing) kept as u.purseDrop. Returns the amount, or null where there's nothing to settle.
+ */
+export function dropShare(u) {
+  const p = u?.purse;
+  if ( !p || u.purseDrop !== undefined ) return null;
+  const left = purseLeft(u);
+  const mine = Number(p.shares?.[u.id]) || 1;
+  const total = Number(p.totalShares) || p.members.length || 1;
+  const exact = (left * mine) / total;
+  u.purseDrop = Math.max(0, Math.min(left, mine > 1 ? Math.ceil(exact) : Math.floor(exact)));
+  return u.purseDrop;
 }
 
 /** Something to hand over: money, an item carried but not wielded or worn, or ground to give (progress on its track). */

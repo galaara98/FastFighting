@@ -8,6 +8,7 @@
  *   stable, prone:                      {from, to} when changed
  *   fell                                down (or dead) this turn, standing before
  *   died                                dead this turn
+ *   purseDrop                           its share of its team's purse, left on its body as it died (smallest coin)
  *   revived                             back up this turn
  *   status                              {from, to}: a change of status (fled, surrendered, stood down, beaten ...)
  *   conditions: {set: {key: value}, cleared: [key]}  the engine's condition keys (prone apart)
@@ -48,6 +49,8 @@ export function diffOutcome(before, after) {
   const up = s => s === STATUS.STANDING;
   if ( up(before.status) && (after.status === STATUS.DOWN || after.status === STATUS.DEAD) ) out.fell = true;
   if ( before.status !== STATUS.DEAD && after.status === STATUS.DEAD ) out.died = true;
+  // (Its share of its team's purse, on its body: money onto its sheet, out of the purse, talk.js dropShare.)
+  if ( Number(after.purseDrop) > 0 && !(Number(before.purseDrop) > 0) ) out.purseDrop = Number(after.purseDrop);
   if ( !up(before.status) && up(after.status) ) out.revived = true;
   if ( changed(before.status, after.status) ) out.status = { from: before.status, to: after.status };
 

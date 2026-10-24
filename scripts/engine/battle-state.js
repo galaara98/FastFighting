@@ -337,6 +337,19 @@ function prepareCombatant(c, side) {
 }
 
 /** Fresh mutable state for one run. */
+/**
+ * How a team's purse is pictured split among its members as the fight starts (the money itself stays in the purse):
+ * a share each, a lieutenant 2, a leader 4, a boss a leader's times the boss's influence (options.bossInfluence, 2 by
+ * default: 8). {shares: {unit id: n}, totalShares}. What one that dies leaves on its body: behavior/talk.js dropShare.
+ */
+export function purseShares(prep, key, members) {
+  const chain = prep.command?.[key] ?? (prep.sides?.[key]?.leaderId ? [{ id: prep.sides[key].leaderId, role: "leader" }] : []);
+  const boss = Number(prep.options?.bossInfluence) || 2;
+  const shareOf = role => (role === "boss" ? 4 * boss : role === "leader" ? 4 : role === "lieutenant" ? 2 : 1);
+  const shares = Object.fromEntries(members.map(u => [u.id, shareOf(chain.find(c => c.id === u.id)?.role)]));
+  return { shares, totalShares: Object.values(shares).reduce((s, n) => s + n, 0) };
+}
+
 export function createRun(prep) {
   const units = prep.combatants.map(p => createUnit(prep, p));
   // Money its side pools (Ironsworn's Supply): what one pays, all of them have that much less of.
@@ -349,7 +362,7 @@ export function createRun(prep) {
     const amount = Math.max(0, Math.round(Number(money) || 0));
     const members = units.filter(u => groupKeyOf(u) === key);
     if ( !amount || !members.length ) continue;
-    const purse = { key, money: amount, members };
+    const purse = { key, money: amount, members, ...purseShares(prep, key, members) };
     for ( const u of members ) u.purse = purse;
   }
   // Boost pools several share (DCC's Fleeting Luck: a player's, for all its characters): one stock for the fight.
