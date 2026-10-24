@@ -4,7 +4,7 @@
  * Every logged event carries structured data (type, rolls, margins, damage types, movement) so the story
  * writer can narrate it at any level of detail.
  */
-import { STATUS, TACTICAL, DOWNED_MODELS, AFTERMATH, EXECUTE_LUCK, NEUTRAL_PARTY, OPENING, clamp } from "../constants.js";
+import { STATUS, TACTICAL, DOWNED_MODELS, AFTERMATH, EXECUTE_LUCK, NEUTRAL_PARTY, OPENING, LORE_BOOST as LORE, clamp } from "../constants.js";
 import { createRng, deriveSeed, randomSeed } from "./rng.js";
 import { sampleDamage, samplePart, meanPart, part, addTo } from "./dice.js";
 import { diceAt, tableRoll, recordingRng, rollsWaiting, markRerolled, pendingRolls, markShown } from "./table-rolls.js";
@@ -2991,7 +2991,7 @@ function sizesUp(run, u, t, turn, room, { decided = false, wholeTurn = false } =
   // advantage says (options.loreBoost), about 2.5 times without it; a helper's own boost still goes first (one that
   // keeps the setting itself, or plays it otherwise: Ironsworn's next attack or words, at anyone, 25% likelier).
   const fromWorld = Number(run.prep.options?.loreBoost);
-  const factor = Number(how?.boost) > 1 ? Number(how.boost) : fromWorld > 1 ? fromWorld : LORE_BOOST;
+  const factor = Number(how?.boost) > 1 ? Number(how.boost) : fromWorld > 1 ? fromWorld : LORE.default;
   const uses = Number(how?.uses) > 0 ? Number(how.uses) : undefined;
   // Others of its sort here: what it learns (or doesn't) holds for them too.
   const kin = run.units.filter(o => o !== t && isStanding(o) && sortOf(o) === sort).length;
@@ -3074,8 +3074,6 @@ function tellLore(run, u, turn) {
   });
 }
 
-/** A Lore-Collector's payoff for sizing a foe up: its rolls against it about this many times as likely to succeed. */
-const LORE_BOOST = 2.5;
 
 /**
  * A Lore-Collector's first turn of a standoff: it may spend the whole of it watching the other side instead of

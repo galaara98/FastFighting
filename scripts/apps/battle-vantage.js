@@ -925,9 +925,9 @@ export function battleContext(b, focusId = null) {
     canEnd: started && !(state === "ended"),
     flags: [b.data.auto ? loc("FASTFIGHTING.Battle.PlayThrough") : null, npcAsk ? loc("FASTFIGHTING.Battle.NpcAsk") : null].filter(Boolean),
     toggles: [
-      { action: "playThrough", label: loc("FASTFIGHTING.Battle.PlayThrough"), on: !!b.data.auto, disabled: fast },
-      { action: "npcReactions", label: loc("FASTFIGHTING.Battle.NpcAsk"), on: npcAsk },
-      { action: "applyDamage", label: loc("FASTFIGHTING.Battle.ApplyDamage"), on: !!b.data.applyDamage, disabled: !!systemApplies }
+      { action: "playThrough", label: loc("FASTFIGHTING.Battle.PlayThrough"), hint: loc("FASTFIGHTING.Battle.PlayThroughHint"), on: !!b.data.auto, disabled: fast },
+      { action: "npcReactions", label: loc("FASTFIGHTING.Battle.NpcAsk"), hint: loc("FASTFIGHTING.Battle.NpcAskHint"), on: npcAsk },
+      { action: "applyDamage", label: loc("FASTFIGHTING.Battle.ApplyDamage"), hint: systemApplies || loc("FASTFIGHTING.Battle.ApplyDamageHint"), on: !!b.data.applyDamage, disabled: !!systemApplies }
     ],
     queue, waitingCount: queue.length, waitingText: fmt("FASTFIGHTING.Battle.WaitingCount", { n: queue.length }),
     order, teams, teamsComing: reinforcing.reduce((n, r) => n + (r.coming || 0), 0),

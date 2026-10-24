@@ -2901,7 +2901,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "f67ab10ad4e4"
+   "hash": "f67ab10ad4e4",
+   "gone": "2026-10-24"
   },
   "core:FASTFIGHTING.Battle.Net.HandBack": {
    "repo": "core",
@@ -14803,7 +14804,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "7a14ceb2d8f5"
+   "hash": "7a14ceb2d8f5",
+   "gone": "2026-10-24"
   },
   "core:FASTFIGHTING.Party.ReadOnly": {
    "repo": "core",
@@ -15295,7 +15297,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "58fdee5fa731"
+   "hash": "58fdee5fa731",
+   "gone": "2026-10-24"
   },
   "core:FASTFIGHTING.Planner.ClearConfirm": {
    "repo": "core",
@@ -15661,7 +15664,8 @@
    "date": null,
    "commit": null,
    "hash": "da30e4e9e766",
-   "changed": true
+   "changed": true,
+   "gone": "2026-10-24"
   },
   "core:FASTFIGHTING.Planner.IgnoreLanguages": {
    "repo": "core",
@@ -15897,7 +15901,8 @@
    "date": null,
    "commit": null,
    "hash": "c10de74ceecc",
-   "changed": true
+   "changed": true,
+   "gone": "2026-10-24"
   },
   "core:FASTFIGHTING.Planner.NoAdapter": {
    "repo": "core",

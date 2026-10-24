@@ -426,17 +426,30 @@ function onUnstarted(combat, diff, options, userId) {
 }
 
 /**
- * Was the tracker moved as it may be? By a GM, any way; by a player, only forward, from the turn of a character of their
- * own (ending it), into the next round at most. Foundry lets anyone set a combat's turn: a player going back would
- * have the GM's client take back a foe's turn (and roll it again), one going on past others, skip theirs.
+ * Where Foundry's own Next Turn (a player's End Turn) goes from `prior` ({round, turn}): the next in the order (the next
+ * not defeated, `skipDefeated`), else the next round's first (its first not defeated). `defeated`: each turn's, in order.
+ */
+export function nextPlace(defeated, prior, skipDefeated = false) {
+  const n = defeated.length;
+  const from = prior.turn ?? -1;
+  for ( let i = from + 1; i < n; i++ ) if ( !skipDefeated || !defeated[i] ) return { round: prior.round, turn: i };
+  if ( prior.turn === null || prior.turn === undefined || !n ) return { round: prior.round + 1, turn: null };
+  const first = skipDefeated ? defeated.findIndex(d => !d) : 0;
+  return { round: prior.round + 1, turn: first === -1 ? 0 : first };
+}
+
+/**
+ * Was the tracker moved as it may be? By a GM, any way; by a player, only as their End Turn moves it (nextPlace), from the
+ * turn of a character of their own. Foundry lets anyone set a combat's turn: a player going back would have the GM's
+ * client take back a foe's turn (and roll it again), one going on past others, skip theirs.
  */
 function movedRightly(combat, prior, current) {
   const by = game.users.get(combat._stats?.lastModifiedBy);
   if ( !by || by.isGM ) return true;
   if ( !prior ) return false;
-  const forward = current.round > prior.round || (current.round === prior.round && (current.turn ?? -1) > (prior.turn ?? -1));
+  const next = nextPlace(combat.turns.map(c => !!c.isDefeated), prior, !!combat.settings?.skipDefeated);
   const was = combat.combatants.get(prior.combatantId);
-  return forward && current.round - prior.round <= 1 && !!was?.actor?.testUserPermission(by, "OWNER");
+  return current.round === next.round && (current.turn ?? null) === next.turn && !!was?.actor?.testUserPermission(by, "OWNER");
 }
 
 /**
@@ -2379,7 +2392,11 @@ async function prepareDeal(deal, user) {
   const key = foundry.utils.randomID();
   const dc = dealDC(run, u, t, terms);
   const skill = (adapter.skillsOf?.(doc.actor) ?? []).find(s => s.key === deal.skill);
-  dealsPending.set(key, { u: u.id, t: t.id, terms, dc, dcStat: t.spec.social?.resist?.[pitchOf(kind)]?.label ?? "DC", wordless: how === "wordless", skill: skill?.label ?? deal.skill ?? "", user: user.id });
+  // (One deal at a time for each player: a new one takes the place of any not rolled yet.)
+  for ( const [k, v] of dealsPending ) if ( v.user === user.id ) dealsPending.delete(k);
+  // (The skill's name from the sheet's own skills; free words, short, only where the system lists none.)
+  const skillName = skill?.label ?? (adapter.skillsOf ? "" : String(deal.skill ?? "").slice(0, 40));
+  dealsPending.set(key, { u: u.id, t: t.id, terms, dc, dcStat: t.spec.social?.resist?.[pitchOf(kind)]?.label ?? "DC", wordless: how === "wordless", skill: skillName, user: user.id });
   return { ok: true, key, dc, purpose: kind, wordless: how === "wordless" };
 }
 
@@ -2396,8 +2413,9 @@ async function rolledDeal(data, user) {
   if ( cards.length ) battle.pc.dealRolls = [...(battle.pc.dealRolls ?? []), ...cards];
   const natural = Number.isFinite(Number(data.roll?.natural)) ? Number(data.roll.natural) : null;
   const total = Number.isFinite(Number(data.roll?.total)) ? Number(data.roll.total) : null;
-  let degree = Number.isInteger(data.roll?.degree) ? clamp(data.roll.degree, 0, 3) : null;
-  if ( degree === null && total !== null ) degree = run.prep.rules.degreeOfSuccess(natural ?? 10, total, p.dc, "check", 20);
+  // (Its degree worked out here from its total against the DC; only without a total, the one its player's browser gave.)
+  let degree = total !== null ? run.prep.rules.degreeOfSuccess(natural ?? 10, total, p.dc, "check", 20) : null;
+  if ( degree === null && Number.isInteger(data.roll?.degree) ) degree = clamp(data.roll.degree, 0, 3);
   if ( degree === null ) return { ok: false, reason: "none" };
   const roll = { degree, natural, total };
   const request = {

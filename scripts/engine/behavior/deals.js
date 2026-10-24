@@ -681,8 +681,6 @@ export function reactionBribe(run, u, by, say) {
   return offerDeal(run, u, by, "bribe", say, { terms, reaction: true }) === "accept";
 }
 
-/** Is `side` the one u made its deal with (the deal it's leaving by)? */
-export const dealtWith = (u, side) => !!u.leaving?.deal && u.leaving.deal.side === side;
 
 /** Does u spare t (paid to be left alone)? */
 export const spares = (u, t) => !!u.spares?.has(t.id);

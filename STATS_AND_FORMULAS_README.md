@@ -2914,7 +2914,7 @@ What it decides: how much a successful Recall Knowledge improves a Lore-Collecto
 - Why 2×: Recall Knowledge costs one action of three, and the payoff covers the rest of that same turn, so it needs less than the one-action systems' boosts.
 - Example: a Strike at +7 against AC 22 succeeds 30% of the time; at 2× it aims for 60% and gets +6.
 
-Code: `lore.js` `LORE_BOOST`; `adapter.js` `#recallKnowledge`; core `battle-state.js` `boostBonus`, `simulator.js` `sizesUp`.
+Code: `adapter.js` `settingDefaults`, `#recallKnowledge`; core `constants.js` `LORE_BOOST`, `battle-state.js` `boostBonus`, `simulator.js` `sizesUp`.
 
 ### Conditions and their penalties
 

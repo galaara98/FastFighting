@@ -65,14 +65,11 @@
 .ff-field-label i { margin-left: 3px; opacity: 0.6; cursor: help; }
 .ff-slider-control { display: inline-flex; align-items: center; gap: 6px; }
 .ff-field input[type="number"] { width: 72px; }
-.ff-toggles { display: flex; flex-wrap: wrap; gap: 2px 12px; font-size: 12px; align-self: center; flex: 1 1 280px; }
-.ff-toggles label, .ff-check { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.ff-check { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
 .ff-btn {
   display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px;
   white-space: nowrap; width: auto; flex: none;
 }
-.ff-run { font-weight: 700; background: var(--ff-accent); color: #fff; border-color: transparent; }
-.ff-run:disabled { opacity: 0.6; }
 .ff-progress { position: absolute; left: 0; right: 0; bottom: -1px; height: 3px; background: transparent; }
 .ff-progress > span { display: block; height: 100%; background: var(--ff-accent); transition: width 0.1s linear; }
 .ff-progress:not(.is-running) > span { opacity: 0; }
@@ -116,38 +113,7 @@
   display: inline-flex; align-items: center; justify-content: center;
 }
 .ff-icon-btn:disabled { opacity: 0.3; }
-.ff-compact .ff-fudge { padding: 1px 2px; }
 
-/* Groups 1 2 3 (the Battle Vantage's team pills): small touching pills, one click to move a creature. */
-.ff-groups { display: inline-flex; }
-.ff-group-pill {
-  flex: none; width: var(--ff-target); height: var(--ff-target); min-height: 0; margin: 0; padding: 0; line-height: 22px;
-  font-size: 11px; font-weight: 600; border: 1px solid var(--ff-line); border-radius: 0; background: var(--ff-surface); color: var(--ff-text-dim); cursor: pointer;
-}
-.ff-group-pill + .ff-group-pill { border-left: none; }
-.ff-group-pill:first-child { border-radius: 10px 0 0 10px; }
-.ff-group-pill:last-child { border-radius: 0 10px 10px 0; }
-.ff-group-pill:hover { color: var(--color-text-primary, inherit); background: var(--ff-surface-2); }
-.ff-group-pill.active { background: var(--ff-accent); border-color: var(--ff-accent); color: #fff; }
-.ff-group-pill.active.is-auto { background: color-mix(in srgb, var(--ff-accent) 60%, transparent); }
-.ff-groups.hostile .ff-group-pill.active { background: var(--ff-team-hostile); border-color: var(--ff-team-hostile); color: var(--ff-team-hostile-text); }
-.ff-groups.neutral .ff-group-pill.active { background: var(--ff-team-neutral); border-color: var(--ff-team-neutral); color: var(--ff-team-neutral-text); }
-.ff-groups.friendly .ff-group-pill.active { background: var(--ff-team-friendly); border-color: var(--ff-team-friendly); color: var(--ff-team-friendly-text); }
-.ff-groups.hostile .ff-group-pill.active.is-auto { background: color-mix(in srgb, var(--ff-team-hostile) 55%, transparent); }
-.ff-groups.neutral .ff-group-pill.active.is-auto { background: color-mix(in srgb, var(--ff-team-neutral) 55%, transparent); }
-.ff-groups + .ff-groups { margin-left: 4px; }
-/* Command roles B L 1 2: the same touching pills, in the leaders' own color. */
-.ff-roles { display: inline-flex; }
-.ff-role-pill {
-  flex: none; width: var(--ff-target); height: var(--ff-target); min-height: 0; margin: 0; padding: 0; line-height: 22px;
-  font-size: 11px; font-weight: 600; border: 1px solid var(--ff-line); border-radius: 0; background: var(--ff-surface); color: var(--ff-text-dim); cursor: pointer;
-}
-.ff-role-pill + .ff-role-pill { border-left: none; }
-.ff-role-pill:first-child { border-radius: 10px 0 0 10px; }
-.ff-role-pill:last-child { border-radius: 0 10px 10px 0; }
-.ff-role-pill:hover { color: var(--color-text-primary, inherit); background: var(--ff-surface-2); }
-.ff-role-pill.active { background: var(--ff-command); border-color: var(--ff-command); color: #fff; }
-.ff-role-pill.active.is-auto { background: color-mix(in srgb, var(--ff-command) 55%, transparent); }
 .ff-row-meta { display: flex; flex-wrap: wrap; gap: 2px 10px; font-size: 11px; color: var(--ff-text-dim); }
 .ff-row-note { font-size: 11px; color: var(--ff-accent); }
 .ff-facts { display: grid; grid-template-columns: max-content 1fr; gap: 2px 8px; margin: 0; font-size: 11px; }
@@ -354,8 +320,6 @@
 .ff-desires { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; }
 .ff-desire { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) minmax(0, 1fr); gap: 4px; }
 /* The game system's own settings for an encounter (the planner's system section). */
-.ff-system-row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; font-size: 12px; }
-.ff-system-title { font-weight: bold; }
 .ff-system-field { display: inline-flex; align-items: center; gap: 6px; }
 .ff-system-field .ff-pills { display: inline-flex; flex-wrap: wrap; gap: 2px; }
 .ff-desire.is-empty select:not(:first-child) { opacity: 0.6; }
@@ -369,7 +333,6 @@
   margin-top: 2px;
 }
 .ff-auto-value i { margin-right: 4px; }
-.ff-hidden-scores { margin: 6px 0 8px; }
 .ff-hidden-row { display: flex; flex-wrap: wrap; gap: 6px 14px; color: var(--ff-accent); }
 .ff-hidden-score { white-space: nowrap; cursor: help; }
 .ff-hidden-band { opacity: 0.8; font-size: var(--font-size-12, 12px); }

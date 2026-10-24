@@ -27,7 +27,7 @@
         </div>
         <button type="button" class="ff-btn ff-btn--quiet ff-btn--icon" popovertarget="ff-pop-survey" aria-haspopup="menu" aria-label="{{localize "FASTFIGHTING.Survey.More"}}" data-tooltip="{{localize "FASTFIGHTING.Survey.More"}}"><i class="fa-solid fa-ellipsis"></i></button>
         <div class="ff-menu" id="ff-pop-survey" popover role="menu">
-          <button type="button" class="ff-menu-item ff-menu-item--danger" role="menuitem" data-action="resetAll" data-token-id="{{id}}"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i> {{localize "FASTFIGHTING.Survey.ResetMenu"}}</button>
+          <button type="button" class="ff-menu-item ff-menu-item--danger" role="menuitem" data-action="resetAll" data-token-id="{{id}}" data-tooltip-direction="LEFT" data-tooltip="{{localize "FASTFIGHTING.Survey.ResetHint"}}"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i> {{localize "FASTFIGHTING.Survey.ResetMenu"}}</button>
         </div>
       </header>
       {{> "modules/fast-fighting/templates/partials/tactics.hbs" tactics}}

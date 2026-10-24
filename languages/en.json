@@ -546,7 +546,6 @@
       "RoleRemembered": "Held this role in an earlier fight",
       "RoleWantsToLead": "The only one who wants to lead",
       "NoLeader": "No leaders",
-      "ChosenLeader": "Chosen by the GM",
       "PanTo": "Select and pan to token",
       "HiddenToken": "Hidden token",
       "IncludeHint": "Take part in the battle.",
@@ -562,8 +561,6 @@
       "RunFailed": "Simulation failed: {error}",
       "FightsWith": "Fights as {side}",
       "Group": "Group",
-      "HostileGroupHint": "Hostile group: fights the Friendlies and the other groups.",
-      "NeutralGroupHint": "Friend group: they look out for each other. Click to move.",
       "SitsOut": "Sits this one out",
       "TakesNoSide": {
         "neutral": "Takes no side (until crossed)",
@@ -2462,7 +2459,6 @@
       "ReadOnly": "View only: you can vote again when your GM sends everyone the survey.",
       "LockIn": "Lock-in",
       "LockedIn": "Choices locked in",
-      "NotLockedIn": "Choices not locked in",
       "target": {
         "Label": "Who do we go after first?",
         "Hint": "The foe everyone goes for.",
@@ -2979,7 +2975,6 @@
           "surrender": "Surrenders to whom",
           "standDown": "Stands down before whom"
         },
-        "FriendlyShort": "F",
         "RoleHint": "Its place in the group's chain of command: whoever held it steps down, and desires are worked out again. Click again to take it out.",
         "ResetShort": "Reset"
       },
