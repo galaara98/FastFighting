@@ -343,6 +343,17 @@
    "status": "todo",
    "date": null,
    "commit": null,
+   "hash": "fa9a1a4288bd",
+   "changed": true
+  },
+  "core:code:scripts/foundry/battle.js:gatherRoster#2": {
+   "repo": "core",
+   "file": "scripts/foundry/battle.js",
+   "key": "scripts/foundry/battle.js:gatherRoster#2",
+   "area": "core/code",
+   "status": "todo",
+   "date": null,
+   "commit": null,
    "hash": "fa9a1a4288bd"
   },
   "core:code:scripts/foundry/battle.js:readReinforcements#1": {
@@ -7761,6 +7772,16 @@
    "commit": null,
    "hash": "aa457436acf8"
   },
+  "core:FASTFIGHTING.Live.FastTwin": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Live.FastTwin",
+   "area": "core/Live",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "f8d69f03e598"
+  },
   "core:FASTFIGHTING.Live.HandedBack": {
    "repo": "core",
    "file": "languages/en.json",
@@ -8169,6 +8190,16 @@
    "date": null,
    "commit": null,
    "hash": "2c70e071b11a"
+  },
+  "core:FASTFIGHTING.Live.TwinSession": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Live.TwinSession",
+   "area": "core/Live",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "198850ec15b2"
   },
   "core:FASTFIGHTING.Live.Would": {
    "repo": "core",
@@ -49375,6 +49406,16 @@
    "commit": null,
    "hash": "350fa7c12d73"
   },
+  "dcc:code:scripts/reading.js:loadReading#1": {
+   "repo": "dcc",
+   "file": "scripts/reading.js",
+   "key": "scripts/reading.js:loadReading#1",
+   "area": "dcc/code",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "3f72954299a4"
+  },
   "dcc:code:scripts/tables.js:once#1": {
    "repo": "dcc",
    "file": "scripts/tables.js",
@@ -49716,6 +49757,16 @@
    "commit": null,
    "hash": "f7b18c765e82"
   },
+  "dcc:FFDCC.DamageWord": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.DamageWord",
+   "area": "dcc/General",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "6f5a5c61ccdb"
+  },
   "dcc:FFDCC.Deed.Ac": {
    "repo": "dcc",
    "file": "languages/en.json",
@@ -49725,6 +49776,46 @@
    "date": null,
    "commit": null,
    "hash": "66564f38bdd4"
+  },
+  "dcc:FFDCC.Deed.AfterCrit": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.Deed.AfterCrit",
+   "area": "dcc/Deed",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "39891bbcbf65"
+  },
+  "dcc:FFDCC.Deed.AfterCritTheirs": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.Deed.AfterCritTheirs",
+   "area": "dcc/Deed",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "979dda35b08b"
+  },
+  "dcc:FFDCC.Deed.AfterKill": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.Deed.AfterKill",
+   "area": "dcc/Deed",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "6c8c7baabfc6"
+  },
+  "dcc:FFDCC.Deed.AfterKillTheirs": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.Deed.AfterKillTheirs",
+   "area": "dcc/Deed",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "7cad07b815e5"
   },
   "dcc:FFDCC.Deed.Blind": {
    "repo": "dcc",
@@ -49835,6 +49926,16 @@
    "date": null,
    "commit": null,
    "hash": "cd632b392829"
+  },
+  "dcc:FFDCC.Deed.Precision": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.Deed.Precision",
+   "area": "dcc/Deed",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "786b158d1639"
   },
   "dcc:FFDCC.Deed.Pushback": {
    "repo": "dcc",
@@ -50168,6 +50269,26 @@
    "commit": null,
    "hash": "15b922785fce"
   },
+  "dcc:FFDCC.Lionize": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.Lionize",
+   "area": "dcc/General",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "346471218f88"
+  },
+  "dcc:FFDCC.Lionized": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.Lionized",
+   "area": "dcc/General",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "dddece253bfa"
+  },
   "dcc:FFDCC.Luck": {
    "repo": "dcc",
    "file": "languages/en.json",
@@ -50457,6 +50578,16 @@
    "date": null,
    "commit": null,
    "hash": "daf064fe39bd"
+  },
+  "dcc:FFDCC.PerformanceCheck": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.PerformanceCheck",
+   "area": "dcc/General",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "732bee14fee7"
   },
   "dcc:FFDCC.Personality": {
    "repo": "dcc",
@@ -51081,6 +51212,16 @@
    "commit": null,
    "hash": "73cd51563a50"
   },
+  "dcc:FFDCC.WildAttack": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.WildAttack",
+   "area": "dcc/General",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "90fb7b1f5fbd"
+  },
   "dcc:FFDCC.Will": {
    "repo": "dcc",
    "file": "languages/en.json",
@@ -51091,6 +51232,16 @@
    "commit": null,
    "hash": "6cef4ccc1019"
   },
+  "dcc:FFDCC.WithWeapon": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.WithWeapon",
+   "area": "dcc/General",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "3afcb2fbc419"
+  },
   "dcc:FFDCC.Words.AnyLanguage": {
    "repo": "dcc",
    "file": "languages/en.json",
@@ -51100,6 +51251,16 @@
    "date": null,
    "commit": null,
    "hash": "b37fc5edb642"
+  },
+  "dcc:FFDCC.Words.AugurTrapSaves": {
+   "repo": "dcc",
+   "file": "languages/en.json",
+   "key": "FFDCC.Words.AugurTrapSaves",
+   "area": "dcc/Words",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "cf0129b21a31"
   },
   "dcc:FFDCC.Words.Beast": {
    "repo": "dcc",

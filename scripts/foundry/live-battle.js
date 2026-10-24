@@ -21,6 +21,7 @@
  * transcript, a journal entry only GMs can see (live-journals.js), the combat holding only that a battle is live. A
  * reload picks it up again.
  */
+import { twinSession } from "./twin-sessions.js";
 import { MODULE_ID, STATUS, SIDES, DISPOSITION_SIDES, NEUTRAL_PARTY, HOSTILE_GROUPS, clamp } from "../constants.js";
 import { escapeHtml as escape, inertHtml, listJoin } from "../i18n.js";
 import { getAdapter, characterSpec } from "../api.js";
@@ -3986,15 +3987,22 @@ const moveSpeed = () => (battle?.fast ? FAST_MOVE_SPEED : undefined);
  * the moves on the map quick (FAST_MOVE_SPEED), Dice So Nice's 3D dice off (fast-fight.js hushDice), Play to the end
  * off. It goes from where the battle is: a turn played and waiting, on to the next; one not played yet, played. It
  * stops as fastFightStop says (checkFast): pressed again, the battle over, a player's character to act, a GM wanted,
- * the tracker used, or something gone wrong; two still rounds ask the GM whether it goes on (askStill).
+ * the tracker used, or something gone wrong; two still rounds ask the GM whether it goes on (askStill). It doesn't
+ * start while this GM is signed in somewhere else too (twin-sessions.js): the other session sends the tracker back.
  */
-export function fastFight() {
+export async function fastFight() {
   if ( !battle || !playsHere() ) return null;
   if ( battle.fast ) {
     checkFast({ pressed: true });
     return null;
   }
   if ( !fastOffered() ) return null;
+  if ( await twinSession() ) {
+    ui.notifications.warn(fmt("FASTFIGHTING.Live.FastTwin", { name: game.user.name }));
+    return null;
+  }
+  // (Asked while that was found out: as it is now.)
+  if ( !battle || battle.fast || !fastOffered() ) return null;
   const auto = !!battle.data.auto;
   battle.data.auto = false;
   battle.fast = { had: [...(battle.data.players ?? [])], pending: null, moment: fightMoment(battle.run.units), since: null, least: rangeOf("maxRounds").min };

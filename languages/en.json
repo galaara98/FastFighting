@@ -2621,6 +2621,8 @@
       "YourReaction": "{name}: roll your {reaction} at {target} now, as you would on your turn, then press the button.",
       "ReactionDone": "I've done my reaction",
       "NoCombat": "There is no combat on this scene to play the battle on.",
+      "TwinSession": "{name} is signed in in another window too. Each window runs the game system's start and end of turns, and the one behind moves the tracker back. Close the other window.",
+      "FastTwin": "Fast Fight can't start while {name} is signed in in another window too. Close the other window, then try again.",
       "Failed": "The live battle hit a problem: {error}",
       "FastStopped": {
         "tracker": "Fast Fight stopped: the tracker was moved.",

@@ -16,6 +16,7 @@
   "esmodules": [
     "scripts/main.js"
   ],
+  "socket": true,
   "styles": [
     "styles/fast-fighting.css"
   ],

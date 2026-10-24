@@ -27,6 +27,7 @@ import { registerLiveBattles, liveBattle, followPlayersSay, systemAppliesText } 
 import { registerSheetWatch } from "./foundry/sheet-watch.js";
 import { registerSheetButton } from "./foundry/sheet-button.js";
 import { BattleVantage, registerBattleVantage } from "./apps/battle-vantage.js";
+import { registerTwinSessions } from "./foundry/twin-sessions.js";
 
 Hooks.once("init", () => {
   registerSettings(DefaultsConfig, GenericPathsConfig, StoryTablesConfig, LiveDataConfig);
@@ -201,6 +202,8 @@ for ( const hook of ["createToken", "deleteToken", "canvasReady", "createActor",
 Hooks.once("ready", () => {
   // (Settings whose default is the system's: Max rounds, a very long fight there.)
   systemDefaults(getAdapter());
+  // (The same user signed in elsewhere too: the GM told, twin-sessions.js.)
+  registerTwinSessions();
   // (The keywords read in characters' biographies: English, and the reader's language's on top.)
   loadKeywords();
   // Tell the GM once if this system has no helper module yet.
