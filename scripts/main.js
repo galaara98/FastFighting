@@ -17,7 +17,7 @@ import { registerTokenTactics, syncTokenTactics } from "./apps/token-tactics.js"
 import { QUERIES, SURVEY_STATUS, hasCharactersFor, preparePlayers } from "./foundry/tactics.js";
 import { helperStatus, helperMessage, helperNoticeHtml, surveyHtml } from "./helpers.js";
 import { invalidateApproach, systemSurprise } from "./foundry/battle.js";
-import { revealStory, ownCard } from "./foundry/make-it-so.js";
+import { revealStory, ownCard, whoIsWho } from "./foundry/make-it-so.js";
 import { sceneUnit, registerGroundField } from "./foundry/terrain.js";
 import { planHolder, sceneEncounter } from "./foundry/persistence.js";
 import { hasRun } from "./foundry/run-memory.js";
@@ -322,6 +322,9 @@ Hooks.on("renderSettingsConfig", (app, html) => {
   const hint = group?.querySelector(".hint");
   if ( hint ) hint.textContent = says;
 });
+
+// A story card with someone in it: in a GM's browser, who each is.
+Hooks.on("renderChatMessageHTML", whoIsWho);
 
 // A GM-only story: the GM can show it to everyone.
 Hooks.on("renderChatMessageHTML", (message, html) => {

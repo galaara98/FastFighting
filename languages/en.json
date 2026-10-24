@@ -1308,6 +1308,9 @@
       "Title": "The battle at {scene}",
       "Speaker": "The Chronicle",
       "GmOnly": "For the GM only",
+      "WhoIsWho": "GM: {list}",
+      "WhoIs": "{someone} is {name}",
+      "WhoIsWhoHint": "Only GMs see this line. The players see the story without it.",
       "StyleLabel": "Story",
       "Style": {
         "roleplay": "Roleplay",

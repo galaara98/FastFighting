@@ -27919,6 +27919,36 @@
    "commit": null,
    "hash": "af2dff6dd952"
   },
+  "core:FASTFIGHTING.Story.WhoIs": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Story.WhoIs",
+   "area": "core/Story",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "ce5d1b9a69bf"
+  },
+  "core:FASTFIGHTING.Story.WhoIsWho": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Story.WhoIsWho",
+   "area": "core/Story",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "0ca5e00149cf"
+  },
+  "core:FASTFIGHTING.Story.WhoIsWhoHint": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Story.WhoIsWhoHint",
+   "area": "core/Story",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "540230dfd5dc"
+  },
   "core:FASTFIGHTING.StoryWords.acid": {
    "repo": "core",
    "file": "languages/en.json",

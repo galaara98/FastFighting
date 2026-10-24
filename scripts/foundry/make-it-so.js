@@ -10,7 +10,7 @@ import { statusesOf, statusEntry } from "./sheet-tools.js";
 import { chatMessageClass, gmIds } from "./chat.js";
 import { MODULE_ID } from "../constants.js";
 import { revertItemPile } from "./loot-drop.js";
-import { escapeHtml as escape, inertHtml } from "../i18n.js";
+import { escapeHtml as escape, inertHtml, listJoin } from "../i18n.js";
 import { getAdapter } from "../api.js";
 import { setting } from "../settings.js";
 import { pixelsFor, sceneDistance, squareFeet } from "./terrain.js";
@@ -290,6 +290,9 @@ export async function postBeat(scene, beat, docs, state) {
   const doc = beat.actorId ? (docs.get(beat.actorId) ?? null) : null;
   const whisper = setting("storyMode") === "whisper" ? gmIds() : [];
   const flags = { [MODULE_ID]: { story: true, beat: true } };
+  // (Someone in it whose name the players haven't learned: which token each is, for the GMs' who's who (whoIsWho). No
+  // name in the card: every browser is sent it.)
+  if ( beat.someone?.length ) flags[MODULE_ID].someone = { scene: scene?.id ?? null, who: beat.someone };
   // (A hidden creature not yet given away: the narrator's card, not its own.)
   const speaker = doc && !beat.anonymous ? ChatMessage.getSpeaker({ scene, token: doc }) : chronicle();
   const head = beat.closing ? `<header><i class="fa-solid fa-book-open"></i> ${escape(storyTitle(scene))}</header>`
@@ -303,6 +306,32 @@ export async function postBeat(scene, beat, docs, state) {
     out.push(await ChatMessage.create({ content: inertHtml(`<div class="fast-fighting-story fast-fighting-beat ff-gm-only">${gm}${beat.gmHtml}</div>`), speaker, whisper: gmIds(), flags }));
   }
   return out.filter(Boolean);
+}
+
+/**
+ * A story card told openly with someone in it (flags.fast-fighting.someone: {scene, who: [{label, tokenId}]}), in a GM's
+ * browser: a short line above the story saying who each is, by its token's name. Drawn here only, so the card the
+ * players are sent never holds the names.
+ */
+export function whoIsWho(message, html) {
+  const said = message.getFlag(MODULE_ID, "someone");
+  if ( !game.user.isGM || !ownCard(message) || !Array.isArray(said?.who) || !said.who.length ) return;
+  const story = html.querySelector?.(".fast-fighting-story");
+  if ( !story || story.querySelector(".ff-who-is-who") ) return;
+  const scene = game.scenes.get(said.scene) ?? canvas?.scene ?? null;
+  const each = said.who.map(w => {
+    const name = scene?.tokens.get(w.tokenId)?.name;
+    return name && w.label ? game.i18n.format("FASTFIGHTING.Story.WhoIs", { someone: w.label, name }) : null;
+  }).filter(Boolean);
+  if ( !each.length ) return;
+  const line = document.createElement("p");
+  line.className = "ff-who-is-who";
+  line.dataset.tooltip = game.i18n.localize("FASTFIGHTING.Story.WhoIsWhoHint");
+  const icon = document.createElement("i");
+  icon.className = "fa-solid fa-eye-slash";
+  icon.setAttribute("aria-hidden", "true");
+  line.append(icon, " ", game.i18n.format("FASTFIGHTING.Story.WhoIsWho", { list: listJoin(each) }));
+  story.prepend(line);
 }
 
 /** A whole story in one card (the Statistician's: the GMs', with a button to show it to everyone). */

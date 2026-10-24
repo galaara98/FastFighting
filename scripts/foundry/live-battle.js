@@ -3521,6 +3521,9 @@ async function tellNew() {
       for ( const beat of beats ) {
         beat.html = told.get(beatKey(beat))?.html ?? beat.html;
         if ( someone.has(beat.actorId) ) beat.anonymous = true;
+        // (Each someone it tells of, and its token: the GMs are shown who's who on the card, make-it-so.js whoIsWho.)
+        beat.someone = [...someone].filter(([, label]) => beat.html?.includes(escape(label)))
+          .map(([id, label]) => ({ label, tokenId: tokenIdOf(run.byId.get(id) ?? { id, spec: {} }) }));
       }
     }
     const done = new Set(battle.data.toldBeats ?? []);
