@@ -108,6 +108,7 @@ Up to four pills per character, PC or NPC, in order of importance: the first cou
 | Brawler | the nearest foe; hits back hard; doesn't talk; jeers now and then (a taunt) |
 | Chicken | keeps away from the most dangerous foe; gives up easily; hits back half-heartedly; hard to taunt; leading, takes its group with it when it runs; trap avoider |
 | Cruel | the weakest, and the fallen; hits back hard; likes leaving a foe hampered |
+| Daredevil | risky moves and off-the-wall ideas: charges in; walks off from foes without minding the blows it invites; shoves, trips and grabs; the biggest threat, however far; fears nothing, never retreats; now and then something nobody expects |
 | Diplomat | talks; spares the fallen; hard to taunt; can't abide violence |
 | DPS | its most damaging option every time, spending what it takes until it's gone; the foes it hurts most; flanks and hides for a sneak attack; impatient with talk |
 | Enabler | bolsters friends first, then gives them an edge (Aid, a foe knocked down, grabbed, shaken; a flank); heals only when it has nothing else to give; backs the leader |

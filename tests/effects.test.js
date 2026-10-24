@@ -166,7 +166,7 @@ describe("debuffs", () => {
   test("the instigator gets really into it; a few others lean that way", () => {
     expect(combinePlaystyles(["instigator"]).behavior.hinders).toBe(1);
     const leaning = PLAYSTYLE_IDS.filter(id => id !== "instigator" && combinePlaystyles([id]).behavior.hinders);
-    expect(leaning.sort()).toEqual(["cruel", "leader", "puzzleManiac", "wallflower"]);
+    expect(leaning.sort()).toEqual(["cruel", "daredevil", "leader", "puzzleManiac", "wallflower"]);
     for ( const id of leaning ) expect(combinePlaystyles([id]).behavior.hinders).toBeLessThanOrEqual(0.3);
     // A jinx worth about 60% of a sword stroke: what does each open the fight with?
     const slowSpell = { id: "jinx", name: "Jinx", kind: "control", cost: 1, save: { type: "fortitude", dc: 15 }, range: { increment: 30, max: 30, noPenalty: true }, melee: false,

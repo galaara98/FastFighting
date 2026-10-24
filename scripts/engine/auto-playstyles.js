@@ -128,6 +128,7 @@ export function numbersFit(s) {
     loreCollector: pos(s.lore) * 6 + pos(T - 60) * 0.4,
     puzzleManiac: pos(T - 70) + (s.hampers || s.special >= 0.5 ? 10 : 0),
     wildcard: 0,
+    daredevil: pos(B - 70) * 0.8 + pos(50 - T) * 0.4 + (s.hampers ? 5 : 0),
     thief: pos(s.theft) * 8,
     vengeful: pos(S - 50) * 0.4 + pos(B - 60) * 0.4 + pos(50 - T) * 0.2,
     relentless: (s.mindless ? 35 : 0) + (s.fearless ? 15 : 0) + pos(B - 75) * 0.8,

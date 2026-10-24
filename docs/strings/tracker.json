@@ -17378,6 +17378,26 @@
    "commit": "f7ee61e",
    "hash": "65c5e545fd23"
   },
+  "core:FASTFIGHTING.Playstyle.daredevil.Hint": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Playstyle.daredevil.Hint",
+   "area": "core/Playstyle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "26c5a7b7f4cd"
+  },
+  "core:FASTFIGHTING.Playstyle.daredevil.Name": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Playstyle.daredevil.Name",
+   "area": "core/Playstyle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "69459d6b42dc"
+  },
   "core:FASTFIGHTING.Playstyle.diplomat.Hint": {
    "repo": "core",
    "file": "languages/en.json",
@@ -17628,6 +17648,16 @@
    "date": null,
    "commit": null,
    "hash": "3cbe3defcd72"
+  },
+  "core:FASTFIGHTING.Playstyle.Effect.reckless": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Playstyle.Effect.reckless",
+   "area": "core/Playstyle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "1e16fe15fbae"
   },
   "core:FASTFIGHTING.Playstyle.Effect.rush": {
    "repo": "core",

@@ -161,6 +161,11 @@
                 "minimum": -2,
                 "maximum": 2
               },
+              "daredevil": {
+                "type": "number",
+                "minimum": -2,
+                "maximum": 2
+              },
               "thief": {
                 "type": "number",
                 "minimum": -2,

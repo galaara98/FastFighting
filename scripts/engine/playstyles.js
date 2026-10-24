@@ -34,7 +34,8 @@ export const STAY_TRUE_CAP = 0.1;
  *             Puzzle-Maniac, Skeptic, Lore-Collector, Chicken, Wallflower; behavior/traps.js); taunt: a taunter, its share
  *             of the Taunting setting (Tank all of it, then Instigator, Martyr, Brawler, Redeem-Seeker; behavior/goad.js);
  *             tauntProof: how readily it shrugs off any taunt (Relentless most, then Skeptic, Peacekeeper, Puzzle-Maniac,
- *             Diplomat, Chicken, Wallflower, Lazy; effects.js tauntProof)
+ *             Diplomat, Chicken, Wallflower, Lazy; effects.js tauntProof); reckless: how often it forgets to mind the
+ *             blows it invites walking off from a foe (a Daredevil; behavior/reactions.js isWary)
  * patrol:    how it looks for a foe when it knows of none in the fight (behavior/patrol.js; the reasons are in
  *             CODING_README): "spread" (a patroller: out to 20 to 30 feet from its friends, searching as it goes),
  *             "near" (stays by its friends), "hold" (searches from where it stands), "hide" (keeps out of sight);
@@ -153,6 +154,11 @@ export const PLAYSTYLES = Object.freeze({
   // Unpredictable: something random catches its eye, nobody's voice counts for much, may defy its leader.
   wildcard: { icon: "fa-dice", traits: {}, suggest: {}, behavior: { random: 0.25 }, patrol: "spread",
     desire: { whim: 25, leader: 0.3, contrarian: 0.5 } },
+  // Risky moves and off-the-wall ideas: charges in, walks off from a foe without a care for the blow it invites
+  // (reckless), shoves, trips and grabs for the thrill of it, takes on the biggest threat across the field, fears
+  // nothing, never retreats, and now and then tries something nobody expects.
+  daredevil: { icon: "fa-person-falling-burst", traits: { brave: 20, tactical: -5 }, suggest: { retreat: "never", resourceUse: "nova", beyond: "hunt", shield: "never" }, behavior: { rush: 0.4, reckless: 0.6, shoves: 0.5, hinders: 0.3, random: 0.1, drawAggro: 0.15 }, patrol: "spread",
+    desire: { hurt: { dangerous: 15, far: 10 }, avoid: { dangerous: -40, attacker: -30 }, whim: 15, frustration: 0.7, rid: -10 } },
   // Light fingers: a lock is an invitation.
   thief: { icon: "fa-mask", traits: { selfish: 10 }, suggest: { fallen: "rob" }, behavior: { steal: 1, trapWary: 1 },
     desire: { extort: 10, toll: 15, hurt: { weakest: 5 }, rob: 30, doorPatience: 1.5 } },

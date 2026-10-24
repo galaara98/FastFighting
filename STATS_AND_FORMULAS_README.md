@@ -916,6 +916,7 @@ its focus fire strength (Focus fire); a multiplier of 1 changes nothing.
 | Lore-Collector | Tactical +5 | hurt unstudied +10, bind +10 | frustration 0.8 | study 0.5, observe 0.85, share 0.9, trapWary 0.6 |
 | Puzzle-Maniac | Tactical +15 | hurt weakness +20, hurt casters +10 | frustration 0.7, doorPatience 2 | exploitWeakness 0.5, hinders 0.3, trapWary 0.9, tauntProof 0.4 |
 | Wildcard | | whim +25 | leader 0.3; contrarian 0.5 | random 0.25 |
+| Daredevil | Brave +20, Tactical −5 | hurt dangerous +15, hurt far +10, avoid dangerous −40, avoid attacker −30, whim +15, rid −10 | frustration 0.7 | rush 0.4, reckless 0.6, shoves 0.5, hinders 0.3, random 0.1, drawAggro 0.15 |
 | Thief | Selfish +10 | hurt weakest +5, rob +30 | doorPatience 1.5 | steal 1, trapWary 1 |
 | Vengeful | Brave +5, Selfish +5 | rid −5 | retaliate 2, avenge 2.5, cool 0 | |
 | Relentless | Brave +10 | hurt current +15, rid −15 | frustration 0.4, doorPatience 1.5 | wary 0.5, tauntProof 0.75 |

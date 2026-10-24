@@ -1235,6 +1235,10 @@
         "Name": "Wildcard",
         "Hint": "Unpredictable: random targets, ignores advice, may defy its leader."
       },
+      "daredevil": {
+        "Name": "Daredevil",
+        "Hint": "Prefers risky moves and off-the-wall ideas: charges in, ignores the blows it invites, tries flashy maneuvers."
+      },
       "thief": {
         "Name": "Thief",
         "Hint": "Light fingers: may rob a foe within reach when winning or unseen. A lock is an invitation."
@@ -1277,6 +1281,7 @@
         "rally": "Rallies friends",
         "random": "Unpredictable",
         "rush": "Rushes",
+        "reckless": "Ignores the blows it invites",
         "share": "Shares what it learns",
         "spareDowned": "Spares the fallen",
         "steal": "Steals",

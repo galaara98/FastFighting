@@ -122,6 +122,8 @@ export function isWary(run, u) {
   let p = tier >= TACTICAL.TACTICAL ? 1 : tier === TACTICAL.COMPETENT ? 0.5 : 0;
   if ( mind(run, u).obsessed ) p = 0; // an obsession leaves no room for caution
   p *= 1 - forgets(run, u);
+  // (A Daredevil doesn't care for the blow it invites, as often as its pills say.)
+  p *= 1 - clamp(Number(behaviorOf(u).reckless) || 0, 0, 1);
   u.waryRound = run.round;
   u.wary = p >= 1 || (p > 0 && run.rng.chance(p));
   return u.wary;
