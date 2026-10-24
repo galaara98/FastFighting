@@ -30,10 +30,15 @@ const units = { jirelle: { final: { status: "standing" } }, a: { final: { status
 describe("a turn told", () => {
   test("it opens on its own creature, not on the one it's done to", () => {
     const listens = "{target} listens, nodding slowly, as {actor} lays out an unanswerable case.";
-    const tables = { get: k => (k === "talk.persuade.criticalSuccess" ? [listens] : english[k]) };
+    const own = { "talk.persuade.criticalSuccess": [listens], "talk.persuade.opening": ["{actor} speaks to {target}."] };
+    const tables = { get: k => own[k] ?? english[k] };
     const beat = storyBeats({ log, units }, spec, "roleplay", { tables, seed: 1 }).find(b => b.actorId === "jirelle");
-    expect(beat.text.startsWith("Jirelle")).toBe(true);
+    expect(beat.text.startsWith("Jirelle speaks to")).toBe(true);
     expect(beat.text).toContain("Cutthroat listens");
+    // (Opening on its own creature already: no opener.)
+    const plain = { get: k => (k === "talk.persuade.criticalSuccess" ? ["{actor} reasons with {target}."] : own[k] ?? english[k]) };
+    const told = storyBeats({ log, units }, spec, "roleplay", { tables: plain, seed: 1 }).find(b => b.actorId === "jirelle");
+    expect(told.text).not.toContain("speaks to");
   });
 
   test("each thing it does, a paragraph: the request and its answer, the door, the Demoralize and its threat", () => {
