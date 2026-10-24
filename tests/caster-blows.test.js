@@ -45,3 +45,30 @@ describe("one that would rather its magic", () => {
     expect(did.some(e => e.type === "attack" && e.action === "Unarmed Attack")).toBe(true);
   });
 });
+
+describe("one Un-Mundane and its fists", () => {
+  const fist = strike({ id: "fist", name: "Unarmed Attack", bonus: 9, traits: ["agile", "unarmed"], damage: [parseFormula("1d4", "bludgeoning")] });
+  const staff = strike({ id: "staff", name: "Staff", bonus: 3, damage: [parseFormula("1d4", "bludgeoning")] });
+  // (Beside its foe, its spell too much for the turn: it can only swing.)
+  const big = { ...arc, cost: 4 };
+  const swung = actions => fight({ playstyles: ["unmundane"], actions }, 5).filter(e => e.type === "attack").map(e => e.action);
+
+  test("with a weapon, never its fist, however much better the fist", () => {
+    const used = swung([fist, staff, big]);
+    expect(used).not.toContain("Unarmed Attack");
+    expect(used).toContain("Staff");
+  });
+
+  test("with a spell it can still cast, no fist either", () => {
+    expect(swung([fist, big])).not.toContain("Unarmed Attack");
+  });
+
+  test("out of everything else: its fist", () => {
+    expect(swung([fist, { ...big, uses: 0 }])).toContain("Unarmed Attack");
+  });
+
+  test("anyone else punches as it likes", () => {
+    const used = fight({ actions: [fist, staff, big] }, 5).filter(e => e.type === "attack").map(e => e.action);
+    expect(used).toContain("Unarmed Attack");
+  });
+});

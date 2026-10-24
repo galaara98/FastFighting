@@ -43,6 +43,18 @@ const PLAIN_BLOW = 0.5;
 /** A plain blow: a weapon or a fist, costing nothing it keeps count of (not a spell, not a power with uses). */
 export const plainBlow = action => action?.kind === "strike" && !action.resource && !Number.isFinite(action.uses);
 
+/** An unarmed blow: a fist, a kick (the system's "unarmed" trait, or the helper's `unarmed`). */
+export const unarmedBlow = action => action?.kind === "strike" && (action.unarmed === true || (action.traits ?? []).includes("unarmed"));
+
+/**
+ * Has one Un-Mundane anything else to hurt with: a spell or power with uses left, or a weapon? Then it never throws an
+ * unarmed blow. Only fists left (or its own natural attacks, all it has), it uses them.
+ */
+export function armedElse(u) {
+  if ( !(u.spec.playstyles ?? []).includes("unmundane") ) return false;
+  return (u.prep.offense ?? []).some(a => !unarmedBlow(a) && hasUses(u, a));
+}
+
 /**
  * Would u rather use its magic than a plain blow: a caster by its tactics, or Un-Mundane by its playstyles, with a
  * spell (or a power) it can still use?
@@ -65,12 +77,15 @@ export function bestOptionVs(run, u, t, attacksMade = 0, turn = null) {
   const behavior = behaviorOf(u);
   let wary = null; // worked out only if some option means walking
   let magicFirst = null; // worked out only if some option is a plain blow
+  let fistsLast = null; // worked out only if some option is unarmed
   const options = [];
   for ( const action of u.prep.offense ) {
     if ( !hasUses(u, action) ) continue;
     if ( action.oncePerTurn && u.usedThisTurn?.has(action.id) ) continue; // (PF2e Flurry of Blows)
     if ( run.prep.rules.usable && !run.prep.rules.usable(run, u, action, t) ) continue; // (Ironsworn: Strike needs the initiative)
     if ( !meets(run, u, action, t) ) continue; // (what it needs first: a grab, a hit, two hits on this foe: requires.js)
+    // (Un-Mundane: a fist only once it has nothing else to hurt with.)
+    if ( unarmedBlow(action) && (fistsLast ??= armedElse(u)) ) continue;
     const moves = movesNeeded(run, u, t, action);
     if ( !Number.isFinite(moves) ) continue;
     // (And what it would set up: a claw that makes a Rend possible is worth more than its own damage; and a blow
