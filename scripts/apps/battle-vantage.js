@@ -188,8 +188,15 @@ export class BattleVantage extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /** Drawn again, if it's open: its turn bar and tabs (the map of minds again only if what it shows has changed). */
   static refresh() {
-    foundry.applications.instances.get("fast-fighting-battle")?.render({ parts: ["turnbar", "side"] });
+    // (Several changes in one go, such as a turn's events one after another: drawn once, after the last.)
+    if ( BattleVantage.#refreshing ) return;
+    BattleVantage.#refreshing = true;
+    queueMicrotask(() => {
+      BattleVantage.#refreshing = false;
+      foundry.applications.instances.get("fast-fighting-battle")?.render({ parts: ["turnbar", "side"] });
+    });
   }
+  static #refreshing = false;
 
   /** The creature (or token, or thing) in focus: its node's id. */
   #focus = null;

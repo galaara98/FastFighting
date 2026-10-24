@@ -1173,6 +1173,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       if ( status === SURVEY_STATUS.REQUESTED && u.active ) status = SURVEY_STATUS.REQUESTED;
       else if ( status === SURVEY_STATUS.REQUESTED && !u.active ) status = "offline";
       else if ( status === SURVEY_STATUS.ENTERING && !u.active ) status = SURVEY_STATUS.CLOSED;
+      const tokens = tokensForUser(scene, u);
       return {
         id: u.id,
         name: u.name,
@@ -1181,8 +1182,8 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
         status,
         statusLabel: loc(`FASTFIGHTING.Survey.Status.${status}`),
         entering: status === SURVEY_STATUS.ENTERING,
-        tokens: brief(listItems(tokensForUser(scene, u).map(t => t.name))),
-        chars: tokensForUser(scene, u).map(t => ({ name: t.name, img: t.texture?.src ?? t.actor?.img })),
+        tokens: brief(listItems(tokens.map(t => t.name))),
+        chars: tokens.map(t => ({ name: t.name, img: t.texture?.src ?? t.actor?.img })),
         openLabel: loc(status === SURVEY_STATUS.NONE ? "FASTFIGHTING.Survey.OpenFirst" : "FASTFIGHTING.Survey.Reopen")
       };
     });

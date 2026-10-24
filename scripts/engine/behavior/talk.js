@@ -179,7 +179,15 @@ const outsider = (talker, t) => { const g = groupKeyOf(talker); return g === nul
  * The foes standing against t that it knows of, for whether it's outnumbered: those in its senses, and any it has come
  * to blows with. (A third side it can't see, busy with others, doesn't press on it.)
  */
-export const foesKnown = (run, t) => enemiesOf(run, t).filter(o => isStanding(o) && (perceives(run, t, o) || t.harmedBy.has(o.id) || o.harmedBy.has(t.id)));
+export const foesKnown = (run, t) => {
+  if ( !pitchScope ) return knownNow(run, t);
+  let known = pitchScope.get(t);
+  if ( !known ) pitchScope.set(t, known = knownNow(run, t));
+  return known;
+};
+const knownNow = (run, t) => enemiesOf(run, t).filter(o => isStanding(o) && (perceives(run, t, o) || t.harmedBy.has(o.id) || o.harmedBy.has(t.id)));
+/** While one choosePitch runs, each target's foesKnown, worked out once: nothing changes mid-choice. */
+let pitchScope = null;
 
 /**
  * Has `talker` already won t over a step this turn of its own? One step a turn, from each talker: a second pitch at it
@@ -354,7 +362,13 @@ function pursued(run, talker, targets) {
  * Choose who to talk to: likely to work, few steps left, and worth taking out of the fight (or bringing in); and,
  * a little more, the one it would go after anyway (its answer to "Who to pursue first").
  */
-export function choosePitch(run, talker, { only = null } = {}) {
+export function choosePitch(run, talker, opts = {}) {
+  const outer = pitchScope;
+  pitchScope ??= new Map();
+  try { return pickPitch(run, talker, opts); } finally { pitchScope = outer; }
+}
+
+function pickPitch(run, talker, { only = null } = {}) {
   let best = null;
   const targets = pitchTargets(run, talker);
   const favored = pursued(run, talker, targets.filter(t => isStanding(t)));
