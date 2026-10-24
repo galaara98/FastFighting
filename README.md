@@ -184,7 +184,7 @@ The tracker's **Vantage** does the same from the planner's last run of that enco
 ### The Battle Vantage
 
 The GMs' window for a live battle. It follows the turn the tracker shows, Foundry's **Skip Defeated** included.
-- **Turn bar:** the round, whose turn it is, what the battle is waiting for, and the one button to press now: **Begin Encounter**, **Play it** (with **Skip to Next Turn** beside it), **Next Turn**, or **Settle the aftermath**, then **End Encounter** (Foundry's own, which asks first). **Rewind** sits beside it. While a player's turn waits for review, or a player's reaction is being rolled, Next Turn is held a moment (**Hold Next Turn**, a setting: 0 to 60 seconds, or until nothing waits), then shows how many things still wait. The ⋯ menu: Play to the end, Ask me about NPC reactions, Apply players' damage, End Encounter, and **Rewind This Encounter** (press twice).
+- **Turn bar:** the round, whose turn it is, what the battle is waiting for, and the one button to press now: **Begin Encounter**, **Play it** (with **Skip to Next Turn** beside it), **Next Turn**, or **Settle the aftermath**, then **End Encounter** (Foundry's own, which asks first). **Rewind** sits beside it. While a player's turn waits for review, or a player's reaction is being rolled, Next Turn shows how many things wait, and asks before moving on past them. The ⋯ menu: Play to the end, Ask me about NPC reactions, Apply players' damage, End Encounter, and **Rewind This Encounter** (press twice).
 - **Turn order:** the tracker's, a chip for each creature; a click puts it in focus. The arrow keys and the mouse wheel move along it.
 - **Waiting:** everything waiting on you, what holds the battle up first: a player's reaction being rolled (They've rolled it, Go on without it); a player's turn to review (keep, drop or set right what was read, then **Tell it**); the notes told with that turn; players' damage to apply (Apply, Half, Double, Dismiss); deals to review. It comes to the front when something new holds the battle up.
 - **Teams:** each team's head, its view of the fight (going after someone, holding back, leaving), its creatures, and its reinforcements, with **Call**.
@@ -342,7 +342,6 @@ World settings, under **Configure Settings → FastFighting**, in groups that op
 | Play for disconnected players | on | A character whose players have all disconnected gets a countdown in the Battle Vantage, and FastFighting plays it when that runs out; off, its turns wait. |
 | Disconnected player countdown | 120 | How many seconds that countdown lasts. |
 | Apply players' damage | off | A player's damage card against a creature FastFighting runs is applied at once; off, the Battle Vantage asks a GM. Per battle in the planner and the Battle Vantage; greyed out where the system applies players' damage itself. |
-| Hold Next Turn for players | 10 s | While a player's turn waits for review, or their reaction is being rolled, the Battle Vantage's Next Turn stays locked this long: never at 0, until nothing waits at Unlimited. |
 
 ### Story & chat
 

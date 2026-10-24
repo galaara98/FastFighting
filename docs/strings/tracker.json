@@ -2703,7 +2703,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "4b85cb6f1e28"
+   "hash": "4b85cb6f1e28",
+   "gone": "2026-10-24"
   },
   "core:FASTFIGHTING.Battle.HoldHint": {
    "repo": "core",
@@ -2713,7 +2714,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "50152ca62f27"
+   "hash": "50152ca62f27",
+   "gone": "2026-10-24"
   },
   "core:FASTFIGHTING.Battle.HoldLockedHint": {
    "repo": "core",
@@ -2723,7 +2725,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "ee52c19a2909"
+   "hash": "ee52c19a2909",
+   "gone": "2026-10-24"
   },
   "core:FASTFIGHTING.Battle.HowWell": {
    "repo": "core",
@@ -2786,6 +2789,26 @@
    "date": null,
    "commit": null,
    "hash": "08c3eb64a827"
+  },
+  "core:FASTFIGHTING.Battle.MoveOnAsk": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.MoveOnAsk",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "32a19a2edf1d"
+  },
+  "core:FASTFIGHTING.Battle.MoveOnTitle": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Battle.MoveOnTitle",
+   "area": "core/Battle",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "7c321a2f7591"
   },
   "core:FASTFIGHTING.Battle.Net.AddButton": {
    "repo": "core",
@@ -21663,7 +21686,8 @@
    "date": null,
    "commit": null,
    "hash": "d341e8e70cbd",
-   "changed": true
+   "changed": true,
+   "gone": "2026-10-24"
   },
   "core:FASTFIGHTING.Settings.waitHold.Name": {
    "repo": "core",
@@ -21674,7 +21698,8 @@
    "date": null,
    "commit": null,
    "hash": "382e15a16ae1",
-   "changed": true
+   "changed": true,
+   "gone": "2026-10-24"
   },
   "core:FASTFIGHTING.Settings.waitHold.Never": {
    "repo": "core",
@@ -21684,7 +21709,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "6300ef800bb8"
+   "hash": "6300ef800bb8",
+   "gone": "2026-10-24"
   },
   "core:FASTFIGHTING.Settings.waitHold.Seconds": {
    "repo": "core",
@@ -21694,7 +21720,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "8e6df4a0a820"
+   "hash": "8e6df4a0a820",
+   "gone": "2026-10-24"
   },
   "core:FASTFIGHTING.Settings.waitHold.Unlimited": {
    "repo": "core",
@@ -21704,7 +21731,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "11dde17d6c3e"
+   "hash": "11dde17d6c3e",
+   "gone": "2026-10-24"
   },
   "core:FASTFIGHTING.Side.friendly": {
    "repo": "core",

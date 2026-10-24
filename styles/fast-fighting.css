@@ -895,7 +895,6 @@ button.ff-team-pick:hover { border-color: var(--ff-line); }
 .ff-reinforce-text { flex: 1; min-width: 140px; }
 .ff-reinforce-row input[type="number"] { width: 3.5em; }
 /* The Next Turn hold's slider, in the settings: its value in words. */
-.ff-hold-words { margin-left: 8px; font-weight: 700; white-space: nowrap; }
 
 /* ==========================================================================
    The survey (and the token's FastFighting tab): its tabs on top, a character's card, its questionnaire in sections.

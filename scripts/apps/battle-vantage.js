@@ -2,8 +2,8 @@
  * The Battle Vantage: the GM's window on a live battle (foundry/live-battle.js). A turn bar: whose turn it is, what
  * FastFighting is waiting for, and the one thing to press now (Begin Encounter, Play it, Next Turn, Settle the
  * aftermath), with Rewind beside it and the rest in its menu (Play to the end, how NPCs' reactions are decided, Rewind
- * This Encounter); the turn order under it. Next Turn is held a moment (the waitHold setting) while a player's turn or
- * reaction waits on the GM. Beside the map, three tabs: what waits on the GM, the creature in focus, the teams. And a
+ * This Encounter); the turn order under it. Next Turn pressed while a player's turn or reaction waits on the GM asks
+ * whether to move on anyway. Beside the map, three tabs: what waits on the GM, the creature in focus, the teams. And a
  * map of minds (battle-network.js): every creature on the map, every desire, condition,
  * goal and way toward others as a line between two (a symbol on the creature, for what's its own), each with its
  * intensity to raise or lower (0 takes it away). Beside it, the creature in focus (clicked there, or its token
@@ -24,13 +24,11 @@ import { stanceOf } from "../engine/behavior/stance.js";
 import { PICKED_BONUS } from "../foundry/battle.js";
 import { GM_RELATIONS, conditionMost } from "../engine/conditions.js";
 import { getAdapter } from "../api.js";
-import { roundsText, listJoin } from "../i18n.js";
+import { roundsText, listJoin, escapeHtml } from "../i18n.js";
 import { feetOnScene } from "../foundry/terrain.js";
 import { mountNetwork } from "./battle-network.js";
 import { listenMenus } from "./menus.js";
 import { wheelSideways } from "./sideways.js";
-import { holdOf } from "./hold.js";
-import { setting } from "../settings.js";
 import { blink, keepTyping } from "./blink.js";
 import { sceneEncounter, encounterNumber } from "../foundry/persistence.js";
 import { clockText } from "../foundry/away.js";
@@ -198,10 +196,9 @@ export class BattleVantage extends HandlebarsApplicationMixin(ApplicationV2) {
   #following = false;
   /** The tab beside the map: waiting, creature, teams. */
   #tab = "waiting";
-  /** When each thing that holds the battle up first came (by its queue id): Next Turn's hold counts from the newest. */
-  #seen = new Map();
-  /** The hold's countdown on Next Turn, ticking (#holdTick); the map of minds' signature, drawn as it is (#mount). */
-  #holdTicker = null;
+  /** What holds the battle up, by its queue id, as last drawn: one new brings the Waiting tab to the front. */
+  #seen = new Set();
+  /** The map of minds' signature, drawn as it is (#mount). */
   #graphSig = null;
 
   /** In the title bar: the scene, and which of its encounters, when it has more than one (the tracker's number). */
@@ -327,26 +324,13 @@ export class BattleVantage extends HandlebarsApplicationMixin(ApplicationV2) {
     this.#graph = graph;
     this.#focus = focus;
     if ( context.none ) return context;
-    // (What holds the battle up: when each came. One just come brings the Waiting tab to the front.)
-    const now = Date.now();
+    // (What holds the battle up. One just come brings the Waiting tab to the front.)
     const blocking = context.queue.filter(q => q.blocking);
-    const fresh = blocking.filter(q => !this.#seen.has(q.id));
-    for ( const q of fresh ) this.#seen.set(q.id, now);
-    for ( const id of [...this.#seen.keys()] ) if ( !blocking.some(q => q.id === id) ) this.#seen.delete(id);
-    if ( fresh.length ) this.#tab = "waiting";
-    // (Next Turn held a moment while something waits on the GM: the waitHold setting.)
+    if ( blocking.some(q => !this.#seen.has(q.id)) ) this.#tab = "waiting";
+    this.#seen = new Set(blocking.map(q => q.id));
+    // (Next Turn says how many things wait, and asks before moving on past them: #onContinue.)
     const p = context.primary;
-    if ( p?.action === "continue" && blocking.length ) {
-      const hold = holdOf(blocking.map(q => this.#seen.get(q.id)), now, Number(setting("waitHold")) || 0);
-      Object.assign(p, { count: blocking.length, countLabel: context.waitingText });
-      if ( hold.held ) {
-        Object.assign(p, {
-          held: true, holdUntil: hold.until ?? "", icon: hold.until ? "fa-hourglass-half" : "fa-lock",
-          label: hold.until ? fmt("FASTFIGHTING.Battle.HoldCount", { n: hold.left }) : loc("FASTFIGHTING.Live.NextTurn"),
-          tooltip: loc(hold.until ? "FASTFIGHTING.Battle.HoldHint" : "FASTFIGHTING.Battle.HoldLockedHint")
-        });
-      }
-    }
+    if ( p?.action === "continue" && blocking.length ) Object.assign(p, { count: blocking.length, countLabel: context.waitingText });
     context.tab = this.#tab;
     context.tabs = ["waiting", "creature", "teams"].map(id => ({
       id, label: loc(`FASTFIGHTING.Battle.Tab.${id}`), active: this.#tab === id,
@@ -394,7 +378,6 @@ export class BattleVantage extends HandlebarsApplicationMixin(ApplicationV2) {
     // (The title bar as the encounter shown now is.)
     if ( this.window?.title && this.window.title.textContent !== this.title ) this.window.title.textContent = this.title;
     this.#tick();
-    this.#holdTick();
     const b = BattleVantage.shown();
     this.#restoreDraft(b);
     this.#mount(b, options?.parts?.includes("net") ?? true);
@@ -435,30 +418,6 @@ export class BattleVantage extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Next Turn's hold counting down on the button, each second, without drawing the window again; the turn bar drawn
-   * again once it's up.
-   */
-  #holdTick() {
-    clearInterval(this.#holdTicker);
-    this.#holdTicker = null;
-    const button = this.element?.querySelector("[data-hold-until]");
-    const until = Number(button?.dataset.holdUntil);
-    if ( !button || !until ) return;
-    const show = () => {
-      const left = until - Date.now();
-      if ( left > 0 && button.isConnected ) {
-        const label = button.querySelector(".ff-primary-label");
-        if ( label ) label.textContent = fmt("FASTFIGHTING.Battle.HoldCount", { n: Math.ceil(left / 1000) });
-        return;
-      }
-      clearInterval(this.#holdTicker);
-      this.#holdTicker = null;
-      if ( this.rendered ) this.render({ parts: ["turnbar"] });
-    };
-    this.#holdTicker = setInterval(show, 250);
-  }
-
-  /**
    * The away countdown beside Add (the creature in focus has one), ticking down each second: only its own time is
    * written, not the window. At zero it's gone; the checkbox shows ticked once FastFighting plays the character.
    */
@@ -486,8 +445,6 @@ export class BattleVantage extends HandlebarsApplicationMixin(ApplicationV2) {
   _onClose(options) {
     clearInterval(this.#ticking);
     this.#ticking = null;
-    clearInterval(this.#holdTicker);
-    this.#holdTicker = null;
     this.#network?.destroy();
     this.#network = null;
     // (Opened again, the map of minds is laid out from the battle map.)
@@ -674,7 +631,19 @@ export class BattleVantage extends HandlebarsApplicationMixin(ApplicationV2) {
     }
   }
 
-  static async #onContinue() {
+  /**
+   * Next Turn. With a player's turn to review or a reaction being rolled still waiting (`data-waiting`), it asks first
+   * whether to move on anyway.
+   */
+  static async #onContinue(event, target) {
+    const waiting = Number(target?.dataset.waiting) || 0;
+    if ( waiting ) {
+      const on = await foundry.applications.api.DialogV2.confirm({
+        window: { title: loc("FASTFIGHTING.Battle.MoveOnTitle") },
+        content: `<p>${escapeHtml(fmt("FASTFIGHTING.Battle.MoveOnAsk", { n: waiting }))}</p>`
+      });
+      if ( !on ) return;
+    }
     await continueBattle();
   }
 

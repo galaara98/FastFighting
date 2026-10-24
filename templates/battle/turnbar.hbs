@@ -13,7 +13,7 @@
     {{#if started}}<button type="button" class="ff-btn ff-btn--quiet {{#unless canRewind}}is-disabled{{/unless}}" data-action="rewind" {{#unless canRewind}}aria-disabled="true"{{/unless}} data-tooltip="{{rewindTip}}"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> {{localize "FASTFIGHTING.Live.Rewind"}}</button>{{/if}}
     {{#with secondary}}<button type="button" class="ff-btn {{cls}}" data-action="{{action}}" {{#if tooltip}}data-tooltip="{{tooltip}}"{{/if}}><i class="fa-solid {{icon}}" aria-hidden="true"></i> {{label}}</button>{{/with}}
     {{#with primary}}
-    <button type="button" class="ff-btn ff-btn--primary {{cls}} {{#if held}}is-disabled{{/if}}" data-action="{{action}}" {{#if held}}aria-disabled="true"{{/if}} {{#if holdUntil}}data-hold-until="{{holdUntil}}"{{/if}} {{#if tooltip}}data-tooltip="{{tooltip}}"{{/if}}>
+    <button type="button" class="ff-btn ff-btn--primary {{cls}}" data-action="{{action}}" {{#if count}}data-waiting="{{count}}"{{/if}} {{#if tooltip}}data-tooltip="{{tooltip}}"{{/if}}>
       <i class="fa-solid {{icon}}" aria-hidden="true"></i> <span class="ff-primary-label">{{label}}</span>{{#if count}} <span class="ff-count ff-count--attention" aria-label="{{countLabel}}">{{count}}</span>{{/if}}
     </button>
     {{/with}}

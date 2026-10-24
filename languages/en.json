@@ -271,13 +271,6 @@
         "Link": "Optional performance survey",
         "Hint": "Your setup, your battle and how many fights the planner ran: it helps make FastFighting faster."
       },
-      "waitHold": {
-        "Name": "Hold Next Turn for players",
-        "Hint": "While a player's turn waits for review, or their reaction is being rolled, the Battle Vantage's Next Turn stays locked this long.",
-        "Never": "Never",
-        "Seconds": "{n} s",
-        "Unlimited": "Unlimited"
-      },
       "loreBoost": {
         "Name": "Lore-Collector advantage (×)",
         "Hint": "How many times likelier a Lore-Collector's rolls are to succeed after it sizes up a foe, against foes of that sort."
@@ -3034,9 +3027,6 @@
       "ActingNow": "acting now",
       "SkipTurn": "Skip to Next Turn",
       "SkipTurnHint": "Moves on without playing this turn.",
-      "HoldCount": "Next Turn · {n}s",
-      "HoldHint": "Something waits on you: Next Turn is held a moment (the Hold Next Turn setting).",
-      "HoldLockedHint": "Something waits on you: Next Turn is held until it's done (the Hold Next Turn setting).",
       "RewindHint": "Undo the last turn.",
       "RewindNone": "Nothing to rewind yet.",
       "UndoArmed": "Press again: rewind the whole encounter",
@@ -3048,7 +3038,9 @@
         "harm": "In the fight against {target}.",
         "wait": "Holding back while others fight.",
         "prey": "Going after {target}."
-      }
+      },
+      "MoveOnTitle": "Move on?",
+      "MoveOnAsk": "{n} still waiting: a player's turn to review, or a reaction being rolled. Move on anyway?"
     },
     "Goal": {
       "openDoor": "Through {thing}, to reach {name}",
