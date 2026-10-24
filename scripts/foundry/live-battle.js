@@ -3499,7 +3499,7 @@ async function tellNew() {
     const beats = storyBeats(result, battle.spec, style, options);
     const docs = new Map(run.units.map(u => [u.id, docOf(u.id)]).filter(([, d]) => d));
     // (Told openly: one whose name the players haven't learned, as someone. The GMs' cards keep its name.)
-    if ( open ) noteSeen(run);
+    if ( open ) noteSeen(run, partyOf(run));
     const someone = open ? unnamed(run, docs) : null;
     if ( someone?.size ) {
       const told = new Map(storyBeats(...namedAs(result, battle.spec, someone), style, options).map(b => [beatKey(b), b]));

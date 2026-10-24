@@ -132,7 +132,7 @@ export function perceives(run, u, t, { crisis = false } = {}) {
  * @param {Set<object>} party
  */
 export function noteSeen(run, party) {
-  if ( !party.size ) return;
+  if ( !party?.size ) return;
   const met = new Set();
   const log = run.log ?? [];
   for ( let i = Math.min(run.seenLogAt ?? 0, log.length); i < log.length; i++ ) {

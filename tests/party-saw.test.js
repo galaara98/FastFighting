@@ -39,3 +39,9 @@ describe("whom the party has seen", () => {
     expect(orc.partySaw).toBeUndefined();
   });
 });
+
+test("no party given: nothing marked, nothing thrown", () => {
+  const orc = { id: "orc", status: "standing", spec: { id: "orc" } };
+  expect(() => noteSeen({ units: [orc], byId: new Map(), prep: { options: {} } }, undefined)).not.toThrow();
+  expect(orc.partySaw).toBeUndefined();
+});
