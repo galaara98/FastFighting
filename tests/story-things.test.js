@@ -50,5 +50,12 @@ describe("a turn told", () => {
       { text: "s", e: by("Jirelle", "jirelle", { type: "attack", targetId: "b" }) }
     ];
     expect(thingsDone(parts, "jirelle").map(g => g.map(x => x.text))).toEqual([["t", "m", "s"]]);
+    // (A reload between two shots at the same foe: one thing.)
+    const shots = [
+      { text: "1", e: by("Jirelle", "jirelle", { type: "attack", targetId: "b" }) },
+      { text: "r", e: by("Jirelle", "jirelle", { type: "reload" }) },
+      { text: "2", e: by("Jirelle", "jirelle", { type: "attack", targetId: "b" }) }
+    ];
+    expect(thingsDone(shots, "jirelle").map(g => g.map(x => x.text))).toEqual([["1", "r", "2"]]);
   });
 });

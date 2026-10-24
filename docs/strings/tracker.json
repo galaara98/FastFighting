@@ -30779,6 +30779,16 @@
    "commit": null,
    "hash": "7f0526e40e7e"
   },
+  "core:FASTFIGHTING.Words.Namesake": {
+   "repo": "core",
+   "file": "languages/en.json",
+   "key": "FASTFIGHTING.Words.Namesake",
+   "area": "core/Words",
+   "status": "todo",
+   "date": null,
+   "commit": null,
+   "hash": "91fcdc927ac4"
+  },
   "core:FASTFIGHTING.Words.Part": {
    "repo": "core",
    "file": "languages/en.json",

@@ -647,6 +647,38 @@ function pursesFor(roster, setup, adapter) {
   return out;
 }
 
+/** "Name (n)", in the reader's language. */
+const namesake = (name, n) => game.i18n.format("FASTFIGHTING.Words.Namesake", { name, n });
+
+/**
+ * Tokens that share an exact name, told apart in the story, the log and the Battle Vantage: each "Name (n)" in the
+ * order they come (the roster's, the scene's: the same from the planner to the live battle), its own name kept
+ * (`baseName`) and its number (`namesake`). One alone keeps its name. Pure but for `label`.
+ */
+export function numberNamesakes(combatants, label = namesake) {
+  const count = new Map();
+  for ( const c of combatants ) count.set(c.name, (count.get(c.name) ?? 0) + 1);
+  const seen = new Map();
+  for ( const c of combatants ) {
+    if ( (count.get(c.name) ?? 0) < 2 ) continue;
+    const n = (seen.get(c.name) ?? 0) + 1;
+    seen.set(c.name, n);
+    Object.assign(c, { baseName: c.name, namesake: n, name: label(c.name, n) });
+  }
+  return combatants;
+}
+
+/**
+ * A creature joining a battle under a name one in it already has: its name, numbered past theirs ({name, baseName,
+ * namesake}); null where none shares it. (Those already in it keep theirs: the story has told them so.)
+ */
+export function namesakeOf(combatants, name, label = namesake) {
+  const same = combatants.filter(c => (c.baseName ?? c.name) === name);
+  if ( !same.length ) return null;
+  const n = Math.max(...same.map(c => c.namesake ?? 1)) + 1;
+  return { baseName: name, namesake: n, name: label(name, n) };
+}
+
 export function buildBattleSpec(roster, setup, { approach = null } = {}) {
   const adapter = getAdapter();
   const sideDefaults = setting("sideDefaults");
@@ -686,6 +718,8 @@ export function buildBattleSpec(roster, setup, { approach = null } = {}) {
     combatants.push(spec);
     (bySide[side] ??= []).push(spec);
   }
+  // (Namesakes told apart: "Black Tear Cutthroat (2)".)
+  numberNamesakes(combatants);
   // Companions: map the master actor to the master's token on this battlefield.
   for ( const c of combatants ) {
     const masterActorId = c.flags?.masterActorId;

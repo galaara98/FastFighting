@@ -20,6 +20,7 @@
     "Words": {
       "List": "{rest} and {last}",
       "ListSeparator": ", ",
+      "Namesake": "{name} ({n})",
       "Part": "{why}: {n}",
       "Luck": "luck",
       "Fate": "fate",

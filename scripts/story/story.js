@@ -1252,8 +1252,8 @@ export function storyBeats(result, spec, style, { tables, seed = 1, damageType =
 /**
  * A beat's sentences ({text, e}) in paragraphs, a thing done each: a new one where the turn's own creature turns to
  * someone or something else (a foe, a door), its moves toward it with it; what comes of it (a foe giving in, a blow's
- * harm, how hurt it looks) and the same thing told twice (a Demoralize, and its threat) stay with it. Its thoughts go
- * with what follows.
+ * harm, how hurt it looks) and the same thing told twice (a Demoralize, and its threat) stay with it. Its thoughts, and
+ * a step at no one (a reload, a draw), go with what it's doing.
  */
 export function thingsDone(parts, actorId) {
   const groups = [];
@@ -1261,7 +1261,8 @@ export function thingsDone(parts, actorId) {
   for ( const x of parts ) {
     const e = x.e;
     const own = !!e && !!actorId && e.actorId === actorId && e.type !== "thought";
-    const now = own ? (e.type === "door" ? `door:${e.doorId}` : e.targetId ?? e.towardId ?? e.type) : null;
+    // (A step at no one, a reload, a draw, getting up, hiding: part of what it's doing.)
+    const now = own ? (e.type === "door" ? `door:${e.doorId}` : e.targetId ?? e.towardId ?? null) : null;
     if ( !groups.length || (now !== null && thing !== null && now !== thing) ) groups.push([]);
     if ( now !== null ) thing = now;
     groups.at(-1).push(x);

@@ -23,7 +23,7 @@ import { planHolder, sceneEncounter } from "./foundry/persistence.js";
 import { hasRun } from "./foundry/run-memory.js";
 import { setDistanceUnit, setTermSource, localize } from "./i18n.js";
 import { loadKeywords } from "./foundry/keywords.js";
-import { registerLiveBattles, liveBattle, followPlayersSay, systemAppliesText } from "./foundry/live-battle.js";
+import { registerLiveBattles, liveBattle, followPlayersSay, systemAppliesText, tokenIdOf } from "./foundry/live-battle.js";
 import { registerSheetWatch } from "./foundry/sheet-watch.js";
 import { registerSheetButton } from "./foundry/sheet-button.js";
 import { BattleVantage, registerBattleVantage, prepareVantage } from "./apps/battle-vantage.js";
@@ -324,7 +324,10 @@ Hooks.on("renderSettingsConfig", (app, html) => {
 });
 
 // A story card with someone in it: in a GM's browser, who each is.
-Hooks.on("renderChatMessageHTML", whoIsWho);
+Hooks.on("renderChatMessageHTML", (message, html) => whoIsWho(message, html, (scene, tokenId) => {
+  const b = liveBattle();
+  return b?.scene === scene ? b.run.units.find(u => tokenIdOf(u) === tokenId)?.spec.name ?? null : null;
+}));
 
 // A GM-only story: the GM can show it to everyone.
 Hooks.on("renderChatMessageHTML", (message, html) => {

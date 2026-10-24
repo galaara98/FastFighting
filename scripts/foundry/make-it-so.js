@@ -312,17 +312,18 @@ export async function postBeat(scene, beat, docs, state) {
 
 /**
  * A story card told openly with someone in it (flags.fast-fighting.someone: {scene, who: [{label, tokenId}]}), in a GM's
- * browser: a short line above the story saying who each is, by its token's name. Drawn here only, so the card the
- * players are sent never holds the names.
+ * browser: a short line above the story saying who each is, by its name in the battle (`nameOf(scene, tokenId)`:
+ * "Black Tear Cutthroat (2)" where namesakes are numbered), else its token's. Drawn here only, so the card the players
+ * are sent never holds the names.
  */
-export function whoIsWho(message, html) {
+export function whoIsWho(message, html, nameOf = null) {
   const said = message.getFlag(MODULE_ID, "someone");
   if ( !game.user.isGM || !ownCard(message) || !Array.isArray(said?.who) || !said.who.length ) return;
   const story = html.querySelector?.(".fast-fighting-story");
   if ( !story || story.querySelector(".ff-who-is-who") ) return;
   const scene = game.scenes.get(said.scene) ?? canvas?.scene ?? null;
   const each = said.who.map(w => {
-    const name = scene?.tokens.get(w.tokenId)?.name;
+    const name = nameOf?.(scene, w.tokenId) ?? scene?.tokens.get(w.tokenId)?.name;
     return name && w.label ? game.i18n.format("FASTFIGHTING.Story.WhoIs", { someone: w.label, name }) : null;
   }).filter(Boolean);
   if ( !each.length ) return;

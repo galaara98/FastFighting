@@ -29,7 +29,7 @@ import { dropGoods, pickUpGoods, lootOnFall, writeForaged } from "./loot-drop.js
 import { meatGoods } from "./food.js";
 import { setting, followSetting, rangeOf } from "../settings.js";
 import { positionOf, squareFeet } from "./terrain.js";
-import { approachFor, sceneNow } from "./battle.js";
+import { approachFor, sceneNow, namesakeOf } from "./battle.js";
 import { currentPathGrid, pathGridFor, sceneWallGrid } from "./pathing.js";
 import { getSetup, sceneEncounter } from "./persistence.js";
 import { QUERIES, isPlayerControlled, getStoredTactics, reactionPrefsFor } from "./tactics.js";
@@ -892,6 +892,8 @@ async function joinFight(combatant) {
   }
   if ( !spec || unitOf(combatant) ) return unitOf(combatant);
   Object.assign(spec, { side, originSide: side, inEncounter: true, tokenId: doc.id, hidden: doc.hidden });
+  // (One of a name already in the fight: numbered past them, numberNamesakes.)
+  Object.assign(spec, namesakeOf(battle.spec.combatants, spec.name) ?? {});
   // (A player's: its reactions and rerolls as its player said.)
   if ( isPlayerControlled(spec, doc.actor) ) Object.assign(spec, playersSay(spec, doc.actor));
   spec.generic ??= spec.kind !== "pc" && !doc.actorLink && (spec.rarity ?? 0) < 3;
@@ -3437,12 +3439,12 @@ function unnamed(run, docs) {
     const doc = docs.get(u.id);
     if ( !doc ) continue;
     if ( nameHidden(doc, u, byNameplate) ) hidden.push(u);
-    else known.add(u.spec.name);
+    else known.add(u.spec.baseName ?? u.spec.name);
   }
   const numbers = (battle.data.someone ??= {});
   const out = new Map();
   for ( const u of hidden ) {
-    if ( known.has(u.spec.name) ) continue;
+    if ( known.has(u.spec.baseName ?? u.spec.name) ) continue;
     numbers[u.id] ??= Object.keys(numbers).length + 1;
     out.set(u.id, game.i18n.format("FASTFIGHTING.Desire.Unknown", { n: numbers[u.id] }));
   }
