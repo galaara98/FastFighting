@@ -379,6 +379,26 @@ function onTurnChange(combat, prior, current) {
 }
 
 /**
+ * The tracker taken back before the encounter began (Previous Turn or Previous Round from round 1's first turn, by a
+ * player or a GM): Foundry tells no turn change for it (combatTurnChange waits for a started combat), so it's caught
+ * here. A live battle doesn't go back past its start that way: the tracker is put back where it was, and the GMs told
+ * (a player's doing: TrackerRefused; a GM's: only Rewind This Encounter goes so far, TooFarBack). Rewind This
+ * Encounter's own (its update's options carry MODULE_ID) is left alone.
+ */
+function onUnstarted(combat, diff, options, userId) {
+  if ( battle?.combat !== combat || battle.data.ended || battle.data.prepared || !playsHere() ) return;
+  if ( diff?.round !== 0 || options?.[MODULE_ID] ) return;
+  const prior = combat.previous;
+  if ( !(prior?.round > 0) ) return;
+  const by = game.users.get(userId);
+  queueFor(async () => {
+    await combat.update({ round: prior.round, turn: prior.turn }, { turnEvents: false });
+    ui.notifications.warn(by && !by.isGM ? fmt("FASTFIGHTING.Live.TrackerRefused", { name: by.name }) : loc("FASTFIGHTING.Live.TooFarBack"));
+    changed();
+  });
+}
+
+/**
  * Was the tracker moved as it may be? By a GM, any way; by a player, only forward, from the turn of a character of their
  * own (ending it), into the next round at most. Foundry lets anyone set a combat's turn: a player going back would
  * have the GM's client take back a foe's turn (and roll it again), one going on past others, skip theirs.
@@ -3714,7 +3734,7 @@ export function rewindEncounter() {
     // updateCombat hook), so `battle` may be gone by the end.)
     const data = battle.data;
     if ( data.rolled?.length ) await combat.updateEmbeddedDocuments("Combatant", data.rolled.filter(id => combat.combatants.has(id)).map(id => ({ _id: id, initiative: null })), { turnEvents: false });
-    if ( data.startedCombat ) await combat.update({ round: 0, turn: null }, { turnEvents: false });
+    if ( data.startedCombat ) await combat.update({ round: 0, turn: null }, { turnEvents: false, [MODULE_ID]: "rewindAll" });
     await combat.unsetFlag(MODULE_ID, "live");
     await forget(combat.id, data.id);
     letGo();
@@ -4222,6 +4242,8 @@ export function registerLiveBattles() {
   // (A Fast Fight's chat cards: no 3D dice, nothing left waiting on them.)
   registerQuietDice();
   Hooks.on("combatTurnChange", onTurnChange);
+  // (Taken back before the start, which Foundry doesn't tell as a turn change.)
+  Hooks.on("updateCombat", onUnstarted);
   Hooks.on("updateToken", (doc, changes) => {
     if ( !battle?.pc || doc.id !== battle.pc.id || !("x" in changes || "y" in changes) || !playsHere() ) return;
     queue(() => playerMoved(doc));
