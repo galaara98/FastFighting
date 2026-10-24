@@ -54910,9 +54910,9 @@
    "file": "languages/en.json",
    "key": "FFPF2E.FreshCorpse",
    "area": "pf2e/General",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "written",
+   "date": "2026-10-24",
+   "commit": "991ef1c",
    "hash": "77f4cdec5a39"
   },
   "pf2e:FFPF2E.FreshCorpseHint": {
@@ -55496,9 +55496,9 @@
    "file": "languages/en.json",
    "key": "FFPF2E.RottenCorpse",
    "area": "pf2e/General",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "written",
+   "date": "2026-10-24",
+   "commit": "991ef1c",
    "hash": "eca283d139a3"
   },
   "pf2e:FFPF2E.RottenCorpseHint": {
@@ -55516,9 +55516,9 @@
    "file": "languages/en.json",
    "key": "FFPF2E.ScrapCorpse",
    "area": "pf2e/General",
-   "status": "todo",
-   "date": null,
-   "commit": null,
+   "status": "written",
+   "date": "2026-10-24",
+   "commit": "991ef1c",
    "hash": "a3bd05a206e6"
   },
   "pf2e:FFPF2E.ScrapCorpseHint": {
