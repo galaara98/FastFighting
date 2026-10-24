@@ -116,7 +116,32 @@ function stillHere() {
 const playsHere = () => !!battle && runsHere(battle.data) && stillHere();
 
 /** The combat's flag for the battle: which it is, whether it's still going, and whose browser plays it. */
-const flagOf = active => ({ id: battle.data.id, active, user: battle.data.user });
+/**
+ * The combat's flag for its battle, as every browser reads it: which, whether it's on, whose browser plays it, and
+ * whether FastFighting is in use for it (begun, or the GM has used the Battle Vantage on it: playersTracker).
+ */
+const flagOf = active => ({ id: battle.data.id, active, user: battle.data.user, inUse: active && (!battle.data.prepared || !!battle.data.touched) });
+
+/**
+ * The GM has used the Battle Vantage on this battle (a button pressed, a setting changed): FastFighting is in use for
+ * it from now on, even before it begins (playersTracker).
+ */
+export async function markInUse() {
+  if ( !battle || battle.data.touched || battle.data.ended || !playsHere() ) return;
+  battle.data.touched = true;
+  await keep();
+  await battle.combat.setFlag(MODULE_ID, "live", flagOf(!battle.data.ended));
+}
+
+/**
+ * The Combat Tracker as a player sees it: with FastFighting in use for its encounter (the combat's flag, flagOf), no
+ * Previous Turn (a player can only end their own turn in a live battle); otherwise, and once the battle is over, as
+ * Foundry draws it. Hidden with a class (`ff-live-tracker`), not removed, so a module that looks for it still finds it.
+ */
+export function playersTracker(app, element) {
+  const live = (app?.viewed ?? game.combat)?.getFlag(MODULE_ID, "live");
+  element?.classList?.toggle("ff-live-tracker", !game.user.isGM && !!live?.active && !!live?.inUse);
+}
 
 /** Something changed in the battle: whatever shows it draws it again. */
 const changed = () => Hooks.callAll("fastFighting.liveBattle", battle);
@@ -285,6 +310,8 @@ export function beginEncounter() {
     battle.data.spec = packSpec(battle.spec);
     liveRound(battle.run, combat.round || 1);
     Object.assign(battle.data, { prepared: false, rolled: unrolled, rollCards, startedCombat: started, beganAt: rolledFrom });
+    // (In use now: the players' tracker as a live battle's, playersTracker.)
+    await combat.setFlag(MODULE_ID, "live", flagOf(true));
     // (Players not here as it begins: gone since it began.)
     timersAtStart(rolledFrom);
     const shown = await showRolls(battle.data.openingRolls ?? [], null);
@@ -4177,7 +4204,9 @@ async function pickUp() {
     const data = found?.data;
     if ( !data?.snapshot || !runsHere(data) ) continue;
     data.user = game.user.id; // (its GM gone: this one plays it now)
-    await combat.setFlag(MODULE_ID, "live", { ...flag, user: game.user.id });
+    // (And whether FastFighting is in use for it, for a battle kept before the flag said so: flagOf's inUse.)
+    const inUse = flag.inUse ?? (flag.active && (!data.prepared || !!data.touched));
+    await combat.setFlag(MODULE_ID, "live", { ...flag, user: game.user.id, inUse });
     let spec;
     try {
       spec = unpackSpec(data.spec);
@@ -4244,6 +4273,11 @@ export function registerLiveBattles() {
   Hooks.on("combatTurnChange", onTurnChange);
   // (Taken back before the start, which Foundry doesn't tell as a turn change.)
   Hooks.on("updateCombat", onUnstarted);
+  // (A player's tracker: no Previous Turn while FastFighting is in use for its encounter; drawn again as that changes.)
+  Hooks.on("renderCombatTracker", playersTracker);
+  Hooks.on("updateCombat", (combat, changes) => {
+    if ( foundry.utils.hasProperty(changes, `flags.${MODULE_ID}`) && combat === (ui.combat?.viewed ?? game.combat) ) ui.combat?.render();
+  });
   Hooks.on("updateToken", (doc, changes) => {
     if ( !battle?.pc || doc.id !== battle.pc.id || !("x" in changes || "y" in changes) || !playsHere() ) return;
     queue(() => playerMoved(doc));

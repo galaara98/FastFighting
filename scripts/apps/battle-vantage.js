@@ -35,7 +35,8 @@ import { clockText } from "../foundry/away.js";
 import {
   liveBattle, continueBattle, rewind, rewindEncounter, beginEncounter, endEncounter, playCurrent, answerDamage, setApplyDamage, systemAppliesText, waitingReaction, endReaction, sheetNow, liveFact, dropHeldFact, setNpcReactions, setPlayThrough, finishReview,
   waitingDeals, openDealReview, liveReinforce, reinforcementsLeft,
-  waitingOnGm, suggestedSpotlight, spotlightNext, settleBattle, setAutomated, liveCondition, liveMind, bringIntoFight, tokenIdOf, fastFight, fastOffered, fastRunning
+  waitingOnGm, suggestedSpotlight, spotlightNext, settleBattle, setAutomated, liveCondition, liveMind, bringIntoFight, tokenIdOf, fastFight, fastOffered, fastRunning,
+  markInUse
 } from "../foundry/live-battle.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -128,6 +129,9 @@ function teamBadge(key) {
   return short ? { short, label: loc(`FASTFIGHTING.Planner.Team.${short}`) } : { short: "none", label: key ?? "" };
 }
 
+
+/** The Battle Vantage's buttons that only change what it shows (its tabs, the creature in focus): not using FastFighting. */
+const LOOKS = new Set(["sideTab", "focusCreature"]);
 
 export class BattleVantage extends HandlebarsApplicationMixin(ApplicationV2) {
   static DEFAULT_OPTIONS = {
@@ -342,6 +346,15 @@ export class BattleVantage extends HandlebarsApplicationMixin(ApplicationV2) {
   _onFirstRender(context, options) {
     super._onFirstRender?.(context, options);
     const el = this.element;
+    // (The GM using it on the battle, a button pressed or a setting changed, not just looking at it: FastFighting is in
+    // use for that encounter from now on, live-battle.js markInUse.)
+    el.addEventListener("click", event => {
+      const action = event.target.closest?.("[data-action]")?.dataset.action;
+      if ( action && !LOOKS.has(action) ) markInUse();
+    }, true);
+    el.addEventListener("change", event => {
+      if ( event.target.closest?.("input, select, textarea") ) markInUse();
+    }, true);
     el.addEventListener("pointerenter", () => { this.#hovering = true; });
     el.addEventListener("pointerleave", () => { this.#hovering = false; });
     listenMenus(el);

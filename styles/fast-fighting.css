@@ -328,6 +328,9 @@
 .ff-helper-notice.ff-helper-generic { border-color: #5bb6db; background: color-mix(in srgb, #5bb6db 12%, transparent); }
 .form-group.ff-disabled { opacity: 0.45; }
 
+/* A player's Combat Tracker while FastFighting is in use for its encounter (live-battle.js playersTracker): no Previous Turn. */
+.ff-live-tracker .combat-controls [data-action="previousTurn"] { display: none; }
+
 /* ---------- The settings' groups (settings.js groupSettings): FastFighting's sections, as in the planner ---------- */
 /* A group with nothing left to show (a search, the loot settings a helper doesn't use) goes, heading and all. */
 .ff-settings-group:not(:has(.form-group:not([hidden]))) { display: none; }
