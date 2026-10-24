@@ -1983,6 +1983,25 @@
     "{actor}'s attack falls apart entirely, and they spend a long moment recovering.",
     "{target} laughs as {actor} trips over their own feet."
   ],
+  "talk.persuade.opening": [
+    "{actor} turns to {target} and speaks.",
+    "{actor} calls out to {target}.",
+    "{actor} lowers their guard and addresses {target}."
+  ],
+  "talk.intimidate.opening": [
+    "{actor} rounds on {target} with a threat.",
+    "{actor} growls a warning at {target}.",
+    "{actor} squares up to {target}."
+  ],
+  "talk.deceive.opening": [
+    "{actor} spins a tale for {target}.",
+    "{actor} leans toward {target} with a story.",
+    "{actor} tries a bluff on {target}."
+  ],
+  "event.opener": [
+    "{actor} turns to {target}.",
+    "{actor} looks to {target}."
+  ],
   "talk.persuade.criticalSuccess": [
     "{actor} reasons with {target}, and every word lands; {target} lowers their weapon.",
     "{actor}'s appeal reaches something deep in {target}, whose whole stance softens.",

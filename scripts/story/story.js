@@ -785,6 +785,10 @@ function storyNames(spec) {
  */
 function roleplayParagraphs(result, spec, tables, seed, mapType, mapCondition = null, healthState = null) {
   const roll = makeRoller(tables, seed);
+  // (A turn's opening by its own creature, where its first line would start with another: drawn apart, as the health
+  // lines are, so the rest reads as it would without them.)
+  const openRoll = makeRoller(tables, (seed + 31337) >>> 0);
+  const begun = new Set(); // turns with a line told
   // (How hurt a creature now looks, after the harm that made it look worse: its own lines, drawn apart, so the rest of
   // the telling reads as it would without them.)
   const health = healthCallouts(result.log ?? [], healthState);
@@ -889,6 +893,7 @@ function roleplayParagraphs(result, spec, tables, seed, mapType, mapCondition = 
       if ( thought ) {
         lastThought.set(e.actorId, e.round);
         current.sentences.push({ e: logged, text: capital(thought.trim()) });
+        begun.add(e.turn);
       }
       continue;
     }
@@ -917,7 +922,18 @@ function roleplayParagraphs(result, spec, tables, seed, mapType, mapCondition = 
     }
     const sentence = lead && told ? `${capital(lead)} ${capital(told.trim())}` : told;
     rel.record(e);
-    if ( sentence ) current.sentences.push({ e: logged, text: capitalSentences(sentence.trim()) });
+    if ( sentence ) {
+      // (A turn mustn't open on the one it's done to, "The cutthroat listens ...": its own creature first, turning to it.)
+      const own = (e.turnOf ?? e.actorId) === e.actorId && !!e.actor && !!e.target;
+      const startsOn = name => sentence.trim().toLowerCase().startsWith(String(name).toLowerCase());
+      if ( !begun.has(e.turn) && own && startsOn(e.target) && !startsOn(e.actor) ) {
+        const key = e.type === "talk" && hasTable(openRoll, `talk.${e.kind ?? "persuade"}.opening`) ? `talk.${e.kind ?? "persuade"}.opening` : "event.opener";
+        const opener = openRoll(key, { actor: e.actor, target: e.target }).trim();
+        if ( opener ) current.sentences.push({ e: logged, text: capitalSentences(opener) });
+      }
+      current.sentences.push({ e: logged, text: capitalSentences(sentence.trim()) });
+      begun.add(e.turn);
+    }
     tellHealth(logged);
   }
   return paragraphs;
@@ -1207,19 +1223,19 @@ export function storyBeats(result, spec, style, { tables, seed = 1, damageType =
     for ( const p of roleplayParagraphs(result, spec, tables, seed, damageType, conditionType, healthState) ) {
       // (What only the GMs are told goes apart.)
       const into = (e, c = null) => { const b = byTurn.get(keyOf(e)); return b ? (secretEvent(e) || (c && secretHealth(e, c)) ? b.secret : b.parts) : null; };
-      if ( p.sentences ) for ( const x of p.sentences ) into(x.e, x.health)?.push(x.text);
-      else if ( p.e ) into(p.e)?.push(p.text);
+      if ( p.sentences ) for ( const x of p.sentences ) into(x.e, x.health)?.push({ text: x.text, e: x.e });
+      else if ( p.e ) into(p.e)?.push({ text: p.text, e: p.e });
       else opening = p.text;
     }
     // (The opening line comes first, before anything: with what's said before the first turn, or on its own.)
     if ( opening ) {
       const first = byTurn.get(0);
-      if ( first ) first.parts.unshift(opening);
-      else beats.unshift({ turns: [], round: 0, actorId: null, closing: false, parts: [opening], secret: [], events: [] });
+      if ( first ) first.parts.unshift({ text: opening, e: null });
+      else beats.unshift({ turns: [], round: 0, actorId: null, closing: false, parts: [{ text: opening, e: null }], secret: [], events: [] });
     }
     for ( const beat of beats ) {
-      beat.parts = beat.parts.length ? [`<p>${bold(beat.parts.map(esc).join(" "))}</p>`] : [];
-      beat.secret = beat.secret.length ? [`<p>${bold(beat.secret.map(esc).join(" "))}</p>`] : [];
+      beat.parts = thingsDone(beat.parts, beat.actorId).map(group => `<p>${bold(group.map(x => esc(x.text)).join(" "))}</p>`);
+      beat.secret = beat.secret.length ? [`<p>${bold(beat.secret.map(x => esc(x.text)).join(" "))}</p>`] : [];
     }
   }
   return beats.map(({ turns, round, actorId: whose, closing, parts, secret, events }) => {
@@ -1231,6 +1247,26 @@ export function storyBeats(result, spec, style, { tables, seed = 1, damageType =
     const anonymous = !!actorId && own.length > 0 && own.every(e => hush.has(e));
     return { turns, round, actorId, closing, html, text: plainText(html), gmHtml: secret.join(""), ...(anonymous ? { anonymous } : {}) };
   });
+}
+
+/**
+ * A beat's sentences ({text, e}) in paragraphs, a thing done each: a new one where the turn's own creature turns to
+ * someone or something else (a foe, a door), its moves toward it with it; what comes of it (a foe giving in, a blow's
+ * harm, how hurt it looks) and the same thing told twice (a Demoralize, and its threat) stay with it. Its thoughts go
+ * with what follows.
+ */
+export function thingsDone(parts, actorId) {
+  const groups = [];
+  let thing = null;
+  for ( const x of parts ) {
+    const e = x.e;
+    const own = !!e && !!actorId && e.actorId === actorId && e.type !== "thought";
+    const now = own ? (e.type === "door" ? `door:${e.doorId}` : e.targetId ?? e.towardId ?? e.type) : null;
+    if ( !groups.length || (now !== null && thing !== null && now !== thing) ) groups.push([]);
+    if ( now !== null ) thing = now;
+    groups.at(-1).push(x);
+  }
+  return groups;
 }
 
 /** Where a creature ended up ("standing", "stood down"), in the reader's language. */

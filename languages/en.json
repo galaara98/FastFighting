@@ -1426,6 +1426,7 @@
         "aid": "Aid",
         "avoid": "Avoid",
         "opening": "Opening",
+        "opener": "Turn opener",
         "surprise": "Surprise",
         "down": "Down",
         "death": "Death",
