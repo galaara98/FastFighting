@@ -32,6 +32,11 @@ function inCrisis(run, u) {
   return run.units.some(o => o.side === u.side && o !== u && o.status === STATUS.DOWN);
 }
 
+/** What every foe in reach striking u at once would do to it, on the whole: what an action that lays it open invites. */
+function invited(run, u) {
+  return threats(run, u, null, "provoked").reduce((s, { e, strike }) => s + expectedDamage(run, e, strike, u, 0), 0);
+}
+
 /**
  * Best way for u to get an offensive action onto t this turn: moves needed, the action, and its value.
  * With a `turn`, options that fit in what's left of it win over ones that don't (so a character whose favorite
@@ -55,7 +60,8 @@ export function bestOptionVs(run, u, t, attacksMade = 0, turn = null) {
     // (And what it would set up: a claw that makes a Rend possible is worth more than its own damage; and a blow
     // struck where a friend already is, flanking it (a sneak attack's extra, off guard).)
     const edge = flankEdge(run, u, action, t, moves);
-    const ev = expectedDamage(run, u, action, t, attacksMade) + followUpWorth(run, u, action, t, attacksMade, turn) + edge;
+    // (Less what it invites, where it lays u open to every foe in reach: XCC's Wild Attack, action.provokes.)
+    const ev = expectedDamage(run, u, action, t, attacksMade) + followUpWorth(run, u, action, t, attacksMade, turn) + edge - (action.provokes ? invited(run, u) : 0);
     const cost = costOf(rules, action, u);
     // Drawing a weapon is a one-time cost, so spread it over the attacks it enables; every shot's Reload is its own
     // (engine/gear.js: a heavy crossbow's shot is three actions, loaded now or not).

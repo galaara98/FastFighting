@@ -169,3 +169,15 @@ describe("where it's moved to", () => {
     expect(forcedPath(far, ...ids(far), { kind: "push", to: 10 })).toMatchObject({ feet: 0 });
   });
 });
+
+describe("an action that lays its user open (provokes)", () => {
+  test("every foe in reach strikes as it's taken, whatever the system's openings; a plain blow invites nothing", () => {
+    const rules = { ...pf2eRules, opportunityOn: [], opportunity: (e) => (e.spec.actions ?? []).find(a => a.kind === "strike") ?? null };
+    const wild = fight([hero([strike({ bonus: 60, damage: [parseFormula("1", "slashing")], provokes: true })]), orc()], { rules });
+    takeTurn(wild, wild.byId.get("hero"));
+    expect(wild.log.some(e => e.type === "opportunity" && e.targetId === "hero" && e.trigger === "provoked")).toBe(true);
+    const plain = fight([hero([strike({ bonus: 60, damage: [parseFormula("1", "slashing")] })]), orc()], { rules });
+    takeTurn(plain, plain.byId.get("hero"));
+    expect(plain.log.some(e => e.type === "opportunity")).toBe(false);
+  });
+});

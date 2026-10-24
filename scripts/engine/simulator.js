@@ -1246,6 +1246,8 @@ export function strikeOutOfTurn(run, u, action, t) {
 function executeOffense(run, u, action, t, attacksMade) {
   // Shooting, or working a spell with its hands, in a foe's reach opens it up, where the system says so (PF2e).
   if ( ((action.range && !action.melee) || action.traits?.includes?.("manipulate")) && !provoke(run, u, "foeOpening") ) return;
+  // (One that always lays it open, whatever the system's openings: XCC's Wild Attack. API 29, action.provokes.)
+  if ( action.provokes && !provoke(run, u, PROVOKED) ) return;
   if ( counterspelled(run, u, action) || disrupted(run, u, action) ) {
     run.blood = true;
     return;
@@ -2394,6 +2396,8 @@ export function noteHeal(run, u, target, healed, revived, { action = "", potion 
 
 /** The reaction every creature with an opportunity strike has (PF2e Reactive Strike, 5e Opportunity Attack), by its id. */
 export const OPPORTUNITY = "opportunity";
+/** The moment an action that always lays its user open is taken (action.provokes, API 29): every foe in reach strikes. */
+const PROVOKED = "provoked";
 
 /**
  * u does something in a foe's reach that opens it up, where the system's opportunity strikes answer it
@@ -2401,7 +2405,7 @@ export const OPPORTUNITY = "opportunity";
  * that can strikes. Returns false if u didn't come through it standing.
  */
 function provoke(run, u, trigger) {
-  if ( !run.prep.rules.opportunityOn?.includes(trigger) ) return true;
+  if ( trigger !== PROVOKED && !run.prep.rules.opportunityOn?.includes(trigger) ) return true;
   for ( const { e, strike, reaction } of threats(run, u, null, trigger) ) {
     if ( !isStanding(u) || battleOver(run) ) break;
     // (In a live battle the player, or the GM, may say otherwise: engine/live.js.)

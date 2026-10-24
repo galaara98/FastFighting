@@ -47,7 +47,8 @@ const MOVE_STRIKES = Object.freeze(["foeLeavesReach", "foeMovesInReach"]);
 export function threats(run, u, keep = null, trigger = "foeLeavesReach") {
   const rules = run.prep.rules;
   if ( !run.prep.options.positioning ) return [];
-  const system = !!rules.opportunity && (rules.opportunityOn ?? ["foeLeavesReach"]).includes(trigger);
+  // ("provoked": an action that lays its user open whatever the system's moments are, API 29.)
+  const system = !!rules.opportunity && (trigger === "provoked" || (rules.opportunityOn ?? ["foeLeavesReach"]).includes(trigger));
   const own = MOVE_STRIKES.includes(trigger) && hasMoveStrikers(run);
   if ( !system && !own ) return [];
   const out = [];
