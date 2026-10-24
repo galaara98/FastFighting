@@ -5,18 +5,14 @@
     <button type="button" class="ff-help" data-tooltip="{{localize "FASTFIGHTING.Playstyle.Hint"}}" aria-label="{{localize "FASTFIGHTING.Playstyle.Hint"}}"><i class="fa-solid fa-question"></i></button>
     <span class="ff-section-sum ff-pill-count">{{playstyleCount}}</span></summary>
   <div class="ff-section-body ff-playstyles">
-    {{#if chosen.length}}
-    <div class="ff-chosen">
-      {{#each chosen}}<span class="ff-chosen-pill"><span class="ff-pill-order">{{n}}</span> {{label}}
-        <button type="button" class="ff-icon-btn" data-action="movePlaystyle" data-playstyle="{{id}}" data-dir="-1" data-actor-uuid="{{../actorUuid}}" aria-label="{{earlier}}" data-tooltip-text="{{earlier}}" {{#if first}}disabled{{/if}}><i class="fa-solid fa-chevron-left"></i></button>
-        <button type="button" class="ff-icon-btn" data-action="movePlaystyle" data-playstyle="{{id}}" data-dir="1" data-actor-uuid="{{../actorUuid}}" aria-label="{{later}}" data-tooltip-text="{{later}}" {{#if last}}disabled{{/if}}><i class="fa-solid fa-chevron-right"></i></button>
-        <button type="button" class="ff-icon-btn" data-action="togglePlaystyle" data-playstyle="{{id}}" data-actor-uuid="{{../actorUuid}}" aria-label="{{unpick}}" data-tooltip-text="{{unpick}}"><i class="fa-solid fa-xmark"></i></button></span>{{/each}}
-      <span class="ff-hint">{{localize "FASTFIGHTING.Playstyle.FirstCounts"}}</span>
-    </div>
-    {{/if}}
     <div class="ff-pills" data-actor-uuid="{{actorUuid}}">
-      {{#each playstyles}}<button type="button" class="ff-pill {{#if active}}active{{/if}}" data-action="togglePlaystyle" data-playstyle="{{id}}" data-actor-uuid="{{../actorUuid}}" aria-pressed="{{#if active}}true{{else}}false{{/if}}" {{#if disabled}}disabled{{/if}} data-tooltip="{{hint}}"><i class="fa-solid {{icon}}" aria-hidden="true"></i> {{label}}<span class="ff-pill-order">{{#if active}}{{order}}{{/if}}</span></button>{{/each}}
+      {{#each playstyles}}{{#if active}}<span class="ff-pill ff-pill--picked active">
+        <button type="button" class="ff-pill-move" data-action="movePlaystyle" data-playstyle="{{id}}" data-dir="-1" data-actor-uuid="{{../actorUuid}}" aria-label="{{earlier}}" data-tooltip-text="{{earlier}}" {{#if first}}disabled{{/if}}><i class="fa-solid fa-chevron-left"></i></button>
+        <button type="button" class="ff-pill-main" data-action="togglePlaystyle" data-playstyle="{{id}}" data-actor-uuid="{{../actorUuid}}" aria-pressed="true" data-tooltip="{{hint}}"><i class="fa-solid {{icon}}" aria-hidden="true"></i> {{label}}<span class="ff-pill-order">{{order}}</span></button>
+        <button type="button" class="ff-pill-move" data-action="movePlaystyle" data-playstyle="{{id}}" data-dir="1" data-actor-uuid="{{../actorUuid}}" aria-label="{{later}}" data-tooltip-text="{{later}}" {{#if last}}disabled{{/if}}><i class="fa-solid fa-chevron-right"></i></button>
+      </span>{{else}}<button type="button" class="ff-pill" data-action="togglePlaystyle" data-playstyle="{{id}}" data-actor-uuid="{{../actorUuid}}" aria-pressed="false" {{#if disabled}}disabled{{/if}} data-tooltip="{{hint}}"><i class="fa-solid {{icon}}" aria-hidden="true"></i> {{label}}</button>{{/if}}{{/each}}
     </div>
+    {{#if anyPicked}}<p class="ff-hint">{{localize "FASTFIGHTING.Playstyle.FirstCounts"}}</p>{{/if}}
     {{#if playstyleEffects}}<div class="ff-auto-value ff-pill-effects" data-tooltip="{{localize "FASTFIGHTING.Playstyle.EffectsHint"}}"><i class="fa-solid fa-eye" aria-hidden="true"></i> {{playstyleEffects}}</div>{{/if}}
     <div class="ff-pill-flags">
       <label class="ff-check"><input type="checkbox" name="{{stayTrue.name}}" data-tactic="stayTrue" data-actor-uuid="{{actorUuid}}" {{checked stayTrue.checked}}> {{localize "FASTFIGHTING.Playstyle.StayTrue"}}

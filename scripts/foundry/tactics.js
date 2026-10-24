@@ -570,25 +570,23 @@ export function questionsContext(spec, actor, uid, { questions: withQuestions = 
     desiresOpen: isOpen(actor, "desires", desiresSet > 0),
     // (The playstyles first, open: for a player the most expressive choice.)
     playstylesOpen: isOpen(actor, "playstyles", true),
-    // (The picked ones in order, to move earlier or later: the first counts most.)
-    chosen: picked.map((id, i) => {
+    anyPicked: picked.length > 0,
+    // (In alphabetical order, as the player reads them; a picked one with its place, to move earlier or later: the
+    // first counts most.)
+    playstyles: PLAYSTYLE_IDS.map(id => {
       const label = loc(`FASTFIGHTING.Playstyle.${id}.Name`);
+      const at = picked.indexOf(id);
       return {
-        id, label, n: i + 1, first: i === 0, last: i === picked.length - 1,
-        earlier: game.i18n.format("FASTFIGHTING.Playstyle.Earlier", { name: label }), later: game.i18n.format("FASTFIGHTING.Playstyle.Later", { name: label }),
-        unpick: game.i18n.format("FASTFIGHTING.Playstyle.Unpick", { name: label })
+        id, label,
+        icon: PLAYSTYLES[id].icon,
+        hint: loc(`FASTFIGHTING.Playstyle.${id}.Hint`),
+        active: at >= 0,
+        order: at + 1,
+        first: at === 0, last: at === picked.length - 1,
+        ...(at >= 0 ? { earlier: game.i18n.format("FASTFIGHTING.Playstyle.Earlier", { name: label }), later: game.i18n.format("FASTFIGHTING.Playstyle.Later", { name: label }) } : {}),
+        disabled: at < 0 && picked.length >= MAX_PLAYSTYLES
       };
-    }),
-    // (In alphabetical order, as the player reads them.)
-    playstyles: PLAYSTYLE_IDS.map(id => ({
-      id,
-      icon: PLAYSTYLES[id].icon,
-      label: loc(`FASTFIGHTING.Playstyle.${id}.Name`),
-      hint: loc(`FASTFIGHTING.Playstyle.${id}.Hint`),
-      active: picked.includes(id),
-      order: picked.indexOf(id) + 1,
-      disabled: !picked.includes(id) && picked.length >= MAX_PLAYSTYLES
-    })).sort((a, b) => a.label.localeCompare(b.label, game.i18n.lang)),
+    }).sort((a, b) => a.label.localeCompare(b.label, game.i18n.lang)),
     playstyleCount: game.i18n.format("FASTFIGHTING.Playstyle.Count", { n: picked.length, max: MAX_PLAYSTYLES }),
     // (What they do together, for a GM or assistant GM.)
     playstyleEffects: gm && picked.length ? playstyleEffectsText(playstyles) || null : null,

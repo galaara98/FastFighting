@@ -930,14 +930,13 @@ button.ff-team-pick:hover { border-color: var(--ff-line); }
 .fast-fighting .ff-btn--attention:hover { background: var(--ff-attention); filter: brightness(1.07); }
 .ff-questionnaire { display: flex; flex-direction: column; }
 .ff-questionnaire .ff-section-body { gap: 8px; }
-.ff-chosen { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
-.ff-chosen-pill {
-  display: inline-flex; align-items: center; gap: 1px; height: 28px; padding: 0 2px 0 6px; border-radius: 999px;
-  background: var(--ff-accent); color: light-dark(#fff, #1c1b22); font-size: var(--ff-text-sm); font-weight: 700;
-}
-.ff-chosen-pill .ff-pill-order { margin-right: 4px; }
-.ff-chosen-pill .ff-icon-btn { border: none; background: none; box-shadow: none; color: inherit; }
-.ff-chosen-pill .ff-icon-btn:disabled { opacity: 0.35; }
+/* A picked playstyle: its pill with ‹ › to move it earlier or later (the first counts most); the pill itself unpicks it. */
+.ff-pill.ff-pill--picked { gap: 0; padding: 0 2px; }
+.ff-pill--picked > button { width: auto; height: 22px; min-height: 0; margin: 0; padding: 0 4px; border: none; border-radius: 10px; background: none; box-shadow: none; color: inherit; font: inherit; line-height: 1; }
+.ff-pill--picked > .ff-pill-main { display: inline-flex; align-items: center; gap: 5px; padding: 0 6px; }
+.ff-pill--picked > .ff-pill-move { font-size: 9px; }
+.ff-pill--picked > button:hover:not(:disabled) { background: rgba(255, 255, 255, 0.18); }
+.ff-pill--picked > .ff-pill-move:disabled { opacity: 0.35; }
 .ff-section-sum.is-set { color: var(--ff-accent); font-weight: 600; }
 .ff-desire-head { color: var(--ff-text-dim); font-size: var(--ff-text-xs); text-transform: uppercase; letter-spacing: 0.05em; }
 .ff-q-label { display: inline-flex; align-items: center; gap: 4px; }

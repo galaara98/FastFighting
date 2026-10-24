@@ -1294,8 +1294,7 @@
       },
       "FirstCounts": "The first counts most.",
       "Earlier": "Move {name} earlier",
-      "Later": "Move {name} later",
-      "Unpick": "Unpick {name}"
+      "Later": "Move {name} later"
     },
     "Tracker": {
       "OpenHint": "Estimate how this encounter will go",

@@ -18292,7 +18292,8 @@
    "status": "todo",
    "date": null,
    "commit": null,
-   "hash": "c772c4863ad1"
+   "hash": "c772c4863ad1",
+   "gone": "2026-10-24"
   },
   "core:FASTFIGHTING.Playstyle.vengeful.Hint": {
    "repo": "core",
