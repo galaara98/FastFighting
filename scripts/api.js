@@ -165,7 +165,7 @@ export async function characterSpec(adapter, tokenDoc) {
 
 export function buildApi(extra = {}) {
   return {
-    // (The helper-facing API's version, "29.0", and its parts: a helper decides by api.major whether it works with this core.)
+    // (The helper-facing API's version, "29.1", and its parts: a helper decides by api.major whether it works with this core.)
     version: CORE_API_VERSION,
     major: CORE_API.major,
     bug: CORE_API.bug,
