@@ -14,7 +14,7 @@ import {
   prepareBattle, createRun, isStanding, isUp, enemiesOf, alliesOf, areEnemies, liveTier, liveTrait, currentAc,
   attackRoll, attackOptions, saveRoll, checkRoll, turnFor, moveToward, moveAway, bonusDamageParts,
   behaviorOf, edgeDistance, coverOf, inArea, movesNeeded, approach, canMove, moveTowardPoint, isMagical, upgradesSave, boostBonus, typical, sortOf, sizedUp, passedOver,
-  command, commandOf, heldOff, holdsBack, wish, groupKeyOf, chainOf, canCommand, regenOf, canHeal, systemRolled, holdsBackThisRound } from "./battle-state.js";
+  command, commandOf, heldOff, holdsBack, wish, groupKeyOf, chainOf, canCommand, regenOf, canHeal, systemRolled, holdsBackThisRound, drawnArea, friendsInArea, burstPoint } from "./battle-state.js";
 import { sampleRunTactics } from "./playstyles.js";
 import { chooseTarget, bestOptionVs, scoreTargets, plainBlow, rathersMagic } from "./behavior/targeting.js";
 import { decideHeal, rescueOption, healScores } from "./behavior/healing.js";
@@ -1337,12 +1337,16 @@ function executeOffense(run, u, action, t, attacksMade) {
     // (A live battle lays the system's own shape on the map and says who's in it: run.live.inArea, null where it can't.)
     const caught = o => run.live?.inArea?.(u, t, o, action) ?? inArea(run, u, t, o, action.area);
     const others = enemiesOf(run, u).filter(o => o !== t && isStanding(o) && !heldOff(run, u, o) && !cutOff(run, u, o) && caught(o));
-    run.rng.shuffle(others);
-    targets.push(...others.slice(0, Math.max(0, (action.area.targets ?? 2) - 1)));
-    // (Where it was aimed, and from where, for a live battle to lay it on the map.)
+    // (Drawn on the map: everyone in it, its maker's friends too unless it spares them. Else as many as it takes.)
+    const drawn = drawnArea(run, u, t, action.area);
+    if ( !drawn ) run.rng.shuffle(others);
+    targets.push(...(drawn ? others : others.slice(0, Math.max(0, (action.area.targets ?? 2) - 1))));
+    if ( drawn ) targets.push(...friendsInArea(run, u, t, action.area, o => !cutOff(run, u, o) && caught(o)));
+    // (Where it was aimed, and from where (a burst's corner), for a live battle to lay it on the map.)
     if ( run.live && run.log ) {
       const at = p => (p ? { x: p.x, y: p.y } : null);
-      log(run, u, { type: "area", actionId: action.id, action: action.name, targetId: t.id, target: t.spec.name, from: at(u.pos), at: at(t.pos) });
+      const point = drawn && action.area.shape === "burst" ? { point: at(burstPoint(run, u, t, action.area)) } : {};
+      log(run, u, { type: "area", actionId: action.id, action: action.name, targetId: t.id, target: t.spec.name, from: at(u.pos), at: at(t.pos), ...point });
     }
     if ( run.neutral ) targets.push(...caughtInArea(run, u, targets));
   }

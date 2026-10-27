@@ -82,7 +82,7 @@ function systemRollKinds(adapter) {
   if ( (out.includes("strike") || out.includes("damage") || out.includes("card")) && offers(adapter, "applyDamageCard") ) out.push("apply");
   return out;
 }
-import { isStanding, canMove, groupKeyOf, pullsThisRound } from "../engine/battle-state.js";
+import { isStanding, canMove, groupKeyOf, pullsThisRound, burstPoint } from "../engine/battle-state.js";
 import { means, dealDC, pitchOf, dealInsight, dealAnswer, mayToll, talkRange } from "../engine/behavior/deals.js";
 
 const loc = key => game.i18n.localize(key);
@@ -1705,12 +1705,15 @@ const spotKey = p => (p ? `${Math.round(p.x)},${Math.round(p.y)}` : "-");
  * template defaults): a cone, a line or a cube from u toward t, a burst or a square on t, an emanation round u; from
  * where the engine has them (or `from` and `at`, where the turn's "area" event says they stood). Null off this scene.
  */
-function areaShapeFor(u, t, action, { from = u.pos, at = t.pos } = {}) {
-  const key = `${u.id}|${t.id}|${action.id}|${spotKey(from)}|${spotKey(at)}`;
+function areaShapeFor(u, t, action, { from = u.pos, at = t.pos, point = null } = {}) {
+  const key = `${u.id}|${t.id}|${action.id}|${spotKey(from)}|${spotKey(at)}|${spotKey(point)}`;
   if ( areaShapes.has(key) ) return areaShapes.get(key);
   let out = null;
   const cu = pointOf(u, from);
-  const ct = pointOf(t, at);
+  // (A burst goes off at a corner of t's space, as the engine picked it: battle-state.js burstPoint.)
+  const burst = (action.area?.shape ?? "burst") === "burst" && action.area?.shape;
+  const corner = burst ? point ?? (at === t.pos && u.pos && t.pos ? burstPoint(battle.run, u, t, action.area) : null) : null;
+  const ct = corner ? pointOf(t, corner) : pointOf(t, at);
   const du = docOf(u.id);
   if ( cu && ct && du && canvas.scene?.id === battle.scene.id && foundry.data?.ConeShapeData ) {
     const area = action.area ?? {};
@@ -1771,7 +1774,7 @@ async function layAreas(events, records) {
     const t = run.byId.get(e.targetId);
     const action = u?.spec.actions?.find(a => a.id === e.actionId);
     // (Where they stood as it was aimed, as the event says: either may have moved since.)
-    const area = u && t && action ? areaShapeFor(u, t, action, { from: e.from ?? u.pos, at: e.at ?? t.pos }) : null;
+    const area = u && t && action ? areaShapeFor(u, t, action, { from: e.from ?? u.pos, at: e.at ?? t.pos, point: e.point ?? null }) : null;
     if ( !area ) continue;
     try {
       const [region] = await battle.scene.createEmbeddedDocuments("Region", [{

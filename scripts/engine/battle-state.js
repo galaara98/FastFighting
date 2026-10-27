@@ -904,7 +904,21 @@ export function currentAc(run, target, attacker, action) {
 export const COVER_POINTS = 2;
 
 /** The shapes that spread from the one who makes them (the rest, bursts, from where they're aimed). */
-const FROM_USER = Object.freeze(["cone", "line", "emanation", "cube"]);
+export const FROM_USER = Object.freeze(["cone", "line", "emanation", "cube"]);
+
+/**
+ * An area that lands where it's drawn, on everyone in it: one with a shape, on a map with positions. Its maker's friends
+ * in it are caught too unless it's `selective` (it spares whom its maker chooses); its maker only in a burst of its
+ * own (a cone, a line, a cube or an emanation spreads from it).
+ */
+export const drawnArea = (run, u, t, area) => !!area?.shape && !!run.prep.options.positioning && !!u.pos && !!t?.pos;
+
+/** Friends of u's an area it aims at t would catch (u in a burst of its own too): none for a selective one, or off the map. */
+export function friendsInArea(run, u, t, area, caught = o => inArea(run, u, t, o, area)) {
+  if ( !drawnArea(run, u, t, area) || area.selective ) return [];
+  return run.units.filter(o => o !== t && isStanding(o) && o.side === u.side && !areEnemies(run, u, o) && o.pos
+    && (o !== u || !FROM_USER.includes(area.shape)) && caught(o));
+}
 
 /**
  * Could an area u aims at t also catch o? Off the map (no positions): anyone, as many as its count says. On it: o
@@ -923,6 +937,11 @@ export function inArea(run, u, t, o, area) {
     // (Any square of o's inside it: its middle within half the side, and half o's width, of the middle's.)
     const half = feet / 2 + (o.spec.position?.size ?? 5) / 2 - 0.5;
     if ( Math.abs(o.pos.x - t.pos.x) > half || Math.abs(o.pos.y - t.pos.y) > half ) return false;
+    return coverOf(run, o, t) !== "total";
+  }
+  if ( shape === "burst" ) {
+    // (From a corner of t's space, as the system's own grid has a burst: any square of o's whose middle it reaches.)
+    if ( !burstReaches(o, burstPoint(run, u, t, area), feet) ) return false;
     return coverOf(run, o, t) !== "total";
   }
   const d = edgeDistance(from, o);
@@ -950,6 +969,47 @@ export function inArea(run, u, t, o, area) {
     }
   }
   return coverOf(run, o, from) !== "total";
+}
+
+/** The middles of the squares a creature covers, in feet (one for a creature smaller than a square). */
+function squareCenters(o) {
+  const size = o.spec.position?.size ?? 5;
+  const n = Math.max(1, Math.round(size / 5));
+  if ( n === 1 ) return [o.pos];
+  const out = [];
+  for ( let i = 0; i < n; i++ ) for ( let j = 0; j < n; j++ ) out.push({ x: o.pos.x - size / 2 + (i + 0.5) * 5, y: o.pos.y - size / 2 + (j + 0.5) * 5 });
+  return out;
+}
+
+/** Does a burst at this point (a grid corner, in feet) of this radius reach o (any square of o's)? */
+const burstReaches = (o, at, feet) => !!o.pos && squareCenters(o).some(c => Math.hypot(c.x - at.x, c.y - at.y) <= feet + 0.01);
+
+/**
+ * Where a burst u aims at t goes off: the corner of t's space (a grid corner, as the system's own template has it) that
+ * catches the most of u's foes standing, less its friends (u too) unless it's `selective` (it spares whom it chooses);
+ * the first, on a tie. Worked out once a turn for each aim.
+ */
+export function burstPoint(run, u, t, area) {
+  const feet = Number(area.feet) > 0 ? Number(area.feet) : 10;
+  const key = `${run.round}|${run.turn ?? 0}|${u.id}|${t.id}|${feet}|${area.selective ? 1 : 0}|${t.pos.x},${t.pos.y}|${u.pos?.x},${u.pos?.y}`;
+  const kept = (run.burstPoints ??= new Map());
+  if ( kept.has(key) ) return kept.get(key);
+  if ( kept.size > 2000 ) kept.clear();
+  const size = Math.max(5, Math.round((t.spec?.position?.size ?? 5) / 5) * 5);
+  const left = Math.round((t.pos.x - size / 2) / 5) * 5;
+  const top = Math.round((t.pos.y - size / 2) / 5) * 5;
+  const foes = run.units.filter(o => o !== t && isStanding(o) && areEnemies(run, u, o));
+  const friends = area.selective ? [] : run.units.filter(o => isStanding(o) && o.side === u.side && !areEnemies(run, u, o));
+  let best = null;
+  for ( let i = 0; i <= size; i += 5 ) {
+    for ( let j = 0; j <= size; j += 5 ) {
+      const at = { x: left + i, y: top + j };
+      const score = foes.filter(o => burstReaches(o, at, feet)).length - friends.filter(o => burstReaches(o, at, feet)).length;
+      if ( !best || score > best.score ) best = { at, score };
+    }
+  }
+  kept.set(key, best.at);
+  return best.at;
 }
 
 /** The cover t has from `from`, by the scene's walls (behavior/space.js): "none", "some", "most", "total". */

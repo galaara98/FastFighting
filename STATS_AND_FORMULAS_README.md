@@ -1997,6 +1997,11 @@ Decides how much one use of an attack is worth to the creature weighing it.
 - An area catches min(its targets (default 2), standing foes). Tactical and up, on a map, aimed at a foe: min(that, the foes it would
   really catch there: within its size, a cone or line toward the foe, no wall between); a costly one (a spell slot or other
   resource, limited uses, a recharge) that would catch only that foe × 0.85; one that would catch 3 or more × 1.5.
+  Friends it would catch too (itself in its own burst; not for a selective area) count against it: foes − friends,
+  at least 0.1. One below Tactical doesn't count them.
+- A burst goes off at a corner of its target's space (the grid's, as the system's template has it): the corner that
+  catches the most foes less friends; it catches every creature with a square whose middle is within its size (a
+  10-foot-diameter column, 5 feet, is the four squares round the corner).
 - A multiattack is the sum of its strikes, each at its multiple attack penalty. A DCC spell check: × its success
   chance. A finishing move: P(hit) × everything the foe has left.
 - A crit table adds, on a crit, the mean of its rows: their damage, +2 for a lasting effect, +15 for a row that kills.
@@ -2129,7 +2134,9 @@ Decides what a creature does with its turn, and with which attack.
 - Options that fit the rest of the turn win over ones that don't.
 - Feral with spells: half the time any option it can afford, otherwise the highest expected damage.
 - Wildcard (base 25%): any option.
-- An area attack hits its target and others picked at random among the standing foes, up to its count (2 by default).
+- An area attack drawn on a map (one with a shape, positions on) hits everyone in it: foes, and its maker's friends
+  too (its maker in its own burst) unless it's selective. Off the map: its target and others picked at random among
+  the standing foes, up to its count (2 by default).
   A multiattack whose target drops turns to the weakest foe in reach.
 
 Code: `engine/behavior/targeting.js` `bestOptionVs`; `engine/tactics.js` `styleWeight`;

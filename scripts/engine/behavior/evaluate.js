@@ -3,7 +3,7 @@
  */
 import { meanPart, doubled, addTo, meanByType } from "../dice.js";
 import { degreeDistribution } from "../probability.js";
-import { attackRoll, attackOptions, currentAc, saveRoll, bonusDamageParts, enemiesOf, isStanding, isMagical, upgradesSave, boostBonus, liveTier, inArea } from "../battle-state.js";
+import { attackRoll, attackOptions, currentAc, saveRoll, bonusDamageParts, enemiesOf, isStanding, isMagical, upgradesSave, boostBonus, liveTier, inArea, friendsInArea } from "../battle-state.js";
 import { TACTICAL } from "../../constants.js";
 import { costOf, costUnits, mainPool } from "../turn.js";
 import { usable as gearUsable, reloadPerUse, canReload } from "../gear.js";
@@ -245,6 +245,8 @@ function maneuverWorth(run, a, action, t) {
 export const LONE_COSTLY_AREA = 0.85;
 /** What an area gains, to a creature that thinks it through, when it would catch three foes or more: well worth it. */
 export const CROWDED_AREA = 1.5;
+/** What an area that would catch as many friends as foes, or more, is still worth, in foes: next to nothing. */
+export const AREA_LEAST = 0.1;
 
 /** Does an action cost something to use: a spell slot or another resource, limited uses, a recharge? */
 const costly = action => !!action.resource || Number.isFinite(action.uses) || !!action.cooldown;
@@ -252,9 +254,10 @@ const costly = action => !!action.resource || Number.isFinite(action.uses) || !!
 /**
  * How many foes an area really catches: as many as it can take, but no more than are standing against u (a Mass
  * Suggestion for twelve, against two foes, takes two). A creature that thinks it through (Tactical and up), aiming it at
- * t on a map: as many as it would really catch there (inArea); a costly one that would catch only t a little less worth
+ * t on a map: as many as it would really catch there (inArea), less each friend it would catch too (friendsInArea: one
+ * that isn't selective), down to AREA_LEAST, not worth it; a costly one that would catch only t a little less worth
  * it (LONE_COSTLY_AREA), as it would rather save it for more; and one that would catch three or more a lot more worth it
- * (CROWDED_AREA).
+ * (CROWDED_AREA). One that doesn't think it through doesn't count its friends in the way.
  */
 export function areaTargets(run, u, action, t = null) {
   if ( !action.area ) return 1;
@@ -263,6 +266,8 @@ export function areaTargets(run, u, action, t = null) {
   let n = Math.max(1, Math.min(most, foes.length));
   if ( t && run.prep.options.positioning && t.pos && liveTier(run, u) >= TACTICAL.TACTICAL ) {
     const caught = 1 + foes.filter(o => o !== t && inArea(run, u, t, o, action.area)).length;
+    const friends = friendsInArea(run, u, t, action.area).length;
+    if ( friends ) return Math.max(AREA_LEAST, Math.min(n, caught) - friends);
     n = Math.max(1, Math.min(n, caught));
     if ( caught < 2 && costly(action) ) n *= LONE_COSTLY_AREA;
     else if ( n >= 3 ) n *= CROWDED_AREA;
