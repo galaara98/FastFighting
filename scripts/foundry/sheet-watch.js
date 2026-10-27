@@ -40,8 +40,14 @@ function changed(actor) {
   if ( actor?.uuid ) counts.set(actor.uuid, (counts.get(actor.uuid) ?? 0) + 1);
 }
 
-/** Where an actor's reads stand: changed since, they're read again. */
-export const changesTo = actor => `${epoch}.${counts.get(actor?.uuid) ?? 0}`;
+/**
+ * Where an actor's reads stand: changed since, they're read again. An unlinked token's actor counts its base actor's
+ * changes too: what the token doesn't change of it, it has from there.
+ */
+export const changesTo = (actor, base = actor?.isToken ? actor.token?.baseActor ?? null : null) => {
+  const own = `${epoch}.${counts.get(actor?.uuid) ?? 0}`;
+  return base?.uuid && base.uuid !== actor?.uuid ? `${own}.${counts.get(base.uuid) ?? 0}` : own;
+};
 
 /**
  * A character read as characterSpec reads it, or its read before when nothing about it has changed since (changesTo). A
@@ -55,7 +61,7 @@ export async function cachedCharacterSpec(adapter, tokenDoc, { fresh = false } =
   const actor = tokenDoc?.actor ?? null;
   if ( !actor ) return characterSpec(adapter, tokenDoc);
   const key = `${tokenDoc.parent ? tokenDoc.uuid : "prototype"}|${actor.uuid}`;
-  const at = changesTo(actor);
+  const at = changesTo(actor, actor.isToken ? tokenDoc.baseActor ?? actor.token?.baseActor ?? null : null);
   const kept = specs.get(key);
   if ( !fresh && kept?.at === at && kept.adapter === adapter ) {
     // (Read last: kept longest.)

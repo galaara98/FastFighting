@@ -62,6 +62,20 @@ describe("a character read again only when it changed", () => {
     expect(reads.n).toBe(before + 1);
     actor.reactions = ["shield"];
   });
+
+  test("an unlinked token's: read again when its base actor changes, though the token's own doesn't", async () => {
+    const base = { uuid: "Actor.wolf", documentName: "Actor" };
+    const synthetic = { uuid: "Scene.s.Token.t2.Actor.wolf", documentName: "Actor", isToken: true, reactions: [] };
+    const wolf = { id: "t2", uuid: "Scene.s.Token.t2", parent: {}, actor: synthetic, baseActor: base };
+    synthetic.token = wolf;
+    await watch.cachedCharacterSpec(adapter, wolf);
+    await watch.cachedCharacterSpec(adapter, wolf);
+    expect(reads.n).toBe(1);
+    fire("createItem", { documentName: "Item", parent: base }, {});
+    await watch.cachedCharacterSpec(adapter, wolf);
+    expect(reads.n).toBe(2);
+    expect(watch.changesTo(synthetic)).not.toBe(watch.changesTo(synthetic, null));
+  });
 });
 
 describe("the reactions a window shows, checked again", () => {
