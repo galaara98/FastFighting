@@ -374,6 +374,7 @@ function baseLine(e) {
     case "surprise": return t("Surprise", { side: e.sideLabel ?? "" });
     case "surprised": return t("Surprised", a);
     case "sustain": return t("Sustain", { actor: e.actor, action: e.action });
+    case "commandMinion": return t("CommandMinion", a);
     case "waver": return t("Waver", a);
     case "stand": return t("Stand", a);
     case "shield": return t("Shield", a);

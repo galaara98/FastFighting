@@ -29,6 +29,7 @@ import { boost } from "./behavior/luck.js";
 import { respond, riposteStrike, bestStep, strikeBack } from "./behavior/responses.js";
 import { playEffects, hasEffects, wouldPlay } from "./behavior/reaction-effects.js";
 import { decideSummon, callSummons, sustainSummons, summonState, dismiss } from "./behavior/summons.js";
+import { commandMinions, awaitsCommand, orderMinions } from "./behavior/minions.js";
 import { sinkHopeless } from "./behavior/hopeless.js";
 import { focusWants, focusAgenda } from "./behavior/focus.js";
 import { keepTogether } from "./behavior/together.js";
@@ -237,6 +238,19 @@ function cueFrom(run, b, c) {
 }
 
 /**
+ * How much harder raised voices are to make out than the din of blows (hearDC's: distance and walls), in a standoff
+ * where no blow has been struck near the speaker this round or last.
+ */
+const TALK_HUSH = 10;
+
+/** What b could notice of c now (cueFrom), where talk in a standoff carries less than a fight would. */
+function noticeCue(run, b, c) {
+  const cue = cueFrom(run, b, c);
+  if ( cue?.sense !== "sound" || !run.standoff || (c.dinRound ?? -9) >= run.round - 1 ) return cue;
+  return { ...cue, dc: cue.dc + TALK_HUSH };
+}
+
+/**
  * b, on the map but not in the encounter, becomes aware of the conflict. It takes its turns from the next round, as
  * if it had been in the encounter all along (its side, its desires and its nerve decide what it does then; someone
  * taking no side starts weighing what it wants). Set upon, it's in the fight at once.
@@ -269,8 +283,8 @@ function leadsGroup(run, u) {
   return !!key && (chainOf(run, key) ?? []).some(c => c.id === u.id);
 }
 
-/** Is u in the fight (not yet to notice it, nor taking no side and turned on no one)? */
-const inFight = u => u.active && isStanding(u) && (!isNeutral(u) || u.against.size > 0);
+/** Is u in the fight (not yet to notice it, nor taking no side and turned on no one)? (A hazard is no one's kin.) */
+const inFight = u => u.active && isStanding(u) && !u.spec.hazard && (!isNeutral(u) || u.against.size > 0);
 
 /** One of u's group in the fight, or null. */
 function kinInFight(run, u) {
@@ -395,9 +409,10 @@ export function lookAround(run, b) {
   if ( b.aware || b.status !== STATUS.STANDING ) return false;
   let best = null;
   for ( const c of run.units ) {
-    if ( c === b || !c.active ) continue;
+    // (A hazard lying in wait makes no din: what it does when it goes off is told as it does.)
+    if ( c === b || !c.active || c.spec.hazard ) continue;
     if ( c.status !== STATUS.STANDING && c.fellRound !== run.round && c.fellRound !== run.round - 1 ) continue;
-    const cue = cueFrom(run, b, c);
+    const cue = noticeCue(run, b, c);
     if ( cue && (!best || cue.dc < best.cue.dc) ) best = { cue, c };
   }
   // A leader whose own people are in the fight hears of it, even out of sight and earshot, and looks the harder.
@@ -3729,6 +3744,8 @@ function playFromHere(run, u) {
     }
     if ( state === "idle" ) return;
   }
+  // A minion its master didn't command since its last turn does nothing (behavior/minions.js).
+  if ( awaitsCommand(run, u) ) return;
   turnUpkeep(run, u);
   // Surprised, where it costs that (5e's 2014 rules): its first turn goes by, and with it what kept it from reacting.
   if ( !u.turnsTaken && run.surprise?.surprised?.includes(u.id) && u.status === STATUS.STANDING ) {
@@ -3794,6 +3811,8 @@ function playFromHere(run, u) {
       log(run, s, { type: "vanish", reason: "unsustained" });
     }
   }
+  // And has its minions act, where they need its word to (behavior/minions.js).
+  for ( const m of commandMinions(run, u, turn) ) log(run, u, { type: "commandMinion", target: m.spec.name, targetId: m.id });
   // Leaving the fight: off the map, as fast as it goes; stopped on its way, this turn goes to what stopped it
   // (behavior/leaving.js).
   dealsWithIt(u);
@@ -4894,7 +4913,7 @@ export function beginRun(prep, seed, { log: withLog = false, record = false } = 
   const order = rollInitiative(run);
   // A simple hazard goes off first: it's what set things off, while whoever set it off is still there.
   order.sort((a, b) => (b.spec.hazard?.once ? 1 : 0) - (a.spec.hazard?.once ? 1 : 0));
-  run.order = order; // (summoned creatures join it, right after their summoner)
+  run.order = orderMinions(run, order); // (minions right after their master; summoned creatures join it, after their summoner)
   if ( withLog ) {
     const fighters = order.filter(u => u.active);
     log(run, null, { type: "initiative", order: fighters.map(u => u.spec.name) });

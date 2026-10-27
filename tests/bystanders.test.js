@@ -43,6 +43,15 @@ describe("bystanders", () => {
     }
   });
 
+  test("a hazard lying in wait is nothing to notice, nor anyone's people in the fight", () => {
+    const spec = scene();
+    const trap = creature({ id: "trap", side: "hostile", position: at(55, 0), actions: [], hazard: { once: true }, untargetable: true, flags: { fearless: true, mindless: true } });
+    spec.combatants.push(trap);
+    spec.awareness.guard.trap = { see: true, smell: false, feel: false, radar: false, hearDC: 5 };
+    const r = runBatchSync(spec, pf2eRules, { runs: 200 });
+    expect(r.combatants.guard.pInvolved).toBe(0);
+  });
+
   test("hearing through walls is harder than seeing", () => {
     const seen = runBatchSync(scene({ see: true }), pf2eRules, { runs: 400 });
     const muffled = runBatchSync(scene({ hearDC: 25 }), pf2eRules, { runs: 400 });

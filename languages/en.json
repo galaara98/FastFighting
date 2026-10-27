@@ -2315,6 +2315,7 @@
       "Surprise": "Surprise round for {side}",
       "Surprised": "{actor} is surprised: its first turn goes by",
       "Sustain": "{actor} sustains {action}",
+      "CommandMinion": "{actor} commands {target}",
       "Watch": "{actor} watches, taking no side",
       "Aside": "{actor} keeps out of the fight",
       "Waver": "{actor} wavers",
