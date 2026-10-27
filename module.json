@@ -2,7 +2,7 @@
   "id": "fast-fighting",
   "title": "FastFighting Core",
   "description": "Simulates the scene's encounter to estimate the odds, tells the fight as a story, and plays it on the Combat Tracker turn by turn. Helper modules such as FastFighting PF2e add each game system.",
-  "version": "0.12.0",
+  "version": "0.13.0",
   "authors": [
     {
       "name": "galaara98",
