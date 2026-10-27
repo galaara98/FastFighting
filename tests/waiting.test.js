@@ -94,7 +94,8 @@ describe("Delay: waiting for a foe to come into reach", () => {
   test("told in the log and the story", () => {
     const r = replay(farApart(), delaying, 1);
     const delay = r.log.find(e => e.type === "delay");
-    expect(logLine(delay)).toBe("Hero delays until after Brute");
+    // (Its words the language file's: whom it waits for, named.)
+    expect(logLine(delay)).toMatch(/Hero.*Brute/);
     const text = buildStory(r, farApart(), "roleplay", { tables, seed: 1 }).text;
     expect(english["event.delayReach"].some(l => text.includes(l.replace("{actor}", "Hero").replace("{target}", "Brute")))).toBe(true);
   });
@@ -131,7 +132,7 @@ describe("Ready: a Strike for a foe that comes within reach", () => {
     expect(readied).toMatchObject({ actorId: "post", targetId: "brute" });
     const strike = r.log[r.log.indexOf(readied) + 1];
     expect(strike).toMatchObject({ type: "attack", actorId: "post", targetId: "brute" });
-    expect(logLine(ready)).toBe("Post readies Longsword");
+    expect(logLine(ready)).toMatch(/Post.*Longsword/);
   });
 
   test("not without the system's Ready", () => {
