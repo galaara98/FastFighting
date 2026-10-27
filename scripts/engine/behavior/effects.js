@@ -56,7 +56,7 @@
 import { STATUS, clamp } from "../../constants.js";
 import { combineMods, diceMean } from "../mods.js";
 import { isStanding, areEnemies, enemiesOf, alliesOf, boostReaches, wish, behaviorOf, regenOf, canHeal } from "../battle-state.js";
-import { threatOf, unitsPerTurn, attacksIn } from "./evaluate.js";
+import { threatOf, unitsPerTurn, attacksIn, costUnits } from "./evaluate.js";
 import { meanPart, meanByType } from "../dice.js";
 import { forcedWorth } from "./forced.js";
 import { PROFILES, profileOf, profiled, profileMods, hasTrait } from "../conditions.js";
@@ -572,6 +572,19 @@ export function fightLeft(run, side) {
   return value;
 }
 
+/**
+ * How much of a round an outcome that lasts only to the end of this turn (thisTurn) is worth when the one laying it does
+ * so as it acts (a buff on itself; or on a foe, as PF2e's Feint: off-guard to its next blow this turn): the share of
+ * its turn left once it's paid `cost` (one roll's worth, uses, any action at all). 1 for anything else.
+ */
+export function thisTurnShare(run, by, t, outcome, cost = 1) {
+  if ( !outcome?.thisTurn || !by || run.acting !== by || !by.turn ) return 1;
+  const rules = run.prep.rules;
+  const left = by.turn.left - costUnits(rules, cost ?? 1);
+  if ( left <= 0 ) return 0;
+  return Number(outcome.uses) > 0 ? 1 : Math.min(1, left / Math.max(1, unitsPerTurn(rules, by)));
+}
+
 /** Rounds an effect will matter, in a fight that rarely lasts long. */
 export function usefulRounds(run, side, rounds) {
   return Math.min(Math.max(1, Number(rounds) || 1), fightLeft(run, side));
@@ -635,10 +648,14 @@ function modsPerRound(run, t, mods, out, inc, { words = 0, own = 1, guard = 1 } 
  * can put a number on (rules.conditionMods) count as those bonuses and penalties; others by how much of t's
  * fighting they take away.
  */
-export function outcomeWorth(run, by, t, outcome, { versus = null } = {}) {
+export function outcomeWorth(run, by, t, outcome, { versus = null, cost = 1 } = {}) {
   if ( !outcome || !t ) return 0;
   // (One that never lands on whoever laid it is nothing to it: notSelf.)
   if ( outcome.notSelf && by && by === t ) return 0;
+  // Lasting only to the end of this turn, laid as it acts (PF2e's "until the end of your turn"): it's worth only what's
+  // left of the turn once it's paid for (`cost`, the action's): nothing left, nothing gained.
+  const lasts = thisTurnShare(run, by, t, outcome, cost);
+  if ( lasts <= 0 ) return 0;
   const rules = run.prep.rules;
   // Against whoever it's set on only: its blows at a foe it would hurt; its words, or its first aid, for one it would
   // talk to or tend. Set on no one, it does nothing.
@@ -715,7 +732,7 @@ export function outcomeWorth(run, by, t, outcome, { versus = null } = {}) {
     const strength = Math.max(...resist.map(([, v]) => rules.resistShare?.(v) ?? 0.5));
     perRound += inc * Math.min(0.9, share) * strength;
   }
-  let worth = perRound * rounds;
+  let worth = perRound * rounds * lasts;
   // An action this very turn: as much again as one of its actions does.
   const now = Number(outcome.actionsNow) || 0;
   if ( now > 0 && by === t ) worth += now * out / Math.max(1, unitsPerTurn(rules, t));

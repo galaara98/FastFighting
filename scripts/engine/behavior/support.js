@@ -107,10 +107,11 @@ export function checkDc(run, u, check) {
 
 /** What a buff is worth to a friend, over what its roll may come to. */
 function edgeWorth(run, u, ally, action, outcome) {
-  if ( !action.check ) return outcomeWorth(run, u, ally, outcome);
+  const cost = action.cost ?? 1;
+  if ( !action.check ) return outcomeWorth(run, u, ally, outcome, { cost });
   const dist = landing(run, u, action);
-  if ( !Array.isArray(action.onDegree) ) return (dist[2] + dist[3]) * outcomeWorth(run, u, ally, outcome);
-  return dist.reduce((s, p, d) => s + (p > 0 && action.onDegree[d] ? p * outcomeWorth(run, u, ally, action.onDegree[d]) : 0), 0);
+  if ( !Array.isArray(action.onDegree) ) return (dist[2] + dist[3]) * outcomeWorth(run, u, ally, outcome, { cost });
+  return dist.reduce((s, p, d) => s + (p > 0 && action.onDegree[d] ? p * outcomeWorth(run, u, ally, action.onDegree[d], { cost }) : 0), 0);
 }
 
 /** What u would do with one action's worth of attacking instead: its best damage per action against a standing foe. */

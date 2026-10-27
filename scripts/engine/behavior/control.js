@@ -175,10 +175,12 @@ export function controlValue(run, u, action, t, attacksMade = 0) {
     dist.forEach((p, d) => {
       const o = controlOutcome(action, d);
       if ( !o || !p ) return;
-      let worth = kept?.get(o);
+      // (One that ends with this turn is worth what's left of it, so it's never kept.)
+      let worth = o.thisTurn ? undefined : kept?.get(o);
       if ( worth === undefined ) {
-        worth = o.self ? outcomeWorth(run, u, u, o) : outcomeWorth(run, u, t, o, { versus: u });
-        kept?.set(o, worth);
+        const cost = action.cost ?? 1;
+        worth = o.self ? outcomeWorth(run, u, u, o, { cost }) : outcomeWorth(run, u, t, o, { versus: u, cost });
+        if ( !o.thisTurn ) kept?.set(o, worth);
       }
       value += o.self ? p * worth : -p * worth;
     });

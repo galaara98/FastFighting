@@ -2307,7 +2307,7 @@ Code: `engine/behavior/healing.js` `healAggroOf`, `healScores`, `decideHeal`, `r
 
 ### Buffs and support
 
-Search: buff, bless, haste, aid, help, bolster, support, guard, setup, worth casting, helper playstyle, area buff, aura
+Search: buff, bless, haste, aid, help, bolster, support, guard, setup, worth casting, helper playstyle, area buff, aura, end of your turn, last action
 
 Decides when a creature bolsters a friend (or itself) instead of attacking.
 
@@ -2320,6 +2320,9 @@ Decides when a creature bolsters a friend (or itself) instead of attacking.
 - × 1.5 for a buff that reaches the friend it's set on; × (1 + the strengths of the playstyles it leans on); a guard
   (Dodge) × 1.5 with shield "Every turn", never with "Don't bother". Rushing, it skips set-ups and guards.
 - Recipients rank by worth × (1 + its desire to aid them ÷ 50).
+- One that lasts only to the end of this turn (PF2e's "until the end of your turn": Sure Strike; Feint's off-guard on a
+  foe) counts only the actions left after paying for it: × actions left ÷ actions a turn (good for one roll: × 1 while
+  any are left); none left, worth nothing, so it's never the turn's last action.
 - Its desire to aid a friend: score = worth per action ÷ max(0.5, baseline); at 0.4 or more, a desire of min(75, 15 +
   30 × score), for its 3 best.
 
