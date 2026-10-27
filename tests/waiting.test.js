@@ -101,6 +101,28 @@ describe("Delay: waiting for a foe to come into reach", () => {
   });
 });
 
+describe("Delay where movement is its own (rules.movement \"feet\": 5e's move, its action kept)", () => {
+  // (5e-style: an action and a move of 30 feet.)
+  const feet = { ...pf2eRules, mainPool: "action", movement: "feet", actionsPerTurn: 1, turn: () => ({ action: 1, move: 30 }),
+    costOf: a => (typeof a.cost === "object" ? a.cost : { action: 1 }), attackPenalty: () => 0, delay: {} };
+  const apart = x => battle([
+    creature({ id: "hero", name: "Hero", position: at(0), initiative: { mod: 100 }, speeds: { walk: 30 }, hp: { value: 300, max: 300 } }),
+    creature({ id: "brute", name: "Brute", side: "hostile", position: at(x), initiative: { mod: -100 }, speeds: { walk: 30 }, hp: { value: 300, max: 300 } })
+  ], { positioning: true, maxRounds: 2 });
+  const planFor = x => {
+    const run = beginRun(prepareBattle(apart(x), feet), 1, { log: true });
+    run.round = 1;
+    return delayFor(run, run.byId.get("hero"));
+  };
+
+  test("a foe it can walk to and strike this turn: no waiting; out of its move, it waits for one who can come (a move and a Dash)", () => {
+    expect(planFor(35)).toBe(null);
+    expect(planFor(60)).toMatchObject({ why: "reach", afterId: "brute" });
+    // (Farther than the foe's move and Dash: nothing to wait for.)
+    expect(planFor(80)).toBe(null);
+  });
+});
+
 describe("Delay to the round's end (rules.delay.toEnd, API 35)", () => {
   /** farApart, with a friend of the hero's who acts last of all. */
   const withLast = () => {

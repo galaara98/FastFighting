@@ -70,6 +70,15 @@ function nearestFoe(run, f) {
   return { foe: best, d };
 }
 
+/**
+ * How far u could walk this turn and still strike: where movement is its own (rules.movement "feet": 5e's move, its
+ * action kept), its speed; else all but one action's Strides.
+ */
+const walkAndStrike = (rules, u) => speedOf(u) * (rules.movement === "feet" ? 1 : Math.max(0, unitsPerTurn(rules, u) - 1));
+
+/** How far f could come this turn, all of it moving: a move and a Dash where movement is its own, else every action a Stride. */
+const comesFar = (rules, f) => speedOf(f) * (rules.movement === "feet" ? 2 : unitsPerTurn(rules, f));
+
 const meleeOf = u => (u.prep?.offense ?? []).filter(a => a.melee);
 const shoots = u => (u.prep?.offense ?? []).some(a => a.range && !a.melee);
 const reachOf = u => Math.max(5, ...meleeOf(u).map(a => a.reach ?? 5));
@@ -120,13 +129,13 @@ function waitForReach(run, u, later) {
   const rules = run.prep.rules;
   const { d } = nearestFoe(run, u);
   // (As far as it could walk this turn and still strike: its reach alone, held where it is.)
-  const walks = canMove(run, u) ? speedOf(u) * Math.max(0, unitsPerTurn(rules, u) - 1) : 0;
+  const walks = canMove(run, u) ? walkAndStrike(rules, u) : 0;
   if ( !Number.isFinite(d) || d <= walks + reachOf(u) ) return null;
   for ( const f of later ) {
     if ( !areEnemies(run, u, f) || heldOff(run, u, f) || f.leaving || !meleeOf(f).length || shoots(f) ) continue;
     const near = nearestFoe(run, f);
     const gap = edgeDistance(f, u);
-    if ( near.foe !== u || gap === null || gap - reachOf(f) > speedOf(f) * unitsPerTurn(rules, f) ) continue;
+    if ( near.foe !== u || gap === null || gap - reachOf(f) > comesFar(rules, f) ) continue;
     return { why: "reach", afterId: f.id, forId: f.id };
   }
   return null;
@@ -186,7 +195,7 @@ export function readyChance(run, u, strike) {
     if ( f === u || !isStanding(f) || !f.active || !areEnemies(run, u, f) || heldOff(run, u, f) || f.leaving || !f.pos ) continue;
     if ( inReachAt(f, u, f.pos, strike) ) continue;
     const gap = edgeDistance(u, f);
-    if ( gap === null || gap - (strike.reach ?? 5) > speedOf(f) * unitsPerTurn(rules, f) ) continue;
+    if ( gap === null || gap - (strike.reach ?? 5) > comesFar(rules, f) ) continue;
     let p = meleeOf(f).length && !shoots(f) ? READY.melee : READY.ranged;
     if ( nearestFoe(run, f).foe !== u ) p *= READY.notNearest;
     miss *= 1 - p;
