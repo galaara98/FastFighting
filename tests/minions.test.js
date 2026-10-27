@@ -42,6 +42,16 @@ describe("minions", () => {
     expect(log.some(e => e.actorId === "pet" && e.type === "attack")).toBe(false);
   });
 
+  test("a cost paid once (API 35) commands every minion that names its key, for one payment", () => {
+    // (As 5e's Animate Dead: one bonus action, here one action, commands every creature the spell made.)
+    const once = { ...rules, minionCommand: u => (isMinion(u) ? { actions: 1, once: "animate" } : null) };
+    const { log } = replay(battle([master(), minion(), minion({ id: "pet2" }), foe()], { maxRounds: 2 }), once, 1);
+    const round1 = log.filter(e => e.type === "commandMinion" && e.round === 1);
+    expect(round1.map(e => e.targetId).sort()).toEqual(["pet", "pet2"]);
+    // (One action spent on both: the master still attacks twice.)
+    expect(attacksBy(log, "master")[1]).toBe(2);
+  });
+
   test("with no master in the fight, or no rule for it, it acts on its own", () => {
     const alone = replay(battle([minion(), foe(), creature({ id: "ally", ...tough })], { maxRounds: 2 }), rules, 1).log;
     expect(alone.some(e => e.actorId === "pet" && e.type === "attack")).toBe(true);

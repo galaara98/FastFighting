@@ -101,6 +101,30 @@ describe("Delay: waiting for a foe to come into reach", () => {
   });
 });
 
+describe("Delay to the round's end (rules.delay.toEnd, API 35)", () => {
+  /** farApart, with a friend of the hero's who acts last of all. */
+  const withLast = () => {
+    const spec = farApart();
+    spec.combatants.push(creature({ id: "last", name: "Last", position: at(0, 10), initiative: { mod: -200 }, hp: { value: 300, max: 300 } }));
+    return spec;
+  };
+  const toEnd = { ...pf2eRules, delay: { toEnd: true } };
+
+  test("it comes back after everyone, whatever it waited for, and stays last", () => {
+    const run = beginRun(prepareBattle(withLast(), toEnd), 1, { log: true });
+    run.round = 1;
+    expect(delayFor(run, run.byId.get("hero"))).toMatchObject({ why: "reach", afterId: null, forId: "brute" });
+    const r = replay(withLast(), toEnd, 1);
+    const delay = r.log.find(e => e.type === "delay");
+    expect(delay).toMatchObject({ actorId: "hero", afterId: null });
+    const last = r.log.findIndex(e => e.actorId === "last" && e.round === delay.round);
+    const back = r.log.findIndex(e => e.actorId === "hero" && e.round === delay.round && e.type !== "delay");
+    expect(last).toBeGreaterThan(-1);
+    expect(back).toBeGreaterThan(last);
+    expect(logLine(delay)).toMatch(/Hero/);
+  });
+});
+
 describe("Delay: a standoff", () => {
   test("one that wouldn't talk waits for whoever after it may break the standoff", () => {
     const spec = battle([

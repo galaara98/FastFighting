@@ -7,7 +7,8 @@
  *                 then on. `reactions: false`: none while it waits (PF2e). API 34: `reasons`, which of the core's own
  *                 below it waits for (all where it doesn't say; [] none), and `waitFor(run, u, later)`, the system's
  *                 own reason, tried first: {why, afterId, forId} or null (DCC: a caster waiting to answer a foe's
- *                 spell, why "counter").
+ *                 spell, why "counter"). API 35: `toEnd`, it always comes back at the round's end, whatever it
+ *                 waited for (5e's homebrew Delay), its place last from then on.
  *   rules.ready   {cost, most}: a creature may Ready (PF2e's Ready: {actions: 2}, an action of 1 at most): it spends
  *                 `cost` of its turn to Strike, as a reaction, at the first foe that comes within its reach before its
  *                 next turn begins, with the attack penalty it had when it readied.
@@ -76,9 +77,16 @@ const reachOf = u => Math.max(5, ...meleeOf(u).map(a => a.reach ?? 5));
 /**
  * Who u waits for as its turn begins, where the system lets it Delay (rules.delay): {why, afterId, forId} (it comes back
  * after `afterId`'s turn; `forId`, what it waits on: the foe, the friend), or null to take its turn now. Only for one
- * on its feet and able to act in the fight (the simulator's to say: `able`), that hasn't delayed this round.
+ * on its feet and able to act in the fight (the simulator's to say: `able`), that hasn't delayed this round. With
+ * `rules.delay.toEnd` (API 35), it comes back at the round's end whatever it waits for (`afterId` null).
  */
 export function delayFor(run, u, { able = true } = {}) {
+  const plan = planDelay(run, u, able);
+  return plan && run.prep.rules.delay?.toEnd ? { ...plan, afterId: null } : plan;
+}
+
+/** delayFor's reason to wait, and whom it comes back after. */
+function planDelay(run, u, able) {
   const rules = run.prep.rules;
   if ( !rules.delay || !orderly(rules) || !able || !(run.round >= 1) || u.rejoined === run.round ) return null;
   if ( !isStanding(u) || u.spec.hazard || u.summoner || u.leaving || u.fetch || u.bound || u.boundBy ) return null;

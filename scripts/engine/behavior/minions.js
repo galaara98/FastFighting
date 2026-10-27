@@ -3,7 +3,10 @@
  * guard dog), that act only when the master commands them, where the system says so (API 32).
  *
  *   rules.minionCommand(minion, master)   what the master pays, at the start of its turn, for the minion to act on its
- *                                         next turn (PF2e: one action, for a minion's two); null: it acts on its own
+ *                                         next turn (PF2e: one action, for a minion's two); null: it acts on its own.
+ *                                         API 35: a cost with `once` (a key) is paid once a turn for every minion
+ *                                         whose cost names that key (5e's Animate Dead: one bonus action commands
+ *                                         every creature the spell made)
  *
  * A master commands each of its minions that is up and in the fight, while it can pay, at the start of its turn (after
  * keeping what it summoned: summons.js). A minion not commanded since its last turn does nothing that turn. One whose
@@ -43,11 +46,16 @@ export const minionsOf = (run, u) => run.units.filter(o => o !== u && o.spec.fla
 export function commandMinions(run, u, turn) {
   const commanded = [];
   if ( !canCommand(u) ) return commanded;
+  const paid = new Set();
   for ( const m of minionsOf(run, u) ) {
     if ( !isStanding(m) ) continue;
-    const cost = commandCost(run, m, u);
-    if ( !turn.canAfford(cost) ) break;
-    turn.spend(cost);
+    // (A cost with `once`, API 35: one payment this turn commands every minion whose cost names the same key.)
+    const { once = null, ...cost } = commandCost(run, m, u);
+    if ( !(once && paid.has(once)) ) {
+      if ( !turn.canAfford(cost) ) continue;
+      turn.spend(cost);
+      if ( once ) paid.add(once);
+    }
     m.commanded = true;
     commanded.push(m);
   }
