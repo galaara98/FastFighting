@@ -5,7 +5,8 @@
  * it, telling no turn change), and a live battle's tracker goes back under it.
  * Each browser says hello on the module's socket as it's ready, and one signed in as the same user answers: the GM is
  * told once per twin, and a Fast Fight doesn't start while one is there (twinSession asks afresh). A session going away
- * says goodbye. The decision (twinHeard) is pure; the socket needs Foundry.
+ * says goodbye. Whose session it is, Foundry's server says (the sender it passes the handler), not the message: a player
+ * can't pass for the GM's twin and hold up a Fast Fight. The decision (twinHeard) is pure; the socket needs Foundry.
  */
 import { MODULE_ID } from "../constants.js";
 
@@ -24,11 +25,12 @@ const told = new Map();
 /**
  * What a session message means here: "twin" (the same user's other session, here or answering), "gone" (one going away),
  * else null (someone else's, or this session's own). Pure.
- * @param {{type, user, session, bye?}} message
+ * @param {{type, session, bye?}} message
  * @param {{user: string, session: string}} me
+ * @param {string} from   the user who sent it, as Foundry's server says
  */
-export function twinHeard(message, me) {
-  if ( message?.type !== TYPE || message.user !== me.user || !message.session || message.session === me.session ) return null;
+export function twinHeard(message, me, from) {
+  if ( message?.type !== TYPE || !from || from !== me.user || !message.session || message.session === me.session ) return null;
   return message.bye ? "gone" : "twin";
 }
 
@@ -56,8 +58,8 @@ function forget(id) {
 
 /** Listen for the user's other sessions, and say hello (at ready: the socket is up). */
 export function registerTwinSessions() {
-  game.socket.on(CHANNEL, message => {
-    const heard = twinHeard(message, { user: game.user.id, session: session() });
+  game.socket.on(CHANNEL, (message, from) => {
+    const heard = twinHeard(message, { user: game.user.id, session: session() }, from);
     if ( heard === "gone" ) forget(message.session);
     else if ( heard === "twin" ) {
       twins.add(message.session);
