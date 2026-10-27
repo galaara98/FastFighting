@@ -307,14 +307,28 @@ function harmAt(run, u, p, ctx) {
     const d = edgeAt(u, p, foe.f);
     const rf = reachFactor(run, foe.f, d, foe);
     if ( !(rf > 0) ) continue;
-    let nearer = 0;
-    for ( const x of foe.friendsAt ) if ( x < d - 2.5 ) nearer += 1;
+    const nearer = fewerThan(foe.friendsAt, d - 2.5);
     const focus = foe.mine ? 0.75 : 1 / (1 + nearer);
     const cover = foe.range > 0 && d > foe.reach + 0.5 ? coverShare(run, u, p, foe) : 1;
     total += foe.threat * rf * focus * cover;
   }
   return total;
 }
+
+/** How many of `sorted` (lowest first) are below `x`. */
+function fewerThan(sorted, x) {
+  let lo = 0;
+  let hi = sorted.length;
+  while ( lo < hi ) {
+    const mid = (lo + hi) >> 1;
+    if ( sorted[mid] < x ) lo = mid + 1;
+    else hi = mid;
+  }
+  return lo;
+}
+
+/** How far each friend is from a foe, nearest first (for harmAt: how many are nearer it than a spot). */
+const friendsFrom = (friends, foe) => friends.map(a => edgeAt(a, a.pos, foe.f)).sort((a, b) => a - b);
 
 /** The moves it takes from p to have t within `reach` (or `range`, in sight). */
 function movesFrom(run, u, p, t, { reach = null, range = null } = {}, speed) {
@@ -528,7 +542,7 @@ function lookAhead(run, u) {
   // (What doesn't hang on where u stands, worked out once: how far its friends are from each foe, and what each foe
   // would do to each friend u guards.)
   for ( const foe of foes ) {
-    foe.friendsAt = friends.map(a => edgeAt(a, a.pos, foe.f));
+    foe.friendsAt = friendsFrom(friends, foe);
     foe.wards = [];
     for ( const w of wards ) {
       const dw = edgeAt(w.unit, w.unit.pos, foe.f);
@@ -628,7 +642,7 @@ export function walkRisk(run, u) {
   const known = foesOf(run, u).filter(foe => knowsOf(run, u, foe.f));
   if ( !known.length && !near.length ) return () => 0;
   const friends = alliesOf(run, u).filter(a => a !== u && isStanding(a) && a.pos);
-  for ( const foe of known ) foe.friendsAt = friends.map(a => edgeAt(a, a.pos, foe.f));
+  for ( const foe of known ) foe.friendsAt = friendsFrom(friends, foe);
   const ctx = { foes: known };
   const w = harmWeight(run, u);
   return p => PREP.harm * w * harmAt(run, u, p, ctx) + moveRisk(u, p, near);
@@ -827,12 +841,13 @@ export function takeSpare(run, u, turn, pick, kit) {
 
 /**
  * What's left of its turn, spent getting ready for the next (the turn's main actions done: it found nothing better to
- * do with them): one step after another while any is worth it. True if it did anything.
+ * do with them): one step after another while any is worth it. `first`: the first step, where the turn has just found
+ * it (spareBest, on the fight as it stands). True if it did anything.
  */
-export function spareTurn(run, u, turn, kit) {
+export function spareTurn(run, u, turn, kit, first = null) {
   let did = false;
   for ( let i = 0; i < 4 && isStanding(u); i++ ) {
-    const pick = spareBest(run, u, turn, kit);
+    const pick = (i === 0 && first) || spareBest(run, u, turn, kit);
     if ( !pick ) break;
     did = true;
     if ( !takeSpare(run, u, turn, pick, kit) ) break;

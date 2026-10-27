@@ -23,7 +23,7 @@
  */
 import { TACTICAL, clamp } from "../../constants.js";
 import { degreeDistribution } from "../probability.js";
-import { saveRoll, attackRoll, attackOptions, checkRoll, currentAc, defenseDc, liveTier, isMagical, boostBonus } from "../battle-state.js";
+import { saveRoll, attackRoll, attackOptions, checkRoll, currentAc, defenseDc, liveTier, isMagical, boostBonus, actionKey } from "../battle-state.js";
 import { netAdvantage } from "../mods.js";
 import { meanDamageVs, saveMultiplier, areaTargets } from "./evaluate.js";
 import { outcomeWorth, hasFresh, concentrationCost, heldElsewhere } from "./effects.js";
@@ -60,8 +60,8 @@ function outcomesOf(action) {
 export function isImmune(run, target, action) {
   if ( !action.id ) return immuneNow(run, target, action);
   const cache = run.prep.immuneCache ??= new Map();
-  let byTarget = cache.get(action.id);
-  if ( !byTarget ) cache.set(action.id, byTarget = new Map());
+  let byTarget = cache.get(actionKey(action));
+  if ( !byTarget ) cache.set(actionKey(action), byTarget = new Map());
   let byIwr = byTarget.get(target.id);
   if ( !byIwr ) byTarget.set(target.id, byIwr = new Map());
   const iwrKey = target.iwrKey ?? "";

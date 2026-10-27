@@ -103,6 +103,9 @@ export function gmMoment(run, id = null) {
 
 /** A new round on the tracker. */
 export function liveRound(run, round) {
+  // (A battle picked up after a reload or a rewind has no dice yet: the round's own, for what comes as it begins, its
+  // reinforcements. The turns draw theirs as they would have.)
+  if ( !run.rng ) run.rng = recordingRng(createRng(deriveSeed(run.live.seed, -1 - round)));
   beginRound(run, round);
 }
 
@@ -1506,7 +1509,7 @@ export function liveAftermath(run) {
 /** A creature's state that's only a convenience (worked out again as needed) or the battle itself (its spec). */
 const UNIT_SKIP = new Set(["prep", "spec", "turn", "nearby", "nearbyKey", "pool", "sharedPools", "coreConds"]);
 /** The run's own: the battle, the creatures (kept apart), the dice and anything worked out again as needed. */
-const RUN_SKIP = new Set(["prep", "units", "byId", "rng", "logTo", "trapLog", "acting", "live"]);
+const RUN_SKIP = new Set(["prep", "units", "byId", "rng", "logTo", "trapLog", "acting", "turnOver", "live"]);
 const CACHE = /(Cache|CacheInner|Round|Geo|Depth)$/;
 /** A creature's own worked-out-again keys, kept by no snapshot. */
 const UNIT_CACHES = Object.freeze(["turn", "nearby", "nearbyKey"]);

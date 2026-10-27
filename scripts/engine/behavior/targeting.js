@@ -12,7 +12,7 @@ import { enemiesOf, isStanding, liveTier, liveTrait, movesNeeded, behaviorOf, he
 import { meanPart } from "../dice.js";
 import { isAnimalistic } from "./animal.js";
 import { hasTrait } from "../conditions.js";
-import { expectedDamage, hasUses, limited, threatOf, costOf, costUnits, unitsPerTurn } from "./evaluate.js";
+import { expectedDamage, hasUses, limited, threatOf, costOf, unitsPerTurn } from "./evaluate.js";
 import { mainPool, unitsPerUse } from "../turn.js";
 import { needsDraw } from "../gear.js";
 import { styleWeight } from "../tactics.js";

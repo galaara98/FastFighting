@@ -13,8 +13,8 @@ import { costOf, mainPool } from "./turn.js";
 import {
   prepareBattle, createRun, isStanding, isUp, enemiesOf, alliesOf, areEnemies, liveTier, liveTrait, currentAc,
   attackRoll, attackOptions, saveRoll, checkRoll, turnFor, moveToward, moveAway, bonusDamageParts,
-  behaviorOf, edgeDistance, coverOf, inArea, movesNeeded, approach, canMove, moveTowardPoint, isMagical, upgradesSave, boostBonus, typical, sortOf, sizedUp, passedOver,
-  command, commandOf, heldOff, holdsBack, wish, groupKeyOf, chainOf, canCommand, regenOf, canHeal, systemRolled, holdsBackThisRound, drawnArea, friendsInArea, burstPoint } from "./battle-state.js";
+  behaviorOf, edgeDistance, inArea, movesNeeded, approach, canMove, moveTowardPoint, isMagical, upgradesSave, boostBonus, typical, sortOf, sizedUp, passedOver,
+  command, commandOf, heldOff, holdsBack, wish, groupKeyOf, chainOf, canCommand, regenOf, canHeal, systemRolled, holdsBackThisRound, drawnArea, friendsInArea, burstPoint, actionKey } from "./battle-state.js";
 import { sampleRunTactics } from "./playstyles.js";
 import { chooseTarget, bestOptionVs, scoreTargets, plainBlow, rathersMagic } from "./behavior/targeting.js";
 import { decideHeal, rescueOption, healScores } from "./behavior/healing.js";
@@ -26,7 +26,7 @@ import { expectedDamage, spendUse, spendAmmo, hasUses, attacksIn, criticalParts,
 import { chooseDeed, deedTier, chooseHitRiders, rescueMiss, rollCrit, rollFumble, rallied } from "./behavior/riders.js";
 import { cast, tierActionsOf } from "./behavior/casting.js";
 import { boost } from "./behavior/luck.js";
-import { respond, riposteStrike, bestStep, strikeBack } from "./behavior/responses.js";
+import { respond, bestStep, strikeBack } from "./behavior/responses.js";
 import { playEffects, hasEffects, wouldPlay } from "./behavior/reaction-effects.js";
 import { decideSummon, callSummons, sustainSummons, summonState, dismiss } from "./behavior/summons.js";
 import { commandMinions, awaitsCommand, orderMinions } from "./behavior/minions.js";
@@ -1312,7 +1312,7 @@ function duelAnswer(run, by, counter, fate, caster) {
 
 /** Which of an action's tiers this is (0 the lowest). */
 function tierIndex(run, action, tierAction) {
-  return run.prep.tierActions?.get(action.id)?.indexOf(tierAction) ?? null;
+  return run.prep.tierActions?.get(actionKey(action))?.indexOf(tierAction) ?? null;
 }
 
 /** A strike u makes out of its turn, now (a reaction: in a live battle, to something a player did). */
@@ -2036,7 +2036,10 @@ function fateSpender(run, victim) {
   return null;
 }
 
-/** What a blow, a save or a recovery check can change on a creature, to put it back as it was. */
+/**
+ * What a blow, a save or a recovery check can change on a creature, to put it back as it was (restoreFrom): what it has
+ * left (its resources, uses, concentration, last stand), what's on it, who's beside it.
+ */
 function snapshotOf(u) {
   const s = {};
   for ( const k in u ) {
@@ -2049,7 +2052,34 @@ function snapshotOf(u) {
   s.afflictions = (u.afflictions ?? []).map(a => ({ ...a }));
   s.harmedBy = new Map(u.harmedBy ?? []);
   s.usedThisTurn = u.usedThisTurn ? new Set(u.usedThisTurn) : u.usedThisTurn;
-  return s;
+  s.concentration = u.concentration ? { ...u.concentration } : u.concentration;
+  s.resources = { ...u.resources };
+  s.uses = { ...u.uses };
+  s.adjacent = new Set(u.adjacent ?? []);
+  s.lastStand = u.lastStand ? { ...u.lastStand } : u.lastStand;
+  return { s, keys: new Set(Object.keys(u)) };
+}
+
+/** A creature put back as snapshotOf found it: what it gained since gone again. */
+function restoreFrom(u, { s, keys }) {
+  for ( const k of Object.keys(u) ) if ( !keys.has(k) ) delete u[k];
+  Object.assign(u, s);
+  recomputeConditions(u);
+}
+
+/**
+ * What a death can change on anyone else, to put it back as it was (backFrom): what it held up on them ends (its
+ * concentration), what held them lets go, what it does on its way down harms them, it's no longer beside them.
+ */
+const touchedOf = (o, victim) => ({ o, effects: o.effects, grabbedBy: o.grabbedBy, hp: o.hp, temp: o.temp, stamina: o.stamina, status: o.status,
+  dying: o.dying, stable: o.stable, beside: !!o.adjacent?.has(victim.id) });
+
+function backFrom({ o, effects, beside, ...rest }, victim) {
+  const changed = o.effects !== effects;
+  Object.assign(o, rest);
+  o.effects = effects;
+  if ( beside ) o.adjacent?.add(victim.id);
+  if ( changed ) recomputeConditions(o);
 }
 
 /** Could anyone spend fate on `victim`: itself, or one on its side with some left? Otherwise nothing is taken back. */
@@ -2068,6 +2098,8 @@ function fateful(run, victim, actor, attempt) {
     const keep = savable(run, victim);
     const before = keep ? snapshotOf(victim) : null;
     const by = keep && actor && actor !== victim ? snapshotOf(actor) : null;
+    // (And everyone else, for what a death does to them.)
+    const others = keep ? run.units.filter(o => o !== victim && o !== actor).map(o => touchedOf(o, victim)) : null;
     const logLength = run.log?.length ?? 0;
     const firstFallen = run.firstFallen;
     const shownFrom = rollsWaiting(run);
@@ -2085,9 +2117,9 @@ function fateful(run, victim, actor, attempt) {
       return;
     }
     if ( !before ) return;
-    Object.assign(victim, before);
-    if ( by ) Object.assign(actor, by);
-    recomputeConditions(victim);
+    restoreFrom(victim, before);
+    if ( by ) restoreFrom(actor, by);
+    for ( const x of others ) backFrom(x, victim);
     if ( run.log ) run.log.length = logLength;
     run.firstFallen = firstFallen;
     // (Its dice were rolled all the same, at the table too: shown, as taken back.)
@@ -3503,8 +3535,10 @@ function neutralTurn(run, u) {
     log(run, u, { type: "offMap" });
     return false;
   }
-  // Someone too close: paid off, or told to go (behavior/deals.js). That's its turn.
-  if ( dealNow(run, u, turnFor(run, u)) ) {
+  // Someone too close: paid off, or told to go (behavior/deals.js). That's its turn. (What a step toward them took, the
+  // rest of it doesn't have.)
+  const turn = turnFor(run, u);
+  if ( dealNow(run, u, turn) ) {
     u.turnsTaken += 1;
     endOfTurn(run, u);
     return false;
@@ -3514,7 +3548,7 @@ function neutralTurn(run, u) {
   // side it likes least out of the fight.
   if ( !u.truce && run.prep.options.talking && canTalk(u) && u.tac?.talk !== "never" ) {
     const rules = run.prep.rules;
-    const actions = turnFor(run, u).howMany(rules.talkCost ?? rules.basicAction ?? 1);
+    const actions = turn.howMany(rules.talkCost ?? rules.basicAction ?? 1);
     if ( !keepsPeace(run, u, actions) ) {
       const involved = meddling(run, u, say);
       if ( involved ) {
@@ -3534,7 +3568,7 @@ function neutralTurn(run, u) {
     } else {
       const rules = run.prep.rules;
       const side = u.truce.side;
-      standoffPitching(run, u, standoffPitches(run, u, turnFor(run, u).howMany(rules.talkCost ?? rules.basicAction ?? 1)), o => o.side === side);
+      standoffPitching(run, u, standoffPitches(run, u, turn.howMany(rules.talkCost ?? rules.basicAction ?? 1)), o => o.side === side);
     }
   }
   u.turnsTaken += 1;
@@ -3802,13 +3836,13 @@ export function takeTurn(run, u) {
 
 /** The rest of a creature's turn (takeTurn): all of it, but for one tied up who acts from its bonds. */
 function playFromHere(run, u) {
-  const { rules, options } = run.prep;
   run.movesCache = null; // (none left over: a turn broken off, a turn played again)
   if ( [STATUS.DEAD, STATUS.FLED, STATUS.SURRENDERED, STATUS.STOOD_DOWN, STATUS.BEATEN].includes(u.status) ) return;
   if ( u.spec.hazard ) return hazardTurn(run, u);
   // On the map but not in the conflict: it only looks around, until the round after it notices.
   if ( !u.active && !lookAround(run, u) ) return;
   // A summoned creature: gone when its time or its summoner's concentration runs out; idle when it wasn't sustained.
+  let idle = false;
   if ( u.summoner ) {
     const state = summonState(run, u);
     if ( state === "expired" || state === "released" ) {
@@ -3816,11 +3850,27 @@ function playFromHere(run, u) {
       log(run, u, { type: "vanish", reason: state });
       return;
     }
-    if ( state === "idle" ) return;
+    idle = state === "idle";
   }
-  // A minion its master didn't command since its last turn does nothing (behavior/minions.js).
-  if ( awaitsCommand(run, u) ) return;
+  // A minion its master didn't command since its last turn does nothing of its own (behavior/minions.js). Its turn
+  // still begins and ends, and down, it fights for its life.
+  if ( awaitsCommand(run, u) ) idle = true;
   turnUpkeep(run, u);
+  run.turnOver = null;
+  turnProper(run, u, idle);
+  // (However the turn broke off, it ends: its effects run on, what burns it burns. Not one gone from the fight.)
+  run.acting = null;
+  if ( run.turnOver === u || u.status === STATUS.FLED ) return;
+  u.turnsTaken += 1;
+  endOfTurn(run, u);
+}
+
+/**
+ * A creature's turn after its upkeep (playFromHere, which ends it, where nothing here did). `idle`: a summoned creature
+ * not sustained, a minion not commanded, that does nothing of its own.
+ */
+function turnProper(run, u, idle) {
+  const { rules, options } = run.prep;
   // Surprised, where it costs that (5e's 2014 rules): its first turn goes by, and with it what kept it from reacting.
   if ( !u.turnsTaken && run.surprise?.surprised?.includes(u.id) && u.status === STATUS.STANDING ) {
     log(run, u, { type: "surprised" });
@@ -3846,6 +3896,7 @@ function playFromHere(run, u) {
     endOfTurn(run, u);
     return;
   }
+  if ( idle ) return;
 
   // Taking no side: it watches, or has words with whoever crossed it; once it has turned on a side, it fights.
   // (One leaving, by a deal into a friend group of those taking no side: it's on its way, not watching. One with goods
@@ -4087,6 +4138,8 @@ function playFromHere(run, u) {
   const happens = () => { run.movesCache = null; };
   // (No foe it knows of to go for, as the loop found: it may patrol, behavior/patrol.js.)
   let lacked = false;
+  // (Its last action better spent on the turn to come, as the loop found: the spare turn's first step.)
+  let spared = null;
   // (Struck down mid-turn, by a reaction to a move: answerMove. Its turn is over.)
   const fightOn = () => {
     for ( let step = 0; turn.any && step < MAX_STEPS_PER_TURN && !battleOver(run) && isStanding(u); step++ ) {
@@ -4308,7 +4361,10 @@ function playFromHere(run, u) {
       // loop takes it). A kiter in a foe's reach falls back first, and shoots with what's left.
       if ( (attacksMade >= 2 || (kiting && attacksMade >= 1)) && turn.howMany(basic) <= 1 && option.moves === 0 ) {
         const spare = spareBest(run, u, turn, prepKit);
-        if ( spare && spare.worth > option.ev ) break;
+        if ( spare && spare.worth > option.ev ) {
+          spared = spare;
+          break;
+        }
       }
       if ( kiting && !u.fellBack && option.moves === 0 && threats(run, u).length ) {
         const back = bestSpot(run, u, turn);
@@ -4356,7 +4412,7 @@ function playFromHere(run, u) {
   happens();
   // What's left of the turn, for the next (behavior/prepare.js): its gear made ready, a potion got out, a better spot to
   // end on, a shield up; what it found nothing better to do with.
-  if ( isStanding(u) && !battleOver(run) ) spareTurn(run, u, turn, prepKit);
+  if ( isStanding(u) && !battleOver(run) ) spareTurn(run, u, turn, prepKit, spared);
   happens();
   // Nothing better to do, and no foe it knows of: it looks for one (behavior/patrol.js). Found, it fights at once with
   // what's left of its turn.
@@ -4480,6 +4536,7 @@ function dropShares(run) {
 
 export function endOfTurn(run, u) {
   const rules = run.prep.rules;
+  run.turnOver = u; // (ended: playFromHere has nothing more to end)
   // (Whoever died this turn, the turn's own creature or another: its share of its team's purse falls with it.)
   dropShares(run);
   // (Whom the players' characters have seen so far: senses.js noteSeen.)
@@ -4924,11 +4981,14 @@ export function runOne(prep, seed, { log: withLog = false, capture = false } = {
     run.round = 0;
     for ( const side of surprise.by ) log(run, null, { type: "surprise", sideLabel: prep.sides[side]?.label ?? side });
     for ( const u of order ) {
-      // (Those with surprise, and anyone who is never caught unready (spec.alert, API 29), whatever its side.)
+      // (Those with surprise, and anyone who is never caught unready (spec.alert, API 29), whatever its side. Its turn
+      // goes as any other's, without Delay; the fight may end with it.)
       if ( !surprise.by.includes(u.side) && !u.spec.alert ) continue;
       startTurn(run, u);
+      u.readied = null;
       takeTurn(run, u);
       noteIdle(run, u);
+      if ( afterTurn(run, u) ) break;
     }
   }
   let ended = battleOver(run);

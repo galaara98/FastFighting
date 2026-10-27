@@ -15,19 +15,19 @@
  * Pure: no Foundry globals.
  */
 import { rollCheck } from "../probability.js";
-import { systemRolled } from "../battle-state.js";
+import { systemRolled, actionKey } from "../battle-state.js";
 import { boost } from "./luck.js";
 
 /** The action as it is at each tier, lowest first (worked out once a batch). */
 export function tierActionsOf(prep, action) {
   prep.tierActions ??= new Map();
-  let list = prep.tierActions.get(action.id);
+  let list = prep.tierActions.get(actionKey(action));
   if ( !list ) {
     list = (action.tiers ?? [])
       .map((t, i) => ({ ...action, ...t, id: `${action.id}@${i}`, name: action.name, casting: null, tiers: null, castChance: 1, min: Number(t.min), max: Number.isFinite(Number(t.max)) ? Number(t.max) : Infinity }))
       .filter(t => Number.isFinite(t.min))
       .sort((a, b) => a.min - b.min);
-    prep.tierActions.set(action.id, list);
+    prep.tierActions.set(actionKey(action), list);
   }
   return list;
 }

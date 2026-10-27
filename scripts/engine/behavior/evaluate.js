@@ -3,7 +3,7 @@
  */
 import { meanPart, doubled, addTo, meanByType } from "../dice.js";
 import { degreeDistribution } from "../probability.js";
-import { attackRoll, attackOptions, currentAc, saveRoll, bonusDamageParts, enemiesOf, isStanding, isMagical, upgradesSave, boostBonus, liveTier, inArea, friendsInArea } from "../battle-state.js";
+import { attackRoll, attackOptions, currentAc, saveRoll, bonusDamageParts, enemiesOf, isStanding, isMagical, upgradesSave, boostBonus, liveTier, inArea, friendsInArea, actionKey } from "../battle-state.js";
 import { TACTICAL } from "../../constants.js";
 import { costOf, costUnits, mainPool } from "../turn.js";
 import { usable as gearUsable, reloadPerUse, canReload } from "../gear.js";
@@ -140,8 +140,8 @@ export function meanDamageVs(run, action, target) {
   // (An action with no id of its own can't be told from another: worked out each time.)
   if ( action.id === undefined || action.id === null ) return meanDamageNow(run, action, target);
   // (Kept by the action, then the target, then what the target resists just now.)
-  let byTarget = run.prep.meanCache.get(action.id);
-  if ( !byTarget ) run.prep.meanCache.set(action.id, byTarget = new Map());
+  let byTarget = run.prep.meanCache.get(actionKey(action));
+  if ( !byTarget ) run.prep.meanCache.set(actionKey(action), byTarget = new Map());
   let byIwr = byTarget.get(target.id);
   if ( !byIwr ) byTarget.set(target.id, byIwr = new Map());
   const iwrKey = target.iwrKey ?? "";

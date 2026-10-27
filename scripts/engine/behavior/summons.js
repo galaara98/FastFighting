@@ -17,7 +17,7 @@
  * Pure: no Foundry globals.
  */
 import { STATUS, TACTICAL } from "../../constants.js";
-import { createUnit, isUp, isStanding, liveTier, enemiesOf, edgeDistance } from "../battle-state.js";
+import { createUnit, isUp, isStanding, liveTier, enemiesOf, edgeDistance, actionKey } from "../battle-state.js";
 import { freeSpotNear, lineOfSight, wallsKnown } from "./space.js";
 import { costOf, costUnits, hasUses, unitsPerTurn } from "./evaluate.js";
 import { offenseBaseline } from "./support.js";
@@ -31,7 +31,7 @@ const calledBy = (run, u, action) => run.units.filter(o => o.summoner === u.id &
 
 /** What summoning would be worth to u now, in damage terms, or 0. */
 function worthOf(run, u, action) {
-  const entries = run.prep.summons?.get(action.id) ?? [];
+  const entries = run.prep.summons?.get(actionKey(action)) ?? [];
   if ( !entries.length ) return 0;
   const rounds = usefulRounds(run, u.side, action.rounds ?? 10);
   const rules = run.prep.rules;
@@ -93,7 +93,7 @@ function appearAt(run, u, s, action, i) {
 
 /** Call the creatures: they join the fight right after u. Returns them. */
 export function callSummons(run, u, action) {
-  const entries = run.prep.summons?.get(action.id) ?? [];
+  const entries = run.prep.summons?.get(actionKey(action)) ?? [];
   const order = run.order ?? [];
   let at = order.indexOf(u);
   const out = [];

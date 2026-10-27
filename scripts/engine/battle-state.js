@@ -131,7 +131,7 @@ import { meanPart } from "./dice.js";
 import { typicalValue, tacticFits } from "./tactics.js";
 import { talkAffinity } from "./behavior/talk.js";
 import { goadAction } from "./behavior/goad.js";
-import { Turn } from "./turn.js";
+import { Turn, ALL_LOST } from "./turn.js";
 import { initGear } from "./gear.js";
 import { combineMods, netAdvantage } from "./mods.js";
 import { conditionSetup, barred, profiled } from "./conditions.js";
@@ -213,6 +213,7 @@ export function prepareBattle(spec, rules) {
   sides[NEUTRAL_PARTY].leaderId = null;
   for ( const s of Object.values(sides) ) s.enemies.delete(NEUTRAL_PARTY);
 
+  scopeActions(spec.combatants);
   const combatants = spec.combatants.filter(c => sides[c.side]).map(c => prepareCombatant(c, sides[c.side]));
 
   // Battle-worthiness: offense compared with everyone else on the field. The weakest may talk twice a turn.
@@ -257,7 +258,7 @@ export function prepareBattle(spec, rules) {
         p.talkAffinity = 0;
         return p;
       });
-      summons.set(a.id, list);
+      summons.set(actionKey(a), list);
     }
   }
 
@@ -310,6 +311,29 @@ export function leadershipOf(l = {}) {
 const ADHD_TACTICAL = 0.3;
 
 /** A combatant as a batch uses it: its traits blended with its side's, and its actions sorted by what they're for. */
+/**
+ * An action as the battle's caches know it (what it deals, whom it can't touch, its tiers, what it calls): its id, and
+ * whose it is where another creature has an action of that id (scopeActions).
+ */
+export const actionKey = action => (action.ownerId ? `${action.ownerId}|${action.id}` : action.id);
+
+/**
+ * Two creatures with actions of the same id that aren't the same action (two unlinked tokens of one actor, one of them
+ * changed: PF2e's ids are its actor's): each such action of the later ones knows whose it is (ownerId), so what's worked
+ * out for one is not taken for the other's (actionKey). The same action shared is left be.
+ */
+function scopeActions(combatants) {
+  const first = new Map();
+  for ( const c of combatants ) {
+    for ( const a of c.actions ?? [] ) {
+      if ( a.id === undefined || a.id === null ) continue;
+      const had = first.get(a.id);
+      if ( !had ) first.set(a.id, { action: a, by: c.id });
+      else if ( had.action !== a && had.by !== c.id ) a.ownerId = c.id;
+    }
+  }
+}
+
 function prepareCombatant(c, side) {
   const traits = {};
   for ( const k of TRAITS ) {
@@ -1154,8 +1178,10 @@ export function turnFor(run, u) {
   // "incapacitated" (asleep, held) is the engine's own: no actions at all.
   // Haste and the like give an action (a negative loss); Slow takes one.
   // (The core's own that take every action: frozen solid, in stasis, banished, fascinated.)
-  const lost = (rules.modifiers?.actionsLost?.(u) ?? 0) + (u.conds.incapacitated || barred(u, "act") ? 99 : 0) - (u.mods?.actions ?? 0);
-  return new Turn(rules, u, lost);
+  // (All of them lost, a hasted one's too: every pool, its bonus action and its move with them.)
+  const lost = rules.modifiers?.actionsLost?.(u) ?? 0;
+  if ( lost >= ALL_LOST || u.conds.incapacitated || barred(u, "act") ) return new Turn(rules, u, ALL_LOST);
+  return new Turn(rules, u, lost - (u.mods?.actions ?? 0));
 }
 
 /**

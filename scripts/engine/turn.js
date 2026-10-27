@@ -58,11 +58,14 @@ export function costUnits(rules, cost) {
   return main + (c.bonus ? 0.5 : 0) + (c.move ? 0.1 : 0);
 }
 
+/** A loss this big (rules.modifiers.actionsLost: 5e's paralyzed; the engine's incapacitated) takes the whole turn. */
+export const ALL_LOST = 99;
+
 export class Turn {
   /**
    * @param {object} rules
    * @param {object} u      Unit taking the turn
-   * @param {number} lost   Main-pool units lost to conditions (stunned, slowed, ...)
+   * @param {number} lost   Main-pool units lost to conditions (stunned, slowed, ...); ALL_LOST or more: every pool
    */
   constructor(rules, u, lost = 0) {
     this.rules = rules;
@@ -70,7 +73,8 @@ export class Turn {
     const budget = rules.turn ? rules.turn(u) : { actions: rules.actionsPerTurn ?? 1 };
     this.pools = { ...budget };
     const pool = mainPool(rules);
-    if ( lost ) this.pools[pool] = Math.max(0, (this.pools[pool] ?? 0) - lost);
+    if ( lost >= ALL_LOST ) for ( const k of Object.keys(this.pools) ) this.pools[k] = 0; // (no bonus action, no move)
+    else if ( lost ) this.pools[pool] = Math.max(0, (this.pools[pool] ?? 0) - lost);
     this.feetMovement = rules.movement === "feet";
     // (What it has paid for so far this turn, an action, a Stride, a bonus action each: for "its last action was ...",
     // behavior/requires.js.)

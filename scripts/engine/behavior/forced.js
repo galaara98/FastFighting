@@ -18,7 +18,7 @@
  * like it (behavior.shoves: Brawlers, the Cruel). Pure: no Foundry globals.
  */
 import { TACTICAL } from "../../constants.js";
-import { edgeDistance, centerDistance, isStanding, liveTier, behaviorOf } from "../battle-state.js";
+import { edgeDistance, isStanding, liveTier, behaviorOf } from "../battle-state.js";
 import { meanPart, meanTotal, parseFormula } from "../dice.js";
 import { dangerOf } from "./traps.js";
 import { iwrOf } from "./effects.js";
