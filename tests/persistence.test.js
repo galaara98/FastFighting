@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
-import { planHolder, getSetup, saveSetup, clearSetup, sceneEncounter, planDistrust } from "../scripts/foundry/persistence.js";
+import { planHolder, getSetup, saveSetup, clearSetup, sceneEncounter, planDistrust, planSignature } from "../scripts/foundry/persistence.js";
 import { groupOf, resolveAllegiances, resolveLeans, commandGroup, commandChains, seedCommand, repickCommand, secretTeam, SECRET_TEAMS } from "../scripts/foundry/battle.js";
 
 /** A document that keeps flags, as a Foundry Scene or Combat does. */
@@ -221,26 +221,42 @@ describe("who commands: picked once, when the plan is new or just cleared", () =
 });
 
 describe("a plan kept on a scene a player owns", () => {
-  test("is read unless a player owns the scene and changed it last", () => {
-    expect(planDistrust({ playerOwned: false, lastByGM: true })).toBe(null);
-    expect(planDistrust({ playerOwned: true, lastByGM: true })).toBe(null);
-    expect(planDistrust({ playerOwned: false, lastByGM: false })).toBe(null);
-    expect(planDistrust({ playerOwned: true, lastByGM: false })).toBe("player");
+  test("is read unless a player owns the scene and no GM signed the plan as it is", () => {
+    expect(planDistrust({ playerOwned: false, signed: true })).toBe(null);
+    expect(planDistrust({ playerOwned: true, signed: true })).toBe(null);
+    expect(planDistrust({ playerOwned: false, signed: false })).toBe(null);
+    expect(planDistrust({ playerOwned: true, signed: false })).toBe("player");
+  });
+
+  test("a plan's signature: the same for the same plan, its keys in any order; another for any change", () => {
+    const plan = { options: { seconds: 10, purses: {} }, tokens: { goblin: { include: true, fudge: { hp: 0 } } } };
+    expect(planSignature(plan)).toBe(planSignature({ tokens: { goblin: { fudge: { hp: 0 }, include: true } }, options: { purses: {}, seconds: 10 } }));
+    expect(planSignature(plan)).not.toBe(planSignature({ ...plan, tokens: { goblin: { include: true, fudge: { hp: 50 } } } }));
   });
 
   test("written by its player-owner, isn't read: the defaults, and an encounter there starts from them", async () => {
-    const users = [{ id: "gm", isGM: true }, { id: "pat", isGM: false }];
+    const gmFlags = {};
+    const gm = { id: "gm", isGM: true, getFlag: (scope, key) => gmFlags[scope]?.[key] };
+    const users = [gm, { id: "pat", isGM: false, getFlag: () => ({ ambush: "forged" }) }];
     game.users = { some: fn => users.some(fn), get: id => users.find(u => u.id === id) };
+    game.user = { ...gm, update: async changes => {
+      for ( const [path, value] of Object.entries(changes) ) {
+        const [, scope, key, id] = path.match(/^flags\.([^.]+)\.(\w+)\.(\w+)$/);
+        ((gmFlags[scope] ??= {})[key] ??= {})[id] = value;
+      }
+    } };
     const owners = new Set(["pat"]);
-    Object.assign(scene, { documentName: "Scene", name: "Ambush", _stats: { lastModifiedBy: "gm" }, testUserPermission: u => owners.has(u.id) });
+    Object.assign(scene, { id: "ambush", documentName: "Scene", name: "Ambush", _stats: { lastModifiedBy: "gm" }, testUserPermission: u => owners.has(u.id) });
     const plan = getSetup();
     plan.options.applyPlayerDamage = true;
     plan.tokens.goblin = { include: true, fudge: { hp: 50 } };
     await saveSetup(plan);
-    // (The GM wrote it last: the GM's own plan, on a scene the player owns.)
-    expect(getSetup().tokens.goblin.fudge.hp).toBe(50);
-    // (The player changed the scene since: anything in it may be theirs.)
+    // (The GM saved it, as it is: the GM's own plan, on a scene the player owns; whatever else changed the scene since.)
     scene._stats.lastModifiedBy = "pat";
+    expect(getSetup().tokens.goblin.fudge.hp).toBe(50);
+    // (The player changed the plan since, a GM's edit of the scene after it or not: not the GM's.)
+    scene.flags["fast-fighting"].setup.tokens.goblin.fudge.hp = 500;
+    scene._stats.lastModifiedBy = "gm";
     const warn = console.warn;
     console.warn = () => {};
     try {
@@ -262,6 +278,6 @@ describe("a plan kept on a scene a player owns", () => {
     owners.clear();
     ui.combat.viewed = null;
     combats.length = 0;
-    expect(getSetup().tokens.goblin.fudge.hp).toBe(50);
+    expect(getSetup().tokens.goblin.fudge.hp).toBe(500);
   });
 });

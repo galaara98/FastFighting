@@ -74,26 +74,47 @@ export const planHolder = (scene = canvas.scene) => sceneEncounter(scene) ?? sce
 
 /**
  * Is a plan kept on a scene not to be read? A scene's flags are any of its owners' to write, and a plan sets the
- * battle's options (players' damage applied at once, fudges): one on a scene a player owns, last changed by a player,
- * is theirs, not the GM's. "player", or null (it's read). (An encounter's plan is a GM's alone: a player may change only
- * a combat's turn.) Pure: the scene's facts (sceneFacts).
- * @param {{playerOwned: boolean, lastByGM: boolean}} facts
+ * battle's options (players' damage applied at once, fudges): one on a scene a player owns is read only as a GM saved
+ * it, its signature (planSignature) noted on a GM's own user, where no player can write. "player", or null (it's read).
+ * (An encounter's plan is a GM's alone: a player may change only a combat's turn.) Pure: the scene's facts (sceneFacts).
+ * @param {{playerOwned: boolean, signed: boolean}} facts
  */
-export const planDistrust = ({ playerOwned, lastByGM } = {}) => (playerOwned && !lastByGM ? "player" : null);
+export const planDistrust = ({ playerOwned, signed } = {}) => (playerOwned && !signed ? "player" : null);
 
-/** What planDistrust asks of a scene: does a player own it, and was it last changed by a GM? */
-function sceneFacts(scene) {
+/**
+ * A plan's signature: a hash of it as it's kept, its keys in order, so the same plan read back signs the same. Pure.
+ * (Not secret, and needn't be: a player can read it, but not make another plan that signs the same.)
+ */
+export function planSignature(plan) {
+  const sorted = v => (Array.isArray(v) ? v.map(sorted) : v && typeof v === "object" ? Object.fromEntries(Object.keys(v).sort().map(k => [k, sorted(v[k])])) : v);
+  const text = JSON.stringify(sorted(plan ?? null)) ?? "";
+  // (cyrb53: 53 bits.)
+  let h1 = 0xdeadbeef;
+  let h2 = 0x41c6ce57;
+  for ( let i = 0; i < text.length; i++ ) {
+    const c = text.charCodeAt(i);
+    h1 = Math.imul(h1 ^ c, 2654435761);
+    h2 = Math.imul(h2 ^ c, 1597334677);
+  }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+  return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(36);
+}
+
+/** What planDistrust asks of a scene and its plan: does a player own the scene, and did a GM sign the plan as it is? */
+function sceneFacts(scene, plan) {
+  const signature = planSignature(plan);
   return {
     playerOwned: !!game.users?.some?.(u => !u.isGM && !!scene.testUserPermission?.(u, "OWNER")),
-    lastByGM: !!game.users?.get?.(scene._stats?.lastModifiedBy)?.isGM
+    signed: !!game.users?.some?.(u => u.isGM && u.getFlag?.(MODULE_ID, "scenePlans")?.[scene.id] === signature)
   };
 }
 
 /** The plan a document keeps: an encounter's, or a scene's while it's to be read (planDistrust); else null. */
 function keptPlan(doc) {
   const plan = doc?.getFlag?.(MODULE_ID, "setup") ?? null;
-  if ( !plan || doc.documentName !== "Scene" || !planDistrust(sceneFacts(doc)) ) return plan;
-  console.warn(`${MODULE_ID} | ${doc.name}: its plan was last changed by a player who owns the scene, and isn't read`);
+  if ( !plan || doc.documentName !== "Scene" || !planDistrust(sceneFacts(doc, plan)) ) return plan;
+  console.warn(`${MODULE_ID} | ${doc.name}: its plan wasn't saved by a GM as it is now, on a scene a player owns, and isn't read`);
   return null;
 }
 
@@ -132,6 +153,8 @@ export async function clearSetup(holder = planHolder()) {
 export async function saveSetup(setup, holder = planHolder()) {
   if ( !holder || !game.user.isGM ) return;
   await holder.update({ [`flags.${MODULE_ID}.==setup`]: setup }, { render: false });
+  // (A scene's: signed, on this GM's own user, as it's kept: read back, on a scene a player owns, only as it was saved.)
+  if ( holder.documentName === "Scene" ) await game.user.update?.({ [`flags.${MODULE_ID}.scenePlans.${holder.id}`]: planSignature(holder.getFlag(MODULE_ID, "setup")) });
 }
 
 export function tokenSetup(setup, tokenId) {
