@@ -799,6 +799,8 @@ export function buildBattleSpec(roster, setup, { approach = null } = {}) {
       // head takes the party's view of the fight as any team's does (engine/behavior/stance.js).
       playersRun: options.playersRunPCs !== false,
       opening: options.opening ?? "auto",
+      // (The GM's lean toward a standoff at the start: the plan's, else the setting's. behavior/standoff.js.)
+      standoffNoncombat: clamp(Number(options.standoffNoncombat ?? setting("standoffNoncombat")) || 0, -50, 50),
       // The luck checks that protect player characters (world settings, as sliders).
       concedeLuck: setting("concedeLuck"),
       theftLuck: setting("theftLuck"),

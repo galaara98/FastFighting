@@ -1249,7 +1249,7 @@ Code: `engine/behavior/talk.js` `outcomeFor`, `resolveTalk`; `engine/behavior/de
 
 ### How an encounter opens
 
-Search: opening, How encounters open (`opening`), standoff, talk first, Talk if they'd rather, Always talk first, Straight to battle, Only an argument: no fighting, parley
+Search: opening, How encounters open (`opening`), Non-combat at the start (`standoffNoncombat`), standoff, talk first, Talk if they'd rather, Always talk first, Straight to battle, Only an argument: no fighting, parley
 
 Decides whether a fight starts as a standoff: nobody attacks or advances; talkers pitch, the rest hold.
 
@@ -1260,6 +1260,10 @@ Decides whether a fight starts as a standoff: nobody attacks or advances; talker
 | Straight to battle (`fight`) | No |
 | Only an argument: no fighting (`argument`) | Always (see Only an argument) |
 
+- **Non-combat at the start** (`standoffNoncombat`, −50 to 50, 0 by default; the planner's slider starts from it), with
+  Talk if they'd rather: lean L = value ÷ 100. Above 0, an encounter that wouldn't open as a standoff does with chance
+  2L; below 0, one that would opens as a fight with chance 2|L|. At 50 always a standoff (an ambush aside); at −50
+  never (talk in the fight itself stays the Talking rule's). Impatience in a standoff × (1 − L).
 - A side's voice: its commander if present, else a majority of its members (more than half).
 - Present: standing and seen; those who take no side and hazards don't count.
 - **Would rather talk**: can talk; answer Always or Talk first; or none of Let my weapons do the talking, and affinity ≥
@@ -1269,7 +1273,7 @@ On a standoff turn, one who can't abide violence tries to calm any quarrel; a Lo
 pitches: the whole turn with chance w (not staying true); 2 if it would rather talk; 1 if its affinity is above 0; else
 none. Hazards wait out a standoff, and legendary actions wait too.
 
-Code: `engine/behavior/standoff.js` `opensWithTalk`, `prefersTalk`, `standoffPitches`; `engine/simulator.js`
+Code: `engine/behavior/standoff.js` `opensWithTalk`, `noncombatLean`, `prefersTalk`, `standoffPitches`; `engine/simulator.js`
 `standoffTurn`.
 
 ### Impatience: what breaks a standoff

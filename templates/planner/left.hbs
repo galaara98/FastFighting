@@ -95,6 +95,9 @@
         <label class="ff-field"><span class="ff-field-label">{{localize "FASTFIGHTING.Planner.Opening"}} <button type="button" class="ff-help" data-tooltip="{{localize "FASTFIGHTING.Settings.opening.Hint"}}" aria-label="{{localize "FASTFIGHTING.Settings.opening.Hint"}}"><i class="fa-solid fa-question"></i></button></span>
           <select name="options.opening">{{selectOptions openingChoices selected=options.opening localize=true}}</select>
         </label>
+        <label class="ff-field ff-slider"><span class="ff-field-label">{{localize "FASTFIGHTING.Planner.StandoffNoncombat"}} <button type="button" class="ff-help" data-tooltip="{{localize "FASTFIGHTING.Settings.standoffNoncombat.Hint"}}" aria-label="{{localize "FASTFIGHTING.Settings.standoffNoncombat.Hint"}}"><i class="fa-solid fa-question"></i></button></span>
+          <span class="ff-slider-control"><input type="range" name="options.standoffNoncombat" value="{{options.standoffNoncombat}}" min="-50" max="50" step="5" data-dtype="Number"> <output class="ff-slider-value">{{options.standoffNoncombat}}</output></span>
+        </label>
         <label class="ff-field"><span class="ff-field-label">{{localize "FASTFIGHTING.Planner.Surprise"}}</span>
           <select name="options.surprise">{{#each surpriseChoices}}<option value="{{value}}" {{#if selected}}selected{{/if}} {{#if disabled}}disabled{{/if}}>{{label}}</option>{{/each}}</select>
         </label>

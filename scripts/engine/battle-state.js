@@ -158,6 +158,8 @@ export function prepareBattle(spec, rules) {
     bossInfluence: 2,
     talking: true,
     opening: "auto",
+    // (The GM's lean toward opening with a standoff, -50 to 50: behavior/standoff.js noncombatLean.)
+    standoffNoncombat: 0,
     aftermath: "tell",
     ...spec.options
   };

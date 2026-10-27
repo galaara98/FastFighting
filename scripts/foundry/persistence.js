@@ -37,6 +37,7 @@ export function defaultSetup() {
       talking: setting("talking"),
       ignoreLanguages: setting("ignoreLanguages"),
       opening: setting("opening"),
+      standoffNoncombat: setting("standoffNoncombat"),
       bystanders: setting("bystanders"),
       surprise: setting("surpriseDefault"),
       includeHidden: setting("includeHidden"),

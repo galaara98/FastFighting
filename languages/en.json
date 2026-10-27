@@ -166,6 +166,10 @@
         "Name": "How encounters open",
         "Hint": "Whether a fight opens as a standoff. Talk if they'd rather: when every side would rather talk."
       },
+      "standoffNoncombat": {
+        "Name": "Non-combat at the start",
+        "Hint": "Leans encounters toward opening as a standoff (talk, Recall Knowledge, sizing up) or straight into a fight. At +50 every encounter opens as one; at −50 none does, though talking mid-fight still happens. New encounters start from this."
+      },
       "concedeLuck": {
         "Name": "PC luck: handing over an item",
         "Hint": "A PC talked into giving up an item loses it only on a hidden d100 at or under this."
@@ -588,6 +592,7 @@
       "Cancel": "Stop",
       "Aftermath": "After the fight",
       "Opening": "Opening",
+      "StandoffNoncombat": "Non-combat at the start",
       "AroundWalls": "around walls",
       "ThroughWall": "no way round: through a wall",
       "NoScene": "No scene on the canvas. View the encounter's scene, then run the battle.",

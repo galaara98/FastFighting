@@ -85,7 +85,16 @@ export function followsTalk(run, u) {
 const party = u => present(u) && u.side !== NEUTRAL_PARTY && !u.spec.hazard; // (a hazard has no say)
 
 /**
- * Does this fight open as a standoff?
+ * The GM's lean toward a standoff at the start (options.standoffNoncombat, -50 to 50: the setting and the planner's
+ * slider, "Non-combat at the start"), as a share: -0.5 to 0.5.
+ */
+export const noncombatLean = run => clamp(Number(run.prep.options.standoffNoncombat) || 0, -50, 50) / 100;
+
+/**
+ * Does this fight open as a standoff? As its sides would have it (each side's voice, or three in four of those there),
+ * then the GM's lean (noncombatLean): leaning toward it, a fight that wouldn't opens as one twice the lean's share of the
+ * time (all the way, always); leaning away, one that would opens as a fight as often (all the way, never a standoff:
+ * talk in the fight itself is the Talking rule's).
  * @param {object} run
  * @returns {boolean}
  */
@@ -96,9 +105,21 @@ export function opensWithTalk(run) {
   if ( o.opening === OPENING.TALK ) return true;
   // (An ambush is not a conversation.)
   if ( run.surprise?.by?.length ) return false;
+  const lean = noncombatLean(run);
+  if ( lean <= -0.5 ) return false;
+  const would = sidesWouldTalk(run);
+  if ( would === null ) return false;
+  if ( lean >= 0.5 ) return true;
+  // (No lean, no dice: the fight's other rolls stay as they were.)
+  if ( !lean ) return would;
+  return would ? !run.rng.chance(-2 * Math.min(0, lean)) : run.rng.chance(2 * Math.max(0, lean));
+}
+
+/** Would the sides there rather talk first (null: there aren't two sides to talk)? */
+function sidesWouldTalk(run) {
   const here = run.units.filter(party);
   const sides = [...new Set(here.map(u => u.side))];
-  if ( sides.length < 2 ) return false;
+  if ( sides.length < 2 ) return null;
   // Each side's voice: its leader if it has one here, otherwise the majority of its members.
   const voices = sides.map(side => {
     const members = here.filter(u => u.side === side);
@@ -148,6 +169,8 @@ export function impatience(run, u, since = 1) {
   if ( cmd && cmd.unit !== u && prefersTalk(cmd.unit) && canTalk(u) ) p *= cmd.boss ? 0.2 : 0.4;
   const master = run.byId.get(u.spec.flags?.masterId);
   if ( master && isStanding(master) && prefersTalk(master) ) p *= 0.3; // a companion waits on its master
+  // (The GM's lean toward a standoff at the start: leaning toward it, tempers fray more slowly; away, faster.)
+  p *= 1 - noncombatLean(run);
   return clamp(p, 0, MAX_CHANCE);
 }
 

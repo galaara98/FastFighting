@@ -48,6 +48,9 @@ const SETTINGS = {
   neutralReach: { group: "planner", type: Number, default: NEUTRAL_REACH, range: { min: 1, max: 20, step: 1 } },
   surpriseDefault: { group: "planner", type: String, default: "system", choices: choices(["system", "none", "friendlySurprised", "friendlySurprise"], "Surprise") },
   opening: { group: "planner", type: String, default: OPENING.AUTO, choices: choices(Object.values(OPENING), "Opening") },
+  // How much more (or less) often an encounter opens as a standoff, and how slowly its tempers fray (-50 to 50: at -50
+  // never, at 50 always; behavior/standoff.js noncombatLean). A new encounter's plan starts from it.
+  standoffNoncombat: { group: "planner", type: Number, default: 0, range: { min: -50, max: 50, step: 5 } },
   positioning: { group: "planner", type: Boolean, default: true },
   downedModel: { group: "planner", type: String, default: DOWNED_MODELS.SIMULATE, choices: choices(Object.values(DOWNED_MODELS), "Downed") },
 
