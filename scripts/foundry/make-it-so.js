@@ -515,7 +515,13 @@ export async function revertRecord(r, { scene = null, settings = null } = {}) {
   const user = typeof r.userId === "string" ? game.users.get(r.userId) : null;
   const flags = userFlags(r.userUpdate, game.system.id);
   if ( user && !user.isGM && Object.keys(flags).length ) await step("restoring a player's", () => user.update(flags));
-  if ( r.combatant ) await step("the combat tracker", async () => (await ofHere(r.combatant.uuid, "Combatant"))?.update({ defeated: !!r.combatant.defeated }, { turnEvents: false }));
+  // (Its place on it too, where a Delay moved it: live-battle.js delayOnTracker.)
+  if ( r.combatant ) {
+    await step("the combat tracker", async () => {
+      const was = { ...("defeated" in r.combatant ? { defeated: !!r.combatant.defeated } : {}), ...("initiative" in r.combatant ? { initiative: r.combatant.initiative } : {}) };
+      await (await ofHere(r.combatant.uuid, "Combatant"))?.update(was, { turnEvents: false });
+    });
+  }
 }
 
 /**

@@ -556,15 +556,15 @@ export function reactNow(run, reactorId, targetId, strike, trigger = null) {
 
 /**
  * A player's character ended a move (its token, from `from` to where the engine has it now, in feet): those it came
- * beside answer it now (simulator.js answerMove: a foe whose reach it came into strikes, a friend it stopped beside
- * steps; a foe's aura it came into goes off, behavior/auras.js). Played as a turn FastFighting plays is: one who must
+ * beside answer it now (simulator.js answerMove: a foe whose reach it came into strikes, a foe that readied a Strike
+ * for it strikes, a friend it stopped beside steps; a foe's aura it came into goes off, behavior/auras.js). Played as a turn FastFighting plays is: one who must
  * be asked first, or a roll the system makes (a strike, its damage applied, a save), stops it (NeedsDecision; `answers`
  * and `before` as liveTurn's): restore the snapshot taken before it, ask or roll, and play it again with the answer, the
  * same `nonce`. Returns the events it made.
  */
 export function movedBeside(run, id, from, { answers = null, nonce = 0, before = null } = {}) {
   const u = run.byId.get(id);
-  if ( !u?.pos || !from || (!run.movers && !run.reachers && !run.foeAuras) ) return [];
+  if ( !u?.pos || !from || (!run.movers && !run.reachers && !run.foeAuras && !run.readying) ) return [];
   freshCaches(run);
   nextDice(run, 0, nonce);
   run.live.answers = new Map(answers ?? []);

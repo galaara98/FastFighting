@@ -3605,6 +3605,31 @@
     "{actor} stays clear, watching closely.",
     "{actor} takes no side, but misses nothing."
   ],
+  "event.delayStandoff": [
+    "{actor} holds back, waiting to see who moves first.",
+    "{actor} hangs back, ready to act the moment the talking stops.",
+    "{actor} lets the others go first and keeps a hand near their weapon."
+  ],
+  "event.delayReach": [
+    "{actor} waits for {target} to come to them.",
+    "{actor} holds their ground and lets {target} close the distance.",
+    "{actor} bides their time as {target} draws near."
+  ],
+  "event.delayAid": [
+    "{actor} waits for {target}'s help before making a move.",
+    "{actor} holds off, counting on {target} to back them up first.",
+    "{actor} lets {target} go first."
+  ],
+  "event.ready": [
+    "{actor} readies {weapon} and waits for someone to come close.",
+    "{actor} braces with {weapon}, watching for anyone who steps in.",
+    "{actor} holds {weapon} ready for the first foe to come near."
+  ],
+  "event.readied": [
+    "{target} steps in, and {actor} is ready for them.",
+    "{actor} strikes the moment {target} comes within reach.",
+    "{actor} has been waiting for {target}, and lets fly."
+  ],
   "event.aside": [
     "{actor} wants no part of this, and keeps well back.",
     "{actor} stays put, letting the fight go on without them.",

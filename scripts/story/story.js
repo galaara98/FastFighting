@@ -509,6 +509,10 @@ function narrate(e, roll, rel, fill) {
     case "join": return roll(e.why === "forced" ? "event.joinForced" : "event.join", f);
     case "watch": return roll(e.neutral ? "event.watchNeutral" : "event.watch", f);
     case "aside": return roll("event.aside", f);
+    // (Waiting for the moment, where the system has a way to: engine/behavior/waiting.js. What it waits for, told.)
+    case "delay": return roll({ standoff: "event.delayStandoff", reach: "event.delayReach", aid: "event.delayAid" }[e.why] ?? "event.delayStandoff", f);
+    case "ready": return roll("event.ready", f);
+    case "readied": return roll("event.readied", f);
     case "neutral": {
       const g = { ...f, side: e.sideLabel ?? "", victim: e.victim ?? "" };
       switch ( e.what ) {
@@ -1006,7 +1010,7 @@ function tally(events, mentions) {
       if ( e.stable ) s.stabilized += 1;
     } else if ( e.type === "move" ) s.feet += e.feet ?? 0;
     else if ( e.type === "reclaim" ) s.notes.push(logTerm("NoteGotBack", { what: concessionText(e.concession), by: e.by }));
-    else if ( ["join", "leave", "sway", "flee", "callHelp", "callToArms", "lazy"].includes(e.type) ) s.notes.push(logLine(e));
+    else if ( ["join", "leave", "sway", "flee", "callHelp", "callToArms", "lazy", "delay", "ready"].includes(e.type) ) s.notes.push(logLine(e));
   }
   return by;
 }

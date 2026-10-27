@@ -413,6 +413,7 @@ function onTurnChange(combat, prior, current) {
     if ( battle.pc && battle.pc.combatantId !== combat.combatant?.id ) await closePlayerTurn();
     if ( battle.data.spotlight ) await spotlightMoved(combat, prior);
     else if ( combat.round > (battle.run.round ?? 0) ) await newRound(combat.round);
+    await delayOnTracker(prior);
     await turnBegins(combat.combatant);
   });
 }
@@ -435,6 +436,43 @@ function onUnstarted(combat, diff, options, userId) {
     ui.notifications.warn(by && !by.isGM ? fmt("FASTFIGHTING.Live.TrackerRefused", { name: by.name }) : loc("FASTFIGHTING.Live.TooFarBack"));
     changed();
   });
+}
+
+/**
+ * The initiative that puts a delayed creature right after `after`'s (the initiative of the one it waits for; `next`,
+ * the one after that, if any), or, with no `after`, last (`lowest`, the lowest on the tracker). Null if there's none
+ * to go by. Pure.
+ */
+export function delayedInitiative({ after = null, next = null, lowest = null } = {}) {
+  if ( Number.isFinite(after) ) return Number.isFinite(next) && next < after ? (after + next) / 2 : after - (Number.isFinite(next) ? 0.001 : 1);
+  return Number.isFinite(lowest) ? lowest - 1 : null;
+}
+
+/**
+ * The tracker moved on from a creature that delayed (engine/behavior/waiting.js: its turn a Delay, `battle.data.delaying`):
+ * it goes on the tracker right after whomever it waits for (the round's last, if no one), its turn coming up there;
+ * the one whose turn it is now stays so. Its place before, in its Delay's turn's records: a Rewind puts it back.
+ */
+async function delayOnTracker(prior) {
+  const d = battle.data.delaying;
+  if ( !d || d.combatantId !== prior?.combatantId ) return;
+  battle.data.delaying = null;
+  // (Its turn comes up again this round, under the same key: not one played already.)
+  if ( battle.data.played === d.key ) battle.data.played = null;
+  const combat = battle.combat;
+  const c = combat.combatants.get(d.combatantId);
+  if ( !c || !Number.isFinite(c.initiative) ) return;
+  const others = combat.turns.filter(t => t.id !== c.id);
+  const at = d.afterId ? others.findIndex(t => unitOf(t)?.id === d.afterId) : -1;
+  const initiative = delayedInitiative({
+    after: at >= 0 ? others[at].initiative : null, next: at >= 0 ? others[at + 1]?.initiative ?? null : null,
+    lowest: Math.min(...others.map(t => t.initiative).filter(Number.isFinite))
+  });
+  if ( initiative === null ) return;
+  battle.data.turns.find(t => t.key === d.key)?.records.push({ combatant: { uuid: c.uuid, initiative: c.initiative } });
+  // (Foundry keeps whoever's turn it is when a combatant's initiative changes.)
+  await c.update({ initiative }, { turnEvents: false });
+  await keep();
 }
 
 /**
@@ -715,6 +753,7 @@ async function followBack(prior) {
   redraw(undo.flatMap(t => t.applied ?? []));
   battle.data.played = null;
   battle.data.offMap = [];
+  battle.data.delaying = null; // (a Delay taken back with its turn)
   battle.data.salt = (battle.data.salt ?? 0) + 1;
   battle.data.told = lastTurn(battle.run.log);
   battle.pc = null;
@@ -1030,6 +1069,8 @@ async function playTurn(u, combatant, key) {
   syncFromSheets(battle.run, await readStates());
   syncPools(adapter);
   refreshApproach();
+  // (Who comes after it this round, as the tracker has it now: for a Delay, engine/behavior/waiting.js.)
+  if ( battle.rules.delay ) liveOrder(battle.run, battle.combat.turns.map(c => unitOf(c)?.id).filter(Boolean));
   const before = captureAll(battle.run);
   const snapshot = snapshotRun(battle.run, { log: false });
   // (Every pass of the turn, the first too, from the fight as the snapshot keeps it: the per-round caches the fight
@@ -1110,6 +1151,9 @@ async function playTurn(u, combatant, key) {
     turn.messages.push(...await tellNew());
   });
   battle.data.played = key;
+  // (A Delay: it moves on the tracker as the tracker moves on from it, delayOnTracker.)
+  const delay = result.events.find(e => e.type === "delay" && e.actorId === u.id);
+  battle.data.delaying = delay ? { combatantId: combatant.id, afterId: delay.afterId ?? null, key } : null;
   await settleTurn(turn, result.ended);
 }
 
@@ -3040,7 +3084,7 @@ async function playerMoved(doc) {
  * damage applied, a save); done now, on the sheets and the map, told with the player's turn. True if anyone answered.
  */
 async function answerArrival(pc, from) {
-  if ( (!battle.run.movers && !battle.run.reachers && !battle.run.foeAuras) || !from ) return false;
+  if ( (!battle.run.movers && !battle.run.reachers && !battle.run.foeAuras && !battle.run.readying) || !from ) return false;
   const before = captureAll(battle.run);
   const snapshot = snapshotRun(battle.run, { log: false });
   // (Every pass from the snapshot, the first too: playTurn's.)

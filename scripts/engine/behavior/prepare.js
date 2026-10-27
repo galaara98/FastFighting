@@ -737,8 +737,8 @@ function standStep(run, u, turn, ctx) {
 
 /**
  * The best thing to do with what's spare of its turn, for next turn's sake: its gear for its best option, a potion
- * got out, standing up, a raised shield (`kit.shield`: what raising it now is worth, or null), a better spot to end the
- * turn on. {step, cost, worth, ...} or null where nothing is worth PREP.least. `moves: false`: no moving.
+ * got out, standing up, a raised shield (`kit.shield`: what raising it now is worth, or null), a Strike readied
+ * (`kit.ready`, the same: behavior/waiting.js), a better spot to end the turn on. {step, cost, worth, ...} or null where nothing is worth PREP.least. `moves: false`: no moving.
  */
 export function spareBest(run, u, turn, kit = {}, { moves = true } = {}) {
   if ( !isStanding(u) || u.spec.hazard ) return null;
@@ -764,6 +764,9 @@ export function spareBest(run, u, turn, kit = {}, { moves = true } = {}) {
     if ( stand ) options.push(stand);
     const shield = kit.shield?.(turn);
     if ( shield ) options.push(shield);
+    // (A Strike readied, where the system has Ready: behavior/waiting.js readyStep.)
+    const ready = kit.ready?.(turn);
+    if ( ready ) options.push(ready);
   }
   if ( walks ) {
     const spot = bestSpot(run, u, turn, { ctx: look() });
@@ -803,6 +806,10 @@ export function takeSpare(run, u, turn, pick, kit) {
   const say = kit.say;
   if ( pick.step === "shield" ) {
     kit.raise(turn);
+    return isStanding(u);
+  }
+  if ( pick.step === "ready" ) {
+    kit.readies(turn, pick);
     return isStanding(u);
   }
   if ( pick.move ) {

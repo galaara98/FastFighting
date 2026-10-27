@@ -66,6 +66,7 @@ import { meets, noteBlow, freshTurn, setupUsed } from "./behavior/requires.js";
 import { withManeuver } from "./maneuvers.js";
 import { readyNow, gearStep, takeGearStep, spareBest, spareTurn, healAhead, tellStep, bestSpot, PREP } from "./behavior/prepare.js";
 import { mayPatrol, patrolTurn, fidget } from "./behavior/patrol.js";
+import { delayFor, moveInOrder, readyStep, takeReady, readiedAgainst } from "./behavior/waiting.js";
 import { used } from "./gear.js";
 
 const MAX_STEPS_PER_TURN = 8;
@@ -2427,6 +2428,8 @@ export function noteHeal(run, u, target, healed, revived, { action = "", potion 
 
 /** The reaction every creature with an opportunity strike has (PF2e Reactive Strike, 5e Opportunity Attack), by its id. */
 export const OPPORTUNITY = "opportunity";
+/** A Strike readied (behavior/waiting.js), as a reaction by its id. */
+export const READIED = "readied";
 /** The moment an action that always lays its user open is taken (action.provokes, API 29): every foe in reach strikes. */
 const PROVOKED = "provoked";
 
@@ -2848,6 +2851,7 @@ function moveLog(run, u, move, toward, purpose = "approach", extra = {}) {
  */
 export function answerMove(run, u, move, toward = null) {
   if ( run.reachers || hasMoveStrikers(run) ) throughReach(run, u, move);
+  if ( run.readying && isStanding(u) ) readiedStrikes(run, u, move);
   if ( run.foeAuras && isStanding(u) ) auraMoved(run, u, AURA_PLAY); // (into an aura, or its own onto others: behavior/auras.js)
   if ( !run.movers || !(move?.feet > 0) || !isStanding(u) ) return;
   for ( const o of [...run.units] ) {
@@ -2895,6 +2899,22 @@ function throughReach(run, u, move) {
     spendOwnStrike(e, reaction);
     log(run, e, { type: "opportunity", target: u.spec.name, targetId: u.id, action: strike.name, trigger: "foeMovesInReach" });
     executeOffense(run, e, strike, u, 0);
+  }
+}
+
+/**
+ * u's move came into the reach of a foe that readied a Strike for it (behavior/waiting.js): each such foe strikes, its
+ * reaction spent, and its readied Strike with it. In a live battle the GM (or the engine) says, as for any reaction.
+ */
+function readiedStrikes(run, u, move) {
+  for ( const { o, strike } of readiedAgainst(run, u, move) ) {
+    if ( !isStanding(u) || battleOver(run) ) break;
+    if ( run.live && !run.live.decide(run, o, { reaction: { id: READIED, label: strike.name }, trigger: "foeEntersReach", by: u, would: true, strike }) ) continue;
+    o.reactionsLeft -= 1;
+    const attacks = o.readied.attacks ?? 0; // (the penalty it had when it readied)
+    o.readied = null;
+    log(run, o, { type: "readied", target: u.spec.name, targetId: u.id, action: strike.name });
+    executeOffense(run, o, strike, u, attacks);
   }
 }
 
@@ -3829,7 +3849,13 @@ function playFromHere(run, u) {
     if ( isLeaving(u) ) leavingTurn(run, u, turn, { whole: false });
     return;
   }
-  if ( stance?.kind === STANCE.WAIT && !u.harmedBy.size && !enemiesOf(run, u).some(e => isStanding(e) && u.adjacent?.has(e.id)) ) return;
+  if ( stance?.kind === STANCE.WAIT && !u.harmedBy.size && !enemiesOf(run, u).some(e => isStanding(e) && u.adjacent?.has(e.id)) ) {
+    // (The turn it doesn't use, a Strike readied for a foe that comes at it, where the system has Ready and it's worth
+    // it: behavior/waiting.js.)
+    const ready = readyStep(run, u, turn);
+    if ( ready && ready.worth >= PREP.least ) takeReady(run, u, turn, ready, logger(run));
+    return;
+  }
   // Its team's head calls for help as the fight turns against it (behavior/reinforce.js): an action; it comes next round.
   const help = reinforcementsWanted(run, u);
   if ( help && turn.canAfford(rules.basicAction ?? 1) ) {
@@ -3915,7 +3941,9 @@ function playFromHere(run, u) {
       log(run, x, { type: "stand", prepared: true });
       return true;
     },
-    walk: (x, t, spot, toward, step) => walkTo(run, x, t, spot, toward ?? nearestFoeOf(run, x) ?? x, step)
+    walk: (x, t, spot, toward, step) => walkTo(run, x, t, spot, toward ?? nearestFoeOf(run, x) ?? x, step),
+    ready: t => readyStep(run, u, t, { attacks: u.turnAttacks ?? 0 }),
+    readies: (t, pick) => takeReady(run, u, t, pick, logger(run))
   };
   // What patrolling and fidgeting take of the simulator's own (behavior/patrol.js).
   const patrolKit = {
@@ -4859,8 +4887,10 @@ export function runOne(prep, seed, { log: withLog = false, capture = false } = {
     beginRound(run, round);
     // (Who acts, and when: the initiative order, or the system's own way of passing the turn: Daggerheart's spotlight.)
     for ( const u of prep.rules.roundTurns ? prep.rules.roundTurns(run, order) : order ) {
-      if ( playTurn(run, u) ) { ended = true; break; }
+      if ( playTurn(run, u) || (run.delaying && rejoin(run, u)) ) { ended = true; break; }
     }
+    // (Still waiting as the round ends: each comes back now, last.)
+    if ( !ended && run.delaying && rejoin(run, null) ) ended = true;
   }
   return endRun(run, ended, { capture });
 }
@@ -4940,12 +4970,59 @@ export function beginRound(run, round) {
 }
 
 /**
- * One creature's turn, as the fight's own: a change of command first, if there's been one, then the turn, then what
- * comes after it (a last stand ending, a legendary creature's moment). True if the fight is over.
+ * Those who delayed until `after`'s turn come back now, each with its turn (and those waiting on theirs after it); with
+ * no `after`, the round's end: everyone still waiting, last. One waiting on a creature that delayed too waits on
+ * whomever that one waits for. True if the fight is over.
+ */
+function rejoin(run, after) {
+  for ( const w of run.order.filter(o => o.delayed && (!after || o.delayed.afterId === after.id)) ) {
+    if ( !w.delayed ) continue;
+    if ( after?.delayed ) {
+      w.delayed.afterId = after.delayed.afterId;
+      continue;
+    }
+    if ( !after ) w.delayed.afterId = null;
+    if ( playTurn(run, w) || rejoin(run, w) ) return true;
+  }
+  return false;
+}
+
+/**
+ * As u's turn begins, where the system lets it Delay (behavior/waiting.js): back from it, its place in the order after
+ * whomever it waited for (the round's last, if no one); else it may Delay now, told, until another's turn later in the
+ * round (true: its turn waits).
+ */
+function delays(run, u) {
+  if ( u.delayed ) {
+    moveInOrder(run.order, u, run.byId.get(u.delayed.afterId) ?? null);
+    u.delayed = null;
+    u.rejoined = run.round;
+    run.delaying = run.units.some(o => o.delayed);
+    return false;
+  }
+  if ( !run.prep.rules.delay ) return false;
+  const able = inFight(u) && ableToAct(run, u) && !isLeaving(u) && !isBound(u) && !run.prep.rules.minionCommand?.(u);
+  const plan = delayFor(run, u, { able });
+  if ( !plan ) return false;
+  u.delayed = { round: run.round, afterId: plan.afterId, why: plan.why };
+  run.delaying = true;
+  if ( run.prep.rules.delay.reactions === false ) u.reactionsLeft = 0; // (none while it waits: back with its turn)
+  const after = run.byId.get(plan.afterId);
+  const on = plan.forId ? run.byId.get(plan.forId) : null;
+  log(run, u, { type: "delay", why: plan.why, after: after?.spec.name ?? "", afterId: plan.afterId, target: on?.spec.name ?? "", targetId: on?.id ?? null });
+  return true;
+}
+
+/**
+ * One creature's turn, as the fight's own: a change of command first, if there's been one, then the turn (unless it
+ * delays: waiting.js), then what comes after it (a last stand ending, a legendary creature's moment). True if the
+ * fight is over.
  */
 export function playTurn(run, u) {
   noteCommand(run);
   startTurn(run, u);
+  u.readied = null; // (its turn begins: what it readied and didn't use is gone)
+  if ( delays(run, u) ) return false;
   takeTurn(run, u);
   noteIdle(run, u);
   noteAside(run, u);

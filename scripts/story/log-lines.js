@@ -157,6 +157,10 @@ function baseLine(e) {
     case "afflictionStage": return t("AfflictionStage", { actor: e.actor, name: e.name, stage: e.stage, damage: damage(e.amount, e.damageType) });
     case "afflictionEnd": return Number.isFinite(e.natural) ? t("AfflictionCured", { actor: e.actor, name: e.name, roll: dice(e.natural, e.mod, e.total, e.dc, t("DC")), degree: degree(e.degree) }) : t("AfflictionEnd", { actor: e.actor, name: e.name });
     case "opportunity": return t("Opportunity", a);
+    // (Waiting for the moment, where the system has a way to: engine/behavior/waiting.js.)
+    case "delay": return e.after ? t("Delay", { actor: e.actor, after: e.after }) : t("DelayLast", a);
+    case "ready": return t("Ready", { actor: e.actor, action: e.action ?? "" });
+    case "readied": return t("Readied", { actor: e.actor, target: e.target ?? "", action: e.action ?? "" });
     case "disengage":
       // (A way out that takes a check: missed, it goes anyway, and the blows come.)
       if ( e.made === false ) return t("DisengageMissed", { actor: e.actor, label: e.label || t("Disengages"), total: e.total, dc: e.dc });

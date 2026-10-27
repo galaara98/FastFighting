@@ -28,9 +28,9 @@ import { cutOff } from "./troubles.js";
 import { answersTo } from "../../story/master.js";
 import { addCosts } from "../turn.js";
 
-/** Reactions u has each round: none in a system without opportunity attacks. */
+/** Reactions u has each round: none in a system without opportunity attacks or Ready (behavior/waiting.js). */
 export function reactionsPerRound(rules, u) {
-  if ( !rules.opportunity && !u.spec.reactions?.length ) return 0;
+  if ( !rules.opportunity && !rules.ready && !u.spec.reactions?.length ) return 0;
   return rules.reactions ? rules.reactions(u) : 1;
 }
 

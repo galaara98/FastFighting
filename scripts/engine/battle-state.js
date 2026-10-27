@@ -498,7 +498,7 @@ export function createUnit(prep, p) {
   initGear(u, s.actions);
   prep.rules.initUnit?.(u); // the system's own per-fight state (5e: death saves already on the sheet)
   // Ready to react from the start (5e opportunity attacks, PF2e Reactive Strike); none if the system has none.
-  u.reactionsLeft = prep.rules.opportunity || s.reactions?.length ? (prep.rules.reactions ? prep.rules.reactions(u) : 1) : 0;
+  u.reactionsLeft = prep.rules.opportunity || prep.rules.ready || s.reactions?.length ? (prep.rules.reactions ? prep.rules.reactions(u) : 1) : 0;
   // (A legendary creature starts the fight with its legendary actions, and has them back at the start of each turn.)
   if ( s.legendary?.pool ) u.legendaryLeft = s.legendary.pool;
   return u;

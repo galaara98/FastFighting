@@ -12,7 +12,7 @@
  * Whether a helper works with a core is the helper's to say: it keeps the majors it knows it works with (its main.js),
  * and the core never refuses one, nor keeps a list of which fit it (helpers.js knows which exist, to recommend them).
  */
-export const CORE_API = Object.freeze({ major: 32, bug: 0 });
+export const CORE_API = Object.freeze({ major: 33, bug: 0 });
 export const CORE_API_VERSION = `${CORE_API.major}.${CORE_API.bug}`;
 
 export { SystemAdapter } from "./adapters/adapter-base.js";
