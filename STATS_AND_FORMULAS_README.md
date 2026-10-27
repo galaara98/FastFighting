@@ -1037,6 +1037,9 @@ argument").
   do the talking 0 (Let this character decide: none). a = max(a + 0.4 × w, 0.85 × w); staying true, a + 0.1 × w.
 - Clamped 0–1. Heading its group (boss or leader): +0.15, at most 1.
 
+**Earshot**: on a map, words reach only a creature within the system's talking range (core: 30 ft, PF2e's
+Demoralize) with no wall that stops sound between them (a shut door among them). Off the map, anyone.
+
 **Low battle-worth**: its best typical offense is under half the field's median.
 
 **Each turn** (talk.js talkActionsThisTurn), in order:

@@ -37,6 +37,7 @@ import { isNeutral, standsAside, appeal, offend, turnOn, standAside, joinSide, c
 import { shareLanguage, talksFirstAnswer } from "./standoff.js";
 import { levelOf, allDesires } from "./desire.js";
 import { perceives } from "./senses.js";
+import { wallsKnown, wallsBetween } from "./space.js";
 import { standsGround, callRetreat } from "./morale.js";
 import { talkDamping } from "./specialty.js";
 import { strain } from "./strain.js";
@@ -390,9 +391,24 @@ export function choosePitch(run, talker, opts = {}) {
   try { return pickPitch(run, talker, opts); } finally { pitchScope = outer; }
 }
 
+/** How far words carry in a fight, in feet, where the system doesn't say (rules.talkFeet, API 32): PF2e's Demoralize. */
+export const TALK_FEET = 30;
+
+/**
+ * Can t hear what talker says to it? On a map: within the system's talking range (rules.talkFeet, else TALK_FEET) and
+ * no wall that stops sound between them (a shut door among them). Off the map, anyone.
+ */
+export function inEarshot(run, talker, t) {
+  if ( !run.prep.options.positioning || !talker.pos || !t.pos ) return true;
+  const feet = Number(run.prep.rules.talkFeet) > 0 ? Number(run.prep.rules.talkFeet) : TALK_FEET;
+  if ( (edgeDistance(talker, t) ?? 0) > feet ) return false;
+  return !wallsKnown(run) || wallsBetween(run, talker.pos, t.pos) === 0;
+}
+
 function pickPitch(run, talker, { only = null } = {}) {
   let best = null;
-  const targets = pitchTargets(run, talker);
+  // (Only to those in earshot: words don't carry across the map, nor through walls.)
+  const targets = pitchTargets(run, talker).filter(t => inEarshot(run, talker, t));
   const favored = pursued(run, talker, targets.filter(t => isStanding(t)));
   for ( const t of targets ) {
     if ( !swayable(t) || !shareLanguage(talker, t, run) ) continue;

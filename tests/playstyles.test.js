@@ -141,7 +141,7 @@ describe("the Lore-Collector sizes up a foe first", () => {
   });
 
   test("one action a turn, about to talk: sizes it up, and talks next turn", () => {
-    const r = replay(battle([scholar({ position: at(0) }), foe({ position: at(60), speeds: { walk: 0 } })], { positioning: true, maxRounds: 3 }), genericRules, 21);
+    const r = replay(battle([scholar({ position: at(0) }), foe({ position: at(30), speeds: { walk: 0 } })], { positioning: true, maxRounds: 3 }), genericRules, 21);
     const acts = mine(r);
     expect(acts.find(e => e.round === 1)?.type).toBe("study");
     expect(acts.find(e => e.round === 2)?.type).toBe("talk");

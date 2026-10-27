@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest";
 import { runBatchSync, replay, prepareBattle, beginRun } from "../scripts/engine/simulator.js";
 import { createRun } from "../scripts/engine/battle-state.js";
-import { stepsToConvince, talkDC, talkAffinity, shareLanguage, foesKnown, movedThisTurn, resolveTalk, bestPitch, choosePitch } from "../scripts/engine/behavior/talk.js";
+import { stepsToConvince, talkDC, talkAffinity, shareLanguage, foesKnown, movedThisTurn, resolveTalk, bestPitch, choosePitch, inEarshot, TALK_FEET } from "../scripts/engine/behavior/talk.js";
 import { pf2eRules } from "./fixtures/three-action-rules.js";
 import { parseFormula } from "../scripts/engine/dice.js";
 import { creature, strike, battle, social as talkData } from "./helpers.js";
@@ -193,5 +193,32 @@ describe("talk: what's fair in a crowded fight", () => {
     const before = b.sway.get(t.side);
     resolveTalk(run, t, pitch, { degree: 3, natural: 20, total: 35 }, say);
     expect(b.sway.get(t.side) === before + 2 || b.swayOutcome).toBeTruthy();
+  });
+});
+
+describe("earshot", () => {
+  const at = (x, y = 0) => ({ x, y, size: 5 });
+  const wall = (ax, ay, bx, by) => ({ a: [ax, ay], b: [bx, by], s: 20, d: 0, door: null, open: false });
+  const set = (foeAt, { walls = null, rules = pf2eRules } = {}) => {
+    const spec = battle([
+      creature({ id: "talker", side: "hostile", position: at(0), social: talkData({ diplomacy: 20, intimidation: 20, deception: 20 }) }),
+      creature({ id: "foe", position: foeAt, social: talkData({ diplomacy: 0 }) })
+    ], { positioning: true });
+    if ( walls ) spec.walls = walls;
+    const run = createRun(prepareBattle(spec, rules));
+    return { run, talker: run.byId.get("talker"), foe: run.byId.get("foe") };
+  };
+
+  test("words reach only so far (rules.talkFeet, else 30 feet), and not through a wall", () => {
+    let s = set(at(25));
+    expect(inEarshot(s.run, s.talker, s.foe)).toBe(true);
+    s = set(at(90));
+    expect(inEarshot(s.run, s.talker, s.foe)).toBe(false);
+    expect(choosePitch(s.run, s.talker)).toBe(null);
+    s = set(at(90), { rules: { ...pf2eRules, talkFeet: 120 } });
+    expect(inEarshot(s.run, s.talker, s.foe)).toBe(true);
+    s = set(at(25), { walls: [wall(12.5, -20, 12.5, 20)] });
+    expect(inEarshot(s.run, s.talker, s.foe)).toBe(false);
+    expect(TALK_FEET).toBe(30);
   });
 });
