@@ -162,7 +162,7 @@ function noiseCue(run, u) {
   }
   if ( !best ) return null;
   const perception = u.spec.perception ?? u.spec.initiative?.mod ?? 0;
-  const check = checkRoll(run, u, perception, null, { purpose: "notice", skill: "perception" });
+  const check = checkRoll(run, u, perception, null, { purpose: "notice", skill: "perception", sense: "sound" });
   const roll = rollCheck(run.prep.rules, run.rng, check.mod, best.dc, { advantage: check.advantage, kind: "check", roller: u, quiet: true });
   return roll.degree >= 2 ? { kind: "noise", unit: best.unit, dc: best.dc } : null;
 }

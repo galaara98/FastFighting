@@ -510,7 +510,7 @@ function narrate(e, roll, rel, fill) {
     case "watch": return roll(e.neutral ? "event.watchNeutral" : "event.watch", f);
     case "aside": return roll("event.aside", f);
     // (Waiting for the moment, where the system has a way to: engine/behavior/waiting.js. What it waits for, told.)
-    case "delay": return roll({ standoff: "event.delayStandoff", reach: "event.delayReach", aid: "event.delayAid" }[e.why] ?? "event.delayStandoff", f);
+    case "delay": return roll({ standoff: "event.delayStandoff", reach: "event.delayReach", aid: "event.delayAid", counter: "event.delayCounter" }[e.why] ?? "event.delayStandoff", f);
     case "ready": return roll("event.ready", f);
     case "readied": return roll("event.readied", f);
     case "neutral": {
@@ -656,7 +656,14 @@ function narrate(e, roll, rel, fill) {
     case "breakStandoff": return roll({ insulted: "event.breakInsulted", beast: "event.breakBeast", annoyed: "event.breakAnnoyed", blood: "event.breakBlood" }[e.cause] ?? "event.breakStandoff", f);
     case "collapse": return roll("event.collapse", f); // (only an argument: it would have come to blows)
     // A spell answered with a spell: undone, or not.
-    case "duel": return roll(e.outcome === "wins" || e.outcome === "both" ? "event.duelWin" : "event.duelLose", { ...f, target: e.target ?? "", spell: e.action ?? "" });
+    // (Reckoned by the system, rules.duelResult: the spell turned back, or both lost in a collision of magic.)
+    case "duel": {
+      const g = { ...f, target: e.target ?? "", spell: e.action ?? "" };
+      if ( e.disturbance ) return roll("event.duelDisturbance", g);
+      if ( e.spell === "reflected" ) return roll("event.duelReflect", g);
+      if ( e.spell ) return roll(e.spell === "undone" ? "event.duelWin" : "event.duelLose", g);
+      return roll(e.outcome === "wins" || e.outcome === "both" ? "event.duelWin" : "event.duelLose", g);
+    }
     // A shot into a melee that missed, straying toward the shooter's own friend.
     case "stray": return roll(e.hit ? "event.strayHit" : "event.strayMiss", { ...f, target: e.target ?? "" });
     case "peacekeep": return roll("event.peacekeep", f);

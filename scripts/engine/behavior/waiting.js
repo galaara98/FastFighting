@@ -4,7 +4,10 @@
  *
  *   rules.delay   {reactions}: a creature may Delay as its turn begins (PF2e's Delay): it leaves the turn order and
  *                 comes back after another's turn later in the round, its turn then, and its place in the order from
- *                 then on. `reactions: false`: none while it waits (PF2e).
+ *                 then on. `reactions: false`: none while it waits (PF2e). API 34: `reasons`, which of the core's own
+ *                 below it waits for (all where it doesn't say; [] none), and `waitFor(run, u, later)`, the system's
+ *                 own reason, tried first: {why, afterId, forId} or null (DCC: a caster waiting to answer a foe's
+ *                 spell, why "counter").
  *   rules.ready   {cost, most}: a creature may Ready (PF2e's Ready: {actions: 2}, an action of 1 at most): it spends
  *                 `cost` of its turn to Strike, as a reaction, at the first foe that comes within its reach before its
  *                 next turn begins, with the attack penalty it had when it readied.
@@ -81,9 +84,14 @@ export function delayFor(run, u, { able = true } = {}) {
   if ( !isStanding(u) || u.spec.hazard || u.summoner || u.leaving || u.fetch || u.bound || u.boundBy ) return null;
   const later = laterThisRound(run, u);
   if ( !later.length ) return null;
+  // (The system's own reason to wait, API 34: DCC's caster waiting to answer a foe's spell.)
+  const own = rules.delay.waitFor?.(run, u, later) ?? null;
+  if ( own?.afterId ) return { why: own.why ?? "system", afterId: own.afterId, forId: own.forId ?? null };
+  const reasons = rules.delay.reasons ?? REASONS;
   const tier = liveTier(run, u);
   // A standoff it wouldn't talk in: after the last who might break it, if it's likely enough someone will.
   if ( run.standoff ) {
+    if ( !reasons.includes("standoff") ) return null;
     if ( isNeutral(u) || prefersTalk(u) || tier < TACTICAL.INSTINCTIVE ) return null;
     const breakers = later.filter(o => !isNeutral(o) && o.side !== u.side);
     const keeps = breakers.reduce((p, o) => p * (1 - impatience(run, o)), 1);
@@ -92,8 +100,11 @@ export function delayFor(run, u, { able = true } = {}) {
   }
   const thinks = tier >= TACTICAL.COMPETENT || (Number(behaviorOf(u).slacks) || 0) > 0;
   if ( !thinks ) return null;
-  return waitForReach(run, u, later) ?? waitForAid(run, u, later);
+  return (reasons.includes("reach") ? waitForReach(run, u, later) : null) ?? (reasons.includes("aid") ? waitForAid(run, u, later) : null);
 }
+
+/** The core's own reasons to Delay (rules.delay.reasons narrows them: API 34). */
+const REASONS = Object.freeze(["standoff", "reach", "aid"]);
 
 /** No foe it can strike this turn, nor shoot: the first after it likely to come to it, if there's one. */
 function waitForReach(run, u, later) {

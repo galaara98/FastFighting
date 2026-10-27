@@ -3542,6 +3542,16 @@
     "{target}'s {spell} breaks through {actor}'s counter.",
     "{actor}'s answer comes too weak: {target}'s {spell} goes on."
   ],
+  "event.duelReflect": [
+    "{actor}'s answer catches {target}'s {spell} and hurls it back at them.",
+    "{target}'s {spell} meets {actor}'s magic and turns on its maker.",
+    "{actor} bends {target}'s {spell} back the way it came."
+  ],
+  "event.duelDisturbance": [
+    "{actor}'s spell and {target}'s {spell} collide, and the air itself tears.",
+    "{target}'s {spell} meets {actor}'s answer head on, and both vanish in a howl of raw magic.",
+    "Two spells strike each other, {actor}'s and {target}'s, and something beyond the world shudders."
+  ],
   "event.backedOff": [
     "One side backs away, and it's over without a blow.",
     "Someone decides it isn't worth it and leaves.",
@@ -3614,6 +3624,11 @@
     "{actor} waits for {target} to come to them.",
     "{actor} holds their ground and lets {target} close the distance.",
     "{actor} bides their time as {target} draws near."
+  ],
+  "event.delayCounter": [
+    "{actor} holds back, watching {target} for a spell to answer.",
+    "{actor} waits, magic ready, for {target} to cast first.",
+    "{actor} lets {target} move first, ready to meet their magic with their own."
   ],
   "event.delayAid": [
     "{actor} waits for {target}'s help before making a move.",

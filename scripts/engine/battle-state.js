@@ -1121,10 +1121,11 @@ export function defenseDc(run, target, against, by = null) {
  * die such as Guidance's, advantage), with those that count against `target` alone when there is one. The rules hear
  * what it's for (`purpose`: "talk", "goad", "theft", "firstAid", "sizeUp", "notice", "heal", "aid", "control"), the
  * skill where the spec names one (a pitch's, first aid's, theft's), and the action that calls for it: PF2e's
- * attribute penalties.
+ * attribute penalties. A notice check says the sense it's by (`sense`, API 34: "sight", "sound", "smell", "feel",
+ * "radar", "help"): DCC listens with Luck.
  */
-export function checkRoll(run, u, mod, target = null, { purpose = null, skill = null, action = null } = {}) {
-  const m = run.prep.rules.modifiers?.check?.({ unit: u, target, purpose, skill, action }) ?? {};
+export function checkRoll(run, u, mod, target = null, { purpose = null, skill = null, action = null, sense = null } = {}) {
+  const m = run.prep.rules.modifiers?.check?.({ unit: u, target, purpose, skill, action, ...(sense ? { sense } : {}) }) ?? {};
   const own = modsAgainst(u, target);
   return { mod: (Number(mod) || 0) + (m.bonus ?? 0) + checkMods(own, skill), advantage: netAdvantage(m.advantage ?? 0, own.checkAdv ?? 0), dice: own.checkDie ?? null, roller: u };
 }

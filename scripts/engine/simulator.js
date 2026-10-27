@@ -24,7 +24,7 @@ import { heldGoal } from "./behavior/goals.js";
 import { checkMorale, standsGround, callRetreat, rallies, MORALE } from "./behavior/morale.js";
 import { expectedDamage, spendUse, spendAmmo, hasUses, attacksIn, criticalParts, saveMultiplier, saveMultiplierFor, meanDamageVs, unitsPerTurn, iwrContext, critDoubles } from "./behavior/evaluate.js";
 import { chooseDeed, deedTier, chooseHitRiders, rescueMiss, rollCrit, rollFumble, rallied } from "./behavior/riders.js";
-import { cast } from "./behavior/casting.js";
+import { cast, tierActionsOf } from "./behavior/casting.js";
 import { boost } from "./behavior/luck.js";
 import { respond, riposteStrike, bestStep, strikeBack } from "./behavior/responses.js";
 import { playEffects, hasEffects, wouldPlay } from "./behavior/reaction-effects.js";
@@ -421,7 +421,7 @@ export function lookAround(run, b) {
   if ( kin && (!best || best.cue.dc > KIN_DC) ) best = { cue: { dc: KIN_DC, sense: "help" }, c: kin };
   if ( !best ) return false;
   const perception = (b.spec.perception ?? b.spec.initiative?.mod ?? 0) + (kin ? KIN_BONUS : 0);
-  const check = checkRoll(run, b, perception, null, { purpose: "notice", skill: "perception" });
+  const check = checkRoll(run, b, perception, null, { purpose: "notice", skill: "perception", sense: best.cue.sense });
   // (FastFighting's own reckoning of who notices the fight, not a roll the table makes: never shown.)
   const roll = rollCheck(run.prep.rules, run.rng, check.mod, best.cue.dc, { advantage: check.advantage, kind: "check", roller: b, quiet: true });
   if ( roll.degree >= 2 ) notice(run, b, best.cue.sense, best.c);
@@ -1244,21 +1244,70 @@ function castFor(run, u, action, target = null) {
   });
   // A spell duel (rules.duel: DCC): someone answers a spell that worked with one of its own, the two checks compared.
   // The answer's higher: the spell is undone; the same: neither stands; lower (or its own check failed): it goes on.
-  if ( result.action && run.prep.rules.duel ) {
+  // Where the system reckons the exchange itself (rules.duelResult, API 34), each spell goes on at the total it says,
+  // weakened or not, at its target or turned back on its caster, or comes to nothing.
+  let played = result.action;
+  let total = r.total;
+  let reflected = false;
+  if ( played && run.prep.rules.duel ) {
     const duel = run.prep.rules.duel(run, u, action);
     if ( duel?.by && duel.counter?.casting ) {
       const answer = cast(run, duel.by, duel.counter, { stakes: 0.5, log: logger(run) });
       const theirs = answer.action ? answer.roll.total : null;
       const outcome = theirs === null ? "fails" : theirs > r.total ? "wins" : theirs === r.total ? "both" : "loses";
+      const said = run.prep.rules.duelResult?.(run, { caster: u, by: duel.by, action, counter: duel.counter, total: r.total, answer: theirs }) ?? null;
       log(run, duel.by, {
-        type: "duel", counter: duel.counter.name, action: action.name, target: u.spec.name, targetId: u.id, natural: answer.roll.natural, total: answer.roll.total, against: r.total, outcome
+        type: "duel", counter: duel.counter.name, action: action.name, target: u.spec.name, targetId: u.id, natural: answer.roll.natural, total: answer.roll.total, against: r.total, outcome,
+        ...(said ? { effect: said.label ?? "", disturbance: !!said.disturbance, spell: duelFate(said.spell, r.total), answered: duelFate(said.counter, theirs) } : {})
       });
-      if ( outcome === "wins" || outcome === "both" ) return null;
+      if ( !said ) {
+        if ( outcome === "wins" || outcome === "both" ) return null;
+      } else {
+        for ( const e of said.effects ?? [] ) {
+          const on = run.byId.get(e.unitId);
+          if ( on && isUp(on) && e.outcome ) applyOutcome(on, e.outcome, e.sourceId ?? null, null);
+        }
+        if ( Number.isFinite(said.counter?.total) ) duelAnswer(run, duel.by, duel.counter, said.counter, u);
+        if ( !Number.isFinite(said.spell?.total) || !isUp(u) ) return null;
+        total = said.spell.total;
+        played = tierAt(run, action, total);
+        reflected = !!said.spell.reflect;
+        if ( !played ) return null;
+      }
     }
   }
   // A save against it whose DC is the check itself (DCC: the spell check total).
-  if ( result.action?.save?.dc === "check" ) return { ...result.action, save: { ...result.action.save, dc: r.total } };
-  return result.action;
+  if ( played?.save?.dc === "check" ) played = { ...played, save: { ...played.save, dc: total } };
+  // (Turned back on its caster by a duel: its callers aim it at the caster.)
+  return reflected ? { ...played, reflected: true } : played;
+}
+
+/** What became of a spell in a duel the system reckoned (rules.duelResult): "undone", "weakened", "stands", "reflected". */
+function duelFate(fate, rolled) {
+  if ( !Number.isFinite(fate?.total) ) return "undone";
+  if ( fate.reflect ) return "reflected";
+  return fate.total < rolled ? "weakened" : "stands";
+}
+
+/** The action as it is at this check total (its highest tier the total reaches), or null below its lowest. */
+function tierAt(run, action, total) {
+  let found = null;
+  for ( const t of tierActionsOf(run.prep, action) ) if ( total >= t.min ) found = t;
+  return found;
+}
+
+/**
+ * A duel's answer, going on at the total the system says (rules.duelResult): at the caster it answered, or turned back on
+ * whoever cast it; a boon on the one who cast it. Below its lowest tier, it comes to nothing.
+ */
+function duelAnswer(run, by, counter, fate, caster) {
+  const tier = tierAt(run, counter, fate.total);
+  if ( !tier || !isUp(by) ) return;
+  const answer = { ...tier, id: counter.id, ...(tier.save?.dc === "check" ? { save: { ...tier.save, dc: fate.total } } : {}) };
+  if ( answer.kind === "buff" ) return executeBuff(run, by, answer, [by]);
+  if ( answer.kind === "heal" ) return executeHeal(run, by, answer, by);
+  const at = fate.reflect ? by : caster;
+  if ( isUp(at) ) executeOffense(run, by, answer, at, 0);
 }
 
 /** Which of an action's tiers this is (0 the lowest). */
@@ -1293,6 +1342,7 @@ function executeOffense(run, u, action, t, attacksMade) {
     run.blood = true;
     if ( !tier || tier.kind === "heal" || tier.kind === "buff" ) return;
     action = tier;
+    if ( tier.reflected ) t = u; // (turned back on its caster in a spell duel)
   }
   // A multiattack (or Extra Attack) makes its strikes in order, turning to a new foe if the first one drops.
   if ( action.sequence?.length ) {
@@ -2283,7 +2333,7 @@ function executeBuff(run, u, action, targets, worth = 0, turn = null) {
   if ( action.casting ) {
     const tier = castFor(run, u, action, targets[0] ?? null);
     if ( !tier || tier.kind !== "buff" ) return spendUse(u, action);
-    return executeBuff(run, u, { ...tier, id: action.id }, targets, worth, turn);
+    return executeBuff(run, u, { ...tier, id: action.id }, tier.reflected ? [u] : targets, worth, turn);
   }
   // (A live battle's: the system's own card for it, as its user shows it; one a check lands shows its check's card.)
   if ( !action.check ) showAction(run, u, action, targets[0] ?? null);
@@ -2348,7 +2398,7 @@ function executeHeal(run, u, action, target) {
     const tier = castFor(run, u, action, target);
     u.healedTargets.add(`${action.id}|${target.id}`);
     if ( !tier || tier.kind !== "heal" ) return spendUse(u, action);
-    return executeHeal(run, u, { ...tier, id: action.id }, target);
+    return executeHeal(run, u, { ...tier, id: action.id }, tier.reflected ? u : target);
   }
   // (A live battle's: the system's own card for it, as its user shows it; a heal a check lands shows its check's card.)
   if ( !action.healCheck ) showAction(run, u, action, target);

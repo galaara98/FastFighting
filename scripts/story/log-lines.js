@@ -72,6 +72,9 @@ const NOTICE = { sight: "NoticeSight", sound: "NoticeSound", smell: "NoticeSmell
 const BREAKS = { insulted: "BreakInsulted", beast: "BreakBeast", annoyed: "BreakAnnoyed", blood: "BreakBlood", impatient: "BreakImpatient" };
 /** Only an argument: why the talks collapsed (nobody fights). */
 const COLLAPSES = { insulted: "CollapseInsulted", beast: "CollapseBeast", annoyed: "CollapseAnnoyed", blood: "CollapseBlood", impatient: "CollapseImpatient", fray: "CollapseFray" };
+/** A duel the system reckoned (rules.duelResult): what became of the spell answered, and of the answer. */
+const DUEL_SPELL = { undone: "DuelSpellUndone", weakened: "DuelSpellWeakened", stands: "DuelSpellStands", reflected: "DuelSpellReflected" };
+const DUEL_ANSWER = { undone: "DuelAnswerUndone", weakened: "DuelAnswerWeakened", stands: "DuelAnswerStands", reflected: "DuelAnswerReflected" };
 const TRIGGER = { hit: "TriggerHit", attacked: "TriggerAttacked", missed: "TriggerMissed", damaged: "TriggerDamaged", spell: "TriggerSpell", foeCasts: "TriggerSpell", ownHit: "TriggerOwnHit" };
 const VANISH = { expired: "VanishExpired", released: "VanishReleased", unsustained: "VanishUnsustained", idle: "VanishIdle" };
 const role = r => (r === "boss" ? t("RoleBoss") : r === "leader" ? t("RoleLeader") : String(r ?? "").startsWith("lieutenant") ? t("RoleLieutenant", { n: String(r).split(" ")[1] ?? "" }) : r ?? "");
@@ -282,7 +285,11 @@ function baseLine(e) {
     case "backlash": return t("Backlash", { actor: e.actor, label: e.label || t("PaysForIt"), damage: damage(e.damage, e.damageType) });
     case "breakStandoff": return t("BreakStandoff", { actor: e.actor, how: t(BREAKS[e.cause] ?? "BreakImpatient") });
     case "collapse": return t("Collapse", { actor: e.actor, how: t(COLLAPSES[e.cause] ?? "CollapseImpatient") });
-    case "duel": return t("Duel", { actor: e.actor, target: e.target ?? "", action: e.action ?? "", counter: e.counter ?? "", total: e.total, against: e.against, result: t({ wins: "DuelWins", both: "DuelBoth", loses: "DuelLoses", fails: "DuelFails" }[e.outcome] ?? "DuelFails") });
+    // (A duel the system reckoned itself, rules.duelResult: what became of each spell, by the system's name for it.)
+    case "duel": return e.spell ? t(e.disturbance ? "DuelDisturbance" : "DuelReckoned", {
+      actor: e.actor, target: e.target ?? "", action: e.action ?? "", counter: e.counter ?? "", total: e.total, against: e.against, effect: e.effect ?? "",
+      spell: t(DUEL_SPELL[e.spell] ?? "DuelSpellUndone"), answer: t(DUEL_ANSWER[e.answered] ?? "DuelAnswerUndone")
+    }) : t("Duel", { actor: e.actor, target: e.target ?? "", action: e.action ?? "", counter: e.counter ?? "", total: e.total, against: e.against, result: t({ wins: "DuelWins", both: "DuelBoth", loses: "DuelLoses", fails: "DuelFails" }[e.outcome] ?? "DuelFails") });
     case "stray": return t("Stray", { actor: e.actor, target: e.target ?? "", result: e.hit ? t("StrayHit", { n: e.damage }) : t("StrayMiss") });
     case "callHelp": return t("CallHelp", { actor: e.actor, target: e.toward ?? "" });
     case "lazy": return t("Lazy", { actor: e.actor });
