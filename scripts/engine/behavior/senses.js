@@ -71,18 +71,36 @@ export function sensesOf(run, u) {
  * How hard the din of a fight is to make out (a DC): baseDC, a point for every perFeet feet between them, perWall for
  * every wall in the way; beyond maxFeet, not at all.
  */
-export const HEAR = Object.freeze({ baseDC: 8, perFeet: 15, perWall: 6, maxFeet: 300 });
+export const HEAR = Object.freeze({ baseDC: 8, perFeet: 15, perWall: 6, maxFeet: 300, talk: 10 });
 
 /**
- * The DC for u to hear c fighting, from where both stand now (walls that stop sound between them, a shut door among
- * them: space.js wallsBetween), or null where it can't (deafened, no hearing, too far, no positions).
+ * The DC to hear a sound so far off, through so many walls that stop sound: the din of a fight, or (`talk`) raised
+ * voices with no blow struck. The system's own (rules.hearDC, API 32: null where it can't be heard), else HEAR's
+ * (talk HEAR.talk harder).
+ * @param {object} rules
+ * @param {{feet: number, walls?: number, talk?: boolean}} sound
+ * @returns {number|null}
  */
-export function hearDC(run, u, c) {
+export function soundDC(rules, { feet, walls = 0, talk = false }) {
+  if ( !Number.isFinite(feet) || feet > HEAR.maxFeet ) return null;
+  if ( rules?.hearDC ) {
+    const dc = rules.hearDC({ feet, walls, talk });
+    return Number.isFinite(dc) ? dc : null;
+  }
+  return Math.round(HEAR.baseDC + feet / HEAR.perFeet + HEAR.perWall * walls + (talk ? HEAR.talk : 0));
+}
+
+/**
+ * The DC for u to hear c fighting (or, `talk`, only talking), from where both stand now (walls that stop sound between
+ * them, a shut door among them: space.js wallsBetween), or null where it can't (deafened, no hearing, too far, no
+ * positions, or the system says so).
+ */
+export function hearDC(run, u, c, { talk = false } = {}) {
   if ( !u.pos || !c.pos || (u.conds?.deafened ?? 0) > 0 || !(sensesOf(run, u).hearing > 0) ) return null;
   const feet = centerDistance(u, c);
-  if ( feet === null || feet > HEAR.maxFeet ) return null;
+  if ( feet === null ) return null;
   const walls = wallsKnown(run) ? wallsBetween(run, u.pos, c.pos) : 0;
-  return Math.round(HEAR.baseDC + feet / HEAR.perFeet + HEAR.perWall * walls);
+  return soundDC(run.prep.rules, { feet, walls, talk });
 }
 
 /**

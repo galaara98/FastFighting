@@ -41,7 +41,7 @@ import { opensWithTalk, breaksStandoff, standoffPitches, charismaticLeader, canT
 import { controlOutcome, controlRoll, isImmune, degreeShift } from "./behavior/control.js";
 import { recompute as recomputeConditions, applyOutcome, renewHolds, beginConcentration, endConcentration, holdsAnything, noteConcentration, moveHeld, settleAllegiance, iwrOf, incoming, spendEdges, spendBoost, focusOf, tauntProof, withoutTaunt, armEffects } from "./behavior/effects.js";
 import { decideBuff, aidScores, checkDc } from "./behavior/support.js";
-import { perceives, noteSeen } from "./behavior/senses.js";
+import { perceives, noteSeen, soundDC, HEAR } from "./behavior/senses.js";
 import { isAnimalistic, animalTactics } from "./behavior/animal.js";
 import { stealChance, theftTarget, theftPlan, attemptTheft, robbable, lootable, leftRemains } from "./behavior/theft.js";
 import { fallenWishes, decideFallen, bind, rob, stayBound, takesPrisoners, robsTheFallen, freeFriend, rollOf } from "./behavior/fallen.js";
@@ -224,30 +224,30 @@ const NOTICE_DC = Object.freeze({ sight: 5, radar: 5, feel: 8, smell: 10 });
  * senses), smell and sound (walls muffle): the easiest of them.
  * @returns {{dc: number, sense: "sight"|"radar"|"feel"|"smell"|"sound"}|null}
  */
-function cueFrom(run, b, c) {
+function cueFrom(run, b, c, { talk = false } = {}) {
   const aw = run.prep.spec.awareness?.[b.id]?.[c.id];
   if ( !aw ) return run.prep.spec.awareness ? null : { dc: 10, sense: "sound" };
+  // (Heard: the system's own DC for how far and through how many walls (senses.js soundDC); a battle kept before the
+  // awareness had them, its hearDC.)
+  const heard = Number.isFinite(aw.feet) ? soundDC(run.prep.rules, { feet: aw.feet, walls: aw.walls ?? 0, talk })
+    : Number.isFinite(aw.hearDC) ? aw.hearDC + (talk ? HEAR.talk : 0) : null;
   const cues = [
     aw.see && { dc: NOTICE_DC.sight, sense: "sight" },
     aw.radar && { dc: NOTICE_DC.radar, sense: "radar" },
     aw.feel && { dc: NOTICE_DC.feel, sense: "feel" },
     aw.smell && { dc: NOTICE_DC.smell, sense: "smell" },
-    Number.isFinite(aw.hearDC) && { dc: aw.hearDC, sense: "sound" }
+    heard !== null && { dc: heard, sense: "sound" }
   ].filter(Boolean);
   return cues.reduce((best, cue) => (!best || cue.dc < best.dc ? cue : best), null);
 }
 
 /**
- * How much harder raised voices are to make out than the din of blows (hearDC's: distance and walls), in a standoff
- * where no blow has been struck near the speaker this round or last.
+ * What b could notice of c now (cueFrom): in a standoff, from one near whom no blow was struck this round or last,
+ * only raised voices, harder to hear than a fight (senses.js soundDC's `talk`).
  */
-const TALK_HUSH = 10;
-
-/** What b could notice of c now (cueFrom), where talk in a standoff carries less than a fight would. */
 function noticeCue(run, b, c) {
-  const cue = cueFrom(run, b, c);
-  if ( cue?.sense !== "sound" || !run.standoff || (c.dinRound ?? -9) >= run.round - 1 ) return cue;
-  return { ...cue, dc: cue.dc + TALK_HUSH };
+  const talk = !!run.standoff && (c.dinRound ?? -9) < run.round - 1;
+  return cueFrom(run, b, c, { talk });
 }
 
 /**

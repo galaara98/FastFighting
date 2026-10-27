@@ -2,6 +2,7 @@ import { describe, expect, test } from "vitest";
 import { runBatchSync, replay } from "../scripts/engine/simulator.js";
 import { pf2eRules } from "./fixtures/three-action-rules.js";
 import { creature, battle } from "./helpers.js";
+import { soundDC } from "../scripts/engine/behavior/senses.js";
 
 const at = (x, y) => ({ x, y, size: 5 });
 
@@ -50,6 +51,23 @@ describe("bystanders", () => {
     spec.awareness.guard.trap = { see: true, smell: false, feel: false, radar: false, hearDC: 5 };
     const r = runBatchSync(spec, pf2eRules, { runs: 200 });
     expect(r.combatants.guard.pInvolved).toBe(0);
+  });
+
+  test("a system sets its own hearing DCs: how far, through how many walls, a fight or only talk (rules.hearDC)", () => {
+    const heard = (hearDC, sound = { feet: 60, walls: 2 }) => {
+      const spec = scene();
+      for ( const id of ["pc1", "pc2", "foe"] ) spec.awareness.guard[id] = { see: false, smell: false, feel: false, radar: false, hearDC: 5, ...sound };
+      return runBatchSync(spec, { ...pf2eRules, ...(hearDC ? { hearDC } : {}) }, { runs: 200 }).combatants.guard.pInvolved;
+    };
+    const asked = [];
+    expect(heard(s => { asked.push(s); return null; })).toBe(0); // (can't be heard: walls stop it)
+    expect(asked[0]).toEqual({ feet: 60, walls: 2, talk: false });
+    expect(heard(() => 1)).toBeGreaterThan(0.3);
+    // Without one, the core's: 8 + 60 / 15 + 6 per wall (24 here); the kept hearDC only for a battle kept before.
+    expect(soundDC(pf2eRules, { feet: 60, walls: 2 })).toBe(24);
+    expect(soundDC(pf2eRules, { feet: 60, walls: 2, talk: true })).toBe(34);
+    expect(soundDC(pf2eRules, { feet: 400 })).toBe(null);
+    expect(heard(null, {})).toBeGreaterThan(0.3); // (hearDC 5, as kept)
   });
 
   test("hearing through walls is harder than seeing", () => {

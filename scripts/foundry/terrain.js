@@ -404,7 +404,7 @@ function wallsBetween(a, b) {
  * @param {object} [options]
  * @param {Map<string, object>} [options.senses]  By token id: its spec's senses (spec.senses, from the system helper)
  * @param {number} [options.hearingFeet]          The system's ordinary hearing (rules.hearingFeet)
- * @returns {Record<string, Record<string, {see: boolean, smell: boolean, feel: boolean, radar: boolean, hearDC: number|null}>>}
+ * @returns {Record<string, Record<string, {see: boolean, smell: boolean, feel: boolean, radar: boolean, hearDC: number|null, feet?: number, walls?: number}>>}
  */
 export function computeAwareness(bystanders, combatants, { senses = new Map(), hearingFeet } = {}) {
   const out = {};
@@ -420,11 +420,16 @@ export function computeAwareness(bystanders, combatants, { senses = new Map(), h
       const smell = feet <= r.smell && !b.checkCollision(c.center, { type: "move", mode: "any" });
       const feel = feet <= r.feel;
       const radar = feet <= r.radar;
+      // (How far and through how many walls, for the system's own hearing DCs: rules.hearDC, API 32. hearDC: the
+      // core's, for a battle kept before they were.)
       let hearDC = null;
+      let sound = {};
       if ( r.hearing > 0 && feet <= HEAR.maxFeet ) {
-        hearDC = Math.round(HEAR.baseDC + feet / HEAR.perFeet + HEAR.perWall * wallsBetween(b, c));
+        const walls = wallsBetween(b, c);
+        hearDC = Math.round(HEAR.baseDC + feet / HEAR.perFeet + HEAR.perWall * walls);
+        sound = { feet: Math.round(feet), walls };
       }
-      row[c.id] = { see, smell, feel, radar, hearDC };
+      row[c.id] = { see, smell, feel, radar, hearDC, ...sound };
     }
   }
   return out;
