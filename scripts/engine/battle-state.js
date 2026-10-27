@@ -989,9 +989,12 @@ const burstReaches = (o, at, feet) => !!o.pos && squareCenters(o).some(c => Math
 /**
  * Where a burst u aims at t goes off: the corner of t's space (a grid corner, as the system's own template has it) that
  * catches the most of u's foes standing, less its friends (u too) unless it's `selective` (it spares whom it chooses);
- * the first, on a tie. Worked out once a turn for each aim.
+ * the first, on a tie. Worked out once a turn for each aim. A system whose bursts are centered on what they're aimed
+ * at, with no grid to snap to (`area.center: "target"`, API 34: DCC's "a radius centered on the target"): the middle of
+ * t's space.
  */
 export function burstPoint(run, u, t, area) {
+  if ( area.center === "target" ) return { x: t.pos.x, y: t.pos.y };
   const feet = Number(area.feet) > 0 ? Number(area.feet) : 10;
   const key = `${run.round}|${run.turn ?? 0}|${u.id}|${t.id}|${feet}|${area.selective ? 1 : 0}|${t.pos.x},${t.pos.y}|${u.pos?.x},${u.pos?.y}`;
   const kept = (run.burstPoints ??= new Map());

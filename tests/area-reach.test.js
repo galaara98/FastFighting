@@ -118,6 +118,11 @@ test("a burst goes off at a corner of its target's space: 5 feet across a corner
   // (The corner between t, east, south and corner: four foes, not t alone; west is left out.)
   expect(caught).toEqual(["t", "east", "south", "corner"]);
   expect(burstPoint(run, by("pyro"), by("t"), column)).toEqual({ x: 10, y: 10 });
+  // (Centered on the target, where the system has no grid corner to snap it to, API 34: DCC. Five feet from t's
+  // middle reaches the squares beside it, not the one across the corner.)
+  const centered = { ...column, center: "target" };
+  expect(burstPoint(run, by("pyro"), by("t"), centered)).toEqual({ x: 7.5, y: 7.5 });
+  expect(["t", "east", "south", "corner", "west"].filter(id => inArea(run, by("pyro"), by("t"), by(id), centered))).toEqual(["t", "east", "south", "west"]);
 });
 
 test("an area on the map catches its maker's friends in it, unless it's selective; a careful one won't aim it so", () => {
