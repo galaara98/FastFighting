@@ -7,6 +7,8 @@
  *   turns.<id>.<n>  each turn kept, in order (what it wrote, told, moved), without the run as it was before it ...
  *   snaps.<id>.<n>  ... which is kept apart, for the turns that still have it (Rewind Turn's)
  *   logs.<id>.<n>   the log, a piece at a time: each keep adds what's new since the one before (a rewind cuts it back)
+ *   pcs.<id>        a player's turn under way: the run as it was before it and every sheet as it began (its big
+ *                   parts, written once a turn; the rest of it is in battles.<id>.pc)
  *   keptAt          when it was last kept (ms), for how long it's kept (live-store.js)
  * A battle kept before this had its turns and its log in battles.<id>: read as it was kept, and kept this way from its
  * next keep on. Pure: no Foundry globals (the update is Foundry's document update, `==` and `-=` keys and all).
@@ -18,9 +20,25 @@ export const KEPT_LAYOUT = 2;
 const turnKept = ({ snapshot: _s, ...turn }) => turn;
 
 /**
+ * Each turn's JSON as last worked out, and what the turn's own fields were then. A kept turn changes only at its top
+ * (a list added to, a field set, its snapshot dropped: live-battle.js), so the same fields, each list as long, is the
+ * same turn, and its JSON isn't worked out again.
+ */
+const turnJson = new WeakMap();
+function jsonOf(turn) {
+  const fields = Object.entries(turn).filter(([k]) => k !== "snapshot").map(([k, v]) => [k, v, Array.isArray(v) ? v.length : -1]);
+  const was = turnJson.get(turn);
+  const same = was && was.fields.length === fields.length && was.fields.every(([k, v, n], i) => fields[i][0] === k && fields[i][1] === v && fields[i][2] === n);
+  if ( same ) return was.json;
+  const json = JSON.stringify(turnKept(turn));
+  turnJson.set(turn, { fields, json });
+  return json;
+}
+
+/**
  * The update that keeps a battle, and what's kept once it's written (the next keep's `was`).
- * @param {{turns, log}|null} was    What the last keep of this battle in this browser wrote (none: write it all, in
- *                                    place of whatever the journal had for this combat)
+ * @param {{turns, log, pcTurn}|null} was  What the last keep of this battle in this browser wrote (none: write it all,
+ *                                    in place of whatever the journal had for this combat)
  * @param {string} id                The battle's combat's id
  * @param {object} data              The battle's data (live-battle.js battle.data): its spec, its turns, and the rest
  * @param {object} options
@@ -29,16 +47,20 @@ const turnKept = ({ snapshot: _s, ...turn }) => turn;
  * @param {string} options.root      Where the journal's flags are ("flags.<module id>")
  * @param {string|null} [options.keptSpec]  The spec as it was last written (unchanged: not written again)
  * @param {number|null} [options.keptAt]    When it's kept (ms), written beside it
- * @returns {{update: object, kept: {turns, log}}}
+ * @param {{snapshot, sheets}|null} [options.pcTurn]  A player's turn's big parts (pcs.<id>): written when it's another
+ *                                    object than the last keep's, gone when there's none
+ * @returns {{update: object, kept: {turns, log, pcTurn}}}
  */
-export function keepUpdate(was, id, data, { log = [], pack, root, keptSpec = null, keptAt = null }) {
+export function keepUpdate(was, id, data, { log = [], pack, root, keptSpec = null, keptAt = null, pcTurn = null }) {
   const { spec, turns = [], log: _log, ...rest } = data;
   const update = { [`${root}.battles.==${id}`]: { ...rest, layout: KEPT_LAYOUT } };
   if ( keptAt !== null ) update[`${root}.keptAt`] = keptAt;
   if ( spec !== keptSpec ) update[`${root}.specs.==${id}`] = spec;
   const keptTurns = turnsToKeep(was?.turns ?? null, id, turns, update, root);
   const keptLog = logToKeep(was?.log ?? null, id, log, pack, update, root);
-  return { update, kept: { turns: keptTurns, log: keptLog } };
+  if ( pcTurn && (!was || was.pcTurn !== pcTurn) ) update[`${root}.pcs.==${id}`] = pcTurn;
+  else if ( !pcTurn && (!was || was.pcTurn) ) update[`${root}.pcs.-=${id}`] = null;
+  return { update, kept: { turns: keptTurns, log: keptLog, pcTurn } };
 }
 
 /**
@@ -46,7 +68,7 @@ export function keepUpdate(was, id, data, { log = [], pack, root, keptSpec = nul
  * run as it was once (until the turn no longer has it: then gone); those taken back since, gone too.
  */
 function turnsToKeep(was, id, turns, update, root) {
-  const marks = turns.map(turn => ({ turn, json: JSON.stringify(turnKept(turn)), snap: !!turn.snapshot }));
+  const marks = turns.map(turn => ({ turn, json: jsonOf(turn), snap: !!turn.snapshot }));
   if ( !was ) {
     update[`${root}.turns.==${id}`] = Object.fromEntries(turns.map((t, i) => [i, turnKept(t)]));
     update[`${root}.snaps.==${id}`] = Object.fromEntries(turns.flatMap((t, i) => (t.snapshot ? [[i, t.snapshot]] : [])));
@@ -111,5 +133,8 @@ export function keptBattle(get, id) {
   const snaps = get(`snaps.${id}`) ?? {};
   const turns = slotsOf(get(`turns.${id}`)).map(([i, t]) => (snaps[i] ? { ...t, snapshot: snaps[i] } : { ...t }));
   const log = slotsOf(get(`logs.${id}`)).flatMap(([, piece]) => piece?.entries ?? []);
-  return { ...data, spec, turns, log };
+  // (A player's turn under way: its big parts given back. One kept before they were apart has its snapshot in it.)
+  const pcTurn = data.pc ? get(`pcs.${id}`) : null;
+  const pc = data.pc && pcTurn ? { ...data.pc, snapshot: pcTurn.snapshot ?? data.pc.snapshot, sheets: pcTurn.sheets ?? null } : data.pc;
+  return { ...data, spec, turns, log, ...(data.pc !== undefined ? { pc } : {}) };
 }

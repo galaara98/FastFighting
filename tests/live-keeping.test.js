@@ -113,6 +113,54 @@ describe("a live battle kept a part at a time", () => {
     matches(doc, b);
   });
 
+  test("a player's turn under way: its run and its sheets as it began written once, read back with it, gone after", () => {
+    const doc = { flags: {} };
+    const b = battle();
+    b.keep(doc);
+    const big = { snapshot: { units: { pc: 1 } }, sheets: { "Scene.s.Token.t1": { token: { x: 0, y: 0 }, actor: { system: { hp: 9 } } } } };
+    const keepWith = pcTurn => {
+      b.data.snapshot = { units: {}, logLength: b.log.length };
+      const { update, kept } = keepUpdate(b.kept, "c1", b.data, { log: b.log, pack: () => [], root: ROOT, keptSpec: b.keptSpec, pcTurn });
+      apply(doc, update);
+      b.kept = kept;
+      return update;
+    };
+    b.data.pc = { id: "pc1", records: [] };
+    expect(keepWith(big)[`${ROOT}.pcs.==c1`]).toEqual(big);
+    // (Kept again as the turn goes on: not written again.)
+    b.data.pc.records.push({ n: 1 });
+    expect(`${ROOT}.pcs.==c1` in keepWith(big)).toBe(false);
+    const back = keptBattle(getter(doc), "c1");
+    expect(back.pc).toEqual({ id: "pc1", records: [{ n: 1 }], snapshot: big.snapshot, sheets: big.sheets });
+    // (The turn over: gone.)
+    b.data.pc = null;
+    expect(keepWith(null)[`${ROOT}.pcs.-=c1`]).toBeNull();
+    expect(keptBattle(getter(doc), "c1").pc).toBeNull();
+    // (One kept before its big parts were apart: its snapshot in it, read as it was.)
+    doc.flags.ff.battles.c1.pc = { id: "pc1", snapshot: { units: { old: 1 } } };
+    expect(keptBattle(getter(doc), "c1").pc).toEqual({ id: "pc1", snapshot: { units: { old: 1 } } });
+  });
+
+  test("a turn changed after it was kept, at its top (a card added, a field set): written again", () => {
+    const doc = { flags: {} };
+    const b = battle();
+    b.turn(1);
+    b.keep(doc);
+    const turn = b.data.turns[0];
+    turn.tallied = true;
+    b.keep(doc);
+    matches(doc, b);
+    turn.records.push({ n: "late" });
+    b.keep(doc);
+    matches(doc, b);
+    turn.moves = [];
+    b.keep(doc);
+    matches(doc, b);
+    delete turn.tallied;
+    b.keep(doc);
+    matches(doc, b);
+  });
+
   test("a battle kept the old way (its turns and its log in its own key): read as it was kept", () => {
     const doc = { flags: { ff: { battles: { c1: { id: "b1", turns: [{ key: "1.a", snapshot: { units: {} } }], snapshot: { units: {}, log: [{ turn: 1 }] } } }, specs: { c1: "{}" } } } };
     const back = keptBattle(getter(doc), "c1");

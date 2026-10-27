@@ -472,6 +472,18 @@ export async function revertRecord(r, { scene = null, settings = null } = {}) {
   if ( settingRestored(r.setting, settings, game.system.id) ) {
     await step("restoring a setting", () => game.settings.set(r.setting.namespace, r.setting.key, r.setting.value));
   }
+  // (A player's flags, such as DCC's Fleeting Luck: FastFighting's and the system's, nothing else of a user's, their
+  // role least of all; and a player's, never a GM's.)
+  const user = typeof r.userId === "string" ? game.users.get(r.userId) : null;
+  const flags = userFlags(r.userUpdate, game.system.id);
+  if ( user && !user.isGM && Object.keys(flags).length ) await step("restoring a player's", () => user.update(flags));
+  // (Its place on it too, where a Delay moved it: live-battle.js delayOnTracker. A record of no actor's, that one.)
+  if ( r.combatant ) {
+    await step("the combat tracker", async () => {
+      const was = { ...("defeated" in r.combatant ? { defeated: !!r.combatant.defeated } : {}), ...("initiative" in r.combatant ? { initiative: r.combatant.initiative } : {}) };
+      await (await ofHere(r.combatant.uuid, "Combatant"))?.update(was, { turnEvents: false });
+    });
+  }
   const tokenDoc = r.tokenUuid ? await ofHere(r.tokenUuid, "Token") : null;
   const actor = tokenDoc?.actor ?? (r.actorUuid ? await of(r.actorUuid, "Actor") : null);
   if ( !actor ) return;
@@ -510,18 +522,6 @@ export async function revertRecord(r, { scene = null, settings = null } = {}) {
   if ( tokenUpdate && tokenDoc ) await step("restoring the token", () => tokenDoc.update(tokenUpdate));
   // (A fallen creature's token made an Item Piles pile, or back from one: loot-drop.js lootOnFall.)
   if ( r.itemPile && tokenDoc ) await step("the fallen's pile", () => revertItemPile(r.itemPile, tokenDoc));
-  // (A player's flags, such as DCC's Fleeting Luck: FastFighting's and the system's, nothing else of a user's, their
-  // role least of all; and a player's, never a GM's.)
-  const user = typeof r.userId === "string" ? game.users.get(r.userId) : null;
-  const flags = userFlags(r.userUpdate, game.system.id);
-  if ( user && !user.isGM && Object.keys(flags).length ) await step("restoring a player's", () => user.update(flags));
-  // (Its place on it too, where a Delay moved it: live-battle.js delayOnTracker.)
-  if ( r.combatant ) {
-    await step("the combat tracker", async () => {
-      const was = { ...("defeated" in r.combatant ? { defeated: !!r.combatant.defeated } : {}), ...("initiative" in r.combatant ? { initiative: r.combatant.initiative } : {}) };
-      await (await ofHere(r.combatant.uuid, "Combatant"))?.update(was, { turnEvents: false });
-    });
-  }
 }
 
 /**
@@ -546,9 +546,9 @@ function actorData(update) {
   return Object.fromEntries(Object.entries(flat).filter(([k]) => ok(k)));
 }
 
-/** What of a token an undo record puts back: where it stood, and whether it's hidden; null for nothing. */
-const TOKEN_FIELDS = new Set(["x", "y", "elevation", "rotation", "hidden", "alpha"]);
-function tokenFields(update) {
+/** What of a token an undo record puts back: where it stood, whether it's hidden, and whose side it's on; null for nothing. */
+const TOKEN_FIELDS = new Set(["x", "y", "elevation", "rotation", "hidden", "alpha", "disposition"]);
+export function tokenFields(update) {
   if ( !update || typeof update !== "object" ) return null;
   const out = Object.fromEntries(Object.entries(update).filter(([k]) => TOKEN_FIELDS.has(k)));
   return Object.keys(out).length ? out : null;
@@ -576,7 +576,15 @@ function withoutOwnership(data) {
  * on `scene` (`settings`: the world settings FastFighting recorded); each door a wall there, each move a token there.
  */
 export async function revertEntry(scene, undo, { settings = null } = {}) {
-  for ( const id of undo.messages ?? [] ) await game.messages.get(id)?.delete();
+  // (Only cards still there, in one call that can't stop the rest: a retry after a half-done Rewind finds some gone.)
+  const cards = (undo.messages ?? []).filter(id => typeof id === "string" && game.messages.get(id));
+  if ( cards.length ) {
+    try {
+      await chatMessageClass().deleteDocuments(cards);
+    } catch ( err ) {
+      console.warn(`${MODULE_ID} | couldn't remove a fight's cards`, err);
+    }
+  }
   for ( const r of [...(undo.records ?? [])].reverse() ) await revertRecord(r, { scene, settings });
   const onScene = async (uuid, type) => {
     if ( typeof uuid !== "string" || foundry.utils.parseUuid(uuid)?.type !== type ) return null;

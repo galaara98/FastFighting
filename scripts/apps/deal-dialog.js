@@ -16,6 +16,7 @@ import { MODULE_ID } from "../constants.js";
 import { getAdapter } from "../api.js";
 import { localize } from "../i18n.js";
 import { QUERIES } from "../foundry/tactics.js";
+import { cardGm } from "../foundry/chat.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 const loc = key => localize(key);
@@ -51,11 +52,13 @@ export class DealDialog extends HandlebarsApplicationMixin(ApplicationV2) {
   /**
    * @param {TokenDocument} token  the player's character's token
    * @param {object} [options]     {toll: it may ask a toll; names: what the story calls those whose names the players
-   *                               haven't learned, by token id}, and the application's own
+   *                               haven't learned, by token id; gmId: the GM whose browser plays the battle, its deal
+   *                               card's author}, and the application's own
    */
-  constructor(token, { toll = false, names = null, ...options } = {}) {
+  constructor(token, { toll = false, names = null, gmId = null, ...options } = {}) {
     super(options);
     this.token = token;
+    this.gmId = gmId;
     this.names = names && typeof names === "object" ? names : null;
     // (Those it perceives, by token id, once the GM's browser has said: null till then, or with no answer.)
     this.perceived = null;
@@ -90,6 +93,11 @@ export class DealDialog extends HandlebarsApplicationMixin(ApplicationV2) {
     }).filter(t => t.feet <= range).sort((a, b) => a.feet - b.feet);
   }
 
+  /** The GM asked: the one playing the battle, while they're here (cardGm). */
+  get gm() {
+    return cardGm(game.users, this.gmId);
+  }
+
   /** Its skills: the talking ones first (persuading, deceiving, threatening), then the rest by name. */
   get skills() {
     const all = this.adapter?.skillsOf?.(this.token.actor) ?? [];
@@ -102,7 +110,7 @@ export class DealDialog extends HandlebarsApplicationMixin(ApplicationV2) {
     // (Whom it perceives from where it stands, and what the story calls them: the GM's browser's say, asked once.)
     if ( !this.asked ) {
       this.asked = true;
-      const said = await game.users.activeGM?.query(QUERIES.liveDeal, { stage: "targets", pcToken: this.token.uuid }, { timeout: 10000 }).catch(() => null);
+      const said = await this.gm?.query(QUERIES.liveDeal, { stage: "targets", pcToken: this.token.uuid }, { timeout: 10000 }).catch(() => null);
       if ( said?.ok && Array.isArray(said.ids) ) {
         this.perceived = new Set(said.ids);
         if ( said.names && typeof said.names === "object" ) this.names = said.names;
@@ -180,7 +188,7 @@ export class DealDialog extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /** The deal made: asked of the GM, rolled the system's way, the roll sent back. */
   static async #onOffer() {
-    const gm = game.users.activeGM;
+    const gm = this.gm;
     const kind = this.kinds.find(k => k.value === this.pick.kind) ?? this.kinds[0];
     const goods = this.adapter?.giveables?.(this.token.actor) ?? { denominations: [] };
     const money = (goods.denominations ?? []).reduce((s, d) => s + (Number(this.pick.money[d.key]) || 0) * d.value, 0);

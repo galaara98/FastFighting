@@ -142,3 +142,32 @@ describe("the system's own options for an actor's restore", () => {
     expect(world.actor.done.find(d => d[0] === "update")).toEqual(["update", { "system.abilities.lck.value": 9 }]);
   });
 });
+
+describe("what a record of no actor's still puts back", () => {
+  test("a Delay's place on the tracker, with no actor named", async () => {
+    await revertRecord({ combatant: { uuid: world.combatant.uuid, initiative: 14 } }, { scene: world.here });
+    expect(world.combatant.done).toEqual([["update", { initiative: 14 }, { turnEvents: false }]]);
+  });
+});
+
+describe("a token's side", () => {
+  test("its disposition goes back with the rest of the token", async () => {
+    await revertRecord({ tokenUuid: world.token.uuid, tokenUpdate: { disposition: -1, texture: { src: "x" } } }, { scene: world.here });
+    expect(world.token.done).toEqual([["update", { disposition: -1 }]]);
+  });
+});
+
+describe("a fight's cards", () => {
+  test("only those still there, in one call; a failed delete stops nothing", async () => {
+    const deleted = [];
+    const there = new Set(["m1", "m3"]);
+    game.messages = { get: id => (there.has(id) ? { id } : null) };
+    globalThis.foundry.documents = { ChatMessage: { deleteDocuments: async ids => deleted.push(ids) } };
+    await revertEntry(world.here, { messages: ["m1", "m2", "m3"], doors: [{ uuid: world.wall.uuid, ds: 0 }] });
+    expect(deleted).toEqual([["m1", "m3"]]);
+    globalThis.foundry.documents.ChatMessage.deleteDocuments = async () => { throw new Error("gone"); };
+    world.wall.done.length = 0;
+    await revertEntry(world.here, { messages: ["m1"], doors: [{ uuid: world.wall.uuid, ds: 0 }] });
+    expect(world.wall.done).toEqual([["update", { ds: 0 }]]);
+  });
+});

@@ -2690,6 +2690,7 @@
       "AftermathHint": "The dying bleed out or hold on, the beaten are dealt with, and goods go back to their owners.",
       "RewindAllConfirm": "Undo the whole battle: every turn, card and move?",
       "PickedUp": "FastFighting picked up the live battle where it was.",
+      "HandChangesKept": "Sheet changes made by hand earlier in this player's turn can't be rewound: they were kept by an older FastFighting.",
       "AskTitle": "A reaction",
       "Ask": "Should {creature} use {reaction}? {trigger}",
       "Would": "FastFighting thinks it would.",
