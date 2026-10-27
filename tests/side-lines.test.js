@@ -28,3 +28,15 @@ describe("a system's own line about FastFighting's write", () => {
     expect(sideLine(line({ speaker: { alias: "Gamemaster" } }), rewinding, true)).toBeNull();
   });
 });
+
+describe("a line typed in the chat while FastFighting writes", () => {
+  test("marked as typed: never a side line, in character or not; outside a write, left as it is", async () => {
+    const { typedLine } = await import("../scripts/foundry/side-lines.js");
+    const typed = typedLine({ speaker: { actor: "kara" }, user: "gm" }, rewinding);
+    expect(typed.flags[MODULE_ID].typed).toBe(true);
+    expect(sideLine({ ...line(), flags: typed.flags }, rewinding, true)).toBeNull();
+    expect(sideLine({ ...line(), flags: typed.flags }, writing, true)).toBeNull();
+    expect(typedLine({ speaker: { actor: "kara" } }, null)).toEqual({ speaker: { actor: "kara" } });
+    expect(typedLine({ flags: { other: { x: 1 } } }, writing).flags).toEqual({ other: { x: 1 }, [MODULE_ID]: { typed: true } });
+  });
+});

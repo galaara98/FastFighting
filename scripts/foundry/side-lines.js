@@ -8,8 +8,9 @@
  *     change, whose line goes too.
  * A side line is a message this browser's user makes (the GM's, writing), with no dice (a roll's card is the turn's own,
  * gathered as it always was), not FastFighting's own, that speaks for a creature in the battle (`actors`, by id).
- * Anything else posted meanwhile, a player's chat or the GM's own, is left alone.
- * The decision (sideLine) is pure; the hooks need Foundry.
+ * Anything else posted meanwhile, a player's chat or the GM's own, is left alone: a line typed in the chat while
+ * FastFighting writes, in character or not, is marked as typed as it's made (typedLine), and never taken for a side line.
+ * The decisions (sideLine, typedLine) are pure; the hooks need Foundry.
  */
 import { MODULE_ID } from "../constants.js";
 
@@ -30,6 +31,17 @@ export function sideLine(message, at, mine) {
   const actor = message?.speaker?.actor;
   if ( !actor || !at.actors?.has(actor) ) return null;
   return at.drop ? "drop" : "mark";
+}
+
+/**
+ * A line typed in the chat (Foundry's chatMessage hook: its data before it's made), while FastFighting writes (`at`, the
+ * scope): marked as typed, the user's own, so it isn't taken for a side line. Outside a write, left as it is. Pure.
+ */
+export function typedLine(chatData, at) {
+  if ( !at || !chatData || typeof chatData !== "object" ) return chatData;
+  const flags = chatData.flags && typeof chatData.flags === "object" ? chatData.flags : {};
+  chatData.flags = { ...flags, [MODULE_ID]: { ...(flags[MODULE_ID] ?? {}), typed: true } };
+  return chatData;
 }
 
 /** fn() run with `next` as the scope, the one before put back after. */
@@ -66,6 +78,9 @@ function created(message) {
 }
 
 export function registerSideLines() {
+  Hooks.on("chatMessage", (log, text, chatData) => {
+    typedLine(chatData, scope);
+  });
   Hooks.on("preCreateChatMessage", preCreate);
   Hooks.on("createChatMessage", created);
 }
