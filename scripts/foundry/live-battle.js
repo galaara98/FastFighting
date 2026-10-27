@@ -4078,7 +4078,8 @@ export async function fastFight() {
 async function goFast(auto = false) {
   if ( !battle?.fast || battle.data.ended ) return;
   if ( auto ) await keep();
-  if ( battle.fast.pending || turnsWaiting > 0 ) return;
+  // (Stopped, or the battle over, while that was kept.)
+  if ( !battle?.fast || battle.data.ended || battle.fast.pending || turnsWaiting > 0 ) return;
   const combatant = battle.combat.combatant;
   const u = combatant ? unitOf(combatant) : null;
   if ( battle.pc || (u && playerRuns(battle.run, u) && !GONE.has(u.status)) ) {
