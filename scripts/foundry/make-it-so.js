@@ -411,7 +411,8 @@ export async function revealStory(message) {
  * each thing it names only of the kind they name, and on the battle's scene (`scene`, where given); an actor it would
  * delete only one FastFighting brought in for a summoning (a GM's copy of a compendium's, no player's); a world setting
  * only one of the system's that FastFighting recorded itself (`settings`); a token restored owned as its actor is; and
- * of a player, only flags, FastFighting's or the system's (DCC's Fleeting Luck).
+ * of a player, only flags, FastFighting's, the system's (DCC's Fleeting Luck) or a scope its helper names
+ * (rewindScopes).
  * @param {object} r
  * @param {object} [options]
  * @param {Scene} [options.scene]          the scene it was recorded on
@@ -475,7 +476,8 @@ export async function revertRecord(r, { scene = null, settings = null } = {}) {
   // (A player's flags, such as DCC's Fleeting Luck: FastFighting's and the system's, nothing else of a user's, their
   // role least of all; and a player's, never a GM's.)
   const user = typeof r.userId === "string" ? game.users.get(r.userId) : null;
-  const flags = userFlags(r.userUpdate, game.system.id);
+  const scopes = rewindScopes(game.system.id, helperScopes());
+  const flags = userFlags(r.userUpdate, game.system.id, scopes);
   if ( user && !user.isGM && Object.keys(flags).length ) await step("restoring a player's", () => user.update(flags));
   // (Its place on it too, where a Delay moved it: live-battle.js delayOnTracker. A record of no actor's, that one.)
   if ( r.combatant ) {
@@ -503,7 +505,7 @@ export async function revertRecord(r, { scene = null, settings = null } = {}) {
     if ( statusesOf(actor).has(s.id) === s.active ) continue; // already as it was
     await step(`status ${s.id}`, () => actor.toggleStatusEffect(s.id, { active: s.active, overlay: s.overlay }));
   }
-  const actorUpdate = actorData(r.actorUpdate);
+  const actorUpdate = actorData(r.actorUpdate, scopes);
   // (The system's own options for it, under its id, where the record has them (API 29): DCC's mark that its ability log
   // is already right, so its own hook doesn't log the restore as a change made by hand.)
   const sys = game.system?.id;
@@ -533,17 +535,43 @@ export function settingRestored(setting, recorded, system) {
   return !!recorded?.has?.(`${setting.namespace}.${setting.key}`);
 }
 
-/** What of a player an undo record puts back: flags in FastFighting's namespace or the system's (`system`), flattened. */
-export function userFlags(update, system) {
-  const ok = k => k.startsWith(`flags.${MODULE_ID}.`) || (!!system && k.startsWith(`flags.${system}.`));
+/**
+ * The flag scopes an undo record may put back: FastFighting's, the system's (`system`), and those its helper names
+ * (`extra`: the adapter's `rewindFlagScopes`, API 36; DCC's `xcc`, for XCC's Mojo). Never Foundry's own (`core`), nor
+ * anything but a plain scope name. Pure.
+ */
+export function rewindScopes(system, extra = []) {
+  const out = new Set([MODULE_ID]);
+  if ( typeof system === "string" && system ) out.add(system);
+  for ( const s of Array.isArray(extra) ? extra : [] ) if ( typeof s === "string" && /^[\w-]+$/.test(s) && s !== "core" ) out.add(s);
+  return [...out];
+}
+
+/** The scopes the system's helper names for Rewind (rewindScopes), if any. */
+function helperScopes() {
+  try {
+    return getAdapter()?.rewindFlagScopes ?? [];
+  } catch ( err ) {
+    return [];
+  }
+}
+
+/** Is a flattened key one of the flags in `scopes`? */
+const inScopes = (k, scopes) => scopes.some(s => k.startsWith(`flags.${s}.`));
+
+/**
+ * What of a player an undo record puts back: flags in FastFighting's namespace or the system's (`system`), or one of
+ * `scopes` (rewindScopes), flattened.
+ */
+export function userFlags(update, system, scopes = rewindScopes(system)) {
+  const ok = k => inScopes(k, scopes) || (!!system && k.startsWith(`flags.${system}.`));
   return Object.fromEntries(Object.entries(foundry.utils.flattenObject(update ?? {})).filter(([k]) => ok(k)));
 }
 
-/** What of an actor an undo record puts back: its system's data, and FastFighting's and the system's flags; nothing else. */
-function actorData(update) {
+/** What of an actor an undo record puts back: its system's data, and the flags of `scopes` (rewindScopes); nothing else. */
+export function actorData(update, scopes = rewindScopes(game.system.id)) {
   const flat = foundry.utils.flattenObject(update ?? {});
-  const ok = k => k.startsWith("system.") || k.startsWith(`flags.${MODULE_ID}.`) || k.startsWith(`flags.${game.system.id}.`);
-  return Object.fromEntries(Object.entries(flat).filter(([k]) => ok(k)));
+  return Object.fromEntries(Object.entries(flat).filter(([k]) => k.startsWith("system.") || inScopes(k, scopes)));
 }
 
 /** What of a token an undo record puts back: where it stood, whether it's hidden, and whose side it's on; null for nothing. */

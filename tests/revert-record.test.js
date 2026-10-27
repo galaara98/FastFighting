@@ -3,7 +3,7 @@
  * what FastFighting's own records do, whatever else it names.
  */
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
-import { revertRecord, revertEntry, settingRestored, userFlags, tokenData } from "../scripts/foundry/make-it-so.js";
+import { revertRecord, revertEntry, settingRestored, userFlags, tokenData, rewindScopes, actorData } from "../scripts/foundry/make-it-so.js";
 
 /** A document as Foundry has one: its uuid, its parent, and what was done to it. */
 function docOf(uuid, parent = null, extra = {}) {
@@ -169,5 +169,18 @@ describe("a fight's cards", () => {
     world.wall.done.length = 0;
     await revertEntry(world.here, { messages: ["m1"], doors: [{ uuid: world.wall.uuid, ds: 0 }] });
     expect(world.wall.done).toEqual([["update", { ds: 0 }]]);
+  });
+});
+
+describe("flag scopes a helper names for Rewind (rewindFlagScopes)", () => {
+  test("kept beside FastFighting's and the system's; never core's, nor anything but a plain scope name", () => {
+    expect(rewindScopes("dcc", ["xcc", "core", "", 7, "a.b", "flags.x", null])).toEqual(["fast-fighting", "dcc", "xcc"]);
+    expect(rewindScopes("dcc", "xcc")).toEqual(["fast-fighting", "dcc"]);
+    const scopes = rewindScopes("dcc", ["xcc"]);
+    expect(actorData({ system: { hp: 3 }, flags: { xcc: { mojo: 2 }, dcc: { x: 1 }, core: { sheetClass: "x" }, other: { y: 1 } }, name: "Bo" }, scopes))
+      .toEqual({ "system.hp": 3, "flags.xcc.mojo": 2, "flags.dcc.x": 1 });
+    expect(userFlags({ flags: { xcc: { mojo: 1 }, other: { y: 1 } }, role: 4 }, "dcc", scopes)).toEqual({ "flags.xcc.mojo": 1 });
+    // (None named: as before.)
+    expect(actorData({ flags: { xcc: { mojo: 2 }, dcc: { x: 1 } } }, rewindScopes("dcc"))).toEqual({ "flags.dcc.x": 1 });
   });
 });
