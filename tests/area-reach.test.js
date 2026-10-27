@@ -123,6 +123,28 @@ test("a burst goes off at a corner of its target's space: 5 feet across a corner
   const centered = { ...column, center: "target" };
   expect(burstPoint(run, by("pyro"), by("t"), centered)).toEqual({ x: 7.5, y: 7.5 });
   expect(["t", "east", "south", "corner", "west"].filter(id => inArea(run, by("pyro"), by("t"), by(id), centered))).toEqual(["t", "east", "south", "west"]);
+  // (Anywhere its maker chooses, API 35: 5e's sphere. Its middle catches four as well as the corner does: the nearer
+  // to t's middle.)
+  const free = { ...column, center: "free" };
+  expect(burstPoint(run, by("pyro"), by("t"), free)).toEqual({ x: 7.5, y: 7.5 });
+});
+
+test("a burst placed freely (API 35) goes where it catches the most foes less friends, still catching its target", () => {
+  const spec = battle([
+    creature({ id: "pyro", side: "hostile", position: at(57.5, 7.5) }),
+    creature({ id: "ally", side: "hostile", position: at(2.5, 7.5) }),
+    creature({ id: "t", kind: "pc", position: at(7.5, 7.5) }),
+    creature({ id: "east", kind: "pc", position: at(12.5, 7.5) }),
+    creature({ id: "far", kind: "pc", position: at(17.5, 7.5) })
+  ], { positioning: true });
+  const run = createRun(prepareBattle(spec, pf2eRules));
+  const by = id => run.byId.get(id);
+  const sphere = { targets: 3, shape: "burst", feet: 5, center: "free" };
+  // (In east's square: t, east and the far one caught, the ally not. No corner of t's own space does as well.)
+  const point = burstPoint(run, by("pyro"), by("t"), sphere);
+  expect(point).toEqual({ x: 12.5, y: 7.5 });
+  expect(["ally", "t", "east", "far"].filter(id => inArea(run, by("pyro"), by("t"), by(id), sphere))).toEqual(["t", "east", "far"]);
+  expect(["ally", "t", "east", "far"].filter(id => inArea(run, by("pyro"), by("t"), by(id), { ...sphere, center: undefined }))).not.toEqual(["t", "east", "far"]);
 });
 
 test("an area on the map catches its maker's friends in it, unless it's selective; a careful one won't aim it so", () => {

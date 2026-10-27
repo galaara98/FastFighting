@@ -983,6 +983,9 @@ function squareCenters(o) {
   return out;
 }
 
+/** How far out from its target's space a burst placed freely is looked for (feet): enough, and quick to search. */
+const FREE_REACH = 15;
+
 /** Does a burst at this point (a grid corner, in feet) of this radius reach o (any square of o's)? */
 const burstReaches = (o, at, feet) => !!o.pos && squareCenters(o).some(c => Math.hypot(c.x - at.x, c.y - at.y) <= feet + 0.01);
 
@@ -991,12 +994,15 @@ const burstReaches = (o, at, feet) => !!o.pos && squareCenters(o).some(c => Math
  * catches the most of u's foes standing, less its friends (u too) unless it's `selective` (it spares whom it chooses);
  * the first, on a tie. Worked out once a turn for each aim. A system whose bursts are centered on what they're aimed
  * at, with no grid to snap to (`area.center: "target"`, API 34: DCC's "a radius centered on the target"): the middle of
- * t's space.
+ * t's space. A system whose burst's point of origin may be any point its maker chooses (`area.center: "free"`, API 35:
+ * 5e's sphere and cylinder): the best of every point half a square apart in and round t's space (a square's corners,
+ * its sides' middles, its middle), still catching t; on a tie, the one nearest t's middle.
  */
 export function burstPoint(run, u, t, area) {
   if ( area.center === "target" ) return { x: t.pos.x, y: t.pos.y };
   const feet = Number(area.feet) > 0 ? Number(area.feet) : 10;
-  const key = `${run.round}|${run.turn ?? 0}|${u.id}|${t.id}|${feet}|${area.selective ? 1 : 0}|${t.pos.x},${t.pos.y}|${u.pos?.x},${u.pos?.y}`;
+  const free = area.center === "free";
+  const key = `${run.round}|${run.turn ?? 0}|${u.id}|${t.id}|${feet}|${area.selective ? 1 : 0}|${free ? 1 : 0}|${t.pos.x},${t.pos.y}|${u.pos?.x},${u.pos?.y}`;
   const kept = (run.burstPoints ??= new Map());
   if ( kept.has(key) ) return kept.get(key);
   if ( kept.size > 2000 ) kept.clear();
@@ -1005,14 +1011,20 @@ export function burstPoint(run, u, t, area) {
   const top = Math.round((t.pos.y - size / 2) / 5) * 5;
   const foes = run.units.filter(o => o !== t && isStanding(o) && areEnemies(run, u, o));
   const friends = area.selective ? [] : run.units.filter(o => isStanding(o) && o.side === u.side && !areEnemies(run, u, o));
+  // (Free: half a square apart, up to FREE_REACH out from t while the burst still catches it; else t's own corners.)
+  const step = free ? 2.5 : 5;
+  const out = free ? Math.min(FREE_REACH, Math.floor(feet / step) * step) : 0;
   let best = null;
-  for ( let i = 0; i <= size; i += 5 ) {
-    for ( let j = 0; j <= size; j += 5 ) {
+  for ( let i = -out; i <= size + out; i += step ) {
+    for ( let j = -out; j <= size + out; j += step ) {
       const at = { x: left + i, y: top + j };
+      if ( free && !burstReaches(t, at, feet) ) continue;
       const score = foes.filter(o => burstReaches(o, at, feet)).length - friends.filter(o => burstReaches(o, at, feet)).length;
-      if ( !best || score > best.score ) best = { at, score };
+      const near = Math.hypot(at.x - t.pos.x, at.y - t.pos.y);
+      if ( !best || score > best.score || (free && score === best.score && near < best.near) ) best = { at, score, near };
     }
   }
+  if ( !best ) best = { at: { x: t.pos.x, y: t.pos.y } };
   kept.set(key, best.at);
   return best.at;
 }

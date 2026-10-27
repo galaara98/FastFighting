@@ -1754,7 +1754,7 @@ function areaShapeFor(u, t, action, { from = u.pos, at = t.pos, point = null } =
   if ( areaShapes.has(key) ) return areaShapes.get(key);
   let out = null;
   const cu = pointOf(u, from);
-  // (A burst goes off at a corner of t's space, as the engine picked it: battle-state.js burstPoint.)
+  // (A burst goes off where the engine picked it: a corner of t's space, or as its area's `center` says: burstPoint.)
   const burst = (action.area?.shape ?? "burst") === "burst" && action.area?.shape;
   const corner = burst ? point ?? (at === t.pos && u.pos && t.pos ? burstPoint(battle.run, u, t, action.area) : null) : null;
   const ct = corner ? pointOf(t, corner) : pointOf(t, at);
