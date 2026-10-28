@@ -40,3 +40,50 @@ describe("a line typed in the chat while FastFighting writes", () => {
     expect(typedLine({ flags: { other: { x: 1 } } }, writing).flags).toEqual({ other: { x: 1 }, [MODULE_ID]: { typed: true } });
   });
 });
+
+describe("what a system tells of a turn's start as FastFighting moves the tracker (PF2e's Current Conditions)", () => {
+  test("the move's scope while it moves and until it settles; a write's first; then none", async () => {
+    const { scopeAt } = await import("../scripts/foundry/side-lines.js");
+    const move = { actors, drop: false, open: 1, until: 0 };
+    expect(scopeAt(null, move, 5000)).toBe(move);
+    const settled = { ...move, open: 0, until: 4000 };
+    expect(scopeAt(null, settled, 4000)).toBe(settled);
+    expect(scopeAt(null, settled, 4001)).toBeNull();
+    expect(scopeAt(writing, move, 5000)).toBe(writing);
+    expect(scopeAt(null, null, 5000)).toBeNull();
+    expect(sideLine(line(), scopeAt(null, move, 5000), true)).toBe("mark");
+  });
+
+  test("a line the GM types meanwhile is theirs, never the battle's", async () => {
+    const { scopeAt, typedLine } = await import("../scripts/foundry/side-lines.js");
+    const move = { actors, drop: false, open: 0, until: 4000 };
+    const typed = typedLine({ speaker: { actor: "kara" } }, scopeAt(null, move, 3000));
+    expect(sideLine({ ...line(), flags: typed.flags }, move, true)).toBeNull();
+  });
+
+  test("Rewind takes those of turns after the one it goes back to; that one keeps its own", async () => {
+    const { startedAfter } = await import("../scripts/foundry/side-lines.js");
+    const at = id => ["a", "b", "c"].indexOf(id);
+    const card = (id, round, combatantId, battle = "b1") => ({ id, flags: { [MODULE_ID]: { live: { battle, line: id, start: { round, combatantId } } } } });
+    const messages = [
+      card("1a", 1, "a"), card("1b", 1, "b"), card("1c", 1, "c"), card("2a", 2, "a"), card("other", 1, "c", "b2"), card("gone", 1, "x"),
+      { id: "typed", flags: { [MODULE_ID]: { typed: true } } },
+      { id: "side", flags: { [MODULE_ID]: { live: { battle: "b1", line: "s" } } } }
+    ];
+    const ids = now => startedAfter(messages, "b1", now, at).map(m => m.id);
+    expect(ids({ round: 1, at: 1 })).toEqual(["1c", "2a"]);
+    expect(ids({ round: 2, at: 0 })).toEqual([]);
+    expect(ids({ round: 1, at: -1 })).toEqual(["1a", "1b", "1c", "2a"]);
+  });
+
+  test("told of a turn again (a Rewind went back to it): the new one takes the place of the battle's older ones for it", async () => {
+    const { startedBefore } = await import("../scripts/foundry/side-lines.js");
+    const card = (id, round, combatantId, battle = "b1") => ({ id, flags: { [MODULE_ID]: { live: { battle, line: id, start: { round, combatantId } } } } });
+    const old = card("old", 1, "a");
+    const again = card("again", 1, "a");
+    const messages = [old, card("next", 1, "b"), card("later", 2, "a"), card("other", 1, "a", "b2"), again];
+    expect(startedBefore(messages, again).map(m => m.id)).toEqual(["old"]);
+    expect(startedBefore(messages, { id: "plain", flags: { [MODULE_ID]: { live: { battle: "b1", line: "s" } } } })).toEqual([]);
+    expect(startedBefore(messages, { id: "theirs", flags: {} })).toEqual([]);
+  });
+});

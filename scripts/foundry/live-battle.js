@@ -48,7 +48,7 @@ import {
 } from "../engine/live.js";
 import { postRolls, postTally, tallyOf, audiencesFor, audienceFor } from "./table-rolls.js";
 import { cardGm, chatMessageClass, gmIds } from "./chat.js";
-import { registerSideLines, writingFor, takingBack } from "./side-lines.js";
+import { registerSideLines, writingFor, takingBack, movingTracker, startedAfter } from "./side-lines.js";
 import { diffAll, sideAfter, leaveToTable } from "../engine/changes.js";
 import { undoRecord } from "./sheet-tools.js";
 import { keepUpdate, keptBattle } from "./live-keeping.js";
@@ -325,12 +325,12 @@ export function beginEncounter() {
     const rolledFrom = Date.now();
     if ( unrolled.length ) await rollFor(combat, unrolled);
     const rollCards = unrolled.length ? initiativeCards(rolledFrom) : [];
-    if ( !combat.started ) await combat.startCombat();
+    if ( !combat.started ) await moving(() => combat.startCombat());
     // (Begun with Foundry's own button before the rolls: the tracker on the first of the order they made.)
-    else if ( unrolled.length && combat.turn !== 0 ) await combat.update({ turn: 0 }, { turnEvents: false });
+    else if ( unrolled.length && combat.turn !== 0 ) await moving(() => combat.update({ turn: 0 }, { turnEvents: false }));
     // (Begun for this battle, whoever pressed the button: Rewind This Encounter takes it back.)
     const started = !battle.data.startedBefore;
-    if ( battle.data.spotlight && combat.turn !== null ) await adapter.giveSpotlight(combat, null);
+    if ( battle.data.spotlight && combat.turn !== null ) await moving(() => adapter.giveSpotlight(combat, null));
     liveOrder(battle.run, combat.turns.map(c => unitOf(c)?.id).filter(Boolean));
     battle.spec = { ...battle.spec, options: { ...battle.spec.options, initiativeOrder: combat.turns.map(c => c.tokenId) } };
     battle.data.spec = packSpec(battle.spec);
@@ -403,7 +403,7 @@ function onTurnChange(combat, prior, current) {
   if ( !(battle.data.spotlight ? spotlightRightly(combat, prior, current) : movedRightly(combat, prior, current)) ) {
     const refused = battle.data.spotlight ? "FASTFIGHTING.Live.SpotlightRefused" : "FASTFIGHTING.Live.TrackerRefused";
     queueFor(async () => {
-      await combat.update({ round: prior.round, turn: prior.turn }, { turnEvents: false });
+      await moving(() => combat.update({ round: prior.round, turn: prior.turn }, { turnEvents: false }));
       ui.notifications.warn(fmt(refused, { name: game.users.get(combat._stats?.lastModifiedBy)?.name ?? "" }));
       changed();
     });
@@ -446,7 +446,7 @@ function onUnstarted(combat, diff, options, userId) {
   if ( !(prior?.round > 0) ) return;
   const by = game.users.get(userId);
   queueFor(async () => {
-    await combat.update({ round: prior.round, turn: prior.turn }, { turnEvents: false });
+    await moving(() => combat.update({ round: prior.round, turn: prior.turn }, { turnEvents: false }));
     ui.notifications.warn(by && !by.isGM ? fmt("FASTFIGHTING.Live.TrackerRefused", { name: by.name }) : loc("FASTFIGHTING.Live.TooFarBack"));
     changed();
   });
@@ -569,12 +569,14 @@ const turnKey = combatant => `${battle.data.spotlight ? `s${battle.data.spots ??
  */
 async function moveOn() {
   if ( battle.fast ) battle.fast.pending = { ...battle.combat.current };
-  if ( !battle.data.spotlight ) await battle.combat.nextTurn();
-  else if ( (battle.data.auto || battle.fast) && !battle.run.live.players.size ) {
-    // (No one for FastFighting to give it to: the GM gives it.)
-    if ( battle.fast && !nextSpotlight(battle.run) ) checkFast({ asks: "spotlight" });
-    else await spotlightNext();
-  } else await getAdapter().giveSpotlight(battle.combat, null);
+  await moving(async () => {
+    if ( !battle.data.spotlight ) await battle.combat.nextTurn();
+    else if ( (battle.data.auto || battle.fast) && !battle.run.live.players.size ) {
+      // (No one for FastFighting to give it to: the GM gives it.)
+      if ( battle.fast && !nextSpotlight(battle.run) ) checkFast({ asks: "spotlight" });
+      else await spotlightNext();
+    } else await getAdapter().giveSpotlight(battle.combat, null);
+  });
   await takeOffTracker();
 }
 
@@ -750,7 +752,7 @@ async function followBack(prior) {
   const { undo, own, reopen } = goingBack(turns, { round: combat.round, at: combat.turn ?? -1 }, key, place);
   if ( undo.length && !undo[0].snapshot ) {
     ui.notifications.warn(loc("FASTFIGHTING.Live.TooFarBack"));
-    await combat.update({ round: prior.round, turn: prior.turn }, { turnEvents: false });
+    await moving(() => combat.update({ round: prior.round, turn: prior.turn }, { turnEvents: false }));
     changed();
     return false;
   }
@@ -758,6 +760,8 @@ async function followBack(prior) {
   const takenBack = new Set([...undo.map(t => t.key), ...(battle.pc ? [`${battle.pc.round}.${battle.pc.combatantId}`] : [])]);
   await revertOpenTurn();
   for ( const turn of undoEntries(undo, reopen).reverse() ) await holdingPause(() => takingBack(battleActors(), () => revertEntry(battle.scene, turn, rewinding())));
+  // (What the system told of the starts of turns gone back past: gone with them.)
+  await dropStarts({ round: combat.round, at: combat.turn ?? -1 });
   await untally(undo);
   const snapshot = undo[0]?.snapshot ?? battle.pc?.snapshot;
   if ( snapshot ) battle.run = playersNow(restoreRun(battle.spec, battle.rules, snapshot, { log: battle.run.log }));
@@ -3334,6 +3338,28 @@ function writeChanges(before, after, records, { messages = null, leave = null } 
 const battleActors = () => new Set(battle.run.units.map(u => docOf(u.id)?.actor?.id).filter(Boolean));
 
 /**
+ * fn(), FastFighting moving the battle's tracker: what the system posts meanwhile for the turn that starts (PF2e's
+ * Current Conditions) is the battle's, marked with that turn (side-lines.js movingTracker).
+ */
+function moving(fn) {
+  if ( !battle ) return fn();
+  const combat = battle.combat;
+  const startOf = m => {
+    const c = combat.combatants.find(x => !!m.speaker?.token && x.tokenId === m.speaker.token) ?? combat.combatants.find(x => !!m.speaker?.actor && x.actorId === m.speaker.actor);
+    return c ? { round: combat.round, combatantId: c.id } : null;
+  };
+  return movingTracker(battle.data.id, battleActors(), startOf, fn);
+}
+
+/** A combatant's place in the tracker's order (by id), -1 off it. */
+const orderOf = id => battle.combat.turns.findIndex(c => c.id === id);
+
+/** Rewind going back to `now` ({round, at}): what the system told of the starts it goes back past, deleted (startedAfter). */
+async function dropStarts(now) {
+  for ( const m of startedAfter(game.messages.contents, battle.data.id, now, orderOf) ) await m.delete();
+}
+
+/**
  * writeChanges' work: each creature's change set onto its sheet, by the helper's commitChanges.
  */
 async function writeEach(before, after, records, { messages = null, leave = null } = {}) {
@@ -3839,7 +3865,7 @@ export function rewind() {
   checkFast({ pressed: true });
   const combat = battle.combat;
   if ( battle.data.ended || battle.data.spotlight || (combat.round <= 1 && !combat.turn) ) return rewindTurn();
-  return combat.previousTurn();
+  return moving(() => combat.previousTurn());
 }
 
 /** Put the last turn back: what it wrote, its cards and moves, and the run as it was before it; the tracker on it again. */
@@ -3881,7 +3907,10 @@ export function rewindTurn() {
     const gone = new Set(battle.run.log.map(e => e.turn ?? 0));
     battle.data.toldBeats = (battle.data.toldBeats ?? []).filter(k => k === "closing" ? false : k.split(",").every(t => gone.has(Number(t))));
     const at = battle.combat.turns.findIndex(c => c.id === turn.combatantId);
-    if ( at >= 0 ) await battle.combat.update({ round: turn.round, turn: at }, { turnEvents: false });
+    // (What the system told of the starts of turns after it: gone. A spotlight system's have no order to go back along:
+    // Rewind This Encounter's.)
+    if ( !battle.data.spotlight ) await dropStarts({ round: turn.round, at });
+    if ( at >= 0 ) await moving(() => battle.combat.update({ round: turn.round, turn: at }, { turnEvents: false }));
     await keep();
     await battle.combat.setFlag(MODULE_ID, "live", flagOf(true));
     const u = unitOf(battle.combat.combatant);
