@@ -3645,6 +3645,16 @@
     "{actor} strikes the moment {target} comes within reach.",
     "{actor} has been waiting for {target}, and lets fly."
   ],
+  "event.readyShot": [
+    "{actor} readies {weapon} and watches for anyone who shows themselves.",
+    "{actor} takes aim with {weapon}, waiting for a foe to step into view.",
+    "{actor} holds {weapon} trained on the way a foe would come."
+  ],
+  "event.readiedShot": [
+    "{target} comes into view, and {actor} looses at once.",
+    "{actor} has been waiting for {target} to show, and shoots.",
+    "The moment {target} steps out, {actor} lets fly."
+  ],
   "event.aside": [
     "{actor} wants no part of this, and keeps well back.",
     "{actor} stays put, letting the fight go on without them.",

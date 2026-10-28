@@ -2985,17 +2985,19 @@ function throughReach(run, u, move) {
 }
 
 /**
- * u's move came into the reach of a foe that readied a Strike for it (behavior/waiting.js): each such foe strikes, its
- * reaction spent, and its readied Strike with it. In a live battle the GM (or the engine) says, as for any reaction.
+ * u's move came into the reach of a foe that readied a Strike for it, or the sight and range of one that readied a shot
+ * (behavior/waiting.js): each such foe strikes, its reaction spent, and its readied Strike with it. In a live battle
+ * the GM (or the engine) says, as for any reaction.
  */
 function readiedStrikes(run, u, move) {
-  for ( const { o, strike } of readiedAgainst(run, u, move) ) {
+  for ( const { o, strike, shot } of readiedAgainst(run, u, move) ) {
     if ( !isStanding(u) || battleOver(run) ) break;
-    if ( run.live && !run.live.decide(run, o, { reaction: { id: READIED, label: strike.name }, trigger: "foeEntersReach", by: u, would: true, strike }) ) continue;
+    const trigger = shot ? "foeComesIntoSight" : "foeEntersReach";
+    if ( run.live && !run.live.decide(run, o, { reaction: { id: READIED, label: strike.name }, trigger, by: u, would: true, strike }) ) continue;
     o.reactionsLeft -= 1;
     const attacks = o.readied.attacks ?? 0; // (the penalty it had when it readied)
     o.readied = null;
-    log(run, o, { type: "readied", target: u.spec.name, targetId: u.id, action: strike.name });
+    log(run, o, { type: "readied", target: u.spec.name, targetId: u.id, action: strike.name, ...(shot ? { shot: true } : {}) });
     executeOffense(run, o, strike, u, attacks);
   }
 }

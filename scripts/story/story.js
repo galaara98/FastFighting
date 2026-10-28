@@ -511,8 +511,8 @@ function narrate(e, roll, rel, fill) {
     case "aside": return roll("event.aside", f);
     // (Waiting for the moment, where the system has a way to: engine/behavior/waiting.js. What it waits for, told.)
     case "delay": return roll({ standoff: "event.delayStandoff", reach: "event.delayReach", aid: "event.delayAid", counter: "event.delayCounter" }[e.why] ?? "event.delayStandoff", f);
-    case "ready": return roll("event.ready", f);
-    case "readied": return roll("event.readied", f);
+    case "ready": return roll(e.shot ? "event.readyShot" : "event.ready", f);
+    case "readied": return roll(e.shot ? "event.readiedShot" : "event.readied", f);
     case "neutral": {
       const g = { ...f, side: e.sideLabel ?? "", victim: e.victim ?? "" };
       switch ( e.what ) {

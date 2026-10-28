@@ -2291,24 +2291,31 @@ and Ironsworn's spotlight), nor in a round of surprise.
 
 - **Ready** (READY's numbers): with what's spare of a turn (Getting ready), one of the steps weighed against the rest,
   and the turn of one held back by its team's head (a stance to wait) where it's worth PREP.least (0.5). It costs the
-  system's `ready.cost` (PF2e two actions) and readies its best everyday melee strike (no multiattack, nothing with
-  limited uses) that costs `ready.most` (PF2e 1 action) at most, for a reaction: it needs a reaction left. On a map
-  only.
+  system's `ready.cost` (PF2e two actions) and readies, for a reaction (it needs a reaction left), whichever is worth
+  more: its best everyday melee strike, or its best everyday shot with the ammunition for it (no multiattack, nothing
+  with limited uses), that costs `ready.most` (PF2e 1 action) at most as it is (drawn, loaded). On a map only.
 - **What readying is worth:** chance × the strike's expected damage, at the attack penalty it has when it readies (the
-  attacks it has made this turn), on the likeliest foe; × READY.reaction (0.8) where its reaction would have struck a foe coming close anyway (an opportunity strike of
-  its own).
-- **Chance:** 1 − the product of (1 − p) over each foe on its feet not in its reach yet that could get there in a turn
-  (the gap less its reach within the foe's speed × its actions): p = READY.melee (0.6) for one that fights in melee
-  with no shot, READY.ranged (0.15) otherwise, × READY.notNearest (0.5) where the readier isn't its nearest foe.
+  attacks it has made this turn), on the likeliest foe; for a melee strike, × READY.reaction (0.8) where its reaction
+  would have struck a foe coming close anyway (an opportunity strike of its own).
+- **Chance, a melee strike:** 1 − the product of (1 − p) over each foe on its feet not in its reach yet that could get
+  there in a turn (the gap less its reach within the foe's speed × its actions): p = READY.melee (0.6) for one that
+  fights in melee with no shot, READY.ranged (0.15) otherwise, × READY.notNearest (0.5) where the readier isn't its
+  nearest foe.
+- **Chance, a shot:** the same over each foe on its feet it can't shoot now (out of range, out of sight, hidden from
+  it) that could come within range in a turn (its maximum, else three increments): p = READY.sight (0.5) for one that
+  fights in melee with no shot, READY.sightShooter (0.3) otherwise, × READY.notNearest (0.5) where the foe nearest it
+  isn't the readier and is out of that range of it.
 - **Set off** by a foe's move (on its turn, or a player's character's in a live battle) that ends inside its reach
-  having begun outside it (without a map: one that comes to blows with it): it strikes as a reaction, at the penalty
-  it had when it readied, and the readied strike is spent. Unused, it's gone as the readier's next turn begins.
+  having begun outside it (without a map: one that comes to blows with it); for a shot, one that ends in its sight and
+  range having begun where it couldn't be shot (out of range, beyond a wall, too far to see in the dark), the
+  ammunition there still. It strikes as a reaction, at the penalty it had when it readied, and the readied strike is
+  spent. Unused, it's gone as the readier's next turn begins.
 - **In a live battle:** a creature that delays moves on the tracker, right after the one it waits for (its initiative
   halfway between theirs and the next one's; the round's last, 1 below the lowest), as the tracker moves on from it;
   the one whose turn it is stays so. Its turn comes up there. A Rewind of its Delay's turn puts it back where it was.
   An NPC's readied strike is allowed as its other reactions are (Ask me about NPC reactions).
 
-Code: `engine/behavior/waiting.js` `delayFor`, `readyStep`, `readyChance`, `readiedAgainst`, `moveInOrder`;
+Code: `engine/behavior/waiting.js` `delayFor`, `readyStep`, `readyChance`, `shotChance`, `readiedAgainst`, `moveInOrder`;
 `engine/simulator.js` `delays`, `rejoin`, `readiedStrikes`; `foundry/live-battle.js` `delayOnTracker`,
 `delayedInitiative`.
 

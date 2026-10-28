@@ -299,7 +299,7 @@ The numbers are under [Fighting and the simulation](STATS_AND_FORMULAS_README.md
 - Crowd control, valued by the damage it prevents; thinking creatures don't waste it on the immune.
 - Healing by spells, potions and first aid, with range: a touch means walking over first.
 - [Getting ready](STATS_AND_FORMULAS_README.md#getting-ready-draws-reloads-and-a-turn-for-the-next): a weapon drawn and loaded (a crossbow's Reload), a potion got out, a healer on its way, when the turn can't do what it wants; and what's spare after its main actions spent on where it stands next: into reach or range, a flank, cover, between its friends and their foes, or out of reach.
-- [Delay and Ready](STATS_AND_FORMULAS_README.md#waiting-for-the-moment-delay-and-ready), where the system has them (PF2e): instead of wasting a turn, a creature waits for a foe to come, a friend's help or a standoff to break, or readies a strike for the first foe that comes within reach.
+- [Delay and Ready](STATS_AND_FORMULAS_README.md#waiting-for-the-moment-delay-and-ready), where the system has them (PF2e): instead of wasting a turn, a creature waits for a foe to come, a friend's help or a standoff to break, or readies a strike for the first foe that comes within reach, or a shot for the first that comes into sight and range.
 - Terrain from Foundry's regions, by movement mode; walls block sight and movement; climbers go over and burrowers under, and a high flyer can't be hit in melee from the ground.
 - Any grid and units, from the scene (1.5 m to a 5-foot square); units it doesn't know count each square as 5 ft.
 

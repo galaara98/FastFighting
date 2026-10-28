@@ -5,7 +5,7 @@
 import { describe, expect, test } from "vitest";
 import { replay, prepareBattle, beginRun, answerMove, playTurn } from "../scripts/engine/simulator.js";
 import { turnFor } from "../scripts/engine/battle-state.js";
-import { delayFor, moveInOrder, readyStep, takeReady, readyChance, readyStrike } from "../scripts/engine/behavior/waiting.js";
+import { delayFor, moveInOrder, readyStep, takeReady, readyChance, readyStrike, readyShot, shotChance } from "../scripts/engine/behavior/waiting.js";
 import { beginLive, liveTurn } from "../scripts/engine/live.js";
 import { delayedInitiative } from "../scripts/foundry/live-battle.js";
 import { buildStory } from "../scripts/story/story.js";
@@ -241,6 +241,82 @@ describe("Ready: a Strike for a foe that comes within reach", () => {
     const r = replay(stuck(), both, 1);
     // (Immobilized: no foe in reach this turn, and the brute is coming. It waits for it, then strikes it.)
     expect(r.log.find(e => e.type === "delay")).toMatchObject({ actorId: "post", why: "reach" });
+  });
+});
+
+describe("Ready: a shot for a foe that comes into sight and range", () => {
+  const wall = (ax, ay, bx, by) => ({ a: [ax, ay], b: [bx, by], s: 20, d: 0, door: null, open: false });
+  const bow = () => strike({ id: "bow", name: "Shortbow", melee: false, reach: undefined, range: { increment: 60, max: 300 }, ammo: "ammo:bow" });
+  /** An archer that can't move, a brute out of sight behind a wall. */
+  const hidden = ({ arrows = 10, walls = [wall(40, -10, 40, 30)] } = {}) => {
+    const spec = battle([
+      creature({ id: "archer", name: "Archer", position: at(0), initiative: { mod: 100 }, conditions: { immobilized: 1 }, hp: { value: 300, max: 300 },
+        actions: [bow()], resources: { "ammo:bow": arrows } }),
+      creature({ id: "brute", name: "Brute", side: "hostile", position: at(60), initiative: { mod: -100 }, hp: { value: 300, max: 300 } })
+    ], { positioning: true, maxRounds: 1 });
+    if ( walls ) spec.walls = walls;
+    const run = beginRun(prepareBattle(spec, readying), 1, { log: true });
+    run.round = 1;
+    return { run, archer: run.byId.get("archer"), brute: run.byId.get("brute") };
+  };
+  const step = (run, brute, x, y) => {
+    const from = { ...brute.pos };
+    brute.pos.x = x;
+    brute.pos.y = y;
+    answerMove(run, brute, { feet: Math.round(Math.hypot(x - from.x, y - from.y)), from, to: { ...brute.pos } });
+  };
+
+  test("an archer with no foe in sight readies its shot", () => {
+    const { run, archer, brute } = hidden();
+    expect(readyShot(readying, archer)).toMatchObject({ id: "bow" });
+    expect(shotChance(run, archer, readyShot(readying, archer))).toMatchObject({ chance: 0.5, foe: brute });
+    expect(readyStep(run, archer, turnFor(run, archer))).toMatchObject({ step: "ready", shot: true, action: { id: "bow" }, target: brute });
+  });
+
+  test("set off once the foe comes into sight, not while it stays behind the wall", () => {
+    const { run, archer, brute } = hidden();
+    const turn = turnFor(run, archer);
+    takeReady(run, archer, turn, readyStep(run, archer, turn), (u, e) => run.log.push({ ...e, actorId: u.id }));
+    expect(archer.readied).toMatchObject({ shot: true });
+    expect(run.log.find(e => e.type === "ready")).toMatchObject({ shot: true, targetId: "brute" });
+    step(run, brute, 60, 10);
+    expect(run.log.some(e => e.type === "readied")).toBe(false);
+    step(run, brute, 60, 60);
+    const readied = run.log.filter(e => e.type === "readied");
+    expect(readied).toHaveLength(1);
+    expect(readied[0]).toMatchObject({ actorId: "archer", targetId: "brute", shot: true });
+    expect(run.log[run.log.indexOf(readied[0]) + 1]).toMatchObject({ type: "attack", actorId: "archer", targetId: "brute" });
+    expect(archer.readied).toBe(null);
+    expect(archer.reactionsLeft).toBe(0);
+  });
+
+  test("set off by a foe coming into range in the open; not by one already in sight that moves", () => {
+    const far = hidden({ walls: null });
+    far.brute.pos.x = 400;
+    const turn = turnFor(far.run, far.archer);
+    takeReady(far.run, far.archer, turn, { step: "ready", cost: { actions: 2 }, action: readyShot(readying, far.archer), target: far.brute, attacks: 0, shot: true }, () => {});
+    step(far.run, far.brute, 280, 0);
+    expect(far.run.log.filter(e => e.type === "readied")).toHaveLength(1);
+    const near = hidden({ walls: null });
+    const turn2 = turnFor(near.run, near.archer);
+    takeReady(near.run, near.archer, turn2, { step: "ready", cost: { actions: 2 }, action: readyShot(readying, near.archer), target: near.brute, attacks: 0, shot: true }, () => {});
+    step(near.run, near.brute, 40, 0);
+    expect(near.run.log.some(e => e.type === "readied")).toBe(false);
+  });
+
+  test("not without the ammunition for it", () => {
+    const { run, archer } = hidden({ arrows: 0 });
+    expect(readyShot(readying, archer)).toBe(null);
+    expect(readyStep(run, archer, turnFor(run, archer))).toBe(null);
+  });
+
+  test("told in the log and the story as a shot", () => {
+    const ready = { type: "ready", actor: "Archer", action: "Shortbow", target: "Brute", shot: true };
+    const readied = { type: "readied", actor: "Archer", action: "Shortbow", target: "Brute", shot: true };
+    expect(logLine(ready)).toMatch(/Archer.*Shortbow/);
+    expect(english["event.readyShot"]?.length).toBeGreaterThan(0);
+    expect(english["event.readiedShot"]?.length).toBeGreaterThan(0);
+    expect(logLine(readied)).toMatch(/Archer.*Brute.*Shortbow/);
   });
 });
 

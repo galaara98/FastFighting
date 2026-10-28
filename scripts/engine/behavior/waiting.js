@@ -11,7 +11,8 @@
  *                 waited for (5e's homebrew Delay), its place last from then on.
  *   rules.ready   {cost, most}: a creature may Ready (PF2e's Ready: {actions: 2}, an action of 1 at most): it spends
  *                 `cost` of its turn to Strike, as a reaction, at the first foe that comes within its reach before its
- *                 next turn begins, with the attack penalty it had when it readied.
+ *                 next turn begins, with the attack penalty it had when it readied. A shot readied goes off at the
+ *                 first foe that comes into its sight and range instead.
  *
  * Neither for a system that passes the turn some other way (rules.roundTurns: Daggerheart's spotlight), nor in a
  * round of surprise. What each waits for:
@@ -25,27 +26,32 @@
  * Readying: one of the spare turn's steps (behavior/prepare.js spareBest, kit.ready), and one held back by its team's
  * head (a stance to wait) readies with the turn it doesn't use: worth its best everyday melee Strike's damage on
  * the foe most likely to come within its reach, as likely as some foe is to come (readyChance), less READY.reaction
- * where the reaction would have gone to a strike of its own anyway.
+ * where the reaction would have gone to a strike of its own anyway; or its best everyday shot's on the foe most likely
+ * to come into its sight and range (shotChance), whichever is worth more.
  * Pure: no Foundry globals.
  */
 import { TACTICAL } from "../../constants.js";
 import { areEnemies, isStanding, liveTier, edgeDistance, heldOff, behaviorOf, canMove } from "../battle-state.js";
-import { expectedDamage, unitsPerTurn } from "./evaluate.js";
+import { expectedDamage, unitsPerTurn, hasAmmo } from "./evaluate.js";
+import { wallsKnown, lineOfSight } from "./space.js";
+import { hiddenFrom, sensesOf, sightReach, DARK } from "./senses.js";
 import { bestReactionStrike } from "./reactions.js";
 import { prefersTalk, impatience } from "./standoff.js";
 import { isNeutral } from "./neutral.js";
 import { aidScores } from "./support.js";
 import { speedOf } from "./prepare.js";
 import { costOf, costUnits, normalizeCost } from "../turn.js";
+import { meanPart } from "../dice.js";
 
 /** Tuning: how likely a standoff's break must be to wait for it; how much a friend's bolstering must be worth. */
 export const DELAY = Object.freeze({ standoff: 0.2, aid: 1 });
 /**
  * Tuning: how likely a foe is to come within reach before the readier's next turn (one who fights in melee, one who
  * shoots), halved when the readier isn't its nearest foe; what a readied blow is worth where the reaction would have
- * struck anyway (an opportunity strike of its own).
+ * struck anyway (an opportunity strike of its own). For a shot readied, how likely a foe is to come into sight and
+ * range (one who fights in melee, one who shoots), halved when it's going for someone out of that range.
  */
-export const READY = Object.freeze({ melee: 0.6, ranged: 0.15, notNearest: 0.5, reaction: 0.8 });
+export const READY = Object.freeze({ melee: 0.6, ranged: 0.15, notNearest: 0.5, reaction: 0.8, sight: 0.5, sightShooter: 0.3 });
 
 /** Does the system have a turn order to wait in? */
 const orderly = rules => !rules.roundTurns;
@@ -175,10 +181,44 @@ export function readyStrike(rules, u) {
   return costUnits(rules, costOf(rules, strike, u)) <= most ? strike : null;
 }
 
+/**
+ * The shot u could ready: its best everyday ranged Strike (no multiattack, nothing with limited uses) with the
+ * ammunition for it, that costs the system's `most` at most as it is (drawn, loaded), or null.
+ */
+export function readyShot(rules, u) {
+  const most = rules.ready?.most ?? 1;
+  let best = null;
+  let bestScore = -Infinity;
+  for ( const a of u.prep?.offense ?? [] ) {
+    if ( a.kind !== "strike" || a.melee || !a.range || a.sequence || a.resource || Number.isFinite(a.uses) || !hasAmmo(u, a) ) continue;
+    if ( costUnits(rules, costOf(rules, a, u)) > most ) continue;
+    const score = (a.damage ?? []).reduce((s, p) => s + meanPart(p), 0) + (a.bonus ?? 0) * 0.5;
+    if ( score > bestScore ) { bestScore = score; best = a; }
+  }
+  return best;
+}
+
 /** Is p within o's reach of `strike`, sizes and all (as simulator.js throughReach reckons it)? */
 function inReachAt(u, o, p, strike) {
   const half = ((u.spec.position?.size ?? 5) + (o.spec.position?.size ?? 5)) / 2 - 5;
   return Math.max(5, Math.hypot(p.x - o.pos.x, p.y - o.pos.y) - half) <= (strike.reach ?? 5) + 0.5;
+}
+
+/** How far a shot goes: its maximum, else three range increments (as battle-state.js reachShape has it). */
+const shotRange = a => a.range.max ?? (a.range.increment ?? 0) * 3;
+
+/**
+ * Could o shoot u, were u at p, with `strike`: in range, sizes and all; in o's sight (o not blinded, u not hidden from
+ * it, near enough to see in the dark); a clear line between them on a map with its walls?
+ */
+function inShotAt(run, o, u, p, strike) {
+  if ( !o.pos || !p ) return false;
+  const half = ((u.spec.position?.size ?? 5) + (o.spec.position?.size ?? 5)) / 2 - 5;
+  const feet = Math.max(5, Math.hypot(p.x - o.pos.x, p.y - o.pos.y) - half);
+  if ( feet > shotRange(strike) + 0.5 ) return false;
+  if ( (o.conds?.blinded ?? 0) > 0 || hiddenFrom(o, u) ) return false;
+  if ( feet > sightReach(sensesOf(run, o), (run.prep.options.darkness ?? 0) >= DARK) ) return false;
+  return !wallsKnown(run) || lineOfSight(run, u, o, p);
 }
 
 /**
@@ -205,31 +245,68 @@ export function readyChance(run, u, strike) {
 }
 
 /**
+ * How likely foes are to come into u's sight and the range of `shot` before its next turn: each one u can't shoot now
+ * that could come within range in a turn, READY.sight if it fights in melee and has no shot, READY.sightShooter
+ * otherwise, halved where the foe it's going for (its nearest) isn't u and is out of that range of u; together, and the
+ * likeliest. {chance, foe}.
+ */
+export function shotChance(run, u, shot) {
+  const rules = run.prep.rules;
+  const range = shotRange(shot);
+  let miss = 1;
+  let best = null;
+  let bestP = 0;
+  for ( const f of run.units ) {
+    if ( f === u || !isStanding(f) || !f.active || !areEnemies(run, u, f) || heldOff(run, u, f) || f.leaving || !f.pos ) continue;
+    if ( inShotAt(run, u, f, f.pos, shot) ) continue;
+    const gap = edgeDistance(u, f);
+    if ( gap === null || gap - range > comesFar(rules, f) ) continue;
+    let p = meleeOf(f).length && !shoots(f) ? READY.sight : READY.sightShooter;
+    const goesFor = nearestFoe(run, f).foe;
+    if ( goesFor && goesFor !== u && (edgeDistance(u, goesFor) ?? Infinity) > range ) p *= READY.notNearest;
+    miss *= 1 - p;
+    if ( p > bestP ) { bestP = p; best = f; }
+  }
+  return { chance: 1 - miss, foe: best };
+}
+
+/**
  * Readying a Strike with what's left of the turn, as a spare step (behavior/prepare.js spareBest), `attacks` made in it
- * so far (the readied blow's penalty): {step: "ready", cost, worth, action, target, attacks}, or null where the system
- * has no Ready, the turn can't pay for it, it has no reaction left, nothing to ready or no foe likely to come.
+ * so far (the readied blow's penalty): {step: "ready", cost, worth, action, target, attacks, shot}, or null where the
+ * system has no Ready, the turn can't pay for it, it has no reaction left, nothing to ready or no foe likely to come.
+ * A blow for a foe coming within reach, or a shot for one coming into sight and range (`shot`), whichever is worth more.
  */
 export function readyStep(run, u, turn, { attacks = 0 } = {}) {
   const rules = run.prep.rules;
   if ( !rules.ready || !orderly(rules) || u.readied || !u.pos || !run.prep.options.positioning ) return null;
   const cost = normalizeCost(rules, rules.ready.cost ?? 2);
   if ( !turn.canAfford(cost) || !((u.reactionsLeft ?? 0) > 0) ) return null;
+  let pick = null;
   const strike = readyStrike(rules, u);
-  if ( !strike ) return null;
-  const { chance, foe } = readyChance(run, u, strike);
-  if ( !foe ) return null;
-  // (Its reaction would have struck a foe coming close anyway, where it has an opportunity strike: worth less.)
-  const opportunity = !!rules.opportunity?.(u, foe);
-  const worth = chance * expectedDamage(run, u, strike, foe, attacks) * (opportunity ? READY.reaction : 1);
-  return { step: "ready", cost, worth, action: strike, target: foe, attacks };
+  if ( strike ) {
+    const { chance, foe } = readyChance(run, u, strike);
+    if ( foe ) {
+      // (Its reaction would have struck a foe coming close anyway, where it has an opportunity strike: worth less.)
+      const opportunity = !!rules.opportunity?.(u, foe);
+      const worth = chance * expectedDamage(run, u, strike, foe, attacks) * (opportunity ? READY.reaction : 1);
+      pick = { step: "ready", cost, worth, action: strike, target: foe, attacks, shot: false };
+    }
+  }
+  const shot = readyShot(rules, u);
+  if ( shot ) {
+    const { chance, foe } = shotChance(run, u, shot);
+    const worth = foe ? chance * expectedDamage(run, u, shot, foe, attacks) : 0;
+    if ( foe && worth > (pick?.worth ?? 0) ) pick = { step: "ready", cost, worth, action: shot, target: foe, attacks, shot: true };
+  }
+  return pick;
 }
 
 /** A Strike readied (readyStep's): paid for, and held until its next turn. Told. */
 export function takeReady(run, u, turn, pick, say) {
   turn.spend(pick.cost);
-  u.readied = { actionId: pick.action.id, round: run.round, attacks: pick.attacks ?? 0 };
+  u.readied = { actionId: pick.action.id, round: run.round, attacks: pick.attacks ?? 0, ...(pick.shot ? { shot: true } : {}) };
   run.readying = true;
-  say(u, { type: "ready", action: pick.action.name ?? "", target: pick.target?.spec.name ?? "", targetId: pick.target?.id ?? null });
+  say(u, { type: "ready", action: pick.action.name ?? "", target: pick.target?.spec.name ?? "", targetId: pick.target?.id ?? null, ...(pick.shot ? { shot: true } : {}) });
 }
 
 /** What u readied, as its action (or null: none, or the action's gone). */
@@ -240,7 +317,9 @@ export function readiedAction(u) {
 
 /**
  * The foes whose readied Strike a move of u's sets off: each on its feet, with its reaction, whose reach the move
- * came into (it began outside it; without places on the map, it came to blows with them). [{o, strike}].
+ * came into (it began outside it; without places on the map, it came to blows with them), or, for a shot readied
+ * (`shot`), whose sight and range it came into (it couldn't have been shot where it began), with the ammunition for
+ * it still. [{o, strike, shot}].
  */
 export function readiedAgainst(run, u, move) {
   if ( !run.readying || !isStanding(u) ) return [];
@@ -249,10 +328,14 @@ export function readiedAgainst(run, u, move) {
     if ( o === u || !o.readied || !isStanding(o) || !((o.reactionsLeft ?? 0) > 0) || !areEnemies(run, o, u) || heldOff(run, o, u) ) continue;
     const strike = readiedAction(o);
     if ( !strike ) continue;
-    const came = o.pos && u.pos && move?.from
+    const shot = !!o.readied.shot;
+    let came;
+    if ( shot ) came = !!(o.pos && u.pos && move?.from) && hasAmmo(o, strike)
+      && inShotAt(run, o, u, u.pos, strike) && !inShotAt(run, o, u, move.from, strike);
+    else came = o.pos && u.pos && move?.from
       ? inReachAt(u, o, u.pos, strike) && !inReachAt(u, o, move.from, strike)
       : !u.pos && !!move?.reached && u.adjacent?.has(o.id);
-    if ( came ) out.push({ o, strike });
+    if ( came ) out.push({ o, strike, shot });
   }
   return out;
 }
