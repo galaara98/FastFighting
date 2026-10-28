@@ -6,10 +6,12 @@
  *     goes into the turn's cards (`into`) once made, so taking the turn back deletes it; Rewind This Encounter deletes
  *     every card marked as the battle's.
  *   - Moving a live battle's tracker (movingTracker): a system posts its turn's start once the tracker has moved, in its
- *     own time, so the lines made as it moves and for a moment after (SETTLE) are the battle's, each marked with the
- *     turn it started (`start`: {round, combatantId}, startOf). One for a turn told of before (a Rewind went back to
- *     it) takes the place of those (startedBefore). Rewind deletes those of turns it goes back past (startedAfter);
- *     Rewind This Encounter, all of them.
+ *     own time, so the lines made as it moves and for a moment after (SETTLE) are the battle's. One for the creature
+ *     whose turn it is (startOf) is marked with the turn it started (`start`: {round, combatantId, move}), unless
+ *     FastFighting is playing that turn already (turnBegun: what's posted then is the turn's own; startLine). One for a
+ *     turn told of in an earlier move (a Rewind went back to it) takes the place of those (startedBefore). Rewind deletes those of turns it goes back past (startedAfter);
+ *     Rewind This Encounter, all of them. A system may post none (PF2e's are a setting the GM may turn off), and the GM
+ *     may delete one before a Rewind: then there's nothing to mark or delete (forgetLine).
  *   - Taking a write back (takingBack, a Rewind): none is posted at all. What it would tell of undoes FastFighting's own
  *     change, whose line goes too.
  * A side line is a message this browser's user makes (the GM's, writing), with no dice (a roll's card is the turn's own,
@@ -17,7 +19,7 @@
  * Anything else posted meanwhile, a player's chat or the GM's own, is left alone: a line typed in the chat while
  * FastFighting writes or moves the tracker, in character or not, is marked as typed as it's made (typedLine), and never
  * taken for a side line.
- * The decisions (sideLine, typedLine, scopeAt, startedAfter, startedBefore) are pure; the hooks need Foundry.
+ * The decisions (sideLine, typedLine, scopeAt, startLine, startedAfter, startedBefore) are pure; the hooks need Foundry.
  */
 import { MODULE_ID } from "../constants.js";
 
@@ -26,8 +28,13 @@ export const SETTLE = 3000;
 
 /** Where FastFighting is writing now: {battle, actors: Set<actorId>, into: string[]|null, drop}, or null. */
 let scope = null;
-/** FastFighting's latest move of the tracker: {battle, actors, startOf, open (1 while it moves), until (ms)}, or null. */
+/**
+ * FastFighting's latest move of the tracker: {battle, actors, startOf, seq, open (1 while it moves), until (ms), playing
+ * (the combatant whose turn FastFighting has begun since, by id)}, or null.
+ */
 let moved = null;
+/** How many moves of the tracker FastFighting has made here: each one's own number (seq). */
+let moves = 0;
 /** Side lines marked and not yet made: their mark -> the turn's cards they go into. */
 const pending = new Map();
 
@@ -55,6 +62,15 @@ export function scopeAt(writing, move, now) {
 }
 
 /**
+ * The turn's start a line marked in a move (`at`) tells of: `of` (startOf's {round, combatantId}, or null) with the
+ * move's number, or null if there's none, or FastFighting is playing that turn already (its own card). Pure.
+ */
+export function startLine(of, at) {
+  if ( !of || !at || at.playing === of.combatantId ) return null;
+  return { ...of, move: at.seq };
+}
+
+/**
  * A line typed in the chat (Foundry's chatMessage hook: its data before it's made), while FastFighting writes (`at`, the
  * scope): marked as typed, the user's own, so it isn't taken for a side line. Outside a write, left as it is. Pure.
  */
@@ -79,13 +95,18 @@ export function startedAfter(messages, battle, now, at) {
   });
 }
 
-/** The start lines the system made before `made` (one just made) for the same turn of the same battle. Pure. */
+/**
+ * The start lines the system made for the same turn of the same battle as `made` (one just made) in an earlier move of
+ * the tracker: told of again, the turn's start replaces them. Those of the same move stay (two lines for one start).
+ * Pure.
+ */
 export function startedBefore(messages, made) {
   const of = made?.flags?.[MODULE_ID]?.live;
   if ( !of?.battle || !of.start ) return [];
   return messages.filter(m => {
     const live = m !== made && m?.id !== made.id ? m?.flags?.[MODULE_ID]?.live : null;
-    return live?.battle === of.battle && live.start?.round === of.start.round && live.start.combatantId === of.start.combatantId;
+    return live?.battle === of.battle && live.start?.round === of.start.round && live.start.combatantId === of.start.combatantId
+      && (live.start.move ?? 0) < (of.start.move ?? 0);
   });
 }
 
@@ -111,12 +132,42 @@ export const takingBack = (actors, fn) => within({ battle: null, actors, into: n
  * with the turn it starts (`startOf(message)`: {round, combatantId}, or null).
  */
 export async function movingTracker(battle, actors, startOf, fn) {
-  const move = moved = { battle, actors, startOf, into: null, drop: false, open: 1, until: 0 };
+  const move = moved = { battle, actors, startOf, seq: ++moves, into: null, drop: false, open: 1, until: 0, playing: null };
   try {
     return await fn();
   } finally {
     move.open = 0;
     move.until = Date.now() + SETTLE;
+  }
+}
+
+/** FastFighting begins `combatantId`'s turn: what's posted for it from now on is the turn's own, not its start's. */
+export function turnBegun(combatantId) {
+  if ( moved ) moved.playing = combatantId ?? null;
+}
+
+/** A line deleted if it's still in the chat: the GM, or another browser, may have deleted it already. */
+export async function forgetLine(message) {
+  if ( !message?.id || !game.messages?.has(message.id) ) return;
+  try {
+    await message.delete();
+  } catch ( err ) {
+    if ( game.messages?.has(message.id) ) console.warn(`${MODULE_ID} | deleting a line`, err);
+  }
+}
+
+/** Rewind going back to `now` ({round, at}): the battle's start lines of the turns after it deleted (startedAfter). */
+export async function dropStartsAfter(battle, now, at) {
+  for ( const m of startedAfter(game.messages?.contents ?? [], battle, now, at) ) await forgetLine(m);
+}
+
+/** The turn a line starts (startOf), or null if it can't be told. */
+function startOfLine(at, message) {
+  try {
+    return at.startOf?.(message) ?? null;
+  } catch ( err ) {
+    console.warn(`${MODULE_ID} | the turn a line starts`, err);
+    return null;
   }
 }
 
@@ -126,7 +177,7 @@ function preCreate(message, data, options, userId) {
   if ( what === "drop" ) return false;
   if ( what !== "mark" ) return;
   const mark = foundry.utils.randomID();
-  const start = at.startOf?.(message) ?? null;
+  const start = at.seq ? startLine(startOfLine(at, message), at) : null;
   message.updateSource({ [`flags.${MODULE_ID}.live`]: { battle: at.battle, line: mark, ...(start ? { start } : {}) } });
   if ( at.into ) pending.set(mark, at.into);
 }
@@ -137,7 +188,7 @@ async function created(message, options, userId) {
     pending.get(mark).push(message.id);
     pending.delete(mark);
   }
-  if ( userId === game.user?.id ) for ( const m of startedBefore(game.messages.contents, message) ) await m.delete();
+  if ( userId === game.user?.id ) for ( const m of startedBefore(game.messages?.contents ?? [], message) ) await forgetLine(m);
 }
 
 export function registerSideLines() {

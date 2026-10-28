@@ -51,6 +51,12 @@ describe("what a system tells of a turn's start as FastFighting moves the tracke
     expect(scopeAt(null, settled, 4001)).toBeNull();
     expect(scopeAt(writing, move, 5000)).toBe(writing);
     expect(scopeAt(null, null, 5000)).toBeNull();
+    const { startLine } = await import("../scripts/foundry/side-lines.js");
+    // (The turn it tells of the start of, with the move's number; none once FastFighting plays that turn: its own card.)
+    expect(startLine({ round: 2, combatantId: "c1" }, { ...move, seq: 7, playing: null })).toEqual({ round: 2, combatantId: "c1", move: 7 });
+    expect(startLine({ round: 2, combatantId: "c1" }, { ...move, seq: 7, playing: "c1" })).toBeNull();
+    expect(startLine({ round: 2, combatantId: "c1" }, { ...move, seq: 7, playing: "c2" })).toEqual({ round: 2, combatantId: "c1", move: 7 });
+    expect(startLine(null, { ...move, seq: 7 })).toBeNull();
     expect(sideLine(line(), scopeAt(null, move, 5000), true)).toBe("mark");
   });
 
@@ -76,12 +82,12 @@ describe("what a system tells of a turn's start as FastFighting moves the tracke
     expect(ids({ round: 1, at: -1 })).toEqual(["1a", "1b", "1c", "2a"]);
   });
 
-  test("told of a turn again (a Rewind went back to it): the new one takes the place of the battle's older ones for it", async () => {
+  test("told of a turn again (a Rewind went back to it): the new one takes the place of the battle's older ones for it, not of those of its own move", async () => {
     const { startedBefore } = await import("../scripts/foundry/side-lines.js");
-    const card = (id, round, combatantId, battle = "b1") => ({ id, flags: { [MODULE_ID]: { live: { battle, line: id, start: { round, combatantId } } } } });
-    const old = card("old", 1, "a");
-    const again = card("again", 1, "a");
-    const messages = [old, card("next", 1, "b"), card("later", 2, "a"), card("other", 1, "a", "b2"), again];
+    const card = (id, round, combatantId, move, battle = "b1") => ({ id, flags: { [MODULE_ID]: { live: { battle, line: id, start: { round, combatantId, move } } } } });
+    const old = card("old", 1, "a", 1);
+    const again = card("again", 1, "a", 3);
+    const messages = [old, card("same-move", 1, "a", 3), card("next", 1, "b", 2), card("later", 2, "a", 2), card("other", 1, "a", 1, "b2"), again];
     expect(startedBefore(messages, again).map(m => m.id)).toEqual(["old"]);
     expect(startedBefore(messages, { id: "plain", flags: { [MODULE_ID]: { live: { battle: "b1", line: "s" } } } })).toEqual([]);
     expect(startedBefore(messages, { id: "theirs", flags: {} })).toEqual([]);

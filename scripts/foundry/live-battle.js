@@ -48,7 +48,7 @@ import {
 } from "../engine/live.js";
 import { postRolls, postTally, tallyOf, audiencesFor, audienceFor } from "./table-rolls.js";
 import { cardGm, chatMessageClass, gmIds } from "./chat.js";
-import { registerSideLines, writingFor, takingBack, movingTracker, startedAfter } from "./side-lines.js";
+import { registerSideLines, writingFor, takingBack, movingTracker, turnBegun, dropStartsAfter, forgetLine } from "./side-lines.js";
 import { diffAll, sideAfter, leaveToTable } from "../engine/changes.js";
 import { undoRecord } from "./sheet-tools.js";
 import { keepUpdate, keptBattle } from "./live-keeping.js";
@@ -985,6 +985,8 @@ async function joinFight(combatant) {
  * player, here, offered a deal (dealTurnCard).
  */
 async function beginPlayerTurn(u, combatant) {
+  // (What the system posts for it from here on is the turn's, not what it told of its start: side-lines.js.)
+  turnBegun(combatant?.id);
   const snapshot = snapshotRun(battle.run, { log: false });
   pcTurnBegin(battle.run, u.id, { nonce: freshNonce() });
   const doc = docOf(u.id);
@@ -1089,6 +1091,8 @@ function refreshApproach() {
 /* -------------------------------------------- */
 
 async function playTurn(u, combatant, key) {
+  // (What the system posts for it from here on is the turn's, not what it told of its start: side-lines.js.)
+  turnBegun(combatant?.id);
   const adapter = getAdapter();
   syncFromSheets(battle.run, await readStates());
   syncPools(adapter);
@@ -3344,9 +3348,11 @@ const battleActors = () => new Set(battle.run.units.map(u => docOf(u.id)?.actor?
 function moving(fn) {
   if ( !battle ) return fn();
   const combat = battle.combat;
+  // (Only the creature whose turn it is: what the system tells of its turn's start.)
   const startOf = m => {
-    const c = combat.combatants.find(x => !!m.speaker?.token && x.tokenId === m.speaker.token) ?? combat.combatants.find(x => !!m.speaker?.actor && x.actorId === m.speaker.actor);
-    return c ? { round: combat.round, combatantId: c.id } : null;
+    const c = combat.combatant;
+    const speaks = !!c && (m.speaker?.token ? c.tokenId === m.speaker.token : !!m.speaker?.actor && c.actorId === m.speaker.actor);
+    return speaks ? { round: combat.round, combatantId: c.id } : null;
   };
   return movingTracker(battle.data.id, battleActors(), startOf, fn);
 }
@@ -3355,9 +3361,7 @@ function moving(fn) {
 const orderOf = id => battle.combat.turns.findIndex(c => c.id === id);
 
 /** Rewind going back to `now` ({round, at}): what the system told of the starts it goes back past, deleted (startedAfter). */
-async function dropStarts(now) {
-  for ( const m of startedAfter(game.messages.contents, battle.data.id, now, orderOf) ) await m.delete();
-}
+const dropStarts = now => dropStartsAfter(battle.data.id, now, orderOf);
 
 /**
  * writeChanges' work: each creature's change set onto its sheet, by the helper's commitChanges.
@@ -3945,7 +3949,7 @@ export function rewindEncounter() {
     // (Its opening cards, and the combat as it was: not started, the initiative it rolled taken back, and those who
     // joined it on the way gone from it.)
     for ( const id of [...(battle.data.opening ?? []), ...(battle.data.rollCards ?? [])] ) await game.messages.get(id)?.delete();
-    for ( const m of game.messages.filter(x => x.getFlag(MODULE_ID, "live")?.battle === battle.data.id && x.author?.isGM) ) await m.delete();
+    for ( const m of game.messages.filter(x => x.getFlag(MODULE_ID, "live")?.battle === battle.data.id && x.author?.isGM) ) await forgetLine(m);
     // (And whatever else a creature in it rolled since it began, that no turn took.)
     const tokens = new Set(battle.run.units.map(u => tokenIdOf(u)));
     const actors = new Set(battle.run.units.map(u => docOf(u.id)?.actor?.id).filter(Boolean));
