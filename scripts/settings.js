@@ -99,7 +99,7 @@ const SETTINGS = {
   pcMeat: { group: "after", type: Boolean, default: false },
   fledMode: { group: "after", type: String, default: "hide", choices: choices(["hide", "leave"], "Fled") },
 
-  // Troubleshooting: live battles' transcripts kept for 30 days, and the planner's last run with them (off: a transcript
+  // Troubleshooting: live battles' transcripts kept for 7 days, and the planner's last run with them (off: a transcript
   // goes with its combat; foundry/live-journals.js). A world setting: only a GM changes it.
   troubleshooting: { group: "troubleshooting", type: Boolean, default: false },
   // The planner's fights on background workers (engine/batch-pool.js), where the browser and the system's helper allow.

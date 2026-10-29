@@ -268,7 +268,7 @@
       },
       "troubleshooting": {
         "Name": "Troubleshooting",
-        "Hint": "Keeps each live battle's transcript, and the planner's last run, for 30 days, even after the encounter is deleted. Turn on before reporting a bug. While on, a player who digs could read the last run's odds."
+        "Hint": "Keeps each live battle's transcript, and the planner's last run, for 7 days, even after the encounter is deleted. Turn on before reporting a bug. While on, a player who digs could read the last run's odds."
       },
       "plannerWorkers": {
         "Name": "Background workers",

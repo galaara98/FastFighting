@@ -16,7 +16,7 @@ export const TRANSCRIPT_FOLDER = "FF_FF_LiveBattle_Transcripts";
 /** The planner's last run, while troubleshooting. */
 export const PLAN_JOURNAL = "FF_FF_BattlePlan_LastRun";
 /** How long a journal is kept after its last keep, for troubleshooting and by the cleanup (days). */
-export const KEEP_DAYS = 30;
+export const KEEP_DAYS = 7;
 const DAY = 24 * 60 * 60 * 1000;
 
 /** What the file Export makes says it is. */
