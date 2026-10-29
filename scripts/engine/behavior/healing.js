@@ -7,7 +7,7 @@ import { alliesOf, liveTier, liveTrait, movesNeeded, canMove, refusesToHelp, beh
 import { hasUses, costOf, costUnits } from "./evaluate.js";
 import { mainPool } from "../turn.js";
 import { threats, isWary } from "./reactions.js";
-import { addCosts } from "../turn.js";
+import { addCosts, DISENGAGE } from "../turn.js";
 import { mind, levelOf } from "./desire.js";
 import { bringsItself } from "./reluctance.js";
 import { perceives } from "./senses.js";
@@ -159,7 +159,7 @@ export function decideHeal(run, u, turn) {
     // take the risk for a friend who is down; they won't for a scratch.
     if ( !u.disengaged && threats(run, u, best).length && isWary(run, u) ) {
       const safe = rules.disengage?.(u);
-      const safely = safe && turn.canAfford(addCosts(cost, safe.cost));
+      const safely = safe && turn.canAfford(addCosts(cost, safe.cost), DISENGAGE);
       if ( !safely && best.status !== STATUS.DOWN ) return null;
     }
     return { a, moves, units };
