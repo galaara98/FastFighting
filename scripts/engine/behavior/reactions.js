@@ -27,6 +27,7 @@ import { mind } from "./desire.js";
 import { cutOff } from "./troubles.js";
 import { answersTo } from "../../story/master.js";
 import { addCosts } from "../turn.js";
+import { needsDraw, isLoaded } from "../gear.js";
 
 /** Reactions u has each round: none in a system without opportunity attacks or Ready (behavior/waiting.js). */
 export function reactionsPerRound(rules, u) {
@@ -78,7 +79,7 @@ export function ownMoveStrike(u, trigger) {
     if ( !r.strike || !answersTo(r, trigger) ) continue;
     if ( r.resource ? (u.resources[r.resource] ?? 0) < (r.amount ?? 1) : Number.isFinite(r.uses) && (u.reactionUses?.[r.id] ?? r.uses) <= 0 ) continue;
     const named = typeof r.strike === "string" ? [r.strike] : Array.isArray(r.strike) ? r.strike : null;
-    const strike = named ? (u.prep?.offense ?? []).filter(a => a.kind === "strike" && a.melee && named.includes(a.id))
+    const strike = named ? (u.prep?.offense ?? []).filter(a => a.kind === "strike" && a.melee && named.includes(a.id) && reactsWith(u, a))
       .sort((a, b) => (b.damage ?? []).reduce((s, p) => s + meanPart(p), 0) - (a.damage ?? []).reduce((s, p) => s + meanPart(p), 0))[0] ?? null : bestReactionStrike(u);
     if ( strike ) return { reaction: r, strike };
   }
@@ -147,14 +148,25 @@ export function takesSafeWay(run, u, safe, turn, need = null) {
 }
 
 /**
- * The best everyday melee strike a creature could react with (no Multiattack, nothing with limited uses): what a
- * system's `opportunity` usually returns once it has decided the creature can react at all.
+ * Can u strike with it as a reaction: one plain blow (not an activity of several actions, a class action's, Vicious
+ * Swing), with its weapon in hand and loaded (a reaction has no time to draw it: engine/gear.js)?
+ */
+export function reactsWith(u, a) {
+  if ( a.classAction || a.oncePerTurn || a.charge ) return false;
+  const cost = typeof a.cost === "number" ? a.cost : Math.max(0, ...Object.values(a.cost ?? {}).map(Number).filter(Number.isFinite));
+  return !(cost > 1) && !needsDraw(u, a) && isLoaded(u, a);
+}
+
+/**
+ * The best everyday melee strike a creature could react with (no Multiattack, nothing with limited uses, only what it
+ * can strike with now: reactsWith): what a system's `opportunity` usually returns once it has decided the creature can
+ * react at all.
  */
 export function bestReactionStrike(u) {
   let best = null;
   let bestScore = -Infinity;
   for ( const a of u.prep?.offense ?? [] ) {
-    if ( a.kind !== "strike" || !a.melee || a.sequence || a.resource || Number.isFinite(a.uses) ) continue;
+    if ( a.kind !== "strike" || !a.melee || a.sequence || a.resource || Number.isFinite(a.uses) || !reactsWith(u, a) ) continue;
     const score = (a.damage ?? []).reduce((s, p) => s + meanPart(p), 0) + (a.bonus ?? 0) * 0.5;
     if ( score > bestScore ) { bestScore = score; best = a; }
   }

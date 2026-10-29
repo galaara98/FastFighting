@@ -22,7 +22,8 @@
  *              shot, waits for the first foe after it who is likely to come to it (one who fights in melee, could get
  *              to it this turn, and has no nearer foe), then has its whole turn for blows
  *   aid        one that thinks waits for the first friend after it whose bolstering is worth more to it than its own
- *              blows (support.js aidScores, DELAY.aid at least)
+ *              blows (support.js aidScores, DELAY.aid at least); not with a foe to strike where it stands, nor hurt,
+ *              nor for a friend hurt or down on the ground (DELAY.hurt)
  * Readying: one of the spare turn's steps (behavior/prepare.js spareBest, kit.ready), and one held back by its team's
  * head (a stance to wait) readies with the turn it doesn't use: worth its best everyday melee Strike's damage on
  * the foe most likely to come within its reach, as likely as some foe is to come (readyChance), less READY.reaction
@@ -31,7 +32,7 @@
  * Pure: no Foundry globals.
  */
 import { TACTICAL } from "../../constants.js";
-import { areEnemies, isStanding, liveTier, edgeDistance, heldOff, behaviorOf, canMove } from "../battle-state.js";
+import { areEnemies, isStanding, liveTier, edgeDistance, heldOff, behaviorOf, canMove, hpFraction } from "../battle-state.js";
 import { expectedDamage, unitsPerTurn, hasAmmo } from "./evaluate.js";
 import { wallsKnown, lineOfSight } from "./space.js";
 import { hiddenFrom, sensesOf, sightReach, DARK } from "./senses.js";
@@ -43,8 +44,11 @@ import { speedOf } from "./prepare.js";
 import { costOf, costUnits, normalizeCost } from "../turn.js";
 import { meanPart } from "../dice.js";
 
-/** Tuning: how likely a standoff's break must be to wait for it; how much a friend's bolstering must be worth. */
-export const DELAY = Object.freeze({ standoff: 0.2, aid: 1 });
+/**
+ * Tuning: how likely a standoff's break must be to wait for it; how much a friend's bolstering must be worth; below how
+ * much of its hit points one is too hurt to wait for it (or a friend too hurt to give it).
+ */
+export const DELAY = Object.freeze({ standoff: 0.2, aid: 1, hurt: 0.5 });
 /**
  * Tuning: how likely a foe is to come within reach before the readier's next turn (one who fights in melee, one who
  * shoots), halved when the readier isn't its nearest foe; what a readied blow is worth where the reaction would have
@@ -88,6 +92,14 @@ const comesFar = (rules, f) => speedOf(f) * (rules.movement === "feet" ? 2 : uni
 const meleeOf = u => (u.prep?.offense ?? []).filter(a => a.melee);
 const shoots = u => (u.prep?.offense ?? []).some(a => a.range && !a.melee);
 const reachOf = u => Math.max(5, ...meleeOf(u).map(a => a.reach ?? 5));
+
+/** A foe on its feet that u could strike where it stands (engaged, or within its reach on the map). */
+function foeInReach(run, u) {
+  if ( [...(u.adjacent ?? [])].some(id => { const o = run.byId.get(id); return o && isStanding(o) && areEnemies(run, u, o); }) ) return true;
+  if ( !run.prep.options.positioning || !u.pos || !meleeOf(u).length ) return false;
+  const { d } = nearestFoe(run, u);
+  return Number.isFinite(d) && d <= reachOf(u) + 0.5;
+}
 
 /**
  * Who u waits for as its turn begins, where the system lets it Delay (rules.delay): {why, afterId, forId} (it comes back
@@ -147,10 +159,16 @@ function waitForReach(run, u, later) {
   return null;
 }
 
-/** The first friend after it whose bolstering is worth waiting for. */
+/**
+ * The first friend after it whose bolstering is worth waiting for. Not while it has a foe to strike where it stands, nor
+ * hurt (below DELAY.hurt of its hit points): it acts now. Nor for a friend with itself to see to first (hurt, or down
+ * on the ground).
+ */
 function waitForAid(run, u, later) {
+  if ( hpFraction(u) < DELAY.hurt || foeInReach(run, u) ) return null;
   for ( const a of later ) {
     if ( a.side !== u.side || isNeutral(a) || !a.prep.buffActions?.length || a.conds?.incapacitated ) continue;
+    if ( hpFraction(a) < DELAY.hurt || a.conds?.prone ) continue;
     const mine = aidScores(run, a).find(x => x.ally === u);
     if ( mine && mine.score >= DELAY.aid ) return { why: "aid", afterId: a.id, forId: a.id };
   }

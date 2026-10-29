@@ -343,3 +343,37 @@ describe("live battles", () => {
     expect(delayedInitiative({})).toBe(null);
   });
 });
+
+describe("Delay: waiting for a friend's help", () => {
+  const heroism = { id: "heroism", name: "Heroism", kind: "buff", cost: 1, reach: 30, outcome: { mods: { attack: 3, damage: 6 }, rounds: 10 }, targets: "ally" };
+  const big = strike({ bonus: 10, damage: [{ dice: [{ n: 2, faces: 12, mult: 1 }], flat: 10, type: "slashing", persistent: false, category: null }] });
+  /** A fighter, a bard after it with a bolstering worth waiting for, and an orc `orcAt` feet off. */
+  function waiting({ orcAt = 15, heroHp = 100, bardHp = 100 } = {}) {
+    const spec = battle([
+      creature({ id: "hero", position: at(0), initiative: { mod: 100 }, hp: { value: heroHp, max: 100 }, actions: [big] }),
+      creature({ id: "bard", position: at(10), initiative: { mod: 50 }, hp: { value: bardHp, max: 100 }, actions: [heroism, strike({ bonus: 0 })] }),
+      creature({ id: "orc", side: "hostile", position: at(orcAt), initiative: { mod: -100 }, hp: { value: 300, max: 300 }, flags: { fearless: true } })
+    ], { positioning: true, maxRounds: 3 });
+    const run = beginRun(prepareBattle(spec, delaying), 1, { log: true });
+    run.round = 1;
+    for ( const u of run.units ) u.active = true;
+    return { run, by: id => run.byId.get(id) };
+  }
+
+  test("with no foe to strike where it stands, it waits for the friend's bolstering", () => {
+    const { run, by } = waiting();
+    expect(delayFor(run, by("hero"))).toMatchObject({ why: "aid", afterId: "bard" });
+  });
+
+  test("not with a foe in its reach, nor hurt, nor for a friend hurt or on the ground", () => {
+    const beside = waiting({ orcAt: 5 });
+    expect(delayFor(beside.run, beside.by("hero"))).toBeNull();
+    const hurt = waiting({ heroHp: 40 });
+    expect(delayFor(hurt.run, hurt.by("hero"))).toBeNull();
+    const bardHurt = waiting({ bardHp: 30 });
+    expect(delayFor(bardHurt.run, bardHurt.by("hero"))).toBeNull();
+    const prone = waiting();
+    prone.by("bard").conds.prone = true;
+    expect(delayFor(prone.run, prone.by("hero"))).toBeNull();
+  });
+});

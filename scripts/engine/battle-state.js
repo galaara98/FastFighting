@@ -318,6 +318,20 @@ const ADHD_TACTICAL = 0.3;
 export const actionKey = action => (action.ownerId ? `${action.ownerId}|${action.id}` : action.id);
 
 /**
+ * What an action's once a turn counts by (action.oncePerTurn): true, the action itself (its id); a string, a key it
+ * shares with others, so only one of them a turn (PF2e's flourish).
+ */
+export const onceKey = action => (typeof action.oncePerTurn === "string" ? `once:${action.oncePerTurn}` : action.id);
+
+/** Has u used this action's once a turn (onceKey) already this turn? */
+export const usedOnce = (u, action) => !!action.oncePerTurn && !!u.usedThisTurn?.has(onceKey(action));
+
+/** This action's once a turn, used (where it has one). */
+export function useOnce(u, action) {
+  if ( action.oncePerTurn ) (u.usedThisTurn ??= new Set()).add(onceKey(action));
+}
+
+/**
  * Two creatures with actions of the same id that aren't the same action (two unlinked tokens of one actor, one of them
  * changed: PF2e's ids are its actor's): each such action of the later ones knows whose it is (ownerId), so what's worked
  * out for one is not taken for the other's (actionKey). The same action shared is left be.
@@ -1417,17 +1431,26 @@ export function moveToward(run, a, t, reach = null, budget = null, { range = nul
       // together, ending in reach bunched up beside a teammate: a spot in reach that isn't, if this move gets there too.)
       if ( reach !== null && inTheWay(run, a, to) ) to = freeEnd(run, a, t, reach, progress) ?? to;
       else if ( reach !== null && edgeDistance(a, t) - reach <= progress + 0.5 ) to = spread(run, a, t, reach, progress, to);
-      // (Those in the way: round them, through them, or tumbling past, as the system says: behavior/space.js.)
-      const past = passing(run, a, to, t);
+      // (Where it ends up, free and as far as the move goes with the way round or through those in it, settled before
+      // anything is rolled: it tumbles past no one it would then stop short of anyway.)
+      if ( inTheWay(run, a, to) ) to = backOff(run, a, to);
+      const dry = passing(run, a, to, t, { dry: true });
+      const ahead = dry.extra;
+      if ( dry.stop ) to = dry.stop.at;
+      if ( ahead > 0 && Math.hypot(to.x - a.pos.x, to.y - a.pos.y) + ahead > progress + 0.5 ) {
+        // (The way round takes some of the move: as far as the rest goes.)
+        const left = Math.max(0, progress - ahead);
+        const k = left / Math.max(0.001, Math.hypot(to.x - a.pos.x, to.y - a.pos.y));
+        if ( k < 1 ) to = backOff(run, a, { x: a.pos.x + (to.x - a.pos.x) * k, y: a.pos.y + (to.y - a.pos.y) * k });
+      }
+      // (Those in the way of that: round them, through them, or tumbling past, as the system says: behavior/space.js.
+      // Going nowhere, past no one.)
+      const going = Math.hypot(to.x - a.pos.x, to.y - a.pos.y) >= 0.5;
+      const past = going ? passing(run, a, to, t) : { extra: 0, stop: null };
       extra = past.extra;
       if ( past.stop ) {
         to = past.stop.at;
         stopped = past.stop.o;
-      } else if ( extra > 0 && Math.hypot(to.x - a.pos.x, to.y - a.pos.y) + extra > progress + 0.5 ) {
-        // (The way round takes some of the move: as far as the rest goes.)
-        const left = Math.max(0, progress - extra);
-        const k = left / Math.max(0.001, Math.hypot(to.x - a.pos.x, to.y - a.pos.y));
-        if ( k < 1 ) to = backOff(run, a, { x: a.pos.x + (to.x - a.pos.x) * k, y: a.pos.y + (to.y - a.pos.y) * k });
       }
       // (Never ending in someone's space.)
       if ( inTheWay(run, a, to) ) to = backOff(run, a, to);
@@ -1487,26 +1510,35 @@ function backOff(run, a, to) {
 
 /**
  * Getting past those between a and `to`: the extra feet round them (or through them as difficult ground), and a
- * tumble past each one the system says to (rules.tumbleThrough): failed, its move stops short of that one ({stop: {o,
- * at}}). Logged.
+ * tumble past each one the system says to (rules.tumbleThrough), as many in a move as the system allows
+ * (rules.tumblesPerMove: PF2e's one enemy a Tumble Through): failed, or one more than that, its move stops short of
+ * that one ({stop: {o, at}}). Logged. `dry`: nothing rolled or logged, every tumble it may try taken as made: the extra
+ * feet, and where the one past them stops it.
  */
-function passing(run, a, to, t) {
+function passing(run, a, to, t, { dry = false } = {}) {
   const list = crossed(run, a, a.pos, to, t);
   if ( !list.length ) return { extra: 0, stop: null };
   const rules = run.prep.rules;
+  const most = Number.isFinite(rules.tumblesPerMove) ? rules.tumblesPerMove : Infinity;
   let extra = 0;
+  let tumbled = 0;
   for ( const { o, k } of list ) {
     const how = passOf(run, a, o, areEnemies);
     if ( how === "around" || how === "difficult" ) extra += o.spec.position?.size ?? 5;
     if ( how !== "tumble" ) continue;
-    const got = rules.tumbleThrough?.(run, a, o) ?? { success: false };
-    run.trapLog?.(a, { type: "tumble", target: o.spec.name, targetId: o.id, success: !!got.success, natural: got.natural, mod: got.mod, total: got.total, dc: got.dc, ...(got.said?.text ? { said: got.said.text } : {}) });
+    tumbled += 1;
+    if ( dry && tumbled <= most ) {
+      extra += o.spec.position?.size ?? 5;
+      continue;
+    }
+    const got = tumbled > most ? null : rules.tumbleThrough?.(run, a, o) ?? { success: false };
+    if ( got ) run.trapLog?.(a, { type: "tumble", target: o.spec.name, targetId: o.id, success: !!got.success, natural: got.natural, mod: got.mod, total: got.total, dc: got.dc, ...(got.said?.text ? { said: got.said.text } : {}) });
     // (Through it, as through difficult ground, unless the system says not: PF2e's Tumble Through.)
-    if ( got.success ) {
+    if ( got?.success ) {
       if ( got.difficult !== false ) extra += o.spec.position?.size ?? 5;
       continue;
     }
-    // (Stopped short of it: as near as it gets without sharing its space.)
+    // (Stopped short of it, failed or not tried: as near as it gets without sharing its space.)
     const reachK = Math.max(0, k - ((a.spec.position?.size ?? 5) + (o.spec.position?.size ?? 5)) / 2 / Math.max(1, Math.hypot(to.x - a.pos.x, to.y - a.pos.y)));
     return { extra, stop: { o, at: backOff(run, a, { x: a.pos.x + (to.x - a.pos.x) * reachK, y: a.pos.y + (to.y - a.pos.y) * reachK }) } };
   }

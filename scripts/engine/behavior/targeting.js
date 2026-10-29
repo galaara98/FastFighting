@@ -8,7 +8,7 @@
  *   Mastermind   side-wide focus target; ruthless ones finish off the downed
  */
 import { STATUS, TACTICAL, NEUTRAL_PARTY } from "../../constants.js";
-import { enemiesOf, isStanding, liveTier, liveTrait, movesNeeded, behaviorOf, heldOff, holdsBackThisRound, pullsThisRound, regenOf, edgeDistance, isExposed } from "../battle-state.js";
+import { enemiesOf, isStanding, liveTier, liveTrait, movesNeeded, behaviorOf, heldOff, holdsBackThisRound, pullsThisRound, regenOf, edgeDistance, isExposed, usedOnce } from "../battle-state.js";
 import { meanPart } from "../dice.js";
 import { isAnimalistic } from "./animal.js";
 import { hasTrait } from "../conditions.js";
@@ -92,7 +92,7 @@ export function bestOptionVs(run, u, t, attacksMade = 0, turn = null) {
   const options = [];
   for ( const action of u.prep.offense ) {
     if ( !hasUses(u, action) ) continue;
-    if ( action.oncePerTurn && u.usedThisTurn?.has(action.id) ) continue; // (PF2e Flurry of Blows)
+    if ( usedOnce(u, action) ) continue; // (PF2e Flurry of Blows; one flourish a turn)
     if ( run.prep.rules.usable && !run.prep.rules.usable(run, u, action, t) ) continue; // (Ironsworn: Strike needs the initiative)
     if ( !meets(run, u, action, t) ) continue; // (what it needs first: a grab, a hit, two hits on this foe: requires.js)
     // (Un-Mundane: a fist only once it has nothing else to hurt with.)

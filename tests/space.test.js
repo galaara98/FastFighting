@@ -152,6 +152,19 @@ describe("room", () => {
     expect(o.pos.x).toBe(15);
   });
 
+  test("tumbling past as many in a move as the system allows (PF2e one): the next stops it short, untried", () => {
+    const tumbles = [];
+    const rules = { ...pf2eRules, tumblesPerMove: 1, passThrough: (r, u, o) => (areEnemies(r, u, o) ? "tumble" : null),
+      tumbleThrough: (r, u, o) => { tumbles.push(o.id); return { success: true }; } };
+    const run = fight([who("hero", "friendly", 0), who("orc", "hostile", 15), who("kobold", "hostile", 25), who("target", "hostile", 45)], { rules });
+    const [h, , , t] = get(run, "hero", "orc", "kobold", "target");
+    moveToward(run, h, t, 5, 60);
+    expect(tumbles).toEqual(["orc"]);
+    expect(run.log.filter(e => e.type === "tumble").map(e => e.targetId)).toEqual(["orc"]);
+    expect(h.pos.x).toBeLessThan(25);
+    expect(inTheWay(run, h, h.pos)).toBeNull();
+  });
+
   test("tumbling past: through, as through difficult ground, unless the system says not", () => {
     const tumbling = difficult => ({ ...pf2eRules, passThrough: (r, u, o) => (areEnemies(r, u, o) ? "tumble" : null), tumbleThrough: () => ({ success: true, difficult }) });
     const through = difficult => {

@@ -14,7 +14,7 @@ import {
   prepareBattle, createRun, isStanding, isUp, enemiesOf, alliesOf, areEnemies, liveTier, liveTrait, currentAc,
   attackRoll, attackOptions, saveRoll, checkRoll, turnFor, moveToward, moveAway, bonusDamageParts,
   behaviorOf, edgeDistance, inArea, movesNeeded, approach, canMove, moveTowardPoint, isMagical, upgradesSave, boostBonus, typical, sortOf, sizedUp, passedOver,
-  command, commandOf, heldOff, holdsBack, wish, groupKeyOf, chainOf, canCommand, regenOf, canHeal, systemRolled, holdsBackThisRound, drawnArea, friendsInArea, burstPoint, actionKey } from "./battle-state.js";
+  command, commandOf, heldOff, holdsBack, wish, groupKeyOf, chainOf, canCommand, regenOf, canHeal, systemRolled, holdsBackThisRound, drawnArea, friendsInArea, burstPoint, actionKey, useOnce } from "./battle-state.js";
 import { sampleRunTactics } from "./playstyles.js";
 import { chooseTarget, bestOptionVs, scoreTargets, plainBlow, rathersMagic } from "./behavior/targeting.js";
 import { decideHeal, rescueOption, healScores } from "./behavior/healing.js";
@@ -1315,14 +1315,18 @@ function tierIndex(run, action, tierAction) {
   return run.prep.tierActions?.get(actionKey(action))?.indexOf(tierAction) ?? null;
 }
 
+/** Does the action roll to hit (a Strike, a spell attack), rather than ask for a save or land by itself? */
+const rollsToHit = action => action.kind === "strike" || action.kind === "spell-attack";
+
 /** A strike u makes out of its turn, now (a reaction: in a live battle, to something a player did). */
 export function strikeOutOfTurn(run, u, action, t) {
   return executeOffense(run, u, action, t, 0);
 }
 
 function executeOffense(run, u, action, t, attacksMade) {
-  // Shooting, or working a spell with its hands, in a foe's reach opens it up, where the system says so (PF2e).
-  if ( ((action.range && !action.melee) || action.traits?.includes?.("manipulate")) && !provoke(run, u, "foeOpening") ) return;
+  // Shooting, or working a spell with its hands, in a foe's reach opens it up, where the system says so (PF2e). (A
+  // ranged attack is one that rolls to hit: an area or a save from afar is none.)
+  if ( ((rollsToHit(action) && action.range && !action.melee) || action.traits?.includes?.("manipulate")) && !provoke(run, u, "foeOpening") ) return;
   // (One that always lays it open, whatever the system's openings: XCC's Wild Attack. API 29, action.provokes.)
   if ( action.provokes && !provoke(run, u, PROVOKED) ) return;
   if ( counterspelled(run, u, action) || disrupted(run, u, action) ) {
@@ -2348,9 +2352,13 @@ function executeControl(run, u, action, target, attacksMade, common) {
   if ( r.kind === "attack" ) rules.afterAttack?.(run, u, target, { action, degree, dealt: damage, control: true });
 }
 
-/** Creatures called to fight: they join the order right after u (holding its concentration, if they need it). */
+/**
+ * Creatures called to fight: they join the order right after u (holding its concentration, if they need it). In a live
+ * battle, the system's card for the summoning, as its caster shows it.
+ */
 function executeSummon(run, u, action) {
   if ( counterspelled(run, u, action) || disrupted(run, u, action) ) return;
+  showAction(run, u, action, null);
   const released = beginConcentration(run, u, action);
   if ( released.length ) log(run, u, { type: "concentrationEnd", effects: released, reason: "switch" });
   const called = callSummons(run, u, action);
@@ -2369,7 +2377,7 @@ function executeBuff(run, u, action, targets, worth = 0, turn = null) {
   }
   // (A live battle's: the system's own card for it, as its user shows it; one a check lands shows its check's card.)
   if ( !action.check ) showAction(run, u, action, targets[0] ?? null);
-  if ( action.oncePerTurn ) (u.usedThisTurn ??= new Set()).add(action.id);
+  useOnce(u, action);
   const now = Number(action.outcome?.actionsNow) || 0;
   if ( now > 0 && turn && targets.includes(u) ) turn.pools[mainPool(run.prep.rules)] = (turn.pools[mainPool(run.prep.rules)] ?? 0) + now;
   const released = u.concentration?.actionId === action.id ? [] : beginConcentration(run, u, action);
@@ -4387,7 +4395,7 @@ function turnProper(run, u, idle) {
         const move = moveToward(run, u, target, option.action.reach ?? 5, approach(run, u, target).speed * option.action.charge);
         if ( !moveLog(run, u, move, target, "approach") ) break;
       }
-      if ( option.action.oncePerTurn ) (u.usedThisTurn ??= new Set()).add(option.action.id);
+      useOnce(u, option.action);
       // (A damage-dealer holding nothing back: the first slot, focus or bomb it spends on a blow this turn, told.)
       if ( (Number(behavior.dps) || 0) > 0 && !u.allOut && (option.action.resource || Number.isFinite(option.action.uses)) ) {
         u.allOut = true;

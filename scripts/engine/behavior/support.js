@@ -17,7 +17,8 @@
  * An outcome with `failed` is what a failure costs (Ironsworn: Pay the Price, through rules.onOutcome).
  * An outcome with vsFocus counts against whoever the friend is set on (effects.js), and `uses` makes it one roll's
  * worth: Help, Aid, Guidance, an inspiration die, "+1 on your next move".
- *   oncePerTurn          no more than once in a turn (Action Surge, Reckless Attack)
+ *   oncePerTurn          no more than once in a turn (Action Surge, Reckless Attack); a string: once a turn among
+ *                        all the actions that name it (battle-state.js onceKey)
  *   tell                 the story table to tell it with (event.dodge, event.reckless, event.surge), for what isn't magic
  *   guard                a turn given to its own defense (5e Dodge): the shield answer says how readily, as for a shield
  *                        (always: half again as readily; never: not at all)
@@ -31,7 +32,7 @@
  * Pure: no Foundry globals.
  */
 import { STATUS, TACTICAL } from "../../constants.js";
-import { alliesOf, enemiesOf, isStanding, liveTier, movesNeeded, edgeDistance, behaviorOf, checkRoll, refusesToHelp, defenseDc } from "../battle-state.js";
+import { alliesOf, enemiesOf, isStanding, liveTier, movesNeeded, edgeDistance, behaviorOf, checkRoll, refusesToHelp, defenseDc, usedOnce } from "../battle-state.js";
 import { degreeDistribution } from "../probability.js";
 import { hasUses, limited, costOf, costUnits, threatOf, unitsPerTurn } from "./evaluate.js";
 import { outcomeWorth, hasFresh, concentrationCost, heldElsewhere, focusOf } from "./effects.js";
@@ -140,7 +141,7 @@ export function buffOptions(run, u, turn = null) {
   const out = [];
   for ( const action of buffs ) {
     if ( !hasUses(u, action) ) continue;
-    if ( action.oncePerTurn && u.usedThisTurn?.has(action.id) ) continue;
+    if ( usedOnce(u, action) ) continue;
     if ( rules.usable && !rules.usable(run, u, action, null) ) continue; // (Ironsworn: Secure an Advantage only in control)
     const cost = costOf(rules, action, u);
     if ( turn && !turn.canAfford(cost) ) continue;
