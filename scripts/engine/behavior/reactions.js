@@ -26,7 +26,7 @@ import { meanPart } from "../dice.js";
 import { mind } from "./desire.js";
 import { cutOff } from "./troubles.js";
 import { answersTo } from "../../story/master.js";
-import { addCosts } from "../turn.js";
+import { addCosts, DISENGAGE } from "../turn.js";
 import { needsDraw, isLoaded } from "../gear.js";
 
 /** Reactions u has each round: none in a system without opportunity attacks or Ready (behavior/waiting.js). */
@@ -136,7 +136,7 @@ export function isWary(run, u) {
  * second nature to anything that isn't feral.
  */
 export function takesSafeWay(run, u, safe, turn, need = null) {
-  if ( !safe || !turn || !turn.canAfford(addCosts(safe.cost, need)) ) return false;
+  if ( !safe || !turn || !turn.canAfford(addCosts(safe.cost, need), DISENGAGE) ) return false;
   // In a hurry (Impatient), it doesn't stop to get clear: it takes the free swings.
   const rush = behaviorOf(u).rush ?? 0;
   if ( rush > 0 && run.rng.chance(rush) ) return false;

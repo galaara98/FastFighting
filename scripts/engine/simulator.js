@@ -57,7 +57,7 @@ import { setConditionValue, layerOf, toughSave, healedOf, harmEnds, letGo, holde
 import { profiled, hasTrait, barred } from "./conditions.js";
 import { reactionsPerRound, threats, takesSafeWay, spendOwnStrike, hasMoveStrikers } from "./behavior/reactions.js";
 import { isNeutral, crossed, caughtInArea, refreshLeans, truceWith, truceBreaks, turnOn, settleTruce, peaceDesires, seemsFoe, meddling, inFray, fighting, dislikesViolence, annoyedBy, ANNOYED } from "./behavior/neutral.js";
-import { normalizeCost } from "./turn.js";
+import { normalizeCost, DISENGAGE } from "./turn.js";
 import { resolveSurprise } from "./behavior/surprise.js";
 import { auraMoved, auraTurnStart } from "./behavior/auras.js";
 import { localize } from "../i18n.js";
@@ -2684,7 +2684,7 @@ function leaveReach(run, u, turn, keep = null, need = null) {
     const safe = run.prep.rules.disengage?.(u);
     let clear = false;
     if ( takesSafeWay(run, u, safe, turn, need) ) {
-      turn.spend(safe.cost);
+      turn.spend(safe.cost, DISENGAGE);
       // (A way out that takes a check, when the system has one: XCC's acrobatics, harder against several foes.)
       const dc = list.length > 1 ? safe.check?.dcMany ?? safe.check?.dc : safe.check?.dc;
       const rolled = safe.check ? systemRolled(run, u, "check", { dc, purpose: "disengage", skill: safe.check.skill ?? null, label: safe.label ?? "" }) : null;

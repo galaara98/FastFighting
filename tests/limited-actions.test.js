@@ -3,7 +3,7 @@
  * action more for a single Strike or a Stride, never part of an activity nor anything else.
  */
 import { describe, expect, test } from "vitest";
-import { Turn, limitedFits } from "../scripts/engine/turn.js";
+import { Turn, limitedFits, DISENGAGE } from "../scripts/engine/turn.js";
 import { replay } from "../scripts/engine/simulator.js";
 import { pf2eRules } from "./fixtures/three-action-rules.js";
 import { creature, strike, battle } from "./helpers.js";
@@ -59,6 +59,46 @@ describe("limited actions on the Turn", () => {
     const turn = new Turn(pf2eRules, hasted, -1);
     turn.spend(2, spell);
     expect(turn.canAfford(2, spell)).toBe(true);
+  });
+});
+
+describe("limited actions with movement in feet (5e Haste: one weapon attack, Dash, Disengage, Hide, Utilize)", () => {
+  const feet = { ...pf2eRules, mainPool: "action", movement: "feet", turn: () => ({ action: 1, bonus: 1, move: 30 }),
+    modifiers: { ...pf2eRules.modifiers, limitedActions: u => (u.mods?.actions ? { n: 1, for: ["strike", "stride", "disengage", "hide"] } : null) } };
+  const haste = { conds: {}, mods: { actions: 1 } };
+  const cast = { id: "fireball", kind: "save", cost: 1 };
+
+  test("a Dash takes the limited action, leaving the other for anything", () => {
+    const turn = new Turn(feet, haste, -1);
+    turn.usedMove(30);
+    expect(turn.payForMove(30)).toBe(30);
+    expect(turn.left).toBe(1);
+    expect(turn.canAfford(1, cast)).toBe(true);
+  });
+
+  test("with only the limited action left, a Dash, but not one that it doesn't fit", () => {
+    const turn = new Turn(feet, haste, -1);
+    turn.spend(1, cast);
+    turn.usedMove(30);
+    expect(turn.payForMove(30)).toBe(30);
+    expect(turn.left).toBe(0);
+    const still = new Turn({ ...feet, modifiers: { ...feet.modifiers, limitedActions: () => ({ n: 1, for: ["strike"] }) } }, haste, -1);
+    still.spend(1, cast);
+    still.usedMove(30);
+    expect(still.payForMove(30)).toBe(0);
+  });
+
+  test("the kinds a helper names (limitedAs), and the core's Disengage", () => {
+    const kinds = new Set(["hide", "disengage"]);
+    expect(limitedFits(kinds, { id: "hide", kind: "buff", cost: 1, limitedAs: "hide" })).toBe(true);
+    expect(limitedFits(kinds, { id: "dodge", kind: "buff", cost: 1 })).toBe(false);
+    expect(limitedFits(kinds, { id: "hide", kind: "buff", cost: 2, limitedAs: "hide" })).toBe(false);
+    expect(limitedFits(kinds, DISENGAGE)).toBe(true);
+    expect(limitedFits(new Set(["strike"]), DISENGAGE)).toBe(false);
+    const turn = new Turn(feet, haste, -1);
+    turn.spend(1, cast);
+    expect(turn.canAfford({ action: 1 }, DISENGAGE)).toBe(true);
+    expect(turn.canAfford({ action: 1 }, { id: "dodge", kind: "buff", cost: 1 })).toBe(false);
   });
 });
 

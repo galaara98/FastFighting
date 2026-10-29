@@ -64,16 +64,22 @@ export const ALL_LOST = 99;
 /** What payForMove pays for, as limitedFits sees it. */
 const STRIDE = Object.freeze({ kind: "stride" });
 
+/** What leaveReach pays rules.disengage's cost for, as limitedFits sees it: the kind "disengage". */
+export const DISENGAGE = Object.freeze({ limitedAs: "disengage" });
+
 /**
  * Is this action one a turn's limited actions (rules.modifiers.limitedActions) may pay for: "strike", a single Strike
- * (one action, not an activity that makes Strikes: Flurry of Blows, Vicious Swing); "stride", a move (payForMove's).
+ * (one action, not an activity that makes Strikes: Flurry of Blows, Vicious Swing); "stride", a move (payForMove's,
+ * a 5e Dash too); "disengage", rules.disengage's way out (DISENGAGE); any other, an action of one action whose
+ * `limitedAs` names it (the helper's: 5e Haste's Hide, Utilize).
  */
 export function limitedFits(kinds, action) {
   if ( !kinds?.size || !action ) return false;
   if ( action === STRIDE ) return kinds.has("stride");
+  const one = () => (typeof action.cost === "number" ? action.cost : action.cost?.actions ?? 1) === 1;
+  if ( action.limitedAs && kinds.has(action.limitedAs) ) return one();
   if ( !kinds.has("strike") || action.kind !== "strike" || action.sequence || action.classAction || action.charge ) return false;
-  const cost = typeof action.cost === "number" ? action.cost : action.cost?.actions ?? 1;
-  return cost === 1;
+  return one();
 }
 
 export class Turn {
@@ -177,8 +183,10 @@ export class Turn {
       return speed;
     }
     if ( (this.pools.move ?? 0) <= 0.5 ) {
-      if ( this.left < 1 ) return 0;
-      this.pools[mainPool(this.rules)] -= 1; // Dash
+      // (Dash: a limited unit first where a move fits it, 5e Haste's; never one that can't pay for a move.)
+      if ( this.#open(STRIDE) < 1 ) return 0;
+      this.pools[mainPool(this.rules)] -= 1;
+      if ( this.limited ) this.#useLimited(limitedFits(this.limitedKinds, STRIDE) ? 1 : 0);
       this.pools.move = (this.pools.move ?? 0) + speed;
       this.acts += 1;
     }
