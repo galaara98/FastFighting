@@ -503,6 +503,7 @@ export function createUnit(prep, p) {
     baseMods: s.mods ?? null, // bonuses and penalties already on it when the fight starts (one, or a list)
     mods: combineMods([].concat(s.mods ?? [])),
     marks: [],             // extra damage on the hits of whoever marked it (Hunter's Mark, Hex): {by, parts}
+    preyId: s.preyId ?? null, // the one foe it hunts (PF2e's Hunt Prey: an action's huntsPrey; bonusDamage "prey", preyMaps)
     vs: null,              // conditions that hold against one foe only (PF2e Feint): Map(sourceId -> conditions)
     concentration: null,   // the effect it is holding up (5e concentration): {actionId, name, worth}
     triedOn: null,         // once-per-target actions already tried (PF2e Demoralize)
@@ -1174,11 +1175,11 @@ export function defenseDc(run, target, against, by = null) {
  * die such as Guidance's, advantage), with those that count against `target` alone when there is one. The rules hear
  * what it's for (`purpose`: "talk", "goad", "theft", "firstAid", "sizeUp", "notice", "heal", "aid", "control"), the
  * skill where the spec names one (a pitch's, first aid's, theft's), and the action that calls for it: PF2e's
- * attribute penalties. A notice check says the sense it's by (`sense`, API 34: "sight", "sound", "smell", "feel",
+ * attribute penalties; and the fight (`run`: its options, ignoreLanguages). A notice check says the sense it's by (`sense`, API 34: "sight", "sound", "smell", "feel",
  * "radar", "help"): DCC listens with Luck.
  */
 export function checkRoll(run, u, mod, target = null, { purpose = null, skill = null, action = null, sense = null } = {}) {
-  const m = run.prep.rules.modifiers?.check?.({ unit: u, target, purpose, skill, action, ...(sense ? { sense } : {}) }) ?? {};
+  const m = run.prep.rules.modifiers?.check?.({ unit: u, target, purpose, skill, action, run, ...(sense ? { sense } : {}) }) ?? {};
   const own = modsAgainst(u, target);
   return { mod: (Number(mod) || 0) + (m.bonus ?? 0) + checkMods(own, skill), advantage: netAdvantage(m.advantage ?? 0, own.checkAdv ?? 0), dice: own.checkDie ?? null, roller: u };
 }
@@ -1205,7 +1206,7 @@ export function turnFor(run, u) {
  */
 export function attackRoll(run, u, target, action, attacksMade = 0) {
   const rules = run.prep.rules;
-  let bonus = (action.bonus ?? 0) + rules.attackPenalty(action, attacksMade);
+  let bonus = (action.bonus ?? 0) + rules.attackPenalty(action, attacksMade, { attacker: u, target });
   if ( u.wavering ) bonus -= 1;
   // (A blow pulled to knock out, what its system says that costs: PF2e's -2 with a lethal weapon.)
   if ( rules.pullPenalty && pullsThisRound(run, u) && rules.pullsBlow(u, action) ) bonus += Number(rules.pullPenalty(u, action)) || 0;
@@ -1247,6 +1248,7 @@ export function attackOptions(r, { deed = false } = {}) {
 function bonusApplies(run, attacker, action, target, when, bonus, advantage) {
   switch ( when ) {
     case "always": return true;
+    case "prey": return !!target && (attacker.preyId === target.id || !!action?.huntsPrey);
     case "offGuard":
     case "exposed": return isExposed(run, target, attacker, action);
     case "advantage": return advantage > 0;

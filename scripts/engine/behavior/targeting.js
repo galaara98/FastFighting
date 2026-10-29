@@ -24,6 +24,7 @@ import { specialtyWeight } from "./specialty.js";
 import { perceives, apparentHealth, knowsOf } from "./senses.js";
 import { auraToll } from "./auras.js";
 import { meets, followUpWorth } from "./requires.js";
+import { usefulRounds } from "./effects.js";
 
 
 /** Is the unit (or its side) in trouble, so a careful character would spend limited resources? */
@@ -79,6 +80,28 @@ export function rathersMagic(u) {
  * weapon still needs drawing punches with its last action instead of standing idle), and moving costs what the
  * system says (PF2e: an action per Stride; 5e: nothing until the movement runs out).
  */
+/**
+ * What making t its prey is worth beyond the blow that does it (an action's huntsPrey: PF2e's Hunt Prey): its edge on a
+ * round's later blows at t (with t its prey, over without: the system's extra damage and attack penalty), for the
+ * rounds the fight has left after this one (three at most). Nothing where t is its prey already.
+ */
+function huntWorth(run, u, action, t) {
+  if ( u.preyId === t.id ) return 0;
+  const plain = { ...action, huntsPrey: false };
+  const blows = Math.max(1, Math.min(2, unitsPerTurn(run.prep.rules, u)));
+  const round = () => {
+    let sum = 0;
+    for ( let i = 0; i < blows; i++ ) sum += expectedDamage(run, u, plain, t, i);
+    return sum;
+  };
+  const was = u.preyId;
+  const without = round();
+  u.preyId = t.id;
+  const hunted = round();
+  u.preyId = was;
+  return Math.max(0, hunted - without) * Math.max(0, usefulRounds(run, u.side, 4) - 1);
+}
+
 export function bestOptionVs(run, u, t, attacksMade = 0, turn = null) {
   const rules = run.prep.rules;
   const main = mainPool(rules);
@@ -103,7 +126,8 @@ export function bestOptionVs(run, u, t, attacksMade = 0, turn = null) {
     // struck where a friend already is, flanking it (a sneak attack's extra, off guard).)
     const edge = flankEdge(run, u, action, t, moves);
     // (Less what it invites, where it lays u open to every foe in reach: XCC's Wild Attack, action.provokes.)
-    const ev = expectedDamage(run, u, action, t, attacksMade) + followUpWorth(run, u, action, t, attacksMade, turn) + edge - (action.provokes ? invited(run, u) : 0);
+    const ev = expectedDamage(run, u, action, t, attacksMade) + followUpWorth(run, u, action, t, attacksMade, turn) + edge - (action.provokes ? invited(run, u) : 0)
+      + (action.huntsPrey ? huntWorth(run, u, action, t) : 0);
     const cost = costOf(rules, action, u);
     // Drawing a weapon is a one-time cost, so spread it over the attacks it enables; every shot's Reload is its own
     // (engine/gear.js: a heavy crossbow's shot is three actions, loaded now or not).

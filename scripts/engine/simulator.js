@@ -64,7 +64,7 @@ import { localize } from "../i18n.js";
 import { maneuverOf, answersTo } from "../story/master.js";
 import { meets, noteBlow, freshTurn, setupUsed } from "./behavior/requires.js";
 import { withManeuver } from "./maneuvers.js";
-import { readyNow, gearStep, takeGearStep, spareBest, spareTurn, healAhead, tellStep, bestSpot, PREP } from "./behavior/prepare.js";
+import { readyNow, gearStep, takeGearStep, spareBest, spareTurn, healAhead, tellStep, bestSpot, spotsWithin, PREP } from "./behavior/prepare.js";
 import { mayPatrol, patrolTurn, fidget } from "./behavior/patrol.js";
 import { delayFor, moveInOrder, readyStep, takeReady, readiedAgainst } from "./behavior/waiting.js";
 import { used } from "./gear.js";
@@ -2296,6 +2296,11 @@ function executeControl(run, u, action, target, attacksMade, common) {
   // Some effects hold weaker on much stronger targets (PF2e incapacitation): their result counts one better.
   const shift = r.kind === "auto" ? 0 : degreeShift(run, u, target, action);
   const degree = Math.max(0, Math.min(3, roll.degree + (action.save ? shift : -shift)));
+  // (A grab tried again on one it holds, and failed: it holds it no longer. PF2e's Grapple, action.failLetsGo.)
+  if ( action.failLetsGo && degree <= 1 && target.grabbedBy === u.id ) {
+    release(run, target, { key: "grabbed", byId: u.id });
+    log(run, target, { type: "letGo", hold: "grabbed", by: u.spec.name, byId: u.id });
+  }
   // A playstyle's taunt that gets through takes hold only on its luck check (the Taunting setting: behavior/goad.js).
   const luck = r.kind === "goad" && degree >= 2 ? { roll: run.rng.die(100), needed: r.luck } : null;
   let outcome = luck && luck.roll > luck.needed ? null : controlOutcome(action, degree);
@@ -2949,12 +2954,23 @@ function moveLog(run, u, move, toward, purpose = "approach", extra = {}) {
   return isStanding(u);
 }
 
+/** u moved: those it had grabbed are grabbed no longer (rules.grabEndsOnMove), told. */
+function letGoMoving(run, u) {
+  for ( const o of run.units ) {
+    if ( o === u || o.grabbedBy !== u.id ) continue;
+    release(run, o, { key: "grabbed", byId: u.id });
+    log(run, o, { type: "letGo", hold: "grabbed", by: u.spec.name, byId: u.id });
+  }
+}
+
 /**
  * u ended a move (`move`, as moveToward made it, toward `toward`): those it came beside answer, where they have a
  * reaction for it (behavior/responses.js): a friend it stopped beside ("allyMoves": PF2e Goblin Scuttle, a Step), a
  * foe whose reach it came into ("foeApproaches": a strike at it, or a step).
  */
 export function answerMove(run, u, move, toward = null) {
+  // (Where the system says so, PF2e's Grapple: a grab ends as its grabber moves off.)
+  if ( run.prep.rules.grabEndsOnMove && move?.feet > 0 ) letGoMoving(run, u);
   if ( run.reachers || hasMoveStrikers(run) ) throughReach(run, u, move);
   if ( run.readying && isStanding(u) ) readiedStrikes(run, u, move);
   if ( run.foeAuras && isStanding(u) ) auraMoved(run, u, AURA_PLAY); // (into an aura, or its own onto others: behavior/auras.js)
@@ -3796,12 +3812,40 @@ export function tickEffects(run, u) {
  * A try at breaking a hold: the system's way or its escape against it (behavior/holds.js), loose on a success, told, and
  * what the try did to whoever holds it (harmHolder: PF2e's cutting free of a gullet), whichever way it's tried.
  */
-function attemptEscape(run, u, hold) {
+function attemptEscape(run, u, hold, turn = null) {
   const got = tryHold(run, u, hold);
   if ( got.success ) release(run, u, hold);
   log(run, u, { type: "escape", hold: hold.key, success: got.success, ...rollOf(got), ...(got.said?.text ? { said: got.said.text } : {}) });
   harmHolder(run, u, hold, got);
+  if ( got.success && got.degree === 3 && turn ) stepClear(run, u, hold, turn);
   return got;
+}
+
+/**
+ * Free of a hold by a critical success, a step clear of whoever held it, where the system gives one for nothing
+ * (rules.escapeStep, in feet: PF2e's Stride of 5 feet): out of its reach, onto a spot nobody's in, only where that
+ * draws no foe's strike and it doesn't mean to fight the holder hand to hand. Told as a move away.
+ */
+function stepClear(run, u, hold, turn) {
+  const feet = Number(run.prep.rules.escapeStep) || 0;
+  const holder = hold.byId ? run.byId.get(hold.byId) : null;
+  if ( !(feet > 0) || !holder?.pos || !u.pos || !isStanding(holder) || !canMove(run, u) || !isStanding(u) ) return;
+  // (Not where it means to fight the holder hand to hand: it stays beside it.)
+  if ( mind(run, u).lead?.targetId === holder.id && mind(run, u).lead?.kind === "hurt" && bestOptionVs(run, u, holder, 0, turn)?.action?.melee ) return;
+  if ( threats(run, u).length ) return;
+  const reach = Math.max(5, ...(holder.prep?.offense ?? []).filter(a => a.melee).map(a => Number(a.reach) || 5));
+  const spot = spotsWithin(run, u, feet).map(p => ({ p, d: Math.hypot(p.x - holder.pos.x, p.y - holder.pos.y) }))
+    .sort((a, b) => b.d - a.d)[0]?.p;
+  if ( !spot ) return;
+  const from = { x: u.pos.x, y: u.pos.y };
+  const move = moveTowardPoint(run, u, spot, feet + 0.5, 0);
+  if ( (edgeDistance(u, holder) ?? 0) <= reach + 0.5 ) {
+    u.pos.x = from.x;
+    u.pos.y = from.y;
+    return;
+  }
+  resettle(run, u);
+  moveLog(run, u, move, holder, "fallBack", { away: true, escaped: true });
 }
 
 /**
@@ -3817,27 +3861,48 @@ function struggle(run, u) {
 /**
  * Held fast as its turn begins: it breaks free when that's what it most wants (the system's way, or its escape
  * against the hold, for what it costs). A grab with nothing to go on: it tries at once, an even chance, as the engine
- * always had it.
+ * always had it. Returns how many tries it made.
  */
 function breakFree(run, u, turn) {
   const rules = run.prep.rules;
+  let tries = 0;
   for ( const hold of ownHolds(run, u) ) {
     if ( hold.key === "bound" ) continue;
     if ( hold.key === "grabbed" && !known(run, u, hold) ) {
       const basic = rules.basicAction ?? 1;
-      if ( !turn.canAfford(basic) ) return;
+      if ( !turn.canAfford(basic) ) return tries;
       turn.spend(basic);
+      tries += 1;
       const escaped = run.rng.chance(0.5);
       if ( escaped ) u.grabbedBy = null;
       log(run, u, { type: "escape", success: escaped });
       continue;
     }
-    if ( mind(run, u).lead?.kind !== "breakFree" ) return;
+    if ( mind(run, u).lead?.kind !== "breakFree" ) return tries;
     const cost = escapeCost(rules, u, hold, run);
-    if ( !turn.canAfford(cost) ) return;
+    if ( !turn.canAfford(cost) ) return tries;
     turn.spend(cost);
-    attemptEscape(run, u, hold);
+    tries += 1;
+    attemptEscape(run, u, hold, turn);
   }
+  return tries;
+}
+
+/**
+ * What botching freeing a friend did to the friend, as the system's try says (got.harmHeld {parts}: what it takes at
+ * once, rolled here and shown as the table's roll; PF2e: a critically failed Administer First Aid, its bleed again).
+ * Told as the harm it's under.
+ */
+function harmFreed(run, u, t, got) {
+  const parts = got?.harmHeld?.parts;
+  if ( !t || !isUp(t) || !Array.isArray(parts) || !parts.length ) return;
+  const at = diceAt(run);
+  const rolled = sampleDamage(parts, run.rng);
+  const shown = at >= 0 ? tableRoll(run, at, { by: t, target: t, kind: "damage", what: "persistent", parts }) : null;
+  const amount = landsRolled(run, u, t, shown, run.prep.rules.applyIwr(iwrOf(t), rolled.byType, t));
+  const types = Object.keys(rolled.byType);
+  const entry = log(run, t, { type: "persistent", damageType: types[0] ?? "untyped", amount });
+  dealDamage(run, u, t, amount, { types, entry });
 }
 
 /**
@@ -4117,7 +4182,12 @@ function turnProper(run, u, idle) {
       log(run, u, { type: "stand" });
     }
   }
-  breakFree(run, u, turn);
+  // (An Escape with the attack trait, PF2e's, counts toward the multiple attack penalty of the Strikes after it.)
+  const escapes = breakFree(run, u, turn);
+  if ( rules.escapeIsAttack && escapes > 0 ) {
+    attacksMade += escapes;
+    u.turnAttacks = attacksMade;
+  }
   getRid(run, u, turn);
 
   // Running for help: head toward an ally who hasn't joined yet and shout.
@@ -4274,7 +4344,7 @@ function turnProper(run, u, idle) {
       }
       if ( fallen ) {
         turn.spend(fallen.cost);
-        if ( fallen.kind === "free" ) freeFriend(run, u, fallen.target, fallen.hold, logger(run));
+        if ( fallen.kind === "free" ) harmFreed(run, u, fallen.target, freeFriend(run, u, fallen.target, fallen.hold, logger(run)));
         else (fallen.kind === "bind" ? bind : rob)(run, u, fallen.target, logger(run));
         u.actsThisTurn += 1;
         continue;
@@ -4444,6 +4514,8 @@ function turnProper(run, u, idle) {
         if ( !moveLog(run, u, move, target, "approach") ) break;
       }
       useOnce(u, option.action);
+      // (One that hunts its foe as it strikes, PF2e's Hunt Prey: that foe its prey from now on, this blow too.)
+      if ( option.action.huntsPrey ) u.preyId = target.id;
       // (A damage-dealer holding nothing back: the first slot, focus or bomb it spends on a blow this turn, told.)
       if ( (Number(behavior.dps) || 0) > 0 && !u.allOut && (option.action.resource || Number.isFinite(option.action.uses)) ) {
         u.allOut = true;

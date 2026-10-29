@@ -186,9 +186,13 @@ export function stayBound(run, u, say) {
 /** A roll's numbers for the log (what a try at a hold rolled, if it rolled). */
 export const rollOf = got => Object.fromEntries(["natural", "mod", "total", "dc", "degree"].filter(k => got?.[k] !== undefined).map(k => [k, got[k]]));
 
-/** u frees t of a hold (untying it, or as the system says), or tries to. */
+/**
+ * u frees t of a hold (untying it, or as the system says), or tries to. Returns the try: its `harmHeld` ({parts}: the
+ * damage, to roll) what botching it does to t (PF2e's critically failed Administer First Aid: the bleed again, at once).
+ */
 export function freeFriend(run, u, t, hold, say) {
   const got = tryHold(run, u, hold, { freeing: true, held: t });
   if ( got.success ) release(run, t, hold);
   say(u, { type: "free", target: t.spec.name, targetId: t.id, hold: hold.key, success: got.success, ...rollOf(got), ...(got.said?.text ? { said: got.said.text } : {}) });
+  return got;
 }

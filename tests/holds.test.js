@@ -3,7 +3,7 @@
  * breaks), and freeing a friend; the system's own say on it; tied up as something on the creature, from no one.
  */
 import { describe, expect, test } from "vitest";
-import { beginRun, beginRound, takeTurn, prepareBattle } from "../scripts/engine/simulator.js";
+import { beginRun, beginRound, takeTurn, prepareBattle, answerMove, strikeOutOfTurn } from "../scripts/engine/simulator.js";
 import { holdsOf, tryHold, isBound, bears, release } from "../scripts/engine/behavior/holds.js";
 import { recompute } from "../scripts/engine/behavior/effects.js";
 import { mind } from "../scripts/engine/behavior/desire.js";
@@ -274,5 +274,67 @@ describe("held where it stands, the foe it wants out of reach", () => {
       expect(own.some(e => e.type === "attack" && e.targetId === "brute")).toBe(true);
       expect(own.some(e => e.type === "ready")).toBe(false);
     }
+  });
+});
+
+describe("grabs, escapes and freeing, as the system has them (API 37.3)", () => {
+  test("rules.grabEndsOnMove: a grabber that moves off lets go, told; without it, its hold goes with it", () => {
+    for ( const [rules, held] of [[{ ...pf2eRules, grabEndsOnMove: true }, false], [pf2eRules, true]] ) {
+      const run = fight([fighter("hero", "friendly", 0), fighter("orc", "hostile", 5)], rules);
+      const [hero, orc] = [run.byId.get("hero"), run.byId.get("orc")];
+      orc.grabbedBy = "hero";
+      const from = { ...hero.pos };
+      hero.pos.x = -10;
+      answerMove(run, hero, { feet: 10, from, to: { ...hero.pos }, reached: false });
+      expect(orc.grabbedBy === "hero").toBe(held);
+      expect(run.log.some(e => e.type === "letGo" && e.actorId === "orc" && e.byId === "hero")).toBe(!held);
+    }
+  });
+
+  test("rules.escapeIsAttack: an Escape counts toward the attack penalty of the Strikes after it", () => {
+    const rules = { ...pf2eRules, escapeIsAttack: true, breakFree: () => ({ success: true, natural: 15, mod: 10, total: 25, dc: 15, degree: 2 }) };
+    const run = fight([fighter("hero", "friendly", 0, { escapeDC: 15 }), fighter("orc", "hostile", 5, { escapeWork: { mod: 10 } })], rules);
+    const orc = run.byId.get("orc");
+    orc.grabbedBy = "hero";
+    orc.harmedBy?.add?.("hero");
+    takeTurn(run, orc);
+    const escape = run.log.findIndex(e => e.actorId === "orc" && e.type === "escape");
+    const first = run.log.find((e, i) => i > escape && e.actorId === "orc" && e.type === "attack");
+    expect(escape).toBeGreaterThanOrEqual(0);
+    expect(first?.attackNumber).toBe(2);
+    // (Without it, the Strike after an Escape is the turn's first.)
+    const plain = fight([fighter("hero", "friendly", 0, { escapeDC: 15 }), fighter("orc", "hostile", 5, { escapeWork: { mod: 10 } })], { ...rules, escapeIsAttack: false });
+    const o = plain.byId.get("orc");
+    o.grabbedBy = "hero";
+    takeTurn(plain, o);
+    expect(plain.log.find(e => e.actorId === "orc" && e.type === "attack")?.attackNumber).toBe(1);
+  });
+
+  test("rules.escapeStep: a critical Escape, a free step out of the holder's reach where it draws no strike", () => {
+    const rules = { ...pf2eRules, escapeStep: 5, breakFree: () => ({ success: true, natural: 20, mod: 10, total: 30, dc: 15, degree: 3 }) };
+    let stepped = 0;
+    for ( const seed of [1, 2, 3, 4] ) {
+      const run = fight([fighter("hero", "friendly", 0, { escapeDC: 15 }), fighter("orc", "hostile", 5, { escapeWork: { mod: 10 }, actions: [strike({ id: "bow", name: "Bow", melee: false, range: { increment: 60, max: 120 }, bonus: 8 })] })], rules, seed);
+      const orc = run.byId.get("orc");
+      orc.grabbedBy = "hero";
+      takeTurn(run, orc);
+      const step = run.log.find(e => e.actorId === "orc" && e.type === "move" && e.escaped);
+      if ( !step ) continue;
+      stepped += 1;
+      expect(step.feet).toBeLessThanOrEqual(5);
+      expect(run.log.some(e => e.type === "opportunity" && e.targetId === "orc" && run.log.indexOf(e) < run.log.indexOf(step))).toBe(false);
+    }
+    expect(stepped).toBeGreaterThan(0);
+  });
+
+  test("action.failLetsGo: a grab tried again and failed lets go of the one it held", () => {
+    const grapple = { id: "grapple", name: "Grapple", kind: "control", cost: 1, melee: true, reach: 5, failLetsGo: true, check: { mod: -50, against: "fortitude", attack: true },
+      onHit: [null, null, { conditions: { grabbed: 1 }, grab: true, rounds: 1 }, { conditions: { restrained: 1 }, grab: true, rounds: 1 }] };
+    const run = fight([fighter("hero", "friendly", 0, { actions: [grapple] }), fighter("orc", "hostile", 5)]);
+    const [hero, orc] = [run.byId.get("hero"), run.byId.get("orc")];
+    orc.grabbedBy = "hero";
+    strikeOutOfTurn(run, hero, hero.prep.offense.find(a => a.id === "grapple"), orc);
+    expect(orc.grabbedBy).toBe(null);
+    expect(run.log.some(e => e.type === "letGo" && e.actorId === "orc")).toBe(true);
   });
 });

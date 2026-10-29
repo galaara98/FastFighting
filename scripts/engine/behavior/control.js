@@ -113,7 +113,7 @@ export function controlRoll(run, u, t, action, attacksMade = 0) {
   }
   if ( kind === "check" ) {
     const check = checkRoll(run, u, action.check.mod, t, { purpose: "control", action });
-    const map = action.check.attack ? (run.prep.rules.attackPenalty?.(action, attacksMade) ?? 0) : 0;
+    const map = action.check.attack ? (run.prep.rules.attackPenalty?.(action, attacksMade, { attacker: u, target: t }) ?? 0) : 0;
     const dc = defenseDc(run, t, action.check.against ?? "will", u);
     const mod = check.mod + map;
     const lift = boostBonus(run.prep.rules, u, t, mod, dc, { advantage: check.advantage, dice: check.dice, kind: "check" });
