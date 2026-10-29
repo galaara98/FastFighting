@@ -10,10 +10,13 @@
  *   sustainOrEnd   unpaid, they're gone (PF2e)
  *   range          how far off it calls them, in feet (or {max}: by default 30). Each appears in the nearest space no one's
  *                  in, within it and in the summoner's sight: beside the foe it would go for, else beside the summoner
+ *   withSummoner   they have no turns of their own in the order: each acts right after its summoner's turn, in it
+ *                  (PF2e's summoned minions: the summoner's Sustain commands them). In a live battle, not on the tracker
  * A summoned creature with `untargetable` (Spiritual Weapon: not a creature at all) can't be attacked and doesn't
  * keep its side in the fight. Summoned creatures aren't the table's: they're left out of the results and Make it So.
- * In a live battle they're placed on the scene and the tracker as they're called (foundry/live-battle.js), and take
- * turns of their own; a kept turn remembers them (summonOf), so a restored one has them again.
+ * In a live battle they're placed on the scene as they're called (foundry/live-battle.js), before they act, and on
+ * the tracker to take turns of their own (but `withSummoner`: theirs are their summoner's); a kept turn remembers
+ * them (summonOf), so a restored one has them again.
  * Pure: no Foundry globals.
  */
 import { STATUS, TACTICAL } from "../../constants.js";
@@ -91,7 +94,10 @@ function appearAt(run, u, s, action, i) {
     ?? { x: u.pos.x + 5 * (1 + (i % 3)), y: u.pos.y + 5 * Math.floor(i / 3) };
 }
 
-/** Call the creatures: they join the fight right after u. Returns them. */
+/**
+ * Call the creatures: they join the fight right after u (or, `withSummoner`, act in its turn, not in the order).
+ * Returns them.
+ */
 export function callSummons(run, u, action) {
   const entries = run.prep.summons?.get(actionKey(action)) ?? [];
   const order = run.order ?? [];
@@ -108,6 +114,10 @@ export function callSummons(run, u, action) {
     s.expires = action.rounds ? run.round + action.rounds : null;
     s.joinedRound = run.round;
     s.sustainedRound = run.round; // the round it's called, it acts
+    if ( action.withSummoner ) s.withSummoner = true;
+    // (Its token, placed already in a pass of this live turn before: the same one again. foundry/live-battle.js.)
+    const token = run.live?.summonTokens?.get(s.id);
+    if ( token ) s.tokenId = token;
     // Where it would appear, in the nearest space no one's in: beside the foe it would go for, within the summoning's
     // reach and in sight; else beside the summoner.
     s.pos = u.pos ? appearAt(run, u, s, action, i) : null;
@@ -115,7 +125,7 @@ export function callSummons(run, u, action) {
     s.tac = sampleRunTactics(s.spec, run.rng);
     run.units.push(s);
     run.byId.set(s.id, s);
-    if ( at >= 0 ) order.splice(++at, 0, s);
+    if ( at >= 0 && !action.withSummoner ) order.splice(++at, 0, s);
     if ( s.spec.untargetable ) run.untargetable = true;
     out.push(s);
   });

@@ -1153,6 +1153,7 @@ async function playingTurn(u, combatant, key, { adapter, before, snapshot, nonce
   for ( let tries = 0; ; tries++ ) {
     try {
       battle.run.live.exitOf = exitOf; // (the way off the scene, for one leaving the fight)
+      battle.run.live.summonTokens = stage.summoned; // (what it summoned on a pass before, on the map already)
       battle.run.live.inArea = areaTest; // (who an area catches, as the system's own shape has it on the map)
       result = liveTurn(battle.run, u.id, { answers, salt: battle.data.salt ?? 0, nonce, before: lastPass });
       break;
@@ -1173,9 +1174,11 @@ async function playingTurn(u, combatant, key, { adapter, before, snapshot, nonce
     // Where everyone stood (for Rewind), then the moves and doors as the turn made them (those after its last roll:
     // the rest are on the map already).
     turn.moves = startedAt;
+    const rest = result.events.slice(stage.played);
+    // (What it summoned since its last roll, onto the scene before it moves.)
+    if ( rest.some(e => e.type === "summon") ) await placeSummons(turn.records, stage);
     const docs = stageDocs(stage);
     const doorsOpened = stage.doorsOpened;
-    const rest = result.events.slice(stage.played);
     if ( setting("playOnMap") ) await playMoves(rest, docs, stageGrid(stage), doorsOpened, battle.scene, { speed: moveSpeed() });
     else await playMoves(rest, docs, null, doorsOpened, battle.scene, { instant: true });
     // (What it did to get ready since: drawn, loaded, up off the ground, as the system does it.)
@@ -1184,7 +1187,7 @@ async function playingTurn(u, combatant, key, { adapter, before, snapshot, nonce
     // (Its areas, laid on the map as the system lays them: who they caught was tested against them.)
     await layAreas(result.events, turn.records);
     // What it summoned, onto the scene and the tracker; and any team's reinforcements come in.
-    await placeSummons(turn.records);
+    await placeSummons(turn.records, stage);
     await placeReinforcements(turn.records);
     // (Those inside another, swallowed or engulfed: where their holder went.)
     await carryInside();
@@ -1290,7 +1293,7 @@ const MOVING = new Set(["move", "flee", "leave", "forced", "step"]);
  * played (`played`), the doors they opened, the undo records and cards of the rolls (for Rewind); whose turn it is
  * (`key`: a card it leaves to the table waits with it).
  */
-const turnStage = (key = null) => ({ key, played: 0, records: [], messages: [], applied: [], doorsOpened: new Map(), docs: null, grid: null });
+const turnStage = (key = null) => ({ key, played: 0, records: [], messages: [], applied: [], doorsOpened: new Map(), docs: null, grid: null, summoned: new Map() });
 
 /** The battle's tokens by creature, for a turn's moves. */
 const stageDocs = stage => (stage.docs ??= new Map(battle.run.units.map(x => [x.id, docOf(x.id)]).filter(([, d]) => d)));
@@ -1302,6 +1305,8 @@ const stageGrid = stage => (stage.grid ??= currentPathGrid() ?? pathGridFor([...
 async function playSoFar(events, stage) {
   const fresh = events.slice(stage.played);
   stage.played = Math.max(stage.played, events.length);
+  // (What it summoned, onto the scene first: what it calls may move and roll in this very turn, withSummoner.)
+  if ( fresh.some(e => e.type === "summon") ) await placeSummons(stage.records, stage);
   // (A door opened where it stood, with no move: opened on the map all the same, or the scene, read again, shuts it.)
   if ( fresh.some(e => MOVING.has(e.type) || (e.type === "door" && e.success)) ) {
     if ( setting("playOnMap") ) await playMoves(fresh, stageDocs(stage), stageGrid(stage), stage.doorsOpened, battle.scene, { speed: moveSpeed() });
@@ -3224,10 +3229,13 @@ export function doorsWith(kept, fresh) {
 
 /**
  * Creatures summoned since (the engine's, with no token yet): placed beside their summoner by the helper, and on the
- * tracker right after it, to take their own turns (a player's character's, the player's to run). Undo records added to
- * `records`. (One whose time runs out goes as one that ran: its token hidden, its turns passed over.)
+ * tracker right after it, to take their own turns (a player's character's, the player's to run); not those that act in
+ * their summoner's turn (withSummoner). Undo records added to `records`. With the turn's `stage`, placed as soon as a
+ * pass of the turn calls them (playSoFar), before they move or roll: each pass after that finds its token again
+ * (stage.summoned, the engine's run.live.summonTokens). (One whose time runs out goes as one that ran: its token
+ * hidden, its turns passed over.)
  */
-async function placeSummons(records) {
+async function placeSummons(records, stage = null) {
   const run = battle.run;
   const fresh = run.units.filter(s => s.summoner && !s.tokenId && !s.vanished && s.status !== STATUS.DEAD);
   if ( !fresh.length ) return;
@@ -3251,15 +3259,23 @@ async function placeSummons(records) {
     }
     records.push(...noteSettings(placed?.records ?? []));
     const tokens = placed?.tokens ?? [];
-    tokens.forEach((t, i) => { if ( list[i] ) list[i].tokenId = t.id; });
+    tokens.forEach((t, i) => {
+      if ( !list[i] ) return;
+      list[i].tokenId = t.id;
+      stage?.summoned.set(list[i].id, t.id);
+    });
+    if ( stage ) stage.docs = null; // (the turn's tokens again, these with them)
     if ( !tokens.length ) continue;
-    // (Right after the summoner on the tracker; a spotlight system's, when the GM gives it the spotlight.)
+    if ( run.live.players.has(summoner.id) ) for ( const s of list ) addPlayer(s.id);
+    // (Right after the summoner on the tracker; a spotlight system's, when the GM gives it the spotlight. Those that
+    // act in their summoner's turn, withSummoner, have none of their own.)
+    const own = tokens.filter((t, i) => !list[i]?.withSummoner);
+    if ( !own.length ) continue;
     const after = battle.combat.combatants.find(c => c.tokenId === doc.id)?.initiative;
-    const created = await battle.combat.createEmbeddedDocuments("Combatant", tokens.map((t, i) => ({
+    const created = await battle.combat.createEmbeddedDocuments("Combatant", own.map((t, i) => ({
       tokenId: t.id, sceneId: battle.scene.id, actorId: t.actorId, initiative: battle.data.spotlight || !Number.isFinite(after) ? null : after - 0.01 * (i + 1)
     })));
     records.push({ createdCombatants: created.map(c => c.uuid) });
-    if ( run.live.players.has(summoner.id) ) for ( const s of list ) addPlayer(s.id);
   }
 }
 

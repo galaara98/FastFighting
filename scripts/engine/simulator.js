@@ -3673,9 +3673,9 @@ function hazardTurn(run, u) {
   for ( let tries = 0; tries < 6 && !battleOver(run); tries++ ) {
     // (Someone in its reach, and what it needs first, where it needs something: requires.js.)
     const ready = a => { const t = nextTargetInReach(run, u, a); return !!t && meets(run, u, a, t); };
-    const action = u.prep.offense.find(a => turn.canAfford(costOf(run.prep.rules, a, u)) && hasUses(u, a) && ready(a));
+    const action = u.prep.offense.find(a => turn.canAfford(costOf(run.prep.rules, a, u), a) && hasUses(u, a) && ready(a));
     if ( !action ) break;
-    turn.spend(costOf(run.prep.rules, action, u));
+    turn.spend(costOf(run.prep.rules, action, u), action);
     spendUse(u, action);
     executeOffense(run, u, action, nextTargetInReach(run, u, action), made);
     made += attacksIn(action);
@@ -4345,7 +4345,7 @@ function turnProper(run, u, idle) {
         }
         continue;
       }
-      if ( !turn.canAfford(option.cost) ) {
+      if ( !turn.canAfford(option.cost, option.action) ) {
         // Not this turn: what its gear still needs (drawn, loaded) done now, for the next (behavior/prepare.js), unless a
         // raised shield is worth more.
         const ready = gearStep(run, u, turn, option.action, target);
@@ -4378,7 +4378,7 @@ function turnProper(run, u, idle) {
       }
       if ( kiting && !u.fellBack && option.moves === 0 && threats(run, u).length ) {
         const back = bestSpot(run, u, turn);
-        if ( back && (back.step === "fallBack" || back.step === "hitAndRun") && back.gain > expectedDamage(run, u, option.action, target, attacksMade + Math.max(0, turn.howMany(option.cost) - 1)) ) {
+        if ( back && (back.step === "fallBack" || back.step === "hitAndRun") && back.gain > expectedDamage(run, u, option.action, target, attacksMade + Math.max(0, turn.howMany(option.cost, option.action) - 1)) ) {
           u.fellBack = true;
           const from = nearestFoeOf(run, u);
           tellStep(u, { step: "fallBack", desire: "avoid", target: from }, logger(run));
@@ -4407,7 +4407,7 @@ function turnProper(run, u, idle) {
       settleSides(run);
       if ( option.action.concentration && u.concentration?.actionId === option.action.id ) noteConcentration(u, option.ev);
       if ( !holding || !option.action.freeWhileHeld ) spendUse(u, option.action);
-      turn.spend(option.cost);
+      turn.spend(option.cost, option.action);
       attacksMade += attacksIn(option.action);
       u.turnAttacks = attacksMade;
       u.actsThisTurn += 1;
@@ -4998,7 +4998,7 @@ export function runOne(prep, seed, { log: withLog = false, capture = false } = {
       u.readied = null;
       takeTurn(run, u);
       noteIdle(run, u);
-      if ( afterTurn(run, u) ) break;
+      if ( afterTurn(run, u) || withSummonerAct(run, u) ) break;
     }
   }
   let ended = battleOver(run);
@@ -5146,7 +5146,23 @@ export function playTurn(run, u) {
   takeTurn(run, u);
   noteIdle(run, u);
   noteAside(run, u);
-  return afterTurn(run, u);
+  return afterTurn(run, u) || withSummonerAct(run, u);
+}
+
+/**
+ * Those u has called that act with it (a summoning's `withSummoner`: no turns of their own in the order), each its
+ * turn, now, after u's. With its summoner down, they don't. True if the fight is over.
+ */
+function withSummonerAct(run, u) {
+  if ( !isUp(u) ) return false;
+  for ( const s of run.units.filter(o => o.summoner === u.id && o.withSummoner && !o.vanished && o.status !== STATUS.DEAD) ) {
+    startTurn(run, s);
+    s.readied = null;
+    takeTurn(run, s);
+    noteIdle(run, s);
+    if ( afterTurn(run, s) ) return true;
+  }
+  return false;
 }
 
 /**

@@ -102,6 +102,29 @@ describe("summoning", () => {
     }
   });
 
+  test("withSummoner (PF2e): no place in the order, its turn right after its summoner's, in it; sustained, or idle", () => {
+    const summon = { id: "summon-animal", name: "Summon Animal", kind: "summon", cost: 3, resource: "slot", creatures: [wolf], rounds: 10, sustain: { actions: 1 }, sustainOrEnd: true, withSummoner: true };
+    const spec = battle([druid(summon), ogre({ hp: { value: 900, max: 900 } })], { maxRounds: 4 });
+    const run = beginRun(prepareBattle(spec, pf2eRules), 4, { log: true });
+    const d = run.byId.get("druid");
+    const [w] = callSummons(run, d, d.spec.actions.find(a => a.kind === "summon"));
+    expect(w.withSummoner).toBe(true);
+    expect(run.order).not.toContain(w);
+    const r = replay(spec, pf2eRules, 4);
+    const called = r.log.find(e => e.type === "summon");
+    expect(called).toBeDefined();
+    // (The wolf acts between its summoner's last entry of the turn and the ogre's: in the druid's turn, never in a turn of its own.)
+    const wolfActs = r.log.filter(e => called.ids.includes(e.actorId) && e.type === "attack");
+    expect(wolfActs.length).toBeGreaterThan(0);
+    for ( const e of wolfActs ) {
+      const i = r.log.indexOf(e);
+      const before = r.log.slice(0, i).reverse().find(x => x.actorId === "druid" || x.actorId === "ogre");
+      expect(before?.actorId).toBe("druid");
+    }
+    const sustains = r.log.filter(e => e.type === "sustain" && e.actorId === "druid");
+    for ( const e of wolfActs.filter(x => x.round > called.round) ) expect(sustains.some(x => x.round === e.round)).toBe(true);
+  });
+
   test("a summoner who can't sustain loses what it called", () => {
     const action = { id: "sa", name: "Summon Animal", kind: "summon", sustain: { actions: 1 }, sustainOrEnd: true };
     const summoner = { id: "d", prep: { summonActions: [action] }, conds: {}, status: "standing" };

@@ -146,7 +146,7 @@ export function bestOptionVs(run, u, t, attacksMade = 0, turn = null) {
   // right now, spending what they have without a thought.
   const SPELLS = ["spell-attack", "save", "auto", "control"];
   if ( liveTier(run, u) <= TACTICAL.FERAL && options.some(o => SPELLS.includes(o.action.kind)) ) {
-    const affordable = turn ? options.filter(o => turn.canAfford({ ...o.cost, [main]: (o.cost[main] ?? 0) + o.moveUnits })) : options;
+    const affordable = turn ? options.filter(o => turn.canAfford({ ...o.cost, [main]: (o.cost[main] ?? 0) + o.moveUnits }, o.action)) : options;
     // (Anything that does something, that is: not a Demoralize the foe has already shrugged off, worth nothing now.)
     const able = affordable.length ? affordable : options;
     const pool = able.some(o => o.ev > 0) ? able.filter(o => o.ev > 0) : able;
@@ -168,7 +168,7 @@ export function bestOptionVs(run, u, t, attacksMade = 0, turn = null) {
     if ( gated.length ) pool = gated;
   }
   if ( turn ) {
-    const fits = pool.filter(o => turn.canAfford({ ...o.cost, [main]: (o.cost[main] ?? 0) + o.moveUnits }));
+    const fits = pool.filter(o => turn.canAfford({ ...o.cost, [main]: (o.cost[main] ?? 0) + o.moveUnits }, o.action));
     if ( fits.length ) pool = fits;
   }
   // Wildcards sometimes just do something else.

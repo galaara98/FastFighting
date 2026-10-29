@@ -1661,7 +1661,7 @@ export function snapshotRun(run, { log = true } = {}) {
     const e = encode(v, units);
     if ( e !== undefined ) runData[k] = e;
   }
-  const { decide: _d, roll: _r, mayReroll: _m, systemOwns: _s, ...live } = run.live ?? {};
+  const { decide: _d, roll: _r, mayReroll: _m, systemOwns: _s, summonTokens: _t, ...live } = run.live ?? {};
   return { units: unitData, run: runData, ...(log ? { log: encode(run.log ?? [], units) } : { logLength: run.log?.length ?? 0 }), live: encode(live, units) };
 }
 

@@ -61,6 +61,21 @@ export function costUnits(rules, cost) {
 /** A loss this big (rules.modifiers.actionsLost: 5e's paralyzed; the engine's incapacitated) takes the whole turn. */
 export const ALL_LOST = 99;
 
+/** What payForMove pays for, as limitedFits sees it. */
+const STRIDE = Object.freeze({ kind: "stride" });
+
+/**
+ * Is this action one a turn's limited actions (rules.modifiers.limitedActions) may pay for: "strike", a single Strike
+ * (one action, not an activity that makes Strikes: Flurry of Blows, Vicious Swing); "stride", a move (payForMove's).
+ */
+export function limitedFits(kinds, action) {
+  if ( !kinds?.size || !action ) return false;
+  if ( action === STRIDE ) return kinds.has("stride");
+  if ( !kinds.has("strike") || action.kind !== "strike" || action.sequence || action.classAction || action.charge ) return false;
+  const cost = typeof action.cost === "number" ? action.cost : action.cost?.actions ?? 1;
+  return cost === 1;
+}
+
 export class Turn {
   /**
    * @param {object} rules
@@ -79,6 +94,11 @@ export class Turn {
     // (What it has paid for so far this turn, an action, a Stride, a bonus action each: for "its last action was ...",
     // behavior/requires.js.)
     this.acts = 0;
+    // (Main-pool units only some actions may use: PF2e's quickened, a Strike or a Stride. Counted in the pool, and
+    // kept for those: anything else is paid from the rest.)
+    const limited = lost >= ALL_LOST ? null : rules.modifiers?.limitedActions?.(u) ?? null;
+    this.limited = Math.max(0, Math.min(this.pools[pool] ?? 0, Math.floor(Number(limited?.n) || 0)));
+    this.limitedKinds = new Set(this.limited ? limited.for ?? [] : []);
   }
 
   /** Main-pool units left (PF2e actions; 5e: 1 until the action is used). */
@@ -91,28 +111,49 @@ export class Turn {
     return this.left > 0 || (this.pools.bonus ?? 0) > 0;
   }
 
-  canAfford(cost) {
-    const c = normalizeCost(this.rules, cost);
-    return Object.entries(c).every(([k, v]) => (this.pools[k] ?? 0) >= v);
+  /**
+   * The main-pool units this action may use: the rest, and one limited unit more where it fits them (a Strike or a
+   * Stride is one action: what comes before it, a draw, is paid from the rest).
+   */
+  #open(action) {
+    const rest = Math.max(0, this.left - this.limited);
+    return limitedFits(this.limitedKinds, action) ? rest + Math.min(this.limited, 1) : rest;
   }
 
-  spend(cost) {
+  /** Could it pay this cost, for this action (without one: as an action the limited units can't pay for)? */
+  canAfford(cost, action = null) {
     const c = normalizeCost(this.rules, cost);
+    const main = mainPool(this.rules);
+    return Object.entries(c).every(([k, v]) => (k === main ? this.#open(action) : (this.pools[k] ?? 0)) >= v);
+  }
+
+  /** Pay this cost, for this action: a limited unit first where it fits, else from the rest. */
+  spend(cost, action = null) {
+    const c = normalizeCost(this.rules, cost);
+    const main = mainPool(this.rules);
     for ( const [k, v] of Object.entries(c) ) this.pools[k] = (this.pools[k] ?? 0) - v;
+    if ( this.limited && (c[main] ?? 0) > 0 ) this.#useLimited(limitedFits(this.limitedKinds, action) ? 1 : 0);
     this.acts += 1;
   }
 
-  /** How many times this cost could be paid from what's left. */
-  howMany(cost) {
+  /** The limited units after a payment: `used` of them, and never more than the pool has left. */
+  #useLimited(used) {
+    this.limited = Math.max(0, Math.min(this.limited - used, this.left));
+  }
+
+  /** How many times this cost could be paid from what's left, for this action. */
+  howMany(cost, action = null) {
     const c = normalizeCost(this.rules, cost);
+    const main = mainPool(this.rules);
     let n = Infinity;
-    for ( const [k, v] of Object.entries(c) ) if ( v > 0 ) n = Math.min(n, Math.floor((this.pools[k] ?? 0) / v));
+    for ( const [k, v] of Object.entries(c) ) if ( v > 0 ) n = Math.min(n, Math.floor((k === main ? this.#open(action) : (this.pools[k] ?? 0)) / v));
     return Number.isFinite(n) ? n : 0;
   }
 
   /** Give up the main pool (end the turn's real actions; bonus actions may remain). */
   spendAll() {
     this.pools[mainPool(this.rules)] = 0;
+    this.limited = 0;
   }
 
   /** Main-pool units needed to make `steps` moves of a full speed each (5e: what remains of the move is free). */
@@ -129,8 +170,9 @@ export class Turn {
    */
   payForMove(speed) {
     if ( !this.feetMovement ) {
-      if ( this.left < 1 ) return 0;
+      if ( this.#open(STRIDE) < 1 ) return 0;
       this.pools[mainPool(this.rules)] -= 1;
+      if ( this.limited ) this.#useLimited(limitedFits(this.limitedKinds, STRIDE) ? 1 : 0);
       this.acts += 1;
       return speed;
     }
