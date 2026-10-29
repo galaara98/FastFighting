@@ -14,6 +14,7 @@
  *   action.drawEach   each use leaves the hand empty (a potion drunk, a bomb or a dagger thrown): drawn again for the next
  *
  * The creature's own: u.drawn (the gear keys in hand), u.loaded (gear key -> rounds loaded, for gear that reloads).
+ * spec.hands: the hands it has (2 by default); a draw for later goes only into a free one (fitsInHand).
  */
 
 /** The key an action's gear goes by. */
@@ -75,6 +76,31 @@ export function initGear(u, actions = []) {
     if ( reloads(a) && !u.loaded.has(gearOf(a)) ) u.loaded.set(gearOf(a), startLoaded(a));
   }
 }
+
+/** The hands a creature has (spec.hands; two unless the helper says otherwise). */
+export const handsOf = u => (Number.isFinite(Number(u?.spec?.hands)) ? Number(u.spec.hands) : 2);
+
+/** The hands an action's gear takes in hand (its `hands`; one where it needs drawing and doesn't say). */
+const gripOf = action => (Number.isFinite(Number(action?.hands)) ? Number(action.hands) : (Number(action?.drawCost) || 0) > 0 ? 1 : 0);
+
+/**
+ * The hands its gear in hand takes now: each gear drawn, and each a character's sheet had in hand from the start (no
+ * draw to make), at the most any of its actions grips it with; `except`, a gear key not counted. Only gear that can be
+ * drawn at all counts the second way (a creature's own claws, jaws and fists hold nothing).
+ */
+export function handsHeld(u, actions = [], except = null) {
+  const grip = new Map();
+  for ( const a of actions ) {
+    const key = gearOf(a);
+    if ( key === except ) continue;
+    const held = u?.drawn?.has(key) || (a.held && !(Number(a.drawCost) > 0) && !(a.traits ?? []).includes("unarmed"));
+    if ( held ) grip.set(key, Math.max(grip.get(key) ?? 0, gripOf(a)));
+  }
+  return [...grip.values()].reduce((s, n) => s + n, 0);
+}
+
+/** Would drawing this action's gear fit in its free hands (what else it holds staying where it is)? */
+export const fitsInHand = (u, action, actions = []) => handsHeld(u, actions, gearOf(action)) + gripOf(action) <= handsOf(u);
 
 /** Its gear in hand. */
 export function draw(u, action) {

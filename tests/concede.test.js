@@ -69,6 +69,14 @@ describe("a charismatic leader's last word", () => {
     const words = fights(spec, 150).filter(r => r.log.some(e => e.type === "lastWord"));
     expect(words.length).toBeGreaterThan(0);
     for ( const r of words ) expect(r.log.filter(e => e.type === "lastWord").length).toBe(1);
+    // (Out of its own turn: one pitch, its reaction. The words after it, up to the next creature's own, are that one.)
+    for ( const r of words ) {
+      const at = r.log.findIndex(e => e.type === "lastWord");
+      const chief = r.log[at].actorId;
+      const after = r.log.slice(at + 1);
+      const next = after.findIndex(e => e.actorId !== chief && !["talk", "sway", "concede", "standoffEnd", "thought"].includes(e.type));
+      expect(after.slice(0, next < 0 ? after.length : next).filter(e => e.actorId === chief && e.type === "talk").length).toBeLessThanOrEqual(1);
+    }
     const r = runBatchSync(spec, pf2eRules, { runs: 200 });
     expect(r.pPeaceful).toBeGreaterThan(0);
   });

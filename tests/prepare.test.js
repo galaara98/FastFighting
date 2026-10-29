@@ -5,7 +5,7 @@
 import { describe, expect, test } from "vitest";
 import { replay, beginRun, prepareBattle } from "../scripts/engine/simulator.js";
 import { costOf } from "../scripts/engine/turn.js";
-import { gearOf, needsDraw, isLoaded, roundsLoaded, startLoaded, readyUnits, reloadPerUse, initGear, draw, load, fire, used, syncGear, usable } from "../scripts/engine/gear.js";
+import { gearOf, needsDraw, isLoaded, roundsLoaded, startLoaded, readyUnits, reloadPerUse, initGear, draw, load, fire, used, syncGear, usable, handsHeld, fitsInHand } from "../scripts/engine/gear.js";
 import { hasUses } from "../scripts/engine/behavior/evaluate.js";
 import { coverOf, enemiesOf } from "../scripts/engine/battle-state.js";
 import { beginLive, syncFromSheets, snapshotRun, restoreRun } from "../scripts/engine/live.js";
@@ -260,5 +260,33 @@ describe("spare movement, after the turn's main action", () => {
     expect(first.find(e => e.type === "prepare")?.step).toBe("cover");
     const second = r.log.filter(e => e.actorId === "sneak" && e.round === 2 && e.type !== "thought");
     expect(second.some(e => e.type === "buff" && e.maneuver === "hide")).toBe(true);
+  });
+});
+
+describe("hands: a draw for later goes only into a free hand", () => {
+  const blade = (id, hands = 1) => strike({ id, name: id, bonus: 8, drawCost: 1, hands, gear: id, damage: [parseFormula("1d6+2", "slashing")] });
+
+  test("what it holds: drawn gear and gear in hand from the start, at its grip; claws and fists hold nothing", () => {
+    const axe = blade("axe"), pick = blade("pick", 2), shield = strike({ id: "boss", name: "Shield Boss", held: true, hands: 1, gear: "boss" });
+    const u = { drawn: new Set(["axe"]), spec: {} };
+    expect(handsHeld(u, [axe, pick, shield, fist()])).toBe(2);
+    expect(fitsInHand(u, pick, [axe, pick, shield])).toBe(false);
+    expect(fitsInHand({ drawn: new Set(), spec: {} }, pick, [axe, pick])).toBe(true);
+    expect(fitsInHand({ drawn: new Set(["axe"]), spec: { hands: 4 } }, pick, [axe, pick, shield])).toBe(true);
+  });
+
+  test("three one-handed weapons and a spare turn: no more drawn than its two hands hold", () => {
+    let any = 0;
+    for ( const seed of [1, 2, 3] ) {
+      const r = replay(battle([
+        creature({ id: "harsk", name: "Harsk", kind: "pc", position: at(0), hp: { value: 40, max: 40 }, speeds: { walk: 20 }, conditions: { immobilized: true },
+          actions: [blade("waraxe"), blade("hatchet"), blade("dagger"), fist()] }),
+        post("kobold", 30)
+      ], { positioning: true, maxRounds: 2 }), pf2eRules, seed);
+      const drawn = r.log.filter(e => e.actorId === "harsk" && e.type === "draw");
+      expect(new Set(drawn.map(e => e.gear)).size).toBeLessThanOrEqual(2);
+      any += drawn.length;
+    }
+    expect(any).toBeGreaterThan(0);
   });
 });

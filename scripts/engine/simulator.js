@@ -366,7 +366,8 @@ export function noteIdle(run, u) {
     if ( e.turn < run.turn ) break;
     if ( e.turn === run.turn && e.actorId === u.id && e.type !== "thought" ) return;
   }
-  log(run, u, { type: "lazy" });
+  // (While a standoff holds, a turn with nothing in it is one spent waiting on the words, not idling.)
+  log(run, u, run.standoff ? { type: "watch", standoff: true } : { type: "lazy" });
 }
 
 /**
@@ -2353,6 +2354,20 @@ function executeControl(run, u, action, target, attacksMade, common) {
 }
 
 /**
+ * The best way u can hurt a foe without moving (bestOptionVs's, at no move), and that foe: {target, option}, or null.
+ * For one that can't move this turn (grabbed, immobilized) whose chosen foe is out of reach.
+ */
+function fromWhereItStands(run, u, attacksMade, turn) {
+  let best = null;
+  for ( const t of enemiesOf(run, u) ) {
+    if ( !isStanding(t) || t.spec.untargetable || heldOff(run, u, t) ) continue;
+    const option = bestOptionVs(run, u, t, attacksMade, turn);
+    if ( option && option.moves === 0 && (!best || option.weighted > best.option.weighted) ) best = { target: t, option };
+  }
+  return best;
+}
+
+/**
  * Creatures called to fight: they join the order right after u (holding its concentration, if they need it). In a live
  * battle, the system's card for the summoning, as its caster shows it.
  */
@@ -3489,12 +3504,20 @@ function legendaryMoment(run, after) {
   }
 }
 
-/** Pitches made in a standoff turn (or a leader's last word, aimed only at the player characters). Returns how many. */
-function standoffPitching(run, u, n, only = null) {
+/**
+ * Pitches made in a standoff turn (or a leader's last word, aimed only at the player characters). Each is a check, so
+ * each takes what the system says talking that changes something costs (rules.talkCost, else an action): with `turn`,
+ * paid from it, and no more than it has. Returns how many.
+ */
+function standoffPitching(run, u, n, only = null, turn = null) {
+  const rules = run.prep.rules;
+  const cost = rules.talkCost ?? rules.basicAction ?? 1;
   let made = 0;
   for ( let i = 0; i < n; i++ ) {
+    if ( turn && !turn.canAfford(cost) ) break;
     const pitch = choosePitch(run, u, { only });
     if ( !pitch ) break;
+    turn?.spend(cost);
     attemptTalk(run, u, pitch, logger(run));
     made += 1;
     if ( battleOver(run) ) break;
@@ -3507,13 +3530,14 @@ function standoffPitching(run, u, n, only = null) {
  * sides; any fight, for one taking no side), puts its words into stopping it, whoever's in it: talking the fighters
  * into letting it be (in a standoff), or into leaving. Returns true if it made a pitch.
  */
-function keepsPeace(run, u, actions) {
-  if ( !dislikesViolence(u) || !run.prep.options.talking || !canTalk(u) || u.tac?.talk === "never" ) return false;
+function keepsPeace(run, u, turn) {
+  const actions = turn.howMany(run.prep.rules.talkCost ?? run.prep.rules.basicAction ?? 1);
+  if ( actions < 1 || !dislikesViolence(u) || !run.prep.options.talking || !canTalk(u) || u.tac?.talk === "never" ) return false;
   const fighters = new Set(run.units.filter(o => o !== u && fighting(run, o) && perceives(run, u, o)));
   if ( !fighters.size ) return false;
   u.calming = run.standoff ? "pacify" : "leave";
   const first = !u.keptPeace;
-  const made = standoffPitching(run, u, Math.max(1, standoffPitches(run, u, actions)), o => fighters.has(o));
+  const made = standoffPitching(run, u, Math.max(1, standoffPitches(run, u, actions)), o => fighters.has(o), turn);
   u.calming = null;
   if ( made && first ) {
     u.keptPeace = true;
@@ -3559,11 +3583,11 @@ function neutralTurn(run, u) {
   if ( !u.truce && run.prep.options.talking && canTalk(u) && u.tac?.talk !== "never" ) {
     const rules = run.prep.rules;
     const actions = turn.howMany(rules.talkCost ?? rules.basicAction ?? 1);
-    if ( !keepsPeace(run, u, actions) ) {
+    if ( !keepsPeace(run, u, turn) ) {
       const involved = meddling(run, u, say);
       if ( involved ) {
         const against = new Set(involved.against);
-        standoffPitching(run, u, Math.max(1, standoffPitches(run, u, actions)), o => !isNeutral(o) && against.has(o.side) && isStanding(o));
+        standoffPitching(run, u, Math.max(1, standoffPitches(run, u, actions)), o => !isNeutral(o) && against.has(o.side) && isStanding(o), turn);
       }
     }
   }
@@ -3578,7 +3602,7 @@ function neutralTurn(run, u) {
     } else {
       const rules = run.prep.rules;
       const side = u.truce.side;
-      standoffPitching(run, u, standoffPitches(run, u, turn.howMany(rules.talkCost ?? rules.basicAction ?? 1)), o => o.side === side);
+      standoffPitching(run, u, standoffPitches(run, u, turn.howMany(rules.talkCost ?? rules.basicAction ?? 1)), o => o.side === side, turn);
     }
   }
   u.turnsTaken += 1;
@@ -3595,12 +3619,29 @@ function standoffTurn(run, u) {
   const rules = run.prep.rules;
   const turn = turnFor(run, u);
   tellLore(run, u, turn); // (what it learned last turn, if it means to tell its friends)
-  dealNow(run, u, turn);
+  const dealt = dealNow(run, u, turn);
   const actions = turn.howMany(rules.talkCost ?? rules.basicAction ?? 1);
-  if ( !keepsPeace(run, u, actions) && !observes(run, u, turn) ) standoffPitching(run, u, standoffPitches(run, u, actions));
+  const said = keepsPeace(run, u, turn) || observes(run, u, turn) || standoffPitching(run, u, standoffPitches(run, u, actions), null, turn) > 0;
+  // (Nothing said or done: the turn goes to getting ready for what may come, where it stands: its weapon drawn, a
+  // potion got out, up off the ground. Nothing that moves it or looks like a blow: behavior/prepare.js.)
+  if ( !dealt && !said && !turn.acts && isStanding(u) ) spareTurn(run, u, turn, standoffKit(run, u), null, { moves: false });
   u.turnsTaken += 1;
   endOfTurn(run, u);
 }
+
+/**
+ * What getting ready in a standoff takes of the simulator's own: no shield raised, no Strike readied, no moves; its
+ * gear for whom it would fight, should it come to blows (`held`).
+ */
+const standoffKit = (run, u) => ({
+  say: logger(run),
+  held: true,
+  stand: x => {
+    x.prone = false;
+    log(run, x, { type: "stand", prepared: true });
+    return true;
+  }
+});
 
 /**
  * Outside the turn's own steps (a standoff, one taking no side): the deal it wants most (behavior/deals.js), as often as
@@ -3631,8 +3672,8 @@ function dealNow(run, u, turn) {
 }
 
 /**
- * Before a standoff breaks, a charismatic NPC leader may take one more turn to press the player characters to back
- * off (once per side). Returns true if that settled it.
+ * Before a standoff breaks, a charismatic NPC leader may get a last word in, pressing the player characters to back off
+ * (once per side): one pitch, a check out of its own turn, as its reaction. Returns true if that settled it.
  */
 function lastWord(run) {
   const rules = run.prep.rules;
@@ -3643,10 +3684,12 @@ function lastWord(run) {
     if ( !found ) continue;
     const pcs = run.units.filter(o => o.spec.kind === "pc" && isStanding(o) && areEnemies(run, found.leader, o));
     if ( !pcs.length ) continue;
+    // (Out of its own turn: a word, a check, as its reaction, where it has one left.)
+    if ( (found.leader.reactionsLeft ?? 1) < 1 ) continue;
     run.lastWords.add(side);
     if ( !run.rng.chance(Math.min(0.85, 0.35 + 0.1 * found.edge)) ) continue;
     log(run, found.leader, { type: "lastWord" });
-    standoffPitching(run, found.leader, turnFor(run, found.leader).howMany(rules.talkCost ?? rules.basicAction ?? 1), o => o.spec.kind === "pc");
+    if ( standoffPitching(run, found.leader, 1, o => o.spec.kind === "pc") ) found.leader.reactionsLeft = Math.max(0, (found.leader.reactionsLeft ?? 1) - 1);
     if ( battleOver(run) ) return true;
   }
   return false;
@@ -4290,8 +4333,13 @@ function turnProper(run, u, idle) {
           continue;
         }
       }
+      let option = bestOptionVs(run, u, target, attacksMade, turn);
+      // (Held where it is, by a grab or the like, the foe it would go for out of reach: the foe it can hurt from here.)
+      if ( option?.moves > 0 && !canMove(run, u) ) {
+        const here = fromWhereItStands(run, u, attacksMade, turn);
+        if ( here ) ({ target, option } = here);
+      }
       u.targetId = target.id;
-      const option = bestOptionVs(run, u, target, attacksMade, turn);
       if ( !option ) {
         if ( openUp() ) continue;
         break;

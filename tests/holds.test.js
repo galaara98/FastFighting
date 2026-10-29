@@ -254,3 +254,25 @@ describe("tied up, as the GM puts it on", () => {
     expect([u.status, isBound(u)]).toEqual(["standing", false]);
   });
 });
+
+describe("held where it stands, the foe it wants out of reach", () => {
+  test("it strikes the foe it can reach from where it stands, rather than give up its blows", () => {
+    for ( const seed of [1, 2, 3, 4, 5, 6] ) {
+      const run = beginRun(prepareBattle(battle([
+        creature({ id: "hero", name: "Hero", traits: traits(), conditions: { immobilized: true }, hp: { value: 80, max: 80 }, actions: [strike({ id: "sword", name: "Sword", bonus: 12 })], ...at(0) }),
+        creature({ id: "brute", name: "Brute", side: "hostile", hp: { value: 200, max: 200 }, flags: { fearless: true }, ...at(5) }),
+        creature({ id: "mage", name: "Mage", side: "hostile", hp: { value: 6, max: 60 }, flags: { fearless: true }, actions: [strike({ id: "zap", name: "Zap", melee: false, range: { increment: 60, max: 120 }, bonus: 20 })], ...at(30) })
+      ], { positioning: true, maxRounds: 2 }), pf2eRules), seed, { log: true });
+      beginRound(run, 1);
+      for ( const u of run.units ) u.active = true;
+      const hero = run.byId.get("hero");
+      // (It wants the mage, out of reach: the weakest, and the one hurting it.)
+      hero.harmedBy?.add?.("mage");
+      const from = run.log.length;
+      takeTurn(run, hero);
+      const own = run.log.slice(from).filter(e => e.actorId === "hero");
+      expect(own.some(e => e.type === "attack" && e.targetId === "brute")).toBe(true);
+      expect(own.some(e => e.type === "ready")).toBe(false);
+    }
+  });
+});

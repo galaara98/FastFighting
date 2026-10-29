@@ -117,3 +117,50 @@ describe("standoffs", () => {
     expect(impatience(run, guard)).toBeGreaterThan(held);
   });
 });
+
+describe("a standoff turn with nothing said", () => {
+  const spetum = { id: "spetum", name: "Spetum", kind: "strike", cost: 1, bonus: 10, maps: [0, -5, -10], melee: true, reach: 10, drawCost: 1, gear: "spetum",
+    damage: [{ dice: [{ n: 1, faces: 8, mult: 1 }], flat: 4, type: "piercing", persistent: false, category: null }] };
+  const fist = { id: "fist", name: "Fist", kind: "strike", cost: 1, bonus: 6, maps: [0, -5, -10], melee: true, reach: 5,
+    damage: [{ dice: [{ n: 1, faces: 4, mult: 1 }], flat: 0, type: "bludgeoning", persistent: false, category: null }] };
+  const at = x => ({ position: { x, y: 0, size: 5 } });
+  // (A silent fighter facing a captain who talks: the standoff holds while the captain weighs its words.)
+  const field = actions => {
+    const spec = battle([
+      creature({ id: "spet", name: "Spet", kind: "pc", diesAtZero: false, social: null, tactics: { talk: "never" }, actions, initiative: { mod: 100 }, ...at(0) }),
+      creature({ id: "captain", name: "Captain", side: "hostile", social: speaks(), tactics: { talk: "first" }, initiative: { mod: -100 }, ...at(10) })
+    ], { maxRounds: 2, opening: "talk", positioning: true });
+    spec.sides.hostile.leaderId = "captain";
+    return spec;
+  };
+  const spetsFirst = r => r.log.filter(e => e.actorId === "spet" && e.round === 1 && e.type !== "thought").map(e => e.type);
+  // (Where the standoff held through its first turn: it didn't break it itself.)
+  const held = r => r.log.some(e => e.type === "standoff") && !spetsFirst(r).includes("breakStandoff");
+
+  test("it gets ready where it stands: its weapon drawn, as in any spare turn", () => {
+    const seen = [];
+    for ( const seed of [1, 2, 3, 4, 5] ) {
+      const r = replay(field([spetum, fist]), pf2eRules, seed);
+      if ( !held(r) ) continue;
+      seen.push(spetsFirst(r));
+    }
+    expect(seen.length).toBeGreaterThan(0);
+    for ( const types of seen ) {
+      expect(types).toContain("draw");
+      expect(types).not.toContain("lazy");
+      expect(types).not.toContain("move");
+    }
+  });
+
+  test("nothing to get ready: told as watching, never as idling", () => {
+    let seen = 0;
+    for ( const seed of [1, 2, 3, 4, 5] ) {
+      const r = replay(field([fist]), pf2eRules, seed);
+      if ( !held(r) ) continue;
+      seen++;
+      expect(spetsFirst(r)).toEqual(["watch"]);
+      expect(r.log.find(e => e.actorId === "spet" && e.round === 1 && e.type === "watch")).toMatchObject({ standoff: true });
+    }
+    expect(seen).toBeGreaterThan(0);
+  });
+});

@@ -25,8 +25,8 @@
  * Pure: no Foundry globals.
  */
 import { STATUS, TACTICAL, clamp } from "../../constants.js";
-import { isStanding, enemiesOf, alliesOf, liveTier, liveTrait, behaviorOf, canMove, heldOff, areEnemies, approach, teamOf } from "../battle-state.js";
-import { needsDraw, isLoaded, canReload, draw, load, gearOf, reloadPerUse } from "../gear.js";
+import { isStanding, enemiesOf, alliesOf, liveTier, liveTrait, behaviorOf, canMove, heldOff, areEnemies, approach, teamOf, edgeDistance } from "../battle-state.js";
+import { needsDraw, isLoaded, canReload, draw, load, gearOf, reloadPerUse, fitsInHand } from "../gear.js";
 import { costOf, costUnits, mainPool, normalizeCost } from "../turn.js";
 import { expectedDamage, threatOf, hasUses, unitsPerTurn } from "./evaluate.js";
 import { mind, levelOf, protective } from "./desire.js";
@@ -92,13 +92,15 @@ export function stillMatters(run, u, t) {
 const gearMatters = (run, u, t) => (enemiesOf(run, u).filter(isStanding).length >= 2 ? 0.95 : stillMatters(run, u, t));
 
 /**
- * The first thing an action it can't afford this turn still needs, if what's left of the turn pays for it: {step,
- * cost, action, target, worth, desire}; worth what it lets the action do next turn (gearWorth; `o`, its nextOption, where
+ * The first thing an action it can't afford this turn still needs, if what's left of the turn pays for it (a draw, if
+ * it has the hand free for it: engine/gear.js fitsInHand): {step, cost, action, target, worth, desire}; worth what it lets the action do next turn (gearWorth; `o`, its nextOption, where
  * it has it). Null for none.
  */
 export function gearStep(run, u, turn, action, target, o = null) {
   const need = gearNeeds(u, action)[0];
   if ( !need ) return null;
+  // (A draw for later only into a free hand: what it holds stays where it is.)
+  if ( need.step !== "reload" && !fitsInHand(u, action, u.prep?.offense ?? []) ) return null;
   const cost = normalizeCost(run.prep.rules, need.units);
   if ( !turn.canAfford(cost) ) return null;
   const plan = o?.action === action ? o : optionFor(run, u, action, target);
@@ -125,14 +127,27 @@ function tellPrepare(u, step, say) {
 /*  What it would do next turn                  */
 /* -------------------------------------------- */
 
-/** Whoever it most wants to hurt, standing: its lead, else the one it went for, else its strongest such wish. */
-export function nextFoe(run, u) {
-  const ok = t => t && isStanding(t) && areEnemies(run, u, t) && !heldOff(run, u, t) && !t.spec.untargetable;
+/**
+ * Whoever it most wants to hurt, standing: its lead, else the one it went for, else its strongest such wish. `held`:
+ * one a standoff holds it off too (whom it would fight, should it come to blows), and with no such wish, the nearest.
+ */
+export function nextFoe(run, u, { held = false } = {}) {
+  const ok = t => t && isStanding(t) && areEnemies(run, u, t) && (held || !heldOff(run, u, t)) && !t.spec.untargetable;
   const lead = mind(run, u).lead;
   if ( lead?.kind === "hurt" && ok(run.byId.get(lead.targetId)) ) return run.byId.get(lead.targetId);
   if ( ok(run.byId.get(u.targetId)) ) return run.byId.get(u.targetId);
   const want = mind(run, u).ranked.find(d => d.kind === "hurt" && !d.sunk && ok(run.byId.get(d.targetId)));
-  return want ? run.byId.get(want.targetId) : null;
+  if ( want ) return run.byId.get(want.targetId);
+  // (In a standoff, with no one it wants to hurt yet: the foe nearest it.)
+  if ( !held || !u.pos ) return null;
+  let near = null;
+  let d = Infinity;
+  for ( const t of run.units ) {
+    if ( !ok(t) || !t.pos ) continue;
+    const x = edgeDistance(u, t) ?? Infinity;
+    if ( x < d ) { d = x; near = t; }
+  }
+  return near;
 }
 
 /**
@@ -753,6 +768,7 @@ function standStep(run, u, turn, ctx) {
  * The best thing to do with what's spare of its turn, for next turn's sake: its gear for its best option, a potion
  * got out, standing up, a raised shield (`kit.shield`: what raising it now is worth, or null), a Strike readied
  * (`kit.ready`, the same: behavior/waiting.js), a better spot to end the turn on. {step, cost, worth, ...} or null where nothing is worth PREP.least. `moves: false`: no moving.
+ * `kit.held`: its gear made ready for a foe a standoff holds it off from, too.
  */
 export function spareBest(run, u, turn, kit = {}, { moves = true } = {}) {
   if ( !isStanding(u) || u.spec.hazard ) return null;
@@ -764,7 +780,7 @@ export function spareBest(run, u, turn, kit = {}, { moves = true } = {}) {
   const options = [];
   if ( turn.left > 0 ) {
     // (Whichever of its weapons getting ready does most for: the one it would use next turn, most often.)
-    const foe = u.prep.offense?.some(a => gearNeeds(u, a).length) ? nextFoe(run, u) : null;
+    const foe = u.prep.offense?.some(a => gearNeeds(u, a).length) ? nextFoe(run, u, { held: !!kit.held }) : null;
     let gear = null;
     for ( const a of foe ? u.prep.offense : [] ) {
       if ( !gearNeeds(u, a).length ) continue;
@@ -842,12 +858,12 @@ export function takeSpare(run, u, turn, pick, kit) {
 /**
  * What's left of its turn, spent getting ready for the next (the turn's main actions done: it found nothing better to
  * do with them): one step after another while any is worth it. `first`: the first step, where the turn has just found
- * it (spareBest, on the fight as it stands). True if it did anything.
+ * it (spareBest, on the fight as it stands). `moves: false`: none that moves it (a standoff's). True if it did anything.
  */
-export function spareTurn(run, u, turn, kit, first = null) {
+export function spareTurn(run, u, turn, kit, first = null, { moves = true } = {}) {
   let did = false;
   for ( let i = 0; i < 4 && isStanding(u); i++ ) {
-    const pick = (i === 0 && first) || spareBest(run, u, turn, kit);
+    const pick = (i === 0 && first) || spareBest(run, u, turn, kit, { moves });
     if ( !pick ) break;
     did = true;
     if ( !takeSpare(run, u, turn, pick, kit) ) break;
