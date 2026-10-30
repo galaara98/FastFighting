@@ -9,7 +9,7 @@
 import { describe, expect, test } from "vitest";
 import { beginRun, beginRound, takeTurn, prepareBattle } from "../scripts/engine/simulator.js";
 import { movesNeeded, moveToward, edgeDistance, currentAc, saveRoll, COVER_POINTS, reachShape } from "../scripts/engine/battle-state.js";
-import { inTheWay, spotWithin, spotToShoot, stepSpots, lineOfSight, sightBlocked, lineBlocked, blockedPoints, coverFrom, crossed, crossesAny, crossedExtra } from "../scripts/engine/behavior/space.js";
+import { inTheWay, spotWithin, spotToShoot, ringOf, stepSpots, lineOfSight, sightBlocked, lineBlocked, blockedPoints, coverFrom, crossed, crossesAny, crossedExtra } from "../scripts/engine/behavior/space.js";
 import { spotsWithin } from "../scripts/engine/behavior/prepare.js";
 import { areEnemies } from "../scripts/engine/battle-state.js";
 import { snapshotRun } from "../scripts/engine/live.js";
@@ -22,9 +22,10 @@ const at = (x, y = 0) => ({ position: { x, y, size: 5 } });
 const bow = { id: "bow", name: "Bow", kind: "strike", cost: 1, bonus: 9, maps: [0, -5, -10], melee: false, range: { increment: 60, max: 60 }, damage: [{ dice: [{ n: 1, faces: 8, mult: 1 }], flat: 0, type: "piercing", persistent: false, category: null }] };
 const who = (id, side, x, y = 0, extra = {}) => creature({ id, name: id, side, traits, hp: { value: 60, max: 60 }, actions: [strike({ bonus: -50 })], ...at(x, y), ...extra });
 
-function fight(list, { rules = pf2eRules, walls = undefined } = {}) {
+function fight(list, { rules = pf2eRules, walls = undefined, approach = undefined } = {}) {
   const spec = battle(list, { maxRounds: 4, positioning: true, aftermath: "none" });
   if ( walls !== undefined ) spec.walls = walls;
+  if ( approach !== undefined ) spec.approach = approach;
   const run = beginRun(prepareBattle(spec, rules), 2, { log: true });
   beginRound(run, 1);
   for ( const u of run.units ) u.active = true;
@@ -414,5 +415,35 @@ describe("one look at the map while it decides", () => {
     blockedPoints(other, ...get(other, "a", "b"));
     expect(other.sightCache.store).toBe(kept);
     expect(Object.keys(snapshotRun(run).run)).not.toContain("sightCache");
+  });
+});
+
+describe("a way there that costs nothing", () => {
+  // (An approach worked out on the map with a terrain multiplier of 0: a step that never leaves the mover's own square,
+  // to beside a tiny creature, as Foundry measures it, costs nothing. Seen with a cleric shooting a spell at a familiar.)
+  const nearHero = mult => ({ hero: { orc: { dist: 35, mult, speed: 25, mode: "walk", los: false, meleeOk: true } } });
+  const shot = mult => {
+    const run = fight([who("hero", "friendly", 0, 0, { actions: [bow] }), who("orc", "hostile", 40)],
+      { walls: [wall(20, -40, 20, 40)], approach: nearHero(mult) });
+    const [h, o] = get(run, "hero", "orc");
+    return { run, h, o };
+  };
+
+  test("a shot past a wall takes the moves it would over open ground, not a search without end", () => {
+    const open = shot(1);
+    const free = shot(0);
+    const moves = movesNeeded(open.run, open.h, open.o, bow);
+    expect(Number.isFinite(moves)).toBe(true);
+    expect(movesNeeded(free.run, free.h, free.o, bow)).toBe(moves);
+  });
+
+  test("a move toward it gets somewhere", () => {
+    const { run, h, o } = shot(0);
+    const move = moveToward(run, h, o, 5, 25);
+    expect(move.feet).toBeGreaterThan(0);
+  });
+
+  test("no ring of squares without end", () => {
+    expect(ringOf(Infinity)).toEqual([]);
   });
 });

@@ -243,7 +243,15 @@ export function prepareBattle(spec, rules) {
   const byId = new Map(combatants.map(c => [c.spec.id, c]));
   // Whoever heads a group (its boss or its leader) finds its words more readily (one who only wants to lead doesn't).
   for ( const chain of Object.values(command) ) headsUp(byId.get(chain[0]?.id));
-  const approachOf = (aId, tId) => spec.approach?.[aId]?.[tId] ?? DEFAULT_APPROACH;
+  // (A way there with a terrain multiplier of nothing or less, as no ground is: open ground's, 1. Kept per pair.)
+  const freeWays = new WeakMap();
+  const approachOf = (aId, tId) => {
+    const ap = spec.approach?.[aId]?.[tId] ?? DEFAULT_APPROACH;
+    if ( typeof ap.mult !== "number" || ap.mult > 0 ) return ap;
+    let fixed = freeWays.get(ap);
+    if ( !fixed ) freeWays.set(ap, fixed = { ...ap, mult: 1 });
+    return fixed;
+  };
 
   // What each summoning calls, ready to join a fight (on the summoner's side, under its command).
   const summons = new Map();

@@ -536,6 +536,8 @@ const RINGS = new Map();
 export function ringOf(most) {
   let ring = RINGS.get(most);
   if ( ring ) return ring;
+  // (No ring without end: none.)
+  if ( !Number.isFinite(most) ) return [];
   ring = [];
   const r = Math.floor(most / STEP) * STEP;
   for ( let dx = -r; dx <= r; dx += STEP ) {

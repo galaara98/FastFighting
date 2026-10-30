@@ -252,7 +252,9 @@ function terrainMultiplier(a, b, action) {
   try {
     const path = a.createTerrainMovementPath([from, to]);
     const measured = a.measureMovementPath(path);
-    if ( !measured.distance ) return 1;
+    // (A step that stays in its own square, to beside a tiny creature, costs nothing as Foundry measures it: open
+    // ground, not free.)
+    if ( !(measured.distance > 0) || !(measured.cost > 0) ) return 1;
     // Climbing and crawling carry an action cost multiplier for creatures without the speed; a creature with
     // a climb speed only pays for the terrain.
     const actionMult = CONFIG.Token.movement.actions[action]?.costMultiplier ?? 1;

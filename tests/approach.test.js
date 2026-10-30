@@ -85,4 +85,17 @@ describe("the approach matrix, pair by pair", () => {
     resetPathGrid();
     expect(ignoring).toEqual(computeApproach(tokens, specs, { ignoreTerrainFor: new Set(["b"]) }));
   });
+
+  test("beside a tiny creature, a step that stays in its own square costs nothing as Foundry measures it: open ground, not free", () => {
+    // (A cleric and her familiar, half a square wide, on the square up and left: to beside it is half a square's step.)
+    const cleric = token("cleric", 2, 4);
+    const familiar = token("familiar", 1, 3);
+    familiar.document.width = familiar.document.height = 0.5;
+    cleric.measureMovementPath = () => ({ distance: 2.5, cost: 0 });
+    const specs = new Map([[cleric.id, { speeds: { walk: 30 }, actions: [] }], [familiar.id, { speeds: { walk: 25 }, actions: [] }]]);
+    resetPathGrid();
+    const ap = computeApproach([cleric, familiar], specs).cleric.familiar;
+    expect(ap.mult).toBe(1);
+    expect(ap.modes.walk.mult).toBe(1);
+  });
 });
