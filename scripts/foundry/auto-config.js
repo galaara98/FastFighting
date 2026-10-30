@@ -216,7 +216,9 @@ export async function ensureAutoConfig(actor, spec, { force = false } = {}) {
       next.scores = Object.fromEntries(scored.slice(0, 8).map(s => [s.id, s.score]));
       if ( next.picked.length ) changes[`flags.${MODULE_ID}.tactics.playstyles`] = next.picked;
     }
-    await actor.update(changes);
+    // (Without a diff: the system's update rules have nothing to do with FastFighting's flags, and PF2e's Grant Item
+    // rules, run again on every diffed update, put up a banner for a grant that lost track of its item.)
+    await actor.update(changes, { diff: false });
     return true;
   })();
   running.set(key, job);
