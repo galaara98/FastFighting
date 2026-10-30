@@ -447,3 +447,61 @@ describe("a way there that costs nothing", () => {
     expect(ringOf(Infinity)).toEqual([]);
   });
 });
+
+describe("what's kept from fight to fight: as worked out afresh, and no more of it with each fight", () => {
+  test("the squares round a creature, for any distance: as a ring worked out to it alone, one set of squares for all", () => {
+    // (The ring as it was once worked out for each distance on its own: the squares reachOf each way, those near enough.)
+    const alone = most => {
+      const r = Math.floor(most / 5) * 5;
+      const ring = [];
+      for ( let dx = -r; dx <= r; dx += 5 ) {
+        for ( let dy = -r; dy <= r; dy += 5 ) {
+          const feet = Math.hypot(dx, dy);
+          if ( feet <= most + 0.5 ) ring.push({ dx, dy, feet });
+        }
+      }
+      return ring.sort((a, b) => a.feet - b.feet);
+    };
+    // (Strides and moves left, fractions and all, the widest first and last; and within half a foot of a whole square.)
+    const asked = [120.25, ...Array.from({ length: 1500 }, (_, i) => (i * 7.37) % 120), 9.7, 14.6, 0, 4.9, 120.25];
+    const squares = new Set();
+    for ( const most of asked ) {
+      const ring = ringOf(most);
+      // (-0, under 5 feet, the same square as 0.)
+      const plain = list => list.map(({ dx, dy, feet }) => [dx + 0, dy + 0, feet]);
+      expect(plain(ring)).toEqual(plain(alone(most)));
+      for ( const o of ring ) squares.add(o);
+    }
+    // (However many distances: no more squares than the widest ring has. Kept apart for each, they came to over 900,000 here.)
+    expect(squares.size).toBeLessThanOrEqual((2 * 120 / 5 + 1) ** 2);
+    expect(ringOf(-3)).toEqual([]);
+  });
+
+  test("lines of sight on a map of many doors: all let go once there are too many over every way the doors stand", () => {
+    const walls = [wall(20, -40, 20, 40), ...Array.from({ length: 6 }, (_, i) => wall(-40 + 10 * i, 50, -35 + 10 * i, 50, { door: `d${i}` }))];
+    const run = fight([who("a", "friendly", 0), who("b", "hostile", 40)], { walls });
+    const fill = () => {
+      // (40,000 lines a way: under the most for any one way the doors stand, over it for three.)
+      run.geo += 1;
+      for ( let i = 0; i < 200; i++ ) for ( let j = 0; j < 200; j++ ) lineBlocked(run, { x: i, y: -30 }, { x: j, y: 30 });
+      return run.sightCache.store;
+    };
+    const ways = [[], ["d0"], ["d1"]];
+    const stand = open => { for ( const id of ["d0", "d1"] ) run.doors.set(id, { open: open.includes(id) }); };
+    stand([]);
+    run.geo = 1;
+    const shut = fill();
+    expect(shut.size).toBe(40000);
+    for ( const open of ways.slice(1) ) {
+      stand(open);
+      expect(fill()).not.toBe(shut);
+    }
+    // (The doors shut again: 120,000 kept over the three ways, so a store begun afresh, with the same answers.)
+    stand([]);
+    run.geo += 1;
+    expect(lineBlocked(run, { x: 0, y: -30 }, { x: 0, y: 30 })).toBe(sightBlocked(run, { x: 0, y: -30 }, { x: 0, y: 30 }));
+    expect(lineBlocked(run, { x: 30, y: 0 }, { x: 0, y: 0 })).toBe(sightBlocked(run, { x: 30, y: 0 }, { x: 0, y: 0 }));
+    expect(run.sightCache.store).not.toBe(shut);
+    expect(run.sightCache.store.size).toBe(2);
+  });
+});

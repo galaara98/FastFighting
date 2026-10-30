@@ -415,7 +415,11 @@ function pointsOf(t) {
   return [{ x, y }, { x: x - h, y: y - h }, { x: x + h, y: y - h }, { x: x - h, y: y + h }, { x: x + h, y: y + h }];
 }
 
-/** The most lines of sight kept for one state of the doors before they're let go and found again (memory). */
+/**
+ * The most lines of sight kept for one list of walls, over every state of its doors, before they're all let go and found
+ * again (memory). Doors open and shut a different way in each fight of a batch, and each way keeps lines of its own: a
+ * most for each would grow without end on a map of many doors.
+ */
 const LINES_MOST = 100000;
 
 /** Lines of sight kept, by the battle's list of walls (spec.walls), then by the doors open: sightKept. */
@@ -437,8 +441,11 @@ function sightKept(run) {
   for ( const [id, d] of run.doors ?? [] ) if ( d?.open ) open += `${id}\u0000`;
   let byDoors = SIGHT.get(walls);
   if ( !byDoors ) SIGHT.set(walls, byDoors = new Map());
+  let lines = 0;
+  for ( const s of byDoors.values() ) lines += s.size;
+  if ( lines > LINES_MOST ) byDoors.clear();
   let store = byDoors.get(open);
-  if ( !store || store.size > LINES_MOST ) byDoors.set(open, store = { lines: new Map(), points: new Map(), size: 0 });
+  if ( !store ) byDoors.set(open, store = { lines: new Map(), points: new Map(), size: 0 });
   run.sightCache = { geo: run.geo, walls, store };
   return store;
 }
@@ -512,8 +519,12 @@ export function spotToShoot(run, u, t, range, most, edgeDistance, crowd = null) 
   let bestCost = Infinity;
   const c = snapTo(gridOf(u), u.pos.x, u.pos.y);
   const off = Math.hypot(c.x - u.pos.x, c.y - u.pos.y);
-  for ( const o of ringOf(off > 0 ? most + STEP : most) ) {
-    if ( best && o.feet - off > bestCost ) break;
+  // (The ring read as ringOf reads it, without a list made for it: RING out past `out` feet, and corners past its reach.)
+  const out = off > 0 ? most + STEP : most;
+  const r = reachOf(out);
+  for ( const o of r < 0 ? [] : ringTo(r) ) {
+    if ( o.feet > out + 0.5 || (best && o.feet - off > bestCost) ) break;
+    if ( Math.abs(o.dx) > r || Math.abs(o.dy) > r ) continue;
     const p = { x: c.x + o.dx, y: c.y + o.dy };
     if ( !(edgeAt(u, p, t) <= range + 0.5) ) continue;
     p.feet = Math.hypot(p.x - u.pos.x, p.y - u.pos.y);
@@ -529,24 +540,41 @@ export function spotToShoot(run, u, t, range, most, edgeDistance, crowd = null) 
   return best;
 }
 
-/** The squares round a creature's out to `most` feet, nearest first: the same for everyone (from its own square). */
-const RINGS = new Map();
+/**
+ * The squares round a creature's, nearest first, out to the farthest reach asked for yet (RING_REACH feet each way): the
+ * same for everyone (from its own square). One ring, grown when a wider one is asked for and read only as far as it's
+ * wanted (ringOf). A ring kept for each distance asked for would keep one for every stride and move left, fractions and
+ * all, and every fight of a batch would add more (memory).
+ */
+let RING = [];
+let RING_REACH = -1;
 
-/** [{dx, dy, feet}] for `most` (worked out once, then kept). */
-export function ringOf(most) {
-  let ring = RINGS.get(most);
-  if ( ring ) return ring;
-  // (No ring without end: none.)
-  if ( !Number.isFinite(most) ) return [];
-  ring = [];
-  const r = Math.floor(most / STEP) * STEP;
+/** How far each way the squares within `most` feet go (a multiple of STEP), or -1: none (no ring without end). */
+const reachOf = most => Number.isFinite(most) ? Math.floor(most / STEP) * STEP : -1;
+
+/** RING, out to `r` feet each way at least (grown if it must be). */
+function ringTo(r) {
+  if ( r <= RING_REACH ) return RING;
+  const ring = [];
   for ( let dx = -r; dx <= r; dx += STEP ) {
-    for ( let dy = -r; dy <= r; dy += STEP ) {
-      const feet = Math.hypot(dx, dy);
-      if ( feet <= most + 0.5 ) ring.push({ dx, dy, feet });
-    }
+    for ( let dy = -r; dy <= r; dy += STEP ) ring.push({ dx, dy, feet: Math.hypot(dx, dy) });
   }
+  // (A stable sort: squares as far off stay in the order they were put in, dx then dy, however wide the ring, so one read
+  // from a wider ring comes in the same order as one worked out to its own reach.)
   ring.sort((a, b) => a.feet - b.feet);
-  RINGS.set(most, ring);
+  RING = ring;
+  RING_REACH = r;
+  return ring;
+}
+
+/** [{dx, dy, feet}] the squares within `most` feet and `reachOf(most)` each way, nearest first: RING read that far. */
+export function ringOf(most) {
+  const r = reachOf(most);
+  const ring = [];
+  if ( r < 0 ) return ring;
+  for ( const o of ringTo(r) ) {
+    if ( o.feet > most + 0.5 ) break;
+    if ( Math.abs(o.dx) <= r && Math.abs(o.dy) <= r ) ring.push(o);
+  }
   return ring;
 }
