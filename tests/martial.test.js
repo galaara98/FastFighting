@@ -113,6 +113,33 @@ describe("a sequence that fumbles only when every attack does (fumble: \"all\")"
   });
 });
 
+describe("an action's own fumble table (fumbleTable, API 41)", () => {
+  const fumble = { die: parseFormula("1"), mod: 0, rows: [{ lo: -99, hi: 99, text: "creature" }] };
+  const own = { rows: [{ lo: -99, hi: 99, text: "weapon" }] };
+  const sure = (over = {}) => ({ ...strike({ id: "sure", name: "Sure", bonus: -500, damage: [parseFormula("1", "slashing")] }), ...over });
+  const rowsRolled = (spec, seed = 7) => replay(battle([creature({ id: "fumbler", ...spec }), dummy()], { maxRounds: 1 }), pf2eRules, seed)
+    .log.filter(e => e.type === "fumble").map(e => e.rowText);
+
+  test("a fumble with it rolls its rows on the creature's die; without it, the creature's table", () => {
+    const withOwn = rowsRolled({ fumble, actions: [sure({ fumbleTable: own })] });
+    expect(withOwn.length).toBeGreaterThan(0);
+    expect(new Set(withOwn)).toEqual(new Set(["weapon"]));
+    expect(new Set(rowsRolled({ fumble, actions: [sure()] }))).toEqual(new Set(["creature"]));
+  });
+
+  test("with its own die, a creature with no table fumbles on it; with no die anywhere, nothing", () => {
+    expect(new Set(rowsRolled({ actions: [sure({ fumbleTable: { ...own, die: parseFormula("1") } })] }))).toEqual(new Set(["weapon"]));
+    expect(rowsRolled({ actions: [sure({ fumbleTable: own })] })).toEqual([]);
+  });
+
+  test("a sequence fumbling as one (fumble: \"all\") rolls its first attack's table", () => {
+    const pair = { ...sure(), id: "pair", name: "Pair", cost: 1, fumble: "all", sequence: [sure({ fumbleTable: own }), sure({ id: "sure2" })] };
+    const rolled = rowsRolled({ fumble, actions: [pair] });
+    expect(rolled.length).toBeGreaterThan(0);
+    expect(new Set(rolled)).toEqual(new Set(["weapon"]));
+  });
+});
+
 describe("a bonus that waits on a kill or a crit (armedBy)", () => {
   test("nothing until its bearer crits; then all it says", async () => {
     const { applyOutcome } = await import("../scripts/engine/behavior/effects.js");

@@ -17,8 +17,9 @@
  *   {id, label, melee?, ranged?, tiers: [{min, outcome}]}   (the highest tier the deed die reaches; an outcome with
  *   self lands on the one who did it: a defensive deed)
  *
- * Crits and fumbles from tables (spec.crit / action.crit, spec.fumble): a critical hit rolls on the attacker's table
- * for extra damage and a lasting effect on the foe; a fumble rolls on its own for what befalls the fumbler.
+ * Crits and fumbles from tables (spec.crit / action.crit, spec.fumble / action.fumbleTable): a critical hit rolls on
+ * the attacker's table for extra damage and a lasting effect on the foe; a fumble rolls on its own for what befalls
+ * the fumbler.
  *   {die: DamagePart, mod, rows: [{lo, hi, damage?, multiply?, outcome?, self?, slay?}]}
  * spec.critAgainst: taken off crit rolls made against this creature by anyone but a player character (DCC: a PC's
  * Luck modifier works against a monster's crits).
@@ -224,10 +225,24 @@ export function rollCrit(run, u, action, t) {
   return { row: rowFor(crit.rows, total), total };
 }
 
-/** Roll on u's fumble table: {row, total} or null. */
-export function rollFumble(run, u) {
+/**
+ * The fumble table u rolls on when this action fumbles, if it has one: the action's own (API 41, `fumbleTable`: DCC's
+ * weapon with its own table), its die and mod the creature's unless it gives them; else the creature's.
+ */
+export function fumbleTableOf(u, action) {
+  const own = action?.fumbleTable;
   const fumble = u.spec.fumble;
-  if ( !fumble?.rows?.length ) return null;
+  if ( own?.rows?.length ) {
+    const die = own.die ?? fumble?.die;
+    if ( die ) return { die, mod: own.mod ?? fumble?.mod ?? 0, rows: own.rows };
+  }
+  return fumble?.rows?.length ? fumble : null;
+}
+
+/** Roll on u's fumble table for a fumble with this action: {row, total} or null. */
+export function rollFumble(run, u, action) {
+  const fumble = fumbleTableOf(u, action);
+  if ( !fumble ) return null;
   const at = diceAt(run);
   const total = samplePart(fumble.die, run.rng) + (fumble.mod ?? 0);
   if ( at >= 0 ) tableRoll(run, at, { by: u, kind: "other", what: "fumble", parts: [fumble.die], mod: fumble.mod ?? 0, total });

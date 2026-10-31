@@ -23,7 +23,7 @@ import { prepareDoors, doorStates, doorAhead, atDoor, doorPlan, patienceFor, doo
 import { heldGoal } from "./behavior/goals.js";
 import { checkMorale, standsGround, callRetreat, rallies, MORALE } from "./behavior/morale.js";
 import { expectedDamage, spendUse, spendAmmo, hasUses, attacksIn, criticalParts, saveMultiplier, saveMultiplierFor, meanDamageVs, unitsPerTurn, iwrContext, critDoubles } from "./behavior/evaluate.js";
-import { chooseDeed, deedTier, chooseHitRiders, rescueMiss, rollCrit, rollFumble, rallied } from "./behavior/riders.js";
+import { chooseDeed, deedTier, chooseHitRiders, rescueMiss, rollCrit, rollFumble, fumbleTableOf, rallied } from "./behavior/riders.js";
 import { cast, tierActionsOf } from "./behavior/casting.js";
 import { boost } from "./behavior/luck.js";
 import { respond, bestStep, strikeBack } from "./behavior/responses.js";
@@ -1355,8 +1355,10 @@ function executeOffense(run, u, action, t, attacksMade) {
     let made = attacksMade;
     let target = t;
     // (A fumble only when every attack of it fumbles (API 29, `fumble: "all"`: DCC's halfling fighting with two
-    // weapons): each one's fumble held back, and the table rolled once, at the end, if all of them did.)
-    const held = action.fumble === "all" && u.spec.fumble ? (u.heldFumbles = { made: 0, fumbled: 0 }) : null;
+    // weapons): each one's fumble held back, and the table rolled once, at the end, if all of them did: the
+    // sequence's own table, else the first attack's.)
+    const fumbles = action.fumble === "all" && (fumbleTableOf(u, action) || action.sequence.some(s => fumbleTableOf(u, s)));
+    const held = fumbles ? (u.heldFumbles = { made: 0, fumbled: 0, first: null }) : null;
     try {
       for ( const strike of action.sequence ) {
         if ( !target || !isStanding(target) ) target = nextTargetInReach(run, u, strike);
@@ -1369,7 +1371,7 @@ function executeOffense(run, u, action, t, attacksMade) {
     } finally {
       if ( held ) delete u.heldFumbles;
     }
-    if ( held && held.made > 0 && held.fumbled === held.made && isUp(u) ) applyFumble(run, u);
+    if ( held && held.made > 0 && held.fumbled === held.made && isUp(u) ) applyFumble(run, u, action.fumbleTable?.rows?.length ? action : held.first);
     return;
   }
   u.revealed = true;
@@ -1709,9 +1711,12 @@ function strikeTarget(run, u, action, target, attacksMade, ranged, logging) {
         const friend = rules.strayShot(run, u, target, action);
         if ( friend && isUp(friend) ) strayShot(run, u, action, friend, logging);
       }
-      if ( roll.degree === 0 && u.spec.fumble ) {
-        if ( u.heldFumbles ) u.heldFumbles.fumbled++;
-        else applyFumble(run, u);
+      if ( roll.degree === 0 && fumbleTableOf(u, action) ) {
+        if ( u.heldFumbles ) {
+          u.heldFumbles.fumbled++;
+          u.heldFumbles.first ??= action;
+        }
+        else applyFumble(run, u, action);
       }
     }
     // (A Strike on its own turn, for what needs one first: its last action a hit, two hits in a row: requires.js. And a
@@ -1902,8 +1907,8 @@ function applyCritRow(run, u, target, { row, total }) {
 }
 
 /** A fumble table's row: what befalls the one who fumbled. */
-function applyFumble(run, u) {
-  const table = rollFumble(run, u);
+function applyFumble(run, u, action) {
+  const table = rollFumble(run, u, action);
   if ( !table?.row ) return;
   const { row, total } = table;
   const before = u.hp;
