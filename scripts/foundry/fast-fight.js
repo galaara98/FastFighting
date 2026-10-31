@@ -30,7 +30,7 @@ export function fastFightOffered({ running = false, started = false, ended = fal
  *   - playerTurn: the turn beginning is a character its player runs; `players` and `had`, the characters the players
  *     run now and as the Fast Fight began: one more (handed back to a player who came back, or by the GM), and it stops;
  *   - asks: a GM is wanted ("roll", a save or check the helper leaves to them; "question", a reaction to allow;
- *     "damage", a player's reaction's damage to say; "player", a player's reaction to wait on; "review", a player's
+ *     "damage", a player's reaction's damage to say, or damage or healing left in the Battle Vantage to apply; "player", a player's reaction to wait on; "review", a player's
  *     turn to look over; "spotlight", the spotlight to give);
  * The first that holds is why: "pressed", "error", "ended", "tracker", "player" or "gm". (A fight going nowhere isn't
  * one of them: the GM is asked whether it goes on, stillSince. A live battle never ends as a stalemate: Max rounds is

@@ -1634,8 +1634,10 @@ const liveIo = () => ({
   hpOf,
   nameOf: id => battle.run.byId.get(id)?.spec.name ?? "",
   randomKey: () => foundry.utils.randomID(),
+  // (A line for the GM to apply: a Fast Fight stops for it, as for any GM's answer.)
   wait: async line => {
     battle.data.waiting = [...(battle.data.waiting ?? []), line];
+    checkFast({ asks: "damage" });
     changed();
     ui.notifications.info(fmt(line.healing ? "FASTFIGHTING.Live.HealingWaits" : "FASTFIGHTING.Live.DamageWaits", { name: line.by }));
     Hooks.callAll("fastFighting.damageWaits", battle);
