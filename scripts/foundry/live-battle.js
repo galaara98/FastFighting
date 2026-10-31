@@ -1516,10 +1516,11 @@ export function appliedIn(data, pc, id) {
  * Does the table settle this itself, FastFighting applying none of it (API 21)? A player's character's heal, damage,
  * buff or debuff at another player's character (`by` and `target`: {id, pc}), FastFighting playing it for its player or
  * not, while the battle's Apply players' damage is off and its players run their characters (the planner's say: off,
- * FastFighting plays everyone, and applies everything). Never what one does to itself. Pure.
+ * FastFighting plays everyone, and applies everything). Not in a Fast Fight (`fast`): FastFighting plays every token,
+ * and applies everything. Never what one does to itself. Pure.
  */
-export function tableSettles({ applyDamage = false, playersRun = true, by = null, target = null } = {}) {
-  if ( applyDamage || playersRun === false || !by?.pc || !target?.pc ) return false;
+export function tableSettles({ applyDamage = false, playersRun = true, fast = false, by = null, target = null } = {}) {
+  if ( applyDamage || playersRun === false || fast || !by?.pc || !target?.pc ) return false;
   return !!by.id && !!target.id && by.id !== target.id;
 }
 
@@ -1531,7 +1532,7 @@ function playerChar(id) {
 
 /** Does the table settle what `byId` does to `targetId`, in this battle (tableSettles)? */
 const settlesHere = (byId, targetId) => !!battle && tableSettles({
-  applyDamage: battle.data.applyDamage, playersRun: battle.data.playersRun,
+  applyDamage: battle.data.applyDamage, playersRun: battle.data.playersRun, fast: !!battle.fast,
   by: { id: byId, pc: playerChar(byId) }, target: { id: targetId, pc: playerChar(targetId) }
 });
 
@@ -2836,6 +2837,7 @@ async function playerDamage(pc, message) {
     lines.push({ key: foundry.utils.randomID(), messageId: message.id, targetId: u?.id ?? null, amount: card.amount, save: !!card.save, healing, by, hpAt: u ? await hpOf(u) : null });
   }
   pc.damage = [...(pc.damage ?? []), ...lines];
+  checkFast({ asks: "damage" });
   changed();
   ui.notifications.info(fmt("FASTFIGHTING.Live.DamageWaits", { name: by }));
   Hooks.callAll("fastFighting.damageWaits", battle);

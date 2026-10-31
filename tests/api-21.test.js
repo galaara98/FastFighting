@@ -194,6 +194,10 @@ describe("what the table settles itself (tableSettles)", () => {
     expect(tableSettles({ applyDamage: false, by: pc("seelah"), target: pc("seelah") })).toBe(false);
   });
 
+  test("in a Fast Fight, FastFighting plays every token: its own to apply", () => {
+    expect(tableSettles({ applyDamage: false, fast: true, by: pc("seelah"), target: pc("lem") })).toBe(false);
+  });
+
   test("a turn taken back takes its waiting cards with it", () => {
     const waiting = [{ key: "a", turn: "1.x" }, { key: "b", turn: "2.y" }, { key: "c" }];
     expect(waitingAfter(waiting, new Set(["2.y"])).map(l => l.key)).toEqual(["a", "c"]);

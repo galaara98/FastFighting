@@ -493,7 +493,9 @@ export async function revertRecord(r, { scene = null, settings = null } = {}) {
     const ids = r.createdItems.filter(id => actor.items.has(id));
     if ( ids.length ) await step("removing items", () => actor.deleteEmbeddedDocuments("Item", ids));
   }
-  if ( r.deletedItems?.length ) await step("restoring items", () => actor.createEmbeddedDocuments("Item", r.deletedItems, { keepId: true }));
+  // (Not one still there: a system's own housekeeping, left to take it off, may not have yet.)
+  const gone = (r.deletedItems ?? []).filter(d => !actor.items.has(d?._id));
+  if ( gone.length ) await step("restoring items", () => actor.createEmbeddedDocuments("Item", gone, { keepId: true }));
   if ( r.createdEffects?.length ) {
     const ids = r.createdEffects.filter(id => actor.effects.has(id));
     if ( ids.length ) await step("removing effects", () => actor.deleteEmbeddedDocuments("ActiveEffect", ids));

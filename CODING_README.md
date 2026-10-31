@@ -356,10 +356,11 @@ table may settle itself (`tests/api-21.test.js`).
   `commitChanges` hears `options.tokenOf(id)` (a creature's token, by its id in the run: an effect's `sourceId`) and
   `options.audience(id)` (`"public"` or `"gm"`: `table-rolls.js` `audienceFor`, the GMs alone for one hidden from the
   players), for a card it posts.
-- **Player to player:** `live-battle.js` `tableSettles({applyDamage, playersRun, by, target})` (pure): a player's
+- **Player to player:** `live-battle.js` `tableSettles({applyDamage, playersRun, fast, by, target})` (pure): a player's
   character's heal, damage, buff or debuff at another player's character (`spec.kind` "pc", or one a player owns; never
   one at itself), FastFighting playing it for an absent player or not, while the battle's Apply players' damage is off
-  (`battle.data.applyDamage`) and its players run their characters (`battle.data.playersRun`), is the table's to settle:
+  (`battle.data.applyDamage`), its players run their characters (`battle.data.playersRun`) and no Fast Fight is running
+  (`battle.fast`: FastFighting plays every token, and applies it), is the table's to settle:
   - its cards are still posted (the action's own, the healing or damage card naming the target and the amount), but
     `apply` isn't carried out (`settleCard`, its Foundry parts given apart, `liveIo`): the card comes off the turn's
     `applied`, the helper puts the system's own Apply back on it (`leaveToTable`), and it waits in the Battle Vantage
