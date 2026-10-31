@@ -22,7 +22,9 @@
  *    point at most.
  *  - A verdict (swingVerdict), over the three measures (the deaths only with a player's character in the battle): it
  *    matters if any does; negligible if all are; near the line once the test has as many fights as the main run
- *    and still isn't clear (no more fights could make it surer than the main run's own odds are); else open.
+ *    and still isn't clear (no more fights could make it surer than the main run's own odds are); else open. One that
+ *    has settled but isn't clear is called at SWING_LEAN_Z instead (+9 points, from -1 to +19 at SWING_Z: it matters);
+ *    only one still not clear there (-5 points, give or take 4) is near the line.
  *  - The study (createSwingStudy): every test gets SWING_MIN_FIGHTS first (those the main run hints matter most first),
  *    then the open ones get the fights, the fewest first; then those that matter until known within SWING_SETTLED;
  *    then, with the time left, those near the line. A test whose changes have held within SWING_STEADY of where they
@@ -42,6 +44,11 @@ import { STATUS, SIDES, HOSTILE_GROUPS, clamp } from "../constants.js";
 export const SWING_THRESHOLD = 0.025;
 /** How sure: standard errors either way (about 99%, as the study looks again after every few fights). */
 export const SWING_Z = 2.5;
+/**
+ * How sure, for a test that has settled (steady, or as sure as the main run) and still isn't clear at SWING_Z: standard
+ * errors (about 90% each way). It's called by this; only one still not clear here is near the line.
+ */
+export const SWING_LEAN_Z = 1.28;
 /** The fights every test gets before it's judged. */
 export const SWING_MIN_FIGHTS = 16;
 /** A test that matters is measured enough when its odds are known to within this either way (2 points). */
@@ -198,11 +205,10 @@ export function measured({ n, hits, sum = 0, squares = 0 }, p0, n0, { model = nu
   const pt = (hits + 1) / (n + 2);
   const pb = (p0 * n0 + 1) / (n0 + 2);
   const rawSe = Math.sqrt(pt * (1 - pt) / (n + 2) + pb * (1 - pb) / (n0 + 2));
-  const rawLo = bound(pt - pb - z * rawSe);
-  const rawHi = bound(pt - pb + z * rawSe);
+  const rawAt = zz => [bound(pt - pb - zz * rawSe), bound(pt - pb + zz * rawSe)];
+  const [rawLo, rawHi] = rawAt(z);
   let estimate = raw;
-  let lo = rawLo;
-  let hi = rawHi;
+  let at = rawAt;
   let byMargins = false;
   // (The margins, where the fight is lopsided in the main run and in the test alike, and they agree with the wins.)
   const tail = p => (p0 < LOPSIDED && p < LOPSIDED) || (p0 > 1 - LOPSIDED && p > 1 - LOPSIDED);
@@ -212,19 +218,28 @@ export function measured({ n, hits, sum = 0, squares = 0 }, p0, n0, { model = nu
     const shift = mean - model.mean;
     const se = Math.sqrt(variance / n + model.variance / model.n);
     const at0 = model.odds(0);
-    const mLo = bound(model.odds(shift - z * se) - at0);
-    const mHi = bound(model.odds(shift + z * se) - at0);
+    const modelAt = zz => [bound(model.odds(shift - zz * se) - at0), bound(model.odds(shift + zz * se) - at0)];
+    const [mLo, mHi] = modelAt(z);
     if ( mLo <= rawHi && mHi >= rawLo ) {
       estimate = bound(model.odds(shift) - at0);
-      lo = mLo;
-      hi = mHi;
+      at = modelAt;
       byMargins = true;
     }
   }
-  const clear = lo >= threshold || hi <= -threshold || rawLo >= threshold || rawHi <= -threshold ? "matters"
-    : lo > -threshold && hi < threshold ? "negligible" : null;
-  return { estimate, lo, hi, raw, clear, byMargins };
+  // (Clear at so many standard errors: by the measure, or the plain wins saying it matters.)
+  const clearAt = zz => {
+    const [l, h] = at(zz);
+    const [rl, rh] = rawAt(zz);
+    if ( l >= threshold || h <= -threshold || rl >= threshold || rh <= -threshold ) return "matters";
+    return l > -threshold && h < threshold ? "negligible" : null;
+  };
+  const [lo, hi] = at(z);
+  return { estimate, lo, hi, raw, clear: clearAt(z), lean: clearAt(SWING_LEAN_Z), byMargins };
 }
+
+/** A settled test that isn't clear, called at SWING_LEAN_Z: it matters, it's negligible, or it's near the line. */
+const leanStatus = measures => (measures.some(m => m.lean === "matters") ? "matters"
+  : measures.every(m => m.lean === "negligible") ? "negligible" : "near");
 
 /**
  * How a test stands, by its measures: the Friendly Team's wins (`win`), one of it going down (`downed`) and, with a
@@ -249,12 +264,12 @@ export function swingVerdict(test, model, base, { threshold = SWING_THRESHOLD, z
   if ( n >= least ) {
     if ( both.some(m => m.clear === "matters") ) status = "matters";
     else if ( both.every(m => m.clear === "negligible") ) status = "negligible";
-    else if ( n >= n0 ) status = "near";
+    else if ( n >= n0 ) status = leanStatus(both);
   }
   // (Measured enough: negligible; near the line as sure as the main run is; or it matters and each measure is known:
   // clear, within SWING_SETTLED, or as sure as the main run is.)
   const known = m => m.clear === "negligible" || n >= n0 || (m.clear === "matters" && (m.hi - m.lo) / 2 <= SWING_SETTLED);
-  const settled = status === "negligible" || status === "near" || (status === "matters" && both.every(known));
+  const settled = status === "negligible" || status === "near" || (status === "matters" && (n >= n0 || both.every(known)));
   return { estimate: win.estimate, lo: win.lo, hi: win.hi, raw: win.raw, byMargins: win.byMargins, win, downed, death, status, settled };
 }
 
@@ -338,11 +353,12 @@ export function createSwingStudy(tests, baseline) {
     const v = swingVerdict(s, s.model, base);
     const now = [v.win.estimate, v.downed?.estimate ?? 0, v.death?.estimate ?? 0];
     s.seen.push([s.n, ...now]);
-    // (Steady: it matters, calculated; not clear, near the line, measured on with what time is left.)
+    // (Steady: it matters, calculated; not clear, called at SWING_LEAN_Z, or near the line and measured on with what
+    // time is left.)
     if ( !v.settled && steady(s, now) ) {
       v.steady = true;
-      if ( v.status === "matters" ) v.settled = true;
-      else if ( v.status === "open" ) v.status = "near";
+      if ( v.status === "open" ) v.status = leanStatus([v.win, v.downed, v.death].filter(Boolean));
+      if ( v.status !== "near" ) v.settled = true;
     }
     s.verdict = v;
   };

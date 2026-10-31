@@ -138,6 +138,17 @@ describe("PC deaths, and near the line", () => {
     expect(v.settled).toBe(true);
   });
 
+  test("settled but not clear at 99%: called at 90%; near the line only when that can't tell either", () => {
+    const base = { runs: 300, pWin: 0.5, pDeath: null };
+    // (+9 points, from -1 to +19 at 99%: it matters.)
+    const plus9 = swingVerdict({ n: 300, wins: 177 }, null, base);
+    expect(plus9.win.clear).toBeNull();
+    expect(plus9.status).toBe("matters");
+    expect(plus9.settled).toBe(true);
+    // (-5 points, give or take 4: it could go either way.)
+    expect(swingVerdict({ n: 300, wins: 136 }, null, base).status).toBe("near");
+  });
+
   test("steady but not clear: near the line, given the time that's left, after everything else", () => {
     const tests = [{ id: "a", slot: "a", label: "a", spec: {} }];
     const study = createSwingStudy(tests, { runs: 1000, sides: { friendly: { pWin: 0.5 } } });

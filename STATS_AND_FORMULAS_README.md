@@ -1929,10 +1929,12 @@ the chance of a PC dying, by 2.5 points or more, with as few fights as it takes 
   would need about 150. In a close fight it isn't used: a change there turns clear wins into clear losses rather than
   moving every margin a little, and it understates (7 points against 39 measured).
 - Matters: any measure's change is 2.5 points or more, its whole interval on one side. Negligible: every interval
-  within ±2.5. Near the line: as many fights as the main run (no more could make it surer than the main run's own
-  odds) and still neither. Calculated: changes that have stayed within 2 points of where they are over the second half
-  of the test's fights (32 at least) settle a test that matters; one that isn't clear is near the line instead, and
-  gets fights only once nothing else needs them, rather than a call that could come out the other way next time. A
+  within ±2.5. With as many fights as the main run (no more could make it surer than the main run's own odds) and
+  still neither, it's called as below. Calculated: changes that have stayed within 2 points of where they are over the second half
+  of the test's fights (32 at least) settle a test that matters. A settled test that isn't clear is called at 1.28
+  standard errors (about 90% each way, `SWING_LEAN_Z`): +9 points, from −1 to +19 at 2.5, matters. Only one still not
+  clear there (−5 points, give or take 4) is near the line, and gets fights only once nothing else needs them, rather
+  than a call that could come out the other way next time. A
   test that matters is settled when each measure is known to within 2 points, or as sure as the main run.
 - The list, while it runs and after: each test's change in the win chance, largest first; Negligible for one under
   2.5 points; ≈ and in italics for one near the line, or still open (Still measuring, or Not settled in time); beside
