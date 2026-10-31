@@ -28,6 +28,15 @@ FastFighting is split into a pure simulation engine, system **helpers**, and the
 
 `foundry/live-store.js` decides (pure, tested in `tests/live-store.test.js`); `foundry/live-journals.js` finds, makes and deletes; `apps/live-data.js` is the GM's **Live battle data** menu.
 - **Transcripts:** each battle has a journal of its own, `FF_FF_LiveBattle_Transcript_<n>`, `n` the tracker's encounter number as the battle began (`encounterNumber`, 1 for a scene's only encounter). The number repeats across scenes and over time, so a taken name gets `_2`, `_3` and so on. All live in the folder `FF_FF_LiveBattle_Transcripts`, ownership None. These names are identifiers, never translated. Flags: `liveBattle` (the combat's id), `encounter` (n), `keptAt` (ms, written with every keep), and the battle in live-keeping.js's parts (`battles`, `specs`, `turns`, `snaps`, `logs`, each by combat id). A battle's transcript is found by its flags (its combat, and the battle's own id, `battles.<combat>.id`), never by its name.
+- **Several battles at once** (Foundry runs any number of encounters, on one scene or several): a GM's browser plays
+  one at a time (`live-battle.js battle`) and parks the rest. A parked battle is kept on its transcript, as a reload
+  leaves it, its encounter's `live` flag still on (`liveOn(combat)`: there's a battle on it, held or parked). It's
+  picked up again (`holdBattleOn(combat)`, in the queue: the one held is parked first) when its encounter's turn
+  changes or it begins (Foundry's own button), the GM views it (a scene, or the tracker's encounter), opens its Battle
+  Vantage, or goes live on another plan (`startLiveBattle` parks the one held). One begun is parked with no way back
+  past that point: its turns' snapshots dropped and `data.parked` set, so Rewind (and the tracker's Previous Turn)
+  stops there with a warning, and Rewind This Encounter is refused; the turns played after it's picked up again rewind
+  as usual. A parked battle's countdowns for absent players wait until it's picked up.
 - **Trust:** a journal holds a battle only while it's flagged, last changed by a GM, and no player has Limited or more (`distrustOf`). Otherwise a new one is made, and the old one stays, listed in Live battle data with why.
 - **The Troubleshooting setting** (world, off by default) says how long they last (`whatGoes`):
   - Off: a transcript goes when its combat is deleted; and on the active GM's login, any whose combat is gone.

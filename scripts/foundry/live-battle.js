@@ -95,6 +95,12 @@ let battle = null;
 export const liveBattle = () => battle;
 
 /**
+ * Is there a live battle on this encounter (held here, or parked: holdBattleOn), begun or waiting for Begin Encounter?
+ * By its flag, as every browser reads it.
+ */
+export const liveOn = combat => !!combat?.getFlag?.(MODULE_ID, "live")?.active;
+
+/**
  * Whose browser plays a battle: the GM who began it, while they're here; when they're gone, the active GM (who takes it
  * over).
  */
@@ -285,8 +291,15 @@ export async function startLiveBattle(spec, { style = setting("storyStyle"), odd
   const run = beginLive(live, adapter.rules, { seed, players, owns: adapter.liveOwnership?.() ?? {}, npcReactions: "calculated", systemRolls: systemRollKinds(adapter), readsRolls: offers(adapter, "readTurn") });
   // (What the system rolled as the fight was set up, its surprise: shown with the opening.)
   const openingRolls = takeRolls(run);
-  // (Prepared until the encounter begins: no turn played, nothing told. Another battle held here before it: let go.)
-  letGo();
+  // (Prepared until the encounter begins: no turn played, nothing told. Another battle held here before it: parked.)
+  await queue(async () => {
+    swapping = true;
+    try {
+      await park();
+    } finally {
+      swapping = false;
+    }
+  });
   battle = {
     combat, scene, spec: live, rules: adapter.rules, run, pc: null,
     data: {
@@ -302,6 +315,57 @@ export async function startLiveBattle(spec, { style = setting("storyStyle"), odd
   if ( begin ) await beginEncounter();
   else await keep();
   return battle;
+}
+
+/* -------------------------------------------- */
+/*  Several battles                             */
+/* -------------------------------------------- */
+
+/**
+ * Foundry runs any number of encounters at once, on one scene or several; this browser plays one live battle at a time
+ * and parks the rest. A parked battle is kept on its transcript (as it is when its GM reloads) with its encounter's flag
+ * still on, and is picked up again (pickUp) as it's needed: its encounter's turn changes or begins, the GM views it, or
+ * opens its Battle Vantage. One begun is parked with no way back past that point (its turns' runs dropped, `parked`):
+ * the turns after it's picked up again can be rewound, one at a time or all of them, but not into the cards another
+ * battle laid down meanwhile, nor Rewind This Encounter.
+ */
+let swapping = false;
+
+/** The battle held here, parked: kept, and let go of. */
+async function park() {
+  const b = battle;
+  if ( !b || !playsHere() ) return;
+  if ( !b.data.prepared && b.data.turns?.some(t => t.snapshot) ) {
+    for ( const t of b.data.turns ) delete t.snapshot;
+    b.data.parked = true;
+    ui.notifications.info(fmt("FASTFIGHTING.Live.Parked", { scene: b.scene?.name ?? "" }));
+  }
+  await inTurn(() => keepNow(b));
+  if ( battle === b ) {
+    letGo();
+    changed();
+  }
+}
+
+/**
+ * The battle on `combat` held here, the one held before parked (in the queue, after whatever it was doing): true once
+ * it is; false where there's no live battle of this browser's on it.
+ */
+export function holdBattleOn(combat) {
+  if ( !combat || !game.user.isGM ) return Promise.resolve(false);
+  if ( battle?.combat === combat ) return Promise.resolve(true);
+  if ( !liveOn(combat) ) return Promise.resolve(false);
+  return queue(async () => {
+    if ( battle?.combat === combat ) return true;
+    swapping = true;
+    try {
+      await park();
+      await pickUp(combat, { quiet: true });
+    } finally {
+      swapping = false;
+    }
+    return battle?.combat === combat;
+  });
 }
 
 /** The encounter beginning (beginEncounter), while it does. */
@@ -751,7 +815,7 @@ async function followBack(prior) {
   };
   const { undo, own, reopen } = goingBack(turns, { round: combat.round, at: combat.turn ?? -1 }, key, place);
   if ( undo.length && !undo[0].snapshot ) {
-    ui.notifications.warn(loc("FASTFIGHTING.Live.TooFarBack"));
+    ui.notifications.warn(loc(battle.data.parked ? "FASTFIGHTING.Live.PastParked" : "FASTFIGHTING.Live.TooFarBack"));
     await moving(() => combat.update({ round: prior.round, turn: prior.turn }, { turnEvents: false }));
     changed();
     return false;
@@ -3909,8 +3973,11 @@ export function rewindTurn() {
   checkFast({ pressed: true });
   return queue(async () => {
     const turn = battle?.data.turns.at(-1);
-    // (So far back, only the whole encounter can be rewound.)
-    if ( !turn?.snapshot ) return false;
+    // (So far back, only the whole encounter can be rewound; past where it was parked, nothing.)
+    if ( !turn?.snapshot ) {
+      if ( turn && battle.data.parked ) ui.notifications.warn(loc("FASTFIGHTING.Live.PastParked"));
+      return false;
+    }
     // (A player's turn under way after it: what a foe's reaction wrote in it comes off first. Cards either left to the
     // table go with their cards.)
     const takenBack = new Set([turn.key, ...(battle.pc ? [`${battle.pc.round}.${battle.pc.combatantId}`] : [])]);
@@ -3972,6 +4039,11 @@ export function rewindEncounter() {
   checkFast({ pressed: true });
   return queue(async () => {
     if ( !battle ) return false;
+    // (Parked while another battle went on: its cards and its turns before then aren't to be taken back.)
+    if ( battle.data.parked ) {
+      ui.notifications.warn(loc("FASTFIGHTING.Live.NoWholeRewind"));
+      return false;
+    }
     // (A player's turn still open: what it changed, by hand and by FastFighting, first.)
     await revertOpenTurn();
     for ( const turn of undoEntries(battle.data.turns).reverse() ) await holdingPause(() => takingBack(battleActors(), () => revertEntry(battle.scene, turn, rewinding())));
@@ -4443,10 +4515,25 @@ function awaySetting(on) {
 /*  Hooks                                       */
 /* -------------------------------------------- */
 
-/** A battle still live on a combat when the GM comes back: picked up where it was. */
-async function pickUp() {
-  if ( !game.user.isGM || battle ) return;
-  for ( const combat of game.combats ) {
+/**
+ * A battle still live on a combat when the GM comes back, or one parked (holdBattleOn: `only` that combat's, told
+ * `quiet`ly): picked up where it was. The encounter viewed first.
+ */
+let picking = false;
+async function pickUp(only = null, { quiet = false } = {}) {
+  if ( !game.user.isGM || battle || picking || (swapping && !only) ) return;
+  picking = true;
+  try {
+    const viewed = ui.combat?.viewed ?? game.combat ?? null;
+    const combats = only ? [only] : [...new Set([viewed, ...game.combats].filter(Boolean))];
+    await pickUpFrom(combats, quiet);
+  } finally {
+    picking = false;
+  }
+}
+
+async function pickUpFrom(combats, quiet) {
+  for ( const combat of combats ) {
     const flag = combat.getFlag(MODULE_ID, "live");
     if ( !flag?.active ) continue;
     const found = kept(combat.id, flag.id);
@@ -4502,7 +4589,8 @@ async function pickUp() {
     // (Its countdowns run here now, as they were kept: none with the setting off, nor for one whose player is back.)
     const timers = setting("autoPlayAbsent") ? stillAway({ units: ownedUnits(), connected: connectedPlayers(), timers: timersNow() }) : {};
     if ( setTimers(timers) ) keep();
-    ui.notifications.info(loc("FASTFIGHTING.Live.PickedUp"));
+    if ( !quiet ) ui.notifications.info(loc("FASTFIGHTING.Live.PickedUp"));
+    changed();
     return;
   }
 }
@@ -4524,7 +4612,18 @@ export function registerLiveBattles() {
   });
   // (A Fast Fight's chat cards: no 3D dice, nothing left waiting on them.)
   registerQuietDice();
-  Hooks.on("combatTurnChange", onTurnChange);
+  // (A parked battle's encounter moving on: picked up first, then followed.)
+  Hooks.on("combatTurnChange", (combat, prior, current) => {
+    if ( battle?.combat === combat || !liveOn(combat) || !game.user.isGM ) return onTurnChange(combat, prior, current);
+    holdBattleOn(combat).then(held => held && onTurnChange(combat, prior, current));
+  });
+  // (The encounter viewed, on another scene or the tracker's: its battle picked up, the one held parked.)
+  const followView = () => {
+    const viewed = ui.combat?.viewed;
+    if ( viewed && viewed !== battle?.combat && liveOn(viewed) && game.user.isGM ) holdBattleOn(viewed);
+  };
+  Hooks.on("canvasReady", followView);
+  Hooks.on("renderCombatTracker", followView);
   // (Taken back before the start, which Foundry doesn't tell as a turn change.)
   Hooks.on("updateCombat", onUnstarted);
   // (A player's tracker: no Previous Turn while FastFighting is in use for its encounter; drawn again as that changes.)
@@ -4586,6 +4685,10 @@ export function registerLiveBattles() {
   // (Foundry's own Begin Encounter, a battle prepared on it: the battle begins with it.)
   Hooks.on("updateCombat", combat => {
     if ( battle?.combat === combat && battle.data.prepared && combat.started && playsHere() ) beginEncounter();
+    // (A parked battle's, begun with Foundry's own button: picked up, and begun with it.)
+    else if ( battle?.combat !== combat && combat.started && liveOn(combat) && game.user.isGM ) {
+      holdBattleOn(combat).then(held => held && battle.data.prepared && combat.started && playsHere() && beginEncounter());
+    }
   });
   Hooks.on("updateCombat", (combat, changes) => {
     if ( !foundry.utils.hasProperty(changes, `flags.${MODULE_ID}`) ) return;

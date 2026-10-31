@@ -23,7 +23,7 @@ import { planHolder, sceneEncounter } from "./foundry/persistence.js";
 import { hasRun } from "./foundry/run-memory.js";
 import { setDistanceUnit, setTermSource, localize } from "./i18n.js";
 import { loadKeywords } from "./foundry/keywords.js";
-import { registerLiveBattles, liveBattle, followPlayersSay, systemAppliesText, tokenIdOf } from "./foundry/live-battle.js";
+import { registerLiveBattles, liveBattle, followPlayersSay, systemAppliesText, tokenIdOf, liveOn } from "./foundry/live-battle.js";
 import { registerSheetWatch } from "./foundry/sheet-watch.js";
 import { registerSheetButton } from "./foundry/sheet-button.js";
 import { BattleVantage, registerBattleVantage, prepareVantage } from "./apps/battle-vantage.js";
@@ -138,8 +138,8 @@ Hooks.on("renderCombatTracker", (app, element) => {
   header.querySelector(".ff-battle-open")?.remove();
   // (Each by the encounter's id: a scene can hold several, and the battle is on one of them.)
   const planner = foundry.applications.instances.get("fast-fighting-planner");
-  const live = !!app.viewed && liveBattle()?.combat?.id === app.viewed.id;
-  const planned = !!app.viewed && app.viewed.id === sceneEncounter(canvas.scene)?.id && !liveBattle() && !!getAdapter()?.supportsLive
+  const live = !!app.viewed && liveOn(app.viewed);
+  const planned = !!app.viewed && app.viewed.id === sceneEncounter(canvas.scene)?.id && !live && !!getAdapter()?.supportsLive
     && (planner?.readyForVantage?.(app.viewed) || hasRun(app.viewed.uuid));
   if ( live || planned ) {
     const open = document.createElement("button");

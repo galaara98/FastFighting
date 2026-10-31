@@ -34,7 +34,7 @@ import { sceneEncounter, encounterNumber } from "../foundry/persistence.js";
 import { clockText } from "../foundry/away.js";
 import { showSheet, panToToken, tokenHudAt } from "../foundry/sheet-tools.js";
 import {
-  liveBattle, playedElsewhere, continueBattle, rewind, rewindEncounter, beginEncounter, endEncounter, playCurrent, answerDamage, setApplyDamage, systemAppliesText, waitingReaction, endReaction, sheetNow, liveFact, dropHeldFact, setNpcReactions, setPlayThrough, finishReview,
+  liveBattle, liveOn, holdBattleOn, playedElsewhere, continueBattle, rewind, rewindEncounter, beginEncounter, endEncounter, playCurrent, answerDamage, setApplyDamage, systemAppliesText, waitingReaction, endReaction, sheetNow, liveFact, dropHeldFact, setNpcReactions, setPlayThrough, finishReview,
   waitingDeals, openDealReview, liveReinforce, reinforcementsLeft,
   waitingOnGm, suggestedSpotlight, spotlightNext, settleBattle, setAutomated, liveCondition, liveMind, bringIntoFight, tokenIdOf, fastFight, fastOffered, fastRunning,
   markInUse
@@ -1268,7 +1268,8 @@ function factText(f, name) {
  * the battle is ready). False where there's no run to make it ready from: the GM is told to run the planner first.
  */
 export async function prepareVantage(combat = ui.combat?.viewed) {
-  if ( liveBattle() ) {
+  if ( liveOn(combat) ) {
+    await holdBattleOn(combat);
     BattleVantage.open();
     return true;
   }

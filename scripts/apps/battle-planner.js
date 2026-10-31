@@ -33,7 +33,7 @@ import { planMakeItSo, makingItSo } from "../foundry/make-it-so.js";
 import { ensureAutoConfig, recalcPlaystyles } from "../foundry/auto-config.js";
 import { PlayerSurvey } from "./player-survey.js";
 import { rememberRun, recallRun, rememberSwing } from "../foundry/run-memory.js";
-import { startLiveBattle, liveBattle, systemAppliesText } from "../foundry/live-battle.js";
+import { startLiveBattle, liveBattle, liveOn, holdBattleOn, systemAppliesText } from "../foundry/live-battle.js";
 import { savePlanRun } from "../foundry/live-journals.js";
 import { BattleVantage } from "./battle-vantage.js";
 import { listenMenus } from "./menus.js";
@@ -2061,7 +2061,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
    */
   readyForVantage(combat = null) {
     return !!(this.results && this.spec && this.sample && !this.running && !this.abort) && canvas.scene?.id === this.sceneId
-      && (!combat || combat.uuid === this.holderUuid) && !!getAdapter()?.supportsLive && !liveBattle();
+      && (!combat || combat.uuid === this.holderUuid) && !!getAdapter()?.supportsLive && !liveOn(combat ?? this.#holderCombat());
   }
 
   /** This plan's encounter by the tracker's number for it, when the scene has more than one: {n, hint}, or null. */
@@ -2109,7 +2109,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
   /** The tracker's Vantage button: the battle prepared as Go Live would, waiting for the encounter to begin. */
   async openVantage() {
     await this.#goLive({ begin: false });
-    if ( liveBattle() ) BattleVantage.open();
+    if ( liveBattle() && liveBattle().combat === this.#holderCombat() ) BattleVantage.open();
   }
 
   /**
@@ -2122,8 +2122,14 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     // (The plan changed since it was run: the battle it would play is the old one. Run it again first.)
     if ( this.stale ) return ui.notifications.warn(loc("FASTFIGHTING.MakeItSo.RunAgain"));
     if ( canvas.scene?.id !== this.sceneId ) return ui.notifications.warn(loc("FASTFIGHTING.Planner.SceneChanged"));
-    // (A battle on already, begun or waiting for Begin Encounter: its Battle Vantage, where it goes on.)
-    if ( liveBattle() ) return BattleVantage.open();
+    // (A battle on this plan's encounter already, begun or waiting for Begin Encounter: its Battle Vantage, where it goes
+    // on, picked up if it was parked. One on another encounter is parked as this one starts: startLiveBattle.)
+    const combatId = this.holder?.documentName === "Combat" ? this.holder.id : null;
+    const here = combatId ? game.combats.get(combatId) : sceneEncounter(canvas.scene);
+    if ( liveOn(here) ) {
+      await holdBattleOn(here);
+      return BattleVantage.open();
+    }
     // The sample is only a sample: what's done for real is one more fight, that nobody has seen, so a 70% win is a
     // loss three times in ten, as it should be. The planner closes, so the GM can watch it play out with the table.
     let playing;
@@ -2134,8 +2140,6 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       if ( !getAdapter()?.supportsLive ) return ui.notifications.warn(loc("FASTFIGHTING.MakeItSo.NeedsUpdate"));
       const players = this.setup.options.playersRunPCs === false ? []
         : this.spec.combatants.filter(c => isPlayerControlled(c, canvas.scene.tokens.get(c.tokenId ?? c.id)?.actor)).map(c => c.id);
-      // (On this plan's own encounter, by its id.)
-      const combatId = this.holder?.documentName === "Combat" ? this.holder.id : null;
       playing = startLiveBattle(this.spec, { style: this.storyStyle, odds, players, playersRun: this.setup.options.playersRunPCs !== false, begin, began, combatId, applyDamage: this.setup.options.applyPlayerDamage === true });
     } catch ( err ) {
       return reportError(err);
