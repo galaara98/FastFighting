@@ -4,7 +4,7 @@
 import { MODULE_ID, SIDES, ALLEGIANCE, DISPOSITION_SIDES, NEUTRAL_PARTY, HOSTILE_GROUPS, GROUPS, TRAITS, clamp } from "../constants.js";
 import { replay } from "../engine/simulator.js";
 import { budgetFudges } from "../engine/trait-budget.js";
-import { budgetMs, swingRuns, swingCapMs, MAX_RUNS } from "../engine/run-budget.js";
+import { budgetMs, swingRuns, swingShareMs, MAX_RUNS } from "../engine/run-budget.js";
 import { openPool, poolSize, poolThreads } from "../engine/batch-pool.js";
 
 /** How long a battle's prediction runs (seconds): its plan's, else the world's Prediction time. */
@@ -1091,9 +1091,11 @@ export function swingTests(spec, baseline, scope = {}) {
 
 /**
  * Swing factors: how much the party's odds of winning move without each creature, or with each rule turned off (the
- * pills chosen: swingTests). Each test runs as many fights as the run it's measured against (swingRuns), in twice the
- * prediction time at most (swingCapMs), so fewer tests finish sooner. Each keeps its fights' odds, the party's losses and how sure it is:
+ * pills chosen: swingTests). Each test gets a full study's share of three predictions' time (swingShareMs), and runs
+ * no more fights than the run it's measured against (swingRuns), so fewer tests finish sooner. Each keeps its fights' odds, the party's losses and how sure it is:
  * `se`, the standard error of its change against the run's own (`noise`: within twice that, or under 2 points).
+ * `onProgress(fraction, done, total)`: how far along by the tests' time, the fights done so far, and about how many
+ * there will be (from the run's pace at first, then from the tests done so far).
  * @returns {Promise<object[]>} sorted by impact
  */
 export async function swingFactors(spec, baseline, { seconds = null, onProgress, scope = {} } = {}) {
@@ -1103,12 +1105,21 @@ export async function swingFactors(spec, baseline, { seconds = null, onProgress,
   const base = friendlyWin(baseline);
   const { tests } = swingTests(spec, baseline, scope);
   const out = [];
+  const time = seconds ?? setting("predictionTime");
   const runs = swingRuns(baseline.runs);
-  const cap = swingCapMs(seconds ?? setting("predictionTime"));
+  const share = swingShareMs(tests.length, time);
+  // (How many fights a test will run, at first as the run went, and as the tests done so far went once there are some.)
+  const guess = Math.min(runs, Math.max(1, Math.round(baseline.runs * share / budgetMs(time))));
+  let ran = 0;
   const pool = fightPool(adapter);
   try {
     for ( const [i, t] of tests.entries() ) {
-      const r = await pool.run(t.make(spec), rules, { runs, seed: 99, maxMs: cap });
+      const each = i ? ran / i : guess;
+      const told = (fraction, done) => {
+        const total = Math.max(ran + done, Math.round(ran + (tests.length - i) * Math.max(each, done)));
+        onProgress?.((i + Math.min(1, fraction)) / tests.length, ran + done, total);
+      };
+      const r = await pool.run(t.make(spec), rules, { runs, seed: 99, maxMs: share, onProgress: told });
       const p = friendlyWin(r);
       const se = Math.sqrt((p * (1 - p)) / Math.max(1, r.runs) + (base * (1 - base)) / Math.max(1, baseline.runs));
       const delta = p - base;
@@ -1116,7 +1127,8 @@ export async function swingFactors(spec, baseline, { seconds = null, onProgress,
         label: t.label, scope: t.scope, side: t.side ?? null, id: t.id ?? null, key: t.key ?? null, delta, se,
         noise: Math.abs(delta) < Math.max(0.02, 2 * se), runs: r.runs, pWin: p, pAnyPcDead: r.pAnyPcDead, pAnyPcDowned: r.pAnyPcDowned
       });
-      onProgress?.((i + 1) / tests.length);
+      ran += r.runs;
+      onProgress?.((i + 1) / tests.length, ran, Math.round(ran + (tests.length - i - 1) * (ran / (i + 1))));
       await new Promise(resolve => setTimeout(resolve, 0));
     }
   } finally {

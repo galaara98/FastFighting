@@ -544,6 +544,8 @@
       "Run": "Run",
       "FightsRun": "{n} fights",
       "FightsRunHint": "Fights simulated: in tens while running, then the exact count.",
+      "SwingFights": "{done}/{total}",
+      "SwingFightsHint": "Swing factor fights run so far, of about how many all the tests will run.",
       "Lean": "Lean",
       "Healing": "Healing",
       "SideMorale": "Can rout",

@@ -39,7 +39,7 @@ import { BattleVantage } from "./battle-vantage.js";
 import { listenMenus } from "./menus.js";
 import { FOE_ENDS } from "../engine/aggregate.js";
 import { blink, keepTyping } from "./blink.js";
-import { expectedRuns, paceOf, ROUGH_RUNS, PREDICTION_SECONDS } from "../engine/run-budget.js";
+import { expectedRuns, paceOf, swingRuns, swingShareMs, budgetMs, SWING_FULL, ROUGH_RUNS, PREDICTION_SECONDS } from "../engine/run-budget.js";
 import { signedNumber } from "../engine/trait-parts.js";
 import { budgetFudges, traitTotal, TRAIT_BUDGET } from "../engine/trait-budget.js";
 
@@ -87,6 +87,12 @@ function kindChip(spec) {
 
 /** How many fights a run has done, in the reader's numbers ("1,240 fights"). */
 const fightCount = n => game.i18n.format("FASTFIGHTING.Planner.FightsRun", { n: (Number(n) || 0).toLocaleString(game.i18n.lang) });
+
+/** About how many fights each swing test runs, at the run's pace (the first guess; battle.js swingFactors refines it). */
+const swingGuess = (results, seconds) => Math.min(swingRuns(results.runs), Math.max(1, Math.round(results.runs * swingShareMs(SWING_FULL, seconds) / budgetMs(seconds))));
+
+/** The swing study's fights so far, of about how many all its tests will run: "450/560". */
+const swingCount = ({ done, total }) => game.i18n.format("FASTFIGHTING.Planner.SwingFights", { done: done.toLocaleString(game.i18n.lang), total: total.toLocaleString(game.i18n.lang) });
 
 /** A creature's traits as its sheet reads them (its sliders' starting points). */
 const baseTraits = spec => Object.fromEntries(TRAITS.map(k => [k, spec?.traits?.[k]?.base ?? 50]));
@@ -525,6 +531,8 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       progress: Math.round(this.progress * 100),
       // (The fights run: by tens while a run goes, then how many there were.)
       fightCount: this.abort && Number.isFinite(this.counted) ? fightCount(this.counted) : (this.results && !this.stale ? fightCount(this.results.runs) : null),
+      // (While the swing study runs: its fights so far, of all its tests'.)
+      swingCount: this.swingCount ? swingCount(this.swingCount) : null,
       stale: this.stale && !!this.results,
       // (Shown again from the last run: when it ran.)
       restored: this.restoredAt && this.results && !this.stale ? game.i18n.format("FASTFIGHTING.Results.Restored", { when: new Date(this.restoredAt).toLocaleString(game.i18n.lang) }) : null,
@@ -1904,19 +1912,33 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     if ( !this.results || this.running ) return;
     this.running = true;
     this.progress = 0;
+    const scope = this.#swingScope();
+    this.swingCount = { done: 0, total: swingTests(this.spec, this.results, scope).tests.length * swingGuess(this.results, predictionSeconds(this.setup)) };
     await this.render();
+    let lastPaint = 0;
     try {
       this.swing = await swingFactors(this.spec, this.results, {
         seconds: predictionSeconds(this.setup),
-        scope: this.#swingScope(),
-        onProgress: p => {
+        scope,
+        onProgress: (p, done, total) => {
+          this.progress = p;
+          // (The fights so far, as the bar and the Run button fill: redrawn every 50 ms at most.)
+          this.swingCount = { done, total };
+          const now = performance.now();
+          if ( now - lastPaint < 50 && done < total ) return;
+          lastPaint = now;
           const bar = this.element?.querySelector(".ff-progress > span");
+          const fill = this.element?.querySelector(".ff-btn-fill");
+          const count = this.element?.querySelector(".ff-swing-count-n");
           if ( bar ) bar.style.width = `${Math.round(p * 100)}%`;
+          if ( fill ) fill.style.width = `${Math.round(p * 100)}%`;
+          if ( count ) count.textContent = swingCount(this.swingCount);
         }
       });
     } catch ( err ) {
       reportError(err);
     } finally {
+      this.swingCount = null;
       this.#doneRunning();
     }
   }

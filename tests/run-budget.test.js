@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { budgetMs, expectedRuns, paceOf, fightMs, swingRuns, swingCapMs, MAX_RUNS, PREDICTION_SECONDS, ROUGH_RUNS } from "../scripts/engine/run-budget.js";
+import { budgetMs, expectedRuns, paceOf, fightMs, swingRuns, swingShareMs, MAX_RUNS, PREDICTION_SECONDS, ROUGH_RUNS } from "../scripts/engine/run-budget.js";
 import { runBatch } from "../scripts/engine/simulator.js";
 import { pf2eRules } from "./fixtures/three-action-rules.js";
 import { creature, strike, battle } from "./helpers.js";
@@ -22,11 +22,13 @@ describe("the prediction's time", () => {
     for ( let i = 1; i < fits.length; i++ ) expect(fits[i]).toBeLessThan(fits[i - 1]);
     expect(expectedRuns(30, 20)).toBeGreaterThan(expectedRuns(30, 6));
     expect(expectedRuns(1, 20)).toBe(MAX_RUNS);
-    // (Each swing test: as many fights as the prediction ran, in twice its time at most.)
+    expect(swingShareMs(15, 10)).toBe(2000);
+    // (Fewer tests: each the same time, so the study finishes sooner.)
+    expect(swingShareMs(5, 10)).toBe(2000);
+    // (No more fights than the prediction ran.)
     expect(swingRuns(186)).toBe(186);
     expect(swingRuns(0)).toBe(1);
     expect(swingRuns(MAX_RUNS + 5)).toBe(MAX_RUNS);
-    expect(swingCapMs(10)).toBe(20000);
   });
 
   test("this computer's pace, from a prediction that ran out of time, and the next estimate at it", () => {

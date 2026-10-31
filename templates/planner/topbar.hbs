@@ -5,6 +5,7 @@
   {{#if stale}}<span class="ff-chip ff-chip--attention" role="status"><span class="ff-dot-attention" aria-hidden="true"></span> {{localize "FASTFIGHTING.Planner.PlanChanged"}}</span>{{/if}}
   {{#if restored}}<span class="ff-chip" data-tooltip-text="{{restored}}"><i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i> {{localize "FASTFIGHTING.Planner.RestoredChip"}}</span>{{/if}}
   {{#if fightCount}}<span class="ff-chip ff-fight-count" role="status" data-tooltip="{{localize "FASTFIGHTING.Planner.FightsRunHint"}}">{{fightCount}}</span>{{/if}}
+  {{#if swingCount}}<span class="ff-chip ff-swing-count-chip" data-tooltip="{{localize "FASTFIGHTING.Planner.SwingFightsHint"}}"><i class="fa-solid fa-scale-unbalanced" aria-hidden="true"></i> <span class="ff-swing-count-n">{{swingCount}}</span></span>{{/if}}
   {{#if runsNote}}<span class="ff-chip ff-chip--attention" data-tooltip-text="{{runsNote.text}} {{runsNote.size}}"><i class="fa-solid fa-gauge-high" aria-hidden="true"></i> {{localize "FASTFIGHTING.Planner.RoughOdds"}}</span>{{/if}}
   {{#if playersChip}}<button type="button" class="ff-chip ff-chip--button" data-action="leftView" data-view="players"><i class="fa-solid fa-users" aria-hidden="true"></i> {{playersChip}}</button>{{/if}}
   {{#if paused}}<span class="ff-chip" data-tooltip="{{localize "FASTFIGHTING.Planner.PausedHint"}}"><i class="fa-solid fa-pause" aria-hidden="true"></i> {{localize "FASTFIGHTING.Planner.Paused"}}</span>{{/if}}

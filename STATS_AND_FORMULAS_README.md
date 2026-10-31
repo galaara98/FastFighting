@@ -1907,9 +1907,11 @@ Shows how much each combatant and each option moves the Friendly Team's win chan
 - Tests: the battle without each of up to 12 creatures from the pills chosen (those that did most in the main run
   first: damage plus healing, then level, then max HP; never one that took part in under 1 fight in 10), and with
   Leadership, Morale, and Terrain & positioning each turned off (only those that are on).
-- Each test runs as many fights as the main run did (`swingRuns`), so each is as sure as it; seed 99, on the
-  background workers where the prediction runs on them. Each has twice the prediction time at most (`swingCapMs`),
-  should its fights go slower. A study of fewer tests finishes sooner.
+- Each test runs for 3 × prediction time ÷ 15 (`SWING_FULL`, the most tests a study has; `swingShareMs`), and no more
+  fights than the main run did (`swingRuns`); seed 99, on the background workers where the prediction runs on them. A
+  study of fewer tests finishes sooner.
+- While it runs, the bar and the Run button fill by the tests' time, and a chip beside the fight count shows the fights
+  run so far of about how many there will be (from the main run's pace at first, then from the tests done so far).
 - Each shows the Friendly Team's win chance in the test minus the main run's, largest change first.
 - Noise: a change under 2 points, or under twice its standard error (√(p(1−p)/n) of the test and of the main run,
   combined), may be chance. It's shown faint and never makes an Overview tile.
@@ -1917,10 +1919,9 @@ Shows how much each combatant and each option moves the Friendly Team's win chan
   **Key target** (the foe whose absence raises them most), and what the fight **Hinges on** (a rule moving them 10
   points or more).
 
-Example: a main run of 186 fights in 10 seconds gives each test 186 fights, about 10 seconds each, so 10 tests take
-about 100 seconds (200 at most).
+Example: 6 seconds give each test 1.2 seconds, so 10 tests take 12 seconds at most.
 
-Code: `foundry/battle.js` `swingTests`, `swingFactors`; `engine/run-budget.js` `swingRuns`, `swingCapMs`.
+Code: `foundry/battle.js` `swingTests`, `swingFactors`; `engine/run-budget.js` `swingShareMs`, `swingRuns`.
 
 ### Initiative and turn order
 
