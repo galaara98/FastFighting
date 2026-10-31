@@ -1,8 +1,8 @@
 /**
  * The planner's fights on background threads, so the screen never freezes for a fight and more fights fit its time.
  *
- * A pool of module Web Workers (engine/batch-worker.js), up to MOST_WORKERS (one fewer than the computer's cores: one
- * is left for the screen). Each worker builds its own prepareBattle and runs an interleaved share of the fight indices,
+ * A pool of module Web Workers (engine/batch-worker.js), up to MOST_WORKERS (a share of the computer's threads:
+ * poolSize). Each worker builds its own prepareBattle and runs an interleaved share of the fight indices,
  * fight i with deriveSeed(seed, i) as runBatch does: worker w of n runs w, w + n, w + 2n ... This thread feeds the
  * aggregator in index order, so a batch of N fights gives exactly what runBatch and runBatchSync give for N fights with
  * that seed. When the time is up (`maxMs`), each worker finishes the fight under way and starts no other; the fights
@@ -22,15 +22,29 @@ import { deriveSeed, randomSeed } from "./rng.js";
 import { clock } from "./batch-worker.js";
 
 /** The most workers a batch runs on. */
-export const MOST_WORKERS = 4;
+export const MOST_WORKERS = 16;
 
 /**
- * How many workers: one fewer than the computer's cores (one left for the screen), MOST_WORKERS at most, and one at
- * least (on two cores or one, a worker still keeps the screen free). Two cores where the browser doesn't say.
+ * The share of the computer's threads the planner's workers take, as the settings allow it (a computer's own setting,
+ * Background worker share): half at most, about the real cores where each counts twice (hyperthreading), so no core
+ * runs two fights at once and one is left for the screen.
  */
-export function poolSize(cores = globalThis.navigator?.hardwareConcurrency) {
+export const THREAD_SHARE = Object.freeze({ min: 0.1, max: 0.5, default: 0.5 });
+
+/**
+ * How many workers: `share` of the threads the browser says the computer has (THREAD_SHARE's bounds), rounded; no more
+ * than one for each GB of memory, where the browser says (a fight on a big map takes 100 to 200 MB); MOST_WORKERS at
+ * most, one at least (on two threads or one, a worker still keeps the screen free). Two threads where the browser
+ * doesn't say. (Measured on a big map, 24 cores and 32 threads: 4 workers 84 fights, 8 144, 12 164, 16 180, 23 195.)
+ */
+export function poolSize(cores = globalThis.navigator?.hardwareConcurrency, memory = globalThis.navigator?.deviceMemory, share = THREAD_SHARE.default) {
   const n = Math.floor(Number(cores));
-  return Math.max(1, Math.min(MOST_WORKERS, (n > 0 ? n : 2) - 1));
+  const threads = n > 0 ? n : 2;
+  const part = Number.isFinite(Number(share)) ? Math.min(THREAD_SHARE.max, Math.max(THREAD_SHARE.min, Number(share))) : THREAD_SHARE.default;
+  let size = Math.round(threads * part);
+  const gb = Number(memory);
+  if ( gb > 0 ) size = Math.min(size, Math.floor(gb));
+  return Math.max(1, Math.min(MOST_WORKERS, size));
 }
 
 /**

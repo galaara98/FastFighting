@@ -5,7 +5,7 @@ import { MODULE_ID, SIDES, ALLEGIANCE, DISPOSITION_SIDES, NEUTRAL_PARTY, HOSTILE
 import { replay } from "../engine/simulator.js";
 import { budgetFudges } from "../engine/trait-budget.js";
 import { budgetMs, swingShareMs, MAX_RUNS, SWING_RUNS } from "../engine/run-budget.js";
-import { openPool, poolThreads } from "../engine/batch-pool.js";
+import { openPool, poolSize, poolThreads } from "../engine/batch-pool.js";
 
 /** How long a battle's prediction runs (seconds): its plan's, else the world's Prediction time. */
 export const predictionSeconds = setup => setup?.options?.seconds ?? setting("predictionTime");
@@ -1013,10 +1013,13 @@ export function workerRulesOf(adapter = getAdapter()) {
  * A pool for the planner's fights (engine/batch-pool.js): background workers where the helper opens its rules to them
  * and the browser has Web Workers, else this thread. Close it when the run is over.
  */
-export const fightPool = (adapter = getAdapter()) => openPool(fightRules(adapter), { lang: game.i18n.lang });
+export const fightPool = (adapter = getAdapter()) => openPool(fightRules(adapter), { lang: game.i18n.lang, size: fightWorkers() });
 
 /** The threads the planner's next prediction runs on (for its estimate of how many fights fit: run-budget.js). */
-export const fightThreads = (adapter = getAdapter()) => poolThreads(fightRules(adapter));
+export const fightThreads = (adapter = getAdapter()) => poolThreads(fightRules(adapter), { size: fightWorkers() });
+
+/** How many workers, by this computer's Background worker share (a percent of its threads: engine/batch-pool.js). */
+const fightWorkers = () => poolSize(undefined, undefined, Number(setting("plannerThreadShare")) / 100);
 
 /** The rules the planner's workers would run, unless the world's background workers setting is off (null: this thread). */
 const fightRules = adapter => (setting("plannerWorkers") === false ? null : workerRulesOf(adapter));

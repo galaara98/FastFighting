@@ -7,6 +7,7 @@
  * its own, and keep its value.
  */
 import { PREDICTION_SECONDS } from "./engine/run-budget.js";
+import { THREAD_SHARE } from "./engine/batch-pool.js";
 import { MODULE_ID, ALLEGIANCE, DOWNED_MODELS, HEAL_AGGRO, ALLY_DYING, AFTERMATH, OPENING, CONCEDE_LUCK, THEFT_LUCK, EXECUTE_LUCK, SWITCH_LUCK, TRAITOR_LUCK, TRAP_LUCK, IGNORE_TROUBLES, TAUNT_LUCK, STAND_GROUND, AVOID_KILLING, LEAVE_RESOLVE, ROLEPLAY_FORGETS, ADHD, NEUTRAL_REACH, MAX_ROUNDS, LORE_BOOST } from "./constants.js";
 
 const choices = (keys, prefix) => Object.fromEntries(keys.map(k => [k, `FASTFIGHTING.${prefix}.${k}`]));
@@ -106,6 +107,9 @@ const SETTINGS = {
   // Off: on the main thread, as before. Workers that fail fall back by themselves, for the session: this is for tracking
   // a problem down.
   plannerWorkers: { group: "troubleshooting", type: Boolean, default: true },
+  // How many of them: a percent of the threads this computer's browser says it has (engine/batch-pool.js poolSize). A
+  // computer's own: each GM's is theirs.
+  plannerThreadShare: { group: "troubleshooting", scope: "client", type: Number, default: THREAD_SHARE.default * 100, range: { min: THREAD_SHARE.min * 100, max: THREAD_SHARE.max * 100, step: 5 } },
 
   genericFallback: { group: "generic", type: Boolean, default: false, requiresReload: false, onChange: () => ui.combat?.render() }
 };

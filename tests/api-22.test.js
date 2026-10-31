@@ -14,7 +14,7 @@ import { CORE_API, CORE_API_VERSION } from "../scripts/core-api.js";
 import { SystemAdapter } from "../scripts/adapters/adapter-base.js";
 import { GenericAdapter } from "../scripts/adapters/generic/index.js";
 import { runBatchSync } from "../scripts/engine/simulator.js";
-import { openPool, poolSize, poolThreads, onWorkers, MOST_WORKERS } from "../scripts/engine/batch-pool.js";
+import { openPool, poolSize, poolThreads, onWorkers, MOST_WORKERS, THREAD_SHARE } from "../scripts/engine/batch-pool.js";
 import { batchHost, loadRules } from "../scripts/engine/batch-worker.js";
 import { expectedRuns, paceOf, fightMs, budgetMs } from "../scripts/engine/run-budget.js";
 import { goldenBattles } from "./golden/battles.js";
@@ -122,11 +122,18 @@ describe("where a helper's rules are, for the workers (adapter.workerRules)", ()
     await expect(loadRules({ url, exportName: "nothing" })).rejects.toThrow();
   });
 
-  test("how many: one fewer than the cores, four at most, one at least", () => {
-    expect(MOST_WORKERS).toBe(4);
-    expect([1, 2, 3, 4, 5, 8, 32].map(n => poolSize(n))).toEqual([1, 1, 2, 3, 4, 4, 4]);
-    // (Where the browser doesn't say: two cores, one worker.)
-    expect([0, "many", null].map(n => poolSize(n))).toEqual([1, 1, 1]);
+  test("how many: a share of the threads (half by default), a GB each, sixteen at most, one at least", () => {
+    expect(MOST_WORKERS).toBe(16);
+    expect(THREAD_SHARE).toEqual({ min: 0.1, max: 0.5, default: 0.5 });
+    // (Half the threads, rounded: about the real cores where each counts twice.)
+    expect([1, 2, 3, 4, 5, 8, 12, 16, 32, 64].map(n => poolSize(n, undefined))).toEqual([1, 1, 2, 2, 3, 4, 6, 8, 16, 16]);
+    // (The share the settings give, kept to 10% to 50%: less of the computer for the fights.)
+    expect([0.1, 0.25, 0.5, 0.9, 0, "half"].map(s => poolSize(32, undefined, s))).toEqual([3, 8, 16, 16, 3, 16]);
+    expect(poolSize(8, undefined, 0.1)).toBe(1);
+    // (Where the browser doesn't say: two threads, one worker.)
+    expect([0, "many", null].map(n => poolSize(n, undefined))).toEqual([1, 1, 1]);
+    // (A worker for each GB of memory at most, where the browser says; one at least.)
+    expect([32, 8, 4, 2, 0.5, 0, "lots"].map(gb => poolSize(32, gb))).toEqual([16, 8, 4, 2, 1, 16, 16]);
     expect(poolThreads(FIXTURE, { size: 3, makeWorker: () => ({}) })).toBe(3);
   });
 

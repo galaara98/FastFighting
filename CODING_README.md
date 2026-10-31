@@ -382,8 +382,10 @@ fight and more fights fit the time (`engine/batch-pool.js`, `engine/batch-worker
   (`has` false, `localize` and `format` the key), as the core's `localize` does without Foundry.
 - **The spec** goes to each worker as a structured clone: plain data, no functions (`Infinity`, `undefined`, Sets and
   Maps are fine). One that can't be sent runs on the main thread.
-- **The pool:** up to `MOST_WORKERS` (4), one fewer than `navigator.hardwareConcurrency` (one left for the screen), one
-  at least (`poolSize`). Each worker builds its own `prepareBattle` and runs an interleaved share of the fight indices,
+- **The pool:** a share of `navigator.hardwareConcurrency`, rounded: this computer's **Background worker share**
+  (`plannerThreadShare`, a client setting, 10% to 50%, `THREAD_SHARE`; half by default, about the real cores where each
+  counts twice); no more than `navigator.deviceMemory` (GB) where the browser gives it; `MOST_WORKERS` (16) at most,
+  one at least (`poolSize`; `foundry/battle.js` `fightWorkers`). Each worker builds its own `prepareBattle` and runs an interleaved share of the fight indices,
   fight i with `deriveSeed(seed, i)`; it posts the fights it has done every `FLUSH_MS` (25 ms). The main thread feeds the
   aggregator in index order, so N fights give exactly what `runBatch` and `runBatchSync` give for N fights with that
   seed. `preSimulate`, the modifiers and `postSimulate` stay on the main thread, before and after.

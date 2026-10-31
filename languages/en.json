@@ -274,6 +274,10 @@
         "Name": "Background workers",
         "Hint": "Runs the planner's fights on background threads, so the screen stays responsive and more fights fit the time. Workers that fail switch off and say so in the console."
       },
+      "plannerThreadShare": {
+        "Name": "Background worker share",
+        "Hint": "Percent of this computer's threads, as the browser reports them, that the planner's background workers use. 50% is about one worker per real core; lower leaves more for everything else. This computer only."
+      },
       "Survey": {
         "Link": "Optional performance survey",
         "Hint": "Your setup, your battle and how many fights the planner ran: it helps make FastFighting faster."

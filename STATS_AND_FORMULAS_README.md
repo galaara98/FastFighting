@@ -1801,8 +1801,9 @@ Decides how many simulated fights the planner runs before it shows the odds.
   at most 20 000 (`MAX_RUNS`).
 - Time: **Prediction time (seconds)** (`predictionTime`), default 10, range 6–60. The **Seconds** slider in the
   planner's top bar overrides it for one battle.
-- Threads: where the system's helper allows it, the fights run on background workers, min(4, cores − 1) of them and
-  at least 1 (`MOST_WORKERS`, `poolSize`), several at once; worker w of n runs fights w, w + n, w + 2n ... The time
+- Threads: where the system's helper allows it, the fights run on background workers, round(threads × share) of them (share:
+  **Background worker share**, 10% to 50%, 50% by default, each computer its own), no more than the GB of memory where
+  the browser says, 16 at most and at least 1 (`MOST_WORKERS`, `THREAD_SHARE`, `poolSize`), several at once; worker w of n runs fights w, w + n, w + 2n ... The time
   counts from when they're sent the battle. Each starts no fight once it's up and finishes the one under way; fights
   done past the first one missing are left out, so the result is always fights 0 to N − 1, the same as on one thread.
 - Otherwise on the main thread: every 25 ms it lets the browser redraw; each pause counts against the time only up to
