@@ -291,7 +291,7 @@ describe("grabs, escapes and freeing, as the system has them (API 37.3)", () => 
     }
   });
 
-  test("rules.grabEndsOnMove \"reach\": a grab ends only once its grabber's move leaves the held one out of reach (API 41)", () => {
+  test("rules.grabEndsOnMove \"reach\": a grab ends only once its grabber's move leaves the held one out of reach (API 42)", () => {
     const rules = { ...pf2eRules, grabEndsOnMove: "reach" };
     const moved = (run, u, x) => {
       const from = { ...u.pos };
@@ -318,7 +318,7 @@ describe("grabs, escapes and freeing, as the system has them (API 37.3)", () => 
     expect(o2.grabbedBy).toBe(null);
   });
 
-  test("rules.grabEndsOnMove \"reach\": the grab's reach: its own, else the holder's longest melee reach (API 41)", () => {
+  test("rules.grabEndsOnMove \"reach\": the grab's reach: its own, else the holder's longest melee reach (API 42)", () => {
     const holder = { spec: { actions: [{ melee: true, reach: 15 }] }, pos: { x: 0, y: 0 }, size: 5, adjacent: new Set() };
     const held = { id: "h", spec: {}, pos: { x: 15, y: 0 } };
     // (No reach of the grab's own: the holder's longest melee reach.)

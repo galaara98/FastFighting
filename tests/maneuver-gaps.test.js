@@ -138,7 +138,7 @@ describe("a degree's own damage, a botch that moves, a blow that pushes", () => 
     expect(wave.log.some(e => e.type === "forced" && e.targetId === "orc")).toBe(true);
   });
 
-  test("rules.grabEndsOnMove \"reach\": pushed out of the grab's reach, let go, told; without it, still held (API 41)", () => {
+  test("rules.grabEndsOnMove \"reach\": pushed out of the grab's reach, let go, told; without it, still held (API 42)", () => {
     const push = [strike({ bonus: 60, damage: [parseFormula("1", "thunder")], effects: [{ kind: "move", move: { kind: "push", feet: 10 } }] })];
     for ( const [rules, held] of [[{ ...pf2eRules, grabEndsOnMove: "reach" }, false], [pf2eRules, true]] ) {
       const run = fight([hero(push), orc()], { rules });
