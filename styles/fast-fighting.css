@@ -178,7 +178,12 @@
 .ff-swing-pill.is-all { border-color: var(--ff-pill); box-shadow: 0 0 0 1px var(--ff-pill); }
 .ff-swing-count.is-warn { color: var(--ff-attention); }
 /* A swing test still open, and the main run's estimates before the study. */
-.ff-swing li.is-open .ff-swing-value { font-style: italic; opacity: 0.8; }
+.ff-swing li.is-open .ff-swing-value, .ff-swing li.is-near .ff-swing-value { font-style: italic; opacity: 0.8; }
+.ff-swing li.is-near .ff-swing-bar span { opacity: 0.55; }
+/* The change in a character dying, beside the test's name: red where it's likelier. */
+.ff-swing-death { margin-left: 6px; font-size: 0.9em; font-variant-numeric: tabular-nums; font-weight: 700; white-space: nowrap; }
+.ff-swing-death.neg { color: var(--ff-hostile); }
+.ff-swing-death.pos { color: var(--ff-friendly); }
 .ff-swing li.is-preview { font-style: italic; opacity: 0.75; }
 .ff-swing li.is-preview .ff-swing-bar span { opacity: 0.6; }
 .ff-swing-run .ff-filters { flex: 1; padding: 0; }

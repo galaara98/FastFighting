@@ -82,6 +82,7 @@ export function createAggregator(prep) {
   let none = 0;
   let anyPcDead = 0;
   let anyPcDowned = 0;
+  let anyFriendDowned = 0; // (any of the Friendly Team gone down, in the swing study's third measure)
   let swayedRuns = 0;
   let peacefulRuns = 0;
   let collapsedRuns = 0; // (only an argument: the talks collapsed)
@@ -124,6 +125,7 @@ export function createAggregator(prep) {
       let pcsDowned = 0;
       let pcsDead = 0;
       let lostGoods = false;
+      let friendDowned = false;
       const partyWon = result.outcome === "victory" && result.winners.includes(SIDES.FRIENDLY);
       let joined = false;
       let reinforced = false;
@@ -161,6 +163,7 @@ export function createAggregator(prep) {
           anySwayed = true;
         }
         if ( r.wasDowned ) u.downed += 1;
+        if ( r.wasDowned && friendIds.has(id) ) friendDowned = true;
         if ( r.wasDowned && partyWon ) u.downedWins += 1;
         u.hpFrac += r.hpFrac;
         u.damage += r.damage;
@@ -194,6 +197,7 @@ export function createAggregator(prep) {
         if ( who ) c.by.set(who, (c.by.get(who) ?? 0) + 1);
       }
       if ( pcDowned ) anyPcDowned += 1;
+      if ( friendDowned ) anyFriendDowned += 1;
       if ( pcIds.length && pcsOut === pcIds.length ) party.wiped += 1;
       party.downed += pcsDowned;
       party.dead += pcsDead;
@@ -264,6 +268,7 @@ export function createAggregator(prep) {
         pNone: none / n,
         pAnyPcDead: anyPcDead / n,
         pAnyPcDowned: anyPcDowned / n,
+        pAnyFriendDowned: anyFriendDowned / n,
         pAnySwayed: swayedRuns / n,
         pPeaceful: peacefulRuns / n,
         pCollapsed: collapsedRuns / n,

@@ -993,18 +993,32 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /**
    * A swing test as the list shows it: its change in the Friendly Team's odds and what that means, by its status (it
-   * matters; negligible, under SWING_THRESHOLD either way; still measuring, or not settled in time), with how far it
-   * could be and from how many fights.
+   * matters; negligible, under SWING_THRESHOLD either way; near the line, could go either way; still measuring, or not
+   * settled in time); the change in one of the Friendly Team going down, and in a character dying, beside it where
+   * that's SWING_THRESHOLD or more; and in its tooltip, each measure's change and how far it could be, from how many
+   * fights.
    */
   #swingRow(s) {
-    const data = { lo: swingPoints(s.lo), hi: swingPoints(s.hi), n: s.runs.toLocaleString(game.i18n.lang), wins: s.wins.toLocaleString(game.i18n.lang) };
-    const row = { label: s.label, width: Math.min(50, Math.abs(s.delta) * 100).toFixed(1), positive: s.delta >= 0, value: swingPoints(s.delta) };
-    if ( s.status === "negligible" ) {
-      return { ...row, cls: "is-noise", width: 0, value: loc("FASTFIGHTING.Swing.Negligible"),
-        hint: localize("FASTFIGHTING.Swing.NegligibleHint", { ...data, threshold: (SWING_THRESHOLD * 100).toLocaleString(game.i18n.lang) }) };
-    }
-    if ( s.status === "open" ) return { ...row, cls: "is-open", hint: localize(this.running ? "FASTFIGHTING.Swing.Measuring" : "FASTFIGHTING.Swing.Unsure", data) };
-    return { ...row, hint: localize("FASTFIGHTING.Swing.Between", data) };
+    const threshold = (SWING_THRESHOLD * 100).toLocaleString(game.i18n.lang);
+    const line = (key, m) => localize(key, { value: swingPoints(m.estimate), lo: swingPoints(m.lo), hi: swingPoints(m.hi) });
+    const note = { negligible: "NegligibleNote", near: "NearNote", open: this.running ? "MeasuringNote" : "UnsureNote" }[s.status];
+    const hint = [
+      note ? localize(`FASTFIGHTING.Swing.${note}`, { threshold }) : null,
+      line("FASTFIGHTING.Swing.WinLine", s.win),
+      s.downed ? line("FASTFIGHTING.Swing.DownedLine", s.downed) : null,
+      s.death ? line("FASTFIGHTING.Swing.DeathLine", s.death) : null,
+      localize("FASTFIGHTING.Swing.Fights", { n: s.runs.toLocaleString(game.i18n.lang) })
+    ].filter(Boolean).join(" ");
+    // (Beside its name, where it moves SWING_THRESHOLD or more: red where it's likelier.)
+    const badge = m => (m && (m.clear === "matters" || Math.abs(m.estimate) >= SWING_THRESHOLD) ? { value: swingPoints(m.estimate), cls: m.estimate > 0 ? "neg" : "pos" } : null);
+    const row = {
+      label: s.label, width: Math.min(50, Math.abs(s.delta) * 100).toFixed(1), positive: s.delta >= 0, value: swingPoints(s.delta), hint,
+      downed: badge(s.downed), death: badge(s.death)
+    };
+    if ( s.win.clear === "negligible" ) Object.assign(row, { width: 0, value: loc("FASTFIGHTING.Swing.Negligible") });
+    const cls = { negligible: "is-noise", near: "is-near", open: "is-open" }[s.status] ?? "";
+    if ( s.status === "near" ) row.value = localize("FASTFIGHTING.Swing.NearValue", { value: row.value });
+    return { ...row, cls };
   }
 
   /**

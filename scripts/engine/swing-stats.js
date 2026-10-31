@@ -1,6 +1,7 @@
 /**
  * The swing factors' statistics: whether leaving a creature out (or a rule off) moves the Friendly Team's odds of
- * winning by SWING_THRESHOLD or more, found with as few fights as it takes.
+ * winning, of one of it going down, or of a player's character dying, by SWING_THRESHOLD or more, found with as few
+ * fights as it takes.
  *
  *  - A fight's margin: how close it came, for the Friendly Team (marginOf): the share of its strength still standing at
  *    the end less its foes' (each creature weighed by its most HP, its HP left if it's still in the fight, else
@@ -13,17 +14,22 @@
  *    It holds only for a lopsided fight (one side winning under LOPSIDED of them, in the main run and the test): in a
  *    close one, a change moves fights from a clear win to a clear loss rather than every margin a little, and it
  *    understates (a party at 75% without its fighter: 7 points down by the margins, 39 by the wins).
- *  - A verdict (swingVerdict): the change in odds and how far it could be, by the plain wins, test against main run
- *    (Agresti and Caffo's interval, at SWING_Z); in a lopsided fight, by the shift model where it agrees with them
- *    (Δ's standard error at SWING_Z, the shift model's odds at either end). It matters when that, or the wins, say the
- *    change is SWING_THRESHOLD or more; it's negligible when it's under that either way, or when it looks under it once
- *    the test has as many fights as the main run (no more fights could make it surer than the main run's own odds are);
- *    else it's still open. Odds stay between 0 and 1: a party winning 1% loses 1 point at most.
+ *  - A measure (measured): a share of the fights (the Friendly Team's wins; one of it down; a player's character dead), test
+ *    against main run: its change and how far it could be (Agresti and Caffo's interval, at SWING_Z); for the wins in a
+ *    lopsided fight, by the shift model where it agrees with them (Δ's standard error at SWING_Z, the shift model's odds
+ *    at either end). Clear: it matters (the change SWING_THRESHOLD or more, its whole interval on one side), or it's
+ *    negligible (its interval within SWING_THRESHOLD either way). Odds stay between 0 and 1: a party winning 1% loses 1
+ *    point at most.
+ *  - A verdict (swingVerdict), over the three measures (the deaths only with a player's character in the battle): it
+ *    matters if any does; negligible if all are; near the line once the test has as many fights as the main run
+ *    and still isn't clear (no more fights could make it surer than the main run's own odds are); else open.
  *  - The study (createSwingStudy): every test gets SWING_MIN_FIGHTS first (those the main run hints matter most first),
- *    then the open ones get the fights, the fewest first; then those that matter, until each is within SWING_SETTLED.
- *    A test whose change has held within SWING_STEADY of where it is now over the second half of its fights (twice
- *    SWING_MIN_FIGHTS at least) is calculated: it matters or not by that change. Once every test is settled, it's
- *    over; otherwise it goes on until its time runs out (run-budget.js swingBudgetMs).
+ *    then the open ones get the fights, the fewest first; then those that matter until known within SWING_SETTLED;
+ *    then, with the time left, those near the line. A test whose changes have held within SWING_STEADY of where they
+ *    are now over the second half of its fights (twice SWING_MIN_FIGHTS at least) is calculated: settled if it
+ *    matters, near the line if it's still not clear (its range crosses the line: more fights could tip it either way,
+ *    so it gets what time is left, rather than a call that could come out the other way next time). Once every test is
+ *    settled, it's over; otherwise it goes on until its time runs out (run-budget.js swingBudgetMs).
  *  - Before it runs (swingPreview): the main run's own fights, where a creature fell early and where it didn't, hint
  *    at what leaving it out would do (the margin against how much of the fight it missed, through the shift model). Its
  *    side going badly is often why it fell, so the hint overstates, by far (a fighter's 75 points against 14 measured):
@@ -178,22 +184,18 @@ export function ledgerModel(ledger, skip = -1) {
 }
 
 /**
- * How a test stands: the change in the Friendly Team's odds (`estimate`) and how far it could be (`lo`, `hi`), by the
- * shift model where there is one, else by the wins alone; the wins' own change (`raw`); and its `status`: "matters",
- * "negligible" or "open" (too few fights yet, or not clear). `settled`: no more fights would change what's shown.
- * @param {{n: number, wins: number, sum: number, squares: number}} test   its fights: how many, won, margins' sum and
- *   sum of squares
- * @param {object|null} model   the main run's shift model (ledgerModel), with the same creature left out
- * @param {{runs: number, pWin: number}} base   the main run's fights and the Friendly Team's odds in them
+ * One measure of a test against the main run: a share of its fights (`hits` of `n`) against the main run's (`p0` of
+ * `n0`): the change (`estimate`), how far it could be (`lo`, `hi`), the plain change (`raw`), and whether it's
+ * `clear`: "matters", "negligible", or null. With `model` (the wins' shift model, and the test's margins: `sum`,
+ * `squares`), by the margins where the fight is lopsided and they agree with the plain change (`byMargins`).
  */
-export function swingVerdict(test, model, base, { threshold = SWING_THRESHOLD, z = SWING_Z, least = SWING_MIN_FIGHTS } = {}) {
-  const n = test.n;
-  const p0 = clamp(Number(base.pWin) || 0, 0, 1);
-  const n0 = Math.max(1, Number(base.runs) || 1);
+export function measured({ n, hits, sum = 0, squares = 0 }, p0, n0, { model = null, threshold = SWING_THRESHOLD, z = SWING_Z } = {}) {
+  p0 = clamp(Number(p0) || 0, 0, 1);
+  n0 = Math.max(1, Number(n0) || 1);
   const bound = d => clamp(d, -p0, 1 - p0);
-  // (The wins alone, Agresti and Caffo: a win and a loss added to each.)
-  const raw = n ? test.wins / n - p0 : 0;
-  const pt = (test.wins + 1) / (n + 2);
+  // (The plain change, Agresti and Caffo: a hit and a miss added to each.)
+  const raw = n ? hits / n - p0 : 0;
+  const pt = (hits + 1) / (n + 2);
   const pb = (p0 * n0 + 1) / (n0 + 2);
   const rawSe = Math.sqrt(pt * (1 - pt) / (n + 2) + pb * (1 - pb) / (n0 + 2));
   const rawLo = bound(pt - pb - z * rawSe);
@@ -204,9 +206,9 @@ export function swingVerdict(test, model, base, { threshold = SWING_THRESHOLD, z
   let byMargins = false;
   // (The margins, where the fight is lopsided in the main run and in the test alike, and they agree with the wins.)
   const tail = p => (p0 < LOPSIDED && p < LOPSIDED) || (p0 > 1 - LOPSIDED && p > 1 - LOPSIDED);
-  if ( model && n > 1 && tail(n ? test.wins / n : p0) ) {
-    const mean = test.sum / n;
-    const variance = Math.max(0, (test.squares - n * mean * mean) / (n - 1));
+  if ( model && n > 1 && tail(hits / n) ) {
+    const mean = sum / n;
+    const variance = Math.max(0, (squares - n * mean * mean) / (n - 1));
     const shift = mean - model.mean;
     const se = Math.sqrt(variance / n + model.variance / model.n);
     const at0 = model.odds(0);
@@ -219,14 +221,41 @@ export function swingVerdict(test, model, base, { threshold = SWING_THRESHOLD, z
       byMargins = true;
     }
   }
+  const clear = lo >= threshold || hi <= -threshold || rawLo >= threshold || rawHi <= -threshold ? "matters"
+    : lo > -threshold && hi < threshold ? "negligible" : null;
+  return { estimate, lo, hi, raw, clear, byMargins };
+}
+
+/**
+ * How a test stands, by its measures: the Friendly Team's wins (`win`), one of it going down (`downed`) and, with a
+ * player's character in the battle, one dying (`death`); its `status`: "matters" (any does), "negligible" (all are),
+ * "near" (as many fights as the main run and still not clear), or "open"; `settled`: no more fights would change
+ * what's shown. `estimate`, `lo`, `hi`, `raw`: the wins'.
+ * @param {{n: number, wins: number, downs: number, deaths: number, sum: number, squares: number}} test   its fights:
+ *   how many, won, with one of the Friendly Team down, with a character dead, and the margins' sum and sum of squares
+ * @param {object|null} model   the main run's shift model (ledgerModel), with the same creature left out
+ * @param {{runs: number, pWin: number, pDowned: number|null, pDeath: number|null}} base   the main run's fights and
+ *   its odds (null: not measured, with nobody to)
+ */
+export function swingVerdict(test, model, base, { threshold = SWING_THRESHOLD, z = SWING_Z, least = SWING_MIN_FIGHTS } = {}) {
+  const n = test.n;
+  const n0 = Math.max(1, Number(base.runs) || 1);
+  const win = measured({ n, hits: test.wins, sum: test.sum, squares: test.squares }, base.pWin, n0, { model, threshold, z });
+  const other = (p, hits) => (p === null || p === undefined ? null : measured({ n, hits: hits ?? 0 }, p, n0, { threshold, z }));
+  const downed = other(base.pDowned, test.downs);
+  const death = other(base.pDeath, test.deaths);
+  const both = [win, downed, death].filter(Boolean);
   let status = "open";
   if ( n >= least ) {
-    if ( lo >= threshold || hi <= -threshold || rawLo >= threshold || rawHi <= -threshold ) status = "matters";
-    else if ( (lo > -threshold && hi < threshold) || (n >= n0 && Math.abs(estimate) < threshold) ) status = "negligible";
+    if ( both.some(m => m.clear === "matters") ) status = "matters";
+    else if ( both.every(m => m.clear === "negligible") ) status = "negligible";
+    else if ( n >= n0 ) status = "near";
   }
-  // (Measured enough: negligible; or it matters, known to within SWING_SETTLED, or as sure as the main run is.)
-  const settled = status === "negligible" || (status === "matters" && ((hi - lo) / 2 <= SWING_SETTLED || n >= n0));
-  return { estimate, lo, hi, raw, status, settled, byMargins };
+  // (Measured enough: negligible; near the line as sure as the main run is; or it matters and each measure is known:
+  // clear, within SWING_SETTLED, or as sure as the main run is.)
+  const known = m => m.clear === "negligible" || n >= n0 || (m.clear === "matters" && (m.hi - m.lo) / 2 <= SWING_SETTLED);
+  const settled = status === "negligible" || status === "near" || (status === "matters" && both.every(known));
+  return { estimate: win.estimate, lo: win.lo, hi: win.hi, raw: win.raw, byMargins: win.byMargins, win, downed, death, status, settled };
 }
 
 /**
@@ -278,33 +307,42 @@ export function swingPreview(ledger, ids, { least = 5 } = {}) {
  */
 export function createSwingStudy(tests, baseline) {
   const ledger = baseline.ledger ?? null;
-  const base = { runs: baseline.runs, pWin: baseline.sides?.[SIDES.FRIENDLY]?.pWin ?? 0 };
+  const pcs = Object.values(baseline.combatants ?? {}).filter(c => c.kind === "pc").map(c => c.id);
+  const friends = Object.values(baseline.combatants ?? {}).filter(c => c.side === SIDES.FRIENDLY).map(c => c.id);
+  const base = {
+    runs: baseline.runs, pWin: baseline.sides?.[SIDES.FRIENDLY]?.pWin ?? 0,
+    pDowned: friends.length ? baseline.pAnyFriendDowned ?? null : null, pDeath: pcs.length ? baseline.pAnyPcDead ?? 0 : null
+  };
+  const pcDied = f => pcs.some(id => f.units?.[id]?.status === STATUS.DEAD);
+  const friendDowned = f => friends.some(id => f.units?.[id]?.wasDowned);
   const hints = swingPreview(ledger, tests.filter(t => t.id).map(t => t.id));
   const state = tests.map(t => {
     const skip = ledger && t.id ? ledger.ids.indexOf(t.id) : -1;
     return {
       test: t, skip, model: ledger ? ledgerModel(ledger, skip) : null, hint: hints[t.id] ?? null,
-      n: 0, wins: 0, sum: 0, squares: 0, chunks: 0, inFlight: 0, verdict: null, seen: []
+      n: 0, wins: 0, downs: 0, deaths: 0, sum: 0, squares: 0, chunks: 0, inFlight: 0, verdict: null, seen: []
     };
   });
   const byKey = new Map(state.map(s => [s.test.slot, s]));
   // (First: those the main run hints move the odds most, then the rules, then the rest.)
   const first = s => (s.hint !== null ? 1 + Math.abs(s.hint) : s.test.id ? 0 : 0.5);
   const order = [...state].sort((a, b) => first(b) - first(a));
-  // (Its change as each chunk came back; steady once it has stayed within SWING_STEADY of where it is now since it had
-  // half its fights.)
+  // (Its changes as each chunk came back; steady once each has stayed within SWING_STEADY of where it is now since it
+  // had half its fights.)
   const steady = (s, now) => {
     if ( s.n < 2 * SWING_MIN_FIGHTS ) return false;
-    const since = s.seen.filter(([n]) => n >= s.n / 2).map(([, d]) => d);
-    return since.length > 1 && since.every(d => Math.abs(d - now) <= SWING_STEADY);
+    const since = s.seen.filter(([n]) => n >= s.n / 2);
+    return since.length > 1 && since.every(([, ...was]) => was.every((d, k) => Math.abs(d - now[k]) <= SWING_STEADY));
   };
   const judge = s => {
     const v = swingVerdict(s, s.model, base);
-    s.seen.push([s.n, v.estimate]);
-    if ( !v.settled && steady(s, v.estimate) ) {
-      v.status = v.status === "open" ? (Math.abs(v.estimate) >= SWING_THRESHOLD ? "matters" : "negligible") : v.status;
-      v.settled = true;
+    const now = [v.win.estimate, v.downed?.estimate ?? 0, v.death?.estimate ?? 0];
+    s.seen.push([s.n, ...now]);
+    // (Steady: it matters, calculated; not clear, near the line, measured on with what time is left.)
+    if ( !v.settled && steady(s, now) ) {
       v.steady = true;
+      if ( v.status === "matters" ) v.settled = true;
+      else if ( v.status === "open" ) v.status = "near";
     }
     s.verdict = v;
   };
@@ -316,6 +354,7 @@ export function createSwingStudy(tests, baseline) {
     pick() {
       const chosen = order.find(s => coming(s) < SWING_MIN_FIGHTS)
         ?? fewest(state.filter(s => s.verdict.status === "open"))
+        ?? fewest(state.filter(s => !s.verdict.settled && s.verdict.status === "matters"))
         ?? fewest(state.filter(s => !s.verdict.settled));
       if ( !chosen ) return null;
       chosen.inFlight += 1;
@@ -329,6 +368,8 @@ export function createSwingStudy(tests, baseline) {
       for ( const f of fights ) {
         s.n += 1;
         if ( friendlyWon(f) ) s.wins += 1;
+        if ( pcDied(f) ) s.deaths += 1;
+        if ( friendDowned(f) ) s.downs += 1;
         if ( ledger ) {
           const m = resultMargin(ledger, f, s.skip);
           s.sum += m;
@@ -349,8 +390,8 @@ export function createSwingStudy(tests, baseline) {
       const { test, verdict } = s;
       const { spec, slot, ...shown } = test;
       return {
-        ...shown, ...verdict, delta: verdict.estimate, runs: s.n, wins: s.wins, hint: s.hint,
-        pWin: clamp(base.pWin + verdict.estimate, 0, 1), noise: verdict.status !== "matters"
+        ...shown, ...verdict, delta: verdict.estimate, runs: s.n, wins: s.wins, downs: s.downs, deaths: s.deaths, hint: s.hint,
+        pWin: clamp(base.pWin + verdict.estimate, 0, 1), noise: verdict.win.clear !== "matters"
       };
     }).sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta))
   };

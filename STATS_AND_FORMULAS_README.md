@@ -1898,10 +1898,10 @@ Code: `engine/aggregate.js` `finish`; `foundry/battle.js` `typicalFight`; `engin
 
 ### Swing factors
 
-Search: swing factors, Compute swing factors, what moves the odds, Without, impact, negligible, 2.5 points, margin, shift model, Likely, Unlikely, linchpin, key target, hinges on, What to test, swingBudgetMs
+Search: swing factors, Compute swing factors, what moves the odds, Without, impact, negligible, near the line, 2.5 points, PC dies, margin, shift model, Likely, Unlikely, linchpin, key target, hinges on, What to test, swingBudgetMs
 
-Shows whether each combatant and each rule moves the Friendly Team's win chance by 2.5 points or more, with as few fights
-as it takes to tell.
+Shows whether each combatant and each rule moves the Friendly Team's win chance, the chance of one of it going down, or
+the chance of a PC dying, by 2.5 points or more, with as few fights as it takes to tell.
 
 - What to test: a pill each for the Friendly Team's side, its foes and those who take no side, each clicked round
   through its creatures in the encounter (a light ring, the default), all of them on the map (a dark ring), and none (no
@@ -1913,11 +1913,13 @@ as it takes to tell.
   (`swingBudgetMs`): 10 seconds give 12 tests 60 seconds, 3 tests 30, 15 tests 67. It ends sooner once every test is
   settled.
 - How the fights are handed out: every test gets 16 fights first (`SWING_MIN_FIGHTS`), then the tests still open, the
-  fewest fights first, then those that matter but aren't known closely yet. Each background worker takes about 150 ms
-  of one test's fights at a time (`CHUNK_MS`), then whatever is needed most then.
-- The change: the Friendly Team's wins in the test against the main run, with Agresti and Caffo's interval (a win and a
-  loss added to each) at 2.5 standard errors (`SWING_Z`, about 99%, as the study looks again after every few fights).
-  Odds stay between 0 and 1, so a party winning 1% can lose 1 point at most.
+  fewest fights first, then those that matter but aren't known closely yet, then, with the time left, those near the
+  line. Each background worker takes about 150 ms of one test's fights at a time (`CHUNK_MS`), then whatever is needed
+  most then.
+- Three measures, each the test's share of fights against the main run's: the Friendly Team's wins, fights where one
+  of it goes down, and (with a PC in the battle) fights where a PC dies. Each with Agresti and Caffo's interval (a hit and a miss added to each) at 2.5
+  standard errors (`SWING_Z`, about 99%, as the study looks again after every few fights). Odds stay between 0 and 1,
+  so a party winning 1% can lose 1 point at most.
 - In a lopsided fight (the Friendly Team winning under 10% or over 90%, in the main run and the test alike), each
   fight's margin is used too: what's left of the Friendly Team's strength at the end less its foes' (each creature
   weighed by its max HP; its HP left while it's still in the fight, else nothing), from −1 to 1, leaving out the
@@ -1926,13 +1928,16 @@ as it takes to tell.
   it's the change shown. A party wiped every time without ever coming close settles in 16 fights, where the wins alone
   would need about 150. In a close fight it isn't used: a change there turns clear wins into clear losses rather than
   moving every margin a little, and it understates (7 points against 39 measured).
-- Matters: the change is 2.5 points or more, its whole interval on one side. Negligible: its interval within ±2.5; or,
-  once the test has as many fights as the main run (no more could make it surer than the main run's own odds), under
-  2.5. Calculated: a change that has stayed within 2 points of where it is over the second half of its fights (32 at
-  least) settles the test, mattering or not by that change. A test that matters is settled when known to within 2
-  points, or as sure as the main run.
-- The list, while it runs and after: each test's change, largest first; Negligible for one under 2.5 points; a test
-  still open shown in italics (Still measuring, or Not settled in time); each tooltip with how far it could be and from
+- Matters: any measure's change is 2.5 points or more, its whole interval on one side. Negligible: every interval
+  within ±2.5. Near the line: as many fights as the main run (no more could make it surer than the main run's own
+  odds) and still neither. Calculated: changes that have stayed within 2 points of where they are over the second half
+  of the test's fights (32 at least) settle a test that matters; one that isn't clear is near the line instead, and
+  gets fights only once nothing else needs them, rather than a call that could come out the other way next time. A
+  test that matters is settled when each measure is known to within 2 points, or as sure as the main run.
+- The list, while it runs and after: each test's change in the win chance, largest first; Negligible for one under
+  2.5 points; ≈ and in italics for one near the line, or still open (Still measuring, or Not settled in time); beside
+  its name, a broken heart and the change in a Friendly going down, and a skull and the change in a PC dying, each where
+  it's 2.5 points or more (red where it's likelier); each tooltip with every measure, how far each could be, and from
   how many fights. The bar and the Run button fill by its time, and a chip beside the fight count shows its fights so
   far of about how many there will be (at its pace so far; at first, the main run's).
 - Before it runs, from the main run's own fights: where a creature fell early and where it didn't, the margin against how

@@ -106,6 +106,50 @@ describe("a test's verdict", () => {
   });
 });
 
+describe("PC deaths, and near the line", () => {
+  test("a test matters by its deaths alone: the wins say little, a character dies far more often", () => {
+    const v = swingVerdict({ n: 60, wins: 0, deaths: 40, sum: 0, squares: 0 }, null, { runs: 200, pWin: 0, pDeath: 0.05 });
+    expect(v.status).toBe("matters");
+    expect(v.win.clear).not.toBe("matters");
+    expect(v.death.clear).toBe("matters");
+    expect(v.death.estimate).toBeGreaterThan(0.5);
+  });
+
+  test("one of the Friendly Team going down: counted per fight, and it can make a test matter", () => {
+    const baseline = { runs: 300, sides: { friendly: { pWin: 0.5 } }, pAnyFriendDowned: 0.1, combatants: { hero: { id: "hero", side: "friendly", kind: "npc" } } };
+    const study = createSwingStudy([{ id: "ogre", slot: "ogre", label: "ogre", spec: {} }], baseline);
+    for ( let i = 0; i < 2 * SWING_MIN_FIGHTS; i++ ) {
+      study.heard("ogre", [{ outcome: "victory", winners: [i % 2 ? "friendly" : "hostile"], rounds: 3, units: { hero: { status: "standing", hpFrac: 0.4, wasDowned: true } } }]);
+    }
+    const [row] = study.rows();
+    expect(row.death).toBeNull();
+    expect(row.downs).toBe(2 * SWING_MIN_FIGHTS);
+    expect(row.downed.clear).toBe("matters");
+    expect(row.status).toBe("matters");
+  });
+
+  test("no character in the battle: the wins alone", () => {
+    expect(swingVerdict({ n: 20, wins: 10, deaths: 0 }, null, { runs: 200, pWin: 0.5, pDeath: null }).death).toBeNull();
+  });
+
+  test("as many fights as the main run, and still not clear: near the line, and no more fights for it", () => {
+    const v = swingVerdict({ n: 40, wins: 21, deaths: 4 }, null, { runs: 40, pWin: 0.5, pDeath: 0.1 });
+    expect(v.status).toBe("near");
+    expect(v.settled).toBe(true);
+  });
+
+  test("steady but not clear: near the line, given the time that's left, after everything else", () => {
+    const tests = [{ id: "a", slot: "a", label: "a", spec: {} }];
+    const study = createSwingStudy(tests, { runs: 1000, sides: { friendly: { pWin: 0.5 } } });
+    for ( let i = 0; i < 4 * SWING_MIN_FIGHTS; i++ ) study.heard("a", [fight({}, i % 2 === 0)]);
+    const [row] = study.rows();
+    expect(row.status).toBe("near");
+    expect(row.steady).toBe(true);
+    expect(row.settled).toBe(false);
+    expect(study.pick().key).toBe("a");
+  });
+});
+
 describe("the hints from the main run", () => {
   test("an ally whose falling early goes with losing: a cost; one that never fell, nothing to say", () => {
     const ledger = createLedger([...party, ...foes]);
