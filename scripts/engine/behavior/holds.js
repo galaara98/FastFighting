@@ -215,6 +215,7 @@ export function release(run, u, hold) {
       const with_ = u.grabKey;
       u.grabbedBy = null;
       u.grabKey = null;
+      u.grabReach = null;
       u.effects = (u.effects ?? []).filter(e => !(e.conditions?.grabbed && (e.key === "gm:grabbed" || e.key === hold.effectKey)) && !(with_ && e.key === with_ && e.sourceId === by));
       if ( u.baseConds ) delete u.baseConds.grabbed;
       break;

@@ -137,6 +137,19 @@ describe("a degree's own damage, a botch that moves, a blow that pushes", () => 
     takeTurn(wave, wave.byId.get("hero"));
     expect(wave.log.some(e => e.type === "forced" && e.targetId === "orc")).toBe(true);
   });
+
+  test("rules.grabEndsOnMove \"reach\": pushed out of the grab's reach, let go, told; without it, still held (API 41)", () => {
+    const push = [strike({ bonus: 60, damage: [parseFormula("1", "thunder")], effects: [{ kind: "move", move: { kind: "push", feet: 10 } }] })];
+    for ( const [rules, held] of [[{ ...pf2eRules, grabEndsOnMove: "reach" }, false], [pf2eRules, true]] ) {
+      const run = fight([hero(push), orc()], { rules });
+      const [h, o] = ids(run);
+      o.grabbedBy = h.id;
+      takeTurn(run, h);
+      expect(run.log.some(e => e.type === "forced" && e.targetId === "orc")).toBe(true);
+      expect(o.grabbedBy === h.id).toBe(held);
+      expect(run.log.some(e => e.type === "letGo" && e.actorId === "orc")).toBe(!held);
+    }
+  });
 });
 
 describe("where it's moved to", () => {

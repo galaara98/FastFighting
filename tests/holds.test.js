@@ -3,7 +3,7 @@
  * breaks), and freeing a friend; the system's own say on it; tied up as something on the creature, from no one.
  */
 import { describe, expect, test } from "vitest";
-import { beginRun, beginRound, takeTurn, prepareBattle, answerMove, strikeOutOfTurn } from "../scripts/engine/simulator.js";
+import { beginRun, beginRound, takeTurn, prepareBattle, answerMove, strikeOutOfTurn, grabbedOutOfReach } from "../scripts/engine/simulator.js";
 import { holdsOf, tryHold, isBound, bears, release } from "../scripts/engine/behavior/holds.js";
 import { recompute } from "../scripts/engine/behavior/effects.js";
 import { mind } from "../scripts/engine/behavior/desire.js";
@@ -289,6 +289,44 @@ describe("grabs, escapes and freeing, as the system has them (API 37.3)", () => 
       expect(orc.grabbedBy === "hero").toBe(held);
       expect(run.log.some(e => e.type === "letGo" && e.actorId === "orc" && e.byId === "hero")).toBe(!held);
     }
+  });
+
+  test("rules.grabEndsOnMove \"reach\": a grab ends only once its grabber's move leaves the held one out of reach (API 41)", () => {
+    const rules = { ...pf2eRules, grabEndsOnMove: "reach" };
+    const moved = (run, u, x) => {
+      const from = { ...u.pos };
+      u.pos.x = x;
+      answerMove(run, u, { feet: Math.abs(x - from.x), from, to: { ...u.pos }, reached: false });
+    };
+    // (A step that keeps it beside the held one keeps the grab; one away lets go, told.)
+    const run = fight([fighter("hero", "friendly", 0), fighter("orc", "hostile", 5)], rules);
+    const [hero, orc] = [run.byId.get("hero"), run.byId.get("orc")];
+    orc.grabbedBy = "hero";
+    hero.pos.y = 5;
+    moved(run, hero, 5);
+    expect(orc.grabbedBy).toBe("hero");
+    moved(run, hero, -10);
+    expect(orc.grabbedBy).toBe(null);
+    expect(run.log.some(e => e.type === "letGo" && e.actorId === "orc" && e.byId === "hero")).toBe(true);
+    // (A grab made with a 10-foot reach holds 10 feet off.)
+    const far = fight([fighter("hero", "friendly", 0), fighter("orc", "hostile", 5)], rules);
+    const [h2, o2] = [far.byId.get("hero"), far.byId.get("orc")];
+    Object.assign(o2, { grabbedBy: "hero", grabReach: 10 });
+    moved(far, h2, -5);
+    expect(o2.grabbedBy).toBe("hero");
+    moved(far, h2, -10);
+    expect(o2.grabbedBy).toBe(null);
+  });
+
+  test("rules.grabEndsOnMove \"reach\": the grab's reach: its own, else the holder's longest melee reach (API 41)", () => {
+    const holder = { spec: { actions: [{ melee: true, reach: 15 }] }, pos: { x: 0, y: 0 }, size: 5, adjacent: new Set() };
+    const held = { id: "h", spec: {}, pos: { x: 15, y: 0 } };
+    // (No reach of the grab's own: the holder's longest melee reach.)
+    expect(grabbedOutOfReach(holder, held)).toBe(false);
+    expect(grabbedOutOfReach(holder, { ...held, grabReach: 5 })).toBe(true);
+    // (Off the map: out of reach is no longer beside it.)
+    expect(grabbedOutOfReach({ ...holder, pos: null }, { id: "h", spec: {}, pos: null })).toBe(true);
+    expect(grabbedOutOfReach({ ...holder, pos: null, adjacent: new Set(["h"]) }, { id: "h", spec: {}, pos: null })).toBe(false);
   });
 
   test("rules.escapeIsAttack: an Escape counts toward the attack penalty of the Strikes after it", () => {

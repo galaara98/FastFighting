@@ -901,6 +901,7 @@ function applyEffects(run, u, action, target, degree, { saveDegree = null, dealt
       if ( cantBeGrabbed(run, target, action) ) continue;
       target.grabbedBy = u.id;
       target.grabKey = null;
+      target.grabReach = Number.isFinite(action.reach) ? action.reach : null;
       log(run, target, { type: "grabbed", by: u.spec.name });
     } else if ( effect.kind === "move" && effect.move && (degree === 3 || !effect.critOnly) ) {
       // (Pushed back by the blow: 5e Thunderous Smite, a creature's Push. Not one too big for it, nor one the system's
@@ -2163,6 +2164,7 @@ function landOutcome(run, u, target, outcome, action, { damage: harms = true, en
   if ( outcome.grab && isUp(on) && isUp(holder) && !cantBeGrabbed(run, on, action) ) {
     on.grabbedBy = holder.id;
     on.grabKey = self ? null : effect?.key ?? null;
+    on.grabReach = !self && Number.isFinite(action.reach) ? action.reach : null;
     log(run, on, { type: "grabbed", by: holder.spec.name });
   }
   if ( outcome.move && isUp(on) ) {
@@ -2218,6 +2220,8 @@ function forceMove(run, u, t, move) {
     type: "forced", how: move.kind, feet: path.noMap ? move.feet ?? 5 : path.feet, target: t.spec.name, targetId: t.id, from, to: path.to ?? null,
     fall: path.fall || 0, blocked: !!path.blocked, into: (path.hazards ?? []).map(h => h.spec.name), ground: path.cell?.h ? "hazardous" : path.cell?.d ? "difficult" : null
   });
+  // (Taken out of a grab's reach, or taking what it holds out of its own: 5e's.)
+  if ( path.noMap || path.feet > 0 ) letGoForced(run, t);
   if ( path.fall > 0 && isUp(t) ) {
     const fall = fallDamage(run, path.fall, t);
     const at = diceAt(run);
@@ -2960,13 +2964,42 @@ function moveLog(run, u, move, toward, purpose = "approach", extra = {}) {
   return isStanding(u);
 }
 
-/** u moved: those it had grabbed are grabbed no longer (rules.grabEndsOnMove), told. */
+/**
+ * u moved: those it had grabbed are grabbed no longer (rules.grabEndsOnMove), told. With "reach" (5e), only those its
+ * move left out of the grab's reach (grabbedOutOfReach).
+ */
 function letGoMoving(run, u) {
+  const reach = run.prep.rules.grabEndsOnMove === "reach";
   for ( const o of run.units ) {
-    if ( o === u || o.grabbedBy !== u.id ) continue;
-    release(run, o, { key: "grabbed", byId: u.id });
-    log(run, o, { type: "letGo", hold: "grabbed", by: u.spec.name, byId: u.id });
+    if ( o === u || o.grabbedBy !== u.id || (reach && !grabbedOutOfReach(u, o)) ) continue;
+    letGoOf(run, u, o);
   }
+}
+
+/** holder lets go of held, told. */
+function letGoOf(run, holder, held) {
+  release(run, held, { key: "grabbed", byId: holder.id });
+  log(run, held, { type: "letGo", hold: "grabbed", by: holder.spec.name, byId: holder.id });
+}
+
+/**
+ * Is held out of its grab's reach (held.grabReach: the grabbing action's, else the holder's longest melee reach, else
+ * 5 feet)? Off the map, out of reach is no longer beside it.
+ */
+export function grabbedOutOfReach(holder, held) {
+  const d = edgeDistance(holder, held);
+  if ( d === null ) return !holder.adjacent?.has(held.id);
+  const melee = (holder.spec.actions ?? []).filter(a => a.melee && Number.isFinite(a.reach)).map(a => a.reach);
+  const reach = Number.isFinite(held.grabReach) ? held.grabReach : melee.length ? Math.max(...melee) : 5;
+  return d > reach + 0.5;
+}
+
+/** t was moved (forced): with rules.grabEndsOnMove "reach" (5e), a grab its move took it out of the reach of ends. */
+function letGoForced(run, t) {
+  if ( run.prep.rules.grabEndsOnMove !== "reach" ) return;
+  const holder = t.grabbedBy ? run.byId.get(t.grabbedBy) : null;
+  if ( holder && grabbedOutOfReach(holder, t) ) letGoOf(run, holder, t);
+  for ( const o of run.units ) if ( o !== t && o.grabbedBy === t.id && grabbedOutOfReach(t, o) ) letGoOf(run, t, o);
 }
 
 /**
@@ -2975,7 +3008,7 @@ function letGoMoving(run, u) {
  * foe whose reach it came into ("foeApproaches": a strike at it, or a step).
  */
 export function answerMove(run, u, move, toward = null) {
-  // (Where the system says so, PF2e's Grapple: a grab ends as its grabber moves off.)
+  // (Where the system says so, PF2e's Grapple: a grab ends as its grabber moves off; 5e's, as it's out of reach.)
   if ( run.prep.rules.grabEndsOnMove && move?.feet > 0 ) letGoMoving(run, u);
   if ( run.reachers || hasMoveStrikers(run) ) throughReach(run, u, move);
   if ( run.readying && isStanding(u) ) readiedStrikes(run, u, move);
@@ -3798,6 +3831,7 @@ function grabLapsed(u) {
   if ( u.grabbedBy && u.grabKey && !(u.effects ?? []).some(e => e.key === u.grabKey && e.sourceId === u.grabbedBy) ) {
     u.grabbedBy = null;
     u.grabKey = null;
+    u.grabReach = null;
   }
 }
 
