@@ -91,4 +91,11 @@ describe("Rewind This Encounter's last sweep", () => {
   test("a battle with no start kept (one from before): nothing swept", () => {
     expect(strayCards(messages, { tokens: new Set(["amiri"]) })).toEqual([]);
   });
+  test("words the system posts by itself as turns go (the helper's systemTurnCard) go too", () => {
+    const conditions = card("conditions", 1950, { token: "amiri" }, { content: "<div class=\"participant-conditions\"></div>" });
+    const turnCard = m => m.id === "conditions";
+    const gone = strayCards([...messages, conditions], { since: 1000, tokens: new Set(["amiri"]), system: "pf2e", turnCard });
+    expect(gone.map(m => m.id)).toContain("conditions");
+    expect(gone.map(m => m.id)).not.toContain("talk");
+  });
 });

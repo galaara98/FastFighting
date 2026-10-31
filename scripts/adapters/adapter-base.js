@@ -480,6 +480,18 @@ export class SystemAdapter {
   }
 
   /**
+   * API 40. A chat card the system posts by itself as turns go, for a creature (PF2e's Current Conditions as its turn
+   * begins), from whichever GM's browser the system chose: the core takes it with that creature's turn this round, so
+   * the turn's Rewind (and Rewind This Encounter) takes it back. Optional: by default false, and a card goes with a turn
+   * only when the browser playing the battle made it, or the character's player did.
+   * @param {ChatMessage} message
+   * @returns {boolean}
+   */
+  systemTurnCard(message) {
+    return false;
+  }
+
+  /**
    * API 21. A damage or healing card of FastFighting's own (rollStrike's, rollDamage's, showTableRoll's) that it won't
    * apply after all: the table settles it itself (a player's character's at another, Apply players' damage off). Put
    * the system's own Apply back on it, where a helper took it off (PF2e: its mark, cards.js). Optional.

@@ -780,16 +780,40 @@ export function goingBack(turns, now, key, place) {
 /**
  * Rewind This Encounter's last sweep: the chat's roll cards made since the battle began (`since`, ms) by a creature in
  * it (its token, or its actor, by id), that no turn took: a player's roll between turns, a card from before a turn was
- * kept. Only cards: one with a roll, the system's own card (`system`: its flags' key, with a context), or one with a
- * flavor (the heading an action's card has: PF2e's Interact to draw a weapon); words alone stay. And only one its
- * author may speak for it with (`rightful(m)`: a GM, or one who owns it): anyone can name any speaker on a card.
+ * kept. Only cards: one with a roll, the system's own card (`system`: its flags' key, with a context), one with a
+ * flavor (the heading an action's card has: PF2e's Interact to draw a weapon), or one the system posts by itself as
+ * turns go (`turnCard(m)`: the helper's systemTurnCard); words alone stay. And only one its author may speak for it
+ * with (`rightful(m)`: a GM, or one who owns it): anyone can name any speaker on a card.
  */
-export function strayCards(messages, { since, tokens = new Set(), actors = new Set(), system = null, rightful = () => true } = {}) {
+export function strayCards(messages, { since, tokens = new Set(), actors = new Set(), system = null, rightful = () => true, turnCard = () => false } = {}) {
   if ( !Number.isFinite(since) ) return [];
   return messages.filter(m => (m.timestamp ?? 0) >= since
     && (tokens.has(m.speaker?.token) || actors.has(m.speaker?.actor))
-    && ((m.rolls?.length ?? 0) > 0 || (system && !!m.flags?.[system]?.context) || !!String(m.flavor ?? "").trim())
+    && ((m.rolls?.length ?? 0) > 0 || (system && !!m.flags?.[system]?.context) || !!String(m.flavor ?? "").trim() || turnCard(m))
     && rightful(m));
+}
+
+/**
+ * A card the system posts by itself as turns go, for a creature in the battle (the helper's systemTurnCard, API 40),
+ * from whichever GM's browser the system chose: taken with that creature's turn this round, kept already or when it
+ * is, so its Rewind takes the card back too.
+ */
+function noteSystemCard(message) {
+  if ( !battle || battle.data.prepared || battle.data.ended || !playsHere() || !message.author?.isGM ) return;
+  const adapter = getAdapter();
+  if ( !offers(adapter, "systemTurnCard") ) return;
+  try {
+    if ( !adapter.systemTurnCard(message) ) return;
+  } catch ( err ) {
+    console.error(`${MODULE_ID} | reading a system's card`, err);
+    return;
+  }
+  const combatant = battle.combat.combatants.find(c => c.tokenId === message.speaker?.token);
+  if ( !combatant ) return;
+  const key = turnKey(combatant);
+  const kept = battle.data.turns?.findLast(t => t.key === key);
+  if ( kept ) kept.messages = [...(kept.messages ?? []), message.id];
+  else (battle.data.systemCards ??= {})[key] = [...(battle.data.systemCards[key] ?? []), message.id];
 }
 
 /**
@@ -1325,8 +1349,13 @@ export function keptTurns(turns, turn, depth = REWIND_DEPTH) {
   return out;
 }
 
-/** A turn kept (keptTurns), its cards whose damage it applied drawn again. */
+/** A turn kept (keptTurns), its cards whose damage it applied drawn again, with the system's own cards for it (noteSystemCard). */
 function keepTurn(turn) {
+  const own = battle.data.systemCards?.[turn.key];
+  if ( own?.length ) {
+    turn.messages = [...(turn.messages ?? []), ...own];
+    delete battle.data.systemCards[turn.key];
+  }
   battle.data.turns = keptTurns(battle.data.turns, turn);
   redraw(turn.applied);
 }
@@ -4094,7 +4123,9 @@ export function rewindEncounter() {
     const tokens = new Set(battle.run.units.map(u => tokenIdOf(u)));
     const actors = new Set(battle.run.units.map(u => docOf(u.id)?.actor?.id).filter(Boolean));
     const rightful = m => !!m.author && (m.author.isGM || !!(battle.scene.tokens.get(m.speaker?.token)?.actor ?? game.actors.get(m.speaker?.actor))?.testUserPermission(m.author, "OWNER"));
-    for ( const m of strayCards(game.messages.contents, { since: battle.data.beganAt, tokens, actors, system: game.system?.id, rightful }) ) await m.delete();
+    const adapter = getAdapter();
+    const turnCard = m => offers(adapter, "systemTurnCard") && !!adapter.systemTurnCard(m);
+    for ( const m of strayCards(game.messages.contents, { since: battle.data.beganAt, tokens, actors, system: game.system?.id, rightful, turnCard }) ) await m.delete();
     // (None of the tracker's own turn events, as the combat is put back: no turn starting or ending, for the system or
     // for this battle: onTurnChange.)
     for ( const uuid of battle.data.joined ?? [] ) {
@@ -4672,6 +4703,8 @@ export function registerLiveBattles() {
     queue(() => playerMoved(doc));
   });
   Hooks.on("createChatMessage", onMessage);
+  // (The system's own cards as turns go, from any GM's browser: each with its creature's turn.)
+  Hooks.on("createChatMessage", noteSystemCard);
   // (The system's own lines about FastFighting's writes: the battle's, and none as a Rewind takes them back.)
   registerSideLines();
   // (Players' damage waiting on a GM, applied some other way: its line goes.)
